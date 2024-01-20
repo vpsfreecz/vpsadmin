@@ -3,7 +3,7 @@ class ObjectHistory < ActiveRecord::Base
   belongs_to :user
   belongs_to :user_session
 
-  serialize :event_data, JSON
+  serialize :event_data, coder: JSON
   validate :check_user
 
   def check_user

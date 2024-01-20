@@ -8,7 +8,7 @@ class DatasetProperty < ActiveRecord::Base
 
   has_ancestry cache_depth: true
 
-  serialize :value
+  serialize :value, coder: YAML
 
   include Confirmable
 

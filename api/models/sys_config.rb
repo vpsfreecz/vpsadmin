@@ -1,7 +1,7 @@
 class SysConfig < ActiveRecord::Base
   self.table_name = 'sysconfig'
 
-  serialize :value, JSON
+  serialize :value, coder: JSON
   validates :name, presence: true
   validates :category, format: {
     with: /\A[a-zA-Z0-9_]{1,75}\z/,

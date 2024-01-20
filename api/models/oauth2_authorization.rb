@@ -6,7 +6,7 @@ class Oauth2Authorization < ::ActiveRecord::Base
   belongs_to :refresh_token, class_name: 'Token', dependent: :destroy
   belongs_to :single_sign_on
   belongs_to :user_agent
-  serialize :scope, JSON
+  serialize :scope, coder: JSON
 
   def check_code_validity(redirect_uri)
     code.valid_to > Time.now && oauth2_client.redirect_uri == redirect_uri

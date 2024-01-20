@@ -6,7 +6,7 @@ class UserSession < ActiveRecord::Base
   has_many :oauth2_authorizations
   has_many :transaction_chains
 
-  serialize :scope, JSON
+  serialize :scope, coder: JSON
   enum token_lifetime: %i(fixed renewable_manual renewable_auto permanent)
 
   def self.current
