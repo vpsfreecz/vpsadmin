@@ -18,7 +18,7 @@ GEM
     domain_name (0.6.20240107)
     drb (2.2.0)
       ruby2_keywords
-    haveapi-client (0.19.3)
+    haveapi-client (0.20.0)
       activesupport (>= 7.0)
       highline (~> 2.1.0)
       json
@@ -53,7 +53,7 @@ PLATFORMS
   x86_64-linux
 
 DEPENDENCIES
-  haveapi-client (~> 0.19.0)
+  haveapi-client (~> 0.20.0)
   highline
 
 BUNDLED WITH

@@ -77,10 +77,10 @@
     platforms = [];
     source = {
       remotes = ["https://rubygems.org"];
-      sha256 = "0yjcf6yf90sqjsywlcxzfrfrl835ndw96x6bh4grvc75zbb5ijki";
+      sha256 = "0j3l5fnrj1xyr7g61hx4siwickijsb8vy8wy5dr9gg9sr6zsvza5";
       type = "gem";
     };
-    version = "0.19.3";
+    version = "0.20.0";
   };
   highline = {
     groups = ["default"];

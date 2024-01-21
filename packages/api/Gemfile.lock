@@ -48,10 +48,10 @@ GEM
     fio_api (0.0.7)
       httparty (>= 0.16.2)
     github-markdown (0.6.9)
-    haveapi (0.19.3)
-      activesupport (>= 7.0)
+    haveapi (0.20.0)
+      activesupport (>= 7.1)
       github-markdown
-      haveapi-client (~> 0.19.3)
+      haveapi-client (~> 0.20.0)
       json
       mail
       nesty (~> 1.0)
@@ -62,7 +62,7 @@ GEM
       sinatra (~> 3.1.0)
       sinatra-contrib (~> 3.1.0)
       tilt (~> 2.3.0)
-    haveapi-client (0.19.3)
+    haveapi-client (0.20.0)
       activesupport (>= 7.0)
       highline (~> 2.1.0)
       json
@@ -201,7 +201,7 @@ DEPENDENCIES
   bunny (~> 2.22.0)
   eventmachine
   fio_api!
-  haveapi (~> 0.19.0)
+  haveapi (~> 0.20.0)
   ipaddress (~> 0.8.0)
   mysql2 (~> 0.5.3)
   paper_trail (~> 15.1.0)
