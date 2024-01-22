@@ -270,7 +270,7 @@ module VpsAdmin::API::Resources
 
       def exec
         tr = extract_translations
-        ::Outage.create!(to_db_names(input), tr)
+        ::Outage.create_outage!(to_db_names(input), tr)
 
       rescue ActiveRecord::RecordInvalid => e
         error('report failed', to_param_names(e.record.errors.to_hash))
@@ -319,7 +319,7 @@ module VpsAdmin::API::Resources
           end
         end
 
-        @chain, ret = outage.update!(to_db_names(input), tr, opts)
+        @chain, ret = outage.update_outage!(to_db_names(input), tr, opts)
         ret
 
       rescue ActiveRecord::RecordInvalid => e

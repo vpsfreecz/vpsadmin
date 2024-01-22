@@ -14,8 +14,7 @@ class Outage < ActiveRecord::Base
 
   after_initialize :load_translations
 
-  # TODO: pick a different method name?
-  def self.create!(attrs, translations = {})
+  def self.create_outage!(attrs, translations = {})
     transaction do
       outage = new(attrs)
       outage.save!
@@ -41,7 +40,7 @@ class Outage < ActiveRecord::Base
     end
   end
 
-  def update!(attrs = {}, translations = {}, opts = {})
+  def update_outage!(attrs = {}, translations = {}, opts = {})
     attrs[:state] = ::Outage.states[attrs[:state]] if attrs[:state]
 
     VpsAdmin::API::Plugins::OutageReports::TransactionChains::Update.fire(
