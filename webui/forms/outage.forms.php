@@ -862,14 +862,38 @@ function outage_list_recent() {
 	}
 
 	if (count($active) > 0) {
-		$xtpl->table_title(_('Current/planned maintenances and outages'));
+		$xtpl->table_title(outage_list_title(_('Current/planned'), $active));
 		outage_list_overview($active);
 	}
 
 	if (count($past) > 0) {
-		$xtpl->table_title(_('Recently resolved maintenances and outages'));
+		$xtpl->table_title(outage_list_title(_('Recently resolved'), $past));
 		outage_list_overview($past);
 	}
+}
+
+function outage_list_title($prefix, $outages) {
+	$hasMaintenance = false;
+	$hasOutage = false;
+
+	foreach ($outages as $outage) {
+		if ($outage->planned)
+			$hasMaintenance = true;
+		else
+			$hasOutage = true;
+
+		if ($hasMaintenance && $hasOutage)
+			break;
+	}
+
+	if ($hasMaintenance && $hasOutage)
+		return $prefix .' '. _('maintenances and outages');
+	elseif ($hasMaintenance)
+		return $prefix .' '. _('maintenances');
+	elseif ($hasOutages)
+		return $prefix .' '. _('outages');
+	else
+		return $prefix .' '. _('maintenances and outages');
 }
 
 function outage_list_overview($outages) {
