@@ -30,7 +30,6 @@ This plugin defines five new resources:
 - `OutageUpdate` - updates of reported outages
 - `UserOutage` - browse users affected by outages
 - `VpsOutage` - browse VPS affected by outages
-- `VpsOutageMount` - browse affected mounts
 
 ## Usage
 Outages are reported using action `Outage.Create`. Outages can be in one
