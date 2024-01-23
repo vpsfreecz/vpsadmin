@@ -9,8 +9,17 @@ class Outage < ActiveRecord::Base
   has_many :outage_exports
   has_many :exports, through: :outage_exports
 
-  enum state: %i(staged announced closed cancelled)
-  enum outage_type: %i(tbd vps_restart vps_reset network performance maintenance)
+  enum state: %i(staged announced resolved cancelled)
+  enum outage_type: %i(maintenance outage)
+  enum impact_type: %i(
+    tbd
+    system_restart
+    system_reset
+    network
+    performance
+    unavailability
+    export
+  )
 
   after_initialize :load_translations
 
@@ -19,7 +28,7 @@ class Outage < ActiveRecord::Base
       outage = new(attrs)
       outage.save!
 
-      attrs.delete(:planned)
+      attrs.delete(:outage_type)
 
       report = ::OutageUpdate.new(attrs)
       report.outage = outage
@@ -324,10 +333,10 @@ class Outage < ActiveRecord::Base
   def to_hash
     ret = {
       id: id,
-      planned: planned,
+      type: outage_type,
       begins_at: begins_at.iso8601,
       duration: duration,
-      type: outage_type,
+      impact: impact_type,
       entities: outage_entities.map { |v| {name: v.name, id: v.row_id, label: v.real_name} },
       handlers: outage_handlers.map { |v| v.full_name },
       translations: {},

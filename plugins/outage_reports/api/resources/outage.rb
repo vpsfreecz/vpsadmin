@@ -14,10 +14,10 @@ module VpsAdmin::API::Resources
       datetime :begins_at, label: 'Begins at'
       datetime :finished_at, label: 'Finished at'
       integer :duration, label: 'Duration', desc: 'Outage duration in minutes'
-      bool :planned, label: 'Planned', desc: 'Is this outage planned?'
+      string :type, db_name: :outage_type, label: 'Type', choices: ::Outage.outage_types.keys.map(&:to_s)
       string :state, label: 'State', choices: ::Outage.states.keys.map(&:to_s)
-      string :type, db_name: :outage_type, label: 'Type',
-          choices: ::Outage.outage_types.keys.map(&:to_s)
+      string :impact, db_name: :impact_type, label: 'Impact',
+          choices: ::Outage.impact_types.keys.map(&:to_s)
       use :texts
     end
 
@@ -60,7 +60,7 @@ module VpsAdmin::API::Resources
       auth false
 
       input do
-        use :all, include: %i(planned state type affected)
+        use :all, include: %i(type state impact affected)
         datetime :recent_since, desc: 'Filter announced or recently reported outages'
         resource VpsAdmin::API::Resources::User, name: :user, label: 'User',
             desc: 'Filter outages affecting a specific user'
@@ -102,9 +102,9 @@ module VpsAdmin::API::Resources
           q = q.where.not(state: ::Outage.states[:staged])
         end
 
-        q = q.where(planned: input[:planned]) if input.has_key?(:planned)
+        q = q.where(outage_type: input[:type]) if input[:type]
         q = q.where(state: ::Outage.states[input[:state]]) if input[:state]
-        q = q.where(outage_type: ::Outage.outage_types[input[:type]]) if input[:type]
+        q = q.where(impact_type: input[:impact]) if input[:impact]
 
         if input.has_key?(:affected)
           q = q.joins(
@@ -142,7 +142,7 @@ module VpsAdmin::API::Resources
           q = q.where(
             '`state` = ? OR (`state` = ? AND updated_at >= ?)',
             ::Outage.states[:announced],
-            ::Outage.states[:closed],
+            ::Outage.states[:resolved],
             input[:recent_since],
           )
         end
@@ -253,7 +253,7 @@ module VpsAdmin::API::Resources
       input do
         use :editable, exclude: %i(state)
 
-        %i(begins_at duration planned type).each { |p| patch p, required: true }
+        %i(begins_at duration type impact).each { |p| patch p, required: true }
 
         ::Language.all.each do |lang|
           patch :"#{lang.code}_summary", required: true
@@ -284,7 +284,7 @@ module VpsAdmin::API::Resources
       blocking true
 
       input do
-        use :editable, exclude: %i(planned)
+        use :editable, exclude: %i(impact)
         use :input
       end
 

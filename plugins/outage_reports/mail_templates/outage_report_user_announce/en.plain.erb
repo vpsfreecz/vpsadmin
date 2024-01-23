@@ -1,6 +1,6 @@
 Hi <%= @user.login %>,
 
-<%= @o.planned ? 'a planned' : 'an unplanned' %> outage has been reported.
+<%= @o.outage_type.capitalize %> has been reported.
 
 <% if @direct_vpses.count > 0 -%>
 Directly affected VPS:
@@ -32,7 +32,7 @@ Affected NFS exports:
 Date and time: <%= @o.begins_at.localtime.strftime('%Y-%m-%d %H:%M %Z') %>
 Expected duration: <%= @o.duration %> minutes
 Affected systems: <%= @o.outage_entities.map { |e| e.real_name }.join(', ') %>
-Outage type: <%= @o.outage_type %>
+Impact type: <%= @o.impact_type %>
 Reason: <%= @o.en_summary %>
 Handled by: <%= @o.outage_handlers.map { |h| h.user.full_name }.join(', ') %>
 <% if @o.en_description && !@o.en_description.empty? -%>

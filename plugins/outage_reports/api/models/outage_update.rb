@@ -3,8 +3,16 @@ class OutageUpdate < ActiveRecord::Base
   belongs_to :reported_by, class_name: 'User'
   has_many :outage_translations
 
-  enum state: %i(staged announced closed cancelled)
-  enum outage_type: %i(tbd vps_restart vps_reset network performance maintenance)
+  enum state: %i(staged announced resolved cancelled)
+  enum impact_type: %i(
+    tbd
+    system_restart
+    system_reset
+    network
+    performance
+    unavailability
+    export
+  )
 
   after_initialize :load_translations
   before_validation :set_name
@@ -13,14 +21,14 @@ class OutageUpdate < ActiveRecord::Base
   def origin=(attrs)
     @origin = attrs
     @origin['state'] = self.class.states.invert[@origin['state']]
-    @origin['outage_type'] = self.class.outage_types.invert[@origin['outage_type']]
+    @origin['impact_type'] = self.class.impact_types.invert[@origin['impact_type']]
   end
 
   # @yieldparam attribute [Symbol]
   # @yieldparam old_value [any]
   # @yieldparam new_value [any]
   def each_change
-    %i(begins_at finished_at duration state outage_type).each do |attr|
+    %i(begins_at finished_at duration state impact_type).each do |attr|
       old = @origin[attr.to_s]
       new = send(attr)
       yield(attr, old, new) if !new.nil? && new != old
@@ -69,7 +77,7 @@ class OutageUpdate < ActiveRecord::Base
       when :begins_at, :finished_at
         ret[:changes][attr] = {from: old && old.iso8601, to: new && new.iso8601}
 
-      when :outage_type
+      when :impact_type
         ret[:changes][:type] = {from: old, to: new}
 
       else

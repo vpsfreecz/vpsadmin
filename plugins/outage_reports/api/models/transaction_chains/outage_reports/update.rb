@@ -87,7 +87,7 @@ module VpsAdmin::API::Plugins::OutageReports::TransactionChains
       event = {
         ::Outage.states[:announced] => 'announce',
         ::Outage.states[:cancelled] => 'cancel',
-        ::Outage.states[:closed] => 'closed',
+        ::Outage.states[:resolved] => 'resolve',
       }
       msg_id = message_id(
         attrs[:state] == ::Outage.states[:announced] ? :announce : :update,
