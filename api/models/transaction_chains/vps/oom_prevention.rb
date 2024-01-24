@@ -13,6 +13,7 @@ module TransactionChains
       end
 
       lock(vps)
+      concerns(:affect, [vps.class.name, vps.id])
 
       mail(:vps_oom_prevention, {
         user: vps.user,
