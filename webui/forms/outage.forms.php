@@ -78,6 +78,7 @@ function outage_report_form () {
 	$xtpl->form_add_number(_('Duration').':', 'duration', post_val('duration'), 0, 999999, 1, 'minutes');
 	api_param_to_form('type', $input->type, null, null, true);
 	api_param_to_form('impact', $input->impact);
+	api_param_to_form('auto_resolve', $input->auto_resolve);
 
 	$entities = maintenance_to_entities();
 
@@ -151,6 +152,7 @@ function outage_edit_attrs_form ($id) {
 
 	api_param_to_form('type', $input->type, $outage->type);
 	api_param_to_form('impact', $input->impact, $outage->impact);
+	api_param_to_form('auto_resolve', $input->auto_resolve, $outage->auto_resolve);
 
 	foreach ($api->language->list() as $lang) {
 		$xtpl->form_add_input(
@@ -410,6 +412,12 @@ function outage_details ($id) {
 	$xtpl->table_td(_('Impact').':');
 	$xtpl->table_td($outage->impact);
 	$xtpl->table_tr();
+
+	if (isAdmin()) {
+		$xtpl->table_td(_('Auto-resolve').':');
+		$xtpl->table_td(boolean_icon($outage->auto_resolve));
+		$xtpl->table_tr();
+	}
 
 	$xtpl->table_td(_('Affected systems').':');
 	$xtpl->table_td(implode("\n<br>\n", array_map(

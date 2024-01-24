@@ -9,6 +9,7 @@ function outage_create () {
 			'duration' => $_POST['duration'],
 			'type' => $_POST['type'],
 			'impact' => $_POST['impact'],
+			'auto_resolve' => isset($_POST['auto_resolve']),
 		];
 
 		$texts = [];
@@ -160,7 +161,9 @@ if (isLoggedIn()) {
 			if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 				csrf_check();
 
-				$params = [];
+				$params = [
+					'auto_resolve' => isset($_POST['auto_resolve']),
+				];
 				$dates = ['begins_at', 'finished_at'];
 				$fields = ['duration', 'type', 'impact'];
 
