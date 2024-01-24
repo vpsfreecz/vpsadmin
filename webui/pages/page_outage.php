@@ -11,9 +11,9 @@ function outage_create () {
 			'impact' => $_POST['impact'],
 		];
 
-		$texts = array();
+		$texts = [];
 		foreach ($api->language->list() as $lang) {
-			foreach (array('summary', 'description') as $name) {
+			foreach (['summary', 'description'] as $name) {
 				$param = $lang->code.'_'.$name;
 
 				if ($_POST[$param])
@@ -155,7 +155,54 @@ if (isLoggedIn()) {
 		}
 		break;
 
-	case 'edit':
+	case 'edit_attrs':
+		if (isAdmin()) {
+			if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+				csrf_check();
+
+				$params = [];
+				$dates = ['begins_at', 'finished_at'];
+				$fields = ['duration', 'type', 'impact'];
+
+				foreach ($dates as $d) {
+					$v = strtotime($_POST[$d]);
+
+					if ($_POST[$d])
+						$params[$d] = date('c', $v);
+					else
+						$params[$d] = null;
+				}
+
+				foreach ($fields as $f) {
+					if ($_POST[$f])
+						$params[$f] = $_POST[$f];
+				}
+
+				$texts = [];
+
+				foreach ($api->language->list() as $l) {
+					foreach (['summary', 'description'] as $name) {
+						$param = $l->code.'_'.$name;
+						$params[$param] = $_POST[$param];
+					}
+				}
+
+				try {
+					$outage = $api->outage->update($_GET['id'], $params);
+					redirect('?page=outage&action=show&id='.$outage->id);
+
+				} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+					$xtpl->perex_format_errors('Save failed', $e->getResponse());
+					outage_edit_attrs_form($_GET['id']);
+				}
+
+			} else {
+				outage_edit_attrs_form($_GET['id']);
+			}
+		}
+		break;
+
+	case 'edit_systems':
 		if (isAdmin()) {
 			if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 				csrf_check();
@@ -170,11 +217,12 @@ if (isLoggedIn()) {
 
 				} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
 					$xtpl->perex_format_errors('Save failed', $e->getResponse());
-					outage_edit_form($_GET['id']);
+					outage_edit_systems_form($_GET['id']);
 				}
 
-			} else
-				outage_edit_form($_GET['id']);
+			} else {
+				outage_edit_systems_form($_GET['id']);
+			}
 		}
 		break;
 
@@ -184,11 +232,12 @@ if (isLoggedIn()) {
 				csrf_check();
 
 				$outage = $api->outage->show($_GET['id']);
-				$params = array(
+				$params = [
+					'outage' => $outage->id,
 					'send_mail' => isset($_POST['send_mail']),
-				);
-				$dates = array('begins_at', 'finished_at');
-				$fields = array('duration', 'impact', 'state');
+				];
+				$dates = ['begins_at', 'finished_at'];
+				$fields = ['duration', 'impact', 'state'];
 
 				foreach ($dates as $d) {
 					$v = strtotime($_POST[$d]);
@@ -205,9 +254,9 @@ if (isLoggedIn()) {
 						$params[$f] = $_POST[$f];
 				}
 
-				$texts = array();
+				$texts = [];
 				foreach ($api->language->list() as $l) {
-					foreach (array('summary', 'description') as $name) {
+					foreach (['summary', 'description'] as $name) {
 						$param = $l->code.'_'.$name;
 
 						if ($_POST[$param])
@@ -216,7 +265,7 @@ if (isLoggedIn()) {
 				}
 
 				try {
-					$outage->update($params);
+					$api->outage_update->create($params);
 
 					notify_user(_('Update posted'), _('The outage update was successfully posted.'));
 					redirect('?page=outage&action=show&id='.$outage->id);
@@ -236,10 +285,11 @@ if (isLoggedIn()) {
 			csrf_check();
 
 			try {
-				$api->outage->update($_GET['id'], array(
+				$api->outage_update->create([
+					'outage' => $_GET['id'],
 					'send_mail' => isset($_POST['send_mail']),
-					'state' => $_POST['state']
-				));
+					'state' => $_POST['state'],
+				]);
 
 				notify_user(_('State set'), _('The outage state was successfully set.'));
 				redirect('?page=outage&action=show&id='.$_GET['id']);

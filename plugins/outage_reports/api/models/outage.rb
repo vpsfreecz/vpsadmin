@@ -50,6 +50,32 @@ class Outage < ActiveRecord::Base
   end
 
   def update_outage!(attrs = {}, translations = {}, opts = {})
+    transaction do
+      assign_attributes(attrs)
+      save!
+
+      translations.each do |lang, attrs|
+        tr = ::OutageTranslation.find_by(
+          outage: self,
+          language: lang,
+        )
+
+        if tr.nil?
+          tr = ::OutageTranslation.new(attrs)
+          tr.language = lang
+          tr.outage = self
+          tr.save!
+        else
+          tr.update!(attrs)
+        end
+      end
+
+      load_translations
+      self
+    end
+  end
+
+  def create_outage_update!(attrs = {}, translations = {}, opts = {})
     attrs[:state] = ::Outage.states[attrs[:state]] if attrs[:state]
 
     VpsAdmin::API::Plugins::OutageReports::TransactionChains::Update.fire(

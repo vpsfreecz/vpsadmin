@@ -281,11 +281,9 @@ module VpsAdmin::API::Resources
       include Helpers
 
       desc 'Update an outage'
-      blocking true
 
       input do
-        use :editable, exclude: %i(impact)
-        use :input
+        use :editable, exclude: %i(state)
       end
 
       output do
@@ -298,36 +296,12 @@ module VpsAdmin::API::Resources
 
       def exec
         outage = ::Outage.find(params[:outage_id])
-
         tr = extract_translations
-        opts = {send_mail: input.delete(:send_mail)}
 
-        if input[:state]
-          if input[:state] == outage.state
-            error('update failed', {state: ["is already #{outage.state}"]})
-
-          elsif input[:state] == 'announced'
-            if outage.state != 'staged'
-              error('Only staged outages can be announced')
-
-            elsif outage.outage_handlers.count <= 0
-              error('Add at least one outage handler')
-
-            elsif outage.outage_entities.count <= 0
-              error('Add at least one entity impaired by the outage')
-            end
-          end
-        end
-
-        @chain, ret = outage.update_outage!(to_db_names(input), tr, opts)
-        ret
+        outage.update_outage!(to_db_names(input), tr)
 
       rescue ActiveRecord::RecordInvalid => e
         error('update failed', to_param_names(e.record.errors.to_hash))
-      end
-
-      def state_id
-        @chain.empty? ? nil : @chain.id
       end
     end
 

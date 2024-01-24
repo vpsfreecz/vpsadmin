@@ -124,7 +124,59 @@ function outage_report_form () {
 	$xtpl->form_out(_('Continue'));
 }
 
-function outage_edit_form ($id) {
+function outage_edit_attrs_form ($id) {
+	global $xtpl, $api;
+
+	$input = $api->outage->update->getParameters('input');
+	$outage = $api->outage->show($id);
+
+	$xtpl->sbar_add(_('Back'), '?page=outage&action=show&id='.$outage->id);
+
+	$xtpl->title(_('Outage').' #'.$outage->id);
+	$xtpl->table_title(_('Edit original report'));
+	$xtpl->form_create('?page=outage&action=edit_attrs&id='.$outage->id, 'post');
+
+	$xtpl->form_add_input(
+		_('Date and time').':', 'text', '30', 'begins_at',
+		tolocaltz($outage->begins_at, 'Y-m-d H:i')
+	);
+	$xtpl->form_add_input(
+		_('Finished at').':', 'text', '30', 'finished_at',
+		$outage->finished_at ? tolocaltz($outage->finished_at, 'Y-m-d H:i') : ''
+	);
+	$xtpl->form_add_number(
+		_('Duration').':', 'duration', post_val('duration', $outage->duration),
+		0, 999999, 1, 'minutes'
+	);
+
+	api_param_to_form('type', $input->type, $outage->type);
+	api_param_to_form('impact', $input->impact, $outage->impact);
+
+	foreach ($api->language->list() as $lang) {
+		$xtpl->form_add_input(
+			$lang->label.' '._('summary').':', 'text', '70', $lang->code.'_summary',
+			post_val($lang->code.'_summary', $outage->{$lang->code.'_summary'})
+		);
+		$xtpl->form_add_textarea(
+			$lang->label.' '._('description').':', 70, 8, $lang->code.'_description',
+			post_val($lang->code.'_description', $outage->{$lang->code.'_description'})
+		);
+	}
+
+	$xtpl->table_td(
+		_('<strong>This form is used to edit the original report.</strong>').
+		' '.
+		'<a href="?page=outage&action=update&id='.$outage->id.'">'._('Post an update').'</a>'.
+		' '.
+		_('instead').'?',
+		false, false, '2'
+	);
+	$xtpl->table_tr();
+
+	$xtpl->form_out(_('Save'));
+}
+
+function outage_edit_systems_form ($id) {
 	global $xtpl, $api;
 
 	$outage = $api->outage->show($id);
@@ -133,7 +185,7 @@ function outage_edit_form ($id) {
 
 	$xtpl->title(_('Outage').' #'.$outage->id);
 	$xtpl->table_title(_('Edit affected entities and handlers'));
-	$xtpl->form_create('?page=outage&action=edit&id='.$outage->id, 'post');
+	$xtpl->form_create('?page=outage&action=edit_systems&id='.$outage->id, 'post');
 
 	$ents = outage_entities_to_array($outage);
 
@@ -198,14 +250,14 @@ function outage_update_form ($id) {
 		_('Duration').':', 'duration', post_val('duration', $outage->duration),
 		0, 999999, 1, 'minutes'
 	);
-	api_param_to_form('type', $input->type, $outage->type);
+	api_param_to_form('impact', $input->impact, $outage->impact);
 
-	$xtpl->form_add_select(_('State').':', 'state', array(
+	$xtpl->form_add_select(_('State').':', 'state', [
 		'staged' => _('staged'),
 		'announced' => _('announced'),
 		'cancelled' => _('cancelled'),
 		'closed' => _('closed'),
-	), post_val('state', $outage->state));
+	], post_val('state', $outage->state));
 
 	foreach ($api->language->list() as $lang) {
 		$xtpl->form_add_input(
@@ -230,7 +282,8 @@ function outage_details ($id) {
 	global $xtpl, $api;
 
 	if ($_SESSION['is_admin']) {
-		$xtpl->sbar_add(_('Edit affected systems & handlers'), '?page=outage&action=edit&id='.$id);
+		$xtpl->sbar_add(_('Edit outage'), '?page=outage&action=edit_attrs&id='.$id);
+		$xtpl->sbar_add(_('Edit affected systems & handlers'), '?page=outage&action=edit_systems&id='.$id);
 		$xtpl->sbar_add(_('Post update'), '?page=outage&action=update&id='.$id);
 		$xtpl->sbar_add(_('Affected users'), '?page=outage&action=users&id='.$id);
 	}
