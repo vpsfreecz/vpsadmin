@@ -76,8 +76,8 @@ function outage_report_form () {
 
 	$xtpl->form_add_input(_('Date and time').':', 'text', '30', 'begins_at', date('Y-m-d H:i'));
 	$xtpl->form_add_number(_('Duration').':', 'duration', post_val('duration'), 0, 999999, 1, 'minutes');
-	$xtpl->form_add_checkbox(_('Planned').':', 'planned', '1', post_val('planned'));
 	api_param_to_form('type', $input->type);
+	api_param_to_form('impact', $input->impact);
 
 	$entities = maintenance_to_entities();
 
@@ -346,16 +346,16 @@ function outage_details ($id) {
 	$xtpl->table_td($outage->duration.' '._('minutes'));
 	$xtpl->table_tr();
 
-	$xtpl->table_td(_('Planned').':');
-	$xtpl->table_td(boolean_icon($outage->planned));
+	$xtpl->table_td(_('Type').':');
+	$xtpl->table_td($outage->type);
 	$xtpl->table_tr();
 
 	$xtpl->table_td(_('State').':');
 	$xtpl->table_td($outage->state);
 	$xtpl->table_tr();
 
-	$xtpl->table_td(_('Type').':');
-	$xtpl->table_td($outage->type);
+	$xtpl->table_td(_('Impact').':');
+	$xtpl->table_td($outage->impact);
 	$xtpl->table_tr();
 
 	$xtpl->table_td(_('Affected systems').':');
@@ -450,8 +450,8 @@ function outage_details ($id) {
 					$changes[] = _("State:").' '.$update->state;
 					break;
 
-				case 'type':
-					$changes[] = _("Outage type:").' '.$update->type;
+				case 'impact':
+					$changes[] = _("Impact type:").' '.$update->impact;
 					break;
 
 				case 'duration':
@@ -504,13 +504,9 @@ function outage_list () {
 
 	$input = $api->outage->list->getParameters('input');
 
-	$xtpl->form_add_select(_('Planned').':', 'planned', array(
-		'' => '---',
-		'yes' => _('Planned'),
-		'no' => _('Unplanned'),
-	), get_val('planned'));
-	api_param_to_form('state', $input->state, null, null, true);
-	api_param_to_form('type', $input->type, null, null, true);
+	api_param_to_form('type', $input->type, $_GET['type'], null, true);
+	api_param_to_form('state', $input->state, $_GET['state'], null, true);
+	api_param_to_form('impact', $input->impact, $_GET['impact'], null, true);
 
 	if ($_SESSION['logged_in']) {
 		$xtpl->form_add_select(_('Affects me?'), 'affected', array(
@@ -560,10 +556,10 @@ function outage_list () {
 
 	$xtpl->table_add_category(_('Date'));
 	$xtpl->table_add_category(_('Duration'));
-	$xtpl->table_add_category(_('Planned'));
+	$xtpl->table_add_category(_('Type'));
 	$xtpl->table_add_category(_('State'));
 	$xtpl->table_add_category(_('Systems'));
-	$xtpl->table_add_category(_('Type'));
+	$xtpl->table_add_category(_('Impact'));
 	$xtpl->table_add_category(_('Reason'));
 
 	if ($_SESSION['is_admin']) {
@@ -575,11 +571,11 @@ function outage_list () {
 
 	$xtpl->table_add_category('');
 
-	$params = array(
+	$params = [
 		'limit' => get_val('limit', 25),
-	);
+	];
 
-	foreach (array('planned', 'affected') as $v) {
+	foreach (['affected'] as $v) {
 		if ($_GET[$v] === 'yes')
 			$params[$v] = true;
 
@@ -587,10 +583,10 @@ function outage_list () {
 			$params[$v] = false;
 	}
 
-	$filters = array(
-		'state', 'type', 'user', 'handled_by', 'vps', 'export', 'order',
+	$filters = [
+		'state', 'type', 'impact', 'user', 'handled_by', 'vps', 'export', 'order',
 		'environment', 'location', 'node', 'entity_name', 'entity_id'
-	);
+	];
 
 	foreach ($filters as $v) {
 		if ($_GET[$v])
@@ -602,13 +598,13 @@ function outage_list () {
 	foreach ($outages as $outage) {
 		$xtpl->table_td(tolocaltz($outage->begins_at, 'Y-m-d H:i'));
 		$xtpl->table_td($outage->duration, false, true);
-		$xtpl->table_td(boolean_icon($outage->planned));
+		$xtpl->table_td($outage->type);
 		$xtpl->table_td($outage->state);
 		$xtpl->table_td(implode(', ', array_map(
 			function ($v) { return h($v->label); },
 			$outage->entity->list()->asArray()
 		)));
-		$xtpl->table_td($outage->type);
+		$xtpl->table_td($outage->impact);
 		$xtpl->table_td(h($outage->en_summary));
 
 		if ($_SESSION['is_admin']) {
@@ -877,7 +873,7 @@ function outage_list_title($prefix, $outages) {
 	$hasOutage = false;
 
 	foreach ($outages as $outage) {
-		if ($outage->planned)
+		if ($outage->type == 'maintenance')
 			$hasMaintenance = true;
 		else
 			$hasOutage = true;
@@ -901,9 +897,9 @@ function outage_list_overview($outages) {
 
 	$xtpl->table_add_category(_('Date'));
 	$xtpl->table_add_category(_('Duration'));
-	$xtpl->table_add_category(_('Planned'));
-	$xtpl->table_add_category(_('Systems'));
 	$xtpl->table_add_category(_('Type'));
+	$xtpl->table_add_category(_('Systems'));
+	$xtpl->table_add_category(_('Impact'));
 	$xtpl->table_add_category(_('Reason'));
 
 	if (isAdmin()) {
@@ -919,12 +915,12 @@ function outage_list_overview($outages) {
 	foreach ($outages as $outage) {
 		$xtpl->table_td(tolocaltz($outage->begins_at, 'Y-m-d H:i'));
 		$xtpl->table_td($outage->duration.' min', false, true);
-		$xtpl->table_td(boolean_icon($outage->planned));
+		$xtpl->table_td($outage->type);
 		$xtpl->table_td(implode(', ', array_map(
 			function ($v) { return h($v->label); },
 			$outage->entity->list()->asArray()
 		)));
-		$xtpl->table_td($outage->type);
+		$xtpl->table_td($outage->impact);
 		$xtpl->table_td(h($outage->en_summary));
 
 		if (isAdmin()) {

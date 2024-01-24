@@ -4,12 +4,12 @@ function outage_create () {
 	global $xtpl, $api;
 
 	try {
-		$params = array(
+		$params = [
 			'begins_at' => date('c', strtotime($_POST['begins_at'])),
 			'duration' => $_POST['duration'],
-			'planned' => isset($_POST['planned']),
 			'type' => $_POST['type'],
-		);
+			'impact' => $_POST['impact'],
+		];
 
 		$texts = array();
 		foreach ($api->language->list() as $lang) {
@@ -188,7 +188,7 @@ if (isLoggedIn()) {
 					'send_mail' => isset($_POST['send_mail']),
 				);
 				$dates = array('begins_at', 'finished_at');
-				$fields = array('duration', 'type', 'state');
+				$fields = array('duration', 'impact', 'state');
 
 				foreach ($dates as $d) {
 					$v = strtotime($_POST[$d]);
