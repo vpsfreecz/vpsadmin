@@ -76,7 +76,7 @@ function outage_report_form () {
 
 	$xtpl->form_add_input(_('Date and time').':', 'text', '30', 'begins_at', date('Y-m-d H:i'));
 	$xtpl->form_add_number(_('Duration').':', 'duration', post_val('duration'), 0, 999999, 1, 'minutes');
-	api_param_to_form('type', $input->type);
+	api_param_to_form('type', $input->type, null, null, true);
 	api_param_to_form('impact', $input->impact);
 
 	$entities = maintenance_to_entities();
