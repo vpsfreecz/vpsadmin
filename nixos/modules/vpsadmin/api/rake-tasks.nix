@@ -388,6 +388,18 @@ in {
             RandomizedDelaySec = "10s";
           };
         };
+
+        outage-reports-auto-resolve = {
+          enable = elem "outage_reports" vpsadminCfg.plugins;
+          rake = [ "vpsadmin:outage_reports:auto_resolve" ];
+          timer.enable = true;
+          timer.config = {
+            OnBootSec = "5min";
+            OnUnitActiveSec = "2min";
+            RandomizedDelaySec = "60s";
+            FixedRandomDelay = true;
+          };
+        };
       };
     })
 

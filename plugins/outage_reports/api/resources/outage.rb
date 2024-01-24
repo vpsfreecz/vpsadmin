@@ -18,6 +18,7 @@ module VpsAdmin::API::Resources
       string :state, label: 'State', choices: ::Outage.states.keys.map(&:to_s)
       string :impact, db_name: :impact_type, label: 'Impact',
           choices: ::Outage.impact_types.keys.map(&:to_s)
+      bool :auto_resolve, label: 'Auto-resolve', default: true
       use :texts
     end
 
@@ -89,7 +90,7 @@ module VpsAdmin::API::Resources
 
       authorize do |u|
         allow if u && u.role == :admin
-        output blacklist: %i(affected_user_count affected_vps_count)
+        output blacklist: %i(affected_user_count affected_vps_count auto_resolve)
         allow if u
         input blacklist: %i(affected user handled_by)
         allow
@@ -224,7 +225,7 @@ module VpsAdmin::API::Resources
 
       authorize do |u|
         allow if u && u.role == :admin
-        output blacklist: %i(affected_user_count affected_vps_count)
+        output blacklist: %i(affected_user_count affected_vps_count auto_resolve)
         allow if u
         input blacklist: %i(affected)
         allow

@@ -29,6 +29,7 @@ class Outage < ActiveRecord::Base
       outage.save!
 
       attrs.delete(:outage_type)
+      attrs.delete(:auto_resolve)
 
       report = ::OutageUpdate.new(attrs)
       report.outage = outage
@@ -83,6 +84,21 @@ class Outage < ActiveRecord::Base
       attrs,
       translations,
       opts
+    )
+  end
+
+  def do_auto_resolve
+    attrs = {state: ::Outage.states['resolved']}
+
+    if finished_at.nil?
+      attrs[:finished_at] = begins_at + duration
+    end
+
+    VpsAdmin::API::Plugins::OutageReports::TransactionChains::Update.fire(
+      self,
+      attrs,
+      {},
+      {send_mail: false},
     )
   end
 
