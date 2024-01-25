@@ -32,29 +32,30 @@ function outage_create () {
 
 function outage_set_entities ($outage) {
 	$existing_entities = $outage->entity->list();
-	$new_entities = array();
+	$new_entities = [];
 
-	$tr = array(
+	$tr = [
+		'vpsadmin' => 'vpsAdmin',
 		'environments' => 'Environment',
 		'locations' => 'Location',
 		'nodes' => 'Node',
-	);
+	];
 
 	foreach ($tr as $post => $name) {
 		foreach ($_POST[$post] as $v) {
-			$new_entities[] = array($name, (int)$v);
+			$new_entities[] = [$name, (int)$v];
 		}
 	}
 
 	if ($_POST['cluster_wide'])
-		$new_entities[] = array('Cluster', null);
+		$new_entities[] = ['Cluster', null];
 
 	if ($_POST['entities']) {
 		foreach (explode(',', $_POST['entities']) as $ent) {
 			$trimmed = trim($ent);
 
 			if ($trimmed)
-				$new_entities[] = array($trimmed, null);
+				$new_entities[] = [$trimmed, null];
 		}
 	}
 
@@ -70,10 +71,10 @@ function outage_set_entities ($outage) {
 		}
 
 		if (!$exists) {
-			$outage->entity->create(array(
+			$outage->entity->create([
 				'name' => $new[0],
 				'entity_id' => $new[1],
-			));
+			]);
 		}
 	}
 

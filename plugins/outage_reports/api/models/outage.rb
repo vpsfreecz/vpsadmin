@@ -126,6 +126,12 @@ class Outage < ActiveRecord::Base
   end
 
   def get_affected_users
+    if outage_entities.where(name: 'vpsAdmin').any?
+      return ::User
+        .where('object_state < ?', ::User.object_states[:soft_delete])
+        .order('id')
+    end
+
     users = []
     users.concat(outage_vpses.pluck(:user_id))
     users.concat(outage_exports.pluck(:user_id))

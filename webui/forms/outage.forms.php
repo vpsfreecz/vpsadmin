@@ -4,14 +4,19 @@ function maintenance_to_entities () {
 	if ($_SERVER['REQUEST_METHOD'] === 'POST')
 		return $_POST;
 
-	$ret = array(
+	$ret = [
+		'vpsadmin' => [],
 		'cluster_wide' => false,
-		'environments' => array(),
-		'locations' => array(),
-		'nodes' => array(),
-	);
+		'environments' => [],
+		'locations' => [],
+		'nodes' => [],
+	];
 
 	switch ($_GET['type']) {
+	case 'vpsadmin':
+		$ret['vpsadmin'][] = $_GET['obj_id'];
+		break;
+
 	case 'cluster':
 		$ret['cluster_wide'] = true;
 		break;
@@ -29,16 +34,21 @@ function maintenance_to_entities () {
 }
 
 function outage_entities_to_array ($outage) {
-	$ret = array(
+	$ret = [
+		'vpsadmin' => [],
 		'cluster' => false,
-		'environments' => array(),
-		'locations' => array(),
-		'nodes' => array(),
-	);
-	$extra = array();
+		'environments' => [],
+		'locations' => [],
+		'nodes' => [],
+	];
+	$extra = [];
 
 	foreach ($outage->entity->list() as $ent) {
 		switch ($ent->name) {
+		case 'vpsAdmin':
+			$ret['vpsadmin'][] = $ent->entity_id;
+			break;
+
 		case 'Cluster':
 			$ret['cluster'] = true;
 			break;
@@ -82,6 +92,11 @@ function outage_report_form () {
 
 	$entities = maintenance_to_entities();
 
+	$xtpl->form_add_select(
+		_('vpsAdmin').':', 'vpsadmin[]',
+		resource_list_to_options($api->component->list(), 'id', 'label', false),
+		$entities['vpsadmin'], '', true, 5
+	);
 	$xtpl->form_add_checkbox(
 		_('Cluster-wide').':', 'cluster_wide', '1', $entities['cluster_wide']
 	);
@@ -191,6 +206,11 @@ function outage_edit_systems_form ($id) {
 
 	$ents = outage_entities_to_array($outage);
 
+	$xtpl->form_add_select(
+		_('vpsAdmin').':', 'vpsadmin[]',
+		resource_list_to_options($api->component->list(), 'id', 'label', false),
+		post_val('vpsadmin', $ents['vpsadmin']), '', true, 5
+	);
 	$xtpl->form_add_checkbox(
 		_('Cluster-wide').':', 'cluster_wide', '1',
 		post_val('cluster_wide', $ents['cluster'])
@@ -600,6 +620,11 @@ function outage_list () {
 			resource_list_to_options($api->node->list(), 'id', 'domain_name'),
 			get_val('node')
 		);
+		$xtpl->form_add_select(
+			_('vpsAdmin').':', 'vpsadmin',
+			resource_list_to_options($api->component->list()),
+			get_val('vpsadmin')
+		);
 	}
 
 	if ($_SESSION['is_admin']) {
@@ -646,7 +671,7 @@ function outage_list () {
 
 	$filters = [
 		'state', 'type', 'impact', 'user', 'handled_by', 'vps', 'export', 'order',
-		'environment', 'location', 'node', 'entity_name', 'entity_id'
+		'environment', 'location', 'node', 'vpsadmin', 'entity_name', 'entity_id'
 	];
 
 	foreach ($filters as $v) {

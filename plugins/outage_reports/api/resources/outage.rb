@@ -77,6 +77,8 @@ module VpsAdmin::API::Resources
             desc: 'Filter outages by location'
         resource VpsAdmin::API::Resources::Node,
             desc: 'Filter outages by node'
+        resource VpsAdmin::API::Resources::Component,
+            desc: 'Filter outages by vpsAdmin component'
         string :entity_name, label: 'Entity name', desc: 'Filter outages by entity name'
         integer :entity_id, label: 'Entity ID', desc: 'Filter outages by entity ID'
         string :order, label: 'Order', choices: %w(newest oldest), default: 'newest',

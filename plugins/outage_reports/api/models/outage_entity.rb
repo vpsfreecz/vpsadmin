@@ -3,6 +3,9 @@ class OutageEntity < ActiveRecord::Base
 
   def real_name
     case name
+    when 'vpsAdmin'
+      Component.find(row_id).label
+
     when 'Cluster'
       'Cluster-wide'
 
@@ -22,6 +25,9 @@ class OutageEntity < ActiveRecord::Base
 
   def label
     case name
+    when 'vpsAdmin'
+      "vpsAdmin #{real_name}"
+
     when 'Cluster'
       'All systems within the cluster'
 
