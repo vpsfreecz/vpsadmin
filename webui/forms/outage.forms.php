@@ -908,18 +908,31 @@ function outage_list_recent() {
 		'order' => 'oldest',
 	]);
 
+	$planned = [];
 	$active = [];
 	$past = [];
+	$now = time();
 
 	foreach ($outages as $outage) {
-		if ($outage->state == 'announced')
-			$active[] = $outage;
-		else
+		if ($outage->state == 'announced') {
+			$beginsAt = strtotime($outage->begins_at);
+
+			if ($beginsAt > $now)
+				$planned[] = $outage;
+			else
+				$active[] = $outage;
+		} else {
 			$past[] = $outage;
+		}
+	}
+
+	if (count($planned) > 0) {
+		$xtpl->table_title(outage_list_title(_('Planned'), $planned));
+		outage_list_overview($planned);
 	}
 
 	if (count($active) > 0) {
-		$xtpl->table_title(outage_list_title(_('Current/planned'), $active));
+		$xtpl->table_title(outage_list_title(_('Current'), $active));
 		outage_list_overview($active);
 	}
 
