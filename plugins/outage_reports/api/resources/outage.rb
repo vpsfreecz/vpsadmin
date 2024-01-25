@@ -111,30 +111,17 @@ module VpsAdmin::API::Resources
 
         if input.has_key?(:affected)
           q = q.joins(
-            'LEFT JOIN outage_vpses ON outage_vpses.outage_id = outages.id'
-          ).joins(
-            'LEFT JOIN outage_exports ON outage_exports.outage_id = outages.id'
+            'LEFT JOIN outage_users ON outage_users.outage_id = outages.id'
           ).group('outages.id')
 
           if input[:affected]
-            q = q.where(
-              'outage_vpses.user_id = ? OR outage_exports.user_id = ?',
-              current_user.id, current_user.id
-            )
+            q = q.where('outage_users.user_id = ?', current_user.id)
 
           else
             q = q.where("
               outages.id NOT IN (
                 SELECT outage_id
-                FROM outage_vpses
-                WHERE user_id = ?
-              )
-            ", current_user.id)
-
-            q = q.where("
-              outages.id NOT IN (
-                SELECT outage_id
-                FROM outage_exports
+                FROM outage_users
                 WHERE user_id = ?
               )
             ", current_user.id)
