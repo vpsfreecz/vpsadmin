@@ -947,7 +947,7 @@ function outage_list_title($prefix, $outages) {
 		return $prefix .' '. _('maintenances and outages');
 	elseif ($hasMaintenance)
 		return $prefix .' '. _('maintenances');
-	elseif ($hasOutages)
+	elseif ($hasOutage)
 		return $prefix .' '. _('outages');
 	else
 		return $prefix .' '. _('maintenances and outages');
