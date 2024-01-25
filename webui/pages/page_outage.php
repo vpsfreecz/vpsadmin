@@ -134,25 +134,29 @@ function outage_set_handlers ($outage) {
 if (isLoggedIn()) {
 	switch ($_GET['action']) {
 	case 'report':
-		csrf_check();
-
 		if (isAdmin()) {
-			$outage = outage_create();
+			if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+				csrf_check();
 
-			if (!$outage) {
-				outage_report_form();
+				$outage = outage_create();
 
-			} else {
-				try {
-					outage_set_entities($outage);
-					outage_set_handlers($outage);
-
-					redirect('?page=outage&action=show&id='.$outage->id);
-
-				} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
-					$xtpl->perex_format_errors('Create failed', $e->getResponse());
+				if (!$outage) {
 					outage_report_form();
+
+				} else {
+					try {
+						outage_set_entities($outage);
+						outage_set_handlers($outage);
+
+						redirect('?page=outage&action=show&id='.$outage->id);
+
+					} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+						$xtpl->perex_format_errors('Create failed', $e->getResponse());
+						outage_report_form();
+					}
 				}
+			} else {
+				outage_report_form();
 			}
 		}
 		break;

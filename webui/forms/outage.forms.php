@@ -572,6 +572,9 @@ function outage_details ($id) {
 function outage_list () {
 	global $xtpl, $api;
 
+	if (isAdmin())
+		$xtpl->sbar_add(_('New report'), '?page=outage&action=report&t='.csrf_token());
+
 	$xtpl->title(_('Outage list'));
 	$xtpl->table_title(_('Filters'));
 	$xtpl->form_create('', 'get', 'outage-list', false);
