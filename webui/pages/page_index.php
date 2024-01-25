@@ -22,7 +22,7 @@
 
 $return_url = urlencode($_SERVER['REQUEST_URI']);
 
-$xtpl->sbar_add(_('Outages'), '?page=outage&action=list');
+$xtpl->sbar_add(_('Maintenances and Outages'), '?page=outage&action=list');
 
 if (isLoggedIn()) {
 	if ($api->monitored_event)
