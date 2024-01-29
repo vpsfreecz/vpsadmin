@@ -681,27 +681,6 @@ switch($_GET["action"] ?? null) {
 		ip_edit_form($_GET['id']);
 		break;
 
-	case "ipaddr_edit_shaper":
-		csrf_check();
-
-		try {
-			$params = [
-				'max_tx' => $_POST['max_tx'] * 1024 * 1024 / 8,
-				'max_rx' => $_POST['max_rx'] * 1024 * 1024 / 8,
-			];
-
-			$ret = $api->ip_address($_GET['id'])->update($params);
-
-			notify_user(_('Shaper set'), '');
-			redirect($_GET['return'] ? $_GET['return'] : '?page=cluster&action=ip_addresses');
-
-		} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
-			$xtpl->perex_format_errors(_('Update failed'), $e->getResponse());
-			ip_edit_form($_GET['id']);
-		}
-
-		break;
-
 	case "ipaddr_edit_user":
 		csrf_check();
 
