@@ -34,6 +34,7 @@ module VpsAdmin::API::Resources
     params(:all) do
       use :id
       use :common
+      bool :user_created
       patch :addr, label: 'Address'
     end
 
@@ -55,6 +56,7 @@ module VpsAdmin::API::Resources
         input whitelist: %i(location network version role purpose addr prefix vps
                             network_interface ip_address assigned order
                             limit offset)
+        output blacklist: %i(user_created)
         allow
       end
 
@@ -184,6 +186,8 @@ module VpsAdmin::API::Resources
       end
 
       authorize do |u|
+        allow if u.role == :admin
+        output blacklist: %i(user_created)
         allow
       end
 
@@ -217,6 +221,63 @@ module VpsAdmin::API::Resources
       end
     end
 
+    class Create < HaveAPI::Actions::Default::Create
+      desc 'Add host IP address'
+
+      input do
+        use :common, include: %i(ip_address addr)
+
+        %i(ip_address addr).each do |v|
+          patch v, required: true
+        end
+      end
+
+      output do
+        use :all
+      end
+
+      authorize do |u|
+        allow if u.role == :admin
+        output blacklist: %i(user_created)
+        allow
+      end
+
+      def exec
+        ip = input[:ip_address]
+
+        if current_user.role != :admin && ip.current_owner != current_user
+          error('access denied')
+        end
+
+        VpsAdmin::API::Operations::HostIpAddress::Create.run(ip, input[:addr])
+
+      rescue VpsAdmin::API::Exceptions::OperationError => e
+        error("create failed: #{e.message}")
+      end
+    end
+
+    class Delete < HaveAPI::Actions::Default::Delete
+      desc 'Delete host IP address'
+
+      authorize do |u|
+        allow
+      end
+
+      def exec
+        host = ::HostIpAddress.find(params[:host_ip_address_id])
+
+        if current_user.role != :admin && host.current_owner != current_user
+          error('access denied')
+        end
+
+        VpsAdmin::API::Operations::HostIpAddress::Destroy.run(host)
+        ok
+
+      rescue VpsAdmin::API::Exceptions::OperationError => e
+        error("delete failed: #{e.message}")
+      end
+    end
+
     class Assign < HaveAPI::Action
       desc 'Assign the address to an interface'
       route '{%{resource}_id}/assign'
@@ -228,6 +289,8 @@ module VpsAdmin::API::Resources
       end
 
       authorize do |u|
+        allow if u.role == :admin
+        output blacklist: %i(user_created)
         allow
       end
 
@@ -240,10 +303,7 @@ module VpsAdmin::API::Resources
         if netif.nil?
           error("#{host.ip_address} is not assigned to any interface")
 
-        elsif current_user.role != :admin && ( \
-                (host.ip_address.user_id && host.ip_address.user_id != current_user.id) \
-                || (netif && netif.vps.user_id != current_user.id) \
-              )
+        elsif current_user.role != :admin && host.current_owner != current_user
           error('access denied')
 
         elsif host.assigned?
@@ -273,6 +333,8 @@ module VpsAdmin::API::Resources
       end
 
       authorize do |u|
+        allow if u.role == :admin
+        output blacklist: %i(user_created)
         allow
       end
 
@@ -285,10 +347,7 @@ module VpsAdmin::API::Resources
         if netif.nil?
           error("#{host.ip_address} is not routed to any interface")
 
-        elsif current_user.role != :admin && ( \
-                (host.ip_address.user_id && host.ip_address.user_id != current_user.id) \
-                || (netif && netif.vps.user_id != current_user.id) \
-              )
+        elsif current_user.role != :admin && host.current_owner != current_user
           error('access denied')
 
         elsif host.routed_via_addresses.any?

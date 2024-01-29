@@ -485,6 +485,7 @@ CREATE TABLE `host_ip_addresses` (
   `ip_addr` varchar(40) NOT NULL,
   `order` int(11) DEFAULT NULL,
   `auto_add` tinyint(1) NOT NULL DEFAULT 1,
+  `user_created` tinyint(1) NOT NULL DEFAULT 0,
   PRIMARY KEY (`id`),
   UNIQUE KEY `index_host_ip_addresses_on_ip_address_id_and_ip_addr` (`ip_address_id`,`ip_addr`),
   KEY `index_host_ip_addresses_on_ip_address_id` (`ip_address_id`),
@@ -2068,6 +2069,7 @@ CREATE TABLE `vpses` (
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
 INSERT INTO `schema_migrations` (version) VALUES
+('20240126165609'),
 ('20240125124755'),
 ('20240113193809'),
 ('20240113131046'),

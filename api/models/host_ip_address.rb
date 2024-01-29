@@ -12,4 +12,9 @@ class HostIpAddress < ActiveRecord::Base
   def version
     ip_address.network.ip_version
   end
+
+  # @return [::User, nil]
+  def current_owner
+    ip_address.current_owner
+  end
 end

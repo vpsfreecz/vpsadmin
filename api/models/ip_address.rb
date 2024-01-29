@@ -184,6 +184,11 @@ class IpAddress < ActiveRecord::Base
     end
   end
 
+  # @return [::User, nil]
+  def current_owner
+    user || (network_interface && network_interface.vps && network_interface.vps.user)
+  end
+
   def log_assignment(vps:, chain:, confirmable:)
     assignment = ip_address_assignments.create!(
       ip_addr: ip_addr,
