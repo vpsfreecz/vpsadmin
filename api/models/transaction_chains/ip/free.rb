@@ -25,6 +25,10 @@ module TransactionChains
       append_t(Transactions::Utils::NoOp, args: find_node_id) do |t|
         ips.each do |ip|
           t.edit(ip, user_id: nil, charged_environment_id: nil)
+
+          ip.host_ip_addresses.where(user_created: true).each do |host|
+            t.just_destroy(host)
+          end
         end
       end unless ips.empty?
     end
