@@ -91,7 +91,7 @@ class Outage < ActiveRecord::Base
     attrs = {state: ::Outage.states['resolved']}
 
     if finished_at.nil?
-      attrs[:finished_at] = begins_at + duration
+      attrs[:finished_at] = begins_at + duration * 60
     end
 
     VpsAdmin::API::Plugins::OutageReports::TransactionChains::Update.fire(

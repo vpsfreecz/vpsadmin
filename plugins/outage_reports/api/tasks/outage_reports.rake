@@ -14,7 +14,7 @@ namespace :vpsadmin do
           resolve = true if outage.finished_at < now
 
         elsif outage.begins_at \
-              && outage.begins_at + outage.duration + delay < now \
+              && outage.begins_at + outage.duration * 60 + delay < now \
               && now - outage.begins_at > min_duration \
               && outage.outage_updates.count <= 2 # one update for staged, one for announced
           resolve = true
