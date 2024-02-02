@@ -278,7 +278,7 @@ function outage_update_form ($id) {
 		'staged' => _('staged'),
 		'announced' => _('announced'),
 		'cancelled' => _('cancelled'),
-		'closed' => _('closed'),
+		'resolved' => _('resolved'),
 	], post_val('state', $outage->state));
 
 	foreach ($api->language->list() as $lang) {
@@ -480,7 +480,7 @@ function outage_details ($id) {
 		$xtpl->form_add_select(_('State').':', 'state', array(
 			'announced' => _('Announce'),
 			'cancelled' => _('Cancel'),
-			'closed' => _('Close'),
+			'resolved' => _('Resolve'),
 		), post_val('state'));
 
 		$xtpl->form_add_checkbox(
