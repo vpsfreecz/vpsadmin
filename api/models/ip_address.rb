@@ -88,6 +88,7 @@ class IpAddress < ActiveRecord::Base
   # @option opts [:public_access, :private_access] :role network role
   # @option opts [:any, :vps, :export] :purpose network purpose
   # @option opts [::Location, nil] :address_location
+  # @option opts [Array<::Network>] :except_networks
   def self.pick_addr!(opts)
     opts[:role] ||= :public_access
     opts[:purpose] ||= :any
@@ -145,6 +146,10 @@ class IpAddress < ActiveRecord::Base
           ],
         },
       )
+    end
+
+    if opts[:except_networks]
+      q = q.where.not(network: opts[:except_networks])
     end
 
     q.order('ip_addresses.user_id DESC, location_networks.priority, ip_addresses.id').take!
