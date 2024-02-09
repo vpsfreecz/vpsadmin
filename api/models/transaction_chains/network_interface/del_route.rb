@@ -118,7 +118,7 @@ module TransactionChains
       if !env.user_ip_ownership
         changes[:charged_environment_id] = nil
 
-        ip.host_ip_address.where(user_created: true).each do |host|
+        ip.host_ip_addresses.where(user_created: true).each do |host|
           t.just_destroy(host)
         end
       end
