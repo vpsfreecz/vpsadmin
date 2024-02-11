@@ -6,16 +6,16 @@ module VpsAdmin::Supervisor
     HIGHRATE = 1000
 
     # Number of seconds into the past to check for high-rate reports
-    PERIOD = 10*60
+    PERIOD = 10 * 60
 
     # Number of high-rate reports that trigger preventive action
     THRESHOLD = 5
 
     # Number of seconds in between preventive actions for one VPS
-    PREVENTION_COOLDOWN = 5*60
+    PREVENTION_COOLDOWN = 5 * 60
 
     # Number of seconds into the past to check for previous preventions
-    PREVENTION_PERIOD = 30*60
+    PREVENTION_PERIOD = 30 * 60
 
     # Number of preventive actions within {PREVENTION_PERIOD} that trigger VPS stop
     PREVENTION_THRESHOLD = 3
