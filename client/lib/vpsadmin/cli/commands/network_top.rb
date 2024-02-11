@@ -5,7 +5,7 @@ module VpsAdmin::CLI::Commands
     include Curses
 
     REFRESH_RATE = 10
-    FILTERS = %i[limit user environment location node vps network_interface]
+    FILTERS = %i[limit user environment location node vps network_interface].freeze
 
     cmd :network, :top
     args ''

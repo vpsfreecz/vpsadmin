@@ -23,9 +23,9 @@ MINIMUM = {
     ipv4: 1,
     ipv6: 32
   }
-}
+}.freeze
 
-RESOURCES = %i[memory swap cpu diskspace ipv4 ipv6]
+RESOURCES = %i[memory swap cpu diskspace ipv4 ipv6].freeze
 
 CONFIRMED = ClusterResourceUse.confirmed(:confirmed)
 

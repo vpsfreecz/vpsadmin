@@ -13,7 +13,7 @@ module NodeCtld
       outage
       queue
       rollback
-    ]
+    ].freeze
 
     def initialize(daemon)
       @daemon = daemon

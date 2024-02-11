@@ -2,7 +2,7 @@ module NodeCtld
   class VpsConfig::Mount
     ATTRIBUTES = %i[id on_start_fail type src_node_addr pool_fs dataset_name
                     snapshot_id snapshot dataset_tree branch dst
-                    mount_opts umount_opts mode]
+                    mount_opts umount_opts mode].freeze
 
     # @return [Integer]
     attr_reader :id

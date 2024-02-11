@@ -3,9 +3,9 @@
 require 'optparse'
 
 class Cli
-  ACTIONS = %w[setup user policies]
+  ACTIONS = %w[setup user policies].freeze
 
-  USERS = %w[console node supervisor]
+  USERS = %w[console node supervisor].freeze
 
   def self.run(args)
     cli = new(args)

@@ -5,7 +5,7 @@ module NodeCtld
   SECRET_CONFIGS = [
     '/var/secrets/nodectld-config',
     '/var/secrets/nodectld*.yml'
-  ]
+  ].freeze
 
   IMPLICIT_CONFIG = {
     db: {
@@ -241,7 +241,7 @@ module NodeCtld
       soft_timeout: 15,
       hard_timeout: 900
     }
-  }
+  }.freeze
 
   class AppConfig
     attr_reader :file

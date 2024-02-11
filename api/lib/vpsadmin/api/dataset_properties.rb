@@ -20,8 +20,8 @@ module VpsAdmin::API
 
     # Represents a single dataset property.
     class Property
-      SETTABLES = %i[type inheritable editable]
-      META = %i[label desc default choices]
+      SETTABLES = %i[type inheritable editable].freeze
+      META = %i[label desc default choices].freeze
 
       SETTABLES.each do |s|
         define_method(s) do |v|

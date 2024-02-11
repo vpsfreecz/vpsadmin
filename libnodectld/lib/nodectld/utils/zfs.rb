@@ -4,7 +4,7 @@ module NodeCtld
     class DatasetInfo
       Property = Struct.new(:source, :value)
 
-      INHERIT_EXCEPTIONS = %i[quota refquota canmount]
+      INHERIT_EXCEPTIONS = %i[quota refquota canmount].freeze
 
       def initialize(cmd, str)
         @cmd = cmd

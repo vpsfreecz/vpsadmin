@@ -10,7 +10,7 @@ module VpsAdmin::Supervisor
       loadavg
       used_memory used_swap
       arc_c_max arc_c arc_size arc_hitpercent
-    ]
+    ].freeze
 
     def start
       exchange = channel.direct(exchange_name)

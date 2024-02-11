@@ -11,7 +11,7 @@ module NodeCtld::SystemProbes
       steal
       guest
       guest_nice
-    ]
+    ].freeze
 
     def initialize
       @data = []

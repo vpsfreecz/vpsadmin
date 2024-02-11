@@ -5,9 +5,9 @@ module NodeCtld
   class StorageStatus
     include OsCtl::Lib::Utils::Log
 
-    READ_PROPERTIES = %w[used referenced available refquota compressratio refcompressratio]
+    READ_PROPERTIES = %w[used referenced available refquota compressratio refcompressratio].freeze
 
-    SAVE_PROPERTIES = %w[used referenced available compressratio refcompressratio]
+    SAVE_PROPERTIES = %w[used referenced available compressratio refcompressratio].freeze
 
     Pool = Struct.new(:name, :fs, :role, :refquota_check, :datasets, keyword_init: true)
 

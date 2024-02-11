@@ -11,8 +11,8 @@ class Pool < ActiveRecord::Base
 
   enum role: %i[hypervisor primary backup]
 
-  STATE_VALUES = %i[unknown online degraded suspended faulted error]
-  SCAN_VALUES = %i[unknown none scrub resilver error]
+  STATE_VALUES = %i[unknown online degraded suspended faulted error].freeze
+  SCAN_VALUES = %i[unknown none scrub resilver error].freeze
 
   enum state: STATE_VALUES, _prefix: :state
   enum scan: SCAN_VALUES, _prefix: :scan

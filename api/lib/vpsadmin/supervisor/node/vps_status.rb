@@ -4,7 +4,7 @@ module VpsAdmin::Supervisor
   class Node::VpsStatus < Node::Base
     LOG_INTERVAL = 3600
 
-    AVERAGES = %i[loadavg process_count used_memory cpu_idle]
+    AVERAGES = %i[loadavg process_count used_memory cpu_idle].freeze
 
     def self.setup(channel)
       channel.prefetch(5)

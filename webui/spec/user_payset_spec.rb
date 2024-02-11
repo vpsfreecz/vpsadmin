@@ -5,8 +5,8 @@ include RSpec::Expectations
 
 describe 'User payset' do
   # TODO: find a better way of inputting credentials
-  USERNAME = ''
-  PASSWORD = ''
+  USERNAME = ''.freeze
+  PASSWORD = ''.freeze
   USER_ID = 1754
 
   before(:all) do

@@ -3,8 +3,8 @@ require 'thread'
 
 module NodeCtld
   class PoolStatus
-    STATES = %i[unknown online degraded suspended faulted error]
-    SCANS = %i[unknown none scrub resilver error]
+    STATES = %i[unknown online degraded suspended faulted error].freeze
+    SCANS = %i[unknown none scrub resilver error].freeze
 
     include OsCtl::Lib::Utils::Log
 

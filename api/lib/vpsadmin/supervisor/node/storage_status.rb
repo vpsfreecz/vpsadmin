@@ -13,7 +13,7 @@ module VpsAdmin::Supervisor
 
     # TODO: add compressratio and refcompressratio: these values are floats while
     # {DatasetPropertyHistory} can store only integers.
-    LOG_PROPERTIES = %w[used referenced available]
+    LOG_PROPERTIES = %w[used referenced available].freeze
 
     def start
       exchange = channel.direct(exchange_name)

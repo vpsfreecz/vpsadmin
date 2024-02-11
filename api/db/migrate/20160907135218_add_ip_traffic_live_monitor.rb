@@ -1,6 +1,6 @@
 class AddIpTrafficLiveMonitor < ActiveRecord::Migration
-  ROLES = %i[public private]
-  PROTOCOLS = %i[tcp udp other]
+  ROLES = %i[public private].freeze
+  PROTOCOLS = %i[tcp udp other].freeze
 
   def change
     create_table :ip_traffic_live_monitors do |t|

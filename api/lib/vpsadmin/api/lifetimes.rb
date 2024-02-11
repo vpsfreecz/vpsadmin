@@ -76,7 +76,7 @@ module VpsAdmin::API
   # or delete it completely. depending on the object behaviour.
   module Lifetimes
     # A list of all possible states objects can be in.
-    STATES = %i[active suspended soft_delete hard_delete deleted]
+    STATES = %i[active suspended soft_delete hard_delete deleted].freeze
 
     # Register models that use lifetimes.
     def self.register_model(model)

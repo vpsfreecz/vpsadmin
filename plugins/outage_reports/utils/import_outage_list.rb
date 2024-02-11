@@ -25,7 +25,7 @@ class OutageParser
     'Richard Marko' => 828,
     'Jiri Medved' => 506,
     'Jiří Medvěd' => 506
-  }
+  }.freeze
 
   ENTITIES = {
     'vpsadmin.vpsfree.cz' => ['Node', 5],
@@ -33,7 +33,7 @@ class OutageParser
     'router2.brq' => ['Location', 4],
     'router1.prg' => ['Location', 3],
     'router2.prg' => ['Location', 3]
-  }
+  }.freeze
 
   attr_reader :outages
 

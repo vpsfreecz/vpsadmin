@@ -1,5 +1,5 @@
 module Confirmable
-  CONFIRM_STATES = %i[confirm_create confirmed confirm_destroy]
+  CONFIRM_STATES = %i[confirm_create confirmed confirm_destroy].freeze
 
   def self.included(base)
     base.extend(ClassMethods)

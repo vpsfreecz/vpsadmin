@@ -5,7 +5,7 @@ module NodeCtl
     cmd :'halt-reason'
     description 'Look up reported maintenaces/outages for halt reason'
 
-    OUTAGE_TYPES = %i[tbd vps_restart vps_reset network performance maintenance]
+    OUTAGE_TYPES = %i[tbd vps_restart vps_reset network performance maintenance].freeze
 
     def execute
       # Access db from a subprocess in case it is not accessible

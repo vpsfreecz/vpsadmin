@@ -4,7 +4,7 @@ require 'bcrypt'
 module VpsAdmin
   module API
     module CryptoProviders
-      PROVIDERS = %i[md5 bcrypt]
+      PROVIDERS = %i[md5 bcrypt].freeze
 
       def self.provider(name)
         const_get(name.to_s.classify)

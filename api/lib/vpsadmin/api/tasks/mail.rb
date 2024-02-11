@@ -1,6 +1,6 @@
 module VpsAdmin::API::Tasks
   class Mail < Base
-    FOLDERS = %w[INBOX Junk]
+    FOLDERS = %w[INBOX Junk].freeze
 
     COUNT = ENV['COUNT'] ? ENV['COUNT'].to_i : 10
 

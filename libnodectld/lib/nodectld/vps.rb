@@ -6,7 +6,7 @@ require 'nodectld/utils'
 
 module NodeCtld
   class Vps
-    START_TIMEOUT = 'infinity'
+    START_TIMEOUT = 'infinity'.freeze
 
     include OsCtl::Lib::Utils::Log
     include Utils::System

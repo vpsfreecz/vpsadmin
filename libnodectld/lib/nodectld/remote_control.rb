@@ -8,7 +8,7 @@ require 'thread'
 
 module NodeCtld
   class RemoteControl
-    RUNDIR = '/run/nodectl'
+    RUNDIR = '/run/nodectl'.freeze
     SOCKET = File.join(RUNDIR, 'nodectld.sock')
 
     extend Utils::Compat

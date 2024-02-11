@@ -109,7 +109,7 @@ class User < ActiveRecord::Base
     21 => 'Admin',
     90 => 'Super admin',
     99 => 'God'
-  }
+  }.freeze
 
   def create(vps, node, tpl)
     TransactionChains::User::Create.fire(self, vps, node, tpl)
