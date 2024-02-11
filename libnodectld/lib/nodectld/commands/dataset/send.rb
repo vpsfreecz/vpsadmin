@@ -7,11 +7,7 @@ module NodeCtld
       db = Db.new
       snap = confirmed_snapshot_name(db, @snapshots.last)
 
-      if @snapshots.count > 1
-        from_snap = confirmed_snapshot_name(db, @snapshots.first)
-      else
-        from_snap = nil
-      end
+      from_snap = (confirmed_snapshot_name(db, @snapshots.first) if @snapshots.count > 1)
 
       db.close
 
@@ -20,10 +16,10 @@ module NodeCtld
           pool: @src_pool_fs,
           tree: @tree,
           branch: @branch,
-          dataset: @dataset_name,
+          dataset: @dataset_name
         },
         snap,
-        from_snap,
+        from_snap
       )
 
       stream.command(self) do
@@ -33,7 +29,7 @@ module NodeCtld
           block_size: $CFG.get(:mbuffer, :send, :block_size),
           buffer_size: $CFG.get(:mbuffer, :send, :buffer_size),
           log_file: mbuffer_log_file,
-          timeout: $CFG.get(:mbuffer, :send, :timeout),
+          timeout: $CFG.get(:mbuffer, :send, :timeout)
         )
       end
 
@@ -47,6 +43,7 @@ module NodeCtld
     end
 
     protected
+
     def confirmed_snapshot_name(db, snap)
       if snapshot_confirmed?(snap)
         snap['name']

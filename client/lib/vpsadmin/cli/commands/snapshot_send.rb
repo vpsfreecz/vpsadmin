@@ -10,7 +10,7 @@ module VpsAdmin::CLI::Commands
       @opts = {
         delete_after: true,
         send_mail: false,
-        checksum: true,
+        checksum: true
       }
 
       opts.on('-I', '--from-snapshot SNAPSHOT_ID', Integer, 'Download snapshot incrementally from SNAPSHOT_ID') do |s|
@@ -41,7 +41,7 @@ module VpsAdmin::CLI::Commands
 
     def exec(args)
       if args.size != 1
-        warn "Provide exactly one SNAPSHOT_ID as an argument"
+        warn 'Provide exactly one SNAPSHOT_ID as an argument'
         exit(false)
       end
 
@@ -58,7 +58,7 @@ module VpsAdmin::CLI::Commands
       dl, created = find_or_create_dl(opts)
 
       if created
-        warn_msg "The download is being prepared..."
+        warn_msg 'The download is being prepared...'
         sleep(5)
 
       else
@@ -77,9 +77,8 @@ module VpsAdmin::CLI::Commands
             w,
             progress: !opts[:quiet] && STDERR,
             max_rate: opts[:max_rate],
-            checksum: opts[:checksum],
+            checksum: opts[:checksum]
           )
-
         rescue VpsAdmin::CLI::DownloadError => e
           warn e.message
           exit(false)
@@ -89,7 +88,7 @@ module VpsAdmin::CLI::Commands
       w.close
 
       gz = Zlib::GzipReader.new(r)
-      STDOUT.write(gz.readpartial(16*1024)) while !gz.eof?
+      STDOUT.write(gz.readpartial(16 * 1024)) until gz.eof?
       gz.close
 
       Process.wait(pid)

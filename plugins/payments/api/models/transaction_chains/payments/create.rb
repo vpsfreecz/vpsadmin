@@ -29,7 +29,7 @@ module VpsAdmin::API::Plugins::Payments::TransactionChains
 
         if payment.incoming_payment
           payment.incoming_payment.update!(
-            state: ::IncomingPayment.states[:processed],
+            state: ::IncomingPayment.states[:processed]
           )
         end
 
@@ -43,7 +43,7 @@ module VpsAdmin::API::Plugins::Payments::TransactionChains
           :active,
           expiration: payment.to_date,
           reason: "Payment ##{payment.id} accepted.",
-          chain: self,
+          chain: self
         )
 
         append_t(Transactions::Utils::NoOp, args: find_node_id) do |t|
@@ -52,31 +52,30 @@ module VpsAdmin::API::Plugins::Payments::TransactionChains
 
           u.user_account.save!
 
-          if payment.incoming_payment
-            t.edit(payment.incoming_payment, state: ::IncomingPayment.states[:processed])
-          end
+          t.edit(payment.incoming_payment, state: ::IncomingPayment.states[:processed]) if payment.incoming_payment
         end
 
       else
         raise ::UserAccount::AccountDisabled,
-            "Account #{u.id} is in state #{u.object_state}, cannot add payment"
+              "Account #{u.id} is in state #{u.object_state}, cannot add payment"
       end
 
       if u.mailer_enabled
         mail(:payment_accepted, {
-          user: u,
-          vars: {
-            user: u,
-            account: u.user_account,
-            payment: payment,
-          },
-        })
+               user: u,
+               vars: {
+                 user: u,
+                 account: u.user_account,
+                 payment: payment
+               }
+             })
       end
 
       payment
     end
 
     protected
+
     # @param time [Time]
     # @param n [Integer] months to add
     # @return [Time]

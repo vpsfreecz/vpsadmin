@@ -3,7 +3,7 @@ require 'require_all'
 module NodeCtld
   STANDALONE = false unless const_defined?(:STANDALONE)
 
-  module KernelLog ; end
+  module KernelLog; end
 
   def self.root
     File.join(__dir__, '..')

@@ -8,12 +8,12 @@ class VpsAdmin::API::Resources::DnsResolver < HaveAPI::Resource
 
   params(:common) do
     string :ip_addr, label: 'IP address', desc: 'Multiple addresses separated by comma',
-           db_name: :addrs
+                     db_name: :addrs
     string :label, label: 'Label'
     bool :is_universal, label: 'Is universal?',
-         desc: 'Universal resolver is independent on location'
+                        desc: 'Universal resolver is independent on location'
     resource VpsAdmin::API::Resources::Location, label: 'Location',
-             desc: 'Location this resolver can be used on'
+                                                 desc: 'Location this resolver can be used on'
   end
 
   params(:all) do
@@ -26,28 +26,28 @@ class VpsAdmin::API::Resources::DnsResolver < HaveAPI::Resource
 
     input do
       resource VpsAdmin::API::Resources::VPS, label: 'VPS',
-          desc: 'List DNS resolvers usable for a specific VPS'
+                                              desc: 'List DNS resolvers usable for a specific VPS'
     end
 
     output(:object_list) do
       use :all
     end
 
-    authorize do |u|
+    authorize do |_u|
       allow
     end
 
     example do
       request({})
       response([
-        {
-          id: 26,
-          ip_addr: '8.8.8.8',
-          label: 'Google DNS',
-          is_universal: true,
-          location: nil
-        }
-      ])
+                 {
+                   id: 26,
+                   ip_addr: '8.8.8.8',
+                   label: 'Google DNS',
+                   is_universal: true,
+                   location: nil
+                 }
+               ])
     end
 
     def query
@@ -79,7 +79,7 @@ class VpsAdmin::API::Resources::DnsResolver < HaveAPI::Resource
       use :all
     end
 
-    authorize do |u|
+    authorize do |_u|
       allow
     end
 
@@ -112,7 +112,6 @@ class VpsAdmin::API::Resources::DnsResolver < HaveAPI::Resource
 
     def exec
       ::DnsResolver.create!(to_db_names(input))
-
     rescue ActiveRecord::RecordInvalid => e
       error('create failed', to_param_names(e.record.errors.to_hash, :input))
     end
@@ -134,7 +133,6 @@ class VpsAdmin::API::Resources::DnsResolver < HaveAPI::Resource
     def exec
       ns = ::DnsResolver.find(params[:dns_resolver_id])
       ns.update(to_db_names(input))
-
     rescue ActiveRecord::RecordInvalid => e
       error('update failed', to_param_names(e.record.errors.to_hash, :input))
     end
@@ -143,7 +141,7 @@ class VpsAdmin::API::Resources::DnsResolver < HaveAPI::Resource
   class Delete < HaveAPI::Actions::Default::Delete
     input do
       bool :force, label: 'Force deletion',
-           desc: 'Delete the DNS resolver even it is in use. Affected VPSes get a new DNS resolver.'
+                   desc: 'Delete the DNS resolver even it is in use. Affected VPSes get a new DNS resolver.'
     end
 
     authorize do |u|
@@ -153,12 +151,9 @@ class VpsAdmin::API::Resources::DnsResolver < HaveAPI::Resource
     def exec
       ns = ::DnsResolver.find(params[:dns_resolver_id])
 
-      if !input[:force] && ns.in_use?
-        error('The DNS resolver is in use. Use force=true to override.')
-      end
+      error('The DNS resolver is in use. Use force=true to override.') if !input[:force] && ns.in_use?
 
       ns.delete
-
     rescue ActiveRecord::RecordInvalid => e
       error('update failed', to_param_names(e.record.errors.to_hash, :input))
     end

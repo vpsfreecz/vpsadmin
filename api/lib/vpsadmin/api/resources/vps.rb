@@ -12,36 +12,36 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
 
   params(:common) do
     resource VpsAdmin::API::Resources::User, label: 'User', desc: 'VPS owner',
-             value_label: :login
+                                             value_label: :login
     string :hostname, desc: 'VPS hostname'
     bool :manage_hostname, label: 'Manage hostname',
-          desc: 'Determines whether vpsAdmin sets VPS hostname or not'
+                           desc: 'Determines whether vpsAdmin sets VPS hostname or not'
     use :template
     string :cgroup_version, choices: ::Vps.cgroup_versions.keys, default: 'cgroup_any'
     string :info, label: 'Info', desc: 'VPS description'
     resource VpsAdmin::API::Resources::DnsResolver, label: 'DNS resolver',
-             desc: 'DNS resolver the VPS will use'
+                                                    desc: 'DNS resolver the VPS will use'
     resource VpsAdmin::API::Resources::Node, label: 'Node', desc: 'Node VPS will run on',
-             value_label: :domain_name
+                                             value_label: :domain_name
     resource VpsAdmin::API::Resources::UserNamespaceMap, label: 'UID/GID mapping'
     bool :autostart_enable, label: 'Auto-start', desc: 'Start VPS on node boot?'
     integer :autostart_priority, label: 'Auto-start priority', default: 1000,
-      desc: '0 is the highest priority, greater numbers have lower priority'
+                                 desc: '0 is the highest priority, greater numbers have lower priority'
     bool :onstartall, label: 'On start all',
-         desc: 'Start VPS on start all action?', default: true
+                      desc: 'Start VPS on start all action?', default: true
     string :config, label: 'Config', desc: 'Custom configuration options',
-           default: ''
+                    default: ''
     integer :cpu_limit, label: 'CPU limit', desc: 'Limit of maximum CPU usage'
     integer :start_menu_timeout, label: 'Start menu timeout',
-      desc: 'Number of seconds the start menu waits for the user'
+                                 desc: 'Number of seconds the start menu waits for the user'
     bool :allow_admin_modifications, label: 'Allow admin modifications'
   end
 
   params(:dataset) do
     resource VpsAdmin::API::Resources::Dataset, label: 'Dataset',
-             desc: 'Dataset the VPS resides in', value_label: :name
+                                                desc: 'Dataset the VPS resides in', value_label: :name
     resource VpsAdmin::API::Resources::Pool, label: 'Pool',
-             desc: 'Storage pool the VPS resides in', value_label: :name
+                                             desc: 'Storage pool the VPS resides in', value_label: :name
   end
 
   params(:read_only) do
@@ -68,7 +68,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
   end
 
   params(:resources) do
-    VpsAdmin::API::ClusterResources.to_params(::Vps, self, resources: %i(memory swap cpu diskspace))
+    VpsAdmin::API::ClusterResources.to_params(::Vps, self, resources: %i[memory swap cpu diskspace])
     patch :diskspace, db_name: :rootfs_diskspace
   end
 
@@ -86,9 +86,9 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
 
     input do
       resource VpsAdmin::API::Resources::User, label: 'User', desc: 'Filter by owner',
-               value_label: :login
+                                               value_label: :login
       resource VpsAdmin::API::Resources::Node, label: 'Node', desc: 'Filter by node',
-          value_label: :domain_name
+                                               value_label: :domain_name
       resource VpsAdmin::API::Resources::Location, label: 'Location', desc: 'Filter by location'
       resource VpsAdmin::API::Resources::Environment, label: 'Environment', desc: 'Filter by environment'
       resource VpsAdmin::API::Resources::UserNamespaceMap, label: 'UID/GID mapping'
@@ -104,87 +104,75 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
     authorize do |u|
       allow if u.role == :admin
       restrict user_id: u.id
-      input blacklist: %i(user)
-      output whitelist: %i(
+      input blacklist: %i[user]
+      output whitelist: %i[
         id user hostname manage_hostname os_template cgroup_version dns_resolver
         node dataset pool memory swap cpu diskspace maintenance_lock
         maintenance_lock_reason object_state expiration_date allow_admin_modifications
         is_running process_count used_memory used_swap used_diskspace
         uptime loadavg cpu_user cpu_nice cpu_system cpu_idle cpu_iowait
         cpu_irq cpu_softirq user_namespace_map
-      )
+      ]
       allow
     end
 
     example do
       request({})
       response([{
-        id: 150,
-        user: {
-          id: 1,
-          name: 'somebody'
-        },
-        hostname: 'thehostname',
-        os_template: {
-          id: 1,
-          label: 'Scientific Linux 6'
-        },
-        info: 'My very important VPS',
-        dns_resolver: {
-          id: 1,
-        },
-        node: {
-          id: 1,
-          name: 'node1'
-        },
-        onstartall: true,
-      }])
+                 id: 150,
+                 user: {
+                   id: 1,
+                   name: 'somebody'
+                 },
+                 hostname: 'thehostname',
+                 os_template: {
+                   id: 1,
+                   label: 'Scientific Linux 6'
+                 },
+                 info: 'My very important VPS',
+                 dns_resolver: {
+                   id: 1
+                 },
+                 node: {
+                   id: 1,
+                   name: 'node1'
+                 },
+                 onstartall: true
+               }])
     end
 
     def query
       q = if input[:object_state]
-        Vps.unscoped.where(
-          object_state: Vps.object_states[input[:object_state]]
-        )
+            Vps.unscoped.where(
+              object_state: Vps.object_states[input[:object_state]]
+            )
 
-      else
-        Vps.existing
-      end
+          else
+            Vps.existing
+          end
 
       q = with_includes(q).includes(dataset_in_pool: [:dataset_properties])
 
       q = q.where(with_restricted)
       q = q.where(user_id: input[:user].id) if input[:user]
 
-      if input[:node]
-        q = q.where(node_id: input[:node].id)
-      end
+      q = q.where(node_id: input[:node].id) if input[:node]
 
-      if input[:location]
-        q = q.joins(:node).where(nodes: {location_id: input[:location].id})
-      end
+      q = q.joins(:node).where(nodes: { location_id: input[:location].id }) if input[:location]
 
       if input[:environment]
         q = q.joins(node: [:location]).where(
-          locations: {environment_id: input[:environment].id}
+          locations: { environment_id: input[:environment].id }
         )
       end
 
-      if input.has_key?(:user_namespace_map)
-        q = q.where(user_namespace_map: input[:user_namespace_map])
-      end
+      q = q.where(user_namespace_map: input[:user_namespace_map]) if input.has_key?(:user_namespace_map)
 
-      if input[:os_template]
-        q = q.where(os_template: input[:os_template])
-      end
+      q = q.where(os_template: input[:os_template]) if input[:os_template]
 
-      if input[:hostname_exact]
-        q = q.where(hostname: input[:hostname_exact])
-      end
+      q = q.where(hostname: input[:hostname_exact]) if input[:hostname_exact]
 
-      if input[:hostname_any]
-        q = q.where('vpses.hostname LIKE ?', "%#{input[:hostname_any]}%")
-      end
+      q = q.where('vpses.hostname LIKE ?', "%#{input[:hostname_any]}%") if input[:hostname_any]
 
       q
     end
@@ -207,13 +195,13 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
 
     input do
       resource VpsAdmin::API::Resources::Environment, label: 'Environment',
-               desc: 'Environment in which to create the VPS, for non-admins'
+                                                      desc: 'Environment in which to create the VPS, for non-admins'
       resource VpsAdmin::API::Resources::Location, label: 'Location',
-               desc: 'Location in which to create the VPS, for non-admins'
+                                                   desc: 'Location in which to create the VPS, for non-admins'
       resource VpsAdmin::API::Resources::Location, name: :address_location,
-               label: 'Address location',
-               desc: 'Location to select IP addresses from'
-      use :common, exclude: %i(manage_hostname)
+                                                   label: 'Address location',
+                                                   desc: 'Location to select IP addresses from'
+      use :common, exclude: %i[manage_hostname]
       VpsAdmin::API::ClusterResources.to_params(::Vps, self)
       integer :ipv4, label: 'IPv4', default: 1, fill: true
       integer :ipv6, label: 'IPv6', default: 1, fill: true
@@ -230,39 +218,39 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
 
     authorize do |u|
       allow if u.role == :admin
-      input whitelist: %i(
+      input whitelist: %i[
         environment location address_location hostname os_template cgroup_version
         dns_resolver cpu memory swap diskspace ipv4 ipv4_private ipv6
         start_menu_timeout allow_admin_modifications user_namespace_map start
-      )
-      output whitelist: %i(
+      ]
+      output whitelist: %i[
         id user hostname manage_hostname os_template cgroup_version dns_resolver
         node dataset pool memory swap cpu diskspace maintenance_lock
         maintenance_lock_reason object_state expiration_date allow_admin_modifications
         is_running process_count used_memory used_swap used_diskspace
         uptime loadavg cpu_user cpu_nice cpu_system cpu_idle cpu_iowait
         cpu_irq cpu_softirq start_menu_timeout user_namespace_map created_at
-      )
+      ]
       allow
     end
 
     example 'Create vps' do
       request({
-        user: 1,
-        hostname: 'my-vps',
-        os_template: 1,
-        info: '',
-        dns_resolver: 1,
-        node: 1,
-        onstartall: true,
-      })
+                user: 1,
+                hostname: 'my-vps',
+                os_template: 1,
+                info: '',
+                dns_resolver: 1,
+                node: 1,
+                onstartall: true
+              })
       response({
-        id: 150
-      })
-      comment <<END
-Create VPS owned by user with ID 1, template ID 1 and DNS resolver ID 1. VPS
-will be created on node ID 1. Action returns ID of newly created VPS.
-END
+                 id: 150
+               })
+      comment <<~END
+        Create VPS owned by user with ID 1, template ID 1 and DNS resolver ID 1. VPS
+        will be created on node ID 1. Action returns ID of newly created VPS.
+      END
     end
 
     def exec
@@ -272,20 +260,16 @@ END
       else
         object_state_check!(current_user)
 
-        if input[:environment].nil? && input[:location].nil?
-          error('provide either an environment or a location')
-        end
+        error('provide either an environment or a location') if input[:environment].nil? && input[:location].nil?
 
         node = VpsAdmin::API::Operations::Node::Pick.run(
           environment: input[:environment],
           location: input[:location],
           hypervisor_type: input[:os_template].hypervisor_type,
-          cgroup_version: input[:cgroup_version] || input[:os_template].cgroup_version,
+          cgroup_version: input[:cgroup_version] || input[:os_template].cgroup_version
         )
 
-        unless node
-          error('no free node is available in selected environment/location')
-        end
+        error('no free node is available in selected environment/location') unless node
 
         env = node.location.environment
 
@@ -300,34 +284,32 @@ END
         input.delete(:environment)
 
         input.update({
-          user: current_user,
-          node: node
-        })
+                       user: current_user,
+                       node: node
+                     })
       end
 
       maintenance_check!(input[:node])
 
       opts = {}
 
-      %i(ipv4 ipv6 ipv4_private).each do |opt|
+      %i[ipv4 ipv6 ipv4_private].each do |opt|
         opts[opt] = input.delete(opt) if input.has_key?(opt)
       end
 
       if input[:address_location]
         unless node.location.shares_any_networks_with_primary?(
-                 input[:address_location],
-                 userpick: current_user.role == :admin ? nil : true,
-               )
+          input[:address_location],
+          userpick: current_user.role == :admin ? nil : true
+        )
           error("no shared networks with location #{input[:address_location].label}")
         end
 
         opts[:address_location] = input.delete(:address_location)
       end
 
-      if input[:user_namespace_map]
-        if input[:user_namespace_map].user_namespace.user_id != input[:user].id
-          error('user namespace map has to belong to VPS owner')
-        end
+      if input[:user_namespace_map] && (input[:user_namespace_map].user_namespace.user_id != input[:user].id)
+        error('user namespace map has to belong to VPS owner')
       end
 
       opts[:start] = input.delete(:start)
@@ -365,14 +347,14 @@ END
     authorize do |u|
       allow if u.role == :admin
       restrict user_id: u.id
-      output whitelist: %i(
+      output whitelist: %i[
         id user hostname manage_hostname os_template cgroup_version dns_resolver
         node dataset pool memory swap cpu diskspace maintenance_lock
         maintenance_lock_reason object_state expiration_date allow_admin_modifications
         is_running process_count used_memory used_swap used_diskspace
         uptime loadavg cpu_user cpu_nice cpu_system cpu_idle cpu_iowait
         cpu_irq cpu_softirq start_menu_timeout user_namespace_map created_at
-      )
+      ]
       allow
     end
 
@@ -380,8 +362,8 @@ END
       @vps = with_includes(::Vps.including_deleted).includes(
         dataset_in_pool: [:dataset_properties]
       ).find_by!(with_restricted(
-        id: params[:vps_id])
-      )
+                   id: params[:vps_id]
+                 ))
     end
 
     def exec
@@ -395,22 +377,22 @@ END
 
     input do
       use :common
-      VpsAdmin::API::ClusterResources.to_params(::Vps, self, resources: %i(cpu memory swap))
+      VpsAdmin::API::ClusterResources.to_params(::Vps, self, resources: %i[cpu memory swap])
       text :change_reason, label: 'Change reason',
-             desc: 'If filled, it is send to VPS owner in an email'
+                           desc: 'If filled, it is send to VPS owner in an email'
       bool :admin_override, label: 'Admin override',
-           desc: 'Make it possible to assign more resource than the user actually has'
-      string :admin_lock_type, label: 'Admin lock type', choices: %i(no_lock absolute not_less not_more),
-          desc: 'How is the admin lock enforced'
+                            desc: 'Make it possible to assign more resource than the user actually has'
+      string :admin_lock_type, label: 'Admin lock type', choices: %i[no_lock absolute not_less not_more],
+                               desc: 'How is the admin lock enforced'
     end
 
     authorize do |u|
       allow if u.role == :admin
       restrict user_id: u.id
-      input whitelist: %i(
+      input whitelist: %i[
         hostname manage_hostname os_template cgroup_version dns_resolver user_namespace_map
         cpu memory swap start_menu_timeout allow_admin_modifications remind_after_date
-      )
+      ]
       allow
     end
 
@@ -419,9 +401,7 @@ END
       maintenance_check!(vps)
       object_state_check!(vps, vps.user)
 
-      if input.empty?
-        error('provide at least one attribute to update')
-      end
+      error('provide at least one attribute to update') if input.empty?
 
       update_object_state!(vps) if change_object_state?
 
@@ -429,9 +409,7 @@ END
         resources = ::Vps.cluster_resources[:required] + ::Vps.cluster_resources[:optional]
 
         resources.each do |r|
-          if input.has_key?(r)
-            error('resources cannot be changed when changing VPS owner')
-          end
+          error('resources cannot be changed when changing VPS owner') if input.has_key?(r)
         end
       end
 
@@ -444,7 +422,7 @@ END
 
       elsif input[:dns_resolver] && !input[:dns_resolver].available_to_vps?(vps)
         error(
-          "DNS resolver '#{input[:dns_resolver].label}' is not available "+
+          "DNS resolver '#{input[:dns_resolver].label}' is not available " +
           "in location #{vps.node.location.label}"
         )
 
@@ -455,12 +433,11 @@ END
 
       elsif input[:user_namespace_map] \
             && input[:user_namespace_map].user_namespace.user_id != vps.user_id
-          error('user namespace map belongs to a different user than the VPS')
+        error('user namespace map belongs to a different user than the VPS')
       end
 
-      @chain, _ = vps.update(to_db_names(input))
+      @chain, = vps.update(to_db_names(input))
       ok
-
     rescue ActiveRecord::RecordInvalid => e
       error(
         'update failed',
@@ -479,7 +456,7 @@ END
 
     input do
       bool :lazy, label: 'Lazy delete', desc: 'Only mark VPS as deleted',
-           default: true, fill: true
+                  default: true, fill: true
     end
 
     authorize do |u|
@@ -494,17 +471,17 @@ END
       maintenance_check!(vps)
       object_state_check!(vps.user)
 
-      if current_user.role == :admin
-        state = input[:lazy] ? :soft_delete : :hard_delete
+      state = if current_user.role == :admin
+                input[:lazy] ? :soft_delete : :hard_delete
 
-      else
-        state = :soft_delete
-      end
+              else
+                :soft_delete
+              end
 
-      @chain, _ = vps.set_object_state(
+      @chain, = vps.set_object_state(
         state,
         reason: 'Deletion requested',
-        expiration: true,
+        expiration: true
       )
       ok
     end
@@ -531,7 +508,7 @@ END
       maintenance_check!(vps)
       object_state_check!(vps, vps.user)
 
-      @chain, _ = vps.start
+      @chain, = vps.start
       ok
     end
 
@@ -557,7 +534,7 @@ END
       maintenance_check!(vps)
       object_state_check!(vps, vps.user)
 
-      @chain, _ = vps.restart
+      @chain, = vps.restart
       ok
     end
 
@@ -583,7 +560,7 @@ END
       maintenance_check!(vps)
       object_state_check!(vps, vps.user)
 
-      @chain, _ = vps.stop
+      @chain, = vps.stop
       ok
     end
 
@@ -599,8 +576,8 @@ END
     blocking true
 
     input(:hash) do
-      string :type, label: 'Type', choices: %w(secure simple), default: 'secure',
-             fill: true
+      string :type, label: 'Type', choices: %w[secure simple], default: 'secure',
+                    fill: true
     end
 
     output(:hash) do
@@ -618,7 +595,7 @@ END
       maintenance_check!(vps)
 
       @chain, password = vps.passwd(input[:type].to_sym)
-      {password: password}
+      { password: password }
     end
 
     def state_id
@@ -648,17 +625,15 @@ END
       maintenance_check!(vps)
       object_state_check!(vps, vps.user)
 
-      if vps.node.hypervisor_type != 'vpsadminos'
-        error('this action is available only for VPS running on vpsAdminOS')
-      end
+      error('this action is available only for VPS running on vpsAdminOS') if vps.node.hypervisor_type != 'vpsadminos'
 
       if input[:mount_root_dataset] && !check_mountpoint(input[:mount_root_dataset])
         error('invalid mountpoint', {
-          mount_root_dataset: [
-            'must start with a slash',
-            'a-z, A-Z, 0-9, _-/.:'
-          ],
-        })
+                mount_root_dataset: [
+                  'must start with a slash',
+                  'a-z, A-Z, 0-9, _-/.:'
+                ]
+              })
       end
 
       tpl = input[:os_template] || vps.os_template
@@ -668,18 +643,18 @@ END
 
       elsif tpl.hypervisor_type != vps.node.hypervisor_type
         error(
-          "incompatible template: needs #{tpl.hypervisor_type}, but VPS is "+
+          "incompatible template: needs #{tpl.hypervisor_type}, but VPS is " +
           "using #{vps.node.hypervisor_type}"
         )
 
       elsif tpl.cgroup_version != 'cgroup_any' && tpl.cgroup_version != vps.node.cgroup_version
         error(
-          "incompatible cgroup version: #{tpl.label} needs #{tpl.cgroup_version}, "+
+          "incompatible cgroup version: #{tpl.label} needs #{tpl.cgroup_version}, " +
           "but node is using #{vps.node.cgroup_version}"
         )
       end
 
-      @chain, _ = vps.boot(tpl, mount_root_dataset: input[:mount_root_dataset])
+      @chain, = vps.boot(tpl, mount_root_dataset: input[:mount_root_dataset])
       ok
     end
 
@@ -688,11 +663,12 @@ END
     end
 
     protected
+
     def check_mountpoint(dst)
       dst.start_with?('/') \
-        && dst =~ /\A[a-zA-Z0-9_\-\/\.:]{3,500}\z/ \
+        && dst =~ %r{\A[a-zA-Z0-9_\-/.:]{3,500}\z} \
         && dst !~ /\.\./ \
-        && dst !~ /\/\//
+        && dst !~ %r{//}
     end
   end
 
@@ -723,18 +699,18 @@ END
 
       elsif tpl.hypervisor_type != vps.node.hypervisor_type
         error(
-          "incompatible template: needs #{tpl.hypervisor_type}, but VPS is "+
+          "incompatible template: needs #{tpl.hypervisor_type}, but VPS is " +
           "using #{vps.node.hypervisor_type}"
         )
 
       elsif tpl.cgroup_version != 'cgroup_any' && tpl.cgroup_version != vps.node.cgroup_version
         error(
-          "incompatible cgroup version: #{tpl.label} needs #{tpl.cgroup_version}, "+
+          "incompatible cgroup version: #{tpl.label} needs #{tpl.cgroup_version}, " +
           "but node is using #{vps.node.cgroup_version}"
         )
       end
 
-      @chain, _ = vps.reinstall(tpl)
+      @chain, = vps.reinstall(tpl)
       ok
     end
 
@@ -751,35 +727,35 @@ END
 
     input do
       resource VpsAdmin::API::Resources::Node, label: 'Node',
-        value_label: :domain_name,
-               required: true
+                                               value_label: :domain_name,
+                                               required: true
       bool :replace_ip_addresses, label: 'Replace IP addresses',
-          desc: 'When migrating to another location, current IP addresses are replaced by addresses from the new location'
+                                  desc: 'When migrating to another location, current IP addresses are replaced by addresses from the new location'
       bool :transfer_ip_addresses, label: 'Transfer IP addresses',
-          desc: 'If possible, keep IP addresses and recharge them to a different '+
-                'environment or location'
-      string :swap, choices: %w(enforce), default: 'enforce', fill: true
+                                   desc: 'If possible, keep IP addresses and recharge them to a different ' +
+                                         'environment or location'
+      string :swap, choices: %w[enforce], default: 'enforce', fill: true
       bool :maintenance_window, label: 'Maintenance window',
-          desc: 'Migrate the VPS within the nearest maintenance window',
-          default: true
+                                desc: 'Migrate the VPS within the nearest maintenance window',
+                                default: true
       integer :finish_weekday, label: 'Finish weekday',
-        desc: 'Prepare the migration and finish it on this day',
-        number: {min: 0, max: 6}
+                               desc: 'Prepare the migration and finish it on this day',
+                               number: { min: 0, max: 6 }
       integer :finish_minutes, label: 'Finish minutes',
-        desc: 'Number of minutes from midnight of start_weekday after which the migration is done',
-        number: {min: 0, max: 24 * 60 - 30}
+                               desc: 'Number of minutes from midnight of start_weekday after which the migration is done',
+                               number: { min: 0, max: 24 * 60 - 30 }
       bool :cleanup_data, label: 'Cleanup data',
-          desc: 'Remove VPS dataset from the source node',
-          default: true
+                          desc: 'Remove VPS dataset from the source node',
+                          default: true
       bool :no_start, label: 'No start',
-          desc: 'Do not start the VPS on the target node',
-          default: false
+                      desc: 'Do not start the VPS on the target node',
+                      default: false
       bool :skip_start, label: 'Skip start',
-          desc: 'Continue even if the VPS fails to start on the target node',
-          default: false
+                        desc: 'Continue even if the VPS fails to start on the target node',
+                        default: false
       bool :send_mail, label: 'Send e-mails',
-          desc: 'Inform the VPS owner about migration progress',
-          default: true
+                       desc: 'Inform the VPS owner about migration progress',
+                       default: true
       string :reason
     end
 
@@ -800,20 +776,19 @@ END
       if (input[:finish_weekday] || input[:finish_minutes]) \
          && (!input[:finish_weekday] || !input[:finish_minutes])
         error('invalid finish configuration', {
-          finish_weeday: ['must be set together with finish_minutes'],
-          finish_minutes: ['must be set together with finish_weekday'],
-        })
+                finish_weeday: ['must be set together with finish_minutes'],
+                finish_minutes: ['must be set together with finish_weekday']
+              })
       end
 
       if input[:maintenance_window] && (input[:finish_weekday] || input[:finish_minutes])
         error('invalid finish configuration', {
-          maintenance_window: ['conflicts with finish_weekday and finish_minutes'],
-        })
+                maintenance_window: ['conflicts with finish_weekday and finish_minutes']
+              })
       end
 
-      @chain, _ = vps.migrate(input[:node], input)
+      @chain, = vps.migrate(input[:node], input)
       ok
-
     rescue VpsAdmin::API::Exceptions::VpsMigrationError => e
       error(e.message)
     end
@@ -835,20 +810,20 @@ END
       resource VpsAdmin::API::Resources::Node, desc: 'Clone to node', value_label: :name
       resource VpsAdmin::API::Resources::User, desc: 'The owner of the cloned VPS', value_label: :login
       resource VpsAdmin::API::Resources::Location, name: :address_location,
-               label: 'Address location',
-               desc: 'Location to select IP addresses from'
-      #resource VpsAdmin::API::Resources::VPS, desc: 'Clone into an existing VPS', value_label: :hostname
-      string :platform, default: 'same', fill: true, choices: %w(same vpsadminos)
+                                                   label: 'Address location',
+                                                   desc: 'Location to select IP addresses from'
+      # resource VpsAdmin::API::Resources::VPS, desc: 'Clone into an existing VPS', value_label: :hostname
+      string :platform, default: 'same', fill: true, choices: %w[same vpsadminos]
       bool :subdatasets, default: true, fill: true
       bool :dataset_plans, default: true, fill: true, label: 'Dataset plans'
       bool :resources, default: true, fill: true,
-           desc: 'Clone resources such as memory and CPU'
+                       desc: 'Clone resources such as memory and CPU'
       bool :features, default: true, fill: true
       string :hostname
       bool :stop, default: true, fill: true,
-           desc: 'Do a consistent clone - original VPS is stopped before making a snapshot'
+                  desc: 'Do a consistent clone - original VPS is stopped before making a snapshot'
       bool :keep_snapshots, default: false, fill: true, label: 'Keep snapshots',
-          desc: 'Keep snapshots created during the cloning process'
+                            desc: 'Keep snapshots created during the cloning process'
     end
 
     output do
@@ -858,15 +833,15 @@ END
     authorize do |u|
       allow if u.role == :admin
       restrict user_id: u.id
-      input blacklist: %i(node user configs)
-      output whitelist: %i(
+      input blacklist: %i[node user configs]
+      output whitelist: %i[
         id user hostname manage_hostname os_template cgroup_version dns_resolver
         node dataset pool memory swap cpu diskspace maintenance_lock
         maintenance_lock_reason object_state expiration_date allow_admin_modifications
         is_running process_count used_memory used_swap used_disk uptime
         loadavg cpu_user cpu_nice cpu_system cpu_idle cpu_iowait cpu_irq
         cpu_softirq user_namespace_map created_at
-      )
+      ]
       allow
     end
 
@@ -900,7 +875,7 @@ END
           location: input[:location],
           except: vps.node,
           hypervisor_type: input[:platform] == 'same' ? vps.os_template.hypervisor_type : input[:platform],
-          cgroup_version: vps.os_template.cgroup_version,
+          cgroup_version: vps.os_template.cgroup_version
         )
 
       else
@@ -917,28 +892,24 @@ END
       elsif !input[:vps] && \
             current_user.role != :admin && \
             current_user.vps_in_env(env) >= current_user.env_config(env, :max_vps_count)
-          error('cannot create more VPSes in this environment')
+        error('cannot create more VPSes in this environment')
       end
 
       if input[:hostname].nil? || input[:hostname].strip.length == 0
         input[:hostname] = "#{vps.hostname}-#{vps.id}-clone"
       end
 
-      if input[:address_location]
-        unless node.location.shares_any_networks_with_primary?(
-                 input[:address_location],
-                 userpick: current_user.role == :admin ? nil : true,
-               )
-          error("no shared networks with location #{input[:address_location].label}")
-        end
+      if input[:address_location] && !node.location.shares_any_networks_with_primary?(
+        input[:address_location],
+        userpick: current_user.role == :admin ? nil : true
+      )
+        error("no shared networks with location #{input[:address_location].label}")
       end
 
       @chain, cloned_vps = vps.clone(node, input)
       cloned_vps
-
     rescue ActiveRecord::RecordInvalid => e
       error('clone failed', to_param_names(e.record.errors.to_hash))
-
     rescue VpsAdmin::API::Exceptions::OsTemplateNotFound => e
       error(e.message)
     end
@@ -956,9 +927,9 @@ END
 
     input do
       resource VpsAdmin::API::Resources::VPS, desc: 'Swap with this VPS',
-          required: true
+                                              required: true
       bool :resources,
-        desc: 'Swap resources (CPU, memory and swap, not disk space)'
+           desc: 'Swap resources (CPU, memory and swap, not disk space)'
       bool :hostname, desc: 'Swap hostname', load_validators: false
       bool :expirations, desc: 'Swap expirations'
     end
@@ -966,13 +937,13 @@ END
     authorize do |u|
       allow if u.role == :admin
       restrict user_id: u.id
-      input blacklist: %i(expirations)
+      input blacklist: %i[expirations]
       allow
     end
 
     def exec
       vps = ::Vps.includes(:node).find_by!(
-          with_restricted(id: params[:vps_id])
+        with_restricted(id: params[:vps_id])
       )
       maintenance_check!(vps)
       maintenance_check!(input[:vps])
@@ -982,14 +953,12 @@ END
         error('access denied')
 
       elsif vps.node.location_id == input[:vps].node.location_id
-        error("swap within one location is not needed, simply exchange IP addresses")
+        error('swap within one location is not needed, simply exchange IP addresses')
       end
 
-      if current_user.role != :admin
-        input[:expirations] = true
-      end
+      input[:expirations] = true if current_user.role != :admin
 
-      @chain, _ = vps.swap_with(input[:vps], input)
+      @chain, = vps.swap_with(input[:vps], input)
       ok
     end
 
@@ -1025,7 +994,6 @@ END
 
       @chain, replaced_vps = vps.replace(input[:node] || vps.node, input)
       replaced_vps
-
     rescue ActiveRecord::RecordInvalid => e
       error('replace failed', to_param_names(e.record.errors.to_hash))
     end
@@ -1043,7 +1011,7 @@ END
 
     input do
       resource VpsAdmin::API::Resources::User::PublicKey, label: 'Public key',
-          required: true
+                                                          required: true
     end
 
     authorize do |u|
@@ -1054,11 +1022,11 @@ END
 
     def exec
       vps = ::Vps.includes(:node).find_by!(
-          with_restricted(id: params[:vps_id])
+        with_restricted(id: params[:vps_id])
       )
       maintenance_check!(vps)
 
-      @chain, _ = vps.deploy_public_key(input[:public_key])
+      @chain, = vps.deploy_public_key(input[:public_key])
       ok
     end
 
@@ -1119,7 +1087,7 @@ END
 
     class Show < HaveAPI::Actions::Default::Show
       desc 'Show VPS feature'
-      resolve ->(f){ [f.vps_id, f.id] }
+      resolve ->(f) { [f.vps_id, f.id] }
 
       output do
         use :all
@@ -1160,12 +1128,11 @@ END
         vps = ::Vps.find_by!(
           with_restricted(id: params[:vps_id])
         )
-        @chain, _ = vps.set_feature(
+        @chain, = vps.set_feature(
           vps.vps_features.find(params[:feature_id]),
           input[:enabled]
         )
         ok
-
       rescue VpsAdmin::API::Exceptions::VpsFeatureConflict => e
         error(e.message)
       end
@@ -1197,9 +1164,8 @@ END
         vps = ::Vps.find_by!(
           with_restricted(id: params[:vps_id])
         )
-        @chain, _ = vps.set_features(input)
+        @chain, = vps.set_features(input)
         ok
-
       rescue VpsAdmin::API::Exceptions::VpsFeatureConflict => e
         error(e.message)
       end
@@ -1219,19 +1185,19 @@ END
       id :id
       resource VpsAdmin::API::Resources::VPS, value_label: :hostname
       resource VpsAdmin::API::Resources::Dataset, label: 'Dataset',
-               value_label: :name
+                                                  value_label: :name
       resource VpsAdmin::API::Resources::UserNamespaceMap, label: 'UID/GID map'
       string :mountpoint, label: 'Mountpoint', db_name: :dst
-      string :mode, label: 'Mode', choices: %w(ro rw), default: 'rw', fill: true
+      string :mode, label: 'Mode', choices: %w[ro rw], default: 'rw', fill: true
       string :on_start_fail, label: 'On mount failure',
-             choices: ::Mount.on_start_fails.keys,
-             desc: 'What happens when the mount fails during VPS start'
+                             choices: ::Mount.on_start_fails.keys,
+                             desc: 'What happens when the mount fails during VPS start'
       datetime :expiration_date, label: 'Expiration date',
-        desc: 'The mount is deleted when expiration date passes'
+                                 desc: 'The mount is deleted when expiration date passes'
       bool :enabled, label: 'Enabled'
       bool :master_enabled, label: 'Master enabled'
       string :current_state, label: 'Current state',
-             choices: ::Mount.current_states.keys
+                             choices: ::Mount.current_states.keys
     end
 
     class Index < HaveAPI::Actions::Default::Index
@@ -1243,7 +1209,7 @@ END
 
       authorize do |u|
         allow if u.role == :admin
-        restrict vpses: {user_id: u.id}
+        restrict vpses: { user_id: u.id }
         allow
       end
 
@@ -1262,7 +1228,7 @@ END
 
     class Show < HaveAPI::Actions::Default::Show
       desc 'Show mount'
-      resolve ->(m){ [m.vps_id, m.id] }
+      resolve ->(m) { [m.vps_id, m.id] }
 
       output do
         use :all
@@ -1270,15 +1236,15 @@ END
 
       authorize do |u|
         allow if u.role == :admin
-        restrict vpses: {user_id: u.id}
+        restrict vpses: { user_id: u.id }
         allow
       end
 
       def prepare
         @mount = ::Mount.joins(:vps).find_by!(with_restricted(
-          vps_id: params[:vps_id],
-          id: params[:mount_id])
-        )
+                                                vps_id: params[:vps_id],
+                                                id: params[:mount_id]
+                                              ))
       end
 
       def exec
@@ -1291,12 +1257,12 @@ END
       blocking true
 
       input do
-        use :all, include: %i(
-            dataset user_namespace_map mountpoint mode on_start_fail
-            enabled
-          )
-          patch :dataset, required: true
-          patch :enabled, default: true, fill: true
+        use :all, include: %i[
+          dataset user_namespace_map mountpoint mode on_start_fail
+          enabled
+        ]
+        patch :dataset, required: true
+        patch :enabled, default: true, fill: true
       end
 
       output do
@@ -1319,11 +1285,9 @@ END
 
         @chain, ret = vps.mount_dataset(input[:dataset], input[:mountpoint], input)
         ret
-
       rescue VpsAdmin::API::Exceptions::SnapshotAlreadyMounted,
              VpsAdmin::API::Exceptions::OperationNotSupported => e
         error(e.message)
-
       rescue ActiveRecord::RecordInvalid => e
         error('create failed', e.record.errors.to_hash)
       end
@@ -1338,7 +1302,7 @@ END
       blocking true
 
       input do
-        use :all, include: %i(on_start_fail enabled master_enabled)
+        use :all, include: %i[on_start_fail enabled master_enabled]
       end
 
       output do
@@ -1348,7 +1312,7 @@ END
       authorize do |u|
         allow if u.role == :admin
         restrict user_id: u.id
-        input blacklist: %i(master_enabled)
+        input blacklist: %i[master_enabled]
         allow
       end
 
@@ -1357,7 +1321,7 @@ END
         maintenance_check!(vps)
 
         mnt = ::Mount.find_by!(vps: vps, id: params[:mount_id])
-        @chain, _ = mnt.update_chain(input)
+        @chain, = mnt.update_chain(input)
         mnt
       end
 
@@ -1381,7 +1345,7 @@ END
         maintenance_check!(vps)
 
         mnt = ::Mount.find_by!(vps: vps, id: params[:mount_id])
-        @chain, _ = vps.umount(mnt)
+        @chain, = vps.umount(mnt)
 
         ok
       end
@@ -1481,9 +1445,7 @@ END
         maintenance_check!(vps)
         window = vps.vps_maintenance_windows.find_by!(weekday: params[:maintenance_window_id])
 
-        if input.empty?
-          error('provide parameters to change')
-        end
+        error('provide parameters to change') if input.empty?
 
         if input.has_key?(:is_open) && !input[:is_open]
           input[:opens_at] = nil
@@ -1492,13 +1454,12 @@ END
 
         window.update!(input)
         vps.log(:maintenance_window, {
-          weekday: window.weekday,
-          is_open: window.is_open,
-          opens_at: window.opens_at,
-          closes_at: window.closes_at,
-        })
+                  weekday: window.weekday,
+                  is_open: window.is_open,
+                  opens_at: window.opens_at,
+                  closes_at: window.closes_at
+                })
         window
-
       rescue ActiveRecord::RecordInvalid => e
         error('update failed', e.record.errors.to_hash)
       end
@@ -1527,9 +1488,7 @@ END
         vps = ::Vps.find_by!(with_restricted(id: params[:vps_id]))
         maintenance_check!(vps)
 
-        if input.empty?
-          error('provide parameters to change')
-        end
+        error('provide parameters to change') if input.empty?
 
         if input.has_key?(:is_open) && !input[:is_open]
           input[:opens_at] = nil
@@ -1545,7 +1504,7 @@ END
               weekday: w.weekday,
               is_open: w.is_open,
               opens_at: w.opens_at,
-              closes_at: w.closes_at,
+              closes_at: w.closes_at
             }
           end
 
@@ -1553,7 +1512,6 @@ END
         end
 
         vps.vps_maintenance_windows.order('weekday')
-
       rescue ActiveRecord::RecordInvalid => e
         error('update failed', e.record.errors.to_hash)
       end
@@ -1568,9 +1526,9 @@ END
 
     params(:all) do
       string :token, label: 'Token',
-             desc: 'Authentication token'
+                     desc: 'Authentication token'
       datetime :expiration, label: 'Expiration date',
-          desc: 'A date after which the token becomes invalid'
+                            desc: 'A date after which the token becomes invalid'
     end
 
     class Create < HaveAPI::Actions::Default::Create
@@ -1590,13 +1548,7 @@ END
 
         t = ::VpsConsole.find_for(vps, current_user)
 
-        if t
-          t
-
-        else
-          ::VpsConsole.create_for!(vps, current_user)
-        end
-
+        t || ::VpsConsole.create_for!(vps, current_user)
       rescue ::ActiveRecord::RecordInvalid => e
         error('failed to create a token', e.record.errors.to_hash)
       end

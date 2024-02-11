@@ -4,8 +4,8 @@ namespace :vpsadmin do
     task :auto_resolve do
       now = Time.now
 
-      min_duration = ENV['MIN_DURATION'] ? ENV['MIN_DURATION'].to_i : 15*60
-      delay = ENV['DELAY'] ? ENV['DELAY'].to_i : 10*60
+      min_duration = ENV['MIN_DURATION'] ? ENV['MIN_DURATION'].to_i : 15 * 60
+      delay = ENV['DELAY'] ? ENV['DELAY'].to_i : 10 * 60
 
       ::Outage.where(state: 'announced', auto_resolve: true).each do |outage|
         resolve = false

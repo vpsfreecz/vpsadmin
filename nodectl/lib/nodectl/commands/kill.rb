@@ -4,11 +4,11 @@ module NodeCtl
     args '[ID|TYPE]...'
     description 'Kill transaction(s) that are being processed'
 
-    def options(parser, args)
+    def options(parser, _args)
       opts.update({
-        all: false,
-        type: nil,
-      })
+                    all: false,
+                    type: nil
+                  })
 
       parser.on('-a', '--all', 'Kill all transactions') do
         opts[:all] = true
@@ -24,16 +24,12 @@ module NodeCtl
         params[:transactions] = :all
 
       elsif opts[:type]
-        if args.size < 1
-          raise ValidationError, 'missing transaction type(s)'
-        end
+        raise ValidationError, 'missing transaction type(s)' if args.size < 1
 
         params[:types] = args.map(&:to_i)
 
       else
-        if args.size < 1
-          raise ValidationError, 'missing transaction id(s)'
-        end
+        raise ValidationError, 'missing transaction id(s)' if args.size < 1
 
         params[:transactions] = args.map(&:to_i)
       end

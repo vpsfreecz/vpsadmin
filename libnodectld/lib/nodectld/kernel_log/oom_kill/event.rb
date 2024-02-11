@@ -45,7 +45,7 @@ module NodeCtld
 
       if !report.invoked_by_pid \
          && /^CPU: \d+ PID: (\d+) Comm:/ =~ msg.text
-        report.invoked_by_pid = $1.to_i
+        report.invoked_by_pid = ::Regexp.last_match(1).to_i
         return
       end
 
@@ -53,9 +53,9 @@ module NodeCtld
       if !report.usage[:mem] \
          && /^memory: usage (\d+)kB, limit (\d+)kB, failcnt (\d+)/ =~ msg.text
         report.usage[:mem] = {
-          usage: $1.to_i,
-          limit: $2.to_i,
-          failcnt: $3.to_i,
+          usage: ::Regexp.last_match(1).to_i,
+          limit: ::Regexp.last_match(2).to_i,
+          failcnt: ::Regexp.last_match(3).to_i
         }
         return
       end
@@ -64,9 +64,9 @@ module NodeCtld
       if !report.usage[:memswap] \
          && /^memory\+swap: usage (\d+)kB, limit (\d+)kB, failcnt (\d+)/ =~ msg.text
         report.usage[:memswap] = {
-          usage: $1.to_i,
-          limit: $2.to_i,
-          failcnt: $3.to_i,
+          usage: ::Regexp.last_match(1).to_i,
+          limit: ::Regexp.last_match(2).to_i,
+          failcnt: ::Regexp.last_match(3).to_i
         }
         return
       end
@@ -75,9 +75,9 @@ module NodeCtld
       if !report.usage[:kmem] \
          && /^kmem: usage (\d+)kB, limit (\d+)kB, failcnt (\d+)/ =~ msg.text
         report.usage[:kmem] = {
-          usage: $1.to_i,
-          limit: $2.to_i,
-          failcnt: $3.to_i,
+          usage: ::Regexp.last_match(1).to_i,
+          limit: ::Regexp.last_match(2).to_i,
+          failcnt: ::Regexp.last_match(3).to_i
         }
         return
       end
@@ -86,43 +86,43 @@ module NodeCtld
       if !report.usage[:swap] \
          && /^swap: usage (\d+)kB, limit (\d+)kB, failcnt (\d+)/ =~ msg.text
         report.usage[:swap] = {
-          usage: $1.to_i,
-          limit: $2.to_i,
-          failcnt: $3.to_i,
+          usage: ::Regexp.last_match(1).to_i,
+          limit: ::Regexp.last_match(2).to_i,
+          failcnt: ::Regexp.last_match(3).to_i
         }
         return
       end
 
       if !report.vps_id \
-         && /^Memory cgroup stats for \/osctl\/pool\.([^\/]+)\/group\.([^\/]+)\/user\.([^\/]+)\/ct\.([^:]+):/ =~ msg.text
-        vps_id = $4.to_i
+         && %r{^Memory cgroup stats for /osctl/pool\.([^/]+)/group\.([^/]+)/user\.([^/]+)/ct\.([^:]+):} =~ msg.text
+        vps_id = ::Regexp.last_match(4).to_i
 
         if vps_id == 0
-          log(:info, "Skipping OOM report from an unmanaged VPS #{$1}:#{$4}")
+          log(:info, "Skipping OOM report from an unmanaged VPS #{::Regexp.last_match(1)}:#{::Regexp.last_match(4)}")
           finish!
           return
         elsif $CFG.get(:oom_reports, :exclude_vps_ids).include?(vps_id)
-          log(:info, "Skipping OOM report from an excluded VPS #{$1}:#{$4}")
+          log(:info, "Skipping OOM report from an excluded VPS #{::Regexp.last_match(1)}:#{::Regexp.last_match(4)}")
           finish!
           return
         end
 
-        report.pool = $1
-        report.group = $2
-        report.user = $3
+        report.pool = ::Regexp.last_match(1)
+        report.group = ::Regexp.last_match(2)
+        report.user = ::Regexp.last_match(3)
         report.vps_id = vps_id
 
-        if /lxc\.payload\.(\d+)(\/[^:]+):$/ =~ msg.text && $1.to_i == vps_id
-          report.cgroup = $2
-        else
-          report.cgroup = '/'
-        end
+        report.cgroup = if %r{lxc\.payload\.(\d+)(/[^:]+):$} =~ msg.text && ::Regexp.last_match(1).to_i == vps_id
+                          ::Regexp.last_match(2)
+                        else
+                          '/'
+                        end
 
         return
       end
 
       if report.stats.empty? && /^anon \d+/ =~ msg.text
-        msg.text.strip.split("\\x0a").each do |stat|
+        msg.text.strip.split('\\x0a').each do |stat|
           k, v = stat.split
           report.stats[k] = v.to_i
         end
@@ -130,13 +130,13 @@ module NodeCtld
       end
 
       if /^\[\s*(\d+)\] ([^$]+)/ =~ msg.text
-        attrs = $2.split
+        attrs = ::Regexp.last_match(2).split
         return if attrs.length != 8
 
         uid, tgid, total_vm, rss, pgtables_bytes, swapents, oom_score_adj, name = attrs
 
         report.tasks << {
-          pid: $1.to_i,
+          pid: ::Regexp.last_match(1).to_i,
           uid: uid.to_i,
           tgid: tgid.to_i,
           total_vm: total_vm.to_i,
@@ -144,7 +144,7 @@ module NodeCtld
           pgtables_bytes: pgtables_bytes.to_i,
           swapents: swapents.to_i,
           oom_score_adj: oom_score_adj.to_i,
-          name: name,
+          name: name
         }
 
         return
@@ -156,19 +156,19 @@ module NodeCtld
         return
       end
 
-      if /^Memory cgroup out of memory: Killed process (\d+) \(([^\)]+)\)/ =~ msg.text
-        report.killed_pid = $1.to_i
-        report.killed_name = $2
+      if /^Memory cgroup out of memory: Killed process (\d+) \(([^)]+)\)/ =~ msg.text
+        report.killed_pid = ::Regexp.last_match(1).to_i
+        report.killed_name = ::Regexp.last_match(2)
         finish!
         return
       end
 
-      if /^oom_reaper: reaped process (\d+) \(([^\)]+)\)/ =~ msg.text
-        report.killed_pid = $1.to_i
-        report.killed_name = $2
-        finish!
-        return
-      end
+      return unless /^oom_reaper: reaped process (\d+) \(([^)]+)\)/ =~ msg.text
+
+      report.killed_pid = ::Regexp.last_match(1).to_i
+      report.killed_name = ::Regexp.last_match(2)
+      finish!
+      nil
     end
 
     def lost_messages(count)
@@ -177,13 +177,13 @@ module NodeCtld
     end
 
     def close
-      if report
-        if report.complete?
-          log(:info, "OOM report invoked by PID #{report.invoked_by_pid} from VPS #{report.vps_id} complete")
-          KernelLog::OomKill::Submitter << report
-        else
-          log(:info, 'OOM report incomplete, disregarding')
-        end
+      return unless report
+
+      if report.complete?
+        log(:info, "OOM report invoked by PID #{report.invoked_by_pid} from VPS #{report.vps_id} complete")
+        KernelLog::OomKill::Submitter << report
+      else
+        log(:info, 'OOM report incomplete, disregarding')
       end
     end
 

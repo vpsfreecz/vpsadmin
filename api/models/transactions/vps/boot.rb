@@ -19,7 +19,7 @@ module Transactions::Vps
         vendor: template.vendor,
         variant: template.variant,
         mount_root_dataset: mount_root_dataset,
-        start_timeout: start_timeout,
+        start_timeout: start_timeout
       }
     end
   end

@@ -8,8 +8,8 @@ class RemoveNetworkInterfaceAccountingsId < ActiveRecord::Migration[7.0]
     )
 
     remove_index :network_interface_daily_accountings,
-      %i(network_interface_id year month day),
-      name: 'index_network_interface_daily_accountings_unique'
+                 %i[network_interface_id year month day],
+                 name: 'index_network_interface_daily_accountings_unique'
 
     # Monthly
     remove_column :network_interface_monthly_accountings, :id
@@ -19,8 +19,8 @@ class RemoveNetworkInterfaceAccountingsId < ActiveRecord::Migration[7.0]
     )
 
     remove_index :network_interface_monthly_accountings,
-      %i(network_interface_id year month),
-      name: 'index_network_interface_monthly_accountings_unique'
+                 %i[network_interface_id year month],
+                 name: 'index_network_interface_monthly_accountings_unique'
 
     # Yearly
     remove_column :network_interface_yearly_accountings, :id
@@ -30,8 +30,8 @@ class RemoveNetworkInterfaceAccountingsId < ActiveRecord::Migration[7.0]
     )
 
     remove_index :network_interface_yearly_accountings,
-      %i(network_interface_id year),
-      name: 'index_network_interface_yearly_accountings_unique'
+                 %i[network_interface_id year],
+                 name: 'index_network_interface_yearly_accountings_unique'
   end
 
   def down

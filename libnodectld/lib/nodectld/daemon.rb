@@ -71,9 +71,7 @@ module NodeCtld
     end
 
     def init
-      unless $CFG.minimal?
-        @mount_reporter.start
-      end
+      @mount_reporter.start unless $CFG.minimal?
 
       @remote_control.start
 
@@ -107,17 +105,15 @@ module NodeCtld
 
         run_threads
 
-        catch (:next) do
+        catch(:next) do
           @m_workers.synchronize do
             @queues.each_value do |queue|
-              queue.delete_if do |wid, w|
+              queue.delete_if do |_wid, w|
                 unless w.working?
                   c = w.cmd
                   Db.open { |db| c.save(db) }
 
-                  if @pause && w.cmd.id.to_i === @pause
-                    pause!(true)
-                  end
+                  pause!(true) if @pause && w.cmd.id.to_i === @pause
 
                   next true
                 end
@@ -138,7 +134,7 @@ module NodeCtld
 
             now = Time.now
 
-            if cmd_db.nil? || cmd_db_created + 5*60 <= now
+            if cmd_db.nil? || cmd_db_created + 5 * 60 <= now
               cmd_db.close if cmd_db
               cmd_db = Db.new
               cmd_db_created = Time.now
@@ -179,19 +175,19 @@ module NodeCtld
       @last_transaction_update = update_rs['update_time']
 
       if current_transaction_update.nil? || @last_transaction_update.nil?
-        return true
+        true
 
       elsif @skipped_transaction_checks > (60 / $CFG.get(:vpsadmin, :check_interval))
         @skipped_transaction_checks = 0
-        return true
+        true
 
       elsif current_transaction_update >= update_rs['update_time']
         @skipped_transaction_checks += 1
-        return false
+        false
 
       else
         @skipped_transaction_checks = 0
-        return true
+        true
       end
     end
 
@@ -270,6 +266,7 @@ module NodeCtld
       # Once again, sometimes we get invalid results
       rs.each do |row|
         raise TransactionCheckError if row['queue'].nil?
+
         cmds << row
       end
 
@@ -290,9 +287,9 @@ module NodeCtld
         return
       end
 
-      if @queues.execute(cmd)
-        @cmd_counter += 1
-      end
+      return unless @queues.execute(cmd)
+
+      @cmd_counter += 1
     end
 
     def run_threads
@@ -354,29 +351,25 @@ module NodeCtld
       end
     end
 
-    def run_thread_unless_runs(name)
-      if !@threads[name] || !@threads[name].alive?
-        @threads[name] = Thread.new do
-          yield
-        end
-      end
+    def run_thread_unless_runs(name, &block)
+      return unless !@threads[name] || !@threads[name].alive?
+
+      @threads[name] = Thread.new(&block)
     end
 
     def update_all
       @node_status.update
 
-      if $CFG.get(:storage, :pool_status)
-        @pool_status.update
-      end
+      @pool_status.update if $CFG.get(:storage, :pool_status)
 
       if $CFG.get(:vpsadmin, :update_vps_status)
         # TODO
         # @vps_status.update
       end
 
-      if $CFG.get(:storage, :update_status)
-        @storage_status.update
-      end
+      return unless $CFG.get(:storage, :update_status)
+
+      @storage_status.update
     end
 
     def queues
@@ -394,10 +387,10 @@ module NodeCtld
     def pause!(t = true)
       @pause = t
 
-      if @pause === true
-        @@mutex.synchronize do
-          @@run = false
-        end
+      return unless @pause === true
+
+      @@mutex.synchronize do
+        @@run = false
       end
     end
 

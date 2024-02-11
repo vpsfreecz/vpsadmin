@@ -6,17 +6,17 @@ module NodeCtl
       if args.size < 1
         raise ValidationError, 'missing resource'
 
-      elsif !%w(all shaper).include?(args[0])
+      elsif !%w[all shaper].include?(args[0])
         raise ValidationError, 'not a valid resource'
       end
 
       params.update({
-        resources: args[0] == 'all' ? [:shaper] : [args[0]]
-      })
+                      resources: args[0] == 'all' ? [:shaper] : [args[0]]
+                    })
     end
 
     def process
-      response.each do |k, v|
+      response.each do |k, _v|
         case k
         when :shaper
           puts 'Shaper  ...  ok'

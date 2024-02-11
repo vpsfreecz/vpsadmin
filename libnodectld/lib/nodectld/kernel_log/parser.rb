@@ -18,23 +18,19 @@ module NodeCtld
     def start
       @reader = Thread.new { read_thread }
       @parser = Thread.new do
-        begin
-          parse_thread
-        rescue => e
-          log(:warn, "Parser aborted with #{e.class}: #{e.message}")
-          sleep(5)
-          parse_queue.clear
-          retry unless @stop
-        end
+        parse_thread
+      rescue StandardError => e
+        log(:warn, "Parser aborted with #{e.class}: #{e.message}")
+        sleep(5)
+        parse_queue.clear
+        retry unless @stop
       end
       @submitter = Thread.new do
-        begin
-          submit_thread
-        rescue => e
-          log(:warn, "Submitter aborted with #{e.class}: #{e.message}")
-          sleep(5)
-          retry unless @stop
-        end
+        submit_thread
+      rescue StandardError => e
+        log(:warn, "Submitter aborted with #{e.class}: #{e.message}")
+        sleep(5)
+        retry unless @stop
       end
       nil
     end
@@ -55,6 +51,7 @@ module NodeCtld
     end
 
     protected
+
     attr_reader :file, :parse_queue, :submit_queue, :stop, :event
 
     def read_thread
@@ -77,20 +74,18 @@ module NodeCtld
         t = Time.now
         parse_queue << [line, t]
 
-        if last_time + 5 < t
-          size = parse_queue.size
+        next unless last_time + 5 < t
 
-          if size > 128
-            log(:warn, "Parser queue size at #{size} lines")
-          end
+        size = parse_queue.size
 
-          if size > 16*1024
-            log(:warn, "Parser queue too large, resetting")
-            parse_queue.clear
-          end
+        log(:warn, "Parser queue size at #{size} lines") if size > 128
 
-          last_time = t
+        if size > 16 * 1024
+          log(:warn, 'Parser queue too large, resetting')
+          parse_queue.clear
         end
+
+        last_time = t
       end
 
       io.close
@@ -143,12 +138,12 @@ module NodeCtld
 
         hole = false
 
-        if KernelLog::OomKill::Event.start?(msg)
-          @event = KernelLog::OomKill::Event.new
+        next unless KernelLog::OomKill::Event.start?(msg)
 
-          call_event do
-            event.start(msg)
-          end
+        @event = KernelLog::OomKill::Event.new
+
+        call_event do
+          event.start(msg)
         end
       end
     end
@@ -163,14 +158,12 @@ module NodeCtld
     end
 
     def call_event
-      begin
-        yield
-      rescue KernelLog::Event::Error => e
-        log(:warn, "Parser error: #{e.message}")
-        close_event
-      else
-        close_event if event.finished?
-      end
+      yield
+    rescue KernelLog::Event::Error => e
+      log(:warn, "Parser error: #{e.message}")
+      close_event
+    else
+      close_event if event.finished?
     end
 
     def close_event

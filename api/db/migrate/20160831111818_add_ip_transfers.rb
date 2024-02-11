@@ -1,6 +1,6 @@
 class AddIpTransfers < ActiveRecord::Migration
   def up
-    %i(ip_traffics ip_recent_traffics).each do |table|
+    %i[ip_traffics ip_recent_traffics].each do |table|
       create_table table do |t|
         t.references  :ip_address,     null: false
         t.references  :user,           null: true
@@ -12,18 +12,19 @@ class AddIpTransfers < ActiveRecord::Migration
         t.datetime    :created_at,     null: false
       end
 
-      add_index table, %i(ip_address_id user_id protocol created_at), unique: true,
-                name: :transfers_unique
+      add_index table, %i[ip_address_id user_id protocol created_at], unique: true,
+                                                                      name: :transfers_unique
       add_index table, :ip_address_id
       add_index table, :user_id
     end
 
-    if ENV['MIGRATE_TRAFFIC_DATA'] != 'no' && table_exists?(:transfered)
-      {
-          transfered: :ip_traffics,
-          transfered_recent: :ip_recent_traffics,
-      }.each do |src, dst|
-        ActiveRecord::Base.connection.execute("
+    return unless ENV['MIGRATE_TRAFFIC_DATA'] != 'no' && table_exists?(:transfered)
+
+    {
+      transfered: :ip_traffics,
+      transfered_recent: :ip_recent_traffics
+    }.each do |src, dst|
+      ActiveRecord::Base.connection.execute("
             INSERT INTO #{dst} (
               ip_address_id, user_id, protocol, packets_in, packets_out,
               bytes_in, bytes_out, created_at
@@ -44,8 +45,7 @@ class AddIpTransfers < ActiveRecord::Migration
             LEFT JOIN vps ON vps.vps_id = vps_ip.vps_id
         ")
 
-        drop_table src
-      end
+      drop_table src
     end
   end
 
@@ -53,7 +53,7 @@ class AddIpTransfers < ActiveRecord::Migration
   # does not support composite primary keys, i.e. there will be column `id`
   # as a primary key.
   def down
-    %i(transfered transfered_recent).each do |table|
+    %i[transfered transfered_recent].each do |table|
       create_table table do |t|
         t.string      :tr_ip,             null: false, limit: 127
         t.string      :tr_proto,          null: false, limit: 4
@@ -64,15 +64,15 @@ class AddIpTransfers < ActiveRecord::Migration
         t.datetime    :tr_date,           null: false
       end
 
-      add_index table, %i(tr_ip tr_proto tr_date), unique: true,
-                name: :transfers_unique
+      add_index table, %i[tr_ip tr_proto tr_date], unique: true,
+                                                   name: :transfers_unique
     end
 
     return if ENV['MIGRATE_TRAFFIC_DATA'] == 'no'
 
     {
-        ip_traffics: :transfered,
-        ip_recent_traffics: :transfered_recent,
+      ip_traffics: :transfered,
+      ip_recent_traffics: :transfered_recent
     }.each do |src, dst|
       ActiveRecord::Base.connection.execute("
           INSERT INTO #{dst} (

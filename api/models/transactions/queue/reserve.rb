@@ -8,7 +8,7 @@ module Transactions::Queue
     # @param queue [Symbol]
     def params(node, queue)
       self.node_id = node.id
-      {queue: queue}
+      { queue: queue }
     end
   end
 end

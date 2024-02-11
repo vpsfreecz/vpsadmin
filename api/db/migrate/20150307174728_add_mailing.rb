@@ -26,7 +26,7 @@ class AddMailing < ActiveRecord::Migration
       t.references :mail_recipient,   null: false
     end
 
-    add_index :mail_template_recipients, [:mail_template_id, :mail_recipient_id],
+    add_index :mail_template_recipients, %i[mail_template_id mail_recipient_id],
               unique: true, name: :mail_template_recipients_unique
 
     create_table :mail_logs do |t|

@@ -23,24 +23,24 @@ Vps.transaction do
 
     # Find backup dataset in pool
     backup_dip = vps.dataset_in_pool.dataset.dataset_in_pools.where(
-        pool_id: BACKUP_POOL
+      pool_id: BACKUP_POOL
     ).take!
 
     # Create dataset tree
     tree = DatasetTree.create!(
-        dataset_in_pool: backup_dip,
-        head: false,
-        confirmed: DatasetTree.confirmed(:confirmed),
-        created_at: t
+      dataset_in_pool: backup_dip,
+      head: false,
+      confirmed: DatasetTree.confirmed(:confirmed),
+      created_at: t
     )
 
     # Create a branch
     branch = Branch.create!(
-        dataset_tree: tree,
-        name: t.strftime('%Y-%m-%dT%H:%M:%S'),
-        head: false,
-        confirmed: Branch.confirmed(:confirmed),
-        created_at: t
+      dataset_tree: tree,
+      name: t.strftime('%Y-%m-%dT%H:%M:%S'),
+      head: false,
+      confirmed: Branch.confirmed(:confirmed),
+      created_at: t
     )
 
     q.each do |backup|
@@ -49,24 +49,23 @@ Vps.transaction do
 
       # Create snapshot in pool and snapshot in branch for all backups
       s = Snapshot.create!(
-          dataset: vps.dataset_in_pool.dataset,
-          name: t_str,
-          confirmed: Snapshot.confirmed(:confirmed),
-          created_at: t
+        dataset: vps.dataset_in_pool.dataset,
+        name: t_str,
+        confirmed: Snapshot.confirmed(:confirmed),
+        created_at: t
       )
 
       sip = SnapshotInPool.create!(
-          snapshot: s,
-          dataset_in_pool: backup_dip,
-          confirmed: SnapshotInPool.confirmed(:confirmed)
+        snapshot: s,
+        dataset_in_pool: backup_dip,
+        confirmed: SnapshotInPool.confirmed(:confirmed)
       )
 
       SnapshotInPoolInBranch.create!(
-          snapshot_in_pool: sip,
-          branch: branch,
-          confirmed: SnapshotInPoolInBranch.confirmed(:confirmed)
+        snapshot_in_pool: sip,
+        branch: branch,
+        confirmed: SnapshotInPoolInBranch.confirmed(:confirmed)
       )
     end
   end
 end
-

@@ -39,7 +39,7 @@ module VpsAdmin::API
 
       # @return [Boolean]
       attr_reader :processed
-      alias_method :processed?, :processed
+      alias processed? processed
 
       # @return [Hash]
       attr_reader :reply
@@ -73,6 +73,7 @@ module VpsAdmin::API
       end
 
       private
+
       def do_handle_message(mailbox, message, dry_run:)
         @handle_message.call(mailbox, message, dry_run: dry_run)
       end
@@ -87,7 +88,7 @@ module VpsAdmin::API
 
       # @return [Boolean]
       attr_reader :dry_run
-      alias_method :dry_run?, :dry_run
+      alias dry_run? dry_run
 
       # @param mailbox [::Mailbox]
       # @param message [Mail::Message]
@@ -99,6 +100,7 @@ module VpsAdmin::API
       end
 
       protected
+
       # @param addr_str [String]
       # @param time [Time, nil]
       # @return [::IpAddressAssignment, nil]

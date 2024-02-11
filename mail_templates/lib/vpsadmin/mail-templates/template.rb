@@ -7,7 +7,8 @@ module VpsAdmin::MailTemplates
       @name = File.basename(path)
       @translations = []
 
-      fail "#{path}/meta.rb does not exist" unless File.exist?(path)
+      raise "#{path}/meta.rb does not exist" unless File.exist?(path)
+
       require_relative File.join(path, 'meta.rb')
 
       @meta = Meta.last_meta
@@ -36,7 +37,11 @@ module VpsAdmin::MailTemplates
         template_id: @id,
         name: @name,
         label: @meta[:label] || '',
-        user_visibility: v.nil? ? 'default' : (v ? 'visible' : 'invisible'),
+        user_visibility: if v.nil?
+                           'default'
+                         else
+                           (v ? 'visible' : 'invisible')
+                         end
       }
     end
   end

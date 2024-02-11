@@ -5,7 +5,8 @@ module NodeCtld::Utils
         wday = Time.now.wday
         today = detect { |w| w.weekday == wday }
         return false unless today
-        return today.open?
+
+        today.open?
       end
 
       def closest
@@ -13,11 +14,11 @@ module NodeCtld::Utils
         now_in_mins = t.hour * 60 + t.min
 
         if first.opens_today?
-          return first
+          first
         elsif first.weekday != t.wday
           first
         else
-          return size > 1 ? self[1] : first
+          size > 1 ? self[1] : first
         end
       end
     end
@@ -61,21 +62,21 @@ module NodeCtld::Utils
 
           else # will open on this week day, but next week
             today = Time.local(now.year, now.month, now.day)
-            t = today + 7*24*60*60 + (opens_at * 60)
+            t = today + 7 * 24 * 60 * 60 + (opens_at * 60)
           end
 
         else # will open the next or some later day
           # Start with tomorrow
-          t = Time.local(now.year, now.month, now.day) + 24*60*60
-          return (t + opens_at*60) if t.wday == weekday
+          t = Time.local(now.year, now.month, now.day) + 24 * 60 * 60
+          return (t + opens_at * 60) if t.wday == weekday
 
           # Iterate over all 6 remaining days, find our day of week
           6.times do
-            t = t + 24*60*60
+            t += 24 * 60 * 60
             break if t.wday == weekday
           end
 
-          t = t + opens_at*60
+          t += opens_at * 60
         end
 
         t
@@ -89,7 +90,7 @@ module NodeCtld::Utils
         @cmd.step = "waiting until #{t + delta}"
         sleep(delta + 10)
 
-        fail 'not in the window' unless open?
+        raise 'not in the window' unless open?
       end
     end
 
@@ -109,7 +110,7 @@ module NodeCtld::Utils
         windows.concat(@windows.select { |w| w['weekday'] < weekday })
       end
 
-      fail 'no outage window available' if windows.empty?
+      raise 'no outage window available' if windows.empty?
 
       windows.each do |w|
         @obj_windows << OutageWindow.new(self, w, @reserve_time)

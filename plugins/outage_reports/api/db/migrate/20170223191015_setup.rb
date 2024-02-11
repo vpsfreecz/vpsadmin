@@ -24,7 +24,7 @@ class Setup < ActiveRecord::Migration
     add_index :outage_entities, :outage_id
     add_index :outage_entities, :name
     add_index :outage_entities, :row_id
-    add_index :outage_entities, %i(outage_id name row_id), unique: true
+    add_index :outage_entities, %i[outage_id name row_id], unique: true
 
     create_table :outage_handlers do |t|
       t.references  :outage,         null: false
@@ -35,7 +35,7 @@ class Setup < ActiveRecord::Migration
 
     add_index :outage_handlers, :outage_id
     add_index :outage_handlers, :user_id
-    add_index :outage_handlers, %i(outage_id user_id), unique: true
+    add_index :outage_handlers, %i[outage_id user_id], unique: true
 
     create_table :outage_updates do |t|
       t.references  :outage,         null: false
@@ -66,8 +66,8 @@ class Setup < ActiveRecord::Migration
     add_index :outage_translations, :outage_id
     add_index :outage_translations, :outage_update_id
     add_index :outage_translations, :language_id
-    add_index :outage_translations, %i(outage_id language_id), unique: true
-    add_index :outage_translations, %i(outage_update_id language_id), unique: true
+    add_index :outage_translations, %i[outage_id language_id], unique: true
+    add_index :outage_translations, %i[outage_update_id language_id], unique: true
 
     create_table :outage_vpses do |t|
       t.references  :outage,         null: false
@@ -79,7 +79,7 @@ class Setup < ActiveRecord::Migration
       t.boolean     :direct,         null: false
     end
 
-    add_index :outage_vpses, %i(outage_id vps_id), unique: true
+    add_index :outage_vpses, %i[outage_id vps_id], unique: true
     add_index :outage_vpses, :outage_id
     add_index :outage_vpses, :vps_id
     add_index :outage_vpses, :user_id
@@ -99,7 +99,7 @@ class Setup < ActiveRecord::Migration
       t.string      :mountpoint,     null: false, limit: 500
     end
 
-    add_index :outage_vps_mounts, %i(outage_vps_id mount_id), unique: true
+    add_index :outage_vps_mounts, %i[outage_vps_id mount_id], unique: true
     add_index :outage_vps_mounts, :outage_vps_id
     add_index :outage_vps_mounts, :mount_id
   end

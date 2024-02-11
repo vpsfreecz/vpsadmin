@@ -7,15 +7,15 @@ module NodeCtld
       ds_name = @branch ? "#{@dataset_name}/#{@tree}/#{@branch}" : @dataset_name
       recv = "zfs recv -F -u #{@dst_pool_fs}/#{ds_name}"
       cmd = [
-        "mbuffer",
-        "-q",
+        'mbuffer',
+        '-q',
         "-I #{@port}",
         "-s #{$CFG.get(:mbuffer, :receive, :block_size)}",
         "-m #{$CFG.get(:mbuffer, :receive, :buffer_size)}",
         "-P #{$CFG.get(:mbuffer, :receive, :start_writing_at)}",
         "-l #{mbuffer_log_file}",
         "-W #{$CFG.get(:mbuffer, :receive, :timeout)}",
-        "|",
+        '|',
         recv
       ].join(' ')
 
@@ -39,9 +39,7 @@ module NodeCtld
       begin
         s = TCPSocket.new(@addr, @port)
         s.close
-
       rescue Errno::ECONNREFUSED
-
       end
 
       # Remove received snapshots
@@ -71,6 +69,7 @@ module NodeCtld
     end
 
     protected
+
     def confirmed_snapshot_name(db, snap)
       if snapshot_confirmed?(snap)
         snap['name']

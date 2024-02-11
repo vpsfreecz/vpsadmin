@@ -32,7 +32,7 @@ class VpsAdmin::API::Resources::OsTemplate < HaveAPI::Resource
 
     input do
       resource VpsAdmin::API::Resources::Location
-      use :common, include: %i(hypervisor_type cgroup_version)
+      use :common, include: %i[hypervisor_type cgroup_version]
     end
 
     output(:object_list) do
@@ -42,7 +42,7 @@ class VpsAdmin::API::Resources::OsTemplate < HaveAPI::Resource
     authorize do |u|
       allow if u.role == :admin
       restrict enabled: true
-      output whitelist: %i(id name label info supported hypervisor_type cgroup_version)
+      output whitelist: %i[id name label info supported hypervisor_type cgroup_version]
       allow
     end
 
@@ -51,23 +51,23 @@ class VpsAdmin::API::Resources::OsTemplate < HaveAPI::Resource
 
       if input[:location]
         hypervisor_types = ::Node.where(
-          location_id: input[:location].id,
+          location_id: input[:location].id
         ).group('hypervisor_type').pluck('hypervisor_type')
 
         q = q.where(hypervisor_type: hypervisor_types)
       end
 
-      if input[:hypervisor_type]
-        q = q.where(
-          hypervisor_type: ::OsTemplate.hypervisor_types[input[:hypervisor_type]],
-        )
-      else
-        q = q.where(hypervisor_type: 'vpsadminos')
-      end
+      q = if input[:hypervisor_type]
+            q.where(
+              hypervisor_type: ::OsTemplate.hypervisor_types[input[:hypervisor_type]]
+            )
+          else
+            q.where(hypervisor_type: 'vpsadminos')
+          end
 
       if input[:cgroup_version]
         q = q.where(
-          cgroup_version: ::OsTemplate.cgroup_versions[input[:cgroup_version]],
+          cgroup_version: ::OsTemplate.cgroup_versions[input[:cgroup_version]]
         )
       end
 
@@ -93,7 +93,7 @@ class VpsAdmin::API::Resources::OsTemplate < HaveAPI::Resource
 
     authorize do |u|
       allow if u.role == :admin
-      output whitelist: %i(id name label info supported enabled hypervisor_type cgroup_version)
+      output whitelist: %i[id name label info supported enabled hypervisor_type cgroup_version]
       allow
     end
 
@@ -108,8 +108,8 @@ class VpsAdmin::API::Resources::OsTemplate < HaveAPI::Resource
 
   class Create < HaveAPI::Actions::Default::Create
     input do
-      use :common, exclude: %i(name)
-      %i(label vendor variant arch distribution version).each do |v|
+      use :common, exclude: %i[name]
+      %i[label vendor variant arch distribution version].each do |v|
         patch v, required: true
       end
     end
@@ -124,7 +124,6 @@ class VpsAdmin::API::Resources::OsTemplate < HaveAPI::Resource
 
     def exec
       ::OsTemplate.create!(to_db_names(input))
-
     rescue ActiveRecord::RecordInvalid => e
       error('create failed', to_param_names(e.record.errors.to_hash))
     end
@@ -132,7 +131,7 @@ class VpsAdmin::API::Resources::OsTemplate < HaveAPI::Resource
 
   class Update < HaveAPI::Actions::Default::Update
     input do
-      use :common, exclude: %i(name)
+      use :common, exclude: %i[name]
     end
 
     output do
@@ -145,7 +144,6 @@ class VpsAdmin::API::Resources::OsTemplate < HaveAPI::Resource
 
     def exec
       ::OsTemplate.find(params[:os_template_id]).update!(to_db_names(input))
-
     rescue ActiveRecord::RecordInvalid => e
       error('update failed', to_param_names(e.record.errors.to_hash))
     end

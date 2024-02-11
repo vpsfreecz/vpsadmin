@@ -33,14 +33,14 @@ module VpsAdmin::API::Resources
       authorize do |u|
         allow if u.role == :admin
         restrict user_id: u.id
-        input blacklist: %i(user accounted_by)
+        input blacklist: %i[user accounted_by]
         allow
       end
 
       def query
         q = ::UserPayment.where(with_restricted)
 
-        %i(user accounted_by).each do |v|
+        %i[user accounted_by].each do |v|
           q = q.where(v => input[v]) if input[v]
         end
 
@@ -73,8 +73,8 @@ module VpsAdmin::API::Resources
 
       def prepare
         @payment = ::UserPayment.find_by!(with_restricted(
-          id: params['user_payment_id'],
-        ))
+                                            id: params['user_payment_id']
+                                          ))
       end
 
       def exec
@@ -89,7 +89,7 @@ module VpsAdmin::API::Resources
       input do
         use :writable
         patch :user, required: true
-        patch :amount, number: {min: 1}
+        patch :amount, number: { min: 1 }
       end
 
       output do
@@ -101,19 +101,14 @@ module VpsAdmin::API::Resources
       end
 
       def exec
-        if !input[:amount] && !input[:incoming_payment]
-          error("Provide amount or incoming payment")
-        end
+        error('Provide amount or incoming payment') if !input[:amount] && !input[:incoming_payment]
 
         @chain, payment = ::UserPayment.create!(input)
         payment
-
       rescue ActiveRecord::RecordInvalid => e
         error('Create failed', e.record.errors.to_hash)
-
       rescue ActiveRecord::RecordNotUnique
         error('Create failed: this incoming payment is already assigned')
-
       rescue ::UserAccount::AccountDisabled => e
         error(e.message)
       end

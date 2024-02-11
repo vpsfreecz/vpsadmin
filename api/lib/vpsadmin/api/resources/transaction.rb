@@ -43,7 +43,7 @@ module VpsAdmin::API::Resources
       authorize do |u|
         allow if u.role == :admin
         restrict user: u
-        output blacklist: %i(user type urgent priority input output)
+        output blacklist: %i[user type urgent priority input output]
         allow
       end
 
@@ -81,14 +81,14 @@ module VpsAdmin::API::Resources
       authorize do |u|
         allow if u.role == :admin
         restrict user: u
-        output blacklist: %i(user type urgent priority input output)
+        output blacklist: %i[user type urgent priority input output]
         allow
       end
 
       def prepare
         @trans = ::Transaction.find_by!(with_restricted(
-          id: params[:transaction_id]
-        ))
+                                          id: params[:transaction_id]
+                                        ))
       end
 
       def exec

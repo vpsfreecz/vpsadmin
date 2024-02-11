@@ -2,8 +2,8 @@ class DatasetExpansion < ::ActiveRecord::Base
   belongs_to :vps
   belongs_to :dataset
   has_many :dataset_expansion_histories
-  enum state: %i(active resolved)
-  validates :original_refquota, :added_space, numericality: {greater_than: 0}
+  enum state: %i[active resolved]
+  validates :original_refquota, :added_space, numericality: { greater_than: 0 }
 
   # @return [DatasetExpansion]
   def self.create_for_expanded!(dataset_in_pool, **attrs)
@@ -17,7 +17,7 @@ class DatasetExpansion < ::ActiveRecord::Base
           added_space: exp.added_space,
           original_refquota: exp.original_refquota,
           new_refquota: dataset_in_pool.refquota,
-          admin: ::User.current,
+          admin: ::User.current
         )
 
         exp.dataset.update!(dataset_expansion: exp)

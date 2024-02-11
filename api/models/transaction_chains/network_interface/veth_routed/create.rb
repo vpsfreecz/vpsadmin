@@ -10,7 +10,7 @@ module TransactionChains
       netif.call_class_hooks_for(
         :create,
         self,
-        args: [netif],
+        args: [netif]
       )
 
       # Create the veth interface

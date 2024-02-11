@@ -20,8 +20,8 @@ module VpsAdmin::API
 
     # Represents a single dataset property.
     class Property
-      SETTABLES = %i(type inheritable editable)
-      META = %i(label desc default choices)
+      SETTABLES = %i[type inheritable editable]
+      META = %i[label desc default choices]
 
       SETTABLES.each do |s|
         define_method(s) do |v|
@@ -79,7 +79,7 @@ module VpsAdmin::API
       def self.included(model)
         Registrator.properties.each_key do |name|
           model.send(:define_method, name) do
-            self.dataset_properties.each do |p|
+            dataset_properties.each do |p|
               return p.value if p.name.to_sym == name
             end
 
@@ -87,7 +87,7 @@ module VpsAdmin::API
           end
 
           model.send(:define_method, "property_#{name}") do
-            self.dataset_properties.each do |p|
+            dataset_properties.each do |p|
               return p if p.name.to_sym == name
             end
 
@@ -95,7 +95,7 @@ module VpsAdmin::API
           end
 
           model.send(:define_method, "#{name}=") do |v|
-            self.dataset_properties.each do |p|
+            dataset_properties.each do |p|
               if p.name.to_sym == name
                 p.update!(value: v)
                 return v
@@ -133,6 +133,7 @@ module VpsAdmin::API
         next if input[name].nil?
 
         raise Exceptions::PropertyInvalid, name unless p.valid?(input[name])
+
         ret[name] = input[name]
       end
 
@@ -157,10 +158,10 @@ module VpsAdmin::API
 
       case mode
       when :ro
-        Registrator.properties.each { |k,v| ret[k] = v unless v.editable? }
+        Registrator.properties.each { |k, v| ret[k] = v unless v.editable? }
 
       when :rw
-        Registrator.properties.each { |k,v| ret[k] = v if v.editable? }
+        Registrator.properties.each { |k, v| ret[k] = v if v.editable? }
 
       else
         ret = Registrator.properties

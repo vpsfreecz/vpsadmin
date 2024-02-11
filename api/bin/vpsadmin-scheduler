@@ -4,7 +4,7 @@ require_relative '../lib/vpsadmin'
 EventMachine.run do
   VpsAdmin::Scheduler.start
 
-  EventMachine.add_periodic_timer(3*60*60) do
+  EventMachine.add_periodic_timer(3 * 60 * 60) do
     VpsAdmin::Scheduler.regenerate
   end
 end

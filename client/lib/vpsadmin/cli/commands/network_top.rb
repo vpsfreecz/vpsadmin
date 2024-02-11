@@ -5,7 +5,7 @@ module VpsAdmin::CLI::Commands
     include Curses
 
     REFRESH_RATE = 10
-    FILTERS = %i(limit user environment location node vps network_interface)
+    FILTERS = %i[limit user environment location node vps network_interface]
 
     cmd :network, :top
     args ''
@@ -13,10 +13,10 @@ module VpsAdmin::CLI::Commands
 
     def options(opts)
       @opts = {
-        unit: :bits,
+        unit: :bits
       }
 
-      opts.on('--unit UNIT', %w(bytes bits), 'Select data unit (bytes or bits)') do |v|
+      opts.on('--unit UNIT', %w[bytes bits], 'Select data unit (bytes or bits)') do |v|
         @opts[:unit] = v.to_sym
       end
 
@@ -24,19 +24,20 @@ module VpsAdmin::CLI::Commands
         @opts[:limit] = v
       end
 
-      (FILTERS - %i(limit)).each do |f|
+      (FILTERS - %i[limit]).each do |f|
         opts.on("--#{f.to_s.gsub(/_/, '-')} ID", Integer, "Filter network interfaces by #{f}") do |v|
           @opts[f] = v
         end
       end
     end
 
-    def exec(args)
+    def exec(_args)
       if @global_opts[:list_output]
-        exclude = %i(id network_interface updated_at delta)
+        exclude = %i[id network_interface updated_at delta]
 
         @api.network_interface_monitor.actions[:index].params.each_key do |name|
           next if exclude.include?(name)
+
           puts name
         end
 
@@ -48,7 +49,7 @@ module VpsAdmin::CLI::Commands
       start_color
       crmode
       stdscr.keypad = true
-      curs_set(0)  # hide cursor
+      curs_set(0) # hide cursor
       use_default_colors
 
       init_pair(1, COLOR_BLACK, COLOR_WHITE)
@@ -88,19 +89,19 @@ module VpsAdmin::CLI::Commands
           clear
         end
       end
-
     rescue Interrupt
     ensure
       close_screen
     end
 
     protected
+
     def set_global_opts
-      if @global_opts[:output]
-        @params = @global_opts[:output].split(',').map(&:to_sym)
-      else
-        @params = %i(bytes bytes_in bytes_out packets packets_in packets_out)
-      end
+      @params = if @global_opts[:output]
+                  @global_opts[:output].split(',').map(&:to_sym)
+                else
+                  %i[bytes bytes_in bytes_out packets packets_in packets_out]
+                end
 
       if @global_opts[:sort]
         v = @global_opts[:sort]
@@ -129,7 +130,7 @@ module VpsAdmin::CLI::Commands
         @columns << {
           name: p,
           title: title,
-          width: size < 8 ? 8 : size,
+          width: size < 8 ? 8 : size
         }
       end
     end
@@ -139,10 +140,10 @@ module VpsAdmin::CLI::Commands
 
       limit = @opts[:limit] || lines - 6
 
-      params =  {
+      params = {
         limit: limit > 0 ? limit : 25,
         order: "#{@sort_desc ? '-' : ''}#{@sort_param}",
-        meta: {includes: 'network_interface'},
+        meta: { includes: 'network_interface' }
       }
 
       FILTERS.each do |f|
@@ -188,11 +189,11 @@ module VpsAdmin::CLI::Commands
       unless @header
         fmt = (['%8s', '%-15s'] + @columns.map { |c| "%#{c[:width]}s" }).join(' ')
 
-        @header = sprintf(
+        @header = format(
           fmt,
           'VPS',
           'Interface',
-          *@columns.map { |c| c[:title] },
+          *@columns.map { |c| c[:title] }
         )
 
         @header << (' ' * (cols - @header.size)) << "\n"
@@ -202,30 +203,30 @@ module VpsAdmin::CLI::Commands
     end
 
     def print_row(data)
-      addstr(sprintf(
-        '%8s %-15s',
-        data.network_interface.vps_id,
-        data.network_interface.name,
-      ))
+      addstr(format(
+               '%8s %-15s',
+               data.network_interface.vps_id,
+               data.network_interface.name
+             ))
 
       @columns.each do |c|
         p = c[:name]
 
         attron(A_BOLD) if p == @sort_param
-        addstr(sprintf(" %#{c[:width]}s", unitize_param(p, data.send(p), data.delta)))
+        addstr(format(" %#{c[:width]}s", unitize_param(p, data.send(p), data.delta)))
         attroff(A_BOLD) if p == @sort_param
       end
     end
 
     def stats
-      fields = %i(bytes packets)
+      fields = %i[bytes packets]
       stats = {}
       delta_sum = 0
 
       fields.each do |f|
         stats[f] = 0
 
-        %i(in out).each do |dir|
+        %i[in out].each do |dir|
           stats[:"#{f}_#{dir}"] = 0
         end
       end
@@ -236,7 +237,7 @@ module VpsAdmin::CLI::Commands
         fields.each do |f|
           stats[f] += data.send(f)
 
-          %i(in out).each do |dir|
+          %i[in out].each do |dir|
             stats[:"#{f}_#{dir}"] += data.send("#{f}_#{dir}")
           end
         end
@@ -244,41 +245,43 @@ module VpsAdmin::CLI::Commands
 
       avg_delta = delta_sum.to_f / fetch.count
 
-      setpos(lines-5, 0)
+      setpos(lines - 5, 0)
       addstr('─' * cols)
 
       fmt = '%10s %10s %10s'
       unit = @opts[:unit].to_s.capitalize
 
-      setpos(lines-4, 0)
-      addstr(sprintf(
-        fmt,
-        '',
-        "#{unit}/s",
-        'Packets/s',
-      ))
+      setpos(lines - 4, 0)
+      addstr(format(
+               fmt,
+               '',
+               "#{unit}/s",
+               'Packets/s'
+             ))
 
-      setpos(lines-3, 0)
-      addstr(sprintf(fmt, 'In', *fields.map { |f| unitize_param(f, stats[:"#{f}_in"], avg_delta) }))
+      setpos(lines - 3, 0)
+      addstr(format(fmt, 'In', *fields.map { |f| unitize_param(f, stats[:"#{f}_in"], avg_delta) }))
 
-      setpos(lines-2, 0)
-      addstr(sprintf(fmt, 'Out', *fields.map { |f| unitize_param(f, stats[:"#{f}_out"], avg_delta) }))
+      setpos(lines - 2, 0)
+      addstr(format(fmt, 'Out', *fields.map { |f| unitize_param(f, stats[:"#{f}_out"], avg_delta) }))
 
-      setpos(lines-1, 0)
+      setpos(lines - 1, 0)
       attron(A_BOLD)
-      addstr(sprintf(fmt, 'Total', *fields.map { |f| unitize_param(f, stats[:"#{f}_in"] + stats[:"#{f}_out"], avg_delta) }))
+      addstr(format(fmt, 'Total', *fields.map do |f|
+                                    unitize_param(f, stats[:"#{f}_in"] + stats[:"#{f}_out"], avg_delta)
+                                  end))
       attroff(A_BOLD)
     end
 
     def unitize_bytes(n, delta)
-      if @opts[:unit] == :bytes
-        per_s = n / delta.to_f
-      else
-        per_s = n * 8 / delta.to_f
-      end
+      per_s = if @opts[:unit] == :bytes
+                n / delta.to_f
+              else
+                n * 8 / delta.to_f
+              end
 
       bits = 39
-      units = %w(T G M k)
+      units = %w[T G M k]
 
       units.each do |u|
         threshold = 2 << bits
@@ -294,7 +297,7 @@ module VpsAdmin::CLI::Commands
     def unitize_number(n, delta)
       per_s = n / delta.to_f
       threshold = 1_000_000_000_000
-      units = %w(T G M k)
+      units = %w[T G M k]
 
       units.each do |u|
         return "#{(per_s / threshold).round(2)}#{u}" if per_s >= threshold
@@ -312,7 +315,7 @@ module VpsAdmin::CLI::Commands
       when :packets, :packets_in, :packets_out
         unitize_number(n, delta)
       else
-        fail "unknown param to unitize: #{param.inspect}"
+        raise "unknown param to unitize: #{param.inspect}"
       end
     end
 
@@ -335,10 +338,10 @@ module VpsAdmin::CLI::Commands
 
       ips = @api.ip_address.list(addr: v)
       return false if ips.count < 1
-      ips.first.id
 
+      ips.first.id
     rescue HaveAPI::Client::ActionFailed
-      return false
+      false
     end
   end
 end

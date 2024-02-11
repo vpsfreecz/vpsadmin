@@ -12,7 +12,7 @@ module NodeCtld
         instance
       end
 
-      %i(create_channel publish_wait publish_drop exchange_name queue_name).each do |v|
+      %i[create_channel publish_wait publish_drop exchange_name queue_name].each do |v|
         define_method(v) do |*args, **kwargs, &block|
           instance.send(v, *args, **kwargs, &block)
         end
@@ -24,7 +24,7 @@ module NodeCtld
         hosts: $CFG.get(:rabbitmq, :hosts),
         vhost: $CFG.get(:rabbitmq, :vhost),
         username: $CFG.get(:rabbitmq, :username),
-        password: $CFG.get(:rabbitmq, :password),
+        password: $CFG.get(:rabbitmq, :password)
       }
 
       logger = OsCtl::Lib::Logger.get
@@ -43,7 +43,7 @@ module NodeCtld
       begin
         @connection.start
       rescue Bunny::TCPConnectionFailed
-        log(:info, "Retry in 15s")
+        log(:info, 'Retry in 15s')
         sleep(15)
         retry
       end

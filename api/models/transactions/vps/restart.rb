@@ -10,7 +10,7 @@ module Transactions::Vps
 
       {
         start_timeout: start_timeout,
-        autostart_priority: vps.autostart_priority,
+        autostart_priority: vps.autostart_priority
       }
     end
   end

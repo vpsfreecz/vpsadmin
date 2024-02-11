@@ -6,7 +6,7 @@ module VpsAdmin::API::Resources
 
       params(:request) do
         string :change_reason, label: 'Change reason', required: true,
-            desc: 'Why do you wish to make the change?'
+                               desc: 'Why do you wish to make the change?'
         string :full_name, label: 'Full name'
         string :email, label: 'E-mail'
         string :address, label: 'Address'

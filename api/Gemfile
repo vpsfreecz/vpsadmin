@@ -5,22 +5,22 @@ begin
 rescue Errno::ENOENT
 end
 
-gem 'haveapi', '~> 0.20.0'
 gem 'activerecord', '~> 7.1.3'
-gem 'sinatra-activerecord', '~> 2.0.23'
-gem 'paper_trail', '~> 15.1.0'
-gem 'require_all', '~> 2.0.0'
-gem 'rake'
-gem 'eventmachine'
 gem 'ancestry', '~> 4.3.3'
-gem 'mysql2', '~> 0.5.3'
 gem 'bcrypt', '~> 3.1.13'
+gem 'bunny', '~> 2.22.0'
+gem 'eventmachine'
+gem 'haveapi', '~> 0.20.0'
 gem 'ipaddress', '~> 0.8.0'
+gem 'mysql2', '~> 0.5.3'
+gem 'paper_trail', '~> 15.1.0'
+gem 'prometheus-client', '~> 4.1.0'
+gem 'rake'
+gem 'require_all', '~> 2.0.0'
 gem 'rotp', '~> 6.2.2'
 gem 'rubyzip', '~> 2.3.2' # needed by vpsFree.cz's incident reports
+gem 'sinatra-activerecord', '~> 2.0.23'
 gem 'thin'
-gem 'prometheus-client', '~> 4.1.0'
-gem 'bunny', '~> 2.22.0'
 
 group :test do
   gem 'rspec'
@@ -36,7 +36,7 @@ end
 ### vpsAdmin plugin marker ###
 # Do not remove the comment above. It is used to create a Nix package with
 # resolved plugin dependencies.
-Dir.glob(File.expand_path("../plugins/*", File.realpath(__FILE__))) do |v|
+Dir.glob(File.expand_path('../plugins/*', File.realpath(__FILE__))) do |v|
   path = File.join(v, 'api', 'Gemfile')
   next unless File.exist?(path)
 

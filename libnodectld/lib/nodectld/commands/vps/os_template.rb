@@ -5,22 +5,22 @@ module NodeCtld
 
     def exec
       honor_state do
-        osctl(%i(ct stop), @vps_id)
+        osctl(%i[ct stop], @vps_id)
         osctl(
-          %i(ct set image-config),
+          %i[ct set image-config],
           @vps_id,
-          {distribution: @new['distribution'], version: @new['version']}
+          { distribution: @new['distribution'], version: @new['version'] }
         )
       end
     end
 
     def rollback
       honor_state do
-        osctl(%i(ct stop), @vps_id)
+        osctl(%i[ct stop], @vps_id)
         osctl(
-          %i(ct set image-config),
+          %i[ct set image-config],
           @vps_id,
-          {distribution: @original['distribution'], version: @original['version']}
+          { distribution: @original['distribution'], version: @original['version'] }
         )
       end
     end

@@ -7,7 +7,7 @@ module VpsAdmin::Supervisor
       queue = channel.queue(
         queue_name('rpc'),
         durable: true,
-        arguments: {'x-queue-type' => 'quorum'},
+        arguments: { 'x-queue-type' => 'quorum' }
       )
 
       queue.bind(exchange, routing_key: 'rpc')
@@ -18,7 +18,6 @@ module VpsAdmin::Supervisor
       end
     end
 
-    protected
     class Request
       def initialize(channel, exchange, delivery_info, properties, node)
         @channel = channel
@@ -31,7 +30,7 @@ module VpsAdmin::Supervisor
       def process(payload)
         begin
           req = JSON.parse(payload)
-        rescue
+        rescue StandardError
           send_error('Unable to parse request as json')
           raise
         end
@@ -39,7 +38,7 @@ module VpsAdmin::Supervisor
         handler = Handler.new(@node)
         cmd = req['command']
 
-        if !handler.respond_to?(cmd)
+        unless handler.respond_to?(cmd)
           send_error("Command #{cmd.inspect} not found")
           return
         end
@@ -48,9 +47,9 @@ module VpsAdmin::Supervisor
           response = handler.send(
             cmd,
             *req.fetch('args', []),
-            **symbolize_hash_keys(req.fetch('kwargs', {})),
+            **symbolize_hash_keys(req.fetch('kwargs', {}))
           )
-        rescue => e
+        rescue StandardError => e
           send_error("#{e.class}: #{e.message}")
           raise
         else
@@ -61,12 +60,13 @@ module VpsAdmin::Supervisor
       end
 
       protected
+
       def send_response(response)
-        reply({status: true, response: response})
+        reply({ status: true, response: response })
       end
 
       def send_error(message)
-        reply({status: false, message: message})
+        reply({ status: false, message: message })
       end
 
       def reply(payload)
@@ -78,10 +78,10 @@ module VpsAdmin::Supervisor
             persistent: true,
             content_type: 'application/json',
             routing_key: @properties.reply_to,
-            correlation_id: @properties.correlation_id,
+            correlation_id: @properties.correlation_id
           )
         rescue Bunny::ConnectionClosedError
-          warn "Node::Rpc#reply: connection closed, retry in 5s"
+          warn 'Node::Rpc#reply: connection closed, retry in 5s'
           sleep(5)
           retry
         end
@@ -99,15 +99,15 @@ module VpsAdmin::Supervisor
 
       def get_node_config
         node = ::Node
-          .select('name, role, ip_addr, max_tx, max_rx')
-          .where(id: @node.id).take
+               .select('name, role, ip_addr, max_tx, max_rx')
+               .where(id: @node.id).take
         return if node.nil?
 
         {
           role: node.role,
           ip_addr: node.ip_addr,
           max_tx: node.max_tx,
-          max_rx: node.max_rx,
+          max_rx: node.max_rx
         }
       end
 
@@ -118,7 +118,7 @@ module VpsAdmin::Supervisor
             name: pool.filesystem.split('/').first,
             filesystem: pool.filesystem,
             role: pool.role,
-            refquota_check: pool.refquota_check,
+            refquota_check: pool.refquota_check
           }
         end
       end
@@ -139,21 +139,21 @@ module VpsAdmin::Supervisor
           .where(
             dataset_in_pools: {
               pool_id: pool_id,
-              confirmed: ::DatasetInPool.confirmed(:confirmed),
+              confirmed: ::DatasetInPool.confirmed(:confirmed)
             },
             pools: {
-              node_id: @node.id,
+              node_id: @node.id
             },
             dataset_properties: {
-              name: properties,
-            },
+              name: properties
+            }
           ).map do |dip|
             {
               dataset_in_pool_id: dip.id,
               dataset_id: dip.dataset_id,
               dataset_name: dip.full_name,
               property_id: dip.property_id,
-              property_name: dip.property_name,
+              property_name: dip.property_name
             }
           end
       end
@@ -161,10 +161,10 @@ module VpsAdmin::Supervisor
       def list_vps_status_check
         ::Vps.where(
           node: @node,
-          object_state: %w(active suspended),
-          confirmed: ::Vps.confirmed(:confirmed),
+          object_state: %w[active suspended],
+          confirmed: ::Vps.confirmed(:confirmed)
         ).map do |vps|
-          {id: vps.id, read_hostname: !vps.manage_hostname}
+          { id: vps.id, read_hostname: !vps.manage_hostname }
         end
       end
 
@@ -185,8 +185,8 @@ module VpsAdmin::Supervisor
           .where(
             vpses: {
               node_id: @node.id,
-              object_state: 'active',
-            },
+              object_state: 'active'
+            }
           ).map do |netif|
           {
             id: netif.id,
@@ -196,7 +196,7 @@ module VpsAdmin::Supervisor
             bytes_in_readout: netif.bytes_in_readout,
             bytes_out_readout: netif.bytes_out_readout,
             packets_in_readout: netif.bytes_in_readout,
-            packets_out_readout: netif.bytes_out_readout,
+            packets_out_readout: netif.bytes_out_readout
           }
         end
       end
@@ -204,8 +204,8 @@ module VpsAdmin::Supervisor
       def find_vps_network_interface(vps_id, vps_name)
         netif =
           ::NetworkInterface
-            .select(
-              'network_interfaces.id,
+          .select(
+            'network_interfaces.id,
               network_interfaces.name,
               vpses.id AS vps_id,
               vpses.user_id AS user_id,
@@ -213,13 +213,13 @@ module VpsAdmin::Supervisor
               network_interface_monitors.bytes_out_readout,
               network_interface_monitors.packets_in_readout,
               network_interface_monitors.packets_out_readout'
-            )
-            .joins(:vps)
-            .joins('LEFT JOIN network_interface_monitors ON network_interface_monitors.network_interface_id = network_interfaces.id')
-            .where(
-              vps_id: vps_id,
-              name: vps_name,
-            ).take
+          )
+          .joins(:vps)
+          .joins('LEFT JOIN network_interface_monitors ON network_interface_monitors.network_interface_id = network_interfaces.id')
+          .where(
+            vps_id: vps_id,
+            name: vps_name
+          ).take
 
         return if netif.nil?
 
@@ -231,28 +231,28 @@ module VpsAdmin::Supervisor
           bytes_in_readout: netif.bytes_in_readout,
           bytes_out_readout: netif.bytes_out_readout,
           packets_in_readout: netif.bytes_in_readout,
-          packets_out_readout: netif.bytes_out_readout,
+          packets_out_readout: netif.bytes_out_readout
         }
       end
 
       def list_running_vps_ids
         ::Vps.select('vpses.id').joins(:vps_current_status).where(
-          vpses: {node_id: @node.id, object_state: 'active'},
-          vps_current_statuses: {is_running: true},
+          vpses: { node_id: @node.id, object_state: 'active' },
+          vps_current_statuses: { is_running: true }
         ).map(&:id)
       end
 
-      def list_vps_user_namespace_maps(pool_id, from_id: nil, limit:)
+      def list_vps_user_namespace_maps(pool_id, limit:, from_id: nil)
         q = ::Vps
-          .joins(:dataset_in_pool)
-          .includes(user_namespace_map: :user_namespace_map_entries)
-          .where(
-            object_state: %w(active suspended soft_delete),
-            confirmed: ::Vps.confirmed(:confirmed),
-            node: @node,
-            dataset_in_pools: {pool_id: pool_id},
-          )
-          .limit(limit)
+            .joins(:dataset_in_pool)
+            .includes(user_namespace_map: :user_namespace_map_entries)
+            .where(
+              object_state: %w[active suspended soft_delete],
+              confirmed: ::Vps.confirmed(:confirmed),
+              node: @node,
+              dataset_in_pools: { pool_id: pool_id }
+            )
+            .limit(limit)
 
         q = q.where('vpses.id > ?', from_id) if from_id
 
@@ -261,7 +261,7 @@ module VpsAdmin::Supervisor
             vps_id: vps.id,
             map_name: vps.user_namespace_map_id.to_s,
             uidmap: vps.user_namespace_map.build_map(:uid),
-            gidmap: vps.user_namespace_map.build_map(:gid),
+            gidmap: vps.user_namespace_map.build_map(:gid)
           }
         end
       end
@@ -269,20 +269,20 @@ module VpsAdmin::Supervisor
       # @param from_id [Integer, nil]
       # @param limit [Integer]
       # @return [Array<Hash>]
-      def list_exports(from_id: nil, limit:)
+      def list_exports(limit:, from_id: nil)
         q = ::Export
-          .joins(dataset_in_pool: :pool)
-          .includes(
-            :host_ip_addresses,
-            :snapshot_in_pool_clone,
-            dataset_in_pool: [:pool, :dataset],
-            network_interface: {ip_addresses: :host_ip_addresses},
-            export_hosts: :ip_address,
-          )
-          .where(
-            pools: {node_id: @node.id},
-          )
-          .limit(limit)
+            .joins(dataset_in_pool: :pool)
+            .includes(
+              :host_ip_addresses,
+              :snapshot_in_pool_clone,
+              dataset_in_pool: %i[pool dataset],
+              network_interface: { ip_addresses: :host_ip_addresses },
+              export_hosts: :ip_address
+            )
+            .where(
+              pools: { node_id: @node.id }
+            )
+            .limit(limit)
 
         q = q.where('exports.id > ?', from_id) if from_id
 
@@ -303,9 +303,9 @@ module VpsAdmin::Supervisor
                 rw: host.rw,
                 sync: host.sync,
                 subtree_check: host.subtree_check,
-                root_squash: host.root_squash,
+                root_squash: host.root_squash
               }
-            end,
+            end
           }
         end
       end
@@ -314,11 +314,11 @@ module VpsAdmin::Supervisor
       # @return [Integer, nil] VPS id
       def authenticate_console_session(token)
         console = ::VpsConsole
-          .select('vps_id')
-          .joins(:vps)
-          .where(token: token, vpses: {node_id: @node.id})
-          .where('expiration > ?', Time.now)
-          .take
+                  .select('vps_id')
+                  .joins(:vps)
+                  .where(token: token, vpses: { node_id: @node.id })
+                  .where('expiration > ?', Time.now)
+                  .take
 
         console && console.vps_id
       end

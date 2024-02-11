@@ -7,9 +7,9 @@ class ObjectHistory < ActiveRecord::Base
   validate :check_user
 
   def check_user
-    if (user || user_session) && (!user || !user_session)
-      errors.add(:user, 'must provide both user and user_session or none')
-      errors.add(:user_session, 'must provide both user and user_session or none')
-    end
+    return unless (user || user_session) && (!user || !user_session)
+
+    errors.add(:user, 'must provide both user and user_session or none')
+    errors.add(:user_session, 'must provide both user and user_session or none')
   end
 end

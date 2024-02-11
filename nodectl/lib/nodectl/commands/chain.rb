@@ -7,23 +7,23 @@ module NodeCtl
     def options(parser, args)
       self.opts = {
         direction: :execute,
-        success: true,
+        success: true
       }
 
-      parser.separator <<END
-Subcommands:
-confirmations [TRANSACTION]...  List transaction confirmations
-confirm [TRANSACTION]...        Run transaction confirmations
-release [locks|ports]           Release acquired locks and reserved ports
-resolve                         Mark the chain as resolved
-retry [TRANSACTION]             Rerun transaction chain
-END
+      parser.separator <<~END
+        Subcommands:
+        confirmations [TRANSACTION]...  List transaction confirmations
+        confirm [TRANSACTION]...        Run transaction confirmations
+        release [locks|ports]           Release acquired locks and reserved ports
+        resolve                         Mark the chain as resolved
+        retry [TRANSACTION]             Rerun transaction chain
+      END
 
       return if args[1] != 'confirm'
 
       parser.on(
         '--direction DIR',
-        %w(execute rollback),
+        %w[execute rollback],
         'Direction (execute or rollback)'
       ) do |d|
         opts[:direction] = d
@@ -41,31 +41,29 @@ END
       elsif /\A\d+\z/ !~ args[0]
         raise ValidationError, "invalid chain id '#{args[0]}'"
 
-      elsif !%w(confirmations confirm release resolve retry).include?(args[1])
+      elsif !%w[confirmations confirm release resolve retry].include?(args[1])
         raise ValidationError, "invalid subcommand '#{args[1]}'"
       end
 
       params.update({
-        chain: args[0].to_i,
-        command: args[1],
-        transactions: args.size > 2 ? args[2..-1].map { |v| v.to_i } : nil,
-      })
+                      chain: args[0].to_i,
+                      command: args[1],
+                      transactions: args.size > 2 ? args[2..-1].map { |v| v.to_i } : nil
+                    })
 
       case args[1]
       when 'confirm'
         params.update({
-          direction: opts[:direction],
-          success: opts[:success],
-        })
+                        direction: opts[:direction],
+                        success: opts[:success]
+                      })
 
       when 'release'
-        if args[2] && !%w(locks ports).include?(args[2])
-          raise ValidationError, "invalid resource '#{args[2]}'"
-        end
+        raise ValidationError, "invalid resource '#{args[2]}'" if args[2] && !%w[locks ports].include?(args[2])
 
         params.update({
-          release: args[2].nil? ? %w(locks ports) : [args[2]],
-        })
+                        release: args[2].nil? ? %w[locks ports] : [args[2]]
+                      })
       end
     end
 
@@ -86,16 +84,17 @@ END
     end
 
     protected
+
     def list_confirmations(list)
       list.each do |t, confirmations|
         puts "TRANSACTION ##{t}"
-        puts sprintf(
-          "%-8s %-13s %-4s %-20s %-12s %s",
+        puts format(
+          '%-8s %-13s %-4s %-20s %-12s %s',
           'ID', 'TYPE', 'DONE', 'OBJECT', 'ID', 'ATTRS'
         )
 
         confirmations.each do |c|
-          puts sprintf(
+          puts format(
             '%-8d %-13s %-4s %-20s %-12s %s',
             c[:id],
             c[:type],
@@ -112,26 +111,27 @@ END
     def format_hash(hash)
       return '' unless hash
       return hash if hash.is_a?(::String)
-      hash.inject([]) { |s, v| s << v.join('=')  }.join(',')
+
+      hash.inject([]) { |s, v| s << v.join('=') }.join(',')
     end
 
     def list_locks(locks)
-      puts "RESOURCE LOCKS"
-      puts sprintf('%-30s %-10s %-20s', 'RESOURCE', 'ROW_ID', 'LOCKED_AT')
+      puts 'RESOURCE LOCKS'
+      puts format('%-30s %-10s %-20s', 'RESOURCE', 'ROW_ID', 'LOCKED_AT')
 
       locks.each do |l|
-        puts sprintf('%-30s %-10d %-20s', l[:resource], l[:row_id], l[:created_at])
+        puts format('%-30s %-10d %-20s', l[:resource], l[:row_id], l[:created_at])
       end
 
       puts "Released #{locks.count} locks"
     end
 
     def list_ports(ports)
-      puts "RESERVED PORTS"
-      puts sprintf('%-20s %-20s %-10s', 'NODE', 'ADDR', 'PORT')
+      puts 'RESERVED PORTS'
+      puts format('%-20s %-20s %-10s', 'NODE', 'ADDR', 'PORT')
 
       ports.each do |p|
-        puts sprintf(
+        puts format(
           '%-20s %-20s %-10d',
           "#{p[:node_name]}.#{p[:location_domain]}",
           p[:addr],
@@ -143,4 +143,3 @@ END
     end
   end
 end
-

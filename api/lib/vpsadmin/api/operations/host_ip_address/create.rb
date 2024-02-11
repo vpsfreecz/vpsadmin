@@ -21,7 +21,7 @@ module VpsAdmin::API
           ip_address: ip_address,
           ip_addr: parsed_addr.to_s,
           order: nil,
-          user_created: true,
+          user_created: true
         )
       rescue ::ActiveRecord::RecordNotUnique
         raise Exceptions::OperationError, "#{parsed_addr} already exists"

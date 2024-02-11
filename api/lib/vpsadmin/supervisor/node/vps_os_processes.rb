@@ -7,7 +7,7 @@ module VpsAdmin::Supervisor
       queue = channel.queue(
         queue_name('vps_os_processes'),
         durable: true,
-        arguments: {'x-queue-type' => 'quorum'},
+        arguments: { 'x-queue-type' => 'quorum' }
       )
 
       queue.bind(exchange, routing_key: 'vps_os_processes')
@@ -19,6 +19,7 @@ module VpsAdmin::Supervisor
     end
 
     protected
+
     def update_vps_processes(vps_procs)
       t = Time.at(vps_procs['time'])
 
@@ -30,10 +31,10 @@ module VpsAdmin::Supervisor
               state: state,
               count: count,
               created_at: t,
-              updated_at: t,
+              updated_at: t
             }
           end,
-          update_only: %i(count),
+          update_only: %i[count]
         )
       end
     end

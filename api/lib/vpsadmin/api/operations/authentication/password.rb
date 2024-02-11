@@ -20,8 +20,8 @@ module VpsAdmin::API
       user = ::User.unscoped.where(
         object_state: [
           ::User.object_states[:active],
-          ::User.object_states[:suspended],
-        ],
+          ::User.object_states[:suspended]
+        ]
       ).find_by('login = ? COLLATE utf8_bin', username)
       return unless user
 
@@ -44,7 +44,7 @@ module VpsAdmin::API
           user,
           authenticated,
           !require_totp,
-          !require_totp && user.password_reset,
+          !require_totp && user.password_reset
         )
 
         if require_totp && multi_factor
@@ -59,22 +59,23 @@ module VpsAdmin::API
           user,
           false,
           false,
-          false,
+          false
         )
       end
     end
 
     protected
+
     def require_totp?(user)
       user.user_totp_devices.where(enabled: true).any?
     end
 
     def create_auth_token(purpose, user, request)
-      ::Token.for_new_record!(Time.now + 60*5) do |token|
+      ::Token.for_new_record!(Time.now + 60 * 5) do |token|
         t = ::AuthToken.new(
           user: user,
           token: token,
-          purpose: purpose,
+          purpose: purpose
         )
 
         if request
@@ -84,7 +85,7 @@ module VpsAdmin::API
             client_ip_addr: request.env['HTTP_CLIENT_IP'],
             client_ip_ptr: request.env['HTTP_CLIENT_IP'] && get_ptr(request.env['HTTP_CLIENT_IP']),
             user_agent: ::UserAgent.find_or_create!(request.user_agent || ''),
-            client_version: request.user_agent || '',
+            client_version: request.user_agent || ''
           )
         end
 

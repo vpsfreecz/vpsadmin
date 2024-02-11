@@ -7,7 +7,7 @@ class UserMailTemplateRecipient < ActiveRecord::Base
 
   # @param user [User]
   def self.all_templates_for(user)
-    ret = self.includes(:mail_template).where(user: user).to_a
+    ret = includes(:mail_template).where(user: user).to_a
 
     ::MailTemplate.where.not(
       id: ret.map { |recp| recp.mail_template_id }
@@ -17,7 +17,7 @@ class UserMailTemplateRecipient < ActiveRecord::Base
       ret << new(
         user: user,
         mail_template: tpl,
-        to: nil,
+        to: nil
       )
     end
 
@@ -28,7 +28,6 @@ class UserMailTemplateRecipient < ActiveRecord::Base
       else
         recp.mail_template.user_visibility == 'visible'
       end
-
     end.sort do |a, b|
       a.mail_template.name <=> b.mail_template.name
     end
@@ -39,22 +38,21 @@ class UserMailTemplateRecipient < ActiveRecord::Base
   # @param attrs [Hash]
   def self.handle_update!(user, template, attrs)
     recp = nil
-    empty = (
+    empty =
       (attrs[:to].nil? || attrs[:to].strip.empty?) && \
       (attrs[:enabled].nil? || attrs[:enabled])
-    )
 
     if empty
       placeholder = new(
         user: user,
-        mail_template: template,
+        mail_template: template
       )
     end
 
     transaction do
       recp = find_by(
         user: user,
-        mail_template: template,
+        mail_template: template
       )
 
       if recp
@@ -72,7 +70,7 @@ class UserMailTemplateRecipient < ActiveRecord::Base
       else
         recp = new(
           user: user,
-          mail_template: template,
+          mail_template: template
         )
         recp.assign_attributes(attrs)
         recp.save!
@@ -99,15 +97,17 @@ class UserMailTemplateRecipient < ActiveRecord::Base
   end
 
   protected
+
   def clean_emails
-    return unless self.to
-    self.to.gsub!(/\s/, '')
+    return unless to
+
+    to.gsub!(/\s/, '')
   end
 
   def check_emails
-    return unless self.to
+    return unless to
 
-    self.to.split(',').each do |mail|
+    to.split(',').each do |mail|
       next if /@/ =~ mail.strip
 
       errors.add(:to, "'#{mail}' is not a valid e-mail address")

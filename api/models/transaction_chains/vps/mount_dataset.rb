@@ -8,7 +8,7 @@ module TransactionChains
       concerns(:affect, [vps.class.name, vps.id])
 
       dip = dataset.dataset_in_pools.joins(:pool).where(
-        pools: {role: [::Pool.roles[:hypervisor], ::Pool.roles[:primary]]}
+        pools: { role: [::Pool.roles[:hypervisor], ::Pool.roles[:primary]] }
       ).take!
 
       lock(dip)
@@ -17,18 +17,18 @@ module TransactionChains
       if dip.pool.node.vpsadminos? && dip.pool.role == 'hypervisor'
         if !vps.dataset_in_pool.dataset.root_of?(dip.dataset)
           raise VpsAdmin::API::Exceptions::OperationNotSupported,
-                "Only VPS subdatasets can be mouted using vpsAdmin"
+                'Only VPS subdatasets can be mouted using vpsAdmin'
         elsif dip.pool.node_id != vps.node_id
           raise VpsAdmin::API::Exceptions::OperationNotSupported,
-                "Datasets on vpsAdminOS cannot be mounted remotely"
+                'Datasets on vpsAdminOS cannot be mounted remotely'
         end
       end
 
       # Forbid remote mounts to vpsAdminOS VPS
       if vps.node.vpsadminos? && dip.pool.node_id != vps.node_id
         raise VpsAdmin::API::Exceptions::OperationNotSupported,
-              "Remote mounts on vpsAdminOS are not supported, export your "+
-              "dataset and mount it from your VPS manually using NFS"
+              'Remote mounts on vpsAdminOS are not supported, export your ' +
+              'dataset and mount it from your VPS manually using NFS'
       end
 
       mnt = ::Mount.new(
@@ -64,17 +64,17 @@ module TransactionChains
       append(Transactions::Utils::NoOp, args: vps.node_id) do
         create(mnt)
         just_create(vps.log(:mount, {
-          id: mnt.id,
-          type: :dataset,
-          src: {
-            id: mnt.dataset_in_pool.dataset_id,
-            name: mnt.dataset_in_pool.dataset.full_name
-          },
-          dst: mnt.dst,
-          mode: mnt.mode,
-          on_start_fail: mnt.on_start_fail,
-          enabled: mnt.enabled,
-        }))
+                              id: mnt.id,
+                              type: :dataset,
+                              src: {
+                                id: mnt.dataset_in_pool.dataset_id,
+                                name: mnt.dataset_in_pool.dataset.full_name
+                              },
+                              dst: mnt.dst,
+                              mode: mnt.mode,
+                              on_start_fail: mnt.on_start_fail,
+                              enabled: mnt.enabled
+                            }))
       end
 
       mnt

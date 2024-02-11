@@ -3,19 +3,19 @@ module TransactionChains
     urgent_rollback
 
     has_hook :pre_start,
-        desc: 'Called before the VPS is started on the new node',
-        context: 'TransactionChains::Vps::Migrate instance',
-        args: {
-          vps: 'destination Vps',
-          running: 'true if the VPS was running before the migration'
-        }
+             desc: 'Called before the VPS is started on the new node',
+             context: 'TransactionChains::Vps::Migrate instance',
+             args: {
+               vps: 'destination Vps',
+               running: 'true if the VPS was running before the migration'
+             }
     has_hook :post_start,
-        desc: 'Called after the VPS was started on the new node',
-        context: 'TransactionChains::Vps::Migrate instance',
-        args: {
-          vps: 'destination Vps',
-          running: 'true if the VPS was running before the migration'
-        }
+             desc: 'Called after the VPS was started on the new node',
+             context: 'TransactionChains::Vps::Migrate instance',
+             args: {
+               vps: 'destination Vps',
+               running: 'true if the VPS was running before the migration'
+             }
 
     # @param opts [Hash]
     # @option opts [Boolean] replace_ips (false)
@@ -34,27 +34,28 @@ module TransactionChains
     end
 
     protected
+
     attr_reader :opts, :vps_user, :src_node, :dst_node, :src_pool, :dst_pool,
-      :src_vps, :dst_vps, :datasets, :resources_changes, :maintenance_windows
+                :src_vps, :dst_vps, :datasets, :resources_changes, :maintenance_windows
     attr_accessor :userns_map
 
     def setup(vps, dst_node, opts)
       @opts = set_hash_opts(opts, {
-        replace_ips: false,
-        transfer_ips: false,
-        resources: nil,
-        handle_ips: true,
-        reallocate_ips: true,
-        swap: :enforce,
-        maintenance_window: true,
-        finish_weekday: nil,
-        finish_minutes: nil,
-        send_mail: true,
-        reason: nil,
-        cleanup_data: true,
-        no_start: false,
-        skip_start: false,
-      })
+                              replace_ips: false,
+                              transfer_ips: false,
+                              resources: nil,
+                              handle_ips: true,
+                              reallocate_ips: true,
+                              swap: :enforce,
+                              maintenance_window: true,
+                              finish_weekday: nil,
+                              finish_minutes: nil,
+                              send_mail: true,
+                              reason: nil,
+                              cleanup_data: true,
+                              no_start: false,
+                              skip_start: false
+                            })
 
       lock(vps)
       lock(vps.dataset_in_pool)
@@ -89,7 +90,7 @@ module TransactionChains
           ::VpsMaintenanceWindow.make_for(
             src_vps,
             finish_weekday: opts[:finish_weekday],
-            finish_minutes: opts[:finish_minutes],
+            finish_minutes: opts[:finish_minutes]
           )
         else
           vps.vps_maintenance_windows.where(is_open: true).order('weekday')
@@ -109,11 +110,11 @@ module TransactionChains
     end
 
     def check_swap!
-      if opts[:swap] == :enforce && src_vps.swap > 0 && dst_node.total_swap == 0
-        raise VpsAdmin::API::Exceptions::OperationNotSupported,
-              "VPS has #{src_vps.swap}MiB of swap, which is not available "+
-              "on #{dst_node.domain_name}"
-      end
+      return unless opts[:swap] == :enforce && src_vps.swap > 0 && dst_node.total_swap == 0
+
+      raise VpsAdmin::API::Exceptions::OperationNotSupported,
+            "VPS has #{src_vps.swap}MiB of swap, which is not available " +
+            "on #{dst_node.domain_name}"
     end
 
     def check_cgroup_version!
@@ -146,56 +147,60 @@ module TransactionChains
     # the target node. Therefore we do not allow migrations of VPS with existing
     # snapshot clones.
     def check_snapshot_clone_mounts!
-      return if !@opts[:cleanup_data] && self.is_a?(TransactionChains::Vps::Migrate::VzToVz)
+      return if !@opts[:cleanup_data] && is_a?(TransactionChains::Vps::Migrate::VzToVz)
 
       ds_ids = [src_vps.dataset_in_pool.dataset_id] + src_vps.dataset_in_pool.dataset.descendant_ids
       dip_ids = ::DatasetInPool.where(
         dataset_id: ds_ids,
-        pool_id: src_vps.dataset_in_pool.pool_id,
+        pool_id: src_vps.dataset_in_pool.pool_id
       ).pluck(:id)
 
       clones = ::SnapshotInPoolClone.joins(:snapshot_in_pool).where(
-        snapshot_in_pools: {dataset_in_pool_id: dip_ids}
+        snapshot_in_pools: { dataset_in_pool_id: dip_ids }
       )
 
-      if clones.any?
-        raise VpsAdmin::API::Exceptions::OperationNotSupported,
-              'unable to migrate VPS with existing snapshot clones'
-      end
+      return unless clones.any?
+
+      raise VpsAdmin::API::Exceptions::OperationNotSupported,
+            'unable to migrate VPS with existing snapshot clones'
     end
 
     def notify_begun
+      return unless opts[:send_mail] && vps_user.mailer_enabled
+
       mail(:vps_migration_begun, {
-        user: vps_user,
-        vars: {
-          vps: src_vps,
-          src_node: src_vps.node,
-          dst_node: dst_vps.node,
-          maintenance_window: opts[:maintenance_window],
-          maintenance_windows: maintenance_windows,
-          custom_window: !opts[:finish_weekday].nil?,
-          finish_weekday: opts[:finish_weekday],
-          finish_minutes: opts[:finish_minutes],
-          reason: opts[:reason],
-        }
-      }) if opts[:send_mail] && vps_user.mailer_enabled
+             user: vps_user,
+             vars: {
+               vps: src_vps,
+               src_node: src_vps.node,
+               dst_node: dst_vps.node,
+               maintenance_window: opts[:maintenance_window],
+               maintenance_windows: maintenance_windows,
+               custom_window: !opts[:finish_weekday].nil?,
+               finish_weekday: opts[:finish_weekday],
+               finish_minutes: opts[:finish_minutes],
+               reason: opts[:reason]
+             }
+           })
     end
 
     def notify_finished
+      return unless opts[:send_mail] && vps_user.mailer_enabled
+
       mail(:vps_migration_finished, {
-        user: vps_user,
-        vars: {
-          vps: src_vps,
-          src_node: src_vps.node,
-          dst_node: dst_vps.node,
-          maintenance_window: opts[:maintenance_window],
-          maintenance_windows: maintenance_windows,
-          custom_window: !opts[:finish_weekday].nil?,
-          finish_weekday: opts[:finish_weekday],
-          finish_minutes: opts[:finish_minutes],
-          reason: opts[:reason],
-        }
-      }) if opts[:send_mail] && vps_user.mailer_enabled
+             user: vps_user,
+             vars: {
+               vps: src_vps,
+               src_node: src_vps.node,
+               dst_node: dst_vps.node,
+               maintenance_window: opts[:maintenance_window],
+               maintenance_windows: maintenance_windows,
+               custom_window: !opts[:finish_weekday].nil?,
+               finish_weekday: opts[:finish_weekday],
+               finish_minutes: opts[:finish_minutes],
+               reason: opts[:reason]
+             }
+           })
     end
 
     def use_maintenance_window?
@@ -203,13 +208,13 @@ module TransactionChains
     end
 
     def transfer_cluster_resources
-      if environment_changed?
-        resources_changes.update(src_vps.transfer_resources_to_env!(
-          vps_user,
-          dst_node.location.environment,
-          opts[:resources]
-        ))
-      end
+      return unless environment_changed?
+
+      resources_changes.update(src_vps.transfer_resources_to_env!(
+                                 vps_user,
+                                 dst_node.location.environment,
+                                 opts[:resources]
+                               ))
     end
 
     def recursive_serialize(dataset, children)
@@ -227,7 +232,7 @@ module TransactionChains
         label: dip.label,
         min_snapshots: dip.min_snapshots,
         max_snapshots: dip.max_snapshots,
-        snapshot_max_age: dip.snapshot_max_age,
+        snapshot_max_age: dip.snapshot_max_age
       )
 
       lock(dst)
@@ -248,7 +253,7 @@ module TransactionChains
             label: dip.label,
             min_snapshots: dip.min_snapshots,
             max_snapshots: dip.max_snapshots,
-            snapshot_max_age: dip.snapshot_max_age,
+            snapshot_max_age: dip.snapshot_max_age
           )
 
           lock(dst)
@@ -288,11 +293,10 @@ module TransactionChains
         begin
           next unless ::EnvironmentDatasetPlan.find_by!(
             dataset_plan: plan,
-            environment: dst_dip.pool.node.location.environment,
+            environment: dst_dip.pool.node.location.environment
           ).user_add
-
         rescue ActiveRecord::RecordNotFound
-          next  # the plan is not present in the target environment
+          next # the plan is not present in the target environment
         end
 
         begin
@@ -300,7 +304,6 @@ module TransactionChains
             dst_dip,
             confirmation: confirmable
           )
-
         rescue VpsAdmin::API::Exceptions::DatasetPlanNotInEnvironment
           # This exception should never be raised, as the not-existing plan
           # in the target environment is caught by the rescue above.
@@ -322,8 +325,8 @@ module TransactionChains
       append(
         Transactions::Vps::PopulateConfig,
         args: dst_vps,
-        kwargs: {add_routes: opts[:handle_ips]},
-        urgent: true,
+        kwargs: { add_routes: opts[:handle_ips] },
+        urgent: true
       )
 
       if src_vps.network_interfaces.count > 1
@@ -335,7 +338,7 @@ module TransactionChains
         netif.call_class_hooks_for(
           :migrate,
           self,
-          args: [netif, dst_vps],
+          args: [netif, dst_vps]
         )
       end
 
@@ -355,7 +358,7 @@ module TransactionChains
             dst_vps.user,
             netif.ip_addresses.to_a,
             src_node.location,
-            dst_node.location,
+            dst_node.location
           )
         end
       elsif src_node.location != dst_node.location
@@ -382,9 +385,8 @@ module TransactionChains
               location: dst_vps.node.location,
               ip_v: ip.network.ip_version,
               role: ip.network.role.to_sym,
-              purpose: ip.network.purpose.to_sym,
+              purpose: ip.network.purpose.to_sym
             )
-
           rescue ActiveRecord::RecordNotFound
             dst_ip_addresses << [ip, nil]
             next
@@ -400,14 +402,14 @@ module TransactionChains
           dst = dst_ip_addresses.map { |v| v[1] }.compact
           errors = []
 
-          %i(ipv4 ipv4_private ipv6).each do |r|
+          %i[ipv4 ipv4_private ipv6].each do |r|
             diff = filter_ip_addresses(src, r).count - filter_ip_addresses(dst, r).count
             next if diff == 0
 
             errors << "#{diff} #{r} addresses"
           end
 
-          fail "Not enough free IP addresses in the target location: #{errors.join(', ')}"
+          raise "Not enough free IP addresses in the target location: #{errors.join(', ')}"
         end
 
         # Migrating to a different environment, transfer IP cluster resources
@@ -416,7 +418,7 @@ module TransactionChains
             vps_user,
             dst_ip_addresses,
             src_node.location.environment,
-            dst_node.location.environment,
+            dst_node.location.environment
           )
 
           unless changes.empty?
@@ -437,7 +439,7 @@ module TransactionChains
           all_dst_host_addrs.concat(dst_host_addrs)
 
           # Remove old addresses on the target node
-          remove_confirmation = Proc.new do |t|
+          remove_confirmation = proc do |t|
             t.edit(src_ip, network_interface_id: nil)
             t.edit(src_ip, user_id: nil) if src_ip.user_id
             t.edit(src_ip, charged_environment_id: nil)
@@ -484,13 +486,13 @@ module TransactionChains
           append_t(
             Transactions::NetworkInterface::AddRoute,
             args: [dst_netif, dst_ip],
-            urgent: true,
+            urgent: true
           ) do |t|
             t.edit(
               dst_ip,
               network_interface_id: dst_netif.id,
               order: src_ip.order,
-              charged_environment_id: dst_node.location.environment_id,
+              charged_environment_id: dst_node.location.environment_id
             )
 
             if !dst_ip.user_id && dst_node.location.environment.user_ip_ownership
@@ -503,15 +505,15 @@ module TransactionChains
 
         # Add new addresses to user's exports
         use_chain(Export::AddHostsToAll, args: [
-          vps_user,
-          dst_ip_addresses.map { |src, dst| dst }.compact,
-        ])
+                    vps_user,
+                    dst_ip_addresses.map { |_src, dst| dst }.compact
+                  ])
 
         # Remove old addresses from user's exports
         use_chain(Export::DelHostsFromAll, args: [
-          vps_user,
-          dst_ip_addresses.map { |src, dst| src }.compact,
-        ])
+                    vps_user,
+                    dst_ip_addresses.map { |src, _dst| src }.compact
+                  ])
 
         # Sort src host addresses by order
         all_src_host_addrs.sort! { |a, b| a[0].order <=> b[0].order }
@@ -526,12 +528,13 @@ module TransactionChains
           end
 
           next if dst_addr.nil?
+
           all_dst_host_addrs.delete(dst_addr)
 
           append_t(
             Transactions::NetworkInterface::AddHostIp,
             args: [dst_netif, dst_addr],
-            urgent: true,
+            urgent: true
           ) do |t|
             t.edit(dst_addr, order: i)
           end
@@ -547,13 +550,13 @@ module TransactionChains
           NetworkInterface::DelRoute,
           args: [
             dst_netif,
-            ips,
+            ips
           ],
           kwargs: {
             unregister: false,
             reallocate: opts[:reallocate_ips],
             phony: src_node.hypervisor_type != dst_node.hypervisor_type,
-            environment: netif.vps.node.location.environment,
+            environment: netif.vps.node.location.environment
           },
           urgent: true
         )
@@ -569,15 +572,15 @@ module TransactionChains
       ret = {}
 
       src_user_env = user.environment_user_configs.find_by!(
-        environment: src_env,
+        environment: src_env
       )
       dst_user_env = user.environment_user_configs.find_by!(
-        environment: dst_env,
+        environment: dst_env
       )
 
       new_ips = ips.select { |_, ip| !ip.user_id }.map { |v| v[1] }
 
-      %i(ipv4 ipv4_private ipv6).each do |r|
+      %i[ipv4 ipv4_private ipv6].each do |r|
         # Free only standalone IP addresses
         standalone_ips = ips.map { |v| v[0] }
 
@@ -585,7 +588,7 @@ module TransactionChains
           r,
           src_user_env.send(r) - filter_sum_ip_addresses(standalone_ips, r),
           user: user,
-          confirmed: ::ClusterResourceUse.confirmed(:confirmed),
+          confirmed: ::ClusterResourceUse.confirmed(:confirmed)
         )
 
         # Allocate all _new_ IP addresses
@@ -593,11 +596,11 @@ module TransactionChains
           r,
           dst_user_env.send(r) + filter_sum_ip_addresses(new_ips, r),
           user: user,
-          confirmed: ::ClusterResourceUse.confirmed(:confirmed),
+          confirmed: ::ClusterResourceUse.confirmed(:confirmed)
         )
 
-        ret[src_use] = {value: src_use.value}
-        ret[dst_use] = {value: dst_use.value}
+        ret[src_use] = { value: src_use.value }
+        ret[dst_use] = { value: dst_use.value }
       end
 
       ret
@@ -611,11 +614,11 @@ module TransactionChains
 
       # Check that all addresses are available in both locations
       ips.each do |ip|
-        if !ip.is_in_environment?(dst_loc.environment)
-          raise VpsAdmin::API::Exceptions::VpsMigrationError,
-                "IP #{ip} is not available in the target environment "+
-                "(#{dst_loc.environment.label})"
-        end
+        next if ip.is_in_environment?(dst_loc.environment)
+
+        raise VpsAdmin::API::Exceptions::VpsMigrationError,
+              "IP #{ip} is not available in the target environment " +
+              "(#{dst_loc.environment.label})"
       end
 
       src_env = src_loc.environment
@@ -624,13 +627,13 @@ module TransactionChains
       src_user_env = user.environment_user_configs.find_by!(environment: src_env)
       dst_user_env = user.environment_user_configs.find_by!(environment: dst_env)
 
-      %i(ipv4 ipv4_private ipv6).each do |r|
+      %i[ipv4 ipv4_private ipv6].each do |r|
         # Free addresses from src env
         src_use = src_user_env.reallocate_resource!(
           r,
           src_user_env.send(r) - filter_sum_ip_addresses(ips, r),
           user: user,
-          confirmed: ::ClusterResourceUse.confirmed(:confirmed),
+          confirmed: ::ClusterResourceUse.confirmed(:confirmed)
         )
 
         # Allocate in dst env
@@ -638,32 +641,32 @@ module TransactionChains
           r,
           dst_user_env.send(r) + filter_sum_ip_addresses(ips, r),
           user: user,
-          confirmed: ::ClusterResourceUse.confirmed(:confirmed),
+          confirmed: ::ClusterResourceUse.confirmed(:confirmed)
         )
 
-        changes[src_use] = {value: src_use.value}
-        changes[dst_use] = {value: dst_use.value}
+        changes[src_use] = { value: src_use.value }
+        changes[dst_use] = { value: dst_use.value }
       end
 
-      if changes.any?
-        append_t(Transactions::Utils::NoOp, args: find_node_id) do |t|
-          changes.each { |obj, change| t.edit(obj, change) }
+      return unless changes.any?
 
-          ips.each do |ip|
-            ip_changes = {
-              charged_environment_id: dst_loc.environment_id,
-            }
+      append_t(Transactions::Utils::NoOp, args: find_node_id) do |t|
+        changes.each { |obj, change| t.edit(obj, change) }
 
-            if ip.user_id \
-               && src_env.user_ip_ownership && !dst_env.user_ip_ownership
-              ip_changes[:user_id] = nil
-            elsif ip.user_id.nil? \
-                  && !src_env.user_ip_ownership && dst_env.user_ip_ownership
-              ip_changes[:user_id] = user.id
-            end
+        ips.each do |ip|
+          ip_changes = {
+            charged_environment_id: dst_loc.environment_id
+          }
 
-            t.edit(ip, ip_changes)
+          if ip.user_id \
+             && src_env.user_ip_ownership && !dst_env.user_ip_ownership
+            ip_changes[:user_id] = nil
+          elsif ip.user_id.nil? \
+                && !src_env.user_ip_ownership && dst_env.user_ip_ownership
+            ip_changes[:user_id] = user.id
           end
+
+          t.edit(ip, ip_changes)
         end
       end
     end
@@ -712,14 +715,14 @@ module TransactionChains
         to_create << ::VpsFeature.create!(
           vps: dst_vps,
           name: name,
-          enabled: false,
+          enabled: false
         )
       end
 
       append_t(Transactions::Vps::Features, args: [
-        dst_vps,
-        to_keep.values + to_create
-      ], urgent: true) do |t|
+                 dst_vps,
+                 to_keep.values + to_create
+               ], urgent: true) do |t|
         to_remove.each { |f| t.just_destroy(f) }
         to_create.each { |f| t.just_create(f) }
       end

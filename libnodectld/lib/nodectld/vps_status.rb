@@ -10,7 +10,7 @@ module NodeCtld
     class Entry
       attr_reader :id, :read_hostname
       attr_accessor :exists, :running, :hostname, :uptime, :cpu_usage, :memory,
-        :nproc, :loadavg, :in_rescue_mode
+                    :nproc, :loadavg, :in_rescue_mode
 
       def initialize(row)
         @skip = false
@@ -19,9 +19,9 @@ module NodeCtld
         @in_rescue_mode = false
       end
 
-      alias_method :read_hostname?, :read_hostname
-      alias_method :exists?, :exists
-      alias_method :running?, :running
+      alias read_hostname? read_hostname
+      alias exists? exists
+      alias running? running
 
       def skip
         @skip = true
@@ -68,7 +68,7 @@ module NodeCtld
 
       begin
         lavgs = OsCtl::Lib::LoadAvgReader.read_for(cts)
-      rescue => e
+      rescue StandardError => e
         log(:warn, :vps_status, "Unable to read load averages: #{e.message} (#{e.class})")
         lavgs = {}
       end
@@ -82,43 +82,37 @@ module NodeCtld
         vpsadmin_vps.exists = true
         vpsadmin_vps.running = vps[:state] == 'running'
 
-        if vpsadmin_vps.running?
-          # Find matching stats from ct top
-          apply_usage_stats(vpsadmin_vps)
+        next unless vpsadmin_vps.running?
 
-          run_or_skip(vpsadmin_vps) do
-            vpsadmin_vps.uptime = read_uptime(vps[:init_pid])
-          end
+        # Find matching stats from ct top
+        apply_usage_stats(vpsadmin_vps)
 
-          # Set loadavg
-          lavg = lavgs[ "#{vps[:pool]}:#{vps[:id]}" ]
-
-          if lavg
-            vpsadmin_vps.loadavg = lavg.avg
-          else
-            vpsadmin_vps.loadavg = nil
-          end
-
-          # Read hostname if it isn't managed by vpsAdmin
-          if vpsadmin_vps.read_hostname?
-            hostname_vpsadmin_vpses << vpsadmin_vps
-            vpsadmin_vps.hostname = 'unable-to-read'
-          end
-
-          # Detect osctl ct boot
-          if vps[:dataset] != vps[:boot_dataset]
-            vpsadmin_vps.in_rescue_mode = true
-          end
+        run_or_skip(vpsadmin_vps) do
+          vpsadmin_vps.uptime = read_uptime(vps[:init_pid])
         end
+
+        # Set loadavg
+        lavg = lavgs["#{vps[:pool]}:#{vps[:id]}"]
+
+        vpsadmin_vps.loadavg = (lavg.avg if lavg)
+
+        # Read hostname if it isn't managed by vpsAdmin
+        if vpsadmin_vps.read_hostname?
+          hostname_vpsadmin_vpses << vpsadmin_vps
+          vpsadmin_vps.hostname = 'unable-to-read'
+        end
+
+        # Detect osctl ct boot
+        vpsadmin_vps.in_rescue_mode = true if vps[:dataset] != vps[:boot_dataset]
       end
 
       # Query hostname of VPSes with manual configuration
       if hostname_vpsadmin_vpses.any?
         begin
           osctl_parse(
-            %i(ct ls),
+            %i[ct ls],
             hostname_vpsadmin_vpses.map(&:id),
-            {output: %w(id hostname_readout).join(',')},
+            { output: %w[id hostname_readout].join(',') }
           ).each do |ct|
             vpsadmin_vpses[ct[:id]].hostname = ct[:hostname_readout] || 'unable-to-read'
           end
@@ -128,7 +122,7 @@ module NodeCtld
       end
 
       # Send results to supervisor
-      vpsadmin_vpses.each do |vps_id, vps|
+      vpsadmin_vpses.each do |_vps_id, vps|
         next unless vps.exists?
 
         NodeBunny.publish_wait(
@@ -144,18 +138,18 @@ module NodeCtld
             process_count: vps.nproc,
             used_memory: vps.memory,
             cpu_usage: vps.cpu_usage,
-            hostname: vps.hostname,
+            hostname: vps.hostname
           }.to_json,
           content_type: 'application/json',
-          routing_key: 'vps_statuses',
+          routing_key: 'vps_statuses'
         )
       end
-
     rescue SystemCommandFailed => e
       log(:fatal, :vps_status, e.message)
     end
 
     protected
+
     def fetch_vpses
       RpcClient.run do |rpc|
         rpc.list_vps_status_check
@@ -163,13 +157,12 @@ module NodeCtld
     end
 
     def ct_list
-      osctl_parse(%i(ct ls))
+      osctl_parse(%i[ct ls])
     end
 
     def run_or_skip(vps)
       yield
-
-    rescue => e
+    rescue StandardError => e
       log(:warn, :vps, e.message)
       vps.skip
     end

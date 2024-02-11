@@ -1,8 +1,8 @@
 module NodeCtld
   class VpsConfig::Mount
-    ATTRIBUTES = %i(id on_start_fail type src_node_addr pool_fs dataset_name
+    ATTRIBUTES = %i[id on_start_fail type src_node_addr pool_fs dataset_name
                     snapshot_id snapshot dataset_tree branch dst
-                    mount_opts umount_opts mode)
+                    mount_opts umount_opts mode]
 
     # @return [Integer]
     attr_reader :id
@@ -48,15 +48,13 @@ module NodeCtld
 
     # @param data [Hash]
     def self.load(data)
-      new(Hash[data.map { |k, v| [k.to_sym, v] } ])
+      new(Hash[data.map { |k, v| [k.to_sym, v] }])
     end
 
     # @param opts [Hash] attributes
     def initialize(opts)
       ATTRIBUTES.each do |attr|
-        if opts.has_key?(attr)
-          instance_variable_set(:"@#{attr}", opts[attr])
-        end
+        instance_variable_set(:"@#{attr}", opts[attr]) if opts.has_key?(attr)
       end
     end
 

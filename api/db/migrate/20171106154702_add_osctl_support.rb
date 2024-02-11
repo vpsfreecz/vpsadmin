@@ -1,7 +1,7 @@
 class AddOsctlSupport < ActiveRecord::Migration
-  class UserNamespaceBlock < ActiveRecord::Base ; end
-  class UserNamespaceUgid < ActiveRecord::Base ; end
-  class OsTemplate < ActiveRecord::Base ; end
+  class UserNamespaceBlock < ActiveRecord::Base; end
+  class UserNamespaceUgid < ActiveRecord::Base; end
+  class OsTemplate < ActiveRecord::Base; end
 
   def change
     create_table :user_namespaces do |t|
@@ -38,9 +38,9 @@ class AddOsctlSupport < ActiveRecord::Migration
 
         while offset < max
           UserNamespaceBlock.create!(
-              index: i,
-              offset: offset,
-              size: size,
+            index: i,
+            offset: offset,
+            size: size
           )
 
           i += 1
@@ -59,8 +59,8 @@ class AddOsctlSupport < ActiveRecord::Migration
 
     reversible do |dir|
       dir.up do
-        10000.times do |i|
-          UserNamespaceUgid.create!(ugid: 10000+i)
+        10_000.times do |i|
+          UserNamespaceUgid.create!(ugid: 10_000 + i)
         end
       end
     end
@@ -71,7 +71,7 @@ class AddOsctlSupport < ActiveRecord::Migration
     reversible do |dir|
       dir.up do
         ActiveRecord::Base.connection.execute(
-            'UPDATE nodes SET hypervisor_type = 0 WHERE role = 0'
+          'UPDATE nodes SET hypervisor_type = 0 WHERE role = 0'
         )
       end
     end
@@ -95,11 +95,11 @@ class AddOsctlSupport < ActiveRecord::Migration
           dist, ver, arch, vendor, variant = t.name.split('-')
 
           t.update!(
-              distribution: dist,
-              version: ver,
-              arch: arch,
-              vendor: vendor,
-              variant: variant,
+            distribution: dist,
+            version: ver,
+            arch: arch,
+            vendor: vendor,
+            variant: variant
           )
         end
       end

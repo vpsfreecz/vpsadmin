@@ -8,6 +8,6 @@ class AddVpsSshHostKeys < ActiveRecord::Migration[6.1]
       t.timestamps                              null: false
     end
 
-    add_index :vps_ssh_host_keys, %i(vps_id algorithm), unique: true
+    add_index :vps_ssh_host_keys, %i[vps_id algorithm], unique: true
   end
 end

@@ -9,10 +9,10 @@ class Pool < ActiveRecord::Base
   has_many :dataset_actions
   has_many :snapshot_downloads
 
-  enum role: %i(hypervisor primary backup)
+  enum role: %i[hypervisor primary backup]
 
-  STATE_VALUES = %i(unknown online degraded suspended faulted error)
-  SCAN_VALUES = %i(unknown none scrub resilver error)
+  STATE_VALUES = %i[unknown online degraded suspended faulted error]
+  SCAN_VALUES = %i[unknown none scrub resilver error]
 
   enum state: STATE_VALUES, _prefix: :state
   enum scan: SCAN_VALUES, _prefix: :scan
@@ -36,14 +36,14 @@ class Pool < ActiveRecord::Base
   # @param role [:hypervisor, :primary]
   # @return [Array<::Pool>]
   def self.pick_by_node(node, role: nil)
-    q = self
-      .joins('LEFT JOIN dataset_in_pools ON dataset_in_pools.pool_id = pools.id')
+    q =
+      joins('LEFT JOIN dataset_in_pools ON dataset_in_pools.pool_id = pools.id')
       .where(
         'pools.max_datasets > 0
         AND pools.is_open = 1
         AND pools.maintenance_lock = 0
         AND pools.node_id = ?',
-        node.id,
+        node.id
       )
 
     q = q.where(role: role.to_s) if role
@@ -58,8 +58,9 @@ class Pool < ActiveRecord::Base
   # @param role [:hypervisor, :primary]
   # @return [::Pool]
   def self.take_by_node!(node, role: nil)
-    pool, _ = pick_by_node(node, role: role)
-    fail "no pool available on #{node.domain_name}" if pool.nil?
+    pool, = pick_by_node(node, role: role)
+    raise "no pool available on #{node.domain_name}" if pool.nil?
+
     pool
   end
 
@@ -69,15 +70,15 @@ class Pool < ActiveRecord::Base
     if i.nil?
       filesystem
     else
-      filesystem[0..(i-1)]
+      filesystem[0..(i - 1)]
     end
   end
 
   def state_value
-    STATE_VALUES[ self.class.states[state] ].to_s
+    STATE_VALUES[self.class.states[state]].to_s
   end
 
   def scan_value
-    SCAN_VALUES[ self.class.scans[scan] ].to_s
+    SCAN_VALUES[self.class.scans[scan]].to_s
   end
 end

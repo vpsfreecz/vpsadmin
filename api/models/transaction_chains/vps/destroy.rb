@@ -2,7 +2,7 @@ module TransactionChains
   class Vps::Destroy < ::TransactionChain
     label 'Destroy'
 
-    def link_chain(vps, target, state, log)
+    def link_chain(vps, _target, _state, _log)
       lock(vps.dataset_in_pool)
       lock(vps)
       concerns(:affect, [vps.class.name, vps.id])
@@ -15,7 +15,7 @@ module TransactionChains
 
       # Remove mounts
       vps.mounts.each do |mnt|
-        fail 'snapshot mounts are not supported' if mnt.snapshot_in_pool_id
+        raise 'snapshot mounts are not supported' if mnt.snapshot_in_pool_id
 
         use_chain(Vps::UmountDataset, args: [vps, mnt, false])
       end
@@ -40,7 +40,7 @@ module TransactionChains
       # evaluating them.
       use_chain(
         DatasetInPool::Destroy,
-        args: [vps.dataset_in_pool, {recursive: true, destroy: false}]
+        args: [vps.dataset_in_pool, { recursive: true, destroy: false }]
       )
 
       # Destroy VPS
@@ -66,7 +66,7 @@ module TransactionChains
       # Delete SSH host keys
       vps.vps_ssh_host_keys.delete_all
 
-      # Note: there are too many records to delete them using transaction confirmations.
+      # NOTE: there are too many records to delete them using transaction confirmations.
       # All VPS statuses are deleted whether the chain is successful or not.
       vps.vps_statuses.delete_all
     end

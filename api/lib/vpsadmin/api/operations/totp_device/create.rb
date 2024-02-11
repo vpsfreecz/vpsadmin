@@ -8,15 +8,13 @@ module VpsAdmin::API
     # @return [::UserTotpDevice]
     def run(user, label)
       5.times do
-        begin
-          return ::UserTotpDevice.create!(
-            user: user,
-            label: label,
-            secret: ROTP::Base32.random,
-          )
-        rescue ActiveRecord::RecordNotUnique
-          next
-        end
+        return ::UserTotpDevice.create!(
+          user: user,
+          label: label,
+          secret: ROTP::Base32.random
+        )
+      rescue ActiveRecord::RecordNotUnique
+        next
       end
 
       raise Exceptions::OperationError, 'unable to generate totp secret'

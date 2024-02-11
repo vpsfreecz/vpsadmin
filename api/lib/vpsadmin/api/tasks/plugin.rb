@@ -2,9 +2,9 @@ module VpsAdmin::API::Tasks
   class Plugin < Base
     # List installed plugins
     def list
-      puts sprintf('%-20s %-20s %10s  %-20s', 'ID', 'NAME', 'VERSION', 'COMPONENTS')
-      VpsAdmin::API::Plugin.registered.each do |id, p|
-        puts sprintf(
+      puts format('%-20s %-20s %10s  %-20s', 'ID', 'NAME', 'VERSION', 'COMPONENTS')
+      VpsAdmin::API::Plugin.registered.each do |_id, p|
+        puts format(
           '%-20s %-20s %10s  %-20s',
           p.id,
           p.name,
@@ -20,7 +20,7 @@ module VpsAdmin::API::Tasks
     def status
       required_env('PLUGIN')
       plugin = VpsAdmin::API::Plugin.registered[ENV['PLUGIN'].to_sym]
-      fail 'plugin not found' unless plugin
+      raise 'plugin not found' unless plugin
 
       sm_table = ::ActiveRecord::Base.connection.schema_migration.table_name
 
@@ -33,7 +33,6 @@ module VpsAdmin::API::Tasks
         "SELECT version FROM #{sm_table}"
       ).delete_if do |v|
         v.match(/-#{plugin.id}$/).nil?
-
       end.map! do |version|
         ::ActiveRecord::Base.connection.schema_migration.normalize_migration_number(version)
       end
@@ -58,7 +57,7 @@ module VpsAdmin::API::Tasks
       puts "database: #{ActiveRecord::Base.connection_db_config.database}"
       puts "plugin:   #{plugin.id}\n\n"
       puts "#{'Status'.center(8)}  #{'Migration ID'.ljust(14)}  Migration Name"
-      puts "-" * 50
+      puts '-' * 50
       (db_list + file_list).sort_by { |migration| migration[1] }.each do |migration|
         puts "#{migration[0].center(8)}  #{migration[1].ljust(14)}  #{migration[2]}"
       end
@@ -72,7 +71,7 @@ module VpsAdmin::API::Tasks
     # [VERSION]: target version, requires plugin name
     def migrate
       if ENV['PLUGIN'].nil?
-        fail 'VERSION requires PLUGIN to be set' if ENV['VERSION']
+        raise 'VERSION requires PLUGIN to be set' if ENV['VERSION']
 
         VpsAdmin::API::Plugin.registered.each_value do |p|
           puts "Migrating plugin #{p.id}"
@@ -82,7 +81,7 @@ module VpsAdmin::API::Tasks
       else
         v = ENV['VERSION'].nil? ? nil : ENV['VERSION'].to_i
         plugin = VpsAdmin::API::Plugin.registered[ENV['PLUGIN'].to_sym]
-        fail 'plugin not found' unless plugin
+        raise 'plugin not found' unless plugin
 
         plugin.migrate(v)
       end
@@ -96,7 +95,7 @@ module VpsAdmin::API::Tasks
     def rollback
       required_env('PLUGIN')
       plugin = VpsAdmin::API::Plugin.registered[ENV['PLUGIN'].to_sym]
-      fail 'plugin not found' unless plugin
+      raise 'plugin not found' unless plugin
 
       step = ENV['STEP'] ? ENV['STEP'].to_i : 1
       plugin.rollback(step)
@@ -109,7 +108,7 @@ module VpsAdmin::API::Tasks
     def uninstall
       required_env('PLUGIN')
       plugin = VpsAdmin::API::Plugin.registered[ENV['PLUGIN'].to_sym]
-      fail 'plugin not found' unless plugin
+      raise 'plugin not found' unless plugin
 
       plugin.rollback(plugin.migrations.count)
     end

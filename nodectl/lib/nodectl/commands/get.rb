@@ -10,11 +10,11 @@ module NodeCtl
     include Utils
     include OsCtl::Lib::Utils::Humanize
 
-    def options(parser, args)
+    def options(parser, _args)
       opts.update({
-          header: true,
-          limit: 50,
-      })
+                    header: true,
+                    limit: 50
+                  })
 
       parser.on('-H', '--no-header', 'Suppress header row') do
         opts[:header] = false
@@ -24,20 +24,20 @@ module NodeCtl
         opts[:limit] = l
       end
 
-      parser.separator <<END
+      parser.separator <<~END
 
-Subcommands:
-config [some.key]    Show nodectld's config or specific key
-queue                List transactions queued for execution
-veth_map             Print hash table that maps VPS interfaces to host interfaces
-net_accounting       Print network interface accounting state
-END
+        Subcommands:
+        config [some.key]    Show nodectld's config or specific key
+        queue                List transactions queued for execution
+        veth_map             Print hash table that maps VPS interfaces to host interfaces
+        net_accounting       Print network interface accounting state
+      END
     end
 
     def validate
       raise ValidationError, 'missing resource' if args.size < 1
 
-      params.update({resource: args[0], limit: opts[:limit]})
+      params.update({ resource: args[0], limit: opts[:limit] })
     end
 
     def process
@@ -65,13 +65,15 @@ END
           puts q.to_json
 
         else
-          puts sprintf(
-            '%-6s %-8s %-3s %-3s %-4s %-5s %-5s %-5s %-8s %-18.16s',
-            'CHAIN', 'TRANS', 'DIR', 'URG', 'PRIO', 'USER', 'VEID', 'TYPE', 'DEP', 'WAITING'
-          ) if opts[:header]
+          if opts[:header]
+            puts format(
+              '%-6s %-8s %-3s %-3s %-4s %-5s %-5s %-5s %-8s %-18.16s',
+              'CHAIN', 'TRANS', 'DIR', 'URG', 'PRIO', 'USER', 'VEID', 'TYPE', 'DEP', 'WAITING'
+            )
+          end
 
           q.each do |t|
-            puts sprintf(
+            puts format(
               '%-6d %-8d %-3d %-3d %-4d %-5d %-5d %-5d %-8d %-18.16s',
               t[:chain], t[:id], t[:state], t[:urgent] ? 1 : 0, t[:priority], t[:m_id], t[:vps_id],
               t[:type], t[:depends_on],
@@ -87,16 +89,17 @@ END
           puts map.to_json
 
         else
-          puts sprintf(
-            '%-10s %s',
-            'VPS', 'INTERFACES'
-          ) if opts[:header]
+          if opts[:header]
+            puts format(
+              '%-10s %s',
+              'VPS', 'INTERFACES'
+            )
+          end
 
           map.sort do |a, b|
             a[0] <=> b[0]
-
           end.each do |vps_id, netifs|
-            puts sprintf(
+            puts format(
               '%-10s %s',
               vps_id,
               netifs.map { |vps_veth, host_veth| "#{vps_veth}=#{host_veth}" }.join(',')
@@ -111,20 +114,22 @@ END
           puts interfaces.to_json
 
         else
-          puts sprintf(
-            '%-10s %5s %-10s %8s %8s %8s %6s ' + (['%12s'] * 4 * 3).join(' '),
-            'VPS', 'USER', 'NETIF', 'NETIF_ID',
-            'UPDATE', 'LOG', 'DELTA',
-            'B/IN', 'B/OUT', 'PKT/IN', 'PKT/OUT',
-            'LOG_B/IN', 'LOG_B/OUT', 'LOG_PKT/IN', 'LOG_PKT/OUT',
-            'LAST_B/IN', 'LAST_B/OUT', 'LAST_PKT/IN', 'LAST_PKT/OUT',
-          ) if opts[:header]
+          if opts[:header]
+            puts format(
+              '%-10s %5s %-10s %8s %8s %8s %6s ' + (['%12s'] * 4 * 3).join(' '),
+              'VPS', 'USER', 'NETIF', 'NETIF_ID',
+              'UPDATE', 'LOG', 'DELTA',
+              'B/IN', 'B/OUT', 'PKT/IN', 'PKT/OUT',
+              'LOG_B/IN', 'LOG_B/OUT', 'LOG_PKT/IN', 'LOG_PKT/OUT',
+              'LAST_B/IN', 'LAST_B/OUT', 'LAST_PKT/IN', 'LAST_PKT/OUT'
+            )
+          end
 
           row_fmt = '%-10d %5d %-10s %8d %8s %8s %6d ' + (['%12s'] * 4 * 3).join(' ')
           now = Time.now
 
           interfaces.each do |n|
-            puts sprintf(
+            puts format(
               row_fmt,
               n[:vps_id],
               n[:user_id],
@@ -135,7 +140,7 @@ END
               n[:delta],
               *format_interface_stats(n, ''),
               *format_interface_stats(n, 'log_'),
-              *format_interface_stats(n, 'last_'),
+              *format_interface_stats(n, 'last_')
             )
           end
         end
@@ -147,8 +152,9 @@ END
     end
 
     protected
+
     def format_duration_ago(timestamp, from)
-      sprintf('-%.1fs', from - Time.at(timestamp))
+      format('-%.1fs', from - Time.at(timestamp))
     end
 
     def format_interface_stats(n, prefix)
@@ -156,7 +162,7 @@ END
         humanize_data(n[:"#{prefix}bytes_in"]),
         humanize_data(n[:"#{prefix}bytes_out"]),
         humanize_number(n[:"#{prefix}packets_in"]),
-        humanize_number(n[:"#{prefix}packets_out"]),
+        humanize_number(n[:"#{prefix}packets_out"])
       ]
     end
   end

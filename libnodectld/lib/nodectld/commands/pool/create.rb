@@ -29,16 +29,17 @@ module NodeCtld
     end
 
     protected
+
     def ensure_ds(fs, opts = nil)
       ret = zfs(:get, '-H -o value name', fs, valid_rcs: [1])
 
       # Does not exist
       if ret.exitstatus == 1
-        if opts
-          str_opts = opts.map { |k, v| "-o #{k}=\"#{translate_property(k, v)}\""  }.join(' ')
-        else
-          str_opts = ''
-        end
+        str_opts = if opts
+                     opts.map { |k, v| "-o #{k}=\"#{translate_property(k, v)}\"" }.join(' ')
+                   else
+                     ''
+                   end
 
         zfs(:create, str_opts, fs)
         return
@@ -47,7 +48,7 @@ module NodeCtld
       # Exists, set options
       return unless opts
 
-      str_opts = opts.map { |k, v| "#{k}=\"#{translate_property(k, v)}\""  }.join(' ')
+      str_opts = opts.map { |k, v| "#{k}=\"#{translate_property(k, v)}\"" }.join(' ')
       return if str_opts.empty?
 
       zfs(:set, str_opts, fs)

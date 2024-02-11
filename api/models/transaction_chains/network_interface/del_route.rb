@@ -24,43 +24,43 @@ module TransactionChains
 
       uses = []
       user_env = netif.vps.user.environment_user_configs.find_by!(
-        environment: env,
+        environment: env
       )
       ips_arr = ips.to_a
 
       if opts[:reallocate] && !env.user_ip_ownership
-        %i(ipv4 ipv4_private ipv6).each do |r|
+        %i[ipv4 ipv4_private ipv6].each do |r|
           cnt = case r
-          when :ipv4
-            ips_arr.inject(0) do |sum, ip|
-              if ip.network.role == 'public_access' && ip.network.ip_version == 4
-                sum + ip.size
+                when :ipv4
+                  ips_arr.inject(0) do |sum, ip|
+                    if ip.network.role == 'public_access' && ip.network.ip_version == 4
+                      sum + ip.size
 
-              else
-                sum
-              end
-            end
+                    else
+                      sum
+                    end
+                  end
 
-          when :ipv4_private
-            ips_arr.inject(0) do |sum, ip|
-              if ip.network.role == 'private_access' && ip.network.ip_version == 4
-                sum + ip.size
+                when :ipv4_private
+                  ips_arr.inject(0) do |sum, ip|
+                    if ip.network.role == 'private_access' && ip.network.ip_version == 4
+                      sum + ip.size
 
-              else
-                sum
-              end
-            end
+                    else
+                      sum
+                    end
+                  end
 
-          when :ipv6
-            ips_arr.inject(0) do |sum, ip|
-              if ip.network.ip_version == 6
-                sum + ip.size
+                when :ipv6
+                  ips_arr.inject(0) do |sum, ip|
+                    if ip.network.ip_version == 6
+                      sum + ip.size
 
-              else
-                sum
-              end
-            end
-          end
+                    else
+                      sum
+                    end
+                  end
+                end
 
           uses << user_env.reallocate_resource!(
             r,
@@ -77,9 +77,9 @@ module TransactionChains
           NetworkInterface::DelHostIp,
           args: [
             netif,
-            ip.host_ip_addresses.where.not(order: nil).to_a,
+            ip.host_ip_addresses.where.not(order: nil).to_a
           ],
-          kwargs: {phony: opts[:phony]},
+          kwargs: { phony: opts[:phony] }
         )
 
         if opts[:phony]
@@ -94,28 +94,31 @@ module TransactionChains
         end
       end
 
-      append_t(Transactions::Utils::NoOp, args: netif.vps.node_id) do |t|
-        uses.each do |use|
-          if use.updating?
-            t.edit(use, value: use.value)
-          else
-            t.create(use)
+      unless uses.empty?
+        append_t(Transactions::Utils::NoOp, args: netif.vps.node_id) do |t|
+          uses.each do |use|
+            if use.updating?
+              t.edit(use, value: use.value)
+            else
+              t.create(use)
+            end
           end
         end
-      end unless uses.empty?
+      end
 
       use_chain(Export::DelHostsFromAll, args: [netif.vps.user, ips_arr])
     end
 
     protected
+
     def ip_confirmation(t, netif, ip, env)
       changes = {
         network_interface_id: nil,
         route_via_id: nil,
-        order: nil,
+        order: nil
       }
 
-      if !env.user_ip_ownership
+      unless env.user_ip_ownership
         changes[:charged_environment_id] = nil
 
         ip.host_ip_addresses.where(user_created: true).each do |host|
@@ -125,9 +128,11 @@ module TransactionChains
 
       t.edit(ip, changes)
 
-      t.just_create(
-        netif.vps.log(:route_del, {id: ip.id, addr: ip.addr})
-      ) unless included?
+      unless included?
+        t.just_create(
+          netif.vps.log(:route_del, { id: ip.id, addr: ip.addr })
+        )
+      end
 
       ip.log_unassignment(chain: current_chain, confirmable: t)
     end

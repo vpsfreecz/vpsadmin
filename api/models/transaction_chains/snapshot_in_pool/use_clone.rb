@@ -6,7 +6,7 @@ module TransactionChains
     def link_chain(sip, userns_map)
       cl = ::SnapshotInPoolClone.where(
         snapshot_in_pool: sip,
-        user_namespace_map: userns_map,
+        user_namespace_map: userns_map
       ).take
 
       if cl.nil?
@@ -20,11 +20,12 @@ module TransactionChains
     end
 
     protected
+
     def create_clone(sip, userns_map)
       cl = ::SnapshotInPoolClone.create!(
         snapshot_in_pool: sip,
         user_namespace_map: userns_map,
-        name: "#{sip.snapshot_id}-0.snapshot",
+        name: "#{sip.snapshot_id}-0.snapshot"
       )
       lock(cl)
       cl.update!(name: "#{sip.snapshot_id}-#{cl.id}.snapshot")

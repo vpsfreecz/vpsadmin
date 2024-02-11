@@ -19,17 +19,15 @@ class VpsMaintenanceWindow < ActiveRecord::Base
     if opens_at < 0
       errors.add(:opens_at, 'must be greater or equal to zero')
 
-    elsif opens_at >= 24*60
+    elsif opens_at >= 24 * 60
       errors.add(:opens_at, 'must be less or equal to 23:59')
     end
 
-    if opens_at > closes_at
-      errors.add(:closes_at, 'must be greater than opens_at')
-    end
+    errors.add(:closes_at, 'must be greater than opens_at') if opens_at > closes_at
 
-    if closes_at > 24*60
-      errors.add(:closes_at, 'must be less or equal to 24:00')
-    end
+    return unless closes_at > 24 * 60
+
+    errors.add(:closes_at, 'must be less or equal to 24:00')
   end
 
   def check_length
@@ -37,12 +35,12 @@ class VpsMaintenanceWindow < ActiveRecord::Base
       errors.add(:closes_at, 'must be at least 60 minutes after opens_at')
     end
 
-    sum = vps.vps_maintenance_windows.where.not(id: self.id).sum('closes_at - opens_at')
+    sum = vps.vps_maintenance_windows.where.not(id: id).sum('closes_at - opens_at')
     sum += closes_at - opens_at if opens_at && closes_at && is_open
 
-    if sum / 60.0 < 12
-      errors.add(:closes_at, 'maintenance window per week must be at least 12 hours long')
-    end
+    return unless sum / 60.0 < 12
+
+    errors.add(:closes_at, 'maintenance window per week must be at least 12 hours long')
   end
 
   # Generate maintenance windows specific for this migration
@@ -57,7 +55,7 @@ class VpsMaintenanceWindow < ActiveRecord::Base
     windows = (0..6).map do |i|
       ::VpsMaintenanceWindow.new(
         vps: vps,
-        weekday: i,
+        weekday: i
       )
     end
 
@@ -65,7 +63,7 @@ class VpsMaintenanceWindow < ActiveRecord::Base
     finish_day.assign_attributes(
       is_open: true,
       opens_at: finish_minutes,
-      closes_at: 24*60,
+      closes_at: 24 * 60
     )
 
     cur_day = Time.now.wday
@@ -78,7 +76,7 @@ class VpsMaintenanceWindow < ActiveRecord::Base
         w.assign_attributes(
           is_open: true,
           opens_at: 0,
-          closes_at: 24*60,
+          closes_at: 24 * 60
         )
       end
 
@@ -102,13 +100,13 @@ class VpsMaintenanceWindow < ActiveRecord::Base
           windows[day].assign_attributes(
             is_open: true,
             opens_at: 0,
-            closes_at: 24*60,
+            closes_at: 24 * 60
           )
         else
           windows[day].assign_attributes(
             is_open: false,
             opens_at: nil,
-            closes_at: nil,
+            closes_at: nil
           )
         end
       end
@@ -116,9 +114,7 @@ class VpsMaintenanceWindow < ActiveRecord::Base
 
     windows.delete_if { |w| !w.is_open }
 
-    unless windows.detect { |w| w.is_open }
-      fail 'programming error: no maintenance window is open'
-    end
+    raise 'programming error: no maintenance window is open' unless windows.detect { |w| w.is_open }
 
     windows
   end

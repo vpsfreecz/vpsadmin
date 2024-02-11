@@ -10,7 +10,7 @@ namespace :vpsadmin do
     desc 'Close inactive events'
     task :close do
       ::MonitoredEvent.where(
-        state: %w(monitoring confirmed acknowledged ignored),
+        state: %w[monitoring confirmed acknowledged ignored]
       ).where(
         'DATE_ADD(updated_at, INTERVAL 1 MONTH) < ?', Time.now.utc.strftime('%Y-%m-%d %H:%M:%S')
       ).each do |event|

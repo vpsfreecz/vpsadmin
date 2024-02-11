@@ -12,7 +12,7 @@ module NodeCtld
     include Singleton
 
     class << self
-      %i(setup add_pool add_vps remove_vps).each do |v|
+      %i[setup add_pool add_vps remove_vps].each do |v|
         define_method(v) do |*args, **kwargs, &block|
           instance.send(v, *args, **kwargs, &block)
         end
@@ -46,7 +46,7 @@ module NodeCtld
         vps_id: vps_id,
         user_name: user_name,
         uidmap: uidmap,
-        gidmap: gidmap,
+        gidmap: gidmap
       )
     end
 
@@ -59,13 +59,14 @@ module NodeCtld
     end
 
     protected
+
     def setup_pool_users
       RpcClient.run do |rpc|
         rpc.list_pools.each do |pool|
           pu = PoolUsers.new(pool['filesystem'])
           pu.setup(rpc, pool['id'])
 
-          @pool_users[ pool['filesystem'] ] = pu
+          @pool_users[pool['filesystem']] = pu
         end
       end
     end
@@ -131,6 +132,7 @@ module NodeCtld
       end
 
       protected
+
       def dump
         save_users = []
 
@@ -141,7 +143,7 @@ module NodeCtld
         end
 
         {
-          'users' => save_users,
+          'users' => save_users
         }
       end
 
@@ -149,7 +151,7 @@ module NodeCtld
         sync do
           FileUtils.mkdir_p(config_dir)
 
-          regenerate_file(config_path, 0644) do |new|
+          regenerate_file(config_path, 0o644) do |new|
             new.puts(OsCtl::Lib::ConfigFile.dump_yaml(dump))
           end
         end
@@ -173,7 +175,7 @@ module NodeCtld
           '/',
           @pool_fs,
           path_to_pool_working_dir(:config),
-          'users',
+          'users'
         )
       end
 
@@ -181,11 +183,11 @@ module NodeCtld
         @config_path ||= File.join(config_dir, 'user-list.yml')
       end
 
-      def sync
+      def sync(&block)
         if @mutex.owned?
           yield
         else
-          @mutex.synchronize { yield }
+          @mutex.synchronize(&block)
         end
       end
     end
@@ -201,7 +203,7 @@ module NodeCtld
           vps_map['map_name'],
           created: true,
           uidmap: vps_map['uidmap'],
-          gidmap: vps_map['gidmap'],
+          gidmap: vps_map['gidmap']
         )
       end
 
@@ -211,7 +213,7 @@ module NodeCtld
           cfg['name'],
           created: cfg['created'],
           uidmap: cfg['uidmap'],
-          gidmap: cfg['gidmap'],
+          gidmap: cfg['gidmap']
         )
 
         cfg['vpses'].each do |vps_id|
@@ -227,7 +229,7 @@ module NodeCtld
       # @return [Boolean]
       attr_reader :created
 
-      def initialize(pool_name, name, created: false, uidmap:, gidmap:)
+      def initialize(pool_name, name, uidmap:, gidmap:, created: false)
         @mutex = Mutex.new
         @pool_name = pool_name
         @name = name
@@ -273,7 +275,7 @@ module NodeCtld
             'created' => @created,
             'uidmap' => @uidmap,
             'gidmap' => @gidmap,
-            'vpses' => @vpses.keys,
+            'vpses' => @vpses.keys
           }
         end
       end
@@ -282,7 +284,7 @@ module NodeCtld
         if @mutex.owned?
           yield
         else
-          @mutex.synchronize { yield }
+          @mutex.synchronize(&block)
         end
       end
 
@@ -291,13 +293,14 @@ module NodeCtld
       end
 
       protected
+
       def create
-        osctl_pool(@pool_name, %i(user new), @name, {map_uid: @uidmap, map_gid: @gidmap})
+        osctl_pool(@pool_name, %i[user new], @name, { map_uid: @uidmap, map_gid: @gidmap })
         @created = true
       end
 
       def destroy
-        osctl_pool(@pool_name, %i(user del), @name)
+        osctl_pool(@pool_name, %i[user del], @name)
         @created = false
       end
     end

@@ -23,7 +23,7 @@ class VpsAdmin::API::Resources::DatasetPlan < HaveAPI::Resource
       use :all
     end
 
-    authorize do |u|
+    authorize do |_u|
       allow
     end
 
@@ -39,7 +39,7 @@ class VpsAdmin::API::Resources::DatasetPlan < HaveAPI::Resource
       use :all
     end
 
-    authorize do |u|
+    authorize do |_u|
       allow
     end
 

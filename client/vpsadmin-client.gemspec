@@ -1,5 +1,4 @@
-# coding: utf-8
-lib = File.expand_path('../lib', __FILE__)
+lib = File.expand_path('lib', __dir__)
 $LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
 require 'vpsadmin/client/version'
 
@@ -9,7 +8,7 @@ Gem::Specification.new do |spec|
   spec.authors       = ['Jakub Skokan']
   spec.email         = ['jakub.skokan@vpsfree.cz']
   spec.summary       =
-  spec.description   = 'Ruby API and CLI for vpsAdmin API'
+    spec.description = 'Ruby API and CLI for vpsAdmin API'
   spec.homepage      = ''
   spec.license       = 'GPL'
 
@@ -21,7 +20,7 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency 'bundler'
   spec.add_development_dependency 'rake'
 
+  spec.add_runtime_dependency 'curses'
   spec.add_runtime_dependency 'haveapi-client', '~> 0.20.0'
   spec.add_runtime_dependency 'json'
-  spec.add_runtime_dependency 'curses'
 end

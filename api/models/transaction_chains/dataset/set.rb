@@ -44,7 +44,6 @@ module TransactionChains
       end
 
       append_t(Transactions::Storage::SetDataset, args: [dataset_in_pool, props]) do |t|
-
         props.each_value do |p|
           edit_children(t, p[0], YAML.dump(p[1]))
           t.edit(p[0], inherited: false)
@@ -64,7 +63,7 @@ module TransactionChains
             t.edit(
               exp,
               state: ::DatasetExpansion.states[:resolved],
-              updated_at: Time.now.utc.strftime('%Y-%m-%d %H:%M:%S'),
+              updated_at: Time.now.utc.strftime('%Y-%m-%d %H:%M:%S')
             )
           elsif properties[:refquota] < dataset_in_pool.refquota
             new_added_space = properties[:refquota] - exp.original_refquota
@@ -73,18 +72,17 @@ module TransactionChains
             t.edit(
               exp,
               added_space: new_added_space,
-              updated_at: Time.now.utc.strftime('%Y-%m-%d %H:%M:%S'),
+              updated_at: Time.now.utc.strftime('%Y-%m-%d %H:%M:%S')
             )
 
             t.just_create(exp.dataset_expansion_histories.create!(
-              added_space: returned_space,
-              original_refquota: dataset_in_pool.refquota,
-              new_refquota: properties[:refquota],
-              admin: ::User.current,
-            ))
+                            added_space: returned_space,
+                            original_refquota: dataset_in_pool.refquota,
+                            new_refquota: properties[:refquota],
+                            admin: ::User.current
+                          ))
           end
         end
-
       end
     end
 

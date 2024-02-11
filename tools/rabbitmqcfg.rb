@@ -3,9 +3,9 @@
 require 'optparse'
 
 class Cli
-  ACTIONS = %w(setup user policies)
+  ACTIONS = %w[setup user policies]
 
-  USERS = %w(console node supervisor)
+  USERS = %w[console node supervisor]
 
   def self.run(args)
     cli = new(args)
@@ -25,11 +25,11 @@ class Cli
     @user_perms = false
 
     @parser = OptionParser.new do |parser|
-      parser.banner = <<END
-Usage:
-  #{$0} user [--create] [--perms] console|node|supervisor <name...>
-  #{$0} policies
-END
+      parser.banner = <<~END
+        Usage:
+          #{$0} user [--create] [--perms] console|node|supervisor <name...>
+          #{$0} policies
+      END
       parser.on('--execute', 'Execute configuration commands') do
         @execute = true
       end
@@ -56,7 +56,7 @@ END
     cmd_args = @parser.parse!(@args)
 
     if cmd_args.length < 1
-      warn "Missing action"
+      warn 'Missing action'
       warn @parser.help
       exit(false)
     elsif !ACTIONS.include?(cmd_args[0])
@@ -69,18 +69,19 @@ END
   end
 
   protected
+
   def run_setup(_args)
     print_or_execute([
-      "rabbitmqctl add_vhost #{@vhost}",
-      "rabbitmqctl add_user admin",
-      "rabbitmqctl set_permissions -p #{@vhost} admin \".*\" \".*\" \".*\"",
-      "rabbitmqctl set_user_tags admin administrator",
-    ])
+                       "rabbitmqctl add_vhost #{@vhost}",
+                       'rabbitmqctl add_user admin',
+                       "rabbitmqctl set_permissions -p #{@vhost} admin \".*\" \".*\" \".*\"",
+                       'rabbitmqctl set_user_tags admin administrator'
+                     ])
   end
 
   def run_user(args)
     if args.length < 2
-      warn "Missing user type / name"
+      warn 'Missing user type / name'
       warn @parser.help
       exit(false)
     end
@@ -94,18 +95,16 @@ END
     end
 
     users.each do |user|
-      if @user_all || @user_create
-        print_or_execute(["rabbitmqctl add_user #{user}"])
-      end
+      print_or_execute(["rabbitmqctl add_user #{user}"]) if @user_all || @user_create
 
-      if @user_all || @user_perms
-        print_or_execute(<<END)
-rabbitmqctl set_permissions \\
-  -p #{@vhost} \\
-  #{user} \\
-  #{user_perms(type, user).map{ |v| "\"#{v}\"" }.join(" \\\n  ")}
-END
-      end
+      next unless @user_all || @user_perms
+
+      print_or_execute(<<~END)
+        rabbitmqctl set_permissions \\
+          -p #{@vhost} \\
+          #{user} \\
+          #{user_perms(type, user).map { |v| "\"#{v}\"" }.join(" \\\n  ")}
+      END
     end
   end
 
@@ -113,9 +112,9 @@ END
     case type
     when 'console'
       [
-        "^(amq\\.gen.*|console:rpc|console:output:.+|console:[^:]+:(input|output))$",
-        "^(amq\\.gen.*|console:rpc|console:output:.+|console:[^:]+:(input|output))$",
-        "^(amq\\.gen.*|console:rpc|console:output:.+|console:[^:]+:(input|output))$",
+        '^(amq\\.gen.*|console:rpc|console:output:.+|console:[^:]+:(input|output))$',
+        '^(amq\\.gen.*|console:rpc|console:output:.+|console:[^:]+:(input|output))$',
+        '^(amq\\.gen.*|console:rpc|console:output:.+|console:[^:]+:(input|output))$'
       ]
     when 'node'
       rx_name = Regexp.escape(user)
@@ -123,33 +122,33 @@ END
       [
         "^(amq\\.gen.*|node:#{rx_name}|console:#{rx_name}:.+)$",
         "^(amq\\.gen.*|node:#{rx_name}|console:#{rx_name}:.+)$",
-        "^(amq\\.gen.*|node:#{rx_name}|node:#{rx_name}:.+|console:#{rx_name}:input)$",
+        "^(amq\\.gen.*|node:#{rx_name}|node:#{rx_name}:.+|console:#{rx_name}:input)$"
       ]
     when 'supervisor'
-      [".*", ".*", ".*"]
+      ['.*', '.*', '.*']
     else
-      ["^$", "^$", "^$"]
+      ['^$', '^$', '^$']
     end
   end
 
   def run_policies(_args)
-    print_or_execute(<<END)
-rabbitmqctl set_policy \\
-	-p #{@vhost} \\
-	TTL \\
-	"^node:[^:]+:(statuses|net_monitor|pool_statuses|storage_statuses|vps_statuses|vps_os_processes|vps_ssh_host_keys)$" \\
-	'{"message-ttl":60000}' \\
-	--apply-to queues
-END
+    print_or_execute(<<~END)
+      rabbitmqctl set_policy \\
+      	-p #{@vhost} \\
+      	TTL \\
+      	"^node:[^:]+:(statuses|net_monitor|pool_statuses|storage_statuses|vps_statuses|vps_os_processes|vps_ssh_host_keys)$" \\
+      	'{"message-ttl":60000}' \\
+      	--apply-to queues
+    END
 
-  print_or_execute(<<END)
-rabbitmqctl set_policy \\
-	-p #{@vhost} \\
-	console-output \\
-	"console:output:.+" \\
-	'{"max-length": 1000,"max-length-bytes":#{32*1024*1024},"overflow":"drop-head","expires":600000,"message-ttl":60000}' \\
-	--apply-to queues
-END
+    print_or_execute(<<~END)
+      rabbitmqctl set_policy \\
+      	-p #{@vhost} \\
+      	console-output \\
+      	"console:output:.+" \\
+      	'{"max-length": 1000,"max-length-bytes":#{32 * 1024 * 1024},"overflow":"drop-head","expires":600000,"message-ttl":60000}' \\
+      	--apply-to queues
+    END
   end
 
   def print_or_execute(arg)
@@ -159,7 +158,7 @@ END
       elsif arg.respond_to?(:each)
         arg
       else
-        raise ArgumentError, "expected argument to be String or respond to #each"
+        raise ArgumentError, 'expected argument to be String or respond to #each'
       end
 
     cmds.each do |cmd|
@@ -172,9 +171,7 @@ END
 
       puts exec_cmd
 
-      if @execute && !Kernel.system(exec_cmd)
-        fail "Command #{exec_cmd.inspect} failed"
-      end
+      raise "Command #{exec_cmd.inspect} failed" if @execute && !Kernel.system(exec_cmd)
 
       puts
     end

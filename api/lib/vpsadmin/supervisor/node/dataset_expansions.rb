@@ -7,7 +7,7 @@ module VpsAdmin::Supervisor
       queue = channel.queue(
         queue_name('dataset_expansions'),
         durable: true,
-        arguments: {'x-queue-type' => 'quorum'},
+        arguments: { 'x-queue-type' => 'quorum' }
       )
 
       queue.bind(exchange, routing_key: 'dataset_expansions')
@@ -20,6 +20,7 @@ module VpsAdmin::Supervisor
     end
 
     protected
+
     def process_event(event)
       t = Time.at(event['time'])
 
@@ -29,7 +30,7 @@ module VpsAdmin::Supervisor
         new_refquota: event['new_refquota'],
         added_space: event['added_space'],
         created_at: t,
-        updated_at: t,
+        updated_at: t
       )
 
       # Check if we're authorized to handle expansions from this node
@@ -38,7 +39,7 @@ module VpsAdmin::Supervisor
       begin
         exp = VpsAdmin::API::Operations::DatasetExpansion::ProcessEvent.run(
           new_event,
-          max_over_refquota_seconds: VpsAdmin::API::Tasks::DatasetExpansion::MAX_OVER_REFQUOTA_SECONDS,
+          max_over_refquota_seconds: VpsAdmin::API::Tasks::DatasetExpansion::MAX_OVER_REFQUOTA_SECONDS
         )
       rescue ::ResourceLocked
         # Save the event to be later processed by the appropriate rake task
@@ -46,9 +47,9 @@ module VpsAdmin::Supervisor
         return
       end
 
-      if exp && exp.enable_notifications && exp.vps.active?
-        TransactionChains::Mail::VpsDatasetExpanded.fire(exp)
-      end
+      return unless exp && exp.enable_notifications && exp.vps.active?
+
+      TransactionChains::Mail::VpsDatasetExpanded.fire(exp)
     end
   end
 end

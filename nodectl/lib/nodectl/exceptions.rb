@@ -1,3 +1,3 @@
 module NodeCtl
-  class ValidationError < StandardError ; end
+  class ValidationError < StandardError; end
 end

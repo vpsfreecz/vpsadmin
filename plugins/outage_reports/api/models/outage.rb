@@ -9,9 +9,9 @@ class Outage < ActiveRecord::Base
   has_many :outage_exports
   has_many :exports, through: :outage_exports
 
-  enum state: %i(staged announced resolved cancelled)
-  enum outage_type: %i(maintenance outage)
-  enum impact_type: %i(
+  enum state: %i[staged announced resolved cancelled]
+  enum outage_type: %i[maintenance outage]
+  enum impact_type: %i[
     tbd
     system_restart
     system_reset
@@ -19,7 +19,7 @@ class Outage < ActiveRecord::Base
     performance
     unavailability
     export
-  )
+  ]
 
   after_initialize :load_translations
 
@@ -50,7 +50,7 @@ class Outage < ActiveRecord::Base
     end
   end
 
-  def update_outage!(attrs = {}, translations = {}, opts = {})
+  def update_outage!(attrs = {}, translations = {}, _opts = {})
     transaction do
       assign_attributes(attrs)
       save!
@@ -58,7 +58,7 @@ class Outage < ActiveRecord::Base
       translations.each do |lang, attrs|
         tr = ::OutageTranslation.find_by(
           outage: self,
-          language: lang,
+          language: lang
         )
 
         if tr.nil?
@@ -88,17 +88,15 @@ class Outage < ActiveRecord::Base
   end
 
   def do_auto_resolve
-    attrs = {state: ::Outage.states['resolved']}
+    attrs = { state: ::Outage.states['resolved'] }
 
-    if finished_at.nil?
-      attrs[:finished_at] = begins_at + duration * 60
-    end
+    attrs[:finished_at] = begins_at + duration * 60 if finished_at.nil?
 
     VpsAdmin::API::Plugins::OutageReports::TransactionChains::Update.fire(
       self,
       attrs,
       {},
-      {send_mail: false},
+      { send_mail: false }
     )
   end
 
@@ -106,9 +104,9 @@ class Outage < ActiveRecord::Base
     ::OutageTranslation.joins(
       'RIGHT JOIN languages ON languages.id = outage_translations.language_id'
     ).where(
-      outage_id: id,
+      outage_id: id
     ).each do |tr|
-      %i(summary description).each do |param|
+      %i[summary description].each do |param|
         define_singleton_method("#{tr.language.code}_#{param}") do
           tr.send(param)
         end
@@ -128,8 +126,8 @@ class Outage < ActiveRecord::Base
   def get_affected_users
     if outage_entities.where(name: 'vpsAdmin').any?
       return ::User
-        .where('object_state < ?', ::User.object_states[:soft_delete])
-        .order('id')
+             .where('object_state < ?', ::User.object_states[:soft_delete])
+             .order('id')
     end
 
     users = []
@@ -153,13 +151,13 @@ class Outage < ActiveRecord::Base
       begin
         outage_users.find_by!(user: user).update!(
           vps_count: vps_cnt,
-          export_count: export_cnt,
+          export_count: export_cnt
         )
       rescue ActiveRecord::RecordNotFound
         outage_users.create!(
           user: user,
           vps_count: vps_cnt,
-          export_count: export_cnt,
+          export_count: export_cnt
         )
       end
     end
@@ -228,14 +226,18 @@ class Outage < ActiveRecord::Base
       end
     end
 
-    q.empty? ? [] : ::Vps.find_by_sql(<<-END
+    if q.empty?
+      []
+    else
+      ::Vps.find_by_sql(<<-END
       SELECT * FROM (
         #{q.join("\nUNION\n")}
       ) as tmp
       GROUP BY tmp.id
       ORDER BY tmp.id
       END
-    )
+                       )
+    end
   end
 
   # Store affected VPSes in model {OutageVps}
@@ -252,9 +254,8 @@ class Outage < ActiveRecord::Base
             environment: vps.node.location.environment,
             location: vps.node.location,
             node: vps.node,
-            direct: true,
+            direct: true
           )
-
         rescue ActiveRecord::RecordNotFound
           out = ::OutageVps.create!(
             outage: self,
@@ -263,7 +264,7 @@ class Outage < ActiveRecord::Base
             environment: vps.node.location.environment,
             location: vps.node.location,
             node: vps.node,
-            direct: true,
+            direct: true
           )
         end
 
@@ -326,14 +327,18 @@ class Outage < ActiveRecord::Base
       end
     end
 
-    q.empty? ? [] : ::Export.find_by_sql(<<-END
+    if q.empty?
+      []
+    else
+      ::Export.find_by_sql(<<-END
       SELECT * FROM (
         #{q.join("\nUNION\n")}
       ) as tmp
       GROUP BY tmp.id
       ORDER BY tmp.id
       END
-    )
+                          )
+    end
   end
 
   # Store affected exports in model {OutageExport}
@@ -351,9 +356,8 @@ class Outage < ActiveRecord::Base
             user: ex.user,
             environment: node.location.environment,
             location: node.location,
-            node: node,
+            node: node
           )
-
         rescue ActiveRecord::RecordNotFound
           out = ::OutageExport.create!(
             outage: self,
@@ -361,7 +365,7 @@ class Outage < ActiveRecord::Base
             user: ex.user,
             environment: node.location.environment,
             location: node.location,
-            node: node,
+            node: node
           )
         end
 
@@ -385,15 +389,15 @@ class Outage < ActiveRecord::Base
       begins_at: begins_at.iso8601,
       duration: duration,
       impact: impact_type,
-      entities: outage_entities.map { |v| {name: v.name, id: v.row_id, label: v.real_name} },
+      entities: outage_entities.map { |v| { name: v.name, id: v.row_id, label: v.real_name } },
       handlers: outage_handlers.map { |v| v.full_name },
-      translations: {},
+      translations: {}
     }
 
     outage_translations.each do |tr|
       ret[:translations][tr.language.code] = {
         summary: tr.summary,
-        description: tr.description,
+        description: tr.description
       }
     end
 

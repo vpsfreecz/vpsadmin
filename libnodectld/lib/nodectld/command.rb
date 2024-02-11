@@ -43,8 +43,7 @@ module NodeCtld
       begin
         input = JSON.parse(@trans['input'])
         param = input['input']
-
-      rescue
+      rescue StandardError
         @output[:error] = 'Bad input syntax'
         return false
       end
@@ -63,13 +62,11 @@ module NodeCtld
       if original_chain_direction == :execute
         safe_call(klass, :exec)
 
-      else
-        if reversible?
-          safe_call(klass, :rollback)
+      elsif reversible?
+        safe_call(klass, :rollback)
 
-        else
-          @status = :failed
-        end
+      else
+        @status = :failed
       end
 
       @time_end = Time.new.utc
@@ -105,23 +102,21 @@ module NodeCtld
 
             close_chain(t, true)
 
-          else # Reverse chain direction
+          elsif chain_finished? # Reverse chain direction
             # Is it the last transaction to rollback?
-            if chain_finished?
-              fail_followers(t) if @rollbacked
+            fail_followers(t) if @rollbacked
 
-              run_confirmations(t)
-              close_chain(t)
+            run_confirmations(t)
+            close_chain(t)
 
-            elsif reversible?
-              rollback_chain(t)
-              fail_followers(t)
+          elsif reversible?
+            rollback_chain(t)
+            fail_followers(t)
 
-            else
-              fail_followers(t)
-              run_confirmations(t)
-              close_chain(t)
-            end
+          else
+            fail_followers(t)
+            run_confirmations(t)
+            close_chain(t)
           end
         end
       end
@@ -132,15 +127,13 @@ module NodeCtld
     def save_transaction(db)
       log(:debug, self, 'Saving transaction')
 
-      if @cmd && current_chain_direction == :execute && @status != :failed
-        @cmd.on_save(db)
-      end
+      @cmd.on_save(db) if @cmd && current_chain_direction == :execute && @status != :failed
 
-      if current_chain_direction == :execute
-        done = 1
-      else
-        done = 2 # rollbacked
-      end
+      done = if current_chain_direction == :execute
+               1
+             else
+               2 # rollbacked
+             end
 
       db.prepared(
         'UPDATE transactions
@@ -150,7 +143,7 @@ module NodeCtld
             started_at = ?,
             finished_at = ?
         WHERE id = ?',
-        done, {failed: 0, ok: 1, warning: 2}[@status],
+        done, { failed: 0, ok: 1, warning: 2 }[@status],
         (@cmd ? @output.merge(@cmd.output) : @output).to_json,
         @time_start && @time_start.strftime('%Y-%m-%d %H:%M:%S'),
         @time_end && @time_end.strftime('%Y-%m-%d %H:%M:%S'),
@@ -159,9 +152,9 @@ module NodeCtld
     end
 
     def post_save_transaction
-      if @cmd && current_chain_direction == :execute && @status != :failed
-        @cmd.post_save
-      end
+      return unless @cmd && current_chain_direction == :execute && @status != :failed
+
+      @cmd.post_save
     end
 
     def run_confirmations(t)
@@ -193,12 +186,12 @@ module NodeCtld
       log(:debug, self, 'Close chain')
 
       state = if fatal
-        5
-      elsif current_chain_direction == :execute && @status != :failed
-        2
-      else
-        4
-      end
+                5
+              elsif current_chain_direction == :execute && @status != :failed
+                2
+              else
+                4
+              end
 
       # mark chain as finished
       db.prepared(
@@ -217,22 +210,22 @@ module NodeCtld
       )
 
       # release all locks
-      unless fatal
-        db.prepared(
-          "DELETE FROM resource_locks
+      return if fatal
+
+      db.prepared(
+        "DELETE FROM resource_locks
           WHERE
             locked_by_type = 'TransactionChain' AND locked_by_id = ?",
-          chain_id
-        )
+        chain_id
+      )
 
-        # release ports
-        db.prepared(
-          'UPDATE port_reservations
+      # release ports
+      db.prepared(
+        'UPDATE port_reservations
           SET transaction_chain_id = NULL, addr = NULL
           WHERE transaction_chain_id = ?',
-          chain_id
-        )
-      end
+        chain_id
+      )
     end
 
     def fail_followers(db)
@@ -243,7 +236,7 @@ module NodeCtld
         WHERE
           transaction_chain_id = ?
           AND id > ?',
-        {error: 'Dependency failed'}.to_json,
+        { error: 'Dependency failed' }.to_json,
         chain_id,
         id
       )
@@ -256,29 +249,29 @@ module NodeCtld
         SET done = 1, status = 0, output = ?
         WHERE
           transaction_chain_id = ?',
-        {error: 'Chain failed'}.to_json,
+        { error: 'Chain failed' }.to_json,
         chain_id
       )
     end
 
     def killed(hard)
-      if hard
-        @output[:error] = 'Killed'
-        @status = :failed
+      return unless hard
 
-        if @current_method == :exec
-          if keep_going?
-            log(:debug, self, 'Transaction failed but keep going on')
+      @output[:error] = 'Killed'
+      @status = :failed
 
-          elsif reversible?
-            log(:debug, self, 'Transaction failed, running rollback')
-            @rollbacked = true
-            safe_call(@current_klass, :rollback)
+      return unless @current_method == :exec
 
-          else
-            log(:debug, self, 'Transaction failed and is irreversible')
-          end
-        end
+      if keep_going?
+        log(:debug, self, 'Transaction failed but keep going on')
+
+      elsif reversible?
+        log(:debug, self, 'Transaction failed, running rollback')
+        @rollbacked = true
+        safe_call(@current_klass, :rollback)
+
+      else
+        log(:debug, self, 'Transaction failed and is irreversible')
       end
     end
 
@@ -286,18 +279,18 @@ module NodeCtld
       @chain[:id]
     end
 
-    alias_method :worker_id, :chain_id
+    alias worker_id chain_id
 
     def id
-      @trans["id"]
+      @trans['id']
     end
 
     def type
-      @trans["handle"]
+      @trans['handle']
     end
 
     def queue
-      @trans["queue"].to_sym
+      @trans['queue'].to_sym
     end
 
     def priority
@@ -310,7 +303,7 @@ module NodeCtld
     end
 
     def handler
-      @@handlers[@trans["handle"].to_i]
+      @@handlers[@trans['handle'].to_i]
     end
 
     def step
@@ -353,11 +346,12 @@ module NodeCtld
       "chain=#{chain_id},trans=#{id},type=#{current_chain_direction}"
     end
 
-    def Command.register(klass, type)
+    def self.register(klass, type)
       @@handlers[type] = klass
     end
 
     private
+
     def check_signed_opts(input)
       input['transaction_chain'] == trans['transaction_chain_id'] \
         && input['depends_on'] == trans['depends_on_id'] \
@@ -377,16 +371,15 @@ module NodeCtld
           @status = :ok
         elsif ret.is_a?(::Hash)
           @status = ret[:ret]
-          bad_value(klass) if @status == nil
+          bad_value(klass) if @status.nil?
         else
           bad_value(klass)
         end
-
-      rescue SystemCommandFailed => err
+      rescue SystemCommandFailed => e
         @status = :failed
-        @output[:cmd] = err.cmd
-        @output[:exitstatus] = err.rc
-        @output[:error] = err.output.byteslice(0, 2**15)
+        @output[:cmd] = e.cmd
+        @output[:exitstatus] = e.rc
+        @output[:error] = e.output.byteslice(0, 2**15)
 
         # FIXME: if rollback fails, original error is overwritten!
         if m == :exec
@@ -402,15 +395,13 @@ module NodeCtld
             log(:debug, self, 'Transaction failed and is irreversible')
           end
         end
-
       rescue CommandNotImplemented
         @status = :failed
         @output[:error] = 'Command not implemented'
-
-      rescue => err
+      rescue StandardError => e
         @status = :failed
-        @output[:error] = err.inspect
-        @output[:backtrace] = err.backtrace
+        @output[:error] = e.inspect
+        @output[:backtrace] = e.backtrace
         p @output
 
         # FIXME: if rollback fails, original error is overwritten!

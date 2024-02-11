@@ -41,12 +41,12 @@ class AddIntegrityCheck < ActiveRecord::Migration
     reversible do |dir|
       dir.up do
         # longtext
-        change_column :transactions, :t_param, :text, :limit => 4294967295
+        change_column :transactions, :t_param, :text, limit: 4_294_967_295
       end
 
       dir.down do
         # text
-        change_column :transactions, :t_param, :text, :limit => 65535
+        change_column :transactions, :t_param, :text, limit: 65_535
       end
     end
   end

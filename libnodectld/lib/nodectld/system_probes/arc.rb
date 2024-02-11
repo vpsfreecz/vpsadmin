@@ -6,7 +6,7 @@ module NodeCtld::SystemProbes
       File.readlines('/proc/spl/kstat/zfs/arcstats')[2..-1].each do |line|
         name, type, value = line.split
 
-        @data[ name.to_sym ] = value.to_i
+        @data[name.to_sym] = value.to_i
       end
     end
 
@@ -17,6 +17,7 @@ module NodeCtld::SystemProbes
 
     def method_missing(name, *args)
       return @data[name] if @data.has_key?(name) && args.empty?
+
       super(name, *args)
     end
   end

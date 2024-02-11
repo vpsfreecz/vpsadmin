@@ -17,10 +17,10 @@ module NodeCtld
 
     def rollback
       call_cmd(Commands::Vps::Umount, {
-        pool_fs: @pool_fs,
-        mounts: @mounts.reverse,
-        vps_id: @vps_id
-      })
+                 pool_fs: @pool_fs,
+                 mounts: @mounts.reverse,
+                 vps_id: @vps_id
+               })
     end
   end
 end

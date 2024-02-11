@@ -4,42 +4,37 @@ class MigrationPlan < ActiveRecord::Base
   has_many :vps_migrations, dependent: :destroy
   has_many :resource_locks, as: :locked_by, dependent: :destroy
 
-  enum state: %i(staged running cancelling failing cancelled done error)
+  enum state: %i[staged running cancelling failing cancelled done error]
 
   def start!
     self.class.transaction(requires_new: true) do
       i = 0
 
       vps_migrations.order('created_at').each do |m|
-        begin
-          chain, _ = TransactionChains::Vps::Migrate.chain_for(m.vps, m.dst_node).fire2(
-            args: [m.vps, m.dst_node, {
-              maintenance_window: m.maintenance_window,
-              cleanup_data: m.cleanup_data,
-              send_mail: send_mail,
-              reason: reason,
-            }],
-          )
+        chain, = TransactionChains::Vps::Migrate.chain_for(m.vps, m.dst_node).fire2(
+          args: [m.vps, m.dst_node, {
+            maintenance_window: m.maintenance_window,
+            cleanup_data: m.cleanup_data,
+            send_mail: send_mail,
+            reason: reason
+          }]
+        )
 
-          m.update!(
-            state: ::VpsMigration.states[:running],
-            started_at: Time.now,
-            transaction_chain: chain,
-          )
+        m.update!(
+          state: ::VpsMigration.states[:running],
+          started_at: Time.now,
+          transaction_chain: chain
+        )
 
-          i += 1
-          break if i >= concurrency
-
-        rescue ResourceLocked
-          next
-        end
+        i += 1
+        break if i >= concurrency
+      rescue ResourceLocked
+        next
       end
 
       update!(state: self.class.states[:running])
 
-      if send_mail
-        TransactionChains::MigrationPlan::Mail.fire(self)
-      end
+      TransactionChains::MigrationPlan::Mail.fire(self) if send_mail
     end
   end
 
@@ -64,7 +59,7 @@ class MigrationPlan < ActiveRecord::Base
   # @param new_state [Symbol]
   def finish!(new_state = nil)
     unless new_state
-      case self.state
+      case state
       when 'running'
         new_state = :done
 
@@ -78,7 +73,7 @@ class MigrationPlan < ActiveRecord::Base
 
     update!(
       state: self.class.states[new_state],
-      finished_at: Time.now,
+      finished_at: Time.now
     )
 
     resource_locks.delete_all

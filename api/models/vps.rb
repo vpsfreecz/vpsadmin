@@ -44,9 +44,9 @@ class Vps < ActiveRecord::Base
   has_many :oom_preventions, dependent: :destroy
   has_many :dataset_expansions
 
-  enum cgroup_version: %i(cgroup_any cgroup_v1 cgroup_v2)
+  enum cgroup_version: %i[cgroup_any cgroup_v1 cgroup_v2]
 
-  has_paper_trail ignore: %i(maintenance_lock maintenance_lock_reason)
+  has_paper_trail ignore: %i[maintenance_lock maintenance_lock_reason]
 
   alias_attribute :veid, :id
 
@@ -60,9 +60,9 @@ class Vps < ActiveRecord::Base
   maintenance_parents :node
 
   include VpsAdmin::API::ClusterResources
-  cluster_resources required: %i(cpu memory diskspace),
-                    optional: %i(swap),
-                    environment: ->(){ node.location.environment }
+  cluster_resources required: %i[cpu memory diskspace],
+                    optional: %i[swap],
+                    environment: -> { node.location.environment }
 
   include VpsAdmin::API::Lifetimes::Model
   set_object_states suspended: {
@@ -79,20 +79,20 @@ class Vps < ActiveRecord::Base
                     deleted: {
                       enter: TransactionChains::Lifetimes::NotImplemented
                     },
-                    environment: ->(){ node.location.environment }
+                    environment: -> { node.location.environment }
 
   include VpsAdmin::API::ObjectHistory::Model
-  log_events %i(
-      hostname os_template dns_resolver reinstall resources node
-      route_add route_del host_addr_add host_addr_del
-      start stop restart passwd clone swap configs features mount umount
-      maintenance_windows maintenance_window restore deploy_public_key
-      netif_rename start_menu user
-  )
+  log_events %i[
+    hostname os_template dns_resolver reinstall resources node
+    route_add route_del host_addr_add host_addr_del
+    start stop restart passwd clone swap configs features mount umount
+    maintenance_windows maintenance_window restore deploy_public_key
+    netif_rename start_menu user
+  ]
 
-  validates :user_id, :node_id, :os_template_id, presence: true, numericality: {only_integer: true}
+  validates :user_id, :node_id, :os_template_id, presence: true, numericality: { only_integer: true }
   validates :hostname, presence: true, format: {
-    with: /\A[a-zA-Z0-9][a-zA-Z\-_\.0-9]{0,62}[a-zA-Z0-9]\z/,
+    with: /\A[a-zA-Z0-9][a-zA-Z\-_.0-9]{0,62}[a-zA-Z0-9]\z/,
     message: 'bad format'
   }
   validates :cpu_limit, numericality: {
@@ -102,36 +102,36 @@ class Vps < ActiveRecord::Base
   validates :start_menu_timeout, numericality: {
     only_integer: true,
     greater_than_or_equal_to: 0,
-    less_than_or_equal_to: 24*60*60,
+    less_than_or_equal_to: 24 * 60 * 60
   }
   validates :autostart_priority, numericality: {
     only_integer: true,
-    greater_than_or_equal_to: 0,
+    greater_than_or_equal_to: 0
   }
   validate :foreign_keys_exist
   validate :check_cgroup_version
 
-  default_scope {
+  default_scope do
     where.not(object_state: object_states[:hard_delete])
-  }
+  end
 
-  scope :existing, -> {
-    unscoped {
+  scope :existing, lambda {
+    unscoped do
       where(object_state: [
               object_states[:active],
               object_states[:suspended]
             ])
-    }
+    end
   }
 
-  scope :including_deleted, -> {
-    unscoped {
+  scope :including_deleted, lambda {
+    unscoped do
       where(object_state: [
               object_states[:active],
               object_states[:suspended],
               object_states[:soft_delete]
             ])
-    }
+    end
   }
 
   PathInfo = Struct.new(:dataset, :exists)
@@ -143,7 +143,7 @@ class Vps < ActiveRecord::Base
   # @Option opts [::Location, nil] address_location
   # @Option opts [Boolean] start
   def create(opts)
-    lifetime = self.user.env_config(
+    lifetime = user.env_config(
       node.location.environment,
       :vps_lifetime
     )
@@ -204,16 +204,15 @@ class Vps < ActiveRecord::Base
     dataset_in_pool.pool
   end
 
-  %i(is_running in_rescue_mode uptime process_count cpu_user cpu_nice cpu_system
-     cpu_idle cpu_iowait cpu_irq cpu_softirq loadavg used_memory used_swap
-  ).each do |attr|
+  %i[is_running in_rescue_mode uptime process_count cpu_user cpu_nice cpu_system
+     cpu_idle cpu_iowait cpu_irq cpu_softirq loadavg used_memory used_swap].each do |attr|
     define_method(attr) do
       vps_current_status && vps_current_status.send(attr)
     end
   end
 
-  alias_method :is_running?, :is_running
-  alias_method :running?, :is_running
+  alias is_running? is_running
+  alias running? is_running
 
   def rootfs_diskspace
     dataset_in_pool.diskspace(default: false)
@@ -258,7 +257,7 @@ class Vps < ActiveRecord::Base
   end
 
   def umount(mnt)
-    fail 'snapshot mounts are not supported' if mnt.snapshot_in_pool_id
+    raise 'snapshot mounts are not supported' if mnt.snapshot_in_pool_id
 
     TransactionChains::Vps::UmountDataset.fire(self, mnt)
   end
@@ -266,7 +265,7 @@ class Vps < ActiveRecord::Base
   # @param feature [Symbol]
   # @param enabled [Boolean]
   def set_feature(feature, enabled)
-    set_features({feature.name.to_sym => enabled})
+    set_features({ feature.name.to_sym => enabled })
   end
 
   # @param features [Hash<Symbol, Boolean>]
@@ -279,6 +278,7 @@ class Vps < ActiveRecord::Base
   end
 
   private
+
   def generate_password(t)
     if t == :secure
       chars = ('a'..'z').to_a + ('A'..'Z').to_a + (0..9).to_a
@@ -296,12 +296,12 @@ class Vps < ActiveRecord::Base
   end
 
   def check_cgroup_version
-    if cgroup_version != 'cgroup_any' && cgroup_version != node.cgroup_version
-      errors.add(
-        :cgroup_version,
-        "cannot require #{cgroup_version}, #{node.domain_name} uses #{node.cgroup_version}",
-      )
-    end
+    return unless cgroup_version != 'cgroup_any' && cgroup_version != node.cgroup_version
+
+    errors.add(
+      :cgroup_version,
+      "cannot require #{cgroup_version}, #{node.domain_name} uses #{node.cgroup_version}"
+    )
   end
 
   def prefix_mountpoint(parent, part, mountpoint)
@@ -326,17 +326,12 @@ class Vps < ActiveRecord::Base
     parts.each do |part|
       ds = parent.children.find_by(name: part)
 
-      if ds
-        parent = ds
-        dip = ds.dataset_in_pools.joins(:pool).where(pools: {role: Pool.roles[:hypervisor]}).take
+      raise VpsAdmin::API::Exceptions::DatasetDoesNotExist, path unless ds
 
-        unless dip
-          raise VpsAdmin::API::Exceptions::DatasetDoesNotExist, path
-        end
+      parent = ds
+      dip = ds.dataset_in_pools.joins(:pool).where(pools: { role: Pool.roles[:hypervisor] }).take
 
-      else
-        raise VpsAdmin::API::Exceptions::DatasetDoesNotExist, path
-      end
+      raise VpsAdmin::API::Exceptions::DatasetDoesNotExist, path unless dip
     end
 
     dip
@@ -353,9 +348,7 @@ class Vps < ActiveRecord::Base
     # Check for conflicts
     set.each do |f1|
       set.each do |f2|
-        if f1.conflict?(f2)
-          raise VpsAdmin::API::Exceptions::VpsFeatureConflict.new(f1, f2)
-        end
+        raise VpsAdmin::API::Exceptions::VpsFeatureConflict.new(f1, f2) if f1.conflict?(f2)
       end
     end
 

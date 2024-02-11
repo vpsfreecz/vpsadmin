@@ -9,7 +9,6 @@ module TransactionChains
       dataset_in_pools.each do |dip|
         begin
           lock(dip)
-
         rescue ResourceLocked
           warn "dataset #{dip.id} is locked, skipping"
           next

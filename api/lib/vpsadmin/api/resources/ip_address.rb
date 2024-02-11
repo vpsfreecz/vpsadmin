@@ -9,14 +9,14 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
   params(:filters) do
     resource VpsAdmin::API::Resources::NetworkInterface, value_label: :name
     resource VpsAdmin::API::Resources::VPS, label: 'VPS',
-            desc: 'VPS this IP is assigned to, can be null',
-            value_label: :hostname
+                                            desc: 'VPS this IP is assigned to, can be null',
+                                            value_label: :hostname
     integer :version, label: 'IP version', desc: '4 or 6'
     resource VpsAdmin::API::Resources::Network, label: 'Network', value_label: :address
     resource VpsAdmin::API::Resources::Location, label: 'Location',
-              desc: 'Location this IP address is available in'
+                                                 desc: 'Location this IP address is available in'
     resource VpsAdmin::API::Resources::User, label: 'User',
-             value_label: :login
+                                             value_label: :login
     bool :assigned_to_interface, label: 'Assigned to interface'
     string :role, choices: ::Network.roles.keys
     string :purpose, choices: ::Network.purposes.keys
@@ -26,7 +26,7 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
   end
 
   params(:common) do
-    use :filters, include: %i(network prefix size network_interface user addr)
+    use :filters, include: %i[network prefix size network_interface user addr]
     resource VpsAdmin::API::Resources::HostIpAddress, name: :route_via, value_label: :addr
   end
 
@@ -34,8 +34,8 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
     use :id
     use :common
     resource VpsAdmin::API::Resources::Environment,
-      name: :charged_environment,
-      label: 'Charged environment'
+             name: :charged_environment,
+             label: 'Charged environment'
   end
 
   class Index < HaveAPI::Actions::Default::Index
@@ -44,7 +44,7 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
     input do
       use :filters
       patch :user, desc: 'Filter by owner'
-      string :order, choices: %w(asc interface), default: 'asc', fill: true
+      string :order, choices: %w[asc interface], default: 'asc', fill: true
     end
 
     output(:object_list) do
@@ -53,86 +53,80 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
 
     authorize do |u|
       allow if u.role == :admin
-      input whitelist: %i(location network version role purpose addr prefix vps
+      input whitelist: %i[location network version role purpose addr prefix vps
                           network_interface assigned_to_interface order
-                          limit offset)
+                          limit offset]
       allow
     end
 
     example do
       request({
-        vps: 101
-      })
+                vps: 101
+              })
       response([{
-        id: 10,
-        vps: {
-          id: 101,
-          hostname: 'myvps'
-        },
-        version: 4,
-        location: {
-          id: 1,
-          label: 'The Location'
-        },
-        addr: '192.168.0.50'
-      }])
+                 id: 10,
+                 vps: {
+                   id: 101,
+                   hostname: 'myvps'
+                 },
+                 version: 4,
+                 location: {
+                   id: 1,
+                   label: 'The Location'
+                 },
+                 addr: '192.168.0.50'
+               }])
       comment 'List IP addresses assigned to VPS with ID 101.'
     end
 
     def query
       ips = ::IpAddress.joins(:network)
 
-      %i(prefix network network_interface user addr size).each do |filter|
+      %i[prefix network network_interface user addr size].each do |filter|
         next unless input.has_key?(filter)
 
         ips = ips.where(
-          filter => input[filter],
+          filter => input[filter]
         )
       end
 
       if input.has_key?(:vps)
-        if input[:vps]
-          ips = ips.joins(:network_interface).where(
-            network_interfaces: {vps_id: input[:vps].id},
-          )
-        else
-          ips = ips.where(network_interface: nil)
-        end
+        ips = if input[:vps]
+                ips.joins(:network_interface).where(
+                  network_interfaces: { vps_id: input[:vps].id }
+                )
+              else
+                ips.where(network_interface: nil)
+              end
       end
 
       if input[:location]
         if current_user.role == :admin
           locs = ::LocationNetwork.where(
-            location: input[:location],
+            location: input[:location]
           ).pluck(:network_id)
-          ips = ips.where(networks: {id: locs})
+          ips = ips.where(networks: { id: locs })
         else
           locs = ::LocationNetwork.where(
             location: input[:location],
-            userpick: true,
+            userpick: true
           ).pluck(:network_id)
-          ips = ips.where(networks: {id: locs})
+          ips = ips.where(networks: { id: locs })
         end
       end
 
-      if input[:version]
-        ips = ips.where(networks: {ip_version: input[:version]})
-      end
+      ips = ips.where(networks: { ip_version: input[:version] }) if input[:version]
 
-      if input[:role]
-        ips = ips.where(networks: {role: ::Network.roles[input[:role]]})
-      end
+      ips = ips.where(networks: { role: ::Network.roles[input[:role]] }) if input[:role]
 
-      if input[:purpose]
-        ips = ips.where(networks: {purpose: ::Network.purposes[input[:purpose]]})
-      end
+      ips = ips.where(networks: { purpose: ::Network.purposes[input[:purpose]] }) if input[:purpose]
 
       unless input[:assigned_to_interface].nil?
-        if input[:assigned_to_interface]
-          ips = ips.where.not(network_interface: nil)
-        else
-          ips = ips.where(network_interface: nil)
-        end
+        ips = if input[:assigned_to_interface]
+                ips.where.not(network_interface: nil)
+              else
+                ips.where(network_interface: nil)
+              end
       end
 
       if current_user.role != :admin
@@ -142,10 +136,10 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
         ).joins(
           'LEFT JOIN vpses my_vps ON my_vps.id = my_netifs.vps_id'
         ).where(
-          networks: {role: [
+          networks: { role: [
             ::Network.roles[:public_access],
-            ::Network.roles[:private_access],
-          ]},
+            ::Network.roles[:private_access]
+          ] }
         ).where(
           'ip_addresses.user_id = ?
             OR (ip_addresses.network_interface_id IS NOT NULL AND my_vps.user_id = ?)
@@ -169,6 +163,7 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
     end
 
     protected
+
     def order_col
       case input[:order]
       when 'interface'
@@ -190,7 +185,7 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
       use :all
     end
 
-    authorize do |u|
+    authorize do |_u|
       allow
     end
 
@@ -226,7 +221,7 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
     desc 'Add an IP address'
 
     input do
-      use :common, exclude: %i(vps version)
+      use :common, exclude: %i[vps version]
       patch :addr, required: true
       patch :network, required: true
     end
@@ -251,10 +246,8 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
       end
 
       ::IpAddress.register(addr, input.merge(prefix: addr.prefix)) # model
-
     rescue ArgumentError => e
-      error(e.message, {addr: ['not a valid IP address']})
-
+      error(e.message, { addr: ['not a valid IP address'] })
     rescue ::ActiveRecord::RecordInvalid => e
       error('create failed', e.record.errors.to_hash)
     end
@@ -265,7 +258,7 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
     blocking true
 
     input do
-      use :filters, include: %i(user)
+      use :filters, include: %i[user]
       resource VpsAdmin::API::Resources::Environment
     end
 
@@ -280,20 +273,15 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
     def exec
       ip = ::IpAddress.find(params[:ip_address_id])
 
-      if input.has_key?(:user) && ip.user != input[:user]
-        # Check if the IP is assigned to a VPS in an environment with IP ownership
-        if ip.network_interface && ip.network_interface.vps.node.location.environment.user_ip_ownership
-          error('cannot chown IP while it belongs to a VPS')
-        end
+      # Check if the IP is assigned to a VPS in an environment with IP ownership
+      if input.has_key?(:user) && ip.user != input[:user] && (ip.network_interface && ip.network_interface.vps.node.location.environment.user_ip_ownership)
+        error('cannot chown IP while it belongs to a VPS')
       end
 
-      if input[:user] && !input.has_key?(:environment)
-        error('choose environment')
-      end
+      error('choose environment') if input[:user] && !input.has_key?(:environment)
 
-      @chain, _ = ip.do_update(input)
+      @chain, = ip.do_update(input)
       ip
-
     rescue ActiveRecord::RecordInvalid => e
       error('update failed', e.record.errors.to_hash)
     rescue VpsAdmin::API::Exceptions::IpAddressInvalidLocation => e
@@ -313,16 +301,16 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
 
     input do
       resource VpsAdmin::API::Resources::NetworkInterface, value_label: :name,
-        required: true
+                                                           required: true
       resource VpsAdmin::API::Resources::HostIpAddress, name: :route_via,
-        value_label: :addr
+                                                        value_label: :addr
     end
 
     output do
       use :all
     end
 
-    authorize do |u|
+    authorize do |_u|
       allow
     end
 
@@ -342,22 +330,18 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
       maintenance_check!(netif.vps)
       object_state_check!(netif.vps, netif.vps.user)
 
-      @chain, _ = netif.add_route(
+      @chain, = netif.add_route(
         ip,
         via: input[:route_via],
-        is_user: current_user.role != :admin,
+        is_user: current_user.role != :admin
       )
       ip
-
     rescue VpsAdmin::API::Exceptions::IpAddressInUse
       error('IP address is already in use')
-
     rescue VpsAdmin::API::Exceptions::IpAddressInvalidLocation
       error('IP address is from the wrong location')
-
     rescue VpsAdmin::API::Exceptions::IpAddressNotOwned => e
       error(e.message)
-
     rescue VpsAdmin::API::Exceptions::IpAddressInvalid => e
       error(e.message)
     end
@@ -375,16 +359,16 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
 
     input do
       resource VpsAdmin::API::Resources::NetworkInterface, value_label: :name,
-        required: true
+                                                           required: true
       resource VpsAdmin::API::Resources::HostIpAddress, value_label: :addr,
-        desc: 'Host address to assign to the interface, defaults to the first address'
+                                                        desc: 'Host address to assign to the interface, defaults to the first address'
     end
 
     output do
       use :all
     end
 
-    authorize do |u|
+    authorize do |_u|
       allow
     end
 
@@ -401,27 +385,22 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
         error('access denied')
       end
 
-      if input[:host_ip_address] && input[:host_ip_address].ip_address != ip
-        error('invalid host IP address')
-      end
+      error('invalid host IP address') if input[:host_ip_address] && input[:host_ip_address].ip_address != ip
 
       host_addr = input[:host_ip_address] || ip.host_ip_addresses.where(auto_add: true).take!
 
       maintenance_check!(netif.vps)
       object_state_check!(netif.vps, netif.vps.user)
 
-      @chain, _ = netif.add_route(
+      @chain, = netif.add_route(
         ip, host_addrs: [host_addr],
-        is_user: current_user.role != :admin,
+            is_user: current_user.role != :admin
       )
       ip
-
     rescue VpsAdmin::API::Exceptions::IpAddressInUse
       error('IP address is already in use')
-
     rescue VpsAdmin::API::Exceptions::IpAddressInvalidLocation
       error('IP address is from the wrong location')
-
     rescue VpsAdmin::API::Exceptions::IpAddressNotOwned => e
       error(e.message)
     end
@@ -441,7 +420,7 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
       use :all
     end
 
-    authorize do |u|
+    authorize do |_u|
       allow
     end
 
@@ -463,9 +442,8 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
       maintenance_check!(netif.vps)
       object_state_check!(netif.vps, netif.vps.user)
 
-      @chain, _ = netif.remove_route(ip)
+      @chain, = netif.remove_route(ip)
       ip
-
     rescue VpsAdmin::API::Exceptions::IpAddressInUse => e
       error(e.message)
     end

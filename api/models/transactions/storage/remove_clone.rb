@@ -16,12 +16,12 @@ module Transactions::Storage
         pool_fs: cl.snapshot_in_pool.dataset_in_pool.pool.filesystem,
         dataset_name: cl.snapshot_in_pool.dataset_in_pool.dataset.full_name,
         snapshot_id: cl.snapshot_in_pool.snapshot_id,
-        snapshot: cl.snapshot_in_pool.snapshot.name,
+        snapshot: cl.snapshot_in_pool.snapshot.name
       }
 
       if cl.snapshot_in_pool.dataset_in_pool.pool.role == 'backup'
         in_branch = ::SnapshotInPoolInBranch.joins(branch: [:dataset_tree]).find_by!(
-          dataset_trees: {dataset_in_pool_id: cl.snapshot_in_pool.dataset_in_pool_id},
+          dataset_trees: { dataset_in_pool_id: cl.snapshot_in_pool.dataset_in_pool_id },
           snapshot_in_pool_id: cl.snapshot_in_pool_id
         )
 
@@ -32,7 +32,7 @@ module Transactions::Storage
       if cl.user_namespace_map_id
         ret.update(
           uidmap: build_map(cl.user_namespace_map, :uid),
-          gidmap: build_map(cl.user_namespace_map, :gid),
+          gidmap: build_map(cl.user_namespace_map, :gid)
         )
       end
 

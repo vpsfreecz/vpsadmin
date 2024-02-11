@@ -6,7 +6,7 @@ class AddStreamDownloads < ActiveRecord::Migration
     reversible do |dir|
       dir.up do
         ActiveRecord::Base.connection.execute(
-            "UPDATE `transaction_chains`
+          "UPDATE `transaction_chains`
              SET type = 'TransactionChains::Dataset::FullDownload'
              WHERE type = 'TransactionChains::Dataset::Download'"
         )

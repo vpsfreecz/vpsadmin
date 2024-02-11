@@ -24,17 +24,17 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
 
   params(:password) do
     string :password, label: 'Password',
-           desc: 'The password must be at least 8 characters long'
+                      desc: 'The password must be at least 8 characters long'
   end
 
   params(:vps) do
     bool :vps, label: 'Create a VPS'
     resource VpsAdmin::API::Resources::Node, label: 'Node', desc: 'Node VPS will run on',
-             value_label: :name
+                                             value_label: :name
     resource VpsAdmin::API::Resources::Environment, label: 'Environment',
-             desc: 'Environment in which to create the VPS'
+                                                    desc: 'Environment in which to create the VPS'
     resource VpsAdmin::API::Resources::Location, label: 'Location',
-             desc: 'Location in which to create the VPS'
+                                                 desc: 'Location in which to create the VPS'
     resource VpsAdmin::API::Resources::OsTemplate, label: 'OS template'
   end
 
@@ -42,7 +42,7 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
     use :writable
     datetime :last_activity_at, label: 'Last activity'
     string :dokuwiki_groups, label: 'DokuWiki groups',
-      desc: 'Comma-separated list of DokuWiki groups'
+                             desc: 'Comma-separated list of DokuWiki groups'
   end
 
   params(:dates) do
@@ -73,23 +73,25 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
 
     def query
       q = if input[:object_state]
-        ::User.unscoped.where(
-          object_state: ::User.object_states[input[:object_state]]
-        )
+            ::User.unscoped.where(
+              object_state: ::User.object_states[input[:object_state]]
+            )
 
-      else
-        ::User.existing.all
-      end
+          else
+            ::User.existing.all
+          end
 
       in_params = self.class.input
 
-      %i(login full_name email address info).each do |p|
+      %i[login full_name email address info].each do |p|
         next unless input[p]
+
         q = q.where("#{in_params[p].db_name} LIKE ? COLLATE utf8_unicode_ci", "#{input[p]}")
       end
 
-      %i(level mailer_enabled).each do |p|
+      %i[level mailer_enabled].each do |p|
         next unless input[p]
+
         q = q.where(in_params[p].db_name => input[p])
       end
 
@@ -126,16 +128,14 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
     end
 
     def exec
-      vps_params = %i(vps node environment location os_template)
+      vps_params = %i[vps node environment location os_template]
 
       passwd = input.delete(:password)
-      user = ::User.new(to_db_names(input.select { |k,_| !vps_params.include?(k) }))
+      user = ::User.new(to_db_names(input.select { |k, _| !vps_params.include?(k) }))
       user.set_password(passwd) if passwd
 
       if input[:vps]
-        if input[:os_template].nil?
-          error('provide an OS template')
-        end
+        error('provide an OS template') if input[:os_template].nil?
 
         if input[:node]
           node = input[:node]
@@ -143,23 +143,20 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
         elsif input[:location] || input[:environment]
           node = VpsAdmin::API::Operations::Node::Pick.run(
             environment: input[:environment],
-            location: input[:location],
+            location: input[:location]
           )
 
         else
           error('provide either an environment, a location or a node')
         end
 
-        unless node
-          error('no free node is available in selected environment/location')
-        end
+        error('no free node is available in selected environment/location') unless node
 
         input[:node] = node
       end
 
-      @chain, _ = user.create(input[:vps], input[:node], input[:os_template])
+      @chain, = user.create(input[:vps], input[:node], input[:os_template])
       user
-
     rescue ActiveRecord::RecordInvalid
       error('create failed', to_param_names(user.errors.to_hash, :input))
     end
@@ -193,14 +190,12 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
     desc 'Update last activity'
     route '{user_id}/touch'
 
-    authorize do |u|
+    authorize do |_u|
       allow
     end
 
     def prepare
-      if current_user.role != :admin && current_user.id != params[:user_id].to_i
-        error('access denied')
-      end
+      error('access denied') if current_user.role != :admin && current_user.id != params[:user_id].to_i
 
       @user = User.find(params[:user_id])
     end
@@ -216,14 +211,12 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
       use :all
     end
 
-    authorize do |u|
+    authorize do |_u|
       allow
     end
 
     def prepare
-      if current_user.role != :admin && current_user.id != params[:user_id].to_i
-        error('access denied')
-      end
+      error('access denied') if current_user.role != :admin && current_user.id != params[:user_id].to_i
 
       @user = ::User.find(params[:user_id])
     end
@@ -239,9 +232,9 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
     input do
       use :writable
       string :password, label: 'Current password', protected: true,
-            desc: 'The password must be at least 8 characters long'
+                        desc: 'The password must be at least 8 characters long'
       string :new_password, label: 'Password', protected: true,
-            desc: 'The password must be at least 8 characters long'
+                            desc: 'The password must be at least 8 characters long'
     end
 
     output do
@@ -250,23 +243,19 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
 
     authorize do |u|
       allow if u.role == :admin
-      input whitelist: %i(
+      input whitelist: %i[
         password new_password mailer_enabled language enable_single_sign_on
         preferred_session_length preferred_logout_all remind_after_date
-      )
+      ]
       allow
     end
 
     def exec
-      if current_user.role != :admin && current_user.id != params[:user_id].to_i
-        error('access denied')
-      end
+      error('access denied') if current_user.role != :admin && current_user.id != params[:user_id].to_i
 
       u = ::User.including_deleted.find(params[:user_id])
 
-      if input.empty?
-        error('provide at least one attribute to update')
-      end
+      error('provide at least one attribute to update') if input.empty?
 
       update_object_state!(u) if change_object_state?
 
@@ -307,7 +296,6 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
 
       u.update!(to_db_names(input))
       u
-
     rescue ActiveRecord::RecordInvalid => e
       error('update failed', to_param_names(e.record.errors.to_hash, :input))
     end
@@ -349,19 +337,19 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
       bool :can_create_vps, label: 'Can create a VPS', default: false
       bool :can_destroy_vps, label: 'Can destroy a VPS', default: false
       integer :vps_lifetime, label: 'Default VPS lifetime',
-              desc: 'in seconds, 0 is unlimited', default: 0
+                             desc: 'in seconds, 0 is unlimited', default: 0
       integer :max_vps_count, label: 'Maximum number of VPS per user',
-              desc: '0 is unlimited', default: 1
+                              desc: '0 is unlimited', default: 1
       bool :default, label: 'Default',
-           desc: 'If true, the user config is inherited from the environment config',
-           default: true
+                     desc: 'If true, the user config is inherited from the environment config',
+                     default: true
     end
 
     class Index < HaveAPI::Actions::Default::Index
       desc 'List settings per environment'
 
       input do
-        use :common, include: %i(environment)
+        use :common, include: %i[environment]
       end
 
       output(:object_list) do
@@ -370,20 +358,16 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
 
       authorize do |u|
         allow if u.role == :admin
-        output blacklist: %i(default)
+        output blacklist: %i[default]
         allow
       end
 
       def query
-        if current_user.role != :admin && params[:user_id].to_i != current_user.id
-          error('access denied')
-        end
+        error('access denied') if current_user.role != :admin && params[:user_id].to_i != current_user.id
 
         q = ::EnvironmentUserConfig.where(user_id: params[:user_id])
 
-        if input[:environment]
-          q = q.where(environment: input[:environment])
-        end
+        q = q.where(environment: input[:environment]) if input[:environment]
 
         q
       end
@@ -406,18 +390,16 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
 
       authorize do |u|
         allow if u.role == :admin
-        output blacklist: %i(default)
+        output blacklist: %i[default]
         allow
       end
 
       def prepare
-        if current_user.role != :admin && params[:user_id].to_i != current_user.id
-          error('access denied')
-        end
+        error('access denied') if current_user.role != :admin && params[:user_id].to_i != current_user.id
 
         @cfg = ::EnvironmentUserConfig.where(
-            user_id: params[:user_id],
-            id: params[:environment_config_id]
+          user_id: params[:user_id],
+          id: params[:environment_config_id]
         ).take!
       end
 
@@ -430,7 +412,7 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
       desc 'Change settings in an environment'
 
       input do
-        use :common, exclude: %i(environment)
+        use :common, exclude: %i[environment]
       end
 
       authorize do |u|
@@ -444,7 +426,6 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
           user_id: params[:user_id],
           id: params[:environment_config_id]
         ).update!(input)
-
       rescue ActiveRecord::RecordInvalid => e
         error('update failed', e.record.errors.to_hash)
       end
@@ -488,7 +469,7 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
         use :all
       end
 
-      authorize do |u|
+      authorize do |_u|
         allow
       end
 
@@ -519,7 +500,7 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
         use :all
       end
 
-      authorize do |u|
+      authorize do |_u|
         allow
       end
 
@@ -556,9 +537,8 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
 
       def exec
         ::UserClusterResource.create!(input.update({
-          user: ::User.find(params[:user_id]),
-        }))
-
+                                                     user: ::User.find(params[:user_id])
+                                                   }))
       rescue ActiveRecord::RecordInvalid => e
         error('create failed', e.record.errors.to_hash)
       end
@@ -585,25 +565,23 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
       desc 'List configured TOTP devices'
 
       input do
-        use :all, include: %i(confirmed enabled)
+        use :all, include: %i[confirmed enabled]
       end
 
       output(:object_list) do
         use :all
       end
 
-      authorize do |u|
+      authorize do |_u|
         allow
       end
 
       def query
-        if current_user.role != :admin && current_user.id != params[:user_id].to_i
-          error('access denied')
-        end
+        error('access denied') if current_user.role != :admin && current_user.id != params[:user_id].to_i
 
         q = ::UserTotpDevice.where(user_id: params[:user_id])
 
-        %i(confirmed enabled).each do |v|
+        %i[confirmed enabled].each do |v|
           q = q.where(v => input[v]) if input.has_key?(v)
         end
 
@@ -627,18 +605,16 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
         use :all
       end
 
-      authorize do |u|
+      authorize do |_u|
         allow
       end
 
       def prepare
-        if current_user.role != :admin && current_user.id != params[:user_id].to_i
-          error('access denied')
-        end
+        error('access denied') if current_user.role != :admin && current_user.id != params[:user_id].to_i
 
         @device = ::UserTotpDevice.find_by!(
           user_id: params[:user_id],
-          id: params[:totp_device_id],
+          id: params[:totp_device_id]
         )
       end
 
@@ -660,18 +636,15 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
         string :provisioning_uri
       end
 
-      authorize do |u|
+      authorize do |_u|
         allow
       end
 
       def exec
-        if current_user.role != :admin && current_user.id != params[:user_id].to_i
-          error('access denied')
-        end
+        error('access denied') if current_user.role != :admin && current_user.id != params[:user_id].to_i
 
         u = ::User.find(params[:user_id])
         VpsAdmin::API::Operations::TotpDevice::Create.run(u, input[:label])
-
       rescue VpsAdmin::API::Exceptions::OperationError => e
         error(e.message)
       end
@@ -690,27 +663,24 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
         string :recovery_code
       end
 
-      authorize do |u|
+      authorize do |_u|
         allow
       end
 
       def exec
-        if current_user.role != :admin && current_user.id != params[:user_id].to_i
-          error('access denied')
-        end
+        error('access denied') if current_user.role != :admin && current_user.id != params[:user_id].to_i
 
         device = ::UserTotpDevice.find_by!(
           user_id: params[:user_id],
-          id: params[:totp_device_id],
+          id: params[:totp_device_id]
         )
 
         recovery_code = VpsAdmin::API::Operations::TotpDevice::Confirm.run(
           device,
-          input[:code],
+          input[:code]
         )
 
-        {recovery_code: recovery_code}
-
+        { recovery_code: recovery_code }
       rescue VpsAdmin::API::Exceptions::OperationError => e
         error(e.message)
       end
@@ -728,7 +698,7 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
         use :all
       end
 
-      authorize do |u|
+      authorize do |_u|
         allow
       end
 
@@ -741,13 +711,13 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
 
         device = ::UserTotpDevice.find_by!(
           user_id: params[:user_id],
-          id: params[:totp_device_id],
+          id: params[:totp_device_id]
         )
 
         if input[:label]
           VpsAdmin::API::Operations::TotpDevice::Update.run(
             device,
-            label: input[:label],
+            label: input[:label]
           )
         end
 
@@ -763,7 +733,6 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
         end
 
         device
-
       rescue VpsAdmin::API::Exceptions::OperationError => e
         error(e.message)
       end
@@ -772,23 +741,20 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
     class Delete < HaveAPI::Actions::Default::Delete
       desc 'Delete TOTP device'
 
-      authorize do |u|
+      authorize do |_u|
         allow
       end
 
       def exec
-        if current_user.role != :admin && current_user.id != params[:user_id].to_i
-          error('access denied')
-        end
+        error('access denied') if current_user.role != :admin && current_user.id != params[:user_id].to_i
 
         device = ::UserTotpDevice.find_by!(
           user_id: params[:user_id],
-          id: params[:totp_device_id],
+          id: params[:totp_device_id]
         )
 
         VpsAdmin::API::Operations::TotpDevice::Delete.run(device)
         ok
-
       rescue VpsAdmin::API::Exceptions::OperationError => e
         error(e.message)
       end
@@ -804,7 +770,7 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
       string :label, label: 'Label'
       text :key, label: 'Public key'
       bool :auto_add, label: 'Auto add',
-          desc: 'Add this key automatically into newly created VPS'
+                      desc: 'Add this key automatically into newly created VPS'
     end
 
     params(:readonly) do
@@ -827,14 +793,12 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
         use :all
       end
 
-      authorize do |u|
+      authorize do |_u|
         allow
       end
 
       def query
-        if current_user.role != :admin && current_user.id != params[:user_id].to_i
-          error("Access denied")
-        end
+        error('Access denied') if current_user.role != :admin && current_user.id != params[:user_id].to_i
 
         ::UserPublicKey.where(user_id: params[:user_id])
       end
@@ -855,14 +819,12 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
         use :all
       end
 
-      authorize do |u|
+      authorize do |_u|
         allow
       end
 
       def prepare
-        if current_user.role != :admin && current_user.id != params[:user_id].to_i
-          error("Access denied")
-        end
+        error('Access denied') if current_user.role != :admin && current_user.id != params[:user_id].to_i
 
         @key = ::UserPublicKey.find_by!(user_id: params[:user_id], id: params[:public_key_id])
       end
@@ -886,20 +848,17 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
         use :all
       end
 
-      authorize do |u|
+      authorize do |_u|
         allow
       end
 
       def exec
-        if current_user.role != :admin && current_user.id != params[:user_id].to_i
-          error("Access denied")
-        end
+        error('Access denied') if current_user.role != :admin && current_user.id != params[:user_id].to_i
 
         input[:user] = ::User.find(params[:user_id])
         input[:key].strip!
 
         ::UserPublicKey.create!(input)
-
       rescue ActiveRecord::RecordInvalid => e
         error('create failed', e.record.errors.to_hash)
       end
@@ -916,16 +875,14 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
         use :all
       end
 
-      authorize do |u|
+      authorize do |_u|
         allow
       end
 
       def exec
-        if current_user.role != :admin && current_user.id != params[:user_id].to_i
-          error("Access denied")
-        end
+        error('Access denied') if current_user.role != :admin && current_user.id != params[:user_id].to_i
 
-        error("Provide at least one input parameter") if input.empty?
+        error('Provide at least one input parameter') if input.empty?
 
         key = ::UserPublicKey.find_by!(user_id: params[:user_id], id: params[:public_key_id])
 
@@ -933,7 +890,6 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
 
         key.update!(input)
         key
-
       rescue ActiveRecord::RecordInvalid => e
         error('update failed', e.record.errors.to_hash)
       end
@@ -942,14 +898,12 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
     class Delete < HaveAPI::Actions::Default::Delete
       desc 'Delete public key'
 
-      authorize do |u|
+      authorize do |_u|
         allow
       end
 
       def exec
-        if current_user.role != :admin && current_user.id != params[:user_id].to_i
-          error("Access denied")
-        end
+        error('Access denied') if current_user.role != :admin && current_user.id != params[:user_id].to_i
 
         key = ::UserPublicKey.find_by!(user_id: params[:user_id], id: params[:public_key_id])
         key.destroy!
@@ -977,14 +931,12 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
         use :all
       end
 
-      authorize do |u|
+      authorize do |_u|
         allow
       end
 
       def query
-        if current_user.role != :admin && current_user.id != params[:user_id].to_i
-          error("Access denied")
-        end
+        error('Access denied') if current_user.role != :admin && current_user.id != params[:user_id].to_i
 
         ::UserMailRoleRecipient.all_roles_for(::User.find(params[:user_id]))
       end
@@ -1005,14 +957,12 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
         use :all
       end
 
-      authorize do |u|
+      authorize do |_u|
         allow
       end
 
       def prepare
-        if current_user.role != :admin && current_user.id != params[:user_id].to_i
-          error("Access denied")
-        end
+        error('Access denied') if current_user.role != :admin && current_user.id != params[:user_id].to_i
 
         @recp = ::UserMailRoleRecipient.find_by!(
           user_id: params[:user_id],
@@ -1029,28 +979,25 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
       desc 'Update user mail role recipient'
 
       input do
-        use :all, include: %i(to)
+        use :all, include: %i[to]
       end
 
       output do
         use :all
       end
 
-      authorize do |u|
+      authorize do |_u|
         allow
       end
 
       def exec
-        if current_user.role != :admin && current_user.id != params[:user_id].to_i
-          error("Access denied")
-        end
+        error('Access denied') if current_user.role != :admin && current_user.id != params[:user_id].to_i
 
         ::UserMailRoleRecipient.handle_update!(
           ::User.find(params[:user_id]),
           params[:mail_role_recipient_id],
           input
         )
-
       rescue ActiveRecord::RecordInvalid => e
         error('Update failed', e.record.errors.to_hash)
       end
@@ -1077,14 +1024,12 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
         use :all
       end
 
-      authorize do |u|
+      authorize do |_u|
         allow
       end
 
       def query
-        if current_user.role != :admin && current_user.id != params[:user_id].to_i
-          error("Access denied")
-        end
+        error('Access denied') if current_user.role != :admin && current_user.id != params[:user_id].to_i
 
         ::UserMailTemplateRecipient.all_templates_for(::User.find(params[:user_id]))
       end
@@ -1105,18 +1050,16 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
         use :all
       end
 
-      authorize do |u|
+      authorize do |_u|
         allow
       end
 
       def prepare
-        if current_user.role != :admin && current_user.id != params[:user_id].to_i
-          error("Access denied")
-        end
+        error('Access denied') if current_user.role != :admin && current_user.id != params[:user_id].to_i
 
         @recp = ::UserMailTemplateRecipient.find_by!(
           user_id: params[:user_id],
-          mail_template_id: params[:mail_template_id],
+          mail_template_id: params[:mail_template_id]
         )
       end
 
@@ -1129,28 +1072,25 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
       desc 'Update user mail template recipient'
 
       input do
-        use :all, include: %i(to enabled)
+        use :all, include: %i[to enabled]
       end
 
       output do
         use :all
       end
 
-      authorize do |u|
+      authorize do |_u|
         allow
       end
 
       def exec
-        if current_user.role != :admin && current_user.id != params[:user_id].to_i
-          error("Access denied")
-        end
+        error('Access denied') if current_user.role != :admin && current_user.id != params[:user_id].to_i
 
         ::UserMailTemplateRecipient.handle_update!(
           ::User.find(params[:user_id]),
           ::MailTemplate.find_by!(name: params[:mail_template_recipient_id]),
           input
         )
-
       rescue ActiveRecord::RecordInvalid => e
         error('Update failed', e.record.errors.to_hash)
       end

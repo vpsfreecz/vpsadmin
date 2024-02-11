@@ -9,6 +9,7 @@ module TransactionChains
     end
 
     protected
+
     def active_pools
       t = ::NodeCurrentStatus.table_name
 
@@ -20,8 +21,8 @@ module TransactionChains
         nodes: {
           role: ::Node.roles[:node],
           hypervisor_type: ::Node.hypervisor_types[:vpsadminos],
-          active: true,
-        },
+          active: true
+        }
       )
     end
   end

@@ -14,9 +14,7 @@ module TransactionChains
       changed_vpses = []
 
       ns.changed.each do |attr|
-        unless %w(addrs label is_universal location_id).include?(attr)
-          fail "cannot change attribute '#{attr}'"
-        end
+        raise "cannot change attribute '#{attr}'" unless %w[addrs label is_universal location_id].include?(attr)
 
         db_changes[attr] = ns.send(attr)
       end
@@ -28,7 +26,7 @@ module TransactionChains
         # Set another NS to all VPSes using this server and not
         # being in the new location.
         ::Vps.including_deleted.where(dns_resolver: ns).joins(:node)
-            .where('location_id != ?', ns.location_id).each do |vps|
+             .where('location_id != ?', ns.location_id).each do |vps|
           lock(vps)
 
           new_ns = ::DnsResolver.pick_suitable_resolver_for_vps(vps, except: [ns.id])
@@ -46,7 +44,7 @@ module TransactionChains
         old_ns = ::DnsResolver.find(ns.id)
 
         ::Vps.including_deleted.where(dns_resolver: ns)
-            .where.not(vps_id: changed_vpses).each do |vps|
+             .where.not(vps_id: changed_vpses).each do |vps|
           lock(vps)
           append(Transactions::Vps::DnsResolver, args: [vps, old_ns, ns])
         end

@@ -12,7 +12,7 @@ class ObjectState < ::ActiveRecord::Base
       reason: reason,
       user: user,
       expiration_date: expiration,
-      remind_after_date: remind_date,
+      remind_after_date: remind_date
     )
   end
 end

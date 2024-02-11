@@ -1,7 +1,7 @@
 module VpsAdmin::API
   # Controller and model maintenance support.
   module Maintainable
-    class ResourceUnderMaintenance < StandardError ; end
+    class ResourceUnderMaintenance < StandardError; end
 
     # Include this module in resource controller to enable maintenance
     # lock support.
@@ -9,15 +9,13 @@ module VpsAdmin::API
     module Action
       module InstanceMethods
         def maintenance_check!(obj)
-          if (respond_to?(:current_user) && current_user.role == :admin) || User.current.role == :admin
-            return true
-          end
+          return true if (respond_to?(:current_user) && current_user.role == :admin) || User.current.role == :admin
 
           return false unless obj.respond_to?(:maintenance_lock)
 
-          if obj.maintenance_lock != MaintenanceLock.maintain_lock(:no)
-            raise ResourceUnderMaintenance, obj.maintenance_lock_reason
-          end
+          return unless obj.maintenance_lock != MaintenanceLock.maintain_lock(:no)
+
+          raise ResourceUnderMaintenance, obj.maintenance_lock_reason
         end
       end
 
@@ -29,7 +27,7 @@ module VpsAdmin::API
 
         resource.define_action(:SetMaintenance) do
           desc 'Set maintenance lock'
-          route ->(r){ r.singular ? 'set_maintenance' : '{%{resource}_id}/set_maintenance' }
+          route ->(r) { r.singular ? 'set_maintenance' : '{%{resource}_id}/set_maintenance' }
           http_method :post
 
           input(:hash) do
@@ -68,7 +66,6 @@ module VpsAdmin::API
               )
               lock.unlock!(obj)
             end
-
           rescue ActiveRecord::RecordInvalid => e
             puts e.message
             puts e.backtrace
@@ -76,14 +73,14 @@ module VpsAdmin::API
           end
         end
 
-        HaveAPI::Action.send(:include, InstanceMethods)
+        HaveAPI::Action.include InstanceMethods
       end
 
       def self.output_params
-        Proc.new do
+        proc do
           string :maintenance_lock, label: 'Maintenance lock',
-                 choices: %i(no lock master_lock),
-                 db_name: :maintenance_lock?
+                                    choices: %i[no lock master_lock],
+                                    db_name: :maintenance_lock?
           string :maintenance_lock_reason, label: 'Maintenance reason'
         end
         # Proc.new {}
@@ -121,11 +118,12 @@ module VpsAdmin::API
         # Return MaintenanceLock object or boolean.
         def find_maintenance_lock(force = false)
           return @maintenance_lock_cache if !@maintenance_lock_cache.nil? && !force
+
           cls = self.class
 
           lock = ::MaintenanceLock.find_by(
             class_name: cls.to_s,
-            row_id: is_a?(ActiveRecord::Base) ? self.id : nil,
+            row_id: is_a?(ActiveRecord::Base) ? id : nil,
             active: true
           )
 
@@ -141,7 +139,7 @@ module VpsAdmin::API
 
           else
             cls.maintenance_parents.each do |p|
-              parent_obj = self.send(p)
+              parent_obj = send(p)
               @maintenance_lock_cache = parent_obj.find_maintenance_lock if parent_obj
               return @maintenance_lock_cache if @maintenance_lock_cache
             end

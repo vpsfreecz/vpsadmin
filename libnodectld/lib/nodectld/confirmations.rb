@@ -6,15 +6,15 @@ module NodeCtld
     include OsCtl::Lib::Utils::Log
 
     def self.translate_type(t)
-      [
-        :create,
-        :just_create,
-        :edit_before,
-        :edit_after,
-        :destroy,
-        :just_destroy,
-        :decrement,
-        :increment
+      %i[
+        create
+        just_create
+        edit_before
+        edit_after
+        destroy
+        just_destroy
+        decrement
+        increment
       ][t]
     end
 
@@ -62,17 +62,18 @@ module NodeCtld
           WHERE
             t.transaction_chain_id = #{@chain_id}
             AND t.id IN (#{transactions.join(',')})
-      ")
+      "
+      )
 
       rs.each do |trans|
-        ret[ trans['t_id'].to_i ] ||= []
-        ret[ trans['t_id'].to_i ] << {
+        ret[trans['t_id'].to_i] ||= []
+        ret[trans['t_id'].to_i] << {
           id: trans['c_id'].to_i,
           class_name: trans['class_name'],
           row_pks: load_yaml(trans['row_pks']),
           attr_changes: trans['attr_changes'] ? load_yaml(trans['attr_changes']) : nil,
           type: self.class.translate_type(trans['confirm_type'].to_i),
-          done: trans['done'].to_i == 1 ? true : false,
+          done: trans['done'].to_i == 1
         }
 
         confirm(t, trans, direction, success)
@@ -84,12 +85,14 @@ module NodeCtld
           SET c.done = 1
           WHERE t.transaction_chain_id = #{@chain_id}
                 AND t.id IN (#{transactions.join(',')})
-      ")
+      "
+      )
 
       ret
     end
 
     protected
+
     def confirm(t, trans, dir, success = nil)
       success = success.nil? ? trans['status'].to_i > 0 : success
       pk = pk_cond(load_yaml(trans['row_pks']))
@@ -103,9 +106,7 @@ module NodeCtld
         end
 
       when 1 # just create
-        if !success || dir != :execute
-          t.query("DELETE FROM #{trans['table_name']} WHERE #{pk}")
-        end
+        t.query("DELETE FROM #{trans['table_name']} WHERE #{pk}") if !success || dir != :execute
 
       when 2 # edit before
         if !success || dir == :rollback
@@ -131,9 +132,7 @@ module NodeCtld
         end
 
       when 5 # just destroy
-        if success && dir == :execute
-          t.query("DELETE FROM #{trans['table_name']} WHERE #{pk}")
-        end
+        t.query("DELETE FROM #{trans['table_name']} WHERE #{pk}") if success && dir == :execute
 
       when 6 # decrement
         if success && dir == :execute

@@ -21,7 +21,7 @@ module VpsAdmin::MailTemplates
     def params
       ret = {
         text_plain: @plain,
-        text_html: @html,
+        text_html: @html
       }
       ret.update(@tpl.meta.opts)
       ret.update(@tpl.meta.lang_opts(@lang))

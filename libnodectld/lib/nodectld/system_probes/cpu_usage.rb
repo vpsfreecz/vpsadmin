@@ -1,16 +1,16 @@
 module NodeCtld::SystemProbes
   class CpuUsage
-    FIELDS = [
-        :user,
-        :nice,
-        :system,
-        :idle,
-        :iowait,
-        :irq,
-        :softirq,
-        :steal,
-        :guest,
-        :guest_nice,
+    FIELDS = %i[
+      user
+      nice
+      system
+      idle
+      iowait
+      irq
+      softirq
+      steal
+      guest
+      guest_nice
     ]
 
     def initialize
@@ -40,7 +40,7 @@ module NodeCtld::SystemProbes
         v = values[i + 1]
         break unless v
 
-        data[ FIELDS[i] ] = v.to_i
+        data[FIELDS[i]] = v.to_i
       end
 
       @data << data
@@ -53,17 +53,18 @@ module NodeCtld::SystemProbes
       ret = {}
 
       data.each do |k, v|
-        if sum == 0.0
-          ret[k] = 0.0
-        else
-          ret[k] = (v / sum * 100).round(2)
-        end
+        ret[k] = if sum == 0.0
+                   0.0
+                 else
+                   (v / sum * 100).round(2)
+                 end
       end
 
       ret
     end
 
     protected
+
     def diff
       ret = {}
 

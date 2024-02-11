@@ -12,7 +12,7 @@ module TransactionChains
       concerns(
         :affect,
         [exp.vps.class.name, exp.vps.id],
-        [exp.dataset.class.name, exp.dataset.id],
+        [exp.dataset.class.name, exp.dataset.id]
       )
 
       new_refquota = dip.refquota + dataset_expansion_history.added_space
@@ -22,18 +22,16 @@ module TransactionChains
       dataset_expansion_history.save!
 
       use_chain(Dataset::Set, args: [
-        dip,
-        {refquota: new_refquota},
-        {
-          reset_expansion: false,
-          admin_override: true,
-          admin_lock_type: 'no_lock',
-        }
-      ])
+                  dip,
+                  { refquota: new_refquota },
+                  {
+                    reset_expansion: false,
+                    admin_override: true,
+                    admin_lock_type: 'no_lock'
+                  }
+                ])
 
-      if exp.enable_notifications
-        use_chain(Mail::VpsDatasetExpanded, args: [exp])
-      end
+      use_chain(Mail::VpsDatasetExpanded, args: [exp]) if exp.enable_notifications
 
       append_t(Transactions::Utils::NoOp, args: find_node_id) do |t|
         t.just_create(dataset_expansion_history)

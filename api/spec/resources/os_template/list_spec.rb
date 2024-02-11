@@ -34,7 +34,7 @@ describe 'OsTemplate.list' do
     it 'returns enabled' do
       api :get, '/v1/os_templates'
 
-      expect([1,0]).to include(api_response[:os_templates].first[:enabled])
+      expect([1, 0]).to include(api_response[:os_templates].first[:enabled])
     end
   end
 end

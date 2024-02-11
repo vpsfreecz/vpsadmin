@@ -12,7 +12,7 @@ module VpsAdmin::Supervisor
       queue = channel.queue(
         queue_name('vps_ssh_host_keys'),
         durable: true,
-        arguments: {'x-queue-type' => 'quorum'},
+        arguments: { 'x-queue-type' => 'quorum' }
       )
 
       queue.bind(exchange, routing_key: 'vps_ssh_host_keys')
@@ -24,12 +24,13 @@ module VpsAdmin::Supervisor
     end
 
     protected
+
     def update_vps_keys(vps_keys)
       t = Time.at(vps_keys['time'])
 
       ::VpsSshHostKey
         .joins(:vps)
-        .where(vps_id: vps_keys['vps_id'], vpses: {node_id: node.id})
+        .where(vps_id: vps_keys['vps_id'], vpses: { node_id: node.id })
         .each do |host_key|
         key_update = vps_keys['keys'].detect { |v| v['algorithm'] == host_key.algorithm }
 
@@ -41,7 +42,7 @@ module VpsAdmin::Supervisor
         host_key.update!(
           bits: key_update['bits'],
           fingerprint: key_update['fingerprint'],
-          updated_at: t,
+          updated_at: t
         )
       end
     end

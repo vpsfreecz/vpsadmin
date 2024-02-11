@@ -25,7 +25,7 @@ module Transactions::Vps
                   addr: ip.addr,
                   prefix: ip.prefix,
                   version: ip.version,
-                  via: ip.route_via && ip.route_via.ip_addr,
+                  via: ip.route_via && ip.route_via.ip_addr
                 }
               end
             else
@@ -34,9 +34,9 @@ module Transactions::Vps
 
           {
             name: netif.name,
-            routes: routes,
+            routes: routes
           }
-        end,
+        end
       }
     end
   end

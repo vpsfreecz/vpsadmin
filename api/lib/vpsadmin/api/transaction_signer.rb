@@ -4,12 +4,12 @@ require 'singleton'
 
 module VpsAdmin::API
   class TransactionSigner
-    class Error < ::StandardError ; end
+    class Error < ::StandardError; end
 
     include Singleton
 
     class << self
-      %i(can_sign? unlock sign_base64).each do |m|
+      %i[can_sign? unlock sign_base64].each do |m|
         define_method(m) do |*args, &block|
           instance.send(m, *args, &block)
         end
@@ -21,7 +21,7 @@ module VpsAdmin::API
     end
 
     def can_sign?
-      !key.nil?
+      key.nil?
       # TODO: return true only if key is set
       true
     end
@@ -33,7 +33,6 @@ module VpsAdmin::API
 
       @key = OpenSSL::PKey::RSA.new(get_key, passphrase)
       true
-
     rescue OpenSSL::PKey::RSAError
       raise Error, 'invalid passphrase'
     end
@@ -42,16 +41,15 @@ module VpsAdmin::API
     # @return [String] base64 encoded signature
     def sign_base64(data)
       # TODO: always sign data
-      if key
-        digest = OpenSSL::Digest::SHA256.new
-        signature = key.sign(digest, data)
-        Base64.encode64(signature)
-      else
-        nil
-      end
+      return unless key
+
+      digest = OpenSSL::Digest.new('SHA256')
+      signature = key.sign(digest, data)
+      Base64.encode64(signature)
     end
 
     protected
+
     attr_reader :key
 
     def get_key

@@ -35,7 +35,7 @@ module VpsAdmin::API::Resources
 
       input do
         resource Location
-        use :common, include: %i(purpose)
+        use :common, include: %i[purpose]
       end
 
       output(:object_list) do
@@ -44,9 +44,9 @@ module VpsAdmin::API::Resources
 
       authorize do |u|
         allow if u.role == :admin
-        output whitelist: %i(
-            id address prefix ip_version role split_access split_prefix purpose
-          )
+        output whitelist: %i[
+          id address prefix ip_version role split_access split_prefix purpose
+        ]
         allow
       end
 
@@ -55,7 +55,7 @@ module VpsAdmin::API::Resources
 
         if input[:location]
           q = q.joins(:location_networks).where(
-            location_networks: {location_id: input[:location].id},
+            location_networks: { location_id: input[:location].id }
           )
         end
 
@@ -81,9 +81,9 @@ module VpsAdmin::API::Resources
 
       authorize do |u|
         allow if u.role == :admin
-        output whitelist: %i(
-            id address prefix ip_version role split_access split_prefix purpose
-          )
+        output whitelist: %i[
+          id address prefix ip_version role split_access split_prefix purpose
+        ]
         allow
       end
 
@@ -111,7 +111,7 @@ module VpsAdmin::API::Resources
         patch :purpose, required: true
 
         bool :add_ip_addresses, default: false,
-            desc: 'Add all IP addresses from this network to the database now'
+                                desc: 'Add all IP addresses from this network to the database now'
       end
 
       output do
@@ -127,10 +127,8 @@ module VpsAdmin::API::Resources
 
         @chain, net = ::Network.register!(input, add_ips: add_ips)
         net
-
       rescue ActiveRecord::RecordInvalid => e
         error('create failed', e.record.errors.to_hash)
-
       rescue ActiveRecord::RecordNotUnique
         error('this network already exists')
       end
@@ -159,10 +157,8 @@ module VpsAdmin::API::Resources
         net = ::Network.find(params[:network_id])
         net.update!(input)
         net
-
       rescue ActiveRecord::RecordInvalid => e
         error('update failed', e.record.errors.to_hash)
-
       rescue ActiveRecord::RecordNotUnique
         error('this network already exists')
       end
@@ -175,7 +171,7 @@ module VpsAdmin::API::Resources
 
       input do
         integer :count, required: true, number: {
-          min: 1,
+          min: 1
         }
         resource User, desc: 'Owner of new IP addresses'
         resource Environment, desc: 'Environment to which the addresses are charged'
@@ -192,18 +188,15 @@ module VpsAdmin::API::Resources
       def exec
         net = ::Network.find(params[:network_id])
 
-        unless net.managed
-          error('this action can be used only on managed networks')
-        end
+        error('this action can be used only on managed networks') unless net.managed
 
         {
           count: net.add_ips(
             input[:count],
             user: input[:user],
-            environment: input[:environment],
-          ).count,
+            environment: input[:environment]
+          ).count
         }
-
       rescue ActiveRecord::RecordInvalid => e
         error('add failed', e.record.errors.to_hash)
       end

@@ -29,7 +29,7 @@ class VpsFeature < ActiveRecord::Base
       Feature.new(:ppp, 'PPP', :all),
       Feature.new(:kvm, 'KVM', :all, default: true),
       Feature.new(:lxc, 'LXC nesting', :vpsadminos),
-      Feature.new(:apparmor_dirs, 'AppArmor control directories', :vpsadminos),
+      Feature.new(:apparmor_dirs, 'AppArmor control directories', :vpsadminos)
     ].map { |f| [f.name, f] }
   ]
 

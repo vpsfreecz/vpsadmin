@@ -30,7 +30,8 @@ class AddRoutableSubnets < ActiveRecord::Migration
             WHEN 6 THEN 128
             END
           )
-        ')
+        '
+        )
 
         ActiveRecord::Base.connection.execute(
           'UPDATE ip_addresses SET size = 1'

@@ -9,11 +9,13 @@ module NodeCtld
     include Utils::OsCtl
 
     def set
-      zfs(
-        :set,
-        "sharenfs=\"#{@params['share_options']}\"",
-        @params['name']
-      ) if @params['share_options']
+      if @params['share_options']
+        zfs(
+          :set,
+          "sharenfs=\"#{@params['share_options']}\"",
+          @params['name']
+        )
+      end
 
       zfs(
         :set,
@@ -26,14 +28,12 @@ module NodeCtld
       ds = "#{pool_fs}/#{name}"
 
       if trash
-        unless recursive
-          # Check that it has no descendants
-          if zfs(:list, '-H -r -t all -o name', ds).output.strip.split("\n").length > 1
-            fail "#{ds} has children, refusing to destroy"
-          end
+        # Check that it has no descendants
+        if !recursive && (zfs(:list, '-H -r -t all -o name', ds).output.strip.split("\n").length > 1)
+          raise "#{ds} has children, refusing to destroy"
         end
 
-        osctl(%i(trash-bin dataset add), ds)
+        osctl(%i[trash-bin dataset add], ds)
       else
         zfs(:destroy, recursive ? '-r' : nil, ds)
       end
@@ -46,12 +46,10 @@ module NodeCtld
       [snap, t]
     end
 
-    def rollback
-
-    end
+    def rollback; end
 
     def clone
-      zfs(:clone, nil, "#{}")
+      zfs(:clone, nil, '')
     end
   end
 end

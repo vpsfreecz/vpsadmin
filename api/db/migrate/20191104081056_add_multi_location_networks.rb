@@ -1,8 +1,8 @@
 class AddMultiLocationNetworks < ActiveRecord::Migration
-  class Network < ActiveRecord::Base ; end
-  class Location < ActiveRecord::Base ; end
-  class LocationNetwork < ActiveRecord::Base ; end
-  class IpAddress < ActiveRecord::Base ; end
+  class Network < ActiveRecord::Base; end
+  class Location < ActiveRecord::Base; end
+  class LocationNetwork < ActiveRecord::Base; end
+  class IpAddress < ActiveRecord::Base; end
 
   def change
     create_table :location_networks do |t|
@@ -13,7 +13,7 @@ class AddMultiLocationNetworks < ActiveRecord::Migration
       t.boolean     :userpick,                 null: false, default: true
     end
 
-    add_index :location_networks, %i(location_id network_id), unique: true
+    add_index :location_networks, %i[location_id network_id], unique: true
 
     add_column :ip_addresses, :charged_environment_id, :integer, null: true
     add_index :ip_addresses, :charged_environment_id
@@ -25,7 +25,7 @@ class AddMultiLocationNetworks < ActiveRecord::Migration
             location_id: net.location_id,
             network_id: net.id,
             autopick: net.autopick,
-            userpick: net.autopick,
+            userpick: net.autopick
           )
         end
 
@@ -34,7 +34,7 @@ class AddMultiLocationNetworks < ActiveRecord::Migration
           loc = Location.find(net.location_id)
 
           ip.update!(
-            charged_environment_id: loc.environment_id,
+            charged_environment_id: loc.environment_id
           )
         end
       end
@@ -42,7 +42,7 @@ class AddMultiLocationNetworks < ActiveRecord::Migration
       dir.down do
         Network.all.each do |net|
           locnet = LocationNetwork.where(
-            network_id: net.id,
+            network_id: net.id
           ).order('priority, id').take
 
           if locnet.nil?
@@ -52,15 +52,15 @@ class AddMultiLocationNetworks < ActiveRecord::Migration
 
           net.update!(
             location_id: locnet.location_id,
-            autopick: locnet.autopick,
+            autopick: locnet.autopick
           )
         end
       end
     end
 
-    remove_index :networks, column: %i(location_id address prefix), unique: true
+    remove_index :networks, column: %i[location_id address prefix], unique: true
     remove_column :networks, :autopick, :boolean, null: false, default: true
     remove_column :networks, :location_id, :integer, null: false
-    add_index :networks, %i(address prefix), unique: true
+    add_index :networks, %i[address prefix], unique: true
   end
 end

@@ -38,7 +38,7 @@ module TransactionChains
         cgroup_version: vps.cgroup_version,
         expiration_date: vps.expiration_date,
         allow_admin_modifications: vps.allow_admin_modifications,
-        confirmed: ::Vps.confirmed(:confirm_create),
+        confirmed: ::Vps.confirmed(:confirm_create)
       )
 
       remote = dst_vps.node_id != vps.node_id
@@ -54,7 +54,7 @@ module TransactionChains
         confirm_features << ::VpsFeature.create!(
           vps: dst_vps,
           name: name,
-          enabled: dst_features[name],
+          enabled: dst_features[name]
         )
       end
 
@@ -65,7 +65,7 @@ module TransactionChains
           weekday: w.weekday,
           is_open: w.is_open,
           opens_at: w.opens_at,
-          closes_at: w.closes_at,
+          closes_at: w.closes_at
         )
         w.save!(validate: false)
         confirm_windows << w
@@ -73,7 +73,7 @@ module TransactionChains
 
       # Allocate resources for the new VPS
       vps_resources = dst_vps.allocate_resources(
-        required: %i(cpu memory swap),
+        required: %i[cpu memory swap],
         optional: [],
         user: dst_vps.user,
         chain: self,
@@ -82,7 +82,7 @@ module TransactionChains
           memory: vps.memory,
           swap: vps.swap
         },
-        admin_override: true,
+        admin_override: true
       )
 
       dst_vps.dataset_in_pool = vps_dataset(vps, dst_vps, true)
@@ -93,9 +93,9 @@ module TransactionChains
 
       # Stop the broken VPS
       append(Transactions::Vps::RecoverCleanup, args: [
-        vps,
-        {network_interfaces: true},
-      ])
+               vps,
+               { network_interfaces: true }
+             ])
 
       # Free resources of the original VPS
       append_t(Transactions::Utils::NoOp, args: vps.node_id) do |t|
@@ -117,9 +117,9 @@ module TransactionChains
       # Set state to soft_delete
       vps.record_object_state_change(
         :soft_delete,
-        expiration: attrs[:expiration_date] || (Time.now + 60*24*60*60),
+        expiration: attrs[:expiration_date] || (Time.now + 60 * 24 * 60 * 60),
         reason: "Replaced with VPS #{dst_vps.id}",
-        chain: self,
+        chain: self
       )
 
       # Prepare userns
@@ -131,7 +131,7 @@ module TransactionChains
         # Authorize the migration
         append(
           Transactions::Pool::AuthorizeSendKey,
-          args: [@dst_pool, @src_pool, dst_vps.id, "chain-#{id}-#{token}", token],
+          args: [@dst_pool, @src_pool, dst_vps.id, "chain-#{id}-#{token}", token]
         )
 
         # Copy configs
@@ -139,13 +139,13 @@ module TransactionChains
           Transactions::Vps::SendConfig,
           args: [
             vps,
-            node,
+            node
           ],
           kwargs: {
             as_id: dst_vps.id,
             network_interfaces: true,
-            passphrase: token,
-          },
+            passphrase: token
+          }
         )
 
         # In case of rollback on the target node
@@ -156,7 +156,7 @@ module TransactionChains
       datasets = serialize_datasets(vps.dataset_in_pool, dst_vps.dataset_in_pool)
       datasets.insert(0, [vps.dataset_in_pool, dst_vps.dataset_in_pool])
 
-      confirm_creation = Proc.new do |t|
+      confirm_creation = proc do |t|
         datasets.each do |src, dst|
           t.create(dst_vps)
 
@@ -172,7 +172,7 @@ module TransactionChains
             :diskspace,
             src.diskspace,
             user: dst_vps.user,
-            admin_override: true,
+            admin_override: true
           )
 
           properties = ::DatasetProperty.clone_properties!(src, dst)
@@ -180,6 +180,7 @@ module TransactionChains
 
           properties.each_value do |p|
             next if p.inherited
+
             props_to_set[p.name.to_sym] = p.value
           end
 
@@ -203,7 +204,7 @@ module TransactionChains
         # Full copy
         append_t(
           Transactions::Vps::Copy,
-          args: [vps, dst_vps.id, consistent: false, network_interfaces: true],
+          args: [vps, dst_vps.id, { consistent: false, network_interfaces: true }],
           &confirm_creation
         )
       end
@@ -224,13 +225,13 @@ module TransactionChains
         # Finish the transfer
         append_t(
           Transactions::Vps::SendState,
-          args: [vps, ],
+          args: [vps],
           kwargs: {
             clone: true,
             consistent: false,
             restart: false,
-            start: false,
-          },
+            start: false
+          }
         )
       end
 
@@ -248,7 +249,7 @@ module TransactionChains
       append(
         Transactions::Vps::PopulateConfig,
         args: [dst_vps],
-        kwargs: {network_interfaces: vps.network_interfaces.all},
+        kwargs: { network_interfaces: vps.network_interfaces.all }
       )
 
       # Resources
@@ -275,13 +276,11 @@ module TransactionChains
       append(
         Transactions::Vps::Autostart,
         args: [vps],
-        kwargs: { enable: false, revert: false},
+        kwargs: { enable: false, revert: false }
       )
 
       # Start the new VPS
-      if attrs[:start]
-        use_chain(Vps::Start, args: dst_vps, reversible: :keep_going)
-      end
+      use_chain(Vps::Start, args: dst_vps, reversible: :keep_going) if attrs[:start]
 
       if remote
         # Add IPS to accounting and shaper on the destination node
@@ -300,7 +299,7 @@ module TransactionChains
     end
 
     # Create a new dataset for target VPS.
-    def vps_dataset(vps, dst_vps, clone_plans)
+    def vps_dataset(vps, dst_vps, _clone_plans)
       ds = ::Dataset.new(
         name: dst_vps.id.to_s,
         user: dst_vps.user,
@@ -310,16 +309,14 @@ module TransactionChains
         confirmed: ::Dataset.confirmed(:confirm_create)
       )
 
-      dip = ::DatasetInPool.create!(
+      ::DatasetInPool.create!(
         pool: @dst_pool,
         dataset: ds,
         label: "vps#{dst_vps.id}",
         min_snapshots: vps.dataset_in_pool.min_snapshots,
         max_snapshots: vps.dataset_in_pool.max_snapshots,
-        snapshot_max_age: vps.dataset_in_pool.snapshot_max_age,
+        snapshot_max_age: vps.dataset_in_pool.snapshot_max_age
       )
-
-      dip
     end
 
     def serialize_datasets(dataset_in_pool, dst_dataset_in_pool)
@@ -360,7 +357,7 @@ module TransactionChains
         label: dip.label,
         min_snapshots: dip.min_snapshots,
         max_snapshots: dip.max_snapshots,
-        snapshot_max_age: dip.snapshot_max_age,
+        snapshot_max_age: dip.snapshot_max_age
       )
 
       lock(dst)
@@ -391,7 +388,7 @@ module TransactionChains
             label: dip.label,
             min_snapshots: dip.min_snapshots,
             max_snapshots: dip.max_snapshots,
-            snapshot_max_age: dip.snapshot_max_age,
+            snapshot_max_age: dip.snapshot_max_age
           )
 
           lock(dst)

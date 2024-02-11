@@ -12,18 +12,19 @@ module NodeCtld
     end
 
     protected
+
     def set_features(key)
-      # TODO features
+      # TODO: features
       # tun: net_admin capability?
       # bridge: ?
       # nfs: ?
 
       # Generic device access
       devices = {
-        tun: [%w(char 10 200), '/dev/net/tun'],
-        fuse: [%w(char 10 229), '/dev/fuse'],
-        ppp: [%w(char 108 0), '/dev/ppp'],
-        kvm: [%w(char 10 232), '/dev/kvm'],
+        tun: [%w[char 10 200], '/dev/net/tun'],
+        fuse: [%w[char 10 229], '/dev/fuse'],
+        ppp: [%w[char 108 0], '/dev/ppp'],
+        kvm: [%w[char 10 232], '/dev/kvm']
       }
 
       devices.each do |name, desc|
@@ -33,11 +34,10 @@ module NodeCtld
           # Enable
           begin
             osctl(
-              %i(ct devices add),
+              %i[ct devices add],
               [@vps_id, *ident, 'rwm', devnode],
               parents: true
             )
-
           rescue SystemCommandFailed => e
             raise if e.rc != 1 || /error: device already exists/ !~ e.output
           end
@@ -45,7 +45,7 @@ module NodeCtld
         else
           # Disable
           osctl(
-            %i(ct devices del),
+            %i[ct devices del],
             [@vps_id, *ident],
             {},
             {},
@@ -56,27 +56,27 @@ module NodeCtld
 
       # LXC nesting
       if @features['lxc'][key]
-        osctl(%i(ct set nesting), @vps_id)
+        osctl(%i[ct set nesting], @vps_id)
 
       else
-        osctl(%i(ct unset nesting), @vps_id)
+        osctl(%i[ct unset nesting], @vps_id)
       end
 
       # AppArmor control dirs
       if @features['apparmor_dirs'][key]
-        osctl(%i(ct mounts del), [@vps_id, '/sys/kernel/security'], {}, {}, valid_rcs: [1])
-        osctl(%i(ct mounts del), [@vps_id, '/sys/module/apparmor'], {}, {}, valid_rcs: [1])
+        osctl(%i[ct mounts del], [@vps_id, '/sys/kernel/security'], {}, {}, valid_rcs: [1])
+        osctl(%i[ct mounts del], [@vps_id, '/sys/module/apparmor'], {}, {}, valid_rcs: [1])
       else
         begin
           osctl(
-            %i(ct mounts new),
+            %i[ct mounts new],
             [@vps_id],
             {
               fs: '/run/vpsadmin/sys-kernel-security',
               type: 'bind',
               opts: 'bind,ro',
-              mountpoint: '/sys/kernel/security',
-            },
+              mountpoint: '/sys/kernel/security'
+            }
           )
         rescue SystemCommandFailed => e
           raise if e.rc != 1 || /is already mounted/ !~ e.output
@@ -84,14 +84,14 @@ module NodeCtld
 
         begin
           osctl(
-            %i(ct mounts new),
+            %i[ct mounts new],
             [@vps_id],
             {
               fs: '/run/vpsadmin/sys-module-apparmor',
               type: 'bind',
               opts: 'bind,ro',
-              mountpoint: '/sys/module/apparmor',
-            },
+              mountpoint: '/sys/module/apparmor'
+            }
           )
         rescue SystemCommandFailed => e
           raise if e.rc != 1 || /is already mounted/ !~ e.output
@@ -100,7 +100,7 @@ module NodeCtld
 
       # Restart the VPS if it is running, this is needed for LXC nesting
       # and Docker access to take effect.
-      osctl(%i(ct restart), @vps_id) if status == :running
+      osctl(%i[ct restart], @vps_id) if status == :running
 
       ok
     end

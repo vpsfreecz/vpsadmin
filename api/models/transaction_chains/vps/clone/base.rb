@@ -39,20 +39,20 @@ module TransactionChains
       return unless vps.manage_hostname
 
       append(Transactions::Vps::Hostname, args: [
-        dst_vps,
-        vps.hostname,
-        attrs[:hostname]
-      ])
+               dst_vps,
+               vps.hostname,
+               attrs[:hostname]
+             ])
     end
 
     def clone_dns_resolver(vps, dst_vps)
       return unless vps.dns_resolver
 
       append(Transactions::Vps::DnsResolver, args: [
-        dst_vps,
-        vps.dns_resolver,
-        dst_vps.dns_resolver
-      ])
+               dst_vps,
+               vps.dns_resolver,
+               dst_vps.dns_resolver
+             ])
     end
 
     # A hash containing all not-inherited properties, which must
@@ -76,40 +76,37 @@ module TransactionChains
         plans << dip_plan
       end
 
-      unless plans.empty?
-        append(Transactions::Utils::NoOp, args: find_node_id) do
-          plans.each do |dip_plan|
-            plan = dip_plan.environment_dataset_plan.dataset_plan
+      return if plans.empty?
 
-            # Do not add the plan in the target environment is for admins only
-            begin
-              next unless ::EnvironmentDatasetPlan.find_by!(
-                dataset_plan: plan,
-                environment: dst_dip.pool.node.location.environment
-              ).user_add
+      append(Transactions::Utils::NoOp, args: find_node_id) do
+        plans.each do |dip_plan|
+          plan = dip_plan.environment_dataset_plan.dataset_plan
 
-            rescue ActiveRecord::RecordNotFound
-              next  # the plan is not present in the target environment
-            end
+          # Do not add the plan in the target environment is for admins only
+          begin
+            next unless ::EnvironmentDatasetPlan.find_by!(
+              dataset_plan: plan,
+              environment: dst_dip.pool.node.location.environment
+            ).user_add
+          rescue ActiveRecord::RecordNotFound
+            next # the plan is not present in the target environment
+          end
 
-            begin
-              VpsAdmin::API::DatasetPlans.plans[plan.name.to_sym].register(
-                dst_dip,
-                confirmation: self
-              )
-
-            rescue VpsAdmin::API::Exceptions::DatasetPlanNotInEnvironment
-              # This exception should never be raised, as the not-existing plan
-              # in the target environment is caught by the rescue above.
-              next
-
-            rescue ActiveRecord::RecordNotUnique => e
-              # The dataset in pool already is in this plan. The only way this could
-              # happen is if the code connected to hook DatasetInPool.create registered
-              # it.
-              # As it is already registered, we may skip it.
-              next
-            end
+          begin
+            VpsAdmin::API::DatasetPlans.plans[plan.name.to_sym].register(
+              dst_dip,
+              confirmation: self
+            )
+          rescue VpsAdmin::API::Exceptions::DatasetPlanNotInEnvironment
+            # This exception should never be raised, as the not-existing plan
+            # in the target environment is caught by the rescue above.
+            next
+          rescue ActiveRecord::RecordNotUnique => e
+            # The dataset in pool already is in this plan. The only way this could
+            # happen is if the code connected to hook DatasetInPool.create registered
+            # it.
+            # As it is already registered, we may skip it.
+            next
           end
         end
       end
@@ -198,10 +195,10 @@ module TransactionChains
 
       use_chain(Vps::Mounts, args: dst_vps)
 
-      if mounts.size > 0
-        append(Transactions::Utils::NoOp, args: dst_vps.node_id) do
-          mounts.each { |m| create(m) }
-        end
+      return unless mounts.size > 0
+
+      append(Transactions::Utils::NoOp, args: dst_vps.node_id) do
+        mounts.each { |m| create(m) }
       end
     end
 
@@ -209,8 +206,8 @@ module TransactionChains
       @transfer_snapshots ||= []
 
       datasets.each do |src, dst|
-          @transfer_snapshots << use_chain(Dataset::Snapshot, args: src, urgent: urgent)
-          use_chain(Dataset::Transfer, args: [src, dst], urgent: urgent)
+        @transfer_snapshots << use_chain(Dataset::Snapshot, args: src, urgent: urgent)
+        use_chain(Dataset::Transfer, args: [src, dst], urgent: urgent)
       end
     end
 
@@ -243,9 +240,9 @@ module TransactionChains
       # Now fix snapshot names - snapshot name is updated by vpsAdmind
       # to the time when it was actually created.
       append(Transactions::Storage::CloneSnapshotName, args: [
-          dst_vps.dataset_in_pool.pool.node,
-          snapshot_name_fixes
-      ]) do
+               dst_vps.dataset_in_pool.pool.node,
+               snapshot_name_fixes
+             ]) do
         new_snapshots.each { |s| create(s) }
       end
     end
@@ -254,8 +251,8 @@ module TransactionChains
     def cleanup_transfer_snapshots
       @transfer_snapshots.each do |src_sip|
         dst_sip = ::SnapshotInPool.joins(:dataset_in_pool).where(
-          snapshot_id: @snapshot_name_fixes[ src_sip.snapshot_id ][1],
-          dataset_in_pools: {pool_id: @dst_pool.id}
+          snapshot_id: @snapshot_name_fixes[src_sip.snapshot_id][1],
+          dataset_in_pools: { pool_id: @dst_pool.id }
         ).take!
 
         use_chain(SnapshotInPool::Destroy, args: src_sip)

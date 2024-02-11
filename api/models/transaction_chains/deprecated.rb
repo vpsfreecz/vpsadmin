@@ -1,12 +1,12 @@
 module TransactionChains
   class Deprecated < ::TransactionChain
     def link_chain(*_)
-      fail "Transaction chain #{self.class.name} has been deprecated"
+      raise "Transaction chain #{self.class.name} has been deprecated"
     end
   end
 
   module Dataset
-    class SetUserNamespaceMap < Deprecated ; end
+    class SetUserNamespaceMap < Deprecated; end
   end
 
   module Vps
@@ -14,16 +14,16 @@ module TransactionChains
       label 'Apply config'
     end
 
-    class AddIp < Deprecated ; end
-    class DelIp < Deprecated ; end
-    class CreateVeth < Deprecated ; end
-    class RemoveVeth < Deprecated ; end
+    class AddIp < Deprecated; end
+    class DelIp < Deprecated; end
+    class CreateVeth < Deprecated; end
+    class RemoveVeth < Deprecated; end
 
-    class SetUserNamespaceMap < Deprecated ; end
+    class SetUserNamespaceMap < Deprecated; end
 
-    class ShaperChange < Deprecated ; end
-    class ShaperSet < Deprecated ; end
-    class ShaperUnset < Deprecated ; end
+    class ShaperChange < Deprecated; end
+    class ShaperSet < Deprecated; end
+    class ShaperUnset < Deprecated; end
 
     class MountSnapshot < Deprecated
       label 'Mount snapshot'
@@ -73,7 +73,7 @@ module TransactionChains
   end
 
   module IntegrityCheck
-    class Cluster < Deprecated ; end
-    class Node < Deprecated ; end
+    class Cluster < Deprecated; end
+    class Node < Deprecated; end
   end
 end

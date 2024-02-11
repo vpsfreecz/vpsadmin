@@ -10,7 +10,7 @@ module VpsAdmin::API
         (vars.is_a?(Array) ? vars : [vars]).each do |env|
           next if ENV[env] && ENV[env].length > 0
 
-          fail "Missing required environment variable #{env}"
+          raise "Missing required environment variable #{env}"
         end
       end
     end

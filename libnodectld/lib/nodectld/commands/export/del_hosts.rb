@@ -23,7 +23,7 @@ module NodeCtld
             @snapshot_clone,
             @as,
             host['address'],
-            host['options'],
+            host['options']
           )
         else
           s.add_filesystem_export(
@@ -31,7 +31,7 @@ module NodeCtld
             @dataset_name,
             @as,
             host['address'],
-            host['options'],
+            host['options']
           )
         end
       end

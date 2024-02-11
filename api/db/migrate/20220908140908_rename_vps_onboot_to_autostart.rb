@@ -3,7 +3,7 @@ class RenameVpsOnbootToAutostart < ActiveRecord::Migration[6.1]
     has_one :vps_current_status
   end
 
-  class VpsCurrentStatus < ActiveRecord::Base ; end
+  class VpsCurrentStatus < ActiveRecord::Base; end
 
   def change
     remove_column :locations, :vps_onboot, :boolean, null: false, default: true
@@ -13,9 +13,7 @@ class RenameVpsOnbootToAutostart < ActiveRecord::Migration[6.1]
     reversible do |dir|
       dir.up do
         Vps.all.includes(:vps_current_status).each do |vps|
-          if vps.vps_current_status && vps.vps_current_status.is_running
-            vps.update!(autostart_enable: true)
-          end
+          vps.update!(autostart_enable: true) if vps.vps_current_status && vps.vps_current_status.is_running
         end
       end
     end

@@ -27,7 +27,7 @@ module TransactionChains
             user: user,
             environment: env,
             cluster_resource: cr,
-            value: 0,
+            value: 0
           )
         end
 
@@ -35,13 +35,13 @@ module TransactionChains
         personal_pkg = ::ClusterResourcePackage.create!(
           user: user,
           environment: env,
-          label: 'Personal package',
+          label: 'Personal package'
         )
         objects << personal_pkg
         objects << ::UserClusterResourcePackage.create!(
           user: user,
           environment: env,
-          cluster_resource_package: personal_pkg,
+          cluster_resource_package: personal_pkg
         )
 
         # Assign default resource packages
@@ -50,7 +50,7 @@ module TransactionChains
             user: user,
             environment: env,
             cluster_resource_package: pkg.cluster_resource_package,
-            comment: 'User was created',
+            comment: 'User was created'
           )
         end
 
@@ -66,7 +66,7 @@ module TransactionChains
         :create,
         self,
         args: [user],
-        initial: {objects: []}
+        initial: { objects: [] }
       )
       objects.concat(ret[:objects])
 
@@ -75,21 +75,21 @@ module TransactionChains
           user: user,
           node: node,
           os_template: tpl,
-          hostname: 'vps',
+          hostname: 'vps'
         )
         vps.dns_resolver = ::DnsResolver.pick_suitable_resolver_for_vps(vps)
 
         vps_opts = {
-          start: activate,
+          start: activate
         }
 
         node.location.environment.default_object_cluster_resources.joins(
           :cluster_resource
         ).where(
           class_name: 'Vps',
-          cluster_resources: {name: %w(ipv4 ipv4_private ipv6)},
+          cluster_resources: { name: %w[ipv4 ipv4_private ipv6] }
         ).each do |default|
-          vps_opts[ default.cluster_resource.name.to_sym ] = default.value
+          vps_opts[default.cluster_resource.name.to_sym] = default.value
         end
 
         use_chain(Vps::Create, args: [vps, vps_opts])
@@ -102,11 +102,11 @@ module TransactionChains
       end
 
       mail(:user_create, {
-        user: user,
-        vars: {
-          user: user
-        }
-      })
+             user: user,
+             vars: {
+               user: user
+             }
+           })
 
       user
     end

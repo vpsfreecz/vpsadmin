@@ -4,9 +4,7 @@ module Transactions::Pool
     t_type 5262
 
     def params(dst_pool, src_pool, ctid, name, passphrase)
-      unless src_pool.migration_public_key
-        fail "no pubkey set for pool #{src_pool.id}"
-      end
+      raise "no pubkey set for pool #{src_pool.id}" unless src_pool.migration_public_key
 
       self.node_id = dst_pool.node_id
       {
@@ -15,7 +13,7 @@ module Transactions::Pool
         pubkey: src_pool.migration_public_key,
         name: name,
         ctid: ctid.to_s,
-        passphrase: passphrase,
+        passphrase: passphrase
       }
     end
   end

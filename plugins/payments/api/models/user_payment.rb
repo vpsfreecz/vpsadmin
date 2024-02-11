@@ -9,9 +9,7 @@ class UserPayment < ActiveRecord::Base
     payment = new(attrs)
     payment.accounted_by = ::User.current
 
-    if attrs[:incoming_payment]
-      payment.amount = payment.incoming_payment.converted_amount
-    end
+    payment.amount = payment.incoming_payment.converted_amount if attrs[:incoming_payment]
 
     monthly = payment.user.user_account.monthly_payment
 
@@ -39,7 +37,7 @@ class UserPayment < ActiveRecord::Base
   end
 end
 
-TransactionChains::Mail::DailyReport.connect_hook(:send) do |ret, from, now|
+TransactionChains::Mail::DailyReport.connect_hook(:send) do |ret, _from, now|
   t = now.strftime('%Y-%m-%d %H:%M:%S')
 
   ret[:payments] ||= {}

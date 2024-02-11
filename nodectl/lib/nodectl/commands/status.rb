@@ -5,12 +5,12 @@ module NodeCtl
 
     include Utils
 
-    def options(parser, args)
+    def options(parser, _args)
       opts.update({
-        workers: false,
-        consoles: false,
-        header: true,
-      })
+                    workers: false,
+                    consoles: false,
+                    header: true
+                  })
 
       parser.on('-c', '--consoles', 'List exported consoles') do
         opts[:consoles] = true
@@ -37,13 +37,13 @@ module NodeCtl
       if opts[:workers]
         if opts[:header]
           if global_opts[:parsable]
-            puts sprintf(
+            puts format(
               '%-8s %-8s %-8s %-20.19s %-5s %8s  %12s %-18.16s %-8s %s',
               'QUEUE', 'CHAIN', 'TRANS', 'HANDLER', 'TYPE', 'TIME', 'PROGRESS', 'ETA', 'PID', 'STEP'
             )
 
           else
-            puts sprintf(
+            puts format(
               '%-8s %-8s %-8s %-20.19s %-5s %-18.16s %12s %-18.16s  %-8s %s',
               'QUEUE', 'CHAIN', 'TRANS', 'HANDLER', 'TYPE', 'TIME', 'PROGRESS', 'ETA', 'PID', 'STEP'
             )
@@ -54,21 +54,19 @@ module NodeCtl
 
         response[:queues].each do |name, queue|
           queue[:workers].sort { |a, b| a[0].to_s.to_i <=> b[0].to_s.to_i }.each do |w|
-
             eta = nil
 
             if w[1][:progress] && w[1][:start]
               begin
                 rate = w[1][:progress][:current] / (t.to_i - w[1][:start])
                 eta = (w[1][:progress][:total] - w[1][:progress][:current]) / rate
-
               rescue ZeroDivisionError
                 eta = nil
               end
             end
 
             if global_opts[:parsable]
-              puts sprintf(
+              puts format(
                 '%-8s %-8d %-8d %-20.19s %-5d %8d %12s %-20.19s %-8s %s',
                 name,
                 w[0].to_s,
@@ -78,12 +76,12 @@ module NodeCtl
                 w[1][:start] ? (t.to_i - w[1][:start]).round : '-',
                 w[1][:pid] || '-',
                 w[1][:progress] ? format_progress(t, w[1][:progress]) : '-',
-                eta ? eta : '-',
+                eta || '-',
                 w[1][:step]
               )
 
             else
-              puts sprintf(
+              puts format(
                 '%-8s %-8d %-8d %-20.19s %-5d %-18.16s %12s %-20.19s  %-8s  %s',
                 name,
                 w[0].to_s,
@@ -102,33 +100,32 @@ module NodeCtl
       end
 
       if opts[:consoles]
-        puts sprintf('%-5s %s', 'VEID', 'LISTENERS') if opts[:header]
+        puts format('%-5s %s', 'VEID', 'LISTENERS') if opts[:header]
 
         response[:consoles].sort { |a, b| a[0].to_s.to_i <=> b[0].to_s.to_i }.each do |c|
-          puts sprintf('%-5d %d', c[0].to_s, c[1])
+          puts format('%-5d %d', c[0].to_s, c[1])
         end
       end
 
       if opts[:reservations]
-        puts sprintf('%-12s %-10s', 'QUEUE', 'CHAIN')
+        puts format('%-12s %-10s', 'QUEUE', 'CHAIN')
 
         response[:queues].each do |name, queue|
           queue[:reservations].each do |r|
-            puts sprintf("%-12s %-10d", name, r)
+            puts format('%-12s %-10d', name, r)
           end
         end
       end
 
       if opts[:subtasks]
-        puts sprintf('%-10s %-10s %-20s %s', 'CHAIN', 'PID', 'STATE', 'NAME') if @opts[:header]
+        puts format('%-10s %-10s %-20s %s', 'CHAIN', 'PID', 'STATE', 'NAME') if @opts[:header]
 
         response[:subprocesses].sort do |a, b|
           a[0].to_s.to_i <=> b[0].to_s.to_i
-
         end.each do |chain_tasks|
           chain_tasks[1].each do |task|
             info = process_info(task)
-            puts sprintf(
+            puts format(
               '%-10d %-10d %-20s %s',
               chain_tasks[0].to_s,
               task,
@@ -146,17 +143,17 @@ module NodeCtl
         puts "  Consoles: #{response[:export_console] ? response[:consoles].size : 'disabled'}"
         puts "  Subtasks: #{response[:subprocesses].inject(0) { |sum, v| sum + v[1].size }}"
         puts "Queue size: #{response[:queue_size]}"
-        puts "    Queues:"
+        puts '    Queues:'
 
         response[:queues].each do |name, queue|
-          puts sprintf(
-            "    %10s  %d / %d (+%d%s) %s",
+          puts format(
+            '    %10s  %d / %d (+%d%s) %s',
             name,
             queue[:workers].size,
             queue[:threads],
             queue[:urgent],
             queue[:reservations].empty? ? '' : " *#{queue[:reservations].size}",
-            format_queue_state(queue),
+            format_queue_state(queue)
           )
         end
       end
@@ -169,7 +166,7 @@ module NodeCtl
         if queue[:start_delay] > 0
           "paused for #{format_queue_start_delay(queue)}"
         else
-          "paused"
+          'paused'
         end
       elsif !queue[:started]
         "opens in #{format_queue_start_delay(queue)}"
@@ -205,7 +202,7 @@ module NodeCtl
       {
         100 => 'stop',
         150 => 'restart',
-        200 => 'update',
+        200 => 'update'
       }[s]
     end
 
@@ -216,7 +213,6 @@ module NodeCtl
       ret[:name] = /^Name:([^\n]+)/.match(s)[1].strip
       ret[:state] = /^State:([^\n]+)/.match(s)[1].strip
       ret
-
     rescue Errno::ENOENT, NoMethodError => e
       {}
     end

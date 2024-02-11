@@ -12,14 +12,12 @@ module NodeCtld
         vendor: @vendor,
         variant: @variant,
         zfs_property: 'refquota=10G',
-        wait: @start_timeout || Vps::START_TIMEOUT,
+        wait: @start_timeout || Vps::START_TIMEOUT
       }
 
-      if @mount_root_dataset
-        boot_opts[:mount_root_dataset] = @mount_root_dataset
-      end
+      boot_opts[:mount_root_dataset] = @mount_root_dataset if @mount_root_dataset
 
-      osctl(%i(ct boot), @vps_id, boot_opts)
+      osctl(%i[ct boot], @vps_id, boot_opts)
     end
 
     def rollback

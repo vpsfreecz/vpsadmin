@@ -22,7 +22,7 @@ namespace :vpsadmin do
   namespace :auth do
     desc 'Close expired authentication processes'
     task :close_expired do
-      puts "Close expired authentication processes"
+      puts 'Close expired authentication processes'
       VpsAdmin::API::Tasks.run(:authentication, :close_expired)
     end
   end
@@ -30,7 +30,7 @@ namespace :vpsadmin do
   namespace :user_session do
     desc 'Close expired user sessions'
     task :close_expired do
-      puts "Close expired user sessions"
+      puts 'Close expired user sessions'
       VpsAdmin::API::Tasks.run(:user_session, :close_expired)
     end
   end
@@ -81,7 +81,7 @@ namespace :vpsadmin do
     end
 
     desc 'Run OOM reports pipeline'
-    task run: %i(notify)
+    task run: %i[notify]
   end
 
   namespace :prometheus do
@@ -111,7 +111,7 @@ namespace :vpsadmin do
     end
 
     desc 'Run whole dataset expansion pipeline'
-    task run: %i(process enforce resolve)
+    task run: %i[process enforce resolve]
   end
 
   namespace :plugins do

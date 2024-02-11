@@ -12,9 +12,9 @@ class DatasetInPool < ActiveRecord::Base
   has_many :mounts
   has_many :dataset_in_pool_plans
   has_many :src_dataset_actions, class_name: 'DatasetAction',
-           foreign_key: :src_dataset_in_pool_id
+                                 foreign_key: :src_dataset_in_pool_id
   has_many :dst_dataset_actions, class_name: 'DatasetAction',
-           foreign_key: :dst_dataset_in_pool_id
+                                 foreign_key: :dst_dataset_in_pool_id
   has_many :group_snapshots
   has_many :exports
   has_many :vpses
@@ -25,22 +25,22 @@ class DatasetInPool < ActiveRecord::Base
   include VpsAdmin::API::DatasetProperties::Model
   include VpsAdmin::API::ClusterResources
 
-  cluster_resources required: %i(diskspace),
-                    environment: ->(){ pool.node.location.environment }
+  cluster_resources required: %i[diskspace],
+                    environment: -> { pool.node.location.environment }
 
   has_hook :create,
-      desc: 'Called when a new DatasetInPool is being created',
-      context: 'TransactionChains::Dataset::Create instance',
-      args: {
-        dataset_in_pool: 'instance of DatasetInPool'
-      }
+           desc: 'Called when a new DatasetInPool is being created',
+           context: 'TransactionChains::Dataset::Create instance',
+           args: {
+             dataset_in_pool: 'instance of DatasetInPool'
+           }
   has_hook :migrated,
-      desc: 'Called when a DatasetInPool is being migrated with a VPS',
-      context: 'TransactionChains::Vps::Migrate::Base instance',
-      args: {
-        src_dataset_in_pool: 'source DatasetInPool',
-        dst_dataset_in_pool: 'target DatasetInPool',
-      }
+           desc: 'Called when a DatasetInPool is being migrated with a VPS',
+           context: 'TransactionChains::Vps::Migrate::Base instance',
+           args: {
+             src_dataset_in_pool: 'source DatasetInPool',
+             dst_dataset_in_pool: 'target DatasetInPool'
+           }
 
   # @param opts [Hash] options
   # @option opts [String] label user-friendly snapshot label
@@ -84,6 +84,7 @@ class DatasetInPool < ActiveRecord::Base
   end
 
   protected
+
   def recursive_serialize(dataset, children)
     ret = []
 

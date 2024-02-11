@@ -7,6 +7,6 @@ class AddVpsOsProcesses < ActiveRecord::Migration[6.1]
       t.timestamps                          null: false
     end
 
-    add_index :vps_os_processes, %i(vps_id state), unique: true
+    add_index :vps_os_processes, %i[vps_id state], unique: true
   end
 end

@@ -1,6 +1,6 @@
 module NodeCtld
   class Commands::Utils::NoOp < Commands::Base
-    handle 10001
+    handle 10_001
 
     def exec
       sleep(@sleep) if @sleep

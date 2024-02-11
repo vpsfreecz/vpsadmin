@@ -7,7 +7,7 @@ module NodeCtld::RemoteCommands
       NodeCtld::Daemon.safe_exit(NodeCtld::EXIT_STOP)
 
       if @force
-        walk_workers { |w| :silent }
+        walk_workers { |_w| :silent }
         drop_workers
         killall_subprocesses
       end

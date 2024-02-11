@@ -27,14 +27,14 @@ module VpsAdmin::API::Resources
       input do
         use :filters
         bool :view, default: false, fill: true,
-          desc: 'When enabled, list help boxes for the current user, including page/action filters'
+                    desc: 'When enabled, list help boxes for the current user, including page/action filters'
       end
 
       output(:object_list) do
         use :all
       end
 
-      authorize do |u|
+      authorize do |_u|
         allow
       end
 
@@ -51,17 +51,17 @@ module VpsAdmin::API::Resources
             )
           end
 
-          if input.has_key?(:language)
-            q = q.where(language: input[:language])
+          q = if input.has_key?(:language)
+                q.where(language: input[:language])
 
-          else
-            q = q.where(
-              'language_id IS NULL OR language_id = ?',
-              current_user ? current_user.language_id : ::Language.take!.id
-            )
-          end
+              else
+                q.where(
+                  'language_id IS NULL OR language_id = ?',
+                  current_user ? current_user.language_id : ::Language.take!.id
+                )
+              end
         else
-          %i(page action).each do |f|
+          %i[page action].each do |f|
             q = q.where(f => input[f]) if input[f]
           end
 
@@ -91,7 +91,7 @@ module VpsAdmin::API::Resources
         use :all
       end
 
-      authorize do |u|
+      authorize do |_u|
         allow
       end
 
@@ -122,7 +122,6 @@ module VpsAdmin::API::Resources
 
       def exec
         ::HelpBox.create!(input)
-
       rescue ActiveRecord::RecordInvalid => e
         error('Create failed', e.record.errors.to_hash)
       end
@@ -147,7 +146,6 @@ module VpsAdmin::API::Resources
         box = ::HelpBox.find(params[:help_box_id])
         box.update!(input)
         box
-
       rescue ActiveRecord::RecordInvalid => e
         error('Update failed', e.record.errors.to_hash)
       end

@@ -69,7 +69,7 @@ class AddContinuousResourceTracking < ActiveRecord::Migration
       t.integer      :vps_nproc,         null: true
       t.integer      :vps_vm_used_mb,    null: true
       t.integer      :vps_disk_used_mb,  null: true
-      t.string       :vps_admin_ver,     null: true,  default: 'not set'
+      t.string       :vps_admin_ver,     null: true, default: 'not set'
       t.datetime     :created_at,        null: true
     end
 

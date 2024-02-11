@@ -10,7 +10,7 @@ class Setup < ActiveRecord::Migration
       dir.up do
         if ENV['FROM_VPSADMIN1'] && table_exists?(:log)
           ActiveRecord::Base.connection.execute(
-              "INSERT INTO news_logs (message, published_at, created_at)
+            "INSERT INTO news_logs (message, published_at, created_at)
               SELECT msg, FROM_UNIXTIME(`timestamp`), FROM_UNIXTIME(`timestamp`)
               FROM log
               ORDER BY `timestamp`"

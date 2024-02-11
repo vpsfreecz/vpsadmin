@@ -12,17 +12,17 @@ module Transactions::Vps
         {
           new: {
             distribution: os_template.distribution,
-            version: os_template.version,
+            version: os_template.version
           },
           original: {
             distribution: orig.distribution,
-            version: orig.version,
-          },
+            version: orig.version
+          }
         }
       else
         {
           os_template: os_template.name,
-          original: orig.name,
+          original: orig.name
         }
       end
     end

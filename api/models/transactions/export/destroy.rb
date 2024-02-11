@@ -9,7 +9,7 @@ module Transactions::Export
 
       {
         export_id: export.id,
-        address: host_addr.ip_addr,
+        address: host_addr.ip_addr
       }
     end
   end

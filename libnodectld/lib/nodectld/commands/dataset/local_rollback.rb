@@ -11,7 +11,6 @@ module NodeCtld
       # Unmount datasets
       begin
         zfs(:umount, nil, base)
-
       rescue SystemCommandFailed => e
         raise if e.rc != 1 || e.output !~ /not currently mounted/
       end

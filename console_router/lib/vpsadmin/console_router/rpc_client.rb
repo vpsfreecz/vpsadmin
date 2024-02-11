@@ -3,9 +3,9 @@ require 'securerandom'
 
 module VpsAdmin::ConsoleRouter
   class RpcClient
-    class Error < ::StandardError ; end
+    class Error < ::StandardError; end
 
-    class Timeout < Error ; end
+    class Timeout < Error; end
 
     SOFT_TIMEOUT = 10
 
@@ -33,6 +33,7 @@ module VpsAdmin::ConsoleRouter
     end
 
     protected
+
     attr_reader :lock, :condition, :call_id
     attr_accessor :response
 
@@ -65,16 +66,16 @@ module VpsAdmin::ConsoleRouter
           {
             command: command,
             args: args,
-            kwargs: kwargs,
+            kwargs: kwargs
           }.to_json,
           persistent: true,
           content_type: 'application/json',
           routing_key: 'rpc',
           correlation_id: @call_id,
-          reply_to: @reply_queue.name,
+          reply_to: @reply_queue.name
         )
       rescue Bunny::ConnectionClosedError
-        warn "rpc: connection closed, retry in 5s"
+        warn 'rpc: connection closed, retry in 5s'
         sleep(5)
         retry
       end
@@ -97,13 +98,9 @@ module VpsAdmin::ConsoleRouter
         end
       end
 
-      if @debug
-        warn "response id=#{@call_id[0..7]} time=#{(Time.now - t1).round(3)}s value=#{@response.inspect}"
-      end
+      warn "response id=#{@call_id[0..7]} time=#{(Time.now - t1).round(3)}s value=#{@response.inspect}" if @debug
 
-      if !@response['status']
-        raise Error, @response.fetch('message', 'Server error')
-      end
+      raise Error, @response.fetch('message', 'Server error') unless @response['status']
 
       @response['response']
     end

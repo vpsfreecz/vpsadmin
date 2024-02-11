@@ -14,10 +14,11 @@ module NodeCtld
     end
 
     protected
+
     def chown_to(userns_map, user_id)
       honor_state do
-        osctl(%i(ct stop), @vps_id)
-        osctl(%i(ct chown), [@vps_id, userns_map])
+        osctl(%i[ct stop], @vps_id)
+        osctl(%i[ct chown], [@vps_id, userns_map])
         NetAccounting.chown_vps(@vps_id, user_id)
       end
     end

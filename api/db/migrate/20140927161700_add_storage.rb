@@ -9,7 +9,7 @@ class AddStorage < ActiveRecord::Migration
     self.table_name = 'servers'
     self.primary_key = 'server_id'
 
-    belongs_to :location, :foreign_key => :server_location
+    belongs_to :location, foreign_key: :server_location
   end
 
   class Vps < ActiveRecord::Base
@@ -17,7 +17,7 @@ class AddStorage < ActiveRecord::Migration
     self.primary_key = 'vps_id'
 
     belongs_to :dataset_in_pool
-    belongs_to :node, :foreign_key => :vps_server
+    belongs_to :node, foreign_key: :vps_server
     has_many :vps_mounts
   end
 
@@ -41,6 +41,7 @@ class AddStorage < ActiveRecord::Migration
     end
 
     protected
+
     def cache_full_name
       self.full_name = resolve_full_name
     end
@@ -66,32 +67,34 @@ class AddStorage < ActiveRecord::Migration
       root = false
 
       if parents.empty?
-        self.joins(:dataset_in_pool).where(
-            dataset: dataset_in_pool.dataset.parent,
-            dataset_in_pools: {pool_id: dataset_in_pool.pool_id}
+        joins(:dataset_in_pool).where(
+          dataset: dataset_in_pool.dataset.parent,
+          dataset_in_pools: { pool_id: dataset_in_pool.pool_id }
         ).each do |p|
           parents[p.name.to_sym] = p
         end
       end
 
-      if parents.empty?
-        root = true
-      end
+      root = true if parents.empty?
 
       VpsAdmin::API::DatasetProperties::Registrator.properties.each do |name, p|
-        property = self.new(
-            dataset_in_pool: dataset_in_pool,
-            dataset: dataset_in_pool.dataset,
-            parent: parents[name],
-            name: name,
-            confirmed: 1
+        property = new(
+          dataset_in_pool: dataset_in_pool,
+          dataset: dataset_in_pool.dataset,
+          parent: parents[name],
+          name: name,
+          confirmed: 1
         )
 
         if values.has_key?(name)
           property.value = values[name]
           property.inherited = false
         else
-          property.value = root ? (p.meta[:default]) : (p.inheritable? ? parents[name].value : p.meta[:default])
+          property.value = if root
+                             p.meta[:default]
+                           else
+                             (p.inheritable? ? parents[name].value : p.meta[:default])
+                           end
           property.inherited = root ? false : p.inheritable?
         end
 
@@ -123,18 +126,15 @@ class AddStorage < ActiveRecord::Migration
   end
 
   class DatasetPlan < ActiveRecord::Base
-
   end
 
   class EnvironmentDatasetPlan < ActiveRecord::Base
   end
 
   class DatasetInPoolPlan < ActiveRecord::Base
-
   end
 
   class RepeatableTask < ActiveRecord::Base
-
   end
 
   class DatasetAction < ActiveRecord::Base
@@ -142,7 +142,6 @@ class AddStorage < ActiveRecord::Migration
   end
 
   class GroupSnapshot < ActiveRecord::Base
-
   end
 
   def up
@@ -206,7 +205,7 @@ class AddStorage < ActiveRecord::Migration
       t.integer    :confirmed,      null: false, default: 0
     end
 
-    add_index :dataset_in_pools, [:dataset_id, :pool_id], unique: true
+    add_index :dataset_in_pools, %i[dataset_id pool_id], unique: true
 
     create_table :snapshots do |t|
       t.string     :name,           null: false
@@ -239,14 +238,14 @@ class AddStorage < ActiveRecord::Migration
     create_table :snapshot_in_pools do |t|
       t.references :snapshot,       null: false
       t.references :dataset_in_pool, null: false
-      t.integer    :reference_count,  null: false, default: 0
+      t.integer    :reference_count, null: false, default: 0
       t.references :mount,          null: true
 
       # snapshot is marked as confirmed when vpsadmind creates it
       t.integer    :confirmed,      null: false, default: 0
     end
 
-    add_index :snapshot_in_pools, [:snapshot_id, :dataset_in_pool_id], unique: true
+    add_index :snapshot_in_pools, %i[snapshot_id dataset_in_pool_id], unique: true
 
     create_table :dataset_trees do |t|
       t.references :dataset_in_pool, null: false
@@ -273,7 +272,7 @@ class AddStorage < ActiveRecord::Migration
       t.integer    :confirmed,        null: false, default: 0
     end
 
-    add_index :snapshot_in_pool_in_branches, [:snapshot_in_pool_id, :branch_id],
+    add_index :snapshot_in_pool_in_branches, %i[snapshot_in_pool_id branch_id],
               unique: true, name: 'unique_snapshot_in_pool_in_branches'
 
     create_table :mounts do |t|
@@ -322,11 +321,11 @@ class AddStorage < ActiveRecord::Migration
     end
 
     create_table :dataset_in_pool_plans do |t|
-      t.references :environment_dataset_plan,    null: false
+      t.references :environment_dataset_plan, null: false
       t.references :dataset_in_pool, null: false
     end
 
-    add_index :dataset_in_pool_plans, [:environment_dataset_plan_id, :dataset_in_pool_id],
+    add_index :dataset_in_pool_plans, %i[environment_dataset_plan_id dataset_in_pool_id],
               unique: true, name: :dataset_in_pool_plans_unique
 
     create_table :repeatable_tasks do |t|
@@ -366,7 +365,7 @@ class AddStorage < ActiveRecord::Migration
       # backup
       # group_snapshot
       #           (may have to be fetched from the backup of src snapshot)
-      t.integer    :action,         null: false
+      t.integer    :action, null: false
     end
 
     create_table :group_snapshots do |t|
@@ -379,17 +378,17 @@ class AddStorage < ActiveRecord::Migration
     # Setup environments
     Environment.all.delete_all
     production_env = Environment.create!(
-        label: 'Production',
-        domain: 'vpsfree.cz'
+      label: 'Production',
+      domain: 'vpsfree.cz'
     )
 
     # Create dataset plans
     backup_plan = DatasetPlan.create!(name: :daily_backup)
     env_backup_plan = EnvironmentDatasetPlan.create!(
-        dataset_plan_id: backup_plan.id,
-        environment_id: production_env.id,
-        user_add: true,
-        user_remove: true
+      dataset_plan_id: backup_plan.id,
+      environment_id: production_env.id,
+      user_add: true,
+      user_remove: true
     )
 
     group_snapshots_per_pool = {}
@@ -397,22 +396,22 @@ class AddStorage < ActiveRecord::Migration
     # Create pools for all hypervisors
     Node.where(server_type: 'node').each do |node|
       pool = Pool.create!({
-          node_id: node.id,
-          label: "#{node.server_name}: vz/private",
-          filesystem: 'vz/private',
-          role: 0, # :hypervisor
-          refquota_check: true
-      })
+                            node_id: node.id,
+                            label: "#{node.server_name}: vz/private",
+                            filesystem: 'vz/private',
+                            role: 0, # :hypervisor
+                            refquota_check: true
+                          })
 
       pool_properties = {}
 
       VpsAdmin::API::DatasetProperties::Registrator.properties.each do |k, v|
         pool_properties[k] = DatasetProperty.create!(
-            pool: pool,
-            name: k,
-            value: v.meta[:default],
-            inherited: false,
-            confirmed: 1
+          pool: pool,
+          name: k,
+          value: v.meta[:default],
+          inherited: false,
+          confirmed: 1
         )
       end
 
@@ -421,40 +420,40 @@ class AddStorage < ActiveRecord::Migration
       # TransactionChains::Pool::Create.fire(pool)
 
       group_snapshots_per_pool[ pool.id ] = DatasetAction.create!(
-          pool_id: pool.id,
-          action: 4, # group_snapshot
-          dataset_plan_id: backup_plan.id
+        pool_id: pool.id,
+        action: 4, # group_snapshot
+        dataset_plan_id: backup_plan.id
       )
 
       # Create a dataset for every VPS
       Vps.where(vps_server: node.id).each do |vps|
         ds = Dataset.create!(
-            name: vps.id,
-            user_id: vps.m_id,
-            user_editable: false,
-            user_create: true,
-            user_destroy: false
+          name: vps.id,
+          user_id: vps.m_id,
+          user_editable: false,
+          user_create: true,
+          user_destroy: false
         )
 
         ds_in_pool = DatasetInPool.create!(
-            dataset_id: ds.id,
-            pool_id: pool.id,
-            label: "vps#{vps.id}",
-            min_snapshots: 1,
-            max_snapshots: 1,
-            snapshot_max_age: 1*24*60*60,
-            confirmed: 1
+          dataset_id: ds.id,
+          pool_id: pool.id,
+          label: "vps#{vps.id}",
+          min_snapshots: 1,
+          max_snapshots: 1,
+          snapshot_max_age: 1 * 24 * 60 * 60,
+          confirmed: 1
         )
 
         VpsAdmin::API::DatasetProperties::Registrator.properties.each do |k, v|
           DatasetProperty.create!(
-              dataset: ds,
-              dataset_in_pool: ds_in_pool,
-              name: k,
-              value: k == :refquota ? 60*1024 : v.meta[:default],
-              inherited: v.inheritable?,
-              parent: pool_properties[k],
-              confirmed: 1
+            dataset: ds,
+            dataset_in_pool: ds_in_pool,
+            name: k,
+            value: k == :refquota ? 60 * 1024 : v.meta[:default],
+            inherited: v.inheritable?,
+            parent: pool_properties[k],
+            confirmed: 1
           )
         end
 
@@ -474,21 +473,21 @@ class AddStorage < ActiveRecord::Migration
       ex = StorageExport.find_by(root_id: root.id)
 
       r = Pool.create!(
-          node_id: root.node_id,
-          label: root.label,
-          filesystem: root.root_dataset,
-          role: ex && ex.data_type == 'backup' ? 2 : 1
+        node_id: root.node_id,
+        label: root.label,
+        filesystem: root.root_dataset,
+        role: ex && ex.data_type == 'backup' ? 2 : 1
       )
 
       nas_pool_properties[r.id] = {}
 
       VpsAdmin::API::DatasetProperties::Registrator.properties.each do |k, v|
         nas_pool_properties[r.id][k] = DatasetProperty.create!(
-            pool: r,
-            name: k,
-            value: v.meta[:default],
-            inherited: false,
-            confirmed: 1
+          pool: r,
+          name: k,
+          value: v.meta[:default],
+          inherited: false,
+          confirmed: 1
         )
       end
 
@@ -501,22 +500,22 @@ class AddStorage < ActiveRecord::Migration
     # Create repeatable tasks for all group snapshots
     group_snapshots_per_pool.each do |k, v|
       RepeatableTask.create!(
-          label: "group_snapshot of pool #{k}",
-          class_name: v.class.to_s.demodulize,
-          table_name: v.class.table_name,
-          row_id: v.id,
-          minute: '00',
-          hour: '01',
-          day_of_month: '*',
-          month: '*',
-          day_of_week: '*'
+        label: "group_snapshot of pool #{k}",
+        class_name: v.class.to_s.demodulize,
+        table_name: v.class.table_name,
+        row_id: v.id,
+        minute: '00',
+        hour: '01',
+        day_of_month: '*',
+        month: '*',
+        day_of_week: '*'
       )
     end
 
     # Add already existing datasets (NAS, exports)
     StorageExport.where(
-        data_type: 'data',
-        default: 'no'
+      data_type: 'data',
+      default: 'no'
     ).order('dataset ASC').each do |export|
       ds_in_pool = nil
       last_ds = nil
@@ -529,21 +528,21 @@ class AddStorage < ActiveRecord::Migration
         # Find all datasets with matching name, then see if any of them are
         # on the correct pool.
         q = (ds ? Dataset.children_of(ds) : Dataset.roots).where(
-            name: name,
-            user_id: export.member_id
+          name: name,
+          user_id: export.member_id
         )
         ds = nil
 
         break if q.empty?
 
         q.each do |dataset|
-          if dataset.dataset_in_pools.exists?(
-                pool_id: pool_mapping[ export.root_id ]
-             )
-            last_ds = dataset
-            index += 1
-            break
-          end
+          next unless dataset.dataset_in_pools.exists?(
+            pool_id: pool_mapping[export.root_id]
+          )
+
+          last_ds = dataset
+          index += 1
+          break
         end
 
         break unless ds
@@ -551,28 +550,28 @@ class AddStorage < ActiveRecord::Migration
 
       parts[index..-1].each do |name|
         last_ds = Dataset.create!(
-            name: name,
-            parent: last_ds,
-            user_id: export.member_id,
-            user_editable: last_ds ? export.user_editable : false,
-            user_create: export.user_editable,
-            user_destroy: export.user_editable,
-            confirmed: 1
+          name: name,
+          parent: last_ds,
+          user_id: export.member_id,
+          user_editable: last_ds ? export.user_editable : false,
+          user_create: export.user_editable,
+          user_destroy: export.user_editable,
+          confirmed: 1
         )
 
         ds_in_pool = DatasetInPool.create!(
           dataset_id: last_ds.id,
-          pool_id: pool_mapping[ export.root_id ],
+          pool_id: pool_mapping[export.root_id],
           label: last_ds.parent ? nil : 'nas',
           confirmed: 1
         )
 
-        dataset_mapping[ export.id ] = ds_in_pool
+        dataset_mapping[export.id] = ds_in_pool
 
         parent_properties = DatasetProperty.inherit_properties!(
-            ds_in_pool,
-            parent_properties,
-            export.quota > 0 ? {quota: export.quota / 1024 / 1024} : {}
+          ds_in_pool,
+          parent_properties,
+          export.quota > 0 ? { quota: export.quota / 1024 / 1024 } : {}
         )
       end
 
@@ -589,7 +588,7 @@ class AddStorage < ActiveRecord::Migration
       pool_id = nil
 
       if ex
-        pool_id =  pool_mapping[ ex.root_id ]
+        pool_id = pool_mapping[ex.root_id]
       else
         p = Pool.find_by(role: 2)
 
@@ -599,47 +598,47 @@ class AddStorage < ActiveRecord::Migration
       end
 
       ds_in_pool = DatasetInPool.create!(
-          dataset_id: vps.dataset_in_pool.dataset_id,
-          pool_id: pool_id,
-          confirmed: 1
+        dataset_id: vps.dataset_in_pool.dataset_id,
+        pool_id: pool_id,
+        confirmed: 1
       )
 
-      dataset_mapping[ ex.id ] = ds_in_pool if ex
+      dataset_mapping[ex.id] = ds_in_pool if ex
 
       # Mounts
       vps.vps_mounts.all.each do |m|
-        dst = dataset_mapping[ m.storage_export_id ]
+        dst = dataset_mapping[m.storage_export_id]
 
         if dst
           migrate_mount(m, dst.id)
         else
           warn "unable to migrate mount #{m.id}: storage export does not exist"
-          warn ex ? "ex is set" : "ex is not set"
+          warn ex ? 'ex is set' : 'ex is not set'
         end
       end
 
       dip_plan = DatasetInPoolPlan.create!(
-          environment_dataset_plan_id: env_backup_plan.id,
-          dataset_in_pool_id: vps.dataset_in_pool_id
+        environment_dataset_plan_id: env_backup_plan.id,
+        dataset_in_pool_id: vps.dataset_in_pool_id
       )
 
       # Transfer snapshots at 01:30 every day
       backup = DatasetAction.create!(
-          src_dataset_in_pool_id: vps.dataset_in_pool_id,
-          dst_dataset_in_pool_id: ds_in_pool.id,
-          action: 3, # :backup
-          dataset_in_pool_plan_id: dip_plan.id
+        src_dataset_in_pool_id: vps.dataset_in_pool_id,
+        dst_dataset_in_pool_id: ds_in_pool.id,
+        action: 3, # :backup
+        dataset_in_pool_plan_id: dip_plan.id
       )
 
       RepeatableTask.create!(
-          class_name: backup.class.to_s.demodulize,
-          table_name: backup.class.table_name,
-          row_id: backup.id,
-          minute: '05',
-          hour: '01',
-          day_of_month: '*',
-          month: '*',
-          day_of_week: '*'
+        class_name: backup.class.to_s.demodulize,
+        table_name: backup.class.table_name,
+        row_id: backup.id,
+        minute: '05',
+        hour: '01',
+        day_of_month: '*',
+        month: '*',
+        day_of_week: '*'
       )
     end
 
@@ -656,20 +655,21 @@ class AddStorage < ActiveRecord::Migration
   end
 
   private
+
   def migrate_mount(m, ds_in_pool_id)
     Mount.create!(
-        vps_id: m.vps_id,
-        src: m.src,
-        dst: m.dst,
-        mount_opts: m.mount_opts,
-        umount_opts: m.umount_opts,
-        mount_type: m.mount_type.empty? ? 'nfs' : m.mount_type,
-        dataset_in_pool_id: ds_in_pool_id,
-        mode: m.mode,
-        cmd_premount: m.cmd_premount,
-        cmd_postmount: m.cmd_postmount,
-        cmd_preumount: m.cmd_preumount,
-        cmd_postumount: m.cmd_postumount
+      vps_id: m.vps_id,
+      src: m.src,
+      dst: m.dst,
+      mount_opts: m.mount_opts,
+      umount_opts: m.umount_opts,
+      mount_type: m.mount_type.empty? ? 'nfs' : m.mount_type,
+      dataset_in_pool_id: ds_in_pool_id,
+      mode: m.mode,
+      cmd_premount: m.cmd_premount,
+      cmd_postmount: m.cmd_postmount,
+      cmd_preumount: m.cmd_preumount,
+      cmd_postumount: m.cmd_postumount
     )
   end
 end

@@ -15,7 +15,7 @@ module Transactions::Vps
         original_user_id: current_userns_map.user_namespace.user_id,
         original_userns_map: current_userns_map.id.to_s,
         new_user_id: new_userns_map.user_namespace.user_id,
-        new_userns_map: new_userns_map.id.to_s,
+        new_userns_map: new_userns_map.id.to_s
       }
     end
   end

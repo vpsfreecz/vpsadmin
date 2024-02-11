@@ -1,6 +1,6 @@
 class RefactorApiTokensToSessionTokens < ActiveRecord::Migration
-  class SessionToken < ActiveRecord::Base ; end
-  class Token < ActiveRecord::Base ; end
+  class SessionToken < ActiveRecord::Base; end
+  class Token < ActiveRecord::Base; end
 
   def up
     rename_table :api_tokens, :session_tokens
@@ -12,7 +12,7 @@ class RefactorApiTokensToSessionTokens < ActiveRecord::Migration
         valid_to: st.valid_to,
         owner_type: 'SessionToken',
         owner_id: st.id,
-        created_at: st.created_at,
+        created_at: st.created_at
       )
 
       st.update!(token_id: t.id)
@@ -35,7 +35,7 @@ class RefactorApiTokensToSessionTokens < ActiveRecord::Migration
 
       st.update!(
         token: t.token,
-        valid_to: t.valid_to,
+        valid_to: t.valid_to
       )
 
       t.destroy!

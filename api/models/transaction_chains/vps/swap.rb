@@ -18,9 +18,8 @@ module TransactionChains
       lock(primary_vps)
       lock(secondary_vps)
       concerns(:transform,
-        [secondary_vps.class.name, secondary_vps.id],
-        [primary_vps.class.name, primary_vps.id]
-      )
+               [secondary_vps.class.name, secondary_vps.id],
+               [primary_vps.class.name, primary_vps.id])
 
       # Migrate secondary VPS to primary node
       # Stop primary VPS, switch IP addresses
@@ -69,10 +68,10 @@ module TransactionChains
 
         [
           :public,
-          netif: netif,
-          target_netif: new_netif,
-          routes: netif.ip_addresses.order(:order).to_a,
-          host_addrs: netif.host_ip_addresses.where.not(order: nil).order(:order).to_a,
+          { netif: netif,
+            target_netif: new_netif,
+            routes: netif.ip_addresses.order(:order).to_a,
+            host_addrs: netif.host_ip_addresses.where.not(order: nil).order(:order).to_a }
         ]
       end]
 
@@ -82,21 +81,21 @@ module TransactionChains
 
         [
           :public,
-          netif: netif,
-          target_netif: new_netif,
-          routes: netif.ip_addresses.order(:order).to_a,
-          host_addrs: netif.host_ip_addresses.where.not(order: nil).order(:order).to_a,
+          { netif: netif,
+            target_netif: new_netif,
+            routes: netif.ip_addresses.order(:order).to_a,
+            host_addrs: netif.host_ip_addresses.where.not(order: nil).order(:order).to_a }
         ]
       end]
 
       # Check that interfaces match
-      %i(public private).each do |netif_type|
+      %i[public private].each do |netif_type|
         if primary_netifs[netif_type].nil? != secondary_netifs[netif_type].nil?
-          fail "#{netif_type} network interface mismatch"
+          raise "#{netif_type} network interface mismatch"
         end
       end
 
-      swappable_resources = %i(memory cpu swap)
+      swappable_resources = %i[memory cpu swap]
 
       primary_resources_obj = primary_vps.get_cluster_resources(swappable_resources)
       secondary_resources_obj = secondary_vps.get_cluster_resources(swappable_resources)
@@ -127,11 +126,11 @@ module TransactionChains
             handle_ips: false,
             reallocate_ips: false,
             maintenance_window: false,
-            send_mail: false,
+            send_mail: false
           }
         ],
         hooks: {
-          pre_start: ->(ret, _, _) do
+          pre_start: lambda do |ret, _, _|
             # Remove addresses from the secondary (new primary) VPS
             secondary_netifs.each_value do |attrs|
               attrs[:routes].reverse_each do |ip|
@@ -141,7 +140,7 @@ module TransactionChains
                   append_t(
                     Transactions::NetworkInterface::DelHostIp,
                     args: [attrs[:target_netif], addr],
-                    urgent: true,
+                    urgent: true
                   ) do |t|
                     t.edit(addr, order: nil)
                   end
@@ -150,7 +149,7 @@ module TransactionChains
                 append_t(
                   Transactions::NetworkInterface::DelRoute,
                   args: [attrs[:target_netif], ip, false],
-                  urgent: true,
+                  urgent: true
                 ) do |t|
                   t.edit(ip, network_interface_id: nil)
                   ip.log_unassignment(chain: current_chain, confirmable: t)
@@ -167,7 +166,7 @@ module TransactionChains
                   append_t(
                     Transactions::NetworkInterface::DelHostIp,
                     args: [attrs[:netif], addr],
-                    urgent: true,
+                    urgent: true
                   ) do |t|
                     t.edit(addr, order: nil)
                   end
@@ -176,7 +175,7 @@ module TransactionChains
                 append_t(
                   Transactions::NetworkInterface::DelRoute,
                   args: [attrs[:netif], ip, true],
-                  urgent: true,
+                  urgent: true
                 ) do |t|
                   t.edit(ip, network_interface_id: nil)
                   ip.log_unassignment(chain: current_chain, confirmable: t)
@@ -191,8 +190,8 @@ module TransactionChains
                 append_t(
                   Transactions::NetworkInterface::AddRoute,
                   args: [dst_attrs[:target_netif], ip, true],
-                  kwargs: {via: ip.route_via},
-                  urgent: true,
+                  kwargs: { via: ip.route_via },
+                  urgent: true
                 ) do |t|
                   t.edit(ip, network_interface_id: dst_attrs[:target_netif].id)
                   ip.log_assignment(vps: dst_attrs[:target_netif].vps, chain: current_chain, confirmable: t)
@@ -204,7 +203,7 @@ module TransactionChains
                   append_t(
                     Transactions::NetworkInterface::AddHostIp,
                     args: [dst_attrs[:target_netif], addr],
-                    urgent: true,
+                    urgent: true
                   ) do |t|
                     t.edit(addr, order: host_i)
                     host_i += 1
@@ -226,31 +225,30 @@ module TransactionChains
 
                 new_primary_resources_obj.each do |use|
                   use.value = primary_resources[use.user_cluster_resource.cluster_resource.name.to_sym]
-                  use.attr_changes = {value: use.value}
+                  use.attr_changes = { value: use.value }
                   resources << use
                 end
               end
 
               use_chain(Vps::SetResources, args: [
-                new_primary_vps, resources
-              ], urgent: true)
+                          new_primary_vps, resources
+                        ], urgent: true)
 
-            else  # Resources are not swapped, re-set the original ones
+            else # Resources are not swapped, re-set the original ones
               append(Transactions::Vps::Resources, args: [
-                new_primary_vps,
-                secondary_resources_obj
-              ])
+                       new_primary_vps,
+                       secondary_resources_obj
+                     ])
             end
 
             if opts[:hostname] && new_primary_vps.manage_hostname
               append(Transactions::Vps::Hostname,
-                args: [
-                  new_primary_vps,
-                  secondary_vps.hostname,
-                  primary_vps.hostname
-                ],
-                urgent: true
-              ) do
+                     args: [
+                       new_primary_vps,
+                       secondary_vps.hostname,
+                       primary_vps.hostname
+                     ],
+                     urgent: true) do
                 edit(new_primary_vps, hostname: primary_vps.hostname)
               end
             end
@@ -277,11 +275,11 @@ module TransactionChains
             handle_ips: false,
             reallocate_ips: false,
             maintenance_window: false,
-            send_mail: false,
+            send_mail: false
           }
         ],
         hooks: {
-          pre_start: ->(ret, _, _) do
+          pre_start: lambda do |ret, _, _|
             # Add IP addresses to the new secondary VPS
             secondary_netifs.each do |netif_type, attrs|
               dst_attrs = primary_netifs[netif_type]
@@ -291,8 +289,8 @@ module TransactionChains
                 append_t(
                   Transactions::NetworkInterface::AddRoute,
                   args: [dst_attrs[:target_netif], ip, true],
-                  kwargs: {via: ip.route_via},
-                  urgent: true,
+                  kwargs: { via: ip.route_via },
+                  urgent: true
                 ) do |t|
                   t.edit(ip, network_interface_id: dst_attrs[:target_netif].id)
                   ip.log_assignment(vps: dst_attrs[:target_netif].vps, chain: current_chain, confirmable: t)
@@ -304,7 +302,7 @@ module TransactionChains
                   append_t(
                     Transactions::NetworkInterface::AddHostIp,
                     args: [dst_attrs[:target_netif], addr],
-                    urgent: true,
+                    urgent: true
                   ) do |t|
                     t.edit(addr, order: host_i)
                     host_i += 1
@@ -326,31 +324,30 @@ module TransactionChains
 
                 new_secondary_resources_obj.each do |use|
                   use.value = secondary_resources[use.user_cluster_resource.cluster_resource.name.to_sym]
-                  use.attr_changes = {value: use.value}
+                  use.attr_changes = { value: use.value }
                   resources << use
                 end
               end
 
               use_chain(Vps::SetResources, args: [
-                new_secondary_vps, resources
-              ], urgent: true)
+                          new_secondary_vps, resources
+                        ], urgent: true)
 
-            else  # Resources are not swapped, re-set the original ones
+            else # Resources are not swapped, re-set the original ones
               append(Transactions::Vps::Resources, args: [
-                new_secondary_vps,
-                primary_resources_obj
-              ])
+                       new_secondary_vps,
+                       primary_resources_obj
+                     ])
             end
 
             if opts[:hostname] && new_secondary_vps.manage_hostname
               append(Transactions::Vps::Hostname,
-                args: [
-                  new_secondary_vps,
-                  primary_vps.hostname,
-                  secondary_vps.hostname
-                ],
-                urgent: true
-              ) do
+                     args: [
+                       new_secondary_vps,
+                       primary_vps.hostname,
+                       secondary_vps.hostname
+                     ],
+                     urgent: true) do
                 edit(new_secondary_vps, hostname: secondary_vps.hostname)
               end
             end

@@ -1,6 +1,6 @@
 module VpsAdmin::API::Tasks
   class Mail < Base
-    FOLDERS = %w(INBOX Junk)
+    FOLDERS = %w[INBOX Junk]
 
     COUNT = ENV['COUNT'] ? ENV['COUNT'].to_i : 10
 
@@ -31,18 +31,19 @@ module VpsAdmin::API::Tasks
     end
 
     protected
+
     def check_mailbox(mailbox, folder, dry_run:)
       retriever = ::Mail::IMAP.new(
         address: mailbox.server,
         port: mailbox.port,
         user_name: mailbox.user,
         password: mailbox.password,
-        enable_ssl: mailbox.enable_ssl,
+        enable_ssl: mailbox.enable_ssl
       )
 
       messages =
         if dry_run
-          warn "Dry run: received messages are not removed from the mail server"
+          warn 'Dry run: received messages are not removed from the mail server'
           retriever.all(mailbox: folder)
         else
           retriever.find_and_delete(mailbox: folder, count: COUNT)

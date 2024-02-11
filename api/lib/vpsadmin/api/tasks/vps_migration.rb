@@ -1,6 +1,6 @@
 module VpsAdmin::API::Tasks
   class VpsMigration < Base
-    class SkipMigration < StandardError ; end
+    class SkipMigration < StandardError; end
 
     # Run VPS migration plans
     def run_plans
@@ -8,12 +8,13 @@ module VpsAdmin::API::Tasks
     end
 
     protected
+
     def do_run_plans
       ::MigrationPlan.where(
         state: [
           ::MigrationPlan.states[:running],
           ::MigrationPlan.states[:cancelling],
-          ::MigrationPlan.states[:failing],
+          ::MigrationPlan.states[:failing]
         ]
       ).each do |plan|
         puts "Plan ##{plan.id} #{plan.state}"
@@ -28,9 +29,9 @@ module VpsAdmin::API::Tasks
       ).joins(
         :transaction_chain
       ).where(
-        state: ::VpsMigration.states[:running],
+        state: ::VpsMigration.states[:running]
       ).where.not(
-        transaction_chains: {state: ::TransactionChain.states[:queued]}
+        transaction_chains: { state: ::TransactionChain.states[:queued] }
       ).each do |m|
         # The migration has finished - successfully or not
         case m.transaction_chain.state.to_sym
@@ -43,12 +44,12 @@ module VpsAdmin::API::Tasks
           m.state = ::VpsMigration.states[:error]
 
           if plan.stop_on_error
-            puts "  Cancelling migration plan due to an error"
+            puts '  Cancelling migration plan due to an error'
             plan.fail!
           end
 
         else
-          fail "unsupported transaction chain state '#{m.transaction_chain.state}'"
+          raise "unsupported transaction chain state '#{m.transaction_chain.state}'"
         end
 
         m.finished_at = Time.now
@@ -57,7 +58,7 @@ module VpsAdmin::API::Tasks
 
       # Check if the plan is finished
       running = plan.vps_migrations.where(
-        state: ::VpsMigration.states[:running],
+        state: ::VpsMigration.states[:running]
       ).count
 
       if running <= 0
@@ -67,7 +68,7 @@ module VpsAdmin::API::Tasks
 
         # No running migrations, nothing in the queue -> finished
         if queued == 0
-          puts "  Migration plan is finished"
+          puts '  Migration plan is finished'
           plan.finish!
           return
         end
@@ -91,9 +92,8 @@ module VpsAdmin::API::Tasks
       i = 0
 
       plan.vps_migrations.where(
-          state: ::VpsMigration.states[:queued],
+        state: ::VpsMigration.states[:queued]
       ).order('created_at, id').each do |m|
-
         unless m.vps
           m.update!(state: ::VpsMigration.states[:cancelled])
           puts "    VPS ##{m.vps_id} no longer exists"
@@ -106,15 +106,12 @@ module VpsAdmin::API::Tasks
           i += 1
 
           break if i >= schedule_n
-
         rescue ResourceLocked
-          puts "      resource locked"
-
+          puts '      resource locked'
         rescue SkipMigration => e
           m.update!(state: ::VpsMigration.states[:cancelled])
           puts "      #{e.message}"
         end
-
       end
     end
 
@@ -126,18 +123,18 @@ module VpsAdmin::API::Tasks
         raise SkipMigration, 'the VPS has been hard_deleted in the meantime'
       end
 
-      chain, _ = TransactionChains::Vps::Migrate.chain_for(m.vps, m.dst_node).fire2(
+      chain, = TransactionChains::Vps::Migrate.chain_for(m.vps, m.dst_node).fire2(
         args: [m.vps, m.dst_node, {
           maintenance_window: m.maintenance_window,
-          cleanup_data: m.cleanup_data,
+          cleanup_data: m.cleanup_data
         }],
-        locks: locks,
+        locks: locks
       )
 
       m.update!(
         state: ::VpsMigration.states[:running],
         started_at: Time.now,
-        transaction_chain: chain,
+        transaction_chain: chain
       )
     end
   end

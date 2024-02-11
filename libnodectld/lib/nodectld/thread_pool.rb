@@ -20,6 +20,7 @@ module NodeCtld
     end
 
     protected
+
     attr_reader :threads, :queue
 
     def work

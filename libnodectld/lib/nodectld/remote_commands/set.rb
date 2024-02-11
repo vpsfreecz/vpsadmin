@@ -4,15 +4,15 @@ module NodeCtld::RemoteCommands
 
     def exec
       case @resource
-        when 'config'
-          @config.each do |change|
-            $CFG.patch(change)
-          end
+      when 'config'
+        @config.each do |change|
+          $CFG.patch(change)
+        end
 
-          ok
+        ok
 
-        else
-          raise SystemCommandFailed.new(nil, nil, "Unknown resource #{@resource}")
+      else
+        raise SystemCommandFailed.new(nil, nil, "Unknown resource #{@resource}")
       end
     end
   end

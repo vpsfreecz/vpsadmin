@@ -9,9 +9,9 @@ module VpsAdmin::API
       throw(:plugin, p) if @throw
     end
 
-    def self.catch_plugin
+    def self.catch_plugin(&block)
       @throw = true
-      ret = catch(:plugin) { yield }
+      ret = catch(:plugin, &block)
       @throw = false
       ret
     end
@@ -21,5 +21,5 @@ module VpsAdmin::API
     end
   end
 
-  module Plugins ; end
+  module Plugins; end
 end

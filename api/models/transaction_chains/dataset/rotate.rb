@@ -18,11 +18,10 @@ module TransactionChains
 
         ::SnapshotInPoolInBranch.includes(
           snapshot_in_pool: [:snapshot],
-          branch: [{dataset_tree: :dataset_in_pool}]
+          branch: [{ dataset_tree: :dataset_in_pool }]
         ).where(
-          dataset_trees: {dataset_in_pool_id: dataset_in_pool.id}
+          dataset_trees: { dataset_in_pool_id: dataset_in_pool.id }
         ).order('snapshots.id').each do |s|
-
           next if s.snapshot_in_pool.reference_count > 0
 
           if destroy?(s.snapshot_in_pool)
@@ -30,16 +29,12 @@ module TransactionChains
             use_chain(SnapshotInPool::Destroy, args: s)
           end
 
-          if stop?(s.snapshot_in_pool)
-            break
-          end
-
+          break if stop?(s.snapshot_in_pool)
         end
 
       else # primary or hypervisor
 
         dataset_in_pool.snapshot_in_pools.includes(:snapshot).all.order('snapshots.id').each do |s|
-
           if s.reference_count > 0
             next
 
@@ -47,9 +42,8 @@ module TransactionChains
             # Check if it is backed up.
             # Check if destroying it won't break the history.
             dataset_in_pool.dataset.dataset_in_pools
-              .joins(:pool)
-              .where(pools: {role: ::Pool.roles[:backup], is_open: true}).each do |backup|
-
+                           .joins(:pool)
+                           .where(pools: { role: ::Pool.roles[:backup], is_open: true }).each do |backup|
               # Is the snapshot in this dataset_in_pool? -> continue
               unless backup.snapshot_in_pools.find_by(snapshot_id: s.snapshot_id)
                 # This snapshot is not backed up in dataset_in_pool +backup+.
@@ -70,17 +64,13 @@ module TransactionChains
                 # It cannot be destroyed as it would break the history flow.
                 return
               end
-
             end
 
             @deleted += 1
             use_chain(SnapshotInPool::Destroy, args: s)
           end
 
-          if stop?(s)
-            break
-          end
-
+          break if stop?(s)
         end
       end
     end

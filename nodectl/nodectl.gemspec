@@ -1,18 +1,18 @@
-lib = File.expand_path('../lib', __FILE__)
+lib = File.expand_path('lib', __dir__)
 $LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
 require 'nodectl/version'
 
 Gem::Specification.new do |s|
-  s.name        = 'nodectl'
+  s.name = 'nodectl'
 
-  if ENV['VPSADMIN_BUILD_ID']
-    s.version   = "#{NodeCtl::VERSION}.build#{ENV['VPSADMIN_BUILD_ID']}"
-  else
-    s.version   = NodeCtl::VERSION
-  end
+  s.version = if ENV['VPSADMIN_BUILD_ID']
+                "#{NodeCtl::VERSION}.build#{ENV['VPSADMIN_BUILD_ID']}"
+              else
+                NodeCtl::VERSION
+              end
 
   s.summary     =
-  s.description = 'CLI for nodectld'
+    s.description = 'CLI for nodectld'
   s.authors     = 'Jakub Skokan'
   s.email       = 'jakub.skokan@vpsfree.cz'
   s.files       = `git ls-files -z`.split("\x0")

@@ -16,14 +16,14 @@ module TransactionChains
         end
       end.compact
 
-      if hosts.any?
-        append_t(
-          Transactions::Export::DelHosts,
-          args: [export, hosts],
-        ) do |t|
-          hosts.each do |host|
-            t.just_destroy(host)
-          end
+      return unless hosts.any?
+
+      append_t(
+        Transactions::Export::DelHosts,
+        args: [export, hosts]
+      ) do |t|
+        hosts.each do |host|
+          t.just_destroy(host)
         end
       end
     end

@@ -10,9 +10,9 @@ module TransactionChains
         OR
         (UNIX_TIMESTAMP() - UNIX_TIMESTAMP(CONVERT_TZ(#{t}.updated_at, 'UTC', 'Europe/Prague')) <= 120)"
       ).where(
-        active: true,
+        active: true
       ).where.not(
-        role: ::Node.roles[:mailer],
+        role: ::Node.roles[:mailer]
       ).each do |n|
         append(Transactions::Node::GenerateKnownHosts, args: n)
       end

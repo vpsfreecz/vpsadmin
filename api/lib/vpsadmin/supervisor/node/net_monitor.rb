@@ -7,7 +7,7 @@ module VpsAdmin::Supervisor
       queue = channel.queue(
         queue_name('net_monitor'),
         durable: true,
-        arguments: {'x-queue-type' => 'quorum'},
+        arguments: { 'x-queue-type' => 'quorum' }
       )
 
       queue.bind(exchange, routing_key: 'net_monitor')
@@ -19,6 +19,7 @@ module VpsAdmin::Supervisor
     end
 
     protected
+
     def update_monitors(monitors)
       ::NetworkInterfaceMonitor.upsert_all(
         monitors.map do |m|
@@ -38,17 +39,17 @@ module VpsAdmin::Supervisor
             packets_in_readout: m['packets_in_readout'],
             packets_out_readout: m['packets_out_readout'],
             created_at: t,
-            updated_at: t,
+            updated_at: t
           }
         end,
-        update_only: %i(
+        update_only: %i[
           bytes bytes_in bytes_out
           packets packets_in packets_out
           delta
           bytes_in_readout bytes_out_readout
           packets_in_readout packets_out_readout
           updated_at
-        ),
+        ]
       )
     end
   end

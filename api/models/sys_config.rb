@@ -5,11 +5,11 @@ class SysConfig < ActiveRecord::Base
   validates :name, presence: true
   validates :category, format: {
     with: /\A[a-zA-Z0-9_]{1,75}\z/,
-    message: 'bad format',
+    message: 'bad format'
   }
   validates :name, format: {
     with: /\A[a-zA-Z0-9_]{1,75}\z/,
-    message: 'bad format',
+    message: 'bad format'
   }
 
   def self.get(category, key)
@@ -17,7 +17,7 @@ class SysConfig < ActiveRecord::Base
     obj.value if obj
   end
 
-  def self.set(category, key, value)
+  def self.set(category, key, _value)
     SysConfig.transaction do
       obj = find_by(category: category, name: key)
 
@@ -45,8 +45,9 @@ class SysConfig < ActiveRecord::Base
     cfg = find_by(category: category, name: name)
 
     if cfg
-      %i(label description min_user_level).each do |opt|
+      %i[label description min_user_level].each do |opt|
         next unless opts.has_key?(opt)
+
         cfg.send("#{opt}=", opts[opt]) if cfg.send("#{opt}") != opts[opt]
       end
 
@@ -64,11 +65,10 @@ class SysConfig < ActiveRecord::Base
 
       create!(attrs)
     end
-
   rescue ActiveRecord::StatementInvalid
     # The sysconfig refactoring migration has not been run yet
-    warn "Ignoring sysconfig registration as needed database migration has not "+
-         "been applied yet"
+    warn 'Ignoring sysconfig registration as needed database migration has not ' +
+         'been applied yet'
   end
 
   register :core, :api_url, String, min_user_level: 0
@@ -93,12 +93,12 @@ class SysConfig < ActiveRecord::Base
   end
 
   def set_value(v)
-    case data_type
-    when 'Hash', 'Array'
-      self.value = YAML.safe_load(v)
+    self.value = case data_type
+                 when 'Hash', 'Array'
+                   YAML.safe_load(v)
 
-    else
-      self.value = v
-    end
+                 else
+                   v
+                 end
   end
 end

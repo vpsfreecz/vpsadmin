@@ -11,7 +11,7 @@ module TransactionChains
         name: src_netif.name,
         mac: nil,
         max_tx: 0,
-        max_rx: 0,
+        max_rx: 0
       )
 
       append_t(Transactions::Utils::NoOp, args: find_node_id) do |t|
@@ -21,7 +21,7 @@ module TransactionChains
       src_netif.call_class_hooks_for(
         :clone,
         self,
-        args: [src_netif, new_netif],
+        args: [src_netif, new_netif]
       )
 
       new_netif

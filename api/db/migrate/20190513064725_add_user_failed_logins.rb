@@ -9,7 +9,7 @@ class AddUserFailedLogins < ActiveRecord::Migration
       t.string      :client_ip_addr,     null: true,  limit: 46
       t.string      :client_ip_ptr,      null: true,  limit: 255
       t.references  :user_agent,         null: true
-      t.string      :client_version,     null: true,  limit: 255
+      t.string      :client_version,     null: true, limit: 255
       t.datetime    :created_at,         null: false
     end
 

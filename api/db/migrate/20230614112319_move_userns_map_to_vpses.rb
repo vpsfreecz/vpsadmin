@@ -8,7 +8,7 @@ class MoveUsernsMapToVpses < ActiveRecord::Migration[7.0]
     has_ancestry cache_depth: true
 
     def primary_dataset_in_pool!
-      dataset_in_pools.joins(:pool).where.not(pools: {role: 2}).take!
+      dataset_in_pools.joins(:pool).where.not(pools: { role: 2 }).take!
     end
   end
 

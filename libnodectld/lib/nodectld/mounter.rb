@@ -52,12 +52,12 @@ module NodeCtld
       syscmd(cmd)
 
       # Register in osctl
-      osctl(%i(ct mounts register), [@vps_id, mnt['dst']], {
-        fs: fs,
-        type: type,
-        opts: opts,
-        on_ct_start: true,
-      })
+      osctl(%i[ct mounts register], [@vps_id, mnt['dst']], {
+              fs: fs,
+              type: type,
+              opts: opts,
+              on_ct_start: true
+            })
 
       report_state(mnt, :mounted)
     end
@@ -68,12 +68,12 @@ module NodeCtld
       opts = ['bind', mnt['mode']].join(',')
 
       src = case mnt['type']
-      when 'dataset_local'
-        "/#{mnt['pool_fs']}/#{mnt['dataset_name']}/private"
+            when 'dataset_local'
+              "/#{mnt['pool_fs']}/#{mnt['dataset_name']}/private"
 
-      else
-        fail "unknown mount type '#{mnt['type']}'"
-      end
+            else
+              raise "unknown mount type '#{mnt['type']}'"
+            end
 
       [
         "#{$CFG.get(:bin, :mount)} -t #{type} -o #{opts} #{src} #{dst}",
@@ -85,15 +85,15 @@ module NodeCtld
     end
 
     # Add a new mount into a running container
-    def mount_after_start(mnt, oneshot)
+    def mount_after_start(mnt, _oneshot)
       _cmd, src, dst, type, opts = bind_mount_to_vps_cmd(mnt, '/')
 
-      osctl(%i(ct mounts register), [@vps_id, dst], {
-        fs: src,
-        type: type,
-        opts: opts,
-      })
-      osctl(%i(ct mounts activate), [@vps_id, dst])
+      osctl(%i[ct mounts register], [@vps_id, dst], {
+              fs: src,
+              type: type,
+              opts: opts
+            })
+      osctl(%i[ct mounts activate], [@vps_id, dst])
 
       report_state(mnt, :mounted)
     end
@@ -101,8 +101,7 @@ module NodeCtld
     def umount(mnt, keep_going: false)
       # Remove mount from the VPS
       begin
-        osctl(%i(ct mounts del), [@vps_id, mnt['dst']])
-
+        osctl(%i[ct mounts del], [@vps_id, mnt['dst']])
       rescue SystemCommandFailed => e
         raise e unless keep_going
       end
@@ -115,13 +114,14 @@ module NodeCtld
     end
 
     protected
+
     def report_state(opts, state)
       if NodeCtld::STANDALONE
         RemoteClient.send_or_not(RemoteControl::SOCKET, :mount_state, {
-          vps_id: @vps_id,
-          mount_id: opts['id'],
-          state: state,
-        })
+                                   vps_id: @vps_id,
+                                   mount_id: opts['id'],
+                                   state: state
+                                 })
 
       else
         MountReporter.report(@vps_id, opts['id'], state)

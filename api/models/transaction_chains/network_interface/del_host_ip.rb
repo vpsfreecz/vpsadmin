@@ -15,9 +15,9 @@ module TransactionChains
       addrs.each do |addr|
         next if addr.ip_address.network_interface_id == netif.id
 
-        fail "address #{addr} belongs to network routed to interface "+
-             "#{addr.ip_address.network_interface}, unable to remove from "+
-             "interface #{netif}"
+        raise "address #{addr} belongs to network routed to interface " +
+              "#{addr.ip_address.network_interface}, unable to remove from " +
+              "interface #{netif}"
       end
 
       # Delete the addresses
@@ -36,12 +36,15 @@ module TransactionChains
     end
 
     protected
+
     def addr_confirmation(t, netif, addr)
       t.edit(addr, order: nil)
 
+      return if included?
+
       t.just_create(
-        netif.vps.log(:host_addr_del, {id: addr.id, addr: addr.ip_addr})
-      ) unless included?
+        netif.vps.log(:host_addr_del, { id: addr.id, addr: addr.ip_addr })
+      )
     end
   end
 end

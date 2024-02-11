@@ -1,5 +1,5 @@
 class AddImpactType < ActiveRecord::Migration[7.1]
-  class Outage < ActiveRecord::Base ; end
+  class Outage < ActiveRecord::Base; end
 
   def change
     add_column :outages, :impact_type, :integer, null: false, default: 0
@@ -10,7 +10,7 @@ class AddImpactType < ActiveRecord::Migration[7.1]
         Outage.all.each do |outage|
           outage.update!(
             impact_type: outage.outage_type,
-            outage_type: outage.planned ? 0 : 1,
+            outage_type: outage.planned ? 0 : 1
           )
         end
       end
@@ -19,7 +19,7 @@ class AddImpactType < ActiveRecord::Migration[7.1]
         Outage.all.each do |outage|
           outage.update!(
             outage_type: outage.impact_type,
-            planned: outage.outage_type == 0,
+            planned: outage.outage_type == 0
           )
         end
       end

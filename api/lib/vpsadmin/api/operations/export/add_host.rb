@@ -19,13 +19,14 @@ module VpsAdmin::API
           rw: with_default(export, opts, :rw),
           sync: with_default(export, opts, :sync),
           subtree_check: with_default(export, opts, :subtree_check),
-          root_squash: with_default(export, opts, :root_squash),
+          root_squash: with_default(export, opts, :root_squash)
         )]
       )
-      return chain, hosts.first
+      [chain, hosts.first]
     end
 
     protected
+
     def with_default(export, opts, k)
       opts[k].nil? ? export.send(k) : opts[k]
     end

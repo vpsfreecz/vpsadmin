@@ -31,7 +31,7 @@ module NodeCtld
     def save
       {
         'address' => address.to_string,
-        'via' => via,
+        'via' => via
       }
     end
   end

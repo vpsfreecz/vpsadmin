@@ -15,60 +15,54 @@ module VpsAdmin::API::Plugins::Requests::TransactionChains
       [
         [
           :request_action_role_type,
-          {action: 'create', role: 'user', type: request.type_name}
+          { action: 'create', role: 'user', type: request.type_name }
         ],
         [
           :request_action_role,
-          {action: 'create', role: 'user'}
-        ],
+          { action: 'create', role: 'user' }
+        ]
       ].each do |id, params|
-        begin
-          mail(id, {
-            params: params,
-            user: request.user,
-            to: [request.user_mail],
-            language: request.user_language,
-            message_id: message_id(request),
-            vars: {
-              request: request,
-              r: request,
-              webui_url: webui_url,
-            },
-          })
-          break
-
-        rescue VpsAdmin::API::Exceptions::MailTemplateDoesNotExist
-          next
-        end
+        mail(id, {
+               params: params,
+               user: request.user,
+               to: [request.user_mail],
+               language: request.user_language,
+               message_id: message_id(request),
+               vars: {
+                 request: request,
+                 r: request,
+                 webui_url: webui_url
+               }
+             })
+        break
+      rescue VpsAdmin::API::Exceptions::MailTemplateDoesNotExist
+        next
       end
 
       ::User.where('level > 90').where(mailer_enabled: true).group(:email).each do |admin|
         [
           [
             :request_action_role_type,
-            {action: 'create', role: 'admin', type: request.type_name}
+            { action: 'create', role: 'admin', type: request.type_name }
           ],
           [
             :request_action_role,
-            {action: 'create', role: 'admin'}
-          ],
+            { action: 'create', role: 'admin' }
+          ]
         ].each do |id, params|
-          begin
-            mail(id, {
-              params: params,
-              user: admin,
-              message_id: message_id(request),
-              vars: {
-                request: request,
-                r: request,
-                webui_url: webui_url,
-              },
-            })
-            break
-
-          rescue VpsAdmin::API::Exceptions::MailTemplateDoesNotExist
-            next
-          end
+          mail(id, {
+                 params: params,
+                 user: admin,
+                 message_id: message_id(request),
+                 vars: {
+                   request: request,
+                   r: request,
+                   webui_url: webui_url
+                 }
+               })
+          break
+        rescue VpsAdmin::API::Exceptions::MailTemplateDoesNotExist
+          next
         end
       end
     end

@@ -9,7 +9,7 @@ module TransactionChains
       append_t(
         Transactions::Vps::Restart,
         args: [vps],
-        kwargs: {start_timeout: start_timeout},
+        kwargs: { start_timeout: start_timeout }
       ) do |t|
         t.just_create(vps.log(:restart)) unless included?
         t.edit(vps, autostart_enable: true)

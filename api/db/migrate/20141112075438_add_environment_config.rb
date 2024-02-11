@@ -11,8 +11,8 @@ class AddEnvironmentConfig < ActiveRecord::Migration
       t.integer    :cfg_order,     null: false
     end
 
-    add_index :environment_config_chains, [:environment_id, :vps_config_id], unique: true,
-              name: :environment_config_chains_unique
+    add_index :environment_config_chains, %i[environment_id vps_config_id], unique: true,
+                                                                            name: :environment_config_chains_unique
 
     remove_column :locations, :location_type, "enum('production', 'playground')", null: false
 
@@ -25,7 +25,7 @@ class AddEnvironmentConfig < ActiveRecord::Migration
       t.integer    :max_vps_count,    null: false, default: 1
     end
 
-    add_index :environment_user_configs, [:environment_id, :user_id], unique: true,
-              name: :environment_user_configs_unique
+    add_index :environment_user_configs, %i[environment_id user_id], unique: true,
+                                                                     name: :environment_user_configs_unique
   end
 end

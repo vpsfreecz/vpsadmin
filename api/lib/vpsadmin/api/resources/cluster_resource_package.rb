@@ -20,7 +20,7 @@ module VpsAdmin::API::Resources
       desc 'List cluster resource packages'
 
       input do
-        use :common, include: %i(environment user)
+        use :common, include: %i[environment user]
       end
 
       output(:object_list) do
@@ -34,7 +34,7 @@ module VpsAdmin::API::Resources
       def query
         q = ::ClusterResourcePackage.all
 
-        %i(environment user).each do |v|
+        %i[environment user].each do |v|
           q = q.where(v => input[v]) if input.has_key?(v)
         end
 
@@ -74,7 +74,7 @@ module VpsAdmin::API::Resources
       desc 'Create a cluster resource package'
 
       input do
-        use :common, include: %i(label)
+        use :common, include: %i[label]
         patch :label, required: true
       end
 
@@ -88,7 +88,6 @@ module VpsAdmin::API::Resources
 
       def exec
         ::ClusterResourcePackage.create!(input)
-
       rescue ActiveRecord::RecordInvalid => e
         error('create failed', e.record.errors.to_hash)
       end
@@ -98,7 +97,7 @@ module VpsAdmin::API::Resources
       desc 'Update a cluster resource package'
 
       input do
-        use :common, include: %i(label)
+        use :common, include: %i[label]
         patch :label, required: true
       end
 
@@ -112,7 +111,6 @@ module VpsAdmin::API::Resources
 
       def exec
         ::ClusterResourcePackage.find(params[:cluster_resource_package_id]).update!(input)
-
       rescue ActiveRecord::RecordInvalid => e
         error('update failed', e.record.errors.to_hash)
       end
@@ -139,7 +137,7 @@ module VpsAdmin::API::Resources
     end
 
     class Item < HaveAPI::Resource
-      desc "Manage cluster resource package contents"
+      desc 'Manage cluster resource package contents'
       model ::ClusterResourcePackageItem
       route '{cluster_resource_package_id}/items'
 
@@ -166,7 +164,7 @@ module VpsAdmin::API::Resources
 
         def query
           ::ClusterResourcePackageItem.where(
-            cluster_resource_package_id: params[:cluster_resource_package_id],
+            cluster_resource_package_id: params[:cluster_resource_package_id]
           )
         end
 
@@ -193,7 +191,7 @@ module VpsAdmin::API::Resources
         def prepare
           @it = ::ClusterResourcePackageItem.where(
             cluster_resource_package_id: params[:cluster_resource_package_id],
-            id: params[:item_id],
+            id: params[:item_id]
           ).take!
         end
 
@@ -221,10 +219,8 @@ module VpsAdmin::API::Resources
           ::ClusterResourcePackage
             .find(params[:cluster_resource_package_id])
             .add_item(input[:cluster_resource], input[:value])
-
         rescue ActiveRecord::RecordInvalid => e
           error('create failed', e.record.errors.to_hash)
-
         rescue ActiveRecord::RecordNotUnique
           error('this resource already exists')
         end
@@ -234,7 +230,7 @@ module VpsAdmin::API::Resources
         desc 'Update item in a cluster resource package'
 
         input do
-          use :common, include: %i(value)
+          use :common, include: %i[value]
         end
 
         output do
@@ -248,10 +244,9 @@ module VpsAdmin::API::Resources
         def exec
           it = ::ClusterResourcePackageItem.where(
             cluster_resource_package_id: params[:cluster_resource_package_id],
-            id: params[:item_id],
+            id: params[:item_id]
           ).take!
           it.cluster_resource_package.update_item(it, input[:value])
-
         rescue ActiveRecord::RecordInvalid => e
           error('update failed', e.record.errors.to_hash)
         end
@@ -267,7 +262,7 @@ module VpsAdmin::API::Resources
         def exec
           it = ::ClusterResourcePackageItem.where(
             cluster_resource_package_id: params[:cluster_resource_package_id],
-            id: params[:item_id],
+            id: params[:item_id]
           ).take!
           it.cluster_resource_package.remove_item(it)
           ok

@@ -7,7 +7,7 @@ module VpsAdmin::API::Resources
       id :id
       resource User, value_label: :login
       string :label
-      string :auth_type, label: 'Authentication type', choices: %w(basic token oauth2)
+      string :auth_type, label: 'Authentication type', choices: %w[basic token oauth2]
       string :api_ip_addr, label: 'IP Address'
       string :api_ip_ptr, label: 'IP PTR'
       string :client_ip_addr, label: 'Client IP Address'
@@ -29,10 +29,10 @@ module VpsAdmin::API::Resources
       desc 'List user sessions'
 
       input do
-        use :all, include: %i(user auth_type ip_addr api_ip_addr client_ip_addr
-                              user_agent client_version token_fragment admin)
+        use :all, include: %i[user auth_type ip_addr api_ip_addr client_ip_addr
+                              user_agent client_version token_fragment admin]
         string :ip_addr, label: 'IP Address', desc: 'Search both API and client IP address'
-        string :state, choices: %w(all open closed), default: 'all', fill: true
+        string :state, choices: %w[all open closed], default: 'all', fill: true
         patch :limit, default: 25, fill: true
       end
 
@@ -42,8 +42,8 @@ module VpsAdmin::API::Resources
 
       authorize do |u|
         allow if u.role == :admin
-        input blacklist: %i(admin)
-        output blacklist: %i(admin)
+        input blacklist: %i[admin]
+        output blacklist: %i[admin]
         restrict user_id: u.id
         allow
       end
@@ -71,9 +71,7 @@ module VpsAdmin::API::Resources
         q = q.where('api_ip_addr LIKE ?', input[:api_ip_addr]) if input[:api_ip_addr]
         q = q.where('client_ip_addr LIKE ?', input[:client_ip_addr]) if input[:client_ip_addr]
 
-        if input[:user_agent]
-          q = q.joins(:user_agents).where('agent LIKE ?', input[:user_agent])
-        end
+        q = q.joins(:user_agents).where('agent LIKE ?', input[:user_agent]) if input[:user_agent]
 
         q = q.where('client_version LIKE ?', input[:client_version]) if input[:client_version]
         q = q.where('token_str LIKE ?', "#{input[:token_fragment]}%") if input[:token_fragment]
@@ -104,8 +102,8 @@ module VpsAdmin::API::Resources
 
       authorize do |u|
         allow if u.role == :admin
-        input blacklist: %i(admin)
-        output blacklist: %i(admin)
+        input blacklist: %i[admin]
+        output blacklist: %i[admin]
         restrict user_id: u.id
         allow
       end
@@ -123,7 +121,7 @@ module VpsAdmin::API::Resources
       desc 'Create a new session for token authentication'
 
       input do
-        use :all, include: %i(user scope token_lifetime token_interval label)
+        use :all, include: %i[user scope token_lifetime token_interval label]
         patch :user, required: true
         patch :token_lifetime, required: true
         patch :scope, default: 'all', fill: true
@@ -146,9 +144,8 @@ module VpsAdmin::API::Resources
           token_lifetime: input[:token_lifetime],
           token_interval: input[:token_interval],
           scope: input[:scope].split,
-          label: input[:label],
+          label: input[:label]
         )
-
       rescue ActiveRecord::RecordInvalid
         error('failed to create user session')
       end
@@ -158,7 +155,7 @@ module VpsAdmin::API::Resources
       desc 'Update user session'
 
       input do
-        use :all, include: %i(label)
+        use :all, include: %i[label]
         patch :label, required: true
       end
 
@@ -175,7 +172,6 @@ module VpsAdmin::API::Resources
       def exec
         user_session = ::UserSession.find_by!(with_restricted(id: params[:user_session_id]))
         user_session.update!(label: input[:label])
-
       rescue ActiveRecord::RecordInvalid
         error('failed to create user session')
       end
@@ -196,7 +192,6 @@ module VpsAdmin::API::Resources
         user_session = ::UserSession.find_by!(with_restricted(id: params[:user_session_id]))
         VpsAdmin::API::Operations::UserSession::Close.run(user_session)
         ok
-
       rescue ActiveRecord::RecordInvalid
         error('failed to close user session')
       end

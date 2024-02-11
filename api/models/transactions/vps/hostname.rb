@@ -10,7 +10,7 @@ module Transactions::Vps
 
       {
         hostname: hostname,
-        original: orig,
+        original: orig
       }
     end
   end

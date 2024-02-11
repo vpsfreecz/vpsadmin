@@ -4,7 +4,7 @@ module NodeCtld
     needs :system, :osctl
 
     def exec
-      osctl(%i(ct del), @vps_id)
+      osctl(%i[ct del], @vps_id)
       NetAccounting.remove_vps(@vps_id)
       ok
     end

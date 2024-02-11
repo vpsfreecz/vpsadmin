@@ -13,10 +13,10 @@ module NodeCtld
 
     def rollback
       call_cmd(Commands::Dataset::Set, {
-        pool_fs: @pool_fs,
-        name: @name,
-        properties: @properties.merge(@properties) { |_, v| [nil, v] }
-      })
+                 pool_fs: @pool_fs,
+                 name: @name,
+                 properties: @properties.merge(@properties) { |_, v| [nil, v] }
+               })
     end
   end
 end

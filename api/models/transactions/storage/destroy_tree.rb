@@ -11,7 +11,7 @@ module Transactions::Storage
       {
         pool_fs: tree.dataset_in_pool.pool.filesystem,
         dataset_name: tree.dataset_in_pool.dataset.full_name,
-        tree: tree.full_name,
+        tree: tree.full_name
       }
     end
   end

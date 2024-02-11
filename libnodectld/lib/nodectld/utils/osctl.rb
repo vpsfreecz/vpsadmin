@@ -44,7 +44,7 @@ module NodeCtld
     # @param cmd_opts [Hash] options passed to {Utils::System#syscmd}
     # @return [OsCtl::Lib::SystemCommandResult]
     def osctl_pool(pool, cmd, args = [], opts = {}, gopts = {}, cmd_opts = {})
-      osctl(cmd, args, opts, gopts.merge({pool: pool}), cmd_opts)
+      osctl(cmd, args, opts, gopts.merge({ pool: pool }), cmd_opts)
     end
 
     def osctl_parse(*args)

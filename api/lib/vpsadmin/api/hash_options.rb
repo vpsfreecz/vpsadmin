@@ -8,7 +8,7 @@ module VpsAdmin::API
 
         diff = opts.keys - defaults.keys
 
-        fail "unknown options '#{diff.join(',')}'" unless diff.empty?
+        raise "unknown options '#{diff.join(',')}'" unless diff.empty?
 
         defaults.each do |k, v|
           next if !opts.has_key?(k) && v.nil?

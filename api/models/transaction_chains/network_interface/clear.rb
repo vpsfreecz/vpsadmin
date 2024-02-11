@@ -8,10 +8,10 @@ module TransactionChains
       routed_direct = []
 
       netif.ip_addresses.joins(:network).where(
-        networks: {role: [
+        networks: { role: [
           ::Network.roles[:public_access],
-          ::Network.roles[:private_access],
-        ]},
+          ::Network.roles[:private_access]
+        ] }
       ).each do |ip|
         if ip.route_via_id
           routed_via << ip

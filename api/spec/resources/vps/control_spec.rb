@@ -1,6 +1,6 @@
 require 'spec_helper'
 
-%w(start stop restart).each do |action|
+%w[start stop restart].each do |action|
   describe "Vps.#{action}" do
     use_version 1
 

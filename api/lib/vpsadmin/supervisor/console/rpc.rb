@@ -14,7 +14,7 @@ module VpsAdmin::Supervisor
       queue = channel.queue(
         'console:rpc',
         durable: true,
-        arguments: {'x-queue-type' => 'quorum'},
+        arguments: { 'x-queue-type' => 'quorum' }
       )
 
       queue.bind(exchange, routing_key: 'rpc')
@@ -26,6 +26,7 @@ module VpsAdmin::Supervisor
     end
 
     protected
+
     attr_reader :channel
 
     class Request
@@ -39,7 +40,7 @@ module VpsAdmin::Supervisor
       def process(payload)
         begin
           req = JSON.parse(payload)
-        rescue
+        rescue StandardError
           send_error('Unable to parse request as json')
           raise
         end
@@ -47,7 +48,7 @@ module VpsAdmin::Supervisor
         handler = Handler.new
         cmd = req['command']
 
-        if !handler.respond_to?(cmd)
+        unless handler.respond_to?(cmd)
           send_error("Command #{cmd.inspect} not found")
           return
         end
@@ -56,9 +57,9 @@ module VpsAdmin::Supervisor
           response = handler.send(
             cmd,
             *req.fetch('args', []),
-            **symbolize_hash_keys(req.fetch('kwargs', {})),
+            **symbolize_hash_keys(req.fetch('kwargs', {}))
           )
-        rescue => e
+        rescue StandardError => e
           send_error("#{e.class}: #{e.message}")
           raise
         else
@@ -69,12 +70,13 @@ module VpsAdmin::Supervisor
       end
 
       protected
+
       def send_response(response)
-        reply({status: true, response: response})
+        reply({ status: true, response: response })
       end
 
       def send_error(message)
-        reply({status: false, message: message})
+        reply({ status: false, message: message })
       end
 
       def reply(payload)
@@ -86,10 +88,10 @@ module VpsAdmin::Supervisor
             persistent: true,
             content_type: 'application/json',
             routing_key: @properties.reply_to,
-            correlation_id: @properties.correlation_id,
+            correlation_id: @properties.correlation_id
           )
         rescue Bunny::ConnectionClosedError
-          warn "Console::Rpc#reply: connection closed, retry in 5s"
+          warn 'Console::Rpc#reply: connection closed, retry in 5s'
           sleep(5)
           retry
         end
@@ -105,7 +107,7 @@ module VpsAdmin::Supervisor
       def get_api_url
         ::SysConfig.select('value').where(
           category: 'core',
-          name: 'api_url',
+          name: 'api_url'
         ).take!.value
       end
 
@@ -115,15 +117,13 @@ module VpsAdmin::Supervisor
       def get_session_node(vps_id, session)
         now = Time.now
         console = ::VpsConsole
-          .includes(vps: {node: :location})
-          .find_by(vps_id: vps_id, token: session)
+                  .includes(vps: { node: :location })
+                  .find_by(vps_id: vps_id, token: session)
 
-        if console && console.expiration > now
-          console.update!(expiration: now + 60)
-          console.vps.node.domain_name
-        else
-          nil
-        end
+        return unless console && console.expiration > now
+
+        console.update!(expiration: now + 60)
+        console.vps.node.domain_name
       end
     end
   end

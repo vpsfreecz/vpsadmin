@@ -9,7 +9,7 @@ module Transactions::Network
         ip_version: net.ip_version,
         address: net.address,
         prefix: net.prefix,
-        role: ::Network.roles[net.role],
+        role: ::Network.roles[net.role]
       }
     end
   end

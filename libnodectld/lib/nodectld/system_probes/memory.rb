@@ -6,9 +6,9 @@ module NodeCtld::SystemProbes
       @data = {}
 
       (data || File.read('/proc/meminfo')).split("\n").each do |line|
-        name, value, _ = line.split
+        name, value, = line.split
 
-        @data[ name.chop.downcase.to_sym ] = value.to_i
+        @data[name.chop.downcase.to_sym] = value.to_i
       end
     end
 

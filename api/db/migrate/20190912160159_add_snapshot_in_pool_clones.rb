@@ -1,9 +1,9 @@
 class AddSnapshotInPoolClones < ActiveRecord::Migration
-  class Mount < ActiveRecord::Base ; end
-  class SnapshotInPool < ActiveRecord::Base ; end
-  class SnapshotInPoolClone < ActiveRecord::Base ; end
-  class Vps < ActiveRecord::Base ; end
-  class DatasetInPool < ActiveRecord::Base ; end
+  class Mount < ActiveRecord::Base; end
+  class SnapshotInPool < ActiveRecord::Base; end
+  class SnapshotInPoolClone < ActiveRecord::Base; end
+  class Vps < ActiveRecord::Base; end
+  class DatasetInPool < ActiveRecord::Base; end
 
   def up
     create_table :snapshot_in_pool_clones do |t|
@@ -17,9 +17,9 @@ class AddSnapshotInPoolClones < ActiveRecord::Migration
 
     add_index :snapshot_in_pool_clones, :snapshot_in_pool_id
     add_index :snapshot_in_pool_clones,
-      %i(snapshot_in_pool_id user_namespace_map_id),
-      unique: true,
-      name: 'snapshot_in_pool_clones_unique'
+              %i[snapshot_in_pool_id user_namespace_map_id],
+              unique: true,
+              name: 'snapshot_in_pool_clones_unique'
 
     add_column :mounts, :snapshot_in_pool_clone_id, :integer, null: true
     add_index :mounts, :snapshot_in_pool_clone_id
@@ -51,7 +51,7 @@ class AddSnapshotInPoolClones < ActiveRecord::Migration
           user_namespace_map_id: dip.user_namespace_map_id,
           confirmed: 1,
           created_at: mnt.created_at,
-          updated_at: mnt.updated_at,
+          updated_at: mnt.updated_at
         )
 
         mnt.update!(snapshot_in_pool_clone_id: cl.id)

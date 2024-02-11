@@ -18,10 +18,10 @@ module VpsAdmin::ConsoleRouter
           vps_id: vps_id,
           auth_type: params[:auth_type],
           auth_token: params[:auth_token],
-          session: params[:session],
+          session: params[:session]
         }
       else
-        "Access denied, invalid session"
+        'Access denied, invalid session'
       end
     end
 
@@ -31,16 +31,16 @@ module VpsAdmin::ConsoleRouter
         params[:session],
         params[:keys],
         params[:width].to_i,
-        params[:height].to_i,
+        params[:height].to_i
       )
 
       if data
         {
           data: Base64.encode64(data),
-          session: true,
+          session: true
         }.to_json
       else
-        {data: 'Access denied, invalid session', session: nil}.to_json
+        { data: 'Access denied, invalid session', session: nil }.to_json
       end
     end
   end

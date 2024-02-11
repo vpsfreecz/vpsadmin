@@ -2,8 +2,8 @@ require 'bunny'
 
 module VpsAdmin
   module Supervisor
-    module Console ; end
-    module Node ; end
+    module Console; end
+    module Node; end
 
     def self.start(cfg)
       connection = Bunny.new(
@@ -11,7 +11,7 @@ module VpsAdmin
         vhost: cfg.fetch('vhost', '/'),
         username: cfg.fetch('username'),
         password: cfg.fetch('password'),
-        log_file: STDERR,
+        log_file: STDERR
       )
       connection.start
 

@@ -27,32 +27,32 @@ class AddDatasetPropertyReferenced < ActiveRecord::Migration
 
     Pool.all.each do |pool|
       pool_props[pool.id] = DatasetProperty.create!(
-          pool_id: pool.id,
-          parent: nil,
-          name: :referenced,
-          value: 0,
-          confirmed: 1
+        pool_id: pool.id,
+        parent: nil,
+        name: :referenced,
+        value: 0,
+        confirmed: 1
       )
     end
 
     DatasetInPool.includes(:dataset).joins(:pool).where(
-        pools: {role: [0, 1]} # hypervisor and primary pools only
+      pools: { role: [0, 1] } # hypervisor and primary pools only
     ).each do |dip|
       parent_prop = DatasetProperty.joins(:dataset_in_pool).where(
-          dataset: dip.dataset.parent,
-          name: :referenced,
-          dataset_in_pools: {pool_id: dip.pool_id}
+        dataset: dip.dataset.parent,
+        name: :referenced,
+        dataset_in_pools: { pool_id: dip.pool_id }
       ).take
 
-      parent_prop = pool_props[dip.pool_id] unless parent_prop
+      parent_prop ||= pool_props[dip.pool_id]
 
       DatasetProperty.create!(
-          dataset_id: dip.dataset_id,
-          dataset_in_pool_id: dip.id,
-          parent: parent_prop,
-          name: :referenced,
-          value: 0,
-          confirmed: 1
+        dataset_id: dip.dataset_id,
+        dataset_in_pool_id: dip.id,
+        parent: parent_prop,
+        name: :referenced,
+        value: 0,
+        confirmed: 1
       )
     end
   end

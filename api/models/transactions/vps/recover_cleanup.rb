@@ -10,7 +10,7 @@ module Transactions::Vps
 
       {
         cgroups: opts[:cgroups] ? true : false,
-        network_interfaces: opts[:network_interfaces] ? true : false,
+        network_interfaces: opts[:network_interfaces] ? true : false
       }
     end
   end

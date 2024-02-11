@@ -6,7 +6,7 @@ class DatasetAction < ActiveRecord::Base
   belongs_to :dataset_in_pool_plan
   has_many :group_snapshots
 
-  enum action: %i(snapshot transfer rollback backup group_snapshot)
+  enum action: %i[snapshot transfer rollback backup group_snapshot]
 
   def execute
     case action.to_sym

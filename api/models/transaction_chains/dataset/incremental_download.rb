@@ -9,11 +9,11 @@ module TransactionChains
 
       # Pools on which the first snapshot is located
       pool_ids = dl.from_snapshot.snapshot_in_pools
-        .joins(:dataset_in_pool)
-        .pluck('dataset_in_pools.pool_id')
+                   .joins(:dataset_in_pool)
+                   .pluck('dataset_in_pools.pool_id')
 
       to_sip = dl.snapshot.snapshot_in_pools.joins(:dataset_in_pool).where(
-        dataset_in_pools: {pool_id: pool_ids}
+        dataset_in_pools: { pool_id: pool_ids }
       ).take
 
       if to_sip
@@ -21,7 +21,7 @@ module TransactionChains
         lock(to_sip.dataset_in_pool)
 
         from_sip = dl.from_snapshot.snapshot_in_pools.joins(:dataset_in_pool).where(
-          dataset_in_pools: {pool_id: to_sip.dataset_in_pool.pool_id}
+          dataset_in_pools: { pool_id: to_sip.dataset_in_pool.pool_id }
         ).take!
 
         lock(from_sip)
@@ -33,25 +33,25 @@ module TransactionChains
         from_sip = dl.from_snapshot.snapshot_in_pools.joins(
           dataset_in_pool: [:pool]
         ).where(
-          pools: {role: ::Pool.roles[:backup]}
+          pools: { role: ::Pool.roles[:backup] }
         ).take!
 
         to_sip = dl.snapshot.snapshot_in_pools.joins(
           dataset_in_pool: [:pool]
         ).where(
-          pools: {role: [
+          pools: { role: [
             ::Pool.roles[:primary],
-            ::Pool.roles[:hypervisor],
-          ]}
+            ::Pool.roles[:hypervisor]
+          ] }
         ).take!
 
         lock(from_sip)
         lock(to_sip)
 
         use_chain(Dataset::Transfer, args: [
-          to_sip.dataset_in_pool,
-          from_sip.dataset_in_pool,
-        ])
+                    to_sip.dataset_in_pool,
+                    from_sip.dataset_in_pool
+                  ])
 
         dl.pool = from_sip.dataset_in_pool.pool
       end

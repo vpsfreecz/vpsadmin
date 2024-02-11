@@ -8,7 +8,7 @@ module TransactionChains
 
       append(Transactions::Vps::Resources, args: [vps, resources]) do
         resources.each do |r|
-          if %i(confirmed confirm_destroy).include?(r.confirmed)
+          if %i[confirmed confirm_destroy].include?(r.confirmed)
             edit(r, r.attr_changes)
 
           else

@@ -3,6 +3,7 @@ require_relative 'helpers'
 module TransactionChains
   class NetworkInterface::Veth::Base < ::TransactionChain
     protected
+
     include NetworkInterface::Veth::Helpers
 
     # @param vps [::Vps]
@@ -14,7 +15,7 @@ module TransactionChains
           vps: vps,
           kind: type,
           name: name,
-          mac: gen_mac,
+          mac: gen_mac
         )
       end
     end
@@ -29,23 +30,20 @@ module TransactionChains
           name: src_netif.name,
           mac: gen_mac,
           max_tx: src_netif.max_tx,
-          max_rx: src_netif.max_rx,
+          max_rx: src_netif.max_rx
         )
       end
     end
 
     def create_unique
       5.times do
-        begin
-          return yield
-
-        rescue ActiveRecord::RecordNotUnique
-          sleep(0.25)
-          next
-        end
+        return yield
+      rescue ActiveRecord::RecordNotUnique
+        sleep(0.25)
+        next
       end
 
-      fail 'unable to create veth interface with a unique mac address'
+      raise 'unable to create veth interface with a unique mac address'
     end
   end
 end

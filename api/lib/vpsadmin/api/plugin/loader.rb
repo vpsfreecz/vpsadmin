@@ -3,9 +3,9 @@ module VpsAdmin::API::Plugin
     # @param component [String] name of a plugin component to load
     def self.load(component)
       plugin_dir = File.realpath(File.join(
-        VpsAdmin::API.root,
-        'plugins'
-      ))
+                                   VpsAdmin::API.root,
+                                   'plugins'
+                                 ))
       return unless File.exist?(plugin_dir)
 
       Dir.entries(plugin_dir).select do |v|
@@ -19,19 +19,17 @@ module VpsAdmin::API::Plugin
 
         next if plugin.components.nil? || !plugin.components.include?(component.to_sym)
 
-        if component == 'api'
-          if plugin.directory.nil?
-            plugin.directory(File.join(VpsAdmin::API.root, 'plugins', plugin.id.to_s))
-          end
+        if component == 'api' && plugin.directory.nil?
+          plugin.directory(File.join(VpsAdmin::API.root, 'plugins', plugin.id.to_s))
         end
 
         basedir = File.join(plugin_dir, p, component)
-        fail "Plugin dir '#{basedir}' not found" unless Dir.exist?(basedir)
+        raise "Plugin dir '#{basedir}' not found" unless Dir.exist?(basedir)
 
         begin
           init = File.realpath(File.join(basedir, 'init.rb'))
         rescue Errno::ENOENT
-          %w(lib models resources).each do |d|
+          %w[lib models resources].each do |d|
             path = File.join(basedir, d)
             require_all(File.realpath(path)) if File.exist?(path)
           end

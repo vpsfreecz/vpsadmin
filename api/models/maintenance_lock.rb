@@ -26,12 +26,14 @@ class MaintenanceLock < ActiveRecord::Base
       save!
 
       # Lock self and all children objects.
-      obj.update!(
-        maintenance_lock: maintain_lock(:lock),
-        maintenance_lock_reason: self.reason
-      ) if obj && obj.respond_to?(:update!)
+      if obj && obj.respond_to?(:update!)
+        obj.update!(
+          maintenance_lock: maintain_lock(:lock),
+          maintenance_lock_reason: reason
+        )
+      end
 
-      lock_children(obj || ::Object.const_get(self.class_name).new)
+      lock_children(obj || ::Object.const_get(class_name).new)
       true
     end
   end
@@ -44,7 +46,7 @@ class MaintenanceLock < ActiveRecord::Base
       parent.method(child).call.where(maintenance_lock: maintain_lock(:no)).each do |obj|
         obj.update!(
           maintenance_lock: maintain_lock(:master_lock),
-          maintenance_lock_reason: self.reason
+          maintenance_lock_reason: reason
         )
 
         lock_children(obj)
@@ -57,27 +59,31 @@ class MaintenanceLock < ActiveRecord::Base
       self.active = false
       save!
 
-      obj ||= ::Object.const_get(self.class_name).new
+      obj ||= ::Object.const_get(class_name).new
 
       # Unlock all children objects that are otherwise
       # not locked.
       master_lock = obj.find_maintenance_lock
 
       if master_lock
-        obj.update!(
-          maintenance_lock: maintain_lock(:master_lock),
-          maintenance_lock_reason: master_lock.reason
-        ) if obj && obj.respond_to?(:update!)
+        if obj && obj.respond_to?(:update!)
+          obj.update!(
+            maintenance_lock: maintain_lock(:master_lock),
+            maintenance_lock_reason: master_lock.reason
+          )
+        end
 
         master_lock.lock_children(obj)
 
       else
-        obj.update!(
-          maintenance_lock: maintain_lock(:no),
-          maintenance_lock_reason: nil
-        ) if obj && obj.respond_to?(:update!)
+        if obj && obj.respond_to?(:update!)
+          obj.update!(
+            maintenance_lock: maintain_lock(:no),
+            maintenance_lock_reason: nil
+          )
+        end
 
-        unlock_children(obj || Object.const_get(self.class_name).new)
+        unlock_children(obj || Object.const_get(class_name).new)
       end
 
       true
@@ -107,7 +113,7 @@ class MaintenanceLock < ActiveRecord::Base
   end
 
   def self.maintain_lock(k)
-    opts = %i(no lock master_lock)
+    opts = %i[no lock master_lock]
 
     if k.is_a?(::Symbol)
       opts.index(k)

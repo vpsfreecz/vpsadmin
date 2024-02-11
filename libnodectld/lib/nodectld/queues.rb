@@ -2,17 +2,17 @@ require 'nodectld/transaction_queue'
 
 module NodeCtld
   class Queues
-    QUEUES = [
-      :general,
-      :storage,
-      :network,
-      :vps,
-      :zfs_send,
-      :zfs_recv,
-      :mail,
-      :outage,
-      :queue,
-      :rollback,
+    QUEUES = %i[
+      general
+      storage
+      network
+      vps
+      zfs_send
+      zfs_recv
+      mail
+      outage
+      queue
+      rollback
     ]
 
     def initialize(daemon)
@@ -38,7 +38,8 @@ module NodeCtld
 
     def execute(cmd)
       return false if busy?(cmd.chain_id)
-      @queues[ queue_for(cmd) ].execute(cmd)
+
+      @queues[queue_for(cmd)].execute(cmd)
     end
 
     def reserve(queues, cmd)
@@ -71,9 +72,7 @@ module NodeCtld
         chain_id = row['id'].to_i
 
         chain_reservations[chain_id].each do |q_name|
-          if @queues[q_name].release(chain_id)
-            counter += 1
-          end
+          counter += 1 if @queues[q_name].release(chain_id)
         end
       end
 
@@ -97,7 +96,7 @@ module NodeCtld
     end
 
     def free_slot?(cmd)
-      @queues[ cmd.queue ].free_slot?(cmd)
+      @queues[cmd.queue].free_slot?(cmd)
     end
 
     def busy?(chain_id)
@@ -125,6 +124,7 @@ module NodeCtld
     end
 
     protected
+
     def queue_for(cmd)
       if cmd.current_chain_direction == :rollback
         :rollback

@@ -1,8 +1,8 @@
 class SwitchUserNamespaceMapsToPools < ActiveRecord::Migration[6.1]
-  class UserNamespaceMapNode < ActiveRecord::Base ; end
-  class UserNamespaceMapPool < ActiveRecord::Base ; end
-  class Node < ActiveRecord::Base ; end
-  class Pool < ActiveRecord::Base ; end
+  class UserNamespaceMapNode < ActiveRecord::Base; end
+  class UserNamespaceMapPool < ActiveRecord::Base; end
+  class Node < ActiveRecord::Base; end
+  class Pool < ActiveRecord::Base; end
 
   def up
     create_table :user_namespace_map_pools do |t|
@@ -10,7 +10,7 @@ class SwitchUserNamespaceMapsToPools < ActiveRecord::Migration[6.1]
       t.references  :pool,                         null: false
     end
 
-    add_index :user_namespace_map_pools, %i(user_namespace_map_id pool_id),
+    add_index :user_namespace_map_pools, %i[user_namespace_map_id pool_id],
               unique: true, name: 'user_namespace_map_pools_unique'
 
     UserNamespaceMapNode.all.each do |map_on_node|
@@ -18,7 +18,7 @@ class SwitchUserNamespaceMapsToPools < ActiveRecord::Migration[6.1]
 
       UserNamespaceMapPool.create!(
         user_namespace_map_id: map_on_node.user_namespace_map_id,
-        pool_id: pool.id,
+        pool_id: pool.id
       )
     end
 
@@ -31,7 +31,7 @@ class SwitchUserNamespaceMapsToPools < ActiveRecord::Migration[6.1]
       t.references  :node,                null: false
     end
 
-    add_index :user_namespace_map_nodes, %i(user_namespace_map_id node_id),
+    add_index :user_namespace_map_nodes, %i[user_namespace_map_id node_id],
               unique: true, name: 'user_namespace_map_nodes_unique'
 
     UserNamespaceMapPool.all.each do |map_on_pool|
@@ -41,7 +41,7 @@ class SwitchUserNamespaceMapsToPools < ActiveRecord::Migration[6.1]
       begin
         UserNamespaceMapNode.create!(
           user_namespace_map_id: map_on_pool.user_namespace_map_id,
-          node_id: node.id,
+          node_id: node.id
         )
       rescue ActiveRecord::RecordNotUnique
         # One node can have multiple pools and there may already be maps on them,

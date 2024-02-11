@@ -20,10 +20,10 @@ module Transactions::Export
               rw: h.rw,
               sync: h.sync,
               subtree_check: h.subtree_check,
-              root_squash: h.root_squash,
-            },
+              root_squash: h.root_squash
+            }
           }
-        end,
+        end
       }
     end
   end

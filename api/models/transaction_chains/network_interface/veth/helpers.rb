@@ -11,7 +11,7 @@ module TransactionChains
       # Last three octets -- NIC
       3.times { octets << rand(256) }
 
-      octets.map { |v| '%02x' % [v] }.join(':')
+      octets.map { |v| format('%02x', v) }.join(':')
     end
   end
 end

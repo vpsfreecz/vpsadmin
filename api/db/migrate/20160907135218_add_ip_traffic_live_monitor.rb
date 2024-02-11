@@ -1,10 +1,10 @@
 class AddIpTrafficLiveMonitor < ActiveRecord::Migration
-  ROLES = %i(public private)
-  PROTOCOLS = %i(tcp udp other)
+  ROLES = %i[public private]
+  PROTOCOLS = %i[tcp udp other]
 
   def change
     create_table :ip_traffic_live_monitors do |t|
-      t.references  :ip_address,          null: false
+      t.references :ip_address, null: false
 
       cols(t)
 
@@ -24,10 +24,10 @@ class AddIpTrafficLiveMonitor < ActiveRecord::Migration
   end
 
   def cols(t, *name)
-    %i(packets bytes).each do |stat|
+    %i[packets bytes].each do |stat|
       col(t, *(name + [stat]))
 
-      %i(in out).each do |dir|
+      %i[in out].each do |dir|
         col(t, *(name + [stat, dir]))
       end
     end

@@ -73,25 +73,24 @@ module TransactionChains
     end
 
     protected
+
     def create_missing_hosts(export)
       ips = ::IpAddress.joins(:network, network_interface: :vps).where(
-        networks: {ip_version: 4},
-        vpses: {user_id: export.user_id},
+        networks: { ip_version: 4 },
+        vpses: { user_id: export.user_id }
       ).to_a
 
       ips.map do |ip|
-        begin
-          ::ExportHost.create!(
-            export: export,
-            ip_address: ip,
-            rw: export.rw,
-            sync: export.sync,
-            subtree_check: export.subtree_check,
-            root_squash: export.root_squash,
-          )
-        rescue ActiveRecord::RecordNotUnique
-          nil
-        end
+        ::ExportHost.create!(
+          export: export,
+          ip_address: ip,
+          rw: export.rw,
+          sync: export.sync,
+          subtree_check: export.subtree_check,
+          root_squash: export.root_squash
+        )
+      rescue ActiveRecord::RecordNotUnique
+        nil
       end.compact
     end
   end

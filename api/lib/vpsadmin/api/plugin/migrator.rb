@@ -1,19 +1,19 @@
 module VpsAdmin::API::Plugin
   class MigrationContext < ActiveRecord::MigrationContext
-    def up(target_version = nil)
+    def up(target_version = nil, &block)
       selected_migrations =
         if block_given?
-          migrations.select {|m| yield m}
+          migrations.select(&block)
         else
           migrations
         end
       Migrator.new(:up, selected_migrations, schema_migration, internal_metadata, target_version).migrate
     end
 
-    def down(target_version = nil)
+    def down(target_version = nil, &block)
       selected_migrations =
         if block_given?
-          migrations.select {|m| yield m}
+          migrations.select(&block)
         else
           migrations
         end
@@ -43,7 +43,7 @@ module VpsAdmin::API::Plugin
 
         MigrationContext.new(
           plugin.migration_directory,
-          ::ActiveRecord::Base.connection.schema_migration,
+          ::ActiveRecord::Base.connection.schema_migration
         ).migrate(version)
       end
 
@@ -53,7 +53,7 @@ module VpsAdmin::API::Plugin
 
         MigrationContext.new(
           plugin.migration_directory,
-          ::ActiveRecord::Base.connection.schema_migration,
+          ::ActiveRecord::Base.connection.schema_migration
         ).rollback(steps)
       end
 
@@ -62,8 +62,8 @@ module VpsAdmin::API::Plugin
         @all_versions[plugin.id.to_s] ||= begin
           sm_table = ::ActiveRecord::Base.connection.schema_migration.table_name
           migration_versions  = ActiveRecord::Base.connection.select_values("SELECT version FROM #{sm_table}")
-          versions_by_plugins = migration_versions.group_by {|version| version.match(/-(.*)$/).try(:[], 1)}
-          @all_versions       = versions_by_plugins.transform_values! {|versions| versions.map!(&:to_i).sort!}
+          versions_by_plugins = migration_versions.group_by { |version| version.match(/-(.*)$/).try(:[], 1) }
+          @all_versions       = versions_by_plugins.transform_values! { |versions| versions.map!(&:to_i).sort! }
           @all_versions[plugin.id.to_s] || []
         end
       end
@@ -78,7 +78,7 @@ module VpsAdmin::API::Plugin
     end
 
     def record_version_state_after_migrating(version)
-      super(version.to_s + "-" + current_plugin.id.to_s)
+      super(version.to_s + '-' + current_plugin.id.to_s)
     end
   end
 end

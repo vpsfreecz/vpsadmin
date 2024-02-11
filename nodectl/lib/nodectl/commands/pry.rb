@@ -13,8 +13,7 @@ module NodeCtl
         client.cmd(cmd, params)
         sleep(1)
         PryRemote::CLI.new.run
-
-      rescue => e
+      rescue StandardError => e
         warn "Error occured: #{e.message}"
         warn 'Are you sure that nodectld is running and configured properly?'
         return error('Cannot connect to nodectld')

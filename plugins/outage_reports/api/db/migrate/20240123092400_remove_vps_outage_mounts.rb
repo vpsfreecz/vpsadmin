@@ -1,6 +1,6 @@
 class RemoveVpsOutageMounts < ActiveRecord::Migration[7.1]
   def change
-    remove_index :outage_vps_mounts, %i(outage_vps_id mount_id), unique: true
+    remove_index :outage_vps_mounts, %i[outage_vps_id mount_id], unique: true
 
     drop_table :outage_vps_mounts do |t|
       t.references  :outage_vps,     null: false

@@ -18,7 +18,7 @@ module VpsAdmin::API::Resources
 
     params(:all) do
       use :id
-      use :common, exclude: %i(password)
+      use :common, exclude: %i[password]
       datetime :created_at
       datetime :updated_at
     end
@@ -153,7 +153,7 @@ module VpsAdmin::API::Resources
 
         def query
           ::MailboxHandler.joins(:mailbox).where(
-            mailboxes: {id: params[:mailbox_id]},
+            mailboxes: { id: params[:mailbox_id] }
           )
         end
 
@@ -168,7 +168,7 @@ module VpsAdmin::API::Resources
 
       class Show < HaveAPI::Actions::Default::Show
         desc 'Show mailbox handler'
-        resolve ->(handler){ [handler.mailbox_id, handler.id] }
+        resolve ->(handler) { [handler.mailbox_id, handler.id] }
 
         output do
           use :all
@@ -180,8 +180,8 @@ module VpsAdmin::API::Resources
 
         def prepare
           @handler = ::MailboxHandler.joins(:mailbox).find_by!(
-            mailboxes: {id: params[:mailbox_id]},
-            id: params[:handler_id],
+            mailboxes: { id: params[:mailbox_id] },
+            id: params[:handler_id]
           )
         end
 
@@ -207,8 +207,8 @@ module VpsAdmin::API::Resources
 
         def exec
           ::MailboxHandler.create!(input.merge(
-            mailbox: ::Mailbox.find(params[:mailbox_id]),
-          ))
+                                     mailbox: ::Mailbox.find(params[:mailbox_id])
+                                   ))
         end
       end
 
@@ -229,8 +229,8 @@ module VpsAdmin::API::Resources
 
         def exec
           ::MailboxHandler.joins(:mailbox).find_by!(
-            mailboxes: {id: params[:mailbox_id]},
-            id: params[:handler_id],
+            mailboxes: { id: params[:mailbox_id] },
+            id: params[:handler_id]
           ).update!(input)
         end
       end
@@ -244,8 +244,8 @@ module VpsAdmin::API::Resources
 
         def exec
           ::MailboxHandler.joins(:mailbox).find_by!(
-            mailboxes: {id: params[:mailbox_id]},
-            id: params[:handler_id],
+            mailboxes: { id: params[:mailbox_id] },
+            id: params[:handler_id]
           ).destroy!
           ok
         end

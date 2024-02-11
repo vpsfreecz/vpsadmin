@@ -14,6 +14,7 @@ module NodeCtld
     end
 
     protected
+
     def change_properties(i)
       @properties.each do |k, v|
         zfs(

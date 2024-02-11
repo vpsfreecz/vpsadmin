@@ -28,9 +28,8 @@ module TransactionChains
 
       begin
         dl.save!
-
       rescue ActiveRecord::RecordNotUnique
-        fail 'run out of tries' if tries == 10
+        raise 'run out of tries' if tries == 10
 
         dl.secret_key = generate_key
         tries += 1
@@ -40,30 +39,33 @@ module TransactionChains
       append(
         Transactions::Storage::DownloadSnapshot,
         args: dl,
-        queue: opts[:format] == :archive ? nil : :zfs_send,
+        queue: opts[:format] == :archive ? nil : :zfs_send
       ) do
         create(dl)
         edit(snapshot, snapshot_download_id: dl.id)
       end
 
-      mail(:snapshot_download_ready, {
-        user: ::User.current,
-        vars: {
-          base_url: ::SysConfig.get(:webui, :base_url),
-          dl: dl,
-        }
-      }) if opts[:send_mail]
+      if opts[:send_mail]
+        mail(:snapshot_download_ready, {
+               user: ::User.current,
+               vars: {
+                 base_url: ::SysConfig.get(:webui, :base_url),
+                 dl: dl
+               }
+             })
+      end
 
       dl
     end
 
     protected
+
     def download(dl)
       raise NotImplementedError
     end
 
     def filename(snapshot, format, from_snapshot)
-      ds = snapshot.dataset.full_name.gsub(/\//, '_')
+      ds = snapshot.dataset.full_name.gsub(%r{/}, '_')
       base = "#{ds}__#{snapshot.name.gsub(/:/, '-')}"
 
       case format
@@ -77,7 +79,7 @@ module TransactionChains
         "#{ds}__#{from_snapshot.name.gsub(/:/, '-')}__#{snapshot.name.gsub(/:/, '-')}.inc.dat.gz"
 
       else
-        fail "unsupported format '#{format}'"
+        raise "unsupported format '#{format}'"
       end
     end
 

@@ -3,12 +3,11 @@ module VpsAdmin::API
     module Private
       def self.define_access_methods(klass, resources)
         resources.each do |r|
-
           ensure_method(klass, r) do |**kwargs|
             if @cluster_resources && @cluster_resources[r]
               @cluster_resources[r]
 
-            elsif klass.respond_to?(:confirmed) && self.confirmed.to_sym == :confirm_create
+            elsif klass.respond_to?(:confirmed) && confirmed.to_sym == :confirm_create
               if kwargs[:default].nil? || kwargs[:default]
                 ::DefaultObjectClusterResource.joins(:cluster_resource).find_by!(
                   cluster_resources: {
@@ -17,8 +16,6 @@ module VpsAdmin::API
                   environment: Private.environment(self),
                   class_name: self.class.name
                 ).value
-              else
-                nil
               end
 
             else
@@ -32,7 +29,6 @@ module VpsAdmin::API
             @cluster_resources ||= {}
             @cluster_resources[r] = v
           end
-
         end
       end
 
@@ -49,14 +45,14 @@ module VpsAdmin::API
           user_cluster_resource: [:cluster_resource]
         ).find_by(
           user_cluster_resources: {
-            environment_id: environment(obj).id,
+            environment_id: environment(obj).id
           },
           cluster_resources: {
             name: resource
           },
           class_name: obj.class.name,
           table_name: obj.class.table_name,
-          row_id: obj.id,
+          row_id: obj.id
         )
       end
 
@@ -96,7 +92,7 @@ module VpsAdmin::API
 
     module InstanceMethods
       def allocate_resources(_ = nil, required: nil, optional: nil, user: nil,
-                              confirmed: nil, chain: nil, values: {}, admin_override: nil)
+                             confirmed: nil, chain: nil, values: {}, admin_override: nil)
         user ||= ::User.current
 
         required ||= self.class.cluster_resources[:required]
@@ -116,7 +112,7 @@ module VpsAdmin::API
             user: user,
             confirmed: confirmed,
             chain: chain,
-            admin_override: admin_override,
+            admin_override: admin_override
           )
         end
 
@@ -127,7 +123,7 @@ module VpsAdmin::API
             user: user,
             confirmed: confirmed,
             chain: chain,
-            admin_override: admin_override,
+            admin_override: admin_override
           )
 
           ret << use if use.valid?
@@ -144,7 +140,7 @@ module VpsAdmin::API
         ).joins(:user_cluster_resource).where(
           class_name: self.class.name,
           table_name: self.class.table_name,
-          row_id: self.id,
+          row_id: id,
           user_cluster_resources: {
             environment_id: Private.environment(self).id
           }
@@ -166,6 +162,8 @@ module VpsAdmin::API
         available = Private.registered_resources(self)
 
         available.each do |r|
+          next unless resources.has_key?(r)
+
           ret << reallocate_resource!(
             r,
             resources[r],
@@ -173,7 +171,7 @@ module VpsAdmin::API
             chain: chain,
             override: override,
             lock_type: lock_type
-          ) if resources.has_key?(r)
+          )
         end
 
         ret
@@ -193,13 +191,13 @@ module VpsAdmin::API
         ).joins(user_cluster_resource: [:cluster_resource]).where(
           class_name: self.class.name,
           table_name: self.class.table_name,
-          row_id: self.id,
+          row_id: id,
           user_cluster_resources: {
             environment_id: Private.environment(self).id
           }
         )
 
-        q = q.where(cluster_resources: {name: resources}) if resources
+        q = q.where(cluster_resources: { name: resources }) if resources
         q
       end
 
@@ -227,13 +225,14 @@ module VpsAdmin::API
           user_cluster_resource: user_resource,
           class_name: self.class.name,
           table_name: self.class.table_name,
-          row_id: self.id,
+          row_id: id,
           value: value,
           confirmed: confirmed
         )
 
         use.admin_override = true if admin_override
         return use unless use.valid?
+
         use.save
 
         if resource_obj.resource_type.to_sym == :object && chain \
@@ -244,7 +243,7 @@ module VpsAdmin::API
             method: "allocate_to_#{self.class.name.demodulize.underscore}"
           )
 
-          fail 'not enough' if res != value
+          raise 'not enough' if res != value
         end
 
         use
@@ -253,12 +252,9 @@ module VpsAdmin::API
       def allocate_resource!(*args, **kwargs)
         ret = allocate_resource(*args, **kwargs)
 
-        if ret.persisted?
-          ret
+        raise Exceptions::ClusterResourceAllocationError, ret unless ret.persisted?
 
-        else
-          raise Exceptions::ClusterResourceAllocationError, ret
-        end
+        ret
       end
 
       def reallocate_resource!(resource, value, user: nil, save: false, confirmed: nil,
@@ -273,7 +269,7 @@ module VpsAdmin::API
           },
           class_name: self.class.name,
           table_name: self.class.table_name,
-          row_id: self.id,
+          row_id: id
         )
 
         unless use
@@ -304,13 +300,12 @@ module VpsAdmin::API
       end
 
       def free_resource!(resource, destroy: false, chain: nil,
-                          use: nil, free_object: true)
+                         use: nil, free_object: true)
         resource_obj = (use && use.user_cluster_resource.cluster_resource) \
                         || ::ClusterResource.find_by!(name: resource)
 
         begin
           use ||= Private.find_resource_use!(self, resource)
-
         rescue ActiveRecord::RecordNotFound
           # The resource is NOT allocated, no action is needed
           return
@@ -353,22 +348,20 @@ module VpsAdmin::API
         ).joins(:user_cluster_resource).where(
           class_name: self.class.name,
           table_name: self.class.table_name,
-          row_id: self.id,
+          row_id: id,
           user_cluster_resources: {
             environment_id: env.id
           }
         ).each do |use|
-
           t = target_resources[use.user_cluster_resource.cluster_resource.name.to_sym]
 
-          fail 'target resource does not exist' unless t
+          raise 'target resource does not exist' unless t
 
           use.user_cluster_resource = t
           use.resource_transfer = true
           raise Exceptions::ClusterResourceAllocationError, use unless use.valid?
 
-          ret[use] = {user_cluster_resource_id: t.id}
-
+          ret[use] = { user_cluster_resource_id: t.id }
         end
 
         ret
@@ -391,7 +384,7 @@ module VpsAdmin::API
         ).joins(:user_cluster_resource).where(
           class_name: self.class.name,
           table_name: self.class.table_name,
-          row_id: self.id,
+          row_id: id,
           user_cluster_resources: {
             environment_id: src_env.id
           }
@@ -399,16 +392,15 @@ module VpsAdmin::API
           name = use.user_cluster_resource.cluster_resource.name.to_sym
           t = target_resources[name]
 
-          fail 'target resource does not exist' unless t
+          raise 'target resource does not exist' unless t
 
           use.user_cluster_resource = t
           use.value = resources[name] if resources && resources[name]
           use.resource_transfer = true
           raise Exceptions::ClusterResourceAllocationError, use unless use.valid?
 
-          ret[use] = {user_cluster_resource_id: t.id}
+          ret[use] = { user_cluster_resource_id: t.id }
           ret[use][:value] = use.value if resources && resources[name]
-
         end
 
         ret

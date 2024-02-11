@@ -42,16 +42,17 @@ module NodeCtld
     end
 
     protected
+
     def approx_size(ds)
       size = 0
 
       if @from_snapshot
         stream = ZfsStream.new({
-          pool: @pool_fs,
-          tree: @tree,
-          branch: @branch,
-          dataset: @dataset_name,
-        }, @snapshot, @from_snapshot)
+                                 pool: @pool_fs,
+                                 tree: @tree,
+                                 branch: @branch,
+                                 dataset: @dataset_name
+                               }, @snapshot, @from_snapshot)
         size = stream.size
 
       else
@@ -73,9 +74,7 @@ module NodeCtld
       begin
         # If the transaction is being restarted, e.g. after a crash, the snapshot
         # may already be mounted.
-        unless Pathname.new(dir).mountpoint?
-          syscmd("mount -t zfs #{ds}@#{@snapshot} \"#{dir}\"")
-        end
+        syscmd("mount -t zfs #{ds}@#{@snapshot} \"#{dir}\"") unless Pathname.new(dir).mountpoint?
 
         pipe_cmd("tar -cz -C \"#{dir}\" .")
       ensure
@@ -90,7 +89,7 @@ module NodeCtld
           sleep(1)
         end
 
-        fail "unable to unmount #{dir}"
+        raise "unable to unmount #{dir}"
       end
     end
 
@@ -126,7 +125,7 @@ module NodeCtld
       w.close
 
       until r.eof?
-        data = r.read(131072)
+        data = r.read(131_072)
         digest << data
         f.write(data)
       end
@@ -136,9 +135,9 @@ module NodeCtld
 
       Process.wait(pid)
 
-      if $?.exitstatus != 0
-        raise SystemCommandFailed.new(cmd, $?.exitstatus, '')
-      end
+      return unless $?.exitstatus != 0
+
+      raise SystemCommandFailed.new(cmd, $?.exitstatus, '')
     end
   end
 end

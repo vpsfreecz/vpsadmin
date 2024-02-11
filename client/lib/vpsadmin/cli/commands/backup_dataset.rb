@@ -21,7 +21,7 @@ module VpsAdmin::CLI::Commands
         attempts: 10,
         checksum: true,
         delete_after: true,
-        sudo: true,
+        sudo: true
       }
 
       opts.on('-p', '--pretend', 'Print what would the program do') do
@@ -93,14 +93,14 @@ module VpsAdmin::CLI::Commands
 
         ds_id = read_dataset_id(fs)
 
-        if ds_id
-          ds = @api.dataset.show(ds_id)
-        else
-          ds = dataset_chooser
-        end
+        ds = if ds_id
+               @api.dataset.show(ds_id)
+             else
+               dataset_chooser
+             end
 
       elsif args.size != 2
-        warn "Provide DATASET_ID and FILESYSTEM arguments"
+        warn 'Provide DATASET_ID and FILESYSTEM arguments'
         exit(false)
 
       else
@@ -170,33 +170,33 @@ module VpsAdmin::CLI::Commands
       if for_transfer.empty?
         if found_latest
           exit_msg(
-            "Nothing to transfer: all snapshots with history id "+
+            'Nothing to transfer: all snapshots with history id ' +
             "#{ds.current_history_id} are already present locally",
             error: @opts[:no_snapshots_error]
           )
 
         else
-          exit_msg(<<END
-Unable to transfer: the common snapshot has not been found
+          exit_msg(<<~END
+            Unable to transfer: the common snapshot has not been found
 
-This can happen when the latest local snapshot was deleted from the server,
-i.e. you have not backed up this dataset for quite some time.
+            This can happen when the latest local snapshot was deleted from the server,
+            i.e. you have not backed up this dataset for quite some time.
 
-You can either rename or destroy the whole current history id:
+            You can either rename or destroy the whole current history id:
 
-  zfs rename #{fs}/#{ds.current_history_id} #{fs}/#{ds.current_history_id}.old
+              zfs rename #{fs}/#{ds.current_history_id} #{fs}/#{ds.current_history_id}.old
 
-or
+            or
 
-  zfs list -r -t all #{fs}/#{ds.current_history_id}
-  zfs destroy -r #{fs}/#{ds.current_history_id}
+              zfs list -r -t all #{fs}/#{ds.current_history_id}
+              zfs destroy -r #{fs}/#{ds.current_history_id}
 
-which will destroy all snapshots with this history id.
+            which will destroy all snapshots with this history id.
 
-You can also destroy the local backup completely or backup to another dataset
-and start anew.
-END
-          )
+            You can also destroy the local backup completely or backup to another dataset
+            and start anew.
+          END
+                  )
         end
       end
 
@@ -226,9 +226,7 @@ END
         if shared_name
           shared = remote_state[ds.current_history_id].detect { |s| s.name == shared_name }
 
-          if shared && !for_transfer.detect { |s| s.id == shared.id }
-            for_transfer.insert(0, shared)
-          end
+          for_transfer.insert(0, shared) if shared && !for_transfer.detect { |s| s.id == shared.id }
         end
 
         write_dataset_id!(ds, fs) unless written_dataset_id?
@@ -238,13 +236,12 @@ END
     end
 
     protected
+
     def transfer(local_state, snapshots, hist_id, fs)
       ds = "#{fs}/#{hist_id}"
       no_local_snapshots = local_state[hist_id].nil? || local_state[hist_id].empty?
 
-      if local_state[hist_id].nil?
-        zfs(:create, nil, ds)
-      end
+      zfs(:create, nil, ds) if local_state[hist_id].nil?
 
       if no_local_snapshots
         msg "Performing a full receive of @#{snapshots.first.name} to #{ds}"
@@ -255,60 +252,59 @@ END
         else
           run_piped(zfs_cmd(:recv, '-F', ds)) do
             SnapshotSend.new({}, @api).do_exec({
-              snapshot: snapshots.first.id,
-              send_mail: false,
-              delete_after: @opts[:delete_after],
-              max_rate: @opts[:max_rate],
-              checksum: @opts[:checksum],
-              quiet: @opts[:quiet],
-            })
+                                                 snapshot: snapshots.first.id,
+                                                 send_mail: false,
+                                                 delete_after: @opts[:delete_after],
+                                                 max_rate: @opts[:max_rate],
+                                                 checksum: @opts[:checksum],
+                                                 quiet: @opts[:quiet]
+                                               })
           end || exit_msg('Receive failed')
         end
       end
 
-      if !no_local_snapshots || snapshots.size > 1
-        msg "Performing an incremental receive of "+
-            "@#{snapshots.first.name} - @#{snapshots.last.name} to #{ds}"
+      return unless !no_local_snapshots || snapshots.size > 1
 
-        if @opts[:safe]
-          safe_download(ds, snapshots.last, snapshots.first)
+      msg 'Performing an incremental receive of ' +
+          "@#{snapshots.first.name} - @#{snapshots.last.name} to #{ds}"
 
-        else
-          run_piped(zfs_cmd(:recv, '-F', ds)) do
-            SnapshotSend.new({}, @api).do_exec({
-              snapshot: snapshots.last.id,
-              from_snapshot: snapshots.first.id,
-              send_mail: false,
-              delete_after: @opts[:delete_after],
-              max_rate: @opts[:max_rate],
-              checksum: @opts[:checksum],
-              quiet: @opts[:quiet],
-            })
-          end || exit_msg('Receive failed')
-        end
+      if @opts[:safe]
+        safe_download(ds, snapshots.last, snapshots.first)
+
+      else
+        run_piped(zfs_cmd(:recv, '-F', ds)) do
+          SnapshotSend.new({}, @api).do_exec({
+                                               snapshot: snapshots.last.id,
+                                               from_snapshot: snapshots.first.id,
+                                               send_mail: false,
+                                               delete_after: @opts[:delete_after],
+                                               max_rate: @opts[:max_rate],
+                                               checksum: @opts[:checksum],
+                                               quiet: @opts[:quiet]
+                                             })
+        end || exit_msg('Receive failed')
       end
     end
 
     def safe_download(ds, snapshot, from_snapshot = nil)
       part, full = snapshot_tmp_file(snapshot, from_snapshot)
 
-      if !File.exist?(full)
+      unless File.exist?(full)
         attempts = 0
 
         begin
           SnapshotDownload.new({}, @api).do_exec({
-            snapshot: snapshot.id,
-            from_snapshot: from_snapshot && from_snapshot.id,
-            format: from_snapshot ? :incremental_stream : :stream,
-            file: part,
-            max_rate: @opts[:max_rate],
-            checksum: @opts[:checksum],
-            quiet: @opts[:quiet],
-            resume: true,
-            delete_after: @opts[:delete_after],
-            send_mail: false,
-          })
-
+                                                   snapshot: snapshot.id,
+                                                   from_snapshot: from_snapshot && from_snapshot.id,
+                                                   format: from_snapshot ? :incremental_stream : :stream,
+                                                   file: part,
+                                                   max_rate: @opts[:max_rate],
+                                                   checksum: @opts[:checksum],
+                                                   quiet: @opts[:quiet],
+                                                   resume: true,
+                                                   delete_after: @opts[:delete_after],
+                                                   send_mail: false
+                                                 })
         rescue Errno::ECONNREFUSED,
                Errno::ETIMEDOUT,
                Errno::EHOSTUNREACH,
@@ -318,11 +314,11 @@ END
           attempts += 1
 
           if attempts >= @opts[:attempts]
-            warn "Run out of attempts"
+            warn 'Run out of attempts'
             exit(false)
 
           else
-            warn "Retry in 60 seconds"
+            warn 'Retry in 60 seconds'
             sleep(60)
             retry
           end
@@ -339,8 +335,8 @@ END
     end
 
     def rotate(fs, pretend: false)
-      msg "Rotating snapshots"
-      local_state = pretend ? pretend : parse_tree(fs)
+      msg 'Rotating snapshots'
+      local_state = pretend || parse_tree(fs)
 
       # Order snapshots by date of creation
       snapshots = local_state.values.flatten.sort do |a, b|
@@ -388,9 +384,9 @@ END
       end
 
       zfs(
-          :get,
-          '-Hrp -d2 -tsnapshot -oname,property,value name,creation',
-          fs
+        :get,
+        '-Hrp -d2 -tsnapshot -oname,property,value name,creation',
+        fs
       ).split("\n").each do |line|
         name, property, value = line.split
         ds, snap_name = name.split('@')
@@ -418,14 +414,15 @@ END
     def read_dataset_id(fs)
       ds_id = zfs(:get, '-H -ovalue cz.vpsfree.vpsadmin:dataset_id', fs).strip
       return nil if ds_id == '-'
+
       @dataset_id = ds_id.to_i
     end
 
     def check_dataset_id!(ds, fs)
-      if @dataset_id && @dataset_id != ds.id
-        warn "Dataset '#{fs}' is used to backup remote dataset with id '#{@dataset_id}', not '#{ds.id}'"
-        exit(false)
-      end
+      return unless @dataset_id && @dataset_id != ds.id
+
+      warn "Dataset '#{fs}' is used to backup remote dataset with id '#{@dataset_id}', not '#{ds.id}'"
+      exit(false)
     end
 
     def written_dataset_id?
@@ -505,6 +502,7 @@ END
 
         else
           next if vps_only
+
           puts "(#{i}) Dataset #{ds.name}"
         end
 
@@ -524,12 +522,12 @@ END
     end
 
     def snapshot_tmp_file(s, from_s = nil)
-      if from_s
-        base = ".snapshot_#{from_s.id}-#{s.id}.inc.dat.gz"
+      base = if from_s
+               ".snapshot_#{from_s.id}-#{s.id}.inc.dat.gz"
 
-      else
-        base = ".snapshot_#{s.id}.dat.gz"
-      end
+             else
+               ".snapshot_#{s.id}.dat.gz"
+             end
 
       ["#{base}.part", base]
     end

@@ -2,7 +2,7 @@ module VpsAdmin::API::Plugin
   class Plugin
     attr_reader :id
 
-    %i(name author email version description url directory).each do |field|
+    %i[name author email version description url directory].each do |field|
       define_method(field) do |v = nil|
         if v
           instance_variable_set("@#{field}", v)
@@ -28,6 +28,7 @@ module VpsAdmin::API::Plugin
 
     def components(*args)
       return @components if args.empty?
+
       @components = args
     end
 
@@ -37,7 +38,7 @@ module VpsAdmin::API::Plugin
 
     def migrations
       Dir[File.join(migration_directory, '*.rb')].map do |v|
-        File.basename(v).match(/^(\d+)\_/)[1].to_i
+        File.basename(v).match(/^(\d+)_/)[1].to_i
       end.sort
     end
 

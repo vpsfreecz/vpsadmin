@@ -15,15 +15,15 @@ class AddMonthlySummaryForIpTraffics < ActiveRecord::Migration
     end
 
     add_index :ip_traffic_monthly_summaries,
-              %i(ip_address_id user_id protocol role created_at),
+              %i[ip_address_id user_id protocol role created_at],
               unique: true, name: :ip_traffic_monthly_summaries_unique
     add_index :ip_traffic_monthly_summaries, :ip_address_id
     add_index :ip_traffic_monthly_summaries, :user_id
     add_index :ip_traffic_monthly_summaries, :protocol
     add_index :ip_traffic_monthly_summaries, :year
     add_index :ip_traffic_monthly_summaries, :month
-    add_index :ip_traffic_monthly_summaries, %i(year month)
-    add_index :ip_traffic_monthly_summaries, %i(ip_address_id year month),
+    add_index :ip_traffic_monthly_summaries, %i[year month]
+    add_index :ip_traffic_monthly_summaries, %i[ip_address_id year month],
               name: :ip_traffic_monthly_summaries_ip_year_month
 
     return if ENV['MIGRATE_TRAFFIC_DATA'] == 'no'

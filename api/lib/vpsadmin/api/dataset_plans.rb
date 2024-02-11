@@ -80,17 +80,17 @@ module VpsAdmin::API
         )
 
         dst_dip = dip
-          .dataset
-          .dataset_in_pools
-          .joins(:pool)
-          .where(pools: {role: 'backup', is_open: true})
-          .take!
+                  .dataset
+                  .dataset_in_pools
+                  .joins(:pool)
+                  .where(pools: { role: 'backup', is_open: true })
+                  .take!
 
         action = ::DatasetAction.create!(
           src_dataset_in_pool: dip,
           dst_dataset_in_pool: dst_dip,
           dataset_in_pool_plan: plan,
-          action: ::DatasetAction.actions[:backup],
+          action: ::DatasetAction.actions[:backup]
         )
 
         confirm(:just_create, action)
@@ -134,6 +134,7 @@ module VpsAdmin::API
 
       def confirm(type, *args)
         return unless @confirm
+
         @confirm.send(type, *args)
       end
 
@@ -160,6 +161,7 @@ module VpsAdmin::API
         end
 
         protected
+
         def task(name, *args)
           @exec ||= Executor.new(@plan, @confirmation)
           @exec.method("#{@direction}_#{name}").call(*args)
@@ -229,7 +231,6 @@ module VpsAdmin::API
           environment: dip.pool.node.location.environment,
           dataset_plan: dataset_plan
         )
-
       rescue ::ActiveRecord::RecordNotFound
         raise Exceptions::DatasetPlanNotInEnvironment.new(
           dataset_plan,

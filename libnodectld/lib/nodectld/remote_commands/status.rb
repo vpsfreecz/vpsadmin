@@ -18,7 +18,7 @@ module NodeCtld::RemoteCommands
             start_delay: queue.start_delay,
             started: queue.started?,
             workers: {},
-            reservations: queue.reservations,
+            reservations: queue.reservations
           }
 
           queue.each do |wid, w|
@@ -35,7 +35,7 @@ module NodeCtld::RemoteCommands
               step: w.cmd.step,
               pid: w.cmd.subtask,
               start: start && start.localtime.to_i,
-              progress: p,
+              progress: p
             }
           end
 
@@ -65,14 +65,14 @@ module NodeCtld::RemoteCommands
             initialized: @daemon.initialized?,
             run: @daemon.run?,
             pause: @daemon.paused?,
-            status: @daemon.exitstatus,
+            status: @daemon.exitstatus
           },
           queues: res_queues,
           export_console: $CFG.get(:console, :enable),
           consoles: consoles,
           subprocesses: subtasks,
           start_time: @daemon.start_time.to_i,
-          queue_size: q_size - queue_size,
+          queue_size: q_size - queue_size
         }
       }
     end

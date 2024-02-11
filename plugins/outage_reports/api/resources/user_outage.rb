@@ -15,7 +15,7 @@ module VpsAdmin::API::Resources
       desc 'List users affected by outage'
 
       input do
-        use :all, include: %i(outage user)
+        use :all, include: %i[outage user]
       end
 
       output(:object_list) do

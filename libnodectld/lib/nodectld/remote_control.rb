@@ -30,10 +30,10 @@ module NodeCtld
 
     def start
       @thread = Thread.new do
-        Dir.mkdir(RUNDIR, 0700) unless Dir.exist?(RUNDIR)
+        Dir.mkdir(RUNDIR, 0o700) unless Dir.exist?(RUNDIR)
         File.unlink(SOCKET) if File.exist?(SOCKET)
         serv = UNIXServer.new(SOCKET)
-        File.chmod(0600, SOCKET)
+        File.chmod(0o600, SOCKET)
 
         loop do
           if @stop
@@ -65,17 +65,16 @@ module NodeCtld
       end
 
       def communicate
-        send_data({version: NodeCtld::VERSION})
+        send_data({ version: NodeCtld::VERSION })
 
-        buf = ""
+        buf = ''
 
         while m = @sock.recv(1024)
-          buf = buf + m
+          buf += m
           break if m.empty? || m.end_with?("\n")
         end
 
         parse(buf)
-
       rescue Errno::ECONNRESET
         # pass
       end
@@ -83,30 +82,26 @@ module NodeCtld
       def parse(data)
         begin
           req = JSON.parse(data, symbolize_names: true)
-
         rescue TypeError, JSON::ParserError
-          return error("Syntax error")
+          return error('Syntax error')
         end
 
-        cmd = RemoteControl.handlers[ req[:command].to_sym ]
+        cmd = RemoteControl.handlers[req[:command].to_sym]
 
-        return error("Unsupported command") unless cmd
+        return error('Unsupported command') unless cmd
 
         executor = cmd.new(req[:params] || {}, @daemon)
         output = {}
 
         begin
           ret = executor.exec
-
-        rescue SystemCommandFailed => err
-          output[:cmd] = err.cmd
-          output[:exitstatus] = err.rc
-          output[:error] = err.output
+        rescue SystemCommandFailed => e
+          output[:cmd] = e.cmd
+          output[:exitstatus] = e.rc
+          output[:error] = e.output
           error(output)
-
-        rescue RemoteCommandError => err
-          error(err.message)
-
+        rescue RemoteCommandError => e
+          error(e.message)
         else
           if ret[:ret] == :ok
             ok(ret[:output])
@@ -118,16 +113,15 @@ module NodeCtld
       end
 
       def error(err)
-        send_data({status: :failed, error: err})
+        send_data({ status: :failed, error: err })
       end
 
       def ok(res)
-        send_data({status: :ok, response: res})
+        send_data({ status: :ok, response: res })
       end
 
       def send_data(data)
         @sock.send(data.to_json + "\n", 0)
-
       rescue Errno::EPIPE
       end
     end

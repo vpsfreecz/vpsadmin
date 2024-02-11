@@ -10,12 +10,9 @@ module NodeCtld
       loop do
         run
 
-        if stop?
-          break
+        break if stop?
 
-        else
-          sleep(1)
-        end
+        sleep(1)
       end
     end
 
@@ -29,6 +26,7 @@ module NodeCtld
     end
 
     protected
+
     attr_reader :pipe, :pid
 
     def run
@@ -42,9 +40,7 @@ module NodeCtld
 
       log(:info, "Started with pid #{pid}")
 
-      until pipe.eof?
-        process_event(JSON.parse(pipe.readline, symbolize_names: true))
-      end
+      process_event(JSON.parse(pipe.readline, symbolize_names: true)) until pipe.eof?
 
       Process.wait(pid)
       log(:info, "Exited with pid #{$?.exitstatus}")
@@ -59,18 +55,14 @@ module NodeCtld
       when 'state'
         vps_id = event[:opts][:id].to_i
 
-        if vps_id > 0 && event[:opts][:state] == 'running'
-          VpsSshHostKeys.schedule_update_vps(vps_id)
-        end
+        VpsSshHostKeys.schedule_update_vps(vps_id) if vps_id > 0 && event[:opts][:state] == 'running'
 
         if vps_id > 0 && event[:opts][:state] == 'stopped'
           MountReporter.report(event[:opts][:id], :all, :unmounted)
           VethMap.reset(vps_id)
         end
 
-        if %w(running stopped).include?(event[:opts][:state])
-          Daemon.instance.ct_top.refresh
-        end
+        Daemon.instance.ct_top.refresh if %w[running stopped].include?(event[:opts][:state])
 
       when 'osctld_shutdown'
         if Daemon.instance.node.any_osctl_pools?

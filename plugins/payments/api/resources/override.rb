@@ -31,16 +31,14 @@ module VpsAdmin::API::Resources
         string :instructions
       end
 
-      authorize do |u|
+      authorize do |_u|
         allow
       end
 
       def exec
-        if current_user.role != :admin && current_user.id != params[:user_id].to_i
-          error('access denied')
-        end
+        error('access denied') if current_user.role != :admin && current_user.id != params[:user_id].to_i
 
-        {instructions: ::User.find(params[:user_id]).user_account.payment_instructions}
+        { instructions: ::User.find(params[:user_id]).user_account.payment_instructions }
       end
     end
   end

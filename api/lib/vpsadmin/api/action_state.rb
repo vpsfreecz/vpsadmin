@@ -8,7 +8,7 @@ module VpsAdmin::API
         user: user,
         state: [
           ::TransactionChain.states[:queued],
-          ::TransactionChain.states[:rollbacking],
+          ::TransactionChain.states[:rollbacking]
         ]
       ).order(
         "id #{order == :newest ? 'DESC' : 'ASC'}"
@@ -22,15 +22,10 @@ module VpsAdmin::API
     def initialize(user, id: nil, state: nil)
       return if user.nil?
 
-      if state
-        @chain = state
-
-      else
-        @chain = ::TransactionChain.find_by(
-          id: id,
-          user: user,
-        )
-      end
+      @chain = state || ::TransactionChain.find_by(
+        id: id,
+        user: user
+      )
     end
 
     def valid?
@@ -38,11 +33,11 @@ module VpsAdmin::API
     end
 
     def finished?
-      %w(done failed fatal resolved).include?(@chain.state)
+      %w[done failed fatal resolved].include?(@chain.state)
     end
 
     def status
-      %w(queued done).include?(@chain.state)
+      %w[queued done].include?(@chain.state)
     end
 
     def id
@@ -54,7 +49,7 @@ module VpsAdmin::API
     end
 
     def progress
-      {current: @chain.progress, total: @chain.size, unit: 'transactions'}
+      { current: @chain.progress, total: @chain.size, unit: 'transactions' }
     end
 
     def created_at

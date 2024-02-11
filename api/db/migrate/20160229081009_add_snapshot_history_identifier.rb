@@ -48,6 +48,7 @@ class AddSnapshotHistoryIdentifier < ActiveRecord::Migration
   end
 
   protected
+
   def handle_dataset(ds)
     head = nil
     history_id = nil
@@ -55,24 +56,22 @@ class AddSnapshotHistoryIdentifier < ActiveRecord::Migration
 
     # Walk through all branches
     Branch.includes(
-        :dataset_tree
+      :dataset_tree
     ).joins(
-        dataset_tree: [:dataset_in_pool]
+      dataset_tree: [:dataset_in_pool]
     ).where(
-        dataset_in_pools: {dataset_id: ds.id}
+      dataset_in_pools: { dataset_id: ds.id }
     ).order('branches.created_at, branches.id').each do |branch|
-
       history_id ||= 0
       head = history_id if branch.head && branch.dataset_tree.head
 
       branch.snapshot_in_pool_in_branches.includes(
-          snapshot_in_pool: [:snapshot]
+        snapshot_in_pool: [:snapshot]
       ).each do |sipb|
-        snapshots[ sipb.snapshot_in_pool.snapshot ] ||= history_id
+        snapshots[sipb.snapshot_in_pool.snapshot] ||= history_id
       end
 
       history_id += 1
-
     end
 
     # Walk through snapshots that do not have backups
@@ -88,7 +87,7 @@ class AddSnapshotHistoryIdentifier < ActiveRecord::Migration
     end
 
     ds.update(
-        current_history_id: (head || history_id || 0)
+      current_history_id: head || history_id || 0
     )
   end
 end

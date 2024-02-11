@@ -1,13 +1,11 @@
 namespace :vpsadmin do
   desc 'Set vpsAdmin version'
   task :version do
-    unless ENV['VERSION']
-      fail "missing required environment variable VERSION"
-    end
+    raise 'missing required environment variable VERSION' unless ENV['VERSION']
 
     v = ENV['VERSION'].strip
 
-    File.write("VERSION", "#{v}\n")
+    File.write('VERSION', "#{v}\n")
 
     [
       'vpsadmind/lib/vpsadmind/version.rb',
@@ -18,7 +16,7 @@ namespace :vpsadmin do
       'client/lib/vpsadmin/client/version.rb',
       'download_mounter/lib/vpsadmin/download_mounter/version.rb',
       'api/lib/vpsadmin/api/version.rb',
-      'mail_templates/lib/vpsadmin/mail-templates/version.rb',
+      'mail_templates/lib/vpsadmin/mail-templates/version.rb'
     ].each do |file|
       File.write(file, File.read(file).sub(/ VERSION = '[^']+'/, " VERSION = '#{v}'"))
     end
@@ -73,7 +71,7 @@ namespace :vpsadmin do
   gems = {
     libnodectld: [],
     nodectl: [:libnodectld],
-    nodectld: [:libnodectld],
+    nodectld: [:libnodectld]
   }
 
   desc 'Build all gems and deploy to rubygems'
@@ -82,14 +80,11 @@ namespace :vpsadmin do
   namespace :gems do
     desc 'Setup parameters for gem building'
     task :environment do
-      unless ENV.has_key?('VPSADMIN_BUILD_ID')
-        ENV['VPSADMIN_BUILD_ID'] = Time.now.strftime('%Y%m%d%H%M%S')
-      end
+      ENV['VPSADMIN_BUILD_ID'] = Time.now.strftime('%Y%m%d%H%M%S') unless ENV.has_key?('VPSADMIN_BUILD_ID')
 
       unless ENV.has_key?('OS_BUILD_ID')
         begin
           os = File.realpath(ENV['OS'] || '../vpsadminos')
-
         rescue Errno::ENOENT
           warn "vpsAdminOS not found at '#{ENV['OS'] || '../vpsadminos'}'"
           exit(false)
@@ -99,7 +94,6 @@ namespace :vpsadmin do
 
         begin
           os_build_id = File.read(os_build_id_path)
-
         rescue Errno::ENOENT
           abort "vpsAdminOS build ID not found at '#{os_build_id_path}'"
         end
@@ -119,9 +113,7 @@ namespace :vpsadmin do
           ENV['OS_BUILD_ID']
         )
 
-        unless ret
-          fail "unable to build #{gem}: failed with exit status #{$?.exitstatus}"
-        end
+        raise "unable to build #{gem}: failed with exit status #{$?.exitstatus}" unless ret
       end
     end
   end

@@ -1,8 +1,8 @@
 class AddUserNamespaceMaps < ActiveRecord::Migration
-  class UserNamespace < ActiveRecord::Base ; end
-  class UserNamespaceMap < ActiveRecord::Base ; end
-  class UserNamespaceMapEntry < ActiveRecord::Base ; end
-  class UserNamespaceMapUgid < ActiveRecord::Base ; end
+  class UserNamespace < ActiveRecord::Base; end
+  class UserNamespaceMap < ActiveRecord::Base; end
+  class UserNamespaceMapEntry < ActiveRecord::Base; end
+  class UserNamespaceMapUgid < ActiveRecord::Base; end
 
   def up
     create_table :user_namespace_maps do |t|
@@ -31,7 +31,7 @@ class AddUserNamespaceMaps < ActiveRecord::Migration
 
     add_index :user_namespace_map_nodes, :user_namespace_map_id
     add_index :user_namespace_map_nodes, :node_id
-    add_index :user_namespace_map_nodes, %i(user_namespace_map_id node_id),
+    add_index :user_namespace_map_nodes, %i[user_namespace_map_id node_id],
               unique: true, name: 'user_namespace_map_nodes_unique'
 
     add_column :dataset_in_pools, :user_namespace_map_id, :integer, null: true
@@ -61,7 +61,7 @@ class AddUserNamespaceMaps < ActiveRecord::Migration
         user_namespace_map_ugid_id: UserNamespaceMapUgid.find_by!(
           user_namespace_map_id: uns.id
         ).id,
-        label: 'Default map',
+        label: 'Default map'
       )
 
       [0, 1].each do |kind|
@@ -70,7 +70,7 @@ class AddUserNamespaceMaps < ActiveRecord::Migration
           kind: kind,
           ns_id: 0,
           host_id: 0,
-          count: uns.size,
+          count: uns.size
         )
       end
     end
@@ -112,7 +112,7 @@ class AddUserNamespaceMaps < ActiveRecord::Migration
 
     add_index :user_namespace_nodes, :user_namespace_id
     add_index :user_namespace_nodes, :node_id
-    add_index :user_namespace_nodes, %i(user_namespace_id node_id), unique: true
+    add_index :user_namespace_nodes, %i[user_namespace_id node_id], unique: true
 
     add_column :dataset_in_pools, :user_namespace_id, :integer, null: true
     add_index :dataset_in_pools, :user_namespace_id

@@ -5,13 +5,13 @@ module NodeCtld
 
     def exec
       osctl(
-        %i(ct send state),
+        %i[ct send state],
         @vps_id,
         {
           clone: @clone || false,
           start: @start || false,
           restart: @restart || false,
-          consistent: @consistent.nil? ? true : @consistent,
+          consistent: @consistent.nil? ? true : @consistent
         },
         {}, {}
       )

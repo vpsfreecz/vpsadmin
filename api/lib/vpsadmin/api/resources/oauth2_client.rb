@@ -76,7 +76,7 @@ module VpsAdmin::API::Resources
       input do
         use :editable
 
-        %i(name client_id client_secret redirect_uri).each do |param|
+        %i[name client_id client_secret redirect_uri].each do |param|
           patch param, required: true
         end
       end
@@ -96,7 +96,6 @@ module VpsAdmin::API::Resources
         client.set_secret(secret)
         client.save!
         client
-
       rescue ActiveRecord::RecordInvalid => e
         error('create failed', e.record.errors.to_hash)
       end
@@ -123,7 +122,6 @@ module VpsAdmin::API::Resources
         client.assign_attributes(input)
         client.save!
         client
-
       rescue ActiveRecord::RecordInvalid => e
         error('update failed', e.record.errors.to_hash)
       end
@@ -138,7 +136,6 @@ module VpsAdmin::API::Resources
         client = self.class.model.find(params[:oauth2_client_id])
         client.destroy!
         ok
-
       rescue ActiveRecord::RecordInvalid => e
         error('update failed', e.record.errors.to_hash)
       end

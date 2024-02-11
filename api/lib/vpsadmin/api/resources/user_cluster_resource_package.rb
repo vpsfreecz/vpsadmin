@@ -1,5 +1,5 @@
 class VpsAdmin::API::Resources::UserClusterResourcePackage < HaveAPI::Resource
-  desc "Manage user cluster resource packages"
+  desc 'Manage user cluster resource packages'
   model ::UserClusterResourcePackage
 
   params(:common) do
@@ -23,7 +23,7 @@ class VpsAdmin::API::Resources::UserClusterResourcePackage < HaveAPI::Resource
     desc 'List user cluster resource packages'
 
     input do
-      use :common, include: %i(environment user cluster_resource_package added_by)
+      use :common, include: %i[environment user cluster_resource_package added_by]
     end
 
     output(:object_list) do
@@ -32,8 +32,8 @@ class VpsAdmin::API::Resources::UserClusterResourcePackage < HaveAPI::Resource
 
     authorize do |u|
       allow if u.role == :admin
-      input blacklist: %i(user cluster_resource_package)
-      output whitelist: %i(id environment label comment created_at updated_at)
+      input blacklist: %i[user cluster_resource_package]
+      output whitelist: %i[id environment label comment created_at updated_at]
       restrict user_id: u.id
       allow
     end
@@ -41,7 +41,7 @@ class VpsAdmin::API::Resources::UserClusterResourcePackage < HaveAPI::Resource
     def query
       q = ::UserClusterResourcePackage.where(with_restricted)
 
-      %i(environment user cluster_resource_package added_by).each do |v|
+      %i[environment user cluster_resource_package added_by].each do |v|
         q = q.where(v => input[v]) if input.has_key?(v)
       end
 
@@ -66,15 +66,15 @@ class VpsAdmin::API::Resources::UserClusterResourcePackage < HaveAPI::Resource
 
     authorize do |u|
       allow if u.role == :admin
-      output whitelist: %i(id environment label comment created_at updated_at)
+      output whitelist: %i[id environment label comment created_at updated_at]
       restrict user_id: u.id
       allow
     end
 
     def prepare
       @p = with_includes.where(with_restricted(
-        id: params[:user_cluster_resource_package_id],
-      )).take!
+                                 id: params[:user_cluster_resource_package_id]
+                               )).take!
     end
 
     def exec
@@ -86,13 +86,13 @@ class VpsAdmin::API::Resources::UserClusterResourcePackage < HaveAPI::Resource
     desc 'Assign cluster resource package to user'
 
     input do
-      params = %i(environment user cluster_resource_package comment)
+      params = %i[environment user cluster_resource_package comment]
       use :common, include: params
       bool :from_personal,
-        label: 'From personal package',
-        desc: 'Substract the added resources from the personal package',
-        default: false,
-        fill: true
+           label: 'From personal package',
+           desc: 'Substract the added resources from the personal package',
+           default: false,
+           fill: true
 
       params.each { |p| patch(p, required: true) }
     end
@@ -112,7 +112,6 @@ class VpsAdmin::API::Resources::UserClusterResourcePackage < HaveAPI::Resource
         comment: input[:comment],
         from_personal: input[:from_personal]
       )
-
     rescue VpsAdmin::API::Exceptions::UserResourceAllocationError => e
       error(e.message)
     end
@@ -122,7 +121,7 @@ class VpsAdmin::API::Resources::UserClusterResourcePackage < HaveAPI::Resource
     desc 'Update user cluster resource package'
 
     input do
-      use :common, include: %i(comment)
+      use :common, include: %i[comment]
       patch :comment, required: true
     end
 
@@ -137,7 +136,6 @@ class VpsAdmin::API::Resources::UserClusterResourcePackage < HaveAPI::Resource
     def exec
       upkg = ::UserClusterResourcePackage.find(params[:user_cluster_resource_package_id])
       upkg.update!(input)
-
     rescue ActiveRecord::RecordInvalid => e
       error('update failed', e.record.errors.to_hash)
     end
@@ -163,7 +161,7 @@ class VpsAdmin::API::Resources::UserClusterResourcePackage < HaveAPI::Resource
   end
 
   class Item < HaveAPI::Resource
-    desc "View user cluster resource package contents"
+    desc 'View user cluster resource package contents'
     route '{user_cluster_resource_package_id}/items'
     model ::ClusterResourcePackageItem
 
@@ -192,11 +190,11 @@ class VpsAdmin::API::Resources::UserClusterResourcePackage < HaveAPI::Resource
 
       def query
         urp = ::UserClusterResourcePackage.where(with_restricted(
-          id: params[:user_cluster_resource_package_id],
-        )).take!
+                                                   id: params[:user_cluster_resource_package_id]
+                                                 )).take!
 
         ::ClusterResourcePackageItem.where(
-          cluster_resource_package_id: urp.cluster_resource_package_id,
+          cluster_resource_package_id: urp.cluster_resource_package_id
         )
       end
 
@@ -224,12 +222,12 @@ class VpsAdmin::API::Resources::UserClusterResourcePackage < HaveAPI::Resource
 
       def prepare
         urp = ::UserClusterResourcePackage.where(with_restricted(
-          id: params[:user_cluster_resource_package_id],
-        )).take!
+                                                   id: params[:user_cluster_resource_package_id]
+                                                 )).take!
 
         @it = ::ClusterResourcePackageItem.where(
           cluster_resource_package_id: urp.cluster_resource_package_id,
-          id: params[:item_id],
+          id: params[:item_id]
         ).take!
       end
 

@@ -10,13 +10,13 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
     bool :active, label: 'Active'
     string :name, label: 'Name', desc: 'Node name'
     string :domain_name, label: 'Domain name',
-      desc: 'Node name including location domain'
+                         desc: 'Node name including location domain'
     string :fqdn, label: 'FQDN'
     string :type, label: 'Role', desc: 'node, storage or mailer', db_name: :role
     string :hypervisor_type, label: 'Hypervisor type', desc: 'vpsadminos',
-      choices: %w(vpsadminos)
+                             choices: %w[vpsadminos]
     resource VpsAdmin::API::Resources::Location, label: 'Location',
-             desc: 'Location node is placed in'
+                                                 desc: 'Location node is placed in'
     string :ip_addr, label: 'IPv4 address', desc: 'Node\'s IP address'
     integer :max_tx, label: 'Max tx', desc: 'Maximum output throughput'
     integer :max_rx, label: 'Max tx', desc: 'Maximum input throughput'
@@ -70,10 +70,10 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
 
     input do
       resource VpsAdmin::API::Resources::Location, label: 'Location',
-               desc: 'Location node is placed in'
+                                                   desc: 'Location node is placed in'
       resource VpsAdmin::API::Resources::Environment, label: 'Environment'
-      use :common, include: %i(type hypervisor_type cgroup_version)
-      string :state, choices: %w(all active inactive)
+      use :common, include: %i[type hypervisor_type cgroup_version]
+      string :state, choices: %w[all active inactive]
     end
 
     output(:object_list) do
@@ -82,8 +82,8 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
 
     authorize do |u|
       allow if u.role == :admin
-      input blacklist: %i(state)
-      output whitelist: %i(id name domain_name fqdn location hypervisor_type cgroup_version)
+      input blacklist: %i[state]
+      output whitelist: %i[id name domain_name fqdn location hypervisor_type cgroup_version]
       restrict active: true
       allow
     end
@@ -91,16 +91,16 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
     example do
       request({})
       response([{
-        id: 1,
-        name: 'node1',
-        type: 'node',
-        location: {
-          id: 1,
-          label: 'The Location'
-        },
-        ip_addr: '192.168.0.10',
-        maintenance_lock: 'no'
-      }])
+                 id: 1,
+                 name: 'node1',
+                 type: 'node',
+                 location: {
+                   id: 1,
+                   label: 'The Location'
+                 },
+                 ip_addr: '192.168.0.10',
+                 maintenance_lock: 'no'
+               }])
     end
 
     def query
@@ -117,7 +117,7 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
 
       if input[:environment]
         q = q.joins(:location).where(
-          locations: {environment_id: input[:environment].id}
+          locations: { environment_id: input[:environment].id }
         )
       end
 
@@ -125,15 +125,15 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
 
       if input[:hypervisor_type]
         q = q.where(
-          hypervisor_type: ::Node.hypervisor_types[input[:hypervisor_type]],
+          hypervisor_type: ::Node.hypervisor_types[input[:hypervisor_type]]
         )
       end
 
       if input[:cgroup_version]
         q = q.joins(:node_current_status).where(
           node_current_statuses: {
-            cgroup_version: ::NodeCurrentStatus.cgroup_versions[input[:cgroup_version]],
-          },
+            cgroup_version: ::NodeCurrentStatus.cgroup_versions[input[:cgroup_version]]
+          }
         )
       end
 
@@ -156,8 +156,8 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
     blocking true
 
     input do
-      use :all, include: %i(id name type hypervisor_type location ip_addr
-                            max_tx max_rx max_vps cpus total_memory total_swap)
+      use :all, include: %i[id name type hypervisor_type location ip_addr
+                            max_tx max_rx max_vps cpus total_memory total_swap]
       patch :name, required: true
       patch :type, required: true
       patch :location, required: true
@@ -179,7 +179,6 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
     def exec
       @chain, node = ::Node.register!(to_db_names(input))
       node
-
     rescue ActiveRecord::RecordInvalid => e
       error('save failed', to_param_names(e.record.errors.to_hash, :input))
     end
@@ -230,7 +229,7 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
       string :name, label: 'Node name', db_name: :domain_name
       string :fqdn, label: 'FQDN'
       resource VpsAdmin::API::Resources::Location, label: 'Location',
-               desc: 'Location node is placed in'
+                                                   desc: 'Location node is placed in'
       datetime :last_report, label: 'Last report'
       integer :vps_count, label: 'VPS count', db_name: :vps_running
       integer :vps_free, label: 'Free VPS slots'
@@ -238,68 +237,68 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
       string :type, label: 'Role', desc: 'node, storage or mailer', db_name: :role
       string :hypervisor_type, label: 'Hypervisor type', desc: 'vpsadminos'
       float :cpu_idle, label: 'CPU idle'
-      use :status, include: %i(cgroup_version pool_state pool_scan pool_scan_percent pool_checked_at pool_status)
+      use :status, include: %i[cgroup_version pool_state pool_scan pool_scan_percent pool_checked_at pool_status]
     end
 
     output(&VpsAdmin::API::Maintainable::Action.output_params)
 
     authorize do |u|
       allow if u
-      output blacklist: %i(id)
+      output blacklist: %i[id]
       allow
     end
 
     example do
       response([
-        {
-          status: true,
-          name: 'node1.prg',
-          location: {
-            id: 1,
-            label: 'Prague',
-          },
-          last_report: '2016-11-20T08:30:50+01:00',
-          vps_count: 68,
-          vps_free: 12,
-          kernel: '2.6.32-042stab120.6',
-          cpu_idle: 65.3,
-        },
-        {
-          status: false,
-          name: 'node2.prg',
-          location: {
-            id: 1,
-            label: 'Prague',
-          },
-          last_report: '2016-11-14T06:41:23+01:00',
-          vps_count: 0,
-          vps_free: 80,
-          kernel: '2.6.32-042stab120.6',
-          cpu_idle: 100.0,
-          maintenance_lock: 'lock',
-          maintenance_lock_reason: 'HW upgrade',
-        },
-        {
-          status: true,
-          name: 'node3.prg',
-          location: {
-            id: 1,
-            label: 'Prague',
-          },
-          last_report: '2016-11-20T08:30:46+01:00',
-          vps_count: 65,
-          vps_free: 15,
-          kernel: '2.6.32-042stab120.6',
-          cpu_idle: 72.6,
-        },
-      ])
+                 {
+                   status: true,
+                   name: 'node1.prg',
+                   location: {
+                     id: 1,
+                     label: 'Prague'
+                   },
+                   last_report: '2016-11-20T08:30:50+01:00',
+                   vps_count: 68,
+                   vps_free: 12,
+                   kernel: '2.6.32-042stab120.6',
+                   cpu_idle: 65.3
+                 },
+                 {
+                   status: false,
+                   name: 'node2.prg',
+                   location: {
+                     id: 1,
+                     label: 'Prague'
+                   },
+                   last_report: '2016-11-14T06:41:23+01:00',
+                   vps_count: 0,
+                   vps_free: 80,
+                   kernel: '2.6.32-042stab120.6',
+                   cpu_idle: 100.0,
+                   maintenance_lock: 'lock',
+                   maintenance_lock_reason: 'HW upgrade'
+                 },
+                 {
+                   status: true,
+                   name: 'node3.prg',
+                   location: {
+                     id: 1,
+                     label: 'Prague'
+                   },
+                   last_report: '2016-11-20T08:30:46+01:00',
+                   vps_count: 65,
+                   vps_free: 15,
+                   kernel: '2.6.32-042stab120.6',
+                   cpu_idle: 72.6
+                 }
+               ])
     end
 
     def exec
       ::Node.includes(:node_current_status, location: :environment)
-        .joins(:location)
-        .where(active: true, role: %w(node storage))
-        .order('locations.environment_id, locations.id, nodes.id')
+            .joins(:location)
+            .where(active: true, role: %w[node storage])
+            .order('locations.environment_id, locations.id, nodes.id')
     end
   end
 
@@ -312,7 +311,7 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
 
     authorize do |u|
       allow if u.role == :admin
-      output whitelist: %i(id name domain_name fqdn location hypervisor_type cgroup_version)
+      output whitelist: %i[id name domain_name fqdn location hypervisor_type cgroup_version]
       allow
     end
 
@@ -320,16 +319,16 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
       path_params(2)
       request({})
       response({
-        id: 2,
-        name: 'node2',
-        type: 'node',
-        location: {
-          id: 1,
-          label: 'The Location'
-        },
-        ip_addr: '192.168.0.11',
-        maintenance_lock: 'no'
-      })
+                 id: 2,
+                 name: 'node2',
+                 type: 'node',
+                 location: {
+                   id: 1,
+                   label: 'The Location'
+                 },
+                 ip_addr: '192.168.0.11',
+                 maintenance_lock: 'no'
+               })
     end
 
     def prepare
@@ -345,22 +344,22 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
     desc 'Update node'
 
     input do
-      use :common, exclude: %i(domain_name)
+      use :common, exclude: %i[domain_name]
     end
 
     authorize do |u|
-      input blacklist: %i(type location)
+      input blacklist: %i[type location]
       allow if u.role == :admin
     end
 
     example do
       path_params(2)
       request({
-        name: 'node2',
-        type: 'storage',
-        location: 1,
-        ip_addr: '192.168.0.11',
-      })
+                name: 'node2',
+                type: 'storage',
+                location: 1,
+                ip_addr: '192.168.0.11'
+              })
       response({})
     end
 
@@ -399,11 +398,11 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
 
     input do
       resource VpsAdmin::API::Resources::Node, name: :dst_node,
-          label: 'Target node', required: true
+                                               label: 'Target node', required: true
       bool :stop_on_error, label: 'Stop on error', default: true,
-          fill: true
+                           fill: true
       bool :maintenance_window, desc: 'Run migrations in every VPS\'s maintenance window',
-          default: true, fill: true
+                                default: true, fill: true
       integer :concurrency, desc: 'How many migrations run concurrently', default: 1, fill: true
       bool :cleanup_data, default: true
       bool :send_mail, default: true
@@ -431,7 +430,7 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
 
       plan = n.evacuate(input)
 
-      {migration_plan_id: plan.id}
+      { migration_plan_id: plan.id }
     end
   end
 

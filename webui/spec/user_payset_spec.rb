@@ -1,6 +1,6 @@
-require "json"
-require "selenium-webdriver"
-require "rspec"
+require 'json'
+require 'selenium-webdriver'
+require 'rspec'
 include RSpec::Expectations
 
 describe 'User payset' do
@@ -12,7 +12,7 @@ describe 'User payset' do
   before(:all) do
     @driver = Selenium::WebDriver.for(:firefox)
     @driver.manage.timeouts.implicit_wait = 5
-    @base_url = "https://vpsadmin.vpsfree.cz/"
+    @base_url = 'https://vpsadmin.vpsfree.cz/'
     @driver.get(@base_url)
     login
     enter
@@ -32,23 +32,23 @@ describe 'User payset' do
     expect(PASSWORD.length).to be > 0
 
     @driver.find_element(
-        :css,
-        'form[action="?page=login&action=login"] input[name="username"]'
+      :css,
+      'form[action="?page=login&action=login"] input[name="username"]'
     ).send_keys(USERNAME)
 
     @driver.find_element(
-        :css,
-        'form[action="?page=login&action=login"] input[name="passwd"]'
+      :css,
+      'form[action="?page=login&action=login"] input[name="passwd"]'
     ).send_keys(PASSWORD)
 
     @driver.find_element(
-        :css,
-        'form[action="?page=login&action=login"] input[type="submit"]'
+      :css,
+      'form[action="?page=login&action=login"] input[type="submit"]'
     ).click
 
     expect(@driver.find_element(
-        :css,
-        'form[action="?page=login&action=logout"] input[type="submit"]'
+      :css,
+      'form[action="?page=login&action=logout"] input[type="submit"]'
     ).attribute(:value)).to eq("Logout (#{USERNAME})")
   end
 
@@ -58,8 +58,8 @@ describe 'User payset' do
 
   def logout
     @driver.find_element(
-        :css,
-        'form[action="?page=login&action=logout"] input[type="submit"]'
+      :css,
+      'form[action="?page=login&action=logout"] input[type="submit"]'
     ).click
   end
 
@@ -74,8 +74,8 @@ describe 'User payset' do
 
   def set_expiration(date = nil)
     @driver.find_element(
-        :css,
-        '#content form input[name="paid_until"]'
+      :css,
+      '#content form input[name="paid_until"]'
     ).send_keys(strftime(date))
     submit
   end
@@ -84,10 +84,10 @@ describe 'User payset' do
     @new_date = Date.today
     set_expiration
 
-    @new_date = @new_date >> n  # +n months
+    @new_date >>= n # +n months
     @driver.find_element(
-        :css,
-        '#content form input[name="months_to_add"]'
+      :css,
+      '#content form input[name="months_to_add"]'
     ).send_keys(n.to_s)
     submit
   end
@@ -95,15 +95,15 @@ describe 'User payset' do
   def add_months_from_now(n)
     @new_date = Date.today >> n  # now + n months
     @driver.find_element(
-        :css,
-        '#content form input[name="months_to_add"]'
+      :css,
+      '#content form input[name="months_to_add"]'
     ).send_keys(n.to_s)
 
     select = Selenium::WebDriver::Support::Select.new(
-        @driver.find_element(
-            :css,
-            '#content form select[name="add_from"]'
-        )
+      @driver.find_element(
+        :css,
+        '#content form select[name="add_from"]'
+      )
     )
     select.select_by(:value, 'from_now')
     submit
@@ -119,13 +119,13 @@ describe 'User payset' do
 
     expect(get_expiration).to eq(strftime)
   end
-  
+
   it 'rejects invalid date' do
     expiration = get_expiration
 
     @driver.find_element(
-        :css,
-        '#content form input[name="paid_until"]'
+      :css,
+      '#content form input[name="paid_until"]'
     ).send_keys('not a date')
     submit
 
@@ -155,40 +155,40 @@ describe 'User payset' do
 
     expect(get_expiration).to eq(strftime)
   end
-  
+
   it 'rejects invalid number of months' do
     expiration = get_expiration
 
     @driver.find_element(
-        :css,
-        '#content form input[name="months_to_add"]'
+      :css,
+      '#content form input[name="months_to_add"]'
     ).send_keys('not a number')
 
     select = Selenium::WebDriver::Support::Select.new(
-        @driver.find_element(
-            :css,
-            '#content form select[name="add_from"]'
-        )
+      @driver.find_element(
+        :css,
+        '#content form select[name="add_from"]'
+      )
     )
     select.select_by(:value, 'from_now')
     submit
 
     expect(expiration).to eq(get_expiration)
   end
-  
+
   it 'does not add many months from now' do
-    add_months_from_now(15641561651)
-    
+    add_months_from_now(15_641_561_651)
+
     expect(
-        @driver.find_element(:css, '#content h1').text
+      @driver.find_element(:css, '#content h1').text
     ).to eq('Failed to add payment')
   end
-  
+
   it 'does not remove many months from now' do
-    add_months_from_now(-22441451161)
-  
+    add_months_from_now(-22_441_451_161)
+
     expect(
-        @driver.find_element(:css, '#content h1').text
+      @driver.find_element(:css, '#content h1').text
     ).to eq('Failed to add payment')
   end
 end

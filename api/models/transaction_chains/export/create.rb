@@ -22,7 +22,7 @@ module TransactionChains
         dip = dataset.primary_dataset_in_pool!
       end
 
-      if sip.nil? && !%w(primary backup).include?(dip.pool.role)
+      if sip.nil? && !%w[primary backup].include?(dip.pool.role)
         raise VpsAdmin::API::Exceptions::OperationNotSupported,
               'This dataset cannot be exported or mounted via vpsAdmin'
       elsif !dip.pool.node.vpsadminos?
@@ -30,9 +30,7 @@ module TransactionChains
               'This dataset cannot be exported, use legacy mounts instead'
       end
 
-      if sip
-        snap_clone = use_chain(SnapshotInPool::UseClone, args: [sip, nil])
-      end
+      snap_clone = use_chain(SnapshotInPool::UseClone, args: [sip, nil]) if sip
 
       lock(dip)
 
@@ -50,13 +48,13 @@ module TransactionChains
           sync: opts[:sync] ? true : false,
           threads: opts[:threads] || 8,
           enabled: opts[:enabled] ? true : false,
-          expiration_date: sip ? Time.now + 3 * 24 * 60 * 60 : nil,
+          expiration_date: sip ? Time.now + 3 * 24 * 60 * 60 : nil
         )
       rescue ActiveRecord::RecordNotUnique
         msg =
           if sip
-            "snapshot #{dataset.full_name}@#{sip.snapshot.name} is already "+
-            "exported"
+            "snapshot #{dataset.full_name}@#{sip.snapshot.name} is already " +
+              'exported'
           else
             "dataset #{dataset.full_name} is already exported"
           end
@@ -70,14 +68,14 @@ module TransactionChains
       netif = ::NetworkInterface.create!(
         export: export,
         kind: 'veth_routed',
-        name: 'eth0',
+        name: 'eth0'
       )
       lock(netif)
 
       netif.call_class_hooks_for(
         :create,
         self,
-        args: [netif],
+        args: [netif]
       )
 
       ip_addr = pick_ip_address(export.user, dip.pool.node.location)
@@ -94,8 +92,8 @@ module TransactionChains
 
       if export.all_vps
         ips = ::IpAddress.joins(:network, network_interface: :vps).where(
-          networks: {ip_version: 4},
-          vpses: {user_id: export.user_id},
+          networks: { ip_version: 4 },
+          vpses: { user_id: export.user_id }
         ).to_a
 
         hosts = ips.map do |ip|
@@ -105,7 +103,7 @@ module TransactionChains
             rw: export.rw,
             sync: export.sync,
             subtree_check: export.subtree_check,
-            root_squash: export.root_squash,
+            root_squash: export.root_squash
           )
         end
 
@@ -119,34 +117,31 @@ module TransactionChains
     end
 
     protected
+
     # TODO:
     #   - we might want to divide addresses by purpose -- VPS or NFS exports, etc.
     #   - /32 is enough, we shouldn't take larger addresses
     def pick_ip_address(user, location)
       loop do
-        begin
-          ip = nil
+        ip = nil
 
-          ::IpAddress.transaction do
-            ip = ::IpAddress.pick_addr!(
-              user: user,
-              location: location,
-              ip_v: 4,
-              role: :private_access,
-              purpose: :export,
-            )
-            lock(ip)
-          end
-
-          return ip
-
-        rescue ActiveRecord::RecordNotFound
-          fail 'no ipv4_private available'
-
-        rescue ResourceLocked
-          sleep(0.25)
-          retry
+        ::IpAddress.transaction do
+          ip = ::IpAddress.pick_addr!(
+            user: user,
+            location: location,
+            ip_v: 4,
+            role: :private_access,
+            purpose: :export
+          )
+          lock(ip)
         end
+
+        return ip
+      rescue ActiveRecord::RecordNotFound
+        raise 'no ipv4_private available'
+      rescue ResourceLocked
+        sleep(0.25)
+        retry
       end
     end
 
@@ -154,9 +149,9 @@ module TransactionChains
       hv = pr = bc = nil
 
       snapshot.snapshot_in_pools
-        .includes(dataset_in_pool: [:pool])
-        .joins(dataset_in_pool: [:pool])
-        .all.group('pools.role').each do |sip|
+              .includes(dataset_in_pool: [:pool])
+              .joins(dataset_in_pool: [:pool])
+              .all.group('pools.role').each do |sip|
         case sip.dataset_in_pool.pool.role.to_sym
         when :hypervisor
           hv = sip

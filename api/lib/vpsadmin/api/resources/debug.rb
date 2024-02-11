@@ -17,13 +17,12 @@ module VpsAdmin::API::Resources
       end
 
       def exec
-        ObjectSpace.each_object.inject(Hash.new(0)) do |hash, obj|
+        ObjectSpace.each_object.each_with_object(Hash.new(0)) do |obj, hash|
           hash[obj.class] += 1
-          hash
-        end.sort_by do |klass, count|
+        end.sort_by do |_klass, count|
           -count
         end.map do |klass, count|
-          {object: klass, count: count}
+          { object: klass, count: count }
         end
       end
     end
@@ -48,7 +47,7 @@ module VpsAdmin::API::Resources
         hashes = []
 
         ObjectSpace.each_object do |obj|
-          next if !obj.is_a?(::Hash)
+          next unless obj.is_a?(::Hash)
 
           sample = {}
 
@@ -59,7 +58,7 @@ module VpsAdmin::API::Resources
 
           hashes << {
             size: obj.size,
-            sample: sample,
+            sample: sample
           }
         end
 
@@ -89,7 +88,7 @@ module VpsAdmin::API::Resources
         arrays = []
 
         ObjectSpace.each_object do |obj|
-          next if !obj.is_a?(::Array) || obj.object_id == arrays.object_id
+          next if !obj.is_a?(::Array) || obj.equal?(arrays)
 
           sample = []
 
@@ -100,7 +99,7 @@ module VpsAdmin::API::Resources
 
           arrays << {
             size: obj.size,
-            sample: sample,
+            sample: sample
           }
         end
 

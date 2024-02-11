@@ -13,6 +13,7 @@ module NodeCtld
     end
 
     protected
+
     def wait_for_routes
       RouteCheck.wait(@pool_fs, @vps_id, timeout: @timeout)
     end

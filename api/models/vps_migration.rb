@@ -6,7 +6,7 @@ class VpsMigration < ActiveRecord::Base
   belongs_to :dst_node, class_name: 'Node'
   belongs_to :user
 
-  enum state: %i(queued running cancelled done error)
+  enum state: %i[queued running cancelled done error]
 
   validate :check_uniqueness
 
@@ -17,20 +17,20 @@ class VpsMigration < ActiveRecord::Base
       vps: vps,
       state: [
         self.class.states[:queued],
-        self.class.states[:running],
+        self.class.states[:running]
       ],
       migration_plans: {
         state: [
           ::VpsMigration.states[:staged],
           ::VpsMigration.states[:running],
           ::VpsMigration.states[:cancelling],
-          ::VpsMigration.states[:failing],
+          ::VpsMigration.states[:failing]
         ]
       }
     ).any?
 
-    if exists
-      errors.add(:vps, 'is already in a migration plan')
-    end
+    return unless exists
+
+    errors.add(:vps, 'is already in a migration plan')
   end
 end

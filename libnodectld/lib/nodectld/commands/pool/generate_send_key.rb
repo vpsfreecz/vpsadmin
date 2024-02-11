@@ -4,7 +4,7 @@ module NodeCtld
     needs :system, :osctl
 
     def exec
-      osctl_pool(@pool_name, %i(send key gen), [], {force: true})
+      osctl_pool(@pool_name, %i[send key gen], [], { force: true })
 
       pubkey, privkey = get_key_paths
 
@@ -14,7 +14,7 @@ module NodeCtld
       db.prepared(
         'UPDATE pools SET migration_public_key = ? WHERE id = ?',
         content,
-        @pool_id,
+        @pool_id
       )
       db.close
 
@@ -23,11 +23,9 @@ module NodeCtld
 
     def rollback
       get_key_paths.each do |file|
-        begin
-          File.unlink(file)
-        rescue Errno::ENOENT
-          next
-        end
+        File.unlink(file)
+      rescue Errno::ENOENT
+        next
       end
 
       db = Db.new
@@ -41,10 +39,11 @@ module NodeCtld
     end
 
     protected
+
     def get_key_paths
       [
-        osctl_pool(@pool_name, %i(send key path public)).output.strip,
-        osctl_pool(@pool_name, %i(send key path private)).output.strip,
+        osctl_pool(@pool_name, %i[send key path public]).output.strip,
+        osctl_pool(@pool_name, %i[send key path private]).output.strip
       ]
     end
   end

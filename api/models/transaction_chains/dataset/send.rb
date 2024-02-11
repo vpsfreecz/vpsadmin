@@ -58,15 +58,16 @@ module TransactionChains
         end
       end
 
-      if opts[:send_reservation]
-        append(Transactions::Queue::Release, args: [dst.pool.node, :zfs_recv])
-        append(Transactions::Queue::Release, args: [src.pool.node, :zfs_send])
-      end
+      return unless opts[:send_reservation]
+
+      append(Transactions::Queue::Release, args: [dst.pool.node, :zfs_recv])
+      append(Transactions::Queue::Release, args: [src.pool.node, :zfs_send])
     end
 
     protected
+
     def confirm_block(snapshots, dst, branch)
-      Proc.new do
+      proc do
         snapshots.each do |snap|
           sip = ::SnapshotInPool.create(
             snapshot_id: snap.snapshot_id,
@@ -76,13 +77,13 @@ module TransactionChains
 
           create(sip)
 
-          if dst.pool.role == 'backup'
-            create(::SnapshotInPoolInBranch.create(
-              snapshot_in_pool: sip,
-              branch: branch,
-              confirmed: ::SnapshotInPoolInBranch.confirmed(:confirm_create)
-            ))
-          end
+          next unless dst.pool.role == 'backup'
+
+          create(::SnapshotInPoolInBranch.create(
+                   snapshot_in_pool: sip,
+                   branch: branch,
+                   confirmed: ::SnapshotInPoolInBranch.confirmed(:confirm_create)
+                 ))
         end
       end
     end

@@ -14,11 +14,11 @@ module VpsAdmin::API::Resources
       integer :original_refquota, label: 'Original reference quota'
       integer :added_space, label: 'Added space'
       bool :enable_notifications, label: 'Enable notifications',
-        desc: 'Send emails about the expansion'
+                                  desc: 'Send emails about the expansion'
       bool :enable_shrink, label: 'Enable shrink',
-        desc: 'Automatically shrink the dataset when possible'
+                           desc: 'Automatically shrink the dataset when possible'
       bool :stop_vps, label: 'Stop VPS',
-        desc: 'Stop the VPS after extra space is used too long or there are too many expansions'
+                      desc: 'Stop the VPS after extra space is used too long or there are too many expansions'
       integer :over_refquota_seconds
       integer :max_over_refquota_seconds
       datetime :created_at
@@ -38,7 +38,7 @@ module VpsAdmin::API::Resources
 
       authorize do |u|
         allow if u.role == :admin
-        restrict datasets: {user_id: u.id}
+        restrict datasets: { user_id: u.id }
         allow
       end
 
@@ -64,14 +64,14 @@ module VpsAdmin::API::Resources
 
       authorize do |u|
         allow if u.role == :admin
-        restrict datasets: {user_id: u.id}
+        restrict datasets: { user_id: u.id }
         allow
       end
 
       def prepare
         @exp = ::DatasetExpansion.joins(:dataset).find_by!(with_restricted(
-          id: params[:dataset_expansion_id],
-        ))
+                                                             id: params[:dataset_expansion_id]
+                                                           ))
       end
 
       def exec
@@ -84,14 +84,14 @@ module VpsAdmin::API::Resources
       blocking true
 
       input do
-        use :common, include: %i(
+        use :common, include: %i[
           dataset
           added_space
           enable_notifications
           enable_shrink
           stop_vps
           max_over_refquota_seconds
-        )
+        ]
       end
 
       output do
@@ -103,15 +103,11 @@ module VpsAdmin::API::Resources
       end
 
       def exec
-        if input[:dataset].dataset_expansion_id
-          error('this dataset is already expanded')
-        end
+        error('this dataset is already expanded') if input[:dataset].dataset_expansion_id
 
         dip = input[:dataset].root.primary_dataset_in_pool!
 
-        if dip.pool.role != 'hypervisor'
-          error('only hypervisor datasets can be expanded')
-        end
+        error('only hypervisor datasets can be expanded') if dip.pool.role != 'hypervisor'
 
         exp = ::DatasetExpansion.new(
           vps: dip.vpses.take!,
@@ -120,7 +116,7 @@ module VpsAdmin::API::Resources
           enable_notifications: input[:enable_notifications],
           enable_shrink: input[:enable_shrink],
           stop_vps: input[:stop_vps],
-          max_over_refquota_seconds: input[:max_over_refquota_seconds],
+          max_over_refquota_seconds: input[:max_over_refquota_seconds]
         )
 
         @chain, ret = TransactionChains::Vps::ExpandDataset.fire(exp)
@@ -136,7 +132,7 @@ module VpsAdmin::API::Resources
       desc 'Update dataset expansion'
 
       input do
-        use :common, include: %i(enable_notifications enable_shrink stop_vps max_over_refquota_seconds)
+        use :common, include: %i[enable_notifications enable_shrink stop_vps max_over_refquota_seconds]
       end
 
       output do
@@ -149,8 +145,8 @@ module VpsAdmin::API::Resources
 
       def exec
         exp = ::DatasetExpansion.joins(:dataset).find_by!(with_restricted(
-          id: params[:dataset_expansion_id],
-        ))
+                                                            id: params[:dataset_expansion_id]
+                                                          ))
         exp.update!(input)
       end
     end
@@ -161,14 +157,14 @@ module VpsAdmin::API::Resources
       http_method :post
 
       input do
-        use :common, include: %i(
+        use :common, include: %i[
           dataset
           original_refquota
           enable_notifications
           enable_shrink
           stop_vps
           max_over_refquota_seconds
-        )
+        ]
       end
 
       output do
@@ -180,15 +176,11 @@ module VpsAdmin::API::Resources
       end
 
       def exec
-        if input[:dataset].dataset_expansion_id
-          error('this dataset is already expanded')
-        end
+        error('this dataset is already expanded') if input[:dataset].dataset_expansion_id
 
         dip = input[:dataset].root.primary_dataset_in_pool!
 
-        if dip.pool.role != 'hypervisor'
-          error('only hypervisor datasets can be expanded')
-        end
+        error('only hypervisor datasets can be expanded') if dip.pool.role != 'hypervisor'
 
         if input[:dataset].refquota <= input[:original_refquota]
           error('invalid parameters', original_refquota: ['must be lesser than current refquota'])
@@ -203,7 +195,7 @@ module VpsAdmin::API::Resources
           enable_notifications: input[:enable_notifications],
           enable_shrink: input[:enable_shrink],
           stop_vps: input[:stop_vps],
-          max_over_refquota_seconds: input[:max_over_refquota_seconds],
+          max_over_refquota_seconds: input[:max_over_refquota_seconds]
         )
       end
     end
@@ -231,13 +223,13 @@ module VpsAdmin::API::Resources
 
         authorize do |u|
           allow if u.role == :admin
-          restrict datasets: {user_id: u.id}
+          restrict datasets: { user_id: u.id }
           allow
         end
 
         def query
           ::DatasetExpansionHistory.joins(dataset_expansion: :dataset).where(
-            with_restricted(dataset_expansions: {id: params[:dataset_expansion_id]})
+            with_restricted(dataset_expansions: { id: params[:dataset_expansion_id] })
           )
         end
 
@@ -252,7 +244,7 @@ module VpsAdmin::API::Resources
 
       class Show < HaveAPI::Actions::Default::Show
         desc 'Show dataset expansion history'
-        resolve ->(hist){ [hist.dataset_expansion_id, hist.id] }
+        resolve ->(hist) { [hist.dataset_expansion_id, hist.id] }
 
         output do
           use :all
@@ -260,15 +252,15 @@ module VpsAdmin::API::Resources
 
         authorize do |u|
           allow if u.role == :admin
-          restrict datasets: {user_id: u.id}
+          restrict datasets: { user_id: u.id }
           allow
         end
 
         def prepare
           @hist = ::DatasetExpansionHistory.joins(dataset_expansion: :dataset).find_by!(
             with_restricted(
-              dataset_expansions: {id: params[:dataset_expansion_id]},
-              id: params[:history_id],
+              dataset_expansions: { id: params[:dataset_expansion_id] },
+              id: params[:history_id]
             )
           )
         end
@@ -283,7 +275,7 @@ module VpsAdmin::API::Resources
         blocking true
 
         input do
-          use :all, include: %i(added_space)
+          use :all, include: %i[added_space]
         end
 
         output do
@@ -297,13 +289,11 @@ module VpsAdmin::API::Resources
         def exec
           exp = ::DatasetExpansion.find(params[:dataset_expansion_id])
 
-          if exp.state != 'active'
-            error('this expansion is already resolved')
-          end
+          error('this expansion is already resolved') if exp.state != 'active'
 
           hist = exp.dataset_expansion_histories.new(
             added_space: input[:added_space],
-            admin: current_user,
+            admin: current_user
           )
 
           @chain, ret = TransactionChains::Vps::ExpandDatasetAgain.fire(hist)

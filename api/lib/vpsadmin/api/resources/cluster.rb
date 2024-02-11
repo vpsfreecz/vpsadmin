@@ -44,24 +44,24 @@ class VpsAdmin::API::Resources::Cluster < HaveAPI::Resource
 
     example do
       response({
-        user_count: 1100,
-        vps_count: 1560,
-        ipv4_left: 256,
-      })
+                 user_count: 1100,
+                 vps_count: 1560,
+                 ipv4_left: 256
+               })
     end
 
     def exec
       {
         user_count: ::User.unscoped.where(
           object_state: [
-              ::User.object_states[:active],
-              ::User.object_states[:suspended],
+            ::User.object_states[:active],
+            ::User.object_states[:suspended]
           ]
         ).count,
         vps_count: ::Vps.unscoped.where(
           object_state: [
-              ::Vps.object_states[:active],
-              ::Vps.object_states[:suspended],
+            ::Vps.object_states[:active],
+            ::Vps.object_states[:suspended]
           ]
         ).count,
         ipv4_left: ::IpAddress.joins(:network).where(
@@ -69,9 +69,9 @@ class VpsAdmin::API::Resources::Cluster < HaveAPI::Resource
           network_interface: nil,
           networks: {
             ip_version: 4,
-            role: ::Network.roles[:public_access],
-          },
-        ).count,
+            role: ::Network.roles[:public_access]
+          }
+        ).count
       }
     end
   end
@@ -110,10 +110,10 @@ class VpsAdmin::API::Resources::Cluster < HaveAPI::Resource
         ).count,
         node_count: ::Node.all.count,
         vps_running: ::Vps.joins(:vps_current_status).where(
-          vps_current_statuses: {is_running: true}
+          vps_current_statuses: { is_running: true }
         ).count,
         vps_stopped: ::Vps.joins(:vps_current_status).where(
-          vps_current_statuses: {is_running: false}
+          vps_current_statuses: { is_running: false }
         ).count,
         vps_suspended: ::Vps.joins(:user).where(
           'users.object_state = ? OR vpses.object_state = ?',
@@ -136,15 +136,15 @@ class VpsAdmin::API::Resources::Cluster < HaveAPI::Resource
         ipv4_used: ::IpAddress.joins(:network).where.not(network_interface: nil).where(
           networks: {
             ip_version: 4,
-            role: ::Network.roles[:public_access],
+            role: ::Network.roles[:public_access]
           }
         ).count,
         ipv4_count: ::IpAddress.joins(:network).where(
           networks: {
             ip_version: 4,
-            role: ::Network.roles[:public_access],
+            role: ::Network.roles[:public_access]
           }
-        ).count,
+        ).count
       }
     end
   end
@@ -155,14 +155,14 @@ class VpsAdmin::API::Resources::Cluster < HaveAPI::Resource
 
     input(:hash) do
       string :value, label: 'Value', desc: 'Value to be searched for',
-          required: true
+                     required: true
     end
 
     output(:hash_list) do
       string :resource, label: 'Resource', desc: 'Resource name of the located object'
       integer :id, label: 'ID', desc: 'Identifier of the located object'
       string :attribute, label: 'Attribute',
-          desc: 'Name of the attribute containing the searched value'
+                         desc: 'Name of the attribute containing the searched value'
       string :value, label: 'Value', desc: 'Located value'
     end
 
@@ -185,7 +185,7 @@ class VpsAdmin::API::Resources::Cluster < HaveAPI::Resource
     end
 
     def exec
-      @chain, _ = TransactionChains::Cluster::GenerateMigrationKeys.fire
+      @chain, = TransactionChains::Cluster::GenerateMigrationKeys.fire
       ok
     end
 

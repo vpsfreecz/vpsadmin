@@ -22,30 +22,27 @@ module TransactionChains
     def link_chain(dataset_in_pool, opts = {})
       lock(dataset_in_pool)
       concerns(:affect, [
-        dataset_in_pool.dataset.class.name,
-        dataset_in_pool.dataset_id
-      ])
+                 dataset_in_pool.dataset.class.name,
+                 dataset_in_pool.dataset_id
+               ])
 
       @opts = set_hash_opts(opts, {
-        recursive: false,
-        top: true,
-        tasks: true,
-        detach_backups: true,
-        destroy: true,
-      })
+                              recursive: false,
+                              top: true,
+                              tasks: true,
+                              detach_backups: true,
+                              destroy: true
+                            })
 
       @datasets = []
 
-      if @opts[:recursive]
-        @pool_id = dataset_in_pool.pool.id
-        dataset_in_pool.dataset.subtree.where.not(
-          confirmed: ::Dataset.confirmed(:confirm_destroy)
-        ).arrange.each do |k, v|
-          destroy_recursive(k, v)
-        end
+      raise 'not implemented' unless @opts[:recursive]
 
-      else
-        fail 'not implemented'
+      @pool_id = dataset_in_pool.pool.id
+      dataset_in_pool.dataset.subtree.where.not(
+        confirmed: ::Dataset.confirmed(:confirm_destroy)
+      ).arrange.each do |k, v|
+        destroy_recursive(k, v)
       end
 
       # Acquire dataset locks
@@ -61,7 +58,7 @@ module TransactionChains
       end
 
       # Remove duplicit mounts
-      affected_vpses.each { |vps, mounts| mounts.uniq! }
+      affected_vpses.each { |_vps, mounts| mounts.uniq! }
 
       # Update mount action scripts
       affected_vpses.each_key do |vps|
@@ -71,7 +68,7 @@ module TransactionChains
       # Umount
       affected_vpses.each do |vps, mounts|
         mounts.each do |mnt|
-          fail 'snapshot mounts are not supported' if mnt.snapshot_in_pool_id
+          raise 'snapshot mounts are not supported' if mnt.snapshot_in_pool_id
 
           use_chain(TransactionChains::Vps::UmountDataset, args: [vps, mnt, false])
         end
@@ -80,7 +77,7 @@ module TransactionChains
       # Destroy exports of the datasets
       @datasets.each do |dip|
         dip.exports.where.not(
-          confirmed: ::Export.confirmed(:confirm_destroy),
+          confirmed: ::Export.confirmed(:confirm_destroy)
         ).each do |export|
           use_chain(TransactionChains::Export::Destroy, args: export)
         end
@@ -105,9 +102,7 @@ module TransactionChains
         if v.is_a?(::Dataset)
           dip = v.dataset_in_pools.where(pool_id: @pool_id).take
 
-          if dip
-            @datasets << dip
-          end
+          @datasets << dip if dip
 
         else
           destroy_recursive(k, v)
@@ -157,14 +152,13 @@ module TransactionChains
       chain = self
       opts = @opts
 
-      destroy_confirm = Proc.new do
+      destroy_confirm = proc do
         # Destroy snapshots, trees, branches, snapshot in pool in branches
-        if opts[:detach_backups] && %w(primary hypervisor).include?(dataset_in_pool.pool.role)
+        if opts[:detach_backups] && %w[primary hypervisor].include?(dataset_in_pool.pool.role)
           # Detach dataset tree heads in all backups
           dataset_in_pool.dataset.dataset_in_pools.joins(:pool).where(
-            pools: {role: ::Pool.roles[:backup]}
+            pools: { role: ::Pool.roles[:backup] }
           ).each do |backup|
-
             backup.dataset_trees.all.each do |tree|
               edit(tree, head: false)
 
@@ -186,7 +180,7 @@ module TransactionChains
               confirmed: ::DatasetProperty.confirmed(:confirm_destroy)
             )
             dataset_in_pool.dataset_properties.each do |p|
-              # Note: there are too many records to delete them using transaction confirmations.
+              # NOTE: there are too many records to delete them using transaction confirmations.
               # Dataset property history is deleted whether the chain is successful or not.
               p.dataset_property_histories.delete_all
 
@@ -213,8 +207,8 @@ module TransactionChains
 
           # Check if ::Dataset should be destroyed or marked for destroyal
           if dataset_in_pool.dataset.dataset_in_pools.where.not(
-               confirmed: ::DatasetInPool.confirmed(:confirm_destroy)
-             ).count == 0
+            confirmed: ::DatasetInPool.confirmed(:confirm_destroy)
+          ).count == 0
             dataset_in_pool.dataset.update!(
               confirmed: ::Dataset.confirmed(:confirm_destroy)
             )
@@ -230,15 +224,15 @@ module TransactionChains
             destroy(dataset_in_pool.dataset)
 
           elsif dataset_in_pool.dataset.dataset_in_pools
-                  .joins(:pool)
-                  .where.not(confirmed: ::DatasetInPool.confirmed(:confirm_destroy))
-                  .where.not(pools: {role: ::Pool.roles[:backup]}).count == 0
+                               .joins(:pool)
+                               .where.not(confirmed: ::DatasetInPool.confirmed(:confirm_destroy))
+                               .where.not(pools: { role: ::Pool.roles[:backup] }).count == 0
 
             # Is now only in backup pools
             just_create(dataset_in_pool.dataset.set_expiration(
-              Time.now.utc + 30*24*60*60,
-              reason: 'Dataset on the primary pool was deleted.'
-            ))
+                          Time.now.utc + 30 * 24 * 60 * 60,
+                          reason: 'Dataset on the primary pool was deleted.'
+                        ))
             edit(
               dataset_in_pool.dataset,
               expiration_date: dataset_in_pool.dataset.expiration_date

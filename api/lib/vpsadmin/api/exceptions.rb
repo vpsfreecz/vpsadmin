@@ -2,31 +2,24 @@ require 'haveapi'
 
 module VpsAdmin::API::Exceptions
   class AuthenticationError < HaveAPI::AuthenticationError
-
   end
 
   class AccessDenied < ::StandardError
-
   end
 
   class IpAddressInUse < ::StandardError
-
   end
 
   class IpAddressNotAssigned < ::StandardError
-
   end
 
   class IpAddressInvalidLocation < ::StandardError
-
   end
 
   class IpAddressNotOwned < ::StandardError
-
   end
 
   class IpAddressInvalid < ::StandardError
-
   end
 
   class DatasetAlreadyExists < ::StandardError
@@ -87,35 +80,27 @@ module VpsAdmin::API::Exceptions
   end
 
   class PropertyInvalid < ::StandardError
-
   end
 
   class InvalidRefquotaDataset < ::StandardError
-
   end
 
   class DatasetNestingForbidden < ::StandardError
-
   end
 
   class RefquotaCheckFailed < ::StandardError
-
   end
 
   class UserResourceMissing < ::StandardError
-
   end
 
   class UserResourceAllocationError < ::StandardError
-
   end
 
   class CannotLeaveState < ::StandardError
-
   end
 
   class TooManyParameters < ::StandardError
-
   end
 
   class MailTemplateDoesNotExist < ::StandardError
@@ -148,26 +133,20 @@ module VpsAdmin::API::Exceptions
   end
 
   class OsTemplateNotFound < ::StandardError
-
   end
 
   class OperationError < ::StandardError
-
   end
 
   class OperationNotSupported < OperationError
-
   end
 
   class DatasetAlreadyExported < ::StandardError
-
   end
 
   class VpsMigrationError < ::StandardError
-
   end
 
   class ConfigurationError < ::StandardError
-
   end
 end

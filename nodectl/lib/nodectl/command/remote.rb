@@ -30,8 +30,7 @@ module NodeCtl
         client.open
         client.cmd(cmd, params)
         msg = client.receive
-
-      rescue => e
+      rescue StandardError => e
         warn "Error occured: #{e.message}"
         warn 'Are you sure that nodectld is running and configured properly?'
         return error('Cannot connect to nodectld')
@@ -48,8 +47,6 @@ module NodeCtl
     end
 
     # Process response from nodectld
-    def process
-
-    end
+    def process; end
   end
 end

@@ -5,9 +5,7 @@ module VpsAdmin::API
     # @param device [::UserTotpDevice]
     # @return [::UserTotpDevice]
     def run(device)
-      unless device.confirmed
-        raise Exceptions::OperationError, 'unconfirmed device cannot be enabled'
-      end
+      raise Exceptions::OperationError, 'unconfirmed device cannot be enabled' unless device.confirmed
 
       device.update!(enabled: true)
       device

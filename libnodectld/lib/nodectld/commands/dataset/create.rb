@@ -6,11 +6,11 @@ module NodeCtld
     include Utils::Zfs
 
     def exec
-      if @options
-        opts = @options.map { |k, v| "-o #{k}=\"#{translate_property(k, v)}\""  }.join(' ')
-      else
-        opts = ''
-      end
+      opts = if @options
+               @options.map { |k, v| "-o #{k}=\"#{translate_property(k, v)}\"" }.join(' ')
+             else
+               ''
+             end
 
       zfs(:create, "-p #{opts}", "#{@pool_fs}/#{@name}")
 

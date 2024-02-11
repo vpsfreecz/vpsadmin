@@ -24,16 +24,13 @@ module VpsAdmin::API::Plugins::Payments::Backends
             ks: t.ks,
             ss: t.ss,
             transaction_type: t.transaction_type || 'unset',
-            comment: t.comment,
+            comment: t.comment
           )
 
-          if t.detail_info
-            p.src_amount, p.src_currency = t.detail_info.split(' ')
-          end
+          p.src_amount, p.src_currency = t.detail_info.split(' ') if t.detail_info
 
           begin
             p.save!
-
           rescue ActiveRecord::RecordNotUnique
             warn "Duplicit transaction ID '#{t.transaction_id}'"
             next

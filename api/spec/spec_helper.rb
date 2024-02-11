@@ -11,7 +11,7 @@ ENV['RACK_ENV'] = 'test'
 
 # Connect to database
 environment = 'test'
-configuration = YAML::load(File.open('config/database.yml'))
+configuration = YAML.load(File.open('config/database.yml'))
 
 ActiveRecord::Base.establish_connection(configuration[environment])
 

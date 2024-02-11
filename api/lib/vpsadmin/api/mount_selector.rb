@@ -20,7 +20,7 @@ module VpsAdmin::API
     # @yieldparam vps [::Vps]
     # @yieldparam mounts [Array<::Mount>]
     def each_vps_mount
-      mounts.each do |vps_id, vps_mounts|
+      mounts.each do |_vps_id, vps_mounts|
         yield(vps_mounts.vps, vps_mounts.mounts)
       end
     end
@@ -28,12 +28,13 @@ module VpsAdmin::API
     # @yieldparam vps [::Vps]
     # @yieldparam mounts [Array<::Mount>]
     def each_vps_unmount
-      mounts.each do |vps_id, vps_mounts|
+      mounts.each do |_vps_id, vps_mounts|
         yield(vps_mounts.vps, vps_mounts.mounts.reverse)
       end
     end
 
     protected
+
     attr_reader :dip, :mounts
 
     def find_mounts
@@ -41,15 +42,15 @@ module VpsAdmin::API
       dataset_in_pools = [dip.id] + dip.dataset.subtree.joins(
         :dataset_in_pools
       ).where(
-        dataset_in_pools: {pool_id: dip.pool_id}
+        dataset_in_pools: { pool_id: dip.pool_id }
       ).pluck('dataset_in_pools.id')
 
       # Find mounts of all datasets in pools
       ::Mount.includes(
-        :vps, dataset_in_pool: [:dataset, pool: [:node]]
+        :vps, dataset_in_pool: [:dataset, { pool: [:node] }]
       ).where(
         enabled: true,
-        master_enabled: true,
+        master_enabled: true
       ).where(
         'dataset_in_pool_id IN (?)', dataset_in_pools
       ).order('dst ASC').each do |m|
@@ -58,7 +59,7 @@ module VpsAdmin::API
 
         # Find mounts that are mounted anywhere below m.dst on m.vps
         ::Mount.includes(
-        :vps, dataset_in_pool: [:dataset, pool: [:node]]
+          :vps, dataset_in_pool: [:dataset, { pool: [:node] }]
         ).where(vps: m.vps, enabled: true, master_enabled: true).where(
           'dst LIKE ?', "#{m.dst}/%"
         ).order('dst ASC').each do |m2|

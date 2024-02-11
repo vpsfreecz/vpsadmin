@@ -8,15 +8,13 @@ module NodeCtld::RemoteCommands
       msgs = {}
 
       if @transactions == 'all'
-        cnt = walk_workers { |w| true }
+        cnt = walk_workers { |_w| true }
 
       elsif @types
         @types.each do |t|
           killed = walk_workers { |w| w.cmd.type == t }
 
-          if killed == 0
-            msgs[t] = 'No transaction with this type'
-          end
+          msgs[t] = 'No transaction with this type' if killed == 0
 
           cnt += killed
         end
@@ -25,15 +23,13 @@ module NodeCtld::RemoteCommands
         @transactions.each do |t|
           killed = walk_workers { |w| w.cmd.id == t }
 
-          if killed == 0
-            msgs[t] = 'No such transaction'
-          end
+          msgs[t] = 'No such transaction' if killed == 0
 
           cnt += killed
         end
       end
 
-      {ret: :ok, output: {killed: cnt, msgs: msgs}}
+      { ret: :ok, output: { killed: cnt, msgs: msgs } }
     end
   end
 end

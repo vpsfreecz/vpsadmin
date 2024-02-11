@@ -23,7 +23,7 @@ module VpsAdmin::Supervisor
         Node::VpsMounts,
         Node::VpsOsProcesses,
         Node::VpsSshHostKeys,
-        Node::VpsStatus,
+        Node::VpsStatus
       ].map do |klass|
         chan = @connection.create_channel
         chan.prefetch(1)
@@ -33,7 +33,7 @@ module VpsAdmin::Supervisor
 
       ::Node.includes(:location).where(active: true).each do |node|
         use_klasses =
-          if %w(node storage).include?(node.role)
+          if %w[node storage].include?(node.role)
             klasses
           else
             klasses.select { |klass, _| [Node::Rpc, Node::Status].include?(klass) }

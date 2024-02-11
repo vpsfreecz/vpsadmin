@@ -10,7 +10,7 @@ module Transactions::Storage
 
       {
         pool_fs: dataset_in_pool.pool.filesystem,
-        name: dataset_in_pool.dataset.full_name,
+        name: dataset_in_pool.dataset.full_name
       }
     end
   end

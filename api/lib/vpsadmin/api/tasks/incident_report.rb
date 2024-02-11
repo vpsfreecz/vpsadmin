@@ -11,12 +11,10 @@ module VpsAdmin::API::Tasks
         # to be processes. This is because CPU limit changing use Vps::Update
         # chain.
         incidents.each do |inc|
-          begin
-            TransactionChains::IncidentReport::Process.fire([inc])
-          rescue ResourceLocked
-            warn "Unable to process incident ##{inc.id}: VPS #{inc.vps.id} is locked"
-            next
-          end
+          TransactionChains::IncidentReport::Process.fire([inc])
+        rescue ResourceLocked
+          warn "Unable to process incident ##{inc.id}: VPS #{inc.vps.id} is locked"
+          next
         end
       else
         TransactionChains::IncidentReport::Process.fire(incidents)

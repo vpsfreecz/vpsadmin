@@ -4,7 +4,7 @@ require 'yaml'
 module NodeCtld
   SECRET_CONFIGS = [
     '/var/secrets/nodectld-config',
-    '/var/secrets/nodectld*.yml',
+    '/var/secrets/nodectld*.yml'
   ]
 
   IMPLICIT_CONFIG = {
@@ -17,14 +17,14 @@ module NodeCtld
       ssl: false,
       connect_timeout: 15,
       read_timeout: 15,
-      write_timeout: 15,
+      write_timeout: 15
     },
 
     rabbitmq: {
       hosts: [],
       vhost: '/',
       username: nil,
-      password: nil,
+      password: nil
     },
 
     # Choose from predefined runtime configurations: standard or minimal
@@ -38,62 +38,62 @@ module NodeCtld
     vpsadmin: {
       node_id: nil,
       node_name: nil,
-      domain: "vpsfree.cz",
+      domain: 'vpsfree.cz',
       node_addr: nil, # loaded from db
       max_tx: nil, # loaded from db
       max_rx: nil, # loaded from db
       net_interfaces: [],
       queues: {
         general: {
-            threads: 6,
-            urgent: 6,
-            start_delay: 0
+          threads: 6,
+          urgent: 6,
+          start_delay: 0
         },
         storage: {
-            threads: 2,
-            urgent: 2,
-            start_delay: 0
+          threads: 2,
+          urgent: 2,
+          start_delay: 0
         },
         network: {
-            threads: 1,
-            urgent: 0,
-            start_delay: 0
+          threads: 1,
+          urgent: 0,
+          start_delay: 0
         },
         vps: {
-            threads: 4,
-            urgent: 4,
-            start_delay: 0
+          threads: 4,
+          urgent: 4,
+          start_delay: 0
         },
         zfs_send: {
-            threads: 3,
-            urgent: 0,
-            start_delay: 90*60,
+          threads: 3,
+          urgent: 0,
+          start_delay: 90 * 60
         },
         zfs_recv: {
-            threads: 3,
-            urgent: 0,
-            start_delay: 90*60,
+          threads: 3,
+          urgent: 0,
+          start_delay: 90 * 60
         },
         mail: {
-            threads: 2,
-            urgent: 2,
-            start_delay: 0
+          threads: 2,
+          urgent: 2,
+          start_delay: 0
         },
         outage: {
-            threads: 128,
-            urgent: 0,
-            start_delay: 0,
+          threads: 128,
+          urgent: 0,
+          start_delay: 0
         },
         queue: {
-            threads: 256,
-            urgent: 16,
-            start_delay: 0,
+          threads: 256,
+          urgent: 16,
+          start_delay: 0
         },
         rollback: {
-            threads: 6,
-            urgent: 6,
-            start_delay: 0,
-        },
+          threads: 6,
+          urgent: 6,
+          start_delay: 0
+        }
       },
       queues_reservation_prune_interval: 60,
       check_interval: 1,
@@ -102,53 +102,53 @@ module NodeCtld
       veth_map_interval: 3600,
       update_vps_status: true,
       type: nil, # loaded from db
-      transaction_public_key: '/etc/vpsadmin/transaction.key',
+      transaction_public_key: '/etc/vpsadmin/transaction.key'
     },
 
     bin: {
-      cat: "cat",
-      df: "df",
-      rm: "rm",
-      mv: "mv",
-      cp: "cp",
-      mkdir: "mkdir",
-      rmdir: "rmdir",
-      chmod: "chmod",
-      tar: "tar",
-      scp: "scp",
-      rdiff_backup: "rdiff-backup",
-      rsync: "rsync",
-      iptables: "iptables",
-      ip6tables: "ip6tables",
-      git: "git",
-      zfs: "zfs",
-      mount: "mount",
-      umount: "umount",
-      uptime: "uptime",
-      uname: "uname",
-      hostname: "hostname",
-      ssh_keygen: "ssh-keygen",
-      exportfs: "exportfs",
-      tc: 'tc',
+      cat: 'cat',
+      df: 'df',
+      rm: 'rm',
+      mv: 'mv',
+      cp: 'cp',
+      mkdir: 'mkdir',
+      rmdir: 'rmdir',
+      chmod: 'chmod',
+      tar: 'tar',
+      scp: 'scp',
+      rdiff_backup: 'rdiff-backup',
+      rsync: 'rsync',
+      iptables: 'iptables',
+      ip6tables: 'ip6tables',
+      git: 'git',
+      zfs: 'zfs',
+      mount: 'mount',
+      umount: 'umount',
+      uptime: 'uptime',
+      uname: 'uname',
+      hostname: 'hostname',
+      ssh_keygen: 'ssh-keygen',
+      exportfs: 'exportfs',
+      tc: 'tc'
     },
 
     node: {
       pubkey: {
-        types: ['rsa', 'dsa'],
-        path: "/etc/ssh/ssh_host_%{type}_key.pub",
+        types: %w[rsa dsa],
+        path: '/etc/ssh/ssh_host_%{type}_key.pub'
       },
-      known_hosts: "/root/.ssh/known_hosts",
+      known_hosts: '/root/.ssh/known_hosts'
     },
 
     shaper: {
-      enable: true,
+      enable: true
     },
 
     traffic_accounting: {
       enable: true,
       update_interval: 10,
       log_interval: 60,
-      batch_size: 50,
+      batch_size: 50
     },
 
     storage: {
@@ -157,75 +157,75 @@ module NodeCtld
       update_interval: 90,
       batch_size: 50,
       pool_status: true,
-      pool_interval: 60,
+      pool_interval: 60
     },
 
     mailer: {
-      smtp_server: "localhost",
+      smtp_server: 'localhost',
       smtp_port: 25,
       smtp_open_timeout: 15,
-      smtp_read_timeout: 60,
+      smtp_read_timeout: 60
     },
 
     console: {
       enable: true,
-      host: "localhost",
+      host: 'localhost',
       port: 8081,
-      session_timeout: 60,
+      session_timeout: 60
     },
 
     kernel_log: {
-      enable: true,
+      enable: true
     },
 
     oom_reports: {
       enable: true,
       exclude_vps_ids: [],
-      submit_interval: 60,
+      submit_interval: 60
     },
 
     exports: {
       enable: true,
       parallel_start: 4,
-      start_delay: 5,
+      start_delay: 5
     },
 
     route_check: {
-      default_timeout: 300,
+      default_timeout: 300
     },
 
     mbuffer: {
       send: {
         block_size: '1M',
         buffer_size: '256M',
-        timeout: 90*60,
+        timeout: 90 * 60
       },
       receive: {
         block_size: '1M',
         buffer_size: '128M',
         start_writing_at: 60,
-        timeout: 90*60,
-      },
+        timeout: 90 * 60
+      }
     },
 
     exporter: {
       enable: true,
       metrics_dir: '/run/metrics',
-      interval: 60,
+      interval: 60
     },
 
     osctl_exporter: {
       enable: true,
       url: 'http://localhost:9101/metrics',
       interval: 120,
-      batch_size: 50,
+      batch_size: 50
     },
 
     vps_ssh_host_keys: {
       enable: true,
       update_vps_delay: 1,
       update_all_interval: 3600,
-      default_schedule_delay: 15,
+      default_schedule_delay: 15
     },
 
     dataset_expander: {
@@ -233,13 +233,13 @@ module NodeCtld
       min_avail_bytes: 512 * 1024 * 1024,
       min_avail_percent: 1,
       min_expand_bytes: 20 * 1024 * 1024 * 1024,
-      min_expand_percent: 10,
+      min_expand_percent: 10
     },
 
     rpc_client: {
       debug: false,
       soft_timeout: 15,
-      hard_timeout: 900,
+      hard_timeout: 900
     }
   }
 
@@ -261,7 +261,7 @@ module NodeCtld
       end
 
       unless tmp
-        warn 'Using implicit config, some specific settings '+
+        warn 'Using implicit config, some specific settings ' +
              '(database, server id) are missing, may not work properly'
         @cfg = IMPLICIT_CONFIG
         return true
@@ -287,22 +287,22 @@ module NodeCtld
         # pass
       when 'minimal'
         @cfg = merge(@cfg, {
-          vpsadmin: {
-            update_vps_status: false,
-          },
-          storage: {
-            update_status: false,
-          },
-          shaper: {enable: false},
-          traffic_accounting: {enable: false},
-          kernel_log: {enable: false},
-          oom_reports: {enable: false},
-          exports: {enable: false},
-          osctl_exporter: {enable: false},
-          vps_ssh_host_keys: {enable: false},
-          dataset_expander: {enable: false},
-          console: {enable: false},
-        })
+                       vpsadmin: {
+                         update_vps_status: false
+                       },
+                       storage: {
+                         update_status: false
+                       },
+                       shaper: { enable: false },
+                       traffic_accounting: { enable: false },
+                       kernel_log: { enable: false },
+                       oom_reports: { enable: false },
+                       exports: { enable: false },
+                       osctl_exporter: { enable: false },
+                       vps_ssh_host_keys: { enable: false },
+                       dataset_expander: { enable: false },
+                       console: { enable: false }
+                     })
       else
         warn "Unsupported runtime mode '#{@cfg[:mode]}'"
         return false
@@ -311,9 +311,7 @@ module NodeCtld
       if @cfg[:vpsadmin][:node_name].nil?
         host_parts = Socket.gethostname.split('.')
 
-        if host_parts.length > 2
-          @cfg[:vpsadmin][:node_name] = host_parts[0..1].join('.')
-        end
+        @cfg[:vpsadmin][:node_name] = host_parts[0..1].join('.') if host_parts.length > 2
       end
 
       load_db_settings if db
@@ -353,11 +351,11 @@ module NodeCtld
 
       sync do
         args.each do |k|
-          if val
-            val = val[k]
-          else
-            val = @cfg[k]
-          end
+          val = if val
+                  val[k]
+                else
+                  @cfg[k]
+                end
         end
 
         if block_given?
@@ -408,13 +406,12 @@ module NodeCtld
       @on_update.delete(name)
     end
 
-    def sync
-      @mutex.synchronize do
-        yield
-      end
+    def sync(&block)
+      @mutex.synchronize(&block)
     end
 
     protected
+
     def call_on_update
       @on_update.each_value { |block| block.call }
     end

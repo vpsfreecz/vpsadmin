@@ -5,7 +5,7 @@ module VpsAdmin::API
     # @param export [::Export]
     # @return [TransactionChain]
     def run(export)
-      chain, _ = TransactionChains::Export::Destroy.fire(export)
+      chain, = TransactionChains::Export::Destroy.fire(export)
       chain
     end
   end

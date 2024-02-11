@@ -9,7 +9,7 @@ class RemoveUserNamespaceMapPools < ActiveRecord::Migration[6.1]
       t.references  :pool,                         null: false
     end
 
-    add_index :user_namespace_map_pools, %i(user_namespace_map_id pool_id),
+    add_index :user_namespace_map_pools, %i[user_namespace_map_id pool_id],
               unique: true, name: 'user_namespace_map_pools_unique'
   end
 end

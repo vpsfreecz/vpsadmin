@@ -4,7 +4,7 @@ require 'bcrypt'
 module VpsAdmin
   module API
     module CryptoProviders
-      PROVIDERS = %i(md5 bcrypt)
+      PROVIDERS = %i[md5 bcrypt]
 
       def self.provider(name)
         const_get(name.to_s.classify)
@@ -40,12 +40,9 @@ module VpsAdmin
         end
 
         def self.matches?(crypted, _, password)
-          begin
-            ::BCrypt::Password.new(crypted) == password
-
-          rescue BCrypt::Errors::InvalidHash
-            false
-          end
+          ::BCrypt::Password.new(crypted) == password
+        rescue BCrypt::Errors::InvalidHash
+          false
         end
       end
     end

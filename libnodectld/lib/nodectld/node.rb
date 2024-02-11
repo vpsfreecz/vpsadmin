@@ -56,6 +56,7 @@ module NodeCtld
     def pool_down(pool_name)
       @mutex.synchronize do
         next if @pools[pool_name].nil?
+
         @pools[pool_name].online = false
       end
     end
@@ -63,6 +64,7 @@ module NodeCtld
     def pool_up(pool_name)
       @mutex.synchronize do
         next if @pools[pool_name].nil?
+
         @pools[pool_name].online = true
       end
     end
@@ -72,6 +74,7 @@ module NodeCtld
     end
 
     protected
+
     def wait_for_pool(pool)
       sv = "pool-#{pool.name}"
 
@@ -85,7 +88,7 @@ module NodeCtld
       if $CFG.get(:vpsadmin, :type) == :node
         loop do
           begin
-            osctl_pool = osctl_parse(%i(pool show), pool.name)
+            osctl_pool = osctl_parse(%i[pool show], pool.name)
           rescue SystemCommandFailed
             sleep(5)
             next
@@ -113,7 +116,7 @@ module NodeCtld
         return
       end
 
-      %w(pre-import post-import pre-export).each do |hook|
+      %w[pre-import post-import pre-export].each do |hook|
         dst = File.join(hook_dir, hook)
 
         FileUtils.cp(
@@ -121,7 +124,7 @@ module NodeCtld
           "#{dst}.new"
         )
 
-        File.chmod(0500, "#{dst}.new")
+        File.chmod(0o500, "#{dst}.new")
         File.rename("#{dst}.new", dst)
       end
     end
@@ -135,7 +138,7 @@ module NodeCtld
             pool['name'],
             pool['filesystem'],
             pool['role'].to_sym,
-            false,
+            false
           )
         end
       end

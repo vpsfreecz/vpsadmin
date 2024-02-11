@@ -23,6 +23,7 @@ module NodeCtld
     end
 
     protected
+
     attr_reader :index
 
     def key(addr)

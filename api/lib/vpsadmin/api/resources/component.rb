@@ -18,7 +18,7 @@ module VpsAdmin::API::Resources
         use :all
       end
 
-      authorize do |u|
+      authorize do |_u|
         allow
       end
 
@@ -43,7 +43,7 @@ module VpsAdmin::API::Resources
         use :all
       end
 
-      authorize do |u|
+      authorize do |_u|
         allow
       end
 

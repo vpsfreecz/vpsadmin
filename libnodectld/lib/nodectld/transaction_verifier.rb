@@ -7,7 +7,7 @@ module NodeCtld
     include Singleton
 
     class << self
-      %i(verify_base64).each do |m|
+      %i[verify_base64].each do |m|
         define_method(m) do |*args, &block|
           instance.send(m, *args, &block)
         end
@@ -18,15 +18,16 @@ module NodeCtld
       path = $CFG.get(:vpsadmin, :transaction_public_key)
       @key = OpenSSL::PKey::RSA.new(File.read(path))
     rescue Errno::ENOENT
-      fail "Transaction public key file not found at '#{path}'"
+      raise "Transaction public key file not found at '#{path}'"
     end
 
     def verify_base64(data, signature)
-      digest = OpenSSL::Digest::SHA256.new
+      digest = OpenSSL::Digest.new('SHA256')
       key.verify(digest, Base64.decode64(signature), data)
     end
 
     protected
+
     attr_reader :key
   end
 end

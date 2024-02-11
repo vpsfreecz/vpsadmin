@@ -7,6 +7,6 @@ class AddUserNamespaceNodes < ActiveRecord::Migration
 
     add_index :user_namespace_nodes, :user_namespace_id
     add_index :user_namespace_nodes, :node_id
-    add_index :user_namespace_nodes, %i(user_namespace_id node_id), unique: true
+    add_index :user_namespace_nodes, %i[user_namespace_id node_id], unique: true
   end
 end

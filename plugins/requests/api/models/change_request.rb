@@ -1,11 +1,11 @@
 require_relative 'user_request'
 
 class ChangeRequest < UserRequest
-  validates :change_reason, presence: true, length: {maximum: 255}
-  validates :full_name, length: {minimum: 2}, allow_blank: true
+  validates :change_reason, presence: true, length: { maximum: 255 }
+  validates :full_name, length: { minimum: 2 }, allow_blank: true
   validates :email, format: {
     with: /@/,
-    message: 'not a valid e-mail address',
+    message: 'not a valid e-mail address'
   }, allow_blank: true
   validate :check_changes
 
@@ -17,10 +17,11 @@ class ChangeRequest < UserRequest
     user.full_name
   end
 
-  def approve(chain, params)
-    %i(full_name email address).each do |attr|
+  def approve(_chain, _params)
+    %i[full_name email address].each do |attr|
       v = send(attr)
       next unless v
+
       user.send("#{attr}=", v)
     end
 
@@ -31,7 +32,7 @@ class ChangeRequest < UserRequest
   # @yieldparam new_value
   # @yieldparam current_value
   def each_change
-    %i(full_name email address).each do |attr|
+    %i[full_name email address].each do |attr|
       new_v = send(attr)
       old_v = user.send(attr)
 
@@ -42,11 +43,12 @@ class ChangeRequest < UserRequest
   end
 
   protected
+
   def check_changes
-    if !full_name && !email && !address
-      errors.add(:full_name, 'change at least one parameter')
-      errors.add(:email, 'change at least one parameter')
-      errors.add(:address, 'change at least one parameter')
-    end
+    return unless !full_name && !email && !address
+
+    errors.add(:full_name, 'change at least one parameter')
+    errors.add(:email, 'change at least one parameter')
+    errors.add(:address, 'change at least one parameter')
   end
 end

@@ -5,7 +5,7 @@ class AddNetworks < ActiveRecord::Migration
     belongs_to :location
     has_many :ip_addresses
 
-    enum role: %i(public_access private_access)
+    enum role: %i[public_access private_access]
   end
 
   class IpAddress < ActiveRecord::Base
@@ -35,7 +35,7 @@ class AddNetworks < ActiveRecord::Migration
       t.boolean     :managed,             null: false
     end
 
-    add_index :networks, %i(location_id address prefix), unique: true
+    add_index :networks, %i[location_id address prefix], unique: true
 
     add_column :vps_ip, :network_id, :integer, null: false
     add_index :vps_ip, :network_id
@@ -57,12 +57,12 @@ class AddNetworks < ActiveRecord::Migration
 
   def get_networks
     puts
-    puts "For the migration to take place, it needs to know what networks you have."
-    puts "It is important to specify all networks, so that all IP addresses belong"
-    puts "to one of them."
+    puts 'For the migration to take place, it needs to know what networks you have.'
+    puts 'It is important to specify all networks, so that all IP addresses belong'
+    puts 'to one of them.'
     puts
-    puts "Enter the networks one by line, e.g. 192.168.1.0/24."
-    puts "When finished, enter \"done\" and press enter."
+    puts 'Enter the networks one by line, e.g. 192.168.1.0/24.'
+    puts 'When finished, enter "done" and press enter.'
 
     STDOUT.write('> ')
     STDOUT.flush
@@ -73,7 +73,6 @@ class AddNetworks < ActiveRecord::Migration
 
       begin
         @networks << IPAddress.parse(s)
-
       rescue ArgumentError
         puts "'#{s}' is not a valid network"
       end
@@ -82,7 +81,7 @@ class AddNetworks < ActiveRecord::Migration
       STDOUT.flush
     end
 
-    puts "Done"
+    puts 'Done'
     puts
 
     used_nets = []
@@ -91,6 +90,7 @@ class AddNetworks < ActiveRecord::Migration
       ip_net = @networks.detect do |net|
         addr = IPAddress.parse(ip.ip_addr)
         next if addr.class != net.class
+
         net.include?(addr)
       end
 
@@ -102,31 +102,31 @@ class AddNetworks < ActiveRecord::Migration
       end
     end
 
-    if @orphans.any? || used_nets.count < @networks.count
-      if used_nets.count < @networks.count
-        puts "These networks are not used:"
-        (@networks - used_nets).each { |net| puts "  #{net.to_string}" }
-      end
+    return unless @orphans.any? || used_nets.count < @networks.count
 
-      if @orphans.any?
-        puts "The following IP addresses do not belong to any network, please restart"
-        puts "the migration and specify all networks."
-        puts
-        @orphans.each { |ip| puts "  #{ip.ip_addr}" }
-      end
-
-      exit(false)
+    if used_nets.count < @networks.count
+      puts 'These networks are not used:'
+      (@networks - used_nets).each { |net| puts "  #{net.to_string}" }
     end
+
+    if @orphans.any?
+      puts 'The following IP addresses do not belong to any network, please restart'
+      puts 'the migration and specify all networks.'
+      puts
+      @orphans.each { |ip| puts "  #{ip.ip_addr}" }
+    end
+
+    exit(false)
   end
 
   def continue?
     puts
-    puts "The migration can proceed with the following networks:"
+    puts 'The migration can proceed with the following networks:'
     @networks.each { |net| puts "  #{net.to_string}" }
     puts
-    STDOUT.write("Continue? [y/N]: ")
+    STDOUT.write('Continue? [y/N]: ')
     STDOUT.flush
-    return STDIN.readline.strip.downcase == 'y'
+    STDIN.readline.strip.downcase == 'y'
   end
 
   def create_networks
@@ -142,15 +142,15 @@ class AddNetworks < ActiveRecord::Migration
         end
       end
 
-      fail "cannot find location for network #{net.to_string}" unless loc
+      raise "cannot find location for network #{net.to_string}" unless loc
 
       @net_map[net] = Network.create!(
-          location_id: loc,
-          ip_version: net.ipv4? ? 4 : 6,
-          address: net.to_s,
-          prefix: net.prefix,
-          role: 0,  # public
-          managed: true,
+        location_id: loc,
+        ip_version: net.ipv4? ? 4 : 6,
+        address: net.to_s,
+        prefix: net.prefix,
+        role: 0, # public
+        managed: true
       )
     end
   end
@@ -168,34 +168,34 @@ class AddNetworks < ActiveRecord::Migration
       net = @net_map[raw_net]
 
       if net.location_id != ip.ip_location
-        fail "network location (#{net.location_id}) is not the same as IP location "+
-             "(#{ip.ip_location})"
+        raise "network location (#{net.location_id}) is not the same as IP location " +
+              "(#{ip.ip_location})"
       end
 
       # IpAddress was first used when column network_id did not exist. It seems
       # unable to update it now.
       IpAddress.connection.execute(
-          "UPDATE vps_ip SET network_id = #{net.id} WHERE ip_id = #{ip.id}"
+        "UPDATE vps_ip SET network_id = #{net.id} WHERE ip_id = #{ip.id}"
       )
     end
 
-    if @orphans.any?
-      puts "The following IP addresses do not belong to any network, please restart"
-      puts "the migration and specify all networks."
-      puts
-      @orphans.each { |ip| puts "  #{ip.ip_addr}" }
-      puts
-      puts "You can either fix this manually or rollback the migration and run it"
-      puts "again."
-    end
+    return unless @orphans.any?
+
+    puts 'The following IP addresses do not belong to any network, please restart'
+    puts 'the migration and specify all networks.'
+    puts
+    @orphans.each { |ip| puts "  #{ip.ip_addr}" }
+    puts
+    puts 'You can either fix this manually or rollback the migration and run it'
+    puts 'again.'
   end
 
   def revert_ips
     Network.all.each do |net|
       IpAddress.where(network_id: net.id).each do |ip|
         ip.update!(
-            ip_v: net.ip_version,
-            ip_location: net.location_id,
+          ip_v: net.ip_version,
+          ip_location: net.location_id
         )
       end
     end

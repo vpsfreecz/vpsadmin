@@ -10,7 +10,7 @@ module Transactions::Vps
 
       {
         user: 'root',
-        password: passwd,
+        password: passwd
       }
     end
   end

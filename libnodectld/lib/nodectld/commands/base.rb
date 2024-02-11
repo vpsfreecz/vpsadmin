@@ -1,7 +1,7 @@
 module NodeCtld::Commands
   class Base
     def self.handle(type)
-      NodeCtld::Command.register(self.to_s, type)
+      NodeCtld::Command.register(to_s, type)
     end
 
     include NodeCtld::Utils::Command
@@ -14,7 +14,7 @@ module NodeCtld::Commands
       @anchors = []
       @command = cmd
 
-      params.each do |k,v|
+      params.each do |k, v|
         instance_variable_set(:"@#{k}", v)
       end
 
@@ -24,25 +24,15 @@ module NodeCtld::Commands
       Thread.current[:command] = self
     end
 
-    def exec
+    def exec; end
 
-    end
+    def rollback; end
 
-    def rollback
+    def test; end
 
-    end
+    def on_save(db); end
 
-    def test
-
-    end
-
-    def on_save(db)
-
-    end
-
-    def post_save
-
-    end
+    def post_save; end
 
     def step
       attrs do
@@ -73,7 +63,7 @@ module NodeCtld::Commands
     end
 
     def progress=(v)
-      @command.progress=(v)
+      @command.progress = (v)
     end
 
     def log_type
@@ -81,12 +71,13 @@ module NodeCtld::Commands
     end
 
     protected
+
     def anchor(name)
       @anchors << name
     end
 
-    def used_anchors
-      @anchors.reverse_each { |a| yield(a) }
+    def used_anchors(&block)
+      @anchors.reverse_each(&block)
     end
 
     def attrs
@@ -100,7 +91,7 @@ module NodeCtld::Commands
     end
 
     def ok
-      {ret: :ok}
+      { ret: :ok }
     end
 
     # Call command +cmd+ with +opts+.
@@ -109,18 +100,18 @@ module NodeCtld::Commands
     end
   end
 
-  module Pool              ; end
-  module DatasetTree       ; end
-  module Branch            ; end
-  module Vps               ; end
-  module Dataset           ; end
-  module Shaper            ; end
-  module Utils             ; end
-  module Mail              ; end
-  module OutageWindow      ; end
-  module Queue             ; end
-  module Network           ; end
-  module UserNamespace     ; end
-  module NetworkInterface  ; end
-  module Export            ; end
+  module Pool; end
+  module DatasetTree; end
+  module Branch; end
+  module Vps; end
+  module Dataset; end
+  module Shaper; end
+  module Utils; end
+  module Mail; end
+  module OutageWindow; end
+  module Queue; end
+  module Network; end
+  module UserNamespace; end
+  module NetworkInterface; end
+  module Export; end
 end

@@ -5,14 +5,14 @@ class ClusterResourceUse < ActiveRecord::Base
 
   belongs_to :user_cluster_resource
 
-  enum admin_lock_type: %i(no_lock absolute not_less not_more)
+  enum admin_lock_type: %i[no_lock absolute not_less not_more]
 
   validate :check_allocation
 
   attr_accessor :resource_transfer, :admin_override, :attr_changes
 
   def self.for_obj(obj)
-    self.where(
+    where(
       class_name: obj.class.name,
       table_name: obj.class.table_name,
       row_id: obj.id
@@ -20,17 +20,18 @@ class ClusterResourceUse < ActiveRecord::Base
   end
 
   def updating?
-    %w(confirmed confirm_destroy).include?(confirmed.to_s)
+    %w[confirmed confirm_destroy].include?(confirmed.to_s)
   end
 
   protected
+
   def check_allocation
-    self.attr_changes ||= {value: self.value}
+    self.attr_changes ||= { value: value }
 
     if ::User.current && ::User.current.role == :admin
-      self.admin_limit = admin_lock_type == 'no_lock' ? nil : self.value
-      attr_changes[:admin_limit] = self.admin_limit
-      attr_changes[:admin_lock_type] = self.class.admin_lock_types[self.admin_lock_type]
+      self.admin_limit = admin_lock_type == 'no_lock' ? nil : value
+      attr_changes[:admin_limit] = admin_limit
+      attr_changes[:admin_lock_type] = self.class.admin_lock_types[admin_lock_type]
     end
 
     used = self.class.where(
@@ -40,11 +41,11 @@ class ClusterResourceUse < ActiveRecord::Base
       confirmed: self.class.confirmed(:confirm_destroy)
     ).sum(:value)
 
-    if self.new_record? || resource_transfer
-      total = used + self.value
-    else
-      total = used - self.value_was + self.value
-    end
+    total = if new_record? || resource_transfer
+              used + value
+            else
+              used - value_was + value
+            end
 
     name = user_cluster_resource.cluster_resource.name
     min = user_cluster_resource.cluster_resource.min
@@ -57,37 +58,31 @@ class ClusterResourceUse < ActiveRecord::Base
       )
     end
 
-    if !admin_override && self.value > max
+    if !admin_override && value > max
       errors.add(:value, "cannot allocate more #{name} than #{max} to one object")
 
-    elsif !admin_override && self.value < min
+    elsif !admin_override && value < min
       errors.add(:value, "cannot allocate less #{name} than #{min} to one object")
     end
 
-    if (self.value % user_cluster_resource.cluster_resource.stepsize) != 0
+    if (value % user_cluster_resource.cluster_resource.stepsize) != 0
       errors.add(
         :value,
         "#{name} is not a multiple of step size (#{user_cluster_resource.cluster_resource.stepsize})"
       )
     end
 
-    if self.admin_limit
-      case self.admin_lock_type
-      when 'absolute'
-        if admin_limit != value
-          errors.add(:value, "cannot allocate #{name} other than #{admin_limit}")
-        end
+    return unless admin_limit
 
-      when 'not_less'
-        if value < admin_limit
-          errors.add(:value, "cannot allocate less #{name} than #{admin_limit}")
-        end
+    case admin_lock_type
+    when 'absolute'
+      errors.add(:value, "cannot allocate #{name} other than #{admin_limit}") if admin_limit != value
 
-      when 'not_more'
-        if value > admin_limit
-          errors.add(:value, "cannot allocate more #{name} than #{admin_limit}")
-        end
-      end
+    when 'not_less'
+      errors.add(:value, "cannot allocate less #{name} than #{admin_limit}") if value < admin_limit
+
+    when 'not_more'
+      errors.add(:value, "cannot allocate more #{name} than #{admin_limit}") if value > admin_limit
     end
   end
 end

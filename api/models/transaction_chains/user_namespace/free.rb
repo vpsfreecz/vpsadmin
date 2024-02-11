@@ -9,7 +9,7 @@ module TransactionChains
         lock(blk)
       end
 
-      confirmations = Proc.new do |t|
+      confirmations = proc do |t|
         userns.user_namespace_maps.each do |map|
           t.just_destroy(map)
         end

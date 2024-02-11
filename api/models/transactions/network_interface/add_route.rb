@@ -21,7 +21,7 @@ module Transactions::NetworkInterface
         via: via && via.ip_addr,
         register: register,
         id: ip.id,
-        user_id: ip.user_id || netif.vps.user_id,
+        user_id: ip.user_id || netif.vps.user_id
       }
     end
   end

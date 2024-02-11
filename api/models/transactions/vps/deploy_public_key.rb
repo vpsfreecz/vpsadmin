@@ -8,7 +8,7 @@ module Transactions::Vps
       self.vps_id = vps.id
       self.node_id = vps.node_id
 
-      {pubkey: pubkey.key}
+      { pubkey: pubkey.key }
     end
   end
 end

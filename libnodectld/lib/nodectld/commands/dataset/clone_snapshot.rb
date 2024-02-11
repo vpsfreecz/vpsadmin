@@ -6,7 +6,7 @@ module NodeCtld
     def exec
       clone = pool_mounted_clone(@pool_fs, @clone_name)
 
-      zfs(:clone, "-o readonly=on", "#{ds} #{clone}")
+      zfs(:clone, '-o readonly=on', "#{ds} #{clone}")
 
       if @uidmap && @gidmap
         zfs(:umount, nil, clone)
@@ -22,6 +22,7 @@ module NodeCtld
     end
 
     protected
+
     def ds
       if @branch
         "#{@pool_fs}/#{@dataset_name}/#{@dataset_tree}/#{@branch}@#{@snapshot}"

@@ -2,8 +2,9 @@ module TransactionChains
   class Ip::Allocate < ::TransactionChain
     label 'Allocate IP to object'
 
-    def allocate_to_environment_user_config(r, vps, n)
+    def allocate_to_environment_user_config(_r, _vps, n)
       return n if n == 0
+
       raise NotImplementedError
     end
 
@@ -22,21 +23,17 @@ module TransactionChains
               ip_v: v,
               role: r.name.end_with?('_private') ? :private_access : :public_access,
               purpose: :vps,
-              address_location: address_location,
+              address_location: address_location
             )
             lock(ip)
 
             ips << ip
           end
-
         rescue ActiveRecord::RecordNotFound
-          if strict
-            raise VpsAdmin::API::Exceptions::ConfigurationError,
-                  "no #{r.name} address available"
-          else
-            break
-          end
+          break unless strict
 
+          raise VpsAdmin::API::Exceptions::ConfigurationError,
+                "no #{r.name} address available"
         rescue ResourceLocked
           sleep(0.25)
           retry
@@ -48,7 +45,7 @@ module TransactionChains
       chowned = 0
       ownership = netif.vps.node.location.environment.user_ip_ownership
       last_ip = netif.ip_addresses.joins(:network).where(
-        networks: {ip_version: v}
+        networks: { ip_version: v }
       ).order(order: :desc).take
 
       order = last_ip ? last_ip.order + 1 : 0
@@ -59,7 +56,7 @@ module TransactionChains
             ip,
             network_interface_id: ip.network_interface_id,
             order: ip.order,
-            charged_environment_id: ip.charged_environment_id,
+            charged_environment_id: ip.charged_environment_id
           )
           t.edit_before(ip, user_id: ip.user_id) if ownership
 
@@ -79,7 +76,7 @@ module TransactionChains
           use_chain(
             NetworkInterface::AddHostIp,
             args: [netif, ip.host_ip_addresses.where(auto_add: true)],
-            kwargs: {check_addrs: false},
+            kwargs: { check_addrs: false }
           )
         end
 

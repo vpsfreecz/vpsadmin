@@ -17,7 +17,7 @@ VpsAdmin::API::DatasetProperties.register do
     type :integer
     label 'Record size'
     desc 'Specifies a suggested block size for files in the file system'
-    default 128*1024
+    default 128 * 1024
 
     validate do |raw|
       raw >= 4096 && raw <= 128 * 1024 && (raw & (raw - 1)) == 0
@@ -60,7 +60,7 @@ VpsAdmin::API::DatasetProperties.register do
     label 'Sync'
     desc 'Controls the behavior of synchronous requests'
     default 'standard'
-    choices %w(standard disabled)
+    choices %w[standard disabled]
   end
 
   property :sharenfs do

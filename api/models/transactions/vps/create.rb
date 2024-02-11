@@ -21,7 +21,7 @@ module Transactions::Vps
         arch: vps.os_template.arch,
         vendor: vps.os_template.vendor,
         variant: vps.os_template.variant,
-        empty: empty,
+        empty: empty
       }
     end
   end

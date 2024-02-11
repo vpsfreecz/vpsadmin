@@ -7,15 +7,17 @@ module TransactionChains
       concerns(:affect, [plan.class.name, plan.id])
 
       plan.vps_migrations.includes(:src_node, :dst_node, vps: [:user]).each do |m|
+        next unless m.vps.user.mailer_enabled
+
         mail(:vps_migration_planned, {
-          user: m.vps.user,
-          vars: {
-            m: m,
-            vps: m.vps,
-            src_node: m.src_node,
-            dst_node: m.dst_node,
-          }
-        }) if m.vps.user.mailer_enabled
+               user: m.vps.user,
+               vars: {
+                 m: m,
+                 vps: m.vps,
+                 src_node: m.src_node,
+                 dst_node: m.dst_node
+               }
+             })
       end
     end
   end

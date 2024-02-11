@@ -3,8 +3,8 @@ require 'thread'
 
 module NodeCtld
   class PoolStatus
-    STATES = %i(unknown online degraded suspended faulted error)
-    SCANS = %i(unknown none scrub resilver error)
+    STATES = %i[unknown online degraded suspended faulted error]
+    SCANS = %i[unknown none scrub resilver error]
 
     include OsCtl::Lib::Utils::Log
 
@@ -25,6 +25,7 @@ module NodeCtld
 
     def update
       return if @pools.empty?
+
       check_status
     end
 
@@ -37,6 +38,7 @@ module NodeCtld
     end
 
     protected
+
     def check_status
       t = Time.now.utc
 
@@ -77,10 +79,10 @@ module NodeCtld
             time: t.to_i,
             state: state,
             scan: scan,
-            scan_percent: scan_percent,
+            scan_percent: scan_percent
           }.to_json,
           content_type: 'application/json',
-          routing_key: 'pool_statuses',
+          routing_key: 'pool_statuses'
         )
       end
 

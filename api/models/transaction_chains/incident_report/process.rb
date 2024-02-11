@@ -6,8 +6,8 @@ module TransactionChains
       concerns(:affect, *incidents.map { |inc| [inc.vps.class.name, inc.vps_id] })
 
       use_chain(IncidentReport::Send, args: [
-        VpsAdmin::API::IncidentReports::Result.new(incidents: incidents),
-      ])
+                  VpsAdmin::API::IncidentReports::Result.new(incidents: incidents)
+                ])
 
       now = Time.now
 
@@ -17,9 +17,9 @@ module TransactionChains
             Vps::Update,
             args: [
               incident.vps,
-              {cpu_limit: incident.cpu_limit},
+              { cpu_limit: incident.cpu_limit }
             ],
-            kwargs: {admin: incident.filed_by},
+            kwargs: { admin: incident.filed_by }
           )
         end
 

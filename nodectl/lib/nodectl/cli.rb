@@ -14,7 +14,7 @@ module NodeCtl
     def initialize
       @options = {
         parsable: false,
-        sock: '/run/nodectl/nodectld.sock',
+        sock: '/run/nodectl/nodectld.sock'
       }
     end
 
@@ -34,7 +34,6 @@ module NodeCtl
 
       begin
         cli.parse!
-
       rescue OptionParser::InvalidOption => e
         warn e.message
         warn cli
@@ -52,13 +51,11 @@ module NodeCtl
 
       begin
         command.validate
-
       rescue ValidationError => e
         warn 'Command failed'
         warn "#{command.cmd}: #{e.message}"
         exit(false)
-
-      rescue => e
+      rescue StandardError => e
         warn 'Command failed'
         warn e.inspect
         exit(false)
@@ -66,30 +63,31 @@ module NodeCtl
 
       ret = command.execute
 
-      if ret.is_a?(Hash) && !ret[:status]
-        warn "Command error: #{ret[:message]}"
-        exit(false)
-      end
+      return unless ret.is_a?(Hash) && !ret[:status]
+
+      warn "Command error: #{ret[:message]}"
+      exit(false)
     end
 
     protected
+
     def opt_parser
       OptionParser.new do |opts|
-        opts.banner = <<END_BANNER
-Usage: nodectl <command> [global options] [command options]
+        opts.banner = <<~END_BANNER
+          Usage: nodectl <command> [global options] [command options]
 
-Commands:
-END_BANNER
+          Commands:
+        END_BANNER
 
         Command.all.each do |c|
-          opts.banner << sprintf("%-20s %s\n", c.label, c.description)
+          opts.banner << format("%-20s %s\n", c.label, c.description)
         end
 
-        opts.banner << <<END_BANNER
+        opts.banner << <<~END_BANNER
 
-For specific options type: nodectl <command> --help
+          For specific options type: nodectl <command> --help
 
-END_BANNER
+        END_BANNER
 
         if command
           opts.separator 'Command-specific options:'

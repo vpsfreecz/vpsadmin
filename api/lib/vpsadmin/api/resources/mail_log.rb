@@ -19,7 +19,7 @@ module VpsAdmin::API::Resources
       string :text_plain
       string :text_html
       resource MailTemplate
-      #resource TransactionChain::Transaction
+      # resource TransactionChain::Transaction
       datetime :created_at
     end
 

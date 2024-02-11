@@ -10,7 +10,7 @@ module Transactions::Export
       {
         export_id: export.id,
         address: host_addr.ip_addr,
-        threads: export.threads,
+        threads: export.threads
       }
     end
   end

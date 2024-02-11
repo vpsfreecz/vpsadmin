@@ -25,7 +25,7 @@ module NodeCtld
     include OsCtl::Lib::Utils::Log
 
     class << self
-      %i(<<).each do |v|
+      %i[<<].each do |v|
         define_method(v) do |*args, **kwargs, &block|
           instance.send(v, *args, **kwargs, &block)
         end
@@ -53,6 +53,7 @@ module NodeCtld
     end
 
     protected
+
     def process_queue
       loop do
         add_report(@queue.pop)
@@ -72,14 +73,14 @@ module NodeCtld
 
         next if vps_reports.empty?
 
-        vps_reports.each do |vps_id, reports|
+        vps_reports.each do |_vps_id, reports|
           reports.each do |r|
             log(:info, "Submitting OOM report invoked by PID #{r.invoked_by_pid} from VPS #{r.vps_id}")
             NodeBunny.publish_wait(
               @exchange,
               r.export.to_json,
               content_type: 'application/json',
-              routing_key: 'oom_reports',
+              routing_key: 'oom_reports'
             )
           end
         end

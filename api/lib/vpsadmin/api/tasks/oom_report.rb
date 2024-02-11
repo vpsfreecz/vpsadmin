@@ -1,6 +1,6 @@
 module VpsAdmin::API::Tasks
   class OomReport < Base
-    COOLDOWN = ENV['COOLDOWN'] ? ENV['COOLDOWN'].to_i : 3*60*60
+    COOLDOWN = ENV['COOLDOWN'] ? ENV['COOLDOWN'].to_i : 3 * 60 * 60
 
     # Notify users about stale and previously unreported OOM reports
     #
@@ -9,12 +9,12 @@ module VpsAdmin::API::Tasks
     #             the user again
     def notify
       vpses = ::Vps.joins(:oom_reports).where(
-        oom_reports: {reported_at: nil},
+        oom_reports: { reported_at: nil }
       ).group('vpses.id')
 
       TransactionChains::Vps::OomReports.fire2(
         args: [vpses],
-        kwargs: {cooldown: COOLDOWN},
+        kwargs: { cooldown: COOLDOWN }
       )
     end
   end

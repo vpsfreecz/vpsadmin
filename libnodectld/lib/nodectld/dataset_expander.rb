@@ -13,7 +13,7 @@ module NodeCtld
       :new_refquota,
       :added_space,
       :time,
-      keyword_init: true,
+      keyword_init: true
     )
 
     def initialize
@@ -46,6 +46,7 @@ module NodeCtld
 
       pool.datasets.each_value do |ds|
         next unless ds.properties.has_key?('available')
+
         avail_bytes = ds.properties['available'].value
         next if avail_bytes.nil? # non-existent datasets found only in db
 
@@ -64,6 +65,7 @@ module NodeCtld
     end
 
     protected
+
     def run_submitter
       loop do
         event = @submit_queue.pop
@@ -76,11 +78,11 @@ module NodeCtld
             original_refquota: event.original_refquota,
             new_refquota: event.new_refquota,
             added_space: event.added_space,
-            time: event.time.to_i,
+            time: event.time.to_i
           }.to_json,
           persistent: true,
           content_type: 'application/json',
-          routing_key: 'dataset_expansions',
+          routing_key: 'dataset_expansions'
         )
       end
     end
@@ -94,14 +96,14 @@ module NodeCtld
 
       add_bytes = [
         min_add_bytes,
-        ((min_add_pct / 100.0) * refquota_bytes).round,
+        ((min_add_pct / 100.0) * refquota_bytes).round
       ].max
 
       new_refquota_bytes = refquota_bytes + add_bytes
 
       log(
         :info,
-        "Expanding #{ds.name} #{humanize_data(refquota_bytes)} -> "+
+        "Expanding #{ds.name} #{humanize_data(refquota_bytes)} -> " +
         "#{humanize_data(new_refquota_bytes)} (+#{humanize_data(add_bytes)})"
       )
 
@@ -117,7 +119,7 @@ module NodeCtld
         original_refquota: (refquota_bytes / 1024.0 / 1024).round,
         new_refquota: (new_refquota_bytes / 1024.0 / 1024.0).round,
         added_space: (add_bytes / 1024.0 / 1024).round,
-        time: t,
+        time: t
       )
     end
   end

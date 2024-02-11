@@ -118,15 +118,16 @@ module NodeCtld
 
     def dump
       sync do
-        Hash[ @map.map { |k,v| [k.dup, v.clone] } ]
+        Hash[@map.map { |k, v| [k.dup, v.clone] }]
       end
     end
 
-    def each_veth(&block)
+    def each_veth
       sync do
         @map.each do |vps_id, netmap|
           netmap.each do |vps, host|
             next unless host
+
             yield(vps_id, vps, host)
           end
         end
@@ -138,18 +139,19 @@ module NodeCtld
     end
 
     protected
+
     def fetch(vps_id)
       entry = {}
 
-      osctl_parse(%i(ct netif ls), vps_id).each do |netif|
-        entry[ netif[:name] ] = netif[:veth]
+      osctl_parse(%i[ct netif ls], vps_id).each do |netif|
+        entry[netif[:name]] = netif[:veth]
       end
 
       entry
     end
 
     def list_all
-      osctl_parse(%i(ct netif ls))
+      osctl_parse(%i[ct netif ls])
     end
 
     def load_all
@@ -168,8 +170,8 @@ module NodeCtld
       end
     end
 
-    def sync
-      @mutex.synchronize { yield }
+    def sync(&block)
+      @mutex.synchronize(&block)
     end
   end
 end

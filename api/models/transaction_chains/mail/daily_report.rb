@@ -4,27 +4,28 @@ module TransactionChains
     allow_empty
 
     has_hook :send,
-        desc: 'Called when daily report is being sent',
-        context: 'TransactionChains::Mail::DailyReport instance',
-        args: {
-          from: 'Starting time of this report',
-        }
+             desc: 'Called when daily report is being sent',
+             context: 'TransactionChains::Mail::DailyReport instance',
+             args: {
+               from: 'Starting time of this report'
+             }
 
     def link_chain(lang)
       now = Time.now.utc
 
       mail(:daily_report, {
-        language: lang,
-        vars: call_hooks_for(
-          :send,
-          self,
-          args: [now - 24*60*60, now],
-          initial: vars(now)
-        ),
-      })
+             language: lang,
+             vars: call_hooks_for(
+               :send,
+               self,
+               args: [now - 24 * 60 * 60, now],
+               initial: vars(now)
+             )
+           })
     end
 
     protected
+
     def vars(now)
       t = now.strftime('%Y-%m-%d %H:%M:%S')
 
@@ -37,56 +38,56 @@ module TransactionChains
 
       {
         date: {
-          start: (now - 24*60*60),
+          start: (now - 24 * 60 * 60),
           end: now
         },
 
         users: {
           new: {
             changed: ::User.existing.where(
-                'DATE_ADD(created_at, INTERVAL 1 DAY) >= ?', t
+              'DATE_ADD(created_at, INTERVAL 1 DAY) >= ?', t
             ).order('id')
           },
 
           active: {
             all: ::User.unscoped.where(object_state: ::User.object_states[:active]),
             changed: ::User.unscoped.where(
-                object_state: ::User.object_states[:active]
+              object_state: ::User.object_states[:active]
             ).joins("INNER JOIN object_states s ON s.class_name = 'User' AND users.id = s.row_id")
-            .where('s.state = ?', ::User.object_states[:active])
-            .where('s.created_at != users.created_at')
-            .where('DATE_ADD(s.created_at, INTERVAL 1 DAY) >= ?', t)
-            .order('users.id')
+                           .where('s.state = ?', ::User.object_states[:active])
+                           .where('s.created_at != users.created_at')
+                           .where('DATE_ADD(s.created_at, INTERVAL 1 DAY) >= ?', t)
+                           .order('users.id')
           },
 
           soft_deleted: {
             all: ::User.unscoped.where(object_state: ::User.object_states[:soft_delete]),
             changed: ::User.unscoped.where(
-                object_state: ::User.object_states[:soft_delete]
+              object_state: ::User.object_states[:soft_delete]
             ).joins("INNER JOIN object_states s ON s.class_name = 'User' AND users.id = s.row_id")
-            .where('s.state = ?', ::User.object_states[:soft_delete])
-            .where('DATE_ADD(s.created_at, INTERVAL 1 DAY) >= ?', t)
-            .order('users.id')
+                           .where('s.state = ?', ::User.object_states[:soft_delete])
+                           .where('DATE_ADD(s.created_at, INTERVAL 1 DAY) >= ?', t)
+                           .order('users.id')
           },
 
           hard_deleted: {
             all: ::User.unscoped.where(object_state: ::User.object_states[:hard_delete]),
             changed: ::User.unscoped.where(
-                object_state: ::User.object_states[:hard_delete]
+              object_state: ::User.object_states[:hard_delete]
             ).joins("INNER JOIN object_states s ON s.class_name = 'User' AND users.id = s.row_id")
-            .where('s.state = ?', ::User.object_states[:hard_delete])
-            .where('DATE_ADD(s.created_at, INTERVAL 1 DAY) >= ?', t)
-            .order('users.id')
+                           .where('s.state = ?', ::User.object_states[:hard_delete])
+                           .where('DATE_ADD(s.created_at, INTERVAL 1 DAY) >= ?', t)
+                           .order('users.id')
           },
 
           suspended: {
             all: ::User.unscoped.where(object_state: ::User.object_states[:suspended]),
             changed: ::User.unscoped.where(
-                object_state: ::User.object_states[:suspended]
+              object_state: ::User.object_states[:suspended]
             ).joins("INNER JOIN object_states s ON s.class_name = 'User' AND users.id = s.row_id")
-            .where('s.state = ?', ::User.object_states[:suspended])
-            .where('DATE_ADD(s.created_at, INTERVAL 1 DAY) >= ?', t)
-            .order('users.id')
+                           .where('s.state = ?', ::User.object_states[:suspended])
+                           .where('DATE_ADD(s.created_at, INTERVAL 1 DAY) >= ?', t)
+                           .order('users.id')
           }
         },
 
@@ -102,10 +103,10 @@ module TransactionChains
             changed: ::Vps.unscoped.where(
               object_state: ::Vps.object_states[:active]
             ).joins("INNER JOIN object_states s ON s.class_name = 'Vps' AND vpses.id = s.row_id")
-            .where('s.state = ?', ::Vps.object_states[:active])
-            .where('s.created_at != vpses.created_at')
-            .where('DATE_ADD(s.created_at, INTERVAL 1 DAY) >= ?', t)
-            .order('vpses.id')
+                          .where('s.state = ?', ::Vps.object_states[:active])
+                          .where('s.created_at != vpses.created_at')
+                          .where('DATE_ADD(s.created_at, INTERVAL 1 DAY) >= ?', t)
+                          .order('vpses.id')
           },
 
           soft_deleted: {
@@ -113,9 +114,9 @@ module TransactionChains
             changed: ::Vps.unscoped.where(
               object_state: ::Vps.object_states[:soft_delete]
             ).joins("INNER JOIN object_states s ON s.class_name = 'Vps' AND vpses.id = s.row_id")
-            .where('s.state = ?', ::Vps.object_states[:soft_delete])
-            .where('DATE_ADD(s.created_at, INTERVAL 1 DAY) >= ?', t)
-            .order('vpses.id')
+                          .where('s.state = ?', ::Vps.object_states[:soft_delete])
+                          .where('DATE_ADD(s.created_at, INTERVAL 1 DAY) >= ?', t)
+                          .order('vpses.id')
           },
 
           hard_deleted: {
@@ -123,9 +124,9 @@ module TransactionChains
             changed: ::Vps.unscoped.where(
               object_state: ::Vps.object_states[:hard_delete]
             ).joins("INNER JOIN object_states s ON s.class_name = 'Vps' AND vpses.id = s.row_id")
-            .where('s.state = ?', ::Vps.object_states[:hard_delete])
-            .where('DATE_ADD(s.created_at, INTERVAL 1 DAY) >= ?', t)
-            .order('vpses.id')
+                          .where('s.state = ?', ::Vps.object_states[:hard_delete])
+                          .where('DATE_ADD(s.created_at, INTERVAL 1 DAY) >= ?', t)
+                          .order('vpses.id')
           },
 
           suspended: {
@@ -133,37 +134,37 @@ module TransactionChains
             changed: ::Vps.unscoped.where(
               object_state: ::Vps.object_states[:suspended]
             ).joins("INNER JOIN object_states s ON s.class_name = 'Vps' AND vpses.id = s.row_id")
-            .where('s.state = ?', ::Vps.object_states[:suspended])
-            .where('DATE_ADD(s.created_at, INTERVAL 1 DAY) >= ?', t)
-            .order('vpses.id')
+                          .where('s.state = ?', ::Vps.object_states[:suspended])
+                          .where('DATE_ADD(s.created_at, INTERVAL 1 DAY) >= ?', t)
+                          .order('vpses.id')
           }
         },
 
         datasets: {
           all: ::Dataset.all,
           primary: ::Dataset.joins(dataset_in_pools: [:pool]).where(
-            pools: {role: ::Pool.roles[:primary]}
+            pools: { role: ::Pool.roles[:primary] }
           ).group('datasets.id'),
           hypervisor: ::Dataset.joins(dataset_in_pools: [:pool]).where(
-            pools: {role: ::Pool.roles[:hypervisor]}
+            pools: { role: ::Pool.roles[:hypervisor] }
           ).group('datasets.id'),
           backup: ::Dataset.joins(dataset_in_pools: [:pool]).where(
-            pools: {role: ::Pool.roles[:backup]}
+            pools: { role: ::Pool.roles[:backup] }
           ).group('datasets.id')
         },
 
         snapshots: {
           all: ::Snapshot.all,
           new: ::Snapshot.where('DATE_ADD(created_at, INTERVAL 1 DAY) >= ?', t),
-          primary: ::Snapshot.joins(dataset: [{dataset_in_pools: [:pool]}]).where(
-            pools: {role: ::Pool.roles[:primary]}
+          primary: ::Snapshot.joins(dataset: [{ dataset_in_pools: [:pool] }]).where(
+            pools: { role: ::Pool.roles[:primary] }
           ).group('snapshots.id'),
-          hypervisor: ::Snapshot.joins(dataset: [{dataset_in_pools: [:pool]}]).where(
-            pools: {role: ::Pool.roles[:hypervisor]}
+          hypervisor: ::Snapshot.joins(dataset: [{ dataset_in_pools: [:pool] }]).where(
+            pools: { role: ::Pool.roles[:hypervisor] }
           ).group('snapshots.id'),
-          backup: ::Snapshot.joins(dataset: [{dataset_in_pools: [:pool]}]).where(
-            pools: {role: ::Pool.roles[:backup]}
-          ).group('snapshots.id'),
+          backup: ::Snapshot.joins(dataset: [{ dataset_in_pools: [:pool] }]).where(
+            pools: { role: ::Pool.roles[:backup] }
+          ).group('snapshots.id')
         },
 
         downloads: {
@@ -172,14 +173,14 @@ module TransactionChains
             'DATE_ADD(created_at, INTERVAL 1 DAY) >= ?', t
           ),
           primary: ::SnapshotDownload.joins(:pool).where(
-            pools: {role: ::Pool.roles[:primary]}
+            pools: { role: ::Pool.roles[:primary] }
           ),
           hypervisor: ::SnapshotDownload.joins(:pool).where(
-            pools: {role: ::Pool.roles[:hypervisor]}
+            pools: { role: ::Pool.roles[:hypervisor] }
           ),
           backup: ::SnapshotDownload.joins(:pool).where(
-            pools: {role: ::Pool.roles[:backup]}
-          ),
+            pools: { role: ::Pool.roles[:backup] }
+          )
         },
 
         chains: {
@@ -206,11 +207,11 @@ module TransactionChains
             .joins(:cluster_resource_uses, :user)
             .select('user_cluster_resources.*, SUM(cluster_resource_uses.value) AS used_sum')
             .where(
-              users: {object_state: 'active'},
-              cluster_resource_uses: {confirmed: ::ClusterResourceUse.confirmed(:confirmed)},
+              users: { object_state: 'active' },
+              cluster_resource_uses: { confirmed: ::ClusterResourceUse.confirmed(:confirmed) }
             )
             .group('user_cluster_resources.user_id, user_cluster_resources.environment_id, user_cluster_resources.cluster_resource_id')
-            .having('SUM(cluster_resource_uses.value) > user_cluster_resources.value'),
+            .having('SUM(cluster_resource_uses.value) > user_cluster_resources.value')
         },
 
         backups: {
@@ -221,7 +222,7 @@ module TransactionChains
 
           old_latest_backup_snapshot: ::DatasetInPool
             .joins(:dataset, :pool, :dataset_in_pool_plans)
-            .where(pools: {role: ::Pool.roles[:backup]})
+            .where(pools: { role: ::Pool.roles[:backup] })
             .where('(
                 SELECT dips2.id
                 FROM dataset_in_pools dips2
@@ -242,7 +243,7 @@ module TransactionChains
           too_many_in_hypervisor: ::DatasetInPool
             .select('dataset_in_pools.*, COUNT(snapshot_in_pools.id) AS snapshot_count')
             .joins(:dataset, :pool, :snapshot_in_pools)
-            .where(pools: {role: ::Pool.roles[:hypervisor]})
+            .where(pools: { role: ::Pool.roles[:hypervisor] })
             .group('datasets.id, pools.id')
             .having('snapshot_count > 2')
             .order(Arel.sql('COUNT(snapshot_in_pools.id) DESC')),
@@ -250,10 +251,10 @@ module TransactionChains
           too_many_in_backup: ::DatasetInPool
             .select('dataset_in_pools.*, COUNT(snapshot_in_pools.id) AS snapshot_count')
             .joins(:dataset, :pool, :snapshot_in_pools)
-            .where(pools: {role: ::Pool.roles[:backup]})
+            .where(pools: { role: ::Pool.roles[:backup] })
             .group('datasets.id, pools.id')
             .having('snapshot_count > 20')
-            .order(Arel.sql('COUNT(snapshot_in_pools.id) DESC')),
+            .order(Arel.sql('COUNT(snapshot_in_pools.id) DESC'))
         },
 
         dataset_expansions: {
@@ -261,8 +262,8 @@ module TransactionChains
             .includes(:dataset, :vps)
             .joins(:vps, dataset: :user)
             .where(state: 'active')
-            .where(users: {object_state: ::User.object_states[:active]})
-            .where(vpses: {object_state: ::Vps.object_states[:active]})
+            .where(users: { object_state: ::User.object_states[:active] })
+            .where(vpses: { object_state: ::Vps.object_states[:active] })
             .order('over_refquota_seconds DESC'),
 
           new: ::DatasetExpansion
@@ -275,17 +276,17 @@ module TransactionChains
             .includes(:dataset, :vps)
             .where(state: 'resolved')
             .where('DATE_ADD(dataset_expansions.updated_at, INTERVAL 1 DAY) >= ?', t)
-            .order('dataset_expansions.updated_at'),
+            .order('dataset_expansions.updated_at')
         },
 
         oom_reports: {
           by_vps: ::Vps
             .select('vpses.*, SUM(oom_reports.`count`) AS oom_count')
             .joins(:oom_reports)
-            .where(vpses: {object_state: [
-                ::Vps.object_states[:active],
-                ::Vps.object_states[:suspended],
-              ]})
+            .where(vpses: { object_state: [
+                     ::Vps.object_states[:active],
+                     ::Vps.object_states[:suspended]
+                   ] })
             .where('DATE_ADD(oom_reports.created_at, INTERVAL 1 DAY) >= ?', t)
             .group('vpses.id')
             .having('oom_count > 0')
@@ -298,10 +299,10 @@ module TransactionChains
           by_node: ::Node
             .select('nodes.*, SUM(oom_reports.`count`) AS oom_count')
             .joins(vpses: :oom_reports)
-            .where(vpses: {object_state: [
-                ::Vps.object_states[:active],
-                ::Vps.object_states[:suspended],
-              ]})
+            .where(vpses: { object_state: [
+                     ::Vps.object_states[:active],
+                     ::Vps.object_states[:suspended]
+                   ] })
             .where('DATE_ADD(oom_reports.created_at, INTERVAL 1 DAY) >= ?', t)
             .group('nodes.id')
             .having('oom_count > 0')
@@ -318,8 +319,8 @@ module TransactionChains
           new: ::IncidentReport
             .includes(:user, :vps)
             .where('DATE_ADD(incident_reports.created_at, INTERVAL 1 DAY) >= ?', t)
-            .order('incident_reports.detected_at'),
-        },
+            .order('incident_reports.detected_at')
+        }
       }
     end
   end

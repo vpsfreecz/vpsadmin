@@ -5,11 +5,11 @@ module VpsAdmin::API::Resources
 
     params(:input) do
       resource VpsAdmin::API::Resources::Dataset::Snapshot, label: 'Snapshot',
-          value_label: :created_at, required: true
+                                                            value_label: :created_at, required: true
       resource VpsAdmin::API::Resources::Dataset::Snapshot, name: :from_snapshot,
-          label: 'From snapshot', value_label: :created_at
+                                                            label: 'From snapshot', value_label: :created_at
       string :format, choices: ::SnapshotDownload.formats.keys, default: 'archive',
-          fill: true
+                      fill: true
     end
 
     params(:filters) do
@@ -26,9 +26,9 @@ module VpsAdmin::API::Resources
       integer :size, desc: 'Size of the archive in MiB'
       string :sha256sum, desc: 'Control checksum'
       bool :ready, desc: 'True if the archive is complete and ready for download',
-          db_name: :confirmed?
+                   db_name: :confirmed?
       datetime :expiration_date, label: 'Expiration date',
-        desc: 'The archive is deleted when expiration date passes'
+                                 desc: 'The archive is deleted when expiration date passes'
     end
 
     class Index < HaveAPI::Actions::Default::Index
@@ -51,9 +51,7 @@ module VpsAdmin::API::Resources
           confirmed: ::SnapshotDownload.confirmed(:confirm_destroy)
         )
 
-        if input[:dataset]
-          q = q.joins(snapshot: [:dataset]).where(datasets: {id: input[:dataset].id})
-        end
+        q = q.joins(snapshot: [:dataset]).where(datasets: { id: input[:dataset].id }) if input[:dataset]
 
         q = q.where(snapshot: input[:snapshot]) if input[:snapshot]
 
@@ -104,21 +102,19 @@ module VpsAdmin::API::Resources
 
       authorize do |u|
         allow if u.role == :admin
-        restrict datasets: {user_id: u.id}
+        restrict datasets: { user_id: u.id }
         allow
       end
 
       def exec
         snap = ::Snapshot.includes(:dataset).joins(:dataset).find_by!(with_restricted(
-          id: input[:snapshot].id
-        ))
+                                                                        id: input[:snapshot].id
+                                                                      ))
 
-        if snap.snapshot_download_id
-          error('this snapshot has already been made available for download')
-        end
+        error('this snapshot has already been made available for download') if snap.snapshot_download_id
 
         if input[:format] == 'incremental_stream'
-          error('from_snapshot is required') if !input[:from_snapshot]
+          error('from_snapshot is required') unless input[:from_snapshot]
 
         elsif input[:from_snapshot]
           error('from_snapshot is for incremental_stream format only')
@@ -136,7 +132,7 @@ module VpsAdmin::API::Resources
         @chain, dl = snap.download(
           format: input[:format].to_sym,
           from_snapshot: input[:from_snapshot],
-          send_mail: input[:send_mail],
+          send_mail: input[:send_mail]
         )
         dl
       end
@@ -158,7 +154,7 @@ module VpsAdmin::API::Resources
 
       def exec
         dl = ::SnapshotDownload.find_by!(with_restricted(id: params[:snapshot_download_id]))
-        @chain, _ = dl.destroy
+        @chain, = dl.destroy
         ok
       end
 

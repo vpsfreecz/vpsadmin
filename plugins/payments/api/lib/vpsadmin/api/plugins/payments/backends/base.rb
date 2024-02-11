@@ -6,8 +6,6 @@ module VpsAdmin::API::Plugins::Payments::Backends
       end
     end
 
-    def fetch
-
-    end
+    def fetch; end
   end
 end

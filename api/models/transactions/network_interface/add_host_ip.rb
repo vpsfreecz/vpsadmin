@@ -15,7 +15,7 @@ module Transactions::NetworkInterface
         interface: netif.name,
         addr: addr.ip_addr,
         prefix: addr.ip_address.prefix,
-        version: addr.version,
+        version: addr.version
       }
     end
   end

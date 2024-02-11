@@ -5,7 +5,7 @@ module NodeCtld
     def mbuffer_log_file
       @mbuffer_log_file ||= File.join(
         ENV['TMPDIR'] || '/tmp',
-        "nodectld-mbuffer-#{@command.id}.log",
+        "nodectld-mbuffer-#{@command.id}.log"
       )
     end
 

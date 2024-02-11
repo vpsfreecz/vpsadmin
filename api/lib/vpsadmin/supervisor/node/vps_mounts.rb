@@ -7,7 +7,7 @@ module VpsAdmin::Supervisor
       queue = channel.queue(
         queue_name('vps_mounts'),
         durable: true,
-        arguments: {'x-queue-type' => 'quorum'},
+        arguments: { 'x-queue-type' => 'quorum' }
       )
 
       queue.bind(exchange, routing_key: 'vps_mounts')
@@ -20,6 +20,7 @@ module VpsAdmin::Supervisor
     end
 
     protected
+
     def update_mount_state(state)
       q =
         if state['id'] == 'all'

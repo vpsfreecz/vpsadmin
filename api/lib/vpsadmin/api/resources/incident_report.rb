@@ -33,7 +33,7 @@ module VpsAdmin::API::Resources
       desc 'List incident reports'
 
       input do
-        use :common, include: %i(user vps ip_address_assignment filed_by mailbox codename)
+        use :common, include: %i[user vps ip_address_assignment filed_by mailbox codename]
         string :ip_addr, label: 'IP address'
       end
 
@@ -44,25 +44,25 @@ module VpsAdmin::API::Resources
       authorize do |u|
         allow if u.role == :admin
         restrict user_id: u.id
-        output blacklist: %i(user mailbox)
+        output blacklist: %i[user mailbox]
         allow
       end
 
       def query
         q = ::IncidentReport.where(with_restricted)
 
-        %i(user vps ip_address_assignment filed_by mailbox codename).each do |v|
+        %i[user vps ip_address_assignment filed_by mailbox codename].each do |v|
           q = q.where(v => input[v]) if input.has_key?(v)
         end
 
         if input[:ip_addr]
           q = q.joins(:ip_address_assignment).where(
-            ip_address_assignments: {ip_addr: input[:ip_addr]},
+            ip_address_assignments: { ip_addr: input[:ip_addr] }
           )
 
           if current_user.role != :admin
             q = q.where(
-              ip_address_assignments: {user_id: current_user.id},
+              ip_address_assignments: { user_id: current_user.id }
             )
           end
         end
@@ -92,14 +92,14 @@ module VpsAdmin::API::Resources
       authorize do |u|
         allow if u.role == :admin
         restrict user_id: u.id
-        output blacklist: %i(user mailbox)
+        output blacklist: %i[user mailbox]
         allow
       end
 
       def prepare
         @incident = with_includes(::IncidentReport).find_by!(with_restricted(
-          id: params[:incident_report_id],
-        ))
+                                                               id: params[:incident_report_id]
+                                                             ))
       end
 
       def exec
@@ -112,9 +112,9 @@ module VpsAdmin::API::Resources
       blocking true
 
       input do
-        use :all, include: %i(vps ip_address_assignment subject text codename detected_at cpu_limit)
+        use :all, include: %i[vps ip_address_assignment subject text codename detected_at cpu_limit]
 
-        %i(vps subject text).each do |v|
+        %i[vps subject text].each do |v|
           patch v, required: true
         end
       end
@@ -137,10 +137,10 @@ module VpsAdmin::API::Resources
           text: input[:text],
           codename: input[:codename],
           detected_at: input[:detected_at] || Time.now,
-          cpu_limit: input[:cpu_limit],
+          cpu_limit: input[:cpu_limit]
         )
-        @chain, _ = TransactionChains::IncidentReport::New.fire2(
-          args: [incident],
+        @chain, = TransactionChains::IncidentReport::New.fire2(
+          args: [incident]
         )
         incident
       end

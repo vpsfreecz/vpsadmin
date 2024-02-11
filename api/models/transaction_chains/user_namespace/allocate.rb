@@ -25,7 +25,7 @@ module TransactionChains
 
       lock(uns)
 
-      confirmations = Proc.new do |t|
+      confirmations = proc do |t|
         t.just_create(uns)
         blocks.each { |blk| t.edit_before(blk, user_namespace_id: nil) }
       end
@@ -36,32 +36,30 @@ module TransactionChains
     end
 
     protected
+
     def allocate_block_range(count)
       ranges = available_ranges(count)
       locks = []
 
       ranges.each do |range|
-        begin
-          locks << lock(range.first)
-          locks << lock(range.last)
+        locks << lock(range.first)
+        locks << lock(range.last)
 
-          blocks = range.blocks
-          blocks.each { |blk| locks << lock(blk) }
+        blocks = range.blocks
+        blocks.each { |blk| locks << lock(blk) }
 
-          if blocks.detect { |blk| blk.user_namespace_id }
-            locks.each { |l| l.release }.clear
-            next
-          end
-
-          return blocks
-
-        rescue ResourceLocked
+        if blocks.detect { |blk| blk.user_namespace_id }
           locks.each { |l| l.release }.clear
           next
         end
+
+        return blocks
+      rescue ResourceLocked
+        locks.each { |l| l.release }.clear
+        next
       end
 
-      fail 'unable to find free block range'
+      raise 'unable to find free block range'
     end
 
     def available_ranges(block_count)
@@ -102,7 +100,7 @@ module TransactionChains
 
         AvailableRange.new(
           ::UserNamespaceBlock.new(id: f_id, index: f_index),
-          ::UserNamespaceBlock.new(id: l_id, index: l_index),
+          ::UserNamespaceBlock.new(id: l_id, index: l_index)
         )
       end
     end

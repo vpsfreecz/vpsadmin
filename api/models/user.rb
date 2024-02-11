@@ -37,34 +37,34 @@ class User < ActiveRecord::Base
 
   attr_reader :password_plain
 
-  has_paper_trail only: %i(login level full_name email address
-                           mailer_enabled object_state expiration_date)
+  has_paper_trail only: %i[login level full_name email address
+                           mailer_enabled object_state expiration_date]
 
   validates :level, :login, :password, :language_id, presence: true
   validates :level, numericality: {
     only_integer: true
   }
   validates :login, format: {
-    with: /\A[a-zA-Z0-9\.\-]{2,63}\z/,
+    with: /\A[a-zA-Z0-9.-]{2,63}\z/,
     message: 'not a valid login'
   }, uniqueness: true
   validates :preferred_session_length, numericality: {
     only_integer: true,
-    greater_or_equal_than: 0,
+    greater_or_equal_than: 0
   }
 
   include Lockable
   include HaveAPI::Hookable
 
   has_hook :create,
-      desc: 'Called when a new User is being created',
-      context: 'TransactionChains::User::Create instance',
-      args: {
-        user: 'User instance'
-      },
-      ret: {
-        objects: 'An array of created objects'
-      }
+           desc: 'Called when a new User is being created',
+           context: 'TransactionChains::User::Create instance',
+           args: {
+             user: 'User instance'
+           },
+           ret: {
+             objects: 'An array of created objects'
+           }
 
   include VpsAdmin::API::Lifetimes::Model
   set_object_states suspended: {
@@ -82,24 +82,24 @@ class User < ActiveRecord::Base
                       enter: TransactionChains::Lifetimes::NotImplemented
                     }
 
-  default_scope {
+  default_scope do
     where.not(object_state: object_states[:hard_delete])
-  }
+  end
 
-  scope :existing, -> {
-    unscoped {
+  scope :existing, lambda {
+    unscoped do
       where(object_state: object_states[:active])
-    }
+    end
   }
 
-  scope :including_deleted, -> {
-    unscoped {
+  scope :including_deleted, lambda {
+    unscoped do
       where(object_state: [
               object_states[:active],
               object_states[:suspended],
               object_states[:soft_delete]
             ])
-    }
+    end
   }
 
   ROLES = {
@@ -108,7 +108,7 @@ class User < ActiveRecord::Base
     3 => 'Power user',
     21 => 'Admin',
     90 => 'Super admin',
-    99 => 'God',
+    99 => 'God'
   }
 
   def create(vps, node, tpl)
@@ -150,7 +150,7 @@ class User < ActiveRecord::Base
   end
 
   def last_request_at
-    last_activity_at ? last_activity_at : 'never'
+    last_activity_at || 'never'
   end
 
   def set_password(plaintext)
@@ -161,10 +161,10 @@ class User < ActiveRecord::Base
       self.password = provider.encrypt(login, plaintext)
     end
 
-    if password_reset
-      self.password_reset = false
-      self.lockout = false
-    end
+    return unless password_reset
+
+    self.password_reset = false
+    self.lockout = false
   end
 
   def env_config(env, name)
@@ -178,11 +178,11 @@ class User < ActiveRecord::Base
 
   def vps_in_env(env)
     vpses.joins(node: [:location]).where(
-      locations: {environment_id: env.id},
-      vpses: {object_state: [
+      locations: { environment_id: env.id },
+      vpses: { object_state: [
         ::Vps.object_states[:active],
         ::Vps.object_states[:suspended]
-      ]}
+      ] }
     ).count
   end
 
@@ -222,7 +222,8 @@ class User < ActiveRecord::Base
   end
 
   private
+
   def set_no_password
-    self.password = '!' if self.password.nil? || self.password.empty?
+    self.password = '!' if password.nil? || password.empty?
   end
 end

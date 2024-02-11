@@ -2,7 +2,7 @@ module TransactionChains
   class Dataset::RemoveDownload < ::TransactionChain
     label 'Remove'
 
-    def link_chain(dl, *args)
+    def link_chain(dl, *_args)
       lock(dl)
       concerns(:affect, [dl.class.name, dl.id])
 

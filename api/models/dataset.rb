@@ -23,16 +23,16 @@ class Dataset < ActiveRecord::Base
   include VpsAdmin::API::DatasetProperties::Model
 
   include VpsAdmin::API::Lifetimes::Model
-  set_object_states states: %i(active deleted),
+  set_object_states states: %i[active deleted],
                     deleted: {
                       enter: TransactionChains::Dataset::Destroy
                     }
 
   validates :name, format: {
-    with: /\A[a-zA-Z0-9][a-zA-Z0-9_\-:\.]{0,254}\z/,
+    with: /\A[a-zA-Z0-9][a-zA-Z0-9_\-:.]{0,254}\z/,
     message: "'%{value}' is not a valid dataset name"
   }, exclusion: {
-    in: %w(private vpsadmin),
+    in: %w[private vpsadmin],
     message: "'%{value}' is a reserved name"
   }
   validate :check_name
@@ -47,9 +47,7 @@ class Dataset < ActiveRecord::Base
     opts[:properties] ||= {}
     parts = name.split('/')
 
-    if parts.empty?
-      fail 'FIXME: invalid path'
-    end
+    raise 'FIXME: invalid path' if parts.empty?
 
     # Parent dataset is specified, use it
     if parent_ds
@@ -63,8 +61,8 @@ class Dataset < ActiveRecord::Base
     # Parent dataset is not set, try to locate it using label
     else
       top_dip = ::DatasetInPool.includes(:dataset).joins(:dataset)
-                    .find_by(label: parts.first,
-                             datasets: {user_id: User.current.id})
+                               .find_by(label: parts.first,
+                                        datasets: { user_id: User.current.id })
 
       if !top_dip
         raise VpsAdmin::API::Exceptions::DatasetLabelDoesNotExist, parts.first
@@ -99,7 +97,7 @@ class Dataset < ActiveRecord::Base
       parent_dip.pool,
       parent_dip,
       path,
-      opts,
+      opts
     )
     [chain, dips.last.dataset]
   end
@@ -112,20 +110,18 @@ class Dataset < ActiveRecord::Base
       maintenance_check!(vps)
     end
 
-    TransactionChains::DatasetInPool::Destroy.fire(dip, {recursive: true})
+    TransactionChains::DatasetInPool::Destroy.fire(dip, { recursive: true })
   end
 
   def check_name
-    if name.present?
-      if name =~ /\.\./
-        errors.add(:mountpoint, "'..' not allowed in dataset name")
-      end
+    return unless name.present?
 
-      %w(branch- tree.).each do |prefix|
-        if name.start_with?(prefix)
-          errors.add(:name, "cannot start with prefix '#{prefix}'")
-          break
-        end
+    errors.add(:mountpoint, "'..' not allowed in dataset name") if name =~ /\.\./
+
+    %w[branch- tree.].each do |prefix|
+      if name.start_with?(prefix)
+        errors.add(:name, "cannot start with prefix '#{prefix}'")
+        break
       end
     end
   end
@@ -149,13 +145,13 @@ class Dataset < ActiveRecord::Base
   # Returns DatasetInPool of +self+ on pools with +hypervisor+
   # or +primary+ role.
   def primary_dataset_in_pool!
-    dataset_in_pools.joins(:pool).where.not(pools: {role: Pool.roles[:backup]}).take!
+    dataset_in_pools.joins(:pool).where.not(pools: { role: Pool.roles[:backup] }).take!
   end
 
   def export
     ::Export.joins(:dataset_in_pool).where(
-      dataset_in_pools: {dataset_id: id},
-      snapshot_in_pool_clone: nil,
+      dataset_in_pools: { dataset_id: id },
+      snapshot_in_pool_clone: nil
     ).take
   end
 
@@ -181,7 +177,7 @@ class Dataset < ActiveRecord::Base
   end
 
   def inherit_properties(properties)
-    TransactionChains::Dataset::Inherit.fire(self.primary_dataset_in_pool!, properties)
+    TransactionChains::Dataset::Inherit.fire(primary_dataset_in_pool!, properties)
   end
 
   # @param opts [Hash] options
@@ -215,10 +211,12 @@ class Dataset < ActiveRecord::Base
   # quota from the closest parent that has it set.
   def effective_quota
     return quota if quota != 0 || root?
+
     parent.effective_quota
   end
 
   protected
+
   def cache_full_name
     self.full_name = resolve_full_name
   end
@@ -263,9 +261,7 @@ class Dataset < ActiveRecord::Base
       end
     end
 
-    if ret.empty?
-      raise VpsAdmin::API::Exceptions::DatasetAlreadyExists.new(tmp, parts.join('/'))
-    end
+    raise VpsAdmin::API::Exceptions::DatasetAlreadyExists.new(tmp, parts.join('/')) if ret.empty?
 
     [last, ret]
   end
@@ -291,19 +287,14 @@ class Dataset < ActiveRecord::Base
 
   def check_refquota(dip, path, refquota)
     # Refquota enforcement
-    if dip.pool.refquota_check
-      if refquota.nil?
-        raise VpsAdmin::API::Exceptions::PropertyInvalid, 'refquota must be set'
-      end
+    return unless dip.pool.refquota_check
+    raise VpsAdmin::API::Exceptions::PropertyInvalid, 'refquota must be set' if refquota.nil?
 
-      i = 0
-      path.each do |p|
-        i += 1 if p.new_record?
+    i = 0
+    path.each do |p|
+      i += 1 if p.new_record?
 
-        if i > 1
-          raise VpsAdmin::API::Exceptions::DatasetNestingForbidden, 'Cannot create more than one dataset at a time'
-        end
-      end
+      raise VpsAdmin::API::Exceptions::DatasetNestingForbidden, 'Cannot create more than one dataset at a time' if i > 1
     end
   end
 end

@@ -2,7 +2,7 @@ module TransactionChains
   module NetworkInterface
     TYPES = {
       venet: Venet,
-      veth_routed: VethRouted,
+      veth_routed: VethRouted
     }
 
     def self.chain_for(type, action)

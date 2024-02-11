@@ -17,7 +17,7 @@ module NodeCtld
     # @param name [String]
     def initialize(name)
       @name = name
-      @routes = {4 => [], 6 => []}
+      @routes = { 4 => [], 6 => [] }
     end
 
     # @param data [Hash]
@@ -42,7 +42,7 @@ module NodeCtld
 
     # @param address [IPAddress]
     def route_for(address)
-      routes[ address.ipv4? ? 4 : 6 ].detect { |v| v.address == address }
+      routes[address.ipv4? ? 4 : 6].detect { |v| v.address == address }
     end
 
     # @return [Hash]
@@ -51,16 +51,17 @@ module NodeCtld
         'name' => name,
         'routes' => Hash[[4, 6].map do |ip_v|
           [ip_v, routes[ip_v].map(&:save)]
-        end],
+        end]
       }
     end
 
     protected
+
     def parse_ip_addresses(ips)
       Hash[[4, 6].map do |ip_v|
         [
           ip_v,
-          ips[ip_v].map { |data| VpsConfig::Route.load(data) },
+          ips[ip_v].map { |data| VpsConfig::Route.load(data) }
         ]
       end]
     end

@@ -1,12 +1,12 @@
 class IncomingPayment < ActiveRecord::Base
-  enum state: %i(queued unmatched processed ignored)
+  enum state: %i[queued unmatched processed ignored]
 
   # Amount converted to vpsAdmin's default currency
   def converted_amount
     rates = ::SysConfig.get(:plugin_payments, :conversion_rates)
 
     if src_amount
-      rate = rates[ src_currency.downcase ]
+      rate = rates[src_currency.downcase]
       return src_amount * rate if rate
     end
 
@@ -34,7 +34,7 @@ class IncomingPayment < ActiveRecord::Base
   end
 end
 
-TransactionChains::Mail::DailyReport.connect_hook(:send) do |ret, from, now|
+TransactionChains::Mail::DailyReport.connect_hook(:send) do |ret, _from, now|
   t = now.strftime('%Y-%m-%d %H:%M:%S')
 
   income = ::IncomingPayment.where(

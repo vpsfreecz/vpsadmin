@@ -12,7 +12,7 @@ module VpsAdmin::API::Plugins::Payments::TransactionChains
         base_url: ::SysConfig.get(:webui, :base_url),
         start: now - period,
         end: now,
-        incoming: income,
+        incoming: income
       }
 
       ::IncomingPayment.states.each_key do |k|
@@ -24,9 +24,9 @@ module VpsAdmin::API::Plugins::Payments::TransactionChains
       ).order('user_payments.created_at, user_payments.user_id')
 
       mail(:payments_overview, {
-        language: language,
-        vars: vars,
-      })
+             language: language,
+             vars: vars
+           })
     end
   end
 end

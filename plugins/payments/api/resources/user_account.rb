@@ -87,7 +87,6 @@ module VpsAdmin::API::Resources
         end
 
         acc
-
       rescue ActiveRecord::RecordInvalid => e
         error('Update failed', e.record.errors.to_hash)
       end

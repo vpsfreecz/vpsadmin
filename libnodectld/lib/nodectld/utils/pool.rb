@@ -1,7 +1,7 @@
 module NodeCtld
   module Utils::Pool
     POOL_WORKING_DIR = 'vpsadmin'
-    POOL_WORKING_DIRS = [:config, :download, :mount]
+    POOL_WORKING_DIRS = %i[config download mount]
 
     def pool_work_root
       POOL_WORKING_DIR

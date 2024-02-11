@@ -9,14 +9,14 @@ class Environment < ActiveRecord::Base
   has_many :default_object_cluster_resources
   has_many :default_user_cluster_resource_packages
   has_many :charged_ip_addresses,
-    class_name: 'IpAddress',
-    foreign_key: 'charged_environment_id'
+           class_name: 'IpAddress',
+           foreign_key: 'charged_environment_id'
 
-  has_paper_trail ignore: %i(maintenance_lock maintenance_lock_reason)
+  has_paper_trail ignore: %i[maintenance_lock maintenance_lock_reason]
 
   validates :label, :domain, presence: true
   validates :domain, format: {
-    with: /[0-9a-zA-Z\-\.]{3,255}/,
+    with: /[0-9a-zA-Z\-.]{3,255}/,
     message: 'invalid format'
   }
 
@@ -40,7 +40,7 @@ class Environment < ActiveRecord::Base
     assign_attributes(attrs)
 
     self.class.transaction do
-      self.environment_user_configs.where(default: true).update_all(
+      environment_user_configs.where(default: true).update_all(
         can_create_vps: can_create_vps,
         can_destroy_vps: can_destroy_vps,
         vps_lifetime: vps_lifetime,

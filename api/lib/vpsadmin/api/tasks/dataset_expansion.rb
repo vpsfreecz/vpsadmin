@@ -1,16 +1,16 @@
 module VpsAdmin::API::Tasks
   class DatasetExpansion < Base
-    MAX_OVER_REFQUOTA_SECONDS = ENV['MAX_OVER_REFQUOTA_SECONDS'] ? ENV['MAX_OVER_REFQUOTA_SECONDS'].to_i : 30*24*60*60
+    MAX_OVER_REFQUOTA_SECONDS = ENV['MAX_OVER_REFQUOTA_SECONDS'] ? ENV['MAX_OVER_REFQUOTA_SECONDS'].to_i : 30 * 24 * 60 * 60
 
-    COOLDOWN = ENV['COOLDOWN'] ? ENV['COOLDOWN'].to_i : 2*60*60
+    COOLDOWN = ENV['COOLDOWN'] ? ENV['COOLDOWN'].to_i : 2 * 60 * 60
 
     MAX_EXPANSIONS = ENV['MAX_EXPANSIONS'] ? ENV['MAX_EXPANSIONS'].to_i : 3
 
     STRICT_MAX_EXPANSIONS = ENV['STRICT_MAX_EXPANSIONS'] ? ENV['STRICT_MAX_EXPANSIONS'].to_i : 9
 
-    OVERQUOTA_MB = ENV['OVERQUOTA_MB'] ? ENV['OVERQUOTA_MB'].to_i : 5*1024
+    OVERQUOTA_MB = ENV['OVERQUOTA_MB'] ? ENV['OVERQUOTA_MB'].to_i : 5 * 1024
 
-    STRICT_OVERQUOTA_MB = ENV['STRICT_OVERQUOTA_MB'] ? ENV['STRICT_OVERQUOTA_MB'].to_i : 100*1024
+    STRICT_OVERQUOTA_MB = ENV['STRICT_OVERQUOTA_MB'] ? ENV['STRICT_OVERQUOTA_MB'].to_i : 100 * 1024
 
     FREE_PERCENT = ENV['FREE_PERCENT'] ? ENV['FREE_PERCENT'].to_i : 5
 
@@ -27,7 +27,7 @@ module VpsAdmin::API::Tasks
         begin
           exp = VpsAdmin::API::Operations::DatasetExpansion::ProcessEvent.run(
             event,
-            max_over_refquota_seconds: MAX_OVER_REFQUOTA_SECONDS,
+            max_over_refquota_seconds: MAX_OVER_REFQUOTA_SECONDS
           )
         rescue ResourceLocked
           warn "Dataset id=#{event.dataset_id} name=#{event.dataset.full_name} locked"
@@ -36,9 +36,7 @@ module VpsAdmin::API::Tasks
 
         next if exp.nil?
 
-        if exp.enable_notifications && exp.vps.active? && !expansions.detect { |v| v.id == exp.id }
-          expansions << exp
-        end
+        expansions << exp if exp.enable_notifications && exp.vps.active? && !expansions.detect { |v| v.id == exp.id }
       end
 
       expansions.each do |exp|
@@ -70,7 +68,7 @@ module VpsAdmin::API::Tasks
 
           exp.update!(
             over_refquota_seconds: exp.over_refquota_seconds + elapsed_time,
-            last_over_refquota_check: now,
+            last_over_refquota_check: now
           )
         end
 
@@ -80,7 +78,7 @@ module VpsAdmin::API::Tasks
           begin
             exp.vps.set_object_state(
               :suspended,
-              reason: "Dataset #{exp.dataset.full_name} expanded too many times",
+              reason: "Dataset #{exp.dataset.full_name} expanded too many times"
             )
             puts "Suspended VPS #{exp.vps.id} due to too many expansions (#{exp_cnt})"
           rescue ResourceLocked
@@ -90,20 +88,20 @@ module VpsAdmin::API::Tasks
           next
         end
 
-        if exp.dataset.referenced - OVERQUOTA_MB > exp.original_refquota \
+        next unless exp.dataset.referenced - OVERQUOTA_MB > exp.original_refquota \
            && (exp.last_vps_stop.nil? || exp.last_vps_stop + COOLDOWN < now) \
            && exp.vps.active? \
            && exp.vps.is_running? \
            && exp.vps.uptime >= COOLDOWN \
            && (exp_cnt > MAX_EXPANSIONS || exp.over_refquota_seconds > exp.max_over_refquota_seconds)
-          begin
-            TransactionChains::Vps::StopOverQuota.fire(exp)
-            puts "Stopped VPS #{exp.vps.id}"
-            exp.update!(last_vps_stop: now)
-          rescue ResourceLocked
-            warn "VPS #{exp.vps.id} is locked, unable to stop at this time"
-            next
-          end
+
+        begin
+          TransactionChains::Vps::StopOverQuota.fire(exp)
+          puts "Stopped VPS #{exp.vps.id}"
+          exp.update!(last_vps_stop: now)
+        rescue ResourceLocked
+          warn "VPS #{exp.vps.id} is locked, unable to stop at this time"
+          next
         end
       end
     end
@@ -125,13 +123,13 @@ module VpsAdmin::API::Tasks
           next
         end
 
-        if (exp.last_shrink.nil? || exp.last_shrink + COOLDOWN < now) \
+        next unless (exp.last_shrink.nil? || exp.last_shrink + COOLDOWN < now) \
            && exp.created_at + COOLDOWN < now \
            && dip.referenced + FREE_MB < exp.original_refquota \
            && (dip.referenced.to_f / exp.original_refquota) * 100 <= (100 - FREE_PERCENT)
-          TransactionChains::Vps::ShrinkDataset.fire(dip, exp)
-          exp.update!(last_shrink: now)
-        end
+
+        TransactionChains::Vps::ShrinkDataset.fire(dip, exp)
+        exp.update!(last_shrink: now)
       end
     end
   end

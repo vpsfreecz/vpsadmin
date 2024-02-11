@@ -15,15 +15,15 @@ module VpsAdmin::DownloadMounter
       src = "#{@pool.node.ip_addr}:/#{@pool.filesystem}/vpsadmin/download"
 
       if mountpoint_exists?
-        puts "  mountpoint found"
+        puts '  mountpoint found'
 
       else
-        puts "  creating mountpoint"
+        puts '  creating mountpoint'
         FileUtils.mkpath(@full_mnt) unless @opts[:dry_run]
       end
 
       if mounted?
-        puts "  is mounted"
+        puts '  is mounted'
 
       else
         run("mount -t nfs -overs=3,nolock #{src} #{@full_mnt}")
@@ -35,7 +35,7 @@ module VpsAdmin::DownloadMounter
         run("umount -f #{@full_mnt}")
 
       else
-        puts "  not mounted"
+        puts '  not mounted'
       end
     end
 

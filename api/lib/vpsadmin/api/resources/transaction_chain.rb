@@ -35,8 +35,8 @@ class VpsAdmin::API::Resources::TransactionChain < HaveAPI::Resource
     authorize do |u|
       allow if u.role == :admin
       restrict user: u
-      input blacklist: %i(user)
-      output blacklist: %i(user)
+      input blacklist: %i[user]
+      output blacklist: %i[user]
       allow
     end
 
@@ -47,12 +47,16 @@ class VpsAdmin::API::Resources::TransactionChain < HaveAPI::Resource
       q = q.where(state: ::TransactionChain.states[input[:state]]) if input[:state]
       q = q.where(user: input[:user]) if input[:user]
       q = q.where(user_session: input[:user_session]) if input[:user_session]
-      q = q.joins(:transaction_chain_concerns).where(
-        transaction_chain_concerns: {class_name: input[:class_name]}
-      ) if input[:class_name]
-      q = q.joins(:transaction_chain_concerns).where(
-        transaction_chain_concerns: {row_id: input[:row_id]}
-      ) if input[:row_id]
+      if input[:class_name]
+        q = q.joins(:transaction_chain_concerns).where(
+          transaction_chain_concerns: { class_name: input[:class_name] }
+        )
+      end
+      if input[:row_id]
+        q = q.joins(:transaction_chain_concerns).where(
+          transaction_chain_concerns: { row_id: input[:row_id] }
+        )
+      end
 
       q
     end
@@ -80,7 +84,7 @@ class VpsAdmin::API::Resources::TransactionChain < HaveAPI::Resource
     authorize do |u|
       allow if u.role == :admin
       restrict user: u
-      output blacklist: %i(user)
+      output blacklist: %i[user]
       allow
     end
 

@@ -55,10 +55,10 @@ module NodeCtld
 
     def on_save(db)
       db.prepared(
-        "UPDATE snapshots SET name = ?, created_at = ? WHERE id IN (#{@snapshots.map{'?'}.join(',')})",
+        "UPDATE snapshots SET name = ?, created_at = ? WHERE id IN (#{@snapshots.map { '?' }.join(',')})",
         @name,
         @created_at,
-        *(@snapshots.map { |snap| snap['snapshot_id'] }),
+        *(@snapshots.map { |snap| snap['snapshot_id'] })
       )
     end
 
@@ -67,11 +67,12 @@ module NodeCtld
     end
 
     protected
+
     def save_state
       File.open(state_file_path, 'w') do |f|
         f.puts({
           name: @name,
-          created_at: @created_at,
+          created_at: @created_at
         }.to_json)
       end
     end
@@ -95,7 +96,7 @@ module NodeCtld
     def state_file_path
       @state_file_path ||= File.join(
         RemoteControl::RUNDIR,
-        ".transaction-#{@command.id}-group-snapshot.json",
+        ".transaction-#{@command.id}-group-snapshot.json"
       )
     end
   end

@@ -12,17 +12,17 @@ module Transactions::Vps
         {
           resource: r.user_cluster_resource.cluster_resource.name,
           value: r.value,
-          original: r.value_was,
+          original: r.value_was
         }
       end
 
       resources << {
         resource: 'cpu_limit',
         value: vps.cpu_limit,
-        original: vps.cpu_limit_was,
+        original: vps.cpu_limit_was
       }
 
-      {resources: resources}
+      { resources: resources }
     end
   end
 end

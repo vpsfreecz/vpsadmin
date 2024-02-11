@@ -18,8 +18,8 @@ class MailTemplateTranslation < ActiveRecord::Base
 
   def resolve(vars)
     b = TemplateBuilder.new(vars)
-    self.subject = b.build(self.subject)
-    self.text_plain = b.build(self.text_plain) if self.text_plain
-    self.text_html = b.build(self.text_html) if self.text_html
+    self.subject = b.build(subject)
+    self.text_plain = b.build(text_plain) if text_plain
+    self.text_html = b.build(text_html) if text_html
   end
 end

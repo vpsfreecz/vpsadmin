@@ -18,14 +18,14 @@ module VpsAdmin::API::Resources
       auth false
 
       input do
-        use :all, include: %i(category)
+        use :all, include: %i[category]
       end
 
       output(:object_list) do
         use :all
       end
 
-      authorize do |u|
+      authorize do |_u|
         allow
       end
 
@@ -53,14 +53,14 @@ module VpsAdmin::API::Resources
         use :all
       end
 
-      authorize do |u|
+      authorize do |_u|
         allow
       end
 
       def prepare
         q = ::SysConfig.where.not(min_user_level: nil).where(
           category: params[:category],
-          name: params[:name],
+          name: params[:name]
         )
 
         if current_user.nil?
@@ -84,7 +84,7 @@ module VpsAdmin::API::Resources
       http_method :put
 
       input do
-        use :all, include: %i(value)
+        use :all, include: %i[value]
       end
 
       output do
@@ -98,7 +98,7 @@ module VpsAdmin::API::Resources
       def exec
         cfg = ::SysConfig.find_by!(
           category: params[:category],
-          name: params[:name],
+          name: params[:name]
         )
         cfg.set_value(input[:value])
         cfg.save!

@@ -14,16 +14,16 @@ class Export < ::ActiveRecord::Base
 
   validates :threads, presence: true, numericality: {
     greater_than_or_equal_to: 1,
-    less_than_or_equal_to: 64,
+    less_than_or_equal_to: 64
   }
 
   include Confirmable
   include Lockable
 
   include VpsAdmin::API::Lifetimes::Model
-  set_object_states states: %i(active deleted),
+  set_object_states states: %i[active deleted],
                     deleted: {
-                      enter: TransactionChains::Export::Destroy,
+                      enter: TransactionChains::Export::Destroy
                     }
 
   def dataset

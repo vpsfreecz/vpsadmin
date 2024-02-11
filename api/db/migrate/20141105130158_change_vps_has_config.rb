@@ -1,6 +1,5 @@
 class ChangeVpsHasConfig < ActiveRecord::Migration
   class VpsHasConfig < ActiveRecord::Base
-
   end
 
   def up
@@ -11,7 +10,7 @@ class ChangeVpsHasConfig < ActiveRecord::Migration
       t.integer     :confirmed,               null: false
     end
 
-    add_index :tmp, [:vps_id, :config_id, :confirmed], unique: true
+    add_index :tmp, %i[vps_id config_id confirmed], unique: true
 
     VpsHasConfig.connection.execute('INSERT INTO tmp (vps_id, config_id, `order`, confirmed)
                                      SELECT vps_id, config_id, `order`, 1 FROM vps_has_config')

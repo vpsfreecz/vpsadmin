@@ -47,16 +47,14 @@ module NodeCtld
       sync { safe_init_node }
     end
 
-    def update_root(tx, rx)
+    def update_root(tx, _rx)
       host_netifs = $CFG.get(:vpsadmin, :net_interfaces)
 
       sync do
         host_netifs.each do |netif|
           tc("qdisc delete root dev #{netif}", [2])
 
-          if tx > 0
-            tc("qdisc add root dev #{netif} cake bandwidth #{tx}bit")
-          end
+          tc("qdisc add root dev #{netif} cake bandwidth #{tx}bit") if tx > 0
         end
       end
     end
@@ -89,6 +87,7 @@ module NodeCtld
     end
 
     protected
+
     def safe_init_node
       host_netifs = $CFG.get(:vpsadmin, :net_interfaces)
       max_tx = $CFG.get(:vpsadmin, :max_tx)
@@ -97,9 +96,7 @@ module NodeCtld
       host_netifs.each do |netif|
         tc("qdisc delete root dev #{netif}", [2])
 
-        if max_tx > 0
-          tc("qdisc add root dev #{netif} cake bandwidth #{max_tx}bit")
-        end
+        tc("qdisc add root dev #{netif} cake bandwidth #{max_tx}bit") if max_tx > 0
       end
     end
 
@@ -107,11 +104,11 @@ module NodeCtld
       syscmd("#{$CFG.get(:bin, :tc)} #{arg}", valid_rcs: valid_rcs)
     end
 
-    def sync
+    def sync(&block)
       if @mutex.owned?
         yield
       else
-        @mutex.synchronize { yield }
+        @mutex.synchronize(&block)
       end
     end
   end

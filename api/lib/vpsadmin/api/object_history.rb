@@ -15,8 +15,8 @@ module VpsAdmin::API
         # @return [::ObjectHistory]
         def log_change(type, data = nil)
           events = self.class.instance_variable_get('@log_events')
-          fail "no event types configured for #{self.class}" unless events
-          fail "'#{type}' is not a valid event type" unless events.include?(type)
+          raise "no event types configured for #{self.class}" unless events
+          raise "'#{type}' is not a valid event type" unless events.include?(type)
 
           session = ::UserSession.current
 
@@ -25,11 +25,11 @@ module VpsAdmin::API
             user_session: session,
             tracked_object: self,
             event_type: type,
-            event_data: data,
+            event_data: data
           )
         end
 
-        alias_method :log, :log_change
+        alias log log_change
       end
 
       def self.included(klass)

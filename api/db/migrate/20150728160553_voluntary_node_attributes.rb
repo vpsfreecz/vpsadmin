@@ -5,12 +5,12 @@ class VoluntaryNodeAttributes < ActiveRecord::Migration
     reversible do |dir|
       dir.up do
         change_column :servers, :ve_private, :string, limit: 255, null: true,
-                      default: '/vz/private/%{veid}/private'
+                                                      default: '/vz/private/%{veid}/private'
       end
 
       dir.down do
         change_column :servers, :ve_private, :string, limit: 255, null: false,
-                      default: '/vz/private/%veid%'
+                                                      default: '/vz/private/%veid%'
       end
     end
   end

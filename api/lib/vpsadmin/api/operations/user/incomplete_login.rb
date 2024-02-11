@@ -19,7 +19,7 @@ module VpsAdmin::API
           client_ip_addr: auth_token.client_ip_addr,
           client_ip_ptr: auth_token.client_ip_ptr,
           user_agent: auth_token.user_agent,
-          client_version: auth_token.client_version,
+          client_version: auth_token.client_version
         )
         ::User.increment_counter(:failed_login_count, auth_token.user.id)
       end

@@ -1,8 +1,8 @@
 require 'require_all'
 
 module NodeCtl
-  module Commands ; end
-  module CommandTemplates ; end
+  module Commands; end
+  module CommandTemplates; end
 end
 
 require_rel 'nodectl/*.rb'

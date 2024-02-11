@@ -13,7 +13,7 @@ module Transactions::Vps
         version: template.version,
         arch: template.arch,
         vendor: template.vendor,
-        variant: template.variant,
+        variant: template.variant
       }
     end
   end

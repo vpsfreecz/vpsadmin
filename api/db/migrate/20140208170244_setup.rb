@@ -1,6 +1,6 @@
 class Setup < ActiveRecord::Migration
   def change
-    create_table :members, :primary_key => 'm_id' do |t|
+    create_table :members, primary_key: 'm_id' do |t|
       # compatibility columns for vpsadmin1
       t.text      :m_info,              null: true
       t.integer   :m_created,           null: true
@@ -38,7 +38,7 @@ class Setup < ActiveRecord::Migration
       t.timestamps
     end
 
-    create_table :locations, :primary_key => 'location_id' do |t|
+    create_table :locations, primary_key: 'location_id' do |t|
       # compatibility columns
       t.string     :location_label,       limit: 100, null: false
       t.string     :location_type,        limit: 100, null: false
@@ -48,7 +48,7 @@ class Setup < ActiveRecord::Migration
 
       # additional columns
       t.belongs_to :environment
-      t.string     :domain,               limit: 100, null: false
+      t.string     :domain, limit: 100, null: false
       t.timestamps
 
       # Dropped support of following columns:
@@ -63,12 +63,12 @@ class Setup < ActiveRecord::Migration
       #   location_backup_server_id
     end
 
-    create_table :servers, :primary_key => 'server_id' do |t|
+    create_table :servers, primary_key: 'server_id' do |t|
       t.string     :server_name,         limit: 50,  null: false
       t.string     :server_type,         limit: 10,  null: false
-      t.integer    :server_location,                 null: false,      index: true
+      t.integer    :server_location,                 null: false, index: true
       t.text       :server_availstat,                null: true
-      t.string     :server_ip4,          limit: 127, null: false
+      t.string     :server_ip4, limit: 127, null: false
       t.boolean    :server_maintenance,              null: false,  default: 0
       t.integer    :max_vps,                         null: false,  default: 0
       t.string     :ve_private,          limit: 255, null: false,  default: '/vz/private/%{veid}'
@@ -76,15 +76,15 @@ class Setup < ActiveRecord::Migration
       t.timestamps
     end
 
-    #create_table :environment_os_templates do |t|
+    # create_table :environment_os_templates do |t|
     #  t.boolean     :enabled,                 null: false
     #  t.boolean     :supported,               null: false
     #  t.integer     :order,                   null: false
     #  t.belongs_to  :environment
     #  t.belongs_to  :os_template
-    #end
+    # end
 
-    create_table :cfg_templates, :primary_key => 'templ_id' do |t|
+    create_table :cfg_templates, primary_key: 'templ_id' do |t|
       t.string      :templ_name,        limit: 64, null: false
       t.string      :templ_label,       limit: 64, null: false
       t.text        :templ_info,                   null: true
@@ -95,12 +95,12 @@ class Setup < ActiveRecord::Migration
       # Dropped column 'special'
     end
 
-    create_table :vps, :primary_key => 'vps_id' do |t|
+    create_table :vps, primary_key: 'vps_id' do |t|
       t.integer     :vps_created,                      null: true
       t.integer     :vps_expiration,                   null: true
       t.integer     :vps_deleted,                      null: true
       t.integer     :m_id,                             null: false, index: true
-      t.string      :vps_hostname,   limit: 255,       null: true
+      t.string      :vps_hostname, limit: 255, null: true
       t.integer     :vps_template,                     null: false
       t.text        :vps_info,                         null: true
       t.belongs_to  :dns_resolver,                     null: true
@@ -120,14 +120,14 @@ class Setup < ActiveRecord::Migration
       # New column dns_resolver_id
     end
 
-    create_table :vps_ip, :primary_key => 'ip_id' do |t|
+    create_table :vps_ip, primary_key: 'ip_id' do |t|
       t.integer     :vps_id,                  null: true
       t.integer     :ip_v,                    null: false, default: 4
       t.integer     :ip_location,             null: false
-      t.string      :ip_addr,     limit: 40,  null: false
+      t.string      :ip_addr, limit: 40, null: false
     end
 
-    create_table :transactions, :primary_key => 't_id' do |t|
+    create_table :transactions, primary_key: 't_id' do |t|
       t.integer     :t_group,                 null: true
       t.integer     :t_time,                  null: true
       t.integer     :t_real_start,            null: true
@@ -146,7 +146,7 @@ class Setup < ActiveRecord::Migration
       t.text        :t_output,                null: true
     end
 
-    create_table :cfg_dns, :primary_key => 'dns_id' do |t|
+    create_table :cfg_dns, primary_key: 'dns_id' do |t|
       t.string      :dns_ip,     limit: 63,   null: false
       t.string      :dns_label,  limit: 63,   null: false
       t.boolean     :dns_is_universal,        null: true,  default: false
@@ -159,15 +159,15 @@ class Setup < ActiveRecord::Migration
       t.text        :config,                  null: false
     end
 
-    create_table :vps_has_config, :id => false do |t|
+    create_table :vps_has_config, id: false do |t|
       t.integer     :vps_id,                  null: false
       t.integer     :config_id,               null: false
       t.integer     :order,                   null: false
     end
 
-    create_table :sysconfig, :id => false do |t|
+    create_table :sysconfig, id: false do |t|
       t.string      :cfg_name,                null: false
-      t.text        :cfg_value,               null: true,  default: nil
+      t.text        :cfg_value,               null: true, default: nil
     end
 
     create_table :storage_root do |t|
@@ -177,11 +177,11 @@ class Setup < ActiveRecord::Migration
       t.string      :root_path,      limit: 500, null: false
       t.string      :storage_layout, limit: 10,  null: false
       t.boolean     :user_export,                null: false
-      t.string      :user_mount,     limit: 10,  null: false
+      t.string      :user_mount, limit: 10, null: false
       t.integer     :quota,                      null: false
       t.integer     :used,                       null: false, default: 0
       t.integer     :avail,                      null: false, default: 0
-      t.string      :share_options,  limit: 500, null: false
+      t.string      :share_options, limit: 500, null: false
 
       # Rename type to storage_layout.
     end

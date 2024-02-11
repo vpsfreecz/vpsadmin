@@ -5,7 +5,7 @@ module TransactionChains
 
     def link_chain
       ::SnapshotInPoolClone.where(
-        state: ::SnapshotInPoolClone.states[:inactive],
+        state: ::SnapshotInPoolClone.states[:inactive]
       ).each do |cl|
         begin
           lock(cl)
@@ -16,7 +16,7 @@ module TransactionChains
         append_t(
           Transactions::Storage::RemoveClone,
           args: [cl],
-          reversible: :keep_going,
+          reversible: :keep_going
         ) do |t|
           t.decrement(cl.snapshot_in_pool, :reference_count)
           t.destroy(cl)

@@ -10,7 +10,7 @@ module Transactions::Storage
       {
         pool_fs: dl.pool.filesystem,
         secret_key: dl.secret_key,
-        file_name: dl.file_name,
+        file_name: dl.file_name
       }
     end
   end

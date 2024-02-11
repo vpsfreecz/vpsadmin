@@ -14,10 +14,12 @@ module TransactionChains
     # @option opts [Boolean] :create_private
     def link_chain(pool, dataset_in_pool, path, opts)
       lock(dataset_in_pool) if dataset_in_pool
-      concerns(
-        :affect,
-        [dataset_in_pool.dataset.class.name, dataset_in_pool.dataset_id]
-      ) if dataset_in_pool
+      if dataset_in_pool
+        concerns(
+          :affect,
+          [dataset_in_pool.dataset.class.name, dataset_in_pool.dataset_id]
+        )
+      end
 
       ret = []
       @pool = pool
@@ -39,7 +41,7 @@ module TransactionChains
         path.last,
         opts[:properties],
         opts[:label],
-        opts[:userns_map],
+        opts[:userns_map]
       )
 
       use_prop = nil
@@ -97,7 +99,7 @@ module TransactionChains
 
       append_t(
         Transactions::Storage::CreateDataset,
-        args: [dip, properties, {create_private: @opts[:create_private], userns_map: userns_map}]
+        args: [dip, properties, { create_private: @opts[:create_private], userns_map: userns_map }]
       ) do |t|
         t.create(part)
         t.create(dip)
@@ -119,10 +121,10 @@ module TransactionChains
       parent_dip = dataset_in_pool.dataset.dataset_in_pools.where(pool: dataset_in_pool.pool).take!
 
       parent_dip.mounts.includes(:vps).joins(:vps).where(
-        vpses: {object_state: [
+        vpses: { object_state: [
           ::Vps.object_states[:active],
           ::Vps.object_states[:suspended]
-        ]}
+        ] }
       ).each do |mnt|
         @vps_mounts[mnt.vps] ||= []
         @vps_mounts[mnt.vps] << mnt
@@ -130,22 +132,22 @@ module TransactionChains
 
       # If no parent is mounted anywhere and the dataset is a subdataset
       # of a VPS, it is mounted to the VPS root.
-      if @vps_mounts.empty?
-        vps = ::Vps.find_by(dataset_in_pool: dataset_in_pool.dataset.root.primary_dataset_in_pool!)
+      return unless @vps_mounts.empty?
 
-        if vps
-          @vps_mounts[vps] = [::Mount.new(
-            vps: vps,
-            dst: "/#{dataset_in_pool.dataset.full_name.split('/')[1..-1].join('/')}",
-            mount_opts: '--bind',
-            umount_opts: '-f',
-            mount_type: 'bind',
-            mode: 'rw',
-            user_editable: true,
-            dataset_in_pool: dataset_in_pool
-          )]
-        end
-      end
+      vps = ::Vps.find_by(dataset_in_pool: dataset_in_pool.dataset.root.primary_dataset_in_pool!)
+
+      return unless vps
+
+      @vps_mounts[vps] = [::Mount.new(
+        vps: vps,
+        dst: "/#{dataset_in_pool.dataset.full_name.split('/')[1..-1].join('/')}",
+        mount_opts: '--bind',
+        umount_opts: '-f',
+        mount_type: 'bind',
+        mode: 'rw',
+        user_editable: true,
+        dataset_in_pool: dataset_in_pool
+      )]
     end
 
     def create_mounts(dip)

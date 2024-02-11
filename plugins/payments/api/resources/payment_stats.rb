@@ -9,7 +9,7 @@ module VpsAdmin::API::Resources
       input(:hash) do
         integer :year, required: true
         integer :month, required: true
-        string :select, choices: %w(exactly_until all_until), required: true
+        string :select, choices: %w[exactly_until all_until], required: true
         integer :duration, required: true
       end
 
@@ -28,29 +28,29 @@ module VpsAdmin::API::Resources
         d = input[:duration]
 
         q = ::UserAccount
-          .joins(:user)
-          .where(users: {object_state: [
-            ::User.object_states[:active],
-            ::User.object_states[:suspended],
-          ]})
+            .joins(:user)
+            .where(users: { object_state: [
+                     ::User.object_states[:active],
+                     ::User.object_states[:suspended]
+                   ] })
 
         q =
           case input[:select]
           when 'exactly_until'
             q
-              .where('YEAR(paid_until) = ?', y)
-              .where('MONTH(paid_until) = ?', m)
+          .where('YEAR(paid_until) = ?', y)
+          .where('MONTH(paid_until) = ?', m)
           when 'all_until'
             q
-              .where('YEAR(paid_until) <= ?', y)
-              .where('MONTH(paid_until) <= ?', m)
+          .where('YEAR(paid_until) <= ?', y)
+          .where('MONTH(paid_until) <= ?', m)
           else
-            fail 'programming error'
+            raise 'programming error'
           end
 
         {
           user_count: q.count,
-          estimated_income: q.sum("monthly_payment") * d,
+          estimated_income: q.sum('monthly_payment') * d
         }
       end
     end

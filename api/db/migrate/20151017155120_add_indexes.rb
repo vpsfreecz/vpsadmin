@@ -12,7 +12,7 @@ class AddIndexes < ActiveRecord::Migration
     add_index :user_cluster_resources, :environment_id
     add_index :user_cluster_resources, :cluster_resource_id
     add_index :cluster_resource_uses, :user_cluster_resource_id
-    add_index :cluster_resource_uses, %i(class_name table_name row_id),
+    add_index :cluster_resource_uses, %i[class_name table_name row_id],
               name: :cluster_resouce_use_name_search
     add_index :datasets, :user_id
     add_index :dataset_in_pools, :dataset_id
@@ -33,8 +33,8 @@ class AddIndexes < ActiveRecord::Migration
     add_index :vps_ip, :ip_location
     add_index :user_sessions, :user_id
     add_index :mail_logs, :user_id
-    add_index :object_states, %i(class_name row_id)
-    add_index :transfered, %i(tr_ip tr_date)
-    add_index :transfered, %i(tr_ip)
+    add_index :object_states, %i[class_name row_id]
+    add_index :transfered, %i[tr_ip tr_date]
+    add_index :transfered, %i[tr_ip]
   end
 end

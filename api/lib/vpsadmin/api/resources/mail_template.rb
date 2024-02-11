@@ -299,7 +299,7 @@ module VpsAdmin::API::Resources
         def prepare
           @tr = ::MailTemplateTranslation.find_by!(
             id: params[:translation_id],
-            mail_template_id: params[:mail_template_id],
+            mail_template_id: params[:mail_template_id]
           )
         end
 
@@ -354,7 +354,7 @@ module VpsAdmin::API::Resources
         def exec
           tr = ::MailTemplateTranslation.find_by!(
             id: params[:translation_id],
-            mail_template_id: params[:mail_template_id],
+            mail_template_id: params[:mail_template_id]
           )
 
           if tr.update(input)
@@ -376,7 +376,7 @@ module VpsAdmin::API::Resources
         def exec
           ::MailTemplateTranslation.find_by!(
             id: params[:translation_id],
-            mail_template_id: params[:mail_template_id],
+            mail_template_id: params[:mail_template_id]
           ).destroy!
           ok
         end

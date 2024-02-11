@@ -1,6 +1,6 @@
 class AddUserTotpDevices < ActiveRecord::Migration
-  class User < ActiveRecord::Base ; end
-  class UserTotpDevice < ActiveRecord::Base ; end
+  class User < ActiveRecord::Base; end
+  class UserTotpDevice < ActiveRecord::Base; end
 
   def up
     create_table :user_totp_devices do |t|
@@ -29,7 +29,7 @@ class AddUserTotpDevices < ActiveRecord::Migration
         secret: user.totp_secret,
         recovery_code: user.totp_recovery_code,
         last_verification_at: user.totp_last_use_at,
-        last_use_at: Time.at(user.totp_last_use_at),
+        last_use_at: Time.at(user.totp_last_use_at)
       )
       dev.update!(label: "Device ##{dev.id}")
     end
@@ -57,7 +57,7 @@ class AddUserTotpDevices < ActiveRecord::Migration
         totp_enabled: true,
         totp_secret: dev.secret,
         totp_recovery_code: dev.recovery_code,
-        totp_last_use_at: dev.last_verification_at,
+        totp_last_use_at: dev.last_verification_at
       )
     end
 

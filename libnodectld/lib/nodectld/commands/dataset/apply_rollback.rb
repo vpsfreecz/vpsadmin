@@ -11,7 +11,6 @@ module NodeCtld
 
       begin
         zfs(:umount, nil, origin)
-
       rescue SystemCommandFailed => e
         raise if e.rc != 1 || e.output !~ /not currently mounted/
       end
@@ -27,7 +26,7 @@ module NodeCtld
 
         ds_state = dataset_properties("#{@pool_fs}/#{ds['full_name']}", [:canmount])
 
-        if /\// =~ ds['relative_name']
+        if %r{/} =~ ds['relative_name']
           descendants << [ds, ds_state]
         else
           children << [ds, ds_state]
@@ -35,12 +34,12 @@ module NodeCtld
       end
 
       # Disable mount for all descendants
-      @descendant_datasets.reverse.each do |ds, ds_state|
+      @descendant_datasets.reverse.each do |ds, _ds_state|
         zfs(:set, 'canmount=off', "#{origin}/#{ds['relative_name']}")
       end
 
       # Rename direct children
-      children.each do |child, ds_state|
+      children.each do |child, _ds_state|
         zfs(
           :rename,
           nil,
@@ -49,14 +48,14 @@ module NodeCtld
       end
 
       # Save original properties
-      state = dataset_properties(origin, [
-        :atime, :compression, :mountpoint, :quota,
-        :recordsize, :refquota, :sync, :canmount,
-        :uidmap, :gidmap,
-      ])
+      state = dataset_properties(origin, %i[
+                                   atime compression mountpoint quota
+                                   recordsize refquota sync canmount
+                                   uidmap gidmap
+                                 ])
 
       # Destroy the original dataset
-      osctl(%i(trash-bin dataset add), origin)
+      osctl(%i[trash-bin dataset add], origin)
 
       # Move the rollbacked one in its place
       zfs(:rename, nil, "#{origin}.rollback #{origin}")

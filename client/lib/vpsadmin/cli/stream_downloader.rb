@@ -4,7 +4,7 @@ require 'ruby-progressbar'
 require 'digest'
 
 module VpsAdmin::CLI
-  class DownloadError < StandardError ; end
+  class DownloadError < StandardError; end
 
   class StreamDownloader
     def self.download(*args, **kwargs)
@@ -12,7 +12,7 @@ module VpsAdmin::CLI
     end
 
     def initialize(api, dl, io, progress: STDOUT, position: 0, max_rate: nil,
-                  checksum: true)
+                   checksum: true)
       downloaded = position
       uri = URI(dl.url)
       digest = Digest::SHA256.new
@@ -26,12 +26,12 @@ module VpsAdmin::CLI
             format: '%E %t: [%B] %p%% %r MB/s',
             rate_scale: ->(rate) { (rate / 1024.0 / 1024.0).round(2) },
             throttle_rate: 0.2,
-            output: progress,
+            output: progress
           )
         end
 
         read = 0
-        step = 1*1024*1024
+        step = 1 * 1024 * 1024
         io.seek(0)
 
         while read < position
@@ -56,11 +56,11 @@ module VpsAdmin::CLI
           throttle_rate: 0.2,
           starting_at: downloaded,
           autofinish: false,
-          output: progress,
+          output: progress
         )
       end
 
-      args = [uri.host] + Array.new(5, nil) + [{use_ssl: uri.scheme == 'https'}]
+      args = [uri.host] + Array.new(5, nil) + [{ use_ssl: uri.scheme == 'https' }]
 
       Net::HTTP.start(*args) do |http|
         loop do
@@ -81,7 +81,6 @@ module VpsAdmin::CLI
                 self.format = "%E %t ~#{@download_size} GB: [%B] %p%% %r kB/s"
               end
             end
-
           rescue HaveAPI::Client::ActionFailed => e
             # The SnapshotDownload object no longer exists, the transaction
             # responsible for its creation must have failed.
@@ -94,36 +93,32 @@ module VpsAdmin::CLI
 
           http.request_get(uri.path, headers) do |res|
             case res.code
-            when '404'  # Not Found
-              if downloaded > 0
-                # This means that the transaction used for preparing the download
-                # has failed, the file to download does not exist anymore, so fail.
-                raise DownloadError, 'The download has failed, most likely transaction failure'
+            when '404' # Not Found
+              raise DownloadError, 'The download has failed, most likely transaction failure' if downloaded > 0
 
-              else
-                # The file is not available yet, this is normal, the transaction
-                # may be queued and it can take some time before it is processed.
-                pause(10)
-                next
-              end
+              # This means that the transaction used for preparing the download
+              # has failed, the file to download does not exist anymore, so fail.
 
-            when '416'  # Range Not Satisfiable
-              if downloaded > position
-                # We have already managed to download something (at this run, if the trasfer
-                # was resumed) and the server cannot provide more data yet. This can be
-                # because the server is busy. Wait and retry.
-                pause(20)
-                next
+              # The file is not available yet, this is normal, the transaction
+              # may be queued and it can take some time before it is processed.
+              pause(10)
+              next
 
-              else
-                # The file is not ready yet - we ask for range that cannot be provided
-                # This happens when we're resuming a download and the file on the
-                # server was deleted meanwhile. The file might not be exactly the same
-                # as the one before, sha256sum would most likely fail.
-                raise DownloadError, 'Range not satisfiable'
-              end
+            when '416' # Range Not Satisfiable
+              raise DownloadError, 'Range not satisfiable' unless downloaded > position
 
-            when '200', '206'  # OK and Partial Content
+              # We have already managed to download something (at this run, if the trasfer
+              # was resumed) and the server cannot provide more data yet. This can be
+              # because the server is busy. Wait and retry.
+              pause(20)
+              next
+
+            # The file is not ready yet - we ask for range that cannot be provided
+            # This happens when we're resuming a download and the file on the
+            # server was deleted meanwhile. The file might not be exactly the same
+            # as the one before, sha256sum would most likely fail.
+
+            when '200', '206' # OK and Partial Content
               resume
 
             else
@@ -140,10 +135,7 @@ module VpsAdmin::CLI
               downloaded += size
 
               begin
-                if @pb && (@pb.total.nil? || @pb.progress < @pb.total)
-                  @pb.progress += size
-                end
-
+                @pb.progress += size if @pb && (@pb.total.nil? || @pb.progress < @pb.total)
               rescue ProgressBar::InvalidProgressError
                 # The total value is in MB, it is not precise, so the actual
                 # size may be a little bit bigger.
@@ -186,12 +178,13 @@ module VpsAdmin::CLI
       @pb.finish if @pb
 
       # Verify the checksum
-      if checksum && digest.hexdigest != dl_check.sha256sum
-        raise DownloadError, 'The sha256sum does not match, retry the download'
-      end
+      return unless checksum && digest.hexdigest != dl_check.sha256sum
+
+      raise DownloadError, 'The sha256sum does not match, retry the download'
     end
 
     protected
+
     def pause(secs)
       @paused = true
 

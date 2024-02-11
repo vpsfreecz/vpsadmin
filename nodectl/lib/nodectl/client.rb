@@ -16,14 +16,14 @@ module NodeCtl
     end
 
     def cmd(cmd, params = {})
-      @sock.send({command: cmd, params: params}.to_json + "\n", 0)
+      @sock.send({ command: cmd, params: params }.to_json + "\n", 0)
     end
 
     def receive
-      buf = ""
+      buf = ''
 
       while m = @sock.recv(1024)
-        buf = buf + m
+        buf += m
         break if m[-1].chr == "\n"
       end
 

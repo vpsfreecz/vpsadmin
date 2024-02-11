@@ -14,13 +14,14 @@ module NodeCtld
     end
 
     protected
+
     def add_key
-      Dir.mkdir(root_dir, 0700) unless Dir.exist?(root_dir)
-      Dir.mkdir(ssh_dir, 0700) unless Dir.exist?(ssh_dir)
+      Dir.mkdir(root_dir, 0o700) unless Dir.exist?(root_dir)
+      Dir.mkdir(ssh_dir, 0o700) unless Dir.exist?(ssh_dir)
 
       unless File.exist?(authorized_keys)
         File.open(authorized_keys, 'w') { |f| f.write(@pubkey + "\n") }
-        File.chmod(0600, authorized_keys)
+        File.chmod(0o600, authorized_keys)
         return
       end
 
@@ -56,6 +57,7 @@ module NodeCtld
 
       src.each_line do |line|
         next if line.strip == @pubkey
+
         dst.write(line)
       end
 

@@ -10,22 +10,22 @@ class Node < ActiveRecord::Base
   has_many :node_statuses, dependent: :destroy
   has_one :node_current_status
 
-  enum role: %i(node storage mailer)
-  enum hypervisor_type: %i(openvz vpsadminos)
+  enum role: %i[node storage mailer]
+  enum hypervisor_type: %i[openvz vpsadminos]
 
-  has_paper_trail ignore: %i(maintenance_lock maintenance_lock_reason)
+  has_paper_trail ignore: %i[maintenance_lock maintenance_lock_reason]
 
   alias_attribute :addr, :ip_addr
   alias_attribute :vps_max, :max_vps
 
   validates :name, :role, :location_id, :ip_addr, presence: true
-  validates :location_id, numericality: {only_integer: true}
+  validates :location_id, numericality: { only_integer: true }
   validates :name, format: {
-    with: /\A[a-zA-Z0-9\.\-_]+\Z/,
+    with: /\A[a-zA-Z0-9.\-_]+\Z/,
     message: 'invalid format'
   }
   validates :role, inclusion: {
-    in: %w(node storage mailer),
+    in: %w[node storage mailer],
     message: '%{value} is not a valid node role'
   }
   validates :ip_addr, format: {
@@ -33,7 +33,7 @@ class Node < ActiveRecord::Base
     message: 'not a valid IPv4 address'
   }
   validates :max_vps, presence: true, numericality: {
-    only_integer: true,
+    only_integer: true
   }, if: :hypervisor?
 
   after_update :shaper_changed, if: :shaper_changed?
@@ -51,7 +51,7 @@ class Node < ActiveRecord::Base
       maintenance: attrs.delete(:maintenance)
     }
     n = new(attrs)
-    n.hypervisor_type = 'vpsadminos' if %w(node storage).include?(n.role)
+    n.hypervisor_type = 'vpsadminos' if %w[node storage].include?(n.role)
 
     TransactionChains::Node::Register.fire(n, opts)
   end
@@ -65,8 +65,8 @@ class Node < ActiveRecord::Base
   end
 
   # @return [Array<::Node>]
-  def self.pick_by_environment(env, except: nil, hypervisor_type: nil , cgroup_version: nil)
-    q = self.joins('
+  def self.pick_by_environment(env, except: nil, hypervisor_type: nil, cgroup_version: nil)
+    q = joins('
           LEFT JOIN vpses ON vpses.node_id = nodes.id
           LEFT JOIN vps_current_statuses st ON st.vps_id = vpses.id
           INNER JOIN node_current_statuses nst ON nst.node_id = nodes.id
@@ -81,19 +81,17 @@ class Node < ActiveRecord::Base
 
     q = q.where('nodes.id != ?', except.id) if except
 
-    if hypervisor_type
-      q = q.where('nodes.hypervisor_type = ?', Node.hypervisor_types[hypervisor_type])
-    end
+    q = q.where('nodes.hypervisor_type = ?', Node.hypervisor_types[hypervisor_type]) if hypervisor_type
 
     if cgroup_version && cgroup_version != 'cgroup_any'
       q = q.where(
-        'nst.cgroup_version = ?', NodeCurrentStatus.cgroup_versions[cgroup_version],
+        'nst.cgroup_version = ?', NodeCurrentStatus.cgroup_versions[cgroup_version]
       )
     end
 
     nodes = q.group('nodes.id')
-      .order(Arel.sql('nst.cgroup_version DESC, COUNT(st.is_running) / max_vps ASC'))
-      .to_a
+             .order(Arel.sql('nst.cgroup_version DESC, COUNT(st.is_running) / max_vps ASC'))
+             .to_a
 
     if nodes.any?
       return nodes
@@ -101,7 +99,7 @@ class Node < ActiveRecord::Base
       return []
     end
 
-    q = self.joins('
+    q = joins('
       LEFT JOIN vpses ON vpses.node_id = nodes.id
       INNER JOIN node_current_statuses nst ON nst.node_id = nodes.id
       INNER JOIN locations ON locations.id = nodes.location_id
@@ -110,18 +108,16 @@ class Node < ActiveRecord::Base
     ).where(
       active: true,
       maintenance_lock: 0,
-      locations: {environment_id: env.id},
+      locations: { environment_id: env.id }
     )
 
     q = q.where('nodes.id != ?', except.id) if except
 
-    if hypervisor_type
-      q = q.where('nodes.hypervisor_type = ?', Node.hypervisor_types[hypervisor_type])
-    end
+    q = q.where('nodes.hypervisor_type = ?', Node.hypervisor_types[hypervisor_type]) if hypervisor_type
 
     if cgroup_version && cgroup_version != 'cgroup_any'
       q = q.where(
-        'nst.cgroup_version = ?', NodeCurrentStatus.cgroup_versions[cgroup_version],
+        'nst.cgroup_version = ?', NodeCurrentStatus.cgroup_versions[cgroup_version]
       )
     end
 
@@ -132,7 +128,7 @@ class Node < ActiveRecord::Base
   end
 
   def self.pick_by_location(loc, except: nil, hypervisor_type: nil, cgroup_version: nil)
-    q = self.joins('
+    q = joins('
         LEFT JOIN vpses ON vpses.node_id = nodes.id
         LEFT JOIN vps_current_statuses st ON st.vps_id = vpses.id
         INNER JOIN node_current_statuses nst ON nst.node_id = nodes.id
@@ -143,23 +139,20 @@ class Node < ActiveRecord::Base
         AND nodes.active = 1
         AND nodes.maintenance_lock = 0
         AND l.id = ?
-      ', loc.id
-    )
+      ', loc.id)
     q = q.where('nodes.id != ?', except.id) if except
 
-    if hypervisor_type
-      q = q.where('nodes.hypervisor_type = ?', Node.hypervisor_types[hypervisor_type])
-    end
+    q = q.where('nodes.hypervisor_type = ?', Node.hypervisor_types[hypervisor_type]) if hypervisor_type
 
     if cgroup_version && cgroup_version != 'cgroup_any'
       q = q.where(
-        'nst.cgroup_version = ?', NodeCurrentStatus.cgroup_versions[cgroup_version],
+        'nst.cgroup_version = ?', NodeCurrentStatus.cgroup_versions[cgroup_version]
       )
     end
 
     nodes = q.group('nodes.id')
-      .order(Arel.sql('nst.cgroup_version DESC, COUNT(st.is_running) / max_vps ASC'))
-      .to_a
+             .order(Arel.sql('nst.cgroup_version DESC, COUNT(st.is_running) / max_vps ASC'))
+             .to_a
 
     if nodes.any?
       return nodes
@@ -167,7 +160,7 @@ class Node < ActiveRecord::Base
       return []
     end
 
-    q = self.joins(
+    q = joins(
       'LEFT JOIN vpses ON vpses.node_id = nodes.id
       INNER JOIN node_current_statuses nst ON nst.node_id = nodes.id'
     ).where(
@@ -180,13 +173,11 @@ class Node < ActiveRecord::Base
 
     q = q.where('nodes.id != ?', except.id) if except
 
-    if hypervisor_type
-      q = q.where('nodes.hypervisor_type = ?', Node.hypervisor_types[hypervisor_type])
-    end
+    q = q.where('nodes.hypervisor_type = ?', Node.hypervisor_types[hypervisor_type]) if hypervisor_type
 
     if cgroup_version && cgroup_version != 'cgroup_any'
       q = q.where(
-        'nst.cgroup_version = ?', NodeCurrentStatus.cgroup_versions[cgroup_version],
+        'nst.cgroup_version = ?', NodeCurrentStatus.cgroup_versions[cgroup_version]
       )
     end
 
@@ -197,10 +188,10 @@ class Node < ActiveRecord::Base
   end
 
   def self.first_available
-    return self.joins(:node_current_status)
-        .where(active: true)
-        .order('node_current_statuses.created_at DESC')
-        .take!
+    joins(:node_current_status)
+      .where(active: true)
+      .order('node_current_statuses.created_at DESC')
+      .take!
   end
 
   def status
@@ -208,9 +199,7 @@ class Node < ActiveRecord::Base
 
     t = Time.now.utc.to_i
 
-    if node_current_status.updated_at
-      return (t - node_current_status.updated_at.to_i) <= 120
-    end
+    return (t - node_current_status.updated_at.to_i) <= 120 if node_current_status.updated_at
 
     (t - node_current_status.created_at.to_i) <= 120
   end
@@ -220,15 +209,14 @@ class Node < ActiveRecord::Base
 
     t = Time.now.utc.to_i
 
-    if node_current_status.pool_checked_at
-      return (t - node_current_status.pool_checked_at.to_i) <= 120
-    end
+    return (t - node_current_status.pool_checked_at.to_i) <= 120 if node_current_status.pool_checked_at
 
     (t - node_current_status.created_at.to_i) <= 120
   end
 
   def last_report
     return unless node_current_status
+
     node_current_status.updated_at || node_current_status.created_at
   end
 
@@ -238,13 +226,13 @@ class Node < ActiveRecord::Base
 
   def vps_running
     vpses.joins(:vps_current_status).where(
-      vps_current_statuses: {is_running: true}
+      vps_current_statuses: { is_running: true }
     ).count
   end
 
   def vps_stopped
     vpses.joins(:vps_current_status).where(
-      vps_current_statuses: {is_running: false}
+      vps_current_statuses: { is_running: false }
     ).count
   end
 
@@ -257,6 +245,7 @@ class Node < ActiveRecord::Base
 
   def vps_total
     return @vps_total if @vps_total
+
     @vps_total = vpses.count
   end
 
@@ -264,12 +253,11 @@ class Node < ActiveRecord::Base
     max_vps && (max_vps - vps_total)
   end
 
-  %i(uptime process_count cpu_user cpu_nice cpu_system cpu_idle cpu_iowait
+  %i[uptime process_count cpu_user cpu_nice cpu_system cpu_idle cpu_iowait
      cpu_irq cpu_softirq cpu_guest loadavg used_memory used_swap arc_c_max arc_c
      arc_size arc_hitpercent kernel vpsadmin_version pool_state pool_scan
      pool_scan_percent pool_checked_at pool_state_value pool_scan_value
-     cgroup_version
-  ).each do |attr|
+     cgroup_version].each do |attr|
     define_method(attr) do
       node_current_status && node_current_status.send(attr)
     end
@@ -308,11 +296,11 @@ class Node < ActiveRecord::Base
         node: opts[:dst_node],
         concurrency: concurrency,
         send_mail: send_mail,
-        reason: opts[:reason],
+        reason: opts[:reason]
       )
 
       # Lock evacuated node by the MigrationPlan
-      self.acquire_lock(plan)
+      acquire_lock(plan)
 
       ::Vps.where(
         node: self
@@ -323,7 +311,7 @@ class Node < ActiveRecord::Base
           maintenance_window: maintenance_window,
           cleanup_data: cleanup_data,
           src_node: self,
-          dst_node: opts[:dst_node],
+          dst_node: opts[:dst_node]
         )
       end
 
@@ -338,6 +326,7 @@ class Node < ActiveRecord::Base
   end
 
   protected
+
   def shaper_changed?
     max_tx_changed? || max_rx_changed?
   end

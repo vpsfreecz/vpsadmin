@@ -4,7 +4,7 @@ module NodeCtld
     needs :system, :osctl
 
     def exec
-      osctl(%i(ct send sync), @vps_id)
+      osctl(%i[ct send sync], @vps_id)
     end
 
     def rollback

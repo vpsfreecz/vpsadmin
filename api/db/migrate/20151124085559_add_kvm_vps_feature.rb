@@ -13,8 +13,8 @@ class AddKvmVpsFeature < ActiveRecord::Migration
   def up
     Vps.where('object_state < 3').each do |vps|
       vps.vps_features << VpsFeature.new(
-          name: :kvm,
-          enabled: false
+        name: :kvm,
+        enabled: false
       )
     end
   end

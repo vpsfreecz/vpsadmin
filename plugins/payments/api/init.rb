@@ -1,7 +1,7 @@
 module VpsAdmin::API::Plugins
   module Payments
-    module TransactionChains ; end
-    module Backends ; end
+    module TransactionChains; end
+    module Backends; end
   end
 end
 

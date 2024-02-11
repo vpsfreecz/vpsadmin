@@ -14,6 +14,7 @@ module NodeCtld
     end
 
     protected
+
     def set(key)
       mem = 0
       swap = 0
@@ -39,30 +40,30 @@ module NodeCtld
 
       if mem > 0
         osctl(
-          %i(ct set memory-limit),
+          %i[ct set memory-limit],
           [@vps_id, "#{mem}M", swap > 0 ? "#{swap}M" : nil].compact
         )
         osctl(
-          %i(ct cgparams set),
+          %i[ct cgparams set],
           [@vps_id, 'memory.soft_limit_in_bytes', (mem * 0.8 * 1024 * 1024).round],
-          {version: '1'},
+          { version: '1' }
         )
         osctl(
-          %i(ct cgparams set),
+          %i[ct cgparams set],
           [@vps_id, 'memory.low', (mem * 0.8 * 1024 * 1024).round],
-          {version: '2'},
+          { version: '2' }
         )
       end
 
-      if cpu_limits.any?
-        cpu_limit = cpu_limits.min || 0
+      return unless cpu_limits.any?
 
-        if cpu_limit > 0
-          osctl(%i(ct set cpu-limit), [@vps_id, cpu_limit.to_s])
+      cpu_limit = cpu_limits.min || 0
 
-        else
-          osctl(%i(ct unset cpu-limit), @vps_id)
-        end
+      if cpu_limit > 0
+        osctl(%i[ct set cpu-limit], [@vps_id, cpu_limit.to_s])
+
+      else
+        osctl(%i[ct unset cpu-limit], @vps_id)
       end
     end
   end

@@ -51,12 +51,10 @@ module VpsAdmin::API::Resources
         q = with_includes(query).offset(input[:offset]).limit(input[:limit])
 
         if input[:location] && !input[:network]
-          q = q.order('location_networks.priority')
+          q.order('location_networks.priority')
         else
-          q = q.order('location_networks.location_id, location_networks.priority')
+          q.order('location_networks.location_id, location_networks.priority')
         end
-
-        q
       end
     end
 
@@ -98,10 +96,8 @@ module VpsAdmin::API::Resources
 
       def exec
         VpsAdmin::API::Operations::LocationNetwork::Create.run(input)
-
       rescue ActiveRecord::RecordInvalid => e
         error('create failed', e.record.errors.to_hash)
-
       rescue ActiveRecord::RecordNotUnique
         error('this network already exists in the selected location')
       end
@@ -127,7 +123,6 @@ module VpsAdmin::API::Resources
           ::LocationNetwork.find(params[:location_network_id]),
           input
         )
-
       rescue ActiveRecord::RecordInvalid => e
         error('update failed', e.record.errors.to_hash)
       end

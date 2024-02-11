@@ -46,8 +46,8 @@ module VpsAdmin::API::Resources
 
       authorize do |u|
         allow if u.role == :admin
-        input whitelist: %i(node role)
-        output whitelist: %i(id node name role state scan scan_percent checked_at)
+        input whitelist: %i[node role]
+        output whitelist: %i[id node name role state scan scan_percent checked_at]
         allow
       end
 
@@ -80,7 +80,7 @@ module VpsAdmin::API::Resources
 
       authorize do |u|
         allow if u.role == :admin
-        output whitelist: %i(id node name role state scan scan_percent checked_at)
+        output whitelist: %i[id node name role state scan scan_percent checked_at]
         allow
       end
 
@@ -98,7 +98,7 @@ module VpsAdmin::API::Resources
       blocking true
 
       input do
-        use :common, exclude: %i(name)
+        use :common, exclude: %i[name]
         use :editable_properties
       end
 
@@ -115,10 +115,8 @@ module VpsAdmin::API::Resources
 
         @chain, pool = ::Pool.create!(input, properties)
         pool
-
       rescue VpsAdmin::API::Exceptions::PropertyInvalid => e
         error("property invalid: #{e.message}")
-
       rescue ActiveRecord::RecordInvalid => e
         error('create failed', e.record.errors.to_hash)
       end

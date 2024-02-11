@@ -8,21 +8,21 @@ module VpsAdmin::DownloadMounter
     def initialize
       @opts = {
         auth: 'token',
-        lifetime: 'renewable_auto',
+        lifetime: 'renewable_auto'
       }
     end
 
     def parse
-      usage = <<END
-Usage: #{$0} [options] <api> <mountpoint> <action>
+      usage = <<~END
+        Usage: #{$0} [options] <api> <mountpoint> <action>
 
-Actions:
-    auth                             Authenticate and exit
-    mount                            Check and mount all download datasets
-    umount                           Check and unmount all download datasets
+        Actions:
+            auth                             Authenticate and exit
+            mount                            Check and mount all download datasets
+            umount                           Check and unmount all download datasets
 
-Options:
-END
+        Options:
+      END
 
       opt_parser = OptionParser.new do |opts|
         opts.banner = usage
@@ -31,7 +31,7 @@ END
           @opts[:dry_run] = true
         end
 
-        opts.on('-a', '--auth AUTH', %w(basic token), 'Basic or token authentication') do |a|
+        opts.on('-a', '--auth AUTH', %w[basic token], 'Basic or token authentication') do |a|
           @opts[:auth] = a
         end
 
@@ -48,7 +48,7 @@ END
         end
 
         opts.on('-i', '--token-lifetime LIFETIME',
-                %w(renewable_manual renewable_auto fixed permanent), 'Token lifetime') do |l|
+                %w[renewable_manual renewable_auto fixed permanent], 'Token lifetime') do |l|
           @opts[:lifetime] = l
         end
 
@@ -89,11 +89,10 @@ END
 
         begin
           @api.pool.list(limit: 0)
-          puts "Sufficient permissions for download mount management"
+          puts 'Sufficient permissions for download mount management'
           true
-
         rescue HaveAPI::Client::ActionFailed => e
-          puts "Insufficient permissions for download mount management"
+          puts 'Insufficient permissions for download mount management'
           false
         end
 
@@ -104,7 +103,7 @@ END
         each_pool_mounter { |m| m.umount }
 
       else
-        fail "unsupported action '#{ARGV[2]}'"
+        raise "unsupported action '#{ARGV[2]}'"
       end
     end
 
@@ -136,7 +135,7 @@ END
         end
 
       else
-        fail "unsupported auth"
+        raise 'unsupported auth'
       end
     end
 
@@ -152,11 +151,11 @@ END
     end
 
     def each_pool_mounter
-      @api.pool.list(meta: {includes: 'node__environment'}).each do |pool|
+      @api.pool.list(meta: { includes: 'node__environment' }).each do |pool|
         puts "Pool #{pool.filesystem} of #{pool.node.domain_name}"
 
         unless pool.node.attributes[:status]
-          puts "  Node is down, skipping"
+          puts '  Node is down, skipping'
           puts "\n"
           next
         end

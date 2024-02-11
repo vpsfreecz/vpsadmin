@@ -12,25 +12,25 @@ module VpsAdmin::MailTemplates
     def initialize
       @opts = {
         auth: 'token',
-        lifetime: 'renewable_auto',
+        lifetime: 'renewable_auto'
       }
     end
 
     def parse
-      usage = <<EOF
-Usage: #{$0} [options] <api> <action>
+      usage = <<~EOF
+        Usage: #{$0} [options] <api> <action>
 
-Actions:
-    auth                             Authenticate and exit
-    install                          Upload templates to the API
+        Actions:
+            auth                             Authenticate and exit
+            install                          Upload templates to the API
 
-Options:
-EOF
+        Options:
+      EOF
 
       opt_parser = OptionParser.new do |opts|
         opts.banner = usage
 
-        opts.on('-a', '--auth AUTH', %w(basic token), 'Basic or token authentication') do |a|
+        opts.on('-a', '--auth AUTH', %w[basic token], 'Basic or token authentication') do |a|
           @opts[:auth] = a
         end
 
@@ -47,7 +47,7 @@ EOF
         end
 
         opts.on('-i', '--token-lifetime LIFETIME',
-                %w(renewable_manual renewable_auto fixed permanent), 'Token lifetime') do |l|
+                %w[renewable_manual renewable_auto fixed permanent], 'Token lifetime') do |l|
           @opts[:lifetime] = l
         end
 
@@ -88,11 +88,10 @@ EOF
 
         begin
           @api.mail_template.list(limit: 0)
-          puts "Sufficient permissions for mail template management"
+          puts 'Sufficient permissions for mail template management'
           true
-
         rescue HaveAPI::Client::ActionFailed => e
-          puts "Insufficient permissions for mail template management"
+          puts 'Insufficient permissions for mail template management'
           false
         end
 
@@ -100,7 +99,7 @@ EOF
         VpsAdmin::MailTemplates.install(@api)
 
       else
-        fail "unsupported action '#{ARGV[1]}'"
+        raise "unsupported action '#{ARGV[1]}'"
       end
     end
 
@@ -131,7 +130,7 @@ EOF
         end
 
       else
-        fail "unsupported auth"
+        raise 'unsupported auth'
       end
     end
 

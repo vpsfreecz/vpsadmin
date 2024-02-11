@@ -3,15 +3,16 @@ class UserPublicKey < ActiveRecord::Base
   has_paper_trail
 
   validates :label, :key, presence: true
-  validates :label, length: {maximum: 255}
+  validates :label, length: { maximum: 255 }
   validates :key, format: {
-      with: /\A[^\n]+\z/,
-      message: 'must not contain line breaks',
+    with: /\A[^\n]+\z/,
+    message: 'must not contain line breaks'
   }
-  validates :key, length: {maximum: 5000}
+  validates :key, length: { maximum: 5000 }
   validate :process_key
 
   protected
+
   def process_key
     if /\A-----BEGIN [^ ]+ PRIVATE KEY-----/ =~ key
       errors.add(:key, 'never upload your private key')
@@ -22,8 +23,7 @@ class UserPublicKey < ActiveRecord::Base
 
     self.comment = k.comment || ''
     self.fingerprint = k.fingerprint
-
-  rescue => e
+  rescue StandardError => e
     errors.add(:key, 'invalid public key')
   end
 end

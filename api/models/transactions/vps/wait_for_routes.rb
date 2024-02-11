@@ -14,7 +14,7 @@ module Transactions::Vps
       {
         pool_fs: vps.dataset_in_pool.pool.filesystem,
         timeout: timeout,
-        direction: direction.to_s,
+        direction: direction.to_s
       }
     end
   end

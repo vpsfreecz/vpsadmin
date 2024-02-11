@@ -18,7 +18,7 @@ module TransactionChains
       append_t(Transactions::Utils::NoOp, args: vps.node_id) do |t|
         t.destroy(mount)
 
-        t.just_create(vps.log(:umount, {id: mount.id, dst: mount.dst})) unless included?
+        t.just_create(vps.log(:umount, { id: mount.id, dst: mount.dst })) unless included?
       end
     end
   end

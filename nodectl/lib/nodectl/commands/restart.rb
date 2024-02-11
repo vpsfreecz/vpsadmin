@@ -3,12 +3,12 @@ module NodeCtl
     cmd :restart
     description 'Safely restart nodectld'
 
-    def options(parser, args)
+    def options(parser, _args)
       opts[:force] = false
 
       parser.on(
         '-f', '--force',
-        'Force restart - kills all transactions that are being processed '+
+        'Force restart - kills all transactions that are being processed ' +
         'and restarts immediately'
       ) do
         opts[:force] = true

@@ -12,7 +12,7 @@ module VpsAdmin::API
 
       # Find by label
       parts = name.split('/')
-      fail 'invalid dataset path' if parts.empty?
+      raise 'invalid dataset path' if parts.empty?
 
       top_dip =
         ::DatasetInPool
@@ -20,12 +20,12 @@ module VpsAdmin::API
         .joins(:dataset)
         .find_by!(
           label: parts.first,
-          datasets: {user_id: user.id}
+          datasets: { user_id: user.id }
         )
 
       ::Dataset.find_by!(
         user: user,
-        full_name: File.join(top_dip.dataset.full_name, *parts[1..-1]),
+        full_name: File.join(top_dip.dataset.full_name, *parts[1..-1])
       )
     end
   end

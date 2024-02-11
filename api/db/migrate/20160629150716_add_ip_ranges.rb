@@ -10,7 +10,7 @@ class AddIpRanges < ActiveRecord::Migration
     reversible do |dir|
       dir.up do
         ActiveRecord::Base.connection.execute(
-            "UPDATE networks SET `type` = 'Network'"
+          "UPDATE networks SET `type` = 'Network'"
         )
       end
     end

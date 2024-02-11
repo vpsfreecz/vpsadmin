@@ -11,22 +11,22 @@ module NodeCtld
         version: @version,
         arch: @arch,
         variant: @variant,
-        vendor: @vendor,
+        vendor: @vendor
       }
 
       opts[:skip_image] = true if @empty
 
-      osctl_pool(@pool_name, %i(ct create), @vps_id, opts)
+      osctl_pool(@pool_name, %i[ct create], @vps_id, opts)
 
-      osctl_pool(@pool_name, %i(ct set hostname), [@vps_id, @hostname]) if @hostname
+      osctl_pool(@pool_name, %i[ct set hostname], [@vps_id, @hostname]) if @hostname
 
       # nofile was originally set by osctld automatically, it's not working
       # because of vpsadminos#28. Until it is fixed, we'll set nofile manually.
-      osctl_pool(@pool_name, %i(ct prlimits set), [@vps_id, 'nofile', 1024, 1024*1024])
-      osctl_pool(@pool_name, %i(ct prlimits set), [@vps_id, 'nproc', 128*1024, 1024*1024])
-      osctl_pool(@pool_name, %i(ct prlimits set), [@vps_id, 'memlock', 65536, 'unlimited'])
+      osctl_pool(@pool_name, %i[ct prlimits set], [@vps_id, 'nofile', 1024, 1024 * 1024])
+      osctl_pool(@pool_name, %i[ct prlimits set], [@vps_id, 'nproc', 128 * 1024, 1024 * 1024])
+      osctl_pool(@pool_name, %i[ct prlimits set], [@vps_id, 'memlock', 65_536, 'unlimited'])
 
-      %w(veth-up).each do |hook|
+      %w[veth-up].each do |hook|
         dst = hook_path(hook)
 
         FileUtils.cp(
@@ -34,7 +34,7 @@ module NodeCtld
           "#{dst}.new"
         )
 
-        File.chmod(0500, "#{dst}.new")
+        File.chmod(0o500, "#{dst}.new")
         File.rename("#{dst}.new", dst)
       end
 
@@ -49,6 +49,7 @@ module NodeCtld
     end
 
     protected
+
     def hook_path(name)
       File.join(ct_hook_dir, name)
     end

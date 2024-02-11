@@ -6,16 +6,16 @@ class Location < ActiveRecord::Base
   has_many :location_networks
   has_many :networks, through: :location_networks
   has_many :dns_resolvers
-  has_paper_trail ignore: %i(maintenance_lock maintenance_lock_reason)
+  has_paper_trail ignore: %i[maintenance_lock maintenance_lock_reason]
 
   validates :label, :domain, presence: true
   validates :has_ipv6, inclusion: { in: [true, false] }
   validates :domain, format: {
-    with: /[[0-9a-zA-Z\-\.]{3,255}]/,
+    with: /[[0-9a-zA-Z\-.]{3,255}]/,
     message: 'invalid format'
   }
   validates :remote_console_server, allow_blank: true, format: {
-    with: /\A(https?:\/\/.+)?\Z/,
+    with: %r{\A(https?://.+)?\Z},
     message: 'invalid format'
   }
 
@@ -30,32 +30,28 @@ class Location < ActiveRecord::Base
 
   def shares_any_networks_with_primary?(location, userpick: nil)
     q = location_networks
-      .select('location_networks.location_id')
-      .joins('INNER JOIN location_networks ln2')
-      .where('location_networks.location_id != ln2.location_id')
-      .where('location_networks.network_id = ln2.network_id')
-      .where('ln2.location_id = ?', location.id)
-      .where('ln2.primary = 1')
+        .select('location_networks.location_id')
+        .joins('INNER JOIN location_networks ln2')
+        .where('location_networks.location_id != ln2.location_id')
+        .where('location_networks.network_id = ln2.network_id')
+        .where('ln2.location_id = ?', location.id)
+        .where('ln2.primary = 1')
 
-    if !userpick.nil?
-      q = q.where('ln2.userpick = ?', userpick)
-    end
+    q = q.where('ln2.userpick = ?', userpick) unless userpick.nil?
 
     q.count > 0
   end
 
   def any_shared_networks_with_primary(location, userpick: nil)
     net_ids = location_networks
-      .select('location_networks.network_id')
-      .joins('INNER JOIN location_networks ln2')
-      .where('location_networks.location_id != ln2.location_id')
-      .where('location_networks.network_id = ln2.network_id')
-      .where('ln2.location_id = ?', location.id)
-      .where('ln2.primary = 1')
+              .select('location_networks.network_id')
+              .joins('INNER JOIN location_networks ln2')
+              .where('location_networks.location_id != ln2.location_id')
+              .where('location_networks.network_id = ln2.network_id')
+              .where('ln2.location_id = ?', location.id)
+              .where('ln2.primary = 1')
 
-    if !userpick.nil?
-      net_ids = net_ids.where('ln2.userpick = ?', userpick)
-    end
+    net_ids = net_ids.where('ln2.userpick = ?', userpick) unless userpick.nil?
 
     ::Network.where(id: net_ids.pluck(:network_id))
   end

@@ -1,9 +1,9 @@
 class RemoveSessionTokens < ActiveRecord::Migration[7.0]
-  class Token < ::ActiveRecord::Base ; end
+  class Token < ::ActiveRecord::Base; end
 
-  class SessionToken < ::ActiveRecord::Base ; end
+  class SessionToken < ::ActiveRecord::Base; end
 
-  class UserSession < ::ActiveRecord::Base ; end
+  class UserSession < ::ActiveRecord::Base; end
 
   def change
     add_column :user_sessions, :label, :string, null: false, default: '', limit: 255
@@ -25,7 +25,7 @@ class RemoveSessionTokens < ActiveRecord::Migration[7.0]
           user_session = UserSession.find_by(session_token_id: session_token.id)
 
           if user_session.nil?
-            puts "  user session not found"
+            puts '  user session not found'
             Token.where(id: session_token.token_id).delete_all
             next
           else
@@ -37,15 +37,15 @@ class RemoveSessionTokens < ActiveRecord::Migration[7.0]
             request_count: session_token.use_count,
             token_id: session_token.token_id,
             token_lifetime: session_token.lifetime,
-            token_interval: session_token.interval,
+            token_interval: session_token.interval
           )
 
           Token.where(
             owner_type: 'SessionToken',
-            owner_id: session_token.id,
+            owner_id: session_token.id
           ).update_all(
             owner_type: 'UserSession',
-            owner_id: user_session.id,
+            owner_id: user_session.id
           )
         end
       end
@@ -63,21 +63,21 @@ class RemoveSessionTokens < ActiveRecord::Migration[7.0]
             label: user_session.label.empty? ? nil : user_session.label,
             use_count: user_session.request_count,
             lifetime: user_session.token_lifetime,
-            interval: user_session.token_interval,
+            interval: user_session.token_interval
           )
 
           puts "  -> session token ##{session_token.id}"
 
           user_session.update!(
-            session_token_id: session_token.id,
+            session_token_id: session_token.id
           )
 
           Token.where(
             owner_type: 'UserSession',
-            owner_id: user_session.id,
+            owner_id: user_session.id
           ).update_all(
             owner_type: 'SessionToken',
-            owner_id: session_token.id,
+            owner_id: session_token.id
           )
         end
       end

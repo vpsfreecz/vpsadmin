@@ -14,9 +14,10 @@ module NodeCtld
     def killall_subprocesses
       @daemon.chain_blockers do |blockers|
         return unless blockers
-        log("Killing all subprocesses")
 
-        blockers.each do |chain, pids|
+        log('Killing all subprocesses')
+
+        blockers.each do |_chain, pids|
           pids.each do |pid|
             log("Sending SIGTERM to subprocess #{pid}")
             Process.kill('TERM', pid)

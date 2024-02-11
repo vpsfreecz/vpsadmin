@@ -21,12 +21,12 @@ class VpsInterfacesAddresses < ActiveRecord::Migration
     belongs_to :vps
     has_many :ip_addresses
     has_many :host_ip_addresses
-    enum kind: %i(venet veth_bridge veth_routed)
+    enum kind: %i[venet veth_bridge veth_routed]
   end
 
   class Network < ActiveRecord::Base
     has_many :ip_addresses
-    enum role: %i(public_access private_access)
+    enum role: %i[public_access private_access]
   end
 
   class IpAddress < ActiveRecord::Base
@@ -44,11 +44,11 @@ class VpsInterfacesAddresses < ActiveRecord::Migration
       t.references  :vps,               null: false
       t.string      :name,              null: false, limit: 30
       t.integer     :kind,              null: false
-      t.string      :mac,               null: true,  limit: 17
+      t.string      :mac,               null: true, limit: 17
       t.timestamps
     end
 
-    add_index :network_interfaces, %i(vps_id name), unique: true
+    add_index :network_interfaces, %i[vps_id name], unique: true
     add_index :network_interfaces, :vps_id
     add_index :network_interfaces, :kind
     add_index :network_interfaces, :mac, unique: true
@@ -59,21 +59,21 @@ class VpsInterfacesAddresses < ActiveRecord::Migration
       t.integer     :order,             null: true
     end
 
-    add_index :host_ip_addresses, %i(ip_address_id ip_addr), unique: true
+    add_index :host_ip_addresses, %i[ip_address_id ip_addr], unique: true
     add_index :host_ip_addresses, :ip_address_id
 
     add_column :ip_addresses, :network_interface_id, :integer, null: true
     add_index :ip_addresses, :network_interface_id
 
     # Create one HostIpAddress for each IpAddress
-    IpAddress.joins(:network).where(networks: {role: [
-      Network.roles[:public_access],
-      Network.roles[:private_access],
-    ]}).each do |ip|
+    IpAddress.joins(:network).where(networks: { role: [
+                                      Network.roles[:public_access],
+                                      Network.roles[:private_access]
+                                    ] }).each do |ip|
       HostIpAddress.create!(
         ip_address_id: ip.id,
         ip_addr: IPAddress.parse(ip.ip_addr).first.to_s,
-        order: nil,
+        order: nil
       )
     end
 
@@ -83,13 +83,13 @@ class VpsInterfacesAddresses < ActiveRecord::Migration
         vps_id: vps.id,
         name: vps.veth_name,
         kind: NetworkInterface.kinds[vps.veth_mac ? :veth_routed : :venet],
-        mac: vps.veth_mac,
+        mac: vps.veth_mac
       )
 
-      vps.ip_addresses.joins(:network).where(networks: {role: [
-        Network.roles[:public_access],
-        Network.roles[:private_access],
-      ]}).each do |ip|
+      vps.ip_addresses.joins(:network).where(networks: { role: [
+                                               Network.roles[:public_access],
+                                               Network.roles[:private_access]
+                                             ] }).each do |ip|
         ip.update!(network_interface_id: netif.id)
         host_ip = ip.host_ip_addresses.take!
         host_ip.update!(order: ip.order)
@@ -120,7 +120,7 @@ class VpsInterfacesAddresses < ActiveRecord::Migration
 
       vps.update!(
         veth_name: netif.name,
-        veth_mac: netif.mac,
+        veth_mac: netif.mac
       )
     end
 

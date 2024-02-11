@@ -4,7 +4,7 @@ class AddVpsOutageWindows < ActiveRecord::Migration
     self.primary_key = 'vps_id'
   end
 
-  class VpsOutageWindow < ActiveRecord::Base ; end
+  class VpsOutageWindow < ActiveRecord::Base; end
 
   def change
     create_table :vps_outage_windows do |t|
@@ -15,18 +15,18 @@ class AddVpsOutageWindows < ActiveRecord::Migration
       t.integer     :closes_at,         null: true
     end
 
-    add_index :vps_outage_windows, [:vps_id, :weekday], unique: true
+    add_index :vps_outage_windows, %i[vps_id weekday], unique: true
 
     reversible do |dir|
       dir.up do
         Vps.where('object_state < 3').each do |vps|
           7.times do |i|
             VpsOutageWindow.create!(
-                vps_id: vps.id,
-                weekday: i,
-                is_open: true,
-                opens_at: 60,
-                closes_at: 5*60,
+              vps_id: vps.id,
+              weekday: i,
+              is_open: true,
+              opens_at: 60,
+              closes_at: 5 * 60
             )
           end
         end

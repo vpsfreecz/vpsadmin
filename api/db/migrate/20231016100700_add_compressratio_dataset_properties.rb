@@ -5,7 +5,7 @@ class AddCompressratioDatasetProperties < ActiveRecord::Migration[7.0]
   end
 
   def up
-    %w(compressratio refcompressratio).each do |new_prop_name|
+    %w[compressratio refcompressratio].each do |new_prop_name|
       # Pool properties
       pool_parents = {}
 
@@ -18,13 +18,12 @@ class AddCompressratioDatasetProperties < ActiveRecord::Migration[7.0]
           name: new_prop_name,
           value: 1.0,
           inherited: false,
-          confirmed: prop.confirmed,
+          confirmed: prop.confirmed
         )
       end
 
       # Dataset properties
       DatasetProperty.where.not(dataset_id: nil).group(:dataset_id).arrange.each do |prop, children|
-
         prop_parent = prop.parent
         pool_parent = prop_parent && pool_parents[prop_parent.pool_id]
         create_property(new_prop_name, pool_parent, prop, children)
@@ -33,10 +32,11 @@ class AddCompressratioDatasetProperties < ActiveRecord::Migration[7.0]
   end
 
   def down
-    DatasetProperty.where(name: %w(compressratio refcompressratio)).delete_all
+    DatasetProperty.where(name: %w[compressratio refcompressratio]).delete_all
   end
 
   protected
+
   def create_property(new_prop_name, parent, prop, children)
     new_prop = DatasetProperty.create!(
       pool_id: prop.pool_id,
@@ -46,7 +46,7 @@ class AddCompressratioDatasetProperties < ActiveRecord::Migration[7.0]
       name: new_prop_name,
       value: 1.0,
       inherited: false,
-      confirmed: prop.confirmed,
+      confirmed: prop.confirmed
     )
 
     children.each do |child_prop, grandchildren|

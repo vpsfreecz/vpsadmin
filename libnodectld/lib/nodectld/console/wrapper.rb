@@ -31,7 +31,7 @@ module NodeCtld
       @pid = Process.spawn(
         'osctl', '-j', 'ct', 'console', @vps_id.to_s,
         in: in_r,
-        out: out_w,
+        out: out_w
       )
 
       in_r.close
@@ -40,7 +40,7 @@ module NodeCtld
       @reader = Thread.new { read_from_pipe }
 
       publish("Welcome to vpsFree.cz Remote Console\r\n")
-      send_write({keys: Base64.strict_encode64("\n")})
+      send_write({ keys: Base64.strict_encode64("\n") })
     end
 
     def stop
@@ -86,6 +86,7 @@ module NodeCtld
     end
 
     protected
+
     def send_write(data)
       @in_w.write("#{data.to_json}\n")
     end
@@ -107,22 +108,19 @@ module NodeCtld
 
         publish(data)
       end
-
     rescue IOError
       @alive = false
     end
 
     def publish(data)
       @sessions.each do |session|
-        begin
-          @server.publish_output(
-            data,
-            content_type: 'application/octet-stream',
-            routing_key: routing_key(session),
-          )
-        rescue Bunny::ConnectionClosedError
-          next
-        end
+        @server.publish_output(
+          data,
+          content_type: 'application/octet-stream',
+          routing_key: routing_key(session)
+        )
+      rescue Bunny::ConnectionClosedError
+        next
       end
     end
 

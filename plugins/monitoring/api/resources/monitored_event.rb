@@ -19,9 +19,9 @@ module VpsAdmin::API::Resources
 
     class Index < HaveAPI::Actions::Default::Index
       input do
-        use :all, include: %i(monitor object_name object_id state user)
-        string :order, choices: %w(oldest latest longest shortest), default: 'latest',
-            fill: true
+        use :all, include: %i[monitor object_name object_id state user]
+        string :order, choices: %w[oldest latest longest shortest], default: 'latest',
+                       fill: true
 
         patch :limit, default: 25, fill: true
       end
@@ -33,12 +33,12 @@ module VpsAdmin::API::Resources
       authorize do |u|
         allow if u.role == :admin
         restrict user_id: u.id, state: [
-            ::MonitoredEvent.states[:confirmed],
-            ::MonitoredEvent.states[:acknowledged],
-            ::MonitoredEvent.states[:ignored],
-            ::MonitoredEvent.states[:closed],
-          ]
-        input blacklist: %i(user)
+          ::MonitoredEvent.states[:confirmed],
+          ::MonitoredEvent.states[:acknowledged],
+          ::MonitoredEvent.states[:ignored],
+          ::MonitoredEvent.states[:closed]
+        ]
+        input blacklist: %i[user]
         allow
       end
 
@@ -88,20 +88,20 @@ module VpsAdmin::API::Resources
       authorize do |u|
         allow if u.role == :admin
         restrict user_id: u.id, state: [
-              ::MonitoredEvent.states[:confirmed],
-              ::MonitoredEvent.states[:acknowledged],
-              ::MonitoredEvent.states[:ignored],
-              ::MonitoredEvent.states[:closed],
-          ]
+          ::MonitoredEvent.states[:confirmed],
+          ::MonitoredEvent.states[:acknowledged],
+          ::MonitoredEvent.states[:ignored],
+          ::MonitoredEvent.states[:closed]
+        ]
         allow
       end
 
       def prepare
         @event = ::MonitoredEvent.where(with_restricted(
-            id: params[:monitored_event_id],
-        )).where(
-            'access_level <= ?', current_user.level
-        ).take!
+                                          id: params[:monitored_event_id]
+                                        )).where(
+                                          'access_level <= ?', current_user.level
+                                        ).take!
       end
 
       def exec
@@ -112,7 +112,7 @@ module VpsAdmin::API::Resources
     class Acknowledge < HaveAPI::Action
       http_method :post
       route '{%{resource}_id}/acknowledge'
-      aliases %i(ack)
+      aliases %i[ack]
 
       input do
         datetime :until
@@ -121,22 +121,22 @@ module VpsAdmin::API::Resources
       authorize do |u|
         allow if u.role == :admin
         restrict user_id: u.id, state: [
-                ::MonitoredEvent.states[:confirmed],
-                ::MonitoredEvent.states[:acknowledged],
-                ::MonitoredEvent.states[:ignored],
-                ::MonitoredEvent.states[:closed],
-            ]
+          ::MonitoredEvent.states[:confirmed],
+          ::MonitoredEvent.states[:acknowledged],
+          ::MonitoredEvent.states[:ignored],
+          ::MonitoredEvent.states[:closed]
+        ]
         allow
       end
 
       def exec
         event = ::MonitoredEvent.where(with_restricted(
-            id: params[:monitored_event_id],
-        )).where(
-            'access_level <= ?', current_user.level
-        ).take!
+                                         id: params[:monitored_event_id]
+                                       )).where(
+                                         'access_level <= ?', current_user.level
+                                       ).take!
 
-        if !%w(confirmed acknowledged ignored).include?(event.state)
+        unless %w[confirmed acknowledged ignored].include?(event.state)
           error("events in state '#{event.state}' cannot be acknowledged")
         end
 
@@ -156,22 +156,22 @@ module VpsAdmin::API::Resources
       authorize do |u|
         allow if u.role == :admin
         restrict user_id: u.id, state: [
-              ::MonitoredEvent.states[:confirmed],
-              ::MonitoredEvent.states[:acknowledged],
-              ::MonitoredEvent.states[:ignored],
-              ::MonitoredEvent.states[:closed],
-            ]
+          ::MonitoredEvent.states[:confirmed],
+          ::MonitoredEvent.states[:acknowledged],
+          ::MonitoredEvent.states[:ignored],
+          ::MonitoredEvent.states[:closed]
+        ]
         allow
       end
 
       def exec
         event = ::MonitoredEvent.where(with_restricted(
-          id: params[:monitored_event_id],
-        )).where(
-          'access_level <= ?', current_user.level
-        ).take!
+                                         id: params[:monitored_event_id]
+                                       )).where(
+                                         'access_level <= ?', current_user.level
+                                       ).take!
 
-        if !%w(confirmed acknowledged ignored).include?(event.state)
+        unless %w[confirmed acknowledged ignored].include?(event.state)
           error("events in state '#{event.state}' cannot be ignored")
         end
 
@@ -196,8 +196,8 @@ module VpsAdmin::API::Resources
         desc 'List event logs'
 
         input do
-          use :all, include: %i(passed)
-          string :order, choices: %w(oldest latest), default: 'oldest', fill: true
+          use :all, include: %i[passed]
+          string :order, choices: %w[oldest latest], default: 'oldest', fill: true
           patch :limit, default: 25, fill: true
         end
 
@@ -207,16 +207,16 @@ module VpsAdmin::API::Resources
 
         authorize do |u|
           allow if u.role == :admin
-          restrict monitored_events: {user_id: u.id}
+          restrict monitored_events: { user_id: u.id }
           allow
         end
 
         def query
           q = ::MonitoredEventLog.joins(:monitored_event).where(with_restricted(
-            monitored_event_id: params[:monitored_event_id],
-          )).where(
-            'monitored_events.access_level <= ?', current_user.level
-          )
+                                                                  monitored_event_id: params[:monitored_event_id]
+                                                                )).where(
+                                                                  'monitored_events.access_level <= ?', current_user.level
+                                                                )
 
           q = q.where(passed: input[:passed]) if input.has_key?(:passed)
           q
@@ -254,11 +254,11 @@ module VpsAdmin::API::Resources
 
         def prepare
           @event = ::MonitoredEventLog.joins(:monitored_event).where(with_restricted(
-            monitored_event_id: params[:monitored_event_id],
-            id: params[:log_id],
-          )).where(
-            'monitored_events.access_level <= ?', current_user.level
-          ).take!
+                                                                       monitored_event_id: params[:monitored_event_id],
+                                                                       id: params[:log_id]
+                                                                     )).where(
+                                                                       'monitored_events.access_level <= ?', current_user.level
+                                                                     ).take!
         end
 
         def exec

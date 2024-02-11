@@ -20,7 +20,7 @@ module Transactions::Mail
         references: mail.references,
         subject: mail.subject,
         text_plain: mail.text_plain,
-        text_html: mail.text_html,
+        text_html: mail.text_html
       }
     end
   end

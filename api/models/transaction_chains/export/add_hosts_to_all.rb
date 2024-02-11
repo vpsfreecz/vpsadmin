@@ -13,7 +13,7 @@ module TransactionChains
             rw: export.rw,
             sync: export.sync,
             subtree_check: export.subtree_check,
-            root_squash: export.root_squash,
+            root_squash: export.root_squash
           )
         end
 

@@ -11,7 +11,7 @@ module Transactions::Vps
       {
         start_timeout: start_timeout,
         autostart_priority: vps.autostart_priority,
-        rollback_stop: rollback_stop,
+        rollback_stop: rollback_stop
       }
     end
   end

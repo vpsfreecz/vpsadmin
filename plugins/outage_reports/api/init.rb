@@ -1,6 +1,6 @@
 module VpsAdmin::API::Plugins
   module OutageReports
-    module TransactionChains ; end
+    module TransactionChains; end
   end
 end
 

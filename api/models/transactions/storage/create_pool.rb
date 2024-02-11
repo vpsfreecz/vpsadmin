@@ -9,7 +9,7 @@ module Transactions::Storage
 
       {
         pool_fs: pool.filesystem,
-        options: properties,
+        options: properties
       }
     end
   end

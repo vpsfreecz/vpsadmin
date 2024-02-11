@@ -3,7 +3,7 @@ class AddGenericUniqueTokens < ActiveRecord::Migration
     create_table :tokens do |t|
       t.string      :token,         null: false, limit: 100
       t.datetime    :valid_to,      null: true
-      t.references  :owner,         null: true,  polymorphic: true, index: true
+      t.references  :owner,         null: true, polymorphic: true, index: true
       t.datetime    :created_at,    null: false
     end
 

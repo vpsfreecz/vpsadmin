@@ -8,7 +8,7 @@ module Transactions::Pool
       {
         pool_id: pool.id,
         pool_name: pool.name,
-        pool_fs: pool.filesystem,
+        pool_fs: pool.filesystem
       }
     end
   end

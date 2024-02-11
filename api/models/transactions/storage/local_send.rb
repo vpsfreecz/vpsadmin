@@ -13,7 +13,7 @@ module Transactions::Storage
         tmp << {
           id: snap.snapshot.id,
           name: snap.snapshot.name,
-          confirmed: snap.snapshot.confirmed,
+          confirmed: snap.snapshot.confirmed
         }
       end
 
@@ -26,7 +26,7 @@ module Transactions::Storage
         src_tree: src_branch && src_branch.dataset_tree.full_name,
         src_branch: src_branch && src_branch.full_name,
         dst_tree: dst_branch && dst_branch.dataset_tree.full_name,
-        dst_branch: dst_branch && dst_branch.full_name,
+        dst_branch: dst_branch && dst_branch.full_name
       }
     end
   end

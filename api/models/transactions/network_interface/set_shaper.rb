@@ -15,12 +15,12 @@ module Transactions::NetworkInterface
         veth_name: netif.name,
         max_tx: max_tx && {
           new: max_tx,
-          original: netif.max_tx,
+          original: netif.max_tx
         },
         max_rx: max_rx && {
           new: max_rx,
-          original: netif.max_rx,
-        },
+          original: netif.max_rx
+        }
       }
     end
   end

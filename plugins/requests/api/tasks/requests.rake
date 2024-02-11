@@ -6,11 +6,11 @@ namespace :vpsadmin do
       ipqs = VpsAdmin::API::Plugins::Requests::IPQS.new(token)
 
       ::RegistrationRequest.where(
-        state: ::RegistrationRequest.states[:awaiting],
+        state: ::RegistrationRequest.states[:awaiting]
       ).where(
         'ip_checked IS NULL OR ip_checked = 0'
       ).where.not(
-        client_ip_addr: nil,
+        client_ip_addr: nil
       ).order('id').each do |req|
         resp = ipqs.check_ip(req.client_ip_addr)
 
@@ -20,7 +20,7 @@ namespace :vpsadmin do
             ip_request_id: resp[:request_id],
             ip_success: false,
             ip_message: resp[:message],
-            ip_errors: resp[:errors] && resp[:errors].join('; '),
+            ip_errors: resp[:errors] && resp[:errors].join('; ')
           )
           next
         end
@@ -34,7 +34,7 @@ namespace :vpsadmin do
           ip_recent_abuse: resp[:recent_abuse],
           ip_vpn: resp[:vpn],
           ip_tor: resp[:tor],
-          ip_fraud_score: resp[:fraud_score],
+          ip_fraud_score: resp[:fraud_score]
         )
       end
     end
@@ -45,7 +45,7 @@ namespace :vpsadmin do
       ipqs = VpsAdmin::API::Plugins::Requests::IPQS.new(token)
 
       ::RegistrationRequest.where(
-        state: ::RegistrationRequest.states[:awaiting],
+        state: ::RegistrationRequest.states[:awaiting]
       ).where(
         'mail_checked IS NULL OR mail_checked = 0'
       ).order('id').each do |req|
@@ -57,7 +57,7 @@ namespace :vpsadmin do
             mail_request_id: resp[:request_id],
             mail_success: false,
             mail_message: resp[:message],
-            mail_errors: resp[:errors] && resp[:errors].join('; '),
+            mail_errors: resp[:errors] && resp[:errors].join('; ')
           )
           next
         end
@@ -80,12 +80,12 @@ namespace :vpsadmin do
           mail_honeypot: resp[:honeypot],
           mail_spam_trap_score: resp[:spam_trap_score],
           mail_recent_abuse: resp[:recent_abuse],
-          mail_frequent_complainer: resp[:frequent_complaner],
+          mail_frequent_complainer: resp[:frequent_complaner]
         )
       end
     end
 
     desc 'Check registration requests'
-    task check_registrations: %i(check_registration_ips check_registration_mails)
+    task check_registrations: %i[check_registration_ips check_registration_mails]
   end
 end

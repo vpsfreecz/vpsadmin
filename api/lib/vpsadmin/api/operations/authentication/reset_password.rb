@@ -7,13 +7,11 @@ module VpsAdmin::API
     # @return [User]
     def run(token, new_password)
       auth_token = ::AuthToken.joins(:token).includes(:token, :user).find_by(
-        tokens: {token: token},
-        purpose: 'reset_password',
+        tokens: { token: token },
+        purpose: 'reset_password'
       )
 
-      if auth_token.nil? || !auth_token.token_valid?
-        raise Exceptions::AuthenticationError, 'invalid token'
-      end
+      raise Exceptions::AuthenticationError, 'invalid token' if auth_token.nil? || !auth_token.token_valid?
 
       user = auth_token.user
       user.set_password(new_password)

@@ -22,7 +22,7 @@ module VpsAdmin::API::Tasks
             oauth2_open = true if auth.refreshable?
           end
 
-          session_update = {token: nil}
+          session_update = { token: nil }
 
           # Close the session only if oauth2 access token cannot be refreshed
           session_update[:closed_at] = user_session.token.valid_to unless oauth2_open
@@ -35,7 +35,7 @@ module VpsAdmin::API::Tasks
       # Close oauth2 authorizations where even the refresh token has expired
       ::Oauth2Authorization
         .joins(:user_session, :refresh_token)
-        .where(user_sessions: {closed_at: nil})
+        .where(user_sessions: { closed_at: nil })
         .where.not(refresh_token: nil)
         .where('tokens.valid_to < ?', Time.now)
         .each do |auth|

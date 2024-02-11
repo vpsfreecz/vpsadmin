@@ -4,12 +4,12 @@ module NodeCtld
     needs :system, :osctl
 
     def exec
-      osctl(%i(ct unset dns-resolver), @vps_id)
+      osctl(%i[ct unset dns-resolver], @vps_id)
       ok
     end
 
     def rollback
-      osctl(%i(ct set dns-resolver), [@vps_id] + @original)
+      osctl(%i[ct set dns-resolver], [@vps_id] + @original)
       ok
     end
   end

@@ -8,7 +8,7 @@ class UserNamespaceMap < ActiveRecord::Base
   include Lockable
 
   def self.create_direct!(userns, label)
-    self.transaction do
+    transaction do
       create_chained!(userns, label)
     end
   end
@@ -16,7 +16,7 @@ class UserNamespaceMap < ActiveRecord::Base
   def self.create_chained!(userns, label)
     create!(
       user_namespace: userns,
-      label: label,
+      label: label
     )
   end
 

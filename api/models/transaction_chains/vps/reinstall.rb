@@ -23,11 +23,11 @@ module TransactionChains
         use_chain(Vps::DeployPublicKey, args: [vps, key], reversible: :keep_going)
       end
 
-      if running
-        # Set reversible to :keep_going, because we cannot be certain that
-        # the template is correct and the VPS will start.
-        use_chain(Vps::Start, args: vps, reversible: :keep_going)
-      end
+      return unless running
+
+      # Set reversible to :keep_going, because we cannot be certain that
+      # the template is correct and the VPS will start.
+      use_chain(Vps::Start, args: vps, reversible: :keep_going)
     end
 
     def reinstall_vpsadminos(vps, template)
@@ -57,7 +57,7 @@ module TransactionChains
       datasets.each do |dip|
         dip.dataset.dataset_in_pools.joins(:pool).where(
           'pools.role = ?', ::Pool.roles[:backup]
-        ).where(pools: {is_open: true}).each do |dst|
+        ).where(pools: { is_open: true }).each do |dst|
           use_chain(TransactionChains::Dataset::Transfer, args: [dip, dst])
         end
       end

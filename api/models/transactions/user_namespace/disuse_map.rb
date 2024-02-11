@@ -14,7 +14,7 @@ module Transactions::UserNamespace
         pool_fs: vps.dataset_in_pool.pool.filesystem,
         name: userns_map.id.to_s,
         uidmap: build_map(userns_map, :uid),
-        gidmap: build_map(userns_map, :gid),
+        gidmap: build_map(userns_map, :gid)
       }
     end
   end

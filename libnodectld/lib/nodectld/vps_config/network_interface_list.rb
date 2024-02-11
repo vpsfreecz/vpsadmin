@@ -22,9 +22,7 @@ module NodeCtld
 
     # @param netif [VpsConfig::NetworkInterface]
     def <<(netif)
-      if @index.has_key?(netif.name)
-        raise ArgumentError, "netif '#{netif.name}' already exists"
-      end
+      raise ArgumentError, "netif '#{netif.name}' already exists" if @index.has_key?(netif.name)
 
       @netifs << netif
       @index[netif.name] = netif
@@ -34,7 +32,8 @@ module NodeCtld
     # @param new_name [String]
     def rename(name, new_name)
       netif = @netifs.detect { |n| n.name == name }
-      fail "netif '#{name}' not found" if netif.nil?
+      raise "netif '#{name}' not found" if netif.nil?
+
       netif.name = new_name
       @index.delete(name)
       @index[netif.name] = netif.name

@@ -17,14 +17,14 @@ module VpsAdmin::API::Resources
         resource VpsAdmin::API::Resources::OsTemplate, label: 'Distribution', required: true
         resource VpsAdmin::API::Resources::Location, label: 'Location', required: true
         string :currency, label: 'Currency', required: true,
-            choices: ::SysConfig.get(:plugin_requests, :currencies).split(',')
+                          choices: ::SysConfig.get(:plugin_requests, :currencies).split(',')
         resource VpsAdmin::API::Resources::Language, label: 'Language', required: true
       end
 
       params(:resolve) do
         bool :activate, label: 'Activate account', default: true, fill: true
         resource VpsAdmin::API::Resources::Node, label: 'Node', value_label: :domain_name,
-            desc: 'Create the new VPS on this node'
+                                                 desc: 'Create the new VPS on this node'
         bool :create_vps, label: 'Create VPS', default: true, fill: true
       end
 
@@ -79,20 +79,20 @@ module VpsAdmin::API::Resources
         route '{%{resource}_id}/{token}'
 
         output do
-          use :common, include: %i(id admin_response)
+          use :common, include: %i[id admin_response]
           use :request
         end
 
-        authorize do |u|
+        authorize do |_u|
           allow
         end
 
         def exec
           ::RegistrationRequest.find_by!(with_restricted(
-            id: params[:registration_id],
-            access_token: params[:token],
-            state: ::RegistrationRequest.states[:pending_correction],
-          ))
+                                           id: params[:registration_id],
+                                           access_token: params[:token],
+                                           state: ::RegistrationRequest.states[:pending_correction]
+                                         ))
         end
       end
 
@@ -105,23 +105,22 @@ module VpsAdmin::API::Resources
         end
 
         output do
-          use :common, include: %i(id)
+          use :common, include: %i[id]
           use :request
         end
 
-        authorize do |u|
+        authorize do |_u|
           allow
         end
 
         def exec
           req = ::RegistrationRequest.find_by!(with_restricted(
-            id: params[:registration_id],
-            access_token: params[:token],
-            state: ::RegistrationRequest.states[:pending_correction],
-          ))
+                                                 id: params[:registration_id],
+                                                 access_token: params[:token],
+                                                 state: ::RegistrationRequest.states[:pending_correction]
+                                               ))
           req.resubmit!(input)
           req
-
         rescue ActiveRecord::RecordInvalid => e
           error('update failed', e.record.errors.to_hash)
         end

@@ -17,7 +17,7 @@ module VpsAdmin::API::Resources
       desc 'List exports affected by outage'
 
       input do
-        use :all, include: %i(outage export user environment location node direct)
+        use :all, include: %i[outage export user environment location node direct]
       end
 
       output(:object_list) do
@@ -33,7 +33,7 @@ module VpsAdmin::API::Resources
       def query
         q = ::OutageExport.where(with_restricted)
 
-        %i(outage export user environment location node).each do |v|
+        %i[outage export user environment location node].each do |v|
           q = q.where(v => input[v]) if input[v]
         end
 
@@ -67,8 +67,8 @@ module VpsAdmin::API::Resources
 
       def prepare
         @outage = ::OutageExport.find_by!(with_restricted(
-          id: params[:export_outage_id],
-        ))
+                                            id: params[:export_outage_id]
+                                          ))
       end
 
       def exec

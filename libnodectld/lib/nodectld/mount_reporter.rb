@@ -52,6 +52,7 @@ module NodeCtld
     end
 
     protected
+
     def report_thread
       loop do
         break if @stop
@@ -74,17 +75,17 @@ module NodeCtld
             id: mnt[:id],
             vps_id: mnt[:vps_id],
             state: mnt[:state],
-            time: Time.now.to_i,
+            time: Time.now.to_i
           }.to_json,
           persistent: true,
           content_type: 'application/json',
-          routing_key: 'vps_mounts',
+          routing_key: 'vps_mounts'
         )
       end
     end
 
-    def sync
-      @mutex.synchronize { yield }
+    def sync(&block)
+      @mutex.synchronize(&block)
     end
   end
 end

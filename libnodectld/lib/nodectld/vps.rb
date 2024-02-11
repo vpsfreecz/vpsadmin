@@ -19,22 +19,22 @@ module NodeCtld
     end
 
     def start(start_timeout, autostart_priority)
-      osctl(%i(ct start), @veid, {wait: start_timeout || START_TIMEOUT})
-      osctl(%i(ct set autostart), @veid, {priority: autostart_priority})
+      osctl(%i[ct start], @veid, { wait: start_timeout || START_TIMEOUT })
+      osctl(%i[ct set autostart], @veid, { priority: autostart_priority })
     end
 
-    def stop(params = {})
-      osctl(%i(ct stop), @veid)
-      osctl(%i(ct unset autostart), @veid)
+    def stop(_params = {})
+      osctl(%i[ct stop], @veid)
+      osctl(%i[ct unset autostart], @veid)
     end
 
     def restart(start_timeout, autostart_priority)
-      osctl(%i(ct restart), @veid, {wait: start_timeout || START_TIMEOUT})
-      osctl(%i(ct set autostart), @veid, {priority: autostart_priority})
+      osctl(%i[ct restart], @veid, { wait: start_timeout || START_TIMEOUT })
+      osctl(%i[ct set autostart], @veid, { priority: autostart_priority })
     end
 
     def passwd(user, password)
-      osctl(%i(ct passwd), [@veid, user, password])
+      osctl(%i[ct passwd], [@veid, user, password])
     end
 
     def load_file(file)
@@ -42,7 +42,7 @@ module NodeCtld
     end
 
     def status
-      osctl_parse(%i(ct show), @veid)[:state].to_sym
+      osctl_parse(%i[ct show], @veid)[:state].to_sym
     end
 
     def honor_state

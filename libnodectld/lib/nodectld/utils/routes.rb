@@ -19,13 +19,9 @@ module NodeCtld
           break
         end
 
-        if use_default_timeout
-          effective_timeout = $CFG.get(:route_check, :default_timeout)
-        end
+        effective_timeout = $CFG.get(:route_check, :default_timeout) if use_default_timeout
 
-        if since + effective_timeout < Time.now
-          fail "the following route exist: #{v.to_string}"
-        end
+        raise "the following route exist: #{v.to_string}" if since + effective_timeout < Time.now
 
         log(
           :warn,

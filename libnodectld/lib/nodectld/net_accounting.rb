@@ -7,7 +7,7 @@ module NodeCtld
     include OsCtl::Lib::Utils::Log
 
     class << self
-      %i(
+      %i[
         init
         update
         stop
@@ -18,7 +18,7 @@ module NodeCtld
         chown_vps
         netif_up
         dump
-      ).each do |v|
+      ].each do |v|
         define_method(v) do |*args, **kwargs, &block|
           instance.send(v, *args, **kwargs, &block)
         end
@@ -55,11 +55,11 @@ module NodeCtld
         @update_thread = nil
       end
 
-      if @discovery_thread
-        @discovery_queue << :stop
-        @discovery_thread.join
-        @discovery_thread = nil
-      end
+      return unless @discovery_thread
+
+      @discovery_queue << :stop
+      @discovery_thread.join
+      @discovery_thread = nil
     end
 
     # Register a new network interface
@@ -75,7 +75,7 @@ module NodeCtld
           vps_id,
           user_id,
           netif_id,
-          vps_name,
+          vps_name
         )
       end
 
@@ -166,6 +166,7 @@ module NodeCtld
     end
 
     protected
+
     def run_reader
       loop do
         v = @update_queue.pop(timeout: $CFG.get(:traffic_accounting, :update_interval))
@@ -203,7 +204,7 @@ module NodeCtld
             bytes_in: netif['bytes_in_readout'] || 0,
             bytes_out: netif['bytes_out_readout'] || 0,
             packets_in: netif['packets_in_readout'] || 0,
-            packets_out: netif['packets_out_readout'] || 0,
+            packets_out: netif['packets_out_readout'] || 0
           )
         end
       end
@@ -227,7 +228,7 @@ module NodeCtld
         bytes_in: netif['bytes_in_readout'] || 0,
         bytes_out: netif['bytes_out_readout'] || 0,
         packets_in: netif['packets_in_readout'] || 0,
-        packets_out: netif['packets_out_readout'] || 0,
+        packets_out: netif['packets_out_readout'] || 0
       )
     end
 
@@ -281,9 +282,7 @@ module NodeCtld
 
           monitors << netif.export_monitor
 
-          if netif.export_accounting?(log_interval)
-            accountings << netif.export_accounting
-          end
+          accountings << netif.export_accounting if netif.export_accounting?(log_interval)
 
           send_data('net_monitor', :monitors, monitors, max_size, publish: :publish_drop)
           send_data('net_accounting', :accounting, accountings, max_size)
@@ -300,9 +299,9 @@ module NodeCtld
       NodeBunny.send(
         publish,
         @exchange,
-        {data_key => to_save}.to_json,
+        { data_key => to_save }.to_json,
         content_type: 'application/json',
-        routing_key: routing_key,
+        routing_key: routing_key
       )
 
       to_save.clear

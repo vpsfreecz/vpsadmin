@@ -15,7 +15,7 @@ module NodeCtld::Utils
         subprocess: :Subprocess,
         outage_window: :OutageWindow,
         queue: :Queue,
-        mbuffer: :MBuffer,
+        mbuffer: :MBuffer
       }
 
       # Includes module from NodeCtld::Utils using mapping

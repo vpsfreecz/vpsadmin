@@ -38,54 +38,52 @@ module VpsAdmin::API::Resources
 
       authorize do |u|
         allow if u.role == :admin
-        input blacklist: %i(user)
+        input blacklist: %i[user]
         allow
       end
 
       def query
         q = ::NetworkInterfaceMonitor.joins(:network_interface).where.not(
-          network_interfaces: {id: nil},
+          network_interfaces: { id: nil }
         )
 
         if current_user.role != :admin
           q = q.joins(network_interface: :vps).where(
-            vpses: {user_id: current_user.id},
+            vpses: { user_id: current_user.id }
           )
         end
 
         if input[:user]
           q = q.joins(network_interface: :vps).where(
-            vpses: {user_id: input[:user].id}
+            vpses: { user_id: input[:user].id }
           )
         end
 
         if input[:environment]
-          q = q.joins(network_interface: {vps: {node: :location}}).where(
-            locations: {environment_id: input[:environment].id}
+          q = q.joins(network_interface: { vps: { node: :location } }).where(
+            locations: { environment_id: input[:environment].id }
           )
         end
 
         if input[:location]
-          q = q.joins(network_interface: {vps: :node}).where(
-            nodes: {location_id: input[:location].id}
+          q = q.joins(network_interface: { vps: :node }).where(
+            nodes: { location_id: input[:location].id }
           )
         end
 
         if input[:node]
           q = q.joins(network_interface: :vps).where(
-            vpses: {node_id: input[:node].id}
+            vpses: { node_id: input[:node].id }
           )
         end
 
         if input[:vps]
           q = q.joins(:network_interface).where(
-            network_interfaces: {vps_id: input[:vps].id}
+            network_interfaces: { vps_id: input[:vps].id }
           )
         end
 
-        if input[:network_interface]
-          q = q.where(id: input[:network_interface].id)
-        end
+        q = q.where(id: input[:network_interface].id) if input[:network_interface]
 
         q
       end
@@ -100,6 +98,7 @@ module VpsAdmin::API::Resources
       end
 
       protected
+
       def apply_order(q, order_by)
         if order_by.start_with?('-')
           desc = true
@@ -125,16 +124,14 @@ module VpsAdmin::API::Resources
         use :all
       end
 
-      authorize do |u|
+      authorize do |_u|
         allow
       end
 
       def prepare
         q = ::NetworkInterface
 
-        if current_user.role != :admin
-          q = q.joins(network_interface: :vps).where(vpses: {user_id: current_user.id})
-        end
+        q = q.joins(network_interface: :vps).where(vpses: { user_id: current_user.id }) if current_user.role != :admin
 
         @mon = q.find_by!(id: params[:network_interface_monitor_id])
       end

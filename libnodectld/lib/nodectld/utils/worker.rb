@@ -5,14 +5,14 @@ module NodeCtld::Utils
 
       @daemon.queues do |queues|
         queues.each_value do |queue|
-          queue.each do |wid, w|
+          queue.each do |_wid, w|
             ret = yield(w)
 
-            if ret
-              log "Killing transaction #{w.cmd.id}"
-              w.kill(ret != :silent)
-              killed += 1
-            end
+            next unless ret
+
+            log "Killing transaction #{w.cmd.id}"
+            w.kill(ret != :silent)
+            killed += 1
           end
         end
       end

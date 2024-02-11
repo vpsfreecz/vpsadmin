@@ -3,7 +3,7 @@ require 'libosctl'
 module NodeCtld
   module Utils::Vps
     def find_ct(vps_id = nil)
-      Ct.new(osctl_parse(%i(ct show), vps_id || @vps_id))
+      Ct.new(osctl_parse(%i[ct show], vps_id || @vps_id))
     end
 
     def ct
@@ -20,10 +20,10 @@ module NodeCtld
       after = status
 
       if before == :running && after != :running
-        osctl(%i(ct start), @vps_id, {wait: NodeCtld::Vps::START_TIMEOUT})
+        osctl(%i[ct start], @vps_id, { wait: NodeCtld::Vps::START_TIMEOUT })
 
       elsif before != :running && after == :running
-        osctl(%i(ct stop), @vps_id)
+        osctl(%i[ct stop], @vps_id)
 
       else
         ok
@@ -45,9 +45,7 @@ module NodeCtld
 
       Process.wait(pid)
 
-      if $?.exitstatus != 0
-        fail "subprocess failed with exit status #{$?.exitstatus}"
-      end
+      raise "subprocess failed with exit status #{$?.exitstatus}" if $?.exitstatus != 0
 
       $?
     end

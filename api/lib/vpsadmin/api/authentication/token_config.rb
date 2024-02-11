@@ -5,7 +5,7 @@ module VpsAdmin::API
         auth = Operations::Authentication::Password.run(
           req.input[:user],
           req.input[:password],
-          request: req.request,
+          request: req.request
         )
 
         if auth.nil? || !auth.authenticated?
@@ -14,7 +14,7 @@ module VpsAdmin::API
               auth.user,
               :password,
               'invalid password',
-              req.request,
+              req.request
             )
           end
 
@@ -29,7 +29,7 @@ module VpsAdmin::API
               req.request,
               req.input[:lifetime],
               req.input[:interval],
-              req.input[:scope].split,
+              req.input[:scope].split
             )
           rescue Exceptions::OperationError => e
             raise Exceptions::AuthenticationError, e.message
@@ -47,10 +47,10 @@ module VpsAdmin::API
         res.valid_to = auth.token.valid_to
         res.next_action = :totp
         auth.token.update!(opts: {
-          lifetime: req.input[:lifetime],
-          interval: req.input[:interval],
-          scope: req.input[:scope].split,
-        })
+                             lifetime: req.input[:lifetime],
+                             interval: req.input[:interval],
+                             scope: req.input[:scope].split
+                           })
         res.ok
       end
     end
@@ -63,7 +63,7 @@ module VpsAdmin::API
       handle do |req, res|
         auth = Operations::Authentication::Totp.run(
           req.input[:token],
-          req.input[:code],
+          req.input[:code]
         )
 
         if auth.authenticated?
@@ -71,7 +71,7 @@ module VpsAdmin::API
             TransactionChains::User::TotpRecoveryCodeUsed.fire(
               auth.user,
               auth.recovery_device,
-              req.request,
+              req.request
             )
           end
 
@@ -81,7 +81,7 @@ module VpsAdmin::API
               req.request,
               auth.auth_token.opts['lifetime'],
               auth.auth_token.opts['interval'],
-              auth.auth_token.opts['scope'],
+              auth.auth_token.opts['scope']
             )
           rescue Exceptions::OperationError => e
             raise Exceptions::AuthenticationError, e.message
@@ -96,7 +96,7 @@ module VpsAdmin::API
             auth.user,
             :totp,
             'invalid totp code',
-            req.request,
+            req.request
           )
           res.error = 'invalid totp code'
           next res
@@ -109,7 +109,7 @@ module VpsAdmin::API
         user_session = ::UserSession.joins(:token).where(
           auth_type: :token,
           user: req.user,
-          tokens: {token: req.token},
+          tokens: { token: req.token }
         ).take
 
         if user_session && user_session.token_lifetime.start_with?('renewable')
@@ -125,17 +125,15 @@ module VpsAdmin::API
 
     revoke do
       handle do |req, res|
-        begin
-          Operations::UserSession::CloseToken.run(req.user, req.token)
-          res.ok
-        rescue Exceptions::OperationError
-          res.error = 'session not found'
-          res
-        end
+        Operations::UserSession::CloseToken.run(req.user, req.token)
+        res.ok
+      rescue Exceptions::OperationError
+        res.error = 'session not found'
+        res
       end
     end
 
-    def find_user_by_token(request, token)
+    def find_user_by_token(_request, token)
       session = Operations::UserSession::ResumeToken.run(token)
       session && session.user
     end

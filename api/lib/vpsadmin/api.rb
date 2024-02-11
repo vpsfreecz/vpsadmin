@@ -4,19 +4,20 @@ module VpsAdmin
   ActiveRecord.schema_format = :sql
 
   module API
-    module Authentication ; end
+    module Authentication; end
+
     module Operations
-      module Authentication ; end
-      module Dataset ; end
-      module DatasetExpansion ; end
-      module Export ; end
-      module HostIpAddress ; end
-      module LocationNetwork ; end
-      module Node ; end
-      module TotpDevice ; end
-      module User ; end
-      module UserSession ; end
-      module Utils ; end
+      module Authentication; end
+      module Dataset; end
+      module DatasetExpansion; end
+      module Export; end
+      module HostIpAddress; end
+      module LocationNetwork; end
+      module Node; end
+      module TotpDevice; end
+      module User; end
+      module UserSession; end
+      module Utils; end
     end
 
     def self.initialize
@@ -44,7 +45,7 @@ module VpsAdmin
         ret
       end
 
-      api.connect_hook(:description_exception) do |ret, ctx, e|
+      api.connect_hook(:description_exception) do |ret, _ctx, e|
         if e.is_a?(::ActiveRecord::RecordNotFound)
           ret[:http_status] = 404
           ret[:message] = 'Object not found'
@@ -90,12 +91,12 @@ module VpsAdmin
       #   vps.feature#*            access to nested resources
       #   {vps,user}#{index,show}  access to VPS and user index/show actions
       HaveAPI::Action.connect_hook(:pre_authorize) do |ret, ctx|
-        ret[:blocks] << Proc.new do |u, path_params|
+        ret[:blocks] << proc do |u, path_params|
           # Scopes are checked only for authenticated users
           next if u.nil?
 
           user_session = ::UserSession.current
-          fail 'expected user session' if user_session.nil?
+          raise 'expected user session' if user_session.nil?
 
           next if user_session.scope == ['all']
 
@@ -109,13 +110,11 @@ module VpsAdmin
             colon = scope_pattern.index(':')
 
             if colon
-              pattern = scope_pattern[0..(colon-1)]
-              allowed_params = Hash[scope_pattern[(colon+1)..-1].split(',').map do |v|
+              pattern = scope_pattern[0..(colon - 1)]
+              allowed_params = Hash[scope_pattern[(colon + 1)..-1].split(',').map do |v|
                 arr = v.split('=')
 
-                if arr.length != 2
-                  fail "Invalid path params in scope: #{scope_pattern.inspect}"
-                end
+                raise "Invalid path params in scope: #{scope_pattern.inspect}" if arr.length != 2
 
                 arr
               end]
@@ -146,11 +145,11 @@ module VpsAdmin
         ret[:status] = false
         ret[:http_status] = 404
 
-        if /find ([^\s]+)[^=]+=(\d+)/ =~ exception.message
-          ret[:message] = "object #{$~[1]} = #{$~[2]} not found"
-        else
-          ret[:message] = "object not found"
-        end
+        ret[:message] = if /find ([^\s]+)[^=]+=(\d+)/ =~ exception.message
+                          "object #{$~[1]} = #{$~[2]} not found"
+                        else
+                          'object not found'
+                        end
 
         puts "[#{Time.now}] Exception ActiveRecord::RecordNotFound: #{exception.message}"
         puts exception.backtrace.join("\n")
@@ -164,13 +163,13 @@ module VpsAdmin
 
         lock = exception.get_lock
 
-        if lock && lock.locked_by.is_a?(::TransactionChain)
-          ret[:message] = "Resource is locked by transaction chain "+
-                          "#{lock.locked_by_id} (#{lock.locked_by.label}). "+
-                          "Try again later."
-        else
-          ret[:message] = "Resource is locked. Try again later."
-        end
+        ret[:message] = if lock && lock.locked_by.is_a?(::TransactionChain)
+                          'Resource is locked by transaction chain ' +
+                            "#{lock.locked_by_id} (#{lock.locked_by.label}). " +
+                            'Try again later.'
+                        else
+                          'Resource is locked. Try again later.'
+                        end
 
         puts "[#{Time.now}] Exception ResourceLocked: #{exception.message}"
         puts exception.backtrace.join("\n")
@@ -225,11 +224,11 @@ module VpsAdmin
       HaveAPI::Server.new
     end
 
-    def self.authenticate(api=nil)
+    def self.authenticate(api = nil)
       chain = [
         Authentication::Basic,
         HaveAPI::Authentication::Token.with_config(Authentication::TokenConfig),
-        HaveAPI::Authentication::OAuth2.with_config(Authentication::OAuth2Config),
+        HaveAPI::Authentication::OAuth2.with_config(Authentication::OAuth2Config)
       ]
 
       if api
@@ -250,6 +249,7 @@ module VpsAdmin
 
     def self.root
       return @root if @root
+
       @root = File.realpath(File.join(__dir__, '..', '..'))
     end
   end

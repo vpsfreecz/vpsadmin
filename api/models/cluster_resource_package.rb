@@ -5,7 +5,7 @@ class ClusterResourcePackage < ActiveRecord::Base
   belongs_to :environment
   belongs_to :user
 
-  validates :label, presence: true, length: {minimum: 2}
+  validates :label, presence: true, length: { minimum: 2 }
   validate :check_package_type
 
   # @param resource [::ClusterResource]
@@ -16,7 +16,7 @@ class ClusterResourcePackage < ActiveRecord::Base
       it = ClusterResourcePackageItem.create!(
         cluster_resource_package: self,
         cluster_resource: resource,
-        value: value,
+        value: value
       )
 
       recalculate_user_resources
@@ -56,7 +56,7 @@ class ClusterResourcePackage < ActiveRecord::Base
         environment: env,
         user: user,
         added_by: ::User.current,
-        comment: opts[:comment] || '',
+        comment: opts[:comment] || ''
       )
 
       if opts[:from_personal]
@@ -70,12 +70,12 @@ class ClusterResourcePackage < ActiveRecord::Base
 
           if personal_item.nil?
             raise VpsAdmin::API::Exceptions::UserResourceAllocationError,
-                  "unable to add package and substract from the personal package: "+
+                  'unable to add package and substract from the personal package: ' +
                   "resource #{it.cluster_resource.name} not found"
           elsif personal_item.value < it.value
             raise VpsAdmin::API::Exceptions::UserResourceAllocationError,
-                  "unable to add package and substract from the personal package: "+
-                  "not enough #{it.cluster_resource.name} in the personal package "+
+                  'unable to add package and substract from the personal package: ' +
+                  "not enough #{it.cluster_resource.name} in the personal package " +
                   "(#{personal_item.value} < #{it.value})"
           end
         end
@@ -99,10 +99,11 @@ class ClusterResourcePackage < ActiveRecord::Base
   end
 
   def is_personal
-    (user_id && environment_id) ? true : false
+    user_id && environment_id ? true : false
   end
 
   protected
+
   def check_package_type
     if environment_id && !user_id
       errors.add(:user_id, 'user_id and environment_id must be used together')
@@ -116,7 +117,7 @@ class ClusterResourcePackage < ActiveRecord::Base
     t = ::UserClusterResourcePackage.table_name
     user_cluster_resource_packages
       .joins(:user)
-      .where.not(users: {object_state: ::User.object_states[:hard_delete]})
+      .where.not(users: { object_state: ::User.object_states[:hard_delete] })
       .group("#{t}.user_id, #{t}.environment_id")
       .each do |user_pkg|
       user_pkg.user.calculate_cluster_resources_in_env(user_pkg.environment)

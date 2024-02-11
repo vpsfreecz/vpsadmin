@@ -13,21 +13,19 @@ module TransactionChains
       end
 
       append(Transactions::Storage::InheritProperty, args: [dataset_in_pool, props]) do
-
         props.each do |name, p|
-          if p.parent
-            v = p.parent.value
+          v = if p.parent
+                p.parent.value
 
-          else
-            v = VpsAdmin::API::DatasetProperties.property(name).meta[:default]
-          end
+              else
+                VpsAdmin::API::DatasetProperties.property(name).meta[:default]
+              end
 
           yml = YAML.dump(v)
 
           edit(p, inherited: true, value: yml)
           chain.edit_children(self, p, yml)
         end
-
       end
     end
 

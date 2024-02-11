@@ -15,11 +15,9 @@ $: << path unless $:.include?(path)
 module VpsAdmin
   module API
     module Resources
-
     end
 
     module Actions
-
     end
   end
 end

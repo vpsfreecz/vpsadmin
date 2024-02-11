@@ -1,10 +1,10 @@
 class AddClusterResourcePackages < ActiveRecord::Migration
-  class User < ::ActiveRecord::Base ; end
-  class UserClusterResource < ::ActiveRecord::Base ; end
-  class ClusterResourcePackage < ::ActiveRecord::Base ; end
-  class UserClusterResourcePackage < ::ActiveRecord::Base ; end
-  class User < ::ActiveRecord::Base ; end
-  class Environment < ::ActiveRecord::Base ; end
+  class User < ::ActiveRecord::Base; end
+  class UserClusterResource < ::ActiveRecord::Base; end
+  class ClusterResourcePackage < ::ActiveRecord::Base; end
+  class UserClusterResourcePackage < ::ActiveRecord::Base; end
+  class User < ::ActiveRecord::Base; end
+  class Environment < ::ActiveRecord::Base; end
 
   def change
     create_table :cluster_resource_packages do |t|
@@ -17,7 +17,7 @@ class AddClusterResourcePackages < ActiveRecord::Migration
     add_index :cluster_resource_packages, :environment_id
     add_index :cluster_resource_packages, :user_id
     add_index :cluster_resource_packages,
-              %i(environment_id user_id),
+              %i[environment_id user_id],
               unique: true,
               name: :cluster_resource_packages_unique
 
@@ -28,7 +28,7 @@ class AddClusterResourcePackages < ActiveRecord::Migration
     end
 
     add_index :cluster_resource_package_items,
-              %i(cluster_resource_package_id cluster_resource_id),
+              %i[cluster_resource_package_id cluster_resource_id],
               unique: true,
               name: :cluster_resource_package_items_unique
     add_index :cluster_resource_package_items,
@@ -66,7 +66,7 @@ class AddClusterResourcePackages < ActiveRecord::Migration
     end
 
     add_index :default_user_cluster_resource_packages,
-              %i(environment_id cluster_resource_package_id),
+              %i[environment_id cluster_resource_package_id],
               unique: true,
               name: :default_user_cluster_resource_packages_unique
 
@@ -84,28 +84,29 @@ class AddClusterResourcePackages < ActiveRecord::Migration
   end
 
   protected
+
   def create_user_package(user, env)
     pkg = ::ClusterResourcePackage.create!(
       label: 'Personal package',
       environment_id: env.id,
-      user_id: user.id,
+      user_id: user.id
     )
 
     ::UserClusterResource.where(
       environment_id: env.id,
-      user_id: user.id,
+      user_id: user.id
     ).each do |ucr|
       ::ClusterResourcePackageItem.create!(
         cluster_resource_package_id: pkg.id,
         cluster_resource_id: ucr.cluster_resource_id,
-        value: ucr.value,
+        value: ucr.value
       )
     end
 
     ::UserClusterResourcePackage.create!(
       environment_id: env.id,
       user_id: user.id,
-      cluster_resource_package_id: pkg.id,
+      cluster_resource_package_id: pkg.id
     )
   end
 end

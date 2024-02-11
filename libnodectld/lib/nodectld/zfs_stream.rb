@@ -20,12 +20,12 @@ module NodeCtld
     def command(cmd)
       @cmd = cmd
 
-      block = Proc.new do |total, transfered, changed|
+      block = proc do |total, _transfered, _changed|
         cmd.progress = {
           total: size,
           current: total,
           unit: :mib,
-          time: Time.now,
+          time: Time.now
         }
       end
 
@@ -38,6 +38,7 @@ module NodeCtld
     end
 
     protected
+
     def build_path(fs)
       path = [fs[:pool], fs[:dataset]]
       path << fs[:tree] << fs[:branch] if fs[:branch]
@@ -47,6 +48,7 @@ module NodeCtld
 
     def notify_exec(pipeline)
       return unless @cmd
+
       @cmd.step = pipeline.join(' | ')
     end
   end

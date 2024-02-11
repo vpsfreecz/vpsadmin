@@ -22,11 +22,11 @@ rs.each_hash do |row|
   vps_ips = {}
   st = db.prepared_st('SELECT ip_id, ip_addr FROM vps_ip WHERE vps_id = ?', vps_id)
   st.each do |ip_row|
-    vps_ips[ ip_row[1] ] = ip_row[0]
+    vps_ips[ip_row[1]] = ip_row[0]
   end
   st.close
 
-  order = {4 => 0, 6 => 0}
+  order = { 4 => 0, 6 => 0 }
 
   begin
     syscmd("vzlist -H -oip #{vps_id}")[:output].strip.split.each do |ip|
@@ -40,13 +40,12 @@ rs.each_hash do |row|
 
       puts "  IP #{ip} (id=#{ip_id},order=#{order[v]})"
       db.prepared(
-          'UPDATE vps_ip SET `order` = ? WHERE ip_id = ?',
-          order[v], ip_id
+        'UPDATE vps_ip SET `order` = ? WHERE ip_id = ?',
+        order[v], ip_id
       )
 
       order[v] += 1
     end
-
   rescue VpsAdmind::CommandFailed => e
     puts "  Error occurred: #{e.message}"
     next

@@ -18,19 +18,15 @@ module VpsAdmin::API::Tasks
     # [EXECUTE]: The states are progressed only if EXECUTE is 'yes'. If not,
     #            the task just prints what would happen.
     def progress
-      required_env(%w(OBJECTS))
+      required_env(%w[OBJECTS])
 
       time = Time.now.utc
       time -= ENV['GRACE'].to_i if ENV['GRACE']
 
-      expiration = if ENV['NEW_EXPIRATION']
-                     Time.now.utc + ENV['NEW_EXPIRATION'].to_i
-                   else
-                     nil
-                   end
+      expiration = (Time.now.utc + ENV['NEW_EXPIRATION'].to_i if ENV['NEW_EXPIRATION'])
 
       limit = ENV['LIMIT'] ? ENV['LIMIT'].to_i : 30
-      fail 'invalid limit' if limit <= 0
+      raise 'invalid limit' if limit <= 0
 
       puts "Progressing objects having expiration date older than #{time}"
       states = get_states
@@ -50,10 +46,10 @@ module VpsAdmin::API::Tasks
           # users that exist for more than six months. They are suspended
           # a month after the expiration date has passed.
           if instance.is_a?(::User) \
-             && (instance.created_at.nil? || instance.created_at < (Time.now - 6*30*24*60*60)) \
-             && instance.expiration_date > (Time.now - 30*24*60*60) \
+             && (instance.created_at.nil? || instance.created_at < (Time.now - 6 * 30 * 24 * 60 * 60)) \
+             && instance.expiration_date > (Time.now - 30 * 24 * 60 * 60) \
              && instance.object_state == 'active'
-            puts "    we still love you"
+            puts '    we still love you'
             next
           end
 
@@ -65,9 +61,8 @@ module VpsAdmin::API::Tasks
               reason: get_reason(instance),
               expiration: expiration
             )
-
           rescue ResourceLocked
-            puts "    resource locked"
+            puts '    resource locked'
             next
           end
         end
@@ -93,7 +88,7 @@ module VpsAdmin::API::Tasks
     #   FROM_DAYS=-7 to notify about objects a week before their expiration
     #   FORCE_DAY=-1 to send a forced notification a day before the expiration
     def mail_expiration
-      required_env(%w(OBJECTS FROM_DAYS))
+      required_env(%w[OBJECTS FROM_DAYS])
 
       classes = get_objects
       from_days = ENV['FROM_DAYS'].to_i
@@ -127,6 +122,7 @@ module VpsAdmin::API::Tasks
     end
 
     protected
+
     def send_notification?(obj, now, force_days, force_only)
       do_remind = obj.remind_after_date.nil? || obj.remind_after_date < now
 
@@ -134,24 +130,24 @@ module VpsAdmin::API::Tasks
         days_diff = (now - obj.expiration_date) / 60 / 60 / 24
 
         do_force = force_days.detect do |day|
-          days_diff >= day && days_diff < day+1
+          days_diff >= day && days_diff < day + 1
         end
 
         if do_force
           puts '  forced'
-          return true
+          true
         elsif !force_only && do_remind
           puts '  remind allowed'
-          return true
+          true
         else
-          return false
+          false
         end
 
       elsif do_remind
         puts '  remind allowed'
-        return true
+        true
       else
-        return false
+        false
       end
     end
 
@@ -163,7 +159,7 @@ module VpsAdmin::API::Tasks
       ENV['OBJECTS'].split(',').each do |obj|
         cls = Object.const_get(obj)
 
-        fail warn "Unable to find a class for '#{obj}'" unless obj
+        raise warn "Unable to find a class for '#{obj}'" unless obj
 
         classes << cls
       end
@@ -178,7 +174,7 @@ module VpsAdmin::API::Tasks
         i = VpsAdmin::API::Lifetimes::STATES.index(v.to_sym)
         next(i) if i
 
-        fail "Invalid object state '#{v}'"
+        raise "Invalid object state '#{v}'"
       end
     end
 
@@ -194,8 +190,6 @@ module VpsAdmin::API::Tasks
         obj.user
       elsif obj.is_a?(::User)
         obj
-      else
-        nil
       end
     end
   end

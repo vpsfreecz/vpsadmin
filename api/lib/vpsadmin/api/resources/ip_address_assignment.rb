@@ -25,7 +25,7 @@ module VpsAdmin::API::Resources
       desc 'List IP address assignments'
 
       input do
-        use :all, include: %i(
+        use :all, include: %i[
           ip_address
           ip_addr
           ip_prefix
@@ -35,12 +35,12 @@ module VpsAdmin::API::Resources
           assigned_by_chain
           unassigned_by_chain
           reconstructed
-        )
+        ]
 
         resource Location
         resource Network, value_label: :address
         integer :ip_version, choices: [4, 6]
-        string :order, choices: %w(newest oldest), default: 'newest', fill: true
+        string :order, choices: %w[newest oldest], default: 'newest', fill: true
         bool :active
       end
 
@@ -51,15 +51,15 @@ module VpsAdmin::API::Resources
       authorize do |u|
         allow if u.role == :admin
         restrict user_id: u.id
-        input blacklist: %i(user)
-        output blacklist: %i(user raw_user_id)
+        input blacklist: %i[user]
+        output blacklist: %i[user raw_user_id]
         allow
       end
 
       def query
         q = ::IpAddressAssignment.where(with_restricted)
 
-        %i(
+        %i[
           ip_address
           ip_addr
           ip_prefix
@@ -68,29 +68,29 @@ module VpsAdmin::API::Resources
           assigned_by_chain
           unassigned_by_chain
           reconstructed
-        ).each do |v|
+        ].each do |v|
           q = q.where(v => input[v]) if input.has_key?(v)
         end
 
         if input[:location]
           locs = ::LocationNetwork.where(
-            location: input[:location],
+            location: input[:location]
           ).pluck(:network_id)
 
           q = q.joins(:ip_address).where(
-            ip_addresses: {network_id: locs}
+            ip_addresses: { network_id: locs }
           )
         end
 
         if input[:network]
           q = q.joins(:ip_address).where(
-            ip_addresses: {network_id: input[:network].id}
+            ip_addresses: { network_id: input[:network].id }
           )
         end
 
         if input[:ip_version]
           q = q.joins(ip_address: :network).where(
-            networks: {ip_version: input[:ip_version]}
+            networks: { ip_version: input[:ip_version] }
           )
         end
 
@@ -131,14 +131,14 @@ module VpsAdmin::API::Resources
       authorize do |u|
         allow if u.role == :admin
         restrict user_id: u.id
-        output blacklist: %i(user raw_user_id)
+        output blacklist: %i[user raw_user_id]
         allow
       end
 
       def prepare
         @assignment = ::IpAddressAssignment.find_by(with_restricted(
-          id: params[:ip_address_assignment_id],
-        ))
+                                                      id: params[:ip_address_assignment_id]
+                                                    ))
       end
 
       def exec

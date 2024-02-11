@@ -9,7 +9,7 @@ module NodeCtld
     include Utils::OsCtl
 
     class << self
-      %i(update_vps, schedule_update_vps).each do |v|
+      %i[update_vps schedule_update_vps].each do |v|
         define_method(v) do |*args, **kwargs, &block|
           instance.send(v, *args, **kwargs, &block)
         end
@@ -60,6 +60,7 @@ module NodeCtld
     end
 
     protected
+
     VpsUpdate = Struct.new(:id, :boot_rootfs)
 
     HostKey = Struct.new(:bits, :fingerprint, :algorithm)
@@ -86,7 +87,7 @@ module NodeCtld
 
         log(:info, "Updating ssh host keys of #{vps_ids.length} VPS")
 
-        osctl_parse(%i(ct ls), vps_ids.keys, {state: 'running'}).each do |ct|
+        osctl_parse(%i[ct ls], vps_ids.keys, { state: 'running' }).each do |ct|
           next unless /^\d+$/ =~ ct[:id]
 
           vps_id = ct[:id].to_i
@@ -100,12 +101,12 @@ module NodeCtld
     # @param vps [VpsUpdate]
     def update_vps_keys(vps)
       log(:info, "Updating keys of VPS #{vps.id}")
-      vps.boot_rootfs ||= osctl_parse(%i(ct show), [vps.id])[:boot_rootfs]
+      vps.boot_rootfs ||= osctl_parse(%i[ct show], [vps.id])[:boot_rootfs]
       t = Time.now
 
       begin
         keys = read_vps_keys(vps)
-      rescue => e
+      rescue StandardError => e
         log(
           :warn,
           "Unable to read ssh host keys from VPS #{vps.id}: #{e.message} (#{e.class})"
@@ -124,12 +125,12 @@ module NodeCtld
             {
               bits: key.bits,
               fingerprint: key.fingerprint,
-              algorithm: key.algorithm,
+              algorithm: key.algorithm
             }
-          end,
+          end
         }.to_json,
         content_type: 'application/json',
-        routing_key: 'vps_ssh_host_keys',
+        routing_key: 'vps_ssh_host_keys'
       )
     end
 
@@ -145,13 +146,11 @@ module NodeCtld
         sys.chroot(vps.boot_rootfs)
 
         Dir.glob('/etc/ssh/ssh_host_*.pub').each do |v|
-          begin
-            File.open(v, 'r') do |f|
-              STDOUT.write(f.readline(32*1024))
-            end
-          rescue
-            next
+          File.open(v, 'r') do |f|
+            STDOUT.write(f.readline(32 * 1024))
           end
+        rescue StandardError
+          next
         end
       end
 
@@ -181,14 +180,10 @@ module NodeCtld
       ssh_r.close
 
       Process.wait(read_pid)
-      if $?.exitstatus != 0
-        log(:warn, "Reader for VPS #{vps.id} exited with #{$?.exitstatus}")
-      end
+      log(:warn, "Reader for VPS #{vps.id} exited with #{$?.exitstatus}") if $?.exitstatus != 0
 
       Process.wait(ssh_pid)
-      if $?.exitstatus != 0
-        log(:warn, "ssh-keygen for VPS #{vps.id} exited with #{$?.exitstatus}")
-      end
+      log(:warn, "ssh-keygen for VPS #{vps.id} exited with #{$?.exitstatus}") if $?.exitstatus != 0
 
       keys
     end

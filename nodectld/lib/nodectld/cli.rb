@@ -12,7 +12,7 @@ module NodeCtld
         config: '/etc/vpsadmin/nodectld.yml',
         check: false,
         logger: :stdout,
-        wrapper: true,
+        wrapper: true
       }
 
       OptionParser.new do |opts|
@@ -24,7 +24,7 @@ module NodeCtld
           options[:check] = true
         end
 
-        opts.on('-l', '--log LOGGER', %w(syslog stdout)) do |v|
+        opts.on('-l', '--log LOGGER', %w[syslog stdout]) do |v|
           options[:logger] = v.to_sym
         end
 

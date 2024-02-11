@@ -24,7 +24,7 @@ module VpsAdmin::API::Plugins::Requests
 
       res.define_action(:Index, superclass: HaveAPI::Actions::Default::Index) do
         input do
-          use :common, include: %i(user state api_ip_addr client_ip_ptr client_ip_addr admin)
+          use :common, include: %i[user state api_ip_addr client_ip_ptr client_ip_addr admin]
         end
 
         output(:object_list) do
@@ -35,7 +35,7 @@ module VpsAdmin::API::Plugins::Requests
           deny unless u
           allow if u.role == :admin
           restrict user_id: u.id
-          input whitelist: %i(state)
+          input whitelist: %i[state]
           allow
         end
 
@@ -43,8 +43,8 @@ module VpsAdmin::API::Plugins::Requests
           q = self.class.model.where(with_restricted)
           q = q.where(state: ::UserRequest.states[input[:state]]) if input[:state]
 
-          %i(user api_ip_addr client_ip_ptr client_ip_addr admin).each do |v|
-            q = q.where(v =>input[v]) if input[v]
+          %i[user api_ip_addr client_ip_ptr client_ip_addr admin].each do |v|
+            q = q.where(v => input[v]) if input[v]
           end
 
           q
@@ -76,8 +76,8 @@ module VpsAdmin::API::Plugins::Requests
 
         def prepare
           @req = ::UserRequest.find_by!(with_restricted(
-              id: params[:"#{self.class.resource.to_s.demodulize.underscore}_id"]
-          ))
+                                          id: params[:"#{self.class.resource.to_s.demodulize.underscore}_id"]
+                                        ))
         end
 
         def exec
@@ -94,13 +94,12 @@ module VpsAdmin::API::Plugins::Requests
           use :all
         end
 
-        authorize do |u|
+        authorize do |_u|
           allow
         end
 
         def exec
           self.class.model.create!(request, current_user, input)
-
         rescue ActiveRecord::RecordInvalid => e
           error('create failed', e.record.errors.to_hash)
         end
@@ -112,13 +111,14 @@ module VpsAdmin::API::Plugins::Requests
         desc 'Resolve user request'
 
         input do
-          string :action, choices: %w(approve deny ignore request_correction), required: true
+          string :action, choices: %w[approve deny ignore request_correction], required: true
           text :reason
 
           use :request
 
           params.each do |p|
-            next if %i(action reason).include?(p.name)
+            next if %i[action reason].include?(p.name)
+
             p.patch(required: false)
           end
 
@@ -135,11 +135,10 @@ module VpsAdmin::API::Plugins::Requests
           )
 
           request_params = input.clone
-          request_params.delete_if { |k, _| %i(action reason).include?(k) }
+          request_params.delete_if { |k, _| %i[action reason].include?(k) }
 
           r.resolve(input[:action].to_sym, input[:reason], request_params)
           ok
-
         rescue ActiveRecord::RecordInvalid => e
           error('unable to resolve', e.record.errors.to_hash)
         end

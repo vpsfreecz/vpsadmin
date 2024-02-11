@@ -36,17 +36,14 @@ module VpsAdmin::API::Plugins::OutageReports::TransactionChains
       # If the outage is staged, update original translations too
       if outage.state == 'staged' \
           && (attrs[:state].nil? || attrs[:state] == ::Outage.states[:staged])
-          translations.each do |lang, attrs|
-            begin
-              outage.outage_translations.find_by!(language: lang).update!(attrs)
-
-            rescue ActiveRecord::RecordNotFound
-              tr = ::OutageTranslation.new(attrs)
-              tr.outage = outage
-              tr.language = lang
-              tr.save!
-            end
-          end
+        translations.each do |lang, attrs|
+          outage.outage_translations.find_by!(language: lang).update!(attrs)
+        rescue ActiveRecord::RecordNotFound
+          tr = ::OutageTranslation.new(attrs)
+          tr.outage = outage
+          tr.language = lang
+          tr.save!
+        end
 
         outage.load_translations
         return outage
@@ -71,10 +68,10 @@ module VpsAdmin::API::Plugins::OutageReports::TransactionChains
         users: {
           object_state: [
             ::User.object_states[:active],
-            ::User.object_states[:suspended],
+            ::User.object_states[:suspended]
           ],
-          mailer_enabled: true,
-        },
+          mailer_enabled: true
+        }
       ).each do |ou|
         send_mail('user', ou.user, outage, report, attrs, last_report)
       end
@@ -83,38 +80,34 @@ module VpsAdmin::API::Plugins::OutageReports::TransactionChains
     end
 
     protected
+
     def send_mail(role, u, outage, report, attrs, last_report)
       event = {
         ::Outage.states[:announced] => 'announce',
         ::Outage.states[:cancelled] => 'cancel',
-        ::Outage.states[:resolved] => 'resolve',
+        ::Outage.states[:resolved] => 'resolve'
       }
       msg_id = message_id(
         attrs[:state] == ::Outage.states[:announced] ? :announce : :update,
         outage, report, u
       )
 
-      if last_report
-        in_reply_to = message_id(:announce, outage, last_report, u)
-
-      else
-        in_reply_to = nil
-      end
+      in_reply_to = (message_id(:announce, outage, last_report, u) if last_report)
 
       send_first(
         [
           [
             :outage_report_role_event,
-            {role: role, event: event[attrs[:state]] || 'update'},
+            { role: role, event: event[attrs[:state]] || 'update' }
           ],
           [
             :outage_report_role_event,
-            {role: role, event: 'update'},
+            { role: role, event: 'update' }
           ],
           [
             :outage_report_role,
-            {role: role},
-          ],
+            { role: role }
+          ]
         ],
         user: u,
         language: u ? nil : ::Language.take, # TODO: configurable language
@@ -129,32 +122,26 @@ module VpsAdmin::API::Plugins::OutageReports::TransactionChains
           vpses: u && outage.outage_vpses.where(user: u),
           direct_vpses: u && outage.outage_vpses.where(user: u, direct: true),
           indirect_vpses: u && outage.outage_vpses.where(user: u, direct: false),
-          exports: u && outage.outage_exports.where(user: u),
+          exports: u && outage.outage_exports.where(user: u)
         }
       )
     end
 
     def send_first(templates, opts)
       templates.each do |id, params|
-        begin
-          args = {params: params}
-          args.update(opts)
+        args = { params: params }
+        args.update(opts)
 
-          mail(id, args)
-          return
-
-        rescue VpsAdmin::API::Exceptions::MailTemplateDoesNotExist
-          next
-        end
+        mail(id, args)
+        return
+      rescue VpsAdmin::API::Exceptions::MailTemplateDoesNotExist
+        next
       end
     end
 
     def message_id(type, outage, update, user)
-      ::SysConfig.get(:plugin_outage_reports, :"#{type}_message_id") % {
-        outage_id: outage.id,
-        update_id: update.id,
-        user_id: user ? user.id : 0,
-      }
+      format(::SysConfig.get(:plugin_outage_reports, :"#{type}_message_id"), outage_id: outage.id,
+                                                                             update_id: update.id, user_id: user ? user.id : 0)
     end
   end
 end

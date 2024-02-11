@@ -27,17 +27,17 @@ class RefactorSysconfig < ActiveRecord::Migration
     end
 
     add_index :sysconfig_new, :category
-    add_index :sysconfig_new, [:category, :name], unique: true
+    add_index :sysconfig_new, %i[category name], unique: true
 
     OldSysConfig.all.each do |cfg|
       cat, name, type, level = name_up(cfg.cfg_name)
 
       NewSysConfig.create!(
-          category: cat,
-          name: name,
-          data_type: type || 'Text',
-          value: cfg.cfg_value,
-          min_user_level: level,
+        category: cat,
+        name: name,
+        data_type: type || 'Text',
+        value: cfg.cfg_value,
+        min_user_level: level
       )
     end
 
@@ -47,7 +47,7 @@ class RefactorSysconfig < ActiveRecord::Migration
 
   def down
     ActiveRecord::Base.connection.execute(
-        "CREATE TABLE `sysconfig_new` (
+      "CREATE TABLE `sysconfig_new` (
           `cfg_name` varchar(127) NOT NULL,
           `cfg_value` text,
           PRIMARY KEY (`cfg_name`)
@@ -58,8 +58,8 @@ class RefactorSysconfig < ActiveRecord::Migration
       name = name_down(cfg.category, cfg.name)
 
       NewSysConfig.create!(
-          cfg_name: name,
-          cfg_value: cfg.value,
+        cfg_name: name,
+        cfg_value: cfg.value
       )
     end
 

@@ -7,7 +7,7 @@ module VpsAdmin::Supervisor
       queue = channel.queue(
         queue_name('pool_statuses'),
         durable: true,
-        arguments: {'x-queue-type' => 'quorum'},
+        arguments: { 'x-queue-type' => 'quorum' }
       )
 
       queue.bind(exchange, routing_key: 'pool_statuses')
@@ -19,7 +19,7 @@ module VpsAdmin::Supervisor
           state: status['state'],
           scan: status['scan'],
           scan_percent: status['scan_percent'],
-          checked_at: Time.at(status['time']),
+          checked_at: Time.at(status['time'])
         )
       end
     end

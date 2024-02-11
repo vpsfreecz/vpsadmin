@@ -1,5 +1,5 @@
 class ToggleClusterResourceUse < ActiveRecord::Migration
-  class ClusterResourceUse < ActiveRecord::Base ; end
+  class ClusterResourceUse < ActiveRecord::Base; end
 
   def up
     add_column :cluster_resource_uses, :enabled, :boolean, null: false, default: true

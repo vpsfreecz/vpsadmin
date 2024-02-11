@@ -21,14 +21,14 @@ module VpsAdmin::API::Resources
 
       input do
         datetime :since, label: 'Since',
-            desc: 'List news published later than this date'
+                         desc: 'List news published later than this date'
       end
 
       output(:object_list) do
         use :all
       end
 
-      authorize do |u|
+      authorize do |_u|
         allow
       end
 
@@ -36,9 +36,7 @@ module VpsAdmin::API::Resources
         q = ::NewsLog.all
         q = q.where('published_at > ?', input[:since]) if input[:since]
 
-        if current_user.nil? || current_user.role != :admin
-          q = q.where('published_at <= ?', Time.now)
-        end
+        q = q.where('published_at <= ?', Time.now) if current_user.nil? || current_user.role != :admin
 
         q
       end
@@ -63,7 +61,7 @@ module VpsAdmin::API::Resources
         use :all
       end
 
-      authorize do |u|
+      authorize do |_u|
         allow
       end
 
@@ -95,7 +93,6 @@ module VpsAdmin::API::Resources
       def exec
         input[:published_at] ||= Time.now
         ::NewsLog.create!(input)
-
       rescue ActiveRecord::RecordInvalid => e
         error('Create failed', e.record.errors.to_hash)
       end
@@ -121,7 +118,6 @@ module VpsAdmin::API::Resources
         n = ::NewsLog.find(params[:news_log_id])
         n.update!(input)
         n
-
       rescue ActiveRecord::RecordInvalid => e
         error('Update failed', e.record.errors.to_hash)
       end

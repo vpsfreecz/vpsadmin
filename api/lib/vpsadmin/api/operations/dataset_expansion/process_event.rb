@@ -37,7 +37,7 @@ module VpsAdmin::API
             user: ds.user,
             override: true,
             lock_type: 'no_lock',
-            save: true,
+            save: true
           )
 
           prop = dip.dataset_properties.find_by!(name: 'refquota')
@@ -46,7 +46,7 @@ module VpsAdmin::API
           if ds.dataset_expansion.nil?
             free_diskspace = ds.user.user_cluster_resources.joins(:cluster_resource).find_by!(
               environment: dip.pool.node.location.environment,
-              cluster_resources: {name: 'diskspace'},
+              cluster_resources: { name: 'diskspace' }
             ).free
 
             over_limit = free_diskspace < 0
@@ -57,7 +57,7 @@ module VpsAdmin::API
               state: over_limit ? 'active' : 'resolved',
               original_refquota: orig_quota,
               added_space: event.added_space,
-              max_over_refquota_seconds: max_over_refquota_seconds,
+              max_over_refquota_seconds: max_over_refquota_seconds
             )
 
             ds.update!(dataset_expansion: exp) if over_limit
@@ -73,7 +73,7 @@ module VpsAdmin::API
             new_refquota: event.new_refquota,
             added_space: event.added_space,
             created_at: event.created_at,
-            updated_at: event.updated_at,
+            updated_at: event.updated_at
           )
 
           event.destroy!

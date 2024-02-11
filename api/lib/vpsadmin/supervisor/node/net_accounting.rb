@@ -7,7 +7,7 @@ module VpsAdmin::Supervisor
       queue = channel.queue(
         queue_name('net_accounting'),
         durable: true,
-        arguments: {'x-queue-type' => 'quorum'},
+        arguments: { 'x-queue-type' => 'quorum' }
       )
 
       queue.bind(exchange, routing_key: 'net_accounting')
@@ -19,11 +19,12 @@ module VpsAdmin::Supervisor
     end
 
     protected
+
     def save_accounting(accounting)
       kinds = [
         [:year, ::NetworkInterfaceYearlyAccounting],
         [:month, ::NetworkInterfaceMonthlyAccounting],
-        [:day, ::NetworkInterfaceDailyAccounting],
+        [:day, ::NetworkInterfaceDailyAccounting]
       ]
 
       date_spec = []
@@ -43,7 +44,7 @@ module VpsAdmin::Supervisor
               packets_in: acc['packets_in'],
               packets_out: acc['packets_out'],
               created_at: t,
-              updated_at: t,
+              updated_at: t
             }
 
             date_spec.each do |date_part|
@@ -58,7 +59,7 @@ module VpsAdmin::Supervisor
             packets_in = packets_in + values(packets_in),
             packets_out = packets_out + values(packets_out),
             updated_at = values(updated_at)
-          '),
+          ')
         )
       end
     end

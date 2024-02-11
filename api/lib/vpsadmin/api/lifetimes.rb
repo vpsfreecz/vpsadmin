@@ -76,7 +76,7 @@ module VpsAdmin::API
   # or delete it completely. depending on the object behaviour.
   module Lifetimes
     # A list of all possible states objects can be in.
-    STATES = %i(active suspended soft_delete hard_delete deleted)
+    STATES = %i[active suspended soft_delete hard_delete deleted]
 
     # Register models that use lifetimes.
     def self.register_model(model)
@@ -145,7 +145,7 @@ module VpsAdmin::API
           model ::ObjectState
         end
 
-        params = Proc.new do
+        params = proc do
           id :id
           string :state
           datetime :changed_at, db_name: :created_at
@@ -201,9 +201,9 @@ module VpsAdmin::API
 
           def prepare
             @state = with_includes.where(
-                class_name: self.class::PARENT_RESOURCE.model.name,
-                row_id: params[self.class::PARENT_OBJECT_ID],
-                id: params[:state_log_id]
+              class_name: self.class::PARENT_RESOURCE.model.name,
+              row_id: params[self.class::PARENT_OBJECT_ID],
+              id: params[:state_log_id]
             ).take!
           end
 
@@ -214,21 +214,21 @@ module VpsAdmin::API
 
         r.params(:lifetime_state) do
           string :object_state, label: 'Object state',
-                 choices: Private.states(r.model)
+                                choices: Private.states(r.model)
         end
 
         r.params(:lifetime_expiration) do
           use :lifetime_state
           datetime :expiration_date, label: 'Expiration',
-              desc: 'A date after which the state will progress'
+                                     desc: 'A date after which the state will progress'
           datetime :remind_after_date, label: 'Remind after',
-              desc: 'Mail warnings are silenced until this date'
+                                       desc: 'Mail warnings are silenced until this date'
         end
 
         r.params(:lifetime_all) do
           use :lifetime_expiration
           string :change_reason, label: 'Reason',
-                 desc: 'Reason for the state change. May be mailed to the user.'
+                                 desc: 'Reason for the state change. May be mailed to the user.'
         end
 
         if r.const_defined?(:Index)
@@ -261,19 +261,19 @@ module VpsAdmin::API
           Private.action_methods(r::Update)
         end
 
-        if r.const_defined?(:Delete)
-          r::Delete.input do
-            states = Private.states(r.model) & %i(soft_delete hard_delete deleted)
+        return unless r.const_defined?(:Delete)
 
-            use :lifetime_all
-            patch :object_state,
-                  choices: states,
-                  default: states.first.to_s,
-                  fill: true
-          end
+        r::Delete.input do
+          states = Private.states(r.model) & %i[soft_delete hard_delete deleted]
 
-          Private.action_methods(r::Delete)
+          use :lifetime_all
+          patch :object_state,
+                choices: states,
+                default: states.first.to_s,
+                fill: true
         end
+
+        Private.action_methods(r::Delete)
       end
     end
 
@@ -305,9 +305,7 @@ module VpsAdmin::API
           end
 
           @state_changes.each_key do |k|
-            unless @states.include?(k)
-              fail "invalid state '#{k}' for #{self.to_s}"
-            end
+            raise "invalid state '#{k}' for #{self}" unless @states.include?(k)
           end
         end
       end
@@ -317,9 +315,7 @@ module VpsAdmin::API
         # ClassMethods.set_object_states. If +chain+ is provided, all the chains
         # are embedded in it.
         def set_object_state(state, reason: nil, user: nil, expiration: nil, remind_after: nil, chain: nil)
-          unless Private.states(self.class).include?(state)
-            fail "#{self.class.to_s} does not have state '#{state}'"
-          end
+          raise "#{self.class} does not have state '#{state}'" unless Private.states(self.class).include?(state)
 
           Private.change_state(
             self,
@@ -328,7 +324,7 @@ module VpsAdmin::API
             reason,
             user || ::User.current,
             expiration,
-            remind_after,
+            remind_after
           )
         end
 
@@ -336,9 +332,7 @@ module VpsAdmin::API
         # transition. It is the caller's responsibility to ensure that the
         # object and its environment is in the expected state.
         def record_object_state_change(state, reason: nil, user: nil, expiration: nil, remind_after: nil, chain: nil)
-          unless Private.states(self.class).include?(state)
-            fail "#{self.class.to_s} does not have state '#{state}'"
-          end
+          raise "#{self.class} does not have state '#{state}'" unless Private.states(self.class).include?(state)
 
           Private.record_state(
             self,
@@ -347,7 +341,7 @@ module VpsAdmin::API
             reason,
             user || ::User.current,
             expiration,
-            remind_after,
+            remind_after
           )
         end
 
@@ -356,14 +350,11 @@ module VpsAdmin::API
         def progress_object_state(direction, **kwargs)
           states = Private.states(self.class)
           i = states.index(object_state.to_sym)
-          target = states[ direction == :enter ? i + 1 : i - 1 ]
+          target = states[direction == :enter ? i + 1 : i - 1]
 
-          if target
-            set_object_state(target, **kwargs)
+          raise "cannot progress state in chosen direction (#{direction})" unless target
 
-          else
-            fail "cannot progress state in chosen direction (#{direction})"
-          end
+          set_object_state(target, **kwargs)
         end
 
         # Keep the same state and just set new expiration date.
@@ -373,8 +364,8 @@ module VpsAdmin::API
 
           log = ::ObjectState.create!(
             class_name: self.class.name,
-            row_id: self.id,
-            state: self.object_state,
+            row_id: id,
+            state: object_state,
             expiration_date: expiration,
             remind_after_date: remind_after,
             reason: reason,
@@ -387,17 +378,15 @@ module VpsAdmin::API
 
         # Set remind after date.
         def set_remind_after(remind_after_date, save: true, user: nil, reason: nil)
-          if self.expiration_date.nil?
-            fail 'setting remind_from_date when expiration_date is nil'
-          end
+          raise 'setting remind_from_date when expiration_date is nil' if expiration_date.nil?
 
           self.remind_after_date = remind_after_date
 
           log = ::ObjectState.create!(
             class_name: self.class.name,
-            row_id: self.id,
-            state: self.object_state,
-            expiration_date: self.expiration_date,
+            row_id: id,
+            state: object_state,
+            expiration_date: expiration_date,
             remind_after_date: remind_after_date,
             reason: reason,
             user: user || ::User.current
@@ -411,7 +400,7 @@ module VpsAdmin::API
         def current_object_state
           ::ObjectState.where(
             class_name: self.class.name,
-            row_id: self.id
+            row_id: id
           ).order('created_at DESC, id DESC').take
         end
       end
@@ -447,7 +436,7 @@ module VpsAdmin::API
         :expiration,
         :remind_after,
         :enter,
-        :state_chain,
+        :state_chain
       )
 
       def self.states(o)
@@ -477,7 +466,7 @@ module VpsAdmin::API
           t.state_chain,
           t.enter,
           state_changes(obj.class),
-          t.log,
+          t.log
         ]
 
         if chain
@@ -485,7 +474,7 @@ module VpsAdmin::API
           chain
 
         else
-          new_chain, _ = TransactionChains::Lifetimes::Wrapper.fire(*chain_args)
+          new_chain, = TransactionChains::Lifetimes::Wrapper.fire(*chain_args)
           new_chain
         end
       end
@@ -496,7 +485,7 @@ module VpsAdmin::API
         changes =  {
           object_state: ::VpsAdmin::API::Lifetimes::STATES.index(target),
           expiration_date: transition.log.expiration_date,
-          remind_after_date: transition.log.remind_after_date,
+          remind_after_date: transition.log.remind_after_date
         }
 
         transition.log.save!
@@ -518,7 +507,7 @@ module VpsAdmin::API
         t_i = states.index(target)
         o_i = states.index(obj.object_state.to_sym)
         enter = t_i > o_i
-        state_chain = enter ? states[o_i+1..t_i] : states[t_i+1..o_i].reverse
+        state_chain = enter ? states[o_i + 1..t_i] : states[t_i + 1..o_i].reverse
 
         if !enter && o_i >= (states.index(:hard_delete) || states.index(:deleted))
           raise Exceptions::CannotLeaveState,
@@ -537,19 +526,15 @@ module VpsAdmin::API
           )
 
           if default
-            if reason.nil? || reason.empty?
-              reason = default.reason
-            end
+            reason = default.reason if reason.nil? || reason.empty?
 
-            if expiration.nil? || expiration === true
-              expiration = Time.now + default.add_expiration
-            end
+            expiration = Time.now + default.add_expiration if expiration.nil? || expiration === true
           end
 
           if expiration === true
-            fail "Unable to determine the expiration date, no default is set ("+
-                 "environment=#{env.id},class_name=#{obj.class.to_s},direction="+
-                 "#{enter ? 'enter' : 'leave'},state=#{target})"
+            raise 'Unable to determine the expiration date, no default is set (' +
+                  "environment=#{env.id},class_name=#{obj.class},direction=" +
+                  "#{enter ? 'enter' : 'leave'},state=#{target})"
           end
         end
 
@@ -578,9 +563,9 @@ module VpsAdmin::API
         end
 
         action.send(:define_method, :update_object_state) do |obj|
-          lifetime_params = %w(
+          lifetime_params = %w[
             object_state change_reason expiration_date remind_after_date
-          )
+          ]
 
           if (input.keys - lifetime_params).any?
             raise VpsAdmin::API::Exceptions::TooManyParameters,
@@ -592,13 +577,13 @@ module VpsAdmin::API
               obj.set_expiration(
                 input[:expiration_date],
                 remind_after: input[:remind_after_date],
-                reason: input[:change_reason],
+                reason: input[:change_reason]
               )
 
             elsif input.has_key?(:remind_after_date)
               obj.set_remind_after(
                 input[:remind_after_date],
-                reason: input[:change_reason],
+                reason: input[:change_reason]
               )
 
             else
@@ -611,9 +596,9 @@ module VpsAdmin::API
                 input[:object_state].to_sym,
                 reason: input[:change_reason],
                 expiration: input[:expiration_date],
-                remind_after: input[:remind_after_date],
+                remind_after: input[:remind_after_date]
               ),
-              obj,
+              obj
             ]
           end
 
@@ -621,13 +606,10 @@ module VpsAdmin::API
         end
 
         action.send(:define_method, :update_object_state!) do |obj|
-          begin
-            @chain, obj = update_object_state(obj)
-            ok(obj)
-
-          rescue VpsAdmin::API::Exceptions::TooManyParameters => e
-            error(e.message)
-          end
+          @chain, obj = update_object_state(obj)
+          ok(obj)
+        rescue VpsAdmin::API::Exceptions::TooManyParameters => e
+          error(e.message)
         end
 
         action.send(:define_method, :object_state_check!) do |*objs|

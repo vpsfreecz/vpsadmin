@@ -16,7 +16,7 @@ module VpsAdmin::API::Tasks
           VpsAdmin::API::Operations::User::IncompleteLogin.run(
             t,
             :totp,
-            'authentication token expired',
+            'authentication token expired'
           )
           t.destroy!
         end

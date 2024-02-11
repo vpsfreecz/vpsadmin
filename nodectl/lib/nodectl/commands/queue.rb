@@ -4,26 +4,25 @@ module NodeCtl
     args '<queue> <command> [args...]'
     description 'Manage execution queues'
 
-    def options(parser, args)
-      parser.separator <<END
-Subcommands:
-pause <queue> [SECONDS]          List transaction confirmations
-resume <queue>|all               Run transaction confirmations
-END
-
+    def options(parser, _args)
+      parser.separator <<~END
+        Subcommands:
+        pause <queue> [SECONDS]          List transaction confirmations
+        resume <queue>|all               Run transaction confirmations
+      END
     end
 
     def validate
-      if !%w(pause resume resize).include?(args[0])
+      if !%w[pause resume resize].include?(args[0])
         raise ValidationError, 'unknown command: expected pause or resume'
       elsif args.size < 2
         raise ValidationError, 'arguments missing'
       end
 
       params.update({
-        command: args[0],
-        queue: args[1],
-      })
+                      command: args[0],
+                      queue: args[1]
+                    })
 
       if args[0] == 'pause' && args[2]
         secs = args[2].to_i

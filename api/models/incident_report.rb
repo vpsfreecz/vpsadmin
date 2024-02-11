@@ -22,6 +22,7 @@ class IncidentReport < ActiveRecord::Base
   end
 
   protected
+
   def set_reported_at
     self.reported_at ||= Time.now
   end

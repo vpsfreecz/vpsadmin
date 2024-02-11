@@ -1,5 +1,5 @@
 class AddMultilingualMail < ActiveRecord::Migration
-  class Language < ActiveRecord::Base ; end
+  class Language < ActiveRecord::Base; end
 
   class MailTemplate < ActiveRecord::Base
     has_many :mail_template_translations
@@ -30,21 +30,21 @@ class AddMultilingualMail < ActiveRecord::Migration
       t.timestamps
     end
 
-    add_index :mail_template_translations, [:mail_template_id, :language_id], unique: true,
-              name: :mail_template_translation_unique
+    add_index :mail_template_translations, %i[mail_template_id language_id], unique: true,
+                                                                             name: :mail_template_translation_unique
     add_column :members, :language_id, :integer, default: 1
 
     lang_en = Language.create!(code: 'en', label: 'English')
 
     MailTemplate.all.each do |tpl|
       tpl.mail_template_translations << MailTemplateTranslation.new(
-          language: lang_en,
-          from: tpl.from,
-          reply_to: tpl.reply_to,
-          return_path: tpl.return_path,
-          subject: tpl.subject,
-          text_plain: tpl.text_plain,
-          text_html: tpl.text_html,
+        language: lang_en,
+        from: tpl.from,
+        reply_to: tpl.reply_to,
+        return_path: tpl.return_path,
+        subject: tpl.subject,
+        text_plain: tpl.text_plain,
+        text_html: tpl.text_html
       )
     end
 
@@ -65,17 +65,17 @@ class AddMultilingualMail < ActiveRecord::Migration
     add_column :mail_templates, :text_html,   :text,   null: true
 
     MailTemplateTranslation.all.group(
-        'mail_template_id'
+      'mail_template_id'
     ).order(
-        'mail_template_id, id'
+      'mail_template_id, id'
     ).each do |tr|
       tr.mail_template.update!(
-          from: tr.from,
-          reply_to: tr.reply_to,
-          return_path: tr.return_path,
-          subject: tr.subject,
-          text_plain: tr.text_plain,
-          text_html: tr.text_html,
+        from: tr.from,
+        reply_to: tr.reply_to,
+        return_path: tr.return_path,
+        subject: tr.subject,
+        text_plain: tr.text_plain,
+        text_html: tr.text_html
       )
     end
 

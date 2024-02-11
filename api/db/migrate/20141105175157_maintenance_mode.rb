@@ -1,6 +1,6 @@
 class MaintenanceMode < ActiveRecord::Migration
   def change
-    remove_column :servers,   :server_maintenance, :boolean, default: false
+    remove_column :servers, :server_maintenance, :boolean, default: false
 
     create_table :maintenance_locks do |t|
       t.string       :class_name,     null: false, limit: 100
@@ -11,7 +11,7 @@ class MaintenanceMode < ActiveRecord::Migration
       t.timestamps
     end
 
-    add_index :maintenance_locks, %i(class_name row_id)
+    add_index :maintenance_locks, %i[class_name row_id]
 
     add_column :environments, :maintenance_lock, :integer, null: false, default: 0
     add_column :environments, :maintenance_lock_reason, :string, null: true, limit: 255

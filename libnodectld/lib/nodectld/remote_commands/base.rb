@@ -2,7 +2,7 @@ module NodeCtld
   module RemoteCommands
     class Base
       def self.handle(name)
-        NodeCtld::RemoteControl.register(self.to_s, name)
+        NodeCtld::RemoteControl.register(to_s, name)
       end
 
       include NodeCtld::Utils::Command
@@ -17,17 +17,16 @@ module NodeCtld
         end
       end
 
-      def exec
-
-      end
+      def exec; end
 
       protected
+
       def ok
-        {ret: :ok}
+        { ret: :ok }
       end
 
       def error(msg)
-        {ret: :failed, output: msg}
+        { ret: :failed, output: msg }
       end
     end
   end

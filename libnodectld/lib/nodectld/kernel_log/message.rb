@@ -29,6 +29,7 @@ module NodeCtld
     end
 
     protected
+
     def parse(line)
       if line.start_with?(' ')
         @continuation = true
@@ -37,10 +38,10 @@ module NodeCtld
       end
 
       semicolon = line.index(';')
-      params = line[0..(semicolon-1)]
-      @text = line[(semicolon+1)..-1].strip
+      params = line[0..(semicolon - 1)]
+      @text = line[(semicolon + 1)..-1].strip
 
-      syslog, seq, timestamp, _ = params.split(',')
+      syslog, seq, timestamp, = params.split(',')
 
       @seq = seq.to_i
       @timestamp = timestamp.to_i

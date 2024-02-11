@@ -19,9 +19,7 @@ module TransactionChains
           destroy(s.snapshot_in_pool)
           destroy(s.snapshot_in_pool.snapshot) if cleanup
 
-          if s.snapshot_in_pool_in_branch
-            decrement(s.snapshot_in_pool, :reference_count)
-          end
+          decrement(s.snapshot_in_pool, :reference_count) if s.snapshot_in_pool_in_branch
         end
 
         # Destroy the branch if it is empty.
@@ -66,10 +64,11 @@ module TransactionChains
     end
 
     protected
+
     def cleanup_snapshot?(snapshot_in_pool)
       ::Snapshot.joins(:snapshot_in_pools)
-        .where(snapshots: {id: snapshot_in_pool.snapshot_id})
-        .where.not(snapshot_in_pools: {confirmed: ::SnapshotInPool.confirmed(:confirm_destroy)}).count == 0
+                .where(snapshots: { id: snapshot_in_pool.snapshot_id })
+                .where.not(snapshot_in_pools: { confirmed: ::SnapshotInPool.confirmed(:confirm_destroy) }).count == 0
     end
 
     def destroy_snapshot(sip)

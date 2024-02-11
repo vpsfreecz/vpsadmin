@@ -16,7 +16,7 @@ module Transactions::Storage
           confirmed: snapshots.last.snapshot.confirmed
         },
         tree: branch && branch.dataset_tree.full_name,
-        branch: branch && branch.full_name,
+        branch: branch && branch.full_name
       }
     end
   end

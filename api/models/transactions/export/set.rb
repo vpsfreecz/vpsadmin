@@ -10,11 +10,11 @@ module Transactions::Export
       {
         export_id: old_export.id,
         new: {
-          threads: new_export.threads,
+          threads: new_export.threads
         },
         original: {
-          threads: old_export.threads,
-        },
+          threads: old_export.threads
+        }
       }
     end
   end

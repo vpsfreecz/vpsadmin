@@ -21,11 +21,11 @@ module NodeCtld
     end
 
     def stop
-      if @thread
-        @queue << :stop
-        @thread.join
-        @thread = nil
-      end
+      return unless @thread
+
+      @queue << :stop
+      @thread.join
+      @thread = nil
     end
 
     def log_type
@@ -33,6 +33,7 @@ module NodeCtld
     end
 
     protected
+
     def run
       loop do
         v = @queue.pop(timeout: cfg(:interval))
@@ -95,7 +96,7 @@ module NodeCtld
       vpses.each do |vps_id, procs|
         to_save << {
           vps_id: vps_id,
-          processes: procs,
+          processes: procs
         }
 
         save_processes(t, to_save, max_size)
@@ -111,10 +112,10 @@ module NodeCtld
         @exchange,
         {
           time: time.to_i,
-          vps_processes: to_save,
+          vps_processes: to_save
         }.to_json,
         content_type: 'application/json',
-        routing_key: 'vps_os_processes',
+        routing_key: 'vps_os_processes'
       )
 
       to_save.clear

@@ -13,9 +13,9 @@ class VpsAdmin::API::Resources::Environment < HaveAPI::Resource
     bool :can_create_vps, label: 'Can create a VPS', default: false
     bool :can_destroy_vps, label: 'Can destroy a VPS', default: false
     integer :vps_lifetime, label: 'Default VPS lifetime',
-            desc: 'in seconds, 0 is unlimited', default: 0
+                           desc: 'in seconds, 0 is unlimited', default: 0
     integer :max_vps_count, label: 'Maximum number of VPS per user',
-            desc: '0 is unlimited', default: 1
+                            desc: '0 is unlimited', default: 1
     bool :user_ip_ownership, label: 'User owns IP addresses', default: true
   end
 
@@ -29,9 +29,9 @@ class VpsAdmin::API::Resources::Environment < HaveAPI::Resource
 
     input do
       bool :has_hypervisor, label: 'Has hypervisor',
-        desc: 'List only environments having at least one hypervisor'
+                            desc: 'List only environments having at least one hypervisor'
       bool :has_storage, label: 'Has storage',
-        desc: 'List only environments having at least one storage'
+                         desc: 'List only environments having at least one storage'
     end
 
     output(:object_list) do
@@ -40,19 +40,19 @@ class VpsAdmin::API::Resources::Environment < HaveAPI::Resource
 
     authorize do |u|
       allow if u.role == :admin
-      output whitelist: %i(id label description)
+      output whitelist: %i[id label description]
       allow
     end
 
     example do
       request({})
       response([
-          {
-              id: 1,
-              label: 'Production',
-              domain: 'vpsfree.cz',
-          }
-      ])
+                 {
+                   id: 1,
+                   label: 'Production',
+                   domain: 'vpsfree.cz'
+                 }
+               ])
     end
 
     def query
@@ -77,13 +77,13 @@ class VpsAdmin::API::Resources::Environment < HaveAPI::Resource
 
       if has.size > 0
         q = q.joins(locations: :nodes).where(
-          nodes: {role: has}
+          nodes: { role: has }
         ).group('environments.id')
       end
 
       if not_has.size > 0
         q = q.joins(locations: :nodes).where.not(
-          nodes: {role: not_has}
+          nodes: { role: not_has }
         ).group('environments.id')
       end
 
@@ -117,12 +117,12 @@ class VpsAdmin::API::Resources::Environment < HaveAPI::Resource
     example do
       authorize { |u| u.role == :admin }
       request({
-        label: 'Devel',
-        domain: 'vpsfree.cz'
-      })
+                label: 'Devel',
+                domain: 'vpsfree.cz'
+              })
       response({
-        id: 2
-      })
+                 id: 2
+               })
     end
 
     def exec
@@ -145,7 +145,7 @@ class VpsAdmin::API::Resources::Environment < HaveAPI::Resource
 
     authorize do |u|
       allow if u.role == :admin
-      output whitelist: %i(id label description)
+      output whitelist: %i[id label description]
       allow
     end
 
@@ -153,10 +153,10 @@ class VpsAdmin::API::Resources::Environment < HaveAPI::Resource
       path_params(1)
       request({})
       response({
-        id: 1,
-        label: 'Production',
-        domain: 'vpsfree.cz',
-      })
+                 id: 1,
+                 label: 'Production',
+                 domain: 'vpsfree.cz'
+               })
     end
 
     def exec
@@ -183,15 +183,14 @@ class VpsAdmin::API::Resources::Environment < HaveAPI::Resource
       authorize { |u| u.role == :admin }
       path_params(1)
       request({
-        label: 'My new name',
-        domain: 'new.domain'
-      })
+                label: 'My new name',
+                domain: 'new.domain'
+              })
       response({})
     end
 
     def exec
       ::Environment.find(params[:environment_id]).update!(input)
-
     rescue ActiveRecord::RecordInvalid => e
       error('update failed', e.record.errors.to_hash)
     end
@@ -229,9 +228,9 @@ class VpsAdmin::API::Resources::Environment < HaveAPI::Resource
       string :label
       resource VpsAdmin::API::Resources::DatasetPlan, value_label: :label
       bool :user_add, label: 'User add',
-           desc: 'If true, the user can add this plan to a dataset'
+                      desc: 'If true, the user can add this plan to a dataset'
       bool :user_remove, label: 'User remove',
-           desc: 'If true, the user can remove this plan from a dataset'
+                         desc: 'If true, the user can remove this plan from a dataset'
     end
 
     params(:all) do
@@ -254,8 +253,8 @@ class VpsAdmin::API::Resources::Environment < HaveAPI::Resource
 
       def query
         ::EnvironmentDatasetPlan.where(with_restricted(
-          environment_id: params[:environment_id]
-        ))
+                                         environment_id: params[:environment_id]
+                                       ))
       end
 
       def count
@@ -269,13 +268,13 @@ class VpsAdmin::API::Resources::Environment < HaveAPI::Resource
 
     class Show < HaveAPI::Actions::Default::Show
       desc 'Show dataset plan'
-      resolve ->(p){ [p.environment_id, p.id] }
+      resolve ->(p) { [p.environment_id, p.id] }
 
       output do
         use :all
       end
 
-      authorize do |u|
+      authorize do |_u|
         allow
       end
 

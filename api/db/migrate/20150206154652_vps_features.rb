@@ -9,7 +9,7 @@ class VpsFeatures < ActiveRecord::Migration
   class VpsFeature < ActiveRecord::Base
     belongs_to :vps
 
-    FEATURES = %i(iptables tun fuse nfs ppp bridge)
+    FEATURES = %i[iptables tun fuse nfs ppp bridge]
   end
 
   def change
@@ -20,15 +20,15 @@ class VpsFeatures < ActiveRecord::Migration
       t.datetime     :updated_at
     end
 
-    add_index :vps_features, [:vps_id, :name], unique: true
+    add_index :vps_features, %i[vps_id name], unique: true
 
     reversible do |dir|
       dir.up do
         Vps.all.each do |vps|
           VpsFeature::FEATURES.each do |f|
             vps.vps_features << VpsFeature.new(
-                name: f,
-                enabled: vps.vps_features_enabled
+              name: f,
+              enabled: vps.vps_features_enabled
             )
           end
         end

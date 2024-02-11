@@ -1,3 +1,3 @@
 module NodeCtld
-  module Console ; end
+  module Console; end
 end

@@ -11,7 +11,7 @@ class VpsAdmin::API::Resources::Location < HaveAPI::Resource
     string :description, label: 'Description', desc: 'Location description'
     bool :has_ipv6, label: 'Has IPv6', desc: 'True if location has IPv6 addresses'
     string :remote_console_server, label: 'Remote console server',
-        desc: 'URL to HTTP remote console server'
+                                   desc: 'URL to HTTP remote console server'
     string :domain, label: 'Domain', desc: 'Location domain, subdomain at environment domain'
     resource VpsAdmin::API::Resources::Environment, label: 'Environment'
   end
@@ -28,24 +28,24 @@ class VpsAdmin::API::Resources::Location < HaveAPI::Resource
       resource VpsAdmin::API::Resources::Environment,
                desc: 'Filter locations by environment'
       bool :has_hypervisor, label: 'Has hypervisor',
-        desc: 'List only locations having at least one hypervisor node'
+                            desc: 'List only locations having at least one hypervisor node'
       bool :has_storage, label: 'Has storage',
-        desc: 'List only locations having at least one storage node'
+                         desc: 'List only locations having at least one storage node'
       string :hypervisor_type,
-        label: 'Hypervisor type',
-        choices: %w(vpsadminos),
-        desc: 'List only locations having at least one node of this type'
+             label: 'Hypervisor type',
+             choices: %w[vpsadminos],
+             desc: 'List only locations having at least one node of this type'
       resource VpsAdmin::API::Resources::Location,
-        name: :shares_v4_networks_with,
-        label: 'Shares IPv4 networks with location'
+               name: :shares_v4_networks_with,
+               label: 'Shares IPv4 networks with location'
       resource VpsAdmin::API::Resources::Location,
-        name: :shares_v6_networks_with,
-        label: 'Shares IPv4 networks with location'
+               name: :shares_v6_networks_with,
+               label: 'Shares IPv4 networks with location'
       resource VpsAdmin::API::Resources::Location,
-        name: :shares_any_networks_with,
-        label: 'Shares IPv4 networks with location'
+               name: :shares_any_networks_with,
+               label: 'Shares IPv4 networks with location'
       bool :shares_networks_primary, label: 'Shared network primary',
-        desc: 'Filter locations with shared networks that are primary in the other location'
+                                     desc: 'Filter locations with shared networks that are primary in the other location'
     end
 
     output(:object_list) do
@@ -54,20 +54,20 @@ class VpsAdmin::API::Resources::Location < HaveAPI::Resource
 
     authorize do |u|
       allow if u.role == :admin
-      output whitelist: %i(id label description environment remote_console_server)
+      output whitelist: %i[id label description environment remote_console_server]
       allow
     end
 
     example do
       request({})
       response([{
-        label: 'Prague',
-        has_ipv6: true,
-        remote_console_server: 'https://console.vpsadmin.mydomain.com',
-        domain: 'prg',
-        created_at: '2014-05-04 16:59:52 +0200',
-        updated_at: '2014-05-04 16:59:52 +0200'
-      }])
+                 label: 'Prague',
+                 has_ipv6: true,
+                 remote_console_server: 'https://console.vpsadmin.mydomain.com',
+                 domain: 'prg',
+                 created_at: '2014-05-04 16:59:52 +0200',
+                 updated_at: '2014-05-04 16:59:52 +0200'
+               }])
     end
 
     def query
@@ -75,7 +75,7 @@ class VpsAdmin::API::Resources::Location < HaveAPI::Resource
 
       if input[:environment]
         q = q.where(
-            environment_id: input[:environment].id
+          environment_id: input[:environment].id
         ).group('locations.id')
       end
 
@@ -98,31 +98,31 @@ class VpsAdmin::API::Resources::Location < HaveAPI::Resource
 
       if has.size > 0
         q = q.joins(:nodes).where(
-            nodes: {role: has}
+          nodes: { role: has }
         ).group('locations.id')
       end
 
       if not_has.size > 0
         q = q.joins(:nodes).where.not(
-          nodes: {role: not_has}
+          nodes: { role: not_has }
         ).group('locations.id')
       end
 
       if input[:hypervisor_type]
         q = q.joins(:nodes).where(
-          nodes: {hypervisor_type: ::Node.hypervisor_types[input[:hypervisor_type]]},
+          nodes: { hypervisor_type: ::Node.hypervisor_types[input[:hypervisor_type]] }
         ).group('locations.id')
       end
 
       if input[:shares_v4_networks_with]
         loc_ids = ::LocationNetwork
-          .select('location_networks.location_id')
-          .joins('INNER JOIN location_networks ln2')
-          .joins('INNER JOIN networks ON location_networks.network_id = networks.id')
-          .where('location_networks.location_id != ln2.location_id')
-          .where('location_networks.network_id = ln2.network_id')
-          .where('ln2.location_id = ?', input[:shares_v4_networks_with].id)
-          .where('networks.ip_version = 4')
+                  .select('location_networks.location_id')
+                  .joins('INNER JOIN location_networks ln2')
+                  .joins('INNER JOIN networks ON location_networks.network_id = networks.id')
+                  .where('location_networks.location_id != ln2.location_id')
+                  .where('location_networks.network_id = ln2.network_id')
+                  .where('ln2.location_id = ?', input[:shares_v4_networks_with].id)
+                  .where('networks.ip_version = 4')
 
         case input[:shares_networks_primary]
         when true
@@ -136,13 +136,13 @@ class VpsAdmin::API::Resources::Location < HaveAPI::Resource
 
       if input[:shares_v6_networks_with]
         loc_ids = ::LocationNetwork
-          .select('location_networks.location_id')
-          .joins('INNER JOIN location_networks ln2')
-          .joins('INNER JOIN networks ON location_networks.network_id = networks.id')
-          .where('location_networks.location_id != ln2.location_id')
-          .where('location_networks.network_id = ln2.network_id')
-          .where('ln2.location_id = ?', input[:shares_v6_networks_with].id)
-          .where('networks.ip_version = 6')
+                  .select('location_networks.location_id')
+                  .joins('INNER JOIN location_networks ln2')
+                  .joins('INNER JOIN networks ON location_networks.network_id = networks.id')
+                  .where('location_networks.location_id != ln2.location_id')
+                  .where('location_networks.network_id = ln2.network_id')
+                  .where('ln2.location_id = ?', input[:shares_v6_networks_with].id)
+                  .where('networks.ip_version = 6')
 
         case input[:shares_networks_primary]
         when true
@@ -156,11 +156,11 @@ class VpsAdmin::API::Resources::Location < HaveAPI::Resource
 
       if input[:shares_any_networks_with]
         loc_ids = ::LocationNetwork
-          .select('location_networks.location_id')
-          .joins('INNER JOIN location_networks ln2')
-          .where('location_networks.location_id != ln2.location_id')
-          .where('location_networks.network_id = ln2.network_id')
-          .where('ln2.location_id = ?', input[:shares_any_networks_with].id)
+                  .select('location_networks.location_id')
+                  .joins('INNER JOIN location_networks ln2')
+                  .where('location_networks.location_id != ln2.location_id')
+                  .where('location_networks.network_id = ln2.network_id')
+                  .where('ln2.location_id = ?', input[:shares_any_networks_with].id)
 
         case input[:shares_networks_primary]
         when true
@@ -201,14 +201,14 @@ class VpsAdmin::API::Resources::Location < HaveAPI::Resource
 
     example do
       request({
-        label: 'Brno',
-        has_ipv6: true,
-        remote_console_server: '',
-        domain: 'brq'
-      })
+                label: 'Brno',
+                has_ipv6: true,
+                remote_console_server: '',
+                domain: 'brq'
+              })
       response({
-        id: 2
-      })
+                 id: 2
+               })
     end
 
     def exec
@@ -231,7 +231,7 @@ class VpsAdmin::API::Resources::Location < HaveAPI::Resource
 
     authorize do |u|
       allow if u.role == :admin
-      restrict whitelist: %i(id label description environment remote_console_server)
+      restrict whitelist: %i[id label description environment remote_console_server]
       allow
     end
 
@@ -239,12 +239,12 @@ class VpsAdmin::API::Resources::Location < HaveAPI::Resource
       path_params(2)
       request({})
       response({
-        id: 2,
-        label: 'Brno',
-        has_ipv6: true,
-        remote_console_server: '',
-        domain: 'brq'
-      })
+                 id: 2,
+                 label: 'Brno',
+                 has_ipv6: true,
+                 remote_console_server: '',
+                 domain: 'brq'
+               })
     end
 
     def exec
@@ -266,12 +266,12 @@ class VpsAdmin::API::Resources::Location < HaveAPI::Resource
     example do
       path_params(2)
       request({
-        label: 'Ostrava',
-        has_ipv6: true,
-        remote_console_server: '',
-        environment: 1,
-        domain: 'ova'
-      })
+                label: 'Ostrava',
+                has_ipv6: true,
+                remote_console_server: '',
+                environment: 1,
+                domain: 'ova'
+              })
       response({})
     end
 

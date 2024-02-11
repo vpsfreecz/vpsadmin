@@ -16,11 +16,11 @@ module TransactionChains
 
         if chains[s] && chains[s][dir]
           default = use_chain(chains[s][dir], args: [
-            obj,
-            last,
-            states.last,
-            log
-          ])
+                                obj,
+                                last,
+                                states.last,
+                                log
+                              ])
         end
 
         if last
@@ -28,7 +28,7 @@ module TransactionChains
             obj.update!(
               object_state: target,
               expiration_date: log.expiration_date,
-              remind_after_date: log.remind_after_date,
+              remind_after_date: log.remind_after_date
             )
 
           else
@@ -38,7 +38,7 @@ module TransactionChains
                   obj,
                   object_state: ::VpsAdmin::API::Lifetimes::STATES.index(target),
                   expiration_date: log.expiration_date,
-                  remind_after_date: log.remind_after_date,
+                  remind_after_date: log.remind_after_date
                 )
               end
 

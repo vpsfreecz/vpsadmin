@@ -4,7 +4,7 @@ module VpsAdmin::Supervisor
   class Node::VpsStatus < Node::Base
     LOG_INTERVAL = 3600
 
-    AVERAGES = %i(loadavg process_count used_memory cpu_idle)
+    AVERAGES = %i[loadavg process_count used_memory cpu_idle]
 
     def self.setup(channel)
       channel.prefetch(5)
@@ -15,7 +15,7 @@ module VpsAdmin::Supervisor
       queue = channel.queue(
         queue_name('vps_statuses'),
         durable: true,
-        arguments: {'x-queue-type' => 'quorum'},
+        arguments: { 'x-queue-type' => 'quorum' }
       )
 
       queue.bind(exchange, routing_key: 'vps_statuses')
@@ -25,13 +25,12 @@ module VpsAdmin::Supervisor
 
         current_status = ::VpsCurrentStatus.find_or_initialize_by(vps_id: new_status['id'])
 
-        if current_status.vps.node_id == node.id
-          update_status(current_status, new_status)
-        end
+        update_status(current_status, new_status) if current_status.vps.node_id == node.id
       end
     end
 
     protected
+
     def update_status(current_status, new_status)
       now = Time.now
 
@@ -46,7 +45,7 @@ module VpsAdmin::Supervisor
         total_memory: memory,
         total_swap: swap,
         cpus: cpus,
-        updated_at: Time.at(new_status['time']),
+        updated_at: Time.at(new_status['time'])
       )
 
       if current_status.status && current_status.is_running
@@ -55,19 +54,17 @@ module VpsAdmin::Supervisor
           loadavg: new_status['loadavg'] && new_status['loadavg']['5'],
           process_count: new_status['process_count'],
           used_memory: new_status['used_memory'] / 1024 / 1024,
-          cpu_idle: (cpus * 100.0 - new_status['cpu_usage']) / cpus,
+          cpu_idle: (cpus * 100.0 - new_status['cpu_usage']) / cpus
         )
 
-        if new_status['hostname']
-          ::Vps.where(id: current_status.vps_id).update_all(hostname: new_status['hostname'])
-        end
+        ::Vps.where(id: current_status.vps_id).update_all(hostname: new_status['hostname']) if new_status['hostname']
       else
         current_status.assign_attributes(
           uptime: nil,
           loadavg: nil,
           process_count: nil,
           used_memory: nil,
-          cpu_idle: nil,
+          cpu_idle: nil
         )
       end
 
@@ -80,11 +77,11 @@ module VpsAdmin::Supervisor
 
         current_status.assign_attributes(
           last_log_at: now,
-          update_count: 1,
+          update_count: 1
         )
 
         AVERAGES.each do |attr|
-          current_status.assign_attributes(:"sum_#{attr}" => current_status.send(attr))
+          current_status.assign_attributes("sum_#{attr}": current_status.send(attr))
         end
       else
         # Compute averages
@@ -133,7 +130,7 @@ module VpsAdmin::Supervisor
         cpus: current_status.cpus,
         total_memory: current_status.total_memory,
         total_swap: current_status.total_swap,
-        created_at: current_status.updated_at,
+        created_at: current_status.updated_at
       )
 
       AVERAGES.each do |attr|
@@ -153,19 +150,19 @@ module VpsAdmin::Supervisor
     end
 
     def find_cluster_resources(vps_id)
-      resources = %w(cpu memory swap)
+      resources = %w[cpu memory swap]
       ret = Array.new(3)
 
       ::ClusterResourceUse
         .select('cluster_resources.name, cluster_resource_uses.value')
-        .joins(user_cluster_resource: [:cluster_resource],)
+        .joins(user_cluster_resource: [:cluster_resource])
         .where(
-          cluster_resources: {name: resources},
+          cluster_resources: { name: resources },
           class_name: ::Vps.name,
           table_name: ::Vps.table_name,
-          row_id: vps_id,
+          row_id: vps_id
         ).each do |ucr|
-        ret[ resources.index(ucr.name) ] = ucr.value
+        ret[resources.index(ucr.name)] = ucr.value
       end
 
       ret

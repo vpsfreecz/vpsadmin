@@ -7,11 +7,11 @@ module VpsAdmin::API::Resources
       string :name, label: 'Resource name for internal purposes'
       string :label, label: 'Label'
       integer :min, label: 'Minimum value',
-              desc: 'When an object is allocating a resource, it must use more than minimum'
+                    desc: 'When an object is allocating a resource, it must use more than minimum'
       integer :max, label: 'Maximum value',
-              desc: 'When an object is allocating a resource, it must not use more than maximum'
+                    desc: 'When an object is allocating a resource, it must not use more than maximum'
       integer :stepsize, label: 'Step size',
-          desc: 'Steps in which the objects allocated resource value may be iterated'
+                         desc: 'Steps in which the objects allocated resource value may be iterated'
     end
 
     params(:all) do
@@ -26,7 +26,7 @@ module VpsAdmin::API::Resources
         use :all
       end
 
-      authorize do |u|
+      authorize do |_u|
         allow
       end
 
@@ -50,7 +50,7 @@ module VpsAdmin::API::Resources
         use :all
       end
 
-      authorize do |u|
+      authorize do |_u|
         allow
       end
 
@@ -76,7 +76,6 @@ module VpsAdmin::API::Resources
 
       def exec
         ::ClusterResource.create!(input)
-
       rescue ActiveRecord::RecordInvalid => e
         error('create failed', e.record.errors.to_hash)
       end
@@ -99,7 +98,6 @@ module VpsAdmin::API::Resources
 
       def exec
         ::ClusterResource.find(params[:cluster_resource_id]).update!(input)
-
       rescue ActiveRecord::RecordInvalid => e
         error('update failed', e.record.errors.to_hash)
       end

@@ -9,7 +9,7 @@ module NodeCtld
         vps_id: @vps_id,
         user_name: @name,
         uidmap: @uidmap,
-        gidmap: @gidmap,
+        gidmap: @gidmap
       )
       ok
     end
@@ -18,7 +18,7 @@ module NodeCtld
       OsCtlUsers.remove_vps(
         pool_fs: @pool_fs,
         vps_id: @vps_id,
-        user_name: @name,
+        user_name: @name
       )
       ok
     end

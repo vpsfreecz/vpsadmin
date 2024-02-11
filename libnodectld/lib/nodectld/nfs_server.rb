@@ -50,7 +50,7 @@ module NodeCtld
         '--as', as,
         '--host', host,
         '--options', options,
-        name,
+        name
       ]
 
       syscmd(args.join(' '))
@@ -63,7 +63,7 @@ module NodeCtld
         'osctl-exportfs', 'export', 'del',
         '--as', as,
         '--host', host,
-        name,
+        name
       ]
 
       syscmd(args.join(' '))
@@ -79,7 +79,7 @@ module NodeCtld
         File.join('/', pool_fs, dataset, 'private'),
         as,
         host,
-        build_options(options),
+        build_options(options)
       )
     end
 
@@ -93,11 +93,12 @@ module NodeCtld
         File.join('/', pool_mounted_clone(pool_fs, snapshot_clone), 'private'),
         as,
         host,
-        build_options(options),
+        build_options(options)
       )
     end
 
     protected
+
     def build_options(opts)
       result = []
 

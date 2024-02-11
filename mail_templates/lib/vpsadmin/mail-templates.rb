@@ -1,5 +1,5 @@
 module VpsAdmin
-    module MailTemplates ; end
+  module MailTemplates; end
 end
 
 require_relative 'mail-templates/cli'
@@ -22,21 +22,21 @@ module VpsAdmin
       tpl_translations = {}
 
       api.mail_template.list.each do |tpl|
-        tpl_translations[tpl] = tpl.translation.list(meta: {includes: 'language'})
+        tpl_translations[tpl] = tpl.translation.list(meta: { includes: 'language' })
       end
 
       # Create or update templates
       templates.each do |tpl|
-        puts "Template #{tpl.name}" + (tpl.id == tpl.name ? '': " (#{tpl.id})")
+        puts "Template #{tpl.name}" + (tpl.id == tpl.name ? '' : " (#{tpl.id})")
         tpl_exists = tpl_translations.detect { |k, _| k.name == tpl.name }
 
         if tpl_exists
-          puts "  Exists, updating"
+          puts '  Exists, updating'
           api_tpl = tpl_exists[0]
           api_tpl.update(tpl.params)
 
         else
-          puts "  Not found, creating"
+          puts '  Not found, creating'
           api_tpl = api.mail_template.create(tpl.params)
         end
 
@@ -45,14 +45,14 @@ module VpsAdmin
           tr_exists = tpl_exists && tpl_exists[1].detect { |v| v.language.code == tr.lang }
 
           if tr_exists
-            puts "    Exists, updating"
+            puts '    Exists, updating'
             api.mail_template(api_tpl.id).translation(tr_exists.id).update(tr.params)
 
           else
-            puts "    Not found, creating"
+            puts '    Not found, creating'
 
             lang = languages.detect { |v| v.code == tr.lang }
-            fail "language '#{tr.lang}' not found" unless lang
+            raise "language '#{tr.lang}' not found" unless lang
 
             tr_params = tr.params
             tr_params.update(language: lang.id)
@@ -63,7 +63,7 @@ module VpsAdmin
         puts
       end
 
-      puts "Done"
+      puts 'Done'
     end
 
     def self.find_templates

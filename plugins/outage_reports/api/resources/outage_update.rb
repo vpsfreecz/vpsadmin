@@ -18,7 +18,7 @@ module VpsAdmin::API::Resources
       integer :duration, label: 'Duration', desc: 'Outage duration in minutes'
       string :state, label: 'State', choices: ::OutageUpdate.states.keys.map(&:to_s)
       string :impact, db_name: :impact_type, label: 'Impact',
-          choices: ::OutageUpdate.impact_types.keys.map(&:to_s)
+                      choices: ::OutageUpdate.impact_types.keys.map(&:to_s)
       use :texts
     end
 
@@ -28,13 +28,13 @@ module VpsAdmin::API::Resources
       string :type, db_name: :outage_type, label: 'Type', choices: ::Outage.outage_types.keys.map(&:to_s)
       use :editable
       resource VpsAdmin::API::Resources::User, name: :reported_by, value_label: :login,
-          label: 'Reported by'
+                                               label: 'Reported by'
       string :reporter_name, label: "Reporter's name"
       datetime :created_at, label: 'Reported at'
     end
 
     params(:filters) do
-      use :all, include: %i(outage reported_by)
+      use :all, include: %i[outage reported_by]
       datetime :since, label: 'Since', desc: 'Filter updates reported since specified date'
     end
 
@@ -52,7 +52,7 @@ module VpsAdmin::API::Resources
 
       authorize do |u|
         allow if u && u.role == :admin
-        output blacklist: %i(user)
+        output blacklist: %i[user]
         allow
       end
 
@@ -88,7 +88,7 @@ module VpsAdmin::API::Resources
 
       authorize do |u|
         allow if u && u.role == :admin
-        output blacklist: %i(user)
+        output blacklist: %i[user]
         allow
       end
 
@@ -130,11 +130,11 @@ module VpsAdmin::API::Resources
       def exec
         outage = input.delete(:outage)
         tr = extract_translations
-        opts = {send_mail: input.delete(:send_mail)}
+        opts = { send_mail: input.delete(:send_mail) }
 
         if input[:state]
           if input[:state] == outage.state
-            error('update failed', {state: ["is already #{outage.state}"]})
+            error('update failed', { state: ["is already #{outage.state}"] })
 
           elsif input[:state] == 'announced'
             if outage.state != 'staged'
@@ -151,7 +151,6 @@ module VpsAdmin::API::Resources
 
         @chain, ret = outage.create_outage_update!(to_db_names(input), tr, opts)
         ret
-
       rescue ActiveRecord::RecordInvalid => e
         error('update failed', to_param_names(e.record.errors.to_hash))
       end

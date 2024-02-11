@@ -5,7 +5,7 @@ class SingleSignOn < ActiveRecord::Base
 
   def usable?
     token && token.valid_to > Time.now \
-      && user && %w(active suspended).include?(user.object_state)
+      && user && %w[active suspended].include?(user.object_state)
   end
 
   # @param authorization [Oauth2Authorization]
@@ -23,9 +23,9 @@ class SingleSignOn < ActiveRecord::Base
   end
 
   def close
-    if token
-      token.destroy!
-      update!(token: nil)
-    end
+    return unless token
+
+    token.destroy!
+    update!(token: nil)
   end
 end

@@ -4,7 +4,8 @@ module NodeCtld
     needs :outage_window
 
     def exec
-      fail 'not in a window' unless windows.open?
+      raise 'not in a window' unless windows.open?
+
       ok
     end
 

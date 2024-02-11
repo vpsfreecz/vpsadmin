@@ -4,20 +4,20 @@ module VpsAdmin::Supervisor
   class Node::Status < Node::Base
     LOG_INTERVAL = 900
 
-    AVERAGES = %i(
+    AVERAGES = %i[
       process_count
       cpu_user cpu_nice cpu_system cpu_idle cpu_iowait cpu_irq cpu_softirq cpu_guest
       loadavg
       used_memory used_swap
       arc_c_max arc_c arc_size arc_hitpercent
-    )
+    ]
 
     def start
       exchange = channel.direct(exchange_name)
       queue = channel.queue(
         queue_name('statuses'),
         durable: true,
-        arguments: {'x-queue-type' => 'quorum'},
+        arguments: { 'x-queue-type' => 'quorum' }
       )
 
       queue.bind(exchange, routing_key: 'statuses')
@@ -33,6 +33,7 @@ module VpsAdmin::Supervisor
     end
 
     protected
+
     def update_status(current_status, new_status)
       now = Time.now
       check_time = Time.at(new_status['time'])
@@ -63,7 +64,7 @@ module VpsAdmin::Supervisor
         pool_state: new_status['storage']['state'],
         pool_scan: new_status['storage']['scan'],
         pool_scan_percent: new_status['storage']['scan_percent'],
-        pool_checked_at: Time.at(new_status['storage']['checked_at']),
+        pool_checked_at: Time.at(new_status['storage']['checked_at'])
       )
 
       if new_status['arc']
@@ -71,14 +72,14 @@ module VpsAdmin::Supervisor
           arc_c_max: new_status['arc']['c_max'] / 1024 / 1024,
           arc_c: new_status['arc']['c'] / 1024 / 1024,
           arc_size: new_status['arc']['size'] / 1024 / 1024,
-          arc_hitpercent: new_status['arc']['hitpercent'],
+          arc_hitpercent: new_status['arc']['hitpercent']
         )
       else
         current_status.assign_attributes(
           arc_c_max: nil,
           arc_c: nil,
           arc_size: nil,
-          arc_hitpercent: nil,
+          arc_hitpercent: nil
         )
       end
 
@@ -88,11 +89,11 @@ module VpsAdmin::Supervisor
 
         current_status.assign_attributes(
           last_log_at: now,
-          update_count: 1,
+          update_count: 1
         )
 
         AVERAGES.each do |attr|
-          current_status.assign_attributes(:"sum_#{attr}" => current_status.send(attr))
+          current_status.assign_attributes("sum_#{attr}": current_status.send(attr))
         end
       else
         # Compute averages
@@ -134,7 +135,7 @@ module VpsAdmin::Supervisor
         vpsadmin_version: current_status.vpsadmin_version,
         kernel: current_status.kernel,
         cgroup_version: current_status.cgroup_version,
-        created_at: current_status.updated_at,
+        created_at: current_status.updated_at
       )
 
       AVERAGES.each do |attr|

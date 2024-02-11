@@ -53,9 +53,7 @@ module TransactionChains
           m.save!
           @my_deleted << m
 
-          if m.dataset_in_pool.pool.role == 'primary' && m.snapshot_in_pool.nil?
-            @my_deleted_primary_mounts << m
-          end
+          @my_deleted_primary_mounts << m if m.dataset_in_pool.pool.role == 'primary' && m.snapshot_in_pool.nil?
 
           true
         else
@@ -75,19 +73,19 @@ module TransactionChains
 
       @chain.use_chain(Vps::Mounts, args: @dst_vps, urgent: true)
 
-      if obj_changes.any? || @my_deleted.any?
-        @chain.append_t(
-          Transactions::Utils::NoOp,
-          args: @dst_vps.node_id,
-          urgent: true,
-        ) do |t|
-          obj_changes.each do |obj, changes|
-            t.edit_before(obj, changes)
-          end
+      return unless obj_changes.any? || @my_deleted.any?
 
-          @my_deleted.each do |m|
-            t.destroy(m)
-          end
+      @chain.append_t(
+        Transactions::Utils::NoOp,
+        args: @dst_vps.node_id,
+        urgent: true
+      ) do |t|
+        obj_changes.each do |obj, changes|
+          t.edit_before(obj, changes)
+        end
+
+        @my_deleted.each do |m|
+          t.destroy(m)
         end
       end
     end
@@ -122,21 +120,21 @@ module TransactionChains
       @my_deleted_primary_mounts.each do |m|
         ex = ::Export.find_by(
           dataset_in_pool: m.dataset_in_pool,
-          snapshot_in_pool_clone: nil,
+          snapshot_in_pool_clone: nil
         )
 
         if ex
           @chain.lock(ex)
         else
           ex = @chain.use_chain(Export::Create, args: [m.dataset_in_pool.dataset, {
-            all_vps: true,
-            rw: true,
-            sync: true,
-            subtree_check: false,
-            root_squash: false,
-            threads: 8,
-            enabled: true,
-          }])
+                                  all_vps: true,
+                                  rw: true,
+                                  sync: true,
+                                  subtree_check: false,
+                                  root_squash: false,
+                                  threads: 8,
+                                  enabled: true
+                                }])
         end
 
         mounts_to_exports << MountToExport.new(m, ex)
@@ -148,12 +146,13 @@ module TransactionChains
     end
 
     private
+
     def sort_mounts
       # Fetch ids of all descendant datasets in pool
       dataset_in_pools = @src_vps.dataset_in_pool.dataset.subtree.joins(
         :dataset_in_pools
       ).where(
-        dataset_in_pools: {pool_id: @src_vps.dataset_in_pool.pool_id}
+        dataset_in_pools: { pool_id: @src_vps.dataset_in_pool.pool_id }
       ).pluck('dataset_in_pools.id')
 
       # Fetch all snapshot in pools of above datasets
@@ -162,15 +161,15 @@ module TransactionChains
       ::SnapshotInPool.where(dataset_in_pool_id: dataset_in_pools).each do |sip|
         snapshot_in_pools << sip.id
 
-        if sip.reference_count > 1
-          # This shouldn't be possible, as every snapshot can be mounted
-          # just once.
-          fail "snapshot (s=#{sip.snapshot_id},sip=#{sip.id}) has too high a reference count"
-        end
+        next unless sip.reference_count > 1
+
+        # This shouldn't be possible, as every snapshot can be mounted
+        # just once.
+        raise "snapshot (s=#{sip.snapshot_id},sip=#{sip.id}) has too high a reference count"
       end
 
       ::Mount.includes(
-        :vps, :snapshot_in_pool, dataset_in_pool: [:dataset, pool: [:node]]
+        :vps, :snapshot_in_pool, dataset_in_pool: [:dataset, { pool: [:node] }]
       ).where(
         'vps_id = ? OR (dataset_in_pool_id IN (?) OR snapshot_in_pool_id IN (?))',
         @src_vps.id, dataset_in_pools, snapshot_in_pools
@@ -200,11 +199,11 @@ module TransactionChains
       is_local = @src_vps.node_id == mnt.dataset_in_pool.pool.node_id
       is_remote = !is_local
 
-      if is_subdataset
-        become_local = @dst_vps.node_id == dst_dip.pool.node_id
-      else
-        become_local = @dst_vps.node_id == mnt.dataset_in_pool.pool.node_id
-      end
+      become_local = @dst_vps.node_id == if is_subdataset
+                                           dst_dip.pool.node_id
+                                         else
+                                           mnt.dataset_in_pool.pool.node_id
+                                         end
 
       become_remote = !become_local
 
@@ -214,8 +213,6 @@ module TransactionChains
                          snapshot_id: mnt.snapshot_in_pool.snapshot_id,
                          dataset_in_pool: dst_dip
                        ).take!
-                     else
-                       nil
                      end
 
       original = {
@@ -264,7 +261,7 @@ module TransactionChains
           }
           mnt.snapshot_in_pool.update!(mount: nil)
 
-          changes[new_snapshot] = {mount_id: nil}
+          changes[new_snapshot] = { mount_id: nil }
           new_snapshot.update!(mount: mnt)
 
           mnt.snapshot_in_pool = new_snapshot
@@ -294,8 +291,6 @@ module TransactionChains
                          snapshot_id: mnt.snapshot_in_pool.snapshot_id,
                          dataset_in_pool: dst_dip
                        ).take!
-                     else
-                       nil
                      end
 
       original = {
@@ -310,7 +305,7 @@ module TransactionChains
 
       if is_snapshot
         # Should not be possible due to {Vps::Migrate::Base#check_snapshot_clone_mounts!}
-        fail 'programming error'
+        raise 'programming error'
       end
 
       # Local -> remote:
@@ -320,9 +315,7 @@ module TransactionChains
         mnt.mount_type = 'nfs'
         mnt.mount_opts = '-n -t nfs -overs=3'
 
-        if is_snapshot
-          fail
-        end
+        raise if is_snapshot
 
       # Remote -> local:
       #   - change mount type
@@ -331,17 +324,13 @@ module TransactionChains
         mnt.mount_type = 'bind'
         mnt.mount_opts = '--bind'
 
-        if is_snapshot
-          fail
-        end
+        raise if is_snapshot
 
       # Remote -> remote:
       #   - update node IP address, remove snapshot on src and create on dst
       #     node
       elsif is_remote && become_remote
-        if is_snapshot
-          fail
-        end
+        raise if is_snapshot
 
       # Local -> local:
       #   - nothing to do
@@ -360,7 +349,7 @@ module TransactionChains
         }
         mnt.snapshot_in_pool.update!(mount: nil)
 
-        changes[new_snapshot] = {mount_id: nil}
+        changes[new_snapshot] = { mount_id: nil }
         new_snapshot.update!(mount: mnt)
 
         mnt.snapshot_in_pool = new_snapshot

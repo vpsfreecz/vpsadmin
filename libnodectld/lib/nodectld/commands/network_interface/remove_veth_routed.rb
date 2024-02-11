@@ -9,7 +9,7 @@ module NodeCtld
       end
 
       NetAccounting.remove_netif(@vps_id, @netif_id)
-      osctl(%i(ct netif del), [@vps_id, @name])
+      osctl(%i[ct netif del], [@vps_id, @name])
     end
 
     def rollback
@@ -18,9 +18,9 @@ module NodeCtld
       end
 
       osctl(
-        %i(ct netif new routed),
+        %i[ct netif new routed],
         [@vps_id, @name],
-        {hwaddr: @mac_address, max_tx: @max_tx, max_rx: @max_rx},
+        { hwaddr: @mac_address, max_tx: @max_tx, max_rx: @max_rx }
       )
       NetAccounting.add_netif(@vps_id, @user_id, @netif_id, @name)
       ok

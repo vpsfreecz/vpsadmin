@@ -5,8 +5,8 @@ module NodeCtld
 
     def exec
       honor_state do
-        osctl(%i(ct stop), @vps_id)
-        osctl(%i(ct netif rename), [@vps_id, @original, @name])
+        osctl(%i[ct stop], @vps_id)
+        osctl(%i[ct netif rename], [@vps_id, @original, @name])
       end
 
       NetAccounting.rename_netif(@vps_id, @netif_id, @name)
@@ -20,8 +20,8 @@ module NodeCtld
 
     def rollback
       honor_state do
-        osctl(%i(ct stop), @vps_id)
-        osctl(%i(ct netif rename), [@vps_id, @name, @original])
+        osctl(%i[ct stop], @vps_id)
+        osctl(%i[ct netif rename], [@vps_id, @name, @original])
       end
 
       NetAccounting.rename_netif(@vps_id, @netif_id, @original)

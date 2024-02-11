@@ -1,12 +1,13 @@
 module VpsAdmin::API
   class Authentication::Basic < HaveAPI::Authentication::Basic::Provider
     protected
+
     # @return [::UserSession, nil]
     def find_user(request, username, password)
       auth = Operations::Authentication::Password.run(
         username,
         password,
-        multi_factor: false,
+        multi_factor: false
       )
 
       if auth.nil? || !auth.authenticated?
@@ -27,7 +28,6 @@ module VpsAdmin::API
       end
 
       Operations::UserSession::NewBasicLogin.run(auth.user, request).user
-
     rescue Exceptions::OperationError => e
       raise Exceptions::AuthenticationError, e.message
     end

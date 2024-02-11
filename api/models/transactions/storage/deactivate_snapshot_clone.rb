@@ -10,7 +10,7 @@ module Transactions::Storage
 
       {
         clone_name: cl.name,
-        pool_fs: cl.snapshot_in_pool.dataset_in_pool.pool.filesystem,
+        pool_fs: cl.snapshot_in_pool.dataset_in_pool.pool.filesystem
       }
     end
   end

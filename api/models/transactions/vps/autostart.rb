@@ -11,13 +11,13 @@ module Transactions::Vps
       {
         new: {
           enable: enable.nil? ? vps.autostart_enable : enable,
-          priority: priority || vps.autostart_priority,
+          priority: priority || vps.autostart_priority
         },
         original: {
           enable: vps.autostart_enable,
-          priority: vps.autostart_priority,
+          priority: vps.autostart_priority
         },
-        revert: revert,
+        revert: revert
       }
     end
   end

@@ -6,7 +6,7 @@ module NodeCtld
     include Utils::Zfs
 
     def exec
-      zfs(:create, "-o canmount=noauto", tree_name)
+      zfs(:create, '-o canmount=noauto', tree_name)
     end
 
     def rollback
@@ -14,6 +14,7 @@ module NodeCtld
     end
 
     protected
+
     def tree_name
       "#{@pool_fs}/#{@dataset_name}/#{@tree}"
     end

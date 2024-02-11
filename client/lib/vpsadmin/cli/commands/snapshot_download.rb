@@ -9,7 +9,7 @@ module VpsAdmin::CLI::Commands
         delete_after: true,
         send_mail: false,
         checksum: true,
-        format: 'archive',
+        format: 'archive'
       }
 
       opts.on('-f', '--format FORMAT', 'archive, stream or incremental_stream') do |f|
@@ -59,7 +59,7 @@ module VpsAdmin::CLI::Commands
         @opts[:snapshot] = snapshot_chooser
 
       elsif args.size != 1
-        warn "Provide exactly one SNAPSHOT_ID as an argument"
+        warn 'Provide exactly one SNAPSHOT_ID as an argument'
         exit(false)
 
       else
@@ -86,11 +86,11 @@ module VpsAdmin::CLI::Commands
 
       if created
         if action == :resume
-          warn "Unable to resume the download: the file has been deleted from the server"
+          warn 'Unable to resume the download: the file has been deleted from the server'
           exit(false)
         end
 
-        msg "The download is being prepared..."
+        msg 'The download is being prepared...'
         sleep(5)
 
       else
@@ -107,13 +107,11 @@ module VpsAdmin::CLI::Commands
           progress: !@opts[:quiet] && (f == STDOUT ? STDERR : STDOUT),
           position: pos,
           max_rate: @opts[:max_rate],
-          checksum: @opts[:checksum],
+          checksum: @opts[:checksum]
         )
-
       rescue VpsAdmin::CLI::DownloadError => e
         warn e.message
         exit(false)
-
       ensure
         f.close
       end
@@ -122,6 +120,7 @@ module VpsAdmin::CLI::Commands
     end
 
     protected
+
     def open_file(path)
       f = action = nil
       pos = 0
@@ -141,7 +140,7 @@ module VpsAdmin::CLI::Commands
             action = {
               'r' => :resume,
               'o' => :overwrite,
-              '' => false,
+              '' => false
             }[STDIN.readline.strip.downcase]
           end
 
@@ -201,7 +200,7 @@ module VpsAdmin::CLI::Commands
       end
 
       if snap_map.empty?
-        warn "There are no snapshots to choose from, create one first."
+        warn 'There are no snapshots to choose from, create one first.'
         exit(false)
       end
 

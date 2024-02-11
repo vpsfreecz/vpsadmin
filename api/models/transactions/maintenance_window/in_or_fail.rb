@@ -18,13 +18,13 @@ module Transactions::MaintenanceWindow
         window_hashes << {
           weekday: w.weekday,
           opens_at: w.opens_at,
-          closes_at: w.closes_at,
+          closes_at: w.closes_at
         }
       end
 
       {
         windows: window_hashes,
-        reserve_time: reserve_time,
+        reserve_time: reserve_time
       }
     end
   end

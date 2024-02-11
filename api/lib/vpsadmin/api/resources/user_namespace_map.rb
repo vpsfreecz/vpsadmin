@@ -30,21 +30,19 @@ class VpsAdmin::API::Resources::UserNamespaceMap < HaveAPI::Resource
 
     authorize do |u|
       allow if u.role == :admin
-      restrict user_namespaces: {user_id: u.id}
-      input whitelist: %i(limit offset user_namespace)
+      restrict user_namespaces: { user_id: u.id }
+      input whitelist: %i[limit offset user_namespace]
       allow
     end
 
     def query
       q = self.class.model.joins(:user_namespace).where(with_restricted)
 
-      %i(user_namespace).each do |v|
+      %i[user_namespace].each do |v|
         q = q.where(v => input[v]) if input[v]
       end
 
-      if input.has_key?(:user)
-        q = q.where(user_namespaces: {user_id: input[:user].id})
-      end
+      q = q.where(user_namespaces: { user_id: input[:user].id }) if input.has_key?(:user)
 
       q
     end
@@ -65,14 +63,14 @@ class VpsAdmin::API::Resources::UserNamespaceMap < HaveAPI::Resource
 
     authorize do |u|
       allow if u.role == :admin
-      restrict user_namespaces: {user_id: u.id}
+      restrict user_namespaces: { user_id: u.id }
       allow
     end
 
     def prepare
       @map = self.class.model.joins(:user_namespace).find_by!(with_restricted(
-        user_namespace_maps: {id: params[:user_namespace_map_id]},
-      ))
+                                                                user_namespace_maps: { id: params[:user_namespace_map_id] }
+                                                              ))
     end
 
     def exec
@@ -93,14 +91,12 @@ class VpsAdmin::API::Resources::UserNamespaceMap < HaveAPI::Resource
       use :all
     end
 
-    authorize do |u|
+    authorize do |_u|
       allow
     end
 
     def exec
-      if !current_user.role == :admin && input[:user_namespace].user_id != current_user.id
-        error('access denied')
-      end
+      error('access denied') if !current_user.role == :admin && input[:user_namespace].user_id != current_user.id
 
       UserNamespaceMap.create_direct!(input[:user_namespace], input[:label])
     end
@@ -110,7 +106,7 @@ class VpsAdmin::API::Resources::UserNamespaceMap < HaveAPI::Resource
     desc 'Edit user namespace map'
 
     input do
-      use :common, include: %i(user_namespace label)
+      use :common, include: %i[user_namespace label]
       patch :user_namespace, required: true
       patch :label, required: true
     end
@@ -121,14 +117,14 @@ class VpsAdmin::API::Resources::UserNamespaceMap < HaveAPI::Resource
 
     authorize do |u|
       allow if u.role == :admin
-      restrict user_namespaces: {user_id: u.id}
+      restrict user_namespaces: { user_id: u.id }
       allow
     end
 
     def exec
       map = self.class.model.joins(:user_namespace).find_by!(with_restricted(
-        id: params[:user_namespace_map_id],
-      ))
+                                                               id: params[:user_namespace_map_id]
+                                                             ))
 
       map.update!(label: input[:label]) if input[:label]
       map
@@ -140,14 +136,14 @@ class VpsAdmin::API::Resources::UserNamespaceMap < HaveAPI::Resource
 
     authorize do |u|
       allow if u.role == :admin
-      restrict user_namespaces: {user_id: u.id}
+      restrict user_namespaces: { user_id: u.id }
       allow
     end
 
     def exec
       map = self.class.model.joins(:user_namespace).find_by!(with_restricted(
-        id: params[:user_namespace_map_id],
-      ))
+                                                               id: params[:user_namespace_map_id]
+                                                             ))
 
       error('the map is in use, unable to delete at this time') if map.in_use?
 
@@ -173,7 +169,7 @@ class VpsAdmin::API::Resources::UserNamespaceMap < HaveAPI::Resource
     end
 
     params(:editable) do
-      use :all, include: %i(vps_id ns_id count)
+      use :all, include: %i[vps_id ns_id count]
     end
 
     class Index < HaveAPI::Actions::Default::Index
@@ -185,16 +181,16 @@ class VpsAdmin::API::Resources::UserNamespaceMap < HaveAPI::Resource
 
       authorize do |u|
         allow if u.role == :admin
-        restrict user_namespaces: {user_id: u.id}
+        restrict user_namespaces: { user_id: u.id }
         allow
       end
 
       def query
         self.class.model.joins(
-          user_namespace_map: :user_namespace,
+          user_namespace_map: :user_namespace
         ).where(with_restricted(
-          user_namespace_maps: {id: params[:user_namespace_map_id]},
-        ))
+                  user_namespace_maps: { id: params[:user_namespace_map_id] }
+                ))
       end
 
       def count
@@ -216,7 +212,7 @@ class VpsAdmin::API::Resources::UserNamespaceMap < HaveAPI::Resource
 
       authorize do |u|
         allow if u.role == :admin
-        restrict user_namespaces: {user_id: u.id}
+        restrict user_namespaces: { user_id: u.id }
         allow
       end
 
@@ -224,8 +220,8 @@ class VpsAdmin::API::Resources::UserNamespaceMap < HaveAPI::Resource
         @entry = self.class.model.joins(
           user_namespace_map: :user_namespace
         ).find_by!(with_restricted(
-          user_namespace_map_entries: {id: params[:entry_id]},
-        ))
+                     user_namespace_map_entries: { id: params[:entry_id] }
+                   ))
       end
 
       def exec
@@ -237,7 +233,7 @@ class VpsAdmin::API::Resources::UserNamespaceMap < HaveAPI::Resource
       desc 'Create a new map entry'
 
       input do
-        arr = %i(kind vps_id ns_id count)
+        arr = %i[kind vps_id ns_id count]
 
         use :all, include: arr
         arr.each { |v| patch v, required: true }
@@ -249,14 +245,14 @@ class VpsAdmin::API::Resources::UserNamespaceMap < HaveAPI::Resource
 
       authorize do |u|
         allow if u.role == :admin
-        restrict user_namespaces: {user_id: u.id}
+        restrict user_namespaces: { user_id: u.id }
         allow
       end
 
       def exec
         map = ::UserNamespaceMap.joins(:user_namespace).find_by!(with_restricted(
-          user_namespace_maps: {id: params[:user_namespace_map_id]},
-        ))
+                                                                   user_namespace_maps: { id: params[:user_namespace_map_id] }
+                                                                 ))
 
         if !current_user.role == :admin && map.user_namespace.user_id != current_user.id
           error('access denied')
@@ -265,8 +261,8 @@ class VpsAdmin::API::Resources::UserNamespaceMap < HaveAPI::Resource
           error('the map is in use, it cannot be changed at this time')
 
         elsif map.user_namespace_map_entries.where(
-          kind: ::UserNamespaceMapEntry.kinds[input[:kind]],
-              ).count >= 10
+          kind: ::UserNamespaceMapEntry.kinds[input[:kind]]
+        ).count >= 10
           # ZFS properties uidmap/gidmap do not accept more than 10 entries
           # at the moment.
           error('maps are limited to 10 UID and 10 GID entries')
@@ -275,7 +271,6 @@ class VpsAdmin::API::Resources::UserNamespaceMap < HaveAPI::Resource
         map.acquire_lock do
           UserNamespaceMapEntry.create!(input.merge(user_namespace_map: map))
         end
-
       rescue ActiveRecord::RecordInvalid => e
         error('create failed', to_param_names(e.record.errors.to_hash))
       end
@@ -285,7 +280,7 @@ class VpsAdmin::API::Resources::UserNamespaceMap < HaveAPI::Resource
       desc 'Edit map entry'
 
       input do
-        use :all, include: %i(vps_id ns_id count)
+        use :all, include: %i[vps_id ns_id count]
       end
 
       output do
@@ -294,7 +289,7 @@ class VpsAdmin::API::Resources::UserNamespaceMap < HaveAPI::Resource
 
       authorize do |u|
         allow if u.role == :admin
-        restrict user_namespaces: {user_id: u.id}
+        restrict user_namespaces: { user_id: u.id }
         allow
       end
 
@@ -302,19 +297,16 @@ class VpsAdmin::API::Resources::UserNamespaceMap < HaveAPI::Resource
         entry = self.class.model.joins(
           user_namespace_map: :user_namespace
         ).find_by!(with_restricted(
-          user_namespace_map_entries: {id: params[:entry_id]},
-        ))
+                     user_namespace_map_entries: { id: params[:entry_id] }
+                   ))
 
-        if entry.user_namespace_map.in_use?
-          error('the map is in use, it cannot be changed at this time')
-        end
+        error('the map is in use, it cannot be changed at this time') if entry.user_namespace_map.in_use?
 
         entry.user_namespace_map.acquire_lock do
           entry.update!(input)
         end
 
         entry
-
       rescue ActiveRecord::RecordInvalid => e
         error('update failed', to_param_names(e.record.errors.to_hash))
       end
@@ -325,7 +317,7 @@ class VpsAdmin::API::Resources::UserNamespaceMap < HaveAPI::Resource
 
       authorize do |u|
         allow if u.role == :admin
-        restrict user_namespaces: {user_id: u.id}
+        restrict user_namespaces: { user_id: u.id }
         allow
       end
 
@@ -333,12 +325,10 @@ class VpsAdmin::API::Resources::UserNamespaceMap < HaveAPI::Resource
         entry = self.class.model.joins(
           user_namespace_map: :user_namespace
         ).find_by!(with_restricted(
-          user_namespace_map_entries: {id: params[:entry_id]},
-        ))
+                     user_namespace_map_entries: { id: params[:entry_id] }
+                   ))
 
-        if entry.user_namespace_map.in_use?
-          error('the map is in use, it cannot be changed at this time')
-        end
+        error('the map is in use, it cannot be changed at this time') if entry.user_namespace_map.in_use?
 
         entry.user_namespace_map.acquire_lock do
           entry.destroy!

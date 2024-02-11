@@ -17,8 +17,8 @@ class AddNetworkInterfaceAccounting < ActiveRecord::Migration[6.1]
     end
 
     add_index :network_interface_monitors, :network_interface_id,
-      name: 'index_network_interface_monitors_unique',
-      unique: true
+              name: 'index_network_interface_monitors_unique',
+              unique: true
 
     create_table :network_interface_yearly_accountings do |t|
       t.references  :network_interface,       null: false, index: false
@@ -32,15 +32,15 @@ class AddNetworkInterfaceAccounting < ActiveRecord::Migration[6.1]
     end
 
     add_index :network_interface_yearly_accountings, :network_interface_id,
-      name: 'index_network_interface_yearly_accountings_on_netif'
+              name: 'index_network_interface_yearly_accountings_on_netif'
 
     add_index :network_interface_yearly_accountings, :user_id,
-      name: 'index_network_interface_yearly_accountings_on_user_id'
+              name: 'index_network_interface_yearly_accountings_on_user_id'
 
     add_index :network_interface_yearly_accountings,
-      %i(network_interface_id year),
-      name: 'index_network_interface_yearly_accountings_unique',
-      unique: true
+              %i[network_interface_id year],
+              name: 'index_network_interface_yearly_accountings_unique',
+              unique: true
 
     create_table :network_interface_monthly_accountings do |t|
       t.references  :network_interface,       null: false, index: false
@@ -55,15 +55,15 @@ class AddNetworkInterfaceAccounting < ActiveRecord::Migration[6.1]
     end
 
     add_index :network_interface_monthly_accountings, :network_interface_id,
-      name: 'index_network_interface_monthly_accountings_on_netif'
+              name: 'index_network_interface_monthly_accountings_on_netif'
 
     add_index :network_interface_monthly_accountings, :user_id,
-      name: 'index_network_interface_monthly_accountings_on_user_id'
+              name: 'index_network_interface_monthly_accountings_on_user_id'
 
     add_index :network_interface_monthly_accountings,
-      %i(network_interface_id year month),
-      name: 'index_network_interface_monthly_accountings_unique',
-      unique: true
+              %i[network_interface_id year month],
+              name: 'index_network_interface_monthly_accountings_unique',
+              unique: true
 
     create_table :network_interface_daily_accountings do |t|
       t.references  :network_interface,       null: false, index: false
@@ -79,15 +79,15 @@ class AddNetworkInterfaceAccounting < ActiveRecord::Migration[6.1]
     end
 
     add_index :network_interface_daily_accountings, :network_interface_id,
-      name: 'index_network_interface_daily_accountings_on_netif'
+              name: 'index_network_interface_daily_accountings_on_netif'
 
     add_index :network_interface_daily_accountings, :user_id,
-      name: 'index_network_interface_daily_accountings_on_user_id'
+              name: 'index_network_interface_daily_accountings_on_user_id'
 
     add_index :network_interface_daily_accountings,
-      %i(network_interface_id year month day),
-      name: 'index_network_interface_daily_accountings_unique',
-      unique: true
+              %i[network_interface_id year month day],
+              name: 'index_network_interface_daily_accountings_unique',
+              unique: true
 
     reversible do |dir|
       dir.up do

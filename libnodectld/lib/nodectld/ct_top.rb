@@ -32,12 +32,9 @@ module NodeCtld
       loop do
         run(&block)
 
-        if stop?
-          break
+        break if stop?
 
-        else
-          sleep(1)
-        end
+        sleep(1)
       end
     end
 
@@ -58,6 +55,7 @@ module NodeCtld
     end
 
     protected
+
     attr_reader :rate, :pipe, :pid
 
     def run
@@ -76,7 +74,7 @@ module NodeCtld
       until pipe.eof?
         begin
           data = JSON.parse(pipe.readline, symbolize_names: true)
-        rescue => e
+        rescue StandardError => e
           log(:warn, "Unable to parse output from ct top as JSON: #{e.message} (#{e.class})")
           next
         end

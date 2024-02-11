@@ -16,11 +16,12 @@ module NodeCtld
     end
 
     protected
+
     def set_autostart(opts)
       if opts['enable']
-        osctl(%i(ct set autostart), @vps_id, {priority: opts['priority']})
+        osctl(%i[ct set autostart], @vps_id, { priority: opts['priority'] })
       else
-        osctl(%i(ct unset autostart), @vps_id)
+        osctl(%i[ct unset autostart], @vps_id)
       end
     end
   end

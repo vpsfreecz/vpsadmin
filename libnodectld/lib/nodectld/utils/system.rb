@@ -17,11 +17,11 @@ module NodeCtld
           {
             cmd: err.cmd,
             exitstatus: err.rc,
-            error: err.output,
+            error: err.output
           }
         end
 
-        fail 'run out of attempts'
+        raise 'run out of attempts'
       end
     end
   end

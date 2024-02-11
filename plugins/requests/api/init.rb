@@ -1,6 +1,6 @@
 module VpsAdmin::API::Plugins
   module Requests
-    module TransactionChains ; end
+    module TransactionChains; end
   end
 end
 

@@ -6,11 +6,11 @@ class Setup < ActiveRecord::Migration
       t.integer     :state,               null: false, default: 0
       t.string      :api_ip_addr,         null: false, limit: 127
       t.string      :api_ip_ptr,          null: false
-      t.string      :client_ip_addr,      null: true,  limit: 127
+      t.string      :client_ip_addr,      null: true, limit: 127
       t.string      :client_ip_ptr,       null: true
       t.integer     :last_mail_id,        null: false, default: 0
       t.references  :admin,               null: true
-      t.string      :admin_response,      null: true,  limit: 500
+      t.string      :admin_response,      null: true, limit: 500
       t.timestamps
 
       # Registration fields
@@ -25,14 +25,14 @@ class Setup < ActiveRecord::Migration
       t.string      :note,                limit: 500
       t.references  :os_template
       t.references  :location
-      t.string      :currency,            limit: 10
+      t.string      :currency, limit: 10
       t.references  :language
 
       # Change request fields
       # full_name
       # email
       # address
-      t.string      :change_reason,       null: true,  limit: 255
+      t.string      :change_reason, null: true, limit: 255
     end
 
     add_index :user_requests, :user_id
@@ -45,7 +45,7 @@ class Setup < ActiveRecord::Migration
         next unless table_exists?(:members_changes)
 
         ActiveRecord::Base.connection.execute(
-            "INSERT INTO user_requests (
+          "INSERT INTO user_requests (
               user_id,
               type,
               state,

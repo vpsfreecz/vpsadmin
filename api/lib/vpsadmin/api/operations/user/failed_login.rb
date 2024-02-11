@@ -20,7 +20,7 @@ module VpsAdmin::API
           client_ip_addr: request.env['HTTP_CLIENT_IP'],
           client_ip_ptr: request.env['HTTP_CLIENT_IP'] && get_ptr(request.env['HTTP_CLIENT_IP']),
           user_agent: ::UserAgent.find_or_create!(request.user_agent || ''),
-          client_version: request.user_agent || '',
+          client_version: request.user_agent || ''
         )
         ::User.increment_counter(:failed_login_count, user.id)
       end

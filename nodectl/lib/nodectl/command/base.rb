@@ -35,9 +35,7 @@ module NodeCtl
         "#{cmd} #{args}"
       end
 
-      def run
-
-      end
+      def run; end
 
       def inherited(subclass)
         subclass.args(@args)
@@ -69,14 +67,10 @@ module NodeCtl
     end
 
     # Validate command-line options and arguments
-    def validate
-
-    end
+    def validate; end
 
     # Execute command
-    def execute
-
-    end
+    def execute; end
 
     # Command name
     # @return [Symbol]
@@ -85,12 +79,13 @@ module NodeCtl
     end
 
     protected
+
     def ok
-      {status: true}
+      { status: true }
     end
 
     def error(msg)
-      {status: false, message: msg}
+      { status: false, message: msg }
     end
   end
 end

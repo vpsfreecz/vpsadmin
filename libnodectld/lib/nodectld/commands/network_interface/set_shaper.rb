@@ -5,12 +5,12 @@ module NodeCtld
 
     def exec
       osctl(
-        %i(ct netif set),
+        %i[ct netif set],
         [@vps_id, @veth_name],
         {
           max_tx: @max_tx && @max_tx['new'],
-          max_rx: @max_rx && @max_rx['new'],
-        }.compact,
+          max_rx: @max_rx && @max_rx['new']
+        }.compact
       )
 
       ok
@@ -18,12 +18,12 @@ module NodeCtld
 
     def rollback
       osctl(
-        %i(ct netif set),
+        %i[ct netif set],
         [@vps_id, @veth_name],
         {
           max_tx: @max_tx && @max_tx['original'],
-          max_rx: @max_rx && @max_rx['original'],
-        }.compact,
+          max_rx: @max_rx && @max_rx['original']
+        }.compact
       )
 
       ok

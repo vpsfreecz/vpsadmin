@@ -16,20 +16,21 @@ module TransactionChains
       ret.call_class_hooks_for(
         :morph,
         self,
-        args: [ret, orig_kind, ret.kind],
+        args: [ret, orig_kind, ret.kind]
       )
 
       ret
     end
 
     protected
+
     def into_veth_routed(netif)
       orig_kind = netif.kind
 
       update_unique do
         netif.update!(
           kind: 'veth_routed',
-          mac: gen_mac,
+          mac: gen_mac
         )
       end
 
@@ -40,7 +41,7 @@ module TransactionChains
         t.edit_before(
           netif,
           kind: ::NetworkInterface.kinds[orig_kind],
-          mac: nil,
+          mac: nil
         )
       end
 
@@ -49,16 +50,13 @@ module TransactionChains
 
     def update_unique
       5.times do
-        begin
-          return yield
-
-        rescue ActiveRecord::RecordNotUnique
-          sleep(0.25)
-          next
-        end
+        return yield
+      rescue ActiveRecord::RecordNotUnique
+        sleep(0.25)
+        next
       end
 
-      fail 'unable to generate a unique mac address'
+      raise 'unable to generate a unique mac address'
     end
   end
 end

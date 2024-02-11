@@ -11,8 +11,8 @@ class TransactionChain < ActiveRecord::Base
   belongs_to :user
   belongs_to :user_session
 
-  enum state: %i(staged queued done rollbacking failed fatal resolved)
-  enum concern_type: %i(chain_affect chain_transform)
+  enum state: %i[staged queued done rollbacking failed fatal resolved]
+  enum concern_type: %i[chain_affect chain_transform]
 
   attr_reader :acquired_locks
   attr_accessor :last_id, :last_node_id, :dst_chain, :named, :global_locks,
@@ -60,14 +60,12 @@ class TransactionChain < ActiveRecord::Base
       ret = chain.link_chain(*args, **kwargs)
 
       if chain.empty?
-        if chain.class.allow_empty?
-          chain.release_locks
-          chain.destroy
-          next
+        raise 'empty' unless chain.class.allow_empty?
 
-        else
-          fail 'empty'
-        end
+        chain.release_locks
+        chain.destroy
+        next
+
       end
 
       chain.state = :queued
@@ -80,7 +78,7 @@ class TransactionChain < ActiveRecord::Base
   # The chain name is a class name in lowercase with added
   # underscores.
   def self.chain_name
-    self.to_s.demodulize.underscore
+    to_s.demodulize.underscore
   end
 
   # Include this chain in +chain+. All remaining arguments are passed
@@ -266,14 +264,14 @@ class TransactionChain < ActiveRecord::Base
     prio = opts[:prio] || self.prio
 
     c, ret = chain.use_in(self, {
-      args: args.is_a?(Array) ? args : [args],
-      kwargs: kwargs,
-      urgent: urgent,
-      prio: prio,
-      reversible: opts[:reversible],
-      method: opts[:method],
-      hooks: opts[:hooks],
-    })
+                            args: args.is_a?(Array) ? args : [args],
+                            kwargs: kwargs,
+                            urgent: urgent,
+                            prio: prio,
+                            reversible: opts[:reversible],
+                            method: opts[:method],
+                            hooks: opts[:hooks]
+                          })
     @last_id = c.last_id
     @last_node_id = c.last_node_id
     ret
@@ -322,7 +320,7 @@ class TransactionChain < ActiveRecord::Base
   end
 
   def format_concerns
-    ret = {type: concern_type[6..-1], objects: []}
+    ret = { type: concern_type[6..-1], objects: [] }
 
     transaction_chain_concerns.each do |c|
       ret[:objects] << [c.class_name, c.row_id]
@@ -339,7 +337,7 @@ class TransactionChain < ActiveRecord::Base
 
   # @return [TransactionChain]
   def current_chain
-    self.id ? self : dst_chain
+    id ? self : dst_chain
   end
 
   def empty?
@@ -353,15 +351,11 @@ class TransactionChain < ActiveRecord::Base
   # Return the node ID of last transaction. Find first available server if no
   # transactions have been appended yet.
   def find_node_id
-    if @last_node_id
-      @last_node_id
-
-    else
-      @last_node_id = ::Node.first_available.id
-    end
+    @last_node_id || @last_node_id = ::Node.first_available.id
   end
 
   private
+
   # @param dep
   # @param klass
   # @param opts [Hash]
@@ -375,20 +369,20 @@ class TransactionChain < ActiveRecord::Base
   # @param retain_context [Boolean]
   def do_append(dep, klass, opts, block, retain_context = false)
     t_opts = {
-      args: opts[:args].is_a?(Array) ? opts[:args] : [ opts[:args] ],
+      args: opts[:args].is_a?(Array) ? opts[:args] : [opts[:args]],
       kwargs: opts[:kwargs],
-      urgent: opts[:urgent].nil? ? self.urgent : opts[:urgent],
-      prio: opts[:prio] || self.prio,
-      reversible: opts[:reversible] || self.reversible,
+      urgent: opts[:urgent].nil? ? urgent : opts[:urgent],
+      prio: opts[:prio] || prio,
+      reversible: opts[:reversible] || reversible,
       queue: opts[:queue],
-      retain_context: retain_context,
+      retain_context: retain_context
     }
 
     @dst_chain.size += 1
     t = klass.fire_chained(@dst_chain, dep, t_opts, &block)
     @last_node_id = t.node_id
     @last_id = t.id
-    @named[ opts[:name] ] = @last_id if opts[:name]
+    @named[opts[:name]] = @last_id if opts[:name]
     @last_id
   end
 
@@ -399,43 +393,45 @@ class TransactionChain < ActiveRecord::Base
     t = ::NodeCurrentStatus.table_name
     chain.mail_server = ::Node.find_by(role: ::Node.roles[:mailer], active: true)
     chain.mail_server ||= ::Node
-      .joins(:node_current_status)
-      .where(
-        "(#{t}.updated_at IS NULL AND UNIX_TIMESTAMP() - UNIX_TIMESTAMP(CONVERT_TZ(#{t}.created_at, 'UTC', 'Europe/Prague')) <= 120)
+                          .joins(:node_current_status)
+                          .where(
+                            "(#{t}.updated_at IS NULL AND UNIX_TIMESTAMP() - UNIX_TIMESTAMP(CONVERT_TZ(#{t}.created_at, 'UTC', 'Europe/Prague')) <= 120)
         OR
         (UNIX_TIMESTAMP() - UNIX_TIMESTAMP(CONVERT_TZ(#{t}.updated_at, 'UTC', 'Europe/Prague')) <= 120)"
-      ).where(
-        active: true,
-      ).take!
+                          ).where(
+                            active: true
+                          ).take!
   end
 end
 
 module TransactionChains
-  module Cluster           ; end
-  module Node              ; end
-  module Vps               ; end
-  module Ip                ; end
-  module Pool              ; end
-  module Dataset           ; end
-  module DatasetInPool     ; end
-  module Snapshot          ; end
-  module SnapshotInPool    ; end
-  module DatasetTree       ; end
-  module Branch            ; end
-  module User              ; end
-  module Lifetimes         ; end
-  module DnsResolver       ; end
-  module Mail              ; end
-  module MigrationPlan     ; end
-  module Maintenance       ; end
-  module Network           ; end
-  module UserNamespace     ; end
-  module UserNamespaceMap  ; end
+  module Cluster; end
+  module Node; end
+  module Vps; end
+  module Ip; end
+  module Pool; end
+  module Dataset; end
+  module DatasetInPool; end
+  module Snapshot; end
+  module SnapshotInPool; end
+  module DatasetTree; end
+  module Branch; end
+  module User; end
+  module Lifetimes; end
+  module DnsResolver; end
+  module Mail; end
+  module MigrationPlan; end
+  module Maintenance; end
+  module Network; end
+  module UserNamespace; end
+  module UserNamespaceMap; end
+
   module NetworkInterface
-    module Venet           ; end
-    module Veth            ; end
-    module VethRouted      ; end
+    module Venet; end
+    module Veth; end
+    module VethRouted; end
   end
-  module Export            ; end
-  module IncidentReport    ; end
+
+  module Export; end
+  module IncidentReport; end
 end

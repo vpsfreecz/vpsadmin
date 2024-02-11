@@ -6,7 +6,7 @@ class UserRequest < ActiveRecord::Base
 
   has_paper_trail
 
-  enum state: %i(awaiting approved denied ignored pending_correction)
+  enum state: %i[awaiting approved denied ignored pending_correction]
 
   validates :api_ip_addr, :api_ip_ptr, :state, presence: true
 
@@ -48,7 +48,7 @@ class UserRequest < ActiveRecord::Base
       approve: :approved,
       deny: :denied,
       ignore: :ignored,
-      request_correction: :pending_correction,
+      request_correction: :pending_correction
     }[action]
 
     if target_state == state.to_sym
@@ -61,34 +61,24 @@ class UserRequest < ActiveRecord::Base
       target_state,
       action,
       reason,
-      params,
+      params
     )
   end
 
-  def approve(chain, params)
+  def approve(chain, params); end
 
-  end
+  def deny(chain, params); end
 
-  def deny(chain, params)
+  def ignore(chain, params); end
 
-  end
+  def invalidate(chain, params); end
 
-  def ignore(chain, params)
-
-  end
-
-  def invalidate(chain, params)
-
-  end
-
-  def request_correction(chain, params)
-
-  end
+  def request_correction(chain, params); end
 
   private
+
   def get_ptr(ip)
     Resolv.new.getname(ip)
-
   rescue Resolv::ResolvError => e
     e.message
   end

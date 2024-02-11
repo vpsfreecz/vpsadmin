@@ -15,7 +15,7 @@ module TransactionChains
       concerns(:affect, [vps.class.name, vps.id])
 
       vps_resources = vps.allocate_resources(
-        required: %i(cpu memory swap),
+        required: %i[cpu memory swap],
         optional: [],
         user: vps.user,
         chain: self
@@ -24,7 +24,7 @@ module TransactionChains
       pool = ::Pool.take_by_node!(vps.node, role: :hypervisor)
 
       vps.user_namespace_map ||= ::UserNamespaceMap.joins(:user_namespace).where(
-        user_namespaces: {user_id: vps.user_id}
+        user_namespaces: { user_id: vps.user_id }
       ).take!
 
       ds = ::Dataset.new(
@@ -37,17 +37,17 @@ module TransactionChains
       )
 
       dip = use_chain(Dataset::Create, args: [
-        pool,
-        nil,
-        [ds],
-        {
-          automount: false,
-          properties: {refquota: vps.diskspace},
-          user: vps.user,
-          label: "vps#{vps.id}",
-          userns_map: vps.user_namespace_map,
-        },
-      ]).last
+                        pool,
+                        nil,
+                        [ds],
+                        {
+                          automount: false,
+                          properties: { refquota: vps.diskspace },
+                          user: vps.user,
+                          label: "vps#{vps.id}",
+                          userns_map: vps.user_namespace_map
+                        }
+                      ]).last
 
       vps.dataset_in_pool = dip
 
@@ -77,7 +77,7 @@ module TransactionChains
             weekday: i,
             is_open: true,
             opens_at: 60,
-            closes_at: 5*60,
+            closes_at: 5 * 60
           )
           w.save!(validate: false)
           just_create(w)
@@ -87,28 +87,26 @@ module TransactionChains
       # Set default features
       vps_features.each { |f| f.set_to_default }
 
-      if vps_features.any?(&:changed?)
-        use_chain(Vps::Features, args: [vps, vps_features])
-      end
+      use_chain(Vps::Features, args: [vps, vps_features]) if vps_features.any?(&:changed?)
 
       # Create network interface
-      if vps.node.vpsadminos?
-        netif = use_chain(
-          NetworkInterface::VethRouted::Create,
-          args: [vps, 'venet0']
-        )
+      netif = if vps.node.vpsadminos?
+                use_chain(
+                  NetworkInterface::VethRouted::Create,
+                  args: [vps, 'venet0']
+                )
 
-      else
-        netif = use_chain(NetworkInterface::Venet::Create, args: vps)
-      end
+              else
+                use_chain(NetworkInterface::Venet::Create, args: vps)
+              end
 
       # Add IP addresses
-      versions = [:ipv4, :ipv4_private]
+      versions = %i[ipv4 ipv4_private]
       versions << :ipv6 if vps.node.location.has_ipv6
 
       ip_resources = []
       user_env = vps.user.environment_user_configs.find_by!(
-        environment: vps.node.location.environment,
+        environment: vps.node.location.environment
       )
 
       versions.each do |v|
@@ -119,19 +117,19 @@ module TransactionChains
           args: [
             ::ClusterResource.find_by!(name: v),
             netif,
-            opts[v],
+            opts[v]
           ],
           kwargs: {
             host_addrs: true,
-            address_location: opts[:address_location],
+            address_location: opts[:address_location]
           },
-          method: :allocate_to_netif,
+          method: :allocate_to_netif
         )
         ip_resources << user_env.reallocate_resource!(
           v,
           user_env.send(v) + n,
           user: vps.user,
-          chain: self,
+          chain: self
         )
       end
 
@@ -151,10 +149,10 @@ module TransactionChains
       vps.dns_resolver ||= ::DnsResolver.pick_suitable_resolver_for_vps(vps)
 
       append(Transactions::Vps::DnsResolver, args: [
-        vps,
-        vps.dns_resolver,
-        vps.dns_resolver
-      ])
+               vps,
+               vps.dns_resolver,
+               vps.dns_resolver
+             ])
 
       use_chain(Vps::SetResources, args: [vps, vps_resources])
 
@@ -162,9 +160,7 @@ module TransactionChains
         use_chain(Vps::DeployPublicKey, args: [vps, key])
       end
 
-      if opts.fetch(:start, true)
-        use_chain(TransactionChains::Vps::Start, args: vps)
-      end
+      use_chain(TransactionChains::Vps::Start, args: vps) if opts.fetch(:start, true)
 
       vps.save!
 

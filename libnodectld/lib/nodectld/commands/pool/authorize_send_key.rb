@@ -6,22 +6,22 @@ module NodeCtld
     def exec
       osctl_pool(
         @pool_name,
-        %i(receive authorized-keys add),
+        %i[receive authorized-keys add],
         @name,
-        {ctid: @ctid, passphrase: @passphrase, single_use: true},
+        { ctid: @ctid, passphrase: @passphrase, single_use: true },
         {},
-        {input: @pubkey},
+        { input: @pubkey }
       )
     end
 
     def rollback
       osctl_pool(
         @pool_name,
-        %i(receive authorized-keys del),
+        %i[receive authorized-keys del],
         @name,
         {},
         {},
-        {valid_rcs: [1,]},
+        { valid_rcs: [1] }
       )
     end
   end

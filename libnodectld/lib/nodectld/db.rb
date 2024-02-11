@@ -47,18 +47,16 @@ module NodeCtld
         @my.query('BEGIN')
         yield(DbTransaction.new(@my))
         @my.query('COMMIT')
-
       rescue RequestRollback
         log(:info, :sql, 'Rollback requested')
         query('ROLLBACK')
-
-      rescue Mysql2::Error => err
+      rescue Mysql2::Error => e
         query('ROLLBACK')
 
-        if err.message == 'MySQL client is not connected'
+        if e.message == 'MySQL client is not connected'
           log(:warn, :sql, 'MySQL client is not connected')
         else
-          case err.errno
+          case e.errno
           when 1213
             log(:warn, :sql, 'Deadlock found')
 
@@ -97,16 +95,15 @@ module NodeCtld
         end
 
         log(:critical, :sql, 'MySQL transactions failed due to database error, rolling back')
-        p err.inspect
-        p err.traceback if err.respond_to?(:traceback)
-        raise err
-
-      rescue => err
+        p e.inspect
+        p e.traceback if e.respond_to?(:traceback)
+        raise e
+      rescue StandardError => e
         log(:critical, :sql, 'MySQL transactions failed, rolling back')
-        p err.inspect
-        p err.traceback if err.respond_to?(:traceback)
+        p e.inspect
+        p e.traceback if e.respond_to?(:traceback)
         query('ROLLBACK')
-        raise err
+        raise e
       end
     end
 
@@ -121,10 +118,9 @@ module NodeCtld
     end
 
     private
+
     def connect(db)
-      if !db[:host].nil? && db[:hosts].empty?
-        db[:hosts] << db[:host]
-      end
+      db[:hosts] << db[:host] if !db[:host].nil? && db[:hosts].empty?
 
       problem = false
 
@@ -141,15 +137,14 @@ module NodeCtld
               connect_timeout: db[:connect_timeout],
               read_timeout: db[:read_timeout],
               write_timeout: db[:write_timeout],
-              database_timezone: :utc,
+              database_timezone: :utc
             )
             query('SET NAMES UTF8')
             log(:info, :sql, "Connected to #{host}") if problem
             return
-
-          rescue Mysql2::Error => err
+          rescue Mysql2::Error => e
             problem = true
-            log(:warn, :sql, "MySQL error ##{err.errno}: #{err.error}")
+            log(:warn, :sql, "MySQL error ##{e.errno}: #{e.error}")
             log(:info, :sql, 'Trying another host')
           end
 
@@ -161,23 +156,19 @@ module NodeCtld
     end
 
     def protect(try_again = true)
-      begin
-        yield
-
-      rescue Mysql2::Error => err
-        log(:critical, :sql, "MySQL error ##{err.errno}: #{err.error}")
-        close if @my
-        sleep($CFG.get(:db, :retry_interval))
-        connect($CFG.get(:db))
-        retry if try_again
-
-      rescue Errno::EBADF
-        log(:critical, :sql, 'Errno::EBADF raised, reconnecting')
-        close if @my
-        sleep(1)
-        connect($CFG.get(:db))
-        retry if try_again
-      end
+      yield
+    rescue Mysql2::Error => e
+      log(:critical, :sql, "MySQL error ##{e.errno}: #{e.error}")
+      close if @my
+      sleep($CFG.get(:db, :retry_interval))
+      connect($CFG.get(:db))
+      retry if try_again
+    rescue Errno::EBADF
+      log(:critical, :sql, 'Errno::EBADF raised, reconnecting')
+      close if @my
+      sleep(1)
+      connect($CFG.get(:db))
+      retry if try_again
     end
   end
 
@@ -186,13 +177,11 @@ module NodeCtld
       @my = my
     end
 
-    def protect(try_again = true)
-      begin
-        yield
-      rescue Mysql2::Error => err
-        log(:critical, :sql, "MySQL error ##{err.errno}: #{err.error}")
-        raise err
-      end
+    def protect(_try_again = true)
+      yield
+    rescue Mysql2::Error => e
+      log(:critical, :sql, "MySQL error ##{e.errno}: #{e.error}")
+      raise e
     end
 
     def rollback
@@ -210,11 +199,9 @@ module NodeCtld
       @results << @db.query(*args)
     end
 
-    def each
+    def each(&block)
       @results.each do |r|
-        r.each do |row|
-          yield(row)
-        end
+        r.each(&block)
       end
     end
   end
@@ -235,7 +222,7 @@ module NodeCtld
     end
 
     def get!
-      get || (fail 'no row returned')
+      get || (raise 'no row returned')
     end
 
     def count
@@ -243,5 +230,5 @@ module NodeCtld
     end
   end
 
-  class RequestRollback < StandardError ; end
+  class RequestRollback < StandardError; end
 end

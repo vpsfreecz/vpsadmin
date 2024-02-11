@@ -39,7 +39,7 @@ module NodeCtld
         m.body = @text_html
 
       else
-        fail 'Message body missing'
+        raise 'Message body missing'
       end
 
       m.header['X-Mailer'] = 'vpsAdmin'
@@ -50,23 +50,22 @@ module NodeCtld
         port: $CFG.get(:mailer, :smtp_port),
         openssl_verify_mode: OpenSSL::SSL::VERIFY_NONE,
         open_timeout: $CFG.get(:mailer, :smtp_open_timeout),
-        read_timeout: $CFG.get(:mailer, :smtp_read_timeout),
+        read_timeout: $CFG.get(:mailer, :smtp_read_timeout)
       )
 
       tries = 0
 
       begin
         m.deliver
-
       rescue Timeout::Error => e
         tries += 1
 
         if tries <= 3
-          log(:work, self,  'Timeout when sending email: retrying')
+          log(:work, self, 'Timeout when sending email: retrying')
           retry
         end
 
-        log(:work, self,  'Timeout when sending email: out of attempts')
+        log(:work, self, 'Timeout when sending email: out of attempts')
         raise e
       end
 
@@ -78,6 +77,7 @@ module NodeCtld
     end
 
     protected
+
     def has_type?(t)
       v = instance_variable_get("@text_#{t}")
       v && !v.empty?

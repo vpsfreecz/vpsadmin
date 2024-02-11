@@ -2,7 +2,7 @@ class MonitoredEvent < ActiveRecord::Base
   has_many :monitored_event_states
   has_many :monitored_event_logs
   belongs_to :user
-  enum state: %i(monitoring confirmed unconfirmed acknowledged ignored closed)
+  enum state: %i[monitoring confirmed unconfirmed acknowledged ignored closed]
   serialize :action_state
   after_update :log_state
 
@@ -11,7 +11,7 @@ class MonitoredEvent < ActiveRecord::Base
   # TODO: optimize by fetch all monitored violations in advance
   def self.report!(monitor, obj, value, passed, user)
     ret = transaction do
-      event = self.find_by(
+      event = find_by(
         monitor_name: monitor.name,
         class_name: obj.class.name,
         row_id: obj.id,
@@ -19,8 +19,8 @@ class MonitoredEvent < ActiveRecord::Base
           states[:monitoring],
           states[:confirmed],
           states[:acknowledged],
-          states[:ignored],
-        ],
+          states[:ignored]
+        ]
       )
 
       if event.nil?
@@ -28,30 +28,30 @@ class MonitoredEvent < ActiveRecord::Base
 
         if monitor.cooldown
           # Find last confirmed event of the same type
-          last = self.where(
+          last = where(
             monitor_name: monitor.name,
             class_name: obj.class.name,
             row_id: obj.id,
-            state: states[:closed],
+            state: states[:closed]
           ).order('created_at DESC').take
 
           next if last && (last.updated_at + monitor.cooldown) >= Time.now
         end
 
-        event = self.create!(
+        event = create!(
           monitor_name: monitor.name,
           class_name: obj.class.name,
           row_id: obj.id,
           state: states[:monitoring],
           user: user,
-          access_level: monitor.access_level || 0,
+          access_level: monitor.access_level || 0
         )
 
       elsif event.user != user
         event.update!(user: user)
       end
 
-      if %w(acknowledged ignored).include?(event.state) && event.saved_until \
+      if %w[acknowledged ignored].include?(event.state) && event.saved_until \
          && event.saved_until <= Time.now
         event.update!(state: 'confirmed', saved_until: nil)
       end
@@ -65,7 +65,7 @@ class MonitoredEvent < ActiveRecord::Base
       # Log measured value
       event.monitored_event_logs << MonitoredEventLog.new(
         passed: passed,
-        value: value,
+        value: value
       )
 
       # Close passed events
@@ -84,7 +84,7 @@ class MonitoredEvent < ActiveRecord::Base
 
       # Send alerts about confirmed events
       if monitor.period.nil? && monitor.check_count.nil?
-        fail "Monitor #{monitor.name}: specify either period or check_count"
+        raise "Monitor #{monitor.name}: specify either period or check_count"
 
       elsif event.state == 'confirmed'
         if monitor.repeat && (event.last_report_at + monitor.repeat) <= Time.now
@@ -120,13 +120,13 @@ class MonitoredEvent < ActiveRecord::Base
   def ack!(save_until)
     self.state = 'acknowledged'
     self.saved_until = save_until
-    self.save!
+    save!
   end
 
   def ignore!(save_until)
     self.state = 'ignored'
     self.saved_until = save_until
-    self.save!
+    save!
   end
 
   def check_count
@@ -190,10 +190,12 @@ class MonitoredEvent < ActiveRecord::Base
   end
 
   protected
+
   def log_state
     return if monitored_event_states.last && monitored_event_states.last.state == state
+
     monitored_event_states << MonitoredEventState.new(
-      state: state,
+      state: state
     )
   end
 end

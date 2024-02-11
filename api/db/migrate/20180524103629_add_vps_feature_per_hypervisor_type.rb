@@ -1,7 +1,7 @@
 class AddVpsFeaturePerHypervisorType < ActiveRecord::Migration
   class Node < ActiveRecord::Base
     has_many :vpses
-    enum hypervisor_type: %i(openvz vpsadminos)
+    enum hypervisor_type: %i[openvz vpsadminos]
   end
 
   class Vps < ActiveRecord::Base
@@ -20,10 +20,10 @@ class AddVpsFeaturePerHypervisorType < ActiveRecord::Migration
         remove_features(vps, ['lxc'])
 
       when 'vpsadminos'
-        remove_features(vps, ['iptables', 'nfs', 'bridge'])
+        remove_features(vps, %w[iptables nfs bridge])
 
       else
-        fail "unsupported hypervisor_type '#{vps.node.hypervisor_type}'"
+        raise "unsupported hypervisor_type '#{vps.node.hypervisor_type}'"
       end
     end
   end
@@ -35,15 +35,16 @@ class AddVpsFeaturePerHypervisorType < ActiveRecord::Migration
         add_features(vps, ['lxc'])
 
       when 'vpsadminos'
-        add_features(vps, ['iptables', 'nfs', 'bridge'])
+        add_features(vps, %w[iptables nfs bridge])
 
       else
-        fail "unsupported hypervisor_type '#{vps.node.hypervisor_type}'"
+        raise "unsupported hypervisor_type '#{vps.node.hypervisor_type}'"
       end
     end
   end
 
   protected
+
   def remove_features(vps, features)
     vps.vps_features.where(name: features).delete_all
   end
@@ -53,7 +54,7 @@ class AddVpsFeaturePerHypervisorType < ActiveRecord::Migration
       ::VpsFeature.create!(
         vps_id: vps.id,
         name: f,
-        enabled: false,
+        enabled: false
       )
     end
   end

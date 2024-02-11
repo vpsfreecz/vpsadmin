@@ -11,11 +11,12 @@ module TransactionChains
 
       def link_chain
         ::Vps.where(
-            object_state: [
-                ::Vps.object_states[:active],
-                ::Vps.object_states[:suspended],
-                ::Vps.object_states[:soft_delete],
-        ]).order('vps_server ASC, vps_id ASC').each do |vps|
+          object_state: [
+            ::Vps.object_states[:active],
+            ::Vps.object_states[:suspended],
+            ::Vps.object_states[:soft_delete]
+          ]
+        ).order('vps_server ASC, vps_id ASC').each do |vps|
           use_chain(TransactionChains::Vps::Mounts, args: vps)
         end
       end

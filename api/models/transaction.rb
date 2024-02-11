@@ -12,17 +12,17 @@ class Transaction < ActiveRecord::Base
   belongs_to :depends_on, class_name: 'Transaction'
   has_many :transaction_confirmations
 
-  enum done: %i(waiting done staged)
-  enum reversible: %i(not_reversible is_reversible keep_going)
+  enum done: %i[waiting done staged]
+  enum reversible: %i[not_reversible is_reversible keep_going]
 
   before_save :set_init_values
 
   validates :queue, inclusion: {
-    in: %w(general storage network vps zfs_send zfs_recv mail outage queue)
+    in: %w[general storage network vps zfs_send zfs_recv mail outage queue]
   }
 
   class << self
-    def t_name(name=nil)
+    def t_name(name = nil)
       if name
         @name = name
       else
@@ -30,7 +30,7 @@ class Transaction < ActiveRecord::Base
       end
     end
 
-    def t_type(t=nil)
+    def t_type(t = nil)
       if t
         @t_type = t
         ::Transaction.register_type(t, self)
@@ -39,7 +39,7 @@ class Transaction < ActiveRecord::Base
       end
     end
 
-    def queue(q=nil)
+    def queue(q = nil)
       if q
         @queue = q
       else
@@ -113,7 +113,7 @@ class Transaction < ActiveRecord::Base
 
     cmd_input = t.params(
       *  (opts[:args] || []),
-      ** (opts[:kwargs] || {}),
+      ** (opts[:kwargs] || {})
     )
     cmd_input ||= {}
 
@@ -122,8 +122,8 @@ class Transaction < ActiveRecord::Base
       depends_on: t.depends_on_id,
       handle: t.handle,
       node: t.node_id,
-      reversible: self.reversibles[t.reversible],
-      input: cmd_input,
+      reversible: reversibles[t.reversible],
+      input: cmd_input
     }.to_json
     t.signature = VpsAdmin::API::TransactionSigner.sign_base64(t.input)
     t.done = :waiting
@@ -201,9 +201,10 @@ class Transaction < ActiveRecord::Base
       add_confirmable(:increment_type, obj, attr.to_s)
     end
 
-    alias_method :edit, :edit_after
+    alias edit edit_after
 
     protected
+
     def add_confirmable(type, obj, attrs = nil, kwattrs = nil)
       pk = obj.class.primary_key
       pks = {}
@@ -254,15 +255,15 @@ class Transaction < ActiveRecord::Base
 end
 
 module Transactions
-  module Vps              ; end
-  module Storage          ; end
-  module Utils            ; end
-  module Mail             ; end
-  module Network          ; end
-  module Maintenanceindow ; end
-  module Pool             ; end
-  module Queue            ; end
-  module UserNamespace    ; end
-  module NetworkInterface ; end
-  module Export           ; end
+  module Vps; end
+  module Storage; end
+  module Utils; end
+  module Mail; end
+  module Network; end
+  module Maintenanceindow; end
+  module Pool; end
+  module Queue; end
+  module UserNamespace; end
+  module NetworkInterface; end
+  module Export; end
 end

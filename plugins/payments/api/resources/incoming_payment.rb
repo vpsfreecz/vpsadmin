@@ -1,6 +1,6 @@
 module VpsAdmin::API::Resources
   class IncomingPayment < HaveAPI::Resource
-    desc "Browse incoming payments"
+    desc 'Browse incoming payments'
     model ::IncomingPayment
 
     params(:filters) do
@@ -84,7 +84,7 @@ module VpsAdmin::API::Resources
       desc "Change payment's state"
 
       input do
-        use :all, include: %i(state)
+        use :all, include: %i[state]
         patch :state, required: true
       end
 

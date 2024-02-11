@@ -28,34 +28,27 @@ module Lockable
     begin
       lock = ResourceLock.create!(
         resource: lock_resource_name,
-        row_id: self.id,
-        locked_by: lock_by,
+        row_id: id,
+        locked_by: lock_by
       )
 
       if code_block
         begin
           code_block.call(lock)
-
-        rescue
+        rescue StandardError
           raise
-
         ensure
           lock.release
         end
       end
 
-      return lock
-
+      lock
     rescue ActiveRecord::RecordNotUnique => e
-      if block
-        raise ResourceLocked.new(self, e.message) if start + timeout < Time.now
+      raise ResourceLocked.new(self, e.message) unless block
+      raise ResourceLocked.new(self, e.message) if start + timeout < Time.now
 
-        sleep(5)
-        retry
-
-      else
-        raise ResourceLocked.new(self, e.message)
-      end
+      sleep(5)
+      retry
     end
   end
 
@@ -63,8 +56,8 @@ module Lockable
   def assign_lock(obj)
     ResourceLock.find_by(
       resource: lock_resource_name,
-      row_id: self.id,
-      locked_by: nil,
+      row_id: id,
+      locked_by: nil
     ).assign_to(obj)
   end
 
@@ -72,8 +65,8 @@ module Lockable
   def release_lock(locked_by = nil)
     ResourceLock.find_by(
       resource: lock_resource_name,
-      row_id: self.id,
-      locked_by: locked_by,
+      row_id: id,
+      locked_by: locked_by
     ).release
   end
 
@@ -86,7 +79,7 @@ module Lockable
   def get_current_lock
     ResourceLock.find_by(
       resource: lock_resource_name,
-      row_id: self.id,
+      row_id: id
     )
   end
 

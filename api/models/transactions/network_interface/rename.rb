@@ -12,7 +12,7 @@ module Transactions::NetworkInterface
         pool_fs: netif.vps.dataset_in_pool.pool.filesystem,
         name: new_name,
         original: orig,
-        netif_id: netif.id,
+        netif_id: netif.id
       }
     end
   end

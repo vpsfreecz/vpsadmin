@@ -50,9 +50,10 @@ class MailTemplate < ActiveRecord::Base
 
   def self.resolve_name(name, params)
     tpl = templates[name]
-    fail "Attempted to use an unregistered mail template '#{name}'" unless tpl
+    raise "Attempted to use an unregistered mail template '#{name}'" unless tpl
 
     return name if tpl[:name].nil?
+
     tpl[:name] % (params || {})
   end
 
@@ -94,10 +95,10 @@ class MailTemplate < ActiveRecord::Base
       references: opts[:references],
       subject: tr.subject,
       text_plain: tr.text_plain,
-      text_html: tr.text_html,
+      text_html: tr.text_html
     )
 
-    recipients = {to: opts[:to] || [], cc: opts[:cc] || [], bcc: opts[:bcc] || []}
+    recipients = { to: opts[:to] || [], cc: opts[:cc] || [], bcc: opts[:bcc] || [] }
     recipients[:to].concat(tpl.recipients(opts[:user]))
 
     tpl.mail_recipients.each do |recp|
@@ -106,14 +107,13 @@ class MailTemplate < ActiveRecord::Base
       recipients[:bcc].concat(recp.bcc.split(',')) if recp.bcc
     end
 
-    %i(to cc bcc).each do |t|
+    %i[to cc bcc].each do |t|
       recipients[t].concat(opts[t]) if opts[t]
       mail.send("#{t}=", recipients[t].uniq.join(','))
     end
 
     mail.save!
     mail
-
   rescue VpsAdmin::API::Exceptions::MailTemplateDisabled
     nil
   end
@@ -137,13 +137,13 @@ class MailTemplate < ActiveRecord::Base
   # @return [MailLog]
   def self.send_custom(opts)
     if !opts[:subject]
-      fail 'subject needed'
+      raise 'subject needed'
 
     elsif !opts[:text_plain] && !opts[:text_html]
-      fail 'provide text_plain, text_html or both'
+      raise 'provide text_plain, text_html or both'
 
     elsif !opts[:from]
-      fail 'from needed'
+      raise 'from needed'
     end
 
     builder = MailTemplateTranslation::TemplateBuilder.new(opts[:vars] || {})
@@ -158,16 +158,14 @@ class MailTemplate < ActiveRecord::Base
       references: opts[:references],
       subject: builder.build(opts[:subject]),
       text_plain: opts[:text_plain] && builder.build(opts[:text_plain]),
-      text_html: opts[:text_html] && builder.build(opts[:text_html]),
+      text_html: opts[:text_html] && builder.build(opts[:text_html])
     )
 
-    recps = {to: opts[:to] || [], cc: opts[:cc] || [], bcc: opts[:bcc] || []}
+    recps = { to: opts[:to] || [], cc: opts[:cc] || [], bcc: opts[:bcc] || [] }
 
-    if opts[:user] && opts[:role]
-      recps[:to].concat(recipients(nil, opts[:user], [opts[:role]]))
-    end
+    recps[:to].concat(recipients(nil, opts[:user], [opts[:role]])) if opts[:user] && opts[:role]
 
-    %i(to cc bcc).each do |t|
+    %i[to cc bcc].each do |t|
       mail.send("#{t}=", recps[t].uniq.join(','))
     end
 
@@ -190,9 +188,7 @@ class MailTemplate < ActiveRecord::Base
       user.user_mail_template_recipients.where(
         mail_template: template
       ).each do |recp|
-        if recp.disabled?
-          raise VpsAdmin::API::Exceptions::MailTemplateDisabled, name
-        end
+        raise VpsAdmin::API::Exceptions::MailTemplateDisabled, name if recp.disabled?
 
         ret.concat(recp.to.split(','))
       end
@@ -221,132 +217,132 @@ class MailTemplate < ActiveRecord::Base
     snapshots: Hash,
     downloads: Hash,
     chains: Hash,
-    transactions: Hash,
+    transactions: Hash
   }
 
-  register :expiration_warning, name: "expiration_%{object}_%{state}", params: {
+  register :expiration_warning, name: 'expiration_%{object}_%{state}', params: {
     object: 'class name of the object nearing expiration, demodulized with underscores',
-    state: 'one of lifetime states',
-  }, roles: %i(account), public: true
+    state: 'one of lifetime states'
+  }, roles: %i[account], public: true
 
   register :snapshot_download_ready, vars: {
-    base_url: [String, "URL to the web UI"],
-    dl: ::SnapshotDownload,
-  }, roles: %i(admin), public: true
+    base_url: [String, 'URL to the web UI'],
+    dl: ::SnapshotDownload
+  }, roles: %i[admin], public: true
 
   register :user_create, vars: {
-    user: ::User,
-  }, roles: %i(account)
+    user: ::User
+  }, roles: %i[account]
 
   register :user_suspend, vars: {
     user: ::User,
-    state: ::ObjectState,
-  }, roles: %i(account), public: true
+    state: ::ObjectState
+  }, roles: %i[account], public: true
 
   register :user_soft_delete, vars: {
     user: ::User,
-    state: ::ObjectState,
-  }, roles: %i(account), public: true
+    state: ::ObjectState
+  }, roles: %i[account], public: true
 
   register :user_resume, vars: {
     user: ::User,
-    state: ::ObjectState,
-  }, roles: %i(account), public: true
+    state: ::ObjectState
+  }, roles: %i[account], public: true
 
   register :user_revive, vars: {
     user: ::User,
-    state: ::ObjectState,
-  }, roles: %i(account), public: true
+    state: ::ObjectState
+  }, roles: %i[account], public: true
 
   register :user_totp_recovery_code_used, vars: {
     user: ::User,
     totp_device: ::UserTotpDevice,
     request: Sinatra::Request,
-    time: Time,
-  }, roles: %i(account)
+    time: Time
+  }, roles: %i[account]
 
   register :vps_suspend, vars: {
     vps: ::Vps,
-    state: ::ObjectState,
-  }, roles: %i(account admin), public: true
+    state: ::ObjectState
+  }, roles: %i[account admin], public: true
 
   register :vps_resume, vars: {
     vps: ::Vps,
-    state: ::ObjectState,
-  }, roles: %i(account admin), public: true
+    state: ::ObjectState
+  }, roles: %i[account admin], public: true
 
   register :vps_migration_planned, vars: {
     m: ::VpsMigration,
     vps: ::Vps,
     src_node: ::Node,
-    dst_node: ::Node,
-  }, roles: %i(admin), public: true
+    dst_node: ::Node
+  }, roles: %i[admin], public: true
 
   register :vps_migration_begun, vars: {
     vps: ::Vps,
     src_node: ::Node,
     dst_node: ::Node,
     maintenance_window: ::Boolean,
-    reason: String,
-  }, roles: %i(admin), public: true
+    reason: String
+  }, roles: %i[admin], public: true
 
   register :vps_migration_finished, vars: {
     vps: ::Vps,
     src_node: ::Node,
     dst_node: ::Node,
     maintenance_window: ::Boolean,
-    reason: String,
-  }, roles: %i(admin), public: true
+    reason: String
+  }, roles: %i[admin], public: true
 
   register :vps_resources_change, vars: {
     vps: ::Vps,
     admin: ::User,
-    reason: String,
-  }, roles: %i(admin), public: true
+    reason: String
+  }, roles: %i[admin], public: true
 
   register :vps_oom_report, vars: {
-    base_url: [String, "URL to the web UI"],
+    base_url: [String, 'URL to the web UI'],
     vps: ::Vps,
-    oom_reports: 'Array<::OomReport>',
-  }, roles: %i(admin), public: true
+    oom_reports: 'Array<::OomReport>'
+  }, roles: %i[admin], public: true
 
   register :vps_oom_prevention, vars: {
-    base_url: [String, "URL to the web UI"],
+    base_url: [String, 'URL to the web UI'],
     vps: ::Vps,
     action: ':restart, :stop',
     ooms_in_period: Integer,
-    period_seconds: Integer,
-  }, roles: %i(admin), public: true
+    period_seconds: Integer
+  }, roles: %i[admin], public: true
 
   register :vps_dataset_expanded, vars: {
-    base_url: [String, "URL to the web UI"],
+    base_url: [String, 'URL to the web UI'],
     vps: ::Vps,
     expansion: ::DatasetExpansion,
-    dataset: ::Dataset,
-  }, roles: %i(admin), public: true
+    dataset: ::Dataset
+  }, roles: %i[admin], public: true
 
   register :vps_dataset_shrunk, vars: {
-    base_url: [String, "URL to the web UI"],
+    base_url: [String, 'URL to the web UI'],
     vps: ::Vps,
     expansion: ::DatasetExpansion,
-    dataset: ::Dataset,
-  }, roles: %i(admin), public: true
+    dataset: ::Dataset
+  }, roles: %i[admin], public: true
 
   register :vps_stopped_over_quota, vars: {
-    base_url: [String, "URL to the web UI"],
+    base_url: [String, 'URL to the web UI'],
     vps: ::Vps,
     expansion: ::DatasetExpansion,
-    dataset: ::Dataset,
-  }, roles: %i(admin), public: true
+    dataset: ::Dataset
+  }, roles: %i[admin], public: true
 
   register :vps_incident_report, vars: {
-    base_url: [String, "URL to the web UI"],
+    base_url: [String, 'URL to the web UI'],
     user: ::User,
     vps: ::Vps,
-    incident: ::IncidentReport,
-  }, roles: %i(admin), public: true
+    incident: ::IncidentReport
+  }, roles: %i[admin], public: true
 
-  enum user_visibility: %i(default visible invisible)
+  enum user_visibility: %i[default visible invisible]
 
   def recipients(user)
     self.class.recipients(self, user, desc[:roles])

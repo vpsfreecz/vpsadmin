@@ -7,8 +7,8 @@ class EnvironmentUserConfig < ActiveRecord::Base
   has_paper_trail
 
   include VpsAdmin::API::ClusterResources
-  cluster_resources optional: %i(ipv4 ipv4_private ipv6),
-                    environment: ->() { environment }
+  cluster_resources optional: %i[ipv4 ipv4_private ipv6],
+                    environment: -> { environment }
 
   def update!(attrs)
     if attrs[:default]

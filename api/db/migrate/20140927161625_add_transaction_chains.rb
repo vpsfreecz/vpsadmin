@@ -36,7 +36,7 @@ class AddTransactionChains < ActiveRecord::Migration
       t.timestamps
     end
 
-    add_index :resource_locks, [:resource, :row_id], unique: true
+    add_index :resource_locks, %i[resource row_id], unique: true
 
     remove_column :vps, :vps_backup_lock, :boolean, null: false, default: false
 

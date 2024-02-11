@@ -13,11 +13,11 @@ module Transactions::Vps
       features.each do |f|
         res[f.name] = {
           enabled: f.enabled,
-          original: f.enabled_was,
+          original: f.enabled_was
         }
       end
 
-      {features: res}
+      { features: res }
     end
   end
 end

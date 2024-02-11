@@ -32,15 +32,15 @@ class AddNfsExports < ActiveRecord::Migration
       t.timestamps                                  null: false
     end
 
-    add_index :export_hosts, %i(export_id ip_address_id), unique: true
+    add_index :export_hosts, %i[export_id ip_address_id], unique: true
 
     add_column :network_interfaces, :export_id, :integer, null: true
     change_column_null :network_interfaces, :vps_id, true
-    add_index :network_interfaces, %i(export_id name), unique: true
+    add_index :network_interfaces, %i[export_id name], unique: true
 
     add_column :pools, :export_root, :string,
-      null: false,
-      limit: 100,
-      default: '/export'
+               null: false,
+               limit: 100,
+               default: '/export'
   end
 end

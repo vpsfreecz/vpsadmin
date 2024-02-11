@@ -11,9 +11,7 @@ module NodeCtld
     end
 
     def work
-      if self.working?
-        return nil
-      end
+      return nil if working?
 
       @thread = Thread.new do
         @cmd.execute

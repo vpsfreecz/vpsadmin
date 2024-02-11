@@ -35,11 +35,9 @@ module NodeCtld
 
     def load
       data = lock do
-        begin
-          YAML.safe_load(File.read(path)) || {}
-        rescue ArgumentError, SystemCallError
-          {}
-        end
+        YAML.safe_load(File.read(path)) || {}
+      rescue ArgumentError, SystemCallError
+        {}
       end
 
       @network_interfaces = VpsConfig::NetworkInterfaceList.load(data['network_interfaces'] || [])
@@ -95,10 +93,11 @@ module NodeCtld
     end
 
     protected
+
     def config
       {
         'network_interfaces' => network_interfaces.save,
-        'mounts' => mounts.map(&:to_h),
+        'mounts' => mounts.map(&:to_h)
       }
     end
 
@@ -110,6 +109,7 @@ module NodeCtld
         File.rename(new_file, file)
       end
     end
+
     def path
       File.join('/', pool_fs, path_to_pool_working_dir(:config), 'vps', "#{vps_id}.yml")
     end

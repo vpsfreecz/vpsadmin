@@ -31,7 +31,7 @@ module TransactionChains
             edit_before(mount, k => ::Mount.on_start_fails[v.first])
 
           else
-            fail "unsupported attribute '#{k}'"
+            raise "unsupported attribute '#{k}'"
           end
         end
       end

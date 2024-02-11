@@ -31,7 +31,7 @@ module TransactionChains
       # Authorize the migration
       append(
         Transactions::Pool::AuthorizeSendKey,
-        args: [dst_pool, src_pool, vps.id, "chain-#{id}-#{token}", token],
+        args: [dst_pool, src_pool, vps.id, "chain-#{id}-#{token}", token]
       )
 
       # Copy configs
@@ -39,12 +39,12 @@ module TransactionChains
         Transactions::Vps::SendConfig,
         args: [
           src_vps,
-          dst_node,
+          dst_node
         ],
         kwargs: {
           network_interfaces: true,
-          passphrase: token,
-        },
+          passphrase: token
+        }
       )
 
       # In case of rollback on the target node
@@ -64,7 +64,7 @@ module TransactionChains
 
         else
           ::ClusterResourceUse.for_obj(src).each do |use|
-            resources_changes[use] = {row_id: dst.id}
+            resources_changes[use] = { row_id: dst.id }
           end
         end
       end
@@ -86,14 +86,14 @@ module TransactionChains
         append(
           Transactions::MaintenanceWindow::Wait,
           args: [src_vps, 15],
-          kwargs: {maintenance_windows: maintenance_windows},
+          kwargs: { maintenance_windows: maintenance_windows }
         )
         append(Transactions::Queue::Reserve, args: [src_node, :zfs_send])
         append(Transactions::Queue::Reserve, args: [dst_node, :zfs_recv])
         append(
           Transactions::MaintenanceWindow::InOrFail,
           args: [src_vps, 15],
-          kwargs: {maintenance_windows: maintenance_windows},
+          kwargs: { maintenance_windows: maintenance_windows }
         )
 
         append(Transactions::Vps::SendSync, args: [src_vps], urgent: true)
@@ -103,8 +103,8 @@ module TransactionChains
         append(
           Transactions::MaintenanceWindow::InOrFail,
           args: [src_vps, 5],
-          kwargs: {maintenance_windows: maintenance_windows},
-          urgent: true,
+          kwargs: { maintenance_windows: maintenance_windows },
+          urgent: true
         )
       end
 
@@ -112,24 +112,24 @@ module TransactionChains
       use_chain(
         Vps::Stop,
         args: src_vps,
-        kwargs: {start_timeout: start_timeout, rollback_stop: was_running?},
-        urgent: true,
+        kwargs: { start_timeout: start_timeout, rollback_stop: was_running? },
+        urgent: true
       )
 
       # Wait for routing to remove routes from the target system during rollback
       append(
         Transactions::Vps::WaitForRoutes,
         args: [src_vps],
-        kwargs: {direction: :rollback},
-        urgent: true,
+        kwargs: { direction: :rollback },
+        urgent: true
       )
 
       # Send it to the target node
       append(
         Transactions::Vps::SendState,
         args: [src_vps],
-        kwargs: {start: false},
-        urgent: true,
+        kwargs: { start: false },
+        urgent: true
       )
 
       dst_ip_addresses = vps.ip_addresses
@@ -152,16 +152,16 @@ module TransactionChains
         use_chain(
           Vps::Start,
           args: dst_vps,
-          kwargs: {start_timeout: start_timeout},
+          kwargs: { start_timeout: start_timeout },
           urgent: true,
-          reversible: @opts[:skip_start] ? :keep_going : nil,
+          reversible: @opts[:skip_start] ? :keep_going : nil
         )
       end
 
       call_hooks_for(:post_start, self, args: [
-        dst_vps,
-        was_running? && !@opts[:no_start],
-      ])
+                       dst_vps,
+                       was_running? && !@opts[:no_start]
+                     ])
 
       # Release reserved spot in the queue
       append(Transactions::Queue::Release, args: [dst_node, :zfs_recv], urgent: true)
@@ -194,9 +194,9 @@ module TransactionChains
         end
 
         t.just_create(src_vps.log(:node, {
-          src: {id: src_node.id, name: src_node.domain_name},
-          dst: {id: dst_node.id, name: dst_node.domain_name},
-        }))
+                                    src: { id: src_node.id, name: src_node.domain_name },
+                                    dst: { id: dst_node.id, name: dst_node.domain_name }
+                                  }))
       end
 
       # Call DatasetInPool.migrated hook

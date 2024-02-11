@@ -7,7 +7,7 @@ module NodeCtld::RemoteCommands
       when 'pause'
         @daemon.queues do |queues|
           q = queues[@queue.to_sym]
-          return {ret: :error, output: 'queue not found'} if q.nil?
+          return { ret: :error, output: 'queue not found' } if q.nil?
 
           q.pause(@duration)
         end
@@ -20,7 +20,7 @@ module NodeCtld::RemoteCommands
             end
           else
             q = queues[@queue.to_sym]
-            return {ret: :error, output: 'queue not found'} if q.nil?
+            return { ret: :error, output: 'queue not found' } if q.nil?
 
             q.resume
           end
@@ -29,21 +29,21 @@ module NodeCtld::RemoteCommands
       when 'resize'
         @daemon.queues do |queues|
           q = queues[@queue.to_sym]
-          return {ret: :error, output: 'queue not found'} if q.nil?
+          return { ret: :error, output: 'queue not found' } if q.nil?
         end
 
         $CFG.patch({
-          vpsadmin: {
-            queues: {
-              @queue.to_sym => {
-                threads: @size
-              }
-            }
-          }
-        })
+                     vpsadmin: {
+                       queues: {
+                         @queue.to_sym => {
+                           threads: @size
+                         }
+                       }
+                     }
+                   })
 
       else
-        return {ret: :error, output: 'unknown command'}
+        return { ret: :error, output: 'unknown command' }
       end
 
       ok

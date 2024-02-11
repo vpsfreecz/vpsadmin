@@ -8,9 +8,9 @@ describe 'Vps.reinstall' do
 
     it 'reinstalls own VPS' do
       api :post, "/v1/vpses/#{User.find_by!(m_nick: 'user01').vpses.take.id}/reinstall", {
-          vps: {
-              os_template: OsTemplate.take!.id
-          }
+        vps: {
+          os_template: OsTemplate.take!.id
+        }
       }
 
       expect(api_response).to be_ok
@@ -18,9 +18,9 @@ describe 'Vps.reinstall' do
 
     it "does not reinstalls somebody else's VPS" do
       api :post, "/v1/vpses/#{User.find_by!(m_nick: 'user02').vpses.take.id}/reinstall", {
-          vps: {
-              os_template: OsTemplate.take!.id
-          }
+        vps: {
+          os_template: OsTemplate.take!.id
+        }
       }
 
       expect(api_response).to be_failed
@@ -32,9 +32,9 @@ describe 'Vps.reinstall' do
 
     it 'reinstalls any VPS' do
       api :post, "/v1/vpses/#{User.find_by!(m_nick: 'user01').vpses.take.id}/reinstall", {
-          vps: {
-              os_template: OsTemplate.take!.id
-          }
+        vps: {
+          os_template: OsTemplate.take!.id
+        }
       }
 
       expect(api_response).to be_ok
@@ -42,9 +42,9 @@ describe 'Vps.reinstall' do
 
     it 'does not reinstall with invalid template' do
       api :post, "/v1/vpses/#{User.find_by!(m_nick: 'user01').vpses.take.id}/reinstall", {
-          vps: {
-              os_template: 9999
-          }
+        vps: {
+          os_template: 9999
+        }
       }
 
       expect(api_response).to be_failed

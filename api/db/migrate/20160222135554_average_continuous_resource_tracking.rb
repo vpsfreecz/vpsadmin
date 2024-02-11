@@ -81,7 +81,7 @@ class AverageContinuousResourceTracking < ActiveRecord::Migration
       t.integer      :sum_arc_c_max,     null: true
       t.integer      :sum_arc_c,         null: true
       t.integer      :sum_arc_size,      null: true
-      t.float        :sum_arc_hitpercent,null: true
+      t.float        :sum_arc_hitpercent, null: true
 
       t.timestamps
     end
@@ -99,11 +99,11 @@ class AverageContinuousResourceTracking < ActiveRecord::Migration
 
         # Filter VPS statuses - keep hourly history
         ActiveRecord::Base.connection.execute(
-            "CREATE TABLE vps_statuses_new LIKE vps_statuses"
+          'CREATE TABLE vps_statuses_new LIKE vps_statuses'
         )
 
         ActiveRecord::Base.connection.execute(
-            "INSERT INTO vps_statuses_new (
+          "INSERT INTO vps_statuses_new (
               vps_id, status, is_running, cpus, total_memory, total_swap,
               uptime, process_count, cpu_user, cpu_nice, cpu_system, cpu_idle,
               cpu_iowait, cpu_irq, cpu_softirq, loadavg, used_memory, used_swap,
@@ -128,11 +128,11 @@ class AverageContinuousResourceTracking < ActiveRecord::Migration
         # The status is logged every 15 minutes by default, but that is harder
         # to achieve here.
         ActiveRecord::Base.connection.execute(
-            "CREATE TABLE node_statuses_new LIKE node_statuses"
+          'CREATE TABLE node_statuses_new LIKE node_statuses'
         )
 
         ActiveRecord::Base.connection.execute(
-            "INSERT INTO node_statuses_new (
+          "INSERT INTO node_statuses_new (
               node_id, cpus, total_memory, total_swap, uptime, vpsadmind_version,
               kernel, process_count, cpu_user, cpu_nice, cpu_system, cpu_idle,
               cpu_iowait, cpu_irq, cpu_softirq, cpu_guest, loadavg, used_memory,
@@ -156,11 +156,11 @@ class AverageContinuousResourceTracking < ActiveRecord::Migration
 
         # Filter dataset property history, keep hourly history
         ActiveRecord::Base.connection.execute(
-            "CREATE TABLE dataset_property_histories_new LIKE dataset_property_histories"
+          'CREATE TABLE dataset_property_histories_new LIKE dataset_property_histories'
         )
 
         ActiveRecord::Base.connection.execute(
-            "INSERT INTO dataset_property_histories_new (
+          "INSERT INTO dataset_property_histories_new (
               dataset_property_id, value, created_at
             )
 

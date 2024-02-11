@@ -7,15 +7,15 @@ module VpsAdmin::CLI::Commands
     end
 
     protected
+
     def find_or_create_dl(opts, do_create = true)
       @api.snapshot_download.index(snapshot: opts[:snapshot]).each do |r|
-        if opts[:from_snapshot] == (r.from_snapshot && r.from_snapshot_id)
-          if r.format != opts[:format].to_s
-            fail "SnapshotDownload id=#{r.id} is in unusable format '#{r.format}' (needs '#{opts[:format]}')"
-          end
-
-          return [r, false]
+        next unless opts[:from_snapshot] == (r.from_snapshot && r.from_snapshot_id)
+        if r.format != opts[:format].to_s
+          raise "SnapshotDownload id=#{r.id} is in unusable format '#{r.format}' (needs '#{opts[:format]}')"
         end
+
+        return [r, false]
       end
 
       if do_create

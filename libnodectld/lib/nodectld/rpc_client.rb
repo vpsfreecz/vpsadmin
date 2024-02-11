@@ -4,9 +4,9 @@ require 'securerandom'
 
 module NodeCtld
   class RpcClient
-    class Error < ::StandardError ; end
+    class Error < ::StandardError; end
 
-    class Timeout < Error ; end
+    class Timeout < Error; end
 
     def self.run
       rpc = new
@@ -71,15 +71,13 @@ module NodeCtld
           'list_vps_user_namespace_maps',
           pool_id,
           from_id: from_id,
-          limit: 50,
+          limit: 50
         )
 
-        if vps_maps.empty?
-          break
-        else
-          vps_maps.each(&block)
-          from_id = vps_maps.last['vps_id']
-        end
+        break if vps_maps.empty?
+
+        vps_maps.each(&block)
+        from_id = vps_maps.last['vps_id']
       end
     end
 
@@ -91,15 +89,13 @@ module NodeCtld
         exports = send_request(
           'list_exports',
           from_id: from_id,
-          limit: 50,
+          limit: 50
         )
 
-        if exports.empty?
-          break
-        else
-          exports.each(&block)
-          from_id = exports.last['id']
-        end
+        break if exports.empty?
+
+        exports.each(&block)
+        from_id = exports.last['id']
       end
 
       nil
@@ -116,6 +112,7 @@ module NodeCtld
     end
 
     protected
+
     attr_reader :lock, :condition, :call_id
     attr_accessor :response
 
@@ -148,13 +145,13 @@ module NodeCtld
         {
           command: command,
           args: args,
-          kwargs: kwargs,
+          kwargs: kwargs
         }.to_json,
         persistent: true,
         content_type: 'application/json',
         routing_key: 'rpc',
         correlation_id: @call_id,
-        reply_to: @reply_queue.name,
+        reply_to: @reply_queue.name
       )
 
       wait_secs = 0
@@ -179,9 +176,7 @@ module NodeCtld
         log(:debug, "response id=#{@call_id[0..7]} time=#{(Time.now - t1).round(3)}s value=#{@response.inspect}")
       end
 
-      if !@response['status']
-        raise Error, @response.fetch('message', 'Server error')
-      end
+      raise Error, @response.fetch('message', 'Server error') unless @response['status']
 
       @response['response']
     end

@@ -5,7 +5,7 @@ module NodeCtl
     cmd :'halt-reason'
     description 'Look up reported maintenaces/outages for halt reason'
 
-    OUTAGE_TYPES = %i(tbd vps_restart vps_reset network performance maintenance)
+    OUTAGE_TYPES = %i[tbd vps_restart vps_reset network performance maintenance]
 
     def execute
       # Access db from a subprocess in case it is not accessible
@@ -14,7 +14,7 @@ module NodeCtl
       end
 
       begin
-        Timeout::timeout(15) do
+        Timeout.timeout(15) do
           Process.wait(pid)
         end
       rescue Timeout::Error
@@ -27,6 +27,7 @@ module NodeCtl
     end
 
     protected
+
     def print_reason
       require 'nodectld/standalone'
 
@@ -38,7 +39,7 @@ module NodeCtl
         FROM nodes n
         INNER JOIN locations l ON l.id = n.location_id
         WHERE n.id = ?',
-        $CFG.get(:vpsadmin, :node_id),
+        $CFG.get(:vpsadmin, :node_id)
       ).get!
 
       loc_id = rs['location_id']
@@ -57,42 +58,42 @@ module NodeCtl
           OR (e.name = 'Node' AND e.row_id = ?)
         GROUP BY o.id
         ORDER BY o.id",
-          env_id,
-          loc_id,
-          $CFG.get(:vpsadmin, :node_id),
+        env_id,
+        loc_id,
+        $CFG.get(:vpsadmin, :node_id)
       )
 
       outages = []
       now = Time.now
 
       rs.each do |outage|
-        if outage['begins_at'] < now \
+        next unless outage['begins_at'] < now \
            && outage['begins_at'] + outage['duration'] * 60 >= now
-          get_entities(db, outage)
-          get_translations(db, outage)
-          get_handlers(db, outage)
-          outages << outage
-        end
+
+        get_entities(db, outage)
+        get_translations(db, outage)
+        get_handlers(db, outage)
+        outages << outage
       end
 
       webui = get_webui_url(db)
 
       # Print message
       if outages.empty?
-        puts "# No reported outage was found"
+        puts '# No reported outage was found'
         puts "System is #{get_action_verb}. No outage is reported at this time,"
         puts "it may appear later on #{webui}"
 
       else
         if outages.length == 1
-          puts "# Found one reported outage"
+          puts '# Found one reported outage'
         else
-          puts "# Found multiple outages, choose which one is appropriate"
-          puts "# and delete the rest"
+          puts '# Found multiple outages, choose which one is appropriate'
+          puts '# and delete the rest'
         end
 
         outages.each do |outage|
-          puts "#"
+          puts '#'
           puts "# Outage ##{outage['id']}"
           puts "System is #{get_action_verb} due to a reported #{outage['planned'] === 1 ? 'maintenance' : 'outage'}:"
           puts "  Reported at: #{fmt_date(outage['begins_at'].localtime)}"
@@ -112,7 +113,7 @@ module NodeCtl
         INNER JOIN languages l ON l.id = t.language_id
         WHERE l.code = ? AND t.outage_id = ? AND outage_update_id IS NULL',
         'en',
-        outage['id'],
+        outage['id']
       ).get!
 
       outage['summary'] = row['summary']
@@ -126,7 +127,7 @@ module NodeCtl
         'SELECT name, row_id
         FROM outage_entities
         WHERE outage_id = ?',
-        outage['id'],
+        outage['id']
       ).each do |row|
         case row['name']
         when 'Cluster'
@@ -161,7 +162,7 @@ module NodeCtl
         'SELECT full_name
         FROM outage_handlers
         WHERE outage_id = ?',
-        outage['id'],
+        outage['id']
       ).each do |row|
         handlers << row['full_name']
       end
@@ -183,7 +184,7 @@ module NodeCtl
       when 'reboot'
         'rebooting'
       else
-        fail "unknown HALT_ACTION #{ENV['HALT_ACTION'].inspect}"
+        raise "unknown HALT_ACTION #{ENV['HALT_ACTION'].inspect}"
       end
     end
 

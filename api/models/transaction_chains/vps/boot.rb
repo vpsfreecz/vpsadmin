@@ -12,9 +12,9 @@ module TransactionChains
       concerns(:affect, [vps.class.name, vps.id])
 
       append(Transactions::Vps::Boot, args: [vps, template], kwargs: {
-        mount_root_dataset: mount_root_dataset,
-        start_timeout: start_timeout,
-      })
+               mount_root_dataset: mount_root_dataset,
+               start_timeout: start_timeout
+             })
 
       vps.user.user_public_keys.where(auto_add: true).each do |key|
         use_chain(Vps::DeployPublicKey, args: [vps, key], reversible: :keep_going)

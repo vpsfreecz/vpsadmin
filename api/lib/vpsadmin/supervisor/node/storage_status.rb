@@ -13,14 +13,14 @@ module VpsAdmin::Supervisor
 
     # TODO: add compressratio and refcompressratio: these values are floats while
     # {DatasetPropertyHistory} can store only integers.
-    LOG_PROPERTIES = %w(used referenced available)
+    LOG_PROPERTIES = %w[used referenced available]
 
     def start
       exchange = channel.direct(exchange_name)
       queue = channel.queue(
         queue_name('storage_statuses'),
         durable: true,
-        arguments: {'x-queue-type' => 'quorum'},
+        arguments: { 'x-queue-type' => 'quorum' }
       )
 
       queue.bind(exchange, routing_key: 'storage_statuses')
@@ -32,6 +32,7 @@ module VpsAdmin::Supervisor
     end
 
     protected
+
     def update_dataset_properties(status)
       now = Time.now
       updated_at = Time.at(status['time'])
@@ -42,16 +43,16 @@ module VpsAdmin::Supervisor
 
         ::DatasetProperty.where(id: prop['id']).update_all(
           value: value,
-          updated_at: updated_at,
+          updated_at: updated_at
         )
 
-        if save_log && LOG_PROPERTIES.include?(prop['name'])
-          ::DatasetPropertyHistory.create!(
-            dataset_property_id: prop['id'],
-            value: value,
-            created_at: updated_at,
-          )
-        end
+        next unless save_log && LOG_PROPERTIES.include?(prop['name'])
+
+        ::DatasetPropertyHistory.create!(
+          dataset_property_id: prop['id'],
+          value: value,
+          created_at: updated_at
+        )
       end
     end
 

@@ -1,7 +1,7 @@
 module VpsAdmin::API::Plugins
   module Monitoring
-    module TransactionChains ; end
-    class Monitor ; end
+    module TransactionChains; end
+    class Monitor; end
 
     module Dsl
       class ConfigEnv
@@ -23,15 +23,13 @@ module VpsAdmin::API::Plugins
         def initialize
           @data = {
             skip_acknowledged: true,
-            skip_ignored: true,
+            skip_ignored: true
           }
         end
 
-        def data
-          @data
-        end
+        attr_reader :data
 
-        %i(
+        %i[
           label
           period
           check_count
@@ -41,11 +39,11 @@ module VpsAdmin::API::Plugins
           access_level
           skip_acknowledged
           skip_ignored
-        ).each do |name|
+        ].each do |name|
           define_method(name) { |v| @data[name] = v }
         end
 
-        %i(query object value check user).each do |name|
+        %i[query object value check user].each do |name|
           define_method(name) { |&block| @data[name] = block }
         end
 
@@ -59,7 +57,7 @@ module VpsAdmin::API::Plugins
             res.update(arg)
 
           else
-            fail "unknown arg type '#{arg.class}': pass symbol or hash"
+            raise "unknown arg type '#{arg.class}': pass symbol or hash"
           end
 
           @data[:action] ||= {}

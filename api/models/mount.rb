@@ -15,27 +15,25 @@ class Mount < ActiveRecord::Base
   include Lockable
 
   include VpsAdmin::API::Lifetimes::Model
-  set_object_states states: %i(active deleted),
+  set_object_states states: %i[active deleted],
                     deleted: {
                       enter: TransactionChains::Vps::DestroyMount
                     }
 
-  enum on_start_fail: %i(skip mount_later fail_start wait_for_mount)
-  enum current_state: %i(created mounted unmounted skipped delayed waiting)
+  enum on_start_fail: %i[skip mount_later fail_start wait_for_mount]
+  enum current_state: %i[created mounted unmounted skipped delayed waiting]
 
   def check_mountpoint
     dst.insert(0, '/') unless dst.start_with?('/')
     dst.chop! while dst.end_with?('/')
 
-    if dst !~ /\A[a-zA-Z0-9_\-\/\.:]{3,500}\z/ || dst =~ /\.\./ || dst =~ /\/\//
-      errors.add(:dst, 'invalid format')
-    end
+    errors.add(:dst, 'invalid format') if dst !~ %r{\A[a-zA-Z0-9_\-/.:]{3,500}\z} || dst =~ /\.\./ || dst =~ %r{//}
 
     cnt = self.class.where(vps: vps, dst: dst).count
 
-    if (new_record? && cnt > 0) || (!new_record? && cnt > 1)
-      errors.add(:dst, 'this mountpoint already exists')
-    end
+    return unless (new_record? && cnt > 0) || (!new_record? && cnt > 1)
+
+    errors.add(:dst, 'this mountpoint already exists')
   end
 
   def enabled?

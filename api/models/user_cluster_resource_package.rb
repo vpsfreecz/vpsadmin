@@ -19,6 +19,7 @@ class UserClusterResourcePackage < ::ActiveRecord::Base
   end
 
   protected
+
   def recalculate_user_cluster_resources
     user.calculate_cluster_resources_in_env(environment)
   end

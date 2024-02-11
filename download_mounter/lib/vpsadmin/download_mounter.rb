@@ -6,7 +6,6 @@ require 'highline/import'
 
 module VpsAdmin
   module DownloadMounter
-
   end
 end
 

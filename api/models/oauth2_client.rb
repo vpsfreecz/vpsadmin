@@ -2,17 +2,15 @@ class Oauth2Client < ::ActiveRecord::Base
   has_many :oauth2_authorizations, dependent: :destroy
 
   validates :name, :client_id, :client_secret_hash, :redirect_uri,
-    presence: true, allow_blank: false
+            presence: true, allow_blank: false
 
   # Must correspond to {UserSession.token_lifetime}, except for permanent
-  enum access_token_lifetime: %i(fixed renewable_manual renewable_auto)
+  enum access_token_lifetime: %i[fixed renewable_manual renewable_auto]
 
   def check_secret(client_secret)
-    begin
-      ::BCrypt::Password.new(client_secret_hash) == client_secret
-    rescue BCrypt::Errors::InvalidHash
-      false
-    end
+    ::BCrypt::Password.new(client_secret_hash) == client_secret
+  rescue BCrypt::Errors::InvalidHash
+    false
   end
 
   def set_secret(client_secret)

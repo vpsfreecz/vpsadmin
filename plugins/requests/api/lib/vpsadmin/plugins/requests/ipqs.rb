@@ -22,7 +22,7 @@ class VpsAdmin::API::Plugins::Requests::IPQS
 
   def check_ip(addr, strictness: 0)
     uri = URI(
-      "https://www.ipqualityscore.com/api/json/ip/#{api_key}/#{addr}?"+
+      "https://www.ipqualityscore.com/api/json/ip/#{api_key}/#{addr}?" +
       "strictness=#{strictness}"
     )
     Response.new(Net::HTTP.get(uri))
@@ -30,12 +30,13 @@ class VpsAdmin::API::Plugins::Requests::IPQS
 
   def check_mail(mail, strictness: 0)
     uri = URI(
-      "https://www.ipqualityscore.com/api/json/email/#{api_key}/#{mail}?"+
+      "https://www.ipqualityscore.com/api/json/email/#{api_key}/#{mail}?" +
       "strictness=#{strictness}"
     )
     Response.new(Net::HTTP.get(uri))
   end
 
   protected
+
   attr_reader :api_key
 end

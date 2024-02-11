@@ -42,15 +42,15 @@ module VpsAdmin::CLI::Commands
 
     def exec(args)
       if args.size < 2
-        puts "provide at least two VPS IDs"
+        puts 'provide at least two VPS IDs'
         exit(false)
 
       elsif @opts[:dst_node].nil?
-        puts "provide --dst-node"
+        puts 'provide --dst-node'
         exit(false)
       end
 
-      puts "Verifying VPS IDs..."
+      puts 'Verifying VPS IDs...'
       vpses = []
 
       args.each do |vps_id|
@@ -66,44 +66,41 @@ module VpsAdmin::CLI::Commands
 
       begin
         if @opts[:plan]
-          puts "Reusing an existing migration plan..."
+          puts 'Reusing an existing migration plan...'
           plan = @api.migration_plan.find(@opts[:plan])
 
           if plan.state != 'staged'
-            puts "Cannot reuse a plan that has already left the staging phase"
+            puts 'Cannot reuse a plan that has already left the staging phase'
             exit(false)
           end
 
         else
-          puts "Creating a migration plan..."
+          puts 'Creating a migration plan...'
           plan = @api.migration_plan.create(@opts)
         end
-
       rescue HaveAPI::Client::ActionFailed => e
         report_error(e)
       end
 
-      puts "Scheduling VPS migrations..."
+      puts 'Scheduling VPS migrations...'
       begin
         vpses.each do |vps_id|
           params = {
             vps: vps_id,
-            dst_node: @opts[:dst_node],
+            dst_node: @opts[:dst_node]
           }
           params[:outage_window] = @opts[:outage_window] unless @opts[:outage_window].nil?
           params[:cleanup_data] = @opts[:cleanup_data] unless @opts[:cleanup_data].nil?
 
           plan.vps_migration.create(params)
         end
-
       rescue HaveAPI::Client::ActionFailed => e
         report_error(e)
       end
 
-      puts "Executing the migration plan"
+      puts 'Executing the migration plan'
       begin
         ret = plan.start
-
       rescue HaveAPI::Client::ActionFailed => e
         report_error(e)
       end
@@ -112,6 +109,7 @@ module VpsAdmin::CLI::Commands
     end
 
     protected
+
     def report_error(e)
       puts e.message
 

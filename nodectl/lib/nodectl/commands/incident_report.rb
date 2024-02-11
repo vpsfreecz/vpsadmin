@@ -13,10 +13,10 @@ module NodeCtl
       :cpu_limit,
       :admin_id,
       :message,
-      keyword_init: true,
+      keyword_init: true
     )
 
-    class ParseError < ::StandardError ; end
+    class ParseError < ::StandardError; end
 
     class VpsProcesses
       include OsCtl::Lib::Utils::Humanize
@@ -38,16 +38,16 @@ module NodeCtl
         ret = []
 
         @os_procs.each do |os_proc|
-          ret << sprintf("# %13s: %d\n", 'Host PID', os_proc.pid)
-          ret << sprintf("%15s: %d\n", 'PID', os_proc.ct_pid)
-          ret << sprintf("%15s: %d\n", 'User ID', os_proc.ct_euid)
-          ret << sprintf("%15s: %s\n", 'User name', get_user_name(vps_id, os_proc.ct_euid))
-          ret << sprintf("%15s: %s\n", 'Started at', os_proc.start_time.strftime('%Y-%m-%d %H:%M:%S %Z'))
-          ret << sprintf("%15s: %s\n", 'Time on CPU', format_short_duration(os_proc.user_time + os_proc.sys_time))
-          ret << sprintf("%15s: %s\n", 'Virtual memory', humanize_data(os_proc.vmsize))
-          ret << sprintf("%15s: %s\n", 'Used memory', humanize_data(os_proc.rss))
-          ret << sprintf("%15s: %s\n", 'Executable', File.readlink(File.join('/proc', os_proc.pid.to_s, 'exe')))
-          ret << sprintf("%15s: %s\n", 'Command', os_proc.cmdline)
+          ret << format("# %13s: %d\n", 'Host PID', os_proc.pid)
+          ret << format("%15s: %d\n", 'PID', os_proc.ct_pid)
+          ret << format("%15s: %d\n", 'User ID', os_proc.ct_euid)
+          ret << format("%15s: %s\n", 'User name', get_user_name(vps_id, os_proc.ct_euid))
+          ret << format("%15s: %s\n", 'Started at', os_proc.start_time.strftime('%Y-%m-%d %H:%M:%S %Z'))
+          ret << format("%15s: %s\n", 'Time on CPU', format_short_duration(os_proc.user_time + os_proc.sys_time))
+          ret << format("%15s: %s\n", 'Virtual memory', humanize_data(os_proc.vmsize))
+          ret << format("%15s: %s\n", 'Used memory', humanize_data(os_proc.rss))
+          ret << format("%15s: %s\n", 'Executable', File.readlink(File.join('/proc', os_proc.pid.to_s, 'exe')))
+          ret << format("%15s: %s\n", 'Command', os_proc.cmdline)
 
           tree = []
           tmp = os_proc
@@ -62,11 +62,11 @@ module NodeCtl
             tmp = tmp.parent
           end
 
-          ret << sprintf("%15s: %s\n", 'Process tree', tree.reverse_each.map do |os_proc|
+          ret << format("%15s: %s\n", 'Process tree', tree.reverse_each.map do |os_proc|
             "#{os_proc.name}[#{os_proc.ct_pid}]"
           end.join(' - '))
 
-          ret << sprintf("%15s: %s", 'Cgroup', get_cgroup_path(os_proc.pid))
+          ret << format('%15s: %s', 'Cgroup', get_cgroup_path(os_proc.pid))
 
           ret << "\n"
         end
@@ -75,6 +75,7 @@ module NodeCtl
       end
 
       protected
+
       def get_user_name(vps_id, uid)
         name = 'not found'
 
@@ -85,7 +86,7 @@ module NodeCtl
           colon = out.index(':')
           next if colon.nil?
 
-          name = out[0..(colon-1)][0..29]
+          name = out[0..(colon - 1)][0..29]
         end
 
         name
@@ -102,29 +103,30 @@ module NodeCtl
             colon = s.index(':')
             next if colon.nil?
 
-            s = s[(colon+1)..-1]
+            s = s[(colon + 1)..-1]
 
             # Controllers
             colon = s.index(':')
             next if colon.nil?
 
-            if colon == 0
-              subsystems = 'unified'
-            else
-              subsystems = s[0..(colon-1)].split(',').map do |subsys|
-                # Remove name= from named controllers
-                if eq = subsys.index('=')
-                  subsys[(eq+1)..-1]
-                else
-                  subsys
-                end
-              end.join(',')
-            end
+            subsystems = if colon == 0
+                           'unified'
+                         else
+                           s[0..(colon - 1)].split(',').map do |subsys|
+                             # Remove name= from named controllers
+                             if eq = subsys.index('=')
+                               subsys[(eq + 1)..-1]
+                             else
+                               subsys
+                             end
+                           end.join(',')
+                         end
 
-            s = s[(colon+1)..-1]
+            s = s[(colon + 1)..-1]
 
             # Path
             next if s.nil?
+
             path = s
 
             cgroups[subsystems] = path
@@ -143,19 +145,19 @@ module NodeCtl
       end
     end
 
-    def options(parser, args)
-      parser.separator <<END
-Subcommands:
-pid pid...        File incident reports based on process IDs
-vps vps...        File incident reports based on VPS IDs
-END
+    def options(parser, _args)
+      parser.separator <<~END
+        Subcommands:
+        pid pid...        File incident reports based on process IDs
+        vps vps...        File incident reports based on VPS IDs
+      END
     end
 
     def validate
       if args.size < 2
         raise ValidationError, 'arguments missing'
 
-      elsif !%w(pid vps).include?(args[0])
+      elsif !%w[pid vps].include?(args[0])
         raise ValidationError, "invalid subcommand #{args[0].inspect}"
       end
     end
@@ -169,11 +171,12 @@ END
         report_vpses
 
       else
-        fail "invalid subcommand #{args[0].inspect}"
+        raise "invalid subcommand #{args[0].inspect}"
       end
     end
 
     protected
+
     def report_pids
       vps_procs = {}
 
@@ -198,31 +201,31 @@ END
       end
 
       if vps_procs.empty?
-        warn "No processes found"
+        warn 'No processes found'
         exit(false)
       end
 
       incident = open_editor do |f|
-        f.puts(<<END)
-# Lines starting with '#' are comments. Leave an empty line between the header
-# and the message itself. Delete all content to abort.
-#
-Subject:
-# Codename: malware
-# CPU-Limit: 200
-#{admin_headers}
+        f.puts(<<~END)
+          # Lines starting with '#' are comments. Leave an empty line between the header
+          # and the message itself. Delete all content to abort.
+          #
+          Subject:
+          # Codename: malware
+          # CPU-Limit: 200
+          #{admin_headers}
 
-### Incident message goes here
+          ### Incident message goes here
 
 
-END
+        END
 
         if vps_procs.size == 1
           vps_procs.each_value do |vps_proc|
             f.puts(vps_proc.format.join)
           end
         else
-          f.puts("### The following lines are VPS-specific and will be appended automatically:")
+          f.puts('### The following lines are VPS-specific and will be appended automatically:')
           vps_procs.each do |vps_id, vps_proc|
             f.puts("## VPS #{vps_id}")
             f.puts(vps_proc.format.map { |v| "# #{v}" }.join)
@@ -254,18 +257,18 @@ END
       vps_ids = args[1..-1].map(&:to_i)
 
       incident = open_editor do |f|
-        f.puts(<<END)
-# Lines starting with '#' are comments. Leave an empty line between the header
-# and the message itself. Delete all content to abort.
-#
-Subject:
-# Codename: malware
-# CPU-Limit: 200
-#{admin_headers}
+        f.puts(<<~END)
+          # Lines starting with '#' are comments. Leave an empty line between the header
+          # and the message itself. Delete all content to abort.
+          #
+          Subject:
+          # Codename: malware
+          # CPU-Limit: 200
+          #{admin_headers}
 
-### Incident message goes here
+          ### Incident message goes here
 
-END
+        END
       end
 
       incidents = vps_ids.map do |vps_id|
@@ -284,7 +287,7 @@ END
       if admin_id
         "Admin: #{admin_id} #{admin_name}"
       else
-        "# Admin: not found"
+        '# Admin: not found'
       end
     end
 
@@ -310,19 +313,18 @@ END
           content = File.read(file.path)
 
           File.open(file.path, 'w') do |f|
-            f.puts(<<END)
-###
-### Parse error: #{e.message}
-###
-#
-END
+            f.puts(<<~END)
+              ###
+              ### Parse error: #{e.message}
+              ###
+              #
+            END
             f.write(content)
           end
         else
           return incident
         end
       end
-
     ensure
       file && file.unlink
     end
@@ -371,7 +373,7 @@ END
 
     def header_value(line)
       colon = line.index(':')
-      line[(colon+1)..-1].strip
+      line[(colon + 1)..-1].strip
     end
 
     def save_incidents(incidents)
@@ -383,7 +385,7 @@ END
       incidents.each do |inc|
         user_id = db.prepared(
           'SELECT user_id FROM vpses WHERE id = ?',
-          inc.vps_id,
+          inc.vps_id
         ).get!['user_id']
 
         db.prepared(
@@ -400,19 +402,17 @@ END
             updated_at = ?,
             reported_at = NULL',
           user_id, inc.vps_id, inc.admin_id, inc.subject, inc.message, inc.codename, inc.cpu_limit,
-          t, t, t,
+          t, t, t
         )
 
         puts "Created incident report ##{db.insert_id} for VPS #{inc.vps_id}"
 
-        if inc.cpu_limit
-          cmd = %W(osctl ct set cpu-limit #{inc.vps_id} #{inc.cpu_limit})
-          puts "  #{cmd.join(' ')}"
+        next unless inc.cpu_limit
 
-          unless Kernel.system(*cmd)
-            warn "  Failed to set CPU limit on VPS #{inc.vps_id}"
-          end
-        end
+        cmd = %W[osctl ct set cpu-limit #{inc.vps_id} #{inc.cpu_limit}]
+        puts "  #{cmd.join(' ')}"
+
+        warn "  Failed to set CPU limit on VPS #{inc.vps_id}" unless Kernel.system(*cmd)
       end
     end
   end

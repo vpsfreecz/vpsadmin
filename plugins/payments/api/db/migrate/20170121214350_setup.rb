@@ -51,7 +51,7 @@ class Setup < ActiveRecord::Migration
       dir.up do
         if ENV['FROM_VPSADMIN1']
           ActiveRecord::Base.connection.execute(
-              "INSERT INTO user_accounts (user_id, monthly_payment, paid_until)
+            "INSERT INTO user_accounts (user_id, monthly_payment, paid_until)
               SELECT id, monthly_payment, paid_until
               FROM users
               WHERE object_state < 3
@@ -60,7 +60,7 @@ class Setup < ActiveRecord::Migration
 
           if table_exists?(:members_payments)
             ActiveRecord::Base.connection.execute(
-                "INSERT INTO user_payments (
+              "INSERT INTO user_payments (
                   user_id,
                   accounted_by_id,
                   amount,
@@ -91,7 +91,7 @@ class Setup < ActiveRecord::Migration
 
         else
           ActiveRecord::Base.connection.execute(
-              "INSERT INTO user_accounts (user_id, monthly_payment)
+            "INSERT INTO user_accounts (user_id, monthly_payment)
               SELECT id, 0
               FROM users
               WHERE object_state < 3

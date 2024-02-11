@@ -8,7 +8,7 @@ module Transactions::Export
       self.node_id = export.dataset_in_pool.pool.node_id
 
       {
-        export_id: export.id,
+        export_id: export.id
       }
     end
   end

@@ -45,7 +45,7 @@ class AllocateIpsToUsers < ActiveRecord::Migration
     belongs_to :location
     has_many :ip_addresses
 
-    enum role: %i(public_access private_access)
+    enum role: %i[public_access private_access]
   end
 
   class IpAddress < ActiveRecord::Base
@@ -86,14 +86,14 @@ class AllocateIpsToUsers < ActiveRecord::Migration
       User.where('object_state < 3').each { |u| up_user(u) }
 
       DefaultObjectClusterResource.where(
-          cluster_resource_id: ClusterResource.where(
-              name: %w(ipv4 ipv6 ipv4_private)
-          ).pluck(:id),
-          class_name: 'Vps',
+        cluster_resource_id: ClusterResource.where(
+          name: %w[ipv4 ipv6 ipv4_private]
+        ).pluck(:id),
+        class_name: 'Vps'
       ).delete_all
 
-      ClusterResource.where(name: %i(ipv4 ipv6 ipv4_private)).update_all(
-          allocate_chain: nil
+      ClusterResource.where(name: %i[ipv4 ipv6 ipv4_private]).update_all(
+        allocate_chain: nil
       )
     end
   end
@@ -102,17 +102,18 @@ class AllocateIpsToUsers < ActiveRecord::Migration
     ActiveRecord::Base.transaction do
       User.where('object_state < 3').each { |u| down_user(u) }
 
-      ClusterResource.where(name: %i(ipv4 ipv6 ipv4_private)).update_all(
-          allocate_chain: 'Ip::Allocate'
+      ClusterResource.where(name: %i[ipv4 ipv6 ipv4_private]).update_all(
+        allocate_chain: 'Ip::Allocate'
       )
     end
   end
 
   protected
+
   def up_user(u)
-    %i(ipv4 ipv6 ipv4_private).each do |r_name|
+    %i[ipv4 ipv6 ipv4_private].each do |r_name|
       ucrs = u.user_cluster_resources.joins(:cluster_resource).where(
-          cluster_resources: {name: r_name}
+        cluster_resources: { name: r_name }
       )
 
       ucrs.each do |ucr|
@@ -122,54 +123,54 @@ class AllocateIpsToUsers < ActiveRecord::Migration
         # Calculate new resource use
         user_env = u.environment_user_configs.find_by(environment: ucr.environment)
         user_env ||= EnvironmentUserConfig.create!(
-            user: ucr.user,
-            environment: ucr.environment,
+          user: ucr.user,
+          environment: ucr.environment
         )
 
         used = 0
 
         q = IpAddress.joins(
-            'LEFT JOIN vps ON vps.vps_id = vps_ip.vps_id'
-        ).joins(network: {location: :environment}).where(
-            locations: {environment_id: ucr.environment},
+          'LEFT JOIN vps ON vps.vps_id = vps_ip.vps_id'
+        ).joins(network: { location: :environment }).where(
+          locations: { environment_id: ucr.environment }
         )
 
-        if ucr.environment.user_ip_ownership
-          q = q.where(user: ucr.user)
+        q = if ucr.environment.user_ip_ownership
+              q.where(user: ucr.user)
 
-        else
-          q = q.where(vps: {m_id: ucr.user_id})
-        end
+            else
+              q.where(vps: { m_id: ucr.user_id })
+            end
 
         case ucr.cluster_resource.name.to_sym
         when :ipv4
-          q = q.where(networks: {ip_version: 4, role: Network.roles[:public_access]})
+          q = q.where(networks: { ip_version: 4, role: Network.roles[:public_access] })
 
         when :ipv6
-          q = q.where(networks: {ip_version: 6})
+          q = q.where(networks: { ip_version: 6 })
 
         when :ipv4_private
-          q = q.where(networks: {ip_version: 4, role: Network.roles[:private_access]})
+          q = q.where(networks: { ip_version: 4, role: Network.roles[:private_access] })
         end
 
         used += q.count
 
         ClusterResourceUse.create!(
-            user_cluster_resource: ucr,
-            class_name: 'EnvironmentUserConfig',
-            table_name: 'environment_user_configs',
-            row_id: user_env.id,
-            value: used,
-            confirmed: 1,
+          user_cluster_resource: ucr,
+          class_name: 'EnvironmentUserConfig',
+          table_name: 'environment_user_configs',
+          row_id: user_env.id,
+          value: used,
+          confirmed: 1
         )
       end
     end
   end
 
   def down_user(u)
-    %i(ipv4 ipv6 ipv4_private).each do |r_name|
+    %i[ipv4 ipv6 ipv4_private].each do |r_name|
       ucrs = u.user_cluster_resources.joins(:cluster_resource).where(
-          cluster_resources: {name: r_name}
+        cluster_resources: { name: r_name }
       )
 
       ucrs.each do |ucr|
@@ -183,26 +184,26 @@ class AllocateIpsToUsers < ActiveRecord::Migration
 
         case r_name
         when :ipv4
-          q = q.where(networks: {ip_version: 4, role: Network.roles[:public_access]})
+          q = q.where(networks: { ip_version: 4, role: Network.roles[:public_access] })
 
         when :ipv6
-          q = q.where(networks: {ip_version: 6})
+          q = q.where(networks: { ip_version: 6 })
 
         when :ipv4_private
-          q = q.where(networks: {ip_version: 4, role: Network.roles[:private_access]})
+          q = q.where(networks: { ip_version: 4, role: Network.roles[:private_access] })
         end
 
         ClusterResourceUse.create!(
-            user_cluster_resource: u.user_cluster_resources.joins(:cluster_resource).find_by!(
-                environment: vps.node.location.environment,
-                cluster_resources: {name: r_name},
-                user: u,
-            ),
-            class_name: 'Vps',
-            table_name: 'vps',
-            row_id: vps.id,
-            value: q.count,
-            confirmed: 1,
+          user_cluster_resource: u.user_cluster_resources.joins(:cluster_resource).find_by!(
+            environment: vps.node.location.environment,
+            cluster_resources: { name: r_name },
+            user: u
+          ),
+          class_name: 'Vps',
+          table_name: 'vps',
+          row_id: vps.id,
+          value: q.count,
+          confirmed: 1
         )
       end
     end

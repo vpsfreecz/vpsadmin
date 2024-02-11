@@ -32,7 +32,7 @@ module VpsAdmin::API::Resources
       authorize do |u|
         allow if u.role == :admin
         restrict user: u
-        input blacklist: %i(user)
+        input blacklist: %i[user]
         allow
       end
 
@@ -75,8 +75,8 @@ module VpsAdmin::API::Resources
 
       def prepare
         @event = with_includes.where(with_restricted(
-          id: params[:history_id]
-        )).take!
+                                       id: params[:history_id]
+                                     )).take!
       end
 
       def exec

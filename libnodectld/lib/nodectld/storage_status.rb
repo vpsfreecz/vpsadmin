@@ -5,9 +5,9 @@ module NodeCtld
   class StorageStatus
     include OsCtl::Lib::Utils::Log
 
-    READ_PROPERTIES = %w(used referenced available refquota compressratio refcompressratio)
+    READ_PROPERTIES = %w[used referenced available refquota compressratio refcompressratio]
 
-    SAVE_PROPERTIES = %w(used referenced available compressratio refcompressratio)
+    SAVE_PROPERTIES = %w[used referenced available compressratio refcompressratio]
 
     Pool = Struct.new(:name, :fs, :role, :refquota_check, :datasets, keyword_init: true)
 
@@ -56,6 +56,7 @@ module NodeCtld
     end
 
     protected
+
     def run_reader
       loop do
         v = @read_queue.pop(timeout: $CFG.get(:storage, :status_interval))
@@ -97,14 +98,14 @@ module NodeCtld
 
       RpcClient.run do |rpc|
         rpc.list_pools.each do |pool|
-          next unless %w(primary hypervisor).include?(pool['role'])
+          next unless %w[primary hypervisor].include?(pool['role'])
 
           pools[ pool['id'] ] = Pool.new(
             name: pool['name'],
             fs: pool['filesystem'],
             role: pool['role'],
             refquota_check: pool['refquota_check'],
-            datasets: {},
+            datasets: {}
           )
         end
 
@@ -121,7 +122,7 @@ module NodeCtld
               ds.properties[prop_name] = Property.new(
                 id: prop['property_id'],
                 name: prop_name,
-                value: nil,
+                value: nil
               )
 
             else
@@ -134,9 +135,9 @@ module NodeCtld
                   prop_name => Property.new(
                     id: prop['property_id'],
                     name: prop_name,
-                    value: nil,
-                  ),
-                },
+                    value: nil
+                  )
+                }
               )
             end
           end
@@ -156,7 +157,7 @@ module NodeCtld
           tree = reader.read(
             [pool.fs],
             READ_PROPERTIES,
-            recursive: true,
+            recursive: true
           )
         rescue SystemCommandFailed => e
           log(:warn, "Failed to get status of pool #{pool.fs}: #{e.output}")
@@ -204,19 +205,17 @@ module NodeCtld
             to_save << {
               id: ds_prop.id,
               name: ds_prop.name,
-              value: ds_prop.value,
+              value: ds_prop.value
             }
           end
 
-          if to_save.length >= max_size
-            save_properties(now, to_save)
-          end
+          save_properties(now, to_save) if to_save.length >= max_size
         end
       end
 
-      if to_save.any?
-        save_properties(now, to_save)
-      end
+      return unless to_save.any?
+
+      save_properties(now, to_save)
     end
 
     def save_properties(time, to_save)
@@ -225,10 +224,10 @@ module NodeCtld
         {
           message_id: @message_id,
           time: time.to_i,
-          properties: to_save,
+          properties: to_save
         }.to_json,
         content_type: 'application/json',
-        routing_key: 'storage_statuses',
+        routing_key: 'storage_statuses'
       )
 
       to_save.clear

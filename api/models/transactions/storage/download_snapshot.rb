@@ -13,7 +13,7 @@ module Transactions::Storage
         secret_key: dl.secret_key,
         file_name: dl.file_name,
         format: dl.format,
-        download_id: dl.id,
+        download_id: dl.id
       }
 
       ret[:from_snapshot] = dl.from_snapshot.name if dl.from_snapshot
@@ -22,8 +22,8 @@ module Transactions::Storage
         in_branch = ::SnapshotInPoolInBranch.joins(
           snapshot_in_pool: [:dataset_in_pool]
         ).find_by!(
-          dataset_in_pools: {pool_id: dl.pool_id},
-          snapshot_in_pools: {snapshot_id: dl.snapshot_id},
+          dataset_in_pools: { pool_id: dl.pool_id },
+          snapshot_in_pools: { snapshot_id: dl.snapshot_id }
         )
 
         ret[:tree] = in_branch.branch.dataset_tree.full_name

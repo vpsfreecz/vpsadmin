@@ -14,25 +14,25 @@ require 'nokogiri'
 
 class OutageParser
   HANDLERS = {
-      'Pavel Snajdr' => 1,
-      'Pavel Snajdr (snajpa)' => 1,
-      'Pavel Snajder' => 1,
-      'Jakub Skokan' => 51,
-      'Jakub Skokan (aither)' => 51,
-      'Tomas Srnka' => 4,
-      'Tomáš Srnka' => 4,
-      'toms' => 4,
-      'Richard Marko' => 828,
-      'Jiri Medved' => 506,
-      'Jiří Medvěd' => 506,
+    'Pavel Snajdr' => 1,
+    'Pavel Snajdr (snajpa)' => 1,
+    'Pavel Snajder' => 1,
+    'Jakub Skokan' => 51,
+    'Jakub Skokan (aither)' => 51,
+    'Tomas Srnka' => 4,
+    'Tomáš Srnka' => 4,
+    'toms' => 4,
+    'Richard Marko' => 828,
+    'Jiri Medved' => 506,
+    'Jiří Medvěd' => 506
   }
 
   ENTITIES = {
-      'vpsadmin.vpsfree.cz' => ['Node', 5],
-      'router1.brq' => ['Location', 4],
-      'router2.brq' => ['Location', 4],
-      'router1.prg' => ['Location', 3],
-      'router2.prg' => ['Location', 3],
+    'vpsadmin.vpsfree.cz' => ['Node', 5],
+    'router1.brq' => ['Location', 4],
+    'router2.brq' => ['Location', 4],
+    'router1.prg' => ['Location', 3],
+    'router2.prg' => ['Location', 3]
   }
 
   attr_reader :outages
@@ -44,7 +44,7 @@ class OutageParser
   end
 
   def load
-    puts "Loading nodes"
+    puts 'Loading nodes'
     @api.node.list.each do |n|
       ENTITIES[n.domain_name] = ['Node', n.id]
     end
@@ -91,21 +91,21 @@ class OutageParser
   def import
     @outages.each do |data|
       outage = @api.outage.create({
-          planned: data[:planned],
-          begins_at: data[:date],
-          duration: data[:duration],
-          type: data[:type],
-          en_summary: data[:en_summary],
-          cs_summary: data[:cs_summary],
-          en_description: data[:en_description],
-          cs_description: data[:cs_description],
-      }.delete_if { |k,v| v.nil? })
+        planned: data[:planned],
+        begins_at: data[:date],
+        duration: data[:duration],
+        type: data[:type],
+        en_summary: data[:en_summary],
+        cs_summary: data[:cs_summary],
+        en_description: data[:en_description],
+        cs_description: data[:cs_description]
+      }.delete_if { |_k, v| v.nil? })
       puts "Importing outage ##{outage.id}"
 
       data[:entities].each do |name, id|
         @api.outage.entity.create(
-            outage.id,
-            {name: name, entity_id: id}.delete_if { |k,v| v.nil? }
+          outage.id,
+          { name: name, entity_id: id }.delete_if { |_k, v| v.nil? }
         )
       end
 
@@ -124,6 +124,7 @@ class OutageParser
   end
 
   protected
+
   def get_type(outage)
     if outage[:entities].detect { |v| v[0] == 'Location' } \
        && !outage[:entities].detect { |v| v[0] == 'Node' }
@@ -132,6 +133,7 @@ class OutageParser
 
     return 'maintenance' if outage[:entities].detect { |v| v[0] == 'Node' && v[1] == 5 }
     return 'restart' if outage[:planned]
+
     'reset'
   end
 
@@ -143,7 +145,7 @@ class OutageParser
     sep = 'ENGLISH:'
 
     if pos = data.index(sep)
-      [data[0..(pos-1)].strip, data[(pos+sep.size)..-1].strip]
+      [data[0..(pos - 1)].strip, data[(pos + sep.size)..-1].strip]
 
     else
       [data, nil]
@@ -187,11 +189,12 @@ class OutageParser
   def get_files
     ret = []
 
-    Dir.glob("*/*.html").each do |f|
+    Dir.glob('*/*.html').each do |f|
       name = File.basename(f)
       prefix, suffix = name.split('.')
 
       next if prefix !~ /^\d+$/
+
       ret << f
     end
 
@@ -208,7 +211,7 @@ class OutageParser
     end_pos = msg.index(to)
     return if start_pos.nil? || end_pos.nil?
 
-    JSON.parse(Base64.decode64(msg[(start_pos+from.size) .. end_pos]), symbolize_names: true)
+    JSON.parse(Base64.decode64(msg[(start_pos + from.size)..end_pos]), symbolize_names: true)
   end
 end
 
@@ -223,24 +226,21 @@ if $0 == __FILE__
 
   api = HaveAPI::Client.new(ARGV[0])
   api.authenticate(:token,
-      user: ARGV[1],
-      password: password,
-      lifetime: 'fixed',
-      interval: 900,
-  )
+                   user: ARGV[1],
+                   password: password,
+                   lifetime: 'fixed',
+                   interval: 900)
 
-  puts "Initializing the parser"
+  puts 'Initializing the parser'
   parser = OutageParser.new(api)
 
-  puts "Parsing messages"
+  puts 'Parsing messages'
   parser.parse
 
   puts "Parsed #{parser.outages.count} outage reports"
 
-  if ask('Import? [y/N]') != 'y'
-    exit(true)
-  end
+  exit(true) if ask('Import? [y/N]') != 'y'
 
-  puts "Importing outages"
+  puts 'Importing outages'
   parser.import
 end

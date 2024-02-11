@@ -3,7 +3,7 @@ module TransactionChains
     label 'Destroy'
 
     # @param export [::Export]
-    def link_chain(export, *args)
+    def link_chain(export, *_args)
       concerns(:affect, [export.class.name, export.id])
 
       host_addr = export.host_ip_addresses.first
@@ -25,9 +25,9 @@ module TransactionChains
         t.destroy(export)
       end
 
-      if export.snapshot_in_pool_clone
-        use_chain(SnapshotInPool::FreeClone, args: export.snapshot_in_pool_clone)
-      end
+      return unless export.snapshot_in_pool_clone
+
+      use_chain(SnapshotInPool::FreeClone, args: export.snapshot_in_pool_clone)
     end
   end
 end

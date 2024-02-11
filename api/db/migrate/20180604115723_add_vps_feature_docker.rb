@@ -7,16 +7,16 @@ class AddVpsFeatureDocker < ActiveRecord::Migration
     belongs_to :node
   end
 
-  class VpsFeature < ActiveRecord::Base ; end
+  class VpsFeature < ActiveRecord::Base; end
 
   def up
     ::Vps.joins(:node).where('object_state < 3').where(
-      nodes: {hypervisor_type: 1},
+      nodes: { hypervisor_type: 1 }
     ).each do |vps|
       ::VpsFeature.create!(
         vps_id: vps.id,
         name: 'docker',
-        enabled: false,
+        enabled: false
       )
     end
   end

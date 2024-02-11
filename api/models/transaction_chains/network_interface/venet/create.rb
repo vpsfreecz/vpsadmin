@@ -7,13 +7,13 @@ module TransactionChains
       netif = ::NetworkInterface.create!(
         vps: vps,
         kind: 'venet',
-        name: 'venet0',
+        name: 'venet0'
       )
 
       netif.call_class_hooks_for(
         :create,
         self,
-        args: [netif],
+        args: [netif]
       )
 
       append_t(Transactions::Utils::NoOp, args: find_node_id) do |t|

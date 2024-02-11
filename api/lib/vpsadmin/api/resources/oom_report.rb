@@ -40,8 +40,8 @@ module VpsAdmin::API::Resources
 
       authorize do |u|
         allow if u.role == :admin
-        restrict vpses: {user_id: u.id}
-        input blacklist: %i(user)
+        restrict vpses: { user_id: u.id }
+        input blacklist: %i[user]
         allow
       end
 
@@ -49,32 +49,26 @@ module VpsAdmin::API::Resources
         q = self.class.model.joins(:vps).all.where(with_restricted)
 
         q = q.where(vps: input[:vps]) if input[:vps]
-        q = q.where(vpses: {user_id: input[:user].id}) if input[:user]
-        q = q.where(vpses: {node_id: input[:node].id}) if input[:node]
+        q = q.where(vpses: { user_id: input[:user].id }) if input[:user]
+        q = q.where(vpses: { node_id: input[:node].id }) if input[:node]
 
         if input[:location]
           q = q.joins(vps: :node).where(
-            nodes: {location_id: input[:location].id},
+            nodes: { location_id: input[:location].id }
           )
         end
 
         if input[:environment]
-          q = q.joins(vps: {node: :location}).where(
-            locations: {environment_id: input[:environment].id},
+          q = q.joins(vps: { node: :location }).where(
+            locations: { environment_id: input[:environment].id }
           )
         end
 
-        if input[:cgroup]
-          q = q.where('oom_reports.cgroup = ?', input[:cgroup])
-        end
+        q = q.where('oom_reports.cgroup = ?', input[:cgroup]) if input[:cgroup]
 
-        if input[:since]
-          q = q.where('oom_reports.created_at >= ?', input[:since])
-        end
+        q = q.where('oom_reports.created_at >= ?', input[:since]) if input[:since]
 
-        if input[:until]
-          q = q.where('oom_reports.created_at <= ?', input[:until])
-        end
+        q = q.where('oom_reports.created_at <= ?', input[:until]) if input[:until]
 
         q
       end
@@ -100,7 +94,7 @@ module VpsAdmin::API::Resources
 
       authorize do |u|
         allow if u.role == :admin
-        restrict vpses: {user_id: u.id}
+        restrict vpses: { user_id: u.id }
         allow
       end
 
@@ -135,14 +129,14 @@ module VpsAdmin::API::Resources
 
         authorize do |u|
           allow if u.role == :admin
-          restrict vpses: {user_id: u.id}
+          restrict vpses: { user_id: u.id }
           allow
         end
 
         def query
           self.class.model.joins(oom_report: :vps).all.where(with_restricted(
-            oom_report_id: params[:oom_report_id],
-          ))
+                                                               oom_report_id: params[:oom_report_id]
+                                                             ))
         end
 
         def count
@@ -163,15 +157,15 @@ module VpsAdmin::API::Resources
 
         authorize do |u|
           allow if u.role == :admin
-          restrict vpses: {user_id: u.id}
+          restrict vpses: { user_id: u.id }
           allow
         end
 
         def prepare
           @usage = self.class.model.joins(oom_report: :vps).find_by(with_restricted(
-            oom_report_id: params[:oom_report_id],
-            id: params[:usage_id],
-          ))
+                                                                      oom_report_id: params[:oom_report_id],
+                                                                      id: params[:usage_id]
+                                                                    ))
         end
 
         def exec
@@ -200,14 +194,14 @@ module VpsAdmin::API::Resources
 
         authorize do |u|
           allow if u.role == :admin
-          restrict vpses: {user_id: u.id}
+          restrict vpses: { user_id: u.id }
           allow
         end
 
         def query
           self.class.model.joins(oom_report: :vps).all.where(with_restricted(
-            oom_report_id: params[:oom_report_id],
-          ))
+                                                               oom_report_id: params[:oom_report_id]
+                                                             ))
         end
 
         def count
@@ -228,15 +222,15 @@ module VpsAdmin::API::Resources
 
         authorize do |u|
           allow if u.role == :admin
-          restrict vpses: {user_id: u.id}
+          restrict vpses: { user_id: u.id }
           allow
         end
 
         def prepare
           @stat = self.class.model.joins(oom_report: :vps).find_by(with_restricted(
-            oom_report_id: params[:oom_report_id],
-            id: params[:stat_id],
-          ))
+                                                                     oom_report_id: params[:oom_report_id],
+                                                                     id: params[:stat_id]
+                                                                   ))
         end
 
         def exec
@@ -273,14 +267,14 @@ module VpsAdmin::API::Resources
 
         authorize do |u|
           allow if u.role == :admin
-          restrict vpses: {user_id: u.id}
+          restrict vpses: { user_id: u.id }
           allow
         end
 
         def query
           self.class.model.joins(oom_report: :vps).all.where(with_restricted(
-            oom_report_id: params[:oom_report_id],
-          ))
+                                                               oom_report_id: params[:oom_report_id]
+                                                             ))
         end
 
         def count
@@ -301,15 +295,15 @@ module VpsAdmin::API::Resources
 
         authorize do |u|
           allow if u.role == :admin
-          restrict vpses: {user_id: u.id}
+          restrict vpses: { user_id: u.id }
           allow
         end
 
         def prepare
           @task = self.class.model.joins(oom_report: :vps).find_by(with_restricted(
-            oom_report_id: params[:oom_report_id],
-            id: params[:task_id],
-          ))
+                                                                     oom_report_id: params[:oom_report_id],
+                                                                     id: params[:task_id]
+                                                                   ))
         end
 
         def exec

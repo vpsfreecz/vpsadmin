@@ -14,8 +14,8 @@ module Transactions::Storage
         snapshot: {
           id: snapshot_in_pool.snapshot_id,
           name: snapshot_in_pool.snapshot.name,
-          confirmed: snapshot_in_pool.snapshot.confirmed,
-        },
+          confirmed: snapshot_in_pool.snapshot.confirmed
+        }
       }
 
       if branch

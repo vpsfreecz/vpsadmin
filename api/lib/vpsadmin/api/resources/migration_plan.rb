@@ -91,7 +91,6 @@ module VpsAdmin::API::Resources
         plan.user = current_user
         plan.save!
         plan
-
       rescue ActiveRecord::RecordInvalid => e
         error('create failed', e.record.errors.to_hash)
       end
@@ -113,9 +112,7 @@ module VpsAdmin::API::Resources
       def exec
         plan = ::MigrationPlan.find(params[:migration_plan_id])
 
-        if plan.state != 'staged'
-          error('This migration plan has already been started')
-        end
+        error('This migration plan has already been started') if plan.state != 'staged'
 
         plan.start!
         plan
@@ -138,9 +135,7 @@ module VpsAdmin::API::Resources
       def exec
         plan = ::MigrationPlan.find(params[:migration_plan_id])
 
-        if plan.state != 'running'
-          error('This migration plan is not running')
-        end
+        error('This migration plan is not running') if plan.state != 'running'
 
         plan.cancel!
         plan
@@ -157,9 +152,7 @@ module VpsAdmin::API::Resources
       def exec
         plan = ::MigrationPlan.find(params[:migration_plan_id])
 
-        if plan.state != 'staged'
-          error('This migration plan is not in the staging phase anymore')
-        end
+        error('This migration plan is not in the staging phase anymore') if plan.state != 'staged'
 
         plan.destroy
         ok
@@ -237,7 +230,7 @@ module VpsAdmin::API::Resources
         def prepare
           @m = ::VpsMigrationPlan.find_by!(
             migration_plan_id: params[:migration_plan_id],
-            id: params[:vps_migration_id],
+            id: params[:vps_migration_id]
           )
         end
 
@@ -266,18 +259,15 @@ module VpsAdmin::API::Resources
         def exec
           plan = ::MigrationPlan.find(params[:migration_plan_id])
 
-          if plan.state != 'staged'
-            error('This migration plans has already been started.')
-          end
+          error('This migration plans has already been started.') if plan.state != 'staged'
 
           plan.vps_migrations.create!(
             vps: input[:vps],
             maintenance_window: input[:maintenance_window],
             cleanup_data: input[:cleanup_data],
             src_node: input[:vps].node,
-            dst_node: input[:dst_node],
+            dst_node: input[:dst_node]
           )
-
         rescue ActiveRecord::RecordInvalid => e
           error('create failed', e.record.errors.to_hash)
         end

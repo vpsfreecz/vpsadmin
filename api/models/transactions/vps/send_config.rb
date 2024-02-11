@@ -24,7 +24,7 @@ module Transactions::Vps
         snapshots: opts.has_key?(:snapshots) ? opts[:snapshots] : true,
         passphrase: opts[:passphrase],
         from_snapshot: opts[:from_snapshot],
-        preexisting_datasets: opts[:preexisting_datasets],
+        preexisting_datasets: opts[:preexisting_datasets]
       }
     end
   end

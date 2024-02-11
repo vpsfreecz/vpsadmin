@@ -7,7 +7,7 @@ module VpsAdmin::API::Plugins::Monitoring
       @opts = opts
     end
 
-    %i(
+    %i[
       period
       check_count
       repeat
@@ -17,7 +17,7 @@ module VpsAdmin::API::Plugins::Monitoring
       access_level
       skip_acknowledged
       skip_ignored
-    ).each do |name|
+    ].each do |name|
       define_method(name) { @opts[name] }
     end
 
@@ -27,22 +27,18 @@ module VpsAdmin::API::Plugins::Monitoring
         passed = @opts[:check].call(obj, v)
         real_obj = @opts[:object] ? @opts[:object].call(obj) : obj
 
-        unless passed
-          warn "#{real_obj.class.name} ##{real_obj.id} did not pass '#{@name}': value '#{v}'"
-        end
+        warn "#{real_obj.class.name} ##{real_obj.id} did not pass '#{@name}': value '#{v}'" unless passed
 
-        if @opts[:user]
-          responsible_user = @opts[:user].call(obj, real_obj)
+        responsible_user = if @opts[:user]
+                             @opts[:user].call(obj, real_obj)
 
-        elsif real_obj.respond_to?(:user)
-          responsible_user = real_obj.user
+                           elsif real_obj.respond_to?(:user)
+                             real_obj.user
 
-        elsif obj.respond_to?(:user)
-          responsible_user = obj.user
+                           elsif obj.respond_to?(:user)
+                             obj.user
 
-        else
-          responsible_user = nil
-        end
+                           end
 
         MonitoredEvent.report!(
           self,
@@ -58,8 +54,9 @@ module VpsAdmin::API::Plugins::Monitoring
 
     def call_action(state, chain, *args)
       return if @opts[:action].nil? || @opts[:action][state].nil?
+
       blk = VpsAdmin::API::Plugins::Monitoring.actions[@opts[:action][state]]
-      fail "unknown action '#{@opts[:action][state]}'" unless blk
+      raise "unknown action '#{@opts[:action][state]}'" unless blk
 
       chain.instance_exec(*args, &blk)
     end

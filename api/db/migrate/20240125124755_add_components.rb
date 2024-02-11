@@ -1,5 +1,5 @@
 class AddComponents < ActiveRecord::Migration[7.1]
-  class Component < ActiveRecord::Base ; end
+  class Component < ActiveRecord::Base; end
 
   def change
     create_table :components do |t|
@@ -13,19 +13,19 @@ class AddComponents < ActiveRecord::Migration[7.1]
     reversible do |dir|
       dir.up do
         Component.insert_all!([
-          {
-            name: 'api',
-            label: 'API Server',
-          },
-          {
-            name: 'console',
-            label: 'Remote Console Server',
-          },
-          {
-            name: 'webui',
-            label: 'Web Interface',
-          },
-        ])
+                                {
+                                  name: 'api',
+                                  label: 'API Server'
+                                },
+                                {
+                                  name: 'console',
+                                  label: 'Remote Console Server'
+                                },
+                                {
+                                  name: 'webui',
+                                  label: 'Web Interface'
+                                }
+                              ])
       end
     end
   end

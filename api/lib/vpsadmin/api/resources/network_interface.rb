@@ -6,11 +6,11 @@ module VpsAdmin::API::Resources
     params(:all) do
       id :id, label: 'ID', desc: 'Interface ID'
       resource VPS, label: 'VPS',
-        desc: 'VPS the interface is assigned to, can be null',
-        value_label: :hostname
+                    desc: 'VPS the interface is assigned to, can be null',
+                    value_label: :hostname
       string :name
       string :type, choices: ::NetworkInterface.kinds.keys.map(&:to_s),
-        db_name: :kind
+                    db_name: :kind
       string :mac, label: 'MAC Address'
       integer :max_tx, label: 'Max outgoing data throughput'
       integer :max_rx, label: 'Max incoming data throughput'
@@ -21,10 +21,10 @@ module VpsAdmin::API::Resources
 
       input do
         resource VPS, label: 'VPS',
-          desc: 'VPS the interface is assigned to, can be null',
-          value_label: :hostname
+                      desc: 'VPS the interface is assigned to, can be null',
+                      value_label: :hostname
         resource Location, label: 'Location',
-          desc: 'Location this IP address is available in'
+                           desc: 'Location this IP address is available in'
         resource User, label: 'User', value_label: :login
       end
 
@@ -34,8 +34,8 @@ module VpsAdmin::API::Resources
 
       authorize do |u|
         allow if u.role == :admin
-        restrict vpses: {user_id: u.id}
-        input whitelist: %i(vps location limit offset)
+        restrict vpses: { user_id: u.id }
+        input whitelist: %i[vps location limit offset]
         allow
       end
 
@@ -43,11 +43,9 @@ module VpsAdmin::API::Resources
         q = ::NetworkInterface.joins(:vps).where(with_restricted)
         q = q.where(vps: input[:vps]) if input[:vps]
 
-        if input[:location]
-          q = q.joins(vps: :node).where(nodes: {location_id: input[:location].id})
-        end
+        q = q.joins(vps: :node).where(nodes: { location_id: input[:location].id }) if input[:location]
 
-        q = q.where(vpses: {user_id: input[:user].id}) if input[:user]
+        q = q.where(vpses: { user_id: input[:user].id }) if input[:user]
         q
       end
 
@@ -69,14 +67,14 @@ module VpsAdmin::API::Resources
 
       authorize do |u|
         allow if u.role == :admin
-        restrict vpses: {user_id: u.id}
+        restrict vpses: { user_id: u.id }
         allow
       end
 
       def prepare
         @netif = ::NetworkInterface.joins(:vps).find_by!(with_restricted(
-          network_interfaces: {id: params[:network_interface_id]},
-        ))
+                                                           network_interfaces: { id: params[:network_interface_id] }
+                                                         ))
       end
 
       def exec
@@ -89,7 +87,7 @@ module VpsAdmin::API::Resources
       blocking true
 
       input do
-        use :all, include: %i(name max_tx max_rx)
+        use :all, include: %i[name max_tx max_rx]
       end
 
       output do
@@ -98,8 +96,8 @@ module VpsAdmin::API::Resources
 
       authorize do |u|
         allow if u.role == :admin
-        input whitelist: %i(name)
-        restrict vpses: {user_id: u.id}
+        input whitelist: %i[name]
+        restrict vpses: { user_id: u.id }
         allow
       end
 
@@ -108,16 +106,12 @@ module VpsAdmin::API::Resources
 
       def exec
         netif = ::NetworkInterface.joins(:vps).find_by!(with_restricted(
-          network_interfaces: {id: params[:network_interface_id]},
-        ))
+                                                          network_interfaces: { id: params[:network_interface_id] }
+                                                        ))
 
-        if input.empty?
-          ok(netif)
-        end
+        ok(netif) if input.empty?
 
-        if input[:name] && !netif.vps.node.vpsadminos?
-          error('veth renaming is not available on this node')
-        end
+        error('veth renaming is not available on this node') if input[:name] && !netif.vps.node.vpsadminos?
 
         maintenance_check!(netif.vps)
         object_state_check!(netif.vps, netif.vps.user)

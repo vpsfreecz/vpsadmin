@@ -33,38 +33,39 @@ module NodeCtld
         cpu: SystemProbes::CpuUsage.new.measure.to_percent,
         memory: { # in kB
           total: mem.total,
-          used: mem.used,
+          used: mem.used
         },
         swap: { # in kB
           total: mem.swap_total,
-          used: mem.swap_used,
+          used: mem.swap_used
         },
         arc: arc && { # in bytes
           c_max: arc.c_max,
           c: arc.c,
           size: arc.size,
-          hitpercent: arc.hit_percent,
+          hitpercent: arc.hit_percent
         },
         loadavg: SystemProbes::LoadAvg.new.avg,
         storage: {
           state: pool_state,
           scan: pool_scan,
           scan_percent: pool_scan_percent,
-          checked_at: pool_check.to_i,
-        },
+          checked_at: pool_check.to_i
+        }
       }
 
       NodeBunny.publish_drop(
         @exchange,
         status.to_json,
         content_type: 'application/json',
-        routing_key: 'statuses',
+        routing_key: 'statuses'
       )
     rescue SystemCommandFailed => e
       log(:fatal, :node_status, e.message)
     end
 
     protected
+
     def hypervisor?
       $CFG.get(:vpsadmin, :type) == :node
     end
@@ -81,9 +82,7 @@ module NodeCtld
       begin
         @cgroup_version = File.read(path).strip.to_i
       rescue SystemCallError => e
-        unless $CFG.minimal?
-          log(:info, "Unable to read cgroup version from #{path}: #{e.message} (#{e.class})")
-        end
+        log(:info, "Unable to read cgroup version from #{path}: #{e.message} (#{e.class})") unless $CFG.minimal?
 
         @cgroup_version = 0
       end

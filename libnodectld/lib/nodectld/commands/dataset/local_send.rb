@@ -7,12 +7,7 @@ module NodeCtld
       db = Db.new
       snap = confirmed_snapshot_name(db, @snapshots.last)
 
-      if @snapshots.count > 1
-        from_snap = confirmed_snapshot_name(db, @snapshots.first)
-
-      else
-        from_snap = nil
-      end
+      from_snap = (confirmed_snapshot_name(db, @snapshots.first) if @snapshots.count > 1)
 
       db.close
 
@@ -21,7 +16,7 @@ module NodeCtld
           pool: @src_pool_fs,
           tree: @src_tree,
           branch: @src_branch,
-          dataset: @src_dataset_name,
+          dataset: @src_dataset_name
         },
         snap,
         from_snap
@@ -29,11 +24,11 @@ module NodeCtld
 
       stream.command(self) do
         stream.send_recv({
-          pool: @dst_pool_fs,
-          tree: @dst_tree,
-          branch: @dst_branch,
-          dataset: @dst_dataset_name,
-        })
+                           pool: @dst_pool_fs,
+                           tree: @dst_tree,
+                           branch: @dst_branch,
+                           dataset: @dst_dataset_name
+                         })
       end
 
       ok
@@ -42,12 +37,12 @@ module NodeCtld
     def rollback
       db = Db.new
 
-      if @dst_branch
-        ds_name = "#{@dst_dataset_name}/#{@dst_tree}/#{@dst_branch}"
+      ds_name = if @dst_branch
+                  "#{@dst_dataset_name}/#{@dst_tree}/#{@dst_branch}"
 
-      else
-        ds_name = @dst_dataset_name
-      end
+                else
+                  @dst_dataset_name
+                end
 
       @snapshots.reverse_each do |s|
         zfs(
@@ -62,6 +57,7 @@ module NodeCtld
     end
 
     protected
+
     def confirmed_snapshot_name(db, snap)
       if snapshot_confirmed?(snap)
         snap['name']

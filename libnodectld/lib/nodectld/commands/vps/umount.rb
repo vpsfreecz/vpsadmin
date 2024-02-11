@@ -21,10 +21,10 @@ module NodeCtld
       mounts = @umounted_mounts || @mounts
 
       call_cmd(Commands::Vps::Mount, {
-        pool_fs: @pool_fs,
-        vps_id: @vps_id,
-        mounts: mounts.reverse,
-      })
+                 pool_fs: @pool_fs,
+                 vps_id: @vps_id,
+                 mounts: mounts.reverse
+               })
     end
   end
 end

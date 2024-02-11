@@ -10,9 +10,9 @@ module NodeCtld
 
           netif_opts['routes'].each do |route_opts|
             netif.add_route(VpsConfig::Route.new(
-              IPAddress.parse("#{route_opts['addr']}/#{route_opts['prefix']}"),
-              route_opts['via'],
-            ))
+                              IPAddress.parse("#{route_opts['addr']}/#{route_opts['prefix']}"),
+                              route_opts['via']
+                            ))
           end
 
           cfg.network_interfaces << netif

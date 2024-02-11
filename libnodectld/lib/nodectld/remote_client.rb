@@ -16,8 +16,7 @@ module NodeCtld
         i.open
         i.cmd(cmd, params)
         i.close
-
-      rescue
+      rescue StandardError
         # nothing to do
       end
     end
@@ -33,14 +32,14 @@ module NodeCtld
     end
 
     def cmd(cmd, params = {})
-      @sock.send({command: cmd, params: params}.to_json + "\n", 0)
+      @sock.send({ command: cmd, params: params }.to_json + "\n", 0)
     end
 
     def reply
-      buf = ""
+      buf = ''
 
       while m = @sock.recv(1024)
-        buf = buf + m
+        buf += m
         break if m[-1].chr == "\n"
       end
 

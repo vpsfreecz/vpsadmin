@@ -6,7 +6,7 @@ module NodeCtld
     include OsCtl::Lib::Utils::Log
 
     class << self
-      %i(wait check check!).each do |m|
+      %i[wait check check!].each do |m|
         define_method(m) do |pool_fs, ctid, *args, **kwargs|
           check = new(pool_fs, ctid)
           check.send(m, *args, **kwargs)
@@ -32,18 +32,14 @@ module NodeCtld
         routes = check
         break if routes.empty?
 
-        if use_default_timeout
-          effective_timeout = $CFG.get(:route_check, :default_timeout)
-        end
+        effective_timeout = $CFG.get(:route_check, :default_timeout) if use_default_timeout
 
-        if since + effective_timeout < Time.now
-          fail "the following routes exist: #{format_routes(routes)}"
-        else
-          log(
-            :warn,
-            "Waiting for the following routes to disappear: #{format_routes(routes)}"
-          )
-        end
+        raise "the following routes exist: #{format_routes(routes)}" if since + effective_timeout < Time.now
+
+        log(
+          :warn,
+          "Waiting for the following routes to disappear: #{format_routes(routes)}"
+        )
 
         sleep(5)
       end
@@ -63,9 +59,7 @@ module NodeCtld
 
         cfg.network_interfaces.each do |netif|
           netif.routes[ip_v].each do |route|
-            if kernel_routes.include?(route.address)
-              ret << route
-            end
+            ret << route if kernel_routes.include?(route.address)
           end
         end
       end
@@ -77,7 +71,7 @@ module NodeCtld
       routes = check
       return true if routes.empty?
 
-      fail "The following routes exist: #{format_routes(routes)}"
+      raise "The following routes exist: #{format_routes(routes)}"
     end
 
     def log_type
@@ -85,10 +79,11 @@ module NodeCtld
     end
 
     protected
+
     attr_reader :cfg
 
     def format_routes(routes)
-      routes.map{ |r| r.address.to_string}.join(', ')
+      routes.map { |r| r.address.to_string }.join(', ')
     end
   end
 end

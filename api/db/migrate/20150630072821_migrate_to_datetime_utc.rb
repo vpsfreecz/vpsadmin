@@ -42,45 +42,45 @@ class MigrateToDatetimeUtc < ActiveRecord::Migration
     reversible do |dir|
       dir.up do
         Vps.where.not(vps_created: nil).update_all(
-            "created_at = CONVERT_TZ(FROM_UNIXTIME(vps_created), 'Europe/Prague', 'UTC')"
+          "created_at = CONVERT_TZ(FROM_UNIXTIME(vps_created), 'Europe/Prague', 'UTC')"
         )
 
         User.where.not(m_created: nil).update_all(
-            "created_at = CONVERT_TZ(FROM_UNIXTIME(m_created), 'Europe/Prague', 'UTC')"
+          "created_at = CONVERT_TZ(FROM_UNIXTIME(m_created), 'Europe/Prague', 'UTC')"
         )
 
         User.where("m_paid_until IS NOT NULL AND m_paid_until != ''").update_all(
-            "paid_until = CONVERT_TZ(FROM_UNIXTIME(m_paid_until), 'Europe/Prague', 'UTC')"
+          "paid_until = CONVERT_TZ(FROM_UNIXTIME(m_paid_until), 'Europe/Prague', 'UTC')"
         )
 
         User.where.not(m_last_activity: nil).update_all(
-            "last_activity_at = CONVERT_TZ(FROM_UNIXTIME(m_last_activity), 'Europe/Prague', 'UTC')"
+          "last_activity_at = CONVERT_TZ(FROM_UNIXTIME(m_last_activity), 'Europe/Prague', 'UTC')"
         )
 
         Transaction.where.not(t_time: nil).update_all(
-            "created_at = CONVERT_TZ(FROM_UNIXTIME(t_time), 'Europe/Prague', 'UTC')"
+          "created_at = CONVERT_TZ(FROM_UNIXTIME(t_time), 'Europe/Prague', 'UTC')"
         )
 
         Transaction.where.not(t_real_start: nil).update_all(
-            "started_at = CONVERT_TZ(FROM_UNIXTIME(t_real_start), 'Europe/Prague', 'UTC')"
+          "started_at = CONVERT_TZ(FROM_UNIXTIME(t_real_start), 'Europe/Prague', 'UTC')"
         )
 
         Transaction.where.not(t_end: nil).update_all(
-            "finished_at = CONVERT_TZ(FROM_UNIXTIME(t_end), 'Europe/Prague', 'UTC')"
+          "finished_at = CONVERT_TZ(FROM_UNIXTIME(t_end), 'Europe/Prague', 'UTC')"
         )
 
         VpsConsole.all.update_all(
-            "expiration = CONVERT_TZ(expiration, 'Europe/Prague', 'UTC')"
+          "expiration = CONVERT_TZ(expiration, 'Europe/Prague', 'UTC')"
         )
 
         VpsStatus.all.update_all(
-            "created_at = CONVERT_TZ(FROM_UNIXTIME(`timestamp`), 'Europe/Prague', 'UTC')"
+          "created_at = CONVERT_TZ(FROM_UNIXTIME(`timestamp`), 'Europe/Prague', 'UTC')"
         )
 
         change_column_null :vps_status, :created_at, false
 
         NodeStatus.all.update_all(
-            "created_at = CONVERT_TZ(FROM_UNIXTIME(`timestamp`), 'Europe/Prague', 'UTC')"
+          "created_at = CONVERT_TZ(FROM_UNIXTIME(`timestamp`), 'Europe/Prague', 'UTC')"
         )
 
         change_column_null :servers_status, :created_at, false
@@ -88,45 +88,45 @@ class MigrateToDatetimeUtc < ActiveRecord::Migration
 
       dir.down do
         Vps.where.not(created_at: nil).update_all(
-            "vps_created = UNIX_TIMESTAMP(CONVERT_TZ(created_at, 'UTC', 'Europe/Prague'))"
+          "vps_created = UNIX_TIMESTAMP(CONVERT_TZ(created_at, 'UTC', 'Europe/Prague'))"
         )
 
         User.where.not(created_at: nil).update_all(
-            "m_created = UNIX_TIMESTAMP(CONVERT_TZ(created_at, 'UTC', 'Europe/Prague'))"
+          "m_created = UNIX_TIMESTAMP(CONVERT_TZ(created_at, 'UTC', 'Europe/Prague'))"
         )
 
         User.where.not(paid_until: nil).update_all(
-            "m_paid_until = UNIX_TIMESTAMP(CONVERT_TZ(paid_until, 'UTC', 'Europe/Prague'))"
+          "m_paid_until = UNIX_TIMESTAMP(CONVERT_TZ(paid_until, 'UTC', 'Europe/Prague'))"
         )
 
         User.where.not(last_activity_at: nil).update_all(
-            "m_last_activity = UNIX_TIMESTAMP(CONVERT_TZ(last_activity_at, 'UTC', 'Europe/Prague'))"
+          "m_last_activity = UNIX_TIMESTAMP(CONVERT_TZ(last_activity_at, 'UTC', 'Europe/Prague'))"
         )
 
         Transaction.where.not(created_at: nil).update_all(
-            "t_time = UNIX_TIMESTAMP(CONVERT_TZ(created_at, 'UTC', 'Europe/Prague'))"
+          "t_time = UNIX_TIMESTAMP(CONVERT_TZ(created_at, 'UTC', 'Europe/Prague'))"
         )
 
         Transaction.where.not(started_at: nil).update_all(
-            "t_real_start = UNIX_TIMESTAMP(CONVERT_TZ(started_at, 'UTC', 'Europe/Prague'))"
+          "t_real_start = UNIX_TIMESTAMP(CONVERT_TZ(started_at, 'UTC', 'Europe/Prague'))"
         )
 
         Transaction.where.not(finished_at: nil).update_all(
-            "t_end = UNIX_TIMESTAMP(CONVERT_TZ(finished_at, 'UTC', 'Europe/Prague'))"
+          "t_end = UNIX_TIMESTAMP(CONVERT_TZ(finished_at, 'UTC', 'Europe/Prague'))"
         )
 
         VpsConsole.all.update_all(
-            "expiration = CONVERT_TZ(expiration, 'UTC', 'Europe/Prague')"
+          "expiration = CONVERT_TZ(expiration, 'UTC', 'Europe/Prague')"
         )
 
         VpsStatus.all.update_all(
-            "`timestamp` = UNIX_TIMESTAMP(CONVERT_TZ(created_at, 'UTC', 'Europe/Prague'))"
+          "`timestamp` = UNIX_TIMESTAMP(CONVERT_TZ(created_at, 'UTC', 'Europe/Prague'))"
         )
 
         change_column_null :vps_status, :timestamp, false
 
         NodeStatus.all.update_all(
-            "`timestamp` = UNIX_TIMESTAMP(CONVERT_TZ(created_at, 'UTC', 'Europe/Prague'))"
+          "`timestamp` = UNIX_TIMESTAMP(CONVERT_TZ(created_at, 'UTC', 'Europe/Prague'))"
         )
 
         change_column_null :servers_status, :timestamp, false

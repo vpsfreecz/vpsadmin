@@ -11,16 +11,16 @@ module TransactionChains
       if opts[:maintenance]
         m = ::MaintenanceLock.lock_for(node)
 
-        fail 'unable to lock the node' unless m.lock!(node)
+        raise 'unable to lock the node' unless m.lock!(node)
       end
 
       # Port reservations
       append(Transactions::Utils::NoOp, args: node.id) do
-        if %w(node storage).include?(node.role)
-          10000.times do |i|
+        if %w[node storage].include?(node.role)
+          10_000.times do |i|
             r = ::PortReservation.create!(
               node: node,
-              port: 10000 + i
+              port: 10_000 + i
             )
 
             just_create(r)

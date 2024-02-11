@@ -8,7 +8,7 @@ module NodeCtld
     end
 
     def rollback
-      osctl(%i(ct del), @vps_id, {force: true})
+      osctl(%i[ct del], @vps_id, { force: true })
       ok
     end
   end

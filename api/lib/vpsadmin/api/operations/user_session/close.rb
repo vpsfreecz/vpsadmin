@@ -13,9 +13,7 @@ module VpsAdmin::API
 
         sso = auth.single_sign_on
 
-        if sso && (!sso.usable? || !sso.any_active_authorizations?)
-          sso.close
-        end
+        sso.close if sso && (!sso.usable? || !sso.any_active_authorizations?)
       end
 
       # Close expired single sign ons

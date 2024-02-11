@@ -21,17 +21,19 @@ module TransactionChains
         case attr
         when 'name'
           append_t(Transactions::NetworkInterface::Rename, args: [
-            netif,
-            netif.name_was,
-            netif.name,
-          ]) do |t|
+                     netif,
+                     netif.name_was,
+                     netif.name
+                   ]) do |t|
             t.edit(netif, name: netif.name)
 
-            t.just_create(netif.vps.log(:netif_rename, {
-              id: netif.id,
-              name: netif.name_was,
-              new_name: netif.name,
-            })) unless included?
+            unless included?
+              t.just_create(netif.vps.log(:netif_rename, {
+                                            id: netif.id,
+                                            name: netif.name_was,
+                                            new_name: netif.name
+                                          }))
+            end
           end
 
         when 'max_tx', 'max_rx'
@@ -43,7 +45,7 @@ module TransactionChains
         append_t(
           Transactions::NetworkInterface::SetShaper,
           args: [orig_netif],
-          kwargs: shaper,
+          kwargs: shaper
         ) do |t|
           t.edit(netif, **shaper)
         end

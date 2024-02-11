@@ -29,12 +29,9 @@ class Oauth2Authorization < ::ActiveRecord::Base
       update!(refresh_token: nil)
     end
 
-    if user_session && !user_session.closed_at
-      if user_session.token
-        fail "expected user_session.token to be nil on user_session=#{user_session.id}"
-      end
+    return unless user_session && !user_session.closed_at
+    raise "expected user_session.token to be nil on user_session=#{user_session.id}" if user_session.token
 
-      user_session.update!(closed_at: valid_to || Time.now)
-    end
+    user_session.update!(closed_at: valid_to || Time.now)
   end
 end

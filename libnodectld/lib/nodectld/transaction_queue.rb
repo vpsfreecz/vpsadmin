@@ -45,12 +45,10 @@ module NodeCtld
 
       def down_now
         mutex.synchronize do
-          if used < size
-            @used += 1
-            true
-          else
-            raise ThreadError, 'programming error, no free slot'
-          end
+          raise ThreadError, 'programming error, no free slot' unless used < size
+
+          @used += 1
+          true
         end
       end
 
@@ -64,6 +62,7 @@ module NodeCtld
       end
 
       protected
+
       attr_reader :size, :comm_queue, :mutex, :used, :waiting_items, :counter
 
       def sem_down(priority, queue)
@@ -146,14 +145,11 @@ module NodeCtld
     end
 
     def execute(cmd)
-      if !open? || !free_slot?(cmd) || !started?
-        return false
-      end
+      return false if !open? || !free_slot?(cmd) || !started?
 
       if !has_reservation?(cmd.chain_id) && !cmd.urgent?
         begin
           @sem.down_now
-
         rescue ThreadError
           log(:info, :queue, 'Prevented deadlock')
           return false
@@ -172,6 +168,7 @@ module NodeCtld
     def release(chain_id)
       @mon.synchronize do
         return false unless @reserved.delete(chain_id)
+
         @sem.up
         true
       end
@@ -207,6 +204,7 @@ module NodeCtld
 
     def free_slot?(cmd)
       return true if has_reservation?(cmd.chain_id)
+
       s = real_size
       used < s || (cmd.urgent? && used < total_size)
     end
@@ -228,7 +226,7 @@ module NodeCtld
     end
 
     def has_transaction?(t_id)
-      @workers.each do |wid, w|
+      @workers.each do |_wid, w|
         return true if w.cmd.id.to_i == t_id
       end
 
@@ -239,9 +237,7 @@ module NodeCtld
       @workers.size
     end
 
-    def size
-      @size
-    end
+    attr_reader :size, :urgent_size, :start_delay
 
     def reserved_size
       @mon.synchronize { @reserved.size }
@@ -251,16 +247,8 @@ module NodeCtld
       size - reserved_size
     end
 
-    def urgent_size
-      @urgent_size
-    end
-
     def total_size
       size + urgent_size
-    end
-
-    def start_delay
-      @start_delay
     end
 
     def each(&block)
@@ -284,6 +272,7 @@ module NodeCtld
     end
 
     protected
+
     def update_config
       old_size = @size
       new_size = cfg(:threads)

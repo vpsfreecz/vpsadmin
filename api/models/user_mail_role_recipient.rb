@@ -6,15 +6,15 @@ class UserMailRoleRecipient < ActiveRecord::Base
 
   # @param user [User]
   def self.all_roles_for(user)
-    ret = self.where(user: user).to_a
+    ret = where(user: user).to_a
 
-    ::MailTemplate.roles.each do |role, opts|
+    ::MailTemplate.roles.each do |role, _opts|
       next if ret.detect { |recp| recp.role == role.to_s }
 
       ret << new(
         user: user,
         role: role.to_s,
-        to: nil,
+        to: nil
       )
     end
 
@@ -31,14 +31,14 @@ class UserMailRoleRecipient < ActiveRecord::Base
     if empty
       placeholder = new(
         user: user,
-        role: role,
+        role: role
       )
     end
 
     transaction do
       recp = find_by(
         user: user,
-        role: role,
+        role: role
       )
 
       if recp
@@ -56,7 +56,7 @@ class UserMailRoleRecipient < ActiveRecord::Base
       else
         recp = new(
           user: user,
-          role: role,
+          role: role
         )
         recp.assign_attributes(attrs)
         recp.save!
@@ -75,15 +75,17 @@ class UserMailRoleRecipient < ActiveRecord::Base
   end
 
   protected
+
   def clean_emails
-    return unless self.to
-    self.to.gsub!(/\s/, '')
+    return unless to
+
+    to.gsub!(/\s/, '')
   end
 
   def check_emails
-    return unless self.to
+    return unless to
 
-    self.to.split(',').each do |mail|
+    to.split(',').each do |mail|
       next if /@/ =~ mail.strip
 
       errors.add(:to, "'#{mail}' is not a valid e-mail address")

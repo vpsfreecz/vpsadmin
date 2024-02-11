@@ -4,13 +4,13 @@ module NodeCtld
     needs :system, :osctl
 
     def exec
-      osctl(%i(ct reinstall), @vps_id, {
-        distribution: @distribution,
-        version: @version,
-        arch: @arch,
-        vendor: @vendor,
-        variant: @variant,
-      })
+      osctl(%i[ct reinstall], @vps_id, {
+              distribution: @distribution,
+              version: @version,
+              arch: @arch,
+              vendor: @vendor,
+              variant: @variant
+            })
       ok
     end
   end

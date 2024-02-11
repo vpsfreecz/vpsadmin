@@ -43,7 +43,6 @@ class OutageEntity < ActiveRecord::Base
     else
       real_name
     end
-
   rescue ActiveRecord::RecordNotFound
     "#{name} #{row_id}"
   end

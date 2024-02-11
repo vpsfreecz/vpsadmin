@@ -14,6 +14,7 @@ module VpsAdmin::Supervisor
     end
 
     protected
+
     def exchange_name
       "node:#{node.domain_name}"
     end

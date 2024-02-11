@@ -6,7 +6,7 @@ class UserAccount < ActiveRecord::Base
 
   include Lockable
 
-  class AccountDisabled < StandardError ; end
+  class AccountDisabled < StandardError; end
 
   # Accept queued payments
   def self.accept_payments
@@ -16,7 +16,7 @@ class UserAccount < ActiveRecord::Base
 
     transaction do
       ::IncomingPayment.where(
-          state: ::IncomingPayment.states[:queued],
+        state: ::IncomingPayment.states[:queued]
       ).each do |income|
         search_id = nil
 
@@ -41,7 +41,6 @@ class UserAccount < ActiveRecord::Base
 
         begin
           _, payment = accept_payment(u, income)
-
         rescue ::ResourceLocked
           next
         end
@@ -62,7 +61,7 @@ class UserAccount < ActiveRecord::Base
 
     payment = ::UserPayment.new(
       incoming_payment: income,
-      user: user,
+      user: user
     )
     amount = income.converted_amount
 
@@ -75,21 +74,22 @@ class UserAccount < ActiveRecord::Base
     payment.amount = amount
 
     VpsAdmin::API::Plugins::Payments::TransactionChains::Create.fire(payment)
-
   rescue ::UserAccount::AccountDisabled
-    return
+    nil
   end
 
   def payment_instructions
     ERB.new(
       SysConfig.get(:plugin_payments, :payment_instructions) || '',
-      trim_mode: '-',
+      trim_mode: '-'
     ).result(binding)
   end
 
   protected
+
   def set_defaults
     return if persisted?
+
     self.monthly_payment = ::SysConfig.get(
       :plugin_payments,
       :default_monthly_payment

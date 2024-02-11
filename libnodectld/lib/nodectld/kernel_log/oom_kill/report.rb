@@ -5,13 +5,8 @@ module NodeCtld
     include OsCtl::Lib::Utils::Log
 
     attr_reader :time
-    attr_accessor :invoked_by_pid, :invoked_by_name
-    attr_accessor :usage, :stats
-    attr_accessor :tasks
-    attr_accessor :pool, :group, :user, :vps_id
-    attr_accessor :cgroup
-    attr_accessor :killed_pid, :killed_name, :no_killable
-    attr_accessor :count
+    attr_accessor :invoked_by_pid, :invoked_by_name, :usage, :stats, :tasks, :pool, :group, :user, :vps_id, :cgroup,
+                  :killed_pid, :killed_name, :no_killable, :count
 
     def initialize(time, invoked_by_name)
       @time = time
@@ -23,10 +18,14 @@ module NodeCtld
     end
 
     def complete?
-      (invoked_by_pid \
+      if invoked_by_pid \
        && invoked_by_name \
        && ((killed_pid && killed_name) || no_killable) \
-       && vps_id) ? true : false
+       && vps_id
+        true
+      else
+        false
+      end
     end
 
     def find_vps_pids_and_uids
@@ -70,7 +69,7 @@ module NodeCtld
         time: time.to_i,
         usage: usage,
         stats: stats,
-        tasks: tasks,
+        tasks: tasks
       }
     end
   end

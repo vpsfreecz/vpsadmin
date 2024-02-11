@@ -20,7 +20,7 @@ module TransactionChains
 
       uses = []
       user_env = netif.vps.user.environment_user_configs.find_by!(
-        environment: netif.vps.node.location.environment,
+        environment: netif.vps.node.location.environment
       )
       ownership = netif.vps.node.location.environment.user_ip_ownership
       ips_arr = ips.to_a
@@ -29,14 +29,14 @@ module TransactionChains
         uses = reallocate_resources(
           netif.vps.user,
           netif.vps.node.location.environment,
-          ips_arr,
+          ips_arr
         )
       end
 
       order = {}
       [4, 6].each do |v|
         last_ip = netif.ip_addresses.joins(:network).where(
-          networks: {ip_version: v}
+          networks: { ip_version: v }
         ).order(order: :desc).take
 
         order[v] = last_ip ? last_ip.order + 1 : 0
@@ -48,27 +48,25 @@ module TransactionChains
         append_t(
           Transactions::NetworkInterface::AddRoute,
           args: [netif, ip, opts[:register]],
-          kwargs: {via: opts[:via]},
+          kwargs: { via: opts[:via] }
         ) do |t|
           route_changes = {
             network_interface_id: netif.id,
             route_via_id: opts[:via] && opts[:via].id,
-            order: order[ip.version],
+            order: order[ip.version]
           }
 
-          if ownership && !ip.user_id
-            route_changes[:user_id] = netif.vps.user_id
-          end
+          route_changes[:user_id] = netif.vps.user_id if ownership && !ip.user_id
 
-          if opts[:reallocate]
-            route_changes[:charged_environment_id] = netif.vps.node.location.environment_id
-          end
+          route_changes[:charged_environment_id] = netif.vps.node.location.environment_id if opts[:reallocate]
 
           t.edit(ip, route_changes)
 
-          t.just_create(
-            netif.vps.log(:route_add, {id: ip.id, addr: ip.addr})
-          ) unless included?
+          unless included?
+            t.just_create(
+              netif.vps.log(:route_add, { id: ip.id, addr: ip.addr })
+            )
+          end
 
           ip.log_assignment(vps: netif.vps, chain: current_chain, confirmable: t)
         end
@@ -76,27 +74,32 @@ module TransactionChains
         order[ip.version] += 1
 
         host_addrs = opts[:host_addrs].select { |addr| addr.ip_address == ip }
+        next unless host_addrs.any?
+
         use_chain(
           NetworkInterface::AddHostIp,
           args: [netif, host_addrs],
-          kwargs: {check_addrs: false}
-        ) if host_addrs.any?
+          kwargs: { check_addrs: false }
+        )
       end
 
-      append(Transactions::Utils::NoOp, args: netif.vps.node_id) do
-        uses.each do |use|
-          if use.updating?
-            edit(use, value: use.value)
-          else
-            create(use)
+      unless uses.empty?
+        append(Transactions::Utils::NoOp, args: netif.vps.node_id) do
+          uses.each do |use|
+            if use.updating?
+              edit(use, value: use.value)
+            else
+              create(use)
+            end
           end
         end
-      end unless uses.empty?
+      end
 
       use_chain(Export::AddHostsToAll, args: [netif.vps.user, ips_arr])
     end
 
     protected
+
     # @return [Array<::ClusterResourceUse>] changes to resource allocations
     def reallocate_resources(user, target_env, ips)
       uses = []
@@ -106,23 +109,23 @@ module TransactionChains
         ip.charged_environment_id || target_env.id
       end.each do |env_id|
         user_envs[env_id] ||= user.environment_user_configs.find_by!(
-          environment_id: env_id,
+          environment_id: env_id
         )
       end
 
       user_envs[target_env.id] ||= user.environment_user_configs.find_by!(
-        environment_id: target_env.id,
+        environment_id: target_env.id
       )
 
-      %i(ipv4 ipv4_private ipv6).each do |r|
+      %i[ipv4 ipv4_private ipv6].each do |r|
         changes = {}
         user_envs.each_key do |env_id|
-          changes[env_id] ||= {add: 0, drop: 0}
+          changes[env_id] ||= { add: 0, drop: 0 }
         end
 
-        changes[target_env.id] ||= {add: 0, drop: 0}
+        changes[target_env.id] ||= { add: 0, drop: 0 }
 
-        recharger = Proc.new do |ip|
+        recharger = proc do |ip|
           # If the addresses is charged to a different environment, recharge it
           if ip.charged_environment_id && ip.charged_environment_id != target_env.id
             changes[ip.charged_environment_id][:drop] += ip.size
@@ -153,13 +156,13 @@ module TransactionChains
           user_env = user_envs[env_id]
           cur = user_env.send(r)
 
-          if n[:add] > 0 || n[:drop] > 0
-            uses << user_env.reallocate_resource!(
-              r,
-              cur + n[:add] - n[:drop],
-              user: user,
-            )
-          end
+          next unless n[:add] > 0 || n[:drop] > 0
+
+          uses << user_env.reallocate_resource!(
+            r,
+            cur + n[:add] - n[:drop],
+            user: user
+          )
         end
       end
 

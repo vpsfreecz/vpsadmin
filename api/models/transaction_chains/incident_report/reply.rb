@@ -5,7 +5,7 @@ module TransactionChains
     # @param message [Mail::Message]
     # @param result [VpsAdmin::API::IncidentReports::Result]
     def link_chain(message, result)
-      concerns(:affect, *(result.incidents.map { |v| [v.vps.class.name, v.vps_id] }.uniq))
+      concerns(:affect, *result.incidents.map { |v| [v.vps.class.name, v.vps_id] }.uniq)
 
       user_cnt = result.incidents.map(&:user_id).uniq.length
       vps_cnt = result.incidents.map(&:vps_id).uniq.length
@@ -22,15 +22,15 @@ module TransactionChains
       end
 
       mail_custom({
-        user: nil,
-        vars: {},
-        from: result.reply[:from],
-        to: result.reply[:to],
-        in_reply_to: message.message_id,
-        references: message.message_id,
-        subject: "Re: #{message.subject}",
-        text_plain: text,
-      })
+                    user: nil,
+                    vars: {},
+                    from: result.reply[:from],
+                    to: result.reply[:to],
+                    in_reply_to: message.message_id,
+                    references: message.message_id,
+                    subject: "Re: #{message.subject}",
+                    text_plain: text
+                  })
     end
   end
 end

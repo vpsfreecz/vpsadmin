@@ -39,7 +39,7 @@ module NodeCtld
               export['clone_name'],
               export['path'],
               "#{host['ip_address']}/#{host['prefix']}",
-              opts,
+              opts
             )
           else
             srv.add_filesystem_export(
@@ -47,20 +47,21 @@ module NodeCtld
               export['dataset_name'],
               export['path'],
               "#{host['ip_address']}/#{host['prefix']}",
-              opts,
+              opts
             )
           end
         end
       end
 
-      if export['enabled'] && !cache[srv.name]
-        log(:info, "Starting NFS server #{export['id']}")
-        srv.start!
-        sleep($CFG.get(:exports, :start_delay))
-      end
+      return unless export['enabled'] && !cache[srv.name]
+
+      log(:info, "Starting NFS server #{export['id']}")
+      srv.start!
+      sleep($CFG.get(:exports, :start_delay))
     end
 
     protected
+
     def list_existing_servers
       ret = {}
       str = syscmd('osctl-exportfs server ls -H -o server,state').output
@@ -75,7 +76,7 @@ module NodeCtld
 
     def build_options(export)
       ret = {}
-      keys = %w(rw sync subtree_check root_squash)
+      keys = %w[rw sync subtree_check root_squash]
 
       keys.each do |v|
         ret[v] = export[v]

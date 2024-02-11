@@ -35,6 +35,7 @@ module NodeCtld
     end
 
     protected
+
     def install_hooks
       hooks.each do |hook|
         dst = hook_path(hook)
@@ -44,7 +45,7 @@ module NodeCtld
           "#{dst}.new"
         )
 
-        File.chmod(0500, "#{dst}.new")
+        File.chmod(0o500, "#{dst}.new")
         File.rename("#{dst}.new", dst)
       end
     end
@@ -57,7 +58,7 @@ module NodeCtld
     end
 
     def hooks
-      %w(pre-start post-mount)
+      %w[pre-start post-mount]
     end
 
     def hook_path(name)

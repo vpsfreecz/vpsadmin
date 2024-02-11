@@ -100,7 +100,7 @@ module NodeCtld
         bytes_in_readout: @last_bytes_in,
         bytes_out_readout: @last_bytes_out,
         packets_in_readout: @last_packets_in,
-        packets_out_readout: @last_packets_out,
+        packets_out_readout: @last_packets_out
       }
     end
 
@@ -112,7 +112,7 @@ module NodeCtld
         bytes_in: @log_bytes_in,
         bytes_out: @log_bytes_out,
         packets_in: @log_packets_in,
-        packets_out: @log_packets_out,
+        packets_out: @log_packets_out
       }
 
       @log_bytes_in = 0
@@ -144,7 +144,7 @@ module NodeCtld
         last_packets_out: @last_packets_out,
         delta: @delta,
         last_update: @last_update && @last_update.to_i,
-        last_log: @last_log && @last_log.to_i,
+        last_log: @last_log && @last_log.to_i
       }
     end
   end

@@ -4,12 +4,12 @@ module NodeCtl
     args '<command>'
     description 'Set nodectld resources and properties'
 
-    def options(parser, args)
-      parser.separator <<END
+    def options(parser, _args)
+      parser.separator <<~END
 
-Subcommands:
-config <some.key=value>...    Change variable in nodectld's configuration
-END
+        Subcommands:
+        config <some.key=value>...    Change variable in nodectld's configuration
+      END
     end
 
     def validate
@@ -31,11 +31,11 @@ END
             tmp = tmp[part]
           end
 
-          if val =~ /^\d+$/
-            tmp[parts.last] = val.to_i
-          else
-            tmp[parts.last] = val
-          end
+          tmp[parts.last] = if val =~ /^\d+$/
+                              val.to_i
+                            else
+                              val
+                            end
 
           params[:config] << root
         end

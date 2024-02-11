@@ -27,24 +27,22 @@ module TransactionChains
 
       # Scenario 0)
       if dataset_in_pool.dataset.dataset_in_pools.joins(:pool).where(
-           pools: {role: ::Pool.roles[:backup]}
-         ).count == 0
+        pools: { role: ::Pool.roles[:backup] }
+      ).count == 0
 
         sip = snapshot.snapshot_in_pools.where(dataset_in_pool: dataset_in_pool).take
-        fail 'nothing to rollback, integrity error' unless sip
+        raise 'nothing to rollback, integrity error' unless sip
 
         pre_local_rollback
 
         append(Transactions::Storage::Rollback, args: [
-          dataset_in_pool,
-          sip
-        ]) do
+                 dataset_in_pool,
+                 sip
+               ]) do
           dataset_in_pool.snapshot_in_pools.where(
             'id > ?', sip.id
           ).order('id').each do |s|
-            if s.reference_count > 0
-              raise VpsAdmin::API::Exceptions::SnapshotInUse, s
-            end
+            raise VpsAdmin::API::Exceptions::SnapshotInUse, s if s.reference_count > 0
 
             s.update!(confirmed: ::SnapshotInPool.confirmed(:confirm_destroy))
             s.snapshot.update!(confirmed: ::Snapshot.confirmed(:confirm_destroy))
@@ -64,7 +62,7 @@ module TransactionChains
 
       # Find the snapshot_in_pool on pool with hypervisor or primary role
       snapshot_on_primary = snapshot.snapshot_in_pools.joins(dataset_in_pool: [:pool])
-        .where('pools.role IN (?, ?)', ::Pool.roles[:hypervisor], ::Pool.roles[:primary]).take
+                                    .where('pools.role IN (?, ?)', ::Pool.roles[:hypervisor], ::Pool.roles[:primary]).take
 
       if primary_last_snap
         # Scenario 1)
@@ -83,14 +81,13 @@ module TransactionChains
             .dataset_in_pools
             .joins(:pool)
             .where('pools.role = ?', ::Pool.roles[:backup])
-            .where(pools: {is_open: true})
+            .where(pools: { is_open: true })
             .each do |dst|
             use_chain(TransactionChains::Dataset::Transfer, args: [
-               dataset_in_pool,
-                dst,
-              ],
-              kwargs: {send_reservation: true},
-            )
+                                                              dataset_in_pool,
+                                                              dst
+                                                            ],
+                                                            kwargs: { send_reservation: true })
           end
 
           pre_local_rollback
@@ -120,41 +117,39 @@ module TransactionChains
           .dataset_in_pools
           .joins(:pool)
           .where('pools.role = ?', ::Pool.roles[:backup])
-          .where(pools: {is_open: true})
+          .where(pools: { is_open: true })
           .each do |dst|
           use_chain(TransactionChains::Dataset::Transfer, args: [
-              dataset_in_pool,
-              dst,
-            ],
-            kwargs: {send_reservation: true},
-          )
+                                                            dataset_in_pool,
+                                                            dst
+                                                          ],
+                                                          kwargs: { send_reservation: true })
         end
       end
 
       backup_snap = snapshot.snapshot_in_pools.joins(dataset_in_pool: [:pool])
-        .where('pools.role = ?', ::Pool.roles[:backup]).take!
+                            .where('pools.role = ?', ::Pool.roles[:backup]).take!
 
       snap_in_branch = backup_snap.snapshot_in_pool_in_branches
-                           .where.not(confirmed: ::SnapshotInPoolInBranch.confirmed(:confirm_destroy)).take!
-
+                                  .where.not(confirmed: ::SnapshotInPoolInBranch.confirmed(:confirm_destroy)).take!
 
       port = ::PortReservation.reserve(
         dataset_in_pool.pool.node,
         dataset_in_pool.pool.node.addr,
-        self.id ? self : dst_chain
+        id ? self : dst_chain
       )
 
       append(Transactions::Storage::PrepareRollback, args: dataset_in_pool)
       use_chain(Dataset::Send, args: [
-        port,
-        backup_snap.dataset_in_pool,
-        dataset_in_pool,
-        [backup_snap],
-        snap_in_branch.branch,
-        nil,
-        true,
-        :rollback
-      ])
+                  port,
+                  backup_snap.dataset_in_pool,
+                  dataset_in_pool,
+                  [backup_snap],
+                  snap_in_branch.branch,
+                  nil,
+                  true,
+                  :rollback
+                ])
 
       pre_local_rollback
 
@@ -176,21 +171,21 @@ module TransactionChains
         .dataset_in_pools
         .joins(:pool)
         .where('pools.role = ?', ::Pool.roles[:backup])
-        .where(pools: {is_open: true})
+        .where(pools: { is_open: true })
         .each do |ds|
         lock(ds)
 
         snap_in_pool = snapshot.snapshot_in_pools.where(dataset_in_pool: ds).take!
         snap_in_branch = snap_in_pool.snapshot_in_pool_in_branches
-          .where.not(confirmed: ::SnapshotInPoolInBranch.confirmed(:confirm_destroy)).take!
+                                     .where.not(confirmed: ::SnapshotInPoolInBranch.confirmed(:confirm_destroy)).take!
         snap_tree = snap_in_branch.branch.dataset_tree
         head_tree = ds.dataset_trees.find_by(head: true)
         old_head = head_tree && head_tree.branches.find_by(head: true)
         old_branch = snap_in_branch.branch
 
         last_snap = old_branch.snapshot_in_pool_in_branches
-          .joins(snapshot_in_pool: [:snapshot])
-          .order('snapshots.id DESC').take!
+                              .joins(snapshot_in_pool: [:snapshot])
+                              .order('snapshots.id DESC').take!
 
         # If the last snapshot in the branch is the same as the one rollbacking to,
         # it is pointless to create a new branch.
@@ -247,23 +242,19 @@ module TransactionChains
           end
         end
 
-        if head_tree.nil? || snap_tree.id != head_tree.id
-          append(Transactions::Utils::NoOp, args: ds.pool.node_id) do
-            edit(head_tree, head: false) if head_tree
-            edit(snap_tree, head: true)
-          end
+        next unless head_tree.nil? || snap_tree.id != head_tree.id
+
+        append(Transactions::Utils::NoOp, args: ds.pool.node_id) do
+          edit(head_tree, head: false) if head_tree
+          edit(snap_tree, head: true)
         end
       end
     end
 
     # Called before the dataset is rollbacked on primary or hypervisor.
-    def pre_local_rollback
-
-    end
+    def pre_local_rollback; end
 
     # Called after the dataset is rollbacked on primary or hypervisor.
-    def post_local_rollback
-
-    end
+    def post_local_rollback; end
   end
 end

@@ -14,8 +14,6 @@ class AddIpAddressAssignments < ActiveRecord::Migration[7.0]
           record.user_id
         elsif record.network_interface
           record.network_interface.vps.user_id
-        else
-          nil
         end
     end
 
@@ -38,7 +36,7 @@ class AddIpAddressAssignments < ActiveRecord::Migration[7.0]
     belongs_to :network_interface
   end
 
-  class IpAddressAssignment < ActiveRecord::Base ; end
+  class IpAddressAssignment < ActiveRecord::Base; end
 
   class Transaction < ActiveRecord::Base
     belongs_to :transaction_chain
@@ -85,6 +83,7 @@ class AddIpAddressAssignments < ActiveRecord::Migration[7.0]
   end
 
   protected
+
   # Reconstruct IP address assignment history from transactions
   #
   # When this migration is run, we know the current state of affairs. In order
@@ -108,11 +107,11 @@ class AddIpAddressAssignments < ActiveRecord::Migration[7.0]
     IpAddress
       .includes(:network, network_interface: :vps)
       .joins(:network)
-      .where(networks: {purpose: [0, 1]}) # only vps networks
+      .where(networks: { purpose: [0, 1] }) # only vps networks
       .each do |ip|
       ips[ip.ip_addr] = IpInfo.new(
         log: [],
-        record: ip,
+        record: ip
       )
     end
 
@@ -165,7 +164,7 @@ class AddIpAddressAssignments < ActiveRecord::Migration[7.0]
           from_date: trans.finished_at || trans.created_at,
           to_date: nil,
           assigned_by_chain_id: trans.transaction_chain_id,
-          reconstructed: true,
+          reconstructed: true
         )
 
       when 2007 # DelRoute
@@ -181,7 +180,7 @@ class AddIpAddressAssignments < ActiveRecord::Migration[7.0]
             vps_id: vps.id,
             from_date: vps.created_at,
             to_date: trans.finished_at || trans.created_at,
-            reconstructed: true,
+            reconstructed: true
           )
         elsif ip.log.last.to_date.nil?
           ip.log.last.to_date = trans.finished_at || trans.created_at
@@ -202,7 +201,7 @@ class AddIpAddressAssignments < ActiveRecord::Migration[7.0]
           vps_id: ip.vps_id,
           from_date: Time.now,
           to_date: nil,
-          reconstructed: true,
+          reconstructed: true
         )
 
         next
@@ -220,29 +219,29 @@ class AddIpAddressAssignments < ActiveRecord::Migration[7.0]
           vps_id: ip.vps_id,
           from_date: Time.now,
           to_date: nil,
-          reconstructed: true,
+          reconstructed: true
         )
 
         next
       end
 
-      if last && last.to_date.nil? && ip.vps_id && (last.user_id != ip.user_id || last.vps_id != ip.vps_id)
-        # There is an assignment, but the current user/vps is different
-        last.to_date = Time.now
+      next unless last && last.to_date.nil? && ip.vps_id && (last.user_id != ip.user_id || last.vps_id != ip.vps_id)
 
-        ip.log << IpAddressAssignment.new(
-          ip_address_id: ip.id,
-          ip_addr: ip.record.ip_addr,
-          ip_prefix: ip.record.prefix,
-          user_id: ip.user_id,
-          vps_id: ip.vps_id,
-          from_date: Time.now,
-          to_date: nil,
-          reconstructed: true,
-        )
+      # There is an assignment, but the current user/vps is different
+      last.to_date = Time.now
 
-        next
-      end
+      ip.log << IpAddressAssignment.new(
+        ip_address_id: ip.id,
+        ip_addr: ip.record.ip_addr,
+        ip_prefix: ip.record.prefix,
+        user_id: ip.user_id,
+        vps_id: ip.vps_id,
+        from_date: Time.now,
+        to_date: nil,
+        reconstructed: true
+      )
+
+      next
     end
 
     # Save all assignments

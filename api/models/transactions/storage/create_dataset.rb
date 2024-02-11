@@ -27,14 +27,15 @@ module Transactions::Storage
         pool_fs: dataset_in_pool.pool.filesystem,
         name: dataset_in_pool.dataset.full_name,
         options: options.any? ? options : nil,
-        create_private: create_private?(dataset_in_pool, cmd_opts),
+        create_private: create_private?(dataset_in_pool, cmd_opts)
       }
     end
 
     protected
+
     def create_private?(dip, cmd_opts)
       if cmd_opts[:create_private].nil?
-        %w(hypervisor primary).include?(dip.pool.role)
+        %w[hypervisor primary].include?(dip.pool.role)
       else
         cmd_opts[:create_private]
       end
