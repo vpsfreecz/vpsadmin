@@ -351,10 +351,10 @@ module NodeCtld
       end
     end
 
-    def run_thread_unless_runs(name, &block)
+    def run_thread_unless_runs(name, &)
       return unless !@threads[name] || !@threads[name].alive?
 
-      @threads[name] = Thread.new(&block)
+      @threads[name] = Thread.new(&)
     end
 
     def update_all

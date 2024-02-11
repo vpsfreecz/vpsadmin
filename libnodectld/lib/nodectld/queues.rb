@@ -28,12 +28,12 @@ module NodeCtld
       @queues[name]
     end
 
-    def each(&block)
-      @queues.each(&block)
+    def each(&)
+      @queues.each(&)
     end
 
-    def each_value(&block)
-      @queues.each_value(&block)
+    def each_value(&)
+      @queues.each_value(&)
     end
 
     def execute(cmd)

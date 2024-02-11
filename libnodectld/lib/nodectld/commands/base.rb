@@ -76,8 +76,8 @@ module NodeCtld::Commands
       @anchors << name
     end
 
-    def used_anchors(&block)
-      @anchors.reverse_each(&block)
+    def used_anchors(&)
+      @anchors.reverse_each(&)
     end
 
     def attrs

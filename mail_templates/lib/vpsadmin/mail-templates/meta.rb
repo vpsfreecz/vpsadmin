@@ -29,9 +29,9 @@ module VpsAdmin::MailTemplates
       @translations = {}
     end
 
-    def lang(code, &block)
+    def lang(code, &)
       m = Meta.new(@opts[:id])
-      m.instance_exec(&block)
+      m.instance_exec(&)
 
       @translations[code.to_s] = m.opts
     end

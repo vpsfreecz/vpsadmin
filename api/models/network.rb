@@ -176,12 +176,12 @@ class Network < ActiveRecord::Base
   end
 
   # @param from [IPAddress] IPv4/IPv6 address
-  def each_ip(from = nil, &block)
+  def each_ip(from = nil, &)
     if ip_version == 4
-      each_ipv4(from, &block)
+      each_ipv4(from, &)
 
     else
-      each_ipv6(from, &block)
+      each_ipv6(from, &)
     end
   end
 

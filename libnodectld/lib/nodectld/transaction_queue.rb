@@ -251,8 +251,8 @@ module NodeCtld
       size + urgent_size
     end
 
-    def each(&block)
-      @workers.each(&block)
+    def each(&)
+      @workers.each(&)
     end
 
     def delete_if(&block)

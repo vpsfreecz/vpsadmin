@@ -1,19 +1,19 @@
 module VpsAdmin::API::Plugin
   class MigrationContext < ActiveRecord::MigrationContext
-    def up(target_version = nil, &block)
+    def up(target_version = nil, &)
       selected_migrations =
         if block_given?
-          migrations.select(&block)
+          migrations.select(&)
         else
           migrations
         end
       Migrator.new(:up, selected_migrations, schema_migration, internal_metadata, target_version).migrate
     end
 
-    def down(target_version = nil, &block)
+    def down(target_version = nil, &)
       selected_migrations =
         if block_given?
-          migrations.select(&block)
+          migrations.select(&)
         else
           migrations
         end

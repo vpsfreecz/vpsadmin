@@ -212,8 +212,8 @@ module NodeCtld
       @result = result
     end
 
-    def each(&block)
-      @result.each(&block)
+    def each(&)
+      @result.each(&)
     end
 
     def get

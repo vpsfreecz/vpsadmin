@@ -4,11 +4,11 @@ module VpsAdmin::API
   module DatasetProperties
     # Register and store of properties.
     module Registrator
-      def self.property(name, &block)
+      def self.property(name, &)
         @properties ||= {}
 
         p = Property.new(name)
-        p.instance_exec(&block)
+        p.instance_exec(&)
 
         @properties[name] = p
       end
@@ -110,8 +110,8 @@ module VpsAdmin::API
 
     # Call this to register properties. +block+ is executed in context
     # of module Registrator.
-    def self.register(&block)
-      Registrator.module_exec(&block)
+    def self.register(&)
+      Registrator.module_exec(&)
     end
 
     # Add params to the API representing all registered properties.

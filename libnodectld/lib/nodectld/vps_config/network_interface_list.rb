@@ -46,8 +46,8 @@ module NodeCtld
     end
 
     # @yieldparam netif [VpsConfig::NetworkInterface]
-    def each(&block)
-      @netifs.clone.each(&block)
+    def each(&)
+      @netifs.clone.each(&)
     end
 
     include Enumerable

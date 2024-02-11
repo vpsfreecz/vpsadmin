@@ -183,11 +183,11 @@ module NodeCtld
         @config_path ||= File.join(config_dir, 'user-list.yml')
       end
 
-      def sync(&block)
+      def sync(&)
         if @mutex.owned?
           yield
         else
-          @mutex.synchronize(&block)
+          @mutex.synchronize(&)
         end
       end
     end

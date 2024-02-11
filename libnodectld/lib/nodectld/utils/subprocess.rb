@@ -6,8 +6,8 @@ module NodeCtld
     # No further transaction in the same chain will be executed
     # on *this* node until that subprocess finishes.
     # It has no effect on transactions on other nodes.
-    def blocking_fork(&block)
-      child = Process.fork(&block)
+    def blocking_fork(&)
+      child = Process.fork(&)
       Daemon.register_subprocess(@command.chain_id, child)
     end
 

@@ -243,8 +243,8 @@ module VpsAdmin::API
       plans.each_value(&:dataset_plan)
     end
 
-    def self.register(&block)
-      Registrator.module_exec(&block)
+    def self.register(&)
+      Registrator.module_exec(&)
     end
 
     def self.plans

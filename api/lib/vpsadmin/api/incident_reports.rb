@@ -61,8 +61,8 @@ module VpsAdmin::API
     end
 
     class Config
-      def initialize(&block)
-        instance_exec(&block)
+      def initialize(&)
+        instance_exec(&)
       end
 
       # @yieldparam mailbox [Mailbox]
@@ -134,8 +134,8 @@ module VpsAdmin::API
       end
     end
 
-    def self.config(&block)
-      @config = Config.new(&block)
+    def self.config(&)
+      @config = Config.new(&)
     end
 
     def self.handle_message(mailbox, message, dry_run:)

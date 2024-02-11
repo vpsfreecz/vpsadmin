@@ -6,8 +6,8 @@ module NodeCtld
     include Timeout
     include OsCtl::Lib::Utils::System
 
-    def try_harder(attempts = 3, &block)
-      status, v = repeat_on_failure(attempts:, &block)
+    def try_harder(attempts = 3, &)
+      status, v = repeat_on_failure(attempts:, &)
 
       if status
         v

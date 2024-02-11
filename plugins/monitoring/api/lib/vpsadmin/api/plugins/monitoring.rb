@@ -9,9 +9,9 @@ module VpsAdmin::API::Plugins
           VpsAdmin::API::Plugins::Monitoring.register_action(name, block)
         end
 
-        def monitor(name, &block)
+        def monitor(name, &)
           env = MonitorEnv.new
-          env.instance_exec(&block)
+          env.instance_exec(&)
 
           m = Monitor.new(name, env.data)
           VpsAdmin::API::Plugins::Monitoring.register_monitor(m)
@@ -66,9 +66,9 @@ module VpsAdmin::API::Plugins
       end
     end
 
-    def self.config(&block)
+    def self.config(&)
       env = Dsl::ConfigEnv.new
-      env.instance_exec(&block)
+      env.instance_exec(&)
       nil
     end
 

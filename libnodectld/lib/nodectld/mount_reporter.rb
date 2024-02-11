@@ -84,8 +84,8 @@ module NodeCtld
       end
     end
 
-    def sync(&block)
-      @mutex.synchronize(&block)
+    def sync(&)
+      @mutex.synchronize(&)
     end
   end
 end

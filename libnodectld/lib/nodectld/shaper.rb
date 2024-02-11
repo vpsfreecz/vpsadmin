@@ -104,11 +104,11 @@ module NodeCtld
       syscmd("#{$CFG.get(:bin, :tc)} #{arg}", valid_rcs:)
     end
 
-    def sync(&block)
+    def sync(&)
       if @mutex.owned?
         yield
       else
-        @mutex.synchronize(&block)
+        @mutex.synchronize(&)
       end
     end
   end

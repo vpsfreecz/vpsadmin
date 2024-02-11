@@ -36,8 +36,8 @@ module VpsAdmin::API
         obj.class.cluster_resources[:required] + obj.class.cluster_resources[:optional]
       end
 
-      def self.ensure_method(klass, name, &block)
-        klass.send(:define_method, name, &block) unless klass.method_defined?(name)
+      def self.ensure_method(klass, name, &)
+        klass.send(:define_method, name, &) unless klass.method_defined?(name)
       end
 
       def self.find_resource_use(obj, resource)

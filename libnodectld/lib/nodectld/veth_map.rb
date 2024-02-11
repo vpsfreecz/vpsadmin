@@ -53,8 +53,8 @@ module NodeCtld
       # @yieldparam vps_id [Integer]
       # @yieldparam vps_name veth name as seen in the VPS
       # @yieldparam host_name veth name as seen on the host
-      def each_veth(&block)
-        instance.each_veth(&block)
+      def each_veth(&)
+        instance.each_veth(&)
       end
     end
 
@@ -170,8 +170,8 @@ module NodeCtld
       end
     end
 
-    def sync(&block)
-      @mutex.synchronize(&block)
+    def sync(&)
+      @mutex.synchronize(&)
     end
   end
 end
