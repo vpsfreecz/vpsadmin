@@ -85,7 +85,7 @@ module TransactionChains
       end
 
       # Set default features
-      vps_features.each { |f| f.set_to_default }
+      vps_features.each(&:set_to_default)
 
       use_chain(Vps::Features, args: [vps, vps_features]) if vps_features.any?(&:changed?)
 

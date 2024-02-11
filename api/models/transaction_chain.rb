@@ -182,7 +182,7 @@ class TransactionChain < ActiveRecord::Base
 
   # Release all locks acquired by this and all nested chains.
   def release_locks
-    @locks.each { |l| l.release }
+    @locks.each(&:release)
   end
 
   # Append transaction of +klass+ with +opts+ to the end of the chain.

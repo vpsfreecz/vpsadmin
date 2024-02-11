@@ -151,9 +151,7 @@ module NodeCtld
     protected
 
     def fetch_vpses
-      RpcClient.run do |rpc|
-        rpc.list_vps_status_check
-      end
+      RpcClient.run(&:list_vps_status_check)
     end
 
     def ct_list

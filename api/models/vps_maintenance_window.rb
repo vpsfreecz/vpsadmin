@@ -114,7 +114,7 @@ class VpsMaintenanceWindow < ActiveRecord::Base
 
     windows.delete_if { |w| !w.is_open }
 
-    raise 'programming error: no maintenance window is open' unless windows.detect { |w| w.is_open }
+    raise 'programming error: no maintenance window is open' unless windows.detect(&:is_open)
 
     windows
   end

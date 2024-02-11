@@ -321,9 +321,7 @@ module NodeCtld
 
     def load_db_settings
       cfg =
-        RpcClient.run do |rpc|
-          rpc.get_node_config
-        end
+        RpcClient.run(&:get_node_config)
 
       if cfg.nil?
         warn 'Node is not registered!'
@@ -413,7 +411,7 @@ module NodeCtld
     protected
 
     def call_on_update
-      @on_update.each_value { |block| block.call }
+      @on_update.each_value(&:call)
     end
   end
 end

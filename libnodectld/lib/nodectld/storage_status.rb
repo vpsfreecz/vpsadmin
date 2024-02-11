@@ -43,7 +43,7 @@ module NodeCtld
     def stop
       @stop = true
       [@read_queue, @update_queue, @submit_queue].each { |q| q << :stop }
-      [@reader, @updater, @submitter].each { |t| t.join }
+      [@reader, @updater, @submitter].each(&:join)
       nil
     end
 

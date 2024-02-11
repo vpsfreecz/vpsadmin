@@ -41,7 +41,7 @@ module TransactionChains
       @others_mounts.each do |v, vps_mounts|
         @chain.append(
           Transactions::Vps::Umount,
-          args: [v, vps_mounts.select { |m| m.enabled? }]
+          args: [v, vps_mounts.select(&:enabled?)]
         )
       end
     end
@@ -104,7 +104,7 @@ module TransactionChains
 
         @chain.append(
           Transactions::Vps::Mount,
-          args: [vps, mounts.select { |m| m.enabled? }.reverse],
+          args: [vps, mounts.select(&:enabled?).reverse],
           urgent: true
         ) do
           obj_changes.each do |obj, changes|

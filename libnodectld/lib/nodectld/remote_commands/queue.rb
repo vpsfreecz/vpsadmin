@@ -15,9 +15,7 @@ module NodeCtld::RemoteCommands
       when 'resume'
         @daemon.queues do |queues|
           if @queue == 'all'
-            queues.each_value do |q|
-              q.resume
-            end
+            queues.each_value(&:resume)
           else
             q = queues[@queue.to_sym]
             return { ret: :error, output: 'queue not found' } if q.nil?

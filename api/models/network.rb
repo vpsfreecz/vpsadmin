@@ -47,7 +47,7 @@ class Network < ActiveRecord::Base
   end
 
   def to_s
-    net_addr { |n| n.to_string }
+    net_addr(&:to_string)
   end
 
   # Return number of possible IP addresses without network and broadcast address

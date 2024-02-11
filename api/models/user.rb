@@ -209,7 +209,7 @@ class User < ActiveRecord::Base
         end
       end
 
-      ucrs.each_value { |ucr| ucr.save! }
+      ucrs.each_value(&:save!)
     end
   end
 

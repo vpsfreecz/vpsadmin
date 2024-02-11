@@ -22,9 +22,7 @@ module NodeCtld::Utils
 
     def drop_workers
       @daemon.queues do |queues|
-        queues.each_value do |queue|
-          queue.clear!
-        end
+        queues.each_value(&:clear!)
       end
     end
   end

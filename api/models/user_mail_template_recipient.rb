@@ -10,7 +10,7 @@ class UserMailTemplateRecipient < ActiveRecord::Base
     ret = includes(:mail_template).where(user:).to_a
 
     ::MailTemplate.where.not(
-      id: ret.map { |recp| recp.mail_template_id }
+      id: ret.map(&:mail_template_id)
     ).each do |tpl|
       next unless tpl.desc[:public]
 

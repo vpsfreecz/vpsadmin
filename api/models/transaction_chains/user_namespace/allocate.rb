@@ -48,14 +48,14 @@ module TransactionChains
         blocks = range.blocks
         blocks.each { |blk| locks << lock(blk) }
 
-        if blocks.detect { |blk| blk.user_namespace_id }
-          locks.each { |l| l.release }.clear
+        if blocks.detect(&:user_namespace_id)
+          locks.each(&:release).clear
           next
         end
 
         return blocks
       rescue ResourceLocked
-        locks.each { |l| l.release }.clear
+        locks.each(&:release).clear
         next
       end
 

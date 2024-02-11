@@ -5,7 +5,7 @@ module VpsAdmin::API::Tasks
       incidents = ::IncidentReport.where(reported_at: nil).to_a
       return if incidents.empty?
 
-      if incidents.detect { |inc| inc.cpu_limit }
+      if incidents.detect(&:cpu_limit)
         # If there are CPU limits in play, it is best to process the reports
         # one by one, so that one locked VPS would not prevent other reports
         # to be processes. This is because CPU limit changing use Vps::Update

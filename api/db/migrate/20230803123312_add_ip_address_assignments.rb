@@ -246,7 +246,7 @@ class AddIpAddressAssignments < ActiveRecord::Migration[7.0]
 
     # Save all assignments
     ips.each_value do |ip|
-      ip.log.each { |assignment| assignment.save! }
+      ip.log.each(&:save!)
     end
   end
 end

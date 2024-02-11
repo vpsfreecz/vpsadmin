@@ -97,10 +97,10 @@ module VpsAdmin::DownloadMounter
         end
 
       when 'mount'
-        each_pool_mounter { |m| m.mount }
+        each_pool_mounter(&:mount)
 
       when 'umount', 'unmount'
-        each_pool_mounter { |m| m.umount }
+        each_pool_mounter(&:umount)
 
       else
         raise "unsupported action '#{ARGV[2]}'"

@@ -240,7 +240,7 @@ module VpsAdmin::API
     end
 
     def self.initialize
-      plans.each_value { |p| p.dataset_plan }
+      plans.each_value(&:dataset_plan)
     end
 
     def self.register(&block)

@@ -390,7 +390,7 @@ class Outage < ActiveRecord::Base
       duration:,
       impact: impact_type,
       entities: outage_entities.map { |v| { name: v.name, id: v.row_id, label: v.real_name } },
-      handlers: outage_handlers.map { |v| v.full_name },
+      handlers: outage_handlers.map(&:full_name),
       translations: {}
     }
 

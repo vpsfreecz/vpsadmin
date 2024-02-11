@@ -292,9 +292,7 @@ module VpsAdmin::API::Tasks
           .to_a
       )
 
-      export_hosts.uniq do |host|
-        host.id
-      end.each do |host|
+      export_hosts.uniq(&:id).each do |host|
         @export_host_ip_owner_mismatch.set(
           1,
           labels: {

@@ -332,12 +332,12 @@ module TransactionChains
     # given to the target user.
     def check_vps_mounts(vps, allowed)
       forbidden_mounts = vps.mounts.joins(dataset_in_pool: [:dataset]).where.not(
-        datasets: { id: allowed.map { |ds| ds.id } }
+        datasets: { id: allowed.map(&:id) }
       )
 
       return unless forbidden_mounts.any?
 
-      raise "has forbidden mounts: #{forbidden_mounts.map { |mnt| mnt.dst }.join('; ')}"
+      raise "has forbidden mounts: #{forbidden_mounts.map(&:dst).join('; ')}"
     end
 
     # Check that the dataset is not mounted in VPS that does not
