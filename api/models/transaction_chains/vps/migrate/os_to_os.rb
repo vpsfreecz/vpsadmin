@@ -86,14 +86,14 @@ module TransactionChains
         append(
           Transactions::MaintenanceWindow::Wait,
           args: [src_vps, 15],
-          kwargs: { maintenance_windows: maintenance_windows }
+          kwargs: { maintenance_windows: }
         )
         append(Transactions::Queue::Reserve, args: [src_node, :zfs_send])
         append(Transactions::Queue::Reserve, args: [dst_node, :zfs_recv])
         append(
           Transactions::MaintenanceWindow::InOrFail,
           args: [src_vps, 15],
-          kwargs: { maintenance_windows: maintenance_windows }
+          kwargs: { maintenance_windows: }
         )
 
         append(Transactions::Vps::SendSync, args: [src_vps], urgent: true)
@@ -103,7 +103,7 @@ module TransactionChains
         append(
           Transactions::MaintenanceWindow::InOrFail,
           args: [src_vps, 5],
-          kwargs: { maintenance_windows: maintenance_windows },
+          kwargs: { maintenance_windows: },
           urgent: true
         )
       end
@@ -112,7 +112,7 @@ module TransactionChains
       use_chain(
         Vps::Stop,
         args: src_vps,
-        kwargs: { start_timeout: start_timeout, rollback_stop: was_running? },
+        kwargs: { start_timeout:, rollback_stop: was_running? },
         urgent: true
       )
 
@@ -152,7 +152,7 @@ module TransactionChains
         use_chain(
           Vps::Start,
           args: dst_vps,
-          kwargs: { start_timeout: start_timeout },
+          kwargs: { start_timeout: },
           urgent: true,
           reversible: @opts[:skip_start] ? :keep_going : nil
         )

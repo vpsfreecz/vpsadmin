@@ -21,7 +21,7 @@ class Token < ActiveRecord::Base
   # @param valid_to [Time, nil]
   # @return [::Token]
   def self.get!(owner: nil, valid_to: nil)
-    t = new(owner: owner, valid_to: valid_to)
+    t = new(owner:, valid_to:)
 
     5.times do
       t.generate

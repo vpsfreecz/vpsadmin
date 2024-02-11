@@ -140,7 +140,7 @@ module VpsAdmin::API::Resources
         VpsAdmin::API::Operations::UserSession::NewTokenDetached.run(
           user: input[:user],
           admin: current_user,
-          request: request,
+          request:,
           token_lifetime: input[:token_lifetime],
           token_interval: input[:token_interval],
           scope: input[:scope].split,

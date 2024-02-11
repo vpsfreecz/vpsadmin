@@ -34,7 +34,7 @@ module Transactions::Vps
 
           {
             name: netif.name,
-            routes: routes
+            routes:
           }
         end
       }

@@ -149,8 +149,8 @@ module VpsAdmin::ConsoleRouter
     def write_console(entry, keys, width, height)
       data = {
         session: entry.session,
-        width: width,
-        height: height,
+        width:,
+        height:,
       }
 
       if keys && !keys.empty?

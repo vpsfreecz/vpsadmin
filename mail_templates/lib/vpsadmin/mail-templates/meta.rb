@@ -25,7 +25,7 @@ module VpsAdmin::MailTemplates
     attr_reader :opts
 
     def initialize(id)
-      @opts = { id: id }
+      @opts = { id: }
       @translations = {}
     end
 

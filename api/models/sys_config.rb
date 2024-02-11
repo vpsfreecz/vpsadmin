@@ -13,19 +13,19 @@ class SysConfig < ActiveRecord::Base
   }
 
   def self.get(category, key)
-    obj = find_by(category: category, name: key)
+    obj = find_by(category:, name: key)
     obj.value if obj
   end
 
   def self.set(category, key, _value)
     SysConfig.transaction do
-      obj = find_by(category: category, name: key)
+      obj = find_by(category:, name: key)
 
       if obj
         obj.update!(value: v)
       else
         create!(
-          category: category,
+          category:,
           name: k.to_s,
           value: v
         )
@@ -42,7 +42,7 @@ class SysConfig < ActiveRecord::Base
   # @option opts [String] default
   # @option opts [Integer] min_user_level
   def self.register(category, name, type, opts = {})
-    cfg = find_by(category: category, name: name)
+    cfg = find_by(category:, name:)
 
     if cfg
       %i[label description min_user_level].each do |opt|

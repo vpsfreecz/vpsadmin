@@ -65,7 +65,7 @@ module TransactionChains
         ::VpsFeature::FEATURES.each do |name, f|
           next unless f.support?(vps.node)
 
-          feature = ::VpsFeature.create!(vps: vps, name: name, enabled: false)
+          feature = ::VpsFeature.create!(vps:, name:, enabled: false)
           vps_features << feature
           just_create(feature)
         end
@@ -73,7 +73,7 @@ module TransactionChains
         # Maintenance windows
         7.times do |i|
           w = VpsMaintenanceWindow.new(
-            vps: vps,
+            vps:,
             weekday: i,
             is_open: true,
             opens_at: 60,

@@ -25,7 +25,7 @@ class TransactionChain < ActiveRecord::Base
   # create instances of TransactionChain yourself.
   # All arguments are passed to TransactionChain#link_chain.
   def self.fire(*args, **kwargs)
-    fire2(args: args, kwargs: kwargs)
+    fire2(args:, kwargs:)
   end
 
   # Same as TransactionChain.fire, except that arguments are passed
@@ -265,9 +265,9 @@ class TransactionChain < ActiveRecord::Base
 
     c, ret = chain.use_in(self, {
                             args: args.is_a?(Array) ? args : [args],
-                            kwargs: kwargs,
-                            urgent: urgent,
-                            prio: prio,
+                            kwargs:,
+                            urgent:,
+                            prio:,
                             reversible: opts[:reversible],
                             method: opts[:method],
                             hooks: opts[:hooks]
@@ -375,7 +375,7 @@ class TransactionChain < ActiveRecord::Base
       prio: opts[:prio] || prio,
       reversible: opts[:reversible] || reversible,
       queue: opts[:queue],
-      retain_context: retain_context
+      retain_context:
     }
 
     @dst_chain.size += 1

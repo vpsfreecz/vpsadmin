@@ -81,7 +81,7 @@ module TransactionChains
 
           create(::SnapshotInPoolInBranch.create(
                    snapshot_in_pool: sip,
-                   branch: branch,
+                   branch:,
                    confirmed: ::SnapshotInPoolInBranch.confirmed(:confirm_create)
                  ))
         end

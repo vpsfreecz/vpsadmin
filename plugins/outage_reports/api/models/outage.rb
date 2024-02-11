@@ -145,17 +145,17 @@ class Outage < ActiveRecord::Base
     users = get_affected_users
 
     users.each do |user|
-      vps_cnt = outage_vpses.where(user: user).count
-      export_cnt = outage_exports.where(user: user).count
+      vps_cnt = outage_vpses.where(user:).count
+      export_cnt = outage_exports.where(user:).count
 
       begin
-        outage_users.find_by!(user: user).update!(
+        outage_users.find_by!(user:).update!(
           vps_count: vps_cnt,
           export_count: export_cnt
         )
       rescue ActiveRecord::RecordNotFound
         outage_users.create!(
-          user: user,
+          user:,
           vps_count: vps_cnt,
           export_count: export_cnt
         )
@@ -249,7 +249,7 @@ class Outage < ActiveRecord::Base
       # Register new VPSes
       affected.each do |vps|
         begin
-          out = ::OutageVps.find_by!(outage: self, vps: vps).update!(
+          out = ::OutageVps.find_by!(outage: self, vps:).update!(
             user: vps.user,
             environment: vps.node.location.environment,
             location: vps.node.location,
@@ -259,7 +259,7 @@ class Outage < ActiveRecord::Base
         rescue ActiveRecord::RecordNotFound
           out = ::OutageVps.create!(
             outage: self,
-            vps: vps,
+            vps:,
             user: vps.user,
             environment: vps.node.location.environment,
             location: vps.node.location,
@@ -356,7 +356,7 @@ class Outage < ActiveRecord::Base
             user: ex.user,
             environment: node.location.environment,
             location: node.location,
-            node: node
+            node:
           )
         rescue ActiveRecord::RecordNotFound
           out = ::OutageExport.create!(
@@ -365,7 +365,7 @@ class Outage < ActiveRecord::Base
             user: ex.user,
             environment: node.location.environment,
             location: node.location,
-            node: node
+            node:
           )
         end
 
@@ -384,10 +384,10 @@ class Outage < ActiveRecord::Base
 
   def to_hash
     ret = {
-      id: id,
+      id:,
       type: outage_type,
       begins_at: begins_at.iso8601,
-      duration: duration,
+      duration:,
       impact: impact_type,
       entities: outage_entities.map { |v| { name: v.name, id: v.row_id, label: v.real_name } },
       handlers: outage_handlers.map { |v| v.full_name },

@@ -22,7 +22,7 @@ module Transactions::Vps
         original: vps.cpu_limit_was
       }
 
-      { resources: resources }
+      { resources: }
     end
   end
 end

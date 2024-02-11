@@ -66,7 +66,7 @@ module TransactionChains
       lock(export)
 
       netif = ::NetworkInterface.create!(
-        export: export,
+        export:,
         kind: 'veth_routed',
         name: 'eth0'
       )
@@ -98,7 +98,7 @@ module TransactionChains
 
         hosts = ips.map do |ip|
           ::ExportHost.create!(
-            export: export,
+            export:,
             ip_address: ip,
             rw: export.rw,
             sync: export.sync,
@@ -127,8 +127,8 @@ module TransactionChains
 
         ::IpAddress.transaction do
           ip = ::IpAddress.pick_addr!(
-            user: user,
-            location: location,
+            user:,
+            location:,
             ip_v: 4,
             role: :private_access,
             purpose: :export

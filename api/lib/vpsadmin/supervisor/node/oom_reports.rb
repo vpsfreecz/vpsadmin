@@ -49,7 +49,7 @@ module VpsAdmin::Supervisor
       killed_name = report.fetch('killed_name')
 
       new_report = ::OomReport.create!(
-        vps: vps,
+        vps:,
         cgroup: report.fetch('cgroup')[0..254],
         invoked_by_pid: report.fetch('invoked_by_pid'),
         invoked_by_name: invoked_by_name && invoked_by_name[0..49],
@@ -75,7 +75,7 @@ module VpsAdmin::Supervisor
         report.fetch('stats').map do |param, value|
           {
             parameter: param,
-            value: value,
+            value:,
           }
         end
       )
@@ -106,7 +106,7 @@ module VpsAdmin::Supervisor
       since = now - PERIOD
 
       reports_in_period = ::OomReport
-        .where(vps: vps)
+        .where(vps:)
         .where('created_at >= ?', since)
 
       if !vps.is_running? || reports_in_period.where('`count` >= ?', HIGHRATE).count < THRESHOLD

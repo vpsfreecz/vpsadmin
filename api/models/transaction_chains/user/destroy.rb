@@ -27,7 +27,7 @@ module TransactionChains
 
       append(Transactions::Utils::NoOp, args: FIXME) do
         # Free all IP addresses
-        ::IpAddress.where(user: user).each do |ip|
+        ::IpAddress.where(user:).each do |ip|
           edit(ip, user_id: nil)
         end
 

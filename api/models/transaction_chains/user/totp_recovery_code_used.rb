@@ -6,11 +6,11 @@ module TransactionChains
       concerns(:affect, [user.class.name, user.id])
 
       mail(:user_totp_recovery_code_used, {
-             user: user,
+             user:,
              vars: {
-               user: user,
-               totp_device: totp_device,
-               request: request,
+               user:,
+               totp_device:,
+               request:,
                time: Time.now
              }
            })

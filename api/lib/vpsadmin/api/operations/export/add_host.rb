@@ -14,7 +14,7 @@ module VpsAdmin::API
       chain, hosts = TransactionChains::Export::AddHosts.fire(
         export,
         [::ExportHost.new(
-          export: export,
+          export:,
           ip_address: opts[:ip_address],
           rw: with_default(export, opts, :rw),
           sync: with_default(export, opts, :sync),

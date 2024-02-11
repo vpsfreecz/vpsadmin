@@ -39,8 +39,8 @@ class AddOsctlSupport < ActiveRecord::Migration
         while offset < max
           UserNamespaceBlock.create!(
             index: i,
-            offset: offset,
-            size: size
+            offset:,
+            size:
           )
 
           i += 1
@@ -97,9 +97,9 @@ class AddOsctlSupport < ActiveRecord::Migration
           t.update!(
             distribution: dist,
             version: ver,
-            arch: arch,
-            vendor: vendor,
-            variant: variant
+            arch:,
+            vendor:,
+            variant:
           )
         end
       end

@@ -24,8 +24,8 @@ module VpsAdmin::API::Plugins::Payments::TransactionChains
       ).order('user_payments.created_at, user_payments.user_id')
 
       mail(:payments_overview, {
-             language: language,
-             vars: vars
+             language:,
+             vars:
            })
     end
   end

@@ -128,7 +128,7 @@ module NodeCtld
             else
               pool.datasets[name] = Dataset.new(
                 type: :filesystem,
-                name: name,
+                name:,
                 id: prop['dataset_id'],
                 dip_id: prop['dataset_in_pool_id'],
                 properties: {

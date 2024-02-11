@@ -10,9 +10,9 @@ module VpsAdmin::API
     def run(user, token)
       begin
         user_session = ::UserSession.joins(:token).where(
-          user: user,
+          user:,
           auth_type: :token,
-          tokens: { token: token }
+          tokens: { token: }
         ).take!
       rescue ActiveRecord::RecordNotFound
         raise Exceptions::OperationError, 'session not found'

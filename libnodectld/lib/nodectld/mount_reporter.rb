@@ -40,9 +40,9 @@ module NodeCtld
         end
 
         @mounts << {
-          vps_id: vps_id,
+          vps_id:,
           id: mount_id,
-          state: state
+          state:
         }
       end
     end

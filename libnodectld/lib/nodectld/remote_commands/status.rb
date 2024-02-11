@@ -69,7 +69,7 @@ module NodeCtld::RemoteCommands
           },
           queues: res_queues,
           export_console: $CFG.get(:console, :enable),
-          consoles: consoles,
+          consoles:,
           subprocesses: subtasks,
           start_time: @daemon.start_time.to_i,
           queue_size: q_size - queue_size

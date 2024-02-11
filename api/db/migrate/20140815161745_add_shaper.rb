@@ -18,7 +18,7 @@ class AddShaper < ActiveRecord::Migration
         class_id = 10
 
         IpAddress.all.each do |ip|
-          ip.update(class_id: class_id)
+          ip.update(class_id:)
 
           class_id += 1
         end

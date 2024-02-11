@@ -14,7 +14,7 @@ class VpsMigration < ActiveRecord::Base
     return if persisted?
 
     exists = self.class.joins(:migration_plan).where(
-      vps: vps,
+      vps:,
       state: [
         self.class.states[:queued],
         self.class.states[:running]

@@ -368,7 +368,7 @@ module VpsAdmin::API
             state: object_state,
             expiration_date: expiration,
             remind_after_date: remind_after,
-            reason: reason,
+            reason:,
             user: user || ::User.current
           )
 
@@ -386,9 +386,9 @@ module VpsAdmin::API
             class_name: self.class.name,
             row_id: id,
             state: object_state,
-            expiration_date: expiration_date,
-            remind_after_date: remind_after_date,
-            reason: reason,
+            expiration_date:,
+            remind_after_date:,
+            reason:,
             user: user || ::User.current
           )
 

@@ -59,17 +59,17 @@ module NodeCtld
 
     def export
       {
-        vps_id: vps_id,
-        cgroup: cgroup,
-        invoked_by_pid: invoked_by_pid,
-        invoked_by_name: invoked_by_name,
-        killed_pid: killed_pid,
-        killed_name: killed_name,
-        count: count,
+        vps_id:,
+        cgroup:,
+        invoked_by_pid:,
+        invoked_by_name:,
+        killed_pid:,
+        killed_name:,
+        count:,
         time: time.to_i,
-        usage: usage,
-        stats: stats,
-        tasks: tasks
+        usage:,
+        stats:,
+        tasks:
       }
     end
   end

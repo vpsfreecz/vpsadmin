@@ -98,24 +98,24 @@ module VpsAdmin::API::Plugins::OutageReports::TransactionChains
         [
           [
             :outage_report_role_event,
-            { role: role, event: event[attrs[:state]] || 'update' }
+            { role:, event: event[attrs[:state]] || 'update' }
           ],
           [
             :outage_report_role_event,
-            { role: role, event: 'update' }
+            { role:, event: 'update' }
           ],
           [
             :outage_report_role,
-            { role: role }
+            { role: }
           ]
         ],
         user: u,
         language: u ? nil : ::Language.take, # TODO: configurable language
         message_id: msg_id,
-        in_reply_to: in_reply_to,
+        in_reply_to:,
         references: in_reply_to,
         vars: {
-          outage: outage,
+          outage:,
           o: outage,
           update: report,
           user: u,
@@ -129,7 +129,7 @@ module VpsAdmin::API::Plugins::OutageReports::TransactionChains
 
     def send_first(templates, opts)
       templates.each do |id, params|
-        args = { params: params }
+        args = { params: }
         args.update(opts)
 
         mail(id, args)

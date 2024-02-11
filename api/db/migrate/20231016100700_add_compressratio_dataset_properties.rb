@@ -42,7 +42,7 @@ class AddCompressratioDatasetProperties < ActiveRecord::Migration[7.0]
       pool_id: prop.pool_id,
       dataset_id: prop.dataset_id,
       dataset_in_pool_id: prop.dataset_in_pool_id,
-      parent: parent,
+      parent:,
       name: new_prop_name,
       value: 1.0,
       inherited: false,

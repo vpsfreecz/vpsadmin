@@ -193,10 +193,10 @@ class IpAddress < ActiveRecord::Base
 
   def log_assignment(vps:, chain:, confirmable:)
     assignment = ip_address_assignments.create!(
-      ip_addr: ip_addr,
+      ip_addr:,
       ip_prefix: prefix,
       user: vps.user,
-      vps: vps,
+      vps:,
       from_date: Time.now,
       to_date: nil,
       assigned_by_chain: chain
@@ -226,7 +226,7 @@ class IpAddress < ActiveRecord::Base
   # @param env [Environment]
   def is_in_environment?(env)
     ::LocationNetwork.joins(:location).where(
-      network_id: network_id,
+      network_id:,
       locations: { environment_id: env.id }
     ).any?
   end

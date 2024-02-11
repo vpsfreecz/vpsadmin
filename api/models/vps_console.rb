@@ -5,7 +5,7 @@ class VpsConsole < ActiveRecord::Base
   validates :token, uniqueness: true, length: { is: 100 }, unless: :token_nil?
 
   def self.find_for(vps, user)
-    where(vps: vps, user: user)
+    where(vps:, user:)
       .where('expiration > ?', Time.now)
       .where.not(token: nil)
       .take
@@ -21,8 +21,8 @@ class VpsConsole < ActiveRecord::Base
 
   def self.create_for!(vps, user)
     t = new(
-      vps: vps,
-      user: user,
+      vps:,
+      user:,
       expiration: Time.now + 60
     )
 

@@ -125,7 +125,7 @@ module VpsAdmin::API::Resources
       def exec
         add_ips = input.delete(:add_ip_addresses)
 
-        @chain, net = ::Network.register!(input, add_ips: add_ips)
+        @chain, net = ::Network.register!(input, add_ips:)
         net
       rescue ActiveRecord::RecordInvalid => e
         error('create failed', e.record.errors.to_hash)

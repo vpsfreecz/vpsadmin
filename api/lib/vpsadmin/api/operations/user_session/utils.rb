@@ -25,8 +25,8 @@ module VpsAdmin::API
         client_ip_ptr: request.env['HTTP_CLIENT_IP'] && get_ptr(request.env['HTTP_CLIENT_IP']),
         user_agent: ::UserAgent.find_or_create!(request.user_agent || ''),
         client_version: request.user_agent || '',
-        token_lifetime: token_lifetime,
-        token_interval: token_interval,
+        token_lifetime:,
+        token_interval:,
         label: label || request.user_agent,
       )
 

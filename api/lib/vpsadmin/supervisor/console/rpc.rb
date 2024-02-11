@@ -72,11 +72,11 @@ module VpsAdmin::Supervisor
       protected
 
       def send_response(response)
-        reply({ status: true, response: response })
+        reply({ status: true, response: })
       end
 
       def send_error(message)
-        reply({ status: false, message: message })
+        reply({ status: false, message: })
       end
 
       def reply(payload)
@@ -118,7 +118,7 @@ module VpsAdmin::Supervisor
         now = Time.now
         console = ::VpsConsole
                   .includes(vps: { node: :location })
-                  .find_by(vps_id: vps_id, token: session)
+                  .find_by(vps_id:, token: session)
 
         return unless console && console.expiration > now
 

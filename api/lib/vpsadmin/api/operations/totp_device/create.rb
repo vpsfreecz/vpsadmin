@@ -9,8 +9,8 @@ module VpsAdmin::API
     def run(user, label)
       5.times do
         return ::UserTotpDevice.create!(
-          user: user,
-          label: label,
+          user:,
+          label:,
           secret: ROTP::Base32.random
         )
       rescue ActiveRecord::RecordNotUnique

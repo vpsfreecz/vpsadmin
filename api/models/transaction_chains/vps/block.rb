@@ -10,7 +10,7 @@ module TransactionChains
       mail(:vps_suspend, {
              user: vps.user,
              vars: {
-               vps: vps,
+               vps:,
                state: log
              }
            })

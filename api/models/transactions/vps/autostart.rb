@@ -17,7 +17,7 @@ module Transactions::Vps
           enable: vps.autostart_enable,
           priority: vps.autostart_priority
         },
-        revert: revert
+        revert:
       }
     end
   end

@@ -6,13 +6,13 @@ class UserMailRoleRecipient < ActiveRecord::Base
 
   # @param user [User]
   def self.all_roles_for(user)
-    ret = where(user: user).to_a
+    ret = where(user:).to_a
 
     ::MailTemplate.roles.each do |role, _opts|
       next if ret.detect { |recp| recp.role == role.to_s }
 
       ret << new(
-        user: user,
+        user:,
         role: role.to_s,
         to: nil
       )
@@ -30,15 +30,15 @@ class UserMailRoleRecipient < ActiveRecord::Base
 
     if empty
       placeholder = new(
-        user: user,
-        role: role
+        user:,
+        role:
       )
     end
 
     transaction do
       recp = find_by(
-        user: user,
-        role: role
+        user:,
+        role:
       )
 
       if recp
@@ -55,8 +55,8 @@ class UserMailRoleRecipient < ActiveRecord::Base
 
       else
         recp = new(
-          user: user,
-          role: role
+          user:,
+          role:
         )
         recp.assign_attributes(attrs)
         recp.save!

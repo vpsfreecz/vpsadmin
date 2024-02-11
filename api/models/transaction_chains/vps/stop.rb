@@ -10,7 +10,7 @@ module TransactionChains
         Transactions::Vps::Stop,
         args: [vps],
         kwargs: {
-          start_timeout: start_timeout,
+          start_timeout:,
           rollback_stop: rollback_stop.nil? ? included? : rollback_stop
         }
       ) do |t|

@@ -26,7 +26,7 @@ module NodeCtld
         time: t.to_i,
         vpsadmin_version: NodeCtld::VERSION,
         kernel: SystemProbes::Kernel.new.version,
-        cgroup_version: cgroup_version,
+        cgroup_version:,
         nproc: 0,
         uptime: SystemProbes::Uptime.new.uptime.round,
         cpus: @cpus,

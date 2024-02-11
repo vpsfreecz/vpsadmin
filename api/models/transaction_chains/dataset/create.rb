@@ -85,7 +85,7 @@ module TransactionChains
       dip = ::DatasetInPool.create!(
         dataset: part,
         pool: @pool,
-        label: label,
+        label:,
         confirmed: ::DatasetInPool.confirmed(:confirm_create)
       )
 
@@ -99,7 +99,7 @@ module TransactionChains
 
       append_t(
         Transactions::Storage::CreateDataset,
-        args: [dip, properties, { create_private: @opts[:create_private], userns_map: userns_map }]
+        args: [dip, properties, { create_private: @opts[:create_private], userns_map: }]
       ) do |t|
         t.create(part)
         t.create(dip)
@@ -139,14 +139,14 @@ module TransactionChains
       return unless vps
 
       @vps_mounts[vps] = [::Mount.new(
-        vps: vps,
+        vps:,
         dst: "/#{dataset_in_pool.dataset.full_name.split('/')[1..-1].join('/')}",
         mount_opts: '--bind',
         umount_opts: '-f',
         mount_type: 'bind',
         mode: 'rw',
         user_editable: true,
-        dataset_in_pool: dataset_in_pool
+        dataset_in_pool:
       )]
     end
 
@@ -158,7 +158,7 @@ module TransactionChains
 
           new_mnt = ::Mount.new(attrs)
           new_mnt.assign_attributes(
-            vps: vps,
+            vps:,
             dataset_in_pool: dip,
             confirmed: ::Mount.confirmed(:confirm_create)
           )

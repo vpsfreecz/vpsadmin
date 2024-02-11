@@ -12,9 +12,9 @@ module TransactionChains
     def create_netif(vps, type, name)
       create_unique do
         ::NetworkInterface.create!(
-          vps: vps,
+          vps:,
           kind: type,
-          name: name,
+          name:,
           mac: gen_mac
         )
       end

@@ -37,7 +37,7 @@ module TransactionChains
         t.just_create(dataset_expansion.dataset_expansion_histories.create!(
                         added_space: dataset_expansion.added_space,
                         original_refquota: orig_refquota,
-                        new_refquota: new_refquota,
+                        new_refquota:,
                         admin: ::User.current
                       ))
         t.edit(ds, dataset_expansion_id: dataset_expansion.id)

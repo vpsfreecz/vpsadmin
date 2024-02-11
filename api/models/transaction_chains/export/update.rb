@@ -82,7 +82,7 @@ module TransactionChains
 
       ips.map do |ip|
         ::ExportHost.create!(
-          export: export,
+          export:,
           ip_address: ip,
           rw: export.rw,
           sync: export.sync,

@@ -39,9 +39,9 @@ module VpsAdmin::API
             table_name: action.class.table_name,
             row_id: action.id,
             minute: min,
-            hour: hour,
+            hour:,
             day_of_month: day,
-            month: month,
+            month:,
             day_of_week: dow
           )
 
@@ -100,9 +100,9 @@ module VpsAdmin::API
           table_name: action.class.table_name,
           row_id: action.id,
           minute: min,
-          hour: hour,
+          hour:,
           day_of_month: day,
-          month: month,
+          month:,
           day_of_week: dow
         )
 
@@ -229,7 +229,7 @@ module VpsAdmin::API
       def env_dataset_plan(dip)
         ::EnvironmentDatasetPlan.find_by!(
           environment: dip.pool.node.location.environment,
-          dataset_plan: dataset_plan
+          dataset_plan:
         )
       rescue ::ActiveRecord::RecordNotFound
         raise Exceptions::DatasetPlanNotInEnvironment.new(

@@ -70,7 +70,7 @@ class OutageUpdate < ActiveRecord::Base
 
   def to_hash
     ret = {
-      id: id,
+      id:,
       changes: {},
       translations: {}
     }

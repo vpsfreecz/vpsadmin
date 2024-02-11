@@ -28,8 +28,8 @@ module VpsAdmin::Supervisor
           vps_proc['processes'].map do |state, count|
             {
               vps_id: vps_proc['vps_id'],
-              state: state,
-              count: count,
+              state:,
+              count:,
               created_at: t,
               updated_at: t
             }

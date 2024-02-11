@@ -89,7 +89,7 @@ class DatasetInPool < ActiveRecord::Base
     ret = []
 
     # First parents
-    dip = dataset.dataset_in_pools.where(pool: pool).take
+    dip = dataset.dataset_in_pools.where(pool:).take
 
     return ret unless dip
 
@@ -98,7 +98,7 @@ class DatasetInPool < ActiveRecord::Base
     # Then children
     children.each do |k, v|
       if v.is_a?(::Dataset)
-        dip = v.dataset_in_pools.where(pool: pool).take
+        dip = v.dataset_in_pools.where(pool:).take
         next unless dip
 
         ret << dip

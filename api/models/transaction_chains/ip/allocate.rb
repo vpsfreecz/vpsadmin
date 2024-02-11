@@ -23,7 +23,7 @@ module TransactionChains
               ip_v: v,
               role: r.name.end_with?('_private') ? :private_access : :public_access,
               purpose: :vps,
-              address_location: address_location
+              address_location:
             )
             lock(ip)
 

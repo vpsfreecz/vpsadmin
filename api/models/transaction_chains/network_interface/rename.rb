@@ -18,7 +18,7 @@ module TransactionChains
           t.just_create(netif.vps.log(:netif_rename, {
                                         id: netif.id,
                                         name: netif.name,
-                                        new_name: new_name
+                                        new_name:
                                       }))
         end
       end

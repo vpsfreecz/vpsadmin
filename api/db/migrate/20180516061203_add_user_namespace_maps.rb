@@ -67,7 +67,7 @@ class AddUserNamespaceMaps < ActiveRecord::Migration
       [0, 1].each do |kind|
         UserNamespaceMapEntry.create!(
           user_namespace_map_id: map.id,
-          kind: kind,
+          kind:,
           ns_id: 0,
           host_id: 0,
           count: uns.size

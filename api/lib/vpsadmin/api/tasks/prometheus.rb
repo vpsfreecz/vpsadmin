@@ -247,27 +247,27 @@ module VpsAdmin::API::Tasks
 
         @dataset_expansion_count.set(
           exp.expansion_count,
-          labels: labels
+          labels:
         )
 
         @dataset_expansion_added_bytes.set(
           exp.added_space * 1024 * 1024,
-          labels: labels
+          labels:
         )
 
         @dataset_expansion_seconds.set(
           t_now - exp.created_at,
-          labels: labels
+          labels:
         )
 
         @dataset_expansion_over_refquota_seconds.set(
           exp.over_refquota_seconds,
-          labels: labels
+          labels:
         )
 
         @dataset_expansion_max_over_refquota_seconds.set(
           exp.max_over_refquota_seconds,
-          labels: labels
+          labels:
         )
       end
 
@@ -317,7 +317,7 @@ module VpsAdmin::API::Tasks
 
           @vps_incident_report_count.set(
             cnt,
-            labels: { user_id: user_id, vps_id: vps_id }
+            labels: { user_id:, vps_id: }
           )
         end
 

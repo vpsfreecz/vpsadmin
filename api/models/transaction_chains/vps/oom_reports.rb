@@ -34,7 +34,7 @@ module TransactionChains
              user: vps.user,
              vars: {
                base_url: ::SysConfig.get(:webui, :base_url),
-               vps: vps,
+               vps:,
                all_oom_reports: reports,
                all_oom_count: reports.sum(:count),
                selected_oom_reports: selected_reports,

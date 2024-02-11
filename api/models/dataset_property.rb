@@ -29,10 +29,10 @@ class DatasetProperty < ActiveRecord::Base
 
     VpsAdmin::API::DatasetProperties::Registrator.properties.each do |name, p|
       property = new(
-        dataset_in_pool: dataset_in_pool,
+        dataset_in_pool:,
         dataset: dataset_in_pool.dataset,
         parent: parents[name],
-        name: name,
+        name:,
         confirmed: confirmed(:confirm_create)
       )
 

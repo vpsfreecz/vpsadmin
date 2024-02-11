@@ -14,7 +14,7 @@ module TransactionChains
       ::Environment.all.each do |env|
         objects << ::EnvironmentUserConfig.create!(
           environment: env,
-          user: user,
+          user:,
           can_create_vps: env.can_create_vps,
           can_destroy_vps: env.can_destroy_vps,
           vps_lifetime: env.vps_lifetime,
@@ -24,7 +24,7 @@ module TransactionChains
         # Create all cluster resources in all environments
         ::ClusterResource.all.each do |cr|
           objects << ::UserClusterResource.create!(
-            user: user,
+            user:,
             environment: env,
             cluster_resource: cr,
             value: 0
@@ -33,13 +33,13 @@ module TransactionChains
 
         # Create an empty personal resource package for every environment
         personal_pkg = ::ClusterResourcePackage.create!(
-          user: user,
+          user:,
           environment: env,
           label: 'Personal package'
         )
         objects << personal_pkg
         objects << ::UserClusterResourcePackage.create!(
-          user: user,
+          user:,
           environment: env,
           cluster_resource_package: personal_pkg
         )
@@ -47,7 +47,7 @@ module TransactionChains
         # Assign default resource packages
         env.default_user_cluster_resource_packages.each do |pkg|
           objects << ::UserClusterResourcePackage.create!(
-            user: user,
+            user:,
             environment: env,
             cluster_resource_package: pkg.cluster_resource_package,
             comment: 'User was created'
@@ -72,8 +72,8 @@ module TransactionChains
 
       if create_vps
         vps = ::Vps.new(
-          user: user,
-          node: node,
+          user:,
+          node:,
           os_template: tpl,
           hostname: 'vps'
         )
@@ -102,9 +102,9 @@ module TransactionChains
       end
 
       mail(:user_create, {
-             user: user,
+             user:,
              vars: {
-               user: user
+               user:
              }
            })
 

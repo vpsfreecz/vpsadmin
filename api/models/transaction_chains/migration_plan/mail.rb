@@ -12,7 +12,7 @@ module TransactionChains
         mail(:vps_migration_planned, {
                user: m.vps.user,
                vars: {
-                 m: m,
+                 m:,
                  vps: m.vps,
                  src_node: m.src_node,
                  dst_node: m.dst_node

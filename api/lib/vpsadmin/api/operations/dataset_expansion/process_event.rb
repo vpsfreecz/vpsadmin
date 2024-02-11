@@ -57,7 +57,7 @@ module VpsAdmin::API
               state: over_limit ? 'active' : 'resolved',
               original_refquota: orig_quota,
               added_space: event.added_space,
-              max_over_refquota_seconds: max_over_refquota_seconds
+              max_over_refquota_seconds:
             )
 
             ds.update!(dataset_expansion: exp) if over_limit

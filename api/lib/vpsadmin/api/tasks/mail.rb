@@ -25,7 +25,7 @@ module VpsAdmin::API::Tasks
 
       ::Mailbox.all.each do |mailbox|
         FOLDERS.each do |folder|
-          check_mailbox(mailbox, folder, dry_run: dry_run)
+          check_mailbox(mailbox, folder, dry_run:)
         end
       end
     end
@@ -50,7 +50,7 @@ module VpsAdmin::API::Tasks
         end
 
       messages.each do |m|
-        if handle_message(mailbox, m, dry_run: dry_run)
+        if handle_message(mailbox, m, dry_run:)
           puts "#{mailbox.label}/#{folder}: processed message #{m.subject}"
         else
           puts "#{mailbox.label}/#{folder}: ignoring message #{m.subject}"
@@ -63,7 +63,7 @@ module VpsAdmin::API::Tasks
 
       mailbox.mailbox_handlers.each do |handler|
         instance = Object.const_get(handler.class_name).new(mailbox)
-        ret = instance.handle_message(m, dry_run: dry_run)
+        ret = instance.handle_message(m, dry_run:)
         handled = true if ret
 
         if ret == :continue

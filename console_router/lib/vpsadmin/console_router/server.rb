@@ -15,7 +15,7 @@ module VpsAdmin::ConsoleRouter
       if settings.router.check_session(vps_id, params[:session])
         erb :console, locals: {
           api_url: settings.router.api_url,
-          vps_id: vps_id,
+          vps_id:,
           auth_type: params[:auth_type],
           auth_token: params[:auth_token],
           session: params[:session]

@@ -301,7 +301,7 @@ module NodeCtld
         @exchange,
         { data_key => to_save }.to_json,
         content_type: 'application/json',
-        routing_key: routing_key
+        routing_key:
       )
 
       to_save.clear

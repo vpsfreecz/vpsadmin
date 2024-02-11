@@ -26,31 +26,31 @@ VpsAdmin::API::Plugin.register(:requests) do
     }
 
     %w[user admin].each do |_role|
-      MailTemplate.register :request_action_role_type,
+      MailTemplate.register(:request_action_role_type,
                             name: 'request_%{action}_%{role}_%{type}', params: {
                               action: 'create or resolve',
                               role: 'user or admin',
                               type: 'registration or change'
-                            }, vars: vars
+                            }, vars:)
 
-      MailTemplate.register :request_action_role,
+      MailTemplate.register(:request_action_role,
                             name: 'request_%{action}_%{role}', params: {
                               action: 'create or resolve',
                               role: 'user or admin'
-                            }, vars: vars
+                            }, vars:)
 
-      MailTemplate.register :request_resolve_role_type_state,
+      MailTemplate.register(:request_resolve_role_type_state,
                             name: 'request_resolve_%{role}_%{type}_%{state}', params: {
                               role: 'user or admin',
                               type: 'registration or change',
                               state: 'one of awaiting, approved, denied, ignored'
-                            }, vars: vars
+                            }, vars:)
 
       MailTemplate.register :request_resolve_role_state,
                             name: 'request_resolve_%{role}_%{state}', params: {
                               role: 'user or admin',
                               state: 'one of awaiting, approved, denied, ignored'
-                            }, vars: vars
+                            }, vars:
     end
   end
 end

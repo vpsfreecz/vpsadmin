@@ -7,7 +7,7 @@ module VpsAdmin::API
     # @return [::Dataset, nil]
     def run(user, name)
       # Try a direct lookup
-      ds = ::Dataset.find_by(user: user, full_name: name)
+      ds = ::Dataset.find_by(user:, full_name: name)
       return ds if ds
 
       # Find by label
@@ -24,7 +24,7 @@ module VpsAdmin::API
         )
 
       ::Dataset.find_by!(
-        user: user,
+        user:,
         full_name: File.join(top_dip.dataset.full_name, *parts[1..-1])
       )
     end

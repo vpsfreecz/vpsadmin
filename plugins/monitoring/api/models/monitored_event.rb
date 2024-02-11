@@ -43,12 +43,12 @@ class MonitoredEvent < ActiveRecord::Base
           class_name: obj.class.name,
           row_id: obj.id,
           state: states[:monitoring],
-          user: user,
+          user:,
           access_level: monitor.access_level || 0
         )
 
       elsif event.user != user
-        event.update!(user: user)
+        event.update!(user:)
       end
 
       if %w[acknowledged ignored].include?(event.state) && event.saved_until \
@@ -64,8 +64,8 @@ class MonitoredEvent < ActiveRecord::Base
 
       # Log measured value
       event.monitored_event_logs << MonitoredEventLog.new(
-        passed: passed,
-        value: value
+        passed:,
+        value:
       )
 
       # Close passed events
@@ -195,7 +195,7 @@ class MonitoredEvent < ActiveRecord::Base
     return if monitored_event_states.last && monitored_event_states.last.state == state
 
     monitored_event_states << MonitoredEventState.new(
-      state: state
+      state:
     )
   end
 end

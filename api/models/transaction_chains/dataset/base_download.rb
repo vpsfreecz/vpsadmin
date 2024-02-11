@@ -11,7 +11,7 @@ module TransactionChains
 
       dl = ::SnapshotDownload.new(
         user: ::User.current,
-        snapshot: snapshot,
+        snapshot:,
         from_snapshot: opts[:from_snapshot],
         secret_key: generate_key,
         format: opts[:format],
@@ -50,7 +50,7 @@ module TransactionChains
                user: ::User.current,
                vars: {
                  base_url: ::SysConfig.get(:webui, :base_url),
-                 dl: dl
+                 dl:
                }
              })
       end

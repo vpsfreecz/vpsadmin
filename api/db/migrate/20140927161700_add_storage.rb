@@ -79,10 +79,10 @@ class AddStorage < ActiveRecord::Migration
 
       VpsAdmin::API::DatasetProperties::Registrator.properties.each do |name, p|
         property = new(
-          dataset_in_pool: dataset_in_pool,
+          dataset_in_pool:,
           dataset: dataset_in_pool.dataset,
           parent: parents[name],
-          name: name,
+          name:,
           confirmed: 1
         )
 
@@ -407,7 +407,7 @@ class AddStorage < ActiveRecord::Migration
 
       VpsAdmin::API::DatasetProperties::Registrator.properties.each do |k, v|
         pool_properties[k] = DatasetProperty.create!(
-          pool: pool,
+          pool:,
           name: k,
           value: v.meta[:default],
           inherited: false,
@@ -528,7 +528,7 @@ class AddStorage < ActiveRecord::Migration
         # Find all datasets with matching name, then see if any of them are
         # on the correct pool.
         q = (ds ? Dataset.children_of(ds) : Dataset.roots).where(
-          name: name,
+          name:,
           user_id: export.member_id
         )
         ds = nil
@@ -550,7 +550,7 @@ class AddStorage < ActiveRecord::Migration
 
       parts[index..-1].each do |name|
         last_ds = Dataset.create!(
-          name: name,
+          name:,
           parent: last_ds,
           user_id: export.member_id,
           user_editable: last_ds ? export.user_editable : false,
@@ -599,7 +599,7 @@ class AddStorage < ActiveRecord::Migration
 
       ds_in_pool = DatasetInPool.create!(
         dataset_id: vps.dataset_in_pool.dataset_id,
-        pool_id: pool_id,
+        pool_id:,
         confirmed: 1
       )
 

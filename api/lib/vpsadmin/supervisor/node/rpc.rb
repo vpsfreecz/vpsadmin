@@ -62,11 +62,11 @@ module VpsAdmin::Supervisor
       protected
 
       def send_response(response)
-        reply({ status: true, response: response })
+        reply({ status: true, response: })
       end
 
       def send_error(message)
-        reply({ status: false, message: message })
+        reply({ status: false, message: })
       end
 
       def reply(payload)
@@ -138,7 +138,7 @@ module VpsAdmin::Supervisor
           .joins(:dataset, :dataset_properties, :pool)
           .where(
             dataset_in_pools: {
-              pool_id: pool_id,
+              pool_id:,
               confirmed: ::DatasetInPool.confirmed(:confirmed)
             },
             pools: {
@@ -217,7 +217,7 @@ module VpsAdmin::Supervisor
           .joins(:vps)
           .joins('LEFT JOIN network_interface_monitors ON network_interface_monitors.network_interface_id = network_interfaces.id')
           .where(
-            vps_id: vps_id,
+            vps_id:,
             name: vps_name
           ).take
 
@@ -250,7 +250,7 @@ module VpsAdmin::Supervisor
               object_state: %w[active suspended soft_delete],
               confirmed: ::Vps.confirmed(:confirmed),
               node: @node,
-              dataset_in_pools: { pool_id: pool_id }
+              dataset_in_pools: { pool_id: }
             )
             .limit(limit)
 
@@ -316,7 +316,7 @@ module VpsAdmin::Supervisor
         console = ::VpsConsole
                   .select('vps_id')
                   .joins(:vps)
-                  .where(token: token, vpses: { node_id: @node.id })
+                  .where(token:, vpses: { node_id: @node.id })
                   .where('expiration > ?', Time.now)
                   .take
 

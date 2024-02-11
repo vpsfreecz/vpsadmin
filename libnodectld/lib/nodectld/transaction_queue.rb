@@ -160,7 +160,7 @@ module NodeCtld
     end
 
     def reserve(chain_id, priority: 0)
-      @sem.down_block(priority: priority)
+      @sem.down_block(priority:)
       @mon.synchronize { @reserved << chain_id }
       true
     end

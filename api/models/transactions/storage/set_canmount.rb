@@ -10,7 +10,7 @@ module Transactions::Storage
       pool_fs = dataset_in_pools.first.pool.filesystem
 
       {
-        pool_fs: pool_fs,
+        pool_fs:,
         datasets: dataset_in_pools.map do |dip|
           if dip.pool.node_id != node_id
             raise 'mismatching node_id'
@@ -21,7 +21,7 @@ module Transactions::Storage
           dip.dataset.full_name
         end.sort,
         canmount: canmount || (raise ArgumentError, 'missing canmount'),
-        mount: mount
+        mount:
       }
     end
   end

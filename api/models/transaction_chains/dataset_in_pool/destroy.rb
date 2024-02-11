@@ -172,7 +172,7 @@ module TransactionChains
         # Destroy dataset in pool
         if destroy_top
           if opts[:tasks]
-            dataset_in_pool.free_resources(chain: chain).each do |r|
+            dataset_in_pool.free_resources(chain:).each do |r|
               destroy(r)
             end
 
@@ -188,7 +188,7 @@ module TransactionChains
             end
 
             # Remove associated DatasetAction and RepeatableTask
-            GroupSnapshot.where(dataset_in_pool: dataset_in_pool).each do |group|
+            GroupSnapshot.where(dataset_in_pool:).each do |group|
               just_destroy(group)
             end
 

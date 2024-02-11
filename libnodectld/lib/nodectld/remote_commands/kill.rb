@@ -29,7 +29,7 @@ module NodeCtld::RemoteCommands
         end
       end
 
-      { ret: :ok, output: { killed: cnt, msgs: msgs } }
+      { ret: :ok, output: { killed: cnt, msgs: } }
     end
   end
 end

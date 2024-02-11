@@ -680,7 +680,7 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
           input[:code]
         )
 
-        { recovery_code: recovery_code }
+        { recovery_code: }
       rescue VpsAdmin::API::Exceptions::OperationError => e
         error(e.message)
       end

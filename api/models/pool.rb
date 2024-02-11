@@ -58,7 +58,7 @@ class Pool < ActiveRecord::Base
   # @param role [:hypervisor, :primary]
   # @return [::Pool]
   def self.take_by_node!(node, role: nil)
-    pool, = pick_by_node(node, role: role)
+    pool, = pick_by_node(node, role:)
     raise "no pool available on #{node.domain_name}" if pool.nil?
 
     pool

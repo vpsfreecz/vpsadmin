@@ -4,9 +4,9 @@ module TransactionChains
 
     def link_chain(user, target, _state, log)
       mail(:user_soft_delete, {
-             user: user,
+             user:,
              vars: {
-               user: user,
+               user:,
                state: log
              }
            })

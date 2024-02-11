@@ -19,7 +19,7 @@ module VpsAdmin::API
     # @return [Result]
     def run(token, code)
       auth_token = ::AuthToken.joins(:token).includes(:token, :user).find_by(
-        tokens: { token: token },
+        tokens: { token: },
         purpose: 'totp'
       )
 
@@ -34,7 +34,7 @@ module VpsAdmin::API
 
         if last_verification_at
           dev.update!(
-            last_verification_at: last_verification_at,
+            last_verification_at:,
             last_use_at: Time.now
           )
           ::UserTotpDevice.increment_counter(:use_count, dev.id)

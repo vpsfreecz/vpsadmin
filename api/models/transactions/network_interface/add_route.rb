@@ -19,7 +19,7 @@ module Transactions::NetworkInterface
         prefix: ip.prefix,
         version: ip.version,
         via: via && via.ip_addr,
-        register: register,
+        register:,
         id: ip.id,
         user_id: ip.user_id || netif.vps.user_id
       }

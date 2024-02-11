@@ -15,8 +15,8 @@ class MigrationPlan < ActiveRecord::Base
           args: [m.vps, m.dst_node, {
             maintenance_window: m.maintenance_window,
             cleanup_data: m.cleanup_data,
-            send_mail: send_mail,
-            reason: reason
+            send_mail:,
+            reason:
           }]
         )
 

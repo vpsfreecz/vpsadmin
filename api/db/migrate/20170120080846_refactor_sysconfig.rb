@@ -34,7 +34,7 @@ class RefactorSysconfig < ActiveRecord::Migration
 
       NewSysConfig.create!(
         category: cat,
-        name: name,
+        name:,
         data_type: type || 'Text',
         value: cfg.cfg_value,
         min_user_level: level

@@ -144,7 +144,7 @@ module NodeCtld
           pgtables_bytes: pgtables_bytes.to_i,
           swapents: swapents.to_i,
           oom_score_adj: oom_score_adj.to_i,
-          name: name
+          name:
         }
 
         return

@@ -129,7 +129,7 @@ module NodeCtld
           begin
             log(:info, :sql, "Trying to connect to #{host}") if problem
             @my = Mysql2::Client.new(
-              host: host,
+              host:,
               username: db[:user],
               password: db[:pass],
               database: db[:name],

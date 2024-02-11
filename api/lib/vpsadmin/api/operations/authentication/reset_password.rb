@@ -7,7 +7,7 @@ module VpsAdmin::API
     # @return [User]
     def run(token, new_password)
       auth_token = ::AuthToken.joins(:token).includes(:token, :user).find_by(
-        tokens: { token: token },
+        tokens: { token: },
         purpose: 'reset_password'
       )
 

@@ -64,9 +64,9 @@ module VpsAdmin::ConsoleRouter
       begin
         @exchange.publish(
           {
-            command: command,
-            args: args,
-            kwargs: kwargs
+            command:,
+            args:,
+            kwargs:
           }.to_json,
           persistent: true,
           content_type: 'application/json',

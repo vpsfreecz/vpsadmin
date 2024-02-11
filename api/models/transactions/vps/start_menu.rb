@@ -10,7 +10,7 @@ module Transactions::Vps
 
       {
         new_timeout: vps.start_menu_timeout,
-        original_timeout: original_timeout
+        original_timeout:
       }
     end
   end

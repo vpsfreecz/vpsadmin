@@ -128,7 +128,7 @@ module VpsAdmin::API::Tasks
           maintenance_window: m.maintenance_window,
           cleanup_data: m.cleanup_data
         }],
-        locks: locks
+        locks:
       )
 
       m.update!(

@@ -27,9 +27,9 @@ module TransactionChains
                  object: klass.name.underscore,
                  state: obj.object_state
                },
-               user: user,
+               user:,
                vars: {
-                 base_url: base_url,
+                 base_url:,
                  object: obj,
                  state: obj.current_object_state,
                  expires_in_days: days_before,

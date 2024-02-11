@@ -16,7 +16,7 @@ class ClusterResourcePackage < ActiveRecord::Base
       it = ClusterResourcePackageItem.create!(
         cluster_resource_package: self,
         cluster_resource: resource,
-        value: value
+        value:
       )
 
       recalculate_user_resources
@@ -27,7 +27,7 @@ class ClusterResourcePackage < ActiveRecord::Base
   # @return [ClusterResourcePackageItem]
   def update_item(item, value)
     self.class.transaction do
-      item.update!(value: value)
+      item.update!(value:)
       recalculate_user_resources
       item
     end
@@ -54,7 +54,7 @@ class ClusterResourcePackage < ActiveRecord::Base
       ucrp = ::UserClusterResourcePackage.create!(
         cluster_resource_package: self,
         environment: env,
-        user: user,
+        user:,
         added_by: ::User.current,
         comment: opts[:comment] || ''
       )

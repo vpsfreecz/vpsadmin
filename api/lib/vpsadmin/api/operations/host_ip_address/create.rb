@@ -18,7 +18,7 @@ module VpsAdmin::API
 
       begin
         host_ip = ::HostIpAddress.create!(
-          ip_address: ip_address,
+          ip_address:,
           ip_addr: parsed_addr.to_s,
           order: nil,
           user_created: true

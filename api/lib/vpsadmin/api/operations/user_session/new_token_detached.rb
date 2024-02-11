@@ -23,8 +23,8 @@ module VpsAdmin::API
         generate_token: true,
         token_lifetime:,
         token_interval:,
-        admin: admin,
-        label: label,
+        admin:,
+        label:,
       )
     end
   end

@@ -95,7 +95,7 @@ module NodeCtld
 
       vpses.each do |vps_id, procs|
         to_save << {
-          vps_id: vps_id,
+          vps_id:,
           processes: procs
         }
 

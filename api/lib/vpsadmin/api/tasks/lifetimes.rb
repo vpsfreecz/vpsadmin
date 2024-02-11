@@ -59,7 +59,7 @@ module VpsAdmin::API::Tasks
             instance.progress_object_state(
               :enter,
               reason: get_reason(instance),
-              expiration: expiration
+              expiration:
             )
           rescue ResourceLocked
             puts '    resource locked'

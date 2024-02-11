@@ -75,11 +75,11 @@ module NodeCtld
         NodeBunny.publish_drop(
           @exchange,
           {
-            id: id,
+            id:,
             time: t.to_i,
-            state: state,
-            scan: scan,
-            scan_percent: scan_percent
+            state:,
+            scan:,
+            scan_percent:
           }.to_json,
           content_type: 'application/json',
           routing_key: 'pool_statuses'

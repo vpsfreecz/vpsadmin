@@ -42,15 +42,15 @@ module VpsAdmin::Supervisor
         value = save_value(prop['name'], prop['value'])
 
         ::DatasetProperty.where(id: prop['id']).update_all(
-          value: value,
-          updated_at: updated_at
+          value:,
+          updated_at:
         )
 
         next unless save_log && LOG_PROPERTIES.include?(prop['name'])
 
         ::DatasetPropertyHistory.create!(
           dataset_property_id: prop['id'],
-          value: value,
+          value:,
           created_at: updated_at
         )
       end

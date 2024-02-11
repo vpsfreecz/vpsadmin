@@ -7,7 +7,7 @@ class UserMailTemplateRecipient < ActiveRecord::Base
 
   # @param user [User]
   def self.all_templates_for(user)
-    ret = includes(:mail_template).where(user: user).to_a
+    ret = includes(:mail_template).where(user:).to_a
 
     ::MailTemplate.where.not(
       id: ret.map { |recp| recp.mail_template_id }
@@ -15,7 +15,7 @@ class UserMailTemplateRecipient < ActiveRecord::Base
       next unless tpl.desc[:public]
 
       ret << new(
-        user: user,
+        user:,
         mail_template: tpl,
         to: nil
       )
@@ -44,14 +44,14 @@ class UserMailTemplateRecipient < ActiveRecord::Base
 
     if empty
       placeholder = new(
-        user: user,
+        user:,
         mail_template: template
       )
     end
 
     transaction do
       recp = find_by(
-        user: user,
+        user:,
         mail_template: template
       )
 
@@ -69,7 +69,7 @@ class UserMailTemplateRecipient < ActiveRecord::Base
 
       else
         recp = new(
-          user: user,
+          user:,
           mail_template: template
         )
         recp.assign_attributes(attrs)

@@ -28,7 +28,7 @@ module TransactionChains
       reallocate_user(@ip.user, @ip.charged_environment, -1 * @ip.size) if @ip.user
       reallocate_user(user, env, @ip.size) if user
       @ip.update!(
-        user: user,
+        user:,
         charged_environment: env
       )
     end

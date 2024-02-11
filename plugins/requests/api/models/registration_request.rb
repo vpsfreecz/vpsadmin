@@ -49,10 +49,10 @@ class RegistrationRequest < UserRequest
 
   def approve(chain, params)
     new_user = ::User.new(
-      login: login,
-      address: address,
-      email: email,
-      language: language,
+      login:,
+      address:,
+      email:,
+      language:,
       level: 2,
       mailer_enabled: true,
       password_reset: true
@@ -101,13 +101,13 @@ class RegistrationRequest < UserRequest
   def check_login
     return if persisted?
 
-    user = ::User.exists?(login: login)
+    user = ::User.exists?(login:)
     req = self.class.exists?(
       state: [
         self.class.states[:awaiting],
         self.class.states[:pending_correction]
       ],
-      login: login
+      login:
     )
 
     errors.add(:login, 'is taken') if user || req

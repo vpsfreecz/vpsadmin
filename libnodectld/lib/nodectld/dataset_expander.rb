@@ -55,7 +55,7 @@ module NodeCtld
 
         if avail_bytes < min_avail_bytes \
             || ((avail_bytes.to_f / refquota_bytes) * 100) < min_avail_pct
-          expand_dataset(ds, refquota_bytes: refquota_bytes)
+          expand_dataset(ds, refquota_bytes:)
         end
       end
     end

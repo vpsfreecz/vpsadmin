@@ -30,7 +30,7 @@ module TransactionChains
         pools: { role: ::Pool.roles[:backup] }
       ).count == 0
 
-        sip = snapshot.snapshot_in_pools.where(dataset_in_pool: dataset_in_pool).take
+        sip = snapshot.snapshot_in_pools.where(dataset_in_pool:).take
         raise 'nothing to rollback, integrity error' unless sip
 
         pre_local_rollback
@@ -58,7 +58,7 @@ module TransactionChains
       end
 
       # Fetch the last snapshot on the +dataset_in_pool+
-      primary_last_snap = ::SnapshotInPool.where(dataset_in_pool: dataset_in_pool).order('snapshot_id DESC').take
+      primary_last_snap = ::SnapshotInPool.where(dataset_in_pool:).order('snapshot_id DESC').take
 
       # Find the snapshot_in_pool on pool with hypervisor or primary role
       snapshot_on_primary = snapshot.snapshot_in_pools.joins(dataset_in_pool: [:pool])

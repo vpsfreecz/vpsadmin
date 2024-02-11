@@ -5,10 +5,10 @@ module TransactionChains
     # @param user [::User]
     # @param ip_addresses [Array<::IpAddress>]
     def link_chain(user, ip_addresses)
-      ::Export.where(user: user, all_vps: true).each do |export|
+      ::Export.where(user:, all_vps: true).each do |export|
         hosts = ip_addresses.map do |ip|
           ::ExportHost.new(
-            export: export,
+            export:,
             ip_address: ip,
             rw: export.rw,
             sync: export.sync,

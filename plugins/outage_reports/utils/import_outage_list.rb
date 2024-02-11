@@ -105,7 +105,7 @@ class OutageParser
       data[:entities].each do |name, id|
         @api.outage.entity.create(
           outage.id,
-          { name: name, entity_id: id }.delete_if { |_k, v| v.nil? }
+          { name:, entity_id: id }.delete_if { |_k, v| v.nil? }
         )
       end
 
@@ -227,7 +227,7 @@ if $0 == __FILE__
   api = HaveAPI::Client.new(ARGV[0])
   api.authenticate(:token,
                    user: ARGV[1],
-                   password: password,
+                   password:,
                    lifetime: 'fixed',
                    interval: 900)
 

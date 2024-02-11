@@ -6,7 +6,7 @@ module Transactions::Utils
     def params(node_id, sleep: nil)
       self.node_id = node_id
 
-      { sleep: sleep }
+      { sleep: }
     end
   end
 end

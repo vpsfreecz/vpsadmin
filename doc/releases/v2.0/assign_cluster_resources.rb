@@ -47,7 +47,7 @@ User.transaction do
       # Create user cluster resources
       RESOURCES.each do |r|
         env_resources[r] = UserClusterResource.create!(
-          user: user,
+          user:,
           cluster_resource: cluster_resources[r],
           environment: env,
           value: 0

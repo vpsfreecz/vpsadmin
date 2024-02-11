@@ -294,8 +294,8 @@ class Node < ActiveRecord::Base
         stop_on_error: opts[:stop_on_error].nil? ? false : opts[:stop_on_error],
         user: ::User.current,
         node: opts[:dst_node],
-        concurrency: concurrency,
-        send_mail: send_mail,
+        concurrency:,
+        send_mail:,
         reason: opts[:reason]
       )
 
@@ -306,10 +306,10 @@ class Node < ActiveRecord::Base
         node: self
       ).order('object_state, vps_id').each do |vps|
         plan.vps_migrations.create!(
-          vps: vps,
+          vps:,
           migration_plan: plan,
-          maintenance_window: maintenance_window,
-          cleanup_data: cleanup_data,
+          maintenance_window:,
+          cleanup_data:,
           src_node: self,
           dst_node: opts[:dst_node]
         )

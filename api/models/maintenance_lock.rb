@@ -7,7 +7,7 @@ class MaintenanceLock < ActiveRecord::Base
     new(
       class_name: obj.class.to_s,
       row_id: obj.id,
-      reason: reason,
+      reason:,
       user: user || ::User.current
     )
   end
@@ -15,8 +15,8 @@ class MaintenanceLock < ActiveRecord::Base
   def lock!(obj)
     self.class.transaction do
       tmp = self.class.find_by(
-        class_name: class_name,
-        row_id: row_id,
+        class_name:,
+        row_id:,
         active: true
       )
 

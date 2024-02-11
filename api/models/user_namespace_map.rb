@@ -16,7 +16,7 @@ class UserNamespaceMap < ActiveRecord::Base
   def self.create_chained!(userns, label)
     create!(
       user_namespace: userns,
-      label: label
+      label:
     )
   end
 

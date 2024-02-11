@@ -12,9 +12,9 @@ module VpsAdmin::API
     def run(user, mechanism, reason, request)
       ActiveRecord::Base.transaction do
         ::UserFailedLogin.create!(
-          user: user,
+          user:,
           auth_type: mechanism,
-          reason: reason,
+          reason:,
           api_ip_addr: request.ip,
           api_ip_ptr: get_ptr(request.ip),
           client_ip_addr: request.env['HTTP_CLIENT_IP'],

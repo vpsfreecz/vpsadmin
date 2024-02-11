@@ -13,7 +13,7 @@ module VpsAdmin::API
         ::UserFailedLogin.create!(
           user: auth_token.user,
           auth_type: mechanism,
-          reason: reason,
+          reason:,
           api_ip_addr: auth_token.api_ip_addr,
           api_ip_ptr: auth_token.api_ip_ptr,
           client_ip_addr: auth_token.client_ip_addr,

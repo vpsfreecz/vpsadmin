@@ -135,7 +135,7 @@ module NodeCtld
       metrics.start_time_seconds.set((Time.now - @daemon.start_time).to_i)
 
       @daemon.console.stats.each_key do |vps_id|
-        metrics.open_console.set(1, labels: { vps_id: vps_id })
+        metrics.open_console.set(1, labels: { vps_id: })
       end
 
       @daemon.chain_blockers do |blockers|
@@ -143,7 +143,7 @@ module NodeCtld
 
         blockers.each do |chain_id, pids|
           pids.each do |pid|
-            metrics.subprocess.set(1, labels: { chain_id: chain_id, subprocess_pid: pid })
+            metrics.subprocess.set(1, labels: { chain_id:, subprocess_pid: pid })
           end
         end
       end

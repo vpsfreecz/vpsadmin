@@ -29,7 +29,7 @@ class Mount < ActiveRecord::Base
 
     errors.add(:dst, 'invalid format') if dst !~ %r{\A[a-zA-Z0-9_\-/.:]{3,500}\z} || dst =~ /\.\./ || dst =~ %r{//}
 
-    cnt = self.class.where(vps: vps, dst: dst).count
+    cnt = self.class.where(vps:, dst:).count
 
     return unless (new_record? && cnt > 0) || (!new_record? && cnt > 1)
 

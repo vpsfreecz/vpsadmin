@@ -12,7 +12,7 @@ end
 
 Vps.transaction do
   Vps.includes(dataset_in_pool: [:dataset]).all.each do |vps|
-    q = VpsBackup.where(vps: vps).order('`timestamp`')
+    q = VpsBackup.where(vps:).order('`timestamp`')
     next if q.empty?
 
     oldest_backup = q.take
@@ -63,7 +63,7 @@ Vps.transaction do
 
       SnapshotInPoolInBranch.create!(
         snapshot_in_pool: sip,
-        branch: branch,
+        branch:,
         confirmed: SnapshotInPoolInBranch.confirmed(:confirmed)
       )
     end

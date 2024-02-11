@@ -7,7 +7,7 @@ module NodeCtld
     include OsCtl::Lib::Utils::System
 
     def try_harder(attempts = 3, &block)
-      status, v = repeat_on_failure(attempts: attempts, &block)
+      status, v = repeat_on_failure(attempts:, &block)
 
       if status
         v

@@ -66,7 +66,7 @@ module VpsAdmin::API::Plugins::Payments::TransactionChains
                vars: {
                  user: u,
                  account: u.user_account,
-                 payment: payment
+                 payment:
                }
              })
       end

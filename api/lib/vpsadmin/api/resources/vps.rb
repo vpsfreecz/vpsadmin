@@ -285,7 +285,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
 
         input.update({
                        user: current_user,
-                       node: node
+                       node:
                      })
       end
 
@@ -595,7 +595,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
       maintenance_check!(vps)
 
       @chain, password = vps.passwd(input[:type].to_sym)
-      { password: password }
+      { password: }
     end
 
     def state_id
@@ -1150,7 +1150,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
 
       input do
         ::VpsFeature::FEATURES.each do |name, label|
-          bool name, label: label
+          bool name, label:
         end
       end
 
@@ -1320,7 +1320,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
         vps = ::Vps.find_by!(with_restricted(id: params[:vps_id]))
         maintenance_check!(vps)
 
-        mnt = ::Mount.find_by!(vps: vps, id: params[:mount_id])
+        mnt = ::Mount.find_by!(vps:, id: params[:mount_id])
         @chain, = mnt.update_chain(input)
         mnt
       end
@@ -1344,7 +1344,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
         vps = ::Vps.find_by!(with_restricted(id: params[:vps_id]))
         maintenance_check!(vps)
 
-        mnt = ::Mount.find_by!(vps: vps, id: params[:mount_id])
+        mnt = ::Mount.find_by!(vps:, id: params[:mount_id])
         @chain, = vps.umount(mnt)
 
         ok

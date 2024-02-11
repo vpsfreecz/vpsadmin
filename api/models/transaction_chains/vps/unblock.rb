@@ -10,7 +10,7 @@ module TransactionChains
       mail(:vps_resume, {
              user: vps.user,
              vars: {
-               vps: vps,
+               vps:,
                state: log
              }
            })

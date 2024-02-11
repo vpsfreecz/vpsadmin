@@ -53,7 +53,7 @@ module TransactionChains
 
         confirm_features << ::VpsFeature.create!(
           vps: dst_vps,
-          name: name,
+          name:,
           enabled: dst_features[name]
         )
       end
@@ -340,7 +340,7 @@ module TransactionChains
       lock(dip)
 
       ds = ::Dataset.create!(
-        parent: parent,
+        parent:,
         name: dip.dataset.name,
         user: dip.dataset.user,
         user_editable: dip.dataset.user_editable,
@@ -373,7 +373,7 @@ module TransactionChains
           lock(dip)
 
           ds = ::Dataset.create!(
-            parent: parent,
+            parent:,
             name: dip.dataset.name,
             user: dip.dataset.user,
             user_editable: dip.dataset.user_editable,

@@ -41,10 +41,10 @@ class Environment < ActiveRecord::Base
 
     self.class.transaction do
       environment_user_configs.where(default: true).update_all(
-        can_create_vps: can_create_vps,
-        can_destroy_vps: can_destroy_vps,
-        vps_lifetime: vps_lifetime,
-        max_vps_count: max_vps_count
+        can_create_vps:,
+        can_destroy_vps:,
+        vps_lifetime:,
+        max_vps_count:
       )
 
       save!

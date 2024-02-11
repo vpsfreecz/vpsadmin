@@ -19,7 +19,7 @@ module TransactionChains
         if %w[node storage].include?(node.role)
           10_000.times do |i|
             r = ::PortReservation.create!(
-              node: node,
+              node:,
               port: 10_000 + i
             )
 

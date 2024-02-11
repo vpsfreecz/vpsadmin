@@ -66,7 +66,7 @@ module Lockable
     ResourceLock.find_by(
       resource: lock_resource_name,
       row_id: id,
-      locked_by: locked_by
+      locked_by:
     ).release
   end
 

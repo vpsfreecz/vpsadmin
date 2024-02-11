@@ -26,7 +26,7 @@ class ClusterResourceUse < ActiveRecord::Base
   protected
 
   def check_allocation
-    self.attr_changes ||= { value: value }
+    self.attr_changes ||= { value: }
 
     if ::User.current && ::User.current.role == :admin
       self.admin_limit = admin_lock_type == 'no_lock' ? nil : value
@@ -35,7 +35,7 @@ class ClusterResourceUse < ActiveRecord::Base
     end
 
     used = self.class.where(
-      user_cluster_resource: user_cluster_resource,
+      user_cluster_resource:,
       enabled: true
     ).where.not(
       confirmed: self.class.confirmed(:confirm_destroy)

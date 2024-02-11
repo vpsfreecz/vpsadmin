@@ -20,16 +20,16 @@ module VpsAdmin::API
         if location
           ::Node.pick_by_location(
             location,
-            except: except,
-            hypervisor_type: hypervisor_type,
-            cgroup_version: cgroup_version
+            except:,
+            hypervisor_type:,
+            cgroup_version:
           )
         else
           ::Node.pick_by_environment(
             environment,
-            except: except,
-            hypervisor_type: hypervisor_type,
-            cgroup_version: cgroup_version
+            except:,
+            hypervisor_type:,
+            cgroup_version:
           )
         end
 

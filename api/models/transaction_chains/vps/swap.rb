@@ -68,7 +68,7 @@ module TransactionChains
 
         [
           :public,
-          { netif: netif,
+          { netif:,
             target_netif: new_netif,
             routes: netif.ip_addresses.order(:order).to_a,
             host_addrs: netif.host_ip_addresses.where.not(order: nil).order(:order).to_a }
@@ -81,7 +81,7 @@ module TransactionChains
 
         [
           :public,
-          { netif: netif,
+          { netif:,
             target_netif: new_netif,
             routes: netif.ip_addresses.order(:order).to_a,
             host_addrs: netif.host_ip_addresses.where.not(order: nil).order(:order).to_a }
@@ -390,7 +390,7 @@ module TransactionChains
       ret = []
 
       # First parents
-      dip = dataset.dataset_in_pools.where(pool: pool).take
+      dip = dataset.dataset_in_pools.where(pool:).take
 
       return ret unless dip
 
@@ -400,7 +400,7 @@ module TransactionChains
       # Then children
       children.each do |k, v|
         if v.is_a?(::Dataset)
-          dip = v.dataset_in_pools.where(pool: pool).take
+          dip = v.dataset_in_pools.where(pool:).take
           next unless dip
 
           lock(dip)

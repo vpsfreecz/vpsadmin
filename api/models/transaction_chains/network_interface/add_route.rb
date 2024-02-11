@@ -161,7 +161,7 @@ module TransactionChains
           uses << user_env.reallocate_resource!(
             r,
             cur + n[:add] - n[:drop],
-            user: user
+            user:
           )
         end
       end

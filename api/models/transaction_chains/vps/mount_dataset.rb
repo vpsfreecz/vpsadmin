@@ -32,8 +32,8 @@ module TransactionChains
       end
 
       mnt = ::Mount.new(
-        vps: vps,
-        dst: dst,
+        vps:,
+        dst:,
         mount_opts: '',
         umount_opts: '-f',
         mount_type: 'nfs',

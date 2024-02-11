@@ -22,7 +22,7 @@ module VpsAdmin::API::Resources
         end.sort_by do |_klass, count|
           -count
         end.map do |klass, count|
-          { object: klass, count: count }
+          { object: klass, count: }
         end
       end
     end
@@ -58,7 +58,7 @@ module VpsAdmin::API::Resources
 
           hashes << {
             size: obj.size,
-            sample: sample
+            sample:
           }
         end
 
@@ -99,7 +99,7 @@ module VpsAdmin::API::Resources
 
           arrays << {
             size: obj.size,
-            sample: sample
+            sample:
           }
         end
 

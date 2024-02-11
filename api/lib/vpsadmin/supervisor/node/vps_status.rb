@@ -44,7 +44,7 @@ module VpsAdmin::Supervisor
         in_rescue_mode: new_status['in_rescue_mode'],
         total_memory: memory,
         total_swap: swap,
-        cpus: cpus,
+        cpus:,
         updated_at: Time.at(new_status['time'])
       )
 

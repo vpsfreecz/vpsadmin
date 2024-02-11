@@ -22,7 +22,7 @@ module NodeCtld
     protected
 
     def set_start_menu(timeout)
-      osctl(%i[ct set start-menu], @vps_id, { timeout: timeout })
+      osctl(%i[ct set start-menu], @vps_id, { timeout: })
     end
 
     def unset_start_menu

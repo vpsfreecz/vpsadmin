@@ -4,9 +4,9 @@ module TransactionChains
 
     def link_chain(user, _target, _state, log)
       mail(:user_revive, {
-             user: user,
+             user:,
              vars: {
-               user: user,
+               user:,
                state: log
              }
            })

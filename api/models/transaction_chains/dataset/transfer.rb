@@ -124,13 +124,13 @@ module TransactionChains
     end
 
     def get_or_create_tree(dataset_in_pool)
-      tree = ::DatasetTree.find_by(dataset_in_pool: dataset_in_pool, head: true)
+      tree = ::DatasetTree.find_by(dataset_in_pool:, head: true)
 
       unless tree
         last_index = dataset_in_pool.dataset_trees.all.maximum('index')
 
         tree = ::DatasetTree.create!(
-          dataset_in_pool: dataset_in_pool,
+          dataset_in_pool:,
           index: last_index ? last_index + 1 : 0,
           head: true,
           confirmed: ::DatasetTree.confirmed(:confirm_create)

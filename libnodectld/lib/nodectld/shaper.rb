@@ -101,7 +101,7 @@ module NodeCtld
     end
 
     def tc(arg, valid_rcs = [])
-      syscmd("#{$CFG.get(:bin, :tc)} #{arg}", valid_rcs: valid_rcs)
+      syscmd("#{$CFG.get(:bin, :tc)} #{arg}", valid_rcs:)
     end
 
     def sync(&block)

@@ -35,7 +35,7 @@ class VpsMaintenanceWindow < ActiveRecord::Base
       errors.add(:closes_at, 'must be at least 60 minutes after opens_at')
     end
 
-    sum = vps.vps_maintenance_windows.where.not(id: id).sum('closes_at - opens_at')
+    sum = vps.vps_maintenance_windows.where.not(id:).sum('closes_at - opens_at')
     sum += closes_at - opens_at if opens_at && closes_at && is_open
 
     return unless sum / 60.0 < 12
@@ -54,7 +54,7 @@ class VpsMaintenanceWindow < ActiveRecord::Base
     # completely open as well. Days until finish_weekday remain closed.
     windows = (0..6).map do |i|
       ::VpsMaintenanceWindow.new(
-        vps: vps,
+        vps:,
         weekday: i
       )
     end

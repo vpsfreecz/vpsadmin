@@ -11,9 +11,9 @@ module Transactions::Pool
         pool_name: dst_pool.name,
         pool_fs: dst_pool.filesystem,
         pubkey: src_pool.migration_public_key,
-        name: name,
+        name:,
         ctid: ctid.to_s,
-        passphrase: passphrase
+        passphrase:
       }
     end
   end

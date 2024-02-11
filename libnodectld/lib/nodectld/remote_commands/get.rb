@@ -38,7 +38,7 @@ module NodeCtld::RemoteCommands
           db.close
         end
 
-        ok.update({ output: { queue: queue } })
+        ok.update({ output: { queue: } })
 
       when 'veth_map'
         ok.update({ output: { veth_map: NodeCtld::VethMap.dump } })

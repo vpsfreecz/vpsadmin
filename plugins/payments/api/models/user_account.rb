@@ -61,7 +61,7 @@ class UserAccount < ActiveRecord::Base
 
     payment = ::UserPayment.new(
       incoming_payment: income,
-      user: user
+      user:
     )
     amount = income.converted_amount
 
@@ -110,6 +110,6 @@ class User
 end
 
 User.connect_hook(:create) do |ret, user|
-  ret[:objects] << ::UserAccount.create!(user: user)
+  ret[:objects] << ::UserAccount.create!(user:)
   ret
 end

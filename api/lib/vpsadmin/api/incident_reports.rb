@@ -10,7 +10,7 @@ module VpsAdmin::API
       # @param message [Mail::Message]
       # @param dry_run [Boolean]
       def handle_message(message, dry_run:)
-        result = IncidentReports.handle_message(@mailbox, message, dry_run: dry_run)
+        result = IncidentReports.handle_message(@mailbox, message, dry_run:)
         return false if result.nil?
 
         result.incidents.each do |inc|
@@ -20,7 +20,7 @@ module VpsAdmin::API
         return result.processed? if dry_run
 
         if result.active.any?
-          TransactionChains::IncidentReport::Send.fire(result, message: message)
+          TransactionChains::IncidentReport::Send.fire(result, message:)
         elsif result.incidents.any? && result.reply
           TransactionChains::IncidentReport::Reply.fire(message, result)
         end
@@ -75,7 +75,7 @@ module VpsAdmin::API
       private
 
       def do_handle_message(mailbox, message, dry_run:)
-        @handle_message.call(mailbox, message, dry_run: dry_run)
+        @handle_message.call(mailbox, message, dry_run:)
       end
     end
 
@@ -139,7 +139,7 @@ module VpsAdmin::API
     end
 
     def self.handle_message(mailbox, message, dry_run:)
-      @config.send(:do_handle_message, mailbox, message, dry_run: dry_run)
+      @config.send(:do_handle_message, mailbox, message, dry_run:)
     end
   end
 end

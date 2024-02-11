@@ -191,7 +191,7 @@ module VpsAdmin::API::Resources
           input[:name].strip,
           input[:dataset],
           automount: input[:automount],
-          properties: properties
+          properties:
         )
         dataset
       rescue VpsAdmin::API::Exceptions::PropertyInvalid => e

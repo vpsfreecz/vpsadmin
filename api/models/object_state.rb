@@ -8,9 +8,9 @@ class ObjectState < ::ActiveRecord::Base
     new(
       class_name: obj.class.name,
       row_id: obj.id,
-      state: state,
-      reason: reason,
-      user: user,
+      state:,
+      reason:,
+      user:,
       expiration_date: expiration,
       remind_after_date: remind_date
     )

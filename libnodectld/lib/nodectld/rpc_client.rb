@@ -70,7 +70,7 @@ module NodeCtld
         vps_maps = send_request(
           'list_vps_user_namespace_maps',
           pool_id,
-          from_id: from_id,
+          from_id:,
           limit: 50
         )
 
@@ -88,7 +88,7 @@ module NodeCtld
       loop do
         exports = send_request(
           'list_exports',
-          from_id: from_id,
+          from_id:,
           limit: 50
         )
 
@@ -143,9 +143,9 @@ module NodeCtld
       NodeBunny.publish_wait(
         @exchange,
         {
-          command: command,
-          args: args,
-          kwargs: kwargs
+          command:,
+          args:,
+          kwargs:
         }.to_json,
         persistent: true,
         content_type: 'application/json',

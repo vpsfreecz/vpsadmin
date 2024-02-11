@@ -206,8 +206,8 @@ module TransactionChains
       @transfer_snapshots ||= []
 
       datasets.each do |src, dst|
-        @transfer_snapshots << use_chain(Dataset::Snapshot, args: src, urgent: urgent)
-        use_chain(Dataset::Transfer, args: [src, dst], urgent: urgent)
+        @transfer_snapshots << use_chain(Dataset::Snapshot, args: src, urgent:)
+        use_chain(Dataset::Transfer, args: [src, dst], urgent:)
       end
     end
 

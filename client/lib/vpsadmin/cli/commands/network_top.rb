@@ -129,7 +129,7 @@ module VpsAdmin::CLI::Commands
 
         @columns << {
           name: p,
-          title: title,
+          title:,
           width: size < 8 ? 8 : size
         }
       end

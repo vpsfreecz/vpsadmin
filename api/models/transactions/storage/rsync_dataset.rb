@@ -13,7 +13,7 @@ module Transactions::Storage
         dst_pool_name: dst.pool.name,
         dst_pool_fs: dst.pool.filesystem,
         dataset_name: src.dataset.full_name,
-        allow_partial: allow_partial
+        allow_partial:
       }
     end
   end

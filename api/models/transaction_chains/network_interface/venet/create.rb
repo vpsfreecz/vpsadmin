@@ -5,7 +5,7 @@ module TransactionChains
     # @param vps [::Vps]
     def link_chain(vps)
       netif = ::NetworkInterface.create!(
-        vps: vps,
+        vps:,
         kind: 'venet',
         name: 'venet0'
       )

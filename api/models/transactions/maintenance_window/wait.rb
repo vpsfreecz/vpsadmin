@@ -24,7 +24,7 @@ module Transactions::MaintenanceWindow
 
       {
         windows: window_hashes,
-        reserve_time: reserve_time
+        reserve_time:
       }
     end
   end

@@ -175,7 +175,7 @@ module TransactionChains
                src_node: src_vps.node,
                dst_node: dst_vps.node,
                maintenance_window: opts[:maintenance_window],
-               maintenance_windows: maintenance_windows,
+               maintenance_windows:,
                custom_window: !opts[:finish_weekday].nil?,
                finish_weekday: opts[:finish_weekday],
                finish_minutes: opts[:finish_minutes],
@@ -194,7 +194,7 @@ module TransactionChains
                src_node: src_vps.node,
                dst_node: dst_vps.node,
                maintenance_window: opts[:maintenance_window],
-               maintenance_windows: maintenance_windows,
+               maintenance_windows:,
                custom_window: !opts[:finish_weekday].nil?,
                finish_weekday: opts[:finish_weekday],
                finish_minutes: opts[:finish_minutes],
@@ -587,7 +587,7 @@ module TransactionChains
         src_use = src_user_env.reallocate_resource!(
           r,
           src_user_env.send(r) - filter_sum_ip_addresses(standalone_ips, r),
-          user: user,
+          user:,
           confirmed: ::ClusterResourceUse.confirmed(:confirmed)
         )
 
@@ -595,7 +595,7 @@ module TransactionChains
         dst_use = dst_user_env.reallocate_resource!(
           r,
           dst_user_env.send(r) + filter_sum_ip_addresses(new_ips, r),
-          user: user,
+          user:,
           confirmed: ::ClusterResourceUse.confirmed(:confirmed)
         )
 
@@ -632,7 +632,7 @@ module TransactionChains
         src_use = src_user_env.reallocate_resource!(
           r,
           src_user_env.send(r) - filter_sum_ip_addresses(ips, r),
-          user: user,
+          user:,
           confirmed: ::ClusterResourceUse.confirmed(:confirmed)
         )
 
@@ -640,7 +640,7 @@ module TransactionChains
         dst_use = dst_user_env.reallocate_resource!(
           r,
           dst_user_env.send(r) + filter_sum_ip_addresses(ips, r),
-          user: user,
+          user:,
           confirmed: ::ClusterResourceUse.confirmed(:confirmed)
         )
 
@@ -714,7 +714,7 @@ module TransactionChains
 
         to_create << ::VpsFeature.create!(
           vps: dst_vps,
-          name: name,
+          name:,
           enabled: false
         )
       end

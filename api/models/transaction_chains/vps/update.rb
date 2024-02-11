@@ -155,7 +155,7 @@ module TransactionChains
           mail(:vps_resources_change, {
                  user: vps.user,
                  vars: {
-                   vps: vps,
+                   vps:,
                    admin: admin || ::User.current,
                    reason: opts[:change_reason]
                  }
@@ -252,7 +252,7 @@ module TransactionChains
         # Update IP assignments
         all_ips.each do |ip|
           ip.log_unassignment(chain: current_chain, confirmable: t)
-          ip.log_assignment(vps: vps, chain: current_chain, confirmable: t)
+          ip.log_assignment(vps:, chain: current_chain, confirmable: t)
         end
       end
 
@@ -310,7 +310,7 @@ module TransactionChains
 
       add_hosts = ips.map do |ip|
         ::ExportHost.create!(
-          export: export,
+          export:,
           ip_address: ip,
           rw: export.rw,
           sync: export.sync,

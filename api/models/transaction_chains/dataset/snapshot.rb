@@ -21,7 +21,7 @@ module TransactionChains
 
       sip = ::SnapshotInPool.create!(
         snapshot: s,
-        dataset_in_pool: dataset_in_pool,
+        dataset_in_pool:,
         confirmed: ::SnapshotInPool.confirmed(:confirm_create)
       )
 

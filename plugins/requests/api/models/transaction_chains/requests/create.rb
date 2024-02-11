@@ -23,15 +23,15 @@ module VpsAdmin::API::Plugins::Requests::TransactionChains
         ]
       ].each do |id, params|
         mail(id, {
-               params: params,
+               params:,
                user: request.user,
                to: [request.user_mail],
                language: request.user_language,
                message_id: message_id(request),
                vars: {
-                 request: request,
+                 request:,
                  r: request,
-                 webui_url: webui_url
+                 webui_url:
                }
              })
         break
@@ -51,13 +51,13 @@ module VpsAdmin::API::Plugins::Requests::TransactionChains
           ]
         ].each do |id, params|
           mail(id, {
-                 params: params,
+                 params:,
                  user: admin,
                  message_id: message_id(request),
                  vars: {
-                   request: request,
+                   request:,
                    r: request,
-                   webui_url: webui_url
+                   webui_url:
                  }
                })
           break

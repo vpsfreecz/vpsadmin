@@ -5,9 +5,9 @@ module TransactionChains
     def link_chain(user, target, _state, log)
       if target
         mail(:user_suspend, {
-               user: user,
+               user:,
                vars: {
-                 user: user,
+                 user:,
                  state: log
                }
              })

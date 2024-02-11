@@ -53,9 +53,9 @@ module NodeCtld
 
       # Register in osctl
       osctl(%i[ct mounts register], [@vps_id, mnt['dst']], {
-              fs: fs,
-              type: type,
-              opts: opts,
+              fs:,
+              type:,
+              opts:,
               on_ct_start: true
             })
 
@@ -90,8 +90,8 @@ module NodeCtld
 
       osctl(%i[ct mounts register], [@vps_id, dst], {
               fs: src,
-              type: type,
-              opts: opts
+              type:,
+              opts:
             })
       osctl(%i[ct mounts activate], [@vps_id, dst])
 
@@ -120,7 +120,7 @@ module NodeCtld
         RemoteClient.send_or_not(RemoteControl::SOCKET, :mount_state, {
                                    vps_id: @vps_id,
                                    mount_id: opts['id'],
-                                   state: state
+                                   state:
                                  })
 
       else

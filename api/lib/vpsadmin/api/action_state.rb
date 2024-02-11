@@ -5,7 +5,7 @@ module VpsAdmin::API
       return ret if user.nil?
 
       q = ::TransactionChain.where(
-        user: user,
+        user:,
         state: [
           ::TransactionChain.states[:queued],
           ::TransactionChain.states[:rollbacking]
@@ -23,8 +23,8 @@ module VpsAdmin::API
       return if user.nil?
 
       @chain = state || ::TransactionChain.find_by(
-        id: id,
-        user: user
+        id:,
+        user:
       )
     end
 

@@ -16,9 +16,9 @@ class UserClusterResource < ActiveRecord::Base
 
     @used = ::ClusterResourceUse.joins(:user_cluster_resource).where(
       user_cluster_resources: {
-        user_id: user_id,
-        environment_id: environment_id,
-        cluster_resource_id: cluster_resource_id
+        user_id:,
+        environment_id:,
+        cluster_resource_id:
       },
       cluster_resource_uses: {
         confirmed: ::ClusterResourceUse.confirmed(:confirmed),

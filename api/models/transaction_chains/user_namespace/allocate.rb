@@ -16,8 +16,8 @@ module TransactionChains
       blocks = allocate_block_range(block_count)
 
       uns = ::UserNamespace.create!(
-        user: user,
-        block_count: block_count,
+        user:,
+        block_count:,
         offset: blocks.first.offset,
         size: blocks.inject(0) { |sum, block| sum + block.size }
       )

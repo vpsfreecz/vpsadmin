@@ -6,7 +6,7 @@ module TransactionChains
       concerns(:affect, *incidents.map { |inc| [inc.vps.class.name, inc.vps_id] })
 
       use_chain(IncidentReport::Send, args: [
-                  VpsAdmin::API::IncidentReports::Result.new(incidents: incidents)
+                  VpsAdmin::API::IncidentReports::Result.new(incidents:)
                 ])
 
       now = Time.now

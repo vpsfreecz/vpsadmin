@@ -109,10 +109,10 @@ module VpsAdmin::API
           ret << allocate_resource!(
             r,
             values[r] || method(r).call,
-            user: user,
-            confirmed: confirmed,
-            chain: chain,
-            admin_override: admin_override
+            user:,
+            confirmed:,
+            chain:,
+            admin_override:
           )
         end
 
@@ -120,10 +120,10 @@ module VpsAdmin::API
           use = allocate_resource(
             r,
             values[r] || method(r).call,
-            user: user,
-            confirmed: confirmed,
-            chain: chain,
-            admin_override: admin_override
+            user:,
+            confirmed:,
+            chain:,
+            admin_override:
           )
 
           ret << use if use.valid?
@@ -147,9 +147,9 @@ module VpsAdmin::API
         ).each do |use|
           ret << free_resource!(
             use.user_cluster_resource.cluster_resource.name.to_sym,
-            destroy: destroy,
-            chain: chain,
-            use: use,
+            destroy:,
+            chain:,
+            use:,
             free_object: free_objects
           )
         end
@@ -167,10 +167,10 @@ module VpsAdmin::API
           ret << reallocate_resource!(
             r,
             resources[r],
-            user: user,
-            chain: chain,
-            override: override,
-            lock_type: lock_type
+            user:,
+            chain:,
+            override:,
+            lock_type:
           )
         end
 
@@ -209,7 +209,7 @@ module VpsAdmin::API
 
         resource_obj = ::ClusterResource.find_by!(name: resource)
         user_resource = ::UserClusterResource.find_by(
-          user: user,
+          user:,
           environment: env,
           cluster_resource: resource_obj
         )
@@ -226,8 +226,8 @@ module VpsAdmin::API
           class_name: self.class.name,
           table_name: self.class.table_name,
           row_id: id,
-          value: value,
-          confirmed: confirmed
+          value:,
+          confirmed:
         )
 
         use.admin_override = true if admin_override
@@ -276,9 +276,9 @@ module VpsAdmin::API
           return allocate_resource!(
             resource,
             value,
-            user: user,
-            confirmed: confirmed,
-            chain: chain
+            user:,
+            confirmed:,
+            chain:
           )
         end
 
@@ -374,7 +374,7 @@ module VpsAdmin::API
 
         ::UserClusterResource.includes(:cluster_resource).where(
           environment: dst_env,
-          user: user
+          user:
         ).each do |r|
           target_resources[r.cluster_resource.name.to_sym] = r
         end

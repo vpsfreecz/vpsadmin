@@ -9,9 +9,9 @@ module Transactions::Vps
       self.node_id = vps.node_id
 
       {
-        start_timeout: start_timeout,
+        start_timeout:,
         autostart_priority: vps.autostart_priority,
-        rollback_start: rollback_start
+        rollback_start:
       }
     end
   end

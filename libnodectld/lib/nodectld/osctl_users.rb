@@ -43,10 +43,10 @@ module NodeCtld
     # @param gidmap [Array<String>]
     def add_vps(pool_fs:, vps_id:, user_name:, uidmap:, gidmap:)
       @pool_users[pool_fs].add_vps(
-        vps_id: vps_id,
-        user_name: user_name,
-        uidmap: uidmap,
-        gidmap: gidmap
+        vps_id:,
+        user_name:,
+        uidmap:,
+        gidmap:
       )
     end
 
@@ -55,7 +55,7 @@ module NodeCtld
     # @param vps_id [Integer]
     # @param user_name [String]
     def remove_vps(pool_fs:, vps_id:, user_name:)
-      @pool_users[pool_fs].remove_vps(vps_id: vps_id, user_name: user_name)
+      @pool_users[pool_fs].remove_vps(vps_id:, user_name:)
     end
 
     protected
@@ -112,7 +112,7 @@ module NodeCtld
           u = @users[user_name]
 
           if u.nil?
-            u = User.new(@pool_name, user_name, uidmap: uidmap, gidmap: gidmap)
+            u = User.new(@pool_name, user_name, uidmap:, gidmap:)
             @users[user_name] = u
           end
         end
