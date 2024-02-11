@@ -12,7 +12,7 @@ class AddLifetimesToMounts < ActiveRecord::Migration
 
         # Set expiration_date of snapshot mounts to 3 days in the future
         Mount.where.not(snapshot_in_pool_id: nil).update_all(
-          expiration_date: Time.now + 3 * 24 * 60 * 60
+          expiration_date: Time.now + (3 * 24 * 60 * 60)
         )
       end
     end

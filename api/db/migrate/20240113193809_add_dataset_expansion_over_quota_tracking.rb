@@ -13,7 +13,7 @@ class AddDatasetExpansionOverQuotaTracking < ActiveRecord::Migration[7.0]
 
       dir.down do
         DatasetExpansion.all.each do |exp|
-          exp.update!(deadline: exp.created_at + 30 * 24 * 60 * 60)
+          exp.update!(deadline: exp.created_at + (30 * 24 * 60 * 60))
         end
       end
     end

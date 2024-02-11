@@ -230,7 +230,7 @@ module TransactionChains
 
             # Is now only in backup pools
             just_create(dataset_in_pool.dataset.set_expiration(
-                          Time.now.utc + 30 * 24 * 60 * 60,
+                          Time.now.utc + (30 * 24 * 60 * 60),
                           reason: 'Dataset on the primary pool was deleted.'
                         ))
             edit(

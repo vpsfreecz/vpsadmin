@@ -71,7 +71,7 @@ module VpsAdmin::API
     end
 
     def create_auth_token(purpose, user, request)
-      ::Token.for_new_record!(Time.now + 60 * 5) do |token|
+      ::Token.for_new_record!(Time.now + (60 * 5)) do |token|
         t = ::AuthToken.new(
           user:,
           token:,

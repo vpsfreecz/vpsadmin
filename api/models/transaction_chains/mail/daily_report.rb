@@ -18,7 +18,7 @@ module TransactionChains
              vars: call_hooks_for(
                :send,
                self,
-               args: [now - 24 * 60 * 60, now],
+               args: [now - (24 * 60 * 60), now],
                initial: vars(now)
              )
            })
@@ -38,7 +38,7 @@ module TransactionChains
 
       {
         date: {
-          start: (now - 24 * 60 * 60),
+          start: (now - (24 * 60 * 60)),
           end: now
         },
 

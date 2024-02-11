@@ -11,7 +11,7 @@ module NodeCtld::Utils
 
       def closest
         t = Time.now
-        now_in_mins = t.hour * 60 + t.min
+        now_in_mins = (t.hour * 60) + t.min
 
         if first.opens_today?
           first
@@ -38,7 +38,7 @@ module NodeCtld::Utils
 
       def open?
         t = Time.now
-        now_in_mins = t.hour * 60 + t.min
+        now_in_mins = (t.hour * 60) + t.min
 
         t.wday == weekday \
            && now_in_mins >= opens_at \
@@ -47,7 +47,7 @@ module NodeCtld::Utils
 
       def opens_today?
         t = Time.now
-        now_in_mins = t.hour * 60 + t.min
+        now_in_mins = (t.hour * 60) + t.min
 
         t.wday == weekday && opens_at >= now_in_mins
       end
@@ -62,13 +62,13 @@ module NodeCtld::Utils
 
           else # will open on this week day, but next week
             today = Time.local(now.year, now.month, now.day)
-            t = today + 7 * 24 * 60 * 60 + (opens_at * 60)
+            t = today + (7 * 24 * 60 * 60) + (opens_at * 60)
           end
 
         else # will open the next or some later day
           # Start with tomorrow
-          t = Time.local(now.year, now.month, now.day) + 24 * 60 * 60
-          return (t + opens_at * 60) if t.wday == weekday
+          t = Time.local(now.year, now.month, now.day) + (24 * 60 * 60)
+          return (t + (opens_at * 60)) if t.wday == weekday
 
           # Iterate over all 6 remaining days, find our day of week
           6.times do

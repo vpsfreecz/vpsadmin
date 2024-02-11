@@ -19,7 +19,7 @@ module NodeCtl
       bits = 19
 
       %w[T G].each_with_index do |u, i|
-        n = 2 << (bits - 10 * i)
+        n = 2 << (bits - (10 * i))
 
         return "#{(v / n.to_f).round(1)}#{u}" if v >= n
       end

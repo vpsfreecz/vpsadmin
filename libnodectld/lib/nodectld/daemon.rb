@@ -134,7 +134,7 @@ module NodeCtld
 
             now = Time.now
 
-            if cmd_db.nil? || cmd_db_created + 5 * 60 <= now
+            if cmd_db.nil? || cmd_db_created + (5 * 60) <= now
               cmd_db.close if cmd_db
               cmd_db = Db.new
               cmd_db_created = Time.now

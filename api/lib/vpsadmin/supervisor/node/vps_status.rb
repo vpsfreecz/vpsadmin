@@ -54,7 +54,7 @@ module VpsAdmin::Supervisor
           loadavg: new_status['loadavg'] && new_status['loadavg']['5'],
           process_count: new_status['process_count'],
           used_memory: new_status['used_memory'] / 1024 / 1024,
-          cpu_idle: (cpus * 100.0 - new_status['cpu_usage']) / cpus
+          cpu_idle: ((cpus * 100.0) - new_status['cpu_usage']) / cpus
         )
 
         ::Vps.where(id: current_status.vps_id).update_all(hostname: new_status['hostname']) if new_status['hostname']

@@ -25,7 +25,7 @@ module NodeCtld
         when 'cpu'
           # We can't actually assign CPU cores without assigning them statically,
           # so we just set CPU limit
-          cpu_limits << r[key] * 100
+          cpu_limits << (r[key] * 100)
 
         when 'cpu_limit'
           cpu_limits << r[key] if r[key] && r[key] > 0

@@ -83,7 +83,7 @@ module NodeCtld
           counter += 1
 
           if tries.nil? || tries == 0 || counter <= tries
-            w = wait || (counter * 5 + rand(15))
+            w = wait || ((counter * 5) + rand(15))
             w = 10 * 60 if w > 10 * 60
             log(:warn, :sql, "Restarting transaction in #{w} seconds")
             sleep(w)

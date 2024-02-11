@@ -16,7 +16,7 @@ module TransactionChains
         secret_key: generate_key,
         format: opts[:format],
         file_name: filename(snapshot, opts[:format], opts[:from_snapshot]),
-        expiration_date: Time.now + 7 * 24 * 60 * 60,
+        expiration_date: Time.now + (7 * 24 * 60 * 60),
         confirmed: ::SnapshotDownload.confirmed(:confirm_create)
       )
 

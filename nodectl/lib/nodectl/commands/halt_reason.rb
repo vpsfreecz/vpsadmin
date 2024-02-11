@@ -68,7 +68,7 @@ module NodeCtl
 
       rs.each do |outage|
         next unless outage['begins_at'] < now \
-           && outage['begins_at'] + outage['duration'] * 60 >= now
+           && outage['begins_at'] + (outage['duration'] * 60) >= now
 
         get_entities(db, outage)
         get_translations(db, outage)

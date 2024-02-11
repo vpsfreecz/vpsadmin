@@ -743,7 +743,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
                                number: { min: 0, max: 6 }
       integer :finish_minutes, label: 'Finish minutes',
                                desc: 'Number of minutes from midnight of start_weekday after which the migration is done',
-                               number: { min: 0, max: 24 * 60 - 30 }
+                               number: { min: 0, max: (24 * 60) - 30 }
       bool :cleanup_data, label: 'Cleanup data',
                           desc: 'Remove VPS dataset from the source node',
                           default: true

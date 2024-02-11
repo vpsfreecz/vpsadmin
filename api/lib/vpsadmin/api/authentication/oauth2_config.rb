@@ -436,7 +436,7 @@ module VpsAdmin::API
 
     def create_authorization(auth_result, sinatra_request, oauth2_request, oauth2_response, client, sso: nil)
       now = Time.now
-      expires_at = now + 10 * 60
+      expires_at = now + (10 * 60)
 
       ::ActiveRecord::Base.transaction do
         # Create a new single sign on session if applicable

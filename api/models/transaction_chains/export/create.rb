@@ -48,7 +48,7 @@ module TransactionChains
           sync: opts[:sync] ? true : false,
           threads: opts[:threads] || 8,
           enabled: opts[:enabled] ? true : false,
-          expiration_date: sip ? Time.now + 3 * 24 * 60 * 60 : nil
+          expiration_date: sip ? Time.now + (3 * 24 * 60 * 60) : nil
         )
       rescue ActiveRecord::RecordNotUnique
         msg =

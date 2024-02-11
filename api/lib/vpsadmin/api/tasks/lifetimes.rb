@@ -46,8 +46,8 @@ module VpsAdmin::API::Tasks
           # users that exist for more than six months. They are suspended
           # a month after the expiration date has passed.
           if instance.is_a?(::User) \
-             && (instance.created_at.nil? || instance.created_at < (Time.now - 6 * 30 * 24 * 60 * 60)) \
-             && instance.expiration_date > (Time.now - 30 * 24 * 60 * 60) \
+             && (instance.created_at.nil? || instance.created_at < (Time.now - (6 * 30 * 24 * 60 * 60))) \
+             && instance.expiration_date > (Time.now - (30 * 24 * 60 * 60)) \
              && instance.object_state == 'active'
             puts '    we still love you'
             next
@@ -99,7 +99,7 @@ module VpsAdmin::API::Tasks
 
       classes.each do |cls|
         q = cls
-        q = q.where('expiration_date < ?', now - from_days * 24 * 60 * 60)
+        q = q.where('expiration_date < ?', now - (from_days * 24 * 60 * 60))
         q = q.where(object_state: states) if states
 
         objects = []

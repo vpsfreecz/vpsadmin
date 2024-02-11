@@ -117,7 +117,7 @@ module TransactionChains
       # Set state to soft_delete
       vps.record_object_state_change(
         :soft_delete,
-        expiration: attrs[:expiration_date] || (Time.now + 60 * 24 * 60 * 60),
+        expiration: attrs[:expiration_date] || (Time.now + (60 * 24 * 60 * 60)),
         reason: "Replaced with VPS #{dst_vps.id}",
         chain: self
       )

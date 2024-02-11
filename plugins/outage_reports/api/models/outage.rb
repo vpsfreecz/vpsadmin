@@ -90,7 +90,7 @@ class Outage < ActiveRecord::Base
   def do_auto_resolve
     attrs = { state: ::Outage.states['resolved'] }
 
-    attrs[:finished_at] = begins_at + duration * 60 if finished_at.nil?
+    attrs[:finished_at] = begins_at + (duration * 60) if finished_at.nil?
 
     VpsAdmin::API::Plugins::OutageReports::TransactionChains::Update.fire(
       self,
