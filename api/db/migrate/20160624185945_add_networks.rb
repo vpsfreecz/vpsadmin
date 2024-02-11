@@ -64,9 +64,9 @@ class AddNetworks < ActiveRecord::Migration
     puts 'Enter the networks one by line, e.g. 192.168.1.0/24.'
     puts 'When finished, enter "done" and press enter.'
 
-    STDOUT.write('> ')
-    STDOUT.flush
-    STDIN.each_line do |line|
+    $stdout.write('> ')
+    $stdout.flush
+    $stdin.each_line do |line|
       s = line.strip
       next if s.empty?
       break if s.downcase == 'done'
@@ -77,8 +77,8 @@ class AddNetworks < ActiveRecord::Migration
         puts "'#{s}' is not a valid network"
       end
 
-      STDOUT.write('> ')
-      STDOUT.flush
+      $stdout.write('> ')
+      $stdout.flush
     end
 
     puts 'Done'
@@ -124,9 +124,9 @@ class AddNetworks < ActiveRecord::Migration
     puts 'The migration can proceed with the following networks:'
     @networks.each { |net| puts "  #{net.to_string}" }
     puts
-    STDOUT.write('Continue? [y/N]: ')
-    STDOUT.flush
-    STDIN.readline.strip.downcase == 'y'
+    $stdout.write('Continue? [y/N]: ')
+    $stdout.flush
+    $stdin.readline.strip.downcase == 'y'
   end
 
   def create_networks

@@ -118,7 +118,7 @@ module NodeCtld
 
       pid = Process.fork do
         r.close
-        STDOUT.reopen(w)
+        $stdout.reopen(w)
         Process.exec(cmd)
       end
 

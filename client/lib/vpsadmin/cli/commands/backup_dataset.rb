@@ -441,13 +441,13 @@ module VpsAdmin::CLI::Commands
 
       pids << Process.fork do
         r.close
-        STDOUT.reopen(w)
+        $stdout.reopen(w)
         block.call
       end
 
       pids << Process.fork do
         w.close
-        STDIN.reopen(r)
+        $stdin.reopen(r)
         Process.exec(cmd2)
       end
 
@@ -511,10 +511,10 @@ module VpsAdmin::CLI::Commands
       end
 
       loop do
-        STDOUT.write('Pick a dataset to backup: ')
-        STDOUT.flush
+        $stdout.write('Pick a dataset to backup: ')
+        $stdout.flush
 
-        i = STDIN.readline.strip.to_i
+        i = $stdin.readline.strip.to_i
         next if i <= 0 || ds_map[i].nil?
 
         return ds_map[i]

@@ -69,8 +69,8 @@ module NodeCtld
 
         loop do
           pid = Process.fork do
-            STDOUT.reopen(w)
-            STDERR.reopen(w)
+            $stdout.reopen(w)
+            $stderr.reopen(w)
             r.close
 
             run_daemon

@@ -35,7 +35,7 @@ module NodeCtld
         bunny_logger.level = Logger::INFO
         opts[:logger] = bunny_logger
       else
-        opts[:log_file] = STDERR
+        opts[:log_file] = $stderr
       end
 
       @connection = ::Bunny.new(**opts)

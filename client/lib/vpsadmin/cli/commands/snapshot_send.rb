@@ -75,7 +75,7 @@ module VpsAdmin::CLI::Commands
             @api,
             dl,
             w,
-            progress: !opts[:quiet] && STDERR,
+            progress: !opts[:quiet] && $stderr,
             max_rate: opts[:max_rate],
             checksum: opts[:checksum]
           )
@@ -88,7 +88,7 @@ module VpsAdmin::CLI::Commands
       w.close
 
       gz = Zlib::GzipReader.new(r)
-      STDOUT.write(gz.readpartial(16 * 1024)) until gz.eof?
+      $stdout.write(gz.readpartial(16 * 1024)) until gz.eof?
       gz.close
 
       Process.wait(pid)

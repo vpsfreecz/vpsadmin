@@ -11,7 +11,7 @@ module VpsAdmin::CLI
       new(*args, **kwargs)
     end
 
-    def initialize(api, dl, io, progress: STDOUT, position: 0, max_rate: nil,
+    def initialize(api, dl, io, progress: $stdout, position: 0, max_rate: nil,
                    checksum: true)
       downloaded = position
       uri = URI(dl.url)

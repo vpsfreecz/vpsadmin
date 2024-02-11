@@ -55,7 +55,7 @@ module VpsAdmin::CLI::Commands
     end
 
     def exec(args)
-      if args.size == 0 && STDIN.tty?
+      if args.size == 0 && $stdin.tty?
         @opts[:snapshot] = snapshot_chooser
 
       elsif args.size != 1
@@ -75,7 +75,7 @@ module VpsAdmin::CLI::Commands
       pos = 0
 
       if @opts[:file] == '-'
-        f = STDOUT
+        f = $stdout
 
       elsif @opts[:file]
         f, action, pos = open_file(@opts[:file])
@@ -104,7 +104,7 @@ module VpsAdmin::CLI::Commands
           @api,
           dl,
           f,
-          progress: !@opts[:quiet] && (f == STDOUT ? STDERR : STDOUT),
+          progress: !@opts[:quiet] && (f == $stdout ? $stderr : $stdout),
           position: pos,
           max_rate: @opts[:max_rate],
           checksum: @opts[:checksum]
@@ -132,16 +132,16 @@ module VpsAdmin::CLI::Commands
         elsif @opts[:force]
           action = :overwrite
 
-        elsif STDIN.tty?
+        elsif $stdin.tty?
           while action.nil?
-            STDERR.write("'#{path}' already exists. [A]bort, [r]esume or [o]verwrite? [a]: ")
-            STDERR.flush
+            $stderr.write("'#{path}' already exists. [A]bort, [r]esume or [o]verwrite? [a]: ")
+            $stderr.flush
 
             action = {
               'r' => :resume,
               'o' => :overwrite,
               '' => false
-            }[STDIN.readline.strip.downcase]
+            }[$stdin.readline.strip.downcase]
           end
 
         else
@@ -205,10 +205,10 @@ module VpsAdmin::CLI::Commands
       end
 
       loop do
-        STDOUT.write('Pick a snapshot for download: ')
-        STDOUT.flush
+        $stdout.write('Pick a snapshot for download: ')
+        $stdout.flush
 
-        i = STDIN.readline.strip.to_i
+        i = $stdin.readline.strip.to_i
         next if i <= 0 || snap_map[i].nil?
 
         return snap_map[i].id

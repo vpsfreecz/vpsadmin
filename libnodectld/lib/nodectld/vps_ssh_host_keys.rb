@@ -140,14 +140,14 @@ module NodeCtld
       # Chroot into VPS rootfs and read ssh host key files
       read_pid = Process.fork do
         read_r.close
-        STDOUT.reopen(read_w)
+        $stdout.reopen(read_w)
 
         sys = OsCtl::Lib::Sys.new
         sys.chroot(vps.boot_rootfs)
 
         Dir.glob('/etc/ssh/ssh_host_*.pub').each do |v|
           File.open(v, 'r') do |f|
-            STDOUT.write(f.readline(32 * 1024))
+            $stdout.write(f.readline(32 * 1024))
           end
         rescue StandardError
           next

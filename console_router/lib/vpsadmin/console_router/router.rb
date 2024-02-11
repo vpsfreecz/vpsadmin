@@ -32,7 +32,7 @@ module VpsAdmin::ConsoleRouter
         vhost: cfg.fetch('vhost', '/'),
         username: cfg.fetch('username'),
         password: cfg.fetch('password'),
-        log_file: STDERR,
+        log_file: $stderr,
       )
       @connection.start
 
