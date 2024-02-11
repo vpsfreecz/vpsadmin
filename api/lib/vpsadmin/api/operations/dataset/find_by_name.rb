@@ -25,7 +25,7 @@ module VpsAdmin::API
 
       ::Dataset.find_by!(
         user:,
-        full_name: File.join(top_dip.dataset.full_name, *parts[1..-1])
+        full_name: File.join(top_dip.dataset.full_name, *parts[1..])
       )
     end
   end

@@ -39,7 +39,7 @@ module NodeCtld
 
       semicolon = line.index(';')
       params = line[0..(semicolon - 1)]
-      @text = line[(semicolon + 1)..-1].strip
+      @text = line[(semicolon + 1)..].strip
 
       syslog, seq, timestamp, = params.split(',')
 

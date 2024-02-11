@@ -38,7 +38,7 @@ module TransactionChains
           append(
             Transactions::Storage::LocalSend,
             args: [src, dst, snapshots, src_branch, dst_branch],
-            &confirm_block(snapshots[1..-1], dst, dst_branch)
+            &confirm_block(snapshots[1..], dst, dst_branch)
           )
 
         else
@@ -53,7 +53,7 @@ module TransactionChains
           append(
             Transactions::Storage::RecvCheck,
             args: [dst, snapshots, dst_branch, ds_suffix],
-            &confirm_block(snapshots[1..-1], dst, dst_branch)
+            &confirm_block(snapshots[1..], dst, dst_branch)
           )
         end
       end

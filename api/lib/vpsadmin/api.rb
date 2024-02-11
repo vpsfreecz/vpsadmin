@@ -111,7 +111,7 @@ module VpsAdmin
 
             if colon
               pattern = scope_pattern[0..(colon - 1)]
-              allowed_params = Hash[scope_pattern[(colon + 1)..-1].split(',').map do |v|
+              allowed_params = Hash[scope_pattern[(colon + 1)..].split(',').map do |v|
                 arr = v.split('=')
 
                 raise "Invalid path params in scope: #{scope_pattern.inspect}" if arr.length != 2

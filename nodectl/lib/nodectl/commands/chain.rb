@@ -48,7 +48,7 @@ module NodeCtl
       params.update({
                       chain: args[0].to_i,
                       command: args[1],
-                      transactions: args.size > 2 ? args[2..-1].map { |v| v.to_i } : nil
+                      transactions: args.size > 2 ? args[2..].map { |v| v.to_i } : nil
                     })
 
       case args[1]

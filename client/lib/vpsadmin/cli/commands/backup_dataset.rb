@@ -378,7 +378,7 @@ module VpsAdmin::CLI::Commands
       # This is intentionally done by two zfs commands, because -d2 would include
       # nested subdatasets, which should not be there, but the user might create
       # them and it could confuse the program.
-      zfs(:list, '-r -d1 -tfilesystem -H -oname', fs).split("\n")[1..-1].each do |name|
+      zfs(:list, '-r -d1 -tfilesystem -H -oname', fs).split("\n")[1..].each do |name|
         last_name = name.split('/').last
         ret[last_name.to_i] = [] if dataset?(last_name)
       end

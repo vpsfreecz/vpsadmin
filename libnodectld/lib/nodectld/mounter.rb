@@ -44,7 +44,7 @@ module NodeCtld
       # Ensure the mountpoint exists
       Dir.chdir(rootfs_path)
       reldst = mnt['dst']
-      reldst = reldst[1..-1] while reldst.start_with?('/')
+      reldst = reldst[1..] while reldst.start_with?('/')
 
       FileUtils.mkpath(reldst)
 

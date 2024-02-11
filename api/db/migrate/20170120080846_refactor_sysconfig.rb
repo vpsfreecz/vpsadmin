@@ -70,7 +70,7 @@ class RefactorSysconfig < ActiveRecord::Migration
   def name_up(name)
     case name
     when 'node_public_key', 'node_private_key', 'node_key_type'
-      [:node, name[5..-1]]
+      [:node, name[5..]]
 
     when 'snapshot_download_base_url'
       [:core, name, 'String', 1]

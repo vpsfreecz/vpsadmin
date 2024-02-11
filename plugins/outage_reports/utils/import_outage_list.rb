@@ -145,7 +145,7 @@ class OutageParser
     sep = 'ENGLISH:'
 
     if pos = data.index(sep)
-      [data[0..(pos - 1)].strip, data[(pos + sep.size)..-1].strip]
+      [data[0..(pos - 1)].strip, data[(pos + sep.size)..].strip]
 
     else
       [data, nil]

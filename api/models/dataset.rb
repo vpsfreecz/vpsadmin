@@ -72,7 +72,7 @@ class Dataset < ActiveRecord::Base
         raise VpsAdmin::API::Exceptions::AccessDenied
       end
 
-      last, path = top_dip.dataset.send(:create_path, top_dip, parts[1..-1])
+      last, path = top_dip.dataset.send(:create_path, top_dip, parts[1..])
     end
 
     parent_dip = (last && last.primary_dataset_in_pool!) || top_dip

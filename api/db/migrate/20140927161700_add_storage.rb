@@ -548,7 +548,7 @@ class AddStorage < ActiveRecord::Migration
         break unless ds
       end
 
-      parts[index..-1].each do |name|
+      parts[index..].each do |name|
         last_ds = Dataset.create!(
           name:,
           parent: last_ds,

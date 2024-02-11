@@ -51,7 +51,7 @@ module NodeCtld
       # The first snapshot is not a part of the transfer anyway, it is already present
       # and is just a common point in history.
       snaps = if @snapshots.size > 1
-                @snapshots[1..-1]
+                @snapshots[1..]
               else
                 @snapshots
               end

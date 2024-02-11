@@ -320,7 +320,7 @@ class TransactionChain < ActiveRecord::Base
   end
 
   def format_concerns
-    ret = { type: concern_type[6..-1], objects: [] }
+    ret = { type: concern_type[6..], objects: [] }
 
     transaction_chain_concerns.each do |c|
       ret[:objects] << [c.class_name, c.row_id]

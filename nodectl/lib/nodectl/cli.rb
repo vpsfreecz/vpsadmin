@@ -47,7 +47,7 @@ module NodeCtl
       end
 
       command.global_opts = options
-      command.args = ARGV[1..-1]
+      command.args = ARGV[1..]
 
       begin
         command.validate
@@ -91,7 +91,7 @@ module NodeCtl
 
         if command
           opts.separator 'Command-specific options:'
-          command.options(opts, ARGV[1..-1])
+          command.options(opts, ARGV[1..])
         end
 
         opts.separator ''

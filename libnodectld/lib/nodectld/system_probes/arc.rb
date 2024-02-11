@@ -3,7 +3,7 @@ module NodeCtld::SystemProbes
     def initialize
       @data = {}
 
-      File.readlines('/proc/spl/kstat/zfs/arcstats')[2..-1].each do |line|
+      File.readlines('/proc/spl/kstat/zfs/arcstats')[2..].each do |line|
         name, type, value = line.split
 
         @data[name.to_sym] = value.to_i

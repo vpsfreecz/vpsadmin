@@ -31,7 +31,7 @@ module NodeCtld::RemoteCommands
             q[:workers][wid] = {
               id: w.cmd.id,
               type: w.cmd.trans['handle'].to_i,
-              handler: "#{h.split('::')[-2..-1].join('::')}",
+              handler: "#{h.split('::')[-2..].join('::')}",
               step: w.cmd.step,
               pid: w.cmd.subtask,
               start: start && start.localtime.to_i,

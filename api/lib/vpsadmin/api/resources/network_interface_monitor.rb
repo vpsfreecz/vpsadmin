@@ -102,7 +102,7 @@ module VpsAdmin::API::Resources
       def apply_order(q, order_by)
         if order_by.start_with?('-')
           desc = true
-          order_by = order_by[1..-1]
+          order_by = order_by[1..]
         end
 
         sym = order_by.to_sym

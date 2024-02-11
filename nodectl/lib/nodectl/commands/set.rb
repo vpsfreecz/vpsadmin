@@ -20,7 +20,7 @@ module NodeCtl
       when 'config'
         params[:config] = []
 
-        args[1..-1].each do |opt|
+        args[1..].each do |opt|
           key, val = opt.split('=')
           root = {}
           tmp = root

@@ -103,7 +103,7 @@ module NodeCtl
             colon = s.index(':')
             next if colon.nil?
 
-            s = s[(colon + 1)..-1]
+            s = s[(colon + 1)..]
 
             # Controllers
             colon = s.index(':')
@@ -115,14 +115,14 @@ module NodeCtl
                            s[0..(colon - 1)].split(',').map do |subsys|
                              # Remove name= from named controllers
                              if eq = subsys.index('=')
-                               subsys[(eq + 1)..-1]
+                               subsys[(eq + 1)..]
                              else
                                subsys
                              end
                            end.join(',')
                          end
 
-            s = s[(colon + 1)..-1]
+            s = s[(colon + 1)..]
 
             # Path
             next if s.nil?
@@ -141,7 +141,7 @@ module NodeCtl
         i = path.index(lxc_payload)
         return 'not found' if i.nil?
 
-        path[(i + lxc_payload.length - 1)..-1]
+        path[(i + lxc_payload.length - 1)..]
       end
     end
 
@@ -180,7 +180,7 @@ module NodeCtl
     def report_pids
       vps_procs = {}
 
-      args[1..-1].map(&:to_i).each do |pid|
+      args[1..].map(&:to_i).each do |pid|
         os_proc = OsCtl::Lib::OsProcess.new(pid)
         pool, ctid = os_proc.ct_id
 
@@ -254,7 +254,7 @@ module NodeCtl
     end
 
     def report_vpses
-      vps_ids = args[1..-1].map(&:to_i)
+      vps_ids = args[1..].map(&:to_i)
 
       incident = open_editor do |f|
         f.puts(<<~END)
@@ -373,7 +373,7 @@ module NodeCtl
 
     def header_value(line)
       colon = line.index(':')
-      line[(colon + 1)..-1].strip
+      line[(colon + 1)..].strip
     end
 
     def save_incidents(incidents)

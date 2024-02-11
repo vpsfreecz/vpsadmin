@@ -140,7 +140,7 @@ module TransactionChains
 
       @vps_mounts[vps] = [::Mount.new(
         vps:,
-        dst: "/#{dataset_in_pool.dataset.full_name.split('/')[1..-1].join('/')}",
+        dst: "/#{dataset_in_pool.dataset.full_name.split('/')[1..].join('/')}",
         mount_opts: '--bind',
         umount_opts: '-f',
         mount_type: 'bind',
