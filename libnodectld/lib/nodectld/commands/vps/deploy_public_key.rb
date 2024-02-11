@@ -16,8 +16,8 @@ module NodeCtld
     protected
 
     def add_key
-      Dir.mkdir(root_dir, 0o700) unless Dir.exist?(root_dir)
-      Dir.mkdir(ssh_dir, 0o700) unless Dir.exist?(ssh_dir)
+      FileUtils.mkdir_p(root_dir, mode: 0o700)
+      FileUtils.mkdir_p(ssh_dir, mode: 0o700)
 
       unless File.exist?(authorized_keys)
         File.open(authorized_keys, 'w') { |f| f.write(@pubkey + "\n") }

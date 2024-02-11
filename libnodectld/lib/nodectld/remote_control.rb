@@ -30,8 +30,8 @@ module NodeCtld
 
     def start
       @thread = Thread.new do
-        Dir.mkdir(RUNDIR, 0o700) unless Dir.exist?(RUNDIR)
-        File.unlink(SOCKET) if File.exist?(SOCKET)
+        FileUtils.mkdir_p(RUNDIR, mode: 0o700)
+        FileUtils.rm_f(SOCKET)
         serv = UNIXServer.new(SOCKET)
         File.chmod(0o600, SOCKET)
 

@@ -84,7 +84,7 @@ module VpsAdmin
       @run = false
 
       EventMachine.stop_server(@em_server)
-      File.delete(CRONTAB) if File.exist?(CRONTAB)
+      FileUtils.rm_f(CRONTAB)
 
       @queue.clear
       @queue << :stop

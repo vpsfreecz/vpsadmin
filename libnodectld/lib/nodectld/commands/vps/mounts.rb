@@ -53,7 +53,7 @@ module NodeCtld
     def uninstall_hooks
       hooks.each do |hook|
         dst = hook_path(hook)
-        File.unlink(dst) if File.exist?(dst)
+        FileUtils.rm_f(dst)
       end
     end
 
