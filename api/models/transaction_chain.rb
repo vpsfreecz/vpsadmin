@@ -171,11 +171,11 @@ class TransactionChain < ActiveRecord::Base
   # Helper method for acquiring resource locks. TransactionChain remembers
   # what locks it has, therefore it is safe to lock one resource more than
   # once, which happens when including other chains with ::use_in.
-  def lock(obj, *args, **kwargs)
+  def lock(obj, *, **)
     return if @global_locks.detect { |l| l.locks?(obj) }
     return if @locks.detect { |l| l.locks?(obj) }
 
-    lock = obj.acquire_lock(@dst_chain, *args, **kwargs)
+    lock = obj.acquire_lock(@dst_chain, *, **)
     @locks << lock
     lock
   end

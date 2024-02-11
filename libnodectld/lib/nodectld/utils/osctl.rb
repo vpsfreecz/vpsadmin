@@ -47,8 +47,8 @@ module NodeCtld
       osctl(cmd, args, opts, gopts.merge({ pool: }), cmd_opts)
     end
 
-    def osctl_parse(*args)
-      JSON.parse(osctl(*args).output, symbolize_names: true)
+    def osctl_parse(*)
+      JSON.parse(osctl(*).output, symbolize_names: true)
     end
 
     def format_cli_options(opts)

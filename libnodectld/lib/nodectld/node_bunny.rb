@@ -54,8 +54,8 @@ module NodeCtld
     end
 
     # Call {Bunny::Exchange#publish} and handle connection closed errors
-    def publish_wait(exchange, msg, **opts)
-      exchange.publish(msg, **opts)
+    def publish_wait(exchange, msg, **)
+      exchange.publish(msg, **)
     rescue Bunny::ConnectionClosedError
       log(:warn, 'publish_wait: connection currently closed, retry in 15s')
       sleep(15)
@@ -63,8 +63,8 @@ module NodeCtld
     end
 
     # Call {Bunny::Exchange#publish} and drop message if the connection is closed
-    def publish_drop(exchange, msg, **opts)
-      exchange.publish(msg, **opts)
+    def publish_drop(exchange, msg, **)
+      exchange.publish(msg, **)
     rescue Bunny::ConnectionClosedError
       log(:warn, 'publish_drop: connection currently closed, message dropped')
     end

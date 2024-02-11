@@ -9,8 +9,8 @@ module NodeCtld
     class << self
       attr_accessor :instance
 
-      def report(*args)
-        instance.report(*args)
+      def report(*)
+        instance.report(*)
       end
     end
 

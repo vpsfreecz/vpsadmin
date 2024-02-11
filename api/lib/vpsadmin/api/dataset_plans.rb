@@ -132,10 +132,10 @@ module VpsAdmin::API
         end
       end
 
-      def confirm(type, *args)
+      def confirm(type, *)
         return unless @confirm
 
-        @confirm.send(type, *args)
+        @confirm.send(type, *)
       end
 
       def confirm?
@@ -152,19 +152,19 @@ module VpsAdmin::API
           @confirmation = confirmation
         end
 
-        def group_snapshot(dip, *args)
-          task(:group_snapshot, dip, *args)
+        def group_snapshot(dip, *)
+          task(:group_snapshot, dip, *)
         end
 
-        def backup(dip, *args)
-          task(:backup, dip, *args)
+        def backup(dip, *)
+          task(:backup, dip, *)
         end
 
         protected
 
-        def task(name, *args)
+        def task(name, *)
           @exec ||= Executor.new(@plan, @confirmation)
-          @exec.method("#{@direction}_#{name}").call(*args)
+          @exec.method("#{@direction}_#{name}").call(*)
         end
       end
 

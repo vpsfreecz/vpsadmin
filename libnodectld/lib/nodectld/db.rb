@@ -195,8 +195,8 @@ module NodeCtld
       @results = []
     end
 
-    def query(*args)
-      @results << @db.query(*args)
+    def query(*)
+      @results << @db.query(*)
     end
 
     def each(&block)

@@ -133,8 +133,8 @@ class MonitoredEvent < ActiveRecord::Base
     monitored_event_logs.count
   end
 
-  def call_action(chain, *args)
-    monitor.call_action(state.to_sym, chain, *args)
+  def call_action(chain, *)
+    monitor.call_action(state.to_sym, chain, *)
   end
 
   def closed_at

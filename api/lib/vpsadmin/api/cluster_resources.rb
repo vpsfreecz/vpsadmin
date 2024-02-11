@@ -249,8 +249,8 @@ module VpsAdmin::API
         use
       end
 
-      def allocate_resource!(*args, **kwargs)
-        ret = allocate_resource(*args, **kwargs)
+      def allocate_resource!(*, **)
+        ret = allocate_resource(*, **)
 
         raise Exceptions::ClusterResourceAllocationError, ret unless ret.persisted?
 

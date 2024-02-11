@@ -52,13 +52,13 @@ module VpsAdmin::API::Plugins::Monitoring
       nil
     end
 
-    def call_action(state, chain, *args)
+    def call_action(state, chain, *)
       return if @opts[:action].nil? || @opts[:action][state].nil?
 
       blk = VpsAdmin::API::Plugins::Monitoring.actions[@opts[:action][state]]
       raise "unknown action '#{@opts[:action][state]}'" unless blk
 
-      chain.instance_exec(*args, &blk)
+      chain.instance_exec(*, &blk)
     end
   end
 end

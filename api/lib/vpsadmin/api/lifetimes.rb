@@ -347,14 +347,14 @@ module VpsAdmin::API
 
         # Move the object to next state (up or down - direction leave or enter).
         # Accepts the same keyword arguments as #set_object_state.
-        def progress_object_state(direction, **kwargs)
+        def progress_object_state(direction, **)
           states = Private.states(self.class)
           i = states.index(object_state.to_sym)
           target = states[direction == :enter ? i + 1 : i - 1]
 
           raise "cannot progress state in chosen direction (#{direction})" unless target
 
-          set_object_state(target, **kwargs)
+          set_object_state(target, **)
         end
 
         # Keep the same state and just set new expiration date.

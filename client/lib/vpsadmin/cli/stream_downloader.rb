@@ -7,8 +7,8 @@ module VpsAdmin::CLI
   class DownloadError < StandardError; end
 
   class StreamDownloader
-    def self.download(*args, **kwargs)
-      new(*args, **kwargs)
+    def self.download(*, **)
+      new(*, **)
     end
 
     def initialize(api, dl, io, progress: $stdout, position: 0, max_rate: nil,
