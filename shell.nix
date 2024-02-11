@@ -23,6 +23,6 @@ in stdenv.mkDerivation rec {
     export GEM_HOME="$(pwd)/.gems"
     export PATH="$(ruby -e 'puts Gem.bindir'):$PATH"
     export RUBYLIB="$GEM_HOME"
-    gem install --no-document bundler geminabox rake
+    gem install --no-document bundler geminabox rake rubocop rubocop-rake
   '';
 }

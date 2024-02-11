@@ -28,6 +28,8 @@ end
 
 group :development do
   gem 'pry'
+  gem 'rubocop'
+  gem 'rubocop-rake'
   gem 'yard'
 end
 
