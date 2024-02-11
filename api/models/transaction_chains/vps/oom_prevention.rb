@@ -35,7 +35,7 @@ module TransactionChains
 
       ::OomPrevention.create!(
         vps:,
-        action:,
+        action:
       )
     end
   end

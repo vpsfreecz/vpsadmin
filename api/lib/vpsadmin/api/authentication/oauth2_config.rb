@@ -20,7 +20,7 @@ module VpsAdmin::API
           complete: auth.complete? && !auth.reset_password?,
           reset_password: auth.reset_password?,
           auth_token: auth.token,
-          user: auth.user,
+          user: auth.user
         )
       end
 
@@ -32,7 +32,7 @@ module VpsAdmin::API
           complete: auth.authenticated? && !auth.reset_password?,
           reset_password: auth.reset_password?,
           auth_token: auth.auth_token.to_s,
-          user: auth.user,
+          user: auth.user
         )
       end
 
@@ -84,7 +84,7 @@ module VpsAdmin::API
           oauth2_request:,
           oauth2_response:,
           sinatra_params:,
-          client:,
+          client:
         )
       end
     end
@@ -117,7 +117,7 @@ module VpsAdmin::API
           oauth2_response:,
           sinatra_params:,
           client:,
-          auth_result:,
+          auth_result:
         )
       end
 
@@ -137,7 +137,7 @@ module VpsAdmin::API
           sinatra_request,
           authorization.oauth2_client.access_token_lifetime,
           authorization.oauth2_client.access_token_seconds,
-          authorization.scope,
+          authorization.scope
         )
 
         authorization.code.destroy!
@@ -150,7 +150,7 @@ module VpsAdmin::API
         if authorization.oauth2_client.issue_refresh_token
           refresh_token = ::Token.get!(
             owner: user_session,
-            valid_to: Time.now + authorization.oauth2_client.refresh_token_seconds,
+            valid_to: Time.now + authorization.oauth2_client.refresh_token_seconds
           )
           ret << refresh_token.token
         end
@@ -158,7 +158,7 @@ module VpsAdmin::API
         authorization.update!(
           code: nil,
           user_session:,
-          refresh_token:,
+          refresh_token:
         )
 
         ret
@@ -173,7 +173,7 @@ module VpsAdmin::API
 
         authorization.user_session.refresh_token!(
           authorization.oauth2_client.access_token_lifetime,
-          authorization.oauth2_client.access_token_seconds,
+          authorization.oauth2_client.access_token_seconds
         )
 
         authorization.refresh_token.destroy!
@@ -187,7 +187,7 @@ module VpsAdmin::API
           authorization.update!(
             refresh_token: ::Token.get!(
               owner: authorization.user_session,
-              valid_to: Time.now + authorization.oauth2_client.refresh_token_seconds,
+              valid_to: Time.now + authorization.oauth2_client.refresh_token_seconds
             )
           )
           ret << authorization.refresh_token.token
@@ -214,7 +214,7 @@ module VpsAdmin::API
           if auth.user.preferred_logout_all
             ::Oauth2Authorization.where(
               oauth2_client: auth.oauth2_client,
-              user: auth.user,
+              user: auth.user
             ).each do |other_auth|
               if other_auth.code
                 code = other_auth.code
@@ -266,7 +266,7 @@ module VpsAdmin::API
       ::Oauth2Authorization.joins(:code, :user).where(
         oauth2_client: client,
         tokens: {token: code},
-        users: {object_state: %w(active suspended)},
+        users: {object_state: %w(active suspended)}
       ).take
     end
 
@@ -274,7 +274,7 @@ module VpsAdmin::API
       ::Oauth2Authorization.joins(:refresh_token, :user).where(
         oauth2_client: client,
         tokens: {token: refresh_token},
-        users: {object_state: %w(active suspended)},
+        users: {object_state: %w(active suspended)}
       ).where(
         'tokens.valid_to > ?', Time.now
       ).take
@@ -307,7 +307,7 @@ module VpsAdmin::API
 
       @template ||= ERB.new(
         File.read(File.join(__dir__, 'oauth2_authorize.erb')),
-        trim_mode: '-',
+        trim_mode: '-'
       )
 
       oauth2_response.content_type = 'text/html'
@@ -319,7 +319,7 @@ module VpsAdmin::API
       auth = Operations::Authentication::Password.run(
         sinatra_params[:user],
         sinatra_params[:password],
-        request: sinatra_request,
+        request: sinatra_request
       )
 
       if auth.nil?
@@ -333,7 +333,7 @@ module VpsAdmin::API
           auth.user,
           :password,
           'invalid password',
-          sinatra_request,
+          sinatra_request
         )
 
         ret.errors << 'invalid user or password'
@@ -350,7 +350,7 @@ module VpsAdmin::API
     def auth_totp(sinatra_request, sinatra_params, oauth2_request, oauth2_response, client)
       auth = Operations::Authentication::Totp.run(
         sinatra_params[:auth_token],
-        sinatra_params[:totp_code],
+        sinatra_params[:totp_code]
       )
 
       ret = AuthResult.from_totp_result(auth)
@@ -360,7 +360,7 @@ module VpsAdmin::API
           TransactionChains::User::TotpRecoveryCodeUsed.fire(
             auth.user,
             auth.recovery_device,
-            sinatra_request,
+            sinatra_request
           )
         end
 
@@ -372,7 +372,7 @@ module VpsAdmin::API
           auth.user,
           :totp,
           'invalid totp code',
-          sinatra_request,
+          sinatra_request
         )
 
         ret.auth_token = sinatra_params[:auth_token]
@@ -386,7 +386,7 @@ module VpsAdmin::API
       ret = AuthResult.new(
         authenticated: true,
         reset_password: true,
-        auth_token: sinatra_params[:auth_token],
+        auth_token: sinatra_params[:auth_token]
       )
 
       if sinatra_params[:new_password1] != sinatra_params[:new_password2]
@@ -399,7 +399,7 @@ module VpsAdmin::API
 
       ret.user = Operations::Authentication::ResetPassword.run(
         sinatra_params[:auth_token],
-        sinatra_params[:new_password1],
+        sinatra_params[:new_password1]
       )
 
       ret.auth_token = nil
@@ -415,7 +415,7 @@ module VpsAdmin::API
       ret = AuthResult.new(
         authenticated: true,
         complete: true,
-        user: sso.user,
+        user: sso.user
       )
 
       create_authorization(ret, sinatra_request, oauth2_request, oauth2_response, client, sso:)
@@ -447,7 +447,7 @@ module VpsAdmin::API
         # code is valid for.
         if sso.nil? && client.allow_single_sign_on && auth_result.user.enable_single_sign_on
           sso = ::SingleSignOn.new(
-            user: auth_result.user,
+            user: auth_result.user
           )
 
           ::Token.for_new_record!(expires_at + client.access_token_seconds) do |token|
@@ -490,7 +490,7 @@ module VpsAdmin::API
 
           client_ip_addr: sinatra_request.ip,
           client_ip_ptr: get_ptr(sinatra_request.ip),
-          user_agent: ::UserAgent.find_or_create!(sinatra_request.user_agent || ''),
+          user_agent: ::UserAgent.find_or_create!(sinatra_request.user_agent || '')
         )
 
         ::Token.for_new_record!(expires_at) do |token|

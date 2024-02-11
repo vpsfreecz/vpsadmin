@@ -38,7 +38,7 @@ class UserSession < ActiveRecord::Base
 
     update!(
       token: nil,
-      closed_at: Time.now,
+      closed_at: Time.now
     )
 
     old_token && old_token.destroy!

@@ -24,7 +24,7 @@ module VpsAdmin::API
         token_lifetime:,
         token_interval:,
         admin:,
-        label:,
+        label:
       )
     end
   end

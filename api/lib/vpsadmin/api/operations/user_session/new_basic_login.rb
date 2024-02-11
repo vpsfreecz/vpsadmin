@@ -16,7 +16,7 @@ module VpsAdmin::API
         request:,
         auth_type: :basic,
         generate_token: false,
-        scope: ['all'],
+        scope: ['all']
       )
       session.close!
       ::UserSession.current = session

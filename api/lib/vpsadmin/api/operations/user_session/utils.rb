@@ -27,7 +27,7 @@ module VpsAdmin::API
         client_version: request.user_agent || '',
         token_lifetime:,
         token_interval:,
-        label: label || request.user_agent,
+        label: label || request.user_agent
       )
 
       if generate_token

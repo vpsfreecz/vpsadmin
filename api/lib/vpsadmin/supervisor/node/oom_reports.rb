@@ -25,7 +25,7 @@ module VpsAdmin::Supervisor
       queue = channel.queue(
         queue_name('oom_reports'),
         durable: true,
-        arguments: {'x-queue-type' => 'quorum'},
+        arguments: {'x-queue-type' => 'quorum'}
       )
 
       queue.bind(exchange, routing_key: 'oom_reports')
@@ -57,7 +57,7 @@ module VpsAdmin::Supervisor
         killed_name: killed_name && killed_name[0..49],
         count: report.fetch('count'),
         created_at: Time.at(report.fetch('time')),
-        processed: true,
+        processed: true
       )
 
       new_report.oom_report_usages.insert_all(
@@ -121,7 +121,7 @@ module VpsAdmin::Supervisor
 
       preventions_within_period = vps.oom_preventions.where(
         'created_at > ?',
-        now - PREVENTION_PERIOD,
+        now - PREVENTION_PERIOD
       )
 
       action =
@@ -138,7 +138,7 @@ module VpsAdmin::Supervisor
             action:,
             ooms_in_period: reports_in_period.sum(:count),
             period_seconds: PERIOD,
-          },
+          }
         )
         puts "VPS #{vps.id} -> #{action}"
       rescue ::ResourceLocked

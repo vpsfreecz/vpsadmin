@@ -12,7 +12,7 @@ module VpsAdmin::ConsoleRouter
       :channel,
       :input_exchange,
       :output_queue,
-      keyword_init: true,
+      keyword_init: true
     )
 
     # How often verify session validity, in seconds
@@ -32,7 +32,7 @@ module VpsAdmin::ConsoleRouter
         vhost: cfg.fetch('vhost', '/'),
         username: cfg.fetch('username'),
         password: cfg.fetch('password'),
-        log_file: $stderr,
+        log_file: $stderr
       )
       @connection.start
 
@@ -98,7 +98,7 @@ module VpsAdmin::ConsoleRouter
           output_queue = channel.queue(
             output_queue_name(vps_id, session),
             durable: true,
-            arguments: {'x-queue-type' => 'quorum'},
+            arguments: {'x-queue-type' => 'quorum'}
           )
           output_queue.bind(output_exchange, routing_key: routing_key(vps_id, session))
 
@@ -110,7 +110,7 @@ module VpsAdmin::ConsoleRouter
             last_check: now,
             channel:,
             input_exchange:,
-            output_queue:,
+            output_queue:
           )
 
           @cache[k] = entry
@@ -160,7 +160,7 @@ module VpsAdmin::ConsoleRouter
       begin
         entry.input_exchange.publish(
           data.to_json,
-          content_type: 'application/json',
+          content_type: 'application/json'
         )
       rescue Bunny::ConnectionClosedError
         return

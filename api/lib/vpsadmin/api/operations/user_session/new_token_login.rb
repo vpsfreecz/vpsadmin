@@ -21,7 +21,7 @@ module VpsAdmin::API
         scope:,
         generate_token: true,
         token_lifetime:,
-        token_interval:,
+        token_interval:
       )
 
       ::UserSession.current = session

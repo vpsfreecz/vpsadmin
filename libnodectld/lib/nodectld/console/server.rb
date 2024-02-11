@@ -10,7 +10,7 @@ module NodeCtld
       :vps_id,
       :token,
       :last_input,
-      keyword_init: true,
+      keyword_init: true
     )
 
     def initialize
@@ -29,7 +29,7 @@ module NodeCtld
       @input_queue = @channel.queue(
         "console:#{$CFG.get(:vpsadmin, :node_name)}:input",
         durable: true,
-        arguments: {'x-queue-type' => 'quorum'},
+        arguments: {'x-queue-type' => 'quorum'}
       )
       @input_queue.bind(@input_exchange)
 
@@ -77,7 +77,7 @@ module NodeCtld
           session = Session.new(
             vps_id:,
             token:,
-            last_input: now,
+            last_input: now
           )
 
           @sessions[token] = session
