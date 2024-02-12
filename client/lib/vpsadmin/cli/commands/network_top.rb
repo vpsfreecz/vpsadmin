@@ -133,7 +133,7 @@ module VpsAdmin::CLI::Commands
         @columns << {
           name: p,
           title:,
-          width: size < 8 ? 8 : size
+          width: [size, 8].max
         }
       end
     end

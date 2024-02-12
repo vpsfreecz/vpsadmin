@@ -69,7 +69,7 @@ module VpsAdmin::CLI
 
             if @pb && (dl_check.ready || (dl_check.size && dl_check.size > 0)) # rubocop:disable all
               total = dl_check.size * 1024 * 1024
-              @pb.total = @pb.progress > total ? @pb.progress : total
+              @pb.total = [@pb.progress, total].max
 
               @download_size = (dl_check.size / 1024.0).round(2)
 
