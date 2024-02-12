@@ -24,8 +24,6 @@ class OutageUpdate < ActiveRecord::Base
   # Set the origin for attribute changes
   def origin=(attrs)
     @origin = attrs
-    @origin['state'] = @origin['state']
-    @origin['impact_type'] = @origin['impact_type']
   end
 
   # @yieldparam attribute [Symbol]
