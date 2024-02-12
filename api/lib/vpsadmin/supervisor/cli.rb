@@ -54,7 +54,7 @@ module VpsAdmin
     end
 
     def self.parse_config
-      YAML.safe_load(File.read(File.join(VpsAdmin::API.root, 'config/supervisor.yml')))
+      YAML.safe_load_file(File.join(VpsAdmin::API.root, 'config/supervisor.yml'))
     end
 
     def self.wait_loop

@@ -190,7 +190,7 @@ module VpsAdmin::ConsoleRouter
 
     def parse_config
       path = File.join(__dir__, '../../../', 'config/rabbitmq.yml')
-      YAML.safe_load(File.read(path))
+      YAML.safe_load_file(path)
     end
 
     def cache_key(vps_id, session)

@@ -35,7 +35,7 @@ module NodeCtld
 
     def load
       data = lock do
-        YAML.safe_load(File.read(path)) || {}
+        YAML.safe_load_file(path) || {}
       rescue ArgumentError, SystemCallError
         {}
       end
