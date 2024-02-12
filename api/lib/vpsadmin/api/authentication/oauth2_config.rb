@@ -57,7 +57,7 @@ module VpsAdmin::API
 
       # @return [Boolean]
       attr_accessor :reset_password
-      alias_method :reset_password?, :reset_password
+      alias reset_password? reset_password
 
       # @return [Oauth2Authorization]
       attr_accessor :authorization
