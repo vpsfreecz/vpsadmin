@@ -144,7 +144,7 @@ module VpsAdmin::API
 
         ret = [
           user_session.token.token,
-          user_session.token.valid_to,
+          user_session.token.valid_to
         ]
 
         if authorization.oauth2_client.issue_refresh_token
@@ -180,7 +180,7 @@ module VpsAdmin::API
 
         ret = [
           authorization.user_session.token.token,
-          authorization.user_session.token.valid_to,
+          authorization.user_session.token.valid_to
         ]
 
         if authorization.oauth2_client.issue_refresh_token
