@@ -107,8 +107,8 @@ module VpsAdmin::Supervisor
       since = now - PERIOD
 
       reports_in_period = ::OomReport
-        .where(vps:)
-        .where('created_at >= ?', since)
+                          .where(vps:)
+                          .where('created_at >= ?', since)
 
       if !vps.is_running? || reports_in_period.where('`count` >= ?', HIGHRATE).count < THRESHOLD
         return

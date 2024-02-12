@@ -6,9 +6,9 @@ module VpsAdmin::API
     # @return [::UserSession, nil]
     def run(token)
       user_session = ::UserSession
-        .joins(:token)
-        .where(auth_type: 'oauth2', closed_at: nil)
-        .where(
+                     .joins(:token)
+                     .where(auth_type: 'oauth2', closed_at: nil)
+                     .where(
           'tokens.token = ? AND ((token_lifetime = 3 AND tokens.valid_to IS NULL) OR tokens.valid_to >= ?)',
           token, Time.now
         ).take
