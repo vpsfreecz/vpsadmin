@@ -15,8 +15,8 @@ module TransactionChains
       addrs.each do |addr|
         next if addr.ip_address.network_interface_id == netif.id
 
-        raise "address #{addr} belongs to network routed to interface " +
-              "#{addr.ip_address.network_interface}, unable to remove from " +
+        raise "address #{addr} belongs to network routed to interface " \
+              "#{addr.ip_address.network_interface}, unable to remove from " \
               "interface #{netif}"
       end
 

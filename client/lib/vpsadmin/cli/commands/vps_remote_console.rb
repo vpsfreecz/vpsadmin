@@ -170,7 +170,7 @@ module VpsAdmin::CLI::Commands
 
         unless res.is_a?(Net::HTTPSuccess)
           set_error(
-            'Console server returned error: ' +
+            'Console server returned error: ' \
             "HTTP #{res.code} - #{res.message}\n\n#{res.body}"
           )
           stop

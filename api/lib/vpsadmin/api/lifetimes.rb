@@ -532,8 +532,8 @@ module VpsAdmin::API
           end
 
           if expiration === true
-            raise 'Unable to determine the expiration date, no default is set (' +
-                  "environment=#{env.id},class_name=#{obj.class},direction=" +
+            raise 'Unable to determine the expiration date, no default is set (' \
+                  "environment=#{env.id},class_name=#{obj.class},direction=" \
                   "#{enter ? 'enter' : 'leave'},state=#{target})"
           end
         end

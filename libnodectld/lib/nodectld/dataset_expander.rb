@@ -103,7 +103,7 @@ module NodeCtld
 
       log(
         :info,
-        "Expanding #{ds.name} #{humanize_data(refquota_bytes)} -> " +
+        "Expanding #{ds.name} #{humanize_data(refquota_bytes)} -> " \
         "#{humanize_data(new_refquota_bytes)} (+#{humanize_data(add_bytes)})"
       )
 

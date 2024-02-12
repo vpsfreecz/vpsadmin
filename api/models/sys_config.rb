@@ -67,7 +67,7 @@ class SysConfig < ActiveRecord::Base
     end
   rescue ActiveRecord::StatementInvalid
     # The sysconfig refactoring migration has not been run yet
-    warn 'Ignoring sysconfig registration as needed database migration has not ' +
+    warn 'Ignoring sysconfig registration as needed database migration has not ' \
          'been applied yet'
   end
 

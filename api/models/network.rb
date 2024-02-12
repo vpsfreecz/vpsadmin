@@ -120,7 +120,7 @@ class Network < ActiveRecord::Base
 
       if opts[:user] && opts[:environment]
         unless is_in_environment?(opts[:environment])
-          raise "network #{self} (##{id}) not available in environment " +
+          raise "network #{self} (##{id}) not available in environment " \
                 "#{opts[:environment].label} (##{opts[:environment].id})"
         end
 

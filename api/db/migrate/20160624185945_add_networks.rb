@@ -168,7 +168,7 @@ class AddNetworks < ActiveRecord::Migration
       net = @net_map[raw_net]
 
       if net.location_id != ip.ip_location
-        raise "network location (#{net.location_id}) is not the same as IP location " +
+        raise "network location (#{net.location_id}) is not the same as IP location " \
               "(#{ip.ip_location})"
       end
 

@@ -11,18 +11,18 @@ class VpsAdmin::API::Resources::Export < HaveAPI::Resource
     resource VpsAdmin::API::Resources::HostIpAddress, value_label: :addr
     string :path
     bool :all_vps, label: 'All VPS',
-                   desc: "Let all user's VPS to mount this export. Changes to the user's " +
-                         'IP addresses will automatically add or remove allowed hosts on ' +
+                   desc: "Let all user's VPS to mount this export. Changes to the user's " \
+                         'IP addresses will automatically add or remove allowed hosts on ' \
                          'the export.'
     bool :rw, label: 'Read-write',
               desc: 'Allow the export to be mounted as read-write.'
     bool :sync, label: 'Sync',
-                desc: 'Determines whether the server replies to requests only after the ' +
+                desc: 'Determines whether the server replies to requests only after the ' \
                       'changes have been committed to stable storage.'
     bool :subtree_check, label: 'Subtree check', desc: 'See man exports(5).'
     bool :root_squash, label: 'Root squash',
-                       desc: 'Map requests from uid/gid 0 to the anonymous uid/gid. Note that ' +
-                             'this does not apply to any other uids or gids that might be ' +
+                       desc: 'Map requests from uid/gid 0 to the anonymous uid/gid. Note that ' \
+                             'this does not apply to any other uids or gids that might be ' \
                              'equally sensitive.'
     integer :threads, label: 'Threads', desc: 'Number of NFS server threads.'
     bool :enabled
@@ -235,12 +235,12 @@ class VpsAdmin::API::Resources::Export < HaveAPI::Resource
       bool :rw, label: 'Read-write',
                 desc: 'Allow the export to be mounted as read-write.'
       bool :sync, label: 'Sync',
-                  desc: 'Determines whether the server replies to requests only after the ' +
+                  desc: 'Determines whether the server replies to requests only after the ' \
                         'changes have been committed to stable storage.'
       bool :subtree_check, label: 'Subtree check', desc: 'See man exports(5).'
       bool :root_squash, label: 'Root squash',
-                         desc: 'Map requests from uid/gid 0 to the anonymous uid/gid. Note that ' +
-                               'this does not apply to any other uids or gids that might be ' +
+                         desc: 'Map requests from uid/gid 0 to the anonymous uid/gid. Note that ' \
+                               'this does not apply to any other uids or gids that might be ' \
                                'equally sensitive.'
     end
 

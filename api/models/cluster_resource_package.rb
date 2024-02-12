@@ -70,12 +70,12 @@ class ClusterResourcePackage < ActiveRecord::Base
 
           if personal_item.nil?
             raise VpsAdmin::API::Exceptions::UserResourceAllocationError,
-                  'unable to add package and substract from the personal package: ' +
+                  'unable to add package and substract from the personal package: ' \
                   "resource #{it.cluster_resource.name} not found"
           elsif personal_item.value < it.value
             raise VpsAdmin::API::Exceptions::UserResourceAllocationError,
-                  'unable to add package and substract from the personal package: ' +
-                  "not enough #{it.cluster_resource.name} in the personal package " +
+                  'unable to add package and substract from the personal package: ' \
+                  "not enough #{it.cluster_resource.name} in the personal package " \
                   "(#{personal_item.value} < #{it.value})"
           end
         end

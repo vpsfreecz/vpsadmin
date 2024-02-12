@@ -261,7 +261,7 @@ module NodeCtld
       end
 
       unless tmp
-        warn 'Using implicit config, some specific settings ' +
+        warn 'Using implicit config, some specific settings ' \
              '(database, server id) are missing, may not work properly'
         @cfg = IMPLICIT_CONFIG
         return true

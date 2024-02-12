@@ -422,7 +422,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
 
       elsif input[:dns_resolver] && !input[:dns_resolver].available_to_vps?(vps)
         error(
-          "DNS resolver '#{input[:dns_resolver].label}' is not available " +
+          "DNS resolver '#{input[:dns_resolver].label}' is not available " \
           "in location #{vps.node.location.label}"
         )
 
@@ -643,13 +643,13 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
 
       elsif tpl.hypervisor_type != vps.node.hypervisor_type
         error(
-          "incompatible template: needs #{tpl.hypervisor_type}, but VPS is " +
+          "incompatible template: needs #{tpl.hypervisor_type}, but VPS is " \
           "using #{vps.node.hypervisor_type}"
         )
 
       elsif tpl.cgroup_version != 'cgroup_any' && tpl.cgroup_version != vps.node.cgroup_version
         error(
-          "incompatible cgroup version: #{tpl.label} needs #{tpl.cgroup_version}, " +
+          "incompatible cgroup version: #{tpl.label} needs #{tpl.cgroup_version}, " \
           "but node is using #{vps.node.cgroup_version}"
         )
       end
@@ -699,13 +699,13 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
 
       elsif tpl.hypervisor_type != vps.node.hypervisor_type
         error(
-          "incompatible template: needs #{tpl.hypervisor_type}, but VPS is " +
+          "incompatible template: needs #{tpl.hypervisor_type}, but VPS is " \
           "using #{vps.node.hypervisor_type}"
         )
 
       elsif tpl.cgroup_version != 'cgroup_any' && tpl.cgroup_version != vps.node.cgroup_version
         error(
-          "incompatible cgroup version: #{tpl.label} needs #{tpl.cgroup_version}, " +
+          "incompatible cgroup version: #{tpl.label} needs #{tpl.cgroup_version}, " \
           "but node is using #{vps.node.cgroup_version}"
         )
       end
@@ -732,7 +732,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
       bool :replace_ip_addresses, label: 'Replace IP addresses',
                                   desc: 'When migrating to another location, current IP addresses are replaced by addresses from the new location'
       bool :transfer_ip_addresses, label: 'Transfer IP addresses',
-                                   desc: 'If possible, keep IP addresses and recharge them to a different ' +
+                                   desc: 'If possible, keep IP addresses and recharge them to a different ' \
                                          'environment or location'
       string :swap, choices: %w[enforce], default: 'enforce', fill: true
       bool :maintenance_window, label: 'Maintenance window',

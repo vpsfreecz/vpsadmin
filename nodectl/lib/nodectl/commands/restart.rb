@@ -8,7 +8,7 @@ module NodeCtl
 
       parser.on(
         '-f', '--force',
-        'Force restart - kills all transactions that are being processed ' +
+        'Force restart - kills all transactions that are being processed ' \
         'and restarts immediately'
       ) do
         opts[:force] = true

@@ -15,8 +15,8 @@ module TransactionChains
         addrs.each do |addr|
           next if addr.ip_address.network_interface_id == netif.id
 
-          raise "address #{addr.id} belongs to network routed to interface " +
-                "#{addr.ip_address.network_interface_id}, unable to assign to " +
+          raise "address #{addr.id} belongs to network routed to interface " \
+                "#{addr.ip_address.network_interface_id}, unable to assign to " \
                 "interface #{netif.id}"
         end
       end

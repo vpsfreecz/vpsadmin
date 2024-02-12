@@ -113,7 +113,7 @@ module TransactionChains
       return unless opts[:swap] == :enforce && src_vps.swap > 0 && dst_node.total_swap == 0
 
       raise VpsAdmin::API::Exceptions::OperationNotSupported,
-            "VPS has #{src_vps.swap}MiB of swap, which is not available " +
+            "VPS has #{src_vps.swap}MiB of swap, which is not available " \
             "on #{dst_node.domain_name}"
     end
 
@@ -617,7 +617,7 @@ module TransactionChains
         next if ip.is_in_environment?(dst_loc.environment)
 
         raise VpsAdmin::API::Exceptions::VpsMigrationError,
-              "IP #{ip} is not available in the target environment " +
+              "IP #{ip} is not available in the target environment " \
               "(#{dst_loc.environment.label})"
       end
 

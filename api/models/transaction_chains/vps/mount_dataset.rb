@@ -27,7 +27,7 @@ module TransactionChains
       # Forbid remote mounts to vpsAdminOS VPS
       if vps.node.vpsadminos? && dip.pool.node_id != vps.node_id
         raise VpsAdmin::API::Exceptions::OperationNotSupported,
-              'Remote mounts on vpsAdminOS are not supported, export your ' +
+              'Remote mounts on vpsAdminOS are not supported, export your ' \
               'dataset and mount it from your VPS manually using NFS'
       end
 

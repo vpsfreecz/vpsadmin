@@ -164,8 +164,8 @@ module VpsAdmin
         lock = exception.get_lock
 
         ret[:message] = if lock && lock.locked_by.is_a?(::TransactionChain)
-                          'Resource is locked by transaction chain ' +
-                            "#{lock.locked_by_id} (#{lock.locked_by.label}). " +
+                          'Resource is locked by transaction chain ' \
+                            "#{lock.locked_by_id} (#{lock.locked_by.label}). " \
                             'Try again later.'
                         else
                           'Resource is locked. Try again later.'

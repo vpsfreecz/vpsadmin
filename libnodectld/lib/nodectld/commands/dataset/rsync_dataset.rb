@@ -12,8 +12,8 @@ module NodeCtld
       valid_rcs = @allow_partial ? [23, 24] : [0]
 
       syscmd(
-        "#{$CFG.get(:bin, :rsync)} -rlptgoxDHXA --numeric-ids --inplace --delete-after " +
-        "-e \"#{ssh_cmd}\" " +
+        "#{$CFG.get(:bin, :rsync)} -rlptgoxDHXA --numeric-ids --inplace --delete-after " \
+        "-e \"#{ssh_cmd}\" " \
         "\"#{@src_addr}:#{src_path}\" \"#{dst_path}\"",
         { valid_rcs: }
       )

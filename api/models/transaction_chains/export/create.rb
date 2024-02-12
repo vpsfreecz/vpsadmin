@@ -53,7 +53,7 @@ module TransactionChains
       rescue ActiveRecord::RecordNotUnique
         msg =
           if sip
-            "snapshot #{dataset.full_name}@#{sip.snapshot.name} is already " +
+            "snapshot #{dataset.full_name}@#{sip.snapshot.name} is already " \
               'exported'
           else
             "dataset #{dataset.full_name} is already exported"

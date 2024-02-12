@@ -170,7 +170,7 @@ module VpsAdmin::CLI::Commands
       if for_transfer.empty?
         if found_latest
           exit_msg(
-            'Nothing to transfer: all snapshots with history id ' +
+            'Nothing to transfer: all snapshots with history id ' \
             "#{ds.current_history_id} are already present locally",
             error: @opts[:no_snapshots_error]
           )
@@ -265,7 +265,7 @@ module VpsAdmin::CLI::Commands
 
       return unless !no_local_snapshots || snapshots.size > 1
 
-      msg 'Performing an incremental receive of ' +
+      msg 'Performing an incremental receive of ' \
           "@#{snapshots.first.name} - @#{snapshots.last.name} to #{ds}"
 
       if @opts[:safe]

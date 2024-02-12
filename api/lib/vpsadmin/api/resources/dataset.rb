@@ -515,7 +515,7 @@ module VpsAdmin::API::Resources
 
           # Check if any snapshots on primary pool are mounted
           mnt = snap.dataset.snapshots.select(
-            'snapshots.id, snapshots.name, mounts.id AS mnt_id, mounts.vps_id,' +
+            'snapshots.id, snapshots.name, mounts.id AS mnt_id, mounts.vps_id,' \
             'mounts.dst'
           ).joins(
             snapshot_in_pools: [
@@ -533,7 +533,7 @@ module VpsAdmin::API::Resources
 
           if mnt
             error(
-              "Please delete mount of snapshot #{snap.dataset.full_name}@#{mnt.name} " +
+              "Please delete mount of snapshot #{snap.dataset.full_name}@#{mnt.name} " \
               "from VPS #{mnt.vps_id} at '#{mnt.dst}' (mount id #{mnt.mnt_id})"
             )
           end
