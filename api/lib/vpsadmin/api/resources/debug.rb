@@ -17,7 +17,7 @@ module VpsAdmin::API::Resources
       end
 
       def exec
-        ObjectSpace.each_object.each_with_object(Hash.new(0)) do |obj, hash|
+        ObjectSpace.each_object.with_object(Hash.new(0)) do |obj, hash|
           hash[obj.class] += 1
         end.sort_by do |_klass, count|
           -count
