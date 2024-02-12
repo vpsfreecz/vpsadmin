@@ -48,7 +48,7 @@ module NodeCtld
 
     # @param data [Hash]
     def self.load(data)
-      new(data.to_h { |k, v| [k.to_sym, v] })
+      new(data.transform_keys(&:to_sym))
     end
 
     # @param opts [Hash] attributes

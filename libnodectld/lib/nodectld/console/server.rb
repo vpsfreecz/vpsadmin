@@ -49,8 +49,8 @@ module NodeCtld
 
     def stats
       @configure_mutex.synchronize do
-        @consoles.to_h do |vps_id, console|
-          [vps_id, console.sessions.length]
+        @consoles.transform_values do |console|
+          console.sessions.length
         end
       end
     end
