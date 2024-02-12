@@ -2,7 +2,7 @@ namespace :vpsadmin do
   desc 'Open an interactive shell'
   task :shell do
     require 'pry'
-    pry
+    pry # rubocop:disable Lint/Debugger
   end
 
   namespace :lifetimes do
