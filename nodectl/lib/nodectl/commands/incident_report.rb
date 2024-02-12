@@ -242,7 +242,7 @@ module NodeCtl
         vps_procs.each do |vps_id, vps_proc|
           inc = incident.clone
           inc.vps_id = vps_id
-          inc.message = inc.message + "\n\n" + vps_proc.format.reject do |line|
+          inc.message = "#{inc.message}\n\n" << vps_proc.format.reject do |line|
             line.start_with?('#')
           end.join
 
