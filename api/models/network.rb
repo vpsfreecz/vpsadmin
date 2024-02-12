@@ -172,7 +172,7 @@ class Network < ActiveRecord::Base
   end
 
   def ip_order(col = 'address')
-    (ip_version == 4 ? 'INET_ATON' : 'INET6_ATON') + '(' + col + ')'
+    "#{ip_version == 4 ? 'INET_ATON' : 'INET6_ATON'}(#{col})"
   end
 
   # @param from [IPAddress] IPv4/IPv6 address

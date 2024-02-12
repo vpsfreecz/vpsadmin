@@ -20,7 +20,7 @@ module NodeCtld
       FileUtils.mkdir_p(ssh_dir, mode: 0o700)
 
       unless File.exist?(authorized_keys)
-        File.open(authorized_keys, 'w') { |f| f.write(@pubkey + "\n") }
+        File.open(authorized_keys, 'w') { |f| f.write("#{@pubkey}\n") }
         File.chmod(0o600, authorized_keys)
         return
       end

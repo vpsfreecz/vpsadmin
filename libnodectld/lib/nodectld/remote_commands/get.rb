@@ -24,7 +24,7 @@ module NodeCtld::RemoteCommands
                 chain: row['transaction_chain_id'],
                 state: row['chain_state'],
                 type: row['handle'].to_i,
-                time: Time.parse(row['created_at'] + ' UTC').localtime.to_i,
+                time: Time.parse("#{row['created_at']} UTC").localtime.to_i,
                 m_id: row['user_id'].to_i,
                 vps_id: row['vps_id'].to_i,
                 depends_on: row['depends_on_id'].to_i,

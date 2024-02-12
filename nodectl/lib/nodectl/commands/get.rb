@@ -116,7 +116,7 @@ module NodeCtl
         else
           if opts[:header]
             puts format(
-              '%-10s %5s %-10s %8s %8s %8s %6s ' + (['%12s'] * 4 * 3).join(' '),
+              "%-10s %5s %-10s %8s %8s %8s %6s #{(['%12s'] * 4 * 3).join(' ')}",
               'VPS', 'USER', 'NETIF', 'NETIF_ID',
               'UPDATE', 'LOG', 'DELTA',
               'B/IN', 'B/OUT', 'PKT/IN', 'PKT/OUT',
@@ -125,7 +125,7 @@ module NodeCtl
             )
           end
 
-          row_fmt = '%-10d %5d %-10s %8d %8s %8s %6d ' + (['%12s'] * 4 * 3).join(' ')
+          row_fmt = "%-10d %5d %-10s %8d %8s %8s %6d #{(['%12s'] * 4 * 3).join(' ')}"
           now = Time.now
 
           interfaces.each do |n|

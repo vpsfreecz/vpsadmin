@@ -120,7 +120,7 @@ module NodeCtld
       end
 
       def send_data(data)
-        @sock.send(data.to_json + "\n", 0)
+        @sock.send("#{data.to_json}\n", 0)
       rescue Errno::EPIPE
       end
     end
