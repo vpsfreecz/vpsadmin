@@ -201,7 +201,7 @@ module VpsAdmin::API
       # Find access token
       ::Oauth2Authorization
         .joins(user_session: :token)
-        .where(tokens: {token:})
+        .where(tokens: { token: })
         .each do |auth|
         token = auth.user_session.token
         auth.user_session.update!(token: nil)
@@ -241,7 +241,7 @@ module VpsAdmin::API
       # Find refresh token
       ::Oauth2Authorization
         .joins(:refresh_token)
-        .where(tokens: {token:})
+        .where(tokens: { token: })
         .each do |auth|
         refresh_token = auth.refresh_token
         auth.update!(refresh_token: nil)
@@ -265,16 +265,16 @@ module VpsAdmin::API
     def find_authorization_by_code(client, code)
       ::Oauth2Authorization.joins(:code, :user).where(
         oauth2_client: client,
-        tokens: {token: code},
-        users: {object_state: %w(active suspended)}
+        tokens: { token: code },
+        users: { object_state: %w(active suspended) }
       ).take
     end
 
     def find_authorization_by_refresh_token(client, refresh_token)
       ::Oauth2Authorization.joins(:refresh_token, :user).where(
         oauth2_client: client,
-        tokens: {token: refresh_token},
-        users: {object_state: %w(active suspended)}
+        tokens: { token: refresh_token },
+        users: { object_state: %w(active suspended) }
       ).where(
         'tokens.valid_to > ?', Time.now
       ).take
@@ -428,7 +428,7 @@ module VpsAdmin::API
       token = sinatra_handler.cookies[SSO_COOKIE]
       return unless token
 
-      sso = ::SingleSignOn.joins(:token).where(tokens: {token:}).take
+      sso = ::SingleSignOn.joins(:token).where(tokens: { token: }).take
       return if sso.nil? || !sso.usable? || !sso.user.enable_single_sign_on
 
       sso

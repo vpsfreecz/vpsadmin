@@ -29,7 +29,7 @@ module NodeCtld
       @input_queue = @channel.queue(
         "console:#{$CFG.get(:vpsadmin, :node_name)}:input",
         durable: true,
-        arguments: {'x-queue-type' => 'quorum'}
+        arguments: { 'x-queue-type' => 'quorum' }
       )
       @input_queue.bind(@input_exchange)
 

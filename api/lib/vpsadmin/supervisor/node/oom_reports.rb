@@ -25,7 +25,7 @@ module VpsAdmin::Supervisor
       queue = channel.queue(
         queue_name('oom_reports'),
         durable: true,
-        arguments: {'x-queue-type' => 'quorum'}
+        arguments: { 'x-queue-type' => 'quorum' }
       )
 
       queue.bind(exchange, routing_key: 'oom_reports')

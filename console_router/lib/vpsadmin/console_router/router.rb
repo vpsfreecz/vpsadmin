@@ -98,7 +98,7 @@ module VpsAdmin::ConsoleRouter
           output_queue = channel.queue(
             output_queue_name(vps_id, session),
             durable: true,
-            arguments: {'x-queue-type' => 'quorum'}
+            arguments: { 'x-queue-type' => 'quorum' }
           )
           output_queue.bind(output_exchange, routing_key: routing_key(vps_id, session))
 
