@@ -613,7 +613,7 @@ module VpsAdmin::API
         end
 
         action.send(:define_method, :object_state_check!) do |*objs|
-          return if current_user.role == :admin
+          next if current_user.role == :admin
 
           reason = nil
 
@@ -624,7 +624,7 @@ module VpsAdmin::API
             end
           end
 
-          return unless reason
+          next unless reason
 
           if reason.empty?
             error('Access forbidden: your account is suspended')

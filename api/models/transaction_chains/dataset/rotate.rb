@@ -52,7 +52,7 @@ module TransactionChains
                 # TODO: it is possible that this snapshot WAS backed up, but the
                 # backup was already deleted when the snapshot was held up on
                 # the hypervisor...
-                return
+                return # rubocop:disable Lint/NonLocalExitFromIterator
               end
 
               # Is it the last snapshot of this dataset_in_pool? -> break
@@ -62,7 +62,7 @@ module TransactionChains
                 # This snapshot is backed up in dataset_in_pool +backup+ but
                 # it is the last snapshot there.
                 # It cannot be destroyed as it would break the history flow.
-                return
+                return # rubocop:disable Lint/NonLocalExitFromIterator
               end
             end
 

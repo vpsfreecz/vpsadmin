@@ -59,7 +59,7 @@ module NodeCtld
             ret = JSON.parse(response.body)
           rescue JSON::ParserError => e
             log(:warn, "Unable to parse response from osctl-exporter: #{e.message}")
-            return
+            return # rubocop:disable Lint/NonLocalExitFromIterator
           end
         end
       rescue SystemCallError => e

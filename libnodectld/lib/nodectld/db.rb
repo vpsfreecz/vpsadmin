@@ -141,7 +141,7 @@ module NodeCtld
             )
             query('SET NAMES UTF8')
             log(:info, :sql, "Connected to #{host}") if problem
-            return
+            return # rubocop:disable Lint/NonLocalExitFromIterator
           rescue Mysql2::Error => e
             problem = true
             log(:warn, :sql, "MySQL error ##{e.errno}: #{e.error}")

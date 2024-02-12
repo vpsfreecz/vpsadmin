@@ -13,7 +13,7 @@ module NodeCtld
 
     def killall_subprocesses
       @daemon.chain_blockers do |blockers|
-        return unless blockers
+        next unless blockers
 
         log('Killing all subprocesses')
 

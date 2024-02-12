@@ -133,7 +133,7 @@ module VpsAdmin::API::Plugins::OutageReports::TransactionChains
         args.update(opts)
 
         mail(id, args)
-        return
+        break
       rescue VpsAdmin::API::Exceptions::MailTemplateDoesNotExist
         next
       end

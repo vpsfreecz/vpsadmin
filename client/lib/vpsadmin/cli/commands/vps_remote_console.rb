@@ -55,7 +55,7 @@ module VpsAdmin::CLI::Commands
           if char == @end_seq[@end_i]
             if @end_i == @end_seq.size - 1
               @stop = true
-              return
+              return # rubocop:disable Lint/NonLocalExitFromIterator
             end
 
             @end_i += 1

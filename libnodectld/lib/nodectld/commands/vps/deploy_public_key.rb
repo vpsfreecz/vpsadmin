@@ -36,7 +36,7 @@ module NodeCtld
 
         if line.strip == @pubkey
           f.close
-          return
+          return # rubocop:disable Lint/NonLocalExitFromIterator
         end
       end
 

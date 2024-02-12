@@ -11,7 +11,7 @@ module NodeCtld::SystemProbes
 
         if $?.exitstatus == 0
           @count = v.strip.to_i
-          return
+          return # rubocop:disable Lint/NonLocalExitFromIterator
         end
       end
 

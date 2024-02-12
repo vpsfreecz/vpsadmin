@@ -101,11 +101,11 @@ module TransactionChains
                                      ],
                                      kwargs: { send_reservation: opts[:send_reservation] })
 
-            return
+            return # rubocop:disable Lint/NonLocalExitFromIterator
           end
 
           puts 'nothing to transfer'
-          return
+          return # rubocop:disable Lint/NonLocalExitFromIterator
         end
 
         # FIXME: report err, create new tree
