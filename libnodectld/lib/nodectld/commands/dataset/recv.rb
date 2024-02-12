@@ -37,8 +37,8 @@ module NodeCtld
       # Kill nc - just connect and close.
       # This will not stop an ongoing transfer.
       begin
-        s = TCPSocket.new(@addr, @port)
-        s.close
+        sock = TCPSocket.new(@addr, @port)
+        sock.close
       rescue Errno::ECONNREFUSED
         # ignore
       end

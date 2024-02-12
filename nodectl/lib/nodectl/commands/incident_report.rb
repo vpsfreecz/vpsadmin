@@ -62,8 +62,8 @@ module NodeCtl
             tmp = tmp.parent
           end
 
-          ret << format("%15s: %s\n", 'Process tree', tree.reverse_each.map do |os_proc|
-            "#{os_proc.name}[#{os_proc.ct_pid}]"
+          ret << format("%15s: %s\n", 'Process tree', tree.reverse_each.map do |tree_proc|
+            "#{tree_proc.name}[#{tree_proc.ct_pid}]"
           end.join(' - '))
 
           ret << format('%15s: %s', 'Cgroup', get_cgroup_path(os_proc.pid))

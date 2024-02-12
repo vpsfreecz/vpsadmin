@@ -11,12 +11,12 @@ module TransactionChains
 
       use_chain(Network::AddIps, args: [net, net.size]) if opts[:add_ips]
 
-      t = ::NodeCurrentStatus.table_name
+      tn = ::NodeCurrentStatus.table_name
 
       ::Node.joins(:node_current_status).where(
-        "(#{t}.updated_at IS NULL AND UNIX_TIMESTAMP() - UNIX_TIMESTAMP(CONVERT_TZ(#{t}.created_at, 'UTC', 'Europe/Prague')) <= 120)
+        "(#{tn}.updated_at IS NULL AND UNIX_TIMESTAMP() - UNIX_TIMESTAMP(CONVERT_TZ(#{tn}.created_at, 'UTC', 'Europe/Prague')) <= 120)
         OR
-        (UNIX_TIMESTAMP() - UNIX_TIMESTAMP(CONVERT_TZ(#{t}.updated_at, 'UTC', 'Europe/Prague')) <= 120)"
+        (UNIX_TIMESTAMP() - UNIX_TIMESTAMP(CONVERT_TZ(#{tn}.updated_at, 'UTC', 'Europe/Prague')) <= 120)"
       ).where(role: ::Node.roles[:node]).each do |n|
         append(Transactions::Network::Register, args: [n, net])
       end

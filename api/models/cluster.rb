@@ -5,11 +5,11 @@ class Cluster
 
   maintenance_children :environments
 
-  def self.search(v)
+  def self.search(value)
     ret = []
 
-    if /\A\d+\z/ =~ v
-      id = v.to_i
+    if /\A\d+\z/ =~ value
+      id = value.to_i
 
       [::User, ::Vps, ::Export, ::TransactionChain].each do |klass|
         ret << {
@@ -28,11 +28,11 @@ class Cluster
     # If it is an IP address, try to compress it. The gem seems to compress only
     # IPv6 addresses though.
     begin
-      addr = IPAddress.parse(v)
+      addr = IPAddress.parse(value)
     rescue ArgumentError
       # ignore
     else
-      v = addr.to_s
+      value = addr.to_s
     end
 
     # Find which network the address belongs to
@@ -56,7 +56,7 @@ class Cluster
 
             # Switch the search to the located ip in order to find the related
             # VPS and user.
-            v = ip.ip_addr
+            value = ip.ip_addr
             break
           end
         end
@@ -66,7 +66,7 @@ class Cluster
       end
     end
 
-    q = ActiveRecord::Base.connection.quote(v)
+    q = ActiveRecord::Base.connection.quote(value)
     ActiveRecord::Base.connection.execute(
       "SELECT 'User', id, 'login', login
       FROM users WHERE login = #{q}
@@ -139,8 +139,8 @@ class Cluster
       SELECT 'Vps', id, 'hostname', hostname
       FROM vpses
       WHERE hostname LIKE CONCAT('%', #{q}, '%') AND object_state < 3"
-    ).each do |v|
-      ret << { resource: v[0], id: v[1], attribute: v[2], value: v[3] }
+    ).each do |result|
+      ret << { resource: result[0], id: result[1], attribute: result[2], value: result[3] }
     end
 
     ret

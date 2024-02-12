@@ -21,8 +21,8 @@ module VpsAdmin::API::Plugins::OutageReports::TransactionChains
       report.reported_by = ::User.current
       report.save!
 
-      translations.each do |lang, attrs|
-        tr = ::OutageTranslation.new(attrs)
+      translations.each do |lang, tr_attrs|
+        tr = ::OutageTranslation.new(tr_attrs)
         tr.language = lang
         tr.outage_update = report
         tr.save!

@@ -506,13 +506,13 @@ module TransactionChains
         # Add new addresses to user's exports
         use_chain(Export::AddHostsToAll, args: [
                     vps_user,
-                    dst_ip_addresses.map { |_src, dst| dst }.compact
+                    dst_ip_addresses.map { |_src_ip, dst_ip| dst_ip }.compact
                   ])
 
         # Remove old addresses from user's exports
         use_chain(Export::DelHostsFromAll, args: [
                     vps_user,
-                    dst_ip_addresses.map { |src, _dst| src }.compact
+                    dst_ip_addresses.map { |src_ip, _dst_ip| src_ip }.compact
                   ])
 
         # Sort src host addresses by order

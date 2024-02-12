@@ -105,9 +105,9 @@ module VpsAdmin::CLI::Commands
                 end
 
       if @global_opts[:sort]
-        v = @global_opts[:sort]
-        @sort_desc = v.start_with?('-')
-        @sort_param = (v.start_with?('-') ? v[1..] : v).to_sym
+        sort_v = @global_opts[:sort]
+        @sort_desc = sort_v.start_with?('-')
+        @sort_param = (sort_v.start_with?('-') ? sort_v[1..] : sort_v).to_sym
 
       else
         @sort_desc = true

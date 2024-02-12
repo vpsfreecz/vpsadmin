@@ -37,8 +37,8 @@ class Outage < ActiveRecord::Base
       report.reported_by = ::User.current
       report.save!
 
-      translations.each do |lang, attrs|
-        tr = ::OutageTranslation.new(attrs)
+      translations.each do |lang, tr_attrs|
+        tr = ::OutageTranslation.new(tr_attrs)
         tr.language = lang
         tr.outage = outage
         tr.save!
@@ -55,19 +55,19 @@ class Outage < ActiveRecord::Base
       assign_attributes(attrs)
       save!
 
-      translations.each do |lang, attrs|
+      translations.each do |lang, tr_attrs|
         tr = ::OutageTranslation.find_by(
           outage: self,
           language: lang
         )
 
         if tr.nil?
-          tr = ::OutageTranslation.new(attrs)
+          tr = ::OutageTranslation.new(tr_attrs)
           tr.language = lang
           tr.outage = self
           tr.save!
         else
-          tr.update!(attrs)
+          tr.update!(tr_attrs)
         end
       end
 

@@ -15,10 +15,10 @@ module NodeCtld
         # Check that the snapshots actually exist
         return ok if @snapshots.empty?
 
-        s = @snapshots.first
+        first_snap = @snapshots.first
 
         begin
-          zfs(:list, '-H -o name', "#{s['pool_fs']}/#{s['dataset_name']}@#{@name}")
+          zfs(:list, '-H -o name', "#{first_snap['pool_fs']}/#{first_snap['dataset_name']}@#{@name}")
         rescue SystemCommandFailed
           log(:work, self, 'Pre-crash snapshot not found, disregarding old state')
         else

@@ -151,8 +151,8 @@ module VpsAdmin::CLI::Commands
       remote_state[ds.current_history_id].each do |snap|
         found = false
 
-        local_state.each_value do |snapshots|
-          found = snapshots.detect { |s| s.name == snap.name }
+        local_state.each_value do |local_snapshots|
+          found = local_snapshots.detect { |s| s.name == snap.name }
           break if found
         end
 
@@ -343,7 +343,7 @@ module VpsAdmin::CLI::Commands
         a.creation <=> b.creation
       end
 
-      cnt = local_state.values.inject(0) { |sum, snapshots| sum + snapshots.count }
+      cnt = local_state.values.inject(0) { |sum, local_snapshots| sum + local_snapshots.count }
       deleted = 0
       oldest = Time.now.to_i - (@opts[:max_age] * 60 * 60 * 24)
 
@@ -362,8 +362,8 @@ module VpsAdmin::CLI::Commands
         zfs(:destroy, nil, "#{ds}@#{s.name}", pretend:)
       end
 
-      local_state.each do |hist_id, snapshots|
-        next unless snapshots.empty?
+      local_state.each do |hist_id, local_snapshots|
+        next unless local_snapshots.empty?
 
         ds = "#{fs}/#{hist_id}"
 
