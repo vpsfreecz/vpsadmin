@@ -105,14 +105,14 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
           locs = ::LocationNetwork.where(
             location: input[:location]
           ).pluck(:network_id)
-          ips = ips.where(networks: { id: locs })
         else
           locs = ::LocationNetwork.where(
             location: input[:location],
             userpick: true
           ).pluck(:network_id)
-          ips = ips.where(networks: { id: locs })
         end
+
+        ips = ips.where(networks: { id: locs })
       end
 
       ips = ips.where(networks: { ip_version: input[:version] }) if input[:version]

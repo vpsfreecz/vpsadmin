@@ -542,7 +542,6 @@ module TransactionChains
 
       else
         # Remove all IP addresses
-        dst_ip_addresses = []
         ips = []
 
         netif.ip_addresses.each { |ip| ips << ip }

@@ -73,12 +73,11 @@ module TransactionChains
     def create_dataset(part, properties = {}, label = nil, userns_map = nil)
       if part.new_record?
         part.parent ||= @parent
-        part.save!
-
       else
         part.expiration_date = nil
-        part.save!
       end
+
+      part.save!
 
       @parent = part
 
