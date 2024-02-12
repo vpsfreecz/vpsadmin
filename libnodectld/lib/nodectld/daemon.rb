@@ -10,7 +10,6 @@ require 'nodectld/storage_status'
 require 'nodectld/shaper'
 require 'nodectld/ct_top'
 require 'nodectld/ct_monitor'
-require 'thread'
 
 module NodeCtld
   EXIT_OK = 0

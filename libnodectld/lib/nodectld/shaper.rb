@@ -1,7 +1,6 @@
 require 'libosctl'
 require 'nodectld/utils'
 require 'singleton'
-require 'thread'
 
 module NodeCtld
   # {Shaper} configures shaper on the host's interfaces

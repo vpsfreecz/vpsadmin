@@ -4,7 +4,6 @@ require 'nodectld/utils'
 require 'nodectld/version'
 require 'nodectld/exceptions'
 require 'socket'
-require 'thread'
 
 module NodeCtld
   class RemoteControl

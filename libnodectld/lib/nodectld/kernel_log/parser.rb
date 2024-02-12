@@ -1,5 +1,4 @@
 require 'libosctl'
-require 'thread'
 
 module NodeCtld
   # Read from kernel log and parse recognized events

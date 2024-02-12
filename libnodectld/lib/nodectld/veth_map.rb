@@ -1,6 +1,5 @@
 require 'libosctl'
 require 'singleton'
-require 'thread'
 
 module NodeCtld
   # {VethMap} is a singleton class that stores real names of per-VPS veth

@@ -1,5 +1,4 @@
 require 'libosctl'
-require 'thread'
 
 module NodeCtld
   class PoolStatus

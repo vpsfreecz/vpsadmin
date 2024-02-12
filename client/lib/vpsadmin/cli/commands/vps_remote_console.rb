@@ -1,4 +1,3 @@
-require 'thread'
 require 'time'
 require 'json'
 require 'base64'

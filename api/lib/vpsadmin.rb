@@ -1,7 +1,6 @@
 require 'require_all'
 require 'active_record'
 require 'paper_trail'
-require 'pp'
 require 'haveapi'
 require 'ancestry'
 require 'ipaddress'
