@@ -217,7 +217,7 @@ module NodeCtld
     end
 
     def get
-      @result.each { |row| return row }
+      @result.each { |row| return row } # rubocop:disable Lint/UnreachableLoop
       nil
     end
 

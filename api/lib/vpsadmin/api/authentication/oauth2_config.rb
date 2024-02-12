@@ -199,7 +199,7 @@ module VpsAdmin::API
 
     def handle_post_revoke(_sinatra_request, token, token_type_hint: nil)
       # Find access token
-      ::Oauth2Authorization
+      ::Oauth2Authorization # rubocop:disable Lint/UnreachableLoop
         .joins(user_session: :token)
         .where(tokens: { token: })
         .each do |auth|
@@ -239,7 +239,7 @@ module VpsAdmin::API
       end
 
       # Find refresh token
-      ::Oauth2Authorization
+      ::Oauth2Authorization # rubocop:disable Lint/UnreachableLoop
         .joins(:refresh_token)
         .where(tokens: { token: })
         .each do |auth|
