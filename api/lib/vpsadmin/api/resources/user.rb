@@ -131,7 +131,7 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
       vps_params = %i[vps node environment location os_template]
 
       passwd = input.delete(:password)
-      user = ::User.new(to_db_names(input.reject { |k, _| vps_params.include?(k) }))
+      user = ::User.new(to_db_names(input.except(*vps_params)))
       user.set_password(passwd) if passwd
 
       if input[:vps]
