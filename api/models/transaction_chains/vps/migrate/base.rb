@@ -577,7 +577,7 @@ module TransactionChains
         environment: dst_env
       )
 
-      new_ips = ips.select { |_, ip| !ip.user_id }.map { |v| v[1] }
+      new_ips = ips.reject { |_, ip| ip.user_id }.map { |v| v[1] }
 
       %i[ipv4 ipv4_private ipv6].each do |r|
         # Free only standalone IP addresses

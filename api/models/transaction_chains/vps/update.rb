@@ -269,8 +269,8 @@ module TransactionChains
         ds.dataset_in_pools.each do |dip|
           dip.exports.each do |ex|
             # Remove hosts belonging to the original user
-            hosts_to_delete = ex.export_hosts.to_a.select do |host|
-              host.ip_address.network_interface.vps_id != vps.id
+            hosts_to_delete = ex.export_hosts.to_a.reject do |host|
+              host.ip_address.network_interface.vps_id == vps.id
             end
 
             use_chain(Export::DelHosts, args: [ex, hosts_to_delete]) if hosts_to_delete.any?

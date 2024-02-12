@@ -115,7 +115,7 @@ module VpsAdmin::API::Tasks
           end
         end
 
-        next if !objects.any? || ENV['EXECUTE'] != 'yes'
+        next if objects.none? || ENV['EXECUTE'] != 'yes'
 
         TransactionChains::Lifetimes::ExpirationWarning.fire(cls, objects)
       end
