@@ -136,7 +136,7 @@ class AddNetworks < ActiveRecord::Migration
       IpAddress.all.each do |ip|
         addr = IPAddress.parse(ip.ip_addr)
 
-        if addr.class == net.class && net.include?(addr)
+        if addr.instance_of?(net.class) && net.include?(addr)
           loc = ip.ip_location
           break
         end
@@ -158,7 +158,7 @@ class AddNetworks < ActiveRecord::Migration
   def migrate_ips
     IpAddress.all.each do |ip|
       addr = IPAddress.parse(ip.ip_addr)
-      raw_net = @networks.detect { |net| net.class == addr.class && net.include?(addr) }
+      raw_net = @networks.detect { |net| net.instance_of?(addr.class) && net.include?(addr) }
 
       unless raw_net
         @orphans << ip
