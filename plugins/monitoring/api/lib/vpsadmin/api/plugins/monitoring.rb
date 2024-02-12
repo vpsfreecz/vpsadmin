@@ -51,7 +51,7 @@ module VpsAdmin::API::Plugins
           res = {}
 
           if arg.is_a?(Symbol)
-            ::MonitoredEvent.states.keys.each { |v| res[v.to_sym] = arg }
+            ::MonitoredEvent.states.each_key { |v| res[v.to_sym] = arg }
 
           elsif arg.is_a?(Hash)
             res.update(arg)

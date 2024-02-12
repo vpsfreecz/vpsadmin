@@ -3,7 +3,7 @@ module VpsAdmin::API::Tasks
     # List installed plugins
     def list
       puts format('%-20s %-20s %10s  %-20s', 'ID', 'NAME', 'VERSION', 'COMPONENTS')
-      VpsAdmin::API::Plugin.registered.each do |_id, p|
+      VpsAdmin::API::Plugin.registered.each_value do |p|
         puts format(
           '%-20s %-20s %10s  %-20s',
           p.id,

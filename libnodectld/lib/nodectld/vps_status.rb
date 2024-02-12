@@ -122,7 +122,7 @@ module NodeCtld
       end
 
       # Send results to supervisor
-      vpsadmin_vpses.each do |_vps_id, vps|
+      vpsadmin_vpses.each_value do |vps|
         next unless vps.exists?
 
         NodeBunny.publish_wait(

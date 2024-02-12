@@ -5,7 +5,7 @@ module NodeCtld::Utils
 
       @daemon.queues do |queues|
         queues.each_value do |queue|
-          queue.each do |_wid, w|
+          queue.each_value do |w|
             ret = yield(w)
 
             next unless ret

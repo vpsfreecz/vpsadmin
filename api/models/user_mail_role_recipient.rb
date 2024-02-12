@@ -8,7 +8,7 @@ class UserMailRoleRecipient < ActiveRecord::Base
   def self.all_roles_for(user)
     ret = where(user:).to_a
 
-    ::MailTemplate.roles.each do |role, _opts|
+    ::MailTemplate.roles.each_key do |role|
       next if ret.detect { |recp| recp.role == role.to_s }
 
       ret << new(

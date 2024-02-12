@@ -20,7 +20,7 @@ module VpsAdmin::API
     # @yieldparam vps [::Vps]
     # @yieldparam mounts [Array<::Mount>]
     def each_vps_mount
-      mounts.each do |_vps_id, vps_mounts|
+      mounts.each_value do |vps_mounts|
         yield(vps_mounts.vps, vps_mounts.mounts)
       end
     end
@@ -28,7 +28,7 @@ module VpsAdmin::API
     # @yieldparam vps [::Vps]
     # @yieldparam mounts [Array<::Mount>]
     def each_vps_unmount
-      mounts.each do |_vps_id, vps_mounts|
+      mounts.each_value do |vps_mounts|
         yield(vps_mounts.vps, vps_mounts.mounts.reverse)
       end
     end

@@ -17,7 +17,7 @@ module NodeCtld
 
         log('Killing all subprocesses')
 
-        blockers.each do |_chain, pids|
+        blockers.each_value do |pids|
           pids.each do |pid|
             log("Sending SIGTERM to subprocess #{pid}")
             Process.kill('TERM', pid)

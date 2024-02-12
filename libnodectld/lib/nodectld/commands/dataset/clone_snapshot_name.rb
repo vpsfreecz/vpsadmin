@@ -19,7 +19,7 @@ module NodeCtld
     def rollback
       db = Db.new
 
-      @snapshots.values.each do |s|
+      @snapshots.each_value do |s|
         db.prepared('UPDATE snapshots SET name = ? WHERE id = ?', s[0], s[1])
       end
 

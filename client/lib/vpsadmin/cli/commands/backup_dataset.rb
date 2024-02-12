@@ -151,7 +151,7 @@ module VpsAdmin::CLI::Commands
       remote_state[ds.current_history_id].each do |snap|
         found = false
 
-        local_state.values.each do |snapshots|
+        local_state.each_value do |snapshots|
           found = snapshots.detect { |s| s.name == snap.name }
           break if found
         end

@@ -58,7 +58,7 @@ module TransactionChains
       end
 
       # Remove duplicit mounts
-      affected_vpses.each { |_vps, mounts| mounts.uniq! }
+      affected_vpses.each_value(&:uniq!)
 
       # Update mount action scripts
       affected_vpses.each_key do |vps|

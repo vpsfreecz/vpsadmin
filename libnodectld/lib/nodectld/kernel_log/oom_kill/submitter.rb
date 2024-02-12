@@ -73,7 +73,7 @@ module NodeCtld
 
         next if vps_reports.empty?
 
-        vps_reports.each do |_vps_id, reports|
+        vps_reports.each_value do |reports|
           reports.each do |r|
             log(:info, "Submitting OOM report invoked by PID #{r.invoked_by_pid} from VPS #{r.vps_id}")
             NodeBunny.publish_wait(

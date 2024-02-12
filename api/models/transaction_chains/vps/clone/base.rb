@@ -219,7 +219,7 @@ module TransactionChains
       @snapshot_name_fixes ||= {}
       new_snapshots = []
 
-      datasets.each do |_, dst|
+      datasets.each_value do |dst|
         dst.snapshot_in_pools.order('snapshot_id').each do |sip|
           s = ::Snapshot.create!(
             dataset: dst.dataset,

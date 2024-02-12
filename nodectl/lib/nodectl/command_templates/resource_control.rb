@@ -16,7 +16,7 @@ module NodeCtl
     end
 
     def process
-      response.each do |k, _v|
+      response.each_key do |k|
         case k
         when :shaper
           puts 'Shaper  ...  ok'

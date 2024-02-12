@@ -34,12 +34,12 @@ module NodeCtld
       end
 
       # Disable mount for all descendants
-      @descendant_datasets.reverse.each do |ds, _ds_state|
+      @descendant_datasets.reverse.each_key do |ds|
         zfs(:set, 'canmount=off', "#{origin}/#{ds['relative_name']}")
       end
 
       # Rename direct children
-      children.each do |child, _ds_state|
+      children.each_key do |child|
         zfs(
           :rename,
           nil,

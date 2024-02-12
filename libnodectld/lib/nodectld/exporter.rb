@@ -157,7 +157,7 @@ module NodeCtld
           metrics.queue_urgent.set(queue.urgent_size, labels: { queue: name })
           metrics.queue_total.set(queue.size + queue.urgent_size, labels: { queue: name })
 
-          queue.each do |_wid, w|
+          queue.each_value do |w|
             cmd = w.cmd
             start_time = cmd.time_start
 

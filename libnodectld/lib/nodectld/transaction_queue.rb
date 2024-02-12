@@ -225,7 +225,7 @@ module NodeCtld
     end
 
     def has_transaction?(t_id)
-      @workers.each do |_wid, w|
+      @workers.each_value do |w|
         return true if w.cmd.id.to_i == t_id
       end
 
@@ -252,6 +252,10 @@ module NodeCtld
 
     def each(&)
       @workers.each(&)
+    end
+
+    def each_value(&)
+      @workers.each_value(&)
     end
 
     def delete_if(&block)

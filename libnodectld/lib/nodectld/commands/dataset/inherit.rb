@@ -4,7 +4,7 @@ module NodeCtld
     needs :system, :zfs
 
     def exec
-      @properties.keys.each do |p|
+      @properties.each_key do |p|
         zfs(:inherit, p, "#{@pool_fs}/#{@name}")
       end
 
