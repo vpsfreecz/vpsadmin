@@ -208,7 +208,7 @@ module NodeCtl
 
     def process_info(pid)
       ret = {}
-      s = File.open("/proc/#{pid}/status").read
+      s = File.read("/proc/#{pid}/status")
 
       ret[:name] = /^Name:([^\n]+)/.match(s)[1].strip
       ret[:state] = /^State:([^\n]+)/.match(s)[1].strip
