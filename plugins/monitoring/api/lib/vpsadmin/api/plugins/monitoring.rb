@@ -1,7 +1,6 @@
 module VpsAdmin::API::Plugins
   module Monitoring
     module TransactionChains; end
-    class Monitor; end
 
     module Dsl
       class ConfigEnv
