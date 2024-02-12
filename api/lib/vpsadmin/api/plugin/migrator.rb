@@ -78,7 +78,7 @@ module VpsAdmin::API::Plugin
     end
 
     def record_version_state_after_migrating(version)
-      super("#{version.to_s}-#{current_plugin.id.to_s}")
+      super("#{version}-#{current_plugin.id}")
     end
   end
 end
