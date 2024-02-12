@@ -109,8 +109,8 @@ namespace :vpsadmin do
           './tools/update_gem.sh',
           'packages',
           gem.to_s,
-          ENV['VPSADMIN_BUILD_ID'],
-          ENV['OS_BUILD_ID']
+          ENV.fetch('VPSADMIN_BUILD_ID'),
+          ENV.fetch('OS_BUILD_ID')
         )
 
         raise "unable to build #{gem}: failed with exit status #{$?.exitstatus}" unless ret

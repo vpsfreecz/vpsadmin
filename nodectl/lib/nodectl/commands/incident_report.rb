@@ -281,8 +281,8 @@ module NodeCtl
     end
 
     def admin_headers
-      admin_id = ENV['VPSADMIN_USER_ID']
-      admin_name = ENV['VPSADMIN_USER_NAME']
+      admin_id = ENV.fetch('VPSADMIN_USER_ID', nil)
+      admin_name = ENV.fetch('VPSADMIN_USER_NAME', nil)
 
       if admin_id
         "Admin: #{admin_id} #{admin_name}"
@@ -297,8 +297,8 @@ module NodeCtl
       file.close
 
       loop do
-        unless Kernel.system(ENV['EDITOR'], file.path)
-          warn "#{ENV['EDITOR']} exited with non-zero status code"
+        unless Kernel.system(ENV.fetch('EDITOR', 'vim'), file.path)
+          warn "#{ENV.fetch('EDITOR', nil)} exited with non-zero status code"
           exit(false)
         end
 

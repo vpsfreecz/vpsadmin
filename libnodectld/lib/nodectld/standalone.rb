@@ -7,7 +7,7 @@ if NodeCtld::STANDALONE
   require 'nodectld/config'
 
   OsCtl::Lib::Logger.setup(:stdout)
-  $CFG = NodeCtld::AppConfig.new(ENV['CONFIG'] || '/etc/vpsadmin/nodectld.yml')
+  $CFG = NodeCtld::AppConfig.new(ENV.fetch('CONFIG', '/etc/vpsadmin/nodectld.yml'))
 
-  exit(false) unless $CFG.load(ENV['DB_CONFIG'])
+  exit(false) unless $CFG.load(ENV.fetch('DB_CONFIG', false))
 end

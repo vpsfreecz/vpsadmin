@@ -21,11 +21,11 @@ module VpsAdmin::API::Tasks
       required_env(%w[OBJECTS])
 
       time = Time.now.utc
-      time -= ENV['GRACE'].to_i if ENV['GRACE']
+      time -= ENV.fetch('GRACE', 0).to_i
 
-      expiration = (Time.now.utc + ENV['NEW_EXPIRATION'].to_i if ENV['NEW_EXPIRATION'])
+      expiration = Time.now.utc + ENV.fetch('NEW_EXPIRATION', 0).to_i
 
-      limit = ENV['LIMIT'] ? ENV['LIMIT'].to_i : 30
+      limit = ENV.fetch('LIMIT', 30).to_i
       raise 'invalid limit' if limit <= 0
 
       puts "Progressing objects having expiration date older than #{time}"
@@ -156,7 +156,7 @@ module VpsAdmin::API::Tasks
 
       classes = []
 
-      ENV['OBJECTS'].split(',').each do |obj|
+      ENV.fetch('OBJECTS').split(',').each do |obj|
         cls = Object.const_get(obj)
 
         raise warn "Unable to find a class for '#{obj}'" unless obj
@@ -170,7 +170,7 @@ module VpsAdmin::API::Tasks
     def get_states
       return unless ENV['STATES']
 
-      ENV['STATES'].split(',').map do |v|
+      ENV.fetch('STATES').split(',').map do |v|
         i = VpsAdmin::API::Lifetimes::STATES.index(v.to_sym)
         next(i) if i
 
@@ -180,9 +180,9 @@ module VpsAdmin::API::Tasks
 
     def get_reason(obj)
       user = get_user(obj)
-      return ENV['REASON'] if user.nil?
+      return ENV.fetch('REASON', '') if user.nil?
 
-      ENV["REASON_#{user.language.code.upcase}"] || ENV['REASON']
+      ENV["REASON_#{user.language.code.upcase}"] || ENV.fetch('REASON', '')
     end
 
     def get_user(obj)

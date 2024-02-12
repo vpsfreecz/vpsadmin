@@ -178,7 +178,7 @@ module NodeCtl
     end
 
     def get_action_verb
-      case ENV['HALT_ACTION']
+      case ENV.fetch('HALT_ACTION')
       when 'halt', 'poweroff'
         'shutting down'
       when 'reboot'

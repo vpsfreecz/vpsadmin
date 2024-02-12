@@ -25,11 +25,11 @@ Gem::Specification.new do |s|
   s.add_runtime_dependency 'filelock'
   s.add_runtime_dependency 'ipaddress', '~> 0.8.3'
   s.add_runtime_dependency 'json'
-  s.add_runtime_dependency 'libosctl', ENV['OS_BUILD_ID']
+  s.add_runtime_dependency 'libosctl', ENV.fetch('OS_BUILD_ID')
   s.add_runtime_dependency 'mail', '~> 2.8.1'
   s.add_runtime_dependency 'mysql2', '0.5.5'
-  s.add_runtime_dependency 'osctl', ENV['OS_BUILD_ID']
-  s.add_runtime_dependency 'osctl-exportfs', ENV['OS_BUILD_ID']
+  s.add_runtime_dependency 'osctl', ENV.fetch('OS_BUILD_ID')
+  s.add_runtime_dependency 'osctl-exportfs', ENV.fetch('OS_BUILD_ID')
   s.add_runtime_dependency 'prometheus-client', '~> 4.2.2'
   s.add_runtime_dependency 'pry', '~> 0.14.2'
   s.add_runtime_dependency 'pry-remote'

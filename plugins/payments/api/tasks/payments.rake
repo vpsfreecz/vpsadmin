@@ -7,10 +7,10 @@ namespace :vpsadmin do
         exit(false)
       end
 
-      b = VpsAdmin::API::Plugins::Payments.get_backend(ENV['BACKEND'].strip.to_sym)
+      b = VpsAdmin::API::Plugins::Payments.get_backend(ENV.fetch('BACKEND').strip.to_sym)
 
       unless b
-        warn "BACKEND '#{ENV['BACKEND']}' not found"
+        warn "BACKEND '#{ENV.fetch('BACKEND')}' not found"
         exit(false)
       end
 
