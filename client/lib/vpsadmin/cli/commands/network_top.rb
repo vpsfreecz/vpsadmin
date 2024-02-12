@@ -25,7 +25,7 @@ module VpsAdmin::CLI::Commands
       end
 
       (FILTERS - %i[limit]).each do |f|
-        opts.on("--#{f.to_s.gsub(/_/, '-')} ID", Integer, "Filter network interfaces by #{f}") do |v|
+        opts.on("--#{f.to_s.gsub('_', '-')} ID", Integer, "Filter network interfaces by #{f}") do |v|
           @opts[f] = v
         end
       end
@@ -119,7 +119,7 @@ module VpsAdmin::CLI::Commands
       @params.each do |p|
         title = p.to_s.split('_').map do |v|
           if @opts[:unit] == :bits
-            v.to_s.gsub(/bytes/, 'bits').capitalize
+            v.to_s.gsub('bytes', 'bits').capitalize
 
           else
             v.capitalize

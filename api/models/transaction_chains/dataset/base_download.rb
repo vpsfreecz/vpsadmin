@@ -66,7 +66,7 @@ module TransactionChains
 
     def filename(snapshot, format, from_snapshot)
       ds = snapshot.dataset.full_name.gsub(%r{/}, '_')
-      base = "#{ds}__#{snapshot.name.gsub(/:/, '-')}"
+      base = "#{ds}__#{snapshot.name.gsub(':', '-')}"
 
       case format
       when :archive
@@ -76,7 +76,7 @@ module TransactionChains
         "#{base}.dat.gz"
 
       when :incremental_stream
-        "#{ds}__#{from_snapshot.name.gsub(/:/, '-')}__#{snapshot.name.gsub(/:/, '-')}.inc.dat.gz"
+        "#{ds}__#{from_snapshot.name.gsub(':', '-')}__#{snapshot.name.gsub(':', '-')}.inc.dat.gz"
 
       else
         raise "unsupported format '#{format}'"
