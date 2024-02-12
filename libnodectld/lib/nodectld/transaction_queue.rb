@@ -112,10 +112,10 @@ module NodeCtld
       # Sort first by priority, then order of addition
       def sort_queue!
         waiting_items.sort! do |a, b|
-          if b.priority != a.priority
-            b.priority <=> a.priority
-          else
+          if b.priority == a.priority
             a.order <=> b.order
+          else
+            b.priority <=> a.priority
           end
         end
       end

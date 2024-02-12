@@ -35,7 +35,7 @@ module VpsAdmin::API
           raise ArgumentError, 'missing token_interval for non-permanent token_lifetime'
         end
 
-        valid_to = token_lifetime != 'permanent' ? Time.now + token_interval : nil
+        valid_to = token_lifetime == 'permanent' ? nil : Time.now + token_interval
 
         ::Token.for_new_record!(valid_to) do |token|
           user_session.token = token

@@ -137,11 +137,11 @@ module NodeCtld
             end
 
             # Remove unused consoles
-            if !console.in_use?
+            if console.in_use?
+              false
+            else
               close_console(console)
               true
-            else
-              false
             end
           end
         end
