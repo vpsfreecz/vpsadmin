@@ -31,11 +31,13 @@ module NodeCtld
       begin
         File.unlink(file_path)
       rescue Errno::ENOENT
+        # ignore
       end
 
       begin
         Dir.rmdir(secret_dir_path)
       rescue Errno::ENOENT
+        # ignore
       end
 
       ok

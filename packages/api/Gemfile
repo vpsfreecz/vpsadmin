@@ -3,6 +3,7 @@ source 'https://rubygems.org'
 begin
   $: << File.realpath(File.join(__dir__, 'lib'))
 rescue Errno::ENOENT
+  # ignore
 end
 
 gem 'activerecord', '~> 7.1.3'

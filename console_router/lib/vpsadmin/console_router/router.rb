@@ -136,6 +136,7 @@ module VpsAdmin::ConsoleRouter
           ret << payload
         end
       rescue Timeout::Error
+        # ignore
       end
 
       ret

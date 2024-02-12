@@ -90,6 +90,7 @@ module VpsAdmin::CLI::Commands
         end
       end
     rescue Interrupt
+      # break loop and exit
     ensure
       close_screen
     end

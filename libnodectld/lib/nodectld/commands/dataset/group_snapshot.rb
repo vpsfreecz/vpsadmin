@@ -87,6 +87,7 @@ module NodeCtld
     def remove_state
       File.unlink(state_file_path)
     rescue Errno::ENOENT
+      # ignore
     end
 
     def has_saved_state?

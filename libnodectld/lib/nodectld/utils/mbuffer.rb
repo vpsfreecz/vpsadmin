@@ -12,6 +12,7 @@ module NodeCtld
     def mbuffer_cleanup_log_file
       File.unlink(mbuffer_log_file)
     rescue Errno::ENOENT
+      # ignore
     end
   end
 end

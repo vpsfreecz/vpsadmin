@@ -97,6 +97,7 @@ module NodeCtld
               log(:unknown, line)
             end
           rescue IOError
+            # break loop
           end
 
           # Sets $?

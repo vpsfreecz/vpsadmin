@@ -40,6 +40,7 @@ module NodeCtld
         s = TCPSocket.new(@addr, @port)
         s.close
       rescue Errno::ECONNREFUSED
+        # ignore
       end
 
       # Remove received snapshots
