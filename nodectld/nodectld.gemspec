@@ -22,5 +22,4 @@ Gem::Specification.new do |s|
   s.required_ruby_version = '>= 3.2.0'
 
   s.add_runtime_dependency 'libnodectld', s.version
-  s.add_development_dependency 'rake'
 end

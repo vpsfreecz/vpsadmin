@@ -16,3 +16,7 @@ else
   gem 'osctl', path: File.join(os_path, 'osctl')
   gem 'osctl-exportfs', path: File.join(os_path, 'osctl-exportfs')
 end
+
+group :development do
+  gem 'rake'
+end

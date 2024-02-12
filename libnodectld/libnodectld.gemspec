@@ -34,5 +34,4 @@ Gem::Specification.new do |s|
   s.add_runtime_dependency 'pry', '~> 0.14.2'
   s.add_runtime_dependency 'pry-remote'
   s.add_runtime_dependency 'require_all', '~> 2.0.0'
-  s.add_development_dependency 'rake'
 end
