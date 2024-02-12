@@ -67,7 +67,7 @@ module VpsAdmin::Supervisor
             memtype: type,
             usage: attrs['usage'],
             limit: attrs['limit'],
-            failcnt: attrs['failcnt'],
+            failcnt: attrs['failcnt']
           }
         end
       )
@@ -76,7 +76,7 @@ module VpsAdmin::Supervisor
         report.fetch('stats').map do |param, value|
           {
             parameter: param,
-            value:,
+            value:
           }
         end
       )
@@ -94,7 +94,7 @@ module VpsAdmin::Supervisor
             rss: task.fetch('rss'),
             pgtables_bytes: task.fetch('pgtables_bytes'),
             swapents: task.fetch('swapents'),
-            oom_score_adj: task.fetch('oom_score_adj'),
+            oom_score_adj: task.fetch('oom_score_adj')
           }
         end
       )
@@ -138,7 +138,7 @@ module VpsAdmin::Supervisor
             vps:,
             action:,
             ooms_in_period: reports_in_period.sum(:count),
-            period_seconds: PERIOD,
+            period_seconds: PERIOD
           }
         )
         puts "VPS #{vps.id} -> #{action}"

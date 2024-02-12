@@ -152,7 +152,7 @@ module VpsAdmin::ConsoleRouter
       data = {
         session: entry.session,
         width:,
-        height:,
+        height:
       }
 
       if keys && !keys.empty?

@@ -22,8 +22,8 @@ module TransactionChains
           vps:,
           action:,
           ooms_in_period:,
-          period_seconds:,
-        },
+          period_seconds:
+        }
       })
 
       case action

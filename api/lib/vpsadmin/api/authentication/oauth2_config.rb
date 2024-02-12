@@ -477,7 +477,7 @@ module VpsAdmin::API
             # cookie's duration after it has been sent, so make it long enough.
             # The token must still be valid, so at worst the user will send
             # an invalid token.
-            max_age: 24 * 60 * 60,
+            max_age: 24 * 60 * 60
           })
         end
 
