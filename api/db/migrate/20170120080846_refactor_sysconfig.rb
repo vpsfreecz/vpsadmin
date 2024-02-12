@@ -87,14 +87,11 @@ class RefactorSysconfig < ActiveRecord::Migration
     when 'adminbox_content'
       [:webui, 'sidebar', 'Text', 0]
 
-    when /mailer_requests_(admin|member)_sub/
+    when /mailer_requests_(admin|member)_sub/, /mailer_from_/
       [:webui, name, 'String', 99]
 
     when /mailer_requests_(admin|member)_text/
       [:webui, name, 'Text', 99]
-
-    when /mailer_from_/
-      [:webui, name, 'String', 99]
 
     when 'payments_enabled'
       [:webui, name, 'Boolean', 1]

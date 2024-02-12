@@ -104,11 +104,7 @@ module NodeCtld
           Process.waitpid(pid)
 
           case $?.exitstatus
-          when NodeCtld::EXIT_OK
-            log 'Stopping daemon'
-            exit
-
-          when NodeCtld::EXIT_STOP
+          when NodeCtld::EXIT_OK, NodeCtld::EXIT_STOP
             log 'Stopping daemon'
             exit
 

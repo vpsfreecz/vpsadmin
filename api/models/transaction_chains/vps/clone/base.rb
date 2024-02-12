@@ -101,7 +101,7 @@ module TransactionChains
             # This exception should never be raised, as the not-existing plan
             # in the target environment is caught by the rescue above.
             next
-          rescue ActiveRecord::RecordNotUnique => e
+          rescue ActiveRecord::RecordNotUnique => e # rubocop:disable Lint/DuplicateBranch
             # The dataset in pool already is in this plan. The only way this could
             # happen is if the code connected to hook DatasetInPool.create registered
             # it.

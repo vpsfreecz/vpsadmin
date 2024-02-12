@@ -27,9 +27,7 @@ module NodeCtld
     attr_reader :index
 
     def key(addr)
-      if addr.ipv4? && addr.prefix == 32
-        addr.to_s
-      elsif addr.ipv6? && addr.prefix == 128
+      if (addr.ipv4? && addr.prefix == 32) || (addr.ipv6? && addr.prefix == 128)
         addr.to_s
       else
         addr.to_string

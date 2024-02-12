@@ -69,10 +69,7 @@ module NodeCtl
 
     def process
       case args[1]
-      when 'confirmations'
-        list_confirmations(response[:transactions])
-
-      when 'confirm'
+      when 'confirmations', 'confirm'
         list_confirmations(response[:transactions])
 
       when 'release'

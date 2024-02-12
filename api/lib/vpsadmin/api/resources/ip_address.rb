@@ -340,9 +340,8 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
       error('IP address is already in use')
     rescue VpsAdmin::API::Exceptions::IpAddressInvalidLocation
       error('IP address is from the wrong location')
-    rescue VpsAdmin::API::Exceptions::IpAddressNotOwned => e
-      error(e.message)
-    rescue VpsAdmin::API::Exceptions::IpAddressInvalid => e
+    rescue VpsAdmin::API::Exceptions::IpAddressNotOwned,
+           VpsAdmin::API::Exceptions::IpAddressInvalid => e
       error(e.message)
     end
 

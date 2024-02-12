@@ -184,7 +184,7 @@ module NodeCtld
         @skipped_transaction_checks += 1
         false
 
-      else
+      else # rubocop:disable Lint/DuplicateBranch
         @skipped_transaction_checks = 0
         true
       end

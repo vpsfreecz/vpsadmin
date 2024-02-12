@@ -13,9 +13,7 @@ module NodeCtld::Utils
         t = Time.now
         now_in_mins = (t.hour * 60) + t.min
 
-        if first.opens_today?
-          first
-        elsif first.weekday != t.wday
+        if first.opens_today? || first.weekday != t.wday
           first
         else
           size > 1 ? self[1] : first
