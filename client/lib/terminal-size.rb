@@ -28,7 +28,7 @@ class Terminal
 
       buf = IOCTL_INPUT_BUF.dup
       return unless $stdout.ioctl(code, buf).zero?
-      return if IOCTL_INPUT_BUF == buf
+      return if buf == IOCTL_INPUT_BUF
 
       got = buf.unpack('S4')[0..1]
       _height_width_hash_from(*got)
