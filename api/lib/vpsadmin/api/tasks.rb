@@ -8,7 +8,7 @@ module VpsAdmin::API
     class Base
       def required_env(vars)
         (vars.is_a?(Array) ? vars : [vars]).each do |env|
-          next if ENV[env] && ENV[env].length > 0
+          next if ENV[env] && !ENV[env].empty?
 
           raise "Missing required environment variable #{env}"
         end

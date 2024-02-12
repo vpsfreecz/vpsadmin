@@ -3,7 +3,7 @@ module NodeCtl
     args 'all|shaper'
 
     def validate
-      if args.size < 1
+      if args.empty?
         raise ValidationError, 'missing resource'
 
       elsif !%w[all shaper].include?(args[0])

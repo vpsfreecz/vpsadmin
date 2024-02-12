@@ -67,7 +67,7 @@ module VpsAdmin::CLI
           begin
             dl_check = api.snapshot_download.show(dl.id)
 
-            if @pb && (dl_check.ready || (dl_check.size && dl_check.size > 0))
+            if @pb && (dl_check.ready || (dl_check.size && dl_check.size > 0)) # rubocop:disable all
               total = dl_check.size * 1024 * 1024
               @pb.total = @pb.progress > total ? @pb.progress : total
 

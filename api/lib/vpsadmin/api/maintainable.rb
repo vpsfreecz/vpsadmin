@@ -93,7 +93,7 @@ module VpsAdmin::API
         # Set maintenance parents. When a lock for current object
         # is not found, its parent is checked.
         def maintenance_parents(*args, &block)
-          if args.size > 0
+          if !args.empty?
             @maintenance_parents = args
 
           elsif block

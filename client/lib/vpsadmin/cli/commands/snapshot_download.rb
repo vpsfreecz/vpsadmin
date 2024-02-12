@@ -55,7 +55,7 @@ module VpsAdmin::CLI::Commands
     end
 
     def exec(args)
-      if args.size == 0 && $stdin.tty?
+      if args.empty? && $stdin.tty?
         @opts[:snapshot] = snapshot_chooser
 
       elsif args.size != 1

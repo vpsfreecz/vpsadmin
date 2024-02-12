@@ -76,7 +76,7 @@ module VpsAdmin::API
         @cluster_resources[:optional] ||= []
         @cluster_resources[:environment] ||= environment
 
-        if required.size > 0 || optional.size > 0
+        if required.any? || optional.any?
           @cluster_resources[:required].concat(required)
           @cluster_resources[:optional].concat(optional)
 

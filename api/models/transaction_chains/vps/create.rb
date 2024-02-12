@@ -133,7 +133,7 @@ module TransactionChains
         )
       end
 
-      if ip_resources.size > 0
+      if !ip_resources.empty?
         append(Transactions::Utils::NoOp, args: vps.node_id) do
           ip_resources.each do |r|
             if r.updating?

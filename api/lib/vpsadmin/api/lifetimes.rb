@@ -626,10 +626,10 @@ module VpsAdmin::API
 
           return unless reason
 
-          if reason.length > 0
-            error("Access forbidden: #{reason}")
-          else
+          if reason.empty?
             error('Access forbidden: your account is suspended')
+          else
+            error("Access forbidden: #{reason}")
           end
         end
       end

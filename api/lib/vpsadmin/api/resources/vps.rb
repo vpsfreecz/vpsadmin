@@ -895,7 +895,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
         error('cannot create more VPSes in this environment')
       end
 
-      if input[:hostname].nil? || input[:hostname].strip.length == 0
+      if input[:hostname].nil? || input[:hostname].strip.empty?
         input[:hostname] = "#{vps.hostname}-#{vps.id}-clone"
       end
 

@@ -35,7 +35,7 @@ module NodeCtl
     end
 
     def validate
-      raise ValidationError, 'missing resource' if args.size < 1
+      raise ValidationError, 'missing resource' if args.empty?
 
       params.update({ resource: args[0], limit: opts[:limit] })
     end

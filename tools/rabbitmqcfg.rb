@@ -55,7 +55,7 @@ class Cli
 
     cmd_args = @parser.parse!(@args)
 
-    if cmd_args.length < 1
+    if cmd_args.empty?
       warn 'Missing action'
       warn @parser.help
       exit(false)

@@ -24,12 +24,12 @@ module NodeCtl
         params[:transactions] = :all
 
       elsif opts[:type]
-        raise ValidationError, 'missing transaction type(s)' if args.size < 1
+        raise ValidationError, 'missing transaction type(s)' if args.empty?
 
         params[:types] = args.map(&:to_i)
 
       else
-        raise ValidationError, 'missing transaction id(s)' if args.size < 1
+        raise ValidationError, 'missing transaction id(s)' if args.empty?
 
         params[:transactions] = args.map(&:to_i)
       end
@@ -40,7 +40,7 @@ module NodeCtl
         puts "#{i}: #{msg}"
       end
 
-      puts '' if response[:msgs].size > 0
+      puts '' if !response[:msgs].empty?
 
       puts "Killed #{response[:killed]} transactions"
     end

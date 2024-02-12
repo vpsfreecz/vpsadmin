@@ -5,7 +5,7 @@ module NodeCtl
     description 'Run ruby script with libnodectld and nodectl in path'
 
     def validate
-      raise ValidationError, 'missing script name' if args.size < 1
+      raise ValidationError, 'missing script name' if args.empty?
       raise ValidationError, 'too many arguments' if args.size > 1
     end
 

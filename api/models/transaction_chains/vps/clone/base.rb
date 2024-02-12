@@ -195,7 +195,7 @@ module TransactionChains
 
       use_chain(Vps::Mounts, args: dst_vps)
 
-      return unless mounts.size > 0
+      return unless !mounts.empty?
 
       append(Transactions::Utils::NoOp, args: dst_vps.node_id) do
         mounts.each { |m| create(m) }
