@@ -88,7 +88,7 @@ module VpsAdmin::Supervisor
       end
 
       def symbolize_hash_keys(hash)
-        Hash[hash.map { |k, v| [k.to_sym, v] }]
+        hash.to_h { |k, v| [k.to_sym, v] }
       end
     end
 

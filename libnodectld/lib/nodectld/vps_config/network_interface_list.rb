@@ -12,7 +12,7 @@ module NodeCtld
     # @param netifs [Array<VpsConfig::NetworkInterface>]
     def initialize(netifs = [])
       @netifs = netifs
-      @index = Hash[netifs.map { |n| [n.name, n] }]
+      @index = netifs.to_h { |n| [n.name, n] }
     end
 
     # @param name [String]

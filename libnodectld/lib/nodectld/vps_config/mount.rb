@@ -48,7 +48,7 @@ module NodeCtld
 
     # @param data [Hash]
     def self.load(data)
-      new(Hash[data.map { |k, v| [k.to_sym, v] }])
+      new(data.to_h { |k, v| [k.to_sym, v] })
     end
 
     # @param opts [Hash] attributes
@@ -59,9 +59,9 @@ module NodeCtld
     end
 
     def to_h
-      Hash[ATTRIBUTES.map do |attr|
+      ATTRIBUTES.to_h do |attr|
         [attr.to_s, instance_variable_get(:"@#{attr}")]
-      end]
+      end
     end
 
     def save

@@ -61,9 +61,9 @@ class ClusterResourcePackage < ActiveRecord::Base
 
       if opts[:from_personal]
         personal_pkg = user.cluster_resource_packages.where(environment: env).take!
-        personal_items = Hash[personal_pkg.cluster_resource_package_items.map do |it|
+        personal_items = personal_pkg.cluster_resource_package_items.to_h do |it|
           [it.cluster_resource_id, it]
-        end]
+        end
 
         cluster_resource_package_items.each do |it|
           personal_item = personal_items[it.cluster_resource_id]

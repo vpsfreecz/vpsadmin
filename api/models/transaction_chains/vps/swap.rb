@@ -62,7 +62,7 @@ module TransactionChains
       #
       # In the future, we will distinguish public and private interfaces. Now
       # we assume that there's only one public interface.
-      primary_netifs = Hash[primary_vps.network_interfaces.map do |netif|
+      primary_netifs = primary_vps.network_interfaces.to_h do |netif|
         new_netif = ::NetworkInterface.find(netif.id)
         new_netif.vps.node = secondary_vps.node
 
@@ -73,9 +73,9 @@ module TransactionChains
             routes: netif.ip_addresses.order(:order).to_a,
             host_addrs: netif.host_ip_addresses.where.not(order: nil).order(:order).to_a }
         ]
-      end]
+      end
 
-      secondary_netifs = Hash[secondary_vps.network_interfaces.map do |netif|
+      secondary_netifs = secondary_vps.network_interfaces.to_h do |netif|
         new_netif = ::NetworkInterface.find(netif.id)
         new_netif.vps.node = primary_vps.node
 
@@ -86,7 +86,7 @@ module TransactionChains
             routes: netif.ip_addresses.order(:order).to_a,
             host_addrs: netif.host_ip_addresses.where.not(order: nil).order(:order).to_a }
         ]
-      end]
+      end
 
       # Check that interfaces match
       %i[public private].each do |netif_type|

@@ -196,10 +196,10 @@ class User < ActiveRecord::Base
 
   def calculate_cluster_resources_in_env(env)
     self.class.transaction do
-      ucrs = Hash[user_cluster_resources.where(environment: env).map do |ucr|
+      ucrs = user_cluster_resources.where(environment: env).to_h do |ucr|
         ucr.value = 0
         [ucr.cluster_resource_id, ucr]
-      end]
+      end
 
       user_cluster_resource_packages.includes(
         cluster_resource_package: [:cluster_resource_package_items]

@@ -49,21 +49,21 @@ module NodeCtld
     def save
       {
         'name' => name,
-        'routes' => Hash[[4, 6].map do |ip_v|
+        'routes' => [4, 6].to_h do |ip_v|
           [ip_v, routes[ip_v].map(&:save)]
-        end]
+        end
       }
     end
 
     protected
 
     def parse_ip_addresses(ips)
-      Hash[[4, 6].map do |ip_v|
+      [4, 6].to_h do |ip_v|
         [
           ip_v,
           ips[ip_v].map { |data| VpsConfig::Route.load(data) }
         ]
-      end]
+      end
     end
   end
 end

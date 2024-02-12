@@ -22,16 +22,14 @@ class VpsFeature < ActiveRecord::Base
     end
   end
 
-  FEATURES = Hash[
-    [
+  FEATURES = [
       Feature.new(:tun, 'TUN/TAP', :all, default: true),
       Feature.new(:fuse, 'FUSE', :all, default: true),
       Feature.new(:ppp, 'PPP', :all),
       Feature.new(:kvm, 'KVM', :all, default: true),
       Feature.new(:lxc, 'LXC nesting', :vpsadminos),
       Feature.new(:apparmor_dirs, 'AppArmor control directories', :vpsadminos)
-    ].map { |f| [f.name, f] }
-  ]
+    ].to_h { |f| [f.name, f] }
 
   validates :name, inclusion: {
     in: FEATURES.keys.map(&:to_s),

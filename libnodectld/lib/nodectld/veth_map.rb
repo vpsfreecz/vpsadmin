@@ -117,7 +117,7 @@ module NodeCtld
 
     def dump
       sync do
-        Hash[@map.map { |k, v| [k.dup, v.clone] }]
+        @map.to_h { |k, v| [k.dup, v.clone] }
       end
     end
 

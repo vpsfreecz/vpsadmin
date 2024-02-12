@@ -49,9 +49,9 @@ module NodeCtld
 
     def stats
       @configure_mutex.synchronize do
-        Hash[@consoles.map do |vps_id, console|
+        @consoles.to_h do |vps_id, console|
           [vps_id, console.sessions.length]
-        end]
+        end
       end
     end
 

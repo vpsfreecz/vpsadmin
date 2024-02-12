@@ -224,7 +224,7 @@ class Transaction < ActiveRecord::Base
 
       translated_attrs =
         if input_attrs.is_a?(::Hash)
-          Hash[input_attrs.map do |k, v|
+          input_attrs.to_h do |k, v|
             ret_v =
               if v === true
                 1
@@ -237,7 +237,7 @@ class Transaction < ActiveRecord::Base
               end
 
             [k.to_s, ret_v]
-          end]
+          end
         else
           input_attrs
         end
