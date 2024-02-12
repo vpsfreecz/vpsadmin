@@ -86,7 +86,7 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
       %i[login full_name email address info].each do |p|
         next unless input[p]
 
-        q = q.where("#{in_params[p].db_name} LIKE ? COLLATE utf8_unicode_ci", "#{input[p]}")
+        q = q.where("#{in_params[p].db_name} LIKE ? COLLATE utf8_unicode_ci", input[p].to_s)
       end
 
       %i[level mailer_enabled].each do |p|

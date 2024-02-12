@@ -168,7 +168,7 @@ module NodeCtld
                 transaction_id: cmd.id,
                 queue: name,
                 type: cmd.type,
-                handler: "#{cmd.handler.split('::')[-2..].join('::')}"
+                handler: cmd.handler.split('::')[-2..].join('::')
               }
             )
           end

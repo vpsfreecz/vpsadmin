@@ -15,7 +15,7 @@ module NodeCtld
         zfs(:promote, nil, new_branch)
 
       else
-        zfs(:create, '-o canmount=noauto -o readonly=on', "#{new_branch}")
+        zfs(:create, '-o canmount=noauto -o readonly=on', new_branch)
       end
     end
 

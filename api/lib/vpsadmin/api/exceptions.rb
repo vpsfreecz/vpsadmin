@@ -120,7 +120,7 @@ module VpsAdmin::API::Exceptions
 
     def initialize(record)
       @resource_use = record
-      super("#{record.errors.to_hash[:value].join(';')}")
+      super(record.errors.to_hash[:value].join(';'))
     end
   end
 

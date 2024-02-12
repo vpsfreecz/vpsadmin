@@ -48,7 +48,7 @@ class SysConfig < ActiveRecord::Base
       %i[label description min_user_level].each do |opt|
         next unless opts.has_key?(opt)
 
-        cfg.send("#{opt}=", opts[opt]) if cfg.send("#{opt}") != opts[opt]
+        cfg.send("#{opt}=", opts[opt]) if cfg.send(opt.to_s) != opts[opt]
       end
 
       cfg.data_type = type.to_s if cfg.data_type != type.to_s
