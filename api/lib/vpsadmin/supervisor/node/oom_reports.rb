@@ -41,6 +41,7 @@ module VpsAdmin::Supervisor
     end
 
     protected
+
     def save_report(report)
       vps = ::Vps.find_by(id: report['vps_id'], node_id: node.id)
       return if vps.nil?

@@ -60,6 +60,7 @@ module NodeCtld
     end
 
     protected
+
     def open_write_console(data)
       token = data['session']
       session = nil

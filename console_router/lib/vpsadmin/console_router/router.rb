@@ -69,6 +69,7 @@ module VpsAdmin::ConsoleRouter
     end
 
     protected
+
     # @param vps_id [Integer]
     # @param session [String]
     # @return [CacheEntry, nil]

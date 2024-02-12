@@ -290,6 +290,7 @@ module VpsAdmin::API
     end
 
     protected
+
     # @param auth_result [AuthResult]
     def render_authorize_page(oauth2_request:, oauth2_response:, sinatra_params:, client:, auth_result: nil)
       # Variables passed to the ERB template
