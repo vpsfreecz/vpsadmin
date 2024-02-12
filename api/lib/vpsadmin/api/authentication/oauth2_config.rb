@@ -165,7 +165,7 @@ module VpsAdmin::API
       end
     end
 
-    def refresh_tokens(authorization, sinatra_request)
+    def refresh_tokens(authorization, _sinatra_request)
       ::ActiveRecord::Base.transaction do
         if authorization.user_session.token
           authorization.user_session.token.destroy!
@@ -197,7 +197,7 @@ module VpsAdmin::API
       end
     end
 
-    def handle_post_revoke(sinatra_request, token, token_type_hint: nil)
+    def handle_post_revoke(_sinatra_request, token, token_type_hint: nil)
       # Find access token
       ::Oauth2Authorization
         .joins(user_session: :token)
@@ -280,7 +280,7 @@ module VpsAdmin::API
       ).take
     end
 
-    def find_user_by_access_token(sinatra_request, access_token)
+    def find_user_by_access_token(_sinatra_request, access_token)
       session = Operations::UserSession::ResumeOAuth2.run(access_token)
       session && session.user
     end
