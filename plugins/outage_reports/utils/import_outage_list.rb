@@ -99,13 +99,13 @@ class OutageParser
         cs_summary: data[:cs_summary],
         en_description: data[:en_description],
         cs_description: data[:cs_description]
-      }.delete_if { |_k, v| v.nil? })
+      }.compact)
       puts "Importing outage ##{outage.id}"
 
       data[:entities].each do |name, id|
         @api.outage.entity.create(
           outage.id,
-          { name:, entity_id: id }.delete_if { |_k, v| v.nil? }
+          { name:, entity_id: id }.compact
         )
       end
 
