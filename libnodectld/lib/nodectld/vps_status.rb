@@ -195,7 +195,7 @@ module NodeCtld
       str = f.readline.strip
       f.close
 
-      @host_uptime - (str.split(' ')[21].to_i / @tics_per_sec)
+      @host_uptime - (str.split[21].to_i / @tics_per_sec)
     end
   end
 end

@@ -7,7 +7,7 @@ module NodeCtld::SystemProbes
 
     def initialize(data = nil)
       data ||= File.read('/proc/loadavg')
-      parsed = data.split(' ')
+      parsed = data.split
 
       @avg = {
         1 => parsed[0].to_f,

@@ -142,11 +142,11 @@ class User < ActiveRecord::Base
   end
 
   def first_name
-    full_name.split(' ').first
+    full_name.split.first
   end
 
   def last_name
-    full_name.split(' ').last
+    full_name.split.last
   end
 
   def last_request_at

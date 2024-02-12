@@ -27,7 +27,7 @@ module VpsAdmin::API::Plugins::Payments::Backends
             comment: t.comment
           )
 
-          p.src_amount, p.src_currency = t.detail_info.split(' ') if t.detail_info
+          p.src_amount, p.src_currency = t.detail_info.split if t.detail_info
 
           begin
             p.save!

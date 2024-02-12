@@ -239,7 +239,7 @@ if $0 == __FILE__
 
   puts "Parsed #{parser.outages.count} outage reports"
 
-  exit(true) if ask('Import? [y/N]') != 'y'
+  exit if ask('Import? [y/N]') != 'y'
 
   puts 'Importing outages'
   parser.import

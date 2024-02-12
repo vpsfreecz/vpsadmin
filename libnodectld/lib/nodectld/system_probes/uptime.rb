@@ -7,7 +7,7 @@ module NodeCtld::SystemProbes
 
     def initialize(data = nil)
       data ||= File.read('/proc/uptime')
-      parsed = data.split(' ')
+      parsed = data.split
 
       @uptime = parsed[0].to_f
       @idle_process = parsed[1].to_f

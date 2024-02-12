@@ -26,7 +26,7 @@ module VpsAdmin
 
       class Md5
         def self.encrypt(*tokens)
-          Digest::MD5.hexdigest(tokens.join(''))
+          Digest::MD5.hexdigest(tokens.join)
         end
 
         def self.matches?(crypted, *tokens)

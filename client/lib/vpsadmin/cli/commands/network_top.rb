@@ -123,7 +123,7 @@ module VpsAdmin::CLI::Commands
           else
             v.capitalize
           end
-        end.join('') + '/s'
+        end.join + '/s'
 
         size = title.size + 1
 
