@@ -8,7 +8,7 @@ module TransactionChains
     # @param period_seconds [Integer]
     # @return [OomPrevention]
     def link_chain(vps:, action:, ooms_in_period:, period_seconds:)
-      unless %i(restart stop).include?(action)
+      unless %i[restart stop].include?(action)
         raise ArgumentError, "unknown action #{action.inspect}"
       end
 

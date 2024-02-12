@@ -14,7 +14,7 @@ module VpsAdmin::API
         ).take
 
       if user_session.nil? \
-         || !%w(active suspended).include?(user_session.user.object_state)
+         || !%w[active suspended].include?(user_session.user.object_state)
         ::UserSession.current = nil
         ::User.current = nil
         return
