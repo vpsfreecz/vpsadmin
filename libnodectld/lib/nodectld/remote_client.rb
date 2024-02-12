@@ -38,7 +38,7 @@ module NodeCtld
     def reply
       buf = ''
 
-      while m = @sock.recv(1024)
+      while (m = @sock.recv(1024))
         buf += m
         break if m[-1].chr == "\n"
       end

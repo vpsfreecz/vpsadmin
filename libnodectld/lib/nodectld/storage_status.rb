@@ -118,7 +118,7 @@ module NodeCtld
 
             name = File.join(pool.fs, prop['dataset_name'])
 
-            if ds = pool.datasets[name]
+            if (ds = pool.datasets[name])
               ds.properties[prop_name] = Property.new(
                 id: prop['property_id'],
                 name: prop_name,

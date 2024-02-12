@@ -144,7 +144,7 @@ class OutageParser
   def get_description(data)
     sep = 'ENGLISH:'
 
-    if pos = data.index(sep)
+    if (pos = data.index(sep))
       [data[0..(pos - 1)].strip, data[(pos + sep.size)..].strip]
 
     else

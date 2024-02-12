@@ -185,7 +185,7 @@ module VpsAdmin::CLI::Commands
         snapshots = ds.snapshot.index
         next if snapshots.empty?
 
-        if vps = ds_map[ds.id]
+        if (vps = ds_map[ds.id])
           puts "VPS ##{vps.id}"
 
         else

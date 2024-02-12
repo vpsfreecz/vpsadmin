@@ -41,7 +41,7 @@ module VpsAdmin::API::Tasks
 
       Dir.foreach(plugin.migration_directory) do |file|
         # match "20091231235959_some_name.rb" and "001_some_name.rb" pattern
-        if match_data = /^(\d{3,})_(.+)\.rb$/.match(file)
+        if (match_data = /^(\d{3,})_(.+)\.rb$/.match(file))
           version = ::ActiveRecord::Base.connection.schema_migration.normalize_migration_number(match_data[1])
           status = db_list.delete(version) ? 'up' : 'down'
           file_list << [status, version, match_data[2].humanize]

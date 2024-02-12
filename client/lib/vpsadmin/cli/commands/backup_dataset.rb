@@ -395,7 +395,7 @@ module VpsAdmin::CLI::Commands
 
         hist_id = ds_name.to_i
 
-        if snap = ret[hist_id].detect { |s| s.name == snap_name }
+        if (snap = ret[hist_id].detect { |s| s.name == snap_name })
           snap.send("#{property}=", value)
 
         else
@@ -497,7 +497,7 @@ module VpsAdmin::CLI::Commands
       ds_map = {}
 
       @api.dataset.index(user: user.id).each do |ds|
-        if vps = vps_map[ds.id]
+        if (vps = vps_map[ds.id])
           puts "(#{i}) VPS ##{vps.id}"
 
         else
