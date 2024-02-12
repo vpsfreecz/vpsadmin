@@ -91,7 +91,7 @@ module VpsAdmin::API
 
     # @return [AuthResult, nil]
     def handle_post_authorize(sinatra_handler:, sinatra_request:, sinatra_params:, oauth2_request:, oauth2_response:, client:)
-      if !sinatra_params[:login]
+      unless sinatra_params[:login]
         return AuthResult.new(cancel: true)
       end
 

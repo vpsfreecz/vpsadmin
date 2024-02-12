@@ -40,7 +40,7 @@ module NodeCtl
         puts "#{i}: #{msg}"
       end
 
-      puts '' if !response[:msgs].empty?
+      puts '' unless response[:msgs].empty?
 
       puts "Killed #{response[:killed]} transactions"
     end

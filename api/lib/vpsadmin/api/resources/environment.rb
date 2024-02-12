@@ -75,13 +75,13 @@ class VpsAdmin::API::Resources::Environment < HaveAPI::Resource
         not_has << 'storage'
       end
 
-      if !has.empty?
+      unless has.empty?
         q = q.joins(locations: :nodes).where(
           nodes: { role: has }
         ).group('environments.id')
       end
 
-      if !not_has.empty?
+      unless not_has.empty?
         q = q.joins(locations: :nodes).where.not(
           nodes: { role: not_has }
         ).group('environments.id')
