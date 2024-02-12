@@ -369,12 +369,12 @@ module TransactionChains
           fmt = '%Y-%m-%d %H:%M:%S'
           t.edit(
             new_primary_vps,
-            expiration_date: primary_vps.expiration_date && \
+            expiration_date: primary_vps.expiration_date &&
                               primary_vps.expiration_date.utc.strftime(fmt)
           )
           t.edit(
             new_secondary_vps,
-            expiration_date: secondary_vps.expiration_date && \
+            expiration_date: secondary_vps.expiration_date &&
                               secondary_vps.expiration_date.utc.strftime(fmt)
           )
         end

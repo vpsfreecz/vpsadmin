@@ -431,7 +431,7 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
       if current_user.role != :admin && ( \
            (ip.user_id && ip.user_id != current_user.id) \
            || (ip.network_interface_id && \
-               ip.network_interface.vps.user_id != current_user.id) \
+               ip.network_interface.vps.user_id != current_user.id)
          )
         error('access denied')
       end

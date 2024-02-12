@@ -190,8 +190,8 @@ module TransactionChains
     def migrate_mine_mount(mnt)
       dst_dip = @ds_map[mnt.dataset_in_pool]
 
-      is_subdataset = \
-        mnt.dataset_in_pool.pool.node_id == @src_vps.node_id && \
+      is_subdataset =
+        mnt.dataset_in_pool.pool.node_id == @src_vps.node_id &&
         mnt.vps.dataset_in_pool.dataset.subtree_ids.include?(
           mnt.dataset_in_pool.dataset.id
         )

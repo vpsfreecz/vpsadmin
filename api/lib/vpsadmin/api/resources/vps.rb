@@ -889,8 +889,8 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
       if current_user.role != :admin && !current_user.env_config(env, :can_create_vps)
         error('insufficient permission to create a VPS in this environment')
 
-      elsif !input[:vps] && \
-            current_user.role != :admin && \
+      elsif !input[:vps] &&
+            current_user.role != :admin &&
             current_user.vps_in_env(env) >= current_user.env_config(env, :max_vps_count)
         error('cannot create more VPSes in this environment')
       end

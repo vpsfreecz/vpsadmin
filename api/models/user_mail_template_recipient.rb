@@ -39,7 +39,7 @@ class UserMailTemplateRecipient < ActiveRecord::Base
   def self.handle_update!(user, template, attrs)
     recp = nil
     empty =
-      (attrs[:to].nil? || attrs[:to].strip.empty?) && \
+      (attrs[:to].nil? || attrs[:to].strip.empty?) &&
       (attrs[:enabled].nil? || attrs[:enabled])
 
     if empty

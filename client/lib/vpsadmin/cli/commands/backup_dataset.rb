@@ -144,7 +144,7 @@ module VpsAdmin::CLI::Commands
       # This is the first run within this history id, no local snapshots are
       # present
       if !latest_local_snapshot && @opts[:init_snapshots]
-        remote_state[ds.current_history_id] = \
+        remote_state[ds.current_history_id] =
           remote_state[ds.current_history_id].last(@opts[:init_snapshots])
       end
 
