@@ -329,9 +329,7 @@ module VpsAdmin::API::Tasks
     def save
       tmp = "#{EXPORT_FILE}.new"
 
-      File.open(tmp, 'w') do |f|
-        f.write(::Prometheus::Client::Formats::Text.marshal(registry))
-      end
+      File.write(tmp, ::Prometheus::Client::Formats::Text.marshal(registry))
 
       File.rename(tmp, EXPORT_FILE)
     end
