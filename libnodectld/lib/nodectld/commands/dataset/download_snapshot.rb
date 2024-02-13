@@ -85,7 +85,7 @@ module NodeCtld
 
           if [0, 32].include?(st.exitstatus)
             Dir.rmdir(dir)
-            return
+            break
           end
 
           sleep(1)
