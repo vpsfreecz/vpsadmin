@@ -34,7 +34,7 @@ class Token < ActiveRecord::Base
       end
     end
 
-    fail 'unable to generate a unique token'
+    raise 'unable to generate a unique token'
   end
 
   def generate
