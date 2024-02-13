@@ -1,7 +1,7 @@
 require 'time'
 require 'json'
 require 'base64'
-require 'terminal-size'
+require 'terminal_size'
 
 module VpsAdmin::CLI::Commands
   class VpsRemoteControl < HaveAPI::CLI::Command
