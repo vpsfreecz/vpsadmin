@@ -225,27 +225,8 @@ module TransactionChains
 
       changes = {}
 
-      # Local -> remote:
-      #   - change mount type
-      #   - clone snapshot if needed
-      if is_local && become_remote
-        mnt.mount_type = 'nfs'
-        mnt.mount_opts = '-n -t nfs -overs=3'
-
-      # Remote -> local:
-      #   - change mount type
-      #   - remote snapshot clone if needed
-      elsif is_remote && become_local
-        mnt.mount_type = 'bind'
-        mnt.mount_opts = '--bind'
-
-      # Remote -> remote:
-      elsif is_remote && become_remote
-
-      # Local -> local:
-      #   - nothing to do
-      elsif is_local && become_local
-
+      if (is_local && become_remote) || (is_remote && become_local)
+        raise 'remote mounts not supported'
       end
 
       if is_subdataset
@@ -308,34 +289,8 @@ module TransactionChains
         raise 'programming error'
       end
 
-      # Local -> remote:
-      #   - change mount type
-      #   - clone snapshot if needed
-      if is_local && become_remote
-        mnt.mount_type = 'nfs'
-        mnt.mount_opts = '-n -t nfs -overs=3'
-
-        raise if is_snapshot
-
-      # Remote -> local:
-      #   - change mount type
-      #   - remote snapshot clone if needed
-      elsif is_remote && become_local
-        mnt.mount_type = 'bind'
-        mnt.mount_opts = '--bind'
-
-        raise if is_snapshot
-
-      # Remote -> remote:
-      #   - update node IP address, remove snapshot on src and create on dst
-      #     node
-      elsif is_remote && become_remote
-        raise if is_snapshot
-
-      # Local -> local:
-      #   - nothing to do
-      elsif is_local && become_local
-
+      if (is_local && become_remote) || (is_remote && become_local)
+        raise 'remote mounts not supported'
       end
 
       mnt.dataset_in_pool = dst_dip
