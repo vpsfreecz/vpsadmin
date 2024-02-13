@@ -96,9 +96,9 @@ module NodeCtld
         begin
           data = @out_r.read_nonblock(4096)
         rescue IO::WaitReadable
-          _, _, errs = IO.select([@out_r])
+          res = @out_r.wait_readable
 
-          if errs.any?
+          unless res
             @alive = false
             return
           end

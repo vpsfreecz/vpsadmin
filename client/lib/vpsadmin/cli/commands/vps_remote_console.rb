@@ -1,6 +1,7 @@
 require 'time'
 require 'json'
 require 'base64'
+require 'io/wait'
 require 'terminal_size'
 
 module VpsAdmin::CLI::Commands
@@ -287,7 +288,7 @@ module VpsAdmin::CLI::Commands
       client.start
 
       loop do
-        res = IO.select([$stdin], [], [], 1)
+        res = $stdin.wait_readable(1)
         input.read_from($stdin) if res
 
         next unless input.stop? || client.stop?
