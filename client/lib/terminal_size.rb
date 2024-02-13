@@ -27,7 +27,7 @@ class Terminal
       return unless code
 
       buf = IOCTL_INPUT_BUF.dup
-      return unless $stdout.ioctl(code, buf).zero?
+      return if $stdout.ioctl(code, buf) != 0
       return if buf == IOCTL_INPUT_BUF
 
       got = buf.unpack('S4')[0..1]
