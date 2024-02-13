@@ -2,6 +2,7 @@
 # This script orders IP addresses in the database to represent the order in
 # which VPSes see them.
 
+# rubocop:disable Style/GlobalVars
 require '/opt/vpsadmind/lib/vpsadmind/standalone'
 
 include VpsAdmind::Utils::System
@@ -51,3 +52,5 @@ rs.each_hash do |row|
     next
   end
 end
+
+# rubocop:enable all

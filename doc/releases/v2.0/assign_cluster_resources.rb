@@ -65,16 +65,17 @@ User.transaction do
 
         # Translate configs to cluster resources
         vps.vps_configs.each do |cfg|
-          if /\Aram-vswap-(\d+)g-swap-0g\z/ =~ cfg.name
+          case cfg.name
+          when /\Aram-vswap-(\d+)g-swap-0g\z/
             vps_resources[:memory] = $~[1].to_i * 1024
 
-          elsif /\Aswap-(\d+)g\z/ =~ cfg.name
+          when /\Aswap-(\d+)g\z/
             vps_resources[:swap] = $~[1].to_i * 1024
 
-          elsif /\Acpu-(\d+)c-\d+\z/ =~ cfg.name
+          when /\Acpu-(\d+)c-\d+\z/
             vps_resources[:cpu] = $~[1].to_i
 
-          elsif /\Ahdd-(\d+)g\z/ =~ cfg.name
+          when /\Ahdd-(\d+)g\z/
             vps_resources[:diskspace] = $~[1].to_i * 1024
 
           else
