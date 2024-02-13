@@ -30,7 +30,7 @@ class UserNamespaceMapEntry < ActiveRecord::Base
 
     elsif ns_id + count > max_size
       errors.add(:count, "for ns_id=#{ns_id}, maximum count value is " \
-                 "#{max_size - ns_id}")
+                         "#{max_size - ns_id}")
     end
   end
 end
