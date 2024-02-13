@@ -2,11 +2,11 @@ module VpsAdmin
   module MailTemplates; end
 end
 
-require_relative 'mail-templates/cli'
-require_relative 'mail-templates/meta'
-require_relative 'mail-templates/template'
-require_relative 'mail-templates/translation'
-require_relative 'mail-templates/version'
+require_relative 'mail_templates/cli'
+require_relative 'mail_templates/meta'
+require_relative 'mail_templates/template'
+require_relative 'mail_templates/translation'
+require_relative 'mail_templates/version'
 
 def template(id = nil, &block)
   VpsAdmin::MailTemplates::Meta.load(id, block)

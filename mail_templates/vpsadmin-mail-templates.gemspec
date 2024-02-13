@@ -1,6 +1,6 @@
 lib = File.expand_path('lib', __dir__)
 $:.unshift(lib) unless $:.include?(lib)
-require 'vpsadmin/mail-templates/version'
+require 'vpsadmin/mail_templates/version'
 
 Gem::Specification.new do |s|
   s.name        = 'vpsadmin-mail-templates'

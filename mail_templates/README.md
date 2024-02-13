@@ -39,7 +39,7 @@ The template directory may contain files with names in format
 `<language>.<format>.erb`, e.g. `en.plain.erb` or `en.html.erb`.
 
 For example usage, see
-[vpsfree-mail-templates](https://github.com/vpsfreecz/vpsfree-mail-templats).
+[vpsfree-mail-templates](https://github.com/vpsfreecz/vpsfree-mail-templates).
 
 ## `meta.rb` format
 It is a standard Ruby file. There is one predefined method `template`. It has no

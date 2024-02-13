@@ -1,4 +1,4 @@
 #!/usr/bin/env ruby
-require_relative '../lib/vpsadmin/mail-templates'
+require_relative '../lib/vpsadmin/mail_templates'
 
 VpsAdmin::MailTemplates::Cli.run
