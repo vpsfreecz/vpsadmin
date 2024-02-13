@@ -3,12 +3,12 @@ require 'selenium-webdriver'
 require 'rspec'
 include RSpec::Expectations
 
-describe 'User payset' do
-  # TODO: find a better way of inputting credentials
-  USERNAME = ''.freeze
-  PASSWORD = ''.freeze
-  USER_ID = 1754
+# TODO: find a better way of inputting credentials
+USERNAME = ''.freeze
+PASSWORD = ''.freeze
+USER_ID = 1754
 
+describe 'User payset' do
   before(:all) do
     @driver = Selenium::WebDriver.for(:firefox)
     @driver.manage.timeouts.implicit_wait = 5
