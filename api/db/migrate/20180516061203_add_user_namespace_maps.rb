@@ -97,6 +97,8 @@ class AddUserNamespaceMaps < ActiveRecord::Migration
     # Reversing this migration is too much of unnecessary work
     raise ActiveRecord::IrreversibleMigration
 
+    # rubocop:disable Lint/UnreachableCode
+
     create_table :user_namespace_ugids do |t|
       t.references :user_namespace,      null: true
       t.integer    :ugid,                null: false, unsigned: true
@@ -132,5 +134,7 @@ class AddUserNamespaceMaps < ActiveRecord::Migration
     drop_table :user_namespace_map_ugids
     drop_table :user_namespace_map_entries
     drop_table :user_namespace_maps
+
+    # rubocop:enable all
   end
 end
