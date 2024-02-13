@@ -48,7 +48,7 @@ module VpsAdmin::ConsoleRouter
     # @param session [String]
     # @return [Boolean]
     def check_session(vps_id, session)
-      get_session(vps_id, session).nil? ? false : true
+      !get_session(vps_id, session).nil?
     end
 
     # Write data to console and read from it
