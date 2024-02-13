@@ -106,9 +106,6 @@ module VpsAdmin::API
               && sinatra_params[:new_password1] \
               && sinatra_params[:new_password2]
           reset_password(sinatra_request, sinatra_params, oauth2_request, oauth2_response, client)
-
-        else
-          nil
         end
 
       if auth_result.nil? || !auth_result.authenticated || !auth_result.complete

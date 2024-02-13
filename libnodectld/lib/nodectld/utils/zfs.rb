@@ -37,8 +37,6 @@ module NodeCtld
             next if INHERIT_EXCEPTIONS.include?(name)
 
             @cmd.zfs(:inherit, name, ds)
-          else
-            # :temporary, nothing to do
           end
         end
         true
