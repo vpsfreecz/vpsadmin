@@ -101,16 +101,17 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
       end
 
       if input[:location]
-        if current_user.role == :admin
-          locs = ::LocationNetwork.where(
-            location: input[:location]
-          ).pluck(:network_id)
-        else
-          locs = ::LocationNetwork.where(
-            location: input[:location],
-            userpick: true
-          ).pluck(:network_id)
-        end
+        locs =
+          if current_user.role == :admin
+            ::LocationNetwork.where(
+              location: input[:location]
+            ).pluck(:network_id)
+          else
+            ::LocationNetwork.where(
+              location: input[:location],
+              userpick: true
+            ).pluck(:network_id)
+          end
 
         ips = ips.where(networks: { id: locs })
       end
