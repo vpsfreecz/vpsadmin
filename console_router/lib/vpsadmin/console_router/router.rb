@@ -165,7 +165,7 @@ module VpsAdmin::ConsoleRouter
           content_type: 'application/json'
         )
       rescue Bunny::ConnectionClosedError
-        return
+        # return
       end
     end
 
