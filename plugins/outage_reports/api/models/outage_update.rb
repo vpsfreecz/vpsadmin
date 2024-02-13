@@ -17,13 +17,11 @@ class OutageUpdate < ActiveRecord::Base
   after_initialize :load_translations
   before_validation :set_name
 
+  # Set the origin for attribute changes
+  attr_writer :origin
+
   def outage_type
     outage.outage_type
-  end
-
-  # Set the origin for attribute changes
-  def origin=(attrs)
-    @origin = attrs
   end
 
   # @yieldparam attribute [Symbol]
