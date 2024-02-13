@@ -11,7 +11,7 @@ class Location < ActiveRecord::Base
   validates :label, :domain, presence: true
   validates :has_ipv6, inclusion: { in: [true, false] }
   validates :domain, format: {
-    with: /[[0-9a-zA-Z\-.]{3,255}]/,
+    with: /\A[0-9a-zA-Z\-.]{3,255}\Z/,
     message: 'invalid format'
   }
   validates :remote_console_server, allow_blank: true, format: {
