@@ -20,7 +20,7 @@ class UserSession < ActiveRecord::Base
   # @param token_lifetime [String]
   # @param token_interval [Integer, nil]
   def refresh_token!(token_lifetime, token_interval)
-    old_token = self.token
+    old_token = token
 
     valid_to = token_lifetime == 'permanent' ? nil : Time.now + token_interval
     new_token = ::Token.get!(owner: self, valid_to:)
@@ -34,7 +34,7 @@ class UserSession < ActiveRecord::Base
   end
 
   def close!
-    old_token = self.token
+    old_token = token
 
     update!(
       token: nil,
