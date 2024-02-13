@@ -94,7 +94,7 @@ module NodeCtld
     protected
 
     def confirm(t, trans, dir, success = nil)
-      success = success.nil? ? trans['status'].to_i > 0 : success
+      success = trans['status'].to_i > 0 if success.nil?
       pk = pk_cond(load_yaml(trans['row_pks']))
 
       case trans['confirm_type'].to_i
