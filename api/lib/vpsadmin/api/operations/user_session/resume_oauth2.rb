@@ -11,7 +11,7 @@ module VpsAdmin::API
                      .where(
                        'tokens.token = ? AND ((token_lifetime = 3 AND tokens.valid_to IS NULL) OR tokens.valid_to >= ?)',
                        token, Time.now
-        ).take
+                     ).take
 
       if user_session.nil? \
          || !%w[active suspended].include?(user_session.user.object_state)
