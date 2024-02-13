@@ -118,9 +118,6 @@ module TransactionChains
 
     protected
 
-    # TODO:
-    #   - we might want to divide addresses by purpose -- VPS or NFS exports, etc.
-    #   - /32 is enough, we shouldn't take larger addresses
     def pick_ip_address(user, location)
       loop do
         ip = nil
