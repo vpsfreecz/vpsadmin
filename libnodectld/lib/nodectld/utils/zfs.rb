@@ -23,6 +23,10 @@ module NodeCtld
         super(name)
       end
 
+      def respond_to_missing?(name, *)
+        @props.has_key?(name)
+      end
+
       def apply_to(ds)
         @props.each do |name, prop|
           case prop.source

@@ -20,5 +20,9 @@ module NodeCtld::SystemProbes
 
       super(name, *args)
     end
+
+    def respond_to_missing?(name, *args)
+      @data.has_key?(name) && args.empty?
+    end
   end
 end
