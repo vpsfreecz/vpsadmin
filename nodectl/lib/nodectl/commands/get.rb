@@ -115,7 +115,7 @@ module NodeCtl
 
         else
           if opts[:header]
-            puts format(
+            puts format( # rubocop:disable Lint/FormatParameterMismatch
               "%-10s %5s %-10s %8s %8s %8s %6s #{(['%12s'] * 4 * 3).join(' ')}",
               'VPS', 'USER', 'NETIF', 'NETIF_ID',
               'UPDATE', 'LOG', 'DELTA',
