@@ -35,8 +35,6 @@ module Lockable
       if code_block
         begin
           code_block.call(lock)
-        rescue StandardError
-          raise
         ensure
           lock.release
         end
