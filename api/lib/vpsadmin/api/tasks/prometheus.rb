@@ -6,6 +6,7 @@ module VpsAdmin::API::Tasks
     EXPORT_FILE = ENV['EXPORT_FILE'] || '/run/metrics/vpsadmin.prom'
 
     def initialize
+      super
       @registry = ::Prometheus::Client.registry
 
       @user_count = registry.gauge(

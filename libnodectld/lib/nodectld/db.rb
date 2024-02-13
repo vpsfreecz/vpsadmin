@@ -173,7 +173,7 @@ module NodeCtld
   end
 
   class DbTransaction < Db
-    def initialize(my)
+    def initialize(my) # rubocop:disable Lint/MissingSuper
       @my = my
     end
 

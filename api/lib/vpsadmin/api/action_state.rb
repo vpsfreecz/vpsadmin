@@ -19,7 +19,7 @@ module VpsAdmin::API
       ret
     end
 
-    def initialize(user, id: nil, state: nil)
+    def initialize(user, id: nil, state: nil) # rubocop:disable Lint/MissingSuper
       return if user.nil?
 
       @chain = state || ::TransactionChain.find_by(

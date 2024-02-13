@@ -19,6 +19,7 @@ module VpsAdmin
     # Internal UNIX domain socket server.
     class Server < EventMachine::Connection
       def initialize(scheduler)
+        super()
         @scheduler = scheduler
       end
 

@@ -38,6 +38,7 @@ module NodeCtl
       def run; end
 
       def inherited(subclass)
+        super
         subclass.args(@args)
       end
     end
