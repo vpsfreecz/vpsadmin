@@ -2,12 +2,12 @@ module TransactionChains
   class UserNamespace::Allocate < ::TransactionChain
     label 'Allocate userns'
 
-    AvailableRange = Struct.new(:first, :last) do
+    AvailableRange = Struct.new(:first_block, :last_block) do
       def blocks
         t = ::UserNamespaceBlock.table_name
 
         ::UserNamespaceBlock.where(
-          "#{t}.index >= ? AND #{t}.index <= ?", first.index, last.index
+          "#{t}.index >= ? AND #{t}.index <= ?", first_block.index, last_block.index
         ).order("#{t}.index")
       end
     end
@@ -42,8 +42,8 @@ module TransactionChains
       locks = []
 
       ranges.each do |range|
-        locks << lock(range.first)
-        locks << lock(range.last)
+        locks << lock(range.first_block)
+        locks << lock(range.last_block)
 
         blocks = range.blocks
         blocks.each { |blk| locks << lock(blk) }
