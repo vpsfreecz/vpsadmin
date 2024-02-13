@@ -120,7 +120,7 @@ module NodeCtld
         now = Time.now
 
         @configure_mutex.synchronize do
-          @consoles.delete_if do |vps_id, console|
+          @consoles.delete_if do |_vps_id, console|
             # Remove dead consoles
             unless console.alive?
               close_console(console)

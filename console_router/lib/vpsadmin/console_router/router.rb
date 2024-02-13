@@ -176,7 +176,7 @@ module VpsAdmin::ConsoleRouter
         sync do
           now = Time.now
 
-          @cache.delete_if do |key, entry|
+          @cache.delete_if do |_key, entry|
             if entry.last_use + 60 < now
               entry.channel.close
               true
