@@ -51,7 +51,7 @@ module NodeCtld
 
     protected
 
-    attr_reader :file, :parse_queue, :submit_queue, :stop, :event
+    attr_reader :file, :parse_queue, :submit_queue, :event
 
     def read_thread
       log(:info, "Reading from #{file}")
@@ -62,7 +62,7 @@ module NodeCtld
       last_time = Time.now
 
       loop do
-        break if stop
+        break if @stop
 
         begin
           line = io.readline

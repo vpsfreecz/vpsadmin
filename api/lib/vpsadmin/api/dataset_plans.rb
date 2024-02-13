@@ -168,7 +168,7 @@ module VpsAdmin::API
         end
       end
 
-      attr_reader :name, :label, :desc
+      attr_reader :name, :desc
 
       def initialize(name, label, desc, &block)
         @name = name
