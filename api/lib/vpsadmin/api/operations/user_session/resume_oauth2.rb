@@ -10,7 +10,7 @@ module VpsAdmin::API
                      .where(auth_type: 'oauth2', closed_at: nil)
                      .where(
                        'tokens.token = ? AND ((token_lifetime = 3 AND tokens.valid_to IS NULL) OR tokens.valid_to >= ?)',
-          token, Time.now
+                       token, Time.now
         ).take
 
       if user_session.nil? \
