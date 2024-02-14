@@ -280,11 +280,11 @@ module NodeCtld
         end
       end
 
-      def sync
+      def sync(&)
         if @mutex.owned?
           yield
         else
-          @mutex.synchronize(&block)
+          @mutex.synchronize(&)
         end
       end
 
