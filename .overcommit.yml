@@ -1,6 +1,9 @@
 PreCommit:
   RuboCop:
     enabled: true
+  PhpCsFixer:
+    enabled: true
+    command: 'php-cs-fixer'
 CommitMsg:
   CapitalizedSubject:
     enabled: false

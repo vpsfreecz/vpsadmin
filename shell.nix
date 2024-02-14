@@ -17,6 +17,7 @@ in stdenv.mkDerivation rec {
     zlib
     mariadb
     mariadb-connector-c
+    phpPackages.php-cs-fixer
   ];
 
   shellHook = ''
