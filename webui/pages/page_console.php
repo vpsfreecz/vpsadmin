@@ -1,6 +1,7 @@
 <?php
 
-function setup_console() {
+function setup_console()
+{
     global $xtpl, $api;
 
     try {
@@ -28,8 +29,9 @@ function setup_console() {
         return;
     }
 
-    $xtpl->perex(_('Remote Console for VPS').' <a href="?page=adminvps&action=info&veid='.$vps->id.'">#'.$vps->id.'</a>',
-        '<iframe src="'.$server.'/console/'.$vps->id.'?auth_type='.$_SESSION['auth_type'].'&auth_token='.getAuthenticationToken().'&session='.$t->token.'" width="100%" height="500px" border="1" id="vpsadmin-console-frame"></iframe>
+    $xtpl->perex(
+        _('Remote Console for VPS') . ' <a href="?page=adminvps&action=info&veid=' . $vps->id . '">#' . $vps->id . '</a>',
+        '<iframe src="' . $server . '/console/' . $vps->id . '?auth_type=' . $_SESSION['auth_type'] . '&auth_token=' . getAuthenticationToken() . '&session=' . $t->token . '" width="100%" height="500px" border="1" id="vpsadmin-console-frame"></iframe>
 <script type="text/javascript">
 var _theframe = document.getElementById("vpsadmin-console-frame");
 _theframe.contentWindow.location.href = _theframe.src;
@@ -41,7 +43,7 @@ _theframe.contentWindow.location.href = _theframe.src;
 <script type="text/javascript">
 function vps_do(cmd) {
 	apiClient.after("authenticated", function() {
-		apiClient.vps[cmd]('.$vps->id.', function(c, reply) {
+		apiClient.vps[cmd](' . $vps->id . ', function(c, reply) {
 			if (!reply.isOk())
 				alert(cmd + " failed: " + reply.apiResponse().message());
 		});
@@ -50,7 +52,7 @@ function vps_do(cmd) {
 function vps_passwd(cmd) {
 	apiClient.after("authenticated", function() {
 		apiClient.vps.passwd(
-			'.$vps->id.',
+			' . $vps->id . ',
 			{
 				params: {type: "simple"},
 				onReply: function(c, reply) {
@@ -77,19 +79,19 @@ function vps_boot(cmd) {
 		var mnt = $("input[name=\"root_mountpoint\"]").val();
 
 		apiClient.vps.boot(
-			'.$vps->id.',
+			' . $vps->id . ',
 			{
 				params: {os_template: tpl, mount_root_dataset: mnt},
 				onReply: function(c, reply) {
 					if (reply.isOk()) {
-						$("#boot-button").text("'._('Booting...').'")
+						$("#boot-button").text("' . _('Booting...') . '")
 					} else {
 						alert("Boot failed: " + reply.apiResponse().message());
 					}
 				},
 				onDone: function(c, reply) {
 					if (reply.isOk()) {
-						$("#boot-button").text("'._('Boot').'")
+						$("#boot-button").text("' . _('Boot') . '")
 					} else {
 						alert("Boot failed: " + reply.apiResponse().message());
 					}
@@ -100,36 +102,36 @@ function vps_boot(cmd) {
 }
 </script>
 ');
-    $xtpl->sbar_add('<img src="template/icons/vps_start.png"  title="'._("Start").'" /> ' . _("Start"), "javascript:vps_do('start');");
-    $xtpl->sbar_add('<img src="template/icons/vps_stop.png"  title="'._("Stop").'" /> ' . _("Stop"), "javascript:vps_do('stop');");
-    $xtpl->sbar_add('<img src="template/icons/vps_restart.png"  title="'._("Restart").'" /> ' . _("Restart"), "javascript:vps_do('restart');");
+    $xtpl->sbar_add('<img src="template/icons/vps_start.png"  title="' . _("Start") . '" /> ' . _("Start"), "javascript:vps_do('start');");
+    $xtpl->sbar_add('<img src="template/icons/vps_stop.png"  title="' . _("Stop") . '" /> ' . _("Stop"), "javascript:vps_do('stop');");
+    $xtpl->sbar_add('<img src="template/icons/vps_restart.png"  title="' . _("Restart") . '" /> ' . _("Restart"), "javascript:vps_do('restart');");
 
     $xtpl->sbar_add_fragment(
-        '<h3>'._('Set password').'</h3>'.
-        '<table>'.
-        '<tr><td>'._('User').': </td><td>root</td></tr>'.
-        '<tr>'.
-        '<td>'._('Password').': </td>'.
-        '<td><span id="root-password">'._('will be generated').'</span></td>'.
-        '</tr><tr><td colspan="2"><strong>'._('Change the password to something secure when finished!').'</strong></td></tr>'.
-        '<tr>'.
-        '<td></td><td><button onclick="vps_passwd();">'._('Generate password').'</button></td>'.
+        '<h3>' . _('Set password') . '</h3>' .
+        '<table>' .
+        '<tr><td>' . _('User') . ': </td><td>root</td></tr>' .
+        '<tr>' .
+        '<td>' . _('Password') . ': </td>' .
+        '<td><span id="root-password">' . _('will be generated') . '</span></td>' .
+        '</tr><tr><td colspan="2"><strong>' . _('Change the password to something secure when finished!') . '</strong></td></tr>' .
+        '<tr>' .
+        '<td></td><td><button onclick="vps_passwd();">' . _('Generate password') . '</button></td>' .
         '</tr></table>'
     );
 
     $os_templates = list_templates($vps);
 
     $xtpl->sbar_add_fragment(
-        '<h3>'._('Rescue mode').'</h3>'.
-        '<table>'.
-        '<tr>'.
-        '<td>'._('Distribution').': </td>'.
-        '<td>'.$xtpl->form_select_html('os_template', $os_templates, $vps->os_template_id).'</td>'.
-        '</tr><tr>'.
-        '<td>'._('Root dataset mountpoint').': </td>'.
-        '<td><input type="text" name="root_mountpoint" value="/mnt/vps"></td>'.
-        '</tr><tr>'.
-        '<td></td><td><button id="boot-button" onclick="vps_boot();">'._('Boot').'</button></td>'.
+        '<h3>' . _('Rescue mode') . '</h3>' .
+        '<table>' .
+        '<tr>' .
+        '<td>' . _('Distribution') . ': </td>' .
+        '<td>' . $xtpl->form_select_html('os_template', $os_templates, $vps->os_template_id) . '</td>' .
+        '</tr><tr>' .
+        '<td>' . _('Root dataset mountpoint') . ': </td>' .
+        '<td><input type="text" name="root_mountpoint" value="/mnt/vps"></td>' .
+        '</tr><tr>' .
+        '<td></td><td><button id="boot-button" onclick="vps_boot();">' . _('Boot') . '</button></td>' .
         '</tr></table>'
     );
 

@@ -1,17 +1,18 @@
 <?php
 
-function get_helpbox($page = null, $action = null) {
+function get_helpbox($page = null, $action = null)
+{
     global $api;
 
-    if (!$api->help_box){
+    if (!$api->help_box) {
         return '';
     }
 
-    if (!$page){
+    if (!$page) {
         $page = isset($_GET["page"]) ? $_GET["page"] : null;
     }
 
-    if (!$action){
+    if (!$action) {
         $action = isset($_GET["action"]) ? $_GET["action"] : null;
     }
 
@@ -24,8 +25,9 @@ function get_helpbox($page = null, $action = null) {
 
     $ret = '';
 
-    foreach ($boxes as $box)
-        $ret .= $box->content.'<br>';
+    foreach ($boxes as $box) {
+        $ret .= $box->content . '<br>';
+    }
 
     return $ret;
 }

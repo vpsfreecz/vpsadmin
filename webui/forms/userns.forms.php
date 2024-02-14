@@ -1,10 +1,12 @@
 <?php
 
-function userns_or_map_list() {
+function userns_or_map_list()
+{
     global $xtpl, $api;
 
-    if (isAdmin())
+    if (isAdmin()) {
         return userns_list();
+    }
 
     $ret = $api->user_namespace->list(['limit' => 0, 'meta' => ['count' => true]]);
     $cnt = $ret->getTotalCount();
@@ -23,7 +25,8 @@ function userns_or_map_list() {
     }
 }
 
-function userns_submenu () {
+function userns_submenu()
+{
     global $xtpl;
 
     $xtpl->sbar_add(_("User namespaces"), '?page=userns&action=list');
@@ -31,15 +34,17 @@ function userns_submenu () {
     $xtpl->sbar_add(_("New UID/GID map"), '?page=userns&action=map_new');
 }
 
-function userns_list() {
+function userns_list()
+{
     global $xtpl, $api;
 
     $xtpl->title(_('User namespaces'));
     $xtpl->table_title(_('Filters'));
     $xtpl->form_create('', 'get', 'userns-list', false);
 
-    $xtpl->table_td(_("Limit").':'.
-        '<input type="hidden" name="page" value="userns">'.
+    $xtpl->table_td(
+        _("Limit") . ':' .
+        '<input type="hidden" name="page" value="userns">' .
         '<input type="hidden" name="action" value="list">'
     );
     $xtpl->form_add_input_pure('text', '40', 'limit', get_val('limit', '25'), '');
@@ -48,7 +53,7 @@ function userns_list() {
     $input = $api->user_namespace->list->getParameters('input');
 
     if ($_SESSION['is_admin']) {
-        $xtpl->form_add_input(_('User ID').':', 'text', '30', 'user', get_val('user'), '');
+        $xtpl->form_add_input(_('User ID') . ':', 'text', '30', 'user', get_val('user'), '');
         api_param_to_form('block_count', $input->block_count, $_GET['block_count']);
     }
 
@@ -65,8 +70,9 @@ function userns_list() {
     ];
 
     foreach ($filters as $v) {
-        if ($_GET[$v])
+        if ($_GET[$v]) {
             $params[$v] = $_GET[$v];
+        }
     }
 
     $userns_list = $api->user_namespace->list($params);
@@ -85,7 +91,7 @@ function userns_list() {
 
     foreach ($userns_list as $uns) {
         $xtpl->table_td(
-            '<a href="?page=userns&action=show&id='.$uns->id.'">'.$uns->id.'</a>'
+            '<a href="?page=userns&action=show&id=' . $uns->id . '">' . $uns->id . '</a>'
         );
 
         if ($_SESSION['is_admin']) {
@@ -96,10 +102,10 @@ function userns_list() {
 
         $xtpl->table_td($uns->size, false, true);
         $xtpl->table_td(
-            '<a href="?page=userns&action=maps&user_namespace='.$uns->id.'"><img src="template/icons/vps_ip_list.png" alt="'._('List UID/GID maps').'" title="'._('List UID/GID maps').'"></a>'
+            '<a href="?page=userns&action=maps&user_namespace=' . $uns->id . '"><img src="template/icons/vps_ip_list.png" alt="' . _('List UID/GID maps') . '" title="' . _('List UID/GID maps') . '"></a>'
         );
         $xtpl->table_td(
-            '<a href="?page=userns&action=show&id='.$uns->id.'"><img src="template/icons/vps_edit.png" alt="'._('Details').'" title="'._('Details').'"></a>'
+            '<a href="?page=userns&action=show&id=' . $uns->id . '"><img src="template/icons/vps_edit.png" alt="' . _('Details') . '" title="' . _('Details') . '"></a>'
         );
         $xtpl->table_tr();
     }
@@ -107,47 +113,50 @@ function userns_list() {
     $xtpl->table_out();
 }
 
-function userns_show ($userns_id) {
+function userns_show($userns_id)
+{
     global $xtpl, $api;
 
     $uns = $api->user_namespace->show($userns_id);
 
-    $xtpl->title(_('User namespace').' #'.$uns->id);
+    $xtpl->title(_('User namespace') . ' #' . $uns->id);
 
     $xtpl->table_title(_('Info'));
-    $xtpl->table_td(_('ID').':');
+    $xtpl->table_td(_('ID') . ':');
     $xtpl->table_td($uns->id);
     $xtpl->table_tr();
 
     if (isAdmin()) {
-        $xtpl->table_td(_('User').':');
+        $xtpl->table_td(_('User') . ':');
         $xtpl->table_td($uns->user_id ? user_link($uns->user) : '-');
         $xtpl->table_tr();
 
-        $xtpl->table_td(_('Offset').':');
+        $xtpl->table_td(_('Offset') . ':');
         $xtpl->table_td($uns->offset);
         $xtpl->table_tr();
 
-        $xtpl->table_td(_('Blocks').':');
+        $xtpl->table_td(_('Blocks') . ':');
         $xtpl->table_td($uns->block_count);
         $xtpl->table_tr();
     }
 
-    $xtpl->table_td(_('Size').':');
+    $xtpl->table_td(_('Size') . ':');
     $xtpl->table_td($uns->size);
     $xtpl->table_tr();
 
     $xtpl->table_out();
 }
 
-function userns_map_list ($userns_id = null) {
+function userns_map_list($userns_id = null)
+{
     global $xtpl, $api;
 
     $xtpl->table_title(_('UID/GID maps'));
     $xtpl->form_create('', 'get', 'userns-map-list', false);
 
-    $xtpl->table_td(_("Limit").':'.
-        '<input type="hidden" name="page" value="userns">'.
+    $xtpl->table_td(
+        _("Limit") . ':' .
+        '<input type="hidden" name="page" value="userns">' .
         '<input type="hidden" name="action" value="maps">'
     );
     $xtpl->form_add_input_pure('text', '40', 'limit', get_val('limit', '25'), '');
@@ -156,8 +165,8 @@ function userns_map_list ($userns_id = null) {
     $input = $api->user_namespace_map->list->getParameters('input');
 
     if ($_SESSION['is_admin']) {
-        $xtpl->form_add_input(_('User ID').':', 'text', '30', 'user', get_val('user'), '');
-        $xtpl->form_add_input(_('User namespace ID').':', 'text', '30', 'user_namespace', get_val('user_namespace'), '');
+        $xtpl->form_add_input(_('User ID') . ':', 'text', '30', 'user', get_val('user'), '');
+        $xtpl->form_add_input(_('User namespace ID') . ':', 'text', '30', 'user_namespace', get_val('user_namespace'), '');
     }
 
     $xtpl->form_out(_('Show'));
@@ -172,8 +181,9 @@ function userns_map_list ($userns_id = null) {
     ];
 
     foreach ($filters as $v) {
-        if ($_GET[$v])
+        if ($_GET[$v]) {
             $params[$v] = $_GET[$v];
+        }
     }
 
     $maps = $api->user_namespace_map->list($params);
@@ -192,7 +202,7 @@ function userns_map_list ($userns_id = null) {
 
     foreach ($maps as $m) {
         $xtpl->table_td(
-            '<a href="?page=userns&action=map_show&id='.$m->id.'">'.$m->id.'</a>'
+            '<a href="?page=userns&action=map_show&id=' . $m->id . '">' . $m->id . '</a>'
         );
 
         if ($_SESSION['is_admin']) {
@@ -200,22 +210,22 @@ function userns_map_list ($userns_id = null) {
         }
 
         $xtpl->table_td(
-            '<a href="?page=userns&action=show&id='.$m->user_namespace->id.'">'.
-            $m->user_namespace->id.
-            '</a>'.
-            ' '.
-            '('.$m->user_namespace->size.' '._('IDs').')'
+            '<a href="?page=userns&action=show&id=' . $m->user_namespace->id . '">' .
+            $m->user_namespace->id .
+            '</a>' .
+            ' ' .
+            '(' . $m->user_namespace->size . ' ' . _('IDs') . ')'
         );
         $xtpl->table_td($m->label);
         $xtpl->table_td(
-            '<a href="?page=adminvps&action=list&user_namespace_map='.$m->id.'"><img src="template/icons/vps_ip_list.png" alt="'._('List VPS').'" title="'._('List VPS').'"></a>'
+            '<a href="?page=adminvps&action=list&user_namespace_map=' . $m->id . '"><img src="template/icons/vps_ip_list.png" alt="' . _('List VPS') . '" title="' . _('List VPS') . '"></a>'
         );
         $xtpl->table_td(
-            '<a href="?page=userns&action=map_show&id='.$m->id.'"><img src="template/icons/vps_edit.png" alt="'._('Details').'" title="'._('Details').'"></a>'
+            '<a href="?page=userns&action=map_show&id=' . $m->id . '"><img src="template/icons/vps_edit.png" alt="' . _('Details') . '" title="' . _('Details') . '"></a>'
         );
         $xtpl->table_td(
-            '<a href="?page=userns&action=map_del&id='.$m->id.'&t='.csrf_token().'">'.
-            '<img src="template/icons/m_delete.png" title="'._('Delete').'">'.
+            '<a href="?page=userns&action=map_del&id=' . $m->id . '&t=' . csrf_token() . '">' .
+            '<img src="template/icons/m_delete.png" title="' . _('Delete') . '">' .
             '</a>'
         );
         $xtpl->table_tr();
@@ -224,34 +234,35 @@ function userns_map_list ($userns_id = null) {
     $xtpl->table_out();
 }
 
-function userns_map_show ($map_id) {
+function userns_map_show($map_id)
+{
     global $xtpl, $api;
 
     $m = $api->user_namespace_map->show($map_id);
 
-    $xtpl->title(_('UID/GID map').' #'.$m->id.' - '.$m->label);
+    $xtpl->title(_('UID/GID map') . ' #' . $m->id . ' - ' . $m->label);
 
-    $xtpl->form_create('?page=userns&action=map_edit&id='.$m->id, 'post');
-    $xtpl->table_td(_('User namespace').':');
+    $xtpl->form_create('?page=userns&action=map_edit&id=' . $m->id, 'post');
+    $xtpl->table_td(_('User namespace') . ':');
     $xtpl->table_td(
-        '<a href="?page=userns&action=show&id='.$m->user_namespace->id.'">'.
-        $m->user_namespace->id.
+        '<a href="?page=userns&action=show&id=' . $m->user_namespace->id . '">' .
+        $m->user_namespace->id .
         '</a>'
     );
     $xtpl->table_tr();
 
-    $xtpl->table_td(_('Namespace size').':');
-    $xtpl->table_td($m->user_namespace->size.' '._('IDs'));
+    $xtpl->table_td(_('Namespace size') . ':');
+    $xtpl->table_td($m->user_namespace->size . ' ' . _('IDs'));
     $xtpl->table_tr();
 
-    $xtpl->form_add_input(_('Map label').':', 'text', '40', 'label', post_val('label', $m->label), '');
+    $xtpl->form_add_input(_('Map label') . ':', 'text', '40', 'label', post_val('label', $m->label), '');
     $xtpl->form_out(_('Save'));
 
     $xtpl->table_title(_('Map entries'));
 
     $entries = $m->entry->list();
 
-    $xtpl->form_create('?page=userns&action=map_entries_edit&id='.$m->id, 'post', 'userns-map-entries');
+    $xtpl->form_create('?page=userns&action=map_entries_edit&id=' . $m->id, 'post', 'userns-map-entries');
     $xtpl->table_add_category(_('Type'));
     $xtpl->table_add_category(_('ID within VPS'));
     $xtpl->table_add_category(_('ID within namespace'));
@@ -262,16 +273,16 @@ function userns_map_show ($map_id) {
 
     foreach ($entries as $e) {
         $xtpl->table_td(
-            strtoupper($e->kind).
-            '<input type="hidden" name="entry_id[]" value="'.$e->id.'">'
+            strtoupper($e->kind) .
+            '<input type="hidden" name="entry_id[]" value="' . $e->id . '">'
         );
 
         $xtpl->form_add_input_pure('text', '14', 'vps_id[]', post_val_array('vps_id', $i, $e->vps_id));
         $xtpl->form_add_input_pure('text', '14', 'ns_id[]', post_val_array('ns_id', $i, $e->ns_id));
         $xtpl->form_add_input_pure('text', '14', 'count[]', post_val_array('count', $i, $e->count));
         $xtpl->table_td(
-            '<a href="?page=userns&action=map_entry_del&map='.$m->id.'&entry='.$e->id.'&t='.csrf_token().'">'.
-            '<img src="template/icons/m_delete.png" title="'._('Delete').'">'.
+            '<a href="?page=userns&action=map_entry_del&map=' . $m->id . '&entry=' . $e->id . '&t=' . csrf_token() . '">' .
+            '<img src="template/icons/m_delete.png" title="' . _('Delete') . '">' .
             '</a>'
         );
         $xtpl->table_tr();
@@ -280,7 +291,8 @@ function userns_map_show ($map_id) {
     }
 
     $xtpl->form_add_select_pure(
-        'new_kind', ['both' => 'UID&GID', 'uid' => 'UID','gid' => 'GID'],
+        'new_kind',
+        ['both' => 'UID&GID', 'uid' => 'UID','gid' => 'GID'],
         post_val('new_kind', 'both')
     );
     $xtpl->form_add_input_pure('text', '14', 'new_vps_id', post_val('new_vps_id', 0));
@@ -294,7 +306,8 @@ function userns_map_show ($map_id) {
     $xtpl->form_out_raw();
 }
 
-function userns_map_new () {
+function userns_map_new()
+{
     global $xtpl, $api;
 
     $xtpl->table_title(_('Create a new UID/GID map'));
@@ -304,14 +317,14 @@ function userns_map_new () {
     $hidden = '';
 
     if (isAdmin()) {
-        $xtpl->form_add_input(_('User namespace ID').':', 'text', '15', 'user_namespace', post_val('user_namespace'));
+        $xtpl->form_add_input(_('User namespace ID') . ':', 'text', '15', 'user_namespace', post_val('user_namespace'));
 
     } else {
         $ret = $api->user_namespace->list(['limit' => 1, 'meta' => ['count' => true]]);
         $cnt = $ret->getTotalCount();
 
         if ($cnt == 1) {
-            $hidden = '<input type="hidden" name="user_namespace" value="'.$ret[0]->id.'">';
+            $hidden = '<input type="hidden" name="user_namespace" value="' . $ret[0]->id . '">';
 
         } else {
             api_param_to_form(
@@ -319,13 +332,13 @@ function userns_map_new () {
                 $input->user_namespace,
                 post_val('user_namespace'),
                 function ($userns) {
-                    return '#'.$userns->id.' ('.$userns->size.' IDs)';
+                    return '#' . $userns->id . ' (' . $userns->size . ' IDs)';
                 }
             );
         }
     }
 
-    $xtpl->table_td(_('Label').':'.$hidden);
+    $xtpl->table_td(_('Label') . ':' . $hidden);
     $xtpl->form_add_input_pure('text', '30', 'label', post_val('label'));
     $xtpl->table_tr();
 

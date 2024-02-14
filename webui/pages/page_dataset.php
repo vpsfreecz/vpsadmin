@@ -16,29 +16,29 @@ if (isLoggedIn()) {
                 );
 
                 foreach ($quotas as $quota) {
-                    if (isset($_POST[$quota]))
+                    if (isset($_POST[$quota])) {
                         $params[$quota] = $_POST[$quota] * $DATASET_UNITS_TR[$_POST["quota_unit"]];
+                    }
                 }
 
                 foreach ($DATASET_PROPERTIES as $p) {
-                    if (!$_POST['inherit_'.$p]) {
+                    if (!$_POST['inherit_' . $p]) {
                         $validators = $input_params->{$p}->validators;
 
-                        if ($validators && $validators->include)
+                        if ($validators && $validators->include) {
                             $params[$p] = $_POST[$p];
-
-                        elseif (in_array($p, array('compression', 'atime', 'relatime')))
+                        } elseif (in_array($p, array('compression', 'atime', 'relatime'))) {
                             $params[$p] = isset($_POST[$p]);
-
-                        else
+                        } else {
                             $params[$p] = $_POST[$p];
+                        }
                     }
                 }
 
                 try {
                     $api->dataset->create($params);
 
-                    notify_user(_('Dataset created'). '');
+                    notify_user(_('Dataset created') . '');
                     redirect($_POST['return'] ? $_POST['return'] : '?page=');
 
                 } catch (\HaveAPI\Client\Exception\ActionFailed $e) {
@@ -65,29 +65,29 @@ if (isLoggedIn()) {
                 }
 
                 foreach ($quotas as $quota) {
-                    if (isset($_POST[$quota]))
+                    if (isset($_POST[$quota])) {
                         $params[$quota] = $_POST[$quota] * $DATASET_UNITS_TR[$_POST["quota_unit"]];
+                    }
                 }
 
                 foreach ($DATASET_PROPERTIES as $p) {
-                    if (!$_POST['inherit_'.$p]) {
+                    if (!$_POST['inherit_' . $p]) {
                         $validators = $input_params->{$p}->validators;
 
-                        if ($validators && $validators->include)
+                        if ($validators && $validators->include) {
                             $params[$p] = $_POST[$p];
-
-                        elseif (in_array($p, array('compression', 'atime', 'relatime')))
+                        } elseif (in_array($p, array('compression', 'atime', 'relatime'))) {
                             $params[$p] = isset($_POST[$p]);
-
-                        else
+                        } else {
                             $params[$p] = $_POST[$p];
+                        }
                     }
                 }
 
                 try {
                     $ds->update($params);
 
-                    notify_user(_('Dataset updated'). '');
+                    notify_user(_('Dataset updated') . '');
                     redirect($_POST['return'] ? $_POST['return'] : '?page=');
 
                 } catch (\HaveAPI\Client\Exception\ActionFailed $e) {
@@ -112,18 +112,19 @@ if (isLoggedIn()) {
 
                 } catch (\HaveAPI\Client\Exception\ActionFailed $e) {
                     $xtpl->perex_format_errors(_('Failed to destroy dataset'), $e->getResponse());
-                    $show_info=true;
+                    $show_info = true;
                 }
 
             } else {
                 try {
                     $ds = $api->dataset->find($_GET['id']);
 
-                    $xtpl->table_title(_('Confirm the destroyal of dataset').' '.$ds->name);
-                    $xtpl->form_create('?page=dataset&action=destroy&id='.$ds->id, 'post');
+                    $xtpl->table_title(_('Confirm the destroyal of dataset') . ' ' . $ds->name);
+                    $xtpl->form_create('?page=dataset&action=destroy&id=' . $ds->id, 'post');
 
-                    $xtpl->table_td(_("Confirm") . ' ' .
-                        '<input type="hidden" name="return" value="'.($_GET['return'] ? $_GET['return'] : $_POST['return']).'">'
+                    $xtpl->table_td(
+                        _("Confirm") . ' ' .
+                        '<input type="hidden" name="return" value="' . ($_GET['return'] ? $_GET['return'] : $_POST['return']) . '">'
                     );
                     $xtpl->form_add_checkbox_pure('confirm', '1', false);
                     $xtpl->table_td(_('The dataset will be destroyed along with all its descendants.
@@ -134,7 +135,7 @@ if (isLoggedIn()) {
 
                 } catch (\HaveAPI\Client\Exception\ActionFailed $e) {
                     $xtpl->perex_format_errors(_('Dataset cannot be found'), $e->getResponse());
-                    $show_info=true;
+                    $show_info = true;
                 }
             }
 
@@ -155,8 +156,8 @@ if (isLoggedIn()) {
                         'stop_vps' => isset($_POST['stop_vps']),
                     ]);
 
-                    notify_user(_('Dataset expansion updated'). '');
-                    redirect('?page=dataset&action=edit&role='.$_GET['role'].'&id='.$ds->id.'&return='.urlencode($_POST['return']));
+                    notify_user(_('Dataset expansion updated') . '');
+                    redirect('?page=dataset&action=edit&role=' . $_GET['role'] . '&id=' . $ds->id . '&return=' . urlencode($_POST['return']));
 
                 } catch (\HaveAPI\Client\Exception\ActionFailed $e) {
                     $xtpl->perex_format_errors(_('Dataset expansion save failed'), $e->getResponse());
@@ -184,8 +185,8 @@ if (isLoggedIn()) {
                         'stop_vps' => isset($_POST['stop_vps']),
                     ]);
 
-                    notify_user(_('Dataset expanded'). '');
-                    redirect('?page=dataset&action=edit&role='.$_GET['role'].'&id='.$ds->id.'&return='.urlencode($_POST['return']));
+                    notify_user(_('Dataset expanded') . '');
+                    redirect('?page=dataset&action=edit&role=' . $_GET['role'] . '&id=' . $ds->id . '&return=' . urlencode($_POST['return']));
 
                 } catch (\HaveAPI\Client\Exception\ActionFailed $e) {
                     $xtpl->perex_format_errors(_('Dataset expansion failed'), $e->getResponse());
@@ -213,8 +214,8 @@ if (isLoggedIn()) {
                         'stop_vps' => isset($_POST['stop_vps']),
                     ]);
 
-                    notify_user(_('Dataset expansion registered'). '');
-                    redirect('?page=dataset&action=edit&role='.$_GET['role'].'&id='.$ds->id.'&return='.urlencode($_POST['return']));
+                    notify_user(_('Dataset expansion registered') . '');
+                    redirect('?page=dataset&action=edit&role=' . $_GET['role'] . '&id=' . $ds->id . '&return=' . urlencode($_POST['return']));
 
                 } catch (\HaveAPI\Client\Exception\ActionFailed $e) {
                     $xtpl->perex_format_errors(_('Dataset expansion failed'), $e->getResponse());
@@ -238,8 +239,8 @@ if (isLoggedIn()) {
                         'added_space' => $_POST['added_space'] * $DATASET_UNITS_TR[$_POST["unit"]],
                     ]);
 
-                    notify_user(_('Dataset expanded'). '');
-                    redirect('?page=dataset&action=edit&role='.$_GET['role'].'&id='.$ds->id.'&return='.urlencode($_POST['return']));
+                    notify_user(_('Dataset expanded') . '');
+                    redirect('?page=dataset&action=edit&role=' . $_GET['role'] . '&id=' . $ds->id . '&return=' . urlencode($_POST['return']));
 
                 } catch (\HaveAPI\Client\Exception\ActionFailed $e) {
                     $xtpl->perex_format_errors(_('Dataset expand failed'), $e->getResponse());
@@ -299,11 +300,12 @@ if (isLoggedIn()) {
                     $vps = $api->vps->find($_GET['vps']);
                     $m = $vps->mount->find($_GET['id']);
 
-                    $xtpl->table_title(_('Confirm the removal of mount from VPS').' #'.$vps->id._(' at ').$m->mountpoint);
-                    $xtpl->form_create('?page=dataset&action=mount_destroy&vps='.$vps->id.'&id='.$m->id, 'post');
+                    $xtpl->table_title(_('Confirm the removal of mount from VPS') . ' #' . $vps->id . _(' at ') . $m->mountpoint);
+                    $xtpl->form_create('?page=dataset&action=mount_destroy&vps=' . $vps->id . '&id=' . $m->id, 'post');
 
-                    $xtpl->table_td(_("Confirm") . ' ' .
-                        '<input type="hidden" name="return" value="'.($_GET['return'] ? $_GET['return'] : $_POST['return']).'">'
+                    $xtpl->table_td(
+                        _("Confirm") . ' ' .
+                        '<input type="hidden" name="return" value="' . ($_GET['return'] ? $_GET['return'] : $_POST['return']) . '">'
                     );
                     $xtpl->form_add_checkbox_pure('confirm', '1', false);
                     $xtpl->table_td(_('The dataset will be unmounted. The data itself is not touched.'));
@@ -347,7 +349,7 @@ if (isLoggedIn()) {
                     'enabled' => $_GET['do']
                 ));
 
-                notify_user(_('Mount').' '.($_GET['do'] ? _('enabled') : _('disabled')), '');
+                notify_user(_('Mount') . ' ' . ($_GET['do'] ? _('enabled') : _('disabled')), '');
                 redirect($_GET['return'] ? $_GET['return'] : '?page=');
 
             } catch (\HaveAPI\Client\Exception\ActionFailed $e) {
@@ -364,9 +366,9 @@ if (isLoggedIn()) {
                 ));
 
                 notify_user(_('Backup plan added.'), _('The dataset was successfully added to the backup plan.'));
-                redirect('?page=dataset&action=edit&role='.$_GET['role'].'&id='.$_GET['id'].'&return='.urlencode($_POST['return']));
+                redirect('?page=dataset&action=edit&role=' . $_GET['role'] . '&id=' . $_GET['id'] . '&return=' . urlencode($_POST['return']));
 
-            }  catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+            } catch (\HaveAPI\Client\Exception\ActionFailed $e) {
                 $xtpl->perex_format_errors(_('Addition to backup plan failed'), $e->getResponse());
                 dataset_edit_form();
             }
@@ -380,9 +382,9 @@ if (isLoggedIn()) {
                 $api->dataset($_GET['id'])->plan->delete($_GET['plan']);
 
                 notify_user(_('Backup plan removed.'), _('The dataset was successfully removed from the backup plan.'));
-                redirect('?page=dataset&action=edit&role='.$_GET['role'].'&id='.$_GET['id'].'&return='.urlencode($_GET['return']));
+                redirect('?page=dataset&action=edit&role=' . $_GET['role'] . '&id=' . $_GET['id'] . '&return=' . urlencode($_GET['return']));
 
-            }  catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+            } catch (\HaveAPI\Client\Exception\ActionFailed $e) {
                 $xtpl->perex_format_errors(_('Backup plan removal failed'), $e->getResponse());
                 dataset_edit_form();
             }

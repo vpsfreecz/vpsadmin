@@ -29,13 +29,15 @@ $DATA_SIZE_UNITS = [
 ];
 
 
-function get_free_route_list ($res, $vps, $role = null, $limit = null) {
+function get_free_route_list($res, $vps, $role = null, $limit = null)
+{
     global $api;
 
-    if ($res === 'ipv4' || $res === 'ipv4_private')
+    if ($res === 'ipv4' || $res === 'ipv4_private') {
         $v = 4;
-    else
+    } else {
         $v = 6;
+    }
 
     $ret = array();
     $filters = array(
@@ -45,35 +47,40 @@ function get_free_route_list ($res, $vps, $role = null, $limit = null) {
         'meta' => array('includes' => 'user'),
     );
 
-    if ($role)
+    if ($role) {
         $filters['role'] = $role;
+    }
 
-    if ($limit)
+    if ($limit) {
         $filters['limit'] = $limit;
+    }
 
     foreach ($api->ip_address->list($filters) as $ip) {
         $note = '';
 
         if ($ip->user_id) {
-            if ($ip->user_id == $vps->user_id)
+            if ($ip->user_id == $vps->user_id) {
                 $note = '(owned)';
-            else
-                $note = '(owned by '.$ip->user->login.')';
+            } else {
+                $note = '(owned by ' . $ip->user->login . ')';
+            }
         }
 
-        $ret[$ip->id] = $ip->addr.'/'.$ip->prefix." $note";
+        $ret[$ip->id] = $ip->addr . '/' . $ip->prefix . " $note";
     }
 
     return $ret;
 }
 
-function get_free_host_addr_list ($res, $vps, $netif, $role = null, $limit = null) {
+function get_free_host_addr_list($res, $vps, $netif, $role = null, $limit = null)
+{
     global $api;
 
-    if ($res === 'ipv4' || $res === 'ipv4_private')
+    if ($res === 'ipv4' || $res === 'ipv4_private') {
         $v = 4;
-    else
+    } else {
         $v = 6;
+    }
 
     $ret = array();
     $filters = array(
@@ -83,54 +90,62 @@ function get_free_host_addr_list ($res, $vps, $netif, $role = null, $limit = nul
         'meta' => array('includes' => 'ip_address'),
     );
 
-    if ($role)
+    if ($role) {
         $filters['role'] = $role;
+    }
 
-    if ($limit)
+    if ($limit) {
         $filters['limit'] = $limit;
+    }
 
     foreach ($api->host_ip_address->list($filters) as $ip) {
-        $ret[$ip->id] = $ip->addr.'/'.$ip->ip_address->prefix;
+        $ret[$ip->id] = $ip->addr . '/' . $ip->ip_address->prefix;
     }
 
     return $ret;
 }
 
-function get_vps_ip_route_list ($vps) {
+function get_vps_ip_route_list($vps)
+{
     global $api;
 
     return $api->ip_address->list(['vps' => $vps->id]);
 }
 
-function get_ip_address_id ($val) {
+function get_ip_address_id($val)
+{
     global $api;
 
-    if (is_numeric($val))
+    if (is_numeric($val)) {
         return $val;
+    }
 
     $ips = $api->ip_address->list(array('addr' => $val));
 
-    if ($ips->count() < 1)
+    if ($ips->count() < 1) {
         return false;
-
-    else
+    } else {
         return $ips->first()->id;
-}
-
-function ip_label($ip) {
-    switch ($ip->network->role) {
-    case 'public_access':
-        return 'Public IPv'.$ip->network->ip_version;
-    case 'private_access':
-        return 'Private IPv'.$ip->network->ip_version;
     }
 }
 
-function host_ip_label($ip) {
+function ip_label($ip)
+{
+    switch ($ip->network->role) {
+        case 'public_access':
+            return 'Public IPv' . $ip->network->ip_version;
+        case 'private_access':
+            return 'Private IPv' . $ip->network->ip_version;
+    }
+}
+
+function host_ip_label($ip)
+{
     return ip_label($ip->ip_address);
 }
 
-function ip_type_label($type) {
+function ip_type_label($type)
+{
     return [
         'ipv4' => _('Public IPv4'),
         'ipv4_private' => _('Private IPv4'),
@@ -138,126 +153,151 @@ function ip_type_label($type) {
     ][$type];
 }
 
-function available_ip_types($vps) {
+function available_ip_types($vps)
+{
     $ret = [];
 
     $free_4_pub = get_free_route_list('ipv4', $vps, 'public_access', 1);
-    if (!empty($free_4_pub))
+    if (!empty($free_4_pub)) {
         $ret[] = 'ipv4';
+    }
 
     $free_4_priv = get_free_route_list('ipv4_private', $vps, 'private_access', 1);
-    if (!empty($free_4_priv))
+    if (!empty($free_4_priv)) {
         $ret[] = 'ipv4_private';
+    }
 
     if ($vps->node->location->has_ipv6) {
         $free_6 = get_free_route_list('ipv6', $vps, null, 1);
 
-        if (!empty($free_6))
+        if (!empty($free_6)) {
             $ret[] = 'ipv6';
+        }
     }
 
     return $ret;
 }
 
-function available_ip_options($vps) {
+function available_ip_options($vps)
+{
     $ret = [];
 
-    foreach (available_ip_types($vps) as $t)
+    foreach (available_ip_types($vps) as $t) {
         $ret[$t] = ip_type_label($t);
+    }
 
     return $ret;
 }
 
-function ip_address_assignment_label($as) {
-    return $as->ip_addr.' (VPS '.$as->raw_vps_id.', '.tolocaltz($as->from_date).' - '.($as->to_date ? tolocaltz($as->to_date) : _('now')).')';
+function ip_address_assignment_label($as)
+{
+    return $as->ip_addr . ' (VPS ' . $as->raw_vps_id . ', ' . tolocaltz($as->from_date) . ' - ' . ($as->to_date ? tolocaltz($as->to_date) : _('now')) . ')';
 }
 
-function list_templates($vps = null) {
+function list_templates($vps = null)
+{
     global $api;
 
     $disabled = _('(IMPORTANT: This template is currently disabled, it cannot be used)');
     $tpls = $api->os_template->list();
     $choices = resource_list_to_options(
         $tpls,
-        'id', 'label', false, function ($t) use ($vps) {
-            if ($vps && $t->hypervisor_type != $vps->node->hypervisor_type)
+        'id',
+        'label',
+        false,
+        function ($t) use ($vps) {
+            if ($vps && $t->hypervisor_type != $vps->node->hypervisor_type) {
                 return null;
+            }
 
             $ret = $t->label;
 
-            if ($_SESSION['is_admin'] && !$t->enabled)
-                return $ret.' '._('(IMPORTANT: This template is currently disabled, it cannot be used)');;
+            if ($_SESSION['is_admin'] && !$t->enabled) {
+                return $ret . ' ' . _('(IMPORTANT: This template is currently disabled, it cannot be used)');
+            };
 
             return $ret;
         }
     );
 
     if ($vps && !$vps->os_template->enabled && !$_SESSION['is_admin']) {
-        $choices = array($vps->os_template_id => $vps->os_template->label .' '.$disabled) + $choices;
+        $choices = array($vps->os_template_id => $vps->os_template->label . ' ' . $disabled) + $choices;
     }
 
     return $choices;
 }
 
-function notify_user($title, $msg = '') {
+function notify_user($title, $msg = '')
+{
     $_SESSION["notification"] = array(
         "title" => $title,
         "msg" => $msg,
     );
 }
 
-function show_notification() {
+function show_notification()
+{
     global $xtpl;
 
-    if(!isset($_SESSION["notification"]))
+    if(!isset($_SESSION["notification"])) {
         return;
+    }
 
     $xtpl->perex($_SESSION["notification"]["title"], $_SESSION["notification"]["msg"]);
     unset($_SESSION["notification"]);
 }
 
-function redirect($loc) {
-    header('Location: '.preg_replace('#^/+#', '/', $loc));
+function redirect($loc)
+{
+    header('Location: ' . preg_replace('#^/+#', '/', $loc));
     exit;
 }
 
-function format_duration($interval) {
+function format_duration($interval)
+{
     $d = $interval / 86400;
     $h = floor($interval / 3600) % 24;
     $m = floor($interval / 60) % 60;
     $s = floor($interval) % 60;
 
-    if($d >= 1)
+    if($d >= 1) {
         return sprintf("%d days, %02d:%02d:%02d", floor($d), $h, $m, $s);
-    else
+    } else {
         return sprintf("%02d:%02d:%02d", $h, $m, $s);
+    }
 }
 
-function tolocaltz($datetime, $format = "Y-m-d H:i:s") {
-    if (is_null($datetime))
+function tolocaltz($datetime, $format = "Y-m-d H:i:s")
+{
+    if (is_null($datetime)) {
         return '-';
+    }
 
     $t = new DateTime($datetime);
     $t->setTimezone(new DateTimeZone(date_default_timezone_get()));
     return $t->format($format);
 }
 
-function toutc($datetime) {
+function toutc($datetime)
+{
     $t = new DateTime($datetime);
     return $t->setTimezone(new DateTimeZone('UTC'));
 }
 
-function random_string($len) {
+function random_string($len)
+{
     $str = "";
     $chars = array_merge(range(0, 9), range('a', 'z'), range('A', 'Z'));
 
-    for($i = 0; $i < $len; $i++)
+    for($i = 0; $i < $len; $i++) {
         $str .= $chars[array_rand($chars)];
+    }
 
     return $str;
 }
 
-function format_data_rate($n, $suffix) {
+function format_data_rate($n, $suffix)
+{
     $units = array(
         2 << 29 => 'G',
         2 << 19 => 'M',
@@ -269,62 +309,69 @@ function format_data_rate($n, $suffix) {
 
     foreach($units as $threshold => $unit) {
         if($n > $threshold) {
-            return round(($n / $threshold), 2)."$unit$suffix";
+            return round(($n / $threshold), 2) . "$unit$suffix";
         }
     }
 
-    return round($n, 2)."$suffix";
+    return round($n, 2) . "$suffix";
 }
 
-function getClientIdentity() {
+function getClientIdentity()
+{
     $hash = getCommitHash();
 
-    if ($hash)
+    if ($hash) {
         $short = substr($hash, 0, 8);
-    else
+    } else {
         $short = VERSION;
+    }
 
-    return  "vpsadmin-webui ".$short;
+    return  "vpsadmin-webui " . $short;
 }
 
-function api_description_changed($api) {
+function api_description_changed($api)
+{
     $_SESSION["api_description"] = $api->getDescription();
 }
 
-function maintenance_lock_icon($type, $obj) {
-    $m_icon_on = '<img alt="'._('Turn maintenance OFF.').'" src="template/icons/maintenance_mode.png">';
-    $m_icon_off = '<img alt="'._('Turn maintenance ON.').'" src="template/icons/transact_ok.png">';
+function maintenance_lock_icon($type, $obj)
+{
+    $m_icon_on = '<img alt="' . _('Turn maintenance OFF.') . '" src="template/icons/maintenance_mode.png">';
+    $m_icon_off = '<img alt="' . _('Turn maintenance ON.') . '" src="template/icons/transact_ok.png">';
 
     switch ($obj->maintenance_lock) {
         case 'no':
-            return '<a href="?page=cluster&action=maintenance_lock&type='.$type.'&obj_id='.$obj->id.'&lock=1">'
-                   .$m_icon_off
-                   .'</a>';
+            return '<a href="?page=cluster&action=maintenance_lock&type=' . $type . '&obj_id=' . $obj->id . '&lock=1">'
+                   . $m_icon_off
+                   . '</a>';
 
         case 'lock':
-            return '<a href="?page=cluster&action=set_maintenance_lock&type='.$type.'&obj_id='.$obj->id.'&lock=0&t='.csrf_token().'"
-			           title="'._('Maintenance lock reason').': '.htmlspecialchars($obj->maintenance_lock_reason).'">'
-                    .$m_icon_on
-                    .'</a>';
+            return '<a href="?page=cluster&action=set_maintenance_lock&type=' . $type . '&obj_id=' . $obj->id . '&lock=0&t=' . csrf_token() . '"
+			           title="' . _('Maintenance lock reason') . ': ' . htmlspecialchars($obj->maintenance_lock_reason) . '">'
+                    . $m_icon_on
+                    . '</a>';
 
         case 'master_lock':
-            return '<img alt="'._('Under maintenance.').'"
-			             title="'._('Under maintenance').': '.htmlspecialchars($obj->maintenance_lock_reason).'"
+            return '<img alt="' . _('Under maintenance.') . '"
+			             title="' . _('Under maintenance') . ': ' . htmlspecialchars($obj->maintenance_lock_reason) . '"
 			             src="template/icons/maintenance_mode.png">';
     }
 }
 
-function resource_list_to_options($list, $id = 'id', $label = 'label', $empty = true, $label_callback = null) {
+function resource_list_to_options($list, $id = 'id', $label = 'label', $empty = true, $label_callback = null)
+{
     $ret = array();
 
-    if ($empty)
+    if ($empty) {
         $ret[0] = '---';
+    }
 
     foreach ($list as $item) {
         $item_label = $label_callback ? $label_callback($item) : $item->{$label};
 
-        if ($item_label === null)
+        if ($item_label === null) {
             continue;
+        }
 
         $ret[ $item->{$id} ] = $item_label;
     }
@@ -332,7 +379,8 @@ function resource_list_to_options($list, $id = 'id', $label = 'label', $empty = 
     return $ret;
 }
 
-function boolean_icon($val) {
+function boolean_icon($val)
+{
     if ($val) {
         return '<img src="template/icons/transact_ok.png" />';
     } else {
@@ -340,14 +388,17 @@ function boolean_icon($val) {
     }
 }
 
-function api_param_to_form_pure($name, $desc, $v = null, $label_callback = null, $empty = null) {
+function api_param_to_form_pure($name, $desc, $v = null, $label_callback = null, $empty = null)
+{
     global $xtpl, $api;
 
-    if ($v === null)
+    if ($v === null) {
         $v = $desc->default === '_nil' ? null : $desc->default;
+    }
 
-    if (isset($_POST[$name]))
+    if (isset($_POST[$name])) {
         $v = $_POST[$name];
+    }
 
     switch ($desc->type) {
         case 'String':
@@ -358,20 +409,23 @@ function api_param_to_form_pure($name, $desc, $v = null, $label_callback = null,
                 $assoc = is_assoc($desc_choices);
                 $choices = array();
 
-                if ($empty)
+                if ($empty) {
                     $choices[''] = '---';
+                }
 
                 if ($label_callback) {
                     foreach ($desc_choices as $k => $val) {
                         $choice_label = $label_callback($val);
 
-                        if (is_null($choice_label))
+                        if (is_null($choice_label)) {
                             continue;
+                        }
 
-                        if ($assoc)
+                        if ($assoc) {
                             $choices[$k] = $choice_label;
-                        else
+                        } else {
                             $choices[$val] = $choice_label;
+                        }
                     }
 
                 } else {
@@ -421,24 +475,28 @@ function api_param_to_form_pure($name, $desc, $v = null, $label_callback = null,
                 $v
             );
 
+            // no break
         default:
             break;
     }
 }
 
-function api_param_to_form($name, $desc, $v = null, $label_callback = null, $empty = null) {
+function api_param_to_form($name, $desc, $v = null, $label_callback = null, $empty = null)
+{
     global $xtpl;
 
-    $xtpl->table_td(($desc->label ? $desc->label : $name).':');
+    $xtpl->table_td(($desc->label ? $desc->label : $name) . ':');
     api_param_to_form_pure($name, $desc, $v, $label_callback, $empty);
 
-    if ($desc->description)
+    if ($desc->description) {
         $xtpl->table_td($desc->description);
+    }
 
     $xtpl->table_tr();
 }
 
-function api_params_to_form($action, $direction, $label_callbacks = null) {
+function api_params_to_form($action, $direction, $label_callbacks = null)
+{
     $params = $action->getParameters($direction);
 
     foreach ($params as $name => $desc) {
@@ -446,11 +504,13 @@ function api_params_to_form($action, $direction, $label_callbacks = null) {
     }
 }
 
-function api_create_form($resource) {
+function api_create_form($resource)
+{
     api_params_to_form($resource->create, 'input');
 }
 
-function api_update_form($obj) {
+function api_update_form($obj)
+{
     $params = $obj->update->getParameters('input');
 
     foreach ($params as $name => $desc) {
@@ -458,9 +518,11 @@ function api_update_form($obj) {
     }
 }
 
-function client_params_to_api($action, $from = null) {
-    if (!$from)
+function client_params_to_api($action, $from = null)
+{
+    if (!$from) {
         $from = $_POST;
+    }
 
     $params = $action->getParameters('input');
     $ret = array();
@@ -482,9 +544,11 @@ function client_params_to_api($action, $from = null) {
                     break;
 
                 case 'Resource':
-                    if (!$from[$name])
+                    if (!$from[$name]) {
                         continue 2;
+                    }
 
+                    // no break
                 default:
                     $v = $from[ $name ];
             }
@@ -506,7 +570,8 @@ function client_params_to_api($action, $from = null) {
     return $ret;
 }
 
-function unit_for_cluster_resource($name) {
+function unit_for_cluster_resource($name)
+{
     switch ($name) {
         case 'cpu':
             return _('cores');
@@ -521,7 +586,8 @@ function unit_for_cluster_resource($name) {
     }
 }
 
-function data_size_unitize($val) {
+function data_size_unitize($val)
+{
     $units = ["t" => 39, "g" => 29, "m" => 19, "k" => 9, "b" => 0];
     $sign = 1;
 
@@ -530,49 +596,58 @@ function data_size_unitize($val) {
         $val = $val * -1;
     }
 
-    if (!$val)
+    if (!$val) {
         return [0, "b"];
-
-    elseif ($val < 1024)
+    } elseif ($val < 1024) {
         return [$val * $sign, "b"];
+    }
 
     foreach ($units as $u => $ex) {
-        if ($val >= (2 << $ex))
+        if ($val >= (2 << $ex)) {
             return [($val / (2 << $ex)) * $sign, $u];
+        }
     }
 
     return [$val * $sign, "b"];
 }
 
-function data_size_to_humanreadable_b($val) {
+function data_size_to_humanreadable_b($val)
+{
     global $DATA_SIZE_UNITS;
 
-    if (!$val)
+    if (!$val) {
         return _("none");
+    }
 
     $res = data_size_unitize($val);
     return round($res[0], 2) . " " . $DATA_SIZE_UNITS[$res[1]];
 }
 
-function data_size_to_humanreadable_kb($val) {
-    if (!$val)
+function data_size_to_humanreadable_kb($val)
+{
+    if (!$val) {
         return _("none");
+    }
 
     return data_size_to_humanreadable_b($val * 1024);
 }
 
-function data_size_to_humanreadable_mb($val) {
-    if (!$val)
+function data_size_to_humanreadable_mb($val)
+{
+    if (!$val) {
         return _("none");
+    }
 
     return data_size_to_humanreadable_b($val * 1024 * 1024);
 }
 
-function data_size_to_humanreadable($val) {
+function data_size_to_humanreadable($val)
+{
     return data_size_to_humanreadable_mb($val);
 }
 
-function number_unitize($val) {
+function number_unitize($val)
+{
     $units = [
         "t" => 1000000000000,
         "g" => 1000000000,
@@ -587,30 +662,34 @@ function number_unitize($val) {
         $val = $val * -1;
     }
 
-    if (!$val)
+    if (!$val) {
         return [0, ""];
-
-    elseif ($val < 1000)
+    } elseif ($val < 1000) {
         return [$val * $sign, ""];
+    }
 
     foreach ($units as $u => $ex) {
-        if ($val >= $ex)
+        if ($val >= $ex) {
             return [($val / $ex) * $sign, $u];
+        }
     }
 
     return [$val * $sign, ""];
 }
 
-function format_number_with_unit($n) {
+function format_number_with_unit($n)
+{
     list($val, $unit) = number_unitize($n);
 
-    if ($unit != 'k')
+    if ($unit != 'k') {
         $unit = strtoupper($unit);
+    }
 
-    return round($val, 2).$unit;
+    return round($val, 2) . $unit;
 }
 
-function approx_number($val) {
+function approx_number($val)
+{
     $start = 1000;
     $units = [
         "&nbsp;million",
@@ -641,118 +720,139 @@ function approx_number($val) {
     }
 
     foreach (array_reverse($data) as $unit) {
-        if ($val > $unit['n'])
-            return (round($val / $unit['n'], 2) * $sign).$unit['unit'];
+        if ($val > $unit['n']) {
+            return (round($val / $unit['n'], 2) * $sign) . $unit['unit'];
+        }
     }
 
     return number_format($val * $sign, 0, '.', ' ');
 }
 
-function get_val($name, $default = '') {
-    if (isset($_GET[$name]))
+function get_val($name, $default = '')
+{
+    if (isset($_GET[$name])) {
         return h($_GET[$name]);
+    }
 
-    if (is_string($default))
+    if (is_string($default)) {
         return h($default);
-    else
+    } else {
         return $default;
+    }
 }
 
-function post_val($name, $default = '') {
-    if (isset($_POST[$name]))
+function post_val($name, $default = '')
+{
+    if (isset($_POST[$name])) {
         return h($_POST[$name]);
+    }
 
-    if (is_string($default))
+    if (is_string($default)) {
         return h($default);
-    else
+    } else {
         return $default;
+    }
 }
 
-function post_val_array($name, $index, $default = '') {
-    if (isset($_POST[$name]) && isset($_POST[$name][$index]))
+function post_val_array($name, $index, $default = '')
+{
+    if (isset($_POST[$name]) && isset($_POST[$name][$index])) {
         return $_POST[$name][$index];
+    }
     return $default;
 }
 
-function get_val_issetto($name, $value, $default = false) {
-    if (!isset($_GET[$name]))
+function get_val_issetto($name, $value, $default = false)
+{
+    if (!isset($_GET[$name])) {
         return $default;
+    }
 
     return $_GET[$name] == $value;
 }
 
-function post_val_issetto($name, $value, $default = false) {
-    if (!isset($_POST[$name]))
+function post_val_issetto($name, $value, $default = false)
+{
+    if (!isset($_POST[$name])) {
         return $default;
+    }
 
     return $_POST[$name] == $value;
 }
 
-function transaction_concern_class($klass) {
+function transaction_concern_class($klass)
+{
     $tr = array(
         'Vps' => 'VPS'
     );
 
-    if (array_key_exists($klass, $tr))
+    if (array_key_exists($klass, $tr)) {
         return $tr[$klass];
+    }
 
     return $klass;
 }
 
-function transaction_concern_link($klass, $row_id) {
+function transaction_concern_link($klass, $row_id)
+{
     switch ($klass) {
         case 'Vps':
-            return '<a href="?page=adminvps&action=info&veid='.$row_id.'">'.$row_id.'</a>';
+            return '<a href="?page=adminvps&action=info&veid=' . $row_id . '">' . $row_id . '</a>';
 
         case 'User':
-            return '<a href="?page=adminm&action=edit&id='.$row_id.'">'.$row_id.'</a>';
+            return '<a href="?page=adminm&action=edit&id=' . $row_id . '">' . $row_id . '</a>';
 
         case 'UserPayment':
-            return '<a href="?page=redirect&to=payset&from=payment&id='.$row_id.'">'.$row_id.'</a>';
+            return '<a href="?page=redirect&to=payset&from=payment&id=' . $row_id . '">' . $row_id . '</a>';
 
         case 'RegistrationRequest':
-            return '<a href="?page=adminm&action=request_details&id='.$row_id.'&type=registration">'.$row_id.'</a>';
+            return '<a href="?page=adminm&action=request_details&id=' . $row_id . '&type=registration">' . $row_id . '</a>';
 
         case 'ChangeRequest':
-            return '<a href="?page=adminm&action=request_details&id='.$row_id.'&type=change">'.$row_id.'</a>';
+            return '<a href="?page=adminm&action=request_details&id=' . $row_id . '&type=change">' . $row_id . '</a>';
 
         case 'Outage':
-            return '<a href="?page=outage&action=show&id='.$row_id.'">'.$row_id.'</a>';
+            return '<a href="?page=outage&action=show&id=' . $row_id . '">' . $row_id . '</a>';
 
         case 'Export':
-            return '<a href="?page=export&action=edit&export='.$row_id.'">'.$row_id.'</a>';
+            return '<a href="?page=export&action=edit&export=' . $row_id . '">' . $row_id . '</a>';
 
         default:
             return "$row_id";
     }
 }
 
-function transaction_chain_concerns($chain, $limit = 10) {
-    if (!$chain->concerns)
+function transaction_chain_concerns($chain, $limit = 10)
+{
+    if (!$chain->concerns) {
         return '---';
+    }
 
     switch ($chain->concerns->type) {
         case 'affect':
-            if (count($chain->concerns->objects) < 1)
+            if (count($chain->concerns->objects) < 1) {
                 return '---';
+            }
             $o = $chain->concerns->objects[0];
-            return transaction_concern_class($o[0]).' '.transaction_concern_link($o[0], $o[1]);
+            return transaction_concern_class($o[0]) . ' ' . transaction_concern_link($o[0], $o[1]);
 
         case 'transform':
-            if (count($chain->concerns->objects) < 2)
+            if (count($chain->concerns->objects) < 2) {
                 return '---';
+            }
 
             $src = $chain->concerns->objects[0];
             $dst = $chain->concerns->objects[1];
 
-            return transaction_concern_class($src[0]).' '.transaction_concern_link($src[0], $src[1]).' -> '.transaction_concern_link($dst[0], $dst[1]);
+            return transaction_concern_class($src[0]) . ' ' . transaction_concern_link($src[0], $src[1]) . ' -> ' . transaction_concern_link($dst[0], $dst[1]);
 
         default:
             return _('Unknown');
     }
 }
 
-function get_all_users() {
+function get_all_users()
+{
     global $api;
 
     $cnt = $api->user->list(array(
@@ -765,81 +865,96 @@ function get_all_users() {
     ));
 }
 
-function vps_label ($vps) {
-    return '#'.$vps->id.' '.$vps->hostname;
+function vps_label($vps)
+{
+    return '#' . $vps->id . ' ' . $vps->hostname;
 }
 
-function user_label ($user) {
-    return '#'.$user->id.' '.$user->login;
+function user_label($user)
+{
+    return '#' . $user->id . ' ' . $user->login;
 }
 
-function node_link($node, $label = null) {
-    if (!$label)
+function node_link($node, $label = null)
+{
+    if (!$label) {
         $label = $node->domain_name;
+    }
 
-    return '<a href="?page=node&id='.$node->id.'">'.$label.'</a>';
+    return '<a href="?page=node&id=' . $node->id . '">' . $label . '</a>';
 };
 
-function vps_link($vps) {
-    return '<a href="?page=adminvps&action=info&veid='.$vps->id.'">#'.$vps->id.'</a>';
+function vps_link($vps)
+{
+    return '<a href="?page=adminvps&action=info&veid=' . $vps->id . '">#' . $vps->id . '</a>';
 }
 
-function user_link($user) {
-    if ($user)
-        return '<a href="?page=adminm&action=edit&id='.$user->id.'">'.$user->login.'</a>';
+function user_link($user)
+{
+    if ($user) {
+        return '<a href="?page=adminm&action=edit&id=' . $user->id . '">' . $user->login . '</a>';
+    }
 
     return '-';
 }
 
-function export_link($export) {
-    return '<a href="?page=export&action=edit&export='.$export->id.'">#'.$export->id.'</a>';
+function export_link($export)
+{
+    return '<a href="?page=export&action=edit&export=' . $export->id . '">#' . $export->id . '</a>';
 }
 
-function kernel_version($v) {
-    if (is_null($v))
+function kernel_version($v)
+{
+    if (is_null($v)) {
         return '-';
+    }
 
-    if (preg_match("/\d+stab.+/",$v, $matches))
+    if (preg_match("/\d+stab.+/", $v, $matches)) {
         return $matches[0];
-
-    elseif ($pos = strpos($v, '.el6'))
+    } elseif ($pos = strpos($v, '.el6')) {
         return substr($v, 0, $pos);
-    else
+    } else {
         return $v;
-}
-
-function cgroup_version($v) {
-    if (is_null($v))
-        return '-';
-
-    switch($v) {
-    case 'cgroup_v1':
-        return 'v1';
-    case 'cgroup_v2':
-        return 'v2';
-    default:
-        return "v1";
     }
 }
 
-function colorize($array) {
+function cgroup_version($v)
+{
+    if (is_null($v)) {
+        return '-';
+    }
+
+    switch($v) {
+        case 'cgroup_v1':
+            return 'v1';
+        case 'cgroup_v2':
+            return 'v2';
+        default:
+            return "v1";
+    }
+}
+
+function colorize($array)
+{
     $ret = array();
 
     $from = 0x70;
     $to = 0xff;
     $cnt = count($array);
 
-    if (!$cnt)
+    if (!$cnt) {
         return $ret;
+    }
 
-    $step = (int) round(($to - $from) / pow($cnt, 1.0/3));
+    $step = (int) round(($to - $from) / pow($cnt, 1.0 / 3));
     $i = 0;
 
     for ($r = $from; $r < $to; $r += $step) {
         for ($g = $from; $g < $to; $g += $step) {
             for ($b = $from; $b < $to; $b += $step) {
-                if (count($ret) >= $cnt)
+                if (count($ret) >= $cnt) {
                     return $ret;
+                }
 
                 $ret[ $array[$i++] ] = dechex(($r << 16) + ($g << 8) + $b);
             }
@@ -849,41 +964,50 @@ function colorize($array) {
     return $ret;
 }
 
-function lang_id_by_code($code, $langs = null) {
-  global $api;
+function lang_id_by_code($code, $langs = null)
+{
+    global $api;
 
-  if (!$langs)
-      $langs = $api->language->list();
+    if (!$langs) {
+        $langs = $api->language->list();
+    }
 
-  foreach ($langs as $l) {
-    if ($l->code == $code)
-        return $l->id;
-  }
+    foreach ($langs as $l) {
+        if ($l->code == $code) {
+            return $l->id;
+        }
+    }
 
-  return false;
+    return false;
 }
 
 
-function network_label($net) {
-  return $net->label ? $net->label : $net->address.'/'.$net->prefix;
+function network_label($net)
+{
+    return $net->label ? $net->label : $net->address . '/' . $net->prefix;
 }
 
-function payments_enabled() {
+function payments_enabled()
+{
     global $api;
 
     return $api->user_payment ? true : false;
 }
 
-function is_assoc($arr) {
-    if (array() === $arr)
+function is_assoc($arr)
+{
+    if (array() === $arr) {
         return false;
+    }
 
     return array_keys($arr) !== range(0, count($arr) - 1);
 }
 
-function h($v) {
-    if (is_null($v))
+function h($v)
+{
+    if (is_null($v)) {
         return '';
+    }
 
     return htmlspecialchars($v);
 }
@@ -891,29 +1015,34 @@ function h($v) {
 /**
  * @return bool
  */
-function isLoggedIn(){
+function isLoggedIn()
+{
     return $_SESSION["logged_in"] ?? false;
 }
 
 /**
  * @return bool
  */
-function isAdmin(){
+function isAdmin()
+{
     return $_SESSION["is_admin"] ?? false;
 }
 
-function getVersionLink () {
+function getVersionLink()
+{
     $hash = getCommitHash();
 
-    if (!$hash)
+    if (!$hash) {
         return VERSION;
+    }
 
     $short = substr($hash, 0, 8);
 
-    return '<a href="https://github.com/vpsfreecz/vpsadmin/commit/'.$hash.'" target="_blank">'.$short.'</a>';
+    return '<a href="https://github.com/vpsfreecz/vpsadmin/commit/' . $hash . '" target="_blank">' . $short . '</a>';
 }
 
-function getCommitHash() {
+function getCommitHash()
+{
     $hash = null;
 
     if (isset($_SESSION['commit_hash'])) {
@@ -927,29 +1056,34 @@ function getCommitHash() {
     return $hash;
 }
 
-function readCommitHash () {
-    $revisionFile = WWW_ROOT.'/.git-revision';
+function readCommitHash()
+{
+    $revisionFile = WWW_ROOT . '/.git-revision';
 
-    if (file_exists($revisionFile))
+    if (file_exists($revisionFile)) {
         return trim(file_get_contents($revisionFile));
+    }
 
-    $gitDir = WWW_ROOT.'/../.git';
+    $gitDir = WWW_ROOT . '/../.git';
 
-    if (!file_exists($gitDir))
+    if (!file_exists($gitDir)) {
         return null;
+    }
 
-    $gitHead = file_get_contents($gitDir.'/HEAD');
+    $gitHead = file_get_contents($gitDir . '/HEAD');
 
-    if (!str_starts_with($gitHead, 'ref: '))
+    if (!str_starts_with($gitHead, 'ref: ')) {
         return trim($gitHead);
+    }
 
     $ref = trim(explode(' ', $gitHead)[1]);
 
-    return trim(file_get_contents($gitDir.'/'.$ref));
+    return trim(file_get_contents($gitDir . '/' . $ref));
 }
 
-function format_errors ($response) {
-    $body = _('Error message: '). $response->getMessage();
+function format_errors($response)
+{
+    $body = _('Error message: ') . $response->getMessage();
     $errors = $response->getErrors();
 
     $body .= '<br>';
@@ -957,8 +1091,9 @@ function format_errors ($response) {
     if(count((array)$errors) > 0) {
         $body .= '<ul>';
 
-        foreach($errors as $param => $err)
-            $body .= '<li>'.$param.': '.implode(', ', $err).'</li>';
+        foreach($errors as $param => $err) {
+            $body .= '<li>' . $param . ': ' . implode(', ', $err) . '</li>';
+        }
 
         $body .= '</ul>';
     }
@@ -966,7 +1101,8 @@ function format_errors ($response) {
     return $body;
 }
 
-function hasTotpEnabled($user) {
+function hasTotpEnabled($user)
+{
     global $api;
 
     return $user->totp_device->list([
@@ -976,7 +1112,8 @@ function hasTotpEnabled($user) {
     ])->getTotalCount() > 0;
 }
 
-function getUserEmails($user, $mail_role_recipients, $role) {
+function getUserEmails($user, $mail_role_recipients, $role)
+{
     foreach ($mail_role_recipients as $recp) {
         if ($recp->label === $role && $recp->to != '') {
             return explode(',', $recp->to);
@@ -986,53 +1123,62 @@ function getUserEmails($user, $mail_role_recipients, $role) {
     return [$user->email];
 }
 
-function isExportPublic() {
+function isExportPublic()
+{
     return isAdmin() || EXPORT_PUBLIC;
 }
 
-function hypervisorTypeToLabel($type) {
+function hypervisorTypeToLabel($type)
+{
     switch ($type) {
-    case 'vpsadminos':
-        return 'vpsAdminOS';
-    default:
-        return 'Unknown';
+        case 'vpsadminos':
+            return 'vpsAdminOS';
+        default:
+            return 'Unknown';
     }
 }
 
-function findBestPublicHostAddress ($hostAddrs) {
+function findBestPublicHostAddress($hostAddrs)
+{
     // Public IPv4
     foreach ($hostAddrs as $ip) {
         $net = $ip->ip_address->network;
 
-        if ($net->ip_version == 4 && $net->role == "public_access")
+        if ($net->ip_version == 4 && $net->role == "public_access") {
             return $ip;
+        }
     }
 
     // Public IPv6
     foreach ($hostAddrs as $ip) {
         $net = $ip->ip_address->network;
 
-        if ($net->ip_version == 6 && $net->role == "public_access")
+        if ($net->ip_version == 6 && $net->role == "public_access") {
             return $ip;
+        }
     }
 
     // No public IP
     return null;
 }
 
-function showVpsDiskSpaceWarning ($vps) {
+function showVpsDiskSpaceWarning($vps)
+{
     return $vps->used_diskspace > $vps->diskspace / 100.0 * 90;
 }
 
-function vpsDiskUsagePercent ($vps) {
+function vpsDiskUsagePercent($vps)
+{
     return $vps->used_diskspace / $vps->diskspace * 100;
 }
 
-function showVpsDiskExpansionWarning ($vps) {
+function showVpsDiskExpansionWarning($vps)
+{
     return $vps->dataset->dataset_expansion_id ? true : false;
 }
 
-function usedSpaceWithCompression ($dataset, $property) {
+function usedSpaceWithCompression($dataset, $property)
+{
     $used = $dataset->{$property};
     $ratio = $dataset->{$property == 'used' ? 'compressratio' : 'refcompressratio'};
 
@@ -1040,25 +1186,27 @@ function usedSpaceWithCompression ($dataset, $property) {
     $ret .= data_size_to_humanreadable($used);
     $ret .= ' (';
     $ret .= data_size_to_humanreadable($used * $ratio);
-    $ret .= ' '._('uncompressed, ratio ').$ratio.'&times;)';
+    $ret .= ' ' . _('uncompressed, ratio ') . $ratio . '&times;)';
 
     return $ret;
 }
 
-function compressRatioWithUsedSpace ($dataset, $property) {
+function compressRatioWithUsedSpace($dataset, $property)
+{
     $used = $dataset->{$property == 'compressratio' ? 'used' : 'referenced'};
     $ratio = $dataset->{$property};
 
     $ret = '';
-    $ret .= $ratio.'&times;';
+    $ret .= $ratio . '&times;';
     $ret .= ' (';
     $ret .= data_size_to_humanreadable($used * $ratio);
-    $ret .= ' '._('uncompressed').')';
+    $ret .= ' ' . _('uncompressed') . ')';
 
     return $ret;
 }
 
-function sortMaintenanceWindowsByCloseness ($windows) {
+function sortMaintenanceWindowsByCloseness($windows)
+{
     $ret = [];
 
     $curWeekday = intval(date('w'));
@@ -1072,10 +1220,11 @@ function sortMaintenanceWindowsByCloseness ($windows) {
         $daydiff = 0;
 
         if ($curWeekday == $w->weekday) {
-            if ($nowInMins >= $w->opens_at && $nowInMins <= ($w->closes_at - $reserveTime))
+            if ($nowInMins >= $w->opens_at && $nowInMins <= ($w->closes_at - $reserveTime)) {
                 $daydiff = 0;
-            else
+            } else {
                 $daydiff = 7;
+            }
         } elseif ($curWeekday > $w->weekday) {
             $daydiff = $w->weekday - $curWeekday + 7;
         } else {
@@ -1090,16 +1239,17 @@ function sortMaintenanceWindowsByCloseness ($windows) {
     return $ret;
 }
 
-function cgroupEnumTolabel($v) {
+function cgroupEnumTolabel($v)
+{
     switch ($v) {
-    case 'cgroup_any':
-        return 'cgroup v1/v2';
-    case 'cgroup_v1':
-        return 'cgroup v1';
-    case 'cgroup_v2':
-        return 'cgroup v2';
-    default:
-        return 'unknown cgroup';
+        case 'cgroup_any':
+            return 'cgroup v1/v2';
+        case 'cgroup_v1':
+            return 'cgroup v1';
+        case 'cgroup_v2':
+            return 'cgroup v2';
+        default:
+            return 'unknown cgroup';
     }
 }
 
@@ -1109,9 +1259,9 @@ function moo_inputremaining($input, $output, $chars, $uid)
 
     $out .= '
 	$(document).ready(function (){
-		$("#'.$input.'").keyup(function (o){
-			var n = '.abs($chars).' - $(this).val().length;
-			$("#'.$output.'").text( n < 0 ? 0 : n );
+		$("#' . $input . '").keyup(function (o){
+			var n = ' . abs($chars) . ' - $(this).val().length;
+			$("#' . $output . '").text( n < 0 ? 0 : n );
 		});
 	});
 	';

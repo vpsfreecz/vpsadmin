@@ -25,11 +25,12 @@ $return_url = urlencode($_SERVER['REQUEST_URI']);
 $xtpl->sbar_add(_('Maintenances and Outages'), '?page=outage&action=list');
 
 if (isLoggedIn()) {
-    if ($api->monitored_event)
+    if ($api->monitored_event) {
         $xtpl->sbar_add(_("Monitoring"), '?page=monitoring&action=list');
+    }
 
     $xtpl->sbar_add(_("OOM Reports"), '?page=oom_reports&action=list');
-    $xtpl->sbar_add(_("Incident Reports"), '?page=incidents&action=list&return='.$return_url);
+    $xtpl->sbar_add(_("Incident Reports"), '?page=incidents&action=list&return=' . $return_url);
 }
 
 $xtpl->sbar_out(_('Overview'));
@@ -37,9 +38,9 @@ $xtpl->sbar_out(_('Overview'));
 $xtpl->title(_("Overview"));
 
 if (isAdmin()) {
-  $xtpl->table_add_category(_("Event Log <a href=\"?page=cluster&action=sysconfig\">[edit]</a>"));
+    $xtpl->table_add_category(_("Event Log <a href=\"?page=cluster&action=sysconfig\">[edit]</a>"));
 } else {
-  $xtpl->table_add_category(_("Event Log"));
+    $xtpl->table_add_category(_("Event Log"));
 }
 
 $xtpl->table_add_category('');
@@ -53,12 +54,12 @@ if ($noticeboard) {
 
 if ($api->news_log) {
     foreach ($api->news_log->list(array('limit' => 5)) as $news) {
-        $xtpl->table_td('['.tolocaltz($news->published_at, "Y-m-d H:i").']');
+        $xtpl->table_td('[' . tolocaltz($news->published_at, "Y-m-d H:i") . ']');
         $xtpl->table_td($news->message);
         $xtpl->table_tr();
     }
 
-    $xtpl->table_td('<a href="?page=log">'._("View all").'</a>', false, false, '2');
+    $xtpl->table_td('<a href="?page=log">' . _("View all") . '</a>', false, false, '2');
     $xtpl->table_tr();
 }
 
@@ -91,7 +92,7 @@ $xtpl->table_td(_("Storage"), '#5EAFFF; color:#FFF; font-weight:bold;');
 $xtpl->table_td(_("VPS"), '#5EAFFF; color:#FFF; font-weight:bold;');
 $xtpl->table_td(_("CPU"), '#5EAFFF; color:#FFF; font-weight:bold;');
 $xtpl->table_td(_("Kernel"), '#5EAFFF; color:#FFF; font-weight:bold;');
-$xtpl->table_td(_("cgroups").' [<a style="color: #ffffff;" href="https://kb.vpsfree.org/manuals/vps/cgroups" target="_blank" title="'._('Read more about cgroups in KB').'">?</a>]', '#5EAFFF; color:#FFF; font-weight:bold;');
+$xtpl->table_td(_("cgroups") . ' [<a style="color: #ffffff;" href="https://kb.vpsfree.org/manuals/vps/cgroups" target="_blank" title="' . _('Read more about cgroups in KB') . '">?</a>]', '#5EAFFF; color:#FFF; font-weight:bold;');
 
 $xtpl->table_tr();
 
@@ -108,7 +109,7 @@ foreach ($nodes as $node) {
         $xtpl->table_td(_("VPS"), '#5EAFFF; color:#FFF; font-weight:bold;');
         $xtpl->table_td(_("CPU"), '#5EAFFF; color:#FFF; font-weight:bold;');
         $xtpl->table_td(_("Kernel"), '#5EAFFF; color:#FFF; font-weight:bold;');
-        $xtpl->table_td(_("cgroups").' [<a style="color: #ffffff;" href="https://kb.vpsfree.org/manuals/vps/cgroups" target="_blank" title="'._('Read more about cgroups in KB').'">?</a>]', '#5EAFFF; color:#FFF; font-weight:bold;');
+        $xtpl->table_td(_("cgroups") . ' [<a style="color: #ffffff;" href="https://kb.vpsfree.org/manuals/vps/cgroups" target="_blank" title="' . _('Read more about cgroups in KB') . '">?</a>]', '#5EAFFF; color:#FFF; font-weight:bold;');
         $xtpl->table_tr(true);
     }
 
@@ -120,20 +121,20 @@ foreach ($nodes as $node) {
 
     if (!is_null($node->last_report)) {
         $last_report = strtotime($node->last_report);
-        $last_update = date('Y-m-d H:i:s', $last_report).' ('.date('i:s', (time() - $last_report)).' ago)';
+        $last_update = date('Y-m-d H:i:s', $last_report) . ' (' . date('i:s', (time() - $last_report)) . ' ago)';
     }
 
     if($node->maintenance_lock != 'no') {
-        $icons .= '<img title="'._("The server is currently under maintenance").': '.htmlspecialchars($node->maintenance_lock_reason).'" src="template/icons/maintenance_mode.png">';
+        $icons .= '<img title="' . _("The server is currently under maintenance") . ': ' . htmlspecialchars($node->maintenance_lock_reason) . '" src="template/icons/maintenance_mode.png">';
 
     } elseif (is_null($last_report) || (time() - $last_report) > 150) {
 
-        $icons .= '<img title="'._("The server is not responding")
+        $icons .= '<img title="' . _("The server is not responding")
                      . ', last update: ' . ($last_update ?? _('never'))
                      . '" src="template/icons/error.png"/>';
     } else {
 
-        $icons .= '<img title="'._("The server is online")
+        $icons .= '<img title="' . _("The server is online")
                      . ', last update: ' . $last_update
                      . '" src="template/icons/server_online.png"/>';
 
@@ -143,9 +144,9 @@ foreach ($nodes as $node) {
     $xtpl->table_td((isLoggedIn() ? node_link($node, $node->name) : $node->name));
 
     if ($node->pool_scan == 'scrub') {
-        $xtpl->table_td(_('scrub, ').round($node->pool_scan_percent, 1).'&nbsp;%');
+        $xtpl->table_td(_('scrub, ') . round($node->pool_scan_percent, 1) . '&nbsp;%');
     } elseif ($node->pool_scan == 'resilver') {
-        $xtpl->table_td(_('resilver, ').round($node->pool_scan_percent, 1).'&nbsp;%');
+        $xtpl->table_td(_('resilver, ') . round($node->pool_scan_percent, 1) . '&nbsp;%');
     } else {
         $xtpl->table_td($node->pool_state);
     }
@@ -157,18 +158,21 @@ foreach ($nodes as $node) {
     } else {
         $xtpl->table_td(
             $munin->linkHostPath(sprintf('%.2f %%', 100.0 - $node->cpu_idle), $node->fqdn, '#system'),
-            false, true
+            false,
+            true
         );
     }
 
     $xtpl->table_td(
         kernel_version($node->kernel),
-        false, true
+        false,
+        true
     );
 
     $xtpl->table_td(
         cgroup_version($node->cgroup_version),
-        false, true
+        false,
+        true
     );
 
     $xtpl->table_tr();
@@ -180,4 +184,3 @@ $xtpl->table_add_category($config->get('webui', 'index_info_box_title'));
 $xtpl->table_td($config->get('webui', 'index_info_box_content'));
 $xtpl->table_tr();
 $xtpl->table_out();
-

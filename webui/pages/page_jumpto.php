@@ -12,13 +12,13 @@ if (isLoggedIn() && isAdmin()) {
             $v = $res[0];
 
             switch ($v->resource) {
-            case 'User':
-                redirect('?page=adminm&action=edit&id='.$v->id);
-                break;
+                case 'User':
+                    redirect('?page=adminm&action=edit&id=' . $v->id);
+                    break;
 
-            case 'Vps':
-                redirect('?page=adminvps&action=info&veid='.$v->id);
-                break;
+                case 'Vps':
+                    redirect('?page=adminvps&action=info&veid=' . $v->id);
+                    break;
             }
         }
 
@@ -35,33 +35,33 @@ if (isLoggedIn() && isAdmin()) {
                 $link = null;
 
                 switch ($v->resource) {
-                case 'User':
-                    $link = '?page=adminm&action=edit&id='.$v->id;
-                    break;
+                    case 'User':
+                        $link = '?page=adminm&action=edit&id=' . $v->id;
+                        break;
 
-                case 'Vps':
-                    $link = '?page=adminvps&action=info&veid='.$v->id;
-                    break;
+                    case 'Vps':
+                        $link = '?page=adminvps&action=info&veid=' . $v->id;
+                        break;
 
-                case 'Export':
-                    $link = '?page=export&action=edit&export='.$v->id;
-                    break;
+                    case 'Export':
+                        $link = '?page=export&action=edit&export=' . $v->id;
+                        break;
 
-                case 'TransactionChain':
-                    $link = '?page=transactions&chain='.$v->id;
-                    break;
+                    case 'TransactionChain':
+                        $link = '?page=transactions&chain=' . $v->id;
+                        break;
 
-                case 'Network':
-                    $link = '?page=cluster&action=network_locations&network='.$v->id;
-                    break;
+                    case 'Network':
+                        $link = '?page=cluster&action=network_locations&network=' . $v->id;
+                        break;
                 }
 
-                $xtpl->table_td($link ? '<a href="'.$link.'">'.$v->id.'</a>' : $v->id);
+                $xtpl->table_td($link ? '<a href="' . $link . '">' . $v->id . '</a>' : $v->id);
                 $xtpl->table_td($v->attribute);
                 $xtpl->table_td(preg_replace_callback(
-                    "/(".preg_quote($search).")/i",
+                    "/(" . preg_quote($search) . ")/i",
                     function ($matches) {
-                        return "<strong>".htmlspecialchars($matches[0])."</strong>";
+                        return "<strong>" . htmlspecialchars($matches[0]) . "</strong>";
                     },
                     $v->value
                 ));

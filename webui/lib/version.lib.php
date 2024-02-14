@@ -9,4 +9,3 @@ define("VERSION", '3.0.0.dev');
 define("DEMO_MODE", false);
 
 define("API_VERSION", '6.0');
-?>

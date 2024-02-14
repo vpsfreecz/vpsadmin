@@ -6,7 +6,8 @@
     Web-admin interface for vpsAdminOS (see https://vpsadminos.org)
     Copyright (C) 2008-2011 Pavel Snajdr, snajpa@snajpa.net
 */
-function print_newm() {
+function print_newm()
+{
     global $xtpl, $cfg_privlevel, $config;
 
     $xtpl->title(_("Add a member"));
@@ -14,24 +15,24 @@ function print_newm() {
     $xtpl->table_add_category('&nbsp;');
     $xtpl->table_add_category('&nbsp;');
     $xtpl->form_create('?page=adminm&section=members&action=new2', 'post');
-    $xtpl->form_add_input(_("Nickname").':', 'text', '30', 'm_nick', $_POST["m_nick"], _("A-Z, a-z, dot, dash"), 63);
-    $xtpl->form_add_select(_("Privileges").':', 'm_level', $cfg_privlevel, $_POST["m_level"] ? $_POST["m_level"] : '2',  ' ');
+    $xtpl->form_add_input(_("Nickname") . ':', 'text', '30', 'm_nick', $_POST["m_nick"], _("A-Z, a-z, dot, dash"), 63);
+    $xtpl->form_add_select(_("Privileges") . ':', 'm_level', $cfg_privlevel, $_POST["m_level"] ? $_POST["m_level"] : '2', ' ');
 
-    $m_pass_uid  = $xtpl->form_add_input(_("Password").':', 'password', '30', 'm_pass', '', '', -8);
-    $m_pass2_uid = $xtpl->form_add_input(_("Repeat password").':', 'password', '30', 'm_pass2', '', ' ');
+    $m_pass_uid  = $xtpl->form_add_input(_("Password") . ':', 'password', '30', 'm_pass', '', '', -8);
+    $m_pass2_uid = $xtpl->form_add_input(_("Repeat password") . ':', 'password', '30', 'm_pass2', '', ' ');
 
     $xtpl->form_add_input('', 'button', '', 'g_pass', _("Generate password"), '', '', 'onClick="javascript:formSubmit()"');
-    $xtpl->form_add_input(_("Full name").':', 'text', '30', 'm_name', $_POST["m_name"], _("A-Z, a-z, with diacritic"), 255);
-    $xtpl->form_add_input(_("E-mail").':', 'text', '30', 'm_mail', $_POST["m_mail"], ' ');
-    $xtpl->form_add_input(_("Postal address").':', 'text', '30', 'm_address', $_POST["m_address"], ' ');
+    $xtpl->form_add_input(_("Full name") . ':', 'text', '30', 'm_name', $_POST["m_name"], _("A-Z, a-z, with diacritic"), 255);
+    $xtpl->form_add_input(_("E-mail") . ':', 'text', '30', 'm_mail', $_POST["m_mail"], ' ');
+    $xtpl->form_add_input(_("Postal address") . ':', 'text', '30', 'm_address', $_POST["m_address"], ' ');
 
     if (payments_enabled()) {
-        $xtpl->form_add_input(_("Monthly payment").':', 'text', '30', 'm_monthly_payment', $_POST["m_monthly_payment"] ? $_POST["m_monthly_payment"] : '300', ' ');
+        $xtpl->form_add_input(_("Monthly payment") . ':', 'text', '30', 'm_monthly_payment', $_POST["m_monthly_payment"] ? $_POST["m_monthly_payment"] : '300', ' ');
     }
 
-    $xtpl->form_add_checkbox(_("Enable vpsAdmin mailer").':', 'm_mailer_enable', '1', $_POST["m_nick"] ? $_POST["m_mailer_enable"] : true, $hint = '');
+    $xtpl->form_add_checkbox(_("Enable vpsAdmin mailer") . ':', 'm_mailer_enable', '1', $_POST["m_nick"] ? $_POST["m_mailer_enable"] : true, $hint = '');
 
-    $xtpl->form_add_textarea(_("Info").':', 28, 4, 'm_info', $_POST["m_info"], _("Note for administrators"));
+    $xtpl->form_add_textarea(_("Info") . ':', 28, 4, 'm_info', $_POST["m_info"], _("Note for administrators"));
     $xtpl->form_out(_("Add"));
 
     $xtpl->assign('SCRIPT', '
@@ -52,8 +53,8 @@ function print_newm() {
 
 				function formSubmit() {
 					var randpwd = randomPassword(8);
-  					$("#'.$m_pass_uid.'").val(randpwd);
-  					$("#'.$m_pass2_uid.'").val(randpwd);
+  					$("#' . $m_pass_uid . '").val(randpwd);
+  					$("#' . $m_pass2_uid . '").val(randpwd);
 
   					return false;
 				}
@@ -62,7 +63,8 @@ function print_newm() {
 	');
 }
 
-function print_editm($u) {
+function print_editm($u)
+{
     global $xtpl, $cfg_privlevel, $config, $api;
 
     $mail_role_recipients = $u->mail_role_recipient->list();
@@ -71,22 +73,22 @@ function print_editm($u) {
 
     $xtpl->table_add_category(_("Member"));
     $xtpl->table_add_category('&nbsp;');
-    $xtpl->form_create('?page=adminm&section=members&action=edit_member&id='.$u->id, 'post');
+    $xtpl->form_create('?page=adminm&section=members&action=edit_member&id=' . $u->id, 'post');
 
-    $xtpl->table_td("ID".':');
+    $xtpl->table_td("ID" . ':');
     $xtpl->table_td($u->id);
     $xtpl->table_tr();
 
-    $xtpl->table_td("Created".':');
+    $xtpl->table_td("Created" . ':');
     $xtpl->table_td(tolocaltz($u->created_at));
     $xtpl->table_tr();
 
-    $xtpl->table_td("State".':');
+    $xtpl->table_td("State" . ':');
     $xtpl->table_td($u->object_state);
     $xtpl->table_tr();
 
     if ($u->expiration_date) {
-        $xtpl->table_td("Expiration".':');
+        $xtpl->table_td("Expiration" . ':');
         $xtpl->table_td(tolocaltz($u->expiration_date));
         $xtpl->table_tr();
     }
@@ -94,24 +96,24 @@ function print_editm($u) {
     if (isAdmin()) {
         $xtpl->table_add_category('&nbsp;');
 
-        $xtpl->form_add_input(_("Nickname").':', 'text', '30', 'm_nick', $u->login, _("A-Z, a-z, dot, dash"), 63);
-        $xtpl->form_add_select(_("Privileges").':', 'm_level', $cfg_privlevel, $u->level,  '');
+        $xtpl->form_add_input(_("Nickname") . ':', 'text', '30', 'm_nick', $u->login, _("A-Z, a-z, dot, dash"), 63);
+        $xtpl->form_add_select(_("Privileges") . ':', 'm_level', $cfg_privlevel, $u->level, '');
 
     } else {
-        $xtpl->table_td(_("Nickname").':');
+        $xtpl->table_td(_("Nickname") . ':');
         $xtpl->table_td($u->login);
         $xtpl->table_tr();
 
-        $xtpl->table_td(_("Privileges").':');
+        $xtpl->table_td(_("Privileges") . ':');
         $xtpl->table_td($cfg_privlevel[$u->level]);
         $xtpl->table_tr();
     }
 
     if (payments_enabled()) {
-        $xtpl->table_td(_("Paid until").':');
+        $xtpl->table_td(_("Paid until") . ':');
         user_payment_info($u);
         $xtpl->table_td(
-            '<a href="?page=adminm&section=members&action=payment_instructions&id='.$u->id.'">'._('Payment instructions').'</a>'
+            '<a href="?page=adminm&section=members&action=payment_instructions&id=' . $u->id . '">' . _('Payment instructions') . '</a>'
         );
         $xtpl->table_tr();
     }
@@ -123,14 +125,14 @@ function print_editm($u) {
             'meta' => array('count' => true)
         ))->getTotalCount();
 
-        $xtpl->table_td(_("VPS count").':');
-        $xtpl->table_td("<a href='?page=adminvps&action=list&user=".$u->id."'>".$vps_count."</a>");
+        $xtpl->table_td(_("VPS count") . ':');
+        $xtpl->table_td("<a href='?page=adminvps&action=list&user=" . $u->id . "'>" . $vps_count . "</a>");
         $xtpl->table_tr();
     }
 
-    $xtpl->table_td(_('Enable mail notifications from vpsAdmin').':');
+    $xtpl->table_td(_('Enable mail notifications from vpsAdmin') . ':');
     $xtpl->form_add_checkbox_pure('m_mailer_enable', '1', $u->mailer_enabled, $hint = '');
-    $xtpl->table_td('<a href="?page=reminder&action=reminder&resource=user&id='.$u->id.'">'._('Configure payment reminder').'</a>');
+    $xtpl->table_td('<a href="?page=reminder&action=reminder&resource=user&id=' . $u->id . '">' . _('Configure payment reminder') . '</a>');
     $xtpl->table_tr();
 
     api_param_to_form(
@@ -142,11 +144,11 @@ function print_editm($u) {
     );
 
     if (isAdmin()) {
-        $xtpl->form_add_input(_("Monthly payment").':', 'text', '30', 'm_monthly_payment', $u->monthly_payment, ' ');
-        $xtpl->form_add_textarea(_("Info").':', 28, 4, 'm_info', $u->info, _("Note for administrators"));
+        $xtpl->form_add_input(_("Monthly payment") . ':', 'text', '30', 'm_monthly_payment', $u->monthly_payment, ' ');
+        $xtpl->form_add_textarea(_("Info") . ':', 28, 4, 'm_info', $u->info, _("Note for administrators"));
 
-        $xtpl->form_add_checkbox(_("Require password reset").':', 'm_password_reset', '1', $u->password_reset, $hint = '');
-        $xtpl->form_add_checkbox(_("Lock-out").':', 'm_lockout', '1', $u->lockout, $hint = '');
+        $xtpl->form_add_checkbox(_("Require password reset") . ':', 'm_password_reset', '1', $u->password_reset, $hint = '');
+        $xtpl->form_add_checkbox(_("Lock-out") . ':', 'm_lockout', '1', $u->lockout, $hint = '');
     }
 
     $xtpl->form_out(_("Save"));
@@ -155,11 +157,11 @@ function print_editm($u) {
         $xtpl->table_add_category(_('Contact'));
         $xtpl->table_add_category('');
 
-        $xtpl->table_td(_('Account management').':');
+        $xtpl->table_td(_('Account management') . ':');
         $xtpl->table_td(implode(', ', getUserEmails($u, $mail_role_recipients, 'Account management')));
         $xtpl->table_tr();
 
-        $xtpl->table_td(_('System administrator').':');
+        $xtpl->table_td(_('System administrator') . ':');
         $xtpl->table_td(implode(', ', getUserEmails($u, $mail_role_recipients, 'System administrator')));
         $xtpl->table_tr();
 
@@ -169,22 +171,23 @@ function print_editm($u) {
     $xtpl->table_add_category(_("Change password"));
     $xtpl->table_add_category('&nbsp;');
     $xtpl->table_add_category('&nbsp;');
-    $xtpl->form_create('?page=adminm&section=members&action=passwd&id='.$u->id, 'post');
+    $xtpl->form_create('?page=adminm&section=members&action=passwd&id=' . $u->id, 'post');
 
-    if (!isAdmin())
-        $xtpl->form_add_input(_("Current password").':', 'password', '30', 'password');
+    if (!isAdmin()) {
+        $xtpl->form_add_input(_("Current password") . ':', 'password', '30', 'password');
+    }
 
-    $xtpl->form_add_input(_("New password").':', 'password', '30', 'new_password', '', '', -8);
-    $xtpl->form_add_input(_("Repeat new password").':', 'password', '30', 'new_password2', '', '', -8);
+    $xtpl->form_add_input(_("New password") . ':', 'password', '30', 'new_password', '', '', -8);
+    $xtpl->form_add_input(_("Repeat new password") . ':', 'password', '30', 'new_password2', '', '', -8);
     $xtpl->form_out(_("Save"));
 
     $xtpl->table_add_category(_('Session control'));
     $xtpl->table_add_category('&nbsp;');
     $xtpl->table_add_category('&nbsp;');
-    $xtpl->form_create('?page=adminm&section=members&action=session_control&id='.$u->id, 'post');
+    $xtpl->form_create('?page=adminm&section=members&action=session_control&id=' . $u->id, 'post');
 
     $xtpl->form_add_checkbox(
-        _('Enable single sign-on').':',
+        _('Enable single sign-on') . ':',
         'enable_single_sign_on',
         '1',
         $_POST['enable_single_sign_on'] ?? $u->enable_single_sign_on,
@@ -192,18 +195,18 @@ function print_editm($u) {
     );
 
     $xtpl->form_add_number(
-        _('Preferred session length').':',
+        _('Preferred session length') . ':',
         'preferred_session_length',
         post_val('preferred_session_length', round($u->preferred_session_length / 60)),
         0,
-        6*60,
+        6 * 60,
         1,
         _('minutes'),
         _('How long will the session last without any activity. Set to 0 to disable session timeout.')
     );
 
     $xtpl->form_add_checkbox(
-        _('Logout all').':',
+        _('Logout all') . ':',
         'preferred_logout_all',
         '1',
         $_POST['preferred_logout_all'] ?? $u->preferred_logout_all,
@@ -216,17 +219,17 @@ function print_editm($u) {
 
     $xtpl->table_add_category(_("Two-factor authentication"));
     $xtpl->table_add_category('&nbsp;');
-    $xtpl->table_td(_('Status').':');
+    $xtpl->table_td(_('Status') . ':');
     $xtpl->table_td($hasTotp ? _('Enabled') : _('Disabled'));
     $xtpl->table_tr();
 
-    $xtpl->table_td(_("TOTP devices").':');
-    $manageTotp ='<a href="?page=adminm&action=totp_devices&id='.$u->id.'">Manage TOTP devices</a>';
+    $xtpl->table_td(_("TOTP devices") . ':');
+    $manageTotp = '<a href="?page=adminm&action=totp_devices&id=' . $u->id . '">Manage TOTP devices</a>';
 
     if ($hasTotp) {
         $xtpl->table_td($manageTotp);
     } else {
-        $xtpl->table_td('<a href="?page=adminm&action=totp_device_add&id='.$u->id.'">Add TOTP device</a> / '.$manageTotp);
+        $xtpl->table_td('<a href="?page=adminm&action=totp_device_add&id=' . $u->id . '">Add TOTP device</a> / ' . $manageTotp);
     }
 
     $xtpl->table_tr();
@@ -236,38 +239,44 @@ function print_editm($u) {
     $xtpl->table_add_category(_("Personal information"));
     $xtpl->table_add_category('&nbsp;');
     $xtpl->table_add_category('&nbsp;');
-    $xtpl->form_create('?page=adminm&section=members&action=edit_personal&id='.$u->id, 'post');
-    $xtpl->form_add_input(_("Full name").':', 'text', '30', 'full_name', post_val('full_name', $u->full_name), _("A-Z, a-z, with diacritic"), 255);
-    $xtpl->form_add_input(_("E-mail").':', 'text', '30', 'email', post_val('email', $u->email), ' ');
-    $xtpl->form_add_input(_("Postal address").':', 'text', '30', 'address', post_val('address', $u->address), ' ');
+    $xtpl->form_create('?page=adminm&section=members&action=edit_personal&id=' . $u->id, 'post');
+    $xtpl->form_add_input(_("Full name") . ':', 'text', '30', 'full_name', post_val('full_name', $u->full_name), _("A-Z, a-z, with diacritic"), 255);
+    $xtpl->form_add_input(_("E-mail") . ':', 'text', '30', 'email', post_val('email', $u->email), ' ');
+    $xtpl->form_add_input(_("Postal address") . ':', 'text', '30', 'address', post_val('address', $u->address), ' ');
 
     if(!isAdmin()) {
-        $xtpl->form_add_input(_("Reason for change").':', 'text', '50', 'change_reason', isset($_POST['change_reason']) ? $_POST['change_reason'] : null);
-        $xtpl->table_td(_("Request for change will be sent to administrators for approval.".
+        $xtpl->form_add_input(_("Reason for change") . ':', 'text', '50', 'change_reason', isset($_POST['change_reason']) ? $_POST['change_reason'] : null);
+        $xtpl->table_td(_("Request for change will be sent to administrators for approval." .
                           "Changes will not take effect immediately. You will be informed about the result."), false, false, 3);
         $xtpl->table_tr();
     }
 
     $xtpl->form_out(isAdmin() ? _("Save") : _("Request change"));
 
-    $xtpl->form_create('?page=adminm&action=role_recipients&id='.$u->id, 'post');
+    $xtpl->form_create('?page=adminm&action=role_recipients&id=' . $u->id, 'post');
     $xtpl->table_add_category(_('E-mail roles'));
     $xtpl->table_add_category(_('E-mails'));
 
     $xtpl->table_td(
         _('E-mails configured here override the primary e-mail. It is a comma separated list of e-mails, may contain line breaks.'),
-        false, false, 2
+        false,
+        false,
+        2
     );
     $xtpl->table_tr();
 
     foreach ($mail_role_recipients as $recp) {
         $xtpl->table_td(
-            $recp->label, false, false, 1,
+            $recp->label,
+            false,
+            false,
+            1,
             $recp->description ? 2 : 1
         );
 
         $xtpl->form_add_textarea_pure(
-            50, 5,
+            50,
+            5,
             "to[{$recp->id}]",
             str_replace(',', ",\n", $_POST['to'][$recp->id] ?? $recp->to ?? '')
         );
@@ -280,8 +289,8 @@ function print_editm($u) {
     }
 
     $xtpl->table_td(
-        '<a href="?page=adminm&action=template_recipients&id='.$u->id.'">'.
-        _('Advanced configuration').
+        '<a href="?page=adminm&action=template_recipients&id=' . $u->id . '">' .
+        _('Advanced configuration') .
         '</a>'
     );
     $xtpl->table_td($xtpl->html_submit(_('Save')));
@@ -293,42 +302,46 @@ function print_editm($u) {
     if (isAdmin()) {
         lifetimes_set_state_form('user', $u->id, $u);
 
-        $xtpl->sbar_add("<br><img src=\"template/icons/m_switch.png\"  title=". _("Switch context") ." /> Switch context", "?page=login&action=switch_context&m_id={$u->id}&next=".$return_url);
-        $xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="'._("State log").'" />'._('State log'), '?page=lifetimes&action=changelog&resource=user&id='.$u->id.'&return='.$return_url);
+        $xtpl->sbar_add("<br><img src=\"template/icons/m_switch.png\"  title=" . _("Switch context") . " /> Switch context", "?page=login&action=switch_context&m_id={$u->id}&next=" . $return_url);
+        $xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="' . _("State log") . '" />' . _('State log'), '?page=lifetimes&action=changelog&resource=user&id=' . $u->id . '&return=' . $return_url);
     }
 
-    if (payments_enabled())
-        $xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="'._("Payment instructions").'" />'._('Payment instructions'), "?page=adminm&section=members&action=payment_instructions&id={$u->id}");
+    if (payments_enabled()) {
+        $xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="' . _("Payment instructions") . '" />' . _('Payment instructions'), "?page=adminm&section=members&action=payment_instructions&id={$u->id}");
+    }
 
-    $xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="'._("Advanced mail configuration").'" />'._('Advanced e-mail configuration'), "?page=adminm&section=members&action=template_recipients&id={$u->id}");
-    $xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="'._("Public keys").'" />'._('Public keys'), "?page=adminm&section=members&action=pubkeys&id={$u->id}");
-    $xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="'._("TOTP devices").'" />'._('TOTP devices'), "?page=adminm&section=members&action=totp_devices&id={$u->id}");
-    $xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="'._("Sessions").'" />'._('Sessions'), "?page=adminm&action=user_sessions&id={$u->id}");
+    $xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="' . _("Advanced mail configuration") . '" />' . _('Advanced e-mail configuration'), "?page=adminm&section=members&action=template_recipients&id={$u->id}");
+    $xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="' . _("Public keys") . '" />' . _('Public keys'), "?page=adminm&section=members&action=pubkeys&id={$u->id}");
+    $xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="' . _("TOTP devices") . '" />' . _('TOTP devices'), "?page=adminm&section=members&action=totp_devices&id={$u->id}");
+    $xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="' . _("Sessions") . '" />' . _('Sessions'), "?page=adminm&action=user_sessions&id={$u->id}");
 
-    if (isAdmin())
-        $xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="'._("Transaction log").'" />'._('Transaction log'), "?page=transactions&user={$u->id}");
+    if (isAdmin()) {
+        $xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="' . _("Transaction log") . '" />' . _('Transaction log'), "?page=transactions&user={$u->id}");
+    }
 
-    $xtpl->sbar_add('<img src="template/icons/bug.png"  title="'._("Incident reports").'" />'._('Incident reports'), "?page=incidents&action=list&list=1&user={$u->id}&return=".$return_url);
+    $xtpl->sbar_add('<img src="template/icons/bug.png"  title="' . _("Incident reports") . '" />' . _('Incident reports'), "?page=incidents&action=list&list=1&user={$u->id}&return=" . $return_url);
 
-    $xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="'._("Resource packages").'" />'._('Resource packages'), "?page=adminm&section=members&action=resource_packages&id={$u->id}");
-    $xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="'._("Cluster resources").'" />'._('Cluster resources'), "?page=adminm&section=members&action=cluster_resources&id={$u->id}");
-    $xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="'._("Environment configs").'" />'._('Environment configs'), "?page=adminm&section=members&action=env_cfg&id={$u->id}");
+    $xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="' . _("Resource packages") . '" />' . _('Resource packages'), "?page=adminm&section=members&action=resource_packages&id={$u->id}");
+    $xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="' . _("Cluster resources") . '" />' . _('Cluster resources'), "?page=adminm&section=members&action=cluster_resources&id={$u->id}");
+    $xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="' . _("Environment configs") . '" />' . _('Environment configs'), "?page=adminm&section=members&action=env_cfg&id={$u->id}");
 }
 
-function print_deletem($u) {
+function print_deletem($u)
+{
     global $xtpl, $api;
 
     $xtpl->table_title(_("Delete member"));
-    $xtpl->table_td(_("Full name").':');
+    $xtpl->table_td(_("Full name") . ':');
     $xtpl->table_td($u->full_name);
     $xtpl->table_tr();
-    $xtpl->form_create('?page=adminm&section=members&action=delete2&id='.$u->id, 'post');
-    $xtpl->table_td(_("VPSes to be deleted").':');
+    $xtpl->form_create('?page=adminm&section=members&action=delete2&id=' . $u->id, 'post');
+    $xtpl->table_td(_("VPSes to be deleted") . ':');
 
     $vpses = '';
 
-    foreach ($api->vps->list(array('user' => $u->id)) as $vps)
-        $vpses .= '<a href="?page=adminvps&action=info&veid='.$vps->id.'">#'.$vps->id.' - '.$vps->hostname.'</a><br>';
+    foreach ($api->vps->list(array('user' => $u->id)) as $vps) {
+        $vpses .= '<a href="?page=adminvps&action=info&veid=' . $vps->id . '">#' . $vps->id . ' - ' . $vps->hostname . '</a><br>';
+    }
 
     $xtpl->table_td($vpses);
     $xtpl->table_tr();
@@ -339,7 +352,8 @@ function print_deletem($u) {
     $xtpl->form_out(_("Delete"));
 }
 
-function list_pubkeys() {
+function list_pubkeys()
+{
     global $api, $xtpl;
 
     $xtpl->table_title(_("Public keys"));
@@ -354,9 +368,11 @@ function list_pubkeys() {
 
     if ($pubkeys->count() == 0) {
         $xtpl->table_td(
-            '<a href="?page=adminm&section=members&action=pubkey_add&id='.$_GET['id'].'">'.
-            _('Add a public key').'</a>',
-            false, false, '7'
+            '<a href="?page=adminm&section=members&action=pubkey_add&id=' . $_GET['id'] . '">' .
+            _('Add a public key') . '</a>',
+            false,
+            false,
+            '7'
         );
         $xtpl->table_tr();
     }
@@ -367,92 +383,104 @@ function list_pubkeys() {
         $xtpl->table_td(h($k->comment));
         $xtpl->table_td(boolean_icon($k->auto_add));
 
-        $xtpl->table_td('<a href="?page=adminm&section=members&action=pubkey_edit&id='.$_GET['id'].'&pubkey_id='.$k->id.'"><img src="template/icons/m_edit.png"  title="'. _("Edit") .'" /></a>');
-        $xtpl->table_td('<a href="?page=adminm&section=members&action=pubkey_del&id='.$_GET['id'].'&pubkey_id='.$k->id.'&t='.csrf_token().'"><img src="template/icons/m_delete.png"  title="'. _("Delete") .'" /></a>');
+        $xtpl->table_td('<a href="?page=adminm&section=members&action=pubkey_edit&id=' . $_GET['id'] . '&pubkey_id=' . $k->id . '"><img src="template/icons/m_edit.png"  title="' . _("Edit") . '" /></a>');
+        $xtpl->table_td('<a href="?page=adminm&section=members&action=pubkey_del&id=' . $_GET['id'] . '&pubkey_id=' . $k->id . '&t=' . csrf_token() . '"><img src="template/icons/m_delete.png"  title="' . _("Delete") . '" /></a>');
 
         $xtpl->table_tr();
     }
 
     $xtpl->table_out();
 
-    $xtpl->sbar_add('<br><img src="template/icons/m_edit.png"  title="'._("Add public key").'" />'._('Add public key'), "?page=adminm&section=members&action=pubkey_add&id={$_GET['id']}");
-    $xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="'._("Back to user details").'" />'._('Back to user details'), "?page=adminm&section=members&action=edit&id={$_GET['id']}");
+    $xtpl->sbar_add('<br><img src="template/icons/m_edit.png"  title="' . _("Add public key") . '" />' . _('Add public key'), "?page=adminm&section=members&action=pubkey_add&id={$_GET['id']}");
+    $xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="' . _("Back to user details") . '" />' . _('Back to user details'), "?page=adminm&section=members&action=edit&id={$_GET['id']}");
 
 }
 
-function add_pubkey($user) {
+function add_pubkey($user)
+{
     global $api, $xtpl;
 
     $xtpl->table_title(_('Add public key'));
-    $xtpl->form_create('?page=adminm&section=members&action=pubkey_add&id='.$user.'&pubkey_id='.$id, 'post');
+    $xtpl->form_create('?page=adminm&section=members&action=pubkey_add&id=' . $user . '&pubkey_id=' . $id, 'post');
 
-    $xtpl->form_add_input(_("Label").':', 'text', '30', 'label', post_val('label'));
-    $xtpl->form_add_textarea(_("Public key").':', '80', '12', 'key', post_val('key'));
+    $xtpl->form_add_input(_("Label") . ':', 'text', '30', 'label', post_val('label'));
+    $xtpl->form_add_textarea(_("Public key") . ':', '80', '12', 'key', post_val('key'));
     $xtpl->form_add_checkbox(
-        _("Auto add").':', 'auto_add', '1', post_val('auto_add', false), '',
+        _("Auto add") . ':',
+        'auto_add',
+        '1',
+        post_val('auto_add', false),
+        '',
         _('Add this key to newly created VPS')
     );
 
     $xtpl->form_out(_('Save'));
 
-    $xtpl->sbar_add('<br><img src="template/icons/m_edit.png"  title="'._("Back to public keys").'" />'._('Back to public keys'), "?page=adminm&section=members&action=pubkeys&id={$user}");
+    $xtpl->sbar_add('<br><img src="template/icons/m_edit.png"  title="' . _("Back to public keys") . '" />' . _('Back to public keys'), "?page=adminm&section=members&action=pubkeys&id={$user}");
 }
 
-function edit_pubkey($user, $id) {
+function edit_pubkey($user, $id)
+{
     global $api, $xtpl;
 
     $k = $api->user($user)->public_key->find($id);
 
-    $xtpl->table_title(_('Edit public key').' #'.$id);
-    $xtpl->form_create('?page=adminm&section=members&action=pubkey_edit&id='.$user.'&pubkey_id='.$id, 'post');
+    $xtpl->table_title(_('Edit public key') . ' #' . $id);
+    $xtpl->form_create('?page=adminm&section=members&action=pubkey_edit&id=' . $user . '&pubkey_id=' . $id, 'post');
 
-    $xtpl->form_add_input(_("Label").':', 'text', '30', 'label', post_val('label', $k->label));
-    $xtpl->form_add_textarea(_("Public key").':', '80', '12', 'key', post_val('key', $k->key));
+    $xtpl->form_add_input(_("Label") . ':', 'text', '30', 'label', post_val('label', $k->label));
+    $xtpl->form_add_textarea(_("Public key") . ':', '80', '12', 'key', post_val('key', $k->key));
     $xtpl->form_add_checkbox(
-        _("Auto add").':', 'auto_add', '1', post_val('auto_add', $k->auto_add), '',
+        _("Auto add") . ':',
+        'auto_add',
+        '1',
+        post_val('auto_add', $k->auto_add),
+        '',
         _('Add this key to newly created VPS')
     );
 
-    $xtpl->table_td(_('Fingerprint').':');
+    $xtpl->table_td(_('Fingerprint') . ':');
     $xtpl->table_td($k->fingerprint);
     $xtpl->table_tr();
 
-    $xtpl->table_td(_('Comment').':');
+    $xtpl->table_td(_('Comment') . ':');
     $xtpl->table_td(h($k->comment));
     $xtpl->table_tr();
 
-    $xtpl->table_td(_('Created at').':');
+    $xtpl->table_td(_('Created at') . ':');
     $xtpl->table_td(tolocaltz($k->created_at));
     $xtpl->table_tr();
 
-    $xtpl->table_td(_('Updated at').':');
+    $xtpl->table_td(_('Updated at') . ':');
     $xtpl->table_td(tolocaltz($k->updated_at));
     $xtpl->table_tr();
 
     $xtpl->form_out(_('Save'));
 
-    $xtpl->sbar_add('<br><img src="template/icons/m_edit.png"  title="'._("Back to public keys").'" />'._('Back to public keys'), "?page=adminm&section=members&action=pubkeys&id={$user}");
+    $xtpl->sbar_add('<br><img src="template/icons/m_edit.png"  title="' . _("Back to public keys") . '" />' . _('Back to public keys'), "?page=adminm&section=members&action=pubkeys&id={$user}");
 }
 
-function list_cluster_resources() {
+function list_cluster_resources()
+{
     global $xtpl, $api;
 
     $convert = array('memory', 'swap', 'diskspace');
 
-    $xtpl->title(_('User').' <a href="?page=adminm&action=edit&id='.$_GET['id'].'">#'.$_GET['id'].'</a>: '._('Cluster resources'));
+    $xtpl->title(_('User') . ' <a href="?page=adminm&action=edit&id=' . $_GET['id'] . '">#' . $_GET['id'] . '</a>: ' . _('Cluster resources'));
 
     $resources = $api->user($_GET['id'])->cluster_resource->list(array('meta' => array('includes' => 'environment,cluster_resource')));
     $by_env = array();
 
     foreach ($resources as $r) {
-        if (!isset($by_env[$r->environment_id]))
+        if (!isset($by_env[$r->environment_id])) {
             $by_env[$r->environment_id] = array();
+        }
 
         $by_env[$r->environment_id][] = $r;
     }
 
     foreach ($by_env as $res) {
-        $xtpl->table_title(_('Environment').': '.$res[0]->environment->label);
+        $xtpl->table_title(_('Environment') . ': ' . $res[0]->environment->label);
 
         $xtpl->table_add_category(_("Resource"));
         $xtpl->table_add_category(_("Value"));
@@ -482,14 +510,16 @@ function list_cluster_resources() {
         $xtpl->table_out();
     }
 
-    $xtpl->sbar_add('<br><img src="template/icons/m_edit.png"  title="'._("Back to user details").'" />'._('Back to user details'), "?page=adminm&section=members&action=edit&id={$_GET['id']}");
+    $xtpl->sbar_add('<br><img src="template/icons/m_edit.png"  title="' . _("Back to user details") . '" />' . _('Back to user details'), "?page=adminm&section=members&action=edit&id={$_GET['id']}");
 }
 
-function request_approve() {
+function request_approve()
+{
     global $xtpl, $api;
 
-    if(!isAdmin())
+    if(!isAdmin()) {
         return;
+    }
 
     if (isset($_POST['action'])) {
         $params = client_params_to_api(
@@ -513,11 +543,13 @@ function request_approve() {
     }
 }
 
-function request_deny() {
+function request_deny()
+{
     global $xtpl, $api;
 
-    if(!isAdmin())
+    if(!isAdmin()) {
         return;
+    }
 
     if (isset($_POST['action'])) {
         $params = client_params_to_api(
@@ -541,11 +573,13 @@ function request_deny() {
     }
 }
 
-function request_ignore() {
+function request_ignore()
+{
     global $xtpl, $api;
 
-    if(!isAdmin())
+    if(!isAdmin()) {
         return;
+    }
 
     if (isset($_POST['action'])) {
         $params = client_params_to_api(
@@ -569,11 +603,13 @@ function request_ignore() {
     }
 }
 
-function request_correction() {
+function request_correction()
+{
     global $xtpl, $api;
 
-    if(!isAdmin())
+    if(!isAdmin()) {
         return;
+    }
 
     if (isset($_POST['action'])) {
         $params = client_params_to_api(
@@ -597,7 +633,8 @@ function request_correction() {
     }
 }
 
-function list_members() {
+function list_members()
+{
     global $xtpl, $api, $config;
 
     if (isAdmin()) {
@@ -606,22 +643,23 @@ function list_members() {
         $xtpl->table_title(_('Filters'));
         $xtpl->form_create('', 'get', 'user-filter', false);
 
-        $xtpl->table_td(_("Limit").':'.
-            '<input type="hidden" name="page" value="adminm">'.
+        $xtpl->table_td(
+            _("Limit") . ':' .
+            '<input type="hidden" name="page" value="adminm">' .
             '<input type="hidden" name="action" value="list">'
         );
         $xtpl->form_add_input_pure('text', '40', 'limit', get_val('limit', '25'), '');
         $xtpl->table_tr();
 
-        $xtpl->form_add_input(_("Offset").':', 'text', '40', 'offset', get_val('offset', '0'), '');
-        $xtpl->form_add_input(_("Login").':', 'text', '40', 'login', get_val('login', ''), '');
-        $xtpl->form_add_input(_("Full name").':', 'text', '40', 'full_name', get_val('full_name', ''), '');
-        $xtpl->form_add_input(_("E-mail").':', 'text', '40', 'email', get_val('email', ''), '');
-        $xtpl->form_add_input(_("Address").':', 'text', '40', 'address', get_val('address', ''), '');
-        $xtpl->form_add_input(_("Access level").':', 'text', '40', 'level', get_val('level', ''), '');
-        $xtpl->form_add_input(_("Info").':', 'text', '40', 'info', get_val('info', ''), '');
-        $xtpl->form_add_input(_("Monthly payment").':', 'text', '40', 'monthly_payment', get_val('monthly_payment', ''), '');
-        $xtpl->form_add_checkbox(_("Mailer enabled").':', 'mailer_enabled', 1, get_val('mailer_enabled', ''));
+        $xtpl->form_add_input(_("Offset") . ':', 'text', '40', 'offset', get_val('offset', '0'), '');
+        $xtpl->form_add_input(_("Login") . ':', 'text', '40', 'login', get_val('login', ''), '');
+        $xtpl->form_add_input(_("Full name") . ':', 'text', '40', 'full_name', get_val('full_name', ''), '');
+        $xtpl->form_add_input(_("E-mail") . ':', 'text', '40', 'email', get_val('email', ''), '');
+        $xtpl->form_add_input(_("Address") . ':', 'text', '40', 'address', get_val('address', ''), '');
+        $xtpl->form_add_input(_("Access level") . ':', 'text', '40', 'level', get_val('level', ''), '');
+        $xtpl->form_add_input(_("Info") . ':', 'text', '40', 'info', get_val('info', ''), '');
+        $xtpl->form_add_input(_("Monthly payment") . ':', 'text', '40', 'monthly_payment', get_val('monthly_payment', ''), '');
+        $xtpl->form_add_checkbox(_("Mailer enabled") . ':', 'mailer_enabled', 1, get_val('mailer_enabled', ''));
 
         $p = $api->vps->index->getParameters('input')->object_state;
         api_param_to_form('object_state', $p, $_GET['object_state']);
@@ -664,8 +702,9 @@ function list_members() {
             );
 
             foreach ($filters as $f) {
-                if ($_GET[$f])
+                if ($_GET[$f]) {
                     $params[$f] = $_GET[$f];
+                }
             }
 
             $users = $api->user->list($params);
@@ -681,8 +720,8 @@ function list_members() {
 
             if ((isAdmin()) && ($u->id != $_SESSION["user"]["id"])) {
                 $xtpl->table_td(
-                    '<a href="?page=login&action=switch_context&m_id='.$u->id.'&next='.urlencode($_SERVER["REQUEST_URI"]).'">'.
-                    '<img src="template/icons/m_switch.png" title="'._("Switch context").'"></a>'.
+                    '<a href="?page=login&action=switch_context&m_id=' . $u->id . '&next=' . urlencode($_SERVER["REQUEST_URI"]) . '">' .
+                    '<img src="template/icons/m_switch.png" title="' . _("Switch context") . '"></a>' .
                     $u->login
                 );
 
@@ -696,10 +735,11 @@ function list_members() {
                 'meta' => array('count' => true)
             ))->getTotalCount();
 
-            $xtpl->table_td('<a href="?page=adminvps&action=list&user='.$u->id.'">[ '.$vps_count.' ]</a>');
+            $xtpl->table_td('<a href="?page=adminvps&action=list&user=' . $u->id . '">[ ' . $vps_count . ' ]</a>');
 
-            if (payments_enabled())
+            if (payments_enabled()) {
                 $xtpl->table_td($u->monthly_payment);
+            }
 
             $xtpl->table_td(h($u->full_name));
 
@@ -724,20 +764,21 @@ function list_members() {
                 $xtpl->table_td("---", '#FFF');
             }
 
-            if (payments_enabled())
+            if (payments_enabled()) {
                 user_payment_info($u);
+            }
 
-            $xtpl->table_td('<a href="?page=adminm&section=members&action=edit&id='.$u->id.'"><img src="template/icons/m_edit.png"  title="'. _("Edit") .'" /></a>');
+            $xtpl->table_td('<a href="?page=adminm&section=members&action=edit&id=' . $u->id . '"><img src="template/icons/m_edit.png"  title="' . _("Edit") . '" /></a>');
 
             if (isAdmin()) {
-                $xtpl->table_td('<a href="?page=adminm&section=members&action=delete&id='.$u->id.'"><img src="template/icons/m_delete.png"  title="'. _("Delete") .'" /></a>');
+                $xtpl->table_td('<a href="?page=adminm&section=members&action=delete&id=' . $u->id . '"><img src="template/icons/m_delete.png"  title="' . _("Delete") . '" /></a>');
 
             } else {
-                $xtpl->table_td('<img src="template/icons/vps_delete_grey.png"  title="'. _("Cannot delete yourself") .'" />');
+                $xtpl->table_td('<img src="template/icons/vps_delete_grey.png"  title="' . _("Cannot delete yourself") . '" />');
             }
 
             if (isAdmin() && ($u->info != '')) {
-                $xtpl->table_td('<img src="template/icons/info.png" title="'.$u->info.'"');
+                $xtpl->table_td('<img src="template/icons/info.png" title="' . $u->info . '"');
             }
 
             if ($u->level >= PRIV_SUPERADMIN) {
@@ -757,7 +798,8 @@ function list_members() {
     }
 }
 
-function payments_overview() {
+function payments_overview()
+{
     global $xtpl, $api;
 
     $xtpl->table_title(_('Payments overview'));
@@ -780,39 +822,42 @@ function payments_overview() {
 
         $paidUntil = strtotime($u->paid_until);
 
-        if (!$paidUntil || ($paidUntil >= $thisMonth && $paidUntil < $nextMonth))
+        if (!$paidUntil || ($paidUntil >= $thisMonth && $paidUntil < $nextMonth)) {
             $thisMonthIncome += $u->monthly_payment;
+        }
 
-        if ($paidUntil < $now)
+        if ($paidUntil < $now) {
             $unpaidCnt++;
-        elseif ($paidUntil - 7*24*60*60 < $now)
+        } elseif ($paidUntil - 7 * 24 * 60 * 60 < $now) {
             $expiringCnt++;
-        else
+        } else {
             $paidCnt++;
+        }
 
-        if (array_key_exists($u->monthly_payment, $payments))
+        if (array_key_exists($u->monthly_payment, $payments)) {
             $payments[$u->monthly_payment]++;
-        else
+        } else {
             $payments[$u->monthly_payment] = 1;
+        }
     }
 
-    $xtpl->table_td(_('Total monthly income').':');
+    $xtpl->table_td(_('Total monthly income') . ':');
     $xtpl->table_td(number_format($totalIncome));
     $xtpl->table_tr();
 
-    $xtpl->table_td(_("Estimated this month's income").':');
+    $xtpl->table_td(_("Estimated this month's income") . ':');
     $xtpl->table_td(number_format($thisMonthIncome));
     $xtpl->table_tr();
 
-    $xtpl->table_td(_('Paid user count').':');
+    $xtpl->table_td(_('Paid user count') . ':');
     $xtpl->table_td(number_format($paidCnt));
     $xtpl->table_tr();
 
-    $xtpl->table_td(_('Users nearing expiration').':');
+    $xtpl->table_td(_('Users nearing expiration') . ':');
     $xtpl->table_td(number_format($expiringCnt));
     $xtpl->table_tr();
 
-    $xtpl->table_td(_('Unpaid user count').':');
+    $xtpl->table_td(_('Unpaid user count') . ':');
     $xtpl->table_td(number_format($unpaidCnt));
     $xtpl->table_tr();
 
@@ -827,14 +872,15 @@ function payments_overview() {
 
     foreach (array_reverse($payments, true) as $amount => $count) {
         $xtpl->table_td(number_format($amount));
-        $xtpl->table_td(number_format($count)."&times;");
+        $xtpl->table_td(number_format($count) . "&times;");
         $xtpl->table_tr();
     }
 
     $xtpl->table_out();
 }
 
-function estimate_income () {
+function estimate_income()
+{
     global $xtpl, $api;
 
     $xtpl->table_title(_('Estimate income'));
@@ -843,23 +889,24 @@ function estimate_income () {
 
     $y = date('Y');
     $xtpl->table_td(
-        _('Year').':'.
-        '<input type="hidden" name="page" value="adminm">'.
+        _('Year') . ':' .
+        '<input type="hidden" name="page" value="adminm">' .
         '<input type="hidden" name="action" value="estimate_income">'
     );
     $xtpl->form_add_number_pure('y', get_val('y', $y), $y);
     $xtpl->table_tr();
 
-    $xtpl->form_add_number(_('Month').':', 'm', get_val('m', date('n')), 1, 12, 1);
-    $xtpl->form_add_select(_('Select users').':', 's', [
+    $xtpl->form_add_number(_('Month') . ':', 'm', get_val('m', date('n')), 1, 12, 1);
+    $xtpl->form_add_select(_('Select users') . ':', 's', [
         'exactly_until' => _('Having paid until exactly to the selected year/month'),
         'all_until' => _('Having paid until the selected year/month or before'),
     ], get_val('s', 'exactly_until'));
-    $xtpl->form_add_number(_('Payment for').':', 'd', get_val('d', 1), 1, 1000, 1, _('months'));
+    $xtpl->form_add_number(_('Payment for') . ':', 'd', get_val('d', 1), 1, 1000, 1, _('months'));
     $xtpl->form_out(_('Show'));
 
-    if (!$_GET['y'] || !$_GET['m'] || !$_GET['d'])
+    if (!$_GET['y'] || !$_GET['m'] || !$_GET['d']) {
         return;
+    }
 
     $income = $api->payment_stats->estimate_income([
         'year' => $_GET['y'],
@@ -868,11 +915,11 @@ function estimate_income () {
         'duration' => $_GET['d'],
     ]);
 
-    $xtpl->table_td(_('Users').':');
+    $xtpl->table_td(_('Users') . ':');
     $xtpl->table_td(number_format($income['user_count']));
     $xtpl->table_tr();
 
-    $xtpl->table_td(_('Estimated income').':');
+    $xtpl->table_td(_('Estimated income') . ':');
     $xtpl->table_td(number_format($income['estimated_income']));
     $xtpl->table_tr();
 
@@ -882,10 +929,11 @@ function estimate_income () {
 if ($_SESSION["logged_in"]) {
 
     if (isAdmin()) {
-        $xtpl->sbar_add('<img src="template/icons/m_add.png"  title="'._("New member").'" /> '._("New member"), '?page=adminm&section=members&action=new');
+        $xtpl->sbar_add('<img src="template/icons/m_add.png"  title="' . _("New member") . '" /> ' . _("New member"), '?page=adminm&section=members&action=new');
 
-        if ($api->user_request)
-            $xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="'._("Requests for approval").'" /> '._("Requests for approval"), '?page=adminm&section=members&action=approval_requests');
+        if ($api->user_request) {
+            $xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="' . _("Requests for approval") . '" /> ' . _("Requests for approval"), '?page=adminm&section=members&action=approval_requests');
+        }
     }
 
     switch ($_GET["action"] ?? null) {
@@ -918,7 +966,7 @@ if ($_SESSION["logged_in"]) {
                     ));
 
                     notify_user(_('User created'), _('The user was successfully created.'));
-                    redirect('?page=adminm&action=edit&id='.$user->id);
+                    redirect('?page=adminm&action=edit&id=' . $user->id);
 
                 } catch (\HaveAPI\Client\Exception\ActionFailed $e) {
                     $xtpl->perex_format_errors(_('User creation failed'), $e->getResponse());
@@ -930,7 +978,7 @@ if ($_SESSION["logged_in"]) {
             if (isAdmin() && ($u = $api->user->find($_GET["id"]))) {
 
                 $xtpl->perex(_("Are you sure, you want to delete")
-                                .' '.$u->login.'?','');
+                                . ' ' . $u->login . '?', '');
                 print_deletem($u);
 
             }
@@ -939,13 +987,15 @@ if ($_SESSION["logged_in"]) {
             csrf_check();
 
             if (isAdmin() && ($u = $api->user->find($_GET["id"]))) {
-                $xtpl->perex(_("Are you sure, you want to delete")
-                        .' '.$u->login.'?',
-                        '<a href="?page=adminm">'
+                $xtpl->perex(
+                    _("Are you sure, you want to delete")
+                        . ' ' . $u->login . '?',
+                    '<a href="?page=adminm">'
                         . strtoupper(_("No"))
-                        . '</a> | <a href="?page=adminm&section=members&action=delete3&id='.$u->id.'&state='.$_POST["object_state"].'&t='.csrf_token().'">'
-                        . strtoupper(_("Yes")).'</a>');
-                }
+                        . '</a> | <a href="?page=adminm&section=members&action=delete3&id=' . $u->id . '&state=' . $_POST["object_state"] . '&t=' . csrf_token() . '">'
+                        . strtoupper(_("Yes")) . '</a>'
+                );
+            }
             break;
         case 'delete3':
             csrf_check();
@@ -996,7 +1046,7 @@ if ($_SESSION["logged_in"]) {
                 }
 
                 notify_user(_('User updated'), _('The user was successfully updated.'));
-                redirect('?page=adminm&action=edit&id='.$user->id);
+                redirect('?page=adminm&action=edit&id=' . $user->id);
 
             } catch (\HaveAPI\Client\Exception\ActionFailed $e) {
                 $xtpl->perex_format_errors(_('User update failed'), $e->getResponse());
@@ -1008,7 +1058,7 @@ if ($_SESSION["logged_in"]) {
             $u = $api->user->find($_GET["id"]);
 
             if ($_POST["new_password"] != $_POST["new_password2"]) {
-                $xtpl->perex(_("Invalid entry").': '._("Password"), _("The two passwords do not match."));
+                $xtpl->perex(_("Invalid entry") . ': ' . _("Password"), _("The two passwords do not match."));
                 print_editm($u);
 
             } else {
@@ -1017,13 +1067,14 @@ if ($_SESSION["logged_in"]) {
                 try {
                     $params = array('new_password' => $_POST['new_password']);
 
-                    if (!isAdmin())
+                    if (!isAdmin()) {
                         $params['password'] = $_POST['password'];
+                    }
 
                     $u->update($params);
 
                     notify_user(_("Password set"), _("The password was successfully changed."));
-                    redirect('?page=adminm&action=edit&id='.$u->id);
+                    redirect('?page=adminm&action=edit&id=' . $u->id);
 
                 } catch (\HaveAPI\Client\Exception\ActionFailed $e) {
                     $xtpl->perex_format_errors(_('Password change failed'), $e->getResponse());
@@ -1044,11 +1095,12 @@ if ($_SESSION["logged_in"]) {
                     'preferred_logout_all' => isset($_POST['preferred_logout_all']),
                 ]);
 
-                if ($_SESSION['user']['id'] == $_GET['id'])
+                if ($_SESSION['user']['id'] == $_GET['id']) {
                     $_SESSION['user']['session_length'] = $_POST['preferred_session_length'] * 60;
+                }
 
                 notify_user(_('Session control updated'), _('Session control was successfully updated.'));
-                redirect('?page=adminm&action=edit&id='.$user->id);
+                redirect('?page=adminm&action=edit&id=' . $user->id);
 
             } catch (\HaveAPI\Client\Exception\ActionFailed $e) {
                 $xtpl->perex_format_errors(_('User update failed'), $e->getResponse());
@@ -1073,7 +1125,7 @@ if ($_SESSION["logged_in"]) {
                         'secret' => $dev->secret,
                         'provisioning_uri' => $dev->provisioning_uri,
                     ];
-                    redirect('?page=adminm&action=totp_device_confirm&id='.$u->id.'&dev='.$dev->id);
+                    redirect('?page=adminm&action=totp_device_confirm&id=' . $u->id . '&dev=' . $dev->id);
                 } catch (\HaveAPI\Client\Exception\ActionFailed $e) {
                     $xtpl->perex_format_errors(
                         _('TOTP device creation failed'),
@@ -1122,7 +1174,7 @@ if ($_SESSION["logged_in"]) {
                 try {
                     $dev->update(['label' => $_POST['label']]);
                     notify_user(_('TOTP device updated'), '');
-                    redirect('?page=adminm&action=totp_devices&id='.$u->id);
+                    redirect('?page=adminm&action=totp_devices&id=' . $u->id);
                 } catch (\HaveAPI\Client\Exception\ActionFailed $e) {
                     $xtpl->perex_format_errors(
                         _('TOTP device update failed'),
@@ -1147,7 +1199,7 @@ if ($_SESSION["logged_in"]) {
                     notify_user(_('TOTP device disabled'), '');
                 }
 
-                redirect('?page=adminm&action=totp_devices&id='.$u->id);
+                redirect('?page=adminm&action=totp_devices&id=' . $u->id);
 
             } catch (\HaveAPI\Client\Exception\ActionFailed $e) {
                 $xtpl->perex_format_errors(
@@ -1168,7 +1220,7 @@ if ($_SESSION["logged_in"]) {
                 try {
                     $dev->delete();
                     notify_user(_('TOTP device deleted'), '');
-                    redirect('?page=adminm&action=totp_devices&id='.$u->id);
+                    redirect('?page=adminm&action=totp_devices&id=' . $u->id);
                 } catch (\HaveAPI\Client\Exception\ActionFailed $e) {
                     $xtpl->perex_format_errors(
                         _('TOTP device deletion failed'),
@@ -1194,7 +1246,7 @@ if ($_SESSION["logged_in"]) {
                     ));
 
                     notify_user(_("Changes saved"), _('User personal information were updated.'));
-                    redirect('?page=adminm&action=edit&id='.$u->id);
+                    redirect('?page=adminm&action=edit&id=' . $u->id);
 
                 } catch (\HaveAPI\Client\Exception\ActionFailed $e) {
                     $xtpl->perex_format_errors(_('User update failed'), $e->getResponse());
@@ -1211,10 +1263,10 @@ if ($_SESSION["logged_in"]) {
                     ));
 
                     notify_user(
-                        _("Request").' #'.$req->id.' '._("was accepted"),
+                        _("Request") . ' #' . $req->id . ' ' . _("was accepted"),
                         _("Please wait for the administrator to approve or deny your request.")
                     );
-                    redirect('?page=adminm&section=members&action=edit&id='.$u->id);
+                    redirect('?page=adminm&section=members&action=edit&id=' . $u->id);
 
                 } catch (\HaveAPI\Client\Exception\ActionFailed $e) {
                     $xtpl->perex_format_errors(_('Change request failed'), $e->getResponse());
@@ -1235,7 +1287,7 @@ if ($_SESSION["logged_in"]) {
                 }
 
                 notify_user(_('Role e-mails updated'), _('The changes were successfully saved.'));
-                redirect('?page=adminm&action=edit&id='.$_GET['id']);
+                redirect('?page=adminm&action=edit&id=' . $_GET['id']);
 
             } catch (\HaveAPI\Client\Exception\ActionFailed $e) {
                 $xtpl->perex_format_errors(_('Update failed'), $e->getResponse());
@@ -1244,7 +1296,7 @@ if ($_SESSION["logged_in"]) {
             break;
 
         case 'template_recipients':
-            $xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="'._("Back to user details").'" />'._('Back to user details'), "?page=adminm&action=edit&id={$_GET['id']}");
+            $xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="' . _("Back to user details") . '" />' . _('Back to user details'), "?page=adminm&action=edit&id={$_GET['id']}");
 
             if (isset($_POST['to'])) {
                 csrf_check();
@@ -1258,7 +1310,7 @@ if ($_SESSION["logged_in"]) {
                     }
 
                     notify_user(_('Template e-mails updated'), _('The changes were successfully saved.'));
-                    redirect('?page=adminm&action=edit&id='.$_GET['id']);
+                    redirect('?page=adminm&action=edit&id=' . $_GET['id']);
 
                 } catch (\HaveAPI\Client\Exception\ActionFailed $e) {
                     $xtpl->perex_format_errors(_('Update failed'), $e->getResponse());
@@ -1275,16 +1327,18 @@ if ($_SESSION["logged_in"]) {
             break;
 
         case 'payset':
-            if (!isAdmin())
+            if (!isAdmin()) {
                 break;
+            }
 
             user_payment_form($_GET['id']);
-            $xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="'._("Back to user details").'" />'._('Back to user details'), "?page=adminm&action=edit&id={$_GET['id']}");
+            $xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="' . _("Back to user details") . '" />' . _('Back to user details'), "?page=adminm&action=edit&id={$_GET['id']}");
             break;
 
         case 'payset2':
-            if (!isAdmin())
+            if (!isAdmin()) {
                 break;
+            }
 
             csrf_check();
 
@@ -1305,7 +1359,7 @@ if ($_SESSION["logged_in"]) {
                     notify_user(_("Payment accepted"), '');
                 }
 
-                redirect('?page=adminm&action=payset&id='.$_GET['id']);
+                redirect('?page=adminm&action=payset&id=' . $_GET['id']);
 
             } catch (\HaveAPI\Client\Exception\ActionFailed $e) {
                 $xtpl->perex_format_errors(_('Failed to add payment'), $e->getResponse());
@@ -1315,22 +1369,25 @@ if ($_SESSION["logged_in"]) {
             break;
 
         case 'incoming_payments':
-            if (!isAdmin())
+            if (!isAdmin()) {
                 break;
+            }
 
             incoming_payments_list();
             break;
 
         case 'incoming_payment':
-            if (!isAdmin())
+            if (!isAdmin()) {
                 break;
+            }
 
             incoming_payments_details($_GET['id']);
             break;
 
         case 'incoming_payment_state':
-            if (!isAdmin())
+            if (!isAdmin()) {
                 break;
+            }
 
             csrf_check();
 
@@ -1340,7 +1397,7 @@ if ($_SESSION["logged_in"]) {
                 ));
 
                 notify_user(_("State changed"), '');
-                redirect('?page=adminm&action=incoming_payment&id='.$_GET['id']);
+                redirect('?page=adminm&action=incoming_payment&id=' . $_GET['id']);
 
             } catch (\HaveAPI\Client\Exception\ActionFailed $e) {
                 $xtpl->perex_format_errors(_('Unable to change state'), $e->getResponse());
@@ -1350,8 +1407,9 @@ if ($_SESSION["logged_in"]) {
             break;
 
         case 'incoming_payment_assign':
-            if (!isAdmin())
+            if (!isAdmin()) {
                 break;
+            }
 
             csrf_check();
 
@@ -1362,7 +1420,7 @@ if ($_SESSION["logged_in"]) {
                 ));
 
                 notify_user(_("Payment assigned"), '');
-                redirect('?page=adminm&action=payset&id='.$_POST['user']);
+                redirect('?page=adminm&action=payset&id=' . $_POST['user']);
 
             } catch (\HaveAPI\Client\Exception\ActionFailed $e) {
                 $xtpl->perex_format_errors(_('Failed to add payment'), $e->getResponse());
@@ -1372,20 +1430,23 @@ if ($_SESSION["logged_in"]) {
             break;
 
         case 'payments_history':
-            if (!isAdmin())
+            if (!isAdmin()) {
                 break;
+            }
 
             user_payment_history();
             break;
 
         case 'payments_overview':
-            if (isAdmin())
+            if (isAdmin()) {
                 payments_overview();
+            }
             break;
 
         case 'estimate_income':
-            if (isAdmin())
+            if (isAdmin()) {
                 estimate_income();
+            }
             break;
 
         case 'pubkeys':
@@ -1404,7 +1465,7 @@ if ($_SESSION["logged_in"]) {
                     ));
 
                     notify_user(_('Public key saved'), '');
-                    redirect('?page=adminm&section=members&action=pubkeys&id='.$_GET['id']);
+                    redirect('?page=adminm&section=members&action=pubkeys&id=' . $_GET['id']);
 
                 } catch (\HaveAPI\Client\Exception\ActionFailed $e) {
                     $xtpl->perex_format_errors(_('Failed to save public key'), $e->getResponse());
@@ -1429,7 +1490,7 @@ if ($_SESSION["logged_in"]) {
                     ));
 
                     notify_user(_('Public key updated'), '');
-                    redirect('?page=adminm&section=members&action=pubkeys&id='.$_GET['id']);
+                    redirect('?page=adminm&section=members&action=pubkeys&id=' . $_GET['id']);
 
                 } catch (\HaveAPI\Client\Exception\ActionFailed $e) {
                     $xtpl->perex_format_errors(_('Failed to edit public key'), $e->getResponse());
@@ -1449,12 +1510,12 @@ if ($_SESSION["logged_in"]) {
                 $api->user($_GET['id'])->public_key($_GET['pubkey_id'])->delete();
 
                 notify_user(_('Public key deleted'), '');
-                redirect('?page=adminm&section=members&action=pubkeys&id='.$_GET['id']);
+                redirect('?page=adminm&section=members&action=pubkeys&id=' . $_GET['id']);
 
             } catch (\HaveAPI\Client\Exception\ActionFailed $e) {
-                    $xtpl->perex_format_errors(_('Failed to delete public key'), $e->getResponse());
-                    list_pubkeys();
-                }
+                $xtpl->perex_format_errors(_('Failed to delete public key'), $e->getResponse());
+                list_pubkeys();
+            }
 
             break;
 
@@ -1473,7 +1534,7 @@ if ($_SESSION["logged_in"]) {
 
                     notify_user(_('User session updated'), '');
 
-                    redirect($_GET['return'] ?? ('?page=adminm&section=members&action=user_session_edit&id='.$_GET['id']));
+                    redirect($_GET['return'] ?? ('?page=adminm&section=members&action=user_session_edit&id=' . $_GET['id']));
 
                 } catch (\HaveAPI\Client\Exception\ActionFailed $e) {
                     $xtpl->perex_format_errors(_('Failed to edit user session'), $e->getResponse());
@@ -1493,7 +1554,7 @@ if ($_SESSION["logged_in"]) {
                 $api->user_session->close($_GET['user_session']);
 
                 notify_user(_('User session closed'), '');
-                redirect($_GET['return'] ?? ('?page=adminm&section=members&action=user_sessions&id='.$_GET['id']));
+                redirect($_GET['return'] ?? ('?page=adminm&section=members&action=user_sessions&id=' . $_GET['id']));
 
             } catch (\HaveAPI\Client\Exception\ActionFailed $e) {
                 $xtpl->perex_format_errors(_('Failed to close session'), $e->getResponse());
@@ -1521,7 +1582,7 @@ if ($_SESSION["logged_in"]) {
                         ]);
 
                         notify_user(_('Package added'), '');
-                        redirect('?page=adminm&action=resource_packages&id='.$_GET['id']);
+                        redirect('?page=adminm&action=resource_packages&id=' . $_GET['id']);
 
                     } catch (\HaveAPI\Client\Exception\ActionFailed $e) {
                         $xtpl->perex_format_errors(_('Failed to add package'), $e->getResponse());
@@ -1544,7 +1605,7 @@ if ($_SESSION["logged_in"]) {
                         ]);
 
                         notify_user(_('Package updated'), '');
-                        redirect('?page=adminm&action=resource_packages&id='.$_GET['id']);
+                        redirect('?page=adminm&action=resource_packages&id=' . $_GET['id']);
 
                     } catch (\HaveAPI\Client\Exception\ActionFailed $e) {
                         $xtpl->perex_format_errors(_('Failed to update package'), $e->getResponse());
@@ -1566,7 +1627,7 @@ if ($_SESSION["logged_in"]) {
                         $api->user_cluster_resource_package->delete($_GET['pkg']);
 
                         notify_user(_('Package removed'), '');
-                        redirect('?page=adminm&action=resource_packages&id='.$_GET['id']);
+                        redirect('?page=adminm&action=resource_packages&id=' . $_GET['id']);
 
                     } catch (\HaveAPI\Client\Exception\ActionFailed $e) {
                         $xtpl->perex_format_errors(_('Failed to remove package'), $e->getResponse());
@@ -1588,8 +1649,9 @@ if ($_SESSION["logged_in"]) {
             break;
 
         case 'env_cfg_edit':
-            if (!isAdmin())
+            if (!isAdmin()) {
                 break;
+            }
 
             if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 csrf_check();
@@ -1604,7 +1666,7 @@ if ($_SESSION["logged_in"]) {
                     ));
 
                     notify_user(_('Changes saved'), _('Environment configs was successfully updated.'));
-                    redirect('?page=adminm&action=env_cfg&id='.$_GET['id']);
+                    redirect('?page=adminm&action=env_cfg&id=' . $_GET['id']);
 
                 } catch (\HaveAPI\Client\Exception\ActionFailed $e) {
                     $xtpl->perex_format_errors(_('Update failed'), $e->getResponse());
@@ -1618,41 +1680,43 @@ if ($_SESSION["logged_in"]) {
             break;
 
         case 'approval_requests':
-            if(!isAdmin())
+            if(!isAdmin()) {
                 break;
+            }
 
             approval_requests_list();
             break;
 
         case "request_details":
-            if(!isAdmin())
+            if(!isAdmin()) {
                 break;
+            }
 
             approval_requests_details($_GET['type'], $_GET['id']);
             break;
 
         case "request_process":
-            if(!isAdmin())
+            if(!isAdmin()) {
                 break;
+            }
 
             csrf_check();
 
             $action = null;
 
-            if (isset($_POST['action']))
+            if (isset($_POST['action'])) {
                 $action = $_POST['action'];
+            }
 
-            if($action == "approve" || $_GET["rule"] == "approve")
+            if($action == "approve" || $_GET["rule"] == "approve") {
                 request_approve();
-
-            elseif($action == "deny" || $_GET["rule"] == "deny")
+            } elseif($action == "deny" || $_GET["rule"] == "deny") {
                 request_deny();
-
-            elseif($action == "ignore" || $_GET["rule"] == "ignore")
+            } elseif($action == "ignore" || $_GET["rule"] == "ignore") {
                 request_ignore();
-
-            elseif($action == "request_correction" || $_GET["rule"] == "request_correction")
+            } elseif($action == "request_correction" || $_GET["rule"] == "request_correction") {
                 request_correction();
+            }
 
             break;
 
@@ -1664,12 +1728,14 @@ if ($_SESSION["logged_in"]) {
     $xtpl->sbar_out(_("Manage members"));
 
     if (isAdmin() && payments_enabled()) {
-        $xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="'._("Incoming payments").'" /> '._("Incoming payments"), '?page=adminm&action=incoming_payments');
-        $xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="'._("Payments history").'" /> '._("Display history of payments"), '?page=adminm&section=members&action=payments_history');
-        $xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="'._("Payments overview").'" /> '._("Payments overview"), '?page=adminm&section=members&action=payments_overview');
-        $xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="'._("Estimate income").'" /> '._("Estimate income"), '?page=adminm&section=members&action=estimate_income');
+        $xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="' . _("Incoming payments") . '" /> ' . _("Incoming payments"), '?page=adminm&action=incoming_payments');
+        $xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="' . _("Payments history") . '" /> ' . _("Display history of payments"), '?page=adminm&section=members&action=payments_history');
+        $xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="' . _("Payments overview") . '" /> ' . _("Payments overview"), '?page=adminm&section=members&action=payments_overview');
+        $xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="' . _("Estimate income") . '" /> ' . _("Estimate income"), '?page=adminm&section=members&action=estimate_income');
 
         $xtpl->sbar_out(_('Payments'));
     }
 
-} else $xtpl->perex(_("Access forbidden"), _("You have to log in to be able to access vpsAdmin's functions"));
+} else {
+    $xtpl->perex(_("Access forbidden"), _("You have to log in to be able to access vpsAdmin's functions"));
+}

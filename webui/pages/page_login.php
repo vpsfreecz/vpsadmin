@@ -47,7 +47,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && $_GET["action"] == 'callback') {
     } else {
         $xtpl->perex(
             _('Authentication error'),
-            _('Authorization server reports: ').h($_GET['error_description'] ?? $_GET['error'] ?? _('unknown error')).'<br>'.
+            _('Authorization server reports: ') . h($_GET['error_description'] ?? $_GET['error'] ?? _('unknown error')) . '<br>' .
             _('Please try to sign in again or contact support if the error persists.')
         );
     }

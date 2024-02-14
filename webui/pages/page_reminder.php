@@ -9,23 +9,23 @@ if (isLoggedIn()) {
             $error = false;
 
             switch ($_POST['remind_in']) {
-            case '1w':
-                $date = $now;
-                $date->add(new DateInterval('P1W'));
-                break;
-            case '2w':
-                $date = $now;
-                $date->add(new DateInterval('P2W'));
-                break;
-            case 'date':
-                $date = new DateTime($_POST['remind_after_date']);
-                break;
-            case 'never':
-                $date = $now;
-                $date->add(new DateInterval('P1Y'));
-                break;
-            default:
-                $error = true;
+                case '1w':
+                    $date = $now;
+                    $date->add(new DateInterval('P1W'));
+                    break;
+                case '2w':
+                    $date = $now;
+                    $date->add(new DateInterval('P2W'));
+                    break;
+                case 'date':
+                    $date = new DateTime($_POST['remind_after_date']);
+                    break;
+                case 'never':
+                    $date = $now;
+                    $date->add(new DateInterval('P1Y'));
+                    break;
+                default:
+                    $error = true;
             }
 
             if ($error) {
@@ -39,9 +39,9 @@ if (isLoggedIn()) {
 
                     notify_user(
                         _('Mail reminder set'),
-                        _('vpsAdmin will not remind you until').' '.$date->format("Y-m-d").'.'
+                        _('vpsAdmin will not remind you until') . ' ' . $date->format("Y-m-d") . '.'
                     );
-                    redirect('?page=reminder&resource='.$_GET['resource'].'&id='.$_GET['id']);
+                    redirect('?page=reminder&resource=' . $_GET['resource'] . '&id=' . $_GET['id']);
 
                 } catch (\HaveAPI\Client\Exception\ActionFailed $e) {
                     $xtpl->perex_format_errors(_('Reminder change failed'), $e->getResponse());

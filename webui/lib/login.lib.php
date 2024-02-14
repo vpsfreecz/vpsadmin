@@ -1,6 +1,7 @@
 <?php
 
-function setupOAuth2ForLogin() {
+function setupOAuth2ForLogin()
+{
     global $api;
 
     $api->authenticate('oauth2', [
@@ -11,7 +12,8 @@ function setupOAuth2ForLogin() {
     ]);
 }
 
-function loginUser($access_url) {
+function loginUser($access_url)
+{
     global $xtpl, $api;
 
     session_destroy();
@@ -30,9 +32,9 @@ function loginUser($access_url) {
         'login' => $m->login,
         'session_length' => $m->preferred_session_length,
     ];
-    $_SESSION["is_user"] =       ($m->level >= PRIV_USER) ?       true : false;
-    $_SESSION["is_poweruser"] =  ($m->level >= PRIV_POWERUSER) ?  true : false;
-    $_SESSION["is_admin"] =      ($m->level >= PRIV_ADMIN) ?      true : false;
+    $_SESSION["is_user"] =       ($m->level >= PRIV_USER) ? true : false;
+    $_SESSION["is_poweruser"] =  ($m->level >= PRIV_POWERUSER) ? true : false;
+    $_SESSION["is_admin"] =      ($m->level >= PRIV_ADMIN) ? true : false;
     $_SESSION["is_superadmin"] = ($m->level >= PRIV_SUPERADMIN) ? true : false;
 
     csrf_init();
@@ -53,13 +55,14 @@ function loginUser($access_url) {
     }
 }
 
-function logoutUser() {
+function logoutUser()
+{
     global $xtpl, $api;
 
     $_SESSION["logged_in"] = false;
-    $_SESSION["auth_type"] = NULL;
-    $_SESSION["access_token"] = NULL;
-    $_SESSION["session_token"] = NULL;
+    $_SESSION["auth_type"] = null;
+    $_SESSION["access_token"] = null;
+    $_SESSION["session_token"] = null;
     unset($_SESSION["user"]);
 
     $api->logout();
@@ -69,7 +72,8 @@ function logoutUser() {
     session_destroy();
 }
 
-function switchUserContext($target_user_id) {
+function switchUserContext($target_user_id)
+{
     global $xtpl, $api;
 
     $admin = $_SESSION;
@@ -80,9 +84,9 @@ function switchUserContext($target_user_id) {
         // Get a token for target user
         $new_session = $api->user_session->create([
             'user' => $user->id,
-            'label' => getClientIdentity().'(context switch)',
+            'label' => getClientIdentity() . '(context switch)',
             'token_lifetime' => 'renewable_auto',
-            'token_interval' => 20*60,
+            'token_interval' => 20 * 60,
         ]);
 
         session_destroy();
@@ -98,19 +102,21 @@ function switchUserContext($target_user_id) {
         $_SESSION["user"] = [
             'id' => $user->id,
             'login' => $user->login,
-            'session_length' => 20*60,
+            'session_length' => 20 * 60,
         ];
-        $_SESSION["is_user"] =       ($user->level >= PRIV_USER) ?       true : false;
-        $_SESSION["is_poweruser"] =  ($user->level >= PRIV_POWERUSER) ?  true : false;
-        $_SESSION["is_admin"] =      ($user->level >= PRIV_ADMIN) ?      true : false;
+        $_SESSION["is_user"] =       ($user->level >= PRIV_USER) ? true : false;
+        $_SESSION["is_poweruser"] =  ($user->level >= PRIV_POWERUSER) ? true : false;
+        $_SESSION["is_admin"] =      ($user->level >= PRIV_ADMIN) ? true : false;
         $_SESSION["is_superadmin"] = ($user->level >= PRIV_SUPERADMIN) ? true : false;
 
         $_SESSION["context_switch"] = true;
         $_SESSION["original_admin"] = $admin;
 
-        notify_user(_("Change to").' '.$user->login.' '._('was successful'),
-                _("Your privilege level: ")
-                . $cfg_privlevel[$user->level]);
+        notify_user(
+            _("Change to") . ' ' . $user->login . ' ' . _('was successful'),
+            _("Your privilege level: ")
+                . $cfg_privlevel[$user->level]
+        );
 
         redirect($_GET["next"]);
 
@@ -119,7 +125,8 @@ function switchUserContext($target_user_id) {
     }
 }
 
-function regainAdminUser() {
+function regainAdminUser()
+{
     global $api;
 
     $admin = $_SESSION["original_admin"];
@@ -142,37 +149,42 @@ function regainAdminUser() {
     redirect($_GET["next"]);
 }
 
-function getOAuth2RedirectUri() {
-    return getSelfUri().'/?page=login&action=callback';
+function getOAuth2RedirectUri()
+{
+    return getSelfUri() . '/?page=login&action=callback';
 }
 
-function getSelfUri() {
+function getSelfUri()
+{
     $ret = 'http';
 
-    if (($_SERVER['HTTPS'] ?? false) || (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] == 'https'))
+    if (($_SERVER['HTTPS'] ?? false) || (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] == 'https')) {
         $ret .= 's';
+    }
 
     $ret .= '://';
 
-    if ($_SERVER['SERVER_PORT'] != '80')
-        $ret .= $_SERVER['SERVER_NAME'].':'.$_SERVER['SERVER_PORT'];
-    else
+    if ($_SERVER['SERVER_PORT'] != '80') {
+        $ret .= $_SERVER['SERVER_NAME'] . ':' . $_SERVER['SERVER_PORT'];
+    } else {
         $ret .= $_SERVER['SERVER_NAME'];
+    }
 
     return $ret;
 }
 
-function getAuthenticationToken() {
+function getAuthenticationToken()
+{
     global $api;
 
     $provider = $api->getAuthenticationProvider();
 
     switch ($_SESSION['auth_type']) {
-    case 'oauth2':
-        return $provider->jsonSerialize()['access_token'];
-    case 'token':
-        return $provider->getToken();
-    default:
-        throw "Unknown authentication type";
+        case 'oauth2':
+            return $provider->jsonSerialize()['access_token'];
+        case 'token':
+            return $provider->getToken();
+        default:
+            throw "Unknown authentication type";
     }
 }

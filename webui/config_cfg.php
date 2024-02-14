@@ -24,4 +24,3 @@ $langs = array(
     "lang" => "US english"
   )
 );
-?>

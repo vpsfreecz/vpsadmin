@@ -7,7 +7,8 @@
     Copyright (C) 2008-2011 Pavel Snajdr, snajpa@snajpa.net
 */
 
-function list_transaction_chains() {
+function list_transaction_chains()
+{
     global $api, $xtpl;
 
     $chains = $api->transaction_chain->list(array('limit' => 10));

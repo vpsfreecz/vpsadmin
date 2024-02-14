@@ -27,41 +27,43 @@
 // if we are using xtemplate, this is not CLI application
 $_SESSION["cli_mode"] = false;
 
-class XTemplate {
-    var $filecontents = '';
-    var $blocks = array();
-    var $parsed_blocks = array();
-    var $preparsed_blocks = array();
-    var $block_parse_order = array();
-    var $sub_blocks = array();
-    var $vars = array();
-    var $filevars = array();
-    var $filevar_parent = array();
-    var $filecache = array();
-    var $tpldir = '';
-    var $files = null;
-    var $filename = '';
-    var $file_delim = '';//"/\{FILE\s*\"([^\"]+)\"\s*\}/m";
-    var $filevar_delim = '';//"/\{FILE\s*\{([A-Za-z0-9\._]+?)\}\s*\}/m";
-    var $filevar_delim_nl = '';//"/^\s*\{FILE\s*\{([A-Za-z0-9\._]+?)\}\s*\}\s*\n/m";
-    var $block_start_delim = '<!-- ';         /* block start delimiter */
-    var $block_end_delim = '-->';                 /* block end delimiter */
-    var $block_start_word = 'BEGIN:';         /* block start word */
-    var $block_end_word = 'END:';                 /* block end word */
+class XTemplate
+{
+    public $filecontents = '';
+    public $blocks = array();
+    public $parsed_blocks = array();
+    public $preparsed_blocks = array();
+    public $block_parse_order = array();
+    public $sub_blocks = array();
+    public $vars = array();
+    public $filevars = array();
+    public $filevar_parent = array();
+    public $filecache = array();
+    public $tpldir = '';
+    public $files = null;
+    public $filename = '';
+    public $file_delim = '';//"/\{FILE\s*\"([^\"]+)\"\s*\}/m";
+    public $filevar_delim = '';//"/\{FILE\s*\{([A-Za-z0-9\._]+?)\}\s*\}/m";
+    public $filevar_delim_nl = '';//"/^\s*\{FILE\s*\{([A-Za-z0-9\._]+?)\}\s*\}\s*\n/m";
+    public $block_start_delim = '<!-- ';         /* block start delimiter */
+    public $block_end_delim = '-->';                 /* block end delimiter */
+    public $block_start_word = 'BEGIN:';         /* block start word */
+    public $block_end_word = 'END:';                 /* block end word */
 
-    var $tag_start_delim = '{';
-    var $tag_end_delim = '}';
+    public $tag_start_delim = '{';
+    public $tag_end_delim = '}';
 
-    var $mainblock = 'main';
-    var $output_type = 'HTML';
-    var $_null_string = array('' => '');             /* null string for unassigned vars */
-    var $_null_block = array('' => '');  /* null string for unassigned blocks */
-    var $_error = '';
-    var $_autoreset = true;                                     /* auto-reset sub blocks */
-    var $_ignore_missing_blocks = true ;          // NW 17 oct 2002 - Set to FALSE to
-    var $_file_name_full_path = '';
-    var $table_rows = 0;
-    function __construct ($file,  $tpldir = '', $files = null, $mainblock = 'main', $autosetup = true) {
+    public $mainblock = 'main';
+    public $output_type = 'HTML';
+    public $_null_string = array('' => '');             /* null string for unassigned vars */
+    public $_null_block = array('' => '');  /* null string for unassigned blocks */
+    public $_error = '';
+    public $_autoreset = true;                                     /* auto-reset sub blocks */
+    public $_ignore_missing_blocks = true ;          // NW 17 oct 2002 - Set to FALSE to
+    public $_file_name_full_path = '';
+    public $table_rows = 0;
+    public function __construct($file, $tpldir = '', $files = null, $mainblock = 'main', $autosetup = true)
+    {
         $this->filename = $file;
         $this->_file_name_full_path = realpath($file);
         $this->tpldir = $tpldir;
@@ -73,7 +75,8 @@ class XTemplate {
             $this->setup();
         }
     }
-    function restart ($file, $tpldir = '', $files = null, $mainblock = 'main', $autosetup = true, $tag_start = '{', $tag_end = '}') {
+    public function restart($file, $tpldir = '', $files = null, $mainblock = 'main', $autosetup = true, $tag_start = '{', $tag_end = '}')
+    {
         $this->filename = $file;
         $this->_file_name_full_path = realpath($file);
         $this->tpldir = $tpldir;
@@ -97,7 +100,8 @@ class XTemplate {
             $this->setup();
         }
     }
-    function setup ($add_outer = false) {
+    public function setup($add_outer = false)
+    {
         $this->tag_start_delim = preg_quote($this->tag_start_delim);
         $this->tag_end_delim = preg_quote($this->tag_end_delim);
         $this->file_delim = "/" . $this->tag_start_delim . "FILE\s*\"([^\"]+)\"\s*" . $this->tag_end_delim . "/m";
@@ -112,7 +116,8 @@ class XTemplate {
         $this->blocks = $this->_maketree($this->filecontents, '');
         $this->filevar_parent = $this->_store_filevar_parents($this->blocks);
     }
-    function assign ($name, $val = '') {
+    public function assign($name, $val = '')
+    {
         if (is_array($name)) {
             foreach ($name as $k => $v) {
                 $this->vars[$k] = $v;
@@ -122,7 +127,8 @@ class XTemplate {
         }
     }
 
-    function assign_file ($name, $val = '') {
+    public function assign_file($name, $val = '')
+    {
         if (is_array($name)) {
             foreach ($name as $k => $v) {
                 $this->_assign_file_sub($k, $v);
@@ -132,7 +138,8 @@ class XTemplate {
         }
     }
 
-    function parse ($bname) {
+    public function parse($bname)
+    {
         if (isset($this->preparsed_blocks[$bname])) {
             $copy = $this->preparsed_blocks[$bname];
         } elseif (isset($this->blocks[$bname])) {
@@ -148,7 +155,7 @@ class XTemplate {
         }
         $copy = preg_replace($this->filevar_delim_nl, '', $copy);
         $var_array = array();
-        preg_match_all("/" . $this->tag_start_delim . "([A-Za-z0-9\._]+? ?#?.*?)" . $this->tag_end_delim. "/", $copy, $var_array);
+        preg_match_all("/" . $this->tag_start_delim . "([A-Za-z0-9\._]+? ?#?.*?)" . $this->tag_end_delim . "/", $copy, $var_array);
         $var_array = $var_array[1];
         foreach ($var_array as $k => $v) {
             $any_comments = explode('#', $v);
@@ -192,13 +199,13 @@ class XTemplate {
                 $nul = (!isset($this->_null_string[$v])) ? ($this->_null_string[""]) : ($this->_null_string[$v]);
                 $var = (!isset($var)) ? $nul : $var;
                 if ($var == '') {
-                    $copy=preg_replace("|\s*" . $this->tag_start_delim . $v . " ?#?" . $comments . $this->tag_end_delim . "\s*\n|m", '', $copy);
+                    $copy = preg_replace("|\s*" . $this->tag_start_delim . $v . " ?#?" . $comments . $this->tag_end_delim . "\s*\n|m", '', $copy);
                 }
                 $var = trim($var);
                 $var = str_replace('\\', '\\\\', $var);
                 $var = str_replace('$', '\\$', $var);
                 $var = str_replace('\\|', '|', $var);
-                $copy=preg_replace("|" . $this->tag_start_delim . $v . " ?#?" . $comments . $this->tag_end_delim . "|", "$var", $copy);
+                $copy = preg_replace("|" . $this->tag_start_delim . $v . " ?#?" . $comments . $this->tag_end_delim . "|", "$var", $copy);
             }
         }
         if (isset($this->parsed_blocks[$bname])) {
@@ -214,7 +221,8 @@ class XTemplate {
             }
         }
     }
-    function rparse ($bname) {
+    public function rparse($bname)
+    {
         if (!empty($this->sub_blocks[$bname])) {
             reset($this->sub_blocks[$bname]);
             foreach ($this->sub_blocks[$bname] as $k => $v) {
@@ -225,11 +233,13 @@ class XTemplate {
         }
         $this->parse($bname);
     }
-    function insert_loop ($bname, $var, $value = '') {
+    public function insert_loop($bname, $var, $value = '')
+    {
         $this->assign($var, $value);
         $this->parse($bname);
     }
-    function array_loop ($bname, $var, &$values) {
+    public function array_loop($bname, $var, &$values)
+    {
         if (is_array($values)) {
             foreach($values as $v) {
                 $this->assign($var, $v);
@@ -237,57 +247,68 @@ class XTemplate {
             }
         }
     }
-    function text ($bname = '') {
+    public function text($bname = '')
+    {
         $text = '';
         $bname = !empty($bname) ? $bname : $this->mainblock;
         $text .= isset($this->parsed_blocks[$bname]) ? $this->parsed_blocks[$bname] : $this->get_error();
         return $text;
     }
-    function out ($bname) {
+    public function out($bname)
+    {
         $out = $this->text($bname);
         echo $out;
     }
-    function out_file ($bname, $fname) {
+    public function out_file($bname, $fname)
+    {
         if (!empty($bname) && !empty($fname) && is_writeable($fname)) {
             $fp = fopen($fname, 'w');
             fwrite($fp, $this->text($bname));
             fclose($fp);
         }
     }
-    function reset ($bname) {
+    public function reset($bname)
+    {
         $this->parsed_blocks[$bname] = '';
     }
-    function parsed ($bname) {
+    public function parsed($bname)
+    {
         return (!empty($this->parsed_blocks[$bname]));
     }
-    function SetNullString ($str, $varname = '') {
+    public function SetNullString($str, $varname = '')
+    {
         $this->_null_string[$varname] = $str;
     }
-    function SetNullBlock ($str, $bname = '') {
+    public function SetNullBlock($str, $bname = '')
+    {
         $this->_null_block[$bname] = $str;
     }
-    function set_autoreset () {
+    public function set_autoreset()
+    {
         $this->_autoreset = true;
     }
-    function clear_autoreset () {
+    public function clear_autoreset()
+    {
         $this->_autoreset = false;
     }
-    function get_error () {
+    public function get_error()
+    {
         $retval = false;
         if ($this->_error != '') {
             switch ($this->output_type) {
                 case 'HTML':
                 case 'html':
-                $retval = '<b>[XTemplate]</b><ul>' . nl2br(str_replace('* ', '<li>', str_replace(" *\n", "</li>\n", $this->_error))) . '</ul>';
-                break;
+                    $retval = '<b>[XTemplate]</b><ul>' . nl2br(str_replace('* ', '<li>', str_replace(" *\n", "</li>\n", $this->_error))) . '</ul>';
+                    break;
                 default:
-                $retval = '[XTemplate] ' . str_replace(' *\n', "\n", $this->_error);
-                break;
+                    $retval = '[XTemplate] ' . str_replace(' *\n', "\n", $this->_error);
+                    break;
             }
         }
         return $retval;
     }
-    function _maketree ($con, $parentblock='') {
+    public function _maketree($con, $parentblock = '')
+    {
         $blocks = array();
         $con2 = explode($this->block_start_delim, $con);
         if (!empty($parentblock)) {
@@ -307,13 +328,13 @@ class XTemplate {
                 if (strtoupper($block_word) == $this->block_start_word) {
                     $parent_name = implode('.', $block_names);
                     $block_names[++$level] = $block_name;
-                    $cur_block_name=implode('.', $block_names);
+                    $cur_block_name = implode('.', $block_names);
                     $this->block_parse_order[] = $cur_block_name;
                     $blocks[$cur_block_name] = isset($blocks[$cur_block_name]) ? $blocks[$cur_block_name] . $content : $content;
                     $blocks[$parent_name] .= str_replace('\\', '', $this->tag_start_delim) . '_BLOCK_.' . $cur_block_name . str_replace('\\', '', $this->tag_end_delim);
                     $this->sub_blocks[$parent_name][] = $cur_block_name;
                     $this->sub_blocks[$cur_block_name][] = '';
-                } else if (strtoupper($block_word) == $this->block_end_word) {
+                } elseif (strtoupper($block_word) == $this->block_end_word) {
                     unset($block_names[$level--]);
                     $parent_name = implode('.', $block_names);
                     $blocks[$parent_name] .= $res[0][3];
@@ -328,7 +349,8 @@ class XTemplate {
         }
         return $blocks;
     }
-    function _assign_file_sub ($name, $val) {
+    public function _assign_file_sub($name, $val)
+    {
         if (isset($this->filevar_parent[$name])) {
             if ($val != '') {
                 $val = $this->_r_getfile($val);
@@ -352,7 +374,8 @@ class XTemplate {
         }
         $this->filevars[$name] = $val;
     }
-    function _store_filevar_parents ($blocks){
+    public function _store_filevar_parents($blocks)
+    {
         $parents = array();
         foreach ($blocks as $bname => $con) {
             $res = array();
@@ -363,10 +386,12 @@ class XTemplate {
         }
         return $parents;
     }
-    function _set_error ($str)    {
+    public function _set_error($str)
+    {
         $this->_error .= '* ' . $str . " *\n";
     }
-    function _getfile ($file) {
+    public function _getfile($file)
+    {
         if (!isset($file)) {
             $this->_set_error('!isset file name!' . $file);
             return '';
@@ -377,17 +402,17 @@ class XTemplate {
             }
         }
         if (!empty($this->tpldir)) {
-            $file = $this->tpldir. '/' . $file;
+            $file = $this->tpldir . '/' . $file;
         }
         if (isset($this->filecache[$file])) {
-            $file_text=$this->filecache[$file];
+            $file_text = $this->filecache[$file];
         } else {
             if (is_file($file)) {
                 if (!($fh = fopen($file, 'r'))) {
                     $this->_set_error('Cannot open file: ' . $file);
                     return '';
                 }
-                $file_text = fread($fh,filesize($file));
+                $file_text = fread($fh, filesize($file));
                 fclose($fh);
             } else {
                 $this->_set_error("[" . realpath($file) . "] ($file) does not exist");
@@ -397,38 +422,44 @@ class XTemplate {
         }
         return $file_text;
     }
-    function _r_getfile ($file) {
+    public function _r_getfile($file)
+    {
         $text = $this->_getfile($file);
         $res = array();
-        while (preg_match($this->file_delim,$text,$res)) {
+        while (preg_match($this->file_delim, $text, $res)) {
             $text2 = $this->_getfile($res[1]);
-            $text = preg_replace("'".preg_quote($res[0])."'",$text2,$text);
+            $text = preg_replace("'" . preg_quote($res[0]) . "'", $text2, $text);
         }
         return $text;
     }
-    function _add_outer_block () {
+    public function _add_outer_block()
+    {
         $before = $this->block_start_delim . $this->block_start_word . ' ' . $this->mainblock . ' ' . $this->block_end_delim;
         $after = $this->block_start_delim . $this->block_end_word . ' ' . $this->mainblock . ' ' . $this->block_end_delim;
         $this->filecontents = $before . "\n" . $this->filecontents . "\n" . $after;
     }
-    function _pre_var_dump () {
+    public function _pre_var_dump()
+    {
         echo '<pre>';
         var_dump(func_get_args());
         echo '</pre>';
     }
-/* XTemplate extensions for vpsAdmin for lazy programmers */
+    /* XTemplate extensions for vpsAdmin for lazy programmers */
     /**
       * Set title of the page
       * @param $title - title of page
     */
-    function title ($title) {
+    public function title($title)
+    {
         $this->assign('TITLE', $title);
     }
-    function title2 ($title2) {
+    public function title2($title2)
+    {
         $this->assign('S_TITLE', $title2);
         $this->parse('main.s_title');
     }
-    function title3 ($title3) {
+    public function title3($title3)
+    {
         $this->assign('S_S_TITLE', $title3);
         $this->parse('main.s_s_title');
     }
@@ -438,7 +469,8 @@ class XTemplate {
       * @param $lang - language name
       * @param $class - class of image
     **/
-    function lang_add($code, $icon, $lang, $class) {
+    public function lang_add($code, $icon, $lang, $class)
+    {
         $this->assign('LANG_CODE', $code);
         $this->assign('LANG_ICON', $icon);
         $this->assign('LANG_IMG_CLASS', $class);
@@ -451,7 +483,8 @@ class XTemplate {
       * @param $logged - is user logged in?
       * @param $user_name - if so, what is is nick?
       */
-    function logbox ($logged = false, $user_name = 'none', $is_admin=false, $maint_mode = false) {
+    public function logbox($logged = false, $user_name = 'none', $is_admin = false, $maint_mode = false)
+    {
         if ($logged) {
             if ($is_admin) {
                 $this->assign("L_SEARCH", _("Search"));
@@ -461,13 +494,13 @@ class XTemplate {
 
                 if ($maint_mode) {
                     $this->assign("V_CSRF_TOKEN", csrf_token());
-                    $this->assign("L_MAINTENANCE_MODE_ON",_("Maintenance mode status: ON"));
+                    $this->assign("L_MAINTENANCE_MODE_ON", _("Maintenance mode status: ON"));
                     $this->parse("main.loggedbox.is_admin.maintenance_mode_on");
                 } else {
-                    $this->assign("L_MAINTENANCE_MODE_OFF",_("Maintenance mode status: OFF"));
+                    $this->assign("L_MAINTENANCE_MODE_OFF", _("Maintenance mode status: OFF"));
                     $this->parse("main.loggedbox.is_admin.maintenance_mode_off");
                 }
-                $this->assign("L_DROP_PRIVILEGES",_("Drop privileges"));
+                $this->assign("L_DROP_PRIVILEGES", _("Drop privileges"));
                 $this->assign("V_NEXT", urlencode($_SERVER["REQUEST_URI"]));
                 $this->parse("main.loggedbox.is_admin");
             } else {
@@ -495,7 +528,8 @@ class XTemplate {
       * @param $active - Is user currently here?
       * @param $is_last - Is this item last in the menu?
       */
-    function menu_add ($title = 'Titulek', $link = '#', $active = false, $is_last = false) {
+    public function menu_add($title = 'Titulek', $link = '#', $active = false, $is_last = false)
+    {
         $this->assign('MENU_LINK', $link);
         $this->assign('MENU_TITLE', $title);
         $this->assign('MENU_ACTIVE', ($active) ? 'id="nav-active"' : '');
@@ -507,7 +541,8 @@ class XTemplate {
       * @param $title - title of the perex
       * @param $content - HTML content of the perex
       */
-    function perex ($title, $content) {
+    public function perex($title, $content)
+    {
         $this->assign('PEREX_TITLE', $title);
         $this->assign('PEREX_CONTENT', $content);
         $this->parse('main.perex');
@@ -517,10 +552,14 @@ class XTemplate {
       * @param $title - title
       * @param $output - array of lines
       */
-    function perex_cmd_output ($title, $output) {
+    public function perex_cmd_output($title, $output)
+    {
         $this->assign('PEREX_TITLE', $title);
-        if (is_array($output))
-        foreach ($output as $line) $content .= $line.' <br />';
+        if (is_array($output)) {
+            foreach ($output as $line) {
+                $content .= $line . ' <br />';
+            }
+        }
         $this->assign('PEREX_CONTENT', $content);
         $this->parse('main.perex');
     }
@@ -529,7 +568,8 @@ class XTemplate {
       * @param string $title
       * @param \HaveAPI\Client\Response $response
       */
-    function perex_format_errors($title, $response) {
+    public function perex_format_errors($title, $response)
+    {
         $this->perex($title, format_errors($response));
     }
     /**
@@ -537,24 +577,28 @@ class XTemplate {
       * @param $title - link title
       * @param $link - link URL
       */
-    function sbar_add ($title, $link) {
-        $this->assign('SBI_TITLE' ,$title);
+    public function sbar_add($title, $link)
+    {
+        $this->assign('SBI_TITLE', $title);
         $this->assign('SBI_LINK', $link);
         $this->parse('main.sidebar.sb_item');
     }
-    function sbar_add_fragment ($html) {
-        $this->assign('SB_FRAGMENT' ,$html);
+    public function sbar_add_fragment($html)
+    {
+        $this->assign('SB_FRAGMENT', $html);
         $this->parse('main.sidebar_fragment');
     }
     /**
       * Parse out the sidebar
       * @param $title - tile for the sidebar
       */
-    function sbar_out ($title) {
-        $this->assign('SB_TITLE',$title);
+    public function sbar_out($title)
+    {
+        $this->assign('SB_TITLE', $title);
         $this->parse('main.sidebar');
     }
-    function table_title($title = "") {
+    public function table_title($title = "")
+    {
         $this->assign('T_TITLE', $title);
         $this->parse('main.table.t_title');
     }
@@ -562,7 +606,8 @@ class XTemplate {
       * Add table category to table header
       * @param $name - HTML content of the category header
       */
-    function table_add_category ($name) {
+    public function table_add_category($name)
+    {
         $this->assign('TABLE_CATEGORY', $name);
         $this->parse('main.table.category');
     }
@@ -572,16 +617,23 @@ class XTemplate {
       * @param $td_back_color - HTML background color
       * @param $toright - Right side text align
       */
-    function table_td ($content, $td_back_color=false, $toright = false, $colspan = '1', $rowspan = '1', $valign = null) {
+    public function table_td($content, $td_back_color = false, $toright = false, $colspan = '1', $rowspan = '1', $valign = null)
+    {
         $tdstyle = 'style="';
-        if ($td_back_color) $tdstyle .= 'background:'.$td_back_color.';';
-        if ($toright) $tdstyle .= 'text-align:right;';
-        if ($valign) $tdstyle .= "vertical-align: $valign;";
-        $tdstyle .='" colspan="'.$colspan.'" rowspan="'.$rowspan.'"';
-        $this->assign('TDSTYLE',$tdstyle);
-        $this->assign('TABLE_TD',$content);
+        if ($td_back_color) {
+            $tdstyle .= 'background:' . $td_back_color . ';';
+        }
+        if ($toright) {
+            $tdstyle .= 'text-align:right;';
+        }
+        if ($valign) {
+            $tdstyle .= "vertical-align: $valign;";
+        }
+        $tdstyle .= '" colspan="' . $colspan . '" rowspan="' . $rowspan . '"';
+        $this->assign('TDSTYLE', $tdstyle);
+        $this->assign('TABLE_TD', $content);
         $this->parse('main.table.tr.td');
-        $this->assign('TDSTYLE','');
+        $this->assign('TDSTYLE', '');
     }
     /**
       * Parse out the table row
@@ -589,26 +641,29 @@ class XTemplate {
       * @param $tr_class - CSS class of row
       * @param $tr_class_hover - CSS class when mouse over
       */
-    function table_tr ($tr_back_color=false, $tr_class=false, $tr_class_hover=false, $id = null) {
+    public function table_tr($tr_back_color = false, $tr_class = false, $tr_class_hover = false, $id = null)
+    {
         // UPDATED BY toms
         $this->table_rows++;
-        if ($tr_back_color)
-            $this->assign('TRSTYLE','style="background:'.$tr_back_color.'"');
-        elseif ($tr_class)
-            $this->assign('TRSTYLE', 'class="'.$tr_class.'"');
-        else {
+        if ($tr_back_color) {
+            $this->assign('TRSTYLE', 'style="background:' . $tr_back_color . '"');
+        } elseif ($tr_class) {
+            $this->assign('TRSTYLE', 'class="' . $tr_class . '"');
+        } else {
             $this->assign('TRSTYLE', '');
         }
 
-        if ($tr_class)
+        if ($tr_class) {
             $this->assign('TRCLASS', $tr_class);
-        else
+        } else {
             $this->assign('TRCLASS', 'none');
+        }
 
-        if ($tr_class_hover)
+        if ($tr_class_hover) {
             $this->assign('TRCLASS_HOVER', $tr_class_hover);
-        else
+        } else {
             $this->assign('TRCLASS_HOVER', 'bg');
+        }
         if ((!$tr_back_color) && (!$tr_class) && (!$tr_class_hover)) {
             if (($this->table_rows & 1) == 0) {
                 $this->assign('TRSTYLE', 'class="oddrow"');
@@ -617,18 +672,21 @@ class XTemplate {
             }
         }
 
-        if ($id)
-            $this->assign('TRID', 'id="'.$id.'"');
-        else $this->assign('TRID', '');
+        if ($id) {
+            $this->assign('TRID', 'id="' . $id . '"');
+        } else {
+            $this->assign('TRID', '');
+        }
 
         $this->parse('main.table.tr');
     }
     /**
       * Parse out the table
       */
-    function table_out($id = null) {
+    public function table_out($id = null)
+    {
         if ($id) {
-            $this->assign('TABLE_ID', 'id="'.$id.'"');
+            $this->assign('TABLE_ID', 'id="' . $id . '"');
             $this->parse('main.table.table_id');
         }
 
@@ -641,8 +699,9 @@ class XTemplate {
       * @param $method - GET or POST
       * @param $name - form name
       */
-    function form_create($action = '?page=', $method = 'post', $name = 'generic_form', $csrf = true) {
-        $this->assign('TABLE_FORM_BEGIN','<form action="'.$action.'" method="'.$method.'" name="'.$name.'" AUTOCOMPLETE=OFF>');
+    public function form_create($action = '?page=', $method = 'post', $name = 'generic_form', $csrf = true)
+    {
+        $this->assign('TABLE_FORM_BEGIN', '<form action="' . $action . '" method="' . $method . '" name="' . $name . '" AUTOCOMPLETE=OFF>');
 
         $this->form_csrf('common', $csrf);
     }
@@ -650,11 +709,12 @@ class XTemplate {
      * Add a set of hidden fields
      * @param $keyvals array of field names and values
      */
-    function form_set_hidden_fields($keyvals) {
+    public function form_set_hidden_fields($keyvals)
+    {
         $str = '';
 
         foreach ($keyvals as $k => $v) {
-            $str .= '<input type="hidden" name="'.$k.'" value="'.h($v).'">';
+            $str .= '<input type="hidden" name="' . $k . '" value="' . h($v) . '">';
         }
 
         $this->assign('FORM_HIDDEN_FIELDS', $str);
@@ -672,7 +732,8 @@ class XTemplate {
       *
       * @return uid;
       */
-    function form_add_input($label = 'popisek', $type = 'text', $size = '30', $name = 'input_fromgen', $value = '', $hint = '', $nchar = 0, $extra = '') {
+    public function form_add_input($label = 'popisek', $type = 'text', $size = '30', $name = 'input_fromgen', $value = '', $hint = '', $nchar = 0, $extra = '')
+    {
         $uid = uniqid();
 
         $this->table_td($label);
@@ -680,21 +741,21 @@ class XTemplate {
         $maxlength = '';
 
         if ($nchar != 0) {
-            $code  = moo_inputremaining("input".$uid, "inputh".$uid, $nchar, $uid); // see ajax.lib.php
+            $code  = moo_inputremaining("input" . $uid, "inputh" . $uid, $nchar, $uid); // see ajax.lib.php
             if ($nchar > 0) {
                 $output = sprintf(
                     _("<span id='inputh%s'>%d</span> chars remaining"),
                     $uid,
-                    $nchar-strlen($value)
+                    $nchar - strlen($value)
                 );
 
-                $maxlength = 'maxlength="'.$nchar.'"';
+                $maxlength = 'maxlength="' . $nchar . '"';
 
             } else {
                 $output = sprintf(
                     _("<span id='inputh%s'>%d</span> chars needed"),
                     $uid,
-                    (int)(($nchar-strlen($value))*(-1))
+                    (int)(($nchar - strlen($value)) * (-1))
                 );
             }
 
@@ -702,15 +763,16 @@ class XTemplate {
         }
 
         $this->table_td(
-            '<input type="'.$type.'" size="'.$size.'" name="'.$name.'" id="input'. $uid .'" value="'.$value.'" '.$maxlength.' '.$extra.' />'
+            '<input type="' . $type . '" size="' . $size . '" name="' . $name . '" id="input' . $uid . '" value="' . $value . '" ' . $maxlength . ' ' . $extra . ' />'
         );
 
-        if ($hint != '')
+        if ($hint != '') {
             $this->table_td($hint);
+        }
 
         $this->table_tr();
 
-        return 'input'.$uid;
+        return 'input' . $uid;
     }
 
     /**
@@ -722,25 +784,29 @@ class XTemplate {
       *
       * @return uid;
       */
-    function form_add_input_pure($type = 'text', $size = '30', $name = 'input_fromgen', $value = '') {
+    public function form_add_input_pure($type = 'text', $size = '30', $name = 'input_fromgen', $value = '')
+    {
         $uid = uniqid();
-        $this->table_td('<input type="'.$type.'" size="'.$size.'" name="'.$name.'" id="input'. $uid .'" value="'.h($value).'" />');
+        $this->table_td('<input type="' . $type . '" size="' . $size . '" name="' . $name . '" id="input' . $uid . '" value="' . h($value) . '" />');
 
-        return 'input'.$uid;
+        return 'input' . $uid;
     }
 
-    function form_add_number($label, $name, $value, $min = 0, $max = 999999, $step = 1, $unit = '', $hint = '') {
+    public function form_add_number($label, $name, $value, $min = 0, $max = 999999, $step = 1, $unit = '', $hint = '')
+    {
         $this->table_td($label);
         $this->form_add_number_pure($name, $value, $min, $max, $step, $unit);
 
-        if ($hint)
+        if ($hint) {
             $this->table_td($hint);
+        }
 
         $this->table_tr();
     }
 
-    function form_add_number_pure($name, $value, $min = 0, $max = 999999, $step = 1, $unit = '') {
-        $this->table_td('<input type="number" name="'.$name.'" value="'.h($value).'" min="'.$min.'" '.($max > 0 ? 'max="'.$max.'"' : '').' step="'.$step.'">&nbsp;'.$unit);
+    public function form_add_number_pure($name, $value, $min = 0, $max = 999999, $step = 1, $unit = '')
+    {
+        $this->table_td('<input type="number" name="' . $name . '" value="' . h($value) . '" min="' . $min . '" ' . ($max > 0 ? 'max="' . $max . '"' : '') . ' step="' . $step . '">&nbsp;' . $unit);
     }
 
     /**
@@ -751,18 +817,24 @@ class XTemplate {
       * @param $selected_value - default selected value
       * @param $hint - helping hint
       */
-    function form_add_select($label, $name, $options, $selected_value = '', $hint = '', $multiple = false, $size = '5', $colspan = '1') {
+    public function form_add_select($label, $name, $options, $selected_value = '', $hint = '', $multiple = false, $size = '5', $colspan = '1')
+    {
         $this->table_td($label);
-        $code = ('<select  name="'.$name.'" id="input" '.($multiple ? 'multiple size="'.$size.'"' : '').'>');
-        if ($options)
-        foreach ($options as $key=>$value) {
-        if (($selected_value == $key && $selected_value != NULL) || ($multiple && is_array($selected_value) && in_array($key, $selected_value)))
-            $code .= '<option selected="selected" value="'.$key.'" title="">'.h($value).'</option>'."\n";
-            else $code .= '<option value="'.$key.'" title="">'.h($value).'</option>'."\n";
+        $code = ('<select  name="' . $name . '" id="input" ' . ($multiple ? 'multiple size="' . $size . '"' : '') . '>');
+        if ($options) {
+            foreach ($options as $key => $value) {
+                if (($selected_value == $key && $selected_value != null) || ($multiple && is_array($selected_value) && in_array($key, $selected_value))) {
+                    $code .= '<option selected="selected" value="' . $key . '" title="">' . h($value) . '</option>' . "\n";
+                } else {
+                    $code .= '<option value="' . $key . '" title="">' . h($value) . '</option>' . "\n";
+                }
+            }
         }
         $code .= ('</select>');
         $this->table_td($code, false, false, $colspan);
-        if ($hint != '') $this->table_td($hint);
+        if ($hint != '') {
+            $this->table_td($hint);
+        }
         $this->table_tr(false, false, false, $name);
     }
 
@@ -772,7 +844,8 @@ class XTemplate {
       * @param $options - array of options, $option[option_name] = "Option Label"
       * @param $selected_value - default selected value
       */
-    function form_add_select_pure($name, $options, $selected_value = '', $multiple = false, $size = '5') {
+    public function form_add_select_pure($name, $options, $selected_value = '', $multiple = false, $size = '5')
+    {
         $this->table_td($this->form_select_html(
             $name,
             $options,
@@ -788,33 +861,41 @@ class XTemplate {
       * @param $options - array of options, $option[option_name] = "Option Label"
       * @param $selected_value - default selected value
       */
-    function form_select_html($name, $options, $selected_value = '', $multiple = false, $size = '5') {
-        $code = ('<select  name="'.$name.'" id="input" '.($multiple ? 'multiple size="'.$size.'"' : '').'>');
-        if ($options)
-        foreach ($options as $key=>$value) {
-            if ( $selected_value == $key || ($multiple && is_array($selected_value) && in_array($key, $selected_value)) )
-                $code .= '<option selected="selected" value="'.$key.'" title="">'.h($value).'</option>'."\n";
-            else
-                $code .= '<option value="'.$key.'" title="">'.h($value).'</option>'."\n";
+    public function form_select_html($name, $options, $selected_value = '', $multiple = false, $size = '5')
+    {
+        $code = ('<select  name="' . $name . '" id="input" ' . ($multiple ? 'multiple size="' . $size . '"' : '') . '>');
+        if ($options) {
+            foreach ($options as $key => $value) {
+                if ($selected_value == $key || ($multiple && is_array($selected_value) && in_array($key, $selected_value))) {
+                    $code .= '<option selected="selected" value="' . $key . '" title="">' . h($value) . '</option>' . "\n";
+                } else {
+                    $code .= '<option value="' . $key . '" title="">' . h($value) . '</option>' . "\n";
+                }
+            }
         }
         $code .= ('</select>');
         return $code;
     }
 
-    function form_add_datetime_pure($name, $value = null, $local = null, $min = null, $max = null, $step = null) {
-        $input = '<input type="datetime'.($local ? '-local' : '').'" name="'.$name.'"';
+    public function form_add_datetime_pure($name, $value = null, $local = null, $min = null, $max = null, $step = null)
+    {
+        $input = '<input type="datetime' . ($local ? '-local' : '') . '" name="' . $name . '"';
 
-        if ($value)
-            $input .= 'value="'.h($local ? tolocaltz($value, 'Y-m-dTH:i:s') : $value).'" ';
+        if ($value) {
+            $input .= 'value="' . h($local ? tolocaltz($value, 'Y-m-dTH:i:s') : $value) . '" ';
+        }
 
-        if ($min)
-            $input .= 'min="'.$min.'" ';
+        if ($min) {
+            $input .= 'min="' . $min . '" ';
+        }
 
-        if ($max)
-            $input .= 'max="'.$max.'" ';
+        if ($max) {
+            $input .= 'max="' . $max . '" ';
+        }
 
-        if ($step)
-            $input .= 'step="'.$step.'" ';
+        if ($step) {
+            $input .= 'step="' . $step . '" ';
+        }
 
         $input .= '>';
 
@@ -822,12 +903,14 @@ class XTemplate {
     }
 
 
-    function form_add_datetime($label, $name, $value = null, $local = null, $hint = null, $min = null, $max = null, $step = null) {
+    public function form_add_datetime($label, $name, $value = null, $local = null, $hint = null, $min = null, $max = null, $step = null)
+    {
         $this->table_td($label);
         form_add_datetime_pure($name, $value, $local, $min, $max, $step);
 
-        if ($hint)
+        if ($hint) {
             $this->table_td($hint);
+        }
 
         $this->table_tr();
     }
@@ -840,10 +923,13 @@ class XTemplate {
       * @param $value - default value
       * @param $hint - helping hint
       */
-    function form_add_textarea($label = 'popisek', $cols = 10, $rows = 4, $name = 'textarea_formgen', $value = '', $hint = '') {
+    public function form_add_textarea($label = 'popisek', $cols = 10, $rows = 4, $name = 'textarea_formgen', $value = '', $hint = '')
+    {
         $this->table_td($label);
-        $this->table_td('<textarea name="'.$name.'" cols="'.$cols.'" rows="'.$rows.'" id="input">'.h($value).'</textarea>');
-        if ($hint != '') $this->table_td($hint);
+        $this->table_td('<textarea name="' . $name . '" cols="' . $cols . '" rows="' . $rows . '" id="input">' . h($value) . '</textarea>');
+        if ($hint != '') {
+            $this->table_td($hint);
+        }
         $this->table_tr();
     }
     /**
@@ -854,8 +940,9 @@ class XTemplate {
       * @param $value - default value
       * @param $hint - helping hint
       */
-    function form_add_textarea_pure($cols = 10, $rows = 4, $name = 'textarea_formgen', $value = '') {
-        $this->table_td('<textarea name="'.$name.'" cols="'.$cols.'" rows="'.$rows.'" id="input">'.h($value).'</textarea>');
+    public function form_add_textarea_pure($cols = 10, $rows = 4, $name = 'textarea_formgen', $value = '')
+    {
+        $this->table_td('<textarea name="' . $name . '" cols="' . $cols . '" rows="' . $rows . '" id="input">' . h($value) . '</textarea>');
     }
     /**
       * Add checkobox to form
@@ -865,10 +952,13 @@ class XTemplate {
       * @param $checked - if it is checked by default
       * @param $hint - helping hint
       */
-    function form_add_checkbox($label = 'popisek', $name = 'input_fromgen', $value = '', $checked=false, $hint = '', $text = '') {
+    public function form_add_checkbox($label = 'popisek', $name = 'input_fromgen', $value = '', $checked = false, $hint = '', $text = '')
+    {
         $this->table_td($label);
-        $this->table_td('<input type="checkbox" name="'.$name.'" id="input" value="'.h($value).'" '.(($checked) ? 'checked':'').' /> '.$text);
-        if ($hint != '') $this->table_td($hint);
+        $this->table_td('<input type="checkbox" name="' . $name . '" id="input" value="' . h($value) . '" ' . (($checked) ? 'checked' : '') . ' /> ' . $text);
+        if ($hint != '') {
+            $this->table_td($hint);
+        }
         $this->table_tr();
     }
 
@@ -878,8 +968,9 @@ class XTemplate {
       * @param $value - value if checked
       * @param $checked - if it is checked by default
       */
-    function form_add_checkbox_pure($name = 'input_fromgen', $value = '', $checked=false, $text = '') {
-        $this->table_td('<input type="checkbox" name="'.$name.'" id="input" value="'.h($value).'" '.(($checked) ? 'checked':'').' /> '.$text);
+    public function form_add_checkbox_pure($name = 'input_fromgen', $value = '', $checked = false, $text = '')
+    {
+        $this->table_td('<input type="checkbox" name="' . $name . '" id="input" value="' . h($value) . '" ' . (($checked) ? 'checked' : '') . ' /> ' . $text);
     }
 
     /**
@@ -891,10 +982,13 @@ class XTemplate {
       * @param $text - text shown next to the radio button
       * @param $hint - helping hint
       */
-    function form_add_radio($label = 'popisek', $name = 'input_fromgen', $value = '', $checked=false, $text = '', $hint = '') {
+    public function form_add_radio($label = 'popisek', $name = 'input_fromgen', $value = '', $checked = false, $text = '', $hint = '')
+    {
         $this->table_td($label);
-        $this->table_td('<input type="radio" name="'.$name.'" id="input" value="'.h($value).'" '.(($checked) ? 'checked':'').' /> '.$text);
-        if ($hint != '') $this->table_td($hint);
+        $this->table_td('<input type="radio" name="' . $name . '" id="input" value="' . h($value) . '" ' . (($checked) ? 'checked' : '') . ' /> ' . $text);
+        if ($hint != '') {
+            $this->table_td($hint);
+        }
     }
 
     /**
@@ -904,27 +998,32 @@ class XTemplate {
       * @param $checked - if it is checked by default
       * @param $text - text shown next to the radio button
       */
-    function form_add_radio_pure($name = 'input_fromgen', $value = '', $checked=false, $text = '', $enabled = true) {
-        $this->table_td('<input type="radio" name="'.$name.'" id="input" value="'.h($value).'" '.(($checked) ? 'checked':'').' '.($enabled ? '' : 'disabled').' /> '.$text);
+    public function form_add_radio_pure($name = 'input_fromgen', $value = '', $checked = false, $text = '', $enabled = true)
+    {
+        $this->table_td('<input type="radio" name="' . $name . '" id="input" value="' . h($value) . '" ' . (($checked) ? 'checked' : '') . ' ' . ($enabled ? '' : 'disabled') . ' /> ' . $text);
     }
 
-    function form_csrf($name = 'common', $present = true) {
-        if ($present)
-            $this->assign('FORM_CSRF_TOKEN', '<input type="hidden" name="csrf_token" value="'.csrf_token($name).'">');
-        else
+    public function form_csrf($name = 'common', $present = true)
+    {
+        if ($present) {
+            $this->assign('FORM_CSRF_TOKEN', '<input type="hidden" name="csrf_token" value="' . csrf_token($name) . '">');
+        } else {
             $this->assign('FORM_CSRF_TOKEN', '');
+        }
     }
 
-    function html_submit($value, $name = null) {
-        return '<input type="submit" name="'.$name.'" value="'.$value.'" class="button" />';
+    public function html_submit($value, $name = null)
+    {
+        return '<input type="submit" name="' . $name . '" value="' . $value . '" class="button" />';
     }
 
     /**
       * Parse out the form
       * @param $submit_label - label of submit button of the form
       */
-    function form_out_raw($id = null) {
-        $this->assign('TABLE_FORM_END','</form>');
+    public function form_out_raw($id = null)
+    {
+        $this->assign('TABLE_FORM_END', '</form>');
         $this->table_out($id);
     }
 
@@ -932,9 +1031,10 @@ class XTemplate {
       * Parse out the form
       * @param $submit_label - label of submit button of the form
       */
-    function form_out($submit_label, $id = null, $label = '', $colspan = '1') {
+    public function form_out($submit_label, $id = null, $label = '', $colspan = '1')
+    {
         $this->table_td($label);
-        $this->table_td('<input type="submit" value=" '.$submit_label.' "  id="button"/>', false, false, $colspan);
+        $this->table_td('<input type="submit" value=" ' . $submit_label . ' "  id="button"/>', false, false, $colspan);
         $this->table_tr(false, 'nodrag nodrop');
         $this->form_out_raw($id);
     }
@@ -942,12 +1042,13 @@ class XTemplate {
       * Add transaction chain row to rightside shortlog
       * @param $chain - transaction chain from the API
       */
-    function transaction_chain($chain) {
+    public function transaction_chain($chain)
+    {
         $this->assign('T_ID', $chain->id);
         $this->assign('T_CONCERNS', transaction_chain_concerns($chain));
         $this->assign('T_LABEL', $chain->label);
         $this->assign('T_CLASS', $chain->state);
-        $this->assign('T_PROGRESS', round((100.0 / $chain->size) * $chain->progress). '&nbsp;%');
+        $this->assign('T_PROGRESS', round((100.0 / $chain->size) * $chain->progress) . '&nbsp;%');
         $this->assign('T_PROGRESS_VAL', $chain->progress);
 
         switch ($chain->state) {
@@ -964,9 +1065,9 @@ class XTemplate {
                 $this->assign('T_ICO', '<img src="template/icons/transact_fail.png"> ');
                 break;
 
-// 			case "warning":
-// 				$this->assign('T_ICO', '<img src="template/icons/warning.png"> ');
-// 				break;
+                // 			case "warning":
+                // 				$this->assign('T_ICO', '<img src="template/icons/warning.png"> ');
+                // 				break;
 
             default:
                 $this->assign('T_ICO', '<img src="template/icons/transact_fail.png"> ');
@@ -977,7 +1078,8 @@ class XTemplate {
     /**
       * Parse out rightside transact shortlog
       */
-    function transaction_chains_out() {
+    public function transaction_chains_out()
+    {
         $this->assign("L_TRANSACTION_LOG", _("Transaction log"));
         $this->assign("L_LAST10", _("last 10"));
         $this->assign("L_WHAT", _("Object"));
@@ -990,7 +1092,8 @@ class XTemplate {
       * @param $title - helpbox title
       * @param $content - helpbox content, must not have \<br\>'s
       */
-    function helpbox($title, $content) {
+    public function helpbox($title, $content)
+    {
         $this->assign('HELPBOX_TITLE', $title);
         $this->assign('HELPBOX_CONTENT', nl2br($content));
         $this->parse('main.helpbox');
@@ -998,19 +1101,22 @@ class XTemplate {
     /**
       * @param $data - HTML code, which will be added above the table
       */
-    function table_begin($data) {
-      $this->assign('TABLE_FORM_BEGIN', $data);
+    public function table_begin($data)
+    {
+        $this->assign('TABLE_FORM_BEGIN', $data);
     }
     /**
       * @param $data - HTML code, which will be added below the table
       */
-    function table_end($data) {
-      $this->assign('TABLE_FORM_END', $data);
+    public function table_end($data)
+    {
+        $this->assign('TABLE_FORM_END', $data);
     }
     /**
       * @param $content - HTML content of adminbox
       */
-    function adminbox($content) {
+    public function adminbox($content)
+    {
         $this->assign('ADMINBOX_CONTENT', $content);
         $this->parse('main.adminbox');
     }
@@ -1018,24 +1124,27 @@ class XTemplate {
       * @param $url - Where to redirect
       * @param $delay - Delay in msecs
       */
-    function delayed_redirect($url, $delay = 1500) {
-    $script ='
+    public function delayed_redirect($url, $delay = 1500)
+    {
+        $script = '
 		    <script language="JavaScript">
 			function redirect () {
 			    setTimeout("top.location.href = \'' . $url . '\'", ' . $delay . ');
 			}
 		    </script>
 		';
-    $this->assign('SCRIPT', $script);
-    $this->assign('SCRIPT_BODY', 'onload="redirect()"');
+        $this->assign('SCRIPT', $script);
+        $this->assign('SCRIPT_BODY', 'onload="redirect()"');
     }
 
     /**
       * @return String/Boolean - previous url from current url or false if not available
       */
-    function get_prev_url() {
-        if (isset($_GET['prev_url']))
+    public function get_prev_url()
+    {
+        if (isset($_GET['prev_url'])) {
             return base64_decode($_GET['prev_url']);
+        }
 
         return false;
     }
@@ -1049,37 +1158,41 @@ class XTemplate {
   *
   * @return String - HTML code for the listing
   */
-function gen_pages_listing($current, $pages, $offset, $display=false)
+function gen_pages_listing($current, $pages, $offset, $display = false)
 {
-  $out = '<div class="page_listing">';
+    $out = '<div class="page_listing">';
 
-  $begin = 0;
-  if ($current>$offset) {
-    $begin = $current-$offset;
-    $out .= '<a href="?page=transactions&amp;page_number=0">&laquo;</a> ';
-  }
+    $begin = 0;
+    if ($current > $offset) {
+        $begin = $current - $offset;
+        $out .= '<a href="?page=transactions&amp;page_number=0">&laquo;</a> ';
+    }
 
-  $end = $pages;
-  if (($pages-$current-1)>$offset)
-    $end = $current+$offset;
+    $end = $pages;
+    if (($pages - $current - 1) > $offset) {
+        $end = $current + $offset;
+    }
 
-  for ($page=$begin; $page<$end; $page++) {
-    $out .= '&nbsp;';
-    if ($page == $current)
-      $out .= '<b>'.($page+1).'</b>';
-    else
-      $out .= '<a href="?page=transactions&amp;page_number='.$page.'">'.($page+1).'</a>';
-    $out .= '&nbsp;';
-  }
-  if (($pages-1-$current)>$offset)
-    $out .= ' <a href="?page=transactions&amp;page_number='.($pages-1).'">&raquo;</a> ';
+    for ($page = $begin; $page < $end; $page++) {
+        $out .= '&nbsp;';
+        if ($page == $current) {
+            $out .= '<b>' . ($page + 1) . '</b>';
+        } else {
+            $out .= '<a href="?page=transactions&amp;page_number=' . $page . '">' . ($page + 1) . '</a>';
+        }
+        $out .= '&nbsp;';
+    }
+    if (($pages - 1 - $current) > $offset) {
+        $out .= ' <a href="?page=transactions&amp;page_number=' . ($pages - 1) . '">&raquo;</a> ';
+    }
 
-  $out .= '</div>';
+    $out .= '</div>';
 
-  if ($display)
-    echo $out;
+    if ($display) {
+        echo $out;
+    }
 
-  return $out;
+    return $out;
 }
 
 /**
@@ -1087,15 +1200,17 @@ function gen_pages_listing($current, $pages, $offset, $display=false)
   *
   * return String - full URL
   */
-function curPageURL() {
- $pageURL = 'http';
- if (isset($_SERVER["HTTPS"]) && $_SERVER["HTTPS"] == "on") {$pageURL .= "s";}
- $pageURL .= "://";
- if ($_SERVER["SERVER_PORT"] != "80") {
-  $pageURL .= $_SERVER["SERVER_NAME"].":".$_SERVER["SERVER_PORT"].$_SERVER["REQUEST_URI"];
- } else {
-  $pageURL .= $_SERVER["SERVER_NAME"].$_SERVER["REQUEST_URI"];
- }
- return $pageURL;
+function curPageURL()
+{
+    $pageURL = 'http';
+    if (isset($_SERVER["HTTPS"]) && $_SERVER["HTTPS"] == "on") {
+        $pageURL .= "s";
+    }
+    $pageURL .= "://";
+    if ($_SERVER["SERVER_PORT"] != "80") {
+        $pageURL .= $_SERVER["SERVER_NAME"] . ":" . $_SERVER["SERVER_PORT"] . $_SERVER["REQUEST_URI"];
+    } else {
+        $pageURL .= $_SERVER["SERVER_NAME"] . $_SERVER["REQUEST_URI"];
+    }
+    return $pageURL;
 }
-?>

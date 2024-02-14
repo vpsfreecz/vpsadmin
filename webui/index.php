@@ -21,44 +21,44 @@
 */
 include '/etc/vpsadmin/config.php';
 session_start();
-define ("CRON_MODE", false);
-define ("DEBUG", false);
+define("CRON_MODE", false);
+define("DEBUG", false);
 
 // Include libraries
-include WWW_ROOT.'vendor/autoload.php';
-include WWW_ROOT.'lib/version.lib.php';
-include WWW_ROOT.'lib/xtemplate.lib.php';
-include WWW_ROOT.'lib/functions.lib.php';
-include WWW_ROOT.'lib/transact.lib.php';
-include WWW_ROOT.'lib/vps.lib.php';
-include WWW_ROOT.'lib/cluster.lib.php';
-include WWW_ROOT.'lib/mail.lib.php';
-include WWW_ROOT.'lib/helpbox.lib.php';
-include WWW_ROOT.'lib/security.lib.php';
-include WWW_ROOT.'lib/munin.lib.php';
-include WWW_ROOT.'lib/login.lib.php';
+include WWW_ROOT . 'vendor/autoload.php';
+include WWW_ROOT . 'lib/version.lib.php';
+include WWW_ROOT . 'lib/xtemplate.lib.php';
+include WWW_ROOT . 'lib/functions.lib.php';
+include WWW_ROOT . 'lib/transact.lib.php';
+include WWW_ROOT . 'lib/vps.lib.php';
+include WWW_ROOT . 'lib/cluster.lib.php';
+include WWW_ROOT . 'lib/mail.lib.php';
+include WWW_ROOT . 'lib/helpbox.lib.php';
+include WWW_ROOT . 'lib/security.lib.php';
+include WWW_ROOT . 'lib/munin.lib.php';
+include WWW_ROOT . 'lib/login.lib.php';
 
-include WWW_ROOT.'forms/backup.forms.php';
-include WWW_ROOT.'forms/cluster.forms.php';
-include WWW_ROOT.'forms/dataset.forms.php';
-include WWW_ROOT.'forms/export.forms.php';
-include WWW_ROOT.'forms/vps.forms.php';
-include WWW_ROOT.'forms/users.forms.php';
-include WWW_ROOT.'forms/lifetimes.forms.php';
-include WWW_ROOT.'forms/object_history.forms.php';
-include WWW_ROOT.'forms/networking.forms.php';
-include WWW_ROOT.'forms/outage.forms.php';
-include WWW_ROOT.'forms/monitoring.forms.php';
-include WWW_ROOT.'forms/userns.forms.php';
-include WWW_ROOT.'forms/oom_reports.forms.php';
-include WWW_ROOT.'forms/node.forms.php';
-include WWW_ROOT.'forms/incidents.forms.php';
+include WWW_ROOT . 'forms/backup.forms.php';
+include WWW_ROOT . 'forms/cluster.forms.php';
+include WWW_ROOT . 'forms/dataset.forms.php';
+include WWW_ROOT . 'forms/export.forms.php';
+include WWW_ROOT . 'forms/vps.forms.php';
+include WWW_ROOT . 'forms/users.forms.php';
+include WWW_ROOT . 'forms/lifetimes.forms.php';
+include WWW_ROOT . 'forms/object_history.forms.php';
+include WWW_ROOT . 'forms/networking.forms.php';
+include WWW_ROOT . 'forms/outage.forms.php';
+include WWW_ROOT . 'forms/monitoring.forms.php';
+include WWW_ROOT . 'forms/userns.forms.php';
+include WWW_ROOT . 'forms/oom_reports.forms.php';
+include WWW_ROOT . 'forms/node.forms.php';
+include WWW_ROOT . 'forms/incidents.forms.php';
 
-include WWW_ROOT.'lib/gettext_stream.lib.php';
-include WWW_ROOT.'lib/gettext_inc.lib.php';
-include WWW_ROOT.'lib/gettext_lang.lib.php';
+include WWW_ROOT . 'lib/gettext_stream.lib.php';
+include WWW_ROOT . 'lib/gettext_inc.lib.php';
+include WWW_ROOT . 'lib/gettext_lang.lib.php';
 // include configuration
-include WWW_ROOT.'config_cfg.php';
+include WWW_ROOT . 'config_cfg.php';
 
 $api = new \HaveAPI\Client(INT_API_URL, API_VERSION, getClientIdentity());
 $api->registerDescriptionChangeFunc('api_description_changed');
@@ -68,7 +68,7 @@ if(isset($_SESSION["api_description"]) && $_SESSION["api_description"]) {
 }
 
 // Create a template class
-$xtpl = new XTemplate(WWW_ROOT.'template/template.html');
+$xtpl = new XTemplate(WWW_ROOT . 'template/template.html');
 // Create a langauge class
 $lang = new Lang($langs, $xtpl);
 
@@ -83,20 +83,20 @@ $config = null;
 try {
     if (isset($_SESSION["logged_in"]) && $_SESSION["logged_in"]) {
         switch ($_SESSION['auth_type']) {
-        case 'oauth2':
-            $api->authenticate('oauth2', ['access_token' => $_SESSION['access_token']], false);
-            break;
-        case 'token':
-            $api->authenticate('token', ['token' => $_SESSION['session_token']], false);
-            break;
-        default:
-            die("Unknown authentication method");
+            case 'oauth2':
+                $api->authenticate('oauth2', ['access_token' => $_SESSION['access_token']], false);
+                break;
+            case 'token':
+                $api->authenticate('token', ['token' => $_SESSION['session_token']], false);
+                break;
+            default:
+                die("Unknown authentication method");
         }
 
         try {
             $api_cluster = $api->cluster->show();
 
-            if(!isset($_SESSION["context_switch"]) || !$_SESSION["context_switch"]){
+            if(!isset($_SESSION["context_switch"]) || !$_SESSION["context_switch"]) {
                 $api->user->touch($_SESSION["user"]["id"]);
             }
 
@@ -115,99 +115,98 @@ try {
                     ($_GET["page"] != "lang") &&
                     ($_GET["page"] != "about") &&
                     (!isAdmin()) &&
-                    $api_cluster && $api_cluster->maintenance_lock)
-        {
-            $request_page = "";
-            include WWW_ROOT.'pages/page_index.php';
-            $xtpl->perex(_("Maintenance mode"), _("vpsAdmin is currently in maintenance mode, any actions are disabled. <br />
+                    $api_cluster && $api_cluster->maintenance_lock) {
+        $request_page = "";
+        include WWW_ROOT . 'pages/page_index.php';
+        $xtpl->perex(_("Maintenance mode"), _("vpsAdmin is currently in maintenance mode, any actions are disabled. <br />
 											This is usually used during outage to prevent data corruption.<br />")
-                                            ."<br>".($api_cluster->maintenance_lock_reason ? _('Reason').': '.$api_cluster->maintenance_lock_reason.'<br><br>' : '')
-                                            ._("Please be patient."));
+                                        . "<br>" . ($api_cluster->maintenance_lock_reason ? _('Reason') . ': ' . $api_cluster->maintenance_lock_reason . '<br><br>' : '')
+                                        . _("Please be patient."));
     } else {
         show_notification();
 
-        if(!isLoggedIn() && !isset($_SESSION['access_url'])){
+        if(!isLoggedIn() && !isset($_SESSION['access_url'])) {
             $_SESSION["access_url"] = $_SERVER["REQUEST_URI"];
         }
 
         switch ($_GET["page"]) {
             case 'adminvps':
-                include WWW_ROOT.'pages/page_adminvps.php';
+                include WWW_ROOT . 'pages/page_adminvps.php';
                 break;
             case 'about':
-                include WWW_ROOT.'pages/page_about.php';
+                include WWW_ROOT . 'pages/page_about.php';
                 break;
             case 'login':
-                include WWW_ROOT.'pages/page_login.php';
+                include WWW_ROOT . 'pages/page_login.php';
                 break;
             case 'adminm':
-                include WWW_ROOT.'pages/page_adminm.php';
+                include WWW_ROOT . 'pages/page_adminm.php';
                 break;
             case 'transactions':
-                include WWW_ROOT.'pages/page_transactions.php';
+                include WWW_ROOT . 'pages/page_transactions.php';
                 break;
             case 'networking':
-                include WWW_ROOT.'pages/page_networking.php';
+                include WWW_ROOT . 'pages/page_networking.php';
                 break;
             case 'cluster':
-                include WWW_ROOT.'pages/page_cluster.php';
+                include WWW_ROOT . 'pages/page_cluster.php';
                 break;
             case 'log':
-                include WWW_ROOT.'pages/page_log.php';
+                include WWW_ROOT . 'pages/page_log.php';
                 break;
             case 'dataset':
-                include WWW_ROOT.'pages/page_dataset.php';
+                include WWW_ROOT . 'pages/page_dataset.php';
                 break;
             case 'export':
-                include WWW_ROOT.'pages/page_export.php';
+                include WWW_ROOT . 'pages/page_export.php';
                 break;
             case 'backup':
-                include WWW_ROOT.'pages/page_backup.php';
+                include WWW_ROOT . 'pages/page_backup.php';
                 break;
             case 'nas':
-                include WWW_ROOT.'pages/page_nas.php';
+                include WWW_ROOT . 'pages/page_nas.php';
                 break;
             case 'incidents':
-                include WWW_ROOT.'pages/page_incidents.php';
+                include WWW_ROOT . 'pages/page_incidents.php';
                 break;
-            case 'lang';
+            case 'lang':
                 $lang->change($_GET['newlang']);
                 break;
             case 'console':
-                include WWW_ROOT.'pages/page_console.php';
+                include WWW_ROOT . 'pages/page_console.php';
                 break;
             case 'jumpto':
-                include WWW_ROOT.'pages/page_jumpto.php';
+                include WWW_ROOT . 'pages/page_jumpto.php';
                 break;
             case 'lifetimes':
-                include WWW_ROOT.'pages/page_lifetimes.php';
+                include WWW_ROOT . 'pages/page_lifetimes.php';
                 break;
             case 'reminder':
-                include WWW_ROOT.'pages/page_reminder.php';
+                include WWW_ROOT . 'pages/page_reminder.php';
                 break;
             case 'history':
-                include WWW_ROOT.'pages/page_history.php';
+                include WWW_ROOT . 'pages/page_history.php';
                 break;
             case 'redirect':
-                include WWW_ROOT.'pages/page_redirect.php';
+                include WWW_ROOT . 'pages/page_redirect.php';
                 break;
             case 'outage':
-                include WWW_ROOT.'pages/page_outage.php';
+                include WWW_ROOT . 'pages/page_outage.php';
                 break;
             case 'monitoring':
-                include WWW_ROOT.'pages/page_monitoring.php';
+                include WWW_ROOT . 'pages/page_monitoring.php';
                 break;
             case 'userns':
-                include WWW_ROOT.'pages/page_userns.php';
+                include WWW_ROOT . 'pages/page_userns.php';
                 break;
             case 'oom_reports':
-                include WWW_ROOT.'pages/page_oom_reports.php';
+                include WWW_ROOT . 'pages/page_oom_reports.php';
                 break;
             case 'node':
-                include WWW_ROOT.'pages/page_node.php';
+                include WWW_ROOT . 'pages/page_node.php';
                 break;
             default:
-                include WWW_ROOT.'pages/page_index.php';
+                include WWW_ROOT . 'pages/page_index.php';
         }
         $request_page = $_GET["page"];
     }
@@ -223,35 +222,38 @@ try {
 }
 
 if (isLoggedIn()) {
-    $xtpl->menu_add(_("Status"),'?page=', ($_GET["page"] == ''));
-    $xtpl->menu_add(_("Members"),'?page=adminm', ($_GET["page"] == 'adminm'));
-    $xtpl->menu_add(_("VPS"),'?page=adminvps', ($_GET["page"] == 'adminvps'));
+    $xtpl->menu_add(_("Status"), '?page=', ($_GET["page"] == ''));
+    $xtpl->menu_add(_("Members"), '?page=adminm', ($_GET["page"] == 'adminm'));
+    $xtpl->menu_add(_("VPS"), '?page=adminvps', ($_GET["page"] == 'adminvps'));
     if (isAdmin()) {
-        $xtpl->menu_add(_("Backups"),'?page=backup', ($_GET["page"] == 'backup'));
+        $xtpl->menu_add(_("Backups"), '?page=backup', ($_GET["page"] == 'backup'));
 
-        if(NAS_PUBLIC || isAdmin()){
-            $xtpl->menu_add(_("NAS"),'?page=nas', ($_GET["page"] == 'nas'));
+        if(NAS_PUBLIC || isAdmin()) {
+            $xtpl->menu_add(_("NAS"), '?page=nas', ($_GET["page"] == 'nas'));
         }
 
-        $xtpl->menu_add(_("Exports"),'?page=export', ($_GET["page"] == 'export'));
-        $xtpl->menu_add(_("User namespaces"),'?page=userns', ($_GET["page"] == 'userns'));
-        $xtpl->menu_add(_("Networking"),'?page=networking', ($_GET["page"] == 'networking'));
-        $xtpl->menu_add(_("Cluster"),'?page=cluster', ($_GET["page"] == 'cluster'));
-        $xtpl->menu_add(_("Transaction log"),'?page=transactions', ($_GET["page"] == 'transactions'), true);
+        $xtpl->menu_add(_("Exports"), '?page=export', ($_GET["page"] == 'export'));
+        $xtpl->menu_add(_("User namespaces"), '?page=userns', ($_GET["page"] == 'userns'));
+        $xtpl->menu_add(_("Networking"), '?page=networking', ($_GET["page"] == 'networking'));
+        $xtpl->menu_add(_("Cluster"), '?page=cluster', ($_GET["page"] == 'cluster'));
+        $xtpl->menu_add(_("Transaction log"), '?page=transactions', ($_GET["page"] == 'transactions'), true);
     } else {
-        $xtpl->menu_add(_("Backups"),'?page=backup', ($_GET["page"] == 'backup'));
+        $xtpl->menu_add(_("Backups"), '?page=backup', ($_GET["page"] == 'backup'));
 
-        if(NAS_PUBLIC || isAdmin())
-            $xtpl->menu_add(_("NAS"),'?page=nas', ($_GET["page"] == 'nas'));
+        if(NAS_PUBLIC || isAdmin()) {
+            $xtpl->menu_add(_("NAS"), '?page=nas', ($_GET["page"] == 'nas'));
+        }
 
-        if (isExportPublic())
-            $xtpl->menu_add(_("Exports"),'?page=export', ($_GET["page"] == 'export'));
+        if (isExportPublic()) {
+            $xtpl->menu_add(_("Exports"), '?page=export', ($_GET["page"] == 'export'));
+        }
 
-        if (USERNS_PUBLIC)
-            $xtpl->menu_add(_("User namespaces"),'?page=userns', ($_GET["page"] == 'userns'));
+        if (USERNS_PUBLIC) {
+            $xtpl->menu_add(_("User namespaces"), '?page=userns', ($_GET["page"] == 'userns'));
+        }
 
-        $xtpl->menu_add(_("Networking"),'?page=networking', ($_GET["page"] == 'networking'));
-        $xtpl->menu_add(_("Transaction log"),'?page=transactions', ($_GET["page"] == 'transactions'), true);
+        $xtpl->menu_add(_("Networking"), '?page=networking', ($_GET["page"] == 'networking'));
+        $xtpl->menu_add(_("Transaction log"), '?page=transactions', ($_GET["page"] == 'transactions'), true);
     }
 
     try {
@@ -264,18 +266,20 @@ if (isLoggedIn()) {
     }
 
 } else {
-    $xtpl->menu_add(_("Status"),'?page=', ($_GET["page"] == ''));
-    $xtpl->menu_add(_("About vpsAdmin"),'?page=about', ($_GET["page"] == 'about'), true);
+    $xtpl->menu_add(_("Status"), '?page=', ($_GET["page"] == ''));
+    $xtpl->menu_add(_("About vpsAdmin"), '?page=about', ($_GET["page"] == 'about'), true);
 }
 
-$xtpl->logbox(isLoggedIn(),
+$xtpl->logbox(
+    isLoggedIn(),
     isset($_SESSION["user"]) ? $_SESSION["user"]["login"] : false,
     isAdmin(),
     $api_cluster ? $api_cluster->maintenance_lock : false
 );
 
-if ($config)
+if ($config) {
     $xtpl->adminbox($config->get("webui", "sidebar"));
+}
 
 try {
     $help = get_helpbox();
@@ -283,21 +287,23 @@ try {
 }
 
 if (isAdmin()) {
-    $help .= '<p><a href="?page=cluster&action=helpboxes_add&help_page='.($_GET["page"] ?? '').'&help_action='.($_GET["action"] ?? '').'" title="'._("Edit").'"><img src="template/icons/edit.png" title="'._("Edit").'">'._("Edit help box").'</a></p>';
+    $help .= '<p><a href="?page=cluster&action=helpboxes_add&help_page=' . ($_GET["page"] ?? '') . '&help_action=' . ($_GET["action"] ?? '') . '" title="' . _("Edit") . '"><img src="template/icons/edit.png" title="' . _("Edit") . '">' . _("Edit help box") . '</a></p>';
 }
 
-if ($help)
+if ($help) {
     $xtpl->helpbox(_("Help"), nl2br($help));
+}
 
 $lang->lang_switcher();
 
-if ($config)
+if ($config) {
     $xtpl->assign('PAGE_TITLE', $config->get("webui", "document_title"));
+}
 
 $xtpl->assign('API_SPENT_TIME', round($api->getSpentTime(), 3));
 
 if (defined('TRACKING_CODE')) {
-  $xtpl->assign('TRACKING_CODE', TRACKING_CODE);
+    $xtpl->assign('TRACKING_CODE', TRACKING_CODE);
 }
 $xtpl->parse('main');
 $xtpl->out('main');

@@ -2,13 +2,13 @@
 
 if (isLoggedIn()) {
     switch ($_GET['action']) {
-    case 'show':
-        oom_reports_show($_GET['id']);
-        break;
+        case 'show':
+            oom_reports_show($_GET['id']);
+            break;
 
-    case 'list':
-    default:
-        oom_reports_list();
+        case 'list':
+        default:
+            oom_reports_list();
     }
 
     $xtpl->sbar_out(_('OOM Reports'));

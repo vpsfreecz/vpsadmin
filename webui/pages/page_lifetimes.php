@@ -10,19 +10,21 @@ if (isLoggedIn() && isAdmin()) {
                     'object_state' => $state
                 );
 
-                if ($_POST['expiration_date'])
+                if ($_POST['expiration_date']) {
                     $params['expiration_date'] = date('c', strtotime($_POST['expiration_date']));
-                else
+                } else {
                     $params['expiration_date'] = null;
+                }
 
-                if ($_POST['change_reason'])
+                if ($_POST['change_reason']) {
                     $params['change_reason'] = $_POST['change_reason'];
+                }
 
                 $api[ $_GET['resource'] ]->update($_GET['id'], $params);
 
                 notify_user(
                     _('State set'),
-                    _('Object state was successfully set to').' '.$state.'. '.
+                    _('Object state was successfully set to') . ' ' . $state . '. ' .
                     _('You may need to wait a few moments before the change takes effect.')
                 );
                 redirect($_GET['return'] ? $_GET['return'] : '?page=');
@@ -39,7 +41,7 @@ if (isLoggedIn() && isAdmin()) {
                 'meta' => array('includes' => 'user')
             ));
 
-            $xtpl->table_title(_('State log for').' '.$_GET['resource'].' #'.$_GET['id']);
+            $xtpl->table_title(_('State log for') . ' ' . $_GET['resource'] . ' #' . $_GET['id']);
 
             $xtpl->table_add_category(_('Date'));
             $xtpl->table_add_category(_('State'));
@@ -53,15 +55,18 @@ if (isLoggedIn() && isAdmin()) {
                 $xtpl->table_td($s->expiration ? tolocaltz($s->expiration) : '---');
                 $xtpl->table_td($s->remind_after ? tolocaltz($s->remind_after) : '---');
 
-                if ($s->user_id)
-                    $xtpl->table_td('<a href="?page=adminm&action=edit&id='.$s->user->id.'">'.$s->user->login.'</a>');
-                else
+                if ($s->user_id) {
+                    $xtpl->table_td('<a href="?page=adminm&action=edit&id=' . $s->user->id . '">' . $s->user->login . '</a>');
+                } else {
                     $xtpl->table_td('---');
+                }
 
                 $xtpl->table_tr();
                 $xtpl->table_td(
-                    _('Reason').': '.nl2br($s->reason),
-                    false, false, 5
+                    _('Reason') . ': ' . nl2br($s->reason),
+                    false,
+                    false,
+                    5
                 );
                 $xtpl->table_tr();
             }

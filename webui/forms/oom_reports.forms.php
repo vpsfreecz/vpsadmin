@@ -1,6 +1,7 @@
 <?php
 
-function oom_reports_list() {
+function oom_reports_list()
+{
     global $xtpl, $api;
 
     $xtpl->title(_('Out-of-memory Reports'));
@@ -15,16 +16,18 @@ function oom_reports_list() {
 
     $input = $api->oom_report->list->getParameters('input');
 
-    $xtpl->form_add_input(_('Limit').':', 'text', '40', 'limit', get_val('limit', '25'), '');
-    $xtpl->form_add_input(_("Offset").':', 'text', '40', 'offset', get_val('offset', '0'), '');
+    $xtpl->form_add_input(_('Limit') . ':', 'text', '40', 'limit', get_val('limit', '25'), '');
+    $xtpl->form_add_input(_("Offset") . ':', 'text', '40', 'offset', get_val('offset', '0'), '');
 
-    if (isAdmin())
-        $xtpl->form_add_input(_("User").':', 'text', '40', 'user', get_val('user', ''), '');
+    if (isAdmin()) {
+        $xtpl->form_add_input(_("User") . ':', 'text', '40', 'user', get_val('user', ''), '');
+    }
 
-    if (isAdmin())
-        $xtpl->form_add_input(_("VPS").':', 'text', '40', 'vps', get_val('vps', ''), '');
-    else
+    if (isAdmin()) {
+        $xtpl->form_add_input(_("VPS") . ':', 'text', '40', 'vps', get_val('vps', ''), '');
+    } else {
         api_param_to_form('vps', $input->vps, $_GET['vps']);
+    }
 
     api_param_to_form('node', $input->node, $_GET['node']);
     api_param_to_form('location', $input->location, $_GET['location']);
@@ -34,8 +37,9 @@ function oom_reports_list() {
 
     $xtpl->form_out(_('Show'));
 
-    if (!$_GET['list'])
+    if (!$_GET['list']) {
         return;
+    }
 
     $params = [
         'limit' => get_val('limit', 25),
@@ -45,8 +49,9 @@ function oom_reports_list() {
     $conds = ['user', 'vps', 'node', 'location', 'environment', 'since', 'until'];
 
     foreach ($conds as $c) {
-        if ($_GET[$c])
+        if ($_GET[$c]) {
             $params[$c] = $_GET[$c];
+        }
     }
 
     $params['meta'] = array(
@@ -58,8 +63,9 @@ function oom_reports_list() {
     $xtpl->table_add_category(_("Time"));
     $xtpl->table_add_category(_("Node"));
 
-    if (isAdmin())
+    if (isAdmin()) {
         $xtpl->table_add_category(_("User"));
+    }
 
     $xtpl->table_add_category(_("VPS"));
     $xtpl->table_add_category(_("Killed process"));
@@ -71,15 +77,16 @@ function oom_reports_list() {
 
         $xtpl->table_td($r->vps->node->domain_name);
 
-        if (isAdmin())
+        if (isAdmin()) {
             $xtpl->table_td(user_link($r->vps->user));
+        }
 
-        $xtpl->table_td(vps_link($r->vps).' '.h($r->vps->hostname));
+        $xtpl->table_td(vps_link($r->vps) . ' ' . h($r->vps->hostname));
         $xtpl->table_td($r->killed_name ? h($r->killed_name) : _('nothing killed'));
         $xtpl->table_td($r->count);
 
         $xtpl->table_td(
-            '<a href="?page=oom_reports&action=show&id='.$r->id.'&return_url='.urlencode($_SERVER['REQUEST_URI']).'"><img src="template/icons/vps_edit.png" alt="'._('Details').'" title="'._('Details').'"></a>'
+            '<a href="?page=oom_reports&action=show&id=' . $r->id . '&return_url=' . urlencode($_SERVER['REQUEST_URI']) . '"><img src="template/icons/vps_edit.png" alt="' . _('Details') . '" title="' . _('Details') . '"></a>'
         );
 
         $xtpl->table_tr();
@@ -93,7 +100,8 @@ function oom_reports_list() {
     $xtpl->table_out();
 }
 
-function oom_reports_show($id) {
+function oom_reports_show($id)
+{
     global $xtpl, $api;
 
     $r = $api->oom_report->show($id, ['meta' => ['includes' => 'vps__node']]);
@@ -117,50 +125,50 @@ function oom_reports_show($id) {
         }
     }
 
-    $xtpl->title(_('Out-of-memory Reports for VPS').' '.$r->vps_id);
+    $xtpl->title(_('Out-of-memory Reports for VPS') . ' ' . $r->vps_id);
 
-    $xtpl->table_td(_('Time').':');
+    $xtpl->table_td(_('Time') . ':');
     $xtpl->table_td(tolocaltz($r->created_at));
     $xtpl->table_tr();
 
-    $xtpl->table_td(_('Node').':');
+    $xtpl->table_td(_('Node') . ':');
     $xtpl->table_td($r->vps->node->domain_name);
     $xtpl->table_tr();
 
     if (isAdmin()) {
-        $xtpl->table_td(_('User').':');
+        $xtpl->table_td(_('User') . ':');
         $xtpl->table_td(user_link($r->vps->user));
         $xtpl->table_tr();
     }
 
-    $xtpl->table_td(_('VPS').':');
-    $xtpl->table_td(vps_link($r->vps).' '.h($r->vps->hostname));
+    $xtpl->table_td(_('VPS') . ':');
+    $xtpl->table_td(vps_link($r->vps) . ' ' . h($r->vps->hostname));
     $xtpl->table_tr();
 
-    $xtpl->table_td(_('Cgroup').':');
-    $xtpl->table_td('<code>'.h($r->cgroup).'</code>');
+    $xtpl->table_td(_('Cgroup') . ':');
+    $xtpl->table_td('<code>' . h($r->cgroup) . '</code>');
     $xtpl->table_tr();
 
-    $xtpl->table_td(_('Invoked by').':');
-    $xtpl->table_td(h($r->invoked_by_name).' (PID '.($invokedByVpsPid ? $invokedByVpsPid : _('unknown')).')');
+    $xtpl->table_td(_('Invoked by') . ':');
+    $xtpl->table_td(h($r->invoked_by_name) . ' (PID ' . ($invokedByVpsPid ? $invokedByVpsPid : _('unknown')) . ')');
     $xtpl->table_tr();
 
-    $xtpl->table_td(_('Killed').':');
+    $xtpl->table_td(_('Killed') . ':');
 
     if ($r->killed_name) {
-        $xtpl->table_td(h($r->killed_name).' '.($r->invoked_by_pid == $r->killed_pid ? '('._('same process').')' : ''));
+        $xtpl->table_td(h($r->killed_name) . ' ' . ($r->invoked_by_pid == $r->killed_pid ? '(' . _('same process') . ')' : ''));
     } else {
         $xtpl->table_td(_('nothing killed'));
     }
     $xtpl->table_tr();
 
-    $xtpl->table_td(_('Count').':');
+    $xtpl->table_td(_('Count') . ':');
     $xtpl->table_td($r->count);
     $xtpl->table_tr();
 
     $xtpl->table_out();
 
-    $xtpl->table_title(_('Memory usage of cgroup').' <code>'.h($r->cgroup).'</code>');
+    $xtpl->table_title(_('Memory usage of cgroup') . ' <code>' . h($r->cgroup) . '</code>');
     $xtpl->table_add_category(_('Type'));
     $xtpl->table_add_category(_('Usage'));
     $xtpl->table_add_category(_('Limit'));
@@ -176,7 +184,7 @@ function oom_reports_show($id) {
 
     $xtpl->table_out();
 
-    $xtpl->table_title(_('Memory stats of cgroup').' <code>'.h($r->cgroup).'</code>');
+    $xtpl->table_title(_('Memory stats of cgroup') . ' <code>' . h($r->cgroup) . '</code>');
     $xtpl->table_add_category(_('Parameter'));
     $xtpl->table_add_category(_('Value'));
 
@@ -233,7 +241,7 @@ function oom_reports_show($id) {
     $xtpl->table_td(_('oom_score_adj'), '#5EAFFF; color:#FFF; font-weight:bold; text-align:center;');
     $xtpl->table_tr();
 
-    $xtpl->table_td(_('Sum').':', false, false, '2');
+    $xtpl->table_td(_('Sum') . ':', false, false, '2');
     $xtpl->table_td('');
     $xtpl->table_td('');
     $xtpl->table_td(data_size_to_humanreadable_kb($vm_sum * 4), false, true);

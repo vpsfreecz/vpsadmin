@@ -2,14 +2,14 @@
 
 if (isLoggedIn()) {
     switch ($_GET['to']) {
-    case 'payset':
-        switch ($_GET['from']) {
-        case 'payment':
-            $p = $api->user_payment->show($_GET['id']);
-            redirect('?page=adminm&action=payset&id='.$p->user_id);
+        case 'payset':
+            switch ($_GET['from']) {
+                case 'payment':
+                    $p = $api->user_payment->show($_GET['id']);
+                    redirect('?page=adminm&action=payset&id=' . $p->user_id);
+                    break;
+            }
             break;
-        }
-        break;
     }
 
     $xtpl->perex(_('Redirect failed'), _('The redirect request was invalid.'));

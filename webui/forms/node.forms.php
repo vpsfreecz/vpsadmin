@@ -1,6 +1,7 @@
 <?php
 
-function node_details_table($node_id) {
+function node_details_table($node_id)
+{
     global $xtpl, $api, $config;
 
     $node = $api->node->find(
@@ -8,13 +9,13 @@ function node_details_table($node_id) {
         ['meta' => ['includes' => 'location__environment']]
     );
 
-    $xtpl->title(_('Node').' '.$node->domain_name);
+    $xtpl->title(_('Node') . ' ' . $node->domain_name);
 
-    $xtpl->table_td(_('Location').':');
+    $xtpl->table_td(_('Location') . ':');
     $xtpl->table_td($node->location->label);
     $xtpl->table_tr();
 
-    $xtpl->table_td(_('Environment').':');
+    $xtpl->table_td(_('Environment') . ':');
     $xtpl->table_td($node->location->environment->label);
     $xtpl->table_tr();
 
@@ -34,58 +35,59 @@ function node_details_table($node_id) {
         $xtpl->table_td($pool->name);
 
         switch ($pool->state) {
-        case 'online':
-            $state = _('online');
-            break;
-        case 'degraded':
-            $state = _('degraded - one or more disks have failed, the pool continues to function');
-            break;
-        case 'suspended':
-            $state = _('suspended - the pool is not operational');
-            break;
-        case 'faulted':
-            $state = _('faulted - the pool is not operational');
-            break;
-        case 'error':
-            $state = _('error - unable to check pool status');
-            break;
-        default:
-            $state = _('unknown');
-            break;
+            case 'online':
+                $state = _('online');
+                break;
+            case 'degraded':
+                $state = _('degraded - one or more disks have failed, the pool continues to function');
+                break;
+            case 'suspended':
+                $state = _('suspended - the pool is not operational');
+                break;
+            case 'faulted':
+                $state = _('faulted - the pool is not operational');
+                break;
+            case 'error':
+                $state = _('error - unable to check pool status');
+                break;
+            default:
+                $state = _('unknown');
+                break;
         }
 
         $xtpl->table_td($state);
 
         switch ($pool->scan) {
-        case 'none':
-            $scan = _('none');
-            $perf = _('nominal');
-            break;
-        case 'scrub':
-            $scan = _('scrub - checking data integrity').', '.round($pool->scan_percent, 1).'&nbsp;% '._('done');
-            $perf = _('decreased');
-            break;
-        case 'resilver':
-            $scan = _('resilver - replacing disk').', '.round($pool->scan_percent, 1).'&nbsp;% '._('done');
-            $perf = _('decreased');
-            break;
-        case 'error':
-            $scan = _('error - unable to check pool status');
-            $perf = _('unknown');
-            break;
-        default:
-            $scan = $pool->scan;
-            $perf = _('unknown');
-            break;
+            case 'none':
+                $scan = _('none');
+                $perf = _('nominal');
+                break;
+            case 'scrub':
+                $scan = _('scrub - checking data integrity') . ', ' . round($pool->scan_percent, 1) . '&nbsp;% ' . _('done');
+                $perf = _('decreased');
+                break;
+            case 'resilver':
+                $scan = _('resilver - replacing disk') . ', ' . round($pool->scan_percent, 1) . '&nbsp;% ' . _('done');
+                $perf = _('decreased');
+                break;
+            case 'error':
+                $scan = _('error - unable to check pool status');
+                $perf = _('unknown');
+                break;
+            default:
+                $scan = $pool->scan;
+                $perf = _('unknown');
+                break;
         }
 
         $xtpl->table_td($scan);
         $xtpl->table_td($perf);
 
-        if ($pool->state != 'online' || $pool->scan != 'none')
+        if ($pool->state != 'online' || $pool->scan != 'none') {
             $color = '#FFE27A';
-        else
+        } else {
             $color = false;
+        }
 
         $xtpl->table_tr($color);
     }

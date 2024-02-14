@@ -7,8 +7,8 @@
     Copyright (C) 2008-2011 Pavel Snajdr, snajpa@snajpa.net
 */
 
-$xtpl->perex('vpsAdmin',nl2br(
-'		vpsAdmin '.getVersionLink().'
+$xtpl->perex('vpsAdmin', nl2br(
+    '		vpsAdmin ' . getVersionLink() . '
 		Web-admin interface for vpsAdminOS (see <a href="https://vpsadminos.org">https://vpsadminos.org</a>)
 		Copyright &copy; 2012-2024 Jakub Skokan
 		Copyright &copy; 2008-2014 Pavel Snajdr
@@ -20,5 +20,5 @@ $xtpl->perex('vpsAdmin',nl2br(
 		All rights reserved.
 
 		Template Adminizio Lite is download from Nuvio Templates, http://www.nuviotemplates.com
-'));
-?>
+'
+));

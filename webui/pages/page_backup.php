@@ -41,18 +41,22 @@ if (isLoggedIn()) {
                 $ds = $api->dataset->find($_GET['dataset']);
                 $return = urlencode($_GET['return']);
 
-                $xtpl->table_title(_('Create a new snapshot of dataset').' '.$ds->name);
+                $xtpl->table_title(_('Create a new snapshot of dataset') . ' ' . $ds->name);
                 $xtpl->form_create(
-                    '?page=backup&action=snapshot_create&dataset='.$ds->id.'&return='.$return,
+                    '?page=backup&action=snapshot_create&dataset=' . $ds->id . '&return=' . $return,
                     'post'
                 );
 
-                $xtpl->table_td(_('Dataset').':');
+                $xtpl->table_td(_('Dataset') . ':');
                 $xtpl->table_td($ds->name);
                 $xtpl->table_tr();
 
                 $xtpl->form_add_input(
-                    _('Label').':', 'text', '30', 'label', post_val('label'),
+                    _('Label') . ':',
+                    'text',
+                    '30',
+                    'label',
+                    post_val('label'),
                     _('Optional user-defined snapshot identificator')
                 );
 
@@ -91,11 +95,11 @@ if (isLoggedIn()) {
 
                     notify_user(
                         _('Restoration scheduled.'),
-                        _("Restoration of dataset").' '.$ds->name.' '._('from').' '.strftime("%Y-%m-%d %H:%M", strtotime($snap->created_at)).' '._("planned")
+                        _("Restoration of dataset") . ' ' . $ds->name . ' ' . _('from') . ' ' . strftime("%Y-%m-%d %H:%M", strtotime($snap->created_at)) . ' ' . _("planned")
                     );
                     redirect($_POST['return'] ?? '?page=backup');
 
-                }  catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+                } catch (\HaveAPI\Client\Exception\ActionFailed $e) {
                     $xtpl->perex_format_errors(_('Dataset restoration failed'), $e->getResponse());
                 }
 
@@ -109,24 +113,26 @@ if (isLoggedIn()) {
                     if ($_GET['vps_id']) {
                         $vps = $api->vps->find($_GET['vps_id']);
 
-                        if ($ds->id == $vps->dataset_id)
-                            $msg = _("Restore VPS").' #'.$_GET["vps_id"].' root dataset from '.strftime("%Y-%m-%d %H:%M", strtotime($snap->created_at)).'?';
-                        else
-                            $msg = _("Restore dataset").' '.$ds->name.' '._('from VPS').' #'.$vps->id.' from '.strftime("%Y-%m-%d %H:%M", strtotime($snap->created_at)).'?';
+                        if ($ds->id == $vps->dataset_id) {
+                            $msg = _("Restore VPS") . ' #' . $_GET["vps_id"] . ' root dataset from ' . strftime("%Y-%m-%d %H:%M", strtotime($snap->created_at)) . '?';
+                        } else {
+                            $msg = _("Restore dataset") . ' ' . $ds->name . ' ' . _('from VPS') . ' #' . $vps->id . ' from ' . strftime("%Y-%m-%d %H:%M", strtotime($snap->created_at)) . '?';
+                        }
 
                     } else {
-                        $msg = _("Restore dataset").' '.$ds->name.' '._('from').' '.strftime("%Y-%m-%d %H:%M", strtotime($snap->created_at)).'?';
+                        $msg = _("Restore dataset") . ' ' . $ds->name . ' ' . _('from') . ' ' . strftime("%Y-%m-%d %H:%M", strtotime($snap->created_at)) . '?';
                     }
 
-                    $xtpl->table_title(_('Confirm the restoration of dataset').' '.$ds->name);
-                    $xtpl->form_create('?page=backup&action=restore&dataset='.$ds->id.'&vps_id='.$_GET['vps_id'], 'post');
+                    $xtpl->table_title(_('Confirm the restoration of dataset') . ' ' . $ds->name);
+                    $xtpl->form_create('?page=backup&action=restore&dataset=' . $ds->id . '&vps_id=' . $_GET['vps_id'], 'post');
 
                     $xtpl->table_td("<strong>$msg</strong>", false, false, '3');
                     $xtpl->table_tr();
 
-                    $xtpl->table_td(_("Confirm") . ' ' .
-                        '<input type="hidden" name="return" value="'.($_GET['return'] ?? $_POST['return']).'">'
-                        . '<input type="hidden" name="restore_snapshot" value="'.$_POST['restore_snapshot'].'">'
+                    $xtpl->table_td(
+                        _("Confirm") . ' ' .
+                        '<input type="hidden" name="return" value="' . ($_GET['return'] ?? $_POST['return']) . '">'
+                        . '<input type="hidden" name="restore_snapshot" value="' . $_POST['restore_snapshot'] . '">'
                     );
                     $xtpl->form_add_checkbox_pure('confirm', '1', false);
                     $xtpl->table_td(_('The dataset will be restored and all data that has not been snapshoted will be lost.'));
@@ -165,24 +171,27 @@ if (isLoggedIn()) {
                     $date = tolocaltz($snap->created_at, 'Y-m-d H:i');
 
                     $xtpl->table_title(_('Confirm snapshot deletion'));
-                    $xtpl->form_create('?page=backup&action=snapshot_destroy&dataset='.$ds->id.'&snapshot='.$snap->id, 'post');
+                    $xtpl->form_create('?page=backup&action=snapshot_destroy&dataset=' . $ds->id . '&snapshot=' . $snap->id, 'post');
 
                     $xtpl->table_td(
-                        '<strong>'._('This action is irreversible.').'</strong>',
-                        false, false, '2'
+                        '<strong>' . _('This action is irreversible.') . '</strong>',
+                        false,
+                        false,
+                        '2'
                     );
                     $xtpl->table_tr();
 
-                    $xtpl->table_td(_('Dataset').':');
+                    $xtpl->table_td(_('Dataset') . ':');
                     $xtpl->table_td($ds->name);
                     $xtpl->table_tr();
 
-                    $xtpl->table_td(_('Snapshot').':');
+                    $xtpl->table_td(_('Snapshot') . ':');
                     $xtpl->table_td($date);
                     $xtpl->table_tr();
 
-                    $xtpl->table_td(_("Confirm") . ' ' .
-                        '<input type="hidden" name="return" value="'.($_GET['return'] ?? $_POST['return']).'">'
+                    $xtpl->table_td(
+                        _("Confirm") . ' ' .
+                        '<input type="hidden" name="return" value="' . ($_GET['return'] ?? $_POST['return']) . '">'
                     );
                     $xtpl->form_add_checkbox_pure('confirm', '1', false);
                     $xtpl->table_tr();
@@ -209,8 +218,8 @@ if (isLoggedIn()) {
                     ));
 
                     notify_user(
-                          _("Download of snapshot of").' '.$ds->name.' '. _('from').' '.strftime("%Y-%m-%d %H:%M", strtotime($snap->created_at))." "._("planned")
-                        , _("Preparing the archive may take several hours. You will receive email with download link when it is done.")
+                        _("Download of snapshot of") . ' ' . $ds->name . ' ' . _('from') . ' ' . strftime("%Y-%m-%d %H:%M", strtotime($snap->created_at)) . " " . _("planned"),
+                        _("Preparing the archive may take several hours. You will receive email with download link when it is done.")
                     );
                     redirect($_POST['return'] ?? '?page=backup');
 
@@ -223,20 +232,21 @@ if (isLoggedIn()) {
                     $ds = $api->dataset->find($_GET['dataset']);
                     $snap = $ds->snapshot->find($_GET['snapshot']);
 
-                    $xtpl->table_title(_('Confirm the download of snapshot of dataset').' '.$ds->name);
-                    $xtpl->form_create('?page=backup&action=download&dataset='.$ds->id.'&snapshot='.$snap->id, 'post');
+                    $xtpl->table_title(_('Confirm the download of snapshot of dataset') . ' ' . $ds->name);
+                    $xtpl->form_create('?page=backup&action=download&dataset=' . $ds->id . '&snapshot=' . $snap->id, 'post');
 
-                    $xtpl->table_td('<strong>'._('Please confirm the download of snapshot of dataset').' '.$ds->name.' '._('from').' '.strftime("%Y-%m-%d %H:%M", strtotime($snap->created_at)).'</strong>', false, false, '2');
+                    $xtpl->table_td('<strong>' . _('Please confirm the download of snapshot of dataset') . ' ' . $ds->name . ' ' . _('from') . ' ' . strftime("%Y-%m-%d %H:%M", strtotime($snap->created_at)) . '</strong>', false, false, '2');
                     $xtpl->table_tr();
 
                     $formats = array(
                         'archive' => _('tar.gz archive'),
                         'stream' => _('ZFS data stream'),
                     );
-                    $xtpl->form_add_select(_('Format').':', 'format', $formats, $_POST['format']);
+                    $xtpl->form_add_select(_('Format') . ':', 'format', $formats, $_POST['format']);
 
-                    $xtpl->table_td(_("Confirm") . ' ' .
-                        '<input type="hidden" name="return" value="'.($_GET['return'] ?? $_POST['return']).'">'
+                    $xtpl->table_td(
+                        _("Confirm") . ' ' .
+                        '<input type="hidden" name="return" value="' . ($_GET['return'] ?? $_POST['return']) . '">'
                     );
                     $xtpl->form_add_checkbox_pure('confirm', '1', false);
                     $xtpl->table_tr();
@@ -268,8 +278,8 @@ if (isLoggedIn()) {
                 try {
                     $dl = $api->snapshot_download->find($_GET['id']);
 
-                    $xtpl->table_title(_('Confirm the destroyal of snapshot download').' '.$dl->snapshot->created_at);
-                    $xtpl->form_create('?page=backup&action=download_destroy&id='.$dl->id, 'post');
+                    $xtpl->table_title(_('Confirm the destroyal of snapshot download') . ' ' . $dl->snapshot->created_at);
+                    $xtpl->form_create('?page=backup&action=download_destroy&id=' . $dl->id, 'post');
 
                     $xtpl->form_add_checkbox(_("Confirm"), 'confirm', '1', false);
 
@@ -287,4 +297,6 @@ if (isLoggedIn()) {
 
     $xtpl->sbar_out(_('Backups'));
 
-} else $xtpl->perex(_("Access forbidden"), _("You have to log in to be able to access vpsAdmin's functions"));
+} else {
+    $xtpl->perex(_("Access forbidden"), _("You have to log in to be able to access vpsAdmin's functions"));
+}

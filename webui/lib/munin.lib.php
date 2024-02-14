@@ -1,74 +1,87 @@
 <?php
 
-class Munin {
+class Munin
+{
     private $url;
     private $enabled;
     private $graphWidth;
 
-    public function __construct($config) {
+    public function __construct($config)
+    {
         $this->url = $config->get('webui', 'munin_url');
         $this->enabled = (bool) $this->url;
         $this->graphWidth = null;
     }
 
-    public function isEnabled() {
+    public function isEnabled()
+    {
         return $this->enabled;
     }
 
-    public function linkPath($label, $path) {
+    public function linkPath($label, $path)
+    {
         $ret = '';
 
-        if ($this->isEnabled())
-            $ret .= '<a href="'.$this->url.'/'.$path.'" target="_blank">';
+        if ($this->isEnabled()) {
+            $ret .= '<a href="' . $this->url . '/' . $path . '" target="_blank">';
+        }
 
         $ret .= $label;
 
-        if ($this->isEnabled())
+        if ($this->isEnabled()) {
             $ret .= '</a>';
+        }
 
         return $ret;
     }
 
-    public function linkHostPath($label, $fqdn, $path) {
+    public function linkHostPath($label, $fqdn, $path)
+    {
         return $this->linkPath(
             $label,
-            $this->getDomain($fqdn).'/'.$fqdn.'/'.$path
+            $this->getDomain($fqdn) . '/' . $fqdn . '/' . $path
         );
     }
 
-    public function linkHost($label, $fqdn) {
+    public function linkHost($label, $fqdn)
+    {
         return $this->linkPath(
             $label,
-            $this->getDomain($fqdn).'/'.$fqdn
+            $this->getDomain($fqdn) . '/' . $fqdn
         );
     }
 
-    public function hostGraphPath($fqdn, $type, $period) {
-        return $this->url.'/'.$this->getDomain($fqdn).'/'.$fqdn.'/'.$type.'-'.$period.'.png';
+    public function hostGraphPath($fqdn, $type, $period)
+    {
+        return $this->url . '/' . $this->getDomain($fqdn) . '/' . $fqdn . '/' . $type . '-' . $period . '.png';
     }
 
-    public function linkHostGraphPath($fqdn, $type, $period, $dir = false) {
+    public function linkHostGraphPath($fqdn, $type, $period, $dir = false)
+    {
         $graph = $this->hostGraphPath($fqdn, $type, $period);
 
-        $page = $this->url.'/'.$this->getDomain($fqdn).'/'.$fqdn.'/'.$type;
+        $page = $this->url . '/' . $this->getDomain($fqdn) . '/' . $fqdn . '/' . $type;
 
-        if ($dir)
+        if ($dir) {
             $page .= '/index.html';
-        else
+        } else {
             $page .= '.html';
+        }
 
-        $ret = '<a href="'.$page.'" target="_blank">';
-        $ret .= '<img src="'.$graph.'" alt="'.$fqdn.' - '.$type.'" '.($this->graphWidth ? 'width="'.$this->graphWidth.'"' : '').'>';
+        $ret = '<a href="' . $page . '" target="_blank">';
+        $ret .= '<img src="' . $graph . '" alt="' . $fqdn . ' - ' . $type . '" ' . ($this->graphWidth ? 'width="' . $this->graphWidth . '"' : '') . '>';
         $ret .= '</a>';
 
         return $ret;
     }
 
-    public function setGraphWidth($width) {
+    public function setGraphWidth($width)
+    {
         $this->graphWidth = $width;
     }
 
-    private function getDomain($fqdn) {
+    private function getDomain($fqdn)
+    {
         $names = explode('.', $fqdn);
         $domain = implode('.', array_slice($names, 1));
 
