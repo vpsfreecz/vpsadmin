@@ -46,9 +46,9 @@ if (!defined('LC_MESSAGES')) {
 // Variables
 
 global $text_domains, $default_domain, $LC_CATEGORIES, $EMULATEGETTEXT, $CURRENTLOCALE;
-$text_domains = array();
+$text_domains = [];
 $default_domain = 'messages';
-$LC_CATEGORIES = array('LC_CTYPE', 'LC_NUMERIC', 'LC_TIME', 'LC_COLLATE', 'LC_MONETARY', 'LC_MESSAGES', 'LC_ALL');
+$LC_CATEGORIES = ['LC_CTYPE', 'LC_NUMERIC', 'LC_TIME', 'LC_COLLATE', 'LC_MONETARY', 'LC_MESSAGES', 'LC_ALL'];
 $EMULATEGETTEXT = 0;
 $CURRENTLOCALE = '';
 
@@ -71,7 +71,7 @@ function get_list_of_locales($locale)
      * specific ones.  I.e. for sr_CS.UTF-8@latin, look through all of
      * sr_CS.UTF-8@latin, sr_CS@latin, sr@latin, sr_CS.UTF-8, sr_CS, sr.
      */
-    $locale_names = array();
+    $locale_names = [];
     $lang = null;
     $country = null;
     $charset = null;
@@ -99,21 +99,21 @@ function get_list_of_locales($locale)
             if ($modifier) {
                 if ($country) {
                     if ($charset) {
-                        array_push($locale_names, "${lang}_$country.$charset@$modifier");
+                        array_push($locale_names, "{$lang}_$country.$charset@$modifier");
                     }
-                    array_push($locale_names, "${lang}_$country@$modifier");
+                    array_push($locale_names, "{$lang}_$country@$modifier");
                 } elseif ($charset) {
-                    array_push($locale_names, "${lang}.$charset@$modifier");
+                    array_push($locale_names, "{$lang}.$charset@$modifier");
                 }
                 array_push($locale_names, "$lang@$modifier");
             }
             if ($country) {
                 if ($charset) {
-                    array_push($locale_names, "${lang}_$country.$charset");
+                    array_push($locale_names, "{$lang}_$country.$charset");
                 }
-                array_push($locale_names, "${lang}_$country");
+                array_push($locale_names, "{$lang}_$country");
             } elseif ($charset) {
-                array_push($locale_names, "${lang}.$charset");
+                array_push($locale_names, "{$lang}.$charset");
             }
             array_push($locale_names, $lang);
         }
@@ -138,8 +138,7 @@ function _get_reader($domain = null, $category = 5, $enable_cache = true)
     if (!isset($text_domains[$domain]->l10n)) {
         // get the current locale
         $locale = _setlocale(LC_MESSAGES, 0);
-        $bound_path = isset($text_domains[$domain]->path) ?
-          $text_domains[$domain]->path : './';
+        $bound_path = $text_domains[$domain]->path ?? './';
         $subpath = $LC_CATEGORIES[$category] . "/$domain.mo";
 
         $locale_names = get_list_of_locales($locale);

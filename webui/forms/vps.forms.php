@@ -286,9 +286,9 @@ function print_newvps_page3($user_id, $loc_id, $tpl_id)
 
     $user_resources = $user->cluster_resource->list([
         'environment' => $loc->environment_id,
-        'meta' => ['includes' => 'environment,cluster_resource']
+        'meta' => ['includes' => 'environment,cluster_resource'],
     ]);
-    $resource_map = array();
+    $resource_map = [];
 
     foreach ($user_resources as $r) {
         $resource_map[ $r->cluster_resource->name ] = $r;
@@ -306,7 +306,7 @@ function print_newvps_page3($user_id, $loc_id, $tpl_id)
         $xtpl->table_td($r->free . ' ' . unit_for_cluster_resource($name));
         $xtpl->form_add_number_pure(
             $name,
-            isset($_GET[$name]) ? $_GET[$name] : min($default, $r->free),
+            $_GET[$name] ?? min($default, $r->free),
             $r->cluster_resource->min,
             isAdmin()
                 ? $r->cluster_resource->max
@@ -329,7 +329,7 @@ function print_newvps_page3($user_id, $loc_id, $tpl_id)
         $xtpl->table_td(approx_number($r->free) . ' ' . unit_for_cluster_resource($name));
         $xtpl->form_add_number_pure(
             $name,
-            isset($_GET[$name]) ? $_GET[$name] : $default,
+            $_GET[$name] ?? $default,
             0,
             $r->cluster_resource->max,
             $r->cluster_resource->stepsize,
@@ -352,7 +352,7 @@ function print_newvps_page3($user_id, $loc_id, $tpl_id)
 function build_resource_uri_params()
 {
     $resources = [
-        'cpu', 'memory', 'swap', 'diskspace', 'ipv4', 'ipv4_private', 'ipv6'
+        'cpu', 'memory', 'swap', 'diskspace', 'ipv4', 'ipv4_private', 'ipv6',
     ];
     $params = [];
 
@@ -600,7 +600,7 @@ function vps_list_form()
         $xtpl->table_add_category('');
 
         if (!isAdmin()) {
-            $envs_destroy = array();
+            $envs_destroy = [];
 
             foreach ($api->user($_SESSION['user']['id'])->environment_config->list() as $env) {
                 $envs_destroy[$env->environment_id] = $env->can_destroy_vps;
@@ -611,7 +611,7 @@ function vps_list_form()
             $params = [
                 'limit' => get_val('limit', 25),
                 'offset' => get_val('offset', 0),
-                'meta' => ['count' => true, 'includes' => 'user,node,dataset__dataset_expansion']
+                'meta' => ['count' => true, 'includes' => 'user,node,dataset__dataset_expansion'],
             ];
 
             if ($_GET['user']) {
@@ -642,7 +642,7 @@ function vps_list_form()
 
         } else {
             $vpses = $api->vps->list([
-                'meta' => ['count' => true, 'includes' => 'user,node,dataset__dataset_expansion']
+                'meta' => ['count' => true, 'includes' => 'user,node,dataset__dataset_expansion'],
             ]);
         }
 
@@ -1041,7 +1041,7 @@ function vps_migrate_form_step2($vps_id, $node_id)
 
     $days = [
         _('Now or maintenance window'),
-        'Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'
+        'Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat',
     ];
     $hours = [
         _('Now or maintenance window'),
@@ -1553,7 +1553,7 @@ function vps_swap_form($vps)
 
 function format_swap_preview($vps, $hostname, $resources_vps, $ips, $node, $expiration_vps)
 {
-    $ips_tmp = array();
+    $ips_tmp = [];
 
     foreach ($ips as $ip) {
         $ips_tmp[] = $ip->addr;
@@ -1601,29 +1601,29 @@ function format_swap_preview($vps, $hostname, $resources_vps, $ips, $node, $expi
     $s_swap = '';
     if (isAdmin()) {
         $s_swap = <<<EOT
-		<dt>Swap:</dt>
-		<dd style="{$resources_style}">{$resources_vps->swap}</dd>
-EOT;
+            		<dt>Swap:</dt>
+            		<dd style="{$resources_style}">{$resources_vps->swap}</dd>
+            EOT;
     }
 
     $s = <<<EOT
-	<h3 style="{$node_style}">Node {$node->domain_name}</h3>
-	<dl>
-		<dt>Environment:</dt>
-		<dd style="{$env_style}">{$node->location->environment->label}</dd>
-		<dt>Hostname:</dt>
-		<dd style="{$hostname_style}">$s_hostname</dd>
-		<dt>Expiration:</dt>
-		<dd style="{$expiration_style}">{$expiration_date}</dd>
-		<dt>CPU:</dt>
-		<dd style="{$resources_style}">{$resources_vps->cpu}</dd>
-		<dt>Memory:</dt>
-		<dd style="{$resources_style}">{$resources_vps->memory}</dd>
-		{$s_swap}
-		<dt>IP addresses:</dt>
-		<dd style="{$ips_style}">$ips</dd>
-	</dl>
-EOT;
+        	<h3 style="{$node_style}">Node {$node->domain_name}</h3>
+        	<dl>
+        		<dt>Environment:</dt>
+        		<dd style="{$env_style}">{$node->location->environment->label}</dd>
+        		<dt>Hostname:</dt>
+        		<dd style="{$hostname_style}">$s_hostname</dd>
+        		<dt>Expiration:</dt>
+        		<dd style="{$expiration_style}">{$expiration_date}</dd>
+        		<dt>CPU:</dt>
+        		<dd style="{$resources_style}">{$resources_vps->cpu}</dd>
+        		<dt>Memory:</dt>
+        		<dd style="{$resources_style}">{$resources_vps->memory}</dd>
+        		{$s_swap}
+        		<dt>IP addresses:</dt>
+        		<dd style="{$ips_style}">$ips</dd>
+        	</dl>
+        EOT;
     return $s;
 }
 
@@ -1634,12 +1634,12 @@ function format_swap_vps_cell($vps, $primary = false)
     $vps_link = vps_link($vps);
 
     $s = <<<EOT
-	<h3>VPS {$vps_link}</h3>
-	<dl>
-		<dt>Outage duration:</dt>
-		<dd>{$outage_len}</dd>
-	</dl>
-EOT;
+        	<h3>VPS {$vps_link}</h3>
+        	<dl>
+        		<dt>Outage duration:</dt>
+        		<dd>{$outage_len}</dd>
+        	</dl>
+        EOT;
 
     return $s;
 }
@@ -1957,7 +1957,7 @@ function vps_netif_iproute_add_form()
     );
 
     $via_addrs = [
-        '' => _('host address from this network will be on ' . $netif->name)
+        '' => _('host address from this network will be on ' . $netif->name),
     ] + $via_addrs;
 
     $xtpl->table_td(_('VPS') . ':');

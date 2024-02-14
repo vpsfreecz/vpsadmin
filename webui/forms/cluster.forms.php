@@ -224,10 +224,10 @@ function networks_list()
         $xtpl->table_td($n->address . '/' . $n->prefix);
         $xtpl->table_td($n->primary_location_id ? $n->primary_location->label : '-');
         $xtpl->table_td($n->label);
-        $xtpl->table_td(array(
+        $xtpl->table_td([
             'public_access' => 'Pub',
             'private_access' => 'Priv',
-        )[$n->role]);
+        ][$n->role]);
         $xtpl->table_td(boolean_icon($n->managed));
         $xtpl->table_td(approx_number($n->size), false, true);
         $xtpl->table_td($n->used, false, true);
@@ -245,7 +245,7 @@ function networks_list()
                 '<img
 				src="template/icons/vps_ip_list.png"
 				title="' . _('List IP addresses in this network') . '">',
-                array('network' => $n->id)
+                ['network' => $n->id]
             )
         );
         $xtpl->table_td(
@@ -263,7 +263,7 @@ function networks_list()
 
 function ip_list_link($page, $text, $conds)
 {
-    $str_conds = array();
+    $str_conds = [];
 
     foreach ($conds as $k => $v) {
         $str_conds[] = "$k=$v";
@@ -479,7 +479,7 @@ function ip_edit_form($id)
 {
     global $xtpl, $api;
 
-    $ip = $api->ip_address->show($id, array('meta' => array('includes' => 'network')));
+    $ip = $api->ip_address->show($id, ['meta' => ['includes' => 'network']]);
 
     $xtpl->table_title($ip->addr . '/' . $ip->network->prefix);
     $xtpl->sbar_add(
@@ -609,7 +609,7 @@ function system_config_form()
         );
 
         $name = $opt->category . ':' . $opt->name;
-        $value = isset($_POST[$name]) ? $_POST[$name] : $opt->value;
+        $value = $_POST[$name] ?? $opt->value;
 
         switch ($opt->type) {
             case 'String':
@@ -706,9 +706,9 @@ function helpbox_list_and_create_form()
     $xtpl->table_add_category('');
     $xtpl->table_add_category('');
 
-    $boxes = $api->help_box->list(array(
-        'meta' => array('includes' => 'language'),
-    ));
+    $boxes = $api->help_box->list([
+        'meta' => ['includes' => 'language'],
+    ]);
 
     foreach ($boxes as $box) {
         $xtpl->table_td($box->page);

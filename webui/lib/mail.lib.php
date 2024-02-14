@@ -4,13 +4,13 @@ function send_mail(
     $to,
     $subject,
     $msg,
-    $cc = array(),
-    $bcc = array(),
+    $cc = [],
+    $bcc = [],
     $html = false,
     $dep = null,
     $message_id = null,
     $in_reply_to = null,
-    $references = array()
+    $references = []
 ) {
     global $config;
 

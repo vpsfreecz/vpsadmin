@@ -6,9 +6,9 @@ if (isLoggedIn() && isAdmin()) {
         case 'set_state':
             try {
                 $state = $_POST['object_state'];
-                $params = array(
-                    'object_state' => $state
-                );
+                $params = [
+                    'object_state' => $state,
+                ];
 
                 if ($_POST['expiration_date']) {
                     $params['expiration_date'] = date('c', strtotime($_POST['expiration_date']));
@@ -37,9 +37,9 @@ if (isLoggedIn() && isAdmin()) {
             break;
 
         case 'changelog':
-            $states = $api[$_GET['resource']]->state_log->list($_GET['id'], array(
-                'meta' => array('includes' => 'user')
-            ));
+            $states = $api[$_GET['resource']]->state_log->list($_GET['id'], [
+                'meta' => ['includes' => 'user'],
+            ]);
 
             $xtpl->table_title(_('State log for') . ' ' . $_GET['resource'] . ' #' . $_GET['id']);
 

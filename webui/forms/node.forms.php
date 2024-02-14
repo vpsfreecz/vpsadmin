@@ -28,7 +28,7 @@ function node_details_table($node_id)
     $xtpl->table_add_category(_('Performance'));
 
     $pools = $api->pool->list([
-        'node' => $node->id
+        'node' => $node->id,
     ]);
 
     foreach ($pools as $pool) {

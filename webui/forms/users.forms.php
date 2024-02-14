@@ -7,9 +7,9 @@ function environment_configs($user_id)
 {
     global $xtpl, $api;
 
-    $cfgs = $api->user($user_id)->environment_config->list(array(
-        'meta' => array('includes' => 'environment')
-    ));
+    $cfgs = $api->user($user_id)->environment_config->list([
+        'meta' => ['includes' => 'environment'],
+    ]);
 
     $xtpl->title(_('User') . ' <a href="?page=adminm&action=edit&id=' . $user_id . '">#' . $user_id . '</a>: ' . _('Environment configs'));
 
@@ -25,12 +25,12 @@ function environment_configs($user_id)
     }
 
     foreach ($cfgs as $c) {
-        $vps_count = $api->vps->list(array(
+        $vps_count = $api->vps->list([
             'limit' => 0,
             'environment' => $c->environment_id,
             'user' => $user_id,
-            'meta' => array('count' => true)
-        ));
+            'meta' => ['count' => true],
+        ]);
 
         $xtpl->table_td($c->environment->label);
         $xtpl->table_td(boolean_icon($c->can_create_vps));
@@ -59,9 +59,9 @@ function env_cfg_edit_form($user_id, $cfg_id)
 {
     global $xtpl, $api;
 
-    $cfg = $api->user($user_id)->environment_config->find($cfg_id, array(
-        'meta' => array('includes' => 'environment')
-    ));
+    $cfg = $api->user($user_id)->environment_config->find($cfg_id, [
+        'meta' => ['includes' => 'environment'],
+    ]);
 
     $xtpl->title(_('User') . ' <a href="?page=adminm&action=edit&id=' . $user_id . '">#' . $user_id . '</a>: ' . _('Environment config for') . ' ' . $cfg->environment->label);
 
@@ -124,7 +124,7 @@ function list_user_sessions($user_id)
     $params = [
         'limit' => get_val('limit', 25),
         'offset' => get_val('offset', 0),
-        'user' => $user_id
+        'user' => $user_id,
     ];
 
     $conds = [
@@ -283,18 +283,18 @@ function approval_requests_list()
     $xtpl->form_add_input_pure('text', '30', 'limit', $_GET["limit"] ? $_GET["limit"] : 50);
     $xtpl->table_tr();
 
-    $xtpl->form_add_select(_("Type") . ':', 'type', array(
+    $xtpl->form_add_select(_("Type") . ':', 'type', [
         "registration" => _("registration"),
-        "change" => _("change")
-    ), $_GET["type"]);
-    $xtpl->form_add_select(_("State") . ':', 'state', array(
+        "change" => _("change"),
+    ], $_GET["type"]);
+    $xtpl->form_add_select(_("State") . ':', 'state', [
         "all" => _("all"),
         "awaiting" => _("awaiting"),
         "pending_correction" => _("pending correction"),
         "approved" => _("approved"),
         "denied" => _("denied"),
-        "ignored" => _("ignored")
-    ), $_GET["state"] ? $_GET["state"] : "awaiting");
+        "ignored" => _("ignored"),
+    ], $_GET["state"] ? $_GET["state"] : "awaiting");
 
     $xtpl->form_add_input(_("IP address") . ':', 'text', '30', 'ip_addr', $_GET["ip_addr"]);
     $xtpl->form_add_input(_("Client IP PTR") . ':', 'text', '30', 'client_ip_ptr', $_GET["client_ip_ptr"]);
@@ -319,13 +319,13 @@ function approval_requests_list()
     $xtpl->table_add_category('');
     $xtpl->table_add_category('');
 
-    $params = array('limit' => $_GET['limit'],);
+    $params = ['limit' => $_GET['limit'],];
 
     if ($_GET['state'] != 'all') {
         $params['state'] = $_GET['state'];
     }
 
-    foreach (array('ip_addr', 'client_ip_ptr', 'user', 'admin') as $v) {
+    foreach (['ip_addr', 'client_ip_ptr', 'user', 'admin'] as $v) {
         if ($_GET[$v]) {
             $params[$v] = $_GET[$v];
         }
@@ -776,10 +776,10 @@ function user_payment_form($user_id)
     $xtpl->table_add_category("TO");
     $xtpl->table_add_category("PAYMENT");
 
-    $payments = $api->user_payment->list(array(
+    $payments = $api->user_payment->list([
         'user' => $u->id,
-        'meta' => array('includes' => 'accounted_by'),
-    ));
+        'meta' => ['includes' => 'accounted_by'],
+    ]);
 
     foreach ($payments as $payment) {
         $xtpl->table_td(tolocaltz($payment->created_at));
@@ -824,12 +824,12 @@ function user_payment_history()
     $xtpl->form_add_input(_("User ID") . ':', 'text', '40', 'user', get_val('user'));
     $xtpl->form_out(_("Show"));
 
-    $params = array(
+    $params = [
         'limit' => get_val('limit', 25),
-        'meta' => array('includes' => 'user,accounted_by'),
-    );
+        'meta' => ['includes' => 'user,accounted_by'],
+    ];
 
-    foreach (array('accounted_by', 'user') as $filter) {
+    foreach (['accounted_by', 'user'] as $filter) {
         if ($_GET[$filter]) {
             $params[$filter] = $_GET[$filter];
         }
@@ -889,10 +889,10 @@ function incoming_payments_list()
 
     $xtpl->form_out(_('Show'));
 
-    $params = array(
+    $params = [
         'limit' => get_val('limit', 25),
         'offset' => get_val('offset', 0),
-    );
+    ];
 
     if (isset($_GET['state'])) {
         $params['state'] = $_GET['state'];
@@ -1134,7 +1134,7 @@ function list_user_resource_packages($user_id)
 {
     global $xtpl, $api;
 
-    $convert = array('memory', 'swap', 'diskspace');
+    $convert = ['memory', 'swap', 'diskspace'];
 
     $xtpl->title(_('User') . ' <a href="?page=adminm&action=edit&id=' . $user_id . '">#' . $user_id . '</a>: ' . _('Cluster resource packages'));
 
@@ -1150,13 +1150,13 @@ function list_user_resource_packages($user_id)
     $xtpl->table_add_category(_('Count'));
 
     foreach ($sorted_pkgs as $v) {
-        list($env, $env_pkgs) = $v;
+        [$env, $env_pkgs] = $v;
 
         $pkg_counts = resource_package_counts($env_pkgs);
         $xtpl->table_td($env->label, false, false, '1', count($pkg_counts));
 
         foreach ($pkg_counts as $v) {
-            list($pkg, $count) = $v;
+            [$pkg, $count] = $v;
             $xtpl->table_td($pkg->label);
             $xtpl->table_td($count . "&times;");
             $xtpl->table_tr('#fff', '#fff', 'nohover');
@@ -1166,7 +1166,7 @@ function list_user_resource_packages($user_id)
     $xtpl->table_out();
 
     foreach ($sorted_pkgs as $v) {
-        list($env, $env_pkgs) = $v;
+        [$env, $env_pkgs] = $v;
 
         $xtpl->table_title(_('Environment') . ': ' . $env->label);
 

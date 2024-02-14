@@ -52,13 +52,13 @@ class SystemConfig implements Iterator
 
     protected function fetchConfig()
     {
-        $cfg = array();
+        $cfg = [];
 
         $options = $this->api->system_config->index();
 
         foreach ($options as $opt) {
             if (!array_key_exists($opt->category, $cfg)) {
-                $cfg[$opt->category] = array();
+                $cfg[$opt->category] = [];
             }
 
             $cfg[$opt->category][$opt->name] = $opt->attributes();

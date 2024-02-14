@@ -34,7 +34,7 @@ if (isLoggedIn()) {
             } else {
                 try {
                     $api[$_GET['resource']]->update($_GET['id'], [
-                        'remind_after_date' => $date->format('c')
+                        'remind_after_date' => $date->format('c'),
                     ]);
 
                     notify_user(

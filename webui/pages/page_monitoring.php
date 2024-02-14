@@ -16,9 +16,9 @@ if (isLoggedIn()) {
                 csrf_check();
 
                 try {
-                    $api->monitored_event->acknowledge($_GET['id'], array(
+                    $api->monitored_event->acknowledge($_GET['id'], [
                         'until' => $_POST['until'] ? date('c', strtotime($_POST['until'])) : null,
-                    ));
+                    ]);
 
                     notify_user(_('Event acknowledged'), _('The issue has been successfully acknowledged.'));
                     redirect('?page=monitoring&action=list');
@@ -41,9 +41,9 @@ if (isLoggedIn()) {
                 csrf_check();
 
                 try {
-                    $api->monitored_event->ignore($_GET['id'], array(
+                    $api->monitored_event->ignore($_GET['id'], [
                         'until' => $_POST['until'] ? date('c', strtotime($_POST['until'])) : null,
-                    ));
+                    ]);
 
                     notify_user(_('Event ignored'), _('The issue has been successfully ignored.'));
                     redirect('?page=monitoring&action=list');

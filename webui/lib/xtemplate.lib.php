@@ -30,15 +30,15 @@ $_SESSION["cli_mode"] = false;
 class XTemplate
 {
     public $filecontents = '';
-    public $blocks = array();
-    public $parsed_blocks = array();
-    public $preparsed_blocks = array();
-    public $block_parse_order = array();
-    public $sub_blocks = array();
-    public $vars = array();
-    public $filevars = array();
-    public $filevar_parent = array();
-    public $filecache = array();
+    public $blocks = [];
+    public $parsed_blocks = [];
+    public $preparsed_blocks = [];
+    public $block_parse_order = [];
+    public $sub_blocks = [];
+    public $vars = [];
+    public $filevars = [];
+    public $filevar_parent = [];
+    public $filecache = [];
     public $tpldir = '';
     public $files = null;
     public $filename = '';
@@ -55,8 +55,8 @@ class XTemplate
 
     public $mainblock = 'main';
     public $output_type = 'HTML';
-    public $_null_string = array('' => '');             /* null string for unassigned vars */
-    public $_null_block = array('' => '');  /* null string for unassigned blocks */
+    public $_null_string = ['' => ''];             /* null string for unassigned vars */
+    public $_null_block = ['' => ''];  /* null string for unassigned blocks */
     public $_error = '';
     public $_autoreset = true;                                     /* auto-reset sub blocks */
     public $_ignore_missing_blocks = true ;          // NW 17 oct 2002 - Set to FALSE to
@@ -87,15 +87,15 @@ class XTemplate
         $this->tag_start_delim = $tag_start;
         $this->tag_end_delim = $tag_end;
         $this->filecontents = '';
-        $this->blocks = array();
-        $this->parsed_blocks = array();
-        $this->preparsed_blocks = array();
-        $this->block_parse_order = array();
-        $this->sub_blocks = array();
-        $this->vars = array();
-        $this->filevars = array();
-        $this->filevar_parent = array();
-        $this->filecache = array();
+        $this->blocks = [];
+        $this->parsed_blocks = [];
+        $this->preparsed_blocks = [];
+        $this->block_parse_order = [];
+        $this->sub_blocks = [];
+        $this->vars = [];
+        $this->filevars = [];
+        $this->filevar_parent = [];
+        $this->filecache = [];
         if ($autosetup) {
             $this->setup();
         }
@@ -154,7 +154,7 @@ class XTemplate
             die('Block: ' . $bname);
         }
         $copy = preg_replace($this->filevar_delim_nl, '', $copy);
-        $var_array = array();
+        $var_array = [];
         preg_match_all("/" . $this->tag_start_delim . "([A-Za-z0-9\._]+? ?#?.*?)" . $this->tag_end_delim . "/", $copy, $var_array);
         $var_array = $var_array[1];
         foreach ($var_array as $k => $v) {
@@ -169,7 +169,7 @@ class XTemplate
             if ($sub[0] == '_BLOCK_') {
                 unset($sub[0]);
                 $bname2 = implode('.', $sub);
-                $var = isset($this->parsed_blocks[$bname2]) ? $this->parsed_blocks[$bname2] : null;
+                $var = $this->parsed_blocks[$bname2] ?? null;
                 $nul = (!isset($this->_null_block[$bname2])) ? $this->_null_block[''] : $this->_null_block[$bname2];
                 if ($var == '') {
                     if ($nul == '') {
@@ -251,7 +251,7 @@ class XTemplate
     {
         $text = '';
         $bname = !empty($bname) ? $bname : $this->mainblock;
-        $text .= isset($this->parsed_blocks[$bname]) ? $this->parsed_blocks[$bname] : $this->get_error();
+        $text .= $this->parsed_blocks[$bname] ?? $this->get_error();
         return $text;
     }
     public function out($bname)
@@ -309,18 +309,18 @@ class XTemplate
     }
     public function _maketree($con, $parentblock = '')
     {
-        $blocks = array();
+        $blocks = [];
         $con2 = explode($this->block_start_delim, $con);
         if (!empty($parentblock)) {
             $block_names = explode('.', $parentblock);
             $level = sizeof($block_names);
         } else {
-            $block_names = array();
+            $block_names = [];
             $level = 0;
         }
         foreach($con2 as $k => $v) {
             $patt = "($this->block_start_word|$this->block_end_word)\s*(\w+) ?#?.*?\s*$this->block_end_delim(.*)";
-            $res = array();
+            $res = [];
             if (preg_match_all("/$patt/ims", $v, $res, PREG_SET_ORDER)) {
                 $block_word	= $res[0][1];
                 $block_name	= $res[0][2];
@@ -360,7 +360,7 @@ class XTemplate
                     } elseif (isset($this->blocks[$parent])) {
                         $copy = $this->blocks[$parent];
                     }
-                    $res = array();
+                    $res = [];
                     preg_match_all($this->filevar_delim, $copy, $res, PREG_SET_ORDER);
                     if (is_array($res) && isset($res[0])) {
                         foreach ($res[0] as $v) {
@@ -376,9 +376,9 @@ class XTemplate
     }
     public function _store_filevar_parents($blocks)
     {
-        $parents = array();
+        $parents = [];
         foreach ($blocks as $bname => $con) {
-            $res = array();
+            $res = [];
             preg_match_all($this->filevar_delim, $con, $res);
             foreach ($res[1] as $k => $v) {
                 $parents[$v][] = $bname;
@@ -425,7 +425,7 @@ class XTemplate
     public function _r_getfile($file)
     {
         $text = $this->_getfile($file);
-        $res = array();
+        $res = [];
         while (preg_match($this->file_delim, $text, $res)) {
             $text2 = $this->_getfile($res[1]);
             $text = preg_replace("'" . preg_quote($res[0]) . "'", $text2, $text);
@@ -508,7 +508,7 @@ class XTemplate
                 $this->assign('L_EDIT_PROFILE', _("Edit profile"));
                 $this->parse("main.loggedbox.not_admin");
 
-                $contextSwitch = isset($_SESSION["context_switch"]) ? $_SESSION["context_switch"] : null;
+                $contextSwitch = $_SESSION["context_switch"] ?? null;
                 if ($contextSwitch) {
                     $this->assign('L_REGAIN_PRIVILEGES', _("Regain privileges"));
                     $this->assign('V_NEXT', urlencode($_SERVER["REQUEST_URI"]));

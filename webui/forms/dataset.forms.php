@@ -1,7 +1,7 @@
 <?php
 
-$DATASET_PROPERTIES = array('compression', 'recordsize', 'atime', 'relatime', 'sync');
-$DATASET_UNITS_TR = array("m" => 1, "g" => 1024, "t" => 1024 * 1024);
+$DATASET_PROPERTIES = ['compression', 'recordsize', 'atime', 'relatime', 'sync'];
+$DATASET_UNITS_TR = ["m" => 1, "g" => 1024, "t" => 1024 * 1024];
 
 function is_mount_dst_valid($dst)
 {
@@ -42,7 +42,7 @@ function dataset_list($role, $parent = null, $user = null, $dataset = null, $lim
     global $xtpl, $api;
 
     $params = $api->dataset->list->getParameters('output');
-    $ignore = array('id', 'name', 'parent', 'user');
+    $ignore = ['id', 'name', 'parent', 'user'];
     $include = [];
 
     if ($role == 'primary') {
@@ -87,10 +87,10 @@ function dataset_list($role, $parent = null, $user = null, $dataset = null, $lim
     $xtpl->table_add_category('');
     $xtpl->table_add_category('');
 
-    $listParams = array(
+    $listParams = [
         'role' => $role,
         'dataset' => $parent,
-    );
+    ];
 
     if ($user) {
         $listParams['user'] = $user;
@@ -203,7 +203,7 @@ function dataset_create_form()
         $xtpl->form_add_select(
             $params->dataset->label,
             'dataset',
-            resource_list_to_options($api->dataset->list(array('role' => $_GET['role'])), 'id', 'name'),
+            resource_list_to_options($api->dataset->list(['role' => $_GET['role']]), 'id', 'name'),
             $_POST['dataset'],
             $params->dataset->description
         );
@@ -234,7 +234,7 @@ function dataset_create_form()
         '<input type="hidden" name="return" value="' . ($_GET['return'] ? $_GET['return'] : $_POST['return']) . '">'
     );
     $xtpl->form_add_input_pure('text', '30', $quota_name, $_POST[$quota_name] ? $_POST[$quota_name] : $v[0], $quota->description);
-    $xtpl->form_add_select_pure('quota_unit', array("m" => "MiB", "g" => "GiB", "t" => "TiB"), $_POST[$quota_name] ? $_POST['quota_unit'] : $v[1]);
+    $xtpl->form_add_select_pure('quota_unit', ["m" => "MiB", "g" => "GiB", "t" => "TiB"], $_POST[$quota_name] ? $_POST['quota_unit'] : $v[1]);
     $xtpl->table_tr();
 
     // Remaining dataset properties
@@ -300,7 +300,7 @@ function dataset_edit_form()
         '<input type="hidden" name="return" value="' . ($_GET['return'] ? $_GET['return'] : $_POST['return']) . '">'
     );
     $xtpl->form_add_input_pure('text', '30', $quota_name, $_POST[$quota_name] ? $_POST[$quota_name] : $v[0], $quota->description);
-    $xtpl->form_add_select_pure('quota_unit', array("m" => "MiB", "g" => "GiB", "t" => "TiB"), $_POST[$quota_name] ? $_POST['quota_unit'] : $v[1]);
+    $xtpl->form_add_select_pure('quota_unit', ["m" => "MiB", "g" => "GiB", "t" => "TiB"], $_POST[$quota_name] ? $_POST['quota_unit'] : $v[1]);
     $xtpl->table_tr();
 
     if ($_SESSION['is_admin']) {
@@ -495,7 +495,7 @@ function dataset_snapshot_list($datasets, $vps = null)
     $return_url = urlencode($_SERVER['REQUEST_URI']);
 
     foreach ($datasets as $ds) {
-        $snapshots = $ds->snapshot->list(array('meta' => array('includes' => 'mount')));
+        $snapshots = $ds->snapshot->list(['meta' => ['includes' => 'mount']]);
 
         if (!$snapshots->count() && ($_GET['noempty'] ?? false)) {
             continue;
@@ -523,7 +523,7 @@ function dataset_snapshot_list($datasets, $vps = null)
 
         $xtpl->form_create('?page=backup&action=restore&dataset=' . $ds->id . '&vps_id=' . ($vps ? $vps->id : '') . '&return=' . $return_url, 'post');
 
-        $histories = array();
+        $histories = [];
         foreach ($snapshots as $snap) {
             $histories[] = $snap->history_id;
         }
@@ -729,12 +729,12 @@ function mount_edit_form($vps_id, $mnt_id)
 
 function translate_mount_on_start_fail($v)
 {
-    $start_fail_choices = array(
+    $start_fail_choices = [
         'skip' => _('Skip'),
         'mount_later' => _('Mount later'),
         'fail_start' => _('Fail VPS start'),
-        'wait_for_mount' => _('Wait until mounted')
-    );
+        'wait_for_mount' => _('Wait until mounted'),
+    ];
 
     return $start_fail_choices[$v];
 }

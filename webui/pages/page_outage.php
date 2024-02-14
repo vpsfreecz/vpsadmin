@@ -116,7 +116,7 @@ function outage_set_handlers($outage)
         }
 
         if (!$exists) {
-            $outage->handler->create(array('user' => $new));
+            $outage->handler->create(['user' => $new]);
         }
     }
 

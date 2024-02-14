@@ -1,7 +1,7 @@
 <?php
 
 if (isLoggedIn()) {
-    $quotas = array('quota', 'refquota');
+    $quotas = ['quota', 'refquota'];
 
     switch ($_GET['action']) {
         case 'new':
@@ -9,11 +9,11 @@ if (isLoggedIn()) {
                 csrf_check();
 
                 $input_params = $api->dataset->create->getParameters('input');
-                $params = array(
+                $params = [
                     'name' => $_POST['name'],
                     'dataset' => $_POST['dataset'] ? $_POST['dataset'] : $_GET['parent'],
                     'automount' => $_POST['automount'] ? true : false,
-                );
+                ];
 
                 foreach ($quotas as $quota) {
                     if (isset($_POST[$quota])) {
@@ -27,7 +27,7 @@ if (isLoggedIn()) {
 
                         if ($validators && $validators->include) {
                             $params[$p] = $_POST[$p];
-                        } elseif (in_array($p, array('compression', 'atime', 'relatime'))) {
+                        } elseif (in_array($p, ['compression', 'atime', 'relatime'])) {
                             $params[$p] = isset($_POST[$p]);
                         } else {
                             $params[$p] = $_POST[$p];
@@ -57,7 +57,7 @@ if (isLoggedIn()) {
 
                 $ds = $api->dataset->find($_GET['id']);
                 $input_params = $api->dataset->update->getParameters('input');
-                $params = array();
+                $params = [];
 
                 if (isAdmin()) {
                     $params['admin_override'] = isset($_POST['admin_override']);
@@ -76,7 +76,7 @@ if (isLoggedIn()) {
 
                         if ($validators && $validators->include) {
                             $params[$p] = $_POST[$p];
-                        } elseif (in_array($p, array('compression', 'atime', 'relatime'))) {
+                        } elseif (in_array($p, ['compression', 'atime', 'relatime'])) {
                             $params[$p] = isset($_POST[$p]);
                         } else {
                             $params[$p] = $_POST[$p];
@@ -258,12 +258,12 @@ if (isLoggedIn()) {
 
                 try {
                     $input_params = $api->vps->mount->create->getParameters('input');
-                    $params = array(
+                    $params = [
                         'dataset' => $_POST['dataset'],
                         'mountpoint' => $_POST['mountpoint'],
                         'mode' => $_POST['mode'],
                         'on_start_fail' => $_POST['on_start_fail'],
-                    );
+                    ];
 
                     $api->vps($_POST['vps'])->mount->create($params);
 
@@ -324,9 +324,9 @@ if (isLoggedIn()) {
             if (isset($_POST['on_start_fail'])) {
                 try {
                     $input_params = $api->vps->mount->create->getParameters('input');
-                    $api->vps($_GET['vps'])->mount($_GET['id'])->update(array(
-                        'on_start_fail' => $_POST['on_start_fail']
-                    ));
+                    $api->vps($_GET['vps'])->mount($_GET['id'])->update([
+                        'on_start_fail' => $_POST['on_start_fail'],
+                    ]);
 
                     notify_user(_('Changes saved'), '');
                     redirect($_POST['return'] ? $_POST['return'] : '?page=');
@@ -345,9 +345,9 @@ if (isLoggedIn()) {
             csrf_check();
 
             try {
-                $api->vps($_GET['vps'])->mount($_GET['id'])->update(array(
-                    'enabled' => $_GET['do']
-                ));
+                $api->vps($_GET['vps'])->mount($_GET['id'])->update([
+                    'enabled' => $_GET['do'],
+                ]);
 
                 notify_user(_('Mount') . ' ' . ($_GET['do'] ? _('enabled') : _('disabled')), '');
                 redirect($_GET['return'] ? $_GET['return'] : '?page=');
@@ -361,9 +361,9 @@ if (isLoggedIn()) {
             csrf_check();
 
             try {
-                $api->dataset($_GET['id'])->plan->create(array(
-                    'environment_dataset_plan' => $_POST['environment_dataset_plan']
-                ));
+                $api->dataset($_GET['id'])->plan->create([
+                    'environment_dataset_plan' => $_POST['environment_dataset_plan'],
+                ]);
 
                 notify_user(_('Backup plan added.'), _('The dataset was successfully added to the backup plan.'));
                 redirect('?page=dataset&action=edit&role=' . $_GET['role'] . '&id=' . $_GET['id'] . '&return=' . urlencode($_POST['return']));

@@ -47,11 +47,11 @@ function backup_vps_form()
 
         $xtpl->form_out(_('Show'));
 
-        $vpses = array();
-        $params = array(
+        $vpses = [];
+        $params = [
             'limit' => get_val('limit', 25),
-            'offset' => get_val('offset', 0)
-        );
+            'offset' => get_val('offset', 0),
+        ];
 
         if (isset($_GET['user']) && $_GET['user'] !== '') {
             $params['user'] = $_GET['user'];
@@ -71,7 +71,7 @@ function backup_vps_form()
     }
 
     foreach ($vpses as $vps) {
-        $params = array('dataset' => $vps->dataset_id);
+        $params = ['dataset' => $vps->dataset_id];
 
         if (isAdmin() && !($_GET['subdatasets'] ?? false)) {
             $params['limit'] = 1;
@@ -87,7 +87,7 @@ function backup_nas_form()
 {
     global $xtpl, $api;
 
-    $datasets = array();
+    $datasets = [];
 
     if (isAdmin()) {
         $xtpl->table_title(_('Filters'));
@@ -111,11 +111,11 @@ function backup_nas_form()
         $xtpl->form_out(_('Show'));
 
         if ($_GET['list']) {
-            $params = array(
+            $params = [
                 'limit' => get_val('limit', 25),
                 'offset' => get_val('offset', 0),
-                'role' => 'primary'
-            );
+                'role' => 'primary',
+            ];
 
             if (!$_GET['subdatasets']) {
                 $params['to_depth'] = 0;
@@ -129,7 +129,7 @@ function backup_nas_form()
         }
 
     } else {
-        $datasets = $api->dataset->list(array('role' => 'primary'));
+        $datasets = $api->dataset->list(['role' => 'primary']);
     }
 
     dataset_snapshot_list($datasets);
@@ -140,8 +140,8 @@ function backup_download_list_form()
     global $xtpl, $api;
 
     $downloads = $api->snapshot_download->list(
-        array(
-        'meta' => array('includes' => 'snapshot__dataset,user'))
+        [
+        'meta' => ['includes' => 'snapshot__dataset,user']]
     );
 
     if (isAdmin()) {

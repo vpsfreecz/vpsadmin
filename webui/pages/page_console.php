@@ -5,9 +5,9 @@ function setup_console()
     global $xtpl, $api;
 
     try {
-        $vps = $api->vps->find($_GET['veid'], array(
-            'meta' => array('includes', 'node__location')
-        ));
+        $vps = $api->vps->find($_GET['veid'], [
+            'meta' => ['includes', 'node__location'],
+        ]);
 
     } catch (\HaveAPI\Client\Exception\ActionFailed $e) {
         $xtpl->perex_format_errors(_('VPS not found'), $e->getResponse());

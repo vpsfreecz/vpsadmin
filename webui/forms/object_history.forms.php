@@ -42,12 +42,12 @@ function list_object_history()
         return;
     }
 
-    $params = array(
+    $params = [
         'limit' => get_val('limit', 25),
         'offset' => get_val('offset', 0),
-    );
+    ];
 
-    $conds = array('user', 'user_session', 'object', 'object_id', 'event_type');
+    $conds = ['user', 'user_session', 'object', 'object_id', 'event_type'];
 
     foreach ($conds as $c) {
         if ($_GET[$c]) {
@@ -55,10 +55,10 @@ function list_object_history()
         }
     }
 
-    $params['meta'] = array(
+    $params['meta'] = [
         'includes' => 'user,user_session',
         'count' => true,
-    );
+    ];
 
     $events = $api->object_history->list($params);
 

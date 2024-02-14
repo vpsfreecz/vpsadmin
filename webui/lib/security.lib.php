@@ -18,7 +18,7 @@ function csrf_token($name = 'common', $count = 1000)
 
     $_SESSION['csrf_tokens'][$name] = [
         'token' => $t,
-        'count' => $count
+        'count' => $count,
     ];
 
     return $t;

@@ -31,13 +31,13 @@ function monitoring_list()
 
     $xtpl->form_out(_('Show'));
 
-    $params = array(
+    $params = [
         'limit' => get_val('limit', 25),
-    );
+    ];
 
-    $filters = array(
-        'monitor', 'user', 'object_name', 'object_id', 'state', 'order'
-    );
+    $filters = [
+        'monitor', 'user', 'object_name', 'object_id', 'state', 'order',
+    ];
 
     foreach ($filters as $v) {
         if ($_GET[$v]) {
@@ -141,9 +141,9 @@ function monitoring_event()
     $xtpl->table_add_category(_('Date'));
     $xtpl->table_add_category(_('Value'));
 
-    $logs = $e->log->list(array(
+    $logs = $e->log->list([
         'limit' => get_val('limit', 25),
-    ));
+    ]);
 
     foreach ($logs as $log) {
         $xtpl->table_td(tolocaltz($log->created_at));

@@ -54,11 +54,11 @@ function list_chains()
 
     $xtpl->form_out(_('Show'));
 
-    $params = array(
+    $params = [
         'limit' => get_val('limit', 25),
         'offset' => get_val('offset', 0),
-        'meta' => array('includes' => 'user')
-    );
+        'meta' => ['includes' => 'user'],
+    ];
 
     if ($_GET['user'] ?? false) {
         $params['user'] = $_GET['user'];
@@ -209,21 +209,21 @@ function chain_transactions($chain_id)
 
     $xtpl->form_out(_('Show'));
 
-    $meta = array('includes' => 'user,node');
+    $meta = ['includes' => 'user,node'];
 
     if ($_GET['transaction'] ?? false) {
-        $transactions = array();
-        $transactions[] = $api->transaction->find($_GET['transaction'], array(
-            'meta' => $meta
-        ));
+        $transactions = [];
+        $transactions[] = $api->transaction->find($_GET['transaction'], [
+            'meta' => $meta,
+        ]);
 
     } else {
-        $params = array(
+        $params = [
             'limit' => get_val('limit', '100'),
             'offset' => get_val('offset', '0'),
             'transaction_chain' => $chain->id,
-            'meta' => $meta
-        );
+            'meta' => $meta,
+        ];
 
         if ($_GET['node'] ?? false) {
             $params['node'] = $_GET['node'];

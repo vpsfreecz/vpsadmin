@@ -6,7 +6,7 @@ if (isLoggedIn() && isAdmin()) {
     $_SESSION["jumpto"] = $search;
 
     try {
-        $res = $api->cluster->search(array('value' => $search))->getResponse();
+        $res = $api->cluster->search(['value' => $search])->getResponse();
 
         if (count($res) === 1) {
             $v = $res[0];

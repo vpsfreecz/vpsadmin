@@ -17,10 +17,10 @@ $cfg_transactions['max_offset_listing'] = 6;
 ********************************************************/
 $cfg_adminvps['table_heading'] = '';
 
-$langs = array(
-  "en_US.utf8" => array(
+$langs = [
+  "en_US.utf8" => [
     "code" => "en_US.utf8",
     "icon" => "us",
-    "lang" => "US english"
-  )
-);
+    "lang" => "US english",
+  ],
+];

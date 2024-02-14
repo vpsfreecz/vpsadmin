@@ -60,7 +60,7 @@ function incident_list()
     ];
 
     $filters = [
-        'user', 'vps', 'ip_address_assignment', 'ip_addr', 'mailbox', 'codename'
+        'user', 'vps', 'ip_address_assignment', 'ip_addr', 'mailbox', 'codename',
     ];
 
     foreach ($filters as $v) {

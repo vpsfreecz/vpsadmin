@@ -71,9 +71,9 @@ if (isLoggedIn()) {
             csrf_check();
 
             try {
-                $api->dataset($_GET['dataset'])->snapshot->create(array(
+                $api->dataset($_GET['dataset'])->snapshot->create([
                     'label' => post_val('label', null),
-                ));
+                ]);
 
                 notify_user(_('Snapshot creation scheduled.'), _('Snapshot will be taken momentarily.'));
                 redirect($_GET['return'] ?? '?page=');
@@ -212,10 +212,10 @@ if (isLoggedIn()) {
                     $ds = $api->dataset->find($_GET['dataset']);
                     $snap = $ds->snapshot->find($_GET['snapshot']);
 
-                    $api->snapshot_download->create(array(
+                    $api->snapshot_download->create([
                         'format' => $_POST['format'],
                         'snapshot' => $snap->id,
-                    ));
+                    ]);
 
                     notify_user(
                         _("Download of snapshot of") . ' ' . $ds->name . ' ' . _('from') . ' ' . strftime("%Y-%m-%d %H:%M", strtotime($snap->created_at)) . " " . _("planned"),
@@ -238,10 +238,10 @@ if (isLoggedIn()) {
                     $xtpl->table_td('<strong>' . _('Please confirm the download of snapshot of dataset') . ' ' . $ds->name . ' ' . _('from') . ' ' . strftime("%Y-%m-%d %H:%M", strtotime($snap->created_at)) . '</strong>', false, false, '2');
                     $xtpl->table_tr();
 
-                    $formats = array(
+                    $formats = [
                         'archive' => _('tar.gz archive'),
                         'stream' => _('ZFS data stream'),
-                    );
+                    ];
                     $xtpl->form_add_select(_('Format') . ':', 'format', $formats, $_POST['format']);
 
                     $xtpl->table_td(

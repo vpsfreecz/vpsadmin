@@ -39,13 +39,13 @@ function get_free_route_list($res, $vps, $role = null, $limit = null)
         $v = 6;
     }
 
-    $ret = array();
-    $filters = array(
+    $ret = [];
+    $filters = [
         'version' => $v,
         'network_interface' => null,
         'location' => $vps->node->location_id,
-        'meta' => array('includes' => 'user'),
-    );
+        'meta' => ['includes' => 'user'],
+    ];
 
     if ($role) {
         $filters['role'] = $role;
@@ -82,13 +82,13 @@ function get_free_host_addr_list($res, $vps, $netif, $role = null, $limit = null
         $v = 6;
     }
 
-    $ret = array();
-    $filters = array(
+    $ret = [];
+    $filters = [
         'version' => $v,
         'network_interface' => $netif->id,
         'assigned' => false,
-        'meta' => array('includes' => 'ip_address'),
-    );
+        'meta' => ['includes' => 'ip_address'],
+    ];
 
     if ($role) {
         $filters['role'] = $role;
@@ -120,7 +120,7 @@ function get_ip_address_id($val)
         return $val;
     }
 
-    $ips = $api->ip_address->list(array('addr' => $val));
+    $ips = $api->ip_address->list(['addr' => $val]);
 
     if ($ips->count() < 1) {
         return false;
@@ -221,7 +221,7 @@ function list_templates($vps = null)
     );
 
     if ($vps && !$vps->os_template->enabled && !$_SESSION['is_admin']) {
-        $choices = array($vps->os_template_id => $vps->os_template->label . ' ' . $disabled) + $choices;
+        $choices = [$vps->os_template_id => $vps->os_template->label . ' ' . $disabled] + $choices;
     }
 
     return $choices;
@@ -229,10 +229,10 @@ function list_templates($vps = null)
 
 function notify_user($title, $msg = '')
 {
-    $_SESSION["notification"] = array(
+    $_SESSION["notification"] = [
         "title" => $title,
         "msg" => $msg,
-    );
+    ];
 }
 
 function show_notification()
@@ -298,11 +298,11 @@ function random_string($len)
 
 function format_data_rate($n, $suffix)
 {
-    $units = array(
+    $units = [
         2 << 29 => 'G',
         2 << 19 => 'M',
         2 << 9 => 'k',
-    );
+    ];
 
     $ret = "";
     $selected = 0;
@@ -360,7 +360,7 @@ function maintenance_lock_icon($type, $obj)
 
 function resource_list_to_options($list, $id = 'id', $label = 'label', $empty = true, $label_callback = null)
 {
-    $ret = array();
+    $ret = [];
 
     if ($empty) {
         $ret[0] = '---';
@@ -407,7 +407,7 @@ function api_param_to_form_pure($name, $desc, $v = null, $label_callback = null,
             if ($desc->validators && property_exists($desc->validators, 'include')) {
                 $desc_choices = $desc->validators->include->values;
                 $assoc = is_assoc($desc_choices);
-                $choices = array();
+                $choices = [];
 
                 if ($empty) {
                     $choices[''] = '---';
@@ -525,7 +525,7 @@ function client_params_to_api($action, $from = null)
     }
 
     $params = $action->getParameters('input');
-    $ret = array();
+    $ret = [];
 
     foreach ($params as $name => $desc) {
         if (isset($from[ $name ])) {
@@ -653,7 +653,7 @@ function number_unitize($val)
         "g" => 1000000000,
         "m" => 1000000,
         "k" => 1000,
-        "" => 0
+        "" => 0,
     ];
     $sign = 1;
 
@@ -679,7 +679,7 @@ function number_unitize($val)
 
 function format_number_with_unit($n)
 {
-    list($val, $unit) = number_unitize($n);
+    [$val, $unit] = number_unitize($n);
 
     if ($unit != 'k') {
         $unit = strtoupper($unit);
@@ -782,9 +782,9 @@ function post_val_issetto($name, $value, $default = false)
 
 function transaction_concern_class($klass)
 {
-    $tr = array(
-        'Vps' => 'VPS'
-    );
+    $tr = [
+        'Vps' => 'VPS',
+    ];
 
     if (array_key_exists($klass, $tr)) {
         return $tr[$klass];
@@ -855,14 +855,14 @@ function get_all_users()
 {
     global $api;
 
-    $cnt = $api->user->list(array(
+    $cnt = $api->user->list([
         'limit' => 0,
-        'meta' => array('count' => true)
-    ))->getTotalCount();
+        'meta' => ['count' => true],
+    ])->getTotalCount();
 
-    return $api->user->list(array(
-        'limit' => $cnt + 10
-    ));
+    return $api->user->list([
+        'limit' => $cnt + 10,
+    ]);
 }
 
 function vps_label($vps)
@@ -936,7 +936,7 @@ function cgroup_version($v)
 
 function colorize($array)
 {
-    $ret = array();
+    $ret = [];
 
     $from = 0x70;
     $to = 0xff;
@@ -996,7 +996,7 @@ function payments_enabled()
 
 function is_assoc($arr)
 {
-    if (array() === $arr) {
+    if ([] === $arr) {
         return false;
     }
 

@@ -167,7 +167,7 @@ function outage_report_form()
     $xtpl->form_add_select(
         _('Handled by') . ':',
         'handlers[]',
-        resource_list_to_options($api->user->list(array('admin' => true)), 'id', 'full_name', false),
+        resource_list_to_options($api->user->list(['admin' => true]), 'id', 'full_name', false),
         post_val('handlers'),
         '',
         true,
@@ -318,7 +318,7 @@ function outage_edit_systems_form($id)
     $xtpl->form_add_select(
         _('Handled by') . ':',
         'handlers[]',
-        resource_list_to_options($api->user->list(array('admin' => true)), 'id', 'full_name', false),
+        resource_list_to_options($api->user->list(['admin' => true]), 'id', 'full_name', false),
         post_val('handlers', array_map(
             function ($h) { return $h->user_id; },
             $outage->handler->list()->asArray()
@@ -464,19 +464,19 @@ function outage_details($id)
             }
 
         } else {
-            $affected_vpses = $api->vps_outage->list(array(
+            $affected_vpses = $api->vps_outage->list([
                 'outage' => $outage->id,
-                'meta' => array(
+                'meta' => [
                     'includes' => 'vps',
-                ),
-            ));
+                ],
+            ]);
 
-            $affected_exports = $api->export_outage->list(array(
+            $affected_exports = $api->export_outage->list([
                 'outage' => $outage->id,
-                'meta' => array(
+                'meta' => [
                     'includes' => 'export',
-                ),
-            ));
+                ],
+            ]);
 
             if ($affected_vpses->count() || $affected_exports->count()) {
                 if ($affected_vpses->count()) {
@@ -583,11 +583,11 @@ function outage_details($id)
     if ($_SESSION['is_admin'] && $outage->state == 'staged') {
         $xtpl->table_title(_('Change state'));
         $xtpl->form_create('?page=outage&action=set_state&id=' . $id, 'post');
-        $xtpl->form_add_select(_('State') . ':', 'state', array(
+        $xtpl->form_add_select(_('State') . ':', 'state', [
             'announced' => _('Announce'),
             'cancelled' => _('Cancel'),
             'resolved' => _('Resolve'),
-        ), post_val('state'));
+        ], post_val('state'));
 
         $xtpl->form_add_checkbox(
             _('Send mails') . ':',
@@ -604,10 +604,10 @@ function outage_details($id)
     $xtpl->table_add_category(_('Summary'));
     $xtpl->table_add_category(_('Reported by'));
 
-    foreach ($api->outage_update->list(array('outage' => $outage->id)) as $update) {
+    foreach ($api->outage_update->list(['outage' => $outage->id]) as $update) {
         $xtpl->table_td(tolocaltz($update->created_at, "Y-m-d H:i:s T"));
 
-        $summary = array();
+        $summary = [];
 
         foreach ($langs as $lang) {
             $name = $lang->code . '_summary';
@@ -622,8 +622,8 @@ function outage_details($id)
         $xtpl->table_td(implode("\n<br>\n", $summary));
         $xtpl->table_td($update->reporter_name);
 
-        $changes = array();
-        $check = array('begins_at', 'finished_at', 'state', 'type', 'duration');
+        $changes = [];
+        $check = ['begins_at', 'finished_at', 'state', 'type', 'duration'];
 
         foreach ($check as $p) {
             if ($update->{$p}) {
@@ -651,7 +651,7 @@ function outage_details($id)
             }
         }
 
-        $desc = array();
+        $desc = [];
 
         foreach ($langs as $lang) {
             $name = $lang->code . '_description';
@@ -663,10 +663,10 @@ function outage_details($id)
             $desc[] = '<strong>' . h($lang->label) . '</strong>: ' . nl2br(h($update->{$name}));
         }
 
-        $str = implode("\n<br><br>\n", array_filter(array(
+        $str = implode("\n<br><br>\n", array_filter([
             implode("\n<br>\n", $changes),
             implode("\n<br><br>\n", $desc),
-        )));
+        ]));
 
         $xtpl->table_tr();
 
@@ -706,11 +706,11 @@ function outage_list()
     api_param_to_form('impact', $input->impact, $_GET['impact'], null, true);
 
     if ($_SESSION['logged_in']) {
-        $xtpl->form_add_select(_('Affects me?'), 'affected', array(
+        $xtpl->form_add_select(_('Affects me?'), 'affected', [
             '' => '---',
             'yes' => _('Yes'),
             'no' => _('No'),
-        ), get_val('affected'));
+        ], get_val('affected'));
     }
 
     if ($_SESSION['is_admin']) {
@@ -802,7 +802,7 @@ function outage_list()
 
     $filters = [
         'state', 'type', 'impact', 'user', 'handled_by', 'vps', 'export', 'order',
-        'environment', 'location', 'node', 'vpsadmin', 'entity_name', 'entity_id'
+        'environment', 'location', 'node', 'vpsadmin', 'entity_name', 'entity_id',
     ];
 
     foreach ($filters as $v) {
@@ -870,10 +870,10 @@ function outage_affected_users($id)
     $xtpl->title(_('Outage') . ' #' . $outage->id);
     $xtpl->table_title(_('Affected users'));
 
-    $users = $api->user_outage->list(array(
+    $users = $api->user_outage->list([
         'outage' => $outage->id,
-        'meta' => array('includes' => 'user'),
-    ));
+        'meta' => ['includes' => 'user'],
+    ]);
 
     $xtpl->table_add_category(_('Login'));
     $xtpl->table_add_category(_('Name'));
@@ -947,7 +947,7 @@ function outage_affected_vps($id)
         $xtpl->form_add_select(
             _('Direct') . ':',
             'direct',
-            array('' => '---', 'yes' => _('Yes'), 'no' => _('No')),
+            ['' => '---', 'yes' => _('Yes'), 'no' => _('No')],
             get_val('direct')
         );
 
@@ -956,12 +956,12 @@ function outage_affected_vps($id)
 
     $xtpl->table_title(_('Affected VPS'));
 
-    $params = array(
+    $params = [
         'outage' => $outage->id,
-        'meta' => array('includes' => 'vps,user,environment,location,node'),
-    );
+        'meta' => ['includes' => 'vps,user,environment,location,node'],
+    ];
 
-    foreach (array('user', 'environment', 'location', 'node') as $v) {
+    foreach (['user', 'environment', 'location', 'node'] as $v) {
         if ($_GET[$v]) {
             $params[$v] = $_GET[$v];
         }
@@ -1040,12 +1040,12 @@ function outage_affected_exports($id)
 
     $xtpl->table_title(_('Affected exports'));
 
-    $params = array(
+    $params = [
         'outage' => $outage->id,
-        'meta' => array('includes' => 'export,user,environment,location,node'),
-    );
+        'meta' => ['includes' => 'export,user,environment,location,node'],
+    ];
 
-    foreach (array('user', 'environment', 'location', 'node') as $v) {
+    foreach (['user', 'environment', 'location', 'node'] as $v) {
         if ($_GET[$v]) {
             $params[$v] = $_GET[$v];
         }

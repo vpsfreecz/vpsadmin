@@ -54,9 +54,9 @@ function oom_reports_list()
         }
     }
 
-    $params['meta'] = array(
+    $params['meta'] = [
         'includes' => 'vps__node,vps__user',
-    );
+    ];
 
     $reports = $api->oom_report->list($params);
 

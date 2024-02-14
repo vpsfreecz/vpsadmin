@@ -53,7 +53,7 @@ if ($noticeboard) {
 }
 
 if ($api->news_log) {
-    foreach ($api->news_log->list(array('limit' => 5)) as $news) {
+    foreach ($api->news_log->list(['limit' => 5]) as $news) {
         $xtpl->table_td('[' . tolocaltz($news->published_at, "Y-m-d H:i") . ']');
         $xtpl->table_td($news->message);
         $xtpl->table_tr();

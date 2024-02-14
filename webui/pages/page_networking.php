@@ -10,7 +10,7 @@
 function year_list()
 {
     $now = date("Y");
-    $ret = array('' => '---');
+    $ret = ['' => '---'];
 
     for ($i = $now - 5; $i <= $now; $i++) {
         $ret[$i] = $i;
@@ -21,7 +21,7 @@ function year_list()
 
 function month_list()
 {
-    $ret = array('' => '---');
+    $ret = ['' => '---'];
 
     for ($i = 1; $i <= 12; $i++) {
         $ret[$i] = $i;
@@ -223,7 +223,7 @@ if (isLoggedIn()) {
             _("Environment") . ':',
             'environment',
             resource_list_to_options(
-                $api->environment->list(array('has_hypervisor' => true))
+                $api->environment->list(['has_hypervisor' => true])
             ),
             get_val('environment')
         );
@@ -231,7 +231,7 @@ if (isLoggedIn()) {
             _("Location") . ':',
             'location',
             resource_list_to_options(
-                $api->location->list(array('has_hypervisor' => true))
+                $api->location->list(['has_hypervisor' => true])
             ),
             get_val('location')
         );
@@ -263,7 +263,7 @@ if (isLoggedIn()) {
         ];
 
         $conds = [
-            'year', 'month', 'vps', 'node', 'location', 'environment'
+            'year', 'month', 'vps', 'node', 'location', 'environment',
         ];
 
         if (isAdmin()) {
@@ -362,7 +362,7 @@ if (isLoggedIn()) {
         ];
 
         $conds = [
-            'year', 'month', 'node', 'location', 'environment'
+            'year', 'month', 'node', 'location', 'environment',
         ];
 
         foreach ($conds as $c) {
@@ -465,7 +465,7 @@ if (isLoggedIn()) {
         ];
 
         $conds = [
-            'vps', 'node', 'location', 'environment', 'user'
+            'vps', 'node', 'location', 'environment', 'user',
         ];
 
         foreach ($conds as $c) {

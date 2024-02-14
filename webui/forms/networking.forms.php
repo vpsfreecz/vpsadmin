@@ -17,11 +17,11 @@ function ip_address_list($page)
     $xtpl->form_add_input_pure('text', '40', 'limit', get_val('limit', '25'), '');
     $xtpl->table_tr();
 
-    $versions = array(
+    $versions = [
         0 => 'all',
         4 => '4',
-        6 => '6'
-    );
+        6 => '6',
+    ];
 
     $xtpl->form_add_input(_("Offset") . ':', 'text', '40', 'offset', get_val('offset', '0'), '');
     $xtpl->form_add_select(_("Version") . ':', 'v', $versions, get_val('v', 0));
@@ -57,12 +57,12 @@ function ip_address_list($page)
         return;
     }
 
-    $params = array(
+    $params = [
         'limit' => get_val('limit', 25),
         'offset' => get_val('offset', 0),
         'purpose' => 'vps',
-        'meta' => array('includes' => 'user,vps,network')
-    );
+        'meta' => ['includes' => 'user,vps,network'],
+    ];
 
     if ($_SESSION['is_admin']) {
         if ($_GET['user'] === 'unassigned') {
@@ -198,11 +198,11 @@ function host_ip_address_list($page)
     $xtpl->form_add_input_pure('text', '40', 'limit', get_val('limit', '25'), '');
     $xtpl->table_tr();
 
-    $versions = array(
+    $versions = [
         0 => 'all',
         4 => '4',
-        6 => '6'
-    );
+        6 => '6',
+    ];
 
     $xtpl->form_add_input(_("Offset") . ':', 'text', '40', 'offset', get_val('offset', '0'), '');
     $xtpl->form_add_select(_("Version") . ':', 'v', $versions, get_val('v', 0));
@@ -243,15 +243,15 @@ function host_ip_address_list($page)
         return;
     }
 
-    $params = array(
+    $params = [
         'limit' => get_val('limit', 25),
         'offset' => get_val('offset', 0),
         'purpose' => 'vps',
-        'meta' => array(
+        'meta' => [
             'includes' => 'ip_address__user,ip_address__network_interface__vps,' .
-                          'ip_address__network'
-        )
-    );
+                          'ip_address__network',
+        ],
+    ];
 
     if ($_SESSION['is_admin']) {
         if ($_GET['user'] === 'unassigned') {
@@ -366,7 +366,7 @@ function route_assign_form($id)
 {
     global $xtpl, $api;
 
-    $ip = $api->ip_address->show($id, array('meta' => array('includes' => 'network')));
+    $ip = $api->ip_address->show($id, ['meta' => ['includes' => 'network']]);
 
     $xtpl->table_title(_('Route IP address to a VPS'));
     $xtpl->sbar_add(
@@ -431,7 +431,7 @@ function route_assign_form($id)
             );
 
             $via_addrs = [
-                '' => _('host address from this network will be on ' . $netif->name)
+                '' => _('host address from this network will be on ' . $netif->name),
             ] + $via_addrs;
 
             $xtpl->table_td(
@@ -479,7 +479,7 @@ function route_unassign_form($id)
     global $xtpl, $api;
 
     $ip = $api->ip_address->show($id, ['meta' => [
-        'includes' => 'network,network_interface__vps'
+        'includes' => 'network,network_interface__vps',
     ]]);
 
     $xtpl->table_title(_('Remove route from VPS'));
@@ -559,7 +559,7 @@ function hostaddr_unassign_form($id)
     global $xtpl, $api;
 
     $addr = $api->host_ip_address->show($id, ['meta' => [
-        'includes' => 'ip_address__network,ip_address__network_interface__vps'
+        'includes' => 'ip_address__network,ip_address__network_interface__vps',
     ]]);
     $ip = $addr->ip_address;
 
@@ -613,11 +613,11 @@ function ip_address_assignment_list_form()
     $xtpl->form_add_input(_('Limit') . ':', 'text', '40', 'limit', get_val('limit', '25'), '');
     $xtpl->table_tr();
 
-    $versions = array(
+    $versions = [
         0 => 'all',
         4 => '4',
-        6 => '6'
-    );
+        6 => '6',
+    ];
 
     $xtpl->form_add_input(_("Offset") . ':', 'text', '40', 'offset', get_val('offset', '0'), '');
     $xtpl->form_add_select(_("Version") . ':', 'ip_version', $versions, get_val('ip_version', 0));

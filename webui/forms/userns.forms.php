@@ -66,7 +66,7 @@ function userns_list()
     ];
 
     $filters = [
-        'user', 'block_count', 'size'
+        'user', 'block_count', 'size',
     ];
 
     foreach ($filters as $v) {
@@ -173,11 +173,11 @@ function userns_map_list($userns_id = null)
 
     $params = [
         'limit' => get_val('limit', 25),
-        'meta' => ['includes' => 'user_namespace']
+        'meta' => ['includes' => 'user_namespace'],
     ];
 
     $filters = [
-        'user', 'user_namespace'
+        'user', 'user_namespace',
     ];
 
     foreach ($filters as $v) {

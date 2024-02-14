@@ -41,7 +41,7 @@ if (isAdmin()) {
                 break;
         }
 
-        return array('resource' => $r, 'label' => $label);
+        return ['resource' => $r, 'label' => $label];
     }
 
     $xtpl->title(_("Manage Cluster"));
@@ -51,7 +51,7 @@ if (isAdmin()) {
     $list_dns = false;
     $env_settings = false;
 
-    $server_types = array("node" => "Node", "storage" => "Storage", "mailer" => "Mailer");
+    $server_types = ["node" => "Node", "storage" => "Storage", "mailer" => "Mailer"];
 
     switch($_GET["action"] ?? null) {
         case "vps":
@@ -69,32 +69,32 @@ if (isAdmin()) {
             csrf_check();
 
             $current_cfg = new SystemConfig($api, true);
-            $changes = array();
+            $changes = [];
 
             foreach ($current_cfg as $k => $v) {
-                list($cat, $name) = explode(':', $k);
+                [$cat, $name] = explode(':', $k);
                 $type = $current_cfg->getType($cat, $name);
 
                 if ($type === 'Boolean') {
                     if ($v && !$_POST[$k]) {
-                        $changes[] = array($cat, $name, '0');
+                        $changes[] = [$cat, $name, '0'];
 
                     } elseif (!$v && $_POST[$k]) {
-                        $changes[] = array($cat, $name, '1');
+                        $changes[] = [$cat, $name, '1'];
                     }
 
                 } elseif ($_POST[$k] != $v) {
-                    $changes[] = array($cat, $name, $_POST[$k]);
+                    $changes[] = [$cat, $name, $_POST[$k]];
                 }
             }
 
-            $failed = array();
+            $failed = [];
 
             foreach ($changes as $change) {
                 try {
-                    $api->system_config->update($change[0], $change[1], array(
+                    $api->system_config->update($change[0], $change[1], [
                         'value' => $change[2],
-                    ));
+                    ]);
 
                 } catch (\HaveAPI\Client\Exception\ActionFailed $e) {
                     $failed[] = $change[0] . ':' . $change[1];
@@ -144,12 +144,12 @@ if (isAdmin()) {
             csrf_check();
 
             try {
-                $api->dns_resolver->create(array(
+                $api->dns_resolver->create([
                     'label' => $_POST['dns_label'],
                     'ip_addr' => $_POST['dns_ip'],
                     'is_universal' => isset($_POST['dns_is_universal']),
-                    'location' => $_POST['dns_location']
-                ));
+                    'location' => $_POST['dns_location'],
+                ]);
 
                 notify_user(_("Changes saved"), _("DNS server added."));
                 redirect('?page=cluster&action=dns');
@@ -184,12 +184,12 @@ if (isAdmin()) {
             csrf_check();
 
             try {
-                $api->dns_resolver->update($_GET['id'], array(
+                $api->dns_resolver->update($_GET['id'], [
                     'label' => $_POST['dns_label'],
                     'ip_addr' => $_POST['dns_ip'],
                     'is_universal' => isset($_POST['dns_is_universal']),
-                    'location' => $_POST['dns_location']
-                ));
+                    'location' => $_POST['dns_location'],
+                ]);
 
                 notify_user(_("Changes saved"), _("DNS server updated."));
                 redirect('?page=cluster&action=dns');
@@ -204,7 +204,7 @@ if (isAdmin()) {
                 csrf_check();
 
                 try {
-                    $api->dns_resolver->delete($_GET['id'], array('force' => isset($_POST['force'])));
+                    $api->dns_resolver->delete($_GET['id'], ['force' => isset($_POST['force'])]);
 
                     notify_user(_("Changes saved"), _("DNS server deleted."));
                     redirect('?page=cluster&action=dns');
@@ -265,15 +265,15 @@ if (isAdmin()) {
                 csrf_check();
 
                 try {
-                    $api->environment->update($_GET['id'], array(
+                    $api->environment->update($_GET['id'], [
                         'label' => $_POST['label'],
                         'domain' => $_POST['domain'],
                         'can_create_vps' => isset($_POST['can_create_vps']),
                         'can_destroy_vps' => isset($_POST['can_destroy_vps']),
                         'vps_lifetime' => $_POST['vps_lifetime'],
                         'max_vps_count' => $_POST['max_vps_count'],
-                        'user_ip_ownership' => isset($_POST['user_ip_ownership'])
-                    ));
+                        'user_ip_ownership' => isset($_POST['user_ip_ownership']),
+                    ]);
 
                     notify_user(_("Environment updated"), '');
                     redirect('?page=cluster&action=environments');
@@ -321,13 +321,13 @@ if (isAdmin()) {
             csrf_check();
 
             try {
-                $api->location->create(array(
+                $api->location->create([
                     'label' => $_POST['location_label'],
                     'type' => $_POST['type'],
                     'has_ipv6' => (bool)$_POST['has_ipv6'],
                     'remote_console_server' => $_POST['remote_console_server'],
-                    'domain' => $_POST['domain']
-                ));
+                    'domain' => $_POST['domain'],
+                ]);
 
                 notify_user(_("Location created"), '');
                 redirect('?page=cluster&action=locations');
@@ -363,13 +363,13 @@ if (isAdmin()) {
             csrf_check();
 
             try {
-                $api->location->update($_GET['id'], array(
+                $api->location->update($_GET['id'], [
                     'label' => $_POST['location_label'],
                     'type' => $_POST['type'],
                     'has_ipv6' => (bool)$_POST['has_ipv6'],
                     'remote_console_server' => $_POST['remote_console_server'],
-                    'domain' => $_POST['domain']
-                ));
+                    'domain' => $_POST['domain'],
+                ]);
 
                 notify_user(_("Changes saved"), _("Location label saved."));
                 redirect('?page=cluster&action=locations');
@@ -632,11 +632,11 @@ if (isAdmin()) {
             }
 
             $addrs = preg_split("/(\r\n|\n|\r)/", trim($_POST['ip_addresses']));
-            $res = array();
-            $params = array(
+            $res = [];
+            $params = [
                 'addr' => $t,
                 'network' => $_POST['network'],
-            );
+            ];
 
             if ($_POST['user']) {
                 $params['user'] = $_POST['user'];
@@ -761,7 +761,7 @@ if (isAdmin()) {
                 csrf_check();
 
                 try {
-                    $api->os_template->create(array(
+                    $api->os_template->create([
                         'label' => $_POST['label'],
                         'info' => $_POST['info'],
                         'enabled' => isset($_POST['enabled']),
@@ -774,7 +774,7 @@ if (isAdmin()) {
                         'arch' => $_POST['arch'],
                         'distribution' => $_POST['distribution'],
                         'version' => $_POST['version'],
-                    ));
+                    ]);
 
                     notify_user(_("OS template registered"), _("The OS template was successfully registered."));
                     redirect('?page=cluster&action=templates');
@@ -891,7 +891,7 @@ if (isAdmin()) {
                 }
 
                 try {
-                    $params = array('lock' => $_GET['lock'] ? true : false);
+                    $params = ['lock' => $_GET['lock'] ? true : false];
 
                     if ($_GET['lock']) {
                         $params['reason'] = $_POST['reason'];
@@ -918,10 +918,10 @@ if (isAdmin()) {
             csrf_check();
 
             try {
-                $api->news_log->create(array(
+                $api->news_log->create([
                     'published_at' => date('c', strtotime($_POST['published_at'])),
                     'message' => $_POST['message'],
-                ));
+                ]);
 
                 notify_user(_("News message added"), _("Message successfully saved."));
                 redirect('?page=cluster&action=eventlog');
@@ -940,10 +940,10 @@ if (isAdmin()) {
             csrf_check();
 
             try {
-                $api->news_log->update($_GET['id'], array(
+                $api->news_log->update($_GET['id'], [
                     'published_at' => date('c', strtotime($_POST['published_at'])),
                     'message' => $_POST['message'],
-                ));
+                ]);
 
                 notify_user(_("Log message updated"), _("Message successfully updated."));
                 redirect('?page=cluster&action=eventlog');
@@ -1047,11 +1047,11 @@ if (isAdmin()) {
         $templates = $api->os_template->list();
 
         foreach($templates as $t) {
-            $usage = $api->vps->list(array(
+            $usage = $api->vps->list([
                 'os_template' => $t->id,
                 'limit' => 0,
-                'meta' => array('count' => true)
-            ))->getTotalCount();
+                'meta' => ['count' => true],
+            ])->getTotalCount();
 
             $xtpl->table_td($t->label);
             $xtpl->table_td($t->name);
@@ -1089,14 +1089,14 @@ if (isAdmin()) {
         $xtpl->table_add_category('');
         // 	$xtpl->table_add_category('');
 
-        $locations = $api->location->list(array('meta' => array('includes' => 'environment')));
+        $locations = $api->location->list(['meta' => ['includes' => 'environment']]);
 
         foreach($locations as $loc) {
             $nodes = $api->node->list(
-                array(
+                [
                 'location' => $loc->id,
                 'limit' => 0,
-                'meta' => array('count' => true))
+                'meta' => ['count' => true]]
             );
 
             $xtpl->table_td($loc->id);
@@ -1141,9 +1141,9 @@ if (isAdmin()) {
         $xtpl->table_add_category('');
         $xtpl->table_add_category('');
 
-        $nameservers = $api->dns_resolver->list(array(
-            'meta' => array('includes' => 'location')
-        ));
+        $nameservers = $api->dns_resolver->list([
+            'meta' => ['includes' => 'location'],
+        ]);
 
         foreach($nameservers as $ns) {
             $xtpl->table_td($ns->id);

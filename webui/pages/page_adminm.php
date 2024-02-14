@@ -119,11 +119,11 @@ function print_editm($u)
     }
 
     if (isAdmin()) {
-        $vps_count = $api->vps->list(array(
+        $vps_count = $api->vps->list([
             'user' => $u->id,
             'limit' => 0,
-            'meta' => array('count' => true)
-        ))->getTotalCount();
+            'meta' => ['count' => true],
+        ])->getTotalCount();
 
         $xtpl->table_td(_("VPS count") . ':');
         $xtpl->table_td("<a href='?page=adminvps&action=list&user=" . $u->id . "'>" . $vps_count . "</a>");
@@ -245,7 +245,7 @@ function print_editm($u)
     $xtpl->form_add_input(_("Postal address") . ':', 'text', '30', 'address', post_val('address', $u->address), ' ');
 
     if(!isAdmin()) {
-        $xtpl->form_add_input(_("Reason for change") . ':', 'text', '50', 'change_reason', isset($_POST['change_reason']) ? $_POST['change_reason'] : null);
+        $xtpl->form_add_input(_("Reason for change") . ':', 'text', '50', 'change_reason', $_POST['change_reason'] ?? null);
         $xtpl->table_td(_("Request for change will be sent to administrators for approval." .
                           "Changes will not take effect immediately. You will be informed about the result."), false, false, 3);
         $xtpl->table_tr();
@@ -339,7 +339,7 @@ function print_deletem($u)
 
     $vpses = '';
 
-    foreach ($api->vps->list(array('user' => $u->id)) as $vps) {
+    foreach ($api->vps->list(['user' => $u->id]) as $vps) {
         $vpses .= '<a href="?page=adminvps&action=info&veid=' . $vps->id . '">#' . $vps->id . ' - ' . $vps->hostname . '</a><br>';
     }
 
@@ -464,16 +464,16 @@ function list_cluster_resources()
 {
     global $xtpl, $api;
 
-    $convert = array('memory', 'swap', 'diskspace');
+    $convert = ['memory', 'swap', 'diskspace'];
 
     $xtpl->title(_('User') . ' <a href="?page=adminm&action=edit&id=' . $_GET['id'] . '">#' . $_GET['id'] . '</a>: ' . _('Cluster resources'));
 
-    $resources = $api->user($_GET['id'])->cluster_resource->list(array('meta' => array('includes' => 'environment,cluster_resource')));
-    $by_env = array();
+    $resources = $api->user($_GET['id'])->cluster_resource->list(['meta' => ['includes' => 'environment,cluster_resource']]);
+    $by_env = [];
 
     foreach ($resources as $r) {
         if (!isset($by_env[$r->environment_id])) {
-            $by_env[$r->environment_id] = array();
+            $by_env[$r->environment_id] = [];
         }
 
         $by_env[$r->environment_id][] = $r;
@@ -528,7 +528,7 @@ function request_approve()
         );
 
     } else {
-        $params = array('action' => 'approve');
+        $params = ['action' => 'approve'];
     }
 
     try {
@@ -558,7 +558,7 @@ function request_deny()
         );
 
     } else {
-        $params = array('action' => 'deny');
+        $params = ['action' => 'deny'];
     }
 
     try {
@@ -588,7 +588,7 @@ function request_ignore()
         );
 
     } else {
-        $params = array('action' => 'ignore');
+        $params = ['action' => 'ignore'];
     }
 
     try {
@@ -618,7 +618,7 @@ function request_correction()
         );
 
     } else {
-        $params = array('action' => 'request_correction');
+        $params = ['action' => 'request_correction'];
     }
 
     try {
@@ -690,16 +690,16 @@ function list_members()
         $xtpl->table_add_category('');
 
         if (isAdmin()) {
-            $params = array(
+            $params = [
                 'limit' => get_val('limit', 25),
                 'offset' => get_val('offset', 0),
-                'meta' => array('count' => true)
-            );
+                'meta' => ['count' => true],
+            ];
 
-            $filters = array(
+            $filters = [
                 'login', 'full_name', 'email', 'address', 'level', 'info', 'monthly_payment',
-                'mailer_enabled', 'object_state'
-            );
+                'mailer_enabled', 'object_state',
+            ];
 
             foreach ($filters as $f) {
                 if ($_GET[$f]) {
@@ -710,7 +710,7 @@ function list_members()
             $users = $api->user->list($params);
 
         } else {
-            $users = array($api->user->current());
+            $users = [$api->user->current()];
         }
 
         foreach ($users as $u) {
@@ -729,11 +729,11 @@ function list_members()
                 $xtpl->table_td($u->login);
             }
 
-            $vps_count = $api->vps->list(array(
+            $vps_count = $api->vps->list([
                 'user' => $u->id,
                 'limit' => 0,
-                'meta' => array('count' => true)
-            ))->getTotalCount();
+                'meta' => ['count' => true],
+            ])->getTotalCount();
 
             $xtpl->table_td('<a href="?page=adminvps&action=list&user=' . $u->id . '">[ ' . $vps_count . ' ]</a>');
 
@@ -811,7 +811,7 @@ function payments_overview()
     $paidCnt = 0;
     $unpaidCnt = 0;
     $expiringCnt = 0;
-    $payments = array();
+    $payments = [];
 
     $thisMonth = mktime(0, 0, 0, date('n'), 1, date('Y'));
     $nextMonth = strtotime('+1 month', $thisMonth);
@@ -953,7 +953,7 @@ if ($_SESSION["logged_in"]) {
                 }
 
                 try {
-                    $user = $api->user->create(array(
+                    $user = $api->user->create([
                         'login' => $_POST['m_nick'],
                         'password' => $_POST['m_pass'],
                         'full_name' => $_POST['m_name'],
@@ -962,8 +962,8 @@ if ($_SESSION["logged_in"]) {
                         'level' => $_POST['m_level'],
                         'info' => $_POST['m_info'],
                         'monthly_payment' => $_POST['m_monthly_payment'],
-                        'mailer_enabled' => $_POST['m_mailer_enable']
-                    ));
+                        'mailer_enabled' => $_POST['m_mailer_enable'],
+                    ]);
 
                     notify_user(_('User created'), _('The user was successfully created.'));
                     redirect('?page=adminm&action=edit&id=' . $user->id);
@@ -1002,9 +1002,9 @@ if ($_SESSION["logged_in"]) {
 
             if (isAdmin() && ($u = $api->user->find($_GET["id"]))) {
                 try {
-                    $u->delete(array(
+                    $u->delete([
                         'object_state' => $_GET['object_state'],
-                    ));
+                    ]);
 
                     notify_user(_("User deleted"), _('The user was successfully deleted.'));
                     redirect('?page=adminm', 350);
@@ -1040,9 +1040,9 @@ if ($_SESSION["logged_in"]) {
                 $user->update($params);
 
                 if (isAdmin() && $user->monthly_payment != $_POST['m_monthly_payment']) {
-                    $api->user_account->update($user->id, array(
+                    $api->user_account->update($user->id, [
                         'monthly_payment' => $_POST['m_monthly_payment'],
-                    ));
+                    ]);
                 }
 
                 notify_user(_('User updated'), _('The user was successfully updated.'));
@@ -1065,7 +1065,7 @@ if ($_SESSION["logged_in"]) {
                 csrf_check();
 
                 try {
-                    $params = array('new_password' => $_POST['new_password']);
+                    $params = ['new_password' => $_POST['new_password']];
 
                     if (!isAdmin()) {
                         $params['password'] = $_POST['password'];
@@ -1239,11 +1239,11 @@ if ($_SESSION["logged_in"]) {
 
             if(isAdmin()) {
                 try {
-                    $u->update(array(
+                    $u->update([
                         'full_name' => $_POST['full_name'],
                         'email' => $_POST['email'],
                         'address' => $_POST['address'],
-                    ));
+                    ]);
 
                     notify_user(_("Changes saved"), _('User personal information were updated.'));
                     redirect('?page=adminm&action=edit&id=' . $u->id);
@@ -1255,12 +1255,12 @@ if ($_SESSION["logged_in"]) {
 
             } elseif ($api->user_request->change) {
                 try {
-                    $req = $api->user_request->change->create(array(
+                    $req = $api->user_request->change->create([
                         'full_name' => $_POST['full_name'],
                         'email' => $_POST['email'],
                         'address' => $_POST['address'],
                         'change_reason' => $_POST['change_reason'],
-                    ));
+                    ]);
 
                     notify_user(
                         _("Request") . ' #' . $req->id . ' ' . _("was accepted"),
@@ -1281,9 +1281,9 @@ if ($_SESSION["logged_in"]) {
 
             try {
                 foreach ($_POST['to'] as $role => $emails) {
-                    $api->user($_GET['id'])->mail_role_recipient($role)->update(array(
+                    $api->user($_GET['id'])->mail_role_recipient($role)->update([
                         'to' => $emails,
-                    ));
+                    ]);
                 }
 
                 notify_user(_('Role e-mails updated'), _('The changes were successfully saved.'));
@@ -1303,10 +1303,10 @@ if ($_SESSION["logged_in"]) {
 
                 try {
                     foreach ($_POST['to'] as $tpl => $emails) {
-                        $api->user($_GET['id'])->mail_template_recipient($tpl)->update(array(
+                        $api->user($_GET['id'])->mail_template_recipient($tpl)->update([
                             'to' => $emails,
                             'enabled' => $_POST['disable'][$tpl] === '1' ? false : true,
-                        ));
+                        ]);
                     }
 
                     notify_user(_('Template e-mails updated'), _('The changes were successfully saved.'));
@@ -1344,17 +1344,17 @@ if ($_SESSION["logged_in"]) {
 
             try {
                 if (isset($_POST['paid_until'])) {
-                    $api->user_account->update($_GET['id'], array(
+                    $api->user_account->update($_GET['id'], [
                         'paid_until' => $_POST['paid_until'],
-                    ));
+                    ]);
 
                     notify_user(_("Paid until date set"), '');
 
                 } elseif (isset($_POST['amount'])) {
-                    $api->user_payment->create(array(
+                    $api->user_payment->create([
                         'user' => $_GET['id'],
                         'amount' => $_POST['amount'],
-                    ));
+                    ]);
 
                     notify_user(_("Payment accepted"), '');
                 }
@@ -1414,10 +1414,10 @@ if ($_SESSION["logged_in"]) {
             csrf_check();
 
             try {
-                $api->user_payment->create(array(
+                $api->user_payment->create([
                     'user' => $_POST['user'],
                     'incoming_payment' => $_GET['id'],
-                ));
+                ]);
 
                 notify_user(_("Payment assigned"), '');
                 redirect('?page=adminm&action=payset&id=' . $_POST['user']);
@@ -1458,11 +1458,11 @@ if ($_SESSION["logged_in"]) {
                 csrf_check();
 
                 try {
-                    $api->user($_GET['id'])->public_key->create(array(
+                    $api->user($_GET['id'])->public_key->create([
                         'label' => $_POST['label'],
                         'key' => trim($_POST['key']),
                         'auto_add' => isset($_POST['auto_add']),
-                    ));
+                    ]);
 
                     notify_user(_('Public key saved'), '');
                     redirect('?page=adminm&section=members&action=pubkeys&id=' . $_GET['id']);
@@ -1483,11 +1483,11 @@ if ($_SESSION["logged_in"]) {
                 csrf_check();
 
                 try {
-                    $api->user($_GET['id'])->public_key($_GET['pubkey_id'])->update(array(
+                    $api->user($_GET['id'])->public_key($_GET['pubkey_id'])->update([
                         'label' => $_POST['label'],
                         'key' => trim($_POST['key']),
                         'auto_add' => isset($_POST['auto_add']),
-                    ));
+                    ]);
 
                     notify_user(_('Public key updated'), '');
                     redirect('?page=adminm&section=members&action=pubkeys&id=' . $_GET['id']);
@@ -1529,7 +1529,7 @@ if ($_SESSION["logged_in"]) {
 
                 try {
                     $api->user_session->update($_GET['user_session'], [
-                        'label' => $_POST['label']
+                        'label' => $_POST['label'],
                     ]);
 
                     notify_user(_('User session updated'), '');
@@ -1657,13 +1657,13 @@ if ($_SESSION["logged_in"]) {
                 csrf_check();
 
                 try {
-                    $api->user($_GET['id'])->environment_config($_GET['cfg'])->update(array(
+                    $api->user($_GET['id'])->environment_config($_GET['cfg'])->update([
                         'can_create_vps' => isset($_POST['can_create_vps']),
                         'can_destroy_vps' => isset($_POST['can_destroy_vps']),
                         'vps_lifetime' => $_POST['vps_lifetime'],
                         'max_vps_count' => $_POST['max_vps_count'],
-                        'default' => isset($_POST['default'])
-                    ));
+                        'default' => isset($_POST['default']),
+                    ]);
 
                     notify_user(_('Changes saved'), _('Environment configs was successfully updated.'));
                     redirect('?page=adminm&action=env_cfg&id=' . $_GET['id']);

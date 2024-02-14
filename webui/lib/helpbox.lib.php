@@ -9,11 +9,11 @@ function get_helpbox($page = null, $action = null)
     }
 
     if (!$page) {
-        $page = isset($_GET["page"]) ? $_GET["page"] : null;
+        $page = $_GET["page"] ?? null;
     }
 
     if (!$action) {
-        $action = isset($_GET["action"]) ? $_GET["action"] : null;
+        $action = $_GET["action"] ?? null;
     }
 
     $boxes = $api->help_box->list([

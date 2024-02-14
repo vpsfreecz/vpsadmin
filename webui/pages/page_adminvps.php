@@ -37,7 +37,7 @@ function vps_run_redirect_path($veid)
 
 if (isset($_SESSION["logged_in"]) && $_SESSION["logged_in"]) {
 
-    $_GET["run"] = $_GET["run"] ?? false;
+    $_GET["run"] ??= false;
 
     if ($_GET["run"] == 'stop') {
         csrf_check();
@@ -204,7 +204,7 @@ if (isset($_SESSION["logged_in"]) && $_SESSION["logged_in"]) {
             try {
                 csrf_check();
                 $api->vps->destroy($_GET['veid'], [
-                    'lazy' => $_POST['lazy_delete'] ? true : false
+                    'lazy' => $_POST['lazy_delete'] ? true : false,
                 ]);
 
                 notify_user(
@@ -224,12 +224,12 @@ if (isset($_SESSION["logged_in"]) && $_SESSION["logged_in"]) {
         case 'passwd':
             try {
                 csrf_check();
-                $ret = $api->vps->passwd($_GET["veid"], array(
-                    'type' => $_POST['password_type'] == 'simple' ? 'simple' : 'secure'
-                ));
+                $ret = $api->vps->passwd($_GET["veid"], [
+                    'type' => $_POST['password_type'] == 'simple' ? 'simple' : 'secure',
+                ]);
 
                 if (!$_SESSION['vps_password']) {
-                    $_SESSION['vps_password'] = array();
+                    $_SESSION['vps_password'] = [];
                 }
 
                 $_SESSION["vps_password"][(int) $_GET['veid']] = $ret['password'];
@@ -250,9 +250,9 @@ if (isset($_SESSION["logged_in"]) && $_SESSION["logged_in"]) {
             try {
                 csrf_check();
 
-                $ret = $api->vps->deploy_public_key($_GET["veid"], array(
+                $ret = $api->vps->deploy_public_key($_GET["veid"], [
                     'public_key' => $_POST['public_key'],
-                ));
+                ]);
 
                 notify_user(_("Public key deployment planned"), '');
                 redirect('?page=adminvps&action=info&veid=' . $_GET["veid"]);
@@ -268,7 +268,7 @@ if (isset($_SESSION["logged_in"]) && $_SESSION["logged_in"]) {
             try {
                 csrf_check();
 
-                $params = array();
+                $params = [];
 
                 if ($_POST['manage_hostname'] == 'manual') {
                     $params['manage_hostname'] = false;
@@ -308,8 +308,8 @@ if (isset($_SESSION["logged_in"]) && $_SESSION["logged_in"]) {
                 csrf_check();
 
                 try {
-                    $vps_resources = array('memory', 'cpu', 'cpu_limit', 'swap');
-                    $params = array();
+                    $vps_resources = ['memory', 'cpu', 'cpu_limit', 'swap'];
+                    $params = [];
 
                     foreach ($vps_resources as $r) {
                         if (isset($_POST[$r])) {
@@ -614,9 +614,9 @@ if (isset($_SESSION["logged_in"]) && $_SESSION["logged_in"]) {
                 csrf_check();
 
                 try {
-                    $api->vps($_GET['veid'])->reinstall(array(
+                    $api->vps($_GET['veid'])->reinstall([
                         'os_template' => $_POST['os_template'],
-                    ));
+                    ]);
 
                     notify_user(
                         _("Reinstallation of VPS") . " {$_GET["veid"]} " . _("planned"),
@@ -633,9 +633,9 @@ if (isset($_SESSION["logged_in"]) && $_SESSION["logged_in"]) {
                 csrf_check();
 
                 try {
-                    $api->vps($_GET['veid'])->update(array(
-                        'os_template' => $_POST['os_template']
-                    ));
+                    $api->vps($_GET['veid'])->update([
+                        'os_template' => $_POST['os_template'],
+                    ]);
 
                     notify_user(_("Distribution information updated"), '');
                     redirect('?page=adminvps&action=info&veid=' . $_GET["veid"]);
@@ -703,7 +703,7 @@ if (isset($_SESSION["logged_in"]) && $_SESSION["logged_in"]) {
                 try {
                     $resource = $api->vps($_GET['veid'])->feature;
                     $features = $resource->list();
-                    $params = array();
+                    $params = [];
 
                     foreach ($features as $f) {
                         $params[$f->name] = isset($_POST[$f->name]);
@@ -800,19 +800,19 @@ if (isset($_SESSION["logged_in"]) && $_SESSION["logged_in"]) {
                 $maint = $api->vps($_GET['veid'])->maintenance_window;
 
                 if ($_POST['unified']) {
-                    $maint->update_all(array(
+                    $maint->update_all([
                         'is_open' => true,
                         'opens_at' => $_POST['unified_opens_at'] * 60,
                         'closes_at' => $_POST['unified_closes_at'] * 60,
-                    ));
+                    ]);
 
                 } else {
                     for ($i = 0 ; $i < 7; $i++) {
-                        $maint->update($i, array(
+                        $maint->update($i, [
                             'is_open' => array_search("$i", $_POST['is_open']) !== false,
                             'opens_at' => $_POST['opens_at'][$i] * 60,
                             'closes_at' => $_POST['closes_at'][$i] * 60,
-                        ));
+                        ]);
                     }
                 }
 
@@ -892,7 +892,7 @@ if (isset($_SESSION["logged_in"]) && $_SESSION["logged_in"]) {
             $vps = $api->vps->find($_GET['veid']);
 
             try {
-                $params = array('meta' => array('includes' => 'node'));
+                $params = ['meta' => ['includes' => 'node']];
 
                 vps_swap_preview_form(
                     $api->vps->find($_GET['veid'], $params),
@@ -953,8 +953,8 @@ if (isset($_SESSION["logged_in"]) && $_SESSION["logged_in"]) {
 
         $vps = $api->vps->find($veid, [
             'meta' => [
-                'includes' => 'node__location__environment,user,os_template,user_namespace_map'
-            ]
+                'includes' => 'node__location__environment,user,os_template,user_namespace_map',
+            ],
         ]);
 
         vps_details_suite($vps);
@@ -1291,7 +1291,7 @@ if (isset($_SESSION["logged_in"]) && $_SESSION["logged_in"]) {
             $xtpl->form_add_select_pure(
                 'nameserver',
                 resource_list_to_options(
-                    $api->dns_resolver->list(array('vps' => $vps->id)),
+                    $api->dns_resolver->list(['vps' => $vps->id]),
                     'id',
                     'label',
                     false
@@ -1395,13 +1395,13 @@ if (isset($_SESSION["logged_in"]) && $_SESSION["logged_in"]) {
             $xtpl->form_create('?page=adminvps&action=resources&veid=' . $vps->id, 'post');
 
             $params = $api->vps->update->getParameters('input');
-            $vps_resources = array('memory', 'cpu', 'swap');
+            $vps_resources = ['memory', 'cpu', 'swap'];
             $user_resources = $vps->user->cluster_resource->list(
-                array(
+                [
                 'environment' => $vps->node->location->environment_id,
-                'meta' => array('includes' => 'environment,cluster_resource'))
+                'meta' => ['includes' => 'environment,cluster_resource']]
             );
-            $resource_map = array();
+            $resource_map = [];
 
             foreach ($user_resources as $r) {
                 $resource_map[ $r->cluster_resource->name ] = $r;
@@ -1596,8 +1596,8 @@ if (isset($_SESSION["logged_in"]) && $_SESSION["logged_in"]) {
             $xtpl->form_create('?page=adminvps&action=maintenance_windows&veid=' . $vps->id, 'post');
 
             $windows = $vps->maintenance_window->list();
-            $days = array('Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat');
-            $hours = array();
+            $days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+            $hours = [];
 
             for ($i = 0; $i < 25; $i++) {
                 $hours[] = sprintf("%02d:00", $i);

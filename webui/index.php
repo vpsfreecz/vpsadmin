@@ -109,7 +109,7 @@ try {
 
     $config = new SystemConfig($api);
 
-    $_GET["page"] = isset($_GET["page"]) ? $_GET["page"] : false;
+    $_GET["page"] ??= false;
 
     if (($_GET["page"] != "login") &&
                     ($_GET["page"] != "lang") &&
