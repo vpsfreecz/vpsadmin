@@ -25,11 +25,11 @@ $return_url = urlencode($_SERVER['REQUEST_URI']);
 $xtpl->sbar_add(_('Maintenances and Outages'), '?page=outage&action=list');
 
 if (isLoggedIn()) {
-	if ($api->monitored_event)
-		$xtpl->sbar_add(_("Monitoring"), '?page=monitoring&action=list');
+    if ($api->monitored_event)
+        $xtpl->sbar_add(_("Monitoring"), '?page=monitoring&action=list');
 
-	$xtpl->sbar_add(_("OOM Reports"), '?page=oom_reports&action=list');
-	$xtpl->sbar_add(_("Incident Reports"), '?page=incidents&action=list&return='.$return_url);
+    $xtpl->sbar_add(_("OOM Reports"), '?page=oom_reports&action=list');
+    $xtpl->sbar_add(_("Incident Reports"), '?page=incidents&action=list&return='.$return_url);
 }
 
 $xtpl->sbar_out(_('Overview'));
@@ -47,25 +47,25 @@ $xtpl->table_add_category('');
 $noticeboard = $config->get("webui", "noticeboard");
 
 if ($noticeboard) {
-	$xtpl->table_td(nl2br($noticeboard), false, false, 2);
-	$xtpl->table_tr();
+    $xtpl->table_td(nl2br($noticeboard), false, false, 2);
+    $xtpl->table_tr();
 }
 
 if ($api->news_log) {
-	foreach ($api->news_log->list(array('limit' => 5)) as $news) {
-		$xtpl->table_td('['.tolocaltz($news->published_at, "Y-m-d H:i").']');
-		$xtpl->table_td($news->message);
-		$xtpl->table_tr();
-	}
+    foreach ($api->news_log->list(array('limit' => 5)) as $news) {
+        $xtpl->table_td('['.tolocaltz($news->published_at, "Y-m-d H:i").']');
+        $xtpl->table_td($news->message);
+        $xtpl->table_tr();
+    }
 
-	$xtpl->table_td('<a href="?page=log">'._("View all").'</a>', false, false, '2');
-	$xtpl->table_tr();
+    $xtpl->table_td('<a href="?page=log">'._("View all").'</a>', false, false, '2');
+    $xtpl->table_tr();
 }
 
 $xtpl->table_out("notice_board");
 
 if ($api->outage) {
-	outage_list_recent();
+    outage_list_recent();
 }
 
 $xtpl->table_title(_("Cluster statistics"));
@@ -100,78 +100,78 @@ $nodes = $api->node->public_status();
 $munin = new Munin($config);
 
 foreach ($nodes as $node) {
-	if ($last_location != 0 && $last_location != $node->location_id) {
-		$xtpl->table_tr(true);
-		$xtpl->table_td('', '#5EAFFF; color:#FFF; font-weight:bold;');
-		$xtpl->table_td(_("Node"), '#5EAFFF; color:#FFF; font-weight:bold;');
-		$xtpl->table_td(_("Storage"), '#5EAFFF; color:#FFF; font-weight:bold;');
-		$xtpl->table_td(_("VPS"), '#5EAFFF; color:#FFF; font-weight:bold;');
-		$xtpl->table_td(_("CPU"), '#5EAFFF; color:#FFF; font-weight:bold;');
-		$xtpl->table_td(_("Kernel"), '#5EAFFF; color:#FFF; font-weight:bold;');
-		$xtpl->table_td(_("cgroups").' [<a style="color: #ffffff;" href="https://kb.vpsfree.org/manuals/vps/cgroups" target="_blank" title="'._('Read more about cgroups in KB').'">?</a>]', '#5EAFFF; color:#FFF; font-weight:bold;');
-		$xtpl->table_tr(true);
-	}
+    if ($last_location != 0 && $last_location != $node->location_id) {
+        $xtpl->table_tr(true);
+        $xtpl->table_td('', '#5EAFFF; color:#FFF; font-weight:bold;');
+        $xtpl->table_td(_("Node"), '#5EAFFF; color:#FFF; font-weight:bold;');
+        $xtpl->table_td(_("Storage"), '#5EAFFF; color:#FFF; font-weight:bold;');
+        $xtpl->table_td(_("VPS"), '#5EAFFF; color:#FFF; font-weight:bold;');
+        $xtpl->table_td(_("CPU"), '#5EAFFF; color:#FFF; font-weight:bold;');
+        $xtpl->table_td(_("Kernel"), '#5EAFFF; color:#FFF; font-weight:bold;');
+        $xtpl->table_td(_("cgroups").' [<a style="color: #ffffff;" href="https://kb.vpsfree.org/manuals/vps/cgroups" target="_blank" title="'._('Read more about cgroups in KB').'">?</a>]', '#5EAFFF; color:#FFF; font-weight:bold;');
+        $xtpl->table_tr(true);
+    }
 
-	$last_location = $node->location_id;
+    $last_location = $node->location_id;
 
-	$icons = "";
-	$last_report = null;
-	$last_update = null;
+    $icons = "";
+    $last_report = null;
+    $last_update = null;
 
-	if (!is_null($node->last_report)) {
-		$last_report = strtotime($node->last_report);
-		$last_update = date('Y-m-d H:i:s', $last_report).' ('.date('i:s', (time() - $last_report)).' ago)';
-	}
+    if (!is_null($node->last_report)) {
+        $last_report = strtotime($node->last_report);
+        $last_update = date('Y-m-d H:i:s', $last_report).' ('.date('i:s', (time() - $last_report)).' ago)';
+    }
 
-	if($node->maintenance_lock != 'no') {
-		$icons .= '<img title="'._("The server is currently under maintenance").': '.htmlspecialchars($node->maintenance_lock_reason).'" src="template/icons/maintenance_mode.png">';
+    if($node->maintenance_lock != 'no') {
+        $icons .= '<img title="'._("The server is currently under maintenance").': '.htmlspecialchars($node->maintenance_lock_reason).'" src="template/icons/maintenance_mode.png">';
 
-	} elseif (is_null($last_report) || (time() - $last_report) > 150) {
+    } elseif (is_null($last_report) || (time() - $last_report) > 150) {
 
-		$icons .= '<img title="'._("The server is not responding")
-					 . ', last update: ' . ($last_update ?? _('never'))
-					 . '" src="template/icons/error.png"/>';
-	} else {
+        $icons .= '<img title="'._("The server is not responding")
+                     . ', last update: ' . ($last_update ?? _('never'))
+                     . '" src="template/icons/error.png"/>';
+    } else {
 
-		$icons .= '<img title="'._("The server is online")
-					 . ', last update: ' . $last_update
-					 . '" src="template/icons/server_online.png"/>';
+        $icons .= '<img title="'._("The server is online")
+                     . ', last update: ' . $last_update
+                     . '" src="template/icons/server_online.png"/>';
 
-	}
+    }
 
-	$xtpl->table_td($icons);
-	$xtpl->table_td((isLoggedIn() ? node_link($node, $node->name) : $node->name));
+    $xtpl->table_td($icons);
+    $xtpl->table_td((isLoggedIn() ? node_link($node, $node->name) : $node->name));
 
-	if ($node->pool_scan == 'scrub') {
-		$xtpl->table_td(_('scrub, ').round($node->pool_scan_percent, 1).'&nbsp;%');
-	} elseif ($node->pool_scan == 'resilver') {
-		$xtpl->table_td(_('resilver, ').round($node->pool_scan_percent, 1).'&nbsp;%');
-	} else {
-		$xtpl->table_td($node->pool_state);
-	}
+    if ($node->pool_scan == 'scrub') {
+        $xtpl->table_td(_('scrub, ').round($node->pool_scan_percent, 1).'&nbsp;%');
+    } elseif ($node->pool_scan == 'resilver') {
+        $xtpl->table_td(_('resilver, ').round($node->pool_scan_percent, 1).'&nbsp;%');
+    } else {
+        $xtpl->table_td($node->pool_state);
+    }
 
-	$xtpl->table_td($node->vps_count, false, true);
+    $xtpl->table_td($node->vps_count, false, true);
 
-	if ($node->cpu_idle === null) {
-		$xtpl->table_td('---', false, true);
-	} else {
-		$xtpl->table_td(
-			$munin->linkHostPath(sprintf('%.2f %%', 100.0 - $node->cpu_idle), $node->fqdn, '#system'),
-			false, true
-		);
-	}
+    if ($node->cpu_idle === null) {
+        $xtpl->table_td('---', false, true);
+    } else {
+        $xtpl->table_td(
+            $munin->linkHostPath(sprintf('%.2f %%', 100.0 - $node->cpu_idle), $node->fqdn, '#system'),
+            false, true
+        );
+    }
 
-	$xtpl->table_td(
-		kernel_version($node->kernel),
-		false, true
-	);
+    $xtpl->table_td(
+        kernel_version($node->kernel),
+        false, true
+    );
 
-	$xtpl->table_td(
-		cgroup_version($node->cgroup_version),
-		false, true
-	);
+    $xtpl->table_td(
+        cgroup_version($node->cgroup_version),
+        false, true
+    );
 
-	$xtpl->table_tr();
+    $xtpl->table_tr();
 }
 
 $xtpl->table_out();

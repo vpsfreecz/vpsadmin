@@ -11,9 +11,9 @@ $cfg_transactions['per_page'] = 25;
 $cfg_transactions['max_offset_listing'] = 6;
 
 /********************************************************
-	change this, if you want to have table header for:
-	 'server' - each server
-	 '' - only one heading on vpsmanagement page
+    change this, if you want to have table header for:
+     'server' - each server
+     '' - only one heading on vpsmanagement page
 ********************************************************/
 $cfg_adminvps['table_heading'] = '';
 

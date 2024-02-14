@@ -23,54 +23,54 @@
 
 // Redirect to OAuth2 authorization server
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && $_GET["action"] == 'login') {
-	setupOAuth2ForLogin();
-	$api->getAuthenticationProvider()->requestAuthorizationCode();
-	exit;
+    setupOAuth2ForLogin();
+    $api->getAuthenticationProvider()->requestAuthorizationCode();
+    exit;
 }
 
 // Callback from the OAuth2 authorization server
 if ($_SERVER['REQUEST_METHOD'] === 'GET' && $_GET["action"] == 'callback') {
-	if (isset($_GET['code'])) {
-		setupOAuth2ForLogin();
-		$provider = $api->getAuthenticationProvider();
+    if (isset($_GET['code'])) {
+        setupOAuth2ForLogin();
+        $provider = $api->getAuthenticationProvider();
 
-		try {
-			$provider->requestAccessToken();
-			loginUser($_SESSION['access_url']);
-		} catch (Exception $e) {
-			$xtpl->perex(
-				_('Authentication error'),
-				_('vpsAdmin was unable to obtain access token from the authorization server, please contact support if the error persists.')
-			);
-		}
+        try {
+            $provider->requestAccessToken();
+            loginUser($_SESSION['access_url']);
+        } catch (Exception $e) {
+            $xtpl->perex(
+                _('Authentication error'),
+                _('vpsAdmin was unable to obtain access token from the authorization server, please contact support if the error persists.')
+            );
+        }
 
-	} else {
-		$xtpl->perex(
-			_('Authentication error'),
-			_('Authorization server reports: ').h($_GET['error_description'] ?? $_GET['error'] ?? _('unknown error')).'<br>'.
-			_('Please try to sign in again or contact support if the error persists.')
-		);
-	}
+    } else {
+        $xtpl->perex(
+            _('Authentication error'),
+            _('Authorization server reports: ').h($_GET['error_description'] ?? $_GET['error'] ?? _('unknown error')).'<br>'.
+            _('Please try to sign in again or contact support if the error persists.')
+        );
+    }
 }
 
 // Revoke access token
 if ($_GET["action"] == 'logout') {
-	logoutUser();
+    logoutUser();
 }
 
 if (isAdmin() && ($_GET["action"] == 'drop_admin')) {
-	$_SESSION["context_switch"] = true;
-	$_SESSION["original_admin"] = $_SESSION;
-	$_SESSION["is_admin"] = false;
+    $_SESSION["context_switch"] = true;
+    $_SESSION["original_admin"] = $_SESSION;
+    $_SESSION["is_admin"] = false;
 
-	$xtpl->perex(_("Dropped admin privileges"), '');
-	redirect($_GET["next"]);
+    $xtpl->perex(_("Dropped admin privileges"), '');
+    redirect($_GET["next"]);
 }
 
 if (isAdmin() && ($_GET["action"] == 'switch_context') && isset($_GET["m_id"]) && !$_SESSION["context_switch"]) {
-	switchUserContext($_GET['m_id']);
+    switchUserContext($_GET['m_id']);
 }
 
 if ($_GET["action"] == "regain_admin" && $_SESSION["context_switch"]) {
-	regainAdminUser();
+    regainAdminUser();
 }

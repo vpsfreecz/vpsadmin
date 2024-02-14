@@ -8,13 +8,13 @@
 */
 
 function list_transaction_chains() {
-	global $api, $xtpl;
+    global $api, $xtpl;
 
-	$chains = $api->transaction_chain->list(array('limit' => 10));
+    $chains = $api->transaction_chain->list(array('limit' => 10));
 
-	foreach($chains as $chain) {
-		$xtpl->transaction_chain($chain);
-	}
+    foreach($chains as $chain) {
+        $xtpl->transaction_chain($chain);
+    }
 
-	$xtpl->transaction_chains_out();
+    $xtpl->transaction_chains_out();
 }

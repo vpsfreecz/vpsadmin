@@ -8,92 +8,92 @@
 */
 
 class SystemConfig implements Iterator {
-	private $api;
-	private $cfg;
-	private $categories;
-	private $catIterator;
-	private $options;
-	private $optIterator;
+    private $api;
+    private $cfg;
+    private $categories;
+    private $catIterator;
+    private $options;
+    private $optIterator;
 
-	public function __construct($api, $forceLoad = false) {
-		$this->api = $api;
+    public function __construct($api, $forceLoad = false) {
+        $this->api = $api;
 
-		$this->loadConfig($forceLoad);
-		$this->setupIterator();
-	}
+        $this->loadConfig($forceLoad);
+        $this->setupIterator();
+    }
 
-	public function get($cat, $name) {
-		return $this->cfg[$cat][$name]['value'];
-	}
+    public function get($cat, $name) {
+        return $this->cfg[$cat][$name]['value'];
+    }
 
-	public function getType($cat, $name) {
-		return $this->cfg[$cat][$name]['type'];
-	}
+    public function getType($cat, $name) {
+        return $this->cfg[$cat][$name]['type'];
+    }
 
-	public function reload() {
-		$this->loadConfig(true);
-		$this->setupIterator();
-	}
+    public function reload() {
+        $this->loadConfig(true);
+        $this->setupIterator();
+    }
 
-	protected function loadConfig($force) {
-		if (!$force && isset($_SESSION['sysconfig']))
-			return $this->cfg = $_SESSION['sysconfig'];
+    protected function loadConfig($force) {
+        if (!$force && isset($_SESSION['sysconfig']))
+            return $this->cfg = $_SESSION['sysconfig'];
 
-		$this->cfg = $this->fetchConfig();
-		$_SESSION['sysconfig'] = $this->cfg;
-	}
+        $this->cfg = $this->fetchConfig();
+        $_SESSION['sysconfig'] = $this->cfg;
+    }
 
-	protected function fetchConfig() {
-		$cfg = array();
+    protected function fetchConfig() {
+        $cfg = array();
 
-		$options = $this->api->system_config->index();
+        $options = $this->api->system_config->index();
 
-		foreach ($options as $opt) {
-			if (!array_key_exists($opt->category, $cfg))
-				$cfg[$opt->category] = array();
+        foreach ($options as $opt) {
+            if (!array_key_exists($opt->category, $cfg))
+                $cfg[$opt->category] = array();
 
-			$cfg[$opt->category][$opt->name] = $opt->attributes();
-		}
+            $cfg[$opt->category][$opt->name] = $opt->attributes();
+        }
 
-		return $cfg;
-	}
+        return $cfg;
+    }
 
-	protected function setupIterator() {
-		$this->categories = new ArrayObject($this->cfg);
-		$this->catIterator = $this->categories->getIterator();
+    protected function setupIterator() {
+        $this->categories = new ArrayObject($this->cfg);
+        $this->catIterator = $this->categories->getIterator();
 
-		$this->options = new ArrayObject($this->catIterator->current());
-		$this->optIterator = $this->options->getIterator();
-	}
+        $this->options = new ArrayObject($this->catIterator->current());
+        $this->optIterator = $this->options->getIterator();
+    }
 
-	/* Iterator methods */
-	public function current(): mixed {
-		return $this->optIterator->current()['value'];
-	}
+    /* Iterator methods */
+    public function current(): mixed {
+        return $this->optIterator->current()['value'];
+    }
 
-	public function key(): mixed {
-		return $this->catIterator->key().':'.$this->optIterator->key();
-	}
+    public function key(): mixed {
+        return $this->catIterator->key().':'.$this->optIterator->key();
+    }
 
-	public function next(): void {
-		$this->optIterator->next();
+    public function next(): void {
+        $this->optIterator->next();
 
-		if (!$this->optIterator->valid()) {
-			$this->catIterator->next();
+        if (!$this->optIterator->valid()) {
+            $this->catIterator->next();
 
-			if (!$this->catIterator->valid())
-				return;
+            if (!$this->catIterator->valid())
+                return;
 
-			$this->options = new ArrayObject($this->catIterator->current());
-			$this->optIterator = $this->options->getIterator();
-		}
-	}
+            $this->options = new ArrayObject($this->catIterator->current());
+            $this->optIterator = $this->options->getIterator();
+        }
+    }
 
-	public function rewind(): void {
-		$this->setupIterator();
-	}
+    public function rewind(): void {
+        $this->setupIterator();
+    }
 
-	public function valid(): bool {
-		return $this->catIterator->valid() && $this->optIterator->valid();
-	}
+    public function valid(): bool {
+        return $this->catIterator->valid() && $this->optIterator->valid();
+    }
 }
