@@ -19,7 +19,7 @@ function environment_configs($user_id)
     $xtpl->table_add_category(_('VPS count'));
     $xtpl->table_add_category(_('VPS lifetime'));
 
-    if ($_SESSION['is_admin']) {
+    if (isAdmin()) {
         $xtpl->table_add_category(_('Default'));
         $xtpl->table_add_category('');
     }
@@ -42,7 +42,7 @@ function environment_configs($user_id)
         );
         $xtpl->table_td(format_duration($c->vps_lifetime), false, true);
 
-        if ($_SESSION['is_admin']) {
+        if (isAdmin()) {
             $xtpl->table_td(boolean_icon($c->default));
             $xtpl->table_td('<a href="?page=adminm&section=members&action=env_cfg_edit&id=' . $user_id . '&cfg=' . $c->id . '"><img src="template/icons/m_edit.png"  title="' . _("Edit") . '"></a>');
         }
@@ -109,7 +109,7 @@ function list_user_sessions($user_id)
     $xtpl->form_add_input(_("Client version") . ':', 'text', '40', 'client_version', get_val('client_version', ''), '');
     $xtpl->form_add_input(_("Token") . ':', 'text', '40', 'token_fragment', get_val('token_fragment', ''), '');
 
-    if ($_SESSION['is_admin']) {
+    if (isAdmin()) {
         $xtpl->form_add_input(_("Admin ID") . ':', 'text', '40', 'admin', get_val('admin', ''), '');
     }
 
@@ -145,7 +145,7 @@ function list_user_sessions($user_id)
 
     $includes = [];
 
-    if ($_SESSION['is_admin']) {
+    if (isAdmin()) {
         $params['meta'] = ['includes' => 'admin'];
     }
 
@@ -162,7 +162,7 @@ function list_user_sessions($user_id)
     $xtpl->table_add_category(_("Auth type"));
     $xtpl->table_add_category(_("Token"));
 
-    if ($_SESSION['is_admin']) {
+    if (isAdmin()) {
         $xtpl->table_add_category(_("Admin"));
     }
 
@@ -184,7 +184,7 @@ function list_user_sessions($user_id)
             : '---'
         );
 
-        if ($_SESSION['is_admin']) {
+        if (isAdmin()) {
             $xtpl->table_td(
                 $s->admin_id
                 ? '<a href="?page=adminm&action=edit&id=' . $s->admin_id . '">' . $s->admin->login . '</a>'
@@ -649,7 +649,7 @@ function user_payment_info($u)
         $paid_until = date('Y-m-d', $t);
     }
 
-    if ($_SESSION["is_admin"]) {
+    if (isAdmin()) {
         $td = '<a href="?page=adminm&action=payset&id=' . $u->id . '" class="user-' . ($paid ? 'paid' : 'unpaid') . '">';
         $color = '';
 

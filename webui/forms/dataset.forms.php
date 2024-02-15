@@ -65,7 +65,7 @@ function dataset_list($role, $parent = null, $user = null, $dataset = null, $lim
 
     $xtpl->table_title($opts['title'] ?? _('Datasets'));
 
-    if ($_SESSION['is_admin']) {
+    if (isAdmin()) {
         $xtpl->table_add_category('#');
     }
 
@@ -112,7 +112,7 @@ function dataset_list($role, $parent = null, $user = null, $dataset = null, $lim
     $return = urlencode($_SERVER['REQUEST_URI']);
 
     foreach ($datasets as $ds) {
-        if ($_SESSION['is_admin']) {
+        if (isAdmin()) {
             $xtpl->table_td(
                 '<a href="?page=nas&action=list&dataset=' . $ds->id . '">' . $ds->id . '</a>'
             );
@@ -303,7 +303,7 @@ function dataset_edit_form()
     $xtpl->form_add_select_pure('quota_unit', ["m" => "MiB", "g" => "GiB", "t" => "TiB"], $_POST[$quota_name] ? $_POST['quota_unit'] : $v[1]);
     $xtpl->table_tr();
 
-    if ($_SESSION['is_admin']) {
+    if (isAdmin()) {
         api_param_to_form('admin_override', $params->admin_override);
         api_param_to_form('admin_lock_type', $params->admin_lock_type);
     }

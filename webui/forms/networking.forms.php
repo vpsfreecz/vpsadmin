@@ -27,7 +27,7 @@ function ip_address_list($page)
     $xtpl->form_add_select(_("Version") . ':', 'v', $versions, get_val('v', 0));
     $xtpl->form_add_input(_("Prefix") . ':', 'text', '40', 'prefix', get_val('prefix'));
 
-    if ($_SESSION['is_admin']) {
+    if (isAdmin()) {
         $xtpl->form_add_input(_("User ID") . ':', 'text', '40', 'user', get_val('user'), _("'unassigned' to list free addresses"));
     }
 
@@ -64,7 +64,7 @@ function ip_address_list($page)
         'meta' => ['includes' => 'user,vps,network'],
     ];
 
-    if ($_SESSION['is_admin']) {
+    if (isAdmin()) {
         if ($_GET['user'] === 'unassigned') {
             $params['user'] = null;
         } elseif ($_GET['user']) {
@@ -102,7 +102,7 @@ function ip_address_list($page)
     $xtpl->table_add_category(_("TX"));
     $xtpl->table_add_category(_("RX"));
 
-    if ($_SESSION['is_admin']) {
+    if (isAdmin()) {
         $xtpl->table_add_category(_('User'));
     } else {
         $xtpl->table_add_category(_('Owned'));
@@ -112,7 +112,7 @@ function ip_address_list($page)
     $xtpl->table_add_category('');
     $xtpl->table_add_category('');
 
-    if ($_SESSION['is_admin']) {
+    if (isAdmin()) {
         $xtpl->table_add_category('');
     }
 
@@ -130,7 +130,7 @@ function ip_address_list($page)
         $xtpl->table_td(round($ip->max_tx * 8.0 / 1024 / 1024, 1), false, true);
         $xtpl->table_td(round($ip->max_rx * 8.0 / 1024 / 1024, 1), false, true);
 
-        if ($_SESSION['is_admin']) {
+        if (isAdmin()) {
             if ($ip->user_id) {
                 $xtpl->table_td('<a href="?page=adminm&action=edit&id=' . $ip->user_id . '">' . $ip->user->login . '</a>');
             } else {
@@ -150,7 +150,7 @@ function ip_address_list($page)
 
         $xtpl->table_td('<a href="?page=networking&action=assignments&ip_addr=' . $ip->addr . '&ip_prefix=' . $ip->prefix . '&list=1"><img src="template/icons/vps_ip_list.png" alt="' . _('List assignments') . '" title="' . _('List assignments') . '"></a>');
 
-        if ($_SESSION['is_admin']) {
+        if (isAdmin()) {
             $xtpl->table_td(
                 '<a href="?page=cluster&action=ipaddr_edit&id=' . $ip->id . '&return=' . $return_url . '">' .
                 '<img src="template/icons/m_edit.png" alt="' . _('Edit') . '" title="' . _('Edit') . '">' .
@@ -208,7 +208,7 @@ function host_ip_address_list($page)
     $xtpl->form_add_select(_("Version") . ':', 'v', $versions, get_val('v', 0));
     $xtpl->form_add_input(_("Prefix") . ':', 'text', '40', 'prefix', get_val('prefix'));
 
-    if ($_SESSION['is_admin']) {
+    if (isAdmin()) {
         $xtpl->form_add_input(_("User ID") . ':', 'text', '40', 'user', get_val('user'), _("'unassigned' to list free addresses"));
     }
 
@@ -253,7 +253,7 @@ function host_ip_address_list($page)
         ],
     ];
 
-    if ($_SESSION['is_admin']) {
+    if (isAdmin()) {
         if ($_GET['user'] === 'unassigned') {
             $params['user'] = null;
         } elseif ($_GET['user']) {
@@ -295,7 +295,7 @@ function host_ip_address_list($page)
     $xtpl->table_add_category(_("Routed address"));
     $xtpl->table_add_category(_("Host address"));
 
-    if ($_SESSION['is_admin']) {
+    if (isAdmin()) {
         $xtpl->table_add_category(_('User'));
     } else {
         $xtpl->table_add_category(_('Owned'));
@@ -316,7 +316,7 @@ function host_ip_address_list($page)
         $xtpl->table_td($ip->addr . '/' . $ip->prefix);
         $xtpl->table_td($host_addr->addr);
 
-        if ($_SESSION['is_admin']) {
+        if (isAdmin()) {
             if ($ip->user_id) {
                 $xtpl->table_td('<a href="?page=adminm&action=edit&id=' . $ip->user_id . '">' . $ip->user->login . '</a>');
             } else {
@@ -510,7 +510,7 @@ function route_unassign_form($id)
     $xtpl->table_td($ip->network->location->label . ': ' . $ip->addr . '/' . $ip->network->prefix);
     $xtpl->table_tr();
 
-    if ($_SESSION['is_admin']) {
+    if (isAdmin()) {
         $xtpl->form_add_checkbox(_('Disown') . ':', 'disown', '1', false);
     }
 

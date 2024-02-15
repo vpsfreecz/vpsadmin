@@ -20,7 +20,7 @@ function monitoring_list()
 
     api_param_to_form('monitor', $input->monitor, $_GET['monitor']);
 
-    if ($_SESSION['is_admin']) {
+    if (isAdmin()) {
         $xtpl->form_add_input(_('User ID') . ':', 'text', '30', 'user', get_val('user'), '');
     }
 
@@ -50,7 +50,7 @@ function monitoring_list()
     $xtpl->table_add_category(_('Detected at'));
     $xtpl->table_add_category(_('State'));
 
-    if ($_SESSION['is_admin']) {
+    if (isAdmin()) {
         $xtpl->table_add_category(_('User'));
     }
 
@@ -63,7 +63,7 @@ function monitoring_list()
         $xtpl->table_td(tolocaltz($e->created_at));
         $xtpl->table_td($e->state);
 
-        if ($_SESSION['is_admin']) {
+        if (isAdmin()) {
             $xtpl->table_td($e->user_id ? user_link($e->user) : '-');
         }
 
@@ -101,7 +101,7 @@ function monitoring_event()
     $xtpl->table_td($e->issue);
     $xtpl->table_tr();
 
-    if ($_SESSION['is_admin']) {
+    if (isAdmin()) {
         $xtpl->table_td(_('User') . ':');
         $xtpl->table_td($e->user_id ? user_link($e->user) : '-');
         $xtpl->table_tr();

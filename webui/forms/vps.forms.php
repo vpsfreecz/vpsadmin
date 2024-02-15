@@ -761,7 +761,7 @@ function vps_details_title($vps)
 
     $title = 'VPS <a href="?page=adminvps&action=info&veid=' . $vps->id . '">#' . $vps->id . '</a> ' . _("details");
 
-    if ($_SESSION["is_admin"]) {
+    if (isAdmin()) {
         $xtpl->title($title . ' ' . _("[Admin mode]"));
     } else {
         $xtpl->title($title . ' ' . _("[User mode]"));
@@ -779,7 +779,7 @@ function vps_details_submenu($vps)
     $xtpl->sbar_add(_('Remote console'), '?page=console&veid=' . $vps->id . '&t=' . csrf_token());
     $xtpl->sbar_add(_('Backups'), '?page=backup&action=vps&list=1&vps=' . $vps->id . '#ds-' . $vps->dataset_id);
 
-    if ($_SESSION['is_admin']) {
+    if (isAdmin()) {
         $xtpl->sbar_add(_('Migrate VPS'), '?page=adminvps&action=migrate-step-1&veid=' . $vps->id);
         $xtpl->sbar_add(_('Change owner'), '?page=adminvps&action=chown&veid=' . $vps->id);
     }

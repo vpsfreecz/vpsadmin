@@ -212,7 +212,7 @@ function list_templates($vps = null)
 
             $ret = $t->label;
 
-            if ($_SESSION['is_admin'] && !$t->enabled) {
+            if (isAdmin() && !$t->enabled) {
                 return $ret . ' ' . _('(IMPORTANT: This template is currently disabled, it cannot be used)');
             };
 
@@ -220,7 +220,7 @@ function list_templates($vps = null)
         }
     );
 
-    if ($vps && !$vps->os_template->enabled && !$_SESSION['is_admin']) {
+    if ($vps && !$vps->os_template->enabled && !isAdmin()) {
         $choices = [$vps->os_template_id => $vps->os_template->label . ' ' . $disabled] + $choices;
     }
 
@@ -1025,7 +1025,7 @@ function isLoggedIn()
  */
 function isAdmin()
 {
-    return $_SESSION["is_admin"] ?? false;
+    return $_SESSION['is_admin'] ?? false;
 }
 
 function getVersionLink()

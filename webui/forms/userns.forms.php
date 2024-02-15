@@ -52,7 +52,7 @@ function userns_list()
 
     $input = $api->user_namespace->list->getParameters('input');
 
-    if ($_SESSION['is_admin']) {
+    if (isAdmin()) {
         $xtpl->form_add_input(_('User ID') . ':', 'text', '30', 'user', get_val('user'), '');
         api_param_to_form('block_count', $input->block_count, $_GET['block_count']);
     }
@@ -79,7 +79,7 @@ function userns_list()
 
     $xtpl->table_add_category(_('ID'));
 
-    if ($_SESSION['is_admin']) {
+    if (isAdmin()) {
         $xtpl->table_add_category(_('User'));
         $xtpl->table_add_category(_('Offset'));
         $xtpl->table_add_category(_('Blocks'));
@@ -94,7 +94,7 @@ function userns_list()
             '<a href="?page=userns&action=show&id=' . $uns->id . '">' . $uns->id . '</a>'
         );
 
-        if ($_SESSION['is_admin']) {
+        if (isAdmin()) {
             $xtpl->table_td($uns->user_id ? user_link($uns->user) : '-');
             $xtpl->table_td($uns->offset, false, true);
             $xtpl->table_td($uns->block_count, false, true);
@@ -164,7 +164,7 @@ function userns_map_list($userns_id = null)
 
     $input = $api->user_namespace_map->list->getParameters('input');
 
-    if ($_SESSION['is_admin']) {
+    if (isAdmin()) {
         $xtpl->form_add_input(_('User ID') . ':', 'text', '30', 'user', get_val('user'), '');
         $xtpl->form_add_input(_('User namespace ID') . ':', 'text', '30', 'user_namespace', get_val('user_namespace'), '');
     }
@@ -190,7 +190,7 @@ function userns_map_list($userns_id = null)
 
     $xtpl->table_add_category(_('ID'));
 
-    if ($_SESSION['is_admin']) {
+    if (isAdmin()) {
         $xtpl->table_add_category(_('User'));
     }
 
@@ -205,7 +205,7 @@ function userns_map_list($userns_id = null)
             '<a href="?page=userns&action=map_show&id=' . $m->id . '">' . $m->id . '</a>'
         );
 
-        if ($_SESSION['is_admin']) {
+        if (isAdmin()) {
             $xtpl->table_td(user_link($m->user_namespace->user));
         }
 

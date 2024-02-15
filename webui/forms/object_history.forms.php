@@ -25,7 +25,7 @@ function list_object_history()
 
     $xtpl->form_add_input(_("Offset") . ':', 'text', '40', 'offset', get_val('offset', '0'), '');
 
-    if ($_SESSION['is_admin']) {
+    if (isAdmin()) {
         $xtpl->form_add_input(_("User") . ':', 'text', '40', 'user', get_val('user', ''), '');
     }
 

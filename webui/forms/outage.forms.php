@@ -407,7 +407,7 @@ function outage_details($id)
 {
     global $xtpl, $api;
 
-    if ($_SESSION['is_admin']) {
+    if (isAdmin()) {
         $xtpl->sbar_add(_('Edit outage'), '?page=outage&action=edit_attrs&id=' . $id);
         $xtpl->sbar_add(_('Edit affected systems & handlers'), '?page=outage&action=edit_systems&id=' . $id);
         $xtpl->sbar_add(_('Post update'), '?page=outage&action=update&id=' . $id);
@@ -424,7 +424,7 @@ function outage_details($id)
     if ($_SESSION['logged_in']) {
         $xtpl->table_title(_('Status'));
 
-        if ($_SESSION['is_admin']) {
+        if (isAdmin()) {
             if ($outage->state == 'staged') {
                 $xtpl->table_td(_('Affected VPSes have not been checked yet.'));
                 $xtpl->table_tr();
@@ -580,7 +580,7 @@ function outage_details($id)
     $xtpl->table_tr();
     $xtpl->table_out();
 
-    if ($_SESSION['is_admin'] && $outage->state == 'staged') {
+    if (isAdmin() && $outage->state == 'staged') {
         $xtpl->table_title(_('Change state'));
         $xtpl->form_create('?page=outage&action=set_state&id=' . $id, 'post');
         $xtpl->form_add_select(_('State') . ':', 'state', [
@@ -713,7 +713,7 @@ function outage_list()
         ], get_val('affected'));
     }
 
-    if ($_SESSION['is_admin']) {
+    if (isAdmin()) {
         $xtpl->form_add_input(_('User ID') . ':', 'text', '30', 'user', get_val('user'), '');
         $xtpl->form_add_input(_('Handled by') . ':', 'text', '30', 'handled_by', get_val('handled_by'), '');
     }
@@ -747,7 +747,7 @@ function outage_list()
         );
     }
 
-    if ($_SESSION['is_admin']) {
+    if (isAdmin()) {
         $xtpl->form_add_input(
             _('Entity name') . ':',
             'text',
@@ -778,7 +778,7 @@ function outage_list()
     $xtpl->table_add_category(_('Impact'));
     $xtpl->table_add_category(_('Reason'));
 
-    if ($_SESSION['is_admin']) {
+    if (isAdmin()) {
         $xtpl->table_add_category(_('Users'));
         $xtpl->table_add_category(_('VPS'));
 
@@ -825,7 +825,7 @@ function outage_list()
         $xtpl->table_td($outage->impact);
         $xtpl->table_td(h($outage->en_summary));
 
-        if ($_SESSION['is_admin']) {
+        if (isAdmin()) {
             if ($outage->state == 'staged') {
                 $xtpl->table_td('-', false, true);
                 $xtpl->table_td('-', false, true);
@@ -913,7 +913,7 @@ function outage_affected_vps($id)
 
     $xtpl->title(_('Outage') . ' #' . $outage->id);
 
-    if ($_SESSION['is_admin']) {
+    if (isAdmin()) {
         $xtpl->table_title(_('Filters'));
         $xtpl->form_create('', 'get', 'outage-list', false);
 
@@ -1003,7 +1003,7 @@ function outage_affected_exports($id)
 
     $xtpl->title(_('Outage') . ' #' . $outage->id);
 
-    if ($_SESSION['is_admin']) {
+    if (isAdmin()) {
         $xtpl->table_title(_('Filters'));
         $xtpl->form_create('', 'get', 'outage-list', false);
 
