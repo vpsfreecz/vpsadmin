@@ -744,7 +744,11 @@ function get_val($name, $default = '')
 function post_val($name, $default = '')
 {
     if (isset($_POST[$name])) {
-        return h($_POST[$name]);
+        if (is_string($_POST[$name])) {
+            return h($_POST[$name]);
+        } else {
+            return $_POST[$name];
+        }
     }
 
     if (is_string($default)) {
