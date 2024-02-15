@@ -18,7 +18,14 @@ module VpsAdmin::API::Resources
 
       def exec
         ObjectSpace.each_object.with_object(Hash.new(0)) do |obj, hash|
-          hash[obj.class] += 1
+          begin
+            klass = obj.class
+          rescue NoMethodError
+            klass = 'BasicObject'
+          end
+
+          hash[klass] ||= 0
+          hash[klass] += 1
         end.sort_by do |_klass, count|
           -count
         end.map do |klass, count|
@@ -47,7 +54,11 @@ module VpsAdmin::API::Resources
         hashes = []
 
         ObjectSpace.each_object do |obj|
-          next unless obj.is_a?(::Hash)
+          begin
+            next unless obj.is_a?(::Hash)
+          rescue NoMethodError
+            next
+          end
 
           sample = {}
 
@@ -88,7 +99,11 @@ module VpsAdmin::API::Resources
         arrays = []
 
         ObjectSpace.each_object do |obj|
-          next if !obj.is_a?(::Array) || obj.equal?(arrays)
+          begin
+            next if !obj.is_a?(::Array) || obj.equal?(arrays)
+          rescue NoMethodError
+            next
+          end
 
           sample = []
 
