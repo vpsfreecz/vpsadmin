@@ -138,7 +138,7 @@ function vps_boot(cmd) {
     $xtpl->sbar_out(_("Manage VPS"));
 }
 
-if ($_SESSION["logged_in"]) {
+if (isLoggedIn()) {
     csrf_check();
     setup_console();
 

@@ -35,7 +35,7 @@ function vps_run_redirect_path($veid)
     }
 }
 
-if (isset($_SESSION["logged_in"]) && $_SESSION["logged_in"]) {
+if (isLoggedIn()) {
 
     $_GET["run"] ??= false;
 

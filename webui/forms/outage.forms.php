@@ -421,7 +421,7 @@ function outage_details($id)
 
     $xtpl->title(_('Outage') . ' #' . $id);
 
-    if ($_SESSION['logged_in']) {
+    if (isLoggedIn()) {
         $xtpl->table_title(_('Status'));
 
         if (isAdmin()) {
@@ -705,7 +705,7 @@ function outage_list()
     api_param_to_form('state', $input->state, $_GET['state'], null, true);
     api_param_to_form('impact', $input->impact, $_GET['impact'], null, true);
 
-    if ($_SESSION['logged_in']) {
+    if (isLoggedIn()) {
         $xtpl->form_add_select(_('Affects me?'), 'affected', [
             '' => '---',
             'yes' => _('Yes'),
@@ -718,7 +718,7 @@ function outage_list()
         $xtpl->form_add_input(_('Handled by') . ':', 'text', '30', 'handled_by', get_val('handled_by'), '');
     }
 
-    if ($_SESSION['logged_in']) {
+    if (isLoggedIn()) {
         $xtpl->form_add_input(_('VPS ID') . ':', 'text', '30', 'vps', get_val('vps'), '');
         $xtpl->form_add_input(_('Export ID') . ':', 'text', '30', 'export', get_val('export'), '');
         $xtpl->form_add_select(
@@ -782,7 +782,7 @@ function outage_list()
         $xtpl->table_add_category(_('Users'));
         $xtpl->table_add_category(_('VPS'));
 
-    } elseif ($_SESSION['logged_in']) {
+    } elseif (isLoggedIn()) {
         $xtpl->table_add_category(_('Affects me?'));
     }
 
@@ -847,7 +847,7 @@ function outage_list()
                 );
             }
 
-        } elseif ($_SESSION['logged_in']) {
+        } elseif (isLoggedIn()) {
             $xtpl->table_td(boolean_icon($outage->affected));
         }
 

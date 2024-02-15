@@ -81,7 +81,7 @@ $api_cluster = null;
 $config = null;
 
 try {
-    if (isset($_SESSION["logged_in"]) && $_SESSION["logged_in"]) {
+    if (isLoggedIn()) {
         switch ($_SESSION['auth_type']) {
             case 'oauth2':
                 $api->authenticate('oauth2', ['access_token' => $_SESSION['access_token']], false);

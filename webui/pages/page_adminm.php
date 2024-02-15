@@ -926,7 +926,7 @@ function estimate_income()
     $xtpl->table_out();
 }
 
-if ($_SESSION["logged_in"]) {
+if (isLoggedIn()) {
 
     if (isAdmin()) {
         $xtpl->sbar_add('<img src="template/icons/m_add.png"  title="' . _("New member") . '" /> ' . _("New member"), '?page=adminm&section=members&action=new');
