@@ -11,7 +11,7 @@ gem 'ancestry', '~> 4.3.3'
 gem 'bcrypt', '~> 3.1.13'
 gem 'bunny', '~> 2.22.0'
 gem 'eventmachine'
-gem 'haveapi', '~> 0.20.0'
+gem 'haveapi', '~> 0.21.0'
 gem 'ipaddress', '~> 0.8.0'
 gem 'mysql2', '~> 0.5.3'
 gem 'paper_trail', '~> 15.1.0'
@@ -29,6 +29,8 @@ end
 
 group :development do
   gem 'pry'
+  gem 'rubocop'
+  gem 'rubocop-rake'
   gem 'yard'
 end
 
