@@ -54,7 +54,7 @@ GEM
 GEM
   remote: https://rubygems.vpsfree.cz/
   specs:
-    libnodectld (3.0.0.dev.build20240215165817)
+    libnodectld (3.0.0.dev.build20240218200634)
       bunny (~> 2.22.0)
       filelock
       ipaddress (~> 0.8.3)
@@ -71,9 +71,9 @@ GEM
     libosctl (23.11.0.build20240215164448)
       rainbow (~> 3.1.1)
       require_all (~> 2.0.0)
-    nodectl (3.0.0.dev.build20240215165817)
+    nodectl (3.0.0.dev.build20240218200634)
       json
-      libnodectld (= 3.0.0.dev.build20240215165817)
+      libnodectld (= 3.0.0.dev.build20240218200634)
       libosctl (= 23.11.0.build20240215164448)
       pry (~> 0.14.2)
       pry-remote
@@ -99,7 +99,7 @@ PLATFORMS
   x86_64-linux
 
 DEPENDENCIES
-  nodectl (= 3.0.0.dev.build20240215165817)!
+  nodectl (= 3.0.0.dev.build20240218200634)!
 
 BUNDLED WITH
    2.4.22
