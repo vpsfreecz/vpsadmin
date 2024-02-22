@@ -1,7 +1,7 @@
 GEM
   remote: https://rubygems.org/
   specs:
-    activesupport (7.1.3)
+    activesupport (7.1.3.2)
       base64
       bigdecimal
       concurrent-ruby (~> 1.0, >= 1.0.2)
@@ -18,7 +18,7 @@ GEM
     domain_name (0.6.20240107)
     drb (2.2.0)
       ruby2_keywords
-    haveapi-client (0.21.0)
+    haveapi-client (0.21.1)
       activesupport (>= 7.0)
       highline (~> 2.1.0)
       json
