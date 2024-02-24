@@ -268,6 +268,11 @@ mount -t nfs {$ex->host_ip_address->addr}:{$ex->path} /mnt/export{$ex->id}
     $xtpl->table_tr();
     $xtpl->table_out();
 
+    // Hide persistent ways of configuration for temporary exports
+    if ($ex->snapshot_id) {
+        return;
+    }
+
     $xtpl->table_title(_('fstab entry'));
     $xtpl->table_td("
 		<textarea rows=\"1\" cols=\"80\" readonly>
