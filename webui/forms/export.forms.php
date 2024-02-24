@@ -298,6 +298,22 @@ WantedBy=multi-user.target
 	");
     $xtpl->table_tr();
     $xtpl->table_out();
+
+    $xtpl->table_title(_('NixOS configuration'));
+    $xtpl->table_td("
+		<textarea rows=\"15\" cols=\"80\" readonly>
+{ config, pkgs, ... }:
+{
+  fileSystems.\"/mnt/export{$ex->id}\" = {
+    device = \"{$ex->host_ip_address->addr}:{$ex->path}\";
+    fsType = \"nfs\";
+    options = [ \"nofail\" ];
+  };
+}
+		</textarea>
+	");
+    $xtpl->table_tr();
+    $xtpl->table_out();
 }
 
 function export_destroy_form($id)
