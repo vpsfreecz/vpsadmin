@@ -33,19 +33,21 @@ module NodeCtld
         end
       end
 
+      # rubocop:disable Style/HashEachMethods
       # Disable mount for all descendants
-      @descendant_datasets.reverse.each_key do |ds|
+      @descendant_datasets.reverse.each do |ds, _ds_state|
         zfs(:set, 'canmount=off', "#{origin}/#{ds['relative_name']}")
       end
 
       # Rename direct children
-      children.each_key do |child|
+      children.each do |child, _ds_state|
         zfs(
           :rename,
           nil,
           "#{origin}/#{child['relative_name']} #{origin}.rollback/#{child['relative_name']}"
         )
       end
+      # rubocop:enable Style/HashEachMethods
 
       # Save original properties
       state = dataset_properties(origin, %i[
