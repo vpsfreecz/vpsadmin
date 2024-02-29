@@ -38,6 +38,15 @@ module TransactionChains
           label: 'Personal package'
         )
         objects << personal_pkg
+
+        # Create personal package items
+        ::ClusterResource.all.each do |cr|
+          objects << personal_pkg.cluster_resource_package_items.create!(
+            cluster_resource: cr,
+            value: 0
+          )
+        end
+
         objects << ::UserClusterResourcePackage.create!(
           user:,
           environment: env,
