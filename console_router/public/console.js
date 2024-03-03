@@ -42,7 +42,9 @@ VpsAdminConsole.prototype.sendData = function () {
       if (request.status == 200) {
         var jsonResponse = JSON.parse(request.responseText);
 
-        that.term.write(atob(jsonResponse.data));
+        // For some reason it appears that the data gets encoded twice, which
+        // then breaks rendering and so decoding before writing helps.
+        that.term.write(that.decodeUtf8(atob(jsonResponse.data)));
 
         if (jsonResponse.session) {
           that.scheduleNextRequest();
@@ -67,4 +69,8 @@ VpsAdminConsole.prototype.scheduleNextRequest = function () {
   this.timeout = setTimeout(function () {
     that.sendData();
   }, this.rate);
+};
+
+VpsAdminConsole.prototype.decodeUtf8 = function (v) {
+  return decodeURIComponent(escape(v));
 };
