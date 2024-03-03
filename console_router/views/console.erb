@@ -4,8 +4,12 @@
   <title>vpsAdmin Console</title>
   <link rel="stylesheet" href="/xterm.css?<%= Time.now.to_i %>" />
   <script type="text/javascript" src="/xterm.js?<%= Time.now.to_i %>"></script>
+  <script type="text/javascript" src="/addon-fit.js?<%= Time.now.to_i %>"></script>
   <script type="text/javascript" src="/console.js?<%= Time.now.to_i %>"></script>
   <script type="text/javascript" src="/haveapi-client.js?<%= Time.now.to_i %>"></script>
+  <style>
+    #terminal { min-height: 600px; }
+  </style>
 </head>
 <body>
   <noscript>JavaScript must be enabled for the console to work.</noscript>

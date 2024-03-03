@@ -2,7 +2,12 @@ function VpsAdminConsole(element, vpsId, session) {
   this.element = element;
   this.url = "/console/feed/" + vpsId;
   this.session = session;
+
   this.term = new Terminal();
+  this.fitAddon = new FitAddon.FitAddon();
+
+  this.term.loadAddon(this.fitAddon);
+
   this.pendingData = '';
   this.rate = 1.0 / 20 * 1000; // 20 times per second, 50 ms
 
@@ -15,6 +20,7 @@ function VpsAdminConsole(element, vpsId, session) {
 
 VpsAdminConsole.prototype.open = function () {
   this.term.open(this.element);
+  this.fitAddon.fit();
 
   var that = this;
 
