@@ -5,9 +5,10 @@ let
 in stdenv.mkDerivation rec {
   name = "vpsadmin-console-router";
 
-  buildInputs = [
-    pkgs.ruby
-    pkgs.git
+  buildInputs = with pkgs; [
+    git
+    nodePackages.npm
+    ruby
   ];
 
   shellHook = ''
