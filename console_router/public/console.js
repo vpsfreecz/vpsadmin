@@ -81,6 +81,10 @@ VpsAdminConsole.prototype.sendKey = function (key, code, keyCode, modifiers) {
   if (modifiers.metaKey) {
     this.sendEventToTerminal(new KeyboardEvent('keyup', {key: 'MetaLeft', keyCode: 91}));
   }
+
+  // Unfocus the terminal to prevent OS keyboard from popping up on touchscreen
+  // devices
+  this.term.blur();
 };
 
 VpsAdminConsole.prototype.sendEventToTerminal = function (ev) {
