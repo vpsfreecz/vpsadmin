@@ -3,9 +3,13 @@
 <head>
   <title>vpsAdmin Console</title>
   <link rel="stylesheet" href="/xterm.css?<%= Time.now.to_i %>" />
+  <link rel="stylesheet" href="/simple-keyboard.css">
+  <link rel="stylesheet" href="/keyboard.css?<%= Time.now.to_i %>" />
   <script type="text/javascript" src="/xterm.js?<%= Time.now.to_i %>"></script>
   <script type="text/javascript" src="/addon-fit.js?<%= Time.now.to_i %>"></script>
   <script type="text/javascript" src="/console.js?<%= Time.now.to_i %>"></script>
+  <script type="text/javascript" src="/simple-keyboard.js"></script>
+  <script type="text/javascript" src="/keyboard.js?<%= Time.now.to_i %>"></script>
   <script type="text/javascript" src="/haveapi-client.js?<%= Time.now.to_i %>"></script>
   <style>
     #terminal { min-height: 600px; }
@@ -16,6 +20,15 @@
 
   <div id="terminal"></div>
 
+  <div class="keyboardContainer">
+		<div class="simple-keyboard-main"></div>
+
+		<div class="controlArrows">
+			<div class="simple-keyboard-control"></div>
+			<div class="simple-keyboard-arrows"></div>
+		</div>
+	</div>
+
   <script type="text/javascript">
     var remoteConsole = new VpsAdminConsole(
       document.getElementById('terminal'),
@@ -23,6 +36,8 @@
       '<%= session %>'
     );
     remoteConsole.open();
+
+    setupKeyboard(remoteConsole);
   </script>
 </body>
 </html>
