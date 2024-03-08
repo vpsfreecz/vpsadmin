@@ -504,7 +504,7 @@ CREATE TABLE `incident_reports` (
   `mailbox_id` bigint(20) DEFAULT NULL,
   `subject` varchar(255) NOT NULL,
   `text` text NOT NULL,
-  `codename` varchar(50) DEFAULT NULL,
+  `codename` varchar(100) DEFAULT NULL,
   `detected_at` datetime(6) NOT NULL,
   `created_at` datetime(6) NOT NULL,
   `updated_at` datetime(6) NOT NULL,
@@ -2069,6 +2069,7 @@ CREATE TABLE `vpses` (
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
 INSERT INTO `schema_migrations` (version) VALUES
+('20240308152841'),
 ('20240229135345'),
 ('20240126165609'),
 ('20240125124755'),
