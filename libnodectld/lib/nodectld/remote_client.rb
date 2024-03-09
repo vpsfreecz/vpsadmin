@@ -32,7 +32,7 @@ module NodeCtld
     end
 
     def cmd(cmd, params = {})
-      @sock.send("#{{ command: cmd, params: }.to_json}\n", 0)
+      @sock.puts({ command: cmd, params: }.to_json)
     end
 
     def reply
