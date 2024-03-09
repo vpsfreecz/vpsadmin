@@ -138,7 +138,7 @@ module NodeCtld
 
       @mutex.synchronize do
         @netifs.each do |netif|
-          netif.user_id = user_id
+          netif.user_id = user_id if netif.vps_id == vps_id
         end
       end
 
