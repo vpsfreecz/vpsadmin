@@ -9,8 +9,9 @@ class SingleSignOn < ActiveRecord::Base
   end
 
   # @param authorization [Oauth2Authorization]
-  def authorization_revoked(authorization)
-    close unless any_active_authorizations?(except_ids: [authorization.id])
+  # @param close_sso [Boolean]
+  def authorization_revoked(authorization, close_sso: false)
+    close if close_sso || !any_active_authorizations?(except_ids: [authorization.id])
   end
 
   # @param except_ids [Array<Integer>]

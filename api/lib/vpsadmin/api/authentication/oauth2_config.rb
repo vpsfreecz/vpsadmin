@@ -194,9 +194,11 @@ module VpsAdmin::API
       end
     end
 
-    def handle_post_revoke(_sinatra_request, token, token_type_hint: nil)
+    def handle_post_revoke(sinatra_request, token, token_type_hint: nil)
+      close_sso = sinatra_request.params.fetch('close_sso', false) ? true : false
+
       # Find access token
-      ::Oauth2Authorization # rubocop:disable Lint/UnreachableLoop
+      ::Oauth2Authorization
         .joins(user_session: :token)
         .where(tokens: { token: })
         .each do |auth|
@@ -228,12 +230,24 @@ module VpsAdmin::API
               end
 
               other_auth.close unless other_auth.refreshable?
-              other_auth.single_sign_on.authorization_revoked(other_auth) if other_auth.single_sign_on
+
+              next unless other_auth.single_sign_on
+
+              other_auth.single_sign_on.authorization_revoked(
+                other_auth,
+                close_sso:
+              )
             end
           end
         end
 
-        auth.single_sign_on.authorization_revoked(auth) if auth.single_sign_on
+        if auth.single_sign_on
+          auth.single_sign_on.authorization_revoked(
+            auth,
+            close_sso:
+          )
+        end
+
         return :revoked
       end
 
