@@ -55,21 +55,45 @@ function loginUser($access_url)
     }
 }
 
-function logoutUser()
+function destroySession()
 {
-    global $xtpl, $api;
-
     $_SESSION["logged_in"] = false;
     $_SESSION["auth_type"] = null;
     $_SESSION["access_token"] = null;
     $_SESSION["session_token"] = null;
     unset($_SESSION["user"]);
 
+    session_destroy();
+}
+
+function logoutUser()
+{
+    global $xtpl, $api;
+
+    csrf_check();
+    destroySession();
+
     $api->logout();
 
     $xtpl->perex(_("Goodbye"), _("Logout successful"));
+}
 
-    session_destroy();
+function logoutAndSwitchUser()
+{
+    global $xtpl, $api;
+
+    csrf_check();
+
+    if ($_SESSION["auth_type"] != "oauth2") {
+        $xtpl->perex(_('Unable to switch user while impersonating user'), '');
+        return;
+    }
+
+    destroySession();
+
+    $api->getAuthenticationProvider()->revokeAccessToken(['close_sso' => '1']);
+
+    redirect('?page=login&action=login');
 }
 
 function switchUserContext($target_user_id)

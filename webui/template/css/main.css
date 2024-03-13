@@ -89,7 +89,7 @@ ul.ul-style01 ul li {padding-left:12px; background:url("../design/ul-style01.gif
 
 .main {position:relative; width:1150px; margin:0 auto; text-align:left;}
 
-	#header {min-width:1150px; padding:10px 0; overflow:hidden}
+	#header {min-width:1150px; padding:10px 0;}
 
         #logo {margin:0; margin-bottom:3px; font:normal 260%/1.2 "arial",sans-serif; letter-spacing:-1px;}
         #logo span {font-weight:bold;}
@@ -177,3 +177,38 @@ div.page_listing {text-align: center;}
 form[name="userns-map-entries"] input[type="text"] {text-align: right;}
 
 a.user-unpaid {color: #fff;}
+
+/* Dropdown menu */
+.dropdown {
+  position: relative;
+  display: inline-block;
+}
+
+.dropdown-content {
+  display: none;
+  position: absolute;
+  background-color: #f9f9f9;
+  min-width: 140px;
+  box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+  z-index: 10;
+  padding: 10px;
+}
+
+.dropdown-content a:hover {background-color: #f1f1f1}
+
+.dropdown:hover .dropdown-content {
+  display: block;
+}
+
+.dropdown ul {
+  margin: 0;
+}
+
+.account-menu {
+  font-size: 110%;
+}
+
+.account-menu li {
+  padding: 5px;
+  border-bottom: 1px solid #969678;
+}

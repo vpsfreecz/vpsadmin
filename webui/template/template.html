@@ -114,13 +114,21 @@
 						<span><a href="?page=login&action=regain_admin&next={V_NEXT}"><img src="template/icons/m_dropadmin.png" title="{L_REGAIN_PRIVILEGES}" /></a></span>
 					<!-- END: context_switch -->
 					<span id="session-countdown"></span>
-				        <input type="submit" value="{L_LOGOUT} ({USER_NAME})" id="logbox-submit" />
+                    <div id="logout" class="dropdown">
+                        <input type="hidden" name="csrf_token" value="{V_CSRF_TOKEN}">
+                        <input type="submit" value="{L_LOGOUT} ({USER_NAME}) ⯆" id="logbox-submit" />
+                        <ul class="dropdown-content account-menu">
+                            <li><a href="?page=login&action=switch_user&t={V_CSRF_TOKEN}">{L_LOGOUT_SWITCH}</a></li>
+                            <li><a href="?page=login&action=logout&t={V_CSRF_TOKEN}">{L_LOGOUT}</a></li>
+                        </ul>
+                    </div>
             	</div>
             </form>
 	<!-- END: loggedbox -->
         </div> <!-- /logbox -->
 
     </div> <!-- /main -->
+    <br class="clear">
 </div> <!-- /header -->
 
 <hr class="noscreen" />

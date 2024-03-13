@@ -76,6 +76,7 @@ $xtpl->assign("VERSION", getVersionLink());
 $xtpl->assign("L_LOGIN", _("Log in"));
 $xtpl->assign("L_LOGGING_IN", _("Signing in..."));
 $xtpl->assign("L_LOGOUT", _("Logout"));
+$xtpl->assign("L_LOGOUT_SWITCH", _("Switch user"));
 
 $api_cluster = null;
 $config = null;

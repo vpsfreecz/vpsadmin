@@ -486,6 +486,8 @@ class XTemplate
     public function logbox($logged = false, $user_name = 'none', $is_admin = false, $maint_mode = false)
     {
         if ($logged) {
+            $this->assign("V_CSRF_TOKEN", csrf_token());
+
             if ($is_admin) {
                 $this->assign("L_SEARCH", _("Search"));
                 $this->assign("V_SEARCH", $_SESSION["jumpto"] ?? '');
@@ -493,7 +495,6 @@ class XTemplate
                 $this->parse("main.loggedbox.jumpto");
 
                 if ($maint_mode) {
-                    $this->assign("V_CSRF_TOKEN", csrf_token());
                     $this->assign("L_MAINTENANCE_MODE_ON", _("Maintenance mode status: ON"));
                     $this->parse("main.loggedbox.is_admin.maintenance_mode_on");
                 } else {

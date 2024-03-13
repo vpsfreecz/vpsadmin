@@ -22,7 +22,7 @@
 
 
 // Redirect to OAuth2 authorization server
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && $_GET["action"] == 'login') {
+if ($_GET["action"] == 'login') {
     setupOAuth2ForLogin();
     $api->getAuthenticationProvider()->requestAuthorizationCode();
     exit;
@@ -56,6 +56,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && $_GET["action"] == 'callback') {
 // Revoke access token
 if ($_GET["action"] == 'logout') {
     logoutUser();
+} elseif ($_GET["action"] == 'switch_user') {
+    logoutAndSwitchUser();
 }
 
 if (isAdmin() && ($_GET["action"] == 'drop_admin')) {
