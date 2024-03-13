@@ -209,9 +209,11 @@ module VpsAdmin::API
 
           # Revoke other authorizations from the same client
           if auth.user.preferred_logout_all
-            ::Oauth2Authorization.where(
+            ::Oauth2Authorization.left_joins(:user_session).where(
               oauth2_client: auth.oauth2_client,
               user: auth.user
+            ).where.not(id: auth.id).where(
+              'code_id IS NOT NULL OR user_sessions.closed_at IS NULL'
             ).each do |other_auth|
               if other_auth.code
                 code = other_auth.code
