@@ -24,7 +24,14 @@
 // Redirect to OAuth2 authorization server
 if ($_GET["action"] == 'login') {
     setupOAuth2ForLogin();
-    $api->getAuthenticationProvider()->requestAuthorizationCode();
+
+    $queryParams = [];
+
+    if (isset($_GET['user']) && $_GET['user']) {
+        $queryParams['user'] = $_GET['user'];
+    }
+
+    $api->getAuthenticationProvider()->requestAuthorizationCode($queryParams);
     exit;
 }
 

@@ -83,6 +83,8 @@ $config = null;
 
 try {
     if (isLoggedIn()) {
+        savePastUserAccounts();
+
         switch ($_SESSION['auth_type']) {
             case 'oauth2':
                 $api->authenticate('oauth2', ['access_token' => $_SESSION['access_token']], false);

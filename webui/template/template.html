@@ -119,6 +119,9 @@
                         <input type="submit" value="{L_LOGOUT} ({USER_NAME}) ⯆" id="logbox-submit" />
                         <ul class="dropdown-content account-menu">
                             <li><a href="?page=login&action=switch_user&t={V_CSRF_TOKEN}">{L_LOGOUT_SWITCH}</a></li>
+                            <!-- BEGIN: switch_to_user -->
+                            <li><a href="?page=login&action=switch_user&user={SW_USER}&t={SW_CSRF_TOKEN}">{SW_LABEL}</a></li>
+                            <!-- END: switch_to_user -->
                             <li><a href="?page=login&action=logout&t={V_CSRF_TOKEN}">{L_LOGOUT}</a></li>
                         </ul>
                     </div>

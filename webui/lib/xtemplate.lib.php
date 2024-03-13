@@ -517,6 +517,18 @@ class XTemplate
                 }
             }
             $this->assign('USER_NAME', $user_name);
+
+            foreach (getPastUserAccounts() as $userAccount) {
+                if ($userAccount == $_SESSION['user']['login']) {
+                    continue;
+                }
+
+                $this->assign('SW_USER', $userAccount);
+                $this->assign('SW_CSRF_TOKEN', csrf_token());
+                $this->assign('SW_LABEL', _('Switch to') . ' ' . h($userAccount));
+                $this->parse('main.loggedbox.switch_to_user');
+            }
+
             $this->parse('main.loggedbox');
         } else {
             $this->parse('main.logbox');

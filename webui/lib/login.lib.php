@@ -1,5 +1,7 @@
 <?php
 
+define('PAST_USER_ACCOUNTS_COOKIE', 'vpsAdmin-userAccounts');
+
 function setupOAuth2ForLogin()
 {
     global $api;
@@ -93,7 +95,13 @@ function logoutAndSwitchUser()
 
     $api->getAuthenticationProvider()->revokeAccessToken(['close_sso' => '1']);
 
-    redirect('?page=login&action=login');
+    $redirectPath = '?page=login&action=login';
+
+    if (isset($_GET['user']) && $_GET['user']) {
+        $redirectPath .= '&user=' . urlencode($_GET['user']);
+    }
+
+    redirect($redirectPath);
 }
 
 function switchUserContext($target_user_id)
@@ -178,11 +186,16 @@ function getOAuth2RedirectUri()
     return getSelfUri() . '/?page=login&action=callback';
 }
 
+function isHttps()
+{
+    return ($_SERVER['HTTPS'] ?? false) || (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] == 'https');
+}
+
 function getSelfUri()
 {
     $ret = 'http';
 
-    if (($_SERVER['HTTPS'] ?? false) || (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] == 'https')) {
+    if (isHttps()) {
         $ret .= 's';
     }
 
@@ -211,4 +224,45 @@ function getAuthenticationToken()
         default:
             throw "Unknown authentication type";
     }
+}
+
+function savePastUserAccounts()
+{
+    $userAccounts = [];
+    $hasCookie = isset($_COOKIE[PAST_USER_ACCOUNTS_COOKIE]);
+
+    if ($hasCookie) {
+        $userAccounts = explode(',', $_COOKIE[PAST_USER_ACCOUNTS_COOKIE]);
+    }
+
+    if (isset($_SESSION["context_switch"]) && $_SESSION["context_switch"]) {
+        $isSaved = true;
+    } else {
+        $isSaved = in_array($_SESSION['user']['login'], $userAccounts);
+    }
+
+    if (!$isSaved) {
+        $userAccounts[] = $_SESSION['user']['login'];
+        sort($userAccounts);
+    }
+
+    $_SESSION['user_accounts'] = $userAccounts;
+
+    if ($hasCookie && $isSaved) {
+        return;
+    }
+
+    setcookie(
+        PAST_USER_ACCOUNTS_COOKIE,
+        implode(',', $userAccounts),
+        [
+            'expires' => time() + 7 * 24 * 60 * 60,
+            'secure' => isHttps(),
+        ]
+    );
+}
+
+function getPastUserAccounts()
+{
+    return $_SESSION['user_accounts'];
 }
