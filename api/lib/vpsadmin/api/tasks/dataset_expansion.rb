@@ -92,6 +92,7 @@ module VpsAdmin::API::Tasks
            && (exp.last_vps_stop.nil? || exp.last_vps_stop + COOLDOWN < now) \
            && exp.vps.active? \
            && exp.vps.is_running? \
+           && exp.vps.uptime \
            && exp.vps.uptime >= COOLDOWN \
            && (exp_cnt > MAX_EXPANSIONS || exp.over_refquota_seconds > exp.max_over_refquota_seconds)
 
