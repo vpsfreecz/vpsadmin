@@ -65,10 +65,10 @@ let
     "haveapi/client" = {
       targetDir = "";
       src = composerEnv.buildZipPackage {
-        name = "haveapi-client-0aeb7c9b5efa07d3c13211e6712fdcb5c2e3a5c4";
+        name = "haveapi-client-6ba2639f2c76df465034ef99e156f425fe47f015";
         src = fetchurl {
-          url = "https://api.github.com/repos/vpsfreecz/haveapi-client-php/zipball/0aeb7c9b5efa07d3c13211e6712fdcb5c2e3a5c4";
-          sha256 = "16wk40jm821fjq1ibnd600cfwhn09l4s8k4y9dk4hgrjk5nk1khg";
+          url = "https://api.github.com/repos/vpsfreecz/haveapi-client-php/zipball/6ba2639f2c76df465034ef99e156f425fe47f015";
+          sha256 = "13kb5na5divv9qmpixd4j84xx7x7h70901yjxk1mv0mlvb6i81bw";
         };
       };
     };
