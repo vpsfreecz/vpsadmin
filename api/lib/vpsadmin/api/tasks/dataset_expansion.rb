@@ -88,22 +88,24 @@ module VpsAdmin::API::Tasks
           next
         end
 
-        next unless exp.dataset.referenced - OVERQUOTA_MB > exp.original_refquota \
+        # rubocop:disable Style/Next
+        if exp.dataset.referenced - OVERQUOTA_MB > exp.original_refquota \
            && (exp.last_vps_stop.nil? || exp.last_vps_stop + COOLDOWN < now) \
            && exp.vps.active? \
            && exp.vps.is_running? \
            && exp.vps.uptime \
            && exp.vps.uptime >= COOLDOWN \
            && (exp_cnt > MAX_EXPANSIONS || exp.over_refquota_seconds > exp.max_over_refquota_seconds)
-
-        begin
-          TransactionChains::Vps::StopOverQuota.fire(exp)
-          puts "Stopped VPS #{exp.vps.id}"
-          exp.update!(last_vps_stop: now)
-        rescue ResourceLocked
-          warn "VPS #{exp.vps.id} is locked, unable to stop at this time"
-          next
+          begin
+            TransactionChains::Vps::StopOverQuota.fire(exp)
+            puts "Stopped VPS #{exp.vps.id}"
+            exp.update!(last_vps_stop: now)
+          rescue ResourceLocked
+            warn "VPS #{exp.vps.id} is locked, unable to stop at this time"
+            next
+          end
         end
+        # rubocop:enable Style/Next
       end
     end
 
