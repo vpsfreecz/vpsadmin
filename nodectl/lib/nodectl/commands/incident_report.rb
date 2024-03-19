@@ -32,7 +32,7 @@ module NodeCtl
         @os_procs << os_proc
       end
 
-      def format
+      def to_string_array
         return @formatted if @formatted
 
         ret = []
@@ -222,13 +222,13 @@ module NodeCtl
 
         if vps_procs.size == 1
           vps_procs.each_value do |vps_proc|
-            f.puts(vps_proc.format.join)
+            f.puts(vps_proc.to_string_array.join)
           end
         else
           f.puts('### The following lines are VPS-specific and will be appended automatically:')
           vps_procs.each do |vps_id, vps_proc|
             f.puts("## VPS #{vps_id}")
-            f.puts(vps_proc.format.map { |v| "# #{v}" }.join)
+            f.puts(vps_proc.to_string_array.map { |v| "# #{v}" }.join)
           end
         end
       end
@@ -242,7 +242,7 @@ module NodeCtl
         vps_procs.each do |vps_id, vps_proc|
           inc = incident.clone
           inc.vps_id = vps_id
-          inc.message = "#{inc.message}\n\n" << vps_proc.format.reject do |line|
+          inc.message = "#{inc.message}\n\n" << vps_proc.to_string_array.reject do |line|
             line.start_with?('#')
           end.join
 
