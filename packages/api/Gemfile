@@ -18,7 +18,7 @@ gem 'paper_trail', '~> 15.1.0'
 gem 'prometheus-client', '~> 4.1.0'
 gem 'rake'
 gem 'require_all', '~> 2.0.0'
-gem 'rotp', '~> 6.2.2'
+gem 'rotp', '~> 6.3.0'
 gem 'rubyzip', '~> 2.3.2' # needed by vpsFree.cz's incident reports
 gem 'sinatra-activerecord', '~> 2.0.23'
 gem 'thin'
