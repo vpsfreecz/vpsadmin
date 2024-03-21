@@ -1,4 +1,6 @@
 *.swp
+.gems
 .idea
 .php-cs-fixer.cache
+.vscode
 TODO
