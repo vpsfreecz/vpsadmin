@@ -80,18 +80,21 @@ module NodeCtld
 
         pipe_cmd("tar -cz -C \"#{dir}\" .")
       ensure
+        unmounted = false
+
         10.times do
           st = syscmd("umount \"#{dir}\"", valid_rcs: [32])
 
           if [0, 32].include?(st.exitstatus)
             Dir.rmdir(dir)
+            unmounted = true
             break
           end
 
           sleep(1)
         end
 
-        raise "unable to unmount #{dir}"
+        raise "unable to unmount #{dir}" unless unmounted
       end
     end
 
