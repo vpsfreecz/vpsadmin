@@ -49,8 +49,34 @@ module NodeCtld
       end
     end
 
+    # Call {Bunny::Session#create_channel} and handle connection errors
+    #
+    # If the connection is closed, this method blocks until bunny's auto-recovery
+    # process fixes it and the channel can be created.
+    #
+    # @return [Bunny::Channel]
     def create_channel
-      @connection.create_channel
+      until @connection.open?
+        log(:info, 'Waiting for recovery to create a channel')
+        sleep(5)
+      end
+
+      begin
+        @connection.create_channel
+      rescue RuntimeError => e
+        # Bunny returns RuntimeError when the connection is closed
+        # and recovery is in progress
+        raise unless e.message.include?('this connection is not open')
+
+        sleep(5)
+
+        until @connection.open?
+          log(:info, 'Waiting for recovery to create a channel')
+          sleep(5)
+        end
+
+        retry
+      end
     end
 
     # Call {Bunny::Exchange#publish} and handle connection closed errors
