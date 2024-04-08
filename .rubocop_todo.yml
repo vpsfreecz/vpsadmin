@@ -6,5 +6,7 @@ Lint/UnusedMethodArgument:
 
 Style/ClassVars:
   Enabled: false
+Style/MapIntoArray:
+  Enabled: false
 Style/OptionalBooleanParameter:
   Enabled: false
