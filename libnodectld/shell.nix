@@ -5,14 +5,14 @@ let
 in stdenv.mkDerivation rec {
   name = "libnodectld";
 
-  buildInputs = [
-    pkgs.ruby
-    pkgs.git
-    pkgs.zlib
-    pkgs.openssl
-    pkgs.ncurses
-    pkgs.mariadb
-    pkgs.mariadb-connector-c
+  buildInputs = with pkgs; [
+    ruby_3_2
+    git
+    zlib
+    openssl
+    ncurses
+    mariadb
+    mariadb-connector-c
   ];
 
   shellHook = ''
