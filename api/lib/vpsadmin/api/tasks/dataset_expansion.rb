@@ -55,7 +55,11 @@ module VpsAdmin::API::Tasks
     def stop_vps
       now = Time.now
 
-      ::DatasetExpansion.where(state: 'active', stop_vps: true).each do |exp|
+      ::DatasetExpansion
+        .joins(:vps)
+        .where(state: 'active', stop_vps: true)
+        .where(vpses: { object_state: ::Vps.object_states[:active] })
+        .each do |exp|
         exp_cnt = exp.expansion_count
 
         if exp.vps.active? && exp.dataset.referenced > exp.original_refquota
@@ -118,7 +122,11 @@ module VpsAdmin::API::Tasks
     def resolve_datasets
       now = Time.now
 
-      ::DatasetExpansion.where(state: 'active', enable_shrink: true).each do |exp|
+      ::DatasetExpansion
+        .joins(:vps)
+        .where(state: 'active', enable_shrink: true)
+        .where(vpses: { object_state: ::Vps.object_states[:active] })
+        .each do |exp|
         begin
           dip = exp.dataset.primary_dataset_in_pool!
         rescue ActiveRecord::RecordNotFound
