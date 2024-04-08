@@ -133,8 +133,24 @@ module NodeCtld
       end
     end
 
-    def send_request(command, *args, **kwargs)
+    def send_request(command, *, **)
+      loop do
+        resp = send_and_receive(command, *, **)
+        return resp.fetch('response') if resp.fetch('status')
+
+        if resp['retry']
+          log(:debug, "response id=#{@call_id[0..7]} status=false message=#{resp['message']} retry=true")
+          sleep(5)
+          next
+        end
+
+        raise Error, @response.fetch('message', 'Server error')
+      end
+    end
+
+    def send_and_receive(command, *args, **kwargs)
       @call_id = generate_uuid
+
       if @debug
         t1 = Time.now
         log(:debug, "request id=#{@call_id[0..7]} command=#{command} args=#{args.inspect} kwargs=#{kwargs.inspect}")
@@ -176,9 +192,7 @@ module NodeCtld
         log(:debug, "response id=#{@call_id[0..7]} time=#{(Time.now - t1).round(3)}s value=#{@response.inspect}")
       end
 
-      raise Error, @response.fetch('message', 'Server error') unless @response['status']
-
-      @response['response']
+      @response
     end
 
     def generate_uuid

@@ -49,6 +49,9 @@ module VpsAdmin::Supervisor
             *req.fetch('args', []),
             **symbolize_hash_keys(req.fetch('kwargs', {}))
           )
+        rescue ActiveRecord::AdapterError => e
+          send_error("#{e.class}: #{e.message}", retry: true)
+          raise
         rescue StandardError => e
           send_error("#{e.class}: #{e.message}")
           raise
@@ -65,8 +68,8 @@ module VpsAdmin::Supervisor
         reply({ status: true, response: })
       end
 
-      def send_error(message)
-        reply({ status: false, message: })
+      def send_error(message, retry: false)
+        reply({ status: false, message:, retry: })
       end
 
       def reply(payload)
