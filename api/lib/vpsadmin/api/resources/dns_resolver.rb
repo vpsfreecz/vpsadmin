@@ -118,6 +118,8 @@ class VpsAdmin::API::Resources::DnsResolver < HaveAPI::Resource
   end
 
   class Update < HaveAPI::Actions::Default::Update
+    blocking true
+
     input do
       use :common
     end
@@ -131,14 +133,21 @@ class VpsAdmin::API::Resources::DnsResolver < HaveAPI::Resource
     end
 
     def exec
-      ns = ::DnsResolver.find(params[:dns_resolver_id])
-      ns.update(to_db_names(input))
+      resolver = ::DnsResolver.find(params[:dns_resolver_id])
+      @chain, ret = TransactionChains::DnsResolver::Update.fire(resolver, to_db_names(input))
+      ret
     rescue ActiveRecord::RecordInvalid => e
       error('update failed', to_param_names(e.record.errors.to_hash, :input))
+    end
+
+    def state_id
+      @chain && @chain.id
     end
   end
 
   class Delete < HaveAPI::Actions::Default::Delete
+    blocking true
+
     input do
       bool :force, label: 'Force deletion',
                    desc: 'Delete the DNS resolver even it is in use. Affected VPSes get a new DNS resolver.'
@@ -150,12 +159,16 @@ class VpsAdmin::API::Resources::DnsResolver < HaveAPI::Resource
 
     def exec
       ns = ::DnsResolver.find(params[:dns_resolver_id])
-
       error('The DNS resolver is in use. Use force=true to override.') if !input[:force] && ns.in_use?
 
-      ns.delete
+      @chain, = TransactionChains::DnsResolver::Destroy.fire(ns)
+      ok
     rescue ActiveRecord::RecordInvalid => e
-      error('update failed', to_param_names(e.record.errors.to_hash, :input))
+      error('delete failed', to_param_names(e.record.errors.to_hash, :input))
+    end
+
+    def state_id
+      @chain && @chain.id
     end
   end
 end

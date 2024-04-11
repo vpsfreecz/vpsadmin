@@ -58,6 +58,8 @@ module TransactionChains
           edit(ns, db_changes)
         end
       end
+
+      ns
     end
   end
 end

@@ -27,14 +27,6 @@ class DnsResolver < ActiveRecord::Base
     ).where.not(id: except).order(:is_universal).take
   end
 
-  def update(attrs)
-    TransactionChains::DnsResolver::Update.fire(self, attrs)
-  end
-
-  def delete
-    TransactionChains::DnsResolver::Destroy.fire(self)
-  end
-
   def in_use?
     ::Vps.including_deleted.exists?(dns_resolver: self)
   end
