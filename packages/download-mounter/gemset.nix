@@ -76,10 +76,10 @@
     platforms = [];
     source = {
       remotes = ["https://rubygems.org"];
-      sha256 = "14473i8w49c4kxq47zkygpiyga41bqc7zghhhg9yrbjdi03g708j";
+      sha256 = "1wnasdghzqi245v1va3jiv2zvmrjx8nd4nz8jjcsjklgswc2x95p";
       type = "gem";
     };
-    version = "0.21.1";
+    version = "0.22.1";
   };
   highline = {
     groups = ["default"];
@@ -128,10 +128,10 @@
     platforms = [];
     source = {
       remotes = ["https://rubygems.org"];
-      sha256 = "0r9jmjhg2ly3l736flk7r2al47b5c8cayh0gqkq0yhjqzc9a6zhq";
+      sha256 = "0b4qsi8gay7ncmigr0pnbxyb17y3h8kavdyhsh7nrlqwr35vb60q";
       type = "gem";
     };
-    version = "2.7.1";
+    version = "2.7.2";
   };
   mime-types = {
     dependencies = ["mime-types-data"];
