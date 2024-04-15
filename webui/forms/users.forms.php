@@ -906,7 +906,6 @@ function incoming_payments_list()
     $xtpl->table_add_category("FROM");
     $xtpl->table_add_category("MESSAGE");
     $xtpl->table_add_category("VS");
-    $xtpl->table_add_category("COMMENT");
     $xtpl->table_add_category("");
 
     foreach ($payments as $p) {
@@ -916,7 +915,6 @@ function incoming_payments_list()
         $xtpl->table_td(h($p->account_name));
         $xtpl->table_td(h($p->user_message));
         $xtpl->table_td(h($p->vs));
-        $xtpl->table_td(h($p->comment));
         $xtpl->table_td(
             '<a href="?page=adminm&action=incoming_payment&id=' . $p->id . '">' .
             '<img src="template/icons/m_edit.png" title="' . _('Details') . '">' .
