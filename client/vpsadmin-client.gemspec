@@ -19,6 +19,6 @@ Gem::Specification.new do |spec|
   spec.require_paths = ['lib']
 
   spec.add_runtime_dependency 'curses'
-  spec.add_runtime_dependency 'haveapi-client', '~> 0.21.0'
+  spec.add_runtime_dependency 'haveapi-client', '~> 0.22.1'
   spec.add_runtime_dependency 'json'
 end
