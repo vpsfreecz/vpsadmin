@@ -300,6 +300,12 @@ class MailTemplate < ActiveRecord::Base
     reason: String
   }, roles: %i[admin], public: true
 
+  register :vps_dns_resolver_change, vars: {
+    vps: ::Vps,
+    old_dns_resolver: ::DnsResolver,
+    new_dns_resolver: ::DnsResolver
+  }, roles: %i[admin], public: true
+
   register :vps_oom_report, vars: {
     base_url: [String, 'URL to the web UI'],
     vps: ::Vps,
