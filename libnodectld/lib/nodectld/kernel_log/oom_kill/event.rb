@@ -97,6 +97,8 @@ module NodeCtld
          && %r{^Memory cgroup stats for /osctl/pool\.([^/]+)/group\.([^/]+)/user\.([^/]+)/ct\.([^:]+):} =~ msg.text
         vps_id = ::Regexp.last_match(4).to_i
 
+        @in_cgroup_stats = true
+
         if vps_id == 0
           log(:info, "Skipping OOM report from an unmanaged VPS #{::Regexp.last_match(1)}:#{::Regexp.last_match(4)}")
           finish!
@@ -121,12 +123,15 @@ module NodeCtld
         return
       end
 
-      if report.stats.empty? && /^anon \d+/ =~ msg.text
-        msg.text.strip.split('\\x0a').each do |stat|
-          k, v = stat.split
+      if @in_cgroup_stats
+        if /^\w+\s\d+/ =~ msg.text
+          k, v = msg.text.strip.split
           report.stats[k] = v.to_i
+          log(:debug, "got stats '#{k}'='#{v}")
+        else
+          @in_cgroup_stats = false
+          return
         end
-        return
       end
 
       if /^\[\s*(\d+)\] ([^$]+)/ =~ msg.text
