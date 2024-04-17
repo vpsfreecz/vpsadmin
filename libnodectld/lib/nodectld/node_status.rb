@@ -8,6 +8,8 @@ module NodeCtld
     def initialize(pool_status)
       @pool_status = pool_status
       @cpus = SystemProbes::Cpus.new.count
+      @cpu_usage = SystemProbes::CpuUsage.new
+      @cpu_usage.start
 
       @channel = NodeBunny.create_channel
       @exchange = @channel.direct(NodeBunny.exchange_name)
@@ -30,7 +32,7 @@ module NodeCtld
         nproc: 0,
         uptime: SystemProbes::Uptime.new.uptime.round,
         cpus: @cpus,
-        cpu: SystemProbes::CpuUsage.new.measure.to_percent,
+        cpu: @cpu_usage.values,
         memory: { # in kB
           total: mem.total,
           used: mem.used

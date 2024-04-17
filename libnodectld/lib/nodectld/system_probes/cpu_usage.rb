@@ -13,15 +13,27 @@ module NodeCtld::SystemProbes
       guest_nice
     ].freeze
 
+    # @return [Hash]
+    attr_reader :values
+
     def initialize
       @data = []
+      @values = FIELDS.to_h { |v| [v, 0.0] }
+      @values[:idle] = 100.0
     end
 
-    def measure(delay = 0.3)
-      measure_once
-      sleep(delay)
-      measure_once
-      self
+    def start
+      @thread = Thread.new do
+        loop do
+          measure_once
+          sleep($CFG.get(:node, :cpu_usage_measure_delay))
+          measure_once
+          @values = to_percent
+          @data.clear
+        end
+      end
+
+      nil
     end
 
     def measure_once(str = nil)
@@ -44,26 +56,19 @@ module NodeCtld::SystemProbes
       end
 
       @data << data
-      self
+      nil
     end
+
+    protected
 
     def to_percent
       data = diff
       sum = data.values.reduce(:+).to_f
-      ret = {}
 
-      data.each do |k, v|
-        ret[k] = if sum == 0.0
-                   0.0
-                 else
-                   (v / sum * 100).round(2)
-                 end
+      data.transform_values do |v|
+        sum > 0 ? (v / sum * 100).round(2) : 0.0
       end
-
-      ret
     end
-
-    protected
 
     def diff
       ret = {}

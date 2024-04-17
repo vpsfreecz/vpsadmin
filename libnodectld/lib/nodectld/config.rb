@@ -137,7 +137,8 @@ module NodeCtld
         types: %w[rsa dsa],
         path: '/etc/ssh/ssh_host_%{type}_key.pub'
       },
-      known_hosts: '/root/.ssh/known_hosts'
+      known_hosts: '/root/.ssh/known_hosts',
+      cpu_usage_measure_delay: 5
     },
 
     shaper: {
