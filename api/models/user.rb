@@ -11,6 +11,7 @@ require_relative 'transaction_chains/lifetimes/not_implemented'
 class User < ActiveRecord::Base
   has_many :user_namespaces
   has_many :vpses
+  has_many :transaction_chains
   has_many :transactions
   has_many :environment_user_configs
   has_many :environments, through: :environment_user_configs
@@ -27,6 +28,8 @@ class User < ActiveRecord::Base
   has_many :user_sessions
   has_many :oauth2_authorizations
   has_many :single_sign_ons
+  has_many :user_failed_logins
+  has_many :metrics_access_tokens
   belongs_to :language
 
   enum password_version: VpsAdmin::API::CryptoProviders::PROVIDERS

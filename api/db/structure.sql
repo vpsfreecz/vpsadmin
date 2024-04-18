@@ -775,6 +775,23 @@ CREATE TABLE `maintenance_locks` (
   KEY `index_maintenance_locks_on_class_name_and_row_id` (`class_name`,`row_id`) USING BTREE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `metrics_access_tokens`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `metrics_access_tokens` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `token_id` bigint(20) NOT NULL,
+  `user_id` bigint(20) NOT NULL,
+  `metric_prefix` varchar(30) NOT NULL DEFAULT 'vpsadmin_',
+  `use_count` int(11) NOT NULL DEFAULT 0,
+  `last_use` datetime(6) DEFAULT NULL,
+  `created_at` datetime(6) NOT NULL,
+  `updated_at` datetime(6) NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `index_metrics_access_tokens_on_token_id` (`token_id`),
+  KEY `index_metrics_access_tokens_on_user_id` (`user_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `migration_plans`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
@@ -2069,6 +2086,7 @@ CREATE TABLE `vpses` (
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
 INSERT INTO `schema_migrations` (version) VALUES
+('20240418082651'),
 ('20240308152841'),
 ('20240229135345'),
 ('20240126165609'),

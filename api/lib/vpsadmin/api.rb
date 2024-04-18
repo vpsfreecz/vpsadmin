@@ -33,6 +33,18 @@ module VpsAdmin
 
       authenticate(api)
 
+      api.connect_hook(:pre_mount) do |ret, _, sinatra|
+        sinatra.get '/metrics' do
+          m = Metrics.new
+          next [403, 'Access denied'] unless m.authenticate(params['access_token'])
+
+          m.compute
+          [200, { 'Content-Type' => 'text/plain' }, m.render]
+        end
+
+        ret
+      end
+
       api.connect_hook(:post_authenticated) do |ret, u|
         # If some user was authenticated in the previous request, but is not now,
         # reset current user info in the per-thread storage.

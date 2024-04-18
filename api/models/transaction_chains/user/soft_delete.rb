@@ -32,6 +32,7 @@ module TransactionChains
 
       user.single_sign_ons.destroy_all
       user.oauth2_authorizations.destroy_all
+      user.metrics_access_tokens.destroy_all
     end
   end
 end
