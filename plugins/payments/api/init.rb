@@ -13,3 +13,5 @@ if defined?(namespace)
   # Load tasks only if run by rake
   load_rel 'tasks/*.rake'
 end
+
+VpsAdmin::API::Metrics.register_plugin(VpsAdmin::API::Plugins::Payments::Metrics)
