@@ -114,10 +114,13 @@ class Outage < ActiveRecord::Base
     end
   end
 
+  # @param user [::User, nil]
   # @return [Boolean] true if the current user is affected by this outage
-  def affected
-    if ::User.current
-      outage_users.where(user_id: ::User.current.id).any?
+  def affected(user: nil)
+    user ||= ::User.current
+
+    if user
+      outage_users.where(user_id: user.id).any?
     else
       false
     end
