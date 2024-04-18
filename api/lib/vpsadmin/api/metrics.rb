@@ -42,6 +42,16 @@ module VpsAdmin::API
 
     DATASET_PROPERTIES_IN_BYTES = %i[used referenced avail quota refquota].freeze
 
+    def self.register_plugin(klass)
+      @plugins ||= []
+      @plugins << klass
+      nil
+    end
+
+    def self.plugins
+      @plugins || []
+    end
+
     def initialize
       @registry = Prometheus::Client::Registry.new
     end
@@ -56,6 +66,12 @@ module VpsAdmin::API
       @token.update!(last_use: Time.now)
 
       setup
+
+      @plugins = self.class.plugins.map do |metrics_klass|
+        metrics_base = metrics_klass.new(@registry, @token)
+        metrics_base.setup
+        metrics_base
+      end
 
       true
     end
@@ -214,6 +230,8 @@ module VpsAdmin::API
       user.user_failed_logins.group(:auth_type).count.each do |auth_type, cnt|
         @user_failed_logins.set(cnt, labels: { auth_type: })
       end
+
+      @plugins.each(&:compute)
 
       nil
     end
