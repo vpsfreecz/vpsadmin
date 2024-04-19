@@ -145,13 +145,13 @@ if (isLoggedIn()) {
                 'hostname' => $_POST['hostname'],
                 'os_template' => $_GET['os_template'],
                 'info' => isAdmin() ? '' : $_POST['info'],
-                'memory' => (int)$_GET['memory'],
-                'swap' => (int)$_GET['swap'],
-                'cpu' => (int)$_GET['cpu'],
-                'diskspace' => (int)$_GET['diskspace'],
-                'ipv4' => (int)$_GET['ipv4'],
-                'ipv4_private' => (int)$_GET['ipv4_private'],
-                'ipv6' => (int)$_GET['ipv6'],
+                'memory' => (int) $_GET['memory'],
+                'swap' => (int) $_GET['swap'],
+                'cpu' => (int) $_GET['cpu'],
+                'diskspace' => (int) $_GET['diskspace'],
+                'ipv4' => (int) $_GET['ipv4'],
+                'ipv4_private' => (int) $_GET['ipv4_private'],
+                'ipv6' => (int) $_GET['ipv6'],
             ];
 
             if (isAdmin()) {
@@ -161,7 +161,7 @@ if (isLoggedIn()) {
 
             } else {
                 if ($_GET['location']) {
-                    $params['location'] = (int)$_GET['location'];
+                    $params['location'] = (int) $_GET['location'];
                 }
                 if ($_POST['user_namespace_map']) {
                     $params['user_namespace_map'] = $_POST['user_namespace_map'];
@@ -868,7 +868,7 @@ if (isLoggedIn()) {
 
             } else {
                 if ($_GET['location']) {
-                    $params['location'] = (int)$_GET['location'];
+                    $params['location'] = (int) $_GET['location'];
                 }
             }
 

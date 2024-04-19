@@ -768,7 +768,7 @@ class XTemplate
                 $output = sprintf(
                     _("<span id='inputh%s'>%d</span> chars needed"),
                     $uid,
-                    (int)(($nchar - strlen($value)) * (-1))
+                    (int) (($nchar - strlen($value)) * (-1))
                 );
             }
 

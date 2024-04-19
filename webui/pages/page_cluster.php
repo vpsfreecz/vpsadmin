@@ -324,7 +324,7 @@ if (isAdmin()) {
                 $api->location->create([
                     'label' => $_POST['location_label'],
                     'type' => $_POST['type'],
-                    'has_ipv6' => (bool)$_POST['has_ipv6'],
+                    'has_ipv6' => (bool) $_POST['has_ipv6'],
                     'remote_console_server' => $_POST['remote_console_server'],
                     'domain' => $_POST['domain'],
                 ]);
@@ -366,7 +366,7 @@ if (isAdmin()) {
                 $api->location->update($_GET['id'], [
                     'label' => $_POST['location_label'],
                     'type' => $_POST['type'],
-                    'has_ipv6' => (bool)$_POST['has_ipv6'],
+                    'has_ipv6' => (bool) $_POST['has_ipv6'],
                     'remote_console_server' => $_POST['remote_console_server'],
                     'domain' => $_POST['domain'],
                 ]);

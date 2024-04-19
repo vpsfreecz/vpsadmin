@@ -46,7 +46,7 @@ function outage_set_entities($outage)
 
     foreach ($tr as $post => $name) {
         foreach ($_POST[$post] as $v) {
-            $new_entities[] = [$name, (int)$v];
+            $new_entities[] = [$name, (int) $v];
         }
     }
 
@@ -109,7 +109,7 @@ function outage_set_handlers($outage)
         $exists = false;
 
         foreach ($existing as $h) {
-            if ($h->user_id === (int)$new) {
+            if ($h->user_id === (int) $new) {
                 $exists = true;
                 break;
             }
@@ -125,7 +125,7 @@ function outage_set_handlers($outage)
         $exists = false;
 
         foreach ($_POST['handlers'] as $new) {
-            if ($h->user_id === (int)$new) {
+            if ($h->user_id === (int) $new) {
                 $exists = true;
                 break;
             }
