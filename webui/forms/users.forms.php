@@ -1524,3 +1524,103 @@ function totp_device_del_form($user, $dev)
 
     $xtpl->form_out(_('Delete'));
 }
+
+function metrics_list_access_tokens($user_id)
+{
+    global $xtpl, $api;
+
+    $xtpl->table_title(_('Metrics access tokens'));
+    $xtpl->table_add_category(_('Access token'));
+    $xtpl->table_add_category(_('Prefix'));
+    $xtpl->table_add_category(_('Use count'));
+    $xtpl->table_add_category(_('Last use'));
+    $xtpl->table_add_category('');
+    $xtpl->table_add_category('');
+
+    $tokens = $api->metrics_access_token->list(['user' => $user_id]);
+
+    foreach ($tokens as $t) {
+        $xtpl->table_td('<a href="?page=adminm&action=metrics_show&id=' . $user_id . '&token=' . $t->id . '">' . substr($t->access_token, 0, 10) . '...</a>');
+        $xtpl->table_td(h($t->metric_prefix));
+        $xtpl->table_td($t->use_count . '&times;');
+        $xtpl->table_td($t->last_use ? tolocaltz($t->last_use) : '-');
+        $xtpl->table_td('<a href="?page=adminm&action=metrics_show&id=' . $user_id . '&token=' . $t->id . '"><img src="template/icons/m_edit.png" title="' . _('Show access details') . '"></a>');
+        $xtpl->table_td('<a href="?page=adminm&action=metrics_delete&id=' . $user_id . '&token=' . $t->id . '&t=' . csrf_token() . '"><img src="template/icons/m_delete.png" title="' . _('Delete access token') . '"></a>');
+        $xtpl->table_tr();
+    }
+
+    $xtpl->table_td('<a href="?page=adminm&action=metrics_new&id=' . $user_id . '">' . _('New access token') . '</a>', false, true, 6);
+    $xtpl->table_tr();
+
+    $xtpl->table_out();
+
+    $xtpl->sbar_add('<br><img src="template/icons/m_edit.png"  title="' . _("Back to user details") . '" />' . _('Back to user details'), "?page=adminm&section=members&action=edit&id=$user_id");
+}
+
+function metrics_show($user_id, $token_id)
+{
+    global $xtpl, $api;
+
+    $t = $api->metrics_access_token->show($token_id);
+
+    $xtpl->table_title(_('Metrics access token') . ' ' . substr($t->access_token, 0, 10));
+
+    if (isAdmin()) {
+        $xtpl->table_td(_('User') . ':');
+        $xtpl->table_td(user_link($t->user));
+        $xtpl->table_tr();
+    }
+
+    $xtpl->table_td(_('Access token') . ':');
+    $xtpl->table_td('<code>' . h($t->access_token) . '</code>');
+    $xtpl->table_tr();
+
+    $xtpl->table_td(_('Metric prefix') . ':');
+    $xtpl->table_td(h($t->metric_prefix));
+    $xtpl->table_tr();
+
+    $xtpl->table_td(_('Use count') . ':');
+    $xtpl->table_td($t->use_count . '&times;');
+    $xtpl->table_tr();
+
+    $xtpl->table_td(_('Last use') . ':');
+    $xtpl->table_td($t->last_use ? tolocaltz($t->last_use) : '-');
+    $xtpl->table_tr();
+
+    $scrapeUrl = EXT_API_URL . '/metrics?access_token=' . $t->access_token;
+
+    $xtpl->table_td(_('Scrape URL') . ':');
+    $xtpl->table_td("
+		<textarea rows=\"10\" cols=\"80\" readonly>
+{$scrapeUrl}
+		</textarea>
+	");
+    $xtpl->table_tr();
+
+    $xtpl->table_td(_('Scrape link') . ':');
+    $xtpl->table_td('<a href="' . $scrapeUrl . '" target="_blank">' . _('open') . '</a>');
+    $xtpl->table_tr();
+
+    $xtpl->table_out();
+
+    $xtpl->sbar_add('<br><img src="template/icons/m_edit.png"  title="' . _("Back to user details") . '" />' . _('Back to metrics access tokens'), "?page=adminm&action=metrics&id=$user_id");
+    $xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="' . _("Back to user details") . '" />' . _('Back to user details'), "?page=adminm&section=members&action=edit&id=$user_id");
+
+}
+
+function metrics_new_form($user_id)
+{
+    global $xtpl, $api;
+
+    $xtpl->table_title(_('Create new metrics access token'));
+    $xtpl->form_create('?page=adminm&action=metrics_new&id=' . $user_id, 'post');
+
+    $input = $api->metrics_access_token->create->getParameters('input');
+
+    api_param_to_form('metric_prefix', $input->metric_prefix);
+
+    $xtpl->form_out(_('Create'));
+
+    $xtpl->sbar_add('<br><img src="template/icons/m_edit.png"  title="' . _("Back to user details") . '" />' . _('Back to metrics access tokens'), "?page=adminm&action=metrics&id=$user_id");
+    $xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="' . _("Back to user details") . '" />' . _('Back to user details'), "?page=adminm&section=members&action=edit&id=$user_id");
+}

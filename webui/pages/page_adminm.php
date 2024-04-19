@@ -314,6 +314,7 @@ function print_editm($u)
     $xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="' . _("Public keys") . '" />' . _('Public keys'), "?page=adminm&section=members&action=pubkeys&id={$u->id}");
     $xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="' . _("TOTP devices") . '" />' . _('TOTP devices'), "?page=adminm&section=members&action=totp_devices&id={$u->id}");
     $xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="' . _("Sessions") . '" />' . _('Sessions'), "?page=adminm&action=user_sessions&id={$u->id}");
+    $xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="' . _("Metrics access tokens") . '" />' . _('Metrics access tokens'), "?page=adminm&action=metrics&id={$u->id}");
 
     if (isAdmin()) {
         $xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="' . _("Transaction log") . '" />' . _('Transaction log'), "?page=transactions&user={$u->id}");
@@ -1561,6 +1562,47 @@ if (isLoggedIn()) {
                 list_user_sessions($_GET['id']);
             }
 
+            break;
+
+        case 'metrics':
+            metrics_list_access_tokens($_GET['id']);
+            break;
+
+        case 'metrics_show':
+            metrics_show($_GET['id'], $_GET['token']);
+            break;
+
+        case 'metrics_new':
+            if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+                csrf_check();
+
+                try {
+                    $t = $api->metrics_access_token->create([
+                        'metric_prefix' => $_POST['metric_prefix'],
+                    ]);
+
+                    redirect('?page=adminm&action=metrics_show&id=' . $_GET['id'] . '&token=' . $t->id);
+                } catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+                    $xtpl->perex_format_errors(_('Failed create metrics access token'), $e->getResponse());
+                    metrics_new_form($_GET['id']);
+                }
+
+            } else {
+                metrics_new_form($_GET['id']);
+            }
+            break;
+
+        case 'metrics_delete':
+            csrf_check();
+
+            try {
+                $api->metrics_access_token->delete($_GET['token']);
+                notify_user(_('Metrics access token deleted'), '');
+                redirect('?page=adminm&action=metrics&id=' . $_GET['id']);
+            } catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+                $xtpl->perex_format_errors(_('Failed to delete metrics access token'), $e->getResponse());
+                metrics_list_access_tokens($_GET['id']);
+            }
             break;
 
         case 'resource_packages':
