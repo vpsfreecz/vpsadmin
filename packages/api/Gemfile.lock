@@ -48,10 +48,10 @@ GEM
     fio_api (0.0.7)
       httparty (>= 0.16.2)
     github-markdown (0.6.9)
-    haveapi (0.22.1)
+    haveapi (0.23.0)
       activesupport (>= 7.1)
       github-markdown
-      haveapi-client (~> 0.22.1)
+      haveapi-client (~> 0.23.0)
       json
       mail
       nesty (~> 1.0)
@@ -62,7 +62,7 @@ GEM
       sinatra (~> 3.1.0)
       sinatra-contrib (~> 3.1.0)
       tilt (~> 2.3.0)
-    haveapi-client (0.22.1)
+    haveapi-client (0.23.0)
       activesupport (>= 7.0)
       highline (~> 2.1.0)
       json
@@ -93,7 +93,7 @@ GEM
       net-imap
       net-pop
       net-smtp
-    method_source (1.0.0)
+    method_source (1.1.0)
     mime-types (3.5.2)
       mime-types-data (~> 3.2015)
     mime-types-data (3.2024.0305)
@@ -168,7 +168,7 @@ GEM
       diff-lcs (>= 1.2.0, < 2.0)
       rspec-support (~> 3.13.0)
     rspec-support (3.13.1)
-    rubocop (1.63.1)
+    rubocop (1.63.2)
       json (~> 2.3)
       language_server-protocol (>= 3.17.0)
       parallel (~> 1.10)
@@ -226,7 +226,7 @@ DEPENDENCIES
   bunny (~> 2.22.0)
   eventmachine
   fio_api!
-  haveapi (~> 0.22.1)
+  haveapi (~> 0.23.0)
   ipaddress (~> 0.8.0)
   mysql2 (~> 0.5.3)
   paper_trail (~> 15.1.0)
