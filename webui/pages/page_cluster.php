@@ -188,7 +188,7 @@ if (isAdmin()) {
                     'label' => $_POST['dns_label'],
                     'ip_addr' => $_POST['dns_ip'],
                     'is_universal' => isset($_POST['dns_is_universal']),
-                    'location' => $_POST['dns_location'],
+                    'location' => $_POST['dns_location'] ? $_POST['dns_location'] : NULL,
                 ]);
 
                 notify_user(_("Changes saved"), _("DNS server updated."));
