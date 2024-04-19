@@ -19,7 +19,7 @@ module VpsAdmin::API::Plugins::Payments
       return if acc.nil?
 
       @user_monthly_payment.set(acc.monthly_payment)
-      @user_paid_until.set(acc.paid_until) if acc.paid_until
+      @user_paid_until.set(acc.paid_until.to_i) if acc.paid_until
     end
   end
 end
