@@ -400,7 +400,7 @@ module VpsAdmin::API
       @vps_features = add_metric(
         :gauge,
         :vps_feature,
-        docstring: '1 if the feature is enable, 0 if disabled',
+        docstring: '1 if the feature is enabled, 0 if disabled',
         labels: VPS_LABELS + %i[feature]
       )
 
