@@ -451,7 +451,7 @@ function api_param_to_form_pure($name, $desc, $v = null, $label_callback = null,
             break;
 
         case 'Text':
-            $xtpl->form_add_textarea_pure(80, 10, $name, $v);
+            $xtpl->form_add_textarea_pure(70, 10, $name, $v);
             break;
 
         case 'Boolean':
