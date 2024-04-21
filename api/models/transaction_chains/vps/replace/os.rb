@@ -295,6 +295,16 @@ module TransactionChains
       end
 
       dst_vps.save!
+
+      mail(:vps_replaced, {
+        user: vps.user,
+        vars: {
+          original_vps: vps,
+          new_vps: dst_vps,
+          reason: attrs[:reason]
+        }
+      })
+
       dst_vps
     end
 

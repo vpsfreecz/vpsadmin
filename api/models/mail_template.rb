@@ -294,6 +294,12 @@ class MailTemplate < ActiveRecord::Base
     reason: String
   }, roles: %i[admin], public: true
 
+  register :vps_replaced, vars: {
+    original_vps: ::Vps,
+    new_vps: ::Vps,
+    reason: String
+  }, roles: %i[admin], public: true
+
   register :vps_resources_change, vars: {
     vps: ::Vps,
     admin: ::User,
