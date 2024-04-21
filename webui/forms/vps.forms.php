@@ -792,6 +792,10 @@ function vps_details_submenu($vps)
 
     $xtpl->sbar_add(_('Swap VPS'), '?page=adminvps&action=swap&veid=' . $vps->id);
 
+    if (isAdmin()) {
+        $xtpl->sbar_add(_('Replace VPS'), '?page=adminvps&action=replace&veid=' . $vps->id);
+    }
+
     $return_url = urlencode($_SERVER['REQUEST_URI']);
     $xtpl->sbar_add(_('History'), '?page=history&list=1&object=Vps&object_id=' . $vps->id . '&return_url=' . $return_url);
 
@@ -2041,6 +2045,44 @@ function vps_netif_ipaddrs_form($vps, $netif)
         );
     }
     $xtpl->form_out(_('Go >>'));
+}
+
+function vps_replace_form($vps)
+{
+    global $xtpl, $api;
+
+    $xtpl->table_title(_('Replace VPS'));
+    $xtpl->form_create('?page=adminvps&action=replace&veid=' . $vps->id, 'post');
+
+    $input = $api->vps->replace->getParameters('input');
+
+    api_param_to_form(
+        'node',
+        $input->node,
+        post_val('node', $vps->node_id),
+        function ($node) { return $node->domain_name; }
+    );
+    api_param_to_form(
+        'expiration_date',
+        $input->expiration_date,
+        post_val('expiration_date', date('Y-m-d H:i:s', strtotime('+2 months')))
+    );
+    api_param_to_form('start', $input->start);
+    api_param_to_form('reason', $input->reason);
+
+    $xtpl->form_add_checkbox(_('Confirm') . ':', 'confirm', '1');
+
+    $xtpl->table_td(
+        '<strong>' . _('The VPS has to be stopped for replace to work.') . '</strong>',
+        false,
+        false,
+        2
+    );
+    $xtpl->table_tr();
+
+    $xtpl->form_out(_('Replace'));
+
+    vps_details_suite($vps);
 }
 
 function vps_delete_form($vps_id)

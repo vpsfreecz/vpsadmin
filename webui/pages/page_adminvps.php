@@ -935,6 +935,39 @@ if (isLoggedIn()) {
 
             break;
 
+        case 'replace':
+            $vps = $api->vps->find($_GET['veid']);
+
+            if ($_SERVER['REQUEST_METHOD'] !== 'POST' || !isset($_POST['confirm'])) {
+                vps_replace_form($vps);
+                break;
+            }
+
+            csrf_check();
+
+            try {
+                $params = [
+                    'expiration_date' => date('c', strtotime($_POST['expiration_date'])),
+                    'start' => isset($_POST['start']),
+                    'reason' => $_POST['reason']
+                ];
+
+                if ($_POST['node']) {
+                    $params['node'] = $_POST['node'];
+                }
+
+                $newVps = $vps->replace($params);
+
+                notify_user(_('VPS replace in progress'), '');
+                redirect('?page=adminvps&action=info&veid=' . $newVps->id);
+
+            } catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+                $xtpl->perex_format_errors(_('Replace failed'), $e->getResponse());
+                vps_replace_form($vps);
+            }
+
+            break;
+
         default:
             vps_list_form();
             break;
