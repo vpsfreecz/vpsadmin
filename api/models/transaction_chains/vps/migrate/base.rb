@@ -6,6 +6,7 @@ module TransactionChains
              desc: 'Called before the VPS is started on the new node',
              context: 'TransactionChains::Vps::Migrate instance',
              kwargs: {
+               chain: 'Vps::Migrate::Base',
                vps: 'destination Vps',
                running: 'true if the VPS was running before the migration'
              }
@@ -13,6 +14,7 @@ module TransactionChains
              desc: 'Called after the VPS was started on the new node',
              context: 'TransactionChains::Vps::Migrate instance',
              kwargs: {
+               chain: 'Vps::Migrate::Base',
                vps: 'destination Vps',
                running: 'true if the VPS was running before the migration'
              }

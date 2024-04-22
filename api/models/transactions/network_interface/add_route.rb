@@ -8,12 +8,13 @@ module Transactions::NetworkInterface
     # @param ip [::IpAddress]
     # @param register [Boolean]
     # @param via [::HostIpAddress]
-    def params(netif, ip, register = true, via: nil)
+    # @param pool [::Pool, nil]
+    def params(netif, ip, register = true, via: nil, pool: nil)
       self.vps_id = netif.vps.id
       self.node_id = netif.vps.node_id
 
       {
-        pool_fs: netif.vps.dataset_in_pool.pool.filesystem,
+        pool_fs: (pool || netif.vps.dataset_in_pool.pool).filesystem,
         veth_name: netif.name,
         addr: ip.addr,
         prefix: ip.prefix,

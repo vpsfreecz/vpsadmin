@@ -146,7 +146,7 @@ module TransactionChains
       append(Transactions::Vps::WaitForRoutes, args: [dst_vps], urgent: true)
 
       # Restore VPS state
-      call_hooks_for(:pre_start, self, kwargs: { dst_vps:, running: was_running? })
+      call_hooks_for(:pre_start, self, kwargs: { chain: self, dst_vps:, running: was_running? })
 
       if was_running? && !@opts[:no_start]
         use_chain(
@@ -159,6 +159,7 @@ module TransactionChains
       end
 
       call_hooks_for(:post_start, self, kwargs: {
+                       chain: self,
                        dst_vps:,
                        running: was_running? && !@opts[:no_start]
                     })

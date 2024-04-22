@@ -6,12 +6,13 @@ module Transactions::NetworkInterface
 
     # @param netif [::NetworkInterface]
     # @param addr [::HostIpAddress]
-    def params(netif, addr)
+    # @param pool [::Pool, nil]
+    def params(netif, addr, pool: nil)
       self.vps_id = netif.vps.id
       self.node_id = netif.vps.node_id
 
       {
-        pool_fs: netif.vps.dataset_in_pool.pool.filesystem,
+        pool_fs: (pool || netif.vps.dataset_in_pool.pool).filesystem,
         interface: netif.name,
         addr: addr.ip_addr,
         prefix: addr.ip_address.prefix,

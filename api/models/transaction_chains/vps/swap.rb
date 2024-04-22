@@ -130,7 +130,7 @@ module TransactionChains
           }
         ],
         hooks: {
-          pre_start: lambda do |ret, **|
+          pre_start: lambda do |ret, chain:, **|
             # Remove addresses from the secondary (new primary) VPS
             secondary_netifs.each_value do |attrs|
               attrs[:routes].reverse_each do |ip|
@@ -140,6 +140,7 @@ module TransactionChains
                   append_t(
                     Transactions::NetworkInterface::DelHostIp,
                     args: [attrs[:target_netif], addr],
+                    kwargs: { pool: chain.dst_pool },
                     urgent: true
                   ) do |t|
                     t.edit(addr, order: nil)
@@ -149,6 +150,7 @@ module TransactionChains
                 append_t(
                   Transactions::NetworkInterface::DelRoute,
                   args: [attrs[:target_netif], ip, false],
+                  kwargs: { pool: chain.dst_pool },
                   urgent: true
                 ) do |t|
                   t.edit(ip, network_interface_id: nil)
@@ -166,6 +168,7 @@ module TransactionChains
                   append_t(
                     Transactions::NetworkInterface::DelHostIp,
                     args: [attrs[:netif], addr],
+                    # use original pool
                     urgent: true
                   ) do |t|
                     t.edit(addr, order: nil)
@@ -175,6 +178,7 @@ module TransactionChains
                 append_t(
                   Transactions::NetworkInterface::DelRoute,
                   args: [attrs[:netif], ip, true],
+                  # use original pool
                   urgent: true
                 ) do |t|
                   t.edit(ip, network_interface_id: nil)
@@ -190,7 +194,7 @@ module TransactionChains
                 append_t(
                   Transactions::NetworkInterface::AddRoute,
                   args: [dst_attrs[:target_netif], ip, true],
-                  kwargs: { via: ip.route_via },
+                  kwargs: { via: ip.route_via, pool: chain.dst_pool },
                   urgent: true
                 ) do |t|
                   t.edit(ip, network_interface_id: dst_attrs[:target_netif].id)
@@ -203,6 +207,7 @@ module TransactionChains
                   append_t(
                     Transactions::NetworkInterface::AddHostIp,
                     args: [dst_attrs[:target_netif], addr],
+                    kwargs: { pool: chain.dst_pool },
                     urgent: true
                   ) do |t|
                     t.edit(addr, order: host_i)
@@ -279,7 +284,7 @@ module TransactionChains
           }
         ],
         hooks: {
-          pre_start: lambda do |ret, **|
+          pre_start: lambda do |ret, chain:, **|
             # Add IP addresses to the new secondary VPS
             secondary_netifs.each do |netif_type, attrs|
               dst_attrs = primary_netifs[netif_type]
@@ -289,7 +294,7 @@ module TransactionChains
                 append_t(
                   Transactions::NetworkInterface::AddRoute,
                   args: [dst_attrs[:target_netif], ip, true],
-                  kwargs: { via: ip.route_via },
+                  kwargs: { via: ip.route_via, pool: chain.dst_pool },
                   urgent: true
                 ) do |t|
                   t.edit(ip, network_interface_id: dst_attrs[:target_netif].id)
@@ -302,6 +307,7 @@ module TransactionChains
                   append_t(
                     Transactions::NetworkInterface::AddHostIp,
                     args: [dst_attrs[:target_netif], addr],
+                    kwargs: { pool: chain.dst_pool },
                     urgent: true
                   ) do |t|
                     t.edit(addr, order: host_i)
