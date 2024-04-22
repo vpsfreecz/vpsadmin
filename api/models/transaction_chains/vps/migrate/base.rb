@@ -5,17 +5,19 @@ module TransactionChains
     has_hook :pre_start,
              desc: 'Called before the VPS is started on the new node',
              context: 'TransactionChains::Vps::Migrate instance',
-             args: {
+             kwargs: {
                vps: 'destination Vps',
                running: 'true if the VPS was running before the migration'
              }
     has_hook :post_start,
              desc: 'Called after the VPS was started on the new node',
              context: 'TransactionChains::Vps::Migrate instance',
-             args: {
+             kwargs: {
                vps: 'destination Vps',
                running: 'true if the VPS was running before the migration'
              }
+
+    attr_reader :src_node, :dst_node, :src_pool, :dst_pool, :src_vps, :dst_vps
 
     # @param opts [Hash]
     # @option opts [Boolean] replace_ips (false)
@@ -35,8 +37,7 @@ module TransactionChains
 
     protected
 
-    attr_reader :opts, :vps_user, :src_node, :dst_node, :src_pool, :dst_pool,
-                :src_vps, :dst_vps, :datasets, :resources_changes, :maintenance_windows
+    attr_reader :opts, :vps_user, :datasets, :resources_changes, :maintenance_windows
     attr_accessor :userns_map
 
     def setup(vps, dst_node, opts)

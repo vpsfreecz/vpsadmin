@@ -130,7 +130,7 @@ module TransactionChains
           }
         ],
         hooks: {
-          pre_start: lambda do |ret, _, _|
+          pre_start: lambda do |ret, **|
             # Remove addresses from the secondary (new primary) VPS
             secondary_netifs.each_value do |attrs|
               attrs[:routes].reverse_each do |ip|
@@ -279,7 +279,7 @@ module TransactionChains
           }
         ],
         hooks: {
-          pre_start: lambda do |ret, _, _|
+          pre_start: lambda do |ret, **|
             # Add IP addresses to the new secondary VPS
             secondary_netifs.each do |netif_type, attrs|
               dst_attrs = primary_netifs[netif_type]
