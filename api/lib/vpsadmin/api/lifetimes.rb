@@ -615,21 +615,23 @@ module VpsAdmin::API
         action.send(:define_method, :object_state_check!) do |*objs|
           next if current_user.role == :admin
 
+          forbidden = false
           reason = nil
 
           objs.each do |obj|
-            if obj.object_state != 'active'
-              reason = obj.current_object_state.reason
-              break
-            end
+            next if obj.object_state == 'active'
+
+            forbidden = true
+            reason = obj.current_object_state.reason
+            break
           end
 
-          next unless reason
+          next unless forbidden
 
-          if reason.empty?
-            error('Access forbidden: your account is suspended')
-          else
+          if reason && !reason.empty?
             error("Access forbidden: #{reason}")
+          else
+            error('Access forbidden: your account is suspended')
           end
         end
       end
