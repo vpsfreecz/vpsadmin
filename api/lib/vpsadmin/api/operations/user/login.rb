@@ -5,10 +5,7 @@ module VpsAdmin::API
     # @param user [::User]
     # @param request [Sinatra::Request]
     def run(user, request)
-      if user.lockout
-        raise Exceptions::OperationError,
-              'account is locked out, contact support'
-      end
+      Operations::User::CheckLogin.run(user, request)
 
       ::User.increment_counter(:login_count, user.id)
       user.last_login_at = user.current_login_at

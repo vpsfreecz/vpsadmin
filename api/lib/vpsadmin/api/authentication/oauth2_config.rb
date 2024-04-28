@@ -342,7 +342,15 @@ module VpsAdmin::API
 
       ret = AuthResult.from_password_result(auth)
 
-      unless auth.authenticated?
+      if auth.authenticated?
+        # Check that the user can login at an earlier stage, so that we can
+        # show the user an error message now and not fail in {#get_tokens} later.
+        begin
+          Operations::User::CheckLogin.run(auth.user, sinatra_request)
+        rescue Exceptions::OperationError => e
+          return AuthResult.new(errors: [e.message])
+        end
+      else
         Operations::User::FailedLogin.run(
           auth.user,
           :password,
