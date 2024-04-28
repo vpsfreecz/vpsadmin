@@ -104,7 +104,11 @@ module VpsAdmin::API
 
         @vps_is_running.set(vps.running? ? 1 : 0, labels:)
         @vps_in_rescue_mode.set(vps.in_rescue_mode ? 1 : 0, labels:)
-        @vps_boot_time_seconds.set(vps.uptime || 0, labels:)
+
+        @vps_boot_time_seconds.set(
+          vps.uptime ? vps.vps_current_status.updated_at - vps.uptime : 0,
+          labels:
+        )
 
         LOADAVGS.each do |lavg|
           @vps_loadavgs[lavg].set(vps.loadavg || 0, labels:)
@@ -309,7 +313,7 @@ module VpsAdmin::API
       @vps_boot_time_seconds = add_metric(
         :gauge,
         :vps_boot_time_seconds,
-        docstring: 'Number of seconds since the VPS was started',
+        docstring: 'Time at which the VPS was started',
         labels: VPS_LABELS
       )
 
