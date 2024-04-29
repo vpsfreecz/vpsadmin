@@ -1081,7 +1081,6 @@ function outage_list_recent()
 
     $outages = $api->outage->list([
         'recent_since' => date('c', strtotime('-2 days')),
-        'limit' => 5,
         'order' => 'oldest',
     ]);
 
