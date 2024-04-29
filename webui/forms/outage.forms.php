@@ -1115,7 +1115,7 @@ function outage_list_recent()
 
     if (count($past) > 0) {
         $xtpl->table_title(outage_list_title(_('Recently resolved'), $past));
-        outage_list_overview($past);
+        outage_list_overview(array_reverse($past));
     }
 }
 
