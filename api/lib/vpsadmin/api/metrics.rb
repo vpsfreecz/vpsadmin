@@ -106,7 +106,7 @@ module VpsAdmin::API
         @vps_in_rescue_mode.set(vps.in_rescue_mode ? 1 : 0, labels:)
 
         @vps_boot_time_seconds.set(
-          vps.uptime ? vps.vps_current_status.updated_at - vps.uptime : 0,
+          vps.uptime ? (vps.vps_current_status.updated_at - vps.uptime).to_i : 0,
           labels:
         )
 
