@@ -192,7 +192,7 @@ class VpsAdmin::API::Resources::Export < HaveAPI::Resource
     end
 
     def state_id
-      @chain.id
+      @chain && @chain.id
     end
   end
 
