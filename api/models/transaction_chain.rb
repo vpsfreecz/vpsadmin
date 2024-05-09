@@ -64,6 +64,7 @@ class TransactionChain < ActiveRecord::Base
 
         chain.release_locks
         chain.destroy
+        chain = nil
         next
 
       end
