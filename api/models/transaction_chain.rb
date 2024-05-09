@@ -63,14 +63,14 @@ class TransactionChain < ActiveRecord::Base
         raise 'empty' unless chain.class.allow_empty?
 
         chain.release_locks
-        chain.destroy
+        chain.destroy!
         chain = nil
         next
 
       end
 
       chain.state = :queued
-      chain.save
+      chain.save!
     end
 
     [chain, ret]
