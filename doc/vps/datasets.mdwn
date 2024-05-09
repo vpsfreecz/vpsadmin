@@ -26,7 +26,7 @@ When creating a subdataset, its mountpoint must be set correctly
 to `/vz/root/<veid>/<path>`, otherwise it would not be accessible from inside the VPS.
 
 Rollback of a dataset works as usual, except that before the datasets are switched
-(old with the rollbacked one), or before `zfs rollback` is called, the VPS must be stopped
+(old with the rolled back one), or before `zfs rollback` is called, the VPS must be stopped
 and then started again, if it was running before the rollback. The VPS must be stopped even
 when rollbacking a subdataset, because a process from the VPS might be working with the data,
 making the dataset busy.

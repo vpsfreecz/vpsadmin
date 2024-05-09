@@ -195,7 +195,7 @@ module TransactionChains
         transactions: {
           total: trans,
           done: trans.where(done: 1),
-          rollbacked: trans.where(done: 2),
+          rolledback: trans.where(done: 2),
           successful: trans.where(done: 1, status: 1),
           failed: trans.where(done: 1, status: 0),
           warning: trans.where(done: 1, status: 2),

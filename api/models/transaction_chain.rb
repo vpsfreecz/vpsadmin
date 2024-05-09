@@ -55,7 +55,7 @@ class TransactionChain < ActiveRecord::Base
       chain.global_locks = locks
 
       # link_chain will raise ResourceLocked if it is unable to acquire
-      # a lock. It will cause the transaction to be roll backed
+      # a lock. It will cause the transaction to be rolled back
       # and the exception will be propagated.
       ret = chain.link_chain(*args, **kwargs)
 

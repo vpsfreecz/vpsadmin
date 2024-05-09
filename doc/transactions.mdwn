@@ -41,7 +41,7 @@ A lock can be obtained by a transaction chain, not by a single transaction.
 IAll transactions in the chain have access to the resource
 and it is released after the last transaction in the chain is finished.
 
-If a chain cannot get the lock right away, it is rollbacked and error is reported
+If a chain cannot get the lock right away, it is rolled back and error is reported
 to the user. This will change in the future, when queueing will be implemented.
 
 # Priorities

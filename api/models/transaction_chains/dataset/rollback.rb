@@ -251,10 +251,10 @@ module TransactionChains
       end
     end
 
-    # Called before the dataset is rollbacked on primary or hypervisor.
+    # Called before the dataset is rolled back on primary or hypervisor.
     def pre_local_rollback; end
 
-    # Called after the dataset is rollbacked on primary or hypervisor.
+    # Called after the dataset is rolled back on primary or hypervisor.
     def post_local_rollback; end
   end
 end

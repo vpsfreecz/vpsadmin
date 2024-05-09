@@ -84,7 +84,7 @@ module NodeCtld
       db.transaction do |t|
         save_transaction(t)
 
-        if (@status == :ok && !@rollbacked) || keep_going?
+        if (@status == :ok && !@rolledback) || keep_going?
           # Chain is finished, close up
           if chain_finished?
             run_confirmations(t)
@@ -94,9 +94,9 @@ module NodeCtld
             continue_chain(t)
           end
 
-        elsif @status == :failed || @rollbacked
+        elsif @status == :failed || @rolledback
           # Fail if already rollbacking
-          if original_chain_direction == :rollback && !@rollbacked
+          if original_chain_direction == :rollback && !@rolledback
             log(:critical, :chain, 'Transaction rollback failed, admin intervention is necessary')
             # FIXME: do something
 
@@ -104,7 +104,7 @@ module NodeCtld
 
           elsif chain_finished? # Reverse chain direction
             # Is it the last transaction to rollback?
-            fail_followers(t) if @rollbacked
+            fail_followers(t) if @rolledback
 
             run_confirmations(t)
             close_chain(t)
@@ -132,7 +132,7 @@ module NodeCtld
       done = if current_chain_direction == :execute
                1
              else
-               2 # rollbacked
+               2 # rolled back
              end
 
       db.prepared(
@@ -267,7 +267,7 @@ module NodeCtld
 
       elsif reversible?
         log(:debug, self, 'Transaction failed, running rollback')
-        @rollbacked = true
+        @rolledback = true
         safe_call(@current_klass, :rollback)
 
       else
@@ -327,7 +327,7 @@ module NodeCtld
     end
 
     def current_chain_direction
-      if @rollbacked
+      if @rolledback
         :rollback
       else
         original_chain_direction
@@ -335,7 +335,7 @@ module NodeCtld
     end
 
     def original_chain_direction
-      if @chain[:state] == 3 || @rollbacked
+      if @chain[:state] == 3 || @rolledback
         :rollback
       else
         :execute
@@ -388,7 +388,7 @@ module NodeCtld
 
           elsif reversible?
             log(:debug, self, 'Transaction failed, running rollback')
-            @rollbacked = true
+            @rolledback = true
             safe_call(klass, :rollback)
 
           else
@@ -411,7 +411,7 @@ module NodeCtld
 
           elsif reversible?
             log(:debug, self, 'Transaction failed, running rollback')
-            @rollbacked = true
+            @rolledback = true
             safe_call(klass, :rollback)
 
           else

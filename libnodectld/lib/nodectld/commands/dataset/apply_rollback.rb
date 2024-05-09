@@ -15,7 +15,7 @@ module NodeCtld
         raise if e.rc != 1 || e.output !~ /not currently mounted/
       end
 
-      # Move subdatasets from original dataset to the rollbacked one
+      # Move subdatasets from original dataset to the rolled back one
       children = []
       descendants = []
 
@@ -59,7 +59,7 @@ module NodeCtld
       # Destroy the original dataset
       osctl(%i[trash-bin dataset add], origin)
 
-      # Move the rollbacked one in its place
+      # Move the rolled back one in its place
       zfs(:rename, nil, "#{origin}.rollback #{origin}")
 
       # Restore original properties
