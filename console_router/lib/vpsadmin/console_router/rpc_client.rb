@@ -56,6 +56,8 @@ module VpsAdmin::ConsoleRouter
 
     def send_request(command, *args, **kwargs)
       @call_id = generate_uuid
+      @response = nil
+
       if @debug
         t1 = Time.now
         warn "request id=#{@call_id[0..7]} command=#{command} args=#{args.inspect} kwargs=#{kwargs.inspect}"

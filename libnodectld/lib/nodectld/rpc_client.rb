@@ -150,6 +150,7 @@ module NodeCtld
 
     def send_and_receive(command, *args, **kwargs)
       @call_id = generate_uuid
+      @response = nil
 
       if @debug
         t1 = Time.now
