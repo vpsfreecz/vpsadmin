@@ -27,8 +27,7 @@ class VpsFeature < ActiveRecord::Base
     Feature.new(:fuse, 'FUSE', :all, default: true),
     Feature.new(:ppp, 'PPP', :all),
     Feature.new(:kvm, 'KVM', :all, default: true),
-    Feature.new(:lxc, 'LXC nesting', :vpsadminos),
-    Feature.new(:apparmor_dirs, 'AppArmor control directories', :vpsadminos)
+    Feature.new(:lxc, 'LXC nesting', :vpsadminos)
   ].to_h { |f| [f.name, f] }
 
   validates :name, inclusion: {
