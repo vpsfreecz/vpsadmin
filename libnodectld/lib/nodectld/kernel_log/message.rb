@@ -12,6 +12,10 @@ module NodeCtld
     # @return [Time]
     attr_reader :time
 
+    # syslog namespace tag
+    # @return [String, nil]
+    attr_reader :syslogns_tag
+
     # The actual text message
     # @return [String]
     attr_reader :text
@@ -39,7 +43,15 @@ module NodeCtld
 
       semicolon = line.index(';')
       params = line[0..(semicolon - 1)]
-      @text = line[(semicolon + 1)..].strip
+      msg = line[(semicolon + 1)..].strip
+
+      if /^\[ \s*([a-zA-Z0-9_:-]+)\s* \] ([^$]+)/ =~ msg
+        @syslogns_tag = ::Regexp.last_match(1)
+        @text = ::Regexp.last_match(2)
+      else
+        @syslogns_tag = nil
+        @text = msg
+      end
 
       syslog, seq, timestamp, = params.split(',')
 
