@@ -131,7 +131,6 @@ module NodeCtld
         if /^\w+\s\d+/ =~ msg.text
           k, v = msg.text.strip.split
           report.stats[k] = v.to_i
-          log(:debug, "got stats '#{k}'='#{v}")
         else
           @in_cgroup_stats = false
           return
