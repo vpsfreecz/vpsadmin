@@ -107,6 +107,10 @@ module NodeCtld
           log(:info, "Skipping OOM report from an excluded VPS #{::Regexp.last_match(1)}:#{::Regexp.last_match(4)}")
           finish!
           return
+        elsif msg.vps_id && vps_id != msg.vps_id
+          log(:warn, "VPS id from cgroup (#{vps_id.inspect}) does not match syslogns tag #{msg.vps_id.inspect}")
+          finish!
+          return
         end
 
         report.pool = ::Regexp.last_match(1)

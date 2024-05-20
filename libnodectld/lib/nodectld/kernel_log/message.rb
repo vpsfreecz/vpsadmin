@@ -16,6 +16,13 @@ module NodeCtld
     # @return [String, nil]
     attr_reader :syslogns_tag
 
+    # VPS ID extracted from syslog namespace tag
+    #
+    # Note that the tag has limited length, so the ID might be truncated
+    # if it is too long.
+    # @return [Integer, nil]
+    attr_reader :vps_id
+
     # The actual text message
     # @return [String]
     attr_reader :text
@@ -25,6 +32,7 @@ module NodeCtld
     def initialize(line, time)
       @time = time
       @continuation = false
+      @vps_id = nil
       parse(line)
     end
 
@@ -48,6 +56,14 @@ module NodeCtld
       if /^\[ \s*([a-zA-Z0-9_:-]+)\s* \] ([^$]+)/ =~ msg
         @syslogns_tag = ::Regexp.last_match(1)
         @text = ::Regexp.last_match(2)
+
+        @vps_id =
+          if @syslogns_tag.include?(':')
+            _, vps_id = @syslogns_tag.split(':')
+            vps_id.to_i
+          else
+            @syslogns_tag.to_i
+          end
       else
         @syslogns_tag = nil
         @text = msg
