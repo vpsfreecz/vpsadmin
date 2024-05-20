@@ -17,6 +17,13 @@ module Transactions::Vps
         }
       end
 
+      # TODO: remove when all nodes have been updated to nodectld
+      # without this feature.
+      res['apparmor_dirs'] = {
+        enabled: true,
+        original: true
+      }
+
       { features: res }
     end
   end
