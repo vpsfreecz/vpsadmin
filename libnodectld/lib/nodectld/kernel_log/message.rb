@@ -53,7 +53,7 @@ module NodeCtld
       params = line[0..(semicolon - 1)]
       msg = line[(semicolon + 1)..].strip
 
-      if /^\[ \s*([a-zA-Z0-9_:-]+)\s* \] ([^$]+)/ =~ msg
+      if /^\[ \s*([^ ]+) \s*\] ([^$]+)/ =~ msg
         @syslogns_tag = ::Regexp.last_match(1)
         @text = ::Regexp.last_match(2)
 
