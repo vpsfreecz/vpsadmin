@@ -25,8 +25,7 @@ module VpsAdmin::API
 
     OOM_REPORT_LABELS = (VPS_LABELS + %i[invoked_by_name killed_name]).freeze
 
-    # NOTE: Only 5 minute load average is saved by the supervisor
-    LOADAVGS = [5].freeze
+    LOADAVGS = [1, 5, 15].freeze
 
     CPU_USAGE_STATS = %i[idle system user].freeze
 
@@ -111,7 +110,7 @@ module VpsAdmin::API
         )
 
         LOADAVGS.each do |lavg|
-          @vps_loadavgs[lavg].set(vps.loadavg || 0, labels:)
+          @vps_loadavgs[lavg].set(vps.send(:"loadavg#{lavg}") || 0, labels:)
         end
 
         @vps_processes_pids.set(vps.process_count || 0, labels:)

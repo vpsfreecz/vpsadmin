@@ -52,7 +52,9 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
     bool :is_running, label: 'Running'
     bool :in_rescue_mode, label: 'In rescue mode'
     integer :uptime, label: 'Uptime'
-    float :loadavg
+    float :loadavg1
+    float :loadavg5
+    float :loadavg15
     integer :process_count, label: 'Process count'
     float :cpu_user
     float :cpu_nice
@@ -61,7 +63,6 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
     float :cpu_iowait
     float :cpu_irq
     float :cpu_softirq
-    float :loadavg
     integer :used_memory, label: 'Used memory', desc: 'in MB'
     integer :used_swap, label: 'Used swap', desc: 'in MB'
     integer :used_diskspace, label: 'Used disk space', desc: 'in MB'
@@ -110,7 +111,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
         node dataset pool memory swap cpu diskspace maintenance_lock
         maintenance_lock_reason object_state expiration_date allow_admin_modifications
         is_running process_count used_memory used_swap used_diskspace
-        uptime loadavg cpu_user cpu_nice cpu_system cpu_idle cpu_iowait
+        uptime loadavg1 loadavg5 loadavg15 cpu_user cpu_nice cpu_system cpu_idle cpu_iowait
         cpu_irq cpu_softirq user_namespace_map
       ]
       allow
@@ -228,7 +229,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
         node dataset pool memory swap cpu diskspace maintenance_lock
         maintenance_lock_reason object_state expiration_date allow_admin_modifications
         is_running process_count used_memory used_swap used_diskspace
-        uptime loadavg cpu_user cpu_nice cpu_system cpu_idle cpu_iowait
+        uptime loadavg1 loadavg5 loadavg15 cpu_user cpu_nice cpu_system cpu_idle cpu_iowait
         cpu_irq cpu_softirq start_menu_timeout user_namespace_map created_at
       ]
       allow
@@ -352,7 +353,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
         node dataset pool memory swap cpu diskspace maintenance_lock
         maintenance_lock_reason object_state expiration_date allow_admin_modifications
         is_running process_count used_memory used_swap used_diskspace
-        uptime loadavg cpu_user cpu_nice cpu_system cpu_idle cpu_iowait
+        uptime loadavg1 loadavg5 loadavg15 cpu_user cpu_nice cpu_system cpu_idle cpu_iowait
         cpu_irq cpu_softirq start_menu_timeout user_namespace_map created_at
       ]
       allow
@@ -839,7 +840,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
         node dataset pool memory swap cpu diskspace maintenance_lock
         maintenance_lock_reason object_state expiration_date allow_admin_modifications
         is_running process_count used_memory used_swap used_disk uptime
-        loadavg cpu_user cpu_nice cpu_system cpu_idle cpu_iowait cpu_irq
+        loadavg1 loadavg5 loadavg15 cpu_user cpu_nice cpu_system cpu_idle cpu_iowait cpu_irq
         cpu_softirq user_namespace_map created_at
       ]
       allow
@@ -1664,7 +1665,9 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
       bool :is_running, label: 'Running'
       bool :in_rescue_mode, label: 'In rescue mode'
       integer :uptime, label: 'Uptime'
-      float :loadavg
+      float :loadavg1
+      float :loadavg5
+      float :loadavg15
       integer :process_count, label: 'Process count'
       integer :cpus
       float :cpu_user
@@ -1674,7 +1677,6 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
       float :cpu_iowait
       float :cpu_irq
       float :cpu_softirq
-      float :loadavg
       integer :total_memory
       integer :used_memory, label: 'Used memory', desc: 'in MB'
       integer :total_swap

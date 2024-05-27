@@ -4,7 +4,7 @@ module VpsAdmin::Supervisor
   class Node::VpsStatus < Node::Base
     LOG_INTERVAL = 3600
 
-    AVERAGES = %i[loadavg process_count used_memory cpu_idle].freeze
+    AVERAGES = %i[loadavg1 loadavg5 loadavg15 process_count used_memory cpu_idle].freeze
 
     def self.setup(channel)
       channel.prefetch(5)
@@ -51,7 +51,9 @@ module VpsAdmin::Supervisor
       if current_status.status && current_status.is_running
         current_status.assign_attributes(
           uptime: new_status['uptime'],
-          loadavg: new_status['loadavg'] && new_status['loadavg']['5'],
+          loadavg1: new_status['loadavg'] && new_status['loadavg']['1'],
+          loadavg5: new_status['loadavg'] && new_status['loadavg']['5'],
+          loadavg15: new_status['loadavg'] && new_status['loadavg']['15'],
           process_count: new_status['process_count'],
           used_memory: new_status['used_memory'] / 1024 / 1024,
           cpu_idle: ((cpus * 100.0) - new_status['cpu_usage']) / cpus
@@ -61,7 +63,9 @@ module VpsAdmin::Supervisor
       else
         current_status.assign_attributes(
           uptime: nil,
-          loadavg: nil,
+          loadavg1: nil,
+          loadavg5: nil,
+          loadavg15: nil,
           process_count: nil,
           used_memory: nil,
           cpu_idle: nil

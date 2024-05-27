@@ -1033,6 +1033,12 @@ CREATE TABLE `node_current_statuses` (
   `pool_scan_percent` float DEFAULT NULL,
   `cgroup_version` int(11) NOT NULL DEFAULT 1,
   `last_log_at` datetime(6) DEFAULT NULL,
+  `loadavg1` float NOT NULL DEFAULT 0,
+  `loadavg5` float NOT NULL DEFAULT 0,
+  `loadavg15` float NOT NULL DEFAULT 0,
+  `sum_loadavg1` float NOT NULL DEFAULT 0,
+  `sum_loadavg5` float NOT NULL DEFAULT 0,
+  `sum_loadavg15` float NOT NULL DEFAULT 0,
   PRIMARY KEY (`id`),
   UNIQUE KEY `index_node_current_statuses_on_node_id` (`node_id`) USING BTREE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
@@ -1062,11 +1068,14 @@ CREATE TABLE `node_statuses` (
   `arc_c` int(11) DEFAULT NULL,
   `arc_size` int(11) DEFAULT NULL,
   `arc_hitpercent` float DEFAULT NULL,
-  `loadavg` float NOT NULL,
+  `loadavg` float DEFAULT NULL,
   `vpsadmin_version` varchar(25) NOT NULL,
   `kernel` varchar(30) NOT NULL,
   `created_at` datetime DEFAULT NULL,
   `cgroup_version` int(11) NOT NULL DEFAULT 1,
+  `loadavg1` float NOT NULL DEFAULT 0,
+  `loadavg5` float NOT NULL DEFAULT 0,
+  `loadavg15` float NOT NULL DEFAULT 0,
   PRIMARY KEY (`id`),
   KEY `index_node_statuses_on_node_id` (`node_id`) USING BTREE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
@@ -1905,7 +1914,7 @@ CREATE TABLE `vps_current_statuses` (
   `cpu_iowait` float DEFAULT NULL,
   `cpu_irq` float DEFAULT NULL,
   `cpu_softirq` float DEFAULT NULL,
-  `loadavg` float DEFAULT NULL,
+  `loadavg5` float DEFAULT NULL,
   `used_memory` int(11) DEFAULT NULL,
   `used_swap` int(11) DEFAULT NULL,
   `sum_process_count` int(11) DEFAULT NULL,
@@ -1916,13 +1925,17 @@ CREATE TABLE `vps_current_statuses` (
   `sum_cpu_iowait` float DEFAULT NULL,
   `sum_cpu_irq` float DEFAULT NULL,
   `sum_cpu_softirq` float DEFAULT NULL,
-  `sum_loadavg` float DEFAULT NULL,
+  `sum_loadavg5` float DEFAULT NULL,
   `sum_used_memory` int(11) DEFAULT NULL,
   `sum_used_swap` int(11) DEFAULT NULL,
   `created_at` datetime DEFAULT NULL,
   `updated_at` datetime DEFAULT NULL,
   `in_rescue_mode` tinyint(1) DEFAULT 0,
   `last_log_at` datetime(6) DEFAULT NULL,
+  `loadavg1` float DEFAULT NULL,
+  `loadavg15` float DEFAULT NULL,
+  `sum_loadavg1` float DEFAULT NULL,
+  `sum_loadavg15` float DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `index_vps_current_statuses_on_vps_id` (`vps_id`) USING BTREE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
@@ -2023,13 +2036,15 @@ CREATE TABLE `vps_statuses` (
   `cpu_iowait` float DEFAULT NULL,
   `cpu_irq` float DEFAULT NULL,
   `cpu_softirq` float DEFAULT NULL,
-  `loadavg` float DEFAULT NULL,
+  `loadavg5` float DEFAULT NULL,
   `total_memory` int(11) DEFAULT NULL,
   `used_memory` int(11) DEFAULT NULL,
   `total_swap` int(11) DEFAULT NULL,
   `used_swap` int(11) DEFAULT NULL,
   `created_at` datetime DEFAULT NULL,
   `in_rescue_mode` tinyint(1) DEFAULT 0,
+  `loadavg1` float DEFAULT NULL,
+  `loadavg15` float DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `index_vps_statuses_on_vps_id` (`vps_id`) USING BTREE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
@@ -2086,6 +2101,7 @@ CREATE TABLE `vpses` (
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
 INSERT INTO `schema_migrations` (version) VALUES
+('20240527153145'),
 ('20240513130256'),
 ('20240418082651'),
 ('20240308152841'),

@@ -32,7 +32,9 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
   params(:status) do
     bool :status, label: 'Status'
     integer :uptime, label: 'Uptime'
-    float :loadavg
+    float :loadavg1
+    float :loadavg5
+    float :loadavg15
     integer :process_count, label: 'Process count'
     float :cpu_user
     float :cpu_nice
@@ -42,7 +44,6 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
     float :cpu_irq
     float :cpu_softirq
     float :cpu_guest
-    float :loadavg
     integer :used_memory, label: 'Used memory', desc: 'in MB'
     integer :used_swap, label: 'Used swap', desc: 'in MB'
     integer :arc_c_max
@@ -444,7 +445,9 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
     params(:all) do
       id :id
       integer :uptime, label: 'Uptime'
-      float :loadavg
+      float :loadavg1
+      float :loadavg5
+      float :loadavg15
       integer :process_count, label: 'Process count'
       integer :cpus
       float :cpu_user
@@ -455,7 +458,6 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
       float :cpu_irq
       float :cpu_softirq
       float :cpu_guest
-      float :loadavg
       integer :total_memory
       integer :used_memory, label: 'Used memory', desc: 'in MB'
       integer :total_swap

@@ -108,7 +108,7 @@ function node_overview()
         $xtpl->table_td($node->domain_name);
         $xtpl->table_td($node->vps_running, false, true);
         $xtpl->table_td(sprintf('%.1f', $node->uptime / 60.0 / 60 / 24), false, true);
-        $xtpl->table_td($node->loadavg, false, true);
+        $xtpl->table_td($node->loadavg5, false, true);
 
         // CPU
         $xtpl->table_td(sprintf('%.2f', $node->cpu_iowait), false, true);

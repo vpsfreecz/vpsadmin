@@ -7,7 +7,7 @@ module VpsAdmin::Supervisor
     AVERAGES = %i[
       process_count
       cpu_user cpu_nice cpu_system cpu_idle cpu_iowait cpu_irq cpu_softirq cpu_guest
-      loadavg
+      loadavg1 loadavg5 loadavg15
       used_memory used_swap
       arc_c_max arc_c arc_size arc_hitpercent
     ].freeze
@@ -44,7 +44,9 @@ module VpsAdmin::Supervisor
         updated_at: check_time,
         uptime: new_status['uptime'],
         process_count: new_status['nproc'],
-        loadavg: new_status['loadavg']['5'],
+        loadavg1: new_status['loadavg']['1'],
+        loadavg5: new_status['loadavg']['5'],
+        loadavg15: new_status['loadavg']['15'],
         vpsadmin_version: new_status['vpsadmin_version'],
         kernel: new_status['kernel'],
         cgroup_version: new_status['cgroup_version'],

@@ -254,9 +254,10 @@ class Node < ActiveRecord::Base
   end
 
   %i[uptime process_count cpu_user cpu_nice cpu_system cpu_idle cpu_iowait
-     cpu_irq cpu_softirq cpu_guest loadavg used_memory used_swap arc_c_max arc_c
-     arc_size arc_hitpercent kernel vpsadmin_version pool_state pool_scan
-     pool_scan_percent pool_checked_at pool_state_value pool_scan_value
+     cpu_irq cpu_softirq cpu_guest loadavg1 loadavg5 loadavg15
+     used_memory used_swap arc_c_max arc_c arc_size arc_hitpercent
+     kernel vpsadmin_version pool_state pool_scan pool_scan_percent
+     pool_checked_at pool_state_value pool_scan_value
      cgroup_version].each do |attr|
     define_method(attr) do
       node_current_status && node_current_status.send(attr)
