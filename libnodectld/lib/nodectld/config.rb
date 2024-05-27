@@ -225,7 +225,7 @@ module NodeCtld
     vps_ssh_host_keys: {
       enable: true,
       update_vps_delay: 1,
-      update_all_interval: 3600,
+      update_all_interval: 24 * 60 * 60,
       default_schedule_delay: 15
     },
 
