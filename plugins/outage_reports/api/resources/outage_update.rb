@@ -156,7 +156,7 @@ module VpsAdmin::API::Resources
       end
 
       def state_id
-        @chain.empty? ? nil : @chain.id
+        @chain && @chain.id
       end
     end
   end

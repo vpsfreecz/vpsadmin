@@ -447,7 +447,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
     end
 
     def state_id
-      @chain && !@chain.empty? && @chain.id
+      @chain && @chain.id
     end
   end
 

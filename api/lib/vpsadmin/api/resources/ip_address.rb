@@ -290,7 +290,7 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
     end
 
     def state_id
-      @chain.empty? ? nil : @chain.id
+      @chain && @chain.id
     end
   end
 
