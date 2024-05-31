@@ -949,7 +949,7 @@ if (isLoggedIn()) {
                 $params = [
                     'expiration_date' => date('c', strtotime($_POST['expiration_date'])),
                     'start' => isset($_POST['start']),
-                    'reason' => $_POST['reason']
+                    'reason' => $_POST['reason'],
                 ];
 
                 if ($_POST['node']) {
