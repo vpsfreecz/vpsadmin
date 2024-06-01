@@ -21,7 +21,7 @@ GEM
     method_source (1.1.0)
     mini_mime (1.1.5)
     mysql2 (0.5.5)
-    net-imap (0.4.11)
+    net-imap (0.4.12)
       date
       net-protocol
     net-pop (0.1.2)
@@ -54,7 +54,7 @@ GEM
 GEM
   remote: https://rubygems.vpsfree.cz/
   specs:
-    libnodectld (3.0.0.dev.build20240601133950)
+    libnodectld (3.0.0.dev.build20240601202614)
       bunny (~> 2.22.0)
       filelock
       ipaddress (~> 0.8.3)
@@ -71,8 +71,8 @@ GEM
     libosctl (23.11.0.build20240527173238)
       rainbow (~> 3.1.1)
       require_all (~> 2.0.0)
-    nodectld (3.0.0.dev.build20240601133950)
-      libnodectld (= 3.0.0.dev.build20240601133950)
+    nodectld (3.0.0.dev.build20240601202614)
+      libnodectld (= 3.0.0.dev.build20240601202614)
     osctl (23.11.0.build20240527173238)
       curses
       gli (~> 2.20.0)
@@ -94,7 +94,7 @@ PLATFORMS
   x86_64-linux
 
 DEPENDENCIES
-  nodectld (= 3.0.0.dev.build20240601133950)!
+  nodectld (= 3.0.0.dev.build20240601202614)!
 
 BUNDLED WITH
    2.4.22
