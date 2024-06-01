@@ -82,6 +82,12 @@ namespace :vpsadmin do
 
     desc 'Run OOM reports pipeline'
     task run: %i[notify]
+
+    desc 'Remove old OOM reports'
+    task :prune do
+      puts 'Pruning OOM reports'
+      VpsAdmin::API::Tasks.run(:oom_report, :prune)
+    end
   end
 
   namespace :prometheus do

@@ -189,13 +189,26 @@ in {
           };
         };
 
-        oom-reports = {
+        oom-reports-run = {
           rake = [ "vpsadmin:oom_report:run" ];
           timer.enable = true;
           timer.config = {
             OnBootSec = "5min";
             OnUnitActiveSec = "10min";
             RandomizedDelaySec = "60s";
+            FixedRandomDelay = true;
+          };
+        };
+
+        oom-reports-prune = {
+          rake = [ "vpsadmin:oom_report:prune" ];
+          service.config = {
+            TimeoutStartSec = "infinity";
+          };
+          timer.enable = true;
+          timer.config = {
+            OnCalendar = "daily";
+            RandomizedDelaySec = "900s";
             FixedRandomDelay = true;
           };
         };
