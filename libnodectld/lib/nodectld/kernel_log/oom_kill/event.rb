@@ -139,9 +139,17 @@ module NodeCtld
 
       if /^\[\s*(\d+)\] ([^$]+)/ =~ msg.text
         attrs = ::Regexp.last_match(2).split
-        return if attrs.length != 8
 
-        uid, tgid, total_vm, rss, pgtables_bytes, swapents, oom_score_adj, name = attrs
+        # Kernel < 6.8
+        if attrs.length == 8
+          uid, tgid, total_vm, rss, pgtables_bytes, swapents, oom_score_adj, name = attrs
+
+        # Kernel >= 6.8
+        elsif attrs.length == 11
+          uid, tgid, total_vm, rss, rss_anon, rss_file, rss_shmem, pgtables_bytes, swapents, oom_score_adj, name = attrs
+        else
+          return
+        end
 
         report.tasks << {
           pid: ::Regexp.last_match(1).to_i,
@@ -149,6 +157,9 @@ module NodeCtld
           tgid: tgid.to_i,
           total_vm: total_vm.to_i,
           rss: rss.to_i,
+          rss_anon: rss_anon.to_i,
+          rss_file: rss_file.to_i,
+          rss_shmem: rss_shmem.to_i,
           pgtables_bytes: pgtables_bytes.to_i,
           swapents: swapents.to_i,
           oom_score_adj: oom_score_adj.to_i,
