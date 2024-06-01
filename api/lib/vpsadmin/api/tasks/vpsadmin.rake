@@ -56,6 +56,12 @@ namespace :vpsadmin do
         VpsAdmin::API::Tasks.run(:vps_migration, :run_plans)
       end
     end
+
+    desc 'Prune VPS status logs'
+    task :prune_status_logs do
+      puts 'Pruning VPS status log'
+      VpsAdmin::API::Tasks.run(:vps, :prune_status_logs)
+    end
   end
 
   namespace :snapshot do

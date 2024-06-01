@@ -223,6 +223,16 @@ in {
           };
         };
 
+        vps-status-logs-prune = {
+          rake = [ "vpsadmin:vps:prune_status_logs" ];
+          timer.enable = true;
+          timer.config = {
+            OnCalendar = "daily";
+            RandomizedDelaySec = "900s";
+            FixedRandomDelay = true;
+          };
+        };
+
         daily-report = {
           rake = [ "vpsadmin:mail_daily_report" ];
           timer.enable = true;
