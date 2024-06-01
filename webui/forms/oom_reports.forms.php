@@ -203,18 +203,37 @@ function oom_reports_show($id)
     $xtpl->table_add_category(_('TGID'));
     $xtpl->table_add_category(_('VM'));
     $xtpl->table_add_category(_('RSS'));
+    $xtpl->table_add_category(_('anon'));
+    $xtpl->table_add_category(_('file'));
+    $xtpl->table_add_category(_('shmem'));
     $xtpl->table_add_category(_('pgtables'));
     $xtpl->table_add_category(_('swapents'));
     $xtpl->table_add_category(_('oom_score_adj'));
 
     $vm_sum = 0;
     $rss_sum = 0;
+    $rss_anon_sum = 0;
+    $rss_file_sum = 0;
+    $rss_shmem_sum = 0;
     $pgtables_sum = 0;
     $swapents_sum = 0;
 
     foreach ($r->task->list() as $stat) {
         $vm_sum += $stat->total_vm;
         $rss_sum += $stat->rss;
+
+        if ($stat->rss_anon) {
+            $rss_anon_sum += $stat->rss_anon;
+        }
+
+        if ($stat->rss_file) {
+            $rss_file_sum += $stat->rss_file;
+        }
+
+        if ($stat->rss_shmem) {
+            $rss_shmem_sum += $stat->rss_shmem;
+        }
+
         $pgtables_sum += $stat->pgtables_bytes;
         $swapents_sum += $stat->swapents;
 
@@ -224,6 +243,9 @@ function oom_reports_show($id)
         $xtpl->table_td($stat->tgid, false, true);
         $xtpl->table_td(data_size_to_humanreadable_kb($stat->total_vm * 4), false, true);
         $xtpl->table_td(data_size_to_humanreadable_kb($stat->rss * 4), false, true);
+        $xtpl->table_td($stat->rss_anon === null ? '-' : data_size_to_humanreadable_kb($stat->rss_anon * 4), false, true);
+        $xtpl->table_td($stat->rss_file === null ? '-' : data_size_to_humanreadable_kb($stat->rss_file * 4), false, true);
+        $xtpl->table_td($stat->rss_shmem === null ? '-' : data_size_to_humanreadable_kb($stat->rss_shmem * 4), false, true);
         $xtpl->table_td(data_size_to_humanreadable_b($stat->pgtables_bytes), false, true);
         $xtpl->table_td(data_size_to_humanreadable_kb($stat->swapents * 4), false, true);
         $xtpl->table_td($stat->oom_score_adj, false, true);
@@ -236,6 +258,9 @@ function oom_reports_show($id)
     $xtpl->table_td(_('TGID'), '#5EAFFF; color:#FFF; font-weight:bold; text-align:center;');
     $xtpl->table_td(_('VM'), '#5EAFFF; color:#FFF; font-weight:bold; text-align:center;');
     $xtpl->table_td(_('RSS'), '#5EAFFF; color:#FFF; font-weight:bold; text-align:center;');
+    $xtpl->table_td(_('anon'), '#5EAFFF; color:#FFF; font-weight:bold; text-align:center;');
+    $xtpl->table_td(_('file'), '#5EAFFF; color:#FFF; font-weight:bold; text-align:center;');
+    $xtpl->table_td(_('shmem'), '#5EAFFF; color:#FFF; font-weight:bold; text-align:center;');
     $xtpl->table_td(_('pgtables'), '#5EAFFF; color:#FFF; font-weight:bold; text-align:center;');
     $xtpl->table_td(_('swapents'), '#5EAFFF; color:#FFF; font-weight:bold; text-align:center;');
     $xtpl->table_td(_('oom_score_adj'), '#5EAFFF; color:#FFF; font-weight:bold; text-align:center;');
@@ -246,6 +271,9 @@ function oom_reports_show($id)
     $xtpl->table_td('');
     $xtpl->table_td(data_size_to_humanreadable_kb($vm_sum * 4), false, true);
     $xtpl->table_td(data_size_to_humanreadable_kb($rss_sum * 4), false, true);
+    $xtpl->table_td(data_size_to_humanreadable_kb($rss_anon_sum * 4), false, true);
+    $xtpl->table_td(data_size_to_humanreadable_kb($rss_file_sum * 4), false, true);
+    $xtpl->table_td(data_size_to_humanreadable_kb($rss_shmem_sum * 4), false, true);
     $xtpl->table_td(data_size_to_humanreadable_b($pgtables_sum), false, true);
     $xtpl->table_td(data_size_to_humanreadable_kb($swapents_sum * 4), false, true);
     $xtpl->table_td('');

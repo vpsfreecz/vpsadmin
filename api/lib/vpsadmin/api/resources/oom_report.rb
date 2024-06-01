@@ -253,6 +253,9 @@ module VpsAdmin::API::Resources
         integer :tgid
         integer :total_vm
         integer :rss
+        integer :rss_anon
+        integer :rss_file
+        integer :rss_shmem
         integer :pgtables_bytes
         integer :swapents
         integer :oom_score_adj

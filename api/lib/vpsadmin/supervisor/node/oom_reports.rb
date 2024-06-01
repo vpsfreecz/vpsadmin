@@ -92,6 +92,9 @@ module VpsAdmin::Supervisor
             tgid: task.fetch('tgid'),
             total_vm: task.fetch('total_vm'),
             rss: task.fetch('rss'),
+            rss_anon: task.fetch('rss_anon', nil),
+            rss_file: task.fetch('rss_file', nil),
+            rss_shmem: task.fetch('rss_shmem', nil),
             pgtables_bytes: task.fetch('pgtables_bytes'),
             swapents: task.fetch('swapents'),
             oom_score_adj: task.fetch('oom_score_adj')

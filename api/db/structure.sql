@@ -1233,6 +1233,9 @@ CREATE TABLE `oom_report_tasks` (
   `pgtables_bytes` int(11) NOT NULL,
   `swapents` int(11) NOT NULL,
   `oom_score_adj` int(11) NOT NULL,
+  `rss_anon` int(11) DEFAULT NULL,
+  `rss_file` int(11) DEFAULT NULL,
+  `rss_shmem` int(11) DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `index_oom_report_tasks_on_oom_report_id` (`oom_report_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
@@ -2101,6 +2104,7 @@ CREATE TABLE `vpses` (
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
 INSERT INTO `schema_migrations` (version) VALUES
+('20240601131223'),
 ('20240527153145'),
 ('20240513130256'),
 ('20240418082651'),
