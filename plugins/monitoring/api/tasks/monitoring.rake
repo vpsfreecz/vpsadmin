@@ -21,11 +21,18 @@ namespace :vpsadmin do
       n_days = ENV['DAYS'] ? ENV['DAYS'].to_i : 365
       cnt = 0
 
-      ::MonitoredEvent.where(
-        state: %w[unconfirmed closed]
-      ).where('created_at < ?', n_days.day.ago).each do |event|
-        event.destroy!
-        cnt += 1
+      loop do
+        any = false
+
+        ::MonitoredEvent.where(
+          state: %w[unconfirmed closed]
+        ).where('created_at < ?', n_days.day.ago).limit(10_000).each do |event|
+          any = true
+          event.destroy!
+          cnt += 1
+        end
+
+        break unless any
       end
 
       puts "Deleted #{cnt} monitored events"
