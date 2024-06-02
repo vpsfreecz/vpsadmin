@@ -29,7 +29,9 @@ function oom_reports_list()
         api_param_to_form('vps', $input->vps, $_GET['vps']);
     }
 
-    api_param_to_form('node', $input->node, $_GET['node']);
+    api_param_to_form('node', $input->node, $_GET['node'], function ($node) {
+        return $node->domain_name;
+    });
     api_param_to_form('location', $input->location, $_GET['location']);
     api_param_to_form('environment', $input->environment, $_GET['environment']);
     api_param_to_form('since', $input->since, $_GET['since']);
