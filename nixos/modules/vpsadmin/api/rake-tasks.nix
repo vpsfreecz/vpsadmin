@@ -233,6 +233,19 @@ in {
           };
         };
 
+        dataset-property-logs-prune = {
+          rake = [ "vpsadmin:dataset:prune_property_logs" ];
+          service.config = {
+            TimeoutStartSec = "infinity";
+          };
+          timer.enable = true;
+          timer.config = {
+            OnCalendar = "daily";
+            RandomizedDelaySec = "900s";
+            FixedRandomDelay = true;
+          };
+        };
+
         daily-report = {
           rake = [ "vpsadmin:mail_daily_report" ];
           timer.enable = true;

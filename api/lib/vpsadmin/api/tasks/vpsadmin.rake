@@ -64,6 +64,14 @@ namespace :vpsadmin do
     end
   end
 
+  namespace :dataset do
+    desc 'Remove old dataset property logs'
+    task :prune_property_logs do
+      puts 'Pruning dataset property logs'
+      VpsAdmin::API::Tasks.run(:dataset, :prune_property_logs)
+    end
+  end
+
   namespace :snapshot do
     desc 'Remove unused snapshot clones'
     task :purge_clones do
