@@ -178,6 +178,19 @@ in {
           };
         };
 
+        monitoring-prune = {
+          rake = [ "vpsadmin:monitoring:prune" ];
+          service.config = {
+            TimeoutStartSec = "infinity";
+          };
+          timer.enable = true;
+          timer.config = {
+            OnCalendar = "daily";
+            RandomizedDelaySec = "900s";
+            FixedRandomDelay = true;
+          };
+        };
+
         incident-reports = {
           rake = [ "vpsadmin:incident_report:process" ];
           timer.enable = true;

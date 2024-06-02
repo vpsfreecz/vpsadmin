@@ -15,5 +15,20 @@ namespace :vpsadmin do
         event.update!(state: 'closed')
       end
     end
+
+    desc 'Delete old events'
+    task :prune do
+      n_days = ENV['DAYS'] ? ENV['DAYS'].to_i : 365
+      cnt = 0
+
+      ::MonitoredEvent.where(
+        state: %w[unconfirmed closed]
+      ).where('created_at < ?', n_days.day.ago).each do |event|
+        event.destroy!
+        cnt += 1
+      end
+
+      puts "Deleted #{cnt} monitored events"
+    end
   end
 end
