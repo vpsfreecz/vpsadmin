@@ -1579,6 +1579,7 @@ if (isLoggedIn()) {
                 try {
                     $t = $api->metrics_access_token->create([
                         'metric_prefix' => $_POST['metric_prefix'],
+                        'user' => $_GET['id'],
                     ]);
 
                     redirect('?page=adminm&action=metrics_show&id=' . $_GET['id'] . '&token=' . $t->id);
