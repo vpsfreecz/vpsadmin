@@ -59,6 +59,7 @@ module TransactionChains
 
       # Delete OOM Reports
       vps.oom_reports.delete_all
+      vps.oom_report_counters.delete_all
 
       # Delete OS process counts
       vps.vps_os_processes.delete_all

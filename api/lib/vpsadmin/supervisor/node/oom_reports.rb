@@ -48,15 +48,20 @@ module VpsAdmin::Supervisor
 
       invoked_by_name = report.fetch('invoked_by_name')
       killed_name = report.fetch('killed_name')
+      cgroup = report.fetch('cgroup')[0..254]
+      count = report.fetch('count')
+
+      counter = ::OomReportCounter.find_or_create_by!(vps:, cgroup:)
+      ::OomReportCounter.increment_counter(:counter, counter.id, by: count)
 
       new_report = ::OomReport.create!(
         vps:,
-        cgroup: report.fetch('cgroup')[0..254],
+        cgroup:,
         invoked_by_pid: report.fetch('invoked_by_pid'),
         invoked_by_name: invoked_by_name && invoked_by_name[0..49],
         killed_pid: report.fetch('killed_pid'),
         killed_name: killed_name && killed_name[0..49],
-        count: report.fetch('count'),
+        count:,
         created_at: Time.at(report.fetch('time')),
         processed: true
       )

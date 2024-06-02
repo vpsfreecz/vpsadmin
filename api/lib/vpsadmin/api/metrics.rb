@@ -23,7 +23,7 @@ module VpsAdmin::API
 
     INCIDENT_REPORT_LABELS = (VPS_LABELS + %i[codename]).freeze
 
-    OOM_REPORT_LABELS = (VPS_LABELS + %i[invoked_by_name killed_name]).freeze
+    OOM_REPORT_LABELS = (VPS_LABELS + %i[cgroup]).freeze
 
     LOADAVGS = [1, 5, 15].freeze
 
@@ -204,17 +204,17 @@ module VpsAdmin::API
         )
       end
 
-      ::OomReport
+      ::OomReportCounter
         .includes(vps: { node: :location })
         .where(vps_id: vpses.map(&:id))
-        .group(:vps_id, :invoked_by_name, :killed_name)
-        .count
+        .group(:vps_id, :cgroup)
+        .sum(:counter)
         .each do |group, cnt|
-        vps_id, invoked_by_name, killed_name = group
+        vps_id, cgroup = group
 
         @oom_reports.set(
           cnt,
-          labels: oom_report_labels(vps: vps_index[vps_id], invoked_by_name:, killed_name:)
+          labels: oom_report_labels(vps: vps_index[vps_id], cgroup:)
         )
       end
 
@@ -522,10 +522,9 @@ module VpsAdmin::API
       vps_labels(vps).merge(codename:)
     end
 
-    def oom_report_labels(vps:, invoked_by_name:, killed_name:)
+    def oom_report_labels(vps:, cgroup:)
       vps_labels(vps).merge(
-        invoked_by_name:,
-        killed_name:
+        cgroup:
       )
     end
   end
