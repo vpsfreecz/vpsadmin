@@ -438,6 +438,7 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
       end
 
       netif = ip.network_interface
+      error("#{ip} is not assigned to any interface") if netif.nil?
 
       maintenance_check!(netif.vps)
       object_state_check!(netif.vps, netif.vps.user)
