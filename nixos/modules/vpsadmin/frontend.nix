@@ -11,7 +11,8 @@ let
         Frontends to the vpsAdmin ${app} using nginx
 
         A frontend is a public server, usually with SSL, which serves
-        as a reverse proxy to HAProxy. See {option}`vpsadmin.haproxy.${app}`.
+        as a reverse proxy to Varnish or HAProxy.
+        See {option}`vpsadmin.varnish` and {option}`vpsadmin.haproxy.${app}`.
 
         To enable the SSL or to set any other nginx settings, access the nginx
         virtual host using its options,
@@ -62,14 +63,14 @@ let
       host = mkOption {
         type = types.str;
         description = ''
-          Hostname or IP address of the backend, usually a HAProxy instance
+          Hostname or IP address of the backend, usually Varnish or HAProxy instance
         '';
       };
 
       port = mkOption {
         type = types.int;
         description = ''
-          Port number of the backend, usually a HAProxy instance
+          Port number of the backend, usually Varnish or HAProxy instance
         '';
       };
 

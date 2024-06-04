@@ -7,6 +7,7 @@
     ./vpsadmin/console-router.nix
     ./vpsadmin/download-mounter.nix
     ./vpsadmin/frontend.nix
+    ./vpsadmin/varnish.nix
     ./vpsadmin/haproxy.nix
     ./vpsadmin/main.nix
     ./vpsadmin/database.nix
