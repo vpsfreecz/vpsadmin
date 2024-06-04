@@ -11,11 +11,11 @@ let
         Frontends to the vpsAdmin ${app} using nginx
 
         A frontend is a public server, usually with SSL, which serves
-        as a reverse proxy to HAProxy. See <option>vpsadmin.haproxy.${app}</option>.
+        as a reverse proxy to HAProxy. See {option}`vpsadmin.haproxy.${app}`.
 
         To enable the SSL or to set any other nginx settings, access the nginx
         virtual host using its options,
-        i.e. <option>services.nginx.virtualHost</option>.
+        i.e. {option}`services.nginx.virtualHost`.
       '';
     };
 
@@ -30,10 +30,10 @@ let
       type = types.nullOr types.str;
       default = null;
       description = ''
-        nginx virtual host name, see <option>services.nginx.virtualHosts</option>
+        nginx virtual host name, see {option}`services.nginx.virtualHosts`
 
         If not given, it defaults to the value of
-        <option>vpsadmin.frontend.${app}.domain</option>.
+        {option}`vpsadmin.frontend.${app}.domain`.
       '';
       apply = v:
         if !isNull v then
@@ -334,7 +334,7 @@ in {
           Enable maintenance on all frontends
 
           Frontends can be further selected using option
-          <option>vpsadmin.frontend.maintenance.frontends</option>.
+          {option}`vpsadmin.frontend.maintenance.frontends`.
         '';
 
         frontends = mkOption {
@@ -350,7 +350,7 @@ in {
         type = types.nullOr types.bool;
         default = null;
         description = ''
-          Shortcut to set <option>services.nginx.virtualHosts.&lt;name&gt;.forceSSL</option>
+          Shortcut to set {option}`services.nginx.virtualHosts.<name>.forceSSL`
           on all frontends
         '';
       };
@@ -359,7 +359,7 @@ in {
         type = types.nullOr types.bool;
         default = null;
         description = ''
-          Shortcut to set <option>services.nginx.virtualHosts.&lt;name&gt;.enableACME</option>
+          Shortcut to set {option}`services.nginx.virtualHosts.<name>.enableACME`
           on all frontends
         '';
       };
