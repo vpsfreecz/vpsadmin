@@ -134,6 +134,24 @@ in {
     vpsadmin.haproxy = {
       enable = mkEnableOption "Enable HAProxy for vpsAdmin";
 
+      exporter = {
+        enable = mkOption {
+          type = types.bool;
+          default = true;
+          description = ''
+            Enable frontend that exposes prometheus metrics
+          '';
+        };
+
+        port = mkOption {
+          type = types.int;
+          default = 8405;
+          description = ''
+            Port for prometheus metrics endpoint
+          '';
+        };
+      };
+
       api = mkOption {
         type = types.attrsOf (types.submodule appOpts);
         default = {};
@@ -187,6 +205,14 @@ in {
           timeout http-keep-alive 10s
           timeout check           10s
           maxconn                 3000
+
+        ${optionalString cfg.exporter.enable ''
+        frontend prometheus
+          bind *:${toString cfg.exporter.port}
+          mode http
+          http-request use-service prometheus-exporter if { path /metrics }
+          no log
+        ''}
 
         ${stringConfigs cfg.api apiConfig}
         ${stringConfigs cfg.console-router consoleRouterConfig}
