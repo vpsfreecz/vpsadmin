@@ -25,5 +25,8 @@ in stdenv.mkDerivation rec {
     export PATH="$(ruby -e 'puts Gem.bindir'):$PATH"
     export RUBYLIB="$GEM_HOME"
     gem install --no-document bundler geminabox overcommit rake rubocop rubocop-rake
+
+    # TODO: remove when geminabox is fixed, see https://github.com/geminabox/geminabox/pull/572
+    gem install --no-document rubygems-generate_index
   '';
 }
