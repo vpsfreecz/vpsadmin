@@ -101,6 +101,15 @@
                     </div>
                   </div>
 
+                  <dic class="form-group">
+                    <div class="form-check">
+                      <input class="form-check-input" type="checkbox" name="skip_multi_factor" value="1" id="skip_multi_factor" <%= skip_multi_factor.nil? || skip_multi_factor ? 'checked' : '' %>>
+                      <label class="form-check-label" for="skip_multi_factor">
+                        Do not ask for TOTP code on this device next time
+                      </label>
+                    </div>
+                  </div>
+
                 <% elsif step == :reset_password -%>
                   <div class="form-group">
                     <div class="input-group">

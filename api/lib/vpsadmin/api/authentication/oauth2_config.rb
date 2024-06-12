@@ -332,6 +332,7 @@ module VpsAdmin::API
       # Variables passed to the ERB template
       auth_token = auth_result && auth_result.auth_token
       user = sinatra_params[:user]
+      skip_multi_factor = sinatra_params[:skip_multi_factor]
       step =
         if auth_token && !auth_result.reset_password
           :totp
@@ -389,7 +390,11 @@ module VpsAdmin::API
         return ret
       end
 
-      if auth.authenticated? && auth.complete? && !auth.reset_password?
+      skip_multi_factor = device.user == auth.user && device.known && device.skip_multi_factor
+
+      if auth.authenticated? && (auth.complete? || skip_multi_factor) && !auth.reset_password?
+        auth.complete = true unless auth.complete?
+
         create_authorization(
           auth_result: ret,
           sinatra_request:,
@@ -418,6 +423,10 @@ module VpsAdmin::API
             auth.recovery_device,
             sinatra_request
           )
+        end
+
+        if sinatra_params[:skip_multi_factor]
+          device.update!(skip_multi_factor: true)
         end
 
         unless auth.reset_password?
