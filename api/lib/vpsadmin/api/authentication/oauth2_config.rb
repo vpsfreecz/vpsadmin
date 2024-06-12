@@ -5,7 +5,7 @@ module VpsAdmin::API
   class Authentication::OAuth2Config < HaveAPI::Authentication::OAuth2::Config
     SSO_COOKIE = :vpsadmin_sso
 
-    DEVICE_COOKIE = :vpsadmin_device
+    DEVICES_COOKIE = :vpsadmin_devices
 
     include Operations::Utils::Dns
 
@@ -78,16 +78,16 @@ module VpsAdmin::API
     # @return [AuthResult, nil]
     def handle_get_authorize(sinatra_handler:, sinatra_request:, sinatra_params:, oauth2_request:, oauth2_response:, client:)
       sso = find_sso(sinatra_handler, client)
-      device = find_device(sinatra_handler)
+      devices = find_devices(sinatra_handler)
 
-      if sso && device && sso.user.enable_oauth2_auth
+      if sso && devices.detect { |d| d.user == sso.user } && sso.user.enable_oauth2_auth
         auth_sso(
           sso:,
           sinatra_request:,
           oauth2_request:,
           oauth2_response:,
           client:,
-          device:
+          devices:
         )
       else
         render_authorize_page(
@@ -105,7 +105,7 @@ module VpsAdmin::API
         return AuthResult.new(cancel: true)
       end
 
-      device = find_device(sinatra_handler)
+      devices = find_devices(sinatra_handler)
 
       auth_args = {
         sinatra_request:,
@@ -113,7 +113,7 @@ module VpsAdmin::API
         oauth2_request:,
         oauth2_response:,
         client:,
-        device:
+        devices:
       }
 
       auth_result =
@@ -353,7 +353,7 @@ module VpsAdmin::API
       nil
     end
 
-    def auth_credentials(sinatra_request:, sinatra_params:, oauth2_request:, oauth2_response:, client:, device:)
+    def auth_credentials(sinatra_request:, sinatra_params:, oauth2_request:, oauth2_response:, client:, devices:)
       auth = Operations::Authentication::Password.run(
         sinatra_params[:user],
         sinatra_params[:password],
@@ -390,10 +390,11 @@ module VpsAdmin::API
         return ret
       end
 
-      skip_multi_factor = device.user == auth.user && device.known && device.skip_multi_factor
+      device = devices.detect { |d| d.user == auth.user }
+      skip_multi_factor = device && device.known && device.skip_multi_factor
 
       if auth.authenticated? && (auth.complete? || skip_multi_factor) && !auth.reset_password?
-        auth.complete = true unless auth.complete?
+        ret.complete = true unless auth.complete?
 
         create_authorization(
           auth_result: ret,
@@ -401,14 +402,14 @@ module VpsAdmin::API
           oauth2_request:,
           oauth2_response:,
           client:,
-          device:
+          devices:
         )
       end
 
       ret
     end
 
-    def auth_totp(sinatra_request:, sinatra_params:, oauth2_request:, oauth2_response:, client:, device:)
+    def auth_totp(sinatra_request:, sinatra_params:, oauth2_request:, oauth2_response:, client:, devices:)
       auth = Operations::Authentication::Totp.run(
         sinatra_params[:auth_token],
         sinatra_params[:totp_code]
@@ -425,10 +426,6 @@ module VpsAdmin::API
           )
         end
 
-        if sinatra_params[:skip_multi_factor]
-          device.update!(skip_multi_factor: true)
-        end
-
         unless auth.reset_password?
           create_authorization(
             auth_result: ret,
@@ -436,7 +433,8 @@ module VpsAdmin::API
             oauth2_request:,
             oauth2_response:,
             client:,
-            device:
+            devices:,
+            skip_multi_factor: sinatra_params[:skip_multi_factor] == '1'
           )
         end
       else
@@ -454,7 +452,7 @@ module VpsAdmin::API
       ret
     end
 
-    def reset_password(sinatra_request:, sinatra_params:, oauth2_request:, oauth2_response:, client:, device:)
+    def reset_password(sinatra_request:, sinatra_params:, oauth2_request:, oauth2_response:, client:, devices:)
       ret = AuthResult.new(
         authenticated: true,
         reset_password: true,
@@ -484,13 +482,13 @@ module VpsAdmin::API
         oauth2_request:,
         oauth2_response:,
         client:,
-        device:
+        devices:
       )
 
       ret
     end
 
-    def auth_sso(sso:, sinatra_request:, oauth2_request:, oauth2_response:, client:, device:)
+    def auth_sso(sso:, sinatra_request:, oauth2_request:, oauth2_response:, client:, devices:)
       ret = AuthResult.new(
         authenticated: true,
         complete: true,
@@ -503,7 +501,7 @@ module VpsAdmin::API
         oauth2_request:,
         oauth2_response:,
         client:,
-        device:,
+        devices:,
         sso:
       )
 
@@ -522,17 +520,19 @@ module VpsAdmin::API
       sso
     end
 
-    def find_device(sinatra_handler)
-      token = sinatra_handler.cookies[DEVICE_COOKIE]
-      return unless token
+    # @return [Array<::UserDevice>]
+    def find_devices(sinatra_handler)
+      tokens = sinatra_handler.cookies[DEVICES_COOKIE]
+      return [] unless tokens
 
-      device = ::UserDevice.joins(:token).where(tokens: { token: }).take
-      return if device.nil? || !device.usable?
-
-      device
+      ::UserDevice
+        .joins(:token)
+        .where(tokens: { token: tokens.split(',') })
+        .to_a
+        .select(&:usable?)
     end
 
-    def create_device(user, sinatra_request, expires_at)
+    def create_device(user, sinatra_request, expires_at, skip_multi_factor)
       client_ip_addr = sinatra_request.env['HTTP_CLIENT_IP'] || sinatra_request.ip
 
       device = ::UserDevice.new(
@@ -540,7 +540,8 @@ module VpsAdmin::API
         client_ip_addr:,
         client_ip_ptr: get_ptr(client_ip_addr),
         user_agent: ::UserAgent.find_or_create!(sinatra_request.user_agent || ''),
-        known: false
+        known: false,
+        skip_multi_factor:
       )
 
       ::Token.for_new_record!(expires_at) do |token|
@@ -552,14 +553,17 @@ module VpsAdmin::API
       device
     end
 
-    def create_authorization(auth_result:, sinatra_request:, oauth2_request:, oauth2_response:, client:, device:, sso: nil)
+    def create_authorization(auth_result:, sinatra_request:, oauth2_request:, oauth2_response:, client:, devices:, sso: nil, skip_multi_factor: false)
       now = Time.now
       expires_at = now + (10 * 60)
+      device = devices.detect { |d| d.user == auth_result.user }
 
       if device
         device.touch
+        device.update!(skip_multi_factor: true) if skip_multi_factor
       else
-        device = create_device(auth_result.user, sinatra_request, now + ::UserDevice::LIFETIME)
+        device = create_device(auth_result.user, sinatra_request, now + ::UserDevice::LIFETIME, skip_multi_factor)
+        devices << device
       end
 
       client_ip_addr, client_ip_ptr = client_info(sinatra_request, device)
@@ -606,9 +610,9 @@ module VpsAdmin::API
           })
         end
 
-        # Set known-device cookie
-        oauth2_response.set_cookie(DEVICE_COOKIE, {
-          value: device.token.token,
+        # Set known-devices cookie
+        oauth2_response.set_cookie(DEVICES_COOKIE, {
+          value: devices.map { |d| d.token.token }.join(','),
           max_age: ::UserDevice::LIFETIME
         })
 
