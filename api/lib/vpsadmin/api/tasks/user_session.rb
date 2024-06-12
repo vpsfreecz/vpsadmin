@@ -50,6 +50,15 @@ module VpsAdmin::API::Tasks
           sso.close if ENV['EXECUTE'] == 'yes'
         end
       end
+
+      # Expire user devices
+      ::UserDevice
+        .joins(:token)
+        .where('tokens.valid_to < ?', Time.now)
+        .each do |device|
+        puts "User device #{device.id} expired"
+        device.close if ENV['EXECUTE'] == 'yes'
+      end
     end
   end
 end

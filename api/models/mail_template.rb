@@ -2,6 +2,8 @@ require_relative 'node'
 require_relative 'object_state'
 require_relative 'snapshot_download'
 require_relative 'user'
+require_relative 'user_device'
+require_relative 'user_session'
 require_relative 'user_totp_device'
 require_relative 'vps'
 require_relative 'vps_migration'
@@ -253,6 +255,12 @@ class MailTemplate < ActiveRecord::Base
     user: ::User,
     state: ::ObjectState
   }, roles: %i[account], public: true
+
+  register :user_new_login, vars: {
+    user: ::User,
+    user_session: ::UserSession,
+    user_device: ::UserDevice
+  }, roles: %i[account]
 
   register :user_totp_recovery_code_used, vars: {
     user: ::User,

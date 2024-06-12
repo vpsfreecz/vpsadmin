@@ -1123,7 +1123,7 @@ CREATE TABLE `oauth2_authorizations` (
   `single_sign_on_id` int(11) DEFAULT NULL,
   `client_ip_addr` varchar(46) DEFAULT NULL,
   `client_ip_ptr` varchar(255) DEFAULT NULL,
-  `user_agent_id` int(11) DEFAULT NULL,
+  `user_device_id` bigint(20) DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `index_oauth2_authorizations_on_oauth2_client_id` (`oauth2_client_id`),
   KEY `index_oauth2_authorizations_on_user_id` (`user_id`),
@@ -1131,7 +1131,7 @@ CREATE TABLE `oauth2_authorizations` (
   KEY `index_oauth2_authorizations_on_user_session_id` (`user_session_id`),
   KEY `index_oauth2_authorizations_on_refresh_token_id` (`refresh_token_id`),
   KEY `index_oauth2_authorizations_on_single_sign_on_id` (`single_sign_on_id`),
-  KEY `index_oauth2_authorizations_on_user_agent_id` (`user_agent_id`)
+  KEY `index_oauth2_authorizations_on_user_device_id` (`user_device_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `oauth2_clients`;
@@ -1663,6 +1663,25 @@ CREATE TABLE `user_cluster_resources` (
   KEY `index_user_cluster_resources_on_user_id` (`user_id`) USING BTREE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `user_devices`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `user_devices` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `user_id` bigint(20) NOT NULL,
+  `token_id` bigint(20) DEFAULT NULL,
+  `client_ip_addr` varchar(46) NOT NULL,
+  `client_ip_ptr` varchar(255) NOT NULL,
+  `user_agent_id` bigint(20) NOT NULL,
+  `known` tinyint(1) NOT NULL DEFAULT 0,
+  `created_at` datetime(6) NOT NULL,
+  `updated_at` datetime(6) NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `index_user_devices_on_user_id` (`user_id`),
+  KEY `index_user_devices_on_token_id` (`token_id`),
+  KEY `index_user_devices_on_user_agent_id` (`user_agent_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `user_failed_logins`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
@@ -2117,6 +2136,7 @@ CREATE TABLE `vpses` (
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
 INSERT INTO `schema_migrations` (version) VALUES
+('20240610150646'),
 ('20240602092635'),
 ('20240601131223'),
 ('20240527153145'),

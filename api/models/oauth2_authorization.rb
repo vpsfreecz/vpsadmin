@@ -5,6 +5,7 @@ class Oauth2Authorization < ::ActiveRecord::Base
   belongs_to :user_session
   belongs_to :refresh_token, class_name: 'Token', dependent: :destroy
   belongs_to :single_sign_on
+  belongs_to :user_device
   belongs_to :user_agent
   serialize :scope, coder: JSON
 
