@@ -80,7 +80,7 @@ module VpsAdmin::API
       sso = find_sso(sinatra_handler, client)
       device = find_device(sinatra_handler)
 
-      if sso && device
+      if sso && device && sso.user.enable_oauth2_auth
         auth_sso(
           sso:,
           sinatra_request:,
@@ -316,7 +316,9 @@ module VpsAdmin::API
 
     def find_user_by_access_token(_sinatra_request, access_token)
       session = Operations::UserSession::ResumeOAuth2.run(access_token)
-      session && session.user
+      return if !session || !session.user || !session.user.enable_oauth2_auth
+
+      session.user
     end
 
     def base_url
@@ -364,6 +366,10 @@ module VpsAdmin::API
       ret = AuthResult.from_password_result(auth)
 
       if auth.authenticated?
+        unless auth.user.enable_oauth2_auth
+          return AuthResult.new(errors: ['OAuth2 authentication is disabled on this account'])
+        end
+
         # Check that the user can login at an earlier stage, so that we can
         # show the user an error message now and not fail in {#get_tokens} later.
         begin

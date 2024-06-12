@@ -20,6 +20,10 @@ module VpsAdmin::API
 
           res.error = 'invalid user or password'
           next res
+
+        elsif !auth.user.enable_token_auth
+          res.error = 'token authentication is disabled on this account'
+          next res
         end
 
         if auth.complete?
@@ -135,7 +139,9 @@ module VpsAdmin::API
 
     def find_user_by_token(_request, token)
       session = Operations::UserSession::ResumeToken.run(token)
-      session && session.user
+      return if !session || !session.user || !session.user.enable_token_auth
+
+      session.user
     end
   end
 end

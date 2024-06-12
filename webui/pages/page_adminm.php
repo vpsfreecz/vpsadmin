@@ -181,6 +181,34 @@ function print_editm($u)
     $xtpl->form_add_input(_("Repeat new password") . ':', 'password', '30', 'new_password2', '', '', -8);
     $xtpl->form_out(_("Save"));
 
+    $xtpl->table_add_category(_('Authentication settings'));
+    $xtpl->table_add_category('&nbsp;');
+    $xtpl->table_add_category('&nbsp;');
+    $xtpl->form_create('?page=adminm&section=members&action=auth_settings&id=' . $u->id, 'post');
+
+    $xtpl->form_add_checkbox(
+        _('Enable HTTP basic') . ':',
+        'enable_basic_auth',
+        '1',
+        $_POST['enable_basic_auth'] ?? $u->enable_basic_auth,
+        _('Enable authentication using HTTP basic. Not used by vpsAdmin and not recommended.')
+    );
+
+    $xtpl->form_add_checkbox(
+        _('Enable token authentication') . ':',
+        'enable_token_auth',
+        '1',
+        $_POST['enable_token_auth'] ?? $u->enable_token_auth,
+        _('Enable authentication using tokens, used e.g. by vpsfreectl.')
+    );
+
+    $xtpl->table_td(_('Enable OAuth2 authentication') . ':');
+    $xtpl->table_td('<input type="checkbox" ' . ($u->enable_oauth2_auth ? 'checked' : '') . ' disabled>');
+    $xtpl->table_td(_('OAuth2 authentication is used by this web interface and cannot be disabled.'));
+    $xtpl->table_tr();
+
+    $xtpl->form_out(_('Save'));
+
     $xtpl->table_add_category(_('Session control'));
     $xtpl->table_add_category('&nbsp;');
     $xtpl->table_add_category('&nbsp;');
@@ -1081,6 +1109,26 @@ if (isLoggedIn()) {
                     $xtpl->perex_format_errors(_('Password change failed'), $e->getResponse());
                     print_editm($u);
                 }
+            }
+
+            break;
+        case 'auth_settings':
+            csrf_check();
+
+            try {
+                $user = $api->user->show($_GET['id']);
+
+                $user->update([
+                    'enable_basic_auth' => isset($_POST['enable_basic_auth']),
+                    'enable_token_auth' => isset($_POST['enable_token_auth']),
+                ]);
+
+                notify_user(_('Authentication settings updated'), _('Authentication settings were successfully updated.'));
+                redirect('?page=adminm&action=edit&id=' . $user->id);
+
+            } catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+                $xtpl->perex_format_errors(_('User update failed'), $e->getResponse());
+                print_editm($api->user->find($_GET['id']));
             }
 
             break;
