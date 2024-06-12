@@ -24,6 +24,6 @@ class EnvironmentUserConfig < ActiveRecord::Base
       attrs[:default] = false
     end
 
-    super(attrs)
+    super
   end
 end

@@ -18,7 +18,7 @@ module NodeCtld::SystemProbes
     def method_missing(name, *args)
       return @data[name] if @data.has_key?(name) && args.empty?
 
-      super(name, *args)
+      super
     end
 
     def respond_to_missing?(name, *args)

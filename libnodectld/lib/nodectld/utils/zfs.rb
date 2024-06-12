@@ -20,7 +20,7 @@ module NodeCtld
       def method_missing(name)
         return @props[name].value if @props.has_key?(name)
 
-        super(name)
+        super
       end
 
       def respond_to_missing?(name, *)

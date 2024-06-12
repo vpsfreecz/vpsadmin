@@ -22,7 +22,7 @@ module VpsAdmin::CLI::Commands
         super([@api.vps.show(args[0].to_i).dataset_id, args[1]])
 
       else
-        super(args)
+        super
       end
     end
   end
