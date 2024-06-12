@@ -10,15 +10,21 @@ module VpsAdmin::API
     # @param reason [String]
     # @param request [Sinatra::Request]
     def run(user, mechanism, reason, request)
+      api_ip_addr = request.ip
+      api_ip_ptr = get_ptr(api_ip_addr)
+
+      client_ip_addr = request.env['HTTP_CLIENT_IP'] || api_ip_addr
+      client_ip_ptr = client_ip_addr == api_ip_addr ? api_ip_ptr : get_ptr(client_ip_addr)
+
       ActiveRecord::Base.transaction do
         ::UserFailedLogin.create!(
           user:,
           auth_type: mechanism,
           reason:,
-          api_ip_addr: request.ip,
-          api_ip_ptr: get_ptr(request.ip),
-          client_ip_addr: request.env['HTTP_CLIENT_IP'],
-          client_ip_ptr: request.env['HTTP_CLIENT_IP'] && get_ptr(request.env['HTTP_CLIENT_IP']),
+          api_ip_addr:,
+          api_ip_ptr:,
+          client_ip_addr:,
+          client_ip_ptr:,
           user_agent: ::UserAgent.find_or_create!(request.user_agent || ''),
           client_version: request.user_agent || ''
         )
