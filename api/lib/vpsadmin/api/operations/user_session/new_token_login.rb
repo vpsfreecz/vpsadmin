@@ -25,6 +25,10 @@ module VpsAdmin::API
       )
 
       ::UserSession.current = session
+
+      TransactionChains::User::NewToken.fire2(args: [session])
+
+      session
     end
   end
 end

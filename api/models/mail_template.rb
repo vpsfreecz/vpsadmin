@@ -262,6 +262,11 @@ class MailTemplate < ActiveRecord::Base
     user_device: ::UserDevice
   }, roles: %i[account]
 
+  register :user_new_token, vars: {
+    user: ::User,
+    user_session: ::UserSession
+  }, roles: %i[account]
+
   register :user_totp_recovery_code_used, vars: {
     user: ::User,
     totp_device: ::UserTotpDevice,
