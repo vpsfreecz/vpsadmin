@@ -1697,7 +1697,8 @@ CREATE TABLE `user_failed_logins` (
   `client_ip_ptr` varchar(255) DEFAULT NULL,
   `user_agent_id` int(11) DEFAULT NULL,
   `client_version` varchar(255) NOT NULL,
-  `created_at` datetime /* mariadb-5.3 */ NOT NULL,
+  `created_at` datetime NOT NULL,
+  `reported_at` datetime(6) DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `index_user_failed_logins_on_user_id` (`user_id`),
   KEY `index_user_failed_logins_on_auth_type` (`auth_type`),
@@ -2140,6 +2141,7 @@ CREATE TABLE `vpses` (
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
 INSERT INTO `schema_migrations` (version) VALUES
+('20240612165217'),
 ('20240612140437'),
 ('20240612125623'),
 ('20240610150646'),

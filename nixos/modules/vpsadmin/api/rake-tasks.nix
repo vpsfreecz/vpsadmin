@@ -140,6 +140,15 @@ in {
           };
         };
 
+        report-failed-logins = {
+          rake = [ "vpsadmin:auth:report_failed_logins" "EXECUTE=yes" ];
+          timer.enable = true;
+          timer.config = {
+            OnBootSec = "60min";
+            OnUnitActiveSec = "60min";
+          };
+        };
+
         migration-plans = {
           rake = [ "vpsadmin:vps:migration:run_plans" ];
           timer.enable = true;

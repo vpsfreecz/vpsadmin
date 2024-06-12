@@ -25,6 +25,12 @@ namespace :vpsadmin do
       puts 'Close expired authentication processes'
       VpsAdmin::API::Tasks.run(:authentication, :close_expired)
     end
+
+    desc 'Report failed login attempts'
+    task :report_failed_logins do
+      puts 'Reporting failed login attempts'
+      VpsAdmin::API::Tasks.run(:authentication, :report_failed_logins)
+    end
   end
 
   namespace :user_session do

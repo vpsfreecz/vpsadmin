@@ -274,6 +274,11 @@ class MailTemplate < ActiveRecord::Base
     time: Time
   }, roles: %i[account]
 
+  register :user_failed_logins, vars: {
+    user: ::User,
+    attempts: 'Array<Array<UserFailedLogin>>'
+  }, roles: %i[account]
+
   register :vps_suspend, vars: {
     vps: ::Vps,
     state: ::ObjectState
