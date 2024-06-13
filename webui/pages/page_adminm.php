@@ -348,6 +348,7 @@ function print_editm($u)
     $xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="' . _("Advanced mail configuration") . '" />' . _('Advanced e-mail configuration'), "?page=adminm&section=members&action=template_recipients&id={$u->id}");
     $xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="' . _("Public keys") . '" />' . _('Public keys'), "?page=adminm&section=members&action=pubkeys&id={$u->id}");
     $xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="' . _("TOTP devices") . '" />' . _('TOTP devices'), "?page=adminm&section=members&action=totp_devices&id={$u->id}");
+    $xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="' . _("Known login devices") . '" />' . _('Known login devices'), "?page=adminm&action=known_devices&id={$u->id}");
     $xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="' . _("Sessions") . '" />' . _('Sessions'), "?page=adminm&action=user_sessions&id={$u->id}");
     $xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="' . _("Metrics access tokens") . '" />' . _('Metrics access tokens'), "?page=adminm&action=metrics&id={$u->id}");
 
@@ -1289,6 +1290,48 @@ if (isLoggedIn()) {
                 }
             } else {
                 totp_device_del_form($u, $dev);
+            }
+            break;
+        case 'known_devices':
+            $u = $api->user->find($_GET['id']);
+            known_devices_list_form($u);
+            break;
+        case 'known_device_toggle_skip_2fa':
+            $u = $api->user->find($_GET['id']);
+            $dev = $u->known_device->show($_GET['dev']);
+
+            csrf_check();
+
+            try {
+                $dev->update([
+                    'skip_multi_factor' => $_GET['skip'] ? true : false,
+                ]);
+                notify_user(_('Known login device updated'), '');
+                redirect('?page=adminm&action=known_devices&id=' . $u->id);
+            } catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+                $xtpl->perex_format_errors(
+                    _('Failed to update known login device'),
+                    $e->getResponse()
+                );
+                known_devices_list_form($u);
+            }
+            break;
+        case 'known_device_del':
+            $u = $api->user->find($_GET['id']);
+            $dev = $u->known_device->show($_GET['dev']);
+
+            csrf_check();
+
+            try {
+                $dev->delete();
+                notify_user(_('Known login device deleted'), '');
+                redirect('?page=adminm&action=known_devices&id=' . $u->id);
+            } catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+                $xtpl->perex_format_errors(
+                    _('Known login device deletion failed'),
+                    $e->getResponse()
+                );
+                known_devices_list_form($u);
             }
             break;
         case 'edit_personal':

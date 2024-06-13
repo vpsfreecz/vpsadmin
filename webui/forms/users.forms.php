@@ -1525,6 +1525,68 @@ function totp_device_del_form($user, $dev)
     $xtpl->form_out(_('Delete'));
 }
 
+function known_devices_list_form($user)
+{
+    global $xtpl, $api;
+
+    $xtpl->title(_('Known login devices of') . ' <a href="?page=adminm&action=edit&id=' . $user->id . '">#' . $user->id . '</a> ' . $user->login);
+    $xtpl->table_title(_('Filters'));
+    $xtpl->form_create('', 'get', 'known-device-filter', false);
+
+    $xtpl->table_td(
+        _("Limit") . ':' .
+        '<input type="hidden" name="page" value="adminm">' .
+        '<input type="hidden" name="action" value="known_devices">' .
+        '<input type="hidden" name="id" value="' . $user->id . '">'
+    );
+    $xtpl->form_add_input_pure('text', '40', 'limit', get_val('limit', '25'), '');
+    $xtpl->table_tr();
+
+    $xtpl->form_add_checkbox(_('Detailed output') . ':', 'details', '1', isset($_GET['details']));
+    $xtpl->form_out(_('Show'));
+
+    $xtpl->table_add_category(_('OS'));
+    $xtpl->table_add_category(_('Browser'));
+    $xtpl->table_add_category(_('IP address'));
+    $xtpl->table_add_category(_('Reverse record'));
+    $xtpl->table_add_category(_('Created at'));
+    $xtpl->table_add_category(_('Last use'));
+    $xtpl->table_add_category(_('Skip 2FA'));
+    $xtpl->table_add_category('');
+
+    $devices = $user->known_device->list();
+
+    foreach($devices as $dev) {
+        $ua = new WhichBrowser\Parser($dev->user_agent);
+
+        $xtpl->table_td(h($ua->os->toString()));
+        $xtpl->table_td(h($ua->browser->toString()));
+        $xtpl->table_td(h($dev->client_ip_addr));
+        $xtpl->table_td(h($dev->client_ip_ptr));
+        $xtpl->table_td(tolocaltz($dev->created_at));
+        $xtpl->table_td(tolocaltz($dev->updated_at));
+        $xtpl->table_td('<a href="?page=adminm&action=known_device_toggle_skip_2fa&id=' . $user->id . '&dev=' . $dev->id . '&skip=' . ($dev->skip_multi_factor ? '0' : '1') . '&t=' . csrf_token() . '" title="' . _('Toggle 2FA skip') . '">' . boolean_icon($dev->skip_multi_factor) . '</a>');
+        $xtpl->table_td('<a href="?page=adminm&action=known_device_del&id=' . $user->id . '&dev=' . $dev->id . '&t=' . csrf_token() . '"><img src="template/icons/m_delete.png"  title="' . _("Delete") . '" /></a>');
+        $xtpl->table_tr();
+
+        if (!isset($_GET['details'])) {
+            continue;
+        }
+
+        $xtpl->table_td(
+            _('User agent') . ': ' . h($dev->user_agent),
+            false,
+            false,
+            8
+        );
+        $xtpl->table_tr();
+    }
+
+    $xtpl->table_out();
+
+    $xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="' . _("Back to user details") . '" />' . _('Back to user details'), "?page=adminm&action=edit&id={$user->id}");
+}
+
 function metrics_list_access_tokens($user_id)
 {
     global $xtpl, $api;
