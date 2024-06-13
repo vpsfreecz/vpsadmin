@@ -560,6 +560,125 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
     end
   end
 
+  class KnownDevice < HaveAPI::Resource
+    desc 'Manage known login devices'
+    route '{user_id}/known_devices'
+    model ::UserDevice
+
+    params(:all) do
+      id :id
+      string :api_ip_addr, label: 'IP Address'
+      string :api_ip_ptr, label: 'IP PTR'
+      string :client_ip_addr, label: 'Client IP Address'
+      string :client_ip_ptr, label: 'Client IP PTR'
+      string :user_agent, label: 'User agent', db_name: :user_agent_string
+      bool :skip_multi_factor
+      datetime :created_at
+      datetime :updated_at
+    end
+
+    class Index < HaveAPI::Actions::Default::Index
+      desc 'List known devices'
+
+      output(:object_list) do
+        use :all
+      end
+
+      authorize do |_u|
+        allow
+      end
+
+      def query
+        error('access denied') if current_user.role != :admin && current_user.id != params[:user_id].to_i
+
+        self.class.model.active.where(user_id: params[:user_id])
+      end
+
+      def count
+        query.count
+      end
+
+      def exec
+        query.limit(input[:limit]).offset(input[:offset])
+      end
+    end
+
+    class Show < HaveAPI::Actions::Default::Show
+      desc 'Show known device'
+      resolve ->(device) { [device.user_id, device.id] }
+
+      output do
+        use :all
+      end
+
+      authorize do |_u|
+        allow
+      end
+
+      def prepare
+        error('access denied') if current_user.role != :admin && current_user.id != params[:user_id].to_i
+
+        @device = self.class.model.active.find_by!(
+          user_id: params[:user_id],
+          id: params[:known_device_id]
+        )
+      end
+
+      def exec
+        @device
+      end
+    end
+
+    class Update < HaveAPI::Actions::Default::Update
+      desc 'Update known device'
+
+      input do
+        bool :skip_multi_factor, required: true
+      end
+
+      output do
+        use :all
+      end
+
+      authorize do |_u|
+        allow
+      end
+
+      def exec
+        error('access denied') if current_user.role != :admin && current_user.id != params[:user_id].to_i
+
+        device = self.class.model.active.find_by!(
+          user_id: params[:user_id],
+          id: params[:known_device_id]
+        )
+
+        device.update!(skip_multi_factor: input[:skip_multi_factor])
+
+        device
+      end
+    end
+
+    class Delete < HaveAPI::Actions::Default::Delete
+      desc 'Delete known device'
+
+      authorize do |_u|
+        allow
+      end
+
+      def exec
+        error('access denied') if current_user.role != :admin && current_user.id != params[:user_id].to_i
+
+        self.class.model.active.find_by!(
+          user_id: params[:user_id],
+          id: params[:known_device_id]
+        ).close
+        ok
+      rescue VpsAdmin::API::Exceptions::OperationError => e
+        error(e.message)
+      end
+    end
+  end
+
   class TotpDevice < HaveAPI::Resource
     desc 'Manage TOTP devices'
     route '{user_id}/totp_devices'
