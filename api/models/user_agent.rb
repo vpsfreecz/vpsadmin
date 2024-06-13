@@ -1,3 +1,5 @@
+require 'user_agent_parser'
+
 class UserAgent < ActiveRecord::Base
   has_many :user_sessions
   has_many :user_failed_logins
@@ -9,5 +11,24 @@ class UserAgent < ActiveRecord::Base
       agent: user_agent,
       agent_hash: hash
     )
+  end
+
+  # @return [String]
+  def to_user_friendly_s
+    unknown =
+      %i[os family device].map do |v|
+        parsed.send(v).to_s
+      end.all? do |v|
+        v == 'Other'
+      end
+
+    return agent if unknown
+
+    "#{parsed.os}, #{parsed.family} #{parsed.version} (#{parsed.device.family})"
+  end
+
+  # @return [UserAgentParser::UserAgent]
+  def parsed
+    @parsed ||= UserAgentParser.parse(agent)
   end
 end
