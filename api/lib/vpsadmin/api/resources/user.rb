@@ -238,6 +238,9 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
                         desc: 'The password must be at least 8 characters long'
       string :new_password, label: 'Password', protected: true,
                             desc: 'The password must be at least 8 characters long'
+      bool :logout_sessions, label: 'Logout sessions',
+                             desc: 'Logout all sessions except the current one when password is changed',
+                             default: true, fill: true
     end
 
     output do
@@ -247,8 +250,8 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
     authorize do |u|
       allow if u.role == :admin
       input whitelist: %i[
-        password new_password mailer_enabled language enable_basic_auth
-        enable_token_auth enable_oauth2_auth enable_single_sign_on
+        password new_password logout_sessions mailer_enabled language
+        enable_basic_auth enable_token_auth enable_oauth2_auth enable_single_sign_on
         preferred_session_length preferred_logout_all remind_after_date
       ]
       allow
@@ -294,9 +297,17 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
         end
 
         u.set_password(input.delete(:new_password))
+
+        if input[:logout_sessions]
+          VpsAdmin::API::Operations::UserSession::CloseAll.run(
+            u,
+            except: current_user == u ? [::UserSession.current] : nil
+          )
+        end
       end
 
       input.delete(:password)
+      input.delete(:logout_sessions)
 
       u.update!(to_db_names(input))
       u

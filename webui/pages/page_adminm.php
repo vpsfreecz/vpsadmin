@@ -179,7 +179,14 @@ function print_editm($u)
 
     $xtpl->form_add_input(_("New password") . ':', 'password', '30', 'new_password', '', '', -8);
     $xtpl->form_add_input(_("Repeat new password") . ':', 'password', '30', 'new_password2', '', '', -8);
-    $xtpl->form_out(_("Save"));
+    $xtpl->form_add_checkbox(
+        _("Logout other sessions") . ':',
+        'logout_sessions',
+        '1',
+        $_POST['logout_sessions'] ?? !isAdmin(),
+        _("All sessions except this one will be logged out, all access tokens will be revoked.")
+    );
+    $xtpl->form_out(_("Set"));
 
     $xtpl->table_add_category(_('Authentication settings'));
     $xtpl->table_add_category('&nbsp;');
@@ -1094,7 +1101,10 @@ if (isLoggedIn()) {
                 csrf_check();
 
                 try {
-                    $params = ['new_password' => $_POST['new_password']];
+                    $params = [
+                        'new_password' => $_POST['new_password'],
+                        'logout_sessions' => isset($_POST['logout_sessions']),
+                    ];
 
                     if (!isAdmin()) {
                         $params['password'] = $_POST['password'];
