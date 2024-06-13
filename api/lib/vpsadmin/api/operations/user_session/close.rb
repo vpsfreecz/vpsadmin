@@ -18,10 +18,7 @@ module VpsAdmin::API
 
       # Close expired single sign ons
       ::SingleSignOn.where.not(token: nil).each do |sso|
-        if !sso.usable? || !sso.any_active_authorizations?
-          puts "Closing SSO session #{sso.id}"
-          sso.close if ENV['EXECUTE'] == 'yes'
-        end
+        sso.close if !sso.usable? || !sso.any_active_authorizations?
       end
 
       nil
