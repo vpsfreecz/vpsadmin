@@ -22,6 +22,7 @@ gem 'rotp', '~> 6.3.0'
 gem 'rubyzip', '~> 2.3.2' # needed by vpsFree.cz's incident reports
 gem 'sinatra-activerecord', '~> 2.0.23'
 gem 'thin'
+gem 'user_agent_parser', '~> 2.18'
 
 group :test do
   gem 'rspec'
