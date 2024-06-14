@@ -16,7 +16,9 @@ class UserDevice < ::ActiveRecord::Base
   end
 
   def touch
-    token.update!(valid_to: Time.now + LIFETIME)
+    now = Time.now
+    token.update!(valid_to: now + LIFETIME)
+    update!(last_seen_at: now)
   end
 
   def close

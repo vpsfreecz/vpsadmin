@@ -541,7 +541,8 @@ module VpsAdmin::API
         client_ip_ptr: get_ptr(client_ip_addr),
         user_agent: ::UserAgent.find_or_create!(sinatra_request.user_agent || ''),
         known: false,
-        skip_multi_factor:
+        skip_multi_factor:,
+        last_seen_at: Time.now
       )
 
       ::Token.for_new_record!(expires_at) do |token|

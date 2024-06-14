@@ -1677,6 +1677,7 @@ CREATE TABLE `user_devices` (
   `created_at` datetime(6) NOT NULL,
   `updated_at` datetime(6) NOT NULL,
   `skip_multi_factor` tinyint(1) NOT NULL DEFAULT 0,
+  `last_seen_at` datetime(6) NOT NULL,
   PRIMARY KEY (`id`),
   KEY `index_user_devices_on_user_id` (`user_id`),
   KEY `index_user_devices_on_token_id` (`token_id`),
@@ -2141,6 +2142,7 @@ CREATE TABLE `vpses` (
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
 INSERT INTO `schema_migrations` (version) VALUES
+('20240614140313'),
 ('20240612165217'),
 ('20240612140437'),
 ('20240612125623'),

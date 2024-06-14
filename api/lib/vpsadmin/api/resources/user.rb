@@ -575,6 +575,7 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
       bool :skip_multi_factor
       datetime :created_at
       datetime :updated_at
+      datetime :last_seen_at
     end
 
     class Index < HaveAPI::Actions::Default::Index
