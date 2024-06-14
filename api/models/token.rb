@@ -41,6 +41,21 @@ class Token < ActiveRecord::Base
     self.token = SecureRandom.hex(50)
   end
 
+  def regenerate!
+    5.times do
+      generate
+
+      begin
+        save!
+        return
+      rescue ActiveRecord::RecordNotUnique
+        next
+      end
+    end
+
+    raise 'unable to generate a unique token'
+  end
+
   def to_s
     token
   end

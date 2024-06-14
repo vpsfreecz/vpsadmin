@@ -557,6 +557,11 @@ module VpsAdmin::API
     def create_authorization(auth_result:, sinatra_request:, oauth2_request:, oauth2_response:, client:, devices:, sso: nil, skip_multi_factor_auth: false)
       now = Time.now
       expires_at = now + (10 * 60)
+
+      # Refresh all devices
+      devices.each(&:refresh)
+
+      # Find device for the current user
       device = devices.detect { |d| d.user == auth_result.user }
 
       if device

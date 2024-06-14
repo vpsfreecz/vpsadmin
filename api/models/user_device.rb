@@ -15,6 +15,10 @@ class UserDevice < ::ActiveRecord::Base
     token && token.valid_to > Time.now
   end
 
+  def refresh
+    token.regenerate!
+  end
+
   def touch
     now = Time.now
     token.update!(valid_to: now + LIFETIME)
