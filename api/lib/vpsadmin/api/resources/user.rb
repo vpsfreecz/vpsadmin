@@ -240,7 +240,7 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
                             desc: 'The password must be at least 8 characters long'
       bool :logout_sessions, label: 'Logout sessions',
                              desc: 'Logout all sessions except the current one when password is changed',
-                             default: true, fill: true
+                             default: true
     end
 
     output do
@@ -298,7 +298,7 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
 
         u.set_password(input.delete(:new_password))
 
-        if input[:logout_sessions]
+        if input.fetch(:logout_sessions, true)
           VpsAdmin::API::Operations::UserSession::CloseAll.run(
             u,
             except: current_user == u ? [::UserSession.current] : nil
