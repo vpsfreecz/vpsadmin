@@ -92,6 +92,16 @@ let
         };
       };
     };
+    "psr/cache" = {
+      targetDir = "";
+      src = composerEnv.buildZipPackage {
+        name = "psr-cache-aa5030cfa5405eccfdcb1083ce040c2cb8d253bf";
+        src = fetchurl {
+          url = "https://api.github.com/repos/php-fig/cache/zipball/aa5030cfa5405eccfdcb1083ce040c2cb8d253bf";
+          sha256 = "07rnyjwb445sfj30v5ny3gfsgc1m7j7cyvwjgs2cm9slns1k1ml8";
+        };
+      };
+    };
     "psr/http-client" = {
       targetDir = "";
       src = composerEnv.buildZipPackage {
@@ -105,10 +115,10 @@ let
     "psr/http-factory" = {
       targetDir = "";
       src = composerEnv.buildZipPackage {
-        name = "psr-http-factory-e616d01114759c4c489f93b099585439f795fe35";
+        name = "psr-http-factory-2b4765fddfe3b508ac62f829e852b1501d3f6e8a";
         src = fetchurl {
-          url = "https://api.github.com/repos/php-fig/http-factory/zipball/e616d01114759c4c489f93b099585439f795fe35";
-          sha256 = "1vzimn3h01lfz0jx0lh3cy9whr3kdh103m1fw07qric4pnnz5kx8";
+          url = "https://api.github.com/repos/php-fig/http-factory/zipball/2b4765fddfe3b508ac62f829e852b1501d3f6e8a";
+          sha256 = "1ll0pzm0vd5kn45hhwrlkw2z9nqysqkykynn1bk1a73c5cjrghx3";
         };
       };
     };
@@ -135,10 +145,10 @@ let
     "symfony/deprecation-contracts" = {
       targetDir = "";
       src = composerEnv.buildZipPackage {
-        name = "symfony-deprecation-contracts-7c3aff79d10325257a001fcf92d991f24fc967cf";
+        name = "symfony-deprecation-contracts-0e0d29ce1f20deffb4ab1b016a7257c4f1e789a1";
         src = fetchurl {
-          url = "https://api.github.com/repos/symfony/deprecation-contracts/zipball/7c3aff79d10325257a001fcf92d991f24fc967cf";
-          sha256 = "0p0c2942wjq1bb06y9i8gw6qqj7sin5v5xwsvl0zdgspbr7jk1m9";
+          url = "https://api.github.com/repos/symfony/deprecation-contracts/zipball/0e0d29ce1f20deffb4ab1b016a7257c4f1e789a1";
+          sha256 = "1qhyyfyd7q75nyqivjzrljmqa5qhh09gjs2vz7s3xadq0j525c2b";
         };
       };
     };
@@ -152,13 +162,23 @@ let
         };
       };
     };
+    "whichbrowser/parser" = {
+      targetDir = "";
+      src = composerEnv.buildZipPackage {
+        name = "whichbrowser-parser-581d614d686bfbec3529ad60562a5213ac5d8d72";
+        src = fetchurl {
+          url = "https://api.github.com/repos/WhichBrowser/Parser-PHP/zipball/581d614d686bfbec3529ad60562a5213ac5d8d72";
+          sha256 = "010z1ys1hz8hnw0yaj1yv9g0d3krral7k3xk2j3rwwmmic20vwgs";
+        };
+      };
+    };
   };
   devPackages = {};
 in
 composerEnv.buildPackage {
   inherit packages devPackages noDev;
   name = "vpsadmin-webui";
-  src = ./.;
+  src = composerEnv.filterSrc ./.;
   executable = false;
   symlinkDependencies = false;
   meta = {};
