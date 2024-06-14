@@ -332,7 +332,7 @@ module VpsAdmin::API
       # Variables passed to the ERB template
       auth_token = auth_result && auth_result.auth_token
       user = sinatra_params[:user]
-      skip_multi_factor = sinatra_params[:skip_multi_factor]
+      skip_multi_factor_auth = sinatra_params[:skip_multi_factor_auth]
       step =
         if auth_token && !auth_result.reset_password
           :totp
@@ -391,9 +391,9 @@ module VpsAdmin::API
       end
 
       device = devices.detect { |d| d.user == auth.user }
-      skip_multi_factor = device && device.known && device.skip_multi_factor
+      skip_multi_factor_auth = device && device.known && device.skip_multi_factor_auth
 
-      if auth.authenticated? && (auth.complete? || skip_multi_factor) && !auth.reset_password?
+      if auth.authenticated? && (auth.complete? || skip_multi_factor_auth) && !auth.reset_password?
         ret.complete = true unless auth.complete?
 
         create_authorization(
@@ -434,7 +434,7 @@ module VpsAdmin::API
             oauth2_response:,
             client:,
             devices:,
-            skip_multi_factor: sinatra_params[:skip_multi_factor] == '1'
+            skip_multi_factor_auth: sinatra_params[:skip_multi_factor_auth] == '1'
           )
         end
       else
@@ -532,7 +532,7 @@ module VpsAdmin::API
         .select(&:usable?)
     end
 
-    def create_device(user, sinatra_request, expires_at, skip_multi_factor)
+    def create_device(user, sinatra_request, expires_at, skip_multi_factor_auth)
       client_ip_addr = sinatra_request.env['HTTP_CLIENT_IP'] || sinatra_request.ip
 
       device = ::UserDevice.new(
@@ -541,7 +541,7 @@ module VpsAdmin::API
         client_ip_ptr: get_ptr(client_ip_addr),
         user_agent: ::UserAgent.find_or_create!(sinatra_request.user_agent || ''),
         known: false,
-        skip_multi_factor:,
+        skip_multi_factor_auth:,
         last_seen_at: Time.now
       )
 
@@ -554,16 +554,16 @@ module VpsAdmin::API
       device
     end
 
-    def create_authorization(auth_result:, sinatra_request:, oauth2_request:, oauth2_response:, client:, devices:, sso: nil, skip_multi_factor: false)
+    def create_authorization(auth_result:, sinatra_request:, oauth2_request:, oauth2_response:, client:, devices:, sso: nil, skip_multi_factor_auth: false)
       now = Time.now
       expires_at = now + (10 * 60)
       device = devices.detect { |d| d.user == auth_result.user }
 
       if device
         device.touch
-        device.update!(skip_multi_factor: true) if skip_multi_factor
+        device.update!(skip_multi_factor_auth: true) if skip_multi_factor_auth
       else
-        device = create_device(auth_result.user, sinatra_request, now + ::UserDevice::LIFETIME, skip_multi_factor)
+        device = create_device(auth_result.user, sinatra_request, now + ::UserDevice::LIFETIME, skip_multi_factor_auth)
         devices << device
       end
 

@@ -1304,7 +1304,7 @@ if (isLoggedIn()) {
 
             try {
                 $dev->update([
-                    'skip_multi_factor' => $_GET['skip'] ? true : false,
+                    'skip_multi_factor_auth' => $_GET['skip'] ? true : false,
                 ]);
                 notify_user(_('Known login device updated'), '');
                 redirect('?page=adminm&action=known_devices&id=' . $u->id);
