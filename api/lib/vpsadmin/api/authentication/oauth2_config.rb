@@ -533,7 +533,7 @@ module VpsAdmin::API
     end
 
     def create_device(user, sinatra_request, expires_at, skip_multi_factor_auth)
-      client_ip_addr = sinatra_request.env['HTTP_CLIENT_IP'] || sinatra_request.ip
+      client_ip_addr = sinatra_request.env['HTTP_X_REAL_IP'] || sinatra_request.ip
 
       device = ::UserDevice.new(
         user:,
@@ -642,7 +642,7 @@ module VpsAdmin::API
     def client_info(sinatra_request, device)
       return [device.client_ip_addr, device.client_ip_ptr] unless device.known
 
-      addr = sinatra_request.env['HTTP_CLIENT_IP'] || sinatra_request.ip
+      addr = sinatra_request.env['HTTP_X_REAL_IP'] || sinatra_request.ip
       [addr, get_ptr(addr)]
     end
 
