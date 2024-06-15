@@ -631,6 +631,7 @@ module VpsAdmin::API
           single_sign_on: sso,
           client_ip_addr:,
           client_ip_ptr:,
+          user_agent: ::UserAgent.find_or_create!(sinatra_request.user_agent || ''),
           user_device: device
         )
 

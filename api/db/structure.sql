@@ -1124,6 +1124,7 @@ CREATE TABLE `oauth2_authorizations` (
   `client_ip_addr` varchar(46) DEFAULT NULL,
   `client_ip_ptr` varchar(255) DEFAULT NULL,
   `user_device_id` bigint(20) DEFAULT NULL,
+  `user_agent_id` bigint(20) DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `index_oauth2_authorizations_on_oauth2_client_id` (`oauth2_client_id`),
   KEY `index_oauth2_authorizations_on_user_id` (`user_id`),
@@ -2142,6 +2143,7 @@ CREATE TABLE `vpses` (
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
 INSERT INTO `schema_migrations` (version) VALUES
+('20240615093116'),
 ('20240614150907'),
 ('20240614140313'),
 ('20240612165217'),
