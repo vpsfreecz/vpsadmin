@@ -558,8 +558,14 @@ module VpsAdmin::API
       now = Time.now
       expires_at = now + (10 * 60)
 
-      # Refresh all devices
-      devices.each(&:refresh)
+      # Refresh all devices and update user agent
+      devices.each do |d|
+        if sinatra_request.user_agent
+          d.update!(user_agent: ::UserAgent.find_or_create!(sinatra_request.user_agent))
+        end
+
+        d.refresh
+      end
 
       # Find device for the current user
       device = devices.detect { |d| d.user == auth_result.user }
