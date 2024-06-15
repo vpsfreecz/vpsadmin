@@ -116,18 +116,22 @@ module VpsAdmin::API
         devices:
       }
 
-      auth_result =
-        if sinatra_params[:user] && sinatra_params[:password]
-          auth_credentials(**auth_args)
+      begin
+        auth_result =
+          if sinatra_params[:user] && sinatra_params[:password]
+            auth_credentials(**auth_args)
 
-        elsif sinatra_params[:auth_token] && sinatra_params[:totp_code]
-          auth_totp(**auth_args)
+          elsif sinatra_params[:auth_token] && sinatra_params[:totp_code]
+            auth_totp(**auth_args)
 
-        elsif sinatra_params[:auth_token] \
-              && sinatra_params[:new_password1] \
-              && sinatra_params[:new_password2]
-          reset_password(**auth_args)
-        end
+          elsif sinatra_params[:auth_token] \
+                && sinatra_params[:new_password1] \
+                && sinatra_params[:new_password2]
+            reset_password(**auth_args)
+          end
+      rescue Exceptions::AuthenticationError
+        return AuthResult.new(cancel: true)
+      end
 
       if auth_result.nil? || !auth_result.authenticated || !auth_result.complete
         render_authorize_page(
