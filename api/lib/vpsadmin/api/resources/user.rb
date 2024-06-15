@@ -572,7 +572,7 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
       string :client_ip_addr, label: 'Client IP Address'
       string :client_ip_ptr, label: 'Client IP PTR'
       string :user_agent, label: 'User agent', db_name: :user_agent_string
-      bool :skip_multi_factor_auth
+      datetime :skip_multi_factor_auth_until
       datetime :created_at
       datetime :updated_at
       datetime :last_seen_at
@@ -627,35 +627,6 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
 
       def exec
         @device
-      end
-    end
-
-    class Update < HaveAPI::Actions::Default::Update
-      desc 'Update known device'
-
-      input do
-        bool :skip_multi_factor_auth, required: true
-      end
-
-      output do
-        use :all
-      end
-
-      authorize do |_u|
-        allow
-      end
-
-      def exec
-        error('access denied') if current_user.role != :admin && current_user.id != params[:user_id].to_i
-
-        device = self.class.model.active.find_by!(
-          user_id: params[:user_id],
-          id: params[:known_device_id]
-        )
-
-        device.update!(skip_multi_factor_auth: input[:skip_multi_factor_auth])
-
-        device
       end
     end
 

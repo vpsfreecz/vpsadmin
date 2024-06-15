@@ -1550,8 +1550,8 @@ function known_devices_list_form($user)
     $xtpl->table_add_category(_('IP address'));
     $xtpl->table_add_category(_('Reverse record'));
     $xtpl->table_add_category(_('Created at'));
-    $xtpl->table_add_category(_('Last use'));
-    $xtpl->table_add_category(_('Skip 2FA'));
+    $xtpl->table_add_category(_('Last seen'));
+    $xtpl->table_add_category(_('Next 2FA'));
     $xtpl->table_add_category('');
 
     $devices = $user->known_device->list();
@@ -1565,7 +1565,7 @@ function known_devices_list_form($user)
         $xtpl->table_td(h($dev->client_ip_ptr));
         $xtpl->table_td(tolocaltz($dev->created_at));
         $xtpl->table_td(tolocaltz($dev->last_seen_at));
-        $xtpl->table_td('<a href="?page=adminm&action=known_device_toggle_skip_2fa&id=' . $user->id . '&dev=' . $dev->id . '&skip=' . ($dev->skip_multi_factor_auth ? '0' : '1') . '&t=' . csrf_token() . '" title="' . _('Toggle 2FA skip') . '">' . boolean_icon($dev->skip_multi_factor_auth) . '</a>');
+        $xtpl->table_td($dev->skip_multi_factor_auth_until ? tolocaltz($dev->skip_multi_factor_auth_until) : '-');
         $xtpl->table_td('<a href="?page=adminm&action=known_device_del&id=' . $user->id . '&dev=' . $dev->id . '&t=' . csrf_token() . '"><img src="template/icons/m_delete.png"  title="' . _("Delete") . '" /></a>');
         $xtpl->table_tr();
 

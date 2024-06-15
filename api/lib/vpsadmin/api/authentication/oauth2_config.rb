@@ -336,7 +336,7 @@ module VpsAdmin::API
       # Variables passed to the ERB template
       auth_token = auth_result && auth_result.auth_token
       user = sinatra_params[:user]
-      skip_multi_factor_auth = sinatra_params[:skip_multi_factor_auth]
+      next_multi_factor_auth = sinatra_params[:next_multi_factor_auth]
       step =
         if auth_token && !auth_result.reset_password
           :totp
@@ -395,7 +395,7 @@ module VpsAdmin::API
       end
 
       device = devices.detect { |d| d.user == auth.user }
-      skip_multi_factor_auth = device && device.known && device.skip_multi_factor_auth
+      skip_multi_factor_auth = device && device.known && device.skip_multi_factor_auth?
 
       if auth.authenticated? && (auth.complete? || skip_multi_factor_auth) && !auth.reset_password?
         ret.complete = true unless auth.complete?
@@ -431,6 +431,8 @@ module VpsAdmin::API
         end
 
         unless auth.reset_password?
+          skip_multi_factor_auth_until = parse_next_multi_factor_auth(sinatra_params)
+
           create_authorization(
             auth_result: ret,
             sinatra_request:,
@@ -438,7 +440,7 @@ module VpsAdmin::API
             oauth2_response:,
             client:,
             devices:,
-            skip_multi_factor_auth: sinatra_params[:skip_multi_factor_auth] == '1'
+            skip_multi_factor_auth_until:
           )
         end
       else
@@ -536,7 +538,7 @@ module VpsAdmin::API
         .select(&:usable?)
     end
 
-    def create_device(user, sinatra_request, expires_at, skip_multi_factor_auth)
+    def create_device(user, sinatra_request, expires_at, skip_multi_factor_auth_until)
       client_ip_addr = sinatra_request.env['HTTP_X_REAL_IP'] || sinatra_request.ip
 
       device = ::UserDevice.new(
@@ -545,7 +547,7 @@ module VpsAdmin::API
         client_ip_ptr: get_ptr(client_ip_addr),
         user_agent: ::UserAgent.find_or_create!(sinatra_request.user_agent || ''),
         known: false,
-        skip_multi_factor_auth:,
+        skip_multi_factor_auth_until:,
         last_seen_at: Time.now
       )
 
@@ -558,7 +560,7 @@ module VpsAdmin::API
       device
     end
 
-    def create_authorization(auth_result:, sinatra_request:, oauth2_request:, oauth2_response:, client:, devices:, sso: nil, skip_multi_factor_auth: false)
+    def create_authorization(auth_result:, sinatra_request:, oauth2_request:, oauth2_response:, client:, devices:, sso: nil, skip_multi_factor_auth_until: nil)
       now = Time.now
       expires_at = now + (10 * 60)
 
@@ -576,9 +578,14 @@ module VpsAdmin::API
 
       if device
         device.touch
-        device.update!(skip_multi_factor_auth: true) if skip_multi_factor_auth
+        device.update!(skip_multi_factor_auth_until:)
       else
-        device = create_device(auth_result.user, sinatra_request, now + ::UserDevice::LIFETIME, skip_multi_factor_auth)
+        device = create_device(
+          auth_result.user,
+          sinatra_request,
+          now + ::UserDevice::LIFETIME,
+          skip_multi_factor_auth_until
+        )
         devices << device
       end
 
@@ -660,6 +667,19 @@ module VpsAdmin::API
 
       addr = sinatra_request.env['HTTP_X_REAL_IP'] || sinatra_request.ip
       [addr, get_ptr(addr)]
+    end
+
+    def parse_next_multi_factor_auth(sinatra_params)
+      case sinatra_params[:next_multi_factor_auth]
+      when 'require'
+        nil
+      when 'day'
+        1.day.from_now
+      when 'week'
+        1.week.from_now
+      when 'month'
+        1.month.from_now
+      end
     end
 
     def logo_url

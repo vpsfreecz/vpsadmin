@@ -1296,26 +1296,6 @@ if (isLoggedIn()) {
             $u = $api->user->find($_GET['id']);
             known_devices_list_form($u);
             break;
-        case 'known_device_toggle_skip_2fa':
-            $u = $api->user->find($_GET['id']);
-            $dev = $u->known_device->show($_GET['dev']);
-
-            csrf_check();
-
-            try {
-                $dev->update([
-                    'skip_multi_factor_auth' => $_GET['skip'] ? true : false,
-                ]);
-                notify_user(_('Known login device updated'), '');
-                redirect('?page=adminm&action=known_devices&id=' . $u->id);
-            } catch (\HaveAPI\Client\Exception\ActionFailed $e) {
-                $xtpl->perex_format_errors(
-                    _('Failed to update known login device'),
-                    $e->getResponse()
-                );
-                known_devices_list_form($u);
-            }
-            break;
         case 'known_device_del':
             $u = $api->user->find($_GET['id']);
             $dev = $u->known_device->show($_GET['dev']);
