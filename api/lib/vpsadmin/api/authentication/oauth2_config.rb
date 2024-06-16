@@ -440,7 +440,8 @@ module VpsAdmin::API
             oauth2_response:,
             client:,
             devices:,
-            skip_multi_factor_auth_until:
+            skip_multi_factor_auth_until:,
+            set_multi_factor_auth_until: true
           )
         end
       else
@@ -560,7 +561,7 @@ module VpsAdmin::API
       device
     end
 
-    def create_authorization(auth_result:, sinatra_request:, oauth2_request:, oauth2_response:, client:, devices:, sso: nil, skip_multi_factor_auth_until: nil)
+    def create_authorization(auth_result:, sinatra_request:, oauth2_request:, oauth2_response:, client:, devices:, sso: nil, skip_multi_factor_auth_until: nil, set_multi_factor_auth_until: false)
       now = Time.now
       expires_at = now + (10 * 60)
 
@@ -578,7 +579,7 @@ module VpsAdmin::API
 
       if device
         device.touch
-        device.update!(skip_multi_factor_auth_until:)
+        device.update!(skip_multi_factor_auth_until:) if set_multi_factor_auth_until
       else
         device = create_device(
           auth_result.user,
