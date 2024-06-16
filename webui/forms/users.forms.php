@@ -102,8 +102,8 @@ function list_user_sessions($user_id)
 
     $xtpl->form_add_input(_("Offset") . ':', 'text', '40', 'offset', get_val('offset', '0'), '');
     $xtpl->form_add_input(_("Exact ID") . ':', 'text', '40', 'session_id', get_val('session_id', ''), '');
-    api_param_to_form('auth_type', $input->auth_type, post_val('auth_type'), null, true);
-    api_param_to_form('state', $input->state, post_val('auth_type'), null, true);
+    api_param_to_form('auth_type', $input->auth_type, get_val('auth_type'), null, true);
+    api_param_to_form('state', $input->state, get_val('state'), null, true);
     $xtpl->form_add_input(_("IP Address") . ':', 'text', '40', 'ip_addr', get_val('ip_addr', ''), '');
     $xtpl->form_add_input(_("User agent") . ':', 'text', '40', 'user_agent', get_val('user_agent', ''), '');
     $xtpl->form_add_input(_("Client version") . ':', 'text', '40', 'client_version', get_val('client_version', ''), '');
