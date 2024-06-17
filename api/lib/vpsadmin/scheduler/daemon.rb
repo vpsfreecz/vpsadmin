@@ -9,23 +9,29 @@ module VpsAdmin
       @queue = Queue.new
       @worker = Scheduler::Worker.new
       @scheduler = Scheduler::CronScheduler.new(@worker)
+      @server = Scheduler::Server.new(self, @scheduler, @worker)
     end
 
     def run
       @worker.start
       @scheduler.start
+      @server.start
 
       loop do
-        puts 'Regenerating tasks'
-        regenerate
+        puts 'Updating tasks'
+        replace_tasks
         puts "#{@scheduler.size} tasks registered"
         @queue.pop(timeout: 3 * 60 * 60)
       end
     end
 
+    def update
+      @queue << :update
+    end
+
     protected
 
-    def regenerate
+    def replace_tasks
       ActiveRecord::Base.connection_pool.with_connection do
         @scheduler.replace do
           RepeatableTask.all.order(:id).each do |t|

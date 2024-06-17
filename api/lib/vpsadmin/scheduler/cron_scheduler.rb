@@ -23,6 +23,14 @@ module VpsAdmin
       end
     end
 
+    def get_task(id)
+      sync { @cron_tasks[id] }
+    end
+
+    def get_tasks
+      sync { @cron_tasks.clone }
+    end
+
     def replace
       sync do
         @cron_tasks.clear

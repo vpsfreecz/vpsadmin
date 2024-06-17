@@ -21,6 +21,19 @@ module VpsAdmin
         && weekday_match?(time)
     end
 
+    def export
+      {
+        id:,
+        class_name:,
+        row_id:,
+        minute:,
+        hour:,
+        day:,
+        month:,
+        weekday:
+      }
+    end
+
     private
 
     def parse_field(field, min, max)

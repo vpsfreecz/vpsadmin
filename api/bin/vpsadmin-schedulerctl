@@ -1,0 +1,42 @@
+#!/usr/bin/env ruby
+require 'json'
+require 'socket'
+
+if ARGV.length < 2
+  warn "Usage: #{$0} <socket> <command> [arguments...]"
+  exit(false)
+end
+
+command = ARGV[1]
+arguments = ARGV[2..]
+
+Socket.unix(ARGV[0]) do |sock|
+  sock.puts({ command:, arguments: }.to_json)
+  resp = sock.readline
+
+  json = JSON.parse(resp)
+
+  unless json['status']
+    puts "Error: #{json['error']}"
+    exit(false)
+  end
+
+  case command
+  when 'get-tasks'
+    json['response']['tasks'].each do |task|
+      puts "Task #{task['id']}"
+
+      %w[class_name row_id].each do |v|
+        puts "  #{v} = #{task[v]}"
+      end
+
+      %w[minute hour day month weekday].each do |v|
+        puts "  #{v} = #{task[v].join(',')}"
+      end
+
+      puts
+    end
+  else
+    puts json['response']
+  end
+end
