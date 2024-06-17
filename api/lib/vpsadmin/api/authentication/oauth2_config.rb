@@ -33,7 +33,7 @@ module VpsAdmin::API
           authenticated: auth.authenticated?,
           complete: auth.authenticated? && !auth.reset_password?,
           reset_password: auth.reset_password?,
-          auth_token: auth.auth_token.to_s,
+          auth_token: auth.auth_token,
           user: auth.user
         )
       end
@@ -47,8 +47,8 @@ module VpsAdmin::API
       # @return [Boolean]
       attr_reader :cancel
 
-      # @return [String, nil] token used for multi-factor authentication,
-      #                       stored as {AuthToken}
+      # @return [AuthToken, nil] token used for multi-factor authentication,
+      #                          stored as {AuthToken}
       attr_accessor :auth_token
 
       # @return [User, nil]
@@ -400,6 +400,11 @@ module VpsAdmin::API
       if auth.authenticated? && (auth.complete? || skip_multi_factor_auth) && !auth.reset_password?
         ret.complete = true unless auth.complete?
 
+        if ret.auth_token
+          ret.auth_token.destroy!
+          ret.auth_token = nil
+        end
+
         create_authorization(
           auth_result: ret,
           sinatra_request:,
@@ -452,7 +457,6 @@ module VpsAdmin::API
           sinatra_request
         )
 
-        ret.auth_token = sinatra_params[:auth_token]
         ret.errors << 'invalid TOTP code'
       end
 
@@ -460,10 +464,17 @@ module VpsAdmin::API
     end
 
     def reset_password(sinatra_request:, sinatra_params:, oauth2_request:, oauth2_response:, client:, devices:)
+      auth_token = ::AuthToken.joins(:token).includes(:token, :user).find_by(
+        tokens: { token: sinatra_params[:auth_token] },
+        purpose: 'reset_password'
+      )
+
+      raise Exceptions::AuthenticationError, 'invalid token' if auth_token.nil? || !auth_token.token_valid?
+
       ret = AuthResult.new(
         authenticated: true,
         reset_password: true,
-        auth_token: sinatra_params[:auth_token]
+        auth_token:
       )
 
       if sinatra_params[:new_password1] != sinatra_params[:new_password2]
@@ -475,7 +486,7 @@ module VpsAdmin::API
       end
 
       ret.user = Operations::Authentication::ResetPassword.run(
-        sinatra_params[:auth_token],
+        auth_token,
         sinatra_params[:new_password1]
       )
 
