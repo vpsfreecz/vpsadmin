@@ -19,9 +19,11 @@ module VpsAdmin
     module Actions
     end
   end
+
+  module Scheduler; end
 end
 
-require_relative 'vpsadmin/scheduler'
+require_rel 'vpsadmin/scheduler'
 require_relative 'vpsadmin/api/crypto_providers'
 require_relative 'vpsadmin/api/maintainable'
 require_relative 'vpsadmin/api/dataset_properties'

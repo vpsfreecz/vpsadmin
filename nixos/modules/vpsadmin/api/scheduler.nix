@@ -18,10 +18,6 @@ in {
       (self: super: { cron = super.callPackage ../../../../packages/cronie {}; })
     ];
 
-    systemd.tmpfiles.rules = [
-      "f /etc/cron.d/vpsadmin 0644 ${cfg.user} ${cfg.group} - -"
-    ];
-
     systemd.services.vpsadmin-scheduler = {
       after =
         [ "network.target" "vpsadmin-api.service" ]
@@ -42,6 +38,7 @@ in {
       };
     };
 
+    # TODO: cron is no longer necessary
     services.cron = {
       enable = true;
       permitAnyCrontab = true;
