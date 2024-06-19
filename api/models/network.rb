@@ -34,7 +34,7 @@ class Network < ApplicationRecord
       addr = what.addr
 
     when ::Network
-      addr = what.address
+      addr = "#{what.address}/#{what.prefix}"
 
     when ::String
       addr = what
