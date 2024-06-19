@@ -1,4 +1,4 @@
-class DatasetPlan < ActiveRecord::Base
+class DatasetPlan < ApplicationRecord
   has_many :environment_dataset_plans
   has_many :dataset_actions
 

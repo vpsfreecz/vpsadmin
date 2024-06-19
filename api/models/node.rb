@@ -1,7 +1,7 @@
 require 'vpsadmin/api/maintainable'
 require_relative 'lockable'
 
-class Node < ActiveRecord::Base
+class Node < ApplicationRecord
   belongs_to :location
   has_many :vpses
   has_many :transactions

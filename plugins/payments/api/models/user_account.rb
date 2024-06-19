@@ -1,6 +1,6 @@
 require 'date'
 
-class UserAccount < ActiveRecord::Base
+class UserAccount < ApplicationRecord
   belongs_to :user
   before_validation :set_defaults
 

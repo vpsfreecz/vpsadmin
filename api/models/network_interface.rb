@@ -1,6 +1,6 @@
 require_relative 'lockable'
 
-class NetworkInterface < ActiveRecord::Base
+class NetworkInterface < ApplicationRecord
   belongs_to :vps
   belongs_to :export
   has_many :ip_addresses

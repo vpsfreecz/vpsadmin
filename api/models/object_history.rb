@@ -1,4 +1,4 @@
-class ObjectHistory < ActiveRecord::Base
+class ObjectHistory < ApplicationRecord
   belongs_to :tracked_object, polymorphic: true
   belongs_to :user
   belongs_to :user_session

@@ -1,6 +1,6 @@
 require_relative 'confirmable'
 
-class ClusterResourceUse < ActiveRecord::Base
+class ClusterResourceUse < ApplicationRecord
   include Confirmable
 
   belongs_to :user_cluster_resource

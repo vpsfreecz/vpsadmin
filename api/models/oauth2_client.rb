@@ -1,4 +1,4 @@
-class Oauth2Client < ::ActiveRecord::Base
+class Oauth2Client < ApplicationRecord
   has_many :oauth2_authorizations, dependent: :destroy
 
   validates :name, :client_id, :client_secret_hash, :redirect_uri,

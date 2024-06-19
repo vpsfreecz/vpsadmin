@@ -1,4 +1,4 @@
-class VpsConsole < ActiveRecord::Base
+class VpsConsole < ApplicationRecord
   belongs_to :user
   belongs_to :vps
 

@@ -1,4 +1,4 @@
-class HelpBox < ActiveRecord::Base
+class HelpBox < ApplicationRecord
   belongs_to :language
 
   validates :content, presence: true

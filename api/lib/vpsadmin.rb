@@ -34,6 +34,7 @@ require_rel 'vpsadmin/api/plugin'
 
 VpsAdmin::API.load_configurable(:dataset_properties)
 
+require_rel '../models/application_record.rb'
 require_rel '../models/transaction.rb'
 require_rel '../models/transactions/'
 require_rel '../models/transaction_chain.rb'

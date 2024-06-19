@@ -5,7 +5,7 @@ require 'vpsadmin/api/hash_options'
 # method TransactionChain#link_chain.
 # All transaction must be in a chain. Transaction without a chain does not
 # have a meaning.
-class TransactionChain < ActiveRecord::Base
+class TransactionChain < ApplicationRecord
   has_many :transactions
   has_many :transaction_chain_concerns, dependent: :delete_all
   belongs_to :user

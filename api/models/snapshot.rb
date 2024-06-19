@@ -1,7 +1,7 @@
 require_relative 'confirmable'
 require_relative 'lockable'
 
-class Snapshot < ActiveRecord::Base
+class Snapshot < ApplicationRecord
   belongs_to :dataset
   has_many :snapshot_in_pools
   has_many :snapshot_downloads

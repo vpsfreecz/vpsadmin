@@ -1,4 +1,4 @@
-class VpsMaintenanceWindow < ActiveRecord::Base
+class VpsMaintenanceWindow < ApplicationRecord
   belongs_to :vps
 
   validate :check_window

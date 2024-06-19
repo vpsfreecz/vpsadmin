@@ -1,4 +1,4 @@
-class IpAddressAssignment < ActiveRecord::Base
+class IpAddressAssignment < ApplicationRecord
   belongs_to :ip_address
   belongs_to :user
   belongs_to :vps

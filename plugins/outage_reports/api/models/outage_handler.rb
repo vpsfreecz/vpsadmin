@@ -1,4 +1,4 @@
-class OutageHandler < ActiveRecord::Base
+class OutageHandler < ApplicationRecord
   belongs_to :outage
   belongs_to :user
 

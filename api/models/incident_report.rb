@@ -1,4 +1,4 @@
-class IncidentReport < ActiveRecord::Base
+class IncidentReport < ApplicationRecord
   belongs_to :user
   belongs_to :vps
   belongs_to :ip_address_assignment

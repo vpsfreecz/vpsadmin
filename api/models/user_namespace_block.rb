@@ -1,6 +1,6 @@
 require_relative 'lockable'
 
-class UserNamespaceBlock < ActiveRecord::Base
+class UserNamespaceBlock < ApplicationRecord
   belongs_to :user_namespace
 
   include Lockable

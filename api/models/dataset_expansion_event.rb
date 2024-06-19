@@ -1,3 +1,3 @@
-class DatasetExpansionEvent < ::ActiveRecord::Base
+class DatasetExpansionEvent < ApplicationRecord
   belongs_to :dataset
 end

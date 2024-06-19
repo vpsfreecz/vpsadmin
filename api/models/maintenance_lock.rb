@@ -1,4 +1,4 @@
-class MaintenanceLock < ActiveRecord::Base
+class MaintenanceLock < ApplicationRecord
   belongs_to :user
 
   # Return a new MaintenanceLock instance that may be used to lock

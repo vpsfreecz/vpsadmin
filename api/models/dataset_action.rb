@@ -1,4 +1,4 @@
-class DatasetAction < ActiveRecord::Base
+class DatasetAction < ApplicationRecord
   belongs_to :pool
   belongs_to :src_dataset_in_pool, class_name: 'DatasetInPool'
   belongs_to :dst_dataset_in_pool, class_name: 'DatasetInPool'

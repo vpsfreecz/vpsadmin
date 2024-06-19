@@ -5,7 +5,7 @@ require_relative 'confirmable'
 require_relative 'lockable'
 require_relative 'transaction_chains/dataset/destroy'
 
-class Dataset < ActiveRecord::Base
+class Dataset < ApplicationRecord
   belongs_to :user
   belongs_to :dataset_expansion
   has_many :dataset_in_pools

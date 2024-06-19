@@ -1,3 +1,3 @@
-class TransactionChainConcern < ActiveRecord::Base
+class TransactionChainConcern < ApplicationRecord
   belongs_to :transaction_chain
 end

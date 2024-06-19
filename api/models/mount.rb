@@ -3,7 +3,7 @@ require_relative 'confirmable'
 require_relative 'lockable'
 require_relative 'transaction_chains/vps/destroy_mount'
 
-class Mount < ActiveRecord::Base
+class Mount < ApplicationRecord
   belongs_to :vps
   belongs_to :dataset_in_pool
   belongs_to :snapshot_in_pool

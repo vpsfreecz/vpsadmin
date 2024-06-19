@@ -1,4 +1,4 @@
-class Oauth2Authorization < ::ActiveRecord::Base
+class Oauth2Authorization < ApplicationRecord
   belongs_to :oauth2_client
   belongs_to :user
   belongs_to :code, class_name: 'Token', dependent: :destroy

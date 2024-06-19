@@ -1,4 +1,4 @@
-class OutageExport < ActiveRecord::Base
+class OutageExport < ApplicationRecord
   belongs_to :outage
   belongs_to :export
   belongs_to :user

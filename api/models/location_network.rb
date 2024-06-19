@@ -1,4 +1,4 @@
-class LocationNetwork < ::ActiveRecord::Base
+class LocationNetwork < ApplicationRecord
   belongs_to :location
   belongs_to :network
 

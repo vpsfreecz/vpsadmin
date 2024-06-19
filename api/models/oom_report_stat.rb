@@ -1,3 +1,3 @@
-class OomReportStat < ActiveRecord::Base
+class OomReportStat < ApplicationRecord
   belongs_to :oom_report
 end

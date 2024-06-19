@@ -11,7 +11,7 @@ require_relative 'transaction_chains/vps/revive'
 require_relative 'transaction_chains/vps/destroy'
 require_relative 'transaction_chains/lifetimes/not_implemented'
 
-class Vps < ActiveRecord::Base
+class Vps < ApplicationRecord
   belongs_to :node
   belongs_to :user
   belongs_to :os_template

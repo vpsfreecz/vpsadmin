@@ -1,4 +1,4 @@
-class MailTemplateTranslation < ActiveRecord::Base
+class MailTemplateTranslation < ApplicationRecord
   belongs_to :language
   belongs_to :mail_template
 

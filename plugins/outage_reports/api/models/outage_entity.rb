@@ -1,4 +1,4 @@
-class OutageEntity < ActiveRecord::Base
+class OutageEntity < ApplicationRecord
   belongs_to :outage
 
   def real_name

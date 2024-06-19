@@ -1,4 +1,4 @@
-class NetworkInterfaceDailyAccounting < ActiveRecord::Base
+class NetworkInterfaceDailyAccounting < ApplicationRecord
   self.primary_key = %i[network_interface_id user_id year month day]
   belongs_to :network_interface
   belongs_to :user

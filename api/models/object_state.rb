@@ -1,6 +1,6 @@
 require 'vpsadmin/api/lifetimes'
 
-class ObjectState < ::ActiveRecord::Base
+class ObjectState < ApplicationRecord
   belongs_to :user
   enum state: VpsAdmin::API::Lifetimes::STATES
 

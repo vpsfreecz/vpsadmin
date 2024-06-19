@@ -1,4 +1,4 @@
-class OutageVps < ActiveRecord::Base
+class OutageVps < ApplicationRecord
   belongs_to :outage
   belongs_to :vps
   belongs_to :user

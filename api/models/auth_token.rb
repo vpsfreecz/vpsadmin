@@ -1,6 +1,6 @@
 require 'json'
 
-class AuthToken < ActiveRecord::Base
+class AuthToken < ApplicationRecord
   belongs_to :user
   belongs_to :user_agent
   belongs_to :token, dependent: :delete

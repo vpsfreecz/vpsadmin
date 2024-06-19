@@ -3,7 +3,7 @@ require 'vpsadmin/api/dataset_properties'
 require_relative 'confirmable'
 require_relative 'lockable'
 
-class DatasetInPool < ActiveRecord::Base
+class DatasetInPool < ApplicationRecord
   belongs_to :dataset
   belongs_to :pool
   has_many :snapshot_in_pools

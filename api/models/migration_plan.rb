@@ -1,4 +1,4 @@
-class MigrationPlan < ActiveRecord::Base
+class MigrationPlan < ApplicationRecord
   belongs_to :user
   belongs_to :node
   has_many :vps_migrations, dependent: :destroy

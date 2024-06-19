@@ -1,4 +1,4 @@
-class Outage < ActiveRecord::Base
+class Outage < ApplicationRecord
   has_many :outage_entities
   has_many :outage_handlers
   has_many :outage_updates

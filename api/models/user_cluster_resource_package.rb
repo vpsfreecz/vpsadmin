@@ -1,4 +1,4 @@
-class UserClusterResourcePackage < ::ActiveRecord::Base
+class UserClusterResourcePackage < ApplicationRecord
   belongs_to :environment
   belongs_to :user
   belongs_to :cluster_resource_package

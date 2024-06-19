@@ -1,4 +1,4 @@
-class PortReservation < ActiveRecord::Base
+class PortReservation < ApplicationRecord
   belongs_to :node
   belongs_to :transaction_chain
 

@@ -3,7 +3,7 @@ require_relative 'confirmable'
 require_relative 'lockable'
 require_relative 'transaction_chains/dataset/remove_download'
 
-class SnapshotDownload < ActiveRecord::Base
+class SnapshotDownload < ApplicationRecord
   belongs_to :user
   belongs_to :snapshot
   belongs_to :from_snapshot, class_name: 'Snapshot'

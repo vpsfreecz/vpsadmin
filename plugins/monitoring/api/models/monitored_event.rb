@@ -1,4 +1,4 @@
-class MonitoredEvent < ActiveRecord::Base
+class MonitoredEvent < ApplicationRecord
   has_many :monitored_event_states, dependent: :delete_all
   has_many :monitored_event_logs, dependent: :delete_all
   belongs_to :user

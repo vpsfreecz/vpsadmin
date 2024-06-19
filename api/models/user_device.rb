@@ -1,4 +1,4 @@
-class UserDevice < ::ActiveRecord::Base
+class UserDevice < ApplicationRecord
   LIFETIME = 30 * 24 * 60 * 60
 
   belongs_to :user

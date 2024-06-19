@@ -1,6 +1,6 @@
 require 'vpsadmin/api/maintainable'
 
-class Location < ActiveRecord::Base
+class Location < ApplicationRecord
   belongs_to :environment
   has_many :nodes
   has_many :location_networks

@@ -1,7 +1,7 @@
 require_relative 'confirmable'
 require_relative 'lockable'
 
-class SnapshotInPoolClone < ActiveRecord::Base
+class SnapshotInPoolClone < ApplicationRecord
   belongs_to :snapshot_in_pool
   belongs_to :user_namespace_map
   has_many :mounts

@@ -1,6 +1,6 @@
 require 'user_agent_parser'
 
-class UserAgent < ActiveRecord::Base
+class UserAgent < ApplicationRecord
   has_many :user_sessions
   has_many :user_failed_logins
   has_many :oauth2_authorizations

@@ -2,7 +2,7 @@ require 'vpsadmin/api/maintainable'
 require 'vpsadmin/api/dataset_properties'
 require_relative 'lockable'
 
-class Pool < ActiveRecord::Base
+class Pool < ApplicationRecord
   belongs_to :node
   has_many :dataset_in_pools
   has_many :dataset_properties

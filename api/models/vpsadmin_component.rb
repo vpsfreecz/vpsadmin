@@ -1,2 +1,2 @@
-class Component < ActiveRecord::Base
+class Component < ApplicationRecord
 end

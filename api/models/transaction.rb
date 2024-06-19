@@ -4,7 +4,7 @@
 # Subclass can also define following attributes:
 # [t_name]    a name for this transaction for future referencing, symbol
 # [t_type]    numeric code as recognized in vpsAdmin
-class Transaction < ActiveRecord::Base
+class Transaction < ApplicationRecord
   belongs_to :transaction_chain
   belongs_to :user
   belongs_to :node

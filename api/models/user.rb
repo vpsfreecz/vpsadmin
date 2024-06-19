@@ -8,7 +8,7 @@ require_relative 'transaction_chains/user/revive'
 require_relative 'transaction_chains/user/hard_delete'
 require_relative 'transaction_chains/lifetimes/not_implemented'
 
-class User < ActiveRecord::Base
+class User < ApplicationRecord
   has_many :user_namespaces
   has_many :vpses
   has_many :transaction_chains

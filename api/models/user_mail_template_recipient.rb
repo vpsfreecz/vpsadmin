@@ -1,4 +1,4 @@
-class UserMailTemplateRecipient < ActiveRecord::Base
+class UserMailTemplateRecipient < ApplicationRecord
   belongs_to :user
   belongs_to :mail_template
 

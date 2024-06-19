@@ -3,7 +3,7 @@ require_relative 'confirmable'
 require_relative 'lockable'
 require_relative 'transaction_chains/export/destroy'
 
-class Export < ::ActiveRecord::Base
+class Export < ApplicationRecord
   belongs_to :dataset_in_pool
   belongs_to :snapshot_in_pool_clone
   belongs_to :user

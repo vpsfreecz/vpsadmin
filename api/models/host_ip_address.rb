@@ -1,4 +1,4 @@
-class HostIpAddress < ActiveRecord::Base
+class HostIpAddress < ApplicationRecord
   belongs_to :ip_address
   has_many :routed_via_addresses,
            class_name: 'IpAddress', foreign_key: :route_via_id

@@ -1,4 +1,4 @@
-class VpsFeature < ActiveRecord::Base
+class VpsFeature < ApplicationRecord
   belongs_to :vps
 
   Feature = Struct.new(:name, :label, :hypervisor_type, :opts) do

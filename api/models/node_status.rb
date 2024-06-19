@@ -1,4 +1,4 @@
-class NodeStatus < ActiveRecord::Base
+class NodeStatus < ApplicationRecord
   belongs_to :node
 
   enum cgroup_version: %i[cgroup_invalid cgroup_v1 cgroup_v2]

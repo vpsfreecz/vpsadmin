@@ -1,4 +1,4 @@
-class UserMailRoleRecipient < ActiveRecord::Base
+class UserMailRoleRecipient < ApplicationRecord
   belongs_to :user
 
   before_validation :clean_emails

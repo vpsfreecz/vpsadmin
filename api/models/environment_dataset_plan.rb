@@ -1,4 +1,4 @@
-class EnvironmentDatasetPlan < ActiveRecord::Base
+class EnvironmentDatasetPlan < ApplicationRecord
   belongs_to :environment
   belongs_to :dataset_plan
   has_many :dataset_in_pool_plans

@@ -1,4 +1,4 @@
-class MetricsAccessToken < ::ActiveRecord::Base
+class MetricsAccessToken < ApplicationRecord
   belongs_to :token, dependent: :delete
   belongs_to :user
 

@@ -1,4 +1,4 @@
-class OutageTranslation < ActiveRecord::Base
+class OutageTranslation < ApplicationRecord
   belongs_to :outage
   belongs_to :outage_update
   belongs_to :language

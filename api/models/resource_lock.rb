@@ -2,7 +2,7 @@
 # may be working with the resource. The resource is represented
 # by its class name and row id. To make a model lockable, include
 # module Lockable.
-class ResourceLock < ActiveRecord::Base
+class ResourceLock < ApplicationRecord
   belongs_to :transaction_chain
   belongs_to :locked_by, polymorphic: true
 

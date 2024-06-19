@@ -1,4 +1,4 @@
-class NetworkInterfaceMonitor < ActiveRecord::Base
+class NetworkInterfaceMonitor < ApplicationRecord
   self.primary_key = 'network_interface_id'
   belongs_to :network_interface
 

@@ -1,4 +1,4 @@
-class SysConfig < ActiveRecord::Base
+class SysConfig < ApplicationRecord
   self.table_name = 'sysconfig'
 
   serialize :value, coder: JSON

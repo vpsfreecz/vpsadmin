@@ -1,4 +1,4 @@
-class RepeatableTask < ActiveRecord::Base
+class RepeatableTask < ApplicationRecord
   def self.find_for(obj)
     find_by(
       class_name: obj.class.to_s.demodulize,

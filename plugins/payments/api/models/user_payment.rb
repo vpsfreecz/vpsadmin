@@ -1,4 +1,4 @@
-class UserPayment < ActiveRecord::Base
+class UserPayment < ApplicationRecord
   belongs_to :incoming_payment
   belongs_to :user
   belongs_to :accounted_by, class_name: 'User'

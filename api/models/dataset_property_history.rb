@@ -1,4 +1,4 @@
-class DatasetPropertyHistory < ActiveRecord::Base
+class DatasetPropertyHistory < ApplicationRecord
   belongs_to :dataset_property
 
   def name

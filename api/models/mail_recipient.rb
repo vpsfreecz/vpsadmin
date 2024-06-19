@@ -1,4 +1,4 @@
-class MailRecipient < ActiveRecord::Base
+class MailRecipient < ApplicationRecord
   has_many :mail_template_recipients
   has_many :mail_templates, through: :mail_template_recipients
 

@@ -1,4 +1,4 @@
-class MailLog < ActiveRecord::Base
+class MailLog < ApplicationRecord
   belongs_to :user
   belongs_to :mail_template
   belongs_to :mail_transaction, class_name: 'Transaction', foreign_key: :transaction_id

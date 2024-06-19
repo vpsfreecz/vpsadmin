@@ -1,6 +1,6 @@
 require_relative 'lockable'
 
-class UserClusterResource < ActiveRecord::Base
+class UserClusterResource < ApplicationRecord
   include Lockable
 
   belongs_to :user

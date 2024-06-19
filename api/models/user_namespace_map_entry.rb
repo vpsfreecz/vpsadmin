@@ -1,4 +1,4 @@
-class UserNamespaceMapEntry < ActiveRecord::Base
+class UserNamespaceMapEntry < ApplicationRecord
   belongs_to :user_namespace_map
   enum kind: %i[uid gid]
 

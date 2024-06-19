@@ -1,4 +1,4 @@
-class OsTemplate < ActiveRecord::Base
+class OsTemplate < ApplicationRecord
   # has_many :environment_os_templates
   # has_many :environments, through: :environment_os_templates
   has_many :vpses

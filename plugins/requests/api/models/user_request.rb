@@ -1,6 +1,6 @@
 require 'resolv'
 
-class UserRequest < ActiveRecord::Base
+class UserRequest < ApplicationRecord
   belongs_to :user
   belongs_to :admin, class_name: 'User'
 

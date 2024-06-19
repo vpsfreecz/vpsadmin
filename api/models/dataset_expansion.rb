@@ -1,4 +1,4 @@
-class DatasetExpansion < ::ActiveRecord::Base
+class DatasetExpansion < ApplicationRecord
   belongs_to :vps
   belongs_to :dataset
   has_many :dataset_expansion_histories

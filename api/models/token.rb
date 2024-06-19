@@ -1,6 +1,6 @@
 require 'securerandom'
 
-class Token < ActiveRecord::Base
+class Token < ApplicationRecord
   belongs_to :owner, polymorphic: true
 
   # @param owner [ActiveRecord::Base]

@@ -1,6 +1,6 @@
 require 'rotp'
 
-class UserTotpDevice < ActiveRecord::Base
+class UserTotpDevice < ApplicationRecord
   belongs_to :user
 
   validates :label, presence: true

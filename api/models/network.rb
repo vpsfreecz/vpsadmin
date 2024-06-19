@@ -1,6 +1,6 @@
 require_relative 'lockable'
 
-class Network < ActiveRecord::Base
+class Network < ApplicationRecord
   include Lockable
 
   belongs_to :user

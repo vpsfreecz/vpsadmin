@@ -1,4 +1,4 @@
-class UserPublicKey < ActiveRecord::Base
+class UserPublicKey < ApplicationRecord
   belongs_to :user
   has_paper_trail
 

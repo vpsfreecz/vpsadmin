@@ -1,6 +1,6 @@
 require_relative 'lockable'
 
-class IpAddress < ActiveRecord::Base
+class IpAddress < ApplicationRecord
   belongs_to :network
   belongs_to :network_interface
   belongs_to :user

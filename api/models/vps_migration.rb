@@ -1,4 +1,4 @@
-class VpsMigration < ActiveRecord::Base
+class VpsMigration < ApplicationRecord
   belongs_to :vps
   belongs_to :migration_plan
   belongs_to :transaction_chain

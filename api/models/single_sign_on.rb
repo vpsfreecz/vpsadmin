@@ -1,4 +1,4 @@
-class SingleSignOn < ActiveRecord::Base
+class SingleSignOn < ApplicationRecord
   belongs_to :user
   belongs_to :token, dependent: :delete
   has_many :oauth2_authorizations, dependent: :nullify

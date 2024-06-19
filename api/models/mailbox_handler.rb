@@ -1,3 +1,3 @@
-class MailboxHandler < ActiveRecord::Base
+class MailboxHandler < ApplicationRecord
   belongs_to :mailbox
 end

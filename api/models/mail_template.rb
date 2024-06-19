@@ -8,7 +8,7 @@ require_relative 'user_totp_device'
 require_relative 'vps'
 require_relative 'vps_migration'
 
-class MailTemplate < ActiveRecord::Base
+class MailTemplate < ApplicationRecord
   has_many :mail_template_translations, dependent: :destroy
   has_many :mail_template_recipients, dependent: :destroy
   has_many :mail_recipients, through: :mail_template_recipients

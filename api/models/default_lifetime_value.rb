@@ -1,6 +1,6 @@
 require 'vpsadmin/api/lifetimes'
 
-class DefaultLifetimeValue < ActiveRecord::Base
+class DefaultLifetimeValue < ApplicationRecord
   belongs_to :environment
 
   enum direction: %i[leave enter]

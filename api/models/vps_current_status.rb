@@ -1,3 +1,3 @@
-class VpsCurrentStatus < ActiveRecord::Base
+class VpsCurrentStatus < ApplicationRecord
   belongs_to :vps
 end
