@@ -811,7 +811,13 @@ function outage_list()
         }
     }
 
-    $outages = $api->outage->list($params);
+    try {
+        $outages = $api->outage->list($params);
+    } catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+        $xtpl->table_out();
+        $xtpl->perex_format_errors(_('Unable to list outages'), $e->getResponse());
+        return;
+    }
 
     foreach ($outages as $outage) {
         $xtpl->table_td(tolocaltz($outage->begins_at, 'Y-m-d H:i'));
