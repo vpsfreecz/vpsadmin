@@ -21,6 +21,7 @@ in {
       after = [ "network.target" ];
       wantedBy = [ "multi-user.target" ];
       path = with pkgs; [
+        config.services.bind.package
         coreutils
         glibc
         iproute2

@@ -12,7 +12,7 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
     string :domain_name, label: 'Domain name',
                          desc: 'Node name including location domain'
     string :fqdn, label: 'FQDN'
-    string :type, label: 'Role', desc: 'node, storage or mailer', db_name: :role
+    string :type, label: 'Role', include: ::Node.roles.keys.map(&:to_s), db_name: :role
     string :hypervisor_type, label: 'Hypervisor type', desc: 'vpsadminos',
                              choices: %w[vpsadminos]
     resource VpsAdmin::API::Resources::Location, label: 'Location',

@@ -10,7 +10,7 @@ class Node < ApplicationRecord
   has_many :node_statuses, dependent: :destroy
   has_one :node_current_status
 
-  enum role: %i[node storage mailer]
+  enum role: %i[node storage mailer dns_server]
   enum hypervisor_type: %i[openvz vpsadminos]
 
   has_paper_trail ignore: %i[maintenance_lock maintenance_lock_reason]
@@ -23,10 +23,6 @@ class Node < ApplicationRecord
   validates :name, format: {
     with: /\A[a-zA-Z0-9.\-_]+\Z/,
     message: 'invalid format'
-  }
-  validates :role, inclusion: {
-    in: %w[node storage mailer],
-    message: '%{value} is not a valid node role'
   }
   validates :ip_addr, format: {
     with: /\A\d+\.\d+\.\d+\.\d+\Z/,

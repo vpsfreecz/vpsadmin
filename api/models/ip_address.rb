@@ -6,6 +6,7 @@ class IpAddress < ApplicationRecord
   belongs_to :user
   belongs_to :route_via, class_name: 'HostIpAddress'
   belongs_to :charged_environment, class_name: 'Environment'
+  belongs_to :reverse_dns_zone, class_name: 'DnsZone'
   has_many :host_ip_addresses
   has_many :ip_address_assignments
 
@@ -46,12 +47,17 @@ class IpAddress < ApplicationRecord
         )
       end
 
+      reverse_dns_zone = DnsZone.where(zone_role: 'reverse_role').detect do |dns_zone|
+        params[:network].include?(dns_zone)
+      end
+
       ip = create!(
         ip_addr: addr.to_s,
         prefix: params[:prefix],
         size: params[:size],
         network: params[:network],
-        user: params[:user]
+        user: params[:user],
+        reverse_dns_zone:
       )
 
       HostIpAddress.create!(

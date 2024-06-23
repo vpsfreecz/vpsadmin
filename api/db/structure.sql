@@ -15,8 +15,8 @@ DROP TABLE IF EXISTS `ar_internal_metadata`;
 CREATE TABLE `ar_internal_metadata` (
   `key` varchar(255) NOT NULL,
   `value` varchar(255) DEFAULT NULL,
-  `created_at` datetime(6) NOT NULL,
-  `updated_at` datetime(6) NOT NULL,
+  `created_at` datetime NOT NULL,
+  `updated_at` datetime NOT NULL,
   PRIMARY KEY (`key`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -37,13 +37,13 @@ CREATE TABLE `auth_tokens` (
   `client_version` varchar(255) DEFAULT NULL,
   `purpose` int(11) NOT NULL DEFAULT 0,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=215 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `branches`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `branches` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `dataset_tree_id` int(11) NOT NULL,
   `name` varchar(255) NOT NULL,
   `index` int(11) NOT NULL DEFAULT 0,
@@ -52,8 +52,8 @@ CREATE TABLE `branches` (
   `created_at` datetime /* mariadb-5.3 */ DEFAULT NULL,
   `updated_at` datetime /* mariadb-5.3 */ DEFAULT NULL,
   PRIMARY KEY (`id`),
-  KEY `index_branches_on_dataset_tree_id` (`dataset_tree_id`) USING BTREE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
+  KEY `index_branches_on_dataset_tree_id` (`dataset_tree_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=148 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `cluster_resource_package_items`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -67,7 +67,7 @@ CREATE TABLE `cluster_resource_package_items` (
   UNIQUE KEY `cluster_resource_package_items_unique` (`cluster_resource_package_id`,`cluster_resource_id`),
   KEY `cluster_resource_package_id` (`cluster_resource_package_id`),
   KEY `cluster_resource_id` (`cluster_resource_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=3691 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `cluster_resource_packages`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -83,13 +83,13 @@ CREATE TABLE `cluster_resource_packages` (
   UNIQUE KEY `cluster_resource_packages_unique` (`environment_id`,`user_id`),
   KEY `index_cluster_resource_packages_on_environment_id` (`environment_id`),
   KEY `index_cluster_resource_packages_on_user_id` (`user_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=246 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `cluster_resource_uses`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `cluster_resource_uses` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `user_cluster_resource_id` int(11) NOT NULL,
   `class_name` varchar(255) NOT NULL,
   `table_name` varchar(255) NOT NULL,
@@ -100,15 +100,15 @@ CREATE TABLE `cluster_resource_uses` (
   `admin_limit` int(11) DEFAULT NULL,
   `enabled` tinyint(1) NOT NULL DEFAULT 1,
   PRIMARY KEY (`id`),
-  KEY `cluster_resouce_use_name_search` (`class_name`,`table_name`,`row_id`) USING BTREE,
-  KEY `index_cluster_resource_uses_on_user_cluster_resource_id` (`user_cluster_resource_id`) USING BTREE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
+  KEY `index_cluster_resource_uses_on_user_cluster_resource_id` (`user_cluster_resource_id`),
+  KEY `cluster_resouce_use_name_search` (`class_name`,`table_name`,`row_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=2201 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `cluster_resources`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `cluster_resources` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `name` varchar(100) NOT NULL,
   `label` varchar(100) NOT NULL,
   `min` decimal(40,0) NOT NULL,
@@ -118,8 +118,8 @@ CREATE TABLE `cluster_resources` (
   `allocate_chain` varchar(255) DEFAULT NULL,
   `free_chain` varchar(255) DEFAULT NULL,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `index_cluster_resources_on_name` (`name`) USING BTREE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
+  UNIQUE KEY `index_cluster_resources_on_name` (`name`)
+) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `components`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -137,7 +137,7 @@ DROP TABLE IF EXISTS `dataset_actions`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `dataset_actions` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `pool_id` int(11) DEFAULT NULL,
   `src_dataset_in_pool_id` int(11) DEFAULT NULL,
   `dst_dataset_in_pool_id` int(11) DEFAULT NULL,
@@ -147,7 +147,7 @@ CREATE TABLE `dataset_actions` (
   `dataset_in_pool_plan_id` int(11) DEFAULT NULL,
   `action` int(11) NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=1066 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `dataset_expansion_events`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -162,7 +162,7 @@ CREATE TABLE `dataset_expansion_events` (
   `updated_at` datetime(6) NOT NULL,
   PRIMARY KEY (`id`),
   KEY `index_dataset_expansion_events_on_dataset_id` (`dataset_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=37 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `dataset_expansion_histories`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -179,7 +179,7 @@ CREATE TABLE `dataset_expansion_histories` (
   PRIMARY KEY (`id`),
   KEY `index_dataset_expansion_histories_on_dataset_expansion_id` (`dataset_expansion_id`),
   KEY `index_dataset_expansion_histories_on_admin_id` (`admin_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=56 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `dataset_expansions`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -204,24 +204,24 @@ CREATE TABLE `dataset_expansions` (
   PRIMARY KEY (`id`),
   KEY `index_dataset_expansions_on_vps_id` (`vps_id`),
   KEY `index_dataset_expansions_on_dataset_id` (`dataset_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=34 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `dataset_in_pool_plans`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `dataset_in_pool_plans` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `environment_dataset_plan_id` int(11) NOT NULL,
   `dataset_in_pool_id` int(11) NOT NULL,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `dataset_in_pool_plans_unique` (`environment_dataset_plan_id`,`dataset_in_pool_id`) USING BTREE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
+  UNIQUE KEY `dataset_in_pool_plans_unique` (`environment_dataset_plan_id`,`dataset_in_pool_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=701 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `dataset_in_pools`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `dataset_in_pools` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `dataset_id` int(11) NOT NULL,
   `pool_id` int(11) NOT NULL,
   `label` varchar(100) DEFAULT NULL,
@@ -233,15 +233,15 @@ CREATE TABLE `dataset_in_pools` (
   `mountpoint` varchar(500) DEFAULT NULL,
   `confirmed` int(11) NOT NULL DEFAULT 0,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `index_dataset_in_pools_on_dataset_id_and_pool_id` (`dataset_id`,`pool_id`) USING BTREE,
-  KEY `index_dataset_in_pools_on_dataset_id` (`dataset_id`) USING BTREE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
+  UNIQUE KEY `index_dataset_in_pools_on_dataset_id_and_pool_id` (`dataset_id`,`pool_id`),
+  KEY `index_dataset_in_pools_on_dataset_id` (`dataset_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=1965 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `dataset_plans`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `dataset_plans` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `name` varchar(255) NOT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
@@ -250,7 +250,7 @@ DROP TABLE IF EXISTS `dataset_properties`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `dataset_properties` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `pool_id` int(11) DEFAULT NULL,
   `dataset_id` int(11) DEFAULT NULL,
   `dataset_in_pool_id` int(11) DEFAULT NULL,
@@ -263,29 +263,29 @@ CREATE TABLE `dataset_properties` (
   `created_at` datetime DEFAULT NULL,
   `updated_at` datetime DEFAULT NULL,
   PRIMARY KEY (`id`),
-  KEY `index_dataset_properties_on_dataset_id` (`dataset_id`) USING BTREE,
-  KEY `index_dataset_properties_on_dataset_in_pool_id_and_name` (`dataset_in_pool_id`,`name`) USING BTREE,
-  KEY `index_dataset_properties_on_dataset_in_pool_id` (`dataset_in_pool_id`) USING BTREE,
-  KEY `index_dataset_properties_on_pool_id` (`pool_id`) USING BTREE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
+  KEY `index_dataset_properties_on_dataset_id` (`dataset_id`),
+  KEY `index_dataset_properties_on_pool_id` (`pool_id`),
+  KEY `index_dataset_properties_on_dataset_in_pool_id` (`dataset_in_pool_id`),
+  KEY `index_dataset_properties_on_dataset_in_pool_id_and_name` (`dataset_in_pool_id`,`name`)
+) ENGINE=InnoDB AUTO_INCREMENT=7635 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `dataset_property_histories`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `dataset_property_histories` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `dataset_property_id` int(11) NOT NULL,
   `value` int(11) NOT NULL,
   `created_at` datetime /* mariadb-5.3 */ NOT NULL,
   PRIMARY KEY (`id`),
-  KEY `index_dataset_property_histories_on_dataset_property_id` (`dataset_property_id`) USING BTREE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
+  KEY `index_dataset_property_histories_on_dataset_property_id` (`dataset_property_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=1736771 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `dataset_trees`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `dataset_trees` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `dataset_in_pool_id` int(11) NOT NULL,
   `index` int(11) NOT NULL DEFAULT 0,
   `head` tinyint(1) NOT NULL DEFAULT 0,
@@ -293,14 +293,14 @@ CREATE TABLE `dataset_trees` (
   `created_at` datetime /* mariadb-5.3 */ DEFAULT NULL,
   `updated_at` datetime /* mariadb-5.3 */ DEFAULT NULL,
   PRIMARY KEY (`id`),
-  KEY `index_dataset_trees_on_dataset_in_pool_id` (`dataset_in_pool_id`) USING BTREE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
+  KEY `index_dataset_trees_on_dataset_in_pool_id` (`dataset_in_pool_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=107 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `datasets`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `datasets` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `name` varchar(255) NOT NULL,
   `full_name` varchar(1000) NOT NULL,
   `user_id` int(11) DEFAULT NULL,
@@ -318,15 +318,15 @@ CREATE TABLE `datasets` (
   `dataset_expansion_id` int(11) DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `index_datasets_on_dataset_expansion_id` (`dataset_expansion_id`),
-  KEY `index_datasets_on_ancestry` (`ancestry`) USING BTREE,
-  KEY `index_datasets_on_user_id` (`user_id`) USING BTREE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
+  KEY `index_datasets_on_ancestry` (`ancestry`),
+  KEY `index_datasets_on_user_id` (`user_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=603 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `default_lifetime_values`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `default_lifetime_values` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `environment_id` int(11) DEFAULT NULL,
   `class_name` varchar(50) NOT NULL,
   `direction` int(11) NOT NULL,
@@ -334,19 +334,19 @@ CREATE TABLE `default_lifetime_values` (
   `add_expiration` int(11) DEFAULT NULL,
   `reason` varchar(255) NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `default_object_cluster_resources`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `default_object_cluster_resources` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `environment_id` int(11) NOT NULL,
   `cluster_resource_id` int(11) NOT NULL,
   `class_name` varchar(255) NOT NULL,
   `value` decimal(40,0) NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=38 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `default_user_cluster_resource_packages`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -357,6 +357,41 @@ CREATE TABLE `default_user_cluster_resource_packages` (
   `cluster_resource_package_id` int(11) NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `default_user_cluster_resource_packages_unique` (`environment_id`,`cluster_resource_package_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `dns_record_logs`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `dns_record_logs` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `dns_zone_id` bigint(20) NOT NULL,
+  `change_type` int(11) NOT NULL,
+  `name` varchar(255) NOT NULL,
+  `record_type` varchar(10) NOT NULL,
+  `content` text NOT NULL,
+  `created_at` datetime(6) NOT NULL,
+  `updated_at` datetime(6) NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `index_dns_record_logs_on_dns_zone_id` (`dns_zone_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `dns_records`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `dns_records` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `dns_zone_id` bigint(20) NOT NULL,
+  `name` varchar(255) NOT NULL,
+  `record_type` varchar(10) NOT NULL,
+  `content` text NOT NULL,
+  `ttl` int(11) DEFAULT NULL,
+  `enabled` tinyint(1) NOT NULL DEFAULT 1,
+  `host_ip_address_id` bigint(20) DEFAULT NULL,
+  `created_at` datetime(6) NOT NULL,
+  `updated_at` datetime(6) NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `index_dns_records_on_host_ip_address_id` (`host_ip_address_id`),
+  KEY `index_dns_records_on_dns_zone_id` (`dns_zone_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `dns_resolvers`;
@@ -366,29 +401,79 @@ CREATE TABLE `dns_resolvers` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `addrs` varchar(63) NOT NULL,
   `label` varchar(63) NOT NULL,
-  `is_universal` tinyint(1) DEFAULT 0,
+  `is_universal` tinyint(1) unsigned DEFAULT 0,
   `location_id` int(10) unsigned DEFAULT NULL,
   `ip_version` int(11) DEFAULT 4,
   PRIMARY KEY (`id`)
+) ENGINE=MyISAM AUTO_INCREMENT=19 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `dns_server_zones`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `dns_server_zones` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `dns_server_id` bigint(20) NOT NULL,
+  `dns_zone_id` bigint(20) NOT NULL,
+  `created_at` datetime(6) NOT NULL,
+  `updated_at` datetime(6) NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `index_dns_server_zones_on_dns_server_id_and_dns_zone_id` (`dns_server_id`,`dns_zone_id`),
+  KEY `index_dns_server_zones_on_dns_server_id` (`dns_server_id`),
+  KEY `index_dns_server_zones_on_dns_zone_id` (`dns_zone_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `dns_servers`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `dns_servers` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `node_id` bigint(20) NOT NULL,
+  `name` varchar(255) NOT NULL,
+  `created_at` datetime(6) NOT NULL,
+  `updated_at` datetime(6) NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `index_dns_servers_on_name` (`name`),
+  KEY `index_dns_servers_on_node_id` (`node_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `dns_zones`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `dns_zones` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `name` varchar(500) NOT NULL,
+  `reverse_network_address` varchar(255) NOT NULL,
+  `reverse_network_prefix` int(11) NOT NULL,
+  `label` varchar(500) NOT NULL DEFAULT '',
+  `zone_type` int(11) NOT NULL DEFAULT 0,
+  `zone_role` int(11) NOT NULL DEFAULT 0,
+  `default_ttl` int(11) NOT NULL DEFAULT 3600,
+  `email` varchar(255) NOT NULL,
+  `serial` int(10) unsigned NOT NULL DEFAULT 1,
+  `created_at` datetime(6) NOT NULL,
+  `updated_at` datetime(6) NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `index_dns_zones_on_name` (`name`),
+  KEY `index_dns_zones_on_zone_type` (`zone_type`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `environment_dataset_plans`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `environment_dataset_plans` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `environment_id` int(11) NOT NULL,
   `dataset_plan_id` int(11) NOT NULL,
   `user_add` tinyint(1) NOT NULL,
   `user_remove` tinyint(1) NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `environment_user_configs`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `environment_user_configs` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `environment_id` int(11) NOT NULL,
   `user_id` int(11) NOT NULL,
   `can_create_vps` tinyint(1) NOT NULL DEFAULT 0,
@@ -397,16 +482,16 @@ CREATE TABLE `environment_user_configs` (
   `max_vps_count` int(11) NOT NULL DEFAULT 1,
   `default` tinyint(1) NOT NULL DEFAULT 1,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `environment_user_configs_unique` (`environment_id`,`user_id`) USING BTREE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
+  UNIQUE KEY `environment_user_configs_unique` (`environment_id`,`user_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=496 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `environments`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `environments` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `label` varchar(100) NOT NULL,
-  `domain` varchar(100) NOT NULL,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `label` varchar(100) CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci NOT NULL,
+  `domain` varchar(100) CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci NOT NULL,
   `created_at` datetime /* mariadb-5.3 */ DEFAULT NULL,
   `updated_at` datetime /* mariadb-5.3 */ DEFAULT NULL,
   `maintenance_lock` int(11) NOT NULL DEFAULT 0,
@@ -418,7 +503,7 @@ CREATE TABLE `environments` (
   `user_ip_ownership` tinyint(1) NOT NULL,
   `description` text DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `export_hosts`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -435,7 +520,7 @@ CREATE TABLE `export_hosts` (
   `updated_at` datetime /* mariadb-5.3 */ NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `index_export_hosts_on_export_id_and_ip_address_id` (`export_id`,`ip_address_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=77 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `exports`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -463,18 +548,45 @@ CREATE TABLE `exports` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `exports_unique` (`dataset_in_pool_id`,`snapshot_in_pool_clone_n`),
   KEY `index_exports_on_user_id` (`user_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=17 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `group_snapshots`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `group_snapshots` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `dataset_action_id` int(11) DEFAULT NULL,
   `dataset_in_pool_id` int(11) DEFAULT NULL,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `group_snapshots_unique` (`dataset_action_id`,`dataset_in_pool_id`) USING BTREE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
+  UNIQUE KEY `group_snapshots_unique` (`dataset_action_id`,`dataset_in_pool_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=644 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `help_boxes`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `help_boxes` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `page` varchar(255) NOT NULL,
+  `action` varchar(255) NOT NULL,
+  `language_id` int(11) DEFAULT NULL,
+  `content` text NOT NULL,
+  `order` int(11) NOT NULL DEFAULT 0,
+  PRIMARY KEY (`id`),
+  KEY `index_help_boxes_on_page` (`page`),
+  KEY `index_help_boxes_on_action` (`action`),
+  KEY `index_help_boxes_on_page_and_action` (`page`,`action`)
+) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `helpbox`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `helpbox` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `page` varchar(50) NOT NULL,
+  `action` varchar(50) NOT NULL,
+  `content` text NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=MyISAM AUTO_INCREMENT=8 DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `host_ip_addresses`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -486,11 +598,13 @@ CREATE TABLE `host_ip_addresses` (
   `order` int(11) DEFAULT NULL,
   `auto_add` tinyint(1) NOT NULL DEFAULT 1,
   `user_created` tinyint(1) NOT NULL DEFAULT 0,
+  `reverse_dns_record_id` bigint(20) DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `index_host_ip_addresses_on_ip_address_id_and_ip_addr` (`ip_address_id`,`ip_addr`),
+  UNIQUE KEY `index_host_ip_addresses_on_reverse_dns_record_id` (`reverse_dns_record_id`),
   KEY `index_host_ip_addresses_on_ip_address_id` (`ip_address_id`),
   KEY `index_host_ip_addresses_on_auto_add` (`auto_add`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=536 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `incident_reports`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -520,7 +634,35 @@ CREATE TABLE `incident_reports` (
   KEY `index_incident_reports_on_detected_at` (`detected_at`),
   KEY `index_incident_reports_on_reported_at` (`reported_at`),
   KEY `index_incident_reports_on_cpu_limit` (`cpu_limit`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=36 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `incoming_payments`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `incoming_payments` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `transaction_id` varchar(30) NOT NULL,
+  `state` int(11) NOT NULL DEFAULT 0,
+  `date` date NOT NULL,
+  `amount` decimal(10,2) NOT NULL,
+  `currency` varchar(3) NOT NULL,
+  `src_amount` decimal(10,2) DEFAULT NULL,
+  `src_currency` varchar(3) DEFAULT NULL,
+  `account_name` varchar(100) DEFAULT NULL,
+  `user_ident` varchar(100) DEFAULT NULL,
+  `user_message` varchar(255) DEFAULT NULL,
+  `vs` varchar(100) DEFAULT NULL,
+  `ks` varchar(100) DEFAULT NULL,
+  `ss` varchar(100) DEFAULT NULL,
+  `transaction_type` varchar(100) NOT NULL,
+  `comment` varchar(255) DEFAULT NULL,
+  `created_at` datetime /* mariadb-5.3 */ NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `index_incoming_payments_on_transaction_id` (`transaction_id`),
+  KEY `index_incoming_payments_on_vs` (`vs`),
+  KEY `index_incoming_payments_on_ks` (`ks`),
+  KEY `index_incoming_payments_on_ss` (`ss`)
+) ENGINE=InnoDB AUTO_INCREMENT=654 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `ip_address_assignments`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -549,7 +691,7 @@ CREATE TABLE `ip_address_assignments` (
   KEY `index_ip_address_assignments_on_ip_prefix` (`ip_prefix`),
   KEY `index_ip_address_assignments_on_from_date` (`from_date`),
   KEY `index_ip_address_assignments_on_to_date` (`to_date`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=411 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `ip_addresses`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -565,13 +707,15 @@ CREATE TABLE `ip_addresses` (
   `network_interface_id` int(11) DEFAULT NULL,
   `route_via_id` int(11) DEFAULT NULL,
   `charged_environment_id` int(11) DEFAULT NULL,
+  `reverse_dns_zone_id` bigint(20) DEFAULT NULL,
   PRIMARY KEY (`id`),
-  KEY `index_ip_addresses_on_network_id` (`network_id`) USING BTREE,
-  KEY `index_ip_addresses_on_user_id` (`user_id`) USING BTREE,
+  KEY `index_ip_addresses_on_user_id` (`user_id`),
+  KEY `index_ip_addresses_on_network_id` (`network_id`),
   KEY `index_ip_addresses_on_network_interface_id` (`network_interface_id`),
   KEY `index_ip_addresses_on_route_via_id` (`route_via_id`),
-  KEY `index_ip_addresses_on_charged_environment_id` (`charged_environment_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
+  KEY `index_ip_addresses_on_charged_environment_id` (`charged_environment_id`),
+  KEY `index_ip_addresses_on_reverse_dns_zone_id` (`reverse_dns_zone_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=1072 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `ip_traffic_monthly_summaries`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -590,26 +734,26 @@ CREATE TABLE `ip_traffic_monthly_summaries` (
   `year` int(11) NOT NULL,
   `month` int(11) NOT NULL,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `ip_traffic_monthly_summaries_unique` (`ip_address_id`,`user_id`,`protocol`,`role`,`created_at`) USING BTREE,
-  KEY `ip_traffic_monthly_summaries_ip_year_month` (`ip_address_id`,`year`,`month`) USING BTREE,
-  KEY `index_ip_traffic_monthly_summaries_on_ip_address_id` (`ip_address_id`) USING BTREE,
-  KEY `index_ip_traffic_monthly_summaries_on_month` (`month`) USING BTREE,
-  KEY `index_ip_traffic_monthly_summaries_on_protocol` (`protocol`) USING BTREE,
-  KEY `index_ip_traffic_monthly_summaries_on_user_id` (`user_id`) USING BTREE,
-  KEY `index_ip_traffic_monthly_summaries_on_year_and_month` (`year`,`month`) USING BTREE,
-  KEY `index_ip_traffic_monthly_summaries_on_year` (`year`) USING BTREE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
+  UNIQUE KEY `ip_traffic_monthly_summaries_unique` (`ip_address_id`,`user_id`,`protocol`,`role`,`created_at`),
+  KEY `index_ip_traffic_monthly_summaries_on_ip_address_id` (`ip_address_id`),
+  KEY `index_ip_traffic_monthly_summaries_on_user_id` (`user_id`),
+  KEY `index_ip_traffic_monthly_summaries_on_protocol` (`protocol`),
+  KEY `index_ip_traffic_monthly_summaries_on_year` (`year`),
+  KEY `index_ip_traffic_monthly_summaries_on_month` (`month`),
+  KEY `index_ip_traffic_monthly_summaries_on_year_and_month` (`year`,`month`),
+  KEY `ip_traffic_monthly_summaries_ip_year_month` (`ip_address_id`,`year`,`month`)
+) ENGINE=InnoDB AUTO_INCREMENT=46 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `languages`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `languages` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `code` varchar(2) NOT NULL,
   `label` varchar(100) NOT NULL,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `index_languages_on_code` (`code`) USING BTREE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
+  UNIQUE KEY `index_languages_on_code` (`code`)
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `location_networks`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -625,7 +769,7 @@ CREATE TABLE `location_networks` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `index_location_networks_on_location_id_and_network_id` (`location_id`,`network_id`),
   UNIQUE KEY `location_networks_primary` (`network_id`,`primary`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=12 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `locations`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -635,7 +779,7 @@ CREATE TABLE `locations` (
   `label` varchar(63) NOT NULL,
   `has_ipv6` tinyint(1) NOT NULL,
   `remote_console_server` varchar(255) NOT NULL,
-  `domain` varchar(100) NOT NULL,
+  `domain` varchar(100) CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci NOT NULL,
   `created_at` datetime DEFAULT NULL,
   `updated_at` datetime DEFAULT NULL,
   `maintenance_lock` int(11) NOT NULL DEFAULT 0,
@@ -643,13 +787,23 @@ CREATE TABLE `locations` (
   `environment_id` int(11) NOT NULL,
   `description` text DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
+) ENGINE=MyISAM AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `log`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `log` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `timestamp` int(11) NOT NULL,
+  `msg` text NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=MyISAM AUTO_INCREMENT=19 DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `mail_logs`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `mail_logs` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `user_id` int(11) DEFAULT NULL,
   `to` varchar(500) NOT NULL,
   `cc` varchar(500) NOT NULL,
@@ -668,37 +822,37 @@ CREATE TABLE `mail_logs` (
   `created_at` datetime /* mariadb-5.3 */ DEFAULT NULL,
   `updated_at` datetime /* mariadb-5.3 */ DEFAULT NULL,
   PRIMARY KEY (`id`),
-  KEY `index_mail_logs_on_user_id` (`user_id`) USING BTREE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
+  KEY `index_mail_logs_on_user_id` (`user_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=3862 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `mail_recipients`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `mail_recipients` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `label` varchar(100) NOT NULL,
   `to` varchar(500) DEFAULT NULL,
   `cc` varchar(500) DEFAULT NULL,
   `bcc` varchar(500) DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `mail_template_recipients`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `mail_template_recipients` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `mail_template_id` int(11) NOT NULL,
   `mail_recipient_id` int(11) NOT NULL,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `mail_template_recipients_unique` (`mail_template_id`,`mail_recipient_id`) USING BTREE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
+  UNIQUE KEY `mail_template_recipients_unique` (`mail_template_id`,`mail_recipient_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `mail_template_translations`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `mail_template_translations` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `mail_template_id` int(11) NOT NULL,
   `language_id` int(11) NOT NULL,
   `from` varchar(255) NOT NULL,
@@ -710,14 +864,14 @@ CREATE TABLE `mail_template_translations` (
   `created_at` datetime /* mariadb-5.3 */ DEFAULT NULL,
   `updated_at` datetime /* mariadb-5.3 */ DEFAULT NULL,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `mail_template_translation_unique` (`mail_template_id`,`language_id`) USING BTREE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
+  UNIQUE KEY `mail_template_translation_unique` (`mail_template_id`,`language_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=140 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `mail_templates`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `mail_templates` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `name` varchar(100) NOT NULL,
   `label` varchar(100) NOT NULL,
   `created_at` datetime /* mariadb-5.3 */ DEFAULT NULL,
@@ -725,8 +879,8 @@ CREATE TABLE `mail_templates` (
   `template_id` varchar(100) NOT NULL,
   `user_visibility` int(11) NOT NULL DEFAULT 0,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `index_mail_templates_on_name` (`name`) USING BTREE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
+  UNIQUE KEY `index_mail_templates_on_name` (`name`)
+) ENGINE=InnoDB AUTO_INCREMENT=85 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `mailbox_handlers`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -741,7 +895,7 @@ CREATE TABLE `mailbox_handlers` (
   `updated_at` datetime(6) NOT NULL,
   PRIMARY KEY (`id`),
   KEY `index_mailbox_handlers_on_mailbox_id` (`mailbox_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `mailboxes`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -757,13 +911,13 @@ CREATE TABLE `mailboxes` (
   `created_at` datetime(6) NOT NULL,
   `updated_at` datetime(6) NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `maintenance_locks`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `maintenance_locks` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `class_name` varchar(100) NOT NULL,
   `row_id` int(11) DEFAULT NULL,
   `user_id` int(11) DEFAULT NULL,
@@ -772,8 +926,21 @@ CREATE TABLE `maintenance_locks` (
   `created_at` datetime /* mariadb-5.3 */ DEFAULT NULL,
   `updated_at` datetime /* mariadb-5.3 */ DEFAULT NULL,
   PRIMARY KEY (`id`),
-  KEY `index_maintenance_locks_on_class_name_and_row_id` (`class_name`,`row_id`) USING BTREE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
+  KEY `index_maintenance_locks_on_class_name_and_row_id` (`class_name`,`row_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `members_payments`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `members_payments` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `m_id` int(11) NOT NULL,
+  `acct_m_id` int(11) NOT NULL,
+  `timestamp` bigint(20) NOT NULL,
+  `change_from` bigint(20) NOT NULL,
+  `change_to` bigint(20) NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=MyISAM AUTO_INCREMENT=17 DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `metrics_access_tokens`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -790,13 +957,13 @@ CREATE TABLE `metrics_access_tokens` (
   PRIMARY KEY (`id`),
   KEY `index_metrics_access_tokens_on_token_id` (`token_id`),
   KEY `index_metrics_access_tokens_on_user_id` (`user_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `migration_plans`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `migration_plans` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `state` int(11) NOT NULL DEFAULT 0,
   `stop_on_error` tinyint(1) NOT NULL DEFAULT 1,
   `send_mail` tinyint(1) NOT NULL DEFAULT 1,
@@ -807,13 +974,13 @@ CREATE TABLE `migration_plans` (
   `created_at` datetime /* mariadb-5.3 */ DEFAULT NULL,
   `finished_at` datetime /* mariadb-5.3 */ DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=27 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `mirrors`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `mirrors` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `src_pool_id` int(11) DEFAULT NULL,
   `dst_pool_id` int(11) DEFAULT NULL,
   `src_dataset_in_pool_id` int(11) DEFAULT NULL,
@@ -823,11 +990,62 @@ CREATE TABLE `mirrors` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `monitored_event_logs`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `monitored_event_logs` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `monitored_event_id` int(11) NOT NULL,
+  `passed` tinyint(1) NOT NULL,
+  `value` varchar(255) NOT NULL,
+  `created_at` datetime /* mariadb-5.3 */ NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `index_monitored_event_logs_on_monitored_event_id` (`monitored_event_id`),
+  KEY `index_monitored_event_logs_on_passed` (`passed`)
+) ENGINE=InnoDB AUTO_INCREMENT=25091 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `monitored_event_states`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `monitored_event_states` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `monitored_event_id` int(11) NOT NULL,
+  `state` int(11) NOT NULL,
+  `created_at` datetime /* mariadb-5.3 */ NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `index_monitored_event_states_on_monitored_event_id` (`monitored_event_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=142 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `monitored_events`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `monitored_events` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `monitor_name` varchar(100) NOT NULL,
+  `class_name` varchar(255) NOT NULL,
+  `row_id` int(11) NOT NULL,
+  `state` int(11) NOT NULL,
+  `user_id` int(11) DEFAULT NULL,
+  `access_level` int(11) NOT NULL DEFAULT 0,
+  `created_at` datetime NOT NULL,
+  `updated_at` datetime NOT NULL,
+  `last_report_at` datetime DEFAULT NULL,
+  `saved_until` datetime DEFAULT NULL,
+  `action_state` text DEFAULT NULL,
+  `alert_count` int(11) NOT NULL DEFAULT 0,
+  PRIMARY KEY (`id`),
+  KEY `index_monitored_events_on_monitor_name` (`monitor_name`),
+  KEY `index_monitored_events_on_class_name` (`class_name`),
+  KEY `index_monitored_events_on_row_id` (`row_id`),
+  KEY `index_monitored_events_on_state` (`state`),
+  KEY `index_monitored_events_on_user_id` (`user_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=73 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `mounts`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `mounts` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `vps_id` int(11) NOT NULL,
   `src` varchar(500) DEFAULT NULL,
   `dst` varchar(500) NOT NULL,
@@ -850,9 +1068,9 @@ CREATE TABLE `mounts` (
   `snapshot_in_pool_clone_id` int(11) DEFAULT NULL,
   `remind_after_date` datetime DEFAULT NULL,
   PRIMARY KEY (`id`),
-  KEY `index_mounts_on_vps_id` (`vps_id`) USING BTREE,
+  KEY `index_mounts_on_vps_id` (`vps_id`),
   KEY `index_mounts_on_snapshot_in_pool_clone_id` (`snapshot_in_pool_clone_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=216 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `network_interface_daily_accountings`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -944,9 +1162,9 @@ DROP TABLE IF EXISTS `network_interfaces`;
 CREATE TABLE `network_interfaces` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `vps_id` int(11) DEFAULT NULL,
-  `name` varchar(30) NOT NULL,
+  `name` varchar(30) CHARACTER SET utf8mb3 COLLATE utf8mb3_czech_ci NOT NULL,
   `kind` int(11) NOT NULL,
-  `mac` varchar(17) DEFAULT NULL,
+  `mac` varchar(17) CHARACTER SET utf8mb3 COLLATE utf8mb3_czech_ci DEFAULT NULL,
   `created_at` datetime DEFAULT NULL,
   `updated_at` datetime DEFAULT NULL,
   `export_id` int(11) DEFAULT NULL,
@@ -958,13 +1176,13 @@ CREATE TABLE `network_interfaces` (
   UNIQUE KEY `index_network_interfaces_on_export_id_and_name` (`export_id`,`name`),
   KEY `index_network_interfaces_on_vps_id` (`vps_id`),
   KEY `index_network_interfaces_on_kind` (`kind`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=219 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `networks`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `networks` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `label` varchar(255) DEFAULT NULL,
   `ip_version` int(11) NOT NULL,
   `address` varchar(255) NOT NULL,
@@ -978,13 +1196,25 @@ CREATE TABLE `networks` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `index_networks_on_address_and_prefix` (`address`,`prefix`),
   KEY `index_networks_on_purpose` (`purpose`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=24 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `news_logs`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `news_logs` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `message` text NOT NULL,
+  `published_at` datetime /* mariadb-5.3 */ NOT NULL,
+  `created_at` datetime /* mariadb-5.3 */ DEFAULT NULL,
+  `updated_at` datetime /* mariadb-5.3 */ DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=22 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `node_current_statuses`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `node_current_statuses` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `node_id` int(11) NOT NULL,
   `uptime` int(11) DEFAULT NULL,
   `cpus` int(11) DEFAULT NULL,
@@ -1040,14 +1270,14 @@ CREATE TABLE `node_current_statuses` (
   `sum_loadavg5` float NOT NULL DEFAULT 0,
   `sum_loadavg15` float NOT NULL DEFAULT 0,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `index_node_current_statuses_on_node_id` (`node_id`) USING BTREE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
+  UNIQUE KEY `index_node_current_statuses_on_node_id` (`node_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=1221453 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `node_statuses`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `node_statuses` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `node_id` int(11) NOT NULL,
   `uptime` int(11) NOT NULL,
   `process_count` int(11) DEFAULT NULL,
@@ -1077,8 +1307,8 @@ CREATE TABLE `node_statuses` (
   `loadavg5` float NOT NULL DEFAULT 0,
   `loadavg15` float NOT NULL DEFAULT 0,
   PRIMARY KEY (`id`),
-  KEY `index_node_statuses_on_node_id` (`node_id`) USING BTREE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
+  KEY `index_node_statuses_on_node_id` (`node_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=178911 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `nodes`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -1100,10 +1330,10 @@ CREATE TABLE `nodes` (
   `hypervisor_type` int(11) DEFAULT NULL,
   `active` tinyint(1) NOT NULL DEFAULT 1,
   PRIMARY KEY (`id`),
-  KEY `location_id` (`location_id`) USING BTREE,
+  KEY `location_id` (`location_id`),
   KEY `index_nodes_on_hypervisor_type` (`hypervisor_type`),
   KEY `index_nodes_on_active` (`active`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=202 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `oauth2_authorizations`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -1133,7 +1363,7 @@ CREATE TABLE `oauth2_authorizations` (
   KEY `index_oauth2_authorizations_on_refresh_token_id` (`refresh_token_id`),
   KEY `index_oauth2_authorizations_on_single_sign_on_id` (`single_sign_on_id`),
   KEY `index_oauth2_authorizations_on_user_device_id` (`user_device_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=315 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `oauth2_clients`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -1153,13 +1383,13 @@ CREATE TABLE `oauth2_clients` (
   `allow_single_sign_on` tinyint(1) NOT NULL DEFAULT 1,
   PRIMARY KEY (`id`),
   UNIQUE KEY `index_oauth2_clients_on_client_id` (`client_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `object_histories`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `object_histories` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `user_id` int(11) DEFAULT NULL,
   `user_session_id` int(11) DEFAULT NULL,
   `tracked_object_id` int(11) NOT NULL,
@@ -1168,16 +1398,16 @@ CREATE TABLE `object_histories` (
   `event_data` text DEFAULT NULL,
   `created_at` datetime /* mariadb-5.3 */ NOT NULL,
   PRIMARY KEY (`id`),
-  KEY `object_histories_tracked_object` (`tracked_object_id`,`tracked_object_type`) USING BTREE,
-  KEY `index_object_histories_on_user_id` (`user_id`) USING BTREE,
-  KEY `index_object_histories_on_user_session_id` (`user_session_id`) USING BTREE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
+  KEY `object_histories_tracked_object` (`tracked_object_id`,`tracked_object_type`),
+  KEY `index_object_histories_on_user_id` (`user_id`),
+  KEY `index_object_histories_on_user_session_id` (`user_session_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=1446 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `object_states`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `object_states` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `class_name` varchar(255) NOT NULL,
   `row_id` int(11) NOT NULL,
   `state` int(11) NOT NULL,
@@ -1188,8 +1418,8 @@ CREATE TABLE `object_states` (
   `updated_at` datetime DEFAULT NULL,
   `remind_after_date` datetime DEFAULT NULL,
   PRIMARY KEY (`id`),
-  KEY `index_object_states_on_class_name_and_row_id` (`class_name`,`row_id`) USING BTREE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
+  KEY `index_object_states_on_class_name_and_row_id` (`class_name`,`row_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=4048 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `oom_preventions`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -1203,7 +1433,7 @@ CREATE TABLE `oom_preventions` (
   PRIMARY KEY (`id`),
   KEY `index_oom_preventions_on_vps_id` (`vps_id`),
   KEY `index_oom_preventions_on_action` (`action`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `oom_report_counters`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -1216,7 +1446,7 @@ CREATE TABLE `oom_report_counters` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `index_oom_report_counters_on_vps_id_and_cgroup` (`vps_id`,`cgroup`),
   KEY `index_oom_report_counters_on_vps_id` (`vps_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `oom_report_stats`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -1228,7 +1458,7 @@ CREATE TABLE `oom_report_stats` (
   `value` decimal(40,0) NOT NULL,
   PRIMARY KEY (`id`),
   KEY `index_oom_report_stats_on_oom_report_id` (`oom_report_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=6109 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `oom_report_tasks`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -1252,7 +1482,7 @@ CREATE TABLE `oom_report_tasks` (
   `rss_shmem` int(11) DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `index_oom_report_tasks_on_oom_report_id` (`oom_report_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=4128 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `oom_report_usages`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -1266,7 +1496,7 @@ CREATE TABLE `oom_report_usages` (
   `failcnt` decimal(40,0) NOT NULL,
   PRIMARY KEY (`id`),
   KEY `index_oom_report_usages_on_oom_report_id` (`oom_report_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=477 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `oom_reports`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -1288,7 +1518,7 @@ CREATE TABLE `oom_reports` (
   KEY `index_oom_reports_on_processed` (`processed`),
   KEY `index_oom_reports_on_reported_at` (`reported_at`),
   KEY `index_oom_reports_on_created_at` (`created_at`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=236 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `os_templates`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -1302,21 +1532,169 @@ CREATE TABLE `os_templates` (
   `supported` tinyint(1) NOT NULL DEFAULT 1,
   `order` tinyint(4) NOT NULL DEFAULT 1,
   `hypervisor_type` int(11) NOT NULL DEFAULT 0,
-  `vendor` varchar(255) DEFAULT NULL,
-  `variant` varchar(255) DEFAULT NULL,
-  `arch` varchar(255) DEFAULT NULL,
-  `distribution` varchar(255) DEFAULT NULL,
-  `version` varchar(255) DEFAULT NULL,
+  `vendor` varchar(255) CHARACTER SET utf8mb3 COLLATE utf8mb3_czech_ci DEFAULT NULL,
+  `variant` varchar(255) CHARACTER SET utf8mb3 COLLATE utf8mb3_czech_ci DEFAULT NULL,
+  `arch` varchar(255) CHARACTER SET utf8mb3 COLLATE utf8mb3_czech_ci DEFAULT NULL,
+  `distribution` varchar(255) CHARACTER SET utf8mb3 COLLATE utf8mb3_czech_ci DEFAULT NULL,
+  `version` varchar(255) CHARACTER SET utf8mb3 COLLATE utf8mb3_czech_ci DEFAULT NULL,
   `cgroup_version` int(11) NOT NULL DEFAULT 0,
   PRIMARY KEY (`id`),
   KEY `index_os_templates_on_cgroup_version` (`cgroup_version`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
+) ENGINE=MyISAM AUTO_INCREMENT=45 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `outage_entities`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `outage_entities` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `outage_id` int(11) NOT NULL,
+  `name` varchar(255) NOT NULL,
+  `row_id` int(11) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `index_outage_entities_on_outage_id_and_name_and_row_id` (`outage_id`,`name`,`row_id`),
+  KEY `index_outage_entities_on_outage_id` (`outage_id`),
+  KEY `index_outage_entities_on_name` (`name`),
+  KEY `index_outage_entities_on_row_id` (`row_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=36 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `outage_exports`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `outage_exports` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `outage_id` int(11) NOT NULL,
+  `export_id` int(11) NOT NULL,
+  `user_id` int(11) NOT NULL,
+  `environment_id` int(11) NOT NULL,
+  `location_id` int(11) NOT NULL,
+  `node_id` int(11) NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `index_outage_exports_on_outage_id_and_export_id` (`outage_id`,`export_id`),
+  KEY `index_outage_exports_on_outage_id` (`outage_id`),
+  KEY `index_outage_exports_on_export_id` (`export_id`),
+  KEY `index_outage_exports_on_user_id` (`user_id`),
+  KEY `index_outage_exports_on_environment_id` (`environment_id`),
+  KEY `index_outage_exports_on_location_id` (`location_id`),
+  KEY `index_outage_exports_on_node_id` (`node_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=27 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `outage_handlers`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `outage_handlers` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `outage_id` int(11) NOT NULL,
+  `user_id` int(11) DEFAULT NULL,
+  `full_name` varchar(100) NOT NULL,
+  `note` varchar(255) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `index_outage_handlers_on_outage_id_and_user_id` (`outage_id`,`user_id`),
+  KEY `index_outage_handlers_on_outage_id` (`outage_id`),
+  KEY `index_outage_handlers_on_user_id` (`user_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=25 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `outage_translations`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `outage_translations` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `outage_id` int(11) DEFAULT NULL,
+  `outage_update_id` int(11) DEFAULT NULL,
+  `language_id` int(11) NOT NULL,
+  `summary` varchar(255) DEFAULT NULL,
+  `description` text DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `index_outage_translations_on_outage_id_and_language_id` (`outage_id`,`language_id`),
+  UNIQUE KEY `index_outage_translations_on_outage_update_id_and_language_id` (`outage_update_id`,`language_id`),
+  KEY `index_outage_translations_on_outage_id` (`outage_id`),
+  KEY `index_outage_translations_on_outage_update_id` (`outage_update_id`),
+  KEY `index_outage_translations_on_language_id` (`language_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=99 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `outage_updates`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `outage_updates` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `outage_id` int(11) NOT NULL,
+  `reported_by_id` int(11) DEFAULT NULL,
+  `reporter_name` varchar(255) DEFAULT NULL,
+  `begins_at` datetime DEFAULT NULL,
+  `finished_at` datetime DEFAULT NULL,
+  `duration` int(11) DEFAULT NULL,
+  `state` int(11) DEFAULT NULL,
+  `impact_type` int(11) DEFAULT NULL,
+  `created_at` datetime NOT NULL,
+  `updated_at` datetime DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `index_outage_updates_on_outage_id` (`outage_id`),
+  KEY `index_outage_updates_on_reported_by_id` (`reported_by_id`),
+  KEY `index_outage_updates_on_state` (`state`),
+  KEY `index_outage_updates_on_impact_type` (`impact_type`)
+) ENGINE=InnoDB AUTO_INCREMENT=105 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `outage_users`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `outage_users` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `outage_id` int(11) NOT NULL,
+  `user_id` int(11) NOT NULL,
+  `vps_count` int(11) NOT NULL DEFAULT 0,
+  `export_count` int(11) NOT NULL DEFAULT 0,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `index_outage_users_on_outage_id_and_user_id` (`outage_id`,`user_id`),
+  KEY `index_outage_users_on_outage_id` (`outage_id`),
+  KEY `index_outage_users_on_user_id` (`user_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=140 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `outage_vpses`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `outage_vpses` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `outage_id` int(11) NOT NULL,
+  `vps_id` int(11) NOT NULL,
+  `user_id` int(11) NOT NULL,
+  `environment_id` int(11) NOT NULL,
+  `location_id` int(11) NOT NULL,
+  `node_id` int(11) NOT NULL,
+  `direct` tinyint(1) NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `index_outage_vpses_on_outage_id_and_vps_id` (`outage_id`,`vps_id`),
+  KEY `index_outage_vpses_on_outage_id` (`outage_id`),
+  KEY `index_outage_vpses_on_vps_id` (`vps_id`),
+  KEY `index_outage_vpses_on_user_id` (`user_id`),
+  KEY `index_outage_vpses_on_environment_id` (`environment_id`),
+  KEY `index_outage_vpses_on_location_id` (`location_id`),
+  KEY `index_outage_vpses_on_node_id` (`node_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=85 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `outages`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `outages` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `begins_at` datetime DEFAULT NULL,
+  `finished_at` datetime DEFAULT NULL,
+  `duration` int(11) DEFAULT NULL,
+  `state` int(11) NOT NULL DEFAULT 0,
+  `outage_type` int(11) NOT NULL,
+  `created_at` datetime NOT NULL,
+  `updated_at` datetime DEFAULT NULL,
+  `impact_type` int(11) NOT NULL DEFAULT 0,
+  `auto_resolve` tinyint(1) NOT NULL DEFAULT 1,
+  PRIMARY KEY (`id`),
+  KEY `index_outages_on_state` (`state`),
+  KEY `index_outages_on_outage_type` (`outage_type`),
+  KEY `index_outages_on_impact_type` (`impact_type`)
+) ENGINE=InnoDB AUTO_INCREMENT=76 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `pools`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `pools` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `node_id` int(11) NOT NULL,
   `label` varchar(500) NOT NULL,
   `filesystem` varchar(500) NOT NULL,
@@ -1334,28 +1712,28 @@ CREATE TABLE `pools` (
   `is_open` int(11) NOT NULL DEFAULT 1,
   PRIMARY KEY (`id`),
   KEY `index_pools_on_is_open` (`is_open`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=20 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `port_reservations`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `port_reservations` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `node_id` int(11) NOT NULL,
   `addr` varchar(100) DEFAULT NULL,
   `port` int(11) NOT NULL,
   `transaction_chain_id` int(11) DEFAULT NULL,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `port_reservation_uniqueness` (`node_id`,`port`) USING BTREE,
-  KEY `index_port_reservations_on_node_id` (`node_id`) USING BTREE,
-  KEY `index_port_reservations_on_transaction_chain_id` (`transaction_chain_id`) USING BTREE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
+  UNIQUE KEY `port_reservation_uniqueness` (`node_id`,`port`),
+  KEY `index_port_reservations_on_transaction_chain_id` (`transaction_chain_id`),
+  KEY `index_port_reservations_on_node_id` (`node_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=140001 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `repeatable_tasks`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `repeatable_tasks` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `label` varchar(100) DEFAULT NULL,
   `class_name` varchar(255) NOT NULL,
   `table_name` varchar(255) NOT NULL,
@@ -1366,13 +1744,13 @@ CREATE TABLE `repeatable_tasks` (
   `month` varchar(255) NOT NULL,
   `day_of_week` varchar(255) NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=1066 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `resource_locks`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `resource_locks` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `resource` varchar(100) NOT NULL,
   `row_id` int(11) NOT NULL,
   `created_at` datetime /* mariadb-5.3 */ DEFAULT NULL,
@@ -1380,9 +1758,9 @@ CREATE TABLE `resource_locks` (
   `locked_by_id` int(11) DEFAULT NULL,
   `locked_by_type` varchar(255) DEFAULT NULL,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `index_resource_locks_on_resource_and_row_id` (`resource`,`row_id`) USING BTREE,
-  KEY `index_resource_locks_on_locked_by_id_and_locked_by_type` (`locked_by_id`,`locked_by_type`) USING BTREE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
+  UNIQUE KEY `index_resource_locks_on_resource_and_row_id` (`resource`,`row_id`),
+  KEY `index_resource_locks_on_locked_by_id_and_locked_by_type` (`locked_by_id`,`locked_by_type`)
+) ENGINE=InnoDB AUTO_INCREMENT=4221 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `schema_migrations`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -1390,7 +1768,7 @@ DROP TABLE IF EXISTS `schema_migrations`;
 CREATE TABLE `schema_migrations` (
   `version` varchar(255) NOT NULL,
   UNIQUE KEY `unique_schema_migrations` (`version`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `single_sign_ons`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -1404,13 +1782,13 @@ CREATE TABLE `single_sign_ons` (
   PRIMARY KEY (`id`),
   KEY `index_single_sign_ons_on_user_id` (`user_id`),
   KEY `index_single_sign_ons_on_token_id` (`token_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=211 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `snapshot_downloads`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `snapshot_downloads` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `user_id` int(11) NOT NULL,
   `snapshot_id` int(11) DEFAULT NULL,
   `pool_id` int(11) NOT NULL,
@@ -1427,8 +1805,8 @@ CREATE TABLE `snapshot_downloads` (
   `sha256sum` varchar(64) DEFAULT NULL,
   `remind_after_date` datetime DEFAULT NULL,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `index_snapshot_downloads_on_secret_key` (`secret_key`) USING BTREE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
+  UNIQUE KEY `index_snapshot_downloads_on_secret_key` (`secret_key`)
+) ENGINE=InnoDB AUTO_INCREMENT=140 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `snapshot_in_pool_clones`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -1445,43 +1823,43 @@ CREATE TABLE `snapshot_in_pool_clones` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `snapshot_in_pool_clones_unique` (`snapshot_in_pool_id`,`user_namespace_map_id`),
   KEY `index_snapshot_in_pool_clones_on_snapshot_in_pool_id` (`snapshot_in_pool_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=27 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `snapshot_in_pool_in_branches`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `snapshot_in_pool_in_branches` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `snapshot_in_pool_id` int(11) NOT NULL,
   `snapshot_in_pool_in_branch_id` int(11) DEFAULT NULL,
   `branch_id` int(11) NOT NULL,
   `confirmed` int(11) NOT NULL DEFAULT 0,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `unique_snapshot_in_pool_in_branches` (`snapshot_in_pool_id`,`branch_id`) USING BTREE,
-  KEY `index_snapshot_in_pool_in_branches_on_snapshot_in_pool_id` (`snapshot_in_pool_id`) USING BTREE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
+  UNIQUE KEY `unique_snapshot_in_pool_in_branches` (`snapshot_in_pool_id`,`branch_id`),
+  KEY `index_snapshot_in_pool_in_branches_on_snapshot_in_pool_id` (`snapshot_in_pool_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=225 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `snapshot_in_pools`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `snapshot_in_pools` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `snapshot_id` int(11) NOT NULL,
   `dataset_in_pool_id` int(11) NOT NULL,
   `reference_count` int(11) NOT NULL DEFAULT 0,
   `mount_id` int(11) DEFAULT NULL,
   `confirmed` int(11) NOT NULL DEFAULT 0,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `index_snapshot_in_pools_on_snapshot_id_and_dataset_in_pool_id` (`snapshot_id`,`dataset_in_pool_id`) USING BTREE,
-  KEY `index_snapshot_in_pools_on_dataset_in_pool_id` (`dataset_in_pool_id`) USING BTREE,
-  KEY `index_snapshot_in_pools_on_snapshot_id` (`snapshot_id`) USING BTREE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
+  UNIQUE KEY `index_snapshot_in_pools_on_snapshot_id_and_dataset_in_pool_id` (`snapshot_id`,`dataset_in_pool_id`),
+  KEY `index_snapshot_in_pools_on_snapshot_id` (`snapshot_id`),
+  KEY `index_snapshot_in_pools_on_dataset_in_pool_id` (`dataset_in_pool_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=3604 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `snapshots`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `snapshots` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `name` varchar(255) NOT NULL,
   `dataset_id` int(11) NOT NULL,
   `confirmed` int(11) NOT NULL DEFAULT 0,
@@ -1491,8 +1869,8 @@ CREATE TABLE `snapshots` (
   `history_id` int(11) NOT NULL DEFAULT 0,
   `label` varchar(255) DEFAULT NULL,
   PRIMARY KEY (`id`),
-  KEY `index_snapshots_on_dataset_id` (`dataset_id`) USING BTREE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
+  KEY `index_snapshots_on_dataset_id` (`dataset_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=1952 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `sysconfig`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -1509,9 +1887,18 @@ CREATE TABLE `sysconfig` (
   `created_at` datetime /* mariadb-5.3 */ DEFAULT NULL,
   `updated_at` datetime /* mariadb-5.3 */ DEFAULT NULL,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `index_sysconfig_on_category_and_name` (`category`,`name`) USING BTREE,
-  KEY `index_sysconfig_on_category` (`category`) USING BTREE
-) ENGINE=InnoDB AUTO_INCREMENT=35 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
+  UNIQUE KEY `index_sysconfig_on_category_and_name` (`category`,`name`),
+  KEY `index_sysconfig_on_category` (`category`)
+) ENGINE=InnoDB AUTO_INCREMENT=92 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `testik`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `testik` (
+  `col1` int(11) DEFAULT NULL,
+  `col2` int(11) DEFAULT NULL,
+  `col3` int(11) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `tokens`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -1519,35 +1906,35 @@ DROP TABLE IF EXISTS `tokens`;
 CREATE TABLE `tokens` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `token` varchar(100) NOT NULL,
-  `valid_to` datetime /* mariadb-5.3 */ DEFAULT NULL,
+  `valid_to` datetime DEFAULT NULL,
   `owner_id` int(11) DEFAULT NULL,
   `owner_type` varchar(255) DEFAULT NULL,
-  `created_at` datetime /* mariadb-5.3 */ NOT NULL,
+  `created_at` datetime NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `index_tokens_on_token` (`token`),
   KEY `index_tokens_on_owner_type_and_owner_id` (`owner_type`,`owner_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=3949 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `transaction_chain_concerns`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `transaction_chain_concerns` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `transaction_chain_id` int(11) NOT NULL,
   `class_name` varchar(255) NOT NULL,
   `row_id` int(11) NOT NULL,
   PRIMARY KEY (`id`),
-  KEY `index_transaction_chain_concerns_on_transaction_chain_id` (`transaction_chain_id`) USING BTREE,
+  KEY `index_transaction_chain_concerns_on_transaction_chain_id` (`transaction_chain_id`),
   KEY `index_transaction_chain_concerns_on_class_name` (`class_name`),
   KEY `index_transaction_chain_concerns_on_row_id` (`row_id`),
   KEY `index_transaction_chain_concerns_on_class_name_and_row_id` (`class_name`,`row_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=5434 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `transaction_chains`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `transaction_chains` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `name` varchar(30) NOT NULL,
   `type` varchar(100) NOT NULL,
   `state` int(11) NOT NULL,
@@ -1560,18 +1947,18 @@ CREATE TABLE `transaction_chains` (
   `concern_type` int(11) NOT NULL DEFAULT 0,
   `user_session_id` int(11) DEFAULT NULL,
   PRIMARY KEY (`id`),
-  KEY `index_transaction_chains_on_state` (`state`) USING BTREE,
-  KEY `index_transaction_chains_on_user_id` (`user_id`) USING BTREE,
-  KEY `index_transaction_chains_on_user_session_id` (`user_session_id`) USING BTREE,
+  KEY `index_transaction_chains_on_user_id` (`user_id`),
+  KEY `index_transaction_chains_on_user_session_id` (`user_session_id`),
+  KEY `index_transaction_chains_on_state` (`state`),
   KEY `index_transaction_chains_on_created_at` (`created_at`),
   KEY `index_transaction_chains_on_type_and_state` (`type`,`state`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=35189 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `transaction_confirmations`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `transaction_confirmations` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `transaction_id` int(11) NOT NULL,
   `class_name` varchar(255) NOT NULL,
   `table_name` varchar(255) NOT NULL,
@@ -1582,8 +1969,8 @@ CREATE TABLE `transaction_confirmations` (
   `created_at` datetime /* mariadb-5.3 */ DEFAULT NULL,
   `updated_at` datetime /* mariadb-5.3 */ DEFAULT NULL,
   PRIMARY KEY (`id`),
-  KEY `index_transaction_confirmations_on_transaction_id` (`transaction_id`) USING BTREE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
+  KEY `index_transaction_confirmations_on_transaction_id` (`transaction_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=100133 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `transactions`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -1609,25 +1996,38 @@ CREATE TABLE `transactions` (
   `queue` varchar(30) NOT NULL DEFAULT 'general',
   `signature` text DEFAULT NULL,
   PRIMARY KEY (`id`),
-  KEY `index_transactions_on_depends_on_id` (`depends_on_id`) USING BTREE,
-  KEY `index_transactions_on_done` (`done`) USING BTREE,
-  KEY `index_transactions_on_node_id` (`node_id`) USING BTREE,
-  KEY `index_transactions_on_status` (`status`) USING BTREE,
-  KEY `index_transactions_on_transaction_chain_id` (`transaction_chain_id`) USING BTREE,
-  KEY `index_transactions_on_user_id` (`user_id`) USING BTREE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
+  KEY `index_transactions_on_transaction_chain_id` (`transaction_chain_id`),
+  KEY `index_transactions_on_depends_on_id` (`depends_on_id`),
+  KEY `index_transactions_on_status` (`status`),
+  KEY `index_transactions_on_done` (`done`),
+  KEY `index_transactions_on_node_id` (`node_id`),
+  KEY `index_transactions_on_user_id` (`user_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=41316 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `user_accounts`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `user_accounts` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `user_id` int(11) NOT NULL,
+  `monthly_payment` int(11) NOT NULL DEFAULT 0,
+  `paid_until` datetime /* mariadb-5.3 */ DEFAULT NULL,
+  `updated_at` datetime /* mariadb-5.3 */ DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `index_user_accounts_on_user_id` (`user_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=50 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `user_agents`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `user_agents` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `agent` text NOT NULL,
   `agent_hash` varchar(40) NOT NULL,
   `created_at` datetime /* mariadb-5.3 */ NOT NULL,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `user_session_agents_hash` (`agent_hash`) USING BTREE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
+  UNIQUE KEY `user_session_agents_hash` (`agent_hash`)
+) ENGINE=InnoDB AUTO_INCREMENT=141 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `user_cluster_resource_packages`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -1646,23 +2046,23 @@ CREATE TABLE `user_cluster_resource_packages` (
   KEY `user_id` (`user_id`),
   KEY `cluster_resource_package_id` (`cluster_resource_package_id`),
   KEY `added_by_id` (`added_by_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=373 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `user_cluster_resources`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `user_cluster_resources` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `user_id` int(11) DEFAULT NULL,
   `environment_id` int(11) NOT NULL,
   `cluster_resource_id` int(11) NOT NULL,
   `value` decimal(40,0) NOT NULL,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `user_cluster_resource_unique` (`user_id`,`environment_id`,`cluster_resource_id`) USING BTREE,
-  KEY `index_user_cluster_resources_on_cluster_resource_id` (`cluster_resource_id`) USING BTREE,
-  KEY `index_user_cluster_resources_on_environment_id` (`environment_id`) USING BTREE,
-  KEY `index_user_cluster_resources_on_user_id` (`user_id`) USING BTREE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
+  UNIQUE KEY `user_cluster_resource_unique` (`user_id`,`environment_id`,`cluster_resource_id`),
+  KEY `index_user_cluster_resources_on_user_id` (`user_id`),
+  KEY `index_user_cluster_resources_on_environment_id` (`environment_id`),
+  KEY `index_user_cluster_resources_on_cluster_resource_id` (`cluster_resource_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=1441 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `user_devices`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -1683,7 +2083,7 @@ CREATE TABLE `user_devices` (
   KEY `index_user_devices_on_user_id` (`user_id`),
   KEY `index_user_devices_on_token_id` (`token_id`),
   KEY `index_user_devices_on_user_agent_id` (`user_agent_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=133 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `user_failed_logins`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -1693,19 +2093,19 @@ CREATE TABLE `user_failed_logins` (
   `user_id` int(11) NOT NULL,
   `auth_type` varchar(30) NOT NULL,
   `reason` varchar(255) NOT NULL,
-  `api_ip_addr` varchar(46) NOT NULL,
+  `api_ip_addr` varchar(46) DEFAULT NULL,
   `api_ip_ptr` varchar(255) DEFAULT NULL,
   `client_ip_addr` varchar(46) DEFAULT NULL,
   `client_ip_ptr` varchar(255) DEFAULT NULL,
   `user_agent_id` int(11) DEFAULT NULL,
-  `client_version` varchar(255) NOT NULL,
+  `client_version` varchar(255) DEFAULT NULL,
   `created_at` datetime NOT NULL,
   `reported_at` datetime(6) DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `index_user_failed_logins_on_user_id` (`user_id`),
   KEY `index_user_failed_logins_on_auth_type` (`auth_type`),
   KEY `index_user_failed_logins_on_user_agent_id` (`user_agent_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=265 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `user_mail_role_recipients`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -1718,7 +2118,7 @@ CREATE TABLE `user_mail_role_recipients` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `index_user_mail_role_recipients_on_user_id_and_role` (`user_id`,`role`),
   KEY `index_user_mail_role_recipients_on_user_id` (`user_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `user_mail_template_recipients`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -1728,10 +2128,11 @@ CREATE TABLE `user_mail_template_recipients` (
   `user_id` int(11) NOT NULL,
   `mail_template_id` int(11) NOT NULL,
   `to` varchar(500) NOT NULL,
+  `enabled` tinyint(1) NOT NULL DEFAULT 1,
   PRIMARY KEY (`id`),
   UNIQUE KEY `user_id_mail_template_id` (`user_id`,`mail_template_id`),
   KEY `index_user_mail_template_recipients_on_user_id` (`user_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `user_namespace_blocks`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -1762,7 +2163,7 @@ CREATE TABLE `user_namespace_map_entries` (
   `updated_at` datetime /* mariadb-5.3 */ DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `index_user_namespace_map_entries_on_user_namespace_map_id` (`user_namespace_map_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=70 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `user_namespace_maps`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -1775,7 +2176,7 @@ CREATE TABLE `user_namespace_maps` (
   `updated_at` datetime DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `index_user_namespace_maps_on_user_namespace_id` (`user_namespace_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=52 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `user_namespaces`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -1793,7 +2194,25 @@ CREATE TABLE `user_namespaces` (
   KEY `index_user_namespaces_on_block_count` (`block_count`),
   KEY `index_user_namespaces_on_offset` (`offset`),
   KEY `index_user_namespaces_on_size` (`size`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=47 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `user_payments`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `user_payments` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `incoming_payment_id` int(11) DEFAULT NULL,
+  `user_id` int(11) NOT NULL,
+  `accounted_by_id` int(11) DEFAULT NULL,
+  `amount` int(11) NOT NULL,
+  `created_at` datetime /* mariadb-5.3 */ NOT NULL,
+  `from_date` datetime /* mariadb-5.3 */ NOT NULL,
+  `to_date` datetime /* mariadb-5.3 */ NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `index_user_payments_on_incoming_payment_id` (`incoming_payment_id`),
+  KEY `index_user_payments_on_user_id` (`user_id`),
+  KEY `index_user_payments_on_accounted_by_id` (`accounted_by_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=15 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `user_public_keys`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -1809,14 +2228,84 @@ CREATE TABLE `user_public_keys` (
   `created_at` datetime /* mariadb-5.3 */ DEFAULT NULL,
   `updated_at` datetime /* mariadb-5.3 */ DEFAULT NULL,
   PRIMARY KEY (`id`),
-  KEY `index_user_public_keys_on_user_id` (`user_id`) USING BTREE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
+  KEY `index_user_public_keys_on_user_id` (`user_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=25 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `user_requests`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `user_requests` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `user_id` int(11) DEFAULT NULL,
+  `type` varchar(255) NOT NULL,
+  `state` int(11) NOT NULL DEFAULT 0,
+  `api_ip_addr` varchar(127) NOT NULL,
+  `api_ip_ptr` varchar(255) NOT NULL,
+  `client_ip_addr` varchar(127) DEFAULT NULL,
+  `client_ip_ptr` varchar(255) DEFAULT NULL,
+  `last_mail_id` int(11) NOT NULL DEFAULT 0,
+  `admin_id` int(11) DEFAULT NULL,
+  `admin_response` varchar(500) DEFAULT NULL,
+  `created_at` datetime DEFAULT NULL,
+  `updated_at` datetime DEFAULT NULL,
+  `login` varchar(75) DEFAULT NULL,
+  `full_name` varchar(255) DEFAULT NULL,
+  `org_name` varchar(255) DEFAULT NULL,
+  `org_id` varchar(30) DEFAULT NULL,
+  `email` varchar(255) DEFAULT NULL,
+  `address` text DEFAULT NULL,
+  `year_of_birth` int(11) DEFAULT NULL,
+  `how` varchar(500) DEFAULT NULL,
+  `note` varchar(500) DEFAULT NULL,
+  `os_template_id` int(11) DEFAULT NULL,
+  `location_id` int(11) DEFAULT NULL,
+  `currency` varchar(10) DEFAULT NULL,
+  `language_id` int(11) DEFAULT NULL,
+  `change_reason` varchar(255) DEFAULT NULL,
+  `access_token` varchar(40) DEFAULT NULL,
+  `ip_checked` tinyint(1) DEFAULT NULL,
+  `ip_request_id` varchar(50) DEFAULT NULL,
+  `ip_success` tinyint(1) DEFAULT NULL,
+  `ip_message` varchar(255) DEFAULT NULL,
+  `ip_errors` text DEFAULT NULL,
+  `ip_proxy` tinyint(1) DEFAULT NULL,
+  `ip_crawler` tinyint(1) DEFAULT NULL,
+  `ip_recent_abuse` tinyint(1) DEFAULT NULL,
+  `ip_vpn` tinyint(1) DEFAULT NULL,
+  `ip_tor` tinyint(1) DEFAULT NULL,
+  `ip_fraud_score` int(11) DEFAULT NULL,
+  `mail_checked` tinyint(1) DEFAULT NULL,
+  `mail_request_id` varchar(50) DEFAULT NULL,
+  `mail_success` tinyint(1) DEFAULT NULL,
+  `mail_message` varchar(255) DEFAULT NULL,
+  `mail_errors` text DEFAULT NULL,
+  `mail_valid` tinyint(1) DEFAULT NULL,
+  `mail_disposable` tinyint(1) DEFAULT NULL,
+  `mail_timed_out` tinyint(1) DEFAULT NULL,
+  `mail_deliverability` varchar(20) DEFAULT NULL,
+  `mail_catch_all` tinyint(1) DEFAULT NULL,
+  `mail_leaked` tinyint(1) DEFAULT NULL,
+  `mail_suspect` tinyint(1) DEFAULT NULL,
+  `mail_smtp_score` int(11) DEFAULT NULL,
+  `mail_overall_score` int(11) DEFAULT NULL,
+  `mail_fraud_score` int(11) DEFAULT NULL,
+  `mail_dns_valid` tinyint(1) DEFAULT NULL,
+  `mail_honeypot` tinyint(1) DEFAULT NULL,
+  `mail_spam_trap_score` varchar(20) DEFAULT NULL,
+  `mail_recent_abuse` tinyint(1) DEFAULT NULL,
+  `mail_frequent_complainer` tinyint(1) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `index_user_requests_on_user_id` (`user_id`),
+  KEY `index_user_requests_on_type` (`type`),
+  KEY `index_user_requests_on_state` (`state`),
+  KEY `index_user_requests_on_admin_id` (`admin_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=52 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `user_sessions`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `user_sessions` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `user_id` int(11) NOT NULL,
   `auth_type` varchar(30) NOT NULL,
   `api_ip_addr` varchar(46) NOT NULL,
@@ -1837,9 +2326,9 @@ CREATE TABLE `user_sessions` (
   `token_lifetime` int(11) NOT NULL DEFAULT 0,
   `token_interval` int(11) DEFAULT NULL,
   PRIMARY KEY (`id`),
-  KEY `index_user_sessions_on_user_id` (`user_id`) USING BTREE,
+  KEY `index_user_sessions_on_user_id` (`user_id`),
   KEY `index_user_sessions_on_token_id` (`token_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=31496 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `user_totp_devices`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -1861,28 +2350,28 @@ CREATE TABLE `user_totp_devices` (
   UNIQUE KEY `index_user_totp_devices_on_secret` (`secret`),
   KEY `index_user_totp_devices_on_user_id` (`user_id`),
   KEY `index_user_totp_devices_on_enabled` (`enabled`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `users`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `users` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `info` text DEFAULT NULL,
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `level` int(10) unsigned NOT NULL,
   `login` varchar(63) DEFAULT NULL,
   `full_name` varchar(255) DEFAULT NULL,
   `password` varchar(255) NOT NULL,
   `email` varchar(127) DEFAULT NULL,
   `address` text DEFAULT NULL,
-  `mailer_enabled` tinyint(1) NOT NULL DEFAULT 1,
+  `mailer_enabled` tinyint(1) unsigned NOT NULL DEFAULT 1,
   `login_count` int(11) NOT NULL DEFAULT 0,
   `failed_login_count` int(11) NOT NULL DEFAULT 0,
   `last_request_at` datetime DEFAULT NULL,
   `current_login_at` datetime DEFAULT NULL,
   `last_login_at` datetime DEFAULT NULL,
-  `current_login_ip` varchar(255) DEFAULT NULL,
-  `last_login_ip` varchar(255) DEFAULT NULL,
+  `current_login_ip` varchar(255) CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci DEFAULT NULL,
+  `last_login_ip` varchar(255) CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci DEFAULT NULL,
   `created_at` datetime DEFAULT NULL,
   `updated_at` datetime DEFAULT NULL,
   `object_state` int(11) NOT NULL,
@@ -1901,30 +2390,30 @@ CREATE TABLE `users` (
   `enable_token_auth` tinyint(1) NOT NULL DEFAULT 1,
   `enable_oauth2_auth` tinyint(1) NOT NULL DEFAULT 1,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `index_users_on_login` (`login`) USING BTREE,
-  KEY `index_users_on_object_state` (`object_state`) USING BTREE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
+  UNIQUE KEY `index_users_on_login` (`login`),
+  KEY `index_users_on_object_state` (`object_state`)
+) ENGINE=InnoDB AUTO_INCREMENT=2037 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `versions`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `versions` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `item_type` varchar(255) NOT NULL,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `item_type` varchar(255) CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci NOT NULL,
   `item_id` int(11) NOT NULL,
-  `event` varchar(255) NOT NULL,
-  `whodunnit` varchar(255) DEFAULT NULL,
-  `object` text DEFAULT NULL,
+  `event` varchar(255) CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci NOT NULL,
+  `whodunnit` varchar(255) CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci DEFAULT NULL,
+  `object` text CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci DEFAULT NULL,
   `created_at` datetime /* mariadb-5.3 */ DEFAULT NULL,
   PRIMARY KEY (`id`),
-  KEY `index_versions_on_item_type_and_item_id` (`item_type`,`item_id`) USING BTREE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
+  KEY `index_versions_on_item_type_and_item_id` (`item_type`,`item_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=43423 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `vps_consoles`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `vps_consoles` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `vps_id` int(11) NOT NULL,
   `token` varchar(100) DEFAULT NULL,
   `expiration` datetime /* mariadb-5.3 */ NOT NULL,
@@ -1932,14 +2421,14 @@ CREATE TABLE `vps_consoles` (
   `created_at` datetime /* mariadb-5.3 */ DEFAULT NULL,
   `updated_at` datetime /* mariadb-5.3 */ DEFAULT NULL,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `index_vps_consoles_on_token` (`token`) USING BTREE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
+  UNIQUE KEY `index_vps_consoles_on_token` (`token`)
+) ENGINE=MyISAM AUTO_INCREMENT=431 DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `vps_current_statuses`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `vps_current_statuses` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `vps_id` int(11) NOT NULL,
   `status` tinyint(1) NOT NULL,
   `is_running` tinyint(1) NOT NULL,
@@ -1979,28 +2468,28 @@ CREATE TABLE `vps_current_statuses` (
   `sum_loadavg1` float DEFAULT NULL,
   `sum_loadavg15` float DEFAULT NULL,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `index_vps_current_statuses_on_vps_id` (`vps_id`) USING BTREE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
+  UNIQUE KEY `index_vps_current_statuses_on_vps_id` (`vps_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=150 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `vps_features`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `vps_features` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `vps_id` int(11) NOT NULL,
   `name` varchar(255) NOT NULL,
   `enabled` tinyint(1) NOT NULL,
   `updated_at` datetime /* mariadb-5.3 */ DEFAULT NULL,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `index_vps_features_on_vps_id_and_name` (`vps_id`,`name`) USING BTREE,
-  KEY `index_vps_features_on_vps_id` (`vps_id`) USING BTREE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
+  UNIQUE KEY `index_vps_features_on_vps_id_and_name` (`vps_id`,`name`),
+  KEY `index_vps_features_on_vps_id` (`vps_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=2908 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `vps_maintenance_windows`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `vps_maintenance_windows` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `vps_id` int(11) NOT NULL,
   `weekday` int(11) NOT NULL,
   `is_open` tinyint(1) NOT NULL,
@@ -2008,13 +2497,13 @@ CREATE TABLE `vps_maintenance_windows` (
   `closes_at` int(11) DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `index_vps_maintenance_windows_on_vps_id_and_weekday` (`vps_id`,`weekday`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=2213 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `vps_migrations`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `vps_migrations` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `vps_id` int(11) NOT NULL,
   `migration_plan_id` int(11) NOT NULL,
   `state` int(11) NOT NULL DEFAULT 0,
@@ -2027,8 +2516,8 @@ CREATE TABLE `vps_migrations` (
   `finished_at` datetime /* mariadb-5.3 */ DEFAULT NULL,
   `cleanup_data` tinyint(1) DEFAULT 1,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `vps_migrations_unique` (`migration_plan_id`,`vps_id`) USING BTREE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
+  UNIQUE KEY `vps_migrations_unique` (`migration_plan_id`,`vps_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=32 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `vps_os_processes`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -2058,13 +2547,13 @@ CREATE TABLE `vps_ssh_host_keys` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `index_vps_ssh_host_keys_on_vps_id_and_algorithm` (`vps_id`,`algorithm`),
   KEY `index_vps_ssh_host_keys_on_vps_id` (`vps_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=5057 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `vps_statuses`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `vps_statuses` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `vps_id` int(11) NOT NULL,
   `status` tinyint(1) NOT NULL,
   `is_running` tinyint(1) NOT NULL,
@@ -2088,21 +2577,21 @@ CREATE TABLE `vps_statuses` (
   `loadavg1` float DEFAULT NULL,
   `loadavg15` float DEFAULT NULL,
   PRIMARY KEY (`id`),
-  KEY `index_vps_statuses_on_vps_id` (`vps_id`) USING BTREE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
+  KEY `index_vps_statuses_on_vps_id` (`vps_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=1097473 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `vpses`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `vpses` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `user_id` int(10) unsigned NOT NULL,
+  `user_id` int(63) unsigned NOT NULL,
   `hostname` varchar(255) DEFAULT 'vps',
   `os_template_id` int(10) unsigned NOT NULL DEFAULT 1,
   `info` mediumtext DEFAULT NULL,
   `dns_resolver_id` int(11) DEFAULT NULL,
-  `node_id` int(10) unsigned NOT NULL,
-  `onstartall` tinyint(1) NOT NULL DEFAULT 1,
+  `node_id` int(11) unsigned NOT NULL,
+  `onstartall` tinyint(1) unsigned NOT NULL DEFAULT 1,
   `confirmed` int(11) NOT NULL DEFAULT 0,
   `dataset_in_pool_id` int(11) DEFAULT NULL,
   `maintenance_lock` int(11) NOT NULL DEFAULT 0,
@@ -2121,16 +2610,16 @@ CREATE TABLE `vpses` (
   `allow_admin_modifications` tinyint(1) NOT NULL DEFAULT 1,
   `user_namespace_map_id` int(11) DEFAULT NULL,
   PRIMARY KEY (`id`),
-  KEY `index_vpses_on_dataset_in_pool_id` (`dataset_in_pool_id`) USING BTREE,
-  KEY `index_vpses_on_dns_resolver_id` (`dns_resolver_id`) USING BTREE,
-  KEY `index_vpses_on_node_id` (`node_id`) USING BTREE,
-  KEY `index_vpses_on_object_state` (`object_state`) USING BTREE,
-  KEY `index_vpses_on_os_template_id` (`os_template_id`) USING BTREE,
-  KEY `index_vpses_on_user_id` (`user_id`) USING BTREE,
+  KEY `index_vpses_on_user_id` (`user_id`),
+  KEY `index_vpses_on_node_id` (`node_id`),
+  KEY `index_vpses_on_os_template_id` (`os_template_id`),
+  KEY `index_vpses_on_dns_resolver_id` (`dns_resolver_id`),
+  KEY `index_vpses_on_object_state` (`object_state`),
+  KEY `index_vpses_on_dataset_in_pool_id` (`dataset_in_pool_id`),
   KEY `index_vpses_on_cgroup_version` (`cgroup_version`),
   KEY `index_vpses_on_allow_admin_modifications` (`allow_admin_modifications`),
   KEY `index_vpses_on_user_namespace_map_id` (`user_namespace_map_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=561 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
@@ -2143,6 +2632,7 @@ CREATE TABLE `vpses` (
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
 INSERT INTO `schema_migrations` (version) VALUES
+('20240618092416'),
 ('20240615123252'),
 ('20240615093116'),
 ('20240614150907'),
@@ -2160,6 +2650,9 @@ INSERT INTO `schema_migrations` (version) VALUES
 ('20240229135345'),
 ('20240126165609'),
 ('20240125124755'),
+('20240124185400-outage_reports'),
+('20240124093200-outage_reports'),
+('20240123092400-outage_reports'),
 ('20240113193809'),
 ('20240113131046'),
 ('20231229175415'),
@@ -2175,6 +2668,7 @@ INSERT INTO `schema_migrations` (version) VALUES
 ('20231203074758'),
 ('20231201191543'),
 ('20231116085008'),
+('20231105124400-monitoring'),
 ('20231031085006'),
 ('20231028151738'),
 ('20231028145905'),
@@ -2205,6 +2699,7 @@ INSERT INTO `schema_migrations` (version) VALUES
 ('20230213083054'),
 ('20230213082735'),
 ('20230213081826'),
+('20230123085900-monitoring'),
 ('20230122214018'),
 ('20221112155629'),
 ('20220920120951'),
@@ -2222,6 +2717,8 @@ INSERT INTO `schema_migrations` (version) VALUES
 ('20210529125923'),
 ('20210215160434'),
 ('20210126204326'),
+('20201129113300-outage_reports'),
+('20201126142500-requests'),
 ('20200927121503'),
 ('20200924180219'),
 ('20200922070226'),
@@ -2262,13 +2759,21 @@ INSERT INTO `schema_migrations` (version) VALUES
 ('20180416111102'),
 ('20180412063632'),
 ('20171106154702'),
+('20170908165000-requests'),
 ('20170610084155'),
+('20170419144000-requests'),
+('20170408184500-monitoring'),
 ('20170325151018'),
+('20170223191015-outage_reports'),
 ('20170204092606'),
 ('20170203122106'),
+('20170201093720-webui'),
+('20170201082030-newslog'),
 ('20170130154206'),
 ('20170130112048'),
 ('20170125153139'),
+('20170122083340-requests'),
+('20170121214350-payments'),
 ('20170120080846'),
 ('20170118160101'),
 ('20170118094034'),

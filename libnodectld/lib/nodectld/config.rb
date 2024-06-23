@@ -79,6 +79,11 @@ module NodeCtld
           urgent: 2,
           start_delay: 0
         },
+        dns: {
+          threads: 1,
+          urgent: 0,
+          start_delay: 0
+        },
         outage: {
           threads: 128,
           urgent: 0,
@@ -241,6 +246,11 @@ module NodeCtld
       debug: false,
       soft_timeout: 15,
       hard_timeout: 900
+    },
+
+    dns_server: {
+      config_root: '/var/named/vpsadmin/named.conf',
+      zone_template: '/var/named/vpsadmin/zone.%{name}'
     }
   }.freeze
 

@@ -10,6 +10,8 @@ module VpsAdmin
       module Authentication; end
       module Dataset; end
       module DatasetExpansion; end
+      module DnsServer; end
+      module DnsZone; end
       module Export; end
       module HostIpAddress; end
       module LocationNetwork; end

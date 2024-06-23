@@ -30,6 +30,13 @@ class Network < ApplicationRecord
 
   def include?(what)
     case what
+    when ::DnsZone
+      if what.zone_role != 'reverse_role'
+        raise ArgumentError, 'Can check only reverse zones, forward zone given'
+      end
+
+      addr = "#{what.reverse_network_address}/#{what.reverse_network_prefix}"
+
     when ::IpAddress # model
       addr = what.addr
 

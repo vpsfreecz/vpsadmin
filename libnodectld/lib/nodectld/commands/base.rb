@@ -114,4 +114,6 @@ module NodeCtld::Commands
   module UserNamespace; end
   module NetworkInterface; end
   module Export; end
+  module DnsServer; end
+  module DnsZone; end
 end
