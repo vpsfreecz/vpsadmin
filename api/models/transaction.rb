@@ -18,7 +18,7 @@ class Transaction < ApplicationRecord
   before_save :set_init_values
 
   validates :queue, inclusion: {
-    in: %w[general storage network vps zfs_send zfs_recv mail outage queue]
+    in: %w[general storage network vps zfs_send zfs_recv mail dns outage queue]
   }
 
   class << self
@@ -266,4 +266,6 @@ module Transactions
   module UserNamespace; end
   module NetworkInterface; end
   module Export; end
+  module DnsServer; end
+  module DnsZone; end
 end

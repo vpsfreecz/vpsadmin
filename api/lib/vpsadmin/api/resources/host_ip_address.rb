@@ -35,6 +35,7 @@ module VpsAdmin::API::Resources
       use :id
       use :common
       bool :user_created
+      string :reverse_record_value
       patch :addr, label: 'Address'
     end
 
@@ -241,6 +242,48 @@ module VpsAdmin::API::Resources
         VpsAdmin::API::Operations::HostIpAddress::Create.run(ip, input[:addr])
       rescue VpsAdmin::API::Exceptions::OperationError => e
         error("create failed: #{e.message}")
+      end
+    end
+
+    class Update < HaveAPI::Actions::Default::Update
+      desc 'Update host IP address'
+      blocking true
+
+      input do
+        use :all, include: %i[reverse_record_value]
+        patch :reverse_record_value
+      end
+
+      output do
+        use :all
+      end
+
+      authorize do |_u|
+        allow
+      end
+
+      def exec
+        host = ::HostIpAddress.find(params[:host_ip_address_id])
+
+        error('access denied') if current_user.role != :admin && host.current_owner != current_user
+
+        ptr_content = input.fetch(:reverse_record_value, '').strip
+
+        if !ptr_content.empty? && /\A((?!-)[A-Za-z0-9-]{1,63}(?<!-)\.)+[A-Za-z]{2,6}\.\Z/ !~ ptr_content
+          error('invalid reverse record value', { reverse_record_value: ['not a valid domain'] })
+        end
+
+        @chain, ret = VpsAdmin::API::Operations::HostIpAddress::Update.run(
+          host,
+          { reverse_record_value: ptr_content }
+        )
+        ret
+      rescue VpsAdmin::API::Exceptions::OperationError => e
+        error("update failed: #{e.message}")
+      end
+
+      def state_id
+        @chain && @chain.id
       end
     end
 

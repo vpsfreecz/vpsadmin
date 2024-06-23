@@ -5,7 +5,7 @@ require 'optparse'
 class Cli
   ACTIONS = %w[setup user policies].freeze
 
-  USERS = %w[console node supervisor].freeze
+  USERS = %w[api console node supervisor].freeze
 
   def self.run(args)
     cli = new(args)
@@ -27,7 +27,7 @@ class Cli
     @parser = OptionParser.new do |parser|
       parser.banner = <<~END
         Usage:
-          #{$0} user [--create] [--perms] console|node|supervisor <name...>
+          #{$0} user [--create] [--perms] #{USERS.join('|')} <name...>
           #{$0} policies
       END
       parser.on('--execute', 'Execute configuration commands') do
@@ -109,6 +109,7 @@ class Cli
   end
 
   def user_perms(type, user)
+    # permissions in order: configure, write, read
     case type
     when 'console'
       [

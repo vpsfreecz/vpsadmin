@@ -15,7 +15,8 @@ module NodeCtld::Utils
         subprocess: :Subprocess,
         outage_window: :OutageWindow,
         queue: :Queue,
-        mbuffer: :MBuffer
+        mbuffer: :MBuffer,
+        dns: :Dns
       }.freeze
 
       # Includes module from NodeCtld::Utils using mapping

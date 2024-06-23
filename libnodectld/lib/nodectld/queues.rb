@@ -10,6 +10,7 @@ module NodeCtld
       zfs_send
       zfs_recv
       mail
+      dns
       outage
       queue
       rollback
