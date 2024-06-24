@@ -13,7 +13,7 @@ module VpsAdmin::API
       api_ip_addr = request.ip
       api_ip_ptr = get_ptr(api_ip_addr)
 
-      client_ip_addr = request.env['HTTP_X_REAL_IP'] || api_ip_addr
+      client_ip_addr = request.env['HTTP_CLIENT_IP'] || request.env['HTTP_X_REAL_IP'] || api_ip_addr
       client_ip_ptr = client_ip_addr == api_ip_addr ? api_ip_ptr : get_ptr(client_ip_addr)
 
       ActiveRecord::Base.transaction do
