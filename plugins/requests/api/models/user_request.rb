@@ -15,8 +15,12 @@ class UserRequest < ApplicationRecord
     req.api_ip_addr = request.ip
     req.api_ip_ptr = req.send(:get_ptr, req.api_ip_addr)
 
-    if request.env['HTTP_X_REAL_IP']
-      req.client_ip_addr = request.env['HTTP_X_REAL_IP']
+    # Registration requests are coming from the web and change requests usually from webui
+    # using HaveAPI PHP client. Since it sets Client-IP header, prefer to using it.
+    client_ip_addr = request.env['HTTP_CLIENT_IP'] || request.env['HTTP_X_REAL_IP']
+
+    if client_ip_addr
+      req.client_ip_addr = client_ip_addr
       req.client_ip_ptr = req.send(:get_ptr, req.client_ip_addr)
     end
 
