@@ -157,7 +157,7 @@ class User < ApplicationRecord
     last_activity_at || 'never'
   end
 
-  def set_password(plaintext)
+  def set_password(plaintext, resolve_password_reset: true)
     @password_plain = plaintext
 
     VpsAdmin::API::CryptoProviders.current do |name, provider|
@@ -165,7 +165,7 @@ class User < ApplicationRecord
       self.password = provider.encrypt(login, plaintext)
     end
 
-    return unless password_reset
+    return if !password_reset || !resolve_password_reset
 
     self.password_reset = false
     self.lockout = false

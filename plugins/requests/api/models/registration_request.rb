@@ -57,7 +57,7 @@ class RegistrationRequest < UserRequest
       mailer_enabled: true,
       password_reset: true
     )
-    new_user.set_password(generate_password)
+    new_user.set_password(generate_password, resolve_password_reset: false)
 
     new_user.full_name = if org_name && !org_name.strip.empty?
                            "#{org_name} (ID #{org_id}), #{full_name}"
