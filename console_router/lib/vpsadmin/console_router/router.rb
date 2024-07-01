@@ -36,8 +36,10 @@ module VpsAdmin::ConsoleRouter
       )
       @connection.start
 
-      @rpc = RpcClient.new(@connection.create_channel)
-      @api_url = @rpc.get_api_url
+      RpcClient.run(@connection) do |rpc|
+        @api_url = rpc.get_api_url
+      end
+
       @cache = {}
       @mutex = Mutex.new
       @upkeep = Thread.new { run_upkeep }
@@ -84,7 +86,10 @@ module VpsAdmin::ConsoleRouter
         entry = @cache[k]
 
         if entry.nil? || (entry.last_check + SESSION_TIMEOUT < now)
-          node_name = @rpc.get_session_node(vps_id, session)
+          node_name = RpcClient.run(@connection) do |rpc|
+            rpc.get_session_node(vps_id, session)
+          end
+
           return if node_name.nil?
 
           entry.last_check = now if entry

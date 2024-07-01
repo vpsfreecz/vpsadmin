@@ -11,6 +11,15 @@ module VpsAdmin::ConsoleRouter
 
     HARD_TIMEOUT = 60
 
+    def self.run(connection)
+      channel = connection.create_channel
+      rpc = new(channel)
+      yield(rpc)
+    ensure
+      rpc.close if rpc
+      channel.close if channel
+    end
+
     def initialize(channel)
       @channel = channel
       @exchange = @channel.direct('console:rpc')
