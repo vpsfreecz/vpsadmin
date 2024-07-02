@@ -9,6 +9,16 @@
     };
     version = "2.3.2";
   };
+  base64 = {
+    groups = ["default"];
+    platforms = [];
+    source = {
+      remotes = ["https://rubygems.org"];
+      sha256 = "01qml0yilb9basf7is2614skjp8384h2pycfx86cr8023arfj98g";
+      type = "gem";
+    };
+    version = "0.2.0";
+  };
   bunny = {
     dependencies = ["amq-protocol" "sorted_set"];
     groups = ["default"];
@@ -106,10 +116,10 @@
     platforms = [];
     source = {
       remotes = ["https://rubygems.vpsfree.cz"];
-      sha256 = "0lkpp3rl2q8yc99pwdx0m2jkhgav0byn863lm7n98wrcyw3zli87";
+      sha256 = "19xjfjfn5v1h1qayk2illi7g73hjrzn6drcbp8zjv68p89079d0l";
       type = "gem";
     };
-    version = "3.0.0.dev.build20240609190511";
+    version = "3.0.0.dev.build20240702174916";
   };
   libosctl = {
     dependencies = ["rainbow" "require_all"];
@@ -169,10 +179,10 @@
     platforms = [];
     source = {
       remotes = ["https://rubygems.org"];
-      sha256 = "18yclv06n0cy8jqmi11sd1dl8nasc5n5r1mhan2v51j7jd3z58v3";
+      sha256 = "0rc08fxm10vv73bg0nqyp5bdvl4cvzb3y4cdk4kwmxx414zln652";
       type = "gem";
     };
-    version = "0.4.12";
+    version = "0.4.14";
   };
   net-pop = {
     dependencies = ["net-protocol"];
@@ -213,10 +223,10 @@
     platforms = [];
     source = {
       remotes = ["https://rubygems.vpsfree.cz"];
-      sha256 = "01ljhssn4pirviqa3cc7dsvypxkka5swiwid0jphgmspwlbgnm9s";
+      sha256 = "05xr9hzzwgvjr5vk794wp8kysasmvxpmyp0yh07iikbf13vnqi0h";
       type = "gem";
     };
-    version = "3.0.0.dev.build20240609190511";
+    version = "3.0.0.dev.build20240702174916";
   };
   osctl = {
     dependencies = ["curses" "gli" "highline" "ipaddress" "json" "libosctl" "rainbow" "require_all" "ruby-progressbar" "tty-spinner"];
@@ -241,14 +251,15 @@
     version = "24.05.0.build20240605095131";
   };
   prometheus-client = {
+    dependencies = ["base64"];
     groups = ["default"];
     platforms = [];
     source = {
       remotes = ["https://rubygems.org"];
-      sha256 = "1zw39rp3b6jhm9273giv119lkgqvllisxb98k7vfx7367birbqcm";
+      sha256 = "1kdm3997f0jg25vczhxsgh102b3janp7c5zsgx2z3z4gv3hjp6hv";
       type = "gem";
     };
-    version = "4.2.2";
+    version = "4.2.3";
   };
   pry = {
     dependencies = ["coderay" "method_source"];
