@@ -8,7 +8,7 @@ in {
   ];
 
   config = mkIf cfg.enable {
-    nixpkgs.overlays = import ../../../overlays;
+    vpsadmin.enableOverlay = true;
 
     vpsadmin.nodectld.settings.mode = "minimal";
 
