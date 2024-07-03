@@ -106,6 +106,11 @@ module TransactionChains
         end
       end
 
+      use_chain(NetworkInterface::CleanupHostIpAddresses, kwargs: {
+        ips: ips_arr,
+        delete: !env.user_ip_ownership
+      })
+
       use_chain(Export::DelHostsFromAll, args: [netif.vps.user, ips_arr])
     end
 
@@ -120,10 +125,6 @@ module TransactionChains
 
       unless env.user_ip_ownership
         changes[:charged_environment_id] = nil
-
-        ip.host_ip_addresses.where(user_created: true).each do |host|
-          t.just_destroy(host)
-        end
       end
 
       t.edit(ip, changes)
