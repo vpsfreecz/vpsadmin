@@ -294,6 +294,7 @@ function host_ip_address_list($page)
     $xtpl->table_add_category(_("Network"));
     $xtpl->table_add_category(_("Routed address"));
     $xtpl->table_add_category(_("Host address"));
+    $xtpl->table_add_category((_("Reverse record")));
 
     if (isAdmin()) {
         $xtpl->table_add_category(_('User'));
@@ -303,6 +304,7 @@ function host_ip_address_list($page)
 
     $xtpl->table_add_category('VPS');
     $xtpl->table_add_category('Interface');
+    $xtpl->table_add_category('');
     $xtpl->table_add_category('');
 
     $return_url = urlencode($_SERVER['REQUEST_URI']);
@@ -315,6 +317,7 @@ function host_ip_address_list($page)
         $xtpl->table_td($ip->network->address . '/' . $ip->network->prefix);
         $xtpl->table_td($ip->addr . '/' . $ip->prefix);
         $xtpl->table_td($host_addr->addr);
+        $xtpl->table_td($host_addr->reverse_record_value ? h($host_addr->reverse_record_value) : '-');
 
         if (isAdmin()) {
             if ($ip->user_id) {
@@ -337,6 +340,12 @@ function host_ip_address_list($page)
         } else {
             $xtpl->table_td('---');
         }
+
+        $xtpl->table_td(
+            '<a href="?page=networking&action=hostaddr_ptr&id=' . $host_addr->id . '&return=' . $return_url . '">' .
+            '<img src="template/icons/m_edit.png" alt="' . _('Set reverse record') . '" title="' . _('Set reverse record') . '">' .
+            '</a>'
+        );
 
         if ($host_addr->assigned) {
             $xtpl->table_td(
@@ -727,4 +736,53 @@ function ip_address_assignment_list_form()
     }
 
     $xtpl->table_out();
+}
+
+function hostaddr_reverse_record_form($id)
+{
+    global $xtpl, $api;
+
+    $addr = $api->host_ip_address->show($id, ['meta' => [
+        'includes' => 'ip_address__network,ip_address__network_interface__vps',
+    ]]);
+
+    $xtpl->table_title(_('Configure reverse record'));
+    $xtpl->sbar_add(
+        _("Back"),
+        $_GET['return'] ? $_GET['return'] : '?page=networking&action=ip_addresses'
+    );
+
+    $xtpl->form_create(
+        '?page=networking&action=hostaddr_ptr2&id=' . $addr->id . '&return=' . urlencode($_GET['return']),
+        'post'
+    );
+
+    if ($addr->ip_address->network_interface_id) {
+        $vps = $addr->ip_address->network_interface->vps;
+
+        $xtpl->table_td(_('VPS') . ':');
+        $xtpl->table_td(
+            '<a href="?page=adminvps&action=info&veid=' . $vps->id . '">#' . $vps->id . '</a>' .
+            ' ' . $vps->hostname
+        );
+        $xtpl->table_tr();
+
+        $xtpl->table_td(_('Network interface') . ':');
+        $xtpl->table_td($addr->ip_address->network_interface->name);
+        $xtpl->table_tr();
+    }
+
+    $xtpl->table_td(_('IP address') . ':');
+    $xtpl->table_td($addr->addr);
+    $xtpl->table_tr();
+
+    $xtpl->form_add_input(
+        _('Reverse record') . ':',
+        'text',
+        '30',
+        'reverse_record_value',
+        post_val('reverse_record_value', $addr->reverse_record_value)
+    );
+
+    $xtpl->form_out(_("Set"));
 }

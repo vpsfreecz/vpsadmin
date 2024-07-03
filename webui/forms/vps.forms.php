@@ -1997,11 +1997,23 @@ function vps_netif_ipaddrs_form($vps, $netif)
 
     $xtpl->table_add_category(_('Interface addresses'));
     $xtpl->table_add_category('');
+    $xtpl->table_add_category(_('Reverse record'));
+    $xtpl->table_add_category('');
+    $xtpl->table_add_category('');
     $xtpl->form_create('?page=adminvps&action=hostaddr_add&veid=' . $vps->id, 'post');
+
+    $return_url = urlencode($_SERVER['REQUEST_URI']);
 
     foreach ($ips as $ip) {
         $xtpl->table_td(host_ip_label($ip));
         $xtpl->table_td($ip->addr . '/' . $ip->ip_address->prefix);
+        $xtpl->table_td($ip->reverse_record_value ? h($ip->reverse_record_value) : '-');
+        $xtpl->table_td(
+            '<a href="?page=networking&action=hostaddr_ptr&id=' . $ip->id .
+            '&veid=' . $vps->id . '&return=' . $return_url . '" title="' . _('Set reverse record') . '">' .
+            '<img src="template/icons/m_edit.png" alt="' . _("Set reverse record") . '">' .
+            '</a>'
+        );
         $xtpl->table_td(
             '<a href="?page=adminvps&action=hostaddr_del&id=' . $ip->id .
             '&veid=' . $vps->id . '&t=' . csrf_token() . '" title="' . _('Remove') . '">' .
@@ -2022,28 +2034,31 @@ function vps_netif_ipaddrs_form($vps, $netif)
     $xtpl->form_add_select(
         _("Add public IPv4 address") . ':',
         'hostaddr_public_v4',
-        $free_4_pub,
-        '',
-        _('Add one IP address at a time')
+        $free_4_pub
     );
 
     $xtpl->form_add_select(
         _("Add private IPv4 address") . ':',
         'hostaddr_private_v4',
-        $free_4_priv,
-        '',
-        _('Add one IP address at a time')
+        $free_4_priv
     );
 
     if ($vps->node->location->has_ipv6) {
         $xtpl->form_add_select(
             _("Add public IPv6 address") . ':',
             'hostaddr_public_v6',
-            $free_6,
-            '',
-            _('Add one IP address at a time')
+            $free_6
         );
     }
+
+    $xtpl->table_td(
+        _('Add only one IP address at a time'),
+        false,
+        false,
+        2
+    );
+    $xtpl->table_tr();
+
     $xtpl->form_out(_('Go >>'));
 }
 

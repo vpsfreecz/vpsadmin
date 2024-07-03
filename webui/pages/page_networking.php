@@ -170,6 +170,27 @@ if (isLoggedIn()) {
 
             break;
 
+        case "hostaddr_ptr":
+            hostaddr_reverse_record_form($_GET['id']);
+            break;
+
+        case "hostaddr_ptr2":
+            csrf_check();
+
+            try {
+                $api->host_ip_address->update($_GET['id'], [
+                    'reverse_record_value' => $_POST['reverse_record_value'],
+                ]);
+
+                notify_user(_('Reverse record set'), '');
+                redirect($_GET['return'] ? $_GET['return'] : '?page=networking&action=ip_addresses');
+
+            } catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+                $xtpl->perex_format_errors(_('Action failed'), $e->getResponse());
+                hostaddr_reverse_record_form($_GET['id']);
+            }
+            break;
+
         case 'assignments':
             ip_address_assignment_list_form();
             break;
