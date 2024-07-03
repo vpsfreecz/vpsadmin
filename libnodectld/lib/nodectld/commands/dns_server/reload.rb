@@ -4,8 +4,11 @@ module NodeCtld
     needs :system
 
     def exec
-      syscmd('rndc reload')
-      ok
+      if @zone
+        syscmd("rndc reload #{@zone}")
+      else
+        syscmd('rndc reload')
+      end
     end
 
     def rollback

@@ -33,7 +33,11 @@ module TransactionChains
 
       dns_zone.dns_server_zones.each do |dns_server_zone|
         append_t(Transactions::DnsZone::DeleteRecord, args: [dns_server_zone, record])
-        append_t(Transactions::DnsServer::Reload, args: [dns_server_zone.dns_server])
+        append_t(
+          Transactions::DnsServer::Reload,
+          args: [dns_server_zone.dns_server],
+          kwargs: { zone: dns_zone.name }
+        )
       end
 
       if empty?

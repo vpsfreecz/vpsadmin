@@ -4,10 +4,10 @@ module Transactions::DnsServer
     t_type 5510
     queue :dns
 
-    def params(dns_server)
+    def params(dns_server, zone: nil)
       self.node_id = dns_server.node_id
 
-      {}
+      { zone: }
     end
   end
 end
