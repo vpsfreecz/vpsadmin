@@ -301,6 +301,8 @@ function network_locations_list($netId)
         'meta' => ['includes' => 'location'],
     ]);
 
+    $return_url = urlencode($_SERVER['REQUEST_URI']);
+
     foreach ($locnets as $locnet) {
         $xtpl->table_td($locnet->location->label);
         $xtpl->table_td(boolean_icon($locnet->primary));
