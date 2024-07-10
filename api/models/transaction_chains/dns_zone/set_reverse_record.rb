@@ -52,9 +52,9 @@ module TransactionChains
 
       dns_zone.dns_server_zones.each do |dns_server_zone|
         if created
-          append_t(Transactions::DnsZone::CreateRecord, args: [dns_server_zone, record])
+          append_t(Transactions::DnsServerZone::CreateRecord, args: [dns_server_zone, record])
         else
-          append_t(Transactions::DnsZone::UpdateRecord, args: [dns_server_zone, record])
+          append_t(Transactions::DnsServerZone::UpdateRecord, args: [dns_server_zone, record])
         end
 
         append_t(

@@ -1,16 +1,24 @@
+require 'base64'
 require 'ipaddress'
 
 class DnsZone < ApplicationRecord
   has_many :dns_server_zones
   has_many :dns_servers, through: :dns_server_zones
-  has_many :dns_records
-  has_many :dns_record_logs
+  has_many :dns_zone_transfers, dependent: :delete_all
+  has_many :dns_records, dependent: :delete_all
+  has_many :dns_record_logs, dependent: :delete_all
   has_many :ip_addresses, foreign_key: :reverse_dns_zone_id, dependent: :nullify
 
-  enum zone_type: %i[primary_type secondary_type]
   enum zone_role: %i[forward_role reverse_role]
+  enum zone_source: %i[internal_source external_source]
+
+  validates :tsig_algorithm, inclusion: {
+    in: %w[none hmac-sha224 hmac-sha256 hmac-sha384 hmac-sha512],
+    message: '%{value} is not a valid TSIG algorithm'
+  }
 
   validate :check_name
+  validate :check_tsig_key
 
   def include?(what)
     if zone_role != 'reverse_role'
@@ -38,6 +46,27 @@ class DnsZone < ApplicationRecord
     return if name.end_with?('.')
 
     errors.add(:name, 'not a canonical name (add trailing dot)')
+  end
+
+  def check_tsig_key
+    return if tsig_key.empty?
+
+    begin
+      return if Base64.strict_encode64(Base64.strict_decode64(tsig_key)) == tsig_key
+    rescue ArgumentError
+      # pass
+    end
+
+    errors.add(:tsig_key, 'not a valid base64 string')
+  end
+
+  # @return [Array<String>]
+  def nameservers
+    raise '#nameservers can only be called on internal zones' unless internal_source?
+
+    ret = dns_server_zones.reload.map(&:server_name)
+    ret.concat(dns_zone_transfers.map(&:server_name))
+    ret.compact
   end
 
   protected

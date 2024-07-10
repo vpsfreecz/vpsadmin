@@ -1,9 +1,8 @@
 module TransactionChains
-  class DnsZone::Create < ::TransactionChain
-    label 'Create zone'
+  class DnsServerZone::Destroy < ::TransactionChain
+    label 'Destroy zone'
 
     # @param dns_server_zone [::DnsServerZone]
-    # @return [::DnsServerZone]
     def link_chain(dns_server_zone)
       concerns(
         :affect,
@@ -11,28 +10,25 @@ module TransactionChains
         [dns_server_zone.dns_zone.class.name, dns_server_zone.dns_zone_id]
       )
 
-      # Save a list of current nameservers
-      nameservers = dns_server_zone.dns_zone.dns_servers.pluck(:name)
+      nameservers = dns_server_zone.dns_zone.nameservers if dns_server_zone.dns_zone.internal_source?
 
-      # Create the new server zone
-      dns_server_zone.save!
-
-      append_t(Transactions::DnsZone::Create, args: [dns_server_zone]) do |t|
-        t.just_create(dns_server_zone)
+      append_t(Transactions::DnsServerZone::Destroy, args: [dns_server_zone]) do |t|
+        t.just_destroy(dns_server_zone)
       end
 
       append_t(Transactions::DnsServer::Reload, args: [dns_server_zone.dns_server])
 
-      # Update the zone on all other servers for NS records
+      return if dns_server_zone.dns_zone.external_source?
+
       dns_server_zone.dns_zone.dns_server_zones.each do |other_dns_server_zone|
         next if other_dns_server_zone == dns_server_zone
 
         append_t(
-          Transactions::DnsZone::Update,
+          Transactions::DnsServerZone::Update,
           args: [other_dns_server_zone],
           kwargs: {
             new: {
-              nameservers: nameservers + [dns_server_zone.dns_server.name]
+              nameservers: nameservers - [dns_server_zone.dns_server.name]
             },
             original: {
               nameservers:
@@ -40,10 +36,14 @@ module TransactionChains
           }
         )
 
-        append_t(Transactions::DnsServer::Reload, args: [other_dns_server_zone.dns_server])
+        append_t(
+          Transactions::DnsServer::Reload,
+          args: [other_dns_server_zone.dns_server],
+          kwargs: { zone: dns_server_zone.dns_zone.name }
+        )
       end
 
-      dns_server_zone
+      nil
     end
   end
 end

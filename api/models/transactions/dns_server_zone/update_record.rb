@@ -1,4 +1,4 @@
-module Transactions::DnsZone
+module Transactions::DnsServerZone
   class UpdateRecord < ::Transaction
     t_name :dns_zone_update_record
     t_type 5505
@@ -9,6 +9,7 @@ module Transactions::DnsZone
 
       {
         name: dns_server_zone.dns_zone.name,
+        source: dns_server_zone.dns_zone.zone_source,
         serial: dns_server_zone.dns_zone.serial,
         record: {
           new: {

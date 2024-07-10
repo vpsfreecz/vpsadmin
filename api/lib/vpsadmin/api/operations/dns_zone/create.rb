@@ -10,6 +10,8 @@ module VpsAdmin::API
       ActiveRecord::Base.transaction do
         dns_zone.save!
 
+        next if dns_zone.forward_role?
+
         ::Network.all.each do |net|
           next if !net.include?(dns_zone) && !dns_zone.include?(net)
 

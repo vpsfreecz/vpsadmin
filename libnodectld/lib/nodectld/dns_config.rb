@@ -12,24 +12,35 @@ module NodeCtld
       @mutex = Mutex.new
       @zones =
         begin
-          JSON.parse(File.read(@db_file))['zones']
+          JSON.parse(File.read(@db_file), symbolize_names: true)['zones'].to_h do |name|
+            [name, DnsServerZone.new(name)]
+          end
         rescue Errno::ENOENT
           {}
         end
     end
 
-    def add_zone(dns_zone)
+    def add_zone(dns_server_zone)
       @mutex.synchronize do
-        @zones[dns_zone.name] = dns_zone.zone_file
+        @zones[dns_server_zone.name] = dns_server_zone
         save
       end
 
       nil
     end
 
-    def remove_zone(dns_zone)
+    def update_zone(dns_server_zone)
       @mutex.synchronize do
-        @zones.delete(dns_zone.name)
+        @zones[dns_server_zone.name] = dns_server_zone
+        save
+      end
+
+      nil
+    end
+
+    def remove_zone(dns_server_zone)
+      @mutex.synchronize do
+        @zones.delete(dns_server_zone.name)
         save
       end
 
@@ -40,17 +51,58 @@ module NodeCtld
 
     def save
       regenerate_file(@db_file, 0o644) do |f|
-        f.puts(JSON.pretty_generate({ zones: @zones }))
+        f.puts(JSON.pretty_generate({ zones: @zones.keys }))
       end
 
       regenerate_file(@config_root, 0o644) do |f|
-        @zones.each do |name, file|
+        @zones.each do |name, zone|
+          unless zone.enabled
+            f.puts(" # zone #{name} is disabled\n")
+            next
+          end
+
+          if zone.tsig_algorithm != 'none'
+            f.puts("key \"#{name}-key\" {")
+            f.puts("  algorithm #{zone.tsig_algorithm};")
+            f.puts("  secret \"#{zone.tsig_key}\";")
+            f.puts("};\n")
+          end
+
           f.puts("zone \"#{name}\" {")
-          f.puts('  type master;')
-          f.puts("  file \"#{file}\";")
+
+          if zone.source == 'internal_source'
+            f.puts('  type primary;')
+            f.puts("  allow-transfer { #{list_secondaries(zone, zone.secondaries)} };")
+            f.puts('  notify yes;')
+          else
+            f.puts('  type secondary;')
+            f.puts("  primaries { #{list_primaries(zone, zone.primaries)} };")
+          end
+
+          f.puts("  file \"#{zone.zone_file}\";")
           f.puts('  allow-query { any; };')
           f.puts("};\n")
         end
+      end
+    end
+
+    def list_primaries(zone, hosts)
+      hosts.map do |v|
+        if zone.tsig_algorithm == 'none'
+          "#{v};"
+        else
+          "#{v} key #{zone.name}-key;"
+        end
+      end.join(' ')
+    end
+
+    def list_secondaries(zone, hosts)
+      ret = hosts.map { |v| "#{v};" }.join(' ')
+
+      if zone.tsig_algorithm == 'none'
+        ret
+      else
+        "key #{zone.name}-key; #{ret}"
       end
     end
   end

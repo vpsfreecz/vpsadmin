@@ -1,11 +1,13 @@
 module VpsAdmin::API::Resources
-  class DnsServerZone < HaveAPI::Resource
-    model ::DnsServerZone
-    desc 'Manage authoritative DNS zones on servers'
+  class DnsZoneTransfer < HaveAPI::Resource
+    model ::DnsZoneTransfer
+    desc 'Manage DNS zone transfers'
 
     params(:common) do
-      resource DnsServer, value_label: :name
-      resource DnsZone, value_label: :name
+      resource DnsZone
+      resource HostIpAddress, value_label: :addr
+      string :peer_type, db_name: :peer_type, choices: ::DnsZoneTransfer.peer_types.keys.map(&:to_s)
+      bool :enabled
     end
 
     params(:all) do
@@ -16,11 +18,7 @@ module VpsAdmin::API::Resources
     end
 
     class Index < HaveAPI::Actions::Default::Index
-      desc 'List DNS zones on servers'
-
-      input do
-        use :common
-      end
+      desc 'List DNS zone transfers'
 
       output(:object_list) do
         use :all
@@ -31,13 +29,7 @@ module VpsAdmin::API::Resources
       end
 
       def query
-        q = self.class.model.all
-
-        %w[dns_server dns_zone].each do |v|
-          q = q.where(v => input[v]) if input[v]
-        end
-
-        q
+        self.class.model.all
       end
 
       def count
@@ -50,7 +42,7 @@ module VpsAdmin::API::Resources
     end
 
     class Show < HaveAPI::Actions::Default::Show
-      desc 'Show DNS zone on server'
+      desc 'Show DNS zone transfer'
 
       output do
         use :all
@@ -61,21 +53,20 @@ module VpsAdmin::API::Resources
       end
 
       def prepare
-        @server_zone = self.class.model.find(params[:dns_server_zone_id])
+        @zone = self.class.model.find(params[:dns_zone_transfer_id])
       end
 
       def exec
-        @server_zone
+        @zone
       end
     end
 
     class Create < HaveAPI::Actions::Default::Create
-      desc 'Add DNS zone to a server'
+      desc 'Create a DNS zone transfer'
       blocking true
 
       input do
         use :common
-        patch :dns_zone, required: true
       end
 
       output do
@@ -87,21 +78,21 @@ module VpsAdmin::API::Resources
       end
 
       def exec
-        @chain, ret = VpsAdmin::API::Operations::DnsServerZone::Create.run(input)
+        @chain, ret = VpsAdmin::API::Operations::DnsZoneTransfer::Create.run(to_db_names(input))
         ret
       rescue ActiveRecord::RecordInvalid => e
         error('create failed', e.record.errors.to_hash)
       rescue ActiveRecord::RecordNotUnique => e
-        error("zone #{input[:dns_zone].name} already is on server #{input[:dns_server].name}")
+        error("transfer between zone #{input[:dns_zone].name} and host IP #{input[:host_ip_address].ip_addr} already exists")
       end
 
       def state_id
-        @chain.id
+        @chain && @chain.id
       end
     end
 
     class Delete < HaveAPI::Actions::Default::Delete
-      desc 'Delete DNS zone from server'
+      desc 'Delete DNS zone transfer'
       blocking true
 
       authorize do |u|
@@ -109,13 +100,14 @@ module VpsAdmin::API::Resources
       end
 
       def exec
-        dns_server_zone = self.class.model.find(params[:dns_server_zone_id])
-        @chain = VpsAdmin::API::Operations::DnsServerZone::Destroy.run(dns_server_zone)
+        @chain, = VpsAdmin::API::Operations::DnsZoneTransfer::Destroy.run(self.class.model.find(params[:dns_zone_transfer_id]))
         ok
+      rescue VpsAdmin::API::Exceptions::OperationError => e
+        error(e.message)
       end
 
       def state_id
-        @chain.id
+        @chain && @chain.id
       end
     end
   end

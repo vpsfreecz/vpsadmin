@@ -2,19 +2,25 @@ require 'fileutils'
 require 'libosctl'
 
 module NodeCtld
-  class DnsZone
+  class DnsServerZone
     include OsCtl::Lib::Utils::File
 
-    attr_reader :name, :zone_file
+    attr_reader :name, :source, :zone_file, :primaries, :secondaries, :tsig_algorithm, :tsig_key, :enabled
 
-    def initialize(name:, default_ttl: nil, nameservers: nil, serial: nil, email: nil, load_db: true)
+    def initialize(name:, source:, default_ttl: nil, nameservers: nil, serial: nil, email: nil, primaries: nil, secondaries: nil, tsig_algorithm: nil, tsig_key: nil, enabled: nil, load_db: true)
       @name = name
+      @source = source
       @default_ttl = default_ttl
       @nameservers = nameservers
       @serial = serial
       @email = email
-      @zone_file = format($CFG.get(:dns_server, :zone_template), name:)
-      @db_file = "#{@zone_file}.json"
+      @primaries = primaries
+      @secondaries = secondaries
+      @tsig_algorithm = tsig_algorithm
+      @tsig_key = tsig_key
+      @enabled = enabled
+      @db_file = format($CFG.get(:dns_server, :db_template), name:, source:)
+      @zone_file = format($CFG.get(:dns_server, :zone_template), name:, source:)
       self.load_db if load_db
     end
 
@@ -25,10 +31,16 @@ module NodeCtld
         return
       end
 
+      @source ||= json['source']
       @default_ttl ||= json['default_ttl']
       @nameservers ||= json['nameservers']
       @serial ||= json['serial']
       @email ||= json['email']
+      @primaries ||= json['primaries']
+      @secondaries ||= json['secondaries']
+      @tsig_algorithm ||= json['tsig_algorithm']
+      @tsig_key ||= json['tsig_key']
+      @enabled = json['enabled'] if @enabled.nil?
       @records = json['records']
     end
 
@@ -84,16 +96,27 @@ module NodeCtld
     def dump
       {
         name: @name,
+        source: @source,
         default_ttl: @default_ttl,
         nameservers: @nameservers,
         serial: @serial,
         email: @email,
+        primaries: @primaries,
+        secondaries: @secondaries,
+        tsig_algorithm: @tsig_algorithm,
+        tsig_key: @tsig_key,
+        enabled: @enabled,
         records: @records
       }
     end
 
     def generate_zone
       FileUtils.mkdir_p(File.dirname(@zone_file))
+
+      if @source == 'external_source'
+        FileUtils.chown('named', 'named', File.dirname(@zone_file))
+        return
+      end
 
       regenerate_file(@zone_file, 0o644) do |f|
         f.puts("$ORIGIN #{@name}")

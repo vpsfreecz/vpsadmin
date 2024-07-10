@@ -8,10 +8,13 @@ module VpsAdmin::API::Resources
       string :reverse_network_address
       string :reverse_network_prefix
       string :label
-      string :type, db_name: :zone_type, choices: ::DnsZone.zone_types.keys.map(&:to_s)
       string :role, db_name: :zone_role, choices: ::DnsZone.zone_roles.keys.map(&:to_s)
+      string :source, db_name: :zone_source, choices: ::DnsZone.zone_sources.keys.map(&:to_s)
       integer :default_ttl
       string :email
+      string :tsig_algorithm, default: 'hmac-256'
+      string :tsig_key
+      bool :enabled
     end
 
     params(:all) do
@@ -85,6 +88,8 @@ module VpsAdmin::API::Resources
         VpsAdmin::API::Operations::DnsZone::Create.run(to_db_names(input))
       rescue ActiveRecord::RecordInvalid => e
         error('create failed', e.record.errors.to_hash)
+      rescue ActiveRecord::RecordNotUnique => e
+        error('zone with this name already exists')
       end
     end
 
@@ -93,7 +98,7 @@ module VpsAdmin::API::Resources
       blocking true
 
       input do
-        use :common, include: %i[label default_ttl email]
+        use :common, include: %i[label default_ttl email tsig_algorithm tsig_key enabled]
       end
 
       output do

@@ -421,6 +421,8 @@ module TransactionChains
   module Lifetimes; end
   module DnsResolver; end
   module DnsZone; end
+  module DnsServerZone; end
+  module DnsZoneTransfer; end
   module Mail; end
   module MigrationPlan; end
   module Maintenance; end

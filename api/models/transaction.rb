@@ -267,5 +267,5 @@ module Transactions
   module NetworkInterface; end
   module Export; end
   module DnsServer; end
-  module DnsZone; end
+  module DnsServerZone; end
 end
