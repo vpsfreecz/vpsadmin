@@ -359,6 +359,42 @@ CREATE TABLE `default_user_cluster_resource_packages` (
   UNIQUE KEY `default_user_cluster_resource_packages_unique` (`environment_id`,`cluster_resource_package_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `dns_record_logs`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `dns_record_logs` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `dns_zone_id` bigint(20) NOT NULL,
+  `change_type` int(11) NOT NULL,
+  `name` varchar(255) NOT NULL,
+  `record_type` varchar(10) NOT NULL,
+  `content` text NOT NULL,
+  `created_at` datetime(6) NOT NULL,
+  `updated_at` datetime(6) NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `index_dns_record_logs_on_dns_zone_id` (`dns_zone_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `dns_records`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `dns_records` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `dns_zone_id` bigint(20) NOT NULL,
+  `name` varchar(255) NOT NULL,
+  `record_type` varchar(10) NOT NULL,
+  `content` text NOT NULL,
+  `ttl` int(11) DEFAULT NULL,
+  `priority` int(11) DEFAULT NULL,
+  `enabled` tinyint(1) NOT NULL DEFAULT 1,
+  `host_ip_address_id` bigint(20) DEFAULT NULL,
+  `created_at` datetime(6) NOT NULL,
+  `updated_at` datetime(6) NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `index_dns_records_on_host_ip_address_id` (`host_ip_address_id`),
+  KEY `index_dns_records_on_dns_zone_id` (`dns_zone_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `dns_resolvers`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
@@ -370,6 +406,80 @@ CREATE TABLE `dns_resolvers` (
   `location_id` int(10) unsigned DEFAULT NULL,
   `ip_version` int(11) DEFAULT 4,
   PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `dns_server_zones`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `dns_server_zones` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `dns_server_id` bigint(20) NOT NULL,
+  `dns_zone_id` bigint(20) NOT NULL,
+  `created_at` datetime(6) NOT NULL,
+  `updated_at` datetime(6) NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `index_dns_server_zones_on_dns_server_id_and_dns_zone_id` (`dns_server_id`,`dns_zone_id`),
+  KEY `index_dns_server_zones_on_dns_server_id` (`dns_server_id`),
+  KEY `index_dns_server_zones_on_dns_zone_id` (`dns_zone_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `dns_servers`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `dns_servers` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `node_id` bigint(20) NOT NULL,
+  `name` varchar(255) NOT NULL,
+  `ipv4_addr` varchar(46) DEFAULT NULL,
+  `ipv6_addr` varchar(46) DEFAULT NULL,
+  `enable_user_dns_zones` tinyint(1) NOT NULL DEFAULT 0,
+  `created_at` datetime(6) NOT NULL,
+  `updated_at` datetime(6) NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `index_dns_servers_on_name` (`name`),
+  KEY `index_dns_servers_on_node_id` (`node_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `dns_zone_transfers`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `dns_zone_transfers` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `dns_zone_id` bigint(20) NOT NULL,
+  `host_ip_address_id` bigint(20) NOT NULL,
+  `peer_type` int(11) NOT NULL DEFAULT 0,
+  `created_at` datetime(6) NOT NULL,
+  `updated_at` datetime(6) NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `index_dns_zone_transfers_on_dns_zone_id_and_host_ip_address_id` (`dns_zone_id`,`host_ip_address_id`),
+  KEY `index_dns_zone_transfers_on_dns_zone_id` (`dns_zone_id`),
+  KEY `index_dns_zone_transfers_on_host_ip_address_id` (`host_ip_address_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `dns_zones`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `dns_zones` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `user_id` bigint(20) DEFAULT NULL,
+  `name` varchar(500) NOT NULL,
+  `reverse_network_address` varchar(46) DEFAULT NULL,
+  `reverse_network_prefix` int(11) DEFAULT NULL,
+  `label` varchar(500) NOT NULL DEFAULT '',
+  `zone_role` int(11) NOT NULL DEFAULT 0,
+  `zone_source` int(11) NOT NULL DEFAULT 0,
+  `default_ttl` int(11) DEFAULT 3600,
+  `email` varchar(255) DEFAULT NULL,
+  `serial` int(10) unsigned DEFAULT 1,
+  `tsig_algorithm` varchar(20) NOT NULL DEFAULT 'none',
+  `tsig_key` varchar(255) NOT NULL DEFAULT '',
+  `enabled` tinyint(1) NOT NULL DEFAULT 1,
+  `created_at` datetime(6) NOT NULL,
+  `updated_at` datetime(6) NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `index_dns_zones_on_name` (`name`),
+  KEY `index_dns_zones_on_user_id` (`user_id`),
+  KEY `index_dns_zones_on_zone_source` (`zone_source`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `environment_dataset_plans`;
@@ -486,8 +596,10 @@ CREATE TABLE `host_ip_addresses` (
   `order` int(11) DEFAULT NULL,
   `auto_add` tinyint(1) NOT NULL DEFAULT 1,
   `user_created` tinyint(1) NOT NULL DEFAULT 0,
+  `reverse_dns_record_id` bigint(20) DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `index_host_ip_addresses_on_ip_address_id_and_ip_addr` (`ip_address_id`,`ip_addr`),
+  UNIQUE KEY `index_host_ip_addresses_on_reverse_dns_record_id` (`reverse_dns_record_id`),
   KEY `index_host_ip_addresses_on_ip_address_id` (`ip_address_id`),
   KEY `index_host_ip_addresses_on_auto_add` (`auto_add`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
@@ -565,12 +677,14 @@ CREATE TABLE `ip_addresses` (
   `network_interface_id` int(11) DEFAULT NULL,
   `route_via_id` int(11) DEFAULT NULL,
   `charged_environment_id` int(11) DEFAULT NULL,
+  `reverse_dns_zone_id` bigint(20) DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `index_ip_addresses_on_network_id` (`network_id`) USING BTREE,
   KEY `index_ip_addresses_on_user_id` (`user_id`) USING BTREE,
   KEY `index_ip_addresses_on_network_interface_id` (`network_interface_id`),
   KEY `index_ip_addresses_on_route_via_id` (`route_via_id`),
-  KEY `index_ip_addresses_on_charged_environment_id` (`charged_environment_id`)
+  KEY `index_ip_addresses_on_charged_environment_id` (`charged_environment_id`),
+  KEY `index_ip_addresses_on_reverse_dns_zone_id` (`reverse_dns_zone_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `ip_traffic_monthly_summaries`;
@@ -2143,6 +2257,7 @@ CREATE TABLE `vpses` (
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
 INSERT INTO `schema_migrations` (version) VALUES
+('20240618092416'),
 ('20240615123252'),
 ('20240615093116'),
 ('20240614150907'),
