@@ -129,10 +129,11 @@ module NodeCtld
 
         @records.each do |r|
           line = format(
-            '%-25s %4s  IN  %-8s %s',
+            '%-25s %4s  IN  %-8s %2s %s',
             r['name'],
             r['ttl'] ? r['ttl'].to_s : '',
             r['type'],
+            r['priority'] ? r['priority'].to_s : '',
             r['content']
           )
           f.puts(line)

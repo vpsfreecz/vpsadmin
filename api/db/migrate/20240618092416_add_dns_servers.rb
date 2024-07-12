@@ -52,6 +52,7 @@ class AddDnsServers < ActiveRecord::Migration[7.1]
       t.string      :record_type,             null: false, limit: 10
       t.text        :content,                 null: false, limit: 64_000
       t.integer     :ttl,                     null: true
+      t.integer     :priority,                null: true
       t.boolean     :enabled,                 null: false, default: true
       t.references  :host_ip_address,         null: true,  index: false
       t.timestamps                            null: false

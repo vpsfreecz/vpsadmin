@@ -17,14 +17,16 @@ module Transactions::DnsServerZone
             name: dns_record.name,
             type: dns_record.record_type,
             content: dns_record.content,
-            ttl: dns_record.ttl
+            ttl: dns_record.ttl,
+            priority: dns_record.priority
           },
           original: {
             id: dns_record.id,
             name: dns_record.name,
             type: dns_record.record_type,
             content: dns_record.content_was,
-            ttl: dns_record.ttl_was
+            ttl: dns_record.ttl_was,
+            priority: dns_record.priority_was
           }
         }
       }
