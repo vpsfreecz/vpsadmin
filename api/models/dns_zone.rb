@@ -13,6 +13,11 @@ class DnsZone < ApplicationRecord
   enum zone_role: %i[forward_role reverse_role]
   enum zone_source: %i[internal_source external_source]
 
+  validates :name, format: {
+    with: /\A((?!-)[A-Za-z0-9-]{1,63}(?<!-)\.)+[A-Za-z]{2,6}\.\Z/,
+    message: '%{value} is not a valid zone name'
+  }
+
   validates :tsig_algorithm, inclusion: {
     in: %w[none hmac-sha224 hmac-sha256 hmac-sha384 hmac-sha512],
     message: '%{value} is not a valid TSIG algorithm'
