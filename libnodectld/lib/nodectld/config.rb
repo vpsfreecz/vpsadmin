@@ -250,8 +250,8 @@ module NodeCtld
 
     dns_server: {
       config_root: '/var/named/vpsadmin/named.conf',
-      zone_template: '/var/named/vpsadmin/%{source}/zone.%{name}',
-      db_template: '/var/named/vpsadmin/db/zone.%{name}.json'
+      zone_template: '/var/named/vpsadmin/%{source}/%{name}zone',
+      db_template: '/var/named/vpsadmin/db/%{name}json'
     }
   }.freeze
 
