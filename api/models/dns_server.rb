@@ -11,4 +11,8 @@ class DnsServer < ApplicationRecord
 
     errors.add(:name, 'must not have a trailing dot')
   end
+
+  def addr
+    node.ip_addr
+  end
 end

@@ -13,8 +13,8 @@ module VpsAdmin::API::Resources
       string :source, db_name: :zone_source, choices: ::DnsZone.zone_sources.keys.map(&:to_s)
       integer :default_ttl
       string :email
-      string :tsig_algorithm, default: 'hmac-256'
-      string :tsig_key
+      string :tsig_algorithm, label: 'TSIG algorithm', default: 'hmac-256'
+      string :tsig_key, label: 'TSIG key'
       bool :enabled
     end
 
@@ -29,6 +29,10 @@ module VpsAdmin::API::Resources
     class Index < HaveAPI::Actions::Default::Index
       desc 'List DNS zones'
 
+      input do
+        use :common, include: %i[user role source enabled]
+      end
+
       output(:object_list) do
         use :all
       end
@@ -36,11 +40,19 @@ module VpsAdmin::API::Resources
       authorize do |u|
         allow if u.role == :admin
         restrict user_id: u.id
+        input whitelist: %i[role source enabled]
         allow
       end
 
       def query
-        self.class.model.where(with_restricted)
+        q = self.class.model.where(with_restricted)
+        db_input = to_db_names(input)
+
+        %i[user zone_role zone_source enabled].each do |v|
+          q = q.where(v => db_input[v]) if db_input.has_key?(v)
+        end
+
+        q
       end
 
       def count
@@ -48,7 +60,7 @@ module VpsAdmin::API::Resources
       end
 
       def exec
-        query.limit(input[:limit]).offset(input[:offset])
+        with_includes(query).limit(input[:limit]).offset(input[:offset])
       end
     end
 

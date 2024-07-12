@@ -28,10 +28,12 @@ module VpsAdmin::API::Resources
 
       authorize do |u|
         allow if u.role == :admin
+        restrict dns_zones: { user_id: u.id }
+        allow
       end
 
       def query
-        q = self.class.model.all
+        q = self.class.model.joins(:dns_zone).where(with_restricted)
 
         %w[dns_server dns_zone].each do |v|
           q = q.where(v => input[v]) if input[v]
@@ -45,7 +47,7 @@ module VpsAdmin::API::Resources
       end
 
       def exec
-        query.limit(input[:limit]).offset(input[:offset])
+        with_includes(query).limit(input[:limit]).offset(input[:offset])
       end
     end
 
@@ -58,10 +60,12 @@ module VpsAdmin::API::Resources
 
       authorize do |u|
         allow if u.role == :admin
+        restrict dns_zones: { user_id: u.id }
+        allow
       end
 
       def prepare
-        @server_zone = self.class.model.find(params[:dns_server_zone_id])
+        @server_zone = with_includes(self.class.model.joins(:dns_zone).where(with_restricted(id: params[:dns_server_zone_id]))).take!
       end
 
       def exec

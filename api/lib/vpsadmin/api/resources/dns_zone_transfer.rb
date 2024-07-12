@@ -7,7 +7,6 @@ module VpsAdmin::API::Resources
       resource DnsZone
       resource HostIpAddress, value_label: :addr
       string :peer_type, db_name: :peer_type, choices: ::DnsZoneTransfer.peer_types.keys.map(&:to_s)
-      bool :enabled
     end
 
     params(:all) do
@@ -20,16 +19,28 @@ module VpsAdmin::API::Resources
     class Index < HaveAPI::Actions::Default::Index
       desc 'List DNS zone transfers'
 
+      input do
+        use :common, include: %i[dns_zone host_ip_address peer_type]
+      end
+
       output(:object_list) do
         use :all
       end
 
       authorize do |u|
         allow if u.role == :admin
+        restrict dns_zones: { user_id: u.id }
+        allow
       end
 
       def query
-        self.class.model.all
+        q = self.class.model.joins(:dns_zone).where(with_restricted)
+
+        %i[dns_zone host_ip_address peer_type].each do |v|
+          q = q.where(v => input[v]) if input.has_key?(v)
+        end
+
+        q
       end
 
       def count
@@ -37,7 +48,7 @@ module VpsAdmin::API::Resources
       end
 
       def exec
-        query.limit(input[:limit]).offset(input[:offset])
+        with_includes(query).limit(input[:limit]).offset(input[:offset])
       end
     end
 
@@ -50,10 +61,12 @@ module VpsAdmin::API::Resources
 
       authorize do |u|
         allow if u.role == :admin
+        restrict dns_zones: { user_id: u.id }
+        allow
       end
 
       def prepare
-        @zone = self.class.model.find(params[:dns_zone_transfer_id])
+        @zone = self.class.model.joins(:dns_zone).find_by!(with_restricted(id: params[:dns_zone_transfer_id]))
       end
 
       def exec
@@ -75,9 +88,15 @@ module VpsAdmin::API::Resources
 
       authorize do |u|
         allow if u.role == :admin
+        restrict dns_zones: { user_id: u.id }
+        allow
       end
 
       def exec
+        if current_user.role != :admin && input[:dns_zone].user != current_user
+          error('access denied')
+        end
+
         @chain, ret = VpsAdmin::API::Operations::DnsZoneTransfer::Create.run(to_db_names(input))
         ret
       rescue ActiveRecord::RecordInvalid => e
@@ -97,10 +116,13 @@ module VpsAdmin::API::Resources
 
       authorize do |u|
         allow if u.role == :admin
+        restrict dns_zones: { user_id: u.id }
+        allow
       end
 
       def exec
-        @chain, = VpsAdmin::API::Operations::DnsZoneTransfer::Destroy.run(self.class.model.find(params[:dns_zone_transfer_id]))
+        transfer = self.class.model.joins(:dns_zone).find_by!(with_restricted(id: params[:dns_zone_transfer_id]))
+        @chain, = VpsAdmin::API::Operations::DnsZoneTransfer::Destroy.run(transfer)
         ok
       rescue VpsAdmin::API::Exceptions::OperationError => e
         error(e.message)

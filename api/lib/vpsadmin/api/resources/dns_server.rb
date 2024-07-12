@@ -6,6 +6,7 @@ module VpsAdmin::API::Resources
     params(:common) do
       resource Node, value_label: :domain_name
       string :name
+      string :addr
       bool :enable_user_dns_zones
     end
 
@@ -25,10 +26,12 @@ module VpsAdmin::API::Resources
 
       authorize do |u|
         allow if u.role == :admin
+        restrict enable_user_dns_zones: true
+        allow
       end
 
       def query
-        self.class.model.all
+        self.class.model.where(with_restricted)
       end
 
       def count
@@ -36,7 +39,7 @@ module VpsAdmin::API::Resources
       end
 
       def exec
-        query.limit(input[:limit]).offset(input[:offset])
+        with_includes(query).limit(input[:limit]).offset(input[:offset])
       end
     end
 
@@ -49,10 +52,12 @@ module VpsAdmin::API::Resources
 
       authorize do |u|
         allow if u.role == :admin
+        restrict enable_user_dns_zones: true
+        allow
       end
 
       def prepare
-        @server = self.class.model.find(params[:dns_server_id])
+        @server = with_includes(self.class.model.where(with_restricted(id: params[:dns_server_id]))).take!
       end
 
       def exec
