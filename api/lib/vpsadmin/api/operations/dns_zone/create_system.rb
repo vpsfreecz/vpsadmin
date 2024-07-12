@@ -1,9 +1,9 @@
 require 'vpsadmin/api/operations/base'
 
 module VpsAdmin::API
-  class Operations::DnsZone::Create < Operations::Base
+  class Operations::DnsZone::CreateSystem < Operations::Base
     # @param attrs [Hash]
-    # @return [::DnsZone]
+    # @return [Array(nil, ::DnsZone)]
     def run(attrs)
       dns_zone = ::DnsZone.new(**attrs)
 
@@ -23,7 +23,7 @@ module VpsAdmin::API
         end
       end
 
-      dns_zone
+      [nil, dns_zone]
     end
   end
 end

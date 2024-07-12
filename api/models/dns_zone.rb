@@ -2,6 +2,7 @@ require 'base64'
 require 'ipaddress'
 
 class DnsZone < ApplicationRecord
+  belongs_to :user
   has_many :dns_server_zones
   has_many :dns_servers, through: :dns_server_zones
   has_many :dns_zone_transfers, dependent: :delete_all
@@ -18,6 +19,8 @@ class DnsZone < ApplicationRecord
   }
 
   validate :check_name
+  validate :check_role
+  validate :check_source
   validate :check_tsig_key
 
   def include?(what)
@@ -42,11 +45,27 @@ class DnsZone < ApplicationRecord
     net_addr { |n| n.include?(IPAddress.parse(addr)) }
   end
 
-  def check_name
-    return if name.end_with?('.')
+  # rubocop:disable Style/GuardClause
 
-    errors.add(:name, 'not a canonical name (add trailing dot)')
+  def check_name
+    unless name.end_with?('.')
+      errors.add(:name, 'not a canonical name (add trailing dot)')
+    end
   end
+
+  def check_role
+    if reverse_role? && user_id
+      errors.add(:zone_role, 'user-owned zones cannot be reverse')
+    end
+  end
+
+  def check_source
+    if internal_source? && user_id
+      errors.add(:zone_source, 'user-owned zones must be external')
+    end
+  end
+
+  # rubocop:enable Style/GuardClause
 
   def check_tsig_key
     return if tsig_key.empty?

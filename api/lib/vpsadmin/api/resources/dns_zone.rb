@@ -5,6 +5,7 @@ module VpsAdmin::API::Resources
 
     params(:common) do
       string :name
+      resource User, value_label: :login
       string :reverse_network_address
       string :reverse_network_prefix
       string :label
@@ -34,10 +35,12 @@ module VpsAdmin::API::Resources
 
       authorize do |u|
         allow if u.role == :admin
+        restrict user_id: u.id
+        allow
       end
 
       def query
-        self.class.model.all
+        self.class.model.where(with_restricted)
       end
 
       def count
@@ -58,10 +61,13 @@ module VpsAdmin::API::Resources
 
       authorize do |u|
         allow if u.role == :admin
+
+        restrict user_id: u.id
+        allow
       end
 
       def prepare
-        @zone = self.class.model.find(params[:dns_zone_id])
+        @zone = self.class.model.find_by!(with_restricted(id: params[:dns_zone_id]))
       end
 
       def exec
@@ -71,6 +77,7 @@ module VpsAdmin::API::Resources
 
     class Create < HaveAPI::Actions::Default::Create
       desc 'Create a DNS zone'
+      blocking true
 
       input do
         use :common
@@ -82,14 +89,28 @@ module VpsAdmin::API::Resources
 
       authorize do |u|
         allow if u.role == :admin
+        input whitelist: %i[name label tsig_algorithm tsig_key enabled]
+        allow
       end
 
       def exec
-        VpsAdmin::API::Operations::DnsZone::Create.run(to_db_names(input))
+        op =
+          if current_user.role != :admin || input[:user]
+            VpsAdmin::API::Operations::DnsZone::CreateUser
+          else
+            VpsAdmin::API::Operations::DnsZone::CreateSystem
+          end
+
+        @chain, ret = op.run(to_db_names(input))
+        ret
       rescue ActiveRecord::RecordInvalid => e
         error('create failed', e.record.errors.to_hash)
       rescue ActiveRecord::RecordNotUnique => e
         error('zone with this name already exists')
+      end
+
+      def state_id
+        @chain && @chain.id
       end
     end
 
@@ -107,11 +128,13 @@ module VpsAdmin::API::Resources
 
       authorize do |u|
         allow if u.role == :admin
+        restrict user_id: u.id
+        allow
       end
 
       def exec
         @chain, ret = VpsAdmin::API::Operations::DnsZone::Update.run(
-          self.class.model.find(params[:dns_zone_id]),
+          self.class.model.find_by!(with_restricted(id: params[:dns_zone_id])),
           to_db_names(input)
         )
         ret
@@ -124,16 +147,32 @@ module VpsAdmin::API::Resources
 
     class Delete < HaveAPI::Actions::Default::Delete
       desc 'Delete DNS zone'
+      blocking true
 
       authorize do |u|
         allow if u.role == :admin
+        restrict user_id: u.id
+        allow
       end
 
       def exec
-        VpsAdmin::API::Operations::DnsZone::Destroy.run(self.class.model.find(params[:dns_zone_id]))
+        zone = self.class.model.find_by!(with_restricted(id: params[:dns_zone_id]))
+
+        op =
+          if current_user.role != :admin || zone.user_id
+            VpsAdmin::API::Operations::DnsZone::DestroyUser
+          else
+            VpsAdmin::API::Operations::DnsZone::DestroySystem
+          end
+
+        @chain = op.run(zone)
         ok
       rescue VpsAdmin::API::Exceptions::OperationError => e
         error(e.message)
+      end
+
+      def state_id
+        @chain && @chain.id
       end
     end
   end

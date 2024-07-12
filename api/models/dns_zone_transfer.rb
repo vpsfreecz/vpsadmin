@@ -5,6 +5,7 @@ class DnsZoneTransfer < ApplicationRecord
   enum peer_type: %i[primary_type secondary_type]
 
   validate :check_peer_type
+  validate :check_ownership
 
   def ip_addr
     host_ip_address.ip_addr
@@ -22,5 +23,13 @@ class DnsZoneTransfer < ApplicationRecord
     elsif dns_zone.external_source? && secondary_type?
       errors.add(:peer_type, 'external zone can only have primary_type transfers')
     end
+  end
+
+  def check_ownership
+    # rubocop:disable Style/GuardClause
+    if dns_zone.user && dns_zone.user != host_ip_address.current_owner
+      errors.add(:host_ip_address, 'target address does not belong to your account')
+    end
+    # rubocop:enable Style/GuardClause
   end
 end

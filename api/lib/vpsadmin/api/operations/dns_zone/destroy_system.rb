@@ -1,7 +1,7 @@
 require 'vpsadmin/api/operations/base'
 
 module VpsAdmin::API
-  class Operations::DnsZone::Destroy < Operations::Base
+  class Operations::DnsZone::DestroySystem < Operations::Base
     # @param dns_zone [::DnsZone]
     def run(dns_zone)
       if dns_zone.dns_server_zones.any?

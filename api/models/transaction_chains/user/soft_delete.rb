@@ -28,6 +28,10 @@ module TransactionChains
         use_chain(Export::Update, args: [ex, { enabled: false }])
       end
 
+      user.dns_zones.each do |dns_zone|
+        use_chain(DnsZone::Update, args: [dns_zone, { enabled: false }])
+      end
+
       user.user_sessions.where.not(token: nil).each(&:close!)
 
       user.single_sign_ons.destroy_all
