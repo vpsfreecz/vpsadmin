@@ -262,6 +262,15 @@ module TransactionChains
         kwargs: { userns_map: cur_userns_map }
       )
 
+      # Remove DNS zone transfers from chowned IPs
+      vps.ip_addresses.each do |ip|
+        ip.host_ip_addresses.each do |host_ip|
+          host_ip.dns_zone_transfers.each do |zone_transfer|
+            use_chain(DnsZoneTransfer::Destroy, args: [zone_transfer])
+          end
+        end
+      end
+
       # Transfer exports of the VPS's own datasets / snapshots
       chown_exports = []
 
