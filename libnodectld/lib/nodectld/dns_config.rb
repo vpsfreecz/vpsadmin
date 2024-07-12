@@ -56,8 +56,11 @@ module NodeCtld
 
       regenerate_file(@config_root, 0o644) do |f|
         @zones.each do |name, zone|
-          unless zone.enabled
+          if !zone.enabled
             f.puts(" # zone #{name} is disabled\n")
+            next
+          elsif zone.source == 'external_source' && zone.primaries.empty?
+            f.puts(" # zone #{name} has no primaries")
             next
           end
 
