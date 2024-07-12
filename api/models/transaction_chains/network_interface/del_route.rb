@@ -106,6 +106,14 @@ module TransactionChains
         end
       end
 
+      ips_arr.each do |ip|
+        ip.host_ip_addresses.each do |host_ip|
+          host_ip.dns_zone_transfers.each do |zone_transfer|
+            use_chain(DnsZoneTransfer::Destroy, args: [zone_transfer])
+          end
+        end
+      end
+
       use_chain(NetworkInterface::CleanupHostIpAddresses, kwargs: {
         ips: ips_arr,
         delete: !env.user_ip_ownership

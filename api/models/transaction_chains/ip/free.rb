@@ -24,6 +24,14 @@ module TransactionChains
 
       return if ips.empty?
 
+      ips.each do |ip|
+        ip.host_ip_addresses.each do |host_ip|
+          host_ip.dns_zone_transfers.each do |zone_transfer|
+            use_chain(DnsZoneTransfer::Destroy, args: [zone_transfer])
+          end
+        end
+      end
+
       append_t(Transactions::Utils::NoOp, args: find_node_id) do |t|
         ips.each do |ip|
           t.edit(ip, user_id: nil, charged_environment_id: nil)

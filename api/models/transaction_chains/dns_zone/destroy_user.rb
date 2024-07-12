@@ -5,6 +5,7 @@ module TransactionChains
 
     # @param dns_zone [::DnsZone]
     def link_chain(dns_zone)
+      lock(dns_zone)
       concerns(:affect, [dns_zone.class.name, dns_zone.id])
 
       dns_zone.dns_server_zones.each do |dns_server_zone|

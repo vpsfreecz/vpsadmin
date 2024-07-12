@@ -8,6 +8,7 @@ module TransactionChains
     def link_chain(dns_zone)
       dns_zone.save!
 
+      lock(dns_zone)
       concerns(:affect, [dns_zone.class.name, dns_zone.id])
 
       ::DnsServer.where(enable_user_dns_zones: true).each do |dns_server|

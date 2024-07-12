@@ -28,6 +28,8 @@ class DnsZone < ApplicationRecord
   validate :check_source
   validate :check_tsig_key
 
+  include Lockable
+
   def include?(what)
     if zone_role != 'reverse_role'
       raise '#include? can be called only on reverse zones'

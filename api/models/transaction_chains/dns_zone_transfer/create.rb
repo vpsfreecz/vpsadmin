@@ -12,6 +12,8 @@ module TransactionChains
       )
 
       dns_zone = zone_transfer.dns_zone
+      lock(dns_zone)
+
       base_nameservers = dns_zone.nameservers if dns_zone.internal_source?
       base_primaries = dns_zone.dns_zone_transfers.primary_type.map(&:ip_addr)
       base_secondaries = dns_zone.dns_zone_transfers.secondary_type.map(&:ip_addr)

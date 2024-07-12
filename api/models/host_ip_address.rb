@@ -3,6 +3,7 @@ class HostIpAddress < ApplicationRecord
   has_many :routed_via_addresses,
            class_name: 'IpAddress', foreign_key: :route_via_id
   belongs_to :reverse_dns_record, class_name: 'DnsRecord'
+  has_many :dns_zone_transfers
 
   include Lockable
 
