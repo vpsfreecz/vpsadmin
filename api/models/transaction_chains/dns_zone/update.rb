@@ -53,15 +53,7 @@ module TransactionChains
           }
         )
 
-        # Disabled zones or external zones without any configured primaries are not
-        # enabled in bind configuration and a targeted reload would fail.
-        reload_zone = !dns_zone.enabled_changed? && (dns_zone.internal_source? || dns_zone.dns_zone_transfers.primary_type.any?)
-
-        append_t(
-          Transactions::DnsServer::Reload,
-          args: [dns_server_zone.dns_server],
-          kwargs: reload_zone ? { zone: dns_zone.name } : {}
-        )
+        append_t(Transactions::DnsServer::Reload, args: [dns_server_zone.dns_server])
       end
 
       if empty?

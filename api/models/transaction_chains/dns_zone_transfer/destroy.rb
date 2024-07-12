@@ -45,11 +45,7 @@ module TransactionChains
           kwargs: update_kwargs
         )
 
-        append_t(
-          Transactions::DnsServer::Reload,
-          args: [dns_server_zone.dns_server],
-          kwargs: { zone: dns_server_zone.dns_zone.name }
-        )
+        append_t(Transactions::DnsServer::Reload, args: [dns_server_zone.dns_server])
       end
 
       if empty?
