@@ -25,6 +25,7 @@ module VpsAdmin::API::Resources
       integer :prefix, label: 'Prefix'
       integer :size, label: 'Size'
       bool :assigned, label: 'Assigned'
+      bool :routed, label: 'Routed'
     end
 
     params(:common) do
@@ -55,7 +56,7 @@ module VpsAdmin::API::Resources
       authorize do |u|
         allow if u.role == :admin
         input whitelist: %i[location network version role purpose addr prefix vps
-                            network_interface ip_address assigned order
+                            network_interface ip_address assigned routed order
                             limit offset]
         output blacklist: %i[user_created]
         allow
@@ -122,6 +123,14 @@ module VpsAdmin::API::Resources
                   ips.where.not(order: nil)
                 else
                   ips.where(order: nil)
+                end
+        end
+
+        if input.has_key?(:routed) && !input[:routed].nil?
+          ips = if input[:routed]
+                  ips.where.not(ip_addresses: { network_interface_id: nil })
+                else
+                  ips.where(ip_addresses: { network_interface_id: nil })
                 end
         end
 
