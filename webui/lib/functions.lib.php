@@ -821,6 +821,9 @@ function transaction_concern_link($klass, $row_id)
         case 'Export':
             return '<a href="?page=export&action=edit&export=' . $row_id . '">' . $row_id . '</a>';
 
+        case 'DnsZone':
+            return '<a href="?page=dns&action=zone_show&id=' . $row_id . '">' . $row_id . '</a>';
+
         default:
             return "$row_id";
     }

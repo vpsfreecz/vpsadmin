@@ -48,6 +48,9 @@
 			case 'Export':
 				return '<a href="?page=export&action=edit&export='+ obj[1] +'">'+ obj[1] +'</a>';
 
+			case 'DnsZone':
+				return '<a href="?page=dns&action=zone_show&id='+ obj[1] +'">'+ obj[1] +'</a>';
+
 			default:
 				return obj[1];
 		}

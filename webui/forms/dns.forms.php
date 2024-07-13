@@ -1,0 +1,595 @@
+<?php
+
+function dns_submenu()
+{
+    global $xtpl;
+
+    if (isAdmin()) {
+        $xtpl->sbar_add(_('Servers'), '?page=dns&action=server_list');
+        $xtpl->sbar_add(_('All zones'), '?page=dns&action=zone_list');
+    }
+
+    $xtpl->sbar_add(_('Secondary zones'), '?page=dns&action=secondary_zone_list');
+    $xtpl->sbar_add(_('Reverse records'), '?page=dns&action=ptr_list');
+}
+
+function dns_server_list()
+{
+    global $xtpl, $api;
+
+    $xtpl->table_title(_('DNS servers'));
+
+    $servers = $api->dns_server->list(['meta' => ['includes' => 'node']]);
+
+    $xtpl->table_add_category(_('Node'));
+    $xtpl->table_add_category(_('Name'));
+    $xtpl->table_add_category(_('IPv4'));
+    $xtpl->table_add_category(_('IPv6'));
+    $xtpl->table_add_category(_('User zones'));
+
+    foreach ($servers as $s) {
+        $xtpl->table_td(node_link($s->node));
+        $xtpl->table_td(h($s->name));
+        $xtpl->table_td($s->ipv4_addr ? h($s->ipv4_addr) : '-');
+        $xtpl->table_td($s->ipv6_addr ? h($s->ipv6_addr) : '-');
+        $xtpl->table_td(boolean_icon($s->enable_user_dns_zones));
+        $xtpl->table_tr();
+    }
+
+    $xtpl->table_out();
+}
+
+function dns_zone_list($filters = [])
+{
+    global $xtpl, $api;
+
+    $xtpl->table_title(_('Filters'));
+    $xtpl->form_create('', 'get', 'user-session-filter', false);
+
+    $xtpl->form_set_hidden_fields([
+        'page' => 'dns',
+        'action' => 'secondary_zones',
+        'list' => '1',
+    ]);
+
+    $xtpl->form_add_input(_('Limit') . ':', 'text', '40', 'limit', get_val('limit', '25'), '');
+    $xtpl->form_add_input(_("Offset") . ':', 'text', '40', 'offset', get_val('offset', '0'), '');
+
+    if (isAdmin()) {
+        $xtpl->form_add_input(_("User") . ':', 'text', '40', 'user', get_val('user', ''), '');
+    }
+
+    $xtpl->form_out(_('Show'));
+
+    $params = [
+        'limit' => get_val('limit', 25),
+        'offset' => get_val('offset', 0),
+    ];
+
+    $params = array_merge($params, $filters);
+
+    $conds = ['user'];
+
+    foreach ($conds as $c) {
+        if ($_GET[$c]) {
+            $params[$c] = $_GET[$c];
+        }
+    }
+
+    $params['meta'] = [
+        'includes' => 'user',
+    ];
+
+    $zones = $api->dns_zone->list($params);
+
+    if (isAdmin()) {
+        $xtpl->table_add_category(_("User"));
+    }
+
+    $xtpl->table_add_category(_('Name'));
+
+    if (isAdmin()) {
+        $xtpl->table_add_category(_('Role'));
+        $xtpl->table_add_category(_('Source'));
+    }
+
+    $xtpl->table_add_category(_('Enabled'));
+    $xtpl->table_add_category('');
+    $xtpl->table_add_category('');
+
+    foreach ($zones as $z) {
+        if (isAdmin()) {
+            $xtpl->table_td($z->user_id ? user_link($z->user) : '-');
+        }
+
+        $xtpl->table_td(h($z->name));
+
+        if (isAdmin()) {
+            $xtpl->table_td($z->role);
+            $xtpl->table_td($z->source);
+        }
+
+        $xtpl->table_td(boolean_icon($z->enabled));
+
+        $xtpl->table_td(
+            '<a href="?page=dns&action=zone_show&id=' . $z->id . '&return_url=' . urlencode($_SERVER['REQUEST_URI']) . '"><img src="template/icons/vps_edit.png" alt="' . _('Details') . '" title="' . _('Details') . '"></a>'
+        );
+
+
+        $xtpl->table_td(
+            '<a href="?page=dns&action=zone_delete&id=' . $z->id . '&return_url=' . urlencode($_SERVER['REQUEST_URI']) . '"><img src="template/icons/vps_delete.png" alt="' . _('Delete zone') . '" title="' . _('Delete zone') . '"></a>'
+        );
+        $xtpl->table_tr();
+    }
+
+    $xtpl->table_out();
+}
+
+function dns_zone_show($id)
+{
+    global $xtpl, $api;
+
+    $zone = $api->dns_zone->show($id);
+
+    $xtpl->table_title(_('Zone') . ' ' . h($zone->name));
+    $xtpl->form_create('?page=dns&action=zone_update&id=' . $zone->id, 'post');
+
+    $updateInput = $api->dns_zone->update->getParameters('input');
+
+    if (isAdmin()) {
+        $xtpl->table_td(_('User') . ':');
+        $xtpl->table_td($zone->user_id ? user_link($zone->user) : '-');
+        $xtpl->table_tr();
+    }
+
+    $xtpl->table_td(_('Name') . ':');
+    $xtpl->table_td(h($zone->name));
+    $xtpl->table_tr();
+
+    $xtpl->table_td(_('Source') . ':');
+    $xtpl->table_td($zone->source);
+    $xtpl->table_tr();
+
+    $xtpl->table_td(_('Role') . ':');
+    $xtpl->table_td($zone->role);
+    $xtpl->table_tr();
+
+    if (isAdmin() && $zone->role == 'reverse_role') {
+        $xtpl->table_td(_('Reverse network') . ':');
+        $xtpl->table_td($zone->reverse_network_address . '/' . $zone->reverse_network_prefix);
+        $xtpl->table_tr();
+    }
+
+    if (isAdmin() && $zone->source == 'internal_source') {
+
+        api_param_to_form('default_ttl', $updateInput->default_ttl, $zone->default_ttl);
+        api_param_to_form('email', $updateInput->email, $zone->email);
+    }
+
+    api_param_to_form('tsig_algorithm', $updateInput->tsig_algorithm, $zone->tsig_algorithm);
+    api_param_to_form('tsig_key', $updateInput->tsig_key, $zone->tsig_key);
+    api_param_to_form('enabled', $updateInput->enabled, $zone->enabled);
+
+    $xtpl->form_out(_('Save'));
+
+    $xtpl->table_title(_('Name servers'));
+
+    $serverZones = $api->dns_server_zone->list([
+        'dns_zone' => $zone->id,
+        'meta' => ['includes' => 'dns_server'],
+    ]);
+
+    $xtpl->table_add_category(_('Server'));
+    $xtpl->table_add_category(_('IPv4 address'));
+    $xtpl->table_add_category(_('IPv6 address'));
+
+    if (isAdmin()) {
+        $xtpl->table_add_category('');
+    }
+
+    foreach ($serverZones as $sz) {
+        $xtpl->table_td(h($sz->dns_server->name));
+        $xtpl->table_td($sz->dns_server->ipv4_addr ? h($sz->dns_server->ipv4_addr) : '-');
+        $xtpl->table_td($sz->dns_server->ipv6_addr ? h($sz->dns_server->ipv6_addr) : '-');
+
+        if (isAdmin()) {
+            $xtpl->table_td('<a href="?page=dns&action=server_zone_del&id=' . $zone->id . '&server_zone = ' . $sz->id . '"><img src="template/icons/vps_delete.png" alt="' . _('Remove from server') . '" title="' . _('Remove from server') . '"></a>');
+        };
+
+        $xtpl->table_tr();
+    }
+
+    if (isAdmin()) {
+        $xtpl->table_td(
+            '<a href="?page=dns&action=server_zone_new&id=' . $zone->id . '">' . _('Add server') . '</a>',
+            false,
+            true,
+            4
+        );
+        $xtpl->table_tr();
+    }
+
+    $xtpl->table_out();
+
+    $xtpl->table_title(_('Transfers'));
+
+    $zoneTransfers = $api->dns_zone_transfer->list([
+        'dns_zone' => $zone->id,
+        'meta' => ['includes' => 'host_ip_address'],
+    ]);
+
+    $xtpl->table_add_category(_('Host IP address'));
+    $xtpl->table_add_category(_('Peer type'));
+    $xtpl->table_add_category('');
+
+    foreach ($zoneTransfers as $zt) {
+        $xtpl->table_td($zt->host_ip_address->addr);
+        $xtpl->table_td($zt->peer_type);
+        $xtpl->table_td('<a href="?page=dns&action=zone_transfer_delete&id=' . $zone->id . '&transfer=' . $zt->id . '&t=' . csrf_token() . '"><img src="template/icons/vps_delete.png" alt="' . _('Remove transfer') . '" title="' . _('Remove transfer') . '"></a>');
+        $xtpl->table_tr();
+    }
+
+    $xtpl->table_td(
+        '<a href="?page=dns&action=zone_transfer_new&id=' . $zone->id . '">' . _('Add transfer') . '</a>',
+        false,
+        true,
+        3
+    );
+    $xtpl->table_tr();
+
+    $xtpl->table_out();
+
+    if ($zone->source == 'external_source') {
+        dns_bind_primary_example($zone, $serverZones);
+    }
+}
+
+function dns_zone_delete($id)
+{
+    global $xtpl, $api;
+
+    $zone = $api->dns_zone->show($id);
+
+    $xtpl->table_title(_('Delete zone') . ' ' . h($zone->name));
+    $xtpl->form_create('?page=dns&action=zone_delete2&id=' . $zone->id, 'post');
+
+    $xtpl->form_set_hidden_fields([
+        'return_url' => $_GET['return_url'] ?? $_POST['return_url'],
+    ]);
+
+    if (isAdmin()) {
+        $xtpl->table_td(_('User') . ':');
+        $xtpl->table_td($zone->user_id ? user_link($zone->user) : '-');
+        $xtpl->table_tr();
+    }
+
+    $xtpl->table_td(_('Name') . ':');
+    $xtpl->table_td(h($zone->name));
+    $xtpl->table_tr();
+
+    $xtpl->table_td(_('Source') . ':');
+    $xtpl->table_td($zone->source);
+    $xtpl->table_tr();
+
+    $xtpl->table_td(_('Role') . ':');
+    $xtpl->table_td($zone->role);
+    $xtpl->table_tr();
+
+    if (isAdmin() && $zone->role == 'reverse_role') {
+        $xtpl->table_td(_('Reverse network') . ':');
+        $xtpl->table_td($zone->reverse_network_address . '/' . $zone->reverse_network_prefix);
+        $xtpl->table_tr();
+    }
+
+    $xtpl->form_add_checkbox(_('Confirm') . ':', 'confirm', '1');
+
+    $xtpl->form_out(_('Delete'));
+}
+
+function dns_zone_transfer_new($id)
+{
+    global $xtpl, $api;
+
+    $zone = $api->dns_zone->show($id);
+
+    $xtpl->title(_('Add transfer to zone') . ' ' . h($zone->name));
+    $xtpl->form_create('?page=dns&action=zone_transfer_new2&id=' . $zone->id, 'post');
+
+    $params = [
+        'purpose' => 'vps',
+        'routed' => true,
+        'meta' => ['includes' => 'ip_address__network_interface__vps'],
+    ];
+
+    if (isAdmin() && $zone->user_id) {
+        $params['user'] = $zone->user_id;
+    }
+
+    $xtpl->form_add_select(
+        _('Host IP address') . ':',
+        'host_ip_address',
+        resource_list_to_options(
+            $api->host_ip_address->list($params),
+            'id',
+            'addr',
+            false,
+            function ($hostIp) {
+                $netif = $hostIp->ip_address->network_interface;
+                $hostname = h($netif->vps->hostname);
+                return "VPS {$netif->vps->id} {$hostname} - {$netif->name} - {$hostIp->addr}";
+            }
+        )
+    );
+
+    $xtpl->form_out(_('Add'));
+}
+
+function secondary_dns_zone_list()
+{
+    global $xtpl;
+
+    $xtpl->title(_('Secondary DNS zones'));
+
+    dns_zone_list([
+        'source' => 'external_source',
+        'role' => 'forward_role',
+    ]);
+
+    $xtpl->sbar_add(_('New secondary zone'), '?page=dns&action=secondary_zone_new');
+}
+
+function secondary_dns_zone_new()
+{
+    global $xtpl, $api;
+
+    $xtpl->title(_('Create a new secondary DNS zone'));
+
+    $xtpl->form_create('?page=dns&action=secondary_zone_new2', 'post');
+
+    $input = $api->dns_zone->create->getParameters('input');
+
+    if (isAdmin()) {
+        $xtpl->form_add_input(_('User ID') . ':', 'text', '30', 'user', post_val('user'));
+    }
+
+    api_param_to_form('name', $input->name);
+    api_param_to_form('tsig_algorithm', $input->tsig_algorithm);
+    api_param_to_form('tsig_key', $input->tsig_key);
+
+    $xtpl->form_out(_('Create zone'));
+}
+
+function dns_ptr_list()
+{
+    global $xtpl, $api;
+
+    $xtpl->title(_('Reverse records'));
+    $xtpl->table_title(_('Filters'));
+    $xtpl->form_create('', 'get', 'ip-filter', false);
+
+    $xtpl->table_td(
+        _("Limit") . ':' .
+        '<input type="hidden" name="page" value="dns">' .
+        '<input type="hidden" name="action" value="ptr_list">' .
+        '<input type="hidden" name="list" value="1">'
+    );
+    $xtpl->form_add_input_pure('text', '40', 'limit', get_val('limit', '25'), '');
+    $xtpl->table_tr();
+
+    $versions = [
+        0 => 'all',
+        4 => '4',
+        6 => '6',
+    ];
+
+    $xtpl->form_add_input(_("Offset") . ':', 'text', '40', 'offset', get_val('offset', '0'), '');
+    $xtpl->form_add_select(_("Version") . ':', 'v', $versions, get_val('v', 0));
+
+    if (isAdmin()) {
+        $xtpl->form_add_input(_("User ID") . ':', 'text', '40', 'user', get_val('user'));
+    }
+
+    $xtpl->form_add_input(_("VPS") . ':', 'text', '40', 'vps', get_val('vps'));
+    $xtpl->form_add_select(
+        _("Network") . ':',
+        'network',
+        resource_list_to_options(
+            $api->network->list(['purpose' => 'vps']),
+            'id',
+            'label',
+            true,
+            'network_label'
+        ),
+        get_val('network')
+    );
+    $xtpl->form_add_select(
+        _("Location") . ':',
+        'location',
+        resource_list_to_options($api->location->list()),
+        get_val('location')
+    );
+
+    $xtpl->form_out(_('Show'));
+
+    $params = [
+        'limit' => get_val('limit', 25),
+        'offset' => get_val('offset', 0),
+        'purpose' => 'vps',
+        'routed' => true,
+        'meta' => [
+            'includes' => 'ip_address__user,ip_address__network_interface__vps,' .
+                          'ip_address__network',
+        ],
+    ];
+
+    if (isAdmin()) {
+        if ($_GET['user']) {
+            $params['user'] = $_GET['user'];
+        }
+    }
+
+    if ($_GET['vps']) {
+        $params['vps'] = $_GET['vps'];
+    }
+
+    if ($_GET['network']) {
+        $params['network'] = $_GET['network'];
+    }
+
+    if ($_GET['location']) {
+        $params['location'] = $_GET['location'];
+    }
+
+    if ($_GET['v']) {
+        $params['version'] = $_GET['v'];
+    }
+
+    $host_addrs = $api->host_ip_address->list($params);
+
+    if (isAdmin()) {
+        $xtpl->table_add_category(_('User'));
+    } else {
+        $xtpl->table_add_category(_('Owned'));
+    }
+
+    $xtpl->table_add_category('VPS');
+    $xtpl->table_add_category('Interface');
+
+    $xtpl->table_add_category(_("Host address"));
+    $xtpl->table_add_category((_("Reverse record")));
+
+    $xtpl->table_add_category('');
+
+    $return_url = urlencode($_SERVER['REQUEST_URI']);
+
+    foreach ($host_addrs as $host_addr) {
+        $ip = $host_addr->ip_address;
+        $netif = $ip->network_interface_id ? $ip->network_interface : null;
+        $vps = $netif ? $netif->vps : null;
+
+        if (isAdmin()) {
+            if ($ip->user_id) {
+                $xtpl->table_td('<a href="?page=adminm&action=edit&id=' . $ip->user_id . '">' . $ip->user->login . '</a>');
+            } else {
+                $xtpl->table_td('---');
+            }
+        } else {
+            $xtpl->table_td(boolean_icon($ip->user_id));
+        }
+
+        if ($vps) {
+            $xtpl->table_td('<a href="?page=adminvps&action=info&veid=' . $vps->id . '">' . $vps->id . ' (' . h($vps->hostname) . ')</a>');
+        } else {
+            $xtpl->table_td('---');
+        }
+
+        if ($netif) {
+            $xtpl->table_td($host_addr->assigned ? $netif->name : ('<span style="color: #A6A6A6">' . $netif->name . '</span>'));
+        } else {
+            $xtpl->table_td('---');
+        }
+
+        $xtpl->table_td($host_addr->addr);
+        $xtpl->table_td($host_addr->reverse_record_value ? h($host_addr->reverse_record_value) : '-');
+
+        $xtpl->table_td(
+            '<a href="?page=networking&action=hostaddr_ptr&id=' . $host_addr->id . '&return=' . $return_url . '">' .
+            '<img src="template/icons/m_edit.png" alt="' . _('Set reverse record') . '" title="' . _('Set reverse record') . '">' .
+            '</a>'
+        );
+
+        $xtpl->table_tr();
+    }
+
+    $xtpl->table_out();
+}
+
+function dns_bind_primary_example($zone, $serverZones)
+{
+    global $xtpl;
+
+    $xtpl->table_title(_('Example bind configuration'));
+
+    $zoneFile = '/etc/bind/zones/db.' . $zone->name;
+    $zoneKey = $zone->name . '-key';
+    $secondaryIps = implode(
+        ' ',
+        array_map(function ($sz) {
+            $ip = $sz->dns_server->ipv4_addr ? $sz->dns_server->ipv4_addr : $sz->dns_server->ipv6_addr;
+            return $ip . ';';
+        }, $serverZones->asArray())
+    );
+
+    $bindExample = <<<END
+        # /etc/bind/named.conf:
+
+        END;
+
+    if ($zone->tsig_algorithm != 'none') {
+        $bindExample .= <<<END
+            key "$zoneKey" {
+                algorithm {$zone->tsig_algorithm};
+                secret "{$zone->tsig_key}";
+            };
+
+            zone "{$zone->name}" {
+                type primary;
+                file "$zoneFile";
+                allow-transfer { key $zoneKey; $secondaryIps };
+                notify yes;
+            };
+
+            END;
+    } else {
+        $bindExample .= <<<END
+            zone "{$zone->name}" {
+                type primary;
+                file "$zoneFile";
+                allow-transfer { $secondaryIps };
+                notify yes;
+            };
+
+            END;
+    }
+
+    $nameserverRecords = implode(
+        "\n",
+        array_map(function ($sz) {
+            return "        IN NS    {$sz->dns_server->name}";
+        }, $serverZones->asArray())
+    );
+
+    $bindExample .= <<<END
+
+        # $zoneFile:
+        \$TTL 3600         ; Default TTL (1 hour)
+        @       IN SOA   ns1.{$zone->name} hostmaster.{$zone->name} (
+                        2023071201 ; Serial number (YYYYMMDDNN format)
+                        3600       ; Refresh (1 hour)
+                        1800       ; Retry (30 minutes)
+                        1209600    ; Expire (2 weeks)
+                        86400      ; Minimum TTL (1 day)
+        )
+
+        ; Name servers
+                IN NS    ns1.{$zone->name}
+        $nameserverRecords
+
+        ; A records for name servers
+        ns1     IN A     ns1.{$zone->name}
+
+        ; A and AAAA records for the website
+        www     IN A     192.0.2.3
+        www     IN AAAA  2001:db8::3
+
+        ; MX record for mail server
+        @       IN MX    10 mail.{$zone->name}
+        mail    IN A     192.0.2.4
+        END;
+
+    $xtpl->table_td(
+        '<textarea cols="80" rows="40" readonly>' . h($bindExample) . '</textarea>'
+    );
+    $xtpl->table_tr();
+    $xtpl->table_out();
+}

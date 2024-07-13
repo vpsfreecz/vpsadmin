@@ -53,6 +53,7 @@ include WWW_ROOT . 'forms/userns.forms.php';
 include WWW_ROOT . 'forms/oom_reports.forms.php';
 include WWW_ROOT . 'forms/node.forms.php';
 include WWW_ROOT . 'forms/incidents.forms.php';
+include WWW_ROOT . 'forms/dns.forms.php';
 
 include WWW_ROOT . 'lib/gettext_stream.lib.php';
 include WWW_ROOT . 'lib/gettext_inc.lib.php';
@@ -208,6 +209,9 @@ try {
             case 'node':
                 include WWW_ROOT . 'pages/page_node.php';
                 break;
+            case 'dns':
+                include WWW_ROOT . 'pages/page_dns.php';
+                break;
             default:
                 include WWW_ROOT . 'pages/page_index.php';
         }
@@ -238,6 +242,7 @@ if (isLoggedIn()) {
         $xtpl->menu_add(_("Exports"), '?page=export', ($_GET["page"] == 'export'));
         $xtpl->menu_add(_("User namespaces"), '?page=userns', ($_GET["page"] == 'userns'));
         $xtpl->menu_add(_("Networking"), '?page=networking', ($_GET["page"] == 'networking'));
+        $xtpl->menu_add(_("DNS"), '?page=dns', ($_GET["page"] == 'dns'));
         $xtpl->menu_add(_("Cluster"), '?page=cluster', ($_GET["page"] == 'cluster'));
         $xtpl->menu_add(_("Transaction log"), '?page=transactions', ($_GET["page"] == 'transactions'), true);
     } else {
@@ -256,6 +261,7 @@ if (isLoggedIn()) {
         }
 
         $xtpl->menu_add(_("Networking"), '?page=networking', ($_GET["page"] == 'networking'));
+        $xtpl->menu_add(_("DNS"), '?page=dns', ($_GET["page"] == 'dns'));
         $xtpl->menu_add(_("Transaction log"), '?page=transactions', ($_GET["page"] == 'transactions'), true);
     }
 
