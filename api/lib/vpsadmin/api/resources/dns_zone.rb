@@ -13,8 +13,8 @@ module VpsAdmin::API::Resources
       string :source, db_name: :zone_source, choices: ::DnsZone.zone_sources.keys.map(&:to_s)
       integer :default_ttl
       string :email
-      string :tsig_algorithm, label: 'TSIG algorithm', default: 'hmac-256'
-      string :tsig_key, label: 'TSIG key'
+      string :tsig_algorithm, label: 'TSIG algorithm', default: 'hmac-256', desc: 'Optional '
+      string :tsig_key, label: 'TSIG key', desc: 'Optional'
       bool :enabled
     end
 
@@ -150,6 +150,8 @@ module VpsAdmin::API::Resources
           to_db_names(input)
         )
         ret
+      rescue ActiveRecord::RecordInvalid => e
+        error('update failed', e.record.errors.to_hash)
       end
 
       def state_id
