@@ -30,7 +30,7 @@ module TransactionChains
       end
 
       db_attrs = {}
-      db_attrs[:label] = attrs[:label] if attrs.has_key?(:label)
+      db_attrs[:label] = dns_zone.label_was if attrs.has_key?(:label)
 
       new_attrs = {}
       original_attrs = {}
@@ -57,13 +57,13 @@ module TransactionChains
         append_t(Transactions::DnsServer::Reload, args: [dns_server_zone.dns_server])
       end
 
-      if empty?
-        dns_zone.save!
-      else
-        append_t(Transactions::Utils::NoOp, args: find_node_id) do |t|
-          db_attrs.update(new_attrs)
-          t.edit(dns_zone, **db_attrs)
-        end
+      dns_zone.save!
+
+      return dns_zone if empty?
+
+      append_t(Transactions::Utils::NoOp, args: find_node_id) do |t|
+        db_attrs.update(original_attrs)
+        t.edit_before(dns_zone, **db_attrs)
       end
 
       dns_zone
