@@ -18,6 +18,9 @@ module VpsAdmin::API
           net.ip_addresses.each do |ip|
             next unless dns_zone.include?(ip)
 
+            # In case the networks overlap, prefer more specific prefix
+            next if ip.reverse_dns_zone && ip.reverse_dns_zone.reverse_network_prefix > dns_zone.reverse_network_prefix
+
             ip.update!(reverse_dns_zone: dns_zone)
           end
         end
