@@ -116,8 +116,17 @@ module VpsAdmin::MailTemplates
             @api.authenticate(:token, token: File.new(@opts[:load]).read.strip)
 
           else
-            u, p = get_credentials
-            @api.authenticate(:token, user: u, password: p, lifetime: @opts[:lifetime])
+            user, password = get_credentials
+
+            @api.authenticate(:token, user:, password:, lifetime: @opts[:lifetime]) do |_action, params|
+              ret = {}
+
+              params.each do |name, desc|
+                ret[name] = read_auth_param(name, desc)
+              end
+
+              ret
+            end
 
             if @opts[:save]
               token = @api.auth.token
@@ -143,6 +152,15 @@ module VpsAdmin::MailTemplates
       end.to_s
 
       [@opts[:user], @opts[:password]]
+    end
+
+    def read_auth_param(name, p)
+      prompt = "#{p[:label] || name}: "
+
+      ask(prompt) do |q|
+        q.default = nil
+        q.echo = !p[:protected]
+      end
     end
   end
 end
