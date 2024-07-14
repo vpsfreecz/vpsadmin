@@ -50,7 +50,16 @@ class DnsZone < ApplicationRecord
       return net_addr { |n| n.include?(what) }
     end
 
-    net_addr { |n| n.include?(IPAddress.parse(addr)) }
+    net_addr do |net|
+      self_v = net.ipv4? ? 4 : 6
+
+      check_addr = IPAddress.parse(addr)
+      check_v = check_addr.ipv4? ? 4 : 6
+
+      next(false) if self_v != check_v
+
+      net.include?(check_addr)
+    end
   end
 
   # rubocop:disable Style/GuardClause

@@ -50,7 +50,14 @@ class Network < ApplicationRecord
       return net_addr { |n| n.include?(what) }
     end
 
-    net_addr { |n| n.include?(IPAddress.parse(addr)) }
+    net_addr do |net|
+      check_addr = IPAddress.parse(addr)
+      check_v = check_addr.ipv4? ? 4 : 6
+
+      next(false) if ip_version != check_v
+
+      net.include?(check_addr)
+    end
   end
 
   def to_s
