@@ -33,6 +33,9 @@ module TransactionChains
 
       dns_zone.dns_server_zones.each do |dns_server_zone|
         append_t(Transactions::DnsServerZone::DeleteRecord, args: [dns_server_zone, record])
+
+        next unless dns_server_zone.dns_zone.enabled
+
         append_t(
           Transactions::DnsServer::Reload,
           args: [dns_server_zone.dns_server],

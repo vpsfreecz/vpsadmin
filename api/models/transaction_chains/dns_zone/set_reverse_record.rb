@@ -57,6 +57,8 @@ module TransactionChains
           append_t(Transactions::DnsServerZone::UpdateRecord, args: [dns_server_zone, record])
         end
 
+        next unless dns_server_zone.dns_zone.enabled
+
         append_t(
           Transactions::DnsServer::Reload,
           args: [dns_server_zone.dns_server],
