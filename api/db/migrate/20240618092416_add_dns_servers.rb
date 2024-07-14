@@ -3,6 +3,8 @@ class AddDnsServers < ActiveRecord::Migration[7.1]
     create_table :dns_servers do |t|
       t.references  :node,                    null: false
       t.string      :name,                    null: false, limit: 255
+      t.string      :ipv4_addr,               null: true,  limit: 46
+      t.string      :ipv6_addr,               null: true,  limit: 46
       t.boolean     :enable_user_dns_zones,   null: false, default: false
       t.timestamps                            null: false
     end

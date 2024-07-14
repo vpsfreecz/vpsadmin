@@ -4,7 +4,8 @@ class DnsServer < ApplicationRecord
   has_many :dns_zones, through: :dns_server_zones
 
   validates :name, presence: true
-  validate :name, :check_name
+  validate :check_name
+  validate :check_ip_addresses
 
   def check_name
     return unless name.end_with?('.')
@@ -12,7 +13,10 @@ class DnsServer < ApplicationRecord
     errors.add(:name, 'must not have a trailing dot')
   end
 
-  def addr
-    node.ip_addr
+  def check_ip_addresses
+    return if ipv4_addr || ipv6_addr
+
+    errors.add(:ipv4_addr, 'provide at least one address')
+    errors.add(:ipv6_addr, 'provide at least one address')
   end
 end

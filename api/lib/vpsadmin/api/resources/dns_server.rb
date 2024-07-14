@@ -6,7 +6,8 @@ module VpsAdmin::API::Resources
     params(:common) do
       resource Node, value_label: :domain_name
       string :name
-      string :addr
+      string :ipv4_addr
+      string :ipv6_addr
       bool :enable_user_dns_zones
     end
 
