@@ -6,6 +6,8 @@ module TransactionChains
     # @param ips [Array<::IpAddress>]
     # @param delete [Boolean] delete user-created host IP addresses
     def link_chain(ips:, delete:)
+      return unless delete
+
       to_delete = []
 
       ips.each do |ip|
@@ -13,7 +15,7 @@ module TransactionChains
 
         ip.host_ip_addresses.each do |host|
           use_chain(DnsZone::UnsetReverseRecord, args: [host]) if host.reverse_dns_record
-          to_delete << host if delete && host.user_created
+          to_delete << host
         end
       end
 
