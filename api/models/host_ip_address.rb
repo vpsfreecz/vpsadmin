@@ -27,7 +27,7 @@ class HostIpAddress < ApplicationRecord
   end
 
   def reverse_record_domain
-    ip = ip_address.to_ip
+    ip = IPAddress.parse(ip_addr)
 
     case ip_address.network.ip_version
     when 4
