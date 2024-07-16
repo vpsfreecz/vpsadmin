@@ -31,6 +31,13 @@ module TransactionChains
         user:,
         charged_environment: env
       )
+
+      return if user
+
+      use_chain(NetworkInterface::CleanupHostIpAddresses, kwargs: {
+        ips: [@ip],
+        delete: true
+      })
     end
 
     def reallocate_user(u, e, n)
