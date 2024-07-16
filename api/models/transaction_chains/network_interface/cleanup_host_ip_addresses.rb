@@ -21,7 +21,7 @@ module TransactionChains
 
       return if to_delete.empty?
 
-      append_t(Transaction::Utils::NoOp, args: find_node_id) do |t|
+      append_t(Transactions::Utils::NoOp, args: find_node_id) do |t|
         to_delete.each do |host|
           t.just_destroy(host)
         end
