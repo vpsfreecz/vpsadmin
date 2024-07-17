@@ -127,7 +127,7 @@ module NodeCtld
           f.puts("  IN  NS #{ns}.")
         end
 
-        @records.each do |r|
+        sort_records.each do |r|
           line = format(
             '%-25s %4s  IN  %-8s %2s %s',
             r['name'],
@@ -139,6 +139,23 @@ module NodeCtld
           f.puts(line)
         end
       end
+    end
+
+    def sort_records
+      all_integers = @records.all? { |r| /\A\d+\Z/ =~ r['name'] }
+
+      @records.sort do |a, b|
+        sort_key(a, all_integers) <=> sort_key(b, all_integers)
+      end
+    end
+
+    def sort_key(r, all_integers)
+      [
+        all_integers ? r['name'].to_i : r['name'],
+        r['type'],
+        r['priority'] || 0,
+        r['ttl'] || @default_ttl
+      ]
     end
   end
 end
