@@ -12,8 +12,8 @@ module NodeCtld
       @mutex = Mutex.new
       @zones =
         begin
-          JSON.parse(File.read(@db_file), symbolize_names: true)['zones'].to_h do |name|
-            [name, DnsServerZone.new(name)]
+          JSON.parse(File.read(@db_file))['zones'].to_h do |name, zone|
+            [name, DnsServerZone.new(name:, source: zone['source'])]
           end
         rescue Errno::ENOENT
           {}
@@ -55,7 +55,11 @@ module NodeCtld
 
     def save
       regenerate_file(@db_file, 0o644) do |f|
-        f.puts(JSON.pretty_generate({ zones: @zones.keys }))
+        save_zones = @zones.transform_values do |zone|
+          { source: zone.source }
+        end
+
+        f.puts(JSON.pretty_generate({ zones: save_zones }))
       end
 
       regenerate_file(@config_root, 0o644) do |f|
