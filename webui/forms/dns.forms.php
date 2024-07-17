@@ -39,7 +39,7 @@ function dns_server_list()
     $xtpl->table_out();
 }
 
-function dns_zone_list($filters = [])
+function dns_zone_list($filters = [], $onEmpty = null)
 {
     global $xtpl, $api;
 
@@ -120,6 +120,22 @@ function dns_zone_list($filters = [])
             '<a href="?page=dns&action=zone_delete&id=' . $z->id . '&return_url=' . urlencode($_SERVER['REQUEST_URI']) . '"><img src="template/icons/vps_delete.png" alt="' . _('Delete zone') . '" title="' . _('Delete zone') . '"></a>'
         );
         $xtpl->table_tr();
+    }
+
+    if ($zones->count() == 0) {
+        $cols = isAdmin() ? 7 : 4;
+
+        if ($onEmpty) {
+            $onEmpty($cols);
+        } else {
+            $xtpl->table_td(
+                _('No zones found.'),
+                false,
+                false,
+                $cols
+            );
+            $xtpl->table_tr();
+        }
     }
 
     $xtpl->table_out();
@@ -330,10 +346,23 @@ function secondary_dns_zone_list()
 
     $xtpl->title(_('Secondary DNS zones'));
 
-    dns_zone_list([
-        'source' => 'external_source',
-        'role' => 'forward_role',
-    ]);
+    dns_zone_list(
+        [
+            'source' => 'external_source',
+            'role' => 'forward_role',
+        ],
+        function ($cols) {
+            global $xtpl;
+
+            $xtpl->table_td(
+                '<a href="?page=dns&action=secondary_zone_new">' . _('Create new secondary zone') . '</a>.',
+                false,
+                false,
+                $cols
+            );
+            $xtpl->table_tr();
+        }
+    );
 
     $xtpl->sbar_add(_('New secondary zone'), '?page=dns&action=secondary_zone_new');
 }
