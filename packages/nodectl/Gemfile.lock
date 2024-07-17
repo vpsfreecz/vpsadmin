@@ -42,12 +42,15 @@ GEM
     rainbow (3.1.1)
     rbtree (0.4.6)
     require_all (2.0.0)
+    rexml (3.3.2)
+      strscan
     ruby-progressbar (1.11.0)
     set (1.1.0)
     slop (3.6.0)
     sorted_set (1.0.3)
       rbtree
       set (~> 1.0)
+    strscan (3.1.0)
     timeout (0.4.1)
     tty-cursor (0.7.1)
     tty-spinner (0.9.3)
@@ -56,7 +59,7 @@ GEM
 GEM
   remote: https://rubygems.vpsfree.cz/
   specs:
-    libnodectld (3.0.0.dev.build20240717084407)
+    libnodectld (3.0.0.dev.build20240717203530)
       bunny (~> 2.22.0)
       filelock
       ipaddress (~> 0.8.3)
@@ -70,12 +73,13 @@ GEM
       pry (~> 0.14.2)
       pry-remote
       require_all (~> 2.0.0)
+      rexml (~> 3.3)
     libosctl (24.05.0.build20240716123725)
       rainbow (~> 3.1.1)
       require_all (~> 2.0.0)
-    nodectl (3.0.0.dev.build20240717084407)
+    nodectl (3.0.0.dev.build20240717203530)
       json
-      libnodectld (= 3.0.0.dev.build20240717084407)
+      libnodectld (= 3.0.0.dev.build20240717203530)
       libosctl (= 24.05.0.build20240716123725)
       pry (~> 0.14.2)
       pry-remote
@@ -102,7 +106,7 @@ PLATFORMS
   x86_64-linux
 
 DEPENDENCIES
-  nodectl (= 3.0.0.dev.build20240717084407)!
+  nodectl (= 3.0.0.dev.build20240717203530)!
 
 BUNDLED WITH
    2.5.9

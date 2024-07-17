@@ -111,15 +111,15 @@
     version = "2.7.2";
   };
   libnodectld = {
-    dependencies = ["bunny" "filelock" "ipaddress" "json" "libosctl" "mail" "mysql2" "osctl" "osctl-exportfs" "prometheus-client" "pry" "pry-remote" "require_all"];
+    dependencies = ["bunny" "filelock" "ipaddress" "json" "libosctl" "mail" "mysql2" "osctl" "osctl-exportfs" "prometheus-client" "pry" "pry-remote" "require_all" "rexml"];
     groups = ["default"];
     platforms = [];
     source = {
       remotes = ["https://rubygems.vpsfree.cz"];
-      sha256 = "1hz6vjsbx7mplkx3w9ph1jcd9kw90xycmpvsvmf872xyl3228ajd";
+      sha256 = "120xlk9gdkkz4x6h8r5099a18vb29ixqqkyyl6nycw61frh6r1x0";
       type = "gem";
     };
-    version = "3.0.0.dev.build20240717084407";
+    version = "3.0.0.dev.build20240717203530";
   };
   libosctl = {
     dependencies = ["rainbow" "require_all"];
@@ -223,10 +223,10 @@
     platforms = [];
     source = {
       remotes = ["https://rubygems.vpsfree.cz"];
-      sha256 = "0dzdm8s2g4a0z1q64zky6gb7s0jwqzrmddpasz64hyqfzm2001n3";
+      sha256 = "1fpcx5y7g1wmmccvy17v1n709x8bwx296x6gbqm577pm7nd5h8vw";
       type = "gem";
     };
-    version = "3.0.0.dev.build20240717084407";
+    version = "3.0.0.dev.build20240717203530";
   };
   osctl = {
     dependencies = ["curses" "gli" "highline" "ipaddress" "json" "libosctl" "rainbow" "require_all" "ruby-progressbar" "tty-spinner"];
@@ -313,6 +313,17 @@
     };
     version = "2.0.0";
   };
+  rexml = {
+    dependencies = ["strscan"];
+    groups = ["default"];
+    platforms = [];
+    source = {
+      remotes = ["https://rubygems.org"];
+      sha256 = "0zr5qpa8lampaqzhdcjcvyqnrqcjl7439mqjlkjz43wdhmpnh4s5";
+      type = "gem";
+    };
+    version = "3.3.2";
+  };
   ruby-progressbar = {
     groups = ["default"];
     platforms = [];
@@ -353,6 +364,16 @@
       type = "gem";
     };
     version = "1.0.3";
+  };
+  strscan = {
+    groups = ["default"];
+    platforms = [];
+    source = {
+      remotes = ["https://rubygems.org"];
+      sha256 = "0mamrl7pxacbc79ny5hzmakc9grbjysm3yy6119ppgsg44fsif01";
+      type = "gem";
+    };
+    version = "3.1.0";
   };
   timeout = {
     groups = ["default"];
