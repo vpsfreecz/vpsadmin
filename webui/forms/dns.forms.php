@@ -147,6 +147,11 @@ function dns_zone_show($id)
 
     $zone = $api->dns_zone->show($id);
 
+    $zoneTransfers = $api->dns_zone_transfer->list([
+        'dns_zone' => $zone->id,
+        'meta' => ['includes' => 'host_ip_address'],
+    ]);
+
     $xtpl->table_title(_('Zone') . ' ' . h($zone->name));
     $xtpl->form_create('?page=dns&action=zone_update&id=' . $zone->id, 'post');
 
@@ -185,6 +190,12 @@ function dns_zone_show($id)
     api_param_to_form('tsig_algorithm', $updateInput->tsig_algorithm, $zone->tsig_algorithm);
     api_param_to_form('tsig_key', $updateInput->tsig_key, $zone->tsig_key);
     api_param_to_form('enabled', $updateInput->enabled, $zone->enabled);
+
+    if ($zone->source == 'external_source' && $zoneTransfers->count() == 0) {
+        $xtpl->table_td('<strong>' . _('Warning') . ':</strong');
+        $xtpl->table_td(_('Add at least one primary DNS server for this zone to become active.'));
+        $xtpl->table_tr();
+    }
 
     $xtpl->form_out(_('Save'));
 
@@ -228,11 +239,6 @@ function dns_zone_show($id)
     $xtpl->table_out();
 
     $xtpl->table_title($zone->source == 'internal_source' ? _('Secondary servers') : _('Primary servers'));
-
-    $zoneTransfers = $api->dns_zone_transfer->list([
-        'dns_zone' => $zone->id,
-        'meta' => ['includes' => 'host_ip_address'],
-    ]);
 
     $xtpl->table_add_category(_('Host IP address'));
     $xtpl->table_add_category('');
@@ -357,7 +363,8 @@ function dns_zone_transfer_new($id)
 
     $xtpl->table_td(
         _('Select IP address on which your primary DNS server is running.'),
-        false, false,
+        false,
+        false,
         5
     );
     $xtpl->table_tr();
