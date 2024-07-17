@@ -209,6 +209,11 @@ function dns_zone_show($id)
     $xtpl->table_add_category(_('Server'));
     $xtpl->table_add_category(_('IPv4 address'));
     $xtpl->table_add_category(_('IPv6 address'));
+    $xtpl->table_add_category(_('Serial'));
+    $xtpl->table_add_category(_('Last loaded'));
+    $xtpl->table_add_category(_('Next refresh'));
+    $xtpl->table_add_category(_('Expires'));
+    $xtpl->table_add_category(_('Last check'));
 
     if (isAdmin()) {
         $xtpl->table_add_category('');
@@ -218,6 +223,11 @@ function dns_zone_show($id)
         $xtpl->table_td(h($sz->dns_server->name));
         $xtpl->table_td($sz->dns_server->ipv4_addr ? h($sz->dns_server->ipv4_addr) : '-');
         $xtpl->table_td($sz->dns_server->ipv6_addr ? h($sz->dns_server->ipv6_addr) : '-');
+        $xtpl->table_td(is_null($sz->serial) ? '-' : $sz->serial);
+        $xtpl->table_td($sz->loaded_at ? tolocaltz($sz->loaded_at) : '-');
+        $xtpl->table_td($sz->refresh_at ? tolocaltz($sz->refresh_at) : '-');
+        $xtpl->table_td($sz->expires_at ? tolocaltz($sz->expires_at) : '-');
+        $xtpl->table_td($sz->last_check_at ? tolocaltz($sz->last_check_at) : '-');
 
         if (isAdmin()) {
             $xtpl->table_td('<a href="?page=dns&action=server_zone_del&id=' . $zone->id . '&server_zone = ' . $sz->id . '"><img src="template/icons/vps_delete.png" alt="' . _('Remove from server') . '" title="' . _('Remove from server') . '"></a>');
@@ -231,7 +241,7 @@ function dns_zone_show($id)
             '<a href="?page=dns&action=server_zone_new&id=' . $zone->id . '">' . _('Add server') . '</a>',
             false,
             true,
-            4
+            9
         );
         $xtpl->table_tr();
     }
