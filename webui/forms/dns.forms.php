@@ -39,7 +39,7 @@ function dns_server_list()
     $xtpl->table_out();
 }
 
-function dns_zone_list($filters = [], $onEmpty = null)
+function dns_zone_list($action, $filters = [], $onEmpty = null)
 {
     global $xtpl, $api;
 
@@ -48,7 +48,7 @@ function dns_zone_list($filters = [], $onEmpty = null)
 
     $xtpl->form_set_hidden_fields([
         'page' => 'dns',
-        'action' => 'secondary_zones',
+        'action' => $action,
         'list' => '1',
     ]);
 
@@ -347,6 +347,7 @@ function secondary_dns_zone_list()
     $xtpl->title(_('Secondary DNS zones'));
 
     dns_zone_list(
+        'secondary_zone_list',
         [
             'source' => 'external_source',
             'role' => 'forward_role',

@@ -8,7 +8,7 @@ if (isLoggedIn()) {
 
         case 'zone_list':
             $xtpl->title(_('DNS zones'));
-            dns_zone_list();
+            dns_zone_list('zone_list');
             break;
 
         case 'zone_show':
