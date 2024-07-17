@@ -47,6 +47,10 @@ module NodeCtld
       nil
     end
 
+    def get_zone_names
+      @mutex.synchronize { @zones.keys }
+    end
+
     protected
 
     def save

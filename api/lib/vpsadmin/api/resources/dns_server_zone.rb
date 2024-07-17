@@ -11,6 +11,11 @@ module VpsAdmin::API::Resources
     params(:all) do
       integer :id, label: 'ID'
       use :common
+      integer :serial
+      datetime :loaded_at
+      datetime :expires_at
+      datetime :refresh_at
+      datetime :last_check_at
       datetime :created_at
       datetime :updated_at
     end

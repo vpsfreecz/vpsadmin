@@ -64,6 +64,7 @@ module NodeCtld
       @exporter = Exporter.new(self)
       @osctl_exporter = OsCtlExporter.new
       @console = Console::Server.new
+      @dns_status = DnsStatus.new if $CFG.get(:vpsadmin, :type) == :dns_server
       NetAccounting.instance
       Shaper.instance
       TransactionVerifier.instance
@@ -91,6 +92,7 @@ module NodeCtld
       @dataset_expander.start if @dataset_expander.enable?
       @storage_status.start if @storage_status.enable?
       @console.start if $CFG.get(:console, :enable)
+      @dns_status.start if $CFG.get(:vpsadmin, :type) == :dns_server
 
       @init = true
     end
