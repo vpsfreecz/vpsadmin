@@ -116,10 +116,10 @@
     platforms = [];
     source = {
       remotes = ["https://rubygems.vpsfree.cz"];
-      sha256 = "1qyvin25p801p3kzd1ac78iqy08n8nqjypsgpfpnfb8nvlw9z3dv";
+      sha256 = "1hz6vjsbx7mplkx3w9ph1jcd9kw90xycmpvsvmf872xyl3228ajd";
       type = "gem";
     };
-    version = "3.0.0.dev.build20240715095402";
+    version = "3.0.0.dev.build20240717084407";
   };
   libosctl = {
     dependencies = ["rainbow" "require_all"];
@@ -127,10 +127,10 @@
     platforms = [];
     source = {
       remotes = ["https://rubygems.vpsfree.cz"];
-      sha256 = "0ic6km15gkjrpg5nwnia2cyjdx5lp1kiljssy2bwciwl81h8hxk3";
+      sha256 = "1njpaanykqyl7xlndzgb3f8kz1f5i0gvwnlp9fl8g72kb1wzzl23";
       type = "gem";
     };
-    version = "24.05.0.build20240703125659";
+    version = "24.05.0.build20240716123725";
   };
   mail = {
     dependencies = ["mini_mime" "net-imap" "net-pop" "net-smtp"];
@@ -223,10 +223,10 @@
     platforms = [];
     source = {
       remotes = ["https://rubygems.vpsfree.cz"];
-      sha256 = "1d08ifpd83k2fajag395alzpzzpd0lvbn6q93fshmysmf04admds";
+      sha256 = "0dzdm8s2g4a0z1q64zky6gb7s0jwqzrmddpasz64hyqfzm2001n3";
       type = "gem";
     };
-    version = "3.0.0.dev.build20240715095402";
+    version = "3.0.0.dev.build20240717084407";
   };
   osctl = {
     dependencies = ["curses" "gli" "highline" "ipaddress" "json" "libosctl" "rainbow" "require_all" "ruby-progressbar" "tty-spinner"];
@@ -234,10 +234,10 @@
     platforms = [];
     source = {
       remotes = ["https://rubygems.vpsfree.cz"];
-      sha256 = "02pvnkz9r6xqf7ck0j7kd626isj4z5a5mar1xzwg28hbqvdbjdkm";
+      sha256 = "0vdr7z5yhdvgfrcwsrsr1rn45hfn1q44jgwkqmvkrgl1gn1lzmxh";
       type = "gem";
     };
-    version = "24.05.0.build20240703125659";
+    version = "24.05.0.build20240716123725";
   };
   osctl-exportfs = {
     dependencies = ["filelock" "gli" "libosctl" "require_all"];
@@ -245,10 +245,10 @@
     platforms = [];
     source = {
       remotes = ["https://rubygems.vpsfree.cz"];
-      sha256 = "1hsqnijdbgbza20a9qfvgysrjpvsc920rjyrpyd5m7v4p9gsgaf2";
+      sha256 = "0awlnx3grrjnmy1qwfxsld690w9frk54rmi3yhfhvxancgds3d68";
       type = "gem";
     };
-    version = "24.05.0.build20240703125659";
+    version = "24.05.0.build20240716123725";
   };
   prometheus-client = {
     dependencies = ["base64"];

@@ -1,5 +1,5 @@
 source 'https://rubygems.org'
 
 source 'https://rubygems.vpsfree.cz' do
-  gem 'nodectld', '3.0.0.dev.build20240715095402'
+  gem 'nodectld', '3.0.0.dev.build20240717084407'
 end
