@@ -82,11 +82,14 @@ if (isLoggedIn()) {
                     'peer_type' => $zone->source == 'internal_source' ? 'secondary_type' : 'primary_type',
                 ]);
 
-                notify_user(_('Transfer added'), '');
+                notify_user(
+                    $zone->source == 'internal_source' ? _('Secondary server added') : _('Primary server added'),
+                    ''
+                );
                 redirect('?page=dns&action=zone_show&id=' . $zone->id);
 
             } catch (\HaveAPI\Client\Exception\ActionFailed $e) {
-                $xtpl->perex_format_errors(_('Failed to add transfer'), $e->getResponse());
+                $xtpl->perex_format_errors(_('Failed to add server'), $e->getResponse());
                 dns_zone_show($_GET['id']);
             }
             break;

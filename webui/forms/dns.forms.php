@@ -227,7 +227,7 @@ function dns_zone_show($id)
 
     $xtpl->table_out();
 
-    $xtpl->table_title(_('Transfers'));
+    $xtpl->table_title($zone->source == 'internal_source' ? _('Secondary servers') : _('Primary servers'));
 
     $zoneTransfers = $api->dns_zone_transfer->list([
         'dns_zone' => $zone->id,
@@ -235,21 +235,21 @@ function dns_zone_show($id)
     ]);
 
     $xtpl->table_add_category(_('Host IP address'));
-    $xtpl->table_add_category(_('Peer type'));
     $xtpl->table_add_category('');
 
     foreach ($zoneTransfers as $zt) {
         $xtpl->table_td($zt->host_ip_address->addr);
-        $xtpl->table_td($zt->peer_type);
         $xtpl->table_td('<a href="?page=dns&action=zone_transfer_delete&id=' . $zone->id . '&transfer=' . $zt->id . '&t=' . csrf_token() . '"><img src="template/icons/vps_delete.png" alt="' . _('Remove transfer') . '" title="' . _('Remove transfer') . '"></a>');
         $xtpl->table_tr();
     }
 
+    $addText = $zone->source == 'internal_source' ? _('Add secondary server') : _('Add primary server');
+
     $xtpl->table_td(
-        '<a href="?page=dns&action=zone_transfer_new&id=' . $zone->id . '">' . _('Add transfer') . '</a>',
+        '<a href="?page=dns&action=zone_transfer_new&id=' . $zone->id . '">' . $addText . '</a>',
         false,
         true,
-        3
+        2
     );
     $xtpl->table_tr();
 
@@ -308,7 +308,9 @@ function dns_zone_transfer_new($id)
 
     $zone = $api->dns_zone->show($id);
 
-    $xtpl->title(_('Add transfer to zone') . ' ' . h($zone->name));
+    $titleText = $zone->source == 'internal_source' ? _('Add secondary server to zone') : _('Add primary server to zone');
+
+    $xtpl->title($titleText . ' ' . h($zone->name));
     $xtpl->form_create('?page=dns&action=zone_transfer_new2&id=' . $zone->id, 'post');
 
     $params = [
@@ -356,7 +358,7 @@ function secondary_dns_zone_list()
             global $xtpl;
 
             $xtpl->table_td(
-                '<a href="?page=dns&action=secondary_zone_new">' . _('Create new secondary zone') . '</a>.',
+                '<a href="?page=dns&action=secondary_zone_new">' . _('Create new secondary zone') . '</a>',
                 false,
                 false,
                 $cols
