@@ -311,7 +311,6 @@ function dns_zone_transfer_new($id)
     $titleText = $zone->source == 'internal_source' ? _('Add secondary server to zone') : _('Add primary server to zone');
 
     $xtpl->title($titleText . ' ' . h($zone->name));
-    $xtpl->form_create('?page=dns&action=zone_transfer_new2&id=' . $zone->id, 'post');
 
     $params = [
         'purpose' => 'vps',
@@ -323,21 +322,45 @@ function dns_zone_transfer_new($id)
         $params['user'] = $zone->user_id;
     }
 
-    $xtpl->form_add_select(
-        _('Host IP address') . ':',
-        'host_ip_address',
-        resource_list_to_options(
-            $api->host_ip_address->list($params),
-            'id',
-            'addr',
-            false,
-            function ($hostIp) {
-                $netif = $hostIp->ip_address->network_interface;
-                $hostname = h($netif->vps->hostname);
-                return "VPS {$netif->vps->id} {$hostname} - {$netif->name} - {$hostIp->addr}";
-            }
-        )
+    $hostIps = $api->host_ip_address->list($params);
+
+    if ($hostIps->count() == 0) {
+        $xtpl->table_td(_('No usable host IP address found.'));
+        $xtpl->table_tr();
+        $xtpl->table_out();
+        return;
+    }
+
+    $xtpl->form_create('?page=dns&action=zone_transfer_new2&id=' . $zone->id, 'post');
+    $xtpl->table_add_category('');
+    $xtpl->table_add_category(_('VPS'));
+    $xtpl->table_add_category(_('Hostname'));
+    $xtpl->table_add_category(_('Interface'));
+    $xtpl->table_add_category(_('IP address'));
+
+    $array = $hostIps->asArray();
+
+    usort($array, function ($a, $b) {
+        return [$a->ip_address->network_interface->vps_id, $a->addr] <=> [$b->ip_address->network_interface->vps_id, $b->addr];
+    });
+
+    foreach ($array as $hostIp) {
+        $netif = $hostIp->ip_address->network_interface;
+
+        $xtpl->form_add_radio_pure('host_ip_address', $hostIp->id, $_POST['host_ip_address'] == $hostIp->id);
+        $xtpl->table_td(vps_link($netif->vps));
+        $xtpl->table_td(h($netif->vps->hostname));
+        $xtpl->table_td(h($netif->name));
+        $xtpl->table_td(h($hostIp->addr));
+        $xtpl->table_tr();
+    }
+
+    $xtpl->table_td(
+        _('Select IP address on which your primary DNS server is running.'),
+        false, false,
+        5
     );
+    $xtpl->table_tr();
 
     $xtpl->form_out(_('Add'));
 }
