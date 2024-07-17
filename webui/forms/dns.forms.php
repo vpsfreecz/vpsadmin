@@ -9,8 +9,8 @@ function dns_submenu()
         $xtpl->sbar_add(_('All zones'), '?page=dns&action=zone_list');
     }
 
-    $xtpl->sbar_add(_('Secondary zones'), '?page=dns&action=secondary_zone_list');
     $xtpl->sbar_add(_('Reverse records'), '?page=dns&action=ptr_list');
+    $xtpl->sbar_add(_('Secondary zones'), '?page=dns&action=secondary_zone_list');
 }
 
 function dns_server_list()

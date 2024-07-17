@@ -145,7 +145,7 @@ if (isLoggedIn()) {
             break;
 
         default:
-            secondary_dns_zone_list();
+            dns_ptr_list();
     }
 
     dns_submenu();
