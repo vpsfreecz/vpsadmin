@@ -76,10 +76,10 @@
     platforms = [];
     source = {
       remotes = ["https://rubygems.org"];
-      sha256 = "0v2h47wrpigdyj18vlk1k8d1mvwbzy713ya93ia4l3qbn89a8yxx";
+      sha256 = "0i7wq3gr94pm6n6vlc57ygs0acxfscd83a16qng580sm9kzhlmac";
       type = "gem";
     };
-    version = "0.23.3";
+    version = "0.23.4";
   };
   highline = {
     groups = ["default"];
@@ -149,20 +149,20 @@
     platforms = [];
     source = {
       remotes = ["https://rubygems.org"];
-      sha256 = "0rri45lldyk3bsg4yqpxcl1xrnxnqasnw94x03w5arq3yy7kff65";
+      sha256 = "104r7glqjal9fgvnv49wjzp4ssai9hmyn3npkari51s2ska3jnr0";
       type = "gem";
     };
-    version = "3.2024.0604";
+    version = "3.2024.0702";
   };
   minitest = {
     groups = ["default"];
     platforms = [];
     source = {
       remotes = ["https://rubygems.org"];
-      sha256 = "0zgq31wa0ygqnmpqh3plsig32xc8k4l99r49ncmidfg91kfagymg";
+      sha256 = "0jj629q3vw5yn90q4di4dyb87pil4a8qfm2srhgy5nc8j2n33v1i";
       type = "gem";
     };
-    version = "5.24.0";
+    version = "5.24.1";
   };
   mutex_m = {
     groups = ["default"];
