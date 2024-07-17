@@ -15,7 +15,7 @@ module TransactionChains
 
         ip.host_ip_addresses.each do |host|
           use_chain(DnsZone::UnsetReverseRecord, args: [host]) if host.reverse_dns_record
-          to_delete << host
+          to_delete << host if host.user_created
         end
       end
 
