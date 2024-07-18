@@ -270,7 +270,6 @@ module VpsAdmin::API::Resources
 
       input do
         use :all, include: %i[reverse_record_value]
-        patch :reverse_record_value
       end
 
       output do
@@ -288,8 +287,12 @@ module VpsAdmin::API::Resources
 
         ptr_content = input.fetch(:reverse_record_value, '').strip
 
-        if !ptr_content.empty? && /\A((?!-)[A-Za-z0-9-]{1,63}(?<!-)\.)+[A-Za-z]{2,6}\.\Z/ !~ ptr_content
-          error('invalid reverse record value', { reverse_record_value: ['not a valid domain'] })
+        unless ptr_content.empty?
+          ptr_content << '.' unless ptr_content.end_with?('.')
+
+          if /\A((?!-)[A-Za-z0-9-]{1,63}(?<!-)\.)+[A-Za-z]{2,6}\.\Z/ !~ ptr_content
+            error('invalid reverse record value', { reverse_record_value: ['not a valid domain'] })
+          end
         end
 
         @chain, ret = VpsAdmin::API::Operations::HostIpAddress::Update.run(

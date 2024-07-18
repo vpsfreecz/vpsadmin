@@ -178,8 +178,14 @@ if (isLoggedIn()) {
             csrf_check();
 
             try {
+                $ptrContent = $_POST['reverse_record_value'];
+
+                if (!str_ends_with($ptrContent, '.')) {
+                    $ptrContent .= '.';
+                }
+
                 $api->host_ip_address->update($_GET['id'], [
-                    'reverse_record_value' => $_POST['reverse_record_value'],
+                    'reverse_record_value' => $ptrContent,
                 ]);
 
                 notify_user(_('Reverse record set'), '');

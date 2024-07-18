@@ -122,8 +122,14 @@ if (isLoggedIn()) {
             csrf_check();
 
             try {
+                $name = $_POST['name'];
+
+                if (!str_ends_with($name, '.')) {
+                    $name .= '.';
+                }
+
                 $params = [
-                    'name' => $_POST['name'],
+                    'name' => $name,
                     'tsig_algorithm' => $_POST['tsig_algorithm'],
                     'tsig_key' => $_POST['tsig_key'],
                 ];
