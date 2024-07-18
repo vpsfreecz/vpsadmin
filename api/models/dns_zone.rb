@@ -19,7 +19,6 @@ class DnsZone < ApplicationRecord
   }
 
   validate :check_name
-  validate :check_role
   validate :check_source
 
   include Lockable
@@ -60,12 +59,6 @@ class DnsZone < ApplicationRecord
   def check_name
     unless name.end_with?('.')
       errors.add(:name, 'not a canonical name (add trailing dot)')
-    end
-  end
-
-  def check_role
-    if reverse_role? && user_id
-      errors.add(:zone_role, 'user-owned zones cannot be reverse')
     end
   end
 

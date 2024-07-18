@@ -178,7 +178,7 @@ function dns_zone_show($id)
         $xtpl->table_tr();
     }
 
-    if (isAdmin() && $zone->role == 'reverse_role') {
+    if (isAdmin() && $zone->role == 'reverse_role' && $zone->reverse_network_address) {
         $xtpl->table_td(_('Reverse network') . ':');
         $xtpl->table_td($zone->reverse_network_address . '/' . $zone->reverse_network_prefix);
         $xtpl->table_tr();
@@ -326,7 +326,7 @@ function dns_zone_delete($id)
         $xtpl->table_tr();
     }
 
-    if (isAdmin() && $zone->role == 'reverse_role') {
+    if (isAdmin() && $zone->role == 'reverse_role' && $zone->reverse_network_address) {
         $xtpl->table_td(_('Reverse network') . ':');
         $xtpl->table_td($zone->reverse_network_address . '/' . $zone->reverse_network_prefix);
         $xtpl->table_tr();
@@ -429,10 +429,7 @@ function secondary_dns_zone_list()
 
     dns_zone_list(
         'secondary_zone_list',
-        [
-            'source' => 'external_source',
-            'role' => 'forward_role',
-        ],
+        ['source' => 'external_source'],
         function ($cols) {
             global $xtpl;
 
