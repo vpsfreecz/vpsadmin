@@ -53,6 +53,11 @@ module TransactionChains
         use_chain(Dataset::RemoveDownload, args: dl)
       end
 
+      # Destroy DNS zones
+      user.dns_zones.each do |dns_zone|
+        use_chain(DnsZone::DestroyUser, args: [dns_zone])
+      end
+
       # Free user namespaces
       user.user_namespaces.each do |userns|
         use_chain(UserNamespace::Free, args: userns)

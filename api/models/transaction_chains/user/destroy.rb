@@ -25,11 +25,6 @@ module TransactionChains
         use_chain(Dataset::RemoveDownload, args: dl)
       end
 
-      # Destroy DNS zones
-      user.dns_zones.each do |dns_zone|
-        use_chain(DnsZone::DestroyUser, args: [dns_zone])
-      end
-
       append(Transactions::Utils::NoOp, args: FIXME) do
         # Free all IP addresses
         ::IpAddress.where(user:).each do |ip|
