@@ -11,6 +11,7 @@ function dns_submenu()
 
     $xtpl->sbar_add(_('Reverse records'), '?page=dns&action=ptr_list');
     $xtpl->sbar_add(_('Secondary zones'), '?page=dns&action=secondary_zone_list');
+    $xtpl->sbar_add(_('TSIG keys'), '?page=dns&action=tsig_key_list');
 }
 
 function dns_server_list()
@@ -149,7 +150,7 @@ function dns_zone_show($id)
 
     $zoneTransfers = $api->dns_zone_transfer->list([
         'dns_zone' => $zone->id,
-        'meta' => ['includes' => 'host_ip_address'],
+        'meta' => ['includes' => 'host_ip_address,dns_tsig_key'],
     ]);
 
     $xtpl->table_title(_('Zone') . ' ' . h($zone->name));
@@ -189,8 +190,6 @@ function dns_zone_show($id)
         api_param_to_form('email', $updateInput->email, $zone->email);
     }
 
-    api_param_to_form('tsig_algorithm', $updateInput->tsig_algorithm, $zone->tsig_algorithm);
-    api_param_to_form('tsig_key', $updateInput->tsig_key, $zone->tsig_key);
     api_param_to_form('enabled', $updateInput->enabled, $zone->enabled);
 
     if ($zone->source == 'external_source' && $zoneTransfers->count() == 0) {
@@ -253,10 +252,24 @@ function dns_zone_show($id)
     $xtpl->table_title($zone->source == 'internal_source' ? _('Secondary servers') : _('Primary servers'));
 
     $xtpl->table_add_category(_('Host IP address'));
+    $xtpl->table_add_category(_('TSIG key'));
+    $xtpl->table_add_category(_('TSIG algorithm'));
+    $xtpl->table_add_category(_('TSIG secret'));
     $xtpl->table_add_category('');
 
     foreach ($zoneTransfers as $zt) {
         $xtpl->table_td($zt->host_ip_address->addr);
+
+        if ($zt->dns_tsig_key_id) {
+            $xtpl->table_td(h($zt->dns_tsig_key->name));
+            $xtpl->table_td(h($zt->dns_tsig_key->algorithm));
+            $xtpl->table_td('<code>' . h($zt->dns_tsig_key->secret) . '</code>');
+        } else {
+            $xtpl->table_td('-');
+            $xtpl->table_td('-');
+            $xtpl->table_td('-');
+        }
+
         $xtpl->table_td('<a href="?page=dns&action=zone_transfer_delete&id=' . $zone->id . '&transfer=' . $zt->id . '&t=' . csrf_token() . '"><img src="template/icons/vps_delete.png" alt="' . _('Remove transfer') . '" title="' . _('Remove transfer') . '"></a>');
         $xtpl->table_tr();
     }
@@ -267,14 +280,16 @@ function dns_zone_show($id)
         '<a href="?page=dns&action=zone_transfer_new&id=' . $zone->id . '">' . $addText . '</a>',
         false,
         true,
-        2
+        5
     );
     $xtpl->table_tr();
 
     $xtpl->table_out();
 
     if ($zone->source == 'external_source') {
-        dns_bind_primary_example($zone, $serverZones);
+        foreach ($zoneTransfers as $zt) {
+            dns_bind_primary_example($zone, $serverZones, $zt);
+        }
     }
 }
 
@@ -384,6 +399,25 @@ function dns_zone_transfer_new($id)
     $xtpl->table_td($helpMsg, false, false, 5);
     $xtpl->table_tr();
 
+    $xtpl->table_td(_('TSIG key') . ':');
+    $xtpl->form_add_select_pure(
+        'dns_tsig_key',
+        resource_list_to_options(
+            $api->dns_tsig_key->list(['user' => $zone->user_id]),
+            'id',
+            'name',
+            true
+        )
+    );
+    $xtpl->table_td(
+        _('Optional signing key') . ', ' .
+        '<a href="?page=dns&action=tsig_key_list">' . _('manage TSIG keys') . '</a>',
+        false,
+        false,
+        3
+    );
+    $xtpl->table_tr();
+
     $xtpl->form_out(_('Add'));
 }
 
@@ -430,10 +464,145 @@ function secondary_dns_zone_new()
     }
 
     api_param_to_form('name', $input->name);
-    api_param_to_form('tsig_algorithm', $input->tsig_algorithm);
-    api_param_to_form('tsig_key', $input->tsig_key);
 
     $xtpl->form_out(_('Create zone'));
+}
+
+function tsig_key_list()
+{
+    global $xtpl, $api;
+
+    $xtpl->title(_('TSIG keys'));
+    $xtpl->table_title(_('Filters'));
+    $xtpl->form_create('', 'get', 'user-session-filter', false);
+
+    $xtpl->form_set_hidden_fields([
+        'page' => 'dns',
+        'action' => 'tsig_key_list',
+    ]);
+
+    $xtpl->form_add_input(_('Limit') . ':', 'text', '40', 'limit', get_val('limit', '25'), '');
+    $xtpl->form_add_input(_("Offset") . ':', 'text', '40', 'offset', get_val('offset', '0'), '');
+
+    if (isAdmin()) {
+        $xtpl->form_add_input(_("User") . ':', 'text', '40', 'user', get_val('user', ''), '');
+    }
+
+    $xtpl->form_out(_('Show'));
+
+    $params = [
+        'limit' => get_val('limit', 25),
+        'offset' => get_val('offset', 0),
+    ];
+
+    $conds = ['user'];
+
+    foreach ($conds as $c) {
+        if ($_GET[$c]) {
+            $params[$c] = $_GET[$c];
+        }
+    }
+
+    $params['meta'] = [
+        'includes' => 'user',
+    ];
+
+    $keys = $api->dns_tsig_key->list($params);
+
+    if (isAdmin()) {
+        $xtpl->table_add_category(_("User"));
+    }
+
+    $xtpl->table_add_category(_('Name'));
+    $xtpl->table_add_category(_('Algorithm'));
+    $xtpl->table_add_category(_('Secret'));
+    $xtpl->table_add_category('');
+
+    foreach ($keys as $k) {
+        if (isAdmin()) {
+            $xtpl->table_td($k->user_id ? user_link($k->user) : '-');
+        }
+
+        $xtpl->table_td(h($k->name));
+        $xtpl->table_td(h($k->algorithm));
+        $xtpl->table_td('<code>' . h($k->secret) . '</code>');
+        $xtpl->table_td(
+            '<a href="?page=dns&action=tsig_key_delete&id=' . $k->id . '"><img src="template/icons/vps_delete.png" alt="' . _('Delete key') . '" title="' . _('Delete key') . '"></a>'
+        );
+        $xtpl->table_tr();
+    }
+
+    $xtpl->table_td(
+        '<a href="?page=dns&action=tsig_key_new">' . _('Create TSIG key') . '</a>',
+        false,
+        false,
+        isAdmin() ? 5 : 4
+    );
+    $xtpl->table_tr();
+
+    $xtpl->table_out();
+
+    $xtpl->sbar_add(_('New TSIG key'), '?page=dns&action=tsig_key_new');
+}
+
+function tsig_key_new()
+{
+    global $xtpl, $api;
+
+    $xtpl->title(_('Create a new TSIG key'));
+
+    $xtpl->form_create('?page=dns&action=tsig_key_new2', 'post');
+
+    $input = $api->dns_tsig_key->create->getParameters('input');
+
+    if (isAdmin()) {
+        $xtpl->form_add_input(_('User ID') . ':', 'text', '30', 'user', post_val('user'));
+    }
+
+    api_param_to_form('name', $input->name);
+    api_param_to_form('algorithm', $input->algorithm);
+
+    $xtpl->table_td(_('Secret') . ':');
+    $xtpl->table_td(_('Will be generated.'));
+    $xtpl->table_tr();
+
+    $xtpl->form_out(_('Create key'));
+}
+
+function tsig_key_delete($id)
+{
+    global $xtpl, $api;
+
+    $key = $api->dns_tsig_key->show($id);
+
+    $xtpl->table_title(_('Delete TSIG key') . ' ' . h($key->name));
+    $xtpl->form_create('?page=dns&action=tsig_key_delete2&id=' . $key->id, 'post');
+
+    $xtpl->form_set_hidden_fields([
+        'return_url' => $_GET['return_url'] ?? $_POST['return_url'],
+    ]);
+
+    if (isAdmin()) {
+        $xtpl->table_td(_('User') . ':');
+        $xtpl->table_td($key->user_id ? user_link($key->user) : '-');
+        $xtpl->table_tr();
+    }
+
+    $xtpl->table_td(_('Name') . ':');
+    $xtpl->table_td(h($key->name));
+    $xtpl->table_tr();
+
+    $xtpl->table_td(_('Algorithm') . ':');
+    $xtpl->table_td(h($key->algorithm));
+    $xtpl->table_tr();
+
+    $xtpl->table_td(_('Secret') . ':');
+    $xtpl->table_td('<code>' . h($key->secret) . '</code>');
+    $xtpl->table_tr();
+
+    $xtpl->form_add_checkbox(_('Confirm') . ':', 'confirm', '1');
+
+    $xtpl->form_out(_('Delete key'));
 }
 
 function dns_ptr_list()
@@ -581,14 +750,14 @@ function dns_ptr_list()
     $xtpl->table_out();
 }
 
-function dns_bind_primary_example($zone, $serverZones)
+function dns_bind_primary_example($zone, $serverZones, $zoneTransfer)
 {
     global $xtpl;
 
-    $xtpl->table_title(_('Example bind configuration'));
+    $xtpl->table_title(_('Example BIND configuration for server on ') . ' ' . $zoneTransfer->host_ip_address->addr);
 
     $zoneFile = '/etc/bind/zones/db.' . $zone->name;
-    $zoneKey = $zone->name . '-key';
+
     $secondaryIps = implode(
         ' ',
         array_map(function ($sz) {
@@ -598,36 +767,59 @@ function dns_bind_primary_example($zone, $serverZones)
     );
 
     $bindExample = <<<END
-        # /etc/bind/named.conf:
+        # File /etc/bind/named.conf:
 
         END;
 
-    if ($zone->tsig_algorithm != 'none') {
+    if ($zoneTransfer->dns_tsig_key_id) {
         $bindExample .= <<<END
-            key "$zoneKey" {
-                algorithm {$zone->tsig_algorithm};
-                secret "{$zone->tsig_key}";
+            key "{$zoneTransfer->dns_tsig_key->name}" {
+                algorithm {$zoneTransfer->dns_tsig_key->algorithm};
+                secret "{$zoneTransfer->dns_tsig_key->secret}";
             };
 
-            zone "{$zone->name}" {
-                type primary;
-                file "$zoneFile";
-                allow-transfer { key $zoneKey; $secondaryIps };
-                notify yes;
-            };
-
-            END;
-    } else {
-        $bindExample .= <<<END
-            zone "{$zone->name}" {
-                type primary;
-                file "$zoneFile";
-                allow-transfer { $secondaryIps };
-                notify yes;
-            };
 
             END;
     }
+
+    $secondaryIps = '';
+
+    foreach ($serverZones as $sz) {
+        $secondaryIps .= '      ';
+
+        if ($sz->dns_server->ipv4_addr) {
+            $secondaryIps .= $sz->dns_server->ipv4_addr;
+
+            if ($zoneTransfer->dns_tsig_key_id) {
+                $secondaryIps .= ' key ' . $zoneTransfer->dns_tsig_key->name;
+            }
+
+            $secondaryIps .= ';';
+        }
+
+        if ($sz->dns_server->ipv6_addr) {
+            $secondaryIps .= $sz->dns_server->ipv6_addr;
+
+            if ($zoneTransfer->dns_tsig_key_id) {
+                $secondaryIps .= ' key ' . $zoneTransfer->dns_tsig_key->name;
+            }
+
+            $secondaryIps .= ';';
+        }
+    }
+
+    $bindExample .= <<<END
+        zone "{$zone->name}" {
+            type primary;
+            file "$zoneFile";
+            allow-transfer {
+        $secondaryIps
+            };
+            notify yes;
+        };
+
+
+        END;
 
     $nameserverRecords = implode(
         "\n",
@@ -638,7 +830,7 @@ function dns_bind_primary_example($zone, $serverZones)
 
     $bindExample .= <<<END
 
-        # $zoneFile:
+        # File $zoneFile:
         \$TTL 3600         ; Default TTL (1 hour)
         @       IN SOA   ns1.{$zone->name} hostmaster.{$zone->name} (
                         2023071201 ; Serial number (YYYYMMDDNN format)
@@ -648,13 +840,16 @@ function dns_bind_primary_example($zone, $serverZones)
                         86400      ; Minimum TTL (1 day)
         )
 
-        ; Name servers
+        ; Name servers, be sure to set those
                 IN NS    ns1.{$zone->name}
         $nameserverRecords
 
-        ; A records for name servers
+        ; A record for your name server
         ns1     IN A     ns1.{$zone->name}
 
+        ; The following records are only examples and are not needed for the server
+        ; to function.
+        ;
         ; A and AAAA records for the website
         www     IN A     192.0.2.3
         www     IN AAAA  2001:db8::3

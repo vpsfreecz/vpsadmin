@@ -22,8 +22,6 @@ if (isLoggedIn()) {
                 $zone = $api->dns_zone->show($_GET['id']);
 
                 $params = [
-                    'tsig_algorithm' => $_POST['tsig_algorithm'],
-                    'tsig_key' => $_POST['tsig_key'],
                     'enabled' => isset($_POST['enabled']),
                 ];
 
@@ -75,12 +73,17 @@ if (isLoggedIn()) {
 
             try {
                 $zone = $api->dns_zone->show($_GET['id']);
-
-                $api->dns_zone_transfer->create([
+                $params = [
                     'dns_zone' => $zone->id,
                     'host_ip_address' => $_POST['host_ip_address'],
                     'peer_type' => $zone->source == 'internal_source' ? 'secondary_type' : 'primary_type',
-                ]);
+                ];
+
+                if ($_POST['dns_tsig_key']) {
+                    $params['dns_tsig_key'] = $_POST['dns_tsig_key'];
+                }
+
+                $api->dns_zone_transfer->create($params);
 
                 notify_user(
                     $zone->source == 'internal_source' ? _('Secondary server added') : _('Primary server added'),
@@ -90,7 +93,7 @@ if (isLoggedIn()) {
 
             } catch (\HaveAPI\Client\Exception\ActionFailed $e) {
                 $xtpl->perex_format_errors(_('Failed to add server'), $e->getResponse());
-                dns_zone_show($_GET['id']);
+                dns_zone_transfer_new($_GET['id']);
             }
             break;
 
@@ -130,8 +133,6 @@ if (isLoggedIn()) {
 
                 $params = [
                     'name' => $name,
-                    'tsig_algorithm' => $_POST['tsig_algorithm'],
-                    'tsig_key' => $_POST['tsig_key'],
                 ];
 
                 if (!isAdmin() || $_POST['user']) {
@@ -146,6 +147,61 @@ if (isLoggedIn()) {
             } catch (\HaveAPI\Client\Exception\ActionFailed $e) {
                 $xtpl->perex_format_errors(_('Failed to create secondary DNS zone'), $e->getResponse());
                 secondary_dns_zone_new();
+            }
+            break;
+
+        case 'tsig_key_list':
+            tsig_key_list();
+            break;
+
+        case 'tsig_key_new':
+            tsig_key_new();
+            break;
+
+        case 'tsig_key_new2':
+            csrf_check();
+
+            try {
+                $params = [
+                    'name' => $_POST['name'],
+                    'algorithm' => $_POST['algorithm'],
+                ];
+
+                if (!isAdmin() || $_POST['user']) {
+                    $params['user'] = $_POST['user'];
+                }
+
+                $key = $api->dns_tsig_key->create($params);
+
+                notify_user(_('TSIG key created'), '');
+                redirect('?page=dns&action=tsig_key_list');
+
+            } catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+                $xtpl->perex_format_errors(_('Failed to create TSIG key'), $e->getResponse());
+                tsig_key_new();
+            }
+            break;
+
+        case 'tsig_key_delete':
+            tsig_key_delete($_GET['id']);
+            break;
+
+        case 'tsig_key_delete2':
+            csrf_check();
+
+            if ($_POST['confirm'] === '1') {
+                try {
+                    $api->dns_tsig_key->delete($_GET['id']);
+
+                    notify_user(_('TSIG key deleted'), '');
+                    redirect($_POST['return_url'] ?? '?page=dns&action=tsig_key_list');
+
+                } catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+                    $xtpl->perex_format_errors(_('Failed to delete TSIG key'), $e->getResponse());
+                    tsig_key_delete($_GET['id']);
+                }
+            } else {
+                tsig_key_delete($_GET['id']);
             }
             break;
 
