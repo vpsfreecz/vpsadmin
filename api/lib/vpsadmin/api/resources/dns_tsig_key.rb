@@ -7,12 +7,12 @@ module VpsAdmin::API::Resources
       resource User, value_label: :login
       string :name
       string :algorithm, default: 'hmac-256'
-      string :secret
     end
 
     params(:all) do
       integer :id, label: 'ID'
       use :common
+      string :secret
       datetime :created_at
       datetime :updated_at
     end
@@ -79,7 +79,7 @@ module VpsAdmin::API::Resources
       desc 'Create a DNS TSIG key'
 
       input do
-        use :common, include: %i[user name algorithm]
+        use :common
         patch :algorithm, default: 'hmac-sha256', fill: true
       end
 
