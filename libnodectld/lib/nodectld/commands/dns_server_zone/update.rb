@@ -29,8 +29,6 @@ module NodeCtld
         email
         primaries
         secondaries
-        tsig_algorithm
-        tsig_key
         enabled
       ].each do |attr|
         changes = instance_variable_get(:"@#{dir}")

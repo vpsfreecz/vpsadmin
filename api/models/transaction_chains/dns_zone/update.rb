@@ -11,7 +11,7 @@ module TransactionChains
       concerns(:affect, [dns_zone.class.name, dns_zone.id])
 
       attrs.each_key do |k|
-        next if %i[label default_ttl email tsig_algorithm tsig_key enabled].include?(k)
+        next if %i[label default_ttl email enabled].include?(k)
 
         raise ArgumentError, "Cannot change DnsZone attribute #{k.inspect}, not supported"
       end
@@ -20,8 +20,6 @@ module TransactionChains
 
       if !dns_zone.default_ttl_changed? \
          && !dns_zone.email_changed? \
-         && !dns_zone.tsig_algorithm_changed? \
-         && !dns_zone.tsig_key_changed? \
          && !dns_zone.enabled_changed?
         dns_zone.save!
         return dns_zone
@@ -35,7 +33,7 @@ module TransactionChains
       new_attrs = {}
       original_attrs = {}
 
-      %i[default_ttl email tsig_algorithm tsig_key enabled].each do |attr|
+      %i[default_ttl email enabled].each do |attr|
         next unless dns_zone.send(:"#{attr}_changed?")
 
         new_attrs[attr] = dns_zone.send(attr)

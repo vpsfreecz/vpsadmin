@@ -7,6 +7,7 @@ module VpsAdmin::API::Resources
       resource DnsZone
       resource HostIpAddress, value_label: :addr
       string :peer_type, db_name: :peer_type, choices: ::DnsZoneTransfer.peer_types.keys.map(&:to_s)
+      resource DnsTsigKey, value_label: :name
     end
 
     params(:all) do
@@ -20,7 +21,7 @@ module VpsAdmin::API::Resources
       desc 'List DNS zone transfers'
 
       input do
-        use :common, include: %i[dns_zone host_ip_address peer_type]
+        use :common, include: %i[dns_zone host_ip_address peer_type dns_tsig_key]
       end
 
       output(:object_list) do
@@ -36,7 +37,7 @@ module VpsAdmin::API::Resources
       def query
         q = self.class.model.joins(:dns_zone).where(with_restricted)
 
-        %i[dns_zone host_ip_address peer_type].each do |v|
+        %i[dns_zone host_ip_address peer_type dns_tsig_key].each do |v|
           q = q.where(v => input[v]) if input.has_key?(v)
         end
 
@@ -80,6 +81,7 @@ module VpsAdmin::API::Resources
 
       input do
         use :common
+        patch :host_ip_address, required: true
       end
 
       output do

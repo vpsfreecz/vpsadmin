@@ -14,15 +14,15 @@ module TransactionChains
       lock(dns_zone)
 
       base_nameservers = dns_zone.nameservers if dns_zone.internal_source?
-      base_primaries = dns_zone.dns_zone_transfers.primary_type.map(&:ip_addr)
-      base_secondaries = dns_zone.dns_zone_transfers.secondary_type.map(&:ip_addr)
+      base_primaries = dns_zone.dns_zone_transfers.primary_type.map(&:server_opts)
+      base_secondaries = dns_zone.dns_zone_transfers.secondary_type.map(&:server_opts)
 
       update_kwargs =
         if dns_zone.internal_source?
           {
             new: {
               nameservers: base_nameservers - [zone_transfer.server_name].compact,
-              secondaries: base_secondaries - zone_transfer.ip_addr
+              secondaries: base_secondaries.reject { |s| s[:ip_addr] == zone_transfer.ip_addr }
             },
             original: {
               nameservers: base_nameservers,
@@ -32,7 +32,7 @@ module TransactionChains
         else
           {
             new: {
-              primaries: base_primaries - [zone_transfer.ip_addr]
+              primaries: base_primaries.reject { |s| s[:ip_addr] == zone_transfer.ip_addr }
             },
             original: {
               primaries: base_primaries

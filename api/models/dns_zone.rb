@@ -18,16 +18,9 @@ class DnsZone < ApplicationRecord
     message: '%{value} is not a valid zone name'
   }
 
-  validates :tsig_algorithm, inclusion: {
-    in: %w[none hmac-sha224 hmac-sha256 hmac-sha384 hmac-sha512],
-    message: '%{value} is not a valid TSIG algorithm'
-  }
-
   validate :check_name
   validate :check_role
   validate :check_source
-  validate :check_tsig_algorithm
-  validate :check_tsig_key
 
   include Lockable
 
@@ -83,26 +76,6 @@ class DnsZone < ApplicationRecord
   end
 
   # rubocop:enable Style/GuardClause
-
-  def check_tsig_algorithm
-    if tsig_algorithm != 'none' && tsig_key.empty?
-      errors.add(:tsig_key, 'either set TSIG key or unset TSIG algorithm')
-    elsif tsig_algorithm == 'none' && !tsig_key.empty?
-      errors.add(:tsig_key, 'unset TSIG key when algorithm is set to none')
-    end
-  end
-
-  def check_tsig_key
-    return if tsig_key.empty?
-
-    begin
-      return if Base64.strict_encode64(Base64.strict_decode64(tsig_key)) == tsig_key
-    rescue ArgumentError
-      # pass
-    end
-
-    errors.add(:tsig_key, 'not a valid base64 string')
-  end
 
   # @return [Array<String>]
   def nameservers

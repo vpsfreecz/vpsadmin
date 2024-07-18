@@ -5,9 +5,9 @@ module NodeCtld
   class DnsServerZone
     include OsCtl::Lib::Utils::File
 
-    attr_reader :name, :source, :zone_file, :primaries, :secondaries, :tsig_algorithm, :tsig_key, :enabled
+    attr_reader :name, :source, :zone_file, :primaries, :secondaries, :enabled
 
-    def initialize(name:, source:, default_ttl: nil, nameservers: nil, serial: nil, email: nil, primaries: nil, secondaries: nil, tsig_algorithm: nil, tsig_key: nil, enabled: nil, load_db: true)
+    def initialize(name:, source:, default_ttl: nil, nameservers: nil, serial: nil, email: nil, primaries: nil, secondaries: nil, enabled: nil, load_db: true)
       @name = name
       @source = source
       @default_ttl = default_ttl
@@ -16,8 +16,6 @@ module NodeCtld
       @email = email
       @primaries = primaries
       @secondaries = secondaries
-      @tsig_algorithm = tsig_algorithm
-      @tsig_key = tsig_key
       @enabled = enabled
       @db_file = format($CFG.get(:dns_server, :db_template), name:, source:)
       @zone_file = format($CFG.get(:dns_server, :zone_template), name:, source:)
@@ -38,8 +36,6 @@ module NodeCtld
       @email ||= json['email']
       @primaries ||= json['primaries']
       @secondaries ||= json['secondaries']
-      @tsig_algorithm ||= json['tsig_algorithm']
-      @tsig_key ||= json['tsig_key']
       @enabled = json['enabled'] if @enabled.nil?
       @records = json['records']
     end
@@ -103,8 +99,6 @@ module NodeCtld
         email: @email,
         primaries: @primaries,
         secondaries: @secondaries,
-        tsig_algorithm: @tsig_algorithm,
-        tsig_key: @tsig_key,
         enabled: @enabled,
         records: @records
       }

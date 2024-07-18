@@ -63,6 +63,27 @@ module NodeCtld
       end
 
       regenerate_file(@config_root, 0o644) do |f|
+        # First, find all TSIG keys
+        tsig_keys = {}
+
+        @zones.each_value do |zone|
+          (zone.primaries + zone.secondaries).each do |s|
+            k = s['tsig_key']
+            next if k.nil?
+
+            tsig_keys[k['name']] = k
+          end
+        end
+
+        # Declare TSIG keys
+        tsig_keys.each_value do |k|
+          f.puts("key \"#{k['name']}\" {")
+          f.puts("  algorithm #{k['algorithm']};")
+          f.puts("  secret \"#{k['secret']}\";")
+          f.puts("};\n")
+        end
+
+        # Declare zones
         @zones.each do |name, zone|
           if !zone.enabled
             f.puts(" # zone #{name} is disabled\n")
@@ -72,22 +93,15 @@ module NodeCtld
             next
           end
 
-          if zone.tsig_algorithm != 'none'
-            f.puts("key \"#{name}-key\" {")
-            f.puts("  algorithm #{zone.tsig_algorithm};")
-            f.puts("  secret \"#{zone.tsig_key}\";")
-            f.puts("};\n")
-          end
-
           f.puts("zone \"#{name}\" {")
 
           if zone.source == 'internal_source'
             f.puts('  type primary;')
-            f.puts("  allow-transfer { #{list_secondaries(zone, zone.secondaries)} };")
+            f.puts("  allow-transfer { #{list_servers(zone.secondaries)} };")
             f.puts('  notify yes;')
           else
             f.puts('  type secondary;')
-            f.puts("  primaries { #{list_primaries(zone, zone.primaries)} };")
+            f.puts("  primaries { #{list_servers(zone.primaries)} };")
           end
 
           f.puts("  file \"#{zone.zone_file}\";")
@@ -97,24 +111,14 @@ module NodeCtld
       end
     end
 
-    def list_primaries(zone, hosts)
-      hosts.map do |v|
-        if zone.tsig_algorithm == 'none'
-          "#{v};"
+    def list_servers(servers)
+      servers.map do |s|
+        if s['tsig_key']
+          "#{s['ip_addr']} key #{s['tsig_key']['name']};"
         else
-          "#{v} key #{zone.name}-key;"
+          "#{s['ip_addr']};"
         end
       end.join(' ')
-    end
-
-    def list_secondaries(zone, hosts)
-      ret = hosts.map { |v| "#{v};" }.join(' ')
-
-      if zone.tsig_algorithm == 'none'
-        ret
-      else
-        "key #{zone.name}-key; #{ret}"
-      end
     end
   end
 end

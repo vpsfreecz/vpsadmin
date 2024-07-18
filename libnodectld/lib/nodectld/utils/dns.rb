@@ -13,9 +13,7 @@ module NodeCtld
         secondaries: @secondaries,
         serial: @serial,
         email: @email,
-        enabled: @enabled,
-        tsig_algorithm: @tsig_algorithm,
-        tsig_key: @tsig_key
+        enabled: @enabled
       }
       zone_attrs.update(kwargs)
 

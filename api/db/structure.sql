@@ -445,6 +445,22 @@ CREATE TABLE `dns_servers` (
   KEY `index_dns_servers_on_node_id` (`node_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `dns_tsig_keys`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `dns_tsig_keys` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `user_id` bigint(20) DEFAULT NULL,
+  `name` varchar(255) NOT NULL,
+  `algorithm` varchar(20) NOT NULL,
+  `secret` varchar(255) NOT NULL,
+  `created_at` datetime(6) NOT NULL,
+  `updated_at` datetime(6) NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `index_dns_tsig_keys_on_name` (`name`),
+  KEY `index_dns_tsig_keys_on_user_id` (`user_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `dns_zone_transfers`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
@@ -455,10 +471,12 @@ CREATE TABLE `dns_zone_transfers` (
   `peer_type` int(11) NOT NULL DEFAULT 0,
   `created_at` datetime(6) NOT NULL,
   `updated_at` datetime(6) NOT NULL,
+  `dns_tsig_key_id` bigint(20) DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `index_dns_zone_transfers_on_dns_zone_id_and_host_ip_address_id` (`dns_zone_id`,`host_ip_address_id`),
   KEY `index_dns_zone_transfers_on_dns_zone_id` (`dns_zone_id`),
-  KEY `index_dns_zone_transfers_on_host_ip_address_id` (`host_ip_address_id`)
+  KEY `index_dns_zone_transfers_on_host_ip_address_id` (`host_ip_address_id`),
+  KEY `index_dns_zone_transfers_on_dns_tsig_key_id` (`dns_tsig_key_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `dns_zones`;
@@ -476,8 +494,6 @@ CREATE TABLE `dns_zones` (
   `default_ttl` int(11) DEFAULT 3600,
   `email` varchar(255) DEFAULT NULL,
   `serial` int(10) unsigned DEFAULT 1,
-  `tsig_algorithm` varchar(20) NOT NULL DEFAULT 'none',
-  `tsig_key` varchar(255) NOT NULL DEFAULT '',
   `enabled` tinyint(1) NOT NULL DEFAULT 1,
   `created_at` datetime(6) NOT NULL,
   `updated_at` datetime(6) NOT NULL,
@@ -2262,6 +2278,7 @@ CREATE TABLE `vpses` (
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
 INSERT INTO `schema_migrations` (version) VALUES
+('20240718093526'),
 ('20240717132957'),
 ('20240618092416'),
 ('20240615123252'),

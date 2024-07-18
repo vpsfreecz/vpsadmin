@@ -12,6 +12,7 @@ module VpsAdmin
       module DatasetExpansion; end
       module DnsZone; end
       module DnsServerZone; end
+      module DnsTsigKey; end
       module DnsZoneTransfer; end
       module Export; end
       module HostIpAddress; end

@@ -32,6 +32,7 @@ class User < ApplicationRecord
   has_many :user_failed_logins
   has_many :metrics_access_tokens
   has_many :dns_zones
+  has_many :dns_tsig_keys
   belongs_to :language
 
   enum password_version: VpsAdmin::API::CryptoProviders::PROVIDERS

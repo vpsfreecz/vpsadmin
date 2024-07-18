@@ -13,8 +13,6 @@ module VpsAdmin::API::Resources
       string :source, db_name: :zone_source, choices: ::DnsZone.zone_sources.keys.map(&:to_s)
       integer :default_ttl
       string :email
-      string :tsig_algorithm, label: 'TSIG algorithm', default: 'hmac-256', desc: 'Optional '
-      string :tsig_key, label: 'TSIG key', desc: 'Optional'
       bool :enabled
     end
 
@@ -101,7 +99,7 @@ module VpsAdmin::API::Resources
 
       authorize do |u|
         allow if u.role == :admin
-        input whitelist: %i[name label tsig_algorithm tsig_key enabled]
+        input whitelist: %i[name label enabled]
         allow
       end
 
@@ -131,7 +129,7 @@ module VpsAdmin::API::Resources
       blocking true
 
       input do
-        use :common, include: %i[label default_ttl email tsig_algorithm tsig_key enabled]
+        use :common, include: %i[label default_ttl email enabled]
       end
 
       output do

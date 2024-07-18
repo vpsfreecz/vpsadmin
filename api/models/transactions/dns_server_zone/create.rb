@@ -10,9 +10,7 @@ module Transactions::DnsServerZone
       ret = {
         name: dns_server_zone.dns_zone.name,
         source: dns_server_zone.dns_zone.zone_source,
-        enabled: dns_server_zone.dns_zone.enabled,
-        tsig_algorithm: dns_server_zone.dns_zone.tsig_algorithm,
-        tsig_key: dns_server_zone.dns_zone.tsig_key
+        enabled: dns_server_zone.dns_zone.enabled
       }
 
       if dns_server_zone.dns_zone.internal_source?
@@ -22,7 +20,7 @@ module Transactions::DnsServerZone
           email: dns_server_zone.dns_zone.email,
           nameservers: dns_server_zone.dns_zone.nameservers,
           primaries: [],
-          secondaries: dns_server_zone.dns_zone.dns_zone_transfers.secondary_type.map(&:ip_addr),
+          secondaries: dns_server_zone.dns_zone.dns_zone_transfers.secondary_type.map(&:server_opts),
           records: dns_server_zone.dns_zone.dns_records.where(enabled: true).map do |r|
             {
               id: r.id,
@@ -35,7 +33,7 @@ module Transactions::DnsServerZone
         )
       else
         ret.update(
-          primaries: dns_server_zone.dns_zone.dns_zone_transfers.primary_type.map(&:ip_addr),
+          primaries: dns_server_zone.dns_zone.dns_zone_transfers.primary_type.map(&:server_opts),
           secondaries: []
         )
       end

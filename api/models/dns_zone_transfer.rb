@@ -1,6 +1,7 @@
 class DnsZoneTransfer < ApplicationRecord
   belongs_to :dns_zone
   belongs_to :host_ip_address
+  belongs_to :dns_tsig_key
 
   enum peer_type: %i[primary_type secondary_type]
 
@@ -13,6 +14,17 @@ class DnsZoneTransfer < ApplicationRecord
 
   def server_name
     host_ip_address.reverse_record_value
+  end
+
+  def server_opts
+    {
+      ip_addr: host_ip_address.ip_addr,
+      tsig_key: dns_tsig_key && {
+        name: dns_tsig_key.name,
+        algorithm: dns_tsig_key.algorithm,
+        secret: dns_tsig_key.secret
+      }
+    }
   end
 
   protected
@@ -29,6 +41,10 @@ class DnsZoneTransfer < ApplicationRecord
     # rubocop:disable Style/GuardClause
     if dns_zone.user && dns_zone.user != host_ip_address.current_owner
       errors.add(:host_ip_address, 'target address does not belong to your account')
+    end
+
+    if dns_tsig_key && (dns_zone.user || dns_tsig_key.user) && dns_tsig_key.user != dns_zone.user
+      errors.add(:dns_tsig_key, 'TSIG key and zone owner mismatch')
     end
     # rubocop:enable Style/GuardClause
   end
