@@ -375,12 +375,13 @@ function dns_zone_transfer_new($id)
         $xtpl->table_tr();
     }
 
-    $xtpl->table_td(
-        _('Select IP address on which your primary DNS server is running.'),
-        false,
-        false,
-        5
-    );
+    if ($zone->source == 'internal_source') {
+        $helpMsg = _('Select IP address on which your secondary DNS server is running.');
+    } else {
+        $helpMsg = _('Select IP address on which your primary DNS server is running.');
+    }
+
+    $xtpl->table_td($helpMsg, false, false, 5);
     $xtpl->table_tr();
 
     $xtpl->form_out(_('Add'));
