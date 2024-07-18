@@ -779,38 +779,40 @@ function dns_bind_primary_example($zone, $serverZones, $zoneTransfer)
             END;
     }
 
-    $secondaryIps = '';
+    $secondaryIpArray = [];
 
     foreach ($serverZones as $sz) {
-        $secondaryIps .= '      ';
+        $ips = [
+            $sz->dns_server->ipv4_addr,
+            $sz->dns_server->ipv6_addr,
+        ];
 
-        if ($sz->dns_server->ipv4_addr) {
-            $secondaryIps .= $sz->dns_server->ipv4_addr;
-
-            if ($zoneTransfer->dns_tsig_key_id) {
-                $secondaryIps .= ' key ' . $zoneTransfer->dns_tsig_key->name;
+        foreach ($ips as $ip) {
+            if (!$ip) {
+                continue;
             }
 
-            $secondaryIps .= ';';
-        }
-
-        if ($sz->dns_server->ipv6_addr) {
-            $secondaryIps .= $sz->dns_server->ipv6_addr;
+            $str = '      ';
+            $str .= $ip;
 
             if ($zoneTransfer->dns_tsig_key_id) {
-                $secondaryIps .= ' key ' . $zoneTransfer->dns_tsig_key->name;
+                $str .= ' key ' . $zoneTransfer->dns_tsig_key->name;
             }
 
-            $secondaryIps .= ';';
+            $str .= ';';
+
+            $secondaryIpArray[] = $str;
         }
     }
+
+    $secondaryIpStr = implode("\n", $secondaryIpArray);
 
     $bindExample .= <<<END
         zone "{$zone->name}" {
             type primary;
             file "$zoneFile";
             allow-transfer {
-        $secondaryIps
+        $secondaryIpStr
             };
             notify yes;
         };
