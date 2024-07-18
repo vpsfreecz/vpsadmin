@@ -105,8 +105,8 @@ function dns_zone_list($action, $filters = [], $onEmpty = null)
         $xtpl->table_td(h($z->name));
 
         if (isAdmin()) {
-            $xtpl->table_td($z->role);
-            $xtpl->table_td($z->source);
+            $xtpl->table_td(zoneRoleLabel($z->role));
+            $xtpl->table_td(zoneSourceLabel($z->source));
         }
 
         $xtpl->table_td(boolean_icon($z->enabled));
@@ -167,13 +167,15 @@ function dns_zone_show($id)
     $xtpl->table_td(h($zone->name));
     $xtpl->table_tr();
 
-    $xtpl->table_td(_('Source') . ':');
-    $xtpl->table_td($zone->source);
-    $xtpl->table_tr();
+    if (isAdmin()) {
+        $xtpl->table_td(_('Source') . ':');
+        $xtpl->table_td(zoneSourceLabel($zone->source));
+        $xtpl->table_tr();
 
-    $xtpl->table_td(_('Role') . ':');
-    $xtpl->table_td($zone->role);
-    $xtpl->table_tr();
+        $xtpl->table_td(_('Role') . ':');
+        $xtpl->table_td(zoneRoleLabel($zone->role));
+        $xtpl->table_tr();
+    }
 
     if (isAdmin() && $zone->role == 'reverse_role') {
         $xtpl->table_td(_('Reverse network') . ':');
@@ -299,13 +301,15 @@ function dns_zone_delete($id)
     $xtpl->table_td(h($zone->name));
     $xtpl->table_tr();
 
-    $xtpl->table_td(_('Source') . ':');
-    $xtpl->table_td($zone->source);
-    $xtpl->table_tr();
+    if (isAdmin()) {
+        $xtpl->table_td(_('Source') . ':');
+        $xtpl->table_td(zoneSourceLabel($zone->source));
+        $xtpl->table_tr();
 
-    $xtpl->table_td(_('Role') . ':');
-    $xtpl->table_td($zone->role);
-    $xtpl->table_tr();
+        $xtpl->table_td(_('Role') . ':');
+        $xtpl->table_td(zoneRoleLabel($zone->role));
+        $xtpl->table_tr();
+    }
 
     if (isAdmin() && $zone->role == 'reverse_role') {
         $xtpl->table_td(_('Reverse network') . ':');
@@ -664,4 +668,28 @@ function dns_bind_primary_example($zone, $serverZones)
     );
     $xtpl->table_tr();
     $xtpl->table_out();
+}
+
+function zoneRolelabel($role)
+{
+    switch ($role) {
+        case 'forward_role':
+            return _('Forward zone');
+        case 'reverse_role':
+            return _('Reverse zone');
+        default:
+            return _('Unknown');
+    }
+}
+
+function zoneSourcelabel($source)
+{
+    switch ($source) {
+        case 'internal_source':
+            return _('Internal zone');
+        case 'external_source':
+            return _('External zone');
+        default:
+            return _('Unknown');
+    }
 }
