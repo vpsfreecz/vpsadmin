@@ -229,7 +229,7 @@ function dns_zone_show($id)
         $xtpl->table_td($sz->last_check_at ? tolocaltz($sz->last_check_at) : '-');
 
         if (isAdmin()) {
-            $xtpl->table_td('<a href="?page=dns&action=server_zone_del&id=' . $zone->id . '&server_zone = ' . $sz->id . '"><img src="template/icons/vps_delete.png" alt="' . _('Remove from server') . '" title="' . _('Remove from server') . '"></a>');
+            $xtpl->table_td('<a href="?page=dns&action=server_zone_delete&id=' . $zone->id . '&server_zone=' . $sz->id . '&t=' . csrf_token() . '"><img src="template/icons/vps_delete.png" alt="' . _('Remove from server') . '" title="' . _('Remove from server') . '"></a>');
         };
 
         $xtpl->table_tr();
@@ -333,6 +333,25 @@ function dns_zone_delete($id)
     $xtpl->form_add_checkbox(_('Confirm') . ':', 'confirm', '1');
 
     $xtpl->form_out(_('Delete'));
+}
+
+function dns_zone_server_new($id)
+{
+    global $xtpl, $api;
+
+    $zone = $api->dns_zone->show($id);
+
+    $xtpl->title(_('Add zone') . h($zone->name) . ' ' . _('to server'));
+    $xtpl->form_create('?page=dns&action=server_zone_new2&id=' . $zone->id, 'post');
+
+    $xtpl->table_td(_('DNS zone') . ':');
+    $xtpl->table_td(h($zone->name));
+    $xtpl->table_tr();
+
+    $input = $api->dns_server_zone->create->getParameters('input');
+    api_param_to_form('dns_server', $input->dns_server);
+
+    $xtpl->form_out(_('Add to server'));
 }
 
 function dns_zone_transfer_new($id)

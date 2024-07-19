@@ -64,6 +64,43 @@ if (isLoggedIn()) {
             }
             break;
 
+        case 'server_zone_new':
+            dns_zone_server_new($_GET['id']);
+            break;
+
+        case 'server_zone_new2':
+            csrf_check();
+
+            try {
+                $api->dns_server_zone->create([
+                    'dns_server' => $_POST['dns_server'],
+                    'dns_zone' => $_GET['id'],
+                ]);
+
+                notify_user(_('DNS zone added to server'), '');
+                redirect('?page=dns&action=zone_show&id=' . $_GET['id']);
+
+            } catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+                $xtpl->perex_format_errors(_('Failed to add zone to server'), $e->getResponse());
+                dns_zone_server_new($_GET['id']);
+            }
+            break;
+
+        case 'server_zone_delete':
+            csrf_check();
+
+            try {
+                $api->dns_server_zone->delete($_GET['server_zone']);
+
+                notify_user(_('DNS zone removed from server'), '');
+                redirect('?page=dns&action=zone_show&id=' . $_GET['id']);
+
+            } catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+                $xtpl->perex_format_errors(_('Failed to remove DNS zone from server'), $e->getResponse());
+                dns_zone_show($_GET['id']);
+            }
+            break;
+
         case 'zone_transfer_new':
             dns_zone_transfer_new($_GET['id']);
             break;
