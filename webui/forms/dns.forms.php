@@ -40,7 +40,7 @@ function dns_server_list()
     $xtpl->table_out();
 }
 
-function dns_zone_list($action, $filters = [], $onEmpty = null)
+function dns_zone_list($action, $filters = [], $onLastRow = null)
 {
     global $xtpl, $api;
 
@@ -123,20 +123,18 @@ function dns_zone_list($action, $filters = [], $onEmpty = null)
         $xtpl->table_tr();
     }
 
-    if ($zones->count() == 0) {
-        $cols = isAdmin() ? 7 : 4;
+    $cols = isAdmin() ? 7 : 4;
 
-        if ($onEmpty) {
-            $onEmpty($cols);
-        } else {
-            $xtpl->table_td(
-                _('No zones found.'),
-                false,
-                false,
-                $cols
-            );
-            $xtpl->table_tr();
-        }
+    if ($onLastRow) {
+        $onLastRow($cols);
+    } else {
+        $xtpl->table_td(
+            _('No zones found.'),
+            false,
+            false,
+            $cols
+        );
+        $xtpl->table_tr();
     }
 
     $xtpl->table_out();
@@ -436,7 +434,7 @@ function secondary_dns_zone_list()
             $xtpl->table_td(
                 '<a href="?page=dns&action=secondary_zone_new">' . _('Create new secondary zone') . '</a>',
                 false,
-                false,
+                true,
                 $cols
             );
             $xtpl->table_tr();
