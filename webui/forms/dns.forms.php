@@ -515,6 +515,8 @@ function tsig_key_list()
     $xtpl->table_add_category(_('Secret'));
     $xtpl->table_add_category('');
 
+    $return_url = urlencode($_SERVER['REQUEST_URI']);
+
     foreach ($keys as $k) {
         if (isAdmin()) {
             $xtpl->table_td($k->user_id ? user_link($k->user) : '-');
@@ -524,7 +526,7 @@ function tsig_key_list()
         $xtpl->table_td(h($k->algorithm));
         $xtpl->table_td('<code>' . h($k->secret) . '</code>');
         $xtpl->table_td(
-            '<a href="?page=dns&action=tsig_key_delete&id=' . $k->id . '"><img src="template/icons/vps_delete.png" alt="' . _('Delete key') . '" title="' . _('Delete key') . '"></a>'
+            '<a href="?page=dns&action=tsig_key_delete&id=' . $k->id . '&return_url=' . $return_url . '"><img src="template/icons/vps_delete.png" alt="' . _('Delete key') . '" title="' . _('Delete key') . '"></a>'
         );
         $xtpl->table_tr();
     }
