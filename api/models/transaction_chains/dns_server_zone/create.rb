@@ -1,6 +1,6 @@
 module TransactionChains
   class DnsServerZone::Create < ::TransactionChain
-    label 'Create zone'
+    label 'Server zone+'
 
     # @param dns_server_zone [::DnsServerZone]
     # @return [::DnsServerZone]

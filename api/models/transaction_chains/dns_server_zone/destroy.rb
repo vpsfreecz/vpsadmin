@@ -1,6 +1,6 @@
 module TransactionChains
   class DnsServerZone::Destroy < ::TransactionChain
-    label 'Destroy zone'
+    label 'Server zone-'
 
     # @param dns_server_zone [::DnsServerZone]
     def link_chain(dns_server_zone)

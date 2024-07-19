@@ -1,6 +1,6 @@
 module TransactionChains
   class DnsZoneTransfer::Create < ::TransactionChain
-    label 'Create zone transfer'
+    label 'Zone transfer+'
     allow_empty
 
     # @param zone_transfer [::DnsZoneTransfer]

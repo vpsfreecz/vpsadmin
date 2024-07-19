@@ -1,6 +1,6 @@
 module TransactionChains
   class DnsZoneTransfer::Destroy < ::TransactionChain
-    label 'Destroy zone transfer'
+    label 'Zone transfer-'
     allow_empty
 
     # @param zone_transfer [::DnsZoneTransfer]

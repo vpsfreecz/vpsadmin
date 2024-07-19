@@ -1,6 +1,6 @@
 module TransactionChains
   class DnsZone::DestroyUser < ::TransactionChain
-    label 'Destroy zone'
+    label 'Zone-'
     allow_empty
 
     # @param dns_zone [::DnsZone]

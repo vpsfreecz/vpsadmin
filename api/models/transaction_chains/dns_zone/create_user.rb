@@ -1,6 +1,6 @@
 module TransactionChains
   class DnsZone::CreateUser < ::TransactionChain
-    label 'Create zone'
+    label 'Zone+'
     allow_empty
 
     # @param dns_zone [::DnsZone]
