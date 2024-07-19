@@ -532,7 +532,7 @@ function tsig_key_list()
     $xtpl->table_td(
         '<a href="?page=dns&action=tsig_key_new">' . _('Create TSIG key') . '</a>',
         false,
-        false,
+        true,
         isAdmin() ? 5 : 4
     );
     $xtpl->table_tr();
