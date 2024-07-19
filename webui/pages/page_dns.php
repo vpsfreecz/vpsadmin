@@ -101,14 +101,18 @@ if (isLoggedIn()) {
             csrf_check();
 
             try {
+                $zone = $api->dns_zone->show($_GET['id']);
                 $api->dns_zone_transfer->delete($_GET['transfer']);
 
-                notify_user(_('Transfer deleted'), '');
-                redirect('?page=dns&action=zone_show&id=' . $_GET['id']);
+                notify_user(
+                    $zone->source == 'internal_source' ? _('Secondary server deleted') : _('Primary server deleted'),
+                    ''
+                );
+                redirect('?page=dns&action=zone_show&id=' . $zone->id);
 
             } catch (\HaveAPI\Client\Exception\ActionFailed $e) {
-                $xtpl->perex_format_errors(_('Failed to delete transfer'), $e->getResponse());
-                dns_zone_transfer_new($_GET['id']);
+                $xtpl->perex_format_errors(_('Failed to delete server'), $e->getResponse());
+                dns_zone_show($_GET['id']);
             }
 
             break;
