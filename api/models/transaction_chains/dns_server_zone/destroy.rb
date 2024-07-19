@@ -13,7 +13,8 @@ module TransactionChains
       nameservers = dns_server_zone.dns_zone.nameservers if dns_server_zone.dns_zone.internal_source?
 
       append_t(Transactions::DnsServerZone::Destroy, args: [dns_server_zone]) do |t|
-        t.just_destroy(dns_server_zone)
+        dns_server_zone.update!(confirmed: ::DnsServerZone.confirmed(:confirm_destroy))
+        t.destroy(dns_server_zone)
       end
 
       append_t(Transactions::DnsServer::Reload, args: [dns_server_zone.dns_server])

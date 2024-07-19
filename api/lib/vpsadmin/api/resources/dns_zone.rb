@@ -43,7 +43,7 @@ module VpsAdmin::API::Resources
       end
 
       def query
-        q = self.class.model.where(with_restricted)
+        q = self.class.model.existing.where(with_restricted)
         db_input = to_db_names(input)
 
         %i[user zone_role zone_source enabled].each do |v|
@@ -77,7 +77,7 @@ module VpsAdmin::API::Resources
       end
 
       def prepare
-        @zone = self.class.model.find_by!(with_restricted(id: params[:dns_zone_id]))
+        @zone = self.class.model.existing.find_by!(with_restricted(id: params[:dns_zone_id]))
       end
 
       def exec
@@ -144,7 +144,7 @@ module VpsAdmin::API::Resources
 
       def exec
         @chain, ret = VpsAdmin::API::Operations::DnsZone::Update.run(
-          self.class.model.find_by!(with_restricted(id: params[:dns_zone_id])),
+          self.class.model.existing.find_by!(with_restricted(id: params[:dns_zone_id])),
           to_db_names(input)
         )
         ret
@@ -168,7 +168,7 @@ module VpsAdmin::API::Resources
       end
 
       def exec
-        zone = self.class.model.find_by!(with_restricted(id: params[:dns_zone_id]))
+        zone = self.class.model.existing.find_by!(with_restricted(id: params[:dns_zone_id]))
 
         op =
           if current_user.role != :admin || zone.user_id

@@ -18,15 +18,17 @@ module TransactionChains
         )
 
         append_t(Transactions::DnsServerZone::Create, args: [dns_server_zone]) do |t|
-          t.just_create(dns_server_zone)
+          t.create(dns_server_zone)
         end
 
         append_t(Transactions::DnsServer::Reload, args: [dns_server_zone.dns_server])
       end
 
-      unless empty?
+      if empty?
+        dns_zone.update!(confirmed: ::DnsZone.confirmed(:confirmed))
+      else
         append_t(Transactions::Utils::NoOp, args: find_node_id) do |t|
-          t.just_create(dns_zone)
+          t.create(dns_zone)
         end
       end
 

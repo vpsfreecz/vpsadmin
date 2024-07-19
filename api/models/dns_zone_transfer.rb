@@ -1,3 +1,5 @@
+require_relative 'confirmable'
+
 class DnsZoneTransfer < ApplicationRecord
   belongs_to :dns_zone
   belongs_to :host_ip_address
@@ -7,6 +9,12 @@ class DnsZoneTransfer < ApplicationRecord
 
   validate :check_peer_type
   validate :check_ownership
+
+  include Confirmable
+
+  scope :existing, lambda {
+    where(confirmed: [confirmed(:confirm_create), confirmed(:confirmed)])
+  }
 
   def ip_addr
     host_ip_address.ip_addr

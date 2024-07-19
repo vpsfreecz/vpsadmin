@@ -1,5 +1,7 @@
 require 'base64'
 require 'ipaddress'
+require_relative 'confirmable'
+require_relative 'lockable'
 
 class DnsZone < ApplicationRecord
   belongs_to :user
@@ -21,7 +23,12 @@ class DnsZone < ApplicationRecord
   validate :check_name
   validate :check_source
 
+  include Confirmable
   include Lockable
+
+  scope :existing, lambda {
+    where(confirmed: [confirmed(:confirm_create), confirmed(:confirmed)])
+  }
 
   def include?(what)
     if zone_role != 'reverse_role'

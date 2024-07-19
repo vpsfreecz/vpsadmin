@@ -53,10 +53,13 @@ module TransactionChains
         append_t(Transactions::DnsServer::Reload, args: [dns_server_zone.dns_server])
       end
 
-      return zone_transfer if empty?
+      if empty?
+        zone_transfer.update!(confirmed: ::ZoneTransfer.confirmed(:confirmed))
+        return zone_transfer
+      end
 
       append_t(Transactions::Utils::NoOp, args: find_node_id) do |t|
-        t.just_create(zone_transfer)
+        t.create(zone_transfer)
       end
 
       zone_transfer

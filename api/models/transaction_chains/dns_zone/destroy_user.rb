@@ -10,7 +10,8 @@ module TransactionChains
 
       dns_zone.dns_server_zones.each do |dns_server_zone|
         append_t(Transactions::DnsServerZone::Destroy, args: [dns_server_zone]) do |t|
-          t.just_destroy(dns_server_zone)
+          dns_server_zone.update!(confirmed: ::DnsServerZone.confirmed(:confirm_destroy))
+          t.destroy(dns_server_zone)
         end
 
         append_t(Transactions::DnsServer::Reload, args: [dns_server_zone.dns_server])
@@ -23,10 +24,12 @@ module TransactionChains
 
       append_t(Transactions::Utils::NoOp, args: find_node_id) do |t|
         dns_zone.dns_zone_transfers.each do |zone_transfer|
-          t.just_destroy(zone_transfer)
+          zone_transfer.update!(confirmed: ::DnsZoneTransfer.confirmed(:confirm_destroy))
+          t.destroy(zone_transfer)
         end
 
-        t.just_destroy(dns_zone)
+        dns_zone.update!(confirmed: ::DnsZone.confirmed(:confirm_destroy))
+        t.destroy(dns_zone)
       end
 
       nil

@@ -6,6 +6,7 @@ module VpsAdmin::API
     # @return [Array(nil, ::DnsZone)]
     def run(attrs)
       dns_zone = ::DnsZone.new(**attrs)
+      dns_zone.confirmed = :confirmed
 
       ActiveRecord::Base.transaction do
         dns_zone.save!

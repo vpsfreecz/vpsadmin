@@ -56,7 +56,8 @@ module TransactionChains
       end
 
       append_t(Transactions::Utils::NoOp, args: find_node_id) do |t|
-        t.just_destroy(zone_transfer)
+        zone_transfer.update!(confirmed: ::DnsZoneTransfer.confirmed(:confirm_destroy))
+        t.destroy(zone_transfer)
       end
 
       nil

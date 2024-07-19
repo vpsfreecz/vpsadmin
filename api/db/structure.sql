@@ -422,6 +422,7 @@ CREATE TABLE `dns_server_zones` (
   `expires_at` datetime(6) DEFAULT NULL,
   `refresh_at` datetime(6) DEFAULT NULL,
   `last_check_at` datetime(6) DEFAULT NULL,
+  `confirmed` int(11) NOT NULL DEFAULT 0,
   PRIMARY KEY (`id`),
   UNIQUE KEY `index_dns_server_zones_on_dns_server_id_and_dns_zone_id` (`dns_server_id`,`dns_zone_id`),
   KEY `index_dns_server_zones_on_dns_server_id` (`dns_server_id`),
@@ -472,6 +473,7 @@ CREATE TABLE `dns_zone_transfers` (
   `created_at` datetime(6) NOT NULL,
   `updated_at` datetime(6) NOT NULL,
   `dns_tsig_key_id` bigint(20) DEFAULT NULL,
+  `confirmed` int(11) NOT NULL DEFAULT 0,
   PRIMARY KEY (`id`),
   UNIQUE KEY `index_dns_zone_transfers_on_dns_zone_id_and_host_ip_address_id` (`dns_zone_id`,`host_ip_address_id`),
   KEY `index_dns_zone_transfers_on_dns_zone_id` (`dns_zone_id`),
@@ -497,6 +499,7 @@ CREATE TABLE `dns_zones` (
   `enabled` tinyint(1) NOT NULL DEFAULT 1,
   `created_at` datetime(6) NOT NULL,
   `updated_at` datetime(6) NOT NULL,
+  `confirmed` int(11) NOT NULL DEFAULT 0,
   PRIMARY KEY (`id`),
   UNIQUE KEY `index_dns_zones_on_name` (`name`),
   KEY `index_dns_zones_on_user_id` (`user_id`),
@@ -2278,6 +2281,7 @@ CREATE TABLE `vpses` (
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
 INSERT INTO `schema_migrations` (version) VALUES
+('20240719135955'),
 ('20240718093526'),
 ('20240717132957'),
 ('20240618092416'),

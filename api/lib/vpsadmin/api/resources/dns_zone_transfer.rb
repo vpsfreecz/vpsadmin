@@ -35,7 +35,7 @@ module VpsAdmin::API::Resources
       end
 
       def query
-        q = self.class.model.joins(:dns_zone).where(with_restricted)
+        q = self.class.model.existing.joins(:dns_zone).where(with_restricted)
 
         %i[dns_zone host_ip_address peer_type dns_tsig_key].each do |v|
           q = q.where(v => input[v]) if input.has_key?(v)
@@ -67,7 +67,7 @@ module VpsAdmin::API::Resources
       end
 
       def prepare
-        @zone = self.class.model.joins(:dns_zone).find_by!(with_restricted(id: params[:dns_zone_transfer_id]))
+        @zone = self.class.model.existing.joins(:dns_zone).find_by!(with_restricted(id: params[:dns_zone_transfer_id]))
       end
 
       def exec
@@ -123,7 +123,7 @@ module VpsAdmin::API::Resources
       end
 
       def exec
-        transfer = self.class.model.joins(:dns_zone).find_by!(with_restricted(id: params[:dns_zone_transfer_id]))
+        transfer = self.class.model.existing.joins(:dns_zone).find_by!(with_restricted(id: params[:dns_zone_transfer_id]))
         @chain, = VpsAdmin::API::Operations::DnsZoneTransfer::Destroy.run(transfer)
         ok
       rescue VpsAdmin::API::Exceptions::OperationError => e
