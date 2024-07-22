@@ -1886,6 +1886,7 @@ function vps_netif_iproutes_form($vps, $netif)
     }
 
     $xtpl->table_add_category('');
+    $xtpl->table_add_category('');
     $xtpl->form_create('?page=adminvps&action=iproute_select&veid=' . $vps->id . '&netif=' . $netif->id, 'post');
 
     $return_url = urlencode($_SERVER['REQUEST_URI']);
@@ -1902,6 +1903,12 @@ function vps_netif_iproutes_form($vps, $netif)
         if (isAdmin()) {
             $xtpl->table_td('<a href="?page=networking&action=assignments&ip_addr=' . $ip->addr . '&ip_prefix=' . $ip->prefix . '&list=1"><img src="template/icons/vps_ip_list.png" alt="' . _('List assignments') . '" title="' . _('List assignments') . '"></a>');
         }
+
+        $xtpl->table_td(
+            '<a href="?page=networking&action=route_edit&id=' . $ip->id . '&return=' . $return_url . '" title="' . _('Manage host addresses') . '">' .
+            '<img src="template/icons/m_edit.png" alt="' . _("Manage host addresses") . '">' .
+            '</a>'
+        );
 
         $xtpl->table_td(
             '<a href="?page=adminvps&action=iproute_del&id=' . $ip->id .
