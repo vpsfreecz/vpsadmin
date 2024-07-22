@@ -111,11 +111,7 @@ function ip_address_list($page)
     $xtpl->table_add_category('VPS');
     $xtpl->table_add_category('');
     $xtpl->table_add_category('');
-
-    if (isAdmin()) {
-        $xtpl->table_add_category('');
-    }
-
+    $xtpl->table_add_category('');
     $xtpl->table_add_category('');
 
     $return_url = urlencode($_SERVER['REQUEST_URI']);
@@ -150,13 +146,11 @@ function ip_address_list($page)
 
         $xtpl->table_td('<a href="?page=networking&action=assignments&ip_addr=' . $ip->addr . '&ip_prefix=' . $ip->prefix . '&list=1"><img src="template/icons/vps_ip_list.png" alt="' . _('List assignments') . '" title="' . _('List assignments') . '"></a>');
 
-        if (isAdmin()) {
-            $xtpl->table_td(
-                '<a href="?page=networking&action=route_edit&id=' . $ip->id . '&return=' . $return_url . '">' .
-                '<img src="template/icons/m_edit.png" alt="' . _('Edit') . '" title="' . _('Edit') . '">' .
-                '</a>'
-            );
-        }
+        $xtpl->table_td(
+            '<a href="?page=networking&action=route_edit&id=' . $ip->id . '&return=' . $return_url . '">' .
+            '<img src="template/icons/m_edit.png" alt="' . _('Edit') . '" title="' . _('Edit') . '">' .
+            '</a>'
+        );
 
         if ($vps) {
             $xtpl->table_td(
@@ -375,31 +369,121 @@ function route_edit_form($id)
 {
     global $xtpl, $api;
 
-    $ip = $api->ip_address->show($id, ['meta' => ['includes' => 'network']]);
+    $ip = $api->ip_address->show($id);
 
-    $xtpl->table_title($ip->addr . '/' . $ip->network->prefix);
+    $xtpl->title(_('IP address') . ' ' . $ip->addr . '/' . $ip->prefix);
     $xtpl->sbar_add(
         _("Back"),
         $_GET['return'] ? $_GET['return'] : '?page=networking&action=ip_addresses'
     );
 
-    $xtpl->form_create(
-        '?page=networking&action=route_edit_user&id=' . $ip->id . '&return=' . urlencode($_GET['return']),
-        'post'
-    );
+    if (isAdmin()) {
+        $xtpl->table_title(_('Ownership'));
+        $xtpl->form_create(
+            '?page=networking&action=route_edit_user&id=' . $ip->id . '&return=' . urlencode($_GET['return']),
+            'post'
+        );
 
-    $xtpl->table_add_category(_('Owner'));
+        $xtpl->table_add_category(_('Owner'));
+        $xtpl->table_add_category('');
+
+        $xtpl->form_add_input(_('User ID') . ':', 'text', '30', 'user', post_val('user', $ip->user_id));
+        $xtpl->form_add_select(
+            _('Environment') . ':',
+            'environment',
+            resource_list_to_options($api->environment->list()),
+            post_val('environment')
+        );
+
+        $xtpl->form_out(_("Set owner"));
+    }
+
+    $host_addrs = $api->host_ip_address->list(['ip_address' => $ip->id]);
+
+    $xtpl->table_title(_('Host addresses'));
+    $xtpl->table_add_category(_("Host address"));
+    $xtpl->table_add_category((_("Reverse record")));
+    $xtpl->table_add_category(_('VPS'));
+    $xtpl->table_add_category(_('Interface'));
+    $xtpl->table_add_category('');
+    $xtpl->table_add_category('');
     $xtpl->table_add_category('');
 
-    $xtpl->form_add_input(_('User ID') . ':', 'text', '30', 'user', post_val('user', $ip->user_id));
-    $xtpl->form_add_select(
-        _('Environment') . ':',
-        'environment',
-        resource_list_to_options($api->environment->list()),
-        post_val('environment')
-    );
 
-    $xtpl->form_out(_("Set owner"));
+    $return_url = urlencode($_SERVER['REQUEST_URI']);
+
+    foreach ($host_addrs as $host_addr) {
+        $ip = $host_addr->ip_address;
+        $netif = $ip->network_interface_id ? $ip->network_interface : null;
+        $vps = $netif ? $netif->vps : null;
+
+        $xtpl->table_td($host_addr->addr);
+        $xtpl->table_td($host_addr->reverse_record_value ? h($host_addr->reverse_record_value) : '-');
+
+        if ($vps) {
+            $xtpl->table_td('<a href="?page=adminvps&action=info&veid=' . $vps->id . '">' . $vps->id . ' (' . h($vps->hostname) . ')</a>');
+        } else {
+            $xtpl->table_td('---');
+        }
+
+        if ($netif) {
+            $xtpl->table_td($host_addr->assigned ? $netif->name : ('<span style="color: #A6A6A6">' . $netif->name . '</span>'));
+        } else {
+            $xtpl->table_td('---');
+        }
+
+        $xtpl->table_td(
+            '<a href="?page=networking&action=hostaddr_ptr&id=' . $host_addr->id . '&return=' . $return_url . '">' .
+            '<img src="template/icons/m_edit.png" alt="' . _('Set reverse record') . '" title="' . _('Set reverse record') . '">' .
+            '</a>'
+        );
+
+        if ($host_addr->assigned) {
+            $xtpl->table_td(
+                '<a href="?page=networking&action=hostaddr_unassign&id=' . $host_addr->id . '&return=' . $return_url . '">' .
+                '<img src="template/icons/m_remove.png" alt="' . _('Remove from interface') . '" title="' . _('Remove from VPS') . '">' .
+                '</a>'
+            );
+
+        } elseif ($netif) {
+            $xtpl->table_td(
+                '<a href="?page=networking&action=hostaddr_assign&id=' . $host_addr->id . '&return=' . $return_url . '">' .
+                '<img src="template/icons/vps_add.png" alt="' . _('Add to a VPS') . '" title="' . _('Add to a VPS') . '">' .
+                '</a>'
+            );
+
+        } else {
+            $xtpl->table_td('---');
+        }
+
+        if ($host_addr->user_created) {
+            if ($host_addr->assigned) {
+                $xtpl->table_td(
+                    '<img src="template/icons/vps_delete_gray.png" alt="' . _('Delete address from vpsAdmin - address in use') . '" title="' . _('Delete address from vpsAdmin - address in use') . '">'
+                );
+            } else {
+                $xtpl->table_td(
+                    '<a href="?page=networking&action=hostaddr_delete&id=' . $host_addr->id . '&ip=' . $ip->id . '">' .
+                    '<img src="template/icons/vps_delete.png" alt="' . _('Delete address from vpsAdmin') . '" title="' . _('Delete address from vpsAdmin') . '">' .
+                    '</a>'
+                );
+            }
+        } else {
+            $xtpl->table_td('---');
+        }
+
+        $xtpl->table_tr();
+    }
+
+    $xtpl->table_td(
+        '<a href="?page=networking&action=hostaddr_new&ip=' . $ip->id . '&returl_url=' . $return_url . '">' . _('Add host addresses') . '</a>',
+        false,
+        true,
+        7
+    );
+    $xtpl->table_tr();
+
+    $xtpl->table_out();
 }
 
 function route_assign_form($id)
@@ -634,6 +718,53 @@ function hostaddr_unassign_form($id)
     $xtpl->form_add_checkbox(_('Confirm') . ':', 'confirm', '1', false);
 
     $xtpl->form_out(_("Remove"));
+}
+
+function hostaddr_new_form($ipId)
+{
+    global $xtpl, $api;
+
+    $ip = $api->ip_address->show($ipId);
+
+    $xtpl->title(_('IP address') . ' ' . $ip->addr . '/' . $ip->prefix);
+    $xtpl->sbar_add(
+        _("Back"),
+        '?page=networking&action=route_edit&id=' . $ip->id
+    );
+
+    $xtpl->form_create('?page=networking&action=hostaddr_new2&ip=' . $ip->id, 'post');
+
+    $xtpl->form_set_hidden_fields([
+        'returl_url' => $_GET['return_url'] ?? $_POST['return_url'],
+    ]);
+
+    $xtpl->form_add_textarea(
+        _('Host addresses') . ':',
+        40,
+        10,
+        'host_addresses',
+        post_val('host_addresses'),
+        _('One address per line')
+    );
+
+    $xtpl->form_out(_('Add addresses'));
+}
+
+function hostaddr_delete_form($hostId)
+{
+    global $xtpl, $api;
+
+    $host = $api->host_ip_address->show($hostId);
+
+    $xtpl->title(_('Host address') . ' ' . $host->addr);
+    $xtpl->sbar_add(
+        _("Back"),
+        '?page=networking&action=route_edit&id=' . $host->ip_address_id
+    );
+
+    $xtpl->form_create('?page=networking&action=hostaddr_delete2&id=' . $host->id . '&ip=' . $host->ip_address_id, 'post');
+    $xtpl->form_add_checkbox(_('Confirm') . ':', 'confirm', '1');
+    $xtpl->form_out(_('Remove address from vpsAdmin'));
 }
 
 function ip_address_assignment_list_form()

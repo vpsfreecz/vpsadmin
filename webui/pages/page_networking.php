@@ -222,6 +222,71 @@ if (isLoggedIn()) {
             }
             break;
 
+        case "hostaddr_new":
+            hostaddr_new_form($_GET['ip']);
+            break;
+
+        case "hostaddr_new2":
+            csrf_check();
+
+            $addrs = explode("\n", $_POST['host_addresses']);
+            $result = '';
+            $error = false;
+
+            foreach ($addrs as $addr) {
+                $trimmed = trim($addr);
+
+                if ($trimmed === '') {
+                    continue;
+                }
+
+                try {
+                    $host = $api->host_ip_address->create([
+                        'ip_address' => $_GET['ip'],
+                        'addr' => $trimmed,
+                    ]);
+
+                    $result .= _('Added') . ' ' . $host->addr . "<br>\n";
+
+                } catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+                    $error = true;
+                    $xtpl->perex_format_errors(_('Failed to add host address') . ' ' . h($addr), $e->getResponse());
+                    hostaddr_new_form($_GET['ip']);
+                    break;
+                }
+            }
+
+            if (!$error) {
+                notify_user(_('Host addresses added'), $result);
+                redirect('?page=networking&action=route_edit&id=' . $_GET['ip']);
+            }
+
+            break;
+
+        case "hostaddr_delete":
+            hostaddr_delete_form($_GET['id']);
+            break;
+
+        case "hostaddr_delete2":
+            csrf_check();
+
+            if (!$_POST['confirm']) {
+                hostaddr_delete_form($_GET['id']);
+                break;
+            }
+
+            try {
+                $api->host_ip_address->delete($_GET['id']);
+
+                notify_user(_('Host address removed from vpsAdmin'), '');
+                redirect('?page=networking&action=route_edit&id=' . $_GET['ip']);
+
+            } catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+                $xtpl->perex_format_errors(_('Action failed'), $e->getResponse());
+                hostaddr_delete_form($_GET['id']);
+            }
+            break;
+
         case 'assignments':
             ip_address_assignment_list_form();
             break;
