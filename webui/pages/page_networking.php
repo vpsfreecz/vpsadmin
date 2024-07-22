@@ -165,7 +165,7 @@ if (isLoggedIn()) {
 
             } catch (\HaveAPI\Client\Exception\ActionFailed $e) {
                 $xtpl->perex_format_errors(_('Action failed'), $e->getResponse());
-                ip_assign_form($_GET['id']);
+                hostaddr_assign_form($_GET['id']);
             }
 
             break;
@@ -190,7 +190,7 @@ if (isLoggedIn()) {
 
             } catch (\HaveAPI\Client\Exception\ActionFailed $e) {
                 $xtpl->perex_format_errors(_('Action failed'), $e->getResponse());
-                ip_unassign_form($_GET['id']);
+                hostaddr_unassign_form($_GET['id']);
             }
 
             break;
