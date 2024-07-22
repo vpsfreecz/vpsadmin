@@ -58,7 +58,6 @@ module VpsAdmin::API::Resources
         input whitelist: %i[location network version role purpose addr prefix vps
                             network_interface ip_address assigned routed order
                             limit offset]
-        output blacklist: %i[user_created]
         allow
       end
 
@@ -196,9 +195,7 @@ module VpsAdmin::API::Resources
         use :all
       end
 
-      authorize do |u|
-        allow if u.role == :admin
-        output blacklist: %i[user_created]
+      authorize do |_u|
         allow
       end
 
@@ -247,9 +244,7 @@ module VpsAdmin::API::Resources
         use :all
       end
 
-      authorize do |u|
-        allow if u.role == :admin
-        output blacklist: %i[user_created]
+      authorize do |_u|
         allow
       end
 
@@ -338,9 +333,7 @@ module VpsAdmin::API::Resources
         use :all
       end
 
-      authorize do |u|
-        allow if u.role == :admin
-        output blacklist: %i[user_created]
+      authorize do |_u|
         allow
       end
 
@@ -382,9 +375,7 @@ module VpsAdmin::API::Resources
         use :all
       end
 
-      authorize do |u|
-        allow if u.role == :admin
-        output blacklist: %i[user_created]
+      authorize do |_u|
         allow
       end
 
