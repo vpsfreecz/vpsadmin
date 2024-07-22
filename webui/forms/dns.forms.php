@@ -127,7 +127,7 @@ function dns_zone_list($action, $filters = [], $onLastRow = null)
 
     if ($onLastRow) {
         $onLastRow($cols);
-    } else {
+    } elseif ($zones->count() == 0) {
         $xtpl->table_td(
             _('No zones found.'),
             false,
