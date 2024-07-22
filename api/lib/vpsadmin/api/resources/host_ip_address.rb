@@ -306,6 +306,7 @@ module VpsAdmin::API::Resources
 
     class Delete < HaveAPI::Actions::Default::Delete
       desc 'Delete host IP address'
+      blocking true
 
       authorize do |_u|
         allow
@@ -316,10 +317,14 @@ module VpsAdmin::API::Resources
 
         error('access denied') if current_user.role != :admin && host.current_owner != current_user
 
-        VpsAdmin::API::Operations::HostIpAddress::Destroy.run(host)
+        @chain, = VpsAdmin::API::Operations::HostIpAddress::Destroy.run(host)
         ok
       rescue VpsAdmin::API::Exceptions::OperationError => e
         error("delete failed: #{e.message}")
+      end
+
+      def state_id
+        @chain && @chain.id
       end
     end
 

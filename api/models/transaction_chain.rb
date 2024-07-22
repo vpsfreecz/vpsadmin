@@ -438,4 +438,5 @@ module TransactionChains
 
   module Export; end
   module IncidentReport; end
+  module HostIpAddress; end
 end
