@@ -45,6 +45,31 @@ if (isLoggedIn()) {
             host_ip_address_list('networking');
             break;
 
+        case "route_edit":
+            route_edit_form($_GET['id']);
+            break;
+
+        case "route_edit_user":
+            csrf_check();
+
+            try {
+                $params = [
+                    'user' => $_POST['user'] ? $_POST['user'] : null,
+                    'environment' => $_POST['environment'] ? $_POST['environment'] : null,
+                ];
+
+                $ret = $api->ip_address($_GET['id'])->update($params);
+
+                notify_user(_('Owner set'), '');
+                redirect($_GET['return'] ? $_GET['return'] : '?page=cluster&action=ip_addresses');
+
+            } catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+                $xtpl->perex_format_errors(_('Update failed'), $e->getResponse());
+                route_edit_form($_GET['id']);
+            }
+
+            break;
+
         case "route_assign":
             route_assign_form($_GET['id']);
             break;

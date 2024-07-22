@@ -152,7 +152,7 @@ function ip_address_list($page)
 
         if (isAdmin()) {
             $xtpl->table_td(
-                '<a href="?page=cluster&action=ipaddr_edit&id=' . $ip->id . '&return=' . $return_url . '">' .
+                '<a href="?page=networking&action=route_edit&id=' . $ip->id . '&return=' . $return_url . '">' .
                 '<img src="template/icons/m_edit.png" alt="' . _('Edit') . '" title="' . _('Edit') . '">' .
                 '</a>'
             );
@@ -369,6 +369,37 @@ function host_ip_address_list($page)
     }
 
     $xtpl->table_out();
+}
+
+function route_edit_form($id)
+{
+    global $xtpl, $api;
+
+    $ip = $api->ip_address->show($id, ['meta' => ['includes' => 'network']]);
+
+    $xtpl->table_title($ip->addr . '/' . $ip->network->prefix);
+    $xtpl->sbar_add(
+        _("Back"),
+        $_GET['return'] ? $_GET['return'] : '?page=networking&action=ip_addresses'
+    );
+
+    $xtpl->form_create(
+        '?page=networking&action=route_edit_user&id=' . $ip->id . '&return=' . urlencode($_GET['return']),
+        'post'
+    );
+
+    $xtpl->table_add_category(_('Owner'));
+    $xtpl->table_add_category('');
+
+    $xtpl->form_add_input(_('User ID') . ':', 'text', '30', 'user', post_val('user', $ip->user_id));
+    $xtpl->form_add_select(
+        _('Environment') . ':',
+        'environment',
+        resource_list_to_options($api->environment->list()),
+        post_val('environment')
+    );
+
+    $xtpl->form_out(_("Set owner"));
 }
 
 function route_assign_form($id)

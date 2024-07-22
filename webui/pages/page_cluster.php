@@ -188,7 +188,7 @@ if (isAdmin()) {
                     'label' => $_POST['dns_label'],
                     'ip_addr' => $_POST['dns_ip'],
                     'is_universal' => isset($_POST['dns_is_universal']),
-                    'location' => $_POST['dns_location'] ? $_POST['dns_location'] : NULL,
+                    'location' => $_POST['dns_location'] ? $_POST['dns_location'] : null,
                 ]);
 
                 notify_user(_("Changes saved"), _("DNS server updated."));
@@ -689,31 +689,6 @@ if (isAdmin()) {
 
                 notify_user(_('IP addresses added'), $str);
                 redirect('?page=cluster&action=ip_addresses');
-            }
-
-            break;
-
-        case "ipaddr_edit":
-            ip_edit_form($_GET['id']);
-            break;
-
-        case "ipaddr_edit_user":
-            csrf_check();
-
-            try {
-                $params = [
-                    'user' => $_POST['user'] ? $_POST['user'] : null,
-                    'environment' => $_POST['environment'] ? $_POST['environment'] : null,
-                ];
-
-                $ret = $api->ip_address($_GET['id'])->update($params);
-
-                notify_user(_('Owner set'), '');
-                redirect($_GET['return'] ? $_GET['return'] : '?page=cluster&action=ip_addresses');
-
-            } catch (\HaveAPI\Client\Exception\ActionFailed $e) {
-                $xtpl->perex_format_errors(_('Update failed'), $e->getResponse());
-                ip_edit_form($_GET['id']);
             }
 
             break;
