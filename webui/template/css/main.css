@@ -212,3 +212,44 @@ a.user-unpaid {color: #fff;}
   padding: 5px;
   border-bottom: 1px solid #969678;
 }
+
+.goresheat-window {
+  display: none;
+  position: fixed;
+  top: 10%;
+  left: 50%;
+  transform: translate(-50%, 0);
+  width: 80%;
+  height: 80%;
+  background-color: white;
+  border: 1px solid black;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  z-index: 1000;
+}
+.goresheat-window iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+}
+.goresheat-window .header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px;
+  background-color: #f2f2f2;
+  border-bottom: 1px solid black;
+}
+.goresheat-window .header .window-title {
+  margin: 0;
+}
+
+.overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 999;
+}

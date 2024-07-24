@@ -13,6 +13,7 @@ VpsAdmin::API::Plugin.register(:webui) do
     SysConfig.register :webui, :index_info_box_title, String, min_user_level: 0
     SysConfig.register :webui, :index_info_box_content, Text, min_user_level: 0
     SysConfig.register :webui, :munin_url, String, min_user_level: 0
+    SysConfig.register :webui, :goresheat_url, String, min_user_level: 0
 
     MailTemplate.register :daily_report, vars: {
       base_url: [String, 'URL to the web UI']

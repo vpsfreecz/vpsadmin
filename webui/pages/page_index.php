@@ -86,6 +86,16 @@ $xtpl->table_out();
 
 // Node status
 
+$goresheatUrl = $config->get('webui', 'goresheat_url');
+
+if ($goresheatUrl) {
+    $xtpl->assign(
+        'AJAX_SCRIPT',
+        $xtpl->vars['AJAX_SCRIPT'] .
+        '<script type="text/javascript" src="js/goresheat.js"></script>'
+    );
+}
+
 $xtpl->table_td('', '#5EAFFF; color:#FFF; font-weight:bold;');
 $xtpl->table_td(_("Node"), '#5EAFFF; color:#FFF; font-weight:bold;');
 $xtpl->table_td(_("Storage"), '#5EAFFF; color:#FFF; font-weight:bold;');
@@ -93,6 +103,10 @@ $xtpl->table_td(_("VPS"), '#5EAFFF; color:#FFF; font-weight:bold;');
 $xtpl->table_td(_("CPU"), '#5EAFFF; color:#FFF; font-weight:bold;');
 $xtpl->table_td(_("Kernel"), '#5EAFFF; color:#FFF; font-weight:bold;');
 $xtpl->table_td(_("cgroups") . ' [<a style="color: #ffffff;" href="https://kb.vpsfree.org/manuals/vps/cgroups" target="_blank" title="' . _('Read more about cgroups in KB') . '">?</a>]', '#5EAFFF; color:#FFF; font-weight:bold;');
+
+if ($goresheatUrl) {
+    $xtpl->table_td('', '#5EAFFF; color:#FFF; font-weight:bold;');
+}
 
 $xtpl->table_tr();
 
@@ -110,6 +124,11 @@ foreach ($nodes as $node) {
         $xtpl->table_td(_("CPU"), '#5EAFFF; color:#FFF; font-weight:bold;');
         $xtpl->table_td(_("Kernel"), '#5EAFFF; color:#FFF; font-weight:bold;');
         $xtpl->table_td(_("cgroups") . ' [<a style="color: #ffffff;" href="https://kb.vpsfree.org/manuals/vps/cgroups" target="_blank" title="' . _('Read more about cgroups in KB') . '">?</a>]', '#5EAFFF; color:#FFF; font-weight:bold;');
+
+        if ($goresheatUrl) {
+            $xtpl->table_td('', '#5EAFFF; color:#FFF; font-weight:bold;');
+        }
+
         $xtpl->table_tr(true);
     }
 
@@ -174,6 +193,15 @@ foreach ($nodes as $node) {
         false,
         true
     );
+
+    if ($goresheatUrl) {
+        if ($node->type == 'node' && $node->maintenance_lock == 'no') {
+            $fullGoresheatUrl = $goresheatUrl . '/' . $node->fqdn . '/';
+            $xtpl->table_td('<a href="#" onclick="showGoresheatWindow(\'' . $goresheatUrl . '\', \'' . $fullGoresheatUrl . '\', \'' . $node->fqdn . '\', event)"><img src="template/icons/heatmap.png" width="16" alt="' . _('Heatmap') . '" title="' . _('Heatmap') . '"></a>');
+        } else {
+            $xtpl->table_td('');
+        }
+    }
 
     $xtpl->table_tr();
 }
