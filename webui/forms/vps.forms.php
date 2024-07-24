@@ -1200,9 +1200,11 @@ function vps_migrate_form_step3($vps_id, $node_id, $opts)
     $days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
     $hours = [];
 
-    for ($i = 0; $i < 24; $i++) {
+    for ($i = 0; $i < 25; $i++) {
         $hours[] = sprintf("%02d:00", $i);
     }
+
+    $hours[ count($hours) - 1 ] = '23:59';
 
     if ($opts['maintenance_window'] == '1') {
         $windows_td = '<table>';
