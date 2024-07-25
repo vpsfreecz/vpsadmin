@@ -86,12 +86,24 @@ $xtpl->table_out();
 
 // Node status
 
+$nodes = $api->node->public_status();
+
 $goresheatUrl = $config->get('webui', 'goresheat_url');
 
 if ($goresheatUrl) {
+    $goresheatServers = [];
+
+    foreach ($nodes as $node) {
+        $goresheatServers[$node->fqdn] = [
+            'rootUrl' => $goresheatUrl,
+            'serverUrl' => $goresheatUrl . '/' . $node->fqdn . '/',
+        ];
+    }
+
     $xtpl->assign(
         'AJAX_SCRIPT',
         $xtpl->vars['AJAX_SCRIPT'] .
+        '<script type="text/javascript">window.goresheatServers = ' . json_encode($goresheatServers) . ';</script>' .
         '<script type="text/javascript" src="js/goresheat.js"></script>'
     );
 }
@@ -111,7 +123,6 @@ if ($goresheatUrl) {
 $xtpl->table_tr();
 
 $last_location = 0;
-$nodes = $api->node->public_status();
 $munin = new Munin($config);
 
 foreach ($nodes as $node) {
@@ -197,7 +208,7 @@ foreach ($nodes as $node) {
     if ($goresheatUrl) {
         if ($node->type == 'node' && $node->maintenance_lock == 'no') {
             $fullGoresheatUrl = $goresheatUrl . '/' . $node->fqdn . '/';
-            $xtpl->table_td('<a href="#" onclick="showGoresheatWindow(\'' . $goresheatUrl . '\', \'' . $fullGoresheatUrl . '\', \'' . $node->fqdn . '\', event)"><img src="template/icons/heatmap.png" width="16" alt="' . _('Heatmap') . '" title="' . _('Heatmap') . '"></a>');
+            $xtpl->table_td('<a href="#heatmap-' . $node->fqdn . '" onclick="showGoresheatWindow(\'' . $goresheatUrl . '\', \'' . $fullGoresheatUrl . '\', \'' . $node->fqdn . '\', event)"><img src="template/icons/heatmap.png" width="16" alt="' . _('Heatmap') . '" title="' . _('Heatmap') . '"></a>');
         } else {
             $xtpl->table_td('');
         }

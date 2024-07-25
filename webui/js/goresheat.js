@@ -1,4 +1,7 @@
 function showGoresheatWindow(rootUrl, serverUrl, serverName) {
+	// Update the URL hash
+	window.location.hash = `heatmap-${serverName}`;
+
 	// Create the goresheat window div
 	var goresheatWindow = document.createElement('div');
 	goresheatWindow.className = 'goresheat-window';
@@ -44,6 +47,9 @@ function closeGoresheatWindow(event) {
 	// Prevent the event from propagating to the overlay click handler
 	if (event) event.stopPropagation();
 
+	// Remove the hash from the URL
+	history.pushState("", document.title, window.location.pathname + window.location.search);
+
 	// Find the goresheat window and remove it
 	var goresheatWindow = document.getElementById('goresheatWindow');
 	if (goresheatWindow) {
@@ -55,3 +61,24 @@ function closeGoresheatWindow(event) {
 	overlay.style.display = 'none';
 	overlay.onclick = null;
 }
+
+function openeGoresheatWindowFromHash() {
+	var hash = window.location.hash;
+
+	if (!hash.startsWith("#heatmap-")) {
+		return;
+	}
+
+	var serverName = hash.substring(9);
+	var opts = window.goresheatServers[serverName];
+
+	if (!opts) {
+		return;
+	}
+
+	showGoresheatWindow(opts.rootUrl, opts.serverUrl, serverName);
+}
+
+$(document).ready(function () {
+	openeGoresheatWindowFromHash();
+});
