@@ -5,12 +5,12 @@ let
 in stdenv.mkDerivation rec {
   name = "vpsadmin-client";
 
-  buildInputs = [
-    pkgs.ruby
-    pkgs.git
-    pkgs.zlib
-    pkgs.openssl
-    pkgs.ncurses
+  buildInputs = with pkgs; [
+    ruby_3_2
+    git
+    zlib
+    openssl
+    ncurses
   ];
 
   shellHook = ''
