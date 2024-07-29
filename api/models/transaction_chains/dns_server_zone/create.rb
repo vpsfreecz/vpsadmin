@@ -24,12 +24,22 @@ module TransactionChains
         dns_server_zone.dns_zone.dns_server_zones.each do |other_dns_server_zone|
           next if other_dns_server_zone == dns_server_zone
 
+          if dns_server_zone.primary_type? && other_dns_server_zone.secondary_type?
+            primaries = [dns_server_zone.server_opts]
+          end
+
+          if dns_server_zone.secondary_type? && other_dns_server_zone.primary_type?
+            secondaries = [dns_server_zone.server_opts]
+          end
+
           append_t(
             Transactions::DnsServerZone::AddServers,
             args: [other_dns_server_zone],
             kwargs: {
-              nameservers: [dns_server_zone.dns_server.name]
-            }
+              nameservers: [dns_server_zone.dns_server.name],
+              primaries:,
+              secondaries:
+            }.compact
           )
 
           append_t(

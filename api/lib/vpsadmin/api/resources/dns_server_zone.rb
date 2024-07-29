@@ -6,6 +6,7 @@ module VpsAdmin::API::Resources
     params(:common) do
       resource DnsServer, value_label: :name
       resource DnsZone, value_label: :name
+      string :type, db_name: :zone_type, choices: ::DnsServerZone.zone_types.keys.map(&:to_s)
     end
 
     params(:all) do
@@ -96,7 +97,7 @@ module VpsAdmin::API::Resources
       end
 
       def exec
-        @chain, ret = VpsAdmin::API::Operations::DnsServerZone::Create.run(input)
+        @chain, ret = VpsAdmin::API::Operations::DnsServerZone::Create.run(to_db_names(input))
         ret
       rescue ActiveRecord::RecordInvalid => e
         error('create failed', e.record.errors.to_hash)

@@ -350,6 +350,7 @@ function dns_zone_server_new($id)
 
     $input = $api->dns_server_zone->create->getParameters('input');
     api_param_to_form('dns_server', $input->dns_server);
+    api_param_to_form('type', $input->type);
 
     $xtpl->form_out(_('Add to server'));
 }

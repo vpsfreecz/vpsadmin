@@ -14,7 +14,8 @@ module TransactionChains
       ::DnsServer.where(enable_user_dns_zones: true).each do |dns_server|
         dns_server_zone = ::DnsServerZone.create!(
           dns_server:,
-          dns_zone:
+          dns_zone:,
+          zone_type: 'secondary_type'
         )
 
         append_t(Transactions::DnsServerZone::Create, args: [dns_server_zone]) do |t|

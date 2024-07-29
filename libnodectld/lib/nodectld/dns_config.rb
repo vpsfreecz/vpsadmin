@@ -88,14 +88,14 @@ module NodeCtld
           if !zone.enabled
             f.puts(" # zone #{name} is disabled\n")
             next
-          elsif zone.source == 'external_source' && zone.primaries.empty?
+          elsif (zone.source == 'external_source' || zone.type == 'secondary_type') && zone.primaries.empty?
             f.puts(" # zone #{name} has no primaries")
             next
           end
 
           f.puts("zone \"#{name}\" {")
 
-          if zone.source == 'internal_source'
+          if zone.source == 'internal_source' && zone.type == 'primary_type'
             f.puts('  type primary;')
             f.puts("  allow-transfer { #{list_servers(zone.secondaries)} };")
             f.puts('  notify yes;')

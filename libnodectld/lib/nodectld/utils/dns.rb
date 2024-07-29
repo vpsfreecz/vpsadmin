@@ -7,6 +7,7 @@ module NodeCtld
       zone_attrs = {
         name: @name,
         source: @source,
+        type: @type,
         default_ttl: @default_ttl,
         nameservers: @nameservers,
         primaries: @primaries,

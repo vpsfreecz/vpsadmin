@@ -5,11 +5,12 @@ module NodeCtld
   class DnsServerZone
     include OsCtl::Lib::Utils::File
 
-    attr_reader :name, :source, :zone_file, :nameservers, :primaries, :secondaries, :enabled
+    attr_reader :name, :source, :type, :zone_file, :nameservers, :primaries, :secondaries, :enabled
 
-    def initialize(name:, source:, default_ttl: nil, nameservers: nil, serial: nil, email: nil, primaries: nil, secondaries: nil, enabled: nil, load_db: true)
+    def initialize(name:, source:, type: nil, default_ttl: nil, nameservers: nil, serial: nil, email: nil, primaries: nil, secondaries: nil, enabled: nil, load_db: true)
       @name = name
       @source = source
+      @type = type
       @default_ttl = default_ttl
       @nameservers = nameservers
       @serial = serial
@@ -30,6 +31,7 @@ module NodeCtld
       end
 
       @source ||= json['source']
+      @type ||= json['type']
       @default_ttl ||= json['default_ttl']
       @nameservers ||= json['nameservers']
       @serial ||= json['serial']
@@ -93,6 +95,7 @@ module NodeCtld
       {
         name: @name,
         source: @source,
+        type: @type,
         default_ttl: @default_ttl,
         nameservers: @nameservers,
         serial: @serial,
@@ -107,7 +110,7 @@ module NodeCtld
     def generate_zone
       FileUtils.mkdir_p(File.dirname(@zone_file))
 
-      if @source == 'external_source'
+      if @source == 'external_source' || @type == 'secondary_type'
         FileUtils.chown('named', 'named', File.dirname(@zone_file))
         return
       end

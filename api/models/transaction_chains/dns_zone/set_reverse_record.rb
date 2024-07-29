@@ -50,7 +50,7 @@ module TransactionChains
 
       dns_zone.increment!(:serial)
 
-      dns_zone.dns_server_zones.each do |dns_server_zone|
+      dns_zone.dns_server_zones.primary_type.each do |dns_server_zone|
         if created
           append_t(Transactions::DnsServerZone::CreateRecords, args: [dns_server_zone, [record]])
         else

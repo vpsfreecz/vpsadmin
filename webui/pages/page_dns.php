@@ -75,6 +75,7 @@ if (isLoggedIn()) {
                 $api->dns_server_zone->create([
                     'dns_server' => $_POST['dns_server'],
                     'dns_zone' => $_GET['id'],
+                    'type' => $_POST['type'],
                 ]);
 
                 notify_user(_('DNS zone added to server'), '');
