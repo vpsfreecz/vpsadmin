@@ -12,7 +12,7 @@ class DnsServerZone < ApplicationRecord
 
   # @return [String]
   def ip_addr
-    dns_server.node.ip_address
+    dns_server.node.ip_addr
   end
 
   # @return [String]
