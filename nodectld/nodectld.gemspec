@@ -21,5 +21,5 @@ Gem::Specification.new do |s|
 
   s.required_ruby_version = ">= #{File.read('../.ruby-version').strip}"
 
-  s.add_runtime_dependency 'libnodectld', s.version
+  s.add_dependency 'libnodectld', s.version
 end

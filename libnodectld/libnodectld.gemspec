@@ -21,18 +21,18 @@ Gem::Specification.new do |s|
 
   s.required_ruby_version = ">= #{File.read('../.ruby-version').strip}"
 
-  s.add_runtime_dependency 'bunny', '~> 2.22.0'
-  s.add_runtime_dependency 'filelock'
-  s.add_runtime_dependency 'ipaddress', '~> 0.8.3'
-  s.add_runtime_dependency 'json'
-  s.add_runtime_dependency 'libosctl', ENV.fetch('OS_BUILD_ID', nil)
-  s.add_runtime_dependency 'mail', '~> 2.8.1'
-  s.add_runtime_dependency 'mysql2', '0.5.5'
-  s.add_runtime_dependency 'osctl', ENV.fetch('OS_BUILD_ID', nil)
-  s.add_runtime_dependency 'osctl-exportfs', ENV.fetch('OS_BUILD_ID', nil)
-  s.add_runtime_dependency 'prometheus-client', '~> 4.2.2'
-  s.add_runtime_dependency 'pry', '~> 0.14.2'
-  s.add_runtime_dependency 'pry-remote'
-  s.add_runtime_dependency 'require_all', '~> 2.0.0'
-  s.add_runtime_dependency 'rexml', '~> 3.3'
+  s.add_dependency 'bunny', '~> 2.22.0'
+  s.add_dependency 'filelock'
+  s.add_dependency 'ipaddress', '~> 0.8.3'
+  s.add_dependency 'json'
+  s.add_dependency 'libosctl', ENV.fetch('OS_BUILD_ID', nil)
+  s.add_dependency 'mail', '~> 2.8.1'
+  s.add_dependency 'mysql2', '0.5.5'
+  s.add_dependency 'osctl', ENV.fetch('OS_BUILD_ID', nil)
+  s.add_dependency 'osctl-exportfs', ENV.fetch('OS_BUILD_ID', nil)
+  s.add_dependency 'prometheus-client', '~> 4.2.2'
+  s.add_dependency 'pry', '~> 0.14.2'
+  s.add_dependency 'pry-remote'
+  s.add_dependency 'require_all', '~> 2.0.0'
+  s.add_dependency 'rexml', '~> 3.3'
 end
