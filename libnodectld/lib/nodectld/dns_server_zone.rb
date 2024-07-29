@@ -5,7 +5,7 @@ module NodeCtld
   class DnsServerZone
     include OsCtl::Lib::Utils::File
 
-    attr_reader :name, :source, :zone_file, :primaries, :secondaries, :enabled
+    attr_reader :name, :source, :zone_file, :nameservers, :primaries, :secondaries, :enabled
 
     def initialize(name:, source:, default_ttl: nil, nameservers: nil, serial: nil, email: nil, primaries: nil, secondaries: nil, enabled: nil, load_db: true)
       @name = name

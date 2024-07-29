@@ -14,30 +14,15 @@ module TransactionChains
       dns_zone = zone_transfer.dns_zone
       lock(dns_zone)
 
-      base_nameservers = dns_zone.nameservers if dns_zone.internal_source?
-      base_primaries = dns_zone.dns_zone_transfers.primary_type.map(&:server_opts)
-      base_secondaries = dns_zone.dns_zone_transfers.secondary_type.map(&:server_opts)
-
       update_kwargs =
         if dns_zone.internal_source?
           {
-            new: {
-              nameservers: base_nameservers + [zone_transfer.server_name].compact,
-              secondaries: base_secondaries + zone_transfer.server_opts
-            },
-            original: {
-              nameservers: base_nameservers,
-              secondaries: base_secondaries
-            }
+            nameservers: [zone_transfer.server_name].compact,
+            secondaries: [zone_transfer.server_opts]
           }
         else
           {
-            new: {
-              primaries: base_primaries + [zone_transfer.server_opts]
-            },
-            original: {
-              primaries: base_primaries
-            }
+            primaries: [zone_transfer.server_opts]
           }
         end
 
@@ -45,7 +30,7 @@ module TransactionChains
 
       dns_zone.dns_server_zones.each do |dns_server_zone|
         append_t(
-          Transactions::DnsServerZone::Update,
+          Transactions::DnsServerZone::AddServers,
           args: [dns_server_zone],
           kwargs: update_kwargs
         )

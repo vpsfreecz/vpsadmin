@@ -11,9 +11,6 @@ module TransactionChains
         [dns_server_zone.dns_zone.class.name, dns_server_zone.dns_zone_id]
       )
 
-      # Save a list of current nameservers
-      nameservers = dns_server_zone.dns_zone.nameservers if dns_server_zone.dns_zone.internal_source?
-
       # Create the new server zone
       dns_server_zone.save!
 
@@ -28,15 +25,10 @@ module TransactionChains
           next if other_dns_server_zone == dns_server_zone
 
           append_t(
-            Transactions::DnsServerZone::Update,
+            Transactions::DnsServerZone::AddServers,
             args: [other_dns_server_zone],
             kwargs: {
-              new: {
-                nameservers: nameservers + [dns_server_zone.dns_server.name]
-              },
-              original: {
-                nameservers:
-              }
+              nameservers: [dns_server_zone.dns_server.name]
             }
           )
 

@@ -10,8 +10,6 @@ module TransactionChains
         [dns_server_zone.dns_zone.class.name, dns_server_zone.dns_zone_id]
       )
 
-      nameservers = dns_server_zone.dns_zone.nameservers if dns_server_zone.dns_zone.internal_source?
-
       append_t(Transactions::DnsServerZone::Destroy, args: [dns_server_zone]) do |t|
         dns_server_zone.update!(confirmed: ::DnsServerZone.confirmed(:confirm_destroy))
         t.destroy(dns_server_zone)
@@ -25,15 +23,10 @@ module TransactionChains
         next if other_dns_server_zone == dns_server_zone
 
         append_t(
-          Transactions::DnsServerZone::Update,
+          Transactions::DnsServerZone::RemoveServers,
           args: [other_dns_server_zone],
           kwargs: {
-            new: {
-              nameservers: nameservers - [dns_server_zone.dns_server.name]
-            },
-            original: {
-              nameservers:
-            }
+            nameservers: [dns_server_zone.dns_server.name]
           }
         )
 
