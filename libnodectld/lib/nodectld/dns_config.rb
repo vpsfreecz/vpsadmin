@@ -97,11 +97,11 @@ module NodeCtld
 
           if zone.source == 'internal_source' && zone.type == 'primary_type'
             f.puts('  type primary;')
-            f.puts("  allow-transfer { #{list_servers(zone.secondaries)} };")
+            f.puts("  allow-transfer { #{allow_transfer(zone.secondaries)} };")
             f.puts('  notify yes;')
           else
             f.puts('  type secondary;')
-            f.puts("  primaries { #{list_servers(zone.primaries)} };")
+            f.puts("  primaries { #{list_primaries(zone.primaries)} };")
           end
 
           f.puts("  file \"#{zone.zone_file}\";")
@@ -111,7 +111,17 @@ module NodeCtld
       end
     end
 
-    def list_servers(servers)
+    def allow_transfer(servers)
+      servers.map do |s|
+        if s['tsig_key']
+          "key #{s['tsig_key']['name']};"
+        else
+          "#{s['ip_addr']};"
+        end
+      end.join(' ')
+    end
+
+    def list_primaries(servers)
       servers.map do |s|
         if s['tsig_key']
           "#{s['ip_addr']} key #{s['tsig_key']['name']};"
