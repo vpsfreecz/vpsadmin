@@ -7,7 +7,7 @@ module NodeCtld
 
     attr_reader :name, :source, :type, :zone_file, :nameservers, :primaries, :secondaries, :enabled
 
-    def initialize(name:, source:, type: nil, default_ttl: nil, nameservers: nil, serial: nil, email: nil, primaries: nil, secondaries: nil, enabled: nil, load_db: true)
+    def initialize(name:, source:, type:, default_ttl: nil, nameservers: nil, serial: nil, email: nil, primaries: nil, secondaries: nil, enabled: nil, load_db: true)
       @name = name
       @source = source
       @type = type
@@ -18,8 +18,8 @@ module NodeCtld
       @primaries = primaries
       @secondaries = secondaries
       @enabled = enabled
-      @db_file = format($CFG.get(:dns_server, :db_template), name:, source:)
-      @zone_file = format($CFG.get(:dns_server, :zone_template), name:, source:)
+      @db_file = format($CFG.get(:dns_server, :db_template), name:, source:, type:)
+      @zone_file = format($CFG.get(:dns_server, :zone_template), name:, source:, type:)
       self.load_db if load_db
     end
 

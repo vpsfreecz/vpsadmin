@@ -22,7 +22,7 @@ module NodeCtld
     end
 
     def add_servers_to_zone
-      zone = DnsServerZone.new(name: @name, source: @source)
+      zone = DnsServerZone.new(name: @name, source: @source, type: @type)
 
       @nameservers.each do |ns|
         zone.nameservers << ns unless zone.nameservers.include?(ns)
@@ -41,7 +41,7 @@ module NodeCtld
     end
 
     def remove_servers_from_zone
-      zone = DnsServerZone.new(name: @name, source: @source)
+      zone = DnsServerZone.new(name: @name, source: @source, type: @type)
 
       if @nameservers.any?
         zone.nameservers.delete_if do |ns|

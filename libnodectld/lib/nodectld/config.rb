@@ -250,7 +250,7 @@ module NodeCtld
 
     dns_server: {
       config_root: '/var/named/vpsadmin/named.conf',
-      zone_template: '/var/named/vpsadmin/%{source}/%{name}zone',
+      zone_template: '/var/named/vpsadmin/%{type}/%{name}zone',
       db_template: '/var/named/vpsadmin/db/%{name}json',
       statistics_url: 'http://localhost:8053/xml/v3',
       status_interval: 60

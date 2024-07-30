@@ -13,7 +13,7 @@ module NodeCtld
       @zones =
         begin
           JSON.parse(File.read(@db_file))['zones'].to_h do |name, zone|
-            [name, DnsServerZone.new(name:, source: zone['source'])]
+            [name, DnsServerZone.new(name:, source: zone['source'], type: zone['type'])]
           end
         rescue Errno::ENOENT
           {}
@@ -56,7 +56,7 @@ module NodeCtld
     def save
       regenerate_file(@db_file, 0o644) do |f|
         save_zones = @zones.transform_values do |zone|
-          { source: zone.source }
+          { source: zone.source, type: zone.type }
         end
 
         f.puts(JSON.pretty_generate({ zones: save_zones }))

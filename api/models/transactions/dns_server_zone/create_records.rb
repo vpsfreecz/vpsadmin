@@ -10,6 +10,7 @@ module Transactions::DnsServerZone
       {
         name: dns_server_zone.dns_zone.name,
         source: dns_server_zone.dns_zone.zone_source,
+        type: dns_server_zone.zone_type,
         serial: dns_server_zone.dns_zone.serial,
         records: dns_records.map do |r|
                    {
