@@ -40,11 +40,7 @@ module TransactionChains
           }.compact
         )
 
-        append_t(
-          Transactions::DnsServer::Reload,
-          args: [other_dns_server_zone.dns_server],
-          kwargs: { zone: dns_server_zone.dns_zone.name }
-        )
+        append_t(Transactions::DnsServer::Reload, args: [other_dns_server_zone.dns_server])
       end
 
       nil
