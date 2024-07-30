@@ -20,8 +20,12 @@ class DnsZone < ApplicationRecord
     message: '%{value} is not a valid zone name'
   }
 
+  validates :email, presence: true, format: {
+    with: /\A[^@\s]+@[^\s]+\z/,
+    message: '%{value} is not a valid email address'
+  }, if: :internal_source?
+
   validate :check_name
-  validate :check_source
 
   include Confirmable
   include Lockable
@@ -66,12 +70,6 @@ class DnsZone < ApplicationRecord
   def check_name
     unless name.end_with?('.')
       errors.add(:name, 'not a canonical name (add trailing dot)')
-    end
-  end
-
-  def check_source
-    if internal_source? && user_id
-      errors.add(:zone_source, 'user-owned zones must be external')
     end
   end
 

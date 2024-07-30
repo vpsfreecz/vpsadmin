@@ -175,6 +175,7 @@ if (isLoggedIn()) {
 
                 $params = [
                     'name' => $name,
+                    'source' => 'external_source',
                 ];
 
                 if (!isAdmin() || $_POST['user']) {
@@ -189,6 +190,117 @@ if (isLoggedIn()) {
             } catch (\HaveAPI\Client\Exception\ActionFailed $e) {
                 $xtpl->perex_format_errors(_('Failed to create secondary DNS zone'), $e->getResponse());
                 secondary_dns_zone_new();
+            }
+            break;
+
+        case 'primary_zone_list':
+            primary_dns_zone_list();
+            break;
+
+        case 'primary_zone_new':
+            primary_dns_zone_new();
+            break;
+
+        case 'primary_zone_new2':
+            csrf_check();
+
+            try {
+                $name = $_POST['name'];
+
+                if (!str_ends_with($name, '.')) {
+                    $name .= '.';
+                }
+
+                $params = [
+                    'name' => $name,
+                    'email' => $_POST['email'],
+                    'source' => 'internal_source',
+                ];
+
+                if (!isAdmin() || $_POST['user']) {
+                    $params['user'] = $_POST['user'];
+                }
+
+                $zone = $api->dns_zone->create($params);
+
+                notify_user(_('Primary DNS zone created'), '');
+                redirect('?page=dns&action=zone_show&id=' . $zone->id);
+
+            } catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+                $xtpl->perex_format_errors(_('Failed to create primary DNS zone'), $e->getResponse());
+                primary_dns_zone_new();
+            }
+            break;
+
+        case 'record_new':
+            dns_record_new($_GET['zone']);
+            break;
+
+        case 'record_new2':
+            csrf_check();
+
+            try {
+                $params = [
+                    'dns_zone' => $_GET['zone'],
+                    'name' => $_POST['name'],
+                    'type' => $_POST['type'],
+                    'content' => $_POST['content'],
+                ];
+
+                if (trim($_POST['ttl'] ?? '') !== '') {
+                    $params['ttl'] = $_POST['ttl'];
+                }
+
+                if (trim($_POST['priority'] ?? '') !== '') {
+                    $params['priority'] = $_POST['priority'];
+                }
+
+                $record = $api->dns_record->create($params);
+
+                notify_user(_('Record added'), '');
+                redirect('?page=dns&action=zone_show&id=' . $_GET['zone']);
+
+            } catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+                $xtpl->perex_format_errors(_('Failed to add record'), $e->getResponse());
+                dns_record_new($_GET['zone']);
+            }
+            break;
+
+        case 'record_edit':
+            dns_record_edit($_GET['id']);
+            break;
+
+        case 'record_edit2':
+            csrf_check();
+
+            try {
+                $record = $api->dns_record->update($_GET['id'], [
+                    'ttl' => trim($_POST['ttl'] ?? '') === '' ? null : $_POST['ttl'],
+                    'priority' => trim($_POST['priority'] ?? '') === '' ? null : $_POST['priority'],
+                    'content' => $_POST['content'],
+                ]);
+
+                notify_user(_('Record updated'), '');
+                redirect('?page=dns&action=zone_show&id=' . $record->dns_zone_id);
+
+            } catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+                $xtpl->perex_format_errors(_('Failed to update record'), $e->getResponse());
+                dns_record_edit($_GET['id']);
+            }
+            break;
+
+        case 'record_delete':
+            csrf_check();
+
+            try {
+                $api->dns_record->delete($_GET['id']);
+
+                notify_user(_('Record deleted'), '');
+                redirect('?page=dns&action=zone_show&id=' . $_GET['zone']);
+
+            } catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+                $xtpl->perex_format_errors(_('Failed to update record'), $e->getResponse());
+                dns_zone_show($_GET['zone']);
             }
             break;
 

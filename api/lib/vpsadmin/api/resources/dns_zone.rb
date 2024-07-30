@@ -99,7 +99,7 @@ module VpsAdmin::API::Resources
 
       authorize do |u|
         allow if u.role == :admin
-        input whitelist: %i[name label enabled]
+        input whitelist: %i[name label source email enabled]
         allow
       end
 

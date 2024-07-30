@@ -66,10 +66,12 @@ module TransactionChains
         )
       end
 
-      unless empty?
+      if empty?
+        record.confirmed = ::DnsRecord.confirmed(:confirmed)
+      else
         append_t(Transactions::Utils::NoOp, args: find_node_id) do |t|
           if created
-            t.just_create(record)
+            t.create(record)
             t.edit_before(host_ip_address, reverse_dns_record_id: nil)
           else
             t.edit_before(record, content: record.content_was)

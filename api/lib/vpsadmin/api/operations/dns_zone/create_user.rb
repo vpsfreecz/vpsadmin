@@ -7,7 +7,6 @@ module VpsAdmin::API
     def run(attrs)
       dns_zone = ::DnsZone.new(**attrs)
       dns_zone.user = ::User.current unless ::User.current.role == :admin
-      dns_zone.zone_source = 'external_source'
 
       dns_zone.zone_role =
         if dns_zone.name.end_with?('.in-addr.arpa.') || dns_zone.name.end_with?('.ip6.arpa.')

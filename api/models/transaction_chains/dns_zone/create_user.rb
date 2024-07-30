@@ -11,11 +11,23 @@ module TransactionChains
       lock(dns_zone)
       concerns(:affect, [dns_zone.class.name, dns_zone.id])
 
-      ::DnsServer.where(enable_user_dns_zones: true).each do |dns_server|
+      dns_servers = ::DnsServer.where(enable_user_dns_zones: true)
+
+      # For internal zones, we use all user servers. For external zones,
+      # we use only servers for secondary zones, as the primary server is
+      # external.
+      user_servers =
+        if dns_zone.internal_source?
+          dns_servers
+        else
+          dns_servers.secondary_type
+        end
+
+      user_servers.each do |dns_server|
         dns_server_zone = ::DnsServerZone.create!(
           dns_server:,
           dns_zone:,
-          zone_type: 'secondary_type'
+          zone_type: dns_server.user_dns_zone_type
         )
 
         append_t(Transactions::DnsServerZone::Create, args: [dns_server_zone]) do |t|

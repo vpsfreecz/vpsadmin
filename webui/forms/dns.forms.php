@@ -10,6 +10,7 @@ function dns_submenu()
     }
 
     $xtpl->sbar_add(_('Reverse records'), '?page=dns&action=ptr_list');
+    $xtpl->sbar_add(_('Primary zones'), '?page=dns&action=primary_zone_list');
     $xtpl->sbar_add(_('Secondary zones'), '?page=dns&action=secondary_zone_list');
     $xtpl->sbar_add(_('TSIG keys'), '?page=dns&action=tsig_key_list');
 }
@@ -184,7 +185,7 @@ function dns_zone_show($id)
         $xtpl->table_tr();
     }
 
-    if (isAdmin() && $zone->source == 'internal_source') {
+    if ($zone->source == 'internal_source') {
 
         api_param_to_form('default_ttl', $updateInput->default_ttl, $zone->default_ttl);
         api_param_to_form('email', $updateInput->email, $zone->email);
@@ -290,7 +291,11 @@ function dns_zone_show($id)
         foreach ($zoneTransfers as $zt) {
             dns_bind_primary_example($zone, $serverZones, $zt);
         }
+
+        return;
     }
+
+    dns_record_list($zone);
 }
 
 function dns_zone_delete($id)
@@ -481,6 +486,51 @@ function secondary_dns_zone_new()
     }
 
     api_param_to_form('name', $input->name);
+
+    $xtpl->form_out(_('Create zone'));
+}
+
+function primary_dns_zone_list()
+{
+    global $xtpl;
+
+    $xtpl->title(_('Primary DNS zones'));
+
+    dns_zone_list(
+        'primary_zone_list',
+        ['source' => 'internal_source'],
+        function ($cols) {
+            global $xtpl;
+
+            $xtpl->table_td(
+                '<a href="?page=dns&action=primary_zone_new">' . _('Create new primary zone') . '</a>',
+                false,
+                true,
+                $cols
+            );
+            $xtpl->table_tr();
+        }
+    );
+
+    $xtpl->sbar_add(_('New primary zone'), '?page=dns&action=primary_zone_new');
+}
+
+function primary_dns_zone_new()
+{
+    global $xtpl, $api;
+
+    $xtpl->title(_('Create a new primary DNS zone'));
+
+    $xtpl->form_create('?page=dns&action=primary_zone_new2', 'post');
+
+    $input = $api->dns_zone->create->getParameters('input');
+
+    if (isAdmin()) {
+        $xtpl->form_add_input(_('User ID') . ':', 'text', '30', 'user', post_val('user'));
+    }
+
+    api_param_to_form('name', $input->name);
+    api_param_to_form('email', $input->email);
 
     $xtpl->form_out(_('Create zone'));
 }
@@ -885,6 +935,91 @@ function dns_bind_primary_example($zone, $serverZones, $zoneTransfer)
     );
     $xtpl->table_tr();
     $xtpl->table_out();
+}
+
+function dns_record_list($zone)
+{
+    global $xtpl, $api;
+
+    $records = $api->dns_record->list(['dns_zone' => $zone->id]);
+
+    $xtpl->table_title(_('Records'));
+    $xtpl->table_add_category(_('Name'));
+    $xtpl->table_add_category(_('TTL'));
+    $xtpl->table_add_category(_('Type'));
+    $xtpl->table_add_category(_('Priority'));
+    $xtpl->table_add_category(_('Content'));
+    $xtpl->table_add_category('');
+    $xtpl->table_add_category('');
+
+    foreach ($records as $r) {
+        $xtpl->table_td(h($r->name));
+        $xtpl->table_td($r->ttl ? $r->ttl : '-');
+        $xtpl->table_td(h($r->type));
+        $xtpl->table_td($r->priority ? $r->priority : '-');
+        $xtpl->table_td(h($r->content));
+        $xtpl->table_td('<a href="?page=dns&action=record_edit&id=' . $r->id . '"><img src="template/icons/vps_edit.png" alt="' . _('Edit') . '" title="' . _('Edit') . '"></a>');
+        $xtpl->table_td('<a href="?page=dns&action=record_delete&id=' . $r->id . '&zone=' . $r->dns_zone_id . '&t=' . csrf_token() . '"><img src="template/icons/vps_delete.png" alt="' . _('Delete') . '" title="' . _('Delete') . '"></a>');
+        $xtpl->table_tr();
+    }
+
+    $xtpl->table_td(
+        '<a href="?page=dns&action=record_new&zone=' . $zone->id . '">' . _('Add record') . '</a>',
+        false,
+        true,
+        7
+    );
+    $xtpl->table_tr();
+
+    $xtpl->table_out();
+}
+
+function dns_record_new($zone_id)
+{
+    global $xtpl, $api;
+
+    $zone = $api->dns_zone->show($zone_id);
+
+    $xtpl->title(_('Zone ') . h($zone->name) . ': ' . _('new record'));
+
+    $xtpl->form_create('?page=dns&action=record_new2&zone=' . $zone->id, 'post');
+
+    $input = $api->dns_record->create->getParameters('input');
+
+    api_param_to_form('name', $input->name);
+    api_param_to_form('type', $input->type);
+    api_param_to_form('ttl', $input->ttl);
+    api_param_to_form('priority', $input->priority);
+    api_param_to_form('content', $input->content);
+
+    $xtpl->form_out(_('Add'));
+}
+
+function dns_record_edit($id)
+{
+    global $xtpl, $api;
+
+    $record = $api->dns_record->show($id);
+
+    $xtpl->title(_('Zone ') . h($record->dns_zone->name) . ': ' . _('update record'));
+
+    $xtpl->form_create('?page=dns&action=record_edit2&id=' . $record->id, 'post');
+
+    $input = $api->dns_record->update->getParameters('input');
+
+    $xtpl->table_td(_('Name') . ':');
+    $xtpl->table_td(h($record->name));
+    $xtpl->table_tr();
+
+    $xtpl->table_td(_('Type') . ':');
+    $xtpl->table_td(h($record->type));
+    $xtpl->table_tr();
+
+    api_param_to_form('ttl', $input->ttl, $record->ttl);
+    api_param_to_form('priority', $input->priority, $record->priority);
+    api_param_to_form('content', $input->content, $record->content);
+
+    $xtpl->form_out(_('Update'));
 }
 
 function zoneRolelabel($role)

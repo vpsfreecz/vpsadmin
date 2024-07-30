@@ -10,6 +10,7 @@ module VpsAdmin::API::Resources
       string :ipv6_addr
       bool :hidden
       bool :enable_user_dns_zones
+      string :user_dns_zone_type, choices: ::DnsServer.user_dns_zone_types.keys.map(&:to_s)
     end
 
     params(:all) do

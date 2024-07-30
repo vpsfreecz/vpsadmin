@@ -48,7 +48,10 @@ module TransactionChains
       else
         append_t(Transactions::Utils::NoOp, args: find_node_id) do |t|
           t.just_create(log)
-          t.just_destroy(record)
+
+          record.update!(confirmed: ::DnsRecord.confirmed(:confirm_destroy))
+          t.destroy(record)
+
           t.edit_before(host_ip_address, reverse_dns_record_id: host_ip_address.reverse_dns_record_id_was)
         end
       end
