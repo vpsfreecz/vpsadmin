@@ -81,7 +81,7 @@ class DnsZone < ApplicationRecord
   def nameservers
     raise '#nameservers can only be called on internal zones' unless internal_source?
 
-    ret = dns_server_zones.reload.map(&:server_name)
+    ret = dns_server_zones.reload.reject { |dsz| dsz.dns_server.hidden }.map(&:server_name)
     ret.concat(dns_zone_transfers.map(&:server_name))
     ret.compact
   end

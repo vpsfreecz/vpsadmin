@@ -26,6 +26,7 @@ function dns_server_list()
     $xtpl->table_add_category(_('Name'));
     $xtpl->table_add_category(_('IPv4'));
     $xtpl->table_add_category(_('IPv6'));
+    $xtpl->table_add_category(_('Hidden'));
     $xtpl->table_add_category(_('User zones'));
 
     foreach ($servers as $s) {
@@ -33,6 +34,7 @@ function dns_server_list()
         $xtpl->table_td(h($s->name));
         $xtpl->table_td($s->ipv4_addr ? h($s->ipv4_addr) : '-');
         $xtpl->table_td($s->ipv6_addr ? h($s->ipv6_addr) : '-');
+        $xtpl->table_td(boolean_icon($s->hidden));
         $xtpl->table_td(boolean_icon($s->enable_user_dns_zones));
         $xtpl->table_tr();
     }

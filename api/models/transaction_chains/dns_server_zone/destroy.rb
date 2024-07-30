@@ -34,7 +34,7 @@ module TransactionChains
           Transactions::DnsServerZone::RemoveServers,
           args: [other_dns_server_zone],
           kwargs: {
-            nameservers: [dns_server_zone.dns_server.name],
+            nameservers: dns_server_zone.dns_server.hidden ? [] : [dns_server_zone.dns_server.name],
             primaries:,
             secondaries:
           }.compact

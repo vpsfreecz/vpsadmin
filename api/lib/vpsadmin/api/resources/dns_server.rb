@@ -8,6 +8,7 @@ module VpsAdmin::API::Resources
       string :name
       string :ipv4_addr
       string :ipv6_addr
+      bool :hidden
       bool :enable_user_dns_zones
     end
 
