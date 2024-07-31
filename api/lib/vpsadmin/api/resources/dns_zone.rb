@@ -4,15 +4,15 @@ module VpsAdmin::API::Resources
     desc 'Manage DNS zones'
 
     params(:common) do
-      string :name
+      string :name, desc: 'Fully qualified domain name'
       resource User, value_label: :login
       string :reverse_network_address
       string :reverse_network_prefix
       string :label
       string :role, db_name: :zone_role, choices: ::DnsZone.zone_roles.keys.map(&:to_s)
       string :source, db_name: :zone_source, choices: ::DnsZone.zone_sources.keys.map(&:to_s)
-      integer :default_ttl
-      string :email
+      integer :default_ttl, label: 'Default TTL', desc: 'Default TTL for records, in seconds'
+      string :email, label: 'E-mail', desc: 'Administrator of this zone'
       bool :enabled
     end
 
