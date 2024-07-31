@@ -118,7 +118,7 @@ module NodeCtld
       regenerate_file(@zone_file, 0o644) do |f|
         f.puts("$ORIGIN #{@name}")
         f.puts("$TTL #{@default_ttl}")
-        f.puts("@ IN SOA #{@nameservers.first}. #{@email.sub('@', '.')}. #{@serial} 1D 2H 4W 1H")
+        f.puts("@ IN SOA #{@nameservers.first}. #{format_email} #{@serial} 1D 2H 4W 1H")
 
         @nameservers.each do |ns|
           f.puts("  IN  NS #{ns}.")
@@ -136,6 +136,11 @@ module NodeCtld
           f.puts(line)
         end
       end
+    end
+
+    def format_email
+      user, domain = @email.split('@')
+      "#{user.gsub('.', '\.')}.#{domain}."
     end
 
     def sort_records
