@@ -131,7 +131,7 @@ module NodeCtld
             r['ttl'] ? r['ttl'].to_s : '',
             r['type'],
             r['priority'] ? r['priority'].to_s : '',
-            r['content']
+            format_content(r)
           )
           f.puts(line)
         end
@@ -141,6 +141,19 @@ module NodeCtld
     def format_email
       user, domain = @email.split('@')
       "#{user.gsub('.', '\.')}.#{domain}."
+    end
+
+    def format_content(r)
+      case r['type']
+      when 'TXT'
+        "(#{r['content'].scan(/.{1,255}/).map { |s| "\"#{escape_txt_content(s)}\"" }.join(' ')})"
+      else
+        r['content']
+      end
+    end
+
+    def escape_txt_content(content)
+      content.gsub('\\', '\\\\').gsub('"', '\"').gsub("\r", '\r').gsub("\n", '\n')
     end
 
     def sort_records
