@@ -10,6 +10,10 @@ module VpsAdmin::API
     def run(attrs)
       dns_record = ::DnsRecord.new(**process_record(attrs))
 
+      if dns_record.dns_zone.managed
+        raise Exceptions::ZoneManagedError, dns_record.dns_zone
+      end
+
       unless dns_record.valid?
         raise ActiveRecord::RecordInvalid, dns_record
       end

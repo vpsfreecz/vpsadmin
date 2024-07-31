@@ -103,6 +103,8 @@ module VpsAdmin::API::Resources
         ret
       rescue ActiveRecord::RecordInvalid => e
         error('create failed', e.record.errors.to_hash)
+      rescue VpsAdmin::API::Exceptions::OperationError => e
+        error(e.message)
       end
 
       def state_id
@@ -135,6 +137,8 @@ module VpsAdmin::API::Resources
         ret
       rescue ActiveRecord::RecordInvalid => e
         error('update failed', e.record.errors.to_hash)
+      rescue VpsAdmin::API::Exceptions::OperationError => e
+        error(e.message)
       end
 
       def state_id

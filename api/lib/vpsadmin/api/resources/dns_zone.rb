@@ -19,6 +19,7 @@ module VpsAdmin::API::Resources
     params(:all) do
       integer :id, label: 'ID'
       use :common
+      bool :managed
       integer :serial
       datetime :created_at
       datetime :updated_at

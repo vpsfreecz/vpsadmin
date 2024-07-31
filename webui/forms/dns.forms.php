@@ -949,8 +949,11 @@ function dns_record_list($zone)
     $xtpl->table_add_category(_('Type'));
     $xtpl->table_add_category(_('Priority'));
     $xtpl->table_add_category(_('Content'));
-    $xtpl->table_add_category('');
-    $xtpl->table_add_category('');
+
+    if (!$zone->managed) {
+        $xtpl->table_add_category('');
+        $xtpl->table_add_category('');
+    }
 
     foreach ($records as $r) {
         $xtpl->table_td(h($r->name));
@@ -958,18 +961,24 @@ function dns_record_list($zone)
         $xtpl->table_td(h($r->type));
         $xtpl->table_td($r->priority ? $r->priority : '-');
         $xtpl->table_td(h($r->content));
-        $xtpl->table_td('<a href="?page=dns&action=record_edit&id=' . $r->id . '"><img src="template/icons/vps_edit.png" alt="' . _('Edit') . '" title="' . _('Edit') . '"></a>');
-        $xtpl->table_td('<a href="?page=dns&action=record_delete&id=' . $r->id . '&zone=' . $r->dns_zone_id . '&t=' . csrf_token() . '"><img src="template/icons/vps_delete.png" alt="' . _('Delete') . '" title="' . _('Delete') . '"></a>');
+
+        if (!$zone->managed) {
+            $xtpl->table_td('<a href="?page=dns&action=record_edit&id=' . $r->id . '"><img src="template/icons/vps_edit.png" alt="' . _('Edit') . '" title="' . _('Edit') . '"></a>');
+            $xtpl->table_td('<a href="?page=dns&action=record_delete&id=' . $r->id . '&zone=' . $r->dns_zone_id . '&t=' . csrf_token() . '"><img src="template/icons/vps_delete.png" alt="' . _('Delete') . '" title="' . _('Delete') . '"></a>');
+        }
+
         $xtpl->table_tr();
     }
 
-    $xtpl->table_td(
-        '<a href="?page=dns&action=record_new&zone=' . $zone->id . '">' . _('Add record') . '</a>',
-        false,
-        true,
-        7
-    );
-    $xtpl->table_tr();
+    if (!$zone->managed) {
+        $xtpl->table_td(
+            '<a href="?page=dns&action=record_new&zone=' . $zone->id . '">' . _('Add record') . '</a>',
+            false,
+            true,
+            7
+        );
+        $xtpl->table_tr();
+    }
 
     $xtpl->table_out();
 }

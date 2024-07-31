@@ -65,6 +65,10 @@ class DnsZone < ApplicationRecord
     end
   end
 
+  def managed
+    internal_source? && reverse_role? && !reverse_network_address.nil?
+  end
+
   # rubocop:disable Style/GuardClause
 
   def check_name

@@ -9,6 +9,10 @@ module VpsAdmin::API
     # @param attrs [Hash]
     # @return [Array(::TransactionChain, ::DnsRecord)]
     def run(dns_record, attrs)
+      if dns_record.dns_zone.managed
+        raise Exceptions::ZoneManagedError, dns_record.dns_zone
+      end
+
       dns_record.assign_attributes(process_record(attrs, record_type: dns_record.record_type))
 
       unless dns_record.valid?
