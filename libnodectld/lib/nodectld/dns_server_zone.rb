@@ -153,8 +153,8 @@ module NodeCtld
 
     def sort_key(r, all_integers)
       [
-        all_integers ? r['name'].to_i : r['name'],
         r['type'],
+        all_integers ? r['name'].to_i : r['name'],
         r['priority'] || 0,
         r['ttl'] || @default_ttl
       ]

@@ -48,7 +48,7 @@ module VpsAdmin::API::Resources
       end
 
       def exec
-        with_includes(query).order('dns_zone_id, name, record_type, priority')
+        with_includes(query).order('dns_zone_id, record_type, name, priority')
       end
     end
 
