@@ -776,7 +776,7 @@ class XTemplate
         }
 
         $this->table_td(
-            '<input type="' . $type . '" size="' . $size . '" name="' . $name . '" id="input' . $uid . '" value="' . $value . '" ' . $maxlength . ' ' . $extra . ' />'
+            '<input type="' . $type . '" size="' . $size . '" name="' . $name . '" id="input' . $uid . '" value="' . h($value) . '" ' . $maxlength . ' ' . $extra . ' />'
         );
 
         if ($hint != '') {
