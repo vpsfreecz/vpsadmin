@@ -1009,7 +1009,7 @@ function dns_record_new($zone_id)
     api_param_to_form('type', $input->type);
     api_param_to_form('ttl', $input->ttl);
     api_param_to_form('priority', $input->priority);
-    api_param_to_form('content', $input->content);
+    $xtpl->form_add_textarea(_('Content') . ':', 70, 1, 'content', post_val('content'), $input->content->description);
     api_param_to_form('comment', $input->comment);
 
     $xtpl->form_out(_('Add'));
@@ -1037,7 +1037,7 @@ function dns_record_edit($id)
 
     api_param_to_form('ttl', $input->ttl, $record->ttl);
     api_param_to_form('priority', $input->priority, $record->priority);
-    api_param_to_form('content', $input->content, $record->content);
+    $xtpl->form_add_textarea(_('Content') . ':', 70, 1, 'content', post_val('content', $record->content), $input->content->description);
     api_param_to_form('comment', $input->comment, $record->comment);
 
     $xtpl->form_out(_('Update'));
