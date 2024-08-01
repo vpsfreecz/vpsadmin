@@ -5,7 +5,7 @@ class DnsTsigKey < ApplicationRecord
   validates :name, :algorithm, :secret, presence: true
 
   validates :name, format: {
-    with: /\A[a-zA-Z0-9\-\.]+\Z/,
+    with: /\A[a-zA-Z0-9\-\.]+\z/,
     message: '%{value} is not a valid TSIG key name'
   }
 

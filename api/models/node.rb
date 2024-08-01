@@ -21,11 +21,11 @@ class Node < ApplicationRecord
   validates :name, :role, :location_id, :ip_addr, presence: true
   validates :location_id, numericality: { only_integer: true }
   validates :name, format: {
-    with: /\A[a-zA-Z0-9.\-_]+\Z/,
+    with: /\A[a-zA-Z0-9.\-_]+\z/,
     message: 'invalid format'
   }
   validates :ip_addr, format: {
-    with: /\A\d+\.\d+\.\d+\.\d+\Z/,
+    with: /\A\d+\.\d+\.\d+\.\d+\z/,
     message: 'not a valid IPv4 address'
   }
   validates :max_vps, presence: true, numericality: {

@@ -11,11 +11,11 @@ class Location < ApplicationRecord
   validates :label, :domain, presence: true
   validates :has_ipv6, inclusion: { in: [true, false] }
   validates :domain, format: {
-    with: /\A[0-9a-zA-Z\-.]{3,255}\Z/,
+    with: /\A[0-9a-zA-Z\-.]{3,255}\z/,
     message: 'invalid format'
   }
   validates :remote_console_server, allow_blank: true, format: {
-    with: %r{\A(https?://.+)?\Z},
+    with: %r{\A(https?://.+)?\z},
     message: 'invalid format'
   }
 

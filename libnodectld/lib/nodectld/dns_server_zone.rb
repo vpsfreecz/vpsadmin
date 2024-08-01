@@ -157,7 +157,7 @@ module NodeCtld
     end
 
     def sort_records
-      all_integers = @records.all? { |r| /\A\d+\Z/ =~ r['name'] }
+      all_integers = @records.all? { |r| /\A\d+\z/ =~ r['name'] }
 
       @records.sort do |a, b|
         sort_key(a, all_integers) <=> sort_key(b, all_integers)

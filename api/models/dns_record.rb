@@ -77,6 +77,6 @@ class DnsRecord < ApplicationRecord
   # rubocop:enable Style/GuardClause
 
   def valid_fqdn?(v)
-    /\A((?!-)[A-Za-z0-9-]{1,63}(?<!-)\.)+[A-Za-z]{2,63}\.\Z/ =~ v
+    /\A((?!-)[A-Za-z0-9-]{1,63}(?<!-)\.)+[A-Za-z]{2,63}\.\z/ =~ v
   end
 end

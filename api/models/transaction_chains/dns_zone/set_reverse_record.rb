@@ -23,7 +23,7 @@ module TransactionChains
         record.content = ptr_content
         created = false
       else
-        if /\A(.+)\.#{Regexp.escape(dns_zone.name)}\Z/ !~ host_ip_address.reverse_record_domain
+        if /\A(.+)\.#{Regexp.escape(dns_zone.name)}\z/ !~ host_ip_address.reverse_record_domain
           raise "Unable to find reverse record name for #{host_ip_address} in zone #{dns_zone.name}"
         end
 
