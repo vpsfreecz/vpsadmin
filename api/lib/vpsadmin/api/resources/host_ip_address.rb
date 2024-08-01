@@ -285,7 +285,7 @@ module VpsAdmin::API::Resources
         unless ptr_content.empty?
           ptr_content << '.' unless ptr_content.end_with?('.')
 
-          if /\A((?!-)[A-Za-z0-9-]{1,63}(?<!-)\.)+[A-Za-z]{2,6}\.\Z/ !~ ptr_content
+          if /\A((?!-)[A-Za-z0-9-]{1,63}(?<!-)\.)+[A-Za-z]{2,63}\.\z/ !~ ptr_content
             error('invalid reverse record value', { reverse_record_value: ['not a valid domain'] })
           end
         end

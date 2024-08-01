@@ -16,7 +16,7 @@ class DnsZone < ApplicationRecord
   enum zone_source: %i[internal_source external_source]
 
   validates :name, format: {
-    with: /\A((?!-)[A-Za-z0-9-]{1,63}(?<!-)\.)+[A-Za-z]{2,6}\.\Z/,
+    with: /\A((?!-)[A-Za-z0-9-]{1,63}(?<!-)\.)+[A-Za-z]{2,63}\.\z/,
     message: '%{value} is not a valid zone name'
   }
 
