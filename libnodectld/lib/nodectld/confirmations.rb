@@ -111,17 +111,23 @@ module NodeCtld
       when 2 # edit before
         if !success || dir == :rollback
           attrs = load_yaml(trans['attr_changes'])
-          update = attrs.collect { |k, v| "`#{k}` = #{sql_val(v)}" }.join(',')
+          update = attrs.each_key.map { |k| "`#{k}` = ?" }.join(',')
 
-          t.query("UPDATE #{trans['table_name']} SET #{update} WHERE #{pk}")
+          t.prepared(
+            "UPDATE #{trans['table_name']} SET #{update} WHERE #{pk}",
+            *attrs.each_value.map { |v| sql_val(v) }
+          )
         end
 
       when 3 # edit after
         if success && dir == :execute
           attrs = load_yaml(trans['attr_changes'])
-          update = attrs.collect { |k, v| "`#{k}` = #{sql_val(v)}" }.join(',')
+          update = attrs.each_key.map { |k| "`#{k}` = ?" }.join(',')
 
-          t.query("UPDATE #{trans['table_name']} SET #{update} WHERE #{pk}")
+          t.prepared(
+            "UPDATE #{trans['table_name']} SET #{update} WHERE #{pk}",
+            *attrs.each_value.map { |v| sql_val(v) }
+          )
         end
 
       when 4 # destroy
@@ -155,10 +161,22 @@ module NodeCtld
     end
 
     def pk_cond(pks)
-      pks.map { |k, v| "`#{k}` = #{sql_val(v)}" }.join(' AND ')
+      pks.map { |k, v| "`#{k}` = #{sql_quoted_val(v)}" }.join(' AND ')
     end
 
     def sql_val(v)
+      if v.is_a?(Integer)
+        v
+      elsif v.nil?
+        'NULL'
+      elsif v.is_a?(::Time)
+        v.utc.strftime('%Y-%m-%d %H:%M:%S')
+      else
+        v.to_s
+      end
+    end
+
+    def sql_quoted_val(v)
       if v.is_a?(Integer)
         v
       elsif v.nil?
