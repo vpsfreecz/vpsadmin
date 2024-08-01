@@ -939,7 +939,7 @@ class XTemplate
     public function form_add_textarea($label = 'popisek', $cols = 10, $rows = 4, $name = 'textarea_formgen', $value = '', $hint = '')
     {
         $this->table_td($label);
-        $this->table_td('<textarea name="' . $name . '" cols="' . $cols . '" rows="' . $rows . '" id="input">' . h($value) . '</textarea>');
+        $this->table_td('<textarea name="' . $name . '" cols="' . $cols . '" rows="' . $rows . '" id="input">' . htmlspecialchars($value, ENT_NOQUOTES | ENT_SUBSTITUTE | ENT_HTML5, 'UTF-8', false) . '</textarea>');
         if ($hint != '') {
             $this->table_td($hint);
         }
@@ -955,7 +955,7 @@ class XTemplate
       */
     public function form_add_textarea_pure($cols = 10, $rows = 4, $name = 'textarea_formgen', $value = '')
     {
-        $this->table_td('<textarea name="' . $name . '" cols="' . $cols . '" rows="' . $rows . '" id="input">' . h($value) . '</textarea>');
+        $this->table_td('<textarea name="' . $name . '" cols="' . $cols . '" rows="' . $rows . '" id="input">' . htmlspecialchars($value, ENT_NOQUOTES | ENT_SUBSTITUTE | ENT_HTML5, 'UTF-8', false) . '</textarea>');
     }
     /**
       * Add checkobox to form
