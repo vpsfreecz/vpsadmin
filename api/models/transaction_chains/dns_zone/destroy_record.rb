@@ -40,6 +40,8 @@ module TransactionChains
         append_t(Transactions::Utils::NoOp, args: find_node_id) do |t|
           t.just_create(log)
 
+          t.just_destroy(dns_record.update_token) if dns_record.update_token
+
           dns_record.update!(confirmed: ::DnsRecord.confirmed(:confirm_destroy))
           t.destroy(dns_record)
         end

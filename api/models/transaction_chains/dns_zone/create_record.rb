@@ -6,7 +6,6 @@ module TransactionChains
     # @param dns_record [::DnsRecord]
     # @return [::DnsRecord]
     def link_chain(dns_record)
-      dns_record.save!
       dns_zone = dns_record.dns_zone
 
       concerns(
@@ -42,6 +41,7 @@ module TransactionChains
       else
         append_t(Transactions::Utils::NoOp, args: find_node_id) do |t|
           t.create(dns_record)
+          t.just_create(dns_record.update_token) if dns_record.update_token
           t.just_create(log)
         end
       end

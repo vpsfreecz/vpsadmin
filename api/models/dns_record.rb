@@ -4,6 +4,7 @@ require_relative 'confirmable'
 class DnsRecord < ApplicationRecord
   belongs_to :dns_zone
   belongs_to :host_ip_address
+  belongs_to :update_token, class_name: 'Token', dependent: :delete
 
   include Confirmable
 
@@ -16,6 +17,16 @@ class DnsRecord < ApplicationRecord
   validates :comment, length: { maximum: 255 }
   validate :check_name
   validate :check_content
+
+  def dynamic_update_enable
+    !update_token_id.nil?
+  end
+
+  def dynamic_update_url
+    return if update_token_id.nil?
+
+    File.join(::SysConfig.get(:core, :api_url), 'dns_records/dynamic_update/', update_token.token)
+  end
 
   protected
 

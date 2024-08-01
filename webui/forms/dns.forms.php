@@ -945,7 +945,7 @@ function dns_record_list($zone)
     $cols = 5;
 
     if (!$zone->managed) {
-        $cols += 2;
+        $cols += 3;
     }
 
     $xtpl->table_title(_('Records'));
@@ -956,6 +956,7 @@ function dns_record_list($zone)
     $xtpl->table_add_category(_('Content'));
 
     if (!$zone->managed) {
+        $xtpl->table_add_category(_('DDNS'));
         $xtpl->table_add_category('');
         $xtpl->table_add_category('');
     }
@@ -973,6 +974,7 @@ function dns_record_list($zone)
         $xtpl->table_td(h($r->content));
 
         if (!$zone->managed) {
+            $xtpl->table_td(boolean_icon($r->dynamic_update_enable));
             $xtpl->table_td('<a href="?page=dns&action=record_edit&id=' . $r->id . '"><img src="template/icons/vps_edit.png" alt="' . _('Edit') . '" title="' . _('Edit') . '"></a>');
             $xtpl->table_td('<a href="?page=dns&action=record_delete&id=' . $r->id . '&zone=' . $r->dns_zone_id . '&t=' . csrf_token() . '"><img src="template/icons/vps_delete.png" alt="' . _('Delete') . '" title="' . _('Delete') . '"></a>');
         }
@@ -1011,6 +1013,7 @@ function dns_record_new($zone_id)
     api_param_to_form('priority', $input->priority);
     $xtpl->form_add_textarea(_('Content') . ':', 70, 1, 'content', post_val('content'), $input->content->description);
     api_param_to_form('comment', $input->comment);
+    api_param_to_form('dynamic_update_enable', $input->dynamic_update_enable);
 
     $xtpl->form_out(_('Add'));
 }
@@ -1039,6 +1042,20 @@ function dns_record_edit($id)
     api_param_to_form('priority', $input->priority, $record->priority);
     $xtpl->form_add_textarea(_('Content') . ':', 70, 1, 'content', post_val('content', $record->content), $input->content->description);
     api_param_to_form('comment', $input->comment, $record->comment);
+
+    if ($record->type == 'A' || $record->type == 'AAAA') {
+        api_param_to_form('dynamic_update_enable', $input->dynamic_update_enable, $record->dynamic_update_enable);
+
+        $xtpl->table_td(_('Dynamic update URL') . ':');
+
+        if ($record->dynamic_update_enable) {
+            $xtpl->table_td('<textarea cols="70" rows="5" readonly>' . h($record->dynamic_update_url) . '</textarea>');
+        } else {
+            $xtpl->table_td(_('not enabled'));
+        }
+
+        $xtpl->table_tr();
+    }
 
     $xtpl->form_out(_('Update'));
 }

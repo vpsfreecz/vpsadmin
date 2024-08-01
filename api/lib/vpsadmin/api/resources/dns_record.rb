@@ -12,11 +12,13 @@ module VpsAdmin::API::Resources
       integer :priority, label: 'Priority', desc: 'Optional priority, used e.g. for MX records'
       text :comment, desc: 'Optional comment'
       bool :enabled
+      bool :dynamic_update_enable, label: 'Enable dynamic update', desc: 'Only for A and AAAA records', default: false
     end
 
     params(:all) do
       integer :id, label: 'ID'
       use :common
+      string :dynamic_update_url, label: 'Dynamic update URL'
       datetime :created_at
       datetime :updated_at
     end
@@ -118,7 +120,7 @@ module VpsAdmin::API::Resources
       blocking true
 
       input do
-        use :common, include: %i[content ttl priority comment]
+        use :common, include: %i[content ttl priority comment dynamic_update_enable]
       end
 
       output do
@@ -161,6 +163,31 @@ module VpsAdmin::API::Resources
         record = self.class.model.joins(:dns_zone).existing.find_by!(with_restricted(id: params[:dns_record_id]))
         @chain = VpsAdmin::API::Operations::DnsZone::DestroyRecord.run(record)
         ok
+      rescue VpsAdmin::API::Exceptions::OperationError => e
+        error(e.message)
+      end
+
+      def state_id
+        @chain && @chain.id
+      end
+    end
+
+    class DynamicUpdate < HaveAPI::Action
+      desc "Update DNS record with the client's address"
+      http_method :get
+      route 'dynamic_update/{access_token}'
+      auth false
+      blocking true
+
+      output do
+        use :all, include: %i[content]
+      end
+
+      authorize { allow }
+
+      def exec
+        @chain, ret = VpsAdmin::API::Operations::DnsZone::DynamicUpdate.run(request, params[:access_token])
+        ret
       rescue VpsAdmin::API::Exceptions::OperationError => e
         error(e.message)
       end
