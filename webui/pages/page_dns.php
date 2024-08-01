@@ -245,6 +245,7 @@ if (isLoggedIn()) {
                     'name' => $_POST['name'],
                     'type' => $_POST['type'],
                     'content' => $_POST['content'],
+                    'comment' => $_POST['comment'],
                 ];
 
                 if (trim($_POST['ttl'] ?? '') !== '') {
@@ -278,6 +279,7 @@ if (isLoggedIn()) {
                     'ttl' => trim($_POST['ttl'] ?? '') === '' ? null : $_POST['ttl'],
                     'priority' => trim($_POST['priority'] ?? '') === '' ? null : $_POST['priority'],
                     'content' => $_POST['content'],
+                    'comment' => $_POST['comment'],
                 ]);
 
                 notify_user(_('Record updated'), '');

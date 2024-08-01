@@ -13,6 +13,7 @@ class DnsRecord < ApplicationRecord
 
   validates :record_type, presence: true, inclusion: { in: %w[A AAAA CNAME MX NS PTR SRV TXT] }
   validates :content, presence: true
+  validates :comment, length: { maximum: 255 }
   validate :check_name
   validate :check_content
 

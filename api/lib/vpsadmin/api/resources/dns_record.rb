@@ -10,6 +10,7 @@ module VpsAdmin::API::Resources
       string :content
       integer :ttl, label: 'TTL', desc: 'Optional TTL in seconds, defaults to zone TTL'
       integer :priority, label: 'Priority', desc: 'Optional priority, used e.g. for MX records'
+      text :comment, desc: 'Optional comment'
       bool :enabled
     end
 
@@ -117,7 +118,7 @@ module VpsAdmin::API::Resources
       blocking true
 
       input do
-        use :common, include: %i[content ttl priority]
+        use :common, include: %i[content ttl priority comment]
       end
 
       output do

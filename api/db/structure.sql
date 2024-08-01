@@ -391,6 +391,7 @@ CREATE TABLE `dns_records` (
   `created_at` datetime(6) NOT NULL,
   `updated_at` datetime(6) NOT NULL,
   `confirmed` int(11) NOT NULL DEFAULT 0,
+  `comment` varchar(255) NOT NULL DEFAULT '',
   PRIMARY KEY (`id`),
   UNIQUE KEY `index_dns_records_on_host_ip_address_id` (`host_ip_address_id`),
   KEY `index_dns_records_on_dns_zone_id` (`dns_zone_id`)
@@ -2285,6 +2286,7 @@ CREATE TABLE `vpses` (
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
 INSERT INTO `schema_migrations` (version) VALUES
+('20240801065140'),
 ('20240730153209'),
 ('20240730151611'),
 ('20240730113236'),

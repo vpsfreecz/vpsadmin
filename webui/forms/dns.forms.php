@@ -942,6 +942,11 @@ function dns_record_list($zone)
     global $xtpl, $api;
 
     $records = $api->dns_record->list(['dns_zone' => $zone->id]);
+    $cols = 5;
+
+    if (!$zone->managed) {
+        $cols += 2;
+    }
 
     $xtpl->table_title(_('Records'));
     $xtpl->table_add_category(_('Name'));
@@ -956,6 +961,11 @@ function dns_record_list($zone)
     }
 
     foreach ($records as $r) {
+        if ($r->comment) {
+            $xtpl->table_td(_('Comment') . ': ' . h($r->comment), false, false, $cols);
+            $xtpl->table_tr();
+        }
+
         $xtpl->table_td(h($r->name));
         $xtpl->table_td($r->ttl ? $r->ttl : '-');
         $xtpl->table_td(h($r->type));
@@ -975,7 +985,7 @@ function dns_record_list($zone)
             '<a href="?page=dns&action=record_new&zone=' . $zone->id . '">' . _('Add record') . '</a>',
             false,
             true,
-            7
+            $cols
         );
         $xtpl->table_tr();
     }
@@ -1000,6 +1010,7 @@ function dns_record_new($zone_id)
     api_param_to_form('ttl', $input->ttl);
     api_param_to_form('priority', $input->priority);
     api_param_to_form('content', $input->content);
+    api_param_to_form('comment', $input->comment);
 
     $xtpl->form_out(_('Add'));
 }
@@ -1027,6 +1038,7 @@ function dns_record_edit($id)
     api_param_to_form('ttl', $input->ttl, $record->ttl);
     api_param_to_form('priority', $input->priority, $record->priority);
     api_param_to_form('content', $input->content, $record->content);
+    api_param_to_form('comment', $input->comment, $record->comment);
 
     $xtpl->form_out(_('Update'));
 }
