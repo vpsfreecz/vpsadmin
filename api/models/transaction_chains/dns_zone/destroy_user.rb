@@ -28,6 +28,17 @@ module TransactionChains
           t.destroy(zone_transfer)
         end
 
+        dns_zone.dns_records.each do |r|
+          t.just_destroy(r.update_token) if r.update_token
+
+          r.update!(confirmed: ::DnsRecord.confirmed(:confirm_destroy))
+          t.destroy(r)
+        end
+
+        dns_zone.dns_record_logs.each do |log|
+          t.just_destroy(log)
+        end
+
         dns_zone.update!(confirmed: ::DnsZone.confirmed(:confirm_destroy))
         t.destroy(dns_zone)
       end
