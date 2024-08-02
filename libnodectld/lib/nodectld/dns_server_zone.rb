@@ -143,7 +143,7 @@ module NodeCtld
         f.puts("@ IN SOA #{@nameservers.first}. #{format_email} #{@serial} 1D 2H 4W 1H")
 
         @nameservers.each do |ns|
-          f.puts("  IN  NS #{ns}.")
+          f.puts("@ IN  NS #{ns}.")
         end
 
         sort_records.each do |r|
