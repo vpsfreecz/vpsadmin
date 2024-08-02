@@ -249,6 +249,7 @@ module NodeCtld
     },
 
     dns_server: {
+      bind_workdir: '/var/named',
       config_root: '/var/named/vpsadmin/named.conf',
       zone_template: '/var/named/vpsadmin/%{type}/%{name}zone',
       db_template: '/var/named/vpsadmin/db/%{name}json',

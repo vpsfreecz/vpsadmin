@@ -29,6 +29,7 @@ module NodeCtld
         email
         primaries
         secondaries
+        dnssec_enabled
         enabled
       ].each do |attr|
         changes = instance_variable_get(:"@#{dir}")

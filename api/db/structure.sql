@@ -507,10 +507,29 @@ CREATE TABLE `dns_zones` (
   `created_at` datetime(6) NOT NULL,
   `updated_at` datetime(6) NOT NULL,
   `confirmed` int(11) NOT NULL DEFAULT 0,
+  `dnssec_enabled` tinyint(1) NOT NULL DEFAULT 0,
   PRIMARY KEY (`id`),
   UNIQUE KEY `index_dns_zones_on_name` (`name`),
   KEY `index_dns_zones_on_user_id` (`user_id`),
   KEY `index_dns_zones_on_zone_source` (`zone_source`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `dnssec_records`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `dnssec_records` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `dns_zone_id` bigint(20) NOT NULL,
+  `keyid` int(11) NOT NULL,
+  `dnskey_algorithm` int(11) NOT NULL,
+  `dnskey_pubkey` varchar(1000) NOT NULL,
+  `ds_algorithm` int(11) NOT NULL,
+  `ds_digest_type` int(11) NOT NULL,
+  `ds_digest` varchar(1000) NOT NULL,
+  `created_at` datetime(6) NOT NULL,
+  `updated_at` datetime(6) NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `index_dnssec_records_on_dns_zone_id` (`dns_zone_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `environment_dataset_plans`;
@@ -2288,6 +2307,7 @@ CREATE TABLE `vpses` (
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
 INSERT INTO `schema_migrations` (version) VALUES
+('20240802064852'),
 ('20240801112145'),
 ('20240801065140'),
 ('20240730153209'),

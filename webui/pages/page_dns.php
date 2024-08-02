@@ -22,6 +22,7 @@ if (isLoggedIn()) {
                 $zone = $api->dns_zone->show($_GET['id']);
 
                 $params = [
+                    'dnssec_enabled' => isset($_POST['dnssec_enabled']),
                     'enabled' => isset($_POST['enabled']),
                 ];
 
@@ -214,6 +215,7 @@ if (isLoggedIn()) {
                 $params = [
                     'name' => $name,
                     'email' => $_POST['email'],
+                    'dnssec_enabled' => isset($_POST['dnssec_enabled']),
                     'source' => 'internal_source',
                 ];
 
@@ -230,6 +232,10 @@ if (isLoggedIn()) {
                 $xtpl->perex_format_errors(_('Failed to create primary DNS zone'), $e->getResponse());
                 primary_dns_zone_new();
             }
+            break;
+
+        case 'dnssec_records':
+            dnssec_records_list($_GET['id']);
             break;
 
         case 'record_new':

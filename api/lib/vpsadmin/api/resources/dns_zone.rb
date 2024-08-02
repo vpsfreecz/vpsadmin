@@ -13,6 +13,7 @@ module VpsAdmin::API::Resources
       string :source, db_name: :zone_source, choices: ::DnsZone.zone_sources.keys.map(&:to_s)
       integer :default_ttl, label: 'Default TTL', desc: 'Default TTL for records, in seconds'
       string :email, label: 'E-mail', desc: 'Administrator of this zone'
+      bool :dnssec_enabled, label: 'Enable DNSSEC'
       bool :enabled
     end
 
@@ -29,7 +30,7 @@ module VpsAdmin::API::Resources
       desc 'List DNS zones'
 
       input do
-        use :common, include: %i[user role source enabled]
+        use :common, include: %i[user role source dnssec_enabled enabled]
       end
 
       output(:object_list) do
@@ -47,7 +48,7 @@ module VpsAdmin::API::Resources
         q = self.class.model.existing.where(with_restricted)
         db_input = to_db_names(input)
 
-        %i[user zone_role zone_source enabled].each do |v|
+        %i[user zone_role zone_source dnssec_enabled enabled].each do |v|
           q = q.where(v => db_input[v]) if db_input.has_key?(v)
         end
 
@@ -100,7 +101,7 @@ module VpsAdmin::API::Resources
 
       authorize do |u|
         allow if u.role == :admin
-        input whitelist: %i[name label source email enabled]
+        input whitelist: %i[name label source email dnssec_enabled enabled]
         allow
       end
 
@@ -130,7 +131,7 @@ module VpsAdmin::API::Resources
       blocking true
 
       input do
-        use :common, include: %i[label default_ttl email enabled]
+        use :common, include: %i[label default_ttl email dnssec_enabled enabled]
       end
 
       output do

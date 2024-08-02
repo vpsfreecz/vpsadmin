@@ -39,6 +39,10 @@ module TransactionChains
           t.just_destroy(log)
         end
 
+        dns_zone.dnssec_records.each do |r|
+          t.just_destroy(r)
+        end
+
         dns_zone.update!(confirmed: ::DnsZone.confirmed(:confirm_destroy))
         t.destroy(dns_zone)
       end

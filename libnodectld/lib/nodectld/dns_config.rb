@@ -47,8 +47,12 @@ module NodeCtld
       nil
     end
 
-    def get_zone_names
-      @mutex.synchronize { @zones.keys }
+    def any_zones?
+      @mutex.synchronize { @zones.any? }
+    end
+
+    def [](name)
+      @mutex.synchronize { @zones[name] }
     end
 
     protected
@@ -99,6 +103,11 @@ module NodeCtld
             f.puts('  type primary;')
             f.puts("  allow-transfer { #{allow_transfer(zone.secondaries)} };")
             f.puts('  notify yes;')
+
+            if zone.dnssec_enabled
+              f.puts('  dnssec-policy default;')
+              f.puts('  inline-signing yes;')
+            end
           else
             f.puts('  type secondary;')
             f.puts("  primaries { #{list_primaries(zone.primaries)} };")

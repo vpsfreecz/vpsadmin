@@ -189,6 +189,14 @@ function dns_zone_show($id)
 
         api_param_to_form('default_ttl', $updateInput->default_ttl, $zone->default_ttl);
         api_param_to_form('email', $updateInput->email, $zone->email);
+
+        $xtpl->form_add_checkbox(
+            _('Enable DNSSEC') . ':',
+            'dnssec_enabled',
+            '1',
+            post_val_issetto('dnssec_enabled', '1', $zone->dnssec_enabled),
+            $zone->dnssec_enabled ? ('<a href="?page=dns&action=dnssec_records&id=' . $zone->id . '">' . _('View DNSKEY and DS records') . '</a>') : $updateInput->dnssec_enabled->description
+        );
     }
 
     api_param_to_form('enabled', $updateInput->enabled, $zone->enabled);
@@ -531,8 +539,66 @@ function primary_dns_zone_new()
 
     api_param_to_form('name', $input->name);
     api_param_to_form('email', $input->email);
+    api_param_to_form('dnssec_enabled', $input->dnssec_enabled);
 
     $xtpl->form_out(_('Create zone'));
+}
+
+function dnssec_records_list($zone_id)
+{
+    global $xtpl, $api;
+
+    $zone = $api->dns_zone->show($zone_id);
+
+    $xtpl->title(h($zone->name) . ': ' . _('DNSSEC records'));
+
+    $records = $api->dnssec_record->list([
+        'dns_zone' => $zone->id,
+    ]);
+
+    foreach ($records as $r) {
+        $xtpl->table_title(_('Key') . ' ' . $r->keyid);
+
+        $xtpl->table_td(_('Key ID') . ':');
+        $xtpl->table_td($r->keyid);
+        $xtpl->table_tr();
+
+        $xtpl->table_td(_('Flags') . ':');
+        $xtpl->table_td('257');
+        $xtpl->table_tr();
+
+        $xtpl->table_td(_('Protocol') . ':');
+        $xtpl->table_td('3');
+        $xtpl->table_tr();
+
+        $xtpl->table_td(_('Algorithm') . ':');
+        $xtpl->table_td($r->dnskey_algorithm);
+        $xtpl->table_tr();
+
+        $xtpl->table_td(_('Public key') . ':');
+        $xtpl->table_td('<code>' . $r->dnskey_pubkey . '<code>');
+        $xtpl->table_tr();
+
+        $xtpl->table_td(_('DNSKEY record') . ':');
+        $xtpl->table_td(
+            '<textarea cols="70" rows="5" readonly>' .
+            "{$zone->name} IN DNSKEY 257 3 {$r->dnskey_algorithm} {$r->dnskey_pubkey}" .
+            '</textarea>'
+        );
+        $xtpl->table_tr();
+
+        $xtpl->table_td(_('DS record') . ':');
+        $xtpl->table_td(
+            '<textarea cols="70" rows="5" readonly>' .
+            "{$zone->name} IN DS {$r->keyid} {$r->ds_algorithm} {$r->ds_digest_type} {$r->ds_digest}" .
+            '</textarea>'
+        );
+        $xtpl->table_tr();
+
+        $xtpl->table_out();
+    }
+
+    $xtpl->sbar_add(_('Back'), '?page=dns&action=zone_show&id=' . $zone->id);
 }
 
 function tsig_key_list()

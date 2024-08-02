@@ -27,9 +27,12 @@ module NodeCtld
     attr_reader :secondaries
 
     # @return [Boolean]
+    attr_reader :dnssec_enabled
+
+    # @return [Boolean]
     attr_reader :enabled
 
-    def initialize(name:, source:, type:, default_ttl: nil, nameservers: nil, serial: nil, email: nil, primaries: nil, secondaries: nil, enabled: nil, load_db: true)
+    def initialize(name:, source:, type:, default_ttl: nil, nameservers: nil, serial: nil, email: nil, primaries: nil, secondaries: nil, dnssec_enabled: nil, enabled: nil, load_db: true)
       @name = name
       @source = source
       @type = type
@@ -39,6 +42,7 @@ module NodeCtld
       @email = email
       @primaries = primaries
       @secondaries = secondaries
+      @dnssec_enabled = dnssec_enabled
       @enabled = enabled
       @db_file = format($CFG.get(:dns_server, :db_template), name:, source:, type:)
       @zone_file = format($CFG.get(:dns_server, :zone_template), name:, source:, type:)
@@ -60,6 +64,7 @@ module NodeCtld
       @email ||= json['email']
       @primaries ||= json['primaries']
       @secondaries ||= json['secondaries']
+      @dnssec_enabled = json['dnssec_enabled'] if @dnssec_enabled.nil?
       @enabled = json['enabled'] if @enabled.nil?
       @records = json['records']
     end
@@ -124,6 +129,7 @@ module NodeCtld
         email: @email,
         primaries: @primaries,
         secondaries: @secondaries,
+        dnssec_enabled: @dnssec_enabled,
         enabled: @enabled,
         records: @records
       }
@@ -131,11 +137,9 @@ module NodeCtld
 
     def generate_zone
       FileUtils.mkdir_p(File.dirname(@zone_file))
+      FileUtils.chown('named', 'named', File.dirname(@zone_file))
 
-      if @source == 'external_source' || @type == 'secondary_type'
-        FileUtils.chown('named', 'named', File.dirname(@zone_file))
-        return
-      end
+      return if @source == 'external_source' || @type == 'secondary_type'
 
       regenerate_file(@zone_file, 0o644) do |f|
         f.puts("$ORIGIN #{@name}")

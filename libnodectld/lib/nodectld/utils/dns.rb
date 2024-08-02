@@ -14,6 +14,7 @@ module NodeCtld
         secondaries: @secondaries,
         serial: @serial,
         email: @email,
+        dnssec_enabled: @dnssec_enabled,
         enabled: @enabled
       }
       zone_attrs.update(kwargs)
