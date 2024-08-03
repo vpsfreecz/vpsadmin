@@ -72,10 +72,10 @@ class DnsRecord < ApplicationRecord
       end
 
     when 'SRV'
-      priority, weight, port, domain = content.split(' ', 4)
+      weight, port, domain = content.split(' ', 4)
 
-      unless [priority, weight, port].all? { |v| v.to_i.to_s == v }
-        errors.add(:content, 'SRV priority, weight and port must be numbers')
+      unless [weight, port].all? { |v| v.to_i.to_s == v }
+        errors.add(:content, 'SRV weight and port must be numbers')
       end
 
       unless valid_fqdn?(domain)
