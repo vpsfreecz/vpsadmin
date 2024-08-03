@@ -45,7 +45,7 @@ module TransactionChains
         change_type: created ? 'create_record' : 'update_record',
         name: record.name,
         record_type: 'PTR',
-        content: ptr_content
+        attr_changes: { content: ptr_content }
       )
 
       dns_zone.increment!(:serial)

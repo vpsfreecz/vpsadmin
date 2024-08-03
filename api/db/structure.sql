@@ -368,9 +368,9 @@ CREATE TABLE `dns_record_logs` (
   `change_type` int(11) NOT NULL,
   `name` varchar(255) NOT NULL,
   `record_type` varchar(10) NOT NULL,
-  `content` text NOT NULL,
   `created_at` datetime(6) NOT NULL,
   `updated_at` datetime(6) NOT NULL,
+  `attr_changes` mediumtext NOT NULL,
   PRIMARY KEY (`id`),
   KEY `index_dns_record_logs_on_dns_zone_id` (`dns_zone_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
@@ -2307,6 +2307,7 @@ CREATE TABLE `vpses` (
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
 INSERT INTO `schema_migrations` (version) VALUES
+('20240803200139'),
 ('20240802064852'),
 ('20240801112145'),
 ('20240801065140'),

@@ -17,7 +17,13 @@ module TransactionChains
         name: dns_record.name,
         change_type: 'delete_record',
         record_type: dns_record.record_type,
-        content: dns_record.content
+        attr_changes: {
+          ttl: dns_record.ttl,
+          priority: dns_record.priority,
+          content: dns_record.content,
+          comment: dns_record.comment,
+          enabled: dns_record.enabled
+        }
       )
 
       dns_zone.increment!(:serial)

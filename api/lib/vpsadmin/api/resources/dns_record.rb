@@ -11,7 +11,7 @@ module VpsAdmin::API::Resources
       integer :ttl, label: 'TTL', desc: 'Optional TTL in seconds, defaults to zone TTL'
       integer :priority, label: 'Priority', desc: 'Optional priority, used e.g. for MX records'
       text :comment, desc: 'Optional comment'
-      bool :enabled
+      bool :enabled, default: true
       bool :dynamic_update_enabled, label: 'Enable dynamic update', desc: 'Only for A and AAAA records', default: false
     end
 
@@ -120,7 +120,7 @@ module VpsAdmin::API::Resources
       blocking true
 
       input do
-        use :common, include: %i[content ttl priority comment dynamic_update_enabled]
+        use :common, include: %i[content ttl priority comment dynamic_update_enabled enabled]
       end
 
       output do

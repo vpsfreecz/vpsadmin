@@ -252,6 +252,7 @@ if (isLoggedIn()) {
                     'type' => $_POST['type'],
                     'content' => $_POST['content'],
                     'comment' => $_POST['comment'],
+                    'enabled' => isset($_POST['enabled']),
                 ];
 
                 if (trim($_POST['ttl'] ?? '') !== '') {
@@ -291,6 +292,7 @@ if (isLoggedIn()) {
                     'content' => $_POST['content'],
                     'comment' => $_POST['comment'],
                     'dynamic_update_enabled' => isset($_POST['dynamic_update_enabled']),
+                    'enabled' => isset($_POST['enabled']),
                 ]);
 
                 notify_user(_('Record updated'), '');
