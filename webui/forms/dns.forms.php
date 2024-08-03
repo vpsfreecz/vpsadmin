@@ -1033,7 +1033,7 @@ function dns_record_list($zone)
 
     foreach ($records as $r) {
         if ($r->comment) {
-            $xtpl->table_td(_('Comment') . ': ' . h($r->comment), false, false, $cols);
+            $xtpl->table_td(_('Comment') . ': ' . nl2br(h($r->comment)), false, false, $cols);
             $xtpl->table_tr();
         }
 
@@ -1041,7 +1041,7 @@ function dns_record_list($zone)
         $xtpl->table_td($r->ttl ? $r->ttl : '-');
         $xtpl->table_td(h($r->type));
         $xtpl->table_td($r->priority ? $r->priority : '-');
-        $xtpl->table_td(h($r->content));
+        $xtpl->table_td(nl2br(h($r->content)));
 
         if (!$zone->managed) {
             $xtpl->table_td(boolean_icon($r->dynamic_update_enable));
