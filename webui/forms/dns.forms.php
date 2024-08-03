@@ -1081,8 +1081,8 @@ function dns_record_new($zone_id)
     api_param_to_form('type', $input->type);
     api_param_to_form('ttl', $input->ttl);
     api_param_to_form('priority', $input->priority);
-    $xtpl->form_add_textarea(_('Content') . ':', 70, 1, 'content', post_val('content'), $input->content->description);
-    api_param_to_form('comment', $input->comment);
+    $xtpl->form_add_textarea(_('Content') . ':', 60, 1, 'content', post_val('content'), $input->content->description);
+    $xtpl->form_add_textarea(_('Comment') . ':', 60, 1, 'comment', post_val('comment'), $input->comment->description);
     api_param_to_form('dynamic_update_enable', $input->dynamic_update_enable);
 
     $xtpl->form_out(_('Add'));
@@ -1113,8 +1113,8 @@ function dns_record_edit($id)
 
     api_param_to_form('ttl', $input->ttl, $record->ttl);
     api_param_to_form('priority', $input->priority, $record->priority);
-    $xtpl->form_add_textarea(_('Content') . ':', 70, 1, 'content', post_val('content', $record->content), $input->content->description);
-    api_param_to_form('comment', $input->comment, $record->comment);
+    $xtpl->form_add_textarea(_('Content') . ':', 60, 1, 'content', post_val('content', $record->content), $input->content->description);
+    $xtpl->form_add_textarea(_('Comment') . ':', 60, 1, 'comment', post_val('comment', $record->comment), $input->comment->description);
 
     if ($record->type == 'A' || $record->type == 'AAAA') {
         api_param_to_form('dynamic_update_enable', $input->dynamic_update_enable, $record->dynamic_update_enable);
