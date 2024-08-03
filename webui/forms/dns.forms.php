@@ -295,13 +295,23 @@ function dns_zone_show($id)
 
     $xtpl->table_out();
 
-    if ($zone->source == 'external_source') {
-        foreach ($zoneTransfers as $zt) {
-            dns_bind_primary_example($zone, $serverZones, $zt);
+    foreach ($zoneTransfers as $zt) {
+        switch ($zt->peer_type) {
+            case 'primary_type':
+                dns_bind_primary_example($zone, $serverZones, $zt);
+                break;
+            case 'secondary_type':
+                dns_bind_secondary_example($zone, $serverZones, $zt);
+                break;
+            default:
         }
+    }
 
+    if ($zone->source == 'external_source') {
         return;
     }
+
+
 
     dns_record_list($zone);
 }
@@ -1003,6 +1013,79 @@ function dns_bind_primary_example($zone, $serverZones, $zoneTransfer)
 
     $xtpl->table_td(
         '<textarea cols="80" rows="40" readonly>' . h($bindExample) . '</textarea>'
+    );
+    $xtpl->table_tr();
+    $xtpl->table_out();
+}
+
+function dns_bind_secondary_example($zone, $serverZones, $zoneTransfer)
+{
+    global $xtpl;
+
+    $xtpl->table_title(_('Example BIND configuration for server on ') . ' ' . $zoneTransfer->host_ip_address->addr);
+
+    $primaryIps = implode(
+        ' ',
+        array_map(function ($sz) {
+            $ip = $sz->dns_server->ipv4_addr ? $sz->dns_server->ipv4_addr : $sz->dns_server->ipv6_addr;
+            return $ip . ';';
+        }, $serverZones->asArray())
+    );
+
+    $bindExample = <<<END
+        # File /etc/bind/named.conf:
+
+        END;
+
+    if ($zoneTransfer->dns_tsig_key_id) {
+        $bindExample .= <<<END
+            key "{$zoneTransfer->dns_tsig_key->name}" {
+                algorithm {$zoneTransfer->dns_tsig_key->algorithm};
+                secret "{$zoneTransfer->dns_tsig_key->secret}";
+            };
+
+
+            END;
+    }
+
+    if ($zoneTransfer->dns_tsig_key_id) {
+        $primaryIpStr = "      key {$zoneTransfer->dns_tsig_key->name};";
+    } else {
+        $primaryIpArray = [];
+
+        foreach ($serverZones as $sz) {
+            $ips = [
+                $sz->dns_server->ipv4_addr,
+                $sz->dns_server->ipv6_addr,
+            ];
+
+            foreach ($ips as $ip) {
+                if (!$ip) {
+                    continue;
+                }
+
+                $primaryIpArray[] = "      {$ip};";
+            }
+        }
+
+        $primaryIpStr = implode("\n", $primaryIpArray);
+    }
+
+    $bindExample .= <<<END
+        zone "{$zone->name}" {
+            type secondary;
+            file "db.{$zone->name}";
+            primaries {
+        $primaryIpStr
+            };
+            allow-query any;
+        };
+
+
+        END;
+
+    $xtpl->table_td(
+        '<textarea cols="80" rows="18" readonly>' . h($bindExample) . '</textarea>'
     );
     $xtpl->table_tr();
     $xtpl->table_out();
