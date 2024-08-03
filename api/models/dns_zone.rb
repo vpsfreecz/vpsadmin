@@ -21,6 +21,8 @@ class DnsZone < ApplicationRecord
     message: '%{value} is not a valid zone name'
   }
 
+  validates :default_ttl, presence: true, numericality: { in: (60..(7 * 86_400)) }
+
   validates :email, presence: true, format: {
     with: /\A[^@\s]+@[^\s]+\z/,
     message: '%{value} is not a valid email address'

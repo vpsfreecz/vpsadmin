@@ -13,6 +13,8 @@ class DnsRecord < ApplicationRecord
   }
 
   validates :record_type, presence: true, inclusion: { in: %w[A AAAA CNAME MX NS PTR SRV TXT] }
+  validates :ttl, numericality: { in: (60..(7 * 86_400)) }, unless: -> { ttl.blank? }
+  validates :priority, numericality: { in: (0..65_535) }, unless: -> { priority.blank? }
   validates :content, presence: true
   validates :comment, length: { maximum: 255 }
   validate :check_name
