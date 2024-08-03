@@ -957,6 +957,7 @@ function dns_bind_primary_example($zone, $serverZones, $zoneTransfer)
         $secondaryIpStr
             };
             notify yes;
+            allow-query any;
         };
 
 
