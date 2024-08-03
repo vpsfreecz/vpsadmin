@@ -20,7 +20,7 @@ class DnsRecord < ApplicationRecord
   validate :check_name
   validate :check_content
 
-  def dynamic_update_enable
+  def dynamic_update_enabled
     !update_token_id.nil?
   end
 

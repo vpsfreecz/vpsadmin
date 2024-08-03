@@ -1044,7 +1044,7 @@ function dns_record_list($zone)
         $xtpl->table_td(nl2br(h($r->content)));
 
         if (!$zone->managed) {
-            $xtpl->table_td(boolean_icon($r->dynamic_update_enable));
+            $xtpl->table_td(boolean_icon($r->dynamic_update_enabled));
             $xtpl->table_td('<a href="?page=dns&action=record_edit&id=' . $r->id . '"><img src="template/icons/vps_edit.png" alt="' . _('Edit') . '" title="' . _('Edit') . '"></a>');
             $xtpl->table_td('<a href="?page=dns&action=record_delete&id=' . $r->id . '&zone=' . $r->dns_zone_id . '&t=' . csrf_token() . '"><img src="template/icons/vps_delete.png" alt="' . _('Delete') . '" title="' . _('Delete') . '"></a>');
         }
@@ -1083,7 +1083,7 @@ function dns_record_new($zone_id)
     api_param_to_form('priority', $input->priority);
     $xtpl->form_add_textarea(_('Content') . ':', 60, 1, 'content', post_val('content'), $input->content->description);
     $xtpl->form_add_textarea(_('Comment') . ':', 60, 1, 'comment', post_val('comment'), $input->comment->description);
-    api_param_to_form('dynamic_update_enable', $input->dynamic_update_enable);
+    api_param_to_form('dynamic_update_enabled', $input->dynamic_update_enabled);
 
     $xtpl->form_out(_('Add'));
 
@@ -1117,11 +1117,11 @@ function dns_record_edit($id)
     $xtpl->form_add_textarea(_('Comment') . ':', 60, 1, 'comment', post_val('comment', $record->comment), $input->comment->description);
 
     if ($record->type == 'A' || $record->type == 'AAAA') {
-        api_param_to_form('dynamic_update_enable', $input->dynamic_update_enable, $record->dynamic_update_enable);
+        api_param_to_form('dynamic_update_enabled', $input->dynamic_update_enabled, $record->dynamic_update_enabled);
 
         $xtpl->table_td(_('Dynamic update URL') . ':');
 
-        if ($record->dynamic_update_enable) {
+        if ($record->dynamic_update_enabled) {
             $xtpl->table_td('<textarea cols="70" rows="5" readonly>' . h($record->dynamic_update_url) . '</textarea>');
         } else {
             $xtpl->table_td(_('not enabled'));

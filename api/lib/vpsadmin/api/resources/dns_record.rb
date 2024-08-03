@@ -12,7 +12,7 @@ module VpsAdmin::API::Resources
       integer :priority, label: 'Priority', desc: 'Optional priority, used e.g. for MX records'
       text :comment, desc: 'Optional comment'
       bool :enabled
-      bool :dynamic_update_enable, label: 'Enable dynamic update', desc: 'Only for A and AAAA records', default: false
+      bool :dynamic_update_enabled, label: 'Enable dynamic update', desc: 'Only for A and AAAA records', default: false
     end
 
     params(:all) do
@@ -120,7 +120,7 @@ module VpsAdmin::API::Resources
       blocking true
 
       input do
-        use :common, include: %i[content ttl priority comment dynamic_update_enable]
+        use :common, include: %i[content ttl priority comment dynamic_update_enabled]
       end
 
       output do

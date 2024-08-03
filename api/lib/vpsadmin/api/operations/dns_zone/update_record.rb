@@ -15,14 +15,14 @@ module VpsAdmin::API
         raise Exceptions::OperationError, 'Only A and AAAA records can utilize dynamic updates'
       end
 
-      dyn_enable = attrs.delete(:dynamic_update_enable)
+      dyn_enable = attrs.delete(:dynamic_update_enabled)
 
-      if dyn_enable === true && !dns_record.dynamic_update_enable
+      if dyn_enable === true && !dns_record.dynamic_update_enabled
         ActiveRecord::Base.transaction do
           dns_record.update!(update_token: ::Token.get!(owner: dns_record))
         end
 
-      elsif dyn_enable === false && dns_record.dynamic_update_enable
+      elsif dyn_enable === false && dns_record.dynamic_update_enabled
         ActiveRecord::Base.transaction do
           token = dns_record.update_token
           dns_record.update!(update_token: nil)

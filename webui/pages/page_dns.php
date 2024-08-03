@@ -262,8 +262,8 @@ if (isLoggedIn()) {
                     $params['priority'] = $_POST['priority'];
                 }
 
-                if (isset($_POST['dynamic_update_enable'])) {
-                    $params['dynamic_update_enable'] = true;
+                if (isset($_POST['dynamic_update_enabled'])) {
+                    $params['dynamic_update_enabled'] = true;
                 }
 
                 $record = $api->dns_record->create($params);
@@ -290,7 +290,7 @@ if (isLoggedIn()) {
                     'priority' => trim($_POST['priority'] ?? '') === '' ? null : $_POST['priority'],
                     'content' => $_POST['content'],
                     'comment' => $_POST['comment'],
-                    'dynamic_update_enable' => isset($_POST['dynamic_update_enable']),
+                    'dynamic_update_enabled' => isset($_POST['dynamic_update_enabled']),
                 ]);
 
                 notify_user(_('Record updated'), '');
