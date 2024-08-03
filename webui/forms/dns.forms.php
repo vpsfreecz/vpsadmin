@@ -477,6 +477,7 @@ function secondary_dns_zone_list()
     );
 
     $xtpl->sbar_add(_('New secondary zone'), '?page=dns&action=secondary_zone_new');
+    $xtpl->sbar_out(_('Secondary zones'));
 }
 
 function secondary_dns_zone_new()
@@ -521,6 +522,7 @@ function primary_dns_zone_list()
     );
 
     $xtpl->sbar_add(_('New primary zone'), '?page=dns&action=primary_zone_new');
+    $xtpl->sbar_out(_('Primary zones'));
 }
 
 function primary_dns_zone_new()
@@ -598,7 +600,8 @@ function dnssec_records_list($zone_id)
         $xtpl->table_out();
     }
 
-    $xtpl->sbar_add(_('Back'), '?page=dns&action=zone_show&id=' . $zone->id);
+    $xtpl->sbar_add(_('Back to zone'), '?page=dns&action=zone_show&id=' . $zone->id);
+    $xtpl->sbar_out(_('DNS zone'));
 }
 
 function tsig_key_list()
@@ -678,6 +681,7 @@ function tsig_key_list()
     $xtpl->table_out();
 
     $xtpl->sbar_add(_('New TSIG key'), '?page=dns&action=tsig_key_new');
+    $xtpl->sbar_out(_('TSIG keys'));
 }
 
 function tsig_key_new()
@@ -1082,6 +1086,9 @@ function dns_record_new($zone_id)
     api_param_to_form('dynamic_update_enable', $input->dynamic_update_enable);
 
     $xtpl->form_out(_('Add'));
+
+    $xtpl->sbar_add(_('Back to zone'), '?page=dns&action=zone_show&id=' . $zone->id);
+    $xtpl->sbar_out(_('DNS zone'));
 }
 
 function dns_record_edit($id)
@@ -1124,6 +1131,9 @@ function dns_record_edit($id)
     }
 
     $xtpl->form_out(_('Update'));
+
+    $xtpl->sbar_add(_('Back to zone'), '?page=dns&action=zone_show&id=' . $record->dns_zone_id);
+    $xtpl->sbar_out(_('DNS zone'));
 }
 
 function zoneRolelabel($role)
