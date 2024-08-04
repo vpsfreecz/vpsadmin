@@ -368,10 +368,47 @@ function route_edit_form($id)
     $ip = $api->ip_address->show($id);
 
     $xtpl->title(_('IP address') . ' ' . $ip->addr . '/' . $ip->prefix);
+
     $xtpl->sbar_add(
         _("Back"),
         $_GET['return'] ? $_GET['return'] : '?page=networking&action=ip_addresses'
     );
+    $xtpl->sbar_add(_('List assignments'), '?page=networking&action=assignments&ip_addr=' . $ip->addr . '&ip_prefix=' . $ip->prefix . '&list=1');
+    $xtpl->sbar_add(_('List incidents'), '?page=networking&action=assignments&ip_addr=' . $ip->addr . '&ip_prefix=' . $ip->prefix . '&list=1');
+
+    $xtpl->sbar_out(_('Routed address'));
+
+    $netif = $ip->network_interface_id ? $ip->network_interface : null;
+    $vps = $netif ? $netif->vps : null;
+
+    $xtpl->table_title(_('Overview'));
+    $xtpl->table_td(_('Network') . ':');
+    $xtpl->table_td($ip->network->address . '/' . $ip->network->prefix);
+    $xtpl->table_tr();
+
+    $xtpl->table_td(_('IP address') . ':');
+    $xtpl->table_td($ip->addr . '/' . $ip->prefix);
+    $xtpl->table_tr();
+
+    $xtpl->table_td(_('Size') . ':');
+    $xtpl->table_td(approx_number($ip->size));
+    $xtpl->table_tr();
+
+    $xtpl->table_td(_('User') . ':');
+    $xtpl->table_td($ip->user_id ? user_link($ip->user) : '-');
+    $xtpl->table_tr();
+
+    if ($vps) {
+        $xtpl->table_td(_('VPS') . ':');
+        $xtpl->table_td(vps_link($vps) . ' ' . h($vps->hostname));
+        $xtpl->table_tr();
+
+        $xtpl->table_td(_('Network interface') . ':');
+        $xtpl->table_td($netif->name);
+        $xtpl->table_tr();
+    }
+
+    $xtpl->table_out();
 
     if (isAdmin()) {
         $xtpl->table_title(_('Ownership'));
