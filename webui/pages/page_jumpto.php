@@ -54,6 +54,10 @@ if (isLoggedIn() && isAdmin()) {
                     case 'Network':
                         $link = '?page=cluster&action=network_locations&network=' . $v->id;
                         break;
+
+                    case 'IpAddress':
+                        $link = '?page=networking&action=route_edit&id=' . $v->id;
+                        break;
                 }
 
                 $xtpl->table_td($link ? '<a href="' . $link . '">' . $v->id . '</a>' : $v->id);
