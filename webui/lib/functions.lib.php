@@ -824,6 +824,9 @@ function transaction_concern_link($klass, $row_id)
         case 'DnsZone':
             return '<a href="?page=dns&action=zone_show&id=' . $row_id . '">' . $row_id . '</a>';
 
+        case 'HostIpAddress':
+            return '<a href="?page=redirect&to=ip_address&from=host_ip_address&id=' . $row_id . '">' . $row_id . '</a>';
+
         default:
             return "$row_id";
     }

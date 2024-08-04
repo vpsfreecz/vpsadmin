@@ -51,6 +51,9 @@
 			case 'DnsZone':
 				return '<a href="?page=dns&action=zone_show&id='+ obj[1] +'">'+ obj[1] +'</a>';
 
+			case 'HostIpAddress':
+				return '<a href="?page=redirect&to=ip_address&from=host_ip_address&id='+ obj[1] +'">'+ obj[1] +'</a>';
+
 			default:
 				return obj[1];
 		}

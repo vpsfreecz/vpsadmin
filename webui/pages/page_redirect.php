@@ -10,6 +10,15 @@ if (isLoggedIn()) {
                     break;
             }
             break;
+
+        case 'ip_address':
+            switch ($_GET['from']) {
+                case 'host_ip_address':
+                    $hostIp = $api->host_ip_address->show($_GET['id']);
+                    redirect('?page=networking&action=route_edit&id=' . $hostIp->ip_address_id);
+                    break;
+            }
+            break;
     }
 
     $xtpl->perex(_('Redirect failed'), _('The redirect request was invalid.'));
