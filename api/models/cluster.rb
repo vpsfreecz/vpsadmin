@@ -45,9 +45,11 @@ class Cluster
         # Find a matching IP address
         # Quick check if addr is not an IpAddress itself before we walk through
         # network's all addresses
-        if ((net.ip_version == 4 && net.split_prefix < 32) \
-                   || (net.ip_version == 6 && net.split_prefix < 128)) && !net.ip_addresses.find_by(ip_addr: addr.address,
-                                                                                                    prefix: addr.prefix)
+        ip_match = net.ip_addresses.find_by(ip_addr: addr.address, prefix: addr.prefix)
+
+        if ip_match
+          ret << { resource: 'IpAddress', id: ip_match.id, attribute: 'address', value: ip_match.to_s }
+        else
           # Walk the addresses
           net.ip_addresses.each do |ip|
             next unless ip.include?(addr)
