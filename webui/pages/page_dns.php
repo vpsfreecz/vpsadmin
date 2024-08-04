@@ -319,6 +319,10 @@ if (isLoggedIn()) {
             }
             break;
 
+        case 'record_log':
+            dns_record_log_list();
+            break;
+
         case 'tsig_key_list':
             tsig_key_list();
             break;

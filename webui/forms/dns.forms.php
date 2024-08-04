@@ -12,6 +12,7 @@ function dns_submenu()
     $xtpl->sbar_add(_('Reverse records'), '?page=dns&action=ptr_list');
     $xtpl->sbar_add(_('Primary zones'), '?page=dns&action=primary_zone_list');
     $xtpl->sbar_add(_('Secondary zones'), '?page=dns&action=secondary_zone_list');
+    $xtpl->sbar_add(_('Record logs'), '?page=dns&action=record_log');
     $xtpl->sbar_add(_('TSIG keys'), '?page=dns&action=tsig_key_list');
 }
 
@@ -1231,6 +1232,97 @@ function dns_record_edit($id)
 
     $xtpl->sbar_add(_('Back to zone'), '?page=dns&action=zone_show&id=' . $record->dns_zone_id);
     $xtpl->sbar_out(_('DNS zone'));
+}
+
+function dns_record_log_list()
+{
+    global $xtpl, $api;
+
+    $xtpl->title(_('DNS record log'));
+
+    $xtpl->table_title(_('Filters'));
+
+    $input = $api->dns_record_log->list->getparameters('input');
+    $xtpl->form_create('', 'get', 'user-session-filter', false);
+
+    $xtpl->form_set_hidden_fields([
+        'page' => 'dns',
+        'action' => 'record_log',
+        'list' => '1',
+    ]);
+
+    $xtpl->form_add_input(_('Limit') . ':', 'text', '40', 'limit', get_val('limit', '25'), '');
+    $xtpl->form_add_input(_("Offset") . ':', 'text', '40', 'offset', get_val('offset', '0'), '');
+
+    if (isAdmin()) {
+        $xtpl->form_add_input(_("User") . ':', 'text', '40', 'user', get_val('user', ''), '');
+    }
+
+    api_param_to_form('dns_zone', $input->dns_zone, get_val('dns_zone'), null, true);
+    api_param_to_form('change_type', $input->change_type, get_val('change_type'), null, true);
+    api_param_to_form('name', $input->name, get_val('name', ''));
+    api_param_to_form('type', $input->type, get_val('type', ''));
+
+    $xtpl->form_out(_('Show'));
+
+    if (!$_GET['list']) {
+        return;
+    }
+
+    $params = [
+        'limit' => get_val('limit', 25),
+        'offset' => get_val('offset', 0),
+    ];
+
+    $conds = ['user', 'dns_zone', 'name', 'type', 'change_type'];
+
+    foreach ($conds as $c) {
+        if ($_GET[$c]) {
+            $params[$c] = $_GET[$c];
+        }
+    }
+
+    $params['meta'] = [
+        'includes' => 'dns_zone__user',
+    ];
+
+    $logs = $api->dns_record_log->list($params);
+
+    if (isAdmin()) {
+        $xtpl->table_add_category(_("User"));
+    }
+
+    $xtpl->table_add_category(_('Zone'));
+    $xtpl->table_add_category(_('Name'));
+    $xtpl->table_add_category(_('Type'));
+    $xtpl->table_add_category(_('Change type'));
+    $xtpl->table_add_category(_('Changes'));
+    $xtpl->table_add_category(_('Time'));
+
+    foreach ($logs as $log) {
+        if (isAdmin()) {
+            $xtpl->table_td($log->dns_zone->user_id ? user_link($log->dns_zone->user) : '-');
+        }
+
+        $xtpl->table_td('<a href="?page=dns&action=zone_show&id=' . $log->dns_zone_id . '">' . h($log->dns_zone->name) . '</a>');
+        $xtpl->table_td(h($log->name));
+        $xtpl->table_td(h($log->type));
+        $xtpl->table_td(h($log->change_type));
+
+        $changes = [];
+
+        foreach ($log->attr_changes as $k => $v) {
+            $safeVal = h(print_r($v, true));
+            $changes[] = "{$k} = {$safeVal}";
+        }
+
+        $xtpl->table_td('<pre><code>' . implode("<br>\n", $changes) . '</code></pre>');
+        $xtpl->table_td(tolocaltz($log->created_at));
+
+        $xtpl->table_tr();
+    }
+
+    $xtpl->table_out();
 }
 
 function zoneRolelabel($role)
