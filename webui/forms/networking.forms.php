@@ -99,8 +99,6 @@ function ip_address_list($page)
     $xtpl->table_add_category(_("Network"));
     $xtpl->table_add_category(_("IP address"));
     $xtpl->table_add_category(_("Size"));
-    $xtpl->table_add_category(_("TX"));
-    $xtpl->table_add_category(_("RX"));
 
     if (isAdmin()) {
         $xtpl->table_add_category(_('User'));
@@ -123,8 +121,6 @@ function ip_address_list($page)
         $xtpl->table_td($ip->network->address . '/' . $ip->network->prefix);
         $xtpl->table_td($ip->addr . '/' . $ip->prefix);
         $xtpl->table_td(approx_number($ip->size), false, true);
-        $xtpl->table_td(round($ip->max_tx * 8.0 / 1024 / 1024, 1), false, true);
-        $xtpl->table_td(round($ip->max_rx * 8.0 / 1024 / 1024, 1), false, true);
 
         if (isAdmin()) {
             if ($ip->user_id) {
