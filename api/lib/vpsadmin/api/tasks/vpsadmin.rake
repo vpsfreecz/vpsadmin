@@ -140,6 +140,13 @@ namespace :vpsadmin do
     task run: %i[process enforce resolve]
   end
 
+  namespace :dns do
+    desc 'Check DNS servers return configured reverse records'
+    task :check_reverse_records do
+      VpsAdmin::API::Tasks.run(:dns, :check_reverse_records)
+    end
+  end
+
   namespace :plugins do
     desc 'List installed plugins'
     task :list do
