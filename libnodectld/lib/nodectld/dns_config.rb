@@ -111,6 +111,11 @@ module NodeCtld
           else
             f.puts('  type secondary;')
             f.puts("  primaries { #{list_primaries(zone.primaries)} };")
+
+            if zone.secondaries.any?
+              f.puts("  allow-transfer { #{allow_transfer(zone.secondaries)} };")
+              f.puts('  notify yes;')
+            end
           end
 
           f.puts("  file \"#{zone.zone_file}\";")

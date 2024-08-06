@@ -25,7 +25,7 @@ module TransactionChains
           primaries = [zone_transfer.server_opts]
         end
 
-        if zone_transfer.secondary_type? && dns_server_zone.primary_type?
+        if zone_transfer.secondary_type?
           secondaries = [zone_transfer.server_opts]
         end
 
