@@ -101,6 +101,12 @@ module VpsAdmin::API::Tasks
         docstring: 'Number of incident reports per VPS',
         labels: %i[vps_id user_id]
       )
+
+      @dns_server_zone_serial = registry.gauge(
+        :vpsadmin_dns_server_zone_serial,
+        docstring: 'Serial number of zones on servers',
+        labels: %i[dns_server dns_zone]
+      )
     end
 
     # Export metrics for Prometheus
@@ -319,6 +325,48 @@ module VpsAdmin::API::Tasks
             labels: { user_id:, vps_id: }
           )
         end
+
+      # We do not verify serial numbers stored in the database, because those
+      # may not be final in case DNSSEC is in use -- serial is then managed by the
+      # DNS server. Hence we check what the SOA record actually contains from the outside.
+      ::DnsServerZone
+        .includes(:dns_zone, :dns_server)
+        .joins(:dns_zone)
+        .where(dns_zones: { enabled: true })
+        .each do |server_zone|
+        dig = nil
+        success = false
+        cmd = "dig -t SOA #{server_zone.dns_zone.name} @#{server_zone.dns_server.ipv4_addr} +short"
+
+        3.times do
+          dig = `#{cmd}`
+
+          case $?.exitstatus
+          when 0
+            success = true
+            break
+          when 9
+            sleep(1)
+            next
+          else
+            break
+          end
+        end
+
+        if success
+          _name, _email, serial, = dig.split
+        else
+          serial = 0
+        end
+
+        @dns_server_zone_serial.set(
+          serial.strip.to_i,
+          labels: {
+            dns_server: server_zone.dns_server.name,
+            dns_zone: server_zone.dns_zone.name
+          }
+        )
+      end
 
       save
     end

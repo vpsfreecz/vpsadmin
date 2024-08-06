@@ -5,11 +5,12 @@ let
 in stdenv.mkDerivation rec {
   name = "vpsadmin-api";
 
-  buildInputs = [
-    pkgs.ruby_3_2
-    pkgs.git
-    pkgs.mariadb
-    pkgs.mariadb-connector-c
+  buildInputs = with pkgs; [
+    bind
+    git
+    mariadb
+    mariadb-connector-c
+    ruby_3_2
   ];
 
   shellHook = ''

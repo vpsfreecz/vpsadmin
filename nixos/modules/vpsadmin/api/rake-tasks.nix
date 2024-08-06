@@ -76,6 +76,7 @@ let
       environment.RACK_ENV = "production";
       environment.SCHEMA = "${cfg.stateDirectory}/cache/structure.sql";
       path = with pkgs; [
+        bind
         mariadb
       ];
       serviceConfig = {
