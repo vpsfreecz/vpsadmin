@@ -977,7 +977,7 @@ function dns_bind_primary_example($zone, $serverZones, $zoneTransfer)
     $nameserverRecords = implode(
         "\n",
         array_map(function ($sz) {
-            return "        IN NS    {$sz->dns_server->name}";
+            return "@       IN NS    {$sz->dns_server->name}";
         }, $serverZones->asArray())
     );
 
@@ -994,7 +994,7 @@ function dns_bind_primary_example($zone, $serverZones, $zoneTransfer)
         )
 
         ; Name servers, be sure to set those
-                IN NS    ns1.{$zone->name}
+        @       IN NS    ns1.{$zone->name}
         $nameserverRecords
 
         ; A record for your name server
