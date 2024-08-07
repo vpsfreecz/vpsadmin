@@ -1013,7 +1013,7 @@ function dns_bind_primary_example($zone, $serverZones, $zoneTransfer)
         END;
 
     $xtpl->table_td(
-        '<textarea cols="80" rows="40" readonly>' . h($bindExample) . '</textarea>'
+        '<textarea cols="80" rows="' . (substr_count($bindExample, "\n") + 1) . '" readonly>' . h($bindExample) . '</textarea>'
     );
     $xtpl->table_tr();
     $xtpl->table_out();
@@ -1086,7 +1086,7 @@ function dns_bind_secondary_example($zone, $serverZones, $zoneTransfer)
         END;
 
     $xtpl->table_td(
-        '<textarea cols="80" rows="18" readonly>' . h($bindExample) . '</textarea>'
+        '<textarea cols="80" rows="' . (substr_count($bindExample, "\n") + 1) . '" readonly>' . h($bindExample) . '</textarea>'
     );
     $xtpl->table_tr();
     $xtpl->table_out();
@@ -1209,8 +1209,12 @@ function dns_record_edit($id)
 
     api_param_to_form('ttl', $input->ttl, $record->ttl);
     api_param_to_form('priority', $input->priority, $record->priority);
-    $xtpl->form_add_textarea(_('Content') . ':', 60, 1, 'content', post_val('content', $record->content), $input->content->description);
-    $xtpl->form_add_textarea(_('Comment') . ':', 60, 1, 'comment', post_val('comment', $record->comment), $input->comment->description);
+
+    $contentValue = post_val('content', $record->content);
+    $xtpl->form_add_textarea(_('Content') . ':', 60, substr_count($contentValue, "\n") + 1, 'content', $contentValue, $input->content->description);
+
+    $commentValue = post_val('comment', $record->comment);
+    $xtpl->form_add_textarea(_('Comment') . ':', 60, substr_count($commentValue, "\n") + 1, 'comment', $commentValue, $input->comment->description);
 
     if ($record->type == 'A' || $record->type == 'AAAA') {
         api_param_to_form('dynamic_update_enabled', $input->dynamic_update_enabled, $record->dynamic_update_enabled);
