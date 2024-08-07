@@ -233,6 +233,13 @@ module TransactionChains
             i = 0
 
             old_branch.snapshot_in_pool_in_branches.where('snapshot_in_pool_id > ?', snap_in_pool.id).each do |s|
+              # If this snapshot already depends on another, we must decrement the original
+              # reference counter, otherwise it would leak when we overwrite it with a new
+              # dependency.
+              if s.snapshot_in_pool_in_branch
+                decrement(s.snapshot_in_pool_in_branch.snapshot_in_pool, :reference_count)
+              end
+
               edit(s, snapshot_in_pool_in_branch_id: snap_in_branch.id)
               i += 1
             end
