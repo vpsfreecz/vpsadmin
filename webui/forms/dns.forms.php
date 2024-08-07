@@ -241,7 +241,7 @@ function dns_zone_show($id)
         $xtpl->table_td($sz->last_check_at ? tolocaltz($sz->last_check_at) : '-');
 
         if (isAdmin()) {
-            $xtpl->table_td('<a href="?page=dns&action=server_zone_delete&id=' . $zone->id . '&server_zone=' . $sz->id . '&t=' . csrf_token() . '"><img src="template/icons/vps_delete.png" alt="' . _('Remove from server') . '" title="' . _('Remove from server') . '"></a>');
+            $xtpl->table_td('<a href="?page=dns&action=server_zone_delete&id=' . $zone->id . '&server_zone=' . $sz->id . '&t=' . csrf_token() . '" onclick="return confirm(\'' . _('Do you really wish to this server?') . '\');"><img src="template/icons/vps_delete.png" alt="' . _('Remove from server') . '" title="' . _('Remove from server') . '"></a>');
         };
 
         $xtpl->table_tr();
@@ -280,7 +280,7 @@ function dns_zone_show($id)
             $xtpl->table_td('-');
         }
 
-        $xtpl->table_td('<a href="?page=dns&action=zone_transfer_delete&id=' . $zone->id . '&transfer=' . $zt->id . '&t=' . csrf_token() . '"><img src="template/icons/vps_delete.png" alt="' . _('Remove transfer') . '" title="' . _('Remove transfer') . '"></a>');
+        $xtpl->table_td('<a href="?page=dns&action=zone_transfer_delete&id=' . $zone->id . '&transfer=' . $zt->id . '&t=' . csrf_token() . '" onclick="return confirm(\'' . _('Do you really wish to this server?') . '\');"><img src="template/icons/vps_delete.png" alt="' . _('Remove transfer') . '" title="' . _('Remove transfer') . '"></a>');
         $xtpl->table_tr();
     }
 
@@ -1141,7 +1141,7 @@ function dns_record_list($zone)
 
         if (!$zone->managed) {
             $xtpl->table_td('<a href="?page=dns&action=record_edit&id=' . $r->id . '"><img src="template/icons/vps_edit.png" alt="' . _('Edit') . '" title="' . _('Edit') . '"></a>');
-            $xtpl->table_td('<a href="?page=dns&action=record_delete&id=' . $r->id . '&zone=' . $r->dns_zone_id . '&t=' . csrf_token() . '"><img src="template/icons/vps_delete.png" alt="' . _('Delete') . '" title="' . _('Delete') . '"></a>');
+            $xtpl->table_td('<a href="?page=dns&action=record_delete&id=' . $r->id . '&zone=' . $r->dns_zone_id . '&t=' . csrf_token() . '" onclick="return confirm(\'' . _('Do you really wish to this record?') . '\');"><img src="template/icons/vps_delete.png" alt="' . _('Delete') . '" title="' . _('Delete') . '"></a>');
         }
 
         $xtpl->table_tr();
