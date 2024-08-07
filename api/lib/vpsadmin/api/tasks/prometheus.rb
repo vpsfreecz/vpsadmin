@@ -334,33 +334,19 @@ module VpsAdmin::API::Tasks
         .joins(:dns_zone)
         .where(dns_zones: { enabled: true })
         .each do |server_zone|
-        dig = nil
-        success = false
-        cmd = "dig -t SOA #{server_zone.dns_zone.name} @#{server_zone.dns_server.ipv4_addr} +short"
+        soa = []
 
-        3.times do
-          dig = `#{cmd}`
+        VpsAdmin::API::DnsResolver.open([server_zone.dns_server.ipv4_addr]) do |dns|
+          3.times do
+            soa = dns.query_soa(server_zone.dns_zone.name)
+            break if soa.any?
 
-          case $?.exitstatus
-          when 0
-            success = true
-            break
-          when 9
             sleep(1)
-            next
-          else
-            break
           end
         end
 
-        if success
-          _name, _email, serial, = dig.split
-        else
-          serial = 0
-        end
-
         @dns_server_zone_serial.set(
-          serial.strip.to_i,
+          soa.any? ? soa.first.serial : 0,
           labels: {
             dns_server: server_zone.dns_server.name,
             dns_zone: server_zone.dns_zone.name

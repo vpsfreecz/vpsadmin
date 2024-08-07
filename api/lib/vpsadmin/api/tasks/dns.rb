@@ -10,33 +10,26 @@ module VpsAdmin::API::Tasks
         .where.not(reverse_dns_record: nil)
         .each do |host_ip|
         host_ip.reverse_dns_record.dns_zone.dns_server_zones.each do |server_zone|
-          dig = nil
-          success = false
-          cmd = "dig -x #{host_ip.ip_addr} @#{server_zone.dns_server.ipv4_addr} +short"
+          ptr = nil
 
-          3.times do
-            dig = `#{cmd}`.strip
-
-            case $?.exitstatus
-            when 0
-              success = true
+          VpsAdmin::API::DnsResolver.open([server_zone.dns_server.ipv4_addr]) do |dns|
+            3.times do
+              ptr = dns.query_ptr(host_ip.ip_addr)
               break
-            when 9
+            rescue Resolv::ResolvError
               sleep(1)
               next
-            else
-              break
             end
           end
 
-          unless success
+          if ptr.nil?
             warn "#{host_ip.ip_addr}: failed to get reverse record from #{server_zone.dns_server.name}"
             cnt_fail += 1
             next
           end
 
-          if dig != host_ip.reverse_dns_record.content
-            warn "#{host_ip.ip_addr}: #{server_zone.dns_server.name} returned #{dig.inspect}, " \
+          if ptr != host_ip.reverse_dns_record.content
+            warn "#{host_ip.ip_addr}: #{server_zone.dns_server.name} returned #{ptr.inspect}, " \
                  "expected #{host_ip.reverse_dns_record.content.inspect}"
             cnt_incorrect += 1
             next

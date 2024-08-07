@@ -6,7 +6,6 @@ in stdenv.mkDerivation rec {
   name = "vpsadmin-api";
 
   buildInputs = with pkgs; [
-    bind
     git
     mariadb
     mariadb-connector-c
