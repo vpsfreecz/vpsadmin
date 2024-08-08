@@ -245,7 +245,9 @@ module TransactionChains
             end
 
             # Update reference count - number of objects that are dependant on snap_in_branch
-            edit(snap_in_pool, reference_count: snap_in_pool.reference_count + i)
+            i.times do
+              increment(snap_in_pool, :reference_count)
+            end
           end
         end
 
