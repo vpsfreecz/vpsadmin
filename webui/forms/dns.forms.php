@@ -946,10 +946,11 @@ function dns_bind_primary_example($zone, $serverZones, $zoneTransfer)
             }
 
             $str = '      ';
-            $str .= $ip;
 
             if ($zoneTransfer->dns_tsig_key_id) {
-                $str .= ' key ' . $zoneTransfer->dns_tsig_key->name;
+                $str .= 'key ' . $zoneTransfer->dns_tsig_key->name;
+            } else {
+                $str .= $ip;
             }
 
             $str .= ';';
