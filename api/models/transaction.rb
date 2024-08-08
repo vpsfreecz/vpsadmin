@@ -197,8 +197,24 @@ class Transaction < ApplicationRecord
       add_confirmable(:decrement_type, obj, attr.to_s)
     end
 
+    # @param obj [ActiveRecord::Base]
+    # @param attrs [Hash]
+    def decrement_many(obj, **kwattrs)
+      raise NotImplementedError
+
+      add_confirmable(:decrement_type, obj, nil, kwattrs)
+    end
+
     def increment(obj, attr)
       add_confirmable(:increment_type, obj, attr.to_s)
+    end
+
+    # @param obj [ActiveRecord::Base]
+    # @param attrs [Hash]
+    def increment_many(obj, **kwattrs)
+      raise NotImplementedError
+
+      add_confirmable(:increment_type, obj, nil, kwattrs)
     end
 
     alias edit edit_after

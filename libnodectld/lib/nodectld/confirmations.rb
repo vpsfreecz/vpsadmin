@@ -142,16 +142,28 @@ module NodeCtld
 
       when 6 # decrement
         if success && dir == :execute
-          attr = load_yaml(trans['attr_changes'])
+          changes = load_yaml(trans['attr_changes'])
 
-          t.query("UPDATE #{trans['table_name']} SET #{attr} = #{attr} - 1 WHERE #{pk}")
+          if changes.is_a?(Hash)
+            update = changes.map { |k, v| "`#{k}` = `#{k}` - #{v}" }.join(', ')
+            t.query("UPDATE #{trans['table_name']} SET #{update} WHERE #{pk}")
+          else # TODO: legacy single-column single-value version, remove in the future
+            col = changes
+            t.query("UPDATE #{trans['table_name']} SET `#{col}` = `#{col}` - 1 WHERE #{pk}")
+          end
         end
 
       when 7 # increment
         if success && dir == :execute
-          attr = load_yaml(trans['attr_changes'])
+          changes = load_yaml(trans['attr_changes'])
 
-          t.query("UPDATE #{trans['table_name']} SET #{attr} = #{attr} + 1 WHERE #{pk}")
+          if changes.is_a?(Hash)
+            update = changes.map { |k, v| "`#{k}` = `#{k}` + #{v}" }.join(', ')
+            t.query("UPDATE #{trans['table_name']} SET #{update} WHERE #{pk}")
+          else # TODO: legacy single-column single-value version, remove in the future
+            col = changes
+            t.query("UPDATE #{trans['table_name']} SET `#{col}` = `#{col}` + 1 WHERE #{pk}")
+          end
         end
       end
     end
