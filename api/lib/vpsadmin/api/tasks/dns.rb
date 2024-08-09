@@ -1,15 +1,22 @@
 module VpsAdmin::API::Tasks
   class Dns < Base
+    # Check that DNS servers return the configured reverse records
+    #
+    # Accepts the following environment variables:
+    # [SERVERS]: check only listed server names, separated by commas
     def check_reverse_records
       cnt_success = 0
       cnt_fail = 0
       cnt_incorrect = 0
+      servers = ENV['SERVERS'] ? ENV['SERVERS'].split(',') : nil
 
       ::HostIpAddress
-        .includes(reverse_dns_record: { dns_zone: :dns_server_zones })
+        .includes(reverse_dns_record: { dns_zone: { dns_server_zones: :dns_server } })
         .where.not(reverse_dns_record: nil)
         .each do |host_ip|
         host_ip.reverse_dns_record.dns_zone.dns_server_zones.each do |server_zone|
+          next if servers && !servers.include?(server_zone.dns_server.name)
+
           ptr = nil
 
           VpsAdmin::API::DnsResolver.open([server_zone.dns_server.ipv4_addr]) do |dns|
