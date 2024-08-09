@@ -119,6 +119,8 @@ module VpsAdmin::API::Resources
         error('create failed', e.record.errors.to_hash)
       rescue ActiveRecord::RecordNotUnique => e
         error('zone with this name already exists')
+      rescue VpsAdmin::API::Exceptions::OperationError => e
+        error(e.message)
       end
 
       def state_id

@@ -19,7 +19,31 @@ module VpsAdmin::API
         raise ActiveRecord::RecordInvalid, dns_zone
       end
 
+      check_collisions!(dns_zone)
+
       TransactionChains::DnsZone::CreateUser.fire2(args: [dns_zone])
+    end
+
+    protected
+
+    def check_collisions!(dns_zone)
+      zone_segments = dns_zone.name.split('.')
+
+      ::DnsZone.all.each do |existing_zone|
+        existing_segments = existing_zone.name.split('.')
+
+        conflict = (is_subdomain?(existing_segments, zone_segments) || is_subdomain?(zone_segments, existing_segments)) \
+                   && dns_zone.user_id != existing_zone.user_id
+        next unless conflict
+
+        raise Exceptions::OperationError, "#{dns_zone.name.inspect} is already taken"
+      end
+    end
+
+    def is_subdomain?(parent_segments, child_segments)
+      return false if child_segments.length <= parent_segments.length
+
+      child_segments.last(parent_segments.length) == parent_segments
     end
   end
 end
