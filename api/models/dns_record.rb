@@ -27,7 +27,17 @@ class DnsRecord < ApplicationRecord
   def dynamic_update_url
     return if update_token_id.nil?
 
-    File.join(::SysConfig.get(:core, :api_url), 'dns_records/dynamic_update/', update_token.token)
+    base_url =
+      case record_type
+      when 'A'
+        ::SysConfig.get(:core, :ipv4_ddns_url)
+      when 'AAAA'
+        ::SysConfig.get(:core, :ipv6_ddns_url)
+      else
+        raise "Unsupported record type #{record_type.inspect}"
+      end
+
+    File.join(base_url, 'dns_records/dynamic_update/', update_token.token)
   end
 
   protected
