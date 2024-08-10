@@ -959,7 +959,7 @@ function dns_bind_primary_example($zone, $serverZones, $zoneTransfer)
         }
     }
 
-    $secondaryIpStr = implode("\n", $secondaryIpArray);
+    $secondaryIpStr = implode("\n", array_unique($secondaryIpArray));
 
     $bindExample .= <<<END
         zone "{$zone->name}" {
