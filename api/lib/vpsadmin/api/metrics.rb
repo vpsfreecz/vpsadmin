@@ -25,6 +25,12 @@ module VpsAdmin::API
 
     OOM_REPORT_LABELS = (VPS_LABELS + %i[cgroup]).freeze
 
+    DNS_ZONE_LABELS = %i[dns_zone dns_source dns_role].freeze
+
+    DNS_SERVER_ZONE_LABELS = (DNS_ZONE_LABELS + %i[dns_server dns_type]).freeze
+
+    DNS_RECORD_LABELS = %i[dns_zone record_name record_type record_content].freeze
+
     LOADAVGS = [1, 5, 15].freeze
 
     CPU_USAGE_STATS = %i[idle system user].freeze
@@ -232,6 +238,67 @@ module VpsAdmin::API
 
       user.user_failed_logins.group(:auth_type).count.each do |auth_type, cnt|
         @user_failed_logins.set(cnt, labels: { auth_type: })
+      end
+
+      user.dns_zones.each do |zone|
+        labels = { dns_zone: zone.name, dns_source: zone.zone_source, dns_role: zone.zone_role }
+
+        @dns_zone_enabled.set(zone.enabled ? 1 : 0, labels:)
+        next if zone.external_source?
+
+        @dns_zone_dnssec_enabled.set(zone.dnssec_enabled ? 1 : 0, labels:)
+        @dns_zone_default_ttl.set(zone.default_ttl, labels:)
+
+        zone.dns_records.group('record_type').count.each do |type, cnt|
+          @dns_zone_record_count.set(cnt, labels: labels.merge(record_type: type))
+        end
+      end
+
+      ::DnsServerZone
+        .includes(:dns_zone, :dns_server)
+        .joins(:dns_zone, :dns_server)
+        .where(
+          dns_zones: { user_id: user.id, enabled: true },
+          dns_servers: { hidden: false }
+        )
+        .each do |server_zone|
+        labels = {
+          dns_zone: server_zone.dns_zone.name,
+          dns_source: server_zone.dns_zone.zone_source,
+          dns_role: server_zone.dns_zone.zone_role,
+          dns_server: server_zone.dns_server.name,
+          dns_type: server_zone.zone_type
+        }
+
+        @dns_server_zone_last_check_at.set(server_zone.last_check_at.to_i, labels:)
+        @dns_server_zone_serial.set(server_zone.serial.to_i, labels:)
+        @dns_server_zone_loaded_at.set(server_zone.loaded_at.to_i, labels:)
+
+        next if server_zone.primary_type?
+
+        @dns_server_zone_expires_at.set(server_zone.expires_at.to_i, labels:)
+        @dns_server_zone_refresh_at.set(server_zone.refresh_at.to_i, labels:)
+      end
+
+      ::DnsRecord
+        .includes(:dns_zone)
+        .joins(:dns_zone)
+        .where(
+          dns_zones: { user_id: user.id, enabled: true },
+          record_type: %w[A AAAA CNAME MX NS PTR]
+        )
+        .each do |record|
+        labels = {
+          dns_zone: record.dns_zone.name,
+          record_name: record.name,
+          record_type: record.record_type,
+          record_content: record.content
+        }
+
+        @dns_record_enabled.set(record.enabled ? 1 : 0, labels:)
+        @dns_record_ttl.set(record.ttl || 0, labels:)
+        @dns_record_priority.set(record.priority || 0, labels:)
+        @dns_record_dynamic.set(record.dynamic_update_enabled ? 1 : 0, labels:)
       end
 
       @plugins.each(&:compute)
@@ -459,6 +526,97 @@ module VpsAdmin::API
         :user_failed_logins,
         docstring: 'Number of failed logins to vpsAdmin',
         labels: %i[auth_type]
+      )
+
+      @dns_zone_enabled = add_metric(
+        :gauge,
+        :dns_zone_enabled,
+        docstring: '1 if the DNS zone is enabled, 0 otherwise',
+        labels: DNS_ZONE_LABELS
+      )
+
+      @dns_zone_dnssec_enabled = add_metric(
+        :gauge,
+        :dns_zone_dnssec_enabled,
+        docstring: '1 if the DNSSEC is enabled on internal zone, 0 otherwise',
+        labels: DNS_ZONE_LABELS
+      )
+
+      @dns_zone_default_ttl = add_metric(
+        :gauge,
+        :dns_zone_default_ttl,
+        docstring: 'Default TTL for records in internal zones in seconds',
+        labels: DNS_ZONE_LABELS
+      )
+
+      @dns_zone_record_count = add_metric(
+        :gauge,
+        :dns_zone_record_count,
+        docstring: 'Number of records in internal DNS zone',
+        labels: DNS_ZONE_LABELS + %i[record_type]
+      )
+
+      @dns_server_zone_last_check_at = add_metric(
+        :gauge,
+        :dns_server_zone_last_check_at,
+        docstring: 'Time when DNS zone status was last checked',
+        labels: DNS_SERVER_ZONE_LABELS
+      )
+
+      @dns_server_zone_serial = add_metric(
+        :gauge,
+        :dns_server_zone_serial,
+        docstring: 'DNS zone serial number',
+        labels: DNS_SERVER_ZONE_LABELS
+      )
+
+      @dns_server_zone_loaded_at = add_metric(
+        :gauge,
+        :dns_server_zone_loaded_at,
+        docstring: 'Time when DNS zone was last loaded',
+        labels: DNS_SERVER_ZONE_LABELS
+      )
+
+      @dns_server_zone_expires_at = add_metric(
+        :gauge,
+        :dns_server_zone_expires_at,
+        docstring: 'Time when secondary DNS zone expires',
+        labels: DNS_SERVER_ZONE_LABELS
+      )
+
+      @dns_server_zone_refresh_at = add_metric(
+        :gauge,
+        :dns_server_zone_refresh_at,
+        docstring: 'Time when secondary DNS zone will be refreshed',
+        labels: DNS_SERVER_ZONE_LABELS
+      )
+
+      @dns_record_enabled = add_metric(
+        :gauge,
+        :dns_record_enabled,
+        docstring: '1 if the record is enabled, 0 otherwise',
+        labels: DNS_RECORD_LABELS
+      )
+
+      @dns_record_ttl = add_metric(
+        :gauge,
+        :dns_record_ttl,
+        docstring: 'DNS record TTL in seconds, 0 if left to default',
+        labels: DNS_RECORD_LABELS
+      )
+
+      @dns_record_priority = add_metric(
+        :gauge,
+        :dns_record_priority,
+        docstring: 'DNS record priority in seconds, 0 if unset',
+        labels: DNS_RECORD_LABELS
+      )
+
+      @dns_record_dynamic = add_metric(
+        :gauge,
+        :dns_record_dynamic,
+        docstring: '1 if dynamic updates are enabled, 0 otherwise',
+        labels: DNS_RECORD_LABELS
       )
     end
 
