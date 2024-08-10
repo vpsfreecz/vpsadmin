@@ -27,6 +27,12 @@ let
       description = "Public domain";
     };
 
+    aliases = mkOption {
+      type = types.listOf types.str;
+      default = [];
+      description = "Additional domains";
+    };
+
     virtualHost = mkOption {
       type = types.nullOr types.str;
       default = null;
@@ -91,7 +97,7 @@ let
       opts = baseOpts app config;
     in {
       options = {
-        inherit (opts) domain virtualHost maintenance backend;
+        inherit (opts) domain aliases virtualHost maintenance backend;
       };
     };
 
@@ -185,6 +191,7 @@ let
 
   baseVirtualHosts = app: name: instance: nameValuePair instance.virtualHost {
     serverName = mkIf (!isNull instance.domain) instance.domain;
+    serverAliases = instance.aliases;
 
     forceSSL = mkIf (!isNull cfg.forceSSL) cfg.forceSSL;
 
@@ -217,6 +224,7 @@ let
 
   authVirtualHosts = app: name: instance: nameValuePair instance.virtualHost {
     serverName = mkIf (!isNull instance.domain) instance.domain;
+    serverAliases = instance.aliases;
 
     forceSSL = mkIf (!isNull cfg.forceSSL) cfg.forceSSL;
 
