@@ -5,6 +5,10 @@ module VpsAdmin::API::Tasks
   class Prometheus < Base
     EXPORT_FILE = ENV['EXPORT_FILE'] || '/run/metrics/vpsadmin.prom'
 
+    DNS_ZONE_LABELS = %i[dns_zone dns_source dns_role].freeze
+
+    DNS_SERVER_ZONE_LABELS = (DNS_ZONE_LABELS + %i[dns_server dns_type]).freeze
+
     def initialize
       super
       @registry = ::Prometheus::Client.registry
@@ -102,10 +106,58 @@ module VpsAdmin::API::Tasks
         labels: %i[vps_id user_id]
       )
 
+      @dns_zone_enabled = registry.gauge(
+        :vpsadmin_dns_zone_enabled,
+        docstring: '1 if the DNS zone is enabled, 0 otherwise',
+        labels: DNS_ZONE_LABELS
+      )
+
+      @dns_zone_dnssec_enabled = registry.gauge(
+        :vpsadmin_dns_zone_dnssec_enabled,
+        docstring: '1 if the DNSSEC is enabled on internal zone, 0 otherwise',
+        labels: DNS_ZONE_LABELS
+      )
+
+      @dns_zone_default_ttl = registry.gauge(
+        :vpsadmin_dns_zone_default_ttl,
+        docstring: 'Default TTL for records in internal zones in seconds',
+        labels: DNS_ZONE_LABELS
+      )
+
+      @dns_zone_record_count = registry.gauge(
+        :vpsadmin_dns_zone_record_count,
+        docstring: 'Number of records in internal DNS zone',
+        labels: DNS_ZONE_LABELS + %i[record_type]
+      )
+
+      @dns_server_zone_last_check_at = registry.gauge(
+        :vpsadmin_dns_server_zone_last_check_at,
+        docstring: 'Time when DNS zone status was last checked',
+        labels: DNS_SERVER_ZONE_LABELS
+      )
+
       @dns_server_zone_serial = registry.gauge(
         :vpsadmin_dns_server_zone_serial,
-        docstring: 'Serial number of zones on servers',
-        labels: %i[dns_server dns_zone]
+        docstring: 'DNS zone serial number',
+        labels: DNS_SERVER_ZONE_LABELS
+      )
+
+      @dns_server_zone_loaded_at = registry.gauge(
+        :vpsadmin_dns_server_zone_loaded_at,
+        docstring: 'Time when DNS zone was last loaded',
+        labels: DNS_SERVER_ZONE_LABELS
+      )
+
+      @dns_server_zone_expires_at = registry.gauge(
+        :vpsadmin_dns_server_zone_expires_at,
+        docstring: 'Time when secondary DNS zone expires',
+        labels: DNS_SERVER_ZONE_LABELS
+      )
+
+      @dns_server_zone_refresh_at = registry.gauge(
+        :vpsadmin_dns_server_zone_refresh_at,
+        docstring: 'Time when secondary DNS zone will be refreshed',
+        labels: DNS_SERVER_ZONE_LABELS
       )
     end
 
@@ -326,32 +378,41 @@ module VpsAdmin::API::Tasks
           )
         end
 
-      # We do not verify serial numbers stored in the database, because those
-      # may not be final in case DNSSEC is in use -- serial is then managed by the
-      # DNS server. Hence we check what the SOA record actually contains from the outside.
+      ::DnsZone.all.each do |zone|
+        labels = { dns_zone: zone.name, dns_source: zone.zone_source, dns_role: zone.zone_role }
+
+        @dns_zone_enabled.set(zone.enabled ? 1 : 0, labels:)
+        next if zone.external_source?
+
+        @dns_zone_dnssec_enabled.set(zone.dnssec_enabled ? 1 : 0, labels:)
+        @dns_zone_default_ttl.set(zone.default_ttl, labels:)
+
+        zone.dns_records.group('record_type').count.each do |type, cnt|
+          @dns_zone_record_count.set(cnt, labels: labels.merge(record_type: type))
+        end
+      end
+
       ::DnsServerZone
         .includes(:dns_zone, :dns_server)
         .joins(:dns_zone)
         .where(dns_zones: { enabled: true })
         .each do |server_zone|
-        soa = []
+        labels = {
+          dns_server: server_zone.dns_server.name,
+          dns_zone: server_zone.dns_zone.name,
+          dns_source: server_zone.dns_zone.zone_source,
+          dns_role: server_zone.dns_zone.zone_role,
+          dns_type: server_zone.zone_type
+        }
 
-        VpsAdmin::API::DnsResolver.open([server_zone.dns_server.ipv4_addr]) do |dns|
-          3.times do
-            soa = dns.query_soa(server_zone.dns_zone.name)
-            break if soa.any?
+        @dns_server_zone_last_check_at.set(server_zone.last_check_at.to_i, labels:)
+        @dns_server_zone_serial.set(server_zone.serial.to_i, labels:)
+        @dns_server_zone_loaded_at.set(server_zone.loaded_at.to_i, labels:)
 
-            sleep(1)
-          end
-        end
+        next if server_zone.primary_type?
 
-        @dns_server_zone_serial.set(
-          soa.any? ? soa.first.serial : 0,
-          labels: {
-            dns_server: server_zone.dns_server.name,
-            dns_zone: server_zone.dns_zone.name
-          }
-        )
+        @dns_server_zone_expires_at.set(server_zone.expires_at.to_i, labels:)
+        @dns_server_zone_refresh_at.set(server_zone.refresh_at.to_i, labels:)
       end
 
       save
