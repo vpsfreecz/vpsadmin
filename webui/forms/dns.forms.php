@@ -1293,6 +1293,8 @@ function dns_record_log_list()
 
     $logs = $api->dns_record_log->list($params);
 
+    $xtpl->table_add_category(_('Time'));
+
     if (isAdmin()) {
         $xtpl->table_add_category(_("User"));
     }
@@ -1301,10 +1303,10 @@ function dns_record_log_list()
     $xtpl->table_add_category(_('Name'));
     $xtpl->table_add_category(_('Type'));
     $xtpl->table_add_category(_('Change type'));
-    $xtpl->table_add_category(_('Changes'));
-    $xtpl->table_add_category(_('Time'));
 
     foreach ($logs as $log) {
+        $xtpl->table_td(tolocaltz($log->created_at));
+
         if (isAdmin()) {
             $xtpl->table_td($log->dns_zone->user_id ? user_link($log->dns_zone->user) : '-');
         }
@@ -1321,9 +1323,14 @@ function dns_record_log_list()
             $changes[] = "{$k} = {$safeVal}";
         }
 
-        $xtpl->table_td('<pre><code>' . implode("<br>\n", $changes) . '</code></pre>');
-        $xtpl->table_td(tolocaltz($log->created_at));
+        $xtpl->table_tr();
 
+        $xtpl->table_td(
+            '<pre><code>' . implode("\n", $changes) . '</code></pre>',
+            false,
+            false,
+            isAdmin() ? 6 : 5
+        );
         $xtpl->table_tr();
     }
 
