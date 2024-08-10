@@ -374,7 +374,7 @@ function route_edit_form($id)
         $_GET['return'] ? $_GET['return'] : '?page=networking&action=ip_addresses'
     );
     $xtpl->sbar_add(_('List assignments'), '?page=networking&action=assignments&ip_addr=' . $ip->addr . '&ip_prefix=' . $ip->prefix . '&list=1');
-    $xtpl->sbar_add(_('List incidents'), '?page=networking&action=assignments&ip_addr=' . $ip->addr . '&ip_prefix=' . $ip->prefix . '&list=1');
+    $xtpl->sbar_add(_('List incidents'), '?page=incidents&action=list&list=1&ip_addr=' . $ip->addr);
 
     $xtpl->sbar_out(_('Routed address'));
 
