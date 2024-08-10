@@ -285,7 +285,7 @@ module VpsAdmin::API
         .joins(:dns_zone)
         .where(
           dns_zones: { user_id: user.id, enabled: true },
-          record_type: %w[A AAAA CNAME MX NS PTR]
+          record_type: %w[A AAAA CNAME MX NS PTR SRV]
         )
         .each do |record|
         labels = {
