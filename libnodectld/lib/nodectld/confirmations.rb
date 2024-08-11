@@ -177,7 +177,7 @@ module NodeCtld
     end
 
     def sql_val(v)
-      if v.is_a?(Integer)
+      if v.is_a?(Numeric)
         v
       elsif v.nil?
         nil
@@ -189,7 +189,7 @@ module NodeCtld
     end
 
     def sql_quoted_val(v)
-      if v.is_a?(Integer)
+      if v.is_a?(Numeric)
         v
       elsif v.nil?
         'NULL'
