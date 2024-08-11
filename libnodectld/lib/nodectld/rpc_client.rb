@@ -18,12 +18,20 @@ module NodeCtld
     include OsCtl::Lib::Utils::Log
 
     def initialize
-      @channel = NodeBunny.create_channel
-      @exchange = @channel.direct(NodeBunny.exchange_name)
+      retry_on_timeout('Timeout while creating channel') do
+        @channel = NodeBunny.create_channel
+      end
+
+      retry_on_timeout('Timeout while creating exchange') do
+        @exchange = @channel.direct(NodeBunny.exchange_name)
+      end
+
       @response = nil
       @debug = $CFG.get(:rpc_client, :debug)
 
-      setup_reply_queue
+      retry_on_timeout('Timeout while setting up reply queue') do
+        setup_reply_queue
+      end
     end
 
     def close
@@ -115,6 +123,17 @@ module NodeCtld
 
     attr_reader :lock, :condition, :call_id
     attr_accessor :response
+
+    def retry_on_timeout(message, attempts: 10, delay: 10)
+      attempts.times do |i|
+        return yield
+      rescue Timeout::Error
+        log(:warn, "[#{i + 1}/#{attempts}] #{message}")
+        sleep(delay)
+      end
+
+      yield
+    end
 
     def setup_reply_queue
       @lock = Mutex.new
