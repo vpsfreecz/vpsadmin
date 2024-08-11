@@ -8,7 +8,7 @@ module TransactionChains
       concerns(:affect, [vps.class.name, vps.id])
 
       # Stop VPS - should be already stopped when suspended (blocked)
-      use_chain(TransactionChains::Vps::Stop, args: vps)
+      use_chain(TransactionChains::Vps::Stop, args: vps, kwargs: { rollback_stop: false })
 
       # Remove IP addresses
       if target

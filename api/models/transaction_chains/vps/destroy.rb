@@ -8,7 +8,7 @@ module TransactionChains
       concerns(:affect, [vps.class.name, vps.id])
 
       # Stop VPS - should definitely be already stopped
-      use_chain(TransactionChains::Vps::Stop, args: vps)
+      use_chain(TransactionChains::Vps::Stop, args: vps, kwargs: { rollback_stop: false })
 
       # Free resources
       resources = vps.free_resources(chain: self)
