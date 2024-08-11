@@ -180,7 +180,7 @@ module NodeCtld
       if v.is_a?(Integer)
         v
       elsif v.nil?
-        'NULL'
+        nil
       elsif v.is_a?(::Time)
         v.utc.strftime('%Y-%m-%d %H:%M:%S')
       else
