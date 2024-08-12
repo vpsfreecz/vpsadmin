@@ -23,7 +23,7 @@ module VpsAdmin::API::Tasks
       time = Time.now.utc
       time -= ENV.fetch('GRACE', 0).to_i
 
-      expiration = Time.now.utc + ENV.fetch('NEW_EXPIRATION', 0).to_i
+      expiration = Time.now.utc + ENV.fetch('NEW_EXPIRATION').to_i if ENV['NEW_EXPIRATION']
 
       limit = ENV.fetch('LIMIT', 30).to_i
       raise 'invalid limit' if limit <= 0
