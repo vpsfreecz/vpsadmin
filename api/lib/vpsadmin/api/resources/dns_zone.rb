@@ -105,7 +105,11 @@ module VpsAdmin::API::Resources
         allow
       end
 
+      include VpsAdmin::API::Lifetimes::ActionHelpers
+
       def exec
+        object_state_check!(current_user) if current_user.role != :admin
+
         op =
           if current_user.role != :admin || input[:user]
             VpsAdmin::API::Operations::DnsZone::CreateUser
@@ -146,11 +150,13 @@ module VpsAdmin::API::Resources
         allow
       end
 
+      include VpsAdmin::API::Lifetimes::ActionHelpers
+
       def exec
-        @chain, ret = VpsAdmin::API::Operations::DnsZone::Update.run(
-          self.class.model.existing.find_by!(with_restricted(id: params[:dns_zone_id])),
-          to_db_names(input)
-        )
+        zone = self.class.model.existing.find_by!(with_restricted(id: params[:dns_zone_id]))
+        object_state_check!(zone.user) if zone.user_id
+
+        @chain, ret = VpsAdmin::API::Operations::DnsZone::Update.run(zone, to_db_names(input))
         ret
       rescue ActiveRecord::RecordInvalid => e
         error('update failed', e.record.errors.to_hash)
@@ -171,8 +177,11 @@ module VpsAdmin::API::Resources
         allow
       end
 
+      include VpsAdmin::API::Lifetimes::ActionHelpers
+
       def exec
         zone = self.class.model.existing.find_by!(with_restricted(id: params[:dns_zone_id]))
+        object_state_check!(zone.user) if zone.user_id
 
         op =
           if current_user.role != :admin || zone.user_id

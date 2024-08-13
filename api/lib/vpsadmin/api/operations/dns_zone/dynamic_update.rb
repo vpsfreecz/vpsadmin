@@ -6,12 +6,15 @@ module VpsAdmin::API
   class Operations::DnsZone::DynamicUpdate < Operations::Base
     # @param request [Sinatra::Request]
     # @param update_token [String]
+    # @yieldparam dns_record [::DnsRecord]
     # @return [Array(::TransactionChain, ::DnsRecord)]
     def run(request, update_token)
       dns_record = ::DnsRecord.joins(:update_token).find_by!(
         tokens: { token: update_token },
         record_type: %w[A AAAA]
       )
+
+      yield(dns_record) if block_given?
 
       client_ip_addr = request.env['HTTP_CLIENT_IP'] || request.env['HTTP_X_REAL_IP'] || request.ip
 

@@ -97,10 +97,14 @@ module VpsAdmin::API::Resources
         allow
       end
 
+      include VpsAdmin::API::Lifetimes::ActionHelpers
+
       def exec
         if current_user.role != :admin && input[:dns_zone].user != current_user
           error('access to the zone denied')
         end
+
+        object_state_check!(input[:dns_zone].user) if input[:dns_zone].user_id
 
         @chain, ret = VpsAdmin::API::Operations::DnsZone::CreateRecord.run(to_db_names(input))
         ret
@@ -133,8 +137,11 @@ module VpsAdmin::API::Resources
         allow
       end
 
+      include VpsAdmin::API::Lifetimes::ActionHelpers
+
       def exec
         record = self.class.model.joins(:dns_zone).existing.find_by!(with_restricted(id: params[:dns_record_id]))
+        object_state_check!(record.dns_zone.user) if record.dns_zone.user_id
 
         @chain, ret = VpsAdmin::API::Operations::DnsZone::UpdateRecord.run(record, to_db_names(input))
         ret
@@ -159,8 +166,13 @@ module VpsAdmin::API::Resources
         allow
       end
 
+      include VpsAdmin::API::Lifetimes::ActionHelpers
+
       def exec
-        record = self.class.model.joins(:dns_zone).existing.find_by!(with_restricted(id: params[:dns_record_id]))
+        record = self.class.model.joins(:dns_zne).existing.find_by!(with_restricted(id: params[:dns_record_id]))
+
+        object_state_check!(record.dns_zone.user) if record.dns_zone.user_id
+
         @chain = VpsAdmin::API::Operations::DnsZone::DestroyRecord.run(record)
         ok
       rescue VpsAdmin::API::Exceptions::OperationError => e
@@ -185,8 +197,13 @@ module VpsAdmin::API::Resources
 
       authorize { allow }
 
+      include VpsAdmin::API::Lifetimes::ActionHelpers
+
       def exec
-        @chain, ret = VpsAdmin::API::Operations::DnsZone::DynamicUpdate.run(request, params[:access_token])
+        @chain, ret = VpsAdmin::API::Operations::DnsZone::DynamicUpdate.run(request, params[:access_token]) do |record|
+          object_state_check!(record.dns_zone.user) if record.dns_zone.user_id
+        end
+
         ret
       rescue VpsAdmin::API::Exceptions::OperationError => e
         error(e.message)

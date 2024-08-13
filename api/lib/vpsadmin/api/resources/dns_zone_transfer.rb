@@ -94,10 +94,14 @@ module VpsAdmin::API::Resources
         allow
       end
 
+      include VpsAdmin::API::Lifetimes::ActionHelpers
+
       def exec
         if current_user.role != :admin && input[:dns_zone].user != current_user
           error('access denied')
         end
+
+        object_state_check!(input[:dns_zone].user) if input[:dns_zone].user_id
 
         @chain, ret = VpsAdmin::API::Operations::DnsZoneTransfer::Create.run(to_db_names(input))
         ret
@@ -122,8 +126,13 @@ module VpsAdmin::API::Resources
         allow
       end
 
+      include VpsAdmin::API::Lifetimes::ActionHelpers
+
       def exec
         transfer = self.class.model.existing.joins(:dns_zone).find_by!(with_restricted(id: params[:dns_zone_transfer_id]))
+
+        object_state_check!(transfer.dns_zone.user) if transfer.dns_zone.user_id
+
         @chain, = VpsAdmin::API::Operations::DnsZoneTransfer::Destroy.run(transfer)
         ok
       rescue VpsAdmin::API::Exceptions::OperationError => e
