@@ -366,6 +366,10 @@ function route_edit_form($id)
     global $xtpl, $api;
 
     $ip = $api->ip_address->show($id);
+    $netif = $ip->network_interface_id ? $ip->network_interface : null;
+    $vps = $netif ? $netif->vps : null;
+
+    $return_url = urlencode($_SERVER['REQUEST_URI']);
 
     $xtpl->title(_('IP address') . ' ' . $ip->addr . '/' . $ip->prefix);
 
@@ -373,13 +377,18 @@ function route_edit_form($id)
         _("Back"),
         $_GET['return'] ? $_GET['return'] : '?page=networking&action=ip_addresses'
     );
+
     $xtpl->sbar_add(_('List assignments'), '?page=networking&action=assignments&ip_addr=' . $ip->addr . '&ip_prefix=' . $ip->prefix . '&list=1');
     $xtpl->sbar_add(_('List incidents'), '?page=incidents&action=list&list=1&ip_addr=' . $ip->addr);
 
-    $xtpl->sbar_out(_('Routed address'));
+    if ($vps) {
+        $xtpl->sbar_add(_('Remove from VPS'), '?page=networking&action=route_unassign&id=' . $ip->id . '&return=' . $return_url);
 
-    $netif = $ip->network_interface_id ? $ip->network_interface : null;
-    $vps = $netif ? $netif->vps : null;
+    } else {
+        $xtpl->sbar_add(_('Add to a VPS'), '?page=networking&action=route_assign&id=' . $ip->id . '&return=' . $return_url);
+    }
+
+    $xtpl->sbar_out(_('Routed address'));
 
     $xtpl->table_title(_('Overview'));
     $xtpl->table_td(_('Network') . ':');
@@ -441,9 +450,6 @@ function route_edit_form($id)
     $xtpl->table_add_category('');
     $xtpl->table_add_category('');
     $xtpl->table_add_category('');
-
-
-    $return_url = urlencode($_SERVER['REQUEST_URI']);
 
     foreach ($host_addrs as $host_addr) {
         $ip = $host_addr->ip_address;
