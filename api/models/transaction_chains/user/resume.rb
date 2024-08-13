@@ -16,6 +16,10 @@ module TransactionChains
       user.vpses.where(object_state: ::Vps.object_states[:active]).each do |vps|
         use_chain(Vps::Start, args: vps)
       end
+
+      user.dns_zones.each do |dns_zone|
+        use_chain(DnsZone::Update, args: [dns_zone, { enabled: true }])
+      end
     end
   end
 end

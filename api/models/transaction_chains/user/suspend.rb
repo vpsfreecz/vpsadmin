@@ -19,6 +19,10 @@ module TransactionChains
                        ]).each do |vps|
         use_chain(Vps::Stop, args: vps)
       end
+
+      user.dns_zones.each do |dns_zone|
+        use_chain(DnsZone::Update, args: [dns_zone, { enabled: false }])
+      end
     end
   end
 end
