@@ -8,7 +8,7 @@ module VpsAdmin::API::Resources
       resource DnsZone, value_label: :name, label: 'DNS zone'
       string :change_type, label: 'Change type', choices: ::DnsRecordLog.change_types.keys.map(&:to_s)
       string :name
-      string :type, db_name: :record_type
+      string :type, db_name: :record_type, choices: %w[A AAAA CNAME MX NS PTR SRV TXT]
       custom :attr_changes, label: 'Attribute changes'
       datetime :created_at
       datetime :updated_at

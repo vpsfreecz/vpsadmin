@@ -1266,7 +1266,7 @@ function dns_record_log_list()
     api_param_to_form('dns_zone', $input->dns_zone, get_val('dns_zone'), null, true);
     api_param_to_form('change_type', $input->change_type, get_val('change_type'), null, true);
     api_param_to_form('name', $input->name, get_val('name', ''));
-    api_param_to_form('type', $input->type, get_val('type', ''));
+    api_param_to_form('type', $input->type, get_val('type', ''), null, true);
 
     $xtpl->form_out(_('Show'));
 
