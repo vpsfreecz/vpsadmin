@@ -104,6 +104,10 @@ module NodeCtld
             f.puts("  allow-transfer { #{allow_transfer(zone.secondaries)} };")
             f.puts('  notify yes;')
 
+            # We need this in case the nameserver mentioned in the SOA record
+            # is actually a secondary server.
+            f.puts('  notify-to-soa yes;')
+
             if zone.dnssec_enabled
               f.puts('  dnssec-policy default;')
               f.puts('  inline-signing yes;')
