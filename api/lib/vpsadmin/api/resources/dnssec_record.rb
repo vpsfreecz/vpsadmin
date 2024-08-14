@@ -5,6 +5,7 @@ module VpsAdmin::API::Resources
 
     params(:all) do
       integer :id, label: 'ID'
+      resource DnsZone, value_label: :name
       integer :keyid, label: 'Key ID'
       integer :dnskey_algorithm, label: 'DNSKEY algorithm'
       string :dnskey_pubkey, label: 'DNSKEY public key'
@@ -19,7 +20,7 @@ module VpsAdmin::API::Resources
       desc 'List DNSSEC records'
 
       input do
-        use :common, include: %i[user]
+        use :all, include: %i[dns_zone]
       end
 
       output(:object_list) do
@@ -29,14 +30,15 @@ module VpsAdmin::API::Resources
       authorize do |u|
         allow if u.role == :admin
         restrict dns_zones: { user_id: u.id }
+        input whitelist: %i[dns_zone]
         allow
       end
 
       def query
         q = self.class.model.joins(:dns_zone).where(with_restricted)
 
-        %i[user].each do |v|
-          q = q.where(v => input[v]) if input.has_key?(v)
+        %i[dns_zone].each do |v|
+          q = q.where(v => input[v]) if input[v]
         end
 
         q
