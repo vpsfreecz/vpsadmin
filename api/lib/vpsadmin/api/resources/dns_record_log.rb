@@ -38,9 +38,11 @@ module VpsAdmin::API::Resources
 
         q = q.where(dns_zones: { user_id: input[:user].id }) if input[:user]
 
-        %i[dns_zone change_type name type].each do |v|
+        %i[dns_zone change_type name].each do |v|
           q = q.where(v => input[v]) if input[v]
         end
+
+        q = q.where(record_type: input[:type]) if input[:type]
 
         q
       end
