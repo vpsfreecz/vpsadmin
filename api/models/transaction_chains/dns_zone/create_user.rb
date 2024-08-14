@@ -23,13 +23,17 @@ module TransactionChains
           dns_servers.secondary_type
         end
 
-      user_servers.each do |dns_server|
-        dns_server_zone = ::DnsServerZone.create!(
+      # First create all DNS server zone records
+      dns_server_zones = user_servers.map do |dns_server|
+        ::DnsServerZone.create!(
           dns_server:,
           dns_zone:,
           zone_type: dns_server.user_dns_zone_type
         )
+      end
 
+      # When all server zones are already created, fire transactions
+      dns_server_zones.each do |dns_server_zone|
         append_t(Transactions::DnsServerZone::Create, args: [dns_server_zone]) do |t|
           t.create(dns_server_zone)
         end
