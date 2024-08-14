@@ -19,6 +19,7 @@ module Transactions::DnsServerZone
           default_ttl: dns_server_zone.dns_zone.default_ttl,
           serial: dns_server_zone.dns_zone.serial,
           email: dns_server_zone.dns_zone.email,
+          dnssec_enabled: dns_server_zone.dns_zone.dnssec_enabled,
           nameservers: dns_server_zone.dns_zone.nameservers,
           primaries: dns_server_zone.primaries,
           secondaries: dns_server_zone.secondaries,
