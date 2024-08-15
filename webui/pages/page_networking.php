@@ -203,9 +203,9 @@ if (isLoggedIn()) {
             csrf_check();
 
             try {
-                $ptrContent = $_POST['reverse_record_value'];
+                $ptrContent = trim($_POST['reverse_record_value']);
 
-                if (!str_ends_with($ptrContent, '.')) {
+                if ($ptrContent !== '' && !str_ends_with($ptrContent, '.')) {
                     $ptrContent .= '.';
                 }
 

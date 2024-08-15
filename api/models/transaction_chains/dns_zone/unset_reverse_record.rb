@@ -26,7 +26,7 @@ module TransactionChains
         name: record.name,
         change_type: 'delete_record',
         record_type: 'PTR',
-        attr_changes: { content: ptr_content }
+        attr_changes: { content: record.content }
       )
 
       dns_zone.increment!(:serial)
