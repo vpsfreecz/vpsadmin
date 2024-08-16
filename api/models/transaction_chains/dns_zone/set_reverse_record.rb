@@ -41,6 +41,7 @@ module TransactionChains
       end
 
       log = ::DnsRecordLog.create!(
+        user: ::User.current,
         dns_zone:,
         change_type: created ? 'create_record' : 'update_record',
         name: record.name,

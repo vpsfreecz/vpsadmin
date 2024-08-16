@@ -1283,7 +1283,7 @@ function dns_record_log_list()
     }
 
     $params['meta'] = [
-        'includes' => 'dns_zone__user',
+        'includes' => 'user,dns_zone__user',
     ];
 
     $logs = $api->dns_record_log->list($params);
@@ -1292,6 +1292,7 @@ function dns_record_log_list()
 
     if (isAdmin()) {
         $xtpl->table_add_category(_("User"));
+        $xtpl->table_add_category(_("Owner"));
     }
 
     $xtpl->table_add_category(_('Zone'));
@@ -1303,6 +1304,7 @@ function dns_record_log_list()
         $xtpl->table_td(tolocaltz($log->created_at));
 
         if (isAdmin()) {
+            $xtpl->table_td($log->user_id ? user_link($log->user) : '-');
             $xtpl->table_td($log->dns_zone->user_id ? user_link($log->dns_zone->user) : '-');
         }
 
@@ -1324,7 +1326,7 @@ function dns_record_log_list()
             '<pre><code>' . implode("\n", $changes) . '</code></pre>',
             false,
             false,
-            isAdmin() ? 6 : 5
+            isAdmin() ? 7 : 5
         );
         $xtpl->table_tr();
     }

@@ -13,6 +13,7 @@ module TransactionChains
       )
 
       log = ::DnsRecordLog.create!(
+        user: ::User.current,
         dns_zone:,
         name: dns_record.name,
         change_type: 'delete_record',

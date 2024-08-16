@@ -14,6 +14,7 @@ module TransactionChains
       )
 
       log = ::DnsRecordLog.create!(
+        user: ::User.current || dns_zone.user, # dynamic updates are unauthenticated
         dns_zone:,
         change_type: 'update_record',
         name: dns_record.name,

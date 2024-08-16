@@ -1,3 +1,4 @@
+/*!999999\- enable the sandbox mode */ 
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
 /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
@@ -371,8 +372,10 @@ CREATE TABLE `dns_record_logs` (
   `created_at` datetime(6) NOT NULL,
   `updated_at` datetime(6) NOT NULL,
   `attr_changes` mediumtext NOT NULL,
+  `user_id` bigint(20) DEFAULT NULL,
   PRIMARY KEY (`id`),
-  KEY `index_dns_record_logs_on_dns_zone_id` (`dns_zone_id`)
+  KEY `index_dns_record_logs_on_dns_zone_id` (`dns_zone_id`),
+  KEY `index_dns_record_logs_on_user_id` (`user_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `dns_records`;
@@ -1675,7 +1678,7 @@ CREATE TABLE `sysconfig` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `index_sysconfig_on_category_and_name` (`category`,`name`) USING BTREE,
   KEY `index_sysconfig_on_category` (`category`) USING BTREE
-) ENGINE=InnoDB AUTO_INCREMENT=36 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=38 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `tokens`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -2307,6 +2310,7 @@ CREATE TABLE `vpses` (
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
 INSERT INTO `schema_migrations` (version) VALUES
+('20240816194004'),
 ('20240803200139'),
 ('20240802064852'),
 ('20240801112145'),

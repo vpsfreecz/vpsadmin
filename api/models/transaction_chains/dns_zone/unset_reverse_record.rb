@@ -22,6 +22,7 @@ module TransactionChains
       host_ip_address.reverse_dns_record = nil
 
       log = ::DnsRecordLog.create!(
+        user: ::User.current,
         dns_zone:,
         name: record.name,
         change_type: 'delete_record',

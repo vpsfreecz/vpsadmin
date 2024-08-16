@@ -5,6 +5,7 @@ module VpsAdmin::API::Resources
 
     params(:all) do
       integer :id, label: 'ID'
+      resource User, value_label: :login
       resource DnsZone, value_label: :name, label: 'DNS zone'
       string :change_type, label: 'Change type', choices: ::DnsRecordLog.change_types.keys.map(&:to_s)
       string :name
@@ -28,17 +29,16 @@ module VpsAdmin::API::Resources
 
       authorize do |u|
         allow if u.role == :admin
-        restrict dns_zones: { user_id: u.id }
+        restrict user: u, dns_zones: { user_id: u.id }
         input whitelist: %i[dns_zone change_type name type]
+        output blacklist: %i[user]
         allow
       end
 
       def query
         q = self.class.model.joins(:dns_zone).where(with_restricted)
 
-        q = q.where(dns_zones: { user_id: input[:user].id }) if input[:user]
-
-        %i[dns_zone change_type name].each do |v|
+        %i[user dns_zone change_type name].each do |v|
           q = q.where(v => input[v]) if input[v]
         end
 
@@ -65,7 +65,8 @@ module VpsAdmin::API::Resources
 
       authorize do |u|
         allow if u.role == :admin
-        restrict dns_zones: { user_id: u.id }
+        restrict user: u, dns_zones: { user_id: u.id }
+        output blacklist: %i[user]
         allow
       end
 

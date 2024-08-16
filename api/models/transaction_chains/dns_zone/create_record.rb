@@ -14,6 +14,7 @@ module TransactionChains
       )
 
       log = ::DnsRecordLog.create!(
+        user: ::User.current,
         dns_zone:,
         change_type: 'create_record',
         name: dns_record.name,
