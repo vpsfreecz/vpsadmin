@@ -1311,7 +1311,7 @@ function dns_record_log_list()
         $xtpl->table_td('<a href="?page=dns&action=zone_show&id=' . $log->dns_zone_id . '">' . h($log->dns_zone->name) . '</a>');
         $xtpl->table_td(h($log->name));
         $xtpl->table_td(h($log->type));
-        $xtpl->table_td(h($log->change_type));
+        $xtpl->table_td(dnsRecordChangeType($log->change_type));
 
         $changes = [];
 
@@ -1355,5 +1355,19 @@ function zoneSourcelabel($source)
             return _('External zone');
         default:
             return _('Unknown');
+    }
+}
+
+function dnsRecordChangeType($type)
+{
+    switch ($type) {
+        case 'create_record':
+            return _('create');
+        case 'update_record':
+            return _('update');
+        case 'delete_record':
+            return _('delete');
+        default:
+            return $type;
     }
 }
