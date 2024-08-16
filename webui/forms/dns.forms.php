@@ -1148,44 +1148,39 @@ function dns_record_list($zone)
         $xtpl->table_tr();
     }
 
-    if (!$zone->managed) {
-        $xtpl->table_td(
-            '<a href="?page=dns&action=record_new&zone=' . $zone->id . '">' . _('Add record') . '</a>',
-            false,
-            true,
-            $cols
-        );
+    if ($records->count() <= 0) {
+        $xtpl->table_td(_('This zone has no records.'), false, false, $cols);
         $xtpl->table_tr();
     }
 
     $xtpl->table_out();
-}
 
-function dns_record_new($zone_id)
-{
-    global $xtpl, $api;
+    if ($zone->managed) {
+        return;
+    }
 
-    $zone = $api->dns_zone->show($zone_id);
+    $xtpl->table_title(_('New record'));
+    $xtpl->table_add_category(_('Name'));
+    $xtpl->table_add_category(_('TTL'));
+    $xtpl->table_add_category(_('Type'));
+    $xtpl->table_add_category(_('Priority'));
+    $xtpl->table_add_category(_('Content'));
+    $xtpl->table_add_category(_('DDNS'));
+    $xtpl->table_add_category('');
 
-    $xtpl->title(_('Zone ') . h($zone->name) . ': ' . _('new record'));
+    $xtpl->form_create('?page=dns&action=record_new&zone=' . $zone->id, 'post');
+    $newInput = $api->dns_record->create->getParameters('input');
 
-    $xtpl->form_create('?page=dns&action=record_new2&zone=' . $zone->id, 'post');
+    $xtpl->form_add_input_pure('text', 18, 'name', post_val('name'));
+    $xtpl->form_add_input_pure('text', 4, 'ttl', post_val('ttl'));
+    api_param_to_form_pure('type', $newInput->type);
+    $xtpl->form_add_input_pure('text', 4, 'priority', post_val('priority'));
+    $xtpl->form_add_textarea_pure(22, 1, 'content', post_val('content'));
+    api_param_to_form_pure('dynamic_update_enabled', $newInput->dynamic_update_enabled);
+    $xtpl->table_td($xtpl->html_submit(_('Add record'), 'submit'));
+    $xtpl->table_tr();
 
-    $input = $api->dns_record->create->getParameters('input');
-
-    api_param_to_form('name', $input->name);
-    api_param_to_form('type', $input->type);
-    api_param_to_form('ttl', $input->ttl);
-    api_param_to_form('priority', $input->priority);
-    $xtpl->form_add_textarea(_('Content') . ':', 60, 1, 'content', post_val('content'), $input->content->description);
-    $xtpl->form_add_textarea(_('Comment') . ':', 60, 1, 'comment', post_val('comment'), $input->comment->description);
-    api_param_to_form('dynamic_update_enabled', $input->dynamic_update_enabled);
-    api_param_to_form('enabled', $input->enabled);
-
-    $xtpl->form_out(_('Add'));
-
-    $xtpl->sbar_add(_('Back to zone'), '?page=dns&action=zone_show&id=' . $zone->id);
-    $xtpl->sbar_out(_('DNS zone'));
+    $xtpl->form_out_raw();
 }
 
 function dns_record_edit($id)

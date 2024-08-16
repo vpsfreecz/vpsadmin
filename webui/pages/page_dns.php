@@ -239,10 +239,6 @@ if (isLoggedIn()) {
             break;
 
         case 'record_new':
-            dns_record_new($_GET['zone']);
-            break;
-
-        case 'record_new2':
             csrf_check();
 
             try {
@@ -251,8 +247,6 @@ if (isLoggedIn()) {
                     'name' => $_POST['name'],
                     'type' => $_POST['type'],
                     'content' => $_POST['content'],
-                    'comment' => $_POST['comment'],
-                    'enabled' => isset($_POST['enabled']),
                 ];
 
                 if (trim($_POST['ttl'] ?? '') !== '') {
@@ -274,7 +268,7 @@ if (isLoggedIn()) {
 
             } catch (\HaveAPI\Client\Exception\ActionFailed $e) {
                 $xtpl->perex_format_errors(_('Failed to add record'), $e->getResponse());
-                dns_record_new($_GET['zone']);
+                dns_zone_show($_GET['zone']);
             }
             break;
 
