@@ -30,6 +30,7 @@ function dns_server_list()
     $xtpl->table_add_category(_('IPv6'));
     $xtpl->table_add_category(_('Hidden'));
     $xtpl->table_add_category(_('User zones'));
+    $xtpl->table_add_category(_('User zone type'));
 
     foreach ($servers as $s) {
         $xtpl->table_td(node_link($s->node));
@@ -38,6 +39,7 @@ function dns_server_list()
         $xtpl->table_td($s->ipv6_addr ? h($s->ipv6_addr) : '-');
         $xtpl->table_td(boolean_icon($s->hidden));
         $xtpl->table_td(boolean_icon($s->enable_user_dns_zones));
+        $xtpl->table_td($s->enable_user_dns_zones ? dnsServerUserType($s->user_dns_zone_type) : '-');
         $xtpl->table_tr();
     }
 
@@ -1332,6 +1334,18 @@ function dns_record_log_list()
     }
 
     $xtpl->table_out();
+}
+
+function dnsServerUserType($type)
+{
+    switch ($type) {
+        case 'primary_type':
+            return _('primary');
+        case 'secondary_type':
+            return _('secondary');
+        default:
+            return $type;
+    }
 }
 
 function zoneRoleLabel($role)
