@@ -13,7 +13,7 @@ module VpsAdmin::API::Resources
       string :source, db_name: :zone_source, choices: ::DnsZone.zone_sources.keys.map(&:to_s)
       integer :default_ttl, label: 'Default TTL', desc: 'Default TTL for records, in seconds'
       string :email, label: 'E-mail', desc: 'Administrator of this zone'
-      bool :dnssec_enabled, label: 'Enable DNSSEC'
+      bool :dnssec_enabled, label: 'Enable DNSSEC', desc: 'Requires DNSKEY/DS records to be configured in the parent zone'
       bool :enabled
     end
 
