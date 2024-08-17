@@ -1334,7 +1334,7 @@ function dns_record_log_list()
     $xtpl->table_out();
 }
 
-function zoneRolelabel($role)
+function zoneRoleLabel($role)
 {
     switch ($role) {
         case 'forward_role':
@@ -1346,7 +1346,7 @@ function zoneRolelabel($role)
     }
 }
 
-function zoneSourcelabel($source)
+function zoneSourceLabel($source)
 {
     switch ($source) {
         case 'internal_source':
