@@ -157,6 +157,11 @@ function dns_zone_show($id)
         'meta' => ['includes' => 'host_ip_address,dns_tsig_key'],
     ]);
 
+    if ($zone->source == 'internal_source') {
+        $xtpl->sbar_add(_('DNS record log'), '?page=dns&action=record_log&dns_zone=' . $zone->id . '&list=1');
+        $xtpl->sbar_out(_('DNS zone'));
+    }
+
     $xtpl->table_title(_('Zone') . ' ' . h($zone->name));
     $xtpl->form_create('?page=dns&action=zone_update&id=' . $zone->id, 'post');
 
