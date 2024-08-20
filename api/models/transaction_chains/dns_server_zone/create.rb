@@ -7,8 +7,8 @@ module TransactionChains
     def link_chain(dns_server_zone)
       concerns(
         :affect,
-        [dns_server_zone.dns_server.class.name, dns_server_zone.dns_server_id],
-        [dns_server_zone.dns_zone.class.name, dns_server_zone.dns_zone_id]
+        [dns_server_zone.dns_zone.class.name, dns_server_zone.dns_zone_id],
+        [dns_server_zone.dns_server.class.name, dns_server_zone.dns_server_id]
       )
 
       # Create the new server zone
