@@ -374,7 +374,7 @@ function dns_zone_server_new($id)
 
     $zone = $api->dns_zone->show($id);
 
-    $xtpl->title(_('Add zone') . h($zone->name) . ' ' . _('to server'));
+    $xtpl->title(_('Add zone') . ' ' . h($zone->name) . ' ' . _('to server'));
     $xtpl->form_create('?page=dns&action=server_zone_new2&id=' . $zone->id, 'post');
 
     $xtpl->table_td(_('DNS zone') . ':');
