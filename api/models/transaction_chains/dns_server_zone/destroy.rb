@@ -17,24 +17,31 @@ module TransactionChains
 
       append_t(Transactions::DnsServer::Reload, args: [dns_server_zone.dns_server])
 
-      return if dns_server_zone.dns_zone.external_source?
-
       dns_server_zone.dns_zone.dns_server_zones.each do |other_dns_server_zone|
         next if other_dns_server_zone == dns_server_zone
 
-        if dns_server_zone.primary_type? && other_dns_server_zone.secondary_type?
-          primaries = [dns_server_zone.server_opts]
-        end
+        if dns_server_zone.dns_zone.internal_source?
+          nameservers = dns_server_zone.dns_server.hidden ? [] : [dns_server_zone.dns_server.name]
 
-        if dns_server_zone.secondary_type? && other_dns_server_zone.primary_type?
+          if dns_server_zone.primary_type? && other_dns_server_zone.secondary_type?
+            primaries = [dns_server_zone.server_opts]
+          end
+
+          if dns_server_zone.secondary_type? && other_dns_server_zone.primary_type?
+            secondaries = [dns_server_zone.server_opts]
+          end
+        else
+          primaries = [dns_server_zone.server_opts]
           secondaries = [dns_server_zone.server_opts]
         end
+
+        next if nameservers.nil? && primaries.nil? && secondaries.nil?
 
         append_t(
           Transactions::DnsServerZone::RemoveServers,
           args: [other_dns_server_zone],
           kwargs: {
-            nameservers: dns_server_zone.dns_server.hidden ? [] : [dns_server_zone.dns_server.name],
+            nameservers:,
             primaries:,
             secondaries:
           }.compact

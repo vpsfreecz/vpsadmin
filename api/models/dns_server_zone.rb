@@ -34,7 +34,19 @@ class DnsServerZone < ApplicationRecord
   # @return [Array<Hash>]
   def primaries
     ret = dns_zone.dns_zone_transfers.primary_type.map(&:server_opts)
-    ret.concat(dns_zone.dns_server_zones.primary_type.where.not(id:).map(&:server_opts))
+
+    other_dns_server_zones =
+      if dns_zone.internal_source?
+        dns_zone.dns_server_zones.primary_type
+      else
+        # All secondary server zones are also added to primaries, so that it is enough
+        # to notify only one secondary server, which will then send notification to other
+        # secondary servers.
+        dns_zone.dns_server_zones.all
+      end
+
+    ret.concat(other_dns_server_zones.where.not(id:).map(&:server_opts))
+
     ret
   end
 
