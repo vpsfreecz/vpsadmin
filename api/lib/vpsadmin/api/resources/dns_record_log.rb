@@ -6,11 +6,14 @@ module VpsAdmin::API::Resources
     params(:all) do
       integer :id, label: 'ID'
       resource User, value_label: :login
+      integer :raw_user_id
       resource DnsZone, value_label: :name, label: 'DNS zone'
+      string :dns_zone_name, label: 'DNS zone name'
       string :change_type, label: 'Change type', choices: ::DnsRecordLog.change_types.keys.map(&:to_s)
       string :name
       string :type, db_name: :record_type, choices: %w[A AAAA CNAME MX NS PTR SRV TXT]
       custom :attr_changes, label: 'Attribute changes'
+      resource TransactionChain, value_label: :name
       datetime :created_at
       datetime :updated_at
     end
@@ -20,7 +23,7 @@ module VpsAdmin::API::Resources
 
       input do
         resource User, value_label: :login
-        use :all, include: %i[dns_zone change_type name type]
+        use :all, include: %i[dns_zone dns_zone_name change_type name type]
       end
 
       output(:object_list) do
@@ -38,7 +41,7 @@ module VpsAdmin::API::Resources
       def query
         q = self.class.model.joins(:dns_zone).where(with_restricted)
 
-        %i[user dns_zone change_type name].each do |v|
+        %i[user dns_zone dns_zone_name change_type name].each do |v|
           q = q.where(v => input[v]) if input[v]
         end
 

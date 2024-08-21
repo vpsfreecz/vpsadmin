@@ -43,10 +43,12 @@ module TransactionChains
       log = ::DnsRecordLog.create!(
         user: ::User.current,
         dns_zone:,
+        dns_zone_name: dns_zone.name,
         change_type: created ? 'create_record' : 'update_record',
         name: record.name,
         record_type: 'PTR',
-        attr_changes: { content: ptr_content }
+        attr_changes: { content: ptr_content },
+        transaction_chain: current_chain
       )
 
       dns_zone.increment!(:serial)

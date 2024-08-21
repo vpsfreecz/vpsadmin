@@ -16,6 +16,7 @@ module TransactionChains
       log = ::DnsRecordLog.create!(
         user: ::User.current,
         dns_zone:,
+        dns_zone_name: dns_zone.name,
         change_type: 'create_record',
         name: dns_record.name,
         record_type: dns_record.record_type,
@@ -25,7 +26,8 @@ module TransactionChains
           content: dns_record.content,
           comment: dns_record.comment,
           enabled: dns_record.enabled
-        }
+        },
+        transaction_chain: current_chain
       )
 
       unless dns_record.enabled

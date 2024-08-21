@@ -1266,6 +1266,7 @@ function dns_record_log_list()
     }
 
     api_param_to_form('dns_zone', $input->dns_zone, get_val('dns_zone'), null, true);
+    api_param_to_form('dns_zone_name', $input->dns_zone_name, get_val('dns_zone_name'));
     api_param_to_form('change_type', $input->change_type, get_val('change_type'), null, true);
     api_param_to_form('name', $input->name, get_val('name', ''));
     api_param_to_form('type', $input->type, get_val('type', ''), null, true);
@@ -1281,7 +1282,7 @@ function dns_record_log_list()
         'offset' => get_val('offset', 0),
     ];
 
-    $conds = ['user', 'dns_zone', 'name', 'type', 'change_type'];
+    $conds = ['user', 'dns_zone', 'dns_zone_name', 'name', 'type', 'change_type'];
 
     foreach ($conds as $c) {
         if ($_GET[$c]) {
@@ -1303,31 +1304,42 @@ function dns_record_log_list()
     }
 
     $xtpl->table_add_category(_('Zone'));
-    $xtpl->table_add_category(_('Name'));
-    $xtpl->table_add_category(_('Type'));
     $xtpl->table_add_category(_('Change type'));
+    $xtpl->table_add_category(_('Transaction chain'));
 
     foreach ($logs as $log) {
         $xtpl->table_td(tolocaltz($log->created_at));
 
         if (isAdmin()) {
-            $xtpl->table_td($log->user_id ? user_link($log->user) : '-');
+            if ($log->user_id) {
+                $xtpl->table_td(user_link($log->user));
+            } elseif ($log->raw_user_id) {
+                $xtpl->table_td($log->raw_user_id);
+            } else {
+                $xtpl->table_td('-');
+            }
+
             $xtpl->table_td($log->dns_zone->user_id ? user_link($log->dns_zone->user) : '-');
         }
 
-        $xtpl->table_td('<a href="?page=dns&action=zone_show&id=' . $log->dns_zone_id . '">' . h($log->dns_zone->name) . '</a>');
-        $xtpl->table_td(h($log->name));
-        $xtpl->table_td(h($log->type));
+        if ($log->dns_zone_id) {
+            $xtpl->table_td('<a href="?page=dns&action=zone_show&id=' . $log->dns_zone_id . '">' . h($log->dns_zone->name) . '</a>');
+        } else {
+            $xtpl->table_td(h($log->dns_zone_name));
+        }
+
         $xtpl->table_td(dnsRecordChangeType($log->change_type));
+        $xtpl->table_td($log->transaction_chain_id ? ('<a href="?page=transactions&chain=' . $log->transaction_chain_id . '">' . $log->transaction_chain_id . '</a>') : '-', false, true);
+        $xtpl->table_tr();
 
         $changes = [];
+        $changes[] = "name = " . h($log->name);
+        $changes[] = "type = " . h($log->type);
 
         foreach ($log->attr_changes as $k => $v) {
             $safeVal = h(print_r($v, true));
             $changes[] = "{$k} = {$safeVal}";
         }
-
-        $xtpl->table_tr();
 
         $xtpl->table_td(
             '<pre><code>' . implode("\n", $changes) . '</code></pre>',

@@ -15,6 +15,7 @@ module TransactionChains
       log = ::DnsRecordLog.create!(
         user: ::User.current,
         dns_zone:,
+        dns_zone_name: dns_zone.name,
         name: dns_record.name,
         change_type: 'delete_record',
         record_type: dns_record.record_type,
@@ -24,7 +25,8 @@ module TransactionChains
           content: dns_record.content,
           comment: dns_record.comment,
           enabled: dns_record.enabled
-        }
+        },
+        transaction_chain: current_chain
       )
 
       dns_zone.increment!(:serial)

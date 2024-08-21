@@ -36,7 +36,7 @@ module TransactionChains
         end
 
         dns_zone.dns_record_logs.each do |log|
-          t.just_destroy(log)
+          t.edit(log, dns_zone_id: nil)
         end
 
         dns_zone.dnssec_records.each do |r|

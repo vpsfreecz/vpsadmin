@@ -365,7 +365,7 @@ DROP TABLE IF EXISTS `dns_record_logs`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `dns_record_logs` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
-  `dns_zone_id` bigint(20) NOT NULL,
+  `dns_zone_id` bigint(20) DEFAULT NULL,
   `change_type` int(11) NOT NULL,
   `name` varchar(255) NOT NULL,
   `record_type` varchar(10) NOT NULL,
@@ -373,6 +373,8 @@ CREATE TABLE `dns_record_logs` (
   `updated_at` datetime(6) NOT NULL,
   `attr_changes` mediumtext NOT NULL,
   `user_id` bigint(20) DEFAULT NULL,
+  `dns_zone_name` varchar(500) NOT NULL,
+  `transaction_chain_id` bigint(20) DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `index_dns_record_logs_on_dns_zone_id` (`dns_zone_id`),
   KEY `index_dns_record_logs_on_user_id` (`user_id`)
@@ -2310,6 +2312,7 @@ CREATE TABLE `vpses` (
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
 INSERT INTO `schema_migrations` (version) VALUES
+('20240821122633'),
 ('20240816194004'),
 ('20240803200139'),
 ('20240802064852'),

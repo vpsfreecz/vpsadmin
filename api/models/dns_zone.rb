@@ -9,7 +9,7 @@ class DnsZone < ApplicationRecord
   has_many :dns_servers, through: :dns_server_zones
   has_many :dns_zone_transfers, dependent: :delete_all
   has_many :dns_records, dependent: :delete_all
-  has_many :dns_record_logs, dependent: :delete_all
+  has_many :dns_record_logs, dependent: :nullify
   has_many :dnssec_records, dependent: :delete_all
   has_many :ip_addresses, foreign_key: :reverse_dns_zone_id, dependent: :nullify
 

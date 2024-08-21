@@ -16,13 +16,15 @@ module TransactionChains
       log = ::DnsRecordLog.create!(
         user: ::User.current || dns_zone.user, # dynamic updates are unauthenticated
         dns_zone:,
+        dns_zone_name: dns_zone.name,
         change_type: 'update_record',
         name: dns_record.name,
         record_type: dns_record.record_type,
         attr_changes: dns_record.changes.to_h do |attr, values|
           _old_value, new_value = values
           [attr, new_value]
-        end
+        end,
+        transaction_chain: current_chain
       )
 
       dns_zone.increment!(:serial)
