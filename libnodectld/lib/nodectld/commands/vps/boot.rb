@@ -61,7 +61,7 @@ module NodeCtld
             f.puts(<<~END)
 
               # vpsAdmin rescue mode
-              PS1="[VPS in rescue mode]\n$PS1"
+              PS1="\n[VPS in rescue mode]\n$PS1"
             END
           end
 
