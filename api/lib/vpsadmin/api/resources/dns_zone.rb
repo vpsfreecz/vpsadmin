@@ -93,6 +93,8 @@ module VpsAdmin::API::Resources
 
       input do
         use :common
+        resource VPS, name: :seed_vps, label: 'Seed VPS', value_label: :hostname,
+                      desc: 'Seed the zone with basic records pointing to the VPS'
       end
 
       output do
@@ -101,14 +103,20 @@ module VpsAdmin::API::Resources
 
       authorize do |u|
         allow if u.role == :admin
-        input whitelist: %i[name label source email dnssec_enabled enabled]
+        input whitelist: %i[name label source email dnssec_enabled enabled seed_vps]
         allow
       end
 
       include VpsAdmin::API::Lifetimes::ActionHelpers
 
       def exec
-        object_state_check!(current_user) if current_user.role != :admin
+        if current_user.role != :admin
+          object_state_check!(current_user)
+
+          if input[:seed_vps] && input[:seed_vps].user_id != current_user.id
+            error('access to this VPS is denied')
+          end
+        end
 
         op =
           if current_user.role != :admin || input[:user]

@@ -223,6 +223,10 @@ if (isLoggedIn()) {
                     $params['user'] = $_POST['user'];
                 }
 
+                if ($_POST['seed_vps']) {
+                    $params['seed_vps'] = $_POST['seed_vps'];
+                }
+
                 $zone = $api->dns_zone->create($params);
 
                 notify_user(_('Primary DNS zone created'), '');

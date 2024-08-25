@@ -5,6 +5,7 @@ module VpsAdmin::API
     # @param attrs [Hash]
     # @return [Array(TransactionChain, ::DnsZone)]
     def run(attrs)
+      seed_vps = attrs.delete(:seed_vps)
       dns_zone = ::DnsZone.new(**attrs)
       dns_zone.user = ::User.current unless ::User.current.role == :admin
 
@@ -21,7 +22,7 @@ module VpsAdmin::API
 
       check_collisions!(dns_zone)
 
-      TransactionChains::DnsZone::CreateUser.fire2(args: [dns_zone])
+      TransactionChains::DnsZone::CreateUser.fire2(args: [dns_zone], kwargs: { seed_vps: })
     end
 
     protected

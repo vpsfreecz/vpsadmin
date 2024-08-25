@@ -561,6 +561,14 @@ function primary_dns_zone_new()
     api_param_to_form('email', $input->email);
     api_param_to_form('dnssec_enabled', $input->dnssec_enabled);
 
+    if (isAdmin()) {
+        $xtpl->form_add_input(_('Seed VPS') . ':', 'text', '30', 'seed_vps', post_val('seed_vps'), $input->seed_vps->description);
+    } else {
+        api_param_to_form('seed_vps', $input->seed_vps, null, function ($vps) {
+            return $vps->id . ' - ' . h($vps->hostname);
+        }, true);
+    }
+
     $xtpl->form_out(_('Create zone'));
 }
 
