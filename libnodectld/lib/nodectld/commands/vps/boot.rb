@@ -34,9 +34,12 @@ module NodeCtld
           f.write(<<~END)
 
 
-            ********************************************************************************
-            *                        WARNING: VPS in rescue mode!                          *
-            ********************************************************************************
+
+
+            *****************************************************************
+            *                      VPS in rescue mode!                      *
+            *****************************************************************
+
 
             The rescue system is temporary and will be destroyed when the VPS
             is rebooted or halted. Backup any data that you wish to preserve.
