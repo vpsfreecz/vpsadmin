@@ -2069,6 +2069,7 @@ CREATE TABLE `users` (
   `enable_basic_auth` tinyint(1) NOT NULL DEFAULT 0,
   `enable_token_auth` tinyint(1) NOT NULL DEFAULT 1,
   `enable_oauth2_auth` tinyint(1) NOT NULL DEFAULT 1,
+  `enable_new_login_notification` tinyint(1) NOT NULL DEFAULT 1,
   PRIMARY KEY (`id`),
   UNIQUE KEY `index_users_on_login` (`login`) USING BTREE,
   KEY `index_users_on_object_state` (`object_state`) USING BTREE
@@ -2312,6 +2313,7 @@ CREATE TABLE `vpses` (
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
 INSERT INTO `schema_migrations` (version) VALUES
+('20240831114419'),
 ('20240821122633'),
 ('20240816194004'),
 ('20240803200139'),

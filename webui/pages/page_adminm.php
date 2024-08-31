@@ -214,6 +214,14 @@ function print_editm($u)
     $xtpl->table_td(_('OAuth2 authentication is used by this web interface and cannot be disabled.'));
     $xtpl->table_tr();
 
+    $xtpl->form_add_checkbox(
+        _('Enable new login notification') . ':',
+        'enable_new_login_notification',
+        '1',
+        $_POST['enable_new_login_notification'] ?? $u->enable_new_login_notification,
+        _('Send emails about logins from new devices. Strongly recommended.')
+    );
+
     $xtpl->form_out(_('Save'));
 
     $xtpl->table_add_category(_('Session control'));
@@ -1132,6 +1140,7 @@ if (isLoggedIn()) {
                 $user->update([
                     'enable_basic_auth' => isset($_POST['enable_basic_auth']),
                     'enable_token_auth' => isset($_POST['enable_token_auth']),
+                    'enable_new_login_notification' => isset($_POST['enable_new_login_notification']),
                 ]);
 
                 notify_user(_('Authentication settings updated'), _('Authentication settings were successfully updated.'));
