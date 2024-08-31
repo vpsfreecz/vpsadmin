@@ -260,12 +260,12 @@ class MailTemplate < ApplicationRecord
     user: ::User,
     user_session: ::UserSession,
     user_device: ::UserDevice
-  }, roles: %i[account]
+  }, roles: %i[admin]
 
   register :user_new_token, vars: {
     user: ::User,
     user_session: ::UserSession
-  }, roles: %i[account]
+  }, roles: %i[admin]
 
   register :user_totp_recovery_code_used, vars: {
     user: ::User,
