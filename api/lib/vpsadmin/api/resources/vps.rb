@@ -112,7 +112,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
         maintenance_lock_reason object_state expiration_date allow_admin_modifications
         is_running process_count used_memory used_swap used_diskspace
         uptime loadavg1 loadavg5 loadavg15 cpu_user cpu_nice cpu_system cpu_idle cpu_iowait
-        cpu_irq cpu_softirq user_namespace_map
+        cpu_irq cpu_softirq start_menu_timeout user_namespace_map created_at
       ]
       allow
     end
@@ -839,9 +839,9 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
         id user hostname manage_hostname os_template cgroup_version dns_resolver
         node dataset pool memory swap cpu diskspace maintenance_lock
         maintenance_lock_reason object_state expiration_date allow_admin_modifications
-        is_running process_count used_memory used_swap used_disk uptime
-        loadavg1 loadavg5 loadavg15 cpu_user cpu_nice cpu_system cpu_idle cpu_iowait cpu_irq
-        cpu_softirq user_namespace_map created_at
+        is_running process_count used_memory used_swap used_diskspace
+        uptime loadavg1 loadavg5 loadavg15 cpu_user cpu_nice cpu_system cpu_idle cpu_iowait
+        cpu_irq cpu_softirq start_menu_timeout user_namespace_map created_at
       ]
       allow
     end
