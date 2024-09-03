@@ -380,6 +380,10 @@ if (isLoggedIn()) {
             dns_ptr_list();
             break;
 
+        case 'resolver_list':
+            dns_resolver_list();
+            break;
+
         default:
             dns_ptr_list();
     }

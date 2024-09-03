@@ -14,6 +14,7 @@ function dns_submenu()
     $xtpl->sbar_add(_('Secondary zones'), '?page=dns&action=secondary_zone_list');
     $xtpl->sbar_add(_('Record logs'), '?page=dns&action=record_log');
     $xtpl->sbar_add(_('TSIG keys'), '?page=dns&action=tsig_key_list');
+    $xtpl->sbar_add(_('Resolvers'), '?page=dns&action=resolver_list');
 }
 
 function dns_server_list()
@@ -1359,6 +1360,37 @@ function dns_record_log_list()
     }
 
     $xtpl->table_out();
+}
+
+function dns_resolver_list()
+{
+    global $xtpl, $api;
+
+    $xtpl->title(_('DNS resolvers'));
+
+    $resolvers = $api->dns_resolver->list(['meta' => ['includes' => 'location']]);
+
+    $xtpl->table_add_category(_('Location'));
+    $xtpl->table_add_category(_('Name'));
+    $xtpl->table_add_category(_('IP addresses'));
+
+    foreach ($resolvers as $r) {
+        if ($r->ip_addr === '127.0.0.1' || $r->ip_addr === '::1') {
+            continue;
+        }
+
+        $xtpl->table_td($r->location_id ? h($r->location->label) : _('All'));
+        $xtpl->table_td(h($r->label));
+        $xtpl->table_td(implode(', ', explode(',', $r->ip_addr)));
+        $xtpl->table_tr();
+    }
+
+    $xtpl->table_out();
+
+    if (isset($_GET['return_url'])) {
+        $xtpl->sbar_add(_('Back'), $_GET['return_url']);
+        $xtpl->sbar_out(_('DNS resolvers'));
+    }
 }
 
 function dnsServerUserType($type)

@@ -1316,6 +1316,8 @@ if (isLoggedIn()) {
             }
 
             // DNS Server
+            $return_url = urlencode($_SERVER['REQUEST_URI']);
+
             $xtpl->table_title(_('DNS resolver (/etc/resolv.conf)'));
             $xtpl->form_create('?page=adminvps&action=nameserver&veid=' . $vps->id, 'post');
 
@@ -1336,6 +1338,10 @@ if (isLoggedIn()) {
 
             $xtpl->form_add_radio_pure('manage_dns_resolver', 'manual', $vps->dns_resolver_id == null);
             $xtpl->table_td(_('Manage DNS resolver manually'));
+            $xtpl->table_tr();
+
+            $xtpl->table_td('');
+            $xtpl->table_td('<a href="?page=dns&action=resolver_list&return_url=' . $return_url . '">' . _('See available DNS resolvers and their IP addresses') . '</a>');
             $xtpl->table_tr();
 
             $xtpl->form_out(_("Go >>"));
