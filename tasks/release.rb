@@ -19,6 +19,16 @@ namespace :vpsadmin do
       File.write(file, File.read(file).sub(/ VERSION = '[^']+'/, " VERSION = '#{v}'"))
     end
 
+    man_nodectl = 'nodectl/man/man8/nodectl.8.md'
+    File.write(
+      man_nodectl,
+      lambda do |lines|
+        lines[0].sub!(/\d+-\d+-\d+/, Time.now.strftime('%Y-%m-%d'))
+        lines[0].sub!(/\d+\.\d+\.\d+/, v)
+        lines.join
+      end.call(File.readlines(man_nodectl))
+    )
+
     Dir.glob('plugins/*/meta.rb').each do |file|
       File.write(file, File.read(file).sub(/ version '[^']+'/, " version '#{v}'"))
     end
