@@ -1,7 +1,7 @@
 VpsAdmin::API::Plugin.register(:requests) do
   name 'Requests'
   description 'User requests'
-  version '3.0.0.dev'
+  version '4.0.0'
   author 'Jakub Skokan'
   email 'jakub.skokan@vpsfree.cz'
   components :api

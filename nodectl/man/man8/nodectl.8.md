@@ -1,4 +1,4 @@
-# nodectl 1                         2022-11-04                             3.0.0
+# nodectl 1                         2024-09-05                             4.0.0
 
 ## NAME
 `nodectl` - remote control for nodectld

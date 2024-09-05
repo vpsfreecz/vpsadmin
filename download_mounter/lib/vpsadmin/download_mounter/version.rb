@@ -1,5 +1,5 @@
 module VpsAdmin
   module DownloadMounter
-    VERSION = '3.0.0.dev'.freeze
+    VERSION = '4.0.0'.freeze
   end
 end
