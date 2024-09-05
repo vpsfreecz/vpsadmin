@@ -6,7 +6,7 @@ in stdenv.mkDerivation rec {
   name = "vpsadmin-client";
 
   buildInputs = with pkgs; [
-    ruby_3_2
+    ruby
     git
     zlib
     openssl
