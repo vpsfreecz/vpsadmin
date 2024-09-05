@@ -359,7 +359,7 @@ module VpsAdmin::CLI::Commands
         local_state[s.hist_id].delete(s)
 
         msg "Destroying #{ds}@#{s.name}"
-        zfs(:destroy, nil, "#{ds}@#{s.name}", pretend:)
+        zfs(:destroy, nil, "#{ds}@#{s.name}", pretend: pretend)
       end
 
       local_state.each do |hist_id, local_snapshots|
@@ -368,7 +368,7 @@ module VpsAdmin::CLI::Commands
         ds = "#{fs}/#{hist_id}"
 
         msg "Destroying #{ds}"
-        zfs(:destroy, nil, ds, pretend:)
+        zfs(:destroy, nil, ds, pretend: pretend)
       end
     end
 

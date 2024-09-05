@@ -12,13 +12,13 @@ Gem::Specification.new do |spec|
   spec.homepage      = ''
   spec.license       = 'GPL'
 
-  spec.required_ruby_version = ">= #{File.read('../.ruby-version').strip}"
+  spec.required_ruby_version = '>= 3.0'
 
   spec.files         = `git ls-files -z`.split("\x0")
   spec.executables   = spec.files.grep(%r{^bin/}) { |f| File.basename(f) }
   spec.require_paths = ['lib']
 
   spec.add_dependency 'curses'
-  spec.add_dependency 'haveapi-client', '~> 0.23.0'
+  spec.add_dependency 'haveapi-client', '~> 0.23.6'
   spec.add_dependency 'json'
 end

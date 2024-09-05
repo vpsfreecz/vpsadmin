@@ -6,8 +6,8 @@ module VpsAdmin
     end
 
     # Shortcut to {VpsAdmin::Client::Client.new}
-    def self.new(*)
-      Client.new(*)
+    def self.new(*args)
+      Client.new(*args)
     end
   end
 end
