@@ -128,10 +128,10 @@ module VpsAdmin::API
           )
         end
 
-        @vps_memory_used.set(vps.used_memory || 0, labels:)
+        @vps_memory_used.set((vps.used_memory || 0) * 1024 * 1024, labels:)
         @vps_memory_total.set(vps.memory * 1024 * 1024, labels:)
 
-        @vps_swap_used.set(vps.used_swap || 0, labels:)
+        @vps_swap_used.set((vps.used_swap || 0) * 1024 * 1024, labels:)
         @vps_swap_total.set(vps.swap * 1024 * 1024, labels:)
 
         @vps_cpu_cores.set(vps.cpu, labels:)
