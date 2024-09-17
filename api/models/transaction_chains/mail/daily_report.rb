@@ -320,7 +320,19 @@ module TransactionChains
             .includes(:user, :vps)
             .where('DATE_ADD(incident_reports.created_at, INTERVAL 1 DAY) >= ?', t)
             .order('incident_reports.detected_at')
-        }
+        },
+
+        dns_zones: {
+          new: ::DnsZone
+            .includes(:user)
+            .where('DATE_ADD(dns_zones.created_at, INTERVAL 1 DAY) >= ?', t)
+            .order('dns_zones.created_at')
+        },
+
+        dns_record_logs: ::DnsRecordLog
+          .includes(:dns_zone, :user)
+          .where('DATE_ADD(dns_record_logs.created_at, INTERVAL 1 DAY) >= ?', t)
+          .order('dns_record_logs.created_at')
       }
     end
   end
