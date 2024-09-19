@@ -38,7 +38,7 @@ module TransactionChains
         end
       end
 
-      use_chain(NetworkInterface::CleanupHostIpAddresses, kwargs: [ips:, delete: true])
+      use_chain(NetworkInterface::CleanupHostIpAddresses, kwargs: { ips:, delete: true })
     end
   end
 end
