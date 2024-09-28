@@ -169,7 +169,7 @@ module VpsAdmin::API::Resources
       include VpsAdmin::API::Lifetimes::ActionHelpers
 
       def exec
-        record = self.class.model.joins(:dns_zne).existing.find_by!(with_restricted(id: params[:dns_record_id]))
+        record = self.class.model.joins(:dns_zone).existing.find_by!(with_restricted(id: params[:dns_record_id]))
 
         object_state_check!(record.dns_zone.user) if record.dns_zone.user_id
 
