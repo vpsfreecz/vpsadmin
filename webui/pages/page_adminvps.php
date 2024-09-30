@@ -1085,7 +1085,7 @@ if (isLoggedIn()) {
             $xtpl->table_tr();
         }
 
-        $xtpl->table_td(_("HDD") . ':');
+        $xtpl->table_td(_("Disk") . ':');
         $xtpl->table_td(
             ($vps->diskspace && showVpsDiskSpaceWarning($vps) ? ('<img src="template/icons/warning.png" title="' . _('Disk at') . ' ' . sprintf('%.2f %%', round(vpsDiskUsagePercent($vps), 2)) . '"> ') : '') .
             ($vps->diskspace && showVpsDiskExpansionWarning($vps) ? ('<img src="template/icons/warning.png" title="' . _('Disk temporarily expanded') . '"> ') : '') .

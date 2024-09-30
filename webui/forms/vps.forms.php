@@ -590,7 +590,7 @@ function vps_list_form()
         $xtpl->table_add_category(_("#PROC"));
         $xtpl->table_add_category(_("HOSTNAME"));
         $xtpl->table_add_category(_("USED RAM"));
-        $xtpl->table_add_category(_("USED HDD"));
+        $xtpl->table_add_category(_("USED DISK"));
         $xtpl->table_add_category('');
         $xtpl->table_add_category('');
         $xtpl->table_add_category('');
