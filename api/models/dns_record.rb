@@ -18,6 +18,7 @@ class DnsRecord < ApplicationRecord
   validates :content, presence: true
   validates :comment, length: { maximum: 255 }
   validate :check_name
+  validate :check_priority
   validate :check_content
 
   def dynamic_update_enabled
@@ -47,6 +48,12 @@ class DnsRecord < ApplicationRecord
   def check_name
     if !%w[* @].include?(name) && /\A(?=.{1,253}\z)(?!-)(?!.*-\.)(?!.*\.\.)([*a-zA-Z0-9\-]{0,63}(?<!-)\.?)+\z/ !~ name
       errors.add(:name, 'invalid record name; it must be a domain name, * or @')
+    end
+  end
+
+  def check_priority
+    if priority && !%w[MX SRV].include?(record_type)
+      errors.add(:priority, 'only MX and SRV records can have priority set')
     end
   end
 

@@ -9,7 +9,7 @@ module VpsAdmin::API::Resources
       string :type, db_name: :record_type
       string :content
       integer :ttl, label: 'TTL', desc: 'Optional TTL in seconds, defaults to zone TTL'
-      integer :priority, label: 'Priority', desc: 'Optional priority, used e.g. for MX records'
+      integer :priority, label: 'Priority', desc: 'Optional priority, used for MX and SRV records'
       text :comment, desc: 'Optional comment'
       bool :enabled, default: true
       bool :dynamic_update_enabled, label: 'Enable dynamic update', desc: 'Only for A and AAAA records', default: false
