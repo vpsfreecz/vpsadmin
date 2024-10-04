@@ -302,6 +302,40 @@ if (isLoggedIn()) {
             }
             break;
 
+        case 'record_toggle_enable':
+            csrf_check();
+
+            try {
+                $record = $api->dns_record->update($_GET['id'], [
+                    'enabled' => $_GET['enable'] === '1',
+                ]);
+
+                notify_user(_('Record updated'), '');
+                redirect('?page=dns&action=zone_show&id=' . $record->dns_zone_id);
+
+            } catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+                $xtpl->perex_format_errors(_('Failed to update record'), $e->getResponse());
+                dns_record_edit($_GET['id']);
+            }
+            break;
+
+        case 'record_toggle_ddns':
+            csrf_check();
+
+            try {
+                $record = $api->dns_record->update($_GET['id'], [
+                    'dynamic_update_enabled' => $_GET['enable'] === '1',
+                ]);
+
+                notify_user(_('Record updated'), '');
+                redirect('?page=dns&action=zone_show&id=' . $record->dns_zone_id);
+
+            } catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+                $xtpl->perex_format_errors(_('Failed to update record'), $e->getResponse());
+                dns_record_edit($_GET['id']);
+            }
+            break;
+
         case 'record_delete':
             csrf_check();
 

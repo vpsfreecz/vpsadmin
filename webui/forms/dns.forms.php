@@ -1151,10 +1151,22 @@ function dns_record_list($zone)
         $xtpl->table_td(nl2br(h($r->content)));
 
         if (!$zone->managed) {
-            $xtpl->table_td(boolean_icon($r->dynamic_update_enabled));
+            if ($r->type == 'A' || $r->type == 'AAAA') {
+                if ($r->dynamic_update_enabled) {
+                    $xtpl->table_td('<a href="?page=dns&action=record_toggle_ddns&id=' . $r->id . '&zone=' . $r->dns_zone_id . '&id=' . $r->id . '&enable=0&t=' . csrf_token() . '" onclick="return confirm(\'' . _('Do you really wish to disable dynamic updates for this record?') . '\');" title="' . _('Disable dynamic updates') . '">' . boolean_icon($r->dynamic_update_enabled) . '</a>');
+                } else {
+                    $xtpl->table_td('<a href="?page=dns&action=record_toggle_ddns&id=' . $r->id . '&zone=' . $r->dns_zone_id . '&id=' . $r->id . '&enable=1&t=' . csrf_token() . '" onclick="return confirm(\'' . _('Do you really wish to enable dynamic updates for this record?') . '\');" title="' . _('Enable dynamic updates') . '">' . boolean_icon($r->dynamic_update_enabled) . '</a>');
+                }
+            } else {
+                $xtpl->table_td(boolean_icon($r->dynamic_update_enabled));
+            }
         }
 
-        $xtpl->table_td(boolean_icon($r->enabled));
+        if ($r->enabled) {
+            $xtpl->table_td('<a href="?page=dns&action=record_toggle_enable&id=' . $r->id . '&zone=' . $r->dns_zone_id . '&id=' . $r->id . '&enable=0&t=' . csrf_token() . '" onclick="return confirm(\'' . _('Do you really wish to disable this record?') . '\');" title="' . _('Disable this record') . '">' . boolean_icon($r->enabled) . '</a>');
+        } else {
+            $xtpl->table_td('<a href="?page=dns&action=record_toggle_enable&id=' . $r->id . '&zone=' . $r->dns_zone_id . '&id=' . $r->id . '&enable=1&t=' . csrf_token() . '" onclick="return confirm(\'' . _('Do you really wish to enable this record?') . '\');" title="' . _('Enable this record') . '">' . boolean_icon($r->enabled) . '</a>');
+        }
 
         if (!$zone->managed) {
             $xtpl->table_td('<a href="?page=dns&action=record_edit&id=' . $r->id . '"><img src="template/icons/vps_edit.png" alt="' . _('Edit') . '" title="' . _('Edit') . '"></a>');
