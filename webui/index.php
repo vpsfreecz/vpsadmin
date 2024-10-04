@@ -240,7 +240,6 @@ if (isLoggedIn()) {
         }
 
         $xtpl->menu_add(_("Exports"), '?page=export', ($_GET["page"] == 'export'));
-        $xtpl->menu_add(_("User namespaces"), '?page=userns', ($_GET["page"] == 'userns'));
         $xtpl->menu_add(_("Networking"), '?page=networking', ($_GET["page"] == 'networking'));
         $xtpl->menu_add(_("DNS"), '?page=dns', ($_GET["page"] == 'dns'));
         $xtpl->menu_add(_("Cluster"), '?page=cluster', ($_GET["page"] == 'cluster'));

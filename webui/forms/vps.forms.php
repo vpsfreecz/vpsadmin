@@ -753,6 +753,8 @@ function vps_list_form()
     } else {
         $xtpl->sbar_add('<img src="template/icons/m_add.png"  title="' . _("New VPS") . '" /> ' . _("New VPS"), '?page=adminvps&section=vps&action=new-step-1');
     }
+
+    $xtpl->sbar_add('<img src="template/icons/vps_ip_list.png" title="' . _("User namespaces") . '" /> ' . _("User namespaces"), '?page=userns');
 }
 
 function vps_details_title($vps)
@@ -811,6 +813,7 @@ function vps_details_submenu($vps)
     }
 
     $xtpl->sbar_add(_('Transaction log'), '?page=transactions&class_name=Vps&row_id=' . $vps->id);
+    $xtpl->sbar_add(_('User namespaces'), '?page=userns');
 }
 
 function vps_confirm_action_onclick($vps, $action)
