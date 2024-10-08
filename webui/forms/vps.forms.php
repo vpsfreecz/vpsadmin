@@ -267,6 +267,8 @@ function print_newvps_page3($user_id, $loc_id, $tpl_id)
     ]);
 
     $params = $api->vps->create->getParameters('input');
+
+    // Default hardcoded values
     $vps_resources = [
         'memory' => 4096,
         'cpu' => 8,
@@ -279,6 +281,21 @@ function print_newvps_page3($user_id, $loc_id, $tpl_id)
         'ipv4_private' => 0,
         'ipv6' => 1,
     ];
+
+    // Override hardcoded values by data from the API
+    $default_resource_values = $api->default_object_cluster_resource->list([
+        'environment' => $loc->environment_id,
+        'class_name' => 'Vps',
+        'meta' => ['includes' => 'cluster_resource'],
+    ]);
+
+    foreach ($default_resource_values as $defRes) {
+        if (in_array($defRes->cluster_resource->name, ['cpu', 'memory', 'swap', 'diskspace'])) {
+            $vps_resources[$defRes->cluster_resource->name] = $defRes->value;
+        } else {
+            $ips[$defRes->cluster_resource->name] = $defRes->value;
+        }
+    }
 
     if (!isAdmin()) {
         $user = $api->user->current();
