@@ -118,18 +118,6 @@ class User < ApplicationRecord
     99 => 'God'
   }.freeze
 
-  def create(vps, node, tpl)
-    TransactionChains::User::Create.fire(self, vps, node, tpl)
-  end
-
-  def destroy(override = false)
-    if override
-      super
-    else
-      TransactionChains::User::Destroy.fire(self)
-    end
-  end
-
   def role
     if level >= 90
       :admin

@@ -159,7 +159,11 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
         input[:node] = node
       end
 
-      @chain, = user.create(input[:vps], input[:node], input[:os_template])
+      @chain, = TransactionChains::User::Create.fire(
+        input[:vps],
+        input[:node],
+        input[:os_template]
+      )
       user
     rescue ActiveRecord::RecordInvalid
       error('create failed', to_param_names(user.errors.to_hash, :input))
