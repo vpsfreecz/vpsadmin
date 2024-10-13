@@ -484,7 +484,7 @@ module VpsAdmin::API::Resources
 
           snap.dataset.maintenance_check!(snap.dataset.primary_dataset_in_pool!.pool)
 
-          @chain, = snap.destroy
+          @chain, = TransactionChains::Snapshot::Destroy.fire(snap)
           ok
         end
 
