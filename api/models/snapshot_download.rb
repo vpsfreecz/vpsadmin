@@ -26,10 +26,6 @@ class SnapshotDownload < ApplicationRecord
     @base_url = ::SysConfig.get('core', 'snapshot_download_base_url')
   end
 
-  def destroy
-    TransactionChains::Dataset::RemoveDownload.fire(self)
-  end
-
   def url
     File.join(
       self.class.base_url,

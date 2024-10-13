@@ -129,11 +129,19 @@ module VpsAdmin::API::Resources
           end
         end
 
-        @chain, dl = snap.download(
+        opts = {
           format: input[:format].to_sym,
           from_snapshot: input[:from_snapshot],
           send_mail: input[:send_mail]
-        )
+        }
+
+        dl_chain = if input[:format] == 'incremental_stream'
+                     TransactionChains::Dataset::IncrementalDownload
+                   else
+                     TransactionChains::Dataset::FullDownload
+                   end
+
+        @chain, dl = dl_chain.fire(snap, opts)
         dl
       end
 
@@ -154,7 +162,7 @@ module VpsAdmin::API::Resources
 
       def exec
         dl = ::SnapshotDownload.find_by!(with_restricted(id: params[:snapshot_download_id]))
-        @chain, = dl.destroy
+        @chain, = TransactionChains::Dataset::RemoveDownload.fire(dl)
         ok
       end
 
