@@ -158,14 +158,6 @@ class Vps < ApplicationRecord
     end
   end
 
-  def destroy(override = false)
-    if override
-      super
-    else
-      TransactionChains::Vps::Destroy.fire(self)
-    end
-  end
-
   # Filter attributes that must be changed by a transaction.
   def update(attributes)
     TransactionChains::Vps::Update.fire(self, attributes)
