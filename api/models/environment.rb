@@ -36,23 +36,6 @@ class Environment < ApplicationRecord
 
   maintenance_children :locations
 
-  def update!(attrs)
-    assign_attributes(attrs)
-
-    self.class.transaction do
-      environment_user_configs.where(default: true).update_all(
-        can_create_vps:,
-        can_destroy_vps:,
-        vps_lifetime:,
-        max_vps_count:
-      )
-
-      save!
-    end
-
-    self
-  end
-
   def fqdn
     domain
   end

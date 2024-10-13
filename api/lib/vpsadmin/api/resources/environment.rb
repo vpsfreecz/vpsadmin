@@ -190,7 +190,10 @@ class VpsAdmin::API::Resources::Environment < HaveAPI::Resource
     end
 
     def exec
-      ::Environment.find(params[:environment_id]).update!(input)
+      VpsAdmin::API::Operations::Environment::Update.run(
+        ::Environment.find(params[:environment_id]),
+        input
+      )
     rescue ActiveRecord::RecordInvalid => e
       error('update failed', e.record.errors.to_hash)
     end
