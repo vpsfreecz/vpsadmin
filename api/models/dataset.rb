@@ -200,7 +200,7 @@ class Dataset < ApplicationRecord
       vps = Vps.find_by!(dataset_in_pool: dip.dataset.root.primary_dataset_in_pool!)
       maintenance_check!(vps)
 
-      vps.restore(s)
+      TransactionChains::Vps::Restore.fire(vps, s)
 
     else
       TransactionChains::Dataset::Rollback.fire(dip, s)

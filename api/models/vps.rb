@@ -112,6 +112,8 @@ class Vps < ApplicationRecord
   validate :foreign_keys_exist
   validate :check_cgroup_version
 
+  before_create :set_lifetime
+
   default_scope do
     where.not(object_state: object_states[:hard_delete])
   end
@@ -134,64 +136,6 @@ class Vps < ApplicationRecord
             ])
     end
   }
-
-  PathInfo = Struct.new(:dataset, :exists)
-
-  # @param opts [Hash]
-  # @option opts [Integer] ipv4
-  # @option opts [Integer] ipv6
-  # @option opts [Integer] ipv4_private
-  # @Option opts [::Location, nil] address_location
-  # @Option opts [Boolean] start
-  def create(opts)
-    lifetime = user.env_config(
-      node.location.environment,
-      :vps_lifetime
-    )
-
-    self.expiration_date = Time.now + lifetime if lifetime != 0
-
-    if valid?
-      TransactionChains::Vps::Create.fire(self, opts)
-    else
-      false
-    end
-  end
-
-  # Filter attributes that must be changed by a transaction.
-  def update(attributes)
-    TransactionChains::Vps::Update.fire(self, attributes)
-  end
-
-  def start
-    TransactionChains::Vps::Start.fire(self)
-  end
-
-  def restart
-    TransactionChains::Vps::Restart.fire(self)
-  end
-
-  def stop
-    TransactionChains::Vps::Stop.fire(self)
-  end
-
-  def passwd(t)
-    pass = generate_password(t)
-
-    [TransactionChains::Vps::Passwd.fire(self, pass).first, pass]
-  end
-
-  def boot(template, **)
-    TransactionChains::Vps::Boot.fire(self, template, **)
-  end
-
-  def reinstall(template)
-    TransactionChains::Vps::Reinstall.fire(self, template)
-  end
-
-  def restore(snapshot)
-    TransactionChains::Vps::Restore.fire(self, snapshot)
-  end
 
   def pool
     dataset_in_pool.pool
@@ -216,71 +160,15 @@ class Vps < ApplicationRecord
     dataset_in_pool.referenced
   end
 
-  def migrate(node, opts = {})
-    chain_opts = {}
-
-    chain_opts[:replace_ips] = opts[:replace_ip_addresses]
-    chain_opts[:transfer_ips] = opts[:transfer_ip_addresses]
-    chain_opts[:swap] = opts[:swap] && opts[:swap].to_sym
-    chain_opts[:maintenance_window] = opts[:maintenance_window]
-    chain_opts[:finish_weekday] = opts[:finish_weekday]
-    chain_opts[:finish_minutes] = opts[:finish_minutes]
-    chain_opts[:send_mail] = opts[:send_mail]
-    chain_opts[:reason] = opts[:reason]
-    chain_opts[:cleanup_data] = opts[:cleanup_data]
-    chain_opts[:no_start] = opts[:no_start]
-    chain_opts[:skip_start] = opts[:skip_start]
-
-    TransactionChains::Vps::Migrate.chain_for(self, node).fire(self, node, chain_opts)
-  end
-
-  def clone(node, attrs)
-    TransactionChains::Vps::Clone.chain_for(self, node).fire(self, node, attrs)
-  end
-
-  def swap_with(secondary_vps, attrs)
-    TransactionChains::Vps::Swap.fire(self, secondary_vps, attrs)
-  end
-
-  def replace(node, attrs)
-    TransactionChains::Vps::Replace.chain_for(self, node).fire(self, node, attrs)
-  end
-
-  def mount_dataset(dataset, dst, opts)
-    TransactionChains::Vps::MountDataset.fire(self, dataset, dst, opts)
-  end
-
-  def umount(mnt)
-    raise 'snapshot mounts are not supported' if mnt.snapshot_in_pool_id
-
-    TransactionChains::Vps::UmountDataset.fire(self, mnt)
-  end
-
-  # @param feature [Symbol]
-  # @param enabled [Boolean]
-  def set_feature(feature, enabled)
-    set_features({ feature.name.to_sym => enabled })
-  end
-
-  # @param features [Hash<Symbol, Boolean>]
-  def set_features(features)
-    TransactionChains::Vps::Features.fire(self, build_features(features))
-  end
-
-  def deploy_public_key(key)
-    TransactionChains::Vps::DeployPublicKey.fire(self, key)
-  end
-
   private
 
-  def generate_password(t)
-    if t == :secure
-      chars = ('a'..'z').to_a + ('A'..'Z').to_a + (0..9).to_a
-      (0..19).map { chars.sample }.join
-    else
-      chars = ('a'..'z').to_a + (2..9).to_a
-      (0..7).map { chars.sample }.join
-    end
+  def set_lifetime
+    lifetime = user.env_config(
+      node.location.environment,
+      :vps_lifetime
+    )
+
+    self.expiration_date = Time.now + lifetime if lifetime != 0
   end
 
   def foreign_keys_exist
@@ -296,56 +184,5 @@ class Vps < ApplicationRecord
       :cgroup_version,
       "cannot require #{cgroup_version}, #{node.domain_name} uses #{node.cgroup_version}"
     )
-  end
-
-  def prefix_mountpoint(parent, part, mountpoint)
-    root = '/'
-
-    return File.join(parent) if parent && !part
-    return root unless part
-
-    if mountpoint
-      File.join(root, mountpoint)
-
-    elsif parent
-      File.join(parent, part.name)
-    end
-  end
-
-  def dataset_to_destroy(path)
-    parts = path.split('/')
-    parent = dataset_in_pool.dataset
-    dip = nil
-
-    parts.each do |part|
-      ds = parent.children.find_by(name: part)
-
-      raise VpsAdmin::API::Exceptions::DatasetDoesNotExist, path unless ds
-
-      parent = ds
-      dip = ds.dataset_in_pools.joins(:pool).where(pools: { role: Pool.roles[:hypervisor] }).take
-
-      raise VpsAdmin::API::Exceptions::DatasetDoesNotExist, path unless dip
-    end
-
-    dip
-  end
-
-  # @return [Array<VpsFeature>]
-  def build_features(features)
-    set = vps_features.map do |f|
-      n = f.name.to_sym
-      f.enabled = features[n] if features.has_key?(n)
-      f
-    end
-
-    # Check for conflicts
-    set.each do |f1|
-      set.each do |f2|
-        raise VpsAdmin::API::Exceptions::VpsFeatureConflict.new(f1, f2) if f1.conflict?(f2)
-      end
-    end
-
-    set
   end
 end

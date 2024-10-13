@@ -315,16 +315,10 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
 
       opts[:start] = input.delete(:start)
 
-      vps = ::Vps.new(to_db_names(input))
-      vps.set_cluster_resources(input)
-      @chain, vps = vps.create(opts)
-
-      if @chain
-        ok(vps)
-
-      else
-        error('save failed', to_param_names(vps.errors.to_hash, :input))
-      end
+      @chain, vps = VpsAdmin::API::Operations::Vps::Create.run(to_db_names(input), input, opts)
+      vps
+    rescue ActiveRecord::RecordInvalid => e
+      error('save failed', to_param_names(e.record.errors.to_hash, :input))
     end
 
     def state_id
@@ -437,7 +431,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
         error('user namespace map belongs to a different user than the VPS')
       end
 
-      @chain, = vps.update(to_db_names(input))
+      @chain, = TransactionChains::Vps::Update.fire(vps, to_db_names(input))
       ok
     rescue ActiveRecord::RecordInvalid => e
       error(
@@ -509,7 +503,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
       maintenance_check!(vps)
       object_state_check!(vps, vps.user)
 
-      @chain, = vps.start
+      @chain, = TransactionChains::Vps::Start.fire(vps)
       ok
     end
 
@@ -535,7 +529,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
       maintenance_check!(vps)
       object_state_check!(vps, vps.user)
 
-      @chain, = vps.restart
+      @chain, = TransactionChains::Vps::Restart.fire(vps)
       ok
     end
 
@@ -561,7 +555,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
       maintenance_check!(vps)
       object_state_check!(vps, vps.user)
 
-      @chain, = vps.stop
+      @chain, = TransactionChains::Vps::Stop.fire(vps)
       ok
     end
 
@@ -595,7 +589,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
       vps = ::Vps.find_by!(with_restricted(id: params[:vps_id]))
       maintenance_check!(vps)
 
-      @chain, password = vps.passwd(input[:type].to_sym)
+      @chain, password = VpsAdmin::API::Operations::Vps::Passwd.run(vps, input[:type])
       { password: }
     end
 
@@ -655,7 +649,11 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
         )
       end
 
-      @chain, = vps.boot(tpl, mount_root_dataset: input[:mount_root_dataset])
+      @chain, = TransactionChains::Vps::Boot.fire(
+        vps,
+        tpl,
+        mount_root_dataset: input[:mount_root_dataset]
+      )
       ok
     end
 
@@ -711,7 +709,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
         )
       end
 
-      @chain, = vps.reinstall(tpl)
+      @chain, = TransactionChains::Vps::Reinstall.fire(vps, tpl)
       ok
     end
 
@@ -788,7 +786,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
               })
       end
 
-      @chain, = vps.migrate(input[:node], input)
+      @chain = VpsAdmin::API::Operations::Vps::Migrate.run(vps, input)
       ok
     rescue VpsAdmin::API::Exceptions::VpsMigrationError => e
       error(e.message)
@@ -907,7 +905,9 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
         error("no shared networks with location #{input[:address_location].label}")
       end
 
-      @chain, cloned_vps = vps.clone(node, input)
+      chain_class = TransactionChains::Vps::Clone.chain_for(vps, node)
+      @chain, cloned_vps = chain_class.fire(vps, node, input)
+
       cloned_vps
     rescue ActiveRecord::RecordInvalid => e
       error('clone failed', to_param_names(e.record.errors.to_hash))
@@ -959,7 +959,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
 
       input[:expirations] = true if current_user.role != :admin
 
-      @chain, = vps.swap_with(input[:vps], input)
+      @chain, = TransactionChains::Vps::Swap.fire(vps, input[:vps], input)
       ok
     end
 
@@ -994,7 +994,11 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
       maintenance_check!(vps)
       object_state_check!(vps.user)
 
-      @chain, replaced_vps = vps.replace(input[:node] || vps.node, input)
+      target_node = input[:node] || vps.node
+
+      replace_chain = TransactionChains::Vps::Replace.chain_for(vps, target_node)
+      @chain, replaced_vps = replace_chain.fire(vps, target_node, input)
+
       replaced_vps
     rescue ActiveRecord::RecordInvalid => e
       error('replace failed', to_param_names(e.record.errors.to_hash))
@@ -1028,7 +1032,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
       )
       maintenance_check!(vps)
 
-      @chain, = vps.deploy_public_key(input[:public_key])
+      @chain, = TransactionChains::Vps::DeployPublicKey.fire(vps, input[:public_key])
       ok
     end
 
@@ -1130,10 +1134,14 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
         vps = ::Vps.find_by!(
           with_restricted(id: params[:vps_id])
         )
-        @chain, = vps.set_feature(
-          vps.vps_features.find(params[:feature_id]),
-          input[:enabled]
+
+        feature = vps.vps_features.find(params[:feature_id])
+
+        @chain = VpsAdmin::API::Operations::Vps::SetFeatures.run(
+          vps,
+          { feature.name.to_sym => input[:enabled] }
         )
+
         ok
       rescue VpsAdmin::API::Exceptions::VpsFeatureConflict => e
         error(e.message)
@@ -1166,7 +1174,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
         vps = ::Vps.find_by!(
           with_restricted(id: params[:vps_id])
         )
-        @chain, = vps.set_features(input)
+        @chain = VpsAdmin::API::Operations::Vps::SetFeatures.run(vps, input)
         ok
       rescue VpsAdmin::API::Exceptions::VpsFeatureConflict => e
         error(e.message)
@@ -1285,7 +1293,13 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
           error('insufficient permission to mount selected snapshot')
         end
 
-        @chain, ret = vps.mount_dataset(input[:dataset], input[:mountpoint], input)
+        @chain, ret = TransactionChains::Vps::MountDataset.fire(
+          vps,
+          input[:dataset],
+          input[:mountpoint],
+          input
+        )
+
         ret
       rescue VpsAdmin::API::Exceptions::SnapshotAlreadyMounted,
              VpsAdmin::API::Exceptions::OperationNotSupported => e
@@ -1347,7 +1361,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
         maintenance_check!(vps)
 
         mnt = ::Mount.find_by!(vps:, id: params[:mount_id])
-        @chain, = vps.umount(mnt)
+        @chain, = TransactionChains::Vps::UmountDataset.fire(vps, mnt)
 
         ok
       end
