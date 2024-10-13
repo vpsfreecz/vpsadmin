@@ -439,10 +439,12 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
       def exec
         error('provide at least one parameter to update') if input.empty?
 
-        ::EnvironmentUserConfig.find_by!(
+        cfg = ::EnvironmentUserConfig.find_by!(
           user_id: params[:user_id],
           id: params[:environment_config_id]
-        ).update!(input)
+        )
+
+        VpsAdmin::API::Operations::Environment::UpdateUserConfig.run(cfg, input)
       rescue ActiveRecord::RecordInvalid => e
         error('update failed', e.record.errors.to_hash)
       end
