@@ -42,12 +42,6 @@ class DatasetInPool < ApplicationRecord
              dst_dataset_in_pool: 'target DatasetInPool'
            }
 
-  # @param opts [Hash] options
-  # @option opts [String] label user-friendly snapshot label
-  def snapshot(opts)
-    TransactionChains::Dataset::Snapshot.fire(self, opts)
-  end
-
   # +dst+ is destination DatasetInPool.
   def transfer(dst)
     TransactionChains::Dataset::Transfer.fire(self, dst)

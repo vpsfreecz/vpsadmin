@@ -187,7 +187,7 @@ module VpsAdmin::API::Resources
 
         properties = VpsAdmin::API::DatasetProperties.validate_params(input)
 
-        @chain, dataset = ::Dataset.create_new(
+        @chain, dataset = VpsAdmin::API::Operations::Dataset::Create.run(
           input[:name].strip,
           input[:dataset],
           automount: input[:automount],
@@ -237,7 +237,12 @@ module VpsAdmin::API::Resources
         ds.maintenance_check!(ds.primary_dataset_in_pool!.pool)
 
         properties = VpsAdmin::API::DatasetProperties.validate_params(input)
-        @chain, = ds.update_properties(properties, input)
+
+        @chain = VpsAdmin::API::Operations::Dataset::UpdateProperties.run(
+          ds,
+          properties,
+          input
+        )
 
         ok
       rescue VpsAdmin::API::Exceptions::PropertyInvalid => e
@@ -339,7 +344,7 @@ module VpsAdmin::API::Resources
           error("property is not inheritable: #{not_inheritable.join(',')}")
         end
 
-        @chain, = ds.inherit_properties(props)
+        @chain, = TransactionChains::Dataset::Inherit.fire(ds.primary_dataset_in_pool!, props)
         ok
       end
 
@@ -448,7 +453,15 @@ module VpsAdmin::API::Resources
 
           error("cannot make more than #{max_snapshots} snapshots") if ds.snapshots.count >= max_snapshots
 
-          @chain, snap = ds.snapshot(input)
+          dip = ds.primary_dataset_in_pool!
+
+          if dip.pool.role == 'hypervisor'
+            vps = Vps.find_by!(dataset_in_pool: dip.dataset.root.primary_dataset_in_pool!)
+            maintenance_check!(vps)
+          end
+
+          @chain, snap = TransactionChains::Dataset::Snapshot.fire(dip, input)
+
           snap.snapshot
         end
 
@@ -538,7 +551,18 @@ module VpsAdmin::API::Resources
             )
           end
 
-          @chain, = snap.dataset.rollback_snapshot(snap)
+          dip = snap.dataset.primary_dataset_in_pool!
+
+          @chain, =
+            if dip.pool.role == 'hypervisor'
+              vps = Vps.find_by!(dataset_in_pool: dip.dataset.root.primary_dataset_in_pool!)
+              maintenance_check!(vps)
+
+              TransactionChains::Vps::Restore.fire(vps, snap)
+            else
+              TransactionChains::Dataset::Rollback.fire(dip, snap)
+            end
+
           ok
         rescue VpsAdmin::API::Exceptions::SnapshotInUse => e
           error(e.message)
