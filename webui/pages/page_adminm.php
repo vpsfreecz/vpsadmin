@@ -1795,10 +1795,37 @@ if (isLoggedIn()) {
                         'can_destroy_vps' => isset($_POST['can_destroy_vps']),
                         'vps_lifetime' => $_POST['vps_lifetime'],
                         'max_vps_count' => $_POST['max_vps_count'],
-                        'default' => isset($_POST['default']),
+                        'default' => false,
                     ]);
 
-                    notify_user(_('Changes saved'), _('Environment configs was successfully updated.'));
+                    notify_user(_('Settings customized'), _('Environment config was successfully updated.'));
+                    redirect('?page=adminm&action=env_cfg&id=' . $_GET['id']);
+
+                } catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+                    $xtpl->perex_format_errors(_('Update failed'), $e->getResponse());
+                    env_cfg_edit_form($_GET['id'], $_GET['cfg']);
+                }
+
+            } else {
+                env_cfg_edit_form($_GET['id'], $_GET['cfg']);
+            }
+
+            break;
+
+        case 'env_cfg_reset':
+            if (!isAdmin()) {
+                break;
+            }
+
+            if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+                csrf_check();
+
+                try {
+                    $api->user($_GET['id'])->environment_config($_GET['cfg'])->update([
+                        'default' => true,
+                    ]);
+
+                    notify_user(_('Settings reset to default'), _('Environment config was successfully updated.'));
                     redirect('?page=adminm&action=env_cfg&id=' . $_GET['id']);
 
                 } catch (\HaveAPI\Client\Exception\ActionFailed $e) {

@@ -63,17 +63,39 @@ function env_cfg_edit_form($user_id, $cfg_id)
         'meta' => ['includes' => 'environment'],
     ]);
 
+    $input = $cfg->update->getParameters('input');
+
     $xtpl->title(_('User') . ' <a href="?page=adminm&action=edit&id=' . $user_id . '">#' . $user_id . '</a>: ' . _('Environment config for') . ' ' . $cfg->environment->label);
 
+    $xtpl->table_title(_('Customize settings'));
     $xtpl->form_create("?page=adminm&action=env_cfg_edit&id=$user_id&cfg=$cfg_id");
 
     $xtpl->table_td(_('Environment'));
     $xtpl->table_td($cfg->environment->label);
     $xtpl->table_tr();
 
-    api_update_form($cfg);
+    $xtpl->table_td(_('Default settings'));
+    $xtpl->table_td(boolean_icon($cfg->default));
+    $xtpl->table_tr();
 
-    $xtpl->form_out(_('Save'));
+    foreach (['can_create_vps', 'can_destroy_vps', 'vps_lifetime', 'max_vps_count'] as $param) {
+        api_param_to_form($param, $input->{$param}, post_val($param, $cfg->{$param}));
+    }
+
+    $xtpl->form_out(_('Customize'));
+
+    if ($cfg->default) {
+        return;
+    }
+
+    $xtpl->table_title(_('Reset to default settings'));
+    $xtpl->form_create("?page=adminm&action=env_cfg_reset&id=$user_id&cfg=$cfg_id");
+
+    $xtpl->table_td(_('Environment'));
+    $xtpl->table_td($cfg->environment->label);
+    $xtpl->table_tr();
+
+    $xtpl->form_out(_('Reset'));
 
     $xtpl->sbar_add('<br><img src="template/icons/m_edit.png"  title="' . _("Back to environment configs") . '" />' . _('Back to user details'), "?page=adminm&section=members&action=env_cfg&id=$user_id");
 }
