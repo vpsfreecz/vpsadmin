@@ -11,16 +11,16 @@ class DatasetAction < ApplicationRecord
   def execute
     case action.to_sym
     when :snapshot
-      src_dataset_in_pool.snapshot
+      TransactionChains::Dataset::Snapshot.fire(src_dataset_in_pool)
 
     when :transfer
-      src_dataset_in_pool.transfer(dst_dataset_in_pool)
+      TransactionChains::Dataset::Transfer.fire(src_dataset_in_pool, dst_dataset_in_pool)
 
     when :rollback
-      src_dataset_in_pool.rollback
+      raise 'not supported'
 
     when :backup
-      src_dataset_in_pool.backup(dst_dataset_in_pool)
+      TransactionChains::Dataset::Backup.fire(src_dataset_in_pool, dst_dataset_in_pool)
 
     when :group_snapshot
       do_group_snapshots

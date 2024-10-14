@@ -42,19 +42,6 @@ class DatasetInPool < ApplicationRecord
              dst_dataset_in_pool: 'target DatasetInPool'
            }
 
-  # +dst+ is destination DatasetInPool.
-  def transfer(dst)
-    TransactionChains::Dataset::Transfer.fire(self, dst)
-  end
-
-  def rollback(snap)
-    TransactionChains::Dataset::Rollback.fire(self, snap)
-  end
-
-  def backup(dst)
-    TransactionChains::Dataset::Backup.fire(self, dst)
-  end
-
   def add_plan(plan)
     VpsAdmin::API::DatasetPlans.plans[plan.dataset_plan.name.to_sym].register(self)
   end
