@@ -103,7 +103,9 @@ module NodeCtld
         end
 
         # Detect osctl ct boot
-        vpsadmin_vps.in_rescue_mode = true if vps[:dataset] != vps[:boot_dataset]
+        if vps[:dataset] != vps[:boot_dataset] && %r{/ct/\d+\.boot-\w+\z} =~ vps[:boot_dataset]
+          vpsadmin_vps.in_rescue_mode = true
+        end
       end
 
       # Query hostname of VPSes with manual configuration

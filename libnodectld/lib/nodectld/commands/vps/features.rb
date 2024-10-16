@@ -62,6 +62,13 @@ module NodeCtld
         osctl(%i[ct unset nesting], @vps_id)
       end
 
+      # NixOS impermanence
+      if @features['impermanence'][key]
+        osctl(%i[ct set impermanence], @vps_id, { zfs_property: 'refquota=10G' })
+      else
+        osctl(%i[ct unset impermanence], @vps_id)
+      end
+
       # Restart the VPS if it is running, this is needed for LXC nesting
       # and Docker access to take effect.
       osctl(%i[ct restart], @vps_id) if status == :running

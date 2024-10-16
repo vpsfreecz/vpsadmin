@@ -27,7 +27,8 @@ class VpsFeature < ApplicationRecord
     Feature.new(:fuse, 'FUSE', :all, default: true),
     Feature.new(:ppp, 'PPP', :all),
     Feature.new(:kvm, 'KVM', :all, default: true),
-    Feature.new(:lxc, 'LXC nesting', :vpsadminos)
+    Feature.new(:lxc, 'LXC nesting', :vpsadminos),
+    Feature.new(:impermanence, 'NixOS Impermanence', :all)
   ].to_h { |f| [f.name, f] }
 
   validates :name, inclusion: {
