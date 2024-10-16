@@ -234,7 +234,7 @@ function dataset_create_form()
         '<input type="hidden" name="return" value="' . ($_GET['return'] ? $_GET['return'] : $_POST['return']) . '">'
     );
     $xtpl->form_add_input_pure('text', '30', $quota_name, $_POST[$quota_name] ? $_POST[$quota_name] : $v[0], $quota->description);
-    $xtpl->form_add_select_pure('quota_unit', ["m" => "MiB", "g" => "GiB", "t" => "TiB"], $_POST[$quota_name] ? $_POST['quota_unit'] : $v[1]);
+    $xtpl->form_add_select_pure('quota_unit', ["g" => "GiB", "t" => "TiB"], $_POST[$quota_name] ? $_POST['quota_unit'] : $v[1]);
     $xtpl->table_tr();
 
     // Remaining dataset properties
@@ -300,7 +300,7 @@ function dataset_edit_form()
         '<input type="hidden" name="return" value="' . ($_GET['return'] ? $_GET['return'] : $_POST['return']) . '">'
     );
     $xtpl->form_add_input_pure('text', '30', $quota_name, $_POST[$quota_name] ? $_POST[$quota_name] : $v[0], $quota->description);
-    $xtpl->form_add_select_pure('quota_unit', ["m" => "MiB", "g" => "GiB", "t" => "TiB"], $_POST[$quota_name] ? $_POST['quota_unit'] : $v[1]);
+    $xtpl->form_add_select_pure('quota_unit', ["g" => "GiB", "t" => "TiB"], $_POST[$quota_name] ? $_POST['quota_unit'] : $v[1]);
     $xtpl->table_tr();
 
     if (isAdmin()) {
