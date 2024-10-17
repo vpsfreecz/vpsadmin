@@ -1495,6 +1495,10 @@ if (isLoggedIn()) {
             $features = $vps->feature->list();
 
             foreach ($features as $f) {
+                if ($f->name == 'impermanence' && $vps->os_template->distribution != 'nixos') {
+                    continue;
+                }
+
                 $xtpl->table_td($f->label);
                 $xtpl->form_add_checkbox_pure($f->name, '1', $f->enabled ? '1' : '0');
                 $xtpl->table_tr();
