@@ -18,7 +18,8 @@ module VpsAdmin::API::Resources
 
     if u
       restrict enabled: true
-      output whitelist: %i[id name label info supported hypervisor_type]
+      output whitelist: %i[id name label info supported hypervisor_type cgroup_version
+                           vendor variant arch distribution version]
 
     else
       restrict enabled: true, supported: true
