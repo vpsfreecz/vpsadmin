@@ -2057,7 +2057,7 @@ function vps_netif_ipaddrs_form($vps, $netif)
     $free_4_priv = $tmp + get_free_host_addr_list('ipv4_private', $vps, $netif, 'private_access', 25);
 
     if ($vps->node->location->has_ipv6) {
-        $free_6 = $tmp + get_free_host_addr_list('ipv6', $vps, null, null, 25);
+        $free_6 = $tmp + get_free_host_addr_list('ipv6', $vps, $netif, null, 25);
     }
 
     $xtpl->form_add_select(

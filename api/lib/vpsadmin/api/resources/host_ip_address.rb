@@ -144,20 +144,8 @@ module VpsAdmin::API::Resources
         end
 
         if current_user.role != :admin
-          ips = ips.joins(
-            'LEFT JOIN network_interfaces my_netifs
-             ON my_netifs.id = ip_addresses.network_interface_id'
-          ).joins(
-            'LEFT JOIN vpses my_vps ON my_vps.id = my_netifs.vps_id'
-          ).where(
-            networks: { role: [
-              ::Network.roles[:public_access],
-              ::Network.roles[:private_access]
-            ] }
-          ).where(
-            'ip_addresses.user_id = ?
-             OR
-            (ip_addresses.network_interface_id IS NOT NULL AND my_vps.user_id = ?)',
+          ips = ips.joins(ip_address: { network_interface: :vps }).where(
+            'ip_addresses.user_id = ? OR vpses.user_id = ?',
             current_user.id, current_user.id
           )
         end
