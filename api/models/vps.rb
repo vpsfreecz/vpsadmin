@@ -157,7 +157,12 @@ class Vps < ApplicationRecord
   end
 
   def used_diskspace
-    dataset_in_pool.referenced
+    dataset_in_pool.dataset.subtree.inject(0) do |acc, ds|
+      acc + ds.primary_dataset_in_pool!.referenced
+    rescue ActiveRecord::RecordNotFound
+      # Dataset may exist only in backup and those are not accounted
+      acc
+    end
   end
 
   private
