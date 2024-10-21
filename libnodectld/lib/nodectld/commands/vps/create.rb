@@ -18,6 +18,11 @@ module NodeCtld
 
       osctl_pool(@pool_name, %i[ct create], @vps_id, opts)
 
+      # Some container images can carry their own mounts, e.g. NixOS impermanence.
+      # We clear them all so that mounts are managed only through vpsAdmin. If an image
+      # requires custom mounts, configure them using OS template config facility.
+      osctl_pool(@pool_name, %i[ct mounts clear], @vps_id)
+
       osctl_pool(@pool_name, %i[ct set hostname], [@vps_id, @hostname]) if @hostname
 
       # nofile was originally set by osctld automatically, it's not working

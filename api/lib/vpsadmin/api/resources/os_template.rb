@@ -20,6 +20,7 @@ class VpsAdmin::API::Resources::OsTemplate < HaveAPI::Resource
     string :arch
     string :distribution
     string :version
+    text :config, desc: 'Advanced configuration in YAML', db_name: :config_string
   end
 
   params(:all) do
@@ -125,7 +126,11 @@ class VpsAdmin::API::Resources::OsTemplate < HaveAPI::Resource
     end
 
     def exec
-      ::OsTemplate.create!(to_db_names(input))
+      cfg = input.delete(:config)
+      attrs = to_db_names(input)
+      attrs[:config] = YAML.safe_load(cfg) if cfg
+
+      ::OsTemplate.create!(attrs)
     rescue ActiveRecord::RecordInvalid => e
       error('create failed', to_param_names(e.record.errors.to_hash))
     end
@@ -145,7 +150,11 @@ class VpsAdmin::API::Resources::OsTemplate < HaveAPI::Resource
     end
 
     def exec
-      ::OsTemplate.find(params[:os_template_id]).update!(to_db_names(input))
+      cfg = input.delete(:config)
+      attrs = to_db_names(input)
+      attrs[:config] = YAML.safe_load(cfg) if cfg
+
+      ::OsTemplate.find(params[:os_template_id]).update!(attrs)
     rescue ActiveRecord::RecordInvalid => e
       error('update failed', to_param_names(e.record.errors.to_hash))
     end

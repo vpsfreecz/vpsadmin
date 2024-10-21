@@ -1477,6 +1477,7 @@ CREATE TABLE `os_templates` (
   `distribution` varchar(255) DEFAULT NULL,
   `version` varchar(255) DEFAULT NULL,
   `cgroup_version` int(11) NOT NULL DEFAULT 0,
+  `config` text NOT NULL DEFAULT '',
   PRIMARY KEY (`id`),
   KEY `index_os_templates_on_cgroup_version` (`cgroup_version`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
@@ -2313,6 +2314,7 @@ CREATE TABLE `vpses` (
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
 INSERT INTO `schema_migrations` (version) VALUES
+('20241020090006'),
 ('20241016081921'),
 ('20240831114419'),
 ('20240821122633'),

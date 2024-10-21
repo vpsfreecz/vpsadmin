@@ -715,6 +715,7 @@ if (isAdmin()) {
                         'arch' => $_POST['arch'],
                         'distribution' => $_POST['distribution'],
                         'version' => $_POST['version'],
+                        'config' => $_POST['config'],
                     ]);
 
                     notify_user(_("Changes saved"), _("Changes you've made to the template were saved."));
@@ -749,6 +750,7 @@ if (isAdmin()) {
                         'arch' => $_POST['arch'],
                         'distribution' => $_POST['distribution'],
                         'version' => $_POST['version'],
+                        'config' => $_POST['config'],
                     ]);
 
                     notify_user(_("OS template registered"), _("The OS template was successfully registered."));

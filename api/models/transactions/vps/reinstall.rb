@@ -9,6 +9,8 @@ module Transactions::Vps
       self.node_id = vps.node_id
 
       {
+        pool_name: vps.dataset_in_pool.pool.name,
+        pool_fs: vps.dataset_in_pool.pool.filesystem,
         distribution: template.distribution,
         version: template.version,
         arch: template.arch,

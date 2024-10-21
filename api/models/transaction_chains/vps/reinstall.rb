@@ -44,6 +44,10 @@ module TransactionChains
         t.edit(vps, os_template_id: template.id)
         t.increment(vps.dataset_in_pool.dataset, 'current_history_id')
       end
+
+      # Reconfigure features (currently because of NixOS impermanence, which would get
+      # turned on when the container image config is reapplied)
+      use_chain(Vps::Features, args: [vps, vps.vps_features])
     end
 
     def backup_datasets(vps)
