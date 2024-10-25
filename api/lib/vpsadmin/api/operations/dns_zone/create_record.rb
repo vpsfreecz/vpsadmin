@@ -13,7 +13,7 @@ module VpsAdmin::API
 
       if dns_record.dns_zone.managed
         raise Exceptions::ZoneManagedError, dns_record.dns_zone
-      elsif !%w[A AAAA].include?(dns_record.record_type)
+      elsif dyn_enable && !%w[A AAAA].include?(dns_record.record_type)
         raise Exceptions::OperationError, 'Only A and AAAA records can utilize dynamic updates'
       end
 

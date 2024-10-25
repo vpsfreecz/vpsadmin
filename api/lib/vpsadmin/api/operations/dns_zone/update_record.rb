@@ -11,13 +11,15 @@ module VpsAdmin::API
     def run(dns_record, attrs)
       if dns_record.dns_zone.managed
         raise Exceptions::ZoneManagedError, dns_record.dns_zone
-      elsif !%w[A AAAA].include?(dns_record.record_type)
-        raise Exceptions::OperationError, 'Only A and AAAA records can utilize dynamic updates'
       end
 
       dyn_enable = attrs.delete(:dynamic_update_enabled)
 
       if dyn_enable === true && !dns_record.dynamic_update_enabled
+        unless %w[A AAAA].include?(dns_record.record_type)
+          raise Exceptions::OperationError, 'Only A and AAAA records can utilize dynamic updates'
+        end
+
         ActiveRecord::Base.transaction do
           dns_record.update!(update_token: ::Token.get!(owner: dns_record))
         end
