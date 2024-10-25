@@ -12,7 +12,7 @@ class DnsRecord < ApplicationRecord
     where(confirmed: [confirmed(:confirm_create), confirmed(:confirmed)])
   }
 
-  validates :record_type, presence: true, inclusion: { in: %w[A AAAA CNAME MX NS PTR SRV TXT] }
+  validates :record_type, presence: true, inclusion: { in: %w[A AAAA CNAME DS MX NS PTR SRV TXT] }
   validates :ttl, numericality: { in: (60..(7 * 86_400)) }, unless: -> { ttl.blank? }
   validates :priority, numericality: { in: (0..65_535) }, unless: -> { priority.blank? }
   validates :content, presence: true
@@ -88,6 +88,9 @@ class DnsRecord < ApplicationRecord
         errors.add(:content, 'must be a fully qualified domain name')
       end
 
+    when 'DS'
+      check_ds_content
+
     when 'SRV'
       weight, port, domain = content.split(' ', 4)
 
@@ -101,6 +104,50 @@ class DnsRecord < ApplicationRecord
 
     when 'TXT'
       # pass
+    end
+  end
+
+  DS_DIGEST_TYPES = {
+    1 => { length: 40, type: 'SHA-1' },
+    2 => { length: 64, type: 'SHA-256' },
+    4 => { length: 96, type: 'SHA-384' }
+  }.freeze
+
+  def check_ds_content
+    components = content.split
+
+    if components.size != 4
+      errors.add(:content, 'must have exactly four components: key tag, algorithm, digest type, and digest')
+      return
+    end
+
+    key_tag, algorithm, digest_type_str, digest = components
+    digest_type = digest_type_str.to_i
+
+    unless key_tag =~ /\A\d+\z/
+      errors.add(:content, 'invalid key tag: must be a numeric value')
+    end
+
+    unless algorithm =~ /\A\d+\z/
+      errors.add(:content, 'invalid algorithm: must be a numeric value')
+    end
+
+    unless digest_type_str =~ /\A[124]\z/
+      errors.add(
+        :content,
+        'invalid digest type: must be one of ' \
+        "#{DS_DIGEST_TYPES.map { |k, v| "#{k} (#{v[:type]})" }.join(', ')}"
+      )
+    end
+
+    digest_opts = DS_DIGEST_TYPES[digest_type]
+
+    if digest_opts && (digest.length != digest_opts[:length] || digest !~ /\A[a-fA-F0-9]+\z/)
+      errors.add(
+        :content,
+        "invalid digest: must be a #{digest_opts[:length]}-character hexadecimal " \
+        "string for digest type #{digest_type_str} (#{digest_opts[:type]})"
+      )
     end
   end
 
