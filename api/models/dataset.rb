@@ -8,6 +8,7 @@ require_relative 'transaction_chains/dataset/destroy'
 class Dataset < ApplicationRecord
   belongs_to :user
   belongs_to :dataset_expansion
+  belongs_to :vps
   has_many :dataset_in_pools
   has_many :snapshots
   has_many :dataset_properties

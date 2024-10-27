@@ -18,6 +18,7 @@ class Vps < ApplicationRecord
   belongs_to :dns_resolver
   has_many :transactions
 
+  has_many :datasets
   has_many :network_interfaces
   has_many :ip_addresses, through: :network_interfaces
   has_many :host_ip_addresses, through: :network_interfaces

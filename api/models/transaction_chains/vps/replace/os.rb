@@ -313,6 +313,7 @@ module TransactionChains
       ds = ::Dataset.new(
         name: dst_vps.id.to_s,
         user: dst_vps.user,
+        vps: dst_vps,
         user_editable: false,
         user_create: true,
         user_destroy: false,
@@ -353,6 +354,7 @@ module TransactionChains
         parent:,
         name: dip.dataset.name,
         user: dip.dataset.user,
+        vps: parent.vps,
         user_editable: dip.dataset.user_editable,
         user_create: dip.dataset.user_create,
         user_destroy: dip.dataset.user_destroy,
@@ -386,6 +388,7 @@ module TransactionChains
             parent:,
             name: dip.dataset.name,
             user: dip.dataset.user,
+            vps: parent.vps,
             user_editable: dip.dataset.user_editable,
             user_create: dip.dataset.user_create,
             user_destroy: dip.dataset.user_destroy,

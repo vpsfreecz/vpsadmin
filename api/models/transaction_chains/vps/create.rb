@@ -30,6 +30,7 @@ module TransactionChains
       ds = ::Dataset.new(
         name: vps.id.to_s,
         user: vps.user,
+        vps:,
         user_editable: false,
         user_create: true,
         user_destroy: false,
@@ -62,6 +63,7 @@ module TransactionChains
           parent: ds,
           name: subds_opts['name'],
           user: vps.user,
+          vps:,
           user_editable: false,
           user_create: true,
           user_destroy: false,

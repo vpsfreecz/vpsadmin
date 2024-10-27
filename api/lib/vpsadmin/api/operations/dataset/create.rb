@@ -11,6 +11,7 @@ module VpsAdmin::API
     # @param opts [Hash]
     # @option opts [Boolean] :automount
     # @option opts [Hash] :properties
+    # @option opts [::Vps] :vps
     # @return [Array<TransactionChain, Dataset>]
     def run(name, parent_ds, **opts)
       opts[:properties] ||= {}
@@ -18,8 +19,12 @@ module VpsAdmin::API
 
       raise 'FIXME: invalid path' if parts.empty?
 
+      @vps = opts[:vps]
+
       # Parent dataset is specified, use it
       if parent_ds
+        @vps ||= parent_ds.vps
+
         # top_dip is not the root of the tree (though it may be), but the pool role
         # is the same anyway.
         top_dip = parent_ds.primary_dataset_in_pool!
@@ -123,6 +128,7 @@ module VpsAdmin::API
       new_ds = ::Dataset.new(
         name: part,
         user: ::User.current,
+        vps: parent.vps,
         user_editable: true,
         user_create: true,
         user_destroy: true,

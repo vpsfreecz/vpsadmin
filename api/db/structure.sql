@@ -317,10 +317,12 @@ CREATE TABLE `datasets` (
   `current_history_id` int(11) NOT NULL DEFAULT 0,
   `remind_after_date` datetime DEFAULT NULL,
   `dataset_expansion_id` int(11) DEFAULT NULL,
+  `vps_id` bigint(20) DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `index_datasets_on_dataset_expansion_id` (`dataset_expansion_id`),
   KEY `index_datasets_on_ancestry` (`ancestry`) USING BTREE,
-  KEY `index_datasets_on_user_id` (`user_id`) USING BTREE
+  KEY `index_datasets_on_user_id` (`user_id`) USING BTREE,
+  KEY `index_datasets_on_vps_id` (`vps_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `default_lifetime_values`;
@@ -2314,6 +2316,7 @@ CREATE TABLE `vpses` (
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
 INSERT INTO `schema_migrations` (version) VALUES
+('20241027151909'),
 ('20241020090006'),
 ('20241016081921'),
 ('20240831114419'),

@@ -31,6 +31,7 @@ module VpsAdmin::API::Resources
       use :id
       use :common
       use :all_properties
+      resource VPS, value_label: :hostname
       resource Export, value_label: :path
       resource DatasetExpansion, value_label: :created_at
     end
@@ -41,6 +42,7 @@ module VpsAdmin::API::Resources
       input do
         resource User, label: 'User', value_label: :login,
                        desc: 'Dataset owner'
+        resource VPS, label: 'VPS', value_label: :hostname
         resource VpsAdmin::API::Resources::Dataset, label: 'Subtree'
         string :role, label: 'Role', desc: 'Show only datasets of certain role',
                       choices: ::Pool.roles.keys
@@ -71,6 +73,7 @@ module VpsAdmin::API::Resources
             end
 
         q = q.where(user: input[:user]) if input[:user]
+        q = q.where(vps: input[:vps]) if input.has_key?(:vps)
         q = q.to_depth(input[:to_depth]) if input[:to_depth]
 
         q
