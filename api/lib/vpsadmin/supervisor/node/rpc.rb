@@ -135,6 +135,7 @@ module VpsAdmin::Supervisor
             'dataset_in_pools.id,
             dataset_in_pools.dataset_id,
             datasets.full_name,
+            datasets.vps_id,
             dataset_properties.name AS property_name,
             dataset_properties.id AS property_id'
           )
@@ -156,7 +157,8 @@ module VpsAdmin::Supervisor
               dataset_id: dip.dataset_id,
               dataset_name: dip.full_name,
               property_id: dip.property_id,
-              property_name: dip.property_name
+              property_name: dip.property_name,
+              vps_id: dip.vps_id
             }
           end
       end

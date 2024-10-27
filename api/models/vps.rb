@@ -153,11 +153,30 @@ class Vps < ApplicationRecord
   alias is_running? is_running
   alias running? is_running
 
-  def rootfs_diskspace
-    dataset_in_pool.diskspace(default: false)
+  def total_diskspace
+    if vps_current_status && vps_current_status.total_diskspace
+      return vps_current_status.total_diskspace
+    end
+
+    # TODO: remove when we no longer need backwards compatibility, i.e.
+    # when all running nodectld's are updated to send vps_id with dataset
+    # properties.
+    dataset_in_pool.dataset.subtree.inject(0) do |acc, ds|
+      acc + ds.primary_dataset_in_pool!.refquota
+    rescue ActiveRecord::RecordNotFound
+      # Dataset may exist only in backup and those are not accounted
+      acc
+    end
   end
 
   def used_diskspace
+    if vps_current_status && vps_current_status.used_diskspace
+      return vps_current_status.used_diskspace
+    end
+
+    # TODO: remove when we no longer need backwards compatibility, i.e.
+    # when all running nodectld's are updated to send vps_id with dataset
+    # properties.
     dataset_in_pool.dataset.subtree.inject(0) do |acc, ds|
       acc + ds.primary_dataset_in_pool!.referenced
     rescue ActiveRecord::RecordNotFound

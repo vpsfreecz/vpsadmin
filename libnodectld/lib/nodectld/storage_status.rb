@@ -7,11 +7,11 @@ module NodeCtld
 
     READ_PROPERTIES = %w[used referenced available refquota compressratio refcompressratio].freeze
 
-    SAVE_PROPERTIES = %w[used referenced available compressratio refcompressratio].freeze
+    SAVE_PROPERTIES = %w[used referenced available refquota compressratio refcompressratio].freeze
 
     Pool = Struct.new(:name, :fs, :role, :refquota_check, :datasets, keyword_init: true)
 
-    Dataset = Struct.new(:type, :name, :id, :dip_id, :properties, keyword_init: true)
+    Dataset = Struct.new(:type, :name, :id, :dip_id, :vps_id, :properties, keyword_init: true)
 
     Property = Struct.new(:id, :name, :value, keyword_init: true)
 
@@ -131,6 +131,7 @@ module NodeCtld
                 name:,
                 id: prop['dataset_id'],
                 dip_id: prop['dataset_in_pool_id'],
+                vps_id: prop['vps_id'],
                 properties: {
                   prop_name => Property.new(
                     id: prop['property_id'],
@@ -195,9 +196,12 @@ module NodeCtld
       now = Time.now
       max_size = $CFG.get(:storage, :batch_size)
       to_save = []
+      last_ds = nil
 
       pools.each_value do |pool|
         pool.datasets.each_value do |ds|
+          save_properties(now, to_save) if can_save_batch?(to_save, max_size, last_ds, ds)
+
           SAVE_PROPERTIES.each do |prop|
             ds_prop = ds.properties[prop]
             next if ds_prop.nil? || ds_prop.value.nil?
@@ -205,17 +209,27 @@ module NodeCtld
             to_save << {
               id: ds_prop.id,
               name: ds_prop.name,
-              value: ds_prop.value
+              value: ds_prop.value,
+              vps_id: ds.vps_id
             }
           end
 
-          save_properties(now, to_save) if to_save.length >= max_size
+          last_ds = ds
         end
       end
 
       return unless to_save.any?
 
       save_properties(now, to_save)
+    end
+
+    def can_save_batch?(to_save, max_size, last_dataset, next_dataset)
+      # Keep datasets belonging to the same VPS in the same batch, so that
+      # the supervisor can calculate sums of its properties. If the last
+      # dataset belongs to a different VPS than the next dataset, we can
+      # assume that all datasets of the last VPS already are in to_save.
+      # The next dataset is not included in the same batch.
+      to_save.length >= max_size && last_dataset&.vps_id != next_dataset.vps_id
     end
 
     def save_properties(time, to_save)

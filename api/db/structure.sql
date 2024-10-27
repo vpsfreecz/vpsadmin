@@ -2151,6 +2151,9 @@ CREATE TABLE `vps_current_statuses` (
   `loadavg15` float DEFAULT NULL,
   `sum_loadavg1` float DEFAULT NULL,
   `sum_loadavg15` float DEFAULT NULL,
+  `total_diskspace` int(11) DEFAULT NULL,
+  `used_diskspace` int(11) DEFAULT NULL,
+  `sum_used_diskspace` int(11) DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `index_vps_current_statuses_on_vps_id` (`vps_id`) USING BTREE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
@@ -2260,6 +2263,8 @@ CREATE TABLE `vps_statuses` (
   `in_rescue_mode` tinyint(1) DEFAULT 0,
   `loadavg1` float DEFAULT NULL,
   `loadavg15` float DEFAULT NULL,
+  `total_diskspace` int(11) DEFAULT NULL,
+  `used_diskspace` int(11) DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `index_vps_statuses_on_vps_id` (`vps_id`) USING BTREE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
@@ -2316,6 +2321,7 @@ CREATE TABLE `vpses` (
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
 INSERT INTO `schema_migrations` (version) VALUES
+('20241027170252'),
 ('20241027151909'),
 ('20241020090006'),
 ('20241016081921'),
