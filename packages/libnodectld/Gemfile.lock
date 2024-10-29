@@ -57,7 +57,7 @@ GEM
 GEM
   remote: https://rubygems.vpsfree.cz/
   specs:
-    libnodectld (4.0.0.build20241029121016)
+    libnodectld (4.0.0.build20241029174551)
       bunny (~> 2.22.0)
       filelock
       ipaddress (~> 0.8.3)
@@ -97,7 +97,7 @@ PLATFORMS
   x86_64-linux
 
 DEPENDENCIES
-  libnodectld (= 4.0.0.build20241029121016)!
+  libnodectld (= 4.0.0.build20241029174551)!
 
 BUNDLED WITH
    2.5.9
