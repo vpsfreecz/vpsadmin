@@ -144,7 +144,7 @@ class Vps < ApplicationRecord
 
   %i[is_running in_rescue_mode uptime process_count cpu_user cpu_nice cpu_system
      cpu_idle cpu_iowait cpu_irq cpu_softirq loadavg1 loadavg5 loadavg15
-     used_memory used_swap].each do |attr|
+     used_memory used_swap total_diskspace used_diskspace].each do |attr|
     define_method(attr) do
       vps_current_status && vps_current_status.send(attr)
     end
@@ -152,38 +152,6 @@ class Vps < ApplicationRecord
 
   alias is_running? is_running
   alias running? is_running
-
-  def total_diskspace
-    if vps_current_status && vps_current_status.total_diskspace
-      return vps_current_status.total_diskspace
-    end
-
-    # TODO: remove when we no longer need backwards compatibility, i.e.
-    # when all running nodectld's are updated to send vps_id with dataset
-    # properties.
-    dataset_in_pool.dataset.subtree.inject(0) do |acc, ds|
-      acc + ds.primary_dataset_in_pool!.refquota
-    rescue ActiveRecord::RecordNotFound
-      # Dataset may exist only in backup and those are not accounted
-      acc
-    end
-  end
-
-  def used_diskspace
-    if vps_current_status && vps_current_status.used_diskspace
-      return vps_current_status.used_diskspace
-    end
-
-    # TODO: remove when we no longer need backwards compatibility, i.e.
-    # when all running nodectld's are updated to send vps_id with dataset
-    # properties.
-    dataset_in_pool.dataset.subtree.inject(0) do |acc, ds|
-      acc + ds.primary_dataset_in_pool!.referenced
-    rescue ActiveRecord::RecordNotFound
-      # Dataset may exist only in backup and those are not accounted
-      acc
-    end
-  end
 
   private
 
