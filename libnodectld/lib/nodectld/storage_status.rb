@@ -112,7 +112,11 @@ module NodeCtld
         select_properties = READ_PROPERTIES.map { |v| property_to_db(v) }
 
         pools.each do |pool_id, pool|
-          rpc.list_pool_dataset_properties(pool_id, select_properties).each do |prop|
+          rpc.list_pool_dataset_properties(pool_id, select_properties).sort do |a, b|
+            # Sort datasets so that batches sent to the supervisor can ensure that
+            # all datasets of the same VPS are in one batch
+            a['dataset_name'] <=> b['dataset_name']
+          end.each do |prop|
             prop_name = property_from_db(prop['property_name'])
             next unless READ_PROPERTIES.include?(prop_name)
 
