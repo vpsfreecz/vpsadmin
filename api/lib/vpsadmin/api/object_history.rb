@@ -13,7 +13,7 @@ module VpsAdmin::API
         # @param type [Symbol] event type
         # @param data data specific to event type
         # @return [::ObjectHistory]
-        def log_change(type, data = nil)
+        def log_change(type, data = nil, time: nil)
           events = self.class.instance_variable_get('@log_events')
           raise "no event types configured for #{self.class}" unless events
           raise "'#{type}' is not a valid event type" unless events.include?(type)
@@ -25,7 +25,8 @@ module VpsAdmin::API
             user_session: session,
             tracked_object: self,
             event_type: type,
-            event_data: data
+            event_data: data,
+            created_at: time
           )
         end
 

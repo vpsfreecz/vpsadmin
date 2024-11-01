@@ -118,9 +118,17 @@ module TransactionChains
 
         when 'autostart_priority'
           if vps.autostart_enable
-            append_t(Transactions::Vps::Autostart, args: [orig_vps], kwargs: {
-                       priority: vps.autostart_priority
-                     }) { |t| t.edit(vps, autostart_priority: vps.autostart_priority) }
+            append_t(
+              Transactions::Vps::Autostart,
+              args: [orig_vps],
+              kwargs: { priority: vps.autostart_priority }
+            ) do |t|
+              t.edit(vps, autostart_priority: vps.autostart_priority)
+              t.just_create(vps.log(:autostart, {
+                                      enable: vps.autostart_enable,
+                                      priority: vps.autostart_priority
+                                   }))
+            end
           else
             db_changes[vps][attr] = vps.send(attr)
           end

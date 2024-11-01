@@ -72,6 +72,21 @@ module VpsAdmin::Supervisor
         )
       end
 
+      if current_status.status && !current_status.is_running && current_status.halted
+        current_status.halted = false
+
+        if current_status.vps.autostart_enable
+          begin
+            TransactionChains::Vps::Autostart.fire2(
+              args: [current_status.vps],
+              kwargs: { enable: false }
+            )
+          rescue ResourceLocked
+            # ignore
+          end
+        end
+      end
+
       if current_status.last_log_at.nil? \
          || current_status.status_changed? \
          || current_status.is_running_changed? \

@@ -21,6 +21,7 @@ module VpsAdmin::Supervisor
         Node::Rpc,
         Node::Status,
         Node::StorageStatus,
+        Node::VpsEvents,
         Node::VpsMounts,
         Node::VpsOsProcesses,
         Node::VpsSshHostKeys,

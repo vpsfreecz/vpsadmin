@@ -6,6 +6,11 @@ module NodeCtld
   class CtMonitor
     include OsCtl::Lib::Utils::Log
 
+    def initialize
+      @channel = NodeBunny.create_channel
+      @exchange = @channel.direct(NodeBunny.exchange_name)
+    end
+
     def start
       loop do
         run
@@ -55,6 +60,10 @@ module NodeCtld
       when 'state'
         vps_id = event[:opts][:id].to_i
 
+        if vps_id > 0
+          send_event(vps_id, 'state', { 'state' => event[:opts][:state] })
+        end
+
         VpsSshHostKeys.schedule_update_vps(vps_id) if vps_id > 0 && event[:opts][:state] == 'running'
 
         if vps_id > 0 && event[:opts][:state] == 'stopped'
@@ -64,6 +73,13 @@ module NodeCtld
 
         Daemon.instance.ct_top.refresh if %w[running stopped].include?(event[:opts][:state])
 
+      when 'ct_exit'
+        vps_id = event[:opts][:id].to_i
+
+        if vps_id > 0
+          send_event(vps_id, 'exit', { 'exit_type' => event[:opts][:exit_type] })
+        end
+
       when 'osctld_shutdown'
         if Daemon.instance.node.any_osctl_pools?
           log(:info, 'osctld is shutting down, pausing')
@@ -71,6 +87,20 @@ module NodeCtld
           Daemon.instance.node.set_all_pools_down
         end
       end
+    end
+
+    def send_event(vps_id, type, opts)
+      NodeBunny.publish_wait(
+        @exchange,
+        {
+          id: vps_id,
+          time: Time.now.to_i,
+          type:,
+          opts:
+        }.to_json,
+        content_type: 'application/json',
+        routing_key: 'vps_events'
+      )
     end
   end
 end

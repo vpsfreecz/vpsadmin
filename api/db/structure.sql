@@ -2154,6 +2154,7 @@ CREATE TABLE `vps_current_statuses` (
   `total_diskspace` int(11) DEFAULT NULL,
   `used_diskspace` int(11) DEFAULT NULL,
   `sum_used_diskspace` int(11) DEFAULT NULL,
+  `halted` tinyint(1) NOT NULL DEFAULT 0,
   PRIMARY KEY (`id`),
   UNIQUE KEY `index_vps_current_statuses_on_vps_id` (`vps_id`) USING BTREE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
@@ -2321,6 +2322,7 @@ CREATE TABLE `vpses` (
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
 INSERT INTO `schema_migrations` (version) VALUES
+('20241101160100'),
 ('20241027170252'),
 ('20241027151909'),
 ('20241020090006'),

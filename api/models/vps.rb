@@ -89,7 +89,8 @@ class Vps < ApplicationRecord
     route_add route_del host_addr_add host_addr_del
     start stop restart passwd clone swap configs features mount umount
     maintenance_windows maintenance_window restore deploy_public_key
-    netif_rename start_menu user
+    netif_rename start_menu autostart user
+    halt reboot
   ]
 
   validates :user_id, :node_id, :os_template_id, presence: true, numericality: { only_integer: true }
