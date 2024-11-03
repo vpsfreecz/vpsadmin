@@ -11,23 +11,14 @@ let
     databaseConfig = cfg.database;
   };
 
-  serverWait = 90;
-
-  thinYml = pkgs.writeText "thin.yml" ''
-    address: ${cfg.address}
-    port: ${toString cfg.port}
-    servers: ${toString cfg.servers}
-    rackup: ${cfg.package}/api/config.ru
-    pid: ${cfg.stateDirectory}/pids/thin.pid
-    log: ${cfg.stateDirectory}/log/thin.log
-    daemonize: true
-    onebyone: true
-    environment: production
-    wait: ${toString serverWait}
-    tag: api
+  pumaConfig = pkgs.writeText "puma.rb" ''
+    bind 'tcp://${cfg.address}:${toString cfg.port}'
+    rackup '${cfg.package}/api/config.ru'
+    threads ${toString cfg.threads.min}, ${toString cfg.threads.max}
+    workers ${toString cfg.workers}
+    environment 'production'
+    tag 'api'
   '';
-
-  forAllPorts = fn: genList (i: fn (cfg.port + i)) cfg.servers;
 in {
   imports = apiApp.imports;
 
@@ -66,12 +57,27 @@ in {
         description = "Port on which the API is run";
       };
 
-      servers = mkOption {
+      threads.min = mkOption {
         type = types.int;
-        default = 1;
+        default = 0;
         description = ''
-          Number of servers to run. Subsequent servers use incremented port
-          number.
+          Minimum number of threads per worker
+        '';
+      };
+
+      threads.max = mkOption {
+        type = types.int;
+        default = 5;
+        description = ''
+          Maximum number of threads per worker
+        '';
+      };
+
+      workers = mkOption {
+        type = types.int;
+        default = 2;
+        description = ''
+          Number of worker processes to run
         '';
       };
 
@@ -91,7 +97,7 @@ in {
         type = types.listOf types.str;
         default = [];
         description = ''
-          List of IPv4 ranges to be allowed access to the servers within the firewall
+          List of IPv4 ranges to be allowed access to the server within the firewall
         '';
       };
 
@@ -99,7 +105,7 @@ in {
         type = types.listOf types.str;
         default = [];
         description = ''
-          List of IPv6 ranges to be allowed access to the servers within the firewall
+          List of IPv6 ranges to be allowed access to the server within the firewall
         '';
       };
 
@@ -146,13 +152,13 @@ in {
     };
 
     networking.firewall.extraCommands = concatStringsSep "\n" (flatten (
-      (map (ip: forAllPorts (port: ''
-        iptables -A nixos-fw -p tcp -m tcp -s ${ip} --dport ${toString port} -j nixos-fw-accept
-      '')) cfg.allowedIPv4Ranges)
+      (map (ip: ''
+        iptables -A nixos-fw -p tcp -m tcp -s ${ip} --dport ${toString cfg.port} -j nixos-fw-accept
+      '') cfg.allowedIPv4Ranges)
       ++
-      (map (ip: forAllPorts (port: ''
-        ip6tables -A nixos-fw -p tcp -m tcp -s ${ip} --dport ${toString port} -j nixos-fw-accept
-      '')) cfg.allowedIPv6Ranges)
+      (map (ip: ''
+        ip6tables -A nixos-fw -p tcp -m tcp -s ${ip} --dport ${toString cfg.port} -j nixos-fw-accept
+      '') cfg.allowedIPv6Ranges)
     ));
 
     systemd.tmpfiles.rules = apiApp.tmpfilesRules ++ [
@@ -179,22 +185,18 @@ in {
       startLimitBurst = 5;
       preStart = apiApp.setup;
 
-      serviceConfig =
-        let
-          thin = "${apiApp.bundle} exec thin --config ${thinYml}";
-        in {
-          Type = "forking";
-          User = cfg.user;
-          Group = cfg.group;
-          TimeoutStartSec = "infinity";
-          TimeoutStopSec = (cfg.servers * serverWait) + 5;
-          WorkingDirectory = "${cfg.package}/api";
-          ExecStart="${thin} start";
-          ExecStop = "${thin} stop";
-          ExecReload = "${thin} restart";
-          Restart = "on-failure";
-          RestartSec = 30;
-        };
+      serviceConfig ={
+        Type = "notify";
+        User = cfg.user;
+        Group = cfg.group;
+        TimeoutStartSec = "infinity";
+        TimeoutStopSec = 90;
+        WorkingDirectory = "${cfg.package}/api";
+        ExecStart="${apiApp.bundle} exec puma -C ${pumaConfig}";
+        Restart = "on-failure";
+        RestartSec = 30;
+        WatchdogSec = 10;
+      };
     };
 
     users.users = optionalAttrs (cfg.user == "vpsadmin-api") {

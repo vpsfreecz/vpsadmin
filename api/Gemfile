@@ -15,12 +15,12 @@ gem 'ipaddress', '~> 0.8.0'
 gem 'mysql2', '~> 0.5.3'
 gem 'paper_trail', '~> 15.1.0'
 gem 'prometheus-client', '~> 4.1.0'
+gem 'puma'
 gem 'rake'
 gem 'require_all', '~> 2.0.0'
 gem 'rotp', '~> 6.3.0'
 gem 'rubyzip', '~> 2.3.2' # needed by vpsFree.cz's incident reports
 gem 'sinatra-activerecord', '~> 2.0.23'
-gem 'thin'
 gem 'user_agent_parser', '~> 2.18'
 
 group :test do

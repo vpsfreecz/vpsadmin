@@ -13,17 +13,12 @@ let
     password = "#rabbitmq_pass#";
   });
 
-  serverWait = 15;
-
-  thinYml = pkgs.writeText "thin.yml" ''
-    address: ${cfg.address}
-    port: ${toString cfg.port}
-    rackup: ${cfg.package}/console_router/config.ru
-    pid: ${cfg.stateDirectory}/pids/thin.pid
-    log: ${cfg.stateDirectory}/log/thin.log
-    environment: production
-    wait: ${toString serverWait}
-    tag: console-router
+  pumaConfig = pkgs.writeText "puma.rb" ''
+    bind 'tcp://${cfg.address}:${toString cfg.port}'
+    rackup '${cfg.package}/console_router/config.ru'
+    threads ${toString cfg.threads.min}, ${toString cfg.threads.max}
+    environment 'production'
+    tag 'console-router'
   '';
 in {
   options = {
@@ -59,6 +54,22 @@ in {
         type = types.int;
         default = 8000;
         description = "Port on which the console router is run";
+      };
+
+      threads.min = mkOption {
+        type = types.int;
+        default = 0;
+        description = ''
+          Minimum number of threads per worker
+        '';
+      };
+
+      threads.max = mkOption {
+        type = types.int;
+        default = 5;
+        description = ''
+          Maximum number of threads per worker
+        '';
       };
 
       stateDirectory = mkOption {
@@ -140,19 +151,17 @@ in {
         chmod 440 "${cfg.stateDirectory}/config/rabbitmq.yml"
       '';
 
-      serviceConfig =
-        let
-          thin = "${bundle} exec thin --config ${thinYml}";
-        in {
-          Type = "simple";
-          User = cfg.user;
-          Group = cfg.group;
-          TimeoutSec = "300";
-          WorkingDirectory = "${cfg.package}/console_router";
-          ExecStart="${thin} start";
-          Restart = "on-failure";
-          RestartSec = 30;
-        };
+      serviceConfig = {
+        Type = "notify";
+        User = cfg.user;
+        Group = cfg.group;
+        TimeoutSec = "300";
+        WorkingDirectory = "${cfg.package}/console_router";
+        ExecStart="${bundle} exec puma -C ${pumaConfig}";
+        Restart = "on-failure";
+        RestartSec = 30;
+        WatchdogSec = 10;
+      };
     };
 
     users.users = optionalAttrs (cfg.user == "vpsadmin-console") {
