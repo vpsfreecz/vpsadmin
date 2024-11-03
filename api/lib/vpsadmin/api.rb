@@ -45,7 +45,7 @@ module VpsAdmin
           next [403, 'Access denied'] unless m.authenticate(params['access_token'])
 
           m.compute
-          [200, { 'Content-Type' => 'text/plain' }, m.render]
+          [200, { 'content-type' => 'text/plain' }, m.render]
         end
 
         ret
