@@ -48,7 +48,7 @@ class VpsAdmin::API::Resources::UserNamespace < HaveAPI::Resource
     end
 
     def exec
-      query.limit(input[:limit]).offset(input[:offset])
+      with_pagination(query)
     end
   end
 

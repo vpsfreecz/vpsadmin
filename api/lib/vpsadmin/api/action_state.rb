@@ -1,6 +1,6 @@
 module VpsAdmin::API
   class ActionState < HaveAPI::ActionState
-    def self.list_pending(user, offset, limit, order)
+    def self.list_pending(user, from_id, limit, order)
       ret = []
       return ret if user.nil?
 
@@ -12,7 +12,11 @@ module VpsAdmin::API
         ]
       ).order(
         "id #{order == :newest ? 'DESC' : 'ASC'}"
-      ).offset(offset).limit(limit).each do |chain|
+      ).limit(limit)
+
+      q = q.where('id > ?', from_id) if from_id
+
+      q.each do |chain|
         ret << new(user, state: chain)
       end
 

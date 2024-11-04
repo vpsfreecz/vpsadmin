@@ -86,10 +86,7 @@ class VpsAdmin::API::Resources::OsTemplate < HaveAPI::Resource
     end
 
     def exec
-      query
-        .order(:order, :label)
-        .limit(input[:limit])
-        .offset(input[:offset])
+      with_pagination(query).order(:order, :label)
     end
   end
 

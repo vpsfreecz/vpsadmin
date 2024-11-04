@@ -57,7 +57,7 @@ module VpsAdmin::API::Resources
         allow if u.role == :admin
         input whitelist: %i[location network version role purpose addr prefix vps
                             network_interface ip_address assigned routed order
-                            limit offset]
+                            limit from_id]
         allow
       end
 
@@ -158,10 +158,7 @@ module VpsAdmin::API::Resources
       end
 
       def exec
-        with_includes(query)
-          .order(Arel.sql(order_col))
-          .limit(input[:limit])
-          .offset(input[:offset])
+        with_pagination(with_includes(query).order(Arel.sql(order_col)))
       end
 
       protected

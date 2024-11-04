@@ -47,10 +47,7 @@ module VpsAdmin::API::Resources
       end
 
       def exec
-        with_includes(query)
-          .limit(input[:limit])
-          .offset(input[:offset])
-          .order('outage_vpses.id')
+        with_pagination(with_includes(query)).order('outage_vpses.id')
       end
     end
 

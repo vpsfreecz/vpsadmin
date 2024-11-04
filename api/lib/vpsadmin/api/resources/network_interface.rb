@@ -35,7 +35,7 @@ module VpsAdmin::API::Resources
       authorize do |u|
         allow if u.role == :admin
         restrict vpses: { user_id: u.id }
-        input whitelist: %i[vps location limit offset]
+        input whitelist: %i[vps location limit from_id]
         allow
       end
 
@@ -54,7 +54,7 @@ module VpsAdmin::API::Resources
       end
 
       def exec
-        with_includes(query).offset(input[:offset]).limit(input[:limit])
+        with_pagination(with_includes(query))
       end
     end
 

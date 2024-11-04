@@ -55,10 +55,7 @@ module VpsAdmin::API::Plugins::Requests
         end
 
         def exec
-          with_includes(query)
-            .limit(input[:limit])
-            .offset(input[:offset])
-            .order("#{::UserRequest.table_name}.id DESC")
+          with_desc_pagination(with_includes(query)).order("#{::UserRequest.table_name}.id DESC")
         end
       end
 

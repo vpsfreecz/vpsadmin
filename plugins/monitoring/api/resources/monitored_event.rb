@@ -14,6 +14,7 @@ module VpsAdmin::API::Resources
       resource VpsAdmin::API::Resources::User, value_label: :login
       datetime :created_at
       datetime :updated_at
+      float :duration
       datetime :saved_until
     end
 
@@ -24,6 +25,7 @@ module VpsAdmin::API::Resources
                        fill: true
 
         patch :limit, default: 25, fill: true
+        float :from_duration, desc: 'Paginate by duration'
       end
 
       output(:object_list) do
@@ -59,24 +61,26 @@ module VpsAdmin::API::Resources
       end
 
       def exec
-        q = with_includes(query).limit(input[:limit]).offset(input[:offset])
+        q = with_includes(query)
         t = ::MonitoredEvent.table_name
 
         case input[:order]
         when 'oldest'
-          q = q.order("#{t}.created_at")
+          with_asc_pagination(q).order("#{t}.created_at")
 
         when 'latest'
-          q = q.order("#{t}.created_at DESC")
+          with_desc_pagination(q).order("#{t}.created_at DESC")
 
         when 'longest'
-          q = q.order(Arel.sql("TIMESTAMPDIFF(SECOND, #{t}.created_at, #{t}.updated_at) DESC"))
+          ar_with_pagination(q, parameter: :from_duration) do |q2, from_duration|
+            q2.where("TIMESTAMPDIFF(SECOND, #{t}.created_at, #{t}.updated_at) < ?", from_duration)
+          end.order(Arel.sql("TIMESTAMPDIFF(SECOND, #{t}.created_at, #{t}.updated_at) DESC"))
 
         when 'shortest'
-          q = q.order(Arel.sql("TIMESTAMPDIFF(SECOND, #{t}.created_at, #{t}.updated_at)"))
+          ar_with_pagination(q, parameter: :from_duration) do |q2, from_duration|
+            q2.where("TIMESTAMPDIFF(SECOND, #{t}.created_at, #{t}.updated_at) > ?", from_duration)
+          end.order(Arel.sql("TIMESTAMPDIFF(SECOND, #{t}.created_at, #{t}.updated_at)"))
         end
-
-        q
       end
     end
 
@@ -227,14 +231,12 @@ module VpsAdmin::API::Resources
         end
 
         def exec
-          q = query.limit(input[:limit]).offset(input[:offset])
-
           case input[:order]
           when 'oldest'
-            q = q.order('created_at')
+            q = with_asc_pagination(query).order('created_at')
 
           when 'latest'
-            q = q.order('created_at DESC')
+            q = with_desc_pagination(query).order('created_at DESC')
           end
 
           q

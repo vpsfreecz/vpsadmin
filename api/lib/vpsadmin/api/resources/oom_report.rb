@@ -78,10 +78,7 @@ module VpsAdmin::API::Resources
       end
 
       def exec
-        query
-          .order('oom_reports.created_at DESC')
-          .offset(input[:offset])
-          .limit(input[:limit])
+        with_desc_pagination(query).order('oom_reports.created_at DESC')
       end
     end
 
@@ -144,7 +141,7 @@ module VpsAdmin::API::Resources
         end
 
         def exec
-          query.offset(input[:offset]).limit(input[:limit])
+          with_pagination(query)
         end
       end
 
@@ -209,7 +206,7 @@ module VpsAdmin::API::Resources
         end
 
         def exec
-          query.offset(input[:offset]).limit(input[:limit])
+          with_pagination(query)
         end
       end
 
@@ -285,7 +282,7 @@ module VpsAdmin::API::Resources
         end
 
         def exec
-          query.offset(input[:offset]).limit(input[:limit])
+          with_pagination(query)
         end
       end
 

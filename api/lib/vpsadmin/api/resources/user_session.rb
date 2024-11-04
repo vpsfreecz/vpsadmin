@@ -85,11 +85,9 @@ module VpsAdmin::API::Resources
       end
 
       def exec
-        with_includes(query)
+        with_desc_pagination(with_includes(query))
           .includes(:user_agent)
           .order('created_at DESC')
-          .limit(input[:limit])
-          .offset(input[:offset])
       end
     end
 

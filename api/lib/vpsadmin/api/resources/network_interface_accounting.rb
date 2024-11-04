@@ -5,8 +5,10 @@ module VpsAdmin::API::Resources
 
     params(:all) do
       resource VpsAdmin::API::Resources::NetworkInterface, value_label: :name
+      integer :bytes
       integer :bytes_in
       integer :bytes_out
+      integer :packets
       integer :packets_in
       integer :packets_out
       integer :year
@@ -32,6 +34,9 @@ module VpsAdmin::API::Resources
                        default: 'created_at'
 
         patch :limit, default: 25, fill: true
+        remove :from_id # default pagination by from_id is not used
+        integer :from_bytes, desc: 'Paginate by in/out bytes'
+        datetime :from_date, desc: 'Paginate by create/update date'
       end
 
       output(:object_list) do
@@ -95,26 +100,33 @@ module VpsAdmin::API::Resources
       end
 
       def exec
-        q = with_includes(query).offset(input[:offset]).limit(input[:limit])
+        q = with_includes(query)
+        table = self.class.model.table_name
 
         case input[:order]
         when nil, 'created_at'
-          q = q.order('created_at DESC')
+          ar_with_pagination(q, parameter: :from_date) do |q2, from_date|
+            q2.where("`#{table}`.`created_at` < ?", from_date)
+          end.order('created_at DESC')
 
         when 'updated_at'
-          q = q.order('updated_at DESC')
+          ar_with_pagination(q, parameter: :from_date) do |q2, from_date|
+            q2.where("`#{table}`.`updated_at` < ?", from_date)
+          end.order('updated_at DESC')
 
         when 'descending'
-          q = q.order(Arel.sql('(bytes_in + bytes_out) DESC'))
+          ar_with_pagination(q, parameter: :from_bytes) do |q2, from_bytes|
+            q2.where("`#{table}`.`bytes_in` + `#{table}`.`bytes_out` < ?", from_bytes)
+          end.order(Arel.sql('(bytes_in + bytes_out) DESC'))
 
         when 'ascending'
-          q = q.order(Arel.sql('(bytes_in + bytes_out) ASC'))
+          ar_with_pagination(q, parameter: :from_bytes) do |q2, from_bytes|
+            q2.where("`#{table}`.`bytes_in` + `#{table}`.`bytes_out` > ?", from_bytes)
+          end.order(Arel.sql('(bytes_in + bytes_out) ASC'))
 
         else
           error!('invalid order')
         end
-
-        q
       end
     end
 
@@ -134,12 +146,16 @@ module VpsAdmin::API::Resources
         datetime :to
 
         patch :limit, default: 25, fill: true
+        remove :from_id # default pagination by from_id is not used
+        integer :from_bytes, desc: 'Paginate by in/out bytes'
       end
 
       output(:object_list) do
         resource VpsAdmin::API::Resources::User, value_label: :login
+        integer :bytes, db_name: :sum_bytes
         integer :bytes_in, db_name: :sum_bytes_in
         integer :bytes_out, db_name: :sum_bytes_out
+        integer :packets, db_name: :sum_packets
         integer :packets_in, db_name: :sum_packets_in
         integer :packets_out, db_name: :sum_packets_out
         integer :year
@@ -200,8 +216,9 @@ module VpsAdmin::API::Resources
       end
 
       def exec
-        q = query.offset(input[:offset]).limit(input[:limit])
-        q.order(Arel.sql('(SUM(bytes_in) + SUM(bytes_out)) DESC'))
+        ar_with_pagination(query, parameter: :from_bytes) do |q, from_bytes|
+          q.where('(SUM(bytes_in) + SUM(bytes_out)) < ?', from_bytes)
+        end.order(Arel.sql('(SUM(bytes_in) + SUM(bytes_out)) DESC'))
       end
     end
   end

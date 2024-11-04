@@ -64,10 +64,7 @@ module VpsAdmin::API::Resources
       end
 
       def exec
-        with_includes(query)
-          .limit(input[:limit])
-          .offset(input[:offset])
-          .order('transactions.id DESC')
+        with_desc_pagination(with_includes(query)).order('transactions.id DESC')
       end
     end
 

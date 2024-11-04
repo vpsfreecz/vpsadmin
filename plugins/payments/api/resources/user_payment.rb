@@ -52,7 +52,7 @@ module VpsAdmin::API::Resources
       end
 
       def exec
-        with_includes(query).limit(input[:limit]).offset(input[:offset]).order(
+        with_desc_pagination(with_includes(query)).order(
           'user_payments.created_at DESC, user_payments.id DESC'
         )
       end

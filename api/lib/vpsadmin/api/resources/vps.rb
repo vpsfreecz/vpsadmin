@@ -183,10 +183,10 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
     end
 
     def exec
-      with_includes(query).includes(
+      with_pagination(with_includes(query)).includes(
         :vps_current_status,
         dataset_in_pool: [:dataset]
-      ).limit(params[:vps][:limit]).offset(params[:vps][:offset])
+      )
     end
   end
 
@@ -1232,7 +1232,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
       end
 
       def exec
-        query.limit(input[:limit]).offset(input[:offset])
+        with_pagination(query)
       end
     end
 
@@ -1411,7 +1411,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
       end
 
       def exec
-        query.order('weekday').offset(input[:offset]).limit(input[:limit])
+        with_pagination(query).order('weekday')
       end
     end
 
@@ -1646,7 +1646,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
       end
 
       def exec
-        query.order('created_at DESC').offset(input[:offset]).limit(input[:limit])
+        with_pagination(query).order('created_at DESC')
       end
     end
 
@@ -1733,7 +1733,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
       end
 
       def exec
-        query.order('created_at DESC').offset(input[:offset]).limit(input[:limit])
+        with_pagination(query).order('created_at DESC')
       end
     end
 

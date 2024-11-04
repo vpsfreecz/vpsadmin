@@ -117,7 +117,7 @@ module VpsAdmin::API::Resources
           q = q.order('ip_address_assignments.from_date ASC')
         end
 
-        q.limit(input[:limit]).offset(input[:offset])
+        with_pagination(q)
       end
     end
 

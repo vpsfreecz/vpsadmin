@@ -190,15 +190,13 @@ module VpsAdmin::API::Resources
 
       def exec
         q = with_includes(query)
-            .limit(input[:limit])
-            .offset(input[:offset])
 
         case input[:order]
         when 'oldest'
-          q.order('begins_at, created_at')
+          with_asc_pagination(q).order('begins_at, created_at')
 
         when 'newest'
-          q.order('begins_at DESC, created_at DESC')
+          with_desc_pagination(q).order('begins_at DESC, created_at DESC')
         end
       end
     end
@@ -345,7 +343,7 @@ module VpsAdmin::API::Resources
         end
 
         def exec
-          query.limit(input[:limit]).offset(input[:limit])
+          with_pagination(query)
         end
       end
 
@@ -457,7 +455,7 @@ module VpsAdmin::API::Resources
         end
 
         def exec
-          query.limit(input[:limit]).offset(input[:limit])
+          with_pagination(query)
         end
       end
 

@@ -93,7 +93,7 @@ module VpsAdmin::API::Resources
       end
 
       def exec
-        q = with_includes(query).offset(input[:offset]).limit(input[:limit])
+        q = with_pagination(with_includes(query))
         apply_order(q, input[:order])
       end
 

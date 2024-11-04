@@ -109,7 +109,7 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
     end
 
     def exec
-      query.limit(params[:user][:limit]).offset(params[:user][:offset])
+      with_pagination(query)
     end
   end
 
@@ -398,7 +398,7 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
       end
 
       def exec
-        with_includes(query).limit(input[:limit]).offset(input[:offset])
+        with_pagination(with_includes(query))
       end
     end
 
@@ -511,7 +511,7 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
       end
 
       def exec
-        with_includes(query).offset(input[:offset]).limit(input[:limit])
+        with_pagination(with_includes(query))
       end
     end
 
@@ -608,7 +608,7 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
       end
 
       def exec
-        query.limit(input[:limit]).offset(input[:offset])
+        with_pagination(query)
       end
     end
 
@@ -707,7 +707,7 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
       end
 
       def exec
-        query.limit(input[:limit]).offset(input[:offset])
+        with_pagination(query)
       end
     end
 
@@ -922,7 +922,7 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
       end
 
       def exec
-        query.limit(input[:limit]).offset(input[:offset])
+        with_pagination(query)
       end
     end
 

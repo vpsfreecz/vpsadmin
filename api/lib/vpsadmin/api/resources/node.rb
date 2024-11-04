@@ -146,9 +146,7 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
     end
 
     def exec
-      with_includes(query.includes(location: :environment))
-        .limit(input[:limit])
-        .offset(input[:offset])
+      with_pagination(with_includes(query.includes(location: :environment)))
     end
   end
 
@@ -500,7 +498,7 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
       end
 
       def exec
-        query.order('created_at DESC').offset(input[:offset]).limit(input[:limit])
+        with_pagination(query).order('created_at DESC')
       end
     end
 

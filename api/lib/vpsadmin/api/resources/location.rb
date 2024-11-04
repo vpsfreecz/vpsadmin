@@ -71,7 +71,7 @@ class VpsAdmin::API::Resources::Location < HaveAPI::Resource
     end
 
     def query
-      q = ::Location
+      q = ::Location.all
 
       if input[:environment]
         q = q.where(
@@ -180,7 +180,7 @@ class VpsAdmin::API::Resources::Location < HaveAPI::Resource
     end
 
     def exec
-      with_includes(query).limit(input[:limit]).offset(input[:offset])
+      with_pagination(with_includes(query))
     end
   end
 

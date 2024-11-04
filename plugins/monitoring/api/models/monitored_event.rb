@@ -161,6 +161,10 @@ class MonitoredEvent < ApplicationRecord
     monitor.desc
   end
 
+  def duration
+    updated_at - created_at
+  end
+
   def skip_acknowledged
     unless monitor
       self.monitor = VpsAdmin::API::Plugins::Monitoring.monitors.detect do |v|

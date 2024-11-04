@@ -33,7 +33,7 @@ module VpsAdmin::API::Resources
       end
 
       def exec
-        query.order(:label).limit(input[:limit]).offset(input[:offset])
+        with_pagination(query).order(:label)
       end
     end
 

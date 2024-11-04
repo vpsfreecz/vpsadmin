@@ -66,10 +66,8 @@ class VpsAdmin::API::Resources::TransactionChain < HaveAPI::Resource
     end
 
     def exec
-      with_includes(query)
+      with_desc_pagination(with_includes(query))
         .includes(:transaction_chain_concerns)
-        .limit(input[:limit])
-        .offset(input[:offset])
         .order('transaction_chains.created_at DESC, transaction_chains.id DESC')
     end
   end

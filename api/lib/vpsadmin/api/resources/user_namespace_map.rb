@@ -31,7 +31,7 @@ class VpsAdmin::API::Resources::UserNamespaceMap < HaveAPI::Resource
     authorize do |u|
       allow if u.role == :admin
       restrict user_namespaces: { user_id: u.id }
-      input whitelist: %i[limit offset user_namespace]
+      input whitelist: %i[limit from_id user_namespace]
       allow
     end
 
@@ -52,7 +52,7 @@ class VpsAdmin::API::Resources::UserNamespaceMap < HaveAPI::Resource
     end
 
     def exec
-      query.limit(input[:limit]).offset(input[:offset])
+      with_pagination(query)
     end
   end
 
@@ -198,10 +198,7 @@ class VpsAdmin::API::Resources::UserNamespaceMap < HaveAPI::Resource
       end
 
       def exec
-        query
-          .order('user_namespace_map_entries.kind,user_namespace_map_entries.id')
-          .limit(input[:limit])
-          .offset(input[:offset])
+        with_pagination(query).order('user_namespace_map_entries.kind,user_namespace_map_entries.id')
       end
     end
 

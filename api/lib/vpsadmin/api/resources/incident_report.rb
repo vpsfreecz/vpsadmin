@@ -75,10 +75,7 @@ module VpsAdmin::API::Resources
       end
 
       def exec
-        with_includes(query)
-          .order('detected_at DESC')
-          .limit(input[:limit])
-          .offset(input[:offset])
+        with_desc_pagination(with_includes(query).order('detected_at DESC'))
       end
     end
 

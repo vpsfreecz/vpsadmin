@@ -28,7 +28,7 @@ class VpsAdmin::API::Resources::DatasetPlan < HaveAPI::Resource
     end
 
     def exec
-      ::DatasetPlan.all.limit(input[:limit]).offset(input[:offset])
+      with_pagination(::DatasetPlan.all)
     end
   end
 

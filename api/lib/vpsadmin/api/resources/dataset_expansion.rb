@@ -51,7 +51,7 @@ module VpsAdmin::API::Resources
       end
 
       def exec
-        query.limit(input[:limit]).offset(input[:offset])
+        with_pagination(query)
       end
     end
 
@@ -238,7 +238,7 @@ module VpsAdmin::API::Resources
         end
 
         def exec
-          query.order('created_at').limit(input[:limit]).offset(input[:offset])
+          with_pagination(query.order('created_at'))
         end
       end
 

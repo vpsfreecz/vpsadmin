@@ -53,7 +53,7 @@ class VpsAdmin::API::Resources::Export < HaveAPI::Resource
     authorize do |u|
       allow if u.role == :admin
       restrict user_id: u.id
-      input whitelist: %i[limit offset]
+      input whitelist: %i[limit from_id]
       output blacklist: %i[user threads]
       allow
     end
@@ -69,7 +69,7 @@ class VpsAdmin::API::Resources::Export < HaveAPI::Resource
     end
 
     def exec
-      query.limit(input[:limit]).offset(input[:offset])
+      with_pagination(query)
     end
   end
 
@@ -268,7 +268,7 @@ class VpsAdmin::API::Resources::Export < HaveAPI::Resource
       end
 
       def exec
-        query.limit(input[:limit]).offset(input[:offset])
+        with_pagination(query)
       end
     end
 

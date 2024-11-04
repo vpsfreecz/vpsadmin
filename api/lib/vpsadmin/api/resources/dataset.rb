@@ -86,10 +86,10 @@ module VpsAdmin::API::Resources
       def exec
         ret = []
 
-        query.includes(
+        with_pagination(query.includes(
           :dataset_properties,
           dataset_in_pools: [pool: [node: [location: [:environment]]]]
-        ).order('full_name').limit(input[:limit]).offset(input[:offset]).each do |ds|
+        ).order('full_name')).each do |ds|
           ret << ds
         end
 
@@ -400,7 +400,7 @@ module VpsAdmin::API::Resources
         end
 
         def exec
-          query.order('created_at').limit(input[:limit]).offset(input[:offset])
+          with_pagination(query.order('created_at'))
         end
       end
 
@@ -614,9 +614,9 @@ module VpsAdmin::API::Resources
         end
 
         def exec
-          with_includes(query).includes(
-            environment_dataset_plan: [:dataset_plan]
-          ).offset(input[:offset]).limit(input[:limit])
+          with_pagination(with_includes(query).includes(
+                            environment_dataset_plan: [:dataset_plan]
+                          ))
         end
       end
 
@@ -744,7 +744,7 @@ module VpsAdmin::API::Resources
         end
 
         def exec
-          query.order('created_at DESC').offset(input[:offset]).limit(input[:limit])
+          with_pagination(query.order('created_at DESC'))
         end
       end
 

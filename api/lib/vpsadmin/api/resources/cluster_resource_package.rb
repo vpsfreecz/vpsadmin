@@ -46,7 +46,7 @@ module VpsAdmin::API::Resources
       end
 
       def exec
-        with_includes(query).offset(input[:offset]).limit(input[:limit])
+        with_pagination(with_includes(query))
       end
     end
 
@@ -173,7 +173,7 @@ module VpsAdmin::API::Resources
         end
 
         def exec
-          with_includes(query).offset(input[:offset]).limit(input[:limit])
+          with_pagination(with_includes(query))
         end
       end
 
