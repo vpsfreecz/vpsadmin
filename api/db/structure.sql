@@ -1865,6 +1865,7 @@ CREATE TABLE `user_devices` (
   `updated_at` datetime(6) NOT NULL,
   `last_seen_at` datetime(6) NOT NULL,
   `skip_multi_factor_auth_until` datetime(6) DEFAULT NULL,
+  `last_next_multi_factor_auth` varchar(30) NOT NULL DEFAULT '',
   PRIMARY KEY (`id`),
   KEY `index_user_devices_on_user_id` (`user_id`),
   KEY `index_user_devices_on_token_id` (`token_id`),
@@ -2336,6 +2337,7 @@ CREATE TABLE `vpses` (
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
 INSERT INTO `schema_migrations` (version) VALUES
+('20241104151630'),
 ('20241104130237'),
 ('20241101160100'),
 ('20241027170252'),

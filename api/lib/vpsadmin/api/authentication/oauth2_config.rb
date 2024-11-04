@@ -94,7 +94,8 @@ module VpsAdmin::API
           oauth2_request:,
           oauth2_response:,
           sinatra_params:,
-          client:
+          client:,
+          devices:
         )
       end
     end
@@ -139,7 +140,8 @@ module VpsAdmin::API
           oauth2_response:,
           sinatra_params:,
           client:,
-          auth_result:
+          auth_result:,
+          devices:
         )
       end
 
@@ -332,11 +334,11 @@ module VpsAdmin::API
     protected
 
     # @param auth_result [AuthResult]
-    def render_authorize_page(oauth2_request:, oauth2_response:, sinatra_params:, client:, auth_result: nil)
+    def render_authorize_page(oauth2_request:, oauth2_response:, sinatra_params:, client:, devices:, auth_result: nil)
       # Variables passed to the ERB template
       auth_token = auth_result && auth_result.auth_token
       user = sinatra_params[:user]
-      next_multi_factor_auth = sinatra_params[:next_multi_factor_auth]
+      next_multi_factor_auth = sinatra_params[:next_multi_factor_auth] || find_next_multi_factor_auth(devices)
       step =
         if auth_token && !auth_result.reset_password
           :totp
@@ -436,7 +438,7 @@ module VpsAdmin::API
         end
 
         unless auth.reset_password?
-          skip_multi_factor_auth_until = parse_next_multi_factor_auth(sinatra_params)
+          skip_multi_factor_auth_until, last_next_multi_factor_auth = parse_next_multi_factor_auth(sinatra_params)
 
           create_authorization(
             auth_result: ret,
@@ -446,6 +448,7 @@ module VpsAdmin::API
             client:,
             devices:,
             skip_multi_factor_auth_until:,
+            last_next_multi_factor_auth:,
             set_multi_factor_auth_until: true
           )
         end
@@ -550,7 +553,7 @@ module VpsAdmin::API
         .select(&:usable?)
     end
 
-    def create_device(user, sinatra_request, expires_at, skip_multi_factor_auth_until)
+    def create_device(user, sinatra_request, expires_at, skip_multi_factor_auth_until, last_next_multi_factor_auth)
       client_ip_addr = sinatra_request.env['HTTP_X_REAL_IP'] || sinatra_request.ip
 
       device = ::UserDevice.new(
@@ -560,6 +563,7 @@ module VpsAdmin::API
         user_agent: ::UserAgent.find_or_create!(sinatra_request.user_agent || ''),
         known: false,
         skip_multi_factor_auth_until:,
+        last_next_multi_factor_auth:,
         last_seen_at: Time.now
       )
 
@@ -572,7 +576,7 @@ module VpsAdmin::API
       device
     end
 
-    def create_authorization(auth_result:, sinatra_request:, oauth2_request:, oauth2_response:, client:, devices:, sso: nil, skip_multi_factor_auth_until: nil, set_multi_factor_auth_until: false)
+    def create_authorization(auth_result:, sinatra_request:, oauth2_request:, oauth2_response:, client:, devices:, sso: nil, skip_multi_factor_auth_until: nil, last_next_multi_factor_auth: 'require', set_multi_factor_auth_until: false)
       now = Time.now
       expires_at = now + (10 * 60)
 
@@ -590,13 +594,20 @@ module VpsAdmin::API
 
       if device
         device.touch
-        device.update!(skip_multi_factor_auth_until:) if set_multi_factor_auth_until
+
+        if set_multi_factor_auth_until
+          device.update!(
+            skip_multi_factor_auth_until:,
+            last_next_multi_factor_auth:
+          )
+        end
       else
         device = create_device(
           auth_result.user,
           sinatra_request,
           now + ::UserDevice::LIFETIME,
-          skip_multi_factor_auth_until
+          skip_multi_factor_auth_until,
+          last_next_multi_factor_auth
         )
         devices << device
       end
@@ -681,17 +692,38 @@ module VpsAdmin::API
       [addr, get_ptr(addr)]
     end
 
-    def parse_next_multi_factor_auth(sinatra_params)
-      case sinatra_params[:next_multi_factor_auth]
-      when 'require'
-        nil
-      when 'day'
-        1.day.from_now
-      when 'week'
-        1.week.from_now
-      when 'month'
-        1.month.from_now
+    # Choose the strictest `next_multi_factor_auth` found in `devices`
+    # @return [String]
+    def find_next_multi_factor_auth(devices)
+      ret = ''
+      last_i = nil
+
+      devices.each do |dev|
+        dev_i = ::UserDevice::NEXT_MULTI_FACTOR_AUTH.index(dev.last_next_multi_factor_auth)
+        next if dev_i.nil? || (last_i && last_i > dev_i)
+
+        ret = dev.last_next_multi_factor_auth
+        last_i = dev_i
       end
+
+      ret
+    end
+
+    def parse_next_multi_factor_auth(sinatra_params)
+      v = sinatra_params[:next_multi_factor_auth]
+      skip_until =
+        case v
+        when 'require'
+          nil
+        when 'day'
+          1.day.from_now
+        when 'week'
+          1.week.from_now
+        when 'month'
+          1.month.from_now
+        end
+
+      [skip_until, v]
     end
 
     def logo_url

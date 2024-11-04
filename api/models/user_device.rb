@@ -1,12 +1,17 @@
 class UserDevice < ApplicationRecord
   LIFETIME = 3 * 30 * 24 * 60 * 60
 
+  NEXT_MULTI_FACTOR_AUTH = %w[require day week month].freeze
+
   belongs_to :user
   belongs_to :token, dependent: :delete
   belongs_to :user_agent
 
   scope :active, -> { where.not(token: nil) }
 
+  validates :last_next_multi_factor_auth, inclusion: {
+    in: NEXT_MULTI_FACTOR_AUTH
+  }, unless: proc { |d| d.last_next_multi_factor_auth.blank? }
   validate :validate_skip_multi_factor_auth_until
 
   def user_agent_string
