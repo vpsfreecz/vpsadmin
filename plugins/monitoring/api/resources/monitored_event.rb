@@ -137,11 +137,11 @@ module VpsAdmin::API::Resources
                                        ).take!
 
         unless %w[confirmed acknowledged ignored].include?(event.state)
-          error("events in state '#{event.state}' cannot be acknowledged")
+          error!("events in state '#{event.state}' cannot be acknowledged")
         end
 
         event.ack!(input[:until])
-        ok
+        ok!
       end
     end
 
@@ -172,11 +172,11 @@ module VpsAdmin::API::Resources
                                        ).take!
 
         unless %w[confirmed acknowledged ignored].include?(event.state)
-          error("events in state '#{event.state}' cannot be ignored")
+          error!("events in state '#{event.state}' cannot be ignored")
         end
 
         event.ignore!(input[:until])
-        ok
+        ok!
       end
     end
 

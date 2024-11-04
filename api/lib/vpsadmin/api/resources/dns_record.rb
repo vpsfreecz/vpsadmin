@@ -101,7 +101,7 @@ module VpsAdmin::API::Resources
 
       def exec
         if current_user.role != :admin && input[:dns_zone].user != current_user
-          error('access to the zone denied')
+          error!('access to the zone denied')
         end
 
         object_state_check!(input[:dns_zone].user) if input[:dns_zone].user_id
@@ -109,9 +109,9 @@ module VpsAdmin::API::Resources
         @chain, ret = VpsAdmin::API::Operations::DnsZone::CreateRecord.run(to_db_names(input))
         ret
       rescue ActiveRecord::RecordInvalid => e
-        error('create failed', e.record.errors.to_hash)
+        error!('create failed', e.record.errors.to_hash)
       rescue VpsAdmin::API::Exceptions::OperationError => e
-        error(e.message)
+        error!(e.message)
       end
 
       def state_id
@@ -146,9 +146,9 @@ module VpsAdmin::API::Resources
         @chain, ret = VpsAdmin::API::Operations::DnsZone::UpdateRecord.run(record, to_db_names(input))
         ret
       rescue ActiveRecord::RecordInvalid => e
-        error('update failed', e.record.errors.to_hash)
+        error!('update failed', e.record.errors.to_hash)
       rescue VpsAdmin::API::Exceptions::OperationError => e
-        error(e.message)
+        error!(e.message)
       end
 
       def state_id
@@ -174,9 +174,9 @@ module VpsAdmin::API::Resources
         object_state_check!(record.dns_zone.user) if record.dns_zone.user_id
 
         @chain = VpsAdmin::API::Operations::DnsZone::DestroyRecord.run(record)
-        ok
+        ok!
       rescue VpsAdmin::API::Exceptions::OperationError => e
-        error(e.message)
+        error!(e.message)
       end
 
       def state_id
@@ -206,7 +206,7 @@ module VpsAdmin::API::Resources
 
         ret
       rescue VpsAdmin::API::Exceptions::OperationError => e
-        error(e.message)
+        error!(e.message)
       end
 
       def state_id

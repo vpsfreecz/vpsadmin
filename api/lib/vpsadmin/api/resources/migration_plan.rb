@@ -92,7 +92,7 @@ module VpsAdmin::API::Resources
         plan.save!
         plan
       rescue ActiveRecord::RecordInvalid => e
-        error('create failed', e.record.errors.to_hash)
+        error!('create failed', e.record.errors.to_hash)
       end
     end
 
@@ -112,7 +112,7 @@ module VpsAdmin::API::Resources
       def exec
         plan = ::MigrationPlan.find(params[:migration_plan_id])
 
-        error('This migration plan has already been started') if plan.state != 'staged'
+        error!('This migration plan has already been started') if plan.state != 'staged'
 
         plan.start!
         plan
@@ -135,7 +135,7 @@ module VpsAdmin::API::Resources
       def exec
         plan = ::MigrationPlan.find(params[:migration_plan_id])
 
-        error('This migration plan is not running') if plan.state != 'running'
+        error!('This migration plan is not running') if plan.state != 'running'
 
         plan.cancel!
         plan
@@ -152,10 +152,10 @@ module VpsAdmin::API::Resources
       def exec
         plan = ::MigrationPlan.find(params[:migration_plan_id])
 
-        error('This migration plan is not in the staging phase anymore') if plan.state != 'staged'
+        error!('This migration plan is not in the staging phase anymore') if plan.state != 'staged'
 
         plan.destroy
-        ok
+        ok!
       end
     end
 
@@ -259,7 +259,7 @@ module VpsAdmin::API::Resources
         def exec
           plan = ::MigrationPlan.find(params[:migration_plan_id])
 
-          error('This migration plans has already been started.') if plan.state != 'staged'
+          error!('This migration plans has already been started.') if plan.state != 'staged'
 
           plan.vps_migrations.create!(
             vps: input[:vps],
@@ -269,7 +269,7 @@ module VpsAdmin::API::Resources
             dst_node: input[:dst_node]
           )
         rescue ActiveRecord::RecordInvalid => e
-          error('create failed', e.record.errors.to_hash)
+          error!('create failed', e.record.errors.to_hash)
         end
       end
     end

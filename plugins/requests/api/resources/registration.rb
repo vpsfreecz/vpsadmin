@@ -122,7 +122,7 @@ module VpsAdmin::API::Resources
           req.resubmit!(input)
           req
         rescue ActiveRecord::RecordInvalid => e
-          error('update failed', e.record.errors.to_hash)
+          error!('update failed', e.record.errors.to_hash)
         end
       end
     end

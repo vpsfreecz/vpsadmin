@@ -123,7 +123,7 @@ module VpsAdmin::API::Resources
       def exec
         ::HelpBox.create!(input)
       rescue ActiveRecord::RecordInvalid => e
-        error('Create failed', e.record.errors.to_hash)
+        error!('Create failed', e.record.errors.to_hash)
       end
     end
 
@@ -147,7 +147,7 @@ module VpsAdmin::API::Resources
         box.update!(input)
         box
       rescue ActiveRecord::RecordInvalid => e
-        error('Update failed', e.record.errors.to_hash)
+        error!('Update failed', e.record.errors.to_hash)
       end
     end
 
@@ -161,7 +161,7 @@ module VpsAdmin::API::Resources
       def exec
         box = ::HelpBox.find(params[:help_box_id])
         box.destroy!
-        ok
+        ok!
       end
     end
   end

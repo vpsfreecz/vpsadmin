@@ -97,9 +97,9 @@ module VpsAdmin::API::Resources
       def exec
         VpsAdmin::API::Operations::LocationNetwork::Create.run(input)
       rescue ActiveRecord::RecordInvalid => e
-        error('create failed', e.record.errors.to_hash)
+        error!('create failed', e.record.errors.to_hash)
       rescue ActiveRecord::RecordNotUnique
-        error('this network already exists in the selected location')
+        error!('this network already exists in the selected location')
       end
     end
 
@@ -124,7 +124,7 @@ module VpsAdmin::API::Resources
           input
         )
       rescue ActiveRecord::RecordInvalid => e
-        error('update failed', e.record.errors.to_hash)
+        error!('update failed', e.record.errors.to_hash)
       end
     end
 
@@ -139,7 +139,7 @@ module VpsAdmin::API::Resources
         VpsAdmin::API::Operations::LocationNetwork::Delete.run(
           ::LocationNetwork.find(params[:location_network_id])
         )
-        ok
+        ok!
       end
     end
   end

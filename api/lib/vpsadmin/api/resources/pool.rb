@@ -116,9 +116,9 @@ module VpsAdmin::API::Resources
         @chain, pool = ::Pool.create!(input, properties)
         pool
       rescue VpsAdmin::API::Exceptions::PropertyInvalid => e
-        error("property invalid: #{e.message}")
+        error!("property invalid: #{e.message}")
       rescue ActiveRecord::RecordInvalid => e
-        error('create failed', e.record.errors.to_hash)
+        error!('create failed', e.record.errors.to_hash)
       end
 
       def state_id

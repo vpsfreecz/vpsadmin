@@ -186,7 +186,7 @@ class VpsAdmin::API::Resources::Cluster < HaveAPI::Resource
 
     def exec
       @chain, = TransactionChains::Cluster::GenerateMigrationKeys.fire
-      ok
+      ok!
     end
 
     def state_id

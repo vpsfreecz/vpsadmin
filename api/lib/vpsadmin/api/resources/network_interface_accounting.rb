@@ -111,7 +111,7 @@ module VpsAdmin::API::Resources
           q = q.order(Arel.sql('(bytes_in + bytes_out) ASC'))
 
         else
-          error('invalid order')
+          error!('invalid order')
         end
 
         q

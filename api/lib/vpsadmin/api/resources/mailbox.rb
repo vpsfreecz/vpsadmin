@@ -85,7 +85,7 @@ module VpsAdmin::API::Resources
       def exec
         ::Mailbox.create!(input)
       rescue ActiveRecord::RecordInvalid => e
-        error('create failed', e.record.errors.to_hash)
+        error!('create failed', e.record.errors.to_hash)
       end
     end
 
@@ -118,7 +118,7 @@ module VpsAdmin::API::Resources
 
       def exec
         ::Mailbox.find(params[:mailbox_id]).destroy!
-        ok
+        ok!
       end
     end
 
@@ -247,7 +247,7 @@ module VpsAdmin::API::Resources
             mailboxes: { id: params[:mailbox_id] },
             id: params[:handler_id]
           ).destroy!
-          ok
+          ok!
         end
       end
     end

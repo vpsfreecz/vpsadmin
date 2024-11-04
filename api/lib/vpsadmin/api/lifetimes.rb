@@ -587,7 +587,7 @@ module VpsAdmin::API
               )
 
             else
-              error("object_state already is '#{obj.object_state}'")
+              error!("object_state already is '#{obj.object_state}'")
             end
 
           else
@@ -607,9 +607,9 @@ module VpsAdmin::API
 
         action.send(:define_method, :update_object_state!) do |obj|
           @chain, obj = update_object_state(obj)
-          ok(obj)
+          ok!(obj)
         rescue VpsAdmin::API::Exceptions::TooManyParameters => e
-          error(e.message)
+          error!(e.message)
         end
 
         action.send(:define_method, :object_state_check!) do |*objs|
@@ -629,9 +629,9 @@ module VpsAdmin::API
           next unless forbidden
 
           if reason && !reason.empty?
-            error("Access forbidden: #{reason}")
+            error!("Access forbidden: #{reason}")
           else
-            error('Access forbidden: your account is suspended')
+            error!('Access forbidden: your account is suspended')
           end
         end
       end

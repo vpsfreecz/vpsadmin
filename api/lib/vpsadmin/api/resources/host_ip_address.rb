@@ -239,11 +239,11 @@ module VpsAdmin::API::Resources
       def exec
         ip = input[:ip_address]
 
-        error('access denied') if current_user.role != :admin && ip.current_owner != current_user
+        error!('access denied') if current_user.role != :admin && ip.current_owner != current_user
 
         VpsAdmin::API::Operations::HostIpAddress::Create.run(ip, input[:addr])
       rescue VpsAdmin::API::Exceptions::OperationError => e
-        error("create failed: #{e.message}")
+        error!("create failed: #{e.message}")
       end
     end
 
@@ -266,7 +266,7 @@ module VpsAdmin::API::Resources
       def exec
         host = ::HostIpAddress.find(params[:host_ip_address_id])
 
-        error('access denied') if current_user.role != :admin && host.current_owner != current_user
+        error!('access denied') if current_user.role != :admin && host.current_owner != current_user
 
         ptr_content = input.fetch(:reverse_record_value, '').strip
 
@@ -274,7 +274,7 @@ module VpsAdmin::API::Resources
           ptr_content << '.' unless ptr_content.end_with?('.')
 
           if /\A((?!-)[A-Za-z0-9-]{1,63}(?<!-)\.)+[A-Za-z]{2,63}\.\z/ !~ ptr_content
-            error('invalid reverse record value', { reverse_record_value: ['not a valid domain'] })
+            error!('invalid reverse record value', { reverse_record_value: ['not a valid domain'] })
           end
         end
 
@@ -284,7 +284,7 @@ module VpsAdmin::API::Resources
         )
         ret
       rescue VpsAdmin::API::Exceptions::OperationError => e
-        error("update failed: #{e.message}")
+        error!("update failed: #{e.message}")
       end
 
       def state_id
@@ -303,12 +303,12 @@ module VpsAdmin::API::Resources
       def exec
         host = ::HostIpAddress.find(params[:host_ip_address_id])
 
-        error('access denied') if current_user.role != :admin && host.current_owner != current_user
+        error!('access denied') if current_user.role != :admin && host.current_owner != current_user
 
         @chain, = VpsAdmin::API::Operations::HostIpAddress::Destroy.run(host)
-        ok
+        ok!
       rescue VpsAdmin::API::Exceptions::OperationError => e
-        error("delete failed: #{e.message}")
+        error!("delete failed: #{e.message}")
       end
 
       def state_id
@@ -337,13 +337,13 @@ module VpsAdmin::API::Resources
         netif = host.ip_address.network_interface
 
         if netif.nil?
-          error("#{host.ip_address} is not assigned to any interface")
+          error!("#{host.ip_address} is not assigned to any interface")
 
         elsif current_user.role != :admin && host.current_owner != current_user
-          error('access denied')
+          error!('access denied')
 
         elsif host.assigned?
-          error("#{host.ip_addr} address is already assigned")
+          error!("#{host.ip_addr} address is already assigned")
         end
 
         maintenance_check!(netif.vps)
@@ -379,13 +379,13 @@ module VpsAdmin::API::Resources
         netif = host.ip_address.network_interface
 
         if netif.nil?
-          error("#{host.ip_address} is not routed to any interface")
+          error!("#{host.ip_address} is not routed to any interface")
 
         elsif current_user.role != :admin && host.current_owner != current_user
-          error('access denied')
+          error!('access denied')
 
         elsif host.routed_via_addresses.any?
-          error('one or more networks are routed via this address')
+          error!('one or more networks are routed via this address')
         end
 
         maintenance_check!(netif.vps)
@@ -394,7 +394,7 @@ module VpsAdmin::API::Resources
         @chain, = netif.remove_host_address(host)
         host
       rescue VpsAdmin::API::Exceptions::IpAddressNotAssigned
-        error("#{host.ip_addr} is not assigned to any interface")
+        error!("#{host.ip_addr} is not assigned to any interface")
       end
 
       def state_id

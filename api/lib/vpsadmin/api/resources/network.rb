@@ -128,9 +128,9 @@ module VpsAdmin::API::Resources
         @chain, net = ::Network.register!(input, add_ips:)
         net
       rescue ActiveRecord::RecordInvalid => e
-        error('create failed', e.record.errors.to_hash)
+        error!('create failed', e.record.errors.to_hash)
       rescue ActiveRecord::RecordNotUnique
-        error('this network already exists')
+        error!('this network already exists')
       end
 
       def state_id
@@ -158,9 +158,9 @@ module VpsAdmin::API::Resources
         net.update!(input)
         net
       rescue ActiveRecord::RecordInvalid => e
-        error('update failed', e.record.errors.to_hash)
+        error!('update failed', e.record.errors.to_hash)
       rescue ActiveRecord::RecordNotUnique
-        error('this network already exists')
+        error!('this network already exists')
       end
     end
 
@@ -188,7 +188,7 @@ module VpsAdmin::API::Resources
       def exec
         net = ::Network.find(params[:network_id])
 
-        error('this action can be used only on managed networks') unless net.managed
+        error!('this action can be used only on managed networks') unless net.managed
 
         {
           count: net.add_ips(
@@ -198,7 +198,7 @@ module VpsAdmin::API::Resources
           ).count
         }
       rescue ActiveRecord::RecordInvalid => e
-        error('add failed', e.record.errors.to_hash)
+        error!('add failed', e.record.errors.to_hash)
       end
     end
   end

@@ -129,9 +129,9 @@ class VpsAdmin::API::Resources::Environment < HaveAPI::Resource
       env = ::Environment.new(input)
 
       if env.save
-        ok(env)
+        ok!(env)
       else
-        error('save failed', to_param_names(env.errors.to_hash, :input))
+        error!('save failed', to_param_names(env.errors.to_hash, :input))
       end
     end
   end
@@ -195,7 +195,7 @@ class VpsAdmin::API::Resources::Environment < HaveAPI::Resource
         input
       )
     rescue ActiveRecord::RecordInvalid => e
-      error('update failed', e.record.errors.to_hash)
+      error!('update failed', e.record.errors.to_hash)
     end
   end
 

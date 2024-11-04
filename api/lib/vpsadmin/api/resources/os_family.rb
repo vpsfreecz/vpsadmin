@@ -71,7 +71,7 @@ module VpsAdmin::API::Resources
       def exec
         self.class.model.create!(input)
       rescue ActiveRecord::RecordInvalid => e
-        error('create failed', e.record.errors.to_hash)
+        error!('create failed', e.record.errors.to_hash)
       end
     end
 
@@ -91,7 +91,7 @@ module VpsAdmin::API::Resources
       def exec
         self.class.model.find(params[:os_family_id]).update!(input)
       rescue ActiveRecord::RecordInvalid => e
-        error('update failed', e.record.errors.to_hash)
+        error!('update failed', e.record.errors.to_hash)
       end
     end
 
@@ -102,7 +102,7 @@ module VpsAdmin::API::Resources
 
       def exec
         self.class.model.find(params[:os_family_id]).destroy!
-        ok
+        ok!
       end
     end
   end

@@ -88,7 +88,7 @@ module VpsAdmin::API::Resources
       def exec
         self.class.model.create!(input)
       rescue ActiveRecord::RecordInvalid => e
-        error('create failed', e.record.errors.to_hash)
+        error!('create failed', e.record.errors.to_hash)
       end
     end
 
@@ -125,11 +125,11 @@ module VpsAdmin::API::Resources
         server = self.class.model.find(params[:dns_server_id])
 
         if server.dns_server_zones.any?
-          error('DNS server is in use, remove server zones first')
+          error!('DNS server is in use, remove server zones first')
         end
 
         server.destroy!
-        ok
+        ok!
       end
     end
   end

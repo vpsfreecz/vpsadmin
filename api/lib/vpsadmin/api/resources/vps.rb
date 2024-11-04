@@ -261,7 +261,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
       else
         object_state_check!(current_user)
 
-        error('provide either an environment or a location') if input[:environment].nil? && input[:location].nil?
+        error!('provide either an environment or a location') if input[:environment].nil? && input[:location].nil?
 
         node = VpsAdmin::API::Operations::Node::Pick.run(
           environment: input[:environment],
@@ -270,15 +270,15 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
           cgroup_version: input[:cgroup_version] || input[:os_template].cgroup_version
         )
 
-        error('no free node is available in selected environment/location') unless node
+        error!('no free node is available in selected environment/location') unless node
 
         env = node.location.environment
 
         if !current_user.env_config(env, :can_create_vps)
-          error('insufficient permission to create a VPS in this environment')
+          error!('insufficient permission to create a VPS in this environment')
 
         elsif current_user.vps_in_env(env) >= current_user.env_config(env, :max_vps_count)
-          error('cannot create more VPSes in this environment')
+          error!('cannot create more VPSes in this environment')
         end
 
         input.delete(:location)
@@ -303,14 +303,14 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
           input[:address_location],
           userpick: current_user.role == :admin ? nil : true
         )
-          error("no shared networks with location #{input[:address_location].label}")
+          error!("no shared networks with location #{input[:address_location].label}")
         end
 
         opts[:address_location] = input.delete(:address_location)
       end
 
       if input[:user_namespace_map] && (input[:user_namespace_map].user_namespace.user_id != input[:user].id)
-        error('user namespace map has to belong to VPS owner')
+        error!('user namespace map has to belong to VPS owner')
       end
 
       opts[:start] = input.delete(:start)
@@ -318,7 +318,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
       @chain, vps = VpsAdmin::API::Operations::Vps::Create.run(to_db_names(input), input, opts)
       vps
     rescue ActiveRecord::RecordInvalid => e
-      error('save failed', to_param_names(e.record.errors.to_hash, :input))
+      error!('save failed', to_param_names(e.record.errors.to_hash, :input))
     end
 
     def state_id
@@ -396,7 +396,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
       maintenance_check!(vps)
       object_state_check!(vps, vps.user)
 
-      error('provide at least one attribute to update') if input.empty?
+      error!('provide at least one attribute to update') if input.empty?
 
       update_object_state!(vps) if change_object_state?
 
@@ -404,7 +404,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
         resources = ::Vps.cluster_resources[:required] + ::Vps.cluster_resources[:optional]
 
         resources.each do |r|
-          error('resources cannot be changed when changing VPS owner') if input.has_key?(r)
+          error!('resources cannot be changed when changing VPS owner') if input.has_key?(r)
         end
       end
 
@@ -413,10 +413,10 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
 
       elsif input[:manage_hostname] === true && \
             (input[:hostname].nil? || input[:hostname].empty?)
-        error('update failed', hostname: ['must be present'])
+        error!('update failed', hostname: ['must be present'])
 
       elsif input[:dns_resolver] && !input[:dns_resolver].available_to_vps?(vps)
-        error(
+        error!(
           "DNS resolver '#{input[:dns_resolver].label}' is not available " \
           "in location #{vps.node.location.label}"
         )
@@ -424,17 +424,17 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
       elsif vps.node.vpsadminos? \
             && input[:swap] \
             && input[:swap] > 0 && vps.node.total_swap == 0
-        error("swap is not available on #{vps.node.domain_name}")
+        error!("swap is not available on #{vps.node.domain_name}")
 
       elsif input[:user_namespace_map] \
             && input[:user_namespace_map].user_namespace.user_id != vps.user_id
-        error('user namespace map belongs to a different user than the VPS')
+        error!('user namespace map belongs to a different user than the VPS')
       end
 
       @chain, = TransactionChains::Vps::Update.fire(vps, to_db_names(input))
-      ok
+      ok!
     rescue ActiveRecord::RecordInvalid => e
-      error(
+      error!(
         'update failed',
         e.record == vps ? to_param_names(vps.errors.to_hash, :input) : e.record.errors.to_hash
       )
@@ -478,7 +478,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
         reason: 'Deletion requested',
         expiration: true
       )
-      ok
+      ok!
     end
 
     def state_id
@@ -504,7 +504,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
       object_state_check!(vps, vps.user)
 
       @chain, = TransactionChains::Vps::Start.fire(vps)
-      ok
+      ok!
     end
 
     def state_id
@@ -530,7 +530,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
       object_state_check!(vps, vps.user)
 
       @chain, = TransactionChains::Vps::Restart.fire(vps)
-      ok
+      ok!
     end
 
     def state_id
@@ -556,7 +556,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
       object_state_check!(vps, vps.user)
 
       @chain, = TransactionChains::Vps::Stop.fire(vps)
-      ok
+      ok!
     end
 
     def state_id
@@ -620,10 +620,10 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
       maintenance_check!(vps)
       object_state_check!(vps, vps.user)
 
-      error('this action is available only for VPS running on vpsAdminOS') if vps.node.hypervisor_type != 'vpsadminos'
+      error!('this action is available only for VPS running on vpsAdminOS') if vps.node.hypervisor_type != 'vpsadminos'
 
       if input[:mount_root_dataset] && !check_mountpoint(input[:mount_root_dataset])
-        error('invalid mountpoint', {
+        error!('invalid mountpoint', {
                 mount_root_dataset: [
                   'must start with a slash',
                   'a-z, A-Z, 0-9, _-/.:'
@@ -634,16 +634,16 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
       tpl = input[:os_template] || vps.os_template
 
       if !tpl.enabled?
-        error('selected os template is disabled')
+        error!('selected os template is disabled')
 
       elsif tpl.hypervisor_type != vps.node.hypervisor_type
-        error(
+        error!(
           "incompatible template: needs #{tpl.hypervisor_type}, but VPS is " \
           "using #{vps.node.hypervisor_type}"
         )
 
       elsif tpl.cgroup_version != 'cgroup_any' && tpl.cgroup_version != vps.node.cgroup_version
-        error(
+        error!(
           "incompatible cgroup version: #{tpl.label} needs #{tpl.cgroup_version}, " \
           "but node is using #{vps.node.cgroup_version}"
         )
@@ -654,7 +654,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
         tpl,
         mount_root_dataset: input[:mount_root_dataset]
       )
-      ok
+      ok!
     end
 
     def state_id
@@ -694,23 +694,23 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
       tpl = input[:os_template] || vps.os_template
 
       if !tpl.enabled?
-        error('selected os template is disabled')
+        error!('selected os template is disabled')
 
       elsif tpl.hypervisor_type != vps.node.hypervisor_type
-        error(
+        error!(
           "incompatible template: needs #{tpl.hypervisor_type}, but VPS is " \
           "using #{vps.node.hypervisor_type}"
         )
 
       elsif tpl.cgroup_version != 'cgroup_any' && tpl.cgroup_version != vps.node.cgroup_version
-        error(
+        error!(
           "incompatible cgroup version: #{tpl.label} needs #{tpl.cgroup_version}, " \
           "but node is using #{vps.node.cgroup_version}"
         )
       end
 
       @chain, = TransactionChains::Vps::Reinstall.fire(vps, tpl)
-      ok
+      ok!
     end
 
     def state_id
@@ -766,30 +766,30 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
       vps = ::Vps.includes(dataset_in_pool: [:dataset]).find(params[:vps_id])
 
       if vps.node == input[:node]
-        error('the VPS already is on this very node')
+        error!('the VPS already is on this very node')
 
       elsif input[:node].role != 'node'
-        error('target node is not a hypervisor')
+        error!('target node is not a hypervisor')
       end
 
       if (input[:finish_weekday] || input[:finish_minutes]) \
          && (!input[:finish_weekday] || !input[:finish_minutes])
-        error('invalid finish configuration', {
+        error!('invalid finish configuration', {
                 finish_weeday: ['must be set together with finish_minutes'],
                 finish_minutes: ['must be set together with finish_weekday']
               })
       end
 
       if input[:maintenance_window] && (input[:finish_weekday] || input[:finish_minutes])
-        error('invalid finish configuration', {
+        error!('invalid finish configuration', {
                 maintenance_window: ['conflicts with finish_weekday and finish_minutes']
               })
       end
 
       @chain = VpsAdmin::API::Operations::Vps::Migrate.run(vps, input)
-      ok
+      ok!
     rescue VpsAdmin::API::Exceptions::VpsMigrationError => e
-      error(e.message)
+      error!(e.message)
     end
 
     def state_id
@@ -856,13 +856,13 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
         input[:user] = current_user
       end
 
-      error('cannot clone into itself') if input[:vps] == vps
+      error!('cannot clone into itself') if input[:vps] == vps
 
       if input[:vps]
         node = input[:vps].node
 
         if current_user.role != :admin && vps.user != input[:vps].user
-          error('insufficient permission to clone into this VPS')
+          error!('insufficient permission to clone into this VPS')
         end
 
       elsif input[:node]
@@ -878,20 +878,20 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
         )
 
       else
-        error('provide environment, location or node')
+        error!('provide environment, location or node')
       end
 
-      error('no node available in this environment') unless node
+      error!('no node available in this environment') unless node
 
       env = node.location.environment
 
       if current_user.role != :admin && !current_user.env_config(env, :can_create_vps)
-        error('insufficient permission to create a VPS in this environment')
+        error!('insufficient permission to create a VPS in this environment')
 
       elsif !input[:vps] &&
             current_user.role != :admin &&
             current_user.vps_in_env(env) >= current_user.env_config(env, :max_vps_count)
-        error('cannot create more VPSes in this environment')
+        error!('cannot create more VPSes in this environment')
       end
 
       if input[:hostname].nil? || input[:hostname].strip.empty?
@@ -902,7 +902,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
         input[:address_location],
         userpick: current_user.role == :admin ? nil : true
       )
-        error("no shared networks with location #{input[:address_location].label}")
+        error!("no shared networks with location #{input[:address_location].label}")
       end
 
       chain_class = TransactionChains::Vps::Clone.chain_for(vps, node)
@@ -910,9 +910,9 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
 
       cloned_vps
     rescue ActiveRecord::RecordInvalid => e
-      error('clone failed', to_param_names(e.record.errors.to_hash))
+      error!('clone failed', to_param_names(e.record.errors.to_hash))
     rescue VpsAdmin::API::Exceptions::OsTemplateNotFound => e
-      error(e.message)
+      error!(e.message)
     end
 
     def state_id
@@ -951,16 +951,16 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
       object_state_check!(vps.user)
 
       if vps.user != input[:vps].user
-        error('access denied')
+        error!('access denied')
 
       elsif vps.node.location_id == input[:vps].node.location_id
-        error('swap within one location is not needed, simply exchange IP addresses')
+        error!('swap within one location is not needed, simply exchange IP addresses')
       end
 
       input[:expirations] = true if current_user.role != :admin
 
       @chain, = TransactionChains::Vps::Swap.fire(vps, input[:vps], input)
-      ok
+      ok!
     end
 
     def state_id
@@ -1001,7 +1001,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
 
       replaced_vps
     rescue ActiveRecord::RecordInvalid => e
-      error('replace failed', to_param_names(e.record.errors.to_hash))
+      error!('replace failed', to_param_names(e.record.errors.to_hash))
     end
 
     def state_id
@@ -1033,7 +1033,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
       maintenance_check!(vps)
 
       @chain, = TransactionChains::Vps::DeployPublicKey.fire(vps, input[:public_key])
-      ok
+      ok!
     end
 
     def state_id
@@ -1142,9 +1142,9 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
           { feature.name.to_sym => input[:enabled] }
         )
 
-        ok
+        ok!
       rescue VpsAdmin::API::Exceptions::VpsFeatureConflict => e
-        error(e.message)
+        error!(e.message)
       end
 
       def state_id
@@ -1175,9 +1175,9 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
           with_restricted(id: params[:vps_id])
         )
         @chain = VpsAdmin::API::Operations::Vps::SetFeatures.run(vps, input)
-        ok
+        ok!
       rescue VpsAdmin::API::Exceptions::VpsFeatureConflict => e
-        error(e.message)
+        error!(e.message)
       end
 
       def state_id
@@ -1290,7 +1290,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
         maintenance_check!(vps)
 
         if current_user.role != :admin && input[:dataset].user != current_user
-          error('insufficient permission to mount selected snapshot')
+          error!('insufficient permission to mount selected snapshot')
         end
 
         @chain, ret = TransactionChains::Vps::MountDataset.fire(
@@ -1303,9 +1303,9 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
         ret
       rescue VpsAdmin::API::Exceptions::SnapshotAlreadyMounted,
              VpsAdmin::API::Exceptions::OperationNotSupported => e
-        error(e.message)
+        error!(e.message)
       rescue ActiveRecord::RecordInvalid => e
-        error('create failed', e.record.errors.to_hash)
+        error!('create failed', e.record.errors.to_hash)
       end
 
       def state_id
@@ -1363,7 +1363,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
         mnt = ::Mount.find_by!(vps:, id: params[:mount_id])
         @chain, = TransactionChains::Vps::UmountDataset.fire(vps, mnt)
 
-        ok
+        ok!
       end
 
       def state_id
@@ -1461,7 +1461,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
         maintenance_check!(vps)
         window = vps.vps_maintenance_windows.find_by!(weekday: params[:maintenance_window_id])
 
-        error('provide parameters to change') if input.empty?
+        error!('provide parameters to change') if input.empty?
 
         if input.has_key?(:is_open) && !input[:is_open]
           input[:opens_at] = nil
@@ -1477,7 +1477,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
                 })
         window
       rescue ActiveRecord::RecordInvalid => e
-        error('update failed', e.record.errors.to_hash)
+        error!('update failed', e.record.errors.to_hash)
       end
     end
 
@@ -1504,7 +1504,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
         vps = ::Vps.find_by!(with_restricted(id: params[:vps_id]))
         maintenance_check!(vps)
 
-        error('provide parameters to change') if input.empty?
+        error!('provide parameters to change') if input.empty?
 
         if input.has_key?(:is_open) && !input[:is_open]
           input[:opens_at] = nil
@@ -1529,7 +1529,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
 
         vps.vps_maintenance_windows.order('weekday')
       rescue ActiveRecord::RecordInvalid => e
-        error('update failed', e.record.errors.to_hash)
+        error!('update failed', e.record.errors.to_hash)
       end
     end
   end
@@ -1566,7 +1566,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
 
         t || ::VpsConsole.create_for!(vps, current_user)
       rescue ::ActiveRecord::RecordInvalid => e
-        error('failed to create a token', e.record.errors.to_hash)
+        error!('failed to create a token', e.record.errors.to_hash)
       end
     end
 

@@ -89,7 +89,7 @@ module VpsAdmin::API::Resources
       def exec
         ::ClusterResourcePackage.create!(input)
       rescue ActiveRecord::RecordInvalid => e
-        error('create failed', e.record.errors.to_hash)
+        error!('create failed', e.record.errors.to_hash)
       end
     end
 
@@ -112,7 +112,7 @@ module VpsAdmin::API::Resources
       def exec
         ::ClusterResourcePackage.find(params[:cluster_resource_package_id]).update!(input)
       rescue ActiveRecord::RecordInvalid => e
-        error('update failed', e.record.errors.to_hash)
+        error!('update failed', e.record.errors.to_hash)
       end
     end
 
@@ -129,10 +129,10 @@ module VpsAdmin::API::Resources
         if pkg.can_destroy?
           pkg.destroy!
         else
-          error('user resource packages cannot be destroyed independently')
+          error!('user resource packages cannot be destroyed independently')
         end
 
-        ok
+        ok!
       end
     end
 
@@ -220,9 +220,9 @@ module VpsAdmin::API::Resources
             .find(params[:cluster_resource_package_id])
             .add_item(input[:cluster_resource], input[:value])
         rescue ActiveRecord::RecordInvalid => e
-          error('create failed', e.record.errors.to_hash)
+          error!('create failed', e.record.errors.to_hash)
         rescue ActiveRecord::RecordNotUnique
-          error('this resource already exists')
+          error!('this resource already exists')
         end
       end
 
@@ -248,7 +248,7 @@ module VpsAdmin::API::Resources
           ).take!
           it.cluster_resource_package.update_item(it, input[:value])
         rescue ActiveRecord::RecordInvalid => e
-          error('update failed', e.record.errors.to_hash)
+          error!('update failed', e.record.errors.to_hash)
         end
       end
 
@@ -265,7 +265,7 @@ module VpsAdmin::API::Resources
             id: params[:item_id]
           ).take!
           it.cluster_resource_package.remove_item(it)
-          ok
+          ok!
         end
       end
     end

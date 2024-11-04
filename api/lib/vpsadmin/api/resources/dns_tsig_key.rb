@@ -97,9 +97,9 @@ module VpsAdmin::API::Resources
       def exec
         VpsAdmin::API::Operations::DnsTsigKey::Create.run(to_db_names(input))
       rescue ActiveRecord::RecordInvalid => e
-        error('create failed', e.record.errors.to_hash)
+        error!('create failed', e.record.errors.to_hash)
       rescue ActiveRecord::RecordNotUnique => e
-        error("key #{input[:name]} already exists")
+        error!("key #{input[:name]} already exists")
       end
     end
 
@@ -116,9 +116,9 @@ module VpsAdmin::API::Resources
         key = self.class.model.find_by!(with_restricted(id: params[:dns_tsig_key_id]))
         VpsAdmin::API::Operations::DnsTsigKey::Destroy.run(key)
       rescue ActiveRecord::DeleteRestrictionError
-        error("key #{key.name} is in use")
+        error!("key #{key.name} is in use")
       rescue VpsAdmin::API::Exceptions::OperationError => e
-        error(e.message)
+        error!(e.message)
       end
     end
   end

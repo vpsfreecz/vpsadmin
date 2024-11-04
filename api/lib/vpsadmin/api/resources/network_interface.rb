@@ -109,9 +109,9 @@ module VpsAdmin::API::Resources
                                                           network_interfaces: { id: params[:network_interface_id] }
                                                         ))
 
-        ok(netif) if input.empty?
+        ok!(netif) if input.empty?
 
-        error('veth renaming is not available on this node') if input[:name] && !netif.vps.node.vpsadminos?
+        error!('veth renaming is not available on this node') if input[:name] && !netif.vps.node.vpsadminos?
 
         maintenance_check!(netif.vps)
         object_state_check!(netif.vps, netif.vps.user)

@@ -97,7 +97,7 @@ module VpsAdmin::API::Resources
         client.save!
         client
       rescue ActiveRecord::RecordInvalid => e
-        error('create failed', e.record.errors.to_hash)
+        error!('create failed', e.record.errors.to_hash)
       end
     end
 
@@ -123,7 +123,7 @@ module VpsAdmin::API::Resources
         client.save!
         client
       rescue ActiveRecord::RecordInvalid => e
-        error('update failed', e.record.errors.to_hash)
+        error!('update failed', e.record.errors.to_hash)
       end
     end
 
@@ -135,9 +135,9 @@ module VpsAdmin::API::Resources
       def exec
         client = self.class.model.find(params[:oauth2_client_id])
         client.destroy!
-        ok
+        ok!
       rescue ActiveRecord::RecordInvalid => e
-        error('update failed', e.record.errors.to_hash)
+        error!('update failed', e.record.errors.to_hash)
       end
     end
   end

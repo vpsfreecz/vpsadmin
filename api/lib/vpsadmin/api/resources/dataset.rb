@@ -118,12 +118,12 @@ module VpsAdmin::API::Resources
       end
 
       def exec
-        ok(::VpsAdmin::API::Operations::Dataset::FindByName.run(
-             current_user.role == :admin ? (input[:user] || current_user) : current_user,
-             input[:name]
-           ))
+        ok!(::VpsAdmin::API::Operations::Dataset::FindByName.run(
+              current_user.role == :admin ? (input[:user] || current_user) : current_user,
+              input[:name]
+            ))
       rescue ActiveRecord::RecordNotFound
-        error('dataset not found')
+        error!('dataset not found')
       end
     end
 
@@ -182,10 +182,10 @@ module VpsAdmin::API::Resources
 
       def exec
         if current_user.role != :admin && input[:dataset] && input[:dataset].user != current_user
-          error('insufficient permission to create a dataset')
+          error!('insufficient permission to create a dataset')
 
         elsif current_user.role != :admin && input[:dataset] && !input[:dataset].user_create
-          error('access denied')
+          error!('access denied')
         end
 
         properties = VpsAdmin::API::DatasetProperties.validate_params(input)
@@ -198,17 +198,17 @@ module VpsAdmin::API::Resources
         )
         dataset
       rescue VpsAdmin::API::Exceptions::PropertyInvalid => e
-        error("property invalid: #{e.message}")
+        error!("property invalid: #{e.message}")
       rescue VpsAdmin::API::Exceptions::AccessDenied
-        error('insufficient permission to create a dataset')
+        error!('insufficient permission to create a dataset')
       rescue VpsAdmin::API::Exceptions::DatasetLabelDoesNotExist,
              VpsAdmin::API::Exceptions::DatasetAlreadyExists,
              VpsAdmin::API::Exceptions::DatasetNestingForbidden,
              VpsAdmin::API::Exceptions::InvalidRefquotaDataset,
              VpsAdmin::API::Exceptions::RefquotaCheckFailed => e
-        error(e.message)
+        error!(e.message)
       rescue ActiveRecord::RecordInvalid => e
-        error('create failed', e.record.errors.to_hash)
+        error!('create failed', e.record.errors.to_hash)
       end
 
       def state_id
@@ -247,14 +247,14 @@ module VpsAdmin::API::Resources
           input
         )
 
-        ok
+        ok!
       rescue VpsAdmin::API::Exceptions::PropertyInvalid => e
-        error("property invalid: #{e.message}")
+        error!("property invalid: #{e.message}")
       rescue VpsAdmin::API::Exceptions::InvalidRefquotaDataset,
              VpsAdmin::API::Exceptions::RefquotaCheckFailed => e
-        error(e.message)
+        error!(e.message)
       rescue ActiveRecord::RecordInvalid => e
-        error('update failed', e.record.errors.to_hash)
+        error!('update failed', e.record.errors.to_hash)
       end
 
       def state_id
@@ -276,18 +276,18 @@ module VpsAdmin::API::Resources
         ds = ::Dataset.find_by!(with_restricted(id: params[:dataset_id]))
 
         if current_user.role != :admin && !ds.user_destroy
-          error('insufficient permission to destroy this dataset')
+          error!('insufficient permission to destroy this dataset')
 
         elsif ::Vps.exists?(dataset_in_pool: ds.primary_dataset_in_pool!)
-          error('unable to delete, this dataset serves as a root FS for a VPS')
+          error!('unable to delete, this dataset serves as a root FS for a VPS')
         end
 
         ds.maintenance_check!(ds.primary_dataset_in_pool!.pool)
 
         @chain, = ds.destroy
-        ok
+        ok!
       rescue VpsAdmin::API::Exceptions::DatasetDoesNotExist => e
-        error(e.message)
+        error!(e.message)
       end
 
       def state_id
@@ -316,7 +316,7 @@ module VpsAdmin::API::Resources
       def exec
         ds = ::Dataset.find_by!(with_restricted(id: params[:dataset_id]))
 
-        error('insufficient permission to inherit this property') if current_user.role != :admin && !ds.user_editable
+        error!('insufficient permission to inherit this property') if current_user.role != :admin && !ds.user_editable
 
         ds.maintenance_check!(ds.primary_dataset_in_pool!.pool)
 
@@ -341,14 +341,14 @@ module VpsAdmin::API::Resources
         end
 
         if !not_exists.empty?
-          error("property does not exist: #{not_exists.join(',')}")
+          error!("property does not exist: #{not_exists.join(',')}")
 
         elsif !not_inheritable.empty?
-          error("property is not inheritable: #{not_inheritable.join(',')}")
+          error!("property is not inheritable: #{not_inheritable.join(',')}")
         end
 
         @chain, = TransactionChains::Dataset::Inherit.fire(ds.primary_dataset_in_pool!, props)
-        ok
+        ok!
       end
 
       def state_id
@@ -454,7 +454,7 @@ module VpsAdmin::API::Resources
 
           max_snapshots = ds.max_snapshots
 
-          error("cannot make more than #{max_snapshots} snapshots") if ds.snapshots.count >= max_snapshots
+          error!("cannot make more than #{max_snapshots} snapshots") if ds.snapshots.count >= max_snapshots
 
           dip = ds.primary_dataset_in_pool!
 
@@ -490,18 +490,18 @@ module VpsAdmin::API::Resources
                                                                         ))
 
           if snap.snapshot_in_pools.exists?('reference_count > 0')
-            error('this snapshot cannot be destroyed as others are depending on it')
+            error!('this snapshot cannot be destroyed as others are depending on it')
 
           elsif snap.dataset.dataset_in_pools.joins(:pool).where(
             pools: { role: ::Pool.roles[:backup] }
           ).count > 0
-            error('cannot destroy snapshot with backups')
+            error!('cannot destroy snapshot with backups')
           end
 
           snap.dataset.maintenance_check!(snap.dataset.primary_dataset_in_pool!.pool)
 
           @chain, = TransactionChains::Snapshot::Destroy.fire(snap)
-          ok
+          ok!
         end
 
         def state_id
@@ -548,7 +548,7 @@ module VpsAdmin::API::Resources
           ).take
 
           if mnt
-            error(
+            error!(
               "Please delete mount of snapshot #{snap.dataset.full_name}@#{mnt.name} " \
               "from VPS #{mnt.vps_id} at '#{mnt.dst}' (mount id #{mnt.mnt_id})"
             )
@@ -566,9 +566,9 @@ module VpsAdmin::API::Resources
               TransactionChains::Dataset::Rollback.fire(dip, snap)
             end
 
-          ok
+          ok!
         rescue VpsAdmin::API::Exceptions::SnapshotInUse => e
-          error(e.message)
+          error!(e.message)
         end
 
         def state_id
@@ -664,7 +664,7 @@ module VpsAdmin::API::Resources
         def exec
           s = ::Dataset.find_by!(with_restricted(id: params[:dataset_id]))
 
-          error('Insufficient permission') if !input[:environment_dataset_plan].user_add && current_user.role != :admin
+          error!('Insufficient permission') if !input[:environment_dataset_plan].user_add && current_user.role != :admin
 
           s.primary_dataset_in_pool!.add_plan(input[:environment_dataset_plan])
         end
@@ -686,11 +686,11 @@ module VpsAdmin::API::Resources
           dip_plan = dip.dataset_in_pool_plans.find(params[:plan_id])
 
           if !dip_plan.environment_dataset_plan.user_remove && current_user.role != :admin
-            error('Insufficient permission')
+            error!('Insufficient permission')
           end
 
           dip.del_plan(dip_plan)
-          ok
+          ok!
         end
       end
     end

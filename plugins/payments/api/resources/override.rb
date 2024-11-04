@@ -36,7 +36,7 @@ module VpsAdmin::API::Resources
       end
 
       def exec
-        error('access denied') if current_user.role != :admin && current_user.id != params[:user_id].to_i
+        error!('access denied') if current_user.role != :admin && current_user.id != params[:user_id].to_i
 
         { instructions: ::User.find(params[:user_id]).user_account.payment_instructions }
       end

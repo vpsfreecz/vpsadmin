@@ -113,7 +113,7 @@ class VpsAdmin::API::Resources::UserClusterResourcePackage < HaveAPI::Resource
         from_personal: input[:from_personal]
       )
     rescue VpsAdmin::API::Exceptions::UserResourceAllocationError => e
-      error(e.message)
+      error!(e.message)
     end
   end
 
@@ -137,7 +137,7 @@ class VpsAdmin::API::Resources::UserClusterResourcePackage < HaveAPI::Resource
       upkg = ::UserClusterResourcePackage.find(params[:user_cluster_resource_package_id])
       upkg.update!(input)
     rescue ActiveRecord::RecordInvalid => e
-      error('update failed', e.record.errors.to_hash)
+      error!('update failed', e.record.errors.to_hash)
     end
   end
 
@@ -153,9 +153,9 @@ class VpsAdmin::API::Resources::UserClusterResourcePackage < HaveAPI::Resource
 
       if user_pkg.can_destroy?
         user_pkg.destroy!
-        ok
+        ok!
       else
-        error('this package cannot be removed')
+        error!('this package cannot be removed')
       end
     end
   end

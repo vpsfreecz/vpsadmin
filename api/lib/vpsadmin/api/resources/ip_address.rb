@@ -240,17 +240,17 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
 
       if input[:user]
         if !input[:location]
-          error('provide location together with user')
+          error!('provide location together with user')
         elsif input[:network].locations.include?(input[:location])
-          error('network is not available in selected location')
+          error!('network is not available in selected location')
         end
       end
 
       ::IpAddress.register(addr, input.merge(prefix: addr.prefix)) # model
     rescue ArgumentError => e
-      error(e.message, { addr: ['not a valid IP address'] })
+      error!(e.message, { addr: ['not a valid IP address'] })
     rescue ::ActiveRecord::RecordInvalid => e
-      error('create failed', e.record.errors.to_hash)
+      error!('create failed', e.record.errors.to_hash)
     end
   end
 
@@ -276,17 +276,17 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
 
       # Check if the IP is assigned to a VPS in an environment with IP ownership
       if input.has_key?(:user) && ip.user != input[:user] && (ip.network_interface && ip.network_interface.vps.node.location.environment.user_ip_ownership)
-        error('cannot chown IP while it belongs to a VPS')
+        error!('cannot chown IP while it belongs to a VPS')
       end
 
-      error('choose environment') if input[:user] && !input.has_key?(:environment)
+      error!('choose environment') if input[:user] && !input.has_key?(:environment)
 
       @chain, = ip.do_update(input)
       ip
     rescue ActiveRecord::RecordInvalid => e
-      error('update failed', e.record.errors.to_hash)
+      error!('update failed', e.record.errors.to_hash)
     rescue VpsAdmin::API::Exceptions::IpAddressInvalidLocation => e
-      error(e.message)
+      error!(e.message)
     end
 
     def state_id
@@ -325,7 +325,7 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
            (ip.user_id && ip.user_id != current_user.id) \
            || (netif.vps.user_id != current_user.id)
          )
-        error('access denied')
+        error!('access denied')
       end
 
       maintenance_check!(netif.vps)
@@ -338,12 +338,12 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
       )
       ip
     rescue VpsAdmin::API::Exceptions::IpAddressInUse
-      error('IP address is already in use')
+      error!('IP address is already in use')
     rescue VpsAdmin::API::Exceptions::IpAddressInvalidLocation
-      error('IP address is from the wrong location')
+      error!('IP address is from the wrong location')
     rescue VpsAdmin::API::Exceptions::IpAddressNotOwned,
            VpsAdmin::API::Exceptions::IpAddressInvalid => e
-      error(e.message)
+      error!(e.message)
     end
 
     def state_id
@@ -382,10 +382,10 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
            (ip.user_id && ip.user_id != current_user.id) \
            || (netif.vps.user_id != current_user.id)
          )
-        error('access denied')
+        error!('access denied')
       end
 
-      error('invalid host IP address') if input[:host_ip_address] && input[:host_ip_address].ip_address != ip
+      error!('invalid host IP address') if input[:host_ip_address] && input[:host_ip_address].ip_address != ip
 
       host_addr = input[:host_ip_address] || ip.host_ip_addresses.where(auto_add: true).take!
 
@@ -398,11 +398,11 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
       )
       ip
     rescue VpsAdmin::API::Exceptions::IpAddressInUse
-      error('IP address is already in use')
+      error!('IP address is already in use')
     rescue VpsAdmin::API::Exceptions::IpAddressInvalidLocation
-      error('IP address is from the wrong location')
+      error!('IP address is from the wrong location')
     rescue VpsAdmin::API::Exceptions::IpAddressNotOwned => e
-      error(e.message)
+      error!(e.message)
     end
 
     def state_id
@@ -434,11 +434,11 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
            || (ip.network_interface_id && \
                ip.network_interface.vps.user_id != current_user.id)
          )
-        error('access denied')
+        error!('access denied')
       end
 
       netif = ip.network_interface
-      error("#{ip} is not assigned to any interface") if netif.nil?
+      error!("#{ip} is not assigned to any interface") if netif.nil?
 
       maintenance_check!(netif.vps)
       object_state_check!(netif.vps, netif.vps.user)
@@ -446,7 +446,7 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
       @chain, = netif.remove_route(ip)
       ip
     rescue VpsAdmin::API::Exceptions::IpAddressInUse => e
-      error(e.message)
+      error!(e.message)
     end
 
     def state_id

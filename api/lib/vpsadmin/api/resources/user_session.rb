@@ -147,7 +147,7 @@ module VpsAdmin::API::Resources
           label: input[:label]
         )
       rescue ActiveRecord::RecordInvalid
-        error('failed to create user session')
+        error!('failed to create user session')
       end
     end
 
@@ -173,7 +173,7 @@ module VpsAdmin::API::Resources
         user_session = ::UserSession.find_by!(with_restricted(id: params[:user_session_id]))
         user_session.update!(label: input[:label])
       rescue ActiveRecord::RecordInvalid
-        error('failed to create user session')
+        error!('failed to create user session')
       end
     end
 
@@ -191,9 +191,9 @@ module VpsAdmin::API::Resources
       def exec
         user_session = ::UserSession.find_by!(with_restricted(id: params[:user_session_id]))
         VpsAdmin::API::Operations::UserSession::Close.run(user_session)
-        ok
+        ok!
       rescue ActiveRecord::RecordInvalid
-        error('failed to close user session')
+        error!('failed to close user session')
       end
     end
   end

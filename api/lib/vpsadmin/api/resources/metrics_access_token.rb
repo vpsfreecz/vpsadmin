@@ -110,7 +110,7 @@ module VpsAdmin::API::Resources
       def exec
         token = self.class.model.find_by(with_restricted(id: params[:metrics_access_token_id]))
         token.destroy!
-        ok
+        ok!
       end
     end
   end

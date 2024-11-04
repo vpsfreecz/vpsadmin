@@ -111,7 +111,7 @@ module VpsAdmin::API::Resources
           p.name == sym
         end
 
-        error('invalid order') if param.nil?
+        error!('invalid order') if param.nil?
 
         q.order(Arel.sql("#{order_by} #{desc ? 'DESC' : 'ASC'}"))
       end

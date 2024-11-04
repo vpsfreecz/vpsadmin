@@ -96,7 +96,7 @@ class VpsAdmin::API::Resources::UserNamespaceMap < HaveAPI::Resource
     end
 
     def exec
-      error('access denied') if !current_user.role == :admin && input[:user_namespace].user_id != current_user.id
+      error!('access denied') if !current_user.role == :admin && input[:user_namespace].user_id != current_user.id
 
       UserNamespaceMap.create_direct!(input[:user_namespace], input[:label])
     end
@@ -145,13 +145,13 @@ class VpsAdmin::API::Resources::UserNamespaceMap < HaveAPI::Resource
                                                                id: params[:user_namespace_map_id]
                                                              ))
 
-      error('the map is in use, unable to delete at this time') if map.in_use?
+      error!('the map is in use, unable to delete at this time') if map.in_use?
 
       map.acquire_lock do
         map.destroy!
       end
 
-      ok
+      ok!
     end
   end
 
@@ -255,24 +255,24 @@ class VpsAdmin::API::Resources::UserNamespaceMap < HaveAPI::Resource
                                                                  ))
 
         if !current_user.role == :admin && map.user_namespace.user_id != current_user.id
-          error('access denied')
+          error!('access denied')
 
         elsif map.in_use?
-          error('the map is in use, it cannot be changed at this time')
+          error!('the map is in use, it cannot be changed at this time')
 
         elsif map.user_namespace_map_entries.where(
           kind: ::UserNamespaceMapEntry.kinds[input[:kind]]
         ).count >= 10
           # ZFS properties uidmap/gidmap do not accept more than 10 entries
           # at the moment.
-          error('maps are limited to 10 UID and 10 GID entries')
+          error!('maps are limited to 10 UID and 10 GID entries')
         end
 
         map.acquire_lock do
           UserNamespaceMapEntry.create!(input.merge(user_namespace_map: map))
         end
       rescue ActiveRecord::RecordInvalid => e
-        error('create failed', to_param_names(e.record.errors.to_hash))
+        error!('create failed', to_param_names(e.record.errors.to_hash))
       end
     end
 
@@ -300,7 +300,7 @@ class VpsAdmin::API::Resources::UserNamespaceMap < HaveAPI::Resource
                      user_namespace_map_entries: { id: params[:entry_id] }
                    ))
 
-        error('the map is in use, it cannot be changed at this time') if entry.user_namespace_map.in_use?
+        error!('the map is in use, it cannot be changed at this time') if entry.user_namespace_map.in_use?
 
         entry.user_namespace_map.acquire_lock do
           entry.update!(input)
@@ -308,7 +308,7 @@ class VpsAdmin::API::Resources::UserNamespaceMap < HaveAPI::Resource
 
         entry
       rescue ActiveRecord::RecordInvalid => e
-        error('update failed', to_param_names(e.record.errors.to_hash))
+        error!('update failed', to_param_names(e.record.errors.to_hash))
       end
     end
 
@@ -328,13 +328,13 @@ class VpsAdmin::API::Resources::UserNamespaceMap < HaveAPI::Resource
                      user_namespace_map_entries: { id: params[:entry_id] }
                    ))
 
-        error('the map is in use, it cannot be changed at this time') if entry.user_namespace_map.in_use?
+        error!('the map is in use, it cannot be changed at this time') if entry.user_namespace_map.in_use?
 
         entry.user_namespace_map.acquire_lock do
           entry.destroy!
         end
 
-        ok
+        ok!
       end
     end
   end

@@ -129,13 +129,13 @@ class VpsAdmin::API::Resources::Export < HaveAPI::Resource
     def exec
       if (input[:dataset] && input[:snapshot]) \
          || (!input[:dataset] && !input[:snapshot])
-        error('provide either dataset or snapshot')
+        error!('provide either dataset or snapshot')
       end
 
       ds =
         input[:dataset] || input[:snapshot].dataset
 
-      error('access denied') if !current_user.role == :admin && ds.user_id != current_user.id
+      error!('access denied') if !current_user.role == :admin && ds.user_id != current_user.id
 
       object_state_check!(ds.user)
 
@@ -146,7 +146,7 @@ class VpsAdmin::API::Resources::Export < HaveAPI::Resource
       export
     rescue VpsAdmin::API::Exceptions::DatasetAlreadyExported,
            VpsAdmin::API::Exceptions::OperationNotSupported => e
-      error(e.message)
+      error!(e.message)
     end
 
     def state_id
@@ -216,7 +216,7 @@ class VpsAdmin::API::Resources::Export < HaveAPI::Resource
       object_state_check!(export.user)
 
       @chain, export = VpsAdmin::API::Operations::Export::Destroy.run(export)
-      ok
+      ok!
     end
 
     def state_id
@@ -329,7 +329,7 @@ class VpsAdmin::API::Resources::Export < HaveAPI::Resource
 
         host
       rescue ActiveRecord::RecordInvalid => e
-        error('create failed', to_param_names(e.record.errors.to_hash))
+        error!('create failed', to_param_names(e.record.errors.to_hash))
       end
 
       def state_id
@@ -403,7 +403,7 @@ class VpsAdmin::API::Resources::Export < HaveAPI::Resource
           host
         )
 
-        ok
+        ok!
       end
 
       def state_id

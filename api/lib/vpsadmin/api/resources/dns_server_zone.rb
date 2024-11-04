@@ -100,9 +100,9 @@ module VpsAdmin::API::Resources
         @chain, ret = VpsAdmin::API::Operations::DnsServerZone::Create.run(to_db_names(input))
         ret
       rescue ActiveRecord::RecordInvalid => e
-        error('create failed', e.record.errors.to_hash)
+        error!('create failed', e.record.errors.to_hash)
       rescue ActiveRecord::RecordNotUnique => e
-        error("zone #{input[:dns_zone].name} already is on server #{input[:dns_server].name}")
+        error!("zone #{input[:dns_zone].name} already is on server #{input[:dns_server].name}")
       end
 
       def state_id
@@ -121,7 +121,7 @@ module VpsAdmin::API::Resources
       def exec
         dns_server_zone = self.class.model.existing.find(params[:dns_server_zone_id])
         @chain = VpsAdmin::API::Operations::DnsServerZone::Destroy.run(dns_server_zone)
-        ok
+        ok!
       end
 
       def state_id

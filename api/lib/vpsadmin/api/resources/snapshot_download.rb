@@ -111,21 +111,21 @@ module VpsAdmin::API::Resources
                                                                         id: input[:snapshot].id
                                                                       ))
 
-        error('this snapshot has already been made available for download') if snap.snapshot_download_id
+        error!('this snapshot has already been made available for download') if snap.snapshot_download_id
 
         if input[:format] == 'incremental_stream'
-          error('from_snapshot is required') unless input[:from_snapshot]
+          error!('from_snapshot is required') unless input[:from_snapshot]
 
         elsif input[:from_snapshot]
-          error('from_snapshot is for incremental_stream format only')
+          error!('from_snapshot is for incremental_stream format only')
         end
 
         if input[:from_snapshot]
           if input[:snapshot].history_id != input[:from_snapshot].history_id
-            error('snapshot and snapshot2 must share the same history identifier')
+            error!('snapshot and snapshot2 must share the same history identifier')
 
           elsif input[:from_snapshot].created_at > input[:snapshot].created_at
-            error('from_snapshot must precede snapshot')
+            error!('from_snapshot must precede snapshot')
           end
         end
 
@@ -163,7 +163,7 @@ module VpsAdmin::API::Resources
       def exec
         dl = ::SnapshotDownload.find_by!(with_restricted(id: params[:snapshot_download_id]))
         @chain, = TransactionChains::Dataset::RemoveDownload.fire(dl)
-        ok
+        ok!
       end
 
       def state_id

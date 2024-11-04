@@ -101,7 +101,7 @@ module VpsAdmin::API::Plugins::Requests
         def exec
           self.class.model.create!(request, current_user, input)
         rescue ActiveRecord::RecordInvalid => e
-          error('create failed', e.record.errors.to_hash)
+          error!('create failed', e.record.errors.to_hash)
         end
       end
 
@@ -138,9 +138,9 @@ module VpsAdmin::API::Plugins::Requests
           request_params.delete_if { |k, _| %i[action reason].include?(k) }
 
           r.resolve(input[:action].to_sym, input[:reason], request_params)
-          ok
+          ok!
         rescue ActiveRecord::RecordInvalid => e
-          error('unable to resolve', e.record.errors.to_hash)
+          error!('unable to resolve', e.record.errors.to_hash)
         end
       end
     end

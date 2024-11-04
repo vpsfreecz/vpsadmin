@@ -215,9 +215,9 @@ class VpsAdmin::API::Resources::Location < HaveAPI::Resource
       loc = ::Location.new(to_db_names(params[:location]))
 
       if loc.save
-        ok(loc)
+        ok!(loc)
       else
-        error('save failed', to_param_names(loc.errors.to_hash, :input))
+        error!('save failed', to_param_names(loc.errors.to_hash, :input))
       end
     end
   end
@@ -279,9 +279,9 @@ class VpsAdmin::API::Resources::Location < HaveAPI::Resource
       loc = ::Location.find(params[:location_id])
 
       if loc.update(to_db_names(params[:location]))
-        ok
+        ok!
       else
-        error('update failed', to_param_names(loc.errors.to_hash))
+        error!('update failed', to_param_names(loc.errors.to_hash))
       end
     end
   end

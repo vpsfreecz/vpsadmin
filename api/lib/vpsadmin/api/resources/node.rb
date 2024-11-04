@@ -181,7 +181,7 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
       @chain, node = ::Node.register!(to_db_names(input))
       node
     rescue ActiveRecord::RecordInvalid => e
-      error('save failed', to_param_names(e.record.errors.to_hash, :input))
+      error!('save failed', to_param_names(e.record.errors.to_hash, :input))
     end
 
     def state_id
@@ -368,9 +368,9 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
       node = ::Node.find(params[:node_id])
 
       if node.update(to_db_names(input))
-        ok
+        ok!
       else
-        error('update failed', to_param_names(node.errors.to_hash, :input))
+        error!('update failed', to_param_names(node.errors.to_hash, :input))
       end
     end
   end
@@ -423,10 +423,10 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
       dst = input[:dst_node]
 
       if n.location_id != dst.location_id
-        error('the destination node is in a different location')
+        error!('the destination node is in a different location')
 
       elsif n.location.environment_id != dst.location.environment_id
-        error('the destination node is in a different environment')
+        error!('the destination node is in a different environment')
       end
 
       plan = n.evacuate(input)

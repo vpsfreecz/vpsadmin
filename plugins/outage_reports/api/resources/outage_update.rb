@@ -134,17 +134,17 @@ module VpsAdmin::API::Resources
 
         if input[:state]
           if input[:state] == outage.state
-            error('update failed', { state: ["is already #{outage.state}"] })
+            error!('update failed', { state: ["is already #{outage.state}"] })
 
           elsif input[:state] == 'announced'
             if outage.state != 'staged'
-              error('Only staged outages can be announced')
+              error!('Only staged outages can be announced')
 
             elsif outage.outage_handlers.count <= 0
-              error('Add at least one outage handler')
+              error!('Add at least one outage handler')
 
             elsif outage.outage_entities.count <= 0
-              error('Add at least one entity impaired by the outage')
+              error!('Add at least one entity impaired by the outage')
             end
           end
         end
@@ -152,7 +152,7 @@ module VpsAdmin::API::Resources
         @chain, ret = outage.create_outage_update!(to_db_names(input), tr, opts)
         ret
       rescue ActiveRecord::RecordInvalid => e
-        error('update failed', to_param_names(e.record.errors.to_hash))
+        error!('update failed', to_param_names(e.record.errors.to_hash))
       end
 
       def state_id

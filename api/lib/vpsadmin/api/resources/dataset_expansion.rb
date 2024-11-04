@@ -103,11 +103,11 @@ module VpsAdmin::API::Resources
       end
 
       def exec
-        error('this dataset is already expanded') if input[:dataset].dataset_expansion_id
+        error!('this dataset is already expanded') if input[:dataset].dataset_expansion_id
 
         dip = input[:dataset].root.primary_dataset_in_pool!
 
-        error('only hypervisor datasets can be expanded') if dip.pool.role != 'hypervisor'
+        error!('only hypervisor datasets can be expanded') if dip.pool.role != 'hypervisor'
 
         exp = ::DatasetExpansion.new(
           vps: dip.vpses.take!,
@@ -176,14 +176,14 @@ module VpsAdmin::API::Resources
       end
 
       def exec
-        error('this dataset is already expanded') if input[:dataset].dataset_expansion_id
+        error!('this dataset is already expanded') if input[:dataset].dataset_expansion_id
 
         dip = input[:dataset].root.primary_dataset_in_pool!
 
-        error('only hypervisor datasets can be expanded') if dip.pool.role != 'hypervisor'
+        error!('only hypervisor datasets can be expanded') if dip.pool.role != 'hypervisor'
 
         if input[:dataset].refquota <= input[:original_refquota]
-          error('invalid parameters', original_refquota: ['must be lesser than current refquota'])
+          error!('invalid parameters', original_refquota: ['must be lesser than current refquota'])
         end
 
         ::DatasetExpansion.create_for_expanded!(
@@ -289,7 +289,7 @@ module VpsAdmin::API::Resources
         def exec
           exp = ::DatasetExpansion.find(params[:dataset_expansion_id])
 
-          error('this expansion is already resolved') if exp.state != 'active'
+          error!('this expansion is already resolved') if exp.state != 'active'
 
           hist = exp.dataset_expansion_histories.new(
             added_space: input[:added_space],

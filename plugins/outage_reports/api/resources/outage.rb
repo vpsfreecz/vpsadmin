@@ -259,7 +259,7 @@ module VpsAdmin::API::Resources
         tr = extract_translations
         ::Outage.create_outage!(to_db_names(input), tr)
       rescue ActiveRecord::RecordInvalid => e
-        error('report failed', to_param_names(e.record.errors.to_hash))
+        error!('report failed', to_param_names(e.record.errors.to_hash))
       end
     end
 
@@ -286,7 +286,7 @@ module VpsAdmin::API::Resources
 
         outage.update_outage!(to_db_names(input), tr)
       rescue ActiveRecord::RecordInvalid => e
-        error('update failed', to_param_names(e.record.errors.to_hash))
+        error!('update failed', to_param_names(e.record.errors.to_hash))
       end
     end
 
@@ -304,7 +304,7 @@ module VpsAdmin::API::Resources
         outage.set_affected_vpses
         outage.set_affected_exports
         outage.set_affected_users
-        ok
+        ok!
       end
     end
 
@@ -395,9 +395,9 @@ module VpsAdmin::API::Resources
             row_id: input[:entity_id]
           )
         rescue ActiveRecord::RecordInvalid => e
-          error('create failed', to_param_names(e.record.errors.to_hash))
+          error!('create failed', to_param_names(e.record.errors.to_hash))
         rescue ActiveRecord::RecordNotUnique
-          error('this outage entity already exists')
+          error!('this outage entity already exists')
         end
       end
 
@@ -413,7 +413,7 @@ module VpsAdmin::API::Resources
             outage_id: params[:outage_id],
             id: params[:entity_id]
           ).destroy!
-          ok
+          ok!
         end
       end
     end
@@ -509,9 +509,9 @@ module VpsAdmin::API::Resources
             note: input[:note]
           )
         rescue ActiveRecord::RecordInvalid => e
-          error('create failed', e.record.errors.to_hash)
+          error!('create failed', e.record.errors.to_hash)
         rescue ActiveRecord::RecordNotUnique
-          error('this outage handler already exists')
+          error!('this outage handler already exists')
         end
       end
 
@@ -537,7 +537,7 @@ module VpsAdmin::API::Resources
             id: params[:handler_id]
           ).update!(note: input[:note])
         rescue ActiveRecord::RecordInvalid => e
-          error('update failed', e.record.errors.to_hash)
+          error!('update failed', e.record.errors.to_hash)
         end
       end
 
@@ -553,7 +553,7 @@ module VpsAdmin::API::Resources
             outage_id: params[:outage_id],
             id: params[:handler_id]
           ).destroy!
-          ok
+          ok!
         end
       end
     end

@@ -94,7 +94,7 @@ module VpsAdmin::API::Resources
         input[:published_at] ||= Time.now
         ::NewsLog.create!(input)
       rescue ActiveRecord::RecordInvalid => e
-        error('Create failed', e.record.errors.to_hash)
+        error!('Create failed', e.record.errors.to_hash)
       end
     end
 
@@ -119,7 +119,7 @@ module VpsAdmin::API::Resources
         n.update!(input)
         n
       rescue ActiveRecord::RecordInvalid => e
-        error('Update failed', e.record.errors.to_hash)
+        error!('Update failed', e.record.errors.to_hash)
       end
     end
 
@@ -133,7 +133,7 @@ module VpsAdmin::API::Resources
       def exec
         n = ::NewsLog.find(params[:news_log_id])
         n.destroy!
-        ok
+        ok!
       end
     end
   end

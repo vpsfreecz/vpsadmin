@@ -98,7 +98,7 @@ module VpsAdmin::API::Resources
 
       def exec
         if current_user.role != :admin && input[:dns_zone].user != current_user
-          error('access denied')
+          error!('access denied')
         end
 
         object_state_check!(input[:dns_zone].user) if input[:dns_zone].user_id
@@ -106,9 +106,9 @@ module VpsAdmin::API::Resources
         @chain, ret = VpsAdmin::API::Operations::DnsZoneTransfer::Create.run(to_db_names(input))
         ret
       rescue ActiveRecord::RecordInvalid => e
-        error('create failed', e.record.errors.to_hash)
+        error!('create failed', e.record.errors.to_hash)
       rescue ActiveRecord::RecordNotUnique => e
-        error("transfer between zone #{input[:dns_zone].name} and host IP #{input[:host_ip_address].ip_addr} already exists")
+        error!("transfer between zone #{input[:dns_zone].name} and host IP #{input[:host_ip_address].ip_addr} already exists")
       end
 
       def state_id
@@ -134,9 +134,9 @@ module VpsAdmin::API::Resources
         object_state_check!(transfer.dns_zone.user) if transfer.dns_zone.user_id
 
         @chain, = VpsAdmin::API::Operations::DnsZoneTransfer::Destroy.run(transfer)
-        ok
+        ok!
       rescue VpsAdmin::API::Exceptions::OperationError => e
-        error(e.message)
+        error!(e.message)
       end
 
       def state_id

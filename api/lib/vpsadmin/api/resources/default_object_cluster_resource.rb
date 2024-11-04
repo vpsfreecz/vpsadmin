@@ -91,7 +91,7 @@ module VpsAdmin::API::Resources
       def exec
         ::DefaultObjectClusterResource.create!(input)
       rescue ActiveRecord::RecordInvalid => e
-        error('create failed', e.record.errors.to_hash)
+        error!('create failed', e.record.errors.to_hash)
       end
     end
 
@@ -129,7 +129,7 @@ module VpsAdmin::API::Resources
         ::DefaultObjectClusterResource
           .find(params[:default_object_cluster_resource_id])
           .destroy!
-        ok
+        ok!
       end
     end
   end

@@ -80,10 +80,10 @@ module VpsAdmin::API::Resources
         tpl = ::MailTemplate.new(input)
 
         if tpl.save
-          ok(tpl)
+          ok!(tpl)
 
         else
-          error('save failed', tpl.errors.to_hash)
+          error!('save failed', tpl.errors.to_hash)
         end
       end
     end
@@ -107,10 +107,10 @@ module VpsAdmin::API::Resources
         tpl = ::MailTemplate.find(params[:mail_template_id])
 
         if tpl.update(input)
-          ok(tpl)
+          ok!(tpl)
 
         else
-          error('update failed', tpl.errors.to_hash)
+          error!('update failed', tpl.errors.to_hash)
         end
       end
     end
@@ -124,7 +124,7 @@ module VpsAdmin::API::Resources
 
       def exec
         ::MailTemplate.find(params[:mail_template_id]).destroy!
-        ok
+        ok!
       end
     end
 
@@ -214,10 +214,10 @@ module VpsAdmin::API::Resources
           )
 
           if r.save
-            ok(r)
+            ok!(r)
 
           else
-            error('save failed', r.errors.to_hash)
+            error!('save failed', r.errors.to_hash)
           end
         end
       end
@@ -234,7 +234,7 @@ module VpsAdmin::API::Resources
             mail_template_id: params[:mail_template_id],
             mail_recipient_id: params[:recipient_id]
           ).destroy
-          ok
+          ok!
         end
       end
     end
@@ -328,10 +328,10 @@ module VpsAdmin::API::Resources
           tr = ::MailTemplateTranslation.new(input)
 
           if tr.save
-            ok(tr)
+            ok!(tr)
 
           else
-            error('save failed', tr.errors.to_hash)
+            error!('save failed', tr.errors.to_hash)
           end
         end
       end
@@ -358,10 +358,10 @@ module VpsAdmin::API::Resources
           )
 
           if tr.update(input)
-            ok(tr)
+            ok!(tr)
 
           else
-            error('update failed', tr.errors.to_hash)
+            error!('update failed', tr.errors.to_hash)
           end
         end
       end
@@ -378,7 +378,7 @@ module VpsAdmin::API::Resources
             id: params[:translation_id],
             mail_template_id: params[:mail_template_id]
           ).destroy!
-          ok
+          ok!
         end
       end
     end

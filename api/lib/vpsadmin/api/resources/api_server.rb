@@ -15,9 +15,9 @@ module VpsAdmin::API::Resources
 
       def exec
         VpsAdmin::API::TransactionSigner.unlock(input[:passphrase])
-        ok
+        ok!
       rescue VpsAdmin::API::TransactionSigner::Error => e
-        error(e.message)
+        error!(e.message)
       end
     end
   end

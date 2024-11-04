@@ -137,7 +137,7 @@ class VpsAdmin::API::Resources::OsTemplate < HaveAPI::Resource
 
       ::OsTemplate.create!(attrs)
     rescue ActiveRecord::RecordInvalid => e
-      error('create failed', to_param_names(e.record.errors.to_hash))
+      error!('create failed', to_param_names(e.record.errors.to_hash))
     end
   end
 
@@ -161,7 +161,7 @@ class VpsAdmin::API::Resources::OsTemplate < HaveAPI::Resource
 
       ::OsTemplate.find(params[:os_template_id]).update!(attrs)
     rescue ActiveRecord::RecordInvalid => e
-      error('update failed', to_param_names(e.record.errors.to_hash))
+      error!('update failed', to_param_names(e.record.errors.to_hash))
     end
   end
 
@@ -173,9 +173,9 @@ class VpsAdmin::API::Resources::OsTemplate < HaveAPI::Resource
     def exec
       t = ::OsTemplate.find(params[:os_template_id])
 
-      error('The OS template is in use') if t.in_use?
+      error!('The OS template is in use') if t.in_use?
       t.destroy
-      ok
+      ok!
     end
   end
 end

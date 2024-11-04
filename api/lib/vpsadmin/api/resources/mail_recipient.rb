@@ -78,10 +78,10 @@ module VpsAdmin::API::Resources
         tpl = ::MailRecipient.new(input)
 
         if tpl.save
-          ok(tpl)
+          ok!(tpl)
 
         else
-          error('save failed', tpl.errors.to_hash)
+          error!('save failed', tpl.errors.to_hash)
         end
       end
     end
@@ -105,10 +105,10 @@ module VpsAdmin::API::Resources
         tpl = ::MailRecipient.find(params[:mail_recipient_id])
 
         if tpl.update(input)
-          ok(tpl)
+          ok!(tpl)
 
         else
-          error('update failed', tpl.errors.to_hash)
+          error!('update failed', tpl.errors.to_hash)
         end
       end
     end
@@ -122,7 +122,7 @@ module VpsAdmin::API::Resources
 
       def exec
         ::MailTemplate.find(params[:mail_recipient_id]).destroy
-        ok
+        ok!
       end
     end
   end

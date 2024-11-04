@@ -101,16 +101,16 @@ module VpsAdmin::API::Resources
       end
 
       def exec
-        error('Provide amount or incoming payment') if !input[:amount] && !input[:incoming_payment]
+        error!('Provide amount or incoming payment') if !input[:amount] && !input[:incoming_payment]
 
         @chain, payment = ::UserPayment.create!(input)
         payment
       rescue ActiveRecord::RecordInvalid => e
-        error('Create failed', e.record.errors.to_hash)
+        error!('Create failed', e.record.errors.to_hash)
       rescue ActiveRecord::RecordNotUnique
-        error('Create failed: this incoming payment is already assigned')
+        error!('Create failed: this incoming payment is already assigned')
       rescue ::UserAccount::AccountDisabled => e
-        error(e.message)
+        error!(e.message)
       end
 
       def state_id

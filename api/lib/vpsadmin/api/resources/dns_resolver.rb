@@ -113,7 +113,7 @@ class VpsAdmin::API::Resources::DnsResolver < HaveAPI::Resource
     def exec
       ::DnsResolver.create!(to_db_names(input))
     rescue ActiveRecord::RecordInvalid => e
-      error('create failed', to_param_names(e.record.errors.to_hash, :input))
+      error!('create failed', to_param_names(e.record.errors.to_hash, :input))
     end
   end
 
@@ -137,7 +137,7 @@ class VpsAdmin::API::Resources::DnsResolver < HaveAPI::Resource
       @chain, ret = TransactionChains::DnsResolver::Update.fire(resolver, to_db_names(input))
       ret
     rescue ActiveRecord::RecordInvalid => e
-      error('update failed', to_param_names(e.record.errors.to_hash, :input))
+      error!('update failed', to_param_names(e.record.errors.to_hash, :input))
     end
 
     def state_id
@@ -159,12 +159,12 @@ class VpsAdmin::API::Resources::DnsResolver < HaveAPI::Resource
 
     def exec
       ns = ::DnsResolver.find(params[:dns_resolver_id])
-      error('The DNS resolver is in use. Use force=true to override.') if !input[:force] && ns.in_use?
+      error!('The DNS resolver is in use. Use force=true to override.') if !input[:force] && ns.in_use?
 
       @chain, = TransactionChains::DnsResolver::Destroy.fire(ns)
-      ok
+      ok!
     rescue ActiveRecord::RecordInvalid => e
-      error('delete failed', to_param_names(e.record.errors.to_hash, :input))
+      error!('delete failed', to_param_names(e.record.errors.to_hash, :input))
     end
 
     def state_id

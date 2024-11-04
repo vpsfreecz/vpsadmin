@@ -53,9 +53,9 @@ module VpsAdmin::API
               )
 
               if lock.lock!(obj)
-                ok
+                ok!
               else
-                error('already locked')
+                error!('already locked')
               end
 
             else
@@ -69,7 +69,7 @@ module VpsAdmin::API
           rescue ActiveRecord::RecordInvalid => e
             puts e.message
             puts e.backtrace
-            error('lock failed', lock.errors.to_hash)
+            error!('lock failed', lock.errors.to_hash)
           end
         end
 

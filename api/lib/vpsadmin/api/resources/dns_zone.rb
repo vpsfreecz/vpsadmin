@@ -114,7 +114,7 @@ module VpsAdmin::API::Resources
           object_state_check!(current_user)
 
           if input[:seed_vps] && input[:seed_vps].user_id != current_user.id
-            error('access to this VPS is denied')
+            error!('access to this VPS is denied')
           end
         end
 
@@ -128,11 +128,11 @@ module VpsAdmin::API::Resources
         @chain, ret = op.run(to_db_names(input))
         ret
       rescue ActiveRecord::RecordInvalid => e
-        error('create failed', e.record.errors.to_hash)
+        error!('create failed', e.record.errors.to_hash)
       rescue ActiveRecord::RecordNotUnique => e
-        error('zone with this name already exists')
+        error!('zone with this name already exists')
       rescue VpsAdmin::API::Exceptions::OperationError => e
-        error(e.message)
+        error!(e.message)
       end
 
       def state_id
@@ -167,7 +167,7 @@ module VpsAdmin::API::Resources
         @chain, ret = VpsAdmin::API::Operations::DnsZone::Update.run(zone, to_db_names(input))
         ret
       rescue ActiveRecord::RecordInvalid => e
-        error('update failed', e.record.errors.to_hash)
+        error!('update failed', e.record.errors.to_hash)
       end
 
       def state_id
@@ -199,9 +199,9 @@ module VpsAdmin::API::Resources
           end
 
         @chain = op.run(zone)
-        ok
+        ok!
       rescue VpsAdmin::API::Exceptions::OperationError => e
-        error(e.message)
+        error!(e.message)
       end
 
       def state_id
