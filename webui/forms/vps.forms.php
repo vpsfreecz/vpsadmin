@@ -170,23 +170,60 @@ function print_newvps_page2($user_id, $loc_id)
         'location' => $loc_id,
     ]);
 
+    $families = $api->os_family->list();
+    $familyIndex = 0;
     $tpls = $api->os_template->list(['hypervisor_type' => 'vpsadminos']);
 
-    foreach ($tpls as $t) {
-        $xtpl->form_add_radio_pure(
-            'os_template',
-            $t->id,
-            $_GET['os_template'] == $t->id
-        );
-        $xtpl->table_td('<strong>' . $t->label . '</strong>');
-        $xtpl->table_tr();
+    foreach ($families as $family) {
+        $familyTemplates = [];
 
-        $xtpl->table_td('');
-        $xtpl->table_td($t->info);
-        $xtpl->table_tr();
+        foreach ($tpls as $t) {
+            if ($t->os_family_id == $family->id) {
+                $familyTemplates[] = $t;
+            }
+        }
+
+        if (count($familyTemplates) == 0) {
+            continue;
+        }
+
+        $tdContent = '';
+        $tdContent .= '<details>';
+        $tdContent .= '<summary>' . h($family->label) . '</summary>';
+
+        if ($family->description) {
+            $tdContent .= '<p>' . nl2br($family->description) . '</p>';
+        }
+
+        $tdContent .= '<table>';
+
+        foreach ($familyTemplates as $t) {
+            $tdContent .= '<tr>';
+            $tdContent .= '<td><input type="radio" name="os_template" value="' . $t->id . '" ' . ($_GET['os_template'] == $t->id ? 'checked' : '') . '></td>';
+            $tdContent .= '<td>' . h($t->label) . '</td>';
+            $tdContent .= '</tr>';
+
+            if (!$t->info) {
+                continue;
+            }
+
+            $tdContent .= '<tr>';
+            $tdContent .= '<td></td><td>' . nl2br($t->info) . '</td>';
+            $tdContent .= '</tr>';
+        }
+
+        $tdContent .= '</table>';
+        $tdContent .= '</details>';
+
+        $xtpl->table_td($tdContent);
+        $xtpl->table_tr(false, $familyIndex % 2 == 0 ? 'evenrow' : 'oddrow', 'nohover');
+
+        $familyIndex += 1;
     }
 
-    $xtpl->form_out(_("Next"));
+    $xtpl->table_td($xtpl->html_submit(_("Next")));
+    $xtpl->table_tr();
+    $xtpl->form_out_raw();
 }
 
 function print_newvps_page3($user_id, $loc_id, $tpl_id)
