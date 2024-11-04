@@ -703,6 +703,7 @@ if (isAdmin()) {
 
                 try {
                     $api->os_template->update($_GET['id'], [
+                        'os_family' => $_POST['os_family'],
                         'label' => $_POST['label'],
                         'info' => $_POST['info'],
                         'enabled' => isset($_POST['enabled']),
@@ -738,6 +739,7 @@ if (isAdmin()) {
 
                 try {
                     $api->os_template->create([
+                        'os_family' => $_POST['os_family'],
                         'label' => $_POST['label'],
                         'info' => $_POST['info'],
                         'enabled' => isset($_POST['enabled']),
