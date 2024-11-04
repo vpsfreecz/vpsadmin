@@ -7,6 +7,7 @@ class VpsAdmin::API::Resources::OsTemplate < HaveAPI::Resource
   end
 
   params(:common) do
+    resource VpsAdmin::API::Resources::OsFamily, label: 'OS family'
     string :name, label: 'Name', desc: 'Template file name'
     string :label, label: 'Label', desc: 'Human-friendly label'
     text :info, label: 'Info', desc: 'Information about template'
@@ -44,7 +45,7 @@ class VpsAdmin::API::Resources::OsTemplate < HaveAPI::Resource
       allow if u.role == :admin
       restrict enabled: true
       output whitelist: %i[id name label info supported hypervisor_type cgroup_version
-                           vendor variant arch distribution version]
+                           vendor variant arch distribution version os_family]
       allow
     end
 
@@ -73,6 +74,10 @@ class VpsAdmin::API::Resources::OsTemplate < HaveAPI::Resource
         )
       end
 
+      if input[:os_family]
+        q = q.where(os_family: input[:os_family])
+      end
+
       q
     end
 
@@ -96,7 +101,7 @@ class VpsAdmin::API::Resources::OsTemplate < HaveAPI::Resource
     authorize do |u|
       allow if u.role == :admin
       output whitelist: %i[id name label info supported enabled hypervisor_type cgroup_version
-                           vendor variant arch distribution version]
+                           vendor variant arch distribution version os_family]
       allow
     end
 
@@ -112,7 +117,7 @@ class VpsAdmin::API::Resources::OsTemplate < HaveAPI::Resource
   class Create < HaveAPI::Actions::Default::Create
     input do
       use :common, exclude: %i[name]
-      %i[label vendor variant arch distribution version].each do |v|
+      %i[os_family label vendor variant arch distribution version].each do |v|
         patch v, required: true
       end
     end
