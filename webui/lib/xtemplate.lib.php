@@ -62,6 +62,8 @@ class XTemplate
     public $_ignore_missing_blocks = true ;          // NW 17 oct 2002 - Set to FALSE to
     public $_file_name_full_path = '';
     public $table_rows = 0;
+    public $table_max_cols = 0;
+    public $table_cur_cols = 0;
     public function __construct($file, $tpldir = '', $files = null, $mainblock = 'main', $autosetup = true)
     {
         $this->filename = $file;
@@ -623,6 +625,8 @@ class XTemplate
     {
         $this->assign('TABLE_CATEGORY', $name);
         $this->parse('main.table.category');
+
+        $this->table_increment_cols();
     }
     /**
       * Add table cell
@@ -647,6 +651,8 @@ class XTemplate
         $this->assign('TABLE_TD', $content);
         $this->parse('main.table.tr.td');
         $this->assign('TDSTYLE', '');
+
+        $this->table_increment_cols();
     }
     /**
       * Parse out the table row
@@ -658,6 +664,8 @@ class XTemplate
     {
         // UPDATED BY toms
         $this->table_rows++;
+        $this->table_cur_cols = 0;
+
         if ($tr_back_color) {
             $this->assign('TRSTYLE', 'style="background:' . $tr_back_color . '"');
         } elseif ($tr_class) {
@@ -693,6 +701,14 @@ class XTemplate
 
         $this->parse('main.table.tr');
     }
+    private function table_increment_cols()
+    {
+        $this->table_cur_cols += 1;
+
+        if ($this->table_cur_cols > $this->table_max_cols) {
+            $this->table_max_cols = $this->table_cur_cols;
+        }
+    }
     /**
       * Parse out the table
       */
@@ -704,6 +720,8 @@ class XTemplate
         }
 
         $this->table_rows = 0;
+        $this->table_max_cols = 0;
+        $this->table_cur_cols = 0;
         $this->parse('main.table');
     }
     /**
