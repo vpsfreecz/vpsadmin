@@ -5,13 +5,15 @@ class Pagination
     private $resourceList;
     private $baseUrl;
     private $limit;
+    private $inputParameter;
+    private $outputParameter;
     private $history;
 
     /**
      * @param \HaveAPI\Client\ResourceInstanceList $resourceList
      * @param \HaveAPI\Client\Action $action
      */
-    public function __construct($resourceList, $action = null)
+    public function __construct($resourceList, $action = null, $options = [])
     {
         if (is_null($resourceList) && is_null($action)) {
             throw new Exception('Provide either resourceList or action');
@@ -24,6 +26,18 @@ class Pagination
         }
 
         $input = $action->getParameters('input');
+        $output = $action->getParameters('output');
+
+        $this->inputParameter = $options['inputParameter'] ?? 'from_id';
+        $this->outputParameter = $options['outputParameter'] ?? 'id';
+
+        if (is_null($input->{$this->inputParameter})) {
+            throw new Exception('Input parameter ' . $options['inputParameter'] . ' not found');
+        }
+
+        if (is_null($output->{$this->outputParameter})) {
+            throw new Exception('Output parameter ' . $options['outputParameter'] . ' not found');
+        }
 
         $this->baseUrl = $_SERVER['PATH_INFO'];
         $this->limit = isset($_GET['limit']) ? $_GET['limit'] : $input->limit->default;
@@ -53,13 +67,13 @@ class Pagination
     {
         $history = $this->history;
         $history[] = [
-            'from_id' => $_GET['from_id'] ?? 0,
+            $this->inputParameter => $_GET[$this->inputParameter] ?? 0,
             'limit' => $_GET['limit'] ?? $this->limit,
         ];
 
         $params = array_merge(
             $_GET,
-            ['from_id' =>  $this->resourceList->last()->id],
+            [$this->inputParameter =>  $this->resourceList->last()->{$this->outputParameter}],
             $this->appendHistory($history),
         );
 
@@ -86,7 +100,7 @@ class Pagination
         $params = array_merge(
             $_GET,
             [
-                'from_id' => $lastItem['from_id'],
+                $this->inputParameter => $lastItem[$this->inputParameter],
                 'limit' => $lastItem['limit'],
             ],
             $this->appendHistory($history),
@@ -114,7 +128,7 @@ class Pagination
         $params = array_merge(
             $_GET,
             [
-                'from_id' => $lastItem['from_id'],
+                $this->inputParameter => $lastItem[$this->inputParameter],
                 'limit' => $lastItem['limit'],
             ],
             $this->appendHistory([]),
@@ -134,13 +148,13 @@ class Pagination
 
         $ret = [];
 
-        if (isset($_GET['from_id'])) {
-            $ret['from_id'] = $_GET['from_id'];
+        if (isset($_GET[$this->inputParameter])) {
+            $ret[$this->inputParameter] = $_GET[$this->inputParameter];
         }
 
         $history = $this->history;
         $history[] = [
-            'from_id' => $_GET['from_id'] ?? 0,
+            $this->inputParameter => $_GET[$this->inputParameter] ?? 0,
             'limit' => $_GET['limit'] ?? $this->limit,
         ];
 
@@ -158,10 +172,10 @@ class Pagination
         $entries = explode(',', $_GET['pagination']);
 
         foreach ($entries as $v) {
-            list($from_id, $limit) = explode(':', $v);
+            list($parameter, $limit) = explode(':', $v);
 
             $ret[] = [
-                'from_id' => $from_id,
+                $this->inputParameter => $parameter,
                 'limit' => $limit,
             ];
         }
@@ -178,7 +192,7 @@ class Pagination
         $entries = [];
 
         foreach ($history as $item) {
-            $entries[] = $item['from_id'] . ':' . $item['limit'];
+            $entries[] = $item[$this->inputParameter] . ':' . $item['limit'];
         }
 
         return ['pagination' => implode(',', $entries)];
