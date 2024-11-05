@@ -701,6 +701,32 @@ class XTemplate
 
         $this->parse('main.table.tr');
     }
+    /**
+     * Add row with pagination controls
+     */
+    public function table_pagination($pagination)
+    {
+        $links = [];
+
+        if ($pagination->hasFirstPage()) {
+            $links[] = '<a href="' . $pagination->firstPageUrl() . '">&laquo;' . _('First page') . '</a>';
+        }
+
+        if ($pagination->hasPreviousPage()) {
+            $links[] = '<a href="' . $pagination->previousPageUrl() . '">&larr;' . _('Previous page') . '</a>';
+        }
+
+        if ($pagination->hasNextPage()) {
+            $links[] = '<a href="' . $pagination->nextPageUrl() . '">' . _('Next page') . '&rarr;</a>';
+        }
+
+        if (count($links) == 0) {
+            return;
+        }
+
+        $this->table_td(implode(' | ', $links), false, false, $this->table_max_cols);
+        $this->table_tr();
+    }
     private function table_increment_cols()
     {
         $this->table_cur_cols += 1;

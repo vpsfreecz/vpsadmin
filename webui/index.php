@@ -37,6 +37,7 @@ include WWW_ROOT . 'lib/helpbox.lib.php';
 include WWW_ROOT . 'lib/security.lib.php';
 include WWW_ROOT . 'lib/munin.lib.php';
 include WWW_ROOT . 'lib/login.lib.php';
+include WWW_ROOT . 'lib/pagination.lib.php';
 
 include WWW_ROOT . 'forms/backup.forms.php';
 include WWW_ROOT . 'forms/cluster.forms.php';
