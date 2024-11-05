@@ -592,6 +592,8 @@ function vps_list_form()
 {
     global $xtpl, $api;
 
+    $pagination = new Pagination(null, $api->vps->list);
+
     if (isAdmin()) {
         $xtpl->title(_("VPS list") . ' ' . _("[Admin mode]"));
     } else {
@@ -602,15 +604,13 @@ function vps_list_form()
         $xtpl->table_title(_('Filters'));
         $xtpl->form_create('', 'get', 'vps-filter', false);
 
-        $xtpl->table_td(
-            _("Limit") . ':' .
-            '<input type="hidden" name="page" value="adminvps">' .
-            '<input type="hidden" name="action" value="list">'
-        );
-        $xtpl->form_add_input_pure('text', '40', 'limit', get_val('limit', '25'), '');
-        $xtpl->table_tr();
+        $xtpl->form_set_hidden_fields(array_merge([
+            'page' => 'adminvps',
+            'action' => 'list',
+        ], $pagination->hiddenFormFields()));
 
-        $xtpl->form_add_input(_("Offset") . ':', 'text', '40', 'offset', get_val('offset', '0'), '');
+        $xtpl->form_add_input(_("Limit") . ':', 'text', '40', 'limit', get_val('limit', '25'), '');
+        $xtpl->form_add_input(_("From ID") . ':', 'text', '40', 'from_id', get_val('from_id'), '');
         $xtpl->form_add_input(_("User ID") . ':', 'text', '40', 'user', get_val('user'));
         $xtpl->form_add_select(
             _("Node") . ':',
@@ -664,8 +664,8 @@ function vps_list_form()
         if (isAdmin()) {
             $params = [
                 'limit' => get_val('limit', 25),
-                'offset' => get_val('offset', 0),
-                'meta' => ['count' => true, 'includes' => 'user,node,dataset__dataset_expansion'],
+                'from_id' => get_val('from_id', 0),
+                'meta' => ['includes' => 'user,node,dataset__dataset_expansion'],
             ];
 
             if ($_GET['user']) {
@@ -699,6 +699,8 @@ function vps_list_form()
                 'meta' => ['count' => true, 'includes' => 'user,node,dataset__dataset_expansion'],
             ]);
         }
+
+        $pagination->setResourceList($vpses);
 
         foreach ($vpses as $vps) {
             $diskSpaceWarning = showVpsDiskSpaceWarning($vps);
@@ -791,14 +793,8 @@ function vps_list_form()
 
         }
 
+        $xtpl->table_pagination($pagination);
         $xtpl->table_out();
-
-        if (isAdmin()) {
-            $xtpl->table_add_category(_("Total number of VPS") . ':');
-            $xtpl->table_add_category($vpses->getTotalCount());
-            $xtpl->table_out();
-
-        }
     }
 
     if (isAdmin()) {

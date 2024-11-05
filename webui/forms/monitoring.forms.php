@@ -4,17 +4,47 @@ function monitoring_list()
 {
     global $xtpl, $api;
 
+    $params = [
+        'limit' => get_val('limit', 25),
+    ];
+
+    $ordering = $_GET['order'] ?? $api->monitored_event->index->getParameters('input')->order->default;
+
+    if ($ordering == 'oldest' || $ordering == 'latest') {
+        $paginationOptions = ['inputParameter' => 'from_id', 'outputParameter' => 'id'];
+    } else {
+        $paginationOptions = ['inputParameter' => 'from_duration', 'outputParameter' => 'duration'];
+    }
+
+    $paginateBy = $paginationOptions['inputParameter'];
+
+    if ($_GET[$paginateBy] ?? 0 > 0) {
+        $params[$paginateBy] = $_GET[$paginateBy];
+    }
+
+    $filters = [
+        'monitor', 'user', 'object_name', 'object_id', 'state', 'order',
+    ];
+
+    foreach ($filters as $v) {
+        if ($_GET[$v]) {
+            $params[$v] = $_GET[$v];
+        }
+    }
+
+    $events = $api->monitored_event->list($params);
+    $pagination = new Pagination($events, null, $paginationOptions);
+
     $xtpl->title(_('Monitored event list'));
     $xtpl->table_title(_('Filters'));
     $xtpl->form_create('', 'get', 'monitoring-list', false);
 
-    $xtpl->table_td(
-        _("Limit") . ':' .
-        '<input type="hidden" name="page" value="monitoring">' .
-        '<input type="hidden" name="action" value="list">'
-    );
-    $xtpl->form_add_input_pure('text', '40', 'limit', get_val('limit', '25'), '');
-    $xtpl->table_tr();
+    $xtpl->form_set_hidden_fields(array_merge([
+        'page' => 'monitoring',
+        'action' => 'list',
+    ], $pagination->hiddenFormFields()));
+
+    $xtpl->form_add_input(_("Limit") . ':', 'text', '40', 'limit', get_val('limit', '25'), '');
 
     $input = $api->monitored_event->list->getParameters('input');
 
@@ -30,22 +60,6 @@ function monitoring_list()
     api_param_to_form('order', $input->order, $_GET['order']);
 
     $xtpl->form_out(_('Show'));
-
-    $params = [
-        'limit' => get_val('limit', 25),
-    ];
-
-    $filters = [
-        'monitor', 'user', 'object_name', 'object_id', 'state', 'order',
-    ];
-
-    foreach ($filters as $v) {
-        if ($_GET[$v]) {
-            $params[$v] = $_GET[$v];
-        }
-    }
-
-    $events = $api->monitored_event->list($params);
 
     $xtpl->table_add_category(_('Detected at'));
     $xtpl->table_add_category(_('State'));
@@ -72,13 +86,14 @@ function monitoring_list()
             transaction_concern_link($e->object_name, $e->object_id)
         );
         $xtpl->table_td($e->label);
-        $xtpl->table_td(format_duration(strtotime($e->updated_at) - strtotime($e->created_at)));
+        $xtpl->table_td(format_duration($e->duration));
         $xtpl->table_td(
             '<a href="?page=monitoring&action=show&id=' . $e->id . '"><img src="template/icons/vps_edit.png" alt="' . _('Details') . '" title="' . _('Details') . '"></a>'
         );
         $xtpl->table_tr();
     }
 
+    $xtpl->table_pagination($pagination);
     $xtpl->table_out();
 }
 
@@ -112,7 +127,7 @@ function monitoring_event()
     $xtpl->table_tr();
 
     $xtpl->table_td(_('Duration') . ':');
-    $xtpl->table_td(format_duration(strtotime($e->updated_at) - strtotime($e->created_at)));
+    $xtpl->table_td(format_duration($e->duration));
     $xtpl->table_tr();
 
     $xtpl->table_td(_('State') . ':');
@@ -127,23 +142,28 @@ function monitoring_event()
     $xtpl->table_title(_('Log'));
     $xtpl->form_create('', 'get', 'monitoring-list', false);
 
-    $xtpl->table_td(
-        _("Limit") . ':' .
-        '<input type="hidden" name="page" value="monitoring">' .
-        '<input type="hidden" name="action" value="event">' .
-        '<input type="hidden" name="id" value="' . $e->id . '">'
-    );
-    $xtpl->form_add_input_pure('text', '40', 'limit', get_val('limit', '25'), '');
-    $xtpl->table_tr();
+    $params = [
+        'limit' => get_val('limit', 25),
+    ];
 
+    if ($_GET['from_id'] ?? 0 > 0) {
+        $params['from_id'] = $_GET['from_id'];
+    }
+
+    $logs = $e->log->list($params);
+    $pagination = new Pagination($logs);
+
+    $xtpl->form_set_hidden_fields(array_merge([
+        'page' => 'monitoring',
+        'action' => 'show',
+        'id' => $e->id,
+    ], $pagination->hiddenFormFields()));
+
+    $xtpl->form_add_input(_("Limit") . ':', 'text', '40', 'limit', get_val('limit', '25'), '');
     $xtpl->form_out(_('Show'));
 
     $xtpl->table_add_category(_('Date'));
     $xtpl->table_add_category(_('Value'));
-
-    $logs = $e->log->list([
-        'limit' => get_val('limit', 25),
-    ]);
 
     foreach ($logs as $log) {
         $xtpl->table_td(tolocaltz($log->created_at));
@@ -151,6 +171,7 @@ function monitoring_event()
         $xtpl->table_tr();
     }
 
+    $xtpl->table_pagination($pagination);
     $xtpl->table_out();
 }
 

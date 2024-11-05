@@ -107,22 +107,21 @@ function list_user_sessions($user_id)
     $u = $api->user->find($user_id);
 
     $input = $api->user_session->index->getParameters('input');
+    $pagination = new Pagination(null, $api->user_session->index);
 
     $xtpl->title(_('Session log of') . ' <a href="?page=adminm&action=edit&id=' . $u->id . '">#' . $u->id . '</a> ' . $u->login);
     $xtpl->table_title(_('Filters'));
     $xtpl->form_create('', 'get', 'user-session-filter', false);
 
-    $xtpl->table_td(
-        _("Limit") . ':' .
-        '<input type="hidden" name="page" value="adminm">' .
-        '<input type="hidden" name="action" value="user_sessions">' .
-        '<input type="hidden" name="id" value="' . $user_id . '">' .
-        '<input type="hidden" name="list" value="1">'
-    );
-    $xtpl->form_add_input_pure('text', '40', 'limit', get_val('limit', '25'), '');
-    $xtpl->table_tr();
+    $xtpl->form_set_hidden_fields(array_merge([
+        'page' => 'adminm',
+        'action' => 'user_sessions',
+        'id' => $user_id,
+        'list' => '1',
+    ], $pagination->hiddenFormFields()));
 
-    $xtpl->form_add_input(_("Offset") . ':', 'text', '40', 'offset', get_val('offset', '0'), '');
+    $xtpl->form_add_input(_("Limit") . ':', 'text', '40', 'limit', get_val('limit', '25'), '');
+    $xtpl->form_add_input(_("From ID") . ':', 'text', '40', 'from_id', get_val('from_id'), '');
     $xtpl->form_add_input(_("Exact ID") . ':', 'text', '40', 'session_id', get_val('session_id', ''), '');
     api_param_to_form('auth_type', $input->auth_type, get_val('auth_type'), null, true);
     api_param_to_form('state', $input->state, get_val('state'), null, true);
@@ -145,9 +144,12 @@ function list_user_sessions($user_id)
 
     $params = [
         'limit' => get_val('limit', 25),
-        'offset' => get_val('offset', 0),
         'user' => $user_id,
     ];
+
+    if ($_GET['from_id'] ?? 0 > 0) {
+        $params['from_id'] = $_GET['from_id'];
+    }
 
     $conds = [
         'auth_type',
@@ -175,6 +177,7 @@ function list_user_sessions($user_id)
         $sessions = [ $api->user_session->show($_GET['session_id']) ];
     } else {
         $sessions = $api->user_session->list($params);
+        $pagination->setResourceList($sessions);
     }
 
     $xtpl->table_add_category(_("Label"));
@@ -258,6 +261,10 @@ function list_user_sessions($user_id)
         );
 
         $xtpl->table_tr();
+    }
+
+    if (!$_GET['session_id']) {
+        $xtpl->table_pagination($pagination);
     }
 
     $xtpl->table_out();
@@ -831,25 +838,14 @@ function user_payment_history()
 {
     global $xtpl, $api;
 
-    $xtpl->title(_('Payment history'));
-
-    $xtpl->form_create('?page=adminm&action=payments_history', 'get');
-    $xtpl->table_td(
-        _("Limit") . ':' .
-        '<input type="hidden" name="page" value="adminm">' .
-        '<input type="hidden" name="action" value="payments_history">'
-    );
-    $xtpl->form_add_input_pure('text', '40', 'limit', get_val('limit', 25), '');
-    $xtpl->table_tr();
-
-    $xtpl->form_add_input(_("Admin ID") . ':', 'text', '40', 'accounted_by', get_val('accounted_by'));
-    $xtpl->form_add_input(_("User ID") . ':', 'text', '40', 'user', get_val('user'));
-    $xtpl->form_out(_("Show"));
-
     $params = [
         'limit' => get_val('limit', 25),
         'meta' => ['includes' => 'user,accounted_by'],
     ];
+
+    if ($_GET['from_id'] ?? 0 > 0) {
+        $params['from_id'] = $_GET['from_id'];
+    }
 
     foreach (['accounted_by', 'user'] as $filter) {
         if ($_GET[$filter]) {
@@ -858,6 +854,21 @@ function user_payment_history()
     }
 
     $payments = $api->user_payment->list($params);
+    $pagination = new Pagination($payments);
+
+    $xtpl->title(_('Payment history'));
+
+    $xtpl->form_create('?page=adminm&action=payments_history', 'get');
+
+    $xtpl->form_set_hidden_fields(array_merge([
+        'page' => 'adminm',
+        'action' => 'payments_history',
+    ], $pagination->hiddenFormFields()));
+
+    $xtpl->form_add_input(_("Limit") . ':', 'text', '40', 'limit', get_val('limit', 25), '');
+    $xtpl->form_add_input(_("Admin ID") . ':', 'text', '40', 'accounted_by', get_val('accounted_by'));
+    $xtpl->form_add_input(_("User ID") . ':', 'text', '40', 'user', get_val('user'));
+    $xtpl->form_out(_("Show"));
 
     $xtpl->table_add_category("ACCEPTED AT");
     $xtpl->table_add_category("USER");
@@ -882,6 +893,7 @@ function user_payment_history()
         $xtpl->table_tr();
     }
 
+    $xtpl->table_pagination($pagination);
     $xtpl->table_out();
 }
 
@@ -889,17 +901,32 @@ function incoming_payments_list()
 {
     global $xtpl, $api;
 
+    $params = [
+        'limit' => get_val('limit', 25),
+    ];
+
+    if ($_GET['from_id'] ?? 0 > 0) {
+        $params['from_id'] = $_GET['from_id'];
+    }
+
+    if (isset($_GET['state'])) {
+        $params['state'] = $_GET['state'];
+    }
+
+    $payments = $api->incoming_payment->list($params);
+    $pagination = new Pagination($payments);
+
     $xtpl->title(_('Incoming payments'));
 
     $xtpl->form_create('?page=adminm&action=incoming_payments', 'get');
-    $xtpl->table_td(
-        _("Limit") . ':' .
-        '<input type="hidden" name="page" value="adminm">' .
-        '<input type="hidden" name="action" value="incoming_payments">'
-    );
-    $xtpl->form_add_input_pure('text', '40', 'limit', get_val('limit', 25), '');
-    $xtpl->table_tr();
-    $xtpl->form_add_input(_('Offset') . ':', 'text', '40', 'offset', get_val('offset', 0), '');
+
+    $xtpl->form_set_hidden_fields(array_merge([
+        'page' => 'adminm',
+        'action' => 'incoming_payments',
+    ], $pagination->hiddenFormFields()));
+
+    $xtpl->form_add_input(_("Limit") . ':', 'text', '40', 'limit', get_val('limit', 25), '');
+    $xtpl->form_add_input(_('From ID') . ':', 'text', '40', 'from_id', get_val('from_id'), '');
 
     $input = $api->incoming_payment->list->getParameters('input');
 
@@ -910,17 +937,6 @@ function incoming_payments_list()
     );
 
     $xtpl->form_out(_('Show'));
-
-    $params = [
-        'limit' => get_val('limit', 25),
-        'offset' => get_val('offset', 0),
-    ];
-
-    if (isset($_GET['state'])) {
-        $params['state'] = $_GET['state'];
-    }
-
-    $payments = $api->incoming_payment->list($params);
 
     $xtpl->table_add_category("DATE");
     $xtpl->table_add_category("AMOUNT");
@@ -946,6 +962,7 @@ function incoming_payments_list()
         $xtpl->table_tr();
     }
 
+    $xtpl->table_pagination($pagination);
     $xtpl->table_out();
 }
 

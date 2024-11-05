@@ -687,17 +687,18 @@ function outage_list()
         $xtpl->sbar_add(_('New report'), '?page=outage&action=report&t=' . csrf_token());
     }
 
+    $pagination = new Pagination(null, $api->outage->list);
+
     $xtpl->title(_('Outage list'));
     $xtpl->table_title(_('Filters'));
     $xtpl->form_create('', 'get', 'outage-list', false);
 
-    $xtpl->table_td(
-        _("Limit") . ':' .
-        '<input type="hidden" name="page" value="outage">' .
-        '<input type="hidden" name="action" value="list">'
-    );
-    $xtpl->form_add_input_pure('text', '40', 'limit', get_val('limit', '25'), '');
-    $xtpl->table_tr();
+    $xtpl->form_set_hidden_fields(array_merge([
+        'page' => 'outage',
+        'action' => 'list',
+    ], $pagination->hiddenFormFields()));
+
+    $xtpl->form_add_input(_("Limit") . ':', 'text', '40', 'limit', get_val('limit', '25'), '');
 
     $input = $api->outage->list->getParameters('input');
 
@@ -792,6 +793,10 @@ function outage_list()
         'limit' => get_val('limit', 25),
     ];
 
+    if ($_GET['from_id'] ?? 0 > 0) {
+        $params['from_id'] = $_GET['from_id'];
+    }
+
     foreach (['affected'] as $v) {
         if ($_GET[$v] === 'yes') {
             $params[$v] = true;
@@ -818,6 +823,8 @@ function outage_list()
         $xtpl->perex_format_errors(_('Unable to list outages'), $e->getResponse());
         return;
     }
+
+    $pagination->setResourceList($outages);
 
     foreach ($outages as $outage) {
         $xtpl->table_td(tolocaltz($outage->begins_at, 'Y-m-d H:i'));
@@ -862,6 +869,7 @@ function outage_list()
         $xtpl->table_tr();
     }
 
+    $xtpl->table_pagination($pagination);
     $xtpl->table_out();
 }
 

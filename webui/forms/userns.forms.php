@@ -38,17 +38,18 @@ function userns_list()
 {
     global $xtpl, $api;
 
+    $pagination = new Pagination(null, $api->user_namespace->list);
+
     $xtpl->title(_('User namespaces'));
     $xtpl->table_title(_('Filters'));
     $xtpl->form_create('', 'get', 'userns-list', false);
 
-    $xtpl->table_td(
-        _("Limit") . ':' .
-        '<input type="hidden" name="page" value="userns">' .
-        '<input type="hidden" name="action" value="list">'
-    );
-    $xtpl->form_add_input_pure('text', '40', 'limit', get_val('limit', '25'), '');
-    $xtpl->table_tr();
+    $xtpl->form_set_hidden_fields(array_merge([
+        'page' => 'userns',
+        'action' => 'list',
+    ], $pagination->hiddenFormFields()));
+
+    $xtpl->form_add_input(_("Limit") . ':', 'text', '40', 'limit', get_val('limit', '25'), '');
 
     $input = $api->user_namespace->list->getParameters('input');
 
@@ -65,6 +66,10 @@ function userns_list()
         'limit' => get_val('limit', 25),
     ];
 
+    if ($_GET['from_id'] ?? 0 > 0) {
+        $params['from_id'] = $_GET['from_id'];
+    }
+
     $filters = [
         'user', 'block_count', 'size',
     ];
@@ -76,6 +81,7 @@ function userns_list()
     }
 
     $userns_list = $api->user_namespace->list($params);
+    $pagination->setResourceList($userns_list);
 
     $xtpl->table_add_category(_('ID'));
 
@@ -110,6 +116,7 @@ function userns_list()
         $xtpl->table_tr();
     }
 
+    $xtpl->table_pagination($pagination);
     $xtpl->table_out();
 }
 

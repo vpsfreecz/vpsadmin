@@ -4,36 +4,39 @@ function export_list()
 {
     global $xtpl, $api;
 
-    $xtpl->title(_('NFS exports'));
-
-    $xtpl->sbar_add(_("Export dataset"), '?page=export&action=export_dataset');
-
     $params = [
         'meta' => ['includes' => 'dataset,snapshot,host_ip_address,user'],
     ];
 
     if (isAdmin()) {
-        $xtpl->table_title(_('Filters'));
-        $xtpl->form_create('', 'get', 'export-filter', false);
-
-        $xtpl->table_td(
-            _("Limit") . ':' .
-            '<input type="hidden" name="page" value="export">'
-        );
-        $xtpl->form_add_input_pure('text', '40', 'limit', get_val('limit', '25'), '');
-        $xtpl->table_tr();
-
-        $xtpl->form_add_input(_("Offset") . ':', 'text', '40', 'offset', get_val('offset', '0'), '');
-        $xtpl->form_add_input(_("User ID") . ':', 'text', '40', 'user', get_val('user'));
-
-        $xtpl->form_out(_('Show'));
-
         $params['limit'] = get_val('limit', 25);
-        $params['offset'] = get_val('offset', 0);
+        $params['from_id'] = get_val('from_id', 0);
 
         if ($_GET['user'] ?? false) {
             $params['user'] = $_GET['user'];
         }
+    }
+
+    $exports = $api->export->list($params);
+    $pagination = new Pagination($exports);
+
+    $xtpl->title(_('NFS exports'));
+
+    $xtpl->sbar_add(_("Export dataset"), '?page=export&action=export_dataset');
+
+    if (isAdmin()) {
+        $xtpl->table_title(_('Filters'));
+        $xtpl->form_create('', 'get', 'export-filter', false);
+
+        $xtpl->form_set_hidden_fields(array_merge([
+            'page' => 'export',
+        ], $pagination->hiddenFormFields()));
+
+        $xtpl->form_add_input(_("Limit") . ':', 'text', '40', 'limit', get_val('limit', '25'), '');
+        $xtpl->form_add_input(_("From ID") . ':', 'text', '40', 'from_id', get_val('from_id', '0'), '');
+        $xtpl->form_add_input(_("User ID") . ':', 'text', '40', 'user', get_val('user'));
+
+        $xtpl->form_out(_('Show'));
     }
 
     if (isAdmin()) {
@@ -48,8 +51,6 @@ function export_list()
     $xtpl->table_add_category(_('Expiration'));
     $xtpl->table_add_category('');
     $xtpl->table_add_category('');
-
-    $exports = $api->export->list($params);
 
     foreach ($exports as $ex) {
         if (isAdmin()) {
@@ -67,6 +68,7 @@ function export_list()
         $xtpl->table_tr();
     }
 
+    $xtpl->table_pagination($pagination);
     $xtpl->table_out();
 }
 

@@ -51,27 +51,9 @@ function dns_zone_list($action, $filters = [], $onLastRow = null)
 {
     global $xtpl, $api;
 
-    $xtpl->table_title(_('Filters'));
-    $xtpl->form_create('', 'get', 'user-session-filter', false);
-
-    $xtpl->form_set_hidden_fields([
-        'page' => 'dns',
-        'action' => $action,
-        'list' => '1',
-    ]);
-
-    $xtpl->form_add_input(_('Limit') . ':', 'text', '40', 'limit', get_val('limit', '25'), '');
-    $xtpl->form_add_input(_("Offset") . ':', 'text', '40', 'offset', get_val('offset', '0'), '');
-
-    if (isAdmin()) {
-        $xtpl->form_add_input(_("User") . ':', 'text', '40', 'user', get_val('user', ''), '');
-    }
-
-    $xtpl->form_out(_('Show'));
-
     $params = [
         'limit' => get_val('limit', 25),
-        'offset' => get_val('offset', 0),
+        'from_id' => get_val('from_id', 0),
     ];
 
     $params = array_merge($params, $filters);
@@ -89,6 +71,26 @@ function dns_zone_list($action, $filters = [], $onLastRow = null)
     ];
 
     $zones = $api->dns_zone->list($params);
+
+    $pagination = new Pagination($zones);
+
+    $xtpl->table_title(_('Filters'));
+    $xtpl->form_create('', 'get', 'user-session-filter', false);
+
+    $xtpl->form_set_hidden_fields(array_merge([
+        'page' => 'dns',
+        'action' => $action,
+        'list' => '1',
+    ], $pagination->hiddenFormFields()));
+
+    $xtpl->form_add_input(_('Limit') . ':', 'text', '40', 'limit', get_val('limit', '25'), '');
+    $xtpl->form_add_input(_("From ID") . ':', 'text', '40', 'from_id', get_val('from_id', '0'), '');
+
+    if (isAdmin()) {
+        $xtpl->form_add_input(_("User") . ':', 'text', '40', 'user', get_val('user', ''), '');
+    }
+
+    $xtpl->form_out(_('Show'));
 
     if (isAdmin()) {
         $xtpl->table_add_category(_("User"));
@@ -144,6 +146,7 @@ function dns_zone_list($action, $filters = [], $onLastRow = null)
         $xtpl->table_tr();
     }
 
+    $xtpl->table_pagination($pagination);
     $xtpl->table_out();
 }
 
@@ -635,27 +638,9 @@ function tsig_key_list()
 {
     global $xtpl, $api;
 
-    $xtpl->title(_('TSIG keys'));
-    $xtpl->table_title(_('Filters'));
-    $xtpl->form_create('', 'get', 'user-session-filter', false);
-
-    $xtpl->form_set_hidden_fields([
-        'page' => 'dns',
-        'action' => 'tsig_key_list',
-    ]);
-
-    $xtpl->form_add_input(_('Limit') . ':', 'text', '40', 'limit', get_val('limit', '25'), '');
-    $xtpl->form_add_input(_("Offset") . ':', 'text', '40', 'offset', get_val('offset', '0'), '');
-
-    if (isAdmin()) {
-        $xtpl->form_add_input(_("User") . ':', 'text', '40', 'user', get_val('user', ''), '');
-    }
-
-    $xtpl->form_out(_('Show'));
-
     $params = [
         'limit' => get_val('limit', 25),
-        'offset' => get_val('offset', 0),
+        'from_id' => get_val('from_id', 0),
     ];
 
     $conds = ['user'];
@@ -671,6 +656,25 @@ function tsig_key_list()
     ];
 
     $keys = $api->dns_tsig_key->list($params);
+    $pagination = new Pagination($keys);
+
+    $xtpl->title(_('TSIG keys'));
+    $xtpl->table_title(_('Filters'));
+    $xtpl->form_create('', 'get', 'user-session-filter', false);
+
+    $xtpl->form_set_hidden_fields(array_merge([
+        'page' => 'dns',
+        'action' => 'tsig_key_list',
+    ], $pagination->hiddenFormFields()));
+
+    $xtpl->form_add_input(_('Limit') . ':', 'text', '40', 'limit', get_val('limit', '25'), '');
+    $xtpl->form_add_input(_("From ID") . ':', 'text', '40', 'from_id', get_val('from_id', '0'), '');
+
+    if (isAdmin()) {
+        $xtpl->form_add_input(_("User") . ':', 'text', '40', 'user', get_val('user', ''), '');
+    }
+
+    $xtpl->form_out(_('Show'));
 
     if (isAdmin()) {
         $xtpl->table_add_category(_("User"));
@@ -705,6 +709,7 @@ function tsig_key_list()
     );
     $xtpl->table_tr();
 
+    $xtpl->table_pagination($pagination);
     $xtpl->table_out();
 
     $xtpl->sbar_add(_('New TSIG key'), '?page=dns&action=tsig_key_new');
@@ -775,57 +780,9 @@ function dns_ptr_list()
 {
     global $xtpl, $api;
 
-    $xtpl->title(_('Reverse records'));
-    $xtpl->table_title(_('Filters'));
-    $xtpl->form_create('', 'get', 'ip-filter', false);
-
-    $xtpl->table_td(
-        _("Limit") . ':' .
-        '<input type="hidden" name="page" value="dns">' .
-        '<input type="hidden" name="action" value="ptr_list">' .
-        '<input type="hidden" name="list" value="1">'
-    );
-    $xtpl->form_add_input_pure('text', '40', 'limit', get_val('limit', '25'), '');
-    $xtpl->table_tr();
-
-    $versions = [
-        0 => 'all',
-        4 => '4',
-        6 => '6',
-    ];
-
-    $xtpl->form_add_input(_("Offset") . ':', 'text', '40', 'offset', get_val('offset', '0'), '');
-    $xtpl->form_add_select(_("Version") . ':', 'v', $versions, get_val('v', 0));
-
-    if (isAdmin()) {
-        $xtpl->form_add_input(_("User ID") . ':', 'text', '40', 'user', get_val('user'));
-    }
-
-    $xtpl->form_add_input(_("VPS") . ':', 'text', '40', 'vps', get_val('vps'));
-    $xtpl->form_add_select(
-        _("Network") . ':',
-        'network',
-        resource_list_to_options(
-            $api->network->list(['purpose' => 'vps']),
-            'id',
-            'label',
-            true,
-            'network_label'
-        ),
-        get_val('network')
-    );
-    $xtpl->form_add_select(
-        _("Location") . ':',
-        'location',
-        resource_list_to_options($api->location->list()),
-        get_val('location')
-    );
-
-    $xtpl->form_out(_('Show'));
-
     $params = [
         'limit' => get_val('limit', 25),
-        'offset' => get_val('offset', 0),
+        'from_id' => get_val('from_id', 0),
         'purpose' => 'vps',
         'routed' => true,
         'meta' => [
@@ -857,6 +814,54 @@ function dns_ptr_list()
     }
 
     $host_addrs = $api->host_ip_address->list($params);
+    $pagination = new Pagination($host_addrs);
+
+    $xtpl->title(_('Reverse records'));
+    $xtpl->table_title(_('Filters'));
+    $xtpl->form_create('', 'get', 'ip-filter', false);
+
+    $xtpl->form_set_hidden_fields(array_merge([
+        'page' => 'dns',
+        'action' => 'ptr_list',
+        'list' => '1',
+    ], $pagination->hiddenFormFields()));
+
+    $xtpl->form_add_input(_("Limit") . ':', 'text', '40', 'limit', get_val('limit', '25'), '');
+
+    $versions = [
+        0 => 'all',
+        4 => '4',
+        6 => '6',
+    ];
+
+    $xtpl->form_add_input(_("From ID") . ':', 'text', '40', 'from_id', get_val('from_id', '0'), '');
+    $xtpl->form_add_select(_("Version") . ':', 'v', $versions, get_val('v', 0));
+
+    if (isAdmin()) {
+        $xtpl->form_add_input(_("User ID") . ':', 'text', '40', 'user', get_val('user'));
+    }
+
+    $xtpl->form_add_input(_("VPS") . ':', 'text', '40', 'vps', get_val('vps'));
+    $xtpl->form_add_select(
+        _("Network") . ':',
+        'network',
+        resource_list_to_options(
+            $api->network->list(['purpose' => 'vps']),
+            'id',
+            'label',
+            true,
+            'network_label'
+        ),
+        get_val('network')
+    );
+    $xtpl->form_add_select(
+        _("Location") . ':',
+        'location',
+        resource_list_to_options($api->location->list()),
+        get_val('location')
+    );
+
+    $xtpl->form_out(_('Show'));
 
     if (isAdmin()) {
         $xtpl->table_add_category(_('User'));
@@ -913,6 +918,7 @@ function dns_ptr_list()
         $xtpl->table_tr();
     }
 
+    $xtpl->table_pagination($pagination);
     $xtpl->table_out();
 }
 
@@ -1266,6 +1272,8 @@ function dns_record_log_list()
 {
     global $xtpl, $api;
 
+    $pagination = new Pagination(null, $api->dns_record_log->index);
+
     $xtpl->title(_('DNS record log'));
 
     $xtpl->table_title(_('Filters'));
@@ -1273,14 +1281,14 @@ function dns_record_log_list()
     $input = $api->dns_record_log->list->getparameters('input');
     $xtpl->form_create('', 'get', 'user-session-filter', false);
 
-    $xtpl->form_set_hidden_fields([
+    $xtpl->form_set_hidden_fields(array_merge([
         'page' => 'dns',
         'action' => 'record_log',
         'list' => '1',
-    ]);
+    ], $pagination->hiddenFormFields()));
 
     $xtpl->form_add_input(_('Limit') . ':', 'text', '40', 'limit', get_val('limit', '25'), '');
-    $xtpl->form_add_input(_("Offset") . ':', 'text', '40', 'offset', get_val('offset', '0'), '');
+    $xtpl->form_add_input(_("From ID") . ':', 'text', '40', 'from_id', get_val('from_id', '0'), '');
 
     if (isAdmin()) {
         $xtpl->form_add_input(_("User") . ':', 'text', '40', 'user', get_val('user', ''), '');
@@ -1300,7 +1308,7 @@ function dns_record_log_list()
 
     $params = [
         'limit' => get_val('limit', 25),
-        'offset' => get_val('offset', 0),
+        'from_id' => get_val('from_id', 0),
     ];
 
     $conds = ['user', 'dns_zone', 'dns_zone_name', 'name', 'type', 'change_type'];
@@ -1316,6 +1324,7 @@ function dns_record_log_list()
     ];
 
     $logs = $api->dns_record_log->list($params);
+    $pagination->setResourceList($logs);
 
     $xtpl->table_add_category(_('Time'));
 
@@ -1371,6 +1380,7 @@ function dns_record_log_list()
         $xtpl->table_tr();
     }
 
+    $xtpl->table_pagination($pagination);
     $xtpl->table_out();
 }
 

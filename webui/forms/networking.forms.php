@@ -4,18 +4,19 @@ function ip_address_list($page)
 {
     global $xtpl, $api;
 
+    $pagination = new Pagination(null, $api->ip_address->list);
+
     $xtpl->title(_('Routable IP Addresses'));
     $xtpl->table_title(_('Filters'));
     $xtpl->form_create('', 'get', 'ip-filter', false);
 
-    $xtpl->table_td(
-        _("Limit") . ':' .
-        '<input type="hidden" name="page" value="' . $page . '">' .
-        '<input type="hidden" name="action" value="ip_addresses">' .
-        '<input type="hidden" name="list" value="1">'
-    );
-    $xtpl->form_add_input_pure('text', '40', 'limit', get_val('limit', '25'), '');
-    $xtpl->table_tr();
+    $xtpl->form_set_hidden_fields(array_merge([
+        'page' => $page,
+        'action' => 'ip_addresses',
+        'list' => '1',
+    ], $pagination->hiddenFormFields()));
+
+    $xtpl->form_add_input(_("Limit") . ':', 'text', '40', 'limit', get_val('limit', '25'), '');
 
     $versions = [
         0 => 'all',
@@ -23,7 +24,7 @@ function ip_address_list($page)
         6 => '6',
     ];
 
-    $xtpl->form_add_input(_("Offset") . ':', 'text', '40', 'offset', get_val('offset', '0'), '');
+    $xtpl->form_add_input(_("From ID") . ':', 'text', '40', 'from_id', get_val('from_id', '0'), '');
     $xtpl->form_add_select(_("Version") . ':', 'v', $versions, get_val('v', 0));
     $xtpl->form_add_input(_("Prefix") . ':', 'text', '40', 'prefix', get_val('prefix'));
 
@@ -59,7 +60,7 @@ function ip_address_list($page)
 
     $params = [
         'limit' => get_val('limit', 25),
-        'offset' => get_val('offset', 0),
+        'from_id' => get_val('from_id', 0),
         'purpose' => 'vps',
         'meta' => ['includes' => 'user,vps,network'],
     ];
@@ -95,6 +96,7 @@ function ip_address_list($page)
     }
 
     $ips = $api->ip_address->list($params);
+    $pagination->setResourceList($ips);
 
     $xtpl->table_add_category(_("Network"));
     $xtpl->table_add_category(_("IP address"));
@@ -168,6 +170,7 @@ function ip_address_list($page)
         $xtpl->table_tr();
     }
 
+    $xtpl->table_pagination($pagination);
     $xtpl->table_out();
 }
 
@@ -175,18 +178,19 @@ function host_ip_address_list($page)
 {
     global $xtpl, $api;
 
+    $pagination = new Pagination(null, $api->host_ip_address->list);
+
     $xtpl->title(_('Host IP Addresses'));
     $xtpl->table_title(_('Filters'));
     $xtpl->form_create('', 'get', 'ip-filter', false);
 
-    $xtpl->table_td(
-        _("Limit") . ':' .
-        '<input type="hidden" name="page" value="' . $page . '">' .
-        '<input type="hidden" name="action" value="host_ip_addresses">' .
-        '<input type="hidden" name="list" value="1">'
-    );
-    $xtpl->form_add_input_pure('text', '40', 'limit', get_val('limit', '25'), '');
-    $xtpl->table_tr();
+    $xtpl->form_set_hidden_fields(array_merge([
+        'page' => $page,
+        'action' => 'host_ip_addresses',
+        'list' => '1',
+    ], $pagination->hiddenFormFields()));
+
+    $xtpl->form_add_input(_("Limit") . ':', 'text', '40', 'limit', get_val('limit', '25'), '');
 
     $versions = [
         0 => 'all',
@@ -194,7 +198,7 @@ function host_ip_address_list($page)
         6 => '6',
     ];
 
-    $xtpl->form_add_input(_("Offset") . ':', 'text', '40', 'offset', get_val('offset', '0'), '');
+    $xtpl->form_add_input(_("From ID") . ':', 'text', '40', 'from_id', get_val('from_id', '0'), '');
     $xtpl->form_add_select(_("Version") . ':', 'v', $versions, get_val('v', 0));
     $xtpl->form_add_input(_("Prefix") . ':', 'text', '40', 'prefix', get_val('prefix'));
 
@@ -235,7 +239,7 @@ function host_ip_address_list($page)
 
     $params = [
         'limit' => get_val('limit', 25),
-        'offset' => get_val('offset', 0),
+        'from_id' => get_val('from_id', 0),
         'purpose' => 'vps',
         'meta' => [
             'includes' => 'ip_address__user,ip_address__network_interface__vps,' .
@@ -280,6 +284,7 @@ function host_ip_address_list($page)
     }
 
     $host_addrs = $api->host_ip_address->list($params);
+    $pagination->setResourceList($host_addrs);
 
     $xtpl->table_add_category(_("Network"));
     $xtpl->table_add_category(_("Routed address"));
@@ -358,6 +363,7 @@ function host_ip_address_list($page)
         $xtpl->table_tr();
     }
 
+    $xtpl->table_pagination($pagination);
     $xtpl->table_out();
 }
 
@@ -810,18 +816,19 @@ function ip_address_assignment_list_form()
 {
     global $xtpl, $api;
 
+    $pagination = new Pagination(null, $api->ip_address_assignment->list);
+
     $xtpl->title(_('IP address assignments'));
     $xtpl->table_title(_('Filters'));
     $xtpl->form_create('', 'get', 'ip-filter', false);
 
-    $xtpl->form_set_hidden_fields([
+    $xtpl->form_set_hidden_fields(array_merge([
         'page' => $_GET['page'],
         'action' => 'assignments',
         'list' => '1',
-    ]);
+    ], $pagination->hiddenFormFields()));
 
     $xtpl->form_add_input(_('Limit') . ':', 'text', '40', 'limit', get_val('limit', '25'), '');
-    $xtpl->table_tr();
 
     $versions = [
         0 => 'all',
@@ -829,7 +836,7 @@ function ip_address_assignment_list_form()
         6 => '6',
     ];
 
-    $xtpl->form_add_input(_("Offset") . ':', 'text', '40', 'offset', get_val('offset', '0'), '');
+    $xtpl->form_add_input(_("From ID") . ':', 'text', '40', 'from_id', get_val('from_id', '0'), '');
     $xtpl->form_add_select(_("Version") . ':', 'ip_version', $versions, get_val('ip_version', 0));
     $xtpl->form_add_input(_("IP address") . ':', 'text', '40', 'ip_addr', get_val('ip_addr'));
     $xtpl->form_add_input(_("Prefix") . ':', 'text', '40', 'ip_prefix', get_val('ip_prefix'));
@@ -866,7 +873,7 @@ function ip_address_assignment_list_form()
 
     $params = [
         'limit' => get_val('limit', 25),
-        'offset' => get_val('offset', 0),
+        'from_id' => get_val('from_id', 0),
         'order' => 'newest',
         'meta' => ['includes' => 'user,vps,ip_address'],
     ];
@@ -900,6 +907,7 @@ function ip_address_assignment_list_form()
     }
 
     $assignments = $api->ip_address_assignment->list($params);
+    $pagination->setResourceList($assignments);
 
     $xtpl->table_add_category(_("IP address"));
 
@@ -936,6 +944,7 @@ function ip_address_assignment_list_form()
         $xtpl->table_tr();
     }
 
+    $xtpl->table_pagination($pagination);
     $xtpl->table_out();
 }
 

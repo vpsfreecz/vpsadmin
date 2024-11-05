@@ -682,21 +682,21 @@ function list_members()
 {
     global $xtpl, $api, $config;
 
+    $pagination = new Pagination(null, $api->user->list);
+
     if (isAdmin()) {
         $xtpl->title(_("Manage members [Admin mode]"));
 
         $xtpl->table_title(_('Filters'));
         $xtpl->form_create('', 'get', 'user-filter', false);
 
-        $xtpl->table_td(
-            _("Limit") . ':' .
-            '<input type="hidden" name="page" value="adminm">' .
-            '<input type="hidden" name="action" value="list">'
-        );
-        $xtpl->form_add_input_pure('text', '40', 'limit', get_val('limit', '25'), '');
-        $xtpl->table_tr();
+        $xtpl->form_set_hidden_fields(array_merge([
+            'page' => 'adminm',
+            'action' => 'list',
+        ], $pagination->hiddenFormFields()));
 
-        $xtpl->form_add_input(_("Offset") . ':', 'text', '40', 'offset', get_val('offset', '0'), '');
+        $xtpl->form_add_input(_("Limit") . ':', 'text', '40', 'limit', get_val('limit', '25'), '');
+        $xtpl->form_add_input(_("From ID") . ':', 'text', '40', 'from_id', get_val('from_id'), '');
         $xtpl->form_add_input(_("Login") . ':', 'text', '40', 'login', get_val('login', ''), '');
         $xtpl->form_add_input(_("Full name") . ':', 'text', '40', 'full_name', get_val('full_name', ''), '');
         $xtpl->form_add_input(_("E-mail") . ':', 'text', '40', 'email', get_val('email', ''), '');
@@ -737,8 +737,7 @@ function list_members()
         if (isAdmin()) {
             $params = [
                 'limit' => get_val('limit', 25),
-                'offset' => get_val('offset', 0),
-                'meta' => ['count' => true],
+                'from_id' => get_val('from_id', 0),
             ];
 
             $filters = [
@@ -757,6 +756,8 @@ function list_members()
         } else {
             $users = [$api->user->current()];
         }
+
+        $pagination->setResourceList($users);
 
         foreach ($users as $u) {
             $last_activity = strtotime($u->last_activity_at);
@@ -839,6 +840,7 @@ function list_members()
             }
         }
 
+        $xtpl->table_pagination($pagination);
         $xtpl->table_out();
     }
 }

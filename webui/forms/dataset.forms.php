@@ -37,7 +37,7 @@ function is_ds_valid($p)
     return $p;
 }
 
-function dataset_list($role, $parent = null, $user = null, $dataset = null, $limit = null, $offset = null, $opts = [])
+function dataset_list($role, $parent = null, $user = null, $dataset = null, $limit = null, $from_id = null, $opts = [])
 {
     global $xtpl, $api;
 
@@ -104,8 +104,8 @@ function dataset_list($role, $parent = null, $user = null, $dataset = null, $lim
         $listParams['limit'] = $limit;
     }
 
-    if ($offset) {
-        $listParams['offset'] = $offset;
+    if ($from_id) {
+        $listParams['from_id'] = $from_id;
     }
 
     $datasets = $api->dataset->list($listParams);

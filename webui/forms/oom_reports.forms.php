@@ -4,20 +4,22 @@ function oom_reports_list()
 {
     global $xtpl, $api;
 
+    $pagination = new Pagination(null, $api->oom_report->list);
+
     $xtpl->title(_('Out-of-memory Reports'));
 
     $xtpl->table_title(_('Filters'));
     $xtpl->form_create('', 'get', 'user-session-filter', false);
 
-    $xtpl->form_set_hidden_fields([
+    $xtpl->form_set_hidden_fields(array_merge([
         'page' => 'oom_reports',
         'list' => '1',
-    ]);
+    ], $pagination->hiddenFormFields()));
 
     $input = $api->oom_report->list->getParameters('input');
 
     $xtpl->form_add_input(_('Limit') . ':', 'text', '40', 'limit', get_val('limit', '25'), '');
-    $xtpl->form_add_input(_("Offset") . ':', 'text', '40', 'offset', get_val('offset', '0'), '');
+    $xtpl->form_add_input(_("From ID") . ':', 'text', '40', 'from_id', get_val('from_id'), '');
 
     if (isAdmin()) {
         $xtpl->form_add_input(_("User") . ':', 'text', '40', 'user', get_val('user', ''), '');
@@ -45,8 +47,11 @@ function oom_reports_list()
 
     $params = [
         'limit' => get_val('limit', 25),
-        'offset' => get_val('offset', 0),
     ];
+
+    if ($_GET['from_id'] ?? 0 > 0) {
+        $params['from_id'] = $_GET['from_id'];
+    }
 
     $conds = ['user', 'vps', 'node', 'location', 'environment', 'since', 'until'];
 
@@ -61,6 +66,7 @@ function oom_reports_list()
     ];
 
     $reports = $api->oom_report->list($params);
+    $pagination->setResourceList($reports);
 
     $xtpl->table_add_category(_("Time"));
     $xtpl->table_add_category(_("Node"));
@@ -94,11 +100,7 @@ function oom_reports_list()
         $xtpl->table_tr();
     }
 
-    $xtpl->table_out();
-
-    $xtpl->table_td('Displayed reports:');
-    $xtpl->table_td($reports->count());
-    $xtpl->table_tr();
+    $xtpl->table_pagination($pagination);
     $xtpl->table_out();
 }
 

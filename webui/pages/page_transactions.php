@@ -31,19 +31,19 @@ function list_chains()
 {
     global $xtpl, $api;
 
+    $pagination = new Pagination(null, $api->transaction_chain->list);
+
     $xtpl->title(_("Transaction chains"));
 
     $xtpl->table_title(_('Filters'));
     $xtpl->form_create('', 'get', 'vps-filter', false);
 
-    $xtpl->table_td(
-        _("Limit") . ':' .
-        '<input type="hidden" name="page" value="transactions">'
-    );
-    $xtpl->form_add_input_pure('text', '40', 'limit', get_val('limit', '25'), '');
-    $xtpl->table_tr();
+    $xtpl->form_set_hidden_fields(array_merge([
+        'page' => 'transactions',
+    ], $pagination->hiddenFormFields()));
 
-    $xtpl->form_add_input(_("Offset") . ':', 'text', '40', 'offset', get_val('offset', '0'), '');
+    $xtpl->form_add_input(_("Limit") . ':', 'text', '40', 'limit', get_val('limit', '25'), '');
+    $xtpl->form_add_input(_("From ID") . ':', 'text', '40', 'from_id', get_val('from_id'), '');
     $xtpl->form_add_input(_("Exact ID") . ':', 'text', '40', 'chain', get_val('chain'));
     $xtpl->form_add_input(_("User ID") . ':', 'text', '40', 'user', get_val('user'));
     $xtpl->form_add_input(_("User session ID") . ':', 'text', '40', 'user_session', get_val('user_session'));
@@ -56,9 +56,12 @@ function list_chains()
 
     $params = [
         'limit' => get_val('limit', 25),
-        'offset' => get_val('offset', 0),
         'meta' => ['includes' => 'user'],
     ];
+
+    if ($_GET['from_id'] ?? 0 > 0) {
+        $params['from_id'] = $_GET['from_id'];
+    }
 
     if ($_GET['user'] ?? false) {
         $params['user'] = $_GET['user'];
@@ -85,6 +88,7 @@ function list_chains()
     }
 
     $chains = $api->transaction_chain->list($params);
+    $pagination->setResourceList($chains);
 
     $xtpl->table_add_category('#');
     $xtpl->table_add_category(_('Date'));
@@ -119,6 +123,7 @@ function list_chains()
         $xtpl->table_tr(false, chain_class($chain));
     }
 
+    $xtpl->table_pagination($pagination);
     $xtpl->table_out();
 }
 
@@ -183,18 +188,18 @@ function chain_transactions($chain_id)
 
     $xtpl->table_out();
 
+    $pagination = new Pagination(null, $api->transaction->list);
+
     $xtpl->table_title(_('Filters'));
     $xtpl->form_create('', 'get', 'transaction-filter', false);
 
-    $xtpl->table_td(
-        _("Limit") . ':' .
-        '<input type="hidden" name="page" value="transactions">' .
-        '<input type="hidden" name="chain" value="' . $chain->id . '">'
-    );
-    $xtpl->form_add_input_pure('text', '40', 'limit', get_val('limit', '100'));
-    $xtpl->table_tr();
+    $xtpl->form_set_hidden_fields(array_merge([
+        'page' => 'transactions',
+        'chain' => $chain->id,
+    ], $pagination->hiddenFormFields()));
 
-    $xtpl->form_add_input(_("Offset") . ':', 'text', '40', 'offset', get_val('offset', '0'));
+    $xtpl->form_add_input(_("Limit") . ':', 'text', '40', 'limit', get_val('limit', '100'));
+    $xtpl->form_add_input(_("From ID") . ':', 'text', '40', 'from_id', get_val('from_id'));
     $xtpl->form_add_input(_("Exact ID") . ':', 'text', '40', 'transaction', get_val('transaction'));
     $xtpl->form_add_select(
         _("Node") . ':',
@@ -220,10 +225,13 @@ function chain_transactions($chain_id)
     } else {
         $params = [
             'limit' => get_val('limit', '100'),
-            'offset' => get_val('offset', '0'),
             'transaction_chain' => $chain->id,
             'meta' => $meta,
         ];
+
+        if ($_GET['from_id'] ?? 0 > 0) {
+            $params['from_id'] = $_GET['from_id'];
+        }
 
         if ($_GET['node'] ?? false) {
             $params['node'] = $_GET['node'];
@@ -243,6 +251,8 @@ function chain_transactions($chain_id)
 
         $transactions = $api->transaction->list($params);
     }
+
+    $pagination->setResourceList($transactions);
 
     $xtpl->table_title(_('Chained transactions'));
     $xtpl->table_add_category("ID");
@@ -294,6 +304,7 @@ function chain_transactions($chain_id)
         }
     }
 
+    $xtpl->table_pagination($pagination);
     $xtpl->table_out();
 }
 

@@ -29,19 +29,16 @@ function backup_vps_form()
         $xtpl->table_title(_('Filters'));
         $xtpl->form_create('', 'get', 'backup-filter', false);
 
-        $xtpl->table_td(
-            _("Limit") . ':' .
-            '<input type="hidden" name="page" value="backup">' .
-            '<input type="hidden" name="action" value="vps">' .
-            '<input type="hidden" name="list" value="1">'
-        );
-        $xtpl->form_add_input_pure('text', '40', 'limit', get_val('limit', '25'), '');
-        $xtpl->table_tr();
+        $xtpl->form_set_hidden_fields([
+            'page' => 'backup',
+            'action' => 'vps',
+            'list' => '1',
+        ]);
 
-        $xtpl->form_add_input(_("Offset") . ':', 'text', '40', 'offset', get_val('offset', '0'), '');
+        $xtpl->form_add_input(_("Limit") . ':', 'text', '40', 'limit', get_val('limit', '25'), '');
+        $xtpl->form_add_input(_("From ID") . ':', 'text', '40', 'from_id', get_val('from_id', '0'), '');
         $xtpl->form_add_input(_("Member ID") . ':', 'text', '40', 'user', get_val('user'), '');
         $xtpl->form_add_input(_("VPS ID") . ':', 'text', '40', 'vps', get_val('vps'), '');
-        // 		$xtpl->form_add_input(_("Node ID").':', 'text', '40', 'node', get_val('node'), '');
         $xtpl->form_add_checkbox(_("Include subdatasets") . ':', 'subdatasets', '1', get_val('subdatasets', '0'));
         $xtpl->form_add_checkbox(_("Ignore datasets without snapshots") . ':', 'noempty', '1', get_val('noempty', '0'));
 
@@ -50,7 +47,7 @@ function backup_vps_form()
         $vpses = [];
         $params = [
             'limit' => get_val('limit', 25),
-            'offset' => get_val('offset', 0),
+            'from_id' => get_val('from_id', 0),
         ];
 
         if (isset($_GET['user']) && $_GET['user'] !== '') {
@@ -93,16 +90,14 @@ function backup_nas_form()
         $xtpl->table_title(_('Filters'));
         $xtpl->form_create('', 'get', 'backup-filter', false);
 
-        $xtpl->table_td(
-            _("Limit") . ':' .
-            '<input type="hidden" name="page" value="backup">' .
-            '<input type="hidden" name="action" value="nas">' .
-            '<input type="hidden" name="list" value="1">'
-        );
-        $xtpl->form_add_input_pure('text', '40', 'limit', get_val('limit', '25'), '');
-        $xtpl->table_tr();
+        $xtpl->form_set_hidden_fields([
+            'page' => 'backup',
+            'action' => 'nas',
+            'list' => '1',
+        ]);
 
-        $xtpl->form_add_input(_("Offset") . ':', 'text', '40', 'offset', get_val('offset', '0'), '');
+        $xtpl->form_add_input(_("Limit") . ':', 'text', '40', 'limit', get_val('limit', '25'), '');
+        $xtpl->form_add_input(_("From ID") . ':', 'text', '40', 'from_id', get_val('from_id', '0'), '');
         $xtpl->form_add_input(_("Member ID") . ':', 'text', '40', 'user', get_val('user'), '');
         // 		$xtpl->form_add_input(_("Node ID").':', 'text', '40', 'node', get_val('node'), '');
         $xtpl->form_add_checkbox(_("Include subdatasets") . ':', 'subdatasets', '1', get_val('subdatasets', '0'));
@@ -113,7 +108,7 @@ function backup_nas_form()
         if ($_GET['list']) {
             $params = [
                 'limit' => get_val('limit', 25),
-                'offset' => get_val('offset', 0),
+                'from_id' => get_val('from_id', 0),
                 'role' => 'primary',
             ];
 
@@ -140,9 +135,9 @@ function backup_download_list_form()
     global $xtpl, $api;
 
     $downloads = $api->snapshot_download->list(
-        [
-        'meta' => ['includes' => 'snapshot__dataset,user']]
+        ['meta' => ['includes' => 'snapshot__dataset,user']]
     );
+    $pagination = new Pagination($downloads);
 
     if (isAdmin()) {
         $xtpl->table_add_category(_('User'));
@@ -177,6 +172,7 @@ function backup_download_list_form()
         $xtpl->table_tr();
     }
 
+    $xtpl->table_pagination($pagination);
     $xtpl->table_out();
 }
 

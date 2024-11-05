@@ -4,17 +4,20 @@ function incident_list()
 {
     global $xtpl, $api;
 
+    $pagination = new Pagination(null, $api->incident_report->list);
+
     $xtpl->title(_('Incident reports'));
     $xtpl->table_title(_('Filters'));
     $xtpl->form_create('', 'get', 'incident-list', false);
 
-    $xtpl->form_set_hidden_fields([
+    $xtpl->form_set_hidden_fields(array_merge([
         'page' => 'incidents',
         'action' => 'list',
         'list' => '1',
-    ]);
+    ], $pagination->hiddenFormFields()));
 
     $xtpl->form_add_input(_('Limit') . ':', 'text', '40', 'limit', get_val('limit', '25'), '');
+    $xtpl->form_add_input(_('From ID') . ':', 'text', '40', 'from_id', get_val('from_id', ''), '');
     $xtpl->table_tr();
 
     $input = $api->incident_report->list->getParameters('input');
@@ -59,6 +62,10 @@ function incident_list()
         'meta' => ['includes' => 'user,vps,ip_address_assignment'],
     ];
 
+    if ($_GET['from_id'] > 0) {
+        $params['from_id'] = $_GET['from_id'];
+    }
+
     $filters = [
         'user', 'vps', 'ip_address_assignment', 'ip_addr', 'mailbox', 'codename',
     ];
@@ -70,6 +77,7 @@ function incident_list()
     }
 
     $incidents = $api->incident_report->list($params);
+    $pagination->setResourceList($incidents);
 
     $xtpl->table_add_category(_('ID'));
     $xtpl->table_add_category(_('Detected at'));
@@ -112,6 +120,7 @@ function incident_list()
         $xtpl->table_tr();
     }
 
+    $xtpl->table_pagination($pagination);
     $xtpl->table_out();
 }
 

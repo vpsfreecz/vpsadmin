@@ -4,6 +4,8 @@ function list_object_history()
 {
     global $xtpl, $api;
 
+    $pagination = new Pagination(null, $api->object_history->list);
+
     $xtpl->title(_('Object history'));
 
     if ($_GET['return_url']) {
@@ -14,16 +16,14 @@ function list_object_history()
     $xtpl->table_title(_('Filters'));
     $xtpl->form_create('', 'get', 'user-session-filter', false);
 
-    $xtpl->table_td(
-        _("Limit") . ':' .
-        '<input type="hidden" name="page" value="history">' .
-        '<input type="hidden" name="return_url" value="' . $_GET['return_url'] . '">' .
-        '<input type="hidden" name="list" value="1">'
-    );
-    $xtpl->form_add_input_pure('text', '40', 'limit', get_val('limit', '25'), '');
-    $xtpl->table_tr();
+    $xtpl->form_set_hidden_fields(array_merge([
+        'page' => 'history',
+        'return_url' => $_GET['return_url'],
+        'list' => '1',
+    ], $pagination->hiddenFormFields()));
 
-    $xtpl->form_add_input(_("Offset") . ':', 'text', '40', 'offset', get_val('offset', '0'), '');
+    $xtpl->form_add_input(_("Limit") . ':', 'text', '40', 'limit', get_val('limit', '25'), '');
+    $xtpl->form_add_input(_("From ID") . ':', 'text', '40', 'from_id', get_val('from_id', '0'), '');
 
     if (isAdmin()) {
         $xtpl->form_add_input(_("User") . ':', 'text', '40', 'user', get_val('user', ''), '');
@@ -44,7 +44,7 @@ function list_object_history()
 
     $params = [
         'limit' => get_val('limit', 25),
-        'offset' => get_val('offset', 0),
+        'from_id' => get_val('from_id', 0),
     ];
 
     $conds = ['user', 'user_session', 'object', 'object_id', 'event_type'];
@@ -55,12 +55,10 @@ function list_object_history()
         }
     }
 
-    $params['meta'] = [
-        'includes' => 'user,user_session',
-        'count' => true,
-    ];
+    $params['meta'] = ['includes' => 'user,user_session'];
 
     $events = $api->object_history->list($params);
+    $pagination->setResourceList($events);
 
     $xtpl->table_add_category(_("Created at"));
     $xtpl->table_add_category(_("User"));
@@ -87,13 +85,6 @@ function list_object_history()
         $xtpl->table_tr();
     }
 
-    $xtpl->table_out();
-
-    $xtpl->table_td('Displayed events:');
-    $xtpl->table_td($events->count());
-    $xtpl->table_tr();
-    $xtpl->table_td('Total events:');
-    $xtpl->table_td($events->getTotalCount());
-    $xtpl->table_tr();
+    $xtpl->table_pagination($pagination);
     $xtpl->table_out();
 }

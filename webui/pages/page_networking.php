@@ -320,19 +320,23 @@ if (isLoggedIn()) {
     $xtpl->sbar_out(_('Networking'));
 
     if ($show_traffic) {
+        $pagination = new Pagination(
+            null,
+            $api->network_interface_accounting->list,
+            ['inputParameter' => 'from_bytes', 'outputParameter' => 'bytes']
+        );
+
         $xtpl->title(_("Monthly traffic"));
 
         $xtpl->table_title(_('Filters'));
         $xtpl->form_create('', 'get', 'networking-filter', false);
 
-        $xtpl->table_td(
-            _("Limit") . ':' .
-            '<input type="hidden" name="page" value="networking">' .
-            '<input type="hidden" name="action" value="list">'
-        );
-        $xtpl->form_add_input_pure('text', '40', 'limit', get_val('limit', '25'), '');
-        $xtpl->table_tr();
+        $xtpl->form_set_hidden_fields(array_merge([
+            'page' => 'networking',
+            'action' => 'list',
+        ], $pagination->hiddenFormFields()));
 
+        $xtpl->form_add_input(_("Limit") . ':', 'text', '40', 'limit', get_val('limit', '25'), '');
         $xtpl->form_add_select(_("Year") . ':', 'year', year_list(), get_val('year', date("Y")));
         $xtpl->form_add_select(_("Month") . ':', 'month', month_list(), get_val('month', date("n")));
 
@@ -373,11 +377,14 @@ if (isLoggedIn()) {
         $xtpl->table_title(_("Statistics"));
 
         $params = [
-            'offset' => get_val('offset', 0),
             'limit' => get_val('limit', 25),
             'order' => 'descending',
             'meta' => ['includes' => 'network_interface__vps__user'],
         ];
+
+        if ($_GET['from_bytes'] ?? 0 > 0) {
+            $params['from_bytes'] = $_GET['from_bytes'];
+        }
 
         $conds = [
             'year', 'month', 'vps', 'node', 'location', 'environment',
@@ -396,6 +403,7 @@ if (isLoggedIn()) {
         }
 
         $stats = $api->network_interface_accounting->list($params);
+        $pagination->setResourceList($stats);
 
         if (isAdmin()) {
             $xtpl->table_add_category(_('User'));
@@ -424,24 +432,29 @@ if (isLoggedIn()) {
             $xtpl->table_tr();
         }
 
+        $xtpl->table_pagination($pagination);
         $xtpl->table_out();
     }
 
     if (isAdmin() && $show_top) {
         $xtpl->title(_("Top users"));
 
+        $pagination = new Pagination(
+            null,
+            $api->network_interface_accounting->user_top,
+            ['inputParameter' => 'from_bytes', 'outputParameter' => 'bytes']
+        );
+
         $xtpl->table_title(_('Filters'));
         $xtpl->form_create('', 'get', 'networking-filter', false);
 
-        $xtpl->table_td(
-            _("Limit") . ':' .
-            '<input type="hidden" name="page" value="networking">' .
-            '<input type="hidden" name="action" value="user_top">' .
-            '<input type="hidden" name="list" value="1">'
-        );
-        $xtpl->form_add_input_pure('text', '40', 'limit', get_val('limit', '25'), '');
-        $xtpl->table_tr();
+        $xtpl->form_set_hidden_fields(array_merge([
+            'page' => 'networking',
+            'action' => 'user_top',
+            'list' => '1',
+        ], $pagination->hiddenFormFields()));
 
+        $xtpl->form_add_input(_("Limit") . ':', 'text', '40', 'limit', get_val('limit', '25'), '');
         $xtpl->form_add_select(_("Year") . ':', 'year', year_list(), get_val('year', date("Y")));
         $xtpl->form_add_select(_("Month") . ':', 'month', month_list(), get_val('month', date("n")));
 
@@ -473,10 +486,13 @@ if (isLoggedIn()) {
         $xtpl->table_title(_("Statistics"));
 
         $params = [
-            'offset' => get_val('offset', 0),
             'limit' => get_val('limit', 25),
             'meta' => ['includes' => 'user'],
         ];
+
+        if ($_GET['from_bytes'] ?? 0 > 0) {
+            $params['from_bytes'] = $_GET['from_bytes'];
+        }
 
         $conds = [
             'year', 'month', 'node', 'location', 'environment',
@@ -489,6 +505,7 @@ if (isLoggedIn()) {
         }
 
         $stats = $api->network_interface_accounting->user_top($params);
+        $pagination->setResourceList($stats);
 
         $xtpl->table_add_category(_('User'));
         $xtpl->table_add_category(_('Date'));
@@ -512,6 +529,7 @@ if (isLoggedIn()) {
             $xtpl->table_tr();
         }
 
+        $xtpl->table_pagination($pagination);
         $xtpl->table_out();
     }
 
