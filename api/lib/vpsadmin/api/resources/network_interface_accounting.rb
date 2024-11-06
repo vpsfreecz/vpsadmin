@@ -217,7 +217,7 @@ module VpsAdmin::API::Resources
 
       def exec
         ar_with_pagination(query, parameter: :from_bytes) do |q, from_bytes|
-          q.where('(SUM(bytes_in) + SUM(bytes_out)) < ?', from_bytes)
+          q.having('sum_bytes_in + sum_bytes_out < ?', from_bytes)
         end.order(Arel.sql('(SUM(bytes_in) + SUM(bytes_out)) DESC'))
       end
     end
