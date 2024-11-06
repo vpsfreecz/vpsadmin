@@ -1,6 +1,6 @@
 module VpsAdmin
   HaveAPI.module_name = VpsAdmin::API::Resources
-  HaveAPI.implicit_version = '6.0'
+  HaveAPI.implicit_version = '7.0'
   ActiveRecord.schema_format = :sql
 
   module API

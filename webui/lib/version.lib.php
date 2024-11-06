@@ -8,4 +8,4 @@
 define("VERSION", '4.0.0');
 define("DEMO_MODE", false);
 
-define("API_VERSION", '6.0');
+define("API_VERSION", '7.0');
