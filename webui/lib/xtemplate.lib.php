@@ -709,23 +709,28 @@ class XTemplate
         $links = [];
 
         if ($pagination->hasFirstPage()) {
-            $links[] = '<a href="' . $pagination->firstPageUrl() . '">&laquo;' . _('First page') . '</a>';
+            $links[] = '<a href="' . $pagination->firstPageUrl() . '" class="pagination-link first">&laquo;' . _('First page') . '</a>';
         }
 
         if ($pagination->hasPreviousPage()) {
-            $links[] = '<a href="' . $pagination->previousPageUrl() . '">&larr;' . _('Previous page') . '</a>';
+            $links[] = '<a href="' . $pagination->previousPageUrl() . '" class="pagination-link previous">&larr;' . _('Previous page') . '</a>';
         }
 
         if ($pagination->hasNextPage()) {
-            $links[] = '<a href="' . $pagination->nextPageUrl() . '">' . _('Next page') . '&rarr;</a>';
+            $links[] = '<a href="' . $pagination->nextPageUrl() . '" class="pagination-link next">' . _('Next page') . '&rarr;</a>';
         }
 
         if (count($links) == 0) {
             return;
         }
 
-        $this->table_td(implode(' | ', $links), false, false, $this->table_max_cols);
-        $this->table_tr();
+        $tdContent = '';
+        $tdContent .= '<div class="pagination-controls">';
+        $tdContent .= implode('', $links);
+        $tdContent .= '</div>';
+
+        $this->table_td($tdContent, false, false, $this->table_max_cols);
+        $this->table_tr(false, 'pagination-row', 'pagination-row');
     }
     private function table_increment_cols()
     {

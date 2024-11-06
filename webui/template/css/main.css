@@ -213,6 +213,33 @@ a.user-unpaid {color: #fff;}
   border-bottom: 1px solid #969678;
 }
 
+.pagination-row td {
+  padding: 4px;
+  text-align: center;
+  border-top: 1px solid #ddd;
+}
+
+.pagination-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.pagination-link {
+  text-decoration: none;
+  color: #007bff;
+  padding: 4px 6px;
+  margin: 0 5px;
+  font-weight: bold;
+  border-radius: 4px;
+  transition: background-color 0.2s, color 0.2s;
+}
+
+.pagination-link:hover {
+  background-color: #007bff;
+  color: white;
+}
+
 .goresheat-window {
   display: none;
   position: fixed;
