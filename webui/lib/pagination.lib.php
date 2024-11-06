@@ -59,7 +59,7 @@ class Pagination
     {
         $count = is_array($this->resourceList) ? count($this->resourceList) : $this->resourceList->count();
 
-        return $count >= $this->limit && $this->limit > 0;
+        return $count == $this->limit && $this->limit > 0;
     }
 
     /**
