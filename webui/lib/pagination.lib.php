@@ -57,7 +57,9 @@ class Pagination
      */
     public function hasNextPage()
     {
-        return $this->resourceList->count() >= $this->limit && $this->limit > 0;
+        $count = is_array($this->resourceList) ? count($this->resourceList) : $this->resourceList->count();
+
+        return $count >= $this->limit && $this->limit > 0;
     }
 
     /**
@@ -71,9 +73,15 @@ class Pagination
             'limit' => $_GET['limit'] ?? $this->limit,
         ];
 
+        if (is_array($this->resourceList)) {
+            $last = $this->resourceList[ count($this->resourceList) - 1 ];
+        } else {
+            $last = $this->resourceList->last();
+        }
+
         $params = array_merge(
             $_GET,
-            [$this->inputParameter =>  $this->resourceList->last()->{$this->outputParameter}],
+            [$this->inputParameter =>  $last->{$this->outputParameter}],
             $this->appendHistory($history),
         );
 
