@@ -736,7 +736,7 @@ function user_payment_instructions($user_id)
 
     $xtpl->title(_('Payment instructions'));
     $xtpl->table_td($u->get_payment_instructions()['instructions']);
-    $xtpl->table_tr();
+    $xtpl->table_tr(false, 'nohover', 'nohover');
     $xtpl->table_out();
 }
 
