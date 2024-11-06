@@ -188,7 +188,7 @@ function chain_transactions($chain_id)
 
     $xtpl->table_out();
 
-    $pagination = new Pagination(null, $api->transaction->list);
+    $pagination = new Pagination(null, $api->transaction->list, ['defaultLimit' => 100]);
 
     $xtpl->table_title(_('Filters'));
     $xtpl->form_create('', 'get', 'transaction-filter', false);
