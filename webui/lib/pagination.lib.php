@@ -40,7 +40,7 @@ class Pagination
         }
 
         $this->baseUrl = $_SERVER['PATH_INFO'];
-        $this->limit = isset($_GET['limit']) ? $_GET['limit'] : $input->limit->default;
+        $this->limit = $_GET['limit'] ?? $options['defaultLimit'] ?? $input->limit->default ?? 25;
         $this->history = $this->parseHistory();
     }
 
@@ -180,7 +180,7 @@ class Pagination
         $entries = explode(',', $_GET['pagination']);
 
         foreach ($entries as $v) {
-            list($parameter, $limit) = explode(':', $v);
+            [$parameter, $limit] = explode(':', $v);
 
             $ret[] = [
                 $this->inputParameter => $parameter,
