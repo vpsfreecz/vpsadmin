@@ -5,7 +5,7 @@ class DnsZoneTransfer < ApplicationRecord
   belongs_to :host_ip_address
   belongs_to :dns_tsig_key
 
-  enum peer_type: %i[primary_type secondary_type]
+  enum :peer_type, %i[primary_type secondary_type]
 
   validate :check_peer_type
   validate :check_ownership

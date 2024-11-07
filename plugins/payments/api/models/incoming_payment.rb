@@ -1,5 +1,5 @@
 class IncomingPayment < ApplicationRecord
-  enum state: %i[queued unmatched processed ignored]
+  enum :state, %i[queued unmatched processed ignored]
 
   # Amount converted to vpsAdmin's default currency
   def converted_amount

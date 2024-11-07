@@ -6,7 +6,7 @@ class ClusterResourceUse < ApplicationRecord
 
   belongs_to :user_cluster_resource
 
-  enum admin_lock_type: %i[no_lock absolute not_less not_more]
+  enum :admin_lock_type, %i[no_lock absolute not_less not_more]
 
   validate :check_allocation
 

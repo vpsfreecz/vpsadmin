@@ -10,8 +10,8 @@ class Node < ApplicationRecord
   has_many :node_statuses, dependent: :destroy
   has_one :node_current_status
 
-  enum role: %i[node storage mailer dns_server]
-  enum hypervisor_type: %i[openvz vpsadminos]
+  enum :role, %i[node storage mailer dns_server]
+  enum :hypervisor_type, %i[openvz vpsadminos]
 
   has_paper_trail ignore: %i[maintenance_lock maintenance_lock_reason]
 

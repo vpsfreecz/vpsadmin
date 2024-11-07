@@ -2,7 +2,7 @@ require 'vpsadmin/api/lifetimes'
 
 class ObjectState < ApplicationRecord
   belongs_to :user
-  enum state: VpsAdmin::API::Lifetimes::STATES
+  enum :state, VpsAdmin::API::Lifetimes::STATES
 
   def self.new_log(obj, state, reason, user, expiration, remind_date)
     new(

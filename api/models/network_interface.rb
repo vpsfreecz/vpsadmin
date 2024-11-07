@@ -5,7 +5,7 @@ class NetworkInterface < ApplicationRecord
   belongs_to :export
   has_many :ip_addresses
   has_many :host_ip_addresses, through: :ip_addresses
-  enum kind: %i[venet veth_bridge veth_routed]
+  enum :kind, %i[venet veth_bridge veth_routed]
 
   NAME_RX = /\A[a-zA-Z\-_.0-9]{1,30}\z/
 

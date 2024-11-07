@@ -12,8 +12,8 @@ class Transaction < ApplicationRecord
   belongs_to :depends_on, class_name: 'Transaction'
   has_many :transaction_confirmations
 
-  enum done: %i[waiting done staged]
-  enum reversible: %i[not_reversible is_reversible keep_going]
+  enum :done, %i[waiting done staged]
+  enum :reversible, %i[not_reversible is_reversible keep_going]
 
   before_save :set_init_values
 

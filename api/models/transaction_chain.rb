@@ -11,8 +11,8 @@ class TransactionChain < ApplicationRecord
   belongs_to :user
   belongs_to :user_session
 
-  enum state: %i[staged queued done rollbacking failed fatal resolved]
-  enum concern_type: %i[chain_affect chain_transform]
+  enum :state, %i[staged queued done rollbacking failed fatal resolved]
+  enum :concern_type, %i[chain_affect chain_transform]
 
   attr_reader :acquired_locks
   attr_accessor :last_id, :last_node_id, :dst_chain, :named, :global_locks,

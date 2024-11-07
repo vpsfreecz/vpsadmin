@@ -6,7 +6,7 @@ class UserRequest < ApplicationRecord
 
   has_paper_trail
 
-  enum state: %i[awaiting approved denied ignored pending_correction]
+  enum :state, %i[awaiting approved denied ignored pending_correction]
 
   validates :api_ip_addr, :api_ip_ptr, :state, presence: true
 

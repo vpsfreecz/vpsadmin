@@ -9,9 +9,9 @@ class Outage < ApplicationRecord
   has_many :outage_exports
   has_many :exports, through: :outage_exports
 
-  enum state: %i[staged announced resolved cancelled]
-  enum outage_type: %i[maintenance outage]
-  enum impact_type: %i[
+  enum :state, %i[staged announced resolved cancelled]
+  enum :outage_type, %i[maintenance outage]
+  enum :impact_type, %i[
     tbd
     system_restart
     system_reset

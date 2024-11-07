@@ -3,8 +3,8 @@ class OutageUpdate < ApplicationRecord
   belongs_to :reported_by, class_name: 'User'
   has_many :outage_translations
 
-  enum state: %i[staged announced resolved cancelled]
-  enum impact_type: %i[
+  enum :state, %i[staged announced resolved cancelled]
+  enum :impact_type, %i[
     tbd
     system_restart
     system_reset

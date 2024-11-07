@@ -4,7 +4,7 @@ class MigrationPlan < ApplicationRecord
   has_many :vps_migrations, dependent: :destroy
   has_many :resource_locks, as: :locked_by, dependent: :destroy
 
-  enum state: %i[staged running cancelling failing cancelled done error]
+  enum :state, %i[staged running cancelling failing cancelled done error]
 
   def start!
     self.class.transaction(requires_new: true) do

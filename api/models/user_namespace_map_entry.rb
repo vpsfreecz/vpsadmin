@@ -1,6 +1,6 @@
 class UserNamespaceMapEntry < ApplicationRecord
   belongs_to :user_namespace_map
-  enum kind: %i[uid gid]
+  enum :kind, %i[uid gid]
 
   validates :vps_id, :ns_id, numericality: {
     only_integer: true,

@@ -46,7 +46,7 @@ class Vps < ApplicationRecord
   has_many :oom_preventions, dependent: :destroy
   has_many :dataset_expansions
 
-  enum cgroup_version: %i[cgroup_any cgroup_v1 cgroup_v2]
+  enum :cgroup_version, %i[cgroup_any cgroup_v1 cgroup_v2]
 
   has_paper_trail ignore: %i[maintenance_lock maintenance_lock_reason]
 

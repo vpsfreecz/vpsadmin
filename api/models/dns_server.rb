@@ -3,7 +3,7 @@ class DnsServer < ApplicationRecord
   has_many :dns_server_zones
   has_many :dns_zones, through: :dns_server_zones
 
-  enum user_dns_zone_type: %i[primary_type secondary_type]
+  enum :user_dns_zone_type, %i[primary_type secondary_type]
 
   validates :name, presence: true
   validate :check_name

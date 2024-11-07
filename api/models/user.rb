@@ -36,7 +36,7 @@ class User < ApplicationRecord
   has_many :dns_record_logs
   belongs_to :language
 
-  enum password_version: VpsAdmin::API::CryptoProviders::PROVIDERS
+  enum :password_version, VpsAdmin::API::CryptoProviders::PROVIDERS
 
   before_validation :set_no_password
 

@@ -9,13 +9,13 @@ class Pool < ApplicationRecord
   has_many :dataset_actions
   has_many :snapshot_downloads
 
-  enum role: %i[hypervisor primary backup]
+  enum :role, %i[hypervisor primary backup]
 
   STATE_VALUES = %i[unknown online degraded suspended faulted error].freeze
   SCAN_VALUES = %i[unknown none scrub resilver error].freeze
 
-  enum state: STATE_VALUES, _prefix: :state
-  enum scan: SCAN_VALUES, _prefix: :scan
+  enum :state, STATE_VALUES, prefix: :state
+  enum :scan, SCAN_VALUES, prefix: :scan
 
   validates :node_id, :label, :filesystem, :role, presence: true
 

@@ -411,7 +411,7 @@ module VpsAdmin::API
         model.send(:extend, ClassMethods)
         model.send(:include, InstanceMethods)
 
-        model.enum object_state: Lifetimes::STATES
+        model.enum :object_state, Lifetimes::STATES
         model.before_create(Private::ModelCallback.new)
         model.after_create(Private::ModelCallback.new)
 

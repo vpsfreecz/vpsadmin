@@ -13,8 +13,8 @@ class DnsZone < ApplicationRecord
   has_many :dnssec_records, dependent: :delete_all
   has_many :ip_addresses, foreign_key: :reverse_dns_zone_id, dependent: :nullify
 
-  enum zone_role: %i[forward_role reverse_role]
-  enum zone_source: %i[internal_source external_source]
+  enum :zone_role, %i[forward_role reverse_role]
+  enum :zone_source, %i[internal_source external_source]
 
   validates :name, format: {
     with: /\A((?!-)[A-Za-z0-9-]{1,63}(?<!-)\.)+[A-Za-z]{2,63}\.\z/,

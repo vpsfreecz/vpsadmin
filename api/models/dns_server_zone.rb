@@ -4,7 +4,7 @@ class DnsServerZone < ApplicationRecord
   belongs_to :dns_server
   belongs_to :dns_zone
 
-  enum zone_type: %i[primary_type secondary_type]
+  enum :zone_type, %i[primary_type secondary_type]
 
   validate :check_zone_type
 

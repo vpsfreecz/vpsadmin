@@ -20,8 +20,8 @@ class Mount < ApplicationRecord
                       enter: TransactionChains::Vps::DestroyMount
                     }
 
-  enum on_start_fail: %i[skip mount_later fail_start wait_for_mount]
-  enum current_state: %i[created mounted unmounted skipped delayed waiting]
+  enum :on_start_fail, %i[skip mount_later fail_start wait_for_mount]
+  enum :current_state, %i[created mounted unmounted skipped delayed waiting]
 
   def check_mountpoint
     dst.insert(0, '/') unless dst.start_with?('/')

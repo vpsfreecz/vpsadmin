@@ -5,7 +5,7 @@ class Oauth2Client < ApplicationRecord
             presence: true, allow_blank: false
 
   # Must correspond to {UserSession.token_lifetime}, except for permanent
-  enum access_token_lifetime: %i[fixed renewable_manual renewable_auto]
+  enum :access_token_lifetime, %i[fixed renewable_manual renewable_auto]
 
   def check_secret(client_secret)
     ::BCrypt::Password.new(client_secret_hash) == client_secret

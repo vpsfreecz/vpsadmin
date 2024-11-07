@@ -372,7 +372,7 @@ class MailTemplate < ApplicationRecord
     incident: ::IncidentReport
   }, roles: %i[admin], public: true
 
-  enum user_visibility: %i[default visible invisible]
+  enum :user_visibility, %i[default visible invisible]
 
   def recipients(user)
     self.class.recipients(self, user, desc[:roles])

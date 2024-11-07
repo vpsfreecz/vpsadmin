@@ -7,7 +7,7 @@ class UserSession < ApplicationRecord
   has_many :transaction_chains
 
   serialize :scope, coder: JSON
-  enum token_lifetime: %i[fixed renewable_manual renewable_auto permanent]
+  enum :token_lifetime, %i[fixed renewable_manual renewable_auto permanent]
 
   def self.current
     Thread.current[:user_session]
