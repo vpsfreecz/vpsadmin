@@ -580,7 +580,7 @@ function request_approve()
         $api->user_request->{$_GET['type']}->resolve($_GET['id'], $params);
 
         notify_user(_("Request approved"), '');
-        redirect('?page=adminm&section=members&action=approval_requests');
+        redirect($_GET['next_url'] ?? '?page=adminm&section=members&action=approval_requests');
 
     } catch (\HaveAPI\Client\Exception\ActionFailed $e) {
         $xtpl->perex_format_errors(_('Request approval failed'), $e->getResponse());
@@ -610,7 +610,7 @@ function request_deny()
         $api->user_request->{$_GET['type']}->resolve($_GET['id'], $params);
 
         notify_user(_("Request denied"), '');
-        redirect('?page=adminm&section=members&action=approval_requests');
+        redirect($_GET['next_url'] ?? '?page=adminm&section=members&action=approval_requests');
 
     } catch (\HaveAPI\Client\Exception\ActionFailed $e) {
         $xtpl->perex_format_errors(_('Request denial failed'), $e->getResponse());
@@ -640,7 +640,7 @@ function request_ignore()
         $api->user_request->{$_GET['type']}->resolve($_GET['id'], $params);
 
         notify_user(_("Request ignored"), '');
-        redirect('?page=adminm&section=members&action=approval_requests');
+        redirect($_GET['next_url'] ?? '?page=adminm&section=members&action=approval_requests');
 
     } catch (\HaveAPI\Client\Exception\ActionFailed $e) {
         $xtpl->perex_format_errors(_('Request ignore failed'), $e->getResponse());

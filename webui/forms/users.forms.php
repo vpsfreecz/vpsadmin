@@ -392,6 +392,7 @@ function approval_requests_list()
 
     foreach ($requestsSlice as $r) {
         $type = $r->currency ? 'registration' : 'change';
+        $nextUrl = urlencode($_SERVER['REQUEST_URI']);
 
         $xtpl->table_td('<a href="?page=adminm&action=request_details&id=' . $r->id . '&type=' . $_GET['type'] . '">#' . $r->id . '</a>');
         $xtpl->table_td(tolocaltz($r->created_at));
@@ -399,9 +400,9 @@ function approval_requests_list()
         $xtpl->table_td($r->state);
         $xtpl->table_td($r->admin_id ? ('<a href="?page=adminm&action=edit&id=' . $r->admin_id . '&type=' . $_GET['type'] . '">' . $r->admin->login . '</a>') : '-');
         $xtpl->table_td('<a href="?page=adminm&action=request_details&id=' . $r->id . '&type=' . $type . '"><img src="template/icons/m_edit.png"  title="' . _("Details") . '" /></a>');
-        $xtpl->table_td('<a href="?page=adminm&action=request_process&id=' . $r->id . '&type=' . $type . '&rule=approve">' . _("approve") . '</a>');
-        $xtpl->table_td('<a href="?page=adminm&action=request_process&id=' . $r->id . '&type=' . $type . '&rule=deny">' . _("deny") . '</a>');
-        $xtpl->table_td('<a href="?page=adminm&action=request_process&id=' . $r->id . '&type=' . $type . '&rule=ignore">' . _("ignore") . '</a>');
+        $xtpl->table_td('<a href="?page=adminm&action=request_process&id=' . $r->id . '&type=' . $type . '&rule=approve&t=' . csrf_token() . '&next_url=' . $nextUrl . '">' . _("approve") . '</a>');
+        $xtpl->table_td('<a href="?page=adminm&action=request_process&id=' . $r->id . '&type=' . $type . '&rule=deny&t=' . csrf_token() . '&next_url=' . $nextUrl . '">' . _("deny") . '</a>');
+        $xtpl->table_td('<a href="?page=adminm&action=request_process&id=' . $r->id . '&type=' . $type . '&rule=ignore&t=' . csrf_token() . '&next_url=' . $nextUrl . '">' . _("ignore") . '</a>');
 
         $xtpl->table_tr();
 
