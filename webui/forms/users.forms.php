@@ -344,9 +344,8 @@ function approval_requests_list()
     $xtpl->table_add_category('#');
     $xtpl->table_add_category('DATE');
     $xtpl->table_add_category('TYPE');
-    $xtpl->table_add_category('LABEL');
-    $xtpl->table_add_category('IP');
     $xtpl->table_add_category('STATE');
+    $xtpl->table_add_category('ADMIN');
     $xtpl->table_add_category('');
     $xtpl->table_add_category('');
     $xtpl->table_add_category('');
@@ -397,14 +396,64 @@ function approval_requests_list()
         $xtpl->table_td('<a href="?page=adminm&action=request_details&id=' . $r->id . '&type=' . $_GET['type'] . '">#' . $r->id . '</a>');
         $xtpl->table_td(tolocaltz($r->created_at));
         $xtpl->table_td($type);
-        $xtpl->table_td(h($r->label));
-        $xtpl->table_td(h($r->client_ip_addr ? $r->client_ip_addr : $r->api_ip_addr) . "\n<br>\n" . h($r->client_ip_ptr));
         $xtpl->table_td($r->state);
+        $xtpl->table_td($r->admin_id ? ('<a href="?page=adminm&action=edit&id=' . $r->admin_id . '&type=' . $_GET['type'] . '">' . $r->admin->login . '</a>') : '-');
         $xtpl->table_td('<a href="?page=adminm&action=request_details&id=' . $r->id . '&type=' . $type . '"><img src="template/icons/m_edit.png"  title="' . _("Details") . '" /></a>');
         $xtpl->table_td('<a href="?page=adminm&action=request_process&id=' . $r->id . '&type=' . $type . '&rule=approve">' . _("approve") . '</a>');
         $xtpl->table_td('<a href="?page=adminm&action=request_process&id=' . $r->id . '&type=' . $type . '&rule=deny">' . _("deny") . '</a>');
         $xtpl->table_td('<a href="?page=adminm&action=request_process&id=' . $r->id . '&type=' . $type . '&rule=ignore">' . _("ignore") . '</a>');
 
+        $xtpl->table_tr();
+
+        if ($type == 'registration') {
+            $dl = [
+                _('Login') => $r->login,
+                _('Name') => $r->full_name,
+                _('Org') => $r->org_name ? "{$r->org_name} (ID {$r->org_id})" : '',
+                _('Email') => $r->email,
+                _('Address') => $r->address,
+                _('Birth') => $r->year_of_birth,
+                _('How') => $r->how,
+                _('Note') => $r->note,
+                _('Distribution') => $r->os_template->label,
+                _('Location') => $r->location->label,
+                _('Currency') => strtoupper($r->currency),
+                _('Language') => $r->language->label,
+                _('IP') => $r->client_ip_addr,
+                _('PTR') => $r->client_ip_ptr,
+                _('Proxy') => $r->ip_proxy ? 'yes' : 'no',
+                _('Abuse') => $r->ip_recent_abuse ? 'yes' : 'no',
+                _('VPN') => $r->ip_vpn ? 'yes' : 'no',
+                _('Tor') => $r->ip_tor ? 'yes' : 'no',
+                _('IP score') => $r->ip_fraud_score,
+                _('Mail suspect') => $r->mail_suspect ? 'yes' : 'no',
+                _('Mail score') => $r->mail_fraud_score,
+            ];
+        } else {
+            $dl = [
+                _('User') => $r->user->login,
+            ];
+
+            $changeable = [
+                'full_name' => _('Full name'),
+                'email' => _('Email'),
+                'address' => _('Address'),
+            ];
+
+            foreach ($changeable as $param => $label) {
+                if ($r->user->{$param} == $r->{$param}) {
+                    continue;
+                }
+
+                $dl[$label] = $r->{$param};
+            }
+
+            $dl[_('Reason')] = $r->change_reason;
+            $dl[_('IP')] = $r->client_ip_addr;
+            $dl[_('PTR')] = $r->client_ip_ptr;
+        }
+
+        $xtpl->table_td(makeDefinitionList($dl, 'inline'), false, false, $xtpl->table_max_cols);
         $xtpl->table_tr();
     }
 

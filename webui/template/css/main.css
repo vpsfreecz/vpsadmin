@@ -83,6 +83,20 @@ ul.ul-style01 li {padding-left:12px; background:url("../design/ul-style01.gif") 
 ul.ul-style01 ul {margin:0; list-style:none;}
 ul.ul-style01 ul li {padding-left:12px; background:url("../design/ul-style01.gif") 0 5px no-repeat;}
 
+dl.inline {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 5px 10px;
+}
+
+dl.inline dt {
+  font-weight: bold;
+}
+
+dl.inline dd {
+  margin: 0;
+}
+
 /* ----------------------------------------------------------------------------------------------------------
 4) Layout
 ---------------------------------------------------------------------------------------------------------- */

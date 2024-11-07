@@ -1263,6 +1263,21 @@ function cgroupEnumTolabel($v)
     }
 }
 
+function makeDefinitionList($array, $classes = '')
+{
+    $ret = '<dl class="' . $classes . '">';
+
+
+    foreach ($array as $k => $v) {
+        $ret .= '<dt>' . h($k) . ':</dt>';
+        $ret .= '<dd>' . h((is_null($v) || $v === '') ? '-' : $v) . '</dd>';
+    }
+
+    $ret .= '</dl>';
+
+    return $ret;
+}
+
 function moo_inputremaining($input, $output, $chars, $uid)
 {
     $out = "<script type=\"text/javascript\">\n";
