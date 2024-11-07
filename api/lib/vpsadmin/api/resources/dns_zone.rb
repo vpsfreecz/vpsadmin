@@ -40,7 +40,7 @@ module VpsAdmin::API::Resources
       authorize do |u|
         allow if u.role == :admin
         restrict user_id: u.id
-        input whitelist: %i[role source enabled]
+        input whitelist: %i[role source enabled from_id limit]
         allow
       end
 

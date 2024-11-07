@@ -33,7 +33,7 @@ module VpsAdmin::API::Resources
       authorize do |u|
         allow if u.role == :admin
         restrict user: u, dns_zones: { user_id: u.id }
-        input whitelist: %i[dns_zone change_type name type]
+        input whitelist: %i[dns_zone change_type name type from_id limit]
         output blacklist: %i[user]
         allow
       end
