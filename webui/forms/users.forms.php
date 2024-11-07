@@ -324,7 +324,7 @@ function approval_requests_list()
         "all" => _("all"),
         "registration" => _("registration"),
         "change" => _("change"),
-    ], $_GET["type"]);
+    ], $_GET["type"] ?? 'all');
     $xtpl->form_add_select(_("State") . ':', 'state', [
         "all" => _("all"),
         "awaiting" => _("awaiting"),
@@ -332,12 +332,12 @@ function approval_requests_list()
         "approved" => _("approved"),
         "denied" => _("denied"),
         "ignored" => _("ignored"),
-    ], $_GET["state"] ? $_GET["state"] : "awaiting");
+    ], $_GET["state"] ?? "awaiting");
 
-    $xtpl->form_add_input(_("IP address") . ':', 'text', '30', 'ip_addr', $_GET["ip_addr"]);
-    $xtpl->form_add_input(_("Client IP PTR") . ':', 'text', '30', 'client_ip_ptr', $_GET["client_ip_ptr"]);
-    $xtpl->form_add_input(_("User ID") . ':', 'text', '30', 'user', $_GET["user"]);
-    $xtpl->form_add_input(_("Admin ID") . ':', 'text', '30', 'admin', $_GET["admin"]);
+    $xtpl->form_add_input(_("IP address") . ':', 'text', '30', 'ip_addr', get_val("ip_addr"));
+    $xtpl->form_add_input(_("Client IP PTR") . ':', 'text', '30', 'client_ip_ptr', get_val("client_ip_ptr"));
+    $xtpl->form_add_input(_("User ID") . ':', 'text', '30', 'user', get_val("user"));
+    $xtpl->form_add_input(_("Admin ID") . ':', 'text', '30', 'admin', get_val("admin"));
 
     $xtpl->form_out(_("Show"));
 

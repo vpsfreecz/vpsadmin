@@ -39,7 +39,7 @@ class Pagination
             throw new Exception('Output parameter ' . $options['outputParameter'] . ' not found');
         }
 
-        $this->baseUrl = $_SERVER['PATH_INFO'];
+        $this->baseUrl = $_SERVER['PATH_INFO'] ?? '';
         $this->limit = $_GET['limit'] ?? $options['defaultLimit'] ?? $input->limit->default ?? 25;
         $this->history = $this->parseHistory();
     }

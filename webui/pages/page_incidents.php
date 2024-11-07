@@ -5,7 +5,7 @@ if (isLoggedIn()) {
         case 'list':
             incident_list();
 
-            if ($_GET['return']) {
+            if ($_GET['return'] ?? false) {
                 $xtpl->sbar_add(_('Back'), $_GET['return']);
             }
 

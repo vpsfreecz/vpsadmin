@@ -29,7 +29,7 @@ function incident_list()
     if (isAdmin()) {
         $xtpl->form_add_input(_('VPS ID') . ':', 'text', '30', 'vps', get_val('vps'), '');
     } else {
-        api_param_to_form('vps', $input->vps, $_GET['vps']);
+        api_param_to_form('vps', $input->vps, get_val('vps'));
     }
 
     if (isAdmin()) {
@@ -43,17 +43,17 @@ function incident_list()
         );
     }
 
-    api_param_to_form('ip_addr', $input->ip_addr, $_GET['ip_addr']);
+    api_param_to_form('ip_addr', $input->ip_addr, get_val('ip_addr'));
 
     if (isAdmin()) {
-        api_param_to_form('mailbox', $input->mailbox, $_GET['mailbox']);
+        api_param_to_form('mailbox', $input->mailbox, get_val('mailbox'));
     }
 
-    api_param_to_form('codename', $input->codename, $_GET['codename']);
+    api_param_to_form('codename', $input->codename, get_val('codename'));
 
     $xtpl->form_out(_('Show'));
 
-    if (!$_GET['list']) {
+    if (!($_GET['list'] ?? false)) {
         return;
     }
 

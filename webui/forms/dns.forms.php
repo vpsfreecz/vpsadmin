@@ -61,7 +61,7 @@ function dns_zone_list($action, $filters = [], $onLastRow = null)
     $conds = ['user'];
 
     foreach ($conds as $c) {
-        if ($_GET[$c]) {
+        if ($_GET[$c] ?? false) {
             $params[$c] = $_GET[$c];
         }
     }
@@ -646,7 +646,7 @@ function tsig_key_list()
     $conds = ['user'];
 
     foreach ($conds as $c) {
-        if ($_GET[$c]) {
+        if ($_GET[$c] ?? false) {
             $params[$c] = $_GET[$c];
         }
     }
@@ -792,24 +792,24 @@ function dns_ptr_list()
     ];
 
     if (isAdmin()) {
-        if ($_GET['user']) {
+        if ($_GET['user'] ?? false) {
             $params['user'] = $_GET['user'];
         }
     }
 
-    if ($_GET['vps']) {
+    if ($_GET['vps'] ?? false) {
         $params['vps'] = $_GET['vps'];
     }
 
-    if ($_GET['network']) {
+    if ($_GET['network'] ?? false) {
         $params['network'] = $_GET['network'];
     }
 
-    if ($_GET['location']) {
+    if ($_GET['location'] ?? false) {
         $params['location'] = $_GET['location'];
     }
 
-    if ($_GET['v']) {
+    if ($_GET['v'] ?? false) {
         $params['version'] = $_GET['v'];
     }
 
@@ -1302,7 +1302,7 @@ function dns_record_log_list()
 
     $xtpl->form_out(_('Show'));
 
-    if (!$_GET['list']) {
+    if (!($_GET['list'] ?? false)) {
         return;
     }
 
@@ -1314,7 +1314,7 @@ function dns_record_log_list()
     $conds = ['user', 'dns_zone', 'dns_zone_name', 'name', 'type', 'change_type'];
 
     foreach ($conds as $c) {
-        if ($_GET[$c]) {
+        if ($_GET[$c] ?? false) {
             $params[$c] = $_GET[$c];
         }
     }

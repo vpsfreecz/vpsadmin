@@ -28,20 +28,20 @@ function oom_reports_list()
     if (isAdmin()) {
         $xtpl->form_add_input(_("VPS") . ':', 'text', '40', 'vps', get_val('vps', ''), '');
     } else {
-        api_param_to_form('vps', $input->vps, $_GET['vps']);
+        api_param_to_form('vps', $input->vps, get_val('vps'));
     }
 
-    api_param_to_form('node', $input->node, $_GET['node'], function ($node) {
+    api_param_to_form('node', $input->node, get_val('node'), function ($node) {
         return $node->domain_name;
     });
-    api_param_to_form('location', $input->location, $_GET['location']);
-    api_param_to_form('environment', $input->environment, $_GET['environment']);
-    api_param_to_form('since', $input->since, $_GET['since']);
-    api_param_to_form('until', $input->until, $_GET['until']);
+    api_param_to_form('location', $input->location, get_val('location'));
+    api_param_to_form('environment', $input->environment, get_val('environment'));
+    api_param_to_form('since', $input->since, get_val('since'));
+    api_param_to_form('until', $input->until, get_val('until'));
 
     $xtpl->form_out(_('Show'));
 
-    if (!$_GET['list']) {
+    if (!($_GET['list'] ?? false)) {
         return;
     }
 

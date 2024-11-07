@@ -1,7 +1,7 @@
 <?php
 
 if (isLoggedIn()) {
-    switch ($_GET['action']) {
+    switch ($_GET['action'] ?? null) {
         case 'show':
             oom_reports_show($_GET['id']);
             break;

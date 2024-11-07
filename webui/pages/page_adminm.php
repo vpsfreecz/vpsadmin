@@ -707,7 +707,7 @@ function list_members()
         $xtpl->form_add_checkbox(_("Mailer enabled") . ':', 'mailer_enabled', 1, get_val('mailer_enabled', ''));
 
         $p = $api->vps->index->getParameters('input')->object_state;
-        api_param_to_form('object_state', $p, $_GET['object_state']);
+        api_param_to_form('object_state', $p, get_val('object_state'));
 
         $xtpl->form_out(_('Show'));
 
@@ -715,7 +715,7 @@ function list_members()
         $xtpl->title(_("Manage members"));
     }
 
-    if (!isAdmin() || $_GET['action'] == 'list') {
+    if (!isAdmin() || ($_GET['action'] ?? null) == 'list') {
         $xtpl->table_add_category('ID');
         $xtpl->table_add_category(_("NICKNAME"));
         $xtpl->table_add_category(_("VPS"));

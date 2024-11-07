@@ -392,7 +392,7 @@ function api_param_to_form_pure($name, $desc, $v = null, $label_callback = null,
 {
     global $xtpl, $api;
 
-    if ($v === null) {
+    if ($v === null && property_exists($desc, 'default')) {
         $v = $desc->default === '_nil' ? null : $desc->default;
     }
 
