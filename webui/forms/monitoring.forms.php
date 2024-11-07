@@ -18,7 +18,7 @@ function monitoring_list()
 
     $paginateBy = $paginationOptions['inputParameter'];
 
-    if ($_GET[$paginateBy] ?? 0 > 0) {
+    if (($_GET[$paginateBy] ?? 0) > 0) {
         $params[$paginateBy] = $_GET[$paginateBy];
     }
 
@@ -146,7 +146,7 @@ function monitoring_event()
         'limit' => get_val('limit', 25),
     ];
 
-    if ($_GET['from_id'] ?? 0 > 0) {
+    if (($_GET['from_id'] ?? 0) > 0) {
         $params['from_id'] = $_GET['from_id'];
     }
 

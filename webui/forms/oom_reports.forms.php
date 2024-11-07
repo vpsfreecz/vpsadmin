@@ -49,7 +49,7 @@ function oom_reports_list()
         'limit' => get_val('limit', 25),
     ];
 
-    if ($_GET['from_id'] ?? 0 > 0) {
+    if (($_GET['from_id'] ?? 0) > 0) {
         $params['from_id'] = $_GET['from_id'];
     }
 

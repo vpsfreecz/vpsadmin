@@ -59,7 +59,7 @@ function list_chains()
         'meta' => ['includes' => 'user'],
     ];
 
-    if ($_GET['from_id'] ?? 0 > 0) {
+    if (($_GET['from_id'] ?? 0) > 0) {
         $params['from_id'] = $_GET['from_id'];
     }
 
@@ -229,7 +229,7 @@ function chain_transactions($chain_id)
             'meta' => $meta,
         ];
 
-        if ($_GET['from_id'] ?? 0 > 0) {
+        if (($_GET['from_id'] ?? 0) > 0) {
             $params['from_id'] = $_GET['from_id'];
         }
 

@@ -147,7 +147,7 @@ function list_user_sessions($user_id)
         'user' => $user_id,
     ];
 
-    if ($_GET['from_id'] ?? 0 > 0) {
+    if (($_GET['from_id'] ?? 0) > 0) {
         $params['from_id'] = $_GET['from_id'];
     }
 
@@ -359,7 +359,7 @@ function approval_requests_list()
         $params['state'] = $state;
     }
 
-    if ($_GET['from_id'] ?? 0 > 0) {
+    if (($_GET['from_id'] ?? 0) > 0) {
         $params['from_id'] = $_GET['from_id'];
     }
 
@@ -873,7 +873,7 @@ function user_payment_history()
         'meta' => ['includes' => 'user,accounted_by'],
     ];
 
-    if ($_GET['from_id'] ?? 0 > 0) {
+    if (($_GET['from_id'] ?? 0) > 0) {
         $params['from_id'] = $_GET['from_id'];
     }
 
@@ -935,7 +935,7 @@ function incoming_payments_list()
         'limit' => get_val('limit', 25),
     ];
 
-    if ($_GET['from_id'] ?? 0 > 0) {
+    if (($_GET['from_id'] ?? 0) > 0) {
         $params['from_id'] = $_GET['from_id'];
     }
 

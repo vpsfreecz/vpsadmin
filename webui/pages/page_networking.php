@@ -382,7 +382,7 @@ if (isLoggedIn()) {
             'meta' => ['includes' => 'network_interface__vps__user'],
         ];
 
-        if ($_GET['from_bytes'] ?? 0 > 0) {
+        if (($_GET['from_bytes'] ?? 0) > 0) {
             $params['from_bytes'] = $_GET['from_bytes'];
         }
 
@@ -490,7 +490,7 @@ if (isLoggedIn()) {
             'meta' => ['includes' => 'user'],
         ];
 
-        if ($_GET['from_bytes'] ?? 0 > 0) {
+        if (($_GET['from_bytes'] ?? 0) > 0) {
             $params['from_bytes'] = $_GET['from_bytes'];
         }
 
