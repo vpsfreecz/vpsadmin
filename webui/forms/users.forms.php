@@ -346,7 +346,6 @@ function approval_requests_list()
     $xtpl->table_add_category('TYPE');
     $xtpl->table_add_category('LABEL');
     $xtpl->table_add_category('IP');
-    $xtpl->table_add_category('PTR');
     $xtpl->table_add_category('STATE');
     $xtpl->table_add_category('');
     $xtpl->table_add_category('');
@@ -399,8 +398,7 @@ function approval_requests_list()
         $xtpl->table_td(tolocaltz($r->created_at));
         $xtpl->table_td($type);
         $xtpl->table_td(h($r->label));
-        $xtpl->table_td(h($r->client_ip_addr ? $r->client_ip_addr : $r->api_ip_addr));
-        $xtpl->table_td(h($r->client_ip_ptr));
+        $xtpl->table_td(h($r->client_ip_addr ? $r->client_ip_addr : $r->api_ip_addr) . "\n<br>\n" . h($r->client_ip_ptr));
         $xtpl->table_td($r->state);
         $xtpl->table_td('<a href="?page=adminm&action=request_details&id=' . $r->id . '&type=' . $type . '"><img src="template/icons/m_edit.png"  title="' . _("Details") . '" /></a>');
         $xtpl->table_td('<a href="?page=adminm&action=request_process&id=' . $r->id . '&type=' . $type . '&rule=approve">' . _("approve") . '</a>');
