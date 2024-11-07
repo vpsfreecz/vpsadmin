@@ -32,11 +32,11 @@ class Pagination
         $this->outputParameter = $options['outputParameter'] ?? 'id';
 
         if (is_null($input->{$this->inputParameter})) {
-            throw new Exception('Input parameter ' . $options['inputParameter'] . ' not found');
+            throw new Exception('Input parameter ' . $this->inputParameter . ' not found');
         }
 
         if (is_null($output->{$this->outputParameter})) {
-            throw new Exception('Output parameter ' . $options['outputParameter'] . ' not found');
+            throw new Exception('Output parameter ' . $this->outputParameter . ' not found');
         }
 
         $this->baseUrl = $_SERVER['PATH_INFO'] ?? '';
