@@ -73,16 +73,19 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
 
     authorize do |u|
       allow if u.role == :admin
+      restrict id: u.id
+      input whitelist: %i[from_id limit]
+      allow
     end
 
     def query
       q = if input[:object_state]
-            ::User.unscoped.where(
-              object_state: ::User.object_states[input[:object_state]]
-            )
+            ::User.unscoped.where(with_restricted(
+                                    object_state: ::User.object_states[input[:object_state]]
+                                  ))
 
           else
-            ::User.existing.all
+            ::User.existing.where(with_restricted)
           end
 
       in_params = self.class.input
