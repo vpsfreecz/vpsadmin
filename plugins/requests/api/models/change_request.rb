@@ -14,7 +14,7 @@ class ChangeRequest < UserRequest
   end
 
   def label
-    user.full_name
+    user && user.full_name
   end
 
   def approve(_chain, _params)
