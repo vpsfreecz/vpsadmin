@@ -62,7 +62,7 @@ function incident_list()
         'meta' => ['includes' => 'user,vps,ip_address_assignment'],
     ];
 
-    if ($_GET['from_id'] > 0) {
+    if (($_GET['from_id'] ?? 0) > 0) {
         $params['from_id'] = $_GET['from_id'];
     }
 
