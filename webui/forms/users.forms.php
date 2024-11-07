@@ -299,20 +299,29 @@ function approval_requests_list()
 {
     global $xtpl, $api;
 
+    $limit = get_val('limit', 50);
+    $pagination = new Pagination(
+        null,
+        /**
+         * This is not true, as we fetch both registration and change requests, but
+         * it doesn't matter to pagination.
+         */
+        $api->user_request->registration->list,
+        ['defaultLimit' => $limit]
+    );
+
     $xtpl->title(_("Requests for approval"));
 
-    $xtpl->form_create('?page=adminm&section=members&action=approval_requests', 'get');
+    $xtpl->form_create('?page=adminm&action=approval_requests', 'get');
 
-    $xtpl->table_td(
-        _("Limit") . ':' .
-        '<input type="hidden" name="page" value="adminm">' .
-        '<input type="hidden" name="section" value="members">' .
-        '<input type="hidden" name="action" value="approval_requests">'
-    );
-    $xtpl->form_add_input_pure('text', '30', 'limit', $_GET["limit"] ? $_GET["limit"] : 50);
-    $xtpl->table_tr();
+    $xtpl->form_set_hidden_fields(array_merge([
+        'page' => 'adminm',
+        'action' => 'approval_requests',
+    ], $pagination->hiddenFormFields()));
 
+    $xtpl->form_add_input(_("Limit") . ':', 'text', '30', 'limit', $limit);
     $xtpl->form_add_select(_("Type") . ':', 'type', [
+        "all" => _("all"),
         "registration" => _("registration"),
         "change" => _("change"),
     ], $_GET["type"]);
@@ -332,54 +341,77 @@ function approval_requests_list()
 
     $xtpl->form_out(_("Show"));
 
-    if (!isset($_GET['type'])) {
-        return;
-    }
-
     $xtpl->table_add_category('#');
     $xtpl->table_add_category('DATE');
+    $xtpl->table_add_category('TYPE');
     $xtpl->table_add_category('LABEL');
     $xtpl->table_add_category('IP');
     $xtpl->table_add_category('PTR');
     $xtpl->table_add_category('STATE');
-    $xtpl->table_add_category('ADMIN');
     $xtpl->table_add_category('');
     $xtpl->table_add_category('');
     $xtpl->table_add_category('');
     $xtpl->table_add_category('');
 
-    $params = ['limit' => $_GET['limit'],];
+    $params = ['limit' => $limit];
+    $state = $_GET['state'] ?? 'awaiting';
 
-    if ($_GET['state'] != 'all') {
-        $params['state'] = $_GET['state'];
+    if ($state != 'all') {
+        $params['state'] = $state;
+    }
+
+    if ($_GET['from_id'] ?? 0 > 0) {
+        $params['from_id'] = $_GET['from_id'];
     }
 
     foreach (['ip_addr', 'client_ip_ptr', 'user', 'admin'] as $v) {
-        if ($_GET[$v]) {
+        if ($_GET[$v] ?? false) {
             $params[$v] = $_GET[$v];
         }
     }
 
-    $requests = $api->user_request->{$_GET['type']}->list($params);
+    $types = [];
 
-    foreach ($requests as $r) {
+    if (($_GET['type'] ?? 'all') == 'all') {
+        $types[] = 'registration';
+        $types[] = 'change';
+    } else {
+        $types[] = $_GET['type'];
+    }
+
+    $requests = [];
+
+    foreach ($types as $type) {
+        $requests = array_merge($requests, $api->user_request->{$type}->list($params)->asArray());
+    }
+
+    usort($requests, function ($a, $b) {
+        return $a->id < $b->id ? 1 : -1;
+    });
+
+    $requestsSlice = array_slice($requests, 0, $limit);
+    $pagination->setResourceList($requestsSlice);
+
+    foreach ($requestsSlice as $r) {
+        $type = $r->currency ? 'registration' : 'change';
+
         $xtpl->table_td('<a href="?page=adminm&action=request_details&id=' . $r->id . '&type=' . $_GET['type'] . '">#' . $r->id . '</a>');
         $xtpl->table_td(tolocaltz($r->created_at));
+        $xtpl->table_td($type);
         $xtpl->table_td(h($r->label));
         $xtpl->table_td(h($r->client_ip_addr ? $r->client_ip_addr : $r->api_ip_addr));
         $xtpl->table_td(h($r->client_ip_ptr));
         $xtpl->table_td($r->state);
-        $xtpl->table_td($r->admin_id ? ('<a href="?page=adminm&action=edit&id=' . $r->admin_id . '&type=' . $_GET['type'] . '">' . $r->admin->login . '</a>') : '-');
-        $xtpl->table_td('<a href="?page=adminm&action=request_details&id=' . $r->id . '&type=' . $_GET['type'] . '"><img src="template/icons/m_edit.png"  title="' . _("Details") . '" /></a>');
-        $xtpl->table_td('<a href="?page=adminm&action=request_process&id=' . $r->id . '&type=' . $_GET['type'] . '&rule=approve">' . _("approve") . '</a>');
-        $xtpl->table_td('<a href="?page=adminm&action=request_process&id=' . $r->id . '&type=' . $_GET['type'] . '&rule=deny">' . _("deny") . '</a>');
-        $xtpl->table_td('<a href="?page=adminm&action=request_process&id=' . $r->id . '&type=' . $_GET['type'] . '&rule=ignore">' . _("ignore") . '</a>');
+        $xtpl->table_td('<a href="?page=adminm&action=request_details&id=' . $r->id . '&type=' . $type . '"><img src="template/icons/m_edit.png"  title="' . _("Details") . '" /></a>');
+        $xtpl->table_td('<a href="?page=adminm&action=request_process&id=' . $r->id . '&type=' . $type . '&rule=approve">' . _("approve") . '</a>');
+        $xtpl->table_td('<a href="?page=adminm&action=request_process&id=' . $r->id . '&type=' . $type . '&rule=deny">' . _("deny") . '</a>');
+        $xtpl->table_td('<a href="?page=adminm&action=request_process&id=' . $r->id . '&type=' . $type . '&rule=ignore">' . _("ignore") . '</a>');
 
         $xtpl->table_tr();
     }
 
+    $xtpl->table_pagination($pagination);
     $xtpl->table_out();
-
 }
 
 function approval_requests_details($type, $id)
