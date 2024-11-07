@@ -3,7 +3,7 @@ GEM
   specs:
     amq-protocol (2.3.2)
     base64 (0.2.0)
-    bunny (2.22.0)
+    bunny (2.23.0)
       amq-protocol (~> 2.3, >= 2.3.1)
       sorted_set (~> 1, >= 1.0.2)
     mustermann (3.0.3)
@@ -40,7 +40,7 @@ PLATFORMS
   x86_64-linux
 
 DEPENDENCIES
-  bunny (~> 2.22.0)
+  bunny (~> 2.23.0)
   puma
   rackup
   require_all (~> 2.0.0)
