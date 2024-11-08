@@ -239,6 +239,22 @@ a.user-unpaid {color: #fff;}
   align-items: center;
 }
 
+.pagination-section {
+  flex: 1;
+}
+
+.pagination-section.first {
+  text-align: left;
+}
+
+.pagination-section.previous {
+  text-align: center;
+}
+
+.pagination-section.next {
+  text-align: right;
+}
+
 .pagination-link {
   text-decoration: none;
   color: #007bff;

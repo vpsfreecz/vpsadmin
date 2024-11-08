@@ -709,15 +709,15 @@ class XTemplate
         $links = [];
 
         if ($pagination->hasFirstPage()) {
-            $links[] = '<a href="' . $pagination->firstPageUrl() . '" class="pagination-link first">&laquo;' . _('First page') . '</a>';
+            $links['first'] = '<a href="' . $pagination->firstPageUrl() . '" class="pagination-link first">&laquo;' . _('First&nbsp;page') . '</a>';
         }
 
         if ($pagination->hasPreviousPage()) {
-            $links[] = '<a href="' . $pagination->previousPageUrl() . '" class="pagination-link previous">&larr;' . _('Previous page') . '</a>';
+            $links['previous'] = '<a href="' . $pagination->previousPageUrl() . '" class="pagination-link previous">&larr;' . _('Previous&nbsp;page') . '</a>';
         }
 
         if ($pagination->hasNextPage()) {
-            $links[] = '<a href="' . $pagination->nextPageUrl() . '" class="pagination-link next">' . _('Next page') . '&rarr;</a>';
+            $links['next'] = '<a href="' . $pagination->nextPageUrl() . '" class="pagination-link next">' . _('Next&nbsp;page') . '&rarr;</a>';
         }
 
         if (count($links) == 0) {
@@ -726,7 +726,13 @@ class XTemplate
 
         $tdContent = '';
         $tdContent .= '<div class="pagination-controls">';
-        $tdContent .= implode('', $links);
+
+        foreach (['first', 'previous', 'next'] as $dir) {
+            $tdContent .= '<div class="pagination-section ' . $dir . '">';
+            $tdContent .= $links[$dir] ?? '';
+            $tdContent .= '</div>';
+        }
+
         $tdContent .= '</div>';
 
         $this->table_td($tdContent, false, false, $this->table_max_cols);
