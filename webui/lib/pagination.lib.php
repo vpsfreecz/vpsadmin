@@ -90,59 +90,35 @@ class Pagination
     }
 
     /**
-     * @return boolean
+     * @return array list of previous pages
      */
-    public function hasPreviousPage()
+    public function previousPageUrls()
     {
-        return count($this->history) > 0;
-    }
-
-    /**
-     * @return string
-     */
-    public function previousPageUrl()
-    {
+        $ret = [];
         $history = $this->history;
-        $lastItem = array_pop($history);
+        $n = count($history);
 
-        $params = array_merge(
-            $_GET,
-            [
-                $this->inputParameter => $lastItem[$this->inputParameter],
-                'limit' => $lastItem['limit'],
-            ],
-            $this->appendHistory($history),
-        );
+        while(count($history) > 0) {
+            $item = array_pop($history);
 
-        return $this->baseUrl . '?' . http_build_query($params);
-    }
+            $params = array_merge(
+                $_GET,
+                [
+                    $this->inputParameter => $item[$this->inputParameter],
+                    'limit' => $item['limit'],
+                ],
+                $this->appendHistory($history),
+            );
 
-    /**
-     * return boolean
-     */
-    public function hasFirstPage()
-    {
-        return count($this->history) > 1;
-    }
+            $url = $this->baseUrl . '?' . http_build_query($params);
 
-    /**
-     * @return string
-     */
-    public function firstPageUrl()
-    {
-        $history = $this->history;
-        $lastItem = $history[0];
+            $ret[] = [
+                'page' => $n--,
+                'url' => $url,
+            ];
+        }
 
-        $params = array_merge(
-            $_GET,
-            [
-                $this->inputParameter => $lastItem[$this->inputParameter],
-                'limit' => $lastItem['limit'],
-            ],
-            $this->appendHistory([]),
-        );
-
-        return $this->baseUrl . '?' . http_build_query($params);
+        return array_reverse($ret);
     }
 
     /**

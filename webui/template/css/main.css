@@ -228,8 +228,9 @@ a.user-unpaid {color: #fff;}
 }
 
 .pagination-row td {
-  padding: 4px;
+  padding: 10px;
   text-align: center;
+  background-color: #f9f9f9;
   border-top: 1px solid #ddd;
 }
 
@@ -243,23 +244,16 @@ a.user-unpaid {color: #fff;}
   flex: 1;
 }
 
-.pagination-section.first {
-  text-align: left;
-}
-
-.pagination-section.previous {
-  text-align: center;
-}
-
-.pagination-section.next {
-  text-align: right;
+.pagination-ellipsis {
+  color: #666;
+  font-size: 14px;
+  padding: 6px 8px;
 }
 
 .pagination-link {
   text-decoration: none;
   color: #007bff;
-  padding: 4px 6px;
-  margin: 0 5px;
+  padding: 6px 8px;
   font-weight: bold;
   border-radius: 4px;
   transition: background-color 0.2s, color 0.2s;
@@ -268,6 +262,10 @@ a.user-unpaid {color: #fff;}
 .pagination-link:hover {
   background-color: #007bff;
   color: white;
+}
+
+.pagination-section.next {
+  text-align: right;
 }
 
 .goresheat-window {

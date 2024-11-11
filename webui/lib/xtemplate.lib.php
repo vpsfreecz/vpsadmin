@@ -706,33 +706,44 @@ class XTemplate
      */
     public function table_pagination($pagination)
     {
-        $links = [];
+        $previousPages = $pagination->previousPageUrls();
+        $previousCount = count($previousPages);
+        $hasNextPage = $pagination->hasNextPage();
 
-        if ($pagination->hasFirstPage()) {
-            $links['first'] = '<a href="' . $pagination->firstPageUrl() . '" class="pagination-link first">&laquo;' . _('First&nbsp;page') . '</a>';
-        }
-
-        if ($pagination->hasPreviousPage()) {
-            $links['previous'] = '<a href="' . $pagination->previousPageUrl() . '" class="pagination-link previous">&larr;' . _('Previous&nbsp;page') . '</a>';
-        }
-
-        if ($pagination->hasNextPage()) {
-            $links['next'] = '<a href="' . $pagination->nextPageUrl() . '" class="pagination-link next">' . _('Next&nbsp;page') . '&rarr;</a>';
-        }
-
-        if (count($links) == 0) {
+        if ($previousCount == 0 && !$hasNextPage) {
             return;
         }
 
         $tdContent = '';
         $tdContent .= '<div class="pagination-controls">';
+        $tdContent .= '<div class="pagination-section"></div>';
 
-        foreach (['first', 'previous', 'next'] as $dir) {
-            $tdContent .= '<div class="pagination-section ' . $dir . '">';
-            $tdContent .= $links[$dir] ?? '';
-            $tdContent .= '</div>';
+        $tdContent .= '<div class="pagination-section previous-pages">';
+
+        if ($previousCount < 7) {
+            foreach ($previousPages as $page) {
+                $tdContent .= '<a href="' . $page['url'] . '" class="pagination-link">' . $page['page'] . '</a>';
+            }
+        } else {
+            $first = $previousPages[0];
+
+            $tdContent .= '<a href="' . $first['url'] . '" class="pagination-link">' . $first['page'] . '</a>';
+            $tdContent .= '<span class="pagination-ellipsis">...</span>';
+
+            foreach (array_splice($previousPages, -5, 5) as $page) {
+                $tdContent .= '<a href="' . $page['url'] . '" class="pagination-link">' . $page['page'] . '</a>';
+            }
         }
 
+        $tdContent .= '</div>';
+
+        $tdContent .= '<div class="pagination-section next">';
+
+        if ($hasNextPage) {
+            $tdContent .= '<a href="' . $pagination->nextPageUrl() . '" class="pagination-link">' . _('Next') . '&rarr;</a>';
+        }
+
+        $tdContent .= '</div>';
         $tdContent .= '</div>';
 
         $this->table_td($tdContent, false, false, $this->table_max_cols);
