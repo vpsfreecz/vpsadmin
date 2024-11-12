@@ -735,6 +735,8 @@ class XTemplate
             }
         }
 
+        $tdContent .= '<span class="pagination-current">' . ($previousCount + 1) . '</span>';
+
         $tdContent .= '</div>';
 
         $tdContent .= '<div class="pagination-section next">';

@@ -264,6 +264,13 @@ a.user-unpaid {color: #fff;}
   color: white;
 }
 
+.pagination-current {
+  color: #666;
+  font-weight: bold;
+  padding: 6px 8px;
+  border-radius: 4px;
+}
+
 .pagination-section.next {
   text-align: right;
 }
