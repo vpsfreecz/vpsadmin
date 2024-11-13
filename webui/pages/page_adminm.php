@@ -682,7 +682,7 @@ function list_members()
 {
     global $xtpl, $api, $config;
 
-    $pagination = new Pagination(null, $api->user->list);
+    $pagination = new \Pagination\System(null, $api->user->list);
 
     if (isAdmin()) {
         $xtpl->title(_("Manage members [Admin mode]"));

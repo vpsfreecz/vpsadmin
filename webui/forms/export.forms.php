@@ -18,7 +18,7 @@ function export_list()
     }
 
     $exports = $api->export->list($params);
-    $pagination = new Pagination($exports);
+    $pagination = new \Pagination\System($exports);
 
     $xtpl->title(_('NFS exports'));
 

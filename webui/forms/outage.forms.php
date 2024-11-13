@@ -687,7 +687,7 @@ function outage_list()
         $xtpl->sbar_add(_('New report'), '?page=outage&action=report&t=' . csrf_token());
     }
 
-    $pagination = new Pagination(null, $api->outage->list);
+    $pagination = new \Pagination\System(null, $api->outage->list);
 
     $xtpl->title(_('Outage list'));
     $xtpl->table_title(_('Filters'));

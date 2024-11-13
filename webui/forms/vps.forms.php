@@ -592,7 +592,7 @@ function vps_list_form()
 {
     global $xtpl, $api;
 
-    $pagination = new Pagination(null, $api->vps->list);
+    $pagination = new \Pagination\System(null, $api->vps->list);
 
     if (isAdmin()) {
         $xtpl->title(_("VPS list") . ' ' . _("[Admin mode]"));

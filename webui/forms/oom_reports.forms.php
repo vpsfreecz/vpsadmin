@@ -4,7 +4,7 @@ function oom_reports_list()
 {
     global $xtpl, $api;
 
-    $pagination = new Pagination(null, $api->oom_report->list);
+    $pagination = new \Pagination\System(null, $api->oom_report->list);
 
     $xtpl->title(_('Out-of-memory Reports'));
 

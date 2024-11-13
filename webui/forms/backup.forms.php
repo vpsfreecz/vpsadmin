@@ -137,7 +137,7 @@ function backup_download_list_form()
     $downloads = $api->snapshot_download->list(
         ['meta' => ['includes' => 'snapshot__dataset,user']]
     );
-    $pagination = new Pagination($downloads);
+    $pagination = new \Pagination\System($downloads);
 
     if (isAdmin()) {
         $xtpl->table_add_category(_('User'));

@@ -1,6 +1,8 @@
 <?php
 
-class Pagination
+namespace Pagination;
+
+class System
 {
     private $resourceList;
     private $baseUrl;
@@ -16,7 +18,7 @@ class Pagination
     public function __construct($resourceList, $action = null, $options = [])
     {
         if (is_null($resourceList) && is_null($action)) {
-            throw new Exception('Provide either resourceList or action');
+            throw new \Exception('Provide either resourceList or action');
         }
 
         $this->resourceList = $resourceList;
@@ -32,11 +34,11 @@ class Pagination
         $this->outputParameter = $options['outputParameter'] ?? 'id';
 
         if (is_null($input->{$this->inputParameter})) {
-            throw new Exception('Input parameter ' . $this->inputParameter . ' not found');
+            throw new \Exception('Input parameter ' . $this->inputParameter . ' not found');
         }
 
         if (is_null($output->{$this->outputParameter})) {
-            throw new Exception('Output parameter ' . $this->outputParameter . ' not found');
+            throw new \Exception('Output parameter ' . $this->outputParameter . ' not found');
         }
 
         $this->baseUrl = $_SERVER['PATH_INFO'] ?? '';
@@ -86,7 +88,6 @@ class Pagination
         );
 
         return $this->baseUrl . '?' . http_build_query($params);
-
     }
 
     /**

@@ -4,7 +4,7 @@ function list_object_history()
 {
     global $xtpl, $api;
 
-    $pagination = new Pagination(null, $api->object_history->list);
+    $pagination = new \Pagination\System(null, $api->object_history->list);
 
     $xtpl->title(_('Object history'));
 

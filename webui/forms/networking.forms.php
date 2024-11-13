@@ -4,7 +4,7 @@ function ip_address_list($page)
 {
     global $xtpl, $api;
 
-    $pagination = new Pagination(null, $api->ip_address->list);
+    $pagination = new \Pagination\System(null, $api->ip_address->list);
 
     $xtpl->title(_('Routable IP Addresses'));
     $xtpl->table_title(_('Filters'));
@@ -178,7 +178,7 @@ function host_ip_address_list($page)
 {
     global $xtpl, $api;
 
-    $pagination = new Pagination(null, $api->host_ip_address->list);
+    $pagination = new \Pagination\System(null, $api->host_ip_address->list);
 
     $xtpl->title(_('Host IP Addresses'));
     $xtpl->table_title(_('Filters'));
@@ -816,7 +816,7 @@ function ip_address_assignment_list_form()
 {
     global $xtpl, $api;
 
-    $pagination = new Pagination(null, $api->ip_address_assignment->list);
+    $pagination = new \Pagination\System(null, $api->ip_address_assignment->list);
 
     $xtpl->title(_('IP address assignments'));
     $xtpl->table_title(_('Filters'));

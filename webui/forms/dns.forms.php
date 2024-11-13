@@ -72,7 +72,7 @@ function dns_zone_list($action, $filters = [], $onLastRow = null)
 
     $zones = $api->dns_zone->list($params);
 
-    $pagination = new Pagination($zones);
+    $pagination = new \Pagination\System($zones);
 
     $xtpl->table_title(_('Filters'));
     $xtpl->form_create('', 'get', 'user-session-filter', false);
@@ -656,7 +656,7 @@ function tsig_key_list()
     ];
 
     $keys = $api->dns_tsig_key->list($params);
-    $pagination = new Pagination($keys);
+    $pagination = new \Pagination\System($keys);
 
     $xtpl->title(_('TSIG keys'));
     $xtpl->table_title(_('Filters'));
@@ -814,7 +814,7 @@ function dns_ptr_list()
     }
 
     $host_addrs = $api->host_ip_address->list($params);
-    $pagination = new Pagination($host_addrs);
+    $pagination = new \Pagination\System($host_addrs);
 
     $xtpl->title(_('Reverse records'));
     $xtpl->table_title(_('Filters'));
@@ -1272,7 +1272,7 @@ function dns_record_log_list()
 {
     global $xtpl, $api;
 
-    $pagination = new Pagination(null, $api->dns_record_log->index);
+    $pagination = new \Pagination\System(null, $api->dns_record_log->index);
 
     $xtpl->title(_('DNS record log'));
 

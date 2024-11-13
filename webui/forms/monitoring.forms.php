@@ -33,7 +33,7 @@ function monitoring_list()
     }
 
     $events = $api->monitored_event->list($params);
-    $pagination = new Pagination($events, null, $paginationOptions);
+    $pagination = new \Pagination\System($events, null, $paginationOptions);
 
     $xtpl->title(_('Monitored event list'));
     $xtpl->table_title(_('Filters'));
@@ -151,7 +151,7 @@ function monitoring_event()
     }
 
     $logs = $e->log->list($params);
-    $pagination = new Pagination($logs);
+    $pagination = new \Pagination\System($logs);
 
     $xtpl->form_set_hidden_fields(array_merge([
         'page' => 'monitoring',

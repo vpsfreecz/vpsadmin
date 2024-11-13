@@ -4,7 +4,7 @@ function incident_list()
 {
     global $xtpl, $api;
 
-    $pagination = new Pagination(null, $api->incident_report->list);
+    $pagination = new \Pagination\System(null, $api->incident_report->list);
 
     $xtpl->title(_('Incident reports'));
     $xtpl->table_title(_('Filters'));

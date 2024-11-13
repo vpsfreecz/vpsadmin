@@ -31,7 +31,7 @@ function list_chains()
 {
     global $xtpl, $api;
 
-    $pagination = new Pagination(null, $api->transaction_chain->list);
+    $pagination = new \Pagination\System(null, $api->transaction_chain->list);
 
     $xtpl->title(_("Transaction chains"));
 
@@ -188,7 +188,7 @@ function chain_transactions($chain_id)
 
     $xtpl->table_out();
 
-    $pagination = new Pagination(null, $api->transaction->list, ['defaultLimit' => 100]);
+    $pagination = new \Pagination\System(null, $api->transaction->list, ['defaultLimit' => 100]);
 
     $xtpl->table_title(_('Filters'));
     $xtpl->form_create('', 'get', 'transaction-filter', false);

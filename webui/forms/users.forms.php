@@ -107,7 +107,7 @@ function list_user_sessions($user_id)
     $u = $api->user->find($user_id);
 
     $input = $api->user_session->index->getParameters('input');
-    $pagination = new Pagination(null, $api->user_session->index);
+    $pagination = new \Pagination\System(null, $api->user_session->index);
 
     $xtpl->title(_('Session log of') . ' <a href="?page=adminm&action=edit&id=' . $u->id . '">#' . $u->id . '</a> ' . $u->login);
     $xtpl->table_title(_('Filters'));
@@ -300,7 +300,7 @@ function approval_requests_list()
     global $xtpl, $api;
 
     $limit = get_val('limit', 50);
-    $pagination = new Pagination(
+    $pagination = new \Pagination\System(
         null,
         /**
          * This is not true, as we fetch both registration and change requests, but
@@ -934,7 +934,7 @@ function user_payment_history()
     }
 
     $payments = $api->user_payment->list($params);
-    $pagination = new Pagination($payments);
+    $pagination = new \Pagination\System($payments);
 
     $xtpl->title(_('Payment history'));
 
@@ -994,7 +994,7 @@ function incoming_payments_list()
     }
 
     $payments = $api->incoming_payment->list($params);
-    $pagination = new Pagination($payments);
+    $pagination = new \Pagination\System($payments);
 
     $xtpl->title(_('Incoming payments'));
 

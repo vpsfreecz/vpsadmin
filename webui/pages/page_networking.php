@@ -320,7 +320,7 @@ if (isLoggedIn()) {
     $xtpl->sbar_out(_('Networking'));
 
     if ($show_traffic) {
-        $pagination = new Pagination(
+        $pagination = new \Pagination\System(
             null,
             $api->network_interface_accounting->list,
             ['inputParameter' => 'from_bytes', 'outputParameter' => 'bytes']
@@ -439,7 +439,7 @@ if (isLoggedIn()) {
     if (isAdmin() && $show_top) {
         $xtpl->title(_("Top users"));
 
-        $pagination = new Pagination(
+        $pagination = new \Pagination\System(
             null,
             $api->network_interface_accounting->user_top,
             ['inputParameter' => 'from_bytes', 'outputParameter' => 'bytes']

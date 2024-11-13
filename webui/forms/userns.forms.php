@@ -38,7 +38,7 @@ function userns_list()
 {
     global $xtpl, $api;
 
-    $pagination = new Pagination(null, $api->user_namespace->list);
+    $pagination = new \Pagination\System(null, $api->user_namespace->list);
 
     $xtpl->title(_('User namespaces'));
     $xtpl->table_title(_('Filters'));
