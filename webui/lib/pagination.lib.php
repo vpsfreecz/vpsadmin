@@ -2,6 +2,30 @@
 
 namespace Pagination;
 
+class Entry
+{
+    public $value;
+    public $limit;
+
+    public static function parse($string)
+    {
+        [$value, $limit] = explode(':', $string);
+
+        return new Entry($value, $limit);
+    }
+
+    public function __construct($value, $limit)
+    {
+        $this->value = $value;
+        $this->limit = $limit;
+    }
+
+    public function dump()
+    {
+        return $this->value . ':' . $this->limit;
+    }
+}
+
 class System
 {
     private $resourceList;
@@ -70,10 +94,10 @@ class System
     public function nextPageUrl()
     {
         $history = $this->history;
-        $history[] = [
-            $this->inputParameter => $_GET[$this->inputParameter] ?? 0,
-            'limit' => $_GET['limit'] ?? $this->limit,
-        ];
+        $history[] = new Entry(
+            $_GET[$this->inputParameter] ?? 0,
+            $_GET['limit'] ?? $this->limit
+        );
 
         if (is_array($this->resourceList)) {
             $last = $this->resourceList[ count($this->resourceList) - 1 ];
@@ -100,13 +124,13 @@ class System
         $n = count($history);
 
         while(count($history) > 0) {
-            $item = array_pop($history);
+            $entry = array_pop($history);
 
             $params = array_merge(
                 $_GET,
                 [
-                    $this->inputParameter => $item[$this->inputParameter],
-                    'limit' => $item['limit'],
+                    $this->inputParameter => $entry->value,
+                    'limit' => $entry->limit,
                 ],
                 $this->appendHistory($history),
             );
@@ -138,10 +162,10 @@ class System
         }
 
         $history = $this->history;
-        $history[] = [
-            $this->inputParameter => $_GET[$this->inputParameter] ?? 0,
-            'limit' => $_GET['limit'] ?? $this->limit,
-        ];
+        $history[] = new Entry(
+            $_GET[$this->inputParameter] ?? 0,
+            $_GET['limit'] ?? $this->limit
+        );
 
         return array_merge($ret, $this->appendHistory($history));
     }
@@ -157,12 +181,7 @@ class System
         $entries = explode(',', $_GET['pagination']);
 
         foreach ($entries as $v) {
-            [$parameter, $limit] = explode(':', $v);
-
-            $ret[] = [
-                $this->inputParameter => $parameter,
-                'limit' => $limit,
-            ];
+            $ret[] = Entry::parse($v);
         }
 
         return $ret;
@@ -176,8 +195,8 @@ class System
 
         $entries = [];
 
-        foreach ($history as $item) {
-            $entries[] = $item[$this->inputParameter] . ':' . $item['limit'];
+        foreach ($history as $entry) {
+            $entries[] = $entry->dump();
         }
 
         return ['pagination' => implode(',', $entries)];
