@@ -7,7 +7,7 @@ class Link
     public $number;
     public $path;
 
-    public function __construct($pageNumber, $path)
+    public function __construct(int $pageNumber, string $path)
     {
         $this->number = $pageNumber;
         $this->path = $path;
@@ -19,20 +19,20 @@ class Entry
     public $value;
     public $limit;
 
-    public static function parse($string)
+    public static function parse(string $string): Entry
     {
         [$value, $limit] = explode(':', $string);
 
         return new Entry($value, $limit);
     }
 
-    public function __construct($value, $limit)
+    public function __construct(int $value, int $limit)
     {
         $this->value = $value;
         $this->limit = $limit;
     }
 
-    public function dump()
+    public function dump(): string
     {
         return $this->value . ':' . $this->limit;
     }
@@ -43,7 +43,7 @@ class History implements \ArrayAccess, \Countable, \Iterator
     private $position;
     private $array;
 
-    public static function parse($string)
+    public static function parse(string $string): History
     {
         $history = new History();
 
@@ -60,7 +60,7 @@ class History implements \ArrayAccess, \Countable, \Iterator
         return $history;
     }
 
-    public function __construct($array = [])
+    public function __construct(array $array = [])
     {
         $this->position = 0;
         $this->array = $array;
@@ -151,11 +151,7 @@ class System
     private $outputParameter;
     private $history;
 
-    /**
-     * @param \HaveAPI\Client\ResourceInstanceList $resourceList
-     * @param \HaveAPI\Client\Action $action
-     */
-    public function __construct($resourceList, $action = null, $options = [])
+    public function __construct(mixed $resourceList, \HaveAPI\Client\Action $action = null, array $options = [])
     {
         if (is_null($resourceList) && is_null($action)) {
             throw new \Exception('Provide either resourceList or action');
@@ -186,28 +182,19 @@ class System
         $this->history = $this->parseHistory();
     }
 
-    /**
-     * @param \HaveAPI\Client\ResourceInstanceList $resourceList
-     */
-    public function setResourceList($resourceList)
+    public function setResourceList(mixed $resourceList): void
     {
         $this->resourceList = $resourceList;
     }
 
-    /**
-     * @return boolean
-     */
-    public function hasNextPage()
+    public function hasNextPage(): bool
     {
         $count = is_array($this->resourceList) ? count($this->resourceList) : $this->resourceList->count();
 
         return $count == $this->limit && $this->limit > 0;
     }
 
-    /**
-     * @return string
-     */
-    public function nextPageUrl()
+    public function nextPageUrl(): string
     {
         $history = clone $this->history;
         $history[] = new Entry(
@@ -230,10 +217,7 @@ class System
         return $this->baseUrl . '?' . http_build_query($params);
     }
 
-    /**
-     * @return array list of previous pages
-     */
-    public function previousPageLinks()
+    public function previousPageLinks(): array
     {
         $ret = [];
         $history = clone $this->history;
@@ -259,10 +243,7 @@ class System
         return array_reverse($ret);
     }
 
-    /**
-     * @return array
-     */
-    public function hiddenFormFields()
+    public function hiddenFormFields(): array
     {
         if (!isset($_GET['pagination'])) {
             return [];
@@ -283,12 +264,12 @@ class System
         return array_merge($ret, $this->appendHistory($history));
     }
 
-    protected function parseHistory()
+    protected function parseHistory(): History
     {
         return History::parse($_GET['pagination'] ?? '');
     }
 
-    protected function appendHistory($history)
+    protected function appendHistory(History $history): array
     {
         if (count($history) == 0) {
             return ['pagination' => ''];
