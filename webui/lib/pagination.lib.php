@@ -26,6 +26,110 @@ class Entry
     }
 }
 
+class History implements \ArrayAccess, \Countable, \Iterator
+{
+    private $position;
+    private $array;
+
+    public static function parse($string)
+    {
+        $history = new History();
+
+        if (trim($string) == '') {
+            return $history;
+        }
+
+        $entries = explode(',', $string);
+
+        foreach ($entries as $v) {
+            $history[] = Entry::parse($v);
+        }
+
+        return $history;
+    }
+
+    public function __construct($array = [])
+    {
+        $this->position = 0;
+        $this->array = $array;
+    }
+
+    public function pop(): Entry
+    {
+        return array_pop($this->array);
+    }
+
+    public function dump(): string
+    {
+        $entries = [];
+
+        foreach ($this->array as $entry) {
+            $entries[] = $entry->dump();
+        }
+
+        return implode(',', $entries);
+    }
+
+    /* ArrayAccess methods */
+
+    public function offsetExists(mixed $offset): bool
+    {
+        return isset($this->array[$offset]);
+    }
+
+    public function offsetGet(mixed $offset): mixed
+    {
+        return $this->array[$offset];
+    }
+
+    public function offsetSet(mixed $offset, mixed $value): void
+    {
+        if (is_null($offset)) {
+            $this->array[] = $value;
+        } else {
+            $this->array[$offset] = $value;
+        }
+    }
+
+    public function offsetUnset(mixed $offset): void
+    {
+        unset($this->array[$offset]);
+    }
+
+    /* Countable methods */
+    public function count(): int
+    {
+        return count($this->array);
+    }
+
+    /* Iterator methods */
+
+    public function current(): mixed
+    {
+        return $this->array[$this->position];
+    }
+
+    public function key(): mixed
+    {
+        return $this->position;
+    }
+
+    public function next(): void
+    {
+        $this->position++;
+    }
+
+    public function rewind(): void
+    {
+        $this->position = 0;
+    }
+
+    public function valid(): bool
+    {
+        return isset($this->array[$this->position]);
+    }
+}
+
 class System
 {
     private $resourceList;
@@ -93,7 +197,7 @@ class System
      */
     public function nextPageUrl()
     {
-        $history = $this->history;
+        $history = clone $this->history;
         $history[] = new Entry(
             $_GET[$this->inputParameter] ?? 0,
             $_GET['limit'] ?? $this->limit
@@ -120,11 +224,11 @@ class System
     public function previousPageUrls()
     {
         $ret = [];
-        $history = $this->history;
+        $history = clone $this->history;
         $n = count($history);
 
         while(count($history) > 0) {
-            $entry = array_pop($history);
+            $entry = $history->pop();
 
             $params = array_merge(
                 $_GET,
@@ -161,7 +265,7 @@ class System
             $ret[$this->inputParameter] = $_GET[$this->inputParameter];
         }
 
-        $history = $this->history;
+        $history = clone $this->history;
         $history[] = new Entry(
             $_GET[$this->inputParameter] ?? 0,
             $_GET['limit'] ?? $this->limit
@@ -172,19 +276,7 @@ class System
 
     protected function parseHistory()
     {
-        $ret = [];
-
-        if (!isset($_GET['pagination']) || $_GET['pagination'] == '') {
-            return $ret;
-        }
-
-        $entries = explode(',', $_GET['pagination']);
-
-        foreach ($entries as $v) {
-            $ret[] = Entry::parse($v);
-        }
-
-        return $ret;
+        return History::parse($_GET['pagination'] ?? '');
     }
 
     protected function appendHistory($history)
@@ -193,12 +285,6 @@ class System
             return ['pagination' => ''];
         }
 
-        $entries = [];
-
-        foreach ($history as $entry) {
-            $entries[] = $entry->dump();
-        }
-
-        return ['pagination' => implode(',', $entries)];
+        return ['pagination' => $history->dump()];
     }
 }
