@@ -472,7 +472,7 @@ function api_param_to_form_pure($name, $desc, $v = null, $label_callback = null,
                     $empty === null || $empty,
                     $label_callback
                 ),
-                $v
+                ($v instanceof \HaveAPI\Client\ResourceInstance) ? $v->id : $v
             );
 
             // no break
