@@ -706,11 +706,12 @@ class XTemplate
      */
     public function table_pagination($pagination)
     {
-        $previousPages = $pagination->previousPageLinks();
-        $previousCount = count($previousPages);
+        $links = $pagination->pageLinks(7);
+        $count = count($links);
         $hasNextPage = $pagination->hasNextPage();
+        $hasCurrentPage = false;
 
-        if ($previousCount == 0 && !$hasNextPage) {
+        if ($count == 0 && !$hasNextPage) {
             return;
         }
 
@@ -720,22 +721,28 @@ class XTemplate
 
         $tdContent .= '<div class="pagination-section previous-pages">';
 
-        if ($previousCount < 7) {
-            foreach ($previousPages as $page) {
-                $tdContent .= '<a href="' . $page->path . '" class="pagination-link">' . $page->number . '</a>';
-            }
-        } else {
-            $first = $previousPages[0];
+        if ($count > 1 && $links[0]->pageNumber > 1) {
+            $first = $pagination->linkAt(0);
 
-            $tdContent .= '<a href="' . $first->path . '" class="pagination-link">' . $first->number . '</a>';
-            $tdContent .= '<span class="pagination-ellipsis">...</span>';
+            $tdContent .= '<a href="' . $first->path . '" class="pagination-link">' . $first->pageNumber . '</a>';
 
-            foreach (array_splice($previousPages, -5, 5) as $page) {
-                $tdContent .= '<a href="' . $page->path . '" class="pagination-link">' . $page->number . '</a>';
+            if ($links[0]->pageNumber > 2) {
+                $tdContent .= '<span class="pagination-ellipsis">...</span>';
             }
         }
 
-        $tdContent .= '<span class="pagination-current">' . ($previousCount + 1) . '</span>';
+        foreach ($links as $link) {
+            if ($link->isCurrent) {
+                $hasCurrentPage = true;
+                $tdContent .= '<span class="pagination-current">' . $link->pageNumber . '</span>';
+            } else {
+                $tdContent .= '<a href="' . $link->path . '" class="pagination-link">' . $link->pageNumber . '</a>';
+            }
+        }
+
+        if (!$hasCurrentPage) {
+            $tdContent .= '<span class="pagination-current">' . ($pagination->currentPageId() + 1) . '</span>';
+        }
 
         $tdContent .= '</div>';
 

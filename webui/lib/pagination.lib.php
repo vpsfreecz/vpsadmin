@@ -4,30 +4,36 @@ namespace Pagination;
 
 class Link
 {
-    public $number;
-    public $path;
+    public int $pageId;
+    public int $pageNumber;
+    public string $path;
+    public bool $isCurrent;
 
-    public function __construct(int $pageNumber, string $path)
+    public function __construct(int $pageId, int $pageNumber, string $path, bool $isCurrent)
     {
-        $this->number = $pageNumber;
+        $this->pageId = $pageId;
+        $this->pageNumber = $pageNumber;
         $this->path = $path;
+        $this->isCurrent = $isCurrent;
     }
 }
 
 class Entry
 {
+    public $id;
     public $value;
     public $limit;
 
-    public static function parse(string $string): Entry
+    public static function parse(int $id, string $string): Entry
     {
         [$value, $limit] = explode(':', $string);
 
-        return new Entry($value, $limit);
+        return new Entry($id, $value, $limit);
     }
 
-    public function __construct(int $value, int $limit)
+    public function __construct(int $id, int $value, int $limit)
     {
+        $this->id = $id;
         $this->value = $value;
         $this->limit = $limit;
     }
@@ -53,8 +59,8 @@ class History implements \ArrayAccess, \Countable, \Iterator
 
         $entries = explode(',', $string);
 
-        foreach ($entries as $v) {
-            $history[] = Entry::parse($v);
+        foreach ($entries as $i => $v) {
+            $history[] = Entry::parse($i, $v);
         }
 
         return $history;
@@ -64,11 +70,6 @@ class History implements \ArrayAccess, \Countable, \Iterator
     {
         $this->position = 0;
         $this->array = $array;
-    }
-
-    public function pop(): Entry
-    {
-        return array_pop($this->array);
     }
 
     public function dump(): string
@@ -144,12 +145,13 @@ class History implements \ArrayAccess, \Countable, \Iterator
 
 class System
 {
-    private $resourceList;
-    private $baseUrl;
-    private $limit;
-    private $inputParameter;
-    private $outputParameter;
-    private $history;
+    private mixed $resourceList;
+    private string $baseUrl;
+    private int $limit;
+    private string $inputParameter;
+    private string $outputParameter;
+    private History $history;
+    private int $currentPage;
 
     public function __construct(mixed $resourceList, \HaveAPI\Client\Action $action = null, array $options = [])
     {
@@ -180,6 +182,7 @@ class System
         $this->baseUrl = $_SERVER['PATH_INFO'] ?? '';
         $this->limit = $_GET['limit'] ?? $options['defaultLimit'] ?? $input->limit->default ?? 25;
         $this->history = $this->parseHistory();
+        $this->currentPage = (int)($_GET['curpage'] ?? 0);
     }
 
     public function setResourceList(mixed $resourceList): void
@@ -191,13 +194,30 @@ class System
     {
         $count = is_array($this->resourceList) ? count($this->resourceList) : $this->resourceList->count();
 
-        return $count == $this->limit && $this->limit > 0;
+        return $this->currentPage < (count($this->history) - 1) || ($count == $this->limit && $this->limit > 0);
     }
 
     public function nextPageUrl(): string
     {
+        if ($this->currentPage < (count($this->history) - 1) && isset($this->history[$this->currentPage + 1])) {
+            $entry = $this->history[$this->currentPage + 1];
+
+            $params = array_merge(
+                $_GET,
+                [
+                    $this->inputParameter => $entry->value,
+                    'limit' => $entry->limit,
+                    'curpage' => $this->currentPage + 1,
+                ],
+                $this->appendHistory($this->history),
+            );
+
+            return $this->baseUrl . '?' . http_build_query($params);
+        }
+
         $history = clone $this->history;
         $history[] = new Entry(
+            count($history),
             $_GET[$this->inputParameter] ?? 0,
             $_GET['limit'] ?? $this->limit
         );
@@ -210,37 +230,39 @@ class System
 
         $params = array_merge(
             $_GET,
-            [$this->inputParameter =>  $last->{$this->outputParameter}],
+            [
+                $this->inputParameter => $last->{$this->outputParameter},
+                'limit' => $this->limit,
+                'curpage' => count($history),
+            ],
             $this->appendHistory($history),
         );
 
         return $this->baseUrl . '?' . http_build_query($params);
     }
 
-    public function previousPageLinks(): array
+    public function pageLinks(int $maxLinks): array
     {
         $ret = [];
-        $history = clone $this->history;
-        $n = count($history);
+        $entries = $this->selectEntries($maxLinks);
 
-        while(count($history) > 0) {
-            $entry = $history->pop();
-
+        foreach ($entries as $entry) {
             $params = array_merge(
                 $_GET,
                 [
                     $this->inputParameter => $entry->value,
                     'limit' => $entry->limit,
+                    'curpage' => $entry->id,
                 ],
-                $this->appendHistory($history),
+                $this->appendHistory($this->history),
             );
 
             $url = $this->baseUrl . '?' . http_build_query($params);
 
-            $ret[] = new Link($n--, $url);
+            $ret[] = new Link($entry->id, $entry->id + 1, $url, $entry->id == $this->currentPage);
         }
 
-        return array_reverse($ret);
+        return $ret;
     }
 
     public function hiddenFormFields(): array
@@ -257,11 +279,67 @@ class System
 
         $history = clone $this->history;
         $history[] = new Entry(
+            count($this->history),
             $_GET[$this->inputParameter] ?? 0,
             $_GET['limit'] ?? $this->limit
         );
 
         return array_merge($ret, $this->appendHistory($history));
+    }
+
+    public function currentPageId(): int
+    {
+        return $this->currentPage;
+    }
+
+    public function linkAt(int $id): Link
+    {
+        $entry = $this->history[$id];
+
+        $params = array_merge(
+            $_GET,
+            [
+                $this->inputParameter => $entry->value,
+                'limit' => $entry->limit,
+                'curpage' => $entry->id,
+            ],
+            $this->appendHistory($this->history),
+        );
+
+        $url = $this->baseUrl . '?' . http_build_query($params);
+
+        return new Link($entry->id, $entry->id + 1, $url, $entry->id == $this->currentPage);
+    }
+
+    protected function selectEntries(int $maxLinks): array
+    {
+        $entries = [];
+        $i = 0;
+        $countdown = null;
+
+        foreach ($this->history as $entry) {
+            array_push($entries, $entry);
+
+            if (!is_null($countdown) && count($entries) > $maxLinks) {
+                array_shift($entries);
+            }
+
+            if (!is_null($countdown) && --$countdown <= 0) {
+                break;
+            }
+
+            if (is_null($countdown) && $i++ == $this->currentPage) {
+                $countdown = floor($maxLinks / 2);
+            }
+        }
+
+        if (is_null($countdown) || count($entries) > $maxLinks) {
+            while (count($entries) > $maxLinks) {
+                array_shift($entries);
+            }
+        }
+
+        return $entries;
     }
 
     protected function parseHistory(): History
