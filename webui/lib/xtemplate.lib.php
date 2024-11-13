@@ -706,7 +706,7 @@ class XTemplate
      */
     public function table_pagination($pagination)
     {
-        $previousPages = $pagination->previousPageUrls();
+        $previousPages = $pagination->previousPageLinks();
         $previousCount = count($previousPages);
         $hasNextPage = $pagination->hasNextPage();
 
@@ -722,16 +722,16 @@ class XTemplate
 
         if ($previousCount < 7) {
             foreach ($previousPages as $page) {
-                $tdContent .= '<a href="' . $page['url'] . '" class="pagination-link">' . $page['page'] . '</a>';
+                $tdContent .= '<a href="' . $page->path . '" class="pagination-link">' . $page->number . '</a>';
             }
         } else {
             $first = $previousPages[0];
 
-            $tdContent .= '<a href="' . $first['url'] . '" class="pagination-link">' . $first['page'] . '</a>';
+            $tdContent .= '<a href="' . $first->path . '" class="pagination-link">' . $first->number . '</a>';
             $tdContent .= '<span class="pagination-ellipsis">...</span>';
 
             foreach (array_splice($previousPages, -5, 5) as $page) {
-                $tdContent .= '<a href="' . $page['url'] . '" class="pagination-link">' . $page['page'] . '</a>';
+                $tdContent .= '<a href="' . $page->path . '" class="pagination-link">' . $page->number . '</a>';
             }
         }
 

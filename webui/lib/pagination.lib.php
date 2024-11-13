@@ -2,6 +2,18 @@
 
 namespace Pagination;
 
+class Link
+{
+    public $number;
+    public $path;
+
+    public function __construct($pageNumber, $path)
+    {
+        $this->number = $pageNumber;
+        $this->path = $path;
+    }
+}
+
 class Entry
 {
     public $value;
@@ -221,7 +233,7 @@ class System
     /**
      * @return array list of previous pages
      */
-    public function previousPageUrls()
+    public function previousPageLinks()
     {
         $ret = [];
         $history = clone $this->history;
@@ -241,10 +253,7 @@ class System
 
             $url = $this->baseUrl . '?' . http_build_query($params);
 
-            $ret[] = [
-                'page' => $n--,
-                'url' => $url,
-            ];
+            $ret[] = new Link($n--, $url);
         }
 
         return array_reverse($ret);
