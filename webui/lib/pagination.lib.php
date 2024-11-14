@@ -302,7 +302,7 @@ class System
             }
 
             if (is_null($countdown) && $i++ == $this->currentPage) {
-                $countdown = floor($maxLinks / 2);
+                $countdown = max($maxLinks - count($entries), floor($maxLinks / 2));
             }
         }
 
