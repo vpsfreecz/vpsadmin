@@ -709,7 +709,6 @@ class XTemplate
         $links = $pagination->pageLinks(7);
         $count = count($links);
         $hasNextPage = $pagination->hasNextPage();
-        $hasCurrentPage = false;
 
         if ($count == 0 && !$hasNextPage) {
             return;
@@ -737,15 +736,10 @@ class XTemplate
 
         foreach ($links as $link) {
             if ($link->isCurrent) {
-                $hasCurrentPage = true;
                 $tdContent .= '<span class="pagination-current">' . $link->pageNumber . '</span>';
             } else {
                 $tdContent .= '<a href="' . $link->path . '" class="pagination-link">' . $link->pageNumber . '</a>';
             }
-        }
-
-        if (!$hasCurrentPage) {
-            $tdContent .= '<span class="pagination-current">' . ($pagination->currentPageId() + 1) . '</span>';
         }
 
         $tdContent .= '</div>';

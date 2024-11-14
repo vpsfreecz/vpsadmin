@@ -45,11 +45,12 @@ class History implements \ArrayAccess, \Countable, \Iterator
     private $position;
     private $array;
 
-    public static function parse(string $string): History
+    public static function parse(string $string, string $initialValue): History
     {
         $history = new History();
 
         if (trim($string) == '') {
+            $history[] = new Entry(0, (int) $initialValue);
             return $history;
         }
 
@@ -210,23 +211,20 @@ class System
             return $this->baseUrl . '?' . http_build_query($params);
         }
 
-        $history = clone $this->history;
-        $history[] = new Entry(
-            count($history),
-            (int) ($_GET[$this->inputParameter] ?? 0)
-        );
-
         if (is_array($this->resourceList)) {
             $last = $this->resourceList[ count($this->resourceList) - 1 ];
         } else {
             $last = $this->resourceList->last();
         }
 
+        $history = clone $this->history;
+        $history[] = new Entry(count($history), $last->{$this->outputParameter});
+
         $params = array_merge(
             $_GET,
             [
                 $this->inputParameter => $last->{$this->outputParameter},
-                'curpage' => count($history),
+                'curpage' => $this->currentPage + 1,
             ],
             $this->appendHistory($history),
         );
@@ -313,7 +311,7 @@ class System
 
     protected function parseHistory(): History
     {
-        return History::parse($_GET['pagination'] ?? '');
+        return History::parse($_GET['pagination'] ?? '', $_GET[$this->inputParameter] ?? '0');
     }
 
     protected function appendHistory(History $history): array
