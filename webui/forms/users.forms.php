@@ -113,12 +113,12 @@ function list_user_sessions($user_id)
     $xtpl->table_title(_('Filters'));
     $xtpl->form_create('', 'get', 'user-session-filter', false);
 
-    $xtpl->form_set_hidden_fields(array_merge([
+    $xtpl->form_set_hidden_fields([
         'page' => 'adminm',
         'action' => 'user_sessions',
         'id' => $user_id,
         'list' => '1',
-    ], $pagination->hiddenFormFields()));
+    ]);
 
     $xtpl->form_add_input(_("Limit") . ':', 'text', '40', 'limit', get_val('limit', '25'), '');
     $xtpl->form_add_input(_("From ID") . ':', 'text', '40', 'from_id', get_val('from_id'), '');
@@ -314,10 +314,10 @@ function approval_requests_list()
 
     $xtpl->form_create('?page=adminm&action=approval_requests', 'get');
 
-    $xtpl->form_set_hidden_fields(array_merge([
+    $xtpl->form_set_hidden_fields([
         'page' => 'adminm',
         'action' => 'approval_requests',
-    ], $pagination->hiddenFormFields()));
+    ]);
 
     $xtpl->form_add_input(_("Limit") . ':', 'text', '30', 'limit', $limit);
     $xtpl->form_add_select(_("Type") . ':', 'type', [
@@ -940,10 +940,10 @@ function user_payment_history()
 
     $xtpl->form_create('?page=adminm&action=payments_history', 'get');
 
-    $xtpl->form_set_hidden_fields(array_merge([
+    $xtpl->form_set_hidden_fields([
         'page' => 'adminm',
         'action' => 'payments_history',
-    ], $pagination->hiddenFormFields()));
+    ]);
 
     $xtpl->form_add_input(_("Limit") . ':', 'text', '40', 'limit', get_val('limit', 25), '');
     $xtpl->form_add_input(_("Admin ID") . ':', 'text', '40', 'accounted_by', get_val('accounted_by'));
@@ -1000,10 +1000,10 @@ function incoming_payments_list()
 
     $xtpl->form_create('?page=adminm&action=incoming_payments', 'get');
 
-    $xtpl->form_set_hidden_fields(array_merge([
+    $xtpl->form_set_hidden_fields([
         'page' => 'adminm',
         'action' => 'incoming_payments',
-    ], $pagination->hiddenFormFields()));
+    ]);
 
     $xtpl->form_add_input(_("Limit") . ':', 'text', '40', 'limit', get_val('limit', 25), '');
     $xtpl->form_add_input(_('From ID') . ':', 'text', '40', 'from_id', get_val('from_id'), '');

@@ -693,10 +693,10 @@ function outage_list()
     $xtpl->table_title(_('Filters'));
     $xtpl->form_create('', 'get', 'outage-list', false);
 
-    $xtpl->form_set_hidden_fields(array_merge([
+    $xtpl->form_set_hidden_fields([
         'page' => 'outage',
         'action' => 'list',
-    ], $pagination->hiddenFormFields()));
+    ]);
 
     $xtpl->form_add_input(_("Limit") . ':', 'text', '40', 'limit', get_val('limit', '25'), '');
 

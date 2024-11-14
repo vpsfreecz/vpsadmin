@@ -10,11 +10,11 @@ function incident_list()
     $xtpl->table_title(_('Filters'));
     $xtpl->form_create('', 'get', 'incident-list', false);
 
-    $xtpl->form_set_hidden_fields(array_merge([
+    $xtpl->form_set_hidden_fields([
         'page' => 'incidents',
         'action' => 'list',
         'list' => '1',
-    ], $pagination->hiddenFormFields()));
+    ]);
 
     $xtpl->form_add_input(_('Limit') . ':', 'text', '40', 'limit', get_val('limit', '25'), '');
     $xtpl->form_add_input(_('From ID') . ':', 'text', '40', 'from_id', get_val('from_id', ''), '');

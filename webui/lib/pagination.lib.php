@@ -182,7 +182,7 @@ class System
         $this->baseUrl = $_SERVER['PATH_INFO'] ?? '';
         $this->limit = $_GET['limit'] ?? $options['defaultLimit'] ?? $input->limit->default ?? 25;
         $this->history = $this->parseHistory();
-        $this->currentPage = (int)($_GET['curpage'] ?? 0);
+        $this->currentPage = (int) ($_GET['curpage'] ?? 0);
     }
 
     public function setResourceList(mixed $resourceList): void
@@ -263,28 +263,6 @@ class System
         }
 
         return $ret;
-    }
-
-    public function hiddenFormFields(): array
-    {
-        if (!isset($_GET['pagination'])) {
-            return [];
-        }
-
-        $ret = [];
-
-        if (isset($_GET[$this->inputParameter])) {
-            $ret[$this->inputParameter] = $_GET[$this->inputParameter];
-        }
-
-        $history = clone $this->history;
-        $history[] = new Entry(
-            count($this->history),
-            $_GET[$this->inputParameter] ?? 0,
-            $_GET['limit'] ?? $this->limit
-        );
-
-        return array_merge($ret, $this->appendHistory($history));
     }
 
     public function currentPageId(): int

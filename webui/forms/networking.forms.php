@@ -10,11 +10,11 @@ function ip_address_list($page)
     $xtpl->table_title(_('Filters'));
     $xtpl->form_create('', 'get', 'ip-filter', false);
 
-    $xtpl->form_set_hidden_fields(array_merge([
+    $xtpl->form_set_hidden_fields([
         'page' => $page,
         'action' => 'ip_addresses',
         'list' => '1',
-    ], $pagination->hiddenFormFields()));
+    ]);
 
     $xtpl->form_add_input(_("Limit") . ':', 'text', '40', 'limit', get_val('limit', '25'), '');
 
@@ -184,11 +184,11 @@ function host_ip_address_list($page)
     $xtpl->table_title(_('Filters'));
     $xtpl->form_create('', 'get', 'ip-filter', false);
 
-    $xtpl->form_set_hidden_fields(array_merge([
+    $xtpl->form_set_hidden_fields([
         'page' => $page,
         'action' => 'host_ip_addresses',
         'list' => '1',
-    ], $pagination->hiddenFormFields()));
+    ]);
 
     $xtpl->form_add_input(_("Limit") . ':', 'text', '40', 'limit', get_val('limit', '25'), '');
 
@@ -822,11 +822,11 @@ function ip_address_assignment_list_form()
     $xtpl->table_title(_('Filters'));
     $xtpl->form_create('', 'get', 'ip-filter', false);
 
-    $xtpl->form_set_hidden_fields(array_merge([
+    $xtpl->form_set_hidden_fields([
         'page' => $_GET['page'],
         'action' => 'assignments',
         'list' => '1',
-    ], $pagination->hiddenFormFields()));
+    ]);
 
     $xtpl->form_add_input(_('Limit') . ':', 'text', '40', 'limit', get_val('limit', '25'), '');
 

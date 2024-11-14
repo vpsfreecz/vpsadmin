@@ -39,10 +39,10 @@ function monitoring_list()
     $xtpl->table_title(_('Filters'));
     $xtpl->form_create('', 'get', 'monitoring-list', false);
 
-    $xtpl->form_set_hidden_fields(array_merge([
+    $xtpl->form_set_hidden_fields([
         'page' => 'monitoring',
         'action' => 'list',
-    ], $pagination->hiddenFormFields()));
+    ]);
 
     $xtpl->form_add_input(_("Limit") . ':', 'text', '40', 'limit', get_val('limit', '25'), '');
 
@@ -153,11 +153,11 @@ function monitoring_event()
     $logs = $e->log->list($params);
     $pagination = new \Pagination\System($logs);
 
-    $xtpl->form_set_hidden_fields(array_merge([
+    $xtpl->form_set_hidden_fields([
         'page' => 'monitoring',
         'action' => 'show',
         'id' => $e->id,
-    ], $pagination->hiddenFormFields()));
+    ]);
 
     $xtpl->form_add_input(_("Limit") . ':', 'text', '40', 'limit', get_val('limit', '25'), '');
     $xtpl->form_out(_('Show'));

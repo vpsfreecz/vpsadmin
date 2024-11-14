@@ -331,10 +331,10 @@ if (isLoggedIn()) {
         $xtpl->table_title(_('Filters'));
         $xtpl->form_create('', 'get', 'networking-filter', false);
 
-        $xtpl->form_set_hidden_fields(array_merge([
+        $xtpl->form_set_hidden_fields([
             'page' => 'networking',
             'action' => 'list',
-        ], $pagination->hiddenFormFields()));
+        ]);
 
         $xtpl->form_add_input(_("Limit") . ':', 'text', '40', 'limit', get_val('limit', '25'), '');
         $xtpl->form_add_select(_("Year") . ':', 'year', year_list(), get_val('year', date("Y")));
@@ -448,11 +448,11 @@ if (isLoggedIn()) {
         $xtpl->table_title(_('Filters'));
         $xtpl->form_create('', 'get', 'networking-filter', false);
 
-        $xtpl->form_set_hidden_fields(array_merge([
+        $xtpl->form_set_hidden_fields([
             'page' => 'networking',
             'action' => 'user_top',
             'list' => '1',
-        ], $pagination->hiddenFormFields()));
+        ]);
 
         $xtpl->form_add_input(_("Limit") . ':', 'text', '40', 'limit', get_val('limit', '25'), '');
         $xtpl->form_add_select(_("Year") . ':', 'year', year_list(), get_val('year', date("Y")));

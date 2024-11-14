@@ -38,9 +38,9 @@ function list_chains()
     $xtpl->table_title(_('Filters'));
     $xtpl->form_create('', 'get', 'vps-filter', false);
 
-    $xtpl->form_set_hidden_fields(array_merge([
+    $xtpl->form_set_hidden_fields([
         'page' => 'transactions',
-    ], $pagination->hiddenFormFields()));
+    ]);
 
     $xtpl->form_add_input(_("Limit") . ':', 'text', '40', 'limit', get_val('limit', '25'), '');
     $xtpl->form_add_input(_("From ID") . ':', 'text', '40', 'from_id', get_val('from_id'), '');
@@ -193,10 +193,10 @@ function chain_transactions($chain_id)
     $xtpl->table_title(_('Filters'));
     $xtpl->form_create('', 'get', 'transaction-filter', false);
 
-    $xtpl->form_set_hidden_fields(array_merge([
+    $xtpl->form_set_hidden_fields([
         'page' => 'transactions',
         'chain' => $chain->id,
-    ], $pagination->hiddenFormFields()));
+    ]);
 
     $xtpl->form_add_input(_("Limit") . ':', 'text', '40', 'limit', get_val('limit', '100'));
     $xtpl->form_add_input(_("From ID") . ':', 'text', '40', 'from_id', get_val('from_id'));

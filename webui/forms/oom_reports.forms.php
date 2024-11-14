@@ -11,10 +11,10 @@ function oom_reports_list()
     $xtpl->table_title(_('Filters'));
     $xtpl->form_create('', 'get', 'user-session-filter', false);
 
-    $xtpl->form_set_hidden_fields(array_merge([
+    $xtpl->form_set_hidden_fields([
         'page' => 'oom_reports',
         'list' => '1',
-    ], $pagination->hiddenFormFields()));
+    ]);
 
     $input = $api->oom_report->list->getParameters('input');
 

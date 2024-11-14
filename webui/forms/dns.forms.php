@@ -77,11 +77,11 @@ function dns_zone_list($action, $filters = [], $onLastRow = null)
     $xtpl->table_title(_('Filters'));
     $xtpl->form_create('', 'get', 'user-session-filter', false);
 
-    $xtpl->form_set_hidden_fields(array_merge([
+    $xtpl->form_set_hidden_fields([
         'page' => 'dns',
         'action' => $action,
         'list' => '1',
-    ], $pagination->hiddenFormFields()));
+    ]);
 
     $xtpl->form_add_input(_('Limit') . ':', 'text', '40', 'limit', get_val('limit', '25'), '');
     $xtpl->form_add_input(_("From ID") . ':', 'text', '40', 'from_id', get_val('from_id', '0'), '');
@@ -662,10 +662,10 @@ function tsig_key_list()
     $xtpl->table_title(_('Filters'));
     $xtpl->form_create('', 'get', 'user-session-filter', false);
 
-    $xtpl->form_set_hidden_fields(array_merge([
+    $xtpl->form_set_hidden_fields([
         'page' => 'dns',
         'action' => 'tsig_key_list',
-    ], $pagination->hiddenFormFields()));
+    ]);
 
     $xtpl->form_add_input(_('Limit') . ':', 'text', '40', 'limit', get_val('limit', '25'), '');
     $xtpl->form_add_input(_("From ID") . ':', 'text', '40', 'from_id', get_val('from_id', '0'), '');
@@ -820,11 +820,11 @@ function dns_ptr_list()
     $xtpl->table_title(_('Filters'));
     $xtpl->form_create('', 'get', 'ip-filter', false);
 
-    $xtpl->form_set_hidden_fields(array_merge([
+    $xtpl->form_set_hidden_fields([
         'page' => 'dns',
         'action' => 'ptr_list',
         'list' => '1',
-    ], $pagination->hiddenFormFields()));
+    ]);
 
     $xtpl->form_add_input(_("Limit") . ':', 'text', '40', 'limit', get_val('limit', '25'), '');
 
@@ -1281,11 +1281,11 @@ function dns_record_log_list()
     $input = $api->dns_record_log->list->getparameters('input');
     $xtpl->form_create('', 'get', 'user-session-filter', false);
 
-    $xtpl->form_set_hidden_fields(array_merge([
+    $xtpl->form_set_hidden_fields([
         'page' => 'dns',
         'action' => 'record_log',
         'list' => '1',
-    ], $pagination->hiddenFormFields()));
+    ]);
 
     $xtpl->form_add_input(_('Limit') . ':', 'text', '40', 'limit', get_val('limit', '25'), '');
     $xtpl->form_add_input(_("From ID") . ':', 'text', '40', 'from_id', get_val('from_id', '0'), '');
