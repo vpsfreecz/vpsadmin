@@ -9,10 +9,10 @@ class Link
     public string $path;
     public bool $isCurrent;
 
-    public function __construct(int $pageId, int $pageNumber, string $path, bool $isCurrent)
+    public function __construct(int $pageId, string $path, bool $isCurrent)
     {
         $this->pageId = $pageId;
-        $this->pageNumber = $pageNumber;
+        $this->pageNumber = $pageId + 1;
         $this->path = $path;
         $this->isCurrent = $isCurrent;
     }
@@ -208,7 +208,6 @@ class System
 
             return new Link(
                 $entry->id,
-                $entry->id + 1,
                 $this->baseUrl . '?' . http_build_query($params),
                 false
             );
@@ -234,7 +233,6 @@ class System
 
         return new Link(
             $entry->id,
-            $entry->id + 1,
             $this->baseUrl . '?' . http_build_query($params),
             false
         );
@@ -257,7 +255,7 @@ class System
 
             $url = $this->baseUrl . '?' . http_build_query($params);
 
-            $ret[] = new Link($entry->id, $entry->id + 1, $url, $entry->id == $this->currentPage);
+            $ret[] = new Link($entry->id, $url, $entry->id == $this->currentPage);
         }
 
         return $ret;
@@ -283,7 +281,7 @@ class System
 
         $url = $this->baseUrl . '?' . http_build_query($params);
 
-        return new Link($entry->id, $entry->id + 1, $url, $entry->id == $this->currentPage);
+        return new Link($entry->id, $url, $entry->id == $this->currentPage);
     }
 
     protected function selectEntries(int $maxLinks): array
