@@ -23,11 +23,6 @@ class Entry
     public int $id;
     public int $value;
 
-    public static function parse(int $id, string $value): Entry
-    {
-        return new Entry($id, (int) $value);
-    }
-
     public function __construct(int $id, int $value)
     {
         $this->id = $id;
@@ -50,14 +45,14 @@ class History implements \ArrayAccess, \Countable, \Iterator
         $history = new History();
 
         if (trim($string) == '') {
-            $history[] = new Entry(0, (int) $initialValue);
+            $history->addEntry((int) $initialValue);
             return $history;
         }
 
         $entries = explode('-', $string);
 
         foreach ($entries as $i => $v) {
-            $history[] = Entry::parse($i, $v);
+            $history->addEntry((int) $v);
         }
 
         return $history;
@@ -80,6 +75,13 @@ class History implements \ArrayAccess, \Countable, \Iterator
         return implode('-', $entries);
     }
 
+    public function addEntry(int $value): Entry
+    {
+        $entry = new Entry(count($this->array), $value);
+        $this->array[] = $entry;
+        return $entry;
+    }
+
     /* ArrayAccess methods */
 
     public function offsetExists(mixed $offset): bool
@@ -94,11 +96,7 @@ class History implements \ArrayAccess, \Countable, \Iterator
 
     public function offsetSet(mixed $offset, mixed $value): void
     {
-        if (is_null($offset)) {
-            $this->array[] = $value;
-        } else {
-            $this->array[$offset] = $value;
-        }
+        throw new \Exception('offsetSet() is not supported');
     }
 
     public function offsetUnset(mixed $offset): void
@@ -218,7 +216,7 @@ class System
         }
 
         $history = clone $this->history;
-        $history[] = new Entry(count($history), $last->{$this->outputParameter});
+        $history->addEntry($last->{$this->outputParameter});
 
         $params = array_merge(
             $_GET,
