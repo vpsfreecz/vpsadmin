@@ -747,7 +747,7 @@ class XTemplate
         $tdContent .= '<div class="pagination-section next">';
 
         if ($hasNextPage) {
-            $tdContent .= '<a href="' . $pagination->nextPageUrl() . '" class="pagination-link">' . _('Next') . '&rarr;</a>';
+            $tdContent .= '<a href="' . $pagination->nextPageLink()->path . '" class="pagination-link">' . _('Next') . '&rarr;</a>';
         }
 
         $tdContent .= '</div>';

@@ -192,7 +192,7 @@ class System
         return $this->currentPage < (count($this->history) - 1) || ($count == $this->limit && $this->limit > 0);
     }
 
-    public function nextPageUrl(): string
+    public function nextPageLink(): Link
     {
         if ($this->currentPage < (count($this->history) - 1) && isset($this->history[$this->currentPage + 1])) {
             $entry = $this->history[$this->currentPage + 1];
@@ -206,7 +206,12 @@ class System
                 $this->appendHistory($this->history),
             );
 
-            return $this->baseUrl . '?' . http_build_query($params);
+            return new Link(
+                $entry->id,
+                $entry->id + 1,
+                $this->baseUrl . '?' . http_build_query($params),
+                false
+            );
         }
 
         if (is_array($this->resourceList)) {
@@ -216,7 +221,7 @@ class System
         }
 
         $history = clone $this->history;
-        $history->addEntry($last->{$this->outputParameter});
+        $entry = $history->addEntry($last->{$this->outputParameter});
 
         $params = array_merge(
             $_GET,
@@ -227,7 +232,12 @@ class System
             $this->appendHistory($history),
         );
 
-        return $this->baseUrl . '?' . http_build_query($params);
+        return new Link(
+            $entry->id,
+            $entry->id + 1,
+            $this->baseUrl . '?' . http_build_query($params),
+            false
+        );
     }
 
     public function pageLinks(int $maxLinks): array
