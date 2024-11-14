@@ -710,7 +710,7 @@ class XTemplate
         $count = count($links);
         $hasNextPage = $pagination->hasNextPage();
 
-        if ($count == 0 && !$hasNextPage) {
+        if ($count <= 1 && !$hasNextPage) {
             return;
         }
 
