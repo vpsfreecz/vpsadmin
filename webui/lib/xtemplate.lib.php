@@ -726,8 +726,12 @@ class XTemplate
 
             $tdContent .= '<a href="' . $first->path . '" class="pagination-link">' . $first->pageNumber . '</a>';
 
-            if ($links[0]->pageNumber > 2) {
+            if ($links[0]->pageNumber > 3) {
                 $tdContent .= '<span class="pagination-ellipsis">...</span>';
+            } elseif ($links[0]->pageNumber > 2) {
+                $second = $pagination->linkAt(1);
+
+                $tdContent .= '<a href="' . $second->path . '" class="pagination-link">' . $second->pageNumber . '</a>';
             }
         }
 
