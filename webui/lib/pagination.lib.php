@@ -20,27 +20,23 @@ class Link
 
 class Entry
 {
-    public $id;
-    public $value;
-    public $limit;
+    public int $id;
+    public int $value;
 
-    public static function parse(int $id, string $string): Entry
+    public static function parse(int $id, string $value): Entry
     {
-        [$value, $limit] = explode(':', $string);
-
-        return new Entry($id, $value, $limit);
+        return new Entry($id, (int) $value);
     }
 
-    public function __construct(int $id, int $value, int $limit)
+    public function __construct(int $id, int $value)
     {
         $this->id = $id;
         $this->value = $value;
-        $this->limit = $limit;
     }
 
     public function dump(): string
     {
-        return $this->value . ':' . $this->limit;
+        return $this->value;
     }
 }
 
@@ -57,7 +53,7 @@ class History implements \ArrayAccess, \Countable, \Iterator
             return $history;
         }
 
-        $entries = explode(',', $string);
+        $entries = explode('-', $string);
 
         foreach ($entries as $i => $v) {
             $history[] = Entry::parse($i, $v);
@@ -80,7 +76,7 @@ class History implements \ArrayAccess, \Countable, \Iterator
             $entries[] = $entry->dump();
         }
 
-        return implode(',', $entries);
+        return implode('-', $entries);
     }
 
     /* ArrayAccess methods */
@@ -206,7 +202,6 @@ class System
                 $_GET,
                 [
                     $this->inputParameter => $entry->value,
-                    'limit' => $entry->limit,
                     'curpage' => $this->currentPage + 1,
                 ],
                 $this->appendHistory($this->history),
@@ -218,8 +213,7 @@ class System
         $history = clone $this->history;
         $history[] = new Entry(
             count($history),
-            $_GET[$this->inputParameter] ?? 0,
-            $_GET['limit'] ?? $this->limit
+            (int) ($_GET[$this->inputParameter] ?? 0)
         );
 
         if (is_array($this->resourceList)) {
@@ -232,7 +226,6 @@ class System
             $_GET,
             [
                 $this->inputParameter => $last->{$this->outputParameter},
-                'limit' => $this->limit,
                 'curpage' => count($history),
             ],
             $this->appendHistory($history),
@@ -251,7 +244,6 @@ class System
                 $_GET,
                 [
                     $this->inputParameter => $entry->value,
-                    'limit' => $entry->limit,
                     'curpage' => $entry->id,
                 ],
                 $this->appendHistory($this->history),
@@ -278,7 +270,6 @@ class System
             $_GET,
             [
                 $this->inputParameter => $entry->value,
-                'limit' => $entry->limit,
                 'curpage' => $entry->id,
             ],
             $this->appendHistory($this->history),
