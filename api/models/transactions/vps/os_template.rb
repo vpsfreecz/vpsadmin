@@ -8,23 +8,16 @@ module Transactions::Vps
       self.vps_id = vps.id
       self.node_id = vps.node_id
 
-      if vps.node.vpsadminos?
-        {
-          new: {
-            distribution: os_template.distribution,
-            version: os_template.version
-          },
-          original: {
-            distribution: orig.distribution,
-            version: orig.version
-          }
+      {
+        new: {
+          distribution: os_template.distribution,
+          version: os_template.version
+        },
+        original: {
+          distribution: orig.distribution,
+          version: orig.version
         }
-      else
-        {
-          os_template: os_template.name,
-          original: orig.name
-        }
-      end
+      }
     end
   end
 end
