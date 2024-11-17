@@ -1416,7 +1416,6 @@ if (isLoggedIn()) {
                 '1',
                 true,
                 _("Use if you have upgraded your system.")
-                . _('The VPS will be restarted.')
             );
             $xtpl->table_tr();
             $xtpl->form_add_radio(

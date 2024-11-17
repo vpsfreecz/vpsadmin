@@ -11,11 +11,17 @@ module Transactions::Vps
       {
         new: {
           distribution: os_template.distribution,
-          version: os_template.version
+          version: os_template.version,
+          arch: os_template.arch,
+          vendor: os_template.vendor,
+          variant: os_template.variant
         },
         original: {
           distribution: orig.distribution,
-          version: orig.version
+          version: orig.version,
+          arch: orig.arch,
+          vendor: orig.vendor,
+          variant: orig.variant
         }
       }
     end

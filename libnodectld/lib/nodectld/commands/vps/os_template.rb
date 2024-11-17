@@ -4,25 +4,31 @@ module NodeCtld
     needs :system, :osctl, :vps
 
     def exec
-      honor_state do
-        osctl(%i[ct stop], @vps_id)
-        osctl(
-          %i[ct set image-config],
+      osctl(
+        %i[ct set distribution],
+        [
           @vps_id,
-          { distribution: @new['distribution'], version: @new['version'] }
-        )
-      end
+          @new['distribution'],
+          @new['version'],
+          @new['arch'],
+          @new['vendor'],
+          @new['variant']
+        ]
+      )
     end
 
     def rollback
-      honor_state do
-        osctl(%i[ct stop], @vps_id)
-        osctl(
-          %i[ct set image-config],
+      osctl(
+        %i[ct set distribution],
+        [
           @vps_id,
-          { distribution: @original['distribution'], version: @original['version'] }
-        )
-      end
+          @original['distribution'],
+          @original['version'],
+          @original['arch'],
+          @original['vendor'],
+          @original['variant']
+        ]
+      )
     end
   end
 end
