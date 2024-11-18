@@ -37,7 +37,7 @@ module NodeCtld
 
     # @param vps_id [Integer]
     # @param in_seconds [Integer, nil]
-    def schedule_update_vps(vps_id, in_seconds = nil)
+    def schedule_update_vps(vps_id, in_seconds: nil)
       return unless enable?
 
       in_seconds ||= $CFG.get(:vps_ssh_host_keys, :default_schedule_delay)
