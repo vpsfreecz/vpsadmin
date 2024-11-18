@@ -32,7 +32,7 @@ module NodeCtld
     def update_vps(vps_id)
       return unless enable?
 
-      @update_vps_queue.insert(VpsUpdate.new(vps_id, nil))
+      @update_vps_queue.insert(vps_id)
     end
 
     # @param vps_id [Integer]
@@ -61,14 +61,12 @@ module NodeCtld
 
     protected
 
-    VpsUpdate = Struct.new(:id, :boot_rootfs)
-
     HostKey = Struct.new(:bits, :fingerprint, :algorithm)
 
     def update_vps_worker
       loop do
-        vps = @update_vps_queue.pop
-        update_vps_keys(vps)
+        vps_or_id = @update_vps_queue.pop
+        update_vps_keys(vps_or_id)
         sleep($CFG.get(:vps_ssh_host_keys, :update_vps_delay))
       end
     end
@@ -90,26 +88,33 @@ module NodeCtld
         osctl_parse(%i[ct ls], vps_ids.keys, { state: 'running' }).each do |ct|
           next unless /^\d+$/ =~ ct[:id]
 
-          vps_id = ct[:id].to_i
-          next unless vps_ids.has_key?(vps_id)
+          osctl_ct = OsCtlContainer.new(ct)
 
-          @update_vps_queue << VpsUpdate.new(vps_id, ct[:boot_rootfs])
+          next unless vps_ids.has_key?(osctl_ct.vps_id)
+
+          @update_vps_queue << osctl_ct
         end
       end
     end
 
-    # @param vps [VpsUpdate]
-    def update_vps_keys(vps)
-      log(:info, "Updating keys of VPS #{vps.id}")
-      vps.boot_rootfs ||= osctl_parse(%i[ct show], [vps.id])[:boot_rootfs]
+    # @param ct [OsCtlContainer, Integer]
+    def update_vps_keys(ct_or_id)
+      ct =
+        if ct_or_id.is_a?(Integer)
+          OsCtlContainer.new(osctl_parse(%i[ct show], [ct_or_id]))
+        else
+          ct_or_id
+        end
+
+      log(:info, "Updating keys of VPS #{ct.id}")
       t = Time.now
 
       begin
-        keys = read_vps_keys(vps)
+        keys = read_vps_keys(ct)
       rescue StandardError => e
         log(
           :warn,
-          "Unable to read ssh host keys from VPS #{vps.id}: #{e.message} (#{e.class})"
+          "Unable to read ssh host keys from VPS #{ct.id}: #{e.message} (#{e.class})"
         )
         return
       end
@@ -119,7 +124,7 @@ module NodeCtld
       NodeBunny.publish_wait(
         @exchange,
         {
-          vps_id: vps.id,
+          vps_id: ct.vps_id,
           time: t.to_i,
           keys: keys.map do |key|
             {
@@ -134,7 +139,7 @@ module NodeCtld
       )
     end
 
-    def read_vps_keys(vps)
+    def read_vps_keys(ct)
       read_r, read_w = IO.pipe
 
       # Chroot into VPS rootfs and read ssh host key files
@@ -143,7 +148,7 @@ module NodeCtld
         $stdout.reopen(read_w)
 
         sys = OsCtl::Lib::Sys.new
-        sys.chroot(vps.boot_rootfs)
+        sys.chroot(ct.boot_rootfs)
 
         Dir.glob('/etc/ssh/ssh_host_*.pub').each do |v|
           File.open(v, 'r') do |f|
@@ -180,10 +185,10 @@ module NodeCtld
       ssh_r.close
 
       Process.wait(read_pid)
-      log(:warn, "Reader for VPS #{vps.id} exited with #{$?.exitstatus}") if $?.exitstatus != 0
+      log(:warn, "Reader for VPS #{ct.id} exited with #{$?.exitstatus}") if $?.exitstatus != 0
 
       Process.wait(ssh_pid)
-      log(:warn, "ssh-keygen for VPS #{vps.id} exited with #{$?.exitstatus}") if $?.exitstatus != 0
+      log(:warn, "ssh-keygen for VPS #{ct.id} exited with #{$?.exitstatus}") if $?.exitstatus != 0
 
       keys
     end

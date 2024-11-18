@@ -60,7 +60,7 @@ module NodeCtld
 
       fetch_vpses.each do |vps|
         ent = Entry.new(vps)
-        vpsadmin_vpses[ent.id.to_s] = ent
+        vpsadmin_vpses[ent.id] = ent
       end
 
       t = Time.now
@@ -75,12 +75,12 @@ module NodeCtld
 
       hostname_vpsadmin_vpses = []
 
-      cts.each do |vps|
-        vpsadmin_vps = vpsadmin_vpses[vps[:id]]
+      cts.each do |ct|
+        vpsadmin_vps = vpsadmin_vpses[ct.id]
         next if vpsadmin_vps.nil?
 
         vpsadmin_vps.exists = true
-        vpsadmin_vps.running = vps[:state] == 'running'
+        vpsadmin_vps.running = ct.state == 'running'
 
         next unless vpsadmin_vps.running?
 
@@ -88,11 +88,11 @@ module NodeCtld
         apply_usage_stats(vpsadmin_vps)
 
         run_or_skip(vpsadmin_vps) do
-          vpsadmin_vps.uptime = read_uptime(vps[:init_pid])
+          vpsadmin_vps.uptime = read_uptime(ct.init_pid)
         end
 
         # Set loadavg
-        lavg = lavgs["#{vps[:pool]}:#{vps[:id]}"]
+        lavg = lavgs["#{ct.pool}:#{ct.id}"]
 
         vpsadmin_vps.loadavg = (lavg.avg if lavg)
 
@@ -103,7 +103,7 @@ module NodeCtld
         end
 
         # Detect osctl ct boot
-        if vps[:dataset] != vps[:boot_dataset] && %r{/ct/\d+\.boot-\w+\z} =~ vps[:boot_dataset]
+        if ct.in_ct_boot?
           vpsadmin_vps.in_rescue_mode = true
         end
       end
@@ -157,7 +157,7 @@ module NodeCtld
     end
 
     def ct_list
-      osctl_parse(%i[ct ls])
+      osctl_parse(%i[ct ls]).map { |v| OsCtlContainer.new(v) }
     end
 
     def run_or_skip(vps)
