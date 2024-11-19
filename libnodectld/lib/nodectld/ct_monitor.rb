@@ -64,7 +64,10 @@ module NodeCtld
           send_event(vps_id, 'state', { 'state' => event[:opts][:state] })
         end
 
-        VpsSshHostKeys.schedule_update_vps(vps_id) if vps_id > 0 && event[:opts][:state] == 'running'
+        if vps_id > 0 && event[:opts][:state] == 'running'
+          VpsSshHostKeys.schedule_update_vps(vps_id)
+          VpsOsRelease.schedule_update_vps(vps_id)
+        end
 
         if vps_id > 0 && event[:opts][:state] == 'stopped'
           MountReporter.report(event[:opts][:id], :all, :unmounted)

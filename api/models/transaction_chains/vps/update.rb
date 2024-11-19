@@ -3,7 +3,7 @@ module TransactionChains
     label 'Modify'
     allow_empty
 
-    def link_chain(vps, attrs, admin: nil)
+    def link_chain(vps, attrs, admin: nil, os_release: nil)
       lock(vps)
       concerns(:affect, [vps.class.name, vps.id])
 
@@ -53,8 +53,9 @@ module TransactionChains
             just_create(vps.log(:os_template, {
                                   id: vps.os_template_id,
                                   name: vps.os_template.name,
-                                  label: vps.os_template.label
-                                }))
+                                  label: vps.os_template.label,
+                                  os_release:
+                                }.compact))
           end
 
         when 'cgroup_version'
@@ -113,7 +114,7 @@ module TransactionChains
                                   }))
           end
 
-        when 'info', 'onstartall', 'allow_admin_modifications'
+        when 'info', 'onstartall', 'allow_admin_modifications', 'enable_os_template_auto_update'
           db_changes[vps][attr] = vps.send(attr)
 
         when 'autostart_priority'

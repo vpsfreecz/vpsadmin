@@ -24,6 +24,7 @@ module VpsAdmin::Supervisor
         Node::VpsEvents,
         Node::VpsMounts,
         Node::VpsOsProcesses,
+        Node::VpsOsRelease,
         Node::VpsSshHostKeys,
         Node::VpsStatus
       ].map do |klass|

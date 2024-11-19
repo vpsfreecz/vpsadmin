@@ -234,6 +234,13 @@ module NodeCtld
       default_schedule_delay: 15
     },
 
+    vps_os_release: {
+      enable: true,
+      update_vps_delay: 1,
+      update_all_interval: 24 * 60 * 60,
+      default_schedule_delay: 15
+    },
+
     dataset_expander: {
       enable: true,
       min_avail_bytes: 512 * 1024 * 1024,
