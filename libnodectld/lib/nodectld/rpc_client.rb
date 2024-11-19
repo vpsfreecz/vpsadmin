@@ -127,7 +127,7 @@ module NodeCtld
     def retry_on_timeout(message, attempts: 10, delay: 10)
       attempts.times do |i|
         return yield
-      rescue Timeout::Error
+      rescue ::Timeout::Error
         log(:warn, "[#{i + 1}/#{attempts}] #{message}")
         sleep(delay)
       end
