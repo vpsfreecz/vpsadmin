@@ -65,8 +65,7 @@ module NodeCtld
         end
 
         if vps_id > 0 && event[:opts][:state] == 'running'
-          VpsSshHostKeys.schedule_update_vps(vps_id)
-          VpsOsRelease.schedule_update_vps(vps_id)
+          VpsPostStart.run(vps_id)
         end
 
         if vps_id > 0 && event[:opts][:state] == 'stopped'

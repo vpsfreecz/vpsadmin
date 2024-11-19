@@ -227,18 +227,20 @@ module NodeCtld
       batch_size: 50
     },
 
+    vps_post_start: {
+      default_schedule_delay: 15
+    },
+
     vps_ssh_host_keys: {
       enable: true,
       update_vps_delay: 1,
-      update_all_interval: 24 * 60 * 60,
-      default_schedule_delay: 15
+      update_all_interval: 24 * 60 * 60
     },
 
     vps_os_release: {
       enable: true,
       update_vps_delay: 1,
-      update_all_interval: 24 * 60 * 60,
-      default_schedule_delay: 15
+      update_all_interval: 24 * 60 * 60
     },
 
     dataset_expander: {

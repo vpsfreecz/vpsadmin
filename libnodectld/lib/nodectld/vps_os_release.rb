@@ -28,7 +28,7 @@ module NodeCtld
     ].freeze
 
     class << self
-      %i[update_vps schedule_update_vps].each do |v|
+      %i[update_ct].each do |v|
         define_method(v) do |*args, **kwargs, &block|
           instance.send(v, *args, **kwargs, &block)
         end
@@ -47,27 +47,11 @@ module NodeCtld
       @update_all_thread = Thread.new { update_all_worker }
     end
 
-    # @param vps_id [Integer]
-    def update_vps(vps_id)
+    # @param ct [OsCtlContainer]
+    def update_ct(ct)
       return unless enable?
 
-      @update_vps_queue.insert(vps_id)
-    end
-
-    # @param vps_id [Integer]
-    # @param in_seconds [Integer, nil]
-    def schedule_update_vps(vps_id, in_seconds: nil)
-      return unless enable?
-
-      in_seconds ||= $CFG.get(:vps_os_release, :default_schedule_delay)
-      log(:info, "Scheduling os-release update for VPS #{vps_id} in #{in_seconds}s")
-
-      Thread.new do
-        sleep(in_seconds)
-        update_vps(vps_id)
-      end
-
-      nil
+      @update_vps_queue.insert(ct)
     end
 
     def enable?
@@ -82,8 +66,8 @@ module NodeCtld
 
     def update_vps_worker
       loop do
-        vps_or_id = @update_vps_queue.pop
-        update_vps_os_release(vps_or_id)
+        ct = @update_vps_queue.pop
+        update_vps_os_release(ct)
         sleep($CFG.get(:vps_os_release, :update_vps_delay))
       end
     end
@@ -114,15 +98,8 @@ module NodeCtld
       end
     end
 
-    # @param vps [OsCtlContainer, Integer]
-    def update_vps_os_release(ct_or_id)
-      ct =
-        if ct_or_id.is_a?(Integer)
-          OsCtlContainer.new(osctl_parse(%i[ct show], [ct_or_id]))
-        else
-          ct_or_id
-        end
-
+    # @param ct [OsCtlContainer]
+    def update_vps_os_release(ct)
       log(:info, "Updating os-release of VPS #{ct.id}")
 
       if ct.in_ct_boot?

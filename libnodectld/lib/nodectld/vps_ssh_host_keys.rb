@@ -9,7 +9,7 @@ module NodeCtld
     include Utils::OsCtl
 
     class << self
-      %i[update_vps schedule_update_vps].each do |v|
+      %i[update_ct].each do |v|
         define_method(v) do |*args, **kwargs, &block|
           instance.send(v, *args, **kwargs, &block)
         end
@@ -28,27 +28,11 @@ module NodeCtld
       @update_all_thread = Thread.new { update_all_worker }
     end
 
-    # @param vps_id [Integer]
-    def update_vps(vps_id)
+    # @param ct [OsCtlContainer]
+    def update_ct(ct)
       return unless enable?
 
-      @update_vps_queue.insert(vps_id)
-    end
-
-    # @param vps_id [Integer]
-    # @param in_seconds [Integer, nil]
-    def schedule_update_vps(vps_id, in_seconds: nil)
-      return unless enable?
-
-      in_seconds ||= $CFG.get(:vps_ssh_host_keys, :default_schedule_delay)
-      log(:info, "Scheduling ssh host key update for VPS #{vps_id} in #{in_seconds}s")
-
-      Thread.new do
-        sleep(in_seconds)
-        update_vps(vps_id)
-      end
-
-      nil
+      @update_vps_queue.insert(ct)
     end
 
     def enable?
@@ -65,8 +49,8 @@ module NodeCtld
 
     def update_vps_worker
       loop do
-        vps_or_id = @update_vps_queue.pop
-        update_vps_keys(vps_or_id)
+        ct = @update_vps_queue.pop
+        update_vps_keys(ct)
         sleep($CFG.get(:vps_ssh_host_keys, :update_vps_delay))
       end
     end
@@ -97,15 +81,8 @@ module NodeCtld
       end
     end
 
-    # @param ct [OsCtlContainer, Integer]
-    def update_vps_keys(ct_or_id)
-      ct =
-        if ct_or_id.is_a?(Integer)
-          OsCtlContainer.new(osctl_parse(%i[ct show], [ct_or_id]))
-        else
-          ct_or_id
-        end
-
+    # @param ct [OsCtlContainer]
+    def update_vps_keys(ct)
       log(:info, "Updating keys of VPS #{ct.id}")
       t = Time.now
 
