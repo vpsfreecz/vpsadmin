@@ -27,6 +27,11 @@ module NodeCtld
       IMAGE_VERSION
     ].freeze
 
+    RELEASE_FILES = %w[
+      /etc/os-release
+      /usr/lib/os-release
+    ].freeze
+
     class << self
       %i[update_ct].each do |v|
         define_method(v) do |*args, **kwargs, &block|
@@ -136,38 +141,31 @@ module NodeCtld
     # @param ct [OsCtlContainer]
     # @return [Hash]
     def parse_os_release(ct)
-      read_r, read_w = IO.pipe
+      os_release = nil
 
-      # Chroot into VPS rootfs and read os-release files
-      read_pid = Process.fork do
-        read_r.close
-
-        sys = OsCtl::Lib::Sys.new
-        sys.chroot(ct.boot_rootfs)
-
-        parsed = nil
-
-        %w[/etc/os-release /usr/lib/os-release].each do |path|
-          parsed = File.open(path) { |f| parse_os_release_io(f) }
-        rescue Errno::ENOENT
-          next
-        end
-
-        read_w.write((parsed || {}).to_json)
+      RELEASE_FILES.each do |release_file|
+        os_release = parse_os_release_file(ct, release_file)
+        break if os_release
       end
 
-      read_w.close
-
-      begin
-        os_release = JSON.parse(read_r.read)
-      rescue JSON::ParserError
-        log(:warn, "Failed to parse os-release for VPS #{ct.id}")
+      if os_release.nil? || os_release.empty?
+        log(:warn, "Unable to read os-release from VPS #{ct.id}")
       end
-
-      Process.wait(read_pid)
-      log(:warn, "Reader for VPS #{ct.id} exited with #{$?.exitstatus}") if $?.exitstatus != 0
 
       os_release || {}
+    end
+
+    # @return [Hash, nil]
+    def parse_os_release_file(ct, file)
+      r, w = IO.pipe
+
+      pid = Process.spawn('osctl', 'ct', 'cat', ct.id, file, out: w)
+      w.close
+
+      parsed = parse_os_release_io(r)
+
+      Process.wait(pid)
+      $?.exitstatus == 0 ? parsed : nil
     end
 
     # @param io [IO]
