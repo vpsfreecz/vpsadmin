@@ -5,8 +5,6 @@ module NodeCtld
   class VpsOsRelease
     include Singleton
     include OsCtl::Lib::Utils::Log
-    include OsCtl::Lib::Utils::System
-    include Utils::OsCtl
 
     OPTIONS = %w[
       # General
@@ -45,66 +43,12 @@ module NodeCtld
 
       @channel = NodeBunny.create_channel
       @exchange = @channel.direct(NodeBunny.exchange_name)
-
-      @update_vps_queue = OsCtl::Lib::Queue.new
-      @update_vps_thread = Thread.new { update_vps_worker }
-
-      @update_all_thread = Thread.new { update_all_worker }
     end
 
     # @param ct [OsCtlContainer]
     def update_ct(ct)
       return unless enable?
 
-      @update_vps_queue.insert(ct)
-    end
-
-    def enable?
-      $CFG.get(:vps_os_release, :enable)
-    end
-
-    def log_type
-      'vps-os-release'
-    end
-
-    protected
-
-    def update_vps_worker
-      loop do
-        ct = @update_vps_queue.pop
-        update_vps_os_release(ct)
-        sleep($CFG.get(:vps_os_release, :update_vps_delay))
-      end
-    end
-
-    def update_all_worker
-      loop do
-        sleep($CFG.get(:vps_os_release, :update_all_interval))
-
-        vps_ids = {}
-
-        RpcClient.run do |rpc|
-          rpc.list_running_vps_ids.each do |vps_id|
-            vps_ids[vps_id] = true
-          end
-        end
-
-        log(:info, "Updating os-release of #{vps_ids.length} VPS")
-
-        osctl_parse(%i[ct ls], vps_ids.keys, { state: 'running' }).each do |ct|
-          next unless /^\d+$/ =~ ct[:id]
-
-          osctl_ct = OsCtlContainer.new(ct)
-
-          next unless vps_ids.has_key?(osctl_ct.vps_id)
-
-          @update_vps_queue << osctl_ct
-        end
-      end
-    end
-
-    # @param ct [OsCtlContainer]
-    def update_vps_os_release(ct)
       log(:info, "Updating os-release of VPS #{ct.id}")
 
       if ct.in_ct_boot?
@@ -137,6 +81,16 @@ module NodeCtld
         routing_key: 'vps_os_releases'
       )
     end
+
+    def enable?
+      $CFG.get(:vps_os_release, :enable)
+    end
+
+    def log_type
+      'vps-os-release'
+    end
+
+    protected
 
     # @param ct [OsCtlContainer]
     # @return [Hash]
