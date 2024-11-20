@@ -44,7 +44,8 @@ module NodeCtld
       end
 
       if !report.invoked_by_pid \
-         && /^CPU: \d+ PID: (\d+) Comm:/ =~ msg.text
+         && (/^CPU: \d+ PID: (\d+) Comm:/ =~ msg.text || /^CPU: \d+ UID: \d+ PID: (\d+) Comm:/ =~ msg.text)
+        #               ^ Kernel <= 6.9                             ^ Kernel >= 6.11
         report.invoked_by_pid = ::Regexp.last_match(1).to_i
         return
       end
