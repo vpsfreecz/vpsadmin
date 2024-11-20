@@ -697,6 +697,36 @@ if (isLoggedIn()) {
             }
             break;
 
+        case 'toggle_os_template_auto_update':
+            if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+                redirect('?page=adminvps&action=info&veid=' . $_GET["veid"]);
+                break;
+            }
+
+            csrf_check();
+
+            try {
+                $enable = ($_POST['enable_os_template_auto_update'] ?? '') === '1';
+
+                $api->vps($_GET['veid'])->update([
+                    'enable_os_template_auto_update' => $enable,
+                ]);
+
+                if ($enable) {
+                    $message = _('Reading of /etc/release was enabled');
+                } else {
+                    $message = _('Reading of /etc/release was disabled');
+                }
+
+                notify_user($message, '');
+                redirect('?page=adminvps&action=info&veid=' . $_GET["veid"]);
+
+            } catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+                $xtpl->perex_format_errors(_('Update failed'), $e->getResponse());
+                $show_info = true;
+            }
+            break;
+
         case 'features':
             if (isset($_GET["veid"]) && $_SERVER['REQUEST_METHOD'] === 'POST') {
                 csrf_check();
@@ -1425,6 +1455,14 @@ if (isLoggedIn()) {
                 false,
                 _("Install base system again.") . ' ' . _('All data in the root filesystem will be removed.')
             );
+            $xtpl->table_tr();
+            $xtpl->form_out(_("Go >>"));
+
+            // OS template auto-update
+            $xtpl->table_title(_('Read /etc/os-release'));
+            $xtpl->form_create('?page=adminvps&action=toggle_os_template_auto_update&veid=' . $vps->id, 'post');
+            $xtpl->form_add_checkbox_pure('enable_os_template_auto_update', '1', post_val_issetto('enable_os_template_auto_update', '1', $vps->enable_os_template_auto_update));
+            $xtpl->table_td(_('Automatically update distribution version information in vpsAdmin by reading <code>/etc/os-release</code> on VPS start.'));
             $xtpl->table_tr();
             $xtpl->form_out(_("Go >>"));
 
