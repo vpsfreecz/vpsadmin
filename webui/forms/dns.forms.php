@@ -694,7 +694,7 @@ function tsig_key_list()
 
         $xtpl->table_td(h($k->name));
         $xtpl->table_td(h($k->algorithm));
-        $xtpl->table_td('<code>' . h($k->secret) . '</code>');
+        $xtpl->table_td('<textarea cols="60" rows="1" readonly>' . h($k->secret) . '</textarea>');
         $xtpl->table_td(
             '<a href="?page=dns&action=tsig_key_delete&id=' . $k->id . '&return_url=' . $return_url . '"><img src="template/icons/vps_delete.png" alt="' . _('Delete key') . '" title="' . _('Delete key') . '"></a>'
         );
