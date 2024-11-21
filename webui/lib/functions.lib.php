@@ -1278,6 +1278,15 @@ function makeDefinitionList($array, $classes = '')
     return $ret;
 }
 
+function truncateString(string $string, int $maxLength): string
+{
+    if (mb_strlen($string) <= $maxLength) {
+        return $string;
+    }
+
+    return mb_substr($string, 0, $maxLength - 3) . '...';
+}
+
 function moo_inputremaining($input, $output, $chars, $uid)
 {
     $out = "<script type=\"text/javascript\">\n";
