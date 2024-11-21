@@ -29,7 +29,7 @@ p, table, ul, ol, dl, fieldset {margin:15px 0;}
 
 table {border-collapse:collapse; border-spacing:0; font-size:100%;}
 th {text-align:center; font-weight:bold;}
-th, td {padding:3px 7px;}
+th, td {padding:3px 7px; max-width: 750px; overflow-x: auto;}
 
 ul, ol {margin-left:30px;}
 ul ul, ol ol {margin:0; margin-left:20px;}
