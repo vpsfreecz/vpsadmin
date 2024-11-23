@@ -125,7 +125,12 @@ class ClusterResourceUse < ApplicationRecord
         "dataset #{row_id}"
       end
     when 'EnvironmentUserConfig'
-      "user #{row_id}"
+      begin
+        env_cfg = ::EnvironmentUserConfig.find(row_id)
+        "user #{env_cfg.user_id} #{env_cfg.user.login}"
+      rescue ActiveRecord::RecordNotFound
+        'user'
+      end
     else
       class_name
     end
