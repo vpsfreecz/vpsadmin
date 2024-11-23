@@ -228,6 +228,7 @@ module NodeCtld
     },
 
     vps_post_start: {
+      after_uptime: 1 * 60 * 60,
       default_schedule_delay: 15
     },
 
