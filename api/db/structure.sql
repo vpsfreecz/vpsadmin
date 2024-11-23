@@ -1493,6 +1493,8 @@ CREATE TABLE `os_templates` (
   `cgroup_version` int(11) NOT NULL DEFAULT 0,
   `config` text NOT NULL DEFAULT '',
   `os_family_id` bigint(20) NOT NULL,
+  `manage_hostname` tinyint(1) NOT NULL DEFAULT 1,
+  `manage_dns_resolver` tinyint(1) NOT NULL DEFAULT 1,
   PRIMARY KEY (`id`),
   KEY `index_os_templates_on_cgroup_version` (`cgroup_version`),
   KEY `index_os_templates_on_os_family_id` (`os_family_id`)
@@ -2338,6 +2340,7 @@ CREATE TABLE `vpses` (
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
 INSERT INTO `schema_migrations` (version) VALUES
+('20241123161745'),
 ('20241118093252'),
 ('20241104151630'),
 ('20241104130237'),

@@ -235,13 +235,15 @@ module TransactionChains
         end
       end
 
-      vps.dns_resolver ||= ::DnsResolver.pick_suitable_resolver_for_vps(vps)
+      if vps.os_template.manage_dns_resolver
+        vps.dns_resolver ||= ::DnsResolver.pick_suitable_resolver_for_vps(vps)
 
-      append(Transactions::Vps::DnsResolver, args: [
-               vps,
-               vps.dns_resolver,
-               vps.dns_resolver
-             ])
+        append(Transactions::Vps::DnsResolver, args: [
+                 vps,
+                 vps.dns_resolver,
+                 vps.dns_resolver
+               ])
+      end
 
       use_chain(Vps::SetResources, args: [vps, vps_resources])
 

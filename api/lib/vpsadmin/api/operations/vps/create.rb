@@ -13,6 +13,7 @@ module VpsAdmin::API
     # @return [Array(::TransactionChain, ::Vps)]
     def run(attrs, resources, opts)
       vps = ::Vps.new(attrs)
+      vps.manage_hostname = vps.os_template.manage_hostname
       vps.set_cluster_resources(resources)
 
       raise ActiveRecord::RecordInvalid, vps unless vps.valid?

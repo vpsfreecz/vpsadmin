@@ -16,6 +16,8 @@ class VpsAdmin::API::Resources::OsTemplate < HaveAPI::Resource
     integer :order, label: 'Order', desc: 'Template order'
     string :hypervisor_type, choices: ::OsTemplate.hypervisor_types.keys, default: 'vpsadminos'
     string :cgroup_version, choices: ::OsTemplate.cgroup_versions.keys, default: 'cgroup_any'
+    bool :manage_hostname, label: 'Manage hostname'
+    bool :manage_dns_resolver, label: 'Manage DNS resolver'
     string :vendor
     string :variant
     string :arch
@@ -114,8 +116,13 @@ class VpsAdmin::API::Resources::OsTemplate < HaveAPI::Resource
   class Create < HaveAPI::Actions::Default::Create
     input do
       use :common, exclude: %i[name]
+
       %i[os_family label vendor variant arch distribution version].each do |v|
         patch v, required: true
+      end
+
+      %i[manage_hostname manage_dns_resolver].each do |v|
+        patch v, default: true
       end
     end
 
