@@ -10,8 +10,10 @@ GEM
     curses (1.4.7)
     date (3.4.0)
     filelock (1.1.1)
-    gli (2.20.1)
-    highline (2.0.3)
+    gli (2.22.0)
+    highline (3.1.1)
+      reline
+    io-console (0.7.2)
     ipaddress (0.8.3)
     json (2.8.2)
     mail (2.8.1)
@@ -41,9 +43,11 @@ GEM
       slop (~> 3.0)
     rainbow (3.1.1)
     rbtree (0.4.6)
+    reline (0.5.11)
+      io-console (~> 0.5)
     require_all (2.0.0)
     rexml (3.3.9)
-    ruby-progressbar (1.11.0)
+    ruby-progressbar (1.13.0)
     set (1.1.0)
     slop (3.6.0)
     sorted_set (1.0.3)
@@ -57,41 +61,41 @@ GEM
 GEM
   remote: https://rubygems.vpsfree.cz/
   specs:
-    libnodectld (4.0.0.build20241120095958)
+    libnodectld (4.0.0.build20241124114502)
       bunny (~> 2.23.0)
       filelock
       ipaddress (~> 0.8.3)
       json
-      libosctl (= 24.05.0.build20241119175022)
+      libosctl (= 24.05.0.build20241124114328)
       mail (~> 2.8.1)
       mysql2 (= 0.5.6)
-      osctl (= 24.05.0.build20241119175022)
-      osctl-exportfs (= 24.05.0.build20241119175022)
+      osctl (= 24.05.0.build20241124114328)
+      osctl-exportfs (= 24.05.0.build20241124114328)
       prometheus-client (~> 4.2.3)
       pry (~> 0.14.2)
       pry-remote
       require_all (~> 2.0.0)
       rexml (~> 3.3)
-    libosctl (24.05.0.build20241119175022)
+    libosctl (24.05.0.build20241124114328)
       rainbow (~> 3.1.1)
       require_all (~> 2.0.0)
-    nodectld (4.0.0.build20241120095958)
-      libnodectld (= 4.0.0.build20241120095958)
-    osctl (24.05.0.build20241119175022)
+    nodectld (4.0.0.build20241124114502)
+      libnodectld (= 4.0.0.build20241124114502)
+    osctl (24.05.0.build20241124114328)
       curses
-      gli (~> 2.20.0)
-      highline (~> 2.0.3)
+      gli (~> 2.22.0)
+      highline (~> 3.1.1)
       ipaddress (~> 0.8.3)
       json
-      libosctl (= 24.05.0.build20241119175022)
+      libosctl (= 24.05.0.build20241124114328)
       rainbow (~> 3.1.1)
       require_all (~> 2.0.0)
-      ruby-progressbar (~> 1.11.0)
+      ruby-progressbar (~> 1.13.0)
       tty-spinner (~> 0.9.3)
-    osctl-exportfs (24.05.0.build20241119175022)
+    osctl-exportfs (24.05.0.build20241124114328)
       filelock
-      gli (~> 2.20.0)
-      libosctl (= 24.05.0.build20241119175022)
+      gli (~> 2.22.0)
+      libosctl (= 24.05.0.build20241124114328)
       require_all (~> 2.0.0)
 
 PLATFORMS
@@ -99,7 +103,7 @@ PLATFORMS
   x86_64-linux
 
 DEPENDENCIES
-  nodectld (= 4.0.0.build20241120095958)!
+  nodectld (= 4.0.0.build20241124114502)!
 
 BUNDLED WITH
    2.5.9
