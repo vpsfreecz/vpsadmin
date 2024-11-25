@@ -122,7 +122,7 @@ start it.
 `chain` *id* `resolve`
   Mark the chain as resolved.
 
-`chain` *id* retry [*transaction_id*]
+`chain` *id* `retry` [*transaction_id*]
   Rerun transaction chain, either from the beginning or from *transaction_id*.
   All or transactions up from and including *transaction_id* are marked as queued
   and executed again.
@@ -162,7 +162,7 @@ start it.
   Using argument *key*, you can select only specific part of tje config to be
   printed. Nested keys are separated by `.`.
 
-`get` `queue`
+`get queue`
   List transactions queued for execution. Transactions whose dependencies are
   not met yet are not listed, as it is impossible to know when they will be executed.
 
