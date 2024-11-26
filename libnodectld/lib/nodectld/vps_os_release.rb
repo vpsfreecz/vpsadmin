@@ -5,6 +5,8 @@ module NodeCtld
   class VpsOsRelease
     include Singleton
     include OsCtl::Lib::Utils::Log
+    include OsCtl::Lib::Utils::System
+    include Utils::OsCtl
 
     OPTIONS = %w[
       # General
@@ -31,7 +33,7 @@ module NodeCtld
     ].freeze
 
     class << self
-      %i[update_ct].each do |v|
+      %i[update_ct update_vps_ids update_all_vps].each do |v|
         define_method(v) do |*args, **kwargs, &block|
           instance.send(v, *args, **kwargs, &block)
         end
@@ -80,6 +82,52 @@ module NodeCtld
         content_type: 'application/json',
         routing_key: 'vps_os_releases'
       )
+
+      nil
+    end
+
+    # @param vps_ids [Array(Integer)]
+    def update_vps_ids(vps_ids)
+      return if !enable? || vps_ids.empty?
+
+      osctl_parse(%i[ct ls], vps_ids, { state: 'running' }).each do |ct|
+        osctl_ct = OsCtlContainer.new(ct)
+
+        # While ct ls returns only the selected containers, let's be sure
+        next unless vps_ids.include?(osctl_ct.vps_id)
+
+        update_ct(osctl_ct)
+        sleep($CFG.get(:vps_os_release, :update_vps_delay))
+      end
+
+      nil
+    end
+
+    def update_all_vps
+      return unless enable?
+
+      vps_ids = {}
+
+      RpcClient.run do |rpc|
+        rpc.list_running_vps_ids.each do |vps_id|
+          vps_ids[vps_id] = true
+        end
+      end
+
+      log(:info, "Updating os-release of #{vps_ids.length} VPS")
+
+      osctl_parse(%i[ct ls], vps_ids.keys, { state: 'running' }).each do |ct|
+        next unless /^\d+$/ =~ ct[:id]
+
+        osctl_ct = OsCtlContainer.new(ct)
+
+        next unless vps_ids.has_key?(osctl_ct.vps_id)
+
+        update_ct(osctl_ct)
+        sleep($CFG.get(:vps_os_release, :update_vps_delay))
+      end
+
+      nil
     end
 
     def enable?

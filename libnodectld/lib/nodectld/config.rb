@@ -239,7 +239,8 @@ module NodeCtld
     },
 
     vps_os_release: {
-      enable: true
+      enable: true,
+      update_vps_delay: 1
     },
 
     dataset_expander: {

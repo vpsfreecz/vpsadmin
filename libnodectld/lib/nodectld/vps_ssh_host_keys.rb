@@ -9,7 +9,7 @@ module NodeCtld
     include Utils::OsCtl
 
     class << self
-      %i[update_ct].each do |v|
+      %i[update_ct update_vps_ids update_all_vps].each do |v|
         define_method(v) do |*args, **kwargs, &block|
           instance.send(v, *args, **kwargs, &block)
         end
@@ -25,6 +25,7 @@ module NodeCtld
       @update_vps_queue = OsCtl::Lib::Queue.new
       @update_vps_thread = Thread.new { update_vps_worker }
 
+      @update_all_queue = OsCtl::Lib::Queue.new
       @update_all_thread = Thread.new { update_all_worker }
     end
 
@@ -33,6 +34,30 @@ module NodeCtld
       return unless enable?
 
       @update_vps_queue.insert(ct)
+      nil
+    end
+
+    # @param vps_ids [Array(Integer)]
+    def update_vps_ids(vps_ids)
+      return if !enable? || vps_ids.empty?
+
+      osctl_parse(%i[ct ls], vps_ids, { state: 'running' }).each do |ct|
+        osctl_ct = OsCtlContainer.new(ct)
+
+        # While ct ls returns only the selected containers, let's be sure
+        next unless vps_ids.include?(osctl_ct.vps_id)
+
+        @update_vps_queue << osctl_ct
+      end
+
+      nil
+    end
+
+    def update_all_vps
+      return unless enable?
+
+      @update_all_queue << :update
+      nil
     end
 
     def enable?
@@ -57,7 +82,7 @@ module NodeCtld
 
     def update_all_worker
       loop do
-        sleep($CFG.get(:vps_ssh_host_keys, :update_all_interval))
+        @update_all_queue.pop(timeout: $CFG.get(:vps_ssh_host_keys, :update_all_interval))
 
         vps_ids = {}
 

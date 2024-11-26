@@ -208,6 +208,13 @@ start it.
 
   `nodectl` blocks until refresh is finished.
 
+`update ssh-host-keys` [*vps...*]
+  Update SSH host keys from selected or all VPS and store them in vpsAdmin.
+
+`update os-release` [*vps...*]
+  Read `/etc/os-release` in selected or all VPS and update OS template
+  in vpsAdmin if appropriate.
+
 `incident-report pid` *pid...*
   Report incident to VPS that the given PIDs belong to. `nodectl` identifies
   the processes and opens `$EDITOR` with incident report content, which the user
