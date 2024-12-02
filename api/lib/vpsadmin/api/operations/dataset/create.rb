@@ -128,7 +128,7 @@ module VpsAdmin::API
       new_ds = ::Dataset.new(
         name: part,
         user: ::User.current,
-        vps: parent.vps,
+        vps: parent&.vps,
         user_editable: true,
         user_create: true,
         user_destroy: true,
