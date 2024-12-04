@@ -32,6 +32,10 @@ module VpsAdmin::API
 
       dns_record.content = addr.to_s
 
+      unless dns_record.changed?
+        return [nil, dns_record]
+      end
+
       unless dns_record.valid?
         raise ActiveRecord::RecordInvalid, dns_record
       end
