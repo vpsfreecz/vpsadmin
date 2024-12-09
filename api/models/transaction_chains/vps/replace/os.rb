@@ -38,7 +38,7 @@ module TransactionChains
         cgroup_version: vps.cgroup_version,
         expiration_date: vps.expiration_date,
         allow_admin_modifications: vps.allow_admin_modifications,
-        enable_os_template_auto_update: enable_os_template_auto_update,
+        enable_os_template_auto_update: vps.enable_os_template_auto_update,
         confirmed: ::Vps.confirmed(:confirm_create)
       )
 
