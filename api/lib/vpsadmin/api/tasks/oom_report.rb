@@ -11,7 +11,7 @@ module VpsAdmin::API::Tasks
     #             the user again
     def notify
       vpses = ::Vps.joins(:oom_reports).where(
-        oom_reports: { reported_at: nil }
+        oom_reports: { reported_at: nil, ignored: false }
       ).group('vpses.id')
 
       TransactionChains::Vps::OomReports.fire2(

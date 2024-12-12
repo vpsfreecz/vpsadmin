@@ -47,6 +47,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
 
   params(:read_only) do
     datetime :created_at, label: 'Created at'
+    integer :implicit_oom_report_rule_hit_count
   end
 
   params(:status) do
@@ -114,7 +115,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
         is_running process_count used_memory used_swap used_diskspace
         uptime loadavg1 loadavg5 loadavg15 cpu_user cpu_nice cpu_system cpu_idle cpu_iowait
         cpu_irq cpu_softirq start_menu_timeout enable_os_template_auto_update
-        user_namespace_map created_at
+        user_namespace_map implicit_oom_report_rule_hit_count created_at
       ]
       allow
     end
@@ -234,7 +235,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
         is_running process_count used_memory used_swap used_diskspace
         uptime loadavg1 loadavg5 loadavg15 cpu_user cpu_nice cpu_system cpu_idle cpu_iowait
         cpu_irq cpu_softirq start_menu_timeout enable_os_template_auto_update
-        user_namespace_map created_at
+        user_namespace_map implicit_oom_report_rule_hit_count created_at
       ]
       allow
     end
@@ -353,7 +354,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
         is_running process_count used_memory used_swap used_diskspace
         uptime loadavg1 loadavg5 loadavg15 cpu_user cpu_nice cpu_system cpu_idle cpu_iowait
         cpu_irq cpu_softirq start_menu_timeout enable_os_template_auto_update
-        user_namespace_map created_at
+        user_namespace_map implicit_oom_report_rule_hit_count created_at
       ]
       allow
     end
@@ -846,7 +847,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
         is_running process_count used_memory used_swap used_diskspace
         uptime loadavg1 loadavg5 loadavg15 cpu_user cpu_nice cpu_system cpu_idle cpu_iowait
         cpu_irq cpu_softirq start_menu_timeout enable_os_template_auto_update
-        user_namespace_map created_at
+        user_namespace_map implicit_oom_report_rule_hit_count created_at
       ]
       allow
     end

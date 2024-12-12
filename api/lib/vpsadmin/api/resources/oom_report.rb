@@ -14,6 +14,7 @@ module VpsAdmin::API::Resources
       integer :count
       datetime :created_at
       datetime :reported_at
+      resource OomReportRule
     end
 
     params(:filters) do
@@ -22,6 +23,7 @@ module VpsAdmin::API::Resources
       resource VpsAdmin::API::Resources::Node
       resource VpsAdmin::API::Resources::Location
       resource VpsAdmin::API::Resources::Environment
+      resource VpsAdmin::API::Resources::OomReportRule
       string :cgroup
       datetime :since
       datetime :until
@@ -62,6 +64,10 @@ module VpsAdmin::API::Resources
           q = q.joins(vps: { node: :location }).where(
             locations: { environment_id: input[:environment].id }
           )
+        end
+
+        if input[:oom_report_rule]
+          q = q.where(oom_report_rule: input[:oom_report_rule])
         end
 
         q = q.where('oom_reports.cgroup = ?', input[:cgroup]) if input[:cgroup]

@@ -48,11 +48,20 @@ module VpsAdmin::Supervisor
 
       invoked_by_name = report.fetch('invoked_by_name')
       killed_name = report.fetch('killed_name')
-      cgroup = report.fetch('cgroup')[0..254]
+      full_cgroup = report.fetch('cgroup')
+      cgroup = full_cgroup[0..254]
       count = report.fetch('count')
 
       counter = ::OomReportCounter.find_or_create_by!(vps:, cgroup:)
       ::OomReportCounter.increment_counter(:counter, counter.id, by: count)
+
+      rule = evaluate_rules(vps, full_cgroup)
+
+      if rule
+        ::OomReportRule.increment_counter(:hit_count, rule.id)
+      else
+        ::Vps.increment_counter(:implicit_oom_report_rule_hit_count, vps.id)
+      end
 
       new_report = ::OomReport.create!(
         vps:,
@@ -63,7 +72,9 @@ module VpsAdmin::Supervisor
         killed_name: killed_name && killed_name[0..49],
         count:,
         created_at: Time.at(report.fetch('time')),
-        processed: true
+        processed: true,
+        ignored: rule&.action == 'ignore',
+        oom_report_rule: rule
       )
 
       new_report.oom_report_usages.insert_all(
@@ -152,6 +163,12 @@ module VpsAdmin::Supervisor
         puts "VPS #{vps.id} -> #{action}"
       rescue ::ResourceLocked
         puts "VPS #{vps.id} locked, would #{action} otherwise"
+      end
+    end
+
+    def evaluate_rules(vps, full_cgroup)
+      vps.oom_report_rules.order('id').detect do |rule|
+        File.fnmatch?(rule.cgroup_pattern, full_cgroup, File::FNM_PATHNAME | File::FNM_EXTGLOB)
       end
     end
   end

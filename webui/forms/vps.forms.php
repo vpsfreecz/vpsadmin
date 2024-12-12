@@ -736,7 +736,7 @@ function vps_list_form()
                 $xtpl->table_td('---', false, true);
             }
 
-            if(isAdmin() || $vps->maintenance_lock == 'no') {
+            if (isAdmin() || $vps->maintenance_lock == 'no') {
                 $xtpl->table_td(($vps->is_running) ? '<a href="?page=adminvps&run=restart&veid=' . $vps->id . '&t=' . csrf_token() . '" ' . vps_confirm_action_onclick($vps, 'restart') . '><img src="template/icons/vps_restart.png" title="' . _("Restart") . '"/></a>' : '<img src="template/icons/vps_restart_grey.png"  title="' . _("Unable to restart") . '" />');
                 $xtpl->table_td(($vps->is_running) ? '<a href="?page=adminvps&run=stop&veid=' . $vps->id . '&t=' . csrf_token() . '" ' . vps_confirm_action_onclick($vps, 'stop') . '><img src="template/icons/vps_stop.png"  title="' . _("Stop") . '"/></a>' : '<a href="?page=adminvps&run=start&veid=' . $vps->id . '&t=' . csrf_token() . '"><img src="template/icons/vps_start.png"  title="' . _("Start") . '"/></a>');
 
@@ -852,6 +852,7 @@ function vps_details_submenu($vps)
     $xtpl->sbar_add(_('History'), '?page=history&list=1&object=Vps&object_id=' . $vps->id . '&return_url=' . $return_url);
 
     $xtpl->sbar_add(_('OOM reports'), '?page=oom_reports&action=list&vps=' . $vps->id . '&list=1');
+    $xtpl->sbar_add(_('Configure OOM reports'), '?page=oom_reports&action=rule_list&vps=' . $vps->id);
     $xtpl->sbar_add(_('Incident reports'), '?page=incidents&action=list&list=1&vps=' . $vps->id . '&return=' . $return_url);
 
     if (isAdmin()) {
@@ -2176,7 +2177,7 @@ function vps_delete_form($vps_id)
     $xtpl->form_create('?page=adminvps&section=vps&action=delete2&veid=' . $vps->id, 'post');
     $xtpl->form_csrf();
 
-    if(isAdmin()) {
+    if (isAdmin()) {
         $xtpl->form_add_checkbox(
             _("Lazy delete") . ':',
             'lazy_delete',

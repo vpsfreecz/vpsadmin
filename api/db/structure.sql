@@ -1,4 +1,4 @@
-/*!999999\- enable the sandbox mode */ 
+/*M!999999\- enable the sandbox mode */ 
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
 /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
@@ -1389,6 +1389,21 @@ CREATE TABLE `oom_report_counters` (
   KEY `index_oom_report_counters_on_vps_id` (`vps_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `oom_report_rules`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `oom_report_rules` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `vps_id` bigint(20) NOT NULL,
+  `action` int(11) NOT NULL,
+  `cgroup_pattern` varchar(255) NOT NULL,
+  `hit_count` bigint(20) NOT NULL DEFAULT 0,
+  `created_at` datetime(6) NOT NULL,
+  `updated_at` datetime(6) NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `index_oom_report_rules_on_vps_id` (`vps_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `oom_report_stats`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
@@ -1454,6 +1469,8 @@ CREATE TABLE `oom_reports` (
   `reported_at` datetime DEFAULT NULL,
   `count` int(11) NOT NULL DEFAULT 1,
   `cgroup` varchar(255) NOT NULL DEFAULT '/',
+  `ignored` tinyint(1) NOT NULL DEFAULT 0,
+  `oom_report_rule_id` bigint(20) DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `index_oom_reports_on_vps_id` (`vps_id`),
   KEY `index_oom_reports_on_processed` (`processed`),
@@ -2317,6 +2334,7 @@ CREATE TABLE `vpses` (
   `allow_admin_modifications` tinyint(1) NOT NULL DEFAULT 1,
   `user_namespace_map_id` int(11) DEFAULT NULL,
   `enable_os_template_auto_update` tinyint(1) NOT NULL DEFAULT 1,
+  `implicit_oom_report_rule_hit_count` bigint(20) NOT NULL DEFAULT 0,
   PRIMARY KEY (`id`),
   KEY `index_vpses_on_dataset_in_pool_id` (`dataset_in_pool_id`) USING BTREE,
   KEY `index_vpses_on_dns_resolver_id` (`dns_resolver_id`) USING BTREE,
@@ -2340,6 +2358,7 @@ CREATE TABLE `vpses` (
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
 INSERT INTO `schema_migrations` (version) VALUES
+('20241210120737'),
 ('20241123161745'),
 ('20241118093252'),
 ('20241104151630'),

@@ -43,6 +43,7 @@ class Vps < ApplicationRecord
   has_many :object_histories, as: :tracked_object, dependent: :destroy
   has_many :oom_reports, dependent: :destroy
   has_many :oom_report_counters, dependent: :delete_all
+  has_many :oom_report_rules, dependent: :delete_all
   has_many :oom_preventions, dependent: :destroy
   has_many :dataset_expansions
 
