@@ -57,7 +57,7 @@ function oom_reports_list()
     $conds = ['user', 'vps', 'node', 'location', 'environment', 'oom_report_rule', 'since', 'until'];
 
     foreach ($conds as $c) {
-        if ($_GET[$c]) {
+        if ($_GET[$c] ?? false) {
             $params[$c] = $_GET[$c];
         }
     }
