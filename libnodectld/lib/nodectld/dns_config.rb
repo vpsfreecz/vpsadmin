@@ -119,6 +119,8 @@ module NodeCtld
             if zone.secondaries.any?
               f.puts("  allow-transfer { #{allow_transfer(zone.secondaries)} };")
               f.puts('  notify yes;')
+            else
+              f.puts('  allow-transfer { none; };')
             end
           end
 
