@@ -13,7 +13,7 @@ class ClusterResourcePackage < ApplicationRecord
   # @return [ClusterResourcePackageItem]
   def add_item(resource, value)
     self.class.transaction do
-      it = ClusterResourcePackageItem.create!(
+      item = ClusterResourcePackageItem.create!(
         cluster_resource_package: self,
         cluster_resource: resource,
         value:

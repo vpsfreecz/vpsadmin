@@ -70,9 +70,9 @@ module NodeCtld
             @used += 1
             queue << true
           else
-            it = Item.new(priority, counter, queue)
+            item = Item.new(priority, counter, queue)
             @counter += 1
-            waiting_items << it
+            waiting_items << item
           end
         end
       end
@@ -81,8 +81,8 @@ module NodeCtld
         mutex.synchronize do
           if waiting_items.any? && used <= size
             sort_queue!
-            it = waiting_items.shift
-            it.queue << true
+            item = waiting_items.shift
+            item.queue << true
           elsif waiting_items.any?
             @used -= 1 if used > 0
           else
@@ -101,8 +101,8 @@ module NodeCtld
             sort_queue!
 
             while waiting_items.any? && used < size
-              it = waiting_items.shift
-              it.queue << true
+              item = waiting_items.shift
+              item.queue << true
               @used += 1
             end
           end
