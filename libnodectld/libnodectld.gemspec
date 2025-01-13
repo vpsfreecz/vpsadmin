@@ -21,6 +21,7 @@ Gem::Specification.new do |s|
 
   s.required_ruby_version = ">= #{File.read('../.ruby-version').strip}"
 
+  s.add_dependency 'base64'
   s.add_dependency 'bunny', '~> 2.23.0'
   s.add_dependency 'filelock'
   s.add_dependency 'ipaddress', '~> 0.8.3'
@@ -35,4 +36,8 @@ Gem::Specification.new do |s|
   s.add_dependency 'pry-remote'
   s.add_dependency 'require_all', '~> 2.0.0'
   s.add_dependency 'rexml', '~> 3.3'
+
+  # For mysql2 on ruby >=3.3
+  s.add_dependency 'bigdecimal'
+  s.add_dependency 'drb'
 end

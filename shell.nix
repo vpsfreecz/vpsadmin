@@ -12,6 +12,7 @@ in stdenv.mkDerivation rec {
   buildInputs = with pkgs; [
     bundix
     git
+    libffi
     ncurses
     ruby
     zlib
