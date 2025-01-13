@@ -10,7 +10,7 @@
 $xtpl->perex('vpsAdmin', nl2br(
     '		vpsAdmin ' . getVersionLink() . '
 		Web-admin interface for vpsAdminOS (see <a href="https://vpsadminos.org">https://vpsadminos.org</a>)
-		Copyright &copy; 2012-2024 Jakub Skokan
+		Copyright &copy; 2012-' . date('Y') . ' Jakub Skokan
 		Copyright &copy; 2008-2014 Pavel Snajdr
 		All rights reserved.
 
