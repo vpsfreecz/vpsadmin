@@ -20,6 +20,8 @@ class ClusterResourcePackage < ApplicationRecord
       )
 
       recalculate_user_resources
+
+      item
     end
   end
 
