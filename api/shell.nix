@@ -9,7 +9,7 @@ in stdenv.mkDerivation rec {
     git
     mariadb
     mariadb-connector-c
-    ruby_3_2
+    ruby_3_3
   ];
 
   shellHook = ''

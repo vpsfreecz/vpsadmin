@@ -47,7 +47,7 @@ in {
 
   config = {
     nixpkgs.overlays = optionals cfg.enableOverlay (
-      [ (self: super: { ruby = super.ruby_3_2; }) ]
+      [ (self: super: { ruby = super.ruby_3_3; }) ]
       ++ (import ../../overlays)
     );
 

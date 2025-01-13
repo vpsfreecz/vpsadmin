@@ -6,7 +6,7 @@ in stdenv.mkDerivation rec {
   name = "nodectl";
 
   buildInputs = with pkgs; [
-    ruby_3_2
+    ruby_3_3
     ncurses
     git
     zlib
