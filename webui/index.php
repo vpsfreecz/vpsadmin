@@ -65,7 +65,7 @@ include WWW_ROOT . 'config_cfg.php';
 $api = new \HaveAPI\Client(INT_API_URL, API_VERSION, getClientIdentity());
 $api->registerDescriptionChangeFunc('api_description_changed');
 
-if(isset($_SESSION["api_description"]) && $_SESSION["api_description"]) {
+if (isset($_SESSION["api_description"]) && $_SESSION["api_description"]) {
     $api->setDescription($_SESSION["api_description"]);
 }
 
@@ -102,7 +102,7 @@ try {
         try {
             $api_cluster = $api->cluster->show();
 
-            if(!isset($_SESSION["context_switch"]) || !$_SESSION["context_switch"]) {
+            if (!isset($_SESSION["context_switch"]) || !$_SESSION["context_switch"]) {
                 $api->user->touch($_SESSION["user"]["id"]);
             }
 
@@ -131,7 +131,7 @@ try {
     } else {
         show_notification();
 
-        if(!isLoggedIn() && !isset($_SESSION['access_url'])) {
+        if (!isLoggedIn() && !isset($_SESSION['access_url'])) {
             $_SESSION["access_url"] = $_SERVER["REQUEST_URI"];
         }
 
@@ -237,7 +237,7 @@ if (isLoggedIn()) {
     if (isAdmin()) {
         $xtpl->menu_add(_("Backups"), '?page=backup', ($_GET["page"] == 'backup'));
 
-        if(NAS_PUBLIC || isAdmin()) {
+        if (NAS_PUBLIC || isAdmin()) {
             $xtpl->menu_add(_("NAS"), '?page=nas', ($_GET["page"] == 'nas'));
         }
 
@@ -249,7 +249,7 @@ if (isLoggedIn()) {
     } else {
         $xtpl->menu_add(_("Backups"), '?page=backup', ($_GET["page"] == 'backup'));
 
-        if(NAS_PUBLIC || isAdmin()) {
+        if (NAS_PUBLIC || isAdmin()) {
             $xtpl->menu_add(_("NAS"), '?page=nas', ($_GET["page"] == 'nas'));
         }
 
