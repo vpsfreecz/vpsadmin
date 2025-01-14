@@ -19,6 +19,16 @@
     };
     version = "0.2.0";
   };
+  bigdecimal = {
+    groups = ["default"];
+    platforms = [];
+    source = {
+      remotes = ["https://rubygems.org"];
+      sha256 = "1k6qzammv9r6b2cw3siasaik18i6wjc5m0gw5nfdc6jj64h79z1g";
+      type = "gem";
+    };
+    version = "3.1.9";
+  };
   bunny = {
     dependencies = ["amq-protocol" "sorted_set"];
     groups = ["default"];
@@ -60,6 +70,26 @@
     };
     version = "3.4.1";
   };
+  drb = {
+    groups = ["default"];
+    platforms = [];
+    source = {
+      remotes = ["https://rubygems.org"];
+      sha256 = "0h5kbj9hvg5hb3c7l425zpds0vb42phvln2knab8nmazg2zp5m79";
+      type = "gem";
+    };
+    version = "2.2.1";
+  };
+  fiddle = {
+    groups = ["default"];
+    platforms = [];
+    source = {
+      remotes = ["https://rubygems.org"];
+      sha256 = "1as92bp6pgkab73kj3mh5d1idjr9wykczz7r9i1pkn82wq4xks3r";
+      type = "gem";
+    };
+    version = "1.1.6";
+  };
   filelock = {
     groups = ["default"];
     platforms = [];
@@ -71,14 +101,15 @@
     version = "1.1.1";
   };
   gli = {
+    dependencies = ["ostruct"];
     groups = ["default"];
     platforms = [];
     source = {
       remotes = ["https://rubygems.org"];
-      sha256 = "14m132y05s90zpy5r464vkydl521jy91wfnkbb9hig04k8p87gdv";
+      sha256 = "11xgf947dls652hllcyaywmaywf3535sy4zy46h546zc3xl186h6";
       type = "gem";
     };
-    version = "2.22.0";
+    version = "2.22.1";
   };
   highline = {
     dependencies = ["reline"];
@@ -86,10 +117,10 @@
     platforms = [];
     source = {
       remotes = ["https://rubygems.org"];
-      sha256 = "1q0f7izfi542sp93gl276spm0xyws1kpqxm0alrwwmz06mz4i0ks";
+      sha256 = "0jmvyhjp2v3iq47la7w6psrxbprnbnmzz0hxxski3vzn356x7jv7";
       type = "gem";
     };
-    version = "3.1.1";
+    version = "3.1.2";
   };
   io-console = {
     groups = ["default"];
@@ -122,26 +153,36 @@
     version = "2.9.1";
   };
   libnodectld = {
-    dependencies = ["bunny" "filelock" "ipaddress" "json" "libosctl" "mail" "mysql2" "osctl" "osctl-exportfs" "prometheus-client" "pry" "pry-remote" "require_all" "rexml"];
+    dependencies = ["base64" "bigdecimal" "bunny" "drb" "filelock" "ipaddress" "json" "libosctl" "mail" "mysql2" "osctl" "osctl-exportfs" "prometheus-client" "pry" "pry-remote" "require_all" "rexml"];
     groups = ["default"];
     platforms = [];
     source = {
       remotes = ["https://rubygems.vpsfree.cz"];
-      sha256 = "182c9vrsbv9c1spqkk72bzwah02zc2fiiwi6icd0wmf1g9pv35j0";
+      sha256 = "039812dr1ns05crwdilffshs8mkvlk8aya2qhhw42vb6d8fgbcqv";
       type = "gem";
     };
-    version = "4.0.0.build20241228213722";
+    version = "4.0.0.build20250114092426";
   };
   libosctl = {
-    dependencies = ["rainbow" "require_all"];
+    dependencies = ["fiddle" "logger" "rainbow" "require_all" "syslog"];
     groups = ["default"];
     platforms = [];
     source = {
       remotes = ["https://rubygems.vpsfree.cz"];
-      sha256 = "0jrv4fc8id89k03a6gwv594fdpb3whz0xajg51c4mx7x7rayqvms";
+      sha256 = "0cazp9f96my1nfnk3yifk2ib33f4qv7pjcqvml3aps2qzrs12l88";
       type = "gem";
     };
-    version = "24.11.0.build20241217185649";
+    version = "24.11.0.build20250114092210";
+  };
+  logger = {
+    groups = ["default"];
+    platforms = [];
+    source = {
+      remotes = ["https://rubygems.org"];
+      sha256 = "0sz584vw17pwrrc5zg6yd8lqcgfpjf4qplq3s7fr0r3505nybky3";
+      type = "gem";
+    };
+    version = "1.6.5";
   };
   mail = {
     dependencies = ["mini_mime" "net-imap" "net-pop" "net-smtp"];
@@ -190,10 +231,10 @@
     platforms = [];
     source = {
       remotes = ["https://rubygems.org"];
-      sha256 = "17ar8jad1idw3dn9i8z70xwnpw35pcyhxnlvb9raz9pf9qxd4rdn";
+      sha256 = "0ak8w6ypw4lba1y1mdmqwvkrh84ps6h9kd7hn029h9k85j9sirmb";
       type = "gem";
     };
-    version = "0.5.4";
+    version = "0.5.5";
   };
   net-pop = {
     dependencies = ["net-protocol"];
@@ -234,21 +275,21 @@
     platforms = [];
     source = {
       remotes = ["https://rubygems.vpsfree.cz"];
-      sha256 = "0cwcprr5w1bryz68fir77i5wn9mnnpjh6cn9cwwh96w21f00dg3p";
+      sha256 = "1z9gaq10sjj0424llbhy5avm0g7f44vs7x7pwrzikzg5fnxgn4zy";
       type = "gem";
     };
-    version = "4.0.0.build20241228213722";
+    version = "4.0.0.build20250114092426";
   };
   osctl = {
-    dependencies = ["curses" "gli" "highline" "ipaddress" "json" "libosctl" "rainbow" "require_all" "ruby-progressbar" "tty-spinner"];
+    dependencies = ["base64" "curses" "gli" "highline" "ipaddress" "json" "libosctl" "rainbow" "require_all" "ruby-progressbar" "tty-spinner"];
     groups = ["default"];
     platforms = [];
     source = {
       remotes = ["https://rubygems.vpsfree.cz"];
-      sha256 = "02njsy7i23qm3ax4xmyiz6kxjz6prhfsr2jlcz9q2rn9m3qf23ak";
+      sha256 = "1xirv0hac5ah0qhn6n1nvkd68myvkd2vgwb1lpzv1r10rg98slh2";
       type = "gem";
     };
-    version = "24.11.0.build20241217185649";
+    version = "24.11.0.build20250114092210";
   };
   osctl-exportfs = {
     dependencies = ["filelock" "gli" "libosctl" "require_all"];
@@ -256,10 +297,20 @@
     platforms = [];
     source = {
       remotes = ["https://rubygems.vpsfree.cz"];
-      sha256 = "1ch9skf75c5v2w190cw9gwsmc6wl8sv96hpqqj8wnap28j4yz1g8";
+      sha256 = "0zj1fjpjnhy25w1124n3gv66w89bwh05qvp6yq6jyqpfpi8nnspi";
       type = "gem";
     };
-    version = "24.11.0.build20241217185649";
+    version = "24.11.0.build20250114092210";
+  };
+  ostruct = {
+    groups = ["default"];
+    platforms = [];
+    source = {
+      remotes = ["https://rubygems.org"];
+      sha256 = "05xqijcf80sza5pnlp1c8whdaay8x5dc13214ngh790zrizgp8q9";
+      type = "gem";
+    };
+    version = "0.6.1";
   };
   prometheus-client = {
     dependencies = ["base64"];
@@ -385,6 +436,16 @@
       type = "gem";
     };
     version = "1.0.3";
+  };
+  syslog = {
+    groups = ["default"];
+    platforms = [];
+    source = {
+      remotes = ["https://rubygems.org"];
+      sha256 = "1agbkwj904p84gb4s7xk4zmpp9a5av2scdvdbg55i86ma42lw7nf";
+      type = "gem";
+    };
+    version = "0.2.0";
   };
   timeout = {
     groups = ["default"];
