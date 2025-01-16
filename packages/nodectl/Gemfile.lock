@@ -68,7 +68,7 @@ GEM
 GEM
   remote: https://rubygems.vpsfree.cz/
   specs:
-    libnodectld (4.0.0.build20250114092426)
+    libnodectld (4.0.0.build20250116161949)
       base64
       bigdecimal
       bunny (~> 2.23.0)
@@ -76,45 +76,45 @@ GEM
       filelock
       ipaddress (~> 0.8.3)
       json
-      libosctl (= 24.11.0.build20250114092210)
+      libosctl (= 24.11.0.build20250116134239)
       mail (~> 2.8.1)
       mysql2 (= 0.5.6)
-      osctl (= 24.11.0.build20250114092210)
-      osctl-exportfs (= 24.11.0.build20250114092210)
+      osctl (= 24.11.0.build20250116134239)
+      osctl-exportfs (= 24.11.0.build20250116134239)
       prometheus-client (~> 4.2.3)
       pry (~> 0.14.2)
       pry-remote
       require_all (~> 2.0.0)
       rexml (~> 3.3)
-    libosctl (24.11.0.build20250114092210)
+    libosctl (24.11.0.build20250116134239)
       fiddle
       logger
       rainbow (~> 3.1.1)
       require_all (~> 2.0.0)
       syslog
-    nodectl (4.0.0.build20250114092426)
+    nodectl (4.0.0.build20250116161949)
       json
-      libnodectld (= 4.0.0.build20250114092426)
-      libosctl (= 24.11.0.build20250114092210)
+      libnodectld (= 4.0.0.build20250116161949)
+      libosctl (= 24.11.0.build20250116134239)
       pry (~> 0.14.2)
       pry-remote
       require_all (~> 2.0.0)
-    osctl (24.11.0.build20250114092210)
+    osctl (24.11.0.build20250116134239)
       base64
       curses
       gli (~> 2.22.0)
       highline (~> 3.1.1)
       ipaddress (~> 0.8.3)
       json
-      libosctl (= 24.11.0.build20250114092210)
+      libosctl (= 24.11.0.build20250116134239)
       rainbow (~> 3.1.1)
       require_all (~> 2.0.0)
       ruby-progressbar (~> 1.13.0)
       tty-spinner (~> 0.9.3)
-    osctl-exportfs (24.11.0.build20250114092210)
+    osctl-exportfs (24.11.0.build20250116134239)
       filelock
       gli (~> 2.22.0)
-      libosctl (= 24.11.0.build20250114092210)
+      libosctl (= 24.11.0.build20250116134239)
       require_all (~> 2.0.0)
 
 PLATFORMS
@@ -122,7 +122,7 @@ PLATFORMS
   x86_64-linux
 
 DEPENDENCIES
-  nodectl (= 4.0.0.build20250114092426)!
+  nodectl (= 4.0.0.build20250116161949)!
 
 BUNDLED WITH
    2.5.22
