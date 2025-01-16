@@ -10,6 +10,12 @@ in {
   config = mkIf cfg.enable {
     vpsadmin.enableOverlay = true;
 
+    # nodectld requires libosctl, which has a native extension that needs
+    # patched Ruby to workaround setns/unshare issue on Ruby >=3.3.
+    nixpkgs.overlays = mkAfter [
+      (import <vpsadminos/os/overlays/ruby.nix>)
+    ];
+
     vpsadmin.nodectld.settings.mode = "minimal";
 
     systemd.tmpfiles.rules = [
