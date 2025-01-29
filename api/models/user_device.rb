@@ -44,11 +44,15 @@ class UserDevice < ApplicationRecord
   def validate_skip_multi_factor_auth_until
     return if skip_multi_factor_auth_until.nil?
 
-    return unless skip_multi_factor_auth_until > (1.month.from_now + 60)
+    # rubocop:disable Style/GuardClause
 
-    errors.add(
-      :skip_multi_factor_auth_until,
-      'must not be more than a month from now'
-    )
+    if skip_multi_factor_auth_until > (1.month.from_now + 60)
+      errors.add(
+        :skip_multi_factor_auth_until,
+        'must not be more than a month from now'
+      )
+    end
+
+    # rubocop:enable Style/GuardClause
   end
 end
