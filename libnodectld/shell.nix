@@ -1,12 +1,12 @@
 let
-  pkgs = import <nixpkgs> {};
+  pkgs = import <nixpkgs> { overlays = (import <vpsadminos/os/overlays>); };
   stdenv = pkgs.stdenv;
 
 in stdenv.mkDerivation rec {
   name = "libnodectld";
 
   buildInputs = with pkgs; [
-    ruby_3_3
+    ruby
     git
     zlib
     openssl
