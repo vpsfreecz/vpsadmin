@@ -389,6 +389,7 @@ if (isLoggedIn()) {
                     if (isAdmin()) {
                         $params['max_tx'] = $_POST['max_tx'] * 1024 * 1024;
                         $params['max_rx'] = $_POST['max_rx'] * 1024 * 1024;
+                        $params['enable'] = isset($_POST['enable']);
                     }
 
                     $api->network_interface($_GET['id'])->update($params);

@@ -14,6 +14,7 @@ module VpsAdmin::API::Resources
       string :mac, label: 'MAC Address'
       integer :max_tx, label: 'Max outgoing data throughput'
       integer :max_rx, label: 'Max incoming data throughput'
+      bool :enable
     end
 
     class Index < HaveAPI::Actions::Default::Index
@@ -87,7 +88,7 @@ module VpsAdmin::API::Resources
       blocking true
 
       input do
-        use :all, include: %i[name max_tx max_rx]
+        use :all, include: %i[name max_tx max_rx enable]
       end
 
       output do

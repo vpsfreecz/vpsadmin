@@ -1875,6 +1875,8 @@ function vps_netif_form($vps, $netif, $netif_accounting)
             1,
             'Mbps'
         );
+
+        $xtpl->form_add_checkbox(_('Enable') . ':', 'enable', '1', post_val('enable', $netif->enable));
     }
 
     $xtpl->form_out(_('Go >>'));

@@ -4,7 +4,7 @@ module Transactions::NetworkInterface
     t_type 2031
     queue :vps
 
-    def params(netif, max_tx: nil, max_rx: nil, vps: nil)
+    def params(netif, name: nil, max_tx: nil, max_rx: nil, vps: nil)
       vps ||= netif.vps
 
       self.vps_id = vps.id
@@ -12,7 +12,7 @@ module Transactions::NetworkInterface
 
       {
         pool_fs: vps.dataset_in_pool.pool.filesystem,
-        veth_name: netif.name,
+        veth_name: name || netif.name,
         max_tx: max_tx && {
           new: max_tx,
           original: netif.max_tx

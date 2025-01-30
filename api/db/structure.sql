@@ -1123,6 +1123,7 @@ CREATE TABLE `network_interfaces` (
   `export_id` int(11) DEFAULT NULL,
   `max_tx` bigint(20) unsigned NOT NULL DEFAULT 0,
   `max_rx` bigint(20) unsigned NOT NULL DEFAULT 0,
+  `enable` tinyint(1) NOT NULL DEFAULT 1,
   PRIMARY KEY (`id`),
   UNIQUE KEY `index_network_interfaces_on_vps_id_and_name` (`vps_id`,`name`),
   UNIQUE KEY `index_network_interfaces_on_mac` (`mac`),
@@ -2358,6 +2359,7 @@ CREATE TABLE `vpses` (
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
 INSERT INTO `schema_migrations` (version) VALUES
+('20250130150827'),
 ('20241210120737'),
 ('20241123161745'),
 ('20241118093252'),

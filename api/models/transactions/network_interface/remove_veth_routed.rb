@@ -15,7 +15,8 @@ module Transactions::Vps
         netif_id: netif.id,
         mac_address: netif.mac,
         max_tx: netif.max_tx,
-        max_rx: netif.max_rx
+        max_rx: netif.max_rx,
+        enable: netif.enable
       }
     end
   end

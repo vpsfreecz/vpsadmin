@@ -30,7 +30,8 @@ module TransactionChains
           name: src_netif.name,
           mac: gen_mac,
           max_tx: src_netif.max_tx,
-          max_rx: src_netif.max_rx
+          max_rx: src_netif.max_rx,
+          enable: src_netif.enable
         )
       end
     end
