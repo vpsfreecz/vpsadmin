@@ -1,4 +1,5 @@
 <?php
+
 /*
     ./pages/page_adminvps.php
 
@@ -26,9 +27,9 @@ function vps_run_redirect_path($veid)
 {
     $current_url = "http" . (isset($_SERVER["HTTPS"]) ? "s" : "") . "://$_SERVER[HTTP_HOST]$_SERVER[REQUEST_URI]";
 
-    if($_SERVER["HTTP_REFERER"] && $_SERVER["HTTP_REFERER"] != $current_url) {
+    if ($_SERVER["HTTP_REFERER"] && $_SERVER["HTTP_REFERER"] != $current_url) {
         return $_SERVER["HTTP_REFERER"];
-    } elseif($_GET["action"] == "info") {
+    } elseif ($_GET["action"] == "info") {
         return '?page=adminvps&action=info&veid=' . $veid;
     } else {
         return '?page=adminvps';
@@ -442,15 +443,15 @@ if (isLoggedIn()) {
             try {
                 csrf_check();
 
-                if($_POST['hostaddr_public_v4']) {
+                if ($_POST['hostaddr_public_v4']) {
                     $api->host_ip_address->assign($_POST['hostaddr_public_v4']);
                     notify_user(_("Addition of IP address planned"), '');
 
-                } elseif($_POST['hostaddr_private_v4']) {
+                } elseif ($_POST['hostaddr_private_v4']) {
                     $api->host_ip_address->assign($_POST['hostaddr_private_v4']);
                     notify_user(_("Addition of private IP address planned"), '');
 
-                } elseif($_POST['hostaddr_public_v6']) {
+                } elseif ($_POST['hostaddr_public_v6']) {
                     $api->host_ip_address->assign($_POST['hostaddr_public_v6']);
                     notify_user(_("Addition of IP address planned"), '');
 
@@ -484,19 +485,19 @@ if (isLoggedIn()) {
             try {
                 csrf_check();
 
-                if($_POST['iproute_public_v4']) {
+                if ($_POST['iproute_public_v4']) {
                     $api->ip_address->assign_with_host_address($_POST['iproute_public_v4'], [
                         'network_interface' => $_GET['netif'],
                     ]);
                     notify_user(_("Addition of IP address planned"), '');
 
-                } elseif($_POST['iproute_private_v4']) {
+                } elseif ($_POST['iproute_private_v4']) {
                     $api->ip_address->assign_with_host_address($_POST['iproute_private_v4'], [
                         'network_interface' => $_GET['netif'],
                     ]);
                     notify_user(_("Addition of private IP address planned"), '');
 
-                } elseif($_POST['iproute_public_v6']) {
+                } elseif ($_POST['iproute_public_v6']) {
                     $api->ip_address->assign_with_host_address($_POST['iproute_public_v6'], [
                         'network_interface' => $_GET['netif'],
                     ]);
@@ -1071,7 +1072,7 @@ if (isLoggedIn()) {
 
         $xtpl->table_td(_("Status") . ':');
 
-        if($vps->maintenance_lock == 'no') {
+        if ($vps->maintenance_lock == 'no') {
             $xtpl->table_td(
                 (($vps->is_running) ?
                     _("running") . ' (<a href="?page=adminvps&action=info&run=restart&veid=' . $vps->id . '&t=' . csrf_token() . '" ' . vps_confirm_action_onclick($vps, 'restart') . '>' . _("restart") . '</a>, <a href="?page=adminvps&action=info&run=stop&veid=' . $vps->id . '&t=' . csrf_token() . '" ' . vps_confirm_action_onclick($vps, 'stop') . '>' . _("stop") . '</a>'
@@ -1196,7 +1197,7 @@ if (isLoggedIn()) {
 
             $xtpl->table_td(_('Password or SSH key') . ':');
 
-            if($_SESSION['vps_password'][$vps->id] ?? false) {
+            if ($_SESSION['vps_password'][$vps->id] ?? false) {
                 $xtpl->table_td("<b>" . $_SESSION['vps_password'][$vps->id] . "</b>");
 
             } else {
@@ -1286,7 +1287,7 @@ if (isLoggedIn()) {
 
             $xtpl->table_td(_("Password") . ':');
 
-            if($_SESSION['vps_password'][$vps->id] ?? false) {
+            if ($_SESSION['vps_password'][$vps->id] ?? false) {
                 $xtpl->table_td("<b>" . $_SESSION['vps_password'][$vps->id] . "</b>");
 
             } else {
@@ -1474,8 +1475,8 @@ if (isLoggedIn()) {
             $vps_resources = ['memory', 'cpu', 'swap'];
             $user_resources = $vps->user->cluster_resource->list(
                 [
-                'environment' => $vps->node->location->environment_id,
-                'meta' => ['includes' => 'environment,cluster_resource']]
+                    'environment' => $vps->node->location->environment_id,
+                    'meta' => ['includes' => 'environment,cluster_resource']]
             );
             $resource_map = [];
 
