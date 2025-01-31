@@ -133,6 +133,13 @@ module TransactionChains
           else
             db_changes[vps][attr] = vps.send(attr)
           end
+
+        when 'enable_network'
+          use_chain(
+            Vps::EnableNetwork,
+            args: [vps, vps.enable_network],
+            kwargs: { reason: opts[:change_reason] }
+          )
         end
       end
 

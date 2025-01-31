@@ -36,6 +36,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
                                  desc: 'Number of seconds the start menu waits for the user'
     bool :allow_admin_modifications, label: 'Allow admin modifications'
     bool :enable_os_template_auto_update, label: 'Enable OS template auto update'
+    bool :enable_network, label: 'Enable network'
   end
 
   params(:dataset) do
@@ -114,7 +115,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
         maintenance_lock_reason object_state expiration_date allow_admin_modifications
         is_running process_count used_memory used_swap used_diskspace
         uptime loadavg1 loadavg5 loadavg15 cpu_user cpu_nice cpu_system cpu_idle cpu_iowait
-        cpu_irq cpu_softirq start_menu_timeout enable_os_template_auto_update
+        cpu_irq cpu_softirq start_menu_timeout enable_os_template_auto_update enable_network
         user_namespace_map implicit_oom_report_rule_hit_count created_at
       ]
       allow
@@ -234,7 +235,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
         maintenance_lock_reason object_state expiration_date allow_admin_modifications
         is_running process_count used_memory used_swap used_diskspace
         uptime loadavg1 loadavg5 loadavg15 cpu_user cpu_nice cpu_system cpu_idle cpu_iowait
-        cpu_irq cpu_softirq start_menu_timeout enable_os_template_auto_update
+        cpu_irq cpu_softirq start_menu_timeout enable_os_template_auto_update enable_network
         user_namespace_map implicit_oom_report_rule_hit_count created_at
       ]
       allow
@@ -353,7 +354,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
         maintenance_lock_reason object_state expiration_date allow_admin_modifications
         is_running process_count used_memory used_swap used_diskspace
         uptime loadavg1 loadavg5 loadavg15 cpu_user cpu_nice cpu_system cpu_idle cpu_iowait
-        cpu_irq cpu_softirq start_menu_timeout enable_os_template_auto_update
+        cpu_irq cpu_softirq start_menu_timeout enable_os_template_auto_update enable_network
         user_namespace_map implicit_oom_report_rule_hit_count created_at
       ]
       allow
@@ -846,7 +847,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
         maintenance_lock_reason object_state expiration_date allow_admin_modifications
         is_running process_count used_memory used_swap used_diskspace
         uptime loadavg1 loadavg5 loadavg15 cpu_user cpu_nice cpu_system cpu_idle cpu_iowait
-        cpu_irq cpu_softirq start_menu_timeout enable_os_template_auto_update
+        cpu_irq cpu_softirq start_menu_timeout enable_os_template_auto_update enable_network
         user_namespace_map implicit_oom_report_rule_hit_count created_at
       ]
       allow

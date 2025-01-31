@@ -516,6 +516,45 @@ if (isLoggedIn()) {
             }
             break;
 
+        case 'disable_network':
+            try {
+                csrf_check();
+
+                if ($_POST['disable_network'] === '1') {
+                    $api->vps->update($_GET['veid'], [
+                        'enable_network' => false,
+                        'change_reason' => $_POST['change_reason'],
+                    ]);
+
+                    notify_user(_('Network disabled'), '');
+                    redirect('?page=adminvps&action=info&veid=' . $_GET['veid']);
+                } else {
+                    $show_info = true;
+                }
+
+            } catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+                $xtpl->perex_format_errors(_('Failed to disable network'), $e->getResponse());
+                $show_info = true;
+            }
+            break;
+
+        case 'enable_network':
+            try {
+                csrf_check();
+
+                $api->vps->update($_GET['veid'], [
+                    'enable_network' => true,
+                ]);
+
+                notify_user(_('Network enabled'), '');
+                redirect('?page=adminvps&action=info&veid=' . $_GET['veid']);
+
+            } catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+                $xtpl->perex_format_errors(_('Failed to enable network'), $e->getResponse());
+                $show_info = true;
+            }
+            break;
+
         case 'nameserver':
             try {
                 csrf_check();
@@ -1181,6 +1220,22 @@ if (isLoggedIn()) {
                 $xtpl->table_out();
             }
 
+            if (!$vps->enable_network) {
+                $xtpl->table_title(
+                    '<img src="template/icons/warning.png" alt="' . _('Warning') . '">&nbsp;' .
+                    _('Network is disabled') .
+                    '&nbsp;<img src="template/icons/warning.png" alt="' . _('Warning') . '">'
+                );
+                $xtpl->table_td(_('
+                    <p>
+                    The VPS has disabled network, most likely due to abuse. Please contact
+                    support to reenable it.
+                    </p>
+                '));
+                $xtpl->table_tr();
+                $xtpl->table_out();
+            }
+
             // SSH
             $xtpl->table_title(_('SSH connection'));
             $xtpl->table_td(
@@ -1345,6 +1400,35 @@ if (isLoggedIn()) {
 
             foreach ($netifs as $netif) {
                 vps_netif_form($vps, $netif, $netif_accounting);
+            }
+
+            // Network toggle
+            if (isAdmin()) {
+                if ($vps->enable_network) {
+                    $xtpl->table_title(_('Disable network'));
+                    $xtpl->form_create('?page=adminvps&action=disable_network&veid=' . $vps->id, 'post');
+                    $xtpl->table_td(
+                        _('This form disables all network interfaces. User is sent an email on change.'),
+                        false,
+                        false,
+                        2
+                    );
+                    $xtpl->table_tr();
+                    $xtpl->form_add_checkbox(_('Disable') . ':', 'disable_network', '1', post_val('disable_network'));
+                    $xtpl->form_add_textarea(_('Reason') . ':', 60, 10, 'change_reason', post_val('change_reason'));
+                    $xtpl->form_out(_('Go >>'));
+                } else {
+                    $xtpl->table_title(_('Enable network'));
+                    $xtpl->form_create('?page=adminvps&action=enable_network&veid=' . $vps->id, 'post');
+                    $xtpl->table_td(
+                        _('This form enables all network interfaces. User is sent an email on change.'),
+                        false,
+                        false,
+                        2
+                    );
+                    $xtpl->table_tr();
+                    $xtpl->form_out(_('Go >>'));
+                }
             }
 
             // DNS Server

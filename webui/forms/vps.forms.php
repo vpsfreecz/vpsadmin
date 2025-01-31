@@ -712,7 +712,11 @@ function vps_list_form()
             $xtpl->table_td('<a href="?page=adminm&section=members&action=edit&id=' . $vps->user_id . '">' . $vps->user->login . '</a>');
             $xtpl->table_td($vps->process_count, false, true);
 
-            if ($vps->in_rescue_mode) {
+            if (!$vps->enable_network) {
+                $xtpl->table_td(
+                    '<a href="?page=adminvps&action=info&veid=' . $vps->id . '"><img src="template/icons/warning.png"  title="' . _("The VPS has disabled network") . '"/> ' . h($vps->hostname) . '</a>'
+                );
+            } elseif ($vps->in_rescue_mode) {
                 $xtpl->table_td(
                     '<a href="?page=adminvps&action=info&veid=' . $vps->id . '"><img src="template/icons/warning.png"  title="' . _("The VPS is in rescue mode") . '"/> ' . h($vps->hostname) . '</a>'
                 );

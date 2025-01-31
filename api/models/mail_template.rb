@@ -365,6 +365,18 @@ class MailTemplate < ApplicationRecord
     dataset: ::Dataset
   }, roles: %i[admin], public: true
 
+  register :vps_network_disabled, vars: {
+    user: ::User,
+    vps: ::Vps,
+    reason: String
+  }, roles: %i[admin], public: true
+
+  register :vps_network_enabled, vars: {
+    user: ::User,
+    vps: ::Vps,
+    reason: String
+  }, roles: %i[admin], public: true
+
   register :vps_incident_report, vars: {
     base_url: [String, 'URL to the web UI'],
     user: ::User,

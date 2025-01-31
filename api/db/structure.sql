@@ -2336,6 +2336,7 @@ CREATE TABLE `vpses` (
   `user_namespace_map_id` int(11) DEFAULT NULL,
   `enable_os_template_auto_update` tinyint(1) NOT NULL DEFAULT 1,
   `implicit_oom_report_rule_hit_count` bigint(20) NOT NULL DEFAULT 0,
+  `enable_network` tinyint(1) NOT NULL DEFAULT 1,
   PRIMARY KEY (`id`),
   KEY `index_vpses_on_dataset_in_pool_id` (`dataset_in_pool_id`) USING BTREE,
   KEY `index_vpses_on_dns_resolver_id` (`dns_resolver_id`) USING BTREE,
@@ -2359,6 +2360,7 @@ CREATE TABLE `vpses` (
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
 INSERT INTO `schema_migrations` (version) VALUES
+('20250131131838'),
 ('20250130150827'),
 ('20241210120737'),
 ('20241123161745'),

@@ -66,6 +66,7 @@ module TransactionChains
         cgroup_version: vps.cgroup_version,
         allow_admin_modifications: vps.allow_admin_modifications,
         enable_os_template_auto_update: vps.enable_os_template_auto_update,
+        enable_network: vps.enable_network,
         confirmed: ::Vps.confirmed(:confirm_create)
       )
 
