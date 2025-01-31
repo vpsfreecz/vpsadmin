@@ -46,7 +46,7 @@ class DnsRecord < ApplicationRecord
   # rubocop:disable Style/GuardClause
 
   def check_name
-    if !%w[* @].include?(name) && /\A(?=.{1,253}\z)(?!-)(?!.*-\.)(?!.*\.\.)([*a-zA-Z0-9\-]{0,63}(?<!-)\.?)+\z/ !~ name
+    if !%w[* @].include?(name) && /\A(?=.{1,253}\z)(?!-)(?!.*-\.)(?!.*\.\.)([*a-zA-Z0-9\-_]{0,63}(?<!-)\.?)+\z/ !~ name
       errors.add(:name, 'invalid record name; it must be a domain name, * or @')
     end
   end
