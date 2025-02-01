@@ -11,10 +11,13 @@ module NodeCtl
       :subject,
       :codename,
       :cpu_limit,
+      :vps_action,
       :admin_id,
       :message,
       keyword_init: true
     )
+
+    VPS_ACTIONS = %w[none stop suspend disable_network].freeze
 
     class ParseError < ::StandardError; end
 
@@ -213,6 +216,9 @@ module NodeCtl
           Subject:
           # Codename: malware
           # CPU-Limit: 200
+          # VPS-Action: stop
+          # VPS-Action: suspend
+          # VPS-Action: disable_network
           #{admin_headers}
 
           ### Incident message goes here
@@ -264,6 +270,9 @@ module NodeCtl
           Subject:
           # Codename: malware
           # CPU-Limit: 200
+          # VPS-Action: stop
+          # VPS-Action: suspend
+          # VPS-Action: disable_network
           #{admin_headers}
 
           ### Incident message goes here
@@ -330,7 +339,7 @@ module NodeCtl
     end
 
     def parse_file(path)
-      incident = Incident.new(subject: '', codename: nil, cpu_limit: nil, message: '')
+      incident = Incident.new(subject: '', codename: nil, cpu_limit: nil, vps_action: 'none', message: '')
       in_header = true
 
       File.open(path) do |f|
@@ -349,6 +358,8 @@ module NodeCtl
               incident.codename = header_value(stripped)
             elsif downcase.start_with?('cpu-limit:')
               incident.cpu_limit = header_value(stripped).to_i
+            elsif downcase.start_with?('vps-action:')
+              incident.vps_action = header_value(stripped)
             elsif downcase.start_with?('admin:')
               incident.admin_id = header_value(stripped).split.first.to_i
             else
@@ -364,6 +375,8 @@ module NodeCtl
         raise ParseError, 'Missing subject'
       elsif incident.cpu_limit && incident.cpu_limit <= 0
         raise ParseError, 'Invalid CPU limit value'
+      elsif !VPS_ACTIONS.include?(incident.vps_action)
+        raise ParseError, "Invalid VPS action, possible values are #{VPS_ACTIONS.join(', ')}"
       elsif incident.admin_id && incident.admin_id <= 0
         raise ParseError, 'Invalid Admin value'
       end
@@ -397,11 +410,12 @@ module NodeCtl
             text = ?,
             codename = ?,
             cpu_limit = ?,
+            vps_action = ?,
             detected_at = ?,
             created_at = ?,
             updated_at = ?,
             reported_at = NULL',
-          user_id, inc.vps_id, inc.admin_id, inc.subject, inc.message, inc.codename, inc.cpu_limit,
+          user_id, inc.vps_id, inc.admin_id, inc.subject, inc.message, inc.codename, inc.cpu_limit, VPS_ACTIONS.index(inc.vps_action),
           t, t, t
         )
 

@@ -679,6 +679,7 @@ CREATE TABLE `incident_reports` (
   `updated_at` datetime(6) NOT NULL,
   `reported_at` datetime(6) DEFAULT NULL,
   `cpu_limit` int(11) DEFAULT NULL,
+  `vps_action` int(11) NOT NULL DEFAULT 0,
   PRIMARY KEY (`id`),
   KEY `index_incident_reports_on_user_id` (`user_id`),
   KEY `index_incident_reports_on_vps_id` (`vps_id`),
@@ -2360,6 +2361,7 @@ CREATE TABLE `vpses` (
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
 INSERT INTO `schema_migrations` (version) VALUES
+('20250131161427'),
 ('20250131131838'),
 ('20250130150827'),
 ('20241210120737'),

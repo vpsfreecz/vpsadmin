@@ -1,6 +1,10 @@
+require_relative 'utils'
+
 module TransactionChains
   class IncidentReport::Process < ::TransactionChain
     label 'Incident report'
+
+    include IncidentReport::Utils
 
     def link_chain(incidents)
       concerns(:affect, *incidents.map { |inc| [inc.vps.class.name, inc.vps_id] })
@@ -12,17 +16,7 @@ module TransactionChains
       now = Time.now
 
       incidents.each do |incident|
-        if incident.cpu_limit
-          use_chain(
-            Vps::Update,
-            args: [
-              incident.vps,
-              { cpu_limit: incident.cpu_limit }
-            ],
-            kwargs: { admin: incident.filed_by }
-          )
-        end
-
+        process_incident(incident)
         incident.update!(reported_at: now)
       end
     end

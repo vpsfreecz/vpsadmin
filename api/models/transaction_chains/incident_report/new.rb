@@ -1,6 +1,10 @@
+require_relative 'utils'
+
 module TransactionChains
   class IncidentReport::New < ::TransactionChain
     label 'Incident report'
+
+    include IncidentReport::Utils
 
     def link_chain(incident)
       concerns(:affect, [incident.vps.class.name, incident.vps_id])
@@ -9,16 +13,7 @@ module TransactionChains
                   VpsAdmin::API::IncidentReports::Result.new(incidents: [incident])
                 ])
 
-      return unless incident.cpu_limit
-
-      use_chain(
-        Vps::Update,
-        args: [
-          incident.vps,
-          { cpu_limit: incident.cpu_limit }
-        ],
-        kwargs: { admin: incident.filed_by }
-      )
+      process_incident(incident)
     end
   end
 end

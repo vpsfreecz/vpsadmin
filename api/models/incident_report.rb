@@ -5,6 +5,8 @@ class IncidentReport < ApplicationRecord
   belongs_to :filed_by, class_name: 'User'
   belongs_to :mailbox
 
+  enum :vps_action, %i[none stop suspend disable_network], suffix: :action
+
   validates :subject, :text, presence: true, allow_blank: false
 
   before_create :set_reported_at

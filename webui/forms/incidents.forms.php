@@ -192,6 +192,10 @@ function incident_show($id)
     $xtpl->table_td($inc->cpu_limit ? ($inc->cpu_limit . '&nbsp;%') : '-');
     $xtpl->table_tr();
 
+    $xtpl->table_td(_('VPS action') . ':');
+    $xtpl->table_td($inc->vps_action);
+    $xtpl->table_tr();
+
     $xtpl->table_td(_('Text') . ':');
     $xtpl->table_td('<pre><code>' . h($inc->text) . '</code></pre>');
     $xtpl->table_tr();
@@ -251,6 +255,8 @@ function incident_new($vps_id)
         25,
         '%'
     );
+
+    api_param_to_form('vps_action', $input->vps_action, post_val('vps_action'));
 
     $xtpl->form_out(_('Report'));
 }
