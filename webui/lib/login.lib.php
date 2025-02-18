@@ -210,6 +210,25 @@ function getSelfUri()
     return $ret;
 }
 
+function getWebAuthnNewRegistrationUrl()
+{
+    global $config;
+
+    $url = $config->get('core', 'auth_url');
+
+    if (!$url) {
+        $url = $config->get('core', 'api_url');
+    }
+
+    if (!str_ends_with($url, '/')) {
+        $url .= '/';
+    }
+
+    $url .= 'webauthn/registration/new';
+
+    return $url;
+}
+
 function getAuthenticationToken()
 {
     global $api;

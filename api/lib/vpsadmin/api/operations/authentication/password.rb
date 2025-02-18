@@ -38,17 +38,17 @@ module VpsAdmin::API
           end
         end
 
-        require_totp = require_totp?(user)
+        require_mfa = require_mfa?(user)
 
         ret = Result.new(
           user,
           authenticated,
-          !require_totp,
-          !require_totp && user.password_reset
+          !require_mfa,
+          !require_mfa && user.password_reset
         )
 
-        if require_totp && multi_factor
-          ret.token = create_auth_token('totp', user, request)
+        if require_mfa && multi_factor
+          ret.token = create_auth_token('mfa', user, request)
         elsif user.password_reset && multi_factor
           ret.token = create_auth_token('reset_password', user, request)
         end
@@ -66,8 +66,16 @@ module VpsAdmin::API
 
     protected
 
+    def require_mfa?(user)
+      require_totp?(user) || require_webauthn?(user)
+    end
+
     def require_totp?(user)
       user.user_totp_devices.where(enabled: true).any?
+    end
+
+    def require_webauthn?(user)
+      user.webauthn_credentials.where(enabled: true).any?
     end
 
     def create_auth_token(purpose, user, request)

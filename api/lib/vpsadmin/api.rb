@@ -33,6 +33,11 @@ module VpsAdmin
     def self.default
       initialize
 
+      WebAuthn.configure do |config|
+        config.origin = (::SysConfig.get(:core, :auth_url) || ::SysConfig.get(:core, :api_url)).chomp('/')
+        config.rp_name = ::SysConfig.get(:core, :webauthn_rp_name)
+      end
+
       api = HaveAPI::Server.new
       api.use_version(:all)
       api.action_state = ActionState
@@ -46,6 +51,24 @@ module VpsAdmin
 
           m.compute
           [200, { 'content-type' => 'text/plain' }, m.render]
+        end
+
+        sinatra.get '/webauthn/registration/new' do
+          unless authenticated?(settings.api_server.default_version)
+            if params[:redirect_uri]
+              uri = URI(params[:redirect_uri])
+              query_params = URI.decode_www_form(uri.query || '')
+              query_params << %w[registerStatus 0]
+              query_params << ['registerMessage', 'Access denied, please contact support.']
+              uri.query = URI.encode_www_form(query_params)
+
+              redirect uri.to_s
+            else
+              halt 401, 'Access denied'
+            end
+          end
+
+          VpsAdmin::API::Authentication::WebauthnRegister.run(current_user, params)
         end
 
         ret

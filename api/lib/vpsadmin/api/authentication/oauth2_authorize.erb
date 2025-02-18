@@ -37,6 +37,117 @@
           }
         });
       }
+
+      function bufferDecode(value) {
+        return Uint8Array.from(atob(value.replace(/_/g, '/').replace(/-/g, '+')), c => c.charCodeAt(0));
+      }
+
+      function bufferEncode(value) {
+        return btoa(String.fromCharCode.apply(null, new Uint8Array(value)))
+          .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+      }
+
+      async function webAuthn() {
+        event.preventDefault();
+
+        const button = document.getElementById('webauthnBtn');
+        button.disabled = true;
+        button.value = "Signing in with a passkey...";
+
+        const resp1 = await fetch('/webauthn/authentication/begin', {
+          method: 'POST',
+          body: JSON.stringify({
+            authentication: {
+              auth_token: '<%= auth_token %>'
+            }
+          })
+        });
+        const resp1Json = await resp1.json();
+        const options = resp1Json.response.authentication.options;
+
+        options.challenge = bufferDecode(options.challenge);
+
+        if (options.allowCredentials) {
+          for (let i = 0; i < options.allowCredentials.length; i++) {
+            options.allowCredentials[i].id = bufferDecode(options.allowCredentials[i].id);
+          }
+        }
+
+        var assertion;
+
+        try {
+          assertion = await navigator.credentials.get({ publicKey: options });
+        } catch (error) {
+          reportAlert('danger', 'Failed to authenticate: ' + error.message);
+          button.disabled = false;
+          button.value = "<% if mfa_methods.size > 1 %>Use a passkey instead<% else %>Log in with a passkey<% end %>";
+          return;
+        }
+
+        const rawId = bufferEncode(assertion.rawId);
+        const authenticatorData = bufferEncode(assertion.response.authenticatorData);
+        const clientDataJSON = bufferEncode(assertion.response.clientDataJSON);
+        const signature = bufferEncode(assertion.response.signature);
+        const userHandle = assertion.response.userHandle
+          ? bufferEncode(assertion.response.userHandle)
+          : null;
+
+        const data = {
+          authentication: {
+            challenge_token: resp1Json.response.authentication.challenge_token,
+            auth_token: '<%= auth_token %>',
+            public_key_credential: {
+              id: assertion.id,
+              rawId: rawId,
+              type: assertion.type,
+              response: {
+                authenticatorData,
+                clientDataJSON,
+                signature,
+                userHandle
+              }
+            }
+          }
+        };
+
+        const resp2 = await fetch('/webauthn/authentication/finish', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data)
+        });
+
+        if (resp2.ok) {
+          const resp2Json = await resp2.json();
+
+          if (resp2Json.status) {
+            reportAlert('success', 'Authenticated using passkey.');
+
+            document.getElementById('webauthnInput').value = "1";
+            document.getElementById('loginForm').submit();
+
+          } else {
+            reportAlert('danger', 'Failed to authenticate: ' + resp2Json.message);
+          }
+        } else {
+          const errText = await resp2.text();
+          reportAlert('danger', 'Failed to register passkey: ' + errText);
+        }
+      }
+
+      function reportAlert (klass, message) {
+        document.getElementById('alert-area').innerHTML = `
+          <div class="alert alert-${klass}" role="alert">
+            ${message}
+          </div>
+        `;
+      }
+
+      document.addEventListener('DOMContentLoaded', async function () {
+        <% if mfa_methods == [:webauthn] -%>
+          webAuthn();
+        <% end -%>
+      });
+
     </script>
   </head>
   <body>
@@ -49,18 +160,20 @@
               <h4 class="card-title text-center mb-4 mt-1">Sign in using vpsAdmin</h4>
               <h5 class="card-subtitle text-center text-muted mb-2"><%= client.name %></h5>
               <hr>
-              <% if step == :reset_password -%>
-                <div class="alert alert-primary" role="alert">
-                  Please set a new password.
-                </div>
-              <% end -%>
-              <% (auth_result ? auth_result.errors : []).each do |error| -%>
-                <div class="alert alert-danger" role="alert">
-                  Error: <%= Rack::Utils.escape_html(error) %>
-                </div>
-              <% end -%>
+              <div id="alert-area">
+                <% if step == :reset_password -%>
+                  <div class="alert alert-primary" role="alert">
+                    Please set a new password.
+                  </div>
+                <% end -%>
+                <% (auth_result ? auth_result.errors : []).each do |error| -%>
+                  <div class="alert alert-danger" role="alert">
+                    Error: <%= Rack::Utils.escape_html(error) %>
+                  </div>
+                <% end -%>
+              </div>
 
-              <form action="<%= authorize_path %>" method="post" onsubmit="onLoginFormSubmit();">
+              <form action="<%= authorize_path %>" method="post" onsubmit="onLoginFormSubmit();" id="loginForm">
                 <% oauth2_params(oauth2_request).each do |k, v| -%>
                   <input type="hidden" name="<%= k %>" value="<%= Rack::Utils.escape_html(v) %>">
                 <% end -%>
@@ -68,6 +181,8 @@
                 <% if auth_token -%>
                   <input type="hidden" name="auth_token" value="<%= auth_token %>">
                 <% end -%>
+
+                <input type="hidden" name="webauthn" id="webauthnInput" value="0">
 
                 <% if step == :credentials -%>
                   <div class="form-group">
@@ -91,32 +206,40 @@
                     </div>
                   </div>
 
-                <% elsif step == :totp -%>
                   <div class="form-group">
-                    <div class="input-group">
-                      <div class="input-group-prepend">
-                        <span class="input-group-text"> <i class="fa fa-lock"></i> </span>
-                      </div>
-                      <input type="text" class="form-control" name="totp_code" id="totp_code" placeholder="TOTP code" autofocus>
-                    </div>
+                    <input type="submit" class="btn btn-primary btn-block" name="login_credentials" id="login" value="Log in">
                   </div>
 
+                <% elsif step == :mfa -%>
                   <div class="form-group">
                     <select class="form-control" name="next_multi_factor_auth">
-                      <option value="require" <%= next_multi_factor_auth == 'require' ? 'selected' : '' %>>
-                        Require TOTP code on this device
-                      </option>
-                      <option value="day" <%= next_multi_factor_auth == 'day' ? 'selected' : '' %>>
-                        Ask again in a day
-                      </option>
-                      <option value="week" <%= next_multi_factor_auth == 'week' ? 'selected' : '' %>>
-                        Ask again in a week
-                      </option>
-                      <option value="month" <%= next_multi_factor_auth == 'month' ? 'selected' : '' %>>
-                        Ask again in a month
-                      </option>
+                      <option value="require" <%= next_multi_factor_auth == 'require' ? 'selected' : '' %>>Require multi-factor authentication on this device</option>
+                      <option value="day" <%= next_multi_factor_auth == 'day' ? 'selected' : '' %>>Ask again in a day</option>
+                      <option value="week" <%= next_multi_factor_auth == 'week' ? 'selected' : '' %>>Ask again in a week</option>
+                      <option value="month" <%= next_multi_factor_auth == 'month' ? 'selected' : '' %>>Ask again in a month</option>
                     </select>
                   </div>
+
+                  <% if mfa_methods.include?(:totp) -%>
+                    <div class="form-group">
+                      <div class="input-group">
+                        <div class="input-group-prepend">
+                          <span class="input-group-text"> <i class="fa fa-lock"></i> </span>
+                        </div>
+                        <input type="text" class="form-control" name="totp_code" id="totp_code" placeholder="TOTP code" autofocus>
+                      </div>
+                    </div>
+
+                    <div class="form-group">
+                      <input type="submit" class="btn btn-primary btn-block" name="login_totp" id="login" value="Log in with TOTP">
+                    </div>
+                  <% end -%>
+
+                  <% if mfa_methods.include?(:webauthn) -%>
+                    <div class="form-group">
+                      <input type="submit" class="btn btn-secondary btn-block" name="login_webauthn" id="webauthnBtn" value="<% if mfa_methods.size > 1 %>Use a passkey instead<% else %>Log in with a passkey<% end %>" onclick="webAuthn(event);">
+                    </div>
+                  <% end -%>
 
                 <% elsif step == :reset_password -%>
                   <div class="form-group">
@@ -142,23 +265,23 @@
                       </div>
                     </div>
                   </div>
-                <% end -%>
 
-                <div class="form-group">
-                  <input type="submit" class="btn btn-primary btn-block" name="login" id="login" value="Log in">
-                </div>
+                  <div class="form-group">
+                    <input type="submit" class="btn btn-primary btn-block" name="login_reset_password" id="login" value="Log in">
+                  </div>
+                <% end -%>
 
                 <div class="form-group text-center">
                   <input type="submit" class="btn btn-outline-secondary btn-sm" name="cancel" value="Cancel">
                 </div>
               </form>
-              <% if %i(credentials totp).include?(step) -%>
+              <% if step == :credentials || (step == :mfa && mfa_methods.include?(:totp)) -%>
                 <hr>
                 <p class="text-muted text-center">
                   <small>
                     <% if step == :credentials -%>
                       Forgot password? Contact <a href="mailto:<%= support_mail %>">support</a>.
-                    <% elsif step == :totp -%>
+                    <% elsif step == :mfa && mfa_methods.include?(:totp) -%>
                       Lost your authentication device? Try recovery code or contact <a href="mailto:<%= support_mail %>">support</a>.
                     <% end -%>
                   </small>

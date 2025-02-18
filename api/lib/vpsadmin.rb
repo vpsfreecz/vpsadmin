@@ -5,6 +5,7 @@ require 'haveapi'
 require 'ancestry'
 require 'ipaddress'
 require 'digest/sha1'
+require 'webauthn'
 
 Thread.abort_on_exception = true
 

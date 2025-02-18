@@ -29,6 +29,8 @@ class User < ApplicationRecord
   has_many :user_devices
   has_many :oauth2_authorizations
   has_many :single_sign_ons
+  has_many :webauthn_credentials
+  has_many :webauthn_challenges
   has_many :user_failed_logins
   has_many :metrics_access_tokens
   has_many :dns_zones

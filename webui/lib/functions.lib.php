@@ -1,4 +1,5 @@
 <?php
+
 /*
     ./lib/functions.lib.php
 
@@ -239,7 +240,7 @@ function show_notification()
 {
     global $xtpl;
 
-    if(!isset($_SESSION["notification"])) {
+    if (!isset($_SESSION["notification"])) {
         return;
     }
 
@@ -260,7 +261,7 @@ function format_duration($interval)
     $m = floor($interval / 60) % 60;
     $s = floor($interval) % 60;
 
-    if($d >= 1) {
+    if ($d >= 1) {
         return sprintf("%d days, %02d:%02d:%02d", floor($d), $h, $m, $s);
     } else {
         return sprintf("%02d:%02d:%02d", $h, $m, $s);
@@ -289,7 +290,7 @@ function random_string($len)
     $str = "";
     $chars = array_merge(range(0, 9), range('a', 'z'), range('A', 'Z'));
 
-    for($i = 0; $i < $len; $i++) {
+    for ($i = 0; $i < $len; $i++) {
         $str .= $chars[array_rand($chars)];
     }
 
@@ -307,8 +308,8 @@ function format_data_rate($n, $suffix)
     $ret = "";
     $selected = 0;
 
-    foreach($units as $threshold => $unit) {
-        if($n > $threshold) {
+    foreach ($units as $threshold => $unit) {
+        if ($n > $threshold) {
             return round(($n / $threshold), 2) . "$unit$suffix";
         }
     }
@@ -433,7 +434,7 @@ function api_param_to_form_pure($name, $desc, $v = null, $label_callback = null,
                         $choices = $desc_choices;
 
                     } else {
-                        foreach($desc_choices as $val) {
+                        foreach ($desc_choices as $val) {
                             $choices[$val] = $val;
                         }
                     }
@@ -934,7 +935,7 @@ function cgroup_version($v)
         return '-';
     }
 
-    switch($v) {
+    switch ($v) {
         case 'cgroup_v1':
             return 'v1';
         case 'cgroup_v2':
@@ -1098,10 +1099,10 @@ function format_errors($response)
 
     $body .= '<br>';
 
-    if(count((array) $errors) > 0) {
+    if (count((array) $errors) > 0) {
         $body .= '<ul>';
 
-        foreach($errors as $param => $err) {
+        foreach ($errors as $param => $err) {
             $body .= '<li>' . $param . ': ' . implode(', ', $err) . '</li>';
         }
 
@@ -1116,6 +1117,17 @@ function hasTotpEnabled($user)
     global $api;
 
     return $user->totp_device->list([
+        'enabled' => true,
+        'limit' => 0,
+        'meta' => ['count' => true],
+    ])->getTotalCount() > 0;
+}
+
+function hasWebAuthnEnabled($user)
+{
+    global $api;
+
+    return $user->webauthn_credential->list([
         'enabled' => true,
         'limit' => 0,
         'meta' => ['count' => true],

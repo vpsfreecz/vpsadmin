@@ -238,6 +238,13 @@ let
         return = mkIf (isUnderMaintenance app name instance) "503";
       };
 
+      "/webauthn" = {
+        proxyPass = mkIf (!isUnderMaintenance app name instance)
+          "http://${upstreamName app name}";
+
+        return = mkIf (isUnderMaintenance app name instance) "503";
+      };
+
       "@maintenance" = {
         root = pkgs.runCommand "${app}-maintenance-root" {} ''
           mkdir $out

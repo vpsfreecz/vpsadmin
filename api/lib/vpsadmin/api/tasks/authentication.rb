@@ -32,6 +32,26 @@ module VpsAdmin::API::Tasks
 
         auth.destroy!
       end
+
+      ::WebauthnChallenge
+        .joins(:token)
+        .where('tokens.valid_to < ?', Time.now)
+        .each do |challenge|
+        puts "WebAuthn challenge ##{challenge.id} valid_to=#{challenge.valid_to}"
+        next if ENV['EXECUTE'] != 'yes'
+
+        ActiveRecord::Base.transaction do
+          if challenge.challenge_type == 'authentication'
+            VpsAdmin::API::Operations::User::IncompleteLogin.run(
+              challenge,
+              :webauthn,
+              'authentication challenge expired'
+            )
+          end
+
+          challenge.destroy!
+        end
+      end
     end
 
     # Email users about failed login attempts

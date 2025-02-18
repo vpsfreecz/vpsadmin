@@ -37,6 +37,7 @@ CREATE TABLE `auth_tokens` (
   `user_agent_id` int(11) DEFAULT NULL,
   `client_version` varchar(255) DEFAULT NULL,
   `purpose` int(11) NOT NULL DEFAULT 0,
+  `fulfilled` tinyint(1) NOT NULL DEFAULT 0,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -1718,7 +1719,7 @@ CREATE TABLE `sysconfig` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `index_sysconfig_on_category_and_name` (`category`,`name`) USING BTREE,
   KEY `index_sysconfig_on_category` (`category`) USING BTREE
-) ENGINE=InnoDB AUTO_INCREMENT=38 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=39 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `tokens`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -2109,6 +2110,7 @@ CREATE TABLE `users` (
   `enable_token_auth` tinyint(1) NOT NULL DEFAULT 1,
   `enable_oauth2_auth` tinyint(1) NOT NULL DEFAULT 1,
   `enable_new_login_notification` tinyint(1) NOT NULL DEFAULT 1,
+  `webauthn_id` varchar(255) DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `index_users_on_login` (`login`) USING BTREE,
   KEY `index_users_on_object_state` (`object_state`) USING BTREE
@@ -2350,6 +2352,47 @@ CREATE TABLE `vpses` (
   KEY `index_vpses_on_user_namespace_map_id` (`user_namespace_map_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `webauthn_challenges`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `webauthn_challenges` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `user_id` bigint(20) NOT NULL,
+  `token_id` bigint(20) NOT NULL,
+  `challenge_type` int(11) NOT NULL,
+  `challenge` varchar(255) NOT NULL,
+  `api_ip_addr` varchar(46) NOT NULL,
+  `api_ip_ptr` varchar(255) NOT NULL,
+  `client_ip_addr` varchar(46) NOT NULL,
+  `client_ip_ptr` varchar(255) NOT NULL,
+  `user_agent_id` int(11) NOT NULL,
+  `client_version` varchar(255) NOT NULL,
+  `created_at` datetime(6) NOT NULL,
+  `updated_at` datetime(6) NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `index_webauthn_challenges_on_user_id` (`user_id`),
+  KEY `index_webauthn_challenges_on_token_id` (`token_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `webauthn_credentials`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `webauthn_credentials` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `user_id` bigint(20) NOT NULL,
+  `label` varchar(255) NOT NULL,
+  `external_id` varchar(255) NOT NULL,
+  `public_key` varchar(255) NOT NULL,
+  `sign_count` bigint(20) NOT NULL DEFAULT 0,
+  `enabled` tinyint(1) NOT NULL DEFAULT 1,
+  `last_use_at` datetime(6) DEFAULT NULL,
+  `created_at` datetime(6) NOT NULL,
+  `updated_at` datetime(6) NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `index_webauthn_credentials_on_external_id` (`external_id`),
+  KEY `index_webauthn_credentials_on_user_id` (`user_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
@@ -2361,6 +2404,7 @@ CREATE TABLE `vpses` (
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
 INSERT INTO `schema_migrations` (version) VALUES
+('20250213133759'),
 ('20250131161427'),
 ('20250131131838'),
 ('20250130150827'),

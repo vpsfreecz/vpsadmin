@@ -41,7 +41,7 @@ module VpsAdmin::API
     def run(token, code)
       auth_token = ::AuthToken.joins(:token).includes(:token, :user).find_by(
         tokens: { token: },
-        purpose: 'totp'
+        purpose: 'mfa'
       )
 
       raise Exceptions::AuthenticationError, 'invalid token' if auth_token.nil? || !auth_token.token_valid?

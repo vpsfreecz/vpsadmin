@@ -102,7 +102,9 @@ module VpsAdmin::API
 
     # @return [AuthResult, nil]
     def handle_post_authorize(sinatra_handler:, sinatra_request:, sinatra_params:, oauth2_request:, oauth2_response:, client:)
-      unless sinatra_params[:login]
+      submits = %i[login_credentials login_totp login_webauthn login_reset_password]
+
+      if submits.none? { |v| sinatra_params[v] } && sinatra_params[:webauthn] != '1'
         return AuthResult.new(cancel: true)
       end
 
@@ -121,6 +123,9 @@ module VpsAdmin::API
         auth_result =
           if sinatra_params[:user] && sinatra_params[:password]
             auth_credentials(**auth_args)
+
+          elsif sinatra_params[:auth_token] && sinatra_params[:webauthn] == '1'
+            auth_webauthn(**auth_args)
 
           elsif sinatra_params[:auth_token] && sinatra_params[:totp_code]
             auth_totp(**auth_args)
@@ -341,12 +346,19 @@ module VpsAdmin::API
       next_multi_factor_auth = sinatra_params[:next_multi_factor_auth] || find_next_multi_factor_auth(devices)
       step =
         if auth_token && !auth_result.reset_password
-          :totp
+          :mfa
         elsif auth_token && auth_result.reset_password
           :reset_password
         else
           :credentials
         end
+      mfa_methods = []
+
+      if auth_token && step == :mfa
+        mfa_methods << :totp if auth_token.user.user_totp_devices.where(enabled: true).any?
+        mfa_methods << :webauthn if auth_token.user.webauthn_credentials.where(enabled: true).any?
+      end
+
       support_mail = ::SysConfig.get(:core, :support_mail)
 
       @template ||= ERB.new(
@@ -461,6 +473,50 @@ module VpsAdmin::API
         )
 
         ret.errors << 'invalid TOTP code'
+      end
+
+      ret
+    end
+
+    def auth_webauthn(sinatra_request:, sinatra_params:, oauth2_request:, oauth2_response:, client:, devices:)
+      auth_token = ::AuthToken.joins(:token).includes(:token, :user).find_by(
+        tokens: { token: sinatra_params[:auth_token] },
+        purpose: 'mfa',
+        fulfilled: true
+      )
+
+      raise Exceptions::AuthenticationError, 'invalid token' if auth_token.nil? || !auth_token.token_valid?
+
+      reset_password = auth_token.user.password_reset
+
+      if reset_password
+        auth_token.update!(purpose: 'reset_password', fulfilled: false)
+      else
+        auth_token.destroy!
+      end
+
+      ret = AuthResult.new(
+        authenticated: true,
+        complete: !reset_password,
+        reset_password: reset_password,
+        auth_token:,
+        user: auth_token.user
+      )
+
+      unless reset_password
+        skip_multi_factor_auth_until, last_next_multi_factor_auth = parse_next_multi_factor_auth(sinatra_params)
+
+        create_authorization(
+          auth_result: ret,
+          sinatra_request:,
+          oauth2_request:,
+          oauth2_response:,
+          client:,
+          devices:,
+          skip_multi_factor_auth_until:,
+          last_next_multi_factor_auth:,
+          set_multi_factor_auth_until: true
+        )
       end
 
       ret

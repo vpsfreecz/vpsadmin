@@ -878,6 +878,132 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
     end
   end
 
+  class WebauthnCredential < HaveAPI::Resource
+    desc 'Manage WebAuthn credentials'
+    route '{user_id}/webauthn_credentials'
+    model ::WebauthnCredential
+
+    params(:all) do
+      id :id
+      string :label
+      bool :enabled
+      integer :sign_count
+      datetime :last_use_at
+      datetime :created_at
+      datetime :updated_at
+    end
+
+    class Index < HaveAPI::Actions::Default::Index
+      desc 'List configured WebAuthn credentials'
+
+      input do
+        use :all, include: %i[enabled]
+      end
+
+      output(:object_list) do
+        use :all
+      end
+
+      authorize do |_u|
+        allow
+      end
+
+      def query
+        error!('access denied') if current_user.role != :admin && current_user.id != params[:user_id].to_i
+
+        q = self.class.model.where(user_id: params[:user_id])
+        q = q.where(enabled: input[:enabled]) if input.has_key?(:enabled)
+        q
+      end
+
+      def count
+        query.count
+      end
+
+      def exec
+        with_pagination(query)
+      end
+    end
+
+    class Show < HaveAPI::Actions::Default::Show
+      desc 'Show WebAuthn credential'
+      resolve ->(cred) { [cred.user_id, cred.id] }
+
+      output do
+        use :all
+      end
+
+      authorize do |_u|
+        allow
+      end
+
+      def prepare
+        error!('access denied') if current_user.role != :admin && current_user.id != params[:user_id].to_i
+
+        @cred = self.class.model.find_by!(
+          user_id: params[:user_id],
+          id: params[:webauthn_credential_id]
+        )
+      end
+
+      def exec
+        @cred
+      end
+    end
+
+    class Update < HaveAPI::Actions::Default::Update
+      desc 'Update WebAuthn credential'
+
+      input do
+        use :all, include: %i[label enabled]
+      end
+
+      output do
+        use :all
+      end
+
+      authorize do |_u|
+        allow
+      end
+
+      def exec
+        if current_user.role != :admin && current_user.id != params[:user_id].to_i
+          error!('access denied')
+        elsif input.empty?
+          error!('nothing to do')
+        end
+
+        self.class.model.find_by!(
+          user_id: params[:user_id],
+          id: params[:webauthn_credential_id]
+        ).update!(input)
+      rescue VpsAdmin::API::Exceptions::OperationError => e
+        error!(e.message)
+      end
+    end
+
+    class Delete < HaveAPI::Actions::Default::Delete
+      desc 'Delete WebAuthn credential'
+
+      authorize do |_u|
+        allow
+      end
+
+      def exec
+        error!('access denied') if current_user.role != :admin && current_user.id != params[:user_id].to_i
+
+        self.class.model.find_by!(
+          user_id: params[:user_id],
+          id: params[:webauthn_credential_id]
+        ).destroy!
+
+        ok!
+      rescue VpsAdmin::API::Exceptions::OperationError => e
+        error!(e.message)
+      end
+    end
+  end
+
   class PublicKey < HaveAPI::Resource
     desc 'Manage public keys'
     route '{user_id}/public_keys'

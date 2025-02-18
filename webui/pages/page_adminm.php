@@ -260,11 +260,12 @@ function print_editm($u)
     $xtpl->form_out(_('Save'));
 
     $hasTotp = hasTotpEnabled($u);
+    $hasWebAuthn = hasWebAuthnEnabled($u);
 
     $xtpl->table_add_category(_("Two-factor authentication"));
     $xtpl->table_add_category('&nbsp;');
     $xtpl->table_td(_('Status') . ':');
-    $xtpl->table_td($hasTotp ? _('Enabled') : _('Disabled'));
+    $xtpl->table_td(($hasTotp || $hasWebAuthn) ? _('Enabled') : _('Disabled'));
     $xtpl->table_tr();
 
     $xtpl->table_td(_("TOTP devices") . ':');
@@ -276,6 +277,10 @@ function print_editm($u)
         $xtpl->table_td('<a href="?page=adminm&action=totp_device_add&id=' . $u->id . '">Add TOTP device</a> / ' . $manageTotp);
     }
 
+    $xtpl->table_tr();
+
+    $xtpl->table_td(_('Passkeys') . ':');
+    $xtpl->table_td('<a href="?page=adminm&action=webauthn_list&id=' . $u->id . '">' . _('Manage passkeys') . '</a>');
     $xtpl->table_tr();
 
     $xtpl->table_out();
@@ -1308,6 +1313,83 @@ if (isLoggedIn()) {
         case 'webauthn_list':
             $u = $api->user->find($_GET['id']);
             webauthn_list($u);
+            break;
+        case 'webauthn_register':
+            if (($_GET['registerStatus'] ?? '0') === '1') {
+                notify_user(_('Passkey registered'), $_GET['registerMessage'] ?? '');
+            } else {
+                notify_user(_('Failed to register passkey'), $_GET['registerMessage'] ?? _('Unknown error.'));
+            }
+
+            redirect('?page=adminm&action=webauthn_list&id=' . $_GET['id']);
+            break;
+        case 'webauthn_edit':
+            $u = $api->user->find($_GET['id']);
+            $cred = $u->webauthn_credential->show($_GET['cred']);
+
+            if ($_POST['label']) {
+                csrf_check();
+
+                try {
+                    $cred->update(['label' => $_POST['label']]);
+                    notify_user(_('Passkey updated'), '');
+                    redirect('?page=adminm&action=webauthn_list&id=' . $u->id);
+                } catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+                    $xtpl->perex_format_errors(
+                        _('TOTP device update failed'),
+                        $e->getResponse()
+                    );
+                    webauthn_edit_form($u, $cred);
+                }
+            } else {
+                webauthn_edit_form($u, $cred);
+            }
+            break;
+        case 'webauthn_toggle':
+            csrf_check();
+            $u = $api->user->find($_GET['id']);
+
+            try {
+                if ($_GET['toggle'] === 'enable') {
+                    $u->webauthn_credential($_GET['cred'])->update(['enabled' => true]);
+                    notify_user(_('Passkey enabled'), '');
+                } elseif ($_GET['toggle'] === 'disable') {
+                    $u->webauthn_credential($_GET['cred'])->update(['enabled' => false]);
+                    notify_user(_('Passkey disabled'), '');
+                }
+
+                redirect('?page=adminm&action=webauthn_list&id=' . $u->id);
+
+            } catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+                $xtpl->perex_format_errors(
+                    _('Passkey toggle failed'),
+                    $e->getResponse()
+                );
+                webauthn_list($u);
+            }
+
+            break;
+        case 'webauthn_del':
+            $u = $api->user->find($_GET['id']);
+            $cred = $u->webauthn_credential->show($_GET['cred']);
+
+            if ($_POST['confirm']) {
+                csrf_check();
+
+                try {
+                    $cred->delete();
+                    notify_user(_('Passkey deleted'), '');
+                    redirect('?page=adminm&action=webauthn_list&id=' . $u->id);
+                } catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+                    $xtpl->perex_format_errors(
+                        _('Passkey deletion failed'),
+                        $e->getResponse()
+                    );
+                    webauthn_del_form($u, $cred);
+                }
+            } else {
+                webauthn_del_form($u, $cred);
+            }
             break;
         case 'known_devices':
             $u = $api->user->find($_GET['id']);

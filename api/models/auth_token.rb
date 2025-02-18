@@ -5,7 +5,7 @@ class AuthToken < ApplicationRecord
   belongs_to :user_agent
   belongs_to :token, dependent: :delete
 
-  enum :purpose, %i[totp reset_password]
+  enum :purpose, %i[mfa reset_password]
   serialize :opts, coder: JSON
   validates :user_id, presence: true
 

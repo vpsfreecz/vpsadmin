@@ -88,6 +88,11 @@ module TransactionChains
           t.just_destroy(dev)
         end
 
+        # Remove WebAuthn credentials
+        user.webauthn_credentials.each do |cred|
+          t.just_destroy(cred)
+        end
+
         # Free the login and forget password
         t.edit(user, login: nil, orig_login: user.login, password: '!')
       end

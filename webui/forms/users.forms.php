@@ -1477,7 +1477,7 @@ function totp_devices_list_form($user)
         $xtpl->table_tr();
     }
 
-    foreach($devices as $dev) {
+    foreach ($devices as $dev) {
         $xtpl->table_td(h($dev->label));
         $xtpl->table_td(boolean_icon($dev->confirmed));
         $xtpl->table_td(boolean_icon($dev->enabled));
@@ -1644,6 +1644,101 @@ function totp_device_del_form($user, $dev)
     $xtpl->form_out(_('Delete'));
 }
 
+function webauthn_list($user)
+{
+    global $xtpl;
+
+    $xtpl->table_title(_('Passkeys'));
+    $xtpl->table_add_category(_('Label'));
+    $xtpl->table_add_category(_('Sign count'));
+    $xtpl->table_add_category(_('Last use'));
+    $xtpl->table_add_category(_('Enabled'));
+    $xtpl->table_add_category('');
+    $xtpl->table_add_category('');
+
+    $creds = $user->webauthn_credential->list();
+
+    foreach ($creds as $cred) {
+        $xtpl->table_td(h($cred->label));
+        $xtpl->table_td($cred->sign_count, false, true);
+        $xtpl->table_td($cred->last_use_at ? tolocaltz($cred->last_use_at) : '-');
+        $xtpl->table_td('<a href="?page=adminm&action=webauthn_toggle&id=' . $user->id . '&cred=' . $cred->id . '&toggle=' . ($cred->enabled ? 'disable' : 'enable') . '&t=' . csrf_token() . '" title="' . ($cred->enabled ? _('Disable') : _('Enable')) . '">' . boolean_icon($cred->enabled) . '</a>');
+        $xtpl->table_td('<a href="?page=adminm&action=webauthn_edit&id=' . $user->id . '&cred=' . $cred->id . '"><img src="template/icons/m_edit.png"  title="' . _("Edit") . '" /></a>');
+        $xtpl->table_td('<a href="?page=adminm&action=webauthn_del&id=' . $user->id . '&cred=' . $cred->id . '"><img src="template/icons/m_delete.png"  title="' . _("Delete") . '" /></a>');
+
+        $xtpl->table_tr();
+    }
+
+    if ($creds->count() == 0) {
+        $xtpl->table_td(_('No passkeys configured.'), false, false, 6);
+        $xtpl->table_tr();
+    }
+
+    $xtpl->table_out();
+
+    if ($_SESSION['user']['id'] == $user->id) {
+        $xtpl->table_title(_('Register a new passkey'));
+
+        if ($_SESSION['auth_type'] == 'oauth2') {
+            $xtpl->form_create(getWebAuthnNewRegistrationUrl(), 'get', 'webauthn_register', false);
+            $xtpl->form_set_hidden_fields([
+                'access_token' => $_SESSION['access_token']['access_token'],
+                'redirect_uri' => getSelfUri() . '/?page=adminm&action=webauthn_register&id=' . $user->id,
+            ]);
+            $xtpl->table_td(_('You will be redirected to the authentication server.'), false, false, 2);
+            $xtpl->table_tr();
+            $xtpl->form_out(_('Register new passkey'));
+        } else {
+            $xtpl->table_td(_('Passkeys cannot be registered by administrators logged in as users.'));
+            $xtpl->table_tr();
+            $xtpl->table_out();
+        }
+    }
+
+    $xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="' . _("Back to user details") . '" />' . _('Back to user details'), "?page=adminm&action=edit&id={$user->id}");
+}
+
+function webauthn_edit_form($user, $cred)
+{
+    global $xtpl;
+
+    $xtpl->table_title(_("Edit passkey"));
+    $xtpl->form_create('?page=adminm&action=webauthn_edit&id=' . $user->id . '&cred=' . $cred->id, 'post');
+    $xtpl->form_add_input(_('Label') . ':', 'text', '40', 'label', post_val('label', $cred->label));
+    $xtpl->form_out(_('Save'));
+
+    $xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="' . _("Back to user details") . '" />' . _('Back to user details'), "?page=adminm&action=edit&id={$user->id}");
+    $xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="' . _("Back to passkeys") . '" />' . _('Back to passkeys'), "?page=adminm&action=webauthn_list&id={$user->id}");
+}
+
+function webauthn_del_form($user, $cred)
+{
+    global $xtpl;
+
+    $xtpl->table_title(_('Confirm passkey deletion'));
+    $xtpl->form_create('?page=adminm&action=webauthn_del&id=' . $user->id . '&cred=' . $cred->id, 'post');
+
+    $xtpl->table_td('Passkey' . ':');
+    $xtpl->table_td(h($cred->label));
+    $xtpl->table_tr();
+
+    $xtpl->table_td(
+        _('Two-factor authentication will be turned off when the last ' .
+          'authentication device is either disabled or removed.'),
+        false,
+        false,
+        '2'
+    );
+    $xtpl->table_tr();
+
+    $xtpl->form_add_checkbox(_('Confirm') . ':', 'confirm', '1', false);
+
+    $xtpl->form_out(_('Delete'));
+
+    $xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="' . _("Back to user details") . '" />' . _('Back to user details'), "?page=adminm&action=edit&id={$user->id}");
+    $xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="' . _("Back to passkeys") . '" />' . _('Back to passkeys'), "?page=adminm&action=webauthn_list&id={$user->id}");
+}
+
 function known_devices_list_form($user)
 {
     global $xtpl, $api;
@@ -1675,7 +1770,7 @@ function known_devices_list_form($user)
 
     $devices = $user->known_device->list();
 
-    foreach($devices as $dev) {
+    foreach ($devices as $dev) {
         $ua = new WhichBrowser\Parser($dev->user_agent);
 
         $xtpl->table_td(h($ua->os->toString()));
