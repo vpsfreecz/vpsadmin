@@ -1,4 +1,5 @@
 <?php
+
 /*
     ./pages/page_adminm.php
 
@@ -287,7 +288,7 @@ function print_editm($u)
     $xtpl->form_add_input(_("E-mail") . ':', 'text', '30', 'email', post_val('email', $u->email), ' ');
     $xtpl->form_add_input(_("Postal address") . ':', 'text', '30', 'address', post_val('address', $u->address), ' ');
 
-    if(!isAdmin()) {
+    if (!isAdmin()) {
         $xtpl->form_add_input(_("Reason for change") . ':', 'text', '50', 'change_reason', $_POST['change_reason'] ?? null);
         $xtpl->table_td(_("Request for change will be sent to administrators for approval." .
                           "Changes will not take effect immediately. You will be informed about the result."), false, false, 3);
@@ -356,6 +357,7 @@ function print_editm($u)
     $xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="' . _("Advanced mail configuration") . '" />' . _('Advanced e-mail configuration'), "?page=adminm&section=members&action=template_recipients&id={$u->id}");
     $xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="' . _("Public keys") . '" />' . _('Public keys'), "?page=adminm&section=members&action=pubkeys&id={$u->id}");
     $xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="' . _("TOTP devices") . '" />' . _('TOTP devices'), "?page=adminm&section=members&action=totp_devices&id={$u->id}");
+    $xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="' . _("Passkeys") . '" />' . _('Passkeys'), "?page=adminm&section=members&action=webauthn_list&id={$u->id}");
     $xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="' . _("Known login devices") . '" />' . _('Known login devices'), "?page=adminm&action=known_devices&id={$u->id}");
     $xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="' . _("Sessions") . '" />' . _('Sessions'), "?page=adminm&action=user_sessions&id={$u->id}");
     $xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="' . _("Metrics access tokens") . '" />' . _('Metrics access tokens'), "?page=adminm&action=metrics&id={$u->id}");
@@ -422,7 +424,7 @@ function list_pubkeys()
         $xtpl->table_tr();
     }
 
-    foreach($pubkeys as $k) {
+    foreach ($pubkeys as $k) {
         $xtpl->table_td(h($k->label));
         $xtpl->table_td($k->fingerprint);
         $xtpl->table_td(h($k->comment));
@@ -562,7 +564,7 @@ function request_approve()
 {
     global $xtpl, $api;
 
-    if(!isAdmin()) {
+    if (!isAdmin()) {
         return;
     }
 
@@ -592,7 +594,7 @@ function request_deny()
 {
     global $xtpl, $api;
 
-    if(!isAdmin()) {
+    if (!isAdmin()) {
         return;
     }
 
@@ -622,7 +624,7 @@ function request_ignore()
 {
     global $xtpl, $api;
 
-    if(!isAdmin()) {
+    if (!isAdmin()) {
         return;
     }
 
@@ -652,7 +654,7 @@ function request_correction()
 {
     global $xtpl, $api;
 
-    if(!isAdmin()) {
+    if (!isAdmin()) {
         return;
     }
 
@@ -1303,6 +1305,10 @@ if (isLoggedIn()) {
                 totp_device_del_form($u, $dev);
             }
             break;
+        case 'webauthn_list':
+            $u = $api->user->find($_GET['id']);
+            webauthn_list($u);
+            break;
         case 'known_devices':
             $u = $api->user->find($_GET['id']);
             known_devices_list_form($u);
@@ -1330,7 +1336,7 @@ if (isLoggedIn()) {
 
             $u = $api->user->find($_GET["id"]);
 
-            if(isAdmin()) {
+            if (isAdmin()) {
                 try {
                     $u->update([
                         'full_name' => $_POST['full_name'],
@@ -1547,7 +1553,7 @@ if (isLoggedIn()) {
             break;
 
         case 'pubkey_add':
-            if(isset($_POST['label'])) {
+            if (isset($_POST['label'])) {
                 csrf_check();
 
                 try {
@@ -1572,7 +1578,7 @@ if (isLoggedIn()) {
             break;
 
         case 'pubkey_edit':
-            if(isset($_POST['label'])) {
+            if (isset($_POST['label'])) {
                 csrf_check();
 
                 try {
@@ -1842,7 +1848,7 @@ if (isLoggedIn()) {
             break;
 
         case 'approval_requests':
-            if(!isAdmin()) {
+            if (!isAdmin()) {
                 break;
             }
 
@@ -1850,7 +1856,7 @@ if (isLoggedIn()) {
             break;
 
         case "request_details":
-            if(!isAdmin()) {
+            if (!isAdmin()) {
                 break;
             }
 
@@ -1858,7 +1864,7 @@ if (isLoggedIn()) {
             break;
 
         case "request_process":
-            if(!isAdmin()) {
+            if (!isAdmin()) {
                 break;
             }
 
@@ -1870,13 +1876,13 @@ if (isLoggedIn()) {
                 $action = $_POST['action'];
             }
 
-            if($action == "approve" || $_GET["rule"] == "approve") {
+            if ($action == "approve" || $_GET["rule"] == "approve") {
                 request_approve();
-            } elseif($action == "deny" || $_GET["rule"] == "deny") {
+            } elseif ($action == "deny" || $_GET["rule"] == "deny") {
                 request_deny();
-            } elseif($action == "ignore" || $_GET["rule"] == "ignore") {
+            } elseif ($action == "ignore" || $_GET["rule"] == "ignore") {
                 request_ignore();
-            } elseif($action == "request_correction" || $_GET["rule"] == "request_correction") {
+            } elseif ($action == "request_correction" || $_GET["rule"] == "request_correction") {
                 request_correction();
             }
 
