@@ -67,7 +67,7 @@ module VpsAdmin::API
     protected
 
     def require_mfa?(user)
-      require_totp?(user) || require_webauthn?(user)
+      user.enable_multi_factor_auth && (require_totp?(user) || require_webauthn?(user))
     end
 
     def require_totp?(user)

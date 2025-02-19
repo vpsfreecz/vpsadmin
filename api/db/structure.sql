@@ -2111,6 +2111,7 @@ CREATE TABLE `users` (
   `enable_oauth2_auth` tinyint(1) NOT NULL DEFAULT 1,
   `enable_new_login_notification` tinyint(1) NOT NULL DEFAULT 1,
   `webauthn_id` varchar(255) DEFAULT NULL,
+  `enable_multi_factor_auth` tinyint(1) NOT NULL DEFAULT 0,
   PRIMARY KEY (`id`),
   UNIQUE KEY `index_users_on_login` (`login`) USING BTREE,
   KEY `index_users_on_object_state` (`object_state`) USING BTREE
@@ -2404,6 +2405,7 @@ CREATE TABLE `webauthn_credentials` (
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
 INSERT INTO `schema_migrations` (version) VALUES
+('20250219211214'),
 ('20250213133759'),
 ('20250131161427'),
 ('20250131131838'),

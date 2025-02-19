@@ -264,8 +264,22 @@ function print_editm($u)
 
     $xtpl->table_add_category(_("Two-factor authentication"));
     $xtpl->table_add_category('&nbsp;');
+    $xtpl->form_create('?page=adminm&action=edit_mfa&id=' . $u->id, 'post');
+
+    $xtpl->form_add_checkbox(_('Enable') . ':', 'enable_multi_factor_auth', '1', post_val_issetto('enable_multi_factor_auth', '1', $u->enable_multi_factor_auth));
+
     $xtpl->table_td(_('Status') . ':');
-    $xtpl->table_td(($hasTotp || $hasWebAuthn) ? _('Enabled') : _('Disabled'));
+
+    if ($u->enable_multi_factor_auth) {
+        if ($hasTotp || $hasWebAuthn) {
+            $xtpl->table_td(_('Active'));
+        } else {
+            $xtpl->table_td(_('Inactive, no authentication device is enabled'));
+        }
+    } else {
+        $xtpl->table_td(_('Disabled'));
+    }
+
     $xtpl->table_tr();
 
     $xtpl->table_td(_("TOTP devices") . ':');
@@ -283,7 +297,7 @@ function print_editm($u)
     $xtpl->table_td('<a href="?page=adminm&action=webauthn_list&id=' . $u->id . '">' . _('Manage passkeys') . '</a>');
     $xtpl->table_tr();
 
-    $xtpl->table_out();
+    $xtpl->form_out(_('Save'));
 
     $xtpl->table_add_category(_("Personal information"));
     $xtpl->table_add_category('&nbsp;');
@@ -1178,6 +1192,31 @@ if (isLoggedIn()) {
                 }
 
                 notify_user(_('Session control updated'), _('Session control was successfully updated.'));
+                redirect('?page=adminm&action=edit&id=' . $user->id);
+
+            } catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+                $xtpl->perex_format_errors(_('User update failed'), $e->getResponse());
+                print_editm($api->user->find($_GET['id']));
+            }
+
+            break;
+        case 'edit_mfa':
+            csrf_check();
+
+            try {
+                $user = $api->user->show($_GET['id']);
+                $enable = isset($_POST['enable_multi_factor_auth']);
+
+                $user->update([
+                    'enable_multi_factor_auth' => $enable,
+                ]);
+
+                if ($enable) {
+                    notify_user(_('Multi-factor authentication enabled'), '');
+                } else {
+                    notify_user(_('Multi-factor authentication disabled'), '');
+                }
+
                 redirect('?page=adminm&action=edit&id=' . $user->id);
 
             } catch (\HaveAPI\Client\Exception\ActionFailed $e) {

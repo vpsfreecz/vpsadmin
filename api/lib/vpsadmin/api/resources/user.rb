@@ -22,6 +22,7 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
     bool :enable_oauth2_auth, label: 'Enable OAuth2 authentication'
     bool :enable_single_sign_on, label: 'Enable single sign-on'
     bool :enable_new_login_notification, label: 'Enable new login notification'
+    bool :enable_multi_factor_auth, label: 'Enable multi-factor authentication'
     integer :preferred_session_length, label: 'Preferred session length'
     bool :preferred_logout_all, label: 'Preferred logout all'
   end
@@ -260,8 +261,8 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
       input whitelist: %i[
         password new_password logout_sessions mailer_enabled language
         enable_basic_auth enable_token_auth enable_oauth2_auth enable_single_sign_on
-        enable_new_login_notification preferred_session_length preferred_logout_all
-        remind_after_date
+        enable_new_login_notification enable_multi_factor_auth
+        preferred_session_length preferred_logout_all remind_after_date
       ]
       allow
     end

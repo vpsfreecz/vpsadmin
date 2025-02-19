@@ -19,6 +19,8 @@ module VpsAdmin::API
         recovery_code: CryptoProviders::Bcrypt.encrypt(nil, recovery_code)
       )
 
+      device.user.update!(enable_multi_factor_auth: true) unless device.user.enable_multi_factor_auth
+
       recovery_code
     end
   end
