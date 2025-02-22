@@ -1650,9 +1650,11 @@ function webauthn_list($user)
 
     $xtpl->table_title(_('Passkeys'));
     $xtpl->table_add_category(_('Label'));
-    $xtpl->table_add_category(_('Sign count'));
-    $xtpl->table_add_category(_('Last use'));
     $xtpl->table_add_category(_('Enabled'));
+    $xtpl->table_add_category(_('Use count'));
+    $xtpl->table_add_category(_('Created at'));
+    $xtpl->table_add_category(_('Last use'));
+    $xtpl->table_add_category('');
     $xtpl->table_add_category('');
     $xtpl->table_add_category('');
 
@@ -1660,9 +1662,11 @@ function webauthn_list($user)
 
     foreach ($creds as $cred) {
         $xtpl->table_td(h($cred->label));
+        $xtpl->table_td(boolean_icon($cred->enabled));
         $xtpl->table_td($cred->sign_count, false, true);
+        $xtpl->table_td(tolocaltz($cred->created_at));
         $xtpl->table_td($cred->last_use_at ? tolocaltz($cred->last_use_at) : '-');
-        $xtpl->table_td('<a href="?page=adminm&action=webauthn_toggle&id=' . $user->id . '&cred=' . $cred->id . '&toggle=' . ($cred->enabled ? 'disable' : 'enable') . '&t=' . csrf_token() . '" title="' . ($cred->enabled ? _('Disable') : _('Enable')) . '">' . boolean_icon($cred->enabled) . '</a>');
+        $xtpl->table_td('<a href="?page=adminm&action=webauthn_toggle&id=' . $user->id . '&cred=' . $cred->id . '&toggle=' . ($cred->enabled ? 'disable' : 'enable') . '&t=' . csrf_token() . '">' . ($cred->enabled ? _('Disable') : _('Enable')) . '</a>');
         $xtpl->table_td('<a href="?page=adminm&action=webauthn_edit&id=' . $user->id . '&cred=' . $cred->id . '"><img src="template/icons/m_edit.png"  title="' . _("Edit") . '" /></a>');
         $xtpl->table_td('<a href="?page=adminm&action=webauthn_del&id=' . $user->id . '&cred=' . $cred->id . '"><img src="template/icons/m_delete.png"  title="' . _("Delete") . '" /></a>');
 
@@ -1670,7 +1674,7 @@ function webauthn_list($user)
     }
 
     if ($creds->count() == 0) {
-        $xtpl->table_td(_('No passkeys configured.'), false, false, 6);
+        $xtpl->table_td(_('No passkeys configured.'), false, false, 8);
         $xtpl->table_tr();
     }
 
