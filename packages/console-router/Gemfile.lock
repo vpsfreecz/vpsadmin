@@ -1,18 +1,18 @@
 GEM
   remote: https://rubygems.org/
   specs:
-    amq-protocol (2.3.2)
+    amq-protocol (2.3.3)
     base64 (0.2.0)
     bunny (2.23.0)
       amq-protocol (~> 2.3, >= 2.3.1)
       sorted_set (~> 1, >= 1.0.2)
-    logger (1.6.5)
+    logger (1.6.6)
     mustermann (3.0.3)
       ruby2_keywords (~> 0.0.1)
     nio4r (2.7.4)
-    puma (6.5.0)
+    puma (6.6.0)
       nio4r (~> 2.0)
-    rack (3.1.8)
+    rack (3.1.10)
     rack-protection (4.1.1)
       base64 (>= 0.1.0)
       logger (>= 1.6.0)
