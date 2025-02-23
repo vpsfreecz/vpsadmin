@@ -888,7 +888,7 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
       id :id
       string :label
       bool :enabled
-      integer :sign_count
+      integer :use_count
       datetime :last_use_at
       datetime :created_at
       datetime :updated_at

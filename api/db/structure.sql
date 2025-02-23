@@ -2389,6 +2389,7 @@ CREATE TABLE `webauthn_credentials` (
   `last_use_at` datetime(6) DEFAULT NULL,
   `created_at` datetime(6) NOT NULL,
   `updated_at` datetime(6) NOT NULL,
+  `use_count` bigint(20) NOT NULL DEFAULT 0,
   PRIMARY KEY (`id`),
   UNIQUE KEY `index_webauthn_credentials_on_external_id` (`external_id`),
   KEY `index_webauthn_credentials_on_user_id` (`user_id`)
@@ -2405,6 +2406,7 @@ CREATE TABLE `webauthn_credentials` (
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
 INSERT INTO `schema_migrations` (version) VALUES
+('20250223072700'),
 ('20250219211214'),
 ('20250213133759'),
 ('20250131161427'),

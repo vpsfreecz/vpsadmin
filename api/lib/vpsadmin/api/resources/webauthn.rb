@@ -190,12 +190,17 @@ class VpsAdmin::API::Resources::Webauthn < HaveAPI::Resource
           error!(e.message)
         end
 
-        stored_credential.update!(
-          sign_count: webauthn_credential.sign_count,
-          last_use_at: Time.now
-        )
+        ActiveRecord::Base.transaction do
+          stored_credential.update!(
+            sign_count: webauthn_credential.sign_count,
+            last_use_at: Time.now
+          )
 
-        auth_token.update!(fulfilled: true)
+          ::WebauthnCredential.increment_counter(:use_count, stored_credential.id)
+
+          auth_token.update!(fulfilled: true)
+        end
+
         ok!
       end
     end

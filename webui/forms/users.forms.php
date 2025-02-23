@@ -1663,7 +1663,7 @@ function webauthn_list($user)
     foreach ($creds as $cred) {
         $xtpl->table_td(h($cred->label));
         $xtpl->table_td(boolean_icon($cred->enabled));
-        $xtpl->table_td($cred->sign_count, false, true);
+        $xtpl->table_td($cred->use_count . '&times;', false, true);
         $xtpl->table_td(tolocaltz($cred->created_at));
         $xtpl->table_td($cred->last_use_at ? tolocaltz($cred->last_use_at) : '-');
         $xtpl->table_td('<a href="?page=adminm&action=webauthn_toggle&id=' . $user->id . '&cred=' . $cred->id . '&toggle=' . ($cred->enabled ? 'disable' : 'enable') . '&t=' . csrf_token() . '">' . ($cred->enabled ? _('Disable') : _('Enable')) . '</a>');
