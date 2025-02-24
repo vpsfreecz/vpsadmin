@@ -1,7 +1,7 @@
 GEM
   remote: https://rubygems.org/
   specs:
-    amq-protocol (2.3.2)
+    amq-protocol (2.3.3)
     base64 (0.2.0)
     bigdecimal (3.1.9)
     bunny (2.23.0)
@@ -19,8 +19,8 @@ GEM
       reline
     io-console (0.8.0)
     ipaddress (0.8.3)
-    json (2.9.1)
-    logger (1.6.5)
+    json (2.10.1)
+    logger (1.6.6)
     mail (2.8.1)
       mini_mime (>= 0.1.1)
       net-imap
@@ -29,17 +29,17 @@ GEM
     method_source (1.1.0)
     mini_mime (1.1.5)
     mysql2 (0.5.6)
-    net-imap (0.5.5)
+    net-imap (0.5.6)
       date
       net-protocol
     net-pop (0.1.2)
       net-protocol
     net-protocol (0.2.2)
       timeout
-    net-smtp (0.5.0)
+    net-smtp (0.5.1)
       net-protocol
     ostruct (0.6.1)
-    prometheus-client (4.2.3)
+    prometheus-client (4.2.4)
       base64
     pry (0.14.2)
       coderay (~> 1.1)
@@ -52,7 +52,7 @@ GEM
     reline (0.6.0)
       io-console (~> 0.5)
     require_all (2.0.0)
-    rexml (3.4.0)
+    rexml (3.4.1)
     ruby-progressbar (1.13.0)
     set (1.1.1)
     slop (3.6.0)
@@ -68,7 +68,7 @@ GEM
 GEM
   remote: https://rubygems.vpsfree.cz/
   specs:
-    libnodectld (4.0.0.build20250201191001)
+    libnodectld (4.0.0.build20250224090609)
       base64
       bigdecimal
       bunny (~> 2.23.0)
@@ -115,7 +115,7 @@ PLATFORMS
   x86_64-linux
 
 DEPENDENCIES
-  libnodectld (= 4.0.0.build20250201191001)!
+  libnodectld (= 4.0.0.build20250224090609)!
 
 BUNDLED WITH
    2.5.22
