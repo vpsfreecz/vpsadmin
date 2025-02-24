@@ -191,6 +191,8 @@ class VpsAdmin::API::Resources::Webauthn < HaveAPI::Resource
         end
 
         ActiveRecord::Base.transaction do
+          challenge.destroy!
+
           stored_credential.update!(
             sign_count: webauthn_credential.sign_count,
             last_use_at: Time.now
