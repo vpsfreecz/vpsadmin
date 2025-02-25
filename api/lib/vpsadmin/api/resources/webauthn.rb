@@ -137,7 +137,10 @@ class VpsAdmin::API::Resources::Webauthn < HaveAPI::Resource
 
         error!('auth token expired') unless auth_token.valid?
 
-        options = WebAuthn::Credential.options_for_get(allow: auth_token.user.webauthn_credentials.where(enabled: true).pluck(:external_id))
+        options = WebAuthn::Credential.options_for_get(
+          allow: auth_token.user.webauthn_credentials.where(enabled: true).pluck(:external_id),
+          user_verification: 'discouraged'
+        )
 
         challenge = create_challenge!(auth_token.user, 'authentication', options.challenge)
 
