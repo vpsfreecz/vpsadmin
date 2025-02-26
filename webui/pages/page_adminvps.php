@@ -899,6 +899,23 @@ if (isLoggedIn()) {
             }
             break;
 
+        case 'map_mode':
+            csrf_check();
+
+            try {
+                $api->vps($_GET['veid'])->update([
+                    'map_mode' => $_POST['map_mode'],
+                ]);
+
+                notify_user(_("Map mode set"), '');
+                redirect('?page=adminvps&action=info&veid=' . $_GET['veid']);
+
+            } catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+                $xtpl->perex_format_errors(_('Map mode change failed'), $e->getResponse());
+                $show_info = true;
+            }
+            break;
+
         case 'clone-step-0':
             vps_clone_form_step0($_GET['veid']);
             break;
@@ -1801,6 +1818,19 @@ if (isLoggedIn()) {
             }
 
             $xtpl->form_out(_("Go >>"));
+
+            // Map mode
+            if (isAdmin()) {
+                $xtpl->table_title(_('Map mode'));
+                $xtpl->form_create('?page=adminvps&action=map_mode&veid=' . $vps->id, 'post');
+
+                api_param_to_form('map_mode', $params->map_mode, $vps->map_mode);
+
+                $xtpl->table_td(_('The VPS is restarted when map mode is changed.'), false, false, 2);
+                $xtpl->table_tr();
+
+                $xtpl->form_out(_('Go >>'));
+            }
 
             // User namespace map
             if (isAdmin() || USERNS_PUBLIC) {
