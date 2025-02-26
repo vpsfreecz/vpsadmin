@@ -18,8 +18,8 @@ module NodeCtld
 
     class << self
       # Mount all VPS local and remote mounts
-      def mount_vps_mounts(pool_fs, vps_id, rootfs_path)
-        mounter = new(pool_fs, vps_id)
+      def mount_vps_mounts(pool_fs, vps_id, rootfs_path, map_mode, ns_pid)
+        mounter = new(pool_fs, vps_id, map_mode:, ns_pid:)
 
         mounter.load_vps_mounts.each do |mnt|
           if mnt['type'] != 'dataset_local'
@@ -32,9 +32,11 @@ module NodeCtld
       end
     end
 
-    def initialize(pool_fs, vps_id)
+    def initialize(pool_fs, vps_id, map_mode: nil, ns_pid: nil)
       @pool_fs = pool_fs
       @vps_id = vps_id
+      @map_mode = map_mode
+      @ns_pid = ns_pid
     end
 
     # Bind-mount from the host to the VPS
@@ -56,6 +58,7 @@ module NodeCtld
               fs:,
               type:,
               opts:,
+              map_ids: true,
               on_ct_start: true
             })
 
@@ -65,7 +68,11 @@ module NodeCtld
     def bind_mount_to_vps_cmd(mnt, rootfs_path)
       dst = File.join(rootfs_path, mnt['dst'])
       type = 'none'
-      opts = ['bind', mnt['mode']].join(',')
+
+      use_opts = ['bind', mnt['mode']]
+      ret_opts = use_opts.clone
+
+      use_opts << "X-mount.idmap=/proc/#{@ns_pid}/ns/user" if @map_mode == 'native'
 
       src = case mnt['type']
             when 'dataset_local'
@@ -76,11 +83,11 @@ module NodeCtld
             end
 
       [
-        "#{$CFG.get(:bin, :mount)} -t #{type} -o #{opts} #{src} #{dst}",
+        "#{$CFG.get(:bin, :mount)} -t #{type} -o \"#{use_opts.join(',')}\" #{src} #{dst}",
         src,
         dst,
         type,
-        opts
+        ret_opts.join(',')
       ]
     end
 
@@ -91,7 +98,8 @@ module NodeCtld
       osctl(%i[ct mounts register], [@vps_id, dst], {
               fs: src,
               type:,
-              opts:
+              opts:,
+              map_ids: true
             })
       osctl(%i[ct mounts activate], [@vps_id, dst])
 
