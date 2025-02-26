@@ -2341,6 +2341,7 @@ CREATE TABLE `vpses` (
   `enable_os_template_auto_update` tinyint(1) NOT NULL DEFAULT 1,
   `implicit_oom_report_rule_hit_count` bigint(20) NOT NULL DEFAULT 0,
   `enable_network` tinyint(1) NOT NULL DEFAULT 1,
+  `map_mode` int(11) NOT NULL DEFAULT 0,
   PRIMARY KEY (`id`),
   KEY `index_vpses_on_dataset_in_pool_id` (`dataset_in_pool_id`) USING BTREE,
   KEY `index_vpses_on_dns_resolver_id` (`dns_resolver_id`) USING BTREE,
@@ -2350,7 +2351,8 @@ CREATE TABLE `vpses` (
   KEY `index_vpses_on_user_id` (`user_id`) USING BTREE,
   KEY `index_vpses_on_cgroup_version` (`cgroup_version`),
   KEY `index_vpses_on_allow_admin_modifications` (`allow_admin_modifications`),
-  KEY `index_vpses_on_user_namespace_map_id` (`user_namespace_map_id`)
+  KEY `index_vpses_on_user_namespace_map_id` (`user_namespace_map_id`),
+  KEY `index_vpses_on_map_mode` (`map_mode`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `webauthn_challenges`;
@@ -2406,6 +2408,7 @@ CREATE TABLE `webauthn_credentials` (
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
 INSERT INTO `schema_migrations` (version) VALUES
+('20250226200230'),
 ('20250223072700'),
 ('20250219211214'),
 ('20250213133759'),

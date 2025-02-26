@@ -46,7 +46,7 @@ module TransactionChains
                           properties: { refquota: dataset_refquota(vps, '/') },
                           user: vps.user,
                           label: "vps#{vps.id}",
-                          userns_map: vps.user_namespace_map
+                          userns_map: vps.map_mode == 'zfs' ? vps.user_namespace_map : nil
                         }
                       ]).last
 
@@ -78,7 +78,7 @@ module TransactionChains
                                automount: false,
                                properties: { refquota: dataset_refquota(vps, subds_opts['name']) },
                                user: vps.user,
-                               userns_map: vps.user_namespace_map
+                               userns_map: vps.map_mode == 'zfs' ? vps.user_namespace_map : nil
                              }
                            ]).last
 

@@ -61,7 +61,7 @@ module VpsAdmin::API
         vps = Vps.find_by!(dataset_in_pool: top_dip.dataset.root.primary_dataset_in_pool!)
         maintenance_check!(vps)
 
-        opts[:userns_map] = vps.user_namespace_map
+        opts[:userns_map] = vps.user_namespace_map if vps.map_mode == 'zfs'
       end
 
       maintenance_check!(top_dip.pool)

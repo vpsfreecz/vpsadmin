@@ -140,6 +140,12 @@ module TransactionChains
             args: [vps, vps.enable_network],
             kwargs: { reason: opts[:change_reason] }
           )
+
+        when 'map_mode'
+          append_t(Transactions::Vps::MapMode, args: [vps, vps.map_mode_was]) do |t|
+            t.edit(vps, map_mode: ::Vps.map_modes[vps.map_mode])
+            t.just_create(vps.log(:map_mode, { map_mode: vps.map_mode }))
+          end
         end
       end
 

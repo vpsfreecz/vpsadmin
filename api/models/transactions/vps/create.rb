@@ -15,6 +15,7 @@ module Transactions::Vps
         pool_fs: vps.dataset_in_pool.pool.filesystem,
         dataset_name: vps.dataset_in_pool.dataset.full_name,
         userns_map: vps.user_namespace_map_id.to_s,
+        map_mode: vps.map_mode,
         hostname: vps.manage_hostname ? vps.hostname : nil,
         distribution: vps.os_template.distribution,
         version: vps.os_template.version,

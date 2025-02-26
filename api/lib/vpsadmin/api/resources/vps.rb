@@ -18,6 +18,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
                            desc: 'Determines whether vpsAdmin sets VPS hostname or not'
     use :template
     string :cgroup_version, choices: ::Vps.cgroup_versions.keys, default: 'cgroup_any'
+    string :map_mode, label: 'Map mode', choices: ::Vps.map_modes.keys.map(&:to_s), default: 'native'
     string :info, label: 'Info', desc: 'VPS description'
     resource VpsAdmin::API::Resources::DnsResolver, label: 'DNS resolver',
                                                     desc: 'DNS resolver the VPS will use'

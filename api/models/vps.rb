@@ -48,6 +48,7 @@ class Vps < ApplicationRecord
   has_many :dataset_expansions
 
   enum :cgroup_version, %i[cgroup_any cgroup_v1 cgroup_v2]
+  enum :map_mode, %i[native zfs], prefix: :map_mode
 
   has_paper_trail ignore: %i[maintenance_lock maintenance_lock_reason]
 
@@ -90,7 +91,7 @@ class Vps < ApplicationRecord
     route_add route_del host_addr_add host_addr_del
     start stop restart passwd clone swap configs features mount umount
     maintenance_windows maintenance_window restore deploy_public_key
-    netif_rename netif_enable start_menu autostart user
+    netif_rename netif_enable start_menu autostart map_mode user
     halt reboot
   ]
 

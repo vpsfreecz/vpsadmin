@@ -7,6 +7,7 @@ module NodeCtld
       opts = {
         user: @userns_map,
         dataset: File.join(@pool_fs, @dataset_name),
+        map_mode: @map_mode,
         distribution: @distribution,
         version: @version,
         arch: @arch,
