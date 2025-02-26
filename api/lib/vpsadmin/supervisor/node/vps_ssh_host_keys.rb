@@ -44,6 +44,17 @@ module VpsAdmin::Supervisor
           fingerprint: key_update['fingerprint'],
           updated_at: t
         )
+
+        vps_keys['keys'].delete(key_update)
+      end
+
+      vps_keys['keys'].each do |k|
+        ::VpsSshHostKey.create!(
+          vps: ::Vps.find(vps_keys['vps_id']),
+          bits: k['bits'],
+          algorithm: k['algorithm'],
+          fingerprint: k['fingerprint']
+        )
       end
     end
   end
