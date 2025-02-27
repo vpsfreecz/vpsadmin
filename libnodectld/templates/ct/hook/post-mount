@@ -1,18 +1,4 @@
 #!/run/nodectl/nodectl script
 require 'nodectld/standalone'
 
-vars = %w(OSCTL_POOL_NAME OSCTL_CT_ID OSCTL_CT_ROOTFS_MOUNT OSCTL_CT_MAP_MODE OSCTL_CT_NS_PID)
-vars.each do |v|
-  next if ENV[v]
-  warn 'Expected environment variables:'
-  warn "  #{vars.join("\n  ")}"
-  exit(false)
-end
-
-NodeCtld::CtHook.post_mount(
-  ENV['OSCTL_POOL_NAME'],
-  ENV['OSCTL_CT_ID'],
-  ENV['OSCTL_CT_ROOTFS_MOUNT'],
-  ENV['OSCTL_CT_MAP_MODE'],
-  ENV['OSCTL_CT_NS_PID']
-)
+NodeCtld::CtHook.post_mount(ENV)
