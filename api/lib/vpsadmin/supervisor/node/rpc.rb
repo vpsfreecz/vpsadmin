@@ -169,7 +169,11 @@ module VpsAdmin::Supervisor
           object_state: %w[active suspended],
           confirmed: ::Vps.confirmed(:confirmed)
         ).map do |vps|
-          { id: vps.id, read_hostname: !vps.manage_hostname }
+          {
+            id: vps.id,
+            read_hostname: !vps.manage_hostname,
+            pool_fs: vps.dataset_in_pool.pool.filesystem
+          }
         end
       end
 

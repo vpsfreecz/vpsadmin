@@ -10,13 +10,14 @@ module NodeCtl
         Subcommands:
         ssh-host-keys [vps...]    Update SSH host keys
         os-release [vps...]       Update OS template info by reading /etc/os-release
+        script-hooks [vps...]     Reinstall osctl script hooks
       END
     end
 
     def validate
       if args.empty?
         raise ValidationError, 'missing subcommand'
-      elsif !%w[ssh-host-keys os-release].include?(args[0])
+      elsif !%w[ssh-host-keys os-release script-hooks].include?(args[0])
         raise ValidationError, "invalid subcommand '#{args[0]}'"
       end
 
