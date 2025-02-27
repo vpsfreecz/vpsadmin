@@ -3,7 +3,7 @@ require 'fileutils'
 module NodeCtld
   class Commands::Vps::Mounts < Commands::Base
     handle 5301
-    needs :system, :pool, :vps
+    needs :system, :pool
 
     def exec
       cfg = VpsConfig.open(@pool_fs, @vps_id)
@@ -15,13 +15,7 @@ module NodeCtld
       cfg.mounts = @mounts.map { |v| VpsConfig::Mount.load(v) }
       cfg.save
 
-      # Install osctl hooks
-      if @mounts.any?
-        install_hooks
-
-      else
-        uninstall_hooks
-      end
+      install_hooks(cfg)
 
       ok
     end
@@ -31,42 +25,22 @@ module NodeCtld
       cfg = VpsConfig.open(@pool_fs, @vps_id)
       cfg.restore
 
+      install_hooks(cfg)
+
       ok
     end
 
     protected
 
-    def install_hooks
-      hooks.each do |hook|
-        dst = hook_path(hook)
+    def install_hooks(cfg)
+      hook_installer = CtHookInstaller.new(@pool_fs, @vps_id)
+      hooks = %w[pre-start post-mount]
 
-        FileUtils.cp(
-          File.join(NodeCtld.root, 'templates', 'ct', 'hook', hook),
-          "#{dst}.new"
-        )
-
-        File.chmod(0o500, "#{dst}.new")
-        File.rename("#{dst}.new", dst)
+      if cfg.mounts.any?
+        hook_installer.install_hooks(hooks)
+      else
+        hook_installer.uninstall_hooks(hooks)
       end
-    end
-
-    def uninstall_hooks
-      hooks.each do |hook|
-        dst = hook_path(hook)
-        FileUtils.rm_f(dst)
-      end
-    end
-
-    def hooks
-      %w[pre-start post-mount]
-    end
-
-    def hook_path(name)
-      File.join(ct_hook_dir, name)
-    end
-
-    def backup_path(path)
-      "#{path}.backup"
     end
   end
 end

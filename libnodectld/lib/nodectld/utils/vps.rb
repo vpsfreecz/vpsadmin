@@ -30,10 +30,6 @@ module NodeCtld
       end
     end
 
-    def ct_hook_dir(pool_fs: @pool_fs, vps_id: @vps_id)
-      File.join('/', pool_fs, '..', 'hook/ct', vps_id.to_s)
-    end
-
     def fork_chroot_wait(&block)
       rootfs = ct.boot_rootfs
 
