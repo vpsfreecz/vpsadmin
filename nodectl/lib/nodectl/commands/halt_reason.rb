@@ -181,7 +181,7 @@ module NodeCtl
       case ENV.fetch('HALT_ACTION')
       when 'halt', 'poweroff'
         'shutting down'
-      when 'reboot'
+      when 'reboot', 'kexec'
         'rebooting'
       else
         raise "unknown HALT_ACTION #{ENV['HALT_ACTION'].inspect}"
