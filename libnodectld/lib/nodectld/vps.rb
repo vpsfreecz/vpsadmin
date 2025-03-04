@@ -23,8 +23,11 @@ module NodeCtld
       osctl(%i[ct set autostart], @veid, { priority: autostart_priority })
     end
 
-    def stop(_params = {})
-      osctl(%i[ct stop], @veid)
+    def stop(kill: false)
+      stop_opts = {}
+      stop_opts[:kill] = true if kill
+
+      osctl(%i[ct stop], @veid, stop_opts)
       osctl(%i[ct unset autostart], @veid)
     end
 

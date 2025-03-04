@@ -20,7 +20,7 @@ module TransactionChains
     end
 
     def pre_local_rollback
-      use_chain(Vps::Stop, args: @vps)
+      use_chain(Vps::Stop, args: @vps, kwargs: { kill: true })
     end
 
     def post_local_rollback

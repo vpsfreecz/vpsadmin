@@ -5,7 +5,7 @@ module NodeCtld
 
     def exec
       @vps = Vps.new(@vps_id)
-      @vps.stop
+      @vps.stop(kill: @kill)
       ok
     end
 
