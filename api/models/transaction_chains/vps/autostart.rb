@@ -3,6 +3,9 @@ module TransactionChains
     label 'Autostart'
 
     def link_chain(vps, enable:, priority: nil)
+      lock(vps)
+      concerns(:affect, [vps.class.name, vps.id])
+
       new_priority = priority || vps.autostart_priority
 
       append_t(
