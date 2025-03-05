@@ -68,7 +68,7 @@ GEM
 GEM
   remote: https://rubygems.vpsfree.cz/
   specs:
-    libnodectld (4.0.0.build20250303205023)
+    libnodectld (4.0.0.build20250305141725)
       base64
       bigdecimal
       bunny (~> 2.23.0)
@@ -115,7 +115,7 @@ PLATFORMS
   x86_64-linux
 
 DEPENDENCIES
-  libnodectld (= 4.0.0.build20250303205023)!
+  libnodectld (= 4.0.0.build20250305141725)!
 
 BUNDLED WITH
    2.5.22
