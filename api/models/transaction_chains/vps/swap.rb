@@ -159,6 +159,11 @@ module TransactionChains
               end
             end
 
+            # Stop the primary VPS before removing its IP addresses
+            # This is necessary, because breaking the network can disrupt NFS
+            # mounts, preventing a clean shutdown later.
+            use_chain(Vps::Stop, args: primary_vps)
+
             primary_netifs.each do |netif_type, attrs|
               # Remove IP addresses from the original primary VPS.
               attrs[:routes].reverse_each do |ip|
