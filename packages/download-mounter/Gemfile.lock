@@ -41,7 +41,7 @@ GEM
     mime-types (3.6.0)
       logger
       mime-types-data (~> 3.2015)
-    mime-types-data (3.2025.0220)
+    mime-types-data (3.2025.0304)
     minitest (5.25.4)
     netrc (0.11.0)
     reline (0.6.0)
@@ -56,7 +56,7 @@ GEM
     securerandom (0.4.1)
     tzinfo (2.0.6)
       concurrent-ruby (~> 1.0)
-    uri (1.0.2)
+    uri (1.0.3)
 
 PLATFORMS
   ruby
