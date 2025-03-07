@@ -53,5 +53,10 @@ in {
       port = 6379;
       requirePassFile = cfg.passwordFile;
     };
+
+    systemd.services.redis-vpsadmin.serviceConfig = {
+      Restart = "on-failure";
+      RestartSec = 5;
+    };
   };
 }
