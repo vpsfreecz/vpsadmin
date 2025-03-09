@@ -40,6 +40,32 @@ class OsTemplate < ApplicationRecord
     YAML.dump(config)
   end
 
+  # @param user_data [::VpsUserData]
+  def support_user_data?(user_data)
+    case user_data.format
+    when 'script'
+      true
+    when 'cloudinit_config', 'cloudinit_script'
+      cloud_init
+    else
+      false
+    end
+  end
+
+  # @param user_data [::VpsUserData]
+  def user_data_backend(user_data)
+    raise 'user data not supported' unless support_user_data?(user_data)
+
+    case user_data.format
+    when 'script'
+      'script'
+    when 'cloudinit_config', 'cloudinit_script'
+      'cloudinit'
+    else
+      raise "unsupported user data format #{user_data.format.inspect}"
+    end
+  end
+
   protected
 
   def set_name

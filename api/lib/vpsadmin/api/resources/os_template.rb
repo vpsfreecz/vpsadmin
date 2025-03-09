@@ -18,6 +18,7 @@ class VpsAdmin::API::Resources::OsTemplate < HaveAPI::Resource
     string :cgroup_version, choices: ::OsTemplate.cgroup_versions.keys, default: 'cgroup_any'
     bool :manage_hostname, label: 'Manage hostname'
     bool :manage_dns_resolver, label: 'Manage DNS resolver'
+    bool :cloud_init, label: 'Cloud-init'
     string :vendor
     string :variant
     string :arch
@@ -47,7 +48,7 @@ class VpsAdmin::API::Resources::OsTemplate < HaveAPI::Resource
       allow if u.role == :admin
       restrict enabled: true
       output whitelist: %i[id name label info supported hypervisor_type cgroup_version
-                           vendor variant arch distribution version os_family]
+                           vendor variant arch distribution version os_family cloud_init]
       allow
     end
 
@@ -100,7 +101,7 @@ class VpsAdmin::API::Resources::OsTemplate < HaveAPI::Resource
     authorize do |u|
       allow if u.role == :admin
       output whitelist: %i[id name label info supported enabled hypervisor_type cgroup_version
-                           vendor variant arch distribution version os_family]
+                           vendor variant arch distribution version os_family cloud_init]
       allow
     end
 

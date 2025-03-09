@@ -11,6 +11,7 @@ require_relative 'transaction_chains/lifetimes/not_implemented'
 class User < ApplicationRecord
   has_many :user_namespaces
   has_many :vpses
+  has_many :vps_user_data
   has_many :transaction_chains
   has_many :transactions
   has_many :environment_user_configs
