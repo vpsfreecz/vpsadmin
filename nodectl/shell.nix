@@ -12,6 +12,7 @@ in stdenv.mkDerivation rec {
     zlib
     openssl
     mariadb-connector-c
+    libffi
   ];
 
   shellHook = ''
