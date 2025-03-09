@@ -169,6 +169,18 @@ if (isLoggedIn()) {
                 }
             }
 
+            switch ($_POST['user_data_type']) {
+                case 'saved':
+                    $params['vps_user_data'] = $_POST['vps_user_data'];
+                    break;
+                case 'custom':
+                    $params['user_data_format'] = $_POST['user_data_format'];
+                    $params['user_data_content'] = $_POST['user_data_content'];
+                    break;
+                default:
+                    break;
+            }
+
             try {
                 $vps = $api->vps->create($params);
 
@@ -655,9 +667,23 @@ if (isLoggedIn()) {
                 csrf_check();
 
                 try {
-                    $api->vps($_GET['veid'])->reinstall([
+                    $params = [
                         'os_template' => $_POST['os_template'],
-                    ]);
+                    ];
+
+                    switch ($_POST['user_data_type']) {
+                        case 'saved':
+                            $params['vps_user_data'] = $_POST['vps_user_data'];
+                            break;
+                        case 'custom':
+                            $params['user_data_format'] = $_POST['user_data_format'];
+                            $params['user_data_content'] = $_POST['user_data_content'];
+                            break;
+                        default:
+                            break;
+                    }
+
+                    $api->vps($_GET['veid'])->reinstall($params);
 
                     notify_user(
                         _("Reinstallation of VPS") . " {$_GET["veid"]} " . _("planned"),
@@ -670,21 +696,6 @@ if (isLoggedIn()) {
                     $show_info = true;
                 }
 
-            } elseif ($_POST['reinstall_action'] === '1') {
-                csrf_check();
-
-                try {
-                    $api->vps($_GET['veid'])->update([
-                        'os_template' => $_POST['os_template'],
-                    ]);
-
-                    notify_user(_("Distribution information updated"), '');
-                    redirect('?page=adminvps&action=info&veid=' . $_GET["veid"]);
-
-                } catch (\HaveAPI\Client\Exception\ActionFailed $e) {
-                    $xtpl->perex_format_errors(_('Failed to update distribution'), $e->getResponse());
-                    $show_info = true;
-                }
             } elseif (isset($_POST['cancel'])) {
                 redirect('?page=adminvps&action=info&veid=' . $_GET["veid"]);
 
@@ -697,6 +708,13 @@ if (isLoggedIn()) {
                     ' ' . $vps->hostname
                 );
                 $xtpl->form_create('?page=adminvps&action=reinstall&veid=' . $vps->id);
+
+                $xtpl->form_set_hidden_fields([
+                    'user_data_type' => $_POST['user_data_type'],
+                    'vps_user_data' => $_POST['vps_user_data'],
+                    'user_data_format' => $_POST['user_data_format'],
+                    'user_data_content' => $_POST['user_data_content'],
+                ]);
 
                 $xtpl->table_td(
                     '<strong>' .
@@ -725,6 +743,26 @@ if (isLoggedIn()) {
                 $xtpl->table_td($new_tpl->label);
                 $xtpl->table_tr();
 
+                if ($_POST['user_data_type'] == 'saved') {
+                    $data = $api->vps_user_data->show($_POST['vps_user_data']);
+
+                    $xtpl->table_td(_('Initial configuration') . ':');
+                    $xtpl->table_td(h($data->label) . ' (' . $data->format . ')');
+                    $xtpl->table_tr();
+
+                    $xtpl->table_td('');
+                    $xtpl->table_td('<textarea cols="75" rows="10" readonly>' . h($data->content) . '</textarea>');
+                    $xtpl->table_tr();
+                } elseif ($_POST['user_data_type'] == 'custom') {
+                    $xtpl->table_td(_('Initial configuration') . ':');
+                    $xtpl->table_td(h($_POST['user_data_format']));
+                    $xtpl->table_tr();
+
+                    $xtpl->table_td('');
+                    $xtpl->table_td('<textarea cols="75" rows="10" readonly>' . h($_POST['user_data_content']) . '</textarea>');
+                    $xtpl->table_tr();
+                }
+
                 $xtpl->form_add_checkbox(_('Confirm') . ':', 'confirm', '1', false);
 
                 $xtpl->table_td('');
@@ -735,6 +773,23 @@ if (isLoggedIn()) {
                 $xtpl->table_tr();
 
                 $xtpl->form_out_raw();
+            }
+            break;
+
+        case 'os_template':
+            csrf_check();
+
+            try {
+                $api->vps($_GET['veid'])->update([
+                    'os_template' => $_POST['os_template'],
+                ]);
+
+                notify_user(_("Distribution information updated"), '');
+                redirect('?page=adminvps&action=info&veid=' . $_GET["veid"]);
+
+            } catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+                $xtpl->perex_format_errors(_('Failed to update distribution'), $e->getResponse());
+                $show_info = true;
             }
             break;
 
@@ -1534,32 +1589,55 @@ if (isLoggedIn()) {
             $xtpl->table_td(_('Do not mount the root dataset'));
             $xtpl->form_add_radio_pure('mount_root_dataset', 'no', false);
             $xtpl->table_tr();
-            $xtpl->form_out(_("Go >>"));
+            $xtpl->form_out(_('Boot'));
+
+            // Reinstall
+            $xtpl->table_title(_('Reinstall system'));
+            $xtpl->form_create('?page=adminvps&action=reinstall&veid=' . $vps->id, 'post');
+
+            $xtpl->table_td(
+                _('Install base system again. All data in the root filesystem will be removed.'),
+                false,
+                false,
+                2
+            );
+            $xtpl->table_tr();
+
+            $xtpl->form_add_select(_("Distribution") . ':', 'os_template', $os_templates, $vps->os_template_id, '');
+
+            if ($vps->os_template->info) {
+                $xtpl->table_td(_('Info') . ':');
+                $xtpl->table_td($vps->os_template->info);
+                $xtpl->table_tr();
+            }
+
+            vps_user_data_select_form($api->vps->reinstall, $vps->user_id);
+
+            $xtpl->form_out(_('Reinstall'));
 
             // Distribution
-            $xtpl->table_title(_('Distribution'));
-            $xtpl->form_create('?page=adminvps&action=reinstall&veid=' . $vps->id, 'post');
-            $xtpl->form_add_select(_("Distribution") . ':', 'os_template', $os_templates, $vps->os_template_id, '');
-            $xtpl->table_td(_('Info') . ':');
-            $xtpl->table_td($vps->os_template->info);
-            $xtpl->table_tr();
-            $xtpl->form_add_radio(
-                _("Update information") . ':',
-                'reinstall_action',
-                '1',
-                true,
-                _("Use if you have upgraded your system.")
-            );
-            $xtpl->table_tr();
-            $xtpl->form_add_radio(
-                _("Reinstall") . ':',
-                'reinstall_action',
-                '2',
+            $xtpl->table_title(_('Distribution information'));
+            $xtpl->form_create('?page=adminvps&action=os_template&veid=' . $vps->id, 'post');
+
+            $xtpl->table_td(
+                _('Use if you have upgraded/downgraded your system. ' .
+                  'Distribution information can also be updated automatically by reading ' .
+                  '/etc/os-release, see below.'),
                 false,
-                _("Install base system again.") . ' ' . _('All data in the root filesystem will be removed.')
+                false,
+                2
             );
             $xtpl->table_tr();
-            $xtpl->form_out(_("Go >>"));
+
+            $xtpl->form_add_select(_("Distribution") . ':', 'os_template', $os_templates, $vps->os_template_id, '');
+
+            if ($vps->os_template->info) {
+                $xtpl->table_td(_('Info') . ':');
+                $xtpl->table_td($vps->os_template->info);
+                $xtpl->table_tr();
+            }
+
+            $xtpl->form_out(_('Save'));
 
             // OS template auto-update
             $xtpl->table_title(_('Read /etc/os-release'));
@@ -1567,7 +1645,7 @@ if (isLoggedIn()) {
             $xtpl->form_add_checkbox_pure('enable_os_template_auto_update', '1', post_val_issetto('enable_os_template_auto_update', '1', $vps->enable_os_template_auto_update));
             $xtpl->table_td(_('Automatically update distribution version information in vpsAdmin by reading <code>/etc/os-release</code> on VPS start.'));
             $xtpl->table_tr();
-            $xtpl->form_out(_("Go >>"));
+            $xtpl->form_out(_('Save'));
 
             // Resources
             $xtpl->table_title(_('Resources'));
