@@ -83,6 +83,8 @@ Style/NumericPredicate:
 Style/PreferredHashMethods:
   Enabled: true
   EnforcedStyle: verbose
+Style/RedundantCondition:
+  Enabled: false
 Style/RedundantConstantBase:
   Enabled: false
 Style/RedundantFormat:
