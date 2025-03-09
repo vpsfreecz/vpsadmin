@@ -158,10 +158,10 @@
     platforms = [];
     source = {
       remotes = ["https://rubygems.vpsfree.cz"];
-      sha256 = "0ri0552mdh4dm8a1h8bsificamdwrqk82calfdkp7dqi9s8h9wfy";
+      sha256 = "1l6bxblcyi2nfs02g1inyj4rqszb77m6d0ya83lb0660m2cjlfx9";
       type = "gem";
     };
-    version = "4.0.0.build20250305141725";
+    version = "4.0.0.build20250309204935";
   };
   libosctl = {
     dependencies = ["fiddle" "logger" "rainbow" "require_all" "syslog"];
@@ -169,10 +169,10 @@
     platforms = [];
     source = {
       remotes = ["https://rubygems.vpsfree.cz"];
-      sha256 = "0ichrj0rcm1ncf018q362bdidps3906n9z839c6bi9hvh56w9q7w";
+      sha256 = "1fq22pczvcjsip95g1db1m7wh5b0q07zdnv06pi8z09nglhjm1k3";
       type = "gem";
     };
-    version = "24.11.0.build20250228160105";
+    version = "24.11.0.build20250309190441";
   };
   logger = {
     groups = ["default"];
@@ -275,10 +275,10 @@
     platforms = [];
     source = {
       remotes = ["https://rubygems.vpsfree.cz"];
-      sha256 = "04z6iggd3ns7kxxbpzswaysi3vpc6zs86zkv5lhmm8pk07v9pymh";
+      sha256 = "00ihqp6x0bf31pv2s7algpdr1kbzm2apccq9ly9wcnsc9dqjxhz0";
       type = "gem";
     };
-    version = "4.0.0.build20250305141725";
+    version = "4.0.0.build20250309204935";
   };
   osctl = {
     dependencies = ["base64" "curses" "gli" "highline" "ipaddress" "json" "libosctl" "rainbow" "require_all" "ruby-progressbar" "tty-spinner"];
@@ -286,10 +286,10 @@
     platforms = [];
     source = {
       remotes = ["https://rubygems.vpsfree.cz"];
-      sha256 = "0cnz3z87wlilvz9n4lh65ffn57iji1p0d3karywc9rrxvwkx7zrv";
+      sha256 = "1ravribk885hdcznb93g7lggh7hhph5ga8w6srl722lslygxaqc8";
       type = "gem";
     };
-    version = "24.11.0.build20250228160105";
+    version = "24.11.0.build20250309190441";
   };
   osctl-exportfs = {
     dependencies = ["filelock" "gli" "libosctl" "require_all"];
@@ -297,10 +297,10 @@
     platforms = [];
     source = {
       remotes = ["https://rubygems.vpsfree.cz"];
-      sha256 = "11slv3wpwz4cl2dmsxc0wxw6d6585rxwsdl717szl6pahfkbhnaq";
+      sha256 = "1ns235r6qhw389hhdfgxj1ymz8f167p65v1nj4ivwbq89cpzaywy";
       type = "gem";
     };
-    version = "24.11.0.build20250228160105";
+    version = "24.11.0.build20250309190441";
   };
   ostruct = {
     groups = ["default"];
