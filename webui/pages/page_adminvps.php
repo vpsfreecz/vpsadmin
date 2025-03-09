@@ -657,6 +657,8 @@ if (isLoggedIn()) {
                 try {
                     $api->vps($_GET['veid'])->reinstall([
                         'os_template' => $_POST['os_template'],
+                        'user_data_format' => $_POST['user_data_format'],
+                        'user_data_content' => $_POST['user_data_content'],
                     ]);
 
                     notify_user(
@@ -724,6 +726,11 @@ if (isLoggedIn()) {
                 $xtpl->table_td(_('New OS template') . ':');
                 $xtpl->table_td($new_tpl->label);
                 $xtpl->table_tr();
+
+                $input = $api->vps->reinstall->getParameters('input');
+
+                api_param_to_form('user_data_format', $input->user_data_format);
+                api_param_to_form('user_data_content', $input->user_data_content);
 
                 $xtpl->form_add_checkbox(_('Confirm') . ':', 'confirm', '1', false);
 
