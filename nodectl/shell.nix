@@ -6,13 +6,13 @@ in stdenv.mkDerivation rec {
   name = "nodectl";
 
   buildInputs = with pkgs; [
-    ruby
-    ncurses
     git
-    zlib
-    openssl
-    mariadb-connector-c
     libffi
+    mariadb-connector-c
+    ncurses
+    openssl
+    ruby
+    zlib
   ];
 
   shellHook = ''
