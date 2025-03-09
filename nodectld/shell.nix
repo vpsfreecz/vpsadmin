@@ -13,6 +13,7 @@ in stdenv.mkDerivation rec {
     ncurses
     mariadb-connector-c
     openssh
+    libffi
   ];
 
   shellHook = ''
