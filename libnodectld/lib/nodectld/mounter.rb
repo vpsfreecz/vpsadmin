@@ -21,7 +21,11 @@ module NodeCtld
       def mount_vps_mounts(pool_fs, vps_id, rootfs_path, map_mode, ns_pid)
         mounter = new(pool_fs, vps_id, map_mode:, ns_pid:)
 
-        mounter.load_vps_mounts.each do |mnt|
+        mounts = mounter.load_vps_mounts
+
+        mounter.create_mountpoints(mounts, rootfs_path)
+
+        mounts.each do |mnt|
           if mnt['type'] != 'dataset_local'
             log(:warn, "Ignoring mount ##{mnt['id']}: unsupported type #{mnt['type']}")
             next
@@ -39,16 +43,26 @@ module NodeCtld
       @ns_pid = ns_pid
     end
 
+    def create_mountpoints(mounts, rootfs_path)
+      fork_chroot_wait(rootfs: rootfs_path) do
+        if @map_mode == 'native'
+          st = File.stat('/')
+
+          Process.groups = [st.gid]
+          sys = OsCtl::Lib::Sys.new
+          sys.setresgid(st.uid, st.uid, st.uid)
+          sys.setresuid(st.gid, st.gid, st.gid)
+        end
+
+        mounts.each do |mnt|
+          FileUtils.mkpath(mnt['dst'])
+        end
+      end
+    end
+
     # Bind-mount from the host to the VPS
     def bind_mount_to_vps(mnt, rootfs_path)
       cmd, fs, dst, type, opts = bind_mount_to_vps_cmd(mnt, rootfs_path)
-
-      # Ensure the mountpoint exists
-      Dir.chdir(rootfs_path)
-      reldst = mnt['dst']
-      reldst = reldst[1..] while reldst.start_with?('/')
-
-      FileUtils.mkpath(reldst)
 
       # Mount it
       syscmd(cmd)

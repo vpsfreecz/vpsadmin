@@ -30,8 +30,8 @@ module NodeCtld
       end
     end
 
-    def fork_chroot_wait(&block)
-      rootfs = ct.boot_rootfs
+    def fork_chroot_wait(rootfs: nil, &block)
+      rootfs ||= ct.boot_rootfs
 
       pid = Process.fork do
         sys = OsCtl::Lib::Sys.new
