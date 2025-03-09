@@ -1515,9 +1515,13 @@ CREATE TABLE `os_templates` (
   `os_family_id` bigint(20) NOT NULL,
   `manage_hostname` tinyint(1) NOT NULL DEFAULT 1,
   `manage_dns_resolver` tinyint(1) NOT NULL DEFAULT 1,
+  `enable_script` tinyint(1) NOT NULL DEFAULT 1,
+  `enable_cloud_init` tinyint(1) NOT NULL DEFAULT 1,
   PRIMARY KEY (`id`),
   KEY `index_os_templates_on_cgroup_version` (`cgroup_version`),
-  KEY `index_os_templates_on_os_family_id` (`os_family_id`)
+  KEY `index_os_templates_on_os_family_id` (`os_family_id`),
+  KEY `index_os_templates_on_enable_script` (`enable_script`),
+  KEY `index_os_templates_on_enable_cloud_init` (`enable_cloud_init`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `pools`;
@@ -2309,6 +2313,22 @@ CREATE TABLE `vps_statuses` (
   KEY `index_vps_statuses_on_vps_id` (`vps_id`) USING BTREE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `vps_user_data`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `vps_user_data` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `user_id` bigint(20) NOT NULL,
+  `label` varchar(255) NOT NULL,
+  `format` int(11) NOT NULL DEFAULT 0,
+  `content` text NOT NULL,
+  `created_at` datetime(6) NOT NULL,
+  `updated_at` datetime(6) NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `index_vps_user_data_on_user_id` (`user_id`),
+  KEY `index_vps_user_data_on_format` (`format`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `vpses`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
@@ -2408,6 +2428,7 @@ CREATE TABLE `webauthn_credentials` (
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
 INSERT INTO `schema_migrations` (version) VALUES
+('20250307191058'),
 ('20250226200230'),
 ('20250223072700'),
 ('20250219211214'),

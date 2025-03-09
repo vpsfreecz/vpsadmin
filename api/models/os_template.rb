@@ -40,6 +40,18 @@ class OsTemplate < ApplicationRecord
     YAML.dump(config)
   end
 
+  # @param user_data [::VpsUserData]
+  def support_user_data?(user_data)
+    case user_data.format
+    when 'script'
+      enable_script
+    when 'cloudinit_config', 'cloudinit_script'
+      enable_cloud_init
+    else
+      false
+    end
+  end
+
   protected
 
   def set_name

@@ -83,6 +83,10 @@ module TransactionChains
           t.just_destroy(key)
         end
 
+        user.vps_user_data.each do |data|
+          t.just_destroy(data)
+        end
+
         # Remove TOTP devices
         user.user_totp_devices.each do |dev|
           t.just_destroy(dev)

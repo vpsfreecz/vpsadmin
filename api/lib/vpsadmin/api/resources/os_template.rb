@@ -18,6 +18,8 @@ class VpsAdmin::API::Resources::OsTemplate < HaveAPI::Resource
     string :cgroup_version, choices: ::OsTemplate.cgroup_versions.keys, default: 'cgroup_any'
     bool :manage_hostname, label: 'Manage hostname'
     bool :manage_dns_resolver, label: 'Manage DNS resolver'
+    bool :enable_script, label: 'vpsAdmin user scripts'
+    bool :enable_cloud_init, label: 'Cloud-init'
     string :vendor
     string :variant
     string :arch
@@ -36,7 +38,7 @@ class VpsAdmin::API::Resources::OsTemplate < HaveAPI::Resource
 
     input do
       resource VpsAdmin::API::Resources::Location
-      use :common, include: %i[hypervisor_type cgroup_version]
+      use :common, include: %i[hypervisor_type cgroup_version enable_script enable_cloud_init]
     end
 
     output(:object_list) do
@@ -47,7 +49,8 @@ class VpsAdmin::API::Resources::OsTemplate < HaveAPI::Resource
       allow if u.role == :admin
       restrict enabled: true
       output whitelist: %i[id name label info supported hypervisor_type cgroup_version
-                           vendor variant arch distribution version os_family]
+                           vendor variant arch distribution version os_family
+                           enable_script enable_cloud_init]
       allow
     end
 
@@ -80,6 +83,10 @@ class VpsAdmin::API::Resources::OsTemplate < HaveAPI::Resource
         q = q.where(os_family: input[:os_family])
       end
 
+      %i[enable_script enable_cloud_init].each do |v|
+        q = q.where(v => input[v]) if input.has_key?(v)
+      end
+
       q
     end
 
@@ -100,7 +107,8 @@ class VpsAdmin::API::Resources::OsTemplate < HaveAPI::Resource
     authorize do |u|
       allow if u.role == :admin
       output whitelist: %i[id name label info supported enabled hypervisor_type cgroup_version
-                           vendor variant arch distribution version os_family]
+                           vendor variant arch distribution version os_family
+                           enable_script enable_cloud_init]
       allow
     end
 
