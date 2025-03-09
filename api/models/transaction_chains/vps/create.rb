@@ -7,7 +7,8 @@ module TransactionChains
     # @option opts [Integer] ipv6
     # @option opts [Integer] ipv4_private
     # @option opts [Boolean] start (true)
-    # @Option opts [::Location, nil] address_location
+    # @option opts [::Location, nil] address_location
+    # @option opts [::VpsUserData] user_data
     def link_chain(vps, opts)
       lock(vps.user)
       vps.save!
@@ -249,6 +250,10 @@ module TransactionChains
 
       vps.user.user_public_keys.where(auto_add: true).each do |key|
         use_chain(Vps::DeployPublicKey, args: [vps, key])
+      end
+
+      if opts[:vps_user_data]
+        append_t(Transactions::Vps::DeployUserData, args: [vps, opts[:vps_user_data]])
       end
 
       use_chain(TransactionChains::Vps::Start, args: vps) if opts.fetch(:start, true)

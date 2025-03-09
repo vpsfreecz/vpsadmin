@@ -77,6 +77,12 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
     patch :diskspace, db_name: :total_diskspace
   end
 
+  params(:vps_user_data) do
+    resource VpsAdmin::API::Resources::VpsUserData, label: 'User data'
+    string :user_data_format, label: 'User data format', choices: ::VpsUserData.formats.keys.map(&:to_s)
+    text :user_data_content, label: 'User data content'
+  end
+
   params(:all) do
     use :id
     use :common
@@ -215,6 +221,8 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
 
       bool :start, label: 'Start VPS', default: true, fill: true
 
+      use :vps_user_data
+
       patch :hostname, required: true
     end
 
@@ -228,7 +236,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
         environment location address_location hostname os_template cgroup_version
         dns_resolver cpu memory swap diskspace ipv4 ipv4_private ipv6
         start_menu_timeout allow_admin_modifications enable_os_template_auto_update
-        user_namespace_map start
+        user_namespace_map start vps_user_data user_data_format user_data_content
       ]
       output whitelist: %i[
         id user hostname manage_hostname os_template cgroup_version dns_resolver
@@ -320,12 +328,16 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
         error!('user namespace map has to belong to VPS owner')
       end
 
-      opts[:start] = input.delete(:start)
+      %i[start vps_user_data user_data_format user_data_content].each do |v|
+        opts[v] = input.delete(v)
+      end
 
       @chain, vps = VpsAdmin::API::Operations::Vps::Create.run(to_db_names(input), input, opts)
       vps
     rescue ActiveRecord::RecordInvalid => e
       error!('save failed', to_param_names(e.record.errors.to_hash, :input))
+    rescue VpsAdmin::API::Exceptions::OperationError => e
+      error!(e.message)
     end
 
     def state_id
@@ -688,6 +700,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
 
     input do
       use :template
+      use :vps_user_data
     end
 
     authorize do |u|
@@ -700,26 +713,14 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
       vps = ::Vps.find_by!(with_restricted(id: params[:vps_id]))
       maintenance_check!(vps)
 
-      tpl = input[:os_template] || vps.os_template
+      input[:os_template] ||= vps.os_template
 
-      if !tpl.enabled?
-        error!('selected os template is disabled')
-
-      elsif tpl.hypervisor_type != vps.node.hypervisor_type
-        error!(
-          "incompatible template: needs #{tpl.hypervisor_type}, but VPS is " \
-          "using #{vps.node.hypervisor_type}"
-        )
-
-      elsif tpl.cgroup_version != 'cgroup_any' && tpl.cgroup_version != vps.node.cgroup_version
-        error!(
-          "incompatible cgroup version: #{tpl.label} needs #{tpl.cgroup_version}, " \
-          "but node is using #{vps.node.cgroup_version}"
-        )
-      end
-
-      @chain, = TransactionChains::Vps::Reinstall.fire(vps, tpl)
+      @chain = VpsAdmin::API::Operations::Vps::Reinstall.run(vps, input)
       ok!
+    rescue ActiveRecord::RecordInvalid => e
+      error!('reinstall failed', to_param_names(e.record.errors.to_hash))
+    rescue VpsAdmin::API::Exceptions::OperationError => e
+      error!(e.message)
     end
 
     def state_id

@@ -2,7 +2,7 @@ module TransactionChains
   class Vps::Reinstall < ::TransactionChain
     label 'Reinstall'
 
-    def link_chain(vps, template)
+    def link_chain(vps, template, opts)
       lock(vps.dataset_in_pool)
       lock(vps)
       concerns(:affect, [vps.class.name, vps.id])
@@ -21,6 +21,14 @@ module TransactionChains
 
       vps.user.user_public_keys.where(auto_add: true).each do |key|
         use_chain(Vps::DeployPublicKey, args: [vps, key], reversible: :keep_going)
+      end
+
+      if opts[:vps_user_data]
+        append_t(
+          Transactions::Vps::DeployUserData,
+          args: [vps, opts[:vps_user_data]],
+          kwargs: { os_template: template }
+        )
       end
 
       return unless running

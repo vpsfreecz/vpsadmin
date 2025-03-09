@@ -19,7 +19,8 @@ module VpsAdmin::API::Resources
     if u
       restrict enabled: true
       output whitelist: %i[id name label info supported hypervisor_type cgroup_version
-                           vendor variant arch distribution version os_family]
+                           vendor variant arch distribution version os_family
+                           enable_script enable_cloud_init]
 
     else
       restrict enabled: true, supported: true
