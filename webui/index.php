@@ -1,4 +1,5 @@
 <?php
+
 /*
     ./index.php
 
@@ -55,6 +56,7 @@ include WWW_ROOT . 'forms/oom_reports.forms.php';
 include WWW_ROOT . 'forms/node.forms.php';
 include WWW_ROOT . 'forms/incidents.forms.php';
 include WWW_ROOT . 'forms/dns.forms.php';
+include WWW_ROOT . 'forms/userdata.forms.php';
 
 include WWW_ROOT . 'lib/gettext_stream.lib.php';
 include WWW_ROOT . 'lib/gettext_inc.lib.php';
@@ -213,6 +215,9 @@ try {
                 break;
             case 'dns':
                 include WWW_ROOT . 'pages/page_dns.php';
+                break;
+            case 'userdata':
+                include WWW_ROOT . 'pages/page_userdata.php';
                 break;
             default:
                 include WWW_ROOT . 'pages/page_index.php';

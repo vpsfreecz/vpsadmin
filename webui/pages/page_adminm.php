@@ -386,6 +386,7 @@ function print_editm($u)
     }
 
     $xtpl->sbar_add('<img src="template/icons/bug.png"  title="' . _("Incident reports") . '" />' . _('Incident reports'), "?page=incidents&action=list&list=1&user={$u->id}&return=" . $return_url);
+    $xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="' . _("User data") . '" />' . _('User data'), "?page=userdata&action=list&user={$u->id}");
 
     $xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="' . _("Resource packages") . '" />' . _('Resource packages'), "?page=adminm&section=members&action=resource_packages&id={$u->id}");
     $xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="' . _("Cluster resources") . '" />' . _('Cluster resources'), "?page=adminm&section=members&action=cluster_resources&id={$u->id}");

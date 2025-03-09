@@ -199,7 +199,7 @@ function print_newvps_page2($user_id, $loc_id)
 
         foreach ($familyTemplates as $t) {
             $tdContent .= '<tr>';
-            $tdContent .= '<td><input type="radio" name="os_template" value="' . $t->id . '" ' . ($_GET['os_template'] == $t->id ? 'checked' : '') . '></td>';
+            $tdContent .= '<td><input type="radio" name="os_template" value="' . $t->id . '" ' . (($_GET['os_template'] ?? 0) == $t->id ? 'checked' : '') . '></td>';
             $tdContent .= '<td>' . h($t->label) . '</td>';
             $tdContent .= '</tr>';
 
@@ -585,7 +585,55 @@ function print_newvps_page4($user_id, $loc_id, $tpl_id)
 
     $xtpl->table_tr();
 
+    vps_user_data_select_form($api->vps->create, $user_id ? $user_id : $_SESSION['user']['id']);
+
     $xtpl->form_out(_("Create VPS"));
+}
+
+function vps_user_data_select_form($action, $user_id)
+{
+    global $api, $xtpl;
+
+    $input = $action->getParameters('input');
+
+    $xtpl->table_td(
+        _('Optional script/cloud-init configuration which is run when the VPS is first started.'),
+        false,
+        false,
+        2
+    );
+    $xtpl->table_tr();
+
+    $xtpl->form_add_radio(_('No configuration') . ':', 'user_data_type', 'none', post_val_issetto('user_data_type', 'none', true));
+    $xtpl->table_tr();
+
+    $xtpl->form_add_radio(_('Pre-saved') . ':', 'user_data_type', 'saved', post_val_issetto('user_data_type', 'saved'));
+    $xtpl->table_tr();
+
+    $xtpl->table_td($input->vps_user_data->label . ':');
+    $xtpl->form_add_select_pure(
+        'vps_user_data',
+        resource_list_to_options(
+            $api->vps_user_data->list(['user' => $user_id]),
+            'id',
+            'label',
+            false
+        ),
+        post_val('vps_user_data')
+    );
+    $xtpl->table_td('<a href="?page=userdata&action=list&user=' . $user_id . '">' . _('Manage user data') . '</a>');
+    $xtpl->table_tr(false, 'user-data saved', 'user-data saved');
+
+    $xtpl->form_add_radio(_('Custom') . ':', 'user_data_type', 'custom', post_val_issetto('user_data_type', 'custom'));
+    $xtpl->table_tr();
+
+    $xtpl->table_td($input->user_data_format->label . ':');
+    api_param_to_form_pure('user_data_format', $input->user_data_format);
+    $xtpl->table_tr(false, 'user-data custom', 'user-data custom');
+
+    $xtpl->table_td($input->user_data_content->label . ':');
+    api_param_to_form_pure('user_data_content', $input->user_data_content);
+    $xtpl->table_tr(false, 'user-data custom', 'user-data custom');
 }
 
 function vps_list_form()
@@ -808,6 +856,7 @@ function vps_list_form()
         $xtpl->sbar_add('<img src="template/icons/m_add.png"  title="' . _("New VPS") . '" /> ' . _("New VPS"), '?page=adminvps&section=vps&action=new-step-1');
     }
 
+    $xtpl->sbar_add('<img src="template/icons/vps_ip_list.png" title="' . _("User data") . '" /> ' . _("User data"), '?page=userdata&action=list');
     $xtpl->sbar_add('<img src="template/icons/vps_ip_list.png" title="' . _("User namespaces") . '" /> ' . _("User namespaces"), '?page=userns');
 }
 
@@ -868,6 +917,7 @@ function vps_details_submenu($vps)
     }
 
     $xtpl->sbar_add(_('Transaction log'), '?page=transactions&class_name=Vps&row_id=' . $vps->id);
+    $xtpl->sbar_add(_('User data'), '?page=userdata&action=list&user=' . $vps->user_id);
     $xtpl->sbar_add(_('User namespaces'), '?page=userns');
 }
 
