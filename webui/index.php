@@ -64,7 +64,9 @@ include WWW_ROOT . 'lib/gettext_lang.lib.php';
 // include configuration
 include WWW_ROOT . 'config_cfg.php';
 
-$api = new \HaveAPI\Client(INT_API_URL, API_VERSION, getClientIdentity());
+$api = new \HaveAPI\Client(INT_API_URL, API_VERSION, getClientIdentity(), [
+    'verify' => defined('API_SSL_VERIFY') ? API_SSL_VERIFY : true,
+]);
 $api->registerDescriptionChangeFunc('api_description_changed');
 
 if (isset($_SESSION["api_description"]) && $_SESSION["api_description"]) {
