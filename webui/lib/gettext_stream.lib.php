@@ -1,4 +1,5 @@
 <?php
+
 /*
    Copyright (c) 2003, 2005, 2006, 2009 Danilo Segan <danilo@kvota.net>.
 

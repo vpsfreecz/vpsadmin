@@ -1,4 +1,5 @@
 <?php
+
 /*
     ./lib/transact.lib.php
 
@@ -13,7 +14,7 @@ function list_transaction_chains()
 
     $chains = $api->transaction_chain->list(['limit' => 10]);
 
-    foreach($chains as $chain) {
+    foreach ($chains as $chain) {
         $xtpl->transaction_chain($chain);
     }
 

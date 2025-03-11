@@ -1,4 +1,5 @@
 <?php
+
 /**
  * This script is used to maintain PHP session to avoid it being garbage-collected
  * on session.gc_maxlifetime. Since the JavaScript code communicates directly

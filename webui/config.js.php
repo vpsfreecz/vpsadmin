@@ -9,7 +9,7 @@ include WWW_ROOT . 'lib/login.lib.php';
 
 header('Content-Type: text/javascript');
 
-if(isLoggedIn()) {
+if (isLoggedIn()) {
     ?>
 (function(root) {
 root.vpsAdmin = {

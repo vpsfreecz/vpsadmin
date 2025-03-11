@@ -1,4 +1,5 @@
 <?php
+
 /*
     ./lib/xtemplate.lib.php
 
@@ -243,7 +244,7 @@ class XTemplate
     public function array_loop($bname, $var, &$values)
     {
         if (is_array($values)) {
-            foreach($values as $v) {
+            foreach ($values as $v) {
                 $this->assign($var, $v);
                 $this->parse($bname);
             }
@@ -320,7 +321,7 @@ class XTemplate
             $block_names = [];
             $level = 0;
         }
-        foreach($con2 as $k => $v) {
+        foreach ($con2 as $k => $v) {
             $patt = "($this->block_start_word|$this->block_end_word)\s*(\w+) ?#?.*?\s*$this->block_end_delim(.*)";
             $res = [];
             if (preg_match_all("/$patt/ims", $v, $res, PREG_SET_ORDER)) {
@@ -356,7 +357,7 @@ class XTemplate
         if (isset($this->filevar_parent[$name])) {
             if ($val != '') {
                 $val = $this->_r_getfile($val);
-                foreach($this->filevar_parent[$name] as $parent) {
+                foreach ($this->filevar_parent[$name] as $parent) {
                     if (isset($this->preparsed_blocks[$parent]) && !isset($this->filevars[$name])) {
                         $copy = $this->preparsed_blocks[$parent];
                     } elseif (isset($this->blocks[$parent])) {
