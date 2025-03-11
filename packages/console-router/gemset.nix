@@ -77,10 +77,10 @@
     platforms = [];
     source = {
       remotes = ["https://rubygems.org"];
-      sha256 = "1xz82qz7f1vc4yhvacrlnh19q3wcwa5kmznfpkkmf3c9ajki249b";
+      sha256 = "0h65a1f9gsqx2ryisdy4lrd9a9l8gdv65dcscw9ynwwjr1ak1n00";
       type = "gem";
     };
-    version = "3.1.11";
+    version = "3.1.12";
   };
   rack-protection = {
     dependencies = ["base64" "logger" "rack"];
