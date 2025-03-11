@@ -59,7 +59,8 @@ GEM
     sorted_set (1.0.3)
       rbtree
       set (~> 1.0)
-    syslog (0.2.0)
+    syslog (0.3.0)
+      logger
     timeout (0.4.3)
     tty-cursor (0.7.1)
     tty-spinner (0.9.3)
@@ -68,7 +69,7 @@ GEM
 GEM
   remote: https://rubygems.vpsfree.cz/
   specs:
-    libnodectld (4.0.0.build20250309204935)
+    libnodectld (4.0.0.build20250311184859)
       base64
       bigdecimal
       bunny (~> 2.23.0)
@@ -115,7 +116,7 @@ PLATFORMS
   x86_64-linux
 
 DEPENDENCIES
-  libnodectld (= 4.0.0.build20250309204935)!
+  libnodectld (= 4.0.0.build20250311184859)!
 
 BUNDLED WITH
    2.5.22
