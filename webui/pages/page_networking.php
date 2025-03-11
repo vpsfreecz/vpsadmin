@@ -1,4 +1,5 @@
 <?php
+
 /*
     ./pages/page_networking.php
 
@@ -36,7 +37,7 @@ $show_traffic = false;
 
 if (isLoggedIn()) {
 
-    switch($_GET['action'] ?? null) {
+    switch ($_GET['action'] ?? null) {
         case 'ip_addresses':
             ip_address_list('networking');
             break;
@@ -568,7 +569,7 @@ if (isLoggedIn()) {
 
         $xtpl->form_add_input(_("VPS ID") . ':', 'text', '30', 'vps', get_val('vps'));
 
-        if(isAdmin()) {
+        if (isAdmin()) {
             $xtpl->form_add_input(_("User ID") . ':', 'text', '30', 'user', get_val('user'));
         }
 
@@ -643,9 +644,9 @@ if (isLoggedIn()) {
             $xtpl->table_td(h($data->network_interface->name));
 
             foreach (['in', 'out'] as $dir) {
-                $xtpl->table_td(format_data_rate(($data->{"bytes_${dir}"} / $data->delta) * 8, ''), false, true);
+                $xtpl->table_td(format_data_rate(($data->{"bytes_{$dir}"} / $data->delta) * 8, ''), false, true);
 
-                $xtpl->table_td(format_number_with_unit($data->{"packets_${dir}"} / $data->delta), false, true);
+                $xtpl->table_td(format_number_with_unit($data->{"packets_{$dir}"} / $data->delta), false, true);
             }
 
             $xtpl->table_td(format_data_rate((($data->bytes_in + $data->bytes_out) / $data->delta) * 8, ''), false, true);

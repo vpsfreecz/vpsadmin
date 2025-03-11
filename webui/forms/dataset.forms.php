@@ -7,7 +7,7 @@ function is_mount_dst_valid($dst)
 {
     $dst = trim($dst);
 
-    if(!preg_match("/^[a-zA-Z0-9\_\-\/\.]+$/", $dst) || preg_match("/\.\./", $dst)) {
+    if (!preg_match("/^[a-zA-Z0-9\_\-\/\.]+$/", $dst) || preg_match("/\.\./", $dst)) {
         return false;
     }
 
@@ -22,15 +22,15 @@ function is_ds_valid($p)
 {
     $p = trim($p);
 
-    if(preg_match("/^\//", $p)) {
+    if (preg_match("/^\//", $p)) {
         return false;
     }
 
-    if(!preg_match("/^[a-zA-Z0-9\/\-\:\.\_]+$/", $p)) {
+    if (!preg_match("/^[a-zA-Z0-9\/\-\:\.\_]+$/", $p)) {
         return false;
     }
 
-    if(preg_match("/\/\//", $p)) {
+    if (preg_match("/\/\//", $p)) {
         return false;
     }
 

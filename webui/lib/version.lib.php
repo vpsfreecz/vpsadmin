@@ -1,4 +1,5 @@
 <?php
+
 /*
     vpsAdmin
     Web-admin interface for vpsAdminOS (see https://vpsadminos.org)

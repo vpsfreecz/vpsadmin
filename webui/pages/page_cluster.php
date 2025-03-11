@@ -1,4 +1,5 @@
 <?php
+
 /*
     ./pages/page_cluster.php
 
@@ -53,7 +54,7 @@ if (isAdmin()) {
 
     $server_types = ["node" => "Node", "storage" => "Storage", "mailer" => "Mailer"];
 
-    switch($_GET["action"] ?? null) {
+    switch ($_GET["action"] ?? null) {
         case "vps":
             cluster_header();
             node_vps_overview();
@@ -1031,7 +1032,7 @@ if (isAdmin()) {
 
         $templates = $api->os_template->list();
 
-        foreach($templates as $t) {
+        foreach ($templates as $t) {
             $usage = $api->vps->list([
                 'os_template' => $t->id,
                 'limit' => 0,
@@ -1076,12 +1077,12 @@ if (isAdmin()) {
 
         $locations = $api->location->list(['meta' => ['includes' => 'environment']]);
 
-        foreach($locations as $loc) {
+        foreach ($locations as $loc) {
             $nodes = $api->node->list(
                 [
-                'location' => $loc->id,
-                'limit' => 0,
-                'meta' => ['count' => true]]
+                    'location' => $loc->id,
+                    'limit' => 0,
+                    'meta' => ['count' => true]]
             );
 
             $xtpl->table_td($loc->id);
@@ -1130,7 +1131,7 @@ if (isAdmin()) {
             'meta' => ['includes' => 'location'],
         ]);
 
-        foreach($nameservers as $ns) {
+        foreach ($nameservers as $ns) {
             $xtpl->table_td($ns->id);
             $xtpl->table_td($ns->ip_addr);
             $xtpl->table_td($ns->label);
