@@ -718,7 +718,7 @@ if (isLoggedIn()) {
 
                 $xtpl->table_td(
                     '<strong>' .
-                    _('All data from this VPS will be deleted, including all subdatasets.') .
+                    _('All data from the VPS root filesystem will be deleted, subdatasets are kept.') .
                     '</strong>' .
                     '<input type="hidden" name="os_template" value="' . $_POST['os_template'] . '">',
                     false,
