@@ -65,10 +65,10 @@ let
     "haveapi/client" = {
       targetDir = "";
       src = composerEnv.buildZipPackage {
-        name = "haveapi-client-6b7c008b0c1dbc6310d3955f7de50a92d686e471";
+        name = "haveapi-client-0bcc032a2a6a529053d999df4593636f74de2576";
         src = fetchurl {
-          url = "https://api.github.com/repos/vpsfreecz/haveapi-client-php/zipball/6b7c008b0c1dbc6310d3955f7de50a92d686e471";
-          sha256 = "0sbkcpifzya4nvgd34m3n9i1fh3p3zchrq0z8xkpfd0kb4bwb9ar";
+          url = "https://api.github.com/repos/vpsfreecz/haveapi-client-php/zipball/0bcc032a2a6a529053d999df4593636f74de2576";
+          sha256 = "0bby200zd79x7kpppaw2c1153fi6rx3ll72sq5n6n1rh5059qdri";
         };
       };
     };
@@ -145,10 +145,10 @@ let
     "symfony/deprecation-contracts" = {
       targetDir = "";
       src = composerEnv.buildZipPackage {
-        name = "symfony-deprecation-contracts-0e0d29ce1f20deffb4ab1b016a7257c4f1e789a1";
+        name = "symfony-deprecation-contracts-74c71c939a79f7d5bf3c1ce9f5ea37ba0114c6f6";
         src = fetchurl {
-          url = "https://api.github.com/repos/symfony/deprecation-contracts/zipball/0e0d29ce1f20deffb4ab1b016a7257c4f1e789a1";
-          sha256 = "1qhyyfyd7q75nyqivjzrljmqa5qhh09gjs2vz7s3xadq0j525c2b";
+          url = "https://api.github.com/repos/symfony/deprecation-contracts/zipball/74c71c939a79f7d5bf3c1ce9f5ea37ba0114c6f6";
+          sha256 = "0jr67zcxmgq26xi9lrw3pg33fvchf27qg3liicm3r1k36hg4ymwf";
         };
       };
     };
