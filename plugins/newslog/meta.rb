@@ -1,7 +1,7 @@
 VpsAdmin::API::Plugin.register(:newslog) do
   name 'News log'
   description 'Lets admins to announce news'
-  version '4.0.0'
+  version '4.1.0'
   author 'Jakub Skokan'
   email 'jakub.skokan@vpsfree.cz'
   components :api

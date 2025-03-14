@@ -6,7 +6,7 @@
     Copyright (C) 2008-2011 Pavel Snajdr, snajpa@snajpa.net
 */
 
-define("VERSION", '4.0.0');
+define("VERSION", '4.1.0');
 define("DEMO_MODE", false);
 
 define("API_VERSION", '7.0');
