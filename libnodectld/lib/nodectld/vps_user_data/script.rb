@@ -102,7 +102,7 @@ module NodeCtld
             }
 
             start() {
-              #{wrapper}
+              #{@wrapper}
               eend $?
             }
           END
@@ -124,7 +124,7 @@ module NodeCtld
         File.open(run_file, 'w', 0o755) do |f|
           f.puts(<<~END)
             #!/bin/sh
-            exec #{wrapper}
+            exec #{@wrapper}
           END
         end
 
@@ -152,7 +152,7 @@ module NodeCtld
 
             case "$1" in
               start)
-                exec #{wrapper}
+                exec #{@wrapper}
                 ;;
               *)
                 echo "Usage: $0 {start}"
