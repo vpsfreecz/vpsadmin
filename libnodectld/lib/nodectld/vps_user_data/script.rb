@@ -46,6 +46,8 @@ module NodeCtld
           install_systemd
         when 'alpine'
           install_openrc
+        when 'chimera'
+          install_dinit
         when 'devuan'
           install_sysvinit
         when 'gentoo'
@@ -169,6 +171,25 @@ module NodeCtld
         end
 
         @cleanup << path
+      end
+
+      def install_dinit
+        service = 'vpsadmin-script'
+        path = File.join('/etc/dinit.d', service)
+
+        File.open(path, 'w', 0o755) do |f|
+          f.puts(<<~END)
+            type = scripted
+            command = #{@wrapper}
+            depends-on = network.target
+            depends-on = local.target
+          END
+        end
+
+        link = File.join('/etc/dinit.d/boot.d', service)
+        replace_symlink(path, link)
+
+        @cleanup << path << link
       end
 
       def replace_symlink(path, link)

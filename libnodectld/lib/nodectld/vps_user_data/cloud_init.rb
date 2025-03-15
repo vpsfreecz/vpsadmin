@@ -79,6 +79,8 @@ module NodeCtld
           'apk add cloud-init'
         when 'arch'
           'pacman -Sy --noconfirm cloud-init'
+        when 'chimera'
+          'apk add --no-interactive cloud-init'
         when 'debian', 'ubuntu'
           'apt-get install -y cloud-init'
         when 'opensuse'
@@ -101,6 +103,13 @@ module NodeCtld
         case @os_template['distribution']
         when 'almalinux', 'arch', 'centos', 'fedora', 'opensuse', 'rocky'
           systemd
+        when 'chimera'
+          %w[
+            cloud-config
+            cloud-final
+            cloud-init
+            cloud-init-local
+          ].map { |v| "ln -s /usr/lib/dinit.d/#{v} /etc/dinit.d/boot.d/#{v}" }.join("\n")
         when 'debian', 'ubuntu'
           ':'
         when 'alpine'
