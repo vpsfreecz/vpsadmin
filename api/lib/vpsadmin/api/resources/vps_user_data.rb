@@ -6,7 +6,7 @@ module VpsAdmin::API::Resources
     params(:common) do
       resource User, value_label: :login
       string :label, label: 'Label'
-      string :format, choices: ::VpsUserData.formats.keys.map(&:to_s)
+      string :format
       text :content
     end
 

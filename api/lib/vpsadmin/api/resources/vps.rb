@@ -79,7 +79,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
 
   params(:vps_user_data) do
     resource VpsAdmin::API::Resources::VpsUserData, label: 'User data'
-    string :user_data_format, label: 'User data format', choices: ::VpsUserData.formats.keys.map(&:to_s)
+    string :user_data_format, label: 'User data format', choices: ::VpsUserData::FORMATS
     text :user_data_content, label: 'User data content'
   end
 

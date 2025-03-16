@@ -1,12 +1,13 @@
 require 'yaml'
 
 class VpsUserData < ApplicationRecord
-  belongs_to :user
+  FORMATS = %w[script cloudinit_config cloudinit_script].freeze
 
-  enum :format, %i[script cloudinit_config cloudinit_script]
+  belongs_to :user
 
   validates :label, :format, :content, presence: true
   validates :label, length: { maximum: 255 }
+  validates :format, inclusion: { in: FORMATS }
   validates :content, length: { maximum: 65_536 }
   validate :check_content
 
