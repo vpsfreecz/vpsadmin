@@ -29,13 +29,21 @@ module TransactionChains
           args: [vps, opts[:vps_user_data]],
           kwargs: { os_template: template }
         )
-      end
 
-      return unless running
+        apply_user_data = template.apply_user_data?(opts[:vps_user_data])
+      end
 
       # Set reversible to :keep_going, because we cannot be certain that
       # the template is correct and the VPS will start.
-      use_chain(Vps::Start, args: vps, reversible: :keep_going)
+      use_chain(Vps::Start, args: vps, reversible: :keep_going) if running || apply_user_data
+
+      return unless apply_user_data
+
+      append_t(
+        Transactions::Vps::ApplyUserData,
+        args: [vps, opts[:vps_user_data]],
+        kwargs: { os_template: template }
+      )
     end
 
     def reinstall_vpsadminos(vps, template)

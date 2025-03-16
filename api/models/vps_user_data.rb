@@ -1,7 +1,14 @@
 require 'yaml'
 
 class VpsUserData < ApplicationRecord
-  FORMATS = %w[script cloudinit_config cloudinit_script].freeze
+  FORMATS = %w[
+    script
+    cloudinit_config
+    cloudinit_script
+    nixos_configuration
+    nixos_flake_configuration
+    nixos_flake_uri
+  ].freeze
 
   belongs_to :user
 
@@ -27,6 +34,20 @@ class VpsUserData < ApplicationRecord
 
       if line.nil? || !line.start_with?('#!')
         errors.add(:content, 'script must start with a shebang on the first line')
+      end
+
+    when 'nixos_configuration', 'nixos_flake_configuration'
+      unless content.lstrip.start_with?('{')
+        errors.add(:content, "must start with '{'")
+      end
+
+      unless content.rstrip.end_with?('}')
+        errors.add(:content, "must end with '{'")
+      end
+
+    when 'nixos_flake_uri'
+      if /\s/ =~ content
+        errors.add(:content, 'must not contain whitespace')
       end
     end
   end

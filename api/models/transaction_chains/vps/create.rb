@@ -256,7 +256,14 @@ module TransactionChains
         append_t(Transactions::Vps::DeployUserData, args: [vps, opts[:vps_user_data]])
       end
 
-      use_chain(TransactionChains::Vps::Start, args: vps) if opts.fetch(:start, true)
+      start_vps = opts.fetch(:start, true)
+      apply_user_data = opts[:vps_user_data] && vps.os_template.apply_user_data?(opts[:vps_user_data])
+
+      use_chain(TransactionChains::Vps::Start, args: vps) if start_vps || apply_user_data
+
+      if apply_user_data
+        append_t(Transactions::Vps::ApplyUserData, args: [vps, opts[:vps_user_data]])
+      end
 
       vps.save!
 

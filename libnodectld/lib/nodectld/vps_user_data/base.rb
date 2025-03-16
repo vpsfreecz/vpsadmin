@@ -9,8 +9,17 @@ module NodeCtld
       # @param vps_id [Integer]
       # @param format [String]
       # @param content [String]
+      # @param os_template [Hash]
       def self.deploy(*)
         new(*).deploy
+      end
+
+      # @param vps_id [Integer]
+      # @param format [String]
+      # @param content [String]
+      # @param os_template [Hash]
+      def self.apply(*)
+        new(*).apply
       end
 
       # @param vps_id [Integer]
@@ -25,6 +34,10 @@ module NodeCtld
       end
 
       def deploy
+        raise NotImplementedError
+      end
+
+      def apply
         raise NotImplementedError
       end
     end

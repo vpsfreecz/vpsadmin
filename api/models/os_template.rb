@@ -47,9 +47,16 @@ class OsTemplate < ApplicationRecord
       enable_script
     when 'cloudinit_config', 'cloudinit_script'
       enable_cloud_init
+    when 'nixos_configuration', 'nixos_flake_configuration', 'nixos_flake_uri'
+      distribution == 'nixos'
     else
       false
     end
+  end
+
+  # @param user_data [::VpsUserData]
+  def apply_user_data?(user_data)
+    user_data.format.start_with?('nixos_')
   end
 
   protected

@@ -6,6 +6,8 @@ module NodeCtld
         VpsUserData::Script
       when 'cloudinit_config', 'cloudinit_script'
         VpsUserData::CloudInit
+      when 'nixos_configuration', 'nixos_flake_configuration', 'nixos_flake_uri'
+        VpsUserData::Nixos
       end
     end
   end
