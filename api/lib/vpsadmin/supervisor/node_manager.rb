@@ -27,7 +27,7 @@ module VpsAdmin::Supervisor
         Node::VpsOsRelease,
         Node::VpsSshHostKeys,
         Node::VpsStatus
-      ].map do |klass|
+      ].to_h do |klass|
         chan = @connection.create_channel
         chan.prefetch(1)
         klass.setup(chan) if klass.respond_to?(:setup)
@@ -37,11 +37,11 @@ module VpsAdmin::Supervisor
       ::Node.includes(:location).where(active: true).each do |node|
         use_klasses =
           if %w[node storage].include?(node.role)
-            klasses - [Node::DnsStatus]
+            klasses.reject { |klass, _| klass == Node::DnsStatus }
           elsif node.role == 'dns_server'
-            klasses.select { |klass, _| [Node::Rpc, Node::Status, Node::DnsStatus].include?(klass) }
+            klasses.slice(Node::Rpc, Node::Status, Node::DnsStatus)
           else
-            klasses.select { |klass, _| [Node::Rpc, Node::Status].include?(klass) }
+            klasses.slice(Node::Rpc, Node::Status)
           end
 
         use_klasses.each do |klass, chan|

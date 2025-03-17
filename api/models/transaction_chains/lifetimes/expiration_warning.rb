@@ -34,7 +34,7 @@ module TransactionChains
                  state: obj.current_object_state,
                  expires_in_days: days_before,
                  expired_days_ago: days_after,
-                 expires_in_a_day: days_before >= 0 && days_before <= 1.5,
+                 expires_in_a_day: days_before.between?(0, 1.5),
                  klass.name.underscore => obj
                }
              })
