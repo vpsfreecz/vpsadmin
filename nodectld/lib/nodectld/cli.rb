@@ -64,62 +64,69 @@ module NodeCtld
 
       if options[:wrapper]
         log('nodectld wrapper starting')
-
-        r, w = IO.pipe
-
-        loop do
-          pid = Process.fork do
-            $stdout.reopen(w)
-            $stderr.reopen(w)
-            r.close
-
-            run_daemon
-          end
-
-          w.close
-
-          Signal.trap('CHLD') do
-            r.close
-          end
-
-          Signal.trap('TERM') do
-            log 'Killing daemon'
-            Process.kill('TERM', pid)
-            exit
-          end
-
-          Signal.trap('HUP') do
-            Process.kill('HUP', p.pid)
-          end
-
-          begin
-            r.each do |line|
-              log(:unknown, line)
-            end
-          rescue IOError
-            # break loop
-          end
-
-          # Sets $?
-          Process.waitpid(pid)
-
-          case $?.exitstatus
-          when NodeCtld::EXIT_OK, NodeCtld::EXIT_STOP
-            log 'Stopping daemon'
-            exit
-
-          when NodeCtld::EXIT_RESTART
-            log 'Restarting daemon'
-            next
-
-          else
-            log "Daemon crashed with exit status #{$?.exitstatus}"
-            exit(false)
-          end
-        end
+        run_wrapper
+        return
       end
 
       run_daemon
+    end
+
+    def self.run_wrapper
+      loop do
+        r, w = IO.pipe
+
+        pid = Process.fork do
+          $stdout.reopen(w)
+          $stderr.reopen(w)
+          r.close
+
+          run_daemon
+        end
+
+        w.close
+
+        Signal.trap('CHLD') do
+          next if r.nil?
+
+          r.close
+          r = nil
+        end
+
+        Signal.trap('TERM') do
+          log 'Killing daemon'
+          Process.kill('TERM', pid)
+          exit
+        end
+
+        Signal.trap('HUP') do
+          Process.kill('HUP', pid)
+        end
+
+        begin
+          r.each do |line|
+            log(:unknown, line)
+          end
+        rescue IOError
+          r = nil
+        end
+
+        Process.waitpid(pid)
+
+        case $?.exitstatus
+        when NodeCtld::EXIT_OK, NodeCtld::EXIT_STOP
+          log 'Stopping daemon'
+          exit
+
+        when NodeCtld::EXIT_RESTART
+          log 'Restarting daemon'
+          r.close if r
+          next
+
+        else
+          log "Daemon crashed with exit status #{$?.exitstatus}"
+          exit(false)
+        end
+      end
     end
 
     def self.run_daemon
