@@ -4,10 +4,14 @@ require 'nodectld/config'
 require 'nodectld/daemon'
 
 module NodeCtld
-  module Cli
+  class Cli
     include OsCtl::Lib::Utils::Log
 
     def self.run
+      new.run
+    end
+
+    def run
       options = {
         config: '/etc/vpsadmin/nodectld.yml',
         check: false,
@@ -71,7 +75,12 @@ module NodeCtld
       run_daemon
     end
 
-    def self.run_wrapper
+    protected
+
+    def run_wrapper
+      @stop = false
+      @stop_queue = OsCtl::Lib::Queue.new
+
       loop do
         r, w = IO.pipe
 
@@ -92,10 +101,11 @@ module NodeCtld
           r = nil
         end
 
-        Signal.trap('TERM') do
-          log 'Killing daemon'
-          Process.kill('TERM', pid)
-          exit
+        %w[TERM INT].each do |sig|
+          Signal.trap(sig) do
+            @stop = true
+            @stop_thread = Thread.new { stop_daemon(pid) }
+          end
         end
 
         Signal.trap('HUP') do
@@ -111,6 +121,12 @@ module NodeCtld
         end
 
         Process.waitpid(pid)
+        @stop_queue << pid
+
+        if @stop
+          @stop_thread.join
+          return
+        end
 
         case $?.exitstatus
         when NodeCtld::EXIT_OK, NodeCtld::EXIT_STOP
@@ -129,7 +145,7 @@ module NodeCtld
       end
     end
 
-    def self.run_daemon
+    def run_daemon
       $CFG.load_db_settings
 
       log(:info, :init, 'nodectld starting')
@@ -138,6 +154,17 @@ module NodeCtld
       nodectld = NodeCtld::Daemon.new
       nodectld.init
       nodectld.start
+    end
+
+    def stop_daemon(pid)
+      log 'Killing daemon'
+      Process.kill('TERM', pid)
+
+      v = @stop_queue.pop(timeout: 60)
+      return if v == pid
+
+      log 'Sending SIGKILL'
+      Process.kill('KILL', pid)
     end
   end
 end
