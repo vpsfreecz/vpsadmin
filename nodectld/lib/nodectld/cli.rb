@@ -2,6 +2,7 @@ require 'optparse'
 require 'libosctl'
 require 'nodectld/config'
 require 'nodectld/daemon'
+require 'nodectld/remote_control'
 
 module NodeCtld
   class Cli
@@ -16,7 +17,8 @@ module NodeCtld
         config: '/etc/vpsadmin/nodectld.yml',
         check: false,
         logger: :stdout,
-        wrapper: true
+        wrapper: true,
+        watchdog: true
       }
 
       OptionParser.new do |opts|
@@ -46,6 +48,10 @@ module NodeCtld
           options[:wrapper] = w
         end
 
+        opts.on('--[no-]watchdog', 'Run watchdog') do |v|
+          opts[:watchdog] = v
+        end
+
         opts.on_tail('-h', '--help', 'Show this message') do
           puts opts
           exit
@@ -68,7 +74,7 @@ module NodeCtld
 
       if options[:wrapper]
         log('nodectld wrapper starting')
-        run_wrapper
+        run_wrapper(watchdog: options[:watchdog])
         return
       end
 
@@ -77,9 +83,11 @@ module NodeCtld
 
     protected
 
-    def run_wrapper
+    def run_wrapper(watchdog:)
       @stop = false
       @stop_queue = OsCtl::Lib::Queue.new
+      @watchdog_watcher_queue = OsCtl::Lib::Queue.new
+      @watchdog_worker_queue = OsCtl::Lib::Queue.new
 
       loop do
         r, w = IO.pipe
@@ -112,6 +120,11 @@ module NodeCtld
           Process.kill('HUP', pid)
         end
 
+        if watchdog
+          @watchdog_watcher_thread = Thread.new { run_watchdog_watcher(pid) }
+          @watchdog_worker_thread = Thread.new { run_watchdog_worker }
+        end
+
         begin
           r.each do |line|
             log(:unknown, line)
@@ -123,8 +136,13 @@ module NodeCtld
         Process.waitpid(pid)
         @stop_queue << pid
 
+        if watchdog
+          [@watchdog_watcher_queue, @watchdog_worker_queue].each { |q| q << :stop }
+          [@watchdog_watcher_thread, @watchdog_worker_thread].each(&:join)
+        end
+
         if @stop
-          @stop_thread.join
+          @stop_thread.join if @stop_thread
           return
         end
 
@@ -165,6 +183,72 @@ module NodeCtld
 
       log 'Sending SIGKILL'
       Process.kill('KILL', pid)
+    end
+
+    def run_watchdog_watcher(pid)
+      timeout = 90
+      missed = 0
+      limit = 900
+
+      loop do
+        v = @watchdog_watcher_queue.pop(timeout:)
+
+        if v == :stop
+          break
+        elsif v == :alive
+          if missed > 0
+            log "Watchdog: daemon responded after #{missed}/#{limit} seconds"
+          end
+
+          missed = 0
+          next
+        end
+
+        missed += timeout
+
+        log "Watchdog: Daemon is unresponsive for #{missed}/#{limit} seconds"
+        next if missed < limit
+
+        log 'Watchdog: Daemon did not send status in time, restarting'
+        @stop = true
+        stop_daemon(pid)
+      end
+    end
+
+    def run_watchdog_worker
+      loop do
+        v = @watchdog_worker_queue.pop(timeout: 60)
+        break if v == :stop
+
+        begin
+          next if get_daemon_status[:status] != 'ok'
+        rescue StandardError => e
+          log "Watchdog: Failed to check daemon status: #{e.message} (#{e.class})"
+          next
+        end
+
+        @watchdog_watcher_queue << :alive
+      end
+    end
+
+    def get_daemon_status
+      sock = UNIXSocket.new(NodeCtld::RemoteControl::SOCKET)
+      _greetings = remote_receive(sock)
+
+      sock.puts({ command: :status, params: {} }.to_json)
+
+      remote_receive(sock)
+    end
+
+    def remote_receive(sock)
+      buf = ''
+
+      while (m = sock.recv(1024))
+        buf += m
+        break if m[-1].chr == "\n"
+      end
+
+      JSON.parse(buf, symbolize_names: true)
     end
   end
 end
