@@ -18,6 +18,7 @@ module NodeCtld
 
     def initialize(daemon)
       @daemon = daemon
+      @mutex = Mutex.new
       @queues = {}
 
       QUEUES.each do |q|
@@ -26,102 +27,120 @@ module NodeCtld
     end
 
     def [](name)
-      @queues[name]
+      sync { @queues[name] }
     end
 
     def each(&)
-      @queues.each(&)
+      sync { @queues.each(&) }
     end
 
     def each_value(&)
-      @queues.each_value(&)
+      sync { @queues.each_value(&) }
     end
 
     def execute(cmd)
-      return false if busy?(cmd.chain_id)
+      sync do
+        return false if busy?(cmd.chain_id)
 
-      @queues[queue_for(cmd)].execute(cmd)
+        @queues[queue_for(cmd)].execute(cmd)
+      end
     end
 
     def reserve(queues, cmd)
       queues = [queues] unless queues.is_a?(::Array)
 
-      queues.each do |q|
-        @queues[q].reserve(cmd)
+      sync do
+        queues.each do |q|
+          @queues[q].reserve(cmd)
+        end
       end
     end
 
     def prune_reservations(db)
       chain_reservations = {}
 
-      @queues.each do |name, q|
-        q.reservations.each do |chain_id|
-          chain_reservations[chain_id] ||= []
-          chain_reservations[chain_id] << name
+      sync do
+        @queues.each do |name, q|
+          q.reservations.each do |chain_id|
+            chain_reservations[chain_id] ||= []
+            chain_reservations[chain_id] << name
+          end
         end
-      end
 
-      return 0 if chain_reservations.empty?
+        return 0 if chain_reservations.empty?
 
-      counter = 0
+        counter = 0
 
-      db.query(
-        "SELECT id
-        FROM transaction_chains
-        WHERE id IN (#{chain_reservations.keys.join(',')}) AND (state = 2 OR state >= 4)"
-      ).each do |row|
-        chain_id = row['id'].to_i
+        db.query(
+          "SELECT id
+          FROM transaction_chains
+          WHERE id IN (#{chain_reservations.keys.join(',')}) AND (state = 2 OR state >= 4)"
+        ).each do |row|
+          chain_id = row['id'].to_i
 
-        chain_reservations[chain_id].each do |q_name|
-          counter += 1 if @queues[q_name].release(chain_id)
+          chain_reservations[chain_id].each do |q_name|
+            counter += 1 if @queues[q_name].release(chain_id)
+          end
         end
-      end
 
-      counter
+        counter
+      end
     end
 
     def empty?
-      @queues.each_value do |q|
-        return false unless q.empty?
-      end
+      sync do
+        @queues.each_value do |q|
+          return false unless q.empty?
+        end
 
-      true
+        true
+      end
     end
 
     def full?
-      @queues.each_value do |q|
-        return false unless q.full?
-      end
+      sync do
+        @queues.each_value do |q|
+          return false unless q.full?
+        end
 
-      true
+        true
+      end
     end
 
     def free_slot?(cmd)
-      @queues[cmd.queue].free_slot?(cmd)
+      sync { @queues[cmd.queue].free_slot?(cmd) }
     end
 
     def busy?(chain_id)
-      @queues.each_value do |q|
-        return true if q.busy?(chain_id)
-      end
+      sync do
+        @queues.each_value do |q|
+          return true if q.busy?(chain_id)
+        end
 
-      false
+        false
+      end
     end
 
     def has_transaction?(t_id)
-      @queues.each_value do |q|
-        return true if q.has_transaction?(t_id)
-      end
+      sync do
+        @queues.each_value do |q|
+          return true if q.has_transaction?(t_id)
+        end
 
-      false
+        false
+      end
     end
 
     def worker_count
-      @queues.inject(0) { |sum, q| sum + q[1].used }
+      sync do
+        @queues.inject(0) { |sum, q| sum + q[1].used }
+      end
     end
 
     def total_limit
-      @queues.values.inject(0) { |sum, q| sum + q.total_size }
+      sync do
+        @queues.values.inject(0) { |sum, q| sum + q.total_size }
+      end
     end
 
     protected
@@ -132,6 +151,14 @@ module NodeCtld
 
       else
         cmd.queue
+      end
+    end
+
+    def sync(&block)
+      if @mutex.owned?
+        block.call
+      else
+        @mutex.synchronize(&block)
       end
     end
   end

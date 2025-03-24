@@ -3,17 +3,15 @@ module NodeCtld::Utils
     def walk_workers
       killed = 0
 
-      @daemon.queues do |queues|
-        queues.each_value do |queue|
-          queue.each_value do |w|
-            ret = yield(w)
+      @daemon.queues.each_value do |queue|
+        queue.each_value do |w|
+          ret = yield(w)
 
-            next unless ret
+          next unless ret
 
-            log "Killing transaction #{w.cmd.id}"
-            w.kill(ret != :silent)
-            killed += 1
-          end
+          log "Killing transaction #{w.cmd.id}"
+          w.kill(ret != :silent)
+          killed += 1
         end
       end
 

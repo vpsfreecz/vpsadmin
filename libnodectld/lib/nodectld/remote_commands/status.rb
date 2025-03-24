@@ -5,42 +5,38 @@ module NodeCtld::RemoteCommands
     def exec
       db = NodeCtld::Db.new
       res_queues = {}
-      queue_size = nil
+      queue_size = @daemon.queues.worker_count
 
-      @daemon.queues do |queues|
-        queue_size = queues.worker_count
+      @daemon.queues.each do |name, queue|
+        q = {
+          threads: queue.size,
+          urgent: queue.urgent_size,
+          open: queue.open?,
+          start_delay: queue.start_delay,
+          started: queue.started?,
+          workers: {},
+          reservations: queue.reservations
+        }
 
-        queues.each do |name, queue|
-          q = {
-            threads: queue.size,
-            urgent: queue.urgent_size,
-            open: queue.open?,
-            start_delay: queue.start_delay,
-            started: queue.started?,
-            workers: {},
-            reservations: queue.reservations
+        queue.each do |wid, w|
+          h = w.cmd.handler
+
+          start = w.cmd.time_start
+          p = w.cmd.progress
+          p[:time] = p[:time].to_i if p
+
+          q[:workers][wid] = {
+            id: w.cmd.id,
+            type: w.cmd.trans['handle'].to_i,
+            handler: h.split('::')[-2..].join('::'),
+            step: w.cmd.step,
+            pid: w.cmd.subtask,
+            start: start && start.localtime.to_i,
+            progress: p
           }
-
-          queue.each do |wid, w|
-            h = w.cmd.handler
-
-            start = w.cmd.time_start
-            p = w.cmd.progress
-            p[:time] = p[:time].to_i if p
-
-            q[:workers][wid] = {
-              id: w.cmd.id,
-              type: w.cmd.trans['handle'].to_i,
-              handler: h.split('::')[-2..].join('::'),
-              step: w.cmd.step,
-              pid: w.cmd.subtask,
-              start: start && start.localtime.to_i,
-              progress: p
-            }
-          end
-
-          res_queues[name] = q
         end
+
+        res_queues[name] = q
       end
 
       consoles = @daemon.console.stats

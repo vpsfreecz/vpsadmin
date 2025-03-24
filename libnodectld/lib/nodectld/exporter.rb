@@ -148,30 +148,28 @@ module NodeCtld
         end
       end
 
-      @daemon.queues do |queues|
-        queues.each do |name, queue|
-          metrics.queue_started.set(queue.started? ? 1 : 0, labels: { queue: name })
-          metrics.queue_used.set(queue.used, labels: { queue: name })
-          metrics.queue_reserved.set(queue.reservations.size, labels: { queue: name })
-          metrics.queue_slots.set(queue.size, labels: { queue: name })
-          metrics.queue_urgent.set(queue.urgent_size, labels: { queue: name })
-          metrics.queue_total.set(queue.size + queue.urgent_size, labels: { queue: name })
+      @daemon.queues.each do |name, queue|
+        metrics.queue_started.set(queue.started? ? 1 : 0, labels: { queue: name })
+        metrics.queue_used.set(queue.used, labels: { queue: name })
+        metrics.queue_reserved.set(queue.reservations.size, labels: { queue: name })
+        metrics.queue_slots.set(queue.size, labels: { queue: name })
+        metrics.queue_urgent.set(queue.urgent_size, labels: { queue: name })
+        metrics.queue_total.set(queue.size + queue.urgent_size, labels: { queue: name })
 
-          queue.each_value do |w|
-            cmd = w.cmd
-            start_time = cmd.time_start
+        queue.each_value do |w|
+          cmd = w.cmd
+          start_time = cmd.time_start
 
-            metrics.command_seconds.set(
-              start_time ? (Time.now - start_time).to_i : 0,
-              labels: {
-                chain_id: cmd.chain_id,
-                transaction_id: cmd.id,
-                queue: name,
-                type: cmd.type,
-                handler: cmd.handler.split('::')[-2..].join('::')
-              }
-            )
-          end
+          metrics.command_seconds.set(
+            start_time ? (Time.now - start_time).to_i : 0,
+            labels: {
+              chain_id: cmd.chain_id,
+              transaction_id: cmd.id,
+              queue: name,
+              type: cmd.type,
+              handler: cmd.handler.split('::')[-2..].join('::')
+            }
+          )
         end
       end
     end

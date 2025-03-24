@@ -39,12 +39,11 @@ module NodeCtld
       end
     end
 
-    attr_reader :start_time, :ct_top, :node, :console
+    attr_reader :start_time, :ct_top, :node, :console, :queues
 
     def initialize
       self.class.instance = self
       @init = false
-      @m_workers = Mutex.new
       @start_time = Time.new
       @cmd_counter = 0
       @threads = {}
@@ -107,50 +106,46 @@ module NodeCtld
 
         run_threads
 
-        catch(:next) do
-          @m_workers.synchronize do
-            @queues.each_value do |queue|
-              queue.delete_if do |_wid, w|
-                unless w.working?
-                  c = w.cmd
-                  Db.open { |db| c.save(db) }
+        @queues.each_value do |queue|
+          queue.delete_if do |_wid, w|
+            unless w.working?
+              c = w.cmd
+              Db.open { |db| c.save(db) }
 
-                  pause!(true) if @pause && w.cmd.id.to_i === @pause
+              pause!(true) if @pause && w.cmd.id.to_i === @pause
 
-                  next true
-                end
-
-                false
-              end
+              next true
             end
 
-            throw :next if @queues.full?
-
-            @@mutex.synchronize do
-              unless @@run
-                exit(@@exitstatus) if can_stop?
-
-                throw :next
-              end
-            end
-
-            now = Time.now
-
-            if cmd_db.nil? || cmd_db_created + (5 * 60) <= now
-              cmd_db.close if cmd_db
-              cmd_db = Db.new
-              cmd_db_created = Time.now
-            end
-
-            begin
-              do_commands(cmd_db)
-            rescue TransactionCheckError
-              log(:warn, :daemon, 'Failed to check transactions, resetting database connection')
-              cmd_db.close
-              cmd_db = nil
-              sleep(10)
-            end
+            false
           end
+        end
+
+        next if @queues.full?
+
+        @@mutex.synchronize do
+          unless @@run
+            exit(@@exitstatus) if can_stop?
+
+            throw :next
+          end
+        end
+
+        now = Time.now
+
+        if cmd_db.nil? || cmd_db_created + (5 * 60) <= now
+          cmd_db.close if cmd_db
+          cmd_db = Db.new
+          cmd_db_created = Time.now
+        end
+
+        begin
+          do_commands(cmd_db)
+        rescue TransactionCheckError
+          log(:warn, :daemon, 'Failed to check transactions, resetting database connection')
+          cmd_db.close
+          cmd_db = nil
+          sleep(10)
         end
 
         $stdout.flush
@@ -299,11 +294,9 @@ module NodeCtld
         loop do
           n = 0
 
-          @m_workers.synchronize do
-            db = Db.new
-            n = @queues.prune_reservations(db)
-            db.close
-          end
+          db = Db.new
+          n = @queues.prune_reservations(db)
+          db.close
 
           log(:info, :queues, "Released #{n} slot reservations") if n > 0
 
@@ -374,16 +367,8 @@ module NodeCtld
       @storage_status.update
     end
 
-    def queues
-      @m_workers.synchronize do
-        yield(@queues)
-      end
-    end
-
     def pause(t = true)
-      @m_workers.synchronize do
-        pause!(t)
-      end
+      pause!(t)
     end
 
     def pause!(t = true)
@@ -397,7 +382,7 @@ module NodeCtld
     end
 
     def resume
-      @m_workers.synchronize do
+      @@mutex.synchronize do
         @@run = true
         @pause = nil
         @last_transaction_update = nil
@@ -417,9 +402,7 @@ module NodeCtld
     end
 
     def can_stop?
-      @blockers_mutex.synchronize do
-        !@pause && @queues.empty? && @chain_blockers.empty?
-      end
+      !@pause && @queues.empty? && @blockers_mutex.synchronize { @chain_blockers.empty? }
     end
 
     def exitstatus

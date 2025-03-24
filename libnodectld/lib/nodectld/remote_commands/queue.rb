@@ -5,30 +5,24 @@ module NodeCtld::RemoteCommands
     def exec
       case @command
       when 'pause'
-        @daemon.queues do |queues|
-          q = queues[@queue.to_sym]
-          return { ret: :error, output: 'queue not found' } if q.nil?
+        q = @daemon.queues[@queue.to_sym]
+        return { ret: :error, output: 'queue not found' } if q.nil?
 
-          q.pause(@duration)
-        end
+        q.pause(@duration)
 
       when 'resume'
-        @daemon.queues do |queues|
-          if @queue == 'all'
-            queues.each_value(&:resume)
-          else
-            q = queues[@queue.to_sym]
-            return { ret: :error, output: 'queue not found' } if q.nil?
+        if @queue == 'all'
+          @daemon.queues.each_value(&:resume)
+        else
+          q = @daemon.queues[@queue.to_sym]
+          return { ret: :error, output: 'queue not found' } if q.nil?
 
-            q.resume
-          end
+          q.resume
         end
 
       when 'resize'
-        @daemon.queues do |queues|
-          q = queues[@queue.to_sym]
-          return { ret: :error, output: 'queue not found' } if q.nil?
-        end
+        q = @daemon.queues[@queue.to_sym]
+        return { ret: :error, output: 'queue not found' } if q.nil?
 
         $CFG.patch({
                      vpsadmin: {
