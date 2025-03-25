@@ -142,7 +142,8 @@ module TransactionChains
           Transactions::Vps::SendConfig,
           args: [
             vps,
-            node
+            node,
+            @dst_pool
           ],
           kwargs: {
             as_id: dst_vps.id,

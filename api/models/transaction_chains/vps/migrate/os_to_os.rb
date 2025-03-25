@@ -39,7 +39,8 @@ module TransactionChains
         Transactions::Vps::SendConfig,
         args: [
           src_vps,
-          dst_node
+          dst_node,
+          dst_pool
         ],
         kwargs: {
           network_interfaces: true,

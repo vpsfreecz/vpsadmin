@@ -6,6 +6,7 @@ module Transactions::Vps
 
     # @param vps [::Vps]
     # @param node [::Node]
+    # @param pool [::Pool]
     # @param opts [Hash]
     # @option opts [Integer] :as_id
     # @option opts [Boolean] :network_interfaces
@@ -13,12 +14,13 @@ module Transactions::Vps
     # @option opts [String] :passphrase
     # @option opts [String] :from_snapshot
     # @option opts [Boolean] :preexisting_datasets
-    def params(vps, node, **opts)
+    def params(vps, node, pool, **opts)
       self.vps_id = vps.id
       self.node_id = vps.node_id
 
       {
         node: node.ip_addr,
+        pool_name: pool.name,
         as_id: (opts[:as_id] || vps.id).to_s,
         network_interfaces: opts[:network_interfaces] || false,
         snapshots: opts.has_key?(:snapshots) ? opts[:snapshots] : true,

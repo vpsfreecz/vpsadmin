@@ -5,6 +5,7 @@ module NodeCtld
 
     def exec
       send_opts = {
+        to_pool: @pool_name,
         as_id: @as_id,
         network_interfaces: @network_interfaces,
         snapshots: @snapshots,
