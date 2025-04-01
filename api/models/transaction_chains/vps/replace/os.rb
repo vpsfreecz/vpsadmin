@@ -208,7 +208,7 @@ module TransactionChains
         # Full copy
         append_t(
           Transactions::Vps::Copy,
-          args: [vps, dst_vps.id, { consistent: false, network_interfaces: true }],
+          args: [vps, dst_vps.id, { consistent: false, network_interfaces: true, pool: @dst_pool }],
           &confirm_creation
         )
       end

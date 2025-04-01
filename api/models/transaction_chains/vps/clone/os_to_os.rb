@@ -223,7 +223,7 @@ module TransactionChains
           args: [
             vps,
             dst_vps.id,
-            { consistent: attrs[:stop], network_interfaces: false }
+            { consistent: attrs[:stop], network_interfaces: false, pool: @dst_pool }
           ],
           &confirm_creation
         )
