@@ -10,6 +10,7 @@ class VpsAdmin::API::Resources::TransactionChain < HaveAPI::Resource
     integer :size, label: 'Size', desc: 'Number of transactions in the chain'
     integer :progress, label: 'Progress', desc: 'How many transactions are finished'
     resource VpsAdmin::API::Resources::User, label: 'User', value_label: :login
+    resource VpsAdmin::API::Resources::UserSession, label: 'User session'
     datetime :created_at, label: 'Creation date'
     custom :concerns, db_name: :format_concerns
   end
