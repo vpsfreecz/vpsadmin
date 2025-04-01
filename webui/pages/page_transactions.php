@@ -148,7 +148,7 @@ function chain_transactions($chain_id)
     global $xtpl, $api;
 
     try {
-        $chain = $api->transaction_chain->find($chain_id);
+        $chain = $api->transaction_chain->find($chain_id, ['meta' => ['includes' => 'user,user_session']]);
 
     } catch (\HaveAPI\Client\Exception\ActionFailed $e) {
         $xtpl->perex_format_errors(_('Chain not found'), $e->getResponse());
@@ -181,6 +181,10 @@ function chain_transactions($chain_id)
 
     $xtpl->table_td(_('User'));
     $xtpl->table_td($chain->user_id ? ('<a href="?page=adminm&action=edit&id=' . $chain->user_id . '">' . $chain->user->login . '</a>') : '---');
+    $xtpl->table_tr();
+
+    $xtpl->table_td(_('Session'));
+    $xtpl->table_td($chain->user_session_id ? ('<a href="?page=adminm&action=user_sessions&id=' . $chain->user_id . '&session_id=' . $chain->user_session_id . '&list=1&details=1">' . $chain->user_session->label . '</a>') : '---');
     $xtpl->table_tr();
 
     $xtpl->table_td(_('Created at'));
