@@ -16,19 +16,17 @@ module VpsAdmin::API
       tpl = opts.fetch(:os_template)
 
       if !tpl.enabled?
-        error!('selected os template is disabled')
+        raise Exceptions::OperationError, 'selected os template is disabled'
 
       elsif tpl.hypervisor_type != vps.node.hypervisor_type
-        error!(
-          "incompatible template: needs #{tpl.hypervisor_type}, but VPS is " \
-          "using #{vps.node.hypervisor_type}"
-        )
+        raise Exceptions::OperationError,
+              "incompatible template: needs #{tpl.hypervisor_type}, but VPS is " \
+              "using #{vps.node.hypervisor_type}"
 
       elsif tpl.cgroup_version != 'cgroup_any' && tpl.cgroup_version != vps.node.cgroup_version
-        error!(
-          "incompatible cgroup version: #{tpl.label} needs #{tpl.cgroup_version}, " \
-          "but node is using #{vps.node.cgroup_version}"
-        )
+        raise Exceptions::OperationError,
+              "incompatible cgroup version: #{tpl.label} needs #{tpl.cgroup_version}, " \
+              "but node is using #{vps.node.cgroup_version}"
       end
 
       set_user_data(vps, opts, os_template: tpl)
