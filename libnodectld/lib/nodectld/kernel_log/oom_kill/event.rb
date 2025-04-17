@@ -27,19 +27,19 @@ module NodeCtld
   #   oom_reaper: reaped process <pid> (<comm>)...
   class KernelLog::OomKill::Event < KernelLog::Event
     def self.start?(msg)
-      $CFG.get(:oom_reports, :enable) && /^[^\s]+ invoked oom-killer: / =~ msg.text
+      $CFG.get(:oom_reports, :enable) && /^.+ invoked oom-killer: / =~ msg.text
     end
 
     attr_reader :report
 
     def start(msg)
-      m = match_or_fail!(/^([^\s]+) invoked oom-killer: /, msg.text)
+      m = match_or_fail!(/^(.+) invoked oom-killer: /, msg.text)
       @report = KernelLog::OomKill::Report.new(msg.time, m[1])
       log(:info, "OOM killer activity detected, invoked by #{report.invoked_by_name}")
     end
 
     def <<(msg)
-      if /^[^\s]+ invoked oom-killer: / =~ msg.text
+      if /^.+ invoked oom-killer: / =~ msg.text
         raise KernelLog::Event::Error, 'missed ending of the previous oom report'
       end
 
