@@ -84,6 +84,7 @@ class SysConfig < ApplicationRecord
   register :node, :key_type, String
   register :core, :ipv4_ddns_url, String, min_user_level: 99
   register :core, :ipv6_ddns_url, String, min_user_level: 99
+  register :dns, :protected_zones, Array, min_user_level: 99
 
   def get_value
     case data_type

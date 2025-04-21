@@ -72,15 +72,19 @@ class DnsZone < ApplicationRecord
     internal_source? && reverse_role? && !reverse_network_address.nil?
   end
 
-  # rubocop:disable Style/GuardClause
-
   def check_name
     unless name.end_with?('.')
       errors.add(:name, 'not a canonical name (add trailing dot)')
     end
-  end
 
-  # rubocop:enable Style/GuardClause
+    return if ::User.current.role == :admin
+
+    (SysConfig.get(:dns, :protected_zones) || []).each do |prot_name|
+      if name == prot_name || name.end_with?(".#{prot_name}")
+        errors.add(:name, "zone #{prot_name} is protected and cannot be used")
+      end
+    end
+  end
 
   # @return [Array<String>]
   def nameservers
