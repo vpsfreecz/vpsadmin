@@ -176,7 +176,8 @@ module NodeCtld
         return
       end
 
-      if /^Memory cgroup out of memory: Killed process (\d+) \(([^)]+)\)/ =~ msg.text
+      if /^Memory cgroup out of memory: Killed process (\d+) \(([^)]+)\)/ =~ msg.text \
+        || /^Memory cgroup out of memory: killing allocating task: Killed process (\d+) \(([^)]+)\)/ =~ msg.text
         report.killed_pid = ::Regexp.last_match(1).to_i
         report.killed_name = ::Regexp.last_match(2)
         finish!
