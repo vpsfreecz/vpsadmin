@@ -1,13 +1,16 @@
+require 'dnsruby'
 require 'prometheus/client'
 require 'prometheus/client/formats/text'
 
 module VpsAdmin::API::Tasks
   class Prometheus < Base
-    EXPORT_FILE = ENV['EXPORT_FILE'] || '/run/metrics/vpsadmin.prom'
+    EXPORT_FILE = ENV.fetch('EXPORT_FILE', nil)
 
     DNS_ZONE_LABELS = %i[dns_zone dns_source dns_role].freeze
 
     DNS_SERVER_ZONE_LABELS = (DNS_ZONE_LABELS + %i[dns_server dns_type]).freeze
+
+    DNS_RECORD_LABELS = DNS_SERVER_ZONE_LABELS + %i[record_id record_name record_type]
 
     def initialize
       super
@@ -159,13 +162,19 @@ module VpsAdmin::API::Tasks
         docstring: 'Time when secondary DNS zone will be refreshed',
         labels: DNS_SERVER_ZONE_LABELS
       )
+
+      @dns_record_answer_error = registry.gauge(
+        :vpsadmin_dns_record_answer_error,
+        docstring: '1 when DNS server answers differently than expected',
+        labels: DNS_RECORD_LABELS
+      )
     end
 
     # Export metrics for Prometheus
     #
     # Accepts the following environment variables:
     # [EXPORT_FILE]: File where the metrics are written to
-    def export
+    def export_base
       # user_count
       ::User
         .unscoped
@@ -415,19 +424,130 @@ module VpsAdmin::API::Tasks
         @dns_server_zone_refresh_at.set(server_zone.refresh_at.to_i, labels:)
       end
 
-      save
+      save('vpsadmin-base')
+    end
+
+    # Export DNS record metrics for Prometheus
+    #
+    # Accepts the following environment variables:
+    # [EXPORT_FILE]: File where the metrics are written to
+    def export_dns_records
+      ::DnsServerZone
+        .includes(:dns_server, dns_zone: :dns_records)
+        .joins(:dns_zone)
+        .where(dns_zones: { enabled: true, zone_source: 'internal_source' })
+        .each do |server_zone|
+        labels = {
+          dns_server: server_zone.dns_server.name,
+          dns_zone: server_zone.dns_zone.name,
+          dns_source: server_zone.dns_zone.zone_source,
+          dns_role: server_zone.dns_zone.zone_role,
+          dns_type: server_zone.zone_type
+        }
+
+        resolver = Dnsruby::Resolver.new
+        resolver.nameserver = server_zone.dns_server.ipv4_addr
+
+        server_zone.dns_zone.dns_records.where(enabled: true).each do |r|
+          sleep(0.05)
+
+          next if check_record(server_zone, resolver, r)
+
+          @dns_record_answer_error.set(1, labels: labels.merge({
+            record_id: r.id,
+            record_name: r.name,
+            record_type: r.record_type
+          }))
+        end
+      end
+
+      save('vpsadmin-dns-records')
     end
 
     protected
 
     attr_reader :registry
 
-    def save
-      tmp = "#{EXPORT_FILE}.new"
+    def check_record(server_zone, resolver, record)
+      zone_name = record.dns_zone.name
+
+      check_name =
+        if record.name == '*'
+          "#{SecureRandom.hex(6)}.#{zone_name}"
+        elsif record.name == '@'
+          zone_name
+        elsif record.name.end_with?(zone_name)
+          record.name
+        else
+          "#{record.name}.#{record.dns_zone.name}"
+        end
+
+      desc = {
+        id: record.id,
+        name: record.name,
+        type: record.record_type,
+        zone: server_zone.dns_zone.name,
+        server: server_zone.dns_server.name
+      }.map { |k, v| "#{k}=#{v}" }.join(' ')
+
+      begin
+        message = resolver.query(check_name, record.record_type, 'IN')
+      rescue Dnsruby::ResolvError => e
+        warn "ResolvError: #{e.message} (#{desc})"
+        return false
+      end
+
+      if record.record_type == 'NS'
+        return true if message.authority.detect { |v| v.rdata.to_s.downcase == record.content.downcase.chop }
+
+        warn "Answer mismatch: got #{message.authority.inspect}, expected #{record.content.inspect} (#{desc})"
+        return false
+      end
+
+      last_rdata = nil
+
+      message.each_answer do |answer|
+        last_rdata = answer.rdata
+
+        case record.record_type
+        when 'AAAA'
+          return true if answer.rdata.to_s.downcase == record.content.downcase
+        when 'CNAME', 'PTR'
+          return true if answer.rdata.to_s.downcase == record.content.downcase.chop
+        when 'DS'
+          key_tag, algorithm, digest_type, digest = answer.rdata
+          answer_str = [
+            key_tag,
+            algorithm,
+            digest_type,
+            digest.each_byte.map { |b| b.to_s(16) }.join
+          ].join(' ')
+          return true if answer_str == record.content
+        when 'MX'
+          prio, name = answer.rdata
+          return true if prio == record.priority && name.to_s.downcase == record.content.downcase.chop
+        when 'SRV'
+          prio, weight, port, domain = answer.rdata
+          return true if prio == record.priority && [weight, port, "#{domain}."].join(' ') == record.content
+        when 'TXT'
+          return true if answer.rdata.join.strip == record.content.strip
+        else
+          return true if answer.rdata.to_s.strip == record.content.strip
+        end
+      end
+
+      warn "Answer mismatch: got #{last_rdata.inspect}, expected #{record.content.inspect} (#{desc})"
+
+      false
+    end
+
+    def save(name)
+      dst = EXPORT_FILE || "/run/metrics/#{name}.prom"
+      tmp = "#{dst}.new"
 
       File.write(tmp, ::Prometheus::Client::Formats::Text.marshal(registry))
 
-      File.rename(tmp, EXPORT_FILE)
+      File.rename(tmp, dst)
     end
   end
 end

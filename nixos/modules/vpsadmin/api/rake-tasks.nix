@@ -392,15 +392,29 @@ in {
           timer.config = { OnCalendar = "00:35"; };
         };
 
-        prometheus-export = {
+        prometheus-export-base = {
           rake = [
-            "vpsadmin:prometheus:export"
-            "EXPORT_FILE=${cfg.stateDirectory}/cache/vpsadmin.prom"
+            "vpsadmin:prometheus:export:base"
+            "EXPORT_FILE=${cfg.stateDirectory}/cache/vpsadmin-base.prom"
           ];
           timer.enable = true;
           timer.config = {
             OnBootSec = "1min";
             OnUnitActiveSec = "2min";
+            RandomizedDelaySec = "60s";
+            FixedRandomDelay = true;
+          };
+        };
+
+        prometheus-export-dns-records = {
+          rake = [
+            "vpsadmin:prometheus:export:dns_records"
+            "EXPORT_FILE=${cfg.stateDirectory}/cache/vpsadmin-dns-records.prom"
+          ];
+          timer.enable = true;
+          timer.config = {
+            OnBootSec = "10min";
+            OnUnitActiveSec = "10min";
             RandomizedDelaySec = "60s";
             FixedRandomDelay = true;
           };
@@ -462,7 +476,12 @@ in {
     })
 
     (mkIf (cfg.enable && cfg.rake.enableDefaultTasks) {
-      systemd.services."vpsadmin-api-prometheus-export" = {
+      systemd.services."vpsadmin-api-prometheus-export-base" = {
+        wants = [ "vpsadmin-api-prometheus-export-deploy.service" ];
+        before = [ "vpsadmin-api-prometheus-export-deploy.service" ];
+      };
+
+      systemd.services."vpsadmin-api-prometheus-export-dns-records" = {
         wants = [ "vpsadmin-api-prometheus-export-deploy.service" ];
         before = [ "vpsadmin-api-prometheus-export-deploy.service" ];
       };
@@ -473,17 +492,19 @@ in {
           Type = "oneshot";
           ExecStart = pkgs.writeScript "vpsadmin-api-prometheus-export-deploy" ''
             #!${pkgs.bash}/bin/bash
-            src="${cfg.stateDirectory}/cache/vpsadmin.prom"
-            dst="${cfg.nodeExporterTextCollectorDirectory}/vpsadmin.prom"
+            src="${cfg.stateDirectory}/cache/vpsadmin-*.prom"
+            dst="${cfg.nodeExporterTextCollectorDirectory}"
 
-            if [ ! -e "$src" ] ; then
-              echo "File '$src' not found"
-              exit 1
-            fi
+            mkdir -p "$dst"
 
-            mkdir -p "${cfg.nodeExporterTextCollectorDirectory}"
-            mv "$src" "$dst.new" || exit 1
-            mv "$dst.new" "$dst" || exit 1
+            for srcfile in $src ; do
+              basename=$(basename "$srcfile")
+              dstfile="$dst/$basename"
+
+              mv "$srcfile" "$dstfile.new" || exit 1
+              mv "$dstfile.new" "$dstfile" || exit 1
+            done
+
             exit 0
           '';
         };

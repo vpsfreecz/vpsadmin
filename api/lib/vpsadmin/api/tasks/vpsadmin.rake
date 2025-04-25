@@ -111,9 +111,18 @@ namespace :vpsadmin do
   end
 
   namespace :prometheus do
-    desc 'Generate text file with metrics for prometheus'
-    task :export do
-      VpsAdmin::API::Tasks.run(:prometheus, :export)
+    namespace :export do
+      task all: %i[base dns_records]
+
+      desc 'Generate text files with vpsAdmin metrics for prometheus'
+      task :base do
+        VpsAdmin::API::Tasks.run(:prometheus, :export_base)
+      end
+
+      desc 'Generate text files with DNS record metrics for prometheus'
+      task :dns_records do
+        VpsAdmin::API::Tasks.run(:prometheus, :export_dns_records)
+      end
     end
   end
 
