@@ -20,7 +20,7 @@ module VpsAdmin::API
         raise ActiveRecord::RecordInvalid, dns_zone
       end
 
-      check_collisions!(dns_zone)
+      check_collisions!(dns_zone) unless ::User.current.role == :admin
 
       TransactionChains::DnsZone::CreateUser.fire2(args: [dns_zone], kwargs: { seed_vps: })
     end
