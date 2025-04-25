@@ -25,7 +25,8 @@ module TransactionChains
           priority: dns_record.priority,
           content: dns_record.content,
           comment: dns_record.comment,
-          enabled: dns_record.enabled
+          enabled: dns_record.enabled,
+          user_id: dns_record.user_id
         },
         transaction_chain: current_chain
       )
