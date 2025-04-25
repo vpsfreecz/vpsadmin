@@ -17,6 +17,12 @@ module TransactionChains
         use_chain(Vps::Start, args: vps)
       end
 
+      user.dns_records.joins(:dns_zone).where(original_enabled: true).each do |r|
+        r.enabled = true
+
+        use_chain(DnsZone::UpdateRecord, args: [r])
+      end
+
       user.dns_zones.where(original_enabled: true).each do |dns_zone|
         use_chain(DnsZone::Update, args: [dns_zone, { enabled: true }])
       end

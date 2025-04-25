@@ -26,6 +26,13 @@ module TransactionChains
                     { enabled: false, original_enabled: dns_zone.enabled }
                   ])
       end
+
+      user.dns_records.joins(:dns_zone).each do |r|
+        r.original_enabled = r.enabled
+        r.enabled = false
+
+        use_chain(DnsZone::UpdateRecord, args: [r])
+      end
     end
   end
 end

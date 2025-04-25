@@ -5,6 +5,7 @@ module VpsAdmin::API::Resources
 
     params(:common) do
       resource DnsZone, value_label: :name
+      resource User, value_label: :login
       string :name, desc: 'Domain name, @ as alias to origin, * for wildcards'
       string :type, db_name: :record_type
       string :content
@@ -28,7 +29,7 @@ module VpsAdmin::API::Resources
       desc 'List DNS records'
 
       input do
-        use :common, include: %i[dns_zone]
+        use :common, include: %i[dns_zone user]
       end
 
       output(:object_list) do
@@ -38,12 +39,14 @@ module VpsAdmin::API::Resources
       authorize do |u|
         allow if u.role == :admin
         restrict dns_zones: { user_id: u.id }
+        output blacklist: %i[user]
         allow
       end
 
       def query
         q = self.class.model.joins(:dns_zone).existing.where(with_restricted)
         q = q.where(dns_zone: input[:dns_zone]) if input[:dns_zone]
+        q = q.where(user: input[:user]) if input.has_key?(:user)
         q
       end
 
@@ -66,6 +69,7 @@ module VpsAdmin::API::Resources
       authorize do |u|
         allow if u.role == :admin
         restrict dns_zones: { user_id: u.id }
+        output blacklist: %i[user]
         allow
       end
 
@@ -94,7 +98,10 @@ module VpsAdmin::API::Resources
         use :all
       end
 
-      authorize do
+      authorize do |u|
+        allow if u.role == :admin
+        input blacklist: %i[user]
+        output blacklist: %i[user]
         allow
       end
 
@@ -125,7 +132,7 @@ module VpsAdmin::API::Resources
       blocking true
 
       input do
-        use :common, include: %i[content ttl priority comment dynamic_update_enabled enabled]
+        use :common, include: %i[content ttl priority comment dynamic_update_enabled enabled user]
       end
 
       output do
@@ -135,6 +142,8 @@ module VpsAdmin::API::Resources
       authorize do |u|
         allow if u.role == :admin
         restrict dns_zones: { user_id: u.id }
+        input blacklist: %i[user]
+        output blacklist: %i[user]
         allow
       end
 

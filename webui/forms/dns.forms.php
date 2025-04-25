@@ -1121,6 +1121,11 @@ function dns_record_list($zone)
 
     $records = $api->dns_record->list(['dns_zone' => $zone->id]);
     $cols = 9;
+    $showUser = showDnsRecordUser($zone);
+
+    if ($showUser) {
+        $cols += 1;
+    }
 
     $xtpl->table_title(_('Records'));
     $xtpl->table_add_category(_('Name'));
@@ -1130,6 +1135,11 @@ function dns_record_list($zone)
     $xtpl->table_add_category(_('Content'));
     $xtpl->table_add_category(_('DDNS'));
     $xtpl->table_add_category(_('Enabled'));
+
+    if ($showUser) {
+        $xtpl->table_add_category(_('User'));
+    }
+
     $xtpl->table_add_category('');
     $xtpl->table_add_category('');
 
@@ -1148,6 +1158,11 @@ function dns_record_list($zone)
         if ($r->managed) {
             $xtpl->table_td(boolean_icon($r->dynamic_update_enabled));
             $xtpl->table_td(boolean_icon($r->enabled));
+
+            if ($showUser) {
+                $xtpl->table_td($r->user_id ? user_link($r->user) : '-');
+            }
+
             $xtpl->table_td('-');
             $xtpl->table_td('-');
         } else {
@@ -1165,6 +1180,10 @@ function dns_record_list($zone)
                 $xtpl->table_td('<a href="?page=dns&action=record_toggle_enable&id=' . $r->id . '&zone=' . $r->dns_zone_id . '&id=' . $r->id . '&enable=0&t=' . csrf_token() . '" onclick="return confirm(\'' . _('Do you really wish to disable this record?') . '\');" title="' . _('Disable this record') . '">' . boolean_icon($r->enabled) . '</a>');
             } else {
                 $xtpl->table_td('<a href="?page=dns&action=record_toggle_enable&id=' . $r->id . '&zone=' . $r->dns_zone_id . '&id=' . $r->id . '&enable=1&t=' . csrf_token() . '" onclick="return confirm(\'' . _('Do you really wish to enable this record?') . '\');" title="' . _('Enable this record') . '">' . boolean_icon($r->enabled) . '</a>');
+            }
+
+            if ($showUser) {
+                $xtpl->table_td($r->user_id ? user_link($r->user) : '-');
             }
 
             $xtpl->table_td('<a href="?page=dns&action=record_edit&id=' . $r->id . '"><img src="template/icons/vps_edit.png" alt="' . _('Edit') . '" title="' . _('Edit') . '"></a>');
@@ -1188,6 +1207,11 @@ function dns_record_list($zone)
     $xtpl->table_add_category(_('Priority'));
     $xtpl->table_add_category(_('Content'));
     $xtpl->table_add_category(_('DDNS'));
+
+    if ($showUser) {
+        $xtpl->table_add_category(_('User'));
+    }
+
     $xtpl->table_add_category('');
 
     $xtpl->form_create('?page=dns&action=record_new&zone=' . $zone->id, 'post');
@@ -1199,6 +1223,11 @@ function dns_record_list($zone)
     $xtpl->form_add_input_pure('text', 4, 'priority', post_val('priority'));
     $xtpl->form_add_textarea_pure(22, 1, 'content', post_val('content'));
     api_param_to_form_pure('dynamic_update_enabled', $newInput->dynamic_update_enabled);
+
+    if ($showUser) {
+        $xtpl->form_add_input_pure('text', 4, 'user', post_val('user'));
+    }
+
     $xtpl->table_td($xtpl->html_submit(_('Add record'), 'submit'));
     $xtpl->table_tr();
 
@@ -1216,6 +1245,10 @@ function dns_record_edit($id)
     $xtpl->form_create('?page=dns&action=record_edit2&id=' . $record->id, 'post');
 
     $input = $api->dns_record->update->getParameters('input');
+
+    if (showDnsRecordUser($record->dns_zone)) {
+        $xtpl->form_add_input(_('User') . ':', 'text', 30, 'user', post_val('user', $record->user_id));
+    }
 
     $xtpl->table_td(_('Name') . ':');
     $xtpl->table_td(h($record->name));
@@ -1451,4 +1484,9 @@ function dnsRecordChangeType($type)
         default:
             return $type;
     }
+}
+
+function showDnsRecordUser($zone)
+{
+    return isAdmin() && !$zone->user_id;
 }

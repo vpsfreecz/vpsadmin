@@ -34,8 +34,8 @@ module VpsAdmin::API
 
       dns_record.assign_attributes(process_record(attrs, record_type: dns_record.record_type))
 
-      # If only the comment is changed, we save the record right away
-      if (dns_record.changed - %w[comment]).empty?
+      # If only the db content is changed, we save the record right away
+      if (dns_record.changed - %w[comment user_id original_enabled]).empty?
         dns_record.save!
         return [nil, dns_record]
       end

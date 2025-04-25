@@ -36,6 +36,7 @@ class User < ApplicationRecord
   has_many :metrics_access_tokens
   has_many :dns_zones
   has_many :dns_tsig_keys
+  has_many :dns_records
   has_many :dns_record_logs
   belongs_to :language
 

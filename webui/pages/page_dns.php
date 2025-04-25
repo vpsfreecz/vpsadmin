@@ -248,6 +248,7 @@ if (isLoggedIn()) {
             try {
                 $params = [
                     'dns_zone' => $_GET['zone'],
+                    'user' => $_POST['user'] ?? null,
                     'name' => $_POST['name'],
                     'type' => $_POST['type'],
                     'content' => $_POST['content'],
@@ -285,6 +286,7 @@ if (isLoggedIn()) {
 
             try {
                 $record = $api->dns_record->update($_GET['id'], [
+                    'user' => $_POST['user'] ?? null,
                     'ttl' => trim($_POST['ttl'] ?? '') === '' ? null : $_POST['ttl'],
                     'priority' => trim($_POST['priority'] ?? '') === '' ? null : $_POST['priority'],
                     'content' => $_POST['content'],

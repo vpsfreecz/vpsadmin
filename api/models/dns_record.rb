@@ -4,6 +4,7 @@ require_relative 'confirmable'
 class DnsRecord < ApplicationRecord
   belongs_to :dns_zone
   belongs_to :host_ip_address
+  belongs_to :user
   belongs_to :update_token, class_name: 'Token', dependent: :delete
 
   include Confirmable
@@ -17,6 +18,7 @@ class DnsRecord < ApplicationRecord
   validates :priority, numericality: { in: (0..65_535) }, unless: -> { priority.blank? }
   validates :content, presence: true
   validates :comment, length: { maximum: 255 }
+  validate :check_user
   validate :check_name
   validate :check_priority
   validate :check_content
@@ -48,6 +50,12 @@ class DnsRecord < ApplicationRecord
   protected
 
   # rubocop:disable Style/GuardClause
+
+  def check_user
+    if dns_zone.user && user
+      errors.add(:user_id, "user is set, but zone #{dns_zone.name} is owned (only records of system zones can have user set)")
+    end
+  end
 
   def check_name
     if !%w[* @].include?(name) && /\A(?=.{1,253}\z)(?!-)(?!.*-\.)(?!.*\.\.)([*a-zA-Z0-9\-_]{0,63}(?<!-)\.?)+\z/ !~ name

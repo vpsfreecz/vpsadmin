@@ -32,6 +32,13 @@ module TransactionChains
         use_chain(DnsZone::Update, args: [dns_zone, { enabled: false, original_enabled: dns_zone.enabled }])
       end
 
+      user.dns_records.joins(:dns_zone).each do |r|
+        r.original_enabled = r.enabled
+        r.enabled = false
+
+        use_chain(DnsZone::UpdateRecord, args: [r])
+      end
+
       user.user_sessions.where.not(token: nil).each(&:close!)
 
       user.single_sign_ons.destroy_all

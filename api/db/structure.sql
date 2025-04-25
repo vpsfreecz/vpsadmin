@@ -402,10 +402,13 @@ CREATE TABLE `dns_records` (
   `comment` varchar(255) NOT NULL DEFAULT '',
   `update_token_id` bigint(20) DEFAULT NULL,
   `managed` tinyint(1) NOT NULL DEFAULT 0,
+  `user_id` int(11) DEFAULT NULL,
+  `original_enabled` tinyint(1) NOT NULL DEFAULT 1,
   PRIMARY KEY (`id`),
   UNIQUE KEY `index_dns_records_on_host_ip_address_id` (`host_ip_address_id`),
   KEY `index_dns_records_on_dns_zone_id` (`dns_zone_id`),
-  KEY `index_dns_records_on_update_token_id` (`update_token_id`)
+  KEY `index_dns_records_on_update_token_id` (`update_token_id`),
+  KEY `index_dns_records_on_user_id` (`user_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `dns_resolvers`;
@@ -2431,6 +2434,7 @@ CREATE TABLE `webauthn_credentials` (
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
 INSERT INTO `schema_migrations` (version) VALUES
+('20250425142931'),
 ('20250425133822'),
 ('20250425132321'),
 ('20250425132312'),
