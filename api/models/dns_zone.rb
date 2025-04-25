@@ -68,10 +68,6 @@ class DnsZone < ApplicationRecord
     end
   end
 
-  def managed
-    internal_source? && reverse_role? && !reverse_network_address.nil?
-  end
-
   def check_name
     unless name.end_with?('.')
       errors.add(:name, 'not a canonical name (add trailing dot)')

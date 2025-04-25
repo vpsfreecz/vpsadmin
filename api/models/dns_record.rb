@@ -41,6 +41,10 @@ class DnsRecord < ApplicationRecord
     File.join(base_url, 'dns_records/dynamic_update/', update_token.token)
   end
 
+  def to_s
+    "#{name} #{record_type}"
+  end
+
   protected
 
   # rubocop:disable Style/GuardClause

@@ -34,7 +34,8 @@ module TransactionChains
           name: record_name,
           record_type: 'PTR',
           content: ptr_content,
-          host_ip_address:
+          host_ip_address:,
+          managed: true
         )
         host_ip_address.reverse_dns_record = record
         created = true

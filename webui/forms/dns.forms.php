@@ -1120,11 +1120,7 @@ function dns_record_list($zone)
     global $xtpl, $api;
 
     $records = $api->dns_record->list(['dns_zone' => $zone->id]);
-    $cols = 6;
-
-    if (!$zone->managed) {
-        $cols += 3;
-    }
+    $cols = 9;
 
     $xtpl->table_title(_('Records'));
     $xtpl->table_add_category(_('Name'));
@@ -1132,17 +1128,10 @@ function dns_record_list($zone)
     $xtpl->table_add_category(_('Type'));
     $xtpl->table_add_category(_('Priority'));
     $xtpl->table_add_category(_('Content'));
-
-    if (!$zone->managed) {
-        $xtpl->table_add_category(_('DDNS'));
-    }
-
+    $xtpl->table_add_category(_('DDNS'));
     $xtpl->table_add_category(_('Enabled'));
-
-    if (!$zone->managed) {
-        $xtpl->table_add_category('');
-        $xtpl->table_add_category('');
-    }
+    $xtpl->table_add_category('');
+    $xtpl->table_add_category('');
 
     foreach ($records as $r) {
         if ($r->comment) {
@@ -1156,7 +1145,12 @@ function dns_record_list($zone)
         $xtpl->table_td($r->priority ? $r->priority : '-');
         $xtpl->table_td(nl2br(h(truncateString($r->content, 60))));
 
-        if (!$zone->managed) {
+        if ($r->managed) {
+            $xtpl->table_td(boolean_icon($r->dynamic_update_enabled));
+            $xtpl->table_td(boolean_icon($r->enabled));
+            $xtpl->table_td('-');
+            $xtpl->table_td('-');
+        } else {
             if ($r->type == 'A' || $r->type == 'AAAA') {
                 if ($r->dynamic_update_enabled) {
                     $xtpl->table_td('<a href="?page=dns&action=record_toggle_ddns&id=' . $r->id . '&zone=' . $r->dns_zone_id . '&id=' . $r->id . '&enable=0&t=' . csrf_token() . '" onclick="return confirm(\'' . _('Do you really wish to disable dynamic updates for this record?') . '\');" title="' . _('Disable dynamic updates') . '">' . boolean_icon($r->dynamic_update_enabled) . '</a>');
@@ -1166,15 +1160,13 @@ function dns_record_list($zone)
             } else {
                 $xtpl->table_td(boolean_icon($r->dynamic_update_enabled));
             }
-        }
 
-        if ($r->enabled) {
-            $xtpl->table_td('<a href="?page=dns&action=record_toggle_enable&id=' . $r->id . '&zone=' . $r->dns_zone_id . '&id=' . $r->id . '&enable=0&t=' . csrf_token() . '" onclick="return confirm(\'' . _('Do you really wish to disable this record?') . '\');" title="' . _('Disable this record') . '">' . boolean_icon($r->enabled) . '</a>');
-        } else {
-            $xtpl->table_td('<a href="?page=dns&action=record_toggle_enable&id=' . $r->id . '&zone=' . $r->dns_zone_id . '&id=' . $r->id . '&enable=1&t=' . csrf_token() . '" onclick="return confirm(\'' . _('Do you really wish to enable this record?') . '\');" title="' . _('Enable this record') . '">' . boolean_icon($r->enabled) . '</a>');
-        }
+            if ($r->enabled) {
+                $xtpl->table_td('<a href="?page=dns&action=record_toggle_enable&id=' . $r->id . '&zone=' . $r->dns_zone_id . '&id=' . $r->id . '&enable=0&t=' . csrf_token() . '" onclick="return confirm(\'' . _('Do you really wish to disable this record?') . '\');" title="' . _('Disable this record') . '">' . boolean_icon($r->enabled) . '</a>');
+            } else {
+                $xtpl->table_td('<a href="?page=dns&action=record_toggle_enable&id=' . $r->id . '&zone=' . $r->dns_zone_id . '&id=' . $r->id . '&enable=1&t=' . csrf_token() . '" onclick="return confirm(\'' . _('Do you really wish to enable this record?') . '\');" title="' . _('Enable this record') . '">' . boolean_icon($r->enabled) . '</a>');
+            }
 
-        if (!$zone->managed) {
             $xtpl->table_td('<a href="?page=dns&action=record_edit&id=' . $r->id . '"><img src="template/icons/vps_edit.png" alt="' . _('Edit') . '" title="' . _('Edit') . '"></a>');
             $xtpl->table_td('<a href="?page=dns&action=record_delete&id=' . $r->id . '&zone=' . $r->dns_zone_id . '&t=' . csrf_token() . '" onclick="return confirm(\'' . _('Do you really wish to delete this record?') . '\');"><img src="template/icons/vps_delete.png" alt="' . _('Delete') . '" title="' . _('Delete') . '"></a>');
         }
@@ -1188,10 +1180,6 @@ function dns_record_list($zone)
     }
 
     $xtpl->table_out();
-
-    if ($zone->managed) {
-        return;
-    }
 
     $xtpl->table_title(_('New record'));
     $xtpl->table_add_category(_('Name'));

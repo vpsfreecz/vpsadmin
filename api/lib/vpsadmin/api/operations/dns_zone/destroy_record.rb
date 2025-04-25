@@ -5,8 +5,8 @@ module VpsAdmin::API
     # @param dns_record [::DnsRecord]
     # @return [::TransactionChain]
     def run(dns_record)
-      if dns_record.dns_zone.managed
-        raise Exceptions::ZoneManagedError, dns_record.dns_zone
+      if dns_record.managed
+        raise Exceptions::DnsRecordManagedError, dns_record
       end
 
       chain, = TransactionChains::DnsZone::DestroyRecord.fire(dns_record)

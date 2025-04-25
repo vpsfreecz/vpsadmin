@@ -18,6 +18,7 @@ module VpsAdmin::API::Resources
     params(:all) do
       integer :id, label: 'ID'
       use :common
+      bool :managed
       string :dynamic_update_url, label: 'Dynamic update URL'
       datetime :created_at
       datetime :updated_at

@@ -9,8 +9,8 @@ module VpsAdmin::API
     # @param attrs [Hash]
     # @return [Array(::TransactionChain, ::DnsRecord)]
     def run(dns_record, attrs)
-      if dns_record.dns_zone.managed
-        raise Exceptions::ZoneManagedError, dns_record.dns_zone
+      if dns_record.managed
+        raise Exceptions::DnsRecordManagedError, dns_record
       end
 
       dyn_enable = attrs.delete(:dynamic_update_enabled)

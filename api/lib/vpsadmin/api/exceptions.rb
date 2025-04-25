@@ -141,9 +141,9 @@ module VpsAdmin::API::Exceptions
   class OperationNotSupported < OperationError
   end
 
-  class ZoneManagedError < OperationError
-    def initialize(dns_zone)
-      super("zone #{dns_zone.name} is managed and cannot be edited manually")
+  class DnsRecordManagedError < OperationError
+    def initialize(dns_record)
+      super("record '#{dns_record}' from zone #{dns_record.dns_zone.name} is managed and cannot be edited manually")
     end
   end
 
