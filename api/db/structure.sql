@@ -516,6 +516,7 @@ CREATE TABLE `dns_zones` (
   `updated_at` datetime(6) NOT NULL,
   `confirmed` int(11) NOT NULL DEFAULT 0,
   `dnssec_enabled` tinyint(1) NOT NULL DEFAULT 0,
+  `original_enabled` tinyint(1) NOT NULL DEFAULT 1,
   PRIMARY KEY (`id`),
   UNIQUE KEY `index_dns_zones_on_name` (`name`),
   KEY `index_dns_zones_on_user_id` (`user_id`),
@@ -628,6 +629,7 @@ CREATE TABLE `exports` (
   `updated_at` datetime NOT NULL,
   `snapshot_in_pool_clone_n` int(11) NOT NULL DEFAULT 0,
   `remind_after_date` datetime DEFAULT NULL,
+  `original_enabled` tinyint(1) NOT NULL DEFAULT 1,
   PRIMARY KEY (`id`),
   UNIQUE KEY `exports_unique` (`dataset_in_pool_id`,`snapshot_in_pool_clone_n`),
   KEY `index_exports_on_user_id` (`user_id`)
@@ -1723,7 +1725,7 @@ CREATE TABLE `sysconfig` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `index_sysconfig_on_category_and_name` (`category`,`name`) USING BTREE,
   KEY `index_sysconfig_on_category` (`category`) USING BTREE
-) ENGINE=InnoDB AUTO_INCREMENT=39 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=40 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `tokens`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -2428,6 +2430,8 @@ CREATE TABLE `webauthn_credentials` (
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
 INSERT INTO `schema_migrations` (version) VALUES
+('20250425132321'),
+('20250425132312'),
 ('20250316085931'),
 ('20250307191058'),
 ('20250226200230'),

@@ -26,7 +26,7 @@ module TransactionChains
 
       new_export.changed.each do |attr|
         case attr
-        when 'all_vps', 'rw', 'sync', 'subtree_check', 'root_squash'
+        when 'all_vps', 'rw', 'sync', 'subtree_check', 'root_squash', 'original_enabled'
           db_changes[attr] = new_export.send(attr)
         when 'threads'
           db_changes[attr] = new_export.send(attr)

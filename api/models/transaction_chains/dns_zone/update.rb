@@ -11,7 +11,7 @@ module TransactionChains
       concerns(:affect, [dns_zone.class.name, dns_zone.id])
 
       attrs.each_key do |k|
-        next if %i[label default_ttl email dnssec_enabled enabled].include?(k)
+        next if %i[label default_ttl email dnssec_enabled enabled original_enabled].include?(k)
 
         raise ArgumentError, "Cannot change DnsZone attribute #{k.inspect}, not supported"
       end
@@ -30,6 +30,7 @@ module TransactionChains
 
       db_attrs = {}
       db_attrs[:label] = dns_zone.label_was if attrs.has_key?(:label)
+      db_attrs[:original_enabled] = dns_zone.original_enabled_was if attrs.has_key?(:original_enabled)
 
       new_attrs = {}
       original_attrs = {}

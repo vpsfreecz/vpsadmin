@@ -11,6 +11,10 @@ module TransactionChains
              }
            })
 
+      user.exports.where(original_enabled: true).each do |ex|
+        use_chain(Export::Update, args: [ex, { enabled: true }])
+      end
+
       user.vpses.where(object_state: ::Vps.object_states[:soft_delete]).each do |vps|
         vps.set_object_state(:active, reason: 'User was revived', chain: self)
       end

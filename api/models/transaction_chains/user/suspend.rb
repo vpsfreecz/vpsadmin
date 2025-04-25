@@ -21,7 +21,10 @@ module TransactionChains
       end
 
       user.dns_zones.each do |dns_zone|
-        use_chain(DnsZone::Update, args: [dns_zone, { enabled: false }])
+        use_chain(DnsZone::Update, args: [
+                    dns_zone,
+                    { enabled: false, original_enabled: dns_zone.enabled }
+                  ])
       end
     end
   end

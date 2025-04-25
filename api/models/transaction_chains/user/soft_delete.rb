@@ -25,11 +25,11 @@ module TransactionChains
       end
 
       user.exports.each do |ex|
-        use_chain(Export::Update, args: [ex, { enabled: false }])
+        use_chain(Export::Update, args: [ex, { enabled: false, original_enabled: ex.enabled }])
       end
 
       user.dns_zones.each do |dns_zone|
-        use_chain(DnsZone::Update, args: [dns_zone, { enabled: false }])
+        use_chain(DnsZone::Update, args: [dns_zone, { enabled: false, original_enabled: dns_zone.enabled }])
       end
 
       user.user_sessions.where.not(token: nil).each(&:close!)
