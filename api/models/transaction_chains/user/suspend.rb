@@ -20,6 +20,8 @@ module TransactionChains
         use_chain(Vps::Stop, args: vps)
       end
 
+      return unless target
+
       user.dns_zones.each do |dns_zone|
         use_chain(DnsZone::Update, args: [
                     dns_zone,

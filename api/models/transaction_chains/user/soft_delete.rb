@@ -22,21 +22,21 @@ module TransactionChains
             chain: self
           )
         end
-      end
 
-      user.exports.each do |ex|
-        use_chain(Export::Update, args: [ex, { enabled: false, original_enabled: ex.enabled }])
-      end
+        user.exports.each do |ex|
+          use_chain(Export::Update, args: [ex, { enabled: false, original_enabled: ex.enabled }])
+        end
 
-      user.dns_zones.each do |dns_zone|
-        use_chain(DnsZone::Update, args: [dns_zone, { enabled: false, original_enabled: dns_zone.enabled }])
-      end
+        user.dns_zones.each do |dns_zone|
+          use_chain(DnsZone::Update, args: [dns_zone, { enabled: false, original_enabled: dns_zone.enabled }])
+        end
 
-      user.dns_records.joins(:dns_zone).each do |r|
-        r.original_enabled = r.enabled
-        r.enabled = false
+        user.dns_records.joins(:dns_zone).each do |r|
+          r.original_enabled = r.enabled
+          r.enabled = false
 
-        use_chain(DnsZone::UpdateRecord, args: [r])
+          use_chain(DnsZone::UpdateRecord, args: [r])
+        end
       end
 
       user.user_sessions.where.not(token: nil).each(&:close!)
