@@ -73,7 +73,7 @@ class DnsZone < ApplicationRecord
       errors.add(:name, 'not a canonical name (add trailing dot)')
     end
 
-    return if ::User.current.role == :admin
+    return if ::User.current.nil? || ::User.current.role == :admin
 
     (SysConfig.get(:dns, :protected_zones) || []).each do |prot_name|
       if name == prot_name || name.end_with?(".#{prot_name}")
