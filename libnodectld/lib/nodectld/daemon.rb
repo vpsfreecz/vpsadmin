@@ -98,58 +98,60 @@ module NodeCtld
     end
 
     def start
-      cmd_db = nil
-      cmd_db_created = nil
+      @cmd_db = nil
+      @cmd_db_created = nil
 
       loop do
         sleep($CFG.get(:vpsadmin, :check_interval))
 
         run_threads
-
-        @queues.each_value do |queue|
-          queue.delete_if do |_wid, w|
-            unless w.working?
-              c = w.cmd
-              Db.open { |db| c.save(db) }
-
-              pause!(true) if @pause && w.cmd.id.to_i === @pause
-
-              next true
-            end
-
-            false
-          end
-        end
-
-        next if @queues.full?
-
-        @@mutex.synchronize do
-          unless @@run
-            exit(@@exitstatus) if can_stop?
-
-            throw :next
-          end
-        end
-
-        now = Time.now
-
-        if cmd_db.nil? || cmd_db_created + (5 * 60) <= now
-          cmd_db.close if cmd_db
-          cmd_db = Db.new
-          cmd_db_created = Time.now
-        end
-
-        begin
-          do_commands(cmd_db)
-        rescue TransactionCheckError
-          log(:warn, :daemon, 'Failed to check transactions, resetting database connection')
-          cmd_db.close
-          cmd_db = nil
-          sleep(10)
-        end
+        work
 
         $stdout.flush
         $stderr.flush
+      end
+    end
+
+    def work
+      @queues.each_value do |queue|
+        queue.delete_if do |_wid, w|
+          unless w.working?
+            c = w.cmd
+            Db.open { |db| c.save(db) }
+
+            pause!(true) if @pause && w.cmd.id.to_i === @pause
+
+            next true
+          end
+
+          false
+        end
+      end
+
+      return if @queues.full?
+
+      @@mutex.synchronize do
+        unless @@run
+          exit(@@exitstatus) if can_stop?
+          return
+        end
+      end
+
+      now = Time.now
+
+      if @cmd_db.nil? || @cmd_db_created + (5 * 60) <= now
+        @cmd_db.close if @cmd_db
+        @cmd_db = Db.new
+        @cmd_db_created = Time.now
+      end
+
+      begin
+        do_commands(@cmd_db)
+      rescue TransactionCheckError
+        log(:warn, :daemon, 'Failed to check transactions, resetting database connection')
+        @cmd_db.close
+        @cmd_db = nil
+        sleep(10)
       end
     end
 
