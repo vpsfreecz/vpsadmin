@@ -221,7 +221,10 @@ module NodeCtld
         break if v == :stop
 
         begin
-          next if get_daemon_status[:status] != 'ok'
+          response = get_daemon_status
+          next if response[:status] != 'ok'
+
+          next if response[:response][:last_transaction_check] + 600 < Time.now.to_i
         rescue StandardError => e
           log "Watchdog: Failed to check daemon status: #{e.message} (#{e.class})"
           next

@@ -39,7 +39,7 @@ module NodeCtld
       end
     end
 
-    attr_reader :start_time, :ct_top, :node, :console, :queues
+    attr_reader :start_time, :ct_top, :node, :console, :queues, :last_transaction_check
 
     def initialize
       self.class.instance = self
@@ -163,6 +163,8 @@ module NodeCtld
         $CFG.get(:db, :name),
         'transactions'
       ).get
+
+      @last_transaction_check = Time.now
 
       # Sometimes, update_rs is nil, i.e. no row is returned. It's not clear
       # how this could happen, but handle it to avoid a crash.

@@ -64,6 +64,7 @@ module NodeCtld::RemoteCommands
             status: @daemon.exitstatus
           },
           queues: res_queues,
+          last_transaction_check: @daemon.last_transaction_check.to_i,
           export_console: $CFG.get(:console, :enable),
           consoles:,
           subprocesses: subtasks,
