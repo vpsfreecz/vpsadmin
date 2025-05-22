@@ -37,10 +37,17 @@ module TransactionChains
         return dns_record
       end
 
-      dns_zone.increment!(:serial)
+      serial = dns_zone.increment_serial
 
       dns_zone.dns_server_zones.primary_type.each do |dns_server_zone|
-        append_t(Transactions::DnsServerZone::CreateRecords, args: [dns_server_zone, [dns_record]])
+        append_t(
+          Transactions::DnsServerZone::CreateRecords,
+          kwargs: {
+            dns_server_zone:,
+            dns_records: [dns_record],
+            serial:
+          }
+        )
 
         next unless dns_server_zone.dns_zone.enabled
 

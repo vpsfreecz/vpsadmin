@@ -370,7 +370,7 @@ class TransactionChain < ApplicationRecord
   # @param retain_context [Boolean]
   def do_append(dep, klass, opts, block, retain_context = false)
     t_opts = {
-      args: opts[:args].is_a?(Array) ? opts[:args] : [opts[:args]],
+      args: opts[:args] && (opts[:args].is_a?(Array) ? opts[:args] : [opts[:args]]),
       kwargs: opts[:kwargs],
       urgent: opts[:urgent].nil? ? urgent : opts[:urgent],
       prio: opts[:prio] || prio,

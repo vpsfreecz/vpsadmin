@@ -4,14 +4,14 @@ module Transactions::DnsServerZone
     t_type 5506
     queue :dns
 
-    def params(dns_server_zone, dns_records)
+    def params(dns_server_zone:, dns_records:, serial:)
       self.node_id = dns_server_zone.dns_server.node_id
 
       {
         name: dns_server_zone.dns_zone.name,
         source: dns_server_zone.dns_zone.zone_source,
         type: dns_server_zone.zone_type,
-        serial: dns_server_zone.dns_zone.serial,
+        serial:,
         records: dns_records.map do |r|
           {
             id: r.id,

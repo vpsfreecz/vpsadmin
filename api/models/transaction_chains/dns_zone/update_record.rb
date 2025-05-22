@@ -27,17 +27,38 @@ module TransactionChains
         transaction_chain: current_chain
       )
 
-      dns_zone.increment!(:serial)
+      serial = dns_zone.increment_serial
 
       dns_zone.dns_server_zones.primary_type.each do |dns_server_zone|
         if dns_record.enabled_changed?
           if dns_record.enabled
-            append_t(Transactions::DnsServerZone::CreateRecords, args: [dns_server_zone, [dns_record]])
+            append_t(
+              Transactions::DnsServerZone::CreateRecords,
+              kwargs: {
+                dns_server_zone:,
+                dns_records: [dns_record],
+                serial:
+              }
+            )
           else
-            append_t(Transactions::DnsServerZone::DeleteRecords, args: [dns_server_zone, [dns_record]])
+            append_t(
+              Transactions::DnsServerZone::DeleteRecords,
+              kwargs: {
+                dns_server_zone:,
+                dns_records: [dns_record],
+                serial:
+              }
+            )
           end
         elsif dns_record.enabled
-          append_t(Transactions::DnsServerZone::UpdateRecords, args: [dns_server_zone, [dns_record]])
+          append_t(
+            Transactions::DnsServerZone::UpdateRecords,
+            kwargs: {
+              dns_server_zone:,
+              dns_records: [dns_record],
+              serial:
+            }
+          )
         else
           next
         end

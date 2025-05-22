@@ -82,6 +82,13 @@ class DnsZone < ApplicationRecord
     end
   end
 
+  # Increment serial and return the new value
+  # @return [Integer]
+  def increment_serial
+    increment!(:serial)
+    self.class.find(id).serial
+  end
+
   # @return [Array<String>]
   def nameservers
     raise '#nameservers can only be called on internal zones' unless internal_source?
