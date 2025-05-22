@@ -1,7 +1,7 @@
 GEM
   remote: https://rubygems.org/
   specs:
-    amq-protocol (2.3.3)
+    amq-protocol (2.3.4)
     base64 (0.2.0)
     bunny (2.23.0)
       amq-protocol (~> 2.3, >= 2.3.1)
@@ -12,12 +12,12 @@ GEM
     nio4r (2.7.4)
     puma (6.6.0)
       nio4r (~> 2.0)
-    rack (3.1.13)
+    rack (3.1.15)
     rack-protection (4.1.1)
       base64 (>= 0.1.0)
       logger (>= 1.6.0)
       rack (>= 3.0.0, < 4)
-    rack-session (2.1.0)
+    rack-session (2.1.1)
       base64 (>= 0.1.0)
       rack (>= 3.0.0)
     rackup (2.2.1)
@@ -25,7 +25,7 @@ GEM
     rbtree (0.4.6)
     require_all (2.0.0)
     ruby2_keywords (0.0.5)
-    set (1.1.1)
+    set (1.1.2)
     sinatra (4.1.1)
       logger (>= 1.6.0)
       mustermann (~> 3.0)
