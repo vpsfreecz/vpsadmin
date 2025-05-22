@@ -2,6 +2,7 @@
 # Usage: run from repository root
 
 set -e
+export TMPDIR=/tmp
 pushd packages/api
 
 rm -f Gemfile.lock
