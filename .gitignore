@@ -3,4 +3,5 @@
 .idea
 .php-cs-fixer.cache
 .vscode
+Gemfile.lock
 TODO
