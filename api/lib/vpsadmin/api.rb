@@ -34,7 +34,7 @@ module VpsAdmin
       initialize
 
       WebAuthn.configure do |config|
-        config.origin = (::SysConfig.get(:core, :auth_url) || ::SysConfig.get(:core, :api_url)).chomp('/')
+        config.allowed_origins = [(::SysConfig.get(:core, :auth_url) || ::SysConfig.get(:core, :api_url)).chomp('/')]
         config.rp_name = ::SysConfig.get(:core, :webauthn_rp_name)
       end
 
