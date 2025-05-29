@@ -24,7 +24,11 @@ in stdenv.mkDerivation rec {
     export BUNDLE_PATH="$GEM_HOME"
     export BUNDLE_GEMFILE="$PWD/Gemfile"
 
-    $BUNDLE install
+    # Purity disabled because of prism gem, which has a native extension.
+    # The extension has its header files in .gems, which gets stripped but
+    # cc wrapper in Nix. Without NIX_ENFORCE_PURITY=0, we get prism.h not found
+    # error.
+    NIX_ENFORCE_PURITY=0 $BUNDLE install
 
     export RUBYOPT=-rbundler/setup
     export PATH="$(ruby -e 'puts Gem.bindir'):$PATH"
