@@ -1,6 +1,7 @@
-#!/bin/sh -x
+#!/usr/bin/env bash
 # Usage: $0 <nixpkgs | _nopkg> <gem name> <build id> <os build id>
 
+set -x
 set -e
 
 PKGS="$1"
