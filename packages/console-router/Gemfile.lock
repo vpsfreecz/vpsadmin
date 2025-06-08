@@ -2,7 +2,7 @@ GEM
   remote: https://rubygems.org/
   specs:
     amq-protocol (2.3.4)
-    base64 (0.2.0)
+    base64 (0.3.0)
     bunny (2.23.0)
       amq-protocol (~> 2.3, >= 2.3.1)
       sorted_set (~> 1, >= 1.0.2)
@@ -12,7 +12,7 @@ GEM
     nio4r (2.7.4)
     puma (6.6.0)
       nio4r (~> 2.0)
-    rack (3.1.15)
+    rack (3.1.16)
     rack-protection (4.1.1)
       base64 (>= 0.1.0)
       logger (>= 1.6.0)
@@ -53,4 +53,4 @@ DEPENDENCIES
   webrick
 
 BUNDLED WITH
-   2.5.22
+   2.6.6
