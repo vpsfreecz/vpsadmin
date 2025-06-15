@@ -1148,10 +1148,10 @@
     platforms = [];
     source = {
       remotes = ["https://rubygems.org"];
-      sha256 = "0jxzs8bspy26n5q0l3p5zix1rsnkhh77wh07fdmc72bz74mwap6h";
+      sha256 = "0gqr27hrmg35j7kcb6c2cx3xvkqfs42zpp9jcqw0mzbs79jy9m3z";
       type = "gem";
     };
-    version = "0.14.0";
+    version = "0.14.1";
   };
   tzinfo = {
     dependencies = ["concurrent-ruby"];
@@ -1211,10 +1211,10 @@
     platforms = [];
     source = {
       remotes = ["https://rubygems.org"];
-      sha256 = "1igl18smiycv8crkwgpqm96szq2p1i41gz8r0ax5dcayw3sna1m1";
+      sha256 = "1sn399i804pg87b1j30x8lv2602qcndhvg0k0g4xqdfxg28zdipp";
       type = "gem";
     };
-    version = "3.4.0";
+    version = "3.4.1";
   };
   webrick = {
     groups = ["development"];
