@@ -450,6 +450,13 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
       elsif input[:user_namespace_map] \
             && input[:user_namespace_map].user_namespace.user_id != vps.user_id
         error!('user namespace map belongs to a different user than the VPS')
+
+      elsif input[:memory] \
+            && vps.running? \
+            && vps.used_memory \
+            && input[:memory] < vps.memory \
+            && input[:memory] < (vps.used_memory + 128)
+        error!("cannot lower memory limit below current usage (#{vps.used_memory} MiB with 128 MiB reserve), either free memory inside the VPS or stop it")
       end
 
       @chain, = TransactionChains::Vps::Update.fire(vps, to_db_names(input))
