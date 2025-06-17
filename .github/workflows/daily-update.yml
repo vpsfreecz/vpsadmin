@@ -37,6 +37,19 @@ jobs:
 
           git commit -m "packages: update gem dependencies"
 
+      - name: Update webui dependencies
+        run: |
+          cd webui
+
+          nix-shell --run "composer update"
+          [ -d vendor ] && rm -rf vendor
+          nix-shell --run "composer2nix --name vpsadmin-webui"
+
+          git add composer.lock composer-env.nix php-packages.nix
+          git diff --cached --quiet && exit 0
+
+          git commit -m "webui: update dependencies"
+
       - name: Push updates
         run: |
           git push origin master
