@@ -13,6 +13,8 @@ AllCops:
     - 'libnodectld/*.rb'
     - 'nodectl/*.rb'
     - 'nodectld/*.rb'
+    - 'vendor/**/*'
+    - '.git/**/*'
     <% `git status --ignored --porcelain`.lines.grep(/^!! /).each do |path| %>
     - <%= path.sub(/^!! /, '').sub(/\/$/, '/**/*') %>
     <% end %>
