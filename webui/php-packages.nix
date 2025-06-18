@@ -35,30 +35,30 @@ let
     "guzzlehttp/guzzle" = {
       targetDir = "";
       src = composerEnv.buildZipPackage {
-        name = "guzzlehttp-guzzle-d281ed313b989f213357e3be1a179f02196ac99b";
+        name = "guzzlehttp-guzzle-7b2f29fe81dc4da0ca0ea7d42107a0845946ea77";
         src = fetchurl {
-          url = "https://api.github.com/repos/guzzle/guzzle/zipball/d281ed313b989f213357e3be1a179f02196ac99b";
-          sha256 = "048hm3r04ldk2w9pqja6jmkc590h1kln3136128bn7zzdg1vmqi4";
+          url = "https://api.github.com/repos/guzzle/guzzle/zipball/7b2f29fe81dc4da0ca0ea7d42107a0845946ea77";
+          sha256 = "0zmkjb1ryw4k4hm8p8fgj41as6bgxbnhc3lksc5bd90rx6q4xi1q";
         };
       };
     };
     "guzzlehttp/promises" = {
       targetDir = "";
       src = composerEnv.buildZipPackage {
-        name = "guzzlehttp-promises-f9c436286ab2892c7db7be8c8da4ef61ccf7b455";
+        name = "guzzlehttp-promises-7c69f28996b0a6920945dd20b3857e499d9ca96c";
         src = fetchurl {
-          url = "https://api.github.com/repos/guzzle/promises/zipball/f9c436286ab2892c7db7be8c8da4ef61ccf7b455";
-          sha256 = "0xp8slhb6kw9n7i5y6cpbgkc0nkk4gb1lw452kz4fszhk3r1wmgh";
+          url = "https://api.github.com/repos/guzzle/promises/zipball/7c69f28996b0a6920945dd20b3857e499d9ca96c";
+          sha256 = "1s3kmpikr6ray91dpfmlamwqv6q280x9r62fv1396wrr10n77wgh";
         };
       };
     };
     "guzzlehttp/psr7" = {
       targetDir = "";
       src = composerEnv.buildZipPackage {
-        name = "guzzlehttp-psr7-a70f5c95fb43bc83f07c9c948baa0dc1829bf201";
+        name = "guzzlehttp-psr7-c2270caaabe631b3b44c85f99e5a04bbb8060d16";
         src = fetchurl {
-          url = "https://api.github.com/repos/guzzle/psr7/zipball/a70f5c95fb43bc83f07c9c948baa0dc1829bf201";
-          sha256 = "1xp4c6v1qszbhzdgcgbd03dvxsk0s0vysr3q4rvhm134qlkbrdf2";
+          url = "https://api.github.com/repos/guzzle/psr7/zipball/c2270caaabe631b3b44c85f99e5a04bbb8060d16";
+          sha256 = "0kmnrz9f8mzf3bd3v3kvq11ii6drbchjck8hgzywkfm8zpfm741f";
         };
       };
     };
@@ -145,10 +145,10 @@ let
     "symfony/deprecation-contracts" = {
       targetDir = "";
       src = composerEnv.buildZipPackage {
-        name = "symfony-deprecation-contracts-74c71c939a79f7d5bf3c1ce9f5ea37ba0114c6f6";
+        name = "symfony-deprecation-contracts-63afe740e99a13ba87ec199bb07bbdee937a5b62";
         src = fetchurl {
-          url = "https://api.github.com/repos/symfony/deprecation-contracts/zipball/74c71c939a79f7d5bf3c1ce9f5ea37ba0114c6f6";
-          sha256 = "0jr67zcxmgq26xi9lrw3pg33fvchf27qg3liicm3r1k36hg4ymwf";
+          url = "https://api.github.com/repos/symfony/deprecation-contracts/zipball/63afe740e99a13ba87ec199bb07bbdee937a5b62";
+          sha256 = "1blzjsmk38b36l15khbx2qs3c6xqmfp32l9xxq3305ifshw7ldby";
         };
       };
     };
