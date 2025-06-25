@@ -54,10 +54,14 @@ module NodeCtl
       rescue ValidationError => e
         warn 'Command failed'
         warn "#{command.cmd}: #{e.message}"
+        warn "\n"
+        warn cli
         exit(false)
       rescue StandardError => e
         warn 'Command failed'
         warn e.inspect
+        warn "\n"
+        warn cli
         exit(false)
       end
 
