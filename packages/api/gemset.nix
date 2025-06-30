@@ -433,10 +433,10 @@
     platforms = [];
     source = {
       remotes = ["https://rubygems.org"];
-      sha256 = "1i8wmzgb5nfhvkx1f6bhdwfm7v772172imh439v3xxhkv3hllhp6";
+      sha256 = "1x64l31nkqjwfv51s2vsm0yqq4cwzrlnji12wvaq761myx3fxq9i";
       type = "gem";
     };
-    version = "2.10.1";
+    version = "2.10.2";
   };
   language_server-protocol = {
     groups = ["default" "development"];
