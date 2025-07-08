@@ -36,7 +36,7 @@ GEM
     sorted_set (1.0.3)
       rbtree
       set (~> 1.0)
-    tilt (2.6.0)
+    tilt (2.6.1)
     webrick (1.9.1)
 
 PLATFORMS
