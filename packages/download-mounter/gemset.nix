@@ -180,10 +180,10 @@
     platforms = [];
     source = {
       remotes = ["https://rubygems.org"];
-      sha256 = "0qg107qpl8gwmqjxcqiz37a3xmsgp503h9n74y8vyq0jj63gcz8w";
+      sha256 = "1nxrxm1g02a049zcjv859pzjbkwy22ljlz97r6jd5n42scvb92ch";
       type = "gem";
     };
-    version = "3.2025.0701";
+    version = "3.2025.0708";
   };
   minitest = {
     groups = ["default"];
