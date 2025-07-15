@@ -91,7 +91,7 @@ GEM
       multi_xml (>= 0.5.2)
     i18n (1.14.7)
       concurrent-ruby (~> 1.0)
-    io-console (0.8.0)
+    io-console (0.8.1)
     ipaddress (0.8.3)
     json (2.12.2)
     json-jwt (1.16.7)

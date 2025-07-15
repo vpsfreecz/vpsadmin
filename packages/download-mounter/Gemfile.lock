@@ -35,7 +35,7 @@ GEM
       domain_name (~> 0.5)
     i18n (1.14.7)
       concurrent-ruby (~> 1.0)
-    io-console (0.8.0)
+    io-console (0.8.1)
     json (2.12.2)
     logger (1.7.0)
     mime-types (3.7.0)
