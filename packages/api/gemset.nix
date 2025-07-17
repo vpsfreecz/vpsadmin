@@ -505,10 +505,10 @@
     platforms = [];
     source = {
       remotes = ["https://rubygems.org"];
-      sha256 = "1nxrxm1g02a049zcjv859pzjbkwy22ljlz97r6jd5n42scvb92ch";
+      sha256 = "07c7g6msfqwcja5hb0kvp97ydql2hagkfw3a121zj4fvsmcrfpw6";
       type = "gem";
     };
-    version = "3.2025.0708";
+    version = "3.2025.0715";
   };
   mini_mime = {
     groups = ["default"];
@@ -991,10 +991,10 @@
     platforms = [];
     source = {
       remotes = ["https://rubygems.org"];
-      sha256 = "0gis8w51k5dsmzzlppvwwznqyfd73fa3zcrpl1xihzy1mm4jw14l";
+      sha256 = "0ar3y8w36am483ynyzg0x8iwhn8h34y8f4agny4lyqcqbfnzd9qd";
       type = "gem";
     };
-    version = "1.45.1";
+    version = "1.46.0";
   };
   rubocop-rake = {
     dependencies = ["lint_roller" "rubocop"];
