@@ -259,7 +259,7 @@ GEM
       unicode-emoji (~> 4.0, >= 4.0.4)
     unicode-emoji (4.0.4)
     uri (1.0.3)
-    user_agent_parser (2.18.0)
+    user_agent_parser (2.20.0)
     webauthn (3.4.1)
       android_key_attestation (~> 0.3.0)
       bindata (~> 2.4)

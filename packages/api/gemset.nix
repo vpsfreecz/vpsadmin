@@ -1200,10 +1200,10 @@
     platforms = [];
     source = {
       remotes = ["https://rubygems.org"];
-      sha256 = "112mnbn7mybsawgc318lay7vcxwx1i2npq9zgp7cl1l9va8kp55a";
+      sha256 = "19kcpsn85q65i5mia2r06ijwv6lxwhsp3q5v1b5cgr1yj9kvdnab";
       type = "gem";
     };
-    version = "2.18.0";
+    version = "2.20.0";
   };
   webauthn = {
     dependencies = ["android_key_attestation" "bindata" "cbor" "cose" "openssl" "safety_net_attestation" "tpm-key_attestation"];
