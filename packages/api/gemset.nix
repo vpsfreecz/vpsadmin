@@ -272,10 +272,10 @@
     platforms = [];
     source = {
       remotes = ["https://rubygems.org"];
-      sha256 = "06ia9z1wxydn0nmddinnjr93qdv856gi3i87h0fycy5y7cp7c6aw";
+      sha256 = "1dq1mk28vwn3hqrbd2nrm5mdq4bvvyg79z55blw5nnfs99x1wmz9";
       type = "gem";
     };
-    version = "2.13.2";
+    version = "2.13.3";
   };
   faraday-follow_redirects = {
     dependencies = ["faraday"];
@@ -505,10 +505,10 @@
     platforms = [];
     source = {
       remotes = ["https://rubygems.org"];
-      sha256 = "07c7g6msfqwcja5hb0kvp97ydql2hagkfw3a121zj4fvsmcrfpw6";
+      sha256 = "1x42yk0fi6bjm8g2ld9f0752v3p53sc4a7c1v5k8ls65xibzvlgr";
       type = "gem";
     };
-    version = "3.2025.0715";
+    version = "3.2025.0722";
   };
   mini_mime = {
     groups = ["default"];
