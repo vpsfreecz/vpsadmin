@@ -1,4 +1,9 @@
-{ config, pkgs, lib, ... }:
+{
+  config,
+  pkgs,
+  lib,
+  ...
+}:
 with lib;
 let
   vpsadminCfg = config.vpsadmin;
@@ -30,7 +35,7 @@ let
         service = {
           config = mkOption {
             type = types.attrs;
-            default = {};
+            default = { };
             description = ''
               Options for the systemd service, see
               <option>systemd.timers.&lt;name&gt;serviceConfig</option>
@@ -52,27 +57,20 @@ let
       };
     };
 
-  taskDescription = name: task:
-    if isNull task.description then
-      "vpsAdmin API rake task ${name}"
-    else task.description;
+  taskDescription =
+    name: task: if isNull task.description then "vpsAdmin API rake task ${name}" else task.description;
 
-  activeRakeServices =
-    filterAttrs
-      (name: task: task.enable)
-      cfg.rake.tasks;
+  activeRakeServices = filterAttrs (name: task: task.enable) cfg.rake.tasks;
 
-  activeRakeTimers =
-    filterAttrs
-      (name: task: task.enable && task.timer.enable)
-      cfg.rake.tasks;
+  activeRakeTimers = filterAttrs (name: task: task.enable && task.timer.enable) cfg.rake.tasks;
 
   rakeServices = mapAttrsToList (name: task: {
     "vpsadmin-api-${name}" = {
       description = taskDescription name task;
-      after =
-        [ "network.target" "vpsadmin-api.service" ]
-        ++ optional cfg.database.createLocally [ "mysql.service" ];
+      after = [
+        "network.target"
+        "vpsadmin-api.service"
+      ] ++ optional cfg.database.createLocally [ "mysql.service" ];
       environment.RACK_ENV = "production";
       environment.SCHEMA = "${cfg.stateDirectory}/cache/structure.sql";
       path = with pkgs; [
@@ -83,7 +81,7 @@ let
         User = cfg.user;
         Group = cfg.group;
         WorkingDirectory = "${cfg.package}/api";
-        ExecStart="${bundle} exec rake ${toString task.rake}";
+        ExecStart = "${bundle} exec rake ${toString task.rake}";
         TimeoutStartSec = "1h";
       } // task.service.config;
     };
@@ -98,7 +96,8 @@ let
   }) activeRakeTimers;
 
   userExpirationGraceDays = 14;
-in {
+in
+{
   options = {
     vpsadmin.api.rake = {
       enableDefaultTasks = mkOption {
@@ -111,7 +110,7 @@ in {
 
       tasks = mkOption {
         type = types.attrsOf (types.submodule rakeTask);
-        default = {};
+        default = { };
         description = ''
           Rake tasks
         '';
@@ -123,7 +122,10 @@ in {
     (mkIf (cfg.enable && cfg.rake.enableDefaultTasks) {
       vpsadmin.api.rake.tasks = {
         auth-tokens = {
-          rake = [ "vpsadmin:auth:close_expired" "EXECUTE=yes" ];
+          rake = [
+            "vpsadmin:auth:close_expired"
+            "EXECUTE=yes"
+          ];
           timer.enable = true;
           timer.config = {
             OnBootSec = "5min";
@@ -132,7 +134,10 @@ in {
         };
 
         user-sessions = {
-          rake = [ "vpsadmin:user_session:close_expired" "EXECUTE=yes" ];
+          rake = [
+            "vpsadmin:user_session:close_expired"
+            "EXECUTE=yes"
+          ];
           timer.enable = true;
           timer.config = {
             OnBootSec = "5min";
@@ -141,7 +146,10 @@ in {
         };
 
         report-failed-logins = {
-          rake = [ "vpsadmin:auth:report_failed_logins" "EXECUTE=yes" ];
+          rake = [
+            "vpsadmin:auth:report_failed_logins"
+            "EXECUTE=yes"
+          ];
           timer.enable = true;
           timer.config = {
             OnBootSec = "60min";
@@ -152,11 +160,16 @@ in {
         migration-plans = {
           rake = [ "vpsadmin:vps:migration:run_plans" ];
           timer.enable = true;
-          timer.config = { OnCalendar = "*-*-* 08:00:00"; };
+          timer.config = {
+            OnCalendar = "*-*-* 08:00:00";
+          };
         };
 
         mail-process = {
-          rake = [ "vpsadmin:mail:process" "EXECUTE=yes" ];
+          rake = [
+            "vpsadmin:mail:process"
+            "EXECUTE=yes"
+          ];
           timer.enable = true;
           timer.config = {
             OnBootSec = "1h";
@@ -271,7 +284,9 @@ in {
         daily-report = {
           rake = [ "vpsadmin:mail_daily_report" ];
           timer.enable = true;
-          timer.config = { OnCalendar = "*-*-* 09:00:00"; };
+          timer.config = {
+            OnCalendar = "*-*-* 09:00:00";
+          };
         };
 
         mail-user-expiration-regular = {
@@ -285,7 +300,9 @@ in {
             "EXECUTE=yes"
           ];
           timer.enable = true;
-          timer.config = { OnCalendar = "Mon,Wed,Fri 08:00:00"; };
+          timer.config = {
+            OnCalendar = "Mon,Wed,Fri 08:00:00";
+          };
         };
 
         mail-user-expiration-forced = {
@@ -299,7 +316,9 @@ in {
             "EXECUTE=yes"
           ];
           timer.enable = true;
-          timer.config = { OnCalendar = "Tue,Thu,Sat,Sun 08:00:00"; };
+          timer.config = {
+            OnCalendar = "Tue,Thu,Sat,Sun 08:00:00";
+          };
         };
 
         mail-vps-expiration-regular = {
@@ -313,7 +332,9 @@ in {
             "EXECUTE=yes"
           ];
           timer.enable = true;
-          timer.config = { OnCalendar = "Mon,Wed,Fri 08:00:00"; };
+          timer.config = {
+            OnCalendar = "Mon,Wed,Fri 08:00:00";
+          };
         };
 
         mail-vps-expiration-forced = {
@@ -327,7 +348,9 @@ in {
             "EXECUTE=yes"
           ];
           timer.enable = true;
-          timer.config = { OnCalendar = "Tue,Thu,Sat,Sun 08:00:00"; };
+          timer.config = {
+            OnCalendar = "Tue,Thu,Sat,Sun 08:00:00";
+          };
         };
 
         users-suspend = {
@@ -336,14 +359,16 @@ in {
             "vpsadmin:lifetimes:progress"
             "OBJECTS=User"
             "STATES=active"
-            "GRACE=${toString (userExpirationGraceDays*24*60*60)}"
-            "NEW_EXPIRATION=${toString (21*24*60*60)}"
+            "GRACE=${toString (userExpirationGraceDays * 24 * 60 * 60)}"
+            "NEW_EXPIRATION=${toString (21 * 24 * 60 * 60)}"
             "REASON_CS=\"Nezaplacení členského příspěvku\""
             "REASON_EN=\"The membership fee wasn't paid\""
             "EXECUTE=yes"
           ];
           timer.enable = true;
-          timer.config = { OnCalendar = "Tue..Fri, 00:15"; };
+          timer.config = {
+            OnCalendar = "Tue..Fri, 00:15";
+          };
         };
 
         users-soft-delete = {
@@ -352,11 +377,13 @@ in {
             "vpsadmin:lifetimes:progress"
             "OBJECTS=User"
             "STATES=suspended"
-            "NEW_EXPIRATION=${toString (30*24*60*60)}"
+            "NEW_EXPIRATION=${toString (30 * 24 * 60 * 60)}"
             "EXECUTE=yes"
           ];
           timer.enable = true;
-          timer.config = { OnCalendar = "00:20"; };
+          timer.config = {
+            OnCalendar = "00:20";
+          };
         };
 
         users-hard-delete = {
@@ -365,7 +392,7 @@ in {
             "vpsadmin:lifetimes:progress"
             "OBJECTS=User"
             "STATES=soft_delete"
-            "NEW_EXPIRATION=${toString (5*12*30*24*60*60)}"
+            "NEW_EXPIRATION=${toString (5 * 12 * 30 * 24 * 60 * 60)}"
             "EXECUTE=yes"
           ];
         };
@@ -378,7 +405,9 @@ in {
             "EXECUTE=yes"
           ];
           timer.enable = true;
-          timer.config = { OnCalendar = "00:25"; };
+          timer.config = {
+            OnCalendar = "00:25";
+          };
         };
 
         others-expire = {
@@ -389,7 +418,9 @@ in {
             "EXECUTE=yes"
           ];
           timer.enable = true;
-          timer.config = { OnCalendar = "00:35"; };
+          timer.config = {
+            OnCalendar = "00:35";
+          };
         };
 
         prometheus-export-base = {
@@ -433,7 +464,10 @@ in {
 
         payments-process = {
           enable = elem "payments" vpsadminCfg.plugins;
-          rake = [ "vpsadmin:payments:process" "BACKEND=fio" ];
+          rake = [
+            "vpsadmin:payments:process"
+            "BACKEND=fio"
+          ];
           timer.enable = true;
           timer.config = {
             OnBootSec = "5min";
@@ -447,7 +481,9 @@ in {
           enable = elem "payments" vpsadminCfg.plugins;
           rake = [ "vpsadmin:payments:mail_overview" ];
           timer.enable = true;
-          timer.config = { OnCalendar = "*-*-* 23:00:00"; };
+          timer.config = {
+            OnCalendar = "*-*-* 23:00:00";
+          };
         };
 
         requests-ipqs = {

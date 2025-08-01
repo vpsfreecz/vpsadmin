@@ -1,4 +1,11 @@
-{ lib, stdenv, fetchurl, bundlerEnv, ruby, vpsadmin-source }:
+{
+  lib,
+  stdenv,
+  fetchurl,
+  bundlerEnv,
+  ruby,
+  vpsadmin-source,
+}:
 let
   version = vpsadmin-source.version;
 
@@ -9,13 +16,18 @@ let
     gemdir = ./.;
   };
 
-in stdenv.mkDerivation rec {
+in
+stdenv.mkDerivation rec {
   pname = "vpsadmin-console-router";
   inherit version;
 
   src = vpsadmin-source;
 
-  buildInputs = [ rubyEnv rubyEnv.wrappedRuby rubyEnv.bundler ];
+  buildInputs = [
+    rubyEnv
+    rubyEnv.wrappedRuby
+    rubyEnv.bundler
+  ];
 
   buildPhase = ''
     :
@@ -36,7 +48,7 @@ in stdenv.mkDerivation rec {
   meta = with lib; {
     homepage = "https://github.com/vpsfreecz/vpsadmin";
     platforms = platforms.linux;
-    maintainers = [];
+    maintainers = [ ];
     license = licenses.gpl2;
   };
 }

@@ -1,8 +1,14 @@
-{ config, pkgs, lib, ... }:
+{
+  config,
+  pkgs,
+  lib,
+  ...
+}:
 with lib;
 let
   cfg = config.vpsadmin;
-in {
+in
+{
   options = {
     vpsadmin = {
       enableOverlay = mkOption {
@@ -22,7 +28,7 @@ in {
 
       plugins = mkOption {
         type = types.listOf types.str;
-        default = [];
+        default = [ ];
         description = "List of plugins to enable.";
       };
 
@@ -47,8 +53,7 @@ in {
 
   config = {
     nixpkgs.overlays = optionals cfg.enableOverlay (
-      [ (self: super: { ruby = super.ruby_3_3; }) ]
-      ++ (import ../../overlays)
+      [ (self: super: { ruby = super.ruby_3_3; }) ] ++ (import ../../overlays)
     );
 
     systemd.tmpfiles.rules = mkIf cfg.enableStateDirectory [

@@ -1,7 +1,20 @@
-{ config, pkgs, lib, ... }:
+{
+  config,
+  pkgs,
+  lib,
+  ...
+}:
 let
-  inherit (lib) concatStringsSep filterAttrs mapAttrsToList mkEnableOption mkIf mkOption
-                optionalString types;
+  inherit (lib)
+    concatStringsSep
+    filterAttrs
+    mapAttrsToList
+    mkEnableOption
+    mkIf
+    mkOption
+    optionalString
+    types
+    ;
 
   cfg = config.vpsadmin.varnish;
   apiCfg = config.vpsadmin.varnish;
@@ -55,7 +68,8 @@ let
 
   enabledVhosts = vhosts: filterAttrs (name: vhost: vhost.enable) vhosts;
 
-  appBackendDefs = app: vhosts:
+  appBackendDefs =
+    app: vhosts:
     concatStringsSep "\n" (
       mapAttrsToList (name: vhost: ''
         backend ${app}_${name} {
@@ -66,7 +80,8 @@ let
       '') (enabledVhosts vhosts)
     );
 
-  apiVclRecv = vhosts:
+  apiVclRecv =
+    vhosts:
     concatStringsSep "\n" (
       mapAttrsToList (name: vhost: ''
         if (req.http.host == "${vhost.domain}") {
@@ -79,7 +94,8 @@ let
       '') (enabledVhosts vhosts)
     );
 
-  apiVclBackendResponse = vhosts:
+  apiVclBackendResponse =
+    vhosts:
     concatStringsSep "\n" (
       mapAttrsToList (name: vhost: ''
         if (bereq.http.host == "${vhost.domain}") {
@@ -103,7 +119,8 @@ let
       ${apiVclBackendResponse cfg.api}
     }
   '';
-in {
+in
+{
   options = {
     vpsadmin.varnish = {
       enable = mkEnableOption "Enable Varnish for vpsAdmin";
@@ -119,7 +136,7 @@ in {
 
       api = mkOption {
         type = types.attrsOf (types.submodule appOpts);
-        default = {};
+        default = { };
         description = ''
           Virtual hosts for vpsAdmin API
         '';

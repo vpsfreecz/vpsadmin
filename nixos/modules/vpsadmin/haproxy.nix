@@ -1,4 +1,9 @@
-{ config, pkgs, lib, ... }:
+{
+  config,
+  pkgs,
+  lib,
+  ...
+}:
 with lib;
 let
   cfg = config.vpsadmin.haproxy;
@@ -59,10 +64,7 @@ let
             description = ''
               HAProxy bind directive
             '';
-            apply = v:
-              if isNull v then
-                [ "${config.address}:${toString config.port}" ]
-              else v;
+            apply = v: if isNull v then [ "${config.address}:${toString config.port}" ] else v;
           };
         };
 
@@ -76,21 +78,19 @@ let
     };
 
   allAppAssertions =
-    (appAssertions "api")
-    ++
-    (appAssertions "console-router")
-    ++
-    (appAssertions "webui");
+    (appAssertions "api") ++ (appAssertions "console-router") ++ (appAssertions "webui");
 
-  appAssertions = app:
+  appAssertions =
+    app:
     mapAttrsToList (name: instance: {
-      assertion = instance.enable -> (instance.frontend.bind != []);
+      assertion = instance.enable -> (instance.frontend.bind != [ ]);
       message = "Add at least one item to vpsadmin.haproxy.${app}.${name}.frontend.bind";
     }) cfg.${app};
 
-  backendsConfig = backends:
-    imap0 (i: backend:
-      "  server app${toString i} ${backend.host}:${toString backend.port} check"
+  backendsConfig =
+    backends:
+    imap0 (
+      i: backend: "  server app${toString i} ${backend.host}:${toString backend.port} check"
     ) backends;
 
   apiConfig = name: instance: ''
@@ -123,13 +123,12 @@ let
     ${concatStringsSep "\n" (backendsConfig instance.backends)}
   '';
 
-  enabledInstances = instances: filterAttrs (name: instance:
-    instance.enable
-  ) instances;
+  enabledInstances = instances: filterAttrs (name: instance: instance.enable) instances;
 
-  stringConfigs = instances: fn:
-    concatStringsSep "\n\n" (mapAttrsToList fn (enabledInstances instances));
-in {
+  stringConfigs =
+    instances: fn: concatStringsSep "\n\n" (mapAttrsToList fn (enabledInstances instances));
+in
+{
   options = {
     vpsadmin.haproxy = {
       enable = mkEnableOption "Enable HAProxy for vpsAdmin";
@@ -154,7 +153,7 @@ in {
 
       api = mkOption {
         type = types.attrsOf (types.submodule appOpts);
-        default = {};
+        default = { };
         description = ''
           HAProxy instances for vpsAdmin API
         '';
@@ -162,7 +161,7 @@ in {
 
       console-router = mkOption {
         type = types.attrsOf (types.submodule appOpts);
-        default = {};
+        default = { };
         description = ''
           HAProxy instances for vpsAdmin console router
         '';
@@ -170,7 +169,7 @@ in {
 
       webui = mkOption {
         type = types.attrsOf (types.submodule appOpts);
-        default = {};
+        default = { };
         description = ''
           HAProxy instances for vpsAdmin web UI
         '';
@@ -207,11 +206,11 @@ in {
           maxconn                 3000
 
         ${optionalString cfg.exporter.enable ''
-        frontend prometheus
-          bind *:${toString cfg.exporter.port}
-          mode http
-          http-request use-service prometheus-exporter if { path /metrics }
-          no log
+          frontend prometheus
+            bind *:${toString cfg.exporter.port}
+            mode http
+            http-request use-service prometheus-exporter if { path /metrics }
+            no log
         ''}
 
         ${stringConfigs cfg.api apiConfig}

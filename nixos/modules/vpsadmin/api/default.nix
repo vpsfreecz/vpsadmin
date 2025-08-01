@@ -1,4 +1,9 @@
-{ config, pkgs, lib, ... }:
+{
+  config,
+  pkgs,
+  lib,
+  ...
+}:
 with lib;
 let
   vpsadminCfg = config.vpsadmin;
@@ -7,7 +12,13 @@ let
   apiApp = import ../api-app.nix {
     name = "api";
     inherit config pkgs lib;
-    inherit (cfg) package user group configDirectory stateDirectory;
+    inherit (cfg)
+      package
+      user
+      group
+      configDirectory
+      stateDirectory
+      ;
     databaseConfig = cfg.database;
   };
 
@@ -19,7 +30,8 @@ let
     environment 'production'
     tag 'api'
   '';
-in {
+in
+{
   imports = apiApp.imports;
 
   options = {
@@ -95,7 +107,7 @@ in {
 
       allowedIPv4Ranges = mkOption {
         type = types.listOf types.str;
-        default = [];
+        default = [ ];
         description = ''
           List of IPv4 ranges to be allowed access to the server within the firewall
         '';
@@ -103,7 +115,7 @@ in {
 
       allowedIPv6Ranges = mkOption {
         type = types.listOf types.str;
-        default = [];
+        default = [ ];
         description = ''
           List of IPv6 ranges to be allowed access to the server within the firewall
         '';
@@ -119,7 +131,7 @@ in {
       };
 
       database = mkOption {
-        type = types.submodule (apiApp.databaseModule {});
+        type = types.submodule (apiApp.databaseModule { });
         description = ''
           Database configuration
         '';
@@ -151,15 +163,16 @@ in {
       };
     };
 
-    networking.firewall.extraCommands = concatStringsSep "\n" (flatten (
-      (map (ip: ''
-        iptables -A nixos-fw -p tcp -m tcp -s ${ip} --dport ${toString cfg.port} -j nixos-fw-accept
-      '') cfg.allowedIPv4Ranges)
-      ++
-      (map (ip: ''
-        ip6tables -A nixos-fw -p tcp -m tcp -s ${ip} --dport ${toString cfg.port} -j nixos-fw-accept
-      '') cfg.allowedIPv6Ranges)
-    ));
+    networking.firewall.extraCommands = concatStringsSep "\n" (
+      flatten (
+        (map (ip: ''
+          iptables -A nixos-fw -p tcp -m tcp -s ${ip} --dport ${toString cfg.port} -j nixos-fw-accept
+        '') cfg.allowedIPv4Ranges)
+        ++ (map (ip: ''
+          ip6tables -A nixos-fw -p tcp -m tcp -s ${ip} --dport ${toString cfg.port} -j nixos-fw-accept
+        '') cfg.allowedIPv6Ranges)
+      )
+    );
 
     systemd.tmpfiles.rules = apiApp.tmpfilesRules ++ [
       "d '${cfg.stateDirectory}' 0750 ${cfg.user} ${cfg.group} - -"
@@ -172,9 +185,7 @@ in {
     ];
 
     systemd.services.vpsadmin-api = {
-      after =
-        [ "network.target" ]
-        ++ optional cfg.database.createLocally [ "mysql.service" ];
+      after = [ "network.target" ] ++ optional cfg.database.createLocally [ "mysql.service" ];
       wantedBy = [ "multi-user.target" ];
       environment.RACK_ENV = "production";
       environment.SCHEMA = "${cfg.stateDirectory}/cache/structure.sql";
@@ -185,14 +196,14 @@ in {
       startLimitBurst = 5;
       preStart = apiApp.setup;
 
-      serviceConfig ={
+      serviceConfig = {
         Type = "notify";
         User = cfg.user;
         Group = cfg.group;
         TimeoutStartSec = "infinity";
         TimeoutStopSec = 90;
         WorkingDirectory = "${cfg.package}/api";
-        ExecStart="${apiApp.bundle} exec puma -C ${pumaConfig}";
+        ExecStart = "${apiApp.bundle} exec puma -C ${pumaConfig}";
         Restart = "on-failure";
         RestartSec = 30;
         WatchdogSec = 10;
@@ -208,7 +219,7 @@ in {
     };
 
     users.groups = optionalAttrs (cfg.group == "vpsadmin-api") {
-      ${cfg.group} = {};
+      ${cfg.group} = { };
     };
 
     # ExceptionMailer extension in HaveAPI needs sendmail to send errors over

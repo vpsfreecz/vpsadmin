@@ -1,4 +1,9 @@
-{ config, pkgs, lib, ... }:
+{
+  config,
+  pkgs,
+  lib,
+  ...
+}:
 with lib;
 let
   vpsadminCfg = config.vpsadmin;
@@ -7,19 +12,28 @@ let
   apiApp = import ./api-app.nix {
     name = "supervisor";
     inherit config pkgs lib;
-    inherit (cfg) package user group configDirectory stateDirectory;
+    inherit (cfg)
+      package
+      user
+      group
+      configDirectory
+      stateDirectory
+      ;
     databaseConfig = cfg.database;
   };
 
-  rabbitmqYml = pkgs.writeText "rabbitmq.yml" (builtins.toJSON {
-    hosts = vpsadminCfg.rabbitmq.hosts;
-    vhost = vpsadminCfg.rabbitmq.virtualHost;
-    username = cfg.rabbitmq.username;
-    password = "#rabbitmq_pass#";
-    servers = cfg.servers;
-    foreground = false;
-  });
-in {
+  rabbitmqYml = pkgs.writeText "rabbitmq.yml" (
+    builtins.toJSON {
+      hosts = vpsadminCfg.rabbitmq.hosts;
+      vhost = vpsadminCfg.rabbitmq.virtualHost;
+      username = cfg.rabbitmq.username;
+      password = "#rabbitmq_pass#";
+      servers = cfg.servers;
+      foreground = false;
+    }
+  );
+in
+{
   imports = apiApp.imports;
 
   options = {
@@ -82,7 +96,7 @@ in {
       };
 
       database = mkOption {
-        type = types.submodule (apiApp.databaseModule {pool = 15;});
+        type = types.submodule (apiApp.databaseModule { pool = 15; });
         description = ''
           Database configuration
         '';
@@ -99,9 +113,7 @@ in {
     systemd.tmpfiles.rules = apiApp.tmpfilesRules;
 
     systemd.services.vpsadmin-supervisor = {
-      after =
-        [ "network.target" ]
-        ++ optional cfg.database.createLocally [ "mysql.service" ];
+      after = [ "network.target" ] ++ optional cfg.database.createLocally [ "mysql.service" ];
       wantedBy = [ "multi-user.target" ];
       environment.RACK_ENV = "production";
       startLimitIntervalSec = 180;
@@ -109,7 +121,9 @@ in {
       preStart = ''
         ${apiApp.setup}
 
-        RABBITMQ_PASS=${optionalString (cfg.rabbitmq.passwordFile != null) "$(head -n1 ${cfg.rabbitmq.passwordFile})"}
+        RABBITMQ_PASS=${
+          optionalString (cfg.rabbitmq.passwordFile != null) "$(head -n1 ${cfg.rabbitmq.passwordFile})"
+        }
         cp -f ${rabbitmqYml} "${cfg.stateDirectory}/config/supervisor.yml"
         sed -e "s,#rabbitmq_pass#,$RABBITMQ_PASS,g" -i "${cfg.stateDirectory}/config/supervisor.yml"
         chmod 440 "${cfg.stateDirectory}/config/supervisor.yml"
@@ -119,7 +133,7 @@ in {
         User = cfg.user;
         Group = cfg.group;
         WorkingDirectory = "${cfg.package}/supervisor";
-        ExecStart="${apiApp.bundle} exec bin/vpsadmin-supervisor";
+        ExecStart = "${apiApp.bundle} exec bin/vpsadmin-supervisor";
         Restart = "on-failure";
         RestartSec = 30;
       };
@@ -134,7 +148,7 @@ in {
     };
 
     users.groups = optionalAttrs (cfg.group == "vpsadmin-supervisor") {
-      ${cfg.group} = {};
+      ${cfg.group} = { };
     };
   };
 }

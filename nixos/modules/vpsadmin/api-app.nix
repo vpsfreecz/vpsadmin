@@ -1,6 +1,22 @@
-{ config, pkgs, lib, package, name, databaseConfig, configDirectory, stateDirectory, user, group }:
+{
+  config,
+  pkgs,
+  lib,
+  package,
+  name,
+  databaseConfig,
+  configDirectory,
+  stateDirectory,
+  user,
+  group,
+}:
 let
-  inherit (lib) concatStringsSep mkOption optionalString types;
+  inherit (lib)
+    concatStringsSep
+    mkOption
+    optionalString
+    types
+    ;
 
   vpsadminCfg = config.vpsadmin;
 
@@ -17,7 +33,8 @@ let
   '';
 
   bundle = "${package}/ruby-env/bin/bundle";
-in {
+in
+{
   inherit bundle;
 
   imports = [
@@ -25,7 +42,9 @@ in {
   ];
 
   databaseModule =
-    { pool ? 5 }:
+    {
+      pool ? 5,
+    }:
     { config, ... }:
     {
       options = {
@@ -66,11 +85,7 @@ in {
 
         socket = mkOption {
           type = types.nullOr types.path;
-          default =
-            if config.createLocally then
-              "/run/mysqld/mysqld.sock"
-            else
-             null;
+          default = if config.createLocally then "/run/mysqld/mysqld.sock" else null;
           defaultText = "/run/mysqld/mysqld.sock";
           example = "/run/mysqld/mysqld.sock";
           description = "Path to the unix socket file to use for authentication.";
@@ -96,7 +111,7 @@ in {
           description = "Automatically run database migrations";
         };
       };
-  };
+    };
 
   tmpfilesRules = [
     "d '${stateDirectory}' 0750 ${user} ${group} - -"
@@ -124,15 +139,17 @@ in {
     done
 
     # Handle database.passwordFile & permissions
-    DBPASS=${optionalString (databaseConfig.passwordFile != null) "$(head -n1 ${databaseConfig.passwordFile})"}
+    DBPASS=${
+      optionalString (databaseConfig.passwordFile != null) "$(head -n1 ${databaseConfig.passwordFile})"
+    }
     cp -f ${databaseYml} "${stateDirectory}/config/database.yml"
     sed -e "s,#dbpass#,$DBPASS,g" -i "${stateDirectory}/config/database.yml"
     chmod 440 "${stateDirectory}/config/database.yml"
 
     ${optionalString databaseConfig.autoSetup ''
-    # Run database migrations
-    ${bundle} exec rake db:migrate
-    ${bundle} exec rake vpsadmin:plugins:migrate
+      # Run database migrations
+      ${bundle} exec rake db:migrate
+      ${bundle} exec rake vpsadmin:plugins:migrate
     ''}
   '';
 }

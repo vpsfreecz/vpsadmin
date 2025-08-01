@@ -1,10 +1,16 @@
-{ config, pkgs, lib, ... }:
+{
+  config,
+  pkgs,
+  lib,
+  ...
+}:
 with lib;
 let
   cfg = config.vpsadmin.database;
 
   dbPort = config.services.mysql.settings.mysqld.port;
-in {
+in
+{
   options = {
     vpsadmin.database = {
       enable = mkEnableOption "Enable vpsAdmin database server";
@@ -19,7 +25,7 @@ in {
 
       allowedIPv4Ranges = mkOption {
         type = types.listOf types.str;
-        default = [];
+        default = [ ];
         description = ''
           List of IPv4 ranges to be allowed access to the server within the firewall
         '';
@@ -27,7 +33,7 @@ in {
 
       allowedIPv6Ranges = mkOption {
         type = types.listOf types.str;
-        default = [];
+        default = [ ];
         description = ''
           List of IPv6 ranges to be allowed access to the server within the firewall
         '';
@@ -40,8 +46,7 @@ in {
       (map (ip: ''
         iptables -A nixos-fw -p tcp -m tcp -s ${ip} --dport ${toString dbPort} -j nixos-fw-accept
       '') cfg.allowedIPv4Ranges)
-      ++
-      (map (ip: ''
+      ++ (map (ip: ''
         ip6tables -A nixos-fw -p tcp -m tcp -s ${ip} --dport ${toString dbPort} -j nixos-fw-accept
       '') cfg.allowedIPv6Ranges)
     );

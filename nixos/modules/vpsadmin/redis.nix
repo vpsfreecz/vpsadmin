@@ -1,10 +1,16 @@
-{ config, pkgs, lib, ... }:
+{
+  config,
+  pkgs,
+  lib,
+  ...
+}:
 with lib;
 let
   cfg = config.vpsadmin.redis;
 
   redisSrvCfg = config.services.redis.servers.vpsadmin;
-in {
+in
+{
   options = {
     vpsadmin.redis = {
       enable = mkEnableOption "Enable redis for vpsAdmin";
@@ -20,7 +26,7 @@ in {
 
       allowedIPv4Ranges = mkOption {
         type = types.listOf types.str;
-        default = [];
+        default = [ ];
         description = ''
           List of IPv4 ranges to be allowed access to the server within the firewall
         '';
@@ -28,7 +34,7 @@ in {
 
       allowedIPv6Ranges = mkOption {
         type = types.listOf types.str;
-        default = [];
+        default = [ ];
         description = ''
           List of IPv6 ranges to be allowed access to the server within the firewall
         '';
@@ -41,8 +47,7 @@ in {
       (map (ip: ''
         iptables -A nixos-fw -p tcp -m tcp -s ${ip} --dport ${toString redisSrvCfg.port} -j nixos-fw-accept
       '') cfg.allowedIPv4Ranges)
-      ++
-      (map (ip: ''
+      ++ (map (ip: ''
         ip6tables -A nixos-fw -p tcp -m tcp -s ${ip} --dport ${toString redisSrvCfg.port} -j nixos-fw-accept
       '') cfg.allowedIPv6Ranges)
     );

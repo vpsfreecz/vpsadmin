@@ -1,12 +1,18 @@
-{ config, pkgs, lib, ... }:
+{
+  config,
+  pkgs,
+  lib,
+  ...
+}:
 with lib;
 let
   cfg = config.vpsadmin.frontend;
 
-  appOpt = app:
+  appOpt =
+    app:
     mkOption {
       type = types.attrsOf (types.submodule (appModule app));
-      default = {};
+      default = { };
       description = ''
         Frontends to the vpsAdmin ${app} using nginx
 
@@ -29,7 +35,7 @@ let
 
     aliases = mkOption {
       type = types.listOf types.str;
-      default = [];
+      default = [ ];
       description = "Additional domains";
     };
 
@@ -42,7 +48,8 @@ let
         If not given, it defaults to the value of
         {option}`vpsadmin.frontend.${app}.domain`.
       '';
-      apply = v:
+      apply =
+        v:
         if !isNull v then
           v
         else if !isNull config.domain then
@@ -95,9 +102,16 @@ let
     { config, ... }:
     let
       opts = baseOpts app config;
-    in {
+    in
+    {
       options = {
-        inherit (opts) domain aliases virtualHost maintenance backend;
+        inherit (opts)
+          domain
+          aliases
+          virtualHost
+          maintenance
+          backend
+          ;
       };
     };
 
@@ -106,23 +120,27 @@ let
     { config, ... }:
     let
       opts = baseOpts app config;
-    in {
+    in
+    {
       options = {
         inherit (opts) domain virtualHost maintenance;
       };
     };
 
-  appModule = app: {
-    api = baseModule app;
+  appModule =
+    app:
+    {
+      api = baseModule app;
 
-    auth = baseModule app;
+      auth = baseModule app;
 
-    console-router = baseModule app;
+      console-router = baseModule app;
 
-    download-mounter = downloadMounterModule app;
+      download-mounter = downloadMounterModule app;
 
-    webui = baseModule app;
-  }.${app};
+      webui = baseModule app;
+    }
+    .${app};
 
   appMaintenances =
     let
@@ -139,10 +157,9 @@ let
         </html>
       '';
 
-      json = pkgs.writeText
-        "maintenance.json"
-        ''{"status":false,"message":"Server under maintenance."}'';
-    in {
+      json = pkgs.writeText "maintenance.json" ''{"status":false,"message":"Server under maintenance."}'';
+    in
+    {
       api = json;
 
       auth = html;
@@ -154,175 +171,189 @@ let
       webui = html;
     };
 
-  isUnderMaintenance = app: name: instance:
-    instance.maintenance.enable || (
-      cfg.maintenance.enable && (
-        isNull cfg.maintenance.frontends || elem name cfg.maintenance.frontends
-      )
+  isUnderMaintenance =
+    app: name: instance:
+    instance.maintenance.enable
+    || (
+      cfg.maintenance.enable && (isNull cfg.maintenance.frontends || elem name cfg.maintenance.frontends)
     );
 
   upstreamName = app: name: "${app}_${name}";
 
-  baseUpstreams = app: instances: mapAttrs' (name: instance:
-    nameValuePair (upstreamName app name) {
-      servers = {
-        "${instance.backend.address}" = {};
-      };
-    }
-  ) instances;
-
-  appUpstreams = app: instances: {
-    api = baseUpstreams app instances;
-
-    auth = baseUpstreams app instances;
-
-    console-router = baseUpstreams app instances;
-
-    download-mounter = {};
-
-    webui = baseUpstreams app instances;
-  }.${app};
-
-  accessLog = app: name:
-    if app == "console-router" then
-      "off"
-    else
-      "/var/log/nginx/vpsadmin-${app}-${name}.log";
-
-  baseVirtualHosts = app: name: instance: nameValuePair instance.virtualHost {
-    serverName = mkIf (!isNull instance.domain) instance.domain;
-    serverAliases = instance.aliases;
-
-    forceSSL = mkIf (!isNull cfg.forceSSL) cfg.forceSSL;
-
-    enableACME = mkIf (!isNull cfg.enableACME) cfg.enableACME;
-
-    locations = {
-      "/" = {
-        proxyPass = mkIf (!isUnderMaintenance app name instance)
-          "http://${upstreamName app name}";
-
-        return = mkIf (isUnderMaintenance app name instance) "503";
-      };
-
-      "@maintenance" = {
-        root = pkgs.runCommand "${app}-maintenance-root" {} ''
-          mkdir $out
-          ln -s ${instance.maintenance.file} $out/${instance.maintenance.file.name}
-        '';
-        extraConfig = ''
-          rewrite ^(.*)$ /${instance.maintenance.file.name} break;
-        '';
-      };
-    };
-
-    extraConfig = ''
-      access_log ${accessLog app name};
-      error_page 503 @maintenance;
-    '';
-  };
-
-  authVirtualHosts = app: name: instance: nameValuePair instance.virtualHost {
-    serverName = mkIf (!isNull instance.domain) instance.domain;
-    serverAliases = instance.aliases;
-
-    forceSSL = mkIf (!isNull cfg.forceSSL) cfg.forceSSL;
-
-    enableACME = mkIf (!isNull cfg.enableACME) cfg.enableACME;
-
-    locations = {
-      "/_auth" = {
-        proxyPass = mkIf (!isUnderMaintenance app name instance)
-          "http://${upstreamName app name}";
-
-        return = mkIf (isUnderMaintenance app name instance) "503";
-      };
-
-      "/webauthn" = {
-        proxyPass = mkIf (!isUnderMaintenance app name instance)
-          "http://${upstreamName app name}";
-
-        return = mkIf (isUnderMaintenance app name instance) "503";
-      };
-
-      "@maintenance" = {
-        root = pkgs.runCommand "${app}-maintenance-root" {} ''
-          mkdir $out
-          ln -s ${instance.maintenance.file} $out/${instance.maintenance.file.name}
-        '';
-        extraConfig = ''
-          rewrite ^(.*)$ /${instance.maintenance.file.name} break;
-        '';
-      };
-    };
-
-    extraConfig = ''
-      access_log ${accessLog app name};
-      error_page 503 @maintenance;
-    '';
-  };
-
-  downloadMounterVirtualHosts = app: name: instance: nameValuePair instance.virtualHost {
-    forceSSL = mkIf (!isNull cfg.forceSSL) cfg.forceSSL;
-
-    enableACME = mkIf (!isNull cfg.enableACME) cfg.enableACME;
-
-    locations = {
-      "/" = mkIf config.vpsadmin.download-mounter.enable {
-        root = config.vpsadmin.download-mounter.mountpoint;
-        return = mkIf (isUnderMaintenance app name instance) "503";
-      };
-
-      "@maintenance" = {
-        root = pkgs.runCommand "${app}-maintenance-root" {} ''
-          mkdir $out
-          ln -s ${instance.maintenance.file} $out/${instance.maintenance.file.name}
-        '';
-        extraConfig = ''
-          rewrite ^(.*)$ /${instance.maintenance.file.name} break;
-        '';
-      };
-    };
-
-    extraConfig = ''
-      access_log ${accessLog app name};
-      error_page 503 @maintenance;
-    '';
-  };
-
-  appVirtualHosts = app: {
-    api = baseVirtualHosts app;
-
-    auth = authVirtualHosts app;
-
-    console-router = baseVirtualHosts app;
-
-    download-mounter = downloadMounterVirtualHosts app;
-
-    webui = baseVirtualHosts app;
-  }.${app};
-
-  appAssertions = app: instances: {
-    api = [];
-
-    auth = [];
-
-    console-router = [];
-
-    download-mounter = [
-      {
-        assertion = instances != {} -> config.vpsadmin.download-mounter.enable;
-        message = "vpsadmin.frontend.download-mounter requires vpsadmin.download-mounter to be enabled";
+  baseUpstreams =
+    app: instances:
+    mapAttrs' (
+      name: instance:
+      nameValuePair (upstreamName app name) {
+        servers = {
+          "${instance.backend.address}" = { };
+        };
       }
-    ];
+    ) instances;
 
-    webui = [];
-  }.${app};
+  appUpstreams =
+    app: instances:
+    {
+      api = baseUpstreams app instances;
 
-  appConfigs = app:
+      auth = baseUpstreams app instances;
+
+      console-router = baseUpstreams app instances;
+
+      download-mounter = { };
+
+      webui = baseUpstreams app instances;
+    }
+    .${app};
+
+  accessLog =
+    app: name: if app == "console-router" then "off" else "/var/log/nginx/vpsadmin-${app}-${name}.log";
+
+  baseVirtualHosts =
+    app: name: instance:
+    nameValuePair instance.virtualHost {
+      serverName = mkIf (!isNull instance.domain) instance.domain;
+      serverAliases = instance.aliases;
+
+      forceSSL = mkIf (!isNull cfg.forceSSL) cfg.forceSSL;
+
+      enableACME = mkIf (!isNull cfg.enableACME) cfg.enableACME;
+
+      locations = {
+        "/" = {
+          proxyPass = mkIf (!isUnderMaintenance app name instance) "http://${upstreamName app name}";
+
+          return = mkIf (isUnderMaintenance app name instance) "503";
+        };
+
+        "@maintenance" = {
+          root = pkgs.runCommand "${app}-maintenance-root" { } ''
+            mkdir $out
+            ln -s ${instance.maintenance.file} $out/${instance.maintenance.file.name}
+          '';
+          extraConfig = ''
+            rewrite ^(.*)$ /${instance.maintenance.file.name} break;
+          '';
+        };
+      };
+
+      extraConfig = ''
+        access_log ${accessLog app name};
+        error_page 503 @maintenance;
+      '';
+    };
+
+  authVirtualHosts =
+    app: name: instance:
+    nameValuePair instance.virtualHost {
+      serverName = mkIf (!isNull instance.domain) instance.domain;
+      serverAliases = instance.aliases;
+
+      forceSSL = mkIf (!isNull cfg.forceSSL) cfg.forceSSL;
+
+      enableACME = mkIf (!isNull cfg.enableACME) cfg.enableACME;
+
+      locations = {
+        "/_auth" = {
+          proxyPass = mkIf (!isUnderMaintenance app name instance) "http://${upstreamName app name}";
+
+          return = mkIf (isUnderMaintenance app name instance) "503";
+        };
+
+        "/webauthn" = {
+          proxyPass = mkIf (!isUnderMaintenance app name instance) "http://${upstreamName app name}";
+
+          return = mkIf (isUnderMaintenance app name instance) "503";
+        };
+
+        "@maintenance" = {
+          root = pkgs.runCommand "${app}-maintenance-root" { } ''
+            mkdir $out
+            ln -s ${instance.maintenance.file} $out/${instance.maintenance.file.name}
+          '';
+          extraConfig = ''
+            rewrite ^(.*)$ /${instance.maintenance.file.name} break;
+          '';
+        };
+      };
+
+      extraConfig = ''
+        access_log ${accessLog app name};
+        error_page 503 @maintenance;
+      '';
+    };
+
+  downloadMounterVirtualHosts =
+    app: name: instance:
+    nameValuePair instance.virtualHost {
+      forceSSL = mkIf (!isNull cfg.forceSSL) cfg.forceSSL;
+
+      enableACME = mkIf (!isNull cfg.enableACME) cfg.enableACME;
+
+      locations = {
+        "/" = mkIf config.vpsadmin.download-mounter.enable {
+          root = config.vpsadmin.download-mounter.mountpoint;
+          return = mkIf (isUnderMaintenance app name instance) "503";
+        };
+
+        "@maintenance" = {
+          root = pkgs.runCommand "${app}-maintenance-root" { } ''
+            mkdir $out
+            ln -s ${instance.maintenance.file} $out/${instance.maintenance.file.name}
+          '';
+          extraConfig = ''
+            rewrite ^(.*)$ /${instance.maintenance.file.name} break;
+          '';
+        };
+      };
+
+      extraConfig = ''
+        access_log ${accessLog app name};
+        error_page 503 @maintenance;
+      '';
+    };
+
+  appVirtualHosts =
+    app:
+    {
+      api = baseVirtualHosts app;
+
+      auth = authVirtualHosts app;
+
+      console-router = baseVirtualHosts app;
+
+      download-mounter = downloadMounterVirtualHosts app;
+
+      webui = baseVirtualHosts app;
+    }
+    .${app};
+
+  appAssertions =
+    app: instances:
+    {
+      api = [ ];
+
+      auth = [ ];
+
+      console-router = [ ];
+
+      download-mounter = [
+        {
+          assertion = instances != { } -> config.vpsadmin.download-mounter.enable;
+          message = "vpsadmin.frontend.download-mounter requires vpsadmin.download-mounter to be enabled";
+        }
+      ];
+
+      webui = [ ];
+    }
+    .${app};
+
+  appConfigs =
+    app:
     let
       instances = cfg.${app};
-    in {
+    in
+    {
       assertions = appAssertions app instances;
 
       services.nginx = {
@@ -332,7 +363,8 @@ let
       };
     };
 
-in {
+in
+{
   options = {
     vpsadmin.frontend = {
       enable = mkEnableOption "Enable vpsAdmin frontend reverse proxy";
@@ -396,7 +428,8 @@ in {
     {
       networking = {
         firewall.allowedTCPPorts = mkIf cfg.openFirewall [
-          80 443
+          80
+          443
         ];
       };
 
@@ -422,7 +455,10 @@ in {
         settings = {
           nginx = {
             # Override /var/log/nginx/*.log from the nginx module
-            files = [ "/var/log/nginx/access.log" "/var/log/nginx/error.log" ];
+            files = [
+              "/var/log/nginx/access.log"
+              "/var/log/nginx/error.log"
+            ];
           };
 
           nginx-vpsadmin = {

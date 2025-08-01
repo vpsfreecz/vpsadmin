@@ -1,4 +1,9 @@
-{ config, pkgs, lib, ... }:
+{
+  config,
+  pkgs,
+  lib,
+  ...
+}:
 with lib;
 let
   vpsadminCfg = config.vpsadmin;
@@ -6,12 +11,14 @@ let
 
   bundle = "${cfg.package}/ruby-env/bin/bundle";
 
-  rabbitmqYml = pkgs.writeText "rabbitmq.yml" (builtins.toJSON {
-    hosts = vpsadminCfg.rabbitmq.hosts;
-    vhost = vpsadminCfg.rabbitmq.virtualHost;
-    username = cfg.rabbitmq.username;
-    password = "#rabbitmq_pass#";
-  });
+  rabbitmqYml = pkgs.writeText "rabbitmq.yml" (
+    builtins.toJSON {
+      hosts = vpsadminCfg.rabbitmq.hosts;
+      vhost = vpsadminCfg.rabbitmq.virtualHost;
+      username = cfg.rabbitmq.username;
+      password = "#rabbitmq_pass#";
+    }
+  );
 
   pumaConfig = pkgs.writeText "puma.rb" ''
     bind 'tcp://${cfg.address}:${toString cfg.port}'
@@ -20,7 +27,8 @@ let
     environment 'production'
     tag 'console-router'
   '';
-in {
+in
+{
   options = {
     vpsadmin.console-router = {
       enable = mkEnableOption "Enable vpsAdmin console router server";
@@ -80,7 +88,7 @@ in {
 
       allowedIPv4Ranges = mkOption {
         type = types.listOf types.str;
-        default = [];
+        default = [ ];
         description = ''
           List of IPv4 ranges to be allowed access to the server within the firewall
         '';
@@ -88,7 +96,7 @@ in {
 
       allowedIPv6Ranges = mkOption {
         type = types.listOf types.str;
-        default = [];
+        default = [ ];
         description = ''
           List of IPv6 ranges to be allowed access to the server within the firewall
         '';
@@ -122,8 +130,7 @@ in {
       (map (ip: ''
         iptables -A nixos-fw -p tcp -m tcp -s ${ip} --dport ${toString cfg.port} -j nixos-fw-accept
       '') cfg.allowedIPv4Ranges)
-      ++
-      (map (ip: ''
+      ++ (map (ip: ''
         ip6tables -A nixos-fw -p tcp -m tcp -s ${ip} --dport ${toString cfg.port} -j nixos-fw-accept
       '') cfg.allowedIPv6Ranges)
     );
@@ -145,7 +152,9 @@ in {
       startLimitIntervalSec = 180;
       startLimitBurst = 5;
       preStart = ''
-        RABBITMQ_PASS=${optionalString (cfg.rabbitmq.passwordFile != null) "$(head -n1 ${cfg.rabbitmq.passwordFile})"}
+        RABBITMQ_PASS=${
+          optionalString (cfg.rabbitmq.passwordFile != null) "$(head -n1 ${cfg.rabbitmq.passwordFile})"
+        }
         cp -f ${rabbitmqYml} "${cfg.stateDirectory}/config/rabbitmq.yml"
         sed -e "s,#rabbitmq_pass#,$RABBITMQ_PASS,g" -i "${cfg.stateDirectory}/config/rabbitmq.yml"
         chmod 440 "${cfg.stateDirectory}/config/rabbitmq.yml"
@@ -157,7 +166,7 @@ in {
         Group = cfg.group;
         TimeoutSec = "300";
         WorkingDirectory = "${cfg.package}/console_router";
-        ExecStart="${bundle} exec puma -C ${pumaConfig}";
+        ExecStart = "${bundle} exec puma -C ${pumaConfig}";
         Restart = "on-failure";
         RestartSec = 30;
         WatchdogSec = 10;
@@ -173,7 +182,7 @@ in {
     };
 
     users.groups = optionalAttrs (cfg.group == "vpsadmin-console") {
-      ${cfg.group} = {};
+      ${cfg.group} = { };
     };
   };
 }

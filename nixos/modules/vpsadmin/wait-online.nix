@@ -1,4 +1,9 @@
-{ config, pkgs, lib, ... }:
+{
+  config,
+  pkgs,
+  lib,
+  ...
+}:
 with lib;
 let
   cfg = config.vpsadmin.waitOnline;
@@ -13,7 +18,8 @@ let
       sleep 1
     done
   '';
-in {
+in
+{
   options = {
     vpsadmin.waitOnline = {
       api = {

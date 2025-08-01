@@ -1,10 +1,16 @@
-{ config, pkgs, lib, ... }:
+{
+  config,
+  pkgs,
+  lib,
+  ...
+}:
 with lib;
 let
   cfg = config.vpsadmin.download-mounter;
 
   bundle = "${cfg.package}/ruby-env/bin/bundle";
-in {
+in
+{
   options = {
     vpsadmin.download-mounter = {
       enable = mkEnableOption "Enable vpsAdmin download mounter service";
@@ -48,7 +54,10 @@ in {
 
     systemd.services.vpsadmin-download-mounter = {
       description = "Mount download directories from vpsAdmin nodes";
-      after = [ "network.target" config.vpsadmin.waitOnline.api.service ];
+      after = [
+        "network.target"
+        config.vpsadmin.waitOnline.api.service
+      ];
       wantedBy = [ "multi-user.target" ];
       path = with pkgs; [
         nfs-utils
@@ -56,15 +65,24 @@ in {
       ];
       serviceConfig =
         let
-          mounterCommand = cmd: toString ([
-            "${bundle}" "exec"
-            "bin/vpsadmin-download-mounter"
-            "--auth" "token"
-            "--load-token" cfg.api.tokenFile
-            cfg.api.url
-            cfg.mountpoint
-          ] ++ [ cmd ]);
-        in {
+          mounterCommand =
+            cmd:
+            toString (
+              [
+                "${bundle}"
+                "exec"
+                "bin/vpsadmin-download-mounter"
+                "--auth"
+                "token"
+                "--load-token"
+                cfg.api.tokenFile
+                cfg.api.url
+                cfg.mountpoint
+              ]
+              ++ [ cmd ]
+            );
+        in
+        {
           Type = "oneshot";
           TimeoutSec = "900";
           WorkingDirectory = "${cfg.package}/download_mounter";

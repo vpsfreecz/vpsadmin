@@ -1,8 +1,14 @@
-{ config, lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 with lib;
 let
   cfg = config.vpsadmin.nodectld;
-in {
+in
+{
   imports = [
     ./options.nix
   ];

@@ -1,16 +1,18 @@
-{ config, pkgs, lib, ... }:
+{
+  config,
+  pkgs,
+  lib,
+  ...
+}:
 with lib;
 let
   vpsadminCfg = config.vpsadmin;
   cfg = config.vpsadmin.webui;
   app = "vpsadmin-webui";
   boolToPhp = v: if v then "true" else "false";
-  rootDir =
-    if isNull cfg.sourceCodeDir then
-      cfg.package
-    else
-      cfg.sourceCodeDir;
-in {
+  rootDir = if isNull cfg.sourceCodeDir then cfg.package else cfg.sourceCodeDir;
+in
+{
   options = {
     vpsadmin.webui = {
       enable = mkEnableOption "Enable vpsAdmin web interface";
@@ -122,7 +124,7 @@ in {
 
       allowedIPv4Ranges = mkOption {
         type = types.listOf types.str;
-        default = [];
+        default = [ ];
         description = ''
           List of IPv4 ranges to be allowed access to the server within the firewall
         '';
@@ -130,7 +132,7 @@ in {
 
       allowedIPv6Ranges = mkOption {
         type = types.listOf types.str;
-        default = [];
+        default = [ ];
         description = ''
           List of IPv6 ranges to be allowed access to the server within the firewall
         '';
@@ -163,7 +165,13 @@ in {
         "php_admin_flag[log_errors]" = true;
         "catch_workers_output" = true;
       };
-      phpEnv."PATH" = lib.makeBinPath (with pkgs; [ git php ]);
+      phpEnv."PATH" = lib.makeBinPath (
+        with pkgs;
+        [
+          git
+          php
+        ]
+      );
       phpOptions = ''
         error_reporting = ${cfg.errorReporting}
         date.timezone = ${cfg.timeZone}
@@ -176,8 +184,7 @@ in {
       (map (ip: ''
         iptables -A nixos-fw -p tcp -m tcp -s ${ip} --dport 80 -j nixos-fw-accept
       '') cfg.allowedIPv4Ranges)
-      ++
-      (map (ip: ''
+      ++ (map (ip: ''
         ip6tables -A nixos-fw -p tcp -m tcp -s ${ip} --dport 80 -j nixos-fw-accept
       '') cfg.allowedIPv6Ranges)
     );
@@ -230,7 +237,7 @@ in {
       home = cfg.stateDirectory;
       group = app;
     };
-    users.groups.${app} = {};
+    users.groups.${app} = { };
 
     environment.etc."vpsadmin/config.php".text = ''
       <?php

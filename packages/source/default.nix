@@ -1,9 +1,13 @@
-{ lib, stdenv, vpsadminPath ? <vpsadmin> }:
+{
+  lib,
+  stdenv,
+  vpsadminPath ? <vpsadmin>,
+}:
 let
-  filterRepository = path: type:
+  filterRepository =
+    path: type:
     !(type == "directory" && baseNameOf path == ".gems")
-    &&
-    !(type == "directory" && baseNameOf path == ".git");
+    && !(type == "directory" && baseNameOf path == ".git");
 
   copiedRepo =
     if lib.isStorePath vpsadminPath then
@@ -21,7 +25,8 @@ let
 
   version = if hasRevisionFile then readVersion else "dev";
 
-in stdenv.mkDerivation rec {
+in
+stdenv.mkDerivation rec {
   pname = "vpsadmin-source";
   inherit version;
 
@@ -35,16 +40,16 @@ in stdenv.mkDerivation rec {
     cp -a ./. $out/
 
     ${lib.optionalString hasRevisionFile ''
-    for v in api console_router webui ; do
-      cp ${revisionFile} $out/$v/.git-revision
-    done
+      for v in api console_router webui ; do
+        cp ${revisionFile} $out/$v/.git-revision
+      done
     ''}
   '';
 
   meta = with lib; {
     homepage = "https://github.com/vpsfreecz/vpsadmin";
     platforms = platforms.linux;
-    maintainers = [];
+    maintainers = [ ];
     license = licenses.gpl2;
   };
 }

@@ -1,4 +1,9 @@
-{ lib, stdenv, fetchurl, sendmailPath ? "/run/wrappers/bin/sendmail" }:
+{
+  lib,
+  stdenv,
+  fetchurl,
+  sendmailPath ? "/run/wrappers/bin/sendmail",
+}:
 
 stdenv.mkDerivation rec {
   pname = "cronie";
@@ -36,8 +41,13 @@ stdenv.mkDerivation rec {
   meta = with lib; {
     description = "Daemon that runs specified programs at scheduled times and related tools";
     homepage = "https://github.com/cronie-crond/cronie";
-    license = with licenses; [ mit /* and */ bsd3 /* and */ isc /* and */ gpl2Plus ];
+    license = with licenses; [
+      mit # and
+      bsd3 # and
+      isc # and
+      gpl2Plus
+    ];
     platforms = platforms.unix;
-    maintainers = [];
+    maintainers = [ ];
   };
 }

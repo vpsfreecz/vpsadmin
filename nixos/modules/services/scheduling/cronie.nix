@@ -1,4 +1,9 @@
-{ config, lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 with lib;
 {
   options = {
@@ -26,10 +31,15 @@ with lib;
         fi
       '';
 
-      serviceConfig.ExecStart = mkForce (toString ([
-        "${pkgs.cron}/bin/crond"
-        "-n"
-      ] ++ optional config.services.cron.permitAnyCrontab [ "-p" ]));
+      serviceConfig.ExecStart = mkForce (
+        toString (
+          [
+            "${pkgs.cron}/bin/crond"
+            "-n"
+          ]
+          ++ optional config.services.cron.permitAnyCrontab [ "-p" ]
+        )
+      );
     };
   };
 }

@@ -1,8 +1,9 @@
 let
-  pkgs = import <nixpkgs> {};
+  pkgs = import <nixpkgs> { };
   stdenv = pkgs.stdenv;
 
-in stdenv.mkDerivation rec {
+in
+stdenv.mkDerivation rec {
   name = "vpsadmin-console-router";
 
   buildInputs = with pkgs; [

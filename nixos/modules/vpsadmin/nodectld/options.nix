@@ -1,4 +1,10 @@
-{ config, lib, pkgs, utils, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  utils,
+  ...
+}:
 with lib;
 let
   vpsadminCfg = config.vpsadmin;
@@ -7,7 +13,8 @@ let
   settingsFormat = pkgs.formats.yaml { };
 
   configurationYaml = settingsFormat.generate "nodectld.yml" cfg.settings;
-in {
+in
+{
   options = {
     vpsadmin.nodectld = {
       enable = mkOption {
@@ -22,7 +29,7 @@ in {
         type = types.submodule {
           freeformType = settingsFormat.type;
         };
-        default = {};
+        default = { };
         description = ''
           nodectld configuration options
         '';

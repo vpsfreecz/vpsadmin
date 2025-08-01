@@ -1,5 +1,10 @@
 name:
-{ config, pkgs, lib, ... }:
+{
+  config,
+  pkgs,
+  lib,
+  ...
+}:
 with lib;
 let
   cfg = config.vpsadmin.${name};
@@ -67,7 +72,8 @@ let
       --gid ${cfg.group} \
       ${bundle} exec ${rubyRunner} "$SCRIPT" $@
   '';
-in {
+in
+{
   config = mkIf cfg.enable {
     environment.systemPackages = [
       shellScript

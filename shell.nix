@@ -6,7 +6,8 @@ let
   };
   stdenv = pkgs.stdenv;
 
-in stdenv.mkDerivation rec {
+in
+stdenv.mkDerivation rec {
   name = "vpsadmin";
 
   buildInputs = with pkgs; [
