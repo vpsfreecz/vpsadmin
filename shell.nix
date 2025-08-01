@@ -18,6 +18,7 @@ in stdenv.mkDerivation rec {
     zlib
     mariadb
     mariadb-connector-c
+    nixfmt-rfc-style
     nixfmt-tree
     php83Packages.php-cs-fixer
   ];
