@@ -31,6 +31,7 @@ jobs:
       - name: Update gem dependencies
         run: |
           nix-shell -p bundix --run ./tools/bundix_all.sh
+          nix-shell -p nixfmt-rfc-style --run "nixfmt packages/*/gemset.nix"
 
           git add packages
           git diff --cached --quiet && exit 0
@@ -44,6 +45,7 @@ jobs:
           nix-shell --run "composer update"
           [ -d vendor ] && rm -rf vendor
           nix-shell --run "composer2nix --name vpsadmin-webui"
+          nix-shell --run "nixfmt composer-env.nix php-packages.nix"
 
           git add composer.lock composer-env.nix php-packages.nix
           git diff --cached --quiet && exit 0

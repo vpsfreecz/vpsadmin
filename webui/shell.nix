@@ -7,6 +7,7 @@ stdenv.mkDerivation rec {
   name = "vpsadmin-webui";
 
   buildInputs = with pkgs; [
+    nixfmt-rfc-style
     php
     phpPackages.composer
   ];
