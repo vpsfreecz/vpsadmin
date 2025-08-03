@@ -181,10 +181,10 @@
     platforms = [ ];
     source = {
       remotes = [ "https://rubygems.org" ];
-      sha256 = "1dsf9gjc2cj79vrnz2vgq573biqjw7ad4b0idm05xg6rb3y9gq4y";
+      sha256 = "1g3drgbckndgrz740f1ajfhfrpgnrp5nsynih5i91sj6zc4m2w8a";
       type = "gem";
     };
-    version = "0.5.9.8";
+    version = "0.5.9.9";
   };
   coderay = {
     groups = [
@@ -647,10 +647,10 @@
     platforms = [ ];
     source = {
       remotes = [ "https://rubygems.org" ];
-      sha256 = "123ycmq6pkivv29bqbv79jv2cs04xakzd0fz1lalgvfs5nxfky6i";
+      sha256 = "08ma2fmxlm6i7lih4mc3har2fzsbj1pl4hhva65kljf6nfvdryl5";
       type = "gem";
     };
-    version = "3.0.3";
+    version = "3.0.4";
   };
   mysql2 = {
     groups = [ "default" ];

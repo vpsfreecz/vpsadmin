@@ -7,7 +7,7 @@ GEM
       amq-protocol (~> 2.3, >= 2.3.1)
       sorted_set (~> 1, >= 1.0.2)
     logger (1.7.0)
-    mustermann (3.0.3)
+    mustermann (3.0.4)
       ruby2_keywords (~> 0.0.1)
     nio4r (2.7.4)
     puma (6.6.1)
@@ -53,4 +53,4 @@ DEPENDENCIES
   webrick
 
 BUNDLED WITH
-   2.6.6
+   2.6.9
