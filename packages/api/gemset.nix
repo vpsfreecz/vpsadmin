@@ -999,10 +999,10 @@
     platforms = [ ];
     source = {
       remotes = [ "https://rubygems.org" ];
-      sha256 = "0qccah61pjvzyyg6mrp27w27dlv6vxlbznzipxjcswl7x3fhsvyb";
+      sha256 = "0h6dq0cy9mrkj8z4d8w0c7r7b6s92fls2pm57p79726ifns7ipfr";
       type = "gem";
     };
-    version = "2.10.0";
+    version = "2.11.0";
   };
   reline = {
     dependencies = [ "io-console" ];
