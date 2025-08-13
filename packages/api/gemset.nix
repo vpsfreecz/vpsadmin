@@ -595,10 +595,10 @@
     platforms = [ ];
     source = {
       remotes = [ "https://rubygems.org" ];
-      sha256 = "0hnz63a81s4bqkw55mld3ybq057k4hzf8kqp145vka17zaxadqlx";
+      sha256 = "0f05x8mm7p1dpmchpfx2393nyb4wnqizximq9wq904zsjrl4551v";
       type = "gem";
     };
-    version = "3.2025.0805";
+    version = "3.2025.0812";
   };
   mini_mime = {
     groups = [ "default" ];
@@ -999,10 +999,10 @@
     platforms = [ ];
     source = {
       remotes = [ "https://rubygems.org" ];
-      sha256 = "1vir4x1wg7vc3gcpl0ymvf6hbid71l2h3nhz91a8rqr25nwnamjs";
+      sha256 = "167zy35y4sasqx7wdpv757vigxl1znphfa0xmd9xxn7zhla9qpjy";
       type = "gem";
     };
-    version = "2.11.1";
+    version = "2.11.2";
   };
   reline = {
     dependencies = [ "io-console" ];

@@ -115,7 +115,7 @@ GEM
     mime-types (3.7.0)
       logger
       mime-types-data (~> 3.2025, >= 3.2025.0507)
-    mime-types-data (3.2025.0805)
+    mime-types-data (3.2025.0812)
     mini_mime (1.1.5)
     minitest (5.25.5)
     multi_json (1.17.0)
@@ -178,7 +178,7 @@ GEM
     rake (13.3.0)
     rbtree (0.4.6)
     redcarpet (3.6.1)
-    regexp_parser (2.11.1)
+    regexp_parser (2.11.2)
     reline (0.6.2)
       io-console (~> 0.5)
     request_store (1.7.0)
