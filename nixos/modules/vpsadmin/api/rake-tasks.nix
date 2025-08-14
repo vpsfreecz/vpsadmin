@@ -70,7 +70,8 @@ let
       after = [
         "network.target"
         "vpsadmin-api.service"
-      ] ++ optional cfg.database.createLocally [ "mysql.service" ];
+      ]
+      ++ optional cfg.database.createLocally [ "mysql.service" ];
       environment.RACK_ENV = "production";
       environment.SCHEMA = "${cfg.stateDirectory}/cache/structure.sql";
       path = with pkgs; [
@@ -83,7 +84,8 @@ let
         WorkingDirectory = "${cfg.package}/api";
         ExecStart = "${bundle} exec rake ${toString task.rake}";
         TimeoutStartSec = "1h";
-      } // task.service.config;
+      }
+      // task.service.config;
     };
   }) activeRakeServices;
 
