@@ -12,7 +12,7 @@ module TransactionChains
       do_umount = (mount.enabled_changed? && !mount.enabled) \
                   || (mount.master_enabled_changed? && !mount.master_enabled)
       do_mount  = (mount.enabled_changed? || mount.master_enabled_changed?) \
-                  && (mount.enabled && mount.master_enabled)
+                  && mount.enabled && mount.master_enabled
 
       mount.save!
 
