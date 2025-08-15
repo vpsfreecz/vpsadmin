@@ -36,6 +36,32 @@ module VpsAdmin::Supervisor
         when 'reboot'
           vps.log(:reboot, time:)
         end
+
+      when 'oomd'
+        action_past =
+          case event['opts']['action']
+          when 'restart'
+            'restarted'
+          when 'stop'
+            'stopped'
+          else
+            raise "Unsupported oomd action #{event['opts']['action'].inspect}"
+          end
+
+        vps.log(event['opts']['action'].to_sym, time:)
+
+        incident = ::IncidentReport.create!(
+          user: vps.user,
+          vps: vps,
+          subject: "#{event['opts']['action'].capitalize} due to abuse",
+          text: <<~END,
+            VPS ##{vps.id} #{vps.hostname} abused shared system resources and was #{action_past}.
+          END
+          codename: 'oomd',
+          detected_at: time
+        )
+
+        TransactionChains::IncidentReport::New.fire(incident)
       end
     end
   end

@@ -82,6 +82,19 @@ module NodeCtld
           send_event(vps_id, 'exit', { 'exit_type' => event[:opts][:exit_type] })
         end
 
+      when 'osctl_oomd'
+        vps_id = event[:opts][:id].to_i
+
+        if vps_id > 0
+          log(:info, "osctl-oomd action #{event[:opts][:action]} on VPS #{vps_id}")
+          send_event(
+            vps_id,
+            'oomd',
+            { 'action' => event[:opts][:action] },
+            time: Time.at(event[:opts][:time])
+          )
+        end
+
       when 'osctld_shutdown'
         if Daemon.instance.node.any_osctl_pools?
           log(:info, 'osctld is shutting down, pausing')
@@ -91,12 +104,12 @@ module NodeCtld
       end
     end
 
-    def send_event(vps_id, type, opts)
+    def send_event(vps_id, type, opts, time: nil)
       NodeBunny.publish_wait(
         @exchange,
         {
           id: vps_id,
-          time: Time.now.to_i,
+          time: (time || Time.now).to_i,
           type:,
           opts:
         }.to_json,
