@@ -1380,10 +1380,10 @@
     platforms = [ ];
     source = {
       remotes = [ "https://rubygems.org" ];
-      sha256 = "1has87asspm6m9wgqas8ghhhwyf2i1yqrqgrkv47xw7jq3qjmbwc";
+      sha256 = "0knx0bgwwpwa7wcmknqp2i019jq6b46wxfppvhxfxrsyhlbnhmmz";
       type = "gem";
     };
-    version = "3.1.4";
+    version = "3.1.5";
   };
   unicode-emoji = {
     groups = [
