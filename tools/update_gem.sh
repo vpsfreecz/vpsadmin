@@ -27,3 +27,4 @@ rm -f Gemfile.lock gemset.nix
 sed -ri "s/gem '$GEM'[^$]*/gem '$GEM', '$version'/" Gemfile
 
 bundix -l
+nixfmt gemset.nix
