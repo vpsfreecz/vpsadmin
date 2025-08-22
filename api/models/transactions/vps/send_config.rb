@@ -18,8 +18,17 @@ module Transactions::Vps
       self.vps_id = vps.id
       self.node_id = vps.node_id
 
+      addr =
+        if node.domain_name == 'node6.brq'
+          '10.0.0.2'
+        elsif node.domain_name == 'node5.brq'
+          '10.0.0.1'
+        else
+          node.ip_addr
+        end
+
       {
-        node: node.ip_addr,
+        node: addr,
         pool_name: pool.name,
         as_id: (opts[:as_id] || vps.id).to_s,
         network_interfaces: opts[:network_interfaces] || false,
