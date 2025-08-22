@@ -7,7 +7,7 @@ module NodeCtld
         build_path(fs),
         snapshot,
         from_snapshot,
-        compressed: false,
+        compressed: true,
         properties: false,
         large_block: true,
       )
