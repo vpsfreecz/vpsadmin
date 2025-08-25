@@ -6,10 +6,10 @@ set -e
 
 PKGS="$1"
 GEMDIR="$2"
-GEM="$(basename $2)"
+GEM="$3"
 
-export VPSADMIN_BUILD_ID="$3"
-export OS_BUILD_ID="$4"
+export VPSADMIN_BUILD_ID="$4"
+export OS_BUILD_ID="$5"
 
 pushd "$GEMDIR"
 [ -f Gemfile.lock ] && rm -f Gemfile.lock
@@ -22,7 +22,7 @@ gem inabox "$pkg"
 [ "$PKGS" == "_nopkg" ] && exit
 
 popd
-pushd "$PKGS/$GEM"
+pushd "$PKGS/$GEMDIR"
 rm -f Gemfile.lock gemset.nix
 sed -ri "s/gem '$GEM'[^$]*/gem '$GEM', '$version'/" Gemfile
 
