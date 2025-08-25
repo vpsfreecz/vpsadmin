@@ -36,6 +36,7 @@ Gem::Specification.new do |s|
   s.add_dependency 'pry-remote'
   s.add_dependency 'require_all', '~> 2.0.0'
   s.add_dependency 'rexml', '~> 3.4'
+  s.add_dependency 'ruby-libvirt', '~> 0.8'
 
   # For mysql2 on ruby >=3.3
   s.add_dependency 'bigdecimal'
