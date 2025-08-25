@@ -1,0 +1,4 @@
+#!/run/nodectl/nodectl script
+require 'nodectld/standalone'
+
+NodeCtld::PoolHook.pre_import(ENV)
