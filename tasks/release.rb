@@ -113,9 +113,13 @@ namespace :vpsadmin do
     gems.each do |gem, deps|
       desc "Build and deploy #{gem} gem"
       task gem => [:environment] + deps do
+        gem_v = ENV.fetch('NODECTL_VERSION', '4').to_i
+        gem_dir = gem_v >= 5 ? "#{gem}-v#{gem_v}" : gem.to_s
+
         ret = system(
           './tools/update_gem.sh',
           'packages',
+          gem_dir,
           gem.to_s,
           ENV.fetch('VPSADMIN_BUILD_ID'),
           ENV.fetch('OS_BUILD_ID')
