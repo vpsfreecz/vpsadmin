@@ -9,10 +9,12 @@ stdenv.mkDerivation rec {
   buildInputs = with pkgs; [
     git
     libffi
+    libvirt
     mariadb-connector-c
     ncurses
     openssh
     openssl
+    pkg-config
     ruby
     zlib
   ];
