@@ -1,0 +1,24 @@
+require 'require_all'
+
+module NodeCtld
+  STANDALONE = false unless const_defined?(:STANDALONE)
+
+  module KernelLog; end
+
+  def self.root
+    File.join(__dir__, '..')
+  end
+end
+
+require 'nodectld/utils'
+require_rel 'nodectld/*.rb'
+require_rel 'nodectld/console'
+require_rel 'nodectld/commands/base'
+require_rel 'nodectld/commands'
+require_rel 'nodectld/remote_commands/base'
+require_rel 'nodectld/remote_commands/'
+require_rel 'nodectld/net_accounting/'
+require_rel 'nodectld/vps_config'
+require_rel 'nodectld/vps_user_data'
+require_rel 'nodectld/kernel_log'
+require 'nodectld/system_probes'
