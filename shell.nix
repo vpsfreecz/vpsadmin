@@ -14,6 +14,7 @@ stdenv.mkDerivation rec {
     bundix
     git
     libffi
+    libvirt
     ncurses
     ruby
     zlib
@@ -21,6 +22,7 @@ stdenv.mkDerivation rec {
     mariadb-connector-c
     nixfmt-rfc-style
     nixfmt-tree
+    pkg-config
     php83Packages.php-cs-fixer
   ];
 
