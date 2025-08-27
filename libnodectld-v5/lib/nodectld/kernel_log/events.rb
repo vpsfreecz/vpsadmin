@@ -1,5 +1,3 @@
 module NodeCtld
-  module KernelLog
-    module OomKill; end
-  end
+  module KernelLog; end
 end
