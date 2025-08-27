@@ -136,14 +136,6 @@ module NodeCtld
         end
 
         hole = false
-
-        next unless KernelLog::OomKill::Event.start?(msg)
-
-        @event = KernelLog::OomKill::Event.new
-
-        call_event do
-          event.start(msg)
-        end
       end
     end
 
