@@ -50,7 +50,6 @@ module NodeCtld
       @blockers_mutex = Mutex.new
       @chain_blockers = {}
       @queues = Queues.new(self)
-      @mount_reporter = MountReporter.new
       @remote_control = RemoteControl.new(self)
       NodeBunny.connect
       @node = Node.new
