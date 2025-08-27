@@ -60,7 +60,6 @@ module NodeCtld
       @vps_status = VpsStatus.new
       @kernel_log = KernelLog::Parser.new
       @exporter = Exporter.new(self)
-      @osctl_exporter = OsCtlExporter.new
       @console = Console::Server.new
       @dns_status = DnsStatus.new if $CFG.get(:vpsadmin, :type) == :dns_server
       NetAccounting.instance
@@ -85,7 +84,6 @@ module NodeCtld
       OsCtlUsers.setup
       @kernel_log.start if $CFG.get(:kernel_log, :enable)
       @exporter.start if $CFG.get(:exporter, :enable)
-      @osctl_exporter.start if @osctl_exporter.enable?
       VpsSshHostKeys.instance
       VpsOsRelease.instance
       @storage_status.start if @storage_status.enable?
