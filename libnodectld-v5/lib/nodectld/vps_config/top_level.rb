@@ -14,10 +14,6 @@ module NodeCtld
     # @return [VpsConfig::NetworkInterfaceList]
     attr_reader :network_interfaces
 
-    # @param mounts [Array<VpsConfig::Mount>]
-    # @return [Array<VpsConfig::Mount>]
-    attr_accessor :mounts
-
     # @param pool_fs [String]
     # @param vps_id [Integer]
     # @param load [Boolean]
@@ -29,7 +25,6 @@ module NodeCtld
         self.load
       else
         @network_interfaces = VpsConfig::NetworkInterfaceList.new
-        @mounts = []
       end
     end
 
@@ -41,12 +36,10 @@ module NodeCtld
       end
 
       @network_interfaces = VpsConfig::NetworkInterfaceList.load(data['network_interfaces'] || [])
-      @mounts = (data['mounts'] || []).map { |v| VpsConfig::Mount.load(v) }
     end
 
     def reset
       @network_interfaces.clear
-      @mounts.clear
       nil
     end
 
@@ -96,8 +89,7 @@ module NodeCtld
 
     def config
       {
-        'network_interfaces' => network_interfaces.save,
-        'mounts' => mounts.map(&:to_h)
+        'network_interfaces' => network_interfaces.save
       }
     end
 
