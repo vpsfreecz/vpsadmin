@@ -15,9 +15,7 @@ module NodeCtld
 
     Property = Struct.new(:id, :name, :value, keyword_init: true)
 
-    # @param dataset_expander [DatasetExpander]
-    def initialize(dataset_expander)
-      @dataset_expander = dataset_expander
+    def initialize
       @mutex = Mutex.new
       @update_queue = OsCtl::Lib::Queue.new
       @read_queue = OsCtl::Lib::Queue.new
@@ -191,8 +189,6 @@ module NodeCtld
             ds_prop.value = parse_value(prop, tree_ds.properties[prop])
           end
         end
-
-        @dataset_expander.check(pool)
       end
     end
 
