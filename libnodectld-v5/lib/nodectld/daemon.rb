@@ -7,7 +7,6 @@ require 'nodectld/node_status'
 require 'nodectld/vps_status'
 require 'nodectld/storage_status'
 require 'nodectld/shaper'
-require 'nodectld/ct_top'
 require 'nodectld/ct_monitor'
 
 module NodeCtld
@@ -38,7 +37,7 @@ module NodeCtld
       end
     end
 
-    attr_reader :start_time, :ct_top, :node, :console, :queues, :last_transaction_check
+    attr_reader :start_time, :node, :console, :queues, :last_transaction_check
 
     def initialize
       self.class.instance = self
@@ -317,16 +316,7 @@ module NodeCtld
       end
 
       run_thread_unless_runs(:vps_status) do
-        if $CFG.get(:vpsadmin, :update_vps_status)
-          @ct_top = CtTop.new
-          @ct_top.monitor($CFG.get(:vpsadmin, :vps_status_interval)) do |data|
-            @vps_status.update(data[:containers])
-          end
-
-        else
-          @ct_top.stop if @ct_top
-          @ct_top = nil
-        end
+        # TODO: implement VPS statuses with libvirt
       end
 
       run_thread_unless_runs(:vps_monitor) do
