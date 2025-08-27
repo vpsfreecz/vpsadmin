@@ -14,8 +14,6 @@ module NodeCtld
       vps_config = File.join('/', @pool_fs, path_to_pool_working_dir(:config), 'vps')
       FileUtils.mkdir_p(vps_config)
 
-      OsCtlUsers.add_pool(@pool_fs)
-
       ok
     end
 
