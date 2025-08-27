@@ -56,8 +56,7 @@ module NodeCtld
       @node = Node.new
       @pool_status = PoolStatus.new
       @node_status = NodeStatus.new(@pool_status)
-      @dataset_expander = DatasetExpander.new
-      @storage_status = StorageStatus.new(@dataset_expander)
+      @storage_status = StorageStatus.new
       @vps_status = VpsStatus.new
       @kernel_log = KernelLog::Parser.new
       @exporter = Exporter.new(self)
@@ -89,7 +88,6 @@ module NodeCtld
       @osctl_exporter.start if @osctl_exporter.enable?
       VpsSshHostKeys.instance
       VpsOsRelease.instance
-      @dataset_expander.start if @dataset_expander.enable?
       @storage_status.start if @storage_status.enable?
       @console.start if $CFG.get(:console, :enable)
       @dns_status.start if $CFG.get(:vpsadmin, :type) == :dns_server
