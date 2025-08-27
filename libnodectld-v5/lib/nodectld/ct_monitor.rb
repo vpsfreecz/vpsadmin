@@ -69,7 +69,6 @@ module NodeCtld
         end
 
         if vps_id > 0 && event[:opts][:state] == 'stopped'
-          MountReporter.report(event[:opts][:id], :all, :unmounted)
           VethMap.reset(vps_id)
         end
 

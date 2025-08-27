@@ -2,7 +2,6 @@ require 'libosctl'
 require 'nodectld/db'
 require 'nodectld/command'
 require 'nodectld/queues'
-require 'nodectld/mount_reporter'
 require 'nodectld/remote_control'
 require 'nodectld/node_status'
 require 'nodectld/vps_status'
@@ -50,7 +49,6 @@ module NodeCtld
       @blockers_mutex = Mutex.new
       @chain_blockers = {}
       @queues = Queues.new(self)
-      @mount_reporter = MountReporter.new
       @remote_control = RemoteControl.new(self)
       NodeBunny.connect
       @node = Node.new
@@ -68,8 +66,6 @@ module NodeCtld
     end
 
     def init
-      @mount_reporter.start unless $CFG.minimal?
-
       @remote_control.start
 
       NetAccounting.init
