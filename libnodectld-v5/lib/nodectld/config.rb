@@ -220,13 +220,6 @@ module NodeCtld
       interval: 60
     },
 
-    osctl_exporter: {
-      enable: true,
-      url: 'http://localhost:9101/metrics',
-      interval: 120,
-      batch_size: 50
-    },
-
     vps_post_start: {
       after_uptime: 1 * 60 * 60,
       default_schedule_delay: 15
@@ -314,7 +307,6 @@ module NodeCtld
                        kernel_log: { enable: false },
                        oom_reports: { enable: false },
                        exports: { enable: false },
-                       osctl_exporter: { enable: false },
                        vps_ssh_host_keys: { enable: false },
                        console: { enable: false }
                      })
