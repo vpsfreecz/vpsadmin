@@ -81,7 +81,6 @@ module NodeCtld
 
       @pool_status.init
 
-      OsCtlUsers.setup
       @kernel_log.start if $CFG.get(:kernel_log, :enable)
       @exporter.start if $CFG.get(:exporter, :enable)
       VpsSshHostKeys.instance
