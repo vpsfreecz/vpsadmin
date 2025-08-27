@@ -72,8 +72,6 @@ module NodeCtld
           VethMap.reset(vps_id)
         end
 
-        Daemon.instance.ct_top.refresh if %w[running stopped].include?(event[:opts][:state])
-
       when 'ct_exit'
         vps_id = event[:opts][:id].to_i
 
