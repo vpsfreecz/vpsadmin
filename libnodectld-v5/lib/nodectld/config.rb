@@ -243,14 +243,6 @@ module NodeCtld
       update_vps_delay: 1
     },
 
-    dataset_expander: {
-      enable: true,
-      min_avail_bytes: 512 * 1024 * 1024,
-      min_avail_percent: 1,
-      min_expand_bytes: 20 * 1024 * 1024 * 1024,
-      min_expand_percent: 10
-    },
-
     rpc_client: {
       debug: false,
       soft_timeout: 15,
@@ -324,7 +316,6 @@ module NodeCtld
                        exports: { enable: false },
                        osctl_exporter: { enable: false },
                        vps_ssh_host_keys: { enable: false },
-                       dataset_expander: { enable: false },
                        console: { enable: false }
                      })
       else
