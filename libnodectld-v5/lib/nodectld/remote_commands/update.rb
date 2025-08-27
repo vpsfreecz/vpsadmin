@@ -39,7 +39,6 @@ module NodeCtld::RemoteCommands
         hooks = %w[veth-up]
 
         cfg = NodeCtld::VpsConfig.open(vps['pool_fs'], vps['id'])
-        hooks.push('pre-start', 'post-mount') if cfg.mounts.any?
 
         hook_installer.install_hooks(hooks)
       end
