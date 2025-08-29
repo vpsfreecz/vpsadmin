@@ -692,10 +692,10 @@
     platforms = [ ];
     source = {
       remotes = [ "https://rubygems.org" ];
-      sha256 = "1z1kpshd0r09jv0091bcr4gfx3i1psbqdzy7zyag5n8v3qr0anfr";
+      sha256 = "01b21pk68kqn93aa0bn980m0s1cbqdzmc1q5l6ilizvb55m20kgq";
       type = "gem";
     };
-    version = "0.5.9";
+    version = "0.5.10";
   };
   net-pop = {
     dependencies = [ "net-protocol" ];
