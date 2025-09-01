@@ -7,6 +7,8 @@
 with lib;
 let
   cfg = config.vpsadmin.nodectld;
+
+  managedVm = import ./managed-vm.nix { inherit config pkgs lib; };
 in
 {
   imports = [
@@ -19,6 +21,10 @@ in
     boot.postBootCommands = ''
       mkdir -m 0700 /run/nodectl
       ln -sfn /run/current-system/sw/bin/nodectl /run/nodectl/nodectl
+    '';
+
+    system.activationScripts.nodectl.text = ''
+      ln -sfn ${managedVm} /run/nodectl/managed-vm
     '';
 
     runit.services.nodectld = {
