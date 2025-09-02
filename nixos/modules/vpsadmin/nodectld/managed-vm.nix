@@ -4,8 +4,6 @@
   lib,
 }:
 let
-  kernel = config.boot.kernelPackages.kernel;
-
   kernelModules = [
     "ext4"
     "loop"
@@ -19,15 +17,49 @@ let
     "virtio_console"
   ];
 
-  mkModulesTree =
-    let
-      kernel-name = kernel.name or "kernel";
-    in
-    (pkgs.aggregateModules [ kernel ]).override { name = kernel-name + "-modules"; };
+  stage2Config = import <nixpkgs/nixos/lib/eval-config.nix> {
+    inherit pkgs;
+
+    modules = [
+      (
+        { config, pkgs, ... }:
+        {
+          boot.kernelModules = kernelModules;
+
+          fileSystems."/" = {
+            device = "/dev/vda";
+            fsType = "ext4";
+            # autoFormat = true;
+          };
+
+          boot.loader.grub.device = "/dev/vda";
+
+          environment.systemPackages = with pkgs; [
+            lxc
+            qemu
+          ];
+
+          networking.hostName = "stage-2";
+
+          documentation = {
+            enable = false;
+            dev.enable = false;
+            info.enable = false;
+            man.enable = false;
+            nixos.enable = false;
+          };
+
+          fonts.fontconfig.enable = false;
+        }
+      )
+    ];
+  };
+
+  kernel = stage2Config.config.boot.kernelPackages.kernel;
 
   modules = pkgs.makeModulesClosure {
     rootModules = kernelModules;
-    kernel = mkModulesTree;
+    kernel = stage2Config.config.system.modulesTree;
     allowMissing = true;
     firmware = [ ];
   };
@@ -66,12 +98,6 @@ let
         for BIN in ${udev}/lib/udev/*_id; do
           copy_bin_and_libs $BIN
         done
-
-        # Copy LXC
-        copy_bin_and_libs ${pkgs.lxc}/bin/lxc-start
-        copy_bin_and_libs ${pkgs.lxc}/bin/lxc-info
-        copy_bin_and_libs ${pkgs.lxc}/bin/lxc-attach
-        copy_bin_and_libs ${pkgs.lxc}/bin/lxc-stop
 
         # Copy ld manually since it isn't detected correctly
         cp -pv ${pkgs.glibc.out}/lib/ld*.so.? $out/lib
@@ -128,6 +154,10 @@ let
     cp -v ${udev}/var/lib/udev/rules.d/80-drivers.rules $out/
     cp -v ${pkgs.lvm2}/lib/udev/rules.d/*.rules $out/
 
+    cat <<'EOF' > $out/90-virtio-ports.rules
+    SUBSYSTEM=="virtio-ports", KERNEL=="vport*", ATTR{name}=="?*", SYMLINK+="virtio-ports/$attr{name}"
+    EOF
+
     for i in $out/*.rules; do
         substituteInPlace $i \
           --replace ata_id ${extraUtils}/bin/ata_id \
@@ -159,6 +189,7 @@ let
         udevRules
         udevHwdb
         ;
+      bootStage2 = builtins.unsafeDiscardStringContext bootStage2;
     };
   };
 
@@ -198,9 +229,49 @@ let
     ];
   };
 
+  bootStage2 = pkgs.replaceVarsWith {
+    src = ./stage-2-init.sh;
+    isExecutable = true;
+    replacements = {
+      shell = "${pkgs.bash}/bin/bash";
+      systemConfig = stage2Config.config.system.build.toplevel;
+      path = stage2Config.config.system.path;
+      inherit (stage2Config.config.networking) hostName;
+    };
+  };
+
+  # setupRoot = pkgs.runCommand "setup-root" {} ''
+  #   mkdir $out
+  #   ln -sf ${setupPackages} $out/packages
+  #   ln -sf ${config.system.modulesTree} $out/kernel-modules
+  # '';
+
+  stage2Image = import <nixpkgs/nixos/lib/make-disk-image.nix> {
+    inherit pkgs lib;
+    inherit (stage2Config) config;
+    additionalPaths = [
+      bootStage2
+    ];
+    # contents = [
+    #   { source = setupRoot; target = "/init"; }
+    # ];
+    format = "qcow2";
+    onlyNixStore = false;
+    partitionTableType = "none";
+    installBootLoader = false;
+    touchEFIVars = false;
+    diskSize = "auto";
+    additionalSpace = "0M";
+    copyChannel = false;
+    label = "vpsadmin-stage-2";
+    name = "stage-2-image";
+    baseName = "stage-2";
+  };
+
 in
 pkgs.runCommand "managed-vm" { } ''
   mkdir $out
-  ln -sf ${config.system.build.kernel}/bzImage $out/kernel
+  ln -sf ${kernel}/bzImage $out/kernel
   ln -sf ${initialRamdisk}/initrd $out/initrd
+  ln -sf ${stage2Image}/stage-2.qcow2 $out/stage-2
 ''

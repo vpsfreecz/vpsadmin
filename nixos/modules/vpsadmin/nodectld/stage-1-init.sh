@@ -35,7 +35,7 @@ EOF
 trap 'fail' 0
 
 echo
-echo "[1;32m<<< vpsAdmin VPS >>>[0m"
+echo "[1;32m<<< vpsAdmin Stage 1 >>>[0m"
 echo
 
 export LD_LIBRARY_PATH=@extraUtils@/lib
@@ -69,35 +69,19 @@ udevadm trigger --action=add
 udevadm settle --timeout=30 || fail "udevadm settle timed-out"
 udevadm control --exit
 
-echo "Mounting rootfs"
-mkdir -p /mnt/vps
-mount -v /dev/vda /mnt/vps || fail "Unable to mount rootfs"
+echo "Mounting stage-2 image"
 
-echo "Starting managed container"
-mkdir -p /run/lxc /var/lib/lxc/vps /var/lib/lxc/rootfs /etc/lxc
+mkdir -p /.rootfs
+mount -t tmpfs root /.rootfs -o size=32M || fail "Can't mount root tmpfs"
+mkdir -p /.rootfs/rw /.rootfs/workdir
 
-# TODO: we could also support cgroups v1
-mount -t cgroup2 cgroup2 /sys/fs/cgroup
-mkdir /sys/fs/cgroup/init
-echo $$ > /sys/fs/cgroup/init/cgroup.procs
+mkdir -p /.stage-2-image
+mount -v /dev/disk/by-label/vpsadmin-stage-2 /.stage-2-image || fail "Failed to mount stage-2 image"
 
-cat > /var/lib/lxc/vps/config <<'CFG'
-lxc.apparmor.profile = unconfined
-lxc.uts.name = vps
-lxc.rootfs.path = dir:/mnt/vps
-lxc.namespace.keep = net user
-lxc.autodev = 0
-lxc.console.path = /dev/console
-lxc.init.cmd = /sbin/init
+mount -t overlay overlay -o lowerdir=/.stage-2-image,upperdir=/.rootfs/rw,workdir=/.rootfs/workdir /mnt
 
-lxc.mount.auto = proc:rw sys:rw cgroup:rw
-lxc.mount.entry = /dev dev none rbind,create=dir 0 0
-CFG
+mkdir -p /mnt/dev
+mount --move /dev /mnt/dev
 
-echo "Here's out memory"
-free -m
-
-lxc-start -F -n vps -P /var/lib/lxc
-
-echo "Managed container exited"
-echo "TODO: handle reboot/halt"
+exec env -i $(type -P switch_root) /mnt/ @bootStage2@
+exec @shell@
