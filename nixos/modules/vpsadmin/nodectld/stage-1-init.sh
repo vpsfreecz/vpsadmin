@@ -21,10 +21,7 @@ mount --bind / /mnt/image || fail "Failed to mount stage-2 image"
 
 mount -t overlay overlay -o lowerdir=/mnt/image,upperdir=/mnt/rootfs/rw,workdir=/mnt/rootfs/workdir /mnt/overlay
 
-mkdir /mnt/overlay/dev
-mount -t devtmpfs devtmpfs /mnt/overlay/dev
-
-exec env -i $(type -P switch_root) /mnt/overlay @bootStage2@ 2> /mnt/overlay/dev/null
+exec env -i $(type -P switch_root) /mnt/overlay @bootStage2@
 
 echo "Failed to enter stage-2"
 exec @shell@
