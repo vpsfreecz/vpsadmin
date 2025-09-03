@@ -14,9 +14,10 @@ echo
 echo -e "\e[1;32m<<< vpsAdmin Stage 2 >>>\e[0m"
 echo
 
-mkdir -p /proc /sys /tmp /var/empty /var/log /etc /root /run /nix/var/nix/gcroots
+mkdir -p /dev /proc /sys /tmp /var/empty /var/log /etc /root /run /nix/var/nix/gcroots
 mount -t proc proc /proc
 mount -t sysfs sys /sys
+mount -t devtmpfs devtmpfs /dev
 mkdir -p /dev/pts /dev/shm
 mount -t devpts -ogid=3 devpts /dev/pts
 
@@ -25,6 +26,18 @@ ln -sf /proc/mounts /etc/mtab
 
 touch /run/{u,w}tmp
 mkdir /run/lock
+
+defcgroupv=2
+cgroupv=$defcgroupv
+
+for o in $(cat /proc/cmdline); do
+    case $o in
+        vpsadmin.cgroupv=*)
+            set -- $(IFS==; echo $o)
+            cgroupv=$2
+            ;;
+    esac
+done
 
 hostname @hostName@
 
@@ -46,11 +59,87 @@ echo "Mounting container rootfs"
 mkdir -p /mnt/vps
 mount -v /dev/disk/by-label/vpsadmin-rootfs /mnt/vps || fail "Unable to mount rootfs"
 
-# TODO: we should also support cgroups v1
-echo "Mounting cgroups"
-mount -t cgroup2 cgroup2 /sys/fs/cgroup
-mkdir /sys/fs/cgroup/init
-echo $$ > /sys/fs/cgroup/init/cgroup.procs
+# CGroups
+case "$cgroupv" in
+    1) ;;
+    2) ;;
+    *)
+        echo "Invalid cgroup version specified: 'vpsadmin.cgroupv=$cgroupv', " \
+                "falling back to v$defcgroupv"
+        cgroupv=$defcgroupv
+        ;;
+esac
+
+case "$cgroupv" in
+    1)
+        echo "Mounting cgroups in hybrid hierarchy (v1)"
+        mount -t tmpfs -o uid=0,gid=0,mode=0755 cgroup /sys/fs/cgroup
+
+        mkdir /sys/fs/cgroup/cpuset
+        mount -t cgroup -o cpuset cgroup /sys/fs/cgroup/cpuset
+
+        mkdir /sys/fs/cgroup/cpu,cpuacct
+        mount -t cgroup -o cpu,cpuacct cgroup /sys/fs/cgroup/cpu,cpuacct
+
+        mkdir /sys/fs/cgroup/memory
+        mount -t cgroup -o memory cgroup /sys/fs/cgroup/memory
+        echo 1 > /sys/fs/cgroup/memory/memory.use_hierarchy
+
+        mkdir /sys/fs/cgroup/devices
+        mount -t cgroup -o devices cgroup /sys/fs/cgroup/devices
+
+        mkdir /sys/fs/cgroup/freezer
+        mount -t cgroup -o freezer cgroup /sys/fs/cgroup/freezer
+
+        mkdir /sys/fs/cgroup/net_cls,net_prio
+        mount -t cgroup -o net_cls,net_prio cgroup /sys/fs/cgroup/net_cls,net_prio
+
+        mkdir /sys/fs/cgroup/pids
+        mount -t cgroup -o pids cgroup /sys/fs/cgroup/pids
+
+        mkdir /sys/fs/cgroup/perf_event
+        mount -t cgroup -o perf_event cgroup /sys/fs/cgroup/perf_event
+
+        mkdir /sys/fs/cgroup/rdma
+        mount -t cgroup -o rdma cgroup /sys/fs/cgroup/rdma
+
+        mkdir /sys/fs/cgroup/hugetlb
+        mount -t cgroup -o hugetlb cgroup /sys/fs/cgroup/hugetlb
+
+        mkdir /sys/fs/cgroup/systemd
+        mount -t cgroup -o name=systemd,none cgroup /sys/fs/cgroup/systemd
+
+        mkdir /sys/fs/cgroup/unified
+        mount -t cgroup2 cgroup2 /sys/fs/cgroup/unified
+
+        for subsys in /sys/fs/cgroup/* ; do
+            mkdir -p $subsys/init
+
+            if [[ "$subsys" == */cpuset ]] ; then
+                cat "$subsys/cpuset.cpus" > "$subsys/init/cpuset.cpus"
+                cat "$subsys/cpuset.mems" > "$subsys/init/cpuset.mems"
+            fi
+
+            echo $$ > $subsys/init/cgroup.procs
+        done
+        ;;
+    2)
+        echo "Mounting cgroups in unified hierarchy (v2)"
+        mount -t cgroup2 cgroup2 /sys/fs/cgroup
+
+        for c in `cat /sys/fs/cgroup/cgroup.controllers` ; do
+            echo "+$c" >> /sys/fs/cgroup/cgroup.subtree_control
+        done
+
+        mkdir /sys/fs/cgroup/init
+        for c in `cat /sys/fs/cgroup/system/cgroup.controllers` ; do
+            echo "+$c" >> /sys/fs/cgroup/system/cgroup.subtree_control
+        done
+
+        mkdir /sys/fs/cgroup/init
+        echo $$ > /sys/fs/cgroup/init/cgroup.procs
+        ;;
+esac
 
 echo "Starting qemu guest agent"
 qemu-ga -d -m virtio-serial
