@@ -61,23 +61,34 @@ bash
 echo "Starting managed container"
 mkdir -p /run/lxc /var/lib/lxc/vps /var/lib/lxc/rootfs /etc/lxc
 
-cat > /var/lib/lxc/vps/config <<'CFG'
-lxc.apparmor.profile = unconfined
-lxc.uts.name = vps
-lxc.rootfs.path = dir:/mnt/vps
-lxc.namespace.keep = net user
-lxc.autodev = 0
-lxc.console.path = /dev/console
-lxc.init.cmd = /sbin/init
-
-lxc.mount.auto = proc:rw sys:rw cgroup:rw
-lxc.mount.entry = /dev dev none rbind,create=dir 0 0
-CFG
-
-echo "Here's out memory"
-free -m
-
 lxc-start -F -n vps -P /var/lib/lxc
 
 echo "Managed container exited"
-echo "TODO: handle reboot/halt"
+
+echo "Syncing filesystems..."
+sync
+
+if [ -e /run/lxc-target ] ; then
+    target="$(cat /run/lxc-target)"
+
+    case "$target" in
+    reboot)
+        echo "Rebooting..."
+        sleep 1
+        echo b > /proc/sysrq-trigger
+        ;;
+    *)
+        echo "Halting..."
+        sleep 1
+        echo o > /proc/sysrq-trigger
+        ;;
+    esac
+else
+    echo "Unable to determine reboot/halt request, rebooting..."
+    sleep 1
+    echo b > /proc/sysrq-trigger
+fi
+
+# Avoid exiting to avoid kernel panic (we are init)
+sleep 60
+

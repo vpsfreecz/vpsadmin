@@ -104,11 +104,36 @@ let
     mkdir rootfs image overlay
   '';
 
+  lxcConfig = pkgs.writeText "lxc-config" ''
+    lxc.apparmor.profile = unconfined
+    lxc.uts.name = vps
+    lxc.rootfs.path = dir:/mnt/vps
+    lxc.namespace.keep = net user
+    lxc.autodev = 0
+    lxc.console.path = /dev/console
+    lxc.init.cmd = /sbin/init
+
+    lxc.mount.auto = proc:rw sys:rw cgroup:rw
+    lxc.mount.entry = /dev dev none rbind,create=dir 0 0
+
+    lxc.hook.post-stop = ${postStopHook}
+  '';
+
+  postStopHook = pkgs.writeScript "post-stop.sh" ''
+    #!${pkgs.bash}/bin/bash
+
+    [ -z "$LXC_TARGET" ] && LXC_TARGET=unknown
+
+    echo "$LXC_TARGET" > /run/lxc-target
+    exit 0
+  '';
+
   bootImage = import <nixpkgs/nixos/lib/make-disk-image.nix> {
     inherit pkgs lib;
     inherit (stage2Config) config;
     additionalPaths = [
       bootStage2
+      lxcConfig
     ];
     contents = [
       {
@@ -118,6 +143,10 @@ let
       {
         source = rootDirs;
         target = "/mnt";
+      }
+      {
+        source = lxcConfig;
+        target = "/var/lib/lxc/vps/config";
       }
     ];
     format = "qcow2";
