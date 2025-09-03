@@ -24,17 +24,19 @@ let
             pkgs.linuxPackages.kernel.override {
               structuredExtraConfig = with lib.kernel; {
                 EXT4_FS = yes;
+                OVERLAY_FS = yes;
 
                 HW_RANDOM = yes;
                 HW_RANDOM_VIRTIO = yes;
-
-                OVERLAY_FS = yes;
 
                 VIRTIO = yes;
                 VIRTIO_BLK = yes;
                 VIRTIO_CONSOLE = yes;
                 VIRTIO_NET = yes;
                 VIRTIO_PCI = yes;
+
+                CPUSETS_V1 = yes;
+                MEMCG_V1 = yes;
               };
             }
           );
