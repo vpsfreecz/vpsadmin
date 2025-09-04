@@ -147,10 +147,10 @@
     platforms = [ ];
     source = {
       remotes = [ "https://rubygems.org" ];
-      sha256 = "1p2szbr4jdvmwaaj2kxlbv1rp0m6ycbgfyp0kjkkkswmniv5y21r";
+      sha256 = "06sfv80bmxfczkqi3pb3yc9zicqhf94adh5f8hpkn3bsqqd1vlgz";
       type = "gem";
     };
-    version = "3.2.2";
+    version = "3.2.3";
   };
   bindata = {
     groups = [ "default" ];
@@ -859,10 +859,10 @@
     platforms = [ ];
     source = {
       remotes = [ "https://rubygems.org" ];
-      sha256 = "07pajhv7pqz82kcjc6017y4d0hwz5kp746cydpx1npd79r56xddr";
+      sha256 = "1z8yy60wcbj47br408060bnasl70vlalavcg8axgkryjia7vk7i7";
       type = "gem";
     };
-    version = "6.6.1";
+    version = "7.0.0";
   };
   racc = {
     groups = [
@@ -1155,10 +1155,10 @@
     platforms = [ ];
     source = {
       remotes = [ "https://rubygems.org" ];
-      sha256 = "16xrh18hrf2snvhl0vzk7h1ygi3g56ssvh60xdnfkrqcj7rg720n";
+      sha256 = "1x5bv4yrm02ma8qy5127arz3zx0y7cjmw7mrnffijp6gxw7z71b4";
       type = "gem";
     };
-    version = "1.80.1";
+    version = "1.80.2";
   };
   rubocop-ast = {
     dependencies = [
