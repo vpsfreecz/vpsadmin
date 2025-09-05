@@ -117,10 +117,10 @@
     platforms = [ ];
     source = {
       remotes = [ "https://rubygems.org" ];
-      sha256 = "01qml0yilb9basf7is2614skjp8384h2pycfx86cr8023arfj98g";
+      sha256 = "0yx9yn47a8lkfcjmigk79fykxvr80r4m1i35q82sxzynpbm7lcr7";
       type = "gem";
     };
-    version = "0.2.0";
+    version = "0.3.0";
   };
   bcrypt = {
     groups = [ "default" ];
@@ -276,10 +276,10 @@
     platforms = [ ];
     source = {
       remotes = [ "https://rubygems.org" ];
-      sha256 = "1kw8bd8lv7p0fvbn72gkl2maaqzk2h4hm6mgh3malfpn6z0hzxsm";
+      sha256 = "06pis5wwpan5flpbc7qj62d377zvm5bhbp11jkx14w0y6xw09h1r";
       type = "gem";
     };
-    version = "1.72.4";
+    version = "1.73.0";
   };
   domain_name = {
     groups = [ "default" ];
@@ -542,10 +542,10 @@
     platforms = [ ];
     source = {
       remotes = [ "https://rubygems.org" ];
-      sha256 = "05s008w9vy7is3njblmavrbdzyrwwc1fsziffdr58w9pwqj8sqfx";
+      sha256 = "00q2zznygpbls8asz5knjvvj2brr3ghmqxgr83xnrdj4rk3xwvhr";
       type = "gem";
     };
-    version = "1.6.6";
+    version = "1.7.0";
   };
   mail = {
     dependencies = [
