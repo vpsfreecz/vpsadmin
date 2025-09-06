@@ -52,6 +52,7 @@ let
           environment.systemPackages = with pkgs; [
             lxc
             qemu
+            qemuGaRunner
           ];
 
           networking.hostName = "stage-2";
@@ -115,6 +116,20 @@ let
     mkdir $out
     cd $out
     mkdir rootfs image overlay
+  '';
+
+  qemuGaRunner = pkgs.writeScriptBin "qemu-ga-runner.sh" ''
+    #!${pkgs.bash}/bin/bash
+
+    echo -1000 > /proc/$$/oom_score_adj
+
+    while true ; do
+      qemu-ga -m virtio-serial
+      echo "QEMU Guest Agent exited with status $?, restarting"
+      sleep 5
+    done
+
+    exit 0
   '';
 
   lxcConfig = pkgs.writeText "lxc-config" ''
