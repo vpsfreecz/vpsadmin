@@ -5,6 +5,38 @@ fail() {
     exit 1
 }
 
+setCgroup() {
+    local pid="$1"
+    local relPath="$2"
+    local absPath
+
+    case "$cgroupv" in
+        1)
+            for subsys in /sys/fs/cgroup/* ; do
+                absPath="$subsys/$relPath"
+                mkdir -p "$absPath"
+
+                if [[ "$subsys" == */cpuset ]] ; then
+                    cat "$subsys/cpuset.cpus" > "$absPath/cpuset.cpus"
+                    cat "$subsys/cpuset.mems" > "$absPath/cpuset.mems"
+                fi
+
+                echo $pid > "$absPath/cgroup.procs"
+            done
+            ;;
+        2)
+            absPath="/sys/fs/cgroup/$relPath"
+            mkdir -p "$absPath"
+
+            for c in `cat /sys/fs/cgroup/cgroup.controllers` ; do
+                echo "+$c" >> "$absPath/cgroup.subtree_control"
+            done
+
+            echo $pid > "$absPath/cgroup.procs"
+            ;;
+    esac
+}
+
 trap 'fail' 0
 
 systemConfig=@systemConfig@
@@ -111,17 +143,6 @@ case "$cgroupv" in
 
         mkdir /sys/fs/cgroup/unified
         mount -t cgroup2 cgroup2 /sys/fs/cgroup/unified
-
-        for subsys in /sys/fs/cgroup/* ; do
-            mkdir -p $subsys/init
-
-            if [[ "$subsys" == */cpuset ]] ; then
-                cat "$subsys/cpuset.cpus" > "$subsys/init/cpuset.cpus"
-                cat "$subsys/cpuset.mems" > "$subsys/init/cpuset.mems"
-            fi
-
-            echo $$ > $subsys/init/cgroup.procs
-        done
         ;;
     2)
         echo "Mounting cgroups in unified hierarchy (v2)"
@@ -130,16 +151,10 @@ case "$cgroupv" in
         for c in `cat /sys/fs/cgroup/cgroup.controllers` ; do
             echo "+$c" >> /sys/fs/cgroup/cgroup.subtree_control
         done
-
-        mkdir /sys/fs/cgroup/init
-        for c in `cat /sys/fs/cgroup/system/cgroup.controllers` ; do
-            echo "+$c" >> /sys/fs/cgroup/system/cgroup.subtree_control
-        done
-
-        mkdir /sys/fs/cgroup/init
-        echo $$ > /sys/fs/cgroup/init/cgroup.procs
         ;;
 esac
+
+setCgroup $$ init
 
 echo "Starting qemu guest agent"
 qemu-ga -d -m virtio-serial
@@ -150,9 +165,30 @@ bash
 echo "Starting managed container"
 mkdir -p /run/lxc /var/lib/lxc/vps /var/lib/lxc/rootfs /etc/lxc
 
-lxc-start -F -n vps -P /var/lib/lxc
+setCgroup $$ container
 
-echo "Managed container exited"
+lxc-start -F -n vps -P /var/lib/lxc &
+lxcPid=$!
+
+# It is necessary to wait for LXC to start before switching cgroups
+# back to init
+for _ in {1..600} ; do
+    [ -f /run/lxc-started ] && break
+    sleep 0.1
+done
+
+if [ ! -f /run/lxc-started ] ; then
+    fail "LXC not started"
+fi
+
+rm -f /run/lxc-started
+
+setCgroup $$ init
+
+wait $lxcPid
+lxcStatus=$?
+
+echo "Managed container exited with $lxcStatus"
 
 echo "Syncing filesystems..."
 sync

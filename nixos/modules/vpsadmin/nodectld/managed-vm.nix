@@ -129,7 +129,15 @@ let
     lxc.mount.auto = proc:rw sys:rw cgroup:rw
     lxc.mount.entry = /dev dev none rbind,create=dir 0 0
 
+    lxc.hook.pre-start = ${preStartHook}
     lxc.hook.post-stop = ${postStopHook}
+  '';
+
+  preStartHook = pkgs.writeScript "pre-start.sh" ''
+    #!${pkgs.bash}/bin/bash
+
+    touch /run/lxc-started
+    exit 0
   '';
 
   postStopHook = pkgs.writeScript "post-stop.sh" ''
