@@ -172,6 +172,9 @@ qemuGaPid=$!
 echo "tmp shell"
 bash
 
+echo "Configuring managed container"
+configure-ct.rb
+
 echo "Starting managed container"
 mkdir -p /run/lxc /var/lib/lxc/vps /var/lib/lxc/rootfs /etc/lxc
 
