@@ -87,6 +87,15 @@ ln -sfn @udevHwdb@ /etc/udev/hwdb.bin
 @udev@/bin/udevadm settle --timeout=30 || fail "udevadm settle timed-out"
 @udev@/bin/udevadm control --exit
 
+if [ -e /dev/disk/by-label/config-2 ] ; then
+  echo "Mounting config drive"
+  mkdir -p /mnt/config
+  mount -o ro /dev/disk/by-label/config-2 /mnt/config
+  mkdir -p /run/config/vpsadmin
+  [ -d /mnt/config/vpsadmin ] && cp -r /mnt/config/vpsadmin/* /run/config/vpsadmin/
+  umount /mnt/config
+fi
+
 echo "Mounting container rootfs"
 mkdir -p /mnt/vps
 mount -v /dev/disk/by-label/vpsadmin-rootfs /mnt/vps || fail "Unable to mount rootfs"
