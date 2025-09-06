@@ -157,7 +157,8 @@ esac
 setCgroup $$ init
 
 echo "Starting qemu guest agent"
-qemu-ga -d -m virtio-serial
+qemu-ga-runner.sh &
+qemuGaPid=$!
 
 echo "tmp shell"
 bash
@@ -183,6 +184,7 @@ fi
 
 rm -f /run/lxc-started
 
+echo -1000 > /proc/$$/oom_score_adj
 setCgroup $$ init
 
 wait $lxcPid
