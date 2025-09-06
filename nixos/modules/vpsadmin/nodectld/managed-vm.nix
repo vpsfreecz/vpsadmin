@@ -176,7 +176,9 @@ let
     ];
     format = "qcow2";
     onlyNixStore = false;
-    partitionTableType = "none";
+    partitionTableType = "efi";
+    bootSize = "8M";
+    rootGPUID = "fac0aeec-7358-4d5c-a3aa-ba899b14a17f";
     installBootLoader = false;
     touchEFIVars = false;
     diskSize = "auto";
