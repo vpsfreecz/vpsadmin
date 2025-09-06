@@ -50,6 +50,7 @@ let
           boot.loader.grub.device = "/dev/vda";
 
           environment.systemPackages = with pkgs; [
+            configureCt
             lxc
             qemu
             qemuGaRunner
@@ -132,14 +133,26 @@ let
     exit 0
   '';
 
-  lxcConfig = pkgs.writeText "lxc-config" ''
+  configureCt = pkgs.replaceVarsWith {
+    src = ./configure-ct.rb;
+    dir = "bin";
+    isExecutable = true;
+    replacements = {
+      inherit (pkgs) ctstartmenu ruby;
+      inherit lxcConfig;
+    };
+  };
+
+  lxcConfig = pkgs.writeText "lxc-config.erb" ''
     lxc.apparmor.profile = unconfined
     lxc.uts.name = vps
     lxc.rootfs.path = dir:/mnt/vps
     lxc.namespace.keep = net user
     lxc.autodev = 0
     lxc.console.path = /dev/console
-    lxc.init.cmd = /sbin/init
+    lxc.pty.max = 4096
+    lxc.tty.max = 64
+    lxc.init.cmd = <%= init_cmd %>
 
     lxc.mount.auto = proc:rw sys:rw cgroup:rw
     lxc.mount.entry = /dev dev none rbind,create=dir 0 0
@@ -179,10 +192,6 @@ let
       {
         source = rootDirs;
         target = "/mnt";
-      }
-      {
-        source = lxcConfig;
-        target = "/var/lib/lxc/vps/config";
       }
     ];
     format = "qcow2";
