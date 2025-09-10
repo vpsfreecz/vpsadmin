@@ -16,6 +16,7 @@
       libnodectld = super.callPackage ../../packages/libnodectld { ruby = self.ruby_vpsadminos; };
       nodectld = super.callPackage ../../packages/nodectld { ruby = self.ruby_vpsadminos; };
       nodectl = super.callPackage ../../packages/nodectl { ruby = self.ruby_vpsadminos; };
+      distconfig = super.callPackage ../../packages/distconfig { inherit ruby; };
     }
   )
 ]
