@@ -174,6 +174,7 @@ bash
 
 echo "Configuring managed container"
 configure-ct.rb
+distconfig start
 
 echo "Starting managed container"
 mkdir -p /run/lxc /var/lib/lxc/vps /var/lib/lxc/rootfs /etc/lxc
