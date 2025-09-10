@@ -595,10 +595,10 @@
     platforms = [ ];
     source = {
       remotes = [ "https://rubygems.org" ];
-      sha256 = "06hybfl3mffvq46kqgqks9nam03d89jfrmfips1v8xf0fvxrg0sx";
+      sha256 = "1bmmppgrwxi5riss36zc9wykk5pxrc8kwy209nb5ph4qin5b7r53";
       type = "gem";
     };
-    version = "3.2025.0902";
+    version = "3.2025.0909";
   };
   mini_mime = {
     groups = [ "default" ];
@@ -1380,10 +1380,10 @@
     platforms = [ ];
     source = {
       remotes = [ "https://rubygems.org" ];
-      sha256 = "0knx0bgwwpwa7wcmknqp2i019jq6b46wxfppvhxfxrsyhlbnhmmz";
+      sha256 = "0hiwhnqpq271xqari6mg996fgjps42sffm9cpk6ljn8sd2srdp8c";
       type = "gem";
     };
-    version = "3.1.5";
+    version = "3.2.0";
   };
   unicode-emoji = {
     groups = [
@@ -1393,10 +1393,10 @@
     platforms = [ ];
     source = {
       remotes = [ "https://rubygems.org" ];
-      sha256 = "0ajk6rngypm3chvl6r0vwv36q1931fjqaqhjjya81rakygvlwb1c";
+      sha256 = "1995yfjbvjlwrslq48gzzc9j0blkdzlbda9h90pjbm0yvzax55s9";
       type = "gem";
     };
-    version = "4.0.4";
+    version = "4.1.0";
   };
   uri = {
     groups = [ "default" ];
