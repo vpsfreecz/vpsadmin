@@ -43,6 +43,7 @@ let
           environment.systemPackages = with pkgs; [
             configureCt
             distconfig
+            jq
             lxc
             qemu
             qemuGaRunner
