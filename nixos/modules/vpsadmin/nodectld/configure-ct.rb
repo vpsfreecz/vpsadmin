@@ -23,6 +23,7 @@ class ConfigureContainer
         {}
       end
 
+    vars[:hostname] = config.fetch('hostname', config.fetch('vps_id', 'vps')).to_s
     vars[:init_cmd] = config.fetch('init_cmd', '/sbin/init')
     start_menu_timeout = config.fetch('start_menu_timeout', 5)
 
