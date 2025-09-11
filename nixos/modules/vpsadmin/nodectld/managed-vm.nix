@@ -147,7 +147,7 @@ let
 
   lxcConfig = pkgs.writeText "lxc-config.erb" ''
     lxc.apparmor.profile = unconfined
-    lxc.uts.name = vps
+    lxc.uts.name = <%= hostname %>
     lxc.rootfs.path = dir:/mnt/vps
     lxc.namespace.keep = net user
     lxc.autodev = 0
