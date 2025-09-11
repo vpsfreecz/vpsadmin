@@ -97,8 +97,9 @@ if [ -e /dev/disk/by-label/config-2 ] ; then
 fi
 
 echo "Mounting container rootfs"
+rootfsLabel=$(jq -r .rootfs_label /run/config/vpsadmin/config.json)
 mkdir -p /mnt/vps
-mount -v /dev/disk/by-label/vpsadmin-rootfs /mnt/vps || fail "Unable to mount rootfs"
+mount -v "/dev/disk/by-label/$rootfsLabel" /mnt/vps || fail "Unable to mount rootfs with label '$rootfsLabel'"
 
 # CGroups
 case "$cgroupv" in
