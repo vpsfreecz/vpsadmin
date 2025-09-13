@@ -823,10 +823,10 @@
     platforms = [ ];
     source = {
       remotes = [ "https://rubygems.org" ];
-      sha256 = "0gkhpdjib9zi9i27vd9djrxiwjia03cijmd6q8yj2q1ix403w3nw";
+      sha256 = "0rj2af0l7s0vimhd3w47d5jcsffzdpmnmp9sx47lhpxg62hszsja";
       type = "gem";
     };
-    version = "1.4.0";
+    version = "1.5.0";
   };
   prometheus-client = {
     dependencies = [ "base64" ];
