@@ -148,13 +148,13 @@ GEM
     parser (3.3.9.0)
       ast (~> 2.4.1)
       racc
-    prism (1.5.0)
+    prism (1.5.1)
     prometheus-client (4.2.5)
       base64
     pry (0.15.2)
       coderay (~> 1.1)
       method_source (~> 1.0)
-    puma (7.0.2)
+    puma (7.0.3)
       nio4r (~> 2.0)
     racc (1.8.1)
     rack (3.2.1)

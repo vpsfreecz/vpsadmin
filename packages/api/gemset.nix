@@ -823,10 +823,10 @@
     platforms = [ ];
     source = {
       remotes = [ "https://rubygems.org" ];
-      sha256 = "0rj2af0l7s0vimhd3w47d5jcsffzdpmnmp9sx47lhpxg62hszsja";
+      sha256 = "0d3i31npmlhmigcs1zlb9lksg7z7lv6nffams71wrz5rriv1n35l";
       type = "gem";
     };
-    version = "1.5.0";
+    version = "1.5.1";
   };
   prometheus-client = {
     dependencies = [ "base64" ];
@@ -859,10 +859,10 @@
     platforms = [ ];
     source = {
       remotes = [ "https://rubygems.org" ];
-      sha256 = "10hcw8ympvs95hq6n5n610mir9a0gvccxmx45j2j5lfvncj9chfb";
+      sha256 = "19cbhqf0yl74prdwybw44b7s8pp72ihr1knd2i8l9hl95k85y6qk";
       type = "gem";
     };
-    version = "7.0.2";
+    version = "7.0.3";
   };
   racc = {
     groups = [
