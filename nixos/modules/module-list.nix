@@ -20,6 +20,7 @@
   ];
 
   vpsadminos = [
+    ./vpsadmin/console-server.nix
     ./vpsadmin/main.nix
     ./vpsadmin/nodectld/vpsadminos.nix
   ];
