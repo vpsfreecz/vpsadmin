@@ -11,5 +11,7 @@
     nodectl = super.callPackage ../../packages/nodectl { };
     distconfig = super.callPackage ../../packages/distconfig { };
     vmexec = super.callPackage ../../packages/vmexec { };
+    console_server = super.callPackage ../../packages/console_server { };
+    console_client = super.callPackage ../../packages/console_client { };
   })
 ]
