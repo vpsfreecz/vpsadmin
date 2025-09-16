@@ -18,6 +18,8 @@
       nodectl = super.callPackage ../../packages/nodectl { ruby = self.ruby_vpsadminos; };
       distconfig = super.callPackage ../../packages/distconfig { inherit ruby; };
       vmexec = super.callPackage ../../packages/vmexec { inherit ruby; };
+      console_server = super.callPackage ../../packages/console_server { inherit ruby; };
+      console_client = super.callPackage ../../packages/console_client { inherit ruby; };
     }
   )
 ]
