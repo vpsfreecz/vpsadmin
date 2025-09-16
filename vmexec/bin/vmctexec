@@ -1,0 +1,62 @@
+#!/usr/bin/env ruby
+require 'optparse'
+require_relative '../lib/vm_exec'
+
+class Cli
+  SYSTEM_PATH = %w[
+    /bin
+    /usr/bin
+    /sbin
+    /usr/sbin
+    /run/current-system/sw/bin
+    /nix/var/nix/profiles/system/sw/bin
+    /run/current-system/profile/bin
+    /run/current-system/profile/sbin
+    /var/guix/profiles/system/profile/bin
+    /var/guix/profiles/system/profile/sbin
+  ].freeze
+
+  def run
+    options, args = parse_options
+
+    domain = args[0]
+    cmd = %W[lxc-attach -n vps -v PATH=#{SYSTEM_PATH.join(':')} --] + args[1..]
+
+    status, out, err = VmExec::GaExec.run(domain, cmd)
+
+    unless options[:quiet]
+      puts out if out
+      warn err if err
+    end
+
+    exit(status)
+  end
+
+  protected
+
+  def parse_options
+    options = {
+      quiet: false
+    }
+
+    parser = OptionParser.new do |opts|
+      opts.banner = "Usage: #{$0} [options] <domain> [--] <command...>"
+
+      opts.on('-q', '--quiet', 'Suppress output') do
+        options[:quiet] = true
+      end
+    end
+
+    args = parser.parse!
+
+    if ARGV.length < 2
+      warn parser
+      exit(false)
+    end
+
+    [options, args]
+  end
+end
+
+vmctexec = Cli.new
+vmctexec.run
