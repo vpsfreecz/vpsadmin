@@ -60,6 +60,7 @@ in
       mbuffer
       nodectl
       openssh
+      vmexec
     ];
   };
 }

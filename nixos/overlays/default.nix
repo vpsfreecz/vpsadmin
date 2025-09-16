@@ -10,5 +10,6 @@
     nodectld = super.callPackage ../../packages/nodectld { };
     nodectl = super.callPackage ../../packages/nodectl { };
     distconfig = super.callPackage ../../packages/distconfig { };
+    vmexec = super.callPackage ../../packages/vmexec { };
   })
 ]
