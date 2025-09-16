@@ -1,0 +1,5 @@
+#!/usr/bin/env ruby
+$:.insert(0, File.realpath(File.join(File.dirname(__FILE__), '..', 'lib')))
+require 'console_server/cli'
+
+ConsoleServer::Cli.run
