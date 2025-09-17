@@ -22,10 +22,10 @@ let
     "dasprid/enum" = {
       targetDir = "";
       src = composerEnv.buildZipPackage {
-        name = "dasprid-enum-8dfd07c6d2cf31c8da90c53b83c026c7696dda90";
+        name = "dasprid-enum-b5874fa9ed0043116c72162ec7f4fb50e02e7cce";
         src = fetchurl {
-          url = "https://api.github.com/repos/DASPRiD/Enum/zipball/8dfd07c6d2cf31c8da90c53b83c026c7696dda90";
-          sha256 = "1ainxbpfbh9fir2vihc4q614yq6rc3lvz6836nddl50wx2zpcby2";
+          url = "https://api.github.com/repos/DASPRiD/Enum/zipball/b5874fa9ed0043116c72162ec7f4fb50e02e7cce";
+          sha256 = "1b6l6974c5s1f4bz380z93hirf3arypy7yljafifbp4359ainb0x";
         };
       };
     };
