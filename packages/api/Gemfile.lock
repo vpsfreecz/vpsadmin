@@ -93,7 +93,7 @@ GEM
       concurrent-ruby (~> 1.0)
     io-console (0.8.1)
     ipaddress (0.8.3)
-    json (2.13.2)
+    json (2.14.1)
     json-jwt (1.17.0)
       activesupport (>= 4.2)
       aes_key_wrap
