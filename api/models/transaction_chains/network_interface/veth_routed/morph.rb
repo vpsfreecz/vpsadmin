@@ -17,19 +17,5 @@ module TransactionChains
 
       ret
     end
-
-    protected
-
-    def into_venet(netif)
-      append_t(Transactions::Utils::NoOp, args: find_node_id) do |t|
-        t.edit(
-          netif,
-          kind: ::NetworkInterface.kinds[:venet],
-          mac: nil
-        )
-      end
-
-      netif
-    end
   end
 end
