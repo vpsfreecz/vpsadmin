@@ -1,7 +1,6 @@
 module TransactionChains
   module NetworkInterface
     TYPES = {
-      venet: Venet,
       veth_routed: VethRouted
     }.freeze
 
