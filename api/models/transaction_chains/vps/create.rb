@@ -279,7 +279,7 @@ module TransactionChains
       end
       tpl_ds ||= {}
 
-      refquota = tpl_ds.fetch('properties', {}).fetch('refquota', nil)
+      refquota = tpl_ds.dig('properties', 'refquota')
 
       if refquota.nil?
         return vps.diskspace if lookup_name == '/'
