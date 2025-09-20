@@ -58,6 +58,22 @@ module TransactionChains
     end
   end
 
+  module NetworkInterface
+    module Venet
+      class Create < Deprecated
+        label 'Venet create'
+      end
+
+      class Clone < Deprecated
+        label 'Venet clone'
+      end
+
+      class Morph < Deprecated
+        label 'Venet morph'
+      end
+    end
+  end
+
   module VpsConfig
     class Create < Deprecated
       label 'Create'
