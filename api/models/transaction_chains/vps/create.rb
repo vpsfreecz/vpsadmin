@@ -185,9 +185,8 @@ module TransactionChains
                   NetworkInterface::VethRouted::Create,
                   args: [vps, 'venet0']
                 )
-
               else
-                use_chain(NetworkInterface::Venet::Create, args: vps)
+                raise "Unable to create network interface on #{vps.node.hypervisor_type}"
               end
 
       # Add IP addresses
