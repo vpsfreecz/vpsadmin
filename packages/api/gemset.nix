@@ -1172,10 +1172,10 @@
     platforms = [ ];
     source = {
       remotes = [ "https://rubygems.org" ];
-      sha256 = "0ii2bcdilyywpii5sx385v715dk56nq6k9p5vsnp6d8v1pz1bffa";
+      sha256 = "1bh1kls2cs2j3cmj6f2j2zmfqfknj2a6i441d828nh2mg00q49jr";
       type = "gem";
     };
-    version = "1.47.0";
+    version = "1.47.1";
   };
   rubocop-rake = {
     dependencies = [
