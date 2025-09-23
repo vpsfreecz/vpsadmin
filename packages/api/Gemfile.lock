@@ -93,7 +93,7 @@ GEM
       concurrent-ruby (~> 1.0)
     io-console (0.8.1)
     ipaddress (0.8.3)
-    json (2.14.1)
+    json (2.15.0)
     json-jwt (1.17.0)
       activesupport (>= 4.2)
       aes_key_wrap
@@ -123,7 +123,8 @@ GEM
       bigdecimal (~> 3.1)
     mustermann (3.0.4)
       ruby2_keywords (~> 0.0.1)
-    mysql2 (0.5.6)
+    mysql2 (0.5.7)
+      bigdecimal
     nesty (1.0.2)
     net-http (0.6.0)
       uri
