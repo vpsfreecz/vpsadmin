@@ -179,7 +179,7 @@ let
     exit 0
   '';
 
-  bootImage = import <nixpkgs/nixos/lib/make-disk-image.nix> {
+  stage2Image = import <nixpkgs/nixos/lib/make-disk-image.nix> {
     inherit pkgs lib;
     inherit (stage2Config) config;
     additionalPaths = [
@@ -206,14 +206,14 @@ let
     diskSize = "auto";
     additionalSpace = "0M";
     copyChannel = false;
-    label = "vpsadmin-boot";
-    name = "boot-image";
-    baseName = "disk";
+    label = "vpsadmin-stage-2";
+    name = "stage-2";
+    baseName = "stage-2";
   };
 
 in
 pkgs.runCommand "managed-vm" { } ''
   mkdir $out
   ln -sf ${kernel}/bzImage $out/kernel
-  ln -sf ${bootImage}/disk.qcow2 $out/disk
+  ln -sf ${stage2Image}/stage-2.qcow2 $out/stage-2
 ''
