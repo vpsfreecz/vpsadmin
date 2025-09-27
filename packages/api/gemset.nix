@@ -418,10 +418,10 @@
     platforms = [ ];
     source = {
       remotes = [ "https://rubygems.org" ];
-      sha256 = "19hsskzk5zpv14mnf07pq71hfk1fsjwfjcw616pgjjzjbi2f0kxi";
+      sha256 = "06dvmngd4hwrr6k774i1h6c50h2l8nww9f1id0wvrvi72l6yd99q";
       type = "gem";
     };
-    version = "1.0.8";
+    version = "1.1.0";
   };
   httparty = {
     dependencies = [
@@ -1156,10 +1156,10 @@
     platforms = [ ];
     source = {
       remotes = [ "https://rubygems.org" ];
-      sha256 = "1yhdzfzhy1zn3kvrw3s0l2qy5prn4m0x5m71168yspiani240qnf";
+      sha256 = "0d8n87wx2r8vkva5qi4m3hi4s9b6qhmzgw85qgv14hsa65prlaim";
       type = "gem";
     };
-    version = "1.81.0";
+    version = "1.81.1";
   };
   rubocop-ast = {
     dependencies = [
