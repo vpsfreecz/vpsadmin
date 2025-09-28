@@ -284,4 +284,6 @@ module Transactions
   module Export; end
   module DnsServer; end
   module DnsServerZone; end
+  module StoragePool; end
+  module StorageVolume; end
 end
