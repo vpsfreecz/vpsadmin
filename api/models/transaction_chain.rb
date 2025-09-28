@@ -465,4 +465,6 @@ module TransactionChains
   module Export; end
   module IncidentReport; end
   module HostIpAddress; end
+  module StoragePool; end
+  module StorageVolume; end
 end
