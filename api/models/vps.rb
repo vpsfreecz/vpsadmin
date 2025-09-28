@@ -12,6 +12,7 @@ require_relative 'transaction_chains/vps/destroy'
 require_relative 'transaction_chains/lifetimes/not_implemented'
 
 class Vps < ApplicationRecord
+  belongs_to :uuid, dependent: :delete
   belongs_to :node
   belongs_to :user
   belongs_to :os_template
@@ -32,7 +33,9 @@ class Vps < ApplicationRecord
   has_many :vps_ssh_host_keys, dependent: :destroy
 
   belongs_to :user_namespace_map
+  belongs_to :console_port
 
+  belongs_to :storage_volume
   belongs_to :dataset_in_pool
   has_one :dataset, through: :dataset_in_pool, autosave: false
   has_many :mounts
@@ -48,6 +51,7 @@ class Vps < ApplicationRecord
   has_many :dataset_expansions
   has_many :export_mounts, dependent: :delete_all
 
+  enum :vm_type, %i[container qemu_managed qemu_standalone]
   enum :cgroup_version, %i[cgroup_any cgroup_v1 cgroup_v2]
   enum :map_mode, %i[native zfs], prefix: :map_mode
 
@@ -143,7 +147,7 @@ class Vps < ApplicationRecord
   }
 
   def pool
-    dataset_in_pool.pool
+    dataset_in_pool&.pool
   end
 
   %i[is_running in_rescue_mode uptime process_count cpu_user cpu_nice cpu_system
