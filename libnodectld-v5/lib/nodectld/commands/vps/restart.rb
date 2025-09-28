@@ -3,8 +3,17 @@ module NodeCtld
     handle 1003
 
     def exec
-      @vps = Vps.new(@vps_id)
-      @vps.restart(@start_timeout, @autostart_priority)
+      conn = LibvirtClient.new
+      dom = conn.lookup_domain_by_uuid(@vps_uuid)
+
+      begin
+        dom.destroy # TODO: graceful shutdown
+      rescue Libvirt::Error
+        # pass
+      end
+
+      dom.create
+
       ok
     end
 
