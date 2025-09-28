@@ -15,6 +15,12 @@ module TransactionChains
       lock(vps)
       concerns(:affect, [vps.class.name, vps.id])
 
+      ::Uuid.generate_for_new_record! do |uuid|
+        vps.uuid = uuid
+        vps.save!
+        vps
+      end
+
       vps_resources = vps.allocate_resources(
         required: %i[cpu memory swap],
         optional: [],
@@ -22,47 +28,15 @@ module TransactionChains
         chain: self
       )
 
-      pool = ::Pool.take_by_node!(vps.node, role: :hypervisor)
+      if vps.container?
+        pool = ::Pool.take_by_node!(vps.node, role: :hypervisor)
 
-      vps.user_namespace_map ||= ::UserNamespaceMap.joins(:user_namespace).where(
-        user_namespaces: { user_id: vps.user_id }
-      ).take!
+        vps.user_namespace_map ||= ::UserNamespaceMap.joins(:user_namespace).where(
+          user_namespaces: { user_id: vps.user_id }
+        ).take!
 
-      ds = ::Dataset.new(
-        name: vps.id.to_s,
-        user: vps.user,
-        vps:,
-        user_editable: false,
-        user_create: true,
-        user_destroy: false,
-        confirmed: ::Dataset.confirmed(:confirm_create)
-      )
-
-      dip = use_chain(Dataset::Create, args: [
-                        pool,
-                        nil,
-                        [ds],
-                        {
-                          automount: false,
-                          properties: { refquota: dataset_refquota(vps, '/') },
-                          user: vps.user,
-                          label: "vps#{vps.id}",
-                          userns_map: vps.map_mode == 'zfs' ? vps.user_namespace_map : nil
-                        }
-                      ]).last
-
-      vps.dataset_in_pool = dip
-
-      lock(vps.dataset_in_pool)
-
-      template_subdatasets = vps.os_template.datasets.reject do |v|
-        v['name'] == '/'
-      end
-
-      vps_subdips = template_subdatasets.to_h do |subds_opts|
-        subds = ::Dataset.new(
-          parent: ds,
-          name: subds_opts['name'],
+        ds = ::Dataset.new(
+          name: vps.id.to_s,
           user: vps.user,
           vps:,
           user_editable: false,
@@ -71,57 +45,124 @@ module TransactionChains
           confirmed: ::Dataset.confirmed(:confirm_create)
         )
 
-        subdip = use_chain(Dataset::Create, args: [
-                             pool,
-                             nil,
-                             [subds],
-                             {
-                               automount: false,
-                               properties: { refquota: dataset_refquota(vps, subds_opts['name']) },
-                               user: vps.user,
-                               userns_map: vps.map_mode == 'zfs' ? vps.user_namespace_map : nil
-                             }
-                           ]).last
+        dip = use_chain(Dataset::Create, args: [
+                          pool,
+                          nil,
+                          [ds],
+                          {
+                            automount: false,
+                            properties: { refquota: dataset_refquota(vps, '/') },
+                            user: vps.user,
+                            label: "vps#{vps.id}",
+                            userns_map: vps.map_mode == 'zfs' ? vps.user_namespace_map : nil
+                          }
+                        ]).last
 
-        lock(subdip)
+        vps.dataset_in_pool = dip
 
-        [subds_opts['name'], subdip]
-      end
+        lock(vps.dataset_in_pool)
 
-      use_chain(UserNamespaceMap::Use, args: [vps, vps.user_namespace_map])
-
-      #  Setup template mounts
-      template_mounts = vps.os_template.mounts
-
-      mounts = template_mounts.map do |tpl_mnt|
-        mount_dip =
-          if tpl_mnt['dataset'] == '/'
-            vps.dataset_in_pool
-          else
-            vps_subdips[tpl_mnt['dataset']]
-          end
-
-        if mount_dip.nil?
-          raise "Unable to create mount of #{tpl_mnt['dataset']} in " \
-                "OS template #{vps.os_template.label}: dataset not found"
+        template_subdatasets = vps.os_template.datasets.reject do |v|
+          v['name'] == '/'
         end
 
-        ::Mount.create!(
-          vps:,
-          dst: tpl_mnt['mountpoint'],
-          mount_opts: '--bind',
-          umount_opts: '-f',
-          mount_type: 'bind',
-          mode: 'rw',
-          user_editable: true,
-          dataset_in_pool: mount_dip
+        vps_subdips = template_subdatasets.to_h do |subds_opts|
+          subds = ::Dataset.new(
+            parent: ds,
+            name: subds_opts['name'],
+            user: vps.user,
+            vps:,
+            user_editable: false,
+            user_create: true,
+            user_destroy: false,
+            confirmed: ::Dataset.confirmed(:confirm_create)
+          )
+
+          subdip = use_chain(Dataset::Create, args: [
+                               pool,
+                               nil,
+                               [subds],
+                               {
+                                 automount: false,
+                                 properties: { refquota: dataset_refquota(vps, subds_opts['name']) },
+                                 user: vps.user,
+                                 userns_map: vps.map_mode == 'zfs' ? vps.user_namespace_map : nil
+                               }
+                             ]).last
+
+          lock(subdip)
+
+          [subds_opts['name'], subdip]
+        end
+
+        use_chain(UserNamespaceMap::Use, args: [vps, vps.user_namespace_map])
+
+        #  Setup template mounts
+        template_mounts = vps.os_template.mounts
+
+        mounts = template_mounts.map do |tpl_mnt|
+          mount_dip =
+            if tpl_mnt['dataset'] == '/'
+              vps.dataset_in_pool
+            else
+              vps_subdips[tpl_mnt['dataset']]
+            end
+
+          if mount_dip.nil?
+            raise "Unable to create mount of #{tpl_mnt['dataset']} in " \
+                  "OS template #{vps.os_template.label}: dataset not found"
+          end
+
+          ::Mount.create!(
+            vps:,
+            dst: tpl_mnt['mountpoint'],
+            mount_opts: '--bind',
+            umount_opts: '-f',
+            mount_type: 'bind',
+            mode: 'rw',
+            user_editable: true,
+            dataset_in_pool: mount_dip
+          )
+        end
+      else
+        mounts = []
+
+        # TODO: qemu
+        # - get storage pool, later ceph pool...
+        # - create volume
+        # - extract template into the volume
+        # - allocate console port
+
+        vps.user_namespace_map = nil
+
+        storage_pool = ::StoragePool.take_by_node!(vps.node)
+
+        storage_vol = use_chain(
+          StorageVolume::Create,
+          kwargs: {
+            storage_pool:,
+            user: vps.user,
+            vps:,
+            name: "vps#{vps.id}",
+            format: 'qcow2',
+            size: vps.diskspace,
+            label: "vps#{vps.id}",
+            filesystem: 'btrfs',
+            os_template: vps.os_template
+          }
         )
+
+        vps.storage_volume = storage_vol
+        lock(storage_vol)
+
+        vps.console_port = ::ConsolePort.reserve!(vps)
       end
 
       vps_features = []
 
       append(Transactions::Vps::Create, args: vps) do
         create(vps)
+        just_create(vps.uuid)
         just_create(vps.current_object_state)
 
         mounts.each do |mnt|
@@ -142,12 +183,18 @@ module TransactionChains
         end
 
         # Create features
-        ::VpsFeature::FEATURES.each do |name, f|
-          next unless f.support?(vps.node)
+        if vps.container?
+          ::VpsFeature::FEATURES.each do |name, f|
+            next unless f.support?(vps.node)
 
-          feature = ::VpsFeature.create!(vps:, name:, enabled: false)
-          vps_features << feature
-          just_create(feature)
+            feature = ::VpsFeature.create!(vps:, name:, enabled: false)
+            vps_features << feature
+            just_create(feature)
+          end
+        end
+
+        if vps.qemu_managed?
+          just_create(vps.console_port)
         end
 
         # Maintenance windows
@@ -164,23 +211,25 @@ module TransactionChains
         end
       end
 
-      use_chain(Vps::Mounts, args: [vps, mounts]) if mounts.any?
+      if vps.container?
+        use_chain(Vps::Mounts, args: [vps, mounts]) if mounts.any?
 
-      # Set default features
-      template_features = vps.os_template.features
+        # Set default features
+        template_features = vps.os_template.features
 
-      vps_features.each do |feature|
-        if template_features.has_key?(feature.name)
-          feature.enabled = template_features[feature.name]
-        else
-          feature.set_to_default
+        vps_features.each do |feature|
+          if template_features.has_key?(feature.name)
+            feature.enabled = template_features[feature.name]
+          else
+            feature.set_to_default
+          end
         end
+
+        use_chain(Vps::Features, args: [vps, vps_features]) if vps_features.any?(&:changed?)
       end
 
-      use_chain(Vps::Features, args: [vps, vps_features]) if vps_features.any?(&:changed?)
-
       # Create network interface
-      netif = if vps.node.vpsadminos?
+      netif = if vps.node.vpsadminos? || vps.node.libvirt?
                 use_chain(
                   NetworkInterface::VethRouted::Create,
                   args: [vps, 'venet0']
