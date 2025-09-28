@@ -7,6 +7,8 @@ stdenv.mkDerivation rec {
   name = "nodectld";
 
   buildInputs = with pkgs; [
+    btrfs-progs
+    e2fsprogs
     git
     libffi
     libvirt
@@ -16,6 +18,7 @@ stdenv.mkDerivation rec {
     openssl
     pkg-config
     ruby
+    xorriso
     zlib
   ];
 

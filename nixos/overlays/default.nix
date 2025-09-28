@@ -13,9 +13,16 @@
       vpsadmin-source = super.callPackage ../../packages/source { };
       vpsadmin-supervisor = super.callPackage ../../packages/api/supervisor.nix { inherit ruby; };
       vpsadmin-webui = super.callPackage ../../packages/webui { };
-      libnodectld = super.callPackage ../../packages/libnodectld { ruby = self.ruby_vpsadminos; };
-      nodectld = super.callPackage ../../packages/nodectld { ruby = self.ruby_vpsadminos; };
-      nodectl = super.callPackage ../../packages/nodectl { ruby = self.ruby_vpsadminos; };
+      nodectl-v4 = {
+        libnodectld = super.callPackage ../../packages/libnodectld { ruby = self.ruby_vpsadminos; };
+        nodectld = super.callPackage ../../packages/nodectld { ruby = self.ruby_vpsadminos; };
+        nodectl = super.callPackage ../../packages/nodectl { ruby = self.ruby_vpsadminos; };
+      };
+      nodectl-v5 = {
+        libnodectld = super.callPackage ../../packages/libnodectld-v5 { inherit ruby; };
+        nodectld = super.callPackage ../../packages/nodectld-v5 { inherit ruby; };
+        nodectl = super.callPackage ../../packages/nodectl-v5 { inherit ruby; };
+      };
       distconfig = super.callPackage ../../packages/distconfig { inherit ruby; };
       vmexec = super.callPackage ../../packages/vmexec { inherit ruby; };
       console_server = super.callPackage ../../packages/console_server { inherit ruby; };
