@@ -5,8 +5,7 @@ require 'nodectld/system_probes'
 
 module NodeCtld
   class NodeStatus
-    def initialize(pool_status)
-      @pool_status = pool_status
+    def initialize
       @cpus = SystemProbes::Cpus.new.count
       @cpu_usage = SystemProbes::CpuUsage.new
       @cpu_usage.start
@@ -17,8 +16,6 @@ module NodeCtld
 
     def update
       t = Time.now.utc
-
-      pool_check, pool_state, pool_scan, pool_scan_percent = @pool_status.summary_values
 
       mem = SystemProbes::Memory.new
       arc = SystemProbes::Arc.new if hypervisor? || storage?
@@ -47,13 +44,7 @@ module NodeCtld
           size: arc.size,
           hitpercent: arc.hit_percent
         },
-        loadavg: SystemProbes::LoadAvg.new.avg,
-        storage: {
-          state: pool_state,
-          scan: pool_scan,
-          scan_percent: pool_scan_percent,
-          checked_at: pool_check.to_i
-        }
+        loadavg: SystemProbes::LoadAvg.new.avg
       }
 
       NodeBunny.publish_drop(
