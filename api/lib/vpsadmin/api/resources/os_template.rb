@@ -70,7 +70,7 @@ class VpsAdmin::API::Resources::OsTemplate < HaveAPI::Resource
               hypervisor_type: ::OsTemplate.hypervisor_types[input[:hypervisor_type]]
             )
           else
-            q.where(hypervisor_type: 'vpsadminos')
+            q.where(hypervisor_type: %w[vpsadminos libvirt])
           end
 
       if input[:cgroup_version]
