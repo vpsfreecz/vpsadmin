@@ -7,6 +7,8 @@
 with lib;
 let
   cfg = config.vpsadmin.nodectld;
+
+  packages = pkgs."nodectl-v${cfg.version}";
 in
 {
   imports = [
@@ -48,14 +50,14 @@ in
       '';
       serviceConfig = {
         Type = "simple";
-        ExecStart = "${pkgs.nodectld}/bin/nodectld --no-wrapper";
+        ExecStart = "${packages.nodectld}/bin/nodectld --no-wrapper";
         Restart = "on-failure";
         RestartSec = 5;
       };
     };
 
-    environment.systemPackages = with pkgs; [
-      nodectl
+    environment.systemPackages = [
+      packages.nodectl
     ];
   };
 }
