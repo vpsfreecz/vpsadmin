@@ -50,9 +50,7 @@ module NodeCtld
       @queues = Queues.new(self)
       @remote_control = RemoteControl.new(self)
       NodeBunny.connect
-      @node = Node.new
-      @pool_status = PoolStatus.new
-      @node_status = NodeStatus.new(@pool_status)
+      @node_status = NodeStatus.new
       @storage_status = StorageStatus.new
       @vps_status = VpsStatus.new
       @kernel_log = KernelLog::Parser.new
@@ -69,12 +67,9 @@ module NodeCtld
 
       NetAccounting.init
       Shaper.init_node if $CFG.get(:shaper, :enable)
-      @node.init
       Export.init if $CFG.get(:exports, :enable)
 
       @node_status.update
-
-      @pool_status.init
 
       @kernel_log.start if $CFG.get(:kernel_log, :enable)
       @exporter.start if $CFG.get(:exporter, :enable)
@@ -308,13 +303,6 @@ module NodeCtld
         end
       end
 
-      run_thread_unless_runs(:pool_status) do
-        loop do
-          @pool_status.update if $CFG.get(:storage, :pool_status)
-          sleep($CFG.get(:storage, :pool_interval))
-        end
-      end
-
       run_thread_unless_runs(:vps_status) do
         # TODO: implement VPS statuses with libvirt
       end
@@ -339,8 +327,6 @@ module NodeCtld
 
     def update_all
       @node_status.update
-
-      @pool_status.update if $CFG.get(:storage, :pool_status)
 
       if $CFG.get(:vpsadmin, :update_vps_status)
         # TODO
