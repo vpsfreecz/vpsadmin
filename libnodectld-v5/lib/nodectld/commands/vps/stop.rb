@@ -4,15 +4,23 @@ module NodeCtld
     needs :system
 
     def exec
-      @vps = Vps.new(@vps_id)
-      @vps.stop(kill: @kill)
+      conn = LibvirtClient.new
+      dom = conn.lookup_domain_by_uuid(@vps_uuid)
+
+      begin
+        dom.destroy # TODO: graceful shutdown
+      rescue Libvirt::Error
+        # pass
+      end
+
       ok
     end
 
     def rollback
       if @rollback_stop
-        @vps = Vps.new(@vps_id)
-        @vps.start(@start_timeout, @autostart_priority)
+        conn = LibvirtClient.new
+        dom = conn.lookup_domain_by_uuid(@vps_uuid)
+        dom.create
       end
 
       ok

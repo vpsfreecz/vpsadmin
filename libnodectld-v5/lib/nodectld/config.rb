@@ -107,7 +107,9 @@ module NodeCtld
       veth_map_interval: 3600,
       update_vps_status: true,
       type: nil, # loaded from db
-      transaction_public_key: '/etc/vpsadmin/transaction.key'
+      transaction_public_key: '/etc/vpsadmin/transaction.key',
+      vps_config_dir: '/var/lib/libvirt/vpsadmin/vps-configs',
+      config_drive_dir: '/var/lib/libvirt/vpsadmin/config-drives'
     },
 
     bin: {
@@ -144,6 +146,10 @@ module NodeCtld
       },
       known_hosts: '/root/.ssh/known_hosts',
       cpu_usage_measure_delay: 5
+    },
+
+    libvirt: {
+      uri: 'qemu:///system'
     },
 
     shaper: {
@@ -249,6 +255,10 @@ module NodeCtld
       db_template: '/var/named/vpsadmin/db/%{name}json',
       statistics_url: 'http://localhost:8053/xml/v3',
       status_interval: 60
+    },
+
+    osctl_repo: {
+      url: 'https://images.vpsadminos.org'
     }
   }.freeze
 
