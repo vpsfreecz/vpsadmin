@@ -1,0 +1,13 @@
+<volume type='file'>
+  <name><%= name %></name>
+  <allocation>0</allocation>
+  <capacity unit="M"><%= size %></capacity>
+  <target>
+    <format type='<%= format %>'/>
+    <permissions>
+      <owner>301</owner>
+      <group>301</group>
+      <mode>0600</mode>
+    </permissions>
+  </target>
+</volume>
