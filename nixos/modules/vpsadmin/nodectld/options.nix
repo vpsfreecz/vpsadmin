@@ -25,6 +25,22 @@ in
         '';
       };
 
+      version = mkOption {
+        type = types.enum [
+          "4"
+          "5"
+        ];
+        default = "4";
+        description = ''
+          nodectl major version
+
+          Version 4 is used on nodes with vpsAdminOS/osctld that runs unprivileged
+          containers.
+
+          Version 5 is for nodes with libvirt and qemu/kvm.
+        '';
+      };
+
       settings = mkOption {
         type = types.submodule {
           freeformType = settingsFormat.type;
