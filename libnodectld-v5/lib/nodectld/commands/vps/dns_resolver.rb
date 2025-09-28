@@ -1,19 +1,25 @@
 module NodeCtld
   class Commands::Vps::DnsResolver < Commands::Base
     handle 2005
-    needs :system, :osctl
+    needs :system
 
     def exec
-      osctl(%i[ct set dns-resolver], [@vps_id] + @nameserver)
+      VpsConfig.edit(@vps_id) do |cfg|
+        cfg.dns_resolvers = @nameserver
+      end
+
+      # TODO: run distconfig within the VM
+
       ok
     end
 
     def rollback
-      if @original
-        osctl(%i[ct set dns-resolver], [@vps_id] + @original)
-      else
-        osctl(%i[ct unset dns-resolver], @vps_id)
+      VpsConfig.edit(@vps_id) do |cfg|
+        cfg.dns_resolvers = @original || nil
       end
+
+      # TODO: run distconfig within the VM
+
       ok
     end
   end

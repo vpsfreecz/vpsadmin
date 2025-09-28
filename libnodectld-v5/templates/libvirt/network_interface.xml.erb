@@ -1,0 +1,10 @@
+<interface type='ethernet'>
+  <alias name='<%= host_name %>'/>
+  <mac address='<%= guest_mac %>'/>
+  <target dev='<%= host_name %>' managed='yes'/>
+  <model type='virtio'/>
+  <bandwidth>
+    <inbound average='<%= max_rx / 1024 / 8 %>' peak='<%= (max_rx * 1.2 / 1024 / 8).round %>' burst='<%= (max_rx * 1.05 / 1024 / 8).round %>'/>
+    <outbound average='<%= max_tx / 1024 / 8 %>' peak='<%= (max_tx * 1.2 / 1024 / 8).round %>' burst='<%= (max_rx * 1.05 / 1024 / 8).round %>'/>
+  </bandwidth>
+</interface>

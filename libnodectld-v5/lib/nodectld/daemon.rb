@@ -78,6 +78,7 @@ module NodeCtld
       @storage_status.start if @storage_status.enable?
       @console.start if $CFG.get(:console, :enable)
       @dns_status.start if $CFG.get(:vpsadmin, :type) == :dns_server
+      QemuHook.install if $CFG.get(:vpsadmin, :type) == :node
 
       @init = true
     end
