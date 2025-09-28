@@ -3,6 +3,8 @@ require_relative 'lockable'
 class NetworkInterface < ApplicationRecord
   belongs_to :vps
   belongs_to :export
+  belongs_to :host_mac_address, class_name: 'MacAddress', dependent: :delete
+  belongs_to :guest_mac_address, class_name: 'MacAddress', dependent: :delete
   has_many :ip_addresses
   has_many :host_ip_addresses, through: :ip_addresses
   enum :kind, %i[venet veth_bridge veth_routed]
@@ -51,6 +53,14 @@ class NetworkInterface < ApplicationRecord
              network_interface: 'NetworkInterface instance',
              dst_vps: 'target Vps instance'
            }
+
+  def host_name
+    "vpsnet#{id}"
+  end
+
+  def guest_name
+    name
+  end
 
   # Route `ip` to this interface
   #
