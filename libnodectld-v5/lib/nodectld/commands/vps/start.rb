@@ -3,17 +3,25 @@ module NodeCtld
     handle 1001
 
     def exec
-      @vps = Vps.new(@vps_id)
-      @vps.start(@start_timeout, @autostart_priority)
+      conn = LibvirtClient.new
+      dom = conn.lookup_domain_by_uuid(@vps_uuid)
+      dom.create
+      ok
     end
 
     def rollback
       if @rollback_start
-        @vps = Vps.new(@vps_id)
-        @vps.stop
-      else
-        ok
+        conn = LibvirtClient.new
+        dom = conn.lookup_domain_by_uuid(@vps_uuid)
+
+        begin
+          dom.destroy # TODO: graceful shutdown
+        rescue Libvirt::Error
+          # pass
+        end
       end
+
+      ok
     end
   end
 end
