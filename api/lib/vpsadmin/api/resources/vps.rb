@@ -13,6 +13,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
   params(:common) do
     resource VpsAdmin::API::Resources::User, label: 'User', desc: 'VPS owner',
                                              value_label: :login
+    string :vm_type, label: 'VM type', choices: ::Vps.vm_types.keys.map(&:to_s)
     string :hostname, desc: 'VPS hostname'
     bool :manage_hostname, label: 'Manage hostname',
                            desc: 'Determines whether vpsAdmin sets VPS hostname or not'
