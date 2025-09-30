@@ -5,7 +5,7 @@ module VpsAdmin::DownloadMounter
       @full_mnt = File.join(
         mountpoint,
         "#{pool.node.domain_name}.#{pool.node.location.environment.domain}",
-        pool.filesystem.split('/').last
+        pool.id.to_s
       )
       @pool = pool
     end

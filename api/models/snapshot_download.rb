@@ -30,7 +30,7 @@ class SnapshotDownload < ApplicationRecord
     File.join(
       self.class.base_url,
       pool.node.fqdn,
-      pool.filesystem.split('/').last,
+      pool.id.to_s,
       secret_key,
       file_name
     )
