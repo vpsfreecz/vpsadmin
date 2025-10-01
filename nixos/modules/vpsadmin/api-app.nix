@@ -28,6 +28,8 @@ let
       port: ${toString databaseConfig.port}
       username: ${databaseConfig.user}
       password: #dbpass#
+      encoding: utf8mb3
+      collation: utf8mb3_unicode_ci
       pool: ${toString databaseConfig.pool}
       ${optionalString (databaseConfig.socket != null) "socket: ${databaseConfig.socket}"}
   '';
