@@ -89,6 +89,7 @@ module NodeCtld
       @osctl_exporter.start if @osctl_exporter.enable?
       VpsSshHostKeys.instance
       VpsOsRelease.instance
+      ExportMounts.instance
       @dataset_expander.start if @dataset_expander.enable?
       @storage_status.start if @storage_status.enable?
       @console.start if $CFG.get(:console, :enable)

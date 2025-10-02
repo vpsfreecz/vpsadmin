@@ -243,6 +243,12 @@ module NodeCtld
       update_vps_delay: 1
     },
 
+    export_mounts: {
+      enable: true,
+      update_vps_delay: 1,
+      update_all_interval: 6 * 60 * 60
+    },
+
     dataset_expander: {
       enable: true,
       min_avail_bytes: 512 * 1024 * 1024,

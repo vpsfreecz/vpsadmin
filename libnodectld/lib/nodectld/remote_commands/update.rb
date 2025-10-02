@@ -18,6 +18,13 @@ module NodeCtld::RemoteCommands
           NodeCtld::VpsOsRelease.update_all_vps
         end
 
+      when 'export-mounts'
+        if @vps_ids&.any?
+          NodeCtld::ExportMounts.update_vps_ids(@vps_ids)
+        else
+          NodeCtld::ExportMounts.update_all_vps
+        end
+
       when 'script-hooks'
         update_script_hooks(@vps_ids)
 
