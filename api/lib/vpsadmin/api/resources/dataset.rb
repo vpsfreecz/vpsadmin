@@ -44,6 +44,7 @@ module VpsAdmin::API::Resources
                        desc: 'Dataset owner'
         resource VPS, label: 'VPS', value_label: :hostname
         resource VpsAdmin::API::Resources::Dataset, label: 'Subtree'
+        resource Pool, name: :primary_pool, label: 'Primary pool', desc: 'Show only datasets on this pool'
         string :role, label: 'Role', desc: 'Show only datasets of certain role',
                       choices: ::Pool.roles.keys
         integer :to_depth, label: 'To depth', desc: 'Show only datasets to certain depth'
@@ -64,6 +65,10 @@ module VpsAdmin::API::Resources
       def query
         q = with_includes.joins(dataset_in_pools: [:pool]).where(with_restricted)
         q = q.subtree_of(input[:dataset]) if input[:dataset]
+
+        if input[:primary_pool]
+          q = q.where(pools: { id: input[:primary_pool].id, role: 'primary' })
+        end
 
         q = if input[:role]
               q.where(pools: { role: ::Pool.roles[input[:role].to_sym] })
