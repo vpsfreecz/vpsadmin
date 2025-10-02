@@ -12,7 +12,8 @@ module VpsAdmin::MailTemplates
     def initialize
       @opts = {
         auth: 'token',
-        lifetime: 'renewable_auto'
+        lifetime: 'renewable_auto',
+        verify_ssl: true
       }
     end
 
@@ -61,6 +62,10 @@ module VpsAdmin::MailTemplates
           @opts[:auth] = 'token'
         end
 
+        opts.on('--[no-]verify-ssl', 'Toggle SSL peer verification') do |v|
+          @opts[:verify_ssl] = v
+        end
+
         opts.on('-h', '--help', 'Show this help') do
           puts opts
           exit
@@ -76,7 +81,8 @@ module VpsAdmin::MailTemplates
 
       @api = HaveAPI::Client::Client.new(
         ARGV[0],
-        identity: "vpsadmin-mail-templates v#{VpsAdmin::MailTemplates::VERSION}"
+        identity: "vpsadmin-mail-templates v#{VpsAdmin::MailTemplates::VERSION}",
+        verify_ssl: @opts[:verify_ssl]
       )
 
       authenticate
