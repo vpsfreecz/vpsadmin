@@ -4,12 +4,13 @@ module Transactions::MaintenanceWindow
     t_type 2102
     queue :general
 
-    # @param vps [::Vps]
+    # @param vps [::Vps, nil]
     # @param reserve_time [Integer] number of minutes that must be left in the window
     # @param maintenance_windows [Array<::VpsMaintenanceWindow>, nil]
-    def params(vps, reserve_time, maintenance_windows: nil)
-      self.vps_id = vps.id
-      self.node_id = vps.node_id
+    # @param node [::Node, nil]
+    def params(vps, reserve_time, maintenance_windows: nil, node: nil)
+      self.vps_id = vps && vps.id
+      self.node_id = node ? node.id : vps.node_id
 
       maintenance_windows ||= vps.vps_maintenance_windows.where(is_open: true).order('weekday')
       window_hashes = []

@@ -792,7 +792,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
       if (input[:finish_weekday] || input[:finish_minutes]) \
          && (!input[:finish_weekday] || !input[:finish_minutes])
         error!('invalid finish configuration', {
-                finish_weeday: ['must be set together with finish_minutes'],
+                finish_weekday: ['must be set together with finish_minutes'],
                 finish_minutes: ['must be set together with finish_weekday']
               })
       end

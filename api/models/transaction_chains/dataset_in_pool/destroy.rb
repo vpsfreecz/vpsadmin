@@ -18,6 +18,7 @@ module TransactionChains
     # @option opts [Boolean] tasks (true) delete associated dataset actions
     #                                      and repeatable tasks
     # @option opts [Boolean] detach_backups (true) detach current branch and tree on backup pools
+    # @option opts [Boolean] exports (true) destroy exports
     # @option opts [Boolean] destroy (true) destroy datasets using zfs destroy
     def link_chain(dataset_in_pool, opts = {})
       lock(dataset_in_pool)
@@ -31,6 +32,7 @@ module TransactionChains
                               top: true,
                               tasks: true,
                               detach_backups: true,
+                              exports: true,
                               destroy: true
                             })
 
@@ -75,11 +77,13 @@ module TransactionChains
       end
 
       # Destroy exports of the datasets
-      @datasets.each do |dip|
-        dip.exports.where.not(
-          confirmed: ::Export.confirmed(:confirm_destroy)
-        ).each do |export|
-          use_chain(TransactionChains::Export::Destroy, args: export)
+      if @opts[:exports]
+        @datasets.each do |dip|
+          dip.exports.where.not(
+            confirmed: ::Export.confirmed(:confirm_destroy)
+          ).each do |export|
+            use_chain(TransactionChains::Export::Destroy, args: export)
+          end
         end
       end
 

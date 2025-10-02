@@ -356,6 +356,89 @@ module VpsAdmin::API::Resources
       end
     end
 
+    class Migrate < HaveAPI::Action
+      desc 'Migrate dataset to another pool'
+      route '{%{resource}_id}/migrate'
+      http_method :post
+      blocking true
+
+      input do
+        resource VpsAdmin::API::Resources::Pool, label: 'Pool',
+                                                 required: true
+        resource VpsAdmin::API::Resources::VPS, name: :maintenance_window_vps, label: 'VPS maintenance window',
+                                                desc: 'Migrate the dataset within the nearest maintenance window of VPS'
+        integer :finish_weekday, label: 'Finish weekday',
+                                 desc: 'Prepare the migration and finish it on this day',
+                                 number: { min: 0, max: 6 }
+        integer :finish_minutes, label: 'Finish minutes',
+                                 desc: 'Number of minutes from midnight of start_weekday after which the migration is done',
+                                 number: { min: 0, max: (24 * 60) - 30 }
+        bool :cleanup_data, label: 'Cleanup data',
+                            desc: 'Remove dataset from the source pool',
+                            default: true, fill: true
+        bool :send_mail, label: 'Send e-mails',
+                         desc: 'Inform the dataset owner about migration progress',
+                         default: true, fill: true
+        string :reason
+      end
+
+      authorize do |u|
+        allow if u.role == :admin
+      end
+
+      def exec
+        ds = ::Dataset.find(params[:dataset_id])
+        dip = ds.primary_dataset_in_pool!
+
+        if dip.pool == input[:pool]
+          error!('the dataset already is on this pool')
+
+        elsif dip.pool.role != 'primary'
+          error!('source pool is not primary')
+
+        elsif input[:pool].role != 'primary'
+          error!('target pool is not primary')
+
+        elsif ds.parent
+          error!('only top-level datasets can be migrated')
+
+        elsif input[:maintenance_window_vps] && input[:maintenance_window_vps].user_id != ds.user_id
+          error!('access denied to maintenance window VPS')
+        end
+
+        if (input[:finish_weekday] || input[:finish_minutes]) \
+          && (!input[:finish_weekday] || !input[:finish_minutes])
+          error!('invalid finish configuration', {
+                  finish_weekday: ['must be set together with finish_minutes'],
+                  finish_minutes: ['must be set together with finish_weekday']
+                })
+        end
+
+        if input[:maintenance_window_vps] && (input[:finish_weekday] || input[:finish_minutes])
+          error!('invalid finish configuration', {
+                  maintenance_window_vps: ['conflicts with finish_weekday and finish_minutes']
+                })
+        end
+
+        @chain, = TransactionChains::Dataset::Migrate.fire2(
+          args: [dip, input[:pool]],
+          kwargs: {
+            send_mail: input[:send_mail],
+            reason: input[:reason],
+            cleanup_data: input[:cleanup_data],
+            maintenance_window_vps: input[:maintenance_window_vps],
+            finish_weekday: input[:finish_weekday],
+            finish_minutes: input[:finish_minutes]
+          }
+        )
+        ok!
+      end
+
+      def state_id
+        @chain.id
+      end
+    end
+
     class Snapshot < HaveAPI::Resource
       route '{dataset_id}/snapshots'
       model ::Snapshot

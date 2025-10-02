@@ -1,5 +1,6 @@
 require_relative 'node'
 require_relative 'object_state'
+require_relative 'pool'
 require_relative 'snapshot_download'
 require_relative 'user'
 require_relative 'user_device'
@@ -382,6 +383,28 @@ class MailTemplate < ApplicationRecord
     user: ::User,
     vps: ::Vps,
     incident: ::IncidentReport
+  }, roles: %i[admin], public: true
+
+  register :dataset_migration_begun, vars: {
+    dataset: ::Dataset,
+    src_pool: ::Pool,
+    dst_pool: ::Pool,
+    exports: 'Array<Export>',
+    maintenance_window: ::Boolean,
+    maintenance_windows: 'Array<MaintenanceWindow>',
+    custom_window: ::Boolean,
+    reason: String
+  }, roles: %i[admin], public: true
+
+  register :dataset_migration_finished, vars: {
+    dataset: ::Dataset,
+    src_pool: ::Pool,
+    dst_pool: ::Pool,
+    exports: 'Array<Export>',
+    maintenance_window: ::Boolean,
+    maintenance_windows: 'Array<MaintenanceWindow>',
+    custom_window: ::Boolean,
+    reason: String
   }, roles: %i[admin], public: true
 
   enum :user_visibility, %i[default visible invisible]
