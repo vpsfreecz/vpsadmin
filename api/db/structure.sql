@@ -610,6 +610,22 @@ CREATE TABLE `export_hosts` (
   UNIQUE KEY `index_export_hosts_on_export_id_and_ip_address_id` (`export_id`,`ip_address_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `export_mounts`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `export_mounts` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `export_id` bigint(20) NOT NULL,
+  `vps_id` bigint(20) NOT NULL,
+  `mountpoint` varchar(500) NOT NULL,
+  `nfs_version` varchar(10) NOT NULL,
+  `created_at` datetime(6) NOT NULL,
+  `updated_at` datetime(6) NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `index_export_mounts_on_export_id` (`export_id`),
+  KEY `index_export_mounts_on_vps_id` (`vps_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `exports`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8mb4 */;
@@ -2434,6 +2450,7 @@ CREATE TABLE `webauthn_credentials` (
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
 INSERT INTO `schema_migrations` (version) VALUES
+('20251002184144'),
 ('20250425142931'),
 ('20250425133822'),
 ('20250425132321'),

@@ -14,6 +14,7 @@ module VpsAdmin::Supervisor
       klasses = [
         Node::DatasetExpansions,
         Node::DnsStatus,
+        Node::ExportMounts,
         Node::NetAccounting,
         Node::NetMonitor,
         Node::OomReports,

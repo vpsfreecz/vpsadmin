@@ -137,7 +137,7 @@ class Cli
       rabbitmqctl set_policy \\
       	-p #{@vhost} \\
       	TTL \\
-      	"^node:[^:]+:(statuses|net_monitor|pool_statuses|storage_statuses|vps_statuses|vps_os_processes|vps_ssh_host_keys|vps_os_releases)$" \\
+      	"^node:[^:]+:(statuses|net_monitor|pool_statuses|storage_statuses|vps_statuses|vps_os_processes|vps_ssh_host_keys|vps_os_releases|export_mounts)$" \\
       	'{"message-ttl":60000}' \\
       	--apply-to queues
     END

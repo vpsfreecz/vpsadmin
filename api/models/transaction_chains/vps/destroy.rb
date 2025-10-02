@@ -67,6 +67,9 @@ module TransactionChains
       # Delete SSH host keys
       vps.vps_ssh_host_keys.delete_all
 
+      # Delete export mount info
+      vps.export_mounts.delete_all
+
       # NOTE: there are too many records to delete them using transaction confirmations.
       # All VPS statuses are deleted whether the chain is successful or not.
       vps.vps_statuses.delete_all

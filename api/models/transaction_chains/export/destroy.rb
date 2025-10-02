@@ -22,6 +22,7 @@ module TransactionChains
         t.edit(host_addr.ip_address, network_interface_id: nil)
         t.just_destroy(export.network_interface)
         export.export_hosts.each { |host| t.just_destroy(host) }
+        export.export_mounts.each { |ex_mnt| t.just_destroy(ex_mnt) }
         t.destroy(export)
       end
 

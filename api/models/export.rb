@@ -11,6 +11,7 @@ class Export < ApplicationRecord
   has_one :network_interface
   has_many :ip_addresses, through: :network_interface
   has_many :host_ip_addresses, through: :network_interface
+  has_many :export_mounts
 
   validates :threads, presence: true, numericality: {
     greater_than_or_equal_to: 1,
