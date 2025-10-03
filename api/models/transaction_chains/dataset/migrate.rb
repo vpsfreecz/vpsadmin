@@ -3,7 +3,7 @@ module TransactionChains
   class Dataset::Migrate < ::TransactionChain
     label 'Migrate'
 
-    def link_chain(src_dataset_in_pool, dst_pool, maintenance_window_vps: nil, finish_weekday: nil, finish_minutes: nil, cleanup_data: true, send_mail: true, reason: nil)
+    def link_chain(src_dataset_in_pool, dst_pool, restart_vps: false, maintenance_window_vps: nil, finish_weekday: nil, finish_minutes: nil, cleanup_data: true, send_mail: true, reason: nil)
       @src_pool = src_dataset_in_pool.pool
       @dst_pool = dst_pool
 
@@ -55,6 +55,12 @@ module TransactionChains
         exports << [src_export, dst_export]
       end
 
+      # Affected VPS
+      if restart_vps
+        export_mounts = ::ExportMount.where(export: exports.map(&:first))
+        vpses = export_mounts.map(&:vps).uniq
+      end
+
       maintenance_windows =
         if finish_weekday
           ::VpsMaintenanceWindow.make_for(
@@ -75,6 +81,9 @@ module TransactionChains
                src_pool: src_pool,
                dst_pool: dst_pool,
                exports: exports.map(&:first),
+               export_mounts:,
+               vpses:,
+               restart_vps:,
                maintenance_window: maintenance_window_vps,
                maintenance_windows:,
                custom_window: !finish_weekday.nil?,
@@ -178,6 +187,13 @@ module TransactionChains
         )
       end
 
+      # Stop affected VPS
+      if restart_vps
+        vpses.each do |vps|
+          use_chain(Vps::Stop, args: [vps], urgent: true)
+        end
+      end
+
       # Stop exports
       exports.each do |pair|
         src_export, = pair
@@ -250,6 +266,13 @@ module TransactionChains
         end
       end
 
+      # Restart VPS
+      if restart_vps
+        vpses.each do |vps|
+          use_chain(Vps::Start, args: [vps], urgent: true) if vps.is_running?
+        end
+      end
+
       # Release reserved spots in the queue
       append(Transactions::Queue::Release, args: [dst_node, :zfs_recv])
       append(Transactions::Queue::Release, args: [src_node, :zfs_send])
@@ -308,6 +331,9 @@ module TransactionChains
                src_pool: src_pool,
                dst_pool: dst_pool,
                exports: exports.map(&:first),
+               export_mounts:,
+               vpses:,
+               restart_vps:,
                maintenance_window: maintenance_window_vps,
                maintenance_windows:,
                custom_window: !finish_weekday.nil?,

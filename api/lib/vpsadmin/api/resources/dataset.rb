@@ -372,6 +372,7 @@ module VpsAdmin::API::Resources
                                                  required: true
         resource VpsAdmin::API::Resources::VPS, name: :maintenance_window_vps, label: 'VPS maintenance window',
                                                 desc: 'Migrate the dataset within the nearest maintenance window of VPS'
+        bool :restart_vps, label: 'Restart VPS', desc: 'Restart VPSes where migrated exports are mounted', default: false, fill: true
         integer :finish_weekday, label: 'Finish weekday',
                                  desc: 'Prepare the migration and finish it on this day',
                                  number: { min: 0, max: 6 }
@@ -431,6 +432,7 @@ module VpsAdmin::API::Resources
             send_mail: input[:send_mail],
             reason: input[:reason],
             cleanup_data: input[:cleanup_data],
+            restart_vps: input[:restart_vps],
             maintenance_window_vps: input[:maintenance_window_vps],
             finish_weekday: input[:finish_weekday],
             finish_minutes: input[:finish_minutes]
