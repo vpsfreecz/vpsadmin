@@ -2143,6 +2143,20 @@ CREATE TABLE `users` (
   KEY `index_users_on_object_state` (`object_state`) USING BTREE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `uuids`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `uuids` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `uuid` varchar(36) NOT NULL,
+  `owner_type` varchar(255) DEFAULT NULL,
+  `owner_id` bigint(20) DEFAULT NULL,
+  `created_at` datetime(6) NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `index_uuids_on_uuid` (`uuid`),
+  KEY `index_uuids_on_owner` (`owner_type`,`owner_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `versions`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8mb4 */;
@@ -2450,6 +2464,7 @@ CREATE TABLE `webauthn_credentials` (
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
 INSERT INTO `schema_migrations` (version) VALUES
+('20251003073527'),
 ('20251002184144'),
 ('20250425142931'),
 ('20250425133822'),
