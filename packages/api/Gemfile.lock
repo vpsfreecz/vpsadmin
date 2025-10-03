@@ -60,9 +60,9 @@ GEM
       net-http (>= 0.5.0)
     fio_api (0.0.11)
       httparty (>= 0.16.2)
-    haveapi (0.26.1)
+    haveapi (0.26.2)
       activesupport (>= 7.1)
-      haveapi-client (~> 0.26.1)
+      haveapi-client (~> 0.26.2)
       json
       mail
       nesty (~> 1.0)
@@ -73,7 +73,7 @@ GEM
       sinatra (~> 4.0)
       sinatra-contrib (~> 4.0)
       tilt (~> 2.4)
-    haveapi-client (0.26.1)
+    haveapi-client (0.26.2)
       activesupport (>= 7.0)
       highline (~> 3.1)
       json
