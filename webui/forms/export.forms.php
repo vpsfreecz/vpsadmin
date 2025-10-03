@@ -278,7 +278,7 @@ mount -t nfs {$ex->host_ip_address->addr}:{$ex->path} /mnt/export{$ex->id}
     $xtpl->table_title(_('fstab entry'));
     $xtpl->table_td("
 		<textarea rows=\"1\" cols=\"80\" readonly>
-{$ex->host_ip_address->addr}:{$ex->path} /mnt/export{$ex->id} nfs vers=3,nofail 0 0
+{$ex->host_ip_address->addr}:{$ex->path} /mnt/export{$ex->id} nfs nofail 0 0
 		</textarea>
 	");
     $xtpl->table_tr();
@@ -296,7 +296,7 @@ After=network-online.target
 [Mount]
 What={$ex->host_ip_address->addr}:{$ex->path}
 Where=/mnt/export{$ex->id}
-Options=vers=3,nofail
+Options=nofail
 Type=nfs
 
 [Install]
