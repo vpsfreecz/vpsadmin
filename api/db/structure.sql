@@ -650,8 +650,10 @@ CREATE TABLE `exports` (
   `snapshot_in_pool_clone_n` int(11) NOT NULL DEFAULT 0,
   `remind_after_date` datetime DEFAULT NULL,
   `original_enabled` tinyint(1) NOT NULL DEFAULT 1,
+  `uuid_id` bigint(20) NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `exports_unique` (`dataset_in_pool_id`,`snapshot_in_pool_clone_n`),
+  UNIQUE KEY `index_exports_on_uuid_id` (`uuid_id`),
   KEY `index_exports_on_user_id` (`user_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_czech_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -2464,6 +2466,7 @@ CREATE TABLE `webauthn_credentials` (
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
 INSERT INTO `schema_migrations` (version) VALUES
+('20251003074953'),
 ('20251003073527'),
 ('20251002184144'),
 ('20250425142931'),

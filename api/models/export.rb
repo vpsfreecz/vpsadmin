@@ -7,6 +7,7 @@ class Export < ApplicationRecord
   belongs_to :dataset_in_pool
   belongs_to :snapshot_in_pool_clone
   belongs_to :user
+  belongs_to :uuid
   has_many :export_hosts
   has_one :network_interface
   has_many :ip_addresses, through: :network_interface
@@ -41,5 +42,9 @@ class Export < ApplicationRecord
 
   def host_ip_address
     host_ip_addresses.first
+  end
+
+  def fsid
+    uuid.uuid
   end
 end

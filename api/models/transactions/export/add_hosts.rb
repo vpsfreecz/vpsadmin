@@ -17,6 +17,7 @@ module Transactions::Export
           {
             address: h.ip_address.to_s,
             options: {
+              fsid: export.fsid,
               rw: h.rw,
               sync: h.sync,
               subtree_check: h.subtree_check,

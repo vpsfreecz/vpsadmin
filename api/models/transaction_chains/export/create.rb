@@ -34,22 +34,28 @@ module TransactionChains
 
       lock(dip)
 
+      export = ::Export.new(
+        dataset_in_pool: dip,
+        snapshot_in_pool_clone: snap_clone,
+        snapshot_in_pool_clone_n: snap_clone ? snap_clone.id : 0,
+        user: dataset.user,
+        all_vps: opts[:all_vps] ? true : false,
+        path: export_path(dip, sip),
+        rw: opts[:rw] ? true : false,
+        subtree_check: opts[:subtree_check] ? true : false,
+        root_squash: opts[:root_squash] ? true : false,
+        sync: opts[:sync] ? true : false,
+        threads: opts[:threads] || 8,
+        enabled: opts[:enabled] ? true : false,
+        expiration_date: sip ? Time.now + (3 * 24 * 60 * 60) : nil
+      )
+
       begin
-        export = ::Export.create!(
-          dataset_in_pool: dip,
-          snapshot_in_pool_clone: snap_clone,
-          snapshot_in_pool_clone_n: snap_clone ? snap_clone.id : 0,
-          user: dataset.user,
-          all_vps: opts[:all_vps] ? true : false,
-          path: export_path(dip, sip),
-          rw: opts[:rw] ? true : false,
-          subtree_check: opts[:subtree_check] ? true : false,
-          root_squash: opts[:root_squash] ? true : false,
-          sync: opts[:sync] ? true : false,
-          threads: opts[:threads] || 8,
-          enabled: opts[:enabled] ? true : false,
-          expiration_date: sip ? Time.now + (3 * 24 * 60 * 60) : nil
-        )
+        ::Uuid.generate_for_new_record! do |uuid|
+          export.uuid = uuid
+          export.save!
+          export
+        end
       rescue ActiveRecord::RecordNotUnique
         msg =
           if sip
