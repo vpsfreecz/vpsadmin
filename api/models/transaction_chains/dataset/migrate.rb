@@ -129,7 +129,7 @@ module TransactionChains
 
         src.dataset_properties.where(inherited: false).each do |p|
           next unless VpsAdmin::API::DatasetProperties.property(p.name.to_sym).editable?
-          next if %w[quota refquota].include?(p.name)
+          next if %w[quota refquota sharenfs].include?(p.name)
 
           props[p.name.to_sym] = [p, p.value]
         end
