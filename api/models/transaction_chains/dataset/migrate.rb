@@ -128,7 +128,8 @@ module TransactionChains
         props = {}
 
         src.dataset_properties.where(inherited: false).each do |p|
-          next if %w[quota refquota compressratio refcompressratio].include?(p.name)
+          next unless VpsAdmin::API::DatasetProperties.property(p.name.to_sym).editable?
+          next if %w[quota refquota].include?(p.name)
 
           props[p.name.to_sym] = [p, p.value]
         end
