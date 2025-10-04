@@ -75,7 +75,7 @@ module TransactionChains
       end
 
       # Send mail
-      if send_mail && src_dataset_in_pool.dataset.user.mailer_enabled
+      if send_mail && exports.any? && src_dataset_in_pool.dataset.user.mailer_enabled
         mail(:dataset_migration_begun, {
              user: dataset_user,
              vars: {
@@ -325,7 +325,7 @@ module TransactionChains
       }])
 
       # Send mail
-      if send_mail && src_dataset_in_pool.dataset.user.mailer_enabled
+      if send_mail && exports.any? && src_dataset_in_pool.dataset.user.mailer_enabled
         mail(:dataset_migration_finished, {
              user: dataset_user,
              vars: {
