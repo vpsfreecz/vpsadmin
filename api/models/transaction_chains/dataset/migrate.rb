@@ -3,7 +3,7 @@ module TransactionChains
   class Dataset::Migrate < ::TransactionChain
     label 'Migrate'
 
-    def link_chain(src_dataset_in_pool, dst_pool, restart_vps: false, maintenance_window_vps: nil, finish_weekday: nil, finish_minutes: nil, cleanup_data: true, send_mail: true, reason: nil)
+    def link_chain(src_dataset_in_pool, dst_pool, restart_vps: false, maintenance_window_vps: nil, finish_weekday: nil, finish_minutes: nil, optional_maintenance_window: true, cleanup_data: true, send_mail: true, reason: nil)
       @src_pool = src_dataset_in_pool.pool
       @dst_pool = dst_pool
 
@@ -61,16 +61,18 @@ module TransactionChains
         vpses = export_mounts.map(&:vps).uniq
       end
 
-      maintenance_windows =
-        if finish_weekday
-          ::VpsMaintenanceWindow.make_for(
-            nil,
-            finish_weekday: finish_weekday,
-            finish_minutes: finish_minutes
-          )
-        elsif maintenance_window_vps
-          maintenance_window_vps.vps_maintenance_windows.where(is_open: true).order('weekday')
-        end
+      if !optional_maintenance_window || exports.any?
+        maintenance_windows =
+          if finish_weekday
+            ::VpsMaintenanceWindow.make_for(
+              nil,
+              finish_weekday: finish_weekday,
+              finish_minutes: finish_minutes
+            )
+          elsif maintenance_window_vps
+            maintenance_window_vps.vps_maintenance_windows.where(is_open: true).order('weekday')
+          end
+      end
 
       # Send mail
       if send_mail && src_dataset_in_pool.dataset.user.mailer_enabled
@@ -84,9 +86,9 @@ module TransactionChains
                export_mounts:,
                vpses:,
                restart_vps:,
-               maintenance_window: maintenance_window_vps,
+               maintenance_window: maintenance_windows,
                maintenance_windows:,
-               custom_window: !finish_weekday.nil?,
+               custom_window: maintenance_windows && !finish_weekday.nil?,
                finish_weekday: finish_weekday,
                finish_minutes: finish_minutes,
                reason: reason
@@ -334,9 +336,9 @@ module TransactionChains
                export_mounts:,
                vpses:,
                restart_vps:,
-               maintenance_window: maintenance_window_vps,
+               maintenance_window: maintenance_windows,
                maintenance_windows:,
-               custom_window: !finish_weekday.nil?,
+               custom_window: maintenance_windows && !finish_weekday.nil?,
                finish_weekday: finish_weekday,
                finish_minutes: finish_minutes,
                reason: reason
