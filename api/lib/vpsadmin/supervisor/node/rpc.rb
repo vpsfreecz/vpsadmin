@@ -309,6 +309,7 @@ module VpsAdmin::Supervisor
               {
                 ip_address: host.ip_address.ip_addr,
                 prefix: host.ip_address.prefix,
+                fsid: ex.fsid,
                 rw: host.rw,
                 sync: host.sync,
                 subtree_check: host.subtree_check,
