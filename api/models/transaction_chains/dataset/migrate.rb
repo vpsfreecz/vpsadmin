@@ -3,7 +3,7 @@ module TransactionChains
   class Dataset::Migrate < ::TransactionChain
     label 'Migrate'
 
-    def link_chain(src_dataset_in_pool, dst_pool, restart_vps: false, maintenance_window_vps: nil, finish_weekday: nil, finish_minutes: nil, optional_maintenance_window: true, cleanup_data: true, send_mail: true, reason: nil)
+    def link_chain(src_dataset_in_pool, dst_pool, rsync: false, restart_vps: false, maintenance_window_vps: nil, finish_weekday: nil, finish_minutes: nil, optional_maintenance_window: true, cleanup_data: true, send_mail: true, reason: nil)
       @src_pool = src_dataset_in_pool.pool
       @dst_pool = dst_pool
 
@@ -117,10 +117,10 @@ module TransactionChains
         # Create datasets with canmount=off for the transfer
         append_t(Transactions::Storage::CreateDataset, args: [
                    dst,
-                   { canmount: 'off' },
+                   { canmount: rsync ? 'on' : 'off' },
                    {
-                     set_map: true,
-                     create_private: false
+                     set_map: rsync ? false : true,
+                     create_private: rsync ? true : false
                    }
                  ]) { |t| t.create(dst) }
 
@@ -147,8 +147,16 @@ module TransactionChains
       datasets.each do |pair|
         src, dst = pair
 
-        migration_snapshots << use_chain(Dataset::Snapshot, args: src)
-        use_chain(Dataset::Transfer, args: [src, dst])
+        if rsync
+          append(
+            Transactions::Storage::RsyncDataset,
+            args: [src, dst],
+            kwargs: { allow_partial: true }
+          )
+        else
+          migration_snapshots << use_chain(Dataset::Snapshot, args: src)
+          use_chain(Dataset::Transfer, args: [src, dst])
+        end
       end
 
       # Maintenance window
@@ -176,8 +184,16 @@ module TransactionChains
         datasets.each do |pair|
           src, dst = pair
 
-          migration_snapshots << use_chain(Dataset::Snapshot, args: src)
-          use_chain(Dataset::Transfer, args: [src, dst])
+          if rsync
+            append(
+              Transactions::Storage::RsyncDataset,
+              args: [src, dst],
+              kwargs: { allow_partial: true }
+            )
+          else
+            migration_snapshots << use_chain(Dataset::Snapshot, args: src)
+            use_chain(Dataset::Transfer, args: [src, dst])
+          end
         end
 
         # Check if we're still inside the outage window. We're in if the window
@@ -216,8 +232,17 @@ module TransactionChains
       datasets.each do |pair|
         src, dst = pair
 
-        migration_snapshots << use_chain(Dataset::Snapshot, args: src, urgent: true)
-        use_chain(Dataset::Transfer, args: [src, dst], urgent: true)
+        if rsync
+          append(
+            Transactions::Storage::RsyncDataset,
+            args: [src, dst],
+            kwargs: { allow_partial: false },
+            urgent: true
+          )
+        else
+          migration_snapshots << use_chain(Dataset::Snapshot, args: src, urgent: true)
+          use_chain(Dataset::Transfer, args: [src, dst], urgent: true)
+        end
       end
 
       # Set quotas when all data is transfered
@@ -240,17 +265,22 @@ module TransactionChains
       end
 
       # Set canmount=on on all datasets
-      append(
-        Transactions::Storage::SetCanmount,
-        args: [
-          datasets.map { |_src, dst| dst }
-        ],
-        kwargs: {
-          canmount: 'on',
-          mount: true
-        },
-        urgent: true
-      )
+      unless rsync
+        append(
+          Transactions::Storage::SetCanmount,
+          args: [
+            datasets.map { |_src, dst| dst }
+          ],
+          kwargs: {
+            canmount: 'on',
+            mount: true
+          },
+          urgent: true
+        )
+      end
+
+      # NOTE: in case of rsync, uidmap/gidmap is not set on the datasets. This isn't
+      # an issue as primary datasets are used only on NAS and uidmap/gidmap is not set.
 
       # Create exports on dst pool
       exports.each do |pair|
@@ -287,6 +317,14 @@ module TransactionChains
         ).take!
 
         use_chain(SnapshotInPool::Destroy, args: dst_sip)
+      end
+
+      if rsync
+        # Snapshots have not been transfered, so detach backup heads
+        datasets.each do |pair|
+          src, = pair
+          use_chain(DatasetInPool::DetachBackupHeads, args: [src])
+        end
       end
 
       # Move the dataset in pool to the new pool in the database
