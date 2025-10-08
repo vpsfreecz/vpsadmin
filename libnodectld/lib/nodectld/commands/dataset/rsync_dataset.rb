@@ -7,7 +7,7 @@ module NodeCtld
       src_path = File.join('/', @src_pool_fs, @dataset_name, 'private/')
       dst_path = File.join('/', @dst_pool_fs, @dataset_name, 'private/')
       priv_key = File.join('/', @dst_pool_name, 'conf/send-receive/key')
-      ssh_cmd = "ssh -i #{priv_key} -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o HostKeyAlgorithms=+ssh-rsa -o PubkeyAcceptedKeyTypes=ssh-rsa -l root"
+      ssh_cmd = "ssh -i #{priv_key} -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -l root"
 
       valid_rcs = @allow_partial ? [23, 24] : [0]
 
