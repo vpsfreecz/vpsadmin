@@ -24,10 +24,10 @@
     platforms = [ ];
     source = {
       remotes = [ "https://rubygems.org" ];
-      sha256 = "06sfv80bmxfczkqi3pb3yc9zicqhf94adh5f8hpkn3bsqqd1vlgz";
+      sha256 = "1xalhmrpbdlgyzcfzqh11nkv73l2ks2lj7bv1wc2m84x0j9gc5p1";
       type = "gem";
     };
-    version = "3.2.3";
+    version = "3.3.0";
   };
   bunny = {
     dependencies = [
@@ -150,10 +150,10 @@
     platforms = [ ];
     source = {
       remotes = [ "https://rubygems.org" ];
-      sha256 = "0p5dafxjp6kqkf3yx737gz9lwpaljlkc1raynkvcn6yql68d895w";
+      sha256 = "128bp3mihh175l9wm7hgg9sdisp6hd3kf36fw01iksqnq7kv5hdi";
       type = "gem";
     };
-    version = "2.15.0";
+    version = "2.15.1";
   };
   libnodectld = {
     dependencies = [
@@ -179,10 +179,10 @@
     platforms = [ ];
     source = {
       remotes = [ "https://rubygems.vpsfree.cz" ];
-      sha256 = "1faizf68wib9brkm7blnxk36qkiixj322nh47zl1kyabnbqhs699";
+      sha256 = "0fyvr7dzjk7ppw1z0wipva5mrqzhqvxmljywhxb2ywl8x314gh6p";
       type = "gem";
     };
-    version = "4.1.0.build20251006090125";
+    version = "4.1.0.build20251008191815";
   };
   libosctl = {
     dependencies = [
@@ -266,10 +266,10 @@
     platforms = [ ];
     source = {
       remotes = [ "https://rubygems.org" ];
-      sha256 = "08gj220bkdc0fhv4yzsgvhj7mqccn7hm57cfkv20hchmmynl64bn";
+      sha256 = "0i24prs7yy1p1zdps2x1ksb7lmvbn2f0llxwdjdw3z2ksddx136b";
       type = "gem";
     };
-    version = "0.5.11";
+    version = "0.5.12";
   };
   net-pop = {
     dependencies = [ "net-protocol" ];
@@ -310,10 +310,10 @@
     platforms = [ ];
     source = {
       remotes = [ "https://rubygems.vpsfree.cz" ];
-      sha256 = "10cs93fyly6iv51svaks5cs5whbnp0nnwhnbgf98ybsl4zda8wwk";
+      sha256 = "0z8qjzc0q3lqx3zdc89j5rdpzcdx4wimgs9689nlz3annnx2b8jr";
       type = "gem";
     };
-    version = "4.1.0.build20251006090125";
+    version = "4.1.0.build20251008191815";
   };
   osctl = {
     dependencies = [
