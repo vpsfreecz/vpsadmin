@@ -174,23 +174,18 @@ module TransactionChains
         )
         append(Transactions::Queue::Reserve, args: [src_node, :zfs_send])
         append(Transactions::Queue::Reserve, args: [dst_node, :zfs_recv])
-        append(
-          Transactions::MaintenanceWindow::InOrFail,
-          args: [nil, 15],
-          kwargs: { maintenance_windows:, node: src_node }
-        )
 
-        # Intermediary transfer
-        datasets.each do |pair|
-          src, dst = pair
+        unless rsync
+          append(
+            Transactions::MaintenanceWindow::InOrFail,
+            args: [nil, 15],
+            kwargs: { maintenance_windows:, node: src_node }
+          )
 
-          if rsync
-            append(
-              Transactions::Storage::RsyncDataset,
-              args: [src, dst],
-              kwargs: { allow_partial: true }
-            )
-          else
+          # Intermediary transfer
+          datasets.each do |pair|
+            src, dst = pair
+
             migration_snapshots << use_chain(Dataset::Snapshot, args: src)
             use_chain(Dataset::Transfer, args: [src, dst])
           end
