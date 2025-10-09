@@ -246,6 +246,33 @@ class TransactionChain < ApplicationRecord
     do_append(@last_id, klass, opts, block, true)
   end
 
+  # Append a transaction or add is as a NoOp
+  #
+  # If option `noop` is set to true, the transaction is added as
+  # {Transactions::Utils::NoOp}. The confirmation block is executed as is.
+  #
+  # @param klass [Transaction] transaction subclass
+  # @param opts [hash] options
+  # @option iots [Boolean] noop
+  # @option opts [Array] args
+  # @option opts [Hash] kwargs
+  # @option opts [Boolean] urgent
+  # @option opts [Integer] prio
+  # @option opts [Symbol] name
+  # @option opts [Symbol] reversible one of :is_reversible, :not_reversible, :keep_going
+  # @option opts [Symbol] queue
+  def append_or_noop_t(klass, opts = {}, &block)
+    noop = opts.delete(:noop)
+
+    if noop
+      klass = Transactions::Utils::NoOp
+      opts[:args] = [find_node_id]
+      opts[:kwargs] = {}
+    end
+
+    do_append(@last_id, klass, opts, block, true)
+  end
+
   # Call this method from TransactionChain#link_chain to include
   # +chain+. +args+ are passed to the chain as in ::fire.
   #
