@@ -2,8 +2,13 @@ module TransactionChains
   class SnapshotInPool::Destroy < ::TransactionChain
     label 'Destroy snapshot in pool'
 
-    def link_chain(s)
+    # @param s [SnapshotInPoolInBranch, SnapshotInPool]
+    # @param opts [Hash]
+    # @option opts [Boolean] :destroy
+    def link_chain(s, opts = {})
       lock(s)
+
+      @opts = set_hash_opts(opts, { destroy: true })
 
       if s.is_a?(::SnapshotInPoolInBranch)
         lock(s.snapshot_in_pool)
@@ -14,12 +19,12 @@ module TransactionChains
 
         destroy_snapshot(s.snapshot_in_pool) if cleanup
 
-        append(Transactions::Storage::DestroySnapshot, args: [s.snapshot_in_pool, s.branch]) do
-          destroy(s)
-          destroy(s.snapshot_in_pool)
-          destroy(s.snapshot_in_pool.snapshot) if cleanup
+        append_or_noop_t(Transactions::Storage::DestroySnapshot, args: [s.snapshot_in_pool, s.branch], noop: !@opts[:destroy]) do |t|
+          t.destroy(s)
+          t.destroy(s.snapshot_in_pool)
+          t.destroy(s.snapshot_in_pool.snapshot) if cleanup
 
-          decrement(s.snapshot_in_pool, :reference_count) if s.snapshot_in_pool_in_branch
+          t.decrement(s.snapshot_in_pool, :reference_count) if s.snapshot_in_pool_in_branch
         end
 
         # Destroy the branch if it is empty.
@@ -30,8 +35,8 @@ module TransactionChains
         ).count == 0
 
           s.branch.update!(confirmed: ::Branch.confirmed(:confirm_destroy))
-          append(Transactions::Storage::DestroyBranch, args: s.branch) do
-            destroy(s.branch)
+          append_or_noop_t(Transactions::Storage::DestroyBranch, args: s.branch, noop: !@opts[:destroy]) do |t|
+            t.destroy(s.branch)
           end
 
           # Destroy the tree if it is empty, checking for child branches
@@ -43,8 +48,8 @@ module TransactionChains
             s.branch.dataset_tree.update!(
               confirmed: ::DatasetTree.confirmed(:confirm_destroy)
             )
-            append(Transactions::Storage::DestroyTree, args: s.branch.dataset_tree) do
-              destroy(s.branch.dataset_tree)
+            append_or_noop_t(Transactions::Storage::DestroyTree, args: s.branch.dataset_tree, noop: !@opts[:destroy]) do |t|
+              t.destroy(s.branch.dataset_tree)
             end
           end
 
@@ -56,9 +61,9 @@ module TransactionChains
 
         destroy_snapshot(s) if cleanup
 
-        append(Transactions::Storage::DestroySnapshot, args: s) do
-          destroy(s)
-          destroy(s.snapshot) if cleanup
+        append_or_noop_t(Transactions::Storage::DestroySnapshot, args: s, noop: !@opts[:destroy]) do |t|
+          t.destroy(s)
+          t.destroy(s.snapshot) if cleanup
         end
       end
     end

@@ -149,7 +149,7 @@ module TransactionChains
 
       else
         dataset_in_pool.snapshot_in_pools.order('id, reference_count').each do |snap|
-          use_chain(SnapshotInPool::Destroy, args: snap)
+          use_chain(SnapshotInPool::Destroy, args: [snap, { destroy: @opts[:destroy] }])
         end
       end
 
