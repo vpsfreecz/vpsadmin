@@ -61,7 +61,7 @@ module TransactionChains
         vpses = export_mounts.map(&:vps).uniq
       end
 
-      if !optional_maintenance_window || exports.any?
+      if (!optional_maintenance_window || exports.any?) && dataset_user.object_state == 'active'
         maintenance_windows =
           if finish_weekday
             ::VpsMaintenanceWindow.make_for(
@@ -75,7 +75,7 @@ module TransactionChains
       end
 
       # Send mail
-      if send_mail && exports.any? && src_dataset_in_pool.dataset.user.mailer_enabled
+      if dataset_user.object_state == 'active' && send_mail && exports.any? && src_dataset_in_pool.dataset.user.mailer_enabled
         mail(:dataset_migration_begun, {
              user: dataset_user,
              vars: {
@@ -359,7 +359,7 @@ module TransactionChains
       }])
 
       # Send mail
-      if send_mail && exports.any? && src_dataset_in_pool.dataset.user.mailer_enabled
+      if dataset_user.object_state == 'active' && send_mail && exports.any? && src_dataset_in_pool.dataset.user.mailer_enabled
         mail(:dataset_migration_finished, {
              user: dataset_user,
              vars: {
