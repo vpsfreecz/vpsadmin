@@ -147,10 +147,10 @@
     platforms = [ ];
     source = {
       remotes = [ "https://rubygems.org" ];
-      sha256 = "1xalhmrpbdlgyzcfzqh11nkv73l2ks2lj7bv1wc2m84x0j9gc5p1";
+      sha256 = "0612spks81fvpv2zrrv3371lbs6mwd7w6g5zafglyk75ici1x87a";
       type = "gem";
     };
-    version = "3.3.0";
+    version = "3.3.1";
   };
   bindata = {
     groups = [ "default" ];
@@ -824,10 +824,10 @@
     platforms = [ ];
     source = {
       remotes = [ "https://rubygems.org" ];
-      sha256 = "0d3i31npmlhmigcs1zlb9lksg7z7lv6nffams71wrz5rriv1n35l";
+      sha256 = "07fz0p6nlifm983cac3ayi7nwrpb5l4s3jl7p70imbsm79k429qr";
       type = "gem";
     };
-    version = "1.5.1";
+    version = "1.5.2";
   };
   prometheus-client = {
     dependencies = [ "base64" ];
@@ -886,10 +886,10 @@
     platforms = [ ];
     source = {
       remotes = [ "https://rubygems.org" ];
-      sha256 = "1c4jrpf4clx9ij9745g8d44a9dznrj1pvyh6slgvrip82xx0mlkl";
+      sha256 = "0h9xr8ivrfr0i5f2n7czg74r3ri1pba8wb84bzr78iaqlqykg6i3";
       type = "gem";
     };
-    version = "3.2.2";
+    version = "3.2.3";
   };
   rack-oauth2 = {
     dependencies = [

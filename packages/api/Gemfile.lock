@@ -29,7 +29,7 @@ GEM
     base64 (0.3.0)
     bcrypt (3.1.20)
     benchmark (0.4.1)
-    bigdecimal (3.3.0)
+    bigdecimal (3.3.1)
     bindata (2.5.1)
     bunny (2.23.0)
       amq-protocol (~> 2.3, >= 2.3.1)
@@ -149,7 +149,7 @@ GEM
     parser (3.3.9.0)
       ast (~> 2.4.1)
       racc
-    prism (1.5.1)
+    prism (1.5.2)
     prometheus-client (4.2.5)
       base64
     pry (0.15.2)
@@ -158,7 +158,7 @@ GEM
     puma (7.0.4)
       nio4r (~> 2.0)
     racc (1.8.1)
-    rack (3.2.2)
+    rack (3.2.3)
     rack-oauth2 (2.2.1)
       activesupport
       attr_required
