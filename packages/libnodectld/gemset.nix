@@ -24,10 +24,10 @@
     platforms = [ ];
     source = {
       remotes = [ "https://rubygems.org" ];
-      sha256 = "1xalhmrpbdlgyzcfzqh11nkv73l2ks2lj7bv1wc2m84x0j9gc5p1";
+      sha256 = "0612spks81fvpv2zrrv3371lbs6mwd7w6g5zafglyk75ici1x87a";
       type = "gem";
     };
-    version = "3.3.0";
+    version = "3.3.1";
   };
   bunny = {
     dependencies = [
@@ -179,10 +179,10 @@
     platforms = [ ];
     source = {
       remotes = [ "https://rubygems.vpsfree.cz" ];
-      sha256 = "0fyvr7dzjk7ppw1z0wipva5mrqzhqvxmljywhxb2ywl8x314gh6p";
+      sha256 = "01kxgc1a750x86sykawdngz29aiazgrmzxlrvqrw7jpzpnm417bj";
       type = "gem";
     };
-    version = "4.1.0.build20251008191815";
+    version = "4.1.0.build20251011165814";
   };
   libosctl = {
     dependencies = [
