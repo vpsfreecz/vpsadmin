@@ -166,7 +166,7 @@ module NodeCtld
       return if dash.nil?
 
       fstype = fields[dash + 1]
-      return if fstype.nil? || fstype != 'nfs'
+      return if fstype.nil? || !%w[nfs nfs4].include?(fstype)
 
       mountpoint = fields[4]
       return if mountpoint.nil?
