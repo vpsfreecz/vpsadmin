@@ -919,10 +919,10 @@
     platforms = [ ];
     source = {
       remotes = [ "https://rubygems.org" ];
-      sha256 = "1gqms7976gdfgvcdnwbnvlp582n7rq0l5zgdpnlm5fwyqaqrx437";
+      sha256 = "1b4bamcbpk29i7jvly3i7ayfj69yc1g03gm4s7jgamccvx12hvng";
       type = "gem";
     };
-    version = "4.2.0";
+    version = "4.2.1";
   };
   rack-session = {
     dependencies = [
@@ -1276,10 +1276,10 @@
     platforms = [ ];
     source = {
       remotes = [ "https://rubygems.org" ];
-      sha256 = "1vv4349rkb99h7rbvllmjqrdlpkmddrkbfjk87f9ihhj6c34barz";
+      sha256 = "103h6wjpcqp3i034hi44za2v365yz7qk9s5df8lmasq43nqvkbmp";
       type = "gem";
     };
-    version = "4.2.0";
+    version = "4.2.1";
   };
   sinatra-activerecord = {
     dependencies = [
@@ -1307,10 +1307,10 @@
     platforms = [ ];
     source = {
       remotes = [ "https://rubygems.org" ];
-      sha256 = "1yr5c19db7gn9fnisx79w4csa6c7wb1ydj9lz8ycwk55fx6jl19j";
+      sha256 = "0jkbsaika8pr9bc90ag3wqrhbgiy7h5a93k11j8sls6j8k4r3l0h";
       type = "gem";
     };
-    version = "4.2.0";
+    version = "4.2.1";
   };
   sorted_set = {
     dependencies = [
