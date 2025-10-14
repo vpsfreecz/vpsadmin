@@ -46,6 +46,7 @@ module NodeCtld
           syscmd("ip link set dev #{netif.host_name} down")
           syscmd("ip link set dev #{netif.host_name} address #{netif.host_mac}")
           syscmd("ip link set dev #{netif.host_name} up")
+          syscmd("ip -6 addr add fe80::1/64 dev #{netif.host_name}")
 
           netif.routes.each do |ip_v, routes|
             routes.each do |r|
