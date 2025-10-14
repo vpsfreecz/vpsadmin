@@ -20,7 +20,7 @@ module DistConfig
       end
     end
 
-    DEFAULT_IPV4 = '255.255.255.254'.freeze
+    DEFAULT_IPV4 = '172.31.255.254'.freeze
 
     DEFAULT_IPV6 = 'fe80::1'.freeze
 
