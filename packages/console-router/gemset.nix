@@ -70,10 +70,10 @@
     platforms = [ ];
     source = {
       remotes = [ "https://rubygems.org" ];
-      sha256 = "0yjb2m348l5jb9917x4748iz8000pz1pcla1mbp55025s48sximl";
+      sha256 = "1pa9zpr51kqnsq549p6apvnr95s9flx6bnwqii24s8jg2b5i0p74";
       type = "gem";
     };
-    version = "7.0.4";
+    version = "7.1.0";
   };
   rack = {
     groups = [
