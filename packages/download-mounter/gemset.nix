@@ -2,12 +2,12 @@
   activesupport = {
     dependencies = [
       "base64"
-      "benchmark"
       "bigdecimal"
       "concurrent-ruby"
       "connection_pool"
       "drb"
       "i18n"
+      "json"
       "logger"
       "minitest"
       "securerandom"
@@ -18,10 +18,10 @@
     platforms = [ ];
     source = {
       remotes = [ "https://rubygems.org" ];
-      sha256 = "08vqq5y6vniz30p747xa8yfqb3cz8scqd8r65wij62v661gcw4d7";
+      sha256 = "02h73s0cimsfx81vgkaw1jx4cnhp3gs6qslk2qmbqyxy4l3z9bfl";
       type = "gem";
     };
-    version = "8.0.3";
+    version = "8.1.0";
   };
   base64 = {
     groups = [ "default" ];
@@ -32,16 +32,6 @@
       type = "gem";
     };
     version = "0.3.0";
-  };
-  benchmark = {
-    groups = [ "default" ];
-    platforms = [ ];
-    source = {
-      remotes = [ "https://rubygems.org" ];
-      sha256 = "1kicilpma5l0lwayqjb5577bm0hbjndj2gh150xz09xsgc1l1vyl";
-      type = "gem";
-    };
-    version = "0.4.1";
   };
   bigdecimal = {
     groups = [ "default" ];
