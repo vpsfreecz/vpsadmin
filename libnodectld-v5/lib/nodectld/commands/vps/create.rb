@@ -15,7 +15,7 @@ module NodeCtld
           cpu: @cpu,
           memory: @memory,
           kernel_path: '/run/nodectl/managed-vm/kernel',
-          kernel_cmdline: 'root=PARTUUID=fac0aeec-7358-4d5c-a3aa-ba899b14a17f ro console=hvc0 quiet',
+          kernel_cmdline: "root=PARTUUID=fac0aeec-7358-4d5c-a3aa-ba899b14a17f ro console=hvc0 quiet vpsadmin.cgroupv=#{@cgroup_version}",
           stage2_type: 'qcow2',
           stage2_path: '/run/nodectl/managed-vm/stage-2',
           config_path: File.join($CFG.get(:vpsadmin, :config_drive_dir), "#{@vps_id}.iso"),
