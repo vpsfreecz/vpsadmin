@@ -106,7 +106,8 @@ GEM
     language_server-protocol (3.17.0.5)
     lint_roller (1.1.0)
     logger (1.7.0)
-    mail (2.8.1)
+    mail (2.9.0)
+      logger
       mini_mime (>= 0.1.1)
       net-imap
       net-pop
@@ -306,4 +307,4 @@ DEPENDENCIES
   yard
 
 BUNDLED WITH
-   2.7.1
+   2.7.2
