@@ -161,6 +161,22 @@ class Vps < ApplicationRecord
   alias is_running? is_running
   alias running? is_running
 
+  def cgroup_version_number
+    ver =
+      if cgroup_version == 'cgroup_any'
+        os_template.cgroup_version
+      else
+        cgroup_version
+      end
+
+    case ver
+    when 'cgroup_any', 'cgroup_v1'
+      1
+    when 'cgroup_v2'
+      2
+    end
+  end
+
   private
 
   def set_lifetime
