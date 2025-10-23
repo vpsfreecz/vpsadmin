@@ -39,7 +39,8 @@ module Transactions::Vps
           console_port: vps.console_port.port,
           hostname: vps.manage_hostname ? vps.hostname : nil,
           distribution: vps.os_template.distribution,
-          version: vps.os_template.version
+          version: vps.os_template.version,
+          cgroup_version: vps.cgroup_version_number
         }
       end
     end
