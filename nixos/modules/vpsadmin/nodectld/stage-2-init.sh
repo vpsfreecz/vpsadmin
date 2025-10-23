@@ -5,9 +5,9 @@ fail() {
     exit 1
 }
 
-setCgroup() {
-    local pid="$1"
-    local relPath="$2"
+mkCgroup() {
+    local relPath="$1"
+    local subtreeControl="$2"
     local absPath
 
     case "$cgroupv" in
@@ -20,19 +20,33 @@ setCgroup() {
                     cat "$subsys/cpuset.cpus" > "$absPath/cpuset.cpus"
                     cat "$subsys/cpuset.mems" > "$absPath/cpuset.mems"
                 fi
-
-                echo $pid > "$absPath/cgroup.procs"
             done
             ;;
         2)
             absPath="/sys/fs/cgroup/$relPath"
             mkdir -p "$absPath"
 
-            for c in `cat /sys/fs/cgroup/cgroup.controllers` ; do
-                echo "+$c" >> "$absPath/cgroup.subtree_control"
-            done
+            if [ "$subtreeControl" == "subtree_control" ] ; then
+                for c in `cat /sys/fs/cgroup/cgroup.controllers` ; do
+                    echo "+$c" >> "$absPath/cgroup.subtree_control"
+                done
+            fi
+            ;;
+    esac
+}
 
-            echo $pid > "$absPath/cgroup.procs"
+setCgroup() {
+    local pid="$1"
+    local relPath="$2"
+
+    case "$cgroupv" in
+        1)
+            for subsys in /sys/fs/cgroup/* ; do
+                echo $pid > "$subsys/$relPath/cgroup.procs"
+            done
+            ;;
+        2)
+            echo $pid > "/sys/fs/cgroup/$relPath/cgroup.procs"
             ;;
     esac
 }
@@ -164,6 +178,7 @@ case "$cgroupv" in
         ;;
 esac
 
+mkCgroup init
 setCgroup $$ init
 
 echo "Starting qemu guest agent"
@@ -180,7 +195,7 @@ distconfig start
 echo "Starting managed container"
 mkdir -p /run/lxc /var/lib/lxc/vps /var/lib/lxc/rootfs /etc/lxc
 
-setCgroup $$ container
+setCgroup $$ /
 
 lxc-start -F -n vps -P /var/lib/lxc &
 lxcPid=$!
