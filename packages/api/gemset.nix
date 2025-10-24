@@ -1422,14 +1422,6 @@
       "safety_net_attestation"
       "tpm-key_attestation"
     ];
-    groups = [ "default" ];
-    platforms = [ ];
-    source = {
-      remotes = [ "https://rubygems.org" ];
-      sha256 = "1w4g9qcz9m4ri62m9g5rx1kzyzvb4q6p1ihf263np24niz3a9dq9";
-      type = "gem";
-    };
-    version = "3.4.2";
   };
   webrick = {
     groups = [ "development" ];
