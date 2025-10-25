@@ -6,57 +6,62 @@ require 'nodectld/utils'
 
 module NodeCtld
   class Vps
-    START_TIMEOUT = 'infinity'.freeze
-
     include OsCtl::Lib::Utils::Log
     include Utils::System
-    include Utils::OsCtl
-    include Utils::Zfs
+    include Utils::Libvirt
 
-    def initialize(veid, cmd = nil)
-      @veid = veid
+    def initialize(domain, cmd: nil)
+      @domain = domain
+      @vps_id = domain.name
       @cmd = cmd
     end
 
-    def start(start_timeout, autostart_priority)
-      osctl(%i[ct start], @veid, { wait: start_timeout || START_TIMEOUT })
-      osctl(%i[ct set autostart], @veid, { priority: autostart_priority })
+    def start(autostart_priority: nil)
+      @domain.create
     end
 
-    def stop(kill: false)
-      stop_opts = {}
-      stop_opts[:kill] = true if kill
+    def stop(kill: false, timeout: 300)
+      begin
+        st, = distconfig(@domain, %W[stop #{kill ? 'kill' : 'stop'} #{timeout}])
+      rescue Libvirt::Error => e
+        log(:warn, "Error during graceful shutdown of VPS #{@vps_id}: #{e.message} (#{e.class})")
+      end
 
-      osctl(%i[ct stop], @veid, stop_opts)
-      osctl(%i[ct unset autostart], @veid)
+      if st == 0
+        60.times do
+          return unless @domain.active?
+
+          log(:debug, "Waiting for VPS #{@vps_id} to gracefully shutdown")
+          sleep(1)
+        end
+      end
+
+      begin
+        @domain.destroy
+      rescue Libvirt::Error
+        # pass
+      end
+
+      nil
     end
 
-    def restart(start_timeout, autostart_priority)
-      osctl(%i[ct restart], @veid, { wait: start_timeout || START_TIMEOUT })
-      osctl(%i[ct set autostart], @veid, { priority: autostart_priority })
+    def restart(autostart_priority: nil)
+      stop
+      start(autostart_priority:)
     end
 
     def passwd(user, password)
       osctl(%i[ct passwd], [@veid, user, password])
     end
 
-    def load_file(file)
-      vzctl(:exec, @veid, "cat #{file}")
-    end
-
-    def status
-      osctl_parse(%i[ct show], @veid)[:state].to_sym
-    end
-
     def honor_state
-      before = status
+      before = @domain.active?
       yield
-      after = status
+      after = @domain.active?
 
-      if before == :running && after != :running
+      if before && !after
         start
-
-      elsif before != :running && after == :running
+      elsif !before && after
         stop
       end
     end
@@ -65,7 +70,7 @@ module NodeCtld
       if @cmd
         @cmd.log_type
       else
-        "vps=#{@veid}"
+        "vps=#{@vps_id}"
       end
     end
   end
