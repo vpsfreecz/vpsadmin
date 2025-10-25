@@ -306,6 +306,12 @@ module NodeCtld
 
       run_thread_unless_runs(:vps_status) do
         # TODO: implement VPS statuses with libvirt
+        loop do
+          log(:info, :regular, 'Update VPS status')
+
+          @vps_status.update
+          sleep($CFG.get(:vpsadmin, :vps_status_interval))
+        end
       end
 
       run_thread_unless_runs(:vps_monitor) do

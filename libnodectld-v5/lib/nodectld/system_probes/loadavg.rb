@@ -9,6 +9,8 @@ module NodeCtld::SystemProbes
       data ||= File.read('/proc/loadavg')
       parsed = data.split
 
+      raise ParserError if parsed.length < 5
+
       @avg = {
         1 => parsed[0].to_f,
         5 => parsed[1].to_f,

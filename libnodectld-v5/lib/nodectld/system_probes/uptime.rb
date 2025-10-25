@@ -9,6 +9,8 @@ module NodeCtld::SystemProbes
       data ||= File.read('/proc/uptime')
       parsed = data.split
 
+      raise ParserError if parsed.length < 2
+
       @uptime = parsed[0].to_f
       @idle_process = parsed[1].to_f
     end
