@@ -5,7 +5,7 @@ module NodeCtld
     def exec
       conn = LibvirtClient.new
       dom = conn.lookup_domain_by_uuid(@vps_uuid)
-      dom.create
+      Vps.new(dom, cmd: self).start(autostart_priority: @autostart_priority)
       ok
     end
 
@@ -14,11 +14,7 @@ module NodeCtld
         conn = LibvirtClient.new
         dom = conn.lookup_domain_by_uuid(@vps_uuid)
 
-        begin
-          dom.destroy # TODO: graceful shutdown
-        rescue Libvirt::Error
-          # pass
-        end
+        Vps.new(dom, cmd: self).stop
       end
 
       ok

@@ -1,17 +1,13 @@
 module NodeCtld
   class Commands::Vps::Stop < Commands::Base
     handle 1002
-    needs :system
+    needs :system, :libvirt
 
     def exec
       conn = LibvirtClient.new
       dom = conn.lookup_domain_by_uuid(@vps_uuid)
 
-      begin
-        dom.destroy # TODO: graceful shutdown
-      rescue Libvirt::Error
-        # pass
-      end
+      Vps.new(dom, cmd: self).stop(kill: @kill)
 
       ok
     end
@@ -20,7 +16,7 @@ module NodeCtld
       if @rollback_stop
         conn = LibvirtClient.new
         dom = conn.lookup_domain_by_uuid(@vps_uuid)
-        dom.create
+        Vps.new(dom, cmd: self).start(autostart_priority: @autostart_priority)
       end
 
       ok
