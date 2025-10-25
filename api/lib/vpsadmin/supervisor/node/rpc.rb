@@ -171,8 +171,10 @@ module VpsAdmin::Supervisor
         ).map do |vps|
           {
             id: vps.id,
+            uuid: vps.uuid.uuid,
             read_hostname: !vps.manage_hostname,
-            pool_fs: vps.dataset_in_pool.pool.filesystem
+            cgroup_version: vps.cgroup_version_number,
+            pool_fs: vps.dataset_in_pool&.pool&.filesystem
           }
         end
       end
