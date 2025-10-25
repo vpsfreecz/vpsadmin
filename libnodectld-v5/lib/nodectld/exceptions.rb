@@ -8,4 +8,6 @@ module NodeCtld
   class TransactionCheckError < StandardError; end
 
   class RemoteCommandError < StandardError; end
+
+  class ParserError < StandardError; end
 end
