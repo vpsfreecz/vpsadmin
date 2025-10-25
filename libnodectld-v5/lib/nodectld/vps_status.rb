@@ -3,19 +3,20 @@ require 'time'
 require 'libosctl'
 require 'nodectld/utils'
 require 'nodectld/exceptions'
-require 'nodectld/system_probes'
 
 module NodeCtld
   class VpsStatus
     class Entry
-      attr_reader :id, :read_hostname
+      attr_reader :id, :uuid, :read_hostname, :cgroup_version
       attr_accessor :exists, :running, :hostname, :uptime, :cpu_usage, :memory,
                     :nproc, :loadavg, :in_rescue_mode
 
       def initialize(row)
         @skip = false
         @id = row['id'].to_s
+        @uuid = row['uuid']
         @read_hostname = row['read_hostname']
+        @cgroup_version = row['cgroup_version']
         @in_rescue_mode = false
       end
 
@@ -34,23 +35,19 @@ module NodeCtld
 
     include OsCtl::Lib::Utils::Log
     include Utils::System
-    include Utils::OsCtl
+    include Utils::Libvirt
     include Utils::Vps
 
     @@mutex = Mutex.new
 
     def initialize
-      @tics_per_sec = Etc.sysconf(Etc::SC_CLK_TCK).to_i
+      @prev = {}
       @channel = NodeBunny.create_channel
       @exchange = @channel.direct(NodeBunny.exchange_name)
     end
 
-    # @param top_data [Hash] data from osctl ct top
-    def update(top_data)
+    def update
       @@mutex.synchronize do
-        @top_data = top_data
-        @host_uptime = SystemProbes::Uptime.new.uptime
-
         safe_update
       end
     end
@@ -60,91 +57,49 @@ module NodeCtld
 
       fetch_vpses.each do |vps|
         ent = Entry.new(vps)
-        vpsadmin_vpses[ent.id] = ent
+        vpsadmin_vpses[ent.uuid] = ent
       end
 
-      t = Time.now
-      cts = ct_list
-
-      begin
-        lavgs = OsCtl::Lib::LoadAvgReader.read_for(cts)
-      rescue StandardError => e
-        log(:warn, :vps_status, "Unable to read load averages: #{e.message} (#{e.class})")
-        lavgs = {}
-      end
+      conn = LibvirtClient.new
+      domains = conn.list_all_domains
 
       hostname_vpsadmin_vpses = []
 
-      cts.each do |ct|
-        vpsadmin_vps = vpsadmin_vpses[ct.id]
+      domains.each do |dom|
+        t = Time.now
+
+        vpsadmin_vps = vpsadmin_vpses[dom.uuid]
         next if vpsadmin_vps.nil?
 
         vpsadmin_vps.exists = true
-        vpsadmin_vps.running = ct.state == 'running'
+        vpsadmin_vps.running = dom.active?
 
-        next unless vpsadmin_vps.running?
-
-        # Find matching stats from ct top
-        apply_usage_stats(vpsadmin_vps)
-
-        run_or_skip(vpsadmin_vps) do
-          vpsadmin_vps.uptime = read_uptime(ct.init_pid)
+        unless vpsadmin_vps.running?
+          report_status(vpsadmin_vps, t)
+          next
         end
 
-        # Set loadavg
-        lavg = lavgs["#{ct.pool}:#{ct.id}"]
+        prev = @prev[dom.uuid]
+        info = dom.info
 
-        vpsadmin_vps.loadavg = (lavg.avg if lavg)
+        if prev
+          dt = t - prev[:time]
 
-        # Read hostname if it isn't managed by vpsAdmin
-        if vpsadmin_vps.read_hostname?
-          hostname_vpsadmin_vpses << vpsadmin_vps
-          vpsadmin_vps.hostname = 'unable-to-read'
+          vpsadmin_vps.cpu_usage = [((info.cpu_time - prev[:cpu_time]).to_f / (dt * 1_000_000_000.0)) * 100.0, 0].max
+
+          vpsadmin_vps.memory = get_memory_stats(dom)['rss'] || (info.memory * 1024)
+
+          read_guest_info(vpsadmin_vps, dom)
         end
 
-        # Detect osctl ct boot
-        if ct.in_ct_boot?
-          vpsadmin_vps.in_rescue_mode = true
-        end
-      end
+        # TODO: detect rescue mode
 
-      # Query hostname of VPSes with manual configuration
-      if hostname_vpsadmin_vpses.any?
-        begin
-          osctl_parse(
-            %i[ct ls],
-            hostname_vpsadmin_vpses.map(&:id),
-            { output: %w[id hostname_readout].join(',') }
-          ).each do |ct|
-            vpsadmin_vpses[ct[:id]].hostname = ct[:hostname_readout] || 'unable-to-read'
-          end
-        rescue SystemCommandFailed => e
-          log(:warn, :vps_status, "Unable to read VPS hostnames: #{e.message}")
-        end
-      end
+        @prev[dom.uuid] = {
+          time: t,
+          cpu_time: info.cpu_time
+        }
 
-      # Send results to supervisor
-      vpsadmin_vpses.each_value do |vps|
-        next unless vps.exists?
-
-        NodeBunny.publish_wait(
-          @exchange,
-          {
-            id: vps.id.to_i,
-            time: t.to_i,
-            status: !vps.skip?,
-            running: vps.running?,
-            in_rescue_mode: vps.in_rescue_mode,
-            uptime: vps.uptime,
-            loadavg: vps.loadavg,
-            process_count: vps.nproc,
-            used_memory: vps.memory,
-            cpu_usage: vps.cpu_usage,
-            hostname: vps.hostname
-          }.to_json,
-          content_type: 'application/json',
-          routing_key: 'vps_statuses'
-        )
+        report_status(vpsadmin_vps, t)
       end
     rescue SystemCommandFailed => e
       log(:fatal, :vps_status, e.message)
@@ -156,10 +111,6 @@ module NodeCtld
       RpcClient.run(&:list_vps_status_check)
     end
 
-    def ct_list
-      osctl_parse(%i[ct ls]).map { |v| OsCtlContainer.new(v) }
-    end
-
     def run_or_skip(vps)
       yield
     rescue StandardError => e
@@ -167,37 +118,115 @@ module NodeCtld
       vps.skip
     end
 
-    def apply_usage_stats(vps)
-      st = @top_data.detect { |ct| ct[:id] == vps.id }
+    def get_memory_stats(dom)
+      ret = {}
 
-      # It may happen that `osctl ct top` does not yet have information
-      # about a newly started VPS.
-      unless st
-        log(:warn, :vps, "VPS #{vps.id} not found in ct top")
-        vps.skip
+      dom.memory_stats.each do |st|
+        key =
+          case st.tag
+          when Libvirt::Domain::MemoryStats::ACTUAL_BALLOON
+            'actual'
+          when Libvirt::Domain::MemoryStats::AVAILABLE
+            'available'
+          when Libvirt::Domain::MemoryStats::MAJOR_FAULT
+            'major_fault'
+          when Libvirt::Domain::MemoryStats::MINOR_FAULT
+            'minor_fault'
+          when Libvirt::Domain::MemoryStats::RSS
+            'rss'
+          when Libvirt::Domain::MemoryStats::SWAP_IN
+            'swap_in'
+          when Libvirt::Domain::MemoryStats::SWAP_OUT
+            'swap_out'
+          when Libvirt::Domain::MemoryStats::UNUSED
+            'unused'
+          end
+
+        next if key.nil?
+
+        # libvirt returns values in kB
+        ret[key] = st.instance_variable_get('@val') * 1024
+      end
+
+      ret
+    end
+
+    def read_guest_info(vpsadmin_vps, dom)
+      vpsadmin_vps.uptime = 1
+      vpsadmin_vps.loadavg = { 1 => 0, 5 => 0, 15 => 0 }
+      vpsadmin_vps.nproc = 0
+
+      cat_files = %w[/proc/uptime /proc/loadavg]
+
+      cat_files << if vpsadmin_vps.cgroup_version == 1
+                     '/sys/fs/cgroup/pids/lxc.payload.vps/pids.current'
+                   else
+                     '/sys/fs/cgroup/lxc.payload.vps/pids.current'
+                   end
+
+      begin
+        st, out, err = vmexec(dom, %w[cat] + cat_files)
+      rescue Libvirt::Error => e
+        log(:warn, "Error occurred while reading stats from VPS #{vpsadmin_vps.id}: #{e.message}")
         return
       end
 
-      vps.cpu_usage = st[:cpu_usage]
-      vps.memory = st[:memory] # in bytes
-      vps.nproc = st[:nproc]
+      if st != 0
+        log(:warn, "Reading status from VPS #{vpsadmin_vps.id} exited with #{st}: #{err.inspect}")
+      end
+
+      uptime_data, loadavg_data, nproc = out.strip.split("\n")
+
+      begin
+        vpsadmin_vps.uptime = SystemProbes::Uptime.new(uptime_data || '').uptime
+      rescue ParserError
+        # pass
+      end
+
+      begin
+        vpsadmin_vps.loadavg = SystemProbes::LoadAvg.new(loadavg_data || '').avg
+      rescue ParserError
+        # pass
+      end
+
+      vpsadmin_vps.nproc = nproc.to_i
+
+      return unless vpsadmin_vps.read_hostname?
+
+      begin
+        st, out, = vmctexec(dom, %w[cat /proc/sys/kernel/hostname])
+      rescue Libvirt::Error => e
+        log(:warn, "Error occurred while reading hostname from VPS #{vpsadmin_vps.id}: #{e.message}")
+        return
+      end
+
+      if st == 0
+        vpsadmin_vps.hostname = out.strip
+      else
+        log(:warn, "Reading hostname from VPS #{vpsadmin_vps.id} exited with #{st}: #{err.inspect}")
+        vpsadmin_vps.hostname = 'unable-to-read'
+      end
     end
 
-    # Read the container's uptime
-    #
-    # The uptime of the container can be thought of as the time since its
-    # init process has started. Process start time can be found in
-    # `/proc/<pid>/stat`, the 22nd field, see proc(5). The value is stored
-    # in clock ticks since the system boot, so we divide that by ticks per
-    # second, and substract it from the host's uptime.
-    #
-    # @param init_pid [String,Integer]
-    def read_uptime(init_pid)
-      f = File.open(File.join('/proc', init_pid.to_s, 'stat'), 'r')
-      str = f.readline.strip
-      f.close
-
-      @host_uptime - (str.split[21].to_i / @tics_per_sec)
+    def report_status(vps, t)
+      NodeBunny.publish_wait(
+        @exchange,
+        {
+          id: vps.id.to_i,
+          time: t.to_i,
+          status: !vps.skip?,
+          running: vps.running?,
+          in_rescue_mode: vps.in_rescue_mode,
+          uptime: vps.uptime,
+          loadavg: vps.loadavg,
+          process_count: vps.nproc,
+          used_memory: vps.memory,
+          cpu_usage: vps.cpu_usage,
+          hostname: vps.hostname
+        }.to_json,
+        content_type: 'application/json',
+        routing_key: 'vps_statuses'
+      )
     end
   end
 end
