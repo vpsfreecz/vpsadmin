@@ -48,6 +48,8 @@ module DistConfig
           '90-vpsadminos-network.sh'
         )
         File.write(sv, cmds.join("\n")) if writable?(sv)
+
+        generate_netif_rename_rules(netifs)
       end
 
       protected
