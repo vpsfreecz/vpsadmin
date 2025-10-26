@@ -16,19 +16,24 @@ module NodeCtld
       /var/guix/profiles/system/profile/sbin
     ].freeze
 
-    def vmexec(domain, command, timeout: 60)
+    def vmexec(domain, command, env: [], input: nil, timeout: 60)
       t1 = Time.now
 
       cmd = command[0]
       args = command[1..]
 
+      exec_args = {
+        'path' => cmd,
+        'arg' => args,
+        'env' => env,
+        'capture-output' => true
+      }
+
+      exec_args['input-data'] = Base64.encode64(input) if input
+
       job_json = domain.qemu_agent_command({
         'execute' => 'guest-exec',
-        'arguments' => {
-          'path' => cmd,
-          'arg' => args,
-          'capture-output' => true
-        }
+        'arguments' => exec_args
       }.to_json)
 
       job_pid = JSON.parse(job_json)['return']['pid'].to_i
