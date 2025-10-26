@@ -51,7 +51,7 @@ module NodeCtld
     end
 
     def passwd(user, password)
-      osctl(%i[ct passwd], [@veid, user, password])
+      distconfig!(@domain, %W[passwd #{user}], input: password)
     end
 
     def honor_state
