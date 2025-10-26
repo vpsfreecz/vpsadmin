@@ -29,6 +29,8 @@ module DistConfig
     end
 
     def configure(netifs)
+      super
+
       netifs.each do |netif|
         do_create_connection(netif)
       end
