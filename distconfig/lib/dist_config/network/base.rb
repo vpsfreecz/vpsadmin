@@ -21,7 +21,7 @@ module DistConfig
 
     # @param netifs [Array<NetworkInterface>]
     def configure(netifs)
-      raise NotImplementedError
+      configurator.generate_netif_rename_rules(netifs)
     end
 
     # Called when a new network interface is added to a container
