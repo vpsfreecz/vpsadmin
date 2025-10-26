@@ -22,6 +22,8 @@ module DistConfig
         ct,
         "Unable to configure network: #{vps_config.distribution} not supported"
       )
+
+      generate_netif_rename_rules(netifs)
     end
   end
 end

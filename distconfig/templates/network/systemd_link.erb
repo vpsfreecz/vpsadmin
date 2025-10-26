@@ -1,0 +1,7 @@
+<% netifs.each do |netif| -%>
+[Match]
+MACAddress=<%= netif.guest_mac %>
+[Link]
+Name=<%= netif.guest_name %>
+
+<% end -%>

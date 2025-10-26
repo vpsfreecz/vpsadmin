@@ -12,6 +12,8 @@ module DistConfig
     end
 
     def configure(netifs)
+      super
+
       set_params(
         File.join(rootfs, 'etc/sysconfig/network'),
         { 'NETWORKING' => 'yes' }
