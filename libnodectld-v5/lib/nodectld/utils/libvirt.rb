@@ -74,8 +74,21 @@ module NodeCtld
       )
     end
 
-    def distconfig(domain, command, timeout: 60)
-      vmexec(domain, %w[distconfig] + command, timeout:)
+    def distconfig(domain, command, input: nil, timeout: 60)
+      env = [
+        'LANG=en_US.UTF-8',
+        'LOCALE_ARCHIVE=/run/current-system/sw/lib/locale/locale-archive',
+        'PATH=/run/current-system/sw/bin'
+      ]
+
+      vmexec(domain, %w[distconfig] + command, env:, input:, timeout:)
+    end
+
+    def distconfig!(*, **)
+      ret = distconfig(*, **)
+      return ret if ret[0] == 0
+
+      raise "distconfig failed with #{ret[0]}: #{ret[2].inspect}"
     end
   end
 end
