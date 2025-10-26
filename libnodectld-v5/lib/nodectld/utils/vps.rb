@@ -2,12 +2,17 @@ require 'libosctl'
 
 module NodeCtld
   module Utils::Vps
-    def find_ct(vps_id = nil)
-      Ct.new(osctl_parse(%i[ct show], vps_id || @vps_id))
+    def find_domain_by_uuid(vps_uuid: nil)
+      @conn ||= LibvirtClient.new
+      @conn.lookup_domain_by_uuid(vps_uuid || @vps_uuid)
     end
 
-    def ct
-      @ct || (@ct = find_ct)
+    def domain
+      @domain || (@domain = find_domain_by_uuid)
+    end
+
+    def vps
+      @vps || (@vps = Vps.new(domain, cmd: self))
     end
 
     def status
