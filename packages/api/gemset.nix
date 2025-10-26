@@ -470,17 +470,6 @@
     version = "0.8.3";
   };
   json = {
-    groups = [
-      "default"
-      "development"
-    ];
-    platforms = [ ];
-    source = {
-      remotes = [ "https://rubygems.org" ];
-      sha256 = "128bp3mihh175l9wm7hgg9sdisp6hd3kf36fw01iksqnq7kv5hdi";
-      type = "gem";
-    };
-    version = "2.15.1";
   };
   json-jwt = {
     dependencies = [
