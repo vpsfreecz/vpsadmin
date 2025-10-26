@@ -9,6 +9,7 @@ module Transactions::Vps
       self.node_id = vps.node_id
 
       {
+        vps_uuid: vps.uuid.uuid,
         user: 'root',
         password: passwd
       }

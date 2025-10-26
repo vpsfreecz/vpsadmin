@@ -1,9 +1,10 @@
 module NodeCtld
   class Commands::Vps::Passwd < Commands::Base
     handle 2002
+    needs :libvirt, :vps
 
     def exec
-      Vps.new(@vps_id).passwd(@user, @password)
+      vps.passwd(@user, @password)
       ok
     end
 
