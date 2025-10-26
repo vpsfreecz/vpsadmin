@@ -1,13 +1,10 @@
 module NodeCtld
   class Commands::Vps::Restart < Commands::Base
     handle 1003
+    needs :vps
 
     def exec
-      conn = LibvirtClient.new
-      dom = conn.lookup_domain_by_uuid(@vps_uuid)
-
-      Vps.new(dom, cmd: self).restart(autostart_priority: @autostart_priority)
-
+      vps.restart(autostart_priority: @autostart_priority)
       ok
     end
 
