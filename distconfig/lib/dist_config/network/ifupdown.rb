@@ -8,6 +8,8 @@ module DistConfig
     end
 
     def configure(netifs)
+      super
+
       base = File.join(rootfs, 'etc', 'network')
       config = File.join(base, 'interfaces')
       return unless writable?(config)

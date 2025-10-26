@@ -1,0 +1,3 @@
+<% netifs.each do |netif| -%>
+SUBSYSTEM=="net", ACTION=="add", TEST!="/run/systemd/system", ATTR{address}=="<%= netif.guest_mac %>", NAME="<%= netif.guest_name %>"
+<% end -%>

@@ -90,6 +90,22 @@ module DistConfig
       network_backend && network_backend.rename_netif(netifs, netif, old_name)
     end
 
+    # Generate systemd/udev rules to configure network interface names
+    # @param netifs [Array<NetworkInterface>]
+    def generate_netif_rename_rules(netifs)
+      ErbTemplate.render_to_if_changed(
+        'network/systemd_link',
+        { netifs: },
+        File.join(rootfs, 'etc/systemd/network/10-vpsadmin-netifs.link')
+      )
+
+      ErbTemplate.render_to_if_changed(
+        'network/udev_rules',
+        { netifs: },
+        File.join(rootfs, 'etc/udev/rules.d/10-vpsadmin-netifs.rules')
+      )
+    end
+
     # Configure DNS resolvers
     # @param resolvers [Array<String>]
     def dns_resolvers(resolvers)
