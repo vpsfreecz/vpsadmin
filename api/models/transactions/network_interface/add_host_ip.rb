@@ -11,13 +11,24 @@ module Transactions::NetworkInterface
       self.vps_id = netif.vps.id
       self.node_id = netif.vps.node_id
 
-      {
-        pool_fs: (pool || netif.vps.dataset_in_pool.pool).filesystem,
-        interface: netif.name,
-        addr: addr.ip_addr,
-        prefix: addr.ip_address.prefix,
-        version: addr.version
-      }
+      if netif.vps.container?
+        {
+          pool_fs: (pool || netif.vps.dataset_in_pool.pool).filesystem,
+          interface: netif.name,
+          addr: addr.ip_addr,
+          prefix: addr.ip_address.prefix,
+          version: addr.version
+        }
+      else
+        {
+          vps_uuid: netif.vps.uuid.uuid,
+          host_name: netif.host_name,
+          guest_name: netif.guest_name,
+          addr: addr.ip_addr,
+          prefix: addr.ip_address.prefix,
+          version: addr.version
+        }
+      end
     end
   end
 end
