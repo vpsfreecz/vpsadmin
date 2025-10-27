@@ -8,7 +8,7 @@ module DistConfig
       DistConfig::Configurator
     end
 
-    def set_hostname(_opts = {})
+    def set_hostname(*_)
       log(
         :warn,
         ct,
@@ -16,7 +16,7 @@ module DistConfig
       )
     end
 
-    def network(_opts = {})
+    def network
       log(
         :warn,
         ct,

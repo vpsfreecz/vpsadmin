@@ -55,27 +55,31 @@ module DistConfig
     end
 
     # Run just before the container is started
-    def start(_opts = {})
+    def start
       return if !vps_config.hostname && !vps_config.dns_resolvers && vps_config.network_interfaces.empty?
 
       setup_network_interfaces
 
       with_rootfs do
-        set_hostname if vps_config.hostname
-        dns_resolvers if vps_config.dns_resolvers
+        if vps_config.hostname
+          configurator.set_hostname(vps_config.hostname)
+          configurator.update_etc_hosts(vps_config.hostname)
+        end
+
+        configurator.dns_resolvers(vps_config.dns_resolvers) if vps_config.dns_resolvers
+
         network
         nil
       end
     end
 
     # Gracefully stop the container
-    # @param opts [Hash]
-    # @option opts [:stop, :shutdown, :kill] :mode
-    # @option opts [Integer] :timeout
-    def stop(opts)
-      cmd = ['lxc-stop', '-n', @ct, '--timeout', opts.fetch(:timeout, 300).to_s]
+    # @param mode [:stop, :shutdown, :kill]
+    # @param timeout [Integer]
+    def stop(mode: :stop, timeout: 300)
+      cmd = ['lxc-stop', '-n', @ct, '--timeout', timeout.to_s]
 
-      case opts.fetch(:mode, :stop)
+      case mode
       when :stop
         # pass
       when :shutdown
@@ -83,26 +87,21 @@ module DistConfig
       when :kill
         cmd << '--kill'
       else
-        raise ArgumentError, "Unknown mode #{opts[:mode].inspect}"
+        raise ArgumentError, "Unknown mode #{mode.inspect}"
       end
 
       return if system(*cmd)
 
-      raise "#{opts[:mode]} failed"
+      raise "#{mode} failed"
     end
 
     # Set container hostname
-    #
-    # @param opts [Hash] options
-    # @option opts [String] :hostname
-    # @option opts [String] :old_hostname
-    def set_hostname(opts = {})
-      if opts[:hostname] && opts[:hostname] != vps_config.hostname.to_s
-        old_hostname = vps_config.hostname
+    # @param hostname [String]
+    def set_hostname(hostname)
+      old_hostname = vps_config.hostname
 
-        vps_config.hostname = Hostname.new(opts[:hostname])
-        vps_config.save
-      end
+      vps_config.hostname = Hostname.new(hostname)
+      vps_config.save
 
       with_rootfs do
         configurator.set_hostname(vps_config.hostname, old_hostname:)
@@ -113,6 +112,12 @@ module DistConfig
       apply_hostname unless @within_rootfs
     end
 
+    # Unset container hostname
+    def unset_hostname
+      vps_config.hostname = nil
+      vps_config.save
+    end
+
     # Configure hostname in a running system
     def apply_hostname
       log(:warn, "Unable to apply hostname on #{vps_config.distribution}: not implemented")
@@ -121,17 +126,16 @@ module DistConfig
     # Update hostname in `/etc/hosts`, optionally removing configuration of old
     # hostname.
     #
-    # @param opts [Hash] options
-    # @option opts [Hostname, nil] :old_hostname
-    def update_etc_hosts(opts = {})
+    # @param old_hostname [Hostname, nil]
+    def update_etc_hosts(old_hostname: nil)
       with_rootfs do
-        configurator.update_etc_hosts(vps_config.hostname, old_hostname: opts[:old_hostname])
+        configurator.update_etc_hosts(vps_config.hostname, old_hostname:)
         nil
       end
     end
 
     # Remove the vpsAdmin-generated notice from /etc/hosts
-    def unset_etc_hosts(_opts = {})
+    def unset_etc_hosts
       with_rootfs do
         configurator.unset_etc_hosts
         nil
@@ -157,7 +161,7 @@ module DistConfig
       end
     end
 
-    def network(_opts = {})
+    def network
       with_rootfs do
         configurator.network(vps_config.network_interfaces)
         nil
@@ -165,45 +169,41 @@ module DistConfig
     end
 
     # Called when a new network interface is added to a container
-    # @param opts [Hash]
-    # @option opts [String] :netif
-    def add_netif(opts)
+    # @param netif [String]
+    def add_netif(netif)
       with_rootfs do
-        configurator.add_netif(vps_config.network_interfaces, opts[:netif])
+        configurator.add_netif(vps_config.network_interfaces, netif)
         nil
       end
     end
 
     # Called when a network interface is removed from a container
-    # @param opts [Hash]
-    # @option opts [String] :netif
-    def remove_netif(opts)
+    # @param netif [String]
+    def remove_netif
       with_rootfs do
-        configurator.remove_netif(vps_config.network_interfaces, opts[:netif])
+        configurator.remove_netif(vps_config.network_interfaces, netif)
         nil
       end
     end
 
     # Called when an existing network interface is renamed
-    # @param opts [Hash]
-    # @option opts [String] :netif
-    # @option opts [String] :original_name
-    def rename_netif(opts)
+    # @param netif [String]
+    # @param original_name [String]
+    def rename_netif(netif, original_name)
       with_rootfs do
-        configurator.rename_netif(vps_config.network_interfaces, opts[:netif], opts[:original_name])
+        configurator.rename_netif(vps_config.network_interfaces, netif, original_name)
         nil
       end
     end
 
-    # @param opts [Hash]
-    # @option opts [String] :netif
-    # @option opts [String] :addr
-    # @option opts [Integer] :prefix
-    def add_host_addr(opts)
-      netif = vps_config.network_interfaces.detect { |n| n.guest_name == opts[:netif] }
-      raise "Network interface #{opts[:netif].inspect} not found" if netif.nil?
+    # @param netif [String]
+    # @param addr [String]
+    # @param prefix [Integer]
+    def add_host_addr(netif, addr, prefix)
+      network_interface = vps_config.network_interfaces.detect { |n| n.guest_name == netif }
+      raise "Network interface #{netif.inspect} not found" if network_interface.nil?
 
-      ip = netif.add_ip(opts[:addr], opts[:prefix])
+      ip = network_interface.add_ip(addr, prefix)
       vps_config.save
 
       ct_syscmd(
@@ -212,15 +212,14 @@ module DistConfig
       )
     end
 
-    # @param opts [Hash]
-    # @option opts [String] :netif
-    # @option opts [String] :addr
-    # @option opts [Integer] :prefix
-    def remove_host_addr(opts)
-      netif = vps_config.network_interfaces.detect { |n| n.guest_name == opts[:netif] }
-      raise "Network interface #{opts[:netif].inspect} not found" if netif.nil?
+    # @param netif [String]
+    # @param addr [String]
+    # @param prefix [Integer]
+    def remove_host_addr(netif, addr, prefix)
+      network_interface = vps_config.network_interfaces.detect { |n| n.guest_name == netif }
+      raise "Network interface #{netif.inspect} not found" if network_interface.nil?
 
-      ip = netif.remove_ip(opts[:addr], opts[:prefix])
+      ip = network_interface.remove_ip(addr, prefix)
       vps_config.save
 
       ct_syscmd(
@@ -229,20 +228,28 @@ module DistConfig
       )
     end
 
-    def dns_resolvers(_opts = {})
+    # @param dns_resolvers [Array<String>]
+    def set_dns_resolvers(dns_resolvers)
+      vps_config.dns_resolvers = dns_resolvers
+      vps_config.save
+
       with_rootfs do
-        configurator.dns_resolvers(vps_config.dns_resolvers)
+        configurator.dns_resolvers(dns_resolvers)
         nil
       end
     end
 
-    # @param opts [Hash] options
-    # @option opts [String] user
-    # @option opts [String] password
-    def passwd(opts)
+    def unset_dns_resolvers
+      vps_config.dns_resolvers = nil
+      vps_config.save
+    end
+
+    # @param user [String]
+    # @param password [String]
+    def passwd(user, password)
       ret = ct_syscmd(
         %w[chpasswd],
-        stdin: "#{opts[:user]}:#{opts[:password]}\n",
+        stdin: "#{user}:#{password}\n",
         run: true,
         valid_rcs: :all
       )
@@ -252,27 +259,25 @@ module DistConfig
       log(:warn, "Unable to set password: #{ret.output}")
     end
 
-    # @param opts [Hash] options
-    # @option opts [String] public_key
-    def add_authorized_key(opts)
+    # @param public_key [String]
+    def add_authorized_key(public_key)
       with_rootfs do
-        configurator.add_authorized_key(opts[:public_key])
+        configurator.add_authorized_key(public_key)
         nil
       end
     end
 
-    # @param opts [Hash] options
-    # @option opts [String] public_key
-    def remove_authorized_key(opts)
+    # @param public_key [String]
+    def remove_authorized_key(public_key)
       with_rootfs do
-        configurator.remove_authorized_key(opts[:public_key])
+        configurator.remove_authorized_key(public_key)
         nil
       end
     end
 
     # Return path to `/bin` or an alternative, where a shell is looked up
     # @return [String]
-    def bin_path(_opts)
+    def bin_path
       '/bin'
     end
 
