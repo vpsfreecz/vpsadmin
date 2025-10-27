@@ -187,6 +187,40 @@ module DistConfig
       end
     end
 
+    # @param opts [Hash]
+    # @option opts [String] :netif
+    # @option opts [String] :addr
+    # @option opts [Integer] :prefix
+    def add_host_addr(opts)
+      netif = vps_config.network_interfaces.detect { |n| n.guest_name == opts[:netif] }
+      raise "Network interface #{opts[:netif].inspect} not found" if netif.nil?
+
+      ip = netif.add_ip(opts[:addr], opts[:prefix])
+      vps_config.save
+
+      ct_syscmd(
+        %W[ip -#{ip.version} addr add #{ip.to_string} dev #{netif.guest_name}],
+        valid_rcs: :all
+      )
+    end
+
+    # @param opts [Hash]
+    # @option opts [String] :netif
+    # @option opts [String] :addr
+    # @option opts [Integer] :prefix
+    def remove_host_addr(opts)
+      netif = vps_config.network_interfaces.detect { |n| n.guest_name == opts[:netif] }
+      raise "Network interface #{opts[:netif].inspect} not found" if netif.nil?
+
+      ip = netif.remove_ip(opts[:addr], opts[:prefix])
+      vps_config.save
+
+      ct_syscmd(
+        %W[ip -#{ip.version} addr del #{ip.to_string} dev #{netif.guest_name}],
+        valid_rcs: :all
+      )
+    end
+
     def dns_resolvers(_opts = {})
       with_rootfs do
         configurator.dns_resolvers(vps_config.dns_resolvers)
