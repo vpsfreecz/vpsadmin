@@ -42,6 +42,7 @@ module DistConfig
     attr_reader :guest_mac
 
     def initialize(cfg)
+      @host_name = cfg.fetch('host_name')
       @guest_name = cfg.fetch('guest_name')
       @type = cfg.fetch('type')
       @dhcp = cfg.fetch('dhcp', false)
@@ -73,6 +74,20 @@ module DistConfig
       when 6
         DEFAULT_IPV6
       end
+    end
+
+    def dump
+      {
+        'host_name' => @host_name,
+        'guest_name' => @guest_name,
+        'type' => @type,
+        'dhcp' => @dhcp,
+        'host_mac' => @host_mac,
+        'guest_mac' => @guest_mac,
+        'ip_addresses' => [4, 6].to_h do |v|
+          ["v#{v}", @ips[v].map(&:to_string)]
+        end
+      }
     end
   end
 end
