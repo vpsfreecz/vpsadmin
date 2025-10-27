@@ -12,7 +12,7 @@ module DistConfig
     attr_accessor :hostname
 
     # @return [Array<String>, nil]
-    attr_reader :dns_resolvers
+    attr_accessor :dns_resolvers
 
     # @return [Array<NetworkInterface>]
     attr_reader :network_interfaces
