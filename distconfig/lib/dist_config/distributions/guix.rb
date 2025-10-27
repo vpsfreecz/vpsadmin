@@ -33,8 +33,8 @@ module DistConfig
       end
     end
 
-    def stop(opts)
-      return super unless %i[stop shutdown].include?(opts[:mode])
+    def stop(mode: :stop, timeout: 300)
+      return super unless %i[stop shutdown].include?(mode)
 
       # Shepherd gets stuck when it is sent a signal, so shut it down only using
       # halt.
@@ -42,7 +42,7 @@ module DistConfig
         ct_syscmd(['halt'])
       end
 
-      if halt_thread.join(opts[:timeout]).nil?
+      if halt_thread.join(timeout).nil?
         log(:debug, 'Timeout while waiting for graceful shutdown, killing the container')
         halt_thread.terminate
         halt_thread.join
@@ -50,14 +50,14 @@ module DistConfig
 
       # The halt may or may not have been successful, kill the container
       # if it is still running
-      super(opts.merge(mode: :kill))
+      super(mode: :kill, timeout:)
     end
 
-    def passwd(opts)
+    def passwd(user, password)
       # Without the -c switch, the password is not set (bug?)
       ret = ct_syscmd(
         %w[chpasswd -c SHA512],
-        stdin: "#{opts[:user]}:#{opts[:password]}\n",
+        stdin: "#{user}:#{password}\n",
         run: true,
         valid_rcs: :all
       )
@@ -67,7 +67,7 @@ module DistConfig
       log(:warn, "Unable to set password: #{ret.output}")
     end
 
-    def bin_path(_opts)
+    def bin_path
       with_rootfs do
         File.realpath('/var/guix/profiles/system/profile/bin')
       rescue Errno::ENOENT
