@@ -31,14 +31,9 @@ module DistConfig
       when 'stop'
         mode, timeout = args
         DistConfig.run(vps_config, :stop, { mode: mode.to_sym, timeout: timeout.to_i }, **cmd_opts)
-      when 'hostname-set'
-        unless [0, 1].include?(args.length)
-          warn 'Usage: '
-          exit(false)
-        end
-
-        old_hostname = args.first
-        DistConfig.run(vps_config, :set_hostname, { original: old_hostname }, **cmd_opts)
+      when 'hostname'
+        hostname = args[0]
+        DistConfig.run(vps_config, :set_hostname, { hostname: }, **cmd_opts)
       when 'netif-add'
         # TODO
       when 'netif-del'
