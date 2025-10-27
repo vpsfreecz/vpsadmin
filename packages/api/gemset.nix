@@ -734,14 +734,6 @@
     version = "2.7.4";
   };
   openssl = {
-    groups = [ "default" ];
-    platforms = [ ];
-    source = {
-      remotes = [ "https://rubygems.org" ];
-      sha256 = "0dzq3k5hmqlav2mwf7bc10mr1mlmlnpin498g7jhbhpdpa324s6n";
-      type = "gem";
-    };
-    version = "3.3.1";
   };
   openssl-signature_algorithm = {
     dependencies = [ "openssl" ];
@@ -786,17 +778,6 @@
       "ast"
       "racc"
     ];
-    groups = [
-      "default"
-      "development"
-    ];
-    platforms = [ ];
-    source = {
-      remotes = [ "https://rubygems.org" ];
-      sha256 = "1wl7frfk68q6gsf6q6j32jl5m3yc0b9x8ycxz3hy79miaj9r5mll";
-      type = "gem";
-    };
-    version = "3.3.9.0";
   };
   prism = {
     groups = [
