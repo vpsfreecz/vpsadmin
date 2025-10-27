@@ -56,6 +56,12 @@ module DistConfig
         password = $stdin.read.strip
 
         DistConfig.run(vps_config, :passwd, { user:, password: }, **cmd_opts)
+      when 'authorized-key-add'
+        public_key = $stdin.read.strip
+        DistConfig.run(vps_config, :add_authorized_key, { public_key: }, **cmd_opts)
+      when 'authorized-key-del'
+        public_key = $stdin.read.strip
+        DistConfig.run(vps_config, :remove_authorized_key, { public_key: }, **cmd_opts)
       else
         warn "Unknown command #{cmd.inspect}"
         exit(false)

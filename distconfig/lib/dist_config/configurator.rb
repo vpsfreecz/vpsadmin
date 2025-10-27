@@ -119,6 +119,67 @@ module DistConfig
       end
     end
 
+    # Add key to ~/.ssh/authorized_keys
+    # @param public_key [String]
+    def add_authorized_key(public_key)
+      root_dir = File.join(rootfs, 'root')
+      ssh_dir = File.join(root_dir, '.ssh')
+      authorized_keys = File.join(ssh_dir, 'authorized_keys')
+
+      FileUtils.mkdir_p(root_dir, mode: 0o700)
+      FileUtils.mkdir_p(ssh_dir, mode: 0o700)
+
+      unless File.exist?(authorized_keys)
+        File.write(authorized_keys, "#{public_key}\n")
+        File.chmod(0o600, authorized_keys)
+        return
+      end
+
+      # Walk through the file, write the key if it is not there yet
+      # For some reason, when File.open is given a block, it does not raise
+      # exceptions like "Errno::EDQUOT: Disk quota exceeded", so don't use it.
+      f = File.open(authorized_keys, 'r+')
+      last_line = ''
+
+      f.each_line do |line|
+        last_line = line
+
+        if line.strip == public_key
+          f.close
+          return # rubocop:disable Lint/NonLocalExitFromIterator
+        end
+      end
+
+      # The key is not there yet
+      f.write("\n") unless last_line.end_with?("\n")
+      f.write(public_key)
+      f.write("\n")
+      f.close
+    end
+
+    # Remove key from ~/.ssh/authorized_keys
+    def remove_authorized_key(public_key)
+      authorized_keys = File.join(rootfs, 'root/.ssh/authorized_keys')
+
+      return unless File.exist?(authorized_keys)
+
+      tmp = File.join(File.dirname(authorized_keys), ".vpsadmin-#{File.basename(authorized_keys)}")
+
+      src = File.open(authorized_keys, 'r')
+      dst = File.open(tmp, 'w')
+
+      src.each_line do |line|
+        next if line.strip == public_key
+
+        dst.write(line)
+      end
+
+      src.close
+      dst.close
+
+      File.rename(tmp, authorized_keys)
+    end
+
     protected
 
     # @return [Network::Base, nil]
