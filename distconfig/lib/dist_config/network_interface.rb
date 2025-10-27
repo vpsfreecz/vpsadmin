@@ -18,6 +18,14 @@ module DistConfig
       def to_string
         "#{@addr}/#{@addr.prefix}"
       end
+
+      def version
+        @addr.ipv4? ? 4 : 6
+      end
+
+      def ==(other)
+        to_string == other.to_string
+      end
     end
 
     DEFAULT_IPV4 = '172.31.255.254'.freeze
@@ -64,6 +72,24 @@ module DistConfig
     # @param v [4, 6]
     def ips(v)
       @ips[v]
+    end
+
+    # @param addr [String]
+    # @param prefix [Integer]
+    # @return [IpAddress]
+    def add_ip(addr, prefix)
+      ip = IpAddress.new("#{addr}/#{prefix}")
+      @ips[ip.version] << ip
+      ip
+    end
+
+    # @param addr [String]
+    # @param prefix [Integer]
+    # @return [IpAddress]
+    def remove_ip(addr, prefix)
+      ip = IpAddress.new("#{addr}/#{prefix}")
+      @ips[ip.version].delete(ip)
+      ip
     end
 
     # @param v [4, 6]
