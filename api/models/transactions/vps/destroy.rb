@@ -9,7 +9,9 @@ module Transactions::Vps
       self.vps_id = vps.id
       self.node_id = vps.node_id
 
-      {}
+      {
+        uuid: vps.uuid.uuid
+      }
     end
   end
 end

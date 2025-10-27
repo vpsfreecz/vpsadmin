@@ -15,6 +15,7 @@ module NodeCtld
       end
 
       NetAccounting.remove_vps(@vps_id)
+      syscmd("consolectl stop #{@vps_id}")
       ok
     end
   end
