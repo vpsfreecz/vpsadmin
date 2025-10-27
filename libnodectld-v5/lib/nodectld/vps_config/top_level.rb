@@ -16,7 +16,7 @@ module NodeCtld
     # @return [String]
     attr_accessor :version
 
-    # @return [String]
+    # @return [OsCtl::Lib::Hostname]
     attr_accessor :hostname
 
     # @return [Array<String>, nil]
