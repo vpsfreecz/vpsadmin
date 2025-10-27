@@ -19,8 +19,8 @@ module NodeCtld
     def vmexec(domain, command, env: [], input: nil, timeout: 60)
       t1 = Time.now
 
-      cmd = command[0]
-      args = command[1..]
+      cmd = command[0].to_s
+      args = command[1..].map(&:to_s)
 
       exec_args = {
         'path' => cmd,
