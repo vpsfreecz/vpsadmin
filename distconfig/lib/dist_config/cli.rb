@@ -45,6 +45,12 @@ module DistConfig
         # TODO
       when 'netif-rename'
         # TODO
+      when 'hostaddr-add'
+        netif, addr, prefix = args
+        DistConfig.run(vps_config, :add_host_addr, { netif:, addr:, prefix: }, **cmd_opts)
+      when 'hostaddr-del'
+        netif, addr, prefix = args
+        DistConfig.run(vps_config, :remove_host_addr, { netif:, addr:, prefix: }, **cmd_opts)
       when 'passwd'
         user = args[0]
         password = $stdin.read.strip
