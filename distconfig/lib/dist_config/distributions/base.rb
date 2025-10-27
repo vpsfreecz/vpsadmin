@@ -94,11 +94,19 @@ module DistConfig
     # Set container hostname
     #
     # @param opts [Hash] options
-    # @option opts [Hostname] :original previous hostname
+    # @option opts [String] :hostname
+    # @option opts [String] :old_hostname
     def set_hostname(opts = {})
+      if opts[:hostname] && opts[:hostname] != vps_config.hostname.to_s
+        old_hostname = vps_config.hostname
+
+        vps_config.hostname = Hostname.new(opts[:hostname])
+        vps_config.save
+      end
+
       with_rootfs do
-        configurator.set_hostname(vps_config.hostname, old_hostname: opts[:original])
-        configurator.update_etc_hosts(vps_config.hostname, old_hostname: opts[:original])
+        configurator.set_hostname(vps_config.hostname, old_hostname:)
+        configurator.update_etc_hosts(vps_config.hostname, old_hostname:)
         nil
       end
 

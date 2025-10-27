@@ -1,14 +1,29 @@
+require 'libosctl'
+
 module NodeCtld
   class Commands::Vps::Hostname < Commands::Base
     handle 2004
-    needs :system, :osctl
+    needs :system, :libvirt, :vps
 
     def exec
-      osctl(%i[ct set hostname], [@vps_id, @hostname])
+      set_hostname(@hostname)
     end
 
     def rollback
-      osctl(%i[ct set hostname], [@vps_id, @original])
+      set_hostname(@original)
+    end
+
+    protected
+
+    def set_hostname(hostname)
+      VpsConfig.edit(@vps_id) do |cfg|
+        cfg.hostname = OsCtl::Lib::Hostname.new(hostname)
+
+        ConfigDrive.create(@vps_id, cfg)
+      end
+
+      distconfig!(domain, ['hostname', hostname])
+      ok
     end
   end
 end

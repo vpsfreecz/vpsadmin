@@ -8,8 +8,8 @@ module DistConfig
     # @return [String]
     attr_reader :version
 
-    # @return [String, nil]
-    attr_reader :hostname
+    # @return [Hostname, nil]
+    attr_accessor :hostname
 
     # @return [Array<String>, nil]
     attr_reader :dns_resolvers
