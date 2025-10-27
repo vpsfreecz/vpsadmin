@@ -244,6 +244,24 @@ module DistConfig
       log(:warn, "Unable to set password: #{ret.output}")
     end
 
+    # @param opts [Hash] options
+    # @option opts [String] public_key
+    def add_authorized_key(opts)
+      with_rootfs do
+        configurator.add_authorized_key(opts[:public_key])
+        nil
+      end
+    end
+
+    # @param opts [Hash] options
+    # @option opts [String] public_key
+    def remove_authorized_key(opts)
+      with_rootfs do
+        configurator.remove_authorized_key(opts[:public_key])
+        nil
+      end
+    end
+
     # Return path to `/bin` or an alternative, where a shell is looked up
     # @return [String]
     def bin_path(_opts)
