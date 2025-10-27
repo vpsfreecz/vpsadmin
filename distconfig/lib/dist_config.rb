@@ -26,18 +26,19 @@ module DistConfig
 
   # @param vps_config [VpsConfig]
   # @param cmd [Symbol]
-  # @param cmd_opts [Hash]
+  # @param args [Array] positional arguments
+  # @param kwargs [Hash] keyword arguments
   # @param opts [Hash]
   # @option opts [Boolean] :verbose
   # @option opts [String] :rootfs
   # @option opts [String] :ct
-  def self.run(vps_config, cmd, cmd_opts, **)
+  def self.run(vps_config, cmd, args: [], kwargs: {}, opts: {})
     ErbTemplateCache.instance
 
     klass = self.for(vps_config.distribution.to_sym)
-    d = (klass || self.for(:other)).new(vps_config, **)
+    d = (klass || self.for(:other)).new(vps_config, **opts)
 
-    d.method(cmd).call(cmd_opts)
+    d.method(cmd).call(*args, **kwargs)
   end
 end
 

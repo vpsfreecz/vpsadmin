@@ -60,7 +60,7 @@ module DistConfig
     end
 
     # See man runit-init
-    def stop(_opts)
+    def stop(**_)
       with_rootfs do
         next unless Dir.exist?('/etc/runit')
 
@@ -86,11 +86,11 @@ module DistConfig
       log(:warn, "Unable to apply hostname: #{e.message}")
     end
 
-    def passwd(opts)
+    def passwd(user, password)
       # Without the -c switch, the password is not set (bug?)
       ret = ct_syscmd(
         %w[chpasswd -c SHA512],
-        stdin: "#{opts[:user]}:#{opts[:password]}\n",
+        stdin: "#{user}:#{password}\n",
         run: true,
         valid_rcs: :all
       )

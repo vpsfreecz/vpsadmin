@@ -19,7 +19,7 @@ module DistConfig
       options, cmd, args = parse_options
 
       vps_config = VpsConfig.new(options[:vps_config])
-      cmd_opts = {
+      opts = {
         rootfs: options[:rootfs],
         ct: options[:ct],
         verbose: options[:verbose]
@@ -27,13 +27,13 @@ module DistConfig
 
       case cmd
       when 'start'
-        DistConfig.run(vps_config, :start, {}, **cmd_opts)
+        DistConfig.run(vps_config, :start, opts:)
       when 'stop'
         mode, timeout = args
-        DistConfig.run(vps_config, :stop, { mode: mode.to_sym, timeout: timeout.to_i }, **cmd_opts)
+        DistConfig.run(vps_config, :stop, kwargs: { mode: mode.to_sym, timeout: timeout.to_i }, opts:)
       when 'hostname'
         hostname = args[0]
-        DistConfig.run(vps_config, :set_hostname, { hostname: }, **cmd_opts)
+        DistConfig.run(vps_config, :set_hostname, args: [hostname], opts:)
       when 'netif-add'
         # TODO
       when 'netif-del'
@@ -42,21 +42,21 @@ module DistConfig
         # TODO
       when 'hostaddr-add'
         netif, addr, prefix = args
-        DistConfig.run(vps_config, :add_host_addr, { netif:, addr:, prefix: }, **cmd_opts)
+        DistConfig.run(vps_config, :add_host_addr, args: [netif, addr, prefix], opts:)
       when 'hostaddr-del'
         netif, addr, prefix = args
-        DistConfig.run(vps_config, :remove_host_addr, { netif:, addr:, prefix: }, **cmd_opts)
+        DistConfig.run(vps_config, :remove_host_addr, args: [netif, addr, prefix], opts:)
       when 'passwd'
         user = args[0]
         password = $stdin.read.strip
 
-        DistConfig.run(vps_config, :passwd, { user:, password: }, **cmd_opts)
+        DistConfig.run(vps_config, :passwd, args: [user, password], opts:)
       when 'authorized-key-add'
         public_key = $stdin.read.strip
-        DistConfig.run(vps_config, :add_authorized_key, { public_key: }, **cmd_opts)
+        DistConfig.run(vps_config, :add_authorized_key, args: [public_key], opts:)
       when 'authorized-key-del'
         public_key = $stdin.read.strip
-        DistConfig.run(vps_config, :remove_authorized_key, { public_key: }, **cmd_opts)
+        DistConfig.run(vps_config, :remove_authorized_key, args: [public_key], opts:)
       else
         warn "Unknown command #{cmd.inspect}"
         exit(false)
