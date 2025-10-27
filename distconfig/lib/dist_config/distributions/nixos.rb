@@ -33,23 +33,23 @@ module DistConfig
       # TODO: support for NixOS impermanence was here
     end
 
-    def set_hostname(_opts = {})
+    def set_hostname(*_)
       log(:warn, 'Unable to apply hostname to NixOS container')
     end
 
-    def update_etc_hosts(_opts = {})
+    def update_etc_hosts(**_)
       # not supported
     end
 
-    def unset_etc_hosts(_opts = {})
+    def unset_etc_hosts
       # not supported
     end
 
-    def dns_resolvers(_opts = {})
+    def set_dns_resolvers(*_)
       super if ct.impermanence.nil? || ct.running?
     end
 
-    def bin_path(_opts)
+    def bin_path
       # TODO: this might not work with impermanence
       with_rootfs do
         File.realpath('/nix/var/nix/profiles/system/sw/bin')
