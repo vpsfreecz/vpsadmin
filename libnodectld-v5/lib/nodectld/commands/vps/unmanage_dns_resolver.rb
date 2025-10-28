@@ -1,15 +1,25 @@
 module NodeCtld
   class Commands::Vps::UnmanageDnsResolver < Commands::Base
     handle 2027
-    needs :system, :osctl
+    needs :system, :libvirt, :vps
 
     def exec
-      osctl(%i[ct unset dns-resolver], @vps_id)
+      VpsConfig.edit(@vps_id) do |cfg|
+        cfg.dns_resolvers = []
+      end
+
+      distconfig!(domain, ['dns-resolvers-unset'])
+
       ok
     end
 
     def rollback
-      osctl(%i[ct set dns-resolver], [@vps_id] + @original)
+      VpsConfig.edit(@vps_id) do |cfg|
+        cfg.dns_resolvers = @original || []
+      end
+
+      distconfig!(domain, ['dns-resolvers-set'] + (@original || []))
+
       ok
     end
   end
