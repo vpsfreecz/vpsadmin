@@ -56,7 +56,7 @@ module DistConfig
 
     # Run just before the container is started
     def start
-      return if !vps_config.hostname && !vps_config.dns_resolvers && vps_config.network_interfaces.empty?
+      return if !vps_config.hostname && vps_config.dns_resolvers.empty? && vps_config.network_interfaces.empty?
 
       setup_network_interfaces
 
@@ -66,7 +66,7 @@ module DistConfig
           configurator.update_etc_hosts(vps_config.hostname)
         end
 
-        configurator.dns_resolvers(vps_config.dns_resolvers) if vps_config.dns_resolvers
+        configurator.dns_resolvers(vps_config.dns_resolvers) if vps_config.dns_resolvers.any?
 
         network
         nil
@@ -240,7 +240,7 @@ module DistConfig
     end
 
     def unset_dns_resolvers
-      vps_config.dns_resolvers = nil
+      vps_config.dns_resolvers = []
       vps_config.save
     end
 

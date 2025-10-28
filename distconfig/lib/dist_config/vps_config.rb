@@ -11,7 +11,7 @@ module DistConfig
     # @return [Hostname, nil]
     attr_accessor :hostname
 
-    # @return [Array<String>, nil]
+    # @return [Array<String>]
     attr_accessor :dns_resolvers
 
     # @return [Array<NetworkInterface>]
@@ -24,7 +24,7 @@ module DistConfig
       @distribution = @cfg.fetch('distribution')
       @version = @cfg.fetch('version')
       @hostname = @cfg['hostname'] && Hostname.new(@cfg['hostname'])
-      @dns_resolvers = @cfg.fetch('dns_resolvers', nil)
+      @dns_resolvers = @cfg.fetch('dns_resolvers', [])
       @network_interfaces = @cfg.fetch('network_interfaces', []).map { |v| NetworkInterface.new(v) }
     end
 

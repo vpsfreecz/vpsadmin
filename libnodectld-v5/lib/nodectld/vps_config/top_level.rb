@@ -19,7 +19,7 @@ module NodeCtld
     # @return [OsCtl::Lib::Hostname]
     attr_accessor :hostname
 
-    # @return [Array<String>, nil]
+    # @return [Array<String>]
     attr_accessor :dns_resolvers
 
     # @return [String]
@@ -60,7 +60,7 @@ module NodeCtld
       @distribution = data.fetch('distribution', nil)
       @version = data.fetch('version', nil)
       @hostname = data['hostname'] && OsCtl::Lib::Hostname.new(data['hostname'])
-      @dns_resolvers = data.fetch('dns_resolvers', nil)
+      @dns_resolvers = data.fetch('dns_resolvers', [])
       @rootfs_label = data.fetch('rootfs_label', 'vpsadmin-rootfs')
       @init_cmd = data.fetch('init_cmd', '/sbin/init')
       @start_menu_timeout = data.fetch('start_menu_timeout', 5)
