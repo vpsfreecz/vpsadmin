@@ -1,14 +1,32 @@
+require 'libosctl'
+
 module NodeCtld
   class Commands::Vps::UnmanageHostname < Commands::Base
     handle 2016
-    needs :system, :osctl
+    needs :system, :libvirt, :vps
 
     def exec
-      osctl(%i[ct unset hostname], @vps_id)
+      VpsConfig.edit(@vps_id) do |cfg|
+        cfg.hostname = nil
+
+        ConfigDrive.create(@vps_id, cfg)
+      end
+
+      distconfig!(domain, %w[hostname-unset])
+
+      ok
     end
 
     def rollback
-      osctl(%i[ct set hostname], [@vps_id, @hostname])
+      VpsConfig.edit(@vps_id) do |cfg|
+        cfg.hostname = OsCtl::Lib::Hostname.new(@hostname)
+
+        ConfigDrive.create(@vps_id, cfg)
+      end
+
+      distconfig!(domain, ['hostname-set', @hostname])
+
+      ok
     end
   end
 end
