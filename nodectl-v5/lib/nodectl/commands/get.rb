@@ -29,7 +29,6 @@ module NodeCtl
         Subcommands:
         config [some.key]    Show nodectld's config or specific key
         queue                List transactions queued for execution
-        veth_map             Print hash table that maps VPS interfaces to host interfaces
         net_accounting       Print network interface accounting state
       END
     end
@@ -78,31 +77,6 @@ module NodeCtl
               t[:chain], t[:id], t[:state], t[:urgent] ? 1 : 0, t[:priority], t[:m_id], t[:vps_id],
               t[:type], t[:depends_on],
               format_duration(Time.new.to_i - t[:time])
-            )
-          end
-        end
-
-      when 'veth_map'
-        map = response[:veth_map]
-
-        if global_opts[:parsable]
-          puts map.to_json
-
-        else
-          if opts[:header]
-            puts format(
-              '%-10s %s',
-              'VPS', 'INTERFACES'
-            )
-          end
-
-          map.sort do |a, b|
-            a[0] <=> b[0]
-          end.each do |vps_id, netifs|
-            puts format(
-              '%-10s %s',
-              vps_id,
-              netifs.map { |vps_veth, host_veth| "#{vps_veth}=#{host_veth}" }.join(',')
             )
           end
         end
