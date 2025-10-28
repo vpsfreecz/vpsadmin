@@ -15,20 +15,26 @@ module NodeCtld
     # @return [Integer]
     attr_reader :id
 
+    # Network interface name as seen on the host
+    # @param [String]
+    # @return [String]
+    attr_accessor :host_name
+
     # Network interface name as seen inside the VPS
     # @param [String]
     # @return [String]
-    attr_accessor :vps_name
+    attr_accessor :guest_name
 
     # @param vps_id [Integer]
     # @param user_id [Integer]
     # @param id [Integer] network interface ID
-    # @param vps_name [String]
-    def initialize(vps_id, user_id, id, vps_name, bytes_in: 0, bytes_out: 0, packets_in: 0, packets_out: 0)
+    # @param guest_name [String]
+    def initialize(vps_id, user_id, id, host_name, guest_name, bytes_in: 0, bytes_out: 0, packets_in: 0, packets_out: 0)
       @vps_id = vps_id
       @user_id = user_id
       @id = id
-      @vps_name = vps_name
+      @host_name = host_name
+      @guest_name = guest_name
       @last_bytes_in = bytes_in
       @last_bytes_out = bytes_out
       @last_packets_in = packets_in
@@ -47,7 +53,7 @@ module NodeCtld
     end
 
     # Read stats from `/sys/class/net`
-    def update(host_name)
+    def update
       now = Time.now.utc
       @last_update ||= now
       @last_log ||= now
@@ -129,7 +135,7 @@ module NodeCtld
         vps_id: @vps_id,
         user_id: @user_id,
         netif_id: @id,
-        vps_name: @vps_name,
+        guest_name: @guest_name,
         bytes_in: @bytes_in,
         bytes_out: @bytes_out,
         packets_in: @packets_in,

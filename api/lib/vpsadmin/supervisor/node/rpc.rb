@@ -201,6 +201,8 @@ module VpsAdmin::Supervisor
           ).map do |netif|
           {
             id: netif.id,
+            host_name: netif.host_name,
+            guest_name: netif.guest_name,
             name: netif.name,
             vps_id: netif.vps_id,
             user_id: netif.user_id,
@@ -236,6 +238,8 @@ module VpsAdmin::Supervisor
 
         {
           id: netif.id,
+          host_name: netif.host_name,
+          guest_name: netif.guest_name,
           name: netif.name,
           vps_id: netif.vps_id,
           user_id: netif.user_id,
