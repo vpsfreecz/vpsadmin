@@ -38,9 +38,6 @@ module NodeCtld::RemoteCommands
 
         ok.update({ output: { queue: } })
 
-      when 'veth_map'
-        ok.update({ output: { veth_map: NodeCtld::VethMap.dump } })
-
       when 'net_accounting'
         ok.update({ output: { interfaces: NodeCtld::NetAccounting.dump } })
 

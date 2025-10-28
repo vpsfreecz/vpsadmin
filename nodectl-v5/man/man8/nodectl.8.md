@@ -166,10 +166,6 @@ start it.
   List transactions queued for execution. Transactions whose dependencies are
   not met yet are not listed, as it is impossible to know when they will be executed.
 
-`get veth_map`
-  Print veth map contents, listing all known VPS interfaces and their names on
-  the host.
-
 `get net_accounting`
   Print network interface accounting state, listing all tracked interfaces
   and their counters.
