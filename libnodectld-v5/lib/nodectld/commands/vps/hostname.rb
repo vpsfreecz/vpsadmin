@@ -22,7 +22,7 @@ module NodeCtld
         ConfigDrive.create(@vps_id, cfg)
       end
 
-      distconfig!(domain, ['hostname', hostname])
+      distconfig!(domain, ['hostname-set', hostname])
       ok
     end
   end
