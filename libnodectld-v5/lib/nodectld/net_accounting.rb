@@ -66,16 +66,16 @@ module NodeCtld
     # @param vps_id [Integer]
     # @param user_id [Integer]
     # @param netif_id [Integer]
-    # @param vps_name [String]
-    def add_netif(vps_id, user_id, netif_id, vps_name)
-      log(:info, "Registering interface in VPS #{vps_id} id=#{netif_id} name=#{vps_name}")
+    # @param guest_name [String]
+    def add_netif(vps_id, user_id, netif_id, guest_name)
+      log(:info, "Registering interface in VPS #{vps_id} id=#{netif_id} name=#{guest_name}")
 
       @mutex.synchronize do
         @netifs << NetAccounting::Interface.new(
           vps_id,
           user_id,
           netif_id,
-          vps_name
+          guest_name
         )
       end
 
@@ -85,9 +85,9 @@ module NodeCtld
     # Rename an existing network interface
     # @param vps_id [Integer]
     # @param netif_id [Integer]
-    # @param new_vps_name [String]
-    def rename_netif(vps_id, netif_id, new_vps_name)
-      log(:info, "Renaming interface in VPS #{vps_id} id=#{netif_id} name->#{new_vps_name}")
+    # @param new_guest_name [String]
+    def rename_netif(vps_id, netif_id, new_guest_name)
+      log(:info, "Renaming interface in VPS #{vps_id} id=#{netif_id} name->#{new_guest_name}")
 
       @mutex.synchronize do
         n = @netifs.detect do |netif|
@@ -95,7 +95,7 @@ module NodeCtld
         end
         next if n.nil?
 
-        n.vps_name = new_vps_name
+        n.guest_name = new_guest_name
       end
 
       nil
@@ -147,9 +147,9 @@ module NodeCtld
 
     # A new interface has come online, make sure it is accounted
     # @param vps_id [Integer]
-    # @param vps_name [String]
-    def netif_up(vps_id, vps_name)
-      @discovery_queue << [:up, vps_id, vps_name]
+    # @param guest_name [String]
+    def netif_up(vps_id, guest_name)
+      @discovery_queue << [:up, vps_id, guest_name]
       nil
     end
 
@@ -185,8 +185,8 @@ module NodeCtld
 
         case cmd
         when :up
-          vps_id, vps_name = args
-          discover_netif(vps_id, vps_name)
+          vps_id, guest_name = args
+          discover_netif(vps_id, guest_name)
         end
       end
     end
@@ -200,7 +200,8 @@ module NodeCtld
             netif['vps_id'],
             netif['user_id'],
             netif['id'],
-            netif['name'],
+            netif['host_name'],
+            netif['guest_name'],
             bytes_in: netif['bytes_in_readout'] || 0,
             bytes_out: netif['bytes_out_readout'] || 0,
             packets_in: netif['packets_in_readout'] || 0,
@@ -212,10 +213,10 @@ module NodeCtld
       ret
     end
 
-    def fetch_netif(vps_id, vps_name)
+    def fetch_netif(vps_id, guest_name)
       netif =
         RpcClient.run do |rpc|
-          rpc.find_vps_network_interface(vps_id, vps_name)
+          rpc.find_vps_network_interface(vps_id, guest_name)
         end
 
       return if netif.nil?
@@ -224,7 +225,8 @@ module NodeCtld
         netif['vps_id'],
         netif['user_id'],
         netif['id'],
-        netif['name'],
+        netif['host_name'],
+        netif['guest_name'],
         bytes_in: netif['bytes_in_readout'] || 0,
         bytes_out: netif['bytes_out_readout'] || 0,
         packets_in: netif['packets_in_readout'] || 0,
@@ -232,12 +234,12 @@ module NodeCtld
       )
     end
 
-    def discover_netif(vps_id, vps_name)
+    def discover_netif(vps_id, guest_name)
       fetch = false
 
       @mutex.synchronize do
         n = @netifs.detect do |netif|
-          netif.vps_id == vps_id && netif.vps_name == vps_name
+          netif.vps_id == vps_id && netif.guest_name == guest_name
         end
 
         fetch = true if n.nil?
@@ -245,10 +247,10 @@ module NodeCtld
 
       return unless fetch
 
-      netif = fetch_netif(vps_id, vps_name)
+      netif = fetch_netif(vps_id, guest_name)
       return if netif.nil?
 
-      log(:info, "Discovered netif in VPS #{netif.vps_id}: id=#{netif.id} name=#{netif.vps_name}")
+      log(:info, "Discovered netif in VPS #{netif.vps_id}: id=#{netif.id} name=#{netif.guest_name}")
 
       @mutex.synchronize do
         @netifs << netif
@@ -260,10 +262,7 @@ module NodeCtld
 
       @mutex.synchronize do
         @netifs.each do |netif|
-          host_name = VethMap.get(netif.vps_id, netif.vps_name)
-          next if host_name.nil?
-
-          netif.update(host_name)
+          netif.update
           changed = true
         end
       end
