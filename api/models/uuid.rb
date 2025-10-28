@@ -31,4 +31,8 @@ class Uuid < ApplicationRecord
       uuid.owner
     end
   end
+
+  def to_s
+    uuid
+  end
 end
