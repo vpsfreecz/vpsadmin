@@ -9,6 +9,7 @@ module Transactions::Vps
       self.node_id = vps.node_id
 
       {
+        vps_uuid: vps.uuid.to_s,
         nameserver: resolver.addr.split(','),
         original: orig && orig.addr.split(',')
       }

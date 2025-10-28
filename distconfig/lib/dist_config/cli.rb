@@ -48,6 +48,10 @@ module DistConfig
       when 'hostaddr-del'
         netif, addr, prefix = args
         DistConfig.run(vps_config, :remove_host_addr, args: [netif, addr, prefix], opts:)
+      when 'dns-resolvers-set'
+        DistConfig.run(vps_config, :set_dns_resolvers, args: [args], opts:)
+      when 'dns-resolvers-unset'
+        DistConfig.run(vps_config, :unset_dns_resolvers, opts:)
       when 'passwd'
         user = args[0]
         password = $stdin.read.strip
