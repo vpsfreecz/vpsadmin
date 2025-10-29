@@ -66,5 +66,9 @@
     </rng>
 
     <memballoon model="virtio"/>
+
+    <% network_interfaces.each do |netif| -%>
+      <%= ErbTemplate.render('libvirt/network_interface.xml', netif) %>
+    <% end -%>
   </devices>
 </domain>

@@ -8,15 +8,33 @@ module Transactions::Vps
       self.vps_id = vps.id
       self.node_id = vps.node_id
 
-      {
-        pool_name: vps.dataset_in_pool.pool.name,
-        pool_fs: vps.dataset_in_pool.pool.filesystem,
-        distribution: template.distribution,
-        version: template.version,
-        arch: template.arch,
-        vendor: template.vendor,
-        variant: template.variant
-      }
+      if vps.container?
+        {
+          pool_name: vps.dataset_in_pool.pool.name,
+          pool_fs: vps.dataset_in_pool.pool.filesystem,
+          distribution: template.distribution,
+          version: template.version,
+          arch: template.arch,
+          vendor: template.vendor,
+          variant: template.variant
+        }
+      else
+        {
+          uuid: vps.uuid.uuid,
+          cpu: vps.cpu,
+          memory: vps.memory,
+          rootfs_volume: {
+            pool_path: vps.storage_volume.storage_pool.path,
+            name: vps.storage_volume.name,
+            format: vps.storage_volume.format,
+            label: vps.storage_volume.label
+          },
+          console_port: vps.console_port.port,
+          distribution: template.distribution,
+          version: template.version,
+          cgroup_version: vps.cgroup_version_number
+        }
+      end
     end
   end
 end
