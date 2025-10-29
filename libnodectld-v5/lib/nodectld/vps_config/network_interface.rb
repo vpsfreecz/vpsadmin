@@ -7,6 +7,7 @@ module NodeCtld
         guest_name: data.fetch('guest_name'),
         host_mac: data.fetch('host_mac'),
         guest_mac: data.fetch('guest_mac'),
+        enable: data.fetch('enable'),
         max_tx: data.fetch('max_tx'),
         max_rx: data.fetch('max_rx')
       )
@@ -35,6 +36,9 @@ module NodeCtld
     # @return [false]
     attr_reader :dhcp
 
+    # @return [Boolean]
+    attr_accessor :enable
+
     # @return [Integer]
     attr_reader :max_tx
 
@@ -47,11 +51,12 @@ module NodeCtld
     # @return [Hash<Integer, Array<String>>]
     attr_reader :ip_addresses
 
-    def initialize(host_name:, guest_name:, host_mac:, guest_mac:, max_tx:, max_rx:)
+    def initialize(host_name:, guest_name:, host_mac:, guest_mac:, enable:, max_tx:, max_rx:)
       @host_name = host_name
       @guest_name = guest_name
       @host_mac = host_mac
       @guest_mac = guest_mac
+      @enable = enable
       @max_tx = max_tx
       @max_rx = max_rx
       @type = 'routed'
@@ -101,6 +106,7 @@ module NodeCtld
         'dhcp' => dhcp,
         'host_mac' => host_mac,
         'guest_mac' => guest_mac,
+        'enable' => enable,
         'max_tx' => max_tx,
         'max_rx' => max_rx,
         'routes' => [4, 6].to_h do |ip_v|
