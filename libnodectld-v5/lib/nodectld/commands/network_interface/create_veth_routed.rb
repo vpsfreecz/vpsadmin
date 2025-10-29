@@ -28,7 +28,9 @@ module NodeCtld
           host_name: @host_name,
           guest_name: @guest_name,
           host_mac: @host_mac,
-          guest_mac: @guest_mac
+          guest_mac: @guest_mac,
+          max_tx: @max_tx,
+          max_rx: @max_rx
         )
 
         ConfigDrive.create(@vps_id, cfg)
