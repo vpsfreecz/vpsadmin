@@ -33,7 +33,7 @@ module DistConfig
     DEFAULT_IPV6 = 'fe80::1'.freeze
 
     # @return [String]
-    attr_reader :guest_name
+    attr_accessor :guest_name
 
     alias name guest_name
 
