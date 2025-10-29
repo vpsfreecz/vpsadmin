@@ -188,12 +188,24 @@ module DistConfig
 
     # Called when an existing network interface is renamed
     # @param netif [String]
-    # @param original_name [String]
-    def rename_netif(netif, original_name)
+    # @param new_guest_name [String]
+    def rename_netif(netif, new_guest_name)
+      network_interface = vps_config.network_interfaces.detect { |n| n.guest_name == netif }
+      raise "Network interface #{netif.inspect} not found" if network_interface.nil?
+
+      old_guest_name = network_interface.guest_name
+      network_interface.guest_name = new_guest_name
+      vps_config.save
+
       with_rootfs do
-        configurator.rename_netif(vps_config.network_interfaces, netif, original_name)
+        configurator.rename_netif(vps_config.network_interfaces, network_interface, old_guest_name)
         nil
       end
+
+      return if system('ip', 'link', 'set', 'dev', old_guest_name, 'name', network_interface.guest_name)
+
+      log(:warn, "Failed to rename network interface #{old_guest_name.inspect} to #{new_guest_name.inspect}")
+      nil
     end
 
     # @param netif [String]
