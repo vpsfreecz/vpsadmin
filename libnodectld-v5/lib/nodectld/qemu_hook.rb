@@ -45,8 +45,10 @@ module NodeCtld
         cfg.network_interfaces.each do |netif|
           syscmd("ip link set dev #{netif.host_name} down")
           syscmd("ip link set dev #{netif.host_name} address #{netif.host_mac}")
-          syscmd("ip link set dev #{netif.host_name} up")
+          syscmd("ip link set dev #{netif.host_name} up") if netif.enable
           syscmd("ip -6 addr add fe80::1/64 dev #{netif.host_name}")
+
+          next unless netif.enable
 
           netif.routes.each do |ip_v, routes|
             routes.each do |r|
