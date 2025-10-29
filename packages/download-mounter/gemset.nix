@@ -14,14 +14,6 @@
       "tzinfo"
       "uri"
     ];
-    groups = [ "default" ];
-    platforms = [ ];
-    source = {
-      remotes = [ "https://rubygems.org" ];
-      sha256 = "02h73s0cimsfx81vgkaw1jx4cnhp3gs6qslk2qmbqyxy4l3z9bfl";
-      type = "gem";
-    };
-    version = "8.1.0";
   };
   base64 = {
     groups = [ "default" ];
