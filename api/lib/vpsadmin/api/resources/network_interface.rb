@@ -112,8 +112,6 @@ module VpsAdmin::API::Resources
 
         ok!(netif) if input.empty?
 
-        error!('veth renaming is not available on this node') if input[:name] && !netif.vps.node.vpsadminos?
-
         maintenance_check!(netif.vps)
         object_state_check!(netif.vps, netif.vps.user)
 
