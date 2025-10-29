@@ -7,8 +7,6 @@ module NodeCtld
       conn = LibvirtClient.new
       dom = conn.lookup_domain_by_uuid(@vps_uuid)
 
-      # TODO: handle enable/disable
-
       xml = ErbTemplate.render(
         'libvirt/network_interface.xml',
         {
@@ -29,6 +27,7 @@ module NodeCtld
           guest_name: @guest_name,
           host_mac: @host_mac,
           guest_mac: @guest_mac,
+          enable: @enable,
           max_tx: @max_tx,
           max_rx: @max_rx
         )
