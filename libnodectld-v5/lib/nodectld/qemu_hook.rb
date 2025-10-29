@@ -41,7 +41,7 @@ module NodeCtld
     protected
 
     def setup_network_interfaces
-      VpsConfig.open(@domain) do |cfg|
+      VpsConfig.read(@domain) do |cfg|
         cfg.network_interfaces.each do |netif|
           syscmd("ip link set dev #{netif.host_name} down")
           syscmd("ip link set dev #{netif.host_name} address #{netif.host_mac}")
