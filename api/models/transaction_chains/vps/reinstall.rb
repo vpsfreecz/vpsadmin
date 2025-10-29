@@ -3,21 +3,36 @@ module TransactionChains
     label 'Reinstall'
 
     def link_chain(vps, template, opts)
-      lock(vps.dataset_in_pool)
+      if vps.container?
+        lock(vps.dataset_in_pool)
+      else
+        lock(vps.storage_volume)
+      end
+
       lock(vps)
+
       concerns(:affect, [vps.class.name, vps.id])
 
       running = vps.running?
 
-      # Transfer all snapshots to backup
-      @pool = vps.dataset_in_pool.pool
-      backup_datasets(vps)
+      if vps.container?
+        # Transfer all snapshots to backup
+        @pool = vps.dataset_in_pool.pool
+        backup_datasets(vps)
+      end
 
       # Send the stop nevertheless, vpsAdmin information about VPS
       # status may not be up-to-date.
       use_chain(Vps::Stop, args: vps)
 
-      reinstall_vpsadminos(vps, template)
+      case vps.vm_type
+      when 'container'
+        reinstall_vpsadminos(vps, template)
+      when 'qemu_managed'
+        reinstall_qemu_managed(vps, template)
+      else
+        raise "Reinstall for #{vps.vm_type} not implemented"
+      end
 
       vps.user.user_public_keys.where(auto_add: true).each do |key|
         use_chain(Vps::DeployPublicKey, args: [vps, key], reversible: :keep_going)
@@ -64,6 +79,18 @@ module TransactionChains
       # Reconfigure features (currently because of NixOS impermanence, which would get
       # turned on when the container image config is reapplied)
       use_chain(Vps::Features, args: [vps, vps.vps_features])
+    end
+
+    def reinstall_qemu_managed(vps, os_template)
+      append_t(
+        Transactions::StorageVolume::Format,
+        args: [vps.storage_volume],
+        kwargs: { wipe: true, os_template: }
+      )
+
+      append_t(Transactions::Vps::Reinstall, args: [vps, os_template]) do |t|
+        t.edit(vps, os_template_id: os_template.id)
+      end
     end
 
     def backup_datasets(vps)
