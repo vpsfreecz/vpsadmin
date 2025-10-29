@@ -6,7 +6,9 @@ module NodeCtld
         host_name: data.fetch('host_name'),
         guest_name: data.fetch('guest_name'),
         host_mac: data.fetch('host_mac'),
-        guest_mac: data.fetch('guest_mac')
+        guest_mac: data.fetch('guest_mac'),
+        max_tx: data.fetch('max_tx'),
+        max_rx: data.fetch('max_rx')
       )
 
       netif.load_routes(data.fetch('routes'))
@@ -33,17 +35,25 @@ module NodeCtld
     # @return [false]
     attr_reader :dhcp
 
+    # @return [Integer]
+    attr_reader :max_tx
+
+    # @return [Integer]
+    attr_reader :max_rx
+
     # @return [Hash<Integer, Array<Route>>]
     attr_reader :routes
 
     # @return [Hash<Integer, Array<String>>]
     attr_reader :ip_addresses
 
-    def initialize(host_name:, guest_name:, host_mac:, guest_mac:)
+    def initialize(host_name:, guest_name:, host_mac:, guest_mac:, max_tx:, max_rx:)
       @host_name = host_name
       @guest_name = guest_name
       @host_mac = host_mac
       @guest_mac = guest_mac
+      @max_tx = max_tx
+      @max_rx = max_rx
       @type = 'routed'
       @dhcp = false
       @routes = { 4 => [], 6 => [] }
@@ -91,6 +101,8 @@ module NodeCtld
         'dhcp' => dhcp,
         'host_mac' => host_mac,
         'guest_mac' => guest_mac,
+        'max_tx' => max_tx,
+        'max_rx' => max_rx,
         'routes' => [4, 6].to_h do |ip_v|
           ["v#{ip_v}", routes[ip_v].map(&:save)]
         end,
