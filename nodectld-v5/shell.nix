@@ -20,6 +20,7 @@ stdenv.mkDerivation rec {
     ruby
     xorriso
     zlib
+    util-linux
   ];
 
   shellHook = ''
