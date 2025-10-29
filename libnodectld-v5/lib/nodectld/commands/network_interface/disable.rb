@@ -1,14 +1,16 @@
 module NodeCtld
   class Commands::NetworkInterface::Disable < Commands::Base
     handle 2033
-    needs :system, :osctl, :vps
+    needs :system, :libvirt, :vps
 
     def exec
-      osctl(%i[ct netif set], [@vps_id, @veth_name], { disable: true })
+      NetworkInterface.new(domain, @host_name, @guest_name).disable
+      ok
     end
 
     def rollback
-      osctl(%i[ct netif set], [@vps_id, @veth_name], { enable: true })
+      NetworkInterface.new(domain, @host_name, @guest_name).enable
+      ok
     end
   end
 end
