@@ -40,10 +40,10 @@ module NodeCtld
     attr_accessor :enable
 
     # @return [Integer]
-    attr_reader :max_tx
+    attr_accessor :max_tx
 
     # @return [Integer]
-    attr_reader :max_rx
+    attr_accessor :max_rx
 
     # @return [Hash<Integer, Array<Route>>]
     attr_reader :routes
