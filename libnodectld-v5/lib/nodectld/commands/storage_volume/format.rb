@@ -6,6 +6,7 @@ module NodeCtld
     def exec
       @nbd_dev = NbdAllocator.get_device
       syscmd("qemu-nbd --connect #{@nbd_dev} #{vol_path}")
+      syscmd("wipefs -a #{@nbd_dev}") if @wipe
       syscmd("mkfs.#{@filesystem} -L #{@label} #{@nbd_dev}")
       install_os_template if @os_template
       syscmd("qemu-nbd --disconnect #{@nbd_dev}")
