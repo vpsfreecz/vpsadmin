@@ -42,6 +42,27 @@ module NodeCtld
       syscmd("ip link set dev #{@host_name} down")
     end
 
+    def set_shaper(max_tx, max_rx)
+      VpsConfig.edit(@vps_id) do |cfg|
+        netif = cfg.network_interfaces[@guest_name]
+        netif.max_tx = max_tx
+        netif.max_rx = max_rx
+      end
+
+      @domain.interface_parameters = [
+        @host_name,
+        {
+          'inbound.average' => max_rx / 1024 / 8,
+          'inbound.peak' => (max_rx * 1.2 / 1024 / 8).round,
+          'inbound.burst' => (max_rx * 1.05 / 1024 / 8).round,
+          'outbound.average' => max_tx / 1024 / 8,
+          'outbound.peak' => (max_tx * 1.2 / 1024 / 8).round,
+          'outbound.burst' => (max_tx * 1.05 / 1024 / 8).round
+        },
+        Libvirt::Domain::AFFECT_LIVE | Libvirt::Domain::AFFECT_CONFIG
+      ]
+    end
+
     def add_route(addr, prefix, v, _register, via: nil)
       VpsConfig.edit(@vps_id) do |cfg|
         cfg.network_interfaces[@guest_name].add_route(config_route(addr, prefix, via))
