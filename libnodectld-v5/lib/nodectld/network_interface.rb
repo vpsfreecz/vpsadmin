@@ -13,6 +13,35 @@ module NodeCtld
       @guest_name = guest_name
     end
 
+    def enable
+      cfg = VpsConfig.open(@vps_id)
+
+      netif = cfg.network_interfaces[@guest_name]
+      netif.enable = true
+
+      cfg.save
+
+      return unless @domain.active?
+
+      syscmd("ip link set dev #{@host_name} up")
+
+      netif.routes.each do |ip_v, routes|
+        routes.each do |r|
+          syscmd("ip -#{ip_v} route add #{r.address} #{r.via && "via #{r.via}"} dev #{@host_name}")
+        end
+      end
+    end
+
+    def disable
+      VpsConfig.edit(@vps_id) do |cfg|
+        cfg.network_interfaces[@guest_name].enable = false
+      end
+
+      return unless @domain.active?
+
+      syscmd("ip link set dev #{@host_name} down")
+    end
+
     def add_route(addr, prefix, v, _register, via: nil)
       VpsConfig.edit(@vps_id) do |cfg|
         cfg.network_interfaces[@guest_name].add_route(config_route(addr, prefix, via))
