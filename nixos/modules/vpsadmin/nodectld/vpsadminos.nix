@@ -50,6 +50,7 @@ in
           e2fsprogs
           qemu
           xorriso
+          util-linux
         ]
       );
       run = ''
