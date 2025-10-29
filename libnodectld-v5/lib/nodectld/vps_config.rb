@@ -16,6 +16,18 @@ module NodeCtld
 
     # @param vps_id [Integer]
     # @yiledparam cfg [VpsConfig::TopLevel]
+    def self.read(vps_id)
+      cfg = TopLevel.new(vps_id)
+
+      if block_given?
+        yield(cfg)
+      else
+        cfg
+      end
+    end
+
+    # @param vps_id [Integer]
+    # @yiledparam cfg [VpsConfig::TopLevel]
     def self.edit(vps_id)
       ret = nil
       cfg = TopLevel.new(vps_id, load: false)
