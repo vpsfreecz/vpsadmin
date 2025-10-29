@@ -4,7 +4,7 @@ module Transactions::StorageVolume
     t_type 5231
     queue :storage
 
-    def params(vol, os_template: nil)
+    def params(vol, os_template: nil, wipe: false)
       self.vps_id = vol.vps.id
       self.node_id = vol.storage_pool.node_id
 
@@ -15,6 +15,7 @@ module Transactions::StorageVolume
         format: vol.format,
         filesystem: vol.filesystem,
         label: vol.label,
+        wipe:,
         os_template: os_template && {
           distribution: os_template.distribution,
           version: os_template.version,
