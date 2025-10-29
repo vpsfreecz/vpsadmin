@@ -41,7 +41,8 @@ module DistConfig
       when 'netif-del'
         # TODO
       when 'netif-rename'
-        # TODO
+        netif, new_netif = args
+        DistConfig.run(vps_config, :rename_netif, args: [netif, new_netif], opts:)
       when 'hostaddr-add'
         netif, addr, prefix = args
         DistConfig.run(vps_config, :add_host_addr, args: [netif, addr, prefix], opts:)
