@@ -5,15 +5,21 @@ module NodeCtld
   class VpsPostStart
     include Singleton
     include OsCtl::Lib::Utils::Log
-    include OsCtl::Lib::Utils::System
-    include Utils::OsCtl
 
     class << self
-      %i[run].each do |v|
+      %i[run cancel].each do |v|
         define_method(v) do |*args, **kwargs, &block|
           instance.send(v, *args, **kwargs, &block)
         end
       end
+    end
+
+    Job = Struct.new(:vps_id, :time)
+
+    def initialize
+      @jobs = {}
+      @scheduler_thread = Thread.new { run_scheduler }
+      @queue = Queue.new
     end
 
     # @param vps_id [Integer]
@@ -29,11 +35,20 @@ module NodeCtld
 
       in_seconds ||= $CFG.get(:vps_post_start, :default_schedule_delay)
 
-      Thread.new do
-        sleep(in_seconds)
-        post_run(vps_id)
-      end
+      @queue << [:add, Job.new(vps_id, Time.now + in_seconds)]
 
+      nil
+    end
+
+    # @param vps_id [Integer]
+    def cancel(vps_id)
+      @queue << [:cancel, vps_id]
+      nil
+    end
+
+    def stop
+      @queue << [:stop]
+      @scheduler_thread.join
       nil
     end
 
@@ -43,12 +58,51 @@ module NodeCtld
 
     protected
 
-    def post_run(vps_id)
-      ct = OsCtlContainer.new(osctl_parse(%i[ct show], [vps_id]))
-      return if ct.state != 'running'
+    def run_scheduler
+      loop do
+        cmd, v = @queue.pop(timeout: 1)
 
-      VpsSshHostKeys.update_ct(ct)
-      VpsOsRelease.update_ct(ct)
+        if cmd.nil?
+          run_jobs
+          next
+        end
+
+        case cmd
+        when :add
+          log(:debug, "Scheduled post-start job for VPS #{v.vps_id} at #{v.time}")
+          @jobs[v.vps_id] = v
+        when :cancel
+          if @jobs.has_key?(v)
+            log(:debug, "Cancelled post-start job for VPS #{v}")
+            @jobs.delete(v)
+          end
+        when :stop
+          break
+        end
+      end
+    end
+
+    def run_jobs
+      now = Time.now
+
+      @jobs.delete_if do |vps_id, job|
+        if job.time <= now
+          log(:debug, "Running post-start job for VPS #{vps_id}")
+          Thread.new { post_start(vps_id) }
+          true
+        else
+          false
+        end
+      end
+    end
+
+    def post_start(vps_id)
+      conn = LibvirtClient.new
+      dom = conn.lookup_domain_by_name(vps_id.to_s)
+      return if dom.nil? || !dom.active?
+
+      VpsSshHostKeys.update_vps_id(vps_id)
+      VpsOsRelease.update_domain(dom)
     end
   end
 end
