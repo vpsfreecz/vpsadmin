@@ -7,7 +7,7 @@ require 'nodectld/node_status'
 require 'nodectld/vps_status'
 require 'nodectld/storage_status'
 require 'nodectld/shaper'
-require 'nodectld/ct_monitor'
+require 'nodectld/vps_monitor'
 
 module NodeCtld
   EXIT_OK = 0
@@ -316,12 +316,12 @@ module NodeCtld
 
       run_thread_unless_runs(:vps_monitor) do
         if $CFG.get(:vpsadmin, :update_vps_status)
-          @ct_monitor = CtMonitor.new
-          @ct_monitor.start
+          @vps_monitor = VpsMonitor.new
+          @vps_monitor.start
 
         else
-          @ct_monitor.stop if @ct_monitor
-          @ct_monitor = nil
+          @vps_monitor.stop if @vps_monitor
+          @vps_monitor = nil
         end
       end
     end
