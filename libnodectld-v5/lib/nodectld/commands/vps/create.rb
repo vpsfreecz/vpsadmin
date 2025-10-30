@@ -31,6 +31,7 @@ module NodeCtld
       dom = conn.define_domain_xml(xml)
 
       VpsConfig.create_or_replace(@vps_id) do |cfg|
+        cfg.uuid = @uuid
         cfg.vm_type = @vm_type
         cfg.console_port = @console_port
         cfg.distribution = @distribution
