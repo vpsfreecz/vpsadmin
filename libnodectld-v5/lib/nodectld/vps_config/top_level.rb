@@ -8,6 +8,9 @@ module NodeCtld
     attr_reader :vps_id
 
     # @return [String]
+    attr_accessor :uuid
+
+    # @return [String]
     attr_accessor :vm_type
 
     # @return [Integer]
@@ -59,6 +62,7 @@ module NodeCtld
         {}
       end
 
+      @uuid = data.fetch('uuid', nil)
       @vm_type = data.fetch('vm_type', 'qemu_managed')
       @console_port = data.fetch('console_port', nil)
       @distribution = data.fetch('distribution', nil)
