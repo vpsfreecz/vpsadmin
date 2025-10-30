@@ -7,6 +7,9 @@ module NodeCtld
     # @return [Integer]
     attr_reader :vps_id
 
+    # @return [String]
+    attr_accessor :vm_type
+
     # @return [Integer]
     attr_accessor :console_port
 
@@ -56,6 +59,7 @@ module NodeCtld
         {}
       end
 
+      @vm_type = data.fetch('vm_type', 'qemu_managed')
       @console_port = data.fetch('console_port', nil)
       @distribution = data.fetch('distribution', nil)
       @version = data.fetch('version', nil)
@@ -125,6 +129,7 @@ module NodeCtld
     def config
       {
         'vps_id' => vps_id,
+        'vm_type' => vm_type,
         'console_port' => console_port,
         'hostname' => hostname && hostname.to_s,
         'distribution' => distribution,

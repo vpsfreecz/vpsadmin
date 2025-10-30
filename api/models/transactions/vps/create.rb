@@ -28,6 +28,7 @@ module Transactions::Vps
       else
         {
           uuid: vps.uuid.uuid,
+          vm_type: vps.vm_type,
           cpu: vps.cpu,
           memory: vps.memory,
           rootfs_volume: {
