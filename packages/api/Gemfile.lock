@@ -42,7 +42,7 @@ GEM
       cbor (~> 0.5.9)
       openssl-signature_algorithm (~> 1.0)
     csv (3.3.5)
-    date (3.4.1)
+    date (3.5.0)
     diff-lcs (1.6.2)
     dnsruby (1.73.0)
       base64 (>= 0.2)
@@ -250,7 +250,7 @@ GEM
       rbtree
       set (~> 1.0)
     tilt (2.6.1)
-    timeout (0.4.3)
+    timeout (0.4.4)
     tpm-key_attestation (0.14.1)
       bindata (~> 2.4)
       openssl (> 2.0)

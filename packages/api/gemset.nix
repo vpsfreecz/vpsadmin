@@ -220,14 +220,6 @@
     version = "3.3.5";
   };
   date = {
-    groups = [ "default" ];
-    platforms = [ ];
-    source = {
-      remotes = [ "https://rubygems.org" ];
-      sha256 = "0kz6mc4b9m49iaans6cbx031j9y7ldghpi5fzsdh0n3ixwa8w9mz";
-      type = "gem";
-    };
-    version = "3.4.1";
   };
   diff-lcs = {
     groups = [
@@ -1268,14 +1260,6 @@
     version = "2.6.1";
   };
   timeout = {
-    groups = [ "default" ];
-    platforms = [ ];
-    source = {
-      remotes = [ "https://rubygems.org" ];
-      sha256 = "03p31w5ghqfsbz5mcjzvwgkw3h9lbvbknqvrdliy8pxmn9wz02cm";
-      type = "gem";
-    };
-    version = "0.4.3";
   };
   tpm-key_attestation = {
     dependencies = [
