@@ -75,6 +75,7 @@ module NodeCtld
       @exporter.start if $CFG.get(:exporter, :enable)
       VpsSshHostKeys.instance
       VpsOsRelease.instance
+      ExportMounts.instance
       @storage_status.start if @storage_status.enable?
       @console.start if $CFG.get(:console, :enable)
       @dns_status.start if $CFG.get(:vpsadmin, :type) == :dns_server
