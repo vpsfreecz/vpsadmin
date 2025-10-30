@@ -241,6 +241,12 @@ module NodeCtld
       update_vps_delay: 1
     },
 
+    export_mounts: {
+      enable: true,
+      update_vps_delay: 1,
+      update_all_interval: 6 * 60 * 60
+    },
+
     rpc_client: {
       debug: false,
       soft_timeout: 15,
