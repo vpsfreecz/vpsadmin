@@ -227,7 +227,7 @@ module NodeCtld
 
     vps_post_start: {
       after_uptime: 1 * 60 * 60,
-      default_schedule_delay: 15
+      default_schedule_delay: 60
     },
 
     vps_ssh_host_keys: {

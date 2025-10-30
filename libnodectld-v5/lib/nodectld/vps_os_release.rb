@@ -5,8 +5,7 @@ module NodeCtld
   class VpsOsRelease
     include Singleton
     include OsCtl::Lib::Utils::Log
-    include OsCtl::Lib::Utils::System
-    include Utils::OsCtl
+    include Utils::Libvirt
 
     OPTIONS = %w[
       # General
@@ -33,7 +32,7 @@ module NodeCtld
     ].freeze
 
     class << self
-      %i[update_ct update_vps_ids update_all_vps].each do |v|
+      %i[update_domain update_vps_ids update_all_vps].each do |v|
         define_method(v) do |*args, **kwargs, &block|
           instance.send(v, *args, **kwargs, &block)
         end
@@ -47,25 +46,26 @@ module NodeCtld
       @exchange = @channel.direct(NodeBunny.exchange_name)
     end
 
-    # @param ct [OsCtlContainer]
-    def update_ct(ct)
-      return unless enable?
+    # @param domain [Libvirt::Domain]
+    def update_domain(domain)
+      return if !enable? || !domain.active?
 
-      log(:info, "Updating os-release of VPS #{ct.id}")
+      log(:info, "Updating os-release of VPS #{domain.name}")
 
-      if ct.in_ct_boot?
-        log(:info, "VPS #{ct.id} is in rescue mode, skipping")
-        return
-      end
+      # TODO: skip in rescue mode
+      # if ct.in_ct_boot?
+      #   log(:info, "VPS #{ct.id} is in rescue mode, skipping")
+      #   return
+      # end
 
       t = Time.now
 
       begin
-        os_release = parse_os_release(ct)
+        os_release = parse_os_release(domain)
       rescue StandardError => e
         log(
           :warn,
-          "Unable to read os-release from VPS #{ct.id}: #{e.message} (#{e.class})"
+          "Unable to read os-release from VPS #{domain.name}}: #{e.message} (#{e.class})"
         )
         return
       end
@@ -75,7 +75,7 @@ module NodeCtld
       NodeBunny.publish_wait(
         @exchange,
         {
-          vps_id: ct.vps_id,
+          vps_id: domain.name.to_i,
           time: t.to_i,
           os_release:
         }.to_json,
@@ -86,19 +86,21 @@ module NodeCtld
       nil
     end
 
-    # @param vps_ids [Array(Integer)]
+    # @param vps_ids [Array<Integer>]
     def update_vps_ids(vps_ids)
       return if !enable? || vps_ids.empty?
 
-      osctl_parse(%i[ct ls], vps_ids, { state: 'running' }).each do |ct|
-        osctl_ct = OsCtlContainer.new(ct)
+      conn = LibvirtClient.new
 
-        # While ct ls returns only the selected containers, let's be sure
-        next unless vps_ids.include?(osctl_ct.vps_id)
+      conn.list_domains.each do |domain_id|
+        domain = conn.lookup_domain_by_id(domain_id)
+        next if !vps_ids.include?(domain.name.to_i) || !domain.active?
 
-        update_ct(osctl_ct)
+        update_domain(domain)
         sleep($CFG.get(:vps_os_release, :update_vps_delay))
       end
+
+      conn.close
 
       nil
     end
@@ -106,26 +108,27 @@ module NodeCtld
     def update_all_vps
       return unless enable?
 
-      vps_ids = {}
+      vps_ids = []
 
       RpcClient.run do |rpc|
         rpc.list_running_vps_ids.each do |vps_id|
-          vps_ids[vps_id] = true
+          vps_ids << vps_id
         end
       end
 
       log(:info, "Updating os-release of #{vps_ids.length} VPS")
 
-      osctl_parse(%i[ct ls], vps_ids.keys, { state: 'running' }).each do |ct|
-        next unless /^\d+$/ =~ ct[:id]
+      conn = LibvirtClient.new
 
-        osctl_ct = OsCtlContainer.new(ct)
+      vps_ids.each do |vps_id|
+        domain = conn.lookup_domain_by_name(vps_id.to_s)
+        next if domain.nil? || !domain.active?
 
-        next unless vps_ids.has_key?(osctl_ct.vps_id)
-
-        update_ct(osctl_ct)
+        update_domain(domain)
         sleep($CFG.get(:vps_os_release, :update_vps_delay))
       end
+
+      conn.close
 
       nil
     end
@@ -140,44 +143,53 @@ module NodeCtld
 
     protected
 
-    # @param ct [OsCtlContainer]
+    # @param domain [Libvirt::Domain]
     # @return [Hash]
-    def parse_os_release(ct)
+    def parse_os_release(domain)
       os_release = nil
 
       RELEASE_FILES.each do |release_file|
-        os_release = parse_os_release_file(ct, release_file)
+        os_release = parse_os_release_file(domain, release_file)
         break if os_release
       end
 
       if os_release.nil? || os_release.empty?
-        log(:warn, "Unable to read os-release from VPS #{ct.id}")
+        log(:warn, "Unable to read os-release from VPS #{domain.name}")
       end
 
       os_release || {}
     end
 
     # @return [Hash, nil]
-    def parse_os_release_file(ct, file)
-      r, w = IO.pipe
+    def parse_os_release_file(domain, file)
+      cfg = VpsConfig.read(domain.name.to_i)
+      cmd = ['head', '-n100', file]
 
-      pid = Process.spawn('osctl', 'ct', 'cat', ct.id, file, out: w)
-      w.close
+      begin
+        st, out, =
+          if cfg.vm_type == 'qemu_managed'
+            vmctexec(domain, cmd)
+          else
+            vmexec(domain, cmd)
+          end
+      rescue Libvirt::Error => e
+        log(:warn, "Error occurred while reading os-release from VPS #{domain.name}: #{e.message} (#{e.class})")
+        return
+      end
 
-      parsed = parse_os_release_io(r)
+      return if st != 0 || out.nil?
 
-      Process.wait(pid)
-      $?.exitstatus == 0 ? parsed : nil
+      parse_os_release_string(out)
     end
 
-    # @param io [IO]
+    # @param str [String]
     # @return [Hash]
-    def parse_os_release_io(io)
+    def parse_os_release_string(str)
       ret = {}
       max_lines = 100
       max_length = 256
 
-      io.each_line do |line|
+      str.each_line do |line|
         stripped = line.strip
         next if stripped.empty? || stripped.start_with?('#')
 
