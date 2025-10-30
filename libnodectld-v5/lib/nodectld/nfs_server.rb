@@ -104,6 +104,8 @@ module NodeCtld
 
       opts.map do |k, v|
         case k.to_s
+        when 'fsid'
+          result << "fsid=#{v}"
         when 'rw'
           result << (v ? 'rw' : 'ro')
         when 'sync'
