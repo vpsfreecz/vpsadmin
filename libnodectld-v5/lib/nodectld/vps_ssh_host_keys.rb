@@ -5,11 +5,10 @@ module NodeCtld
   class VpsSshHostKeys
     include Singleton
     include OsCtl::Lib::Utils::Log
-    include OsCtl::Lib::Utils::System
-    include Utils::OsCtl
+    include Utils::Libvirt
 
     class << self
-      %i[update_ct update_vps_ids update_all_vps].each do |v|
+      %i[update_vps_id update_vps_ids update_all_vps].each do |v|
         define_method(v) do |*args, **kwargs, &block|
           instance.send(v, *args, **kwargs, &block)
         end
@@ -29,25 +28,20 @@ module NodeCtld
       @update_all_thread = Thread.new { update_all_worker }
     end
 
-    # @param ct [OsCtlContainer]
-    def update_ct(ct)
+    # @param vps_id [Integer]
+    def update_vps_id(vps_id)
       return unless enable?
 
-      @update_vps_queue.insert(ct)
+      @update_vps_queue.insert(vps_id)
       nil
     end
 
-    # @param vps_ids [Array(Integer)]
+    # @param vps_ids [Array<Integer>]
     def update_vps_ids(vps_ids)
       return if !enable? || vps_ids.empty?
 
-      osctl_parse(%i[ct ls], vps_ids, { state: 'running' }).each do |ct|
-        osctl_ct = OsCtlContainer.new(ct)
-
-        # While ct ls returns only the selected containers, let's be sure
-        next unless vps_ids.include?(osctl_ct.vps_id)
-
-        @update_vps_queue << osctl_ct
+      vps_ids.each do |vps_id|
+        @update_vps_queue << vps_id
       end
 
       nil
@@ -74,8 +68,8 @@ module NodeCtld
 
     def update_vps_worker
       loop do
-        ct = @update_vps_queue.pop
-        update_vps_keys(ct)
+        vps_id = @update_vps_queue.pop
+        update_vps_keys(vps_id)
         sleep($CFG.get(:vps_ssh_host_keys, :update_vps_delay))
       end
     end
@@ -84,41 +78,39 @@ module NodeCtld
       loop do
         @update_all_queue.pop(timeout: $CFG.get(:vps_ssh_host_keys, :update_all_interval))
 
-        vps_ids = {}
-
-        RpcClient.run do |rpc|
-          rpc.list_running_vps_ids.each do |vps_id|
-            vps_ids[vps_id] = true
-          end
-        end
+        vps_ids = RpcClient.run(&:list_running_vps_ids)
 
         log(:info, "Updating ssh host keys of #{vps_ids.length} VPS")
 
-        osctl_parse(%i[ct ls], vps_ids.keys, { state: 'running' }).each do |ct|
-          next unless /^\d+$/ =~ ct[:id]
-
-          osctl_ct = OsCtlContainer.new(ct)
-
-          next unless vps_ids.has_key?(osctl_ct.vps_id)
-
-          @update_vps_queue << osctl_ct
+        vps_ids.each do |vps_id|
+          @update_vps_queue << vps_id
         end
       end
     end
 
-    # @param ct [OsCtlContainer]
-    def update_vps_keys(ct)
-      log(:info, "Updating keys of VPS #{ct.id}")
+    # @param vps_id [Integer]
+    def update_vps_keys(vps_id)
+      conn = LibvirtClient.new
+      domain = conn.lookup_domain_by_name(vps_id.to_s)
+
+      if domain.nil? || !domain.active?
+        conn.close
+        return
+      end
+
+      log(:info, "Updating keys of VPS #{vps_id}")
       t = Time.now
 
       begin
-        keys = read_vps_keys(ct)
+        keys = read_vps_keys(vps_id, domain)
       rescue StandardError => e
         log(
           :warn,
-          "Unable to read ssh host keys from VPS #{ct.id}: #{e.message} (#{e.class})"
+          "Unable to read ssh host keys from VPS #{vps_id}: #{e.message} (#{e.class})"
         )
         return
+      ensure
+        conn.close
       end
 
       return if keys.empty?
@@ -126,7 +118,7 @@ module NodeCtld
       NodeBunny.publish_wait(
         @exchange,
         {
-          vps_id: ct.vps_id,
+          vps_id: vps_id,
           time: t.to_i,
           keys: keys.map do |key|
             {
@@ -141,35 +133,38 @@ module NodeCtld
       )
     end
 
-    def read_vps_keys(ct)
-      read_r, read_w = IO.pipe
+    def read_vps_keys(vps_id, domain)
+      cfg = VpsConfig.read(vps_id)
+      cmd = ['sh', '-c', 'head -n 100 /etc/ssh/ssh_host_*.pub']
 
-      # Chroot into VPS rootfs and read ssh host key files
-      read_pid = Process.fork do
-        read_r.close
-        $stdout.reopen(read_w)
-
-        sys = OsCtl::Lib::Sys.new
-        sys.chroot(ct.boot_rootfs)
-
-        Dir.glob('/etc/ssh/ssh_host_*.pub').each do |v|
-          File.open(v, 'r') do |f|
-            $stdout.write(f.readline(32 * 1024))
+      begin
+        st, out, err =
+          if cfg.vm_type == 'qemu_managed'
+            vmctexec(domain, cmd)
+          else
+            vmexec(domain, cmd)
           end
-        rescue StandardError
-          next
-        end
+      rescue Libvirt::Error => e
+        log(:warn, "Error occurred while reading SSH host keys from VPS #{vps_id}: #{e.message} (#{e.class})")
+        return []
       end
 
-      read_w.close
+      if st != 0 || out.nil?
+        log(:warn, "Failed to read SSH keys from VPS #{vps_id}: #{err.inspect}")
+        return []
+      end
 
+      write_r, write_w = IO.pipe
       ssh_r, ssh_w = IO.pipe
 
       # Run ssh-keygen on read key files
-      ssh_pid = Process.spawn('ssh-keygen', '-l', '-f', '-', in: read_r, out: ssh_w)
+      ssh_pid = Process.spawn('ssh-keygen', '-l', '-f', '-', in: write_r, out: ssh_w)
 
-      read_r.close
+      write_r.close
       ssh_w.close
+
+      write_w.write(out)
+      write_w.close
 
       keys = []
 
@@ -186,11 +181,8 @@ module NodeCtld
 
       ssh_r.close
 
-      Process.wait(read_pid)
-      log(:warn, "Reader for VPS #{ct.id} exited with #{$?.exitstatus}") if $?.exitstatus != 0
-
       Process.wait(ssh_pid)
-      log(:warn, "ssh-keygen for VPS #{ct.id} exited with #{$?.exitstatus}") if $?.exitstatus != 0
+      log(:warn, "ssh-keygen for VPS #{vps_id} exited with #{$?.exitstatus}") if $?.exitstatus != 0
 
       keys
     end
