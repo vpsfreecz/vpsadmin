@@ -76,7 +76,7 @@ module NodeCtld
 
     def build_options(export)
       ret = {}
-      keys = %w[rw sync subtree_check root_squash]
+      keys = %w[fsid rw sync subtree_check root_squash]
 
       keys.each do |v|
         ret[v] = export[v]
