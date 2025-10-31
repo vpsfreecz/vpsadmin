@@ -56,6 +56,7 @@ module TransactionChains
         user_id: attrs[:user].id,
         hostname: attrs[:hostname],
         manage_hostname: vps.manage_hostname,
+        os_family_id: vps.os_family_id,
         os_template_id: vps.os_template_id,
         info: "Cloned from #{vps.id}. Original info:\n#{vps.info}",
         node_id: node.id,
