@@ -625,14 +625,6 @@
   };
   net-http = {
     dependencies = [ "uri" ];
-    groups = [ "default" ];
-    platforms = [ ];
-    source = {
-      remotes = [ "https://rubygems.org" ];
-      sha256 = "1ysrwaabhf0sn24jrp0nnp51cdv0jf688mh5i6fsz63q2c6b48cn";
-      type = "gem";
-    };
-    version = "0.6.0";
   };
   net-imap = {
     dependencies = [
@@ -1315,14 +1307,6 @@
     version = "4.1.0";
   };
   uri = {
-    groups = [ "default" ];
-    platforms = [ ];
-    source = {
-      remotes = [ "https://rubygems.org" ];
-      sha256 = "0jrl2vkdvc5aq8q3qvjmmrgjxfm784w8h7fal19qg7q7gh9msj1l";
-      type = "gem";
-    };
-    version = "1.0.4";
   };
   user_agent_parser = {
     groups = [ "default" ];

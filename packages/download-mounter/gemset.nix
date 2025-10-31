@@ -271,13 +271,5 @@
     version = "2.0.6";
   };
   uri = {
-    groups = [ "default" ];
-    platforms = [ ];
-    source = {
-      remotes = [ "https://rubygems.org" ];
-      sha256 = "0jrl2vkdvc5aq8q3qvjmmrgjxfm784w8h7fal19qg7q7gh9msj1l";
-      type = "gem";
-    };
-    version = "1.0.4";
   };
 }
