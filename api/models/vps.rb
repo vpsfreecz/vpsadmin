@@ -15,6 +15,7 @@ class Vps < ApplicationRecord
   belongs_to :uuid, dependent: :delete
   belongs_to :node
   belongs_to :user
+  belongs_to :operating_system
   belongs_to :os_template
   belongs_to :dns_resolver
   has_many :transactions

@@ -29,6 +29,7 @@ module VpsAdmin::API
           raise "Unsupported hypervisor type #{vps.node.hypervisor_type.inspect}"
         end
       vps.manage_hostname = vps.os_template.manage_hostname
+      vps.operating_system = vps.os_template.os_family.operating_system
       vps.set_cluster_resources(resources)
 
       raise ActiveRecord::RecordInvalid, vps unless vps.valid?
