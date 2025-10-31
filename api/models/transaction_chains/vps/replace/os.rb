@@ -28,6 +28,7 @@ module TransactionChains
         hostname: vps.hostname,
         manage_hostname: vps.manage_hostname,
         dns_resolver_id: vps.dns_resolver_id,
+        os_family_id: vps.os_family_id,
         os_template_id: vps.os_template_id,
         info: "Replaced #{vps.id}. Original info:\n#{vps.info}",
         node_id: node.id,
