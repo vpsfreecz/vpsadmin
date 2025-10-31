@@ -211,6 +211,9 @@ start it.
   Read `/etc/os-release` in selected or all VPS and update OS template
   in vpsAdmin if appropriate.
 
+`update export-mounts` [*vps...*]
+  Update a list of NFS export mounts in selected or all VPS.
+
 `incident-report pid` *pid...*
   Report incident to VPS that the given PIDs belong to. `nodectl` identifies
   the processes and opens `$EDITOR` with incident report content, which the user
