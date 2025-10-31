@@ -1,12 +1,11 @@
 module VpsAdmin::API::Resources
-  class OsFamily < HaveAPI::Resource
-    model ::OsFamily
-    desc 'Manage OS families'
+  class Os < HaveAPI::Resource
+    model ::Os
+    desc 'Manage operating systems'
 
     params(:common) do
-      resource Os
+      string :name
       string :label
-      text :description
     end
 
     params(:all) do
@@ -15,7 +14,7 @@ module VpsAdmin::API::Resources
     end
 
     class Index < HaveAPI::Actions::Default::Index
-      desc 'List OS families'
+      desc 'List operating systems'
 
       output(:object_list) do
         use :all
@@ -48,11 +47,11 @@ module VpsAdmin::API::Resources
       end
 
       def prepare
-        @os_family = self.class.model.find_by!(id: params[:os_family_id])
+        @os = self.class.model.find_by!(id: params[:operating_system_id])
       end
 
       def exec
-        @os_family
+        @os
       end
     end
 
@@ -90,7 +89,7 @@ module VpsAdmin::API::Resources
       end
 
       def exec
-        self.class.model.find(params[:os_family_id]).update!(input)
+        self.class.model.find(params[:operating_system_id]).update!(input)
       rescue ActiveRecord::RecordInvalid => e
         error!('update failed', e.record.errors.to_hash)
       end
@@ -102,7 +101,7 @@ module VpsAdmin::API::Resources
       end
 
       def exec
-        self.class.model.find(params[:os_family_id]).destroy!
+        self.class.model.find(params[:operating_system_id]).destroy!
         ok!
       end
     end
