@@ -215,6 +215,9 @@ start it.
   Read `/etc/os-release` in selected or all VPS and update OS template
   in vpsAdmin if appropriate.
 
+`update export-mounts` [*vps...*]
+  Update a list of NFS export mounts in selected or all VPS.
+
 `update script-hooks` [*vps...*]
   Reinstall osctl script hooks for integration with vpsAdmin.
 
