@@ -13,6 +13,9 @@ module NodeCtld
     # @return [String]
     attr_accessor :vm_type
 
+    # @return [String]
+    attr_accessor :operating_system
+
     # @return [Integer]
     attr_accessor :console_port
 
@@ -64,6 +67,7 @@ module NodeCtld
 
       @uuid = data.fetch('uuid', nil)
       @vm_type = data.fetch('vm_type', 'qemu_managed')
+      @operating_system = data.fetch('vm_type', 'linux')
       @console_port = data.fetch('console_port', nil)
       @distribution = data.fetch('distribution', nil)
       @version = data.fetch('version', nil)
@@ -134,6 +138,7 @@ module NodeCtld
       {
         'vps_id' => vps_id,
         'vm_type' => vm_type,
+        'operating_system' => operating_system,
         'console_port' => console_port,
         'hostname' => hostname && hostname.to_s,
         'distribution' => distribution,
