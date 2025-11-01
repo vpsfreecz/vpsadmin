@@ -55,14 +55,6 @@
     version = "3.0.4";
   };
   nio4r = {
-    groups = [ "default" ];
-    platforms = [ ];
-    source = {
-      remotes = [ "https://rubygems.org" ];
-      sha256 = "1a9www524fl1ykspznz54i0phfqya4x45hqaz67in9dvw1lfwpfr";
-      type = "gem";
-    };
-    version = "2.7.4";
   };
   puma = {
     dependencies = [ "nio4r" ];
