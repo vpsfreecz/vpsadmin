@@ -163,6 +163,8 @@ module NodeCtld
     # @return [Hash, nil]
     def parse_os_release_file(domain, file)
       cfg = VpsConfig.read(domain.name.to_i)
+      return if cfg.os != 'linux'
+
       cmd = ['head', '-n100', file]
 
       begin
