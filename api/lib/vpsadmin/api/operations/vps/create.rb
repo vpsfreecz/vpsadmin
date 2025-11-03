@@ -24,7 +24,7 @@ module VpsAdmin::API
         when 'vpsadminos'
           'container'
         when 'libvirt'
-          'qemu_managed'
+          'qemu_container'
         else
           raise "Unsupported hypervisor type #{vps.node.hypervisor_type.inspect}"
         end

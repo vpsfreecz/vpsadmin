@@ -167,7 +167,7 @@ module NodeCtld
 
       begin
         st, out, =
-          if cfg.vm_type == 'qemu_managed'
+          if cfg.vm_type == 'qemu_container'
             vmctexec(domain, cmd)
           else
             vmexec(domain, cmd)

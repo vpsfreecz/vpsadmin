@@ -28,8 +28,8 @@ module TransactionChains
       case vps.vm_type
       when 'container'
         reinstall_vpsadminos(vps, template)
-      when 'qemu_managed'
-        reinstall_qemu_managed(vps, template)
+      when 'qemu_container'
+        reinstall_qemu_container(vps, template)
       else
         raise "Reinstall for #{vps.vm_type} not implemented"
       end
@@ -81,7 +81,7 @@ module TransactionChains
       use_chain(Vps::Features, args: [vps, vps.vps_features])
     end
 
-    def reinstall_qemu_managed(vps, os_template)
+    def reinstall_qemu_container(vps, os_template)
       append_t(
         Transactions::StorageVolume::Format,
         args: [vps.storage_volume],
