@@ -57,6 +57,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
   params(:status) do
     bool :is_running, label: 'Running'
     bool :in_rescue_mode, label: 'In rescue mode'
+    bool :qemu_guest_agent
     integer :uptime, label: 'Uptime'
     float :loadavg1
     float :loadavg5
@@ -1706,6 +1707,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
       bool :status
       bool :is_running, label: 'Running'
       bool :in_rescue_mode, label: 'In rescue mode'
+      bool :qemu_guest_agent
       integer :uptime, label: 'Uptime'
       float :loadavg1
       float :loadavg5
