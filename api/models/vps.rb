@@ -52,7 +52,7 @@ class Vps < ApplicationRecord
   has_many :dataset_expansions
   has_many :export_mounts, dependent: :delete_all
 
-  enum :vm_type, %i[container qemu_managed qemu_standalone]
+  enum :vm_type, %i[container qemu_container qemu_full]
   enum :cgroup_version, %i[cgroup_any cgroup_v1 cgroup_v2]
   enum :map_mode, %i[native zfs], prefix: :map_mode
 
