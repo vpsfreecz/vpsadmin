@@ -5,6 +5,7 @@ module VpsAdmin::API::Resources
 
     params(:common) do
       resource Os
+      string :name
       string :label
       text :description
     end
