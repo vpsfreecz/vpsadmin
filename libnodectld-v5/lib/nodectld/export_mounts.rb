@@ -136,6 +136,8 @@ module NodeCtld
 
     def read_vps_mounts(vps_id, domain)
       cfg = VpsConfig.read(vps_id)
+      return [] if cfg.os != 'linux'
+
       cmd = %w[cat /proc/1/mountinfo]
 
       begin
