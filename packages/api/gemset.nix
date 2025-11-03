@@ -794,17 +794,6 @@
     version = "1.8.1";
   };
   rack = {
-    groups = [
-      "default"
-      "development"
-    ];
-    platforms = [ ];
-    source = {
-      remotes = [ "https://rubygems.org" ];
-      sha256 = "0h9xr8ivrfr0i5f2n7czg74r3ri1pba8wb84bzr78iaqlqykg6i3";
-      type = "gem";
-    };
-    version = "3.2.3";
   };
   rack-oauth2 = {
     dependencies = [
