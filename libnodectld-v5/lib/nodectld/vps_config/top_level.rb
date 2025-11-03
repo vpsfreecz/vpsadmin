@@ -66,7 +66,7 @@ module NodeCtld
       end
 
       @uuid = data.fetch('uuid', nil)
-      @vm_type = data.fetch('vm_type', 'qemu_managed')
+      @vm_type = data.fetch('vm_type', 'qemu_container')
       @operating_system = data.fetch('vm_type', 'linux')
       @console_port = data.fetch('console_port', nil)
       @distribution = data.fetch('distribution', nil)
