@@ -172,6 +172,7 @@ module VpsAdmin::Supervisor
           {
             id: vps.id,
             uuid: vps.uuid.uuid,
+            vm_type: vps.vm_type,
             read_hostname: !vps.manage_hostname,
             cgroup_version: vps.cgroup_version_number,
             pool_fs: vps.dataset_in_pool&.pool&.filesystem
