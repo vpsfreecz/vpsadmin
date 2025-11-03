@@ -193,7 +193,7 @@ module TransactionChains
           end
         end
 
-        if vps.qemu_managed?
+        if vps.qemu_container?
           just_create(vps.console_port)
         end
 
