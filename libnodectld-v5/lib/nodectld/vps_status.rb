@@ -9,7 +9,7 @@ module NodeCtld
     class Entry
       attr_reader :id, :uuid, :vm_type, :os, :os_family, :read_hostname, :cgroup_version
       attr_accessor :exists, :running, :hostname, :uptime, :cpu_usage, :memory,
-                    :nproc, :loadavg, :in_rescue_mode
+                    :nproc, :loadavg, :in_rescue_mode, :qemu_guest_agent
 
       def initialize(row)
         @skip = false
@@ -21,6 +21,7 @@ module NodeCtld
         @read_hostname = row['read_hostname']
         @cgroup_version = row['cgroup_version']
         @in_rescue_mode = false
+        @qemu_guest_agent = false
       end
 
       alias read_hostname? read_hostname
@@ -174,6 +175,14 @@ module NodeCtld
       vpsadmin_vps.loadavg = { 1 => 0, 5 => 0, 15 => 0 }
       vpsadmin_vps.nproc = 0
 
+      begin
+        dom.qemu_agent_command({ 'execute' => 'guest-ping' }.to_json)
+      rescue Libvirt::Error
+        vpsadmin_vps.qemu_guest_agent = false
+      else
+        vpsadmin_vps.qemu_guest_agent = true
+      end
+
       return if vpsadmin_vps.os != 'linux'
 
       cat_files = %w[/proc/uptime /proc/loadavg]
@@ -285,6 +294,7 @@ module NodeCtld
           status: !vps.skip?,
           running: vps.running?,
           in_rescue_mode: vps.in_rescue_mode,
+          qemu_guest_agent: vps.qemu_guest_agent,
           uptime: vps.uptime,
           loadavg: vps.loadavg,
           process_count: vps.nproc,
