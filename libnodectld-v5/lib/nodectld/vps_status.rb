@@ -36,6 +36,21 @@ module NodeCtld
       end
     end
 
+    PROCESS_STATES = %w[R S D Z T t X I].freeze
+
+    PROCESS_COUNTS_COMMAND = <<-END.freeze
+      #{PROCESS_STATES.map { |s| "#{s}=0;" }.join(' ')}
+      for f in /proc/[0-9]*/stat; do
+        IFS= read -r l < "$f" || continue
+        s=${l#*) }; s=${s%% *}
+        case $s in
+          #{PROCESS_STATES.map { |s| "#{s}) #{s}=$((#{s}+1));;" }.join("\n    ")}
+          *) continue;;
+        esac
+      done
+      printf "#{PROCESS_STATES.map { |s| "#{s} %s\\n" }.join}" #{PROCESS_STATES.map { |s| "\"$#{s}\"" }.join(' ')}
+    END
+
     include OsCtl::Lib::Utils::Log
     include Utils::System
     include Utils::Libvirt
@@ -203,6 +218,8 @@ module NodeCtld
         vpsadmin_vps.nproc = nproc_sh.to_i
       end
 
+      update_process_counts(vpsadmin_vps, dom)
+
       return unless vpsadmin_vps.read_hostname?
 
       begin
@@ -223,6 +240,40 @@ module NodeCtld
         log(:warn, "Reading hostname from VPS #{vpsadmin_vps.id} exited with #{st}: #{err.inspect}")
         vpsadmin_vps.hostname = 'unable-to-read'
       end
+    end
+
+    def update_process_counts(vpsadmin_vps, dom)
+      cmd = ['sh', '-c', PROCESS_COUNTS_COMMAND]
+      t = Time.now
+
+      st, out, =
+        if vpsadmin_vps.vm_type == 'qemu_container'
+          vmctexec(dom, cmd)
+        else
+          vmexec(dom, cmd)
+        end
+
+      return if st != 0
+
+      processes = PROCESS_STATES.to_h { |s| [s, 0] }
+
+      out.strip.split("\n").each do |line|
+        state, n_str = line.strip.split
+        next unless PROCESS_STATES.include?(state)
+
+        processes[state] = n_str.to_i
+      end
+
+      NodeBunny.publish_wait(
+        @exchange,
+        {
+          vps_id: vpsadmin_vps.id.to_i,
+          time: t.to_i,
+          processes:
+        }.to_json,
+        content_type: 'application/json',
+        routing_key: 'vps_os_processes'
+      )
     end
 
     def report_status(vps, t)
