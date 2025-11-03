@@ -7,7 +7,7 @@ require 'nodectld/exceptions'
 module NodeCtld
   class VpsStatus
     class Entry
-      attr_reader :id, :uuid, :read_hostname, :cgroup_version
+      attr_reader :id, :uuid, :vm_type, :read_hostname, :cgroup_version
       attr_accessor :exists, :running, :hostname, :uptime, :cpu_usage, :memory,
                     :nproc, :loadavg, :in_rescue_mode
 
@@ -15,6 +15,7 @@ module NodeCtld
         @skip = false
         @id = row['id'].to_s
         @uuid = row['uuid']
+        @vm_type = row['vm_type']
         @read_hostname = row['read_hostname']
         @cgroup_version = row['cgroup_version']
         @in_rescue_mode = false
@@ -158,11 +159,13 @@ module NodeCtld
 
       cat_files = %w[/proc/uptime /proc/loadavg]
 
-      cat_files << if vpsadmin_vps.cgroup_version == 1
-                     '/sys/fs/cgroup/pids/lxc.payload.vps/pids.current'
-                   else
-                     '/sys/fs/cgroup/lxc.payload.vps/pids.current'
-                   end
+      if vpsadmin_vps.vm_type == 'qemu_container'
+        cat_files << if vpsadmin_vps.cgroup_version == 1
+                       '/sys/fs/cgroup/pids/lxc.payload.vps/pids.current'
+                     else
+                       '/sys/fs/cgroup/lxc.payload.vps/pids.current'
+                     end
+      end
 
       begin
         st, out, err = vmexec(dom, %w[cat] + cat_files)
@@ -175,7 +178,7 @@ module NodeCtld
         log(:warn, "Reading status from VPS #{vpsadmin_vps.id} exited with #{st}: #{err.inspect}")
       end
 
-      uptime_data, loadavg_data, nproc = out.strip.split("\n")
+      uptime_data, loadavg_data, nproc_cg = out.strip.split("\n")
 
       begin
         vpsadmin_vps.uptime = SystemProbes::Uptime.new(uptime_data || '').uptime
@@ -189,12 +192,22 @@ module NodeCtld
         # pass
       end
 
-      vpsadmin_vps.nproc = nproc.to_i
+      if nproc_cg
+        vpsadmin_vps.nproc = nproc_cg.to_i
+      else
+        _, nproc_sh = vmexec(dom, ['sh', '-c', 'echo /proc/[0-9]* | wc -w'])
+        vpsadmin_vps.nproc = nproc_sh.to_i
+      end
 
       return unless vpsadmin_vps.read_hostname?
 
       begin
-        st, out, = vmctexec(dom, %w[cat /proc/sys/kernel/hostname])
+        st, out, =
+          if vpsadmin_vps.vm_type == 'qemu_container'
+            vmctexec(dom, %w[cat /proc/sys/kernel/hostname])
+          else
+            vmexec(dom, %w[cat /proc/sys/kernel/hostname])
+          end
       rescue Libvirt::Error => e
         log(:warn, "Error occurred while reading hostname from VPS #{vpsadmin_vps.id}: #{e.message}")
         return
