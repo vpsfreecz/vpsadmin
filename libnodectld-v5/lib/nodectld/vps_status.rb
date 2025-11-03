@@ -7,7 +7,7 @@ require 'nodectld/exceptions'
 module NodeCtld
   class VpsStatus
     class Entry
-      attr_reader :id, :uuid, :vm_type, :read_hostname, :cgroup_version
+      attr_reader :id, :uuid, :vm_type, :os, :os_family, :read_hostname, :cgroup_version
       attr_accessor :exists, :running, :hostname, :uptime, :cpu_usage, :memory,
                     :nproc, :loadavg, :in_rescue_mode
 
@@ -16,6 +16,8 @@ module NodeCtld
         @id = row['id'].to_s
         @uuid = row['uuid']
         @vm_type = row['vm_type']
+        @os = row['os']
+        @os_family = row['os_family']
         @read_hostname = row['read_hostname']
         @cgroup_version = row['cgroup_version']
         @in_rescue_mode = false
@@ -156,6 +158,8 @@ module NodeCtld
       vpsadmin_vps.uptime = 1
       vpsadmin_vps.loadavg = { 1 => 0, 5 => 0, 15 => 0 }
       vpsadmin_vps.nproc = 0
+
+      return if vpsadmin_vps.os != 'linux'
 
       cat_files = %w[/proc/uptime /proc/loadavg]
 

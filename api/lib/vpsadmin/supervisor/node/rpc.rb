@@ -164,7 +164,7 @@ module VpsAdmin::Supervisor
       end
 
       def list_vps_status_check
-        ::Vps.where(
+        ::Vps.includes(os_family: :os).where(
           node: @node,
           object_state: %w[active suspended],
           confirmed: ::Vps.confirmed(:confirmed)
@@ -173,6 +173,8 @@ module VpsAdmin::Supervisor
             id: vps.id,
             uuid: vps.uuid.uuid,
             vm_type: vps.vm_type,
+            os: vps.os_family.os.name,
+            os_family: vps.os_family.name,
             read_hostname: !vps.manage_hostname,
             cgroup_version: vps.cgroup_version_number,
             pool_fs: vps.dataset_in_pool&.pool&.filesystem
