@@ -135,6 +135,8 @@ module NodeCtld
 
     def read_vps_keys(vps_id, domain)
       cfg = VpsConfig.read(vps_id)
+      return [] if cfg.os != 'linux'
+
       cmd = ['sh', '-c', 'head -n 100 /etc/ssh/ssh_host_*.pub']
 
       begin
