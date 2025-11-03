@@ -33,7 +33,8 @@ module NodeCtld
       VpsConfig.create_or_replace(@vps_id) do |cfg|
         cfg.uuid = @uuid
         cfg.vm_type = @vm_type
-        cfg.operating_system = @operating_system
+        cfg.os = @os
+        cfg.os_family = @os_family
         cfg.console_port = @console_port
         cfg.distribution = @distribution
         cfg.version = @version

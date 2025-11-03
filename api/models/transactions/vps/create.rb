@@ -29,7 +29,8 @@ module Transactions::Vps
         {
           uuid: vps.uuid.uuid,
           vm_type: vps.vm_type,
-          operating_system: vps.os_family.os.name,
+          os: vps.os_family.os.name,
+          os_family: vps.os_family.name,
           cpu: vps.cpu,
           memory: vps.memory,
           rootfs_volume: {
