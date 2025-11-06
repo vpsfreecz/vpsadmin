@@ -240,14 +240,6 @@
       "logger"
       "simpleidn"
     ];
-    groups = [ "default" ];
-    platforms = [ ];
-    source = {
-      remotes = [ "https://rubygems.org" ];
-      sha256 = "06pis5wwpan5flpbc7qj62d377zvm5bhbp11jkx14w0y6xw09h1r";
-      type = "gem";
-    };
-    version = "1.73.0";
   };
   domain_name = {
     groups = [ "default" ];
