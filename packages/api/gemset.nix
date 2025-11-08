@@ -289,14 +289,6 @@
   };
   faraday-net_http = {
     dependencies = [ "net-http" ];
-    groups = [ "default" ];
-    platforms = [ ];
-    source = {
-      remotes = [ "https://rubygems.org" ];
-      sha256 = "0fxbckg468dabkkznv48ss8zv14d9cd8mh1rr3m98aw7wzx5fmq9";
-      type = "gem";
-    };
-    version = "3.4.1";
   };
   fio_api = {
     dependencies = [ "httparty" ];
