@@ -21,6 +21,7 @@ module NodeCtld
           config_path: File.join($CFG.get(:vpsadmin, :config_drive_dir), "#{@vps_id}.iso"),
           rootfs_type: @rootfs_volume['format'],
           rootfs_path: File.join(@rootfs_volume['pool_path'], "#{@rootfs_volume['name']}.#{@rootfs_volume['format']}"),
+          rootfs_serial: "vpsadmin-volume-#{@rootfs_volume['id']}",
           console_port: @console_port,
           network_interfaces: []
         }
