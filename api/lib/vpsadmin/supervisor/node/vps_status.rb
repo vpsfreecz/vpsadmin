@@ -61,6 +61,10 @@ module VpsAdmin::Supervisor
         )
 
         ::Vps.where(id: current_status.vps_id).update_all(hostname: new_status['hostname']) if new_status['hostname']
+
+        if new_status['io_stats']
+          update_io_stats(current_status, new_status['io_stats'])
+        end
       else
         current_status.assign_attributes(
           uptime: nil,
@@ -169,6 +173,30 @@ module VpsAdmin::Supervisor
       end
 
       log.save!
+    end
+
+    def update_io_stats(current_status, io_stats)
+      all_index = io_stats.index { |v| v['storage_volume_id'] == 'all' }
+      all = io_stats.delete_at(all_index) if all_index
+
+      ::VpsIoStat.upsert_all(
+        io_stats.map do |vol_stats|
+          {
+            vps_id: current_status.vps_id,
+            storage_volume_id: vol_stats['id'],
+            read_requests: vol_stats['read_requests'],
+            read_bytes: vol_stats['read_bytes'],
+            write_requests: vol_stats['write_requests'],
+            write_bytes: vol_stats['write_bytes'],
+            delta: vol_stats['delta'],
+            read_requests_readout: vol_stats['read_requests_readout'],
+            read_bytes_readout: vol_stats['read_bytes_readout'],
+            write_requests_readout: vol_stats['write_requests_readout'],
+            write_bytes_readout: vol_stats['write_bytes_readout']
+          }
+        end
+      )
+      io_stats
     end
 
     def find_cluster_resources(vps_id)
