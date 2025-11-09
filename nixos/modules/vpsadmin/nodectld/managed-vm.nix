@@ -50,8 +50,10 @@ let
           boot.loader.grub.device = "/dev/vda";
 
           environment.systemPackages = with pkgs; [
+            btrfs-progs
             configureCt
             distconfig
+            e2fsprogs
             jq
             lxc
             qemu
