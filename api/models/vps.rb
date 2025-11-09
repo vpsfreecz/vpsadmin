@@ -37,6 +37,9 @@ class Vps < ApplicationRecord
   belongs_to :console_port
 
   belongs_to :storage_volume
+  has_many :storage_volumes
+  has_many :vps_io_stats
+
   belongs_to :dataset_in_pool
   has_one :dataset, through: :dataset_in_pool, autosave: false
   has_many :mounts

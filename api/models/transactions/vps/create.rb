@@ -34,6 +34,7 @@ module Transactions::Vps
           cpu: vps.cpu,
           memory: vps.memory,
           rootfs_volume: {
+            id: vps.storage_volume_id,
             pool_path: vps.storage_volume.storage_pool.path,
             name: vps.storage_volume.name,
             format: vps.storage_volume.format,
