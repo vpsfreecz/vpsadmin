@@ -183,14 +183,6 @@
     version = "3.2025.0924";
   };
   minitest = {
-    groups = [ "default" ];
-    platforms = [ ];
-    source = {
-      remotes = [ "https://rubygems.org" ];
-      sha256 = "0c1c9lr7h0bnf48xj5sylg2cs2awrb0hfxwimiz4yfl6kz87m0gm";
-      type = "gem";
-    };
-    version = "5.26.0";
   };
   netrc = {
     groups = [ "default" ];

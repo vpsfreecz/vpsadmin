@@ -41,7 +41,7 @@ GEM
       logger
       mime-types-data (~> 3.2025, >= 3.2025.0507)
     mime-types-data (3.2025.0924)
-    minitest (5.26.0)
+    minitest (5.26.1)
     netrc (0.11.0)
     reline (0.6.2)
       io-console (~> 0.5)

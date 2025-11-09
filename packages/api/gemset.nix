@@ -545,14 +545,6 @@
     version = "1.1.5";
   };
   minitest = {
-    groups = [ "default" ];
-    platforms = [ ];
-    source = {
-      remotes = [ "https://rubygems.org" ];
-      sha256 = "0c1c9lr7h0bnf48xj5sylg2cs2awrb0hfxwimiz4yfl6kz87m0gm";
-      type = "gem";
-    };
-    version = "5.26.0";
   };
   multi_json = {
     groups = [ "default" ];
@@ -1027,17 +1019,6 @@
       "parser"
       "prism"
     ];
-    groups = [
-      "default"
-      "development"
-    ];
-    platforms = [ ];
-    source = {
-      remotes = [ "https://rubygems.org" ];
-      sha256 = "1bh1kls2cs2j3cmj6f2j2zmfqfknj2a6i441d828nh2mg00q49jr";
-      type = "gem";
-    };
-    version = "1.47.1";
   };
   rubocop-rake = {
     dependencies = [
