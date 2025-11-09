@@ -195,6 +195,8 @@ module TransactionChains
 
         if vps.qemu_container?
           just_create(vps.console_port)
+
+          just_create(vps.vps_io_stats.create!(storage_volume: vps.storage_volume))
         end
 
         # Maintenance windows
