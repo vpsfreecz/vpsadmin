@@ -5,6 +5,7 @@ class StorageVolume < ApplicationRecord
   belongs_to :storage_pool
   belongs_to :user
   belongs_to :vps
+  has_many :vps_io_stats
 
   enum :format, %i[raw qcow2]
 
