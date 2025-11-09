@@ -7,7 +7,8 @@ require 'nodectld/exceptions'
 module NodeCtld
   class VpsStatus
     class Entry
-      attr_reader :id, :uuid, :vm_type, :os, :os_family, :read_hostname, :cgroup_version
+      attr_reader :id, :uuid, :vm_type, :os, :os_family, :read_hostname, :cgroup_version,
+                  :io_stats
       attr_accessor :exists, :running, :hostname, :uptime, :cpu_usage, :memory,
                     :nproc, :loadavg, :in_rescue_mode, :qemu_guest_agent
 
@@ -20,6 +21,7 @@ module NodeCtld
         @os_family = row['os_family']
         @read_hostname = row['read_hostname']
         @cgroup_version = row['cgroup_version']
+        @io_stats = row['storage_volume_stats'].map { |v| VolumeStats.new(v) }
         @in_rescue_mode = false
         @qemu_guest_agent = false
       end
@@ -34,6 +36,81 @@ module NodeCtld
 
       def skip?
         @skip
+      end
+    end
+
+    class VolumeStats
+      attr_reader :id, :time, :delta,
+                  :read_requests_readout, :read_bytes_readout, :write_requests_readout, :write_bytes_readout,
+                  :read_requests, :read_bytes, :write_requests, :write_bytes
+
+      def initialize(row)
+        @id = row['id']
+        @pool_path = row['pool_path']
+        @name = row['name']
+        @format = row['format']
+
+        @read_requests_readout = row['read_requests_readout']
+        @read_bytes_readout = row['read_bytes_readout']
+        @write_requests_readout = row['write_requests_readout']
+        @write_bytes_readout = row['write_bytes_readout']
+
+        @read_requests = 0
+        @read_bytes = 0
+        @write_requests = 0
+        @write_bytes = 0
+
+        @delta = 1
+      end
+
+      def path
+        if @id == 'all'
+          ''
+        else
+          File.join(@pool_path, "#{@name}.#{@format}")
+        end
+      end
+
+      def set(time, io_stats, prev_stats)
+        @read_requests_readout = io_stats.rd_req
+        @read_bytes_readout = io_stats.rd_bytes
+        @write_requests_readout = io_stats.wr_req
+        @write_bytes_readout = io_stats.wr_bytes
+
+        prev_vol = prev_stats.detect { |v| v.id == id }
+
+        if prev_vol
+          @read_requests = [0, @read_requests_readout - prev_vol.read_requests_readout].max
+          @read_bytes = [0, @read_bytes_readout - prev_vol.read_bytes_readout].max
+          @write_requests = [0, @write_requests_readout - prev_vol.write_requests_readout].max
+          @write_bytes = [0, @write_bytes_readout - prev_vol.write_bytes_readout].max
+
+          @delta = prev_vol.time ? time - prev_vol.time : 1
+        else
+          @read_requests = 0
+          @read_bytes = 0
+          @write_requests = 0
+          @write_bytes = 0
+
+          @delta = 1
+        end
+
+        @time = time
+      end
+
+      def export
+        {
+          id: id,
+          'read_requests' => read_requests,
+          'read_bytes' => read_bytes,
+          'write_requests' => write_requests,
+          'write_bytes' => write_bytes,
+          'delta' => delta.round,
+          'read_requests_readout' => read_requests_readout,
+          'read_bytes_readout' => read_bytes_readout,
+          'write_requests_readout' => write_requests_readout,
+          'write_bytes_readout' => write_bytes_readout
+        }
       end
     end
 
@@ -108,14 +185,15 @@ module NodeCtld
 
           vpsadmin_vps.memory = get_memory_stats(dom)['rss'] || (info.memory * 1024)
 
-          read_guest_info(vpsadmin_vps, dom)
+          read_guest_info(vpsadmin_vps, dom, prev, t)
         end
 
         # TODO: detect rescue mode
 
         @prev[dom.uuid] = {
           time: t,
-          cpu_time: info.cpu_time
+          cpu_time: info.cpu_time,
+          io_stats: vpsadmin_vps.io_stats
         }
 
         report_status(vpsadmin_vps, t)
@@ -170,7 +248,7 @@ module NodeCtld
       ret
     end
 
-    def read_guest_info(vpsadmin_vps, dom)
+    def read_guest_info(vpsadmin_vps, dom, prev, t)
       vpsadmin_vps.uptime = 1
       vpsadmin_vps.loadavg = { 1 => 0, 5 => 0, 15 => 0 }
       vpsadmin_vps.nproc = 0
@@ -184,6 +262,10 @@ module NodeCtld
       end
 
       return if vpsadmin_vps.os != 'linux'
+
+      vpsadmin_vps.io_stats.each do |vol_stats|
+        vol_stats.set(t, dom.block_stats(vol_stats.path), prev[:io_stats])
+      end
 
       cat_files = %w[/proc/uptime /proc/loadavg]
 
@@ -300,6 +382,7 @@ module NodeCtld
           process_count: vps.nproc,
           used_memory: vps.memory,
           cpu_usage: vps.cpu_usage,
+          io_stats: vps.io_stats.map(&:export),
           hostname: vps.hostname
         }.to_json,
         content_type: 'application/json',
