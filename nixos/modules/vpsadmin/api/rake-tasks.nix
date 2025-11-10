@@ -369,7 +369,7 @@ in
           ];
           timer.enable = true;
           timer.config = {
-            OnCalendar = "Tue..Fri, 00:15";
+            OnCalendar = "Tue..Fri, 09:15";
           };
         };
 
@@ -384,7 +384,7 @@ in
           ];
           timer.enable = true;
           timer.config = {
-            OnCalendar = "00:20";
+            OnCalendar = "09:20";
           };
         };
 
@@ -408,7 +408,7 @@ in
           ];
           timer.enable = true;
           timer.config = {
-            OnCalendar = "00:25";
+            OnCalendar = "09:25";
           };
         };
 
