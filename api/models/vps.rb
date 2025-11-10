@@ -46,7 +46,7 @@ class Vps < ApplicationRecord
   has_many :oom_report_rules, dependent: :delete_all
   has_many :oom_preventions, dependent: :destroy
   has_many :dataset_expansions
-  has_many :export_mounts
+  has_many :export_mounts, dependent: :delete_all
 
   enum :cgroup_version, %i[cgroup_any cgroup_v1 cgroup_v2]
   enum :map_mode, %i[native zfs], prefix: :map_mode
