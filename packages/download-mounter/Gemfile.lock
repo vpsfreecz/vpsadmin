@@ -43,7 +43,7 @@ GEM
     mime-types-data (3.2025.0924)
     minitest (5.26.1)
     netrc (0.11.0)
-    reline (0.6.2)
+    reline (0.6.3)
       io-console (~> 0.5)
     require_all (2.0.0)
     rest-client (2.1.0)
@@ -66,4 +66,4 @@ DEPENDENCIES
   highline
 
 BUNDLED WITH
-   2.7.2
+   2.6.6

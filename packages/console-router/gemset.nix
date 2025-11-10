@@ -55,6 +55,14 @@
     version = "3.0.4";
   };
   nio4r = {
+    groups = [ "default" ];
+    platforms = [ ];
+    source = {
+      remotes = [ "https://rubygems.org" ];
+      sha256 = "18fwy5yqnvgixq3cn0h63lm8jaxsjjxkmj8rhiv8wpzv9271d43c";
+      type = "gem";
+    };
+    version = "2.7.5";
   };
   puma = {
     dependencies = [ "nio4r" ];
@@ -68,6 +76,17 @@
     version = "7.1.0";
   };
   rack = {
+    groups = [
+      "default"
+      "development"
+    ];
+    platforms = [ ];
+    source = {
+      remotes = [ "https://rubygems.org" ];
+      sha256 = "1xmnrk076sqymilydqgyzhkma3hgqhcv8xhy7ks479l2a3vvcx2x";
+      type = "gem";
+    };
+    version = "3.2.4";
   };
   rack-protection = {
     dependencies = [

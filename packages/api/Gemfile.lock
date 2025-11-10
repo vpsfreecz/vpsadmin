@@ -181,7 +181,7 @@ GEM
     rbtree (0.4.6)
     redcarpet (3.6.1)
     regexp_parser (2.11.3)
-    reline (0.6.2)
+    reline (0.6.3)
       io-console (~> 0.5)
     request_store (1.7.0)
       rack (>= 1.4)
@@ -307,4 +307,4 @@ DEPENDENCIES
   yard
 
 BUNDLED WITH
-   2.7.2
+   2.6.6
