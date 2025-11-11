@@ -57,6 +57,10 @@ module NodeCtld
       send_request('list_vps_status_check')
     end
 
+    def get_vps_status_check(vps_id)
+      send_request('get_vps_status_check', vps_id)
+    end
+
     def list_vps_network_interfaces
       send_request('list_vps_network_interfaces')
     end
