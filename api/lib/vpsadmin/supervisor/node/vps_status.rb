@@ -65,6 +65,10 @@ module VpsAdmin::Supervisor
         if new_status['io_stats']
           update_io_stats(current_status, new_status['io_stats'])
         end
+
+        if new_status['process_states']
+          update_os_processes(current_status, new_status['process_states'])
+        end
       else
         current_status.assign_attributes(
           uptime: nil,
@@ -197,6 +201,21 @@ module VpsAdmin::Supervisor
         end
       )
       io_stats
+    end
+
+    def update_os_processes(current_status, os_processes)
+      ::VpsOsProcess.upsert_all(
+        os_processes.map do |state, count|
+          {
+            vps_id: current_status.vps_id,
+            state:,
+            count:,
+            created_at: current_status.updated_at,
+            updated_at: current_status.updated_at
+          }
+        end,
+        update_only: %i[count]
+      )
     end
 
     def find_cluster_resources(vps_id)

@@ -1,390 +1,150 @@
-require 'etc'
 require 'time'
 require 'libosctl'
 require 'nodectld/utils'
 require 'nodectld/exceptions'
+require 'singleton'
 
 module NodeCtld
   class VpsStatus
-    class Entry
-      attr_reader :id, :uuid, :vm_type, :os, :os_family, :read_hostname, :cgroup_version,
-                  :io_stats
-      attr_accessor :exists, :running, :hostname, :uptime, :cpu_usage, :memory,
-                    :nproc, :loadavg, :in_rescue_mode, :qemu_guest_agent
-
-      def initialize(row)
-        @skip = false
-        @id = row['id'].to_s
-        @uuid = row['uuid']
-        @vm_type = row['vm_type']
-        @os = row['os']
-        @os_family = row['os_family']
-        @read_hostname = row['read_hostname']
-        @cgroup_version = row['cgroup_version']
-        @io_stats = row['storage_volume_stats'].map { |v| VolumeStats.new(v) }
-        @in_rescue_mode = false
-        @qemu_guest_agent = false
-      end
-
-      alias read_hostname? read_hostname
-      alias exists? exists
-      alias running? running
-
-      def skip
-        @skip = true
-      end
-
-      def skip?
-        @skip
-      end
-    end
-
-    class VolumeStats
-      attr_reader :id, :time, :delta,
-                  :read_requests_readout, :read_bytes_readout, :write_requests_readout, :write_bytes_readout,
-                  :read_requests, :read_bytes, :write_requests, :write_bytes
-
-      def initialize(row)
-        @id = row['id']
-        @pool_path = row['pool_path']
-        @name = row['name']
-        @format = row['format']
-
-        @read_requests_readout = row['read_requests_readout']
-        @read_bytes_readout = row['read_bytes_readout']
-        @write_requests_readout = row['write_requests_readout']
-        @write_bytes_readout = row['write_bytes_readout']
-
-        @read_requests = 0
-        @read_bytes = 0
-        @write_requests = 0
-        @write_bytes = 0
-
-        @delta = 1
-      end
-
-      def path
-        if @id == 'all'
-          ''
-        else
-          File.join(@pool_path, "#{@name}.#{@format}")
-        end
-      end
-
-      def set(time, io_stats, prev_stats)
-        @read_requests_readout = io_stats.rd_req
-        @read_bytes_readout = io_stats.rd_bytes
-        @write_requests_readout = io_stats.wr_req
-        @write_bytes_readout = io_stats.wr_bytes
-
-        prev_vol = prev_stats.detect { |v| v.id == id }
-
-        if prev_vol
-          @read_requests = [0, @read_requests_readout - prev_vol.read_requests_readout].max
-          @read_bytes = [0, @read_bytes_readout - prev_vol.read_bytes_readout].max
-          @write_requests = [0, @write_requests_readout - prev_vol.write_requests_readout].max
-          @write_bytes = [0, @write_bytes_readout - prev_vol.write_bytes_readout].max
-
-          @delta = prev_vol.time ? time - prev_vol.time : 1
-        else
-          @read_requests = 0
-          @read_bytes = 0
-          @write_requests = 0
-          @write_bytes = 0
-
-          @delta = 1
-        end
-
-        @time = time
-      end
-
-      def export
-        {
-          id: id,
-          'read_requests' => read_requests,
-          'read_bytes' => read_bytes,
-          'write_requests' => write_requests,
-          'write_bytes' => write_bytes,
-          'delta' => delta.round,
-          'read_requests_readout' => read_requests_readout,
-          'read_bytes_readout' => read_bytes_readout,
-          'write_requests_readout' => write_requests_readout,
-          'write_bytes_readout' => write_bytes_readout
-        }
-      end
-    end
-
-    PROCESS_STATES = %w[R S D Z T t X I].freeze
-
-    PROCESS_COUNTS_COMMAND = <<-END.freeze
-      #{PROCESS_STATES.map { |s| "#{s}=0;" }.join(' ')}
-      for f in /proc/[0-9]*/stat; do
-        IFS= read -r l < "$f" || continue
-        s=${l#*) }; s=${s%% *}
-        case $s in
-          #{PROCESS_STATES.map { |s| "#{s}) #{s}=$((#{s}+1));;" }.join("\n    ")}
-          *) continue;;
-        esac
-      done
-      printf "#{PROCESS_STATES.map { |s| "#{s} %s\\n" }.join}" #{PROCESS_STATES.map { |s| "\"$#{s}\"" }.join(' ')}
-    END
-
+    include Singleton
     include OsCtl::Lib::Utils::Log
-    include Utils::System
-    include Utils::Libvirt
-    include Utils::Vps
 
-    @@mutex = Mutex.new
+    class << self
+      %i[start stop update add_vps remove_vps].each do |v|
+        define_method(v) do |*args, **kwargs, &block|
+          instance.send(v, *args, **kwargs, &block)
+        end
+      end
+    end
 
     def initialize
-      @prev = {}
+      @queue = Queue.new
+      @vpses = {}
       @channel = NodeBunny.create_channel
       @exchange = @channel.direct(NodeBunny.exchange_name)
     end
 
-    def update
-      @@mutex.synchronize do
-        safe_update
-      end
+    def start
+      @thread = Thread.new { status_loop }
     end
 
-    def safe_update
-      vpsadmin_vpses = {}
+    def stop
+      @queue << [:stop]
+      @thread.join
+      nil
+    end
 
-      fetch_vpses.each do |vps|
-        ent = Entry.new(vps)
-        vpsadmin_vpses[ent.uuid] = ent
-      end
+    def update
+      @queue << [:update]
+      nil
+    end
 
-      conn = LibvirtClient.new
-      domains = conn.list_all_domains
+    # @param vps_id [Integer]
+    def add_vps(vps_id)
+      @queue << [:add_vps, vps_id]
+      nil
+    end
 
-      hostname_vpsadmin_vpses = []
+    # @param vps_id [Integer]
+    def remove_vps(vps_id)
+      @queue << [:remove_vps, vps_id]
+      nil
+    end
 
-      domains.each do |dom|
-        t = Time.now
-
-        vpsadmin_vps = vpsadmin_vpses[dom.uuid]
-        next if vpsadmin_vps.nil?
-
-        vpsadmin_vps.exists = true
-        vpsadmin_vps.running = dom.active?
-
-        unless vpsadmin_vps.running?
-          report_status(vpsadmin_vps, t)
-          next
-        end
-
-        prev = @prev[dom.uuid]
-        info = dom.info
-
-        if prev
-          dt = t - prev[:time]
-
-          vpsadmin_vps.cpu_usage = [((info.cpu_time - prev[:cpu_time]).to_f / (dt * 1_000_000_000.0)) * 100.0, 0].max
-
-          vpsadmin_vps.memory = get_memory_stats(dom)['rss'] || (info.memory * 1024)
-
-          read_guest_info(vpsadmin_vps, dom, prev, t)
-        end
-
-        # TODO: detect rescue mode
-
-        @prev[dom.uuid] = {
-          time: t,
-          cpu_time: info.cpu_time,
-          io_stats: vpsadmin_vps.io_stats
-        }
-
-        report_status(vpsadmin_vps, t)
-      end
-    rescue SystemCommandFailed => e
-      log(:fatal, :vps_status, e.message)
+    def log_type
+      'vps status'
     end
 
     protected
 
-    def fetch_vpses
+    def status_loop
+      @vpses = fetch_all_vpses.to_h do |vps|
+        [vps['id'], VpsStatus::Vps.new(vps)]
+      end
+
+      loop do
+        cmd, *args = @queue.pop(timeout: $CFG.get(:vpsadmin, :vps_status_interval))
+
+        case cmd
+        when :stop
+          break
+        when :update
+          # pass
+        when :add_vps
+          vps_id, = args
+          do_add_vps(vps_id)
+        when :remove_vps
+          vps_id, = args
+          do_remove_vps(vps_id)
+        end
+
+        vps_statuses = @vpses.clone
+        conn = LibvirtClient.new
+
+        domains = conn.list_all_domains
+
+        log(:debug, "Updating status of #{vps_statuses.length} VPS / #{domains.length} domains")
+
+        domains.each do |domain|
+          vps_id = domain.name.to_i
+          next if vps_id <= 0
+
+          vps = vps_statuses.delete(vps_id)
+
+          if vps.nil?
+            vps = get_vps(vps_id)
+
+            # TODO: we could remember that the VPS does not exist
+            next if vps.nil?
+
+            @vpses[vps.id] = vps
+          end
+
+          vps.update(domain)
+
+          report_status(vps.export)
+        end
+
+        vps_statuses.each_value do |vps|
+          log(:debug, "Domain for VPS #{vps.id} not found")
+          vps.update_missing
+          report_status(vps.export)
+        end
+
+        conn.close
+      end
+    end
+
+    def fetch_all_vpses
       RpcClient.run(&:list_vps_status_check)
     end
 
-    def run_or_skip(vps)
-      yield
-    rescue StandardError => e
-      log(:warn, :vps, e.message)
-      vps.skip
+    def fetch_vps(vps_id)
+      RpcClient.run { |rpc| rpc.get_vps_status_check(vps_id) }
     end
 
-    def get_memory_stats(dom)
-      ret = {}
+    def get_vps(vps_id)
+      vps_opts = fetch_vps(vps_id)
+      return if vps_opts.nil?
 
-      dom.memory_stats.each do |st|
-        key =
-          case st.tag
-          when Libvirt::Domain::MemoryStats::ACTUAL_BALLOON
-            'actual'
-          when Libvirt::Domain::MemoryStats::AVAILABLE
-            'available'
-          when Libvirt::Domain::MemoryStats::MAJOR_FAULT
-            'major_fault'
-          when Libvirt::Domain::MemoryStats::MINOR_FAULT
-            'minor_fault'
-          when Libvirt::Domain::MemoryStats::RSS
-            'rss'
-          when Libvirt::Domain::MemoryStats::SWAP_IN
-            'swap_in'
-          when Libvirt::Domain::MemoryStats::SWAP_OUT
-            'swap_out'
-          when Libvirt::Domain::MemoryStats::UNUSED
-            'unused'
-          end
-
-        next if key.nil?
-
-        # libvirt returns values in kB
-        ret[key] = st.instance_variable_get('@val') * 1024
-      end
-
-      ret
+      VpsStatus::Vps.new(vps_opts)
     end
 
-    def read_guest_info(vpsadmin_vps, dom, prev, t)
-      vpsadmin_vps.uptime = 1
-      vpsadmin_vps.loadavg = { 1 => 0, 5 => 0, 15 => 0 }
-      vpsadmin_vps.nproc = 0
+    def do_add_vps(vps_id)
+      vps = get_vps(vps_id)
+      return if vps.nil?
 
-      begin
-        dom.qemu_agent_command({ 'execute' => 'guest-ping' }.to_json)
-      rescue Libvirt::Error
-        vpsadmin_vps.qemu_guest_agent = false
-      else
-        vpsadmin_vps.qemu_guest_agent = true
-      end
-
-      return if vpsadmin_vps.os != 'linux'
-
-      vpsadmin_vps.io_stats.each do |vol_stats|
-        vol_stats.set(t, dom.block_stats(vol_stats.path), prev[:io_stats])
-      end
-
-      cat_files = %w[/proc/uptime /proc/loadavg]
-
-      if vpsadmin_vps.vm_type == 'qemu_container'
-        cat_files << if vpsadmin_vps.cgroup_version == 1
-                       '/sys/fs/cgroup/pids/lxc.payload.vps/pids.current'
-                     else
-                       '/sys/fs/cgroup/lxc.payload.vps/pids.current'
-                     end
-      end
-
-      begin
-        st, out, err = vmexec(dom, %w[cat] + cat_files)
-      rescue Libvirt::Error => e
-        log(:warn, "Error occurred while reading stats from VPS #{vpsadmin_vps.id}: #{e.message}")
-        return
-      end
-
-      if st != 0
-        log(:warn, "Reading status from VPS #{vpsadmin_vps.id} exited with #{st}: #{err.inspect}")
-      end
-
-      uptime_data, loadavg_data, nproc_cg = out.strip.split("\n")
-
-      begin
-        vpsadmin_vps.uptime = SystemProbes::Uptime.new(uptime_data || '').uptime
-      rescue ParserError
-        # pass
-      end
-
-      begin
-        vpsadmin_vps.loadavg = SystemProbes::LoadAvg.new(loadavg_data || '').avg
-      rescue ParserError
-        # pass
-      end
-
-      if nproc_cg
-        vpsadmin_vps.nproc = nproc_cg.to_i
-      else
-        _, nproc_sh = vmexec(dom, ['sh', '-c', 'echo /proc/[0-9]* | wc -w'])
-        vpsadmin_vps.nproc = nproc_sh.to_i
-      end
-
-      update_process_counts(vpsadmin_vps, dom)
-
-      return unless vpsadmin_vps.read_hostname?
-
-      begin
-        st, out, =
-          if vpsadmin_vps.vm_type == 'qemu_container'
-            vmctexec(dom, %w[cat /proc/sys/kernel/hostname])
-          else
-            vmexec(dom, %w[cat /proc/sys/kernel/hostname])
-          end
-      rescue Libvirt::Error => e
-        log(:warn, "Error occurred while reading hostname from VPS #{vpsadmin_vps.id}: #{e.message}")
-        return
-      end
-
-      if st == 0
-        vpsadmin_vps.hostname = out.strip
-      else
-        log(:warn, "Reading hostname from VPS #{vpsadmin_vps.id} exited with #{st}: #{err.inspect}")
-        vpsadmin_vps.hostname = 'unable-to-read'
-      end
+      @vpses[vps.id] = vps
     end
 
-    def update_process_counts(vpsadmin_vps, dom)
-      cmd = ['sh', '-c', PROCESS_COUNTS_COMMAND]
-      t = Time.now
+    def do_remove_vps(vps_id)
+      @vpses.delete(vps_id)
+    end
 
-      st, out, =
-        if vpsadmin_vps.vm_type == 'qemu_container'
-          vmctexec(dom, cmd)
-        else
-          vmexec(dom, cmd)
-        end
-
-      return if st != 0
-
-      processes = PROCESS_STATES.to_h { |s| [s, 0] }
-
-      out.strip.split("\n").each do |line|
-        state, n_str = line.strip.split
-        next unless PROCESS_STATES.include?(state)
-
-        processes[state] = n_str.to_i
-      end
-
+    def report_status(status)
       NodeBunny.publish_wait(
         @exchange,
-        {
-          vps_id: vpsadmin_vps.id.to_i,
-          time: t.to_i,
-          processes:
-        }.to_json,
-        content_type: 'application/json',
-        routing_key: 'vps_os_processes'
-      )
-    end
-
-    def report_status(vps, t)
-      NodeBunny.publish_wait(
-        @exchange,
-        {
-          id: vps.id.to_i,
-          time: t.to_i,
-          status: !vps.skip?,
-          running: vps.running?,
-          in_rescue_mode: vps.in_rescue_mode,
-          qemu_guest_agent: vps.qemu_guest_agent,
-          uptime: vps.uptime,
-          loadavg: vps.loadavg,
-          process_count: vps.nproc,
-          used_memory: vps.memory,
-          cpu_usage: vps.cpu_usage,
-          io_stats: vps.io_stats.map(&:export),
-          hostname: vps.hostname
-        }.to_json,
+        status.to_json,
         content_type: 'application/json',
         routing_key: 'vps_statuses'
       )
