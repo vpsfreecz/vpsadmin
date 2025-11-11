@@ -194,6 +194,38 @@ module VpsAdmin::Supervisor
         end
       end
 
+      def get_vps_status_check(vps_id)
+        vps = ::Vps.includes(storage_volumes: :storage_pool, os_family: :os).find_by(
+          node: @node,
+          object_state: %w[active suspended],
+          confirmed: ::Vps.confirmed(:confirmed)
+        )
+        return if vps.nil?
+
+        {
+          id: vps.id,
+          uuid: vps.uuid.uuid,
+          vm_type: vps.vm_type,
+          os: vps.os_family.os.name,
+          os_family: vps.os_family.name,
+          read_hostname: !vps.manage_hostname,
+          cgroup_version: vps.cgroup_version_number,
+          pool_fs: vps.dataset_in_pool&.pool&.filesystem,
+          storage_volume_stats: vps.vps_io_stats.map do |vol_stats|
+            {
+              id: vol_stats.storage_volume_id,
+              pool_path: vol_stats.storage_volume.storage_pool.path,
+              name: vol_stats.storage_volume.name,
+              format: vol_stats.storage_volume.format,
+              read_requests_readout: vol_stats.read_requests_readout,
+              read_bytes_readout: vol_stats.read_bytes_readout,
+              write_requests_readout: vol_stats.write_requests_readout,
+              write_bytes_readout: vol_stats.write_bytes_readout
+            }
+          end
+        }
+      end
+
       def list_vps_network_interfaces
         ::NetworkInterface
           .select(

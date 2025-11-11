@@ -52,7 +52,6 @@ module NodeCtld
       NodeBunny.connect
       @node_status = NodeStatus.new
       @storage_status = StorageStatus.new
-      @vps_status = VpsStatus.new
       @kernel_log = KernelLog::Parser.new
       @exporter = Exporter.new(self)
       @console = Console::Server.new
@@ -76,6 +75,7 @@ module NodeCtld
       VpsSshHostKeys.instance
       VpsOsRelease.instance
       ExportMounts.instance
+      VpsStatus.start
       @storage_status.start if @storage_status.enable?
       @console.start if $CFG.get(:console, :enable)
       @dns_status.start if $CFG.get(:vpsadmin, :type) == :dns_server
@@ -305,16 +305,6 @@ module NodeCtld
         end
       end
 
-      run_thread_unless_runs(:vps_status) do
-        # TODO: implement VPS statuses with libvirt
-        loop do
-          log(:info, :regular, 'Update VPS status')
-
-          @vps_status.update
-          sleep($CFG.get(:vpsadmin, :vps_status_interval))
-        end
-      end
-
       run_thread_unless_runs(:vps_monitor) do
         if $CFG.get(:vpsadmin, :update_vps_status)
           @vps_monitor = VpsMonitor.new
@@ -335,11 +325,7 @@ module NodeCtld
 
     def update_all
       @node_status.update
-
-      if $CFG.get(:vpsadmin, :update_vps_status)
-        # TODO
-        # @vps_status.update
-      end
+      VpsStatus.update
 
       return unless $CFG.get(:storage, :update_status)
 
