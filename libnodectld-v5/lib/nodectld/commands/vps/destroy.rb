@@ -14,6 +14,7 @@ module NodeCtld
         dom.undefine
       end
 
+      VpsStatus.remove_vps(@vps_id)
       NetAccounting.remove_vps(@vps_id)
       syscmd("consolectl stop #{@vps_id}")
       ok
