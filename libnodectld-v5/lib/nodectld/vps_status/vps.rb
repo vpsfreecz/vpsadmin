@@ -41,6 +41,7 @@ module NodeCtld
 
     def update(domain)
       @time = Time.now
+      @delta = @prev ? @time - @prev[:time] : nil
 
       @exists = true
       @running = domain.active?
@@ -81,6 +82,7 @@ module NodeCtld
       {
         id: @id,
         time: @time.to_i,
+        delta: @delta,
         status: @exists,
         running: @running,
         in_rescue_mode: @in_rescue_mode,
@@ -117,11 +119,11 @@ module NodeCtld
       end
 
       @io_stats.each do |vol_stats|
-        vol_stats.set(@time, domain.block_stats(vol_stats.path), @prev[:io_stats])
+        vol_stats.set(domain.block_stats(vol_stats.path), @prev[:io_stats])
       end
 
       @network_interfaces.each do |netif|
-        netif.set(@time, domain.ifinfo(netif.host_name))
+        netif.set(domain.ifinfo(netif.host_name))
       end
 
       return if @os != 'linux'

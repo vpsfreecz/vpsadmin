@@ -1,6 +1,6 @@
 module NodeCtld
   class VpsStatus::StorageVolume
-    attr_reader :id, :time, :delta,
+    attr_reader :id,
                 :read_requests_readout, :read_bytes_readout, :write_requests_readout, :write_bytes_readout,
                 :read_requests, :read_bytes, :write_requests, :write_bytes
 
@@ -19,8 +19,6 @@ module NodeCtld
       @read_bytes = 0
       @write_requests = 0
       @write_bytes = 0
-
-      @delta = 1
     end
 
     def path
@@ -31,7 +29,7 @@ module NodeCtld
       end
     end
 
-    def set(time, io_stats, prev_stats)
+    def set(io_stats, prev_stats)
       @read_requests_readout = io_stats.rd_req
       @read_bytes_readout = io_stats.rd_bytes
       @write_requests_readout = io_stats.wr_req
@@ -44,18 +42,12 @@ module NodeCtld
         @read_bytes = [0, @read_bytes_readout - prev_vol.read_bytes_readout].max
         @write_requests = [0, @write_requests_readout - prev_vol.write_requests_readout].max
         @write_bytes = [0, @write_bytes_readout - prev_vol.write_bytes_readout].max
-
-        @delta = prev_vol.time ? time - prev_vol.time : 1
       else
         @read_requests = 0
         @read_bytes = 0
         @write_requests = 0
         @write_bytes = 0
-
-        @delta = 1
       end
-
-      @time = time
     end
 
     def export
@@ -65,7 +57,6 @@ module NodeCtld
         'read_bytes' => read_bytes,
         'write_requests' => write_requests,
         'write_bytes' => write_bytes,
-        'delta' => delta.round,
         'read_requests_readout' => read_requests_readout,
         'read_bytes_readout' => read_bytes_readout,
         'write_requests_readout' => write_requests_readout,
