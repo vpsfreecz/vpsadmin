@@ -166,10 +166,6 @@ start it.
   List transactions queued for execution. Transactions whose dependencies are
   not met yet are not listed, as it is impossible to know when they will be executed.
 
-`get net_accounting`
-  Print network interface accounting state, listing all tracked interfaces
-  and their counters.
-
 `set config` *key*`=`*value*...
   Alter nodectld's configuration. Set *key* to *value*. Format of keys is the same
   as for `get`. Multiple keys may be specified, separated by spaces.
