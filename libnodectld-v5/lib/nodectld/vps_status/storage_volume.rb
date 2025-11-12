@@ -1,8 +1,7 @@
 module NodeCtld
   class VpsStatus::StorageVolume
-    attr_reader :id,
-                :read_requests_readout, :read_bytes_readout, :write_requests_readout, :write_bytes_readout,
-                :read_requests, :read_bytes, :write_requests, :write_bytes
+    # @return [Integer]
+    attr_reader :id
 
     def initialize(row)
       @id = row['id']
@@ -46,14 +45,14 @@ module NodeCtld
     def export
       {
         'id' => id,
-        'read_requests' => read_requests,
-        'read_bytes' => read_bytes,
-        'write_requests' => write_requests,
-        'write_bytes' => write_bytes,
-        'read_requests_readout' => read_requests_readout,
-        'read_bytes_readout' => read_bytes_readout,
-        'write_requests_readout' => write_requests_readout,
-        'write_bytes_readout' => write_bytes_readout
+        'read_requests' => @read_requests,
+        'read_bytes' => @read_bytes,
+        'write_requests' => @write_requests,
+        'write_bytes' => @write_bytes,
+        'read_requests_readout' => @read_requests_readout,
+        'read_bytes_readout' => @read_bytes_readout,
+        'write_requests_readout' => @write_requests_readout,
+        'write_bytes_readout' => @write_bytes_readout
       }
     end
   end
