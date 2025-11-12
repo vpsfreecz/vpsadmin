@@ -67,8 +67,7 @@ module NodeCtld
 
       @prev = {
         time: @time,
-        cpu_time: info.cpu_time,
-        io_stats: @io_stats
+        cpu_time: info.cpu_time
       }
     end
 
@@ -119,7 +118,7 @@ module NodeCtld
       end
 
       @io_stats.each do |vol_stats|
-        vol_stats.set(domain.block_stats(vol_stats.path), @prev[:io_stats])
+        vol_stats.set(domain.block_stats(vol_stats.path))
       end
 
       @network_interfaces.each do |netif|
