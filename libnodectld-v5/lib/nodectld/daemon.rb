@@ -56,7 +56,6 @@ module NodeCtld
       @exporter = Exporter.new(self)
       @console = Console::Server.new
       @dns_status = DnsStatus.new if $CFG.get(:vpsadmin, :type) == :dns_server
-      NetAccounting.instance
       Shaper.instance
       TransactionVerifier.instance
     end
@@ -64,7 +63,6 @@ module NodeCtld
     def init
       @remote_control.start
 
-      NetAccounting.init
       Shaper.init_node if $CFG.get(:shaper, :enable)
       Export.init if $CFG.get(:exports, :enable)
 
