@@ -8,7 +8,7 @@ module NodeCtld
         cfg.network_interfaces.remove(@name)
       end
 
-      NetAccounting.remove_netif(@vps_id, @netif_id)
+      VpsStatus.remove_network_interface(@vps_id, @netif_id)
       osctl(%i[ct netif del], [@vps_id, @name])
     end
 
@@ -26,7 +26,7 @@ module NodeCtld
       end
 
       osctl(%i[ct netif new routed], [@vps_id, @name], new_opts)
-      NetAccounting.add_netif(@vps_id, @user_id, @netif_id, @name)
+      VpsStatus.add_network_interface(@vps_id, @netif_id)
       ok
     end
   end

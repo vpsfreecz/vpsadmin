@@ -32,6 +32,7 @@ module NodeCtld
       @read_hostname = opts['read_hostname']
       @cgroup_version = opts['cgroup_version']
       @process_states = {}
+      @network_interfaces = opts['network_interfaces'].map { |v| VpsStatus::NetworkInterface.new(v) }
       @io_stats = opts['storage_volume_stats'].map { |v| VpsStatus::StorageVolume.new(v) }
       @in_rescue_mode = false
       @qemu_guest_agent = false
@@ -91,6 +92,7 @@ module NodeCtld
         cpu_usage: @cpu_usage,
         process_states: @process_states,
         io_stats: @io_stats.map(&:export),
+        network_stats: @network_interfaces.map(&:export),
         hostname: @hostname
       }
     end
@@ -116,6 +118,10 @@ module NodeCtld
 
       @io_stats.each do |vol_stats|
         vol_stats.set(@time, domain.block_stats(vol_stats.path), @prev[:io_stats])
+      end
+
+      @network_interfaces.each do |netif|
+        netif.set(@time, domain.ifinfo(netif.host_name))
       end
 
       return if @os != 'linux'

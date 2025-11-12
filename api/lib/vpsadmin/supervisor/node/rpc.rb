@@ -164,11 +164,44 @@ module VpsAdmin::Supervisor
       end
 
       def list_vps_status_check
-        ::Vps.includes(storage_volumes: :storage_pool, os_family: :os).where(
-          node: @node,
-          object_state: %w[active suspended],
-          confirmed: ::Vps.confirmed(:confirmed)
-        ).map do |vps|
+        vpses = ::Vps
+                .includes(storage_volumes: :storage_pool, os_family: :os)
+                .where(
+                  node: @node,
+                  object_state: %w[active suspended],
+                  confirmed: ::Vps.confirmed(:confirmed)
+                )
+
+        netifs = {}
+
+        ::NetworkInterface
+          .select(
+            'network_interfaces.id,
+            network_interfaces.name,
+            vpses.id AS vps_id,
+            vpses.user_id AS user_id,
+            network_interface_monitors.bytes_in_readout,
+            network_interface_monitors.bytes_out_readout,
+            network_interface_monitors.packets_in_readout,
+            network_interface_monitors.packets_out_readout'
+          )
+          .joins(:vps)
+          .joins('LEFT JOIN network_interface_monitors ON network_interface_monitors.network_interface_id = network_interfaces.id')
+          .where(
+            vpses: { id: vpses.map(&:id) }
+          ).each do |netif|
+          netifs[netif.vps_id] ||= []
+          netifs[netif.vps_id] << {
+            id: netif.id,
+            host_name: netif.host_name,
+            bytes_in_readout: netif.bytes_in_readout,
+            bytes_out_readout: netif.bytes_out_readout,
+            packets_in_readout: netif.bytes_in_readout,
+            packets_out_readout: netif.bytes_out_readout
+          }
+        end
+
+        vpses.map do |vps|
           {
             id: vps.id,
             uuid: vps.uuid.uuid,
@@ -189,18 +222,47 @@ module VpsAdmin::Supervisor
                 write_requests_readout: vol_stats.write_requests_readout,
                 write_bytes_readout: vol_stats.write_bytes_readout
               }
-            end
+            end,
+            network_interfaces: netifs.fetch(vps.id, [])
           }
         end
       end
 
       def get_vps_status_check(vps_id)
-        vps = ::Vps.includes(storage_volumes: :storage_pool, os_family: :os).find_by(
-          node: @node,
-          object_state: %w[active suspended],
-          confirmed: ::Vps.confirmed(:confirmed)
-        )
+        vps = ::Vps
+              .includes(storage_volumes: :storage_pool, os_family: :os)
+              .find_by(
+                node: @node,
+                object_state: %w[active suspended],
+                confirmed: ::Vps.confirmed(:confirmed)
+              )
         return if vps.nil?
+
+        network_interfaces = ::NetworkInterface
+                             .select(
+                               'network_interfaces.id,
+                                network_interfaces.name,
+                                vpses.id AS vps_id,
+                                vpses.user_id AS user_id,
+                                network_interface_monitors.bytes_in_readout,
+                                network_interface_monitors.bytes_out_readout,
+                                network_interface_monitors.packets_in_readout,
+                                network_interface_monitors.packets_out_readout'
+                             )
+                             .joins(:vps)
+                             .joins('LEFT JOIN network_interface_monitors ON network_interface_monitors.network_interface_id = network_interfaces.id')
+                             .where(
+                               vpses: { id: vps.id }
+                             ).map do |netif|
+          {
+            id: netif.id,
+            host_name: netif.host_name,
+            bytes_in_readout: netif.bytes_in_readout,
+            bytes_out_readout: netif.bytes_out_readout,
+            packets_in_readout: netif.bytes_in_readout,
+            packets_out_readout: netif.bytes_out_readout
+          }
+        end
 
         {
           id: vps.id,
@@ -222,7 +284,38 @@ module VpsAdmin::Supervisor
               write_requests_readout: vol_stats.write_requests_readout,
               write_bytes_readout: vol_stats.write_bytes_readout
             }
-          end
+          end,
+          network_interfaces:
+        }
+      end
+
+      def get_network_interface_status_check(vps_id, netif_id)
+        netif = ::NetworkInterface
+                .select(
+                  'network_interfaces.id,
+                  network_interfaces.name,
+                  vpses.id AS vps_id,
+                  vpses.user_id AS user_id,
+                  network_interface_monitors.bytes_in_readout,
+                  network_interface_monitors.bytes_out_readout,
+                  network_interface_monitors.packets_in_readout,
+                  network_interface_monitors.packets_out_readout'
+                )
+                .joins(:vps)
+                .joins('LEFT JOIN network_interface_monitors ON network_interface_monitors.network_interface_id = network_interfaces.id')
+                .find_by(
+                  id: netif_id,
+                  vpses: { id: vps.id }
+                )
+        return if netif.nil?
+
+        {
+          id: netif.id,
+          host_name: netif.host_name,
+          bytes_in_readout: netif.bytes_in_readout,
+          bytes_out_readout: netif.bytes_out_readout,
+          packets_in_readout: netif.bytes_in_readout,
+          packets_out_readout: netif.bytes_out_readout
         }
       end
 
@@ -266,13 +359,13 @@ module VpsAdmin::Supervisor
           ::NetworkInterface
           .select(
             'network_interfaces.id,
-              network_interfaces.name,
-              vpses.id AS vps_id,
-              vpses.user_id AS user_id,
-              network_interface_monitors.bytes_in_readout,
-              network_interface_monitors.bytes_out_readout,
-              network_interface_monitors.packets_in_readout,
-              network_interface_monitors.packets_out_readout'
+            network_interfaces.name,
+            vpses.id AS vps_id,
+            vpses.user_id AS user_id,
+            network_interface_monitors.bytes_in_readout,
+            network_interface_monitors.bytes_out_readout,
+            network_interface_monitors.packets_in_readout,
+            network_interface_monitors.packets_out_readout'
           )
           .joins(:vps)
           .joins('LEFT JOIN network_interface_monitors ON network_interface_monitors.network_interface_id = network_interfaces.id')

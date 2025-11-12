@@ -69,6 +69,11 @@ module VpsAdmin::Supervisor
         if new_status['process_states']
           update_os_processes(current_status, new_status['process_states'])
         end
+
+        if new_status['network_stats']
+          update_network_monitors(current_status, new_status['network_stats'])
+          save_network_accounting(current_status, new_status['network_stats'])
+        end
       else
         current_status.assign_attributes(
           uptime: nil,
@@ -216,6 +221,83 @@ module VpsAdmin::Supervisor
         end,
         update_only: %i[count]
       )
+    end
+
+    def update_network_monitors(current_status, stats)
+      ::NetworkInterfaceMonitor.upsert_all(
+        stats.map do |m|
+          t = current_status.updated_at
+
+          {
+            network_interface_id: m['id'],
+            bytes: m['bytes_in'] + m['bytes_out'],
+            bytes_in: m['bytes_in'],
+            bytes_out: m['bytes_out'],
+            packets: m['packets_in'] + m['packets_out'],
+            packets_in: m['packets_in'],
+            packets_out: m['packets_out'],
+            delta: m['delta'],
+            bytes_in_readout: m['bytes_in_readout'],
+            bytes_out_readout: m['bytes_out_readout'],
+            packets_in_readout: m['packets_in_readout'],
+            packets_out_readout: m['packets_out_readout'],
+            created_at: t,
+            updated_at: t
+          }
+        end,
+        update_only: %i[
+          bytes bytes_in bytes_out
+          packets packets_in packets_out
+          delta
+          bytes_in_readout bytes_out_readout
+          packets_in_readout packets_out_readout
+          updated_at
+        ]
+      )
+    end
+
+    def save_network_accounting(current_status, stats)
+      kinds = [
+        [:year, ::NetworkInterfaceYearlyAccounting],
+        [:month, ::NetworkInterfaceMonthlyAccounting],
+        [:day, ::NetworkInterfaceDailyAccounting]
+      ]
+
+      date_spec = []
+
+      kinds.each do |kind, model|
+        date_spec << kind
+
+        model.upsert_all(
+          stats.map do |acc|
+            t = current_status.updated_at
+
+            data = {
+              network_interface_id: acc['id'],
+              user_id: current_status.vps.user_id,
+              bytes_in: acc['bytes_in'],
+              bytes_out: acc['bytes_out'],
+              packets_in: acc['packets_in'],
+              packets_out: acc['packets_out'],
+              created_at: t,
+              updated_at: t
+            }
+
+            date_spec.each do |date_part|
+              data[date_part] = t.send(date_part)
+            end
+
+            data
+          end,
+          on_duplicate: Arel.sql('
+            bytes_in = bytes_in + values(bytes_in),
+            bytes_out = bytes_out + values(bytes_out),
+            packets_in = packets_in + values(packets_in),
+            packets_out = packets_out + values(packets_out),
+            updated_at = values(updated_at)
+          ')
+        )
+      end
     end
 
     def find_cluster_resources(vps_id)
