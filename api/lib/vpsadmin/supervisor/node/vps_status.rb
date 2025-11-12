@@ -63,7 +63,7 @@ module VpsAdmin::Supervisor
         ::Vps.where(id: current_status.vps_id).update_all(hostname: new_status['hostname']) if new_status['hostname']
 
         if new_status['io_stats']
-          update_io_stats(current_status, new_status['io_stats'])
+          update_io_stats(current_status, new_status['io_stats'], new_status['delta'])
         end
 
         if new_status['process_states']
@@ -71,7 +71,7 @@ module VpsAdmin::Supervisor
         end
 
         if new_status['network_stats']
-          update_network_monitors(current_status, new_status['network_stats'])
+          update_network_monitors(current_status, new_status['network_stats'], new_status['delta'])
           save_network_accounting(current_status, new_status['network_stats'])
         end
       else
@@ -184,7 +184,7 @@ module VpsAdmin::Supervisor
       log.save!
     end
 
-    def update_io_stats(current_status, io_stats)
+    def update_io_stats(current_status, io_stats, delta)
       all_index = io_stats.index { |v| v['storage_volume_id'] == 'all' }
       all = io_stats.delete_at(all_index) if all_index
 
@@ -197,7 +197,7 @@ module VpsAdmin::Supervisor
             read_bytes: vol_stats['read_bytes'],
             write_requests: vol_stats['write_requests'],
             write_bytes: vol_stats['write_bytes'],
-            delta: vol_stats['delta'],
+            delta: delta ? delta.round : 1,
             read_requests_readout: vol_stats['read_requests_readout'],
             read_bytes_readout: vol_stats['read_bytes_readout'],
             write_requests_readout: vol_stats['write_requests_readout'],
@@ -223,7 +223,7 @@ module VpsAdmin::Supervisor
       )
     end
 
-    def update_network_monitors(current_status, stats)
+    def update_network_monitors(current_status, stats, delta)
       ::NetworkInterfaceMonitor.upsert_all(
         stats.map do |m|
           t = current_status.updated_at
@@ -236,7 +236,7 @@ module VpsAdmin::Supervisor
             packets: m['packets_in'] + m['packets_out'],
             packets_in: m['packets_in'],
             packets_out: m['packets_out'],
-            delta: m['delta'],
+            delta: delta ? delta.round : 1,
             bytes_in_readout: m['bytes_in_readout'],
             bytes_out_readout: m['bytes_out_readout'],
             packets_in_readout: m['packets_in_readout'],

@@ -17,12 +17,9 @@ module NodeCtld
       @bytes_out = 0
       @packets_in = 0
       @packets_out = 0
-      @delta = 1
     end
 
-    def set(time, ifinfo)
-      @last_update ||= time
-
+    def set(ifinfo)
       @bytes_in = [ifinfo.tx_bytes - @last_bytes_in, 0].max
       @bytes_out = [ifinfo.rx_bytes - @last_bytes_out, 0].max
 
@@ -34,20 +31,15 @@ module NodeCtld
 
       @last_packets_in = ifinfo.tx_packets
       @last_packets_out = ifinfo.rx_packets
-
-      @delta = [time - @last_update, 1].max.round
-      @last_update = time
     end
 
     def export
       {
         id: @id,
-        time: @last_update.to_i,
         bytes_in: @bytes_in,
         bytes_out: @bytes_out,
         packets_in: @packets_in,
         packets_out: @packets_out,
-        delta: @delta,
         bytes_in_readout: @last_bytes_in,
         bytes_out_readout: @last_bytes_out,
         packets_in_readout: @last_packets_in,
