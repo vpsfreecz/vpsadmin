@@ -10,7 +10,7 @@ module NodeCtld
     include OsCtl::Lib::Utils::Log
 
     class << self
-      %i[start stop update add_vps remove_vps].each do |v|
+      %i[start stop update add_vps remove_vps add_network_interface remove_network_interface].each do |v|
         define_method(v) do |*args, **kwargs, &block|
           instance.send(v, *args, **kwargs, &block)
         end
@@ -51,6 +51,16 @@ module NodeCtld
       nil
     end
 
+    def add_network_interface(vps_id, netif_id)
+      @queue << [:add_netif, vps_id, netif_id]
+      nil
+    end
+
+    def remove_network_interface(vps_id, netif_id)
+      @queue << [:remove_netif, vps_id, netif_id]
+      nil
+    end
+
     def log_type
       'vps status'
     end
@@ -76,6 +86,12 @@ module NodeCtld
         when :remove_vps
           vps_id, = args
           do_remove_vps(vps_id)
+        when :add_network_interface
+          vps_id, netif_id = args
+          do_add_network_interface(vps_id, netif_id)
+        when :remove_network_interface
+          vps_id, netif_id = args
+          do_remove_network_interface(vps_id, netif_id)
         end
 
         vps_statuses = @vpses.clone
@@ -139,6 +155,23 @@ module NodeCtld
 
     def do_remove_vps(vps_id)
       @vpses.delete(vps_id)
+    end
+
+    def do_add_network_interface(vps_id, netif_id)
+      vps = @vpses[vps_id]
+      return if vps.nil? || vps.network_interface.detect { |n| n.id == netif_id }
+
+      netif_opts = RpcClient.run { |rpc| rpc.get_network_interface_status_check(vps_id, netif_id) }
+      return if netif_opts.nil?
+
+      vps.network_interfaces << VpsStatus::NetworkInterface.new(netif_opts)
+    end
+
+    def do_remove_network_interface(vps_id, netif_id)
+      vps = @vpses[vps_id]
+      return if vps.nil?
+
+      vps.network_interfaces.delete_if { |n| n.id == netif_id }
     end
 
     def report_status(status)

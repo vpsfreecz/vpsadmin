@@ -35,7 +35,7 @@ module NodeCtld
         ConfigDrive.create(@vps_id, cfg)
       end
 
-      NetAccounting.add_netif(@vps_id, @user_id, @netif_id, @name)
+      VpsStatus.add_network_interface(@vps_id, @netif_id)
       ok
     end
 
@@ -57,7 +57,7 @@ module NodeCtld
         ConfigDrive.create(@vps_id, cfg)
       end
 
-      NetAccounting.remove_netif(@vps_id, @netif_id)
+      VpsStatus.remove_network_interface(@vps_id, @netif_id)
       ok
     end
   end

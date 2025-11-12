@@ -5,7 +5,6 @@ module NodeCtld
 
     def exec
       osctl(%i[ct send cleanup], @vps_id)
-      NetAccounting.remove_vps(@vps_id)
       ok
     end
   end
