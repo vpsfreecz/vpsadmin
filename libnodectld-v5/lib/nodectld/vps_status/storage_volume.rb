@@ -29,25 +29,18 @@ module NodeCtld
       end
     end
 
-    def set(io_stats, prev_stats)
+    def set(io_stats)
+      @read_requests = [io_stats.rd_req - @read_requests_readout, 0].max
+      @read_bytes = [io_stats.rd_bytes - @read_bytes_readout, 0].max
+
+      @write_requests = [io_stats.wr_req - @write_requests_readout, 0].max
+      @write_bytes = [io_stats.wr_bytes - @write_bytes_readout, 0].max
+
       @read_requests_readout = io_stats.rd_req
       @read_bytes_readout = io_stats.rd_bytes
+
       @write_requests_readout = io_stats.wr_req
       @write_bytes_readout = io_stats.wr_bytes
-
-      prev_vol = prev_stats.detect { |v| v.id == id }
-
-      if prev_vol
-        @read_requests = [0, @read_requests_readout - prev_vol.read_requests_readout].max
-        @read_bytes = [0, @read_bytes_readout - prev_vol.read_bytes_readout].max
-        @write_requests = [0, @write_requests_readout - prev_vol.write_requests_readout].max
-        @write_bytes = [0, @write_bytes_readout - prev_vol.write_bytes_readout].max
-      else
-        @read_requests = 0
-        @read_bytes = 0
-        @write_requests = 0
-        @write_bytes = 0
-      end
     end
 
     def export
