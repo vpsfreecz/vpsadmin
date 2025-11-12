@@ -29,7 +29,6 @@ module NodeCtl
         Subcommands:
         config [some.key]    Show nodectld's config or specific key
         queue                List transactions queued for execution
-        net_accounting       Print network interface accounting state
       END
     end
 
@@ -81,43 +80,6 @@ module NodeCtl
           end
         end
 
-      when 'net_accounting'
-        interfaces = response[:interfaces]
-
-        if global_opts[:parsable]
-          puts interfaces.to_json
-
-        else
-          if opts[:header]
-            puts format( # rubocop:disable Lint/FormatParameterMismatch
-              "%-10s %5s %-10s %8s %8s %8s %6s #{(['%12s'] * 4 * 3).join(' ')}",
-              'VPS', 'USER', 'NETIF', 'NETIF_ID',
-              'UPDATE', 'LOG', 'DELTA',
-              'B/IN', 'B/OUT', 'PKT/IN', 'PKT/OUT',
-              'LOG_B/IN', 'LOG_B/OUT', 'LOG_PKT/IN', 'LOG_PKT/OUT',
-              'LAST_B/IN', 'LAST_B/OUT', 'LAST_PKT/IN', 'LAST_PKT/OUT'
-            )
-          end
-
-          row_fmt = "%-10d %5d %-10s %8d %8s %8s %6d #{(['%12s'] * 4 * 3).join(' ')}"
-          now = Time.now
-
-          interfaces.each do |n|
-            puts format(
-              row_fmt,
-              n[:vps_id],
-              n[:user_id],
-              n[:vps_name],
-              n[:netif_id],
-              n[:last_update] ? format_duration_ago(n[:last_update], now) : '-',
-              n[:last_log] ? format_duration_ago(n[:last_log], now) : '-',
-              n[:delta],
-              *format_interface_stats(n, ''),
-              *format_interface_stats(n, 'log_'),
-              *format_interface_stats(n, 'last_')
-            )
-          end
-        end
       else
         pp response
       end

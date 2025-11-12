@@ -38,9 +38,6 @@ module NodeCtld::RemoteCommands
 
         ok.update({ output: { queue: } })
 
-      when 'net_accounting'
-        ok.update({ output: { interfaces: NodeCtld::NetAccounting.dump } })
-
       else
         raise NodeCtld::SystemCommandFailed.new(
           nil,

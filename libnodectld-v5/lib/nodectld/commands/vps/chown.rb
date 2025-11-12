@@ -19,7 +19,6 @@ module NodeCtld
       honor_state do
         osctl(%i[ct stop], @vps_id)
         osctl(%i[ct chown], [@vps_id, userns_map])
-        NetAccounting.chown_vps(@vps_id, user_id)
       end
     end
   end
