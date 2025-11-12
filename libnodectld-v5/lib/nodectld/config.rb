@@ -155,13 +155,6 @@ module NodeCtld
       enable: true
     },
 
-    traffic_accounting: {
-      enable: true,
-      update_interval: 10,
-      log_interval: 60,
-      batch_size: 50
-    },
-
     storage: {
       update_status: true,
       status_interval: 120,
