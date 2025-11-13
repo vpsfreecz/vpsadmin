@@ -4,7 +4,28 @@ module VpsAdmin::Supervisor
   class Node::VpsStatus < Node::Base
     LOG_INTERVAL = 3600
 
-    AVERAGES = %i[loadavg1 loadavg5 loadavg15 process_count used_memory used_diskspace cpu_idle].freeze
+    AVERAGES = %i[
+      loadavg1
+      loadavg5
+      loadavg15
+      process_count
+      used_memory
+      used_diskspace
+      cpu_idle
+    ].freeze
+
+    SUMS = %i[
+      io_read_requests
+      io_read_bytes
+      io_write_requests
+      io_write_bytes
+      network_packets
+      network_packets_in
+      network_packets_out
+      network_bytes
+      network_bytes_in
+      network_bytes_out
+    ].freeze
 
     def self.setup(channel)
       channel.prefetch(5)
@@ -116,6 +137,10 @@ module VpsAdmin::Supervisor
         AVERAGES.each do |attr|
           current_status.assign_attributes("sum_#{attr}": current_status.send(attr))
         end
+
+        SUMS.each do |attr|
+          current_status.assign_attributes("sum_#{attr}": 0)
+        end
       else
         # Compute averages
         AVERAGES.each do |attr|
@@ -132,6 +157,23 @@ module VpsAdmin::Supervisor
             end
           else
             current_status.assign_attributes(avg_attr => nil)
+          end
+        end
+
+        SUMS.each do |attr|
+          sum_attr = :"sum_#{attr}"
+
+          if current_status.status && current_status.is_running
+            sum_value = current_status.send(sum_attr)
+            cur_value = current_status.send(attr)
+
+            if cur_value
+              new_value = sum_value ? sum_value + cur_value : cur_value
+
+              current_status.assign_attributes(sum_attr => new_value)
+            end
+          else
+            current_status.assign_attributes(sum_attr => nil)
           end
         end
 
@@ -165,6 +207,16 @@ module VpsAdmin::Supervisor
         total_memory: current_status.total_memory,
         total_swap: current_status.total_swap,
         total_diskspace: current_status.total_diskspace,
+        io_read_requests: current_status.sum_io_read_requests,
+        io_read_bytes: current_status.sum_io_read_bytes,
+        io_write_requests: current_status.sum_io_write_requests,
+        io_write_bytes: current_status.sum_io_write_bytes,
+        network_packets: current_status.sum_network_packets,
+        network_packets_in: current_status.sum_network_packets_in,
+        network_packets_out: current_status.sum_network_packets_out,
+        network_bytes: current_status.sum_network_bytes,
+        network_bytes_in: current_status.sum_network_bytes_in,
+        network_bytes_out: current_status.sum_network_bytes_out,
         created_at: current_status.updated_at
       )
 
@@ -179,6 +231,10 @@ module VpsAdmin::Supervisor
           end
 
         log.assign_attributes(attr => v)
+      end
+
+      SUMS.each do |attr|
+        log.assign_attributes(attr => current_status.send(:"sum_#{attr}"))
       end
 
       log.save!
@@ -205,7 +261,19 @@ module VpsAdmin::Supervisor
           }
         end
       )
-      io_stats
+
+      %w[read_requests read_bytes write_requests write_bytes].each do |attr|
+        io_attr = :"io_#{attr}"
+        sum = 0
+
+        io_stats.each do |vol_stats|
+          sum += vol_stats[attr]
+        end
+
+        current_status.assign_attributes({
+          io_attr => sum
+        })
+      end
     end
 
     def update_os_processes(current_status, os_processes)
@@ -254,6 +322,25 @@ module VpsAdmin::Supervisor
           updated_at
         ]
       )
+
+      %w[packets bytes].each do |attr|
+        attr_sum = 0
+
+        %w[in out].each do |dir|
+          net_attr = :"network_#{attr}_#{dir}"
+          dir_sum = 0
+
+          stats.each do |m|
+            v = m["#{attr}_#{dir}"]
+            dir_sum += v
+            attr_sum += v
+          end
+
+          current_status.assign_attributes({ net_attr => dir_sum })
+        end
+
+        current_status.assign_attributes({ "network_#{attr}": attr_sum })
+      end
     end
 
     def save_network_accounting(current_status, stats)
