@@ -92,6 +92,7 @@ module NodeCtld
         used_memory: @memory,
         cpu_usage: @cpu_usage,
         process_states: @process_states,
+        volume_stats: @volume_stats,
         io_stats: @io_stats.map(&:export),
         network_stats: @network_interfaces.map(&:export),
         hostname: @hostname
@@ -124,6 +125,8 @@ module NodeCtld
       @network_interfaces.each do |netif|
         netif.set(domain.ifinfo(netif.host_name))
       end
+
+      @volume_stats = read_volume_stats(domain)
 
       return if @os != 'linux'
 
@@ -191,6 +194,39 @@ module NodeCtld
         log(:warn, "Hostname reader exited with #{st}: #{err.inspect}")
         @hostname = 'unable-to-read'
       end
+    end
+
+    def read_volume_stats(domain)
+      begin
+        fsinfo = JSON.parse(domain.qemu_agent_command({ 'execute' => 'guest-get-fsinfo' }.to_json))['return']
+      rescue Libvirt::Error => e
+        log(:warn, "Error occurred while getting fsinfo: #{e.message}")
+      end
+
+      ret = []
+
+      fsinfo.each do |fs|
+        vol_id = nil
+
+        fs['disk'].each do |disk|
+          next if /\Avpsadmin-volume-(\d+)\z/ !~ disk['serial']
+
+          vol_id = ::Regexp.last_match(1).to_i
+          break
+        end
+
+        next if vol_id.nil? || vol_id <= 0
+
+        ret << {
+          id: vol_id,
+          total_bytes: fs['total-bytes'],
+          total_bytes_privileged: fs['total-bytes-privileged'],
+          used_bytes: fs['used-bytes'],
+          filesystem: fs['type']
+        }
+      end
+
+      ret
     end
 
     def read_process_counts(domain)

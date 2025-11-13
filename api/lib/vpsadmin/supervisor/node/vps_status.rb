@@ -95,6 +95,10 @@ module VpsAdmin::Supervisor
           update_network_monitors(current_status, new_status['network_stats'], new_status['delta'])
           save_network_accounting(current_status, new_status['network_stats'])
         end
+
+        if new_status['volume_stats']
+          update_volume_stats(current_status, new_status['volume_stats'])
+        end
       else
         current_status.assign_attributes(
           uptime: nil,
@@ -385,6 +389,14 @@ module VpsAdmin::Supervisor
           ')
         )
       end
+    end
+
+    def update_volume_stats(current_status, stats)
+      root_volume = stats.detect { |st| st['id'] == current_status.vps.storage_volume_id }
+      return if root_volume.nil?
+
+      current_status.used_diskspace = root_volume['used_bytes'] / 1024 / 1024
+      current_status.total_diskspace = (root_volume['total_bytes_privileged'] || root_volume['total_bytes']) / 1024 / 1024
     end
 
     def find_cluster_resources(vps_id)
