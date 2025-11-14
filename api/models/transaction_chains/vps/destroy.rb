@@ -95,6 +95,7 @@ module TransactionChains
 
       # IO stats
       vps.vps_io_stats.delete_all
+      vps.vps_io_stat_logs.delete_all
 
       # NOTE: there are too many records to delete them using transaction confirmations.
       # All VPS statuses are deleted whether the chain is successful or not.

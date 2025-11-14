@@ -39,6 +39,7 @@ class Vps < ApplicationRecord
   belongs_to :storage_volume
   has_many :storage_volumes
   has_many :vps_io_stats
+  has_many :vps_io_stat_logs
 
   belongs_to :dataset_in_pool
   has_one :dataset, through: :dataset_in_pool, autosave: false
