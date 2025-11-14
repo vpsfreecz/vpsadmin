@@ -392,6 +392,16 @@ module VpsAdmin::Supervisor
     end
 
     def update_volume_stats(current_status, stats)
+      stats.each do |st|
+        ::StorageVolume.where(vps: current_status.vps, id: st['id']).each do |vol|
+          vol.update!(
+            filesystem: st['filesystem'][0..9],
+            fs_used: st['used_bytes'] / 1024 / 1024,
+            fs_total: (st['total_bytes_privileged'] || st['total_bytes']) / 1024 / 1024
+          )
+        end
+      end
+
       root_volume = stats.detect { |st| st['id'] == current_status.vps.storage_volume_id }
       return if root_volume.nil?
 
