@@ -241,6 +241,27 @@ module VpsAdmin::Supervisor
         log.assign_attributes(attr => current_status.send(:"sum_#{attr}"))
       end
 
+      # Log IO stats
+      current_status.vps.vps_io_stats.includes(:storage_volume).each do |io_stats|
+        ::VpsIoStatLog.create!(
+          vps: current_status.vps,
+          storage_volume: io_stats.storage_volume,
+          read_requests: io_stats.sum_read_requests,
+          read_bytes: io_stats.sum_read_bytes,
+          write_requests: io_stats.sum_write_requests,
+          write_bytes: io_stats.sum_write_bytes,
+          fs_used: io_stats.storage_volume.fs_used,
+          fs_total: io_stats.storage_volume.fs_total
+        )
+
+        io_stats.update!(
+          sum_read_requests: 0,
+          sum_read_bytes: 0,
+          sum_write_requests: 0,
+          sum_write_bytes: 0
+        )
+      end
+
       log.save!
     end
 
@@ -257,13 +278,28 @@ module VpsAdmin::Supervisor
             read_bytes: vol_stats['read_bytes'],
             write_requests: vol_stats['write_requests'],
             write_bytes: vol_stats['write_bytes'],
+            sum_read_requests: vol_stats['read_requests'],
+            sum_read_bytes: vol_stats['read_bytes'],
+            sum_write_requests: vol_stats['write_requests'],
+            sum_write_bytes: vol_stats['write_bytes'],
             delta: delta ? delta.round : 1,
             read_requests_readout: vol_stats['read_requests_readout'],
             read_bytes_readout: vol_stats['read_bytes_readout'],
             write_requests_readout: vol_stats['write_requests_readout'],
             write_bytes_readout: vol_stats['write_bytes_readout']
           }
-        end
+        end,
+        on_duplicate: Arel.sql('
+          read_requests = values(read_requests),
+          read_bytes = values(read_bytes),
+          write_requests = values(write_requests),
+          write_bytes = values(write_bytes),
+          sum_read_requests = sum_read_requests + values(read_requests),
+          sum_read_bytes = sum_read_bytes + values(read_bytes),
+          sum_write_requests = sum_write_requests + values(write_requests),
+          sum_write_bytes = sum_write_bytes + values(write_bytes),
+          updated_at = values(updated_at)
+        ')
       )
 
       %w[read_requests read_bytes write_requests write_bytes].each do |attr|
