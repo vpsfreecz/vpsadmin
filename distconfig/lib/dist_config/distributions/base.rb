@@ -55,6 +55,39 @@ module DistConfig
       cls
     end
 
+    def setup_lxc_container(ctstartmenu:)
+      lxc_dir = '/var/lib/lxc/vps'
+      hooks = %w[pre-start post-stop].to_h do |hook|
+        [hook, File.join(lxc_dir, hook)]
+      end
+
+      rescue_rootfs_mountpoint = vps_config.rescue_rootfs_mountpoint
+      rescue_rootfs_mountpoint = rescue_rootfs_mountpoint[1..] while rescue_rootfs_mountpoint && rescue_rootfs_mountpoint.start_with?('/')
+
+      vars = {
+        lxc_dir:,
+        hostname: vps_config.hostname || vps_config.vps_id.to_s,
+        init_cmd: vps_config.init_cmd,
+        rescue_label: vps_config.rescue_label,
+        rescue_rootfs_mountpoint:,
+        hooks:
+      }
+
+      if vps_config.start_menu_timeout > 0
+        FileUtils.mkdir_p('/dev/.vpsadmin')
+        FileUtils.cp(File.join(ctstartmenu, 'bin/ctstartmenu'), '/dev/.vpsadmin/ctstartmenu')
+        File.chmod(0o755, '/dev/.vpsadmin/ctstartmenu')
+        vars[:init_cmd] = "/dev/.vpsadmin/ctstartmenu -timeout #{vps_config.start_menu_timeout} #{vars[:init_cmd]}"
+      end
+
+      FileUtils.mkdir_p(lxc_dir)
+      ErbTemplate.render_to('lxc/config', vars, File.join(lxc_dir, 'config'))
+
+      hooks.each do |hook, path|
+        ErbTemplate.render_to("lxc/#{hook}", {}, path, perm: 0o755)
+      end
+    end
+
     def mount_rootfs
       FileUtils.mkdir_p('/mnt/vps')
 

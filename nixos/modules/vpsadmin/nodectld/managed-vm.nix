@@ -51,7 +51,6 @@ let
 
           environment.systemPackages = with pkgs; [
             btrfs-progs
-            configureCt
             distconfig
             e2fsprogs
             lxc
@@ -113,6 +112,7 @@ let
       path = stage2Config.config.system.path;
       inherit (stage2Config.config.networking) hostName;
       inherit udev udevRules udevHwdb;
+      ctstartmenu = pkgs.ctstartmenu;
     };
   };
 
@@ -136,61 +136,11 @@ let
     exit 0
   '';
 
-  configureCt = pkgs.replaceVarsWith {
-    src = ./configure-ct.rb;
-    dir = "bin";
-    isExecutable = true;
-    replacements = {
-      inherit (pkgs) ctstartmenu ruby;
-      inherit lxcConfig;
-    };
-  };
-
-  lxcConfig = pkgs.writeText "lxc-config.erb" ''
-    lxc.apparmor.profile = unconfined
-    lxc.seccomp.profile =
-    lxc.uts.name = <%= hostname %>
-    lxc.rootfs.path = dir:/mnt/vps
-    lxc.namespace.keep = net user
-    lxc.autodev = 0
-    lxc.console.path = /dev/console
-    lxc.pty.max = 4096
-    lxc.tty.max = 64
-    lxc.init.cmd = <%= init_cmd %>
-
-    lxc.mount.auto = proc:rw sys:rw cgroup:rw
-    lxc.mount.entry = /dev dev none rbind,create=dir 0 0
-
-    <% if rescuefs && rescue_rootfs_mountpoint -%>
-    lxc.mount.entry = /mnt/rootfs <%= rescue_rootfs_mountpoint %> none bind,create=dir 0 0
-    <% end -%>
-
-    lxc.hook.pre-start = ${preStartHook}
-    lxc.hook.post-stop = ${postStopHook}
-  '';
-
-  preStartHook = pkgs.writeScript "pre-start.sh" ''
-    #!${pkgs.bash}/bin/bash
-
-    touch /run/lxc-started
-    exit 0
-  '';
-
-  postStopHook = pkgs.writeScript "post-stop.sh" ''
-    #!${pkgs.bash}/bin/bash
-
-    [ -z "$LXC_TARGET" ] && LXC_TARGET=unknown
-
-    echo "$LXC_TARGET" > /run/lxc-target
-    exit 0
-  '';
-
   stage2Image = import <nixpkgs/nixos/lib/make-disk-image.nix> {
     inherit pkgs lib;
     inherit (stage2Config) config;
     additionalPaths = [
       bootStage2
-      lxcConfig
     ];
     contents = [
       {
