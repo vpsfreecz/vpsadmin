@@ -5,7 +5,7 @@ module NodeCtld
     include Singleton
 
     class << self
-      %i[get_device free_device].each do |m|
+      %i[get_device free_device with_device].each do |m|
         define_method(m) do |*args, **kwargs, &block|
           instance.send(m, *args, **kwargs, &block)
         end
@@ -53,6 +53,17 @@ module NodeCtld
       end
 
       nil
+    end
+
+    # @yieldparam device [String]
+    def with_device
+      dev = get_device
+
+      begin
+        yield(dev)
+      ensure
+        free_device(dev)
+      end
     end
   end
 end
