@@ -45,7 +45,6 @@ let
             configureCt
             distconfig
             e2fsprogs
-            jq
             lxc
             qemu
             qemuGaRunner
