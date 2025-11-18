@@ -36,6 +36,8 @@ module Transactions::Vps
         hostname: "rescue-#{vps.id}",
         distribution: os_template.distribution,
         version: os_template.version,
+        arch: os_template.arch,
+        variant: os_template.variant,
         cgroup_version: vps.cgroup_version_number,
         rescue_rootfs_mountpoint: rootfs_mountpoint
       }
