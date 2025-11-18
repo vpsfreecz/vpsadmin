@@ -61,6 +61,8 @@ module NodeCtld
       cfg.console_port = @console_port
       cfg.distribution = @distribution
       cfg.version = @version
+      cfg.arch = @arch
+      cfg.variant = @variant
       cfg.hostname = @hostname
       cfg.rootfs_label = @rootfs_volume['label']
       cfg.rescue_label = @rescue_volume['label']
