@@ -3,6 +3,15 @@ require 'json'
 module DistConfig
   class VpsConfig
     # @return [String]
+    attr_reader :rootfs_label
+
+    # @return [String]
+    attr_reader :rescue_label
+
+    # @return [String]
+    attr_reader :rescue_rootfs_mountpoint
+
+    # @return [String]
     attr_reader :distribution
 
     # @return [String]
@@ -27,6 +36,9 @@ module DistConfig
       @path = path
       @cfg = JSON.parse(File.read(path))
 
+      @rootfs_label = @cfg.fetch('rootfs_label')
+      @rescue_label = @cfg.fetch('rescue_label', nil)
+      @rescue_rootfs_mountpoint = @cfg.fetch('rescue_rootfs_mountpoint', nil)
       @distribution = @cfg.fetch('distribution')
       @version = @cfg.fetch('version')
       @arch = @cfg.fetch('arch')
@@ -38,6 +50,9 @@ module DistConfig
 
     def dump
       {
+        'rootfs_label' => @rootfs_label,
+        'rescue_label' => @rescue_label,
+        'rescue_rootfs_mountpoint' => @rescue_rootfs_mountpoint,
         'distribution' => @distribution,
         'version' => @version,
         'arch' => @arch,
