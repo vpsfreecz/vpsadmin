@@ -186,7 +186,7 @@ echo "tmp shell"
 bash
 
 echo "Configuring managed container"
-configure-ct.rb
+distconfig lxc-setup @ctstartmenu@
 distconfig start
 
 echo "Starting managed container"

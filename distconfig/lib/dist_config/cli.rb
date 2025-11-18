@@ -26,6 +26,9 @@ module DistConfig
       }
 
       case cmd
+      when 'lxc-setup'
+        ctstartmenu = args[0]
+        DistConfig.run(vps_config, :setup_lxc_container, kwargs: { ctstartmenu: }, opts:)
       when 'rootfs-mount'
         DistConfig.run(vps_config, :mount_rootfs, opts:)
       when 'start'
