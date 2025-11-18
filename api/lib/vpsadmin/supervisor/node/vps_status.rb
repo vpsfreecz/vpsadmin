@@ -62,7 +62,7 @@ module VpsAdmin::Supervisor
       current_status.assign_attributes(
         status: new_status['status'],
         is_running: new_status['running'],
-        in_rescue_mode: new_status['in_rescue_mode'],
+        in_rescue_mode: current_status.vps.container? ? new_status['in_rescue_mode'] : !current_status.vps.rescue_volume_id.nil?,
         qemu_guest_agent: current_status.vps.container? ? false : new_status.fetch('qemu_guest_agent', false),
         total_memory: memory,
         total_swap: swap,

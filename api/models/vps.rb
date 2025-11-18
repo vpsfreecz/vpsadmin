@@ -37,6 +37,7 @@ class Vps < ApplicationRecord
   belongs_to :console_port
 
   belongs_to :storage_volume
+  belongs_to :rescue_volume, class_name: 'StorageVolume'
   has_many :storage_volumes
   has_many :vps_io_stats, dependent: :delete_all
   has_many :vps_io_stat_logs, dependent: :delete_all

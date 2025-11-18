@@ -38,6 +38,12 @@ module NodeCtld
     attr_accessor :rootfs_label
 
     # @return [String]
+    attr_accessor :rescue_label
+
+    # @return [String]
+    attr_accessor :rescue_rootfs_mountpoint
+
+    # @return [String]
     attr_accessor :init_cmd
 
     # @return [Integer]
@@ -78,6 +84,8 @@ module NodeCtld
       @hostname = data['hostname'] && OsCtl::Lib::Hostname.new(data['hostname'])
       @dns_resolvers = data.fetch('dns_resolvers', [])
       @rootfs_label = data.fetch('rootfs_label', 'vpsadmin-rootfs')
+      @rescue_label = data.fetch('rescue_label', nil)
+      @rescue_rootfs_mountpoint = data.fetch('rescue_rootfs_mountpoint', nil)
       @init_cmd = data.fetch('init_cmd', '/sbin/init')
       @start_menu_timeout = data.fetch('start_menu_timeout', 5)
       @network_interfaces = VpsConfig::NetworkInterfaceList.load(data['network_interfaces'] || [])
@@ -150,6 +158,8 @@ module NodeCtld
         'version' => version,
         'dns_resolvers' => dns_resolvers,
         'rootfs_label' => rootfs_label,
+        'rescue_label' => rescue_label,
+        'rescue_rootfs_mountpoint' => rescue_rootfs_mountpoint,
         'init_cmd' => init_cmd,
         'start_menu_timeout' => start_menu_timeout,
         'network_interfaces' => network_interfaces.save

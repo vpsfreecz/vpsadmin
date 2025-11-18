@@ -7,6 +7,7 @@ module TransactionChains
         lock(vps.dataset_in_pool)
       else
         lock(vps.storage_volume)
+        lock(vps.rescue_volume) if vps.rescue_volume
       end
 
       lock(vps)
@@ -74,6 +75,10 @@ module TransactionChains
         end
 
         use_chain(StorageVolume::Destroy, args: [vps.storage_volume])
+
+        if vps.rescue_volume
+          use_chain(StorageVolume::Destroy, args: [vps.rescue_volume])
+        end
 
         append_t(Transactions::Utils::NoOp, args: find_node_id) do |t|
           t.edit(vps, storage_volume_id: nil)
