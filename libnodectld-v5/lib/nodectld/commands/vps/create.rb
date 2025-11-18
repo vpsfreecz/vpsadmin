@@ -19,9 +19,12 @@ module NodeCtld
           stage2_type: 'qcow2',
           stage2_path: '/run/nodectl/managed-vm/stage-2',
           config_path: File.join($CFG.get(:vpsadmin, :config_drive_dir), "#{@vps_id}.iso"),
-          rootfs_type: @rootfs_volume['format'],
-          rootfs_path: File.join(@rootfs_volume['pool_path'], "#{@rootfs_volume['name']}.#{@rootfs_volume['format']}"),
-          rootfs_serial: "vpsadmin-volume-#{@rootfs_volume['id']}",
+          rootfs: {
+            type: @rootfs_volume['format'],
+            path: File.join(@rootfs_volume['pool_path'], "#{@rootfs_volume['name']}.#{@rootfs_volume['format']}"),
+            serial: "vpsadmin-volume-#{@rootfs_volume['id']}"
+          },
+          rescuefs: nil,
           console_port: @console_port,
           network_interfaces: []
         }

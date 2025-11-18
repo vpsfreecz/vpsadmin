@@ -45,11 +45,20 @@
     </disk>
 
     <disk type="file" device="disk">
-      <driver name="qemu" type="<%= rootfs_type %>"/>
-      <source file="<%= rootfs_path %>"/>
+      <driver name="qemu" type="<%= rootfs[:type] %>"/>
+      <source file="<%= rootfs[:path] %>"/>
       <target dev="vdc" bus="virtio"/>
-      <serial><%= rootfs_serial %></serial>
+      <serial><%= rootfs[:serial] %></serial>
     </disk>
+
+    <% if rescuefs -%>
+    <disk type="file" device="disk">
+      <driver name="qemu" type="<%= rescuefs[:type] %>"/>
+      <source file="<%= rescuefs[:path] %>"/>
+      <target dev="vdd" bus="virtio"/>
+      <serial><%= rescuefs[:serial] %></serial>
+    </disk>
+    <% end -%>
 
     <console type='tcp'>
       <source mode='connect' host='localhost' service='<%= console_port %>'>

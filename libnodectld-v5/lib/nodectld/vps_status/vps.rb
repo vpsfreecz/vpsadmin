@@ -63,8 +63,6 @@ module NodeCtld
         read_guest_info(domain)
       end
 
-      # TODO: detect rescue mode
-
       @prev = {
         time: @time,
         cpu_time: info.cpu_time
