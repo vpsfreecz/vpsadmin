@@ -44,6 +44,8 @@ module Transactions::Vps
           hostname: vps.manage_hostname ? vps.hostname : nil,
           distribution: vps.os_template.distribution,
           version: vps.os_template.version,
+          arch: vps.os_template.arch,
+          variant: vps.os_template.variant,
           cgroup_version: vps.cgroup_version_number
         }
       end

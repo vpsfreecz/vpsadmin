@@ -8,6 +8,12 @@ module DistConfig
     # @return [String]
     attr_reader :version
 
+    # @return [String]
+    attr_reader :arch
+
+    # @return [String]
+    attr_reader :variant
+
     # @return [Hostname, nil]
     attr_accessor :hostname
 
@@ -23,6 +29,8 @@ module DistConfig
 
       @distribution = @cfg.fetch('distribution')
       @version = @cfg.fetch('version')
+      @arch = @cfg.fetch('arch')
+      @variant = @cfg.fetch('variant')
       @hostname = @cfg['hostname'] && Hostname.new(@cfg['hostname'])
       @dns_resolvers = @cfg.fetch('dns_resolvers', [])
       @network_interfaces = @cfg.fetch('network_interfaces', []).map { |v| NetworkInterface.new(v) }
@@ -32,6 +40,8 @@ module DistConfig
       {
         'distribution' => @distribution,
         'version' => @version,
+        'arch' => @arch,
+        'variant' => @variant,
         'hostname' => @hostname && @hostname.to_s,
         'dns_resolvers' => @dns_resolvers,
         'network_interfaces' => @network_interfaces.map(&:dump)
