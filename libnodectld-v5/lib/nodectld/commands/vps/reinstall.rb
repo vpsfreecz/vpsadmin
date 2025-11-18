@@ -6,7 +6,7 @@ module NodeCtld
       cfg = VpsConfig.open(@vps_id)
 
       xml = ErbTemplate.render(
-        'libvirt/domain.xml',
+        "libvirt/#{@vm_type}.xml",
         {
           name: @vps_id.to_s,
           uuid: @uuid,
