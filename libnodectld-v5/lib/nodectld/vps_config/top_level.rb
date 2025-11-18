@@ -28,6 +28,12 @@ module NodeCtld
     # @return [String]
     attr_accessor :version
 
+    # @return [String]
+    attr_accessor :arch
+
+    # @return [String]
+    attr_accessor :variant
+
     # @return [OsCtl::Lib::Hostname]
     attr_accessor :hostname
 
@@ -81,6 +87,8 @@ module NodeCtld
       @console_port = data.fetch('console_port', nil)
       @distribution = data.fetch('distribution', nil)
       @version = data.fetch('version', nil)
+      @arch = data.fetch('arch', nil)
+      @variant = data.fetch('variant', nil)
       @hostname = data['hostname'] && OsCtl::Lib::Hostname.new(data['hostname'])
       @dns_resolvers = data.fetch('dns_resolvers', [])
       @rootfs_label = data.fetch('rootfs_label', 'vpsadmin-rootfs')
@@ -156,6 +164,8 @@ module NodeCtld
         'hostname' => hostname && hostname.to_s,
         'distribution' => distribution,
         'version' => version,
+        'arch' => arch,
+        'variant' => variant,
         'dns_resolvers' => dns_resolvers,
         'rootfs_label' => rootfs_label,
         'rescue_label' => rescue_label,
