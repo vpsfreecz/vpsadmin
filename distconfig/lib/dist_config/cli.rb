@@ -26,6 +26,8 @@ module DistConfig
       }
 
       case cmd
+      when 'rootfs-mount'
+        DistConfig.run(vps_config, :mount_rootfs, opts:)
       when 'start'
         DistConfig.run(vps_config, :start, opts:)
       when 'stop'

@@ -1,5 +1,6 @@
 require 'dist_config/configurator'
 require 'dist_config/helpers/log'
+require 'fileutils'
 require 'json'
 
 module DistConfig
@@ -52,6 +53,34 @@ module DistConfig
       cls = self.class::Configurator
       log(:debug, "Using #{cls} for #{vps_config.distribution}")
       cls
+    end
+
+    def mount_rootfs
+      FileUtils.mkdir_p('/mnt/vps')
+
+      if vps_config.rescue_label
+        puts 'Mounting rescue system'
+
+        unless system('mount', "/dev/disk/by-label/#{vps_config.rescue_label}", '/mnt/vps')
+          raise 'Failed to mount rescue system'
+        end
+
+        if vps_config.rescue_rootfs_mountpoint
+          FileUtils.mkdir_p('/mnt/rootfs')
+          puts 'Mounting container rootfs'
+
+          unless system('mount', "/dev/disk/by-label/#{vps_config.rootfs_label}", '/mnt/rootfs')
+            raise 'Failed to mount rootfs'
+          end
+        end
+
+      else
+        puts 'Mounting container rootfs'
+
+        unless system('mount', "/dev/disk/by-label/#{vps_config.rootfs_label}", '/mnt/vps')
+          raise 'Failed to mount rootfs'
+        end
+      end
     end
 
     # Run just before the container is started
