@@ -120,10 +120,14 @@ module NodeCtld
 
       @io_stats.each do |vol_stats|
         vol_stats.set(domain.block_stats(vol_stats.path))
+      rescue Libvirt::Error => e
+        log(:warn, "Error while getting block stats: #{e.message}")
       end
 
       @network_interfaces.each do |netif|
         netif.set(domain.ifinfo(netif.host_name))
+      rescue Libvirt::Error => e
+        log(:warn, "Error while getting netif stats: #{e.message}")
       end
 
       @volume_stats = read_volume_stats(domain)
@@ -172,7 +176,13 @@ module NodeCtld
         @nproc = nproc_sh.to_i
       end
 
-      @process_states = read_process_counts(domain) || {}
+      @process_states =
+        begin
+          read_process_counts(domain) || {}
+        rescue Libvirt::Error => e
+          log(:warn, "Error occurred while reading stats: #{e.message}")
+          {}
+        end
 
       return unless @read_hostname
 
@@ -201,6 +211,7 @@ module NodeCtld
         fsinfo = JSON.parse(domain.qemu_agent_command({ 'execute' => 'guest-get-fsinfo' }.to_json))['return']
       rescue Libvirt::Error => e
         log(:warn, "Error occurred while getting fsinfo: #{e.message}")
+        return []
       end
 
       ret = []
