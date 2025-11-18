@@ -1,0 +1,5 @@
+#!/bin/sh
+[ -z "$LXC_TARGET" ] && LXC_TARGET=unknown
+
+echo "$LXC_TARGET" > /run/lxc-target
+exit 0
