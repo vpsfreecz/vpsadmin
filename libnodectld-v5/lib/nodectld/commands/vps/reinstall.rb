@@ -40,6 +40,8 @@ module NodeCtld
 
       cfg.distribution = @distribution
       cfg.version = @version
+      cfg.arch = @arch
+      cfg.variant = @variant
       cfg.save
 
       ConfigDrive.create(@vps_id, cfg)
