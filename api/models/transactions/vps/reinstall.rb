@@ -32,6 +32,8 @@ module Transactions::Vps
           console_port: vps.console_port.port,
           distribution: template.distribution,
           version: template.version,
+          arch: template.arch,
+          variant: template.variant,
           cgroup_version: vps.cgroup_version_number
         }
       end
