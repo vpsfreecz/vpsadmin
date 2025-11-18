@@ -702,6 +702,114 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
     end
   end
 
+  class RescueEnter < HaveAPI::Action
+    desc 'Put the VPS in rescue mode'
+    route '{%{resource}_id}/rescue_enter'
+    http_method :post
+    blocking true
+
+    input do
+      use :template
+      string :rootfs_mountpoint, label: 'Rootfs mountpoint'
+    end
+
+    authorize do |u|
+      allow if u.role == :admin
+      restrict user_id: u.id
+      allow
+    end
+
+    def exec
+      vps = ::Vps.find_by!(with_restricted(id: params[:vps_id]))
+      maintenance_check!(vps)
+      object_state_check!(vps, vps.user)
+
+      error!('this action is available only for QEMU/container VPS') unless vps.qemu_container?
+
+      if input[:rootfs_mountpoint] && !check_mountpoint(input[:rootfs_mountpoint])
+        error!('invalid mountpoint', {
+                rootfs_mountpoint: [
+                  'must start with a slash',
+                  'a-z, A-Z, 0-9, _-/.:'
+                ]
+              })
+      end
+
+      tpl = input[:os_template] || vps.os_template
+
+      if !tpl.enabled?
+        error!('selected os template is disabled')
+
+      elsif tpl.hypervisor_type != vps.node.hypervisor_type
+        error!(
+          "incompatible template: needs #{tpl.hypervisor_type}, but VPS is " \
+          "using #{vps.node.hypervisor_type}"
+        )
+      end
+
+      @chain, = TransactionChains::Vps::RescueEnter.fire(
+        vps,
+        tpl,
+        rootfs_mountpoint: input[:rootfs_mountpoint]
+      )
+      ok!
+    end
+
+    def state_id
+      @chain.id
+    end
+
+    protected
+
+    def check_mountpoint(dst)
+      dst.start_with?('/') \
+        && dst =~ %r{\A[a-zA-Z0-9_\-/.:]{3,500}\z} \
+        && dst !~ /\.\./ \
+        && dst !~ %r{//}
+    end
+  end
+
+  class RescueLeave < HaveAPI::Action
+    desc 'Leave rescue mode'
+    route '{%{resource}_id}/rescue_leave'
+    http_method :post
+    blocking true
+
+    authorize do |u|
+      allow if u.role == :admin
+      restrict user_id: u.id
+      allow
+    end
+
+    def exec
+      vps = ::Vps.find_by!(with_restricted(id: params[:vps_id]))
+      maintenance_check!(vps)
+      object_state_check!(vps, vps.user)
+
+      if !vps.qemu_container?
+        error!('this action is available only for QEMU/container VPS')
+      elsif vps.rescue_volume_id.nil?
+        error!('VPS is not in rescue mode')
+      end
+
+      @chain, = TransactionChains::Vps::RescueLeave.fire(vps)
+      ok!
+    end
+
+    def state_id
+      @chain.id
+    end
+
+    protected
+
+    def check_mountpoint(dst)
+      dst.start_with?('/') \
+        && dst =~ %r{\A[a-zA-Z0-9_\-/.:]{3,500}\z} \
+        && dst !~ /\.\./ \
+        && dst !~ %r{//}
+    end
+  end
+
   class Reinstall < HaveAPI::Action
     desc 'Reinstall VPS'
     route '{%{resource}_id}/reinstall'
@@ -1064,7 +1172,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
 
   include VpsAdmin::API::Maintainable::Action
   include VpsAdmin::API::Lifetimes::Resource
-  add_lifetime_methods([Start, Stop, Restart, Boot, Create, Clone, Update, Delete, SwapWith, Replace])
+  add_lifetime_methods([Start, Stop, Restart, Boot, Create, Clone, Update, Delete, SwapWith, Replace, RescueEnter, RescueLeave])
 
   class Feature < HaveAPI::Resource
     model ::VpsFeature
