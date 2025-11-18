@@ -162,6 +162,10 @@ let
     lxc.mount.auto = proc:rw sys:rw cgroup:rw
     lxc.mount.entry = /dev dev none rbind,create=dir 0 0
 
+    <% if rescuefs && rescue_rootfs_mountpoint -%>
+    lxc.mount.entry = /mnt/rootfs <%= rescue_rootfs_mountpoint %> none bind,create=dir 0 0
+    <% end -%>
+
     lxc.hook.pre-start = ${preStartHook}
     lxc.hook.post-stop = ${postStopHook}
   '';

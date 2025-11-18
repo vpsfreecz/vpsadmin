@@ -110,10 +110,27 @@ if [ -e /dev/disk/by-label/config-2 ] ; then
   umount /mnt/config
 fi
 
-echo "Mounting container rootfs"
-rootfsLabel=$(jq -r .rootfs_label /run/config/vpsadmin/config.json)
-mkdir -p /mnt/vps
-mount -v "/dev/disk/by-label/$rootfsLabel" /mnt/vps || fail "Unable to mount rootfs with label '$rootfsLabel'"
+rescueLabel=$(jq -r .rescue_label /run/config/vpsadmin/config.json)
+
+if [ -z "$rescueLabel" ] || [ "$rescueLabel" == "null" ] ; then
+    echo "Mounting container rootfs"
+    rootfsLabel=$(jq -r .rootfs_label /run/config/vpsadmin/config.json)
+    mkdir -p /mnt/vps
+    mount -v "/dev/disk/by-label/$rootfsLabel" /mnt/vps || fail "Unable to mount rootfs with label '$rootfsLabel'"
+else
+    rescueRootfsMountpoint=$(jq -r .rescue_rootfs_mountpoint /run/config/vpsadmin/config.json)
+
+    echo "Mounting rescue system"
+    mkdir -p /mnt/vps
+    mount -v "/dev/disk/by-label/$rescueLabel" /mnt/vps || fail "Unable to mount rescue system with label '$rescueLabel'"
+
+    if [ -n "$rescueRootfsMountpoint" ] && [ "$rescueRootfsMountpoint" != "null" ] ; then
+        echo "Mounting container rootfs"
+        rootfsLabel=$(jq -r .rootfs_label /run/config/vpsadmin/config.json)
+        mkdir -p /mnt/rootfs
+        mount -v "/dev/disk/by-label/$rootfsLabel" /mnt/rootfs || fail "Unable to mount rootfs with label '$rootfsLabel'"
+    fi
+fi
 
 # CGroups
 case "$cgroupv" in

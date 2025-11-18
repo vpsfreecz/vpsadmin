@@ -34,6 +34,13 @@ class ConfigureContainer
       vars[:init_cmd] = "/dev/.vpsadmin/ctstartmenu -timeout #{start_menu_timeout} #{vars[:init_cmd]}"
     end
 
+    vars[:rescuefs] = config.fetch('rescue_label', nil)
+
+    rescue_rootfs_mountpoint = config.fetch('rescue_rootfs_mountpoint', nil)
+    rescue_rootfs_mountpoint = rescue_rootfs_mountpoint[1..] while rescue_rootfs_mountpoint && rescue_rootfs_mountpoint.start_with?('/')
+
+    vars[:rescue_rootfs_mountpoint] = rescue_rootfs_mountpoint
+
     result = tpl.result_with_hash(vars)
 
     FileUtils.mkdir_p('/var/lib/lxc/vps')
