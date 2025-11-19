@@ -10,7 +10,7 @@ module NodeCtld
         ConfigDrive.create(@vps_id, cfg)
       end
 
-      distconfig!(domain, ['dns-resolvers-set'] + @nameserver)
+      distconfig!(domain, ['dns-resolvers-set'] + @nameserver) if domain.active?
 
       ok
     end
@@ -22,7 +22,7 @@ module NodeCtld
         ConfigDrive.create(@vps_id, cfg)
       end
 
-      distconfig!(domain, ['dns-resolvers-set'] + (@original || []))
+      distconfig!(domain, ['dns-resolvers-set'] + (@original || [])) if domain.active?
 
       ok
     end
