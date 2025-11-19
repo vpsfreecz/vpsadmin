@@ -395,9 +395,21 @@ module DistConfig
     def ct_syscmd(cmd, run: false, stdin: nil, valid_rcs: [0])
       lxc_cmd =
         if run && `lxc-info -n #{@ct} -s -H`.strip.downcase != 'running'
-          'lxc-execute'
+          [
+            'lxc-execute',
+            '-n', @ct,
+            '-s', 'lxc.environment=PATH',
+            '--',
+            *cmd
+          ]
         else
-          'lxc-attach'
+          [
+            'lxc-attach',
+            '-n', @ct,
+            '-v', "PATH=#{SYSTEM_PATH.join(':')}",
+            '--',
+            *cmd
+          ]
         end
 
       out_r, out_w = IO.pipe
@@ -412,14 +424,7 @@ module DistConfig
         spawn_kwargs[:in] = in_r
       end
 
-      pid = Process.spawn(
-        lxc_cmd,
-        '-n', @ct,
-        '-v', "PATH=#{SYSTEM_PATH.join(':')}",
-        '--',
-        *cmd,
-        **spawn_kwargs
-      )
+      pid = Process.spawn({ 'PATH' => SYSTEM_PATH.join(':') }, *lxc_cmd, **spawn_kwargs)
 
       out_w.close
 
