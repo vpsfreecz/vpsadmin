@@ -201,6 +201,7 @@ class Vps < ApplicationRecord
   end
 
   def check_cgroup_version
+    return if qemu_container?
     return unless cgroup_version != 'cgroup_any' && cgroup_version != node.cgroup_version
 
     errors.add(
