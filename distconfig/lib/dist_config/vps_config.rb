@@ -15,16 +15,16 @@ module DistConfig
     attr_reader :rescue_rootfs_mountpoint
 
     # @return [String]
-    attr_reader :distribution
+    attr_accessor :distribution
 
     # @return [String]
-    attr_reader :version
+    attr_accessor :version
 
     # @return [String]
-    attr_reader :arch
+    attr_accessor :arch
 
     # @return [String]
-    attr_reader :variant
+    attr_accessor :variant
 
     # @return [Hostname, nil]
     attr_accessor :hostname
