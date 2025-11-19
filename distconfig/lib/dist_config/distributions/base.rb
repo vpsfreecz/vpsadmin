@@ -157,6 +157,15 @@ module DistConfig
       raise "#{mode} failed"
     end
 
+    def set_os_template(distribution:, version:, arch:, variant:)
+      vps_config.distribution = distribution
+      vps_config.version = version
+      vps_config.arch = arch
+      vps_config.variant = variant
+      vps_config.save
+      nil
+    end
+
     # Set container hostname
     # @param hostname [String]
     def set_hostname(hostname)
