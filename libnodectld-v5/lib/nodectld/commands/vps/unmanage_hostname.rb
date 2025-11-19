@@ -12,7 +12,7 @@ module NodeCtld
         ConfigDrive.create(@vps_id, cfg)
       end
 
-      distconfig!(domain, %w[hostname-unset])
+      distconfig!(domain, %w[hostname-unset]) if domain.active?
 
       ok
     end
@@ -24,7 +24,7 @@ module NodeCtld
         ConfigDrive.create(@vps_id, cfg)
       end
 
-      distconfig!(domain, ['hostname-set', @hostname])
+      distconfig!(domain, ['hostname-set', @hostname]) if domain.active?
 
       ok
     end
