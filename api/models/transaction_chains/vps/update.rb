@@ -59,7 +59,16 @@ module TransactionChains
           end
 
         when 'cgroup_version'
-          db_changes[vps][attr] = ::Vps.cgroup_versions[vps.send(attr)]
+          if vps.container?
+            db_changes[vps][attr] = ::Vps.cgroup_versions[vps.send(attr)]
+          elsif vps.qemu_container?
+            append_t(
+              Transactions::Vps::CgroupVersion,
+              args: [vps, vps.cgroup_version_number, orig_vps.cgroup_version_number]
+            ) do |t|
+              t.edit(vps, cgroup_version: ::Vps.cgroup_versions[vps.send(attr)])
+            end
+          end
 
         when 'dns_resolver_id'
           if vps.dns_resolver_id
