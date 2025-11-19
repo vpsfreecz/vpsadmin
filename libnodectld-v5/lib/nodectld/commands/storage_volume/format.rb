@@ -33,7 +33,14 @@ module NodeCtld
     def install_os_template
       mountpoint = Dir.mktmpdir("vpsadmin-vol-#{@name}-")
 
-      syscmd("mount #{@nbd_dev} #{mountpoint}")
+      if @filesystem == 'btrfs'
+        syscmd("mount -o subvolid=5 #{@nbd_dev} #{mountpoint}")
+        syscmd("btrfs subvolume create #{File.join(mountpoint, '@')}")
+        syscmd("umount #{mountpoint}")
+        syscmd("mount -o subvol=@ #{@nbd_dev} #{mountpoint}")
+      else
+        syscmd("mount #{@nbd_dev} #{mountpoint}")
+      end
 
       tpl_spec = %w[vendor variant arch distribution version].map { |v| @os_template[v] }
 
