@@ -73,6 +73,8 @@ module DistConfig
         warn "Unknown command #{cmd.inspect}"
         exit(false)
       end
+
+      raise 'Failed to sync filesystem' unless system('sync')
     end
 
     protected
