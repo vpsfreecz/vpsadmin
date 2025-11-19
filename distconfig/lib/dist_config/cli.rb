@@ -36,6 +36,19 @@ module DistConfig
       when 'stop'
         mode, timeout = args
         DistConfig.run(vps_config, :stop, kwargs: { mode: mode.to_sym, timeout: timeout.to_i }, opts:)
+      when 'os-template-set'
+        distribution, version, arch, variant = args
+        DistConfig.run(
+          vps_config,
+          :set_os_template,
+          kwargs: {
+            distribution:,
+            version:,
+            arch:,
+            variant:
+          },
+          opts:
+        )
       when 'hostname-set'
         hostname = args[0]
         DistConfig.run(vps_config, :set_hostname, args: [hostname], opts:)
