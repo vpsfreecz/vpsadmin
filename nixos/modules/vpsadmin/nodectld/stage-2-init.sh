@@ -73,6 +73,7 @@ ln -sf /proc/mounts /etc/mtab
 touch /run/{u,w}tmp
 mkdir /run/lock
 
+action=start
 defcgroupv=2
 cgroupv=$defcgroupv
 
@@ -81,6 +82,9 @@ for o in $(cat /proc/cmdline); do
         vpsadmin.cgroupv=*)
             set -- $(IFS==; echo $o)
             cgroupv=$2
+            ;;
+        vpsadmin.distconfig)
+            action=distconfig
             ;;
     esac
 done
@@ -178,20 +182,33 @@ esac
 mkCgroup init
 setCgroup $$ init
 
+echo "Configuring managed container"
+distconfig lxc-setup @ctstartmenu@
+
+mkdir -p /run/lxc /var/lib/lxc/vps /var/lib/lxc/rootfs /etc/lxc
+
 echo "Starting qemu guest agent"
 qemu-ga-runner.sh &
 qemuGaPid=$!
 
+if [ "$action" == "distconfig" ] ; then
+    echo "Entering distconfig mode"
+    sleep 3600
+
+    echo "Syncing filesystems"
+    sync
+
+    echo "Halting"
+    echo o > /proc/sysrq-trigger
+    sleep 60
+    exit 0
+fi
+
 echo "tmp shell"
 bash
 
-echo "Configuring managed container"
-distconfig lxc-setup @ctstartmenu@
-distconfig start
-
 echo "Starting managed container"
-mkdir -p /run/lxc /var/lib/lxc/vps /var/lib/lxc/rootfs /etc/lxc
-
+distconfig start
 setCgroup $$ /
 
 lxc-start -F -n vps -P /var/lib/lxc &

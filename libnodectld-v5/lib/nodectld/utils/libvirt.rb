@@ -1,5 +1,6 @@
 require 'base64'
 require 'json'
+require 'rexml'
 
 module NodeCtld
   module Utils::Libvirt
@@ -74,14 +75,31 @@ module NodeCtld
       )
     end
 
-    def distconfig(domain, command, input: nil, timeout: 60)
+    def distconfig(domain, command, input: nil, run: false, timeout: 60)
       env = [
         'LANG=en_US.UTF-8',
         'LOCALE_ARCHIVE=/run/current-system/sw/lib/locale/locale-archive',
         'PATH=/run/current-system/sw/bin'
       ]
 
-      vmexec(domain, %w[distconfig] + command, env:, input:, timeout:)
+      unless domain.active?
+        raise "Domain #{domain.name} is not active" unless run
+
+        spawned = true
+
+        domain = add_domain_kernel_parameter(domain, 'vpsadmin.distconfig')
+        domain.create
+
+        wait_for_guest_agent(domain, timeout:)
+      end
+
+      ret = vmexec(domain, %w[distconfig] + command, env:, input:, timeout:)
+      return ret unless spawned
+
+      domain.destroy
+      remove_domain_kernel_parameter(domain, 'vpsadmin.distconfig')
+
+      ret
     end
 
     def distconfig!(*, **)
@@ -89,6 +107,68 @@ module NodeCtld
       return ret if ret[0] == 0
 
       raise "distconfig failed with #{ret[0]}: #{ret[2].inspect}"
+    end
+
+    # @param domain [Libvirt::Domain]
+    # @param param [String]
+    # @return [Libvirt::Domain]
+    def add_domain_kernel_parameter(domain, param)
+      doc = REXML::Document.new(domain.xml_desc)
+
+      os_elem = REXML::XPath.first(doc, '/domain/os')
+      raise 'No <os> element in domain XML' unless os_elem
+
+      cmdline_elem = REXML::XPath.first(doc, '/domain/os/cmdline')
+      raise 'No <cmdline> element in domain XML' unless cmdline_elem
+
+      current = cmdline_elem.text.to_s.strip
+      params = current.empty? ? [] : current.split(/\s+/)
+
+      return domain if params.include?(param)
+
+      params << param
+      cmdline_elem.text = params.join(' ')
+
+      domain.connection.define_domain_xml(doc.to_s)
+    end
+
+    # @param domain [Libvirt::Domain]
+    # @param param [String]
+    # @return [Libvirt::Domain]
+    def remove_domain_kernel_parameter(domain, param)
+      doc = REXML::Document.new(domain.xml_desc)
+
+      cmdline_elem = REXML::XPath.first(doc, '/domain/os/cmdline')
+      return domain unless cmdline_elem && cmdline_elem.text
+
+      current = cmdline_elem.text.to_s.strip
+      params = current.split(/\s+/)
+      new_params = params.reject { |p| p == param }
+
+      return domain if new_params == params
+
+      cmdline_elem.text = new_params.join(' ')
+
+      domain.connection.define_domain_xml(doc.to_s)
+    end
+
+    def wait_for_guest_agent(domain, timeout:)
+      t = Time.now
+
+      loop do
+        if timeout && t + timeout < Time.now
+          raise 'Timed out while waiting for the guest agent'
+        end
+
+        begin
+          domain.qemu_agent_command({ 'execute' => 'guest-ping' }.to_json)
+        rescue Libvirt::Error
+          sleep(0.5)
+          next
+        else
+          return true
+        end
+      end
     end
   end
 end
