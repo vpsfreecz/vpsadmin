@@ -64,14 +64,12 @@ module NodeCtld
     end
 
     def rename(new_guest_name)
+      distconfig!(@domain, ['netif-rename', @guest_name, new_guest_name], run: true)
+
       VpsConfig.edit(@vps_id) do |cfg|
         cfg.network_interfaces.rename(@guest_name, new_guest_name)
         ConfigDrive.create(@vps_id, cfg)
       end
-
-      return unless @domain.active?
-
-      distconfig!(@domain, ['netif-rename', @guest_name, new_guest_name])
     end
 
     def add_route(addr, prefix, v, _register, via: nil)
