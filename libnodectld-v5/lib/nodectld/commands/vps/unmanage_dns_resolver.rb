@@ -8,7 +8,7 @@ module NodeCtld
         cfg.dns_resolvers = []
       end
 
-      distconfig!(domain, ['dns-resolvers-unset'])
+      distconfig!(domain, ['dns-resolvers-unset']) if domain.active?
 
       ok
     end
@@ -18,7 +18,7 @@ module NodeCtld
         cfg.dns_resolvers = @original || []
       end
 
-      distconfig!(domain, ['dns-resolvers-set'] + (@original || []))
+      distconfig!(domain, ['dns-resolvers-set'] + (@original || [])) if domain.active?
 
       ok
     end
