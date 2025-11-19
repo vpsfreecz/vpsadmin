@@ -6,6 +6,8 @@ module NodeCtld
     def exec
       VpsConfig.edit(@vps_id) do |cfg|
         cfg.dns_resolvers = @nameserver
+
+        ConfigDrive.create(@vps_id, cfg)
       end
 
       distconfig!(domain, ['dns-resolvers-set'] + @nameserver)
@@ -16,6 +18,8 @@ module NodeCtld
     def rollback
       VpsConfig.edit(@vps_id) do |cfg|
         cfg.dns_resolvers = @original || []
+
+        ConfigDrive.create(@vps_id, cfg)
       end
 
       distconfig!(domain, ['dns-resolvers-set'] + (@original || []))
