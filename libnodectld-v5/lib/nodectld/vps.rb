@@ -36,7 +36,7 @@ module NodeCtld
 
     def passwd(user, password)
       if @vps_config.vm_type == 'qemu_container'
-        distconfig!(@domain, %W[passwd #{user}], input: password)
+        distconfig!(@domain, %W[passwd #{user}], input: password, run: true)
       else
         @domain.qemu_agent_command({
           'execute' => 'guest-set-user-password',
