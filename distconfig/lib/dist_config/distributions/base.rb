@@ -91,10 +91,20 @@ module DistConfig
     def mount_rootfs
       FileUtils.mkdir_p('/mnt/vps')
 
+      options = []
+
+      options << if rootfs_type == 'btrfs'
+                   'subvol=@'
+                 else
+                   'defaults'
+                 end
+
+      str_options = options.join(',')
+
       if vps_config.rescue_label
         puts 'Mounting rescue system'
 
-        unless system('mount', "/dev/disk/by-label/#{vps_config.rescue_label}", '/mnt/vps')
+        unless system('mount', '-o', str_options, "/dev/disk/by-label/#{vps_config.rescue_label}", '/mnt/vps')
           raise 'Failed to mount rescue system'
         end
 
@@ -102,7 +112,7 @@ module DistConfig
           FileUtils.mkdir_p('/mnt/rootfs')
           puts 'Mounting container rootfs'
 
-          unless system('mount', "/dev/disk/by-label/#{vps_config.rootfs_label}", '/mnt/rootfs')
+          unless system('mount', '-o', str_options, "/dev/disk/by-label/#{vps_config.rootfs_label}", '/mnt/rootfs')
             raise 'Failed to mount rootfs'
           end
         end
@@ -110,7 +120,7 @@ module DistConfig
       else
         puts 'Mounting container rootfs'
 
-        unless system('mount', "/dev/disk/by-label/#{vps_config.rootfs_label}", '/mnt/vps')
+        unless system('mount', '-o', str_options, "/dev/disk/by-label/#{vps_config.rootfs_label}", '/mnt/vps')
           raise 'Failed to mount rootfs'
         end
       end
@@ -367,6 +377,13 @@ module DistConfig
     protected
 
     attr_reader :vps_config, :configurator
+
+    def rootfs_type
+      ret = `blkid -o value -s TYPE /dev/disk/by-label/#{vps_config.rootfs_label}`.strip
+      raise "Unable to get rootfs type, blkid exited with #{$?.exitstatus}" if $?.exitstatus > 0
+
+      ret
+    end
 
     # Execute code block while chrooted to container rootfs
     # @return [any] return value from the code block
