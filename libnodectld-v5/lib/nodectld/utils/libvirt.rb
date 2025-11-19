@@ -152,6 +152,40 @@ module NodeCtld
       domain.connection.define_domain_xml(doc.to_s)
     end
 
+    # @param domain [Libvirt::Domain]
+    # @param param [String]
+    # @param value [String]
+    # @return [Libvirt::Domain]
+    def set_domain_kernel_parameter(domain, param, value)
+      doc = REXML::Document.new(domain.xml_desc)
+
+      os_elem = REXML::XPath.first(doc, '/domain/os')
+      raise 'No <os> element in domain XML' unless os_elem
+
+      cmdline_elem = REXML::XPath.first(doc, '/domain/os/cmdline')
+      raise 'No <cmdline> element in domain XML' unless cmdline_elem
+
+      current = cmdline_elem.text.to_s.strip
+      params = current.empty? ? [] : current.split(/\s+/)
+      replaced = false
+
+      new_params = params.map do |p|
+        k, v = p.split('=', 2)
+        next p if k != param
+
+        replaced = true
+        "#{param}=#{value}"
+      end
+
+      new_params << "#{param}=#{value}" unless replaced
+
+      return domain if new_params == params
+
+      cmdline_elem.text = new_params.join(' ')
+
+      domain.connection.define_domain_xml(doc.to_s)
+    end
+
     def wait_for_guest_agent(domain, timeout:)
       t = Time.now
 
