@@ -1,32 +1,26 @@
 module NodeCtld
   class Commands::Vps::StartMenu < Commands::Base
     handle 2030
-    needs :system, :osctl
+    needs :libvirt, :vps
 
     def exec
-      if @new_timeout > 0
-        set_start_menu(@new_timeout)
-      else
-        unset_start_menu
-      end
+      set_start_menu(@new_timeout)
+      ok
     end
 
     def rollback
-      if @original_timeout > 0
-        set_start_menu(@original_timeout)
-      else
-        unset_start_menu
-      end
+      set_start_menu(@original_timeout)
+      ok
     end
 
     protected
 
     def set_start_menu(timeout)
-      osctl(%i[ct set start-menu], @vps_id, { timeout: })
-    end
+      VpsConfig.edit(@vps_id) do |cfg|
+        cfg.start_menu_timeout = timeout
 
-    def unset_start_menu
-      osctl(%i[ct unset start-menu], @vps_id)
+        ConfigDrive.create(@vps_id, cfg)
+      end
     end
   end
 end
