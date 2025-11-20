@@ -36,6 +36,7 @@ module NodeCtld
       if @filesystem == 'btrfs'
         syscmd("mount -o subvolid=5 #{@nbd_dev} #{mountpoint}")
         syscmd("btrfs subvolume create #{File.join(mountpoint, '@')}")
+        %w[home root].each { |vol| syscmd("btrfs subvolume create #{File.join(mountpoint, '@', vol)}") }
         syscmd("umount #{mountpoint}")
         syscmd("mount -o subvol=@ #{@nbd_dev} #{mountpoint}")
       else
