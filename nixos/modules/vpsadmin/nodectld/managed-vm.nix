@@ -56,6 +56,7 @@ let
             lxc
             qemu
             qemuGaRunner
+            strace
           ];
 
           # Wrappers are needed for login. Since we do not run systemd and its
