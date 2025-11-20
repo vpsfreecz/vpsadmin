@@ -51,6 +51,15 @@ setCgroup() {
     esac
 }
 
+runGetty() (
+    local console="$1"
+
+    while true ; do
+        setsid agetty --autologin root --noclear --keep-baud "$console" 115200,38400,9600 linux
+        sleep 1
+    done
+)
+
 trap 'fail' 0
 
 systemConfig=@systemConfig@
@@ -69,9 +78,6 @@ mount -t devpts -ogid=3 devpts /dev/pts
 
 ln -sfn /run /var/run
 ln -sf /proc/mounts /etc/mtab
-
-touch /run/{u,w}tmp
-mkdir /run/lock
 
 action=start
 defcgroupv=2
@@ -190,6 +196,10 @@ mkdir -p /run/lxc /var/lib/lxc/vps /var/lib/lxc/rootfs /etc/lxc
 echo "Starting qemu guest agent"
 qemu-ga-runner.sh &
 qemuGaPid=$!
+
+echo "Starting management consoles"
+runGetty hvc1 &
+runGetty hvc2 &
 
 if [ "$action" == "distconfig" ] ; then
     echo "Entering distconfig mode"
