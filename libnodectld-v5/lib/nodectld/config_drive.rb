@@ -33,7 +33,7 @@ module NodeCtld
         @vps_config.to_distconfig.to_json
       )
 
-      syscmd("xorriso -as mkisofs -J -R -V config-2 -o #{tmpiso} #{tmpdir}")
+      syscmd("xorriso -as mkisofs -J -R -V CIDATA -o #{tmpiso} #{tmpdir}")
       File.rename(tmpiso, iso)
     ensure
       FileUtils.rm_rf(tmpdir)
