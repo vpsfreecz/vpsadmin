@@ -58,6 +58,19 @@ let
             qemuGaRunner
           ];
 
+          # Wrappers are needed for login. Since we do not run systemd and its
+          # services, we make it a part of profile activation.
+          system.activationScripts.wrappers =
+            lib.stringAfter
+              [
+                "specialfs"
+                "users"
+              ]
+              ''
+                mkdir -p $(dirname ${config.security.wrapperDir})
+                ${config.systemd.services.suid-sgid-wrappers.script}
+              '';
+
           networking.hostName = "stage-2";
 
           documentation = {
