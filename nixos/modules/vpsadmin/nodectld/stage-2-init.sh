@@ -111,10 +111,10 @@ ln -sfn @udevHwdb@ /etc/udev/hwdb.bin
 @udev@/bin/udevadm settle --timeout=30 || fail "udevadm settle timed-out"
 @udev@/bin/udevadm control --exit
 
-if [ -e /dev/disk/by-label/config-2 ] ; then
+if [ -e /dev/disk/by-label/CIDATA ] ; then
   echo "Mounting config drive"
   mkdir -p /mnt/config
-  mount -o ro /dev/disk/by-label/config-2 /mnt/config
+  mount -o ro /dev/disk/by-label/CIDATA /mnt/config
   mkdir -p /run/config/vpsadmin
   [ -d /mnt/config/vpsadmin ] && cp -r /mnt/config/vpsadmin/* /run/config/vpsadmin/
   umount /mnt/config
