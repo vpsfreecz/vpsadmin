@@ -322,6 +322,25 @@ module DistConfig
       )
     end
 
+    def setup_network
+      setup_network_interfaces
+
+      vps_config.network_interfaces.each do |netif|
+        syscmd("ip link set #{netif.guest_name} up")
+
+        netif.active_ip_versions.each do |ip_v|
+          netif.ips(ip_v).each do |ip|
+            syscmd("ip -#{ip_v} addr add #{ip.to_string} dev #{netif.guest_name}")
+          end
+
+          gw = netif.default_via(ip_v)
+
+          syscmd("ip route add #{gw} dev #{netif.guest_name}")
+          syscmd("ip route add default via #{gw} dev #{netif.guest_name}")
+        end
+      end
+    end
+
     # @param dns_resolvers [Array<String>]
     def set_dns_resolvers(dns_resolvers)
       vps_config.dns_resolvers = dns_resolvers
@@ -457,6 +476,10 @@ module DistConfig
           ]
         end
 
+      syscmd(lxc_cmd, stdin:, valid_rcs:)
+    end
+
+    def syscmd(cmd, stdin: nil, valid_rcs: [0])
       out_r, out_w = IO.pipe
 
       spawn_kwargs = {
@@ -469,7 +492,7 @@ module DistConfig
         spawn_kwargs[:in] = in_r
       end
 
-      pid = Process.spawn({ 'PATH' => SYSTEM_PATH.join(':') }, *lxc_cmd, **spawn_kwargs)
+      pid = Process.spawn({ 'PATH' => SYSTEM_PATH.join(':') }, *cmd, **spawn_kwargs)
 
       out_w.close
 
