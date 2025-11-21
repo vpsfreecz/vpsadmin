@@ -44,5 +44,9 @@ module DistConfig
 
       log(:warn, "Unable to set password: #{ret.output}")
     end
+
+    def install_cloud_init_commands
+      [CloudInit.install_apkv3, CloudInit.enable_dinit]
+    end
   end
 end

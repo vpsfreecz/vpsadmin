@@ -24,5 +24,9 @@ module DistConfig
         Network::Ifupdown
       end
     end
+
+    def install_cloud_init_commands
+      [CloudInit.install_apkv2, CloudInit.enable_alpine]
+    end
   end
 end
