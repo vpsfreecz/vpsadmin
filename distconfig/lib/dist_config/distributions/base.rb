@@ -414,6 +414,32 @@ module DistConfig
       end
     end
 
+    # @return [CommandResult]
+    def install_cloud_init
+      commands = install_cloud_init_commands
+      commands = commands.join("\n\n") if commands.is_a?(Array)
+
+      script = <<~END
+        #!/bin/sh
+        set -e
+
+        #{commands}
+
+        # Disable network configuration, so that cloud-init doesn't break
+        # already existing network configuration. vendor-data doesn't seem to work,
+        # so putting it to /etc.
+        mkdir -p /etc/cloud/cloud.cfg.d
+        echo "network: {config: disabled}" > /etc/cloud/cloud.cfg.d/99-disable-network-config.cfg
+      END
+
+      runscript(script, run: true)
+    end
+
+    # @return [String, Array<String>]
+    def install_cloud_init_commands
+      raise NotImplementedError
+    end
+
     # Return path to `/bin` or an alternative, where a shell is looked up
     # @return [String]
     def bin_path
