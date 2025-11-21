@@ -1,8 +1,29 @@
-require 'dist_config/distributions/debian'
+require 'dist_config/distributions/base'
 
 module DistConfig
-  class Distributions::Chimera < Distributions::Debian
+  class Distributions::Chimera < Distributions::Base
     distribution :chimera
+
+    class Configurator < DistConfig::Configurator
+      def set_hostname(new_hostname, old_hostname: nil)
+        # /etc/hostname
+        writable?(File.join(rootfs, 'etc', 'hostname')) do |path|
+          regenerate_file(path, 0o644) do |f|
+            f.puts(new_hostname.local)
+          end
+        end
+      end
+
+      def install_user_script(content)
+        us = UserScript.new(vps_config, content)
+        us.install_systemd
+        us.write_script
+      end
+
+      def network_class
+        Network::Ifupdown
+      end
+    end
 
     def apply_hostname
       ct_syscmd(['hostname', ct.hostname.local])

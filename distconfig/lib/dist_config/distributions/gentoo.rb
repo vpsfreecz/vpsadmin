@@ -15,6 +15,18 @@ module DistConfig
         end
       end
 
+      def install_user_script(content)
+        us = UserScript.new(vps_config, content)
+
+        if version.start_with?('systemd-')
+          us.install_systemd
+        else
+          us.install_openrc
+        end
+
+        us.write_script
+      end
+
       protected
 
       def network_class
