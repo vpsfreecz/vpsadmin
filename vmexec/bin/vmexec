@@ -9,7 +9,7 @@ class Cli
     domain = args[0]
     cmd = args[1..]
 
-    status, out, err = VmExec::GaExec.run(domain, cmd)
+    status, out, err = VmExec::GaExec.run(domain, cmd, input: options[:input])
 
     unless options[:quiet]
       puts out if out
@@ -23,11 +23,16 @@ class Cli
 
   def parse_options
     options = {
+      input: nil,
       quiet: false
     }
 
     parser = OptionParser.new do |opts|
       opts.banner = "Usage: #{$0} [options] <domain> [--] <command...>"
+
+      opts.on('-i', '--input [FILE]', 'Data passed to standard input') do |v|
+        options[:input] = (v.nil? || v == '-') ? $stdin : File.open(v)
+      end
 
       opts.on('-q', '--quiet', 'Suppress output') do
         options[:quiet] = true
