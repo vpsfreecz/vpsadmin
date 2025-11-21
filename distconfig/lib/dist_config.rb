@@ -53,6 +53,7 @@ require_relative 'dist_config/etc_hosts'
 require_relative 'dist_config/network_interface'
 require_relative 'dist_config/hostname'
 require_relative 'dist_config/vps_config'
+require_relative 'dist_config/user_script'
 
 require_relative 'dist_config/distributions/base'
 require_relative 'dist_config/distributions/almalinux'

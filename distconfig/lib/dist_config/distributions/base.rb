@@ -406,6 +406,14 @@ module DistConfig
       result
     end
 
+    # @param content [String]
+    def install_user_script(content)
+      with_rootfs do
+        configurator.install_user_script(content)
+        nil
+      end
+    end
+
     # Return path to `/bin` or an alternative, where a shell is looked up
     # @return [String]
     def bin_path
