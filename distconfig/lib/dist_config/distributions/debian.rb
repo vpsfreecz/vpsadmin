@@ -14,6 +14,12 @@ module DistConfig
         end
       end
 
+      def install_user_script(content)
+        us = UserScript.new(vps_config, content)
+        us.install_systemd
+        us.write_script
+      end
+
       def network_class
         Network::Ifupdown
       end

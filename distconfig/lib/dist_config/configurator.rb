@@ -183,6 +183,10 @@ module DistConfig
       File.rename(tmp, authorized_keys)
     end
 
+    def install_user_script(content)
+      raise NotImplementedError
+    end
+
     protected
 
     # @return [Network::Base, nil]
