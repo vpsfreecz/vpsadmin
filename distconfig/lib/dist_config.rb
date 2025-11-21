@@ -46,6 +46,7 @@ require_relative 'dist_config/helpers/common'
 require_relative 'dist_config/helpers/file'
 require_relative 'dist_config/helpers/redhat'
 
+require_relative 'dist_config/cloud_init'
 require_relative 'dist_config/configurator'
 require_relative 'dist_config/erb_template'
 require_relative 'dist_config/erb_template_cache'
