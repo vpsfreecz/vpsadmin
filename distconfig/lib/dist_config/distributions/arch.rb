@@ -36,5 +36,9 @@ module DistConfig
     rescue SystemCommandFailed => e
       log(:warn, "Unable to apply hostname: #{e.message}")
     end
+
+    def install_cloud_init_commands
+      [CloudInit.install_pacman, CloudInit.enable_systemd]
+    end
   end
 end

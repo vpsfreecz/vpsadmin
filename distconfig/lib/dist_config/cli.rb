@@ -93,6 +93,11 @@ module DistConfig
       when 'user-script-install'
         content = $stdin.read
         DistConfig.run(vps_config, :install_user_script, args: [content], opts:)
+      when 'cloud-init-install'
+        result = DistConfig.run(vps_config, :install_cloud_init, opts:)
+
+        exit_status = result.status
+        $stdout.write(result.output)
       else
         warn "Unknown command #{cmd.inspect}"
         exit(false)
