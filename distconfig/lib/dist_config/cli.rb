@@ -17,6 +17,7 @@ module DistConfig
 
     def run
       options, cmd, args = parse_options
+      exit_status = 0
 
       vps_config = VpsConfig.new(options[:vps_config])
       opts = {
@@ -82,12 +83,19 @@ module DistConfig
       when 'authorized-key-del'
         public_key = $stdin.read.strip
         DistConfig.run(vps_config, :remove_authorized_key, args: [public_key], opts:)
+      when 'runscript'
+        result = DistConfig.run(vps_config, :runscript, args: [$stdin.read], opts:)
+
+        exit_status = result.status
+        $stdout.write(result.output)
       else
         warn "Unknown command #{cmd.inspect}"
         exit(false)
       end
 
       raise 'Failed to sync filesystem' unless system('sync')
+
+      exit(exit_status)
     end
 
     protected
