@@ -2,6 +2,7 @@ require 'dist_config/configurator'
 require 'dist_config/helpers/log'
 require 'fileutils'
 require 'json'
+require 'tempfile'
 
 module DistConfig
   class Distributions::Base
@@ -366,6 +367,24 @@ module DistConfig
         configurator.remove_authorized_key(public_key)
         nil
       end
+    end
+
+    # @param script [String]
+    # @return [CommandResult]
+    def runscript(script, run: true, valid_rcs: [0])
+      tmp = Tempfile.new('.distconfig-runscript', @rootfs)
+      tmp.write(script)
+      tmp.close
+
+      File.chmod(0o700, tmp.path)
+
+      begin
+        result = ct_syscmd([File.join('/', File.basename(tmp.path))], run:, valid_rcs:)
+      ensure
+        tmp.unlink
+      end
+
+      result
     end
 
     # Return path to `/bin` or an alternative, where a shell is looked up
