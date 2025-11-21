@@ -7,7 +7,7 @@ module VmExec
       new.ga_exec(*, **)
     end
 
-    def ga_exec(domain, command)
+    def ga_exec(domain, command, input: nil)
       cmd = command[0]
       args = command[1..]
 
@@ -22,8 +22,9 @@ module VmExec
           'arguments' => {
             'path' => cmd,
             'arg' => args,
+            'input-data' => input && Base64.encode64(input.read),
             'capture-output' => true
-          }
+          }.compact
         }.to_json,
         out: cmd_w
       )
