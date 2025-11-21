@@ -90,6 +90,9 @@ module DistConfig
 
         exit_status = result.status
         $stdout.write(result.output)
+      when 'user-script-install'
+        content = $stdin.read
+        DistConfig.run(vps_config, :install_user_script, args: [content], opts:)
       else
         warn "Unknown command #{cmd.inspect}"
         exit(false)
