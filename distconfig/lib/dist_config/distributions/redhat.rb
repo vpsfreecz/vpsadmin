@@ -20,6 +20,12 @@ module DistConfig
           { 'HOSTNAME' => new_hostname.local }
         )
       end
+
+      def install_user_script(content)
+        us = UserScript.new(vps_config, content)
+        us.install_systemd
+        us.write_script
+      end
     end
 
     def apply_hostname

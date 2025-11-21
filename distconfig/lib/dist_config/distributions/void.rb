@@ -52,6 +52,12 @@ module DistConfig
         generate_netif_rename_rules(netifs)
       end
 
+      def install_user_script(content)
+        us = UserScript.new(vps_config, content)
+        us.install_runit
+        us.write_script
+      end
+
       protected
 
       def network_class
