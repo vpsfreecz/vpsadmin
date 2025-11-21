@@ -37,6 +37,8 @@ module DistConfig
       when 'stop'
         mode, timeout = args
         DistConfig.run(vps_config, :stop, kwargs: { mode: mode.to_sym, timeout: timeout.to_i }, opts:)
+      when 'network-setup'
+        DistConfig.run(vps_config, :setup_network, opts:)
       when 'os-template-set'
         distribution, version, arch, variant = args
         DistConfig.run(
