@@ -57,6 +57,7 @@ let
             qemu
             qemuGaRunner
             strace
+            vim
           ];
 
           # Wrappers are needed for login. Since we do not run systemd and its
