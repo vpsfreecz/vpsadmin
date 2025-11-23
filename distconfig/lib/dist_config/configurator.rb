@@ -15,6 +15,9 @@ module DistConfig
     # @return [String]
     attr_reader :rootfs
 
+    # @return [VpsConfig]
+    attr_reader :vps_config
+
     # @return [String]
     attr_reader :distribution
 
@@ -22,13 +25,13 @@ module DistConfig
     attr_reader :version
 
     # @param rootfs [String]
-    # @param distribution [String]
-    # @param version [String]
+    # @param vps_config [VpsConfig]
     # @param verbose [Boolean]
-    def initialize(rootfs, distribution, version, verbose: false)
+    def initialize(rootfs, vps_config, verbose: false)
       @rootfs = rootfs
-      @distribution = distribution
-      @version = version
+      @vps_config = vps_config
+      @distribution = vps_config.distribution
+      @version = vps_config.version
       @verbose = verbose
       @network_backend = instantiate_network_class
     end
