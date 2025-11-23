@@ -98,6 +98,11 @@ module DistConfig
 
         exit_status = result.status
         $stdout.write(result.output)
+      when 'nixos-config-apply'
+        format = args[0]
+        content = $stdin.read
+
+        DistConfig.run(vps_config, :apply_nixos_config, args: [format, content], opts:)
       else
         warn "Unknown command #{cmd.inspect}"
         exit(false)
