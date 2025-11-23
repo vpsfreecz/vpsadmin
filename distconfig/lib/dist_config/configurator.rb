@@ -187,6 +187,34 @@ module DistConfig
       raise NotImplementedError
     end
 
+    def deploy_cloud_init(format, content)
+      nocloud = File.join(rootfs, 'var/lib/cloud/seed/nocloud')
+
+      FileUtils.mkdir_p(nocloud)
+
+      File.open(File.join(nocloud, 'meta-data'), 'w') do |f|
+        f.puts("instance-id: #{vps_config.vps_id}")
+      end
+
+      File.open(File.join(nocloud, 'network-config'), 'w') do |f|
+        f.puts(<<~END)
+          network:
+            version: 2
+            ethernets: {}
+        END
+      end
+
+      user_data = File.join(nocloud, 'user-data')
+
+      File.open(user_data, 'w') do |f|
+        f.puts(content)
+      end
+
+      return unless format == 'cloudinit_script'
+
+      File.chmod(0o755, user_data)
+    end
+
     protected
 
     # @return [Network::Base, nil]
