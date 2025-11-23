@@ -437,8 +437,7 @@ module DistConfig
 
         @configurator = configurator_class.new(
           '/',
-          vps_config.distribution,
-          vps_config.version,
+          vps_config,
           verbose: @verbose
         )
 
