@@ -109,6 +109,23 @@ module NodeCtld
       raise "distconfig failed with #{ret[0]}: #{ret[2].inspect}"
     end
 
+    def active_or_distconfig_mode(domain, timeout: 60)
+      return yield if domain.active?
+
+      domain = add_domain_kernel_parameter(domain, 'vpsadmin.distconfig')
+      domain.create
+
+      begin
+        wait_for_guest_agent(domain, timeout:)
+        ret = yield
+      ensure
+        domain.destroy
+        remove_domain_kernel_parameter(domain, 'vpsadmin.distconfig')
+      end
+
+      ret
+    end
+
     # @param domain [Libvirt::Domain]
     # @param param [String]
     # @return [Libvirt::Domain]
