@@ -12,8 +12,9 @@ module Transactions::Vps
       os_template ||= vps.os_template
 
       {
+        vps_uuid: vps.uuid.to_s,
         format: user_data.format,
-        content: user_data.content,
+        content: user_data.content.gsub("\r\n", "\n"),
         os_template: {
           distribution: os_template.distribution,
           version: os_template.version,

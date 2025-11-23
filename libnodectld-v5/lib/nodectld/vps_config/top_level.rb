@@ -58,6 +58,9 @@ module NodeCtld
     # @return [VpsConfig::NetworkInterfaceList]
     attr_reader :network_interfaces
 
+    # @return [VpsConfig::UserData]
+    attr_accessor :user_data
+
     # @param vps_id [Integer]
     # @param load [Boolean]
     def initialize(vps_id, load: true)
@@ -70,6 +73,7 @@ module NodeCtld
         @init_cmd = '/sbin/init'
         @start_menu_timeout = 5
         @network_interfaces = VpsConfig::NetworkInterfaceList.new
+        @user_data = nil
       end
     end
 
@@ -97,6 +101,7 @@ module NodeCtld
       @init_cmd = data.fetch('init_cmd', '/sbin/init')
       @start_menu_timeout = data.fetch('start_menu_timeout', 5)
       @network_interfaces = VpsConfig::NetworkInterfaceList.load(data['network_interfaces'] || [])
+      @user_data = data['user_data'] && VpsConfig::UserData.load(data.fetch('user_data'))
     end
 
     def reset
@@ -172,7 +177,8 @@ module NodeCtld
         'rescue_rootfs_mountpoint' => rescue_rootfs_mountpoint,
         'init_cmd' => init_cmd,
         'start_menu_timeout' => start_menu_timeout,
-        'network_interfaces' => network_interfaces.save
+        'network_interfaces' => network_interfaces.save,
+        'user_data' => user_data&.save
       }
     end
 
