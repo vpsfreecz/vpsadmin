@@ -435,6 +435,12 @@ module DistConfig
       runscript(script, run: true)
     end
 
+    def deploy_cloud_init(format, content)
+      with_rootfs do
+        configurator.deploy_cloud_init(format, content)
+      end
+    end
+
     # @return [String, Array<String>]
     def install_cloud_init_commands
       raise NotImplementedError
