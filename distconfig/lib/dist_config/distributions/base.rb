@@ -440,6 +440,12 @@ module DistConfig
       raise NotImplementedError
     end
 
+    # @param type [String]
+    # @param content [String]
+    def apply_nixos_config(type, content)
+      raise NotImplementedError
+    end
+
     # Return path to `/bin` or an alternative, where a shell is looked up
     # @return [String]
     def bin_path
