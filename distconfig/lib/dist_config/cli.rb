@@ -98,6 +98,10 @@ module DistConfig
 
         exit_status = result.status
         $stdout.write(result.output)
+      when 'cloud-init-deploy'
+        format = args[0]
+        content = $stdin.read
+        DistConfig.run(vps_config, :deploy_cloud_init, args: [format, content], opts:)
       when 'nixos-config-apply'
         format = args[0]
         content = $stdin.read
