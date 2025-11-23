@@ -33,6 +33,10 @@ module NodeCtld
         @vps_config.to_distconfig.to_json
       )
 
+      if %w[cloudinit_config cloudinit_script].include?(@vps_config.user_data&.format)
+        add_cloud_init_data(tmpdir)
+      end
+
       syscmd("xorriso -as mkisofs -J -R -V CIDATA -o #{tmpiso} #{tmpdir}")
       File.rename(tmpiso, iso)
     ensure
@@ -41,6 +45,32 @@ module NodeCtld
 
     def log_type
       'config-drive'
+    end
+
+    protected
+
+    def add_cloud_init_data(tmpdir)
+      File.open(File.join(tmpdir, 'meta-data'), 'w') do |f|
+        f.puts("instance-id: #{@vps_id}")
+      end
+
+      File.open(File.join(tmpdir, 'network-config'), 'w') do |f|
+        f.puts(<<~END)
+          network:
+            version: 2
+            ethernets: {}
+        END
+      end
+
+      user_data = File.join(tmpdir, 'user-data')
+
+      File.open(user_data, 'w') do |f|
+        f.puts(@vps_config.user_data.content)
+      end
+
+      return unless @vps_config.user_data.format == 'cloudinit_script'
+
+      File.chmod(0o755, user_data)
     end
   end
 end
