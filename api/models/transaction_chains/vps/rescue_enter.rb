@@ -44,6 +44,8 @@ module TransactionChains
 
       use_chain(Vps::Stop, args: [vps]) unless vps_stopped
 
+      append_t(Transactions::Vps::Define, args: [vps])
+
       append_t(Transactions::Vps::RescueEnter, args: [vps, os_template], kwargs: { rootfs_mountpoint: }) do |t|
         t.edit(vps, rescue_volume_id: vps.rescue_volume_id)
       end

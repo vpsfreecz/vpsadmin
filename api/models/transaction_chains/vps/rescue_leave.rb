@@ -15,6 +15,8 @@ module TransactionChains
         t.edit(vps, rescue_volume_id: nil)
       end
 
+      append_t(Transactions::Vps::Define, args: [vps], kwargs: { rescue_volume: nil })
+
       use_chain(Vps::Start, args: [vps])
 
       use_chain(StorageVolume::Destroy, args: [vps.rescue_volume])
