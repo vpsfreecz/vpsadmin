@@ -90,6 +90,9 @@ module DistConfig
 
         exit_status = result.status
         $stdout.write(result.output)
+      when 'rescue-system-warnings'
+        mountpoint = args[0]
+        DistConfig.run(vps_config, :add_rescue_system_warnings, args: [mountpoint], opts:)
       when 'user-script-install'
         content = $stdin.read
         DistConfig.run(vps_config, :install_user_script, args: [content], opts:)

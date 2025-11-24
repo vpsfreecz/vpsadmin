@@ -406,6 +406,14 @@ module DistConfig
       result
     end
 
+    # @param mountpoint [String]
+    def add_rescue_system_warnings(mountpoint)
+      with_rootfs do
+        configurator.add_rescue_system_warnings(mountpoint)
+        nil
+      end
+    end
+
     # @param content [String]
     def install_user_script(content)
       with_rootfs do
