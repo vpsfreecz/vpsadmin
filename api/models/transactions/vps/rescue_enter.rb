@@ -12,34 +12,25 @@ module Transactions::Vps
       self.node_id = vps.node_id
 
       {
-        uuid: vps.uuid.uuid,
-        vm_type: vps.vm_type,
-        os: vps.os_family.os.name,
-        os_family: vps.os_family.name,
-        cpu: vps.cpu,
-        memory: vps.memory,
-        rootfs_volume: {
-          id: vps.storage_volume_id,
-          pool_path: vps.storage_volume.storage_pool.path,
-          name: vps.storage_volume.name,
-          format: vps.storage_volume.format,
-          label: vps.storage_volume.label
+        vps_uuid: vps.uuid.to_s,
+        rescue_label: vps.rescue_volume.label,
+        rescue_rootfs_mountpoint: rootfs_mountpoint,
+        rescue_system: {
+          hostname: "rescue-#{vps.id}",
+          os_family: os_template.os_family.name,
+          distribution: os_template.distribution,
+          version: os_template.version,
+          arch: os_template.arch,
+          variant: os_template.variant
         },
-        rescue_volume: {
-          id: vps.rescue_volume_id,
-          pool_path: vps.rescue_volume.storage_pool.path,
-          name: vps.rescue_volume.name,
-          format: vps.rescue_volume.format,
-          label: vps.rescue_volume.label
-        },
-        console_port: vps.console_port.port,
-        hostname: "rescue-#{vps.id}",
-        distribution: os_template.distribution,
-        version: os_template.version,
-        arch: os_template.arch,
-        variant: os_template.variant,
-        cgroup_version: vps.cgroup_version_number,
-        rescue_rootfs_mountpoint: rootfs_mountpoint
+        standard_system: {
+          hostname: vps.manage_hostname ? vps.hostname : nil,
+          os_family: vps.os_family.name,
+          distribution: vps.os_template.distribution,
+          version: vps.os_template.version,
+          arch: vps.os_template.arch,
+          variant: vps.os_template.variant
+        }
       }
     end
   end

@@ -50,5 +50,12 @@ module NodeCtld
       end
       ret
     end
+
+    # @param vps_id [Integer]
+    def self.destroy(vps_id)
+      cfg = self.open(vps_id)
+      cfg.destroy
+      nil
+    end
   end
 end

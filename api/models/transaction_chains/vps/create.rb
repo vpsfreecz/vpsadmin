@@ -211,6 +211,12 @@ module TransactionChains
           w.save!(validate: false)
           just_create(w)
         end
+
+        append_t(
+          Transactions::Vps::Define,
+          args: [vps],
+          kwargs: { rollback_undefine: true, network_interfaces: [] }
+        )
       end
 
       if vps.container?
