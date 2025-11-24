@@ -183,6 +183,54 @@ module DistConfig
       File.rename(tmp, authorized_keys)
     end
 
+    # @param mountpoint [String]
+    def add_rescue_system_warnings(mountpoint)
+      return unless File.exist?(File.join(rootfs, 'etc/profile'))
+
+      # Set login message
+      File.open(File.join(rootfs, 'etc/motd'), 'w') do |f|
+        f.write(<<~END)
+
+
+
+
+          *****************************************************************
+          *                      VPS in rescue mode!                      *
+          *****************************************************************
+
+
+          The rescue system is temporary and will be destroyed when the VPS
+          resumes normal operation. Backup any data that you wish to preserve.
+        END
+
+        unless mountpoint.empty?
+          f.write(<<~END)
+
+            Root file system of VPS #{vps_config.vps_id} is mounted to "#{mountpoint}".
+          END
+        end
+
+        f.write("\n\n")
+      end
+
+      # Customize shell prompt
+      ['etc/profile', 'root/.profile'].each do |profile|
+        File.open(File.join(rootfs, profile), 'a') do |f|
+          f.puts(<<~END)
+
+            # vpsAdmin rescue mode
+            PS1="\n[VPS in rescue mode]\n$PS1"
+          END
+        end
+
+        break
+      rescue SystemCallError
+        next
+      end
+
+      nil
+    end
+
     def install_user_script(content)
       raise NotImplementedError
     end
