@@ -106,7 +106,7 @@ module NodeCtld
       ret = distconfig(*, **)
       return ret if ret[0] == 0
 
-      raise "distconfig failed with #{ret[0]}: #{ret[2].inspect}"
+      raise "distconfig failed with #{ret[0]}\n\nstdout: #{ret[1].inspect}\n\nstderr: #{ret[2].inspect}"
     end
 
     def active_or_distconfig_mode(domain, timeout: 60)
