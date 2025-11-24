@@ -108,6 +108,7 @@ module NodeCtld
       type: nil, # loaded from db
       transaction_public_key: '/etc/vpsadmin/transaction.key',
       vps_config_dir: '/var/lib/libvirt/vpsadmin/vps-configs',
+      domain_xml_dir: '/var/lib/libvirt/vpsadmin/domains',
       config_drive_dir: '/var/lib/libvirt/vpsadmin/config-drives'
     },
 

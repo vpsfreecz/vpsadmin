@@ -20,22 +20,10 @@ module Transactions::Vps
         }
       else
         {
-          uuid: vps.uuid.uuid,
-          vm_type: vps.vm_type,
-          cpu: vps.cpu,
-          memory: vps.memory,
-          rootfs_volume: {
-            pool_path: vps.storage_volume.storage_pool.path,
-            name: vps.storage_volume.name,
-            format: vps.storage_volume.format,
-            label: vps.storage_volume.label
-          },
-          console_port: vps.console_port.port,
           distribution: template.distribution,
           version: template.version,
           arch: template.arch,
-          variant: template.variant,
-          cgroup_version: vps.cgroup_version_number
+          variant: template.variant
         }
       end
     end
