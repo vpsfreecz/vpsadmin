@@ -213,6 +213,14 @@ module TransactionChains
         end
       end
 
+      if vps.node.libvirt?
+        append_t(
+          Transactions::Vps::Define,
+          args: [vps],
+          kwargs: { rollback_undefine: true, network_interfaces: [] }
+        )
+      end
+
       if vps.container?
         use_chain(Vps::Mounts, args: [vps, mounts]) if mounts.any?
 

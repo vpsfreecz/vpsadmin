@@ -4,16 +4,7 @@ module NodeCtld
     needs :system
 
     def exec
-      conn = LibvirtClient.new
-
-      begin
-        dom = conn.lookup_domain_by_uuid(@uuid)
-      rescue Libvirt::Error
-        # pass
-      else
-        dom.undefine
-      end
-
+      VpsConfig.destroy(@vps_id)
       VpsStatus.remove_vps(@vps_id)
       syscmd("consolectl stop #{@vps_id}")
       ok
