@@ -2,6 +2,68 @@ require 'libosctl'
 
 module NodeCtld
   class VpsStatus::Vps
+    STATE_MAP = {
+      Libvirt::Domain::NOSTATE => 'no_state',
+      Libvirt::Domain::RUNNING => 'running',
+      Libvirt::Domain::BLOCKED => 'blocked',
+      Libvirt::Domain::PAUSED => 'paused',
+      Libvirt::Domain::SHUTDOWN => 'shutting_down',
+      Libvirt::Domain::SHUTOFF => 'stopped',
+      Libvirt::Domain::CRASHED => 'crashed',
+      Libvirt::Domain::PMSUSPENDED => 'pm_suspended'
+    }.freeze
+
+    REASON_MAP = {
+      # RUNNING
+      Libvirt::Domain::RUNNING_UNKNOWN => 'running_unknown',
+      Libvirt::Domain::RUNNING_BOOTED => 'running_booted',
+      Libvirt::Domain::RUNNING_MIGRATED => 'running_migrated',
+      Libvirt::Domain::RUNNING_RESTORED => 'running_restored',
+      Libvirt::Domain::RUNNING_FROM_SNAPSHOT => 'running_from_snapshot',
+      Libvirt::Domain::RUNNING_UNPAUSED => 'running_unpaused',
+      Libvirt::Domain::RUNNING_MIGRATION_CANCELED => 'running_migration_canceled',
+      Libvirt::Domain::RUNNING_SAVE_CANCELED => 'running_save_canceled',
+      Libvirt::Domain::RUNNING_WAKEUP => 'running_wakeup',
+      Libvirt::Domain::RUNNING_CRASHED => 'running_crashed',
+
+      # BLOCKED
+      Libvirt::Domain::BLOCKED_UNKNOWN => 'blocked_unknown',
+
+      # PAUSED
+      Libvirt::Domain::PAUSED_UNKNOWN => 'paused_unknown',
+      Libvirt::Domain::PAUSED_USER => 'paused_user',
+      Libvirt::Domain::PAUSED_MIGRATION => 'paused_migration',
+      Libvirt::Domain::PAUSED_SAVE => 'paused_save',
+      Libvirt::Domain::PAUSED_DUMP => 'paused_dump',
+      Libvirt::Domain::PAUSED_IOERROR => 'paused_ioerror',
+      Libvirt::Domain::PAUSED_WATCHDOG => 'paused_watchdog',
+      Libvirt::Domain::PAUSED_FROM_SNAPSHOT => 'paused_from_snapshot',
+      Libvirt::Domain::PAUSED_SHUTTING_DOWN => 'paused_shutting_down',
+      Libvirt::Domain::PAUSED_SNAPSHOT => 'paused_snapshot',
+      Libvirt::Domain::PAUSED_CRASHED => 'paused_crashed',
+
+      # SHUTDOWN
+      Libvirt::Domain::SHUTDOWN_UNKNOWN => 'shutdown_unknown',
+      Libvirt::Domain::SHUTDOWN_USER => 'shutdown_user',
+
+      # SHUTOFF
+      Libvirt::Domain::SHUTOFF_UNKNOWN => 'stopped_unknown',
+      Libvirt::Domain::SHUTOFF_SHUTDOWN => 'stopped_shutdown',
+      Libvirt::Domain::SHUTOFF_DESTROYED => 'stopped_destroyed',
+      Libvirt::Domain::SHUTOFF_CRASHED => 'stopped_crashed',
+      Libvirt::Domain::SHUTOFF_MIGRATED => 'stopped_migrated',
+      Libvirt::Domain::SHUTOFF_SAVED => 'stopped_saved',
+      Libvirt::Domain::SHUTOFF_FAILED => 'stopped_failed',
+      Libvirt::Domain::SHUTOFF_FROM_SNAPSHOT => 'stopped_from_snapshot',
+
+      # CRASHED
+      Libvirt::Domain::CRASHED_UNKNOWN => 'crashed_unknown',
+      Libvirt::Domain::CRASHED_PANICKED => 'crashed_panicked',
+
+      # PM SUSPENDED
+      Libvirt::Domain::PMSUSPENDED_UNKNOWN => 'pm_suspended_unknown'
+    }.freeze
+
     PROCESS_STATES = %w[R S D Z T t X I].freeze
 
     PROCESS_COUNTS_COMMAND = <<-END.freeze
@@ -45,6 +107,7 @@ module NodeCtld
 
       @exists = true
       @running = domain.active?
+      @state, = domain_state_string(*domain.state)
 
       unless @running
         @prev = nil
@@ -81,6 +144,7 @@ module NodeCtld
         time: @time.to_i,
         delta: @delta,
         status: @exists,
+        state: @state,
         running: @running,
         in_rescue_mode: @in_rescue_mode,
         qemu_guest_agent: @qemu_guest_agent,
@@ -102,6 +166,13 @@ module NodeCtld
     end
 
     protected
+
+    def domain_state_string(state, reason)
+      state_s  = STATE_MAP[state] || "unknown(#{state})"
+      reason_s = REASON_MAP[reason] || "unknown(#{reason})"
+
+      [state_s, reason_s]
+    end
 
     def read_guest_info(domain)
       @uptime = 1
