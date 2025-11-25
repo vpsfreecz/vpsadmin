@@ -1196,7 +1196,7 @@ function vpsDiskUsagePercent($vps)
 
 function showVpsDiskExpansionWarning($vps)
 {
-    return $vps->dataset->dataset_expansion_id ? true : false;
+    return ($vps->vm_type == 'container' && $vps->dataset->dataset_expansion_id) ? true : false;
 }
 
 function usedSpaceWithCompression($dataset, $property)
@@ -1272,6 +1272,20 @@ function cgroupEnumTolabel($v)
             return 'cgroup v2';
         default:
             return 'unknown cgroup';
+    }
+}
+
+function vmTypeToLabel($v)
+{
+    switch ($v) {
+        case 'container':
+            return _('container');
+        case 'qemu_container':
+            return _('QEMU container');
+        case 'qemu_full':
+            return _('QEMU');
+        default:
+            return _('unknown');
     }
 }
 
