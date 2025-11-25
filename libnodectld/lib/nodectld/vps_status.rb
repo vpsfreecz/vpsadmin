@@ -9,7 +9,7 @@ module NodeCtld
   class VpsStatus
     class Entry
       attr_reader :id, :read_hostname
-      attr_accessor :exists, :running, :hostname, :uptime, :cpu_usage, :memory,
+      attr_accessor :exists, :state, :running, :hostname, :uptime, :cpu_usage, :memory,
                     :nproc, :loadavg, :in_rescue_mode
 
       def initialize(row)
@@ -80,6 +80,7 @@ module NodeCtld
         next if vpsadmin_vps.nil?
 
         vpsadmin_vps.exists = true
+        vpsadmin_vps.state = ct.state
         vpsadmin_vps.running = ct.state == 'running'
 
         next unless vpsadmin_vps.running?
@@ -133,6 +134,7 @@ module NodeCtld
             id: vps.id.to_i,
             time: t.to_i,
             status: !vps.skip?,
+            state: vps.state,
             running: vps.running?,
             in_rescue_mode: vps.in_rescue_mode,
             uptime: vps.uptime,

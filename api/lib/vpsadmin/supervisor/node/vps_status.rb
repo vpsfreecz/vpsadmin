@@ -61,6 +61,7 @@ module VpsAdmin::Supervisor
 
       current_status.assign_attributes(
         status: new_status['status'],
+        state: new_status['state'] || 'no_state',
         is_running: new_status['running'],
         in_rescue_mode: current_status.vps.container? ? new_status['in_rescue_mode'] : !current_status.vps.rescue_volume_id.nil?,
         qemu_guest_agent: new_status['qemu_guest_agent'],
@@ -128,7 +129,7 @@ module VpsAdmin::Supervisor
 
       if current_status.last_log_at.nil? \
          || current_status.status_changed? \
-         || current_status.is_running_changed? \
+         || current_status.state_changed? \
          || current_status.last_log_at + LOG_INTERVAL < now
         # Log status and reset averages
         log_status(current_status)
@@ -203,6 +204,7 @@ module VpsAdmin::Supervisor
       log = ::VpsStatus.new(
         vps_id: current_status.vps_id,
         status: current_status.status,
+        state: current_status.state,
         is_running: current_status.is_running,
         in_rescue_mode: current_status.in_rescue_mode,
         qemu_guest_agent: current_status.qemu_guest_agent,

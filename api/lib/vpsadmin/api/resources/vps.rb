@@ -55,6 +55,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
   end
 
   params(:status) do
+    string :state
     bool :is_running, label: 'Running'
     bool :in_rescue_mode, label: 'In rescue mode'
     bool :qemu_guest_agent
