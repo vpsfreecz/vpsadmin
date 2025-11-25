@@ -1,7 +1,7 @@
 module NodeCtld
   class Commands::NetworkInterface::CreateVethRouted < Commands::Base
     handle 2018
-    needs :system, :osctl, :vps
+    needs :system, :vps
 
     def exec
       conn = LibvirtClient.new
