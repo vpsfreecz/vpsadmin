@@ -7,15 +7,12 @@ module NodeCtld::Utils
       MODULES = {
         system: :System,
         osctl: :OsCtl,
-        zfs: :Zfs,
         vps: :Vps,
         worker: :Worker,
-        pool: :Pool,
         routes: :Routes,
         subprocess: :Subprocess,
         outage_window: :OutageWindow,
         queue: :Queue,
-        mbuffer: :MBuffer,
         dns: :Dns,
         libvirt: :Libvirt
       }.freeze
