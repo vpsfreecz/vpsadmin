@@ -100,7 +100,6 @@ module NodeCtld::Commands
     end
   end
 
-  module Pool; end
   module DatasetTree; end
   module Branch; end
   module Vps; end
