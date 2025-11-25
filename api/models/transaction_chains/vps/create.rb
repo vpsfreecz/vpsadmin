@@ -304,7 +304,13 @@ module TransactionChains
                ])
       end
 
-      use_chain(Vps::SetResources, args: [vps, vps_resources])
+      if vps.container?
+        use_chain(Vps::SetResources, args: [vps, vps_resources])
+      else
+        append_t(Transactions::Utils::NoOp, args: find_node_id) do |t|
+          vps_resources.each { |r| t.create(r) }
+        end
+      end
 
       vps.user.user_public_keys.where(auto_add: true).each do |key|
         use_chain(Vps::DeployPublicKey, args: [vps, key])

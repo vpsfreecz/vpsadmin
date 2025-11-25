@@ -149,7 +149,8 @@ module NodeCtld
     },
 
     libvirt: {
-      uri: 'qemu:///system'
+      uri: 'qemu:///system',
+      cpu_period: 100_000
     },
 
     shaper: {

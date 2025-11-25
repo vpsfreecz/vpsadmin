@@ -5,7 +5,15 @@
   <seclabel type='none' model='dac'/>
 
   <memory unit="MiB"><%= memory %></memory>
+
   <vcpu><%= cpu %></vcpu>
+
+  <cputune>
+    <% if cpu_quota > 0 %>
+    <period><%= cpu_period %></period>
+    <quota><%= cpu_quota %></quota>
+    <% end %>
+  </cputune>
 
   <os>
     <type arch="x86_64">hvm</type>

@@ -22,6 +22,8 @@ module NodeCtld
         "vpsadmin.cgroupv=#{@cgroup_version}"
       ]
 
+      cpu_period = $CFG.get(:libvirt, :cpu_period)
+
       xml = ErbTemplate.render(
         "libvirt/#{@vm_type}.xml",
         {
@@ -29,6 +31,8 @@ module NodeCtld
           uuid: @vps_uuid,
           qemu: '/run/current-system/sw/bin/qemu-system-x86_64',
           cpu: @cpu,
+          cpu_period:,
+          cpu_quota: @cpu_limit ? @cpu_limit / 100 * cpu_period : -1,
           memory: @memory,
           kernel_path: '/run/nodectl/managed-vm/kernel',
           kernel_cmdline: cmdline.join(' '),
