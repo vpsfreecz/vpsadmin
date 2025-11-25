@@ -22,7 +22,10 @@ module Transactions::Vps
         original: vps.cpu_limit_was
       }
 
-      { resources: }
+      {
+        vps_uuid: vps.uuid.to_s,
+        resources:
+      }
     end
   end
 end
