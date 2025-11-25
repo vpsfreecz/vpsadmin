@@ -114,7 +114,7 @@ module NodeCtld
           next
         end
 
-        missed_msgs = last_seq ? msg.seq - last_seq : 0
+        missed_msgs = last_seq && msg.seq ? msg.seq - last_seq : 0
         last_seq = msg.seq
 
         if event
