@@ -157,15 +157,6 @@ module NodeCtld
       enable: true
     },
 
-    storage: {
-      update_status: true,
-      status_interval: 120,
-      update_interval: 90,
-      batch_size: 50,
-      pool_status: true,
-      pool_interval: 60
-    },
-
     mailer: {
       smtp_server: 'localhost',
       smtp_port: 25,
