@@ -5,7 +5,6 @@ require 'nodectld/queues'
 require 'nodectld/remote_control'
 require 'nodectld/node_status'
 require 'nodectld/vps_status'
-require 'nodectld/storage_status'
 require 'nodectld/shaper'
 require 'nodectld/vps_monitor'
 
@@ -51,7 +50,6 @@ module NodeCtld
       @remote_control = RemoteControl.new(self)
       NodeBunny.connect
       @node_status = NodeStatus.new
-      @storage_status = StorageStatus.new
       @kernel_log = KernelLog::Parser.new
       @exporter = Exporter.new(self)
       @console = Console::Server.new
@@ -74,7 +72,6 @@ module NodeCtld
       VpsOsRelease.instance
       ExportMounts.instance
       VpsStatus.start
-      @storage_status.start if @storage_status.enable?
       @console.start if $CFG.get(:console, :enable)
       @dns_status.start if $CFG.get(:vpsadmin, :type) == :dns_server
       QemuHook.install if $CFG.get(:vpsadmin, :type) == :node
@@ -324,10 +321,6 @@ module NodeCtld
     def update_all
       @node_status.update
       VpsStatus.update
-
-      return unless $CFG.get(:storage, :update_status)
-
-      @storage_status.update
     end
 
     def pause(t = true)
