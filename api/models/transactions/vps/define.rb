@@ -20,6 +20,7 @@ module Transactions::Vps
         os: vps.os_family.os.name,
         os_family: vps.os_family.name,
         cpu: vps.cpu,
+        cpu_limit: vps.cpu_limit,
         memory: vps.memory,
         rootfs_volume: {
           id: vps.storage_volume_id,
