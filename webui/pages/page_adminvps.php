@@ -1152,9 +1152,15 @@ if (isLoggedIn()) {
         $xtpl->table_td(node_link($vps->node));
         $xtpl->table_tr();
 
-        $xtpl->table_td(_("Storage pool") . ':');
-        $xtpl->table_td(node_link($vps->node, $vps->pool->name));
+        $xtpl->table_td(_('Virtualization') . ':');
+        $xtpl->table_td(vmTypeTolabel($vps->vm_type));
         $xtpl->table_tr();
+
+        if ($vps->vm_type == 'container') {
+            $xtpl->table_td(_("Storage pool") . ':');
+            $xtpl->table_td(node_link($vps->node, $vps->pool->name));
+            $xtpl->table_tr();
+        }
 
         $xtpl->table_td(_("Location") . ':');
         $xtpl->table_td($vps->node->location->label);
@@ -1553,11 +1559,13 @@ if (isLoggedIn()) {
 
             $xtpl->form_out(_("Go >>"));
 
-            // Datasets
-            dataset_list('hypervisor', $vps->dataset_id);
+            if ($vps->vm_type == 'container') {
+                // Datasets
+                dataset_list('hypervisor', $vps->dataset_id);
 
-            // Mounts
-            mount_list($vps);
+                // Mounts
+                mount_list($vps);
+            }
 
             $os_templates = list_templates($vps);
 
@@ -1584,7 +1592,7 @@ if (isLoggedIn()) {
 
             $xtpl->form_add_select(_("Distribution") . ':', 'os_template', $os_templates, $vps->os_template_id, '');
 
-            $xtpl->table_td(_('Mount root dataset') . ':');
+            $xtpl->table_td(($vps->vm_type == 'container' ? _('Mount root dataset') : _('Mount root volume')) . ':');
             $xtpl->form_add_radio_pure('mount_root_dataset', 'mount', true);
             $xtpl->form_add_input_pure('text', '30', 'mountpoint', post_val('mountpoint', '/mnt/vps'));
             $xtpl->table_tr();
@@ -1710,25 +1718,27 @@ if (isLoggedIn()) {
             $xtpl->form_out(_("Go >>"));
 
             // Enable devices/capabilities
-            $xtpl->table_title(_('Features'));
-            $xtpl->form_create('?page=adminvps&action=features&veid=' . $vps->id, 'post');
+            if ($vps->vm_type == 'container') {
+                $xtpl->table_title(_('Features'));
+                $xtpl->form_create('?page=adminvps&action=features&veid=' . $vps->id, 'post');
 
-            $features = $vps->feature->list();
+                $features = $vps->feature->list();
 
-            foreach ($features as $f) {
-                if ($f->name == 'impermanence' && $vps->os_template->distribution != 'nixos') {
-                    continue;
+                foreach ($features as $f) {
+                    if ($f->name == 'impermanence' && $vps->os_template->distribution != 'nixos') {
+                        continue;
+                    }
+
+                    $xtpl->table_td($f->label);
+                    $xtpl->form_add_checkbox_pure($f->name, '1', $f->enabled ? '1' : '0');
+                    $xtpl->table_tr();
                 }
 
-                $xtpl->table_td($f->label);
-                $xtpl->form_add_checkbox_pure($f->name, '1', $f->enabled ? '1' : '0');
+                $xtpl->table_td(_('VPS is restarted when features are changed.'), false, false, '2');
                 $xtpl->table_tr();
+
+                $xtpl->form_out(_("Go >>"));
             }
-
-            $xtpl->table_td(_('VPS is restarted when features are changed.'), false, false, '2');
-            $xtpl->table_tr();
-
-            $xtpl->form_out(_("Go >>"));
 
             // Auto-start
             if (isAdmin()) {
@@ -1770,86 +1780,118 @@ if (isLoggedIn()) {
             $xtpl->form_out(_("Go >>"));
 
             // Cgroup version
-            $xtpl->table_title(_('Cgroup version'));
-            $xtpl->form_create('?page=adminvps&action=setcgroup&veid=' . $vps->id, 'post');
+            if ($vps->vm_type == 'container' || $vps->vm_type == 'qemu_container') {
+                $xtpl->table_title(_('Cgroup version'));
+                $xtpl->form_create('?page=adminvps&action=setcgroup&veid=' . $vps->id, 'post');
 
-            $xtpl->table_td(_('In use:'));
-            $xtpl->table_td(cgroupEnumToLabel($vps->node->cgroup_version));
-            $xtpl->table_tr();
+                if ($vps->vm_type == 'container') {
+                    $xtpl->table_td(_('In use:'));
+                    $xtpl->table_td(cgroupEnumToLabel($vps->node->cgroup_version));
+                    $xtpl->table_tr();
 
-            $other_cgroup = 'cgroup_v2';
-            if ($other_cgroup == $vps->node->cgroup_version) {
-                $other_cgroup = 'cgroup_v1';
+                    $other_cgroup = 'cgroup_v2';
+                    if ($other_cgroup == $vps->node->cgroup_version) {
+                        $other_cgroup = 'cgroup_v1';
+                    }
+
+                    $xtpl->form_add_radio_pure(
+                        'cgroup_version',
+                        'cgroup_any',
+                        post_val('cgroup_version', $vps->cgroup_version) == 'cgroup_any',
+                    );
+                    $xtpl->table_td(
+                        _('Use cgroups supported by the distribution, i.e. ') .
+                        cgroupEnumToLabel($vps->os_template->cgroup_version) . ' ' . _('for') . ' ' .
+                        $vps->os_template->label . ' ' . _('(recommended)')
+                    );
+                    $xtpl->table_tr();
+
+                    $xtpl->form_add_radio_pure(
+                        'cgroup_version',
+                        $vps->node->cgroup_version,
+                        post_val('cgroup_version', $vps->cgroup_version) == $vps->node->cgroup_version,
+                    );
+                    $xtpl->table_td(_('Always require') . ' ' . cgroupEnumToLabel($vps->node->cgroup_version));
+                    $xtpl->table_tr();
+
+                    $xtpl->form_add_radio_pure(
+                        'cgroup_version',
+                        $other_cgroup,
+                        false,
+                        '',
+                        false
+                    );
+                    $xtpl->table_td(
+                        _("Contact support if you'd like to use") . ' ' . cgroupEnumTolabel($other_cgroup),
+                    );
+                    $xtpl->table_tr();
+                } elseif ($vps->vm_type == 'qemu_container') {
+                    $xtpl->form_add_radio_pure(
+                        'cgroup_version',
+                        'cgroup_any',
+                        post_val('cgroup_version', $vps->cgroup_version) == 'cgroup_any',
+                    );
+                    $xtpl->table_td(
+                        _('Use cgroups supported by the distribution, i.e. ') .
+                        cgroupEnumToLabel($vps->os_template->cgroup_version) . ' ' . _('for') . ' ' .
+                        $vps->os_template->label
+                    );
+                    $xtpl->table_tr();
+
+                    foreach ([1, 2] as $cgroupVersion) {
+                        $stringVersion = 'cgroup_v' . $cgroupVersion;
+
+                        $xtpl->form_add_radio_pure(
+                            'cgroup_version',
+                            $stringVersion,
+                            post_val('cgroup_version', $vps->cgroup_version) == $stringVersion,
+                        );
+                        $xtpl->table_td(
+                            _('Use cgroups ') . 'v' . $cgroupVersion
+                        );
+                        $xtpl->table_tr();
+                    }
+                }
+
+                $xtpl->form_out(_("Go >>"));
             }
 
-            $xtpl->form_add_radio_pure(
-                'cgroup_version',
-                'cgroup_any',
-                post_val('cgroup_version', $vps->cgroup_version) == 'cgroup_any',
-            );
-            $xtpl->table_td(
-                _('Use cgroups supported by the distribution, i.e. ') .
-                cgroupEnumToLabel($vps->os_template->cgroup_version) . ' ' . _('for') . ' ' .
-                $vps->os_template->label . ' ' . _('(recommended)')
-            );
-            $xtpl->table_tr();
-
-            $xtpl->form_add_radio_pure(
-                'cgroup_version',
-                $vps->node->cgroup_version,
-                post_val('cgroup_version', $vps->cgroup_version) == $vps->node->cgroup_version,
-            );
-            $xtpl->table_td(_('Always require') . ' ' . cgroupEnumToLabel($vps->node->cgroup_version));
-            $xtpl->table_tr();
-
-            $xtpl->form_add_radio_pure(
-                'cgroup_version',
-                $other_cgroup,
-                false,
-                '',
-                false
-            );
-            $xtpl->table_td(
-                _("Contact support if you'd like to use") . ' ' . cgroupEnumTolabel($other_cgroup),
-            );
-            $xtpl->table_tr();
-
-            $xtpl->form_out(_("Go >>"));
-
             // Admin modifications
-            $xtpl->table_title(_('VPS modifications by the admin team'));
-            $xtpl->form_create('?page=adminvps&action=setmodifications&veid=' . $vps->id, 'post');
+            if ($vps->vm_type == 'container' || $vps->vm_type == 'qemu_container') {
+                $xtpl->table_title(_('VPS modifications by the admin team'));
+                $xtpl->form_create('?page=adminvps&action=setmodifications&veid=' . $vps->id, 'post');
 
-            $xtpl->table_td(
-                _('New software features or bugs may require or benefit from configuration ' .
-                'changes inside the VPS. If allowed, we can make these necessary changes ' .
-                'for you. We usually only modify the base system configuration files ' .
-                'which we would otherwise deliver in OS templates for new VPS. We do not ' .
-                'access or modify your applications or data. We will email you about any ' .
-                'changes we will make.'),
-                false,
-                false,
-                2
-            );
-            $xtpl->table_tr();
+                $xtpl->table_td(
+                    _('New software features or bugs may require or benefit from configuration ' .
+                    'changes inside the VPS. If allowed, we can make these necessary changes ' .
+                    'for you. We usually only modify the base system configuration files ' .
+                    'which we would otherwise deliver in OS templates for new VPS. We do not ' .
+                    'access or modify your applications or data. We will email you about any ' .
+                    'changes we will make.'),
+                    false,
+                    false,
+                    2
+                );
+                $xtpl->table_tr();
 
-            $xtpl->form_add_radio_pure(
-                'allow_admin_modifications',
-                '1',
-                post_val('allow_admin_modification', $vps->allow_admin_modifications ? '1' : '0') == '1',
-            );
-            $xtpl->table_td(_('Allow modifications by vpsFree.cz admin team (recommended)'));
-            $xtpl->table_tr();
+                $xtpl->form_add_radio_pure(
+                    'allow_admin_modifications',
+                    '1',
+                    post_val('allow_admin_modification', $vps->allow_admin_modifications ? '1' : '0') == '1',
+                );
+                $xtpl->table_td(_('Allow modifications by vpsFree.cz admin team (recommended)'));
+                $xtpl->table_tr();
 
-            $xtpl->form_add_radio_pure(
-                'allow_admin_modifications',
-                '0',
-                post_val('allow_admin_modification', $vps->allow_admin_modifications ? '1' : '0') == '0',
-            );
-            $xtpl->table_td(_('Do not allow modifications by vpsFree.cz admin team'));
-            $xtpl->table_tr();
+                $xtpl->form_add_radio_pure(
+                    'allow_admin_modifications',
+                    '0',
+                    post_val('allow_admin_modification', $vps->allow_admin_modifications ? '1' : '0') == '0',
+                );
+                $xtpl->table_td(_('Do not allow modifications by vpsFree.cz admin team'));
+                $xtpl->table_tr();
 
-            $xtpl->form_out(_("Go >>"));
+                $xtpl->form_out(_("Go >>"));
+            }
 
             // Maintenance windows
             $xtpl->table_title(_('Maintenance windows'));
@@ -1901,7 +1943,7 @@ if (isLoggedIn()) {
             $xtpl->form_out(_("Go >>"));
 
             // Map mode
-            if (isAdmin()) {
+            if (isAdmin() && $vps->vm_type == 'container') {
                 $xtpl->table_title(_('Map mode'));
                 $xtpl->form_create('?page=adminvps&action=map_mode&veid=' . $vps->id, 'post');
 
@@ -1914,7 +1956,7 @@ if (isLoggedIn()) {
             }
 
             // User namespace map
-            if (isAdmin() || USERNS_PUBLIC) {
+            if ((isAdmin() || USERNS_PUBLIC) && $vps->vm_type == 'container') {
                 $xtpl->table_title(_('UID/GID mapping'));
                 $xtpl->form_create('?page=adminvps&action=userns_map&veid=' . $vps->id, 'post');
 
