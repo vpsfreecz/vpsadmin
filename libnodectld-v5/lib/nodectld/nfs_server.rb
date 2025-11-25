@@ -4,7 +4,6 @@ module NodeCtld
   class NfsServer
     include OsCtl::Lib::Utils::Log
     include Utils::System
-    include Utils::Pool
 
     attr_reader :name, :address
 
