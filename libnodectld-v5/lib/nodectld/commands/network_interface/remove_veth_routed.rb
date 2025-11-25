@@ -1,7 +1,7 @@
 module NodeCtld
   class Commands::NetworkInterface::RemoveVethRouted < Commands::Base
     handle 2019
-    needs :system, :osctl, :vps
+    needs :system, :vps
 
     def exec
       VpsConfig.edit(@pool_fs, @vps_id) do |cfg|
