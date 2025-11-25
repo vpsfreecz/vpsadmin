@@ -100,10 +100,7 @@ module NodeCtld::Commands
     end
   end
 
-  module DatasetTree; end
-  module Branch; end
   module Vps; end
-  module Dataset; end
   module Shaper; end
   module Utils; end
   module Mail; end
