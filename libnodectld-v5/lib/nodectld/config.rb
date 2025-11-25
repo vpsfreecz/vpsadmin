@@ -103,7 +103,7 @@ module NodeCtld
       queues_reservation_prune_interval: 60,
       check_interval: 1,
       status_interval: 30,
-      vps_status_interval: 120,
+      vps_status_interval: 5,
       update_vps_status: true,
       type: nil, # loaded from db
       transaction_public_key: '/etc/vpsadmin/transaction.key',
