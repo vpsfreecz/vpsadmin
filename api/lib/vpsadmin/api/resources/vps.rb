@@ -2,6 +2,16 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
   model ::Vps
   desc 'Manage VPS'
 
+  OUTPUT_PARAMS = %i[
+    id user hostname manage_hostname os_template cgroup_version dns_resolver
+    node dataset pool memory swap cpu diskspace maintenance_lock
+    maintenance_lock_reason object_state expiration_date allow_admin_modifications
+    is_running process_count used_memory used_swap used_diskspace
+    uptime loadavg1 loadavg5 loadavg15 cpu_user cpu_nice cpu_system cpu_idle cpu_iowait
+    cpu_irq cpu_softirq start_menu_timeout enable_os_template_auto_update enable_network
+    user_namespace_map implicit_oom_report_rule_hit_count created_at
+  ].freeze
+
   params(:id) do
     id :id, label: 'VPS id'
   end
@@ -120,15 +130,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
       allow if u.role == :admin
       restrict user_id: u.id
       input blacklist: %i[user]
-      output whitelist: %i[
-        id user hostname manage_hostname os_template cgroup_version dns_resolver
-        node dataset pool memory swap cpu diskspace maintenance_lock
-        maintenance_lock_reason object_state expiration_date allow_admin_modifications
-        is_running process_count used_memory used_swap used_diskspace
-        uptime loadavg1 loadavg5 loadavg15 cpu_user cpu_nice cpu_system cpu_idle cpu_iowait
-        cpu_irq cpu_softirq start_menu_timeout enable_os_template_auto_update enable_network
-        user_namespace_map implicit_oom_report_rule_hit_count created_at
-      ]
+      output whitelist: OUTPUT_PARAMS
       allow
     end
 
@@ -242,15 +244,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
         start_menu_timeout allow_admin_modifications enable_os_template_auto_update
         user_namespace_map start vps_user_data user_data_format user_data_content
       ]
-      output whitelist: %i[
-        id user hostname manage_hostname os_template cgroup_version dns_resolver
-        node dataset pool memory swap cpu diskspace maintenance_lock
-        maintenance_lock_reason object_state expiration_date allow_admin_modifications
-        is_running process_count used_memory used_swap used_diskspace
-        uptime loadavg1 loadavg5 loadavg15 cpu_user cpu_nice cpu_system cpu_idle cpu_iowait
-        cpu_irq cpu_softirq start_menu_timeout enable_os_template_auto_update enable_network
-        user_namespace_map implicit_oom_report_rule_hit_count created_at
-      ]
+      output whitelist: OUTPUT_PARAMS
       allow
     end
 
@@ -365,15 +359,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
     authorize do |u|
       allow if u.role == :admin
       restrict user_id: u.id
-      output whitelist: %i[
-        id user hostname manage_hostname os_template cgroup_version dns_resolver
-        node dataset pool memory swap cpu diskspace maintenance_lock
-        maintenance_lock_reason object_state expiration_date allow_admin_modifications
-        is_running process_count used_memory used_swap used_diskspace
-        uptime loadavg1 loadavg5 loadavg15 cpu_user cpu_nice cpu_system cpu_idle cpu_iowait
-        cpu_irq cpu_softirq start_menu_timeout enable_os_template_auto_update enable_network
-        user_namespace_map implicit_oom_report_rule_hit_count created_at
-      ]
+      output whitelist: OUTPUT_PARAMS
       allow
     end
 
@@ -962,15 +948,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
       allow if u.role == :admin
       restrict user_id: u.id
       input blacklist: %i[node user configs]
-      output whitelist: %i[
-        id user hostname manage_hostname os_template cgroup_version dns_resolver
-        node dataset pool memory swap cpu diskspace maintenance_lock
-        maintenance_lock_reason object_state expiration_date allow_admin_modifications
-        is_running process_count used_memory used_swap used_diskspace
-        uptime loadavg1 loadavg5 loadavg15 cpu_user cpu_nice cpu_system cpu_idle cpu_iowait
-        cpu_irq cpu_softirq start_menu_timeout enable_os_template_auto_update enable_network
-        user_namespace_map implicit_oom_report_rule_hit_count created_at
-      ]
+      output whitelist: OUTPUT_PARAMS
       allow
     end
 
