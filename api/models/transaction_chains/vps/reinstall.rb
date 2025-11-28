@@ -82,6 +82,12 @@ module TransactionChains
     end
 
     def reinstall_qemu_container(vps, os_template)
+      if vps.rescue_volume
+        lock(vps.rescue_volume)
+
+        use_chain(Vps::RescueLeave, args: [vps])
+      end
+
       append_t(
         Transactions::StorageVolume::Format,
         args: [vps.storage_volume],
