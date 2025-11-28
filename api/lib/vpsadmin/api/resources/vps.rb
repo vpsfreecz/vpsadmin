@@ -3,7 +3,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
   desc 'Manage VPS'
 
   OUTPUT_PARAMS = %i[
-    id user hostname manage_hostname os_template cgroup_version dns_resolver
+    id user vm_type hostname manage_hostname os_template cgroup_version dns_resolver
     node dataset pool memory swap cpu diskspace maintenance_lock
     maintenance_lock_reason object_state expiration_date allow_admin_modifications
     is_running process_count used_memory used_swap used_diskspace
