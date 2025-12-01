@@ -61,7 +61,7 @@ in
       wantedBy = [ "multi-user.target" ];
       path = with pkgs; [
         nfs-utils
-        utillinux
+        util-linux
       ];
       serviceConfig =
         let
