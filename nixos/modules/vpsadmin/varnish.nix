@@ -125,13 +125,31 @@ in
     vpsadmin.varnish = {
       enable = mkEnableOption "Enable Varnish for vpsAdmin";
 
-      bind = mkOption {
-        type = types.str;
-        default = "*:6081";
-        description = "
-          Address, port or UNIX socket to listen on. Passed to Varnish command-line
-          option `-a`. See also {option}`services.varnish.http_address`.
-        ";
+      bind = {
+        address = mkOption {
+          type = types.str;
+          default = "0.0.0.0";
+          description = "
+            Address, hostname or UNIX socket to listen on. Passed to Varnish command-line
+            option `-a`. See also {option}`services.varnish.listen.address`.
+          ";
+        };
+
+        port = mkOption {
+          type = types.nullOr types.int;
+          default = null;
+          description = ''
+            Port to listen on. See also {option}`services.varnish.listen.port`.
+          '';
+        };
+
+        mode = mkOption {
+          type = types.nullOr types.str;
+          default = null;
+          description = ''
+            Permission of the socket file, see See also {option}`services.varnish.listen.mode`.
+          '';
+        };
       };
 
       api = mkOption {
@@ -147,7 +165,7 @@ in
   config = mkIf cfg.enable {
     services.varnish = {
       enable = true;
-      http_address = cfg.bind;
+      listen = [ { inherit (cfg.bind) address port mode; } ];
       config = varnishConfig;
     };
   };
