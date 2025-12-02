@@ -10,6 +10,9 @@ module TransactionChains
       if src == 'vpsadminos' && dst == 'vpsadminos'
         OsToOs
 
+      elsif src == 'libvirt' && dst == 'libvirt'
+        LibvirtToLibvirt
+
       else
         raise VpsAdmin::API::Exceptions::OperationNotSupported,
               "Clone from #{src} to #{dst} is not supported"
