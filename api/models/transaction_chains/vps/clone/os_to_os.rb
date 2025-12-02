@@ -173,17 +173,17 @@ module TransactionChains
       datasets.insert(0, [vps.dataset_in_pool, dst_vps.dataset_in_pool])
 
       confirm_creation = proc do |t|
+        t.create(dst_vps)
+
+        confirm_features.each do |f|
+          t.just_create(f)
+        end
+
+        confirm_windows.each do |w|
+          t.just_create(w)
+        end
+
         datasets.each do |src, dst|
-          t.create(dst_vps)
-
-          confirm_features.each do |f|
-            t.just_create(f)
-          end
-
-          confirm_windows.each do |w|
-            t.just_create(w)
-          end
-
           use = dst.allocate_resource!(
             :diskspace,
             src.diskspace,
