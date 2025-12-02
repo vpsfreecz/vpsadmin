@@ -22,6 +22,15 @@ module NodeCtld
     end
 
     def stop(kill: false, timeout: 300)
+      state, = @domain.state
+
+      case state
+      when Libvirt::Domain::SHUTOFF
+        return
+      when Libvirt::Domain::PAUSED
+        @domain.resume
+      end
+
       if @vps_config.vm_type == 'qemu_container'
         stop_qemu_container(kill:, timeout:)
       else
