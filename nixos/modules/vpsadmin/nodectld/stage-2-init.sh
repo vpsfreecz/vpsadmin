@@ -79,6 +79,9 @@ mount -t devpts -ogid=3 devpts /dev/pts
 ln -sfn /run /var/run
 ln -sf /proc/mounts /etc/mtab
 
+# pam_lastlog
+mkdir -p /var/lib/lastlog
+
 action=start
 defcgroupv=2
 cgroupv=$defcgroupv
