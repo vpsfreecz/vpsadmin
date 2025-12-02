@@ -23,12 +23,12 @@ class VpsFeature < ApplicationRecord
   end
 
   FEATURES = [
-    Feature.new(:tun, 'TUN/TAP', :all, default: true),
-    Feature.new(:fuse, 'FUSE', :all, default: true),
-    Feature.new(:ppp, 'PPP', :all),
-    Feature.new(:kvm, 'KVM', :all, default: true),
+    Feature.new(:tun, 'TUN/TAP', :vpsadminos, default: true),
+    Feature.new(:fuse, 'FUSE', :vpsadminos, default: true),
+    Feature.new(:ppp, 'PPP', :vpsadminos),
+    Feature.new(:kvm, 'KVM', :vpsadminos, default: true),
     Feature.new(:lxc, 'LXC nesting', :vpsadminos),
-    Feature.new(:impermanence, 'NixOS Impermanence', :all)
+    Feature.new(:impermanence, 'NixOS Impermanence', :vpsadminos)
   ].to_h { |f| [f.name, f] }
 
   validates :name, inclusion: {
