@@ -62,6 +62,18 @@ module DistConfig
         [hook, File.join(lxc_dir, hook)]
       end
 
+      kernel_modules_ct_dir = with_rootfs do
+        modules_dir = '/lib/modules'
+
+        begin
+          File.realpath(modules_dir)
+        rescue Errno::ENOENT
+          modules_dir
+        end
+      end
+
+      kernel_modules_ct_dir = kernel_modules_ct_dir[1..] while kernel_modules_ct_dir.start_with?('/')
+
       rescue_rootfs_mountpoint = vps_config.rescue_rootfs_mountpoint
       rescue_rootfs_mountpoint = rescue_rootfs_mountpoint[1..] while rescue_rootfs_mountpoint && rescue_rootfs_mountpoint.start_with?('/')
 
@@ -69,6 +81,8 @@ module DistConfig
         lxc_dir:,
         hostname: vps_config.hostname || vps_config.vps_id.to_s,
         init_cmd: vps_config.init_cmd,
+        kernel_modules_host_dir: File.realpath('/run/current-system/kernel-modules/lib/modules'),
+        kernel_modules_ct_dir:,
         rescue_label: vps_config.rescue_label,
         rescue_rootfs_mountpoint:,
         hooks:
