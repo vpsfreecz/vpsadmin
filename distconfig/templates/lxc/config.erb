@@ -11,6 +11,7 @@ lxc.init.cmd = <%= init_cmd %>
 
 lxc.mount.auto = proc:rw sys:rw cgroup:rw
 lxc.mount.entry = /dev dev none rbind,create=dir 0 0
+lxc.mount.entry = <%= kernel_modules_host_dir %> <%= kernel_modules_ct_dir %> none bind,ro,create=dir 0 0
 
 <% if rescue_label && rescue_rootfs_mountpoint -%>
 lxc.mount.entry = /mnt/rootfs <%= rescue_rootfs_mountpoint %> none bind,create=dir 0 0
