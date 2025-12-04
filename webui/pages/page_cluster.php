@@ -754,6 +754,8 @@ if (isAdmin()) {
                         'cgroup_version' => $_POST['cgroup_version'],
                         'manage_hostname' => isset($_POST['manage_hostname']),
                         'manage_dns_resolver' => isset($_POST['manage_dns_resolver']),
+                        'enable_script' => isset($_POST['enable_script']),
+                        'enable_cloud_init' => isset($_POST['enable_cloud_init']),
                         'vendor' => $_POST['vendor'],
                         'variant' => $_POST['variant'],
                         'arch' => $_POST['arch'],
