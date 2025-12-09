@@ -27,7 +27,7 @@ let
       --service-type=exec \
       --working-directory=${cfg.package}/${name} \
       --setenv=RACK_ENV=production \
-      --setenv=SCHEMA=${cfg.stateDirectory}/cache/structure.sql \
+      --setenv=SCHEMA=${cfg.stateDirectory}/cache/schema.rb \
       --uid ${cfg.user} \
       --gid ${cfg.group} \
       ${pkgs.bashInteractive}/bin/bash --rcfile ${shellRcFile}
@@ -67,7 +67,7 @@ let
       --service-type=exec \
       --working-directory=${cfg.package}/${name} \
       --setenv=RACK_ENV=production \
-      --setenv=SCHEMA=${cfg.stateDirectory}/cache/structure.sql \
+      --setenv=SCHEMA=${cfg.stateDirectory}/cache/schema.rb \
       --uid ${cfg.user} \
       --gid ${cfg.group} \
       ${bundle} exec ${rubyRunner} "$SCRIPT" $@

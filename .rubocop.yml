@@ -10,6 +10,7 @@ AllCops:
     - 'api/*.rb'
     - 'api/config/*.rb'
     - 'api/config/*/*.rb'
+    - 'api/db/schema.rb'
     - 'libnodectld/*.rb'
     - 'nodectl/*.rb'
     - 'nodectld/*.rb'

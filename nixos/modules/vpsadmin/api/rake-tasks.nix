@@ -73,7 +73,7 @@ let
       ]
       ++ optional cfg.database.createLocally [ "mysql.service" ];
       environment.RACK_ENV = "production";
-      environment.SCHEMA = "${cfg.stateDirectory}/cache/structure.sql";
+      environment.SCHEMA = "${cfg.stateDirectory}/cache/schema.rb";
       path = with pkgs; [
         mariadb
       ];

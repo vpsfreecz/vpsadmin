@@ -188,7 +188,7 @@ in
       after = [ "network.target" ] ++ optional cfg.database.createLocally [ "mysql.service" ];
       wantedBy = [ "multi-user.target" ];
       environment.RACK_ENV = "production";
-      environment.SCHEMA = "${cfg.stateDirectory}/cache/structure.sql";
+      environment.SCHEMA = "${cfg.stateDirectory}/cache/schema.rb";
       path = with pkgs; [
         mariadb
       ];
