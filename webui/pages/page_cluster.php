@@ -107,8 +107,8 @@ if (isAdmin()) {
             if (count($failed)) {
                 $xtpl->perex(
                     _("Some changes were saved"),
-                    _("The following options failed:") . '<br>' .
-                    implode("\n<br>\n", $failed)
+                    _("The following options failed:") . '<br>'
+                    . implode("\n<br>\n", $failed)
                 );
                 system_config_form();
 
@@ -1099,11 +1099,11 @@ if (isAdmin()) {
             }
             $xtpl->table_td($loc->domain);
             $xtpl->table_td(
-                '<a href="?page=cluster&action=location_networks&location=' . $loc->id . '">' .
-                '<img
+                '<a href="?page=cluster&action=location_networks&location=' . $loc->id . '">'
+                . '<img
 				src="template/icons/vps_ip_list.png"
-				title="' . _('List networks available in this location') . '">' .
-                '</a>'
+				title="' . _('List networks available in this location') . '">'
+                . '</a>'
             );
             $xtpl->table_td(maintenance_lock_icon('location', $loc));
             $xtpl->table_td('<a href="?page=cluster&action=location_edit&id=' . $loc->id . '"><img src="template/icons/edit.png" title="' . _("Edit") . '"></a>');
