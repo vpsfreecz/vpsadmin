@@ -327,7 +327,7 @@ module NodeCtld
       end
 
       run_thread_unless_runs(:vps_status) do
-        if $CFG.get(:vpsadmin, :update_vps_status)
+        if $CFG.get(:vpsadmin, :update_vps_status) && $CFG.get(:vpsadmin, :type) == :node
           @ct_top = CtTop.new
           @ct_top.monitor($CFG.get(:vpsadmin, :vps_status_interval)) do |data|
             @vps_status.update(data[:containers])
