@@ -22,6 +22,30 @@ module VpsAdmin::API::Tasks
         labels: [:object_state]
       )
 
+      @user_session_total_count = registry.gauge(
+        :vpsadmin_user_session_total_count,
+        docstring: 'The number of all vpsAdmin user sessions',
+        labels: %i[user_id auth_type client_version]
+      )
+
+      @user_session_open_count = registry.gauge(
+        :vpsadmin_user_session_open_count,
+        docstring: 'The number of currently open vpsAdmin user sessions',
+        labels: %i[user_id auth_type client_version]
+      )
+
+      @user_session_closed_count = registry.gauge(
+        :vpsadmin_user_session_closed_count,
+        docstring: 'The number of currently closed vpsAdmin user sessions',
+        labels: %i[user_id auth_type client_version]
+      )
+
+      @user_failed_login_count = registry.gauge(
+        :vpsadmin_user_failed_login_count,
+        docstring: 'The number of failed logins into vpsAdmin',
+        labels: %i[user_id auth_type client_version reason]
+      )
+
       @vps_count = registry.gauge(
         :vpsadmin_vps_count,
         docstring: 'The number of VPS in vpsAdmin',
@@ -186,6 +210,44 @@ module VpsAdmin::API::Tasks
           cnt,
           labels: { object_state: state }
         )
+      end
+
+      # user_session_total_count
+      ::UserSession
+        .group('user_id', 'auth_type', 'client_version')
+        .count.each do |grp, cnt|
+        user_id, auth_type, client_version = grp
+
+        @user_session_total_count.set(cnt, labels: { user_id:, auth_type:, client_version: })
+      end
+
+      # user_session_open_count
+      ::UserSession
+        .where(closed_at: nil)
+        .group('user_id', 'auth_type', 'client_version')
+        .count.each do |grp, cnt|
+        user_id, auth_type, client_version = grp
+
+        @user_session_open_count.set(cnt, labels: { user_id:, auth_type:, client_version: })
+      end
+
+      # user_session_closed_count
+      ::UserSession
+        .where.not(closed_at: nil)
+        .group('user_id', 'auth_type', 'client_version')
+        .count.each do |grp, cnt|
+        user_id, auth_type, client_version = grp
+
+        @user_session_closed_count.set(cnt, labels: { user_id:, auth_type:, client_version: })
+      end
+
+      # user_failed_login_count
+      ::UserFailedLogin
+        .group('user_id', 'auth_type', 'client_version', 'reason')
+        .count.each do |grp, cnt|
+        user_id, auth_type, client_version, reason = grp
+
+        @user_failed_login_count.set(cnt, labels: { user_id:, auth_type:, client_version:, reason: })
       end
 
       # vps_count
