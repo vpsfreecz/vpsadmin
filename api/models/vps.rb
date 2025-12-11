@@ -106,7 +106,7 @@ class Vps < ApplicationRecord
     halt reboot
   ]
 
-  validates :user_id, :node_id, :os_template_id, presence: true, numericality: { only_integer: true }
+  validates :user_id, :node_id, presence: true, numericality: { only_integer: true }
   validates :hostname, presence: true, format: {
     with: /\A[a-zA-Z0-9][a-zA-Z\-_.0-9]{0,62}[a-zA-Z0-9]\z/,
     message: 'bad format'
@@ -168,6 +168,8 @@ class Vps < ApplicationRecord
   alias running? is_running
 
   def cgroup_version_number
+    return if qemu_full?
+
     ver =
       if cgroup_version == 'cgroup_any'
         os_template.cgroup_version
@@ -197,7 +199,7 @@ class Vps < ApplicationRecord
   def foreign_keys_exist
     User.find(user_id)
     Node.find(node_id)
-    OsTemplate.find(os_template_id)
+    OsTemplate.find(os_template_id) if container? || qemu_container?
   end
 
   def check_cgroup_version

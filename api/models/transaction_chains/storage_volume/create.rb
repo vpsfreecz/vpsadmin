@@ -21,7 +21,9 @@ module TransactionChains
         t.create(vol)
       end
 
-      append_t(Transactions::StorageVolume::Format, args: [vol], kwargs: { os_template: })
+      if os_template
+        append_t(Transactions::StorageVolume::Format, args: [vol], kwargs: { os_template: })
+      end
 
       vol
     end

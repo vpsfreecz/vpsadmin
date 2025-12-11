@@ -49,7 +49,7 @@ module Transactions::Vps
             enable: netif.enable
           }
         end,
-        console_port: vps.console_port.port,
+        console_port: vps.console_port&.port,
         cgroup_version: vps.cgroup_version_number
       }
     end

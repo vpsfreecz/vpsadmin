@@ -6,7 +6,7 @@ module NodeCtld
     def exec
       VpsConfig.destroy(@vps_id)
       VpsStatus.remove_vps(@vps_id)
-      syscmd("consolectl stop #{@vps_id}")
+      syscmd("consolectl stop #{@vps_id}") if @vm_type == 'qemu_container'
       ok
     end
   end

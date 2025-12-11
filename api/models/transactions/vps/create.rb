@@ -32,12 +32,12 @@ module Transactions::Vps
           os: vps.os_family.os.name,
           os_family: vps.os_family.name,
           rootfs_label: vps.storage_volume.label,
-          console_port: vps.console_port.port,
+          console_port: vps.console_port&.port,
           hostname: vps.manage_hostname ? vps.hostname : nil,
-          distribution: vps.os_template.distribution,
-          version: vps.os_template.version,
-          arch: vps.os_template.arch,
-          variant: vps.os_template.variant
+          distribution: vps.os_template&.distribution,
+          version: vps.os_template&.version,
+          arch: vps.os_template&.arch,
+          variant: vps.os_template&.variant
         }
       end
     end

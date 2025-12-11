@@ -20,7 +20,7 @@ module NodeCtld
         ConfigDrive.create(@vps_id, cfg)
       end
 
-      syscmd("consolectl start #{@vps_id} #{@console_port}")
+      syscmd("consolectl start #{@vps_id} #{@console_port}") if @console_port
 
       ok
     end
