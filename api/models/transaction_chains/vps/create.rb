@@ -147,7 +147,7 @@ module TransactionChains
             format: 'qcow2',
             size: vps.diskspace,
             label: "vps#{vps.id}",
-            filesystem: 'btrfs',
+            filesystem: vps.qemu_container? ? 'btrfs' : 'unknown',
             os_template: vps.os_template
           }
         )
@@ -155,7 +155,7 @@ module TransactionChains
         vps.storage_volume = storage_vol
         lock(storage_vol)
 
-        vps.console_port = ::ConsolePort.reserve!(vps)
+        vps.console_port = ::ConsolePort.reserve!(vps) if vps.qemu_container?
       end
 
       vps_features = []
@@ -193,9 +193,9 @@ module TransactionChains
           end
         end
 
-        if vps.qemu_container?
-          just_create(vps.console_port)
+        just_create(vps.console_port) if vps.qemu_container?
 
+        if vps.qemu_container? || vps.qemu_full?
           just_create(vps.vps_io_stats.create!(storage_volume: vps.storage_volume))
         end
 
@@ -294,7 +294,7 @@ module TransactionChains
         end
       end
 
-      if vps.os_template.manage_dns_resolver
+      if vps.os_template&.manage_dns_resolver
         vps.dns_resolver ||= ::DnsResolver.pick_suitable_resolver_for_vps(vps)
 
         append(Transactions::Vps::DnsResolver, args: [
@@ -312,8 +312,10 @@ module TransactionChains
         end
       end
 
-      vps.user.user_public_keys.where(auto_add: true).each do |key|
-        use_chain(Vps::DeployPublicKey, args: [vps, key])
+      unless vps.qemu_full?
+        vps.user.user_public_keys.where(auto_add: true).each do |key|
+          use_chain(Vps::DeployPublicKey, args: [vps, key])
+        end
       end
 
       if opts[:vps_user_data]
