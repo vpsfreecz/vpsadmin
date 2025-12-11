@@ -44,13 +44,13 @@
       <serial><%= rootfs[:serial] %></serial>
     </disk>
 
-    <console type='tcp'>
-      <source mode='connect' host='localhost' service='<%= console_port %>'>
-        <reconnect enabled='yes' timeout='1'/>
-      </source>
-      <protocol type='raw'/>
-      <target type='virtio' port='0'/>
-    </console>
+    <disk type='file' device='disk'>
+      <driver name='qemu' type='raw'/>
+      <source file='<%= config_path %>'/>
+      <target dev='vdb' bus='virtio'/>
+      <serial>vpsadmin-config-drive</serial>
+      <readonly/>
+    </disk>
 
     <channel type='unix'>
       <source mode='bind'/>
