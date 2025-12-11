@@ -201,6 +201,8 @@ module NodeCtld
 
     def each(&block)
       @results.each do |r|
+        next unless r.valid?
+
         r.each(&block)
       end
     end
@@ -210,6 +212,10 @@ module NodeCtld
     # @param result [Mysql2::Result]
     def initialize(result)
       @result = result
+    end
+
+    def valid?
+      !@result.nil?
     end
 
     def each(&)
