@@ -229,6 +229,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
 
       use :vps_user_data
 
+      patch :vm_type, required: true
       patch :hostname, required: true
     end
 
@@ -268,6 +269,12 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
     end
 
     def exec
+      if input[:vm_type] == 'qemu_full' && input[:os_family].nil?
+        error!('os_family must be set when vm_type is qemu_full')
+      elsif input[:vm_type] != 'qemu_full' && input[:os_family]
+        error!('os_family must not be set when vm_type is not qemu_full')
+      end
+
       if current_user.role == :admin
         input[:user] ||= current_user
 
@@ -277,10 +284,11 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
         error!('provide either an environment or a location') if input[:environment].nil? && input[:location].nil?
 
         node = VpsAdmin::API::Operations::Node::Pick.run(
+          vm_type: input[:vm_type],
           environment: input[:environment],
           location: input[:location],
-          hypervisor_type: input[:os_template].hypervisor_type,
-          cgroup_version: input[:cgroup_version] || input[:os_template].cgroup_version
+          hypervisor_type: input[:vm_type] == 'qemu_full' ? nil : input[:os_template].hypervisor_type,
+          cgroup_version: input[:vm_type] == 'qemu_full' ? 'cgroup_any' : (input[:cgroup_version] || input[:os_template].cgroup_version)
         )
 
         error!('no free node is available in selected environment/location') unless node
