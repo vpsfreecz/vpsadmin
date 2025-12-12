@@ -50,7 +50,7 @@ module NodeCtld
     # @param pool_id [Integer]
     # @param properties [Array<String>]
     def list_pool_dataset_properties(pool_id, properties)
-      send_request('list_pool_dataset_properties', pool_id, properties)
+      send_request('list_pool_dataset_properties', args: [pool_id, properties])
     end
 
     def list_vps_status_check
@@ -62,7 +62,7 @@ module NodeCtld
     end
 
     def find_vps_network_interface(vps_id, vps_name)
-      send_request('find_vps_network_interface', vps_id, vps_name)
+      send_request('find_vps_network_interface', args: [vps_id, vps_name])
     end
 
     def list_running_vps_ids
@@ -77,9 +77,11 @@ module NodeCtld
       loop do
         vps_maps = send_request(
           'list_vps_user_namespace_maps',
-          pool_id,
-          from_id:,
-          limit: 50
+          args: [pool_id],
+          kwargs: {
+            from_id:,
+            limit: 50
+          }
         )
 
         break if vps_maps.empty?
@@ -96,8 +98,10 @@ module NodeCtld
       loop do
         exports = send_request(
           'list_exports',
-          from_id:,
-          limit: 50
+          kwargs: {
+            from_id:,
+            limit: 50
+          }
         )
 
         break if exports.empty?
@@ -112,7 +116,7 @@ module NodeCtld
     # @param token [String]
     # @return [Integer, nil] VPS id
     def authenticate_console_session(token)
-      send_request('authenticate_console_session', token)
+      send_request('authenticate_console_session', args: [token])
     end
 
     def log_type
@@ -152,9 +156,9 @@ module NodeCtld
       end
     end
 
-    def send_request(command, *, **)
+    def send_request(command, args: [], kwargs: {})
       loop do
-        resp = send_and_receive(command, *, **)
+        resp = send_and_receive(command, args:, kwargs:)
         return resp.fetch('response') if resp.fetch('status')
 
         if resp['retry']
@@ -167,7 +171,7 @@ module NodeCtld
       end
     end
 
-    def send_and_receive(command, *args, **kwargs)
+    def send_and_receive(command, args:, kwargs:)
       @call_id = generate_uuid
       @response = nil
 
