@@ -40,41 +40,41 @@ module NodeCtld
     end
 
     def get_node_config
-      send_request('get_node_config')
+      send_read_request('get_node_config')
     end
 
     def list_pools
-      send_request('list_pools')
+      send_read_request('list_pools')
     end
 
     # @param pool_id [Integer]
     # @param properties [Array<String>]
     def list_pool_dataset_properties(pool_id, properties)
-      send_request('list_pool_dataset_properties', args: [pool_id, properties])
+      send_read_request('list_pool_dataset_properties', args: [pool_id, properties])
     end
 
     def list_vps_status_check
-      send_request('list_vps_status_check')
+      send_read_request('list_vps_status_check')
     end
 
     def get_vps_status_check(vps_id)
-      send_request('get_vps_status_check', args: [vps_id])
+      send_read_request('get_vps_status_check', args: [vps_id])
     end
 
     def get_network_interface_status_check(vps_id, netif_id)
-      send_request('get_network_interface_status_check', args: [vps_id, netif_id])
+      send_read_request('get_network_interface_status_check', args: [vps_id, netif_id])
     end
 
     def list_vps_network_interfaces
-      send_request('list_vps_network_interfaces')
+      send_read_request('list_vps_network_interfaces')
     end
 
     def find_vps_network_interface(vps_id, vps_name)
-      send_request('find_vps_network_interface', args: [vps_id, vps_name])
+      send_read_request('find_vps_network_interface', args: [vps_id, vps_name])
     end
 
     def list_running_vps_ids
-      send_request('list_running_vps_ids')
+      send_read_request('list_running_vps_ids')
     end
 
     # @param pool_id [Integer]
@@ -83,7 +83,7 @@ module NodeCtld
       from_id = nil
 
       loop do
-        vps_maps = send_request(
+        vps_maps = send_read_request(
           'list_vps_user_namespace_maps',
           args: [pool_id],
           kwargs: {
@@ -104,7 +104,7 @@ module NodeCtld
       from_id = nil
 
       loop do
-        exports = send_request(
+        exports = send_read_request(
           'list_exports',
           kwargs: {
             from_id:,
@@ -124,7 +124,7 @@ module NodeCtld
     # @param token [String]
     # @return [Integer, nil] VPS id
     def authenticate_console_session(token)
-      send_request('authenticate_console_session', args: [token])
+      send_read_request('authenticate_console_session', args: [token])
     end
 
     def log_type
@@ -164,9 +164,30 @@ module NodeCtld
       end
     end
 
-    def send_request(command, args: [], kwargs: {})
+    def send_read_request(command, args: [], kwargs: {}, attempts: 30)
+      send_request(command, args:, kwargs:, attempts:)
+    end
+
+    def send_write_request(command, args: [], kwargs: {}, attempts: 1)
+      send_request(command, args:, kwargs:, attempts:)
+    end
+
+    def send_request(command, args: [], kwargs: {}, attempts: 1)
+      attempt_counter = 1
+
       loop do
-        resp = send_and_receive(command, args:, kwargs:)
+        begin
+          resp = send_and_receive(command, args:, kwargs:)
+        rescue Timeout
+          log(:warn, "request id=#{@call_id[0..7]} attempt=#{attempt_counter}/#{attempts} timed out while waiting for a response")
+
+          raise if attempt_counter >= attempts
+
+          attempt_counter += 1
+          sleep(5)
+          next
+        end
+
         return resp.fetch('response') if resp.fetch('status')
 
         if resp['retry']
