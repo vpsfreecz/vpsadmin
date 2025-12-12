@@ -260,7 +260,7 @@ module NodeCtld
     rpc_client: {
       debug: false,
       soft_timeout: 15,
-      hard_timeout: 900
+      hard_timeout: 60
     },
 
     dns_server: {
