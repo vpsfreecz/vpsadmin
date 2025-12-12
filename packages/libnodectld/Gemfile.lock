@@ -19,7 +19,7 @@ GEM
       reline
     io-console (0.8.1)
     ipaddress (0.8.3)
-    json (2.17.1)
+    json (2.18.0)
     logger (1.7.0)
     mail (2.8.1)
       mini_mime (>= 0.1.1)
@@ -69,7 +69,7 @@ GEM
 GEM
   remote: https://rubygems.vpsfree.cz/
   specs:
-    libnodectld (4.1.0.build20251211085216)
+    libnodectld (4.1.0.build20251212162511)
       base64
       bigdecimal
       bunny (~> 2.23.0)
@@ -116,7 +116,7 @@ PLATFORMS
   x86_64-linux
 
 DEPENDENCIES
-  libnodectld (= 4.1.0.build20251211085216)!
+  libnodectld (= 4.1.0.build20251212162511)!
 
 BUNDLED WITH
    2.7.2
