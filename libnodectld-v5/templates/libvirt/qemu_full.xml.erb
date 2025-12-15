@@ -17,8 +17,6 @@
 
   <os>
     <type arch="x86_64">hvm</type>
-    <boot dev='hd'/>
-    <boot dev='cdrom'/>
     <bootmenu enable='yes'/>
   </os>
 
@@ -37,11 +35,24 @@
   <devices>
     <emulator><%= qemu %></emulator>
 
+    <disk type="file" device="cdrom">
+      <driver name="qemu" type="raw"/>
+      <% if iso_image -%>
+      <source file="<%= iso_image[:path] %>"/>
+      <% end -%>
+      <target dev="sda" bus="sata"/>
+      <readonly/>
+      <% if iso_image -%>
+      <boot order="<%= iso_image[:boot_order] %>"/>
+      <% end -%>
+    </disk>
+
     <disk type="file" device="disk">
       <driver name="qemu" type="<%= rootfs[:type] %>"/>
       <source file="<%= rootfs[:path] %>"/>
       <target dev="vdc" bus="virtio"/>
       <serial><%= rootfs[:serial] %></serial>
+      <boot order="<%= rootfs[:boot_order] %>"/>
     </disk>
 
     <disk type='file' device='disk'>

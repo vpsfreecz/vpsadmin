@@ -38,6 +38,7 @@ class Vps < ApplicationRecord
 
   belongs_to :storage_volume
   belongs_to :rescue_volume, class_name: 'StorageVolume'
+  belongs_to :iso_image
   has_many :storage_volumes
   has_many :vps_io_stats, dependent: :delete_all
   has_many :vps_io_stat_logs, dependent: :delete_all
@@ -103,7 +104,7 @@ class Vps < ApplicationRecord
     start stop restart passwd clone swap configs features mount umount
     maintenance_windows maintenance_window restore deploy_public_key
     netif_rename netif_enable start_menu autostart map_mode user
-    halt reboot
+    halt reboot attach_iso_image detach_iso_image
   ]
 
   validates :user_id, :node_id, presence: true, numericality: { only_integer: true }
@@ -124,6 +125,7 @@ class Vps < ApplicationRecord
     only_integer: true,
     greater_than_or_equal_to: 0
   }
+  validates :iso_image_id, absence: true, unless: :qemu_full?
   validate :foreign_keys_exist
   validate :check_cgroup_version
 

@@ -5,6 +5,7 @@ class StoragePool < ApplicationRecord
   belongs_to :uuid, dependent: :delete
   belongs_to :node
   has_many :storage_volumes
+  has_many :iso_images
 
   include Confirmable
   include Lockable

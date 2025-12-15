@@ -9,7 +9,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
     is_running process_count used_memory used_swap used_diskspace
     uptime loadavg1 loadavg5 loadavg15 cpu_user cpu_nice cpu_system cpu_idle cpu_iowait
     cpu_irq cpu_softirq start_menu_timeout enable_os_template_auto_update enable_network
-    user_namespace_map implicit_oom_report_rule_hit_count created_at
+    user_namespace_map implicit_oom_report_rule_hit_count iso_image created_at
   ].freeze
 
   params(:id) do
@@ -37,6 +37,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
     resource VpsAdmin::API::Resources::Node, label: 'Node', desc: 'Node VPS will run on',
                                              value_label: :domain_name
     resource VpsAdmin::API::Resources::UserNamespaceMap, label: 'UID/GID mapping'
+    resource VpsAdmin::API::Resources::IsoImage, label: 'ISO image'
     bool :autostart_enable, label: 'Auto-start', desc: 'Start VPS on node boot?'
     integer :autostart_priority, label: 'Auto-start priority', default: 1000,
                                  desc: '0 is the highest priority, greater numbers have lower priority'
@@ -802,6 +803,69 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
         && dst =~ %r{\A[a-zA-Z0-9_\-/.:]{3,500}\z} \
         && dst !~ /\.\./ \
         && dst !~ %r{//}
+    end
+  end
+
+  class AttachIsoImage < HaveAPI::Action
+    desc 'Attach ISO image'
+    route '{%{resource}_id}/attach_iso_image'
+    http_method :post
+    blocking true
+
+    input do
+      use :common, include: %i[iso_image]
+      patch :iso_image, required: true
+    end
+
+    authorize do |u|
+      allow if u.role == :admin
+      restrict user_id: u.id
+      allow
+    end
+
+    def exec
+      vps = ::Vps.find_by!(with_restricted(id: params[:vps_id]))
+      maintenance_check!(vps)
+
+      error!('only QEMU full VPS can use ISO images') unless vps.qemu_full?
+
+      @chain, = TransactionChains::Vps::AttachIsoImage.fire(vps, input[:iso_image])
+      ok!
+    rescue VpsAdmin::API::Exceptions::OperationError => e
+      error!(e.message)
+    end
+
+    def state_id
+      @chain.id
+    end
+  end
+
+  class DetachIsoImage < HaveAPI::Action
+    desc 'Detach ISO image'
+    route '{%{resource}_id}/detach_iso_image'
+    http_method :post
+    blocking true
+
+    authorize do |u|
+      allow if u.role == :admin
+      restrict user_id: u.id
+      allow
+    end
+
+    def exec
+      vps = ::Vps.find_by!(with_restricted(id: params[:vps_id]))
+      maintenance_check!(vps)
+
+      error!('no ISO image is attached') if vps.iso_image.nil?
+
+      @chain, = TransactionChains::Vps::DetachIsoImage.fire(vps)
+      ok!
+    rescue VpsAdmin::API::Exceptions::OperationError => e
+      error!(e.message)
+    end
+
+    def state_id
+      @chain.id
     end
   end
 
