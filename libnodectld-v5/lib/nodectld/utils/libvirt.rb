@@ -221,5 +221,14 @@ module NodeCtld
         end
       end
     end
+
+    def update_cdrom(domain, iso_image)
+      xml = ErbTemplate.render(
+        'libvirt/cdrom.xml',
+        { iso_image: iso_image && File.join(iso_image['pool_path'], iso_image['name']) }
+      )
+
+      domain.update_device(xml, Libvirt::Domain::AFFECT_LIVE)
+    end
   end
 end
