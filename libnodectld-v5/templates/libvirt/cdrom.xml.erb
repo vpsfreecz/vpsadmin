@@ -1,0 +1,8 @@
+<disk type="file" device="cdrom">
+  <driver name="qemu" type="raw"/>
+  <% if iso_image -%>
+  <source file="<%= iso_image %>"/>
+  <% end -%>
+  <target dev="sda" bus="sata"/>
+  <readonly/>
+</disk>

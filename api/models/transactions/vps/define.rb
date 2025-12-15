@@ -12,6 +12,7 @@ module Transactions::Vps
       self.node_id = kwargs.fetch(:node, vps.node).id
 
       rescue_volume = kwargs.fetch(:rescue_volume, vps.rescue_volume)
+      iso_image = kwargs.fetch(:iso_image, vps.iso_image)
 
       {
         rollback_undefine:,
@@ -35,6 +36,10 @@ module Transactions::Vps
           name: rescue_volume.name,
           format: rescue_volume.format,
           label: rescue_volume.label
+        },
+        iso_image: iso_image && {
+          pool_path: iso_image.storage_pool.path,
+          name: iso_image.name
         },
         network_interfaces: kwargs.fetch(:network_interfaces, vps.network_interfaces).map do |netif|
           {
