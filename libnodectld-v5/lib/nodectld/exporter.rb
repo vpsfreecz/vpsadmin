@@ -13,6 +13,7 @@ module NodeCtld
       :state_paused,
       :start_time_seconds,
       :open_console,
+      :open_vnc,
       :subprocess,
       :queue_started,
       :queue_used,
@@ -85,6 +86,11 @@ module NodeCtld
           docstring: 'Currently opened VPS consoles',
           labels: %i[vps_id]
         ),
+        open_vnc: registry.gauge(
+          :nodectld_open_vnc,
+          docstring: 'Currently opened VNC connections',
+          labels: %i[vps_id]
+        ),
         subprocess: registry.gauge(
           :nodectld_chain_subprocess,
           docstring: 'Background processes',
@@ -136,6 +142,14 @@ module NodeCtld
 
       @daemon.console.stats.each_key do |vps_id|
         metrics.open_console.set(1, labels: { vps_id: })
+      end
+
+      @daemon.vnc_server.stats
+             .group_by { |c| c[:domain_name] }
+             .each do |domain_name, clients|
+        next unless domain_name
+
+        metrics.open_vnc.set(clients.size, labels: { vps_id: domain_name })
       end
 
       @daemon.chain_blockers do |blockers|

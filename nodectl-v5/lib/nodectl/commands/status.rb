@@ -1,19 +1,27 @@
+require 'libosctl'
+
 module NodeCtl
   class Commands::Status < Command::Remote
     cmd :status
     description "Show nodectld's status"
 
     include Utils
+    include OsCtl::Lib::Utils::Humanize
 
     def options(parser, _args)
       opts.update({
                     workers: false,
                     consoles: false,
+                    vnc: false,
                     header: true
                   })
 
       parser.on('-c', '--consoles', 'List exported consoles') do
         opts[:consoles] = true
+      end
+
+      parser.on('--vnc', 'List VNC clients') do
+        opts[:vnc] = true
       end
 
       parser.on('-r', '--reservations', 'List queue reservations') do
@@ -107,6 +115,20 @@ module NodeCtl
         end
       end
 
+      if opts[:vnc]
+        puts format('%-21s %-24s %12s %12s', 'CLIENT', 'DOMAIN_NAME', 'RX', 'TX') if opts[:header]
+
+        (response[:vnc] || []).each do |c|
+          puts format(
+            '%-21s %-24s %12s %12s',
+            c[:peer],
+            c[:domain_name] || '-',
+            format_data(c[:rx_bytes]),
+            format_data(c[:tx_bytes])
+          )
+        end
+      end
+
       if opts[:reservations]
         puts format('%-12s %-10s', 'QUEUE', 'CHAIN')
 
@@ -136,11 +158,12 @@ module NodeCtl
         end
       end
 
-      unless opts[:workers] || opts[:consoles] || opts[:subtasks] || opts[:reservations]
+      unless opts[:workers] || opts[:consoles] || opts[:subtasks] || opts[:reservations] || opts[:vnc]
         puts "   Version: #{client.version}"
         puts "     State: #{state}"
         puts "    Uptime: #{format_duration(Time.new.to_i - response[:start_time])}"
         puts "  Consoles: #{response[:export_console] ? response[:consoles].size : 'disabled'}"
+        puts "       VNC: #{response[:export_vnc] ? response.fetch(:vnc, []).size : 'disabled'}"
         puts "  Subtasks: #{response[:subprocesses].inject(0) { |sum, v| sum + v[1].size }}"
         puts "Queue size: #{response[:queue_size]}"
         puts '    Queues:'
@@ -177,6 +200,12 @@ module NodeCtl
 
     def format_queue_start_delay(queue)
       format_duration((response[:start_time] + queue[:start_delay]) - Time.now.to_i)
+    end
+
+    def format_data(bytes)
+      return bytes if global_opts[:parsable]
+
+      humanize_data(bytes)
     end
 
     def state

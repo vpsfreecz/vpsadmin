@@ -40,6 +40,7 @@ module NodeCtld::RemoteCommands
       end
 
       consoles = @daemon.console.stats
+      vnc = @daemon.vnc_server.stats
 
       subtasks = nil
       @daemon.chain_blockers do |blockers|
@@ -67,6 +68,8 @@ module NodeCtld::RemoteCommands
           last_transaction_check: @daemon.last_transaction_check.to_i,
           export_console: $CFG.get(:console, :enable),
           consoles:,
+          export_vnc: $CFG.get(:vnc, :enable),
+          vnc:,
           subprocesses: subtasks,
           start_time: @daemon.start_time.to_i,
           queue_size: q_size - queue_size
