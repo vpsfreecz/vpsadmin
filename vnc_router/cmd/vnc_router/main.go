@@ -45,19 +45,33 @@ var consoleTpl = template.Must(template.New("console").Parse(`<!doctype html>
   <title>VNC Console</title>
   <style>
     html, body { height: 100%; margin: 0; }
+    body { display: flex; flex-direction: column; }
     #toolbar {
       display: flex; gap: 8px; align-items: center;
       padding: 8px 10px; border-bottom: 1px solid #ddd;
       font-family: sans-serif; font-size: 14px;
+      flex-wrap: wrap;
     }
     #screen {
       width: 100%;
-      height: calc(100% - 42px);
+      flex: 1;
       background: #000;
     }
     .muted { color: #666; }
     button { padding: 6px 10px; }
     .keys { display: flex; gap: 6px; align-items: center; }
+    #clipboardBox {
+      display: flex; gap: 6px; align-items: center;
+      padding: 8px 10px; border-bottom: 1px solid #ddd;
+      font-family: sans-serif; font-size: 14px;
+      background: #fafafa;
+    }
+    #clipboardInput {
+      flex: 1;
+      min-width: 260px;
+      min-height: 32px;
+      font-family: monospace;
+    }
   </style>
 </head>
 <body>
@@ -75,6 +89,11 @@ var consoleTpl = template.Must(template.New("console").Parse(`<!doctype html>
       <button data-combo="Ctrl+Alt+F1">Ctrl+Alt+F1</button>
       <button data-combo="Ctrl+Alt+F2">Ctrl+Alt+F2</button>
     </div>
+  </div>
+  <div id="clipboardBox">
+    <span class="muted">Paste:</span>
+    <textarea id="clipboardInput" placeholder="Type or paste text to send to VM"></textarea>
+    <button id="clipboardSend">Send to VM</button>
   </div>
 
   <div id="screen"></div>
@@ -96,6 +115,8 @@ var consoleTpl = template.Must(template.New("console").Parse(`<!doctype html>
     const scale = document.getElementById('scale');
     const clip = document.getElementById('clip');
     const keysButtons = Array.from(document.querySelectorAll('[data-combo]'));
+    const clipboardInput = document.getElementById('clipboardInput');
+    const clipboardSend = document.getElementById('clipboardSend');
 
     let rfb = null;
 
@@ -134,6 +155,7 @@ var consoleTpl = template.Must(template.New("console").Parse(`<!doctype html>
       rfb.addEventListener('credentialsrequired', () => {
         setStatus('credentials required (unexpected)');
       });
+      rfb.addEventListener('clipboard', handleClipboard);
     }
 
     function disconnect() {
@@ -149,6 +171,7 @@ var consoleTpl = template.Must(template.New("console").Parse(`<!doctype html>
     keysButtons.forEach((btn) => {
       btn.addEventListener('click', () => sendCombo(btn.dataset.combo));
     });
+    clipboardSend.addEventListener('click', sendClipboard);
 
     // Optional: autoconnect
     {{ if .AutoConnect }}
@@ -189,6 +212,95 @@ var consoleTpl = template.Must(template.New("console").Parse(`<!doctype html>
         const k = combo[i];
         rfb.sendKey(k.keysym, k.code, false);
       }
+    }
+
+    function sendClipboard() {
+      if (!rfb) return;
+      const text = clipboardInput.value || '';
+      for (const ch of text) {
+        sendCharAsKey(ch);
+      }
+    }
+
+    // Update textarea when VM clipboard changes
+    function handleClipboard(event) {
+      if (!event?.detail?.text) return;
+      clipboardInput.value = event.detail.text;
+    }
+
+    function sendCharAsKey(ch) {
+      // Covers printable ASCII with shift handling for common symbols.
+      const special = {
+        '\r': { keysym: 0xff0d, code: 'Enter' },
+        '\n': { keysym: 0xff0d, code: 'Enter' },
+        '\t': { keysym: 0xff09, code: 'Tab' },
+        ' ': { keysym: 0x20, code: 'Space' },
+        '!': { keysym: 0x21, code: 'Digit1', shift: true },
+        '"': { keysym: 0x22, code: 'Quote', shift: true },
+        '#': { keysym: 0x23, code: 'Digit3', shift: true },
+        '$': { keysym: 0x24, code: 'Digit4', shift: true },
+        '%': { keysym: 0x25, code: 'Digit5', shift: true },
+        '&': { keysym: 0x26, code: 'Digit7', shift: true },
+        '\'': { keysym: 0x27, code: 'Quote' },
+        '(': { keysym: 0x28, code: 'Digit9', shift: true },
+        ')': { keysym: 0x29, code: 'Digit0', shift: true },
+        '*': { keysym: 0x2a, code: 'Digit8', shift: true },
+        '+': { keysym: 0x2b, code: 'Equal', shift: true },
+        ',': { keysym: 0x2c, code: 'Comma' },
+        '-': { keysym: 0x2d, code: 'Minus' },
+        '.': { keysym: 0x2e, code: 'Period' },
+        '/': { keysym: 0x2f, code: 'Slash' },
+        ':': { keysym: 0x3a, code: 'Semicolon', shift: true },
+        ';': { keysym: 0x3b, code: 'Semicolon' },
+        '<': { keysym: 0x3c, code: 'Comma', shift: true },
+        '=': { keysym: 0x3d, code: 'Equal' },
+        '>': { keysym: 0x3e, code: 'Period', shift: true },
+        '?': { keysym: 0x3f, code: 'Slash', shift: true },
+        '@': { keysym: 0x40, code: 'Digit2', shift: true },
+        '[': { keysym: 0x5b, code: 'BracketLeft' },
+        '\\': { keysym: 0x5c, code: 'Backslash' },
+        ']': { keysym: 0x5d, code: 'BracketRight' },
+        '^': { keysym: 0x5e, code: 'Digit6', shift: true },
+        '_': { keysym: 0x5f, code: 'Minus', shift: true },
+        [String.fromCharCode(96)]: { keysym: 0x60, code: 'Backquote' },
+        '{': { keysym: 0x7b, code: 'BracketLeft', shift: true },
+        '|': { keysym: 0x7c, code: 'Backslash', shift: true },
+        '}': { keysym: 0x7d, code: 'BracketRight', shift: true },
+        '~': { keysym: 0x7e, code: 'Backquote', shift: true },
+      };
+
+      if (special[ch]) {
+        return sendKeyWithMods(special[ch]);
+      }
+
+      if (ch >= 'a' && ch <= 'z') {
+        return sendKeyWithMods({ keysym: ch.codePointAt(0), code: 'Key' + ch.toUpperCase() });
+      }
+      if (ch >= 'A' && ch <= 'Z') {
+        return sendKeyWithMods({ keysym: ch.codePointAt(0), code: 'Key' + ch, shift: true });
+      }
+      if (ch >= '0' && ch <= '9') {
+        return sendKeyWithMods({ keysym: ch.codePointAt(0), code: 'Digit' + ch });
+      }
+
+      const codePoint = ch.codePointAt(0);
+      if (codePoint === undefined) return;
+      sendKeyStroke(codePoint, undefined);
+    }
+
+    function sendKeyWithMods(info) {
+      if (info.shift) {
+        rfb.sendKey(0xffe1, 'ShiftLeft', true);
+      }
+      sendKeyStroke(info.keysym, info.code);
+      if (info.shift) {
+        rfb.sendKey(0xffe1, 'ShiftLeft', false);
+      }
+    }
+
+    function sendKeyStroke(keysym, code) {
+      rfb.sendKey(keysym, code || undefined, true);
+      rfb.sendKey(keysym, code || undefined, false);
     }
   </script>
 </body>
