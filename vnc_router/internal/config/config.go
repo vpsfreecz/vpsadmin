@@ -7,9 +7,10 @@ import (
 )
 
 type Config struct {
-	ListenAddr  string `json:"listen_addr"`
-	NoVNCDir    string `json:"novnc_dir"`
-	RabbitMQURL string `json:"rabbitmq_url"`
+	ListenAddr            string   `json:"listen_addr"`
+	NoVNCDir              string   `json:"novnc_dir"`
+	RabbitMQURL           string   `json:"rabbitmq_url"`
+	MetricsAllowedSubnets []string `json:"metrics_allowed_subnets"`
 }
 
 // LoadFiles loads configs in order. Later files override earlier ones.
@@ -60,6 +61,9 @@ func merge(dst, src *Config) {
 	if src.RabbitMQURL != "" {
 		dst.RabbitMQURL = src.RabbitMQURL
 	}
+	if len(src.MetricsAllowedSubnets) > 0 {
+		dst.MetricsAllowedSubnets = src.MetricsAllowedSubnets
+	}
 }
 
 func validate(c *Config) error {
@@ -71,6 +75,9 @@ func validate(c *Config) error {
 	}
 	if c.RabbitMQURL == "" {
 		return fmt.Errorf("rabbitmq_url is required")
+	}
+	if len(c.MetricsAllowedSubnets) == 0 {
+		return fmt.Errorf("metrics_allowed_subnets is required and must contain at least one subnet")
 	}
 	return nil
 }
