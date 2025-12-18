@@ -478,6 +478,17 @@ module VpsAdmin::Supervisor
 
         console && console.vps_id
       end
+
+      # @param node_token [String]
+      def authenticate_vnc_session(node_token)
+        vnc = ::VncToken
+              .joins(:vps, :node_token)
+              .where(tokens: { token: node_token }, vpses: { node_id: @node.id })
+              .where('expiration > ?', Time.now)
+              .take
+
+        vnc && vnc.vps.uuid.to_s
+      end
     end
   end
 end

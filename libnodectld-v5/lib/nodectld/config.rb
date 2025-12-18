@@ -171,6 +171,12 @@ module NodeCtld
       session_timeout: 60
     },
 
+    vnc: {
+      enable: true,
+      host: '0.0.0.0', # TODO
+      port: 8082
+    },
+
     kernel_log: {
       enable: true
     },
