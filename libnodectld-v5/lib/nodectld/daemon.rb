@@ -53,6 +53,7 @@ module NodeCtld
       @kernel_log = KernelLog::Parser.new
       @exporter = Exporter.new(self)
       @console = Console::Server.new
+      @vnc_server = VncProxyServer.new
       @dns_status = DnsStatus.new if $CFG.get(:vpsadmin, :type) == :dns_server
       Shaper.instance
       TransactionVerifier.instance
@@ -73,6 +74,7 @@ module NodeCtld
       ExportMounts.instance
       VpsStatus.start
       @console.start if $CFG.get(:console, :enable)
+      @vnc_server.start if $CFG.get(:vnc, :enable)
       @dns_status.start if $CFG.get(:vpsadmin, :type) == :dns_server
       QemuHook.install if $CFG.get(:vpsadmin, :type) == :node
 

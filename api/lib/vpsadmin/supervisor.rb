@@ -4,6 +4,7 @@ module VpsAdmin
   module Supervisor
     module Console; end
     module Node; end
+    module Vnc; end
 
     def self.start(cfg)
       connection = Bunny.new(
@@ -16,6 +17,7 @@ module VpsAdmin
       connection.start
 
       Console::Rpc.start(connection)
+      Vnc::Rpc.start(connection)
       NodeManager.start(connection)
     end
   end

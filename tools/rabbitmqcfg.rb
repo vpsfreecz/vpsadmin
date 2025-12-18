@@ -5,7 +5,7 @@ require 'optparse'
 class Cli
   ACTIONS = %w[setup user policies].freeze
 
-  USERS = %w[api console node supervisor].freeze
+  USERS = %w[api console vnc node supervisor].freeze
 
   def self.run(args)
     cli = new(args)
@@ -121,6 +121,12 @@ class Cli
         '^(amq\\.gen.*|console:rpc|console:output:.+|console:[^:]+:(input|output))$',
         '^(amq\\.gen.*|console:rpc|console:output:.+|console:[^:]+:(input|output))$',
         '^(amq\\.gen.*|console:rpc|console:output:.+|console:[^:]+:(input|output))$'
+      ]
+    when 'vnc'
+      [
+        '^(amq\\.gen.*|vnc:rpc)$',
+        '^(amq\\.gen.*|vnc:rpc)$',
+        '^(amq\\.gen.*|vnc:rpc)$'
       ]
     when 'node'
       rx_name = Regexp.escape(user)

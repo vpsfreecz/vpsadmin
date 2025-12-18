@@ -5,15 +5,21 @@ class Token < ApplicationRecord
 
   # @param owner [ActiveRecord::Base]
   # @param valid_to [Time, nil]
+  # @param count [Integer] number of tokens to generate
   # @yieldparam [::Token] token
   # @yieldreturn [ActiveRecord::Base] owner
   # @return [ActiveRecord::Base] owner
-  def self.for_new_record!(valid_to = nil)
+  def self.for_new_record!(valid_to = nil, count: 1)
     transaction do
-      t = get!(valid_to:)
-      t.owner = yield(t)
-      t.save!
-      t.owner
+      tokens = count.times.map { get!(valid_to:) }
+      owner = yield(*tokens)
+
+      tokens.each do |t|
+        t.owner = owner
+        t.save!
+      end
+
+      owner
     end
   end
 
