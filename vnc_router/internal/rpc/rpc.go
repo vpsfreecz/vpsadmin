@@ -383,6 +383,7 @@ type VncTarget struct {
 	NodeHost  string `json:"node_host"`
 	NodePort  int    `json:"node_port"`
 	NodeToken string `json:"node_token"`
+	VpsID     int    `json:"vps_id"`
 }
 
 func (c *Client) GetVncTarget(ctx context.Context, clientToken string) (*VncTarget, error) {

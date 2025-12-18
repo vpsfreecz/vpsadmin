@@ -10,6 +10,8 @@ import (
 	"time"
 
 	"github.com/gorilla/websocket"
+
+	"vnc_router/internal/metrics"
 )
 
 type nodeHello struct {
@@ -18,7 +20,7 @@ type nodeHello struct {
 
 // ProxyWSToNode connects to nodectld, sends {"token":"..."}\n, then proxies bytes.
 // WS is expected to carry binary RFB frames (noVNC).
-func ProxyWSToNode(ctx context.Context, ws *websocket.Conn, nodeHost string, nodePort int, nodeToken string) error {
+func ProxyWSToNode(ctx context.Context, ws *websocket.Conn, nodeHost string, nodePort int, nodeToken string, connMetrics *metrics.ConnMetrics) error {
 	dialer := net.Dialer{Timeout: 5 * time.Second}
 	conn, err := dialer.DialContext(ctx, "tcp", fmt.Sprintf("%s:%d", nodeHost, nodePort))
 	if err != nil {
@@ -54,6 +56,9 @@ func ProxyWSToNode(ctx context.Context, ws *websocket.Conn, nodeHost string, nod
 				errCh <- err
 				return
 			}
+			if connMetrics != nil {
+				connMetrics.AddClientToNode(len(data))
+			}
 		}
 	}()
 
@@ -66,6 +71,9 @@ func ProxyWSToNode(ctx context.Context, ws *websocket.Conn, nodeHost string, nod
 				if werr := ws.WriteMessage(websocket.BinaryMessage, buf[:n]); werr != nil {
 					errCh <- werr
 					return
+				}
+				if connMetrics != nil {
+					connMetrics.AddNodeToClient(n)
 				}
 			}
 			if err != nil {
