@@ -226,9 +226,12 @@ func main() {
 			return
 		}
 
-		// Allow ?autoconnect=1 (or true)
+		// Autoconnect by default; allow explicit opt-out with ?autoconnect=0/false/no
 		ac := r.URL.Query().Get("autoconnect")
-		auto := ac == "1" || ac == "true" || ac == "yes"
+		auto := true
+		if ac != "" {
+			auto = ac == "1" || ac == "true" || ac == "yes"
+		}
 
 		// Safe JS string literal via json.Marshal
 		b, _ := json.Marshal(clientToken)
