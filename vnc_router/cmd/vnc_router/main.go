@@ -88,6 +88,7 @@ var consoleTpl = template.Must(template.New("console").Parse(`<!doctype html>
       <button data-combo="Ctrl+Alt+Backspace">Ctrl+Alt+Backspace</button>
       <button data-combo="Ctrl+Alt+F1">Ctrl+Alt+F1</button>
       <button data-combo="Ctrl+Alt+F2">Ctrl+Alt+F2</button>
+      <button data-combo="Ctrl+Alt+F7">Ctrl+Alt+F7</button>
     </div>
   </div>
   <div id="clipboardBox">
@@ -201,6 +202,11 @@ var consoleTpl = template.Must(template.New("console").Parse(`<!doctype html>
           { keysym: 0xffe3, code: 'ControlLeft' },
           { keysym: 0xffe9, code: 'AltLeft' },
           { keysym: 0xffbf, code: 'F2' }
+        ],
+        'Ctrl+Alt+F7': [
+          { keysym: 0xffe3, code: 'ControlLeft' },
+          { keysym: 0xffe9, code: 'AltLeft' },
+          { keysym: 0xffc4, code: 'F7' }
         ],
       };
 
