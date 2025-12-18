@@ -385,9 +385,9 @@ type VncTarget struct {
 	NodeToken string `json:"node_token"`
 }
 
-func (c *Client) GetVncTarget(ctx context.Context, accessToken string) (*VncTarget, error) {
+func (c *Client) GetVncTarget(ctx context.Context, clientToken string) (*VncTarget, error) {
 	var out VncTarget
-	if err := c.Call(ctx, "get_vnc_target", []any{accessToken}, nil, &out); err != nil {
+	if err := c.Call(ctx, "get_vnc_target", []any{clientToken}, nil, &out); err != nil {
 		return nil, err
 	}
 	return &out, nil
