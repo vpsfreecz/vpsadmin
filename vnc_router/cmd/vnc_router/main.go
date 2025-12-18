@@ -73,10 +73,10 @@ var consoleTpl = template.Must(template.New("console").Parse(`<!doctype html>
   <script type="module">
     import RFB from '/core/rfb.js';
 
-    const token = {{ .TokenJS }};
+    const clientToken = {{ .ClientTokenJS }};
     const wsUrl = (() => {
       const proto = (location.protocol === 'https:') ? 'wss:' : 'ws:';
-      return proto + '//' + location.host + '{{ .WSPath }}' + '?token=' + encodeURIComponent(token);
+      return proto + '//' + location.host + '{{ .WSPath }}' + '?client_token=' + encodeURIComponent(clientToken);
     })();
 
     const screen = document.getElementById('screen');
@@ -145,9 +145,9 @@ var consoleTpl = template.Must(template.New("console").Parse(`<!doctype html>
 </html>`))
 
 type consolePageData struct {
-	TokenJS     template.JS // JSON-encoded string literal
-	WSPath      string
-	AutoConnect bool
+	ClientTokenJS template.JS // JSON-encoded string literal
+	WSPath        string
+	AutoConnect   bool
 }
 
 func main() {
@@ -179,11 +179,11 @@ func main() {
 
 	mux := http.NewServeMux()
 
-	// Wrapper page: /console?token=...&autoconnect=1
+	// Wrapper page: /console?client_token=...&autoconnect=1
 	mux.HandleFunc("/console", func(w http.ResponseWriter, r *http.Request) {
-		token := r.URL.Query().Get("token")
-		if token == "" {
-			http.Error(w, "missing token", http.StatusBadRequest)
+		clientToken := r.URL.Query().Get("client_token")
+		if clientToken == "" {
+			http.Error(w, "missing client_token", http.StatusBadRequest)
 			return
 		}
 
@@ -192,26 +192,26 @@ func main() {
 		auto := ac == "1" || ac == "true" || ac == "yes"
 
 		// Safe JS string literal via json.Marshal
-		b, _ := json.Marshal(token)
+		b, _ := json.Marshal(clientToken)
 
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		_ = consoleTpl.Execute(w, consolePageData{
-			TokenJS:     template.JS(b),
-			WSPath:      wsPath,
-			AutoConnect: auto,
+			ClientTokenJS: template.JS(b),
+			WSPath:        wsPath,
+			AutoConnect:   auto,
 		})
 	})
 
-	// WebSocket endpoint: /ws?token=...
+	// WebSocket endpoint: /ws?client_token=...
 	upgrader := websocket.Upgrader{
 		CheckOrigin: func(r *http.Request) bool { return true },
 	}
 
 	mux.HandleFunc(wsPath, func(w http.ResponseWriter, r *http.Request) {
-		accessToken := r.URL.Query().Get("token")
-		if accessToken == "" {
-			debugf("ws: missing token from %s", r.RemoteAddr)
-			http.Error(w, "missing token", http.StatusForbidden)
+		clientToken := r.URL.Query().Get("client_token")
+		if clientToken == "" {
+			debugf("ws: missing client_token from %s", r.RemoteAddr)
+			http.Error(w, "missing client_token", http.StatusForbidden)
 			return
 		}
 
@@ -223,7 +223,7 @@ func main() {
 		defer ws.Close()
 
 		ctx, cancel := context.WithTimeout(r.Context(), 15*time.Second)
-		target, err := rpcClient.GetVncTarget(ctx, accessToken)
+		target, err := rpcClient.GetVncTarget(ctx, clientToken)
 		cancel()
 		if err != nil {
 			debugf("ws auth failed from %s: %v", r.RemoteAddr, err)
