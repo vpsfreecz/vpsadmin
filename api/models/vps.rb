@@ -29,6 +29,7 @@ class Vps < ApplicationRecord
   has_many :vps_mounts, dependent: :delete_all
   has_many :vps_features
   has_many :vps_consoles
+  has_many :vnc_tokens
   has_many :vps_maintenance_windows
   has_many :vps_os_processes, dependent: :destroy
   has_many :vps_ssh_host_keys, dependent: :destroy

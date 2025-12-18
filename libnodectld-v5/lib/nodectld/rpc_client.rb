@@ -127,6 +127,12 @@ module NodeCtld
       send_read_request('authenticate_console_session', args: [token])
     end
 
+    # @param node_token [String]
+    # @return [String, nil] VPS uuid
+    def authenticate_vnc_session(node_token)
+      send_read_request('authenticate_vnc_session', args: [node_token])
+    end
+
     def log_type
       'rpc'
     end

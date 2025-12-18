@@ -1785,6 +1785,77 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
     end
   end
 
+  class VncToken < HaveAPI::Resource
+    route '{vps_id}/vnc_token'
+    singular true
+    model ::VncToken
+    desc 'VNC tokens'
+
+    params(:all) do
+      string :client_token, label: 'Token',
+                            desc: 'Authentication token for the client',
+                            db_name: :client_token_str
+      datetime :expiration, label: 'Expiration date',
+                            desc: 'A date after which the token becomes invalid'
+    end
+
+    class Create < HaveAPI::Actions::Default::Create
+      output do
+        use :all
+      end
+
+      authorize do |u|
+        allow if u.role == :admin
+        restrict user_id: u.id
+        allow
+      end
+
+      def exec
+        vps = ::Vps.find_by!(with_restricted(id: params[:vps_id]))
+        maintenance_check!(vps)
+
+        t = self.class.model.find_for(vps, ::UserSession.current)
+        t || self.class.model.create_for!(vps, ::UserSession.current)
+      rescue ::ActiveRecord::RecordInvalid => e
+        error!('failed to create a token', e.record.errors.to_hash)
+      end
+    end
+
+    class Show < HaveAPI::Actions::Default::Show
+      output do
+        use :all
+      end
+
+      authorize do |u|
+        allow if u.role == :admin
+        restrict user_id: u.id
+        allow
+      end
+
+      def exec
+        vps = ::Vps.find_by!(with_restricted(id: params[:vps_id]))
+        maintenance_check!(vps)
+
+        self.class.model.find_for!(vps, ::UserSession.current)
+      end
+    end
+
+    class Delete < HaveAPI::Actions::Default::Delete
+      authorize do |u|
+        allow if u.role == :admin
+        restrict user_id: u.id
+        allow
+      end
+
+      def exec
+        vps = ::Vps.find_by!(with_restricted(id: params[:vps_id]))
+        maintenance_check!(vps)
+
+        self.class.model.find_for!(vps, ::UserSession.current).expire!
+      end
+    end
+  end
+
   class SshHostKey < HaveAPI::Resource
     desc 'View VPS SSH host keys'
     route '{vps_id}/ssh_host_keys'

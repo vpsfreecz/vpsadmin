@@ -2,7 +2,7 @@ module VpsAdmin::API
   class Authentication::Basic < HaveAPI::Authentication::Basic::Provider
     protected
 
-    # @return [::UserSession, nil]
+    # @return [::User, nil]
     def find_user(request, username, password)
       auth = Operations::Authentication::Password.run(
         username,
