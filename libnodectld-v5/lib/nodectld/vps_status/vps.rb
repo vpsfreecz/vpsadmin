@@ -365,6 +365,8 @@ module NodeCtld
       end
 
       ret
+    rescue Libvirt::Error
+      {}
     end
   end
 end
