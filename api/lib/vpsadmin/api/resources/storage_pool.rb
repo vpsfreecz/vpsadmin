@@ -24,7 +24,7 @@ module VpsAdmin::API::Resources
         use :all
       end
 
-      authorize do |_u|
+      authorize do |u|
         allow if u.role == :admin
       end
 
@@ -46,7 +46,7 @@ module VpsAdmin::API::Resources
         use :all
       end
 
-      authorize do |_u|
+      authorize do |u|
         allow if u.role == :admin
       end
 
