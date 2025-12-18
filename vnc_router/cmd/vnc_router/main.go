@@ -6,11 +6,13 @@ import (
 	"flag"
 	"html/template"
 	"log"
+	"net"
 	"net/http"
 	"path/filepath"
 	"time"
 
 	"vnc_router/internal/config"
+	"vnc_router/internal/metrics"
 	"vnc_router/internal/proxy"
 	"vnc_router/internal/rpc"
 
@@ -171,13 +173,50 @@ func main() {
 		log.Fatalf("config error: %v", err)
 	}
 
+	metricsAllow := make([]*net.IPNet, 0, len(cfg.MetricsAllowedSubnets))
+	for _, cidr := range cfg.MetricsAllowedSubnets {
+		_, n, perr := net.ParseCIDR(cidr)
+		if perr != nil {
+			log.Fatalf("invalid metrics_allowed_subnets %q: %v", cidr, perr)
+		}
+		metricsAllow = append(metricsAllow, n)
+	}
+
 	absNoVNC, _ := filepath.Abs(cfg.NoVNCDir)
 	debugf("noVNC dir: %s", absNoVNC)
 
+	metricsRegistry := metrics.New()
 	rpcClient := rpc.New(cfg.RabbitMQURL, rpcExchange, rpcRoutingKey, rpcSoftTimeout, rpcHardTimeout, debug)
 	defer rpcClient.Close()
 
 	mux := http.NewServeMux()
+
+	ipAllowed := func(ip net.IP) bool {
+		if ip == nil {
+			return false
+		}
+		for _, n := range metricsAllow {
+			if n.Contains(ip) {
+				return true
+			}
+		}
+		return false
+	}
+
+	mux.HandleFunc("/metrics", func(w http.ResponseWriter, r *http.Request) {
+		host, _, err := net.SplitHostPort(r.RemoteAddr)
+		if err != nil {
+			host = r.RemoteAddr
+		}
+		ip := net.ParseIP(host)
+		if !ipAllowed(ip) {
+			http.Error(w, "forbidden", http.StatusForbidden)
+			return
+		}
+
+		w.Header().Set("Content-Type", "text/plain; version=0.0.4")
+		metricsRegistry.ExportPrometheus(w)
+	})
 
 	// Wrapper page: /console?client_token=...&autoconnect=1
 	mux.HandleFunc("/console", func(w http.ResponseWriter, r *http.Request) {
@@ -237,11 +276,14 @@ func main() {
 			return
 		}
 
+		connMetrics := metricsRegistry.NewConnection(target.VpsID)
+		defer connMetrics.Done()
+
 		ws.SetReadLimit(8 * 1024 * 1024)
 
 		debugf("ws connected from %s -> node %s:%d", r.RemoteAddr, target.NodeHost, target.NodePort)
 
-		if err := proxy.ProxyWSToNode(r.Context(), ws, target.NodeHost, target.NodePort, target.NodeToken); err != nil {
+		if err := proxy.ProxyWSToNode(r.Context(), ws, target.NodeHost, target.NodePort, target.NodeToken, connMetrics); err != nil {
 			debugf("ws proxy ended for %s (node %s:%d): %v", r.RemoteAddr, target.NodeHost, target.NodePort, err)
 			return
 		}

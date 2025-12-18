@@ -126,7 +126,8 @@ module VpsAdmin::Supervisor
         {
           node_host: vnc.vps.node.ip_addr,
           node_port: 8082,
-          node_token: vnc.node_token.token
+          node_token: vnc.node_token.token,
+          vps_id: vnc.vps.id
         }
       end
     end
