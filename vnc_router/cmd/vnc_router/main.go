@@ -57,6 +57,7 @@ var consoleTpl = template.Must(template.New("console").Parse(`<!doctype html>
     }
     .muted { color: #666; }
     button { padding: 6px 10px; }
+    .keys { display: flex; gap: 6px; align-items: center; }
   </style>
 </head>
 <body>
@@ -67,6 +68,13 @@ var consoleTpl = template.Must(template.New("console").Parse(`<!doctype html>
     <button id="btnDisconnect">Disconnect</button>
     <label><input type="checkbox" id="scale" checked> Scale</label>
     <label><input type="checkbox" id="clip"> Clip</label>
+    <div class="keys">
+      <span class="muted">Special keys:</span>
+      <button data-combo="Ctrl+Alt+Del">Ctrl+Alt+Del</button>
+      <button data-combo="Ctrl+Alt+Backspace">Ctrl+Alt+Backspace</button>
+      <button data-combo="Ctrl+Alt+F1">Ctrl+Alt+F1</button>
+      <button data-combo="Ctrl+Alt+F2">Ctrl+Alt+F2</button>
+    </div>
   </div>
 
   <div id="screen"></div>
@@ -87,6 +95,7 @@ var consoleTpl = template.Must(template.New("console").Parse(`<!doctype html>
     const btnDisconnect = document.getElementById('btnDisconnect');
     const scale = document.getElementById('scale');
     const clip = document.getElementById('clip');
+    const keysButtons = Array.from(document.querySelectorAll('[data-combo]'));
 
     let rfb = null;
 
@@ -137,11 +146,50 @@ var consoleTpl = template.Must(template.New("console").Parse(`<!doctype html>
     btnDisconnect.addEventListener('click', disconnect);
     scale.addEventListener('change', applyViewOptions);
     clip.addEventListener('change', applyViewOptions);
+    keysButtons.forEach((btn) => {
+      btn.addEventListener('click', () => sendCombo(btn.dataset.combo));
+    });
 
     // Optional: autoconnect
     {{ if .AutoConnect }}
     connect();
     {{ end }}
+
+    function sendCombo(name) {
+      if (!rfb) return;
+
+      const combos = {
+        'Ctrl+Alt+Del': [
+          { keysym: 0xffe3, code: 'ControlLeft' }, // Control_L
+          { keysym: 0xffe9, code: 'AltLeft' },     // Alt_L
+          { keysym: 0xffff, code: 'Delete' }       // Delete
+        ],
+        'Ctrl+Alt+Backspace': [
+          { keysym: 0xffe3, code: 'ControlLeft' },
+          { keysym: 0xffe9, code: 'AltLeft' },
+          { keysym: 0xff08, code: 'Backspace' }
+        ],
+        'Ctrl+Alt+F1': [
+          { keysym: 0xffe3, code: 'ControlLeft' },
+          { keysym: 0xffe9, code: 'AltLeft' },
+          { keysym: 0xffbe, code: 'F1' }
+        ],
+        'Ctrl+Alt+F2': [
+          { keysym: 0xffe3, code: 'ControlLeft' },
+          { keysym: 0xffe9, code: 'AltLeft' },
+          { keysym: 0xffbf, code: 'F2' }
+        ],
+      };
+
+      const combo = combos[name];
+      if (!combo) return;
+
+      combo.forEach((k) => rfb.sendKey(k.keysym, k.code, true));
+      for (let i = combo.length - 1; i >= 0; i--) {
+        const k = combo[i];
+        rfb.sendKey(k.keysym, k.code, false);
+      }
+    }
   </script>
 </body>
 </html>`))
