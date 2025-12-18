@@ -10,6 +10,17 @@ module NodeCtld
   class VncProxyServer
     include OsCtl::Lib::Utils::Log
 
+    ClientInfo = Struct.new(
+      :thread,
+      :peer,
+      :domain_uuid,
+      :domain_name,
+      :connected_at,
+      :rx_bytes,
+      :tx_bytes,
+      keyword_init: true
+    )
+
     # How long we will wait for a VM to become active / expose VNC.
     # Set to nil to wait forever.
     DEFAULT_WAIT_FOR_VNC_TIMEOUT = 10 * 60 # seconds
@@ -42,7 +53,7 @@ module NodeCtld
       @server_thread = nil
       @stop = false
 
-      @clients = {} # sock => thread
+      @clients = {} # sock => ClientInfo
       @clients_mutex = Mutex.new
     end
 
@@ -85,14 +96,16 @@ module NodeCtld
         # pass
       end
 
-      threads = nil
+      infos = nil
       @clients_mutex.synchronize do
-        threads = @clients.values
+        infos = @clients.values
         @clients.clear
       end
 
-      threads.each do |t|
-        t.kill
+      infos.each do |info|
+        next unless info&.thread
+
+        info.thread.kill
       rescue StandardError
         # pass
       end
@@ -119,6 +132,23 @@ module NodeCtld
       @server_thread && @server_thread.alive?
     end
 
+    def stats
+      return [] unless running?
+
+      @clients_mutex.synchronize do
+        @clients.map do |_sock, info|
+          {
+            peer: info.peer,
+            domain_uuid: info.domain_uuid,
+            domain_name: info.domain_name,
+            connected_at: info.connected_at&.to_i,
+            rx_bytes: info.rx_bytes,
+            tx_bytes: info.tx_bytes
+          }
+        end
+      end
+    end
+
     private
 
     def accept_loop
@@ -138,10 +168,20 @@ module NodeCtld
           nil
         end
 
-        t = Thread.new(sock) do |client|
+        peer = safe_peer(sock)
+        t = Thread.new(sock, peer) do |client, client_peer|
           Thread.current.name = 'vnc-proxy-client' if Thread.current.respond_to?(:name=)
+          info = ClientInfo.new(
+            thread: Thread.current,
+            peer: client_peer,
+            connected_at: Time.now,
+            rx_bytes: 0,
+            tx_bytes: 0
+          )
+          register_client(client, info)
+
           begin
-            handle_client(client)
+            handle_client(client, peer: client_peer)
           ensure
             unregister_client(client)
             begin
@@ -152,22 +192,20 @@ module NodeCtld
           end
         end
 
-        register_client(sock, t)
       end
     ensure
       log(:debug, 'accept loop ended')
     end
 
-    def register_client(sock, thread)
-      @clients_mutex.synchronize { @clients[sock] = thread }
+    def register_client(sock, info)
+      @clients_mutex.synchronize { @clients[sock] = info }
     end
 
     def unregister_client(sock)
       @clients_mutex.synchronize { @clients.delete(sock) }
     end
 
-    def handle_client(client)
-      peer = safe_peer(client)
+    def handle_client(client, peer:)
       log(:info, "connection from #{peer}")
 
       node_token = read_handshake_token(client)
@@ -181,6 +219,7 @@ module NodeCtld
         log(:warn, "token rejected from #{peer}")
         return
       end
+      update_client_domain(client, domain_uuid)
 
       log(:info, "token ok from #{peer}, domain_uuid=#{domain_uuid}")
 
@@ -312,7 +351,7 @@ module NodeCtld
       done = Queue.new
 
       t1 = Thread.new do
-        copy_stream(a, b)
+        copy_stream(a, b) { |bytes| increment_client_bytes(a, :rx_bytes, bytes) }
       rescue StandardError => e
         done << e
       ensure
@@ -320,7 +359,7 @@ module NodeCtld
       end
 
       t2 = Thread.new do
-        copy_stream(b, a)
+        copy_stream(b, a) { |bytes| increment_client_bytes(a, :tx_bytes, bytes) }
       rescue StandardError => e
         done << e
       ensure
@@ -354,6 +393,7 @@ module NodeCtld
       loop do
         buf = src.readpartial(32 * 1024, buf)
         dst.write(buf)
+        yield(buf.bytesize) if block_given?
       end
     end
 
@@ -364,6 +404,32 @@ module NodeCtld
       "#{addr[3]}:#{addr[1]}"
     rescue StandardError
       'unknown'
+    end
+
+    def increment_client_bytes(sock, key, bytes)
+      @clients_mutex.synchronize do
+        info = @clients[sock]
+        info[key] += bytes if info
+      end
+    end
+
+    def update_client_domain(sock, domain_uuid)
+      @clients_mutex.synchronize do
+        info = @clients[sock]
+        return unless info
+
+        info.domain_uuid = domain_uuid
+        info.domain_name = domain_name_for(domain_uuid)
+      end
+    end
+
+    def domain_name_for(domain_uuid)
+      lv = LibvirtClient.new
+      dom = lv.lookup_domain_by_uuid(domain_uuid)
+      dom&.name
+    rescue StandardError => e
+      log(:warn, "failed to get domain name for #{domain_uuid}: #{e.class}: #{e.message}")
+      nil
     end
   end
 end

@@ -36,7 +36,7 @@ module NodeCtld
       end
     end
 
-    attr_reader :start_time, :node, :console, :queues, :last_transaction_check
+    attr_reader :start_time, :node, :console, :queues, :vnc_server, :last_transaction_check
 
     def initialize
       self.class.instance = self
