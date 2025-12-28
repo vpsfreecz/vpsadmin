@@ -83,6 +83,7 @@ in
 
           log_bin = mkDefault "mysql-bin";
           expire_logs_days = mkDefault 1;
+          slave_connections_needed_for_purge = mkDefault 0;
           max_binlog_size = mkDefault "1000M";
           sync_binlog = mkDefault 1;
           binlog_format = mkDefault "MIXED";
