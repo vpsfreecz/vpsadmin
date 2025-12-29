@@ -3,9 +3,9 @@ GEM
   specs:
     amq-protocol (2.3.4)
     base64 (0.3.0)
-    bigdecimal (3.3.1)
-    bunny (2.23.0)
-      amq-protocol (~> 2.3, >= 2.3.1)
+    bigdecimal (4.0.1)
+    bunny (2.24.0)
+      amq-protocol (~> 2.3)
       sorted_set (~> 1, >= 1.0.2)
     coderay (1.1.3)
     curses (1.5.3)
@@ -17,11 +17,12 @@ GEM
       ostruct
     highline (3.1.2)
       reline
-    io-console (0.8.1)
+    io-console (0.8.2)
     ipaddress (0.8.3)
     json (2.18.0)
     logger (1.7.0)
-    mail (2.8.1)
+    mail (2.9.0)
+      logger
       mini_mime (>= 0.1.1)
       net-imap
       net-pop
@@ -29,7 +30,7 @@ GEM
     method_source (1.1.0)
     mini_mime (1.1.5)
     mysql2 (0.5.6)
-    net-imap (0.5.12)
+    net-imap (0.6.2)
       date
       net-protocol
     net-pop (0.1.2)
@@ -61,7 +62,7 @@ GEM
       set (~> 1.0)
     syslog (0.3.0)
       logger
-    timeout (0.5.0)
+    timeout (0.6.0)
     tty-cursor (0.7.1)
     tty-spinner (0.9.3)
       tty-cursor (~> 0.7)
@@ -69,16 +70,16 @@ GEM
 GEM
   remote: https://rubygems.vpsfree.cz/
   specs:
-    libnodectld (4.1.0.build20251212162511)
+    libnodectld (4.1.0.build20251229161516)
       base64
       bigdecimal
-      bunny (~> 2.23.0)
+      bunny (~> 2.24.0)
       drb
       filelock
       ipaddress (~> 0.8.3)
       json
       libosctl (= 25.11.0.build20251201154349)
-      mail (~> 2.8.1)
+      mail (~> 2.9.0)
       mysql2 (= 0.5.6)
       osctl (= 25.11.0.build20251201154349)
       osctl-exportfs (= 25.11.0.build20251201154349)
@@ -86,15 +87,15 @@ GEM
       pry (~> 0.14.2)
       pry-remote
       require_all (~> 2.0.0)
-      rexml (~> 3.3)
+      rexml (~> 3.4)
     libosctl (25.11.0.build20251201154349)
       fiddle
       logger
       rainbow (~> 3.1.1)
       require_all (~> 2.0.0)
       syslog
-    nodectld (4.1.0.build20251212162511)
-      libnodectld (= 4.1.0.build20251212162511)
+    nodectld (4.1.0.build20251229161516)
+      libnodectld (= 4.1.0.build20251229161516)
     osctl (25.11.0.build20251201154349)
       base64
       curses
@@ -118,7 +119,7 @@ PLATFORMS
   x86_64-linux
 
 DEPENDENCIES
-  nodectld (= 4.1.0.build20251212162511)!
+  nodectld (= 4.1.0.build20251229161516)!
 
 BUNDLED WITH
    2.7.2

@@ -24,10 +24,10 @@
     platforms = [ ];
     source = {
       remotes = [ "https://rubygems.org" ];
-      sha256 = "0612spks81fvpv2zrrv3371lbs6mwd7w6g5zafglyk75ici1x87a";
+      sha256 = "19y406nx17arzsbc515mjmr6k5p59afprspa1k423yd9cp8d61wb";
       type = "gem";
     };
-    version = "3.3.1";
+    version = "4.0.1";
   };
   bunny = {
     dependencies = [
@@ -38,10 +38,10 @@
     platforms = [ ];
     source = {
       remotes = [ "https://rubygems.org" ];
-      sha256 = "1nksa5xnzn9i9x3hag45f6jmq07ksnj386gbish1w4bx0y5x28dp";
+      sha256 = "10hnkm1ky0ivihxbfw3hka5bl2vi9wh6dlg42xdckagak2pf8bq7";
       type = "gem";
     };
-    version = "2.23.0";
+    version = "2.24.0";
   };
   coderay = {
     groups = [ "default" ];
@@ -130,10 +130,10 @@
     platforms = [ ];
     source = {
       remotes = [ "https://rubygems.org" ];
-      sha256 = "1jszj95hazqqpnrjjzr326nn1j32xmsc9xvd97mbcrrgdc54858y";
+      sha256 = "1k0lk3pwadm2myvpg893n8jshmrf2sigrd4ki15lymy7gixaxqyn";
       type = "gem";
     };
-    version = "0.8.1";
+    version = "0.8.2";
   };
   ipaddress = {
     groups = [ "default" ];
@@ -179,10 +179,10 @@
     platforms = [ ];
     source = {
       remotes = [ "https://rubygems.vpsfree.cz" ];
-      sha256 = "15nyx5fdfklfb4q8br0jp4bbrjw9zmciglh3zpf9cgyv9qi3364h";
+      sha256 = "00sawrhwv0q2b8r5k0sq54098cfzmh6phxz6cjs57ca5pnml92cx";
       type = "gem";
     };
-    version = "4.1.0.build20251212162511";
+    version = "4.1.0.build20251229161516";
   };
   libosctl = {
     dependencies = [
@@ -213,6 +213,7 @@
   };
   mail = {
     dependencies = [
+      "logger"
       "mini_mime"
       "net-imap"
       "net-pop"
@@ -222,10 +223,10 @@
     platforms = [ ];
     source = {
       remotes = [ "https://rubygems.org" ];
-      sha256 = "1bf9pysw1jfgynv692hhaycfxa8ckay1gjw5hz3madrbrynryfzc";
+      sha256 = "0ha9sgkfqna62c1basc17dkx91yk7ppgjq32k4nhrikirlz6g9kg";
       type = "gem";
     };
-    version = "2.8.1";
+    version = "2.9.0";
   };
   method_source = {
     groups = [ "default" ];
@@ -266,10 +267,10 @@
     platforms = [ ];
     source = {
       remotes = [ "https://rubygems.org" ];
-      sha256 = "0i24prs7yy1p1zdps2x1ksb7lmvbn2f0llxwdjdw3z2ksddx136b";
+      sha256 = "1imc50a9ic3ynsl3k0japhmb0ggrgp2c186cfqbcclv892nsrjh8";
       type = "gem";
     };
-    version = "0.5.12";
+    version = "0.6.2";
   };
   net-pop = {
     dependencies = [ "net-protocol" ];
@@ -503,10 +504,10 @@
     platforms = [ ];
     source = {
       remotes = [ "https://rubygems.org" ];
-      sha256 = "1jwhj5y89j5c6pk5hjw8jmrm3iila0krn2c31lnlrn217z8yyal5";
+      sha256 = "1bz11pq7n1g51f50jqmgyf5b1v64p1pfqmy5l21y6vpr37b2lwkd";
       type = "gem";
     };
-    version = "0.5.0";
+    version = "0.6.0";
   };
   tty-cursor = {
     groups = [ "default" ];
