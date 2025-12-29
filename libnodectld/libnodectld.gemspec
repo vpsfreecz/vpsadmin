@@ -22,12 +22,12 @@ Gem::Specification.new do |s|
   s.required_ruby_version = ">= #{File.read('../.ruby-version').strip}"
 
   s.add_dependency 'base64'
-  s.add_dependency 'bunny', '~> 2.23.0'
+  s.add_dependency 'bunny', '~> 2.24.0'
   s.add_dependency 'filelock'
   s.add_dependency 'ipaddress', '~> 0.8.3'
   s.add_dependency 'json'
   s.add_dependency 'libosctl', ENV.fetch('OS_BUILD_ID', nil)
-  s.add_dependency 'mail', '~> 2.8.1'
+  s.add_dependency 'mail', '~> 2.9.0'
   s.add_dependency 'mysql2', '0.5.6'
   s.add_dependency 'osctl', ENV.fetch('OS_BUILD_ID', nil)
   s.add_dependency 'osctl-exportfs', ENV.fetch('OS_BUILD_ID', nil)
@@ -35,7 +35,7 @@ Gem::Specification.new do |s|
   s.add_dependency 'pry', '~> 0.14.2'
   s.add_dependency 'pry-remote'
   s.add_dependency 'require_all', '~> 2.0.0'
-  s.add_dependency 'rexml', '~> 3.3'
+  s.add_dependency 'rexml', '~> 3.4'
 
   # For mysql2 on ruby >=3.3
   s.add_dependency 'bigdecimal'
