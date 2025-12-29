@@ -37,7 +37,7 @@ in
         type = types.package;
         default = pkgs.vpsadmin-console-router;
         description = "Which vpsAdmin consoel router package to use.";
-        example = "pkgs.vpsadmin-console-router.override { ruby = pkgs.ruby_3_3; }";
+        example = "pkgs.vpsadmin-console-router.override { ruby = pkgs.ruby_3_4; }";
       };
 
       user = mkOption {
