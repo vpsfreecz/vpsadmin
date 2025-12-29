@@ -6,25 +6,25 @@ rescue Errno::ENOENT
   # ignore
 end
 
-gem 'activerecord', '~> 7.2.2'
+gem 'activerecord', '~> 8.1.1'
 gem 'ancestry', '~> 4.3.3'
 gem 'base64'
 gem 'bcrypt', '~> 3.1.20'
-gem 'bunny', '~> 2.23.0'
-gem 'dnsruby', '~> 1.72'
+gem 'bunny', '~> 2.24.0'
+gem 'dnsruby', '~> 1.73'
 gem 'haveapi', '~> 0.26.0'
 gem 'ipaddress', '~> 0.8.3'
 gem 'mysql2', '~> 0.5.6'
-gem 'paper_trail', '~> 15.2.0'
+gem 'paper_trail', '~> 17.0.0'
 gem 'prometheus-client', '~> 4.2.3'
 gem 'puma'
 gem 'rake'
 gem 'require_all', '~> 2.0.0'
 gem 'rotp', '~> 6.3.0'
-gem 'rubyzip', '~> 2.3.2' # needed by vpsFree.cz's incident reports
+gem 'rubyzip', '~> 3.2.2' # needed by vpsFree.cz's incident reports
 gem 'sinatra-activerecord', '~> 2.0.27'
-gem 'user_agent_parser', '~> 2.18'
-gem 'webauthn', '~> 3.3'
+gem 'user_agent_parser', '~> 2.20'
+gem 'webauthn', '~> 3.4'
 
 group :test do
   gem 'rspec'

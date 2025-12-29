@@ -3,8 +3,8 @@ GEM
   specs:
     amq-protocol (2.3.4)
     base64 (0.3.0)
-    bunny (2.23.0)
-      amq-protocol (~> 2.3, >= 2.3.1)
+    bunny (2.24.0)
+      amq-protocol (~> 2.3)
       sorted_set (~> 1, >= 1.0.2)
     logger (1.7.0)
     mustermann (3.0.4)
@@ -20,7 +20,7 @@ GEM
     rack-session (2.1.1)
       base64 (>= 0.1.0)
       rack (>= 3.0.0)
-    rackup (2.2.1)
+    rackup (2.3.1)
       rack (>= 3)
     rbtree (0.4.6)
     require_all (2.0.0)
@@ -37,7 +37,7 @@ GEM
       rbtree
       set (~> 1.0)
     tilt (2.6.1)
-    webrick (1.9.1)
+    webrick (1.9.2)
 
 PLATFORMS
   ruby
@@ -45,7 +45,7 @@ PLATFORMS
 
 DEPENDENCIES
   base64
-  bunny (~> 2.23.0)
+  bunny (~> 2.24.0)
   puma
   rackup
   require_all (~> 2.0.0)
@@ -53,4 +53,4 @@ DEPENDENCIES
   webrick
 
 BUNDLED WITH
-   2.6.6
+   2.7.2

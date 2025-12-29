@@ -1,7 +1,7 @@
 source 'https://rubygems.org'
 
 gem 'base64'
-gem 'bunny', '~> 2.23.0'
+gem 'bunny', '~> 2.24.0'
 gem 'puma'
 gem 'require_all', '~> 2.0.0'
 gem 'sinatra', '~> 4.0'
