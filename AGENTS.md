@@ -1,10 +1,16 @@
 # Repository Guidelines
+This is a monorepo. Each component has its own `Gemfile`/`gemspec`/`composer.lock`/`go.mod`/lock file.
 
 ## Project Structure & Module Organization
-- `api/`: Ruby 3.4 API with business logic, migrations in `db/migrate`, specs in `spec/`, plugins under `plugins/`.
-- `webui/`: PHP front end (Composer-managed) plus light RSpec checks in `spec/`; config samples near `config_cfg.php`.
-- `client/`, `nodectl*/`, `nodectld*/`, `libnodectld*/`: CLI tools and node daemons, each with its own `Gemfile`/`.rubocop.yml`.
-- `nixos/`, `packages/`: NixOS modules and Nix package definitions for deployments.
+- `api/`: Ruby 3.4 API with business logic, migrations in `db/migrate`, specs in `spec/`, plugins under `plugins/`. The API also contains the `supervisor` in `api/lib/vpsadmin/supervisor/`, which is processing rabbitmq messages from `nodectld`.
+- `client/`: CLI tool for working with the API, used by external clients.
+- `nodectld/`: Ruby daemon running on all nodes, processing commands from the API and communicating with the `supervisor`. `nodectld` uses `vpsAdminOS` to run VPS as Linux containers.
+- `nodectl/`: CLI for `nodectld`.
+- `libnodectld/`: Ruby library, most of the code for `nodectld` is here.
+- `console_router/`: Ruby web application that is proxying remote VPS console connections between external clients and `nodectld`. Clients connect using HTTP, rabbitmq messages are used for communication with `n
+- `webui/`: PHP front end (Composer-managed) for the API; config samples near `config_cfg.php`.
+- `nixos/`: NixOS modules for deployment of all of vpsAdmin's services.
+- `packages/`: Nix package definitions.
 - `doc/`: Architecture notes (`overview.mdwn`, `transactions.mdwn`) and operational docs.
 
 ## Build, Test, and Development Commands
