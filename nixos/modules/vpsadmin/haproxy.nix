@@ -78,7 +78,10 @@ let
     };
 
   allAppAssertions =
-    (appAssertions "api") ++ (appAssertions "console-router") ++ (appAssertions "webui");
+    (appAssertions "api")
+    ++ (appAssertions "console-router")
+    ++ (appAssertions "vnc-router")
+    ++ (appAssertions "webui");
 
   appAssertions =
     app:
@@ -110,6 +113,19 @@ let
 
     backend app-console-router-${name}
       balance hdr(X-Forwarded-For)
+    ${concatStringsSep "\n" (backendsConfig instance.backends)}
+  '';
+
+  vncRouterConfig = name: instance: ''
+    frontend vnc-router-${name}
+      ${concatMapStringsSep "\n" (v: "bind ${v}") instance.frontend.bind}
+      timeout client 1h
+      default_backend app-vnc-router-${name}
+
+    backend app-vnc-router-${name}
+      balance hdr(X-Forwarded-For)
+      timeout server 1h
+      timeout tunnel 1h
     ${concatStringsSep "\n" (backendsConfig instance.backends)}
   '';
 
@@ -167,6 +183,14 @@ in
         '';
       };
 
+      vnc-router = mkOption {
+        type = types.attrsOf (types.submodule appOpts);
+        default = { };
+        description = ''
+          HAProxy instances for vpsAdmin VNC router
+        '';
+      };
+
       webui = mkOption {
         type = types.attrsOf (types.submodule appOpts);
         default = { };
@@ -215,6 +239,7 @@ in
 
         ${stringConfigs cfg.api apiConfig}
         ${stringConfigs cfg.console-router consoleRouterConfig}
+        ${stringConfigs cfg.vnc-router vncRouterConfig}
         ${stringConfigs cfg.webui webuiConfig}
       '';
     };

@@ -6,6 +6,7 @@
     ./vpsadmin/api/scheduler.nix
     ./vpsadmin/database-setup.nix
     ./vpsadmin/console-router.nix
+    ./vpsadmin/vnc-router.nix
     ./vpsadmin/download-mounter.nix
     ./vpsadmin/frontend.nix
     ./vpsadmin/varnish.nix
