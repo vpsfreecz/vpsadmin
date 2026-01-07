@@ -5,6 +5,7 @@
     ./vpsadmin/api/rake-tasks.nix
     ./vpsadmin/api/scheduler.nix
     ./vpsadmin/console-router.nix
+    ./vpsadmin/vnc-router.nix
     ./vpsadmin/download-mounter.nix
     ./vpsadmin/frontend.nix
     ./vpsadmin/varnish.nix

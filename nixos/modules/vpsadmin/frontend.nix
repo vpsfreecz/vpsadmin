@@ -136,6 +136,8 @@ let
 
       console-router = baseModule app;
 
+      vnc-router = baseModule app;
+
       download-mounter = downloadMounterModule app;
 
       webui = baseModule app;
@@ -165,6 +167,8 @@ let
       auth = html;
 
       console-router = html;
+
+      vnc-router = html;
 
       download-mounter = html;
 
@@ -200,6 +204,8 @@ let
 
       console-router = baseUpstreams app instances;
 
+      vnc-router = baseUpstreams app instances;
+
       download-mounter = { };
 
       webui = baseUpstreams app instances;
@@ -207,7 +213,16 @@ let
     .${app};
 
   accessLog =
-    app: name: if app == "console-router" then "off" else "/var/log/nginx/vpsadmin-${app}-${name}.log";
+    app: name:
+    if
+      elem app [
+        "console-router"
+        "vnc-router"
+      ]
+    then
+      "off"
+    else
+      "/var/log/nginx/vpsadmin-${app}-${name}.log";
 
   baseVirtualHosts =
     app: name: instance:
@@ -313,6 +328,67 @@ let
       '';
     };
 
+  vncRouterVirtualHosts =
+    app: name: instance:
+    let
+      upstream = "http://${upstreamName app name}";
+
+      maintenanceRoot = pkgs.runCommand "${app}-maintenance-root" { } ''
+        mkdir $out
+        ln -s ${instance.maintenance.file} $out/${instance.maintenance.file.name}
+      '';
+
+      proxyCommon = ''
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_read_timeout 1h;
+        proxy_send_timeout 1h;
+        proxy_buffering off;
+      '';
+    in
+    nameValuePair instance.virtualHost {
+      serverName = mkIf (!isNull instance.domain) instance.domain;
+      serverAliases = instance.aliases;
+
+      forceSSL = mkIf (!isNull cfg.forceSSL) cfg.forceSSL;
+
+      enableACME = mkIf (!isNull cfg.enableACME) cfg.enableACME;
+
+      locations = {
+        "/" = {
+          proxyPass = mkIf (!isUnderMaintenance app name instance) upstream;
+
+          return = mkIf (isUnderMaintenance app name instance) "503";
+
+          extraConfig = ''
+            autoindex off;
+            ${proxyCommon}
+          '';
+        };
+
+        "/ws" = {
+          proxyPass = mkIf (!isUnderMaintenance app name instance) upstream;
+
+          return = mkIf (isUnderMaintenance app name instance) "503";
+
+          extraConfig = proxyCommon;
+        };
+
+        "@maintenance" = {
+          root = maintenanceRoot;
+          extraConfig = ''
+            rewrite ^(.*)$ /${instance.maintenance.file.name} break;
+          '';
+        };
+      };
+
+      extraConfig = ''
+        access_log ${accessLog app name};
+        error_page 503 @maintenance;
+      '';
+    };
+
   appVirtualHosts =
     app:
     {
@@ -321,6 +397,8 @@ let
       auth = authVirtualHosts app;
 
       console-router = baseVirtualHosts app;
+
+      vnc-router = vncRouterVirtualHosts app;
 
       download-mounter = downloadMounterVirtualHosts app;
 
@@ -336,6 +414,8 @@ let
       auth = [ ];
 
       console-router = [ ];
+
+      vnc-router = [ ];
 
       download-mounter = [
         {
@@ -418,6 +498,8 @@ in
 
       console-router = appOpt "console-router";
 
+      vnc-router = appOpt "vnc-router";
+
       download-mounter = appOpt "download-mounter";
 
       webui = appOpt "webui";
@@ -480,6 +562,8 @@ in
     (appConfigs "auth")
 
     (appConfigs "console-router")
+
+    (appConfigs "vnc-router")
 
     (appConfigs "download-mounter")
 
