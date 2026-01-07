@@ -8,6 +8,9 @@ This is a monorepo. Each component has its own `Gemfile`/`gemspec`/`composer.loc
 - `nodectl/`: CLI for `nodectld`.
 - `libnodectld/`: Ruby library, most of the code for `nodectld` is here.
 - `console_router/`: Ruby web application that is proxying remote VPS console connections between external clients and `nodectld`. Clients connect using HTTP, rabbitmq messages are used for communication with `n
+- `nodectld-v5/`: Ruby daemon running on all nodes, processing commands from the API and communicating with the `supervisor`. `nodectld-v5` runs VPS using `libvirt` with `QEMU/KVM`.
+- `nodectl-v5/`: CLI for `nodectld-v5`.
+- `libnodectld-v5/`: Ruby library, most of the code for `nodectld-v5` is here.odectld`.
 - `webui/`: PHP front end (Composer-managed) for the API; config samples near `config_cfg.php`.
 - `nixos/`: NixOS modules for deployment of all of vpsAdmin's services.
 - `packages/`: Nix package definitions.
