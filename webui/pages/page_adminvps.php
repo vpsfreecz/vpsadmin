@@ -1162,7 +1162,8 @@ if (isLoggedIn()) {
     $xtpl->assign(
         'AJAX_SCRIPT',
         ($xtpl->vars['AJAX_SCRIPT'] ?? '') . '
-	<script type="text/javascript" src="js/vps.js"></script>'
+	<script type="text/javascript" src="js/vps.js"></script>
+    <script type="text/javascript" src="js/vnc.js"></script>'
     );
 
     if (isset($show_info) && $show_info) {
@@ -1239,13 +1240,14 @@ if (isLoggedIn()) {
 
         $remote_console_page = $vps->vm_type == 'qemu_full' ? 'vnc' : 'console';
         $remote_console_label = $vps->vm_type == 'qemu_full' ? _('open VNC console') : _('open remote console');
+        $remote_console_server = $vps->node->location->remote_vnc_server;
 
         if ($vps->maintenance_lock == 'no') {
             $status = $vps->is_running
                 ? _("running") . ' (<a href="?page=adminvps&action=info&run=restart&veid=' . $vps->id . '&t=' . csrf_token() . '" ' . vps_confirm_action_onclick($vps, 'restart') . '>' . _("restart") . '</a>, <a href="?page=adminvps&action=info&run=force_restart&veid=' . $vps->id . '&t=' . csrf_token() . '" ' . vps_confirm_action_onclick($vps, 'force_restart') . '>' . _("reset") . '</a>, <a href="?page=adminvps&action=info&run=stop&veid=' . $vps->id . '&t=' . csrf_token() . '" ' . vps_confirm_action_onclick($vps, 'stop') . '>' . _("stop") . '</a>, <a href="?page=adminvps&action=info&run=force_stop&veid=' . $vps->id . '&t=' . csrf_token() . '" ' . vps_confirm_action_onclick($vps, 'force_stop') . '>' . _("poweroff") . '</a>'
                 : _("stopped") . ' (<a href="?page=adminvps&action=info&run=start&veid=' . $vps->id . '&t=' . csrf_token() . '">' . _("start") . '</a>';
 
-            $status .= ', <a href="?page=' . $remote_console_page . '&veid=' . $vps->id . '&t=' . csrf_token() . '">' . $remote_console_label . '</a>)';
+            $status .= ', <a class="' . ($vps->vm_type == 'qemu_full' ? 'vnc-link' : '') . '" data-veid="' . $vps->id . '" data-vnc-server="' . h($remote_console_server) . '" href="?page=' . $remote_console_page . '&veid=' . $vps->id . '&vnc_server=' . urlencode($remote_console_server) . '&t=' . csrf_token() . '">' . $remote_console_label . '</a>)';
             $xtpl->table_td($status);
         } else {
             $xtpl->table_td($vps->is_running ? _("running") : _("stopped"));
