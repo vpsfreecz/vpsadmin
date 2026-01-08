@@ -794,7 +794,9 @@ function vps_list_form()
 
                 if (!isAdmin()) {
                     if ($vps->vm_type == 'qemu_full') {
-                        $xtpl->table_td('<a href="?page=vnc&veid=' . $vps->id . '&t=' . csrf_token() . '"><img src="template/icons/console.png"  title="' . _("VNC console") . '"/></a>');
+                        $xtpl->table_td(
+                            '<a class="vnc-link" data-veid="' . $vps->id . '" data-vnc-server="' . h($vps->node->location->remote_vnc_server) . '" href="?page=vnc&veid=' . $vps->id . '&vnc_server=' . urlencode($vps->node->location->remote_vnc_server) . '&t=' . csrf_token() . '"><img src="template/icons/console.png"  title="' . _("VNC console") . '"/></a>'
+                        );
                     } else {
                         $xtpl->table_td('<a href="?page=console&veid=' . $vps->id . '&t=' . csrf_token() . '"><img src="template/icons/console.png"  title="' . _("Remote Console") . '"/></a>');
                     }
@@ -886,7 +888,7 @@ function vps_details_submenu($vps)
     }
 
     if ($vps->vm_type == 'qemu_full') {
-        $xtpl->sbar_add(_('VNC console'), '?page=vnc&veid=' . $vps->id . '&t=' . csrf_token());
+        $xtpl->sbar_add(_('VNC console'), '?page=vnc&veid=' . $vps->id . '&vnc_server=' . urlencode($vps->node->location->remote_vnc_server) . '&t=' . csrf_token());
     } else {
         $xtpl->sbar_add(_('Remote console'), '?page=console&veid=' . $vps->id . '&t=' . csrf_token());
     }
