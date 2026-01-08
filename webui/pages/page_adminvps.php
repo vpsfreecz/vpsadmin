@@ -644,6 +644,14 @@ if (isLoggedIn()) {
             if (isset($_POST['os_template'])) {
                 csrf_check();
 
+                $vps = $api->vps->show($_GET['veid']);
+
+                if ($vps->vm_type == 'qemu_full') {
+                    $xtpl->perex(_('Action not available'), _('Rescue boot is not available for this VPS type.'));
+                    $show_info = true;
+                    break;
+                }
+
                 try {
                     $api->vps($_GET['veid'])->boot([
                         'os_template' => $_POST['os_template'],
@@ -669,6 +677,14 @@ if (isLoggedIn()) {
         case 'reinstall':
             if (isset($_POST['reinstall']) && $_POST['confirm']) {
                 csrf_check();
+
+                $vps = $api->vps->show($_GET['veid']);
+
+                if ($vps->vm_type == 'qemu_full') {
+                    $xtpl->perex(_('Action not available'), _('Reinstall is not available for this VPS type.'));
+                    $show_info = true;
+                    break;
+                }
 
                 try {
                     $params = [
@@ -705,6 +721,13 @@ if (isLoggedIn()) {
 
             } else {
                 $vps = $api->vps->show($_GET['veid']);
+
+                if ($vps->vm_type == 'qemu_full') {
+                    $xtpl->perex(_('Action not available'), _('Reinstall is not available for this VPS type.'));
+                    $show_info = true;
+                    break;
+                }
+
                 $new_tpl = $api->os_template->show(get_val('os_template', $_POST['os_template']));
 
                 $xtpl->table_title(
@@ -783,6 +806,14 @@ if (isLoggedIn()) {
         case 'os_template':
             csrf_check();
 
+            $vps = $api->vps->show($_GET['veid']);
+
+            if ($vps->vm_type == 'qemu_full') {
+                $xtpl->perex(_('Action not available'), _('Distribution changes are not available for this VPS type.'));
+                $show_info = true;
+                break;
+            }
+
             try {
                 $api->vps($_GET['veid'])->update([
                     'os_template' => $_POST['os_template'],
@@ -804,6 +835,14 @@ if (isLoggedIn()) {
             }
 
             csrf_check();
+
+            $vps = $api->vps->show($_GET['veid']);
+
+            if ($vps->vm_type == 'qemu_full') {
+                $xtpl->perex(_('Action not available'), _('Distribution changes are not available for this VPS type.'));
+                $show_info = true;
+                break;
+            }
 
             try {
                 $enable = ($_POST['enable_os_template_auto_update'] ?? '') === '1';
@@ -1133,7 +1172,7 @@ if (isLoggedIn()) {
 
         $vps = $api->vps->find($veid, [
             'meta' => [
-                'includes' => 'node__location__environment,user,os_template,user_namespace_map',
+                'includes' => 'node__location__environment,user,os_template,os_family,user_namespace_map',
             ],
         ]);
 
@@ -1189,7 +1228,11 @@ if (isLoggedIn()) {
         }
 
         $xtpl->table_td(_("Distribution") . ':');
-        $xtpl->table_td($vps->os_template->label);
+        if ($vps->vm_type == 'qemu_full') {
+            $xtpl->table_td($vps->os_family ? $vps->os_family->label : '-');
+        } else {
+            $xtpl->table_td($vps->os_template->label);
+        }
         $xtpl->table_tr();
 
         $xtpl->table_td(_("Status") . ':');
@@ -1570,96 +1613,98 @@ if (isLoggedIn()) {
                 mount_list($vps);
             }
 
-            $os_templates = list_templates($vps);
+            if ($vps->vm_type != 'qemu_full') {
+                $os_templates = list_templates($vps);
 
-            // Boot
-            $xtpl->table_title(_('Boot VPS from template (rescue mode)'));
-            $xtpl->form_create('?page=adminvps&action=boot&veid=' . $vps->id, 'post');
-            $xtpl->table_td(
-                '<p>'
-                . _('Boot the VPS from a clean template, e.g. to fix a broken system. '
-                  . 'The VPS configuration (IP addresses, resources, etc.) is the same, '
-                  . 'the VPS only starts from a clean system. The original root '
-                  . 'filesystem from the VPS can be accessed through the mountpoint '
-                  . 'configured below.')
-                . '</p><p>'
-                . _('On next VPS start/restart, the VPS will start from it\'s own '
-                  . 'dataset again. The clean system created by this action is '
-                  . 'temporary and any changes to it will be lost.')
-                . '</p>',
-                false,
-                false,
-                '3'
-            );
-            $xtpl->table_tr();
-
-            $xtpl->form_add_select(_("Distribution") . ':', 'os_template', $os_templates, $vps->os_template_id, '');
-
-            $xtpl->table_td(($vps->vm_type == 'container' ? _('Mount root dataset') : _('Mount root volume')) . ':');
-            $xtpl->form_add_radio_pure('mount_root_dataset', 'mount', true);
-            $xtpl->form_add_input_pure('text', '30', 'mountpoint', post_val('mountpoint', '/mnt/vps'));
-            $xtpl->table_tr();
-
-            $xtpl->table_td(_('Do not mount the root dataset'));
-            $xtpl->form_add_radio_pure('mount_root_dataset', 'no', false);
-            $xtpl->table_tr();
-            $xtpl->form_out(_('Boot'));
-
-            // Reinstall
-            $xtpl->table_title(_('Reinstall system'));
-            $xtpl->form_create('?page=adminvps&action=reinstall&veid=' . $vps->id, 'post');
-
-            $xtpl->table_td(
-                _('Install base system again. All data in the root filesystem will be removed.'),
-                false,
-                false,
-                2
-            );
-            $xtpl->table_tr();
-
-            $xtpl->form_add_select(_("Distribution") . ':', 'os_template', $os_templates, $vps->os_template_id, '');
-
-            if ($vps->os_template->info) {
-                $xtpl->table_td(_('Info') . ':');
-                $xtpl->table_td($vps->os_template->info);
+                // Boot
+                $xtpl->table_title(_('Boot VPS from template (rescue mode)'));
+                $xtpl->form_create('?page=adminvps&action=boot&veid=' . $vps->id, 'post');
+                $xtpl->table_td(
+                    '<p>'
+                    . _('Boot the VPS from a clean template, e.g. to fix a broken system. '
+                      . 'The VPS configuration (IP addresses, resources, etc.) is the same, '
+                      . 'the VPS only starts from a clean system. The original root '
+                      . 'filesystem from the VPS can be accessed through the mountpoint '
+                      . 'configured below.')
+                    . '</p><p>'
+                    . _('On next VPS start/restart, the VPS will start from it\'s own '
+                      . 'dataset again. The clean system created by this action is '
+                      . 'temporary and any changes to it will be lost.')
+                    . '</p>',
+                    false,
+                    false,
+                    '3'
+                );
                 $xtpl->table_tr();
-            }
 
-            vps_user_data_select_form($api->vps->reinstall, $vps->user_id);
+                $xtpl->form_add_select(_("Distribution") . ':', 'os_template', $os_templates, $vps->os_template_id, '');
 
-            $xtpl->form_out(_('Reinstall'));
-
-            // Distribution
-            $xtpl->table_title(_('Distribution information'));
-            $xtpl->form_create('?page=adminvps&action=os_template&veid=' . $vps->id, 'post');
-
-            $xtpl->table_td(
-                _('Use if you have upgraded/downgraded your system. '
-                  . 'Distribution information can also be updated automatically by reading '
-                  . '/etc/os-release, see below.'),
-                false,
-                false,
-                2
-            );
-            $xtpl->table_tr();
-
-            $xtpl->form_add_select(_("Distribution") . ':', 'os_template', $os_templates, $vps->os_template_id, '');
-
-            if ($vps->os_template->info) {
-                $xtpl->table_td(_('Info') . ':');
-                $xtpl->table_td($vps->os_template->info);
+                $xtpl->table_td(($vps->vm_type == 'container' ? _('Mount root dataset') : _('Mount root volume')) . ':');
+                $xtpl->form_add_radio_pure('mount_root_dataset', 'mount', true);
+                $xtpl->form_add_input_pure('text', '30', 'mountpoint', post_val('mountpoint', '/mnt/vps'));
                 $xtpl->table_tr();
+
+                $xtpl->table_td(_('Do not mount the root dataset'));
+                $xtpl->form_add_radio_pure('mount_root_dataset', 'no', false);
+                $xtpl->table_tr();
+                $xtpl->form_out(_('Boot'));
+
+                // Reinstall
+                $xtpl->table_title(_('Reinstall system'));
+                $xtpl->form_create('?page=adminvps&action=reinstall&veid=' . $vps->id, 'post');
+
+                $xtpl->table_td(
+                    _('Install base system again. All data in the root filesystem will be removed.'),
+                    false,
+                    false,
+                    2
+                );
+                $xtpl->table_tr();
+
+                $xtpl->form_add_select(_("Distribution") . ':', 'os_template', $os_templates, $vps->os_template_id, '');
+
+                if ($vps->os_template->info) {
+                    $xtpl->table_td(_('Info') . ':');
+                    $xtpl->table_td($vps->os_template->info);
+                    $xtpl->table_tr();
+                }
+
+                vps_user_data_select_form($api->vps->reinstall, $vps->user_id);
+
+                $xtpl->form_out(_('Reinstall'));
+
+                // Distribution
+                $xtpl->table_title(_('Distribution information'));
+                $xtpl->form_create('?page=adminvps&action=os_template&veid=' . $vps->id, 'post');
+
+                $xtpl->table_td(
+                    _('Use if you have upgraded/downgraded your system. '
+                      . 'Distribution information can also be updated automatically by reading '
+                      . '/etc/os-release, see below.'),
+                    false,
+                    false,
+                    2
+                );
+                $xtpl->table_tr();
+
+                $xtpl->form_add_select(_("Distribution") . ':', 'os_template', $os_templates, $vps->os_template_id, '');
+
+                if ($vps->os_template->info) {
+                    $xtpl->table_td(_('Info') . ':');
+                    $xtpl->table_td($vps->os_template->info);
+                    $xtpl->table_tr();
+                }
+
+                $xtpl->form_out(_('Save'));
+
+                // OS template auto-update
+                $xtpl->table_title(_('Read /etc/os-release'));
+                $xtpl->form_create('?page=adminvps&action=toggle_os_template_auto_update&veid=' . $vps->id, 'post');
+                $xtpl->form_add_checkbox_pure('enable_os_template_auto_update', '1', post_val_issetto('enable_os_template_auto_update', '1', $vps->enable_os_template_auto_update));
+                $xtpl->table_td(_('Automatically update distribution version information in vpsAdmin by reading <code>/etc/os-release</code> on VPS start.'));
+                $xtpl->table_tr();
+                $xtpl->form_out(_('Save'));
             }
-
-            $xtpl->form_out(_('Save'));
-
-            // OS template auto-update
-            $xtpl->table_title(_('Read /etc/os-release'));
-            $xtpl->form_create('?page=adminvps&action=toggle_os_template_auto_update&veid=' . $vps->id, 'post');
-            $xtpl->form_add_checkbox_pure('enable_os_template_auto_update', '1', post_val_issetto('enable_os_template_auto_update', '1', $vps->enable_os_template_auto_update));
-            $xtpl->table_td(_('Automatically update distribution version information in vpsAdmin by reading <code>/etc/os-release</code> on VPS start.'));
-            $xtpl->table_tr();
-            $xtpl->form_out(_('Save'));
 
             // Resources
             $xtpl->table_title(_('Resources'));
