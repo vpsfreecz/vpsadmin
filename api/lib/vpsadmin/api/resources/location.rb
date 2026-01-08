@@ -12,6 +12,8 @@ class VpsAdmin::API::Resources::Location < HaveAPI::Resource
     bool :has_ipv6, label: 'Has IPv6', desc: 'True if location has IPv6 addresses'
     string :remote_console_server, label: 'Remote console server',
                                    desc: 'URL to HTTP remote console server'
+    string :remote_vnc_server, label: 'Remote VNC server',
+                               desc: 'URL to VNC router server'
     string :domain, label: 'Domain', desc: 'Location domain, subdomain at environment domain'
     resource VpsAdmin::API::Resources::Environment, label: 'Environment'
   end
@@ -54,7 +56,7 @@ class VpsAdmin::API::Resources::Location < HaveAPI::Resource
 
     authorize do |u|
       allow if u.role == :admin
-      output whitelist: %i[id label description environment remote_console_server]
+      output whitelist: %i[id label description environment remote_console_server remote_vnc_server]
       allow
     end
 
@@ -64,6 +66,7 @@ class VpsAdmin::API::Resources::Location < HaveAPI::Resource
                  label: 'Prague',
                  has_ipv6: true,
                  remote_console_server: 'https://console.vpsadmin.mydomain.com',
+                 remote_vnc_server: 'https://vnc.vpsadmin.mydomain.com',
                  domain: 'prg',
                  created_at: '2014-05-04 16:59:52 +0200',
                  updated_at: '2014-05-04 16:59:52 +0200'
@@ -204,6 +207,7 @@ class VpsAdmin::API::Resources::Location < HaveAPI::Resource
                 label: 'Brno',
                 has_ipv6: true,
                 remote_console_server: '',
+                remote_vnc_server: '',
                 domain: 'brq'
               })
       response({
@@ -231,7 +235,7 @@ class VpsAdmin::API::Resources::Location < HaveAPI::Resource
 
     authorize do |u|
       allow if u.role == :admin
-      restrict whitelist: %i[id label description environment remote_console_server]
+      restrict whitelist: %i[id label description environment remote_console_server remote_vnc_server]
       allow
     end
 
@@ -243,6 +247,7 @@ class VpsAdmin::API::Resources::Location < HaveAPI::Resource
                  label: 'Brno',
                  has_ipv6: true,
                  remote_console_server: '',
+                 remote_vnc_server: '',
                  domain: 'brq'
                })
     end
@@ -269,6 +274,7 @@ class VpsAdmin::API::Resources::Location < HaveAPI::Resource
                 label: 'Ostrava',
                 has_ipv6: true,
                 remote_console_server: '',
+                remote_vnc_server: '',
                 environment: 1,
                 domain: 'ova'
               })
