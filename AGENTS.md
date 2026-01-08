@@ -36,6 +36,7 @@ This is a monorepo. Each component has its own `Gemfile`/`gemspec`/`composer.loc
 - Use short imperative subjects, often scoped (`api: add StoragePool resource`, `webui: fix payset form`); keep one logical change per commit.
 - PRs should state intent, note risky areas, list test commands run, and link issues; add screenshots/logs for UI/API behavior changes.
 - Overcommit hooks must pass before committing. They run treefmt for Nix formatting and `bundle exec rubocop` for Ruby linting; fix any reported issues before creating a commit.
+- PhpCsFixer from the pre-commit hook can reformat PHP files; always re-add staged files after hooks (or re-run the commit) to include those changes.
 
 ## Security & Configuration Tips
 - Do not commit secrets; use samples in `api/config` and `webui/` plus local `.env` or Nix overlays.
