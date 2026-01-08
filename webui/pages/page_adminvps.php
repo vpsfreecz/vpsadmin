@@ -708,8 +708,8 @@ if (isLoggedIn()) {
                 $new_tpl = $api->os_template->show(get_val('os_template', $_POST['os_template']));
 
                 $xtpl->table_title(
-                    _('Confirm reinstallation of VPS') . ' #' . $vps->id .
-                    ' ' . $vps->hostname
+                    _('Confirm reinstallation of VPS') . ' #' . $vps->id
+                    . ' ' . $vps->hostname
                 );
                 $xtpl->form_create('?page=adminvps&action=reinstall&veid=' . $vps->id);
 
@@ -721,10 +721,10 @@ if (isLoggedIn()) {
                 ]);
 
                 $xtpl->table_td(
-                    '<strong>' .
-                    _('All data from the VPS root filesystem will be deleted, subdatasets are kept.') .
-                    '</strong>' .
-                    '<input type="hidden" name="os_template" value="' . $_POST['os_template'] . '">',
+                    '<strong>'
+                    . _('All data from the VPS root filesystem will be deleted, subdatasets are kept.')
+                    . '</strong>'
+                    . '<input type="hidden" name="os_template" value="' . $_POST['os_template'] . '">',
                     false,
                     false,
                     2
@@ -771,8 +771,8 @@ if (isLoggedIn()) {
 
                 $xtpl->table_td('');
                 $xtpl->table_td(
-                    $xtpl->html_submit(_('Cancel'), 'cancel') .
-                    $xtpl->html_submit(_('Reinstall'), 'reinstall')
+                    $xtpl->html_submit(_('Cancel'), 'cancel')
+                    . $xtpl->html_submit(_('Reinstall'), 'reinstall')
                 );
                 $xtpl->table_tr();
 
@@ -1194,12 +1194,15 @@ if (isLoggedIn()) {
 
         $xtpl->table_td(_("Status") . ':');
 
+        $remote_console_page = $vps->vm_type == 'qemu_full' ? 'vnc' : 'console';
+        $remote_console_label = $vps->vm_type == 'qemu_full' ? _('open VNC console') : _('open remote console');
+
         if ($vps->maintenance_lock == 'no') {
             $status = $vps->is_running
                 ? _("running") . ' (<a href="?page=adminvps&action=info&run=restart&veid=' . $vps->id . '&t=' . csrf_token() . '" ' . vps_confirm_action_onclick($vps, 'restart') . '>' . _("restart") . '</a>, <a href="?page=adminvps&action=info&run=force_restart&veid=' . $vps->id . '&t=' . csrf_token() . '" ' . vps_confirm_action_onclick($vps, 'force_restart') . '>' . _("reset") . '</a>, <a href="?page=adminvps&action=info&run=stop&veid=' . $vps->id . '&t=' . csrf_token() . '" ' . vps_confirm_action_onclick($vps, 'stop') . '>' . _("stop") . '</a>, <a href="?page=adminvps&action=info&run=force_stop&veid=' . $vps->id . '&t=' . csrf_token() . '" ' . vps_confirm_action_onclick($vps, 'force_stop') . '>' . _("poweroff") . '</a>'
                 : _("stopped") . ' (<a href="?page=adminvps&action=info&run=start&veid=' . $vps->id . '&t=' . csrf_token() . '">' . _("start") . '</a>';
 
-            $status .= ', <a href="?page=console&veid=' . $vps->id . '&t=' . csrf_token() . '">' . _("open remote console") . '</a>)';
+            $status .= ', <a href="?page=' . $remote_console_page . '&veid=' . $vps->id . '&t=' . csrf_token() . '">' . $remote_console_label . '</a>)';
             $xtpl->table_td($status);
         } else {
             $xtpl->table_td($vps->is_running ? _("running") : _("stopped"));
@@ -1239,9 +1242,9 @@ if (isLoggedIn()) {
 
         $xtpl->table_td(_("Disk") . ':');
         $xtpl->table_td(
-            ($vps->diskspace && showVpsDiskSpaceWarning($vps) ? ('<img src="template/icons/warning.png" title="' . _('Disk at') . ' ' . sprintf('%.2f %%', round(vpsDiskUsagePercent($vps), 2)) . '"> ') : '') .
-            ($vps->diskspace && showVpsDiskExpansionWarning($vps) ? ('<img src="template/icons/warning.png" title="' . _('Disk temporarily expanded') . '"> ') : '') .
-            sprintf('%.2f GB', round($vps->used_diskspace / 1024, 2))
+            ($vps->diskspace && showVpsDiskSpaceWarning($vps) ? ('<img src="template/icons/warning.png" title="' . _('Disk at') . ' ' . sprintf('%.2f %%', round(vpsDiskUsagePercent($vps), 2)) . '"> ') : '')
+            . ($vps->diskspace && showVpsDiskExpansionWarning($vps) ? ('<img src="template/icons/warning.png" title="' . _('Disk temporarily expanded') . '"> ') : '')
+            . sprintf('%.2f GB', round($vps->used_diskspace / 1024, 2))
         );
         $xtpl->table_tr();
 
@@ -1260,8 +1263,8 @@ if (isLoggedIn()) {
         if (!isAdmin() && $vps->maintenance_lock != 'no') {
             $xtpl->perex(
                 _("VPS is under maintenance"),
-                _("All actions for this VPS are forbidden for the time being. This is usually used during outage to prevent data corruption.") .
-                "<br><br>"
+                _("All actions for this VPS are forbidden for the time being. This is usually used during outage to prevent data corruption.")
+                . "<br><br>"
                 . ($vps->maintenance_lock_reason ? _('Reason') . ': ' . $vps->maintenance_lock_reason . '<br><br>' : '')
                 . _("Please be patient.")
             );
@@ -1273,8 +1276,8 @@ if (isLoggedIn()) {
             } else {
                 $xtpl->perex(
                     _('VPS is scheduled for deletion.'),
-                    _('This VPS is inaccessible and will be deleted when expiration date passes or some other event occurs. ' .
-                    'Contact support if you want to revive it.')
+                    _('This VPS is inaccessible and will be deleted when expiration date passes or some other event occurs. '
+                    . 'Contact support if you want to revive it.')
                 );
             }
 
@@ -1284,9 +1287,9 @@ if (isLoggedIn()) {
         } else {
             if ($vps->in_rescue_mode) {
                 $xtpl->table_title(
-                    '<img src="template/icons/warning.png" alt="' . _('Warning') . '">&nbsp;' .
-                    _('VPS in rescue mode') .
-                    '&nbsp;<img src="template/icons/warning.png" alt="' . _('Warning') . '">'
+                    '<img src="template/icons/warning.png" alt="' . _('Warning') . '">&nbsp;'
+                    . _('VPS in rescue mode')
+                    . '&nbsp;<img src="template/icons/warning.png" alt="' . _('Warning') . '">'
                 );
                 $xtpl->table_td(_('
 				<p>
@@ -1303,9 +1306,9 @@ if (isLoggedIn()) {
 
             if (!$vps->enable_network) {
                 $xtpl->table_title(
-                    '<img src="template/icons/warning.png" alt="' . _('Warning') . '">&nbsp;' .
-                    _('Network is disabled') .
-                    '&nbsp;<img src="template/icons/warning.png" alt="' . _('Warning') . '">'
+                    '<img src="template/icons/warning.png" alt="' . _('Warning') . '">&nbsp;'
+                    . _('Network is disabled')
+                    . '&nbsp;<img src="template/icons/warning.png" alt="' . _('Warning') . '">'
                 );
                 $xtpl->table_td(_('
                     <p>
@@ -1320,8 +1323,8 @@ if (isLoggedIn()) {
             // SSH
             $xtpl->table_title(_('SSH connection'));
             $xtpl->table_td(
-                _('The following credentials can be used on a newly created VPS ' .
-                'with the default configuration.'),
+                _('The following credentials can be used on a newly created VPS '
+                . 'with the default configuration.'),
                 false,
                 false,
                 '2'
@@ -1396,8 +1399,8 @@ if (isLoggedIn()) {
                 $xtpl->table_add_category(_('Last read at'));
 
                 $xtpl->table_td(
-                    _('The following SSH host keys have been found inside the VPS. ' .
-                      'You can verify that the fingerprints match on your first login.'),
+                    _('The following SSH host keys have been found inside the VPS. '
+                      . 'You can verify that the fingerprints match on your first login.'),
                     false,
                     false,
                     '3'
@@ -1454,9 +1457,9 @@ if (isLoggedIn()) {
             $xtpl->form_create('?page=adminvps&action=pubkey&veid=' . $vps->id, 'post');
 
             $xtpl->table_td(
-                _('Public keys can be registered in') .
-                ' <a href="?page=adminm&action=pubkeys&id=' . $vps->user_id . '">' .
-                _('profile settings') . '</a>.',
+                _('Public keys can be registered in')
+                . ' <a href="?page=adminm&action=pubkeys&id=' . $vps->user_id . '">'
+                . _('profile settings') . '</a>.',
                 false,
                 false,
                 '2'
@@ -1573,17 +1576,17 @@ if (isLoggedIn()) {
             $xtpl->table_title(_('Boot VPS from template (rescue mode)'));
             $xtpl->form_create('?page=adminvps&action=boot&veid=' . $vps->id, 'post');
             $xtpl->table_td(
-                '<p>' .
-                _('Boot the VPS from a clean template, e.g. to fix a broken system. ' .
-                  'The VPS configuration (IP addresses, resources, etc.) is the same, ' .
-                  'the VPS only starts from a clean system. The original root ' .
-                  'filesystem from the VPS can be accessed through the mountpoint ' .
-                  'configured below.') .
-                '</p><p>' .
-                _('On next VPS start/restart, the VPS will start from it\'s own ' .
-                  'dataset again. The clean system created by this action is ' .
-                  'temporary and any changes to it will be lost.') .
-                '</p>',
+                '<p>'
+                . _('Boot the VPS from a clean template, e.g. to fix a broken system. '
+                  . 'The VPS configuration (IP addresses, resources, etc.) is the same, '
+                  . 'the VPS only starts from a clean system. The original root '
+                  . 'filesystem from the VPS can be accessed through the mountpoint '
+                  . 'configured below.')
+                . '</p><p>'
+                . _('On next VPS start/restart, the VPS will start from it\'s own '
+                  . 'dataset again. The clean system created by this action is '
+                  . 'temporary and any changes to it will be lost.')
+                . '</p>',
                 false,
                 false,
                 '3'
@@ -1631,9 +1634,9 @@ if (isLoggedIn()) {
             $xtpl->form_create('?page=adminvps&action=os_template&veid=' . $vps->id, 'post');
 
             $xtpl->table_td(
-                _('Use if you have upgraded/downgraded your system. ' .
-                  'Distribution information can also be updated automatically by reading ' .
-                  '/etc/os-release, see below.'),
+                _('Use if you have upgraded/downgraded your system. '
+                  . 'Distribution information can also be updated automatically by reading '
+                  . '/etc/os-release, see below.'),
                 false,
                 false,
                 2
@@ -1688,9 +1691,9 @@ if (isLoggedIn()) {
                     $name,
                     $vps->{$name},
                     isAdmin() ? 0 : $r->cluster_resource->min,
-                    isAdmin() ?
-                        99999999999 :
-                        min($vps->{$name} + $r->free, $r->cluster_resource->max),
+                    isAdmin()
+                        ? 99999999999
+                        : min($vps->{$name} + $r->free, $r->cluster_resource->max),
                     $r->cluster_resource->stepsize,
                     unit_for_cluster_resource($name)
                 );
@@ -1759,8 +1762,8 @@ if (isLoggedIn()) {
             $xtpl->form_create('?page=adminvps&action=startmenu&veid=' . $vps->id, 'post');
 
             $xtpl->table_td(
-                _('Configure the number of seconds the start menu waits for the user ' .
-                'before the system is started. Set to zero to disable the start menu.'),
+                _('Configure the number of seconds the start menu waits for the user '
+                . 'before the system is started. Set to zero to disable the start menu.'),
                 false,
                 false,
                 2
@@ -1800,9 +1803,9 @@ if (isLoggedIn()) {
                         post_val('cgroup_version', $vps->cgroup_version) == 'cgroup_any',
                     );
                     $xtpl->table_td(
-                        _('Use cgroups supported by the distribution, i.e. ') .
-                        cgroupEnumToLabel($vps->os_template->cgroup_version) . ' ' . _('for') . ' ' .
-                        $vps->os_template->label . ' ' . _('(recommended)')
+                        _('Use cgroups supported by the distribution, i.e. ')
+                        . cgroupEnumToLabel($vps->os_template->cgroup_version) . ' ' . _('for') . ' '
+                        . $vps->os_template->label . ' ' . _('(recommended)')
                     );
                     $xtpl->table_tr();
 
@@ -1832,9 +1835,9 @@ if (isLoggedIn()) {
                         post_val('cgroup_version', $vps->cgroup_version) == 'cgroup_any',
                     );
                     $xtpl->table_td(
-                        _('Use cgroups supported by the distribution, i.e. ') .
-                        cgroupEnumToLabel($vps->os_template->cgroup_version) . ' ' . _('for') . ' ' .
-                        $vps->os_template->label
+                        _('Use cgroups supported by the distribution, i.e. ')
+                        . cgroupEnumToLabel($vps->os_template->cgroup_version) . ' ' . _('for') . ' '
+                        . $vps->os_template->label
                     );
                     $xtpl->table_tr();
 
@@ -1862,12 +1865,12 @@ if (isLoggedIn()) {
                 $xtpl->form_create('?page=adminvps&action=setmodifications&veid=' . $vps->id, 'post');
 
                 $xtpl->table_td(
-                    _('New software features or bugs may require or benefit from configuration ' .
-                    'changes inside the VPS. If allowed, we can make these necessary changes ' .
-                    'for you. We usually only modify the base system configuration files ' .
-                    'which we would otherwise deliver in OS templates for new VPS. We do not ' .
-                    'access or modify your applications or data. We will email you about any ' .
-                    'changes we will make.'),
+                    _('New software features or bugs may require or benefit from configuration '
+                    . 'changes inside the VPS. If allowed, we can make these necessary changes '
+                    . 'for you. We usually only modify the base system configuration files '
+                    . 'which we would otherwise deliver in OS templates for new VPS. We do not '
+                    . 'access or modify your applications or data. We will email you about any '
+                    . 'changes we will make.'),
                     false,
                     false,
                     2
@@ -1915,8 +1918,8 @@ if (isLoggedIn()) {
             $last = $windows->first();
 
             foreach ($windows as $w) {
-                if ($last->is_open != $w->is_open || $last->opens_at != $w->opens_at ||
-                    $last->closes_at != $w->closes_at) {
+                if ($last->is_open != $w->is_open || $last->opens_at != $w->opens_at
+                    || $last->closes_at != $w->closes_at) {
                     $unified = false;
                     break;
                 }

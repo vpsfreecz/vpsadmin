@@ -121,11 +121,11 @@ try {
 
     $_GET["page"] ??= false;
 
-    if (($_GET["page"] != "login") &&
-                    ($_GET["page"] != "lang") &&
-                    ($_GET["page"] != "about") &&
-                    (!isAdmin()) &&
-                    $api_cluster && $api_cluster->maintenance_lock) {
+    if (($_GET["page"] != "login")
+                    && ($_GET["page"] != "lang")
+                    && ($_GET["page"] != "about")
+                    && (!isAdmin())
+                    && $api_cluster && $api_cluster->maintenance_lock) {
         $request_page = "";
         include WWW_ROOT . 'pages/page_index.php';
         $xtpl->perex(_("Maintenance mode"), _("vpsAdmin is currently in maintenance mode, any actions are disabled. <br />
@@ -184,6 +184,9 @@ try {
                 break;
             case 'console':
                 include WWW_ROOT . 'pages/page_console.php';
+                break;
+            case 'vnc':
+                include WWW_ROOT . 'pages/page_vnc.php';
                 break;
             case 'jumpto':
                 include WWW_ROOT . 'pages/page_jumpto.php';
