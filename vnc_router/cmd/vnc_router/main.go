@@ -42,7 +42,7 @@ var consoleTpl = template.Must(template.New("console").Parse(`<!doctype html>
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>VNC Console</title>
+  <title>VPS {{ .VpsID }}</title>
   <style>
     html, body { height: 100%; margin: 0; }
     body { display: flex; flex-direction: column; }
@@ -76,7 +76,7 @@ var consoleTpl = template.Must(template.New("console").Parse(`<!doctype html>
 </head>
 <body>
   <div id="toolbar">
-    <strong>VNC Console</strong>
+    <strong>VPS {{ .VpsID }}</strong>
     <span class="muted" id="status">disconnected</span>
     <button id="btnConnect">Connect</button>
     <button id="btnDisconnect">Disconnect</button>
@@ -316,6 +316,7 @@ type consolePageData struct {
 	ClientTokenJS template.JS // JSON-encoded string literal
 	WSPath        string
 	AutoConnect   bool
+	VpsID         int
 }
 
 func main() {
@@ -402,11 +403,21 @@ func main() {
 		// Safe JS string literal via json.Marshal
 		b, _ := json.Marshal(clientToken)
 
+		ctx, cancel := context.WithTimeout(r.Context(), 15*time.Second)
+		target, err := rpcClient.GetVncTarget(ctx, clientToken)
+		cancel()
+		if err != nil {
+			debugf("console: get_vnc_target failed from %s: %v", r.RemoteAddr, err)
+			http.Error(w, "auth failed", http.StatusForbidden)
+			return
+		}
+
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		_ = consoleTpl.Execute(w, consolePageData{
 			ClientTokenJS: template.JS(b),
 			WSPath:        wsPath,
 			AutoConnect:   auto,
+			VpsID:         target.VpsID,
 		})
 	})
 
