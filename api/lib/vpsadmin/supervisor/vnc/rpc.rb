@@ -124,6 +124,7 @@ module VpsAdmin::Supervisor
         vnc.extend!
 
         {
+          api_url: get_api_url,
           node_host: vnc.vps.node.ip_addr,
           node_port: 8082,
           node_token: vnc.node_token.token,

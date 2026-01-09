@@ -380,6 +380,7 @@ func (c *Client) Call(ctx context.Context, command string, args []any, kwargs ma
 
 // RPC response structure for "get_vnc_target"
 type VncTarget struct {
+	APIURL    string `json:"api_url"`
 	NodeHost  string `json:"node_host"`
 	NodePort  int    `json:"node_port"`
 	NodeToken string `json:"node_token"`
