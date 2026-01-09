@@ -129,7 +129,8 @@ var consoleTpl = template.Must(template.New("console").Parse(`<!doctype html>
     <strong>VPS {{ .VpsID }}</strong>
     <span class="muted" id="status">disconnected</span>
     <span class="spinner" id="spinner" aria-label="loading"></span>
-    <button id="btnDisconnect">Disconnect</button>
+    <button id="btnConnect">Connect</button>
+    <button id="btnDisconnect" style="display:none;">Disconnect</button>
     <label><input type="checkbox" id="scale" checked> Scale</label>
     <label><input type="checkbox" id="clip"> Clip</label>
     <div class="keys">
@@ -179,6 +180,7 @@ var consoleTpl = template.Must(template.New("console").Parse(`<!doctype html>
     const screen = document.getElementById('screen');
     const status = document.getElementById('status');
     const spinner = document.getElementById('spinner');
+    const btnConnect = document.getElementById('btnConnect');
     const btnDisconnect = document.getElementById('btnDisconnect');
     const scale = document.getElementById('scale');
     const clip = document.getElementById('clip');
@@ -202,6 +204,7 @@ var consoleTpl = template.Must(template.New("console").Parse(`<!doctype html>
     let apiKeepaliveTimer = null;
     let currentClientToken = pageData.clientToken;
     let powerBusy = false;
+    let connectionBusy = false;
 
     function setStatus(text) {
       status.textContent = text;
@@ -210,6 +213,19 @@ var consoleTpl = template.Must(template.New("console").Parse(`<!doctype html>
     function setSpinner(active) {
       if (!spinner) return;
       spinner.style.display = active ? 'inline-block' : 'none';
+    }
+
+    function setConnectionButtons(connected) {
+      if (btnConnect && btnDisconnect) {
+        btnConnect.style.display = connected ? 'none' : 'inline-block';
+        btnDisconnect.style.display = connected ? 'inline-block' : 'none';
+      }
+    }
+
+    function setConnectionBusy(busy) {
+      connectionBusy = busy;
+      if (btnConnect) btnConnect.disabled = busy;
+      if (btnDisconnect) btnDisconnect.disabled = busy;
     }
 
     function buildWsUrl(token) {
@@ -221,7 +237,7 @@ var consoleTpl = template.Must(template.New("console").Parse(`<!doctype html>
     }
 
     function showCloseNotice(customText) {
-      const msg = customText || 'Connection closed. Please close this window and reopen the VNC console from vpsAdmin to start a new session.';
+      const msg = customText || 'Connection closed. You can use Connect to reconnect, or reopen the VNC console from vpsAdmin.';
       screen.innerHTML = '<div style="color:#fff;display:flex;align-items:center;justify-content:center;height:100%;font-family:sans-serif;font-size:16px;text-align:center;padding:24px;">'
         + msg
         + '</div>';
@@ -456,6 +472,8 @@ var consoleTpl = template.Must(template.New("console").Parse(`<!doctype html>
       const clean = !!(e.detail && e.detail.clean);
       rfb = null;
       setStatus('disconnected' + (clean ? '' : ' (error)'));
+      setConnectionButtons(false);
+      setConnectionBusy(false);
 
       if (manualDisconnect) {
         showCloseNotice();
@@ -479,6 +497,8 @@ var consoleTpl = template.Must(template.New("console").Parse(`<!doctype html>
         return;
       }
       setStatus('connecting...');
+      setConnectionButtons(false);
+      setConnectionBusy(true);
       screen.innerHTML = '';
       if (reconnectTimer) {
         clearTimeout(reconnectTimer);
@@ -513,6 +533,10 @@ var consoleTpl = template.Must(template.New("console").Parse(`<!doctype html>
         setStatus('credentials required (unexpected)');
       });
       rfb.addEventListener('clipboard', handleClipboard);
+      rfb.addEventListener('connect', () => {
+        setConnectionButtons(true);
+        setConnectionBusy(false);
+      });
     }
 
     connect();
@@ -521,18 +545,29 @@ var consoleTpl = template.Must(template.New("console").Parse(`<!doctype html>
     }
     setupPowerMenu();
 
-    btnDisconnect.addEventListener('click', () => {
-      if (!rfb) return;
+    if (btnConnect) {
+      btnConnect.addEventListener('click', () => {
+        if (connectionBusy) return;
+        manualDisconnect = false;
+        connect();
+      });
+    }
+
+    if (btnDisconnect) {
+      btnDisconnect.addEventListener('click', () => {
+      if (!rfb || connectionBusy) return;
       manualDisconnect = true;
+      setConnectionBusy(true);
       if (reconnectTimer) {
         clearTimeout(reconnectTimer);
       }
-      if (apiKeepaliveTimer) {
-        clearTimeout(apiKeepaliveTimer);
-      }
-      rfb.disconnect();
-      showCloseNotice();
-    });
+        if (apiKeepaliveTimer) {
+          clearTimeout(apiKeepaliveTimer);
+        }
+        rfb.disconnect();
+        showCloseNotice();
+      });
+    }
 
     scale.addEventListener('change', applyViewOptions);
     clip.addEventListener('change', applyViewOptions);
