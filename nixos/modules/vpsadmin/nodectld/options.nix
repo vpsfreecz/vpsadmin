@@ -50,10 +50,24 @@ in
           nodectld configuration options
         '';
       };
+
+      vnc.allowedIPv4Ranges = mkOption {
+        type = types.listOf types.str;
+        default = [ ];
+        description = "IPv4 ranges allowed to access nodectld VNC port.";
+      };
+
+      vnc.allowedIPv6Ranges = mkOption {
+        type = types.listOf types.str;
+        default = [ ];
+        description = "IPv6 ranges allowed to access nodectld VNC port.";
+      };
     };
   };
 
   config = mkIf cfg.enable {
+    vpsadmin.nodectld.settings.vnc.port = mkDefault 8082;
+
     vpsadmin.nodectld.settings.rabbitmq = {
       hosts = vpsadminCfg.rabbitmq.hosts;
       vhost = vpsadminCfg.rabbitmq.virtualHost;

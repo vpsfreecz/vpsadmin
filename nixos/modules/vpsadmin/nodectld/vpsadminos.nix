@@ -94,5 +94,18 @@ in
         console_client
         vmexec
       ];
+
+    networking.firewall.extraCommands = concatStringsSep "\n" (
+      (map (ip: ''
+        iptables -A nixos-fw -p tcp -m tcp -s ${ip} --dport ${
+          toString (attrByPath [ "vnc" "port" ] 8082 cfg.settings)
+        } -j nixos-fw-accept
+      '') cfg.vnc.allowedIPv4Ranges)
+      ++ (map (ip: ''
+        ip6tables -A nixos-fw -p tcp -m tcp -s ${ip} --dport ${
+          toString (attrByPath [ "vnc" "port" ] 8082 cfg.settings)
+        } -j nixos-fw-accept
+      '') cfg.vnc.allowedIPv6Ranges)
+    );
   };
 }
