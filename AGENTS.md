@@ -11,6 +11,7 @@ This is a monorepo. Each component has its own `Gemfile`/`gemspec`/`composer.loc
 - `nodectld-v5/`: Ruby daemon running on all nodes, processing commands from the API and communicating with the `supervisor`. `nodectld-v5` runs VPS using `libvirt` with `QEMU/KVM`.
 - `nodectl-v5/`: CLI for `nodectld-v5`.
 - `libnodectld-v5/`: Ruby library, most of the code for `nodectld-v5` is here.odectld`.
+- `distconfig/`: Ruby scripts for configuration of managed libvirt domains (`vm_type` set to `qemu_container`) from the inside. `distconfig` is a part of managed domain's rootfs and is used to configure domain network, hostname, etc.
 - `vnc_router/`: Serves noVNC and proxies client VNC connections to `nodectld-v5` on individual nodes. `nodectld-v5` in turn proxies data between `vnc_router` and QEMU's VNC socket.
 - `webui/`: PHP front end (Composer-managed) for the API; config samples near `config_cfg.php`.
 - `nixos/`: NixOS modules for deployment of all of vpsAdmin's services.
