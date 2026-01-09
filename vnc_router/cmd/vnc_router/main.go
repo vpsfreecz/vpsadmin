@@ -77,6 +77,39 @@ var consoleTpl = template.Must(template.New("console").Parse(`<!doctype html>
       min-height: 32px;
       font-family: monospace;
     }
+    .dropdown {
+      position: relative;
+      display: inline-block;
+    }
+    .dropdown-menu {
+      display: none;
+      position: absolute;
+      top: 100%;
+      left: 0;
+      min-width: 120px;
+      background: #fff;
+      border: 1px solid #ccc;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+      z-index: 10;
+    }
+    .dropdown-menu.open {
+      display: block;
+    }
+    .dropdown-menu button {
+      width: 100%;
+      padding: 8px 10px;
+      text-align: left;
+      border: none;
+      background: #fff;
+      cursor: pointer;
+    }
+    .dropdown-menu button:hover {
+      background: #f0f0f0;
+    }
+    .dropdown-menu button.disabled {
+      color: #888;
+      cursor: not-allowed;
+    }
   </style>
 </head>
 <body>
@@ -94,6 +127,14 @@ var consoleTpl = template.Must(template.New("console").Parse(`<!doctype html>
       <button data-combo="Ctrl+Alt+F2">Ctrl+Alt+F2</button>
       <button data-combo="Ctrl+Alt+F7">Ctrl+Alt+F7</button>
       <button id="toggleClipboard" class="muted">Show paste box</button>
+    </div>
+    <div class="dropdown" id="powerDropdown">
+      <button id="powerToggle">Power ▾</button>
+      <div class="dropdown-menu" id="powerMenu">
+        <button data-action="start">Start</button>
+        <button data-action="restart">Restart</button>
+        <button data-action="stop">Stop</button>
+      </div>
     </div>
   </div>
   <div id="clipboardBox" style="display:none;">
@@ -132,6 +173,10 @@ var consoleTpl = template.Must(template.New("console").Parse(`<!doctype html>
     const clipboardSend = document.getElementById('clipboardSend');
     const toggleClipboard = document.getElementById('toggleClipboard');
     const clipboardBox = document.getElementById('clipboardBox');
+    const powerDropdown = document.getElementById('powerDropdown');
+    const powerToggle = document.getElementById('powerToggle');
+    const powerMenu = document.getElementById('powerMenu');
+    const powerButtons = Array.from(powerMenu ? powerMenu.querySelectorAll('[data-action]') : []);
 
     const hasApiAuth = !!(pageData.apiUrl && pageData.authType && pageData.authToken);
 
@@ -142,6 +187,7 @@ var consoleTpl = template.Must(template.New("console").Parse(`<!doctype html>
     let apiClientPromise = null;
     let apiKeepaliveTimer = null;
     let currentClientToken = pageData.clientToken;
+    let powerBusy = false;
 
     function setStatus(text) {
       status.textContent = text;
@@ -260,6 +306,85 @@ var consoleTpl = template.Must(template.New("console").Parse(`<!doctype html>
       apiKeepaliveTimer = setTimeout(apiKeepaliveLoop, API_KEEPALIVE_MS);
     }
 
+    function setPowerBusy(busy) {
+      powerBusy = busy;
+      if (powerToggle) {
+        powerToggle.disabled = busy || !hasApiAuth;
+      }
+      powerButtons.forEach((btn) => {
+        btn.classList.toggle('disabled', busy || !hasApiAuth);
+        btn.disabled = busy || !hasApiAuth;
+      });
+    }
+
+    function closePowerMenu() {
+      if (powerMenu) {
+        powerMenu.classList.remove('open');
+      }
+    }
+
+    function togglePowerMenu() {
+      if (!powerMenu || !hasApiAuth) return;
+      powerMenu.classList.toggle('open');
+    }
+
+    function handlePowerAction(action, label) {
+      if (!hasApiAuth || powerBusy) return;
+
+      closePowerMenu();
+      setPowerBusy(true);
+      setStatus(label + '...');
+
+      ensureApiClient()
+        .then((client) => new Promise((resolve, reject) => {
+          client.vps[action](pageData.vpsId, {
+            onReply: (c, resp) => {
+              if (!resp || !resp.isOk || !resp.isOk()) {
+                const msg = (resp && typeof resp.message === 'function') ? resp.message() : 'Action failed';
+                reject(new Error(msg));
+                return;
+              }
+              resolve();
+            },
+          });
+        }))
+        .then(() => {
+          setStatus(label + ' requested');
+        })
+        .catch((err) => {
+          console.error('Power action failed', err);
+          setStatus('Error: ' + err.message);
+        })
+        .finally(() => setPowerBusy(false));
+    }
+
+    function setupPowerMenu() {
+      if (!powerToggle || !powerMenu) return;
+
+      powerToggle.addEventListener('click', (e) => {
+        e.stopPropagation();
+        togglePowerMenu();
+      });
+
+      powerButtons.forEach((btn) => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const action = btn.dataset.action;
+          if (action === 'start') return handlePowerAction('start', 'Starting');
+          if (action === 'restart') return handlePowerAction('restart', 'Restarting');
+          if (action === 'stop') return handlePowerAction('stop', 'Stopping');
+        });
+      });
+
+      document.addEventListener('click', (e) => {
+        if (!powerDropdown || !powerDropdown.contains(e.target)) {
+          closePowerMenu();
+        }
+      });
+
+      setPowerBusy(false);
+    }
+
     function scheduleReconnect() {
       if (reconnecting || manualDisconnect) return;
       reconnecting = true;
@@ -367,6 +492,7 @@ var consoleTpl = template.Must(template.New("console").Parse(`<!doctype html>
     if (hasApiAuth) {
       apiKeepaliveLoop();
     }
+    setupPowerMenu();
 
     btnDisconnect.addEventListener('click', () => {
       if (!rfb) return;
