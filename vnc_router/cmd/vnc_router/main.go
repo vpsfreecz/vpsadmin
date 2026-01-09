@@ -126,10 +126,23 @@ var consoleTpl = template.Must(template.New("console").Parse(`<!doctype html>
       status.textContent = text;
     }
 
+    function requestAutoscale() {
+      if (!rfb || !scale.checked) return;
+      // Prefer noVNC's resize handler if present
+      if (rfb._eventHandlers && typeof rfb._eventHandlers.windowResize === 'function') {
+        rfb._eventHandlers.windowResize(new Event('resize'));
+      }
+      // Fallback: briefly toggle scaleViewport to force recalculation, then emit a resize
+      rfb.scaleViewport = false;
+      rfb.scaleViewport = true;
+      window.dispatchEvent(new Event('resize'));
+    }
+
     function applyViewOptions() {
       if (!rfb) return;
       rfb.scaleViewport = !!scale.checked;
       rfb.clipViewport = !!clip.checked;
+      requestAutoscale();
     }
 
     function connect() {
@@ -187,7 +200,16 @@ var consoleTpl = template.Must(template.New("console").Parse(`<!doctype html>
         clipboardBox.style.display = 'none';
         toggleClipboard.textContent = 'Show paste box';
       }
+      applyViewOptions();
     });
+
+    // Re-apply scaling when textarea is resized
+    let resizeObserver = null;
+    if ('ResizeObserver' in window) {
+      resizeObserver = new ResizeObserver(() => applyViewOptions());
+      resizeObserver.observe(clipboardBox);
+      resizeObserver.observe(clipboardInput);
+    }
 
     function sendCombo(name) {
       if (!rfb) return;
