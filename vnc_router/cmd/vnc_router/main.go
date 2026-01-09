@@ -88,9 +88,10 @@ var consoleTpl = template.Must(template.New("console").Parse(`<!doctype html>
       <button data-combo="Ctrl+Alt+F1">Ctrl+Alt+F1</button>
       <button data-combo="Ctrl+Alt+F2">Ctrl+Alt+F2</button>
       <button data-combo="Ctrl+Alt+F7">Ctrl+Alt+F7</button>
+      <button id="toggleClipboard" class="muted">Show paste box</button>
     </div>
   </div>
-  <div id="clipboardBox">
+  <div id="clipboardBox" style="display:none;">
     <span class="muted">Paste:</span>
     <textarea id="clipboardInput" placeholder="Type or paste text to send to VM"></textarea>
     <button id="clipboardSend">Send to VM</button>
@@ -116,6 +117,8 @@ var consoleTpl = template.Must(template.New("console").Parse(`<!doctype html>
     const keysButtons = Array.from(document.querySelectorAll('[data-combo]'));
     const clipboardInput = document.getElementById('clipboardInput');
     const clipboardSend = document.getElementById('clipboardSend');
+    const toggleClipboard = document.getElementById('toggleClipboard');
+    const clipboardBox = document.getElementById('clipboardBox');
 
     let rfb = null;
 
@@ -176,6 +179,15 @@ var consoleTpl = template.Must(template.New("console").Parse(`<!doctype html>
       btn.addEventListener('click', () => sendCombo(btn.dataset.combo));
     });
     clipboardSend.addEventListener('click', sendClipboard);
+    toggleClipboard.addEventListener('click', () => {
+      if (clipboardBox.style.display === 'none') {
+        clipboardBox.style.display = 'flex';
+        toggleClipboard.textContent = 'Hide paste box';
+      } else {
+        clipboardBox.style.display = 'none';
+        toggleClipboard.textContent = 'Show paste box';
+      }
+    });
 
     function sendCombo(name) {
       if (!rfb) return;
