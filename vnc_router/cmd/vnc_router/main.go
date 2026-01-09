@@ -78,7 +78,6 @@ var consoleTpl = template.Must(template.New("console").Parse(`<!doctype html>
   <div id="toolbar">
     <strong>VPS {{ .VpsID }}</strong>
     <span class="muted" id="status">disconnected</span>
-    <button id="btnConnect">Connect</button>
     <button id="btnDisconnect">Disconnect</button>
     <label><input type="checkbox" id="scale" checked> Scale</label>
     <label><input type="checkbox" id="clip"> Clip</label>
@@ -111,7 +110,6 @@ var consoleTpl = template.Must(template.New("console").Parse(`<!doctype html>
 
     const screen = document.getElementById('screen');
     const status = document.getElementById('status');
-    const btnConnect = document.getElementById('btnConnect');
     const btnDisconnect = document.getElementById('btnDisconnect');
     const scale = document.getElementById('scale');
     const clip = document.getElementById('clip');
@@ -144,9 +142,16 @@ var consoleTpl = template.Must(template.New("console").Parse(`<!doctype html>
 
       applyViewOptions();
 
+      const showCloseNotice = () => {
+        screen.innerHTML = '<div style="color:#fff;display:flex;align-items:center;justify-content:center;height:100%;font-family:sans-serif;font-size:16px;text-align:center;padding:24px;">'
+          + 'Connection closed. Please close this window and reopen the VNC console from vpsAdmin to start a new session.'
+          + '</div>';
+      };
+
       rfb.addEventListener('connect', () => setStatus('connected'));
       rfb.addEventListener('disconnect', (e) => {
         setStatus('disconnected' + (e.detail && e.detail.clean ? '' : ' (error)'));
+        showCloseNotice();
         rfb = null;
       });
       rfb.addEventListener('securityfailure', (e) => {
@@ -157,16 +162,14 @@ var consoleTpl = template.Must(template.New("console").Parse(`<!doctype html>
         setStatus('credentials required (unexpected)');
       });
       rfb.addEventListener('clipboard', handleClipboard);
+      btnDisconnect.addEventListener('click', () => {
+        if (!rfb) return;
+        rfb.disconnect();
+        showCloseNotice();
+      });
     }
 
-    function disconnect() {
-      if (!rfb) return;
-      rfb.disconnect();
-      // rfb becomes null in disconnect handler
-    }
-
-    btnConnect.addEventListener('click', connect);
-    btnDisconnect.addEventListener('click', disconnect);
+    connect();
     scale.addEventListener('change', applyViewOptions);
     clip.addEventListener('change', applyViewOptions);
     keysButtons.forEach((btn) => {
