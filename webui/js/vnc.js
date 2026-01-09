@@ -38,7 +38,31 @@ function handleVncLinkClick(e) {
 				}
 
 				var token = vncToken.client_token;
-				var url = server + '/console?client_token=' + encodeURIComponent(token);
+				var authType =
+					window.vpsAdmin && window.vpsAdmin.accessToken
+						? 'oauth2'
+						: window.vpsAdmin && window.vpsAdmin.sessionToken
+							? 'token'
+							: '';
+				var authToken =
+					authType === 'oauth2'
+						? (window.vpsAdmin ? window.vpsAdmin.accessToken : '')
+						: authType === 'token'
+							? (window.vpsAdmin ? window.vpsAdmin.sessionToken : '')
+							: '';
+				var apiUrl = window.vpsAdmin && window.vpsAdmin.api ? window.vpsAdmin.api.url : '';
+				var apiVersion = window.vpsAdmin && window.vpsAdmin.api ? window.vpsAdmin.api.version : '';
+
+				var params = new URLSearchParams();
+				params.set('client_token', token);
+				if (authType && authToken) {
+					params.set('auth_type', authType);
+					params.set('auth_token', authToken);
+				}
+				if (apiUrl) params.set('api_url', apiUrl);
+				if (apiVersion) params.set('api_version', apiVersion);
+
+				var url = server + '/console?' + params.toString();
 				popup.location.href = url;
 				popup.focus();
 			},

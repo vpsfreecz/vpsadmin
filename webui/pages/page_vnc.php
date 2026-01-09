@@ -37,7 +37,15 @@ function setup_vnc_console()
         return;
     }
 
-    $url = rtrim($server, '/') . '/console?client_token=' . urlencode($token->client_token);
+    $query = http_build_query([
+        'client_token' => $token->client_token,
+        'auth_type' => $_SESSION['auth_type'],
+        'auth_token' => getAuthenticationToken(),
+        'api_url' => EXT_API_URL,
+        'api_version' => API_VERSION,
+    ]);
+
+    $url = rtrim($server, '/') . '/console?' . $query;
     $popup_features = 'noopener,noreferrer,toolbar=no,menubar=no,location=no,status=no,scrollbars=yes,resizable=yes,width=1200,height=900';
 
     $xtpl->perex(

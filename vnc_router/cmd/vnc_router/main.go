@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"embed"
 	"encoding/json"
 	"flag"
 	"html/template"
@@ -9,6 +10,7 @@ import (
 	"net"
 	"net/http"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"vnc_router/internal/config"
@@ -27,6 +29,9 @@ const (
 	rpcSoftTimeout = 10 * time.Second
 	rpcHardTimeout = 60 * time.Second
 )
+
+//go:embed assets/haveapi-client.js
+var staticFiles embed.FS
 
 // multiFlag allows repeating -config multiple times
 type multiFlag []string
@@ -99,15 +104,23 @@ var consoleTpl = template.Must(template.New("console").Parse(`<!doctype html>
 
   <div id="screen"></div>
 
+  <script type="text/javascript" src="/haveapi-client.js"></script>
   <!-- noVNC RFB module -->
   <script type="module">
     import RFB from '/core/rfb.js';
 
-    const clientToken = {{ .ClientTokenJS }};
-    const wsUrl = (() => {
-      const proto = (location.protocol === 'https:') ? 'wss:' : 'ws:';
-      return proto + '//' + location.host + '{{ .WSPath }}' + '?client_token=' + encodeURIComponent(clientToken);
-    })();
+    const pageData = {
+      vpsId: {{ .VpsID }},
+      wsPath: {{ .WSPathJS }},
+      clientToken: {{ .ClientTokenJS }},
+      apiUrl: {{ .APIURLJS }},
+      apiVersion: {{ .APIVersionJS }},
+      authType: {{ .AuthTypeJS }},
+      authToken: {{ .AuthTokenJS }},
+    };
+
+    const API_KEEPALIVE_MS = 60 * 1000;
+    const RECONNECT_DELAY_MS = 2000;
 
     const screen = document.getElementById('screen');
     const status = document.getElementById('status');
@@ -120,10 +133,33 @@ var consoleTpl = template.Must(template.New("console").Parse(`<!doctype html>
     const toggleClipboard = document.getElementById('toggleClipboard');
     const clipboardBox = document.getElementById('clipboardBox');
 
+    const hasApiAuth = !!(pageData.apiUrl && pageData.authType && pageData.authToken);
+
     let rfb = null;
+    let manualDisconnect = false;
+    let reconnecting = false;
+    let reconnectTimer = null;
+    let apiClientPromise = null;
+    let apiKeepaliveTimer = null;
+    let currentClientToken = pageData.clientToken;
 
     function setStatus(text) {
       status.textContent = text;
+    }
+
+    function buildWsUrl(token) {
+      const wsPath = pageData.wsPath || '/ws';
+      const proto = (location.protocol === 'https:') ? 'wss:' : 'ws:';
+      const url = new URL(proto + '//' + location.host + wsPath);
+      url.searchParams.set('client_token', token || '');
+      return url.toString();
+    }
+
+    function showCloseNotice(customText) {
+      const msg = customText || 'Connection closed. Please close this window and reopen the VNC console from vpsAdmin to start a new session.';
+      screen.innerHTML = '<div style="color:#fff;display:flex;align-items:center;justify-content:center;height:100%;font-family:sans-serif;font-size:16px;text-align:center;padding:24px;">'
+        + msg
+        + '</div>';
     }
 
     function requestAutoscale() {
@@ -145,9 +181,166 @@ var consoleTpl = template.Must(template.New("console").Parse(`<!doctype html>
       requestAutoscale();
     }
 
-    function connect() {
+    async function ensureApiClient() {
+      if (!hasApiAuth) {
+        throw new Error('API auth not available');
+      }
+
+      if (!apiClientPromise) {
+        if (!window.HaveAPI) {
+          throw new Error('HaveAPI client not loaded');
+        }
+
+        apiClientPromise = new Promise((resolve, reject) => {
+          const opts = pageData.apiVersion ? { version: pageData.apiVersion } : {};
+          const client = new HaveAPI.Client(pageData.apiUrl, opts);
+
+          let authOpts = null;
+          if (pageData.authType === 'oauth2') {
+            authOpts = { access_token: { access_token: pageData.authToken } };
+          } else if (pageData.authType === 'token') {
+            authOpts = { token: pageData.authToken };
+          } else {
+            reject(new Error('Unsupported auth type'));
+            return;
+          }
+
+          client.authenticate(pageData.authType, authOpts, (c, ok) => {
+            if (!ok) {
+              reject(new Error('API authentication failed'));
+              return;
+            }
+            resolve(client);
+          });
+        });
+      }
+
+      return apiClientPromise;
+    }
+
+    async function fetchNewVncToken() {
+      const client = await ensureApiClient();
+      return new Promise((resolve, reject) => {
+        client.vps.vnc_token.create(pageData.vpsId, {
+          onReply: (c, vncToken) => {
+            if (!vncToken || !vncToken.isOk || !vncToken.isOk()) {
+              const msg = (vncToken && typeof vncToken.message === 'function')
+                ? vncToken.message()
+                : 'Unable to acquire VNC token';
+              reject(new Error(msg));
+              return;
+            }
+            resolve(vncToken.client_token);
+          },
+        });
+      });
+    }
+
+    async function apiKeepaliveLoop() {
+      if (!hasApiAuth || manualDisconnect) return;
+
+      try {
+        const client = await ensureApiClient();
+        await new Promise((resolve, reject) => {
+          client.vps.show(pageData.vpsId, {
+            onReply: (c, resp) => {
+              if (!resp.isOk()) {
+                reject(new Error(resp.message() || 'VPS unavailable'));
+                return;
+              }
+              resolve();
+            },
+          });
+        });
+      } catch (err) {
+        handleFatal('API session expired or VPS unavailable. Please reopen the console.', err);
+        return;
+      }
+
+      apiKeepaliveTimer = setTimeout(apiKeepaliveLoop, API_KEEPALIVE_MS);
+    }
+
+    function scheduleReconnect() {
+      if (reconnecting || manualDisconnect) return;
+      reconnecting = true;
+      if (reconnectTimer) {
+        clearTimeout(reconnectTimer);
+      }
+
+      reconnectTimer = setTimeout(async () => {
+        try {
+          const newToken = await fetchNewVncToken();
+          currentClientToken = newToken;
+          connect(currentClientToken);
+        } catch (err) {
+          handleFatal('Unable to reconnect automatically. Please reopen the console.', err);
+        } finally {
+          reconnecting = false;
+        }
+      }, RECONNECT_DELAY_MS);
+    }
+
+    function handleFatal(message, err) {
+      console.error(message, err);
+      manualDisconnect = true;
+      if (reconnectTimer) {
+        clearTimeout(reconnectTimer);
+      }
+      if (apiKeepaliveTimer) {
+        clearTimeout(apiKeepaliveTimer);
+      }
+      if (rfb) {
+        try {
+          rfb.disconnect();
+        } catch (e) {
+          // ignore
+        }
+      }
+      setStatus('disconnected');
+      showCloseNotice(message);
+    }
+
+    function onDisconnect(e) {
+      const clean = !!(e.detail && e.detail.clean);
+      rfb = null;
+      setStatus('disconnected' + (clean ? '' : ' (error)'));
+
+      if (manualDisconnect) {
+        showCloseNotice();
+        return;
+      }
+      if (!hasApiAuth) {
+        showCloseNotice();
+        return;
+      }
+
+      setStatus('reconnecting...');
+      scheduleReconnect();
+    }
+
+    function connect(token = currentClientToken) {
       if (rfb) return;
+
+      currentClientToken = token || currentClientToken;
+      if (!currentClientToken || typeof currentClientToken !== 'string') {
+        handleFatal('Missing VNC token, cannot connect.');
+        return;
+      }
       setStatus('connecting...');
+      screen.innerHTML = '';
+      if (reconnectTimer) {
+        clearTimeout(reconnectTimer);
+        reconnectTimer = null;
+      }
+
+      let wsUrl;
+      try {
+        wsUrl = buildWsUrl(currentClientToken);
+      } catch (err) {
+        handleFatal('Invalid VNC endpoint URL', err);
+        return;
+      }
+
       rfb = new RFB(screen, wsUrl, {
         // credentials: { password: '...' } // not used in your design
       });
@@ -158,18 +351,8 @@ var consoleTpl = template.Must(template.New("console").Parse(`<!doctype html>
 
       applyViewOptions();
 
-      const showCloseNotice = () => {
-        screen.innerHTML = '<div style="color:#fff;display:flex;align-items:center;justify-content:center;height:100%;font-family:sans-serif;font-size:16px;text-align:center;padding:24px;">'
-          + 'Connection closed. Please close this window and reopen the VNC console from vpsAdmin to start a new session.'
-          + '</div>';
-      };
-
       rfb.addEventListener('connect', () => setStatus('connected'));
-      rfb.addEventListener('disconnect', (e) => {
-        setStatus('disconnected' + (e.detail && e.detail.clean ? '' : ' (error)'));
-        showCloseNotice();
-        rfb = null;
-      });
+      rfb.addEventListener('disconnect', onDisconnect);
       rfb.addEventListener('securityfailure', (e) => {
         setStatus('security failure');
         console.error('securityfailure', e);
@@ -178,14 +361,26 @@ var consoleTpl = template.Must(template.New("console").Parse(`<!doctype html>
         setStatus('credentials required (unexpected)');
       });
       rfb.addEventListener('clipboard', handleClipboard);
-      btnDisconnect.addEventListener('click', () => {
-        if (!rfb) return;
-        rfb.disconnect();
-        showCloseNotice();
-      });
     }
 
     connect();
+    if (hasApiAuth) {
+      apiKeepaliveLoop();
+    }
+
+    btnDisconnect.addEventListener('click', () => {
+      if (!rfb) return;
+      manualDisconnect = true;
+      if (reconnectTimer) {
+        clearTimeout(reconnectTimer);
+      }
+      if (apiKeepaliveTimer) {
+        clearTimeout(apiKeepaliveTimer);
+      }
+      rfb.disconnect();
+      showCloseNotice();
+    });
+
     scale.addEventListener('change', applyViewOptions);
     clip.addEventListener('change', applyViewOptions);
     keysButtons.forEach((btn) => {
@@ -347,7 +542,21 @@ var consoleTpl = template.Must(template.New("console").Parse(`<!doctype html>
 type consolePageData struct {
 	ClientTokenJS template.JS // JSON-encoded string literal
 	WSPath        string
+	WSPathJS      template.JS
 	VpsID         int
+	APIURLJS      template.JS
+	APIVersionJS  template.JS
+	AuthTypeJS    template.JS
+	AuthTokenJS   template.JS
+}
+
+func jsStringOrNull(s string) template.JS {
+	if s == "" {
+		return template.JS("null")
+	}
+
+	b, _ := json.Marshal(s)
+	return template.JS(b)
 }
 
 func main() {
@@ -388,6 +597,15 @@ func main() {
 	defer rpcClient.Close()
 
 	mux := http.NewServeMux()
+	mux.HandleFunc("/haveapi-client.js", func(w http.ResponseWriter, r *http.Request) {
+		data, err := staticFiles.ReadFile("assets/haveapi-client.js")
+		if err != nil {
+			http.Error(w, "not found", http.StatusNotFound)
+			return
+		}
+		w.Header().Set("Content-Type", "application/javascript")
+		_, _ = w.Write(data)
+	})
 
 	ipAllowed := func(ip net.IP) bool {
 		if ip == nil {
@@ -418,14 +636,13 @@ func main() {
 
 	// Wrapper page: /console?client_token=...
 	mux.HandleFunc("/console", func(w http.ResponseWriter, r *http.Request) {
-		clientToken := r.URL.Query().Get("client_token")
+		q := r.URL.Query()
+
+		clientToken := q.Get("client_token")
 		if clientToken == "" {
 			http.Error(w, "missing client_token", http.StatusBadRequest)
 			return
 		}
-
-		// Safe JS string literal via json.Marshal
-		b, _ := json.Marshal(clientToken)
 
 		ctx, cancel := context.WithTimeout(r.Context(), 15*time.Second)
 		target, err := rpcClient.GetVncTarget(ctx, clientToken)
@@ -436,11 +653,31 @@ func main() {
 			return
 		}
 
+		apiURL := target.APIURL
+		if override := q.Get("api_url"); override != "" {
+			apiURL = override
+		}
+		apiVersion := q.Get("api_version")
+		authType := strings.ToLower(q.Get("auth_type"))
+		authToken := q.Get("auth_token")
+
+		if authType != "oauth2" && authType != "token" {
+			authType = ""
+			authToken = ""
+		} else if authToken == "" {
+			authType = ""
+		}
+
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		_ = consoleTpl.Execute(w, consolePageData{
-			ClientTokenJS: template.JS(b),
+			ClientTokenJS: jsStringOrNull(clientToken),
 			WSPath:        wsPath,
+			WSPathJS:      jsStringOrNull(wsPath),
 			VpsID:         target.VpsID,
+			APIURLJS:      jsStringOrNull(apiURL),
+			APIVersionJS:  jsStringOrNull(apiVersion),
+			AuthTypeJS:    jsStringOrNull(authType),
+			AuthTokenJS:   jsStringOrNull(authToken),
 		})
 	})
 
@@ -505,8 +742,8 @@ func main() {
 
 	// Serve noVNC static files at "/" (so /vnc.html works).
 	// Must be last so it doesn't shadow /ws, /console, /defaults.json.
-	fs := http.FileServer(http.Dir(cfg.NoVNCDir))
-	mux.Handle("/", fs)
+	noVNCFS := http.FileServer(http.Dir(cfg.NoVNCDir))
+	mux.Handle("/", noVNCFS)
 
 	srv := &http.Server{
 		Addr:              cfg.ListenAddr,
