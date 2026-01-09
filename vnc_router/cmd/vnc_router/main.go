@@ -57,6 +57,18 @@ var consoleTpl = template.Must(template.New("console").Parse(`<!doctype html>
       font-family: sans-serif; font-size: 14px;
       flex-wrap: wrap;
     }
+    .spinner {
+      display: none;
+      width: 16px;
+      height: 16px;
+      border: 2px solid #ccc;
+      border-top-color: #555;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
     #screen {
       width: 100%;
       flex: 1;
@@ -116,6 +128,7 @@ var consoleTpl = template.Must(template.New("console").Parse(`<!doctype html>
   <div id="toolbar">
     <strong>VPS {{ .VpsID }}</strong>
     <span class="muted" id="status">disconnected</span>
+    <span class="spinner" id="spinner" aria-label="loading"></span>
     <button id="btnDisconnect">Disconnect</button>
     <label><input type="checkbox" id="scale" checked> Scale</label>
     <label><input type="checkbox" id="clip"> Clip</label>
@@ -165,6 +178,7 @@ var consoleTpl = template.Must(template.New("console").Parse(`<!doctype html>
 
     const screen = document.getElementById('screen');
     const status = document.getElementById('status');
+    const spinner = document.getElementById('spinner');
     const btnDisconnect = document.getElementById('btnDisconnect');
     const scale = document.getElementById('scale');
     const clip = document.getElementById('clip');
@@ -191,6 +205,11 @@ var consoleTpl = template.Must(template.New("console").Parse(`<!doctype html>
 
     function setStatus(text) {
       status.textContent = text;
+    }
+
+    function setSpinner(active) {
+      if (!spinner) return;
+      spinner.style.display = active ? 'inline-block' : 'none';
     }
 
     function buildWsUrl(token) {
@@ -315,6 +334,7 @@ var consoleTpl = template.Must(template.New("console").Parse(`<!doctype html>
         btn.classList.toggle('disabled', busy || !hasApiAuth);
         btn.disabled = busy || !hasApiAuth;
       });
+      setSpinner(busy);
     }
 
     function closePowerMenu() {
@@ -336,26 +356,33 @@ var consoleTpl = template.Must(template.New("console").Parse(`<!doctype html>
       setStatus(label + '...');
 
       ensureApiClient()
-        .then((client) => new Promise((resolve, reject) => {
+        .then((client) => {
           client.vps[action](pageData.vpsId, {
             onReply: (c, resp) => {
               if (!resp || !resp.isOk || !resp.isOk()) {
                 const msg = (resp && typeof resp.message === 'function') ? resp.message() : 'Action failed';
-                reject(new Error(msg));
+                setStatus('Error: ' + msg);
+                setPowerBusy(false);
                 return;
               }
-              resolve();
+              setStatus(label + ' in progress...');
+            },
+            onDone: (c, reply) => {
+              if (!reply || !reply.isOk || !reply.isOk()) {
+                const msg = (reply && typeof reply.message === 'function') ? reply.message() : 'Action failed';
+                setStatus('Error: ' + msg);
+              } else {
+                setStatus(label + ' done');
+              }
+              setPowerBusy(false);
             },
           });
-        }))
-        .then(() => {
-          setStatus(label + ' requested');
         })
         .catch((err) => {
           console.error('Power action failed', err);
           setStatus('Error: ' + err.message);
-        })
-        .finally(() => setPowerBusy(false));
+          setPowerBusy(false);
+        });
     }
 
     function setupPowerMenu() {
