@@ -177,11 +177,6 @@ var consoleTpl = template.Must(template.New("console").Parse(`<!doctype html>
     });
     clipboardSend.addEventListener('click', sendClipboard);
 
-    // Optional: autoconnect
-    {{ if .AutoConnect }}
-    connect();
-    {{ end }}
-
     function sendCombo(name) {
       if (!rfb) return;
 
@@ -318,7 +313,6 @@ var consoleTpl = template.Must(template.New("console").Parse(`<!doctype html>
 type consolePageData struct {
 	ClientTokenJS template.JS // JSON-encoded string literal
 	WSPath        string
-	AutoConnect   bool
 	VpsID         int
 }
 
@@ -388,19 +382,12 @@ func main() {
 		metricsRegistry.ExportPrometheus(w)
 	})
 
-	// Wrapper page: /console?client_token=...&autoconnect=1
+	// Wrapper page: /console?client_token=...
 	mux.HandleFunc("/console", func(w http.ResponseWriter, r *http.Request) {
 		clientToken := r.URL.Query().Get("client_token")
 		if clientToken == "" {
 			http.Error(w, "missing client_token", http.StatusBadRequest)
 			return
-		}
-
-		// Autoconnect by default; allow explicit opt-out with ?autoconnect=0/false/no
-		ac := r.URL.Query().Get("autoconnect")
-		auto := true
-		if ac != "" {
-			auto = ac == "1" || ac == "true" || ac == "yes"
 		}
 
 		// Safe JS string literal via json.Marshal
@@ -419,7 +406,6 @@ func main() {
 		_ = consoleTpl.Execute(w, consolePageData{
 			ClientTokenJS: template.JS(b),
 			WSPath:        wsPath,
-			AutoConnect:   auto,
 			VpsID:         target.VpsID,
 		})
 	})
