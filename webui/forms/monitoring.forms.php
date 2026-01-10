@@ -82,8 +82,8 @@ function monitoring_list()
         }
 
         $xtpl->table_td(
-            transaction_concern_class($e->object_name) . ' ' .
-            transaction_concern_link($e->object_name, $e->object_id)
+            transaction_concern_class($e->object_name) . ' '
+            . transaction_concern_link($e->object_name, $e->object_id)
         );
         $xtpl->table_td($e->label);
         $xtpl->table_td(format_duration($e->duration));
@@ -107,8 +107,8 @@ function monitoring_event()
 
     $xtpl->table_td(_('Object') . ':');
     $xtpl->table_td(
-        transaction_concern_class($e->object_name) . ' ' .
-        transaction_concern_link($e->object_name, $e->object_id)
+        transaction_concern_class($e->object_name) . ' '
+        . transaction_concern_link($e->object_name, $e->object_id)
     );
     $xtpl->table_tr();
 
@@ -191,8 +191,8 @@ function monitoring_ack_form($id)
     if ($id != $e) {
         $xtpl->table_td(_('Object') . ':');
         $xtpl->table_td(
-            transaction_concern_class($e->object_name) . ' ' .
-            transaction_concern_link($e->object_name, $e->object_id)
+            transaction_concern_class($e->object_name) . ' '
+            . transaction_concern_link($e->object_name, $e->object_id)
         );
         $xtpl->table_tr();
 
@@ -202,8 +202,8 @@ function monitoring_ack_form($id)
     }
 
     $xtpl->table_td(
-        _('When the event is acknowledged, you will not be notified about ' .
-            'the issue until it is resolved.'),
+        _('When the event is acknowledged, you will not be notified about '
+            . 'the issue until it is resolved.'),
         false,
         false,
         3
@@ -231,8 +231,8 @@ function monitoring_ignore_form($id)
     if ($id != $e) {
         $xtpl->table_td(_('Object') . ':');
         $xtpl->table_td(
-            transaction_concern_class($e->object_name) . ' ' .
-            transaction_concern_link($e->object_name, $e->object_id)
+            transaction_concern_class($e->object_name) . ' '
+            . transaction_concern_link($e->object_name, $e->object_id)
         );
         $xtpl->table_tr();
 
@@ -242,8 +242,8 @@ function monitoring_ignore_form($id)
     }
 
     $xtpl->table_td(
-        _('When the event is ignored, you will not be notified about ' .
-            'this issue any more, even should it arise in the future again.'),
+        _('When the event is ignored, you will not be notified about '
+            . 'this issue any more, even should it arise in the future again.'),
         false,
         false,
         3

@@ -241,20 +241,20 @@ function list_user_sessions($user_id)
         }
 
         $xtpl->table_td(
-            '<dl>' .
-            '<dt>Request count:</dt><dd>' . $s->request_count . '</dd>' .
-            '<dt>Last request at:</dt><dd>' . ($s->last_request_at ? tolocaltz($s->last_request_at) : '---') . '</dd>' .
-            '<dt>API IP address:</dt><dd>' . h($s->api_ip_addr) . '</dd>' .
-            '<dt>API IP PTR:</dt><dd>' . h($s->api_ip_ptr) . '</dd>' .
-            '<dt>Client IP address:</dt><dd>' . h($s->client_ip_addr) . '</dd>' .
-            '<dt>Client IP PTR:</dt><dd>' . h($s->client_ip_ptr) . '</dd>' .
-            '<dt>User agent:</dt><dd>' . h($s->user_agent) . '</dd>' .
-            '<dt>Client version:</dt><dd>' . h($s->client_version) . '</dd>' .
-            '<dt>Token:</dt><dd>' . ($s->token_fragment ? $s->token_fragment . '...' : '---') . '</dd>' .
-            '<dt>Token lifetime:</dt><dd>' . $s->token_lifetime . '</dd>' .
-            '<dt>Token interval:</dt><dd>' . $s->token_interval . '</dd>' .
-            '<dt>Scope:</dt><dd>' . h($s->scope) . '</dd>' .
-            '<dl>',
+            '<dl>'
+            . '<dt>Request count:</dt><dd>' . $s->request_count . '</dd>'
+            . '<dt>Last request at:</dt><dd>' . ($s->last_request_at ? tolocaltz($s->last_request_at) : '---') . '</dd>'
+            . '<dt>API IP address:</dt><dd>' . h($s->api_ip_addr) . '</dd>'
+            . '<dt>API IP PTR:</dt><dd>' . h($s->api_ip_ptr) . '</dd>'
+            . '<dt>Client IP address:</dt><dd>' . h($s->client_ip_addr) . '</dd>'
+            . '<dt>Client IP PTR:</dt><dd>' . h($s->client_ip_ptr) . '</dd>'
+            . '<dt>User agent:</dt><dd>' . h($s->user_agent) . '</dd>'
+            . '<dt>Client version:</dt><dd>' . h($s->client_version) . '</dd>'
+            . '<dt>Token:</dt><dd>' . ($s->token_fragment ? $s->token_fragment . '...' : '---') . '</dd>'
+            . '<dt>Token lifetime:</dt><dd>' . $s->token_lifetime . '</dd>'
+            . '<dt>Token interval:</dt><dd>' . $s->token_interval . '</dd>'
+            . '<dt>Scope:</dt><dd>' . h($s->scope) . '</dd>'
+            . '<dl>',
             false,
             false,
             '10'
@@ -899,10 +899,10 @@ function user_payment_form($user_id)
 
         if ($payment->incoming_payment_id) {
             $xtpl->table_td(
-                '<a href="?page=adminm&action=incoming_payment&id=' .
-                $payment->incoming_payment_id . '">' .
-                '#' . $payment->incoming_payment_id .
-                '</a>'
+                '<a href="?page=adminm&action=incoming_payment&id='
+                . $payment->incoming_payment_id . '">'
+                . '#' . $payment->incoming_payment_id
+                . '</a>'
             );
         } else {
             $xtpl->table_td('-');
@@ -1034,9 +1034,9 @@ function incoming_payments_list()
         $xtpl->table_td(h($p->user_message));
         $xtpl->table_td(h($p->vs));
         $xtpl->table_td(
-            '<a href="?page=adminm&action=incoming_payment&id=' . $p->id . '">' .
-            '<img src="template/icons/m_edit.png" title="' . _('Details') . '">' .
-            '</a>'
+            '<a href="?page=adminm&action=incoming_payment&id=' . $p->id . '">'
+            . '<img src="template/icons/m_edit.png" title="' . _('Details') . '">'
+            . '</a>'
         );
 
         $xtpl->table_tr();
@@ -1468,8 +1468,8 @@ function totp_devices_list_form($user)
 
     if ($devices->count() == 0) {
         $xtpl->table_td(
-            '<a href="?page=adminm&action=totp_device_add&id=' . $user->id . '">' .
-            _('Add TOTP device') . '</a>',
+            '<a href="?page=adminm&action=totp_device_add&id=' . $user->id . '">'
+            . _('Add TOTP device') . '</a>',
             false,
             false,
             '7'
@@ -1528,8 +1528,8 @@ function totp_device_confirm_form($user, $dev)
     $xtpl->form_create('?page=adminm&action=totp_device_confirm&id=' . $user->id . '&dev=' . $dev->id, 'post');
 
     $xtpl->table_td(
-        _('Install a TOTP authenticator application like FreeOTP or Google Authenticator ' .
-          'and scan the QR code below, or enter the secret key manually.'),
+        _('Install a TOTP authenticator application like FreeOTP or Google Authenticator '
+          . 'and scan the QR code below, or enter the secret key manually.'),
         false,
         false,
         '2'
@@ -1557,10 +1557,10 @@ function totp_device_confirm_form($user, $dev)
     $xtpl->form_add_input(_('TOTP code') . ':', 'text', '30', 'code');
 
     $xtpl->table_td(
-        _('Once enabled, this authentication device or any other configured ' .
-          'device will be needed to log into your account without any ' .
-          'exception. Two-factor authentication can be later turned off by ' .
-          'disabling or removing all configured authentication devices.'),
+        _('Once enabled, this authentication device or any other configured '
+          . 'device will be needed to log into your account without any '
+          . 'exception. Two-factor authentication can be later turned off by '
+          . 'disabling or removing all configured authentication devices.'),
         false,
         false,
         '2'
@@ -1583,12 +1583,12 @@ function totp_device_configured_form($user, $dev, $recoveryCode)
     $xtpl->form_create('?page=adminm&action=edit&id=' . $user->id, 'get');
 
     $xtpl->table_td(
-        _('Two-factor authentication using TOTP is now enabled. In case you ever ' .
-          'lose access to the TOTP authenticator device, you can use ' .
-          'the recovery code below instead of the TOTP token to log in.') .
-          '<input type="hidden" name="page" value="adminm">' .
-          '<input type="hidden" name="action" value="totp_devices">' .
-          '<input type="hidden" name="id" value="' . $user->id . '">',
+        _('Two-factor authentication using TOTP is now enabled. In case you ever '
+          . 'lose access to the TOTP authenticator device, you can use '
+          . 'the recovery code below instead of the TOTP token to log in.')
+          . '<input type="hidden" name="page" value="adminm">'
+          . '<input type="hidden" name="action" value="totp_devices">'
+          . '<input type="hidden" name="id" value="' . $user->id . '">',
         false,
         false,
         '2'
@@ -1631,8 +1631,8 @@ function totp_device_del_form($user, $dev)
     $xtpl->table_tr();
 
     $xtpl->table_td(
-        _('Two-factor authentication will be turned off when the last ' .
-          'authentication device is either disabled or removed.'),
+        _('Two-factor authentication will be turned off when the last '
+          . 'authentication device is either disabled or removed.'),
         false,
         false,
         '2'
@@ -1727,8 +1727,8 @@ function webauthn_del_form($user, $cred)
     $xtpl->table_tr();
 
     $xtpl->table_td(
-        _('Two-factor authentication will be turned off when the last ' .
-          'authentication device is either disabled or removed.'),
+        _('Two-factor authentication will be turned off when the last '
+          . 'authentication device is either disabled or removed.'),
         false,
         false,
         '2'
@@ -1752,10 +1752,10 @@ function known_devices_list_form($user)
     $xtpl->form_create('', 'get', 'known-device-filter', false);
 
     $xtpl->table_td(
-        _("Limit") . ':' .
-        '<input type="hidden" name="page" value="adminm">' .
-        '<input type="hidden" name="action" value="known_devices">' .
-        '<input type="hidden" name="id" value="' . $user->id . '">'
+        _("Limit") . ':'
+        . '<input type="hidden" name="page" value="adminm">'
+        . '<input type="hidden" name="action" value="known_devices">'
+        . '<input type="hidden" name="id" value="' . $user->id . '">'
     );
     $xtpl->form_add_input_pure('text', '40', 'limit', get_val('limit', '25'), '');
     $xtpl->table_tr();

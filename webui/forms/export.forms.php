@@ -364,8 +364,8 @@ function export_destroy_form($id)
     $xtpl->table_tr();
 
     $xtpl->table_td(
-        _('Stop the NFS server and remove the export. Data on the exported ' .
-          'dataset are not affected by this operation.'),
+        _('Stop the NFS server and remove the export. Data on the exported '
+          . 'dataset are not affected by this operation.'),
         false,
         false,
         '2'
@@ -470,7 +470,7 @@ function include_export_scripts()
 
     $xtpl->assign(
         'AJAX_SCRIPT',
-        $xtpl->vars['AJAX_SCRIPT'] .
-        '<script type="text/javascript" src="js/export.js"></script>'
+        $xtpl->vars['AJAX_SCRIPT']
+        . '<script type="text/javascript" src="js/export.js"></script>'
     );
 }

@@ -6,9 +6,9 @@ function backup_crossroad_form()
 
     $xtpl->perex(
         '',
-        '<h3><a href="?page=backup&action=vps">VPS backups</a></h3>' .
-        '<h3><a href="?page=backup&action=nas">NAS backups</a></h3>' .
-        '<h3><a href="?page=backup&action=downloads">Downloads</a></h3>'
+        '<h3><a href="?page=backup&action=vps">VPS backups</a></h3>'
+        . '<h3><a href="?page=backup&action=nas">NAS backups</a></h3>'
+        . '<h3><a href="?page=backup&action=downloads">Downloads</a></h3>'
     );
 }
 

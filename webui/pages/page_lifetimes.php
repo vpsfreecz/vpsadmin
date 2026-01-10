@@ -24,8 +24,8 @@ if (isLoggedIn() && isAdmin()) {
 
                 notify_user(
                     _('State set'),
-                    _('Object state was successfully set to') . ' ' . $state . '. ' .
-                    _('You may need to wait a few moments before the change takes effect.')
+                    _('Object state was successfully set to') . ' ' . $state . '. '
+                    . _('You may need to wait a few moments before the change takes effect.')
                 );
                 redirect($_GET['return'] ? $_GET['return'] : '?page=');
 

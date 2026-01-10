@@ -145,23 +145,23 @@ function ip_address_list($page)
         $xtpl->table_td('<a href="?page=networking&action=assignments&ip_addr=' . $ip->addr . '&ip_prefix=' . $ip->prefix . '&list=1"><img src="template/icons/vps_ip_list.png" alt="' . _('List assignments') . '" title="' . _('List assignments') . '"></a>');
 
         $xtpl->table_td(
-            '<a href="?page=networking&action=route_edit&id=' . $ip->id . '&return=' . $return_url . '">' .
-            '<img src="template/icons/m_edit.png" alt="' . _('Edit') . '" title="' . _('Edit') . '">' .
-            '</a>'
+            '<a href="?page=networking&action=route_edit&id=' . $ip->id . '&return=' . $return_url . '">'
+            . '<img src="template/icons/m_edit.png" alt="' . _('Edit') . '" title="' . _('Edit') . '">'
+            . '</a>'
         );
 
         if ($vps) {
             $xtpl->table_td(
-                '<a href="?page=networking&action=route_unassign&id=' . $ip->id . '&return=' . $return_url . '">' .
-                '<img src="template/icons/m_remove.png" alt="' . _('Remove from VPS') . '" title="' . _('Remove from VPS') . '">' .
-                '</a>'
+                '<a href="?page=networking&action=route_unassign&id=' . $ip->id . '&return=' . $return_url . '">'
+                . '<img src="template/icons/m_remove.png" alt="' . _('Remove from VPS') . '" title="' . _('Remove from VPS') . '">'
+                . '</a>'
             );
 
         } else {
             $xtpl->table_td(
-                '<a href="?page=networking&action=route_assign&id=' . $ip->id . '&return=' . $return_url . '">' .
-                '<img src="template/icons/vps_add.png" alt="' . _('Add to a VPS') . '" title="' . _('Add to a VPS') . '">' .
-                '</a>'
+                '<a href="?page=networking&action=route_assign&id=' . $ip->id . '&return=' . $return_url . '">'
+                . '<img src="template/icons/vps_add.png" alt="' . _('Add to a VPS') . '" title="' . _('Add to a VPS') . '">'
+                . '</a>'
             );
         }
 
@@ -242,8 +242,8 @@ function host_ip_address_list($page)
         'from_id' => get_val('from_id', 0),
         'purpose' => 'vps',
         'meta' => [
-            'includes' => 'ip_address__user,ip_address__network_interface__vps,' .
-                          'ip_address__network',
+            'includes' => 'ip_address__user,ip_address__network_interface__vps,'
+                          . 'ip_address__network',
         ],
     ];
 
@@ -337,23 +337,23 @@ function host_ip_address_list($page)
         }
 
         $xtpl->table_td(
-            '<a href="?page=networking&action=hostaddr_ptr&id=' . $host_addr->id . '&return=' . $return_url . '">' .
-            '<img src="template/icons/m_edit.png" alt="' . _('Set reverse record') . '" title="' . _('Set reverse record') . '">' .
-            '</a>'
+            '<a href="?page=networking&action=hostaddr_ptr&id=' . $host_addr->id . '&return=' . $return_url . '">'
+            . '<img src="template/icons/m_edit.png" alt="' . _('Set reverse record') . '" title="' . _('Set reverse record') . '">'
+            . '</a>'
         );
 
         if ($host_addr->assigned) {
             $xtpl->table_td(
-                '<a href="?page=networking&action=hostaddr_unassign&id=' . $host_addr->id . '&return=' . $return_url . '">' .
-                '<img src="template/icons/m_remove.png" alt="' . _('Remove from interface') . '" title="' . _('Remove from VPS') . '">' .
-                '</a>'
+                '<a href="?page=networking&action=hostaddr_unassign&id=' . $host_addr->id . '&return=' . $return_url . '">'
+                . '<img src="template/icons/m_remove.png" alt="' . _('Remove from interface') . '" title="' . _('Remove from VPS') . '">'
+                . '</a>'
             );
 
         } elseif ($netif) {
             $xtpl->table_td(
-                '<a href="?page=networking&action=hostaddr_assign&id=' . $host_addr->id . '&return=' . $return_url . '">' .
-                '<img src="template/icons/vps_add.png" alt="' . _('Add to a VPS') . '" title="' . _('Add to a VPS') . '">' .
-                '</a>'
+                '<a href="?page=networking&action=hostaddr_assign&id=' . $host_addr->id . '&return=' . $return_url . '">'
+                . '<img src="template/icons/vps_add.png" alt="' . _('Add to a VPS') . '" title="' . _('Add to a VPS') . '">'
+                . '</a>'
             );
 
         } else {
@@ -478,23 +478,23 @@ function route_edit_form($id)
         }
 
         $xtpl->table_td(
-            '<a href="?page=networking&action=hostaddr_ptr&id=' . $host_addr->id . '&return=' . $return_url . '">' .
-            '<img src="template/icons/m_edit.png" alt="' . _('Set reverse record') . '" title="' . _('Set reverse record') . '">' .
-            '</a>'
+            '<a href="?page=networking&action=hostaddr_ptr&id=' . $host_addr->id . '&return=' . $return_url . '">'
+            . '<img src="template/icons/m_edit.png" alt="' . _('Set reverse record') . '" title="' . _('Set reverse record') . '">'
+            . '</a>'
         );
 
         if ($host_addr->assigned) {
             $xtpl->table_td(
-                '<a href="?page=networking&action=hostaddr_unassign&id=' . $host_addr->id . '&return=' . $return_url . '">' .
-                '<img src="template/icons/m_remove.png" alt="' . _('Remove from interface') . '" title="' . _('Remove from VPS') . '">' .
-                '</a>'
+                '<a href="?page=networking&action=hostaddr_unassign&id=' . $host_addr->id . '&return=' . $return_url . '">'
+                . '<img src="template/icons/m_remove.png" alt="' . _('Remove from interface') . '" title="' . _('Remove from VPS') . '">'
+                . '</a>'
             );
 
         } elseif ($netif) {
             $xtpl->table_td(
-                '<a href="?page=networking&action=hostaddr_assign&id=' . $host_addr->id . '&return=' . $return_url . '">' .
-                '<img src="template/icons/vps_add.png" alt="' . _('Add to a VPS') . '" title="' . _('Add to a VPS') . '">' .
-                '</a>'
+                '<a href="?page=networking&action=hostaddr_assign&id=' . $host_addr->id . '&return=' . $return_url . '">'
+                . '<img src="template/icons/vps_add.png" alt="' . _('Add to a VPS') . '" title="' . _('Add to a VPS') . '">'
+                . '</a>'
             );
 
         } else {
@@ -508,9 +508,9 @@ function route_edit_form($id)
                 );
             } else {
                 $xtpl->table_td(
-                    '<a href="?page=networking&action=hostaddr_delete&id=' . $host_addr->id . '&ip=' . $ip->id . '">' .
-                    '<img src="template/icons/vps_delete.png" alt="' . _('Delete address from vpsAdmin') . '" title="' . _('Delete address from vpsAdmin') . '">' .
-                    '</a>'
+                    '<a href="?page=networking&action=hostaddr_delete&id=' . $host_addr->id . '&ip=' . $ip->id . '">'
+                    . '<img src="template/icons/vps_delete.png" alt="' . _('Delete address from vpsAdmin') . '" title="' . _('Delete address from vpsAdmin') . '">'
+                    . '</a>'
                 );
             }
         } else {
@@ -604,17 +604,17 @@ function route_assign_form($id)
             ] + $via_addrs;
 
             $xtpl->table_td(
-                _('Address') . ':' .
-                '<input type="hidden" name="vps" value="' . $vps->id . '">' .
-                '<input type="hidden" name="network_interface" value="' . $netif->id . '">'
+                _('Address') . ':'
+                . '<input type="hidden" name="vps" value="' . $vps->id . '">'
+                . '<input type="hidden" name="network_interface" value="' . $netif->id . '">'
             );
             $xtpl->form_add_select_pure('route_via', $via_addrs, post_val('route_via'));
             $xtpl->table_tr();
 
             $xtpl->table_td('');
             $xtpl->table_td(
-                $xtpl->html_submit(_('Add only route'), 'route-only') .
-                $xtpl->html_submit(_('Add route and an address to interface') . ' ' . h($netif->name), 'route-and-host')
+                $xtpl->html_submit(_('Add only route'), 'route-only')
+                . $xtpl->html_submit(_('Add route and an address to interface') . ' ' . h($netif->name), 'route-and-host')
             );
             $xtpl->table_tr();
 
@@ -624,8 +624,8 @@ function route_assign_form($id)
             $netifs = $api->network_interface->list(['vps' => $_POST['vps']]);
 
             $xtpl->table_td(
-                _('Network interface') . ':' .
-                '<input type="hidden" name="vps" value="' . $vps->id . '">'
+                _('Network interface') . ':'
+                . '<input type="hidden" name="vps" value="' . $vps->id . '">'
             );
             $xtpl->form_add_select_pure(
                 'network_interface',
@@ -666,8 +666,8 @@ function route_unassign_form($id)
 
     $xtpl->table_td(_('VPS') . ':');
     $xtpl->table_td(
-        '<a href="?page=adminvps&action=info&veid=' . $vps->id . '">#' . $vps->id . '</a>' .
-        ' ' . $vps->hostname
+        '<a href="?page=adminvps&action=info&veid=' . $vps->id . '">#' . $vps->id . '</a>'
+        . ' ' . $vps->hostname
     );
     $xtpl->table_tr();
 
@@ -747,8 +747,8 @@ function hostaddr_unassign_form($id)
 
     $xtpl->table_td(_('VPS') . ':');
     $xtpl->table_td(
-        '<a href="?page=adminvps&action=info&veid=' . $vps->id . '">#' . $vps->id . '</a>' .
-        ' ' . $vps->hostname
+        '<a href="?page=adminvps&action=info&veid=' . $vps->id . '">#' . $vps->id . '</a>'
+        . ' ' . $vps->hostname
     );
     $xtpl->table_tr();
 
@@ -972,8 +972,8 @@ function hostaddr_reverse_record_form($id)
 
         $xtpl->table_td(_('VPS') . ':');
         $xtpl->table_td(
-            '<a href="?page=adminvps&action=info&veid=' . $vps->id . '">#' . $vps->id . '</a>' .
-            ' ' . $vps->hostname
+            '<a href="?page=adminvps&action=info&veid=' . $vps->id . '">#' . $vps->id . '</a>'
+            . ' ' . $vps->hostname
         );
         $xtpl->table_tr();
 

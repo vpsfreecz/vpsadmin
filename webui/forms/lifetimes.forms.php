@@ -48,8 +48,8 @@ function lifetimes_reminder_form($resource, $id)
     }
 
     $xtpl->table_td(_(
-        'E-mail reminders are sent daily before the expiration date. This form ' .
-        'can be used to silent the notifications until a given date.'
+        'E-mail reminders are sent daily before the expiration date. This form '
+        . 'can be used to silent the notifications until a given date.'
     ), false, false, 3);
     $xtpl->table_tr();
 

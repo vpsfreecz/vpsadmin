@@ -131,8 +131,8 @@ if (isLoggedIn()) {
                     $xtpl->table_tr();
 
                     $xtpl->table_td(
-                        _("Confirm") . ' ' .
-                        '<input type="hidden" name="return" value="' . ($_GET['return'] ?? $_POST['return']) . '">'
+                        _("Confirm") . ' '
+                        . '<input type="hidden" name="return" value="' . ($_GET['return'] ?? $_POST['return']) . '">'
                         . '<input type="hidden" name="restore_snapshot" value="' . $_POST['restore_snapshot'] . '">'
                     );
                     $xtpl->form_add_checkbox_pure('confirm', '1', false);
@@ -191,8 +191,8 @@ if (isLoggedIn()) {
                     $xtpl->table_tr();
 
                     $xtpl->table_td(
-                        _("Confirm") . ' ' .
-                        '<input type="hidden" name="return" value="' . ($_GET['return'] ?? $_POST['return']) . '">'
+                        _("Confirm") . ' '
+                        . '<input type="hidden" name="return" value="' . ($_GET['return'] ?? $_POST['return']) . '">'
                     );
                     $xtpl->form_add_checkbox_pure('confirm', '1', false);
                     $xtpl->table_tr();
@@ -246,8 +246,8 @@ if (isLoggedIn()) {
                     $xtpl->form_add_select(_('Format') . ':', 'format', $formats, $_POST['format']);
 
                     $xtpl->table_td(
-                        _("Confirm") . ' ' .
-                        '<input type="hidden" name="return" value="' . ($_GET['return'] ?? $_POST['return']) . '">'
+                        _("Confirm") . ' '
+                        . '<input type="hidden" name="return" value="' . ($_GET['return'] ?? $_POST['return']) . '">'
                     );
                     $xtpl->form_add_checkbox_pure('confirm', '1', false);
                     $xtpl->table_tr();

@@ -162,9 +162,9 @@ function userns_map_list($userns_id = null)
     $xtpl->form_create('', 'get', 'userns-map-list', false);
 
     $xtpl->table_td(
-        _("Limit") . ':' .
-        '<input type="hidden" name="page" value="userns">' .
-        '<input type="hidden" name="action" value="maps">'
+        _("Limit") . ':'
+        . '<input type="hidden" name="page" value="userns">'
+        . '<input type="hidden" name="action" value="maps">'
     );
     $xtpl->form_add_input_pure('text', '40', 'limit', get_val('limit', '25'), '');
     $xtpl->table_tr();
@@ -217,11 +217,11 @@ function userns_map_list($userns_id = null)
         }
 
         $xtpl->table_td(
-            '<a href="?page=userns&action=show&id=' . $m->user_namespace->id . '">' .
-            $m->user_namespace->id .
-            '</a>' .
-            ' ' .
-            '(' . $m->user_namespace->size . ' ' . _('IDs') . ')'
+            '<a href="?page=userns&action=show&id=' . $m->user_namespace->id . '">'
+            . $m->user_namespace->id
+            . '</a>'
+            . ' '
+            . '(' . $m->user_namespace->size . ' ' . _('IDs') . ')'
         );
         $xtpl->table_td($m->label);
         $xtpl->table_td(
@@ -231,9 +231,9 @@ function userns_map_list($userns_id = null)
             '<a href="?page=userns&action=map_show&id=' . $m->id . '"><img src="template/icons/vps_edit.png" alt="' . _('Details') . '" title="' . _('Details') . '"></a>'
         );
         $xtpl->table_td(
-            '<a href="?page=userns&action=map_del&id=' . $m->id . '&t=' . csrf_token() . '">' .
-            '<img src="template/icons/m_delete.png" title="' . _('Delete') . '">' .
-            '</a>'
+            '<a href="?page=userns&action=map_del&id=' . $m->id . '&t=' . csrf_token() . '">'
+            . '<img src="template/icons/m_delete.png" title="' . _('Delete') . '">'
+            . '</a>'
         );
         $xtpl->table_tr();
     }
@@ -252,9 +252,9 @@ function userns_map_show($map_id)
     $xtpl->form_create('?page=userns&action=map_edit&id=' . $m->id, 'post');
     $xtpl->table_td(_('User namespace') . ':');
     $xtpl->table_td(
-        '<a href="?page=userns&action=show&id=' . $m->user_namespace->id . '">' .
-        $m->user_namespace->id .
-        '</a>'
+        '<a href="?page=userns&action=show&id=' . $m->user_namespace->id . '">'
+        . $m->user_namespace->id
+        . '</a>'
     );
     $xtpl->table_tr();
 
@@ -280,17 +280,17 @@ function userns_map_show($map_id)
 
     foreach ($entries as $e) {
         $xtpl->table_td(
-            strtoupper($e->kind) .
-            '<input type="hidden" name="entry_id[]" value="' . $e->id . '">'
+            strtoupper($e->kind)
+            . '<input type="hidden" name="entry_id[]" value="' . $e->id . '">'
         );
 
         $xtpl->form_add_input_pure('text', '14', 'vps_id[]', post_val_array('vps_id', $i, $e->vps_id));
         $xtpl->form_add_input_pure('text', '14', 'ns_id[]', post_val_array('ns_id', $i, $e->ns_id));
         $xtpl->form_add_input_pure('text', '14', 'count[]', post_val_array('count', $i, $e->count));
         $xtpl->table_td(
-            '<a href="?page=userns&action=map_entry_del&map=' . $m->id . '&entry=' . $e->id . '&t=' . csrf_token() . '">' .
-            '<img src="template/icons/m_delete.png" title="' . _('Delete') . '">' .
-            '</a>'
+            '<a href="?page=userns&action=map_entry_del&map=' . $m->id . '&entry=' . $e->id . '&t=' . csrf_token() . '">'
+            . '<img src="template/icons/m_delete.png" title="' . _('Delete') . '">'
+            . '</a>'
         );
         $xtpl->table_tr();
 

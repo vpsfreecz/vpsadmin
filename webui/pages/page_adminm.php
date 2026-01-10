@@ -309,8 +309,8 @@ function print_editm($u)
 
     if (!isAdmin()) {
         $xtpl->form_add_input(_("Reason for change") . ':', 'text', '50', 'change_reason', $_POST['change_reason'] ?? null);
-        $xtpl->table_td(_("Request for change will be sent to administrators for approval." .
-                          "Changes will not take effect immediately. You will be informed about the result."), false, false, 3);
+        $xtpl->table_td(_("Request for change will be sent to administrators for approval."
+                          . "Changes will not take effect immediately. You will be informed about the result."), false, false, 3);
         $xtpl->table_tr();
     }
 
@@ -352,9 +352,9 @@ function print_editm($u)
     }
 
     $xtpl->table_td(
-        '<a href="?page=adminm&action=template_recipients&id=' . $u->id . '">' .
-        _('Advanced configuration') .
-        '</a>'
+        '<a href="?page=adminm&action=template_recipients&id=' . $u->id . '">'
+        . _('Advanced configuration')
+        . '</a>'
     );
     $xtpl->table_td($xtpl->html_submit(_('Save')));
     $xtpl->table_tr();
@@ -435,8 +435,8 @@ function list_pubkeys()
 
     if ($pubkeys->count() == 0) {
         $xtpl->table_td(
-            '<a href="?page=adminm&section=members&action=pubkey_add&id=' . $_GET['id'] . '">' .
-            _('Add a public key') . '</a>',
+            '<a href="?page=adminm&section=members&action=pubkey_add&id=' . $_GET['id'] . '">'
+            . _('Add a public key') . '</a>',
             false,
             false,
             '7'
@@ -788,9 +788,9 @@ function list_members()
 
             if ((isAdmin()) && ($u->id != $_SESSION["user"]["id"])) {
                 $xtpl->table_td(
-                    '<a href="?page=login&action=switch_context&m_id=' . $u->id . '&next=' . urlencode($_SERVER["REQUEST_URI"]) . '">' .
-                    '<img src="template/icons/m_switch.png" title="' . _("Switch context") . '"></a>' .
-                    $u->login
+                    '<a href="?page=login&action=switch_context&m_id=' . $u->id . '&next=' . urlencode($_SERVER["REQUEST_URI"]) . '">'
+                    . '<img src="template/icons/m_switch.png" title="' . _("Switch context") . '"></a>'
+                    . $u->login
                 );
 
             } else {
@@ -958,9 +958,9 @@ function estimate_income()
 
     $y = date('Y');
     $xtpl->table_td(
-        _('Year') . ':' .
-        '<input type="hidden" name="page" value="adminm">' .
-        '<input type="hidden" name="action" value="estimate_income">'
+        _('Year') . ':'
+        . '<input type="hidden" name="page" value="adminm">'
+        . '<input type="hidden" name="action" value="estimate_income">'
     );
     $xtpl->form_add_number_pure('y', get_val('y', $y), $y);
     $xtpl->table_tr();
