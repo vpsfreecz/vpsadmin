@@ -15,7 +15,7 @@ module TransactionChains
           kill:
         }
       ) do |t|
-        t.just_create(vps.log(:stop)) unless included?
+        t.just_create(vps.log(:stop, force: kill)) unless included?
         t.edit(vps, autostart_enable: false)
       end
     end
