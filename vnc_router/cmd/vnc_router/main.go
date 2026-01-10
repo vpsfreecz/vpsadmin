@@ -10,6 +10,7 @@ import (
 	"net"
 	"net/http"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 
@@ -165,7 +166,7 @@ var consoleTpl = template.Must(template.New("console").Parse(`<!doctype html>
     import RFB from '/core/rfb.js';
 
     const pageData = {
-      vpsId: {{ .VpsID }},
+      vpsId: {{ .VpsIDJS }},
       wsPath: {{ .WSPathJS }},
       clientToken: {{ .ClientTokenJS }},
       apiUrl: {{ .APIURLJS }},
@@ -539,9 +540,37 @@ var consoleTpl = template.Must(template.New("console").Parse(`<!doctype html>
       });
     }
 
-    connect();
+    async function ensureClientToken() {
+      if (currentClientToken && typeof currentClientToken === 'string') {
+        return currentClientToken;
+      }
+      if (!hasApiAuth) {
+        throw new Error('API auth required to obtain VNC token');
+      }
+      setStatus('Requesting VNC token...');
+      const newToken = await fetchNewVncToken();
+      currentClientToken = newToken;
+      return newToken;
+    }
+
+    async function startConnectionWorkflow() {
+      if (connectionBusy) return;
+      setConnectionBusy(true);
+      try {
+        const tok = await ensureClientToken();
+        connect(tok);
+      } catch (err) {
+        handleFatal('Unable to start VNC session', err);
+      }
+    }
+
     if (hasApiAuth) {
+      startConnectionWorkflow();
       apiKeepaliveLoop();
+    } else if (currentClientToken) {
+      connect();
+    } else {
+      setStatus('missing credentials');
     }
     setupPowerMenu();
 
@@ -549,7 +578,7 @@ var consoleTpl = template.Must(template.New("console").Parse(`<!doctype html>
       btnConnect.addEventListener('click', () => {
         if (connectionBusy) return;
         manualDisconnect = false;
-        connect();
+        startConnectionWorkflow();
       });
     }
 
@@ -730,6 +759,7 @@ var consoleTpl = template.Must(template.New("console").Parse(`<!doctype html>
 type consolePageData struct {
 	ClientTokenJS template.JS // JSON-encoded string literal
 	WSPath        string
+	VpsIDJS       template.JS
 	WSPathJS      template.JS
 	VpsID         int
 	APIURLJS      template.JS
@@ -822,32 +852,39 @@ func main() {
 		metricsRegistry.ExportPrometheus(w)
 	})
 
-	// Wrapper page: /console?client_token=...
+	// Wrapper page: /console?client_token=... or /console?api_url=...&auth_type=...&auth_token=...&vps_id=...
 	mux.HandleFunc("/console", func(w http.ResponseWriter, r *http.Request) {
 		q := r.URL.Query()
 
 		clientToken := q.Get("client_token")
-		if clientToken == "" {
-			http.Error(w, "missing client_token", http.StatusBadRequest)
-			return
+		var target *rpc.VncTarget
+		apiURL := ""
+		vpsID := 0
+		if clientToken != "" {
+			ctx, cancel := context.WithTimeout(r.Context(), 15*time.Second)
+			defer cancel()
+			t, err := rpcClient.GetVncTarget(ctx, clientToken)
+			if err != nil {
+				debugf("console: get_vnc_target failed from %s: %v", r.RemoteAddr, err)
+				http.Error(w, "auth failed", http.StatusForbidden)
+				return
+			}
+			target = t
+			apiURL = t.APIURL
+			vpsID = t.VpsID
 		}
 
-		ctx, cancel := context.WithTimeout(r.Context(), 15*time.Second)
-		target, err := rpcClient.GetVncTarget(ctx, clientToken)
-		cancel()
-		if err != nil {
-			debugf("console: get_vnc_target failed from %s: %v", r.RemoteAddr, err)
-			http.Error(w, "auth failed", http.StatusForbidden)
-			return
-		}
-
-		apiURL := target.APIURL
 		if override := q.Get("api_url"); override != "" {
 			apiURL = override
 		}
 		apiVersion := q.Get("api_version")
 		authType := strings.ToLower(q.Get("auth_type"))
 		authToken := q.Get("auth_token")
+		if vpsIDStr := q.Get("vps_id"); vpsIDStr != "" {
+			if parsed, err := strconv.Atoi(vpsIDStr); err == nil && parsed > 0 {
+				vpsID = parsed
+			}
+		}
 
 		if authType != "oauth2" && authType != "token" {
 			authType = ""
@@ -856,12 +893,23 @@ func main() {
 			authType = ""
 		}
 
+		if vpsID == 0 {
+			http.Error(w, "missing vps_id", http.StatusBadRequest)
+			return
+		}
+
+		if apiURL == "" {
+			http.Error(w, "missing api_url", http.StatusBadRequest)
+			return
+		}
+
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		_ = consoleTpl.Execute(w, consolePageData{
 			ClientTokenJS: jsStringOrNull(clientToken),
 			WSPath:        wsPath,
 			WSPathJS:      jsStringOrNull(wsPath),
-			VpsID:         target.VpsID,
+			VpsID:         vpsID,
+			VpsIDJS:       jsStringOrNull(strconv.Itoa(vpsID)),
 			APIURLJS:      jsStringOrNull(apiURL),
 			APIVersionJS:  jsStringOrNull(apiVersion),
 			AuthTypeJS:    jsStringOrNull(authType),
