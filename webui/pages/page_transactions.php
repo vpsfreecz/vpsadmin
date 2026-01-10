@@ -300,10 +300,10 @@ function chain_transactions($chain_id)
 
         if ($_GET['details'] ?? false) {
             $xtpl->table_td(nl2br(
-                "<strong>" . _('Input') . "</strong>\n" .
-                "<pre><code>" . htmlspecialchars(print_r(json_decode($t->input, true), true)) . "</pre></code>" .
-                "\n<strong>" . _('Output') . "</strong>\n" .
-                "<pre><code>" . htmlspecialchars(print_r(json_decode($t->output, true), true)) . "</pre></code>"
+                "<strong>" . _('Input') . "</strong>\n"
+                . "<pre><code>" . htmlspecialchars(print_r(json_decode($t->input, true), true)) . "</pre></code>"
+                . "\n<strong>" . _('Output') . "</strong>\n"
+                . "<pre><code>" . htmlspecialchars(print_r(json_decode($t->output, true), true)) . "</pre></code>"
             ), false, false, 10);
             $xtpl->table_tr();
         }

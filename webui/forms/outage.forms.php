@@ -236,11 +236,11 @@ function outage_edit_attrs_form($id)
     }
 
     $xtpl->table_td(
-        _('<strong>This form is used to edit the original report.</strong>') .
-        ' ' .
-        '<a href="?page=outage&action=update&id=' . $outage->id . '">' . _('Post an update') . '</a>' .
-        ' ' .
-        _('instead') . '?',
+        _('<strong>This form is used to edit the original report.</strong>')
+        . ' '
+        . '<a href="?page=outage&action=update&id=' . $outage->id . '">' . _('Post an update') . '</a>'
+        . ' '
+        . _('instead') . '?',
         false,
         false,
         '2'
@@ -432,33 +432,33 @@ function outage_details($id)
             } else {
                 $xtpl->table_td(_('Affected users') . ':');
                 $xtpl->table_td(
-                    '<a href="?page=outage&action=users&id=' . $outage->id . '">' .
-                    $outage->affected_user_count .
-                    '</a>'
+                    '<a href="?page=outage&action=users&id=' . $outage->id . '">'
+                    . $outage->affected_user_count
+                    . '</a>'
                 );
                 $xtpl->table_tr();
 
                 $xtpl->table_td(_('Directly affected VPS') . ':');
                 $xtpl->table_td(
-                    '<a href="?page=outage&action=vps&id=' . $outage->id . '&direct=yes">' .
-                    $outage->affected_direct_vps_count .
-                    '</a>'
+                    '<a href="?page=outage&action=vps&id=' . $outage->id . '&direct=yes">'
+                    . $outage->affected_direct_vps_count
+                    . '</a>'
                 );
                 $xtpl->table_tr();
 
                 $xtpl->table_td(_('Indirectly affected VPS') . ':');
                 $xtpl->table_td(
-                    '<a href="?page=outage&action=vps&id=' . $outage->id . '&direct=no">' .
-                    $outage->affected_indirect_vps_count .
-                    '</a>'
+                    '<a href="?page=outage&action=vps&id=' . $outage->id . '&direct=no">'
+                    . $outage->affected_indirect_vps_count
+                    . '</a>'
                 );
                 $xtpl->table_tr();
 
                 $xtpl->table_td(_('Affected exports') . ':');
                 $xtpl->table_td(
-                    '<a href="?page=outage&action=exports&id=' . $outage->id . '">' .
-                    $outage->affected_export_count .
-                    '</a>'
+                    '<a href="?page=outage&action=exports&id=' . $outage->id . '">'
+                    . $outage->affected_export_count
+                    . '</a>'
                 );
                 $xtpl->table_tr();
             }
@@ -845,16 +845,16 @@ function outage_list()
 
             } else {
                 $xtpl->table_td(
-                    '<a href="?page=outage&action=users&id=' . $outage->id . '">' .
-                    $outage->affected_user_count .
-                    '</a>',
+                    '<a href="?page=outage&action=users&id=' . $outage->id . '">'
+                    . $outage->affected_user_count
+                    . '</a>',
                     false,
                     true
                 );
                 $xtpl->table_td(
-                    '<a href="?page=outage&action=vps&id=' . $outage->id . '">' .
-                    $outage->affected_direct_vps_count .
-                    '</a>',
+                    '<a href="?page=outage&action=vps&id=' . $outage->id . '">'
+                    . $outage->affected_direct_vps_count
+                    . '</a>',
                     false,
                     true
                 );
@@ -898,16 +898,16 @@ function outage_affected_users($id)
         $xtpl->table_td(user_link($out->user));
         $xtpl->table_td(h($out->user->full_name));
         $xtpl->table_td(
-            '<a href="?page=outage&action=vps&id=' . $outage->id . '&user=' . $out->user_id . '">' .
-            $out->vps_count .
-            '</a>',
+            '<a href="?page=outage&action=vps&id=' . $outage->id . '&user=' . $out->user_id . '">'
+            . $out->vps_count
+            . '</a>',
             false,
             true
         );
         $xtpl->table_td(
-            '<a href="?page=outage&action=exports&id=' . $outage->id . '&user=' . $out->user_id . '">' .
-            $out->export_count .
-            '</a>',
+            '<a href="?page=outage&action=exports&id=' . $outage->id . '&user=' . $out->user_id . '">'
+            . $out->export_count
+            . '</a>',
             false,
             true
         );
@@ -932,10 +932,10 @@ function outage_affected_vps($id)
         $xtpl->form_create('', 'get', 'outage-list', false);
 
         $xtpl->table_td(
-            _("User ID") . ':' .
-            '<input type="hidden" name="page" value="outage">' .
-            '<input type="hidden" name="action" value="vps">' .
-            '<input type="hidden" name="id" value="' . $outage->id . '">'
+            _("User ID") . ':'
+            . '<input type="hidden" name="page" value="outage">'
+            . '<input type="hidden" name="action" value="vps">'
+            . '<input type="hidden" name="id" value="' . $outage->id . '">'
         );
         $xtpl->form_add_input_pure('text', '30', 'user', get_val('user'), '');
         $xtpl->table_tr();
@@ -1022,10 +1022,10 @@ function outage_affected_exports($id)
         $xtpl->form_create('', 'get', 'outage-list', false);
 
         $xtpl->table_td(
-            _("User ID") . ':' .
-            '<input type="hidden" name="page" value="outage">' .
-            '<input type="hidden" name="action" value="vps">' .
-            '<input type="hidden" name="id" value="' . $outage->id . '">'
+            _("User ID") . ':'
+            . '<input type="hidden" name="page" value="outage">'
+            . '<input type="hidden" name="action" value="vps">'
+            . '<input type="hidden" name="id" value="' . $outage->id . '">'
         );
         $xtpl->form_add_input_pure('text', '30', 'user', get_val('user'), '');
         $xtpl->table_tr();
@@ -1195,16 +1195,16 @@ function outage_list_overview($outages)
 
         if (isAdmin()) {
             $xtpl->table_td(
-                '<a href="?page=outage&action=users&id=' . $outage->id . '">' .
-                $outage->affected_user_count .
-                '</a>',
+                '<a href="?page=outage&action=users&id=' . $outage->id . '">'
+                . $outage->affected_user_count
+                . '</a>',
                 false,
                 true
             );
             $xtpl->table_td(
-                '<a href="?page=outage&action=vps&id=' . $outage->id . '">' .
-                $outage->affected_direct_vps_count .
-                '</a>',
+                '<a href="?page=outage&action=vps&id=' . $outage->id . '">'
+                . $outage->affected_direct_vps_count
+                . '</a>',
                 false,
                 true
             );

@@ -230,8 +230,8 @@ function dataset_create_form()
     }
 
     $xtpl->table_td(
-        $quota->label . ' ' .
-        '<input type="hidden" name="return" value="' . ($_GET['return'] ? $_GET['return'] : $_POST['return']) . '">'
+        $quota->label . ' '
+        . '<input type="hidden" name="return" value="' . ($_GET['return'] ? $_GET['return'] : $_POST['return']) . '">'
     );
     $xtpl->form_add_input_pure('text', '30', $quota_name, $_POST[$quota_name] ? $_POST[$quota_name] : $v[0], $quota->description);
     $xtpl->form_add_select_pure('quota_unit', ["g" => "GiB", "t" => "TiB"], $_POST[$quota_name] ? $_POST['quota_unit'] : $v[1]);
@@ -296,8 +296,8 @@ function dataset_edit_form()
     }
 
     $xtpl->table_td(
-        $quota->label . ' ' .
-        '<input type="hidden" name="return" value="' . ($_GET['return'] ? $_GET['return'] : $_POST['return']) . '">'
+        $quota->label . ' '
+        . '<input type="hidden" name="return" value="' . ($_GET['return'] ? $_GET['return'] : $_POST['return']) . '">'
     );
     $xtpl->form_add_input_pure('text', '30', $quota_name, $_POST[$quota_name] ? $_POST[$quota_name] : $v[0], $quota->description);
     $xtpl->form_add_select_pure('quota_unit', ["g" => "GiB", "t" => "TiB"], $_POST[$quota_name] ? $_POST['quota_unit'] : $v[1]);
@@ -475,8 +475,8 @@ function dataset_edit_form()
     }
 
     $xtpl->table_td(
-        _('Add backup plan') . ':' . ' ' .
-        '<input type="hidden" name="return" value="' . ($_GET['return'] ? $_GET['return'] : $_POST['return']) . '">'
+        _('Add backup plan') . ':' . ' '
+        . '<input type="hidden" name="return" value="' . ($_GET['return'] ? $_GET['return'] : $_POST['return']) . '">'
     );
     $xtpl->form_add_select_pure('environment_dataset_plan', resource_list_to_options($ds->environment->dataset_plan->list()));
     $xtpl->table_td('');
@@ -619,9 +619,9 @@ function mount_list($vps)
         $xtpl->table_td($m->expiration_date ? tolocaltz($m->expiration_date, 'Y-m-d H:i') : '---');
         if ($m->master_enabled) {
             $xtpl->table_td(
-                '<a href="?page=dataset&action=mount_toggle&vps=' . $vps->id . '&id=' . $m->id . '&do=' . ($m->enabled ? 0 : 1) . '&return=' . $return . '&t=' . csrf_token() . '">' .
-                ($m->enabled ? _('Disable') : _('Enable')) .
-                '</a>'
+                '<a href="?page=dataset&action=mount_toggle&vps=' . $vps->id . '&id=' . $m->id . '&do=' . ($m->enabled ? 0 : 1) . '&return=' . $return . '&t=' . csrf_token() . '">'
+                . ($m->enabled ? _('Disable') : _('Enable'))
+                . '</a>'
             );
 
         } else {
@@ -745,7 +745,7 @@ function include_dataset_scripts()
 
     $xtpl->assign(
         'AJAX_SCRIPT',
-        $xtpl->vars['AJAX_SCRIPT'] .
-        '<script type="text/javascript" src="js/dataset.js"></script>'
+        $xtpl->vars['AJAX_SCRIPT']
+        . '<script type="text/javascript" src="js/dataset.js"></script>'
     );
 }

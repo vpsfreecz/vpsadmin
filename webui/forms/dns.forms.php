@@ -465,8 +465,8 @@ function dns_zone_transfer_new($id)
         )
     );
     $xtpl->table_td(
-        _('Optional signing key') . ', ' .
-        '<a href="?page=dns&action=tsig_key_list">' . _('manage TSIG keys') . '</a>',
+        _('Optional signing key') . ', '
+        . '<a href="?page=dns&action=tsig_key_list">' . _('manage TSIG keys') . '</a>',
         false,
         false,
         3
@@ -613,17 +613,17 @@ function dnssec_records_list($zone_id)
 
         $xtpl->table_td(_('DNSKEY record') . ':');
         $xtpl->table_td(
-            '<textarea cols="70" rows="5" readonly>' .
-            "{$zone->name} IN DNSKEY 257 3 {$r->dnskey_algorithm} {$r->dnskey_pubkey}" .
-            '</textarea>'
+            '<textarea cols="70" rows="5" readonly>'
+            . "{$zone->name} IN DNSKEY 257 3 {$r->dnskey_algorithm} {$r->dnskey_pubkey}"
+            . '</textarea>'
         );
         $xtpl->table_tr();
 
         $xtpl->table_td(_('DS record') . ':');
         $xtpl->table_td(
-            '<textarea cols="70" rows="5" readonly>' .
-            "{$zone->name} IN DS {$r->keyid} {$r->ds_algorithm} {$r->ds_digest_type} {$r->ds_digest}" .
-            '</textarea>'
+            '<textarea cols="70" rows="5" readonly>'
+            . "{$zone->name} IN DS {$r->keyid} {$r->ds_algorithm} {$r->ds_digest_type} {$r->ds_digest}"
+            . '</textarea>'
         );
         $xtpl->table_tr();
 
@@ -786,8 +786,8 @@ function dns_ptr_list()
         'purpose' => 'vps',
         'routed' => true,
         'meta' => [
-            'includes' => 'ip_address__user,ip_address__network_interface__vps,' .
-                          'ip_address__network',
+            'includes' => 'ip_address__user,ip_address__network_interface__vps,'
+                          . 'ip_address__network',
         ],
     ];
 
@@ -910,9 +910,9 @@ function dns_ptr_list()
         $xtpl->table_td($host_addr->reverse_record_value ? h($host_addr->reverse_record_value) : '-');
 
         $xtpl->table_td(
-            '<a href="?page=networking&action=hostaddr_ptr&id=' . $host_addr->id . '&return=' . $return_url . '">' .
-            '<img src="template/icons/m_edit.png" alt="' . _('Set reverse record') . '" title="' . _('Set reverse record') . '">' .
-            '</a>'
+            '<a href="?page=networking&action=hostaddr_ptr&id=' . $host_addr->id . '&return=' . $return_url . '">'
+            . '<img src="template/icons/m_edit.png" alt="' . _('Set reverse record') . '" title="' . _('Set reverse record') . '">'
+            . '</a>'
         );
 
         $xtpl->table_tr();

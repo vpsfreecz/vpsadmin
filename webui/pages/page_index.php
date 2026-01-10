@@ -103,9 +103,9 @@ if ($goresheatUrl) {
 
     $xtpl->assign(
         'AJAX_SCRIPT',
-        ($xtpl->vars['AJAX_SCRIPT'] ?? '') .
-        '<script type="text/javascript">window.goresheatServers = ' . json_encode($goresheatServers) . ';</script>' .
-        '<script type="text/javascript" src="js/goresheat.js"></script>'
+        ($xtpl->vars['AJAX_SCRIPT'] ?? '')
+        . '<script type="text/javascript">window.goresheatServers = ' . json_encode($goresheatServers) . ';</script>'
+        . '<script type="text/javascript" src="js/goresheat.js"></script>'
     );
 }
 

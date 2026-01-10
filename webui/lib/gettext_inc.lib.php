@@ -243,8 +243,8 @@ function _setlocale($category, $locale)
     } else {
         if (function_exists('setlocale')) {
             $ret = setlocale($category, $locale);
-            if (($locale == '' and !$ret) or // failed setting it by env
-                ($locale != '' and $ret != $locale)) { // failed setting it
+            if (($locale == '' and !$ret) // failed setting it by env
+                or ($locale != '' and $ret != $locale)) { // failed setting it
                 // Failed setting it according to environment.
                 $CURRENTLOCALE = _get_default_locale($locale);
                 $EMULATEGETTEXT = 1;

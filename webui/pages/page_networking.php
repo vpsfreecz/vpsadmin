@@ -92,8 +92,8 @@ if (isLoggedIn()) {
                     if ($_POST['route_via']) {
                         $xtpl->perex(
                             _('Invalid route'),
-                            _('When adding the address to the interface, it cannot be routed ' .
-                              'through another address: do not set the "Address" field')
+                            _('When adding the address to the interface, it cannot be routed '
+                              . 'through another address: do not set the "Address" field')
                         );
                         route_assign_form($_GET['id']);
 
@@ -516,9 +516,9 @@ if (isLoggedIn()) {
 
         foreach ($stats as $stat) {
             $xtpl->table_td(
-                '<a href="?page=networking&action=list&user=' . $stat->user_id . '&year=' . $_GET['year'] . '&month=' . $_GET['month'] . '">' .
-                $stat->user->login .
-                '</a>'
+                '<a href="?page=networking&action=list&user=' . $stat->user_id . '&year=' . $_GET['year'] . '&month=' . $_GET['month'] . '">'
+                . $stat->user->login
+                . '</a>'
             );
 
             $xtpl->table_td($stat->year . '/' . $stat->month);
@@ -541,9 +541,9 @@ if (isLoggedIn()) {
         $xtpl->form_create('?page=adminm&section=members&action=approval_requests', 'get');
 
         $xtpl->table_td(
-            _("Limit") . ':' .
-            '<input type="hidden" name="page" value="networking">' .
-            '<input type="hidden" name="action" value="live">'
+            _("Limit") . ':'
+            . '<input type="hidden" name="page" value="networking">'
+            . '<input type="hidden" name="action" value="live">'
         );
         $xtpl->form_add_input_pure('text', '30', 'limit', get_val('limit', 25));
         $xtpl->table_tr();

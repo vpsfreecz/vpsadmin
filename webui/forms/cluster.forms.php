@@ -45,8 +45,8 @@ function cluster_header()
     $xtpl->table_tr();
 
     $xtpl->table_td(_("VPS") . ':');
-    $xtpl->table_td($stats["vps_running"] . ' ' . _("running") . ' / ' . $stats["vps_stopped"] . ' ' . _("stopped") . ' / ' . $stats["vps_suspended"] . ' ' . _("suspended") . ' / ' .
-                    $stats["vps_deleted"] . ' ' . _("deleted") . ' / ' . $stats["vps_count"] . ' ' . _("total"));
+    $xtpl->table_td($stats["vps_running"] . ' ' . _("running") . ' / ' . $stats["vps_stopped"] . ' ' . _("stopped") . ' / ' . $stats["vps_suspended"] . ' ' . _("suspended") . ' / '
+                    . $stats["vps_deleted"] . ' ' . _("deleted") . ' / ' . $stats["vps_count"] . ' ' . _("total"));
     $xtpl->table_tr();
 
     $xtpl->table_td(_("Members") . ':');
@@ -234,8 +234,8 @@ function networks_list()
         $xtpl->table_td($n->assigned, false, true);
         $xtpl->table_td($n->owned, false, true);
         $xtpl->table_td(
-            (approx_number($n->used - $n->taken)) .
-            ' (' . (approx_number($n->size - $n->taken)) . ')',
+            (approx_number($n->used - $n->taken))
+            . ' (' . (approx_number($n->size - $n->taken)) . ')',
             false,
             true
         );
@@ -249,11 +249,11 @@ function networks_list()
             )
         );
         $xtpl->table_td(
-            '<a href="?page=cluster&action=network_locations&network=' . $n->id . '">' .
-            '<img
+            '<a href="?page=cluster&action=network_locations&network=' . $n->id . '">'
+            . '<img
 				src="template/icons/vps_ip_list.png"
-				title="' . _('List locations this network is available in') . '">' .
-            '</a>'
+				title="' . _('List locations this network is available in') . '">'
+            . '</a>'
         );
         $xtpl->table_tr();
     }
@@ -433,8 +433,8 @@ function location_network_edit_form($locnetId)
     );
 
     $xtpl->title(
-        _('Location network') . ': ' . $locnet->location->label . ' @ ' .
-        $locnet->network->address . '/' . $locnet->network->prefix
+        _('Location network') . ': ' . $locnet->location->label . ' @ '
+        . $locnet->network->address . '/' . $locnet->network->prefix
     );
 
     $xtpl->form_create('?page=cluster&action=location_network_edit&id=' . $locnet->id, 'post');
@@ -820,8 +820,8 @@ function resource_packages_delete_form($pkg_id)
     $xtpl->table_tr();
 
     $xtpl->table_td(
-        _('<b>Warning:</b> The package will also be immediately removed from ' .
-        'all users that are using it.'),
+        _('<b>Warning:</b> The package will also be immediately removed from '
+        . 'all users that are using it.'),
         false,
         false,
         '2'
@@ -892,8 +892,8 @@ function resource_packages_item_delete_form($pkg_id, $item_id)
     $xtpl->table_tr();
 
     $xtpl->table_td(
-        _('<b>Warning:</b> The resource will also be immediately removed from ' .
-        'all users having this package.'),
+        _('<b>Warning:</b> The resource will also be immediately removed from '
+        . 'all users having this package.'),
         false,
         false,
         '2'
