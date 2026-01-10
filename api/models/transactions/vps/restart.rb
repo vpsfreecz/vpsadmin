@@ -4,13 +4,14 @@ module Transactions::Vps
     t_type 1003
     queue :vps
 
-    def params(vps, start_timeout: 'infinity')
+    def params(vps, start_timeout: 'infinity', kill: false)
       self.vps_id = vps.id
       self.node_id = vps.node_id
 
       {
         start_timeout:,
-        autostart_priority: vps.autostart_priority
+        autostart_priority: vps.autostart_priority,
+        kill:
       }
     end
   end

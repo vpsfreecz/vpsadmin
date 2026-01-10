@@ -546,6 +546,10 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
     http_method :post
     blocking true
 
+    input(:hash) do
+      bool :force, label: 'Force restart', default: false, fill: true
+    end
+
     authorize do |u|
       allow if u.role == :admin
       restrict user_id: u.id
@@ -557,7 +561,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
       maintenance_check!(vps)
       object_state_check!(vps, vps.user)
 
-      @chain, = TransactionChains::Vps::Restart.fire(vps)
+      @chain, = TransactionChains::Vps::Restart.fire(vps, kill: input[:force])
       ok!
     end
 
@@ -572,6 +576,10 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
     http_method :post
     blocking true
 
+    input(:hash) do
+      bool :force, label: 'Force stop', default: false, fill: true
+    end
+
     authorize do |u|
       allow if u.role == :admin
       restrict user_id: u.id
@@ -583,7 +591,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
       maintenance_check!(vps)
       object_state_check!(vps, vps.user)
 
-      @chain, = TransactionChains::Vps::Stop.fire(vps)
+      @chain, = TransactionChains::Vps::Stop.fire(vps, kill: input[:force])
       ok!
     end
 
