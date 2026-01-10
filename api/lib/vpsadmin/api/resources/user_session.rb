@@ -120,7 +120,6 @@ module VpsAdmin::API::Resources
 
       input do
         use :all, include: %i[user scope token_lifetime token_interval label]
-        patch :user, required: true
         patch :token_lifetime, required: true
         patch :scope, default: 'all', fill: true
       end
@@ -132,12 +131,20 @@ module VpsAdmin::API::Resources
 
       authorize do |u|
         allow if u.role == :admin
+        input blacklist: %i[user]
+        allow
       end
 
       def exec
+        target_user = input[:user] || current_user
+
+        if target_user != current_user && current_user.role != :admin
+          error!('not allowed')
+        end
+
         VpsAdmin::API::Operations::UserSession::NewTokenDetached.run(
-          user: input[:user],
-          admin: current_user,
+          user: target_user,
+          admin: current_user.role == :admin ? current_user : nil,
           request:,
           token_lifetime: input[:token_lifetime],
           token_interval: input[:token_interval],
