@@ -168,7 +168,7 @@ var consoleTpl = template.Must(template.New("console").Parse(`<!doctype html>
     const pageData = {
       vpsId: {{ .VpsIDJS }},
       wsPath: {{ .WSPathJS }},
-      clientToken: {{ .ClientTokenJS }},
+      clientToken: null,
       apiUrl: {{ .APIURLJS }},
       apiVersion: {{ .APIVersionJS }},
       authType: {{ .AuthTypeJS }},
@@ -757,15 +757,14 @@ var consoleTpl = template.Must(template.New("console").Parse(`<!doctype html>
 </html>`))
 
 type consolePageData struct {
-	ClientTokenJS template.JS // JSON-encoded string literal
-	WSPath        string
-	VpsIDJS       template.JS
-	WSPathJS      template.JS
-	VpsID         int
-	APIURLJS      template.JS
-	APIVersionJS  template.JS
-	AuthTypeJS    template.JS
-	AuthTokenJS   template.JS
+	WSPath       string
+	VpsIDJS      template.JS
+	WSPathJS     template.JS
+	VpsID        int
+	APIURLJS     template.JS
+	APIVersionJS template.JS
+	AuthTypeJS   template.JS
+	AuthTokenJS  template.JS
 }
 
 func jsStringOrNull(s string) template.JS {
@@ -856,30 +855,11 @@ func main() {
 	mux.HandleFunc("/console", func(w http.ResponseWriter, r *http.Request) {
 		q := r.URL.Query()
 
-		clientToken := q.Get("client_token")
-		var target *rpc.VncTarget
-		apiURL := ""
-		vpsID := 0
-		if clientToken != "" {
-			ctx, cancel := context.WithTimeout(r.Context(), 15*time.Second)
-			defer cancel()
-			t, err := rpcClient.GetVncTarget(ctx, clientToken)
-			if err != nil {
-				debugf("console: get_vnc_target failed from %s: %v", r.RemoteAddr, err)
-				http.Error(w, "auth failed", http.StatusForbidden)
-				return
-			}
-			target = t
-			apiURL = t.APIURL
-			vpsID = t.VpsID
-		}
-
-		if override := q.Get("api_url"); override != "" {
-			apiURL = override
-		}
+		apiURL := q.Get("api_url")
 		apiVersion := q.Get("api_version")
 		authType := strings.ToLower(q.Get("auth_type"))
 		authToken := q.Get("auth_token")
+		vpsID := 0
 		if vpsIDStr := q.Get("vps_id"); vpsIDStr != "" {
 			if parsed, err := strconv.Atoi(vpsIDStr); err == nil && parsed > 0 {
 				vpsID = parsed
@@ -905,15 +885,14 @@ func main() {
 
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		_ = consoleTpl.Execute(w, consolePageData{
-			ClientTokenJS: jsStringOrNull(clientToken),
-			WSPath:        wsPath,
-			WSPathJS:      jsStringOrNull(wsPath),
-			VpsID:         vpsID,
-			VpsIDJS:       jsStringOrNull(strconv.Itoa(vpsID)),
-			APIURLJS:      jsStringOrNull(apiURL),
-			APIVersionJS:  jsStringOrNull(apiVersion),
-			AuthTypeJS:    jsStringOrNull(authType),
-			AuthTokenJS:   jsStringOrNull(authToken),
+			WSPath:       wsPath,
+			WSPathJS:     jsStringOrNull(wsPath),
+			VpsID:        vpsID,
+			VpsIDJS:      jsStringOrNull(strconv.Itoa(vpsID)),
+			APIURLJS:     jsStringOrNull(apiURL),
+			APIVersionJS: jsStringOrNull(apiVersion),
+			AuthTypeJS:   jsStringOrNull(authType),
+			AuthTokenJS:  jsStringOrNull(authToken),
 		})
 	})
 
