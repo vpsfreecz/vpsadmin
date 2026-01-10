@@ -31,8 +31,11 @@ module NodeCtld
       osctl(%i[ct unset autostart], @veid)
     end
 
-    def restart(start_timeout, autostart_priority)
-      osctl(%i[ct restart], @veid, { wait: start_timeout || START_TIMEOUT })
+    def restart(start_timeout, autostart_priority, kill: false)
+      opts = { wait: start_timeout || START_TIMEOUT }
+      opts[:kill] = true if kill
+
+      osctl(%i[ct restart], @veid, opts)
       osctl(%i[ct set autostart], @veid, { priority: autostart_priority })
     end
 
