@@ -4,7 +4,7 @@ module NodeCtld
 
     def exec
       @vps = Vps.new(@vps_id)
-      @vps.restart(@start_timeout, @autostart_priority)
+      @vps.restart(@start_timeout, @autostart_priority, kill: @kill)
       ok
     end
 
