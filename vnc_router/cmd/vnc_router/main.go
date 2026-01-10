@@ -149,6 +149,8 @@ var consoleTpl = template.Must(template.New("console").Parse(`<!doctype html>
         <button data-action="start">Start</button>
         <button data-action="restart">Restart</button>
         <button data-action="stop">Stop</button>
+        <button data-action="restart" data-force="true">Reset</button>
+        <button data-action="stop" data-force="true">Poweroff</button>
       </div>
     </div>
   </div>
@@ -365,7 +367,7 @@ var consoleTpl = template.Must(template.New("console").Parse(`<!doctype html>
       powerMenu.classList.toggle('open');
     }
 
-    function handlePowerAction(action, label) {
+    function handlePowerAction(action, label, force) {
       if (!hasApiAuth || powerBusy) return;
 
       closePowerMenu();
@@ -374,7 +376,10 @@ var consoleTpl = template.Must(template.New("console").Parse(`<!doctype html>
 
       ensureApiClient()
         .then((client) => {
+          const params = force ? { force: true } : undefined;
+
           client.vps[action](pageData.vpsId, {
+            params,
             onReply: (c, resp) => {
               if (!resp || !resp.isOk || !resp.isOk()) {
                 const msg = (resp && typeof resp.message === 'function') ? resp.message() : 'Action failed';
@@ -414,9 +419,10 @@ var consoleTpl = template.Must(template.New("console").Parse(`<!doctype html>
         btn.addEventListener('click', (e) => {
           e.stopPropagation();
           const action = btn.dataset.action;
-          if (action === 'start') return handlePowerAction('start', 'Starting');
-          if (action === 'restart') return handlePowerAction('restart', 'Restarting');
-          if (action === 'stop') return handlePowerAction('stop', 'Stopping');
+          const force = btn.dataset.force === 'true';
+          if (action === 'start') return handlePowerAction('start', 'Starting', force);
+          if (action === 'restart') return handlePowerAction('restart', force ? 'Resetting' : 'Restarting', force);
+          if (action === 'stop') return handlePowerAction('stop', force ? 'Powering off' : 'Stopping', force);
         });
       });
 
