@@ -165,7 +165,7 @@ module VpsAdmin
 
             next(false) unless File.fnmatch?(pattern, action_scope)
 
-            if allowed_params
+            if !ctx.doc && allowed_params
               allowed_params.all? do |k, v|
                 path_params[k] == v
               end
