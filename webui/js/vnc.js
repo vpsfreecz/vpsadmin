@@ -29,44 +29,33 @@ function handleVncLinkClick(e) {
 	popup.document.write('<p style="font-family: sans-serif; padding: 1em;">Loading VNC console...</p>');
 
 	apiClient.after('authenticated', function () {
-		apiClient.vps.vnc_token.create(veid, {
-			onReply: function (c, vncToken) {
-				if (!vncToken.isOk()) {
-					popup.close();
-					alert('Unable to open VNC console: ' + vncToken.message());
-					return;
-				}
+		var authType =
+			window.vpsAdmin && window.vpsAdmin.accessToken
+				? 'oauth2'
+				: window.vpsAdmin && window.vpsAdmin.sessionToken
+					? 'token'
+					: '';
+		var authToken =
+			authType === 'oauth2'
+				? (window.vpsAdmin ? window.vpsAdmin.accessToken : '')
+				: authType === 'token'
+					? (window.vpsAdmin ? window.vpsAdmin.sessionToken : '')
+					: '';
+		var apiUrl = window.vpsAdmin && window.vpsAdmin.api ? window.vpsAdmin.api.url : '';
+		var apiVersion = window.vpsAdmin && window.vpsAdmin.api ? window.vpsAdmin.api.version : '';
 
-				var token = vncToken.client_token;
-				var authType =
-					window.vpsAdmin && window.vpsAdmin.accessToken
-						? 'oauth2'
-						: window.vpsAdmin && window.vpsAdmin.sessionToken
-							? 'token'
-							: '';
-				var authToken =
-					authType === 'oauth2'
-						? (window.vpsAdmin ? window.vpsAdmin.accessToken : '')
-						: authType === 'token'
-							? (window.vpsAdmin ? window.vpsAdmin.sessionToken : '')
-							: '';
-				var apiUrl = window.vpsAdmin && window.vpsAdmin.api ? window.vpsAdmin.api.url : '';
-				var apiVersion = window.vpsAdmin && window.vpsAdmin.api ? window.vpsAdmin.api.version : '';
+		var params = new URLSearchParams();
+		params.set('vps_id', veid);
+		if (authType && authToken) {
+			params.set('auth_type', authType);
+			params.set('auth_token', authToken);
+		}
+		if (apiUrl) params.set('api_url', apiUrl);
+		if (apiVersion) params.set('api_version', apiVersion);
 
-				var params = new URLSearchParams();
-				params.set('client_token', token);
-				if (authType && authToken) {
-					params.set('auth_type', authType);
-					params.set('auth_token', authToken);
-				}
-				if (apiUrl) params.set('api_url', apiUrl);
-				if (apiVersion) params.set('api_version', apiVersion);
-
-				var url = server + '/console?' + params.toString();
-				popup.location.href = url;
-				popup.focus();
-			},
-		});
+		var url = server + '/console?' + params.toString();
+		popup.location.href = url;
+		popup.focus();
 	});
 }
 

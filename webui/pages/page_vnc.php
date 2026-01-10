@@ -22,14 +22,6 @@ function setup_vnc_console()
         return;
     }
 
-    try {
-        $token = $vps->vnc_token->create();
-
-    } catch (\HaveAPI\Client\Exception\ActionFailed $e) {
-        $xtpl->perex_format_errors(_('Unable to acquire VNC token'), $e->getResponse());
-        return;
-    }
-
     $server = $vps->node->location->remote_vnc_server;
 
     if (!$server) {
@@ -38,7 +30,7 @@ function setup_vnc_console()
     }
 
     $query = http_build_query([
-        'client_token' => $token->client_token,
+        'vps_id' => $vps->id,
         'auth_type' => $_SESSION['auth_type'],
         'auth_token' => getAuthenticationToken(),
         'api_url' => EXT_API_URL,
