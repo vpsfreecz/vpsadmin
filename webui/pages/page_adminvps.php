@@ -40,13 +40,15 @@ if (isLoggedIn()) {
 
     $_GET["run"] ??= false;
 
-    if ($_GET["run"] == 'stop') {
+    if ($_GET["run"] == 'stop' || $_GET["run"] == 'force_stop') {
         csrf_check();
 
         try {
-            $api->vps->stop($_GET["veid"]);
+            $api->vps->stop($_GET["veid"], [
+                'force' => $_GET["run"] == 'force_stop',
+            ]);
 
-            notify_user(_("Stop VPS") . " {$_GET["veid"]} " . _("planned"));
+            notify_user(($_GET["run"] == 'force_stop' ? _("Force stop VPS") : _("Stop VPS")) . " {$_GET["veid"]} " . _("planned"));
             redirect(vps_run_redirect_path($_GET["veid"]));
 
         } catch (\HaveAPI\Client\Exception\ActionFailed $e) {
@@ -76,13 +78,15 @@ if (isLoggedIn()) {
         }
     }
 
-    if ($_GET["run"] == 'restart') {
+    if ($_GET["run"] == 'restart' || $_GET["run"] == 'force_restart') {
         csrf_check();
 
         try {
-            $api->vps->restart($_GET["veid"]);
+            $api->vps->restart($_GET["veid"], [
+                'force' => $_GET["run"] == 'force_restart',
+            ]);
 
-            notify_user(_("Restart of") . " {$_GET["veid"]} " . _("planned"), '');
+            notify_user(($_GET["run"] == 'force_restart' ? _("Force restart VPS") : _("Restart of")) . " {$_GET["veid"]} " . _("planned"), '');
             redirect(vps_run_redirect_path($_GET["veid"]));
 
         } catch (\HaveAPI\Client\Exception\ActionFailed $e) {
@@ -1185,13 +1189,12 @@ if (isLoggedIn()) {
         $xtpl->table_td(_("Status") . ':');
 
         if ($vps->maintenance_lock == 'no') {
-            $xtpl->table_td(
-                (($vps->is_running) ?
-                    _("running") . ' (<a href="?page=adminvps&action=info&run=restart&veid=' . $vps->id . '&t=' . csrf_token() . '" ' . vps_confirm_action_onclick($vps, 'restart') . '>' . _("restart") . '</a>, <a href="?page=adminvps&action=info&run=stop&veid=' . $vps->id . '&t=' . csrf_token() . '" ' . vps_confirm_action_onclick($vps, 'stop') . '>' . _("stop") . '</a>'
-                    :
-                    _("stopped") . ' (<a href="?page=adminvps&action=info&run=start&veid=' . $vps->id . '&t=' . csrf_token() . '">' . _("start") . '</a>') .
-                    ', <a href="?page=console&veid=' . $vps->id . '&t=' . csrf_token() . '">' . _("open remote console") . '</a>)'
-            );
+            $status = $vps->is_running
+                ? _("running") . ' (<a href="?page=adminvps&action=info&run=restart&veid=' . $vps->id . '&t=' . csrf_token() . '" ' . vps_confirm_action_onclick($vps, 'restart') . '>' . _("restart") . '</a>, <a href="?page=adminvps&action=info&run=force_restart&veid=' . $vps->id . '&t=' . csrf_token() . '" ' . vps_confirm_action_onclick($vps, 'force_restart') . '>' . _("reset") . '</a>, <a href="?page=adminvps&action=info&run=stop&veid=' . $vps->id . '&t=' . csrf_token() . '" ' . vps_confirm_action_onclick($vps, 'stop') . '>' . _("stop") . '</a>, <a href="?page=adminvps&action=info&run=force_stop&veid=' . $vps->id . '&t=' . csrf_token() . '" ' . vps_confirm_action_onclick($vps, 'force_stop') . '>' . _("poweroff") . '</a>'
+                : _("stopped") . ' (<a href="?page=adminvps&action=info&run=start&veid=' . $vps->id . '&t=' . csrf_token() . '">' . _("start") . '</a>';
+
+            $status .= ', <a href="?page=console&veid=' . $vps->id . '&t=' . csrf_token() . '">' . _("open remote console") . '</a>)';
+            $xtpl->table_td($status);
         } else {
             $xtpl->table_td($vps->is_running ? _("running") : _("stopped"));
         }

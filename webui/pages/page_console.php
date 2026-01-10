@@ -43,10 +43,22 @@ _theframe.contentWindow.location.href = _theframe.src;
 <script type="text/javascript">
 function vps_do(cmd) {
 	apiClient.after("authenticated", function() {
-		apiClient.vps[cmd](' . $vps->id . ', function(c, reply) {
-			if (!reply.isOk())
-				alert(cmd + " failed: " + reply.apiResponse().message());
-		});
+		var params = {};
+		if (cmd === "force_restart" || cmd === "force_stop") {
+			params.force = true;
+			cmd = cmd === "force_restart" ? "restart" : "stop";
+		}
+
+		apiClient.vps[cmd](
+			' . $vps->id . ',
+			{
+				params: params,
+				onReply: function(c, reply) {
+					if (!reply.isOk())
+						alert(cmd + " failed: " + reply.apiResponse().message());
+				}
+			}
+		);
 	});
 }
 function vps_passwd(cmd) {
@@ -105,34 +117,36 @@ function vps_boot(cmd) {
     $xtpl->sbar_add('<img src="template/icons/vps_start.png"  title="' . _("Start") . '" /> ' . _("Start"), "javascript:vps_do('start');");
     $xtpl->sbar_add('<img src="template/icons/vps_stop.png"  title="' . _("Stop") . '" /> ' . _("Stop"), "javascript:vps_do('stop');");
     $xtpl->sbar_add('<img src="template/icons/vps_restart.png"  title="' . _("Restart") . '" /> ' . _("Restart"), "javascript:vps_do('restart');");
+    $xtpl->sbar_add('<img src="template/icons/vps_reset.png"  title="' . _("Reset") . '" /> ' . _("Reset"), "javascript:vps_do('force_restart');");
+    $xtpl->sbar_add('<img src="template/icons/vps_poweroff.png"  title="' . _("Poweroff") . '" /> ' . _("Poweroff"), "javascript:vps_do('force_stop');");
 
     $xtpl->sbar_add_fragment(
-        '<h3>' . _('Set password') . '</h3>' .
-        '<table>' .
-        '<tr><td>' . _('User') . ': </td><td>root</td></tr>' .
-        '<tr>' .
-        '<td>' . _('Password') . ': </td>' .
-        '<td><span id="root-password">' . _('will be generated') . '</span></td>' .
-        '</tr><tr><td colspan="2"><strong>' . _('Change the password to something secure when finished!') . '</strong></td></tr>' .
-        '<tr>' .
-        '<td></td><td><button onclick="vps_passwd();">' . _('Generate password') . '</button></td>' .
-        '</tr></table>'
+        '<h3>' . _('Set password') . '</h3>'
+        . '<table>'
+        . '<tr><td>' . _('User') . ': </td><td>root</td></tr>'
+        . '<tr>'
+        . '<td>' . _('Password') . ': </td>'
+        . '<td><span id="root-password">' . _('will be generated') . '</span></td>'
+        . '</tr><tr><td colspan="2"><strong>' . _('Change the password to something secure when finished!') . '</strong></td></tr>'
+        . '<tr>'
+        . '<td></td><td><button onclick="vps_passwd();">' . _('Generate password') . '</button></td>'
+        . '</tr></table>'
     );
 
     $os_templates = list_templates($vps);
 
     $xtpl->sbar_add_fragment(
-        '<h3>' . _('Rescue mode') . '</h3>' .
-        '<table>' .
-        '<tr>' .
-        '<td>' . _('Distribution') . ': </td>' .
-        '<td>' . $xtpl->form_select_html('os_template', $os_templates, $vps->os_template_id) . '</td>' .
-        '</tr><tr>' .
-        '<td>' . _('Root dataset mountpoint') . ': </td>' .
-        '<td><input type="text" name="root_mountpoint" value="/mnt/vps"></td>' .
-        '</tr><tr>' .
-        '<td></td><td><button id="boot-button" onclick="vps_boot();">' . _('Boot') . '</button></td>' .
-        '</tr></table>'
+        '<h3>' . _('Rescue mode') . '</h3>'
+        . '<table>'
+        . '<tr>'
+        . '<td>' . _('Distribution') . ': </td>'
+        . '<td>' . $xtpl->form_select_html('os_template', $os_templates, $vps->os_template_id) . '</td>'
+        . '</tr><tr>'
+        . '<td>' . _('Root dataset mountpoint') . ': </td>'
+        . '<td><input type="text" name="root_mountpoint" value="/mnt/vps"></td>'
+        . '</tr><tr>'
+        . '<td></td><td><button id="boot-button" onclick="vps_boot();">' . _('Boot') . '</button></td>'
+        . '</tr></table>'
     );
 
     $xtpl->sbar_out(_("Manage VPS"));
