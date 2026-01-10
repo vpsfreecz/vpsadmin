@@ -481,6 +481,7 @@ var consoleTpl = template.Must(template.New("console").Parse(`<!doctype html>
       setStatus('disconnected' + (clean ? '' : ' (error)'));
       setConnectionButtons(false);
       setConnectionBusy(false);
+      setPowerBusy(false);
 
       if (manualDisconnect) {
         showCloseNotice();
