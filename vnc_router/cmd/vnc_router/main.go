@@ -471,14 +471,14 @@ var consoleTpl = template.Must(template.New("console").Parse(`<!doctype html>
           // ignore
         }
       }
-      setStatus('disconnected');
+      setStatus('Disconnected');
       showCloseNotice(message);
     }
 
     function onDisconnect(e) {
       const clean = !!(e.detail && e.detail.clean);
       rfb = null;
-      setStatus('disconnected' + (clean ? '' : ' (error)'));
+      setStatus('Disconnected' + (clean ? '' : ' (error)'));
       setConnectionButtons(false);
       setConnectionBusy(false);
       setPowerBusy(false);
@@ -492,7 +492,7 @@ var consoleTpl = template.Must(template.New("console").Parse(`<!doctype html>
         return;
       }
 
-      setStatus('reconnecting...');
+      setStatus('Reconnecting...');
       scheduleReconnect();
     }
 
@@ -504,7 +504,7 @@ var consoleTpl = template.Must(template.New("console").Parse(`<!doctype html>
         handleFatal('Missing VNC token, cannot connect.');
         return;
       }
-      setStatus('connecting...');
+      setStatus('Connecting...');
       setConnectionButtons(false);
       setConnectionBusy(true);
       screen.innerHTML = '';
@@ -531,14 +531,14 @@ var consoleTpl = template.Must(template.New("console").Parse(`<!doctype html>
 
       applyViewOptions();
 
-      rfb.addEventListener('connect', () => setStatus('connected'));
+      rfb.addEventListener('connect', () => setStatus('Connected'));
       rfb.addEventListener('disconnect', onDisconnect);
       rfb.addEventListener('securityfailure', (e) => {
-        setStatus('security failure');
+        setStatus('Security failure');
         console.error('securityfailure', e);
       });
       rfb.addEventListener('credentialsrequired', () => {
-        setStatus('credentials required (unexpected)');
+        setStatus('Credentials required (unexpected)');
       });
       rfb.addEventListener('clipboard', handleClipboard);
       rfb.addEventListener('connect', () => {
@@ -577,7 +577,7 @@ var consoleTpl = template.Must(template.New("console").Parse(`<!doctype html>
     } else if (currentClientToken) {
       connect();
     } else {
-      setStatus('missing credentials');
+      setStatus('Missing credentials');
     }
     setupPowerMenu();
 
