@@ -4,7 +4,7 @@ module NodeCtld
     needs :vps
 
     def exec
-      vps.restart(autostart_priority: @autostart_priority)
+      vps.restart(autostart_priority: @autostart_priority, kill: @kill)
       ok
     end
 

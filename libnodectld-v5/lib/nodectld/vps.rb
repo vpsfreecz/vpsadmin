@@ -38,8 +38,8 @@ module NodeCtld
       end
     end
 
-    def restart(autostart_priority: nil)
-      stop
+    def restart(autostart_priority: nil, kill: false, timeout: 300)
+      stop(kill:, timeout:)
       start(autostart_priority:)
     end
 
