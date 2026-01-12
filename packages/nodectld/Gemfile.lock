@@ -1,7 +1,7 @@
 GEM
   remote: https://rubygems.org/
   specs:
-    amq-protocol (2.3.4)
+    amq-protocol (2.5.0)
     base64 (0.3.0)
     bigdecimal (4.0.1)
     bunny (2.24.0)
@@ -70,7 +70,7 @@ GEM
 GEM
   remote: https://rubygems.vpsfree.cz/
   specs:
-    libnodectld (4.1.0.build20251229161516)
+    libnodectld (4.1.0.build20260112183028)
       base64
       bigdecimal
       bunny (~> 2.24.0)
@@ -94,8 +94,8 @@ GEM
       rainbow (~> 3.1.1)
       require_all (~> 2.0.0)
       syslog
-    nodectld (4.1.0.build20251229161516)
-      libnodectld (= 4.1.0.build20251229161516)
+    nodectld (4.1.0.build20260112183028)
+      libnodectld (= 4.1.0.build20260112183028)
     osctl (25.11.0.build20251201154349)
       base64
       curses
@@ -119,7 +119,7 @@ PLATFORMS
   x86_64-linux
 
 DEPENDENCIES
-  nodectld (= 4.1.0.build20251229161516)!
+  nodectld (= 4.1.0.build20260112183028)!
 
 BUNDLED WITH
    2.7.2
