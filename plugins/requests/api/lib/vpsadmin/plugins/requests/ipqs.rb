@@ -25,7 +25,14 @@ class VpsAdmin::API::Plugins::Requests::IPQS
       "https://www.ipqualityscore.com/api/json/ip/#{api_key}/#{addr}?" \
       "strictness=#{strictness}"
     )
-    Response.new(Net::HTTP.get(uri))
+
+    resp = Net::HTTP.get(uri)
+
+    begin
+      Response.new(resp)
+    rescue JSON::ParserError
+      raise "Unable to parse response as JSON: addr=#{addr.inspect} uri=#{uri.inspect} response=#{resp.inspect}"
+    end
   end
 
   def check_mail(mail, strictness: 0)
@@ -33,7 +40,14 @@ class VpsAdmin::API::Plugins::Requests::IPQS
       "https://www.ipqualityscore.com/api/json/email/#{api_key}/#{mail}?" \
       "strictness=#{strictness}"
     )
-    Response.new(Net::HTTP.get(uri))
+
+    resp = Net::HTTP.get(uri)
+
+    begin
+      Response.new(resp)
+    rescue JSON::ParserError
+      raise "Unable to parse response as JSON: mail=#{mail.inspect} uri=#{uri.inspect} response=#{resp.inspect}"
+    end
   end
 
   protected
