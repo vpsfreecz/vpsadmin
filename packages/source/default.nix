@@ -7,7 +7,8 @@ let
   filterRepository =
     path: type:
     !(type == "directory" && baseNameOf path == ".gems")
-    && !(type == "directory" && baseNameOf path == ".git");
+    && !(type == "directory" && baseNameOf path == ".git")
+    && !(type == "directory" && baseNameOf path == "result");
 
   copiedRepo =
     if lib.isStorePath vpsadminPath then
