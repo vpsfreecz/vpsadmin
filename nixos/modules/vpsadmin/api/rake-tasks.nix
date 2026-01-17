@@ -71,7 +71,7 @@ let
         "network.target"
         "vpsadmin-api.service"
       ]
-      ++ optional cfg.database.createLocally [ "mysql.service" ];
+      ++ optional cfg.database.createLocally "mysql.service";
       environment.RACK_ENV = "production";
       environment.SCHEMA = "${cfg.stateDirectory}/cache/schema.rb";
       path = with pkgs; [

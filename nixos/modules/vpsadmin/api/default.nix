@@ -185,7 +185,7 @@ in
     ];
 
     systemd.services.vpsadmin-api = {
-      after = [ "network.target" ] ++ optional cfg.database.createLocally [ "mysql.service" ];
+      after = [ "network.target" ] ++ optional cfg.database.createLocally "mysql.service";
       wantedBy = [ "multi-user.target" ];
       environment.RACK_ENV = "production";
       environment.SCHEMA = "${cfg.stateDirectory}/cache/schema.rb";
