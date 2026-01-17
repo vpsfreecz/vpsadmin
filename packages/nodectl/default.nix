@@ -1,9 +1,14 @@
-{ lib, bundlerApp }:
+{
+  lib,
+  bundlerApp,
+  ruby,
+}:
 
 bundlerApp {
   pname = "nodectl";
   gemdir = ./.;
   exes = [ "nodectl" ];
+  inherit ruby;
 
   meta = with lib; {
     description = "";
