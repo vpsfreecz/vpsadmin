@@ -17,7 +17,7 @@ module VpsAdmin
       cfg = parse_config
       server_count = cfg.fetch('servers', 1)
 
-      if server_count == 1
+      if server_count == 1 && (!cfg.has_key?('foreground') || cfg.fetch('foreground', false))
         Supervisor.start(cfg)
         wait_loop
         return
