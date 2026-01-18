@@ -43,7 +43,7 @@ module VpsAdmin::API::Plugin
 
         MigrationContext.new(
           plugin.migration_directory,
-          ::ActiveRecord::Base.connection.schema_migration
+          ::ActiveRecord::Base.connection.pool.schema_migration
         ).migrate(version)
       end
 
@@ -53,14 +53,14 @@ module VpsAdmin::API::Plugin
 
         MigrationContext.new(
           plugin.migration_directory,
-          ::ActiveRecord::Base.connection.schema_migration
+          ::ActiveRecord::Base.connection.pool.schema_migration
         ).rollback(steps)
       end
 
       def get_all_versions(plugin = current_plugin)
         @all_versions ||= {}
         @all_versions[plugin.id.to_s] ||= begin
-          sm_table = ::ActiveRecord::Base.connection.schema_migration.table_name
+          sm_table = ::ActiveRecord::Base.connection.pool.schema_migration.table_name
           migration_versions  = ActiveRecord::Base.connection.select_values("SELECT version FROM #{sm_table}")
           versions_by_plugins = migration_versions.group_by { |version| version.match(/-(.*)$/).try(:[], 1) }
           @all_versions       = versions_by_plugins.transform_values! { |versions| versions.map!(&:to_i).sort! }
