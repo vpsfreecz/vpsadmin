@@ -1,4 +1,4 @@
-class Setup < ActiveRecord::Migration
+class Setup < ActiveRecord::Migration[4.2]
   def change
     create_table :user_requests do |t|
       t.references  :user,                null: true
