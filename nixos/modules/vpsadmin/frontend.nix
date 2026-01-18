@@ -441,10 +441,6 @@ in
         recommendedProxySettings = mkDefault true;
         recommendedTlsSettings = mkDefault true;
 
-        appendConfig = ''
-          worker_processes auto;
-        '';
-
         appendHttpConfig = ''
           server_names_hash_bucket_size 64;
         '';

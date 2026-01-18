@@ -192,10 +192,6 @@ in
     services.nginx = {
       enable = true;
 
-      appendConfig = ''
-        worker_processes auto;
-      '';
-
       virtualHosts.${cfg.domain} = {
         root = rootDir;
 
