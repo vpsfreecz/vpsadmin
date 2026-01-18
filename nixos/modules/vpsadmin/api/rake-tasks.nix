@@ -181,6 +181,7 @@ in
         };
 
         monitoring-check = {
+          enable = elem "monitoring" vpsadminCfg.plugins;
           rake = [ "vpsadmin:monitoring:check" ];
           timer.enable = true;
           timer.config = {
@@ -192,6 +193,7 @@ in
         };
 
         monitoring-close = {
+          enable = elem "monitoring" vpsadminCfg.plugins;
           rake = [ "vpsadmin:monitoring:close" ];
           timer.enable = true;
           timer.config = {
@@ -202,6 +204,7 @@ in
         };
 
         monitoring-prune = {
+          enable = elem "monitoring" vpsadminCfg.plugins;
           rake = [ "vpsadmin:monitoring:prune" ];
           service.config = {
             TimeoutStartSec = "infinity";
