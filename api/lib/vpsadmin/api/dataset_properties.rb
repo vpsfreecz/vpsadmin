@@ -14,7 +14,7 @@ module VpsAdmin::API
       end
 
       def self.properties
-        @properties
+        @properties || {}
       end
     end
 
