@@ -113,7 +113,11 @@ in
     systemd.tmpfiles.rules = apiApp.tmpfilesRules;
 
     systemd.services.vpsadmin-supervisor = {
-      after = [ "network.target" ] ++ optional cfg.database.createLocally "mysql.service";
+      after = [
+        "network.target"
+        "vpsadmin-database-setup.service"
+      ];
+      requires = [ "vpsadmin-database-setup.service" ];
       wantedBy = [ "multi-user.target" ];
       environment.RACK_ENV = "production";
       startLimitIntervalSec = 180;

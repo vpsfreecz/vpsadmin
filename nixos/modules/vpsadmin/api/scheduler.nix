@@ -28,8 +28,7 @@ in
       after = [
         "network.target"
         "vpsadmin-api.service"
-      ]
-      ++ optional cfg.database.createLocally [ "mysql.service" ];
+      ];
       wantedBy = [ "multi-user.target" ];
       environment.RACK_ENV = "production";
       environment.SCHEDULER_SOCKET = "${cfg.stateDirectory}/scheduler.sock";

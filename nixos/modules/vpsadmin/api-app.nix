@@ -87,8 +87,7 @@ in
 
         socket = mkOption {
           type = types.nullOr types.path;
-          default = if config.createLocally then "/run/mysqld/mysqld.sock" else null;
-          defaultText = "/run/mysqld/mysqld.sock";
+          default = null;
           example = "/run/mysqld/mysqld.sock";
           description = "Path to the unix socket file to use for authentication.";
         };
@@ -99,18 +98,6 @@ in
           description = ''
             Connection pool size
           '';
-        };
-
-        createLocally = mkOption {
-          type = types.bool;
-          default = false;
-          description = "Create the database and database user locally.";
-        };
-
-        autoSetup = mkOption {
-          type = types.bool;
-          default = false;
-          description = "Automatically run database migrations";
         };
       };
     };
@@ -126,6 +113,8 @@ in
   ];
 
   setup = ''
+    set -euo pipefail
+
     # Cleanup previous state
     rm -f "${stateDirectory}/plugins/"*
     find "${stateDirectory}/config" -type l -exec rm -f {} +
@@ -147,11 +136,5 @@ in
     cp -f ${databaseYml} "${stateDirectory}/config/database.yml"
     sed -e "s,#dbpass#,$DBPASS,g" -i "${stateDirectory}/config/database.yml"
     chmod 440 "${stateDirectory}/config/database.yml"
-
-    ${optionalString databaseConfig.autoSetup ''
-      # Run database migrations
-      ${bundle} exec rake db:migrate
-      ${bundle} exec rake vpsadmin:plugins:migrate
-    ''}
   '';
 }
