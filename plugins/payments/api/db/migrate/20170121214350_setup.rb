@@ -1,4 +1,4 @@
-class Setup < ActiveRecord::Migration
+class Setup < ActiveRecord::Migration[4.2]
   def change
     create_table :incoming_payments do |t|
       t.string      :transaction_id,   null: false, limit: 30

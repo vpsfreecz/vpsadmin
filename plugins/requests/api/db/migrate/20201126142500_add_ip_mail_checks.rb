@@ -1,4 +1,4 @@
-class AddIpMailChecks < ActiveRecord::Migration
+class AddIpMailChecks < ActiveRecord::Migration[4.2]
   def change
     add_column :user_requests, :ip_checked, :boolean, null: true
     add_column :user_requests, :ip_request_id, :string, limit: 50, null: true
