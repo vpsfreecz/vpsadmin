@@ -35,37 +35,95 @@ import ../../make-test.nix (
     };
 
     testScript = ''
-      services.start
+      before(:suite) do
+        services.start
+        breakpoint
+      end
 
-      services.wait_for_service('mysql.service')
-      services.wait_for_service('redis-vpsadmin.service')
-      services.wait_for_service('rabbitmq.service')
+      describe 'service' do
+        describe 'mariadb' do
+          it 'is running' do
+            services.wait_for_service('mysql.service')
+          end
 
-      services.wait_until_succeeds("mysql --user=vpsadmin --password=vpsadmin -e 'SELECT 1'")
+          it 'is responding' do
+            services.wait_until_succeeds("mysql --user=vpsadmin --password=testDatabasePassword -e 'SELECT 1'")
+          end
 
-      services.wait_for_service('vpsadmin-api.service')
-      services.wait_for_service('vpsadmin-supervisor.service')
-      services.wait_for_service('vpsadmin-console-router.service')
-      services.wait_for_service('phpfpm-vpsadmin-webui.service')
-      services.wait_for_service('nginx.service')
-      services.wait_for_service('varnish.service')
+          it 'is set up' do
+            services.wait_for_service('vpsadmin-database-setup.service')
+          end
 
-      services.wait_until_succeeds("mysql --user=vpsadmin --password=vpsadmin -D vpsadmin -e 'SHOW TABLES' | grep users")
-      services.wait_until_succeeds("redis-cli -a vpsadmin ping | grep PONG")
+          it 'is populated' do
+            services.wait_until_succeeds("mysql --user=vpsadmin --password=testDatabasePassword -D vpsadmin -e 'SHOW TABLES' | grep users")
+          end
+        end
 
-      services.wait_until_succeeds("cp /var/lib/rabbitmq/.erlang.cookie /root/")
-      services.wait_until_succeeds("rabbitmqctl status > /dev/null")
+        describe 'redis' do
+          it 'is running' do
+            services.wait_for_service('redis-vpsadmin.service')
+          end
 
-      services.wait_until_succeeds("ss -tln | grep ':9292'")
-      services.wait_until_succeeds("ss -tln | grep ':8000'")
-      services.wait_until_succeeds("ss -tln | grep ':6081'")
-      services.wait_until_succeeds("ss -tln | grep ':6379'")
-      services.wait_until_succeeds("ss -tln | grep ':5672'")
-      services.wait_until_succeeds("ss -tln | grep ':3306'")
+          it 'is responding' do
+            services.wait_until_succeeds("redis-cli -a vpsadmin ping | grep PONG")
+          end
+        end
 
-      services.wait_until_succeeds("curl --silent --output /dev/null http://api.vpsadmin.test/")
-      services.wait_until_succeeds("curl --silent --output /dev/null http://webui.vpsadmin.test/")
-      services.wait_until_succeeds("curl --silent --output /dev/null http://127.0.0.1:6081/")
+        example 'nginx is running' do
+          services.wait_for_service('nginx.service')
+        end
+
+        example 'haproxy is running' do
+          services.wait_for_service('haproxy.service')
+        end
+
+        example 'varnish is running' do
+          services.wait_for_service('varnish.service')
+        end
+
+        describe 'rabbitmq' do
+          it 'is running' do
+            services.wait_for_service('rabbitmq.service')
+          end
+
+          it 'is responding' do
+            services.wait_until_succeeds("cp /var/lib/rabbitmq/.erlang.cookie /root/")
+            services.wait_until_succeeds("rabbitmqctl status")
+          end
+        end
+
+        describe 'api' do
+          it 'is running' do
+            services.wait_for_service('vpsadmin-api.service')
+          end
+
+          it 'is responding' do
+            services.wait_until_succeeds("curl http://api.vpsadmin.test/")
+          end
+        end
+
+        example 'scheduler is running' do
+          services.wait_for_service('vpsadmin-scheduler.service')
+        end
+
+        example 'supervisor is running' do
+          services.wait_for_service('vpsadmin-supervisor.service')
+        end
+
+        example 'console-router is running' do
+          services.wait_for_service('vpsadmin-console-router.service')
+        end
+
+        describe 'webui' do
+          it 'is running' do
+            services.wait_for_service('phpfpm-vpsadmin-webui.service')
+          end
+
+          it 'is responding' do
+            services.wait_until_succeeds("curl http://webui.vpsadmin.test/")
+          end
+        end
+      end
     '';
   }
 )
