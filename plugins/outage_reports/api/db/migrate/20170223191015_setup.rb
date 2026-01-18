@@ -1,4 +1,4 @@
-class Setup < ActiveRecord::Migration
+class Setup < ActiveRecord::Migration[4.2]
   def change
     create_table :outages do |t|
       t.boolean     :planned,        null: false

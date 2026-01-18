@@ -1,4 +1,4 @@
-class AddOutageExports < ActiveRecord::Migration
+class AddOutageExports < ActiveRecord::Migration[4.2]
   class Outage < ActiveRecord::Base; end
   class OutageVps < ActiveRecord::Base; end
 

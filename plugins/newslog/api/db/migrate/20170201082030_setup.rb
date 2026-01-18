@@ -1,4 +1,4 @@
-class Setup < ActiveRecord::Migration
+class Setup < ActiveRecord::Migration[4.2]
   def change
     create_table :news_logs do |t|
       t.text     :message,      null: false

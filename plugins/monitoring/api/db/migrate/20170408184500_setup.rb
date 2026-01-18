@@ -1,4 +1,4 @@
-class Setup < ActiveRecord::Migration
+class Setup < ActiveRecord::Migration[4.2]
   def change
     create_table :monitored_events do |t|
       t.string      :monitor_name,        null: false, limit: 100
