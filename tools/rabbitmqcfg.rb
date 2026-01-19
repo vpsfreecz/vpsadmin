@@ -27,7 +27,8 @@ class Cli
     @parser = OptionParser.new do |parser|
       parser.banner = <<~END
         Usage:
-          #{$0} user [--create] [--perms] #{USERS.join('|')} <name...>
+          #{$0} setup [admin-user[:password]]
+          #{$0} user [--create] [--perms] #{USERS.join('|')} <name[:password]...>
           #{$0} policies
       END
       parser.on('--execute', 'Execute configuration commands') do
@@ -70,12 +71,14 @@ class Cli
 
   protected
 
-  def run_setup(_args)
+  def run_setup(args)
+    admin_user, admin_password = (args[0] || 'admin').split(':')
+
     print_or_execute([
                        "rabbitmqctl add_vhost #{@vhost}",
-                       'rabbitmqctl add_user admin',
-                       "rabbitmqctl set_permissions -p #{@vhost} admin \".*\" \".*\" \".*\"",
-                       'rabbitmqctl set_user_tags admin administrator'
+                       "rabbitmqctl add_user #{admin_user} #{admin_password}",
+                       "rabbitmqctl set_permissions -p #{@vhost} #{admin_user} \".*\" \".*\" \".*\"",
+                       "rabbitmqctl set_user_tags #{admin_user} administrator"
                      ])
   end
 
@@ -95,15 +98,17 @@ class Cli
     end
 
     users.each do |user|
-      print_or_execute(["rabbitmqctl add_user #{user}"]) if @user_all || @user_create
+      name, password = user.split(':')
+
+      print_or_execute(["rabbitmqctl add_user #{name} #{password}"]) if @user_all || @user_create
 
       next unless @user_all || @user_perms
 
       print_or_execute(<<~END)
         rabbitmqctl set_permissions \\
           -p #{@vhost} \\
-          #{user} \\
-          #{user_perms(type, user).map { |v| "\"#{v}\"" }.join(" \\\n  ")}
+          #{name} \\
+          #{user_perms(type, name).map { |v| "\"#{v}\"" }.join(" \\\n  ")}
       END
     end
   end
