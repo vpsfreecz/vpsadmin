@@ -94,6 +94,15 @@ in
     vpsadmin.rabbitmq = {
       enable = mkEnableOption "Enable rabbitmq for vpsAdmin";
 
+      initialScript = mkOption {
+        type = types.nullOr types.path;
+        default = null;
+        description = ''
+          Path to an executable script which is run on the first startup. Can be used
+          to provide initial configuration.
+        '';
+      };
+
       allowedIPv4Ranges = allowedRanges "4";
 
       allowedIPv6Ranges = allowedRanges "6";
@@ -117,6 +126,42 @@ in
       plugins = [
         "rabbitmq_prometheus"
       ];
+    };
+
+    systemd.services.vpsadmin-rabbitmq-setup = mkIf (!isNull cfg.initialScript) {
+      description = "Initial configuration for rabbitmq";
+      wantedBy = [ "multi-user.target" ];
+      after = [ "rabbitmq.service" ];
+      requires = [ "rabbitmq.service" ];
+      path = with pkgs; [ rabbitmq-server ];
+      environment.HOME = "/root";
+      serviceConfig = {
+        Type = "oneshot";
+        ExecStart = pkgs.writeScript "vpsadmin-rabbitmq-setup.sh" ''
+          #!${pkgs.bash}/bin/bash
+
+          stateDir="/var/lib/vpsadmin-rabbitmq"
+          stateFile="$stateDir/rabbitmq-initialized"
+
+          if [ -e "$stateFile" ]; then
+            echo "rabbitmq is already initialized"
+            exit 0
+          fi
+
+          echo "Initializing rabbitmq using ${cfg.initialScript}"
+
+          ${cfg.initialScript}
+          rc=$?
+
+          [ "$rc" != "0" ] && exit $rc
+
+          mkdir -p "$stateDir"
+          date > "$stateFile"
+          echo "rabbitmq initialized"
+          exit 0
+        '';
+        RemainAfterExit = "yes";
+      };
     };
   };
 }
