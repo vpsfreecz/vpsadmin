@@ -1,7 +1,6 @@
 import ../../make-test.nix (
   {
     pkgs,
-    testArgs ? { },
     ...
   }:
   let
@@ -34,8 +33,6 @@ import ../../make-test.nix (
           imports = [
             ../../configs/nixos/vpsadmin-services.nix
           ];
-
-          vpsadmin.test.socketPeers = testArgs.socketPeers or { };
         };
       };
     };
