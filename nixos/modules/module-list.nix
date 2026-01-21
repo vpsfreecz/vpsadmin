@@ -11,6 +11,7 @@
     ./vpsadmin/varnish.nix
     ./vpsadmin/haproxy.nix
     ./vpsadmin/main.nix
+    ./vpsadmin/nixos.nix
     ./vpsadmin/database.nix
     ./vpsadmin/nodectld/nixos.nix
     ./vpsadmin/rabbitmq.nix

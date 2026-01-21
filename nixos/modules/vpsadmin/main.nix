@@ -58,9 +58,5 @@ in
       "d /run/vpsadmin - - - - -"
       "d ${cfg.stateDirectory} - - - - -"
     ];
-
-    services.nginx.appendConfig = mkIf (cfg.frontend.enable || cfg.webui.enable) ''
-      worker_processes auto;
-    '';
   };
 }
