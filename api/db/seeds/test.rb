@@ -13,6 +13,10 @@ ActiveRecord::Base.transaction do
     File.read(File.expand_path('./test/transaction-key.json', __dir__)),
     symbolize_names: true
   )
+  location_config = JSON.parse(
+    File.read(File.expand_path('./test/location.json', __dir__)),
+    symbolize_names: true
+  )
 
   language = Language.find_by(code: 'en') || Language.order(:id).first
   language ||= Language.create!(code: 'en', label: 'English')
@@ -53,16 +57,25 @@ ActiveRecord::Base.transaction do
   end
 
   # Provide a default environment for simple tests
-  Environment.find_or_create_by!(id: 1) do |env|
-    env.label = 'test'
-    env.domain = 'vpsadmin.test'
-    env.maintenance_lock = 0
-    env.can_create_vps = false
-    env.can_destroy_vps = false
-    env.vps_lifetime = 0
-    env.max_vps_count = 1
-    env.user_ip_ownership = false
-  end
+  environment = Environment.find_or_initialize_by(id: location_config.fetch(:environment_id))
+  environment.label = 'test'
+  environment.domain = 'vpsadmin.test'
+  environment.maintenance_lock = 0
+  environment.can_create_vps = false
+  environment.can_destroy_vps = false
+  environment.vps_lifetime = 0
+  environment.max_vps_count = 1
+  environment.user_ip_ownership = false
+  environment.save!
+
+  location = Location.find_or_initialize_by(id: location_config.fetch(:id))
+  location.label = location_config.fetch(:label)
+  location.domain = location_config.fetch(:domain)
+  location.description = location_config[:description]
+  location.environment = environment
+  location.remote_console_server = location_config.fetch(:remote_console_server)
+  location.has_ipv6 = location_config.fetch(:has_ipv6)
+  location.save!
 
   admin = User.find_or_initialize_by(login: admin_config.fetch(:login))
   admin.full_name = admin_config.fetch(:full_name)
