@@ -13,13 +13,7 @@ import ../../make-test.nix (
       node = "192.168.10.11";
     };
 
-    location = {
-      label = "test-location";
-      domain = "lab";
-      description = "Test location for node registration";
-      environment = 1;
-      remoteConsoleServer = "http://console.vpsadmin.test";
-    };
+    location = builtins.fromJSON (builtins.readFile ../../../api/db/seeds/test/location.json);
 
     nodeSpec = rec {
       id = 101;
@@ -109,16 +103,7 @@ import ../../make-test.nix (
 
       api_url = "http://api.vpsadmin.test"
       auth_opts = "-u #{api_url} --auth basic --user \"${adminUser.login}\" --password \"${adminUser.password}\""
-
-      location_label = "${location.label}"
-
-      def register_location(services, auth_opts, label, domain, description, env, console_server)
-        _, output = services.succeeds(
-          "vpsadminctl #{auth_opts} -H --columns -o id location create -- " \
-          "--label #{label} --domain #{domain} --description '#{description}' --environment #{env} --remote-console-server '#{console_server}' --has-ipv6 false"
-        )
-        output.strip.to_i
-      end
+      location_id = ${toString location.id}
 
       def register_node(services, auth_opts, node_id:, name:, location_id:, ip_addr:, cpus:, mem_mib:, swap_mib:, max_vps:)
         # TODO: this command fails on timeout, because it takes a long time to create node port reservations
@@ -166,18 +151,13 @@ import ../../make-test.nix (
           services.succeeds("rabbitmqcfg user --vhost ${rabbitmqVhost} --create --perms --execute node ${nodeSpec.domainName}:${rabbitNodeUser.password}")
         end
 
-        it 'registers location and node, then starts nodectld' do
-          location_id = register_location(
-            services, auth_opts, location_label,
-            "${location.domain}", "${location.description}", ${toString location.environment}, "${location.remoteConsoleServer}"
-          )
-
+        it 'registers node and starts nodectld' do
           register_node(
             services,
             auth_opts,
             node_id: ${toString nodeSpec.id},
             name: "${nodeSpec.name}",
-            location_id:,
+            location_id: location_id,
             ip_addr: "${socket.node}",
             cpus: ${toString nodeSpec.cpus},
             mem_mib: ${toString nodeSpec.memoryMiB},
