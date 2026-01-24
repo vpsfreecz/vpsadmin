@@ -2,7 +2,21 @@
 
 # Minimal seed data required for vpsAdmin services to boot in tests and fresh installs.
 
+require 'json'
+
 ActiveRecord::Base.transaction do
+  admin_config = JSON.parse(
+    File.read(File.expand_path('./test/admin-user.json', __dir__)),
+    symbolize_names: true
+  )
+  tx_key_config = JSON.parse(
+    File.read(File.expand_path('./test/transaction-key.json', __dir__)),
+    symbolize_names: true
+  )
+
+  language = Language.find_by(code: 'en') || Language.order(:id).first
+  language ||= Language.create!(code: 'en', label: 'English')
+
   # Core configuration values expected to exist
   [
     { category: :core, name: :api_url, value: 'http://api.vpsadmin.test', min_user_level: 0 },
@@ -10,6 +24,7 @@ ActiveRecord::Base.transaction do
     { category: :core, name: :support_mail, value: 'support@example.invalid', min_user_level: 0 },
     { category: :core, name: :logo_url, value: 'http://webui.vpsadmin.test/logo.png', min_user_level: 0 },
     { category: :core, name: :webauthn_rp_name, value: 'vpsAdmin', min_user_level: 99 },
+    { category: :core, name: :transaction_key, value: tx_key_config.fetch(:private), min_user_level: 99 },
     { category: :plugin_payments, name: :fio_api_tokens, value: [], min_user_level: 99 }
   ].each do |cfg|
     record = SysConfig.find_or_initialize_by(category: cfg[:category], name: cfg[:name])
@@ -48,4 +63,17 @@ ActiveRecord::Base.transaction do
     env.max_vps_count = 1
     env.user_ip_ownership = false
   end
+
+  admin = User.find_or_initialize_by(login: admin_config.fetch(:login))
+  admin.full_name = admin_config.fetch(:full_name)
+  admin.email = admin_config.fetch(:email)
+  admin.level = 99
+  admin.language = language
+  admin.enable_basic_auth = true
+  admin.enable_token_auth = true
+  admin.password_reset = false
+  admin.lockout = false
+  admin.object_state ||= :active
+  admin.set_password(admin_config.fetch(:password))
+  admin.save!
 end
