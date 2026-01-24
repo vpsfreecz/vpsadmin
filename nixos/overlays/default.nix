@@ -9,6 +9,7 @@
       vpsadmin-api = super.callPackage ../../packages/api/api.nix { inherit ruby; };
       vpsadmin-console-router = super.callPackage ../../packages/console-router { inherit ruby; };
       vpsadmin-download-mounter = super.callPackage ../../packages/download-mounter { inherit ruby; };
+      vpsadmin-client = super.callPackage ../../packages/client { inherit ruby; };
       vpsadmin-source = super.callPackage ../../packages/source { };
       vpsadmin-supervisor = super.callPackage ../../packages/api/supervisor.nix { inherit ruby; };
       vpsadmin-webui = super.callPackage ../../packages/webui { };
