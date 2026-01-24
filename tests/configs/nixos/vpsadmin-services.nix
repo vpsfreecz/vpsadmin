@@ -301,7 +301,7 @@ in
         autoSetup = true;
         createLocally = true;
         seedFiles = [
-          "test"
+          "test.nix"
         ];
       };
 

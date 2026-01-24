@@ -77,9 +77,10 @@ in
         description = ''
           List of files that are seeded into the database when it is being initialized.
 
-          Relative paths are looked up within the `api/db/seeds` directory and must not
-          contain file extension (`.rb` is assumed). Absolute paths must provide file
-          extension.
+          Relative paths are looked up within the `api/db/seeds` directory and must
+          include file extension (e.g. `test.nix`). Absolute paths can also be used.
+          Seed files may be Ruby scripts or Nix expressions; Nix files are evaluated
+          to JSON before being applied.
         '';
       };
 
@@ -110,6 +111,7 @@ in
       path = with pkgs; [
         coreutils
         mariadb
+        nix
       ];
       environment.RACK_ENV = "production";
       environment.SCHEMA = schemaFile;
