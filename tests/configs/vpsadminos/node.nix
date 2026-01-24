@@ -12,7 +12,8 @@ let
     ;
 
   creds = import ../nixos/vpsadmin-credentials.nix;
-  txKey = builtins.fromJSON (builtins.readFile ../../../api/db/seeds/test/transaction-key.json);
+  seed = import ../../../api/db/seeds/test.nix;
+  txKey = seed.transactionKey;
 
   cfg = config.vpsadmin.test.node;
 

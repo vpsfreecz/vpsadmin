@@ -1,9 +1,0 @@
-{
-  "id": 1,
-  "label": "test-location",
-  "domain": "lab",
-  "description": "Test location for node registration",
-  "environment_id": 1,
-  "remote_console_server": "http://console.vpsadmin.test",
-  "has_ipv6": false
-}

@@ -1,8 +1,9 @@
 import ../../make-test.nix (
   { pkgs, ... }:
   let
+    seed = import ../../../api/db/seeds/test.nix;
     creds = import ../../configs/nixos/vpsadmin-credentials.nix;
-    adminUser = builtins.fromJSON (builtins.readFile ../../../api/db/seeds/test/admin-user.json);
+    adminUser = seed.adminUser;
 
     rabbitmqVhost = creds.rabbitmq.vhost;
     rabbitmqUsers = creds.rabbitmq.users;
@@ -13,7 +14,7 @@ import ../../make-test.nix (
       node = "192.168.10.11";
     };
 
-    location = builtins.fromJSON (builtins.readFile ../../../api/db/seeds/test/location.json);
+    location = seed.location;
 
     nodeSpec = rec {
       id = 101;
