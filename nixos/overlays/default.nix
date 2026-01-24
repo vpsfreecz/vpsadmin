@@ -12,9 +12,9 @@
       vpsadmin-source = super.callPackage ../../packages/source { };
       vpsadmin-supervisor = super.callPackage ../../packages/api/supervisor.nix { inherit ruby; };
       vpsadmin-webui = super.callPackage ../../packages/webui { };
-      libnodectld = super.callPackage ../../packages/libnodectld { inherit ruby; };
-      nodectld = super.callPackage ../../packages/nodectld { inherit ruby; };
-      nodectl = super.callPackage ../../packages/nodectl { inherit ruby; };
+      libnodectld = super.callPackage ../../packages/libnodectld { ruby = self.ruby_vpsadminos; };
+      nodectld = super.callPackage ../../packages/nodectld { ruby = self.ruby_vpsadminos; };
+      nodectl = super.callPackage ../../packages/nodectl { ruby = self.ruby_vpsadminos; };
     }
   )
 ]
