@@ -2,8 +2,8 @@
 
 This tree reuses the vpsAdminOS test framework without copying it. It expects
 the `vpsadminos` repository to be checked out next to this one (or point
-`VPSADMINOS_PATH` elsewhere) so we can import `../vpsadminos/tests/make-test.nix`
-and build the shared test runner.
+`VPSADMINOS_PATH` elsewhere) so the runner can add it to `NIX_PATH` and import
+`<vpsadminos/tests/make-test.nix>` to build the shared test runner.
 
 ## Running tests
 
@@ -12,13 +12,13 @@ and build the shared test runner.
   `os/packages/test-runner/entry.nix` from vpsAdminOS and runs it with the
   current working directory set to this repository.
 - The runner respects the usual flags from vpsAdminOS (e.g. `--state-dir`,
-  `--jobs`, `--stop-on-failure`); see `../vpsadminos/test-runner/man` for details.
+  `--jobs`, `--stop-on-failure`); see `<vpsadminos/test-runner/man>` for details.
 
 ## Test layout
 
 - `tests/all-tests.nix` mirrors the vpsAdminOS layout so the runner can
   discover tests (the runner loads its own `list-tests.nix` from vpsAdminOS).
-- `tests/make-test.nix` delegates to `../vpsadminos/tests/make-test.nix`.
+- `tests/make-test.nix` delegates to `<vpsadminos/tests/make-test.nix>`.
 - `tests/configs/nixos/vpsadmin-services.nix` defines a NixOS VM profile with
   API, supervisor, console_router, webui, varnish, frontend, rabbitmq and redis.
   It:

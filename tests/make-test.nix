@@ -1,1 +1,1 @@
-import ../../vpsadminos/tests/make-test.nix
+import <vpsadminos/tests/make-test.nix>

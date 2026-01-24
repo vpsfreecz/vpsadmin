@@ -5,7 +5,7 @@
 let
   nixpkgs = import pkgs { };
   lib = nixpkgs.lib;
-  testLib = import ../../vpsadminos/test-runner/nix/lib.nix {
+  testLib = import <vpsadminos/test-runner/nix/lib.nix> {
     inherit pkgs system lib;
     suitePath = ./suite;
   };

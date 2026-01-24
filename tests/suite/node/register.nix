@@ -82,8 +82,8 @@ import ../../make-test.nix (
 
         config = {
           imports = [
-            ../../../../vpsadminos/tests/configs/vpsadminos/base.nix
-            ../../../../vpsadminos/tests/configs/vpsadminos/pool-tank.nix
+            <vpsadminos/tests/configs/vpsadminos/base.nix>
+            <vpsadminos/tests/configs/vpsadminos/pool-tank.nix>
             ../../configs/vpsadminos/node.nix
           ];
 

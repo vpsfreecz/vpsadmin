@@ -9,6 +9,8 @@ if [ ! -d "$OS_ROOT" ]; then
   exit 1
 fi
 
+export NIX_PATH="vpsadminos=${OS_ROOT}${NIX_PATH:+:${NIX_PATH}}"
+
 mkdir -p "$ROOT/result"
 nix-build --out-link "$ROOT/result/test-runner" "$OS_ROOT/os/packages/test-runner/entry.nix" >/dev/null
 exec "$ROOT/result/test-runner/bin/test-runner" "$@"
