@@ -164,6 +164,7 @@ in
       mariadb
       rabbitmqcfg
       redis
+      vpsadmin-client
     ];
 
     virtualisation = {
