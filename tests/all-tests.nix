@@ -12,4 +12,5 @@ let
 in
 testLib.makeTests [
   "vpsadmin/services-up"
+  "node/register"
 ]
