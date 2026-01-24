@@ -18,6 +18,25 @@ let
 
   cfg = config.vpsadmin.test;
 
+  rabbitmqcfg = pkgs.stdenvNoCC.mkDerivation {
+    pname = "rabbitmqcfg";
+    version = "1.0";
+
+    src = ../../../tools/rabbitmqcfg.rb;
+
+    dontUnpack = true;
+
+    installPhase = ''
+      mkdir -p $out/bin
+      cp $src $out/bin/rabbitmqcfg
+      chmod +x $out/bin/rabbitmqcfg
+
+      patchShebangs $out/bin/rabbitmqcfg
+    '';
+
+    buildInputs = [ pkgs.ruby ];
+  };
+
   creds = import ./vpsadmin-credentials.nix;
 
   dbName = creds.database.name;
@@ -80,7 +99,6 @@ let
   rabbitApiUser = rabbitmqUsers.api;
   rabbitSupervisorUser = rabbitmqUsers.supervisor;
   rabbitConsoleUser = rabbitmqUsers.console;
-  rabbitNodeUser = rabbitmqUsers.node;
 
   socketPeersAsHosts = mapAttrs' (host: addr: lib.nameValuePair addr [ host ]) cfg.socketPeers;
 
@@ -144,6 +162,7 @@ in
 
     environment.systemPackages = with pkgs; [
       mariadb
+      rabbitmqcfg
       redis
     ];
 
@@ -230,38 +249,35 @@ in
         enable = true;
         hosts = [ "127.0.0.1" ];
         virtualHost = rabbitmqVhost;
-        initialScript =
-          let
-            rabbitmqcfg = "${pkgs.ruby}/bin/ruby ${pkgs.vpsadmin-source}/tools/rabbitmqcfg.rb";
-          in
-          pkgs.writeScript "rabbitmq-setup.sh" ''
-            #!${pkgs.bash}/bin/bash
+        initialScript = pkgs.writeScript "rabbitmq-setup.sh" ''
+          #!${pkgs.bash}/bin/bash
 
-            cookieFile=/var/lib/rabbitmq/.erlang.cookie
+          cookieFile=/var/lib/rabbitmq/.erlang.cookie
 
-            for _i in {1..120}; do
-              [ -e "$cookieFile" ] && break
-              echo "Waiting for cookie file at $cookieFile"
-              sleep 1
-            done
+          for _i in {1..120}; do
+            [ -e "$cookieFile" ] && break
+            echo "Waiting for cookie file at $cookieFile"
+            sleep 1
+          done
 
-            if [ ! -e "$cookieFile" ]; then
-              echo "Cookie file not found at $cookieFile"
-            fi
+          if [ ! -e "$cookieFile" ]; then
+            echo "Cookie file not found at $cookieFile"
+          fi
 
-            cp "$cookieFile" /root/
+          cp "$cookieFile" /root/
 
-            set -e
+          set -e
 
-            ${rabbitmqcfg} setup --vhost ${rabbitmqVhost} --execute ${rabbitAdminUser.user}:${rabbitAdminUser.password}
+          rabbitmqcfg=${rabbitmqcfg}/bin/rabbitmqcfg
 
-            ${rabbitmqcfg} user --vhost ${rabbitmqVhost} --create --perms --execute api ${rabbitApiUser.user}:${rabbitApiUser.password}
-            ${rabbitmqcfg} user --vhost ${rabbitmqVhost} --create --perms --execute console ${rabbitConsoleUser.user}:${rabbitConsoleUser.password}
-            ${rabbitmqcfg} user --vhost ${rabbitmqVhost} --create --perms --execute supervisor ${rabbitSupervisorUser.user}:${rabbitSupervisorUser.password}
-            ${rabbitmqcfg} user --vhost ${rabbitmqVhost} --create --perms --execute node ${rabbitNodeUser.user}:${rabbitNodeUser.password}
+          $rabbitmqcfg setup --vhost ${rabbitmqVhost} --execute ${rabbitAdminUser.user}:${rabbitAdminUser.password}
 
-            ${rabbitmqcfg} policies --vhost ${rabbitmqVhost} --execute
-          '';
+          $rabbitmqcfg user --vhost ${rabbitmqVhost} --create --perms --execute api ${rabbitApiUser.user}:${rabbitApiUser.password}
+          $rabbitmqcfg user --vhost ${rabbitmqVhost} --create --perms --execute console ${rabbitConsoleUser.user}:${rabbitConsoleUser.password}
+          $rabbitmqcfg user --vhost ${rabbitmqVhost} --create --perms --execute supervisor ${rabbitSupervisorUser.user}:${rabbitSupervisorUser.password}
+
+          $rabbitmqcfg policies --vhost ${rabbitmqVhost} --execute
+        '';
       };
 
       redis = {
