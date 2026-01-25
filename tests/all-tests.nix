@@ -13,5 +13,6 @@ in
 testLib.makeTests [
   "cluster/1-node"
   "node/register"
+  "vps/create"
   "vpsadmin/services-up"
 ]
