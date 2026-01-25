@@ -1,5 +1,6 @@
 let
   adminUser = {
+    id = 1;
     login = "test-admin";
     password = "testAdminPassword";
     full_name = "Test Admin";
@@ -73,6 +74,247 @@ let
     has_ipv6 = false;
   };
 
+  godlikeValues = {
+    memory = 1024 * 1024; # MiB
+    swap = 1024 * 1024; # MiB
+    cpu = 8192;
+    diskspace = 20 * 1024 * 1024; # MiB
+    ipv4 = 256;
+    ipv4_private = 256;
+  };
+
+  clusterResources = [
+    {
+      id = 1;
+      name = "memory";
+      label = "Memory";
+      min = 1024;
+      max = 128 * 1024;
+      stepsize = 1;
+      resource_type = "numeric";
+    }
+    {
+      id = 2;
+      name = "swap";
+      label = "Swap";
+      min = 0;
+      max = 64 * 1024;
+      stepsize = 1;
+      resource_type = "numeric";
+    }
+    {
+      id = 3;
+      name = "cpu";
+      label = "CPU";
+      min = 1;
+      max = 64;
+      stepsize = 1;
+      resource_type = "numeric";
+    }
+    {
+      id = 4;
+      name = "diskspace";
+      label = "Disk space";
+      min = 10 * 1024;
+      max = 10 * 1024 * 1024;
+      stepsize = 1;
+      resource_type = "numeric";
+    }
+    {
+      id = 5;
+      name = "ipv4";
+      label = "IPv4 address";
+      min = 0;
+      max = 64;
+      stepsize = 1;
+      resource_type = "object";
+      free_chain = "Ip::Free";
+    }
+    {
+      id = 6;
+      name = "ipv4_private";
+      label = "Private IPv4 address";
+      min = 0;
+      max = 1024;
+      stepsize = 1;
+      resource_type = "object";
+      free_chain = "Ip::Free";
+    }
+  ];
+
+  osFamilies = {
+    debian = {
+      id = 1;
+      label = "Debian";
+      description = "";
+    };
+    ubuntu = {
+      id = 2;
+      label = "Ubuntu";
+      description = "";
+    };
+    alpine = {
+      id = 3;
+      label = "Alpine";
+      description = "";
+    };
+    fedora = {
+      id = 4;
+      label = "Fedora";
+      description = "";
+    };
+  };
+
+  osTemplates =
+    let
+      mkTpl = id: family: label: distribution: rec {
+        inherit id label distribution;
+        os_family_id = family;
+        hypervisor_type = 1; # vpsadminos
+        cgroup_version = 0; # cgroup_any
+        vendor = "vpsadminos";
+        variant = "minimal";
+        arch = "x86_64";
+        version = "latest";
+        name = "${distribution}-${version}-${arch}-${vendor}-${variant}";
+        manage_hostname = true;
+        manage_dns_resolver = true;
+        enable_script = true;
+        enable_cloud_init = true;
+        config = { };
+      };
+
+      templates = [
+        (mkTpl 1 osFamilies.debian.id "Debian (latest)" "debian")
+        (mkTpl 2 osFamilies.ubuntu.id "Ubuntu (latest)" "ubuntu")
+        (mkTpl 3 osFamilies.alpine.id "Alpine (latest)" "alpine")
+        (mkTpl 4 osFamilies.fedora.id "Fedora (latest)" "fedora")
+      ];
+    in
+    templates;
+
+  dnsResolver = {
+    id = 1;
+    addrs = "8.8.8.8";
+    label = "Test resolver";
+    is_universal = true;
+    location_id = null;
+    ip_version = 4;
+  };
+
+  userNamespaceBlockSize = 65536;
+  userNamespaceBlockCount = 1024;
+  userNamespaceBlocksOwned = 8;
+
+  userNamespace = {
+    id = 1;
+    user_id = adminUser.id;
+    block_count = userNamespaceBlocksOwned;
+    offset = 131072;
+    size = userNamespaceBlockSize * userNamespaceBlocksOwned;
+  };
+
+  userNamespaceBlocks = builtins.genList (
+    i:
+    let
+      idx = i + 1;
+      offset = 131072 + i * userNamespaceBlockSize;
+      owner = if idx <= userNamespaceBlocksOwned then userNamespace.id else null;
+    in
+    {
+      id = idx;
+      user_namespace_id = owner;
+      index = idx;
+      inherit offset;
+      size = userNamespaceBlockSize;
+    }
+  ) userNamespaceBlockCount;
+
+  userNamespaceMap = {
+    id = 1;
+    user_namespace_id = userNamespace.id;
+    label = "Default map";
+  };
+
+  userNamespaceMapEntries = [
+    {
+      id = 1;
+      user_namespace_map_id = userNamespaceMap.id;
+      kind = 0; # uid
+      vps_id = 0;
+      ns_id = 0;
+      count = userNamespace.size;
+    }
+    {
+      id = 2;
+      user_namespace_map_id = userNamespaceMap.id;
+      kind = 1; # gid
+      vps_id = 0;
+      ns_id = 0;
+      count = userNamespace.size;
+    }
+  ];
+
+  environmentUserConfig = {
+    environment_id = environment.id;
+    user_id = adminUser.id;
+    can_create_vps = true;
+    can_destroy_vps = true;
+    vps_lifetime = environment.vps_lifetime;
+    max_vps_count = environment.max_vps_count;
+    default = true;
+  };
+
+  personalPackage = {
+    id = 1;
+    label = "Personal package";
+    environment_id = environment.id;
+    user_id = adminUser.id;
+  };
+
+  godlikePackage = {
+    id = 2;
+    label = "Godlike";
+    environment_id = null;
+    user_id = null;
+  };
+
+  mkPackageItem = pkg: resource: value: {
+    cluster_resource_package_id = pkg.id;
+    cluster_resource_id = resource.id;
+    inherit value;
+  };
+
+  personalPackageItems = map (r: mkPackageItem personalPackage r 0) clusterResources;
+
+  godlikePackageItems = map (
+    r: mkPackageItem godlikePackage r (builtins.getAttr r.name godlikeValues)
+  ) clusterResources;
+
+  userPackageLinks = [
+    {
+      environment_id = environment.id;
+      user_id = adminUser.id;
+      cluster_resource_package_id = personalPackage.id;
+      added_by_id = adminUser.id;
+      comment = "";
+    }
+    {
+      environment_id = environment.id;
+      user_id = adminUser.id;
+      cluster_resource_package_id = godlikePackage.id;
+      added_by_id = adminUser.id;
+      comment = "";
+    }
+  ];
+
+  userClusterResources = map (r: {
+    user_id = adminUser.id;
+    environment_id = environment.id;
+    cluster_resource_id = r.id;
+    value = builtins.getAttr r.name godlikeValues;
+  }) clusterResources;
+
 in
 {
   inherit
@@ -139,40 +381,7 @@ in
     }
     {
       model = "ClusterResource";
-      records = [
-        {
-          name = "memory";
-          label = "Memory";
-          min = 1024;
-          max = 12 * 1024;
-          stepsize = 1024;
-          resource_type = "numeric";
-        }
-        {
-          name = "swap";
-          label = "Swap";
-          min = 0;
-          max = 12 * 1024;
-          stepsize = 1024;
-          resource_type = "numeric";
-        }
-        {
-          name = "cpu";
-          label = "CPU";
-          min = 1;
-          max = 8;
-          stepsize = 1;
-          resource_type = "numeric";
-        }
-        {
-          name = "diskspace";
-          label = "Disk space";
-          min = 10 * 1024;
-          max = 2000 * 1024;
-          stepsize = 10 * 1024;
-          resource_type = "numeric";
-        }
-      ];
+      records = clusterResources;
     }
     {
       model = "Environment";
@@ -186,6 +395,7 @@ in
       model = "User";
       records = [
         {
+          id = adminUser.id;
           inherit (adminUser)
             login
             full_name
@@ -201,6 +411,57 @@ in
           object_state = "active";
         }
       ];
+    }
+    {
+      model = "DnsResolver";
+      records = [ dnsResolver ];
+    }
+    {
+      model = "UserNamespace";
+      records = [ userNamespace ];
+    }
+    {
+      model = "UserNamespaceBlock";
+      records = userNamespaceBlocks;
+    }
+    {
+      model = "UserNamespaceMap";
+      records = [ userNamespaceMap ];
+    }
+    {
+      model = "UserNamespaceMapEntry";
+      records = userNamespaceMapEntries;
+    }
+    {
+      model = "EnvironmentUserConfig";
+      records = [ environmentUserConfig ];
+    }
+    {
+      model = "OsFamily";
+      records = builtins.attrValues osFamilies;
+    }
+    {
+      model = "OsTemplate";
+      records = osTemplates;
+    }
+    {
+      model = "ClusterResourcePackage";
+      records = [
+        personalPackage
+        godlikePackage
+      ];
+    }
+    {
+      model = "ClusterResourcePackageItem";
+      records = personalPackageItems ++ godlikePackageItems;
+    }
+    {
+      model = "UserClusterResource";
+      records = userClusterResources;
+    }
+    {
+      model = "UserClusterResourcePackage";
+      records = userPackageLinks;
     }
   ];
 }
