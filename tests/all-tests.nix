@@ -11,6 +11,7 @@ let
   };
 in
 testLib.makeTests [
-  "vpsadmin/services-up"
+  "cluster/1-node"
   "node/register"
+  "vpsadmin/services-up"
 ]

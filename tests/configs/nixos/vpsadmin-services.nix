@@ -43,6 +43,7 @@ let
   dbUsers = creds.database.users;
   rabbitmqVhost = creds.rabbitmq.vhost;
   rabbitmqUsers = creds.rabbitmq.users;
+  rabbitNodeUser = rabbitmqUsers.node;
   redisPassword = creds.redis.password;
 
   mkSecretEntry =
@@ -130,6 +131,18 @@ in
         type = types.attrsOf types.str;
         default = { };
         description = "Mapping of hostnames to socket-network IPv4 addresses for peer VMs.";
+      };
+
+      seedFiles = mkOption {
+        type = types.listOf types.str;
+        default = [ "test.nix" ];
+        description = "List of seed files applied when initializing the test database.";
+      };
+
+      rabbitmqNodeUsers = mkOption {
+        type = types.listOf types.str;
+        default = [ ];
+        description = "RabbitMQ user names (node domain names) to create for nodes in the cluster.";
       };
     };
   };
@@ -276,6 +289,11 @@ in
           $rabbitmqcfg user --vhost ${rabbitmqVhost} --create --perms --execute api ${rabbitApiUser.user}:${rabbitApiUser.password}
           $rabbitmqcfg user --vhost ${rabbitmqVhost} --create --perms --execute console ${rabbitConsoleUser.user}:${rabbitConsoleUser.password}
           $rabbitmqcfg user --vhost ${rabbitmqVhost} --create --perms --execute supervisor ${rabbitSupervisorUser.user}:${rabbitSupervisorUser.password}
+          ${lib.optionalString (cfg.rabbitmqNodeUsers != [ ]) ''
+            for node_user in ${lib.concatStringsSep " " cfg.rabbitmqNodeUsers}; do
+              $rabbitmqcfg user --vhost ${rabbitmqVhost} --create --perms --execute node ${"$"}{node_user}:${rabbitNodeUser.password}
+            done
+          ''}
 
           $rabbitmqcfg policies --vhost ${rabbitmqVhost} --execute
         '';
@@ -300,9 +318,7 @@ in
         };
         autoSetup = true;
         createLocally = true;
-        seedFiles = [
-          "test.nix"
-        ];
+        seedFiles = cfg.seedFiles;
       };
 
       api = {
