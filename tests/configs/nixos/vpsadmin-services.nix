@@ -48,6 +48,10 @@ let
   rabbitmqUsers = creds.rabbitmq.users;
   rabbitNodeUser = rabbitmqUsers.node;
   redisPassword = creds.redis.password;
+  testApiUrl = "http://api.vpsadmin.test";
+  vpsadminctlWrapper = pkgs.writeShellScriptBin "vpsadminctl" ''
+    exec ${pkgs.vpsadmin-client}/bin/vpsadminctl -u ${testApiUrl} "$@"
+  '';
 
   mkSecretEntry =
     {
@@ -97,7 +101,7 @@ let
         text = ''
           ---
           :servers:
-          - :url: http://api.vpsadmin.test
+          - :url: ${testApiUrl}
             :auth:
               :basic:
                 :user: ${adminUser.login}
@@ -193,7 +197,7 @@ in
       mariadb
       rabbitmqcfg
       redis
-      vpsadmin-client
+      vpsadminctlWrapper
     ];
 
     virtualisation = {

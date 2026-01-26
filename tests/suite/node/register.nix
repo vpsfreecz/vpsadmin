@@ -102,13 +102,12 @@ import ../../make-test.nix (
     testScript = ''
       require 'json'
 
-      api_url = "http://api.vpsadmin.test"
       location_id = ${toString location.id}
 
-      def register_node(services, api_url:, node_id:, name:, location_id:, ip_addr:, cpus:, mem_mib:, swap_mib:, max_vps:)
+      def register_node(services, node_id:, name:, location_id:, ip_addr:, cpus:, mem_mib:, swap_mib:, max_vps:)
         # TODO: this command fails on timeout, because it takes a long time to create node port reservations
         services.execute(
-          "vpsadminctl -u #{api_url} node create -- " \
+          "vpsadminctl node create -- " \
           "--id #{node_id} --name #{name} --type node --hypervisor-type vpsadminos " \
           "--location #{location_id} --ip-addr #{ip_addr} " \
           "--cpus #{cpus} --total-memory #{mem_mib} --total-swap #{swap_mib} --max-vps #{max_vps}"
@@ -142,7 +141,7 @@ import ../../make-test.nix (
 
       describe 'registration' do
         it 'waits for the api server' do
-          services.wait_until_succeeds("vpsadminctl -u #{api_url} cluster public_stats")
+          services.wait_until_succeeds("vpsadminctl cluster public_stats")
         end
 
         it 'creates rabbitmq user' do
@@ -153,7 +152,6 @@ import ../../make-test.nix (
         it 'registers node and starts nodectld' do
           register_node(
             services,
-            api_url: api_url,
             node_id: ${toString nodeSpec.id},
             name: "${nodeSpec.name}",
             location_id: location_id,
