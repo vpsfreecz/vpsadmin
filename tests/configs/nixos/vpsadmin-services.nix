@@ -16,6 +16,9 @@ let
     removePrefix
     ;
 
+  seed = import ../../../api/db/seeds/test.nix;
+  adminUser = seed.adminUser;
+
   cfg = config.vpsadmin.test;
 
   rabbitmqcfg = pkgs.stdenvNoCC.mkDerivation {
@@ -90,8 +93,21 @@ let
           group = "redis";
         })
       ];
+      haveapiClient = nameValuePair "haveapi-client.yml" {
+        text = ''
+          ---
+          :servers:
+          - :url: http://api.vpsadmin.test
+            :auth:
+              :basic:
+                :user: ${adminUser.login}
+                :password: ${adminUser.password}
+            :last_auth: :basic
+        '';
+        mode = "0400";
+      };
     in
-    dbFiles ++ rabbitFiles ++ redisFiles;
+    dbFiles ++ rabbitFiles ++ redisFiles ++ [ haveapiClient ];
 
   dbApiUser = dbUsers.api;
   dbSupervisorUser = dbUsers.supervisor;

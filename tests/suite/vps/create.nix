@@ -27,7 +27,7 @@ import ../../make-test.nix (
         config.default_order = :defined
       end
 
-      auth_opts = "-u http://api.vpsadmin.test --auth basic --user \"${adminUser.login}\" --password \"${adminUser.password}\""
+      api_url = "http://api.vpsadmin.test"
       location_id = ${toString location.id}
       user_id = ${toString adminUser.id}
       node_id = ${toString nodeId}
@@ -58,7 +58,7 @@ import ../../make-test.nix (
 
         it 'creates storage pool' do
           services.succeeds(
-            "vpsadminctl #{auth_opts} pool create -- " \
+            "vpsadminctl -u #{api_url} pool create -- " \
             "--node #{node_id} --label #{pool_label} --filesystem #{pool_fs} " \
             "--role #{pool_role} --is-open --max-datasets #{max_datasets} " \
             "--refquota-check"
@@ -67,7 +67,7 @@ import ../../make-test.nix (
 
         it 'creates a VPS' do
           _, output = services.succeeds(
-            "vpsadminctl #{auth_opts} -H --columns -o id vps new -- " \
+            "vpsadminctl -u #{api_url} -H --columns -o id vps new -- " \
             "--user #{user_id} --node #{node_id} " \
             "--os-template #{os_template_id} " \
             "--hostname vps-test --cpu #{cpu} --memory #{memory} --swap #{swap} " \
@@ -78,8 +78,8 @@ import ../../make-test.nix (
         end
 
         it 'starts a VPS' do
-          services.succeeds("vpsadminctl #{auth_opts} vps start #{@vps_id}")
-          services.wait_until_succeeds("vpsadminctl #{auth_opts} vps show #{@vps_id} | grep 'Running:' | grep 'true'")
+          services.succeeds("vpsadminctl -u #{api_url} vps start #{@vps_id}")
+          services.wait_until_succeeds("vpsadminctl -u #{api_url} vps show #{@vps_id} | grep 'Running:' | grep 'true'")
         end
       end
     '';

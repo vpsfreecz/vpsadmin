@@ -3,7 +3,6 @@ import ../../make-test.nix (
   let
     seed = import ../../../api/db/seeds/test.nix;
     creds = import ../../configs/nixos/vpsadmin-credentials.nix;
-    adminUser = seed.adminUser;
 
     rabbitmqVhost = creds.rabbitmq.vhost;
     rabbitmqUsers = creds.rabbitmq.users;
@@ -104,13 +103,12 @@ import ../../make-test.nix (
       require 'json'
 
       api_url = "http://api.vpsadmin.test"
-      auth_opts = "-u #{api_url} --auth basic --user \"${adminUser.login}\" --password \"${adminUser.password}\""
       location_id = ${toString location.id}
 
-      def register_node(services, auth_opts, node_id:, name:, location_id:, ip_addr:, cpus:, mem_mib:, swap_mib:, max_vps:)
+      def register_node(services, api_url:, node_id:, name:, location_id:, ip_addr:, cpus:, mem_mib:, swap_mib:, max_vps:)
         # TODO: this command fails on timeout, because it takes a long time to create node port reservations
         services.execute(
-          "vpsadminctl #{auth_opts} node create -- " \
+          "vpsadminctl -u #{api_url} node create -- " \
           "--id #{node_id} --name #{name} --type node --hypervisor-type vpsadminos " \
           "--location #{location_id} --ip-addr #{ip_addr} " \
           "--cpus #{cpus} --total-memory #{mem_mib} --total-swap #{swap_mib} --max-vps #{max_vps}"
@@ -144,8 +142,7 @@ import ../../make-test.nix (
 
       describe 'registration' do
         it 'waits for the api server' do
-          # TODO: The client needs authentication even for actions that do not required it
-          services.wait_until_succeeds("vpsadminctl -u http://api.vpsadmin.test/ --auth basic --user nouser --password nopassword cluster public_stats")
+          services.wait_until_succeeds("vpsadminctl -u #{api_url} cluster public_stats")
         end
 
         it 'creates rabbitmq user' do
@@ -156,7 +153,7 @@ import ../../make-test.nix (
         it 'registers node and starts nodectld' do
           register_node(
             services,
-            auth_opts,
+            api_url: api_url,
             node_id: ${toString nodeSpec.id},
             name: "${nodeSpec.name}",
             location_id: location_id,
