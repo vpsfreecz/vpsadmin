@@ -13,10 +13,13 @@ module TransactionChains
     def active_pools
       t = ::NodeCurrentStatus.table_name
 
+      recent = 120.seconds.ago
+
       ::Pool.joins(node: :node_current_status).where(
-        "(#{t}.updated_at IS NULL AND UNIX_TIMESTAMP() - UNIX_TIMESTAMP(CONVERT_TZ(#{t}.created_at, 'UTC', 'Europe/Prague')) <= 120)
+        "(#{t}.updated_at IS NULL AND #{t}.created_at >= :recent)
         OR
-        (UNIX_TIMESTAMP() - UNIX_TIMESTAMP(CONVERT_TZ(#{t}.updated_at, 'UTC', 'Europe/Prague')) <= 120)"
+        (#{t}.updated_at >= :recent)",
+        recent: recent
       ).where(
         nodes: {
           role: ::Node.roles[:node],
