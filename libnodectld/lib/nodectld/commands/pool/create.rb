@@ -1,7 +1,7 @@
 module NodeCtld
   class Commands::Pool::Create < Commands::Base
     handle 5250
-    needs :system, :zfs, :pool
+    needs :system, :zfs, :pool, :osctl
 
     def exec
       ensure_ds(@pool_fs, @options)
@@ -16,6 +16,8 @@ module NodeCtld
 
       OsCtlUsers.add_pool(@pool_fs)
 
+      grant_device_access
+
       Daemon.instance.refresh_pools
 
       ok
@@ -28,6 +30,8 @@ module NodeCtld
 
       zfs(:destroy, nil, "#{@pool_fs}/#{pool_work_root}", valid_rcs: [1])
       zfs(:destroy, nil, @pool_fs, valid_rcs: [1])
+
+      revoke_device_access
 
       Daemon.instance.refresh_pools
     end
@@ -56,6 +60,44 @@ module NodeCtld
       return if str_opts.empty?
 
       zfs(:set, str_opts, fs)
+    end
+
+    def grant_device_access
+      pool_devices.each do |ident, devnode|
+        osctl(
+          %i[group devices add],
+          ['/default', *ident, 'rwm', devnode],
+          {
+            parents: true,
+            inherit: false
+          }
+        )
+      rescue SystemCommandFailed => e
+        raise if e.rc != 1 || /device already exists/ !~ e.output
+      end
+    end
+
+    def revoke_device_access
+      # rubocop:disable Style/HashEachMethods
+      pool_devices.each do |ident, _devnode|
+        osctl(
+          %i[group devices del],
+          ['/default', *ident],
+          {},
+          {},
+          valid_rcs: [1]
+        )
+      end
+      # rubocop:enable Style/HashEachMethods
+    end
+
+    def pool_devices
+      [
+        [%w[char 10 200], '/dev/net/tun'],
+        [%w[char 10 229], '/dev/fuse'],
+        [%w[char 108 0], '/dev/ppp'],
+        [%w[char 10 232], '/dev/kvm']
+      ]
     end
   end
 end
