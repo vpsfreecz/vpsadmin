@@ -28,6 +28,16 @@ module NodeCtld
       check_status
     end
 
+    def reload_pools
+      @mutex.synchronize do
+        @pools = fetch_pools
+        @state_summary_value = :unknown
+        @scan_summary_value = :unknown
+        @scan_percent_summary = nil
+        @last_check = Time.now.utc
+      end
+    end
+
     # @return [Array<Time, Integer, Integer, Float>)]
     #   last check, state, scan and scan percent summary values
     def summary_values

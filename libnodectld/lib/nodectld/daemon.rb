@@ -372,6 +372,11 @@ module NodeCtld
       @storage_status.update
     end
 
+    def refresh_pools
+      @node.refresh_pools
+      @pool_status.reload_pools
+    end
+
     def pause(t = true)
       pause!(t)
     end

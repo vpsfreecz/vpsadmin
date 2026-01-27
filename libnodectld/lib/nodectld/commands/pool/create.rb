@@ -16,6 +16,8 @@ module NodeCtld
 
       OsCtlUsers.add_pool(@pool_fs)
 
+      Daemon.instance.refresh_pools
+
       ok
     end
 
@@ -26,6 +28,8 @@ module NodeCtld
 
       zfs(:destroy, nil, "#{@pool_fs}/#{pool_work_root}", valid_rcs: [1])
       zfs(:destroy, nil, @pool_fs, valid_rcs: [1])
+
+      Daemon.instance.refresh_pools
     end
 
     protected

@@ -73,6 +73,32 @@ module NodeCtld
       'node'
     end
 
+    def refresh_pools
+      new_pools = fetch_pools
+      new_pool_names = new_pools.map(&:name)
+      added = []
+
+      @mutex.synchronize do
+        (@pools.keys - new_pool_names).each do |name|
+          @pools.delete(name)
+        end
+
+        new_pools.each do |pool|
+          if (existing = @pools[pool.name])
+            existing.filesystem = pool.filesystem
+            existing.role = pool.role
+          else
+            @pools[pool.name] = pool
+            added << pool
+          end
+        end
+      end
+
+      added.each do |pool|
+        wait_for_pool(pool)
+      end
+    end
+
     protected
 
     def wait_for_pool(pool)
