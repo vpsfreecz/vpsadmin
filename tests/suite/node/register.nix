@@ -106,11 +106,20 @@ import ../../make-test.nix (
 
       def register_node(services, node_id:, name:, location_id:, ip_addr:, cpus:, mem_mib:, swap_mib:, max_vps:)
         # TODO: this command fails on timeout, because it takes a long time to create node port reservations
-        services.execute(
-          "vpsadminctl node create -- " \
-          "--id #{node_id} --name #{name} --type node --hypervisor-type vpsadminos " \
-          "--location #{location_id} --ip-addr #{ip_addr} " \
-          "--cpus #{cpus} --total-memory #{mem_mib} --total-swap #{swap_mib} --max-vps #{max_vps}"
+        services.vpsadminctl.execute(
+          args: %w[node create],
+          parameters: {
+            id: node_id,
+            name: name,
+            type: 'node',
+            hypervisor_type: 'vpsadminos',
+            location: location_id,
+            ip_addr: ip_addr,
+            cpus: cpus,
+            total_memory: mem_mib,
+            total_swap: swap_mib,
+            max_vps: max_vps
+          }
         )
       end
 
@@ -141,7 +150,7 @@ import ../../make-test.nix (
 
       describe 'registration' do
         it 'waits for the api server' do
-          services.wait_until_succeeds("vpsadminctl cluster public_stats")
+          services.vpsadminctl.wait_until_succeeds(args: %w[cluster public_stats])
         end
 
         it 'creates rabbitmq user' do

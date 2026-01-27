@@ -56,29 +56,48 @@ import ../../make-test.nix (
         end
 
         it 'creates storage pool' do
-          services.succeeds(
-            "vpsadminctl pool create -- " \
-            "--node #{node_id} --label #{pool_label} --filesystem #{pool_fs} " \
-            "--role #{pool_role} --is-open --max-datasets #{max_datasets} " \
-            "--refquota-check"
+          services.vpsadminctl.succeeds(
+            args: %w[pool create],
+            parameters: {
+              node: node_id,
+              label: pool_label,
+              filesystem: pool_fs,
+              role: pool_role,
+              is_open: true,
+              max_datasets: max_datasets,
+              refquota_check: true
+            }
           )
         end
 
         it 'creates a VPS' do
-          _, output = services.succeeds(
-            "vpsadminctl -H --columns -o id vps new -- " \
-            "--user #{user_id} --node #{node_id} " \
-            "--os-template #{os_template_id} " \
-            "--hostname vps-test --cpu #{cpu} --memory #{memory} --swap #{swap} " \
-            "--diskspace #{diskspace} --ipv4 #{ipv4} --ipv4-private #{ipv4_private} --ipv6 #{ipv6}"
+          _, output = services.vpsadminctl.succeeds(
+            args: %w[vps new],
+            parameters: {
+              user: user_id,
+              node: node_id,
+              os_template: os_template_id,
+              hostname: 'vps-test',
+              cpu: cpu,
+              memory: memory,
+              swap: swap,
+              diskspace: diskspace,
+              ipv4: ipv4,
+              ipv4_private: ipv4_private,
+              ipv6: ipv6
+            }
           )
 
-          @vps_id = output.strip.to_i
+          @vps_id = output.fetch('vps').fetch('id')
         end
 
         it 'starts a VPS' do
-          services.succeeds("vpsadminctl vps start #{@vps_id}")
-          services.wait_until_succeeds("vpsadminctl vps show #{@vps_id} | grep 'Running:' | grep 'true'")
+          services.vpsadminctl.succeeds(args: ['vps', 'start', @vps_id.to_s])
+
+          wait_for_block(name: 'VPS to start') do
+            _, output = services.vpsadminctl.succeeds(args: ['vps', 'show', @vps_id])
+            output.fetch('vps').fetch('is_running')
+          end
         end
       end
     '';
