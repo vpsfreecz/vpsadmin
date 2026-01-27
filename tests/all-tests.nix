@@ -12,6 +12,7 @@ let
 in
 testLib.makeTests [
   "cluster/1-node"
+  "cluster/2-node"
   "node/register"
   "vps/create"
   "vpsadmin/services-up"
