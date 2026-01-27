@@ -12,6 +12,8 @@ let
     maxVps = 30;
   };
 
+  nodes = [ node ];
+
   portReservations = builtins.genList (i: {
     node_id = node.id;
     port = 10000 + i;
@@ -25,7 +27,7 @@ in
     location
     ;
 
-  inherit node;
+  inherit node nodes;
 
   seed = [
     {
