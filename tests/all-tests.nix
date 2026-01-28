@@ -15,5 +15,6 @@ testLib.makeTests [
   "cluster/2-node"
   "node/register"
   "vps/create"
+  "vps/migrate"
   "vpsadmin/services-up"
 ]
