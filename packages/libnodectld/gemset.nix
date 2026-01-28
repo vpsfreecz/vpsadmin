@@ -4,10 +4,10 @@
     platforms = [ ];
     source = {
       remotes = [ "https://rubygems.org" ];
-      sha256 = "1f3030phzsngyh4pl035sfjcid2832bzskmyair0g3sgaxq2rwi4";
+      sha256 = "09bgvziaz8k72s26548rs9wfbydcrr1w0kp8by22jbrdnnn900rp";
       type = "gem";
     };
-    version = "2.5.0";
+    version = "2.5.1";
   };
   base64 = {
     groups = [ "default" ];
@@ -179,10 +179,10 @@
     platforms = [ ];
     source = {
       remotes = [ "https://rubygems.vpsfree.cz" ];
-      sha256 = "0zyj2ldj97rz8wr7maxflajh0cfn6f2n2b6l7gsrqm2ffcq7y02b";
+      sha256 = "1b314mjrpp9l69yn1nan7kj37yarms1cs6zqivv8sxwq81qz7n96";
       type = "gem";
     };
-    version = "4.1.0.build20260112183028";
+    version = "4.1.0.build20260128152432";
   };
   libosctl = {
     dependencies = [
@@ -196,10 +196,10 @@
     platforms = [ ];
     source = {
       remotes = [ "https://rubygems.vpsfree.cz" ];
-      sha256 = "1rskiijqrmhpik4mkvy7552q34ydg9yxrh4mn6ks42snnincv9sk";
+      sha256 = "1hbyhfwdpikh9954i7qi8mmcp6rpf8fnpkkkc5r6mlf0yid01sza";
       type = "gem";
     };
-    version = "25.11.0.build20251201154349";
+    version = "25.11.0.build20260124150749";
   };
   logger = {
     groups = [ "default" ];
@@ -323,10 +323,10 @@
     platforms = [ ];
     source = {
       remotes = [ "https://rubygems.vpsfree.cz" ];
-      sha256 = "10k3ir3k5dxa1mphjkq7yjw5r6c2324a1w6gqvprd0cgzwl55s5f";
+      sha256 = "0aqcc8fivsp7mv2wsizqr135shbmz56pcvy6z08v25v8d8xij6my";
       type = "gem";
     };
-    version = "25.11.0.build20251201154349";
+    version = "25.11.0.build20260124150749";
   };
   osctl-exportfs = {
     dependencies = [
@@ -339,10 +339,10 @@
     platforms = [ ];
     source = {
       remotes = [ "https://rubygems.vpsfree.cz" ];
-      sha256 = "1jizcd5zp11x7ldfq9xvy1akd6f0l9g9295ar9khwaim4gs8v40k";
+      sha256 = "12kqbld1q974np7yhphy7kjv2aj6gqbsjq6zvr1y4l1s1hrvil2p";
       type = "gem";
     };
-    version = "25.11.0.build20251201154349";
+    version = "25.11.0.build20260124150749";
   };
   ostruct = {
     groups = [ "default" ];
