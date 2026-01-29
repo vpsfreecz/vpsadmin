@@ -133,6 +133,7 @@ let
   ];
 
   webuiPort = 8134;
+  socketNetwork = "${cfg.socketAddress}/24";
 in
 {
   imports = [
@@ -170,7 +171,7 @@ in
   config = {
     networking = {
       hostName = "vpsadmin-services";
-      firewall.enable = false;
+      firewall.enable = true;
       interfaces.eth1.useDHCP = false;
       interfaces.eth1.ipv4.addresses = [
         {
@@ -283,6 +284,10 @@ in
         enable = true;
         hosts = [ "127.0.0.1" ];
         virtualHost = rabbitmqVhost;
+        allowedIPv4Ranges = {
+          cluster = [ socketNetwork ];
+          clients = [ socketNetwork ];
+        };
         initialScript = pkgs.writeScript "rabbitmq-setup.sh" ''
           #!${pkgs.bash}/bin/bash
 
@@ -326,6 +331,7 @@ in
 
       database = {
         enable = true;
+        allowedIPv4Ranges = [ socketNetwork ];
       };
 
       databaseSetup = {
