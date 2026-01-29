@@ -89,6 +89,12 @@ in
         ip addr add ${cfg.socketAddress}/24 dev eth1
         ip link set eth1 up
       '';
+      firewall.interfaces.eth1.allowedTCPPortRanges = [
+        {
+          from = 10000;
+          to = 20000;
+        }
+      ];
     };
 
     osctl.exportfs.enable = true;
