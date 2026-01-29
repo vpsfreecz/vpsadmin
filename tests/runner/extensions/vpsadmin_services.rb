@@ -189,10 +189,21 @@ class VpsadminServicesMachine < OsVm::NixosMachine
   end
 
   def wait_for_vpsadmin_api(timeout: @default_timeout || 300)
-    wait_until_succeeds(
-      "curl --silent --fail http://api.vpsadmin.test/ | grep 'API description'",
-      timeout:
-    )
+    deadline = Time.now + timeout
+
+    loop do
+      remaining = deadline - Time.now
+      raise OsVm::TimeoutError, 'Timeout occurred while waiting for vpsadmin API' if remaining <= 0
+
+      _, output = wait_until_succeeds(
+        'curl --silent --fail-with-body http://api.vpsadmin.test/',
+        timeout: remaining.ceil
+      )
+
+      return true if output.include?('API description')
+
+      sleep 1
+    end
   end
 end
 
