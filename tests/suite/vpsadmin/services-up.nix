@@ -131,6 +131,16 @@ import ../../make-test.nix (
             services.wait_until_succeeds("curl http://127.0.0.1:8134/ | grep vpsAdmin")
           end
         end
+
+        describe 'mailer node' do
+          it 'container is running' do
+            services.wait_until_succeeds("nixos-container status mailer | grep -l up", timeout: 180)
+          end
+
+          it 'nodectld reports running state' do
+            services.wait_until_succeeds("nixos-container run mailer -- nodectl status | grep 'State: running'", timeout: 180)
+          end
+        end
       end
     '';
   }

@@ -74,6 +74,20 @@ let
     has_ipv6 = false;
   };
 
+  mailerRole = 2; # Node.roles[:mailer]
+
+  mailerNode = rec {
+    id = 100;
+    name = "vpsadmin-mailer";
+    domain = "${name}.${location.domain}";
+    ipAddr = "192.168.10.10";
+    maxVps = 0;
+    cpus = 2;
+    memoryMiB = 2048;
+    swapMiB = 512;
+    role = mailerRole;
+  };
+
   godlikeValues = {
     memory = 1024 * 1024; # MiB
     swap = 1024 * 1024; # MiB
@@ -322,6 +336,7 @@ in
     transactionKey
     environment
     location
+    mailerNode
     ;
 
   seed = [
@@ -390,6 +405,23 @@ in
     {
       model = "Location";
       records = [ location ];
+    }
+    {
+      model = "Node";
+      records = [
+        {
+          id = mailerNode.id;
+          name = mailerNode.name;
+          location_id = location.id;
+          ip_addr = mailerNode.ipAddr;
+          max_vps = mailerNode.maxVps;
+          cpus = mailerNode.cpus;
+          total_memory = mailerNode.memoryMiB;
+          total_swap = mailerNode.swapMiB;
+          role = mailerNode.role;
+          hypervisor_type = null;
+        }
+      ];
     }
     {
       model = "User";

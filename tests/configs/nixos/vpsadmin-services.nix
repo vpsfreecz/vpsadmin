@@ -14,6 +14,7 @@ let
     nameValuePair
     optionalAttrs
     removePrefix
+    unique
     ;
 
   seed = import ../../../api/db/seeds/test.nix;
@@ -115,6 +116,7 @@ let
 
   dbApiUser = dbUsers.api;
   dbSupervisorUser = dbUsers.supervisor;
+  dbNodectldUser = dbUsers.nodectld;
 
   rabbitAdminUser = rabbitmqUsers.admin;
   rabbitApiUser = rabbitmqUsers.api;
@@ -134,6 +136,16 @@ let
 
   webuiPort = 8134;
   socketNetwork = "${cfg.socketAddress}/24";
+
+  mailerNode = {
+    address = cfg.socketAddress;
+    netInterfaces = [ "eth1" ];
+  }
+  // seed.mailerNode;
+
+  mailerRabbitUser = mailerNode.domain;
+
+  rabbitmqNodeUsers = unique (cfg.rabbitmqNodeUsers ++ [ mailerRabbitUser ]);
 in
 {
   imports = [
@@ -187,7 +199,11 @@ in
           "webui.vpsadmin.test"
           "varnish.vpsadmin.test"
         ];
-        "${cfg.socketAddress}" = [ "vpsadmin-services" ];
+        "${cfg.socketAddress}" = [
+          "vpsadmin-services"
+          mailerNode.domain
+          "${mailerNode.domain}.${seed.environment.domain}"
+        ];
       }
       // socketPeersAsHosts;
     };
@@ -275,6 +291,76 @@ in
         };
     };
 
+    containers.mailer = {
+      autoStart = true;
+      privateNetwork = false;
+      config =
+        { config, lib, ... }:
+        {
+          imports = [
+            ../../../nixos/modules/nixos-modules.nix
+          ];
+
+          time.timeZone = "UTC";
+
+          networking = {
+            hostName = mailerNode.name;
+            hosts = {
+              "${mailerNode.address}" = [
+                mailerNode.domain
+                "${mailerNode.domain}.${seed.environment.domain}"
+              ];
+            };
+          };
+
+          services.postfix.enable = true;
+
+          environment.etc."vpsadmin/transaction.key".text = seed.transactionKey.public;
+
+          vpsadmin = {
+            rabbitmq = {
+              hosts = [ cfg.socketAddress ];
+              virtualHost = rabbitmqVhost;
+            };
+
+            nodectld = {
+              enable = true;
+              settings = {
+                mode = "minimal";
+
+                rabbitmq = {
+                  username = mailerRabbitUser;
+                  password = rabbitNodeUser.password;
+                };
+
+                db = {
+                  hosts = [ cfg.socketAddress ];
+                  user = dbNodectldUser.user;
+                  pass = dbNodectldUser.password;
+                  name = dbName;
+                };
+
+                vpsadmin = {
+                  node_id = mailerNode.id;
+                  node_name = mailerNode.domain;
+                  node_addr = mailerNode.address;
+                  net_interfaces = mailerNode.netInterfaces;
+                  transaction_public_key = "/etc/vpsadmin/transaction.key";
+                  type = "mailer";
+                };
+
+                mailer = {
+                  smtp_server = "127.0.0.1";
+                  smtp_port = 25;
+                };
+              };
+            };
+          };
+
+          system.stateVersion = lib.trivial.release;
+        };
+    };
+
     vpsadmin = {
       enableStateDirectory = true;
 
@@ -314,8 +400,8 @@ in
           $rabbitmqcfg user --vhost ${rabbitmqVhost} --create --perms --execute api ${rabbitApiUser.user}:${rabbitApiUser.password}
           $rabbitmqcfg user --vhost ${rabbitmqVhost} --create --perms --execute console ${rabbitConsoleUser.user}:${rabbitConsoleUser.password}
           $rabbitmqcfg user --vhost ${rabbitmqVhost} --create --perms --execute supervisor ${rabbitSupervisorUser.user}:${rabbitSupervisorUser.password}
-          ${lib.optionalString (cfg.rabbitmqNodeUsers != [ ]) ''
-            for node_user in ${lib.concatStringsSep " " cfg.rabbitmqNodeUsers}; do
+          ${lib.optionalString (rabbitmqNodeUsers != [ ]) ''
+            for node_user in ${lib.concatStringsSep " " rabbitmqNodeUsers}; do
               $rabbitmqcfg user --vhost ${rabbitmqVhost} --create --perms --execute node ${"$"}{node_user}:${rabbitNodeUser.password}
             done
           ''}
