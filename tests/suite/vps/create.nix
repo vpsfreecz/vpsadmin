@@ -47,7 +47,11 @@ import ../../make-test.nix (
         [services, node].each(&:start)
         services.wait_for_vpsadmin_api
         node.wait_for_service('nodectld')
-        node.wait_until_succeeds("nodectl status | grep 'State: running'", timeout: 180)
+        wait_until_block_succeeds(name: 'nodectld running') do
+          _, output = node.succeeds('nodectl status', timeout: 180)
+          expect(output).to include('State: running')
+          true
+        end
       end
 
       describe 'cluster', order: :defined do

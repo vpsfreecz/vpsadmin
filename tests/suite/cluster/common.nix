@@ -26,7 +26,11 @@
         map (node: ''
           it '${node} nodectld is running' do
             ${node}.wait_for_service('nodectld')
-            ${node}.wait_until_succeeds("nodectl status | grep 'State: running'", timeout: 180)
+            wait_until_block_succeeds(name: '${node} nodectld running') do
+              _, output = ${node}.succeeds('nodectl status', timeout: 180)
+              expect(output).to include('State: running')
+              true
+            end
           end
         '') nodeMachines
       );

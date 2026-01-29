@@ -63,7 +63,11 @@ import ../../make-test.nix (
           end
 
           it 'is populated' do
-            services.wait_until_succeeds("mysql --user=${dbApiUser.user} --password=${dbApiUser.password} -D ${dbName} -e 'SHOW TABLES' | grep users")
+            wait_until_block_succeeds(name: 'mariadb tables populated') do
+              _, output = services.succeeds("mysql --user=${dbApiUser.user} --password=${dbApiUser.password} -D ${dbName} -e 'SHOW TABLES'")
+              expect(output).to include('users')
+              true
+            end
           end
         end
 
@@ -73,7 +77,11 @@ import ../../make-test.nix (
           end
 
           it 'is responding' do
-            services.wait_until_succeeds("redis-cli -a ${redisPassword} ping | grep PONG")
+            wait_until_block_succeeds(name: 'redis responds') do
+              _, output = services.succeeds("redis-cli -a ${redisPassword} ping")
+              expect(output).to include('PONG')
+              true
+            end
           end
         end
 
@@ -106,7 +114,11 @@ import ../../make-test.nix (
           end
 
           it 'is responding' do
-            services.wait_until_succeeds("curl http://api.vpsadmin.test/ | grep 'API description'")
+            wait_until_block_succeeds(name: 'api responds') do
+              _, output = services.succeeds('curl --silent --fail-with-body http://api.vpsadmin.test/')
+              expect(output).to include('API description')
+              true
+            end
           end
         end
 
@@ -124,21 +136,37 @@ import ../../make-test.nix (
 
         describe 'webui' do
           it 'is responding through varnish/haproxy' do
-            services.wait_until_succeeds("curl http://webui.vpsadmin.test/ | grep vpsAdmin")
+            wait_until_block_succeeds(name: 'webui via proxy responds') do
+              _, output = services.succeeds('curl --silent --fail-with-body http://webui.vpsadmin.test/')
+              expect(output).to include('vpsAdmin')
+              true
+            end
           end
 
           it 'is responding directly' do
-            services.wait_until_succeeds("curl http://127.0.0.1:8134/ | grep vpsAdmin")
+            wait_until_block_succeeds(name: 'webui direct responds') do
+              _, output = services.succeeds('curl --silent --fail-with-body http://127.0.0.1:8134/')
+              expect(output).to include('vpsAdmin')
+              true
+            end
           end
         end
 
         describe 'mailer node' do
           it 'container is running' do
-            services.wait_until_succeeds("nixos-container status mailer | grep -l up", timeout: 180)
+            wait_until_block_succeeds(name: 'mailer container running') do
+              _, output = services.succeeds('nixos-container status mailer', timeout: 180)
+              expect(output).to include('up')
+              true
+            end
           end
 
           it 'nodectld reports running state' do
-            services.wait_until_succeeds("nixos-container run mailer -- nodectl status | grep 'State: running'", timeout: 180)
+            wait_until_block_succeeds(name: 'mailer nodectld running') do
+              _, output = services.succeeds('nixos-container run mailer -- nodectl status', timeout: 180)
+              expect(output).to include('State: running')
+              true
+            end
           end
         end
       end
