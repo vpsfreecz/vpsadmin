@@ -1,0 +1,38 @@
+name: RuboCop
+
+on:
+  push:
+    paths:
+      - "**/*.rb"
+      - "**/*.gemspec"
+      - "Gemfile*"
+      - ".rubocop*"
+  pull_request:
+    paths:
+      - "**/*.rb"
+      - "**/*.gemspec"
+      - "Gemfile*"
+      - ".rubocop*"
+
+jobs:
+  rubocop:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Set up Ruby + Bundler cache
+        uses: ruby/setup-ruby@v1
+        with:
+          bundler-cache: true
+
+      - name: Run RuboCop
+        shell: bash
+        run: |
+          bundle exec rubocop --parallel --force-exclusion
