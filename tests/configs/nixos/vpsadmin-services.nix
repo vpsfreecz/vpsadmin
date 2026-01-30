@@ -53,6 +53,7 @@ let
   vpsadminctlWrapper = pkgs.writeShellScriptBin "vpsadminctl" ''
     exec ${pkgs.vpsadmin-client}/bin/vpsadminctl -u ${testApiUrl} "$@"
   '';
+  testApiConfigDir = ../vpsadmin/api;
 
   mkSecretEntry =
     {
@@ -435,6 +436,7 @@ in
 
       api = {
         enable = true;
+        configDirectory = testApiConfigDir;
         database = {
           name = dbName;
           user = dbApiUser.user;
