@@ -10,6 +10,7 @@ if [ ! -d "$OS_ROOT" ]; then
 fi
 
 export NIX_PATH="vpsadminos=${OS_ROOT}${NIX_PATH:+:${NIX_PATH}}"
+export NIX_PATH="vpsadmin=${ROOT}:${NIX_PATH}"
 
 mkdir -p "$ROOT/result"
 nix-build --out-link "$ROOT/result/test-runner" "$OS_ROOT/os/packages/test-runner/entry.nix" >/dev/null
