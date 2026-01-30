@@ -25,6 +25,7 @@ import ../../make-test.nix (
     machines = {
       services = {
         spin = "nixos";
+        tags = [ "vpsadmin-services" ];
         networks = [
           { type = "user"; }
           { type = "socket"; }
