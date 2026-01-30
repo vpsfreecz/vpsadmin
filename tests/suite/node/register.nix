@@ -35,6 +35,7 @@ import ../../make-test.nix (
     '';
 
     tags = [
+      "ci"
       "vpsadmin"
       "node"
     ];

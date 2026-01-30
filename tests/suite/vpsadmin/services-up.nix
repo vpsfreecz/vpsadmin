@@ -18,6 +18,7 @@ import ../../make-test.nix (
     '';
 
     tags = [
+      "ci"
       "vpsadmin"
       "services"
     ];

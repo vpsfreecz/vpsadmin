@@ -14,6 +14,7 @@
   inherit description machines;
 
   tags = [
+    "ci"
     "vpsadmin"
     "cluster"
     "node"
