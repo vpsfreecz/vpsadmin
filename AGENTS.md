@@ -20,7 +20,12 @@
 - Plugins: keep plugin gems inside the plugin directory; they are pulled via the `### vpsAdmin plugin marker ###` in `api/Gemfile`.
 
 ## Testing Guidelines
-- No tests are currently in use, the existing test files are not known to be functional
+- Integration tests live in `tests/` and reuse the vpsAdminOS test framework; `vpsadminos` is usually available at `../vpsadminos`. If not, you can clone it next to this repo (or set `VPSADMINOS_PATH`) so the runner can add it to `NIX_PATH`.
+- Use `./test-runner.sh ls` to enumerate tests and `./test-runner.sh test <test>` (e.g. `vpsadmin/services-up`).
+- Test definitions are in `tests/all-tests.nix` and `tests/suite/*`; machines compose `tests/machines/cluster/*.nix` plus seeds from `api/db/seeds/test*.nix` to spin up services and vpsAdminOS nodes on user+socket networks.
+- Services VM config `tests/configs/nixos/vpsadmin-services.nix` seeds MariaDB/RabbitMQ/Redis credentials from `tests/configs/nixos/vpsadmin-credentials.nix`, enables API/webui/supervisor/console_router; adjust socket addresses via `vpsadmin.test.*`.
+- Scenarios include cluster smoke tests, node registration, VPS create/start, and VPS migrate between nodes; expect long-running Nix builds/VM boots rather than quick unit specs.
+- test-runner extension `tests/runner/extensions/vpsadmin_services.rb` adds a `vpsadminctl` helper and `wait_for_vpsadmin_api` for machines tagged `vpsadmin-services`.
 
 ## Commit & Pull Request Guidelines
 - Use short imperative subjects, often scoped (`api: add StoragePool resource`, `webui: fix payset form`); keep one logical change per commit.
