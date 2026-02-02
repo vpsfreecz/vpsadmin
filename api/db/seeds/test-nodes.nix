@@ -8,6 +8,15 @@ let
     dns_server = 3;
   };
 
+  hypervisorTypes = {
+    openvz = 0;
+    vpsadminos = 1;
+  };
+
+  nodectlVersions = {
+    "4" = "vpsadminos";
+  };
+
   mkNode =
     {
       key,
@@ -15,6 +24,7 @@ let
       name,
       ipAddr,
       role ? "node",
+      nodectlVersion,
       maxVps ? if role == "node" then 30 else 0,
       cpus ? 4,
       memoryMiB ? 8 * 1024,
@@ -24,8 +34,7 @@ let
       roleId = builtins.getAttr role roleIds;
       hypervisorType =
         if role == "node" || role == "storage" then
-          # Node.register! sets vpsadminos for node/storage
-          1
+          builtins.getAttr (builtins.getAttr nodectlVersion nodectlVersions) hypervisorTypes
         else
           null;
     in
@@ -35,6 +44,7 @@ let
         name
         ipAddr
         role
+        nodectlVersion
         maxVps
         cpus
         memoryMiB
@@ -65,6 +75,7 @@ let
       id = 101;
       name = "vpsadmin-node1";
       ipAddr = "192.168.10.11";
+      nodectlVersion = "4";
     };
 
     node2 = mkNode {
@@ -72,6 +83,7 @@ let
       id = 102;
       name = "vpsadmin-node2";
       ipAddr = "192.168.10.12";
+      nodectlVersion = "4";
     };
 
     storage1 = mkNode {
@@ -80,6 +92,7 @@ let
       name = "vpsadmin-storage1";
       ipAddr = "192.168.10.21";
       role = "storage";
+      nodectlVersion = "4";
       cpus = 4;
       memoryMiB = 4 * 1024;
       swapMiB = 0;
@@ -91,6 +104,7 @@ let
       name = "vpsadmin-storage2";
       ipAddr = "192.168.10.22";
       role = "storage";
+      nodectlVersion = "4";
       cpus = 4;
       memoryMiB = 4 * 1024;
       swapMiB = 0;

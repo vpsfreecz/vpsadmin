@@ -1,8 +1,8 @@
-import ../../make-test.nix (
+import ../../../make-test.nix (
   { pkgs, ... }:
   let
-    seed = import ../../../api/db/seeds/test.nix;
-    creds = import ../../configs/nixos/vpsadmin-credentials.nix;
+    seed = import ../../../../api/db/seeds/test.nix;
+    creds = import ../../../configs/nixos/vpsadmin-credentials.nix;
 
     rabbitmqVhost = creds.rabbitmq.vhost;
     rabbitmqUsers = creds.rabbitmq.users;
@@ -50,7 +50,7 @@ import ../../make-test.nix (
         ];
         config = {
           imports = [
-            ../../configs/nixos/vpsadmin-services.nix
+            ../../../configs/nixos/vpsadmin-services.nix
           ];
 
           vpsadmin.test = {
@@ -80,7 +80,7 @@ import ../../make-test.nix (
           imports = [
             <vpsadminos/tests/configs/vpsadminos/base.nix>
             <vpsadminos/tests/configs/vpsadminos/pool-tank.nix>
-            ../../configs/vpsadminos/node.nix
+            ../../../configs/vpsadminos/node.nix
           ];
 
           boot.qemu.memory = 8192;

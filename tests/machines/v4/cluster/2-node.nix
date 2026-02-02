@@ -1,6 +1,6 @@
 _pkgs:
 let
-  seedPath = ../../../api/db/seeds/test-2-node.nix;
+  seedPath = ../../../../api/db/seeds/test-2-node.nix;
   clusterSeed = import seedPath;
   mkCluster = import ./mk-cluster.nix;
 in

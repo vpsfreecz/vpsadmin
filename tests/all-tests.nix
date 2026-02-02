@@ -11,10 +11,10 @@ let
   };
 in
 testLib.makeTests [
-  "cluster/1-node"
-  "cluster/2-node"
-  "node/register"
-  "vps/create"
-  "vps/migrate"
+  "v4/cluster/1-node"
+  "v4/cluster/2-node"
+  "v4/node/register"
+  "v4/vps/create"
+  "v4/vps/migrate"
   "vpsadmin/services-up"
 ]

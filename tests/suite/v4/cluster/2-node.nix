@@ -1,4 +1,4 @@
-import ../../make-test.nix (
+import ../../../make-test.nix (
   { pkgs, ... }@args:
   let
     clusterTest = import ./common.nix;
@@ -9,7 +9,7 @@ import ../../make-test.nix (
       Boot the reusable two-node vpsAdmin cluster and verify API availability
       plus running nodectld on both nodes.
     '';
-    machines = import ../../machines/cluster/2-node.nix pkgs;
+    machines = import ../../../machines/v4/cluster/2-node.nix pkgs;
     nodeMachines = [
       "node1"
       "node2"

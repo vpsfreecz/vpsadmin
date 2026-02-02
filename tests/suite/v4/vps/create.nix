@@ -1,10 +1,10 @@
-import ../../make-test.nix (
+import ../../../make-test.nix (
   { pkgs, ... }:
   let
-    seed = import ../../../api/db/seeds/test.nix;
+    seed = import ../../../../api/db/seeds/test.nix;
     adminUser = seed.adminUser;
     location = seed.location;
-    clusterSeed = import ../../../api/db/seeds/test-1-node.nix;
+    clusterSeed = import ../../../../api/db/seeds/test-1-node.nix;
     nodeId = clusterSeed.node.id;
   in
   {
@@ -21,7 +21,7 @@ import ../../make-test.nix (
       "vps"
     ];
 
-    machines = import ../../machines/cluster/1-node.nix pkgs;
+    machines = import ../../../machines/v4/cluster/1-node.nix pkgs;
 
     testScript = ''
       configure_examples do |config|

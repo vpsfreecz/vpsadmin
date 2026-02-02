@@ -34,13 +34,14 @@ the `vpsadminos` repository to be checked out next to this one (or point
 ## Cluster definitions
 
 - Predefined nodes with IDs and socket IPs live in `api/db/seeds/test-nodes.nix`
-  (`node1`/`node2` hypervisors plus `storage1`/`storage2` storage nodes).
+  (`node1`/`node2` vpsadminos hypervisors plus `storage1`/`storage2` storage
+  nodes).
 - Cluster seed files such as `api/db/seeds/test-1-node.nix` call
   `mkClusterSeed` with `nodeRefs` to pick which predefined nodes to include;
   Node and PortReservation seed data are generated for the chosen nodes.
-- Machine definitions in `tests/machines/cluster/*.nix` import the same cluster
-  seed and pass `clusterSeed.nodes` into `mk-cluster.nix`, so adding a new
-  cluster only requires a thin wrapper that lists the nodes to include.
+- Machine definitions in `tests/machines/v4/cluster/*.nix` import the same
+  cluster seed and pass `clusterSeed.nodes` into `mk-cluster.nix`, so adding a
+  new cluster only requires a thin wrapper that lists the nodes to include.
 
 This is a starting point for multi-node tests; add more VMs using the same
 socket network and share common setup through the configs above.

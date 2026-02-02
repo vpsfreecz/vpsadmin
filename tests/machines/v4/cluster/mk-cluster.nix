@@ -66,7 +66,7 @@ let
       imports = [
         <vpsadminos/tests/configs/vpsadminos/base.nix>
         <vpsadminos/tests/configs/vpsadminos/pool-tank.nix>
-        ../../configs/vpsadminos/node.nix
+        ../../../configs/vpsadminos/node.nix
       ];
 
       boot.qemu.memory = bootMemory;
@@ -93,7 +93,7 @@ in
     ];
     config = {
       imports = [
-        ../../configs/nixos/vpsadmin-services.nix
+        ../../../configs/nixos/vpsadmin-services.nix
       ];
 
       vpsadmin.test = {
