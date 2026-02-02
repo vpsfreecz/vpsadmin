@@ -113,6 +113,7 @@ import ../../../make-test.nix (
             parameters: {
               user: user_id,
               node: node1_id,
+              vm_type: 'container',
               os_template: os_template_id,
               hostname: 'vps-test',
               cpu: cpu,
