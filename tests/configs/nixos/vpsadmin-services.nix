@@ -228,7 +228,9 @@ in
       settings.mysqld = {
         bind_address = "0.0.0.0";
         max_connections = 200;
+        innodb_buffer_pool_size = "1024M";
       };
+
       initialScript = pkgs.writeText "vpsadmin-test-mysql-init.sql" ''
         CREATE DATABASE IF NOT EXISTS ${dbName} CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci;
 
