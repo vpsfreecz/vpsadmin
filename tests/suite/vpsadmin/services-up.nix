@@ -136,6 +136,18 @@ import ../../make-test.nix (
           services.wait_for_service('vpsadmin-console-router.service')
         end
 
+        example 'vnc-router is running' do
+          services.wait_for_service('vpsadmin-vnc-router.service')
+        end
+
+        example 'vnc-router metrics are available' do
+          wait_until_block_succeeds(name: 'vnc-router responds') do
+            _, output = services.succeeds('curl --silent --fail-with-body http://vnc.vpsadmin.test/metrics')
+            expect(output).to include('vnc_router_clients_connected')
+            true
+          end
+        end
+
         describe 'webui' do
           it 'is responding through varnish/haproxy' do
             wait_until_block_succeeds(name: 'webui via proxy responds') do

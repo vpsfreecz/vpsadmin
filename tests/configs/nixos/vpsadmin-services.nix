@@ -123,6 +123,7 @@ let
   rabbitApiUser = rabbitmqUsers.api;
   rabbitSupervisorUser = rabbitmqUsers.supervisor;
   rabbitConsoleUser = rabbitmqUsers.console;
+  rabbitVncUser = rabbitmqUsers.vnc;
 
   socketPeersAsHosts = mapAttrs' (host: addr: lib.nameValuePair addr [ host ]) cfg.socketPeers;
 
@@ -197,6 +198,7 @@ in
           "api.vpsadmin.test"
           "console.vpsadmin.test"
           "download.vpsadmin.test"
+          "vnc.vpsadmin.test"
           "webui.vpsadmin.test"
           "varnish.vpsadmin.test"
         ];
@@ -403,6 +405,7 @@ in
           $rabbitmqcfg user --vhost ${rabbitmqVhost} --create --perms --execute api ${rabbitApiUser.user}:${rabbitApiUser.password}
           $rabbitmqcfg user --vhost ${rabbitmqVhost} --create --perms --execute console ${rabbitConsoleUser.user}:${rabbitConsoleUser.password}
           $rabbitmqcfg user --vhost ${rabbitmqVhost} --create --perms --execute supervisor ${rabbitSupervisorUser.user}:${rabbitSupervisorUser.password}
+          $rabbitmqcfg user --vhost ${rabbitmqVhost} --create --perms --execute vnc ${rabbitVncUser.user}:${rabbitVncUser.password}
           ${lib.optionalString (rabbitmqNodeUsers != [ ]) ''
             for node_user in ${lib.concatStringsSep " " rabbitmqNodeUsers}; do
               $rabbitmqcfg user --vhost ${rabbitmqVhost} --create --perms --execute node ${"$"}{node_user}:${rabbitNodeUser.password}
@@ -479,6 +482,15 @@ in
         };
       };
 
+      "vnc-router" = {
+        enable = true;
+        address = "127.0.0.1";
+        rabbitmq = {
+          username = rabbitVncUser.user;
+          passwordFile = rabbitVncUser.passwordFile;
+        };
+      };
+
       download-mounter = {
         enable = false;
         api.url = "http://api.vpsadmin.test";
@@ -505,6 +517,16 @@ in
             {
               host = "127.0.0.1";
               port = 8000;
+            }
+          ];
+        };
+
+        vnc-router.test = {
+          frontend.bind = [ "unix@/run/haproxy/vpsadmin-vnc-router.sock mode 0666" ];
+          backends = [
+            {
+              host = "127.0.0.1";
+              port = 8001;
             }
           ];
         };
@@ -550,6 +572,13 @@ in
           domain = "console.vpsadmin.test";
           backend = {
             address = "unix:/run/haproxy/vpsadmin-console-router.sock";
+          };
+        };
+
+        vnc-router.test = {
+          domain = "vnc.vpsadmin.test";
+          backend = {
+            address = "unix:/run/haproxy/vpsadmin-vnc-router.sock";
           };
         };
 

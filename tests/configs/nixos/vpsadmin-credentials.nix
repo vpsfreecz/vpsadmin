@@ -30,6 +30,7 @@ in
       api = mkRabbitUser "api" "testRabbitmqApiPassword";
       supervisor = mkRabbitUser "supervisor" "testRabbitmqSupervisorPassword";
       console = mkRabbitUser "console" "testRabbitmqConsolePassword";
+      vnc = mkRabbitUser "vnc" "testRabbitmqVncPassword";
       node = mkRabbitUser "node" "testRabbitmqNodePassword";
     };
   };
