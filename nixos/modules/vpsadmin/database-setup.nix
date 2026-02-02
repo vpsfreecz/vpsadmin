@@ -125,37 +125,46 @@ in
       script = ''
         ${apiApp.setup}
 
-        ${lib.optionalString (cfg.autoSetup) ''
-          dbStateFile="${cfg.stateDirectory}/database-initialized"
+        dbStateFile="${cfg.stateDirectory}/database-initialized"
 
-          if [ ! -e "${schemaFile}" ] ; then
-            cp ${cfg.package}/database/db/schema.rb ${"${cfg.stateDirectory}/cache/schema.rb"}
-            chmod 0600 "${cfg.stateDirectory}/cache/schema.rb"
-          fi
+        if [ ! -e "${schemaFile}" ] ; then
+          cp ${cfg.package}/database/db/schema.rb ${"${cfg.stateDirectory}/cache/schema.rb"}
+          chmod 0600 "${cfg.stateDirectory}/cache/schema.rb"
+        fi
 
-          if [ -e "$dbStateFile" ]; then
-            dbInitialized=yes
-            echo "Database is already initialized"
+        ${
+          if cfg.autoSetup then
+            ''
+              if [ -e "$dbStateFile" ]; then
+                dbInitialized=yes
+                echo "Database is already initialized"
+              else
+                dbInitialized=no
+                echo "Loading database schema"
+                ${apiApp.bundle} exec rake db:schema:load
+                date > "$dbStateFile"
+              fi
+
+              echo "Running database migrations"
+              ${apiApp.bundle} exec rake db:migrate
+
+              echo "Running plugin migrations"
+              ${apiApp.bundle} exec rake vpsadmin:plugins:migrate
+
+              if [ "$dbInitialized" == "no" ]; then
+                ${lib.concatMapStringsSep "\n" (file: ''
+                  echo "Seeding file ${file}"
+                  ${apiApp.bundle} exec rake db:seed:file SEED_FILE=${file}
+                '') cfg.seedFiles}
+              fi
+            ''
           else
-            dbInitialized=no
-            echo "Loading database schema"
-            ${apiApp.bundle} exec rake db:schema:load
-            date > "$dbStateFile"
-          fi
+            ''
+              [ -e "$dbStateFile" ] || date > "$dbStateFile"
+            ''
+        }
 
-          echo "Running database migrations"
-          ${apiApp.bundle} exec rake db:migrate
-
-          echo "Running plugin migrations"
-          ${apiApp.bundle} exec rake vpsadmin:plugins:migrate
-
-          if [ "$dbInitialized" == "no" ]; then
-            ${lib.concatMapStringsSep "\n" (file: ''
-              echo "Seeding file ${file}"
-              ${apiApp.bundle} exec rake db:seed:file SEED_FILE=${file}
-            '') cfg.seedFiles}
-          fi
-        ''}
+        exit 0
       '';
     };
 
