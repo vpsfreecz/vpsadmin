@@ -8,7 +8,8 @@ let
     path: type:
     !(type == "directory" && baseNameOf path == ".gems")
     && !(type == "directory" && baseNameOf path == ".git")
-    && !(type == "directory" && baseNameOf path == "result");
+    && !(type == "directory" && baseNameOf path == "result")
+    && !(type == "directory" && baseNameOf path == "tests");
 
   copiedRepo =
     if lib.isStorePath vpsadminPath then
