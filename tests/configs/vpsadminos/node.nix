@@ -5,6 +5,7 @@
 }:
 let
   inherit (lib)
+    optionals
     mkOption
     nameValuePair
     types
@@ -16,6 +17,7 @@ let
   txKey = seed.transactionKey;
 
   cfg = config.vpsadmin.test.node;
+  isV5 = config.vpsadmin.nodectld.version == "5";
 
   dbUser = creds.database.users.nodectld;
   rabbitUser = creds.rabbitmq.users.node;
@@ -95,6 +97,7 @@ in
           to = 20000;
         }
       ];
+      firewall.interfaces.eth1.allowedTCPPorts = optionals isV5 [ 8082 ];
     };
 
     osctl.exportfs.enable = true;
@@ -132,8 +135,14 @@ in
             net_interfaces = [ "eth1" ];
             transaction_public_key = "/etc/vpsadmin/transaction.key";
           };
+
+          vnc = {
+            port = 8082;
+          };
         };
       };
+
+      console-server.enable = isV5;
     };
   };
 }
