@@ -80,6 +80,8 @@ let
         locationDomain = seed.location.domain;
         socketPeers = mkNodeSocketPeers nodeSpec;
       };
+
+      vpsadmin.nodectld.version = nodeSpec.nodectlVersion;
     };
   };
 in
