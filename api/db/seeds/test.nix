@@ -156,26 +156,52 @@ let
     }
   ];
 
+  oses = {
+    linux = {
+      id = 1;
+      name = "linux";
+      label = "Linux";
+    };
+    bsd = {
+      id = 2;
+      name = "bsd";
+      label = "BSD";
+    };
+    windows = {
+      id = 3;
+      name = "windows";
+      label = "Windows";
+    };
+  };
+
   osFamilies = {
     debian = {
       id = 1;
+      name = "debian";
       label = "Debian";
       description = "";
+      os_id = oses.linux.id;
     };
     ubuntu = {
       id = 2;
+      name = "ubuntu";
       label = "Ubuntu";
       description = "";
+      os_id = oses.linux.id;
     };
     alpine = {
       id = 3;
+      name = "alpine";
       label = "Alpine";
       description = "";
+      os_id = oses.linux.id;
     };
     fedora = {
       id = 4;
+      name = "fedora";
       label = "Fedora";
       description = "";
+      os_id = oses.linux.id;
     };
   };
 
@@ -467,6 +493,10 @@ in
     {
       model = "EnvironmentUserConfig";
       records = [ environmentUserConfig ];
+    }
+    {
+      model = "Os";
+      records = builtins.attrValues oses;
     }
     {
       model = "OsFamily";
