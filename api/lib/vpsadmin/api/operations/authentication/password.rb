@@ -30,10 +30,10 @@ module VpsAdmin::API
 
       if authenticated
         if CryptoProviders.update?(user.password_version)
-          CryptoProviders.current do |name, provider|
+          CryptoProviders.current do |current_name, current_provider|
             user.update!(
-              password_version: name,
-              password: provider.encrypt(user.login, password)
+              password_version: current_name,
+              password: current_provider.encrypt(user.login, password)
             )
           end
         end

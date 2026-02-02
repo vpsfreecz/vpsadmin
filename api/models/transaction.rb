@@ -202,7 +202,9 @@ class Transaction < ApplicationRecord
     def decrement_many(obj, **kwattrs)
       raise NotImplementedError
 
+      # rubocop:disable Lint/UnreachableCode
       add_confirmable(:decrement_type, obj, nil, kwattrs)
+      # rubocop:enable Lint/UnreachableCode
     end
 
     def increment(obj, attr)
@@ -214,7 +216,9 @@ class Transaction < ApplicationRecord
     def increment_many(obj, **kwattrs)
       raise NotImplementedError
 
+      # rubocop:disable Lint/UnreachableCode
       add_confirmable(:increment_type, obj, nil, kwattrs)
+      # rubocop:enable Lint/UnreachableCode
     end
 
     alias edit edit_after

@@ -42,9 +42,9 @@ module VpsAdmin::API::Plugins::Requests::TransactionChains
             :request_action_role,
             { action: 'resolve', role: 'user' }
           ]
-        ].each do |id, params|
+        ].each do |id, tpl_params|
           mail(id, {
-                 params:,
+                 params: tpl_params,
                  user: request.user,
                  to: [request.user_mail],
                  language: request.user_language,
