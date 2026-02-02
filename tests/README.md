@@ -7,8 +7,8 @@ the `vpsadminos` repository to be checked out next to this one (or point
 
 ## Running tests
 
-- Build/run the runner from this repo: `./test-runner.sh list` (lists available
-  tests) or `./test-runner.sh run vpsadmin/services-up`. The wrapper builds
+- Build/run the runner from this repo: `./test-runner.sh ls` (lists available
+  tests) or `./test-runner.sh test vpsadmin/services-up`. The wrapper builds
   `os/packages/test-runner/entry.nix` from vpsAdminOS and runs it with the
   current working directory set to this repository.
 - The runner respects the usual flags from vpsAdminOS (e.g. `--state-dir`,
