@@ -86,7 +86,7 @@ module VpsAdmin::API::Plugins
     end
 
     def self.monitors
-      @monitors
+      @monitors || []
     end
   end
 end
