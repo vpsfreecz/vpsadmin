@@ -34,7 +34,7 @@ let
   '';
 
   rubyRunner = pkgs.writeScript "vpsadmin-${name}-ruby-runner" ''
-    #!${pkgs.ruby}/bin/ruby
+    #!${cfg.package}/ruby-env-wrapped/bin/ruby
 
     if ARGV.length < 1
       warn "Usage: #{$0} <script> [args...]"

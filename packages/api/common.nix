@@ -45,6 +45,7 @@ stdenv.mkDerivation rec {
     done
 
     ln -sf ${rubyEnv} $out/ruby-env
+    ln -sf ${rubyEnv.wrappedRuby} $out/ruby-env-wrapped
   '';
 
   meta = with lib; {
