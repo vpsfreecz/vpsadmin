@@ -1,6 +1,7 @@
 inherit_from: .rubocop_todo.yml
 plugins:
   - rubocop-rake
+  - rubocop-rspec
 
 AllCops:
   TargetRubyVersion: 3.2
@@ -60,6 +61,15 @@ Naming/HeredocDelimiterNaming:
 Naming/MethodParameterName:
   Enabled: false
 Naming/PredicateName:
+  Enabled: false
+
+RSpec/ExampleLength:
+  Enabled: false
+RSpec/BeforeAfterAll:
+  Enabled: false
+RSpec/SpecFilePathFormat:
+  Enabled: false
+RSpec/MultipleExpectations:
   Enabled: false
 
 Style/CaseEquality:
