@@ -10,6 +10,7 @@ Dir[File.join(__dir__, 'support', '**', '*.rb')].each { |f| require f }
 RSpec.configure do |config|
   config.order = :random
   Kernel.srand config.seed
+  config.filter_run_excluding :generator
 
   config.around do |example|
     ActiveRecord::Base.transaction do

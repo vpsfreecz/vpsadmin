@@ -1,0 +1,4 @@
+# List of HaveAPI action scopes that are covered by request specs
+# Format: "<resource_path>#<action>"
+# Example: "user#current"
+covered: []
