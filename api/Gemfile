@@ -27,6 +27,7 @@ gem 'user_agent_parser', '~> 2.20'
 gem 'webauthn', '~> 3.4'
 
 group :test do
+  gem 'rack-test'
   gem 'rspec'
 end
 
