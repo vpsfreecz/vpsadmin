@@ -1,47 +1,14 @@
-require 'active_record'
-require 'active_record/fixtures'
-require 'active_support'
-require 'rack/test'
-require 'rails'
-require 'json'
-require 'haveapi/spec/helpers'
-require_relative '../lib/vpsadmin'
+# frozen_string_literal: true
 
-ENV['RACK_ENV'] = 'test'
+ENV['RACK_ENV'] ||= 'test'
 
-# Connect to database
-environment = 'test'
-configuration = YAML.load(File.open('config/database.yml'))
+require 'bundler/setup'
+require 'rspec'
 
-ActiveRecord::Base.establish_connection(configuration[environment])
+# Load support helpers (will be populated in later sessions)
+Dir[File.join(__dir__, 'support', '**', '*.rb')].each { |f| require f }
 
-# Create database, load schemac
-include ActiveRecord::Tasks
-
-DatabaseTasks.create_current('test')
-DatabaseTasks.load_schema(:ruby, File.join(__dir__, '..', 'db', 'schema.rb'))
-
-# Load fixtures
-fixtures = ENV['FIXTURES'] ? ENV['FIXTURES'].split(',') : Dir.glob(File.join(__dir__, 'fixtures', '*.yml'))
-
-fixtures.each do |fixture|
-  ActiveRecord::FixtureSet.create_fixtures('spec/fixtures', File.basename(fixture, '.*'))
-end
-
-HaveAPI.set_module_name(VpsAdmin::API::Resources)
-HaveAPI.set_default_authenticate(VpsAdmin::API.authenticate)
-
-# Configure specs
 RSpec.configure do |config|
-  config.order = 'random'
-
-  config.extend HaveAPI::ApiBuilder
-  config.include HaveAPI::SpecMethods
-
-  config.around(:each) do |test|
-    ActiveRecord::Base.transaction do
-      test.run
-      raise ActiveRecord::Rollback
-    end
-  end
+  config.order = :random
+  Kernel.srand config.seed
 end
