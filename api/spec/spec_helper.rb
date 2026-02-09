@@ -11,6 +11,13 @@ RSpec.configure do |config|
   config.order = :random
   Kernel.srand config.seed
 
+  config.around do |example|
+    ActiveRecord::Base.transaction do
+      example.run
+      raise ActiveRecord::Rollback
+    end
+  end
+
   config.before(:suite) do
     SpecDbSetup.establish_connection!
     SpecDbSetup.ensure_database_exists!
@@ -18,5 +25,6 @@ RSpec.configure do |config|
     require_relative '../lib/vpsadmin'
     SpecDbSetup.seed_minimal_sysconfig!
     SpecDbSetup.seed_minimal_cluster_resources!
+    SpecSeed.bootstrap!
   end
 end
