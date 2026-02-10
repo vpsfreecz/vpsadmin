@@ -2,6 +2,8 @@
 # Format: "<resource_path>#<action>"
 # Example: "user#current"
 covered:
+- component#index
+- component#show
 - language#index
 - language#show
 - system_config#index
