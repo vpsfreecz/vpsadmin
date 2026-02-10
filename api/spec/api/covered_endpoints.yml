@@ -28,9 +28,12 @@ covered:
 - system_config#index
 - system_config#show
 - system_config#update
+- user#create
 - user#current
+- user#delete
 - user#index
 - user#show
+- user#update
 - user_cluster_resource_package#create
 - user_cluster_resource_package#delete
 - user_cluster_resource_package#index

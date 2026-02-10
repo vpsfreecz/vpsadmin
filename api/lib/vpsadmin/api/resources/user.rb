@@ -164,6 +164,7 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
       end
 
       @chain, = TransactionChains::User::Create.fire(
+        user,
         input[:vps],
         input[:node],
         input[:os_template]
