@@ -41,3 +41,8 @@ covered:
 - user_cluster_resource_package#update
 - user_cluster_resource_package.item#index
 - user_cluster_resource_package.item#show
+- user_session#close
+- user_session#create
+- user_session#index
+- user_session#show
+- user_session#update
