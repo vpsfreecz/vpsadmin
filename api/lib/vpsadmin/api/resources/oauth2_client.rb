@@ -115,7 +115,7 @@ module VpsAdmin::API::Resources
       end
 
       def exec
-        secret = input.delete(:secret)
+        secret = input.delete(:client_secret)
 
         client = self.class.model.find(params[:oauth2_client_id])
         client.set_secret(secret) if secret
