@@ -292,9 +292,6 @@ pending:
 - snapshot_download#delete
 - snapshot_download#index
 - snapshot_download#show
-- system_config#index
-- system_config#show
-- system_config#update
 - transaction#index
 - transaction#show
 - transaction_chain#index
