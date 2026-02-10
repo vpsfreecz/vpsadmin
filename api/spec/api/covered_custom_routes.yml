@@ -1,0 +1,3 @@
+# List of custom routes covered by request specs
+covered_custom_routes:
+- "GET /metrics"

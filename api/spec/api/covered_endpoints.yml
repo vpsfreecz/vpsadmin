@@ -25,6 +25,10 @@ covered:
 - component#show
 - language#index
 - language#show
+- metrics_access_token#create
+- metrics_access_token#delete
+- metrics_access_token#index
+- metrics_access_token#show
 - system_config#index
 - system_config#show
 - system_config#update

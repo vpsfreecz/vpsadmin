@@ -61,7 +61,7 @@ module VpsAdmin::API::Resources
       end
 
       def prepare
-        @token = self.class.model.find_by(with_restricted(id: params[:metrics_access_token_id]))
+        @token = self.class.model.find_by!(with_restricted(id: params[:metrics_access_token_id]))
       end
 
       def exec
@@ -108,7 +108,7 @@ module VpsAdmin::API::Resources
       end
 
       def exec
-        token = self.class.model.find_by(with_restricted(id: params[:metrics_access_token_id]))
+        token = self.class.model.find_by!(with_restricted(id: params[:metrics_access_token_id]))
         token.destroy!
         ok!
       end

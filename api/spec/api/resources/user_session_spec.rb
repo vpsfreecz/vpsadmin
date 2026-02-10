@@ -121,7 +121,7 @@ RSpec.describe 'VpsAdmin::API::Resources::UserSession' do
     }
   end
 
-  def sessions
+  def session_list
     json.dig('response', 'user_sessions')
   end
 
@@ -158,11 +158,11 @@ RSpec.describe 'VpsAdmin::API::Resources::UserSession' do
 
       expect_status(200)
       expect(json['status']).to be(true)
-      ids = sessions.map { |row| row['id'] }
+      ids = session_list.map { |row| row['id'] }
       expect(ids).to include(session_user_primary.id, session_user_secondary.id)
       expect(ids).not_to include(session_other_user.id)
 
-      row = sessions.find { |s| s['id'] == session_user_primary.id }
+      row = session_list.find { |s| s['id'] == session_user_primary.id }
       expect(row['api_ip_addr']).to eq('192.0.2.10')
       expect(row['user_agent']).to eq('SpecUA/1')
       expect(row['scope']).to eq('all')
@@ -174,7 +174,7 @@ RSpec.describe 'VpsAdmin::API::Resources::UserSession' do
 
       expect_status(200)
       expect(json['status']).to be(true)
-      ids = sessions.map { |row| row['id'] }
+      ids = session_list.map { |row| row['id'] }
       expect(ids).to include(session_user_primary.id, session_user_secondary.id)
       expect(ids).not_to include(session_other_user.id)
     end
@@ -184,7 +184,7 @@ RSpec.describe 'VpsAdmin::API::Resources::UserSession' do
 
       expect_status(200)
       expect(json['status']).to be(true)
-      ids = sessions.map { |row| row['id'] }
+      ids = session_list.map { |row| row['id'] }
       expect(ids).to include(session_support.id)
       expect(ids).not_to include(session_user_primary.id, session_other_user.id)
     end
@@ -194,7 +194,7 @@ RSpec.describe 'VpsAdmin::API::Resources::UserSession' do
 
       expect_status(200)
       expect(json['status']).to be(true)
-      ids = sessions.map { |row| row['id'] }
+      ids = session_list.map { |row| row['id'] }
       expect(ids).to include(
         session_user_primary.id,
         session_user_secondary.id,
@@ -215,7 +215,7 @@ RSpec.describe 'VpsAdmin::API::Resources::UserSession' do
       as(admin) { json_get index_path, user_session: { limit: 1 } }
 
       expect_status(200)
-      expect(sessions.length).to eq(1)
+      expect(session_list.length).to eq(1)
     end
 
     it 'supports from_id pagination' do
@@ -223,7 +223,7 @@ RSpec.describe 'VpsAdmin::API::Resources::UserSession' do
       as(admin) { json_get index_path, user_session: { from_id: boundary } }
 
       expect_status(200)
-      ids = sessions.map { |row| row['id'].to_i }
+      ids = session_list.map { |row| row['id'].to_i }
       expect(ids.all? { |id| id < boundary }).to be(true)
     end
   end
