@@ -55,3 +55,7 @@ covered:
 - user_session#index
 - user_session#show
 - user_session#update
+- webauthn.authentication#begin
+- webauthn.authentication#finish
+- webauthn.registration#begin
+- webauthn.registration#finish

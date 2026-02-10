@@ -375,7 +375,3 @@ pending:
 - vps_user_data#index
 - vps_user_data#show
 - vps_user_data#update
-- webauthn.authentication#begin
-- webauthn.authentication#finish
-- webauthn.registration#begin
-- webauthn.registration#finish

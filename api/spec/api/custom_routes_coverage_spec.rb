@@ -6,7 +6,8 @@ RSpec.describe 'VpsAdmin::API' do
   describe 'Custom route coverage' do
     it 'ensures all known custom routes are listed as covered' do
       known = [
-        'GET /metrics'
+        'GET /metrics',
+        'GET /webauthn/registration/new'
       ]
 
       covered_path = File.join(__dir__, 'covered_custom_routes.yml')
