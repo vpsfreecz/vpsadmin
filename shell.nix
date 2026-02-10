@@ -26,6 +26,7 @@ stdenv.mkDerivation rec {
 
   shellHook = ''
     export GEM_HOME="$(pwd)/.gems"
+    export RUBOCOP_CACHE_ROOT="$(pwd)/.rubocop_cache"
     export PATH="$(ruby -e 'puts Gem.bindir'):$PATH"
     export RUBYLIB="$GEM_HOME"
     gem install --no-document bundler

@@ -2,6 +2,7 @@
 .gems
 .idea
 .php-cs-fixer.cache
+.rubocop_cache/
 .vscode
 Gemfile.lock
 TODO
