@@ -110,7 +110,9 @@ module VpsAdmin::API::Resources
       end
 
       def exec
-        ::ClusterResourcePackage.find(params[:cluster_resource_package_id]).update!(input)
+        pkg = ::ClusterResourcePackage.find(params[:cluster_resource_package_id])
+        pkg.update!(input)
+        pkg
       rescue ActiveRecord::RecordInvalid => e
         error!('update failed', e.record.errors.to_hash)
       end

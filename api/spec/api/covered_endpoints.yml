@@ -6,6 +6,16 @@ covered:
 - cluster_resource#index
 - cluster_resource#show
 - cluster_resource#update
+- cluster_resource_package#create
+- cluster_resource_package#delete
+- cluster_resource_package#index
+- cluster_resource_package#show
+- cluster_resource_package#update
+- cluster_resource_package.item#create
+- cluster_resource_package.item#delete
+- cluster_resource_package.item#index
+- cluster_resource_package.item#show
+- cluster_resource_package.item#update
 - default_object_cluster_resource#create
 - default_object_cluster_resource#delete
 - default_object_cluster_resource#index
