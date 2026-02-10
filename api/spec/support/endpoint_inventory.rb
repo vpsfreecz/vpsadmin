@@ -58,11 +58,7 @@ module EndpointInventory
 
   def request_root(app_helper)
     app_helper.header 'Accept', 'application/json'
-    if app_helper.respond_to?(:options)
-      app_helper.options '/'
-    else
-      app_helper.get '/'
-    end
+    app_helper.options '/'
 
     status = app_helper.last_response.status
     return if status == 200
@@ -72,11 +68,7 @@ module EndpointInventory
 
   def request_version(app_helper, path)
     app_helper.header 'Accept', 'application/json'
-    if app_helper.respond_to?(:options)
-      app_helper.options path
-    else
-      app_helper.get path
-    end
+    app_helper.options path
 
     status = app_helper.last_response.status
     return if status == 200

@@ -74,12 +74,12 @@ module SpecSeed
   def seed_environments!
     Environment.find_or_create_by!(label: 'Spec Env') do |env|
       env.domain = 'spec.test'
-      env.user_ip_ownership = false if env.respond_to?(:user_ip_ownership=)
+      env.user_ip_ownership = false
     end
 
     Environment.find_or_create_by!(label: 'Spec Env 2') do |env|
       env.domain = 'spec2.test'
-      env.user_ip_ownership = false if env.respond_to?(:user_ip_ownership=)
+      env.user_ip_ownership = false
     end
   end
 
@@ -119,25 +119,21 @@ module SpecSeed
   def create_or_update_user!(login:, level:, email:)
     u = User.find_or_initialize_by(login: login)
 
-    u.level = level if u.respond_to?(:level=)
-    u.email = email if u.respond_to?(:email=)
+    u.level = level
+    u.email = email
 
-    if u.respond_to?(:full_name=) && (u.full_name.nil? || u.full_name.empty?)
+    if u.full_name.nil? || u.full_name.empty?
       u.full_name = login
     end
 
-    u.enable_basic_auth = true if u.respond_to?(:enable_basic_auth=)
-    u.enable_multi_factor_auth = false if u.respond_to?(:enable_multi_factor_auth=)
-    u.password_reset = false if u.respond_to?(:password_reset=)
-    u.lockout = false if u.respond_to?(:lockout=)
+    u.enable_basic_auth = true
+    u.enable_multi_factor_auth = false
+    u.password_reset = false
+    u.lockout = false
 
-    if u.respond_to?(:language=) && u.language.nil?
-      u.language = language
-    elsif u.respond_to?(:language_id=) && u.language_id.nil?
-      u.language_id = language&.id
-    end
+    u.language = language if u.language.nil?
 
-    if u.respond_to?(:object_state=) && u.object_state != 'active'
+    if u.object_state != 'active'
       u.object_state = 'active'
     end
 
@@ -152,16 +148,6 @@ module SpecSeed
   end
 
   def set_password!(user, password)
-    if user.respond_to?(:set_password)
-      user.set_password(password)
-      return
-    end
-
-    if user.respond_to?(:password=)
-      user.password = password
-      return
-    end
-
-    raise "Don't know how to set password for User; implement SpecSeed.set_password! based on app models"
+    user.set_password(password)
   end
 end
