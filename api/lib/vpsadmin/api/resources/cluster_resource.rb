@@ -12,6 +12,12 @@ module VpsAdmin::API::Resources
                     desc: 'When an object is allocating a resource, it must not use more than maximum'
       integer :stepsize, label: 'Step size',
                          desc: 'Steps in which the objects allocated resource value may be iterated'
+      string :resource_type,
+             choices: ::ClusterResource.resource_types.keys.map(&:to_s),
+             default: 'numeric',
+             fill: true
+      string :allocate_chain, label: 'Allocation chain'
+      string :free_chain, label: 'Free chain'
     end
 
     params(:all) do
@@ -26,7 +32,9 @@ module VpsAdmin::API::Resources
         use :all
       end
 
-      authorize do |_u|
+      authorize do |u|
+        allow if u.role == :admin
+        output blacklist: %i[resource_type allocate_chain free_chain]
         allow
       end
 
@@ -50,7 +58,9 @@ module VpsAdmin::API::Resources
         use :all
       end
 
-      authorize do |_u|
+      authorize do |u|
+        allow if u.role == :admin
+        output blacklist: %i[resource_type allocate_chain free_chain]
         allow
       end
 
@@ -68,6 +78,10 @@ module VpsAdmin::API::Resources
 
       input do
         use :common
+      end
+
+      output do
+        use :all
       end
 
       authorize do |u|
@@ -97,7 +111,9 @@ module VpsAdmin::API::Resources
       end
 
       def exec
-        ::ClusterResource.find(params[:cluster_resource_id]).update!(input)
+        r = ::ClusterResource.find(params[:cluster_resource_id])
+        r.update!(input)
+        r
       rescue ActiveRecord::RecordInvalid => e
         error!('update failed', e.record.errors.to_hash)
       end

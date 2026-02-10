@@ -2,6 +2,10 @@
 # Format: "<resource_path>#<action>"
 # Example: "user#current"
 covered:
+- cluster_resource#create
+- cluster_resource#index
+- cluster_resource#show
+- cluster_resource#update
 - component#index
 - component#show
 - language#index
