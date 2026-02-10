@@ -9,6 +9,7 @@ module SpecSeed
   def bootstrap!
     seed_language_if_needed!
     seed_users!
+    seed_environments!
     seed_user_accounts!
   end
 
@@ -26,6 +27,14 @@ module SpecSeed
 
   def other_user
     @other_user ||= User.find_by!(login: OTHER_USER_LOGIN)
+  end
+
+  def environment
+    @environment ||= Environment.find_by!(label: 'Spec Env')
+  end
+
+  def other_environment
+    @other_environment ||= Environment.find_by!(label: 'Spec Env 2')
   end
 
   def seed_language_if_needed!
@@ -60,6 +69,18 @@ module SpecSeed
       level: 1,
       email: 'otheruser@test.invalid'
     )
+  end
+
+  def seed_environments!
+    Environment.find_or_create_by!(label: 'Spec Env') do |env|
+      env.domain = 'spec.test'
+      env.user_ip_ownership = false if env.respond_to?(:user_ip_ownership=)
+    end
+
+    Environment.find_or_create_by!(label: 'Spec Env 2') do |env|
+      env.domain = 'spec2.test'
+      env.user_ip_ownership = false if env.respond_to?(:user_ip_ownership=)
+    end
   end
 
   def seed_user_accounts!

@@ -112,9 +112,11 @@ module VpsAdmin::API::Resources
       end
 
       def exec
-        ::DefaultObjectClusterResource
-          .find(params[:default_object_cluster_resource_id])
-          .update!(input)
+        record = ::DefaultObjectClusterResource.find(params[:default_object_cluster_resource_id])
+        record.update!(input)
+        record
+      rescue ActiveRecord::RecordInvalid => e
+        error!('update failed', e.record.errors.to_hash)
       end
     end
 

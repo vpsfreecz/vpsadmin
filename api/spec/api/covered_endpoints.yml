@@ -6,6 +6,11 @@ covered:
 - cluster_resource#index
 - cluster_resource#show
 - cluster_resource#update
+- default_object_cluster_resource#create
+- default_object_cluster_resource#delete
+- default_object_cluster_resource#index
+- default_object_cluster_resource#show
+- default_object_cluster_resource#update
 - component#index
 - component#show
 - language#index
