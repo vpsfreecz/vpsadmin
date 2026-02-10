@@ -114,6 +114,8 @@ class VpsAdmin::API::Resources::UserClusterResourcePackage < HaveAPI::Resource
       )
     rescue VpsAdmin::API::Exceptions::UserResourceAllocationError => e
       error!(e.message)
+    rescue ActiveRecord::RecordInvalid => e
+      error!('create failed', e.record.errors.to_hash)
     end
   end
 
@@ -136,6 +138,7 @@ class VpsAdmin::API::Resources::UserClusterResourcePackage < HaveAPI::Resource
     def exec
       upkg = ::UserClusterResourcePackage.find(params[:user_cluster_resource_package_id])
       upkg.update!(input)
+      upkg
     rescue ActiveRecord::RecordInvalid => e
       error!('update failed', e.record.errors.to_hash)
     end

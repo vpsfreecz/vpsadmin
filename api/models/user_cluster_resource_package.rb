@@ -4,6 +4,10 @@ class UserClusterResourcePackage < ApplicationRecord
   belongs_to :cluster_resource_package
   belongs_to :added_by, foreign_key: :added_by_id, class_name: 'User'
 
+  validates :environment_id, presence: true
+  validates :user_id, presence: true
+  validates :cluster_resource_package_id, presence: true
+
   after_destroy :recalculate_user_cluster_resources
 
   def label
