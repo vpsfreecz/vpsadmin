@@ -4,6 +4,7 @@ module VpsAdmin::API::Resources
 
     class UnlockTransactionSigningKey < HaveAPI::Action
       desc 'Unlock private key used for signing transactions'
+      http_method :post
 
       input(:hash) do
         string :passphrase, label: 'Passphrase', required: true
