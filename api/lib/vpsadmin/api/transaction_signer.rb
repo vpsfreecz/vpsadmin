@@ -31,7 +31,10 @@ module VpsAdmin::API
     def unlock(passphrase)
       raise Error, 'already unlocked' if @key
 
-      @key = OpenSSL::PKey::RSA.new(get_key, passphrase)
+      key = get_key
+      raise Error, 'transaction signing key not configured' if key.nil? || key.to_s.empty?
+
+      @key = OpenSSL::PKey::RSA.new(key, passphrase)
       true
     rescue OpenSSL::PKey::RSAError
       raise Error, 'invalid passphrase'
