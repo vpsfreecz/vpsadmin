@@ -25,7 +25,10 @@ covered:
 - component#index
 - component#show
 - environment#index
+- environment#create
+- environment#set_maintenance
 - environment#show
+- environment#update
 - language#index
 - language#show
 - metrics_access_token#create

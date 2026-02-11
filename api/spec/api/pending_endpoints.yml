@@ -79,9 +79,6 @@ pending:
 - dns_zone_transfer#show
 - dnssec_record#index
 - dnssec_record#show
-- environment#create
-- environment#set_maintenance
-- environment#update
 - environment.dataset_plan#index
 - environment.dataset_plan#show
 - export#create
