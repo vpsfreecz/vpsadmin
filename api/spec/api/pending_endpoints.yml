@@ -259,8 +259,6 @@ pending:
 - snapshot_download#delete
 - snapshot_download#index
 - snapshot_download#show
-- transaction#index
-- transaction#show
 - user#get_payment_instructions
 - user#touch
 - user.cluster_resource#create
