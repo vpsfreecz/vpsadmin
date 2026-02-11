@@ -8,7 +8,7 @@ module VpsAdmin::API
     def run(env, attrs)
       env.assign_attributes(attrs)
 
-      self.class.transaction do
+      ::Environment.transaction do
         env.save!
 
         env.environment_user_configs.where(default: true).update_all(
