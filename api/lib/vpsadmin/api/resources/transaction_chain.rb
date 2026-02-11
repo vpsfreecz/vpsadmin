@@ -63,7 +63,8 @@ class VpsAdmin::API::Resources::TransactionChain < HaveAPI::Resource
     end
 
     def count
-      query.count
+      result = query.count
+      result.is_a?(Hash) ? result.size : result
     end
 
     def exec
