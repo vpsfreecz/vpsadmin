@@ -121,9 +121,7 @@ pending:
 - ip_address_assignment#index
 - ip_address_assignment#show
 - location#create
-- location#index
 - location#set_maintenance
-- location#show
 - location#update
 - location_network#create
 - location_network#delete

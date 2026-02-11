@@ -10,6 +10,7 @@ module SpecSeed
     seed_language_if_needed!
     seed_users!
     seed_environments!
+    seed_locations!
     seed_user_accounts!
   end
 
@@ -35,6 +36,14 @@ module SpecSeed
 
   def other_environment
     @other_environment ||= Environment.find_by!(label: 'Spec Env 2')
+  end
+
+  def location
+    @location ||= Location.find_by!(label: 'Spec Location A')
+  end
+
+  def other_location
+    @other_location ||= Location.find_by!(label: 'Spec Location B')
   end
 
   def seed_language_if_needed!
@@ -80,6 +89,24 @@ module SpecSeed
     Environment.find_or_create_by!(label: 'Spec Env 2') do |env|
       env.domain = 'spec2.test'
       env.user_ip_ownership = false
+    end
+  end
+
+  def seed_locations!
+    Location.find_or_create_by!(label: 'Spec Location A') do |loc|
+      loc.environment = environment
+      loc.domain = 'spec-loc-a.test'
+      loc.has_ipv6 = true
+      loc.remote_console_server = ''
+      loc.description = 'Spec Location A'
+    end
+
+    Location.find_or_create_by!(label: 'Spec Location B') do |loc|
+      loc.environment = other_environment
+      loc.domain = 'spec-loc-b.test'
+      loc.has_ipv6 = false
+      loc.remote_console_server = ''
+      loc.description = 'Spec Location B'
     end
   end
 
