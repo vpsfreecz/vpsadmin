@@ -24,6 +24,8 @@ covered:
 - default_object_cluster_resource#update
 - component#index
 - component#show
+- environment#index
+- environment#show
 - language#index
 - language#show
 - metrics_access_token#create

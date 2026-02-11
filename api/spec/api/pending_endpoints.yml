@@ -80,9 +80,7 @@ pending:
 - dnssec_record#index
 - dnssec_record#show
 - environment#create
-- environment#index
 - environment#set_maintenance
-- environment#show
 - environment#update
 - environment.dataset_plan#index
 - environment.dataset_plan#show
