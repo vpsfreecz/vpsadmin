@@ -2,6 +2,7 @@
 # Format: "<resource_path>#<action>"
 # Example: "user#current"
 covered:
+- api_server#unlock_transaction_signing_key
 - cluster_resource#create
 - cluster_resource#index
 - cluster_resource#show

@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-RSpec.describe VpsAdmin::API do
+RSpec.describe 'VpsAdmin::API' do
   describe 'GET /webauthn/registration/new' do
     let(:redirect_uri) { 'https://example.invalid/return' }
 

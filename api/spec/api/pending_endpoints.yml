@@ -4,7 +4,6 @@ pending:
 - action_state#index
 - action_state#poll
 - action_state#show
-- api_server#unlock_transaction_signing_key
 - cluster#full_stats
 - cluster#generate_migration_keys
 - cluster#public_stats

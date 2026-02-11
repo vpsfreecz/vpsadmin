@@ -27,5 +27,6 @@ RSpec.configure do |config|
     SpecDbSetup.seed_minimal_sysconfig!
     SpecDbSetup.seed_minimal_cluster_resources!
     SpecSeed.bootstrap!
+    TransactionKeyHelpers.install_encrypted_transaction_key!
   end
 end
