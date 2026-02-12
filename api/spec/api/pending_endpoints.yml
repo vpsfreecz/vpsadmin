@@ -52,8 +52,6 @@ pending:
 - dns_record_log#show
 - dns_resolver#create
 - dns_resolver#delete
-- dns_resolver#index
-- dns_resolver#show
 - dns_resolver#update
 - dns_server#create
 - dns_server#delete

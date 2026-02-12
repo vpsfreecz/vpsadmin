@@ -11,6 +11,7 @@ module SpecSeed
     seed_users!
     seed_environments!
     seed_locations!
+    seed_dns_resolvers!
     seed_nodes!
     seed_pools!
     seed_user_accounts!
@@ -62,6 +63,14 @@ module SpecSeed
 
   def other_pool
     @other_pool ||= Pool.find_by!(filesystem: 'spec_pool_b')
+  end
+
+  def dns_resolver
+    @dns_resolver ||= DnsResolver.find_by!(label: 'Spec DNS A')
+  end
+
+  def other_dns_resolver
+    @other_dns_resolver ||= DnsResolver.find_by!(label: 'Spec DNS B')
   end
 
   def seed_language_if_needed!
@@ -126,6 +135,26 @@ module SpecSeed
       loc.remote_console_server = ''
       loc.description = 'Spec Location B'
     end
+  end
+
+  def seed_dns_resolvers!
+    resolver_a = DnsResolver.find_or_initialize_by(label: 'Spec DNS A')
+    resolver_a.assign_attributes(
+      addrs: '192.0.2.53',
+      is_universal: true,
+      location: nil,
+      ip_version: 4
+    )
+    resolver_a.save! if resolver_a.changed?
+
+    resolver_b = DnsResolver.find_or_initialize_by(label: 'Spec DNS B')
+    resolver_b.assign_attributes(
+      addrs: '192.0.2.54',
+      is_universal: false,
+      location: location,
+      ip_version: 4
+    )
+    resolver_b.save! if resolver_b.changed?
   end
 
   def seed_nodes!
