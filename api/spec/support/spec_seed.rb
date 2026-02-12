@@ -11,6 +11,7 @@ module SpecSeed
     seed_users!
     seed_environments!
     seed_locations!
+    seed_networks!
     seed_dns_resolvers!
     seed_nodes!
     seed_pools!
@@ -71,6 +72,14 @@ module SpecSeed
 
   def other_dns_resolver
     @other_dns_resolver ||= DnsResolver.find_by!(label: 'Spec DNS B')
+  end
+
+  def network_v4
+    @network_v4 ||= Network.find_by!(address: '192.0.2.0', prefix: 24)
+  end
+
+  def network_v6
+    @network_v6 ||= Network.find_by!(address: '2001:db8::', prefix: 64)
   end
 
   def seed_language_if_needed!
@@ -135,6 +144,52 @@ module SpecSeed
       loc.remote_console_server = ''
       loc.description = 'Spec Location B'
     end
+  end
+
+  def seed_networks!
+    net_v4 = Network.find_or_initialize_by(address: '192.0.2.0', prefix: 24)
+    net_v4.assign_attributes(
+      label: 'Spec Net v4',
+      ip_version: 4,
+      role: :public_access,
+      managed: true,
+      split_access: :no_access,
+      split_prefix: 32,
+      purpose: :any,
+      primary_location: location
+    )
+    net_v4.save! if net_v4.changed?
+
+    loc_net_v4 = LocationNetwork.find_or_initialize_by(location: location, network: net_v4)
+    loc_net_v4.assign_attributes(
+      primary: true,
+      priority: 10,
+      autopick: true,
+      userpick: true
+    )
+    loc_net_v4.save! if loc_net_v4.changed?
+
+    net_v6 = Network.find_or_initialize_by(address: '2001:db8::', prefix: 64)
+    net_v6.assign_attributes(
+      label: 'Spec Net v6',
+      ip_version: 6,
+      role: :public_access,
+      managed: true,
+      split_access: :no_access,
+      split_prefix: 128,
+      purpose: :vps,
+      primary_location: other_location
+    )
+    net_v6.save! if net_v6.changed?
+
+    loc_net_v6 = LocationNetwork.find_or_initialize_by(location: other_location, network: net_v6)
+    loc_net_v6.assign_attributes(
+      primary: true,
+      priority: 10,
+      autopick: true,
+      userpick: true
+    )
+    loc_net_v6.save! if loc_net_v6.changed?
   end
 
   def seed_dns_resolvers!

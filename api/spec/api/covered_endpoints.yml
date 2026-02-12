@@ -49,6 +49,8 @@ covered:
 - node#set_maintenance
 - node#show
 - node#update
+- network#index
+- network#show
 - pool#create
 - pool#index
 - pool#set_maintenance

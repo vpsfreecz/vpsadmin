@@ -168,8 +168,6 @@ pending:
 - monitored_event.log#show
 - network#add_addresses
 - network#create
-- network#index
-- network#show
 - network#update
 - network_interface#index
 - network_interface#show
