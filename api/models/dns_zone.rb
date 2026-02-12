@@ -20,6 +20,7 @@ class DnsZone < ApplicationRecord
     with: /\A((?!-)[A-Za-z0-9\-_]{1,63}(?<!-)\.)+[A-Za-z]{2,63}\.\z/,
     message: '%{value} is not a valid zone name'
   }
+  validates :name, presence: true
 
   validates :default_ttl, presence: true, numericality: { in: (60..(7 * 86_400)) }
 

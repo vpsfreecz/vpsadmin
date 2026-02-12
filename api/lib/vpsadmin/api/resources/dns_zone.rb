@@ -92,6 +92,7 @@ module VpsAdmin::API::Resources
 
       input do
         use :common
+        patch :name, required: true
         resource VPS, name: :seed_vps, label: 'Seed VPS', value_label: :hostname,
                       desc: 'Seed the zone with basic records pointing to the VPS'
       end
