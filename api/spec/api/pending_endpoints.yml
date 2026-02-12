@@ -106,8 +106,6 @@ pending:
 - incoming_payment#index
 - incoming_payment#show
 - incoming_payment#update
-- ip_address_assignment#index
-- ip_address_assignment#show
 - location_network#create
 - location_network#delete
 - location_network#index

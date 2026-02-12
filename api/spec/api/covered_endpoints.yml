@@ -41,6 +41,8 @@ covered:
 - ip_address#index
 - ip_address#show
 - ip_address#update
+- ip_address_assignment#index
+- ip_address_assignment#show
 - language#index
 - language#show
 - location#index
