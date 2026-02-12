@@ -51,6 +51,9 @@ covered:
 - node#update
 - network#index
 - network#show
+- network#add_addresses
+- network#create
+- network#update
 - pool#create
 - pool#index
 - pool#set_maintenance
