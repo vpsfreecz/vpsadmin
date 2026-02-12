@@ -301,7 +301,7 @@ class Node < ApplicationRecord
 
       ::Vps.where(
         node: self
-      ).order('object_state, vps_id').each do |vps|
+      ).order(:object_state, :id).each do |vps|
         plan.vps_migrations.create!(
           vps:,
           migration_plan: plan,
