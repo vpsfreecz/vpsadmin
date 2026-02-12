@@ -24,8 +24,11 @@ covered:
 - default_object_cluster_resource#update
 - component#index
 - component#show
+- dns_resolver#create
+- dns_resolver#delete
 - dns_resolver#index
 - dns_resolver#show
+- dns_resolver#update
 - environment#index
 - environment#create
 - environment#set_maintenance
