@@ -34,6 +34,13 @@ covered:
 - environment#set_maintenance
 - environment#show
 - environment#update
+- host_ip_address#assign
+- host_ip_address#create
+- host_ip_address#delete
+- host_ip_address#free
+- host_ip_address#index
+- host_ip_address#show
+- host_ip_address#update
 - ip_address#assign
 - ip_address#assign_with_host_address
 - ip_address#create
