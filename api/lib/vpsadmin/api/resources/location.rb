@@ -259,6 +259,10 @@ class VpsAdmin::API::Resources::Location < HaveAPI::Resource
       use :common
     end
 
+    output do
+      use :all
+    end
+
     authorize do |u|
       allow if u.role == :admin
     end
@@ -278,11 +282,10 @@ class VpsAdmin::API::Resources::Location < HaveAPI::Resource
     def exec
       loc = ::Location.find(params[:location_id])
 
-      if loc.update(to_db_names(params[:location]))
-        ok!
-      else
-        error!('update failed', to_param_names(loc.errors.to_hash))
-      end
+      loc.update!(to_db_names(params[:location]))
+      loc
+    rescue ActiveRecord::RecordInvalid => e
+      error!('update failed', to_param_names(e.record.errors.to_hash, :input))
     end
   end
 

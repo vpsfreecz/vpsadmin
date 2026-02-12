@@ -8,7 +8,7 @@ class Location < ApplicationRecord
   has_many :dns_resolvers
   has_paper_trail ignore: %i[maintenance_lock maintenance_lock_reason]
 
-  validates :label, :domain, presence: true
+  validates :label, :domain, :environment, presence: true
   validates :has_ipv6, inclusion: { in: [true, false] }
   validates :domain, format: {
     with: /\A[0-9a-zA-Z\-.]{3,255}\z/,
