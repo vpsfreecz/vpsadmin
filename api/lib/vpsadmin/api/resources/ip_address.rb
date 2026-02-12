@@ -222,6 +222,7 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
       use :common, exclude: %i[vps version]
       patch :addr, required: true
       patch :network, required: true
+      resource VpsAdmin::API::Resources::Location
     end
 
     output do
@@ -234,16 +235,17 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
 
     def exec
       addr = ::IPAddress.parse(input[:addr]) # gem
+      size = input[:size] || addr.size
 
       if input[:user]
         if !input[:location]
           error!('provide location together with user')
-        elsif input[:network].locations.include?(input[:location])
+        elsif !input[:network].locations.include?(input[:location])
           error!('network is not available in selected location')
         end
       end
 
-      ::IpAddress.register(addr, input.merge(prefix: addr.prefix)) # model
+      ::IpAddress.register(addr, input.merge(prefix: addr.prefix, size: size)) # model
     rescue ArgumentError => e
       error!(e.message, { addr: ['not a valid IP address'] })
     rescue ::ActiveRecord::RecordInvalid => e
