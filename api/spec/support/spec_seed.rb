@@ -10,11 +10,14 @@ module SpecSeed
     seed_language_if_needed!
     seed_users!
     seed_environments!
+    seed_environment_user_configs!
+    seed_user_cluster_resources!
     seed_locations!
     seed_networks!
     seed_dns_resolvers!
     seed_nodes!
     seed_pools!
+    seed_os_templates!
     seed_user_accounts!
   end
 
@@ -82,6 +85,14 @@ module SpecSeed
     @network_v6 ||= Network.find_by!(address: '2001:db8::', prefix: 64)
   end
 
+  def os_family
+    @os_family ||= OsFamily.find_by!(label: 'Spec OS')
+  end
+
+  def os_template
+    @os_template ||= OsTemplate.find_by!(label: 'Spec OS Template')
+  end
+
   def seed_language_if_needed!
     return unless User.column_names.include?('language_id')
 
@@ -143,6 +154,17 @@ module SpecSeed
       loc.has_ipv6 = false
       loc.remote_console_server = ''
       loc.description = 'Spec Location B'
+    end
+  end
+
+  def seed_environment_user_configs!
+    users = [admin, support, user, other_user]
+    environments = [environment, other_environment]
+
+    users.each do |seeded_user|
+      environments.each do |env|
+        EnvironmentUserConfig.find_or_create_by!(environment: env, user: seeded_user)
+      end
     end
   end
 
@@ -254,6 +276,42 @@ module SpecSeed
       role: :hypervisor
     )
     pool_b.save! if pool_b.changed?
+  end
+
+  def seed_user_cluster_resources!
+    users = [admin, support, user, other_user]
+    environments = [environment, other_environment]
+    resources = %w[ipv4 ipv4_private ipv6].map { |name| ClusterResource.find_by!(name: name) }
+
+    users.each do |seeded_user|
+      environments.each do |env|
+        resources.each do |resource|
+          record = UserClusterResource.find_or_initialize_by(
+            user: seeded_user,
+            environment: env,
+            cluster_resource: resource
+          )
+          record.value = 10_000
+          record.save! if record.changed?
+        end
+      end
+    end
+  end
+
+  def seed_os_templates!
+    family = OsFamily.find_or_create_by!(label: 'Spec OS')
+    template = OsTemplate.find_or_initialize_by(label: 'Spec OS Template')
+    template.assign_attributes(
+      os_family: family,
+      distribution: 'specos',
+      version: '1',
+      arch: 'x86_64',
+      vendor: 'spec',
+      variant: 'base',
+      hypervisor_type: :vpsadminos,
+      config: {}
+    )
+    template.save! if template.changed?
   end
 
   def seed_user_accounts!

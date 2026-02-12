@@ -79,6 +79,9 @@ module SpecDbSetup
     seed_cluster_resource('memory', 'Memory', 128, 1_048_576, 1)
     seed_cluster_resource('diskspace', 'Disk space', 1024, 1_048_576, 1)
     seed_cluster_resource('swap', 'Swap', 0, 1_048_576, 1)
+    seed_cluster_resource('ipv4', 'IPv4', 0, 1_000_000, 1)
+    seed_cluster_resource('ipv4_private', 'IPv4 private', 0, 1_000_000, 1)
+    seed_cluster_resource('ipv6', 'IPv6', 0, 1_000_000, 1)
   end
 
   def seed_key(category, name, value)
