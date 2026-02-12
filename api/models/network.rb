@@ -13,6 +13,9 @@ class Network < ApplicationRecord
   enum :split_access, %i[no_access user_split owner_split]
   enum :purpose, %i[any vps export]
 
+  validates :address, :prefix, :role, :split_prefix, :purpose, presence: true
+  validates :managed, inclusion: { in: [true, false] }
+  validates :address, uniqueness: { scope: :prefix }
   validates :ip_version, inclusion: {
     in: [4, 6],
     messave: '%{value} is not a valid IP version'
@@ -178,11 +181,15 @@ class Network < ApplicationRecord
   end
 
   def check_ip_integrity
+    return if address.blank? || prefix.blank?
+
     net_addr(true) do |n|
       ip_addresses.each do |ip|
         errors.add(:address, "IP #{ip.addr} does not belong to this network") unless n.include?(ip.to_ip)
       end
     end
+  rescue ArgumentError => e
+    errors.add(:address, e.message)
   end
 
   def ip_order(col = 'address')
