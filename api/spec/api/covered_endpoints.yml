@@ -29,6 +29,11 @@ covered:
 - dns_resolver#index
 - dns_resolver#show
 - dns_resolver#update
+- dns_zone#create
+- dns_zone#delete
+- dns_zone#index
+- dns_zone#show
+- dns_zone#update
 - environment#index
 - environment#create
 - environment#set_maintenance
