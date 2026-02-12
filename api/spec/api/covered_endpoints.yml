@@ -57,6 +57,11 @@ covered:
 - location#set_maintenance
 - location#show
 - location#update
+- location_network#create
+- location_network#delete
+- location_network#index
+- location_network#show
+- location_network#update
 - node#index
 - node#create
 - node#evacuate
