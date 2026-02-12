@@ -103,13 +103,7 @@ module VpsAdmin::API::Resources
 
         ips = ips.where(networks: { purpose: ::Network.purposes[input[:purpose]] }) if input[:purpose]
 
-        ips = ips.where(ip_addresses: { ip_addr: input[:addr] }) if input[:addr]
-
-        %i[prefix size].each do |filter|
-          next unless input[filter]
-
-          ips = ips.where(ip_addresses: { filter => input[:filter] })
-        end
+        ips = ips.where(host_ip_addresses: { ip_addr: input[:addr] }) if input[:addr]
 
         if current_user.role == :admin && input.has_key?(:user)
           user_id = input[:user] && input[:user].id
