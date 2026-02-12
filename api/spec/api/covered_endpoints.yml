@@ -36,6 +36,10 @@ covered:
 - location#set_maintenance
 - location#show
 - location#update
+- node#index
+- node#overview_list
+- node#public_status
+- node#show
 - metrics_access_token#create
 - metrics_access_token#delete
 - metrics_access_token#index

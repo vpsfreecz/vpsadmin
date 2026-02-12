@@ -11,6 +11,8 @@ module SpecSeed
     seed_users!
     seed_environments!
     seed_locations!
+    seed_nodes!
+    seed_pools!
     seed_user_accounts!
   end
 
@@ -44,6 +46,22 @@ module SpecSeed
 
   def other_location
     @other_location ||= Location.find_by!(label: 'Spec Location B')
+  end
+
+  def node
+    @node ||= Node.find_by!(name: 'spec-node-a')
+  end
+
+  def other_node
+    @other_node ||= Node.find_by!(name: 'spec-node-b')
+  end
+
+  def pool
+    @pool ||= Pool.find_by!(filesystem: 'spec_pool_a')
+  end
+
+  def other_pool
+    @other_pool ||= Pool.find_by!(filesystem: 'spec_pool_b')
   end
 
   def seed_language_if_needed!
@@ -108,6 +126,50 @@ module SpecSeed
       loc.remote_console_server = ''
       loc.description = 'Spec Location B'
     end
+  end
+
+  def seed_nodes!
+    Node.find_or_create_by!(name: 'spec-node-a') do |node|
+      node.location = location
+      node.role = :node
+      node.hypervisor_type = :vpsadminos
+      node.ip_addr = '192.0.2.101'
+      node.max_vps = 10
+      node.cpus = 4
+      node.total_memory = 4096
+      node.total_swap = 1024
+      node.active = true
+    end
+
+    Node.find_or_create_by!(name: 'spec-node-b') do |node|
+      node.location = other_location
+      node.role = :storage
+      node.hypervisor_type = :vpsadminos
+      node.ip_addr = '192.0.2.102'
+      node.max_vps = 5
+      node.cpus = 8
+      node.total_memory = 8192
+      node.total_swap = 2048
+      node.active = true
+    end
+  end
+
+  def seed_pools!
+    pool_a = Pool.find_or_initialize_by(filesystem: 'spec_pool_a')
+    pool_a.assign_attributes(
+      node: node,
+      label: 'Spec Pool A',
+      role: :hypervisor
+    )
+    pool_a.save! if pool_a.changed?
+
+    pool_b = Pool.find_or_initialize_by(filesystem: 'spec_pool_b')
+    pool_b.assign_attributes(
+      node: other_node,
+      label: 'Spec Pool B',
+      role: :hypervisor
+    )
+    pool_b.save! if pool_b.changed?
   end
 
   def seed_user_accounts!
