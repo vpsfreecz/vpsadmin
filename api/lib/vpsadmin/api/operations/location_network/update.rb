@@ -20,6 +20,7 @@ module VpsAdmin::API
         end
 
         ln.update!(opts)
+        ln
       end
     end
   end
