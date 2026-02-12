@@ -120,9 +120,6 @@ pending:
 - ip_address#update
 - ip_address_assignment#index
 - ip_address_assignment#show
-- location#create
-- location#set_maintenance
-- location#update
 - location_network#create
 - location_network#delete
 - location_network#index

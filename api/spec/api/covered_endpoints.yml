@@ -32,7 +32,10 @@ covered:
 - language#index
 - language#show
 - location#index
+- location#create
+- location#set_maintenance
 - location#show
+- location#update
 - metrics_access_token#create
 - metrics_access_token#delete
 - metrics_access_token#index
