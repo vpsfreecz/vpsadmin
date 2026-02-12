@@ -234,9 +234,7 @@ pending:
 - outage_update#show
 - payment_stats#estimate_income
 - pool#create
-- pool#index
 - pool#set_maintenance
-- pool#show
 - snapshot_download#create
 - snapshot_download#delete
 - snapshot_download#index

@@ -44,6 +44,8 @@ covered:
 - node#set_maintenance
 - node#show
 - node#update
+- pool#index
+- pool#show
 - metrics_access_token#create
 - metrics_access_token#delete
 - metrics_access_token#index
