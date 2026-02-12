@@ -42,8 +42,6 @@ pending:
 - debug#array_top
 - debug#hash_top
 - debug#list_object_counts
-- dns_record_log#index
-- dns_record_log#show
 - dns_server#create
 - dns_server#delete
 - dns_server#index

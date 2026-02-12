@@ -35,6 +35,8 @@ covered:
 - dns_record#index
 - dns_record#show
 - dns_record#update
+- dns_record_log#index
+- dns_record_log#show
 - dns_zone#create
 - dns_zone#delete
 - dns_zone#index
