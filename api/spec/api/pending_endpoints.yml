@@ -1,9 +1,5 @@
 ---
 pending:
-- action_state#cancel
-- action_state#index
-- action_state#poll
-- action_state#show
 - cluster#full_stats
 - cluster#generate_migration_keys
 - cluster#public_stats

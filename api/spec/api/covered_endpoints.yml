@@ -3,6 +3,10 @@
 # Example: "user#current"
 covered:
 - api_server#unlock_transaction_signing_key
+- action_state#cancel
+- action_state#index
+- action_state#poll
+- action_state#show
 - cluster_resource#create
 - cluster_resource#index
 - cluster_resource#show
