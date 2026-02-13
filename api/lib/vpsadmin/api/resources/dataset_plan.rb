@@ -27,8 +27,16 @@ class VpsAdmin::API::Resources::DatasetPlan < HaveAPI::Resource
       allow
     end
 
+    def query
+      ::DatasetPlan.all
+    end
+
+    def count
+      query.count
+    end
+
     def exec
-      with_pagination(::DatasetPlan.all)
+      with_pagination(query)
     end
   end
 
