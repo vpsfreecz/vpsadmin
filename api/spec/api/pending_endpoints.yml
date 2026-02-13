@@ -1,13 +1,5 @@
 ---
 pending:
-- dataset_expansion#create
-- dataset_expansion#index
-- dataset_expansion#register_expanded
-- dataset_expansion#show
-- dataset_expansion#update
-- dataset_expansion.history#create
-- dataset_expansion.history#index
-- dataset_expansion.history#show
 - debug#array_top
 - debug#hash_top
 - debug#list_object_counts
