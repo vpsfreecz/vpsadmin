@@ -1,9 +1,5 @@
 ---
 pending:
-- dns_server_zone#create
-- dns_server_zone#delete
-- dns_server_zone#index
-- dns_server_zone#show
 - dns_tsig_key#create
 - dns_tsig_key#delete
 - dns_tsig_key#index
