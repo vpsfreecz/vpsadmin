@@ -47,6 +47,10 @@ covered:
 - dns_server#index
 - dns_server#show
 - dns_server#update
+- dns_server_zone#create
+- dns_server_zone#delete
+- dns_server_zone#index
+- dns_server_zone#show
 - dns_record#create
 - dns_record#delete
 - dns_record#dynamic_update
