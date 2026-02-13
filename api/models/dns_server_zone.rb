@@ -6,6 +6,9 @@ class DnsServerZone < ApplicationRecord
 
   enum :zone_type, %i[primary_type secondary_type]
 
+  validates :dns_server, presence: true
+  validates :dns_zone, presence: true
+
   validate :check_zone_type
 
   include Confirmable
@@ -60,10 +63,10 @@ class DnsServerZone < ApplicationRecord
   protected
 
   def check_zone_type
-    # rubocop:disable Style/GuardClause
-    if dns_zone.external_source? && primary_type?
-      errors.add(:zone_type, "zone #{dns_zone.name} is external and must be of secondary type")
-    end
-    # rubocop:enable Style/GuardClause
+    return unless dns_zone.external_source? && primary_type?
+
+    message = "zone #{dns_zone.name} is external and must be of secondary type"
+    errors.add(:zone_type, message)
+    errors.add(:type, message)
   end
 end
