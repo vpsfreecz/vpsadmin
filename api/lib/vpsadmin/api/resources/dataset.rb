@@ -242,6 +242,11 @@ module VpsAdmin::API::Resources
 
       def exec
         ds = ::Dataset.find_by!(with_restricted(id: params[:dataset_id]))
+
+        if current_user.role != :admin && !ds.user_editable
+          error!('insufficient permission to update this dataset')
+        end
+
         ds.maintenance_check!(ds.primary_dataset_in_pool!.pool)
 
         properties = VpsAdmin::API::DatasetProperties.validate_params(input)
@@ -547,6 +552,7 @@ module VpsAdmin::API::Resources
 
         def exec
           ds = ::Dataset.find_by!(with_restricted(id: params[:dataset_id]))
+
           ds.maintenance_check!(ds.primary_dataset_in_pool!.pool)
 
           max_snapshots = ds.max_snapshots
@@ -586,12 +592,11 @@ module VpsAdmin::API::Resources
                                                                           id: params[:snapshot_id]
                                                                         ))
 
-          if snap.snapshot_in_pools.exists?('reference_count > 0')
+          if snap.snapshot_in_pools.where('reference_count > 0').exists?
             error!('this snapshot cannot be destroyed as others are depending on it')
-
           elsif snap.dataset.dataset_in_pools.joins(:pool).where(
             pools: { role: ::Pool.roles[:backup] }
-          ).count > 0
+          ).exists?
             error!('cannot destroy snapshot with backups')
           end
 
