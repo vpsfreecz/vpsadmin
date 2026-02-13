@@ -32,6 +32,9 @@ covered:
 - default_object_cluster_resource#index
 - default_object_cluster_resource#show
 - default_object_cluster_resource#update
+- debug#array_top
+- debug#hash_top
+- debug#list_object_counts
 - component#index
 - component#show
 - dns_resolver#create
