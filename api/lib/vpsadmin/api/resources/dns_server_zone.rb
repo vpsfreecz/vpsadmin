@@ -85,6 +85,7 @@ module VpsAdmin::API::Resources
 
       input do
         use :common
+        patch :dns_server, required: true
         patch :dns_zone, required: true
       end
 
