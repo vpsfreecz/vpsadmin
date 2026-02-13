@@ -7,6 +7,12 @@ covered:
 - action_state#index
 - action_state#poll
 - action_state#show
+- cluster#full_stats
+- cluster#generate_migration_keys
+- cluster#public_stats
+- cluster#search
+- cluster#set_maintenance
+- cluster#show
 - cluster_resource#create
 - cluster_resource#index
 - cluster_resource#show

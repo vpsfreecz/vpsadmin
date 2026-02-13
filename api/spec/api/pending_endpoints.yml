@@ -1,11 +1,5 @@
 ---
 pending:
-- cluster#full_stats
-- cluster#generate_migration_keys
-- cluster#public_stats
-- cluster#search
-- cluster#set_maintenance
-- cluster#show
 - dataset#create
 - dataset#delete
 - dataset#find_by_name
