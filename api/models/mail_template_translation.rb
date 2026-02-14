@@ -2,6 +2,11 @@ class MailTemplateTranslation < ApplicationRecord
   belongs_to :language
   belongs_to :mail_template
 
+  validates :mail_template, presence: true
+  validates :language, presence: true
+  validates :from, :subject, presence: true, allow_blank: false
+  validates :language, uniqueness: { scope: :mail_template }
+
   has_paper_trail
 
   class TemplateBuilder

@@ -14,6 +14,9 @@ class MailTemplate < ApplicationRecord
   has_many :mail_template_recipients, dependent: :destroy
   has_many :mail_recipients, through: :mail_template_recipients
 
+  validates :name, :label, :template_id, presence: true, allow_blank: false
+  validates :name, uniqueness: true
+
   has_paper_trail
 
   # @param name [Symbol]
