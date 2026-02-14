@@ -223,6 +223,14 @@ covered:
 - migration_plan.vps_migration#show
 - object_history#index
 - object_history#show
+- oom_report#index
+- oom_report#show
+- oom_report.stat#index
+- oom_report.stat#show
+- oom_report.task#index
+- oom_report.task#show
+- oom_report.usage#index
+- oom_report.usage#show
 - oauth2_client#create
 - oauth2_client#delete
 - oauth2_client#index
