@@ -153,6 +153,11 @@ covered:
 - location_network#update
 - mail_log#index
 - mail_log#show
+- mail_recipient#create
+- mail_recipient#delete
+- mail_recipient#index
+- mail_recipient#show
+- mail_recipient#update
 - node#index
 - node#create
 - node#evacuate
