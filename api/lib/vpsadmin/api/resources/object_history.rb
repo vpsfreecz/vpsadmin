@@ -72,7 +72,7 @@ module VpsAdmin::API::Resources
 
       def prepare
         @event = with_includes.where(with_restricted(
-                                       id: params[:history_id]
+                                       id: params[:object_history_id]
                                      )).take!
       end
 
