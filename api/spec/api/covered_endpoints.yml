@@ -195,6 +195,9 @@ covered:
 - network#add_addresses
 - network#create
 - network#update
+- network_interface#index
+- network_interface#show
+- network_interface#update
 - pool#create
 - pool#index
 - pool#set_maintenance
