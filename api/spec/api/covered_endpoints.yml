@@ -59,6 +59,8 @@ covered:
 - dns_record#update
 - dns_record_log#index
 - dns_record_log#show
+- dnssec_record#index
+- dnssec_record#show
 - dns_tsig_key#create
 - dns_tsig_key#delete
 - dns_tsig_key#index
