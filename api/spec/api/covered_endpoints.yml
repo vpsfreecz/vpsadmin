@@ -68,6 +68,10 @@ covered:
 - dns_zone#index
 - dns_zone#show
 - dns_zone#update
+- dns_zone_transfer#create
+- dns_zone_transfer#delete
+- dns_zone_transfer#index
+- dns_zone_transfer#show
 - dataset#create
 - dataset#delete
 - dataset#find_by_name
