@@ -241,6 +241,11 @@ covered:
 - oauth2_client#index
 - oauth2_client#show
 - oauth2_client#update
+- os_family#create
+- os_family#delete
+- os_family#index
+- os_family#show
+- os_family#update
 - system_config#index
 - system_config#show
 - system_config#update
