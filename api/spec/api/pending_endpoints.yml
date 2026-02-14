@@ -21,8 +21,6 @@ pending:
 - news_log#index
 - news_log#show
 - news_log#update
-- object_history#index
-- object_history#show
 - oom_report#index
 - oom_report#show
 - oom_report.stat#index

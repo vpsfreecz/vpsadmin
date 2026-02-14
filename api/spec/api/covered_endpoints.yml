@@ -221,6 +221,8 @@ covered:
 - migration_plan.vps_migration#create
 - migration_plan.vps_migration#index
 - migration_plan.vps_migration#show
+- object_history#index
+- object_history#show
 - oauth2_client#create
 - oauth2_client#delete
 - oauth2_client#index
