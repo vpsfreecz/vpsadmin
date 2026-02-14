@@ -14,8 +14,8 @@ class NetworkInterface < ApplicationRecord
     message: 'bad format'
   }
 
-  validates :max_tx, numericality: { greater_or_equal_to: 0 }
-  validates :max_rx, numericality: { greater_or_equal_to: 0 }
+  validates :max_tx, numericality: { greater_than_or_equal_to: 0 }
+  validates :max_rx, numericality: { greater_than_or_equal_to: 0 }
 
   include Lockable
   include HaveAPI::Hookable
