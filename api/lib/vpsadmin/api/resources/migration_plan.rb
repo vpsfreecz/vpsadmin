@@ -36,7 +36,7 @@ module VpsAdmin::API::Resources
       end
 
       def query
-        q = with_includes
+        q = with_includes(self.class.model.all)
         q = q.where(state: ::MigrationPlan.states[input[:state]]) if input[:state]
         q = q.where(user: input[:user]) if input[:user]
         q
@@ -228,7 +228,7 @@ module VpsAdmin::API::Resources
         end
 
         def prepare
-          @m = ::VpsMigrationPlan.find_by!(
+          @m = ::VpsMigration.find_by!(
             migration_plan_id: params[:migration_plan_id],
             id: params[:vps_migration_id]
           )

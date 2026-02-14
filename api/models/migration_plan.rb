@@ -5,6 +5,7 @@ class MigrationPlan < ApplicationRecord
   has_many :resource_locks, as: :locked_by, dependent: :destroy
 
   enum :state, %i[staged running cancelling failing cancelled done error]
+  validates :concurrency, numericality: { only_integer: true, greater_than: 0 }
 
   def start!
     self.class.transaction(requires_new: true) do
