@@ -72,6 +72,10 @@ module VpsAdmin::API::Resources
 
       input do
         use :common
+        patch :label, required: true
+        patch :server, required: true
+        patch :user, required: true
+        patch :password, required: true
       end
 
       output do
@@ -105,7 +109,9 @@ module VpsAdmin::API::Resources
       end
 
       def exec
-        ::Mailbox.find(params[:mailbox_id]).update!(input)
+        m = ::Mailbox.find(params[:mailbox_id])
+        m.update!(input)
+        m
       end
     end
 
@@ -162,7 +168,7 @@ module VpsAdmin::API::Resources
         end
 
         def exec
-          with_pagination(query.order('order'))
+          with_pagination(query.order(:order))
         end
       end
 
@@ -195,6 +201,7 @@ module VpsAdmin::API::Resources
 
         input do
           use :common
+          patch :class_name, required: true
         end
 
         output do
@@ -228,10 +235,12 @@ module VpsAdmin::API::Resources
         end
 
         def exec
-          ::MailboxHandler.joins(:mailbox).find_by!(
+          h = ::MailboxHandler.joins(:mailbox).find_by!(
             mailboxes: { id: params[:mailbox_id] },
             id: params[:handler_id]
-          ).update!(input)
+          )
+          h.update!(input)
+          h
         end
       end
 
