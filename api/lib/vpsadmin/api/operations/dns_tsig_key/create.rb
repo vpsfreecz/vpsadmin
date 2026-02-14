@@ -9,6 +9,11 @@ module VpsAdmin::API
       tsig_key = ::DnsTsigKey.new(attrs)
 
       if ::User.current.role == :admin
+        if tsig_key.user.nil?
+          tsig_key.errors.add(:user, 'must exist')
+          raise ActiveRecord::RecordInvalid, tsig_key
+        end
+
         tsig_key.name = "#{tsig_key.user_id}-#{tsig_key.name}" if tsig_key.user
       else
         tsig_key.user = ::User.current
