@@ -7,6 +7,7 @@ class VpsMigration < ApplicationRecord
   belongs_to :user
 
   enum :state, %i[queued running cancelled done error]
+  alias_attribute :maintenance_window, :outage_window
 
   validate :check_uniqueness
 
