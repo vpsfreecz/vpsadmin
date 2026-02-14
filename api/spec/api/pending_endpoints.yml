@@ -1,15 +1,5 @@
 ---
 pending:
-- export#create
-- export#delete
-- export#index
-- export#show
-- export#update
-- export.host#create
-- export.host#delete
-- export.host#index
-- export.host#show
-- export.host#update
 - export_outage#index
 - export_outage#show
 - help_box#create

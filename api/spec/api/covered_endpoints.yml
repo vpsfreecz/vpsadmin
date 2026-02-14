@@ -110,6 +110,16 @@ covered:
 - environment#update
 - environment.dataset_plan#index
 - environment.dataset_plan#show
+- export#create
+- export#delete
+- export#index
+- export#show
+- export#update
+- export.host#create
+- export.host#delete
+- export.host#index
+- export.host#show
+- export.host#update
 - host_ip_address#assign
 - host_ip_address#create
 - host_ip_address#delete
