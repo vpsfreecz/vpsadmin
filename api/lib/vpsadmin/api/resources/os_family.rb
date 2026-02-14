@@ -89,7 +89,9 @@ module VpsAdmin::API::Resources
       end
 
       def exec
-        self.class.model.find(params[:os_family_id]).update!(input)
+        os_family = self.class.model.find(params[:os_family_id])
+        os_family.update!(input)
+        os_family
       rescue ActiveRecord::RecordInvalid => e
         error!('update failed', e.record.errors.to_hash)
       end
@@ -101,8 +103,11 @@ module VpsAdmin::API::Resources
       end
 
       def exec
-        self.class.model.find(params[:os_family_id]).destroy!
+        os_family = self.class.model.find(params[:os_family_id])
+        os_family.destroy!
         ok!
+      rescue ActiveRecord::DeleteRestrictionError
+        error!('os family is in use')
       end
     end
   end
