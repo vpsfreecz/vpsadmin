@@ -151,6 +151,8 @@ covered:
 - location_network#index
 - location_network#show
 - location_network#update
+- mail_log#index
+- mail_log#show
 - node#index
 - node#create
 - node#evacuate

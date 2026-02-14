@@ -10,8 +10,6 @@ pending:
 - incoming_payment#index
 - incoming_payment#show
 - incoming_payment#update
-- mail_log#index
-- mail_log#show
 - mail_recipient#create
 - mail_recipient#delete
 - mail_recipient#index
