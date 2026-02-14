@@ -121,7 +121,7 @@ module VpsAdmin::API::Resources
       end
 
       def exec
-        ::MailTemplate.find(params[:mail_recipient_id]).destroy
+        ::MailRecipient.find(params[:mail_recipient_id]).destroy!
         ok!
       end
     end
