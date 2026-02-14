@@ -200,6 +200,8 @@ covered:
 - network_interface#index
 - network_interface#show
 - network_interface#update
+- network_interface_monitor#index
+- network_interface_monitor#show
 - pool#create
 - pool#index
 - pool#set_maintenance

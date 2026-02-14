@@ -16,8 +16,6 @@ pending:
 - monitored_event#show
 - monitored_event.log#index
 - monitored_event.log#show
-- network_interface_monitor#index
-- network_interface_monitor#show
 - news_log#create
 - news_log#delete
 - news_log#index
