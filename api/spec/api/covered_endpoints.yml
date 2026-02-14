@@ -172,6 +172,16 @@ covered:
 - mail_template.translation#index
 - mail_template.translation#show
 - mail_template.translation#update
+- mailbox#create
+- mailbox#delete
+- mailbox#index
+- mailbox#show
+- mailbox#update
+- mailbox.handler#create
+- mailbox.handler#delete
+- mailbox.handler#index
+- mailbox.handler#show
+- mailbox.handler#update
 - node#index
 - node#create
 - node#evacuate
