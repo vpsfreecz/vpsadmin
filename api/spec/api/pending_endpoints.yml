@@ -1,7 +1,5 @@
 ---
 pending:
-- dnssec_record#index
-- dnssec_record#show
 - environment.dataset_plan#index
 - environment.dataset_plan#show
 - export#create
