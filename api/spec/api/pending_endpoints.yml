@@ -7,9 +7,6 @@ pending:
 - help_box#index
 - help_box#show
 - help_box#update
-- incident_report#create
-- incident_report#index
-- incident_report#show
 - incoming_payment#index
 - incoming_payment#show
 - incoming_payment#update
