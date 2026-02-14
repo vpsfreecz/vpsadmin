@@ -190,6 +190,8 @@ covered:
 - node#set_maintenance
 - node#show
 - node#update
+- node.status#index
+- node.status#show
 - network#index
 - network#show
 - network#add_addresses
