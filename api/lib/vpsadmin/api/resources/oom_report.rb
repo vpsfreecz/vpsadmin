@@ -154,7 +154,7 @@ module VpsAdmin::API::Resources
       class Show < HaveAPI::Actions::Default::Show
         desc 'Show memory usage'
 
-        output(:object_list) do
+        output do
           use :all
         end
 
@@ -219,7 +219,7 @@ module VpsAdmin::API::Resources
       class Show < HaveAPI::Actions::Default::Show
         desc 'Show memory stat'
 
-        output(:object_list) do
+        output do
           use :all
         end
 
@@ -295,7 +295,7 @@ module VpsAdmin::API::Resources
       class Show < HaveAPI::Actions::Default::Show
         desc 'Show task'
 
-        output(:object_list) do
+        output do
           use :all
         end
 
