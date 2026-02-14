@@ -135,7 +135,7 @@ class VpsAdmin::API::Resources::Export < HaveAPI::Resource
       ds =
         input[:dataset] || input[:snapshot].dataset
 
-      error!('access denied') if !current_user.role == :admin && ds.user_id != current_user.id
+      error!('access denied') if current_user.role != :admin && ds.user_id != current_user.id
 
       object_state_check!(ds.user)
 
@@ -301,6 +301,7 @@ class VpsAdmin::API::Resources::Export < HaveAPI::Resource
 
       input do
         use :all, include: %i[ip_address rw sync subtree_check root_squash]
+        patch :ip_address, required: true
       end
 
       output do
