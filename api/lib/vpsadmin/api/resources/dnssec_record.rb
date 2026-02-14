@@ -67,7 +67,7 @@ module VpsAdmin::API::Resources
       end
 
       def prepare
-        @record = self.class.model.find_by!(with_restricted(id: params[:dnssec_record_id]))
+        @record = self.class.model.joins(:dns_zone).find_by!(with_restricted(id: params[:dnssec_record_id]))
       end
 
       def exec
