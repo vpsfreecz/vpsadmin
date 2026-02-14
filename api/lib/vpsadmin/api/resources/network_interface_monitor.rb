@@ -83,7 +83,7 @@ module VpsAdmin::API::Resources
           )
         end
 
-        q = q.where(id: input[:network_interface].id) if input[:network_interface]
+        q = q.where(network_interface_id: input[:network_interface].id) if input[:network_interface]
 
         q
       end
@@ -129,11 +129,11 @@ module VpsAdmin::API::Resources
       end
 
       def prepare
-        q = ::NetworkInterface
+        q = ::NetworkInterfaceMonitor
 
         q = q.joins(network_interface: :vps).where(vpses: { user_id: current_user.id }) if current_user.role != :admin
 
-        @mon = q.find_by!(id: params[:network_interface_monitor_id])
+        @mon = q.find_by!(network_interface_id: params[:network_interface_monitor_id])
       end
 
       def exec
