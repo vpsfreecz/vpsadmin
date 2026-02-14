@@ -1,9 +1,5 @@
 ---
 pending:
-- dns_zone_transfer#create
-- dns_zone_transfer#delete
-- dns_zone_transfer#index
-- dns_zone_transfer#show
 - dnssec_record#index
 - dnssec_record#show
 - environment.dataset_plan#index
