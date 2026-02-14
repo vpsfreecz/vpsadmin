@@ -203,6 +203,15 @@ covered:
 - metrics_access_token#delete
 - metrics_access_token#index
 - metrics_access_token#show
+- migration_plan#cancel
+- migration_plan#create
+- migration_plan#delete
+- migration_plan#index
+- migration_plan#show
+- migration_plan#start
+- migration_plan.vps_migration#create
+- migration_plan.vps_migration#index
+- migration_plan.vps_migration#show
 - oauth2_client#create
 - oauth2_client#delete
 - oauth2_client#index
