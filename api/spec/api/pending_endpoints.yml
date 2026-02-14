@@ -2,8 +2,6 @@
 pending:
 - dataset_plan#index
 - dataset_plan#show
-- environment.dataset_plan#index
-- environment.dataset_plan#show
 - export#create
 - export#delete
 - export#index
