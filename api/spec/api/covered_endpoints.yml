@@ -108,6 +108,8 @@ covered:
 - environment#set_maintenance
 - environment#show
 - environment#update
+- environment.dataset_plan#index
+- environment.dataset_plan#show
 - host_ip_address#assign
 - host_ip_address#create
 - host_ip_address#delete
