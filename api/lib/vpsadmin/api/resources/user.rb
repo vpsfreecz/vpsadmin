@@ -441,6 +441,10 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
         use :common, exclude: %i[environment]
       end
 
+      output do
+        use :all
+      end
+
       authorize do |u|
         allow if u.role == :admin
       end
