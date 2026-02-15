@@ -103,6 +103,10 @@ covered:
 - dataset.snapshot#index
 - dataset.snapshot#rollback
 - dataset.snapshot#show
+- snapshot_download#create
+- snapshot_download#delete
+- snapshot_download#index
+- snapshot_download#show
 - environment#index
 - environment#create
 - environment#set_maintenance
