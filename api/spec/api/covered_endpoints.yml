@@ -297,6 +297,10 @@ covered:
 - user.totp_device#index
 - user.totp_device#show
 - user.totp_device#update
+- user.webauthn_credential#delete
+- user.webauthn_credential#index
+- user.webauthn_credential#show
+- user.webauthn_credential#update
 - user_cluster_resource_package#create
 - user_cluster_resource_package#delete
 - user_cluster_resource_package#index
