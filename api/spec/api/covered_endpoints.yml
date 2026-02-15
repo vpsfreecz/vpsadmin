@@ -289,6 +289,8 @@ covered:
 - user.public_key#index
 - user.public_key#show
 - user.public_key#update
+- user.state_log#index
+- user.state_log#show
 - user_cluster_resource_package#create
 - user_cluster_resource_package#delete
 - user_cluster_resource_package#index

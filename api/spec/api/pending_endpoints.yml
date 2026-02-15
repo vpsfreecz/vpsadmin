@@ -40,8 +40,6 @@ pending:
 - outage_update#show
 - payment_stats#estimate_income
 - user#get_payment_instructions
-- user.state_log#index
-- user.state_log#show
 - user.totp_device#confirm
 - user.totp_device#create
 - user.totp_device#delete
