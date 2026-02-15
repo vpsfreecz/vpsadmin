@@ -58,9 +58,6 @@ pending:
 - user_request.registration#resolve
 - user_request.registration#show
 - user_request.registration#update
-- vps.console_token#create
-- vps.console_token#delete
-- vps.console_token#show
 - vps.feature#index
 - vps.feature#show
 - vps.feature#update

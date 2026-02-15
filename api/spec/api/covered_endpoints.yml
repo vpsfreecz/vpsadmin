@@ -279,6 +279,9 @@ covered:
 - vps#stop
 - vps#swap_with
 - vps#update
+- vps.console_token#create
+- vps.console_token#delete
+- vps.console_token#show
 - user#create
 - user#current
 - user#delete
