@@ -979,10 +979,14 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
           error!('nothing to do')
         end
 
-        self.class.model.find_by!(
+        cred = self.class.model.find_by!(
           user_id: params[:user_id],
           id: params[:webauthn_credential_id]
-        ).update!(input)
+        )
+        cred.update!(input)
+        cred
+      rescue ActiveRecord::RecordInvalid => e
+        error!('update failed', e.record.errors.to_hash)
       rescue VpsAdmin::API::Exceptions::OperationError => e
         error!(e.message)
       end
