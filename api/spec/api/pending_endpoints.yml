@@ -43,8 +43,6 @@ pending:
 - user_account#index
 - user_account#show
 - user_account#update
-- user_namespace#index
-- user_namespace#show
 - user_namespace_map#create
 - user_namespace_map#delete
 - user_namespace_map#index

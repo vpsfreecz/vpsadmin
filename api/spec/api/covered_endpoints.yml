@@ -301,6 +301,8 @@ covered:
 - user.webauthn_credential#index
 - user.webauthn_credential#show
 - user.webauthn_credential#update
+- user_namespace#index
+- user_namespace#show
 - user_cluster_resource_package#create
 - user_cluster_resource_package#delete
 - user_cluster_resource_package#index
