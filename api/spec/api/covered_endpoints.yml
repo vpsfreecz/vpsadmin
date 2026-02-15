@@ -275,6 +275,9 @@ covered:
 - user.environment_config#index
 - user.environment_config#show
 - user.environment_config#update
+- user.known_device#delete
+- user.known_device#index
+- user.known_device#show
 - user_cluster_resource_package#create
 - user_cluster_resource_package#delete
 - user_cluster_resource_package#index
