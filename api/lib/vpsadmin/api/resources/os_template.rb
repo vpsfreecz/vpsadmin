@@ -38,7 +38,7 @@ class VpsAdmin::API::Resources::OsTemplate < HaveAPI::Resource
 
     input do
       resource VpsAdmin::API::Resources::Location
-      use :common, include: %i[hypervisor_type cgroup_version enable_script enable_cloud_init]
+      use :common, include: %i[os_family hypervisor_type cgroup_version enable_script enable_cloud_init]
     end
 
     output(:object_list) do
@@ -150,6 +150,8 @@ class VpsAdmin::API::Resources::OsTemplate < HaveAPI::Resource
       ::OsTemplate.create!(attrs)
     rescue ActiveRecord::RecordInvalid => e
       error!('create failed', to_param_names(e.record.errors.to_hash))
+    rescue Psych::SyntaxError, Psych::DisallowedClass
+      error!('create failed', { config: ['is not valid YAML'] })
     end
   end
 
@@ -171,9 +173,13 @@ class VpsAdmin::API::Resources::OsTemplate < HaveAPI::Resource
       attrs = to_db_names(input)
       attrs[:config] = YAML.safe_load(cfg) if cfg
 
-      ::OsTemplate.find(params[:os_template_id]).update!(attrs)
+      t = ::OsTemplate.find(params[:os_template_id])
+      t.update!(attrs)
+      t
     rescue ActiveRecord::RecordInvalid => e
       error!('update failed', to_param_names(e.record.errors.to_hash))
+    rescue Psych::SyntaxError, Psych::DisallowedClass
+      error!('update failed', { config: ['is not valid YAML'] })
     end
   end
 
