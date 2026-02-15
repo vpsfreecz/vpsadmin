@@ -278,6 +278,9 @@ covered:
 - user.known_device#delete
 - user.known_device#index
 - user.known_device#show
+- user.mail_role_recipient#index
+- user.mail_role_recipient#show
+- user.mail_role_recipient#update
 - user_cluster_resource_package#create
 - user_cluster_resource_package#delete
 - user_cluster_resource_package#index
