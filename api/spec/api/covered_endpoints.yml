@@ -303,6 +303,16 @@ covered:
 - user.webauthn_credential#update
 - user_namespace#index
 - user_namespace#show
+- user_namespace_map#create
+- user_namespace_map#delete
+- user_namespace_map#index
+- user_namespace_map#show
+- user_namespace_map#update
+- user_namespace_map.entry#create
+- user_namespace_map.entry#delete
+- user_namespace_map.entry#index
+- user_namespace_map.entry#show
+- user_namespace_map.entry#update
 - user_cluster_resource_package#create
 - user_cluster_resource_package#delete
 - user_cluster_resource_package#index
