@@ -279,6 +279,11 @@ covered:
 - vps#stop
 - vps#swap_with
 - vps#update
+- vps.mount#create
+- vps.mount#delete
+- vps.mount#index
+- vps.mount#show
+- vps.mount#update
 - vps.maintenance_window#index
 - vps.maintenance_window#show
 - vps.maintenance_window#update
