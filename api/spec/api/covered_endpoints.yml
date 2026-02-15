@@ -269,6 +269,9 @@ covered:
 - user#show
 - user#touch
 - user#update
+- user.cluster_resource#create
+- user.cluster_resource#index
+- user.cluster_resource#show
 - user_cluster_resource_package#create
 - user_cluster_resource_package#delete
 - user_cluster_resource_package#index
