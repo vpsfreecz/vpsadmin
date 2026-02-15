@@ -21,6 +21,7 @@ module VpsAdmin::API
       end
 
       env_user_cfg.update!(attrs)
+      env_user_cfg
     end
   end
 end
