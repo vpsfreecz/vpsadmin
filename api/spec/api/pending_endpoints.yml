@@ -40,7 +40,6 @@ pending:
 - outage_update#show
 - payment_stats#estimate_income
 - user#get_payment_instructions
-- user#touch
 - user.cluster_resource#create
 - user.cluster_resource#index
 - user.cluster_resource#show

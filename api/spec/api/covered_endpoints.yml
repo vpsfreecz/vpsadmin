@@ -267,6 +267,7 @@ covered:
 - user#delete
 - user#index
 - user#show
+- user#touch
 - user#update
 - user_cluster_resource_package#create
 - user_cluster_resource_package#delete
