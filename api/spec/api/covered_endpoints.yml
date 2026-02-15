@@ -281,6 +281,9 @@ covered:
 - user.mail_role_recipient#index
 - user.mail_role_recipient#show
 - user.mail_role_recipient#update
+- user.mail_template_recipient#index
+- user.mail_template_recipient#show
+- user.mail_template_recipient#update
 - user_cluster_resource_package#create
 - user_cluster_resource_package#delete
 - user_cluster_resource_package#index

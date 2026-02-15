@@ -40,9 +40,6 @@ pending:
 - outage_update#show
 - payment_stats#estimate_income
 - user#get_payment_instructions
-- user.mail_template_recipient#index
-- user.mail_template_recipient#show
-- user.mail_template_recipient#update
 - user.public_key#create
 - user.public_key#delete
 - user.public_key#index

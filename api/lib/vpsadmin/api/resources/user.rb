@@ -1306,9 +1306,11 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
       def prepare
         error!('Access denied') if current_user.role != :admin && current_user.id != params[:user_id].to_i
 
+        tpl = ::MailTemplate.find_by!(name: params[:mail_template_recipient_id])
+
         @recp = ::UserMailTemplateRecipient.find_by!(
           user_id: params[:user_id],
-          mail_template_id: params[:mail_template_id]
+          mail_template: tpl
         )
       end
 
