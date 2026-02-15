@@ -1441,6 +1441,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_10_03_074953) do
     t.integer "user_id", null: false
     t.integer "mail_template_id", null: false
     t.string "to", limit: 500, null: false
+    t.boolean "enabled", default: true, null: false
     t.index ["user_id", "mail_template_id"], name: "user_id_mail_template_id", unique: true
     t.index ["user_id"], name: "index_user_mail_template_recipients_on_user_id"
   end
