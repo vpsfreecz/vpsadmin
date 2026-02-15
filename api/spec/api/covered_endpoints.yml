@@ -291,6 +291,12 @@ covered:
 - user.public_key#update
 - user.state_log#index
 - user.state_log#show
+- user.totp_device#confirm
+- user.totp_device#create
+- user.totp_device#delete
+- user.totp_device#index
+- user.totp_device#show
+- user.totp_device#update
 - user_cluster_resource_package#create
 - user_cluster_resource_package#delete
 - user_cluster_resource_package#index
