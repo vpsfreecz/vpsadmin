@@ -284,6 +284,11 @@ covered:
 - user.mail_template_recipient#index
 - user.mail_template_recipient#show
 - user.mail_template_recipient#update
+- user.public_key#create
+- user.public_key#delete
+- user.public_key#index
+- user.public_key#show
+- user.public_key#update
 - user_cluster_resource_package#create
 - user_cluster_resource_package#delete
 - user_cluster_resource_package#index
