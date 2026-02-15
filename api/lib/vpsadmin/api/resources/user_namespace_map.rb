@@ -96,7 +96,7 @@ class VpsAdmin::API::Resources::UserNamespaceMap < HaveAPI::Resource
     end
 
     def exec
-      error!('access denied') if !current_user.role == :admin && input[:user_namespace].user_id != current_user.id
+      error!('access denied') if current_user.role != :admin && input[:user_namespace].user_id != current_user.id
 
       UserNamespaceMap.create_direct!(input[:user_namespace], input[:label])
     end
@@ -251,7 +251,7 @@ class VpsAdmin::API::Resources::UserNamespaceMap < HaveAPI::Resource
                                                                    user_namespace_maps: { id: params[:user_namespace_map_id] }
                                                                  ))
 
-        if !current_user.role == :admin && map.user_namespace.user_id != current_user.id
+        if current_user.role != :admin && map.user_namespace.user_id != current_user.id
           error!('access denied')
 
         elsif map.in_use?
