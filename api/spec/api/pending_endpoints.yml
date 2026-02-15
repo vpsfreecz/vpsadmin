@@ -40,9 +40,6 @@ pending:
 - outage_update#show
 - payment_stats#estimate_income
 - user#get_payment_instructions
-- user.environment_config#index
-- user.environment_config#show
-- user.environment_config#update
 - user.known_device#delete
 - user.known_device#index
 - user.known_device#show

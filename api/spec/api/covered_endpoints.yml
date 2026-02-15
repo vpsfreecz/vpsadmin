@@ -272,6 +272,9 @@ covered:
 - user.cluster_resource#create
 - user.cluster_resource#index
 - user.cluster_resource#show
+- user.environment_config#index
+- user.environment_config#show
+- user.environment_config#update
 - user_cluster_resource_package#create
 - user_cluster_resource_package#delete
 - user_cluster_resource_package#index
