@@ -58,8 +58,6 @@ pending:
 - user_request.registration#resolve
 - user_request.registration#show
 - user_request.registration#update
-- vps.state_log#index
-- vps.state_log#show
 - vps.status#index
 - vps.status#show
 - vps_outage#index

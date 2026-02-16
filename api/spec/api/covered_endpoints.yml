@@ -297,6 +297,8 @@ covered:
 - vps.console_token#show
 - vps.ssh_host_key#index
 - vps.ssh_host_key#show
+- vps.state_log#index
+- vps.state_log#show
 - user#create
 - user#current
 - user#delete
