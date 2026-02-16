@@ -295,6 +295,8 @@ covered:
 - vps.console_token#create
 - vps.console_token#delete
 - vps.console_token#show
+- vps.ssh_host_key#index
+- vps.ssh_host_key#show
 - user#create
 - user#current
 - user#delete
