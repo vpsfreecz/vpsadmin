@@ -1,0 +1,294 @@
+name: API Specs (topic parallel)
+
+on:
+  push:
+    paths:
+      - "api/**"
+      - ".github/workflows/api-specs.yml"
+      - "AGENTS.md"
+  pull_request:
+    paths:
+      - "api/**"
+      - ".github/workflows/api-specs.yml"
+      - "AGENTS.md"
+
+# Cancel older runs on the same ref when new commits are pushed
+concurrency:
+  group: api-specs-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  api-specs:
+    name: "API specs - ${{ matrix.topic }}"
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # --- Smoke / meta ---
+          - topic: smoke
+            patterns: |
+              spec/smoke/**/*_spec.rb
+
+          - topic: coverage
+            patterns: |
+              spec/api/custom_routes_coverage_spec.rb
+              spec/api/endpoint_coverage_spec.rb
+              spec/api/generate_pending_endpoints_spec.rb
+
+          - topic: routes
+            patterns: |
+              spec/api/routes/**/*_spec.rb
+
+          # --- Resources by domain ---
+          - topic: dns
+            patterns: |
+              spec/api/resources/dns*_spec.rb
+
+          - topic: storage
+            patterns: |
+              spec/api/resources/dataset_*_spec.rb
+              spec/api/resources/environment_dataset_*_spec.rb
+              spec/api/resources/pool_*_spec.rb
+              spec/api/resources/snapshot_download_spec.rb
+              spec/api/resources/export_spec.rb
+
+          - topic: network
+            patterns: |
+              spec/api/resources/network_*_spec.rb
+              spec/api/resources/network_interface*_spec.rb
+              spec/api/resources/ip_address*_spec.rb
+              spec/api/resources/host_ip_address_spec.rb
+              spec/api/resources/location_network_spec.rb
+
+          - topic: mail
+            patterns: |
+              spec/api/resources/mail*_spec.rb
+              spec/api/resources/mailbox_spec.rb
+              spec/api/resources/user_mail_*_spec.rb
+
+          - topic: users-auth
+            patterns: |
+              spec/api/resources/user_cluster_resource*_spec.rb
+              spec/api/resources/user_environment_config_spec.rb
+              spec/api/resources/user_known_device_spec.rb
+              spec/api/resources/user_namespace*_spec.rb
+              spec/api/resources/user_public_key_spec.rb
+              spec/api/resources/user_read_spec.rb
+              spec/api/resources/user_session_spec.rb
+              spec/api/resources/user_state_log_spec.rb
+              spec/api/resources/user_totp_device_spec.rb
+              spec/api/resources/user_touch_spec.rb
+              spec/api/resources/user_webauthn_credential_spec.rb
+              spec/api/resources/user_write_spec.rb
+              spec/api/resources/oauth2_client_spec.rb
+              spec/api/resources/webauthn_spec.rb
+
+          - topic: vps
+            patterns: |
+              spec/api/resources/vps_*_spec.rb
+
+          - topic: platform
+            patterns: |
+              spec/api/resources/action_state_spec.rb
+              spec/api/resources/api_server_spec.rb
+              spec/api/resources/cluster*_spec.rb
+              spec/api/resources/component_spec.rb
+              spec/api/resources/debug_spec.rb
+              spec/api/resources/default_object_cluster_resource_spec.rb
+              spec/api/resources/environment_read_spec.rb
+              spec/api/resources/environment_write_spec.rb
+              spec/api/resources/incident_report_spec.rb
+              spec/api/resources/language_spec.rb
+              spec/api/resources/location_read_spec.rb
+              spec/api/resources/location_write_spec.rb
+              spec/api/resources/metrics_access_token_spec.rb
+              spec/api/resources/migration_plan_spec.rb
+              spec/api/resources/node_*_spec.rb
+              spec/api/resources/object_history_spec.rb
+              spec/api/resources/oom_report*_spec.rb
+              spec/api/resources/os_*_spec.rb
+              spec/api/resources/system_config_spec.rb
+              spec/api/resources/transaction*_spec.rb
+
+    services:
+      mysql:
+        image: mariadb:latest
+        env:
+          MARIADB_ROOT_PASSWORD: root
+          MARIADB_DATABASE: vpsadmin_test
+          MARIADB_USER: vpsadmin
+          MARIADB_PASSWORD: vpsadmin
+        ports:
+          - 3306:3306
+
+    env:
+      RACK_ENV: test
+      DATABASE_URL: mysql2://vpsadmin:vpsadmin@127.0.0.1:3306/vpsadmin_test
+      # CI should not install dev-only gems (rubocop, yard, etc.)
+      BUNDLE_WITHOUT: development
+      BUNDLE_JOBS: "4"
+      BUNDLE_RETRY: "3"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Select spec files for topic
+        working-directory: api
+        env:
+          TOPIC: ${{ matrix.topic }}
+          PATTERNS: ${{ matrix.patterns }}
+        run: |
+          set -euo pipefail
+          shopt -s nullglob globstar
+
+          mkdir -p tmp
+          : > "tmp/rspec-files-$TOPIC.txt"
+
+          files=()
+          while IFS= read -r pat; do
+            [[ -z "$pat" ]] && continue
+            # unquoted expansion is intentional: we want glob expansion
+            for f in $pat; do
+              files+=("$f")
+            done
+          done <<< "$PATTERNS"
+
+          if (( ${#files[@]} == 0 )); then
+            echo "ERROR: Topic '$TOPIC' matched 0 spec files."
+            echo "Patterns were:"
+            echo "$PATTERNS"
+            exit 2
+          fi
+
+          printf '%s\n' "${files[@]}" | sort -u > "tmp/rspec-files-$TOPIC.txt"
+
+          {
+            echo "### API spec topic: $TOPIC"
+            echo ""
+            echo "Matched **$(wc -l < "tmp/rspec-files-$TOPIC.txt")** spec files:"
+            echo ""
+            echo '```'
+            cat "tmp/rspec-files-$TOPIC.txt"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload spec file list (for topic coverage checks)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rspec-files-${{ matrix.topic }}
+          path: api/tmp/rspec-files-${{ matrix.topic }}.txt
+          if-no-files-found: error
+          retention-days: 7
+
+      # mysql2 gem needs client headers; use MariaDB client for readiness checks.
+      - name: Install system dependencies (MariaDB client + headers)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libmariadb-dev libmariadb-dev-compat mariadb-client
+
+      - name: Read Ruby version
+        id: ruby-version
+        run: |
+          set -euo pipefail
+          echo "version=$(cat .ruby-version)" >> "$GITHUB_OUTPUT"
+
+      - name: Set up Ruby (Bundler cache)
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: ${{ steps.ruby-version.outputs.version }}
+          bundler-cache: true
+          working-directory: api
+
+      - name: Wait for MariaDB
+        run: |
+          set -euo pipefail
+
+          for i in {1..60}; do
+            if mariadb -h 127.0.0.1 -uvpsadmin -pvpsadmin -e "SELECT 1" >/dev/null 2>&1; then
+              break
+            fi
+            sleep 1
+          done
+
+          mariadb -h 127.0.0.1 -uvpsadmin -pvpsadmin -e "SELECT 1"
+
+      - name: Run RSpec (topic)
+        working-directory: api
+        run: |
+          set -euo pipefail
+          xargs -a "tmp/rspec-files-${{ matrix.topic }}.txt" bundle exec rspec
+
+  api-spec-topic-coverage:
+    name: "API specs - topic coverage"
+    runs-on: ubuntu-latest
+    needs: [api-specs]
+    if: always()
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout (for git ls-files)
+        uses: actions/checkout@v4
+
+      - name: Download per-topic file lists
+        uses: actions/download-artifact@v4
+        with:
+          pattern: rspec-files-*
+          path: artifacts
+
+      - name: "Validate: every spec file belongs to exactly one topic"
+        run: |
+          set -euo pipefail
+
+          # All tracked spec files in the API component (paths relative to api/)
+          git -C api ls-files 'spec/**/*_spec.rb' | sort > all_specs.txt
+
+          # Union and duplicate detection from downloaded artifacts
+          find artifacts -type f -name 'rspec-files-*.txt' -print0 \
+            | xargs -0 cat \
+            | sed '/^\s*$/d' \
+            | sort > mapped_all.txt
+
+          sort -u mapped_all.txt > mapped_uniq.txt
+
+          # Any duplicates => spec file appears in multiple topics (bad)
+          dupes="$(uniq -d mapped_all.txt || true)"
+          if [[ -n "$dupes" ]]; then
+            echo "ERROR: Some spec files are included in multiple topics:"
+            echo "$dupes"
+            exit 3
+          fi
+
+          # Missing => spec exists but is not mapped into any topic (bad)
+          missing="$(comm -23 all_specs.txt mapped_uniq.txt || true)"
+          if [[ -n "$missing" ]]; then
+            echo "ERROR: Some spec files are not mapped to any topic. Update .github/workflows/api-specs.yml matrix patterns."
+            echo "$missing"
+            exit 4
+          fi
+
+          # Extra => a mapped file isn't tracked (should not happen)
+          extra="$(comm -13 all_specs.txt mapped_uniq.txt || true)"
+          if [[ -n "$extra" ]]; then
+            echo "ERROR: Mapped spec paths include files not tracked by git:"
+            echo "$extra"
+            exit 5
+          fi
+
+          echo "OK: topic mapping covers all API spec files exactly once."
+
+          {
+            echo "### Topic coverage"
+            echo ""
+            echo "- Total API spec files: **$(wc -l < all_specs.txt)**"
+            echo "- Mapped spec files: **$(wc -l < mapped_uniq.txt)**"
+            echo ""
+            echo "OK: All spec files are mapped to exactly one topic."
+          } >> "$GITHUB_STEP_SUMMARY"
