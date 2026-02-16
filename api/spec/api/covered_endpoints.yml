@@ -299,6 +299,8 @@ covered:
 - vps.ssh_host_key#show
 - vps.state_log#index
 - vps.state_log#show
+- vps.status#index
+- vps.status#show
 - user#create
 - user#current
 - user#delete
