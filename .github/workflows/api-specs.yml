@@ -139,6 +139,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Ensure plugins directory exists
+        run: |
+          mkdir -p api/plugins
+
       - name: Select spec files for topic
         working-directory: api
         env:
