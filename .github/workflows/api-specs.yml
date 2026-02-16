@@ -129,7 +129,6 @@ jobs:
 
     env:
       RACK_ENV: test
-      DATABASE_URL: mysql2://vpsadmin:vpsadmin@127.0.0.1:3306/vpsadmin_test
       # CI should not install dev-only gems (rubocop, yard, etc.)
       BUNDLE_WITHOUT: development
       BUNDLE_JOBS: "4"
@@ -142,6 +141,22 @@ jobs:
       - name: Ensure plugins directory exists
         run: |
           mkdir -p api/plugins
+
+      - name: Write database.yml for CI
+        run: |
+          mkdir -p api/config
+          cat > api/config/database.yml <<'YAML'
+          test:
+            adapter: mysql2
+            host: 127.0.0.1
+            port: 3306
+            database: vpsadmin_test
+            username: vpsadmin
+            password: vpsadmin
+            encoding: utf8mb3
+            collation: utf8mb3_unicode_ci
+            pool: 5
+          YAML
 
       - name: Select spec files for topic
         working-directory: api
