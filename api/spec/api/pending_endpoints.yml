@@ -60,9 +60,3 @@ pending:
 - user_request.registration#update
 - vps_outage#index
 - vps_outage#show
-- vps_user_data#create
-- vps_user_data#delete
-- vps_user_data#deploy
-- vps_user_data#index
-- vps_user_data#show
-- vps_user_data#update

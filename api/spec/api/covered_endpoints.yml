@@ -301,6 +301,12 @@ covered:
 - vps.state_log#show
 - vps.status#index
 - vps.status#show
+- vps_user_data#create
+- vps_user_data#delete
+- vps_user_data#deploy
+- vps_user_data#index
+- vps_user_data#show
+- vps_user_data#update
 - user#create
 - user#current
 - user#delete
