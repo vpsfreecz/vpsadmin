@@ -24,6 +24,7 @@ RSpec.configure do |config|
     SpecDbSetup.ensure_database_exists!
     SpecDbSetup.load_schema!
     require_relative '../lib/vpsadmin'
+    SpecSeed.seed_language_if_needed!
     SpecDbSetup.seed_minimal_sysconfig!
     SpecDbSetup.seed_minimal_cluster_resources!
     ApiAppHelper.app_instance
