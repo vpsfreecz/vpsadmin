@@ -509,16 +509,16 @@
         },
         {
             "name": "haveapi/client",
-            "version": "0.26.3",
+            "version": "0.27.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/vpsfreecz/haveapi-client-php.git",
-                "reference": "6e69a8edd7fffc45ca2256c96ae6c0df16a5ae79"
+                "reference": "893c961bc4454f85109dd298ac8bd76284253028"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/vpsfreecz/haveapi-client-php/zipball/6e69a8edd7fffc45ca2256c96ae6c0df16a5ae79",
-                "reference": "6e69a8edd7fffc45ca2256c96ae6c0df16a5ae79",
+                "url": "https://api.github.com/repos/vpsfreecz/haveapi-client-php/zipball/893c961bc4454f85109dd298ac8bd76284253028",
+                "reference": "893c961bc4454f85109dd298ac8bd76284253028",
                 "shasum": ""
             },
             "require": {
@@ -546,9 +546,9 @@
             "homepage": "https://github.com/vpsfreecz/haveapi-client-php",
             "support": {
                 "issues": "https://github.com/vpsfreecz/haveapi-client-php/issues",
-                "source": "https://github.com/vpsfreecz/haveapi-client-php/tree/v0.26.3"
+                "source": "https://github.com/vpsfreecz/haveapi-client-php/tree/v0.27.0"
             },
-            "time": "2026-01-12T17:21:27+00:00"
+            "time": "2026-02-17T20:23:55+00:00"
         },
         {
             "name": "league/oauth2-client",
