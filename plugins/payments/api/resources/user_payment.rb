@@ -114,7 +114,7 @@ module VpsAdmin::API::Resources
       end
 
       def state_id
-        @chain.id
+        @chain&.id
       end
     end
   end
