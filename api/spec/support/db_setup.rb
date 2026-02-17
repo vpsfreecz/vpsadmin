@@ -37,14 +37,43 @@ module SpecDbSetup
 
     raise 'Database name not configured' if dbname.to_s.empty?
 
+    if reset_enabled? && resettable_adapter?(adapter)
+      return recreate_database!(conn_cfg, adapter, dbname)
+    end
+
     ActiveRecord::Base.connection.execute('SELECT 1')
   rescue StandardError => e
     msg = e.message.to_s
-    can_create = adapter.include?('mysql') || adapter.include?('postgres')
+    can_reset = reset_enabled? && resettable_adapter?(adapter)
+    can_create = resettable_adapter?(adapter)
     unknown_db = msg.include?('Unknown database') || msg.include?('does not exist')
+
+    if can_reset && unknown_db
+      return recreate_database!(conn_cfg, adapter, dbname)
+    end
 
     raise e unless can_create && unknown_db
 
+    create_database!(conn_cfg, adapter, dbname)
+  end
+
+  def recreate_database!(conn_cfg, adapter, dbname)
+    base_cfg = conn_cfg.dup
+    base_cfg.delete(:database)
+    base_cfg.delete(:dbname)
+    base_cfg[:database] = 'postgres' if adapter.include?('postgres')
+
+    ActiveRecord::Base.establish_connection(base_cfg)
+    quoted = ActiveRecord::Base.connection.quote_table_name(dbname)
+
+    ActiveRecord::Base.connection.execute("DROP DATABASE IF EXISTS #{quoted}")
+    ActiveRecord::Base.connection.execute("CREATE DATABASE #{quoted}")
+
+    ActiveRecord::Base.establish_connection(conn_cfg)
+  end
+  private_class_method :recreate_database!
+
+  def create_database!(conn_cfg, adapter, dbname)
     base_cfg = conn_cfg.dup
     base_cfg.delete(:database)
     base_cfg.delete(:dbname)
@@ -61,6 +90,17 @@ module SpecDbSetup
 
     ActiveRecord::Base.establish_connection(conn_cfg)
   end
+  private_class_method :create_database!
+
+  def resettable_adapter?(adapter)
+    adapter.include?('mysql') || adapter.include?('postgres')
+  end
+  private_class_method :resettable_adapter?
+
+  def reset_enabled?
+    ENV['RACK_ENV'].to_s == 'test'
+  end
+  private_class_method :reset_enabled?
 
   def load_schema!
     schema_path = File.expand_path('../../db/schema.rb', __dir__)
