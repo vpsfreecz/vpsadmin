@@ -4,11 +4,13 @@ on:
   push:
     paths:
       - "api/**"
+      - "plugins/**"
       - ".github/workflows/api-specs.yml"
       - "AGENTS.md"
   pull_request:
     paths:
       - "api/**"
+      - "plugins/**"
       - ".github/workflows/api-specs.yml"
       - "AGENTS.md"
 
@@ -21,15 +23,15 @@ permissions:
   contents: read
 
 jobs:
-  api-specs:
-    name: "API specs - ${{ matrix.topic }}"
+  api-specs-full:
+    name: "API specs (full) - ${{ matrix.topic }}"
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
     strategy:
       fail-fast: false
       matrix:
-        include:
+        include: &api_spec_topics
           # --- Smoke / meta ---
           - topic: smoke
             patterns: |
@@ -121,7 +123,7 @@ jobs:
         image: mariadb:latest
         env:
           MARIADB_ROOT_PASSWORD: root
-          MARIADB_DATABASE: vpsadmin_test
+          MARIADB_DATABASE: vpsadmin_api_specs_full
           MARIADB_USER: vpsadmin
           MARIADB_PASSWORD: vpsadmin
         ports:
@@ -133,24 +135,23 @@ jobs:
       BUNDLE_WITHOUT: development
       BUNDLE_JOBS: "4"
       BUNDLE_RETRY: "3"
+      BUNDLE_GEMFILE: api/Gemfile
+      DB_NAME: vpsadmin_api_specs_full
+      VPSADMIN_PLUGINS: all
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Ensure plugins directory exists
-        run: |
-          mkdir -p api/plugins
-
       - name: Write database.yml for CI
         run: |
           mkdir -p api/config
-          cat > api/config/database.yml <<'YAML'
+          cat > api/config/database.yml <<YAML
           test:
             adapter: mysql2
             host: 127.0.0.1
             port: 3306
-            database: vpsadmin_test
+            database: ${DB_NAME}
             username: vpsadmin
             password: vpsadmin
             encoding: utf8mb3
@@ -245,10 +246,139 @@ jobs:
           set -euo pipefail
           xargs -a "tmp/rspec-files-${{ matrix.topic }}.txt" bundle exec rspec
 
+  api-specs-core:
+    name: "API specs (core) - ${{ matrix.topic }}"
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include: *api_spec_topics
+
+    services:
+      mysql:
+        image: mariadb:latest
+        env:
+          MARIADB_ROOT_PASSWORD: root
+          MARIADB_DATABASE: vpsadmin_api_specs_core
+          MARIADB_USER: vpsadmin
+          MARIADB_PASSWORD: vpsadmin
+        ports:
+          - 3306:3306
+
+    env:
+      RACK_ENV: test
+      # CI should not install dev-only gems (rubocop, yard, etc.)
+      BUNDLE_WITHOUT: development
+      BUNDLE_JOBS: "4"
+      BUNDLE_RETRY: "3"
+      BUNDLE_GEMFILE: api/Gemfile
+      DB_NAME: vpsadmin_api_specs_core
+      VPSADMIN_PLUGINS: none
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Write database.yml for CI
+        run: |
+          mkdir -p api/config
+          cat > api/config/database.yml <<YAML
+          test:
+            adapter: mysql2
+            host: 127.0.0.1
+            port: 3306
+            database: ${DB_NAME}
+            username: vpsadmin
+            password: vpsadmin
+            encoding: utf8mb3
+            collation: utf8mb3_unicode_ci
+            pool: 5
+          YAML
+
+      - name: Select spec files for topic
+        working-directory: api
+        env:
+          TOPIC: ${{ matrix.topic }}
+          PATTERNS: ${{ matrix.patterns }}
+        run: |
+          set -euo pipefail
+          shopt -s nullglob globstar
+
+          mkdir -p tmp
+          : > "tmp/rspec-files-$TOPIC.txt"
+
+          files=()
+          while IFS= read -r pat; do
+            [[ -z "$pat" ]] && continue
+            # unquoted expansion is intentional: we want glob expansion
+            for f in $pat; do
+              files+=("$f")
+            done
+          done <<< "$PATTERNS"
+
+          if (( ${#files[@]} == 0 )); then
+            echo "ERROR: Topic '$TOPIC' matched 0 spec files."
+            echo "Patterns were:"
+            echo "$PATTERNS"
+            exit 2
+          fi
+
+          printf '%s\n' "${files[@]}" | sort -u > "tmp/rspec-files-$TOPIC.txt"
+
+          {
+            echo "### API spec topic: $TOPIC"
+            echo ""
+            echo "Matched **$(wc -l < "tmp/rspec-files-$TOPIC.txt")** spec files:"
+            echo ""
+            echo '```'
+            cat "tmp/rspec-files-$TOPIC.txt"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      # mysql2 gem needs client headers; use MariaDB client for readiness checks.
+      - name: Install system dependencies (MariaDB client + headers)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libmariadb-dev libmariadb-dev-compat mariadb-client
+
+      - name: Read Ruby version
+        id: ruby-version
+        run: |
+          set -euo pipefail
+          echo "version=$(cat .ruby-version)" >> "$GITHUB_OUTPUT"
+
+      - name: Set up Ruby (Bundler cache)
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: ${{ steps.ruby-version.outputs.version }}
+          bundler-cache: true
+          working-directory: api
+
+      - name: Wait for MariaDB
+        run: |
+          set -euo pipefail
+
+          for i in {1..60}; do
+            if mariadb -h 127.0.0.1 -uvpsadmin -pvpsadmin -e "SELECT 1" >/dev/null 2>&1; then
+              break
+            fi
+            sleep 1
+          done
+
+          mariadb -h 127.0.0.1 -uvpsadmin -pvpsadmin -e "SELECT 1"
+
+      - name: Run RSpec (topic)
+        working-directory: api
+        run: |
+          set -euo pipefail
+          xargs -a "tmp/rspec-files-${{ matrix.topic }}.txt" bundle exec rspec
+
   api-spec-topic-coverage:
     name: "API specs - topic coverage"
     runs-on: ubuntu-latest
-    needs: [api-specs]
+    needs: [api-specs-full]
     if: always()
     timeout-minutes: 10
 

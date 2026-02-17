@@ -2,7 +2,7 @@
 
 require 'yaml'
 
-RSpec.describe EndpointInventory do
+RSpec.describe EndpointInventory, :requires_plugins do
   describe 'API endpoint coverage' do
     it 'ensures all endpoints are listed in covered or pending' do
       all_scopes = described_class.all_scopes(self, only_first_version: true)
