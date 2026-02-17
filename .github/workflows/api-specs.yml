@@ -47,6 +47,10 @@ jobs:
             patterns: |
               spec/api/routes/**/*_spec.rb
 
+          - topic: plugins
+            patterns: |
+              spec/api/plugins/**/*_spec.rb
+
           # --- Resources by domain ---
           - topic: dns
             patterns: |

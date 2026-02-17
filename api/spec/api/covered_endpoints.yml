@@ -124,6 +124,11 @@ covered:
 - export.host#index
 - export.host#show
 - export.host#update
+- help_box#create
+- help_box#delete
+- help_box#index
+- help_box#show
+- help_box#update
 - host_ip_address#assign
 - host_ip_address#create
 - host_ip_address#delete

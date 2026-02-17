@@ -2,11 +2,6 @@
 pending:
 - export_outage#index
 - export_outage#show
-- help_box#create
-- help_box#delete
-- help_box#index
-- help_box#show
-- help_box#update
 - incoming_payment#index
 - incoming_payment#show
 - incoming_payment#update
