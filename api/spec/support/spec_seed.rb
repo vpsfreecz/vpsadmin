@@ -78,11 +78,19 @@ module SpecSeed
   end
 
   def network_v4
-    @network_v4 ||= Network.find_by!(address: '192.0.2.0', prefix: 24)
+    if @network_v4
+      @network_v4.reload
+    else
+      @network_v4 = Network.find_by!(address: '192.0.2.0', prefix: 24)
+    end
   end
 
   def network_v6
-    @network_v6 ||= Network.find_by!(address: '2001:db8::', prefix: 64)
+    if @network_v6
+      @network_v6.reload
+    else
+      @network_v6 = Network.find_by!(address: '2001:db8::', prefix: 64)
+    end
   end
 
   def os_family
