@@ -250,7 +250,7 @@ module VpsAdmin::API::Resources
 
         authorize do |u|
           allow if u.role == :admin
-          restrict user_id: u.id
+          restrict monitored_events: { user_id: u.id }
           allow
         end
 
