@@ -315,8 +315,10 @@ module SpecSeed
   end
 
   def seed_user_accounts!
+    return unless SpecPlugins.enabled?(:payments)
+
     conn = ActiveRecord::Base.connection
-    ensure_user_accounts_table!(conn)
+    return unless conn.data_source_exists?('user_accounts')
 
     user_ids = [admin.id, support.id, user.id, other_user.id]
     existing = conn.select_values(
@@ -332,19 +334,6 @@ module SpecSeed
         "VALUES (#{user_id}, 0, NULL, #{now})"
       )
     end
-  end
-
-  def ensure_user_accounts_table!(conn)
-    return if conn.data_source_exists?('user_accounts')
-
-    conn.create_table :user_accounts do |t|
-      t.integer :user_id, null: false
-      t.integer :monthly_payment, null: false, default: 0
-      t.datetime :paid_until
-      t.datetime :updated_at
-    end
-
-    conn.add_index :user_accounts, :user_id, unique: true
   end
 
   def create_or_update_user!(login:, level:, email:)

@@ -26,6 +26,8 @@ RSpec.configure do |config|
     require_relative '../lib/vpsadmin'
     SpecDbSetup.seed_minimal_sysconfig!
     SpecDbSetup.seed_minimal_cluster_resources!
+    ApiAppHelper.app_instance
+    SpecPlugins.migrate_enabled_plugins!
     SpecSeed.bootstrap!
     TransactionKeyHelpers.install_encrypted_transaction_key!
   end

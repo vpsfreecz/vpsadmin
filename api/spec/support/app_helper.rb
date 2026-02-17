@@ -6,7 +6,11 @@ module ApiAppHelper
   include Rack::Test::Methods
 
   def app
-    VpsAdmin::API.default.app
+    ApiAppHelper.app_instance
+  end
+
+  def self.app_instance
+    @app_instance ||= VpsAdmin::API.default.app
   end
 end
 
