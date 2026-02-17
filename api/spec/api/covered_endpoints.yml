@@ -397,6 +397,16 @@ covered:
 - user_session#index
 - user_session#show
 - user_session#update
+- user_request.change#create
+- user_request.change#index
+- user_request.change#resolve
+- user_request.change#show
+- user_request.registration#create
+- user_request.registration#index
+- user_request.registration#preview
+- user_request.registration#resolve
+- user_request.registration#show
+- user_request.registration#update
 - webauthn.authentication#begin
 - webauthn.authentication#finish
 - webauthn.registration#begin
