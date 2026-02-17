@@ -77,15 +77,17 @@ module SpecPlugins
 
   def ensure_migration_tables!
     conn = ActiveRecord::Base.connection
+    schema_migration = conn.pool.schema_migration
+    internal_metadata = conn.pool.internal_metadata
 
-    unless conn.data_source_exists?(ActiveRecord::SchemaMigration.table_name)
-      ActiveRecord::SchemaMigration.create_table
+    unless conn.data_source_exists?(schema_migration.table_name)
+      schema_migration.create_table
     end
 
-    return unless defined?(ActiveRecord::InternalMetadata)
-    return if conn.data_source_exists?(ActiveRecord::InternalMetadata.table_name)
+    return unless internal_metadata
+    return if conn.data_source_exists?(internal_metadata.table_name)
 
-    ActiveRecord::InternalMetadata.create_table
+    internal_metadata.create_table
   end
   private_class_method :ensure_migration_tables!
 end
