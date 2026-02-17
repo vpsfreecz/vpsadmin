@@ -1,3 +1,5 @@
+require 'pathname'
+
 source 'https://rubygems.org'
 
 begin
@@ -44,9 +46,46 @@ end
 ### vpsAdmin plugin marker ###
 # Do not remove the comment above. It is used to create a Nix package with
 # resolved plugin dependencies.
-Dir.glob(File.expand_path('../plugins/*', File.realpath(__FILE__))) do |v|
-  path = File.join(v, 'api', 'Gemfile')
-  next unless File.exist?(path)
+def vpsadmin_plugin_dir
+  env = ENV['VPSADMIN_PLUGIN_DIR'].to_s.strip
+  unless env.empty?
+    path = env
+    path = File.expand_path(path, __dir__) unless Pathname.new(path).absolute?
+    return File.realpath(path) if Dir.exist?(path)
+  end
 
-  eval_gemfile path
+  candidates = [
+    File.join(__dir__, 'plugins'),
+    File.expand_path('../plugins', __dir__)
+  ]
+
+  candidates.each do |candidate|
+    return File.realpath(candidate) if Dir.exist?(candidate)
+  end
+
+  nil
+end
+
+def vpsadmin_allowed_plugins
+  mode = ENV['VPSADMIN_PLUGINS'].to_s.strip.downcase
+  return :none if mode == 'none'
+  return nil if mode.empty? || mode == 'all'
+
+  mode.split(',').map(&:strip).reject(&:empty?)
+end
+
+allowed_plugins = vpsadmin_allowed_plugins
+plugin_dir = vpsadmin_plugin_dir
+
+if allowed_plugins != :none && plugin_dir
+  Dir.entries(plugin_dir).select do |v|
+    v != '.' && v != '..' && File.directory?(File.join(plugin_dir, v))
+  end.each do |plugin|
+    next if allowed_plugins && !allowed_plugins.include?(plugin)
+
+    path = File.join(plugin_dir, plugin, 'api', 'Gemfile')
+    next unless File.exist?(path)
+
+    eval_gemfile path
+  end
 end
