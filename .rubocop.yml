@@ -15,6 +15,7 @@ AllCops:
     - 'libnodectld/*.rb'
     - 'nodectl/*.rb'
     - 'nodectld/*.rb'
+    - 'webui/spec/**/*'
     - 'vendor/**/*'
     - '.git/**/*'
     <% `git status --ignored --porcelain`.lines.grep(/^!! /).each do |path| %>
