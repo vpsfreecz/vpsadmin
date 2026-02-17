@@ -56,8 +56,11 @@ class OutageUpdate < ApplicationRecord
     ).where(
       outage_update_id: id
     ).each do |tr|
+      lang = tr.language
+      next unless lang
+
       %i[summary description].each do |param|
-        define_singleton_method("#{tr.language.code}_#{param}") do
+        define_singleton_method("#{lang.code}_#{param}") do
           tr.send(param)
         end
       end
