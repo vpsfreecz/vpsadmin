@@ -2,9 +2,6 @@
 pending:
 - export_outage#index
 - export_outage#show
-- incoming_payment#index
-- incoming_payment#show
-- incoming_payment#update
 - outage#create
 - outage#index
 - outage#rebuild_affected_vps
@@ -22,16 +19,8 @@ pending:
 - outage_update#create
 - outage_update#index
 - outage_update#show
-- payment_stats#estimate_income
-- user#get_payment_instructions
-- user_account#index
-- user_account#show
-- user_account#update
 - user_outage#index
 - user_outage#show
-- user_payment#create
-- user_payment#index
-- user_payment#show
 - user_request.change#create
 - user_request.change#index
 - user_request.change#resolve

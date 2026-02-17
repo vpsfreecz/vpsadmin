@@ -148,6 +148,9 @@ covered:
 - incident_report#create
 - incident_report#index
 - incident_report#show
+- incoming_payment#index
+- incoming_payment#show
+- incoming_payment#update
 - language#index
 - language#show
 - location#index
@@ -222,6 +225,7 @@ covered:
 - pool#index
 - pool#set_maintenance
 - pool#show
+- payment_stats#estimate_income
 - metrics_access_token#create
 - metrics_access_token#delete
 - metrics_access_token#index
@@ -330,6 +334,13 @@ covered:
 - user#show
 - user#touch
 - user#update
+- user#get_payment_instructions
+- user_account#index
+- user_account#show
+- user_account#update
+- user_payment#create
+- user_payment#index
+- user_payment#show
 - user.cluster_resource#create
 - user.cluster_resource#index
 - user.cluster_resource#show
