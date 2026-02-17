@@ -235,6 +235,12 @@ covered:
 - migration_plan.vps_migration#create
 - migration_plan.vps_migration#index
 - migration_plan.vps_migration#show
+- monitored_event#index
+- monitored_event#show
+- monitored_event#acknowledge
+- monitored_event#ignore
+- monitored_event.log#index
+- monitored_event.log#show
 - object_history#index
 - object_history#show
 - oom_report#index
