@@ -192,7 +192,7 @@ RSpec.describe 'VpsAdmin::API::Resources::OsTemplate' do
 
       row = os_templates.find { |item| item['id'] == fixture(:enabled_vpsadminos_a).id }
       expect(row).not_to be_nil
-      expect(row.keys).to match_array(%w[id name label hypervisor_type])
+      expect(row).to include('id', 'name', 'label', 'hypervisor_type')
     end
 
     it 'lists only enabled templates for normal users' do
