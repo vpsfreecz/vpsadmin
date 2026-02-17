@@ -96,10 +96,10 @@
     platforms = [ ];
     source = {
       remotes = [ "https://rubygems.org" ];
-      sha256 = "1cwr18rqgfbvzhg5279lvqa6n9hi41n2acrz82pq4yvj0b99ac8l";
+      sha256 = "03blciddiam07mvw9ranmpx43khmj07w33japfjhzb68kxmzsqg6";
       type = "gem";
     };
-    version = "0.26.3";
+    version = "0.27.0";
   };
   highline = {
     dependencies = [ "reline" ];
@@ -159,10 +159,10 @@
     platforms = [ ];
     source = {
       remotes = [ "https://rubygems.org" ];
-      sha256 = "01fmiz052cvnxgdnhb3qwcy88xbv7l3liz0fkvs5qgqqwjp0c1di";
+      sha256 = "11prr7nrxh1y4rfsqa51gy4ixx63r18cz9mdnmk0938va1ajf4gy";
       type = "gem";
     };
-    version = "2.18.0";
+    version = "2.18.1";
   };
   logger = {
     groups = [ "default" ];
@@ -193,10 +193,10 @@
     platforms = [ ];
     source = {
       remotes = [ "https://rubygems.org" ];
-      sha256 = "0a27k4jcrx7pvb0p59fn1frh14iy087c2aygrdkmgwsrbshvqxpj";
+      sha256 = "0bradmf21c9g4z6f3hvqmnf6i2sbgp0630y2j5rq8a7h79lksdal";
       type = "gem";
     };
-    version = "3.2025.0924";
+    version = "3.2026.0203";
   };
   minitest = {
     dependencies = [ "prism" ];
@@ -224,10 +224,10 @@
     platforms = [ ];
     source = {
       remotes = [ "https://rubygems.org" ];
-      sha256 = "00silqnlzzm97gn21lm39q95hjn058waqky44j25r67p9drjy1hh";
+      sha256 = "11ggfikcs1lv17nhmhqyyp6z8nq5pkfcj6a904047hljkxm0qlvv";
       type = "gem";
     };
-    version = "1.7.0";
+    version = "1.9.0";
   };
   reline = {
     dependencies = [ "io-console" ];

@@ -1,3 +1,5 @@
+require 'pathname'
+
 source 'https://rubygems.org'
 
 begin
@@ -12,7 +14,7 @@ gem 'base64'
 gem 'bcrypt', '~> 3.1.20'
 gem 'bunny', '~> 2.24.0'
 gem 'dnsruby', '~> 1.73'
-gem 'haveapi', '~> 0.26.0'
+gem 'haveapi', '~> 0.27.0'
 gem 'ipaddress', '~> 0.8.3'
 gem 'mysql2', '~> 0.5.6'
 gem 'paper_trail', '~> 17.0.0'
@@ -27,6 +29,7 @@ gem 'user_agent_parser', '~> 2.20'
 gem 'webauthn', '~> 3.4'
 
 group :test do
+  gem 'rack-test'
   gem 'rspec'
 end
 
@@ -35,6 +38,7 @@ group :development do
   gem 'rackup'
   gem 'rubocop'
   gem 'rubocop-rake'
+  gem 'rubocop-rspec'
   gem 'webrick'
   gem 'yard'
 end
