@@ -46,17 +46,21 @@ module SpecPlugins
         requires = example.metadata[:requires_plugins]
         if requires
           if requires == true
-            skip('requires plugins enabled') unless any_enabled?
+            skip('requires plugins enabled') unless SpecPlugins.any_enabled?
           else
             ids = Array(requires).map(&:to_sym)
-            skip("requires plugins: #{ids.join(', ')}") unless ids.all? { |id| enabled?(id) }
+            unless ids.all? { |id| SpecPlugins.enabled?(id) }
+              skip("requires plugins: #{ids.join(', ')}")
+            end
           end
         end
 
         without = example.metadata[:without_plugins]
         if without
           ids = Array(without).map(&:to_sym)
-          skip("skipped because plugins are enabled: #{ids.join(', ')}") if ids.any? { |id| enabled?(id) }
+          if ids.any? { |id| SpecPlugins.enabled?(id) }
+            skip("skipped because plugins are enabled: #{ids.join(', ')}")
+          end
         end
       end
     end
