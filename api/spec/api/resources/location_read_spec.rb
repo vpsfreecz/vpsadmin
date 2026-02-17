@@ -65,11 +65,24 @@ RSpec.describe 'VpsAdmin::API::Resources::Location' do
       create_hypervisor_node!
     end
 
-    it 'rejects unauthenticated access' do
+    it 'rejects unauthenticated access (core)', without_plugins: :requests do
+      json_get index_path
+
+      expect_status(401)
+      expect(json['status']).to be(false)
+    end
+
+    it 'allows unauthenticated access (requests plugin)', requires_plugins: :requests do
       json_get index_path
 
       expect_status(200)
       expect(json['status']).to be(true)
+
+      row = locations.find { |item| item['id'] == location.id }
+      expect(row).to include('id', 'label', 'description', 'environment')
+      expect(row).not_to have_key('remote_console_server')
+      expect(row).not_to have_key('domain')
+      expect(row).not_to have_key('has_ipv6')
     end
 
     it 'allows users to list locations with limited output' do

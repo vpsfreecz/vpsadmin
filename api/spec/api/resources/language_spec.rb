@@ -32,7 +32,14 @@ RSpec.describe 'VpsAdmin::API::Resources::Language' do
   end
 
   describe 'Index' do
-    it 'allows unauthenticated access' do
+    it 'rejects unauthenticated access (core)', without_plugins: :requests do
+      json_get index_path
+
+      expect(last_response.status).to eq(401)
+      expect(json['status']).to be(false)
+    end
+
+    it 'allows unauthenticated access (requests plugin)', requires_plugins: :requests do
       json_get index_path
 
       expect(last_response.status).to eq(200)

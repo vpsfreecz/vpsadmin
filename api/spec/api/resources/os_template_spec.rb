@@ -114,6 +114,11 @@ RSpec.describe 'VpsAdmin::API::Resources::OsTemplate' do
         enabled: false,
         order: 3
       ),
+      unsupported_vpsadminos: create_template!(
+        label: 'Unsupported vpsAdminOS',
+        supported: false,
+        order: 4
+      ),
       enabled_openvz: create_template!(
         label: 'OpenVZ Template',
         hypervisor_type: :openvz,
@@ -162,12 +167,32 @@ RSpec.describe 'VpsAdmin::API::Resources::OsTemplate' do
   end
 
   describe 'Index' do
-    it 'rejects unauthenticated access' do
-      skip 'requests plugin makes os_template#index public in this setup'
+    it 'rejects unauthenticated access (core)', without_plugins: :requests do
       json_get index_path
 
       expect_status(401)
       expect(json['status']).to be(false)
+    end
+
+    it 'allows unauthenticated access (requests plugin)', requires_plugins: :requests do
+      json_get index_path
+
+      expect_status(200)
+      expect(json['status']).to be(true)
+
+      ids = os_templates.map { |row| row['id'] }
+      expect(ids).to include(
+        fixture(:enabled_vpsadminos_a).id,
+        fixture(:enabled_vpsadminos_b).id
+      )
+      expect(ids).not_to include(
+        fixture(:disabled_vpsadminos).id,
+        fixture(:unsupported_vpsadminos).id
+      )
+
+      row = os_templates.find { |item| item['id'] == fixture(:enabled_vpsadminos_a).id }
+      expect(row).not_to be_nil
+      expect(row.keys).to match_array(%w[id name label hypervisor_type])
     end
 
     it 'lists only enabled templates for normal users' do
