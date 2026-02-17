@@ -135,7 +135,6 @@ jobs:
       BUNDLE_WITHOUT: development
       BUNDLE_JOBS: "4"
       BUNDLE_RETRY: "3"
-      BUNDLE_GEMFILE: api/Gemfile
       DB_NAME: vpsadmin_api_specs_full
       VPSADMIN_PLUGINS: all
 
@@ -273,7 +272,6 @@ jobs:
       BUNDLE_WITHOUT: development
       BUNDLE_JOBS: "4"
       BUNDLE_RETRY: "3"
-      BUNDLE_GEMFILE: api/Gemfile
       DB_NAME: vpsadmin_api_specs_core
       VPSADMIN_PLUGINS: none
 
