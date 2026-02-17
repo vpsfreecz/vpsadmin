@@ -537,17 +537,18 @@ RSpec.describe 'VpsAdmin::API::Resources::Dataset expansion actions' do # ruboco
       expect(exp.max_over_refquota_seconds).to eq(7200)
     end
 
-    it 'coerces max_over_refquota_seconds to an integer' do
+    it 'rejects invalid max_over_refquota_seconds type' do
       ds, _, vps = create_dataset_with_vps!(user: user)
       exp = create_expansion!(dataset: ds, vps: vps)
 
       as(admin) { json_put show_path(exp.id), dataset_expansion: { max_over_refquota_seconds: 'nope' } }
 
       expect_status(200)
-      expect(json['status']).to be(true)
+      expect(json['status']).to be(false)
+      expect_validation_error('max_over_refquota_seconds')
 
       exp.reload
-      expect(exp.max_over_refquota_seconds).to eq(0)
+      expect(exp.max_over_refquota_seconds).to eq(3600)
     end
   end
 

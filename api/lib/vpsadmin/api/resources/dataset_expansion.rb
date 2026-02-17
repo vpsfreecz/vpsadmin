@@ -92,6 +92,9 @@ module VpsAdmin::API::Resources
           stop_vps
           max_over_refquota_seconds
         ]
+        patch :dataset, required: true
+        patch :added_space, required: true
+        patch :max_over_refquota_seconds, required: true
       end
 
       output do
@@ -276,6 +279,7 @@ module VpsAdmin::API::Resources
 
         input do
           use :all, include: %i[added_space]
+          patch :added_space, required: true
         end
 
         output do

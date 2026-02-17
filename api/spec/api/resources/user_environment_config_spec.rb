@@ -351,8 +351,6 @@ RSpec.describe 'VpsAdmin::API::Resources::User::EnvironmentConfig' do
     end
 
     it 'rejects invalid parameter types' do
-      pending('HaveAPI should validate integer input types')
-
       as(admin) do
         json_put update_path(user.id, user_cfg_env.id), environment_config: { max_vps_count: 'nope' }
       end

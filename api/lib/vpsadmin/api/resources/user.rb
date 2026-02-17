@@ -557,6 +557,8 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
 
       input do
         use :common
+        patch :environment, required: true
+        patch :cluster_resource, required: true
       end
 
       output do

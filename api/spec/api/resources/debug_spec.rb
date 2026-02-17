@@ -164,7 +164,7 @@ RSpec.describe 'VpsAdmin::API::Resources::Debug' do
       expect(response_list[0]['sample']['k1']).to be_a(String)
     end
 
-    it 'coerces non-numeric limit to zero' do
+    it 'rejects non-numeric limit' do
       h1 = { 'k1' => 1 }
       h2 = { 'k1' => 1, 'k2' => 2 }
 
@@ -173,10 +173,8 @@ RSpec.describe 'VpsAdmin::API::Resources::Debug' do
       as(SpecSeed.admin) { json_get hash_top_path, debug: { limit: 'nope' } }
 
       expect_status(200)
-      expect(json['status']).to be(true)
-      expect(response_list).to be_a(Array)
-      expect(response_list.size).to eq(1)
-      expect(response_list[0]['size']).to eq(2)
+      expect(json['status']).to be(false)
+      expect(response_errors.keys.map(&:to_s)).to include('limit')
     end
   end
 
@@ -228,7 +226,7 @@ RSpec.describe 'VpsAdmin::API::Resources::Debug' do
       expect(response_list[0]['sample'].first).to eq('1')
     end
 
-    it 'coerces non-numeric limit to zero' do
+    it 'rejects non-numeric limit' do
       a1 = [1]
       a2 = [1, 2]
 
@@ -237,10 +235,8 @@ RSpec.describe 'VpsAdmin::API::Resources::Debug' do
       as(SpecSeed.admin) { json_get array_top_path, debug: { limit: 'nope' } }
 
       expect_status(200)
-      expect(json['status']).to be(true)
-      expect(response_list).to be_a(Array)
-      expect(response_list.size).to eq(1)
-      expect(response_list[0]['size']).to eq(2)
+      expect(json['status']).to be(false)
+      expect(response_errors.keys.map(&:to_s)).to include('limit')
     end
   end
 end

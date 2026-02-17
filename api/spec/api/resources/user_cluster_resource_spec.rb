@@ -354,7 +354,7 @@ RSpec.describe 'VpsAdmin::API::Resources::User::ClusterResource' do
 
       expect_status(200)
       expect(json['status']).to be(false)
-      expect(msg).to include('Server error occurred')
+      expect(errors.keys.map(&:to_s)).to include('cluster_resource')
     end
 
     it 'returns validation errors for missing environment' do
@@ -367,7 +367,7 @@ RSpec.describe 'VpsAdmin::API::Resources::User::ClusterResource' do
 
       expect_status(200)
       expect(json['status']).to be(false)
-      expect(msg).to include('Server error occurred')
+      expect(errors.keys.map(&:to_s)).to include('environment')
     end
 
     it 'returns validation errors for invalid value type' do
@@ -380,18 +380,15 @@ RSpec.describe 'VpsAdmin::API::Resources::User::ClusterResource' do
       end
 
       expect_status(200)
-      expect(json['status']).to be(true)
-      expect(row_environment_id(cluster_resource_obj)).to eq(env.id)
-      expect(row_cluster_resource_id(cluster_resource_obj)).to eq(memory.id)
-      expect(num(cluster_resource_obj['value'])).to eq(0)
+      expect(json['status']).to be(false)
+      expect(errors.keys.map(&:to_s)).to include('value')
 
       record = UserClusterResource.find_by(
         user: user,
         environment: env,
         cluster_resource: memory
       )
-      expect(record).not_to be_nil
-      expect(record.value).to eq(0)
+      expect(record).to be_nil
     end
   end
 end

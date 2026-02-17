@@ -195,8 +195,6 @@ RSpec.describe 'VpsAdmin::API::Resources::UserNamespace' do
     end
 
     it 'rejects invalid size filter' do
-      pending('HaveAPI should validate integer input types')
-
       as(SpecSeed.admin) { json_get index_path, user_namespace: { size: 'nope' } }
 
       expect_status(200)

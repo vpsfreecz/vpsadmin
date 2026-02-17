@@ -53,14 +53,14 @@ RSpec.describe 'VpsAdmin::API::Resources::PaymentStats', requires_plugins: :paym
     end
 
     it 'forbids non-admin users' do
-      as(user) { json_get estimate_path, payment_stats: { year: 2026, month: 1, select: 'exactly_until', duration: 2 } }
+      as(user) { json_get estimate_path, payment_stat: { year: 2026, month: 1, select: 'exactly_until', duration: 2 } }
 
       expect_status(403)
       expect(json['status']).to be(false)
     end
 
     it 'returns validation errors for missing required fields' do
-      as(admin) { json_get estimate_path, payment_stats: { select: 'nope' } }
+      as(admin) { json_get estimate_path, payment_stat: { select: 'nope' } }
 
       expect_status(200)
       expect(json['status']).to be(false)
@@ -73,7 +73,7 @@ RSpec.describe 'VpsAdmin::API::Resources::PaymentStats', requires_plugins: :paym
       support.user_account.update!(monthly_payment: 400, paid_until: Time.utc(2026, 2, 1, 0, 0, 0))
 
       as(admin) do
-        json_get estimate_path, payment_stats: {
+        json_get estimate_path, payment_stat: {
           year: 2026,
           month: 1,
           select: 'exactly_until',
