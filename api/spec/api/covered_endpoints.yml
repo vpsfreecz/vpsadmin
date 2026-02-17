@@ -191,6 +191,11 @@ covered:
 - mailbox.handler#index
 - mailbox.handler#show
 - mailbox.handler#update
+- news_log#create
+- news_log#delete
+- news_log#index
+- news_log#show
+- news_log#update
 - node#index
 - node#create
 - node#evacuate
