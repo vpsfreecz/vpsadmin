@@ -58,7 +58,7 @@ module VpsAdmin::API::Resources
       end
 
       def prepare
-        @outage = with_includes.find(params[:user_outage_id])
+        @outage = with_includes.find_by!(with_restricted(id: params[:user_outage_id]))
       end
 
       def exec
