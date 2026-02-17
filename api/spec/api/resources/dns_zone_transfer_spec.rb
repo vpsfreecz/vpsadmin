@@ -109,7 +109,7 @@ RSpec.describe 'VpsAdmin::API::Resources::DnsZoneTransfer' do
 
   def create_host_ip_for_user!(user:, ip: nil)
     net = SpecSeed.network_v4
-    ip_addr = ip || "192.0.2.#{rand(100..250)}"
+    ip_addr = ip || next_host_ip_addr(net)
 
     ip_record = IpAddress.create!(
       network: net,
@@ -125,6 +125,17 @@ RSpec.describe 'VpsAdmin::API::Resources::DnsZoneTransfer' do
       order: nil,
       user_created: true
     )
+  end
+
+  def next_host_ip_addr(net)
+    used_octets = IpAddress.where(network: net).pluck(:ip_addr).filter_map do |addr|
+      next unless addr.start_with?('192.0.2.')
+
+      addr.split('.').last.to_i
+    end
+
+    octet = ([99] + used_octets).max + 1
+    "192.0.2.#{octet}"
   end
 
   def create_tsig_key!(user:, name: nil)
