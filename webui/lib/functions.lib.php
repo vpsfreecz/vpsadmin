@@ -43,7 +43,7 @@ function get_free_route_list($res, $vps, $role = null, $limit = null)
     $ret = [];
     $filters = [
         'version' => $v,
-        'network_interface' => null,
+        'assigned_to_interface' => false,
         'location' => $vps->node->location_id,
         'meta' => ['includes' => 'user'],
     ];
