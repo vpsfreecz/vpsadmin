@@ -109,6 +109,9 @@ import ../../../make-test.nix (
         # TODO: this command fails on timeout, because it takes a long time to create node port reservations
         services.vpsadminctl.execute(
           args: %w[node create],
+          opts: {
+            block: false
+          },
           parameters: {
             id: node_id,
             name: name,
