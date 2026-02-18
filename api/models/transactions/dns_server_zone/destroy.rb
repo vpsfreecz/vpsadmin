@@ -36,7 +36,11 @@ module Transactions::DnsServerZone
       else
         ret.update(
           primaries: dns_server_zone.primaries,
-          secondaries: []
+          # For external zones, all vpsAdmin DNS servers are secondaries.
+          # Keep secondaries populated so BIND can allow AXFR/IXFR between
+          # vpsAdmin secondaries (distribution when user's primary only allows
+          # transfers to a subset of our servers).
+          secondaries: dns_server_zone.secondaries
         )
       end
 
