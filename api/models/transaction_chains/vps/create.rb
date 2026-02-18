@@ -32,7 +32,7 @@ module TransactionChains
         name: vps.id.to_s,
         user: vps.user,
         vps:,
-        user_editable: false,
+        user_editable: true,
         user_create: true,
         user_destroy: false,
         confirmed: ::Dataset.confirmed(:confirm_create)
@@ -65,7 +65,7 @@ module TransactionChains
           name: subds_opts['name'],
           user: vps.user,
           vps:,
-          user_editable: false,
+          user_editable: true,
           user_create: true,
           user_destroy: false,
           confirmed: ::Dataset.confirmed(:confirm_create)

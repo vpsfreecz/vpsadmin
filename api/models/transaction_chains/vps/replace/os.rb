@@ -318,7 +318,7 @@ module TransactionChains
         name: dst_vps.id.to_s,
         user: dst_vps.user,
         vps: dst_vps,
-        user_editable: false,
+        user_editable: true,
         user_create: true,
         user_destroy: false,
         confirmed: ::Dataset.confirmed(:confirm_create)
