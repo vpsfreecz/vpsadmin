@@ -43,16 +43,33 @@ function list_object_history()
     }
 
     $params = [
-        'limit' => get_val('limit', 25),
-        'from_id' => get_val('from_id', 0),
+        'limit' => api_get_uint('limit', 25),
+        'from_id' => api_get_uint('from_id', 0),
     ];
 
-    $conds = ['user', 'user_session', 'object', 'object_id', 'event_type'];
+    $userId = api_get_uint('user');
+    if ($userId !== null) {
+        $params['user'] = $userId;
+    }
 
-    foreach ($conds as $c) {
-        if ($_GET[$c]) {
-            $params[$c] = $_GET[$c];
-        }
+    $sessionId = api_get_uint('user_session');
+    if ($sessionId !== null) {
+        $params['user_session'] = $sessionId;
+    }
+
+    $object = api_get('object');
+    if ($object !== null) {
+        $params['object'] = $object;
+    }
+
+    $objectId = api_get_uint('object_id');
+    if ($objectId !== null) {
+        $params['object_id'] = $objectId;
+    }
+
+    $eventType = api_get('event_type');
+    if ($eventType !== null) {
+        $params['event_type'] = $eventType;
     }
 
     $params['meta'] = ['includes' => 'user,user_session'];

@@ -143,28 +143,48 @@ function list_user_sessions($user_id)
     }
 
     $params = [
-        'limit' => get_val('limit', 25),
+        'limit' => api_get_uint('limit', 25),
         'user' => $user_id,
     ];
 
-    if (($_GET['from_id'] ?? 0) > 0) {
-        $params['from_id'] = $_GET['from_id'];
+    $fromId = api_get_uint('from_id');
+    if ($fromId !== null && $fromId > 0) {
+        $params['from_id'] = $fromId;
     }
 
-    $conds = [
-        'auth_type',
-        'state',
-        'ip_addr',
-        'user_agent',
-        'client_version',
-        'token_fragment',
-        'admin',
-    ];
+    $authType = api_get('auth_type');
+    if ($authType !== null) {
+        $params['auth_type'] = $authType;
+    }
 
-    foreach ($conds as $c) {
-        if ($_GET[$c]) {
-            $params[$c] = $_GET[$c];
-        }
+    $state = api_get('state');
+    if ($state !== null) {
+        $params['state'] = $state;
+    }
+
+    $ipAddr = api_get('ip_addr');
+    if ($ipAddr !== null) {
+        $params['ip_addr'] = $ipAddr;
+    }
+
+    $userAgent = api_get('user_agent');
+    if ($userAgent !== null) {
+        $params['user_agent'] = $userAgent;
+    }
+
+    $clientVersion = api_get('client_version');
+    if ($clientVersion !== null) {
+        $params['client_version'] = $clientVersion;
+    }
+
+    $tokenFragment = api_get('token_fragment');
+    if ($tokenFragment !== null) {
+        $params['token_fragment'] = $tokenFragment;
+    }
+
+    $adminId = api_get_uint('admin');
+    if ($adminId !== null) {
+        $params['admin'] = $adminId;
     }
 
     $includes = [];
@@ -173,8 +193,9 @@ function list_user_sessions($user_id)
         $params['meta'] = ['includes' => 'admin'];
     }
 
-    if ($_GET['session_id']) {
-        $sessions = [ $api->user_session->show($_GET['session_id']) ];
+    $sessionId = api_get_uint('session_id');
+    if ($sessionId !== null) {
+        $sessions = [ $api->user_session->show($sessionId) ];
     } else {
         $sessions = $api->user_session->list($params);
         $pagination->setResourceList($sessions);
@@ -299,7 +320,7 @@ function approval_requests_list()
 {
     global $xtpl, $api;
 
-    $limit = get_val('limit', 50);
+    $limit = api_get_uint('limit', 50);
     $pagination = new \Pagination\System(
         null,
         /**
@@ -352,29 +373,44 @@ function approval_requests_list()
     $xtpl->table_add_category('');
 
     $params = ['limit' => $limit];
-    $state = $_GET['state'] ?? 'awaiting';
+    $state = api_get('state') ?? 'awaiting';
 
     if ($state != 'all') {
         $params['state'] = $state;
     }
 
-    if (($_GET['from_id'] ?? 0) > 0) {
-        $params['from_id'] = $_GET['from_id'];
+    $fromId = api_get_uint('from_id');
+    if ($fromId !== null && $fromId > 0) {
+        $params['from_id'] = $fromId;
     }
 
-    foreach (['ip_addr', 'client_ip_ptr', 'user', 'admin'] as $v) {
-        if ($_GET[$v] ?? false) {
-            $params[$v] = $_GET[$v];
-        }
+    $ipAddr = api_get('ip_addr');
+    if ($ipAddr !== null) {
+        $params['ip_addr'] = $ipAddr;
+    }
+
+    $clientIpPtr = api_get('client_ip_ptr');
+    if ($clientIpPtr !== null) {
+        $params['client_ip_ptr'] = $clientIpPtr;
+    }
+
+    $userId = api_get_uint('user');
+    if ($userId !== null) {
+        $params['user'] = $userId;
+    }
+
+    $adminId = api_get_uint('admin');
+    if ($adminId !== null) {
+        $params['admin'] = $adminId;
     }
 
     $types = [];
 
-    if (($_GET['type'] ?? 'all') == 'all') {
+    if ((api_get('type') ?? 'all') == 'all') {
         $types[] = 'registration';
         $types[] = 'change';
     } else {
-        $types[] = $_GET['type'];
+        $types[] = api_get('type');
     }
 
     $requests = [];
@@ -919,18 +955,23 @@ function user_payment_history()
     global $xtpl, $api;
 
     $params = [
-        'limit' => get_val('limit', 25),
+        'limit' => api_get_uint('limit', 25),
         'meta' => ['includes' => 'user,accounted_by'],
     ];
 
-    if (($_GET['from_id'] ?? 0) > 0) {
-        $params['from_id'] = $_GET['from_id'];
+    $fromId = api_get_uint('from_id');
+    if ($fromId !== null && $fromId > 0) {
+        $params['from_id'] = $fromId;
     }
 
-    foreach (['accounted_by', 'user'] as $filter) {
-        if ($_GET[$filter]) {
-            $params[$filter] = $_GET[$filter];
-        }
+    $accountedById = api_get_uint('accounted_by');
+    if ($accountedById !== null) {
+        $params['accounted_by'] = $accountedById;
+    }
+
+    $userId = api_get_uint('user');
+    if ($userId !== null) {
+        $params['user'] = $userId;
     }
 
     $payments = $api->user_payment->list($params);
@@ -982,15 +1023,17 @@ function incoming_payments_list()
     global $xtpl, $api;
 
     $params = [
-        'limit' => get_val('limit', 25),
+        'limit' => api_get_uint('limit', 25),
     ];
 
-    if (($_GET['from_id'] ?? 0) > 0) {
-        $params['from_id'] = $_GET['from_id'];
+    $fromId = api_get_uint('from_id');
+    if ($fromId !== null && $fromId > 0) {
+        $params['from_id'] = $fromId;
     }
 
-    if (isset($_GET['state'])) {
-        $params['state'] = $_GET['state'];
+    $state = api_get('state');
+    if ($state !== null) {
+        $params['state'] = $state;
     }
 
     $payments = $api->incoming_payment->list($params);

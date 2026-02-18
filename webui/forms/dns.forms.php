@@ -52,18 +52,15 @@ function dns_zone_list($action, $filters = [], $onLastRow = null)
     global $xtpl, $api;
 
     $params = [
-        'limit' => get_val('limit', 25),
-        'from_id' => get_val('from_id', 0),
+        'limit' => api_get_uint('limit', 25),
+        'from_id' => api_get_uint('from_id', 0),
     ];
 
     $params = array_merge($params, $filters);
 
-    $conds = ['user'];
-
-    foreach ($conds as $c) {
-        if ($_GET[$c] ?? false) {
-            $params[$c] = $_GET[$c];
-        }
+    $userId = api_get_uint('user');
+    if ($userId !== null) {
+        $params['user'] = $userId;
     }
 
     $params['meta'] = [
@@ -639,16 +636,13 @@ function tsig_key_list()
     global $xtpl, $api;
 
     $params = [
-        'limit' => get_val('limit', 25),
-        'from_id' => get_val('from_id', 0),
+        'limit' => api_get_uint('limit', 25),
+        'from_id' => api_get_uint('from_id', 0),
     ];
 
-    $conds = ['user'];
-
-    foreach ($conds as $c) {
-        if ($_GET[$c] ?? false) {
-            $params[$c] = $_GET[$c];
-        }
+    $userId = api_get_uint('user');
+    if ($userId !== null) {
+        $params['user'] = $userId;
     }
 
     $params['meta'] = [
@@ -781,8 +775,8 @@ function dns_ptr_list()
     global $xtpl, $api;
 
     $params = [
-        'limit' => get_val('limit', 25),
-        'from_id' => get_val('from_id', 0),
+        'limit' => api_get_uint('limit', 25),
+        'from_id' => api_get_uint('from_id', 0),
         'purpose' => 'vps',
         'routed' => true,
         'meta' => [
@@ -792,25 +786,30 @@ function dns_ptr_list()
     ];
 
     if (isAdmin()) {
-        if ($_GET['user'] ?? false) {
-            $params['user'] = $_GET['user'];
+        $userId = api_get_uint('user');
+        if ($userId !== null) {
+            $params['user'] = $userId;
         }
     }
 
-    if ($_GET['vps'] ?? false) {
-        $params['vps'] = $_GET['vps'];
+    $vpsId = api_get_uint('vps');
+    if ($vpsId !== null) {
+        $params['vps'] = $vpsId;
     }
 
-    if ($_GET['network'] ?? false) {
-        $params['network'] = $_GET['network'];
+    $networkId = api_get_uint('network');
+    if ($networkId !== null) {
+        $params['network'] = $networkId;
     }
 
-    if ($_GET['location'] ?? false) {
-        $params['location'] = $_GET['location'];
+    $locationId = api_get_uint('location');
+    if ($locationId !== null) {
+        $params['location'] = $locationId;
     }
 
-    if ($_GET['v'] ?? false) {
-        $params['version'] = $_GET['v'];
+    $version = api_get_uint('v');
+    if ($version !== null && $version > 0) {
+        $params['version'] = $version;
     }
 
     $host_addrs = $api->host_ip_address->list($params);
@@ -1328,16 +1327,38 @@ function dns_record_log_list()
     }
 
     $params = [
-        'limit' => get_val('limit', 25),
-        'from_id' => get_val('from_id', 0),
+        'limit' => api_get_uint('limit', 25),
+        'from_id' => api_get_uint('from_id', 0),
     ];
 
-    $conds = ['user', 'dns_zone', 'dns_zone_name', 'name', 'type', 'change_type'];
+    $userId = api_get_uint('user');
+    if ($userId !== null) {
+        $params['user'] = $userId;
+    }
 
-    foreach ($conds as $c) {
-        if ($_GET[$c] ?? false) {
-            $params[$c] = $_GET[$c];
-        }
+    $dnsZoneId = api_get_uint('dns_zone');
+    if ($dnsZoneId !== null) {
+        $params['dns_zone'] = $dnsZoneId;
+    }
+
+    $dnsZoneName = api_get('dns_zone_name');
+    if ($dnsZoneName !== null) {
+        $params['dns_zone_name'] = $dnsZoneName;
+    }
+
+    $name = api_get('name');
+    if ($name !== null) {
+        $params['name'] = $name;
+    }
+
+    $type = api_get('type');
+    if ($type !== null) {
+        $params['type'] = $type;
+    }
+
+    $changeType = api_get('change_type');
+    if ($changeType !== null) {
+        $params['change_type'] = $changeType;
     }
 
     $params['meta'] = [

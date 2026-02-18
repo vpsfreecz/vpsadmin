@@ -59,40 +59,52 @@ function ip_address_list($page)
     }
 
     $params = [
-        'limit' => get_val('limit', 25),
-        'from_id' => get_val('from_id', 0),
+        'limit' => api_get_uint('limit', 25),
+        'from_id' => api_get_uint('from_id', 0),
         'purpose' => 'vps',
         'meta' => ['includes' => 'user,vps,network'],
     ];
 
     if (isAdmin()) {
-        if ($_GET['user'] === 'unassigned') {
+        $userFilter = api_get('user');
+        if ($userFilter === 'unassigned') {
             $params['user'] = null;
-        } elseif ($_GET['user']) {
-            $params['user'] = $_GET['user'];
+        } else {
+            $userId = api_get_uint('user');
+            if ($userId !== null) {
+                $params['user'] = $userId;
+            }
         }
     }
 
-    if ($_GET['vps'] === 'unassigned') {
+    $vpsFilter = api_get('vps');
+    if ($vpsFilter === 'unassigned') {
         $params['vps'] = null;
-    } elseif ($_GET['vps']) {
-        $params['vps'] = $_GET['vps'];
+    } else {
+        $vpsId = api_get_uint('vps');
+        if ($vpsId !== null) {
+            $params['vps'] = $vpsId;
+        }
     }
 
-    if ($_GET['network']) {
-        $params['network'] = $_GET['network'];
+    $networkId = api_get_uint('network');
+    if ($networkId !== null) {
+        $params['network'] = $networkId;
     }
 
-    if ($_GET['location']) {
-        $params['location'] = $_GET['location'];
+    $locationId = api_get_uint('location');
+    if ($locationId !== null) {
+        $params['location'] = $locationId;
     }
 
-    if ($_GET['v']) {
-        $params['version'] = $_GET['v'];
+    $version = api_get_uint('v');
+    if ($version !== null && $version > 0) {
+        $params['version'] = $version;
     }
 
-    if ($_GET['prefix']) {
-        $params['prefix'] = $_GET['prefix'];
+    $prefix = api_get('prefix');
+    if ($prefix !== null) {
+        $params['prefix'] = $prefix;
     }
 
     $ips = $api->ip_address->list($params);
@@ -238,8 +250,8 @@ function host_ip_address_list($page)
     }
 
     $params = [
-        'limit' => get_val('limit', 25),
-        'from_id' => get_val('from_id', 0),
+        'limit' => api_get_uint('limit', 25),
+        'from_id' => api_get_uint('from_id', 0),
         'purpose' => 'vps',
         'meta' => [
             'includes' => 'ip_address__user,ip_address__network_interface__vps,'
@@ -248,39 +260,52 @@ function host_ip_address_list($page)
     ];
 
     if (isAdmin()) {
-        if ($_GET['user'] === 'unassigned') {
+        $userFilter = api_get('user');
+        if ($userFilter === 'unassigned') {
             $params['user'] = null;
-        } elseif ($_GET['user']) {
-            $params['user'] = $_GET['user'];
+        } else {
+            $userId = api_get_uint('user');
+            if ($userId !== null) {
+                $params['user'] = $userId;
+            }
         }
     }
 
-    if ($_GET['vps'] === 'unassigned') {
+    $vpsFilter = api_get('vps');
+    if ($vpsFilter === 'unassigned') {
         $params['vps'] = null;
-    } elseif ($_GET['vps']) {
-        $params['vps'] = $_GET['vps'];
+    } else {
+        $vpsId = api_get_uint('vps');
+        if ($vpsId !== null) {
+            $params['vps'] = $vpsId;
+        }
     }
 
-    if ($_GET['assigned'] == 'y') {
+    $assigned = api_get('assigned');
+    if ($assigned === 'y') {
         $params['assigned'] = true;
-    } elseif ($_GET['assigned'] == 'n') {
+    } elseif ($assigned === 'n') {
         $params['assigned'] = false;
     }
 
-    if ($_GET['network']) {
-        $params['network'] = $_GET['network'];
+    $networkId = api_get_uint('network');
+    if ($networkId !== null) {
+        $params['network'] = $networkId;
     }
 
-    if ($_GET['location']) {
-        $params['location'] = $_GET['location'];
+    $locationId = api_get_uint('location');
+    if ($locationId !== null) {
+        $params['location'] = $locationId;
     }
 
-    if ($_GET['v']) {
-        $params['version'] = $_GET['v'];
+    $version = api_get_uint('v');
+    if ($version !== null && $version > 0) {
+        $params['version'] = $version;
     }
 
-    if ($_GET['prefix']) {
-        $params['prefix'] = $_GET['prefix'];
+    $prefix = api_get('prefix');
+    if ($prefix !== null) {
+        $params['prefix'] = $prefix;
     }
 
     $host_addrs = $api->host_ip_address->list($params);
@@ -872,38 +897,47 @@ function ip_address_assignment_list_form()
     }
 
     $params = [
-        'limit' => get_val('limit', 25),
-        'from_id' => get_val('from_id', 0),
+        'limit' => api_get_uint('limit', 25),
+        'from_id' => api_get_uint('from_id', 0),
         'order' => 'newest',
         'meta' => ['includes' => 'user,vps,ip_address'],
     ];
 
-    if (isAdmin() && $_GET['user']) {
-        $params['user'] = $_GET['user'];
+    if (isAdmin()) {
+        $userId = api_get_uint('user');
+        if ($userId !== null) {
+            $params['user'] = $userId;
+        }
     }
 
-    if ($_GET['vps']) {
-        $params['vps'] = $_GET['vps'];
+    $vpsId = api_get_uint('vps');
+    if ($vpsId !== null) {
+        $params['vps'] = $vpsId;
     }
 
-    if ($_GET['network']) {
-        $params['network'] = $_GET['network'];
+    $networkId = api_get_uint('network');
+    if ($networkId !== null) {
+        $params['network'] = $networkId;
     }
 
-    if ($_GET['location']) {
-        $params['location'] = $_GET['location'];
+    $locationId = api_get_uint('location');
+    if ($locationId !== null) {
+        $params['location'] = $locationId;
     }
 
-    if ($_GET['ip_version']) {
-        $params['ip_version'] = $_GET['ip_version'];
+    $ipVersion = api_get_uint('ip_version');
+    if ($ipVersion !== null && $ipVersion > 0) {
+        $params['ip_version'] = $ipVersion;
     }
 
-    if ($_GET['ip_addr']) {
-        $params['ip_addr'] = $_GET['ip_addr'];
+    $ipAddr = api_get('ip_addr');
+    if ($ipAddr !== null) {
+        $params['ip_addr'] = $ipAddr;
     }
 
-    if ($_GET['ip_prefix']) {
-        $params['ip_prefix'] = $_GET['ip_prefix'];
+    $ipPrefix = api_get('ip_prefix');
+    if ($ipPrefix !== null) {
+        $params['ip_prefix'] = $ipPrefix;
     }
 
     $assignments = $api->ip_address_assignment->list($params);

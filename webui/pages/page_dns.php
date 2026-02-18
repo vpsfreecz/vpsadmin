@@ -248,7 +248,7 @@ if (isLoggedIn()) {
             try {
                 $params = [
                     'dns_zone' => $_GET['zone'],
-                    'user' => $_POST['user'] ?? null,
+                    'user' => api_post_uint('user', null),
                     'name' => $_POST['name'],
                     'type' => $_POST['type'],
                     'content' => $_POST['content'],
@@ -266,7 +266,7 @@ if (isLoggedIn()) {
                     $params['dynamic_update_enabled'] = true;
                 }
 
-                $record = $api->dns_record->create($params);
+                $record = $api->dns_record->create(api_compact_params($params));
 
                 notify_user(_('Record added'), '');
                 redirect('?page=dns&action=zone_show&id=' . $_GET['zone']);
@@ -285,15 +285,21 @@ if (isLoggedIn()) {
             csrf_check();
 
             try {
-                $record = $api->dns_record->update($_GET['id'], [
-                    'user' => $_POST['user'] ?? null,
+                $params = [
+                    'user' => api_post_uint('user', null),
                     'ttl' => trim($_POST['ttl'] ?? '') === '' ? null : $_POST['ttl'],
                     'priority' => trim($_POST['priority'] ?? '') === '' ? null : $_POST['priority'],
                     'content' => $_POST['content'],
                     'comment' => $_POST['comment'],
                     'dynamic_update_enabled' => isset($_POST['dynamic_update_enabled']),
                     'enabled' => isset($_POST['enabled']),
-                ]);
+                ];
+
+                if ($params['user'] === null) {
+                    unset($params['user']);
+                }
+
+                $record = $api->dns_record->update($_GET['id'], $params);
 
                 notify_user(_('Record updated'), '');
                 redirect('?page=dns&action=zone_show&id=' . $record->dns_zone_id);

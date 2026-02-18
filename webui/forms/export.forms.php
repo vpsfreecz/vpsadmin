@@ -9,11 +9,12 @@ function export_list()
     ];
 
     if (isAdmin()) {
-        $params['limit'] = get_val('limit', 25);
-        $params['from_id'] = get_val('from_id', 0);
+        $params['limit'] = api_get_uint('limit', 25);
+        $params['from_id'] = api_get_uint('from_id', 0);
 
-        if ($_GET['user'] ?? false) {
-            $params['user'] = $_GET['user'];
+        $userId = api_get_uint('user');
+        if ($userId !== null) {
+            $params['user'] = $userId;
         }
     }
 

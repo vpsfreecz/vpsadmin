@@ -175,7 +175,10 @@ class System
         }
 
         $this->baseUrl = $_SERVER['PATH_INFO'] ?? '';
-        $this->limit = $_GET['limit'] ?? $options['defaultLimit'] ?? $input->limit->default ?? 25;
+        $this->limit = \api_get_uint(
+            'limit',
+            $options['defaultLimit'] ?? $input->limit->default ?? 25
+        );
         $this->history = $this->parseHistory();
         $this->currentPage = (int) ($_GET['curpage'] ?? 0);
     }

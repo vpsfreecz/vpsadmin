@@ -5,7 +5,7 @@ function monitoring_list()
     global $xtpl, $api;
 
     $params = [
-        'limit' => get_val('limit', 25),
+        'limit' => api_get_uint('limit', 25),
     ];
 
     $ordering = $_GET['order'] ?? $api->monitored_event->index->getParameters('input')->order->default;
@@ -18,18 +18,39 @@ function monitoring_list()
 
     $paginateBy = $paginationOptions['inputParameter'];
 
-    if (($_GET[$paginateBy] ?? 0) > 0) {
-        $params[$paginateBy] = $_GET[$paginateBy];
+    $paginateValue = api_get_uint($paginateBy);
+    if ($paginateValue !== null && $paginateValue > 0) {
+        $params[$paginateBy] = $paginateValue;
     }
 
-    $filters = [
-        'monitor', 'user', 'object_name', 'object_id', 'state', 'order',
-    ];
+    $monitorId = api_get_uint('monitor');
+    if ($monitorId !== null) {
+        $params['monitor'] = $monitorId;
+    }
 
-    foreach ($filters as $v) {
-        if ($_GET[$v]) {
-            $params[$v] = $_GET[$v];
-        }
+    $userId = api_get_uint('user');
+    if ($userId !== null) {
+        $params['user'] = $userId;
+    }
+
+    $objectName = api_get('object_name');
+    if ($objectName !== null) {
+        $params['object_name'] = $objectName;
+    }
+
+    $objectId = api_get_uint('object_id');
+    if ($objectId !== null) {
+        $params['object_id'] = $objectId;
+    }
+
+    $state = api_get('state');
+    if ($state !== null) {
+        $params['state'] = $state;
+    }
+
+    $order = api_get('order');
+    if ($order !== null) {
+        $params['order'] = $order;
     }
 
     $events = $api->monitored_event->list($params);
@@ -143,11 +164,12 @@ function monitoring_event()
     $xtpl->form_create('', 'get', 'monitoring-list', false);
 
     $params = [
-        'limit' => get_val('limit', 25),
+        'limit' => api_get_uint('limit', 25),
     ];
 
-    if (($_GET['from_id'] ?? 0) > 0) {
-        $params['from_id'] = $_GET['from_id'];
+    $fromId = api_get_uint('from_id');
+    if ($fromId !== null && $fromId > 0) {
+        $params['from_id'] = $fromId;
     }
 
     $logs = $e->log->list($params);

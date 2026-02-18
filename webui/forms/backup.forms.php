@@ -46,20 +46,24 @@ function backup_vps_form()
 
         $vpses = [];
         $params = [
-            'limit' => get_val('limit', 25),
-            'from_id' => get_val('from_id', 0),
+            'limit' => api_get_uint('limit', 25),
+            'from_id' => api_get_uint('from_id', 0),
         ];
 
-        if (isset($_GET['user']) && $_GET['user'] !== '') {
-            $params['user'] = $_GET['user'];
+        $userId = api_get_uint('user');
+        if ($userId !== null) {
+            $params['user'] = $userId;
 
             $vpses = $api->vps->list($params);
 
-        } elseif (isset($_GET['vps']) && $_GET['vps'] !== '') {
-            $vpses[] = $api->vps->find($_GET['vps']);
+        } else {
+            $vpsId = api_get_uint('vps');
+            if ($vpsId !== null) {
+                $vpses[] = $api->vps->find($vpsId);
 
-        } elseif (isset($_GET['list']) && $_GET['list']) {
-            $vpses = $api->vps->list($params);
+            } elseif (isset($_GET['list']) && $_GET['list']) {
+                $vpses = $api->vps->list($params);
+            }
         }
 
     } else {
@@ -107,8 +111,8 @@ function backup_nas_form()
 
         if ($_GET['list']) {
             $params = [
-                'limit' => get_val('limit', 25),
-                'from_id' => get_val('from_id', 0),
+                'limit' => api_get_uint('limit', 25),
+                'from_id' => api_get_uint('from_id', 0),
                 'role' => 'primary',
             ];
 
@@ -116,8 +120,9 @@ function backup_nas_form()
                 $params['to_depth'] = 0;
             }
 
-            if (isset($_GET['user']) && $_GET['user'] !== '') {
-                $params['user'] = $_GET['user'];
+            $userId = api_get_uint('user');
+            if ($userId !== null) {
+                $params['user'] = $userId;
             }
 
             $datasets = $api->dataset->list($params);

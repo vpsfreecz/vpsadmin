@@ -22,10 +22,10 @@ if (isLoggedIn() && (NAS_PUBLIC || isAdmin())) {
             dataset_list(
                 'primary',
                 null,
-                $_GET['user'],
-                $_GET['dataset'],
-                $_GET['limit'],
-                $_GET['from_id']
+                api_get_uint('user'),
+                api_get_uint('dataset'),
+                api_get_uint('limit'),
+                api_get_uint('from_id')
             );
         }
 

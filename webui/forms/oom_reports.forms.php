@@ -47,19 +47,52 @@ function oom_reports_list()
     }
 
     $params = [
-        'limit' => get_val('limit', 25),
+        'limit' => api_get_uint('limit', 25),
     ];
 
-    if (($_GET['from_id'] ?? 0) > 0) {
-        $params['from_id'] = $_GET['from_id'];
+    $fromId = api_get_uint('from_id');
+    if ($fromId !== null && $fromId > 0) {
+        $params['from_id'] = $fromId;
     }
 
-    $conds = ['user', 'vps', 'node', 'location', 'environment', 'oom_report_rule', 'since', 'until'];
+    $userId = api_get_uint('user');
+    if ($userId !== null) {
+        $params['user'] = $userId;
+    }
 
-    foreach ($conds as $c) {
-        if ($_GET[$c] ?? false) {
-            $params[$c] = $_GET[$c];
-        }
+    $vpsId = api_get_uint('vps');
+    if ($vpsId !== null) {
+        $params['vps'] = $vpsId;
+    }
+
+    $nodeId = api_get_uint('node');
+    if ($nodeId !== null) {
+        $params['node'] = $nodeId;
+    }
+
+    $locationId = api_get_uint('location');
+    if ($locationId !== null) {
+        $params['location'] = $locationId;
+    }
+
+    $environment = api_get('environment');
+    if ($environment !== null) {
+        $params['environment'] = $environment;
+    }
+
+    $ruleId = api_get_uint('oom_report_rule');
+    if ($ruleId !== null) {
+        $params['oom_report_rule'] = $ruleId;
+    }
+
+    $since = api_get('since');
+    if ($since !== null) {
+        $params['since'] = $since;
+    }
+
+    $until = api_get('until');
+    if ($until !== null) {
+        $params['until'] = $until;
     }
 
     $params['meta'] = [

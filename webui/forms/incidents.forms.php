@@ -58,22 +58,43 @@ function incident_list()
     }
 
     $params = [
-        'limit' => get_val('limit', 25),
+        'limit' => api_get_uint('limit', 25),
         'meta' => ['includes' => 'user,vps,ip_address_assignment'],
     ];
 
-    if (($_GET['from_id'] ?? 0) > 0) {
-        $params['from_id'] = $_GET['from_id'];
+    $fromId = api_get_uint('from_id');
+    if ($fromId !== null && $fromId > 0) {
+        $params['from_id'] = $fromId;
     }
 
-    $filters = [
-        'user', 'vps', 'ip_address_assignment', 'ip_addr', 'mailbox', 'codename',
-    ];
+    $userId = api_get_uint('user');
+    if ($userId !== null) {
+        $params['user'] = $userId;
+    }
 
-    foreach ($filters as $v) {
-        if ($_GET[$v]) {
-            $params[$v] = $_GET[$v];
-        }
+    $vpsId = api_get_uint('vps');
+    if ($vpsId !== null) {
+        $params['vps'] = $vpsId;
+    }
+
+    $assignmentId = api_get_uint('ip_address_assignment');
+    if ($assignmentId !== null) {
+        $params['ip_address_assignment'] = $assignmentId;
+    }
+
+    $ipAddr = api_get('ip_addr');
+    if ($ipAddr !== null) {
+        $params['ip_addr'] = $ipAddr;
+    }
+
+    $mailbox = api_get('mailbox');
+    if ($mailbox !== null) {
+        $params['mailbox'] = $mailbox;
+    }
+
+    $codename = api_get('codename');
+    if ($codename !== null) {
+        $params['codename'] = $codename;
     }
 
     $incidents = $api->incident_report->list($params);

@@ -19,7 +19,13 @@ if (isLoggedIn()) {
                 ];
 
                 if (isAdmin()) {
-                    $params['user'] = $_POST['user'];
+                    $userId = api_post_uint('user');
+                    if ($userId === null) {
+                        $xtpl->perex(_('Invalid input'), _('User ID is required.'));
+                        vps_user_data_new();
+                        break;
+                    }
+                    $params['user'] = $userId;
                 }
 
                 try {

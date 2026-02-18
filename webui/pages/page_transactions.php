@@ -56,36 +56,43 @@ function list_chains()
     $xtpl->form_out(_('Show'));
 
     $params = [
-        'limit' => get_val('limit', 25),
+        'limit' => api_get_uint('limit', 25),
         'meta' => ['includes' => 'user'],
     ];
 
-    if (($_GET['from_id'] ?? 0) > 0) {
-        $params['from_id'] = $_GET['from_id'];
+    $fromId = api_get_uint('from_id');
+    if ($fromId !== null && $fromId > 0) {
+        $params['from_id'] = $fromId;
     }
 
-    if ($_GET['user'] ?? false) {
-        $params['user'] = $_GET['user'];
+    $userId = api_get_uint('user');
+    if ($userId !== null) {
+        $params['user'] = $userId;
     }
 
-    if ($_GET['user_session'] ?? false) {
-        $params['user_session'] = $_GET['user_session'];
+    $userSessionId = api_get_uint('user_session');
+    if ($userSessionId !== null) {
+        $params['user_session'] = $userSessionId;
     }
 
-    if ($_GET['state'] ?? false) {
-        $params['state'] = $_GET['state'];
+    $state = api_get('state');
+    if ($state !== null) {
+        $params['state'] = $state;
     }
 
-    if ($_GET['name'] ?? false) {
-        $params['name'] = $_GET['name'];
+    $name = api_get('name');
+    if ($name !== null) {
+        $params['name'] = $name;
     }
 
-    if ($_GET['class_name'] ?? false) {
-        $params['class_name'] = $_GET['class_name'];
+    $className = api_get('class_name');
+    if ($className !== null) {
+        $params['class_name'] = $className;
     }
 
-    if ($_GET['row_id'] ?? false) {
-        $params['row_id'] = $_GET['row_id'];
+    $rowId = api_get_uint('row_id');
+    if ($rowId !== null) {
+        $params['row_id'] = $rowId;
     }
 
     $chains = $api->transaction_chain->list($params);
@@ -221,37 +228,43 @@ function chain_transactions($chain_id)
 
     $meta = ['includes' => 'user,node'];
 
-    if ($_GET['transaction'] ?? false) {
+    $transactionId = api_get_uint('transaction');
+    if ($transactionId !== null) {
         $transactions = [];
-        $transactions[] = $api->transaction->find($_GET['transaction'], [
+        $transactions[] = $api->transaction->find($transactionId, [
             'meta' => $meta,
         ]);
 
     } else {
         $params = [
-            'limit' => get_val('limit', '100'),
+            'limit' => api_get_uint('limit', 100),
             'transaction_chain' => $chain->id,
             'meta' => $meta,
         ];
 
-        if (($_GET['from_id'] ?? 0) > 0) {
-            $params['from_id'] = $_GET['from_id'];
+        $fromId = api_get_uint('from_id');
+        if ($fromId !== null && $fromId > 0) {
+            $params['from_id'] = $fromId;
         }
 
-        if ($_GET['node'] ?? false) {
-            $params['node'] = $_GET['node'];
+        $nodeId = api_get_uint('node');
+        if ($nodeId !== null) {
+            $params['node'] = $nodeId;
         }
 
-        if ($_GET['type'] ?? false) {
-            $params['type'] = $_GET['type'];
+        $type = api_get('type');
+        if ($type !== null) {
+            $params['type'] = $type;
         }
 
-        if ($_GET['done'] ?? false) {
-            $params['done'] = $_GET['done'];
+        $done = api_get('done');
+        if ($done !== null) {
+            $params['done'] = $done;
         }
 
-        if ($_GET['success'] ?? false) {
-            $params['success'] = $_GET['success'];
+        $success = api_get('success');
+        if ($success !== null) {
+            $params['success'] = $success;
         }
 
         $transactions = $api->transaction->list($params);

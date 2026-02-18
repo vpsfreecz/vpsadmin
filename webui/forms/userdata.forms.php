@@ -7,15 +7,12 @@ function vps_user_data_list()
     $xtpl->title(_('User data'));
 
     $params = [
-        'limit' => get_val('limit', 25),
+        'limit' => api_get_uint('limit', 25),
     ];
 
-    $conds = ['user'];
-
-    foreach ($conds as $c) {
-        if ($_GET[$c] ?? false) {
-            $params[$c] = $_GET[$c];
-        }
+    $userId = api_get_uint('user');
+    if ($userId !== null) {
+        $params['user'] = $userId;
     }
 
     $params['meta'] = [

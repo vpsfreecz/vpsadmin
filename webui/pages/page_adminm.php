@@ -758,19 +758,53 @@ function list_members()
 
         if (isAdmin()) {
             $params = [
-                'limit' => get_val('limit', 25),
-                'from_id' => get_val('from_id', 0),
+                'limit' => api_get_uint('limit', 25),
+                'from_id' => api_get_uint('from_id', 0),
             ];
 
-            $filters = [
-                'login', 'full_name', 'email', 'address', 'level', 'info', 'monthly_payment',
-                'mailer_enabled', 'object_state',
-            ];
+            $login = api_get('login');
+            if ($login !== null) {
+                $params['login'] = $login;
+            }
 
-            foreach ($filters as $f) {
-                if ($_GET[$f]) {
-                    $params[$f] = $_GET[$f];
-                }
+            $fullName = api_get('full_name');
+            if ($fullName !== null) {
+                $params['full_name'] = $fullName;
+            }
+
+            $email = api_get('email');
+            if ($email !== null) {
+                $params['email'] = $email;
+            }
+
+            $address = api_get('address');
+            if ($address !== null) {
+                $params['address'] = $address;
+            }
+
+            $level = api_get('level');
+            if ($level !== null) {
+                $params['level'] = $level;
+            }
+
+            $info = api_get('info');
+            if ($info !== null) {
+                $params['info'] = $info;
+            }
+
+            $monthlyPayment = api_get('monthly_payment');
+            if ($monthlyPayment !== null) {
+                $params['monthly_payment'] = $monthlyPayment;
+            }
+
+            $mailerEnabled = api_get('mailer_enabled');
+            if ($mailerEnabled !== null) {
+                $params['mailer_enabled'] = $mailerEnabled;
+            }
+
+            $objectState = api_get('object_state');
+            if ($objectState !== null) {
+                $params['object_state'] = $objectState;
             }
 
             $users = $api->user->list($params);

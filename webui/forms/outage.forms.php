@@ -790,30 +790,89 @@ function outage_list()
     $xtpl->table_add_category('');
 
     $params = [
-        'limit' => get_val('limit', 25),
+        'limit' => api_get_uint('limit', 25),
     ];
 
-    if (($_GET['from_id'] ?? 0) > 0) {
-        $params['from_id'] = $_GET['from_id'];
+    $fromId = api_get_uint('from_id');
+    if ($fromId !== null && $fromId > 0) {
+        $params['from_id'] = $fromId;
     }
 
-    foreach (['affected'] as $v) {
-        if ($_GET[$v] === 'yes') {
-            $params[$v] = true;
-        } elseif ($_GET[$v] === 'no') {
-            $params[$v] = false;
-        }
+    $affected = api_get('affected');
+    if ($affected === 'yes') {
+        $params['affected'] = true;
+    } elseif ($affected === 'no') {
+        $params['affected'] = false;
     }
 
-    $filters = [
-        'state', 'type', 'impact', 'user', 'handled_by', 'vps', 'export', 'order',
-        'environment', 'location', 'node', 'vpsadmin', 'entity_name', 'entity_id',
-    ];
+    $state = api_get('state');
+    if ($state !== null) {
+        $params['state'] = $state;
+    }
 
-    foreach ($filters as $v) {
-        if ($_GET[$v]) {
-            $params[$v] = $_GET[$v];
-        }
+    $type = api_get('type');
+    if ($type !== null) {
+        $params['type'] = $type;
+    }
+
+    $impact = api_get('impact');
+    if ($impact !== null) {
+        $params['impact'] = $impact;
+    }
+
+    $userId = api_get_uint('user');
+    if ($userId !== null) {
+        $params['user'] = $userId;
+    }
+
+    $handledById = api_get_uint('handled_by');
+    if ($handledById !== null) {
+        $params['handled_by'] = $handledById;
+    }
+
+    $vpsId = api_get_uint('vps');
+    if ($vpsId !== null) {
+        $params['vps'] = $vpsId;
+    }
+
+    $exportId = api_get_uint('export');
+    if ($exportId !== null) {
+        $params['export'] = $exportId;
+    }
+
+    $order = api_get('order');
+    if ($order !== null) {
+        $params['order'] = $order;
+    }
+
+    $environmentId = api_get_uint('environment');
+    if ($environmentId !== null) {
+        $params['environment'] = $environmentId;
+    }
+
+    $locationId = api_get_uint('location');
+    if ($locationId !== null) {
+        $params['location'] = $locationId;
+    }
+
+    $nodeId = api_get_uint('node');
+    if ($nodeId !== null) {
+        $params['node'] = $nodeId;
+    }
+
+    $vpsAdminId = api_get_uint('vpsadmin');
+    if ($vpsAdminId !== null) {
+        $params['vpsadmin'] = $vpsAdminId;
+    }
+
+    $entityName = api_get('entity_name');
+    if ($entityName !== null) {
+        $params['entity_name'] = $entityName;
+    }
+
+    $entityId = api_get_uint('entity_id');
+    if ($entityId !== null) {
+        $params['entity_id'] = $entityId;
     }
 
     try {

@@ -72,9 +72,10 @@ if (isLoggedIn()) {
             csrf_check();
 
             try {
-                $api->dataset($_GET['dataset'])->snapshot->create([
-                    'label' => post_val('label', null),
+                $params = api_compact_params([
+                    'label' => api_post('label', null),
                 ]);
+                $api->dataset($_GET['dataset'])->snapshot->create($params);
 
                 notify_user(_('Snapshot creation scheduled.'), _('Snapshot will be taken momentarily.'));
                 redirect($_GET['return'] ?? '?page=');

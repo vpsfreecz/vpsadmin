@@ -711,33 +711,39 @@ function vps_list_form()
 
         if (isAdmin()) {
             $params = [
-                'limit' => get_val('limit', 25),
-                'from_id' => get_val('from_id', 0),
+                'limit' => api_get_uint('limit', 25),
+                'from_id' => api_get_uint('from_id', 0),
                 'meta' => ['includes' => 'user,node,dataset__dataset_expansion'],
             ];
 
-            if ($_GET['user']) {
-                $params['user'] = $_GET['user'];
+            $userId = api_get_uint('user');
+            if ($userId !== null) {
+                $params['user'] = $userId;
             }
 
-            if ($_GET['node']) {
-                $params['node'] = $_GET['node'];
+            $nodeId = api_get_uint('node');
+            if ($nodeId !== null) {
+                $params['node'] = $nodeId;
             }
 
-            if ($_GET['location']) {
-                $params['location'] = $_GET['location'];
+            $locationId = api_get_uint('location');
+            if ($locationId !== null) {
+                $params['location'] = $locationId;
             }
 
-            if ($_GET['environment']) {
-                $params['environment'] = $_GET['environment'];
+            $environmentId = api_get_uint('environment');
+            if ($environmentId !== null) {
+                $params['environment'] = $environmentId;
             }
 
-            if ($_GET['object_state']) {
-                $params['object_state'] = $_GET['object_state'];
+            $objectState = api_get('object_state');
+            if ($objectState !== null) {
+                $params['object_state'] = $objectState;
             }
 
-            if ($_GET['user_namespace_map']) {
-                $params['user_namespace_map'] = $_GET['user_namespace_map'];
+            $userNamespaceMapId = api_get_uint('user_namespace_map');
+            if ($userNamespaceMapId !== null) {
+                $params['user_namespace_map'] = $userNamespaceMapId;
             }
 
             $vpses = $api->vps->list($params);

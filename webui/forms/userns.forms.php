@@ -63,21 +63,27 @@ function userns_list()
     $xtpl->form_out(_('Show'));
 
     $params = [
-        'limit' => get_val('limit', 25),
+        'limit' => api_get_uint('limit', 25),
     ];
 
-    if (($_GET['from_id'] ?? 0) > 0) {
-        $params['from_id'] = $_GET['from_id'];
+    $fromId = api_get_uint('from_id');
+    if ($fromId !== null && $fromId > 0) {
+        $params['from_id'] = $fromId;
     }
 
-    $filters = [
-        'user', 'block_count', 'size',
-    ];
+    $userId = api_get_uint('user');
+    if ($userId !== null) {
+        $params['user'] = $userId;
+    }
 
-    foreach ($filters as $v) {
-        if ($_GET[$v]) {
-            $params[$v] = $_GET[$v];
-        }
+    $blockCount = api_get_uint('block_count');
+    if ($blockCount !== null) {
+        $params['block_count'] = $blockCount;
+    }
+
+    $size = api_get_uint('size');
+    if ($size !== null) {
+        $params['size'] = $size;
     }
 
     $userns_list = $api->user_namespace->list($params);
@@ -179,18 +185,18 @@ function userns_map_list($userns_id = null)
     $xtpl->form_out(_('Show'));
 
     $params = [
-        'limit' => get_val('limit', 25),
+        'limit' => api_get_uint('limit', 25),
         'meta' => ['includes' => 'user_namespace'],
     ];
 
-    $filters = [
-        'user', 'user_namespace',
-    ];
+    $userId = api_get_uint('user');
+    if ($userId !== null) {
+        $params['user'] = $userId;
+    }
 
-    foreach ($filters as $v) {
-        if ($_GET[$v]) {
-            $params[$v] = $_GET[$v];
-        }
+    $userNamespaceId = api_get_uint('user_namespace');
+    if ($userNamespaceId !== null) {
+        $params['user_namespace'] = $userNamespaceId;
     }
 
     $maps = $api->user_namespace_map->list($params);

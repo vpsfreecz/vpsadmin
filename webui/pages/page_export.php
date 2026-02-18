@@ -18,31 +18,39 @@ if (isLoggedIn()) {
             break;
 
         case 'create':
+            $datasetId = api_get_uint('dataset');
+            $snapshotId = api_get_uint('snapshot');
+
+            if ($snapshotId !== null) {
+                $datasetId = null;
+            }
+
             if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 csrf_check();
 
                 try {
-                    $ex = $api->export->create([
-                        'dataset' => $_GET['snapshot'] ? null : $_GET['dataset'],
-                        'snapshot' => get_val('snapshot', null),
+                    $params = [
+                        'dataset' => $datasetId,
+                        'snapshot' => $snapshotId,
                         'all_vps' => isset($_POST['all_vps']),
                         'rw' => isset($_POST['rw']),
                         'sync' => isset($_POST['sync']),
                         'subtree_check' => isset($_POST['subtree_check']),
                         'root_squash' => isset($_POST['root_squash']),
-                        'threads' => post_val('threads', null),
+                        'threads' => api_post_uint('threads', null),
                         'enabled' => isset($_POST['enabled']),
-                    ]);
+                    ];
+                    $ex = $api->export->create(api_compact_params($params));
 
                     notify_user(_('Export created'), '');
                     redirect('?page=export&action=edit&export=' . $ex->id);
 
                 } catch (\HaveAPI\Client\Exception\ActionFailed $e) {
                     $xtpl->perex_format_errors(_('Export creation failed'), $e->getResponse());
-                    export_create_form($_GET['dataset'], $_GET['snapshot']);
+                    export_create_form($datasetId, $snapshotId);
                 }
             } else {
-                export_create_form($_GET['dataset'], $_GET['snapshot']);
+                export_create_form($datasetId, $snapshotId);
             }
             break;
 
@@ -51,14 +59,15 @@ if (isLoggedIn()) {
                 csrf_check();
 
                 try {
-                    $api->export->update($_GET['export'], [
+                    $params = [
                         'all_vps' => isset($_POST['all_vps']),
                         'rw' => isset($_POST['rw']),
                         'sync' => isset($_POST['sync']),
                         'subtree_check' => isset($_POST['subtree_check']),
                         'root_squash' => isset($_POST['root_squash']),
-                        'threads' => post_val('threads', null),
-                    ]);
+                        'threads' => api_post_uint('threads', null),
+                    ];
+                    $api->export->update($_GET['export'], api_compact_params($params));
 
                     notify_user(_('Export settings updated'), '');
                     redirect('?page=export&action=edit&export=' . $_GET['export']);

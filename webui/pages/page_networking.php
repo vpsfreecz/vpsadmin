@@ -378,29 +378,51 @@ if (isLoggedIn()) {
         $xtpl->table_title(_("Statistics"));
 
         $params = [
-            'limit' => get_val('limit', 25),
+            'limit' => api_get_uint('limit', 25),
             'order' => 'descending',
             'meta' => ['includes' => 'network_interface__vps__user'],
         ];
 
-        if (($_GET['from_bytes'] ?? 0) > 0) {
-            $params['from_bytes'] = $_GET['from_bytes'];
+        $fromBytes = api_get_uint('from_bytes');
+        if ($fromBytes !== null && $fromBytes > 0) {
+            $params['from_bytes'] = $fromBytes;
         }
-
-        $conds = [
-            'year', 'month', 'vps', 'node', 'location', 'environment',
-        ];
 
         if (isAdmin()) {
-            if ($_GET['user']) {
-                $params['user'] =  $_GET['user'];
+            $userId = api_get_uint('user');
+            if ($userId !== null) {
+                $params['user'] = $userId;
             }
         }
 
-        foreach ($conds as $c) {
-            if ($_GET[$c]) {
-                $params[$c] = $_GET[$c];
-            }
+        $year = api_get_uint('year');
+        if ($year !== null) {
+            $params['year'] = $year;
+        }
+
+        $month = api_get_uint('month');
+        if ($month !== null) {
+            $params['month'] = $month;
+        }
+
+        $vpsId = api_get_uint('vps');
+        if ($vpsId !== null) {
+            $params['vps'] = $vpsId;
+        }
+
+        $nodeId = api_get_uint('node');
+        if ($nodeId !== null) {
+            $params['node'] = $nodeId;
+        }
+
+        $locationId = api_get_uint('location');
+        if ($locationId !== null) {
+            $params['location'] = $locationId;
+        }
+
+        $environmentId = api_get_uint('environment');
+        if ($environmentId !== null) {
+            $params['environment'] = $environmentId;
         }
 
         $stats = $api->network_interface_accounting->list($params);
@@ -487,22 +509,38 @@ if (isLoggedIn()) {
         $xtpl->table_title(_("Statistics"));
 
         $params = [
-            'limit' => get_val('limit', 25),
+            'limit' => api_get_uint('limit', 25),
             'meta' => ['includes' => 'user'],
         ];
 
-        if (($_GET['from_bytes'] ?? 0) > 0) {
-            $params['from_bytes'] = $_GET['from_bytes'];
+        $fromBytes = api_get_uint('from_bytes');
+        if ($fromBytes !== null && $fromBytes > 0) {
+            $params['from_bytes'] = $fromBytes;
         }
 
-        $conds = [
-            'year', 'month', 'node', 'location', 'environment',
-        ];
+        $year = api_get_uint('year');
+        if ($year !== null) {
+            $params['year'] = $year;
+        }
 
-        foreach ($conds as $c) {
-            if ($_GET[$c]) {
-                $params[$c] = $_GET[$c];
-            }
+        $month = api_get_uint('month');
+        if ($month !== null) {
+            $params['month'] = $month;
+        }
+
+        $nodeId = api_get_uint('node');
+        if ($nodeId !== null) {
+            $params['node'] = $nodeId;
+        }
+
+        $locationId = api_get_uint('location');
+        if ($locationId !== null) {
+            $params['location'] = $locationId;
+        }
+
+        $environmentId = api_get_uint('environment');
+        if ($environmentId !== null) {
+            $params['environment'] = $environmentId;
         }
 
         $stats = $api->network_interface_accounting->user_top($params);
@@ -596,18 +634,33 @@ if (isLoggedIn()) {
         $xtpl->form_out(_("Show"), 'monitor-filters');
 
         $params = [
-            'limit' => get_val('limit', 25),
+            'limit' => api_get_uint('limit', 25),
             'meta' => ['includes' => 'network_interface__vps__node'],
         ];
 
-        $conds = [
-            'vps', 'node', 'location', 'environment', 'user',
-        ];
+        $vpsId = api_get_uint('vps');
+        if ($vpsId !== null) {
+            $params['vps'] = $vpsId;
+        }
 
-        foreach ($conds as $c) {
-            if ($_GET[$c]) {
-                $params[$c] = $_GET[$c];
-            }
+        $nodeId = api_get_uint('node');
+        if ($nodeId !== null) {
+            $params['node'] = $nodeId;
+        }
+
+        $locationId = api_get_uint('location');
+        if ($locationId !== null) {
+            $params['location'] = $locationId;
+        }
+
+        $environmentId = api_get_uint('environment');
+        if ($environmentId !== null) {
+            $params['environment'] = $environmentId;
+        }
+
+        $userId = api_get_uint('user');
+        if ($userId !== null) {
+            $params['user'] = $userId;
         }
 
         $monitors = $api->network_interface_monitor->list($params);
