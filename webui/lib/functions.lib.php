@@ -742,6 +742,107 @@ function get_val($name, $default = '')
     }
 }
 
+/**
+ * Return a trimmed scalar request value from $_GET, or $default if missing/empty.
+ * - No HTML escaping
+ * - Strings are trimmed
+ * - "" / "   " -> $default
+ */
+function api_get(string $key, $default = null)
+{
+    if (!isset($_GET[$key])) {
+        return $default;
+    }
+
+    $v = $_GET[$key];
+
+    if (is_string($v)) {
+        $v = trim($v);
+        return $v === '' ? $default : $v;
+    }
+
+    if (is_array($v)) {
+        return $default;
+    }
+
+    return $v;
+}
+
+/**
+ * Return a trimmed scalar request value from $_POST, or $default if missing/empty.
+ * - No HTML escaping
+ * - Strings are trimmed
+ * - "" / "   " -> $default
+ */
+function api_post(string $key, $default = null)
+{
+    if (!isset($_POST[$key])) {
+        return $default;
+    }
+
+    $v = $_POST[$key];
+
+    if (is_string($v)) {
+        $v = trim($v);
+        return $v === '' ? $default : $v;
+    }
+
+    if (is_array($v)) {
+        return $default;
+    }
+
+    return $v;
+}
+
+/**
+ * Parse a non-negative integer (ID-like) from $_GET.
+ * Returns $default if missing/empty or not a valid unsigned integer.
+ */
+function api_get_uint(string $key, ?int $default = null): ?int
+{
+    $v = api_get($key, null);
+    if ($v === null) {
+        return $default;
+    }
+
+    if (is_int($v)) {
+        return $v >= 0 ? $v : $default;
+    }
+
+    if (is_string($v) && ctype_digit($v)) {
+        return (int)$v;
+    }
+
+    return $default;
+}
+
+/**
+ * Parse a non-negative integer (ID-like) from $_POST.
+ * Returns $default if missing/empty or not a valid unsigned integer.
+ */
+function api_post_uint(string $key, ?int $default = null): ?int
+{
+    $v = api_post($key, null);
+    if ($v === null) {
+        return $default;
+    }
+
+    if (is_int($v)) {
+        return $v >= 0 ? $v : $default;
+    }
+
+    if (is_string($v) && ctype_digit($v)) {
+        return (int)$v;
+    }
+
+    return $default;
+}
+
+function api_compact_params(array $params): array
+{
+    return array_filter($params, fn($v) => $v !== null);
+}
+
 function post_val($name, $default = '')
 {
     if (isset($_POST[$name])) {
