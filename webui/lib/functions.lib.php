@@ -843,6 +843,21 @@ function api_compact_params(array $params): array
     return array_filter($params, fn($v) => $v !== null);
 }
 
+function format_validation_errors(array $errors): string
+{
+    $body = _('Some input parameters are not valid.') . '<br>';
+
+    if (count($errors) > 0) {
+        $body .= '<ul>';
+        foreach ($errors as $param => $msgs) {
+            $body .= '<li>' . h((string)$param) . ': ' . h(implode(', ', (array)$msgs)) . '</li>';
+        }
+        $body .= '</ul>';
+    }
+
+    return $body;
+}
+
 function post_val($name, $default = '')
 {
     if (isset($_POST[$name])) {

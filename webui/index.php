@@ -230,6 +230,13 @@ try {
 } catch (\Httpful\Exception\ConnectionErrorException $e) {
     $xtpl->perex(_('Error occured'), _('Unable to connect to the API server. Please contact the support.'));
 
+} catch (\HaveAPI\Client\Exception\ValidationError $e) {
+    error_log((string)$e);
+    $xtpl->perex(
+        _('Invalid input'),
+        h($e->getMessage()) . '<br>' . format_validation_errors($e->getErrors())
+    );
+
 } catch (\HaveAPI\Client\Exception\Base $e) {
     $xtpl->perex(_('Error occured'), _('An unhandled error occured in communication with the API. Please contact the support.'));
     throw $e;
