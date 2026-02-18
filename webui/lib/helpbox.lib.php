@@ -8,18 +8,31 @@ function get_helpbox($page = null, $action = null)
         return '';
     }
 
-    if (!$page) {
-        $page = $_GET["page"] ?? null;
+    $pageProvided = $page !== null;
+    $actionProvided = $action !== null;
+
+    if (!$pageProvided && array_key_exists('page', $_GET)) {
+        $page = $_GET['page'];
+        $pageProvided = true;
     }
 
-    if (!$action) {
-        $action = $_GET["action"] ?? null;
+    if (!$actionProvided && array_key_exists('action', $_GET)) {
+        $action = $_GET['action'];
+        $actionProvided = true;
+    }
+
+    if ($pageProvided && $page === false) {
+        $page = '';
+    }
+
+    if ($actionProvided && $action === false) {
+        $action = '';
     }
 
     $boxes = $api->help_box->list([
         'view' => true,
-        'page' => $page ? $page : null,
-        'action' => $action ? $action : null,
+        'page' => $pageProvided ? $page : null,
+        'action' => $actionProvided ? $action : null,
         'limit' => 1000,
     ]);
 
