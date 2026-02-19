@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "fb6202ffafe8af814ac7225f476b9f02",
+    "content-hash": "26efc6215a7b23299871dac4480aa176",
     "packages": [
         {
             "name": "bacon/bacon-qr-code",
@@ -513,18 +513,21 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/vpsfreecz/haveapi-client-php.git",
-                "reference": "893c961bc4454f85109dd298ac8bd76284253028"
+                "reference": "17ecc1f883394f0062c6dd6b5284c692a6ae9312"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/vpsfreecz/haveapi-client-php/zipball/893c961bc4454f85109dd298ac8bd76284253028",
-                "reference": "893c961bc4454f85109dd298ac8bd76284253028",
+                "url": "https://api.github.com/repos/vpsfreecz/haveapi-client-php/zipball/17ecc1f883394f0062c6dd6b5284c692a6ae9312",
+                "reference": "17ecc1f883394f0062c6dd6b5284c692a6ae9312",
                 "shasum": ""
             },
             "require": {
                 "league/oauth2-client": "~2.7.0",
                 "php": ">=8.0.0",
                 "vpsfreecz/httpful": "~0.4.0"
+            },
+            "require-dev": {
+                "phpunit/phpunit": "^10.0"
             },
             "type": "library",
             "autoload": {
