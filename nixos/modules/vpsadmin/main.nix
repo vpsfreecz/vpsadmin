@@ -2,11 +2,22 @@
   config,
   pkgs,
   lib,
+  vpsadminos ? null,
   ...
 }:
 with lib;
 let
   cfg = config.vpsadmin;
+  vpsadminosPath =
+    if vpsadminos == null then
+      null
+    else if builtins.isAttrs vpsadminos && vpsadminos ? outPath then
+      vpsadminos.outPath
+    else
+      vpsadminos;
+  vpsadminosRubyOverlay =
+    if vpsadminosPath == null then null else import (vpsadminosPath + "/os/overlays/ruby.nix");
+  overlayList = import ../../overlays;
 in
 {
   options = {
@@ -52,7 +63,11 @@ in
   };
 
   config = {
-    nixpkgs.overlays = optionals cfg.enableOverlay (import ../../overlays);
+    nixpkgs.overlays = optionals cfg.enableOverlay (
+      lib.assertMsg (vpsadminosRubyOverlay != null) "vpsadminos is required to enable vpsadmin overlays" (
+        [ vpsadminosRubyOverlay ] ++ overlayList
+      )
+    );
 
     systemd.tmpfiles.rules = mkIf cfg.enableStateDirectory [
       "d /run/vpsadmin - - - - -"

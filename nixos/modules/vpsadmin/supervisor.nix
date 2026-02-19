@@ -8,6 +8,7 @@ with lib;
 let
   vpsadminCfg = config.vpsadmin;
   cfg = config.vpsadmin.supervisor;
+  vpsadminRoot = toString (./../../../.);
 
   apiApp = import ./api-app.nix {
     name = "supervisor";
@@ -75,7 +76,7 @@ in
 
       configDirectory = mkOption {
         type = types.path;
-        default = <vpsadmin/api/config>;
+        default = "${vpsadminRoot}/api/config";
         description = "Directory with vpsAdmin configuration files";
       };
 
