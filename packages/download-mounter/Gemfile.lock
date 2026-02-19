@@ -20,7 +20,7 @@ GEM
     connection_pool (3.0.2)
     domain_name (0.6.20240107)
     drb (2.2.3)
-    haveapi-client (0.27.0)
+    haveapi-client (0.27.1)
       activesupport (>= 7.0)
       highline (~> 3.1)
       json
