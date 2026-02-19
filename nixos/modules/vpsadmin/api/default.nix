@@ -8,6 +8,7 @@ with lib;
 let
   vpsadminCfg = config.vpsadmin;
   cfg = config.vpsadmin.api;
+  vpsadminRoot = toString (./../../../../.);
 
   apiApp = import ../api-app.nix {
     name = "api";
@@ -101,7 +102,7 @@ in
 
       configDirectory = mkOption {
         type = types.path;
-        default = <vpsadmin/api/config>;
+        default = "${vpsadminRoot}/api/config";
         description = "Directory with vpsAdmin configuration files";
       };
 
