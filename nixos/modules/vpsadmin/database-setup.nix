@@ -6,6 +6,7 @@
 }:
 let
   vpsadminCfg = config.vpsadmin;
+  vpsadminRoot = toString (./../../../.);
 
   cfg = vpsadminCfg.databaseSetup;
 
@@ -48,7 +49,7 @@ in
 
       configDirectory = lib.mkOption {
         type = lib.types.path;
-        default = <vpsadmin/api/config>;
+        default = "${vpsadminRoot}/api/config";
         description = "Directory with vpsAdmin configuration files";
       };
 
