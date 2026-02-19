@@ -391,6 +391,19 @@ RSpec.describe 'VpsAdmin::API::Resources::IpAddressAssignment' do
       expect(assignment_ids).to contain_exactly(assignment_user_active_v4.id)
     end
 
+    it 'filters by assigned_by_chain when nil' do
+      as(SpecSeed.admin) do
+        json_get index_path, ip_address_assignment: { assigned_by_chain: nil }
+      end
+
+      expect_status(200)
+      expect(assignment_ids).to contain_exactly(
+        assignment_user_inactive_v4.id,
+        assignment_user_active_v6.id,
+        assignment_other_active_v6.id
+      )
+    end
+
     it 'filters by unassigned_by_chain' do
       as(SpecSeed.admin) do
         json_get index_path, ip_address_assignment: { unassigned_by_chain: chain_a.id }

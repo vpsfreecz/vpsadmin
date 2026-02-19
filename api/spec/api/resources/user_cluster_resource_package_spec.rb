@@ -99,6 +99,14 @@ RSpec.describe 'VpsAdmin::API::Resources::UserClusterResourcePackage' do
       comment: 'Support package'
     )
 
+    nil_added_by_pkg = UserClusterResourcePackage.create!(
+      environment: environment,
+      user: other_user,
+      cluster_resource_package: package_b,
+      added_by: nil,
+      comment: 'Nil added_by package'
+    )
+
     {
       cpu_resource: cpu_resource,
       mem_resource: mem_resource,
@@ -109,7 +117,8 @@ RSpec.describe 'VpsAdmin::API::Resources::UserClusterResourcePackage' do
       user_pkg_a: user_pkg_a,
       other_user_pkg: other_user_pkg,
       user_pkg_other_env: user_pkg_other_env,
-      support_pkg: support_pkg
+      support_pkg: support_pkg,
+      nil_added_by_pkg: nil_added_by_pkg
     }
   end
 
@@ -179,6 +188,10 @@ RSpec.describe 'VpsAdmin::API::Resources::UserClusterResourcePackage' do
 
   def support_pkg
     records.fetch(:support_pkg)
+  end
+
+  def nil_added_by_pkg
+    records.fetch(:nil_added_by_pkg)
   end
 
   def seed_user_cluster_resources!(users, environments, resources)
@@ -350,6 +363,18 @@ RSpec.describe 'VpsAdmin::API::Resources::UserClusterResourcePackage' do
       expect_status(200)
       ids = user_cluster_resource_packages.map { |row| row['id'] }
       expect(ids).to contain_exactly(user_pkg_a.id, user_pkg_other_env.id)
+    end
+
+    it 'filters by added_by when nil' do
+      as(admin) do
+        json_get index_path, user_cluster_resource_package: {
+          added_by: nil
+        }
+      end
+
+      expect_status(200)
+      ids = user_cluster_resource_packages.map { |row| row['id'] }
+      expect(ids).to contain_exactly(nil_added_by_pkg.id)
     end
 
     it 'returns total_count meta when requested' do

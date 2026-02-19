@@ -123,6 +123,26 @@ RSpec.describe 'VpsAdmin::API::Resources::VPS' do
       expect(ids).to include(user_vps.id, other_vps.id)
     end
 
+    it 'filters by user_namespace_map when nil' do
+      user_ns = UserNamespace.create!(
+        user: SpecSeed.user,
+        block_count: 0,
+        offset: 100_000,
+        size: 1_000
+      )
+      user_map = UserNamespaceMap.create_direct!(user_ns, 'Spec map')
+
+      vps_with_map = create_vps!(user: SpecSeed.user, node: SpecSeed.node, hostname: 'spec-map-vps')
+      vps_with_map.update!(user_namespace_map: user_map)
+
+      as(SpecSeed.admin) { json_get index_path, vps: { user_namespace_map: nil } }
+
+      expect_status(200)
+      ids = vps_list.map { |row| row['id'] }
+      expect(ids).to include(user_vps.id, other_vps.id)
+      expect(ids).not_to include(vps_with_map.id)
+    end
+
     it 'filters by hostname' do
       as(SpecSeed.admin) do
         json_get index_path, vps: { hostname_exact: user_vps.hostname }

@@ -238,6 +238,19 @@ RSpec.describe 'VpsAdmin::API::Resources::IpAddress' do
         data[:ip_other_routed].id
       )
     end
+
+    it 'filters by vps when nil' do
+      data = index_data
+      as(SpecSeed.admin) { json_get index_path, ip_address: { vps: nil } }
+
+      expect_status(200)
+      ids = ip_list.map { |row| row['id'] }
+      expect(ids).to contain_exactly(
+        data[:ip_free].id,
+        data[:ip_user_owned].id,
+        data[:ip_other_owned].id
+      )
+    end
   end
 
   describe 'Show' do

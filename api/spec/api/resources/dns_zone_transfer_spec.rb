@@ -167,6 +167,7 @@ RSpec.describe 'VpsAdmin::API::Resources::DnsZoneTransfer' do
       user_host_ip_a = create_host_ip_for_user!(user: SpecSeed.user)
       user_host_ip_b = create_host_ip_for_user!(user: SpecSeed.user)
       other_host_ip = create_host_ip_for_user!(user: SpecSeed.other_user)
+      other_host_ip_no_key = create_host_ip_for_user!(user: SpecSeed.other_user)
       user_key_a = create_tsig_key!(user: SpecSeed.user)
       user_key_b = create_tsig_key!(user: SpecSeed.user)
       other_key = create_tsig_key!(user: SpecSeed.other_user)
@@ -189,6 +190,12 @@ RSpec.describe 'VpsAdmin::API::Resources::DnsZoneTransfer' do
         peer_type: :primary_type,
         dns_tsig_key: other_key
       )
+      transfer_other_no_key = DnsZoneTransfer.create!(
+        dns_zone: other_zone_ext,
+        host_ip_address: other_host_ip_no_key,
+        peer_type: :primary_type,
+        dns_tsig_key: nil
+      )
 
       {
         user_zone_ext: user_zone_ext,
@@ -197,12 +204,14 @@ RSpec.describe 'VpsAdmin::API::Resources::DnsZoneTransfer' do
         user_host_ip_a: user_host_ip_a,
         user_host_ip_b: user_host_ip_b,
         other_host_ip: other_host_ip,
+        other_host_ip_no_key: other_host_ip_no_key,
         user_key_a: user_key_a,
         user_key_b: user_key_b,
         other_key: other_key,
         transfer_user_ext: transfer_user_ext,
         transfer_user_int: transfer_user_int,
-        transfer_other_ext: transfer_other_ext
+        transfer_other_ext: transfer_other_ext,
+        transfer_other_no_key: transfer_other_no_key
       }
     end
 
@@ -275,6 +284,15 @@ RSpec.describe 'VpsAdmin::API::Resources::DnsZoneTransfer' do
       expect_status(200)
       ids = transfers.map { |row| row['id'] }
       expect(ids).to contain_exactly(seed[:transfer_user_ext].id)
+    end
+
+    it 'filters by dns_tsig_key when nil' do
+      seed = index_seed
+      as(SpecSeed.admin) { json_get index_path, dns_zone_transfer: { dns_tsig_key: nil } }
+
+      expect_status(200)
+      ids = transfers.map { |row| row['id'] }
+      expect(ids).to contain_exactly(seed[:transfer_other_no_key].id)
     end
 
     it 'supports limit pagination' do

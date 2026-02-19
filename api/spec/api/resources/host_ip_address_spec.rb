@@ -226,6 +226,35 @@ RSpec.describe 'VpsAdmin::API::Resources::HostIpAddress' do
       expect(ids).to include(host.id)
     end
 
+    it 'filters by vps when nil' do
+      network = create_split_network!(location: SpecSeed.location)
+      _user_vps, user_netif = create_vps_with_netif!(user: SpecSeed.user)
+      assigned_ip = create_ip_address!(
+        network: network,
+        ip_addr: '198.51.100.16',
+        prefix: network.split_prefix,
+        size: 8,
+        netif: user_netif
+      )
+      assigned_host = create_host_ip!(ip_address: assigned_ip, ip_addr: '198.51.100.17')
+
+      unassigned_ip = create_ip_address!(
+        network: network,
+        ip_addr: '198.51.100.24',
+        prefix: network.split_prefix,
+        size: 8,
+        netif: nil
+      )
+      unassigned_host = create_host_ip!(ip_address: unassigned_ip, ip_addr: '198.51.100.25')
+
+      as(SpecSeed.admin) { json_get index_path, host_ip_address: { vps: nil } }
+
+      expect_status(200)
+      ids = host_list.map { |row| row['id'] }
+      expect(ids).to contain_exactly(unassigned_host.id)
+      expect(ids).not_to include(assigned_host.id)
+    end
+
     it 'filters by assigned' do
       network = create_split_network!(location: SpecSeed.location)
       _user_vps, user_netif = create_vps_with_netif!(user: SpecSeed.user)

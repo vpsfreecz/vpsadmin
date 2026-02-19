@@ -9,6 +9,9 @@ RSpec.describe 'VpsAdmin::API::Resources::Dataset read actions' do # rubocop:dis
     SpecSeed.user
     SpecSeed.other_user
     SpecSeed.admin
+    SpecSeed.node
+    SpecSeed.os_template
+    SpecSeed.dns_resolver
   end
 
   let(:pool) do
@@ -76,6 +79,14 @@ RSpec.describe 'VpsAdmin::API::Resources::Dataset read actions' do # rubocop:dis
     expect(last_response.status).to eq(code), message
   end
 
+  def with_current_user(user)
+    prev = ::User.current
+    ::User.current = user
+    yield
+  ensure
+    ::User.current = prev
+  end
+
   describe 'Index' do
     it 'rejects unauthenticated access' do
       json_get datasets_path
@@ -121,6 +132,37 @@ RSpec.describe 'VpsAdmin::API::Resources::Dataset read actions' do # rubocop:dis
 
       row = datasets.find { |r| r['id'] == user_dataset.id }
       expect(row).to have_key('sharenfs')
+    end
+
+    it 'filters by vps when nil' do
+      ds_with_vps, dip_with_vps = create_dataset_with_pool!(
+        user: user,
+        pool: pool,
+        name: "spec-vps-ds-#{SecureRandom.hex(4)}"
+      )
+
+      vps = Vps.new(
+        user: user,
+        node: SpecSeed.node,
+        hostname: "spec-ds-vps-#{SecureRandom.hex(4)}",
+        os_template: SpecSeed.os_template,
+        dns_resolver: SpecSeed.dns_resolver,
+        dataset_in_pool: dip_with_vps,
+        object_state: :active,
+        confirmed: :confirmed
+      )
+
+      with_current_user(SpecSeed.admin) do
+        vps.save!
+      end
+
+      ds_with_vps.update!(vps: vps)
+
+      as(SpecSeed.admin) { json_get datasets_path, dataset: { vps: nil } }
+
+      expect_status(200)
+      ids = datasets.map { |row| row['id'] }
+      expect(ids).to contain_exactly(user_dataset.id, other_dataset.id)
     end
 
     it 'supports subtree filter' do

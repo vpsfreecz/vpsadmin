@@ -185,6 +185,23 @@ RSpec.describe 'VpsAdmin::API::Resources::ClusterResourcePackage' do
       expect(labels).to include('Spec Package A', 'Spec Package B')
     end
 
+    it 'filters by user when nil' do
+      package_user = ClusterResourcePackage.create!(
+        label: 'Spec Package User',
+        environment: SpecSeed.environment,
+        user: SpecSeed.user
+      )
+
+      as(SpecSeed.admin) do
+        json_get index_path, cluster_resource_package: { user: nil }
+      end
+
+      expect_status(200)
+      ids = packages.map { |row| row['id'] }
+      expect(ids).to include(package_a.id, package_b.id)
+      expect(ids).not_to include(package_user.id)
+    end
+
     it 'returns total_count meta when requested' do
       as(SpecSeed.admin) { json_get index_path, _meta: { count: true } }
 

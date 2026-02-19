@@ -314,6 +314,27 @@ RSpec.describe 'VpsAdmin::API::Resources::IncidentReport' do
       expect(report_ids).to contain_exactly(user_incident_newer.id)
     end
 
+    it 'filters by mailbox when nil' do
+      nil_mailbox_incident = IncidentReport.create!(
+        user: SpecSeed.user,
+        vps: vps_user,
+        ip_address_assignment: assignment_user,
+        filed_by: SpecSeed.admin,
+        mailbox: nil,
+        subject: 'Spec incident nil mailbox',
+        text: 'Spec text nil mailbox',
+        codename: 'code-nil-mailbox',
+        detected_at: Time.utc(2040, 1, 1, 10, 30, 0),
+        cpu_limit: nil,
+        vps_action: :none
+      )
+
+      as(SpecSeed.admin) { json_get index_path, incident_report: { mailbox: nil } }
+
+      expect_status(200)
+      expect(report_ids).to contain_exactly(nil_mailbox_incident.id)
+    end
+
     it 'filters by ip_addr without leaking other users' do
       as(SpecSeed.user) { json_get index_path, incident_report: { ip_addr: '192.0.2.10' } }
 

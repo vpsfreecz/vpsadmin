@@ -180,6 +180,14 @@ RSpec.describe 'VpsAdmin::API::Resources::DnsZone' do
       expect(ids).to include(zone_a.id, zone_b.id, rev_zone.id)
     end
 
+    it 'filters by user when nil' do
+      as(SpecSeed.admin) { json_get index_path, dns_zone: { user: nil } }
+
+      expect_status(200)
+      ids = zones.map { |row| row['id'] }
+      expect(ids).to contain_exactly(zone_a.id, rev_zone.id)
+    end
+
     it 'supports limit pagination' do
       as(SpecSeed.admin) { json_get index_path, dns_zone: { limit: 1 } }
 

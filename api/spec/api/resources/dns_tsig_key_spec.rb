@@ -120,6 +120,14 @@ RSpec.describe 'VpsAdmin::API::Resources::DnsTsigKey' do
     )
   end
 
+  let!(:system_key) do
+    create_key!(
+      user: nil,
+      name: 'spec-tsig-system',
+      algorithm: 'hmac-sha256'
+    )
+  end
+
   describe 'API description' do
     it 'includes dns tsig key endpoints' do
       scopes = EndpointInventory.scopes_for_version(self, api_version)
@@ -189,6 +197,14 @@ RSpec.describe 'VpsAdmin::API::Resources::DnsTsigKey' do
       expect_status(200)
       ids = keys.map { |row| row['id'] }
       expect(ids).to contain_exactly(user_key_b.id)
+    end
+
+    it 'filters by user when nil' do
+      as(SpecSeed.admin) { json_get index_path, dns_tsig_key: { user: nil } }
+
+      expect_status(200)
+      ids = keys.map { |row| row['id'] }
+      expect(ids).to contain_exactly(system_key.id)
     end
 
     it 'prevents users from filtering by other users' do

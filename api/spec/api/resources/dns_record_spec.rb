@@ -276,6 +276,19 @@ RSpec.describe 'VpsAdmin::API::Resources::DnsRecord' do
       ids = records.map { |row| row['id'] }
       expect(ids).to contain_exactly(seed[:record_system_user].id)
     end
+
+    it 'filters by user when nil' do
+      as(SpecSeed.admin) { json_get index_path, dns_record: { user: nil } }
+
+      expect_status(200)
+      ids = records.map { |row| row['id'] }
+      expect(ids).to contain_exactly(
+        seed[:record_system_a].id,
+        seed[:record_user_a].id,
+        seed[:record_user_mx].id,
+        seed[:record_support_a].id
+      )
+    end
   end
 
   describe 'Show' do
