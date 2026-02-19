@@ -4,12 +4,14 @@ on:
   push:
     paths:
       - "api/**"
+      - "packages/**"
       - "plugins/**"
       - ".github/workflows/api-specs.yml"
       - "AGENTS.md"
   pull_request:
     paths:
       - "api/**"
+      - "packages/**"
       - "plugins/**"
       - ".github/workflows/api-specs.yml"
       - "AGENTS.md"
