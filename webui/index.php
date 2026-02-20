@@ -121,11 +121,11 @@ try {
 
     $_GET["page"] ??= false;
 
-    if (($_GET["page"] != "login") &&
-                    ($_GET["page"] != "lang") &&
-                    ($_GET["page"] != "about") &&
-                    (!isAdmin()) &&
-                    $api_cluster && $api_cluster->maintenance_lock) {
+    if (($_GET["page"] != "login")
+                    && ($_GET["page"] != "lang")
+                    && ($_GET["page"] != "about")
+                    && (!isAdmin())
+                    && $api_cluster && $api_cluster->maintenance_lock) {
         $request_page = "";
         include WWW_ROOT . 'pages/page_index.php';
         $xtpl->perex(_("Maintenance mode"), _("vpsAdmin is currently in maintenance mode, any actions are disabled. <br />
@@ -231,7 +231,7 @@ try {
     $xtpl->perex(_('Error occured'), _('Unable to connect to the API server. Please contact the support.'));
 
 } catch (\HaveAPI\Client\Exception\ValidationError $e) {
-    error_log((string)$e);
+    error_log((string) $e);
     $xtpl->perex(
         _('Invalid input'),
         h($e->getMessage()) . '<br>' . format_validation_errors($e->getErrors())
