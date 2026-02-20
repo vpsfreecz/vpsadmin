@@ -88,12 +88,12 @@ function ip_address_list($page)
     }
 
     $networkId = api_get_uint('network');
-    if ($networkId !== null) {
+    if ($networkId !== null && $networkId > 0) {
         $params['network'] = $networkId;
     }
 
     $locationId = api_get_uint('location');
-    if ($locationId !== null) {
+    if ($locationId !== null && $locationId > 0) {
         $params['location'] = $locationId;
     }
 
@@ -289,12 +289,12 @@ function host_ip_address_list($page)
     }
 
     $networkId = api_get_uint('network');
-    if ($networkId !== null) {
+    if ($networkId !== null && $networkId > 0) {
         $params['network'] = $networkId;
     }
 
     $locationId = api_get_uint('location');
-    if ($locationId !== null) {
+    if ($locationId !== null && $locationId > 0) {
         $params['location'] = $locationId;
     }
 
@@ -916,12 +916,12 @@ function ip_address_assignment_list_form()
     }
 
     $networkId = api_get_uint('network');
-    if ($networkId !== null) {
+    if ($networkId !== null && $networkId > 0) {
         $params['network'] = $networkId;
     }
 
     $locationId = api_get_uint('location');
-    if ($locationId !== null) {
+    if ($locationId !== null && $locationId > 0) {
         $params['location'] = $locationId;
     }
 

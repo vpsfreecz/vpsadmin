@@ -798,12 +798,12 @@ function dns_ptr_list()
     }
 
     $networkId = api_get_uint('network');
-    if ($networkId !== null) {
+    if ($networkId !== null && $networkId > 0) {
         $params['network'] = $networkId;
     }
 
     $locationId = api_get_uint('location');
-    if ($locationId !== null) {
+    if ($locationId !== null && $locationId > 0) {
         $params['location'] = $locationId;
     }
 
@@ -1337,7 +1337,7 @@ function dns_record_log_list()
     }
 
     $dnsZoneId = api_get_uint('dns_zone');
-    if ($dnsZoneId !== null) {
+    if ($dnsZoneId !== null && $dnsZoneId > 0) {
         $params['dns_zone'] = $dnsZoneId;
     }
 

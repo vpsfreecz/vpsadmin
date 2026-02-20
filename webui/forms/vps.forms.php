@@ -98,12 +98,12 @@ function print_newvps_page1($user_id)
 
         $xtpl->table_td('');
         $xtpl->table_td(
-            '<p>' . _('Environment') . ': ' . $loc->environment->label . '</p>' .
-            '<p>' . $loc->environment->description . '</p>' .
-            '<p>' . $loc->description . '</p>' .
-            '<h4>' . _('Available resources') . ':</h4>' .
-            format_available_resources($user, $loc->environment) .
-            '<p>' . _('Contact support if you need more') . ' <a href="?page=adminm&action=cluster_resources&id=' . $user->id . '">' . _('resources.') . '</a></p>'
+            '<p>' . _('Environment') . ': ' . $loc->environment->label . '</p>'
+            . '<p>' . $loc->environment->description . '</p>'
+            . '<p>' . $loc->description . '</p>'
+            . '<h4>' . _('Available resources') . ':</h4>'
+            . format_available_resources($user, $loc->environment)
+            . '<p>' . _('Contact support if you need more') . ' <a href="?page=adminm&action=cluster_resources&id=' . $user->id . '">' . _('resources.') . '</a></p>'
         );
 
         $xtpl->table_tr();
@@ -722,17 +722,17 @@ function vps_list_form()
             }
 
             $nodeId = api_get_uint('node');
-            if ($nodeId !== null) {
+            if ($nodeId !== null && $nodeId > 0) {
                 $params['node'] = $nodeId;
             }
 
             $locationId = api_get_uint('location');
-            if ($locationId !== null) {
+            if ($locationId !== null && $locationId > 0) {
                 $params['location'] = $locationId;
             }
 
             $environmentId = api_get_uint('environment');
-            if ($environmentId !== null) {
+            if ($environmentId !== null && $environmentId > 0) {
                 $params['environment'] = $environmentId;
             }
 
@@ -742,7 +742,7 @@ function vps_list_form()
             }
 
             $userNamespaceMapId = api_get_uint('user_namespace_map');
-            if ($userNamespaceMapId !== null) {
+            if ($userNamespaceMapId !== null && $userNamespaceMapId > 0) {
                 $params['user_namespace_map'] = $userNamespaceMapId;
             }
 
@@ -784,9 +784,9 @@ function vps_list_form()
 
             if ($vps->used_diskspace > 0) {
                 $xtpl->table_td(
-                    ($vps->diskspace && $diskSpaceWarning ? ('<img src="template/icons/warning.png" title="' . _('Disk at') . ' ' . sprintf('%.2f %%', round(vpsDiskUsagePercent($vps), 2)) . '"> ') : '') .
-                    ($expansionWarning ? ('<img src="template/icons/warning.png" title="' . _('Disk temporarily expanded') . '"> ') : '') .
-                    sprintf('%.2f GB', round($vps->used_diskspace / 1024, 2)),
+                    ($vps->diskspace && $diskSpaceWarning ? ('<img src="template/icons/warning.png" title="' . _('Disk at') . ' ' . sprintf('%.2f %%', round(vpsDiskUsagePercent($vps), 2)) . '"> ') : '')
+                    . ($expansionWarning ? ('<img src="template/icons/warning.png" title="' . _('Disk temporarily expanded') . '"> ') : '')
+                    . sprintf('%.2f GB', round($vps->used_diskspace / 1024, 2)),
                     false,
                     true
                 );
@@ -998,8 +998,8 @@ function vps_owner_form_confirm($vps, $user)
 
     $xtpl->table_td('');
     $xtpl->table_td(
-        $xtpl->html_submit(_('Cancel'), 'cancel') .
-        $xtpl->html_submit(_('Change owner'), 'chown')
+        $xtpl->html_submit(_('Cancel'), 'cancel')
+        . $xtpl->html_submit(_('Change owner'), 'chown')
     );
     $xtpl->table_tr();
 
@@ -1230,17 +1230,17 @@ function vps_migrate_form_step3($vps_id, $node_id, $opts)
 
     $xtpl->sbar_add(
         _('Back to preferences'),
-        '?page=adminvps&action=migrate-step-2&veid=' . $vps_id . '&node=' . $node_id .
-        '&replace_ip_addresses=' . $opts['replace_ip_addresses'] .
-        '&transfer_ip_addresses=' . $opts['transfer_ip_addresses'] .
-        '&maintenance_window=' . $opts['maintenance_window'] .
-        '&finish_weekday=' . $opts['finish_weekday'] .
-        '&finish_minutes=' . $opts['finish_minutes'] .
-        '&cleanup_data=' . $opts['cleanup_data'] .
-        '&no_start=' . $opts['no_start'] .
-        '&skip_start=' . $opts['skip_start'] .
-        '&send_mail=' . $opts['send_mail'] .
-        '&reason=' . urlencode($opts['reason'])
+        '?page=adminvps&action=migrate-step-2&veid=' . $vps_id . '&node=' . $node_id
+        . '&replace_ip_addresses=' . $opts['replace_ip_addresses']
+        . '&transfer_ip_addresses=' . $opts['transfer_ip_addresses']
+        . '&maintenance_window=' . $opts['maintenance_window']
+        . '&finish_weekday=' . $opts['finish_weekday']
+        . '&finish_minutes=' . $opts['finish_minutes']
+        . '&cleanup_data=' . $opts['cleanup_data']
+        . '&no_start=' . $opts['no_start']
+        . '&skip_start=' . $opts['skip_start']
+        . '&send_mail=' . $opts['send_mail']
+        . '&reason=' . urlencode($opts['reason'])
     );
 
     $xtpl->title(_("Migrate a VPS: Overview (3/3)"));
@@ -1330,9 +1330,9 @@ function vps_migrate_form_step3($vps_id, $node_id, $opts)
             }
 
             $windows_td .= '<tr>';
-            $windows_td .= '<td>' . $days[ $w->weekday ] . '</td>' .
-                '<td>' . ($hours[$w->opens_at / 60]) . '</td>' .
-                '<td>' . ($hours[$w->closes_at / 60]) . '</td>';
+            $windows_td .= '<td>' . $days[ $w->weekday ] . '</td>'
+                . '<td>' . ($hours[$w->opens_at / 60]) . '</td>'
+                . '<td>' . ($hours[$w->closes_at / 60]) . '</td>';
             $windows_td .= '</tr>';
         }
 
@@ -1509,11 +1509,11 @@ function vps_clone_form_step1($vps_id, $user_id)
 
         $xtpl->table_td('');
         $xtpl->table_td(
-            '<p>' . _('Environment') . ': ' . $loc->environment->label . '</p>' .
-            '<p>' . $loc->environment->description . '</p>' .
-            '<p>' . $loc->description . '</p>' .
-            '<h4>' . _('Available resources') . ':</h4>' .
-            format_available_resources($user, $loc->environment)
+            '<p>' . _('Environment') . ': ' . $loc->environment->label . '</p>'
+            . '<p>' . $loc->environment->description . '</p>'
+            . '<p>' . $loc->description . '</p>'
+            . '<h4>' . _('Available resources') . ':</h4>'
+            . format_available_resources($user, $loc->environment)
         );
         $xtpl->table_tr();
     }
@@ -1663,9 +1663,9 @@ function vps_swap_form($vps)
     $xtpl->form_out(
         _("Preview"),
         null,
-        '<input type="hidden" name="page" value="adminvps">' .
-        '<input type="hidden" name="action" value="swap_preview">' .
-        '<input type="hidden" name="veid" value="' . $vps->id . '">'
+        '<input type="hidden" name="page" value="adminvps">'
+        . '<input type="hidden" name="action" value="swap_preview">'
+        . '<input type="hidden" name="veid" value="' . $vps->id . '">'
     );
 
     vps_details_suite($vps);
@@ -1880,11 +1880,11 @@ function vps_swap_preview_form($primary, $secondary, $opts)
     $xtpl->table_td($xtpl->html_submit(_('Back'), 'back'));
     $xtpl->table_td('');
     $xtpl->table_td(
-        '<input type="hidden" name="vps" value="' . $secondary->id . '">' .
-        ($opts['hostname'] ? '<input type="hidden" name="hostname" value="1">' : '') .
-        ($opts['resources'] ? '<input type="hidden" name="resources" value="1">' : '') .
-        ($opts['expirations'] ? '<input type="hidden" name="expirations" value="1">' : '') .
-        $xtpl->html_submit(_('Go >>'), 'go'),
+        '<input type="hidden" name="vps" value="' . $secondary->id . '">'
+        . ($opts['hostname'] ? '<input type="hidden" name="hostname" value="1">' : '')
+        . ($opts['resources'] ? '<input type="hidden" name="resources" value="1">' : '')
+        . ($opts['expirations'] ? '<input type="hidden" name="expirations" value="1">' : '')
+        . $xtpl->html_submit(_('Go >>'), 'go'),
         false,
         false,
         '2'
@@ -2012,8 +2012,8 @@ function vps_netif_iproutes_form($vps, $netif)
     foreach ($ips as $ip) {
         $xtpl->table_td(ip_label($ip));
         $xtpl->table_td(
-            $ip->addr . '/' . $ip->prefix .
-            ($ip->route_via_id ? _(' via ') . $ip->route_via->addr : '')
+            $ip->addr . '/' . $ip->prefix
+            . ($ip->route_via_id ? _(' via ') . $ip->route_via->addr : '')
         );
 
         $xtpl->table_td('<a href="?page=incidents&action=list&list=1&ip_addr=' . $ip->addr . '&return=' . $return_url . '"><img src="template/icons/bug.png" alt="' . _('List incident reports') . '" title="' . _('List incident reports') . '"></a>');
@@ -2023,16 +2023,16 @@ function vps_netif_iproutes_form($vps, $netif)
         }
 
         $xtpl->table_td(
-            '<a href="?page=networking&action=route_edit&id=' . $ip->id . '&return=' . $return_url . '" title="' . _('Manage host addresses') . '">' .
-            '<img src="template/icons/m_edit.png" alt="' . _("Manage host addresses") . '">' .
-            '</a>'
+            '<a href="?page=networking&action=route_edit&id=' . $ip->id . '&return=' . $return_url . '" title="' . _('Manage host addresses') . '">'
+            . '<img src="template/icons/m_edit.png" alt="' . _("Manage host addresses") . '">'
+            . '</a>'
         );
 
         $xtpl->table_td(
-            '<a href="?page=adminvps&action=iproute_del&id=' . $ip->id .
-            '&veid=' . $vps->id . '&netif=' . $netif->id . '&t=' . csrf_token() . '" title="' . _('Remove') . '">' .
-            '<img src="template/icons/m_remove.png" alt="' . _("Remove") . '">' .
-            '</a>'
+            '<a href="?page=adminvps&action=iproute_del&id=' . $ip->id
+            . '&veid=' . $vps->id . '&netif=' . $netif->id . '&t=' . csrf_token() . '" title="' . _('Remove') . '">'
+            . '<img src="template/icons/m_remove.png" alt="' . _("Remove") . '">'
+            . '</a>'
         );
         $xtpl->table_tr();
     }
@@ -2098,8 +2098,8 @@ function vps_netif_iproute_add_form()
     $xtpl->table_tr();
 
     $xtpl->table_td(
-        _('Address') . ':' .
-        '<input type="hidden" name="iproute_type" value="' . $_POST['iproute_type'] . '">'
+        _('Address') . ':'
+        . '<input type="hidden" name="iproute_type" value="' . $_POST['iproute_type'] . '">'
     );
     $xtpl->form_add_select_pure('addr', $free, post_val('addr'));
     $xtpl->table_tr();
@@ -2134,16 +2134,16 @@ function vps_netif_ipaddrs_form($vps, $netif)
         $xtpl->table_td($ip->addr . '/' . $ip->ip_address->prefix);
         $xtpl->table_td($ip->reverse_record_value ? h($ip->reverse_record_value) : '-');
         $xtpl->table_td(
-            '<a href="?page=networking&action=hostaddr_ptr&id=' . $ip->id .
-            '&veid=' . $vps->id . '&return=' . $return_url . '" title="' . _('Set reverse record') . '">' .
-            '<img src="template/icons/m_edit.png" alt="' . _("Set reverse record") . '">' .
-            '</a>'
+            '<a href="?page=networking&action=hostaddr_ptr&id=' . $ip->id
+            . '&veid=' . $vps->id . '&return=' . $return_url . '" title="' . _('Set reverse record') . '">'
+            . '<img src="template/icons/m_edit.png" alt="' . _("Set reverse record") . '">'
+            . '</a>'
         );
         $xtpl->table_td(
-            '<a href="?page=adminvps&action=hostaddr_del&id=' . $ip->id .
-            '&veid=' . $vps->id . '&t=' . csrf_token() . '" title="' . _('Remove') . '">' .
-            '<img src="template/icons/m_remove.png" alt="' . _("Remove") . '">' .
-            '</a>'
+            '<a href="?page=adminvps&action=hostaddr_del&id=' . $ip->id
+            . '&veid=' . $vps->id . '&t=' . csrf_token() . '" title="' . _('Remove') . '">'
+            . '<img src="template/icons/m_remove.png" alt="' . _("Remove") . '">'
+            . '</a>'
         );
         $xtpl->table_tr();
     }

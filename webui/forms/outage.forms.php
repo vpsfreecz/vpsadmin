@@ -846,22 +846,22 @@ function outage_list()
     }
 
     $environmentId = api_get_uint('environment');
-    if ($environmentId !== null) {
+    if ($environmentId !== null && $environmentId > 0) {
         $params['environment'] = $environmentId;
     }
 
     $locationId = api_get_uint('location');
-    if ($locationId !== null) {
+    if ($locationId !== null && $locationId > 0) {
         $params['location'] = $locationId;
     }
 
     $nodeId = api_get_uint('node');
-    if ($nodeId !== null) {
+    if ($nodeId !== null && $nodeId > 0) {
         $params['node'] = $nodeId;
     }
 
     $vpsAdminId = api_get_uint('vpsadmin');
-    if ($vpsAdminId !== null) {
+    if ($vpsAdminId !== null && $vpsAdminId > 0) {
         $params['vpsadmin'] = $vpsAdminId;
     }
 

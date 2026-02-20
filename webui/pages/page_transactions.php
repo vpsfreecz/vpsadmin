@@ -248,7 +248,7 @@ function chain_transactions($chain_id)
         }
 
         $nodeId = api_get_uint('node');
-        if ($nodeId !== null) {
+        if ($nodeId !== null && $nodeId > 0) {
             $params['node'] = $nodeId;
         }
 

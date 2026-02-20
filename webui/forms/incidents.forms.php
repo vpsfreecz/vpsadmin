@@ -73,12 +73,12 @@ function incident_list()
     }
 
     $vpsId = api_get_uint('vps');
-    if ($vpsId !== null) {
+    if ($vpsId !== null && $vpsId > 0) {
         $params['vps'] = $vpsId;
     }
 
     $assignmentId = api_get_uint('ip_address_assignment');
-    if ($assignmentId !== null) {
+    if ($assignmentId !== null && $assignmentId > 0) {
         $params['ip_address_assignment'] = $assignmentId;
     }
 
@@ -87,9 +87,9 @@ function incident_list()
         $params['ip_addr'] = $ipAddr;
     }
 
-    $mailbox = api_get('mailbox');
-    if ($mailbox !== null) {
-        $params['mailbox'] = $mailbox;
+    $mailboxId = api_get_uint('mailbox');
+    if ($mailboxId !== null && $mailboxId > 0) {
+        $params['mailbox'] = $mailboxId;
     }
 
     $codename = api_get('codename');

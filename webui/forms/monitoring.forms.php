@@ -24,7 +24,7 @@ function monitoring_list()
     }
 
     $monitorId = api_get_uint('monitor');
-    if ($monitorId !== null) {
+    if ($monitorId !== null && $monitorId > 0) {
         $params['monitor'] = $monitorId;
     }
 

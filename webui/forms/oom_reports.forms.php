@@ -66,18 +66,18 @@ function oom_reports_list()
     }
 
     $nodeId = api_get_uint('node');
-    if ($nodeId !== null) {
+    if ($nodeId !== null && $nodeId > 0) {
         $params['node'] = $nodeId;
     }
 
     $locationId = api_get_uint('location');
-    if ($locationId !== null) {
+    if ($locationId !== null && $locationId > 0) {
         $params['location'] = $locationId;
     }
 
-    $environment = api_get('environment');
-    if ($environment !== null) {
-        $params['environment'] = $environment;
+    $environmentId = api_get_uint('environment');
+    if ($environmentId !== null && $environmentId > 0) {
+        $params['environment'] = $environmentId;
     }
 
     $ruleId = api_get_uint('oom_report_rule');
