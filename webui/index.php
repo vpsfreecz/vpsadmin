@@ -237,6 +237,9 @@ try {
         h($e->getMessage()) . '<br>' . format_validation_errors($e->getErrors())
     );
 
+} catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+    $xtpl->perex_format_errors(_('Action failed'), $e->getResponse());
+
 } catch (\HaveAPI\Client\Exception\Base $e) {
     $xtpl->perex(_('Error occured'), _('An unhandled error occured in communication with the API. Please contact the support.'));
     throw $e;
