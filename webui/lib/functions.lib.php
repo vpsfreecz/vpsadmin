@@ -810,7 +810,7 @@ function api_get_uint(string $key, ?int $default = null): ?int
     }
 
     if (is_string($v) && ctype_digit($v)) {
-        return (int)$v;
+        return (int) $v;
     }
 
     return $default;
@@ -832,7 +832,7 @@ function api_post_uint(string $key, ?int $default = null): ?int
     }
 
     if (is_string($v) && ctype_digit($v)) {
-        return (int)$v;
+        return (int) $v;
     }
 
     return $default;
@@ -850,7 +850,7 @@ function format_validation_errors(array $errors): string
     if (count($errors) > 0) {
         $body .= '<ul>';
         foreach ($errors as $param => $msgs) {
-            $body .= '<li>' . h((string)$param) . ': ' . h(implode(', ', (array)$msgs)) . '</li>';
+            $body .= '<li>' . h((string) $param) . ': ' . h(implode(', ', (array) $msgs)) . '</li>';
         }
         $body .= '</ul>';
     }
