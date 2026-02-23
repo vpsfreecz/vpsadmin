@@ -239,6 +239,88 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
     end
   end
 
+  class AvailableIps < HaveAPI::Action
+    desc 'Get number of user-owned free IP addresses that can be used in a given location'
+    route '{user_id}/available_ips'
+
+    input do
+      resource VpsAdmin::API::Resources::Location, label: 'Location', required: true,
+                                                   desc: 'Location where the VPS will run'
+      resource VpsAdmin::API::Resources::Location, name: :address_location,
+                                                   label: 'Address location',
+                                                   desc: 'Location to select IP addresses from'
+    end
+
+    output(:hash) do
+      integer :ipv4, label: 'IPv4'
+      integer :ipv4_private, label: 'Private IPv4'
+      integer :ipv6, label: 'IPv6'
+    end
+
+    authorize do
+      allow
+    end
+
+    def exec
+      error!('access denied') if current_user.role != :admin && current_user.id != params[:user_id].to_i
+
+      @user = ::User.find(params[:user_id])
+      @location = input[:location]
+      @address_location = input[:address_location]
+
+      if @address_location && !@location.shares_any_networks_with_primary?(
+        @address_location,
+        userpick: current_user.role == :admin ? nil : true
+      )
+        error!("no shared networks with location #{@address_location.label}")
+      end
+
+      {
+        ipv4: count_addrs(ip_v: 4, role: :public_access),
+        ipv4_private: count_addrs(ip_v: 4, role: :private_access),
+        ipv6: count_addrs(ip_v: 6, role: :public_access)
+      }
+    end
+
+    protected
+
+    def count_addrs(ip_v:, role:)
+      q = ::IpAddress
+          .joins(network: :location_networks)
+          .joins("LEFT JOIN resource_locks rl ON rl.resource = 'IpAddress' AND rl.row_id = ip_addresses.id")
+          .where(
+            ip_addresses: { user_id: @user.id },
+            networks: {
+              ip_version: ip_v,
+              role: ::Network.roles[role],
+              purpose: [::Network.purposes[:any], ::Network.purposes[:vps]]
+            }
+          )
+          .where('ip_addresses.network_interface_id IS NULL')
+          .where('rl.id IS NULL')
+
+      q = if @address_location
+            shared_networks = @location.any_shared_networks_with_primary(
+              @address_location,
+              userpick: current_user.role == :admin ? nil : true
+            )
+
+            if current_user.role == :admin
+              q.where(networks: { id: shared_networks.map(&:id) })
+            else
+              q.where(
+                networks: { id: shared_networks.map(&:id) },
+                location_networks: { userpick: true }
+              )
+            end
+          else
+            q.where(location_networks: { location_id: @location.id, autopick: true })
+          end
+
+      q.distinct.count(:id)
+    end
+  end
+
   class Update < HaveAPI::Actions::Default::Update
     blocking true
 

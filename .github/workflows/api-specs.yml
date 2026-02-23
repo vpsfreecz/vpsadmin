@@ -92,6 +92,7 @@ jobs:
               spec/api/resources/user_state_log_spec.rb
               spec/api/resources/user_totp_device_spec.rb
               spec/api/resources/user_touch_spec.rb
+              spec/api/resources/user_available_ips_spec.rb
               spec/api/resources/user_webauthn_credential_spec.rb
               spec/api/resources/user_write_spec.rb
               spec/api/resources/oauth2_client_spec.rb

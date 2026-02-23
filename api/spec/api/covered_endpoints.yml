@@ -352,6 +352,7 @@ covered:
 - vps_user_data#update
 - user#create
 - user#current
+- user#available_ips
 - user#delete
 - user#index
 - user#show
