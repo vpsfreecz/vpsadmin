@@ -329,9 +329,11 @@ if (isLoggedIn()) {
                     $params = [];
 
                     foreach ($vps_resources as $r) {
-                        if (isset($_POST[$r])) {
-                            $params[ $r ] = $_POST[$r];
+                        if (!isset($_POST[$r]) || $_POST[$r] === '') {
+                            continue;
                         }
+
+                        $params[$r] = (int) $_POST[$r];
                     }
 
                     if (isAdmin()) {
@@ -339,8 +341,8 @@ if (isLoggedIn()) {
                             $params['change_reason'] = $_POST['change_reason'];
                         }
 
-                        if ($_POST['admin_override']) {
-                            $params['admin_override'] = $_POST['admin_override'];
+                        if (isset($_POST['admin_override'])) {
+                            $params['admin_override'] = true;
                         }
 
                         $params['admin_lock_type'] = $_POST['admin_lock_type'];
