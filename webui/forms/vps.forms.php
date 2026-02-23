@@ -15,7 +15,7 @@ function print_newvps_page0()
     $xtpl->form_out(_("Next"));
 }
 
-function format_available_resources($user, $environment)
+function format_available_resources($user, $environment, $owned_free_ips = null)
 {
     $s = '<ul>';
 
@@ -25,14 +25,21 @@ function format_available_resources($user, $environment)
     ]);
 
     foreach ($user_resources as $ur) {
-        if ($ur->free <= 0) {
+        $free = $ur->free;
+        $name = $ur->cluster_resource->name;
+
+        if (in_array($name, ['ipv4', 'ipv4_private', 'ipv6'], true)) {
+            $free += (int) ($owned_free_ips[$name] ?? 0);
+        }
+
+        if ($free <= 0) {
             continue;
         }
 
         $s .= '<li>';
         $s .= $ur->cluster_resource->label . ': ';
-        $s .= approx_number($ur->free) . ' ';
-        $s .= unit_for_cluster_resource($ur->cluster_resource->name);
+        $s .= approx_number($free) . ' ';
+        $s .= unit_for_cluster_resource($name);
         $s .= '</li>';
     }
 
@@ -87,7 +94,25 @@ function print_newvps_page1($user_id)
         $user = $api->user->current();
     }
 
+    $avail_user_id = $user->id;
+
     foreach ($locations as $loc) {
+        $owned_free_ips = [
+            'ipv4' => 0,
+            'ipv4_private' => 0,
+            'ipv6' => 0,
+        ];
+
+        $avail = $api->user->available_ips($avail_user_id, [
+            'location' => $loc->id,
+        ]);
+
+        foreach (array_keys($owned_free_ips) as $k) {
+            if (isset($avail[$k])) {
+                $owned_free_ips[$k] = (int) $avail[$k];
+            }
+        }
+
         $xtpl->form_add_radio_pure(
             'location',
             $loc->id,
@@ -102,7 +127,7 @@ function print_newvps_page1($user_id)
             . '<p>' . $loc->environment->description . '</p>'
             . '<p>' . $loc->description . '</p>'
             . '<h4>' . _('Available resources') . ':</h4>'
-            . format_available_resources($user, $loc->environment)
+            . format_available_resources($user, $loc->environment, $owned_free_ips)
             . '<p>' . _('Contact support if you need more') . ' <a href="?page=adminm&action=cluster_resources&id=' . $user->id . '">' . _('resources.') . '</a></p>'
         );
 
@@ -338,6 +363,27 @@ function print_newvps_page3($user_id, $loc_id, $tpl_id)
         $user = $api->user->current();
     }
 
+    // When user IP ownership is enabled, cluster resources for IPs can be fully
+    // consumed even though the user still has user-owned IPs that are currently
+    // unassigned and can be used when creating a VPS.
+    $owned_free_ips = [
+        'ipv4' => 0,
+        'ipv4_private' => 0,
+        'ipv6' => 0,
+    ];
+
+    $avail_user_id = $user->id;
+
+    $avail = $api->user->available_ips($avail_user_id, [
+        'location' => $loc_id,
+    ]);
+
+    foreach (array_keys($owned_free_ips) as $k) {
+        if (isset($avail[$k])) {
+            $owned_free_ips[$k] = (int) $avail[$k];
+        }
+    }
+
     $user_resources = $user->cluster_resource->list([
         'environment' => $loc->environment_id,
         'meta' => ['includes' => 'environment,cluster_resource'],
@@ -380,7 +426,8 @@ function print_newvps_page3($user_id, $loc_id, $tpl_id)
         }
 
         $xtpl->table_td($p->label);
-        $xtpl->table_td(approx_number($r->free) . ' ' . unit_for_cluster_resource($name));
+        $real_free = $r->free + ($owned_free_ips[$name] ?? 0);
+        $xtpl->table_td(approx_number($real_free) . ' ' . unit_for_cluster_resource($name));
         $xtpl->form_add_number_pure(
             $name,
             $_GET[$name] ?? $default,
