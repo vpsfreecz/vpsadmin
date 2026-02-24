@@ -7,7 +7,7 @@ module VpsAdmin::API
     # @option attrs [String] :reverse_record_value
     # @return [Array(::TransactionChain, ::HostIpAddress)]
     def run(host_ip_address, attrs)
-      ptr_content = attrs.fetch(:reverse_record_value)
+      ptr_content = attrs[:reverse_record_value].to_s
 
       if ptr_content.empty?
         TransactionChains::DnsZone::UnsetReverseRecord.fire2(args: [host_ip_address])

@@ -263,7 +263,7 @@ module VpsAdmin::API::Resources
 
         error!('access denied') if current_user.role != :admin && host.current_owner != current_user
 
-        ptr_content = input.fetch(:reverse_record_value, '').strip
+        ptr_content = input[:reverse_record_value].to_s.strip
 
         unless ptr_content.empty?
           ptr_content << '.' unless ptr_content.end_with?('.')
