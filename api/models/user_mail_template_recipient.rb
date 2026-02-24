@@ -38,9 +38,14 @@ class UserMailTemplateRecipient < ApplicationRecord
   # @param attrs [Hash]
   def self.handle_update!(user, template, attrs)
     recp = nil
-    empty =
-      (attrs[:to].nil? || attrs[:to].strip.empty?) &&
-      (attrs[:enabled].nil? || attrs[:enabled])
+    attrs = attrs.dup
+    enabled = attrs[:enabled]
+    to_present = attrs.has_key?(:to)
+    to_value = attrs[:to]
+    to_blank = !to_present || to_value.nil? || to_value.to_s.strip.empty?
+    empty = to_blank && (enabled.nil? || enabled)
+
+    attrs.delete(:enabled) if enabled.nil?
 
     if empty
       placeholder = new(
@@ -61,6 +66,7 @@ class UserMailTemplateRecipient < ApplicationRecord
           recp = placeholder
 
         else
+          attrs[:to] = '' if to_present && to_blank
           recp.update!(attrs)
         end
 
@@ -68,6 +74,7 @@ class UserMailTemplateRecipient < ApplicationRecord
         recp = placeholder
 
       else
+        attrs[:to] = '' if to_blank
         recp = new(
           user:,
           mail_template: template
@@ -105,7 +112,10 @@ class UserMailTemplateRecipient < ApplicationRecord
   end
 
   def check_emails
-    return unless to
+    if to.blank?
+      errors.add(:to, "can't be blank") unless enabled == false
+      return
+    end
 
     to.split(',').each do |mail|
       next if /@/ =~ mail.strip

@@ -212,7 +212,9 @@ class VpsAdmin::API::Resources::Location < HaveAPI::Resource
     end
 
     def exec
-      loc = ::Location.new(to_db_names(params[:location]))
+      attrs = to_db_names(params[:location])
+      attrs[:remote_console_server] = '' if attrs[:remote_console_server].nil?
+      loc = ::Location.new(attrs)
 
       if loc.save
         ok!(loc)
@@ -282,7 +284,11 @@ class VpsAdmin::API::Resources::Location < HaveAPI::Resource
     def exec
       loc = ::Location.find(params[:location_id])
 
-      loc.update!(to_db_names(params[:location]))
+      attrs = to_db_names(params[:location])
+      if attrs.has_key?(:remote_console_server) && attrs[:remote_console_server].nil?
+        attrs[:remote_console_server] = ''
+      end
+      loc.update!(attrs)
       loc
     rescue ActiveRecord::RecordInvalid => e
       error!('update failed', to_param_names(e.record.errors.to_hash, :input))
