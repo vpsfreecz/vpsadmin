@@ -96,10 +96,10 @@
     platforms = [ ];
     source = {
       remotes = [ "https://rubygems.org" ];
-      sha256 = "0b8pdwa01931hznkyp2mdjf48s05f6xrfi0gmla4kkins8v998zv";
+      sha256 = "1sf4ikadcdx64yj9wfkvdcac0q79v7kifl5846xwb9l7fm6bg94p";
       type = "gem";
     };
-    version = "0.27.1";
+    version = "0.27.2";
   };
   highline = {
     dependencies = [ "reline" ];
@@ -199,15 +199,18 @@
     version = "3.2026.0203";
   };
   minitest = {
-    dependencies = [ "prism" ];
+    dependencies = [
+      "drb"
+      "prism"
+    ];
     groups = [ "default" ];
     platforms = [ ];
     source = {
       remotes = [ "https://rubygems.org" ];
-      sha256 = "1fslin1vyh60snwygx8jnaj4kwhk83f3m0v2j2b7bsg2917wfm3q";
+      sha256 = "0gdwmn2d4sznjdxyl3kz7hr95mvdgm38fk1vd0s63k3fdyamfvnv";
       type = "gem";
     };
-    version = "6.0.1";
+    version = "6.0.2";
   };
   netrc = {
     groups = [ "default" ];
