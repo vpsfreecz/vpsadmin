@@ -60,9 +60,9 @@ GEM
       net-http (~> 0.5)
     fio_api (0.0.11)
       httparty (>= 0.16.2)
-    haveapi (0.27.1)
+    haveapi (0.27.2)
       activesupport (>= 7.1)
-      haveapi-client (~> 0.27.1)
+      haveapi-client (~> 0.27.2)
       json
       mail
       nesty (~> 1.0)
@@ -73,7 +73,7 @@ GEM
       sinatra (~> 4.0)
       sinatra-contrib (~> 4.0)
       tilt (~> 2.4)
-    haveapi-client (0.27.1)
+    haveapi-client (0.27.2)
       activesupport (>= 7.0)
       highline (~> 3.1)
       json
@@ -118,7 +118,8 @@ GEM
       mime-types-data (~> 3.2025, >= 3.2025.0507)
     mime-types-data (3.2026.0203)
     mini_mime (1.1.5)
-    minitest (6.0.1)
+    minitest (6.0.2)
+      drb (~> 2.0)
       prism (~> 1.5)
     multi_json (1.19.1)
     multi_xml (0.8.1)
