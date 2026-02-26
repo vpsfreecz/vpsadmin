@@ -9,8 +9,8 @@ module VpsAdmin::API::Resources
       string :name, desc: 'Domain name, @ as alias to origin, * for wildcards'
       string :type, db_name: :record_type
       string :content
-      integer :ttl, label: 'TTL', desc: 'Optional TTL in seconds, defaults to zone TTL'
-      integer :priority, label: 'Priority', desc: 'Optional priority, used for MX and SRV records'
+      integer :ttl, label: 'TTL', desc: 'Optional TTL in seconds, defaults to zone TTL', nullable: true
+      integer :priority, label: 'Priority', desc: 'Optional priority, used for MX and SRV records', nullable: true
       text :comment, desc: 'Optional comment'
       bool :enabled, default: true
       bool :dynamic_update_enabled, label: 'Enable dynamic update', desc: 'Only for A and AAAA records', default: false
