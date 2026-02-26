@@ -6,7 +6,7 @@ module VpsAdmin::API::Resources
     params(:common) do
       string :label, label: 'Label'
       resource VpsAdmin::API::Resources::Environment
-      resource VpsAdmin::API::Resources::User, value_label: :login
+      resource VpsAdmin::API::Resources::User, value_label: :login, nullable: true
       datetime :created_at
       datetime :updated_at
     end

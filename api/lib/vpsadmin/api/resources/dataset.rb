@@ -42,7 +42,7 @@ module VpsAdmin::API::Resources
       input do
         resource User, label: 'User', value_label: :login,
                        desc: 'Dataset owner'
-        resource VPS, label: 'VPS', value_label: :hostname
+        resource VPS, label: 'VPS', value_label: :hostname, nullable: true
         resource VpsAdmin::API::Resources::Dataset, label: 'Subtree'
         resource Pool, name: :primary_pool, label: 'Primary pool', desc: 'Show only datasets on this pool'
         string :role, label: 'Role', desc: 'Show only datasets of certain role',

@@ -5,7 +5,7 @@ module VpsAdmin::API::Resources
 
     params(:common) do
       string :name, desc: 'Fully qualified domain name'
-      resource User, value_label: :login
+      resource User, value_label: :login, nullable: true
       string :reverse_network_address
       string :reverse_network_prefix
       string :label

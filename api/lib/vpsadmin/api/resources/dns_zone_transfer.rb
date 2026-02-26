@@ -7,7 +7,7 @@ module VpsAdmin::API::Resources
       resource DnsZone
       resource HostIpAddress, value_label: :addr
       string :peer_type, db_name: :peer_type, choices: ::DnsZoneTransfer.peer_types.keys.map(&:to_s)
-      resource DnsTsigKey, value_label: :name
+      resource DnsTsigKey, value_label: :name, nullable: true
     end
 
     params(:all) do

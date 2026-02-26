@@ -14,8 +14,8 @@ module VpsAdmin::API::Resources
       integer :raw_vps_id
       datetime :from_date
       datetime :to_date
-      resource TransactionChain, name: :assigned_by_chain, value_label: :name
-      resource TransactionChain, name: :unassigned_by_chain, value_label: :name
+      resource TransactionChain, name: :assigned_by_chain, value_label: :name, nullable: true
+      resource TransactionChain, name: :unassigned_by_chain, value_label: :name, nullable: true
       bool :reconstructed
       datetime :created_at
       datetime :updated_at

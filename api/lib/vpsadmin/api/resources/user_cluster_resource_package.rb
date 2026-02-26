@@ -6,7 +6,7 @@ class VpsAdmin::API::Resources::UserClusterResourcePackage < HaveAPI::Resource
     resource VpsAdmin::API::Resources::Environment
     resource VpsAdmin::API::Resources::User, value_label: :login
     resource VpsAdmin::API::Resources::ClusterResourcePackage
-    resource VpsAdmin::API::Resources::User, name: :added_by, value_label: :login
+    resource VpsAdmin::API::Resources::User, name: :added_by, value_label: :login, nullable: true
     string :label
     bool :is_personal
     text :comment

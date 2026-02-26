@@ -5,9 +5,9 @@ module VpsAdmin::API::Resources
 
     params(:common) do
       string :label, desc: 'Human-friendly label'
-      string :to
-      string :cc
-      string :bcc
+      string :to, nullable: true
+      string :cc, nullable: true
+      string :bcc, nullable: true
     end
 
     params(:all) do
