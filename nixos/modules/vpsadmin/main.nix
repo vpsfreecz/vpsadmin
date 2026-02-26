@@ -17,6 +17,14 @@ let
       vpsadminos;
   vpsadminosRubyOverlay =
     if vpsadminosPath == null then null else import (vpsadminosPath + "/os/overlays/ruby.nix");
+  rubyVpsadminosOnly =
+    final: prev:
+    let
+      overlayAttrs = vpsadminosRubyOverlay final prev;
+    in
+    {
+      ruby_vpsadminos = overlayAttrs.ruby_vpsadminos;
+    };
   overlayList = import ../../overlays;
 in
 {
@@ -67,7 +75,7 @@ in
       assert lib.assertMsg (
         vpsadminosRubyOverlay != null
       ) "vpsadminos is required to enable vpsadmin overlays";
-      [ vpsadminosRubyOverlay ] ++ overlayList
+      [ rubyVpsadminosOnly ] ++ overlayList
     );
 
     systemd.tmpfiles.rules = mkIf cfg.enableStateDirectory [
