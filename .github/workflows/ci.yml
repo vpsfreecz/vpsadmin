@@ -20,10 +20,6 @@ on:
 permissions:
   contents: read
 
-env:
-  NIX_PATH: nixpkgs=https://channels.nixos.org/nixos-25.11/nixexprs.tar.xz
-  VPSADMINOS_PATH: ${{ github.workspace }}/vpsadminos
-
 jobs:
   test:
     name: Run ci-tagged tests
@@ -34,13 +30,6 @@ jobs:
       - name: Checkout vpsadmin
         uses: actions/checkout@v4
         with:
-          fetch-depth: 1
-
-      - name: Checkout vpsadminos (test-runner)
-        uses: actions/checkout@v4
-        with:
-          repository: vpsfreecz/vpsadminos
-          path: vpsadminos
           fetch-depth: 1
 
       - name: Determine job count
