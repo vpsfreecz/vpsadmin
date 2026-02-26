@@ -29,12 +29,20 @@ function get_helpbox($page = null, $action = null)
         $action = '';
     }
 
-    $boxes = $api->help_box->list([
+    $params = [
         'view' => true,
-        'page' => $pageProvided ? $page : null,
-        'action' => $actionProvided ? $action : null,
         'limit' => 1000,
-    ]);
+    ];
+
+    if ($pageProvided) {
+        $params['page'] = $page;
+    }
+
+    if ($actionProvided) {
+        $params['action'] = $action;
+    }
+
+    $boxes = $api->help_box->list($params);
 
     $ret = '';
 
