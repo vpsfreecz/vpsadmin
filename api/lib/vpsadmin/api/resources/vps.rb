@@ -102,7 +102,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
                                                value_label: :domain_name
       resource VpsAdmin::API::Resources::Location, label: 'Location', desc: 'Filter by location'
       resource VpsAdmin::API::Resources::Environment, label: 'Environment', desc: 'Filter by environment'
-      resource VpsAdmin::API::Resources::UserNamespaceMap, label: 'UID/GID mapping'
+      resource VpsAdmin::API::Resources::UserNamespaceMap, label: 'UID/GID mapping', nullable: true
       use :template
       string :hostname_any
       string :hostname_exact

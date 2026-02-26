@@ -5,7 +5,7 @@ module VpsAdmin::API::Resources
 
     params(:common) do
       resource DnsZone, value_label: :name
-      resource User, value_label: :login
+      resource User, value_label: :login, nullable: true
       string :name, desc: 'Domain name, @ as alias to origin, * for wildcards'
       string :type, db_name: :record_type
       string :content

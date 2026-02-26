@@ -12,7 +12,8 @@ module VpsAdmin::API::Resources
       resource NetworkInterface, value_label: :name
       resource VPS, label: 'VPS',
                     desc: 'VPS this IP is assigned to, can be null',
-                    value_label: :hostname
+                    value_label: :hostname,
+                    nullable: true
       integer :version, label: 'IP version', desc: '4 or 6'
       resource Network, label: 'Network', value_label: :address
       resource Location, label: 'Location',

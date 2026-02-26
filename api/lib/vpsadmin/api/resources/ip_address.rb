@@ -10,7 +10,8 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
     resource VpsAdmin::API::Resources::NetworkInterface, value_label: :name
     resource VpsAdmin::API::Resources::VPS, label: 'VPS',
                                             desc: 'VPS this IP is assigned to, can be null',
-                                            value_label: :hostname
+                                            value_label: :hostname,
+                                            nullable: true
     integer :version, label: 'IP version', desc: '4 or 6'
     resource VpsAdmin::API::Resources::Network, label: 'Network', value_label: :address
     resource VpsAdmin::API::Resources::Location, label: 'Location',

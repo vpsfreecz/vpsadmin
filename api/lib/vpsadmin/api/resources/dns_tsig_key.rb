@@ -4,7 +4,7 @@ module VpsAdmin::API::Resources
     desc 'Manage DNS TSIG key transfers'
 
     params(:common) do
-      resource User, value_label: :login
+      resource User, value_label: :login, nullable: true
       string :name
       string :algorithm, default: 'hmac-256'
     end

@@ -12,7 +12,7 @@ module VpsAdmin::API::Resources
       resource VPS, value_label: :hostname
       resource IpAddressAssignment, value_label: :ip_addr, label: 'IP address assignment'
       resource User, name: :filed_by, value_label: :login
-      resource Mailbox
+      resource Mailbox, nullable: true
       string :subject
       text :text
       string :codename
