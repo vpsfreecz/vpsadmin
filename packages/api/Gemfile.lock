@@ -20,6 +20,8 @@ GEM
       securerandom (>= 0.3)
       tzinfo (~> 2.0, >= 2.0.5)
       uri (>= 0.13.1)
+    addressable (2.8.8)
+      public_suffix (>= 2.0.2, < 8.0)
     aes_key_wrap (1.1.0)
     amq-protocol (2.5.1)
     ancestry (4.3.3)
@@ -60,9 +62,9 @@ GEM
       net-http (~> 0.5)
     fio_api (0.0.11)
       httparty (>= 0.16.2)
-    haveapi (0.27.2)
+    haveapi (0.27.3)
       activesupport (>= 7.1)
-      haveapi-client (~> 0.27.2)
+      haveapi-client (~> 0.27.3)
       json
       mail
       nesty (~> 1.0)
@@ -73,7 +75,7 @@ GEM
       sinatra (~> 4.0)
       sinatra-contrib (~> 4.0)
       tilt (~> 2.4)
-    haveapi-client (0.27.2)
+    haveapi-client (0.27.3)
       activesupport (>= 7.0)
       highline (~> 3.1)
       json
@@ -101,6 +103,9 @@ GEM
       bindata
       faraday (~> 2.0)
       faraday-follow_redirects
+    json-schema (6.1.0)
+      addressable (~> 2.8)
+      bigdecimal (>= 3.1, < 5)
     jwt (3.1.2)
       base64
     language_server-protocol (3.17.0.5)
@@ -112,11 +117,13 @@ GEM
       net-imap
       net-pop
       net-smtp
+    mcp (0.7.1)
+      json-schema (>= 4.1)
     method_source (1.1.0)
     mime-types (3.7.0)
       logger
       mime-types-data (~> 3.2025, >= 3.2025.0507)
-    mime-types-data (3.2026.0203)
+    mime-types-data (3.2026.0224)
     mini_mime (1.1.5)
     minitest (6.0.2)
       drb (~> 2.0)
@@ -159,6 +166,7 @@ GEM
       coderay (~> 1.1)
       method_source (~> 1.0)
       reline (>= 0.6.0)
+    public_suffix (7.0.2)
     puma (7.2.0)
       nio4r (~> 2.0)
     racc (1.8.1)
@@ -210,10 +218,11 @@ GEM
       diff-lcs (>= 1.2.0, < 2.0)
       rspec-support (~> 3.13.0)
     rspec-support (3.13.7)
-    rubocop (1.84.2)
+    rubocop (1.85.0)
       json (~> 2.3)
       language_server-protocol (~> 3.17.0.2)
       lint_roller (~> 1.1.0)
+      mcp (~> 0.6)
       parallel (~> 1.10)
       parser (>= 3.3.0.2)
       rainbow (>= 2.2.2, < 4.0)
