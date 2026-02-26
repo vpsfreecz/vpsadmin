@@ -217,7 +217,8 @@ module VpsAdmin::API
         r.params(:lifetime_expiration) do
           use :lifetime_state
           datetime :expiration_date, label: 'Expiration',
-                                     desc: 'A date after which the state will progress'
+                                     desc: 'A date after which the state will progress',
+                                     nullable: true
           datetime :remind_after_date, label: 'Remind after',
                                        desc: 'Mail warnings are silenced until this date'
         end
