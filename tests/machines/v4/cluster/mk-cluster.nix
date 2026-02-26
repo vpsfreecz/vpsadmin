@@ -5,6 +5,7 @@
   servicesSocket ? "192.168.10.10",
   bootMemory ? 8192,
   bootCpus ? 4,
+  vpsadminosPath,
 }:
 _pkgs:
 let
@@ -64,8 +65,8 @@ let
 
     config = {
       imports = [
-        <vpsadminos/tests/configs/vpsadminos/base.nix>
-        <vpsadminos/tests/configs/vpsadminos/pool-tank.nix>
+        (vpsadminosPath + "/tests/configs/vpsadminos/base.nix")
+        (vpsadminosPath + "/tests/configs/vpsadminos/pool-tank.nix")
         ../../../configs/vpsadminos/node.nix
       ];
 

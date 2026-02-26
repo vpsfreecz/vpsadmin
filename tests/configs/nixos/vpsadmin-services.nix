@@ -2,6 +2,7 @@
   config,
   lib,
   pkgs,
+  vpsadminos,
   ...
 }:
 let
@@ -258,6 +259,7 @@ in
     containers.webui = {
       autoStart = true;
       privateNetwork = false;
+      specialArgs = { inherit vpsadminos; };
       config =
         { config, lib, ... }:
         {
@@ -297,6 +299,7 @@ in
     containers.mailer = {
       autoStart = true;
       privateNetwork = false;
+      specialArgs = { inherit vpsadminos; };
       config =
         { config, lib, ... }:
         {

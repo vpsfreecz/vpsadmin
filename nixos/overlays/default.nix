@@ -10,7 +10,7 @@
       vpsadmin-console-router = super.callPackage ../../packages/console-router { inherit ruby; };
       vpsadmin-download-mounter = super.callPackage ../../packages/download-mounter { inherit ruby; };
       vpsadmin-client = super.callPackage ../../packages/client { inherit ruby; };
-      vpsadmin-source = super.callPackage ../../packages/source { };
+      vpsadmin-source = super.callPackage ../../packages/source { vpsadminPath = ../../.; };
       vpsadmin-supervisor = super.callPackage ../../packages/api/supervisor.nix { inherit ruby; };
       vpsadmin-webui = super.callPackage ../../packages/webui { };
       libnodectld = super.callPackage ../../packages/libnodectld { ruby = self.ruby_vpsadminos; };

@@ -2,12 +2,19 @@
   description = "vpsAdmin (NixOS/vpsAdminOS modules and packages)";
 
   inputs = {
-    vpsadminos.url = "github:vpsfreecz/vpsadminos";
+    vpsadminos.url = "github:vpsfreecz/vpsadminos/2026-02-19-flakes";
+    nixpkgs.follows = "vpsadminos/nixpkgs";
   };
 
   outputs =
-    { self, vpsadminos }:
+    {
+      self,
+      vpsadminos,
+      nixpkgs,
+    }:
     let
+      supportedSystems = [ "x86_64-linux" ];
+      forAllSystems = nixpkgs.lib.genAttrs supportedSystems;
       overlayList = import ./nixos/overlays/default.nix;
       vpsadminosRubyOverlay = import (vpsadminos.outPath + "/os/overlays/ruby.nix");
 
@@ -43,5 +50,40 @@
         list = overlayList;
         default = composedOverlay;
       };
+
+      tests = forAllSystems (
+        system:
+        vpsadminos.lib.testFramework.mkTests {
+          inherit system;
+          pkgsPath = nixpkgs.outPath;
+          testsRoot = ./tests;
+          suiteArgs = {
+            vpsadminosPath = vpsadminos.outPath;
+          };
+        }
+      );
+
+      testsMeta = forAllSystems (
+        system:
+        vpsadminos.lib.testFramework.mkTestsMeta {
+          inherit system;
+          pkgsPath = nixpkgs.outPath;
+          testsRoot = ./tests;
+          suiteArgs = {
+            vpsadminosPath = vpsadminos.outPath;
+          };
+        }
+      );
+
+      apps = forAllSystems (system: {
+        test-runner = {
+          type = "app";
+          program = "${vpsadminos.packages.${system}.test-runner}/bin/test-runner";
+        };
+      });
+
+      packages = forAllSystems (system: {
+        test-runner = vpsadminos.packages.${system}.test-runner;
+      });
     };
 }

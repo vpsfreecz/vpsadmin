@@ -1,5 +1,5 @@
 import ../../../make-test.nix (
-  { pkgs, ... }:
+  { pkgs, vpsadminosPath, ... }:
   let
     seed = import ../../../../api/db/seeds/test.nix;
     creds = import ../../../configs/nixos/vpsadmin-credentials.nix;
@@ -78,8 +78,8 @@ import ../../../make-test.nix (
 
         config = {
           imports = [
-            <vpsadminos/tests/configs/vpsadminos/base.nix>
-            <vpsadminos/tests/configs/vpsadminos/pool-tank.nix>
+            (vpsadminosPath + "/tests/configs/vpsadminos/base.nix")
+            (vpsadminosPath + "/tests/configs/vpsadminos/pool-tank.nix")
             ../../../configs/vpsadminos/node.nix
           ];
 

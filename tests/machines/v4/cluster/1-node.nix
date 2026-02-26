@@ -1,4 +1,4 @@
-_pkgs:
+{ pkgs, vpsadminosPath, ... }@args:
 let
   seedPath = ../../../../api/db/seeds/test-1-node.nix;
   clusterSeed = import seedPath;
@@ -8,4 +8,5 @@ mkCluster {
   inherit seedPath;
   seed = clusterSeed;
   nodes = clusterSeed.nodes;
-} _pkgs
+  inherit vpsadminosPath;
+} pkgs
