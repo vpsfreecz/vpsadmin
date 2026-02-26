@@ -64,9 +64,10 @@ in
 
   config = {
     nixpkgs.overlays = optionals cfg.enableOverlay (
-      lib.assertMsg (vpsadminosRubyOverlay != null) "vpsadminos is required to enable vpsadmin overlays" (
-        [ vpsadminosRubyOverlay ] ++ overlayList
-      )
+      assert lib.assertMsg (
+        vpsadminosRubyOverlay != null
+      ) "vpsadminos is required to enable vpsadmin overlays";
+      [ vpsadminosRubyOverlay ] ++ overlayList
     );
 
     systemd.tmpfiles.rules = mkIf cfg.enableStateDirectory [

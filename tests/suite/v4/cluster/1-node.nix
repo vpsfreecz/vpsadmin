@@ -9,7 +9,7 @@ import ../../../make-test.nix (
       Boot the reusable single-node vpsAdmin cluster and verify API availability
       plus running nodectld on the node.
     '';
-    machines = import ../../../machines/v4/cluster/1-node.nix pkgs;
+    machines = import ../../../machines/v4/cluster/1-node.nix args;
     nodeMachines = [ "node" ];
   } args
 )

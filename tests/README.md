@@ -1,24 +1,23 @@
 # Integration tests
 
-This tree reuses the vpsAdminOS test framework without copying it. It expects
-the `vpsadminos` repository to be checked out next to this one (or point
-`VPSADMINOS_PATH` elsewhere) so the runner can add it to `NIX_PATH` and import
-`<vpsadminos/tests/make-test.nix>` to build the shared test runner.
+This tree reuses the vpsAdminOS test framework via the flake input. The
+`./test-runner.sh` wrapper runs the vpsadminos test-runner and evaluates this
+repo's flake outputs (`tests` and `testsMeta`), so no `NIX_PATH` or local
+vpsadminos checkout is required.
 
 ## Running tests
 
-- Build/run the runner from this repo: `./test-runner.sh ls` (lists available
-  tests) or `./test-runner.sh test vpsadmin/services-up`. The wrapper builds
-  `os/packages/test-runner/entry.nix` from vpsAdminOS and runs it with the
-  current working directory set to this repository.
-- The runner respects the usual flags from vpsAdminOS (e.g. `--state-dir`,
-  `--jobs`, `--stop-on-failure`); see `<vpsadminos/test-runner/man>` for details.
+- Use `./test-runner.sh ls` (list tests) or
+  `./test-runner.sh test vpsadmin/services-up`.
+- The runner supports the usual flags from vpsAdminOS; run
+  `./test-runner.sh --help` for details.
 
 ## Test layout
 
 - `tests/all-tests.nix` mirrors the vpsAdminOS layout so the runner can
-  discover tests (the runner loads its own `list-tests.nix` from vpsAdminOS).
-- `tests/make-test.nix` delegates to `<vpsadminos/tests/make-test.nix>`.
+  discover tests (the runner evaluates the `testsMeta` flake output).
+- `tests/make-test.nix` delegates to the vpsAdminOS test framework via the
+  `vpsadminosPath` suite argument.
 - `tests/configs/nixos/vpsadmin-services.nix` defines a NixOS VM profile with
   API, supervisor, console_router, webui, varnish, frontend, rabbitmq and redis.
   It:

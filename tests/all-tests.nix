@@ -1,12 +1,19 @@
 {
   pkgs ? <nixpkgs>,
   system ? builtins.currentSystem,
+  suiteArgs ? { },
 }:
 let
-  nixpkgs = import pkgs { };
+  vpsadminosPath = suiteArgs.vpsadminosPath or (throw "suiteArgs.vpsadminosPath is required");
+  nixpkgs = import pkgs { inherit system; };
   lib = nixpkgs.lib;
-  testLib = import <vpsadminos/test-runner/nix/lib.nix> {
-    inherit pkgs system lib;
+  testLib = import (vpsadminosPath + "/test-runner/nix/lib.nix") {
+    inherit
+      pkgs
+      system
+      lib
+      suiteArgs
+      ;
     suitePath = ./suite;
   };
 in

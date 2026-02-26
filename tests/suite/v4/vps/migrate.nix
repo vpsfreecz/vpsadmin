@@ -1,5 +1,5 @@
 import ../../../make-test.nix (
-  { pkgs, ... }:
+  { pkgs, ... }@args:
   let
     seed = import ../../../../api/db/seeds/test.nix;
     adminUser = seed.adminUser;
@@ -22,7 +22,7 @@ import ../../../make-test.nix (
       "vps"
     ];
 
-    machines = import ../../../machines/v4/cluster/2-node.nix pkgs;
+    machines = import ../../../machines/v4/cluster/2-node.nix args;
 
     testScript = ''
       location_id = ${toString location.id}
