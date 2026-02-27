@@ -120,7 +120,7 @@ module TransactionChains
       return false unless tree
 
       ::SnapshotInPoolInBranch.joins(branch: [:dataset_tree])
-                              .where(branches: { dataset_tree_id: tree.id }).count > 0
+                              .where(branches: { dataset_tree_id: tree.id }).any?
     end
 
     def get_or_create_tree(dataset_in_pool)

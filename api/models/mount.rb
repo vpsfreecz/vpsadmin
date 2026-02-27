@@ -15,6 +15,7 @@ class Mount < ApplicationRecord
   include Lockable
 
   include VpsAdmin::API::Lifetimes::Model
+
   set_object_states states: %i[active deleted],
                     deleted: {
                       enter: TransactionChains::Vps::DestroyMount

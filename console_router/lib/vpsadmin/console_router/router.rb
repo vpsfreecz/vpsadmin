@@ -11,8 +11,7 @@ module VpsAdmin::ConsoleRouter
       :last_check,
       :channel,
       :input_exchange,
-      :output_queue,
-      keyword_init: true
+      :output_queue
     )
 
     # How often verify session validity, in seconds

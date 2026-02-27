@@ -39,7 +39,7 @@ class Location < ApplicationRecord
 
     q = q.where('ln2.userpick = ?', userpick) unless userpick.nil?
 
-    q.count > 0
+    q.any?
   end
 
   def any_shared_networks_with_primary(location, userpick: nil)

@@ -32,7 +32,7 @@ module TransactionChains
         # are all marked for confirm_destroy.
         if s.branch.snapshot_in_pool_in_branches.where.not(
           confirmed: ::SnapshotInPoolInBranch.confirmed(:confirm_destroy)
-        ).count == 0
+        ).none?
 
           s.branch.update!(confirmed: ::Branch.confirmed(:confirm_destroy))
           append_or_noop_t(Transactions::Storage::DestroyBranch, args: s.branch, noop: !@opts[:destroy]) do |t|
@@ -43,7 +43,7 @@ module TransactionChains
           # with the same condition as above.
           if s.branch.dataset_tree.branches.where.not(
             confirmed: ::Branch.confirmed(:confirm_destroy)
-          ).count == 0
+          ).none?
 
             s.branch.dataset_tree.update!(
               confirmed: ::DatasetTree.confirmed(:confirm_destroy)
@@ -73,7 +73,7 @@ module TransactionChains
     def cleanup_snapshot?(snapshot_in_pool)
       ::Snapshot.joins(:snapshot_in_pools)
                 .where(snapshots: { id: snapshot_in_pool.snapshot_id })
-                .where.not(snapshot_in_pools: { confirmed: ::SnapshotInPool.confirmed(:confirm_destroy) }).count == 0
+                .where.not(snapshot_in_pools: { confirmed: ::SnapshotInPool.confirmed(:confirm_destroy) }).none?
     end
 
     def destroy_snapshot(sip)

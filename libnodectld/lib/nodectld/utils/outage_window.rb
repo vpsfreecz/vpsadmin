@@ -66,7 +66,7 @@ module NodeCtld::Utils
         else # will open the next or some later day
           # Start with tomorrow
           t = Time.local(now.year, now.month, now.day) + (24 * 60 * 60)
-          return (t + (opens_at * 60)) if t.wday == weekday
+          return t + (opens_at * 60) if t.wday == weekday
 
           # Iterate over all 6 remaining days, find our day of week
           6.times do

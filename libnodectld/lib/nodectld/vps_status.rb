@@ -193,9 +193,9 @@ module NodeCtld
     #
     # @param init_pid [String,Integer]
     def read_uptime(init_pid)
-      f = File.open(File.join('/proc', init_pid.to_s, 'stat'), 'r')
-      str = f.readline.strip
-      f.close
+      str = File.open(File.join('/proc', init_pid.to_s, 'stat'), 'r') do |file|
+        file.readline.strip
+      end
 
       @host_uptime - (str.split[21].to_i / @tics_per_sec)
     end

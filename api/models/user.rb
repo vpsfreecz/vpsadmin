@@ -78,6 +78,7 @@ class User < ApplicationRecord
            }
 
   include VpsAdmin::API::Lifetimes::Model
+
   set_object_states suspended: {
                       enter: TransactionChains::User::Suspend,
                       leave: TransactionChains::User::Resume
@@ -203,8 +204,8 @@ class User < ApplicationRecord
       user_cluster_resource_packages.includes(
         cluster_resource_package: [:cluster_resource_package_items]
       ).where(environment: env).each do |user_pkg|
-        user_pkg.cluster_resource_package.cluster_resource_package_items.each do |it|
-          ucrs[it.cluster_resource_id].value += it.value
+        user_pkg.cluster_resource_package.cluster_resource_package_items.each do |item|
+          ucrs[item.cluster_resource_id].value += item.value
         end
       end
 

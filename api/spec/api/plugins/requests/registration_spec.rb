@@ -159,8 +159,8 @@ RSpec.describe 'VpsAdmin::API::Resources::UserRequest::Registration', requires_p
     item = ClusterResourcePackageItem.find_or_create_by!(
       cluster_resource_package: pkg,
       cluster_resource: diskspace
-    ) do |it|
-      it.value = value
+    ) do |pkg_item|
+      pkg_item.value = value
     end
 
     item.update!(value: value) if item.value != value

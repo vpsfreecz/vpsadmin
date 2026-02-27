@@ -145,7 +145,7 @@ module VpsAdmin::CLI::Commands
 
       params = {
         limit: limit > 0 ? limit : 25,
-        order: "#{@sort_desc ? '-' : ''}#{@sort_param}",
+        order: "#{'-' if @sort_desc}#{@sort_param}",
         meta: { includes: 'network_interface' }
       }
 

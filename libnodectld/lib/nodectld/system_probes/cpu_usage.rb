@@ -37,11 +37,7 @@ module NodeCtld::SystemProbes
     end
 
     def measure_once(str = nil)
-      unless str
-        f = File.open('/proc/stat')
-        str = f.readline
-        f.close
-      end
+      str ||= File.open('/proc/stat', &:readline)
 
       # The input string may contain multiple lines. We're interested only in the
       # first line.

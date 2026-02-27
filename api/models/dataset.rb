@@ -24,6 +24,7 @@ class Dataset < ApplicationRecord
   include VpsAdmin::API::DatasetProperties::Model
 
   include VpsAdmin::API::Lifetimes::Model
+
   set_object_states states: %i[active deleted],
                     deleted: {
                       enter: TransactionChains::Dataset::Destroy

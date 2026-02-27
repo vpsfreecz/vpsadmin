@@ -28,7 +28,7 @@ module TransactionChains
       # Scenario 0)
       if dataset_in_pool.dataset.dataset_in_pools.joins(:pool).where(
         pools: { role: ::Pool.roles[:backup] }
-      ).count == 0
+      ).none?
 
         sip = snapshot.snapshot_in_pools.where(dataset_in_pool:).take
         raise 'nothing to rollback, integrity error' unless sip

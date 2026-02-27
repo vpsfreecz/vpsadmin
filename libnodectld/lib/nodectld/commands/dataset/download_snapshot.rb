@@ -118,7 +118,6 @@ module NodeCtld
       self.step = cmd
 
       digest = Digest::SHA256.new
-      f = File.open(file_path, 'w')
       r, w = IO.pipe
 
       pid = Process.fork do
@@ -129,13 +128,13 @@ module NodeCtld
 
       w.close
 
-      until r.eof?
-        data = r.read(131_072)
-        digest << data
-        f.write(data)
+      File.open(file_path, 'w') do |file|
+        until r.eof?
+          data = r.read(131_072)
+          digest << data
+          file.write(data)
+        end
       end
-
-      f.close
       @sum = digest.hexdigest
 
       Process.wait(pid)

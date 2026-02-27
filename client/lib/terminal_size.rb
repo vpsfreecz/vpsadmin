@@ -14,7 +14,7 @@ class Terminal
       tmux 'resize-pane', "-#{direction}", magnitude
     end
 
-    def tmux *cmd
+    def tmux(*cmd)
       system 'tmux', *cmd.map(&:to_s)
     end
 
@@ -54,7 +54,7 @@ class Terminal
 
     private
 
-    def _height_width_hash_from *dimensions
+    def _height_width_hash_from(*dimensions)
       { height: dimensions[0], width: dimensions[1] }
     end
   end

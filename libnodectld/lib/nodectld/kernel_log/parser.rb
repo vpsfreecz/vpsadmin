@@ -56,38 +56,37 @@ module NodeCtld
     def read_thread
       log(:info, "Reading from #{file}")
 
-      io = File.open(file, 'r')
-      io.seek(0, IO::SEEK_END)
+      File.open(file, 'r') do |io|
+        io.seek(0, IO::SEEK_END)
 
-      last_time = Time.now
+        last_time = Time.now
 
-      loop do
-        break if @stop
+        loop do
+          break if @stop
 
-        begin
-          line = io.readline
-        rescue Errno::EPIPE
-          line = :hole
+          begin
+            line = io.readline
+          rescue Errno::EPIPE
+            line = :hole
+          end
+
+          t = Time.now
+          parse_queue << [line, t]
+
+          next unless last_time + 5 < t
+
+          size = parse_queue.size
+
+          log(:warn, "Parser queue size at #{size} lines") if size > 128
+
+          if size > 16 * 1024
+            log(:warn, 'Parser queue too large, resetting')
+            parse_queue.clear
+          end
+
+          last_time = t
         end
-
-        t = Time.now
-        parse_queue << [line, t]
-
-        next unless last_time + 5 < t
-
-        size = parse_queue.size
-
-        log(:warn, "Parser queue size at #{size} lines") if size > 128
-
-        if size > 16 * 1024
-          log(:warn, 'Parser queue too large, resetting')
-          parse_queue.clear
-        end
-
-        last_time = t
       end
-
-      io.close
     end
 
     def parse_thread

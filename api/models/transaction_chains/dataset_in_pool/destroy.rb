@@ -212,7 +212,7 @@ module TransactionChains
           # Check if ::Dataset should be destroyed or marked for destroyal
           if dataset_in_pool.dataset.dataset_in_pools.where.not(
             confirmed: ::DatasetInPool.confirmed(:confirm_destroy)
-          ).count == 0
+          ).none?
             dataset_in_pool.dataset.update!(
               confirmed: ::Dataset.confirmed(:confirm_destroy)
             )
@@ -230,7 +230,7 @@ module TransactionChains
           elsif dataset_in_pool.dataset.dataset_in_pools
                                .joins(:pool)
                                .where.not(confirmed: ::DatasetInPool.confirmed(:confirm_destroy))
-                               .where.not(pools: { role: ::Pool.roles[:backup] }).count == 0
+                               .where.not(pools: { role: ::Pool.roles[:backup] }).none?
 
             # Is now only in backup pools
             just_create(dataset_in_pool.dataset.set_expiration(
