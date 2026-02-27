@@ -553,6 +553,96 @@ RSpec.describe 'VpsAdmin::API::Resources::VPS write actions' do # rubocop:disabl
     end
   end
 
+  describe 'Lifetimes::Resource' do
+    let(:admin) { SpecSeed.admin }
+    let(:user_namespace_map) { create_user_namespace_map!(SpecSeed.user) }
+    let(:vps) do
+      create_vps!(
+        user: SpecSeed.user,
+        node: SpecSeed.node,
+        user_namespace_map: user_namespace_map
+      )
+    end
+
+    before do
+      SpecSeed.user.update!(mailer_enabled: false)
+      allow(Vps).to receive(:including_deleted) { Vps.unscoped }
+    end
+
+    def set_state(vps, state)
+      Vps.unscoped.find(vps.id).record_object_state_change(
+        state.to_sym,
+        reason: 'spec setup',
+        user: admin
+      )
+    end
+
+    def last_log(vps)
+      ObjectState.where(class_name: 'Vps', row_id: vps.id).order(:id).last
+    end
+
+    def log_count(vps)
+      ObjectState.where(class_name: 'Vps', row_id: vps.id).count
+    end
+
+    it 'updates expiration_date without changing state' do
+      set_state(vps, :active)
+      expiration = Time.utc(2040, 1, 1, 12, 0, 0)
+
+      as(admin) do
+        json_put show_path(vps.id), vps: {
+          expiration_date: expiration.strftime('%Y-%m-%dT%H:%M:%SZ')
+        }
+      end
+
+      expect_status(200)
+      expect(json['status']).to be(true)
+
+      record = Vps.unscoped.find(vps.id)
+      expect(record.object_state).to eq('active')
+      expect(record.expiration_date.to_i).to eq(expiration.to_i)
+    end
+
+    states = %w[active suspended soft_delete hard_delete deleted]
+
+    states.each do |from|
+      states.each do |to|
+        next if from == to
+
+        it "handles #{from} -> #{to} transitions" do
+          set_state(vps, from)
+          before_count = log_count(vps)
+
+          as(admin) do
+            json_put show_path(vps.id), vps: {
+              object_state: to,
+              change_reason: "spec #{from} -> #{to}"
+            }
+          end
+
+          expect_status(200)
+
+          supported = lifetimes_transition_supported_for?(Vps, from, to)
+
+          if supported
+            expect(json['status']).to be(true)
+            expect(log_count(vps)).to eq(before_count + 1)
+            expect(last_log(vps).state).to eq(to)
+          else
+            expect(json['status']).to be(false)
+            expect(log_count(vps)).to eq(before_count)
+
+            if lifetimes_transition_supported?(from, to)
+              expect(response_message).to include('not implemented')
+            else
+              expect(response_message).to include('cannot leave state')
+            end
+          end
+        end
+      end
+    end
+  end
+
   describe 'SetMaintenance' do
     let!(:vps) { create_vps!(user: SpecSeed.user, node: SpecSeed.node) }
 
@@ -1330,6 +1420,28 @@ RSpec.describe 'VpsAdmin::API::Resources::VPS write actions' do # rubocop:disabl
   rescue ActiveRecord::RecordInvalid
     vps.save!(validate: false)
     vps
+  end
+
+  def create_user_namespace_map!(user)
+    user_ns = UserNamespace.create!(
+      user: user,
+      block_count: 0,
+      offset: 100_000,
+      size: 1_000
+    )
+    user_map = UserNamespaceMap.create_direct!(user_ns, "Spec map #{SecureRandom.hex(3)}")
+
+    %i[uid gid].each do |kind|
+      UserNamespaceMapEntry.create!(
+        user_namespace_map: user_map,
+        kind: kind,
+        vps_id: 0,
+        ns_id: 0,
+        count: 1
+      )
+    end
+
+    user_map
   end
 
   def create_node!(name_prefix:, location:, role: :node, hypervisor_type: :vpsadminos, total_swap: 512)
