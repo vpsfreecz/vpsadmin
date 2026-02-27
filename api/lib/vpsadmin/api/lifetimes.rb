@@ -505,7 +505,7 @@ module VpsAdmin::API
         t_i = states.index(target)
         o_i = states.index(obj.object_state.to_sym)
         enter = t_i > o_i
-        state_chain = enter ? states[o_i + 1..t_i] : states[t_i + 1..o_i].reverse
+        state_chain = enter ? states[(o_i + 1)..t_i] : states[(t_i + 1)..o_i].reverse
 
         if !enter && o_i >= (states.index(:hard_delete) || states.index(:deleted))
           raise Exceptions::CannotLeaveState,
@@ -606,7 +606,9 @@ module VpsAdmin::API
         action.send(:define_method, :update_object_state!) do |obj|
           @chain, obj = update_object_state(obj)
           ok!(obj)
-        rescue VpsAdmin::API::Exceptions::TooManyParameters => e
+        rescue VpsAdmin::API::Exceptions::TooManyParameters,
+               VpsAdmin::API::Exceptions::CannotLeaveState,
+               NotImplementedError => e
           error!(e.message)
         end
 

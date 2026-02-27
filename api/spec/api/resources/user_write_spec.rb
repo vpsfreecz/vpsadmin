@@ -5,8 +5,13 @@ require 'securerandom'
 RSpec.describe 'VpsAdmin::API::Resources::User write actions' do # rubocop:disable RSpec/DescribeClass
   before do
     header 'Accept', 'application/json'
-    ensure_mail_template('user_create')
-    ensure_mail_template('user_soft_delete')
+    %w[
+      user_create
+      user_soft_delete
+      user_suspend
+      user_resume
+      user_revive
+    ].each { |name| ensure_mail_template(name) }
     ensure_user_infra
   end
 
@@ -54,6 +59,10 @@ RSpec.describe 'VpsAdmin::API::Resources::User write actions' do # rubocop:disab
 
   def errors
     json.dig('response', 'errors') || json['errors'] || {}
+  end
+
+  def response_message
+    json['message'] || json.dig('response', 'message')
   end
 
   def login_from(obj)
@@ -436,6 +445,88 @@ RSpec.describe 'VpsAdmin::API::Resources::User write actions' do # rubocop:disab
       expect(last_response.status).to be_in([401, 403])
     ensure
       clear_login
+    end
+  end
+
+  describe 'Lifetimes::Resource' do
+    let(:admin) { SpecSeed.admin }
+    let(:target) { SpecSeed.other_user }
+
+    before do
+      allow(User).to receive(:including_deleted) { User.unscoped }
+    end
+
+    def set_state(user, state)
+      User.unscoped.find(user.id).record_object_state_change(
+        state.to_sym,
+        reason: 'spec setup',
+        user: admin
+      )
+    end
+
+    def last_log(user)
+      ObjectState.where(class_name: 'User', row_id: user.id).order(:id).last
+    end
+
+    def log_count(user)
+      ObjectState.where(class_name: 'User', row_id: user.id).count
+    end
+
+    it 'updates expiration_date without changing state' do
+      set_state(target, :active)
+      expiration = Time.utc(2040, 1, 1, 12, 0, 0)
+
+      as(admin) do
+        json_put show_path(target.id), user: {
+          expiration_date: expiration.strftime('%Y-%m-%dT%H:%M:%SZ')
+        }
+      end
+
+      expect_status(200)
+      expect(json['status']).to be(true)
+
+      record = User.unscoped.find(target.id)
+      expect(record.object_state).to eq('active')
+      expect(record.expiration_date.to_i).to eq(expiration.to_i)
+    end
+
+    states = %w[active suspended soft_delete hard_delete deleted]
+
+    states.each do |from|
+      states.each do |to|
+        next if from == to
+
+        it "handles #{from} -> #{to} transitions" do
+          set_state(target, from)
+          before_count = log_count(target)
+
+          as(admin) do
+            json_put show_path(target.id), user: {
+              object_state: to,
+              change_reason: "spec #{from} -> #{to}"
+            }
+          end
+
+          expect_status(200)
+
+          supported = lifetimes_transition_supported_for?(User, from, to)
+
+          if supported
+            expect(json['status']).to be(true)
+            expect(log_count(target)).to eq(before_count + 1)
+            expect(last_log(target).state).to eq(to)
+          else
+            expect(json['status']).to be(false)
+            expect(log_count(target)).to eq(before_count)
+
+            if lifetimes_transition_supported?(from, to)
+              expect(response_message).to include('not implemented')
+            else
+              expect(response_message).to include('cannot leave state')
+            end
+          end
+        end
+      end
     end
   end
 end
