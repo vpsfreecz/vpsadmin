@@ -149,7 +149,6 @@ if (isLoggedIn()) {
             $params = [
                 'hostname' => $_POST['hostname'],
                 'os_template' => $_GET['os_template'],
-                'info' => isAdmin() ? '' : $_POST['info'],
                 'memory' => (int) $_GET['memory'],
                 'swap' => (int) $_GET['swap'],
                 'cpu' => (int) $_GET['cpu'],
@@ -160,6 +159,7 @@ if (isLoggedIn()) {
             ];
 
             if (isAdmin()) {
+                $params['info'] = isset($_POST['info']) ? $_POST['info'] : '';
                 $params['user'] = $_GET['user'];
                 $params['node'] = $_POST['node'];
                 $params['start'] = isset($_POST['boot_after_create']);
