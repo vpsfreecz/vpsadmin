@@ -160,6 +160,19 @@ RSpec.describe 'VpsAdmin::API::Resources::DnsResolver write actions' do # ruboco
       expect(record.location_id).to be_nil
     end
 
+    it 'allows admin to create with explicit nil location' do
+      payload = minimal_resolver_payload(overrides: { location: nil })
+
+      as(SpecSeed.admin) { json_post index_path, dns_resolver: payload }
+
+      expect_status(200)
+      expect(json['status']).to be(true)
+      expect(resolver_obj['location']).to be_nil
+
+      record = DnsResolver.find_by!(label: payload[:label])
+      expect(record.location_id).to be_nil
+    end
+
     it 'returns validation errors for missing label' do
       as(SpecSeed.admin) { json_post index_path, dns_resolver: payload.except(:label) }
 
@@ -234,6 +247,32 @@ RSpec.describe 'VpsAdmin::API::Resources::DnsResolver write actions' do # ruboco
       record = DnsResolver.find(dns_resolver.id)
       expect(record.label).to eq(new_label)
       expect(record.addrs).to eq(new_addr)
+    end
+
+    it 'accepts explicit nil location on update' do
+      ensure_signer_unlocked!
+
+      resolver = DnsResolver.create!(
+        addrs: random_ipv4,
+        label: "Spec DNS Loc #{SecureRandom.hex(4)}",
+        is_universal: false,
+        location: SpecSeed.location,
+        ip_version: 4
+      )
+
+      as(SpecSeed.admin) do
+        json_put show_path(resolver.id), dns_resolver: {
+          is_universal: true,
+          location: nil
+        }
+      end
+
+      expect_status(200)
+      expect(json['status']).to be(true)
+      expect(resolver_obj['location']).to be_nil
+
+      resolver.reload
+      expect(resolver.location_id).to be_nil
     end
 
     it 'returns validation errors for invalid location settings' do

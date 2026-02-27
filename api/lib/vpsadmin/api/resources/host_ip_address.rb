@@ -19,7 +19,8 @@ module VpsAdmin::API::Resources
       resource Location, label: 'Location',
                          desc: 'Location this IP address is available in'
       resource User, label: 'User',
-                     value_label: :login
+                     value_label: :login,
+                     nullable: true
       string :role, choices: ::Network.roles.keys
       string :purpose, choices: ::Network.purposes.keys
       string :addr, label: 'Network address', db_name: :ip_addr
@@ -111,19 +112,23 @@ module VpsAdmin::API::Resources
         ips = ips.where(host_ip_addresses: { ip_addr: input[:addr] }) if input[:addr]
 
         if current_user.role == :admin && input.has_key?(:user)
-          user_id = input[:user] && input[:user].id
+          if input[:user].nil?
+            ips = ips.where(ip_addresses: { user_id: nil, network_interface_id: nil })
+          else
+            user_id = input[:user].id
 
-          ips = ips.joins(
-            'LEFT JOIN network_interfaces my_netifs
-             ON my_netifs.id = ip_addresses.network_interface_id'
-          ).joins(
-            'LEFT JOIN vpses my_vps ON my_vps.id = my_netifs.vps_id'
-          ).where(
-            'ip_addresses.user_id = ?
-             OR
-            (ip_addresses.network_interface_id IS NOT NULL AND my_vps.user_id = ?)',
-            user_id, user_id
-          )
+            ips = ips.joins(
+              'LEFT JOIN network_interfaces my_netifs
+               ON my_netifs.id = ip_addresses.network_interface_id'
+            ).joins(
+              'LEFT JOIN vpses my_vps ON my_vps.id = my_netifs.vps_id'
+            ).where(
+              'ip_addresses.user_id = ?
+               OR
+              (ip_addresses.network_interface_id IS NOT NULL AND my_vps.user_id = ?)',
+              user_id, user_id
+            )
+          end
         end
 
         if input.has_key?(:assigned) && !input[:assigned].nil?

@@ -24,10 +24,13 @@ if (isLoggedIn()) {
                     'vps' => $_GET['vps'],
                     'subject' => $_POST['subject'],
                     'text' => $_POST['text'],
-                    'codename' => $_POST['codename'] ? $_POST['codename'] : null,
                     'detected_at' => date('c', strtotime($_POST['detected_at'])),
                     'vps_action' => $_POST['vps_action'],
                 ];
+
+                if ($_POST['codename']) {
+                    $params['codename'] = $_POST['codename'];
+                }
 
                 if ($_POST['ip_address_assignment']) {
                     $params['ip_address_assignment'] = $_POST['ip_address_assignment'];

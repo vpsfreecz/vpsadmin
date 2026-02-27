@@ -54,10 +54,15 @@ if (isLoggedIn()) {
             csrf_check();
 
             try {
+                $user = $_POST['user'] ? $_POST['user'] : null;
+
                 $params = [
-                    'user' => $_POST['user'] ? $_POST['user'] : null,
-                    'environment' => $_POST['environment'] ? $_POST['environment'] : null,
+                    'user' => $user,
                 ];
+
+                if ($user && $_POST['environment']) {
+                    $params['environment'] = $_POST['environment'];
+                }
 
                 $ret = $api->ip_address($_GET['id'])->update($params);
 
@@ -80,10 +85,15 @@ if (isLoggedIn()) {
 
             try {
                 if (isset($_POST['route-only'])) {
-                    $api->ip_address($_GET['id'])->assign([
+                    $params = [
                         'network_interface' => $_POST['network_interface'],
-                        'route_via' => $_POST['route_via'] ? $_POST['route_via'] : null,
-                    ]);
+                    ];
+
+                    if ($_POST['route_via']) {
+                        $params['route_via'] = $_POST['route_via'];
+                    }
+
+                    $api->ip_address($_GET['id'])->assign($params);
 
                     notify_user(_('IP assigned'), '');
                     redirect($_GET['return'] ? $_GET['return'] : '?page=networking&action=ip_addresses');
@@ -100,7 +110,6 @@ if (isLoggedIn()) {
                     } else {
                         $api->ip_address($_GET['id'])->assign_with_host_address([
                             'network_interface' => $_POST['network_interface'],
-                            'route_via' => $_POST['route_via'] ? $_POST['route_via'] : null,
                         ]);
 
                         notify_user(_('IP assigned'), '');

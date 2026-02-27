@@ -21,7 +21,8 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
     string :map_mode, label: 'Map mode', choices: ::Vps.map_modes.keys.map(&:to_s), default: 'native'
     string :info, label: 'Info', desc: 'VPS description'
     resource VpsAdmin::API::Resources::DnsResolver, label: 'DNS resolver',
-                                                    desc: 'DNS resolver the VPS will use'
+                                                    desc: 'DNS resolver the VPS will use',
+                                                    nullable: true
     resource VpsAdmin::API::Resources::Node, label: 'Node', desc: 'Node VPS will run on',
                                              value_label: :domain_name
     resource VpsAdmin::API::Resources::UserNamespaceMap, label: 'UID/GID mapping'

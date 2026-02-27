@@ -159,7 +159,7 @@ if (isLoggedIn()) {
             ];
 
             if (isAdmin()) {
-                $params['info'] = isset($_POST['info']) ? $_POST['info'] : '';
+                $params['info'] = $_POST['info'] ?? '';
                 $params['user'] = $_GET['user'];
                 $params['node'] = $_POST['node'];
                 $params['start'] = isset($_POST['boot_after_create']);
@@ -430,10 +430,15 @@ if (isLoggedIn()) {
             try {
                 csrf_check();
 
-                $api->ip_address->assign($_POST['addr'], [
+                $params = [
                     'network_interface' => $_GET['netif'],
-                    'route_via' => $_POST['route_via'] ? $_POST['route_via'] : null,
-                ]);
+                ];
+
+                if ($_POST['route_via']) {
+                    $params['route_via'] = $_POST['route_via'];
+                }
+
+                $api->ip_address->assign($_POST['addr'], $params);
                 notify_user(_("Addition of IP address planned"), '');
 
                 redirect('?page=adminvps&action=info&veid=' . $_GET['veid']);
@@ -621,8 +626,11 @@ if (isLoggedIn()) {
                 'no_start' => $_POST['no_start'] == '1',
                 'skip_start' => $_POST['skip_start'] == '1',
                 'send_mail' => $_POST['send_mail'] == '1',
-                'reason' => $_POST['reason'] ? $_POST['reason'] : null,
             ];
+
+            if ($_POST['reason']) {
+                $params['reason'] = $_POST['reason'];
+            }
 
             if ($_POST['finish_weekday']) {
                 $params['finish_weekday'] = $_POST['finish_weekday'] - 1;
@@ -647,10 +655,15 @@ if (isLoggedIn()) {
                 csrf_check();
 
                 try {
-                    $api->vps($_GET['veid'])->boot([
+                    $params = [
                         'os_template' => $_POST['os_template'],
-                        'mount_root_dataset' => $_POST['mount_root_dataset'] == 'mount' ? trim($_POST['mountpoint']) : null,
-                    ]);
+                    ];
+
+                    if ($_POST['mount_root_dataset'] == 'mount') {
+                        $params['mount_root_dataset'] = trim($_POST['mountpoint']);
+                    }
+
+                    $api->vps($_GET['veid'])->boot($params);
 
                     notify_user(
                         _("VPS") . " {$_GET["veid"]} " . _("will be rebooted momentarily"),

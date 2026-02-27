@@ -255,6 +255,48 @@ RSpec.describe 'VpsAdmin::API::Resources::HostIpAddress' do
       expect(ids).not_to include(assigned_host.id)
     end
 
+    it 'filters by user when nil' do
+      network = create_split_network!(location: SpecSeed.location)
+      _user_vps, user_netif = create_vps_with_netif!(user: SpecSeed.user)
+
+      free_ip = create_ip_address!(
+        network: network,
+        ip_addr: '198.51.100.32',
+        prefix: network.split_prefix,
+        size: 8,
+        netif: nil,
+        user: nil
+      )
+      free_host = create_host_ip!(ip_address: free_ip, ip_addr: '198.51.100.33')
+
+      routed_ip = create_ip_address!(
+        network: network,
+        ip_addr: '198.51.100.40',
+        prefix: network.split_prefix,
+        size: 8,
+        netif: user_netif,
+        user: nil
+      )
+      routed_host = create_host_ip!(ip_address: routed_ip, ip_addr: '198.51.100.41')
+
+      owned_ip = create_ip_address!(
+        network: network,
+        ip_addr: '198.51.100.48',
+        prefix: network.split_prefix,
+        size: 8,
+        netif: nil,
+        user: SpecSeed.other_user
+      )
+      owned_host = create_host_ip!(ip_address: owned_ip, ip_addr: '198.51.100.49')
+
+      as(SpecSeed.admin) { json_get index_path, host_ip_address: { user: nil } }
+
+      expect_status(200)
+      ids = host_list.map { |row| row['id'] }
+      expect(ids).to include(free_host.id)
+      expect(ids).not_to include(routed_host.id, owned_host.id)
+    end
+
     it 'filters by assigned' do
       network = create_split_network!(location: SpecSeed.location)
       _user_vps, user_netif = create_vps_with_netif!(user: SpecSeed.user)

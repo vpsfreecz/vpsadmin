@@ -239,6 +239,18 @@ RSpec.describe 'VpsAdmin::API::Resources::IpAddress' do
       )
     end
 
+    it 'filters by user when nil' do
+      ip_owned = create_ip!(addr: '192.0.2.20', network: SpecSeed.network_v4, user: SpecSeed.user)
+      ip_unowned = create_ip!(addr: '192.0.2.21', network: SpecSeed.network_v4, user: nil)
+
+      as(SpecSeed.admin) { json_get index_path, ip_address: { user: nil } }
+
+      expect_status(200)
+      ids = ip_list.map { |row| row['id'] }
+      expect(ids).to include(ip_unowned.id)
+      expect(ids).not_to include(ip_owned.id)
+    end
+
     it 'filters by vps when nil' do
       data = index_data
       as(SpecSeed.admin) { json_get index_path, ip_address: { vps: nil } }
@@ -493,6 +505,26 @@ RSpec.describe 'VpsAdmin::API::Resources::IpAddress' do
       expect_status(200)
       expect(json['status']).to be(true)
       expect(ip_to_update.reload.user_id).to eq(SpecSeed.user.id)
+    end
+
+    it 'allows admin to disown an address without environment' do
+      ensure_signer_unlocked!
+
+      as(SpecSeed.admin) do
+        json_put show_path(ip_to_update.id), ip_address: {
+          user: SpecSeed.user.id,
+          environment: SpecSeed.environment.id
+        }
+      end
+
+      expect_status(200)
+      expect(json['status']).to be(true)
+
+      as(SpecSeed.admin) { json_put show_path(ip_to_update.id), ip_address: { user: nil } }
+
+      expect_status(200)
+      expect(json['status']).to be(true)
+      expect(ip_to_update.reload.user_id).to be_nil
     end
 
     it 'prevents chown when the address belongs to a VPS in IP ownership env' do
