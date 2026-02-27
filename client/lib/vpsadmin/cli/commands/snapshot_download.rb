@@ -161,9 +161,9 @@ module VpsAdmin::CLI::Commands
           exit
         end
 
-        f = File.open(path, mode)
+        f = File.new(path, mode)
       else
-        f = File.open(path, 'w')
+        f = File.new(path, 'w')
       end
 
       [f, action, pos]

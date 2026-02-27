@@ -9,11 +9,11 @@ module NodeCtld
 
     SAVE_PROPERTIES = %w[used referenced available refquota compressratio refcompressratio].freeze
 
-    Pool = Struct.new(:name, :fs, :role, :refquota_check, :datasets, keyword_init: true)
+    Pool = Struct.new(:name, :fs, :role, :refquota_check, :datasets)
 
-    Dataset = Struct.new(:type, :name, :id, :dip_id, :vps_id, :properties, keyword_init: true)
+    Dataset = Struct.new(:type, :name, :id, :dip_id, :vps_id, :properties)
 
-    Property = Struct.new(:id, :name, :value, keyword_init: true)
+    Property = Struct.new(:id, :name, :value)
 
     # @param dataset_expander [DatasetExpander]
     def initialize(dataset_expander)

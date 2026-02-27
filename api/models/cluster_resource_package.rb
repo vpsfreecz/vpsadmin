@@ -63,28 +63,28 @@ class ClusterResourcePackage < ApplicationRecord
 
       if opts[:from_personal]
         personal_pkg = user.cluster_resource_packages.where(environment: env).take!
-        personal_items = personal_pkg.cluster_resource_package_items.to_h do |it|
-          [it.cluster_resource_id, it]
+        personal_items = personal_pkg.cluster_resource_package_items.to_h do |item|
+          [item.cluster_resource_id, item]
         end
 
-        cluster_resource_package_items.each do |it|
-          personal_item = personal_items[it.cluster_resource_id]
+        cluster_resource_package_items.each do |item|
+          personal_item = personal_items[item.cluster_resource_id]
 
           if personal_item.nil?
             raise VpsAdmin::API::Exceptions::UserResourceAllocationError,
                   'unable to add package and substract from the personal package: ' \
-                  "resource #{it.cluster_resource.name} not found"
-          elsif personal_item.value < it.value
+                  "resource #{item.cluster_resource.name} not found"
+          elsif personal_item.value < item.value
             raise VpsAdmin::API::Exceptions::UserResourceAllocationError,
                   'unable to add package and substract from the personal package: ' \
-                  "not enough #{it.cluster_resource.name} in the personal package " \
-                  "(#{personal_item.value} < #{it.value})"
+                  "not enough #{item.cluster_resource.name} in the personal package " \
+                  "(#{personal_item.value} < #{item.value})"
           end
         end
 
-        cluster_resource_package_items.each do |it|
-          personal_item = personal_items[it.cluster_resource_id]
-          personal_item.value -= it.value
+        cluster_resource_package_items.each do |item|
+          personal_item = personal_items[item.cluster_resource_id]
+          personal_item.value -= item.value
           personal_item.save!
         end
 

@@ -12,8 +12,7 @@ module NodeCtld
       :original_refquota,
       :new_refquota,
       :added_space,
-      :time,
-      keyword_init: true
+      :time
     )
 
     def initialize

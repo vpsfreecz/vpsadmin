@@ -244,11 +244,11 @@ module VpsAdmin::API::Resources
         end
 
         def exec
-          it = ::ClusterResourcePackageItem.where(
+          item = ::ClusterResourcePackageItem.where(
             cluster_resource_package_id: params[:cluster_resource_package_id],
             id: params[:item_id]
           ).take!
-          it.cluster_resource_package.update_item(it, input[:value])
+          item.cluster_resource_package.update_item(item, input[:value])
         rescue ActiveRecord::RecordInvalid => e
           error!('update failed', e.record.errors.to_hash)
         end
@@ -262,11 +262,11 @@ module VpsAdmin::API::Resources
         end
 
         def exec
-          it = ::ClusterResourcePackageItem.where(
+          item = ::ClusterResourcePackageItem.where(
             cluster_resource_package_id: params[:cluster_resource_package_id],
             id: params[:item_id]
           ).take!
-          it.cluster_resource_package.remove_item(it)
+          item.cluster_resource_package.remove_item(item)
           ok!
         end
       end

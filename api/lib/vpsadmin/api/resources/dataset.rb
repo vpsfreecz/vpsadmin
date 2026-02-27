@@ -93,7 +93,7 @@ module VpsAdmin::API::Resources
 
         with_pagination(query.includes(
           :dataset_properties,
-          dataset_in_pools: [pool: [node: [location: [:environment]]]]
+          dataset_in_pools: [{ pool: [{ node: [{ location: [:environment] }] }] }]
         ).order('full_name')).each do |ds|
           ret << ds
         end

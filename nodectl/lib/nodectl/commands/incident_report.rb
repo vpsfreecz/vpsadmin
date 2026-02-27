@@ -13,8 +13,7 @@ module NodeCtl
       :cpu_limit,
       :vps_action,
       :admin_id,
-      :message,
-      keyword_init: true
+      :message
     )
 
     VPS_ACTIONS = %w[none stop suspend disable_network].freeze

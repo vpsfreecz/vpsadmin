@@ -46,9 +46,7 @@ namespace :vpsadmin do
     header = "* #{Time.now.strftime('%a %b %d %Y')} - version #{v}"
 
     (Dir.glob('*/CHANGELOG') + Dir.glob('plugins/*/CHANGELOG')).each do |file|
-      io = File.open(file, 'r')
-      first = io.readline
-      io.close
+      first = File.open(file, 'r', &:readline)
 
       if first.start_with?('* ')
         # Changelog already closed

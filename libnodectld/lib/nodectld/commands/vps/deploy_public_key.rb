@@ -28,7 +28,7 @@ module NodeCtld
       # Walk through the file, write the key if it is not there yet
       # For some reason, when File.open is given a block, it does not raise
       # exceptions like "Errno::EDQUOT: Disk quota exceeded", so don't use it.
-      f = File.open(authorized_keys, 'r+')
+      f = File.new(authorized_keys, 'r+')
       last_line = ''
 
       f.each_line do |line|
@@ -52,8 +52,8 @@ module NodeCtld
 
       tmp = File.join(ssh_dir, '.authorized_keys.new')
 
-      src = File.open(authorized_keys, 'r')
-      dst = File.open(tmp, 'w')
+      src = File.new(authorized_keys, 'r')
+      dst = File.new(tmp, 'w')
 
       src.each_line do |line|
         next if line.strip == @pubkey

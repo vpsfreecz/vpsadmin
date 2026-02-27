@@ -38,6 +38,6 @@ class DatasetAction < ApplicationRecord
       dips << dip
     end
 
-    TransactionChains::Dataset::GroupSnapshot.fire(dips) unless dips.count == 0
+    TransactionChains::Dataset::GroupSnapshot.fire(dips) unless dips.none?
   end
 end

@@ -9,8 +9,7 @@ module NodeCtld
     Session = Struct.new(
       :vps_id,
       :token,
-      :last_input,
-      keyword_init: true
+      :last_input
     )
 
     def initialize

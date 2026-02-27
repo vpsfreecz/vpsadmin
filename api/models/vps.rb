@@ -62,14 +62,17 @@ class Vps < ApplicationRecord
   has_hook :create
 
   include VpsAdmin::API::Maintainable::Model
+
   maintenance_parents :node
 
   include VpsAdmin::API::ClusterResources
+
   cluster_resources required: %i[cpu memory diskspace],
                     optional: %i[swap],
                     environment: -> { node.location.environment }
 
   include VpsAdmin::API::Lifetimes::Model
+
   set_object_states suspended: {
                       enter: TransactionChains::Vps::Block,
                       leave: TransactionChains::Vps::Unblock
@@ -87,6 +90,7 @@ class Vps < ApplicationRecord
                     environment: -> { node.location.environment }
 
   include VpsAdmin::API::ObjectHistory::Model
+
   log_events %i[
     hostname os_template dns_resolver reinstall resources node
     route_add route_del host_addr_add host_addr_del

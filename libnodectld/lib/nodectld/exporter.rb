@@ -20,8 +20,7 @@ module NodeCtld
       :queue_slots,
       :queue_urgent,
       :queue_total,
-      :command_seconds,
-      keyword_init: true
+      :command_seconds
     )
 
     def initialize(daemon)

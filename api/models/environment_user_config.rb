@@ -7,6 +7,7 @@ class EnvironmentUserConfig < ApplicationRecord
   has_paper_trail
 
   include VpsAdmin::API::ClusterResources
+
   cluster_resources optional: %i[ipv4 ipv4_private ipv6],
                     environment: -> { environment }
 end

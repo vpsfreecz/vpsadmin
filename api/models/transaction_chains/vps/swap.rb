@@ -369,7 +369,7 @@ module TransactionChains
       )
 
       append_t(Transactions::Utils::NoOp, args: find_node_id) do |t|
-        if faked_resources.count > 0
+        if faked_resources.any?
           faked_resources.each do |use|
             t.edit(use, confirmed: ::ClusterResourceUse.confirmed(:confirmed))
           end

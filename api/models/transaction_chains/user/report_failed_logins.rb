@@ -6,7 +6,7 @@ module TransactionChains
     def link_chain(user_attempt_groups)
       concerns(
         :affect,
-        *(user_attempt_groups.each_key.map { |u| [u.class.name, u.id] })
+        *user_attempt_groups.each_key.map { |u| [u.class.name, u.id] }
       )
 
       now = Time.now

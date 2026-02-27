@@ -1,8 +1,7 @@
 class AddIpAddressAssignments < ActiveRecord::Migration[7.0]
   IpInfo = Struct.new(
     :log,
-    :record,
-    keyword_init: true
+    :record
   ) do
     def id
       record.id
