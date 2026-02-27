@@ -17,7 +17,8 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
     resource VpsAdmin::API::Resources::Location, label: 'Location',
                                                  desc: 'Location this IP address is available in'
     resource VpsAdmin::API::Resources::User, label: 'User',
-                                             value_label: :login
+                                             value_label: :login,
+                                             nullable: true
     bool :assigned_to_interface, label: 'Assigned to interface'
     string :role, choices: ::Network.roles.keys
     string :purpose, choices: ::Network.purposes.keys

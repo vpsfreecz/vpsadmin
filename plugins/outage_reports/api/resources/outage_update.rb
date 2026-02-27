@@ -13,8 +13,8 @@ module VpsAdmin::API::Resources
     end
 
     params(:editable) do
-      datetime :begins_at, label: 'Begins at'
-      datetime :finished_at, label: 'Finished at'
+      datetime :begins_at, label: 'Begins at', nullable: true
+      datetime :finished_at, label: 'Finished at', nullable: true
       integer :duration, label: 'Duration', desc: 'Outage duration in minutes'
       string :state, label: 'State', choices: ::OutageUpdate.states.keys.map(&:to_s)
       string :impact, db_name: :impact_type, label: 'Impact',

@@ -145,12 +145,17 @@ if (isAdmin()) {
             csrf_check();
 
             try {
-                $api->dns_resolver->create([
+                $params = [
                     'label' => $_POST['dns_label'],
                     'ip_addr' => $_POST['dns_ip'],
                     'is_universal' => isset($_POST['dns_is_universal']),
-                    'location' => $_POST['dns_location'],
-                ]);
+                ];
+
+                if ($_POST['dns_location']) {
+                    $params['location'] = $_POST['dns_location'];
+                }
+
+                $api->dns_resolver->create($params);
 
                 notify_user(_("Changes saved"), _("DNS server added."));
                 redirect('?page=cluster&action=dns');

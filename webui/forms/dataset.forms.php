@@ -89,14 +89,17 @@ function dataset_list($role, $parent = null, $user = null, $dataset = null, $lim
 
     $listParams = [
         'role' => $role,
-        'dataset' => $parent,
     ];
+
+    if ($parent !== null) {
+        $listParams['dataset'] = $parent;
+    }
 
     if ($user) {
         $listParams['user'] = $user;
     }
 
-    if ($dataset) {
+    if ($dataset !== null) {
         $listParams['dataset'] = $dataset;
     }
 

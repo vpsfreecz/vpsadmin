@@ -13,7 +13,8 @@ class VpsAdmin::API::Resources::DnsResolver < HaveAPI::Resource
     bool :is_universal, label: 'Is universal?',
                         desc: 'Universal resolver is independent on location'
     resource VpsAdmin::API::Resources::Location, label: 'Location',
-                                                 desc: 'Location this resolver can be used on'
+                                                 desc: 'Location this resolver can be used on',
+                                                 nullable: true
   end
 
   params(:all) do

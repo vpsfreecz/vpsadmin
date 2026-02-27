@@ -406,6 +406,16 @@ RSpec.describe 'VpsAdmin::API::Resources::VPS write actions' do # rubocop:disabl
       expect(response_message).to include('not available')
     end
 
+    it 'allows clearing dns_resolver with nil' do
+      vps = create_vps!(user: SpecSeed.user, node: SpecSeed.node, dns_resolver: SpecSeed.dns_resolver)
+
+      as(SpecSeed.user) { json_put show_path(vps.id), vps: { dns_resolver: nil } }
+
+      expect_status(200)
+      expect(json['status']).to be(true)
+      expect(vps.reload.dns_resolver_id).to be_nil
+    end
+
     it 'rejects swap on vpsAdminOS nodes without swap' do
       node = create_node!(
         name_prefix: 'spec-noswap',

@@ -335,7 +335,8 @@ RSpec.describe 'VpsAdmin::API::Resources::Outage', requires_plugins: :outage_rep
         state: :staged,
         begins_at: Time.utc(2026, 1, 10, 10, 0, 0),
         duration: 60,
-        impact_type: :network
+        impact_type: :network,
+        finished_at: Time.utc(2026, 1, 10, 11, 0, 0)
       )
     end
 
@@ -372,6 +373,22 @@ RSpec.describe 'VpsAdmin::API::Resources::Outage', requires_plugins: :outage_rep
       lang = ::Language.find_by(code: 'en')
       translation = ::OutageTranslation.find_by(outage: outage, language: lang)
       expect(translation.summary).to eq('Updated summary')
+    end
+
+    it 'allows clearing begins_at and finished_at' do
+      as(admin) do
+        json_put show_path(outage.id), outage: {
+          begins_at: nil,
+          finished_at: nil
+        }
+      end
+
+      expect_status(200)
+      expect(json['status']).to be(true)
+
+      outage.reload
+      expect(outage.begins_at).to be_nil
+      expect(outage.finished_at).to be_nil
     end
 
     it 'returns 404 for missing outage' do
