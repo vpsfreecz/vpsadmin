@@ -61,16 +61,18 @@ Naming/HeredocDelimiterNaming:
   Enabled: false
 Naming/MethodParameterName:
   Enabled: false
-Naming/PredicateName:
+Naming/PredicateMethod:
+  Enabled: false
+Naming/PredicatePrefix:
   Enabled: false
 
-RSpec/ExampleLength:
-  Enabled: false
 RSpec/BeforeAfterAll:
   Enabled: false
-RSpec/SpecFilePathFormat:
+RSpec/ExampleLength:
   Enabled: false
 RSpec/MultipleExpectations:
+  Enabled: false
+RSpec/SpecFilePathFormat:
   Enabled: false
 
 Style/CaseEquality:
@@ -95,6 +97,8 @@ Style/MultilineBlockChain:
 Style/NumericPredicate:
   Enabled: true
   EnforcedStyle: comparison
+Style/OneClassPerFile:
+  Enabled: false
 Style/PreferredHashMethods:
   Enabled: true
   EnforcedStyle: verbose
