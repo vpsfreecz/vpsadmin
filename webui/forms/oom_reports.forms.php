@@ -61,7 +61,7 @@ function oom_reports_list()
     }
 
     $vpsId = api_get_uint('vps');
-    if ($vpsId !== null) {
+    if ($vpsId !== null && $vpsId > 0) {
         $params['vps'] = $vpsId;
     }
 
