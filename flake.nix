@@ -2,7 +2,7 @@
   description = "vpsAdmin (NixOS/vpsAdminOS modules and packages)";
 
   inputs = {
-    vpsadminos.url = "github:vpsfreecz/vpsadminos/2026-02-19-flakes";
+    vpsadminos.url = "github:vpsfreecz/vpsadminos/staging";
     nixpkgs.follows = "vpsadminos/nixpkgs";
   };
 

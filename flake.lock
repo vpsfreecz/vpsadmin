@@ -88,16 +88,16 @@
         "nixpkgs": "nixpkgs_2"
       },
       "locked": {
-        "lastModified": 1772100808,
-        "narHash": "sha256-zj9puQjag6Rc1MH9cyvjAG1R4gDT/sILgBA4JAg/o3o=",
+        "lastModified": 1772356578,
+        "narHash": "sha256-+fmwaT7IMabP0j9QSrQAyPsLOqdfbS3jKjy2mGtDfiM=",
         "owner": "vpsfreecz",
         "repo": "vpsadminos",
-        "rev": "f5d4338619ae6d528c4175e8df4f08dd7561ce8a",
+        "rev": "2cab0100082044f5c05cc7f4d4c39641f7806558",
         "type": "github"
       },
       "original": {
         "owner": "vpsfreecz",
-        "ref": "2026-02-19-flakes",
+        "ref": "staging",
         "repo": "vpsadminos",
         "type": "github"
       }
