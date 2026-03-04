@@ -3,6 +3,7 @@
   pkgs,
   lib,
   vpsadminos ? null,
+  vpsadminRev,
   ...
 }:
 with lib;
@@ -17,7 +18,7 @@ let
       vpsadminos;
   vpsadminosRubyOverlay =
     if vpsadminosPath == null then null else import (vpsadminosPath + "/os/overlays/ruby.nix");
-  overlayList = import ../../overlays;
+  overlayList = import ../../overlays { inherit vpsadminRev; };
 in
 {
   options = {

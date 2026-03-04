@@ -2,6 +2,7 @@
   lib,
   stdenv,
   vpsadminPath ? <vpsadmin>,
+  vpsadminRev,
 }:
 let
   filterRepository =
@@ -17,15 +18,9 @@ let
     else
       builtins.filterSource filterRepository vpsadminPath;
 
-  revisionFile = "${copiedRepo}/.git-revision";
+  revision = builtins.replaceStrings [ "\n" ] [ "" ] (toString vpsadminRev);
 
-  hasRevisionFile = builtins.pathExists revisionFile;
-
-  readVersion = lib.strings.sanitizeDerivationName (
-    builtins.replaceStrings [ "\n" ] [ "" ] (builtins.readFile revisionFile)
-  );
-
-  version = if hasRevisionFile then readVersion else "dev";
+  version = lib.strings.sanitizeDerivationName revision;
 
 in
 stdenv.mkDerivation rec {
@@ -41,11 +36,9 @@ stdenv.mkDerivation rec {
   installPhase = ''
     cp -a ./. $out/
 
-    ${lib.optionalString hasRevisionFile ''
-      for v in api console_router webui ; do
-        cp ${revisionFile} $out/$v/.git-revision
-      done
-    ''}
+    for v in api console_router webui ; do
+      printf '%s\n' '${revision}' > $out/$v/.git-revision
+    done
   '';
 
   meta = with lib; {

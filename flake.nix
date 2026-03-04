@@ -15,7 +15,10 @@
     let
       supportedSystems = [ "x86_64-linux" ];
       forAllSystems = nixpkgs.lib.genAttrs supportedSystems;
-      overlayList = import ./nixos/overlays/default.nix;
+      flakeRevision = nixpkgs.lib.removeSuffix "-dirty" (self.rev or self.dirtyRev);
+      overlayList = import ./nixos/overlays/default.nix {
+        vpsadminRev = flakeRevision;
+      };
       vpsadminosRubyOverlay = import (vpsadminos.outPath + "/os/overlays/ruby.nix");
 
       composeExtensions =
@@ -35,13 +38,19 @@
         nixos-modules =
           { ... }:
           {
-            _module.args.vpsadminos = vpsadminos;
+            _module.args = {
+              inherit vpsadminos;
+              vpsadminRev = flakeRevision;
+            };
             imports = [ ./nixos/modules/nixos-modules.nix ];
           };
         vpsadminos-modules =
           { ... }:
           {
-            _module.args.vpsadminos = vpsadminos;
+            _module.args = {
+              inherit vpsadminos;
+              vpsadminRev = flakeRevision;
+            };
             imports = [ ./nixos/modules/vpsadminos-modules.nix ];
           };
       };

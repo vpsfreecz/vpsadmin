@@ -2,6 +2,7 @@
   config,
   lib,
   pkgs,
+  vpsadminRev,
   ...
 }:
 with lib;
@@ -14,7 +15,7 @@ in
   ];
 
   config = mkIf cfg.enable {
-    nixpkgs.overlays = import ../../../overlays;
+    nixpkgs.overlays = import ../../../overlays { inherit vpsadminRev; };
 
     boot.postBootCommands = ''
       mkdir -m 0700 /run/nodectl
