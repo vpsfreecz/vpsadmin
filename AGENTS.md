@@ -32,6 +32,11 @@
 
 ## Commit & Pull Request Guidelines
 - Use short imperative subjects, often scoped (`api: add StoragePool resource`, `webui: fix payset form`); keep one logical change per commit.
+- Flake input updates (`vpsadminos`) flow:
+  1. Read current rev: `nix flake metadata --json . | jq -r '.locks.nodes.vpsadminos.locked.rev'`.
+  2. Update input: `nix flake update vpsadminos` (or `nix flake lock --update-input vpsadminos`).
+  3. Verify only `flake.lock` changed for this update commit.
+  4. Commit with subject format: `flake: vpsadminos <old9> -> <new9>` (example: `flake: vpsadminos 2cab01000 -> 08bb11324`).
 - PRs should state intent, note risky areas, list test commands run, and link issues; add screenshots/logs for UI/API behavior changes.
 
 ## Security & Configuration Tips
