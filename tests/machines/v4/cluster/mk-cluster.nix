@@ -65,7 +65,6 @@ let
 
     config = {
       imports = [
-        (vpsadminosPath + "/tests/configs/vpsadminos/base.nix")
         (vpsadminosPath + "/tests/configs/vpsadminos/pool-tank.nix")
         ../../../configs/vpsadminos/node.nix
       ];
