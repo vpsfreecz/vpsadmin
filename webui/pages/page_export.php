@@ -20,17 +20,14 @@ if (isLoggedIn()) {
         case 'create':
             $datasetId = api_get_uint('dataset');
             $snapshotId = api_get_uint('snapshot');
-
-            if ($snapshotId !== null) {
-                $datasetId = null;
-            }
+            $datasetIdForCreate = $snapshotId !== null ? null : $datasetId;
 
             if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 csrf_check();
 
                 try {
                     $params = [
-                        'dataset' => $datasetId,
+                        'dataset' => $datasetIdForCreate,
                         'snapshot' => $snapshotId,
                         'all_vps' => isset($_POST['all_vps']),
                         'rw' => isset($_POST['rw']),
