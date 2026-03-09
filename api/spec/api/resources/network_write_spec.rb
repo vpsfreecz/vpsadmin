@@ -307,6 +307,27 @@ RSpec.describe 'VpsAdmin::API::Resources::Network write actions' do # rubocop:di
       expect(managed_net.ip_addresses.count).to eq(3)
     end
 
+    it 'ignores reverse DNS zones without network metadata' do
+      DnsZone.create!(
+        name: "spec-reverse-missing-#{SecureRandom.hex(3)}.in-addr.arpa.",
+        zone_role: :reverse_role,
+        zone_source: :internal_source,
+        label: 'Spec Reverse Missing Network',
+        default_ttl: 3600,
+        email: 'admin@example.test',
+        reverse_network_address: nil,
+        reverse_network_prefix: nil
+      )
+
+      expect do
+        as(SpecSeed.admin) { json_post add_addresses_path(managed_net.id), network: { count: 2 } }
+      end.to change(IpAddress, :count).by(2)
+
+      expect_status(200)
+      expect(json['status']).to be(true)
+      expect(managed_net.ip_addresses.count).to eq(2)
+    end
+
     it 'returns validation errors for invalid count' do
       as(SpecSeed.admin) { json_post add_addresses_path(managed_net.id), network: { count: 0 } }
 

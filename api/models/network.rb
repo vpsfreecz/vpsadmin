@@ -38,6 +38,8 @@ class Network < ApplicationRecord
         raise ArgumentError, 'Can check only reverse zones, forward zone given'
       end
 
+      return false if what.reverse_network_address.blank? || what.reverse_network_prefix.blank?
+
       addr = "#{what.reverse_network_address}/#{what.reverse_network_prefix}"
 
     when ::IpAddress # model

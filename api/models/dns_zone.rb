@@ -43,6 +43,8 @@ class DnsZone < ApplicationRecord
       raise '#include? can be called only on reverse zones'
     end
 
+    return false if reverse_network_address.blank? || reverse_network_prefix.blank?
+
     case what
     when ::IpAddress # model
       addr = what.addr
