@@ -15,8 +15,6 @@ jobs:
           fetch-depth: 0
 
       - uses: cachix/install-nix-action@v31
-        with:
-          nix_path: nixpkgs=channel:nixos-unstable
 
       - name: Set up Ruby + Bundler cache
         uses: ruby/setup-ruby@v1
@@ -30,8 +28,8 @@ jobs:
 
       # - name: Update gem dependencies
       #   run: |
-      #     nix-shell -p bundix --run ./tools/bundix_all.sh
-      #     nix-shell -p nixfmt-rfc-style --run "nixfmt packages/*/gemset.nix"
+      #     nix develop .#vpsadmin --command ./tools/bundix_all.sh
+      #     nix develop .#vpsadmin --command nixfmt packages/*/gemset.nix
 
       #     git add packages
       #     git diff --cached --quiet && exit 0
@@ -42,10 +40,12 @@ jobs:
         run: |
           cd webui
 
-          nix-shell --run "composer update"
-          [ -d vendor ] && rm -rf vendor
-          nix-shell --run "composer2nix --name vpsadmin-webui"
-          nix-shell --run "nixfmt composer-env.nix php-packages.nix"
+          nix develop ..#webui --command bash -lc '
+            composer update
+            [ -d vendor ] && rm -rf vendor
+            composer2nix --name vpsadmin-webui
+            nixfmt composer-env.nix php-packages.nix
+          '
 
           git add composer.lock composer-env.nix php-packages.nix
           git diff --cached --quiet && exit 0
@@ -55,4 +55,3 @@ jobs:
       - name: Push updates
         run: |
           git push origin master
-
