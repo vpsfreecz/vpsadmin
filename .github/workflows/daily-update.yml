@@ -26,15 +26,17 @@ jobs:
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-      # - name: Update gem dependencies
-      #   run: |
-      #     nix develop .#vpsadmin --command ./tools/bundix_all.sh
-      #     nix develop .#vpsadmin --command nixfmt packages/*/gemset.nix
+      - name: Update gem dependencies
+        run: |
+          nix develop .#vpsadmin --command bash -lc '
+            ./tools/bundix_all.sh
+            nixfmt packages/*/gemset.nix
+          '
 
-      #     git add packages
-      #     git diff --cached --quiet && exit 0
+          git add packages
+          git diff --cached --quiet && exit 0
 
-      #     git commit -m "packages: update gem dependencies"
+          git commit -m "packages: update gem dependencies"
 
       - name: Update webui dependencies
         run: |
