@@ -376,7 +376,7 @@ function oom_reports_rules_list($vps_id)
         $xtpl->table_td(
             '<ul>'
             . '<li>' . _('Rules are evaluated top to bottom') . '</li>'
-            . '<li>' . _('Patterns are matched using Ruby\'s <a href="https://www.rubydoc.info/stdlib/core/File.fnmatch" target="_blank">File.fnmatch</a> method with <code>File::FNM_PATHNAME | File::FNM_EXTGLOB</code>') . '</li>'
+            . '<li>' . _('Patterns are matched using Ruby\'s <a href="https://docs.ruby-lang.org/en/master/File.html#method-c-fnmatch" target="_blank">File.fnmatch</a> method with <code>File::FNM_PATHNAME | File::FNM_EXTGLOB</code>') . '</li>'
             . '<li>' . _('Matches are done against full cgroup path without <code>/sys/fs/cgroup</code>, see') . ' <a href="?page=oom_reports&list=1">' . _('existing reports') . '</a>' . '</li>'
             . '<li>' . _('The first matching rule determines the action') . '</li>'
             . '<li>' . _('Out-of-memory situations are considered a configuration error and can result in VPS being restarted or stopped') . '</li>'
