@@ -181,6 +181,16 @@ class Vpsadminctl
 end
 
 class VpsadminServicesMachine < OsVm::NixosMachine
+  CHAIN_STATES = {
+    staged: 0,
+    queued: 1,
+    done: 2,
+    rollbacking: 3,
+    failed: 4,
+    fatal: 5,
+    resolved: 6
+  }.freeze
+
   attr_reader :vpsadminctl
 
   def initialize(*args, **kwargs)
@@ -201,6 +211,121 @@ class VpsadminServicesMachine < OsVm::NixosMachine
       )
 
       return true if output.include?('API description')
+
+      sleep 1
+    end
+  end
+
+  def mysql_raw(sql:, database: 'vpsadmin', user: 'api', timeout: nil)
+    cmd = mysql_command(sql:, database:, user:)
+
+    if timeout.nil?
+      succeeds(cmd)
+    else
+      succeeds(cmd, timeout:)
+    end
+  end
+
+  def mysql_scalar(sql:, database: 'vpsadmin', user: 'api', timeout: nil)
+    _, output = mysql_raw(sql:, database:, user:, timeout:)
+    output.to_s.lines.first&.strip
+  end
+
+  def mysql_rows(sql:, database: 'vpsadmin', user: 'api', timeout: nil)
+    _, output = mysql_raw(sql:, database:, user:, timeout:)
+    output.to_s.lines.map { |line| line.chomp.split("\t", -1) }
+  end
+
+  def mysql_json_rows(sql:, database: 'vpsadmin', user: 'api', timeout: nil)
+    mysql_rows(sql:, database:, user:, timeout:).map do |row|
+      JSON.parse(row.fetch(0))
+    end
+  end
+
+  def wait_for_chain_state(chain_id, state:, timeout: @default_timeout || 300)
+    expected = state.is_a?(Symbol) ? CHAIN_STATES.fetch(state) : Integer(state)
+
+    wait_for_condition(
+      timeout:,
+      error_message: "Timed out waiting for chain ##{chain_id} state=#{state}"
+    ) do
+      current = mysql_scalar(
+        sql: "SELECT state FROM transaction_chains WHERE id = #{Integer(chain_id)}"
+      )
+
+      current && current.to_i == expected
+    end
+  end
+
+  def wait_for_chain_progress(chain_id, progress:, timeout: @default_timeout || 300)
+    expected = Integer(progress)
+
+    wait_for_condition(
+      timeout:,
+      error_message: "Timed out waiting for chain ##{chain_id} progress=#{expected}"
+    ) do
+      current = mysql_scalar(
+        sql: "SELECT progress FROM transaction_chains WHERE id = #{Integer(chain_id)}"
+      )
+
+      current && current.to_i == expected
+    end
+  end
+
+  def wait_for_no_confirmations(chain_id, timeout: @default_timeout || 300)
+    wait_for_condition(
+      timeout:,
+      error_message: "Timed out waiting for chain ##{chain_id} confirmations to finish"
+    ) do
+      current = mysql_scalar(
+        sql: <<~SQL
+          SELECT COUNT(*)
+          FROM transaction_confirmations c
+          INNER JOIN transactions t ON t.id = c.transaction_id
+          WHERE t.transaction_chain_id = #{Integer(chain_id)} AND c.done = 0
+        SQL
+      )
+
+      current && current.to_i == 0
+    end
+  end
+
+  def unlock_transaction_signing_key(passphrase: 'test')
+    _, output = vpsadminctl.succeeds(
+      args: %w[api_server unlock_transaction_signing_key],
+      parameters: { passphrase: }
+    )
+
+    output
+  end
+
+  private
+
+  def mysql_command(sql:, database:, user:)
+    password_file = "/etc/vpsadmin-test/mariadb-#{user}-password"
+
+    inner = [
+      'mariadb',
+      '--batch',
+      '--raw',
+      '--skip-column-names',
+      "--user=#{Shellwords.escape(user)}",
+      "--password=\"$(cat #{Shellwords.escape(password_file)})\"",
+      Shellwords.escape(database),
+      '-e',
+      Shellwords.escape(sql)
+    ].join(' ')
+
+    "bash -lc #{Shellwords.escape(inner)}"
+  end
+
+  def wait_for_condition(timeout:, error_message:)
+    deadline = Time.now + timeout
+
+    loop do
+      return true if yield
+
+      raise OsVm::TimeoutError, error_message if Time.now >= deadline
 
       sleep 1
     end
