@@ -57,6 +57,26 @@ module AfterTestScriptRunLogs
     CMD
   end
 
+  def self.collect_transaction_debug(machine)
+    machine.execute(<<~CMD)
+      mysql_query() {
+        echo "[after_test_script_run] mysql: $1"
+        mysql --batch --raw --table \
+          --user=api \
+          --password="$(cat /etc/vpsadmin-test/mariadb-api-password)" \
+          vpsadmin \
+          -e "$1"
+        echo
+      }
+
+      mysql_query "SELECT id, type, state, size, progress, urgent_rollback, created_at FROM transaction_chains ORDER BY id DESC LIMIT 25"
+      mysql_query "SELECT id, transaction_chain_id, node_id, vps_id, handle, depends_on_id, urgent, priority, status, done, reversible, queue, signature IS NOT NULL AS has_signature, started_at, finished_at FROM transactions ORDER BY id DESC LIMIT 100"
+      mysql_query "SELECT id, transaction_id, class_name, table_name, confirm_type, done FROM transaction_confirmations ORDER BY id DESC LIMIT 100"
+      mysql_query "SELECT resource, row_id, locked_by_type, locked_by_id, created_at FROM resource_locks ORDER BY id DESC LIMIT 100"
+      mysql_query "SELECT node_id, addr, port, transaction_chain_id FROM port_reservations WHERE transaction_chain_id IS NOT NULL ORDER BY id DESC LIMIT 100"
+    CMD
+  end
+
   def self.collect_node_logs(machine)
     %w[/var/log/nodectld /var/log/osctld].each do |log|
       machine.execute(<<~CMD)
@@ -84,6 +104,7 @@ TestRunner::Hook.subscribe(:after_test_script_run) do |script_result:, machines:
 
       if AfterTestScriptRunLogs.services_machine?(machine)
         AfterTestScriptRunLogs.collect_service_journal(machine)
+        AfterTestScriptRunLogs.collect_transaction_debug(machine)
       elsif AfterTestScriptRunLogs.node_machine?(machine)
         AfterTestScriptRunLogs.collect_node_logs(machine)
       end
