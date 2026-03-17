@@ -8,5 +8,6 @@ mkCluster {
   inherit seedPath;
   seed = clusterSeed;
   nodes = clusterSeed.nodes;
+  extraModules = args.extraModules or { };
   inherit vpsadminosPath;
 } pkgs

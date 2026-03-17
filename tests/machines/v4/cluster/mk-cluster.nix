@@ -5,6 +5,7 @@
   servicesSocket ? "192.168.10.10",
   bootMemory ? 8192,
   bootCpus ? 4,
+  extraModules ? { },
   vpsadminosPath,
 }:
 _pkgs:
@@ -28,6 +29,8 @@ let
   );
 
   rabbitmqNodeUsers = map (node: node.domainName) nodeList;
+  servicesExtraModule = extraModules.services or { };
+  nodeExtraModules = extraModules.nodes or { };
 
   seedFiles = [
     "test.nix"
@@ -67,6 +70,7 @@ let
       imports = [
         (vpsadminosPath + "/tests/configs/vpsadminos/pool-tank.nix")
         ../../../configs/vpsadminos/node.nix
+        (nodeExtraModules.${machineName} or { })
       ];
 
       boot.qemu.memory = bootMemory;
@@ -94,6 +98,7 @@ in
     config = {
       imports = [
         ../../../configs/nixos/vpsadmin-services.nix
+        servicesExtraModule
       ];
 
       vpsadmin.test = {
