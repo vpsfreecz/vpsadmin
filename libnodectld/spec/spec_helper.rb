@@ -36,7 +36,6 @@ end
 require 'nodectld/pool_status'
 require 'nodectld/storage_status'
 require 'nodectld/dataset_expander'
-
 OsCtl::Lib::Logger.setup(:none)
 
 Dir[File.join(__dir__, 'support', '**', '*.rb')].each { |f| require f }
