@@ -331,6 +331,7 @@
             packages = with pkgs; [
               ruby_vpsadminos
               git
+              libffi
               zlib
               openssl
               ncurses
