@@ -84,7 +84,7 @@ module NodeCtld
       db.transaction do |t|
         save_transaction(t)
 
-        if (@status == :ok && !@rolledback) || keep_going?
+        if ((@status == :ok || @status == :warning) && !@rolledback) || keep_going?
           # Chain is finished, close up
           if chain_finished?
             run_confirmations(t)
