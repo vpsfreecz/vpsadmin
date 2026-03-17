@@ -228,11 +228,13 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y libmariadb-dev libmariadb-dev-compat mariadb-client
 
-      - name: Read Ruby version
+      - name: Read Ruby series
         id: ruby-version
         run: |
           set -euo pipefail
-          echo "version=$(cat .ruby-version)" >> "$GITHUB_OUTPUT"
+          # ruby/setup-ruby resolves exact 3.4.0 to a preview build on
+          # GitHub-hosted runners, so use the latest stable 3.4.x instead.
+          echo "version=$(cut -d. -f1,2 .ruby-version)" >> "$GITHUB_OUTPUT"
 
       - name: Set up Ruby (Bundler cache)
         uses: ruby/setup-ruby@v1
@@ -356,11 +358,13 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y libmariadb-dev libmariadb-dev-compat mariadb-client
 
-      - name: Read Ruby version
+      - name: Read Ruby series
         id: ruby-version
         run: |
           set -euo pipefail
-          echo "version=$(cat .ruby-version)" >> "$GITHUB_OUTPUT"
+          # ruby/setup-ruby resolves exact 3.4.0 to a preview build on
+          # GitHub-hosted runners, so use the latest stable 3.4.x instead.
+          echo "version=$(cut -d. -f1,2 .ruby-version)" >> "$GITHUB_OUTPUT"
 
       - name: Set up Ruby (Bundler cache)
         uses: ruby/setup-ruby@v1

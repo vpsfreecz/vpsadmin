@@ -16,9 +16,18 @@ jobs:
 
       - uses: cachix/install-nix-action@v31
 
+      - name: Read Ruby series
+        id: ruby-version
+        run: |
+          set -euo pipefail
+          # ruby/setup-ruby resolves exact 3.4.0 to a preview build on
+          # GitHub-hosted runners, so use the latest stable 3.4.x instead.
+          echo "version=$(cut -d. -f1,2 .ruby-version)" >> "$GITHUB_OUTPUT"
+
       - name: Set up Ruby + Bundler cache
         uses: ruby/setup-ruby@v1
         with:
+          ruby-version: ${{ steps.ruby-version.outputs.version }}
           bundler-cache: true
 
       - name: Setup git
