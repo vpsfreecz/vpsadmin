@@ -31,12 +31,14 @@ module NodeCtld
 
       unless klass
         @output[:error] = 'Unsupported command'
+        rollback_without_execute
         return false
       end
 
       if @trans['signature'] \
          && !TransactionVerifier.verify_base64(@trans['input'], @trans['signature'])
         @output[:error] = 'Invalid signature'
+        rollback_without_execute
         return false
       end
 
@@ -45,11 +47,13 @@ module NodeCtld
         param = input['input']
       rescue StandardError
         @output[:error] = 'Bad input syntax'
+        rollback_without_execute
         return false
       end
 
       unless check_signed_opts(input)
         @output[:error] = 'Signed options do not match relational options'
+        rollback_without_execute
         return false
       end
 
@@ -360,6 +364,12 @@ module NodeCtld
         && input['reversible'] == trans['reversible']
     end
 
+    def rollback_without_execute
+      return unless original_chain_direction == :execute && reversible?
+
+      @rolledback = true
+    end
+
     def safe_call(klass, m)
       @current_klass = klass
       @current_method = m
@@ -398,6 +408,7 @@ module NodeCtld
       rescue CommandNotImplemented
         @status = :failed
         @output[:error] = 'Command not implemented'
+        rollback_without_execute if m == :exec
       rescue StandardError => e
         @status = :failed
         @output[:error] = e.inspect
