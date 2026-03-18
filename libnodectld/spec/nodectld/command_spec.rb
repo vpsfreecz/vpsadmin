@@ -46,8 +46,14 @@ RSpec.describe NodeCtld::Command do
     expect(cmd.execute).to be(false)
     cmd.save(shared_db)
 
+    expect(tx_state(tx_id)).to eq(
+      'done' => NodeCtldSpec::TxState::TX_DONE_ROLLED_BACK,
+      'status' => NodeCtldSpec::TxState::TX_STATUS_FAILED
+    )
     expect(transaction_output(tx_id)).to include('error' => 'Unsupported command')
-    expect(sql_value('SELECT status FROM transactions WHERE id = ?', tx_id)).to eq(0)
+    expect(chain_state(chain_id)).to include(
+      'state' => NodeCtldSpec::TxState::CHAIN_FAILED
+    )
   end
 
   it 'persists a bad input syntax error' do
@@ -62,8 +68,14 @@ RSpec.describe NodeCtld::Command do
     expect(cmd.execute).to be(false)
     cmd.save(shared_db)
 
+    expect(tx_state(tx_id)).to eq(
+      'done' => NodeCtldSpec::TxState::TX_DONE_ROLLED_BACK,
+      'status' => NodeCtldSpec::TxState::TX_STATUS_FAILED
+    )
     expect(transaction_output(tx_id)).to include('error' => 'Bad input syntax')
-    expect(sql_value('SELECT status FROM transactions WHERE id = ?', tx_id)).to eq(0)
+    expect(chain_state(chain_id)).to include(
+      'state' => NodeCtldSpec::TxState::CHAIN_FAILED
+    )
   end
 
   it 'fails transactions whose handler returns an invalid value' do
@@ -130,8 +142,14 @@ RSpec.describe NodeCtld::Command do
     expect(cmd.execute).to be(false)
     cmd.save(shared_db)
 
+    expect(tx_state(tx_id)).to eq(
+      'done' => NodeCtldSpec::TxState::TX_DONE_ROLLED_BACK,
+      'status' => NodeCtldSpec::TxState::TX_STATUS_FAILED
+    )
     expect(transaction_output(tx_id)).to include('error' => 'Invalid signature')
-    expect(sql_value('SELECT status FROM transactions WHERE id = ?', tx_id)).to eq(0)
+    expect(chain_state(chain_id)).to include(
+      'state' => NodeCtldSpec::TxState::CHAIN_FAILED
+    )
   end
 
   it 'rejects transactions whose signed options do not match relational columns' do
@@ -156,10 +174,16 @@ RSpec.describe NodeCtld::Command do
     expect(cmd.execute).to be(false)
     cmd.save(shared_db)
 
+    expect(tx_state(tx_id)).to eq(
+      'done' => NodeCtldSpec::TxState::TX_DONE_ROLLED_BACK,
+      'status' => NodeCtldSpec::TxState::TX_STATUS_FAILED
+    )
     expect(transaction_output(tx_id)).to include(
       'error' => 'Signed options do not match relational options'
     )
-    expect(sql_value('SELECT status FROM transactions WHERE id = ?', tx_id)).to eq(0)
+    expect(chain_state(chain_id)).to include(
+      'state' => NodeCtldSpec::TxState::CHAIN_FAILED
+    )
   end
 
   it 'persists successful execution and closes a single-transaction chain' do
@@ -323,12 +347,57 @@ RSpec.describe NodeCtld::Command do
 
     execute_and_save(tx_id)
 
-    expect(sql_value('SELECT done FROM transactions WHERE id = ?', tx_id)).to eq(1)
-    expect(sql_value('SELECT status FROM transactions WHERE id = ?', tx_id)).to eq(0)
+    expect(tx_state(tx_id)).to eq(
+      'done' => NodeCtldSpec::TxState::TX_DONE_ROLLED_BACK,
+      'status' => NodeCtldSpec::TxState::TX_STATUS_FAILED
+    )
     expect(sql_value('SELECT state FROM transaction_chains WHERE id = ?', chain_id)).to eq(
       NodeCtldSpec::TxState::CHAIN_FAILED
     )
     expect(transaction_output(tx_id)).to include('error' => 'Command not implemented')
+  end
+
+  it 'marks unsupported reversible transactions as rolled back before chain rollback starts' do
+    chain_id = insert_chain(size: 3, progress: 1)
+    tx1 = insert_transaction(
+      transaction_chain_id: chain_id,
+      handle: NodeCtldSpec::TestHandles::OK,
+      done: NodeCtldSpec::TxState::TX_DONE_DONE,
+      status: NodeCtldSpec::TxState::TX_STATUS_OK
+    )
+    tx2 = insert_transaction(
+      transaction_chain_id: chain_id,
+      handle: 123_456,
+      depends_on_id: tx1,
+      reversible: NodeCtldSpec::TxState::TX_REVERSIBLE
+    )
+    tx3 = insert_transaction(
+      transaction_chain_id: chain_id,
+      handle: NodeCtldSpec::TestHandles::OK,
+      depends_on_id: tx2,
+      reversible: NodeCtldSpec::TxState::TX_REVERSIBLE
+    )
+
+    execute_and_save(tx2)
+
+    expect(chain_state(chain_id)).to eq(
+      'state' => NodeCtldSpec::TxState::CHAIN_ROLLBACKING,
+      'progress' => 0
+    )
+    expect(tx_state(tx1)).to eq(
+      'done' => NodeCtldSpec::TxState::TX_DONE_DONE,
+      'status' => NodeCtldSpec::TxState::TX_STATUS_OK
+    )
+    expect(tx_state(tx2)).to eq(
+      'done' => NodeCtldSpec::TxState::TX_DONE_ROLLED_BACK,
+      'status' => NodeCtldSpec::TxState::TX_STATUS_FAILED
+    )
+    expect(tx_state(tx3)).to eq(
+      'done' => NodeCtldSpec::TxState::TX_DONE_DONE,
+      'status' => NodeCtldSpec::TxState::TX_STATUS_FAILED
+    )
+    expect(transaction_output(tx2)).to include('error' => 'Unsupported command')
+    expect(transaction_output(tx3)).to eq('error' => 'Dependency failed')
   end
 
   it 'fails followers when a non-reversible transaction fails' do
@@ -553,11 +622,20 @@ RSpec.describe NodeCtld::Command do
       status: NodeCtldSpec::TxState::TX_STATUS_OK,
       signature: 'sig-one'
     )
+    payload, signature = NodeCtldSpec::SigningHelpers.signed_input(
+      chain_id: chain_id,
+      depends_on_id: tx1,
+      handle: NodeCtldSpec::TestHandles::OK,
+      node_id: NodeCtldSpec::BaselineSeed.ids.fetch(:node_id),
+      reversible: NodeCtldSpec::TxState::TX_REVERSIBLE,
+      input: {}
+    )
     tx2 = insert_transaction(
       transaction_chain_id: chain_id,
       handle: NodeCtldSpec::TestHandles::OK,
       depends_on_id: tx1,
-      signature: 'sig-two'
+      input: payload,
+      signature: signature
     )
     insert_resource_lock(chain_id: chain_id)
     port_id = insert_port_reservation(chain_id: chain_id)
