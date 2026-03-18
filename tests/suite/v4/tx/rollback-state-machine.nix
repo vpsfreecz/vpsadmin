@@ -11,9 +11,8 @@ import ../../../make-test.nix (
 
     description = ''
       Insert a synthetic three-step chain into the database, force a reversible
-      unsupported-command failure, and pin the current daemon behavior where the
-      chain enters rollbacking but does not automatically roll back the earlier
-      successful step.
+      unsupported-command failure, and verify nodectld drives the rollback state
+      machine to a failed close with confirmation and cleanup side effects.
     '';
 
     tags = [
@@ -205,10 +204,10 @@ import ../../../make-test.nix (
           ])
         end
 
-        it 'enters rollbacking and remains there waiting for manual intervention' do
+        it 'rolls the chain back and closes it as failed' do
           node.succeeds('nodectl queue resume general')
 
-          services.wait_for_transaction(tx_ids[1], done: 1, status: 0)
+          services.wait_for_transaction(tx_ids[1], done: 2, status: 0)
 
           wait_until_block_succeeds(name: 'chain enters rollbacking') do
             expect(
@@ -226,26 +225,32 @@ import ../../../make-test.nix (
                 sql: "SELECT done, status FROM transactions WHERE id = #{tx_ids[2]}"
               ).first
             ).to eq(['1', '0'])
+            expect(
+              services.mysql_rows(
+                sql: "SELECT done, status FROM transactions WHERE id = #{tx_ids[1]}"
+              ).first
+            ).to eq(['2', '0'])
             true
           end
 
-          sleep 5
+          services.wait_for_chain_state(chain_id, state: :failed)
+          services.wait_for_no_confirmations(chain_id)
 
           expect(
             services.mysql_rows(
               sql: "SELECT state, progress FROM transaction_chains WHERE id = #{chain_id}"
             ).first
-          ).to eq(['3', '0'])
+          ).to eq(['4', '0'])
           expect(
             services.mysql_rows(
               sql: "SELECT done, status FROM transactions WHERE id = #{tx_ids[0]}"
             ).first
-          ).to eq(['1', '1'])
+          ).to eq(['2', '1'])
           expect(
             services.mysql_rows(
               sql: "SELECT done, status FROM transactions WHERE id = #{tx_ids[1]}"
             ).first
-          ).to eq(['1', '0'])
+          ).to eq(['2', '0'])
           expect(
             services.mysql_rows(
               sql: "SELECT done, status FROM transactions WHERE id = #{tx_ids[2]}"
@@ -256,17 +261,17 @@ import ../../../make-test.nix (
           expect(transaction_output(services, tx_ids[2])).to include('error' => 'Dependency failed')
           expect(
             services.mysql_scalar(sql: "SELECT COUNT(*) FROM spec_tx_records WHERE id = #{row_id}")
-          ).to eq('1')
+          ).to eq('0')
           expect(
             services.mysql_scalar(
               sql: "SELECT COUNT(*) FROM resource_locks WHERE locked_by_type = 'TransactionChain' AND locked_by_id = #{chain_id}"
             )
-          ).to eq('1')
+          ).to eq('0')
           expect(
             services.mysql_scalar(
               sql: "SELECT COUNT(*) FROM port_reservations WHERE transaction_chain_id = #{chain_id}"
             )
-          ).to eq('1')
+          ).to eq('0')
           expect(
             services.mysql_scalar(
               sql: <<~SQL
@@ -275,7 +280,7 @@ import ../../../make-test.nix (
                 WHERE transaction_id = #{tx_ids[0]} AND done = 0
               SQL
             )
-          ).to eq('1')
+          ).to eq('0')
         end
       end
     '';
