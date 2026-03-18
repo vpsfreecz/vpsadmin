@@ -272,6 +272,29 @@ class VpsadminServicesMachine < OsVm::NixosMachine
     end
   end
 
+  def wait_for_transaction(transaction_id, done:, status: nil, timeout: @default_timeout || 300)
+    expected_done = Integer(done)
+    expected_status = status.nil? ? nil : Integer(status)
+
+    wait_for_condition(
+      timeout:,
+      error_message: "Timed out waiting for transaction ##{transaction_id} done=#{expected_done} status=#{expected_status.inspect}"
+    ) do
+      row = mysql_rows(
+        sql: <<~SQL
+          SELECT done, status
+          FROM transactions
+          WHERE id = #{Integer(transaction_id)}
+        SQL
+      ).first
+
+      next false unless row
+
+      current_done, current_status = row.map(&:to_i)
+      current_done == expected_done && (expected_status.nil? || current_status == expected_status)
+    end
+  end
+
   def wait_for_no_confirmations(chain_id, timeout: @default_timeout || 300)
     wait_for_condition(
       timeout:,

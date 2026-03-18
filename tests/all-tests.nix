@@ -28,6 +28,8 @@ testLib.makeTests [
   "v4/tx/chain-lifecycle"
   "v4/tx/invalid-signature"
   "v4/tx/manual-confirmations"
+  "v4/tx/rollback-state-machine"
+  "v4/tx/keep-going-final-state"
   "v4/tx/release-retry-resolve"
   "v4/vps/create"
   "v4/vps/migrate"
