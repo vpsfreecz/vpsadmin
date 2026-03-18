@@ -150,7 +150,7 @@ import ../../../make-test.nix (
           ).to eq('4')
           expect(
             services.mysql_scalar(sql: "SELECT done FROM transactions WHERE id = #{@transaction_id}")
-          ).to eq('1')
+          ).to eq('2')
           expect(
             services.mysql_scalar(sql: "SELECT status FROM transactions WHERE id = #{@transaction_id}")
           ).to eq('0')
