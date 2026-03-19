@@ -44,7 +44,13 @@ module NodeCtld
                   @dst_dataset_name
                 end
 
-      @snapshots.reverse_each do |s|
+      snaps = if @snapshots.size > 1
+                @snapshots[1..]
+              else
+                @snapshots
+              end
+
+      snaps.reverse_each do |s|
         zfs(
           :destroy,
           nil,
