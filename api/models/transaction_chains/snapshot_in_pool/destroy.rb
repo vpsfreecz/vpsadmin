@@ -24,7 +24,9 @@ module TransactionChains
           t.destroy(s.snapshot_in_pool)
           t.destroy(s.snapshot_in_pool.snapshot) if cleanup
 
-          t.decrement(s.snapshot_in_pool, :reference_count) if s.snapshot_in_pool_in_branch
+          if s.snapshot_in_pool_in_branch
+            t.decrement(s.snapshot_in_pool_in_branch.snapshot_in_pool, :reference_count)
+          end
         end
 
         # Destroy the branch if it is empty.
