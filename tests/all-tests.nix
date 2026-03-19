@@ -25,6 +25,8 @@ testLib.makeTests [
   "v4/cluster/1-node"
   "v4/cluster/2-node"
   "v4/node/register"
+  "v4/storage/backup-full-incremental"
+  "v4/storage/rollback-from-backup"
   "v4/tx/chain-lifecycle"
   "v4/tx/invalid-signature"
   "v4/tx/manual-confirmations"

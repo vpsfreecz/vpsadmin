@@ -74,6 +74,13 @@ module AfterTestScriptRunLogs
       mysql_query "SELECT id, transaction_id, class_name, table_name, confirm_type, done FROM transaction_confirmations ORDER BY id DESC LIMIT 100"
       mysql_query "SELECT resource, row_id, locked_by_type, locked_by_id, created_at FROM resource_locks ORDER BY id DESC LIMIT 100"
       mysql_query "SELECT node_id, addr, port, transaction_chain_id FROM port_reservations WHERE transaction_chain_id IS NOT NULL ORDER BY id DESC LIMIT 100"
+      mysql_query "SELECT id, dataset_id, pool_id, label, min_snapshots, max_snapshots, snapshot_max_age, confirmed FROM dataset_in_pools ORDER BY id DESC LIMIT 100"
+      mysql_query "SELECT id, dataset_id, name, history_id, confirmed, created_at FROM snapshots ORDER BY id DESC LIMIT 200"
+      mysql_query "SELECT id, dataset_in_pool_id, snapshot_id, reference_count, confirmed FROM snapshot_in_pools ORDER BY id DESC LIMIT 200"
+      mysql_query "SELECT id, dataset_in_pool_id, head, confirmed FROM dataset_trees ORDER BY id DESC LIMIT 100"
+      mysql_query "SELECT id, dataset_tree_id, name, head, confirmed FROM branches ORDER BY id DESC LIMIT 100"
+      mysql_query "SELECT id, snapshot_in_pool_id, snapshot_in_pool_in_branch_id, branch_id, confirmed FROM snapshot_in_pool_in_branches ORDER BY id DESC LIMIT 200"
+      mysql_query "SELECT id, snapshot_in_pool_id, user_namespace_map_id, name, state, confirmed FROM snapshot_in_pool_clones ORDER BY id DESC LIMIT 100"
     CMD
   end
 
@@ -88,6 +95,11 @@ module AfterTestScriptRunLogs
         fi
       CMD
     end
+
+    machine.execute(<<~CMD)
+      echo "[after_test_script_run] zfs list -r -t filesystem,snapshot tank"
+      zfs list -r -t filesystem,snapshot tank || true
+    CMD
   end
 end
 

@@ -427,6 +427,7 @@ in
       };
 
       databaseSetup = {
+        configDirectory = testApiConfigDir;
         database = {
           name = dbName;
           user = dbApiUser.user;
@@ -459,6 +460,7 @@ in
 
       supervisor = {
         enable = true;
+        configDirectory = testApiConfigDir;
         database = {
           name = dbName;
           user = dbSupervisorUser.user;
