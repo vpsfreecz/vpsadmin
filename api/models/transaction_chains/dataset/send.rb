@@ -9,10 +9,10 @@ module TransactionChains
       end
 
       if initial
-        if src.pool == dst.pool
+        if local_send?(src, dst)
           append(
             Transactions::Storage::LocalSend,
-            args: [src, dst, [snapshots.first], src_branch, dst_branch],
+            args: [src, dst, [snapshots.first], src_branch, dst_branch, ds_suffix],
             &confirm_block([snapshots.first], dst, dst_branch)
           )
 
@@ -34,10 +34,10 @@ module TransactionChains
       end
 
       if (initial && snapshots.size > 1) || !initial
-        if src.pool == dst.pool
+        if local_send?(src, dst)
           append(
             Transactions::Storage::LocalSend,
-            args: [src, dst, snapshots, src_branch, dst_branch],
+            args: [src, dst, snapshots, src_branch, dst_branch, ds_suffix],
             &confirm_block(snapshots[1..], dst, dst_branch)
           )
 
@@ -65,6 +65,10 @@ module TransactionChains
     end
 
     protected
+
+    def local_send?(src, dst)
+      src.pool.node_id == dst.pool.node_id
+    end
 
     def confirm_block(snapshots, dst, branch)
       proc do
