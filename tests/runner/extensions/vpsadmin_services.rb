@@ -216,6 +216,34 @@ class VpsadminServicesMachine < OsVm::NixosMachine
     end
   end
 
+  def api_ruby(code:, timeout: nil)
+    script = <<~CMD
+      set -euo pipefail
+      api_dir="$(systemctl show -p WorkingDirectory --value vpsadmin-api)"
+      api_root="$(dirname "$api_dir")"
+      tmp_rb="$(mktemp /tmp/vpsadmin-storage-XXXX.rb)"
+      trap 'rm -f "$tmp_rb"' EXIT
+
+      cat > "$tmp_rb" <<'RUBY'
+      ENV['RACK_ENV'] ||= 'production'
+      require 'json'
+      Dir.chdir(ENV.fetch('API_DIR'))
+      $LOAD_PATH.unshift(File.join(ENV.fetch('API_DIR'), 'lib'))
+      require 'vpsadmin'
+      #{code}
+      RUBY
+
+      API_DIR="$api_dir" "$api_root/ruby-env-wrapped/bin/ruby" "$tmp_rb"
+    CMD
+
+    timeout ? succeeds(script, timeout: timeout) : succeeds(script)
+  end
+
+  def api_ruby_json(code:, timeout: nil)
+    _, output = api_ruby(code: code, timeout: timeout)
+    JSON.parse(output.to_s.lines.last)
+  end
+
   def mysql_raw(sql:, database: 'vpsadmin', user: 'api', timeout: nil)
     cmd = mysql_command(sql:, database:, user:)
 
@@ -322,6 +350,41 @@ class VpsadminServicesMachine < OsVm::NixosMachine
     output
   end
 
+  def wait_for_snapshot_in_pool(dip_id, snapshot_id, timeout: @default_timeout || 300)
+    wait_for_condition(
+      timeout: timeout,
+      error_message: "Timed out waiting for snapshot #{snapshot_id} in DatasetInPool ##{dip_id}"
+    ) do
+      current = mysql_scalar(
+        sql: <<~SQL
+          SELECT COUNT(*)
+          FROM snapshot_in_pools
+          WHERE dataset_in_pool_id = #{Integer(dip_id)} AND snapshot_id = #{Integer(snapshot_id)}
+        SQL
+      )
+
+      current && current.to_i > 0
+    end
+  end
+
+  def wait_for_branch_count(dip_id, count:, timeout: @default_timeout || 300)
+    wait_for_condition(
+      timeout: timeout,
+      error_message: "Timed out waiting for DatasetInPool ##{dip_id} branch count=#{count}"
+    ) do
+      current = mysql_scalar(
+        sql: <<~SQL
+          SELECT COUNT(*)
+          FROM branches b
+          INNER JOIN dataset_trees t ON t.id = b.dataset_tree_id
+          WHERE t.dataset_in_pool_id = #{Integer(dip_id)}
+        SQL
+      )
+
+      current && current.to_i == Integer(count)
+    end
+  end
+
   private
 
   def mysql_command(sql:, database:, user:)
@@ -354,6 +417,35 @@ class VpsadminServicesMachine < OsVm::NixosMachine
     end
   end
 end
+
+module ZfsMachineHelpers
+  def zfs_list(fs:, types: 'filesystem,snapshot', recursive: true, timeout: nil)
+    cmd = [
+      'zfs list -H -o name',
+      ("-t #{types}" if types),
+      ('-r' if recursive),
+      Shellwords.escape(fs)
+    ].compact.join(' ')
+
+    status, output = timeout ? succeeds(cmd, timeout: timeout) : succeeds(cmd)
+    [status, output.to_s.lines.map(&:strip).reject(&:empty?)]
+  end
+
+  def zfs_exists?(name, type: nil, timeout: nil)
+    _, rows = zfs_list(fs: name, types: type, recursive: false, timeout: timeout)
+    rows.include?(name)
+  rescue StandardError
+    false
+  end
+
+  def zfs_snapshots(fs:, timeout: nil)
+    _, rows = zfs_list(fs: fs, types: 'snapshot', recursive: true, timeout: timeout)
+    rows
+  end
+end
+
+OsVm::NixosMachine.include(ZfsMachineHelpers)
+OsVm::VpsadminosMachine.include(ZfsMachineHelpers)
 
 TestRunner::Hook.subscribe(:machine_class_for) do |machine_config|
   next unless machine_config.tags.include?('vpsadmin-services')
