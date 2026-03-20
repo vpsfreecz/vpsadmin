@@ -100,6 +100,11 @@ module AfterTestScriptRunLogs
       echo "[after_test_script_run] zfs list -r -t filesystem,snapshot tank"
       zfs list -r -t filesystem,snapshot tank || true
     CMD
+
+    machine.execute(<<~CMD)
+      echo "[after_test_script_run] zfs get -r -H -o name,property,value origin,clones tank"
+      zfs get -r -H -o name,property,value origin,clones tank || true
+    CMD
   end
 end
 

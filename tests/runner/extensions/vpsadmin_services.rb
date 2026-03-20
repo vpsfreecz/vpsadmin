@@ -300,6 +300,23 @@ class VpsadminServicesMachine < OsVm::NixosMachine
     end
   end
 
+  def wait_for_chain_states(chain_id, states:, timeout: @default_timeout || 300)
+    expected = Array(states).map do |state|
+      state.is_a?(Symbol) ? CHAIN_STATES.fetch(state) : Integer(state)
+    end
+
+    wait_for_condition(
+      timeout:,
+      error_message: "Timed out waiting for chain ##{chain_id} state in #{states.inspect}"
+    ) do
+      current = mysql_scalar(
+        sql: "SELECT state FROM transaction_chains WHERE id = #{Integer(chain_id)}"
+      )
+
+      current && expected.include?(current.to_i)
+    end
+  end
+
   def wait_for_transaction(transaction_id, done:, status: nil, timeout: @default_timeout || 300)
     expected_done = Integer(done)
     expected_status = status.nil? ? nil : Integer(status)
@@ -367,6 +384,24 @@ class VpsadminServicesMachine < OsVm::NixosMachine
     end
   end
 
+  def wait_for_dataset_in_pool(dataset_id:, pool_id:, timeout: @default_timeout || 300)
+    wait_for_condition(
+      timeout: timeout,
+      error_message: "Timed out waiting for DatasetInPool dataset=#{dataset_id} pool=#{pool_id}"
+    ) do
+      current = mysql_scalar(
+        sql: <<~SQL
+          SELECT id
+          FROM dataset_in_pools
+          WHERE dataset_id = #{Integer(dataset_id)} AND pool_id = #{Integer(pool_id)}
+          LIMIT 1
+        SQL
+      )
+
+      !current.nil? && !current.empty?
+    end
+  end
+
   def wait_for_branch_count(dip_id, count:, timeout: @default_timeout || 300)
     wait_for_condition(
       timeout: timeout,
@@ -378,6 +413,23 @@ class VpsadminServicesMachine < OsVm::NixosMachine
           FROM branches b
           INNER JOIN dataset_trees t ON t.id = b.dataset_tree_id
           WHERE t.dataset_in_pool_id = #{Integer(dip_id)}
+        SQL
+      )
+
+      current && current.to_i == Integer(count)
+    end
+  end
+
+  def wait_for_tree_count(dip_id, count:, timeout: @default_timeout || 300)
+    wait_for_condition(
+      timeout: timeout,
+      error_message: "Timed out waiting for DatasetInPool ##{dip_id} tree count=#{count}"
+    ) do
+      current = mysql_scalar(
+        sql: <<~SQL
+          SELECT COUNT(*)
+          FROM dataset_trees
+          WHERE dataset_in_pool_id = #{Integer(dip_id)}
         SQL
       )
 
@@ -419,6 +471,17 @@ class VpsadminServicesMachine < OsVm::NixosMachine
 end
 
 module ZfsMachineHelpers
+  def zfs_get(fs:, property:, timeout: nil)
+    cmd = [
+      'zfs get -H -o value',
+      Shellwords.escape(property.to_s),
+      Shellwords.escape(fs)
+    ].join(' ')
+
+    status, output = timeout ? succeeds(cmd, timeout: timeout) : succeeds(cmd)
+    [status, output.to_s.strip]
+  end
+
   def zfs_list(fs:, types: 'filesystem,snapshot', recursive: true, timeout: nil)
     cmd = [
       'zfs list -H -o name',
@@ -429,6 +492,26 @@ module ZfsMachineHelpers
 
     status, output = timeout ? succeeds(cmd, timeout: timeout) : succeeds(cmd)
     [status, output.to_s.lines.map(&:strip).reject(&:empty?)]
+  end
+
+  def zfs_list_rows(fs:, columns:, types: 'filesystem,snapshot', recursive: true, timeout: nil)
+    cols = Array(columns)
+
+    cmd = [
+      'zfs list -H',
+      "-o #{cols.join(',')}",
+      ("-t #{types}" if types),
+      ('-r' if recursive),
+      Shellwords.escape(fs)
+    ].compact.join(' ')
+
+    status, output = timeout ? succeeds(cmd, timeout: timeout) : succeeds(cmd)
+
+    rows = output.to_s.lines.map do |line|
+      cols.zip(line.chomp.split("\t", -1)).to_h
+    end
+
+    [status, rows]
   end
 
   def zfs_exists?(name, type: nil, timeout: nil)
