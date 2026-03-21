@@ -146,23 +146,47 @@ RSpec.describe TransactionChains::Dataset::Transfer do
 
   it 'creates a new tree or fails explicitly when source and destination histories diverge' do
     dataset, src, dst = create_primary_and_backup!
-    tree = create_tree!(dip: dst, index: 0, head: true)
-    branch = create_branch!(tree: tree, name: 'existing-head', head: true)
+    old_tree = create_tree!(dip: dst, index: 0, head: true)
+    old_branch = create_branch!(tree: old_tree, name: 'existing-head', head: true)
 
-    create_snapshot!(dataset: dataset, dip: src, name: 'src-only')
-    backup_snap = Snapshot.create!(
+    create_snapshot!(dataset: dataset, dip: src, name: 'src-1')
+    create_snapshot!(dataset: dataset, dip: src, name: 'src-2')
+
+    dst_only = Snapshot.create!(
       dataset: dataset,
       name: 'dst-only',
       history_id: dataset.current_history_id,
       confirmed: Snapshot.confirmed(:confirmed)
     )
-    attach_snapshot_to_branch!(sip: mirror_snapshot!(snapshot: backup_snap, dip: dst), branch: branch)
-
-    pending 'history divergence currently only warns and returns without creating a new tree or explicit failure'
+    attach_snapshot_to_branch!(sip: mirror_snapshot!(snapshot: dst_only, dip: dst), branch: old_branch)
 
     chain, = described_class.fire(src, dst)
 
-    expect(chain.size).to be > 0
-    expect(dst.dataset_trees.count).to eq(2)
+    trees = dst.reload.dataset_trees.order(:index).to_a
+    new_tree = trees.max_by(&:index)
+    send_payloads = transactions_for(chain)
+                    .select { |tx| tx.handle == Transactions::Storage::Send.t_type }
+                    .map { |tx| JSON.parse(tx.input).dig('input', 'snapshots').map { |snap| snap.fetch('name') } }
+
+    expect(chain.transactions).not_to be_empty
+    expect(trees.count).to eq(2)
+    expect(new_tree).to be_present
+    expect(new_tree.id).not_to eq(old_tree.id)
+    expect(new_tree.head).to be(true)
+    expect(new_tree.branches.where(head: true).count).to eq(1)
+    expect(tx_classes(chain)).to include(
+      Transactions::Storage::CreateTree,
+      Transactions::Storage::BranchDataset,
+      Transactions::Storage::Recv,
+      Transactions::Storage::Send,
+      Transactions::Storage::RecvCheck
+    )
+    expect(confirmations_for(chain).map { |row| [row.class_name, row.row_pks, row.attr_changes] }).to include(
+      ['DatasetTree', { 'id' => old_tree.id }, { 'head' => 0 }]
+    )
+    expect(send_payloads).to eq([
+                                  ['src-1'],
+                                  %w[src-1 src-2]
+                                ])
   end
 end

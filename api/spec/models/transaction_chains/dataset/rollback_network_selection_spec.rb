@@ -52,15 +52,18 @@ RSpec.describe TransactionChains::Dataset::Rollback do
     end.uniq
   end
 
-  it 'uses the destination primary ip without a pairwise connection' do
+  it 'uses destination-side primary ips for the pre-restore backup and restore without a pairwise connection' do
     primary, snap2 = build_fixture!
 
     chain, = described_class.fire(primary, snap2)
 
-    expect(rollback_addrs_for(chain)).to eq([SpecSeed.node.ip_addr])
+    expect(rollback_addrs_for(chain)).to eq([
+                                              SpecSeed.other_node.ip_addr,
+                                              SpecSeed.node.ip_addr
+                                            ])
   end
 
-  it 'uses the destination-side pairwise transfer ip during backup restore' do
+  it 'uses destination-side pairwise transfer ips for the pre-restore backup and restore' do
     primary, snap2 = build_fixture!
 
     NodeTransferConnection.create!(
@@ -72,6 +75,6 @@ RSpec.describe TransactionChains::Dataset::Rollback do
 
     chain, = described_class.fire(primary, snap2)
 
-    expect(rollback_addrs_for(chain)).to eq(['10.0.0.15'])
+    expect(rollback_addrs_for(chain)).to eq(['10.0.0.16', '10.0.0.15'])
   end
 end
