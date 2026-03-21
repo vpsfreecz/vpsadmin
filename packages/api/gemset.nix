@@ -598,10 +598,10 @@
     platforms = [ ];
     source = {
       remotes = [ "https://rubygems.org" ];
-      sha256 = "1yrl1igajy1z0wg23cxg4rilyx2jby06zlkghr98h5lfpd3d32xf";
+      sha256 = "0iryy3fsw2zzdfk50pbs477xn3967h0jnzpgyir0gpy919xp78x0";
       type = "gem";
     };
-    version = "0.8.0";
+    version = "0.9.0";
   };
   method_source = {
     groups = [
