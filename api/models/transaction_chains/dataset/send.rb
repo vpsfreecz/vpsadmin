@@ -73,17 +73,29 @@ module TransactionChains
     def confirm_block(snapshots, dst, branch)
       proc do
         snapshots.each do |snap|
-          sip = ::SnapshotInPool.create(
+          # A backup tree can reference snapshots that are already mirrored in
+          # the same destination dataset through another branch or tree.
+          sip = ::SnapshotInPool.find_by(
             snapshot_id: snap.snapshot_id,
-            dataset_in_pool: dst,
-            confirmed: ::SnapshotInPool.confirmed(:confirm_create)
+            dataset_in_pool: dst
           )
 
-          create(sip)
+          unless sip
+            sip = ::SnapshotInPool.create!(
+              snapshot_id: snap.snapshot_id,
+              dataset_in_pool: dst,
+              confirmed: ::SnapshotInPool.confirmed(:confirm_create)
+            )
+
+            create(sip)
+          end
 
           next unless dst.pool.role == 'backup'
 
-          create(::SnapshotInPoolInBranch.create(
+          entry = ::SnapshotInPoolInBranch.find_by(snapshot_in_pool: sip, branch: branch)
+          next if entry
+
+          create(::SnapshotInPoolInBranch.create!(
                    snapshot_in_pool: sip,
                    branch:,
                    confirmed: ::SnapshotInPoolInBranch.confirmed(:confirm_create)

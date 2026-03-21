@@ -110,8 +110,34 @@ module TransactionChains
           return # rubocop:disable Lint/NonLocalExitFromIterator
         end
 
-        # FIXME: report err, create new tree
-        warn 'history does not match, cannot make a transfer'
+        if dst_dataset_in_pool.pool.role == 'backup'
+          transfer_snapshots = src_dataset_in_pool.snapshot_in_pools
+                                                  .joins(:snapshot)
+                                                  .order('snapshot_id ASC')
+
+          return if transfer_snapshots.empty?
+
+          tree = create_new_head_tree(dst_dataset_in_pool)
+          branch = get_or_create_branch(tree)
+
+          use_chain(
+            Dataset::Send,
+            args: [
+              port,
+              src_dataset_in_pool,
+              dst_dataset_in_pool,
+              transfer_snapshots,
+              nil,
+              branch,
+              true,
+              nil
+            ],
+            kwargs: { send_reservation: opts[:send_reservation] }
+          )
+          return
+        end
+
+        raise 'history does not match between source and destination'
 
       end
     end
@@ -127,20 +153,25 @@ module TransactionChains
 
     def get_or_create_tree(dataset_in_pool)
       tree = ::DatasetTree.find_by(dataset_in_pool:, head: true)
+      tree ||= create_new_head_tree(dataset_in_pool)
 
-      unless tree
-        last_index = dataset_in_pool.dataset_trees.all.maximum('index')
+      tree
+    end
 
-        tree = ::DatasetTree.create!(
-          dataset_in_pool:,
-          index: last_index ? last_index + 1 : 0,
-          head: true,
-          confirmed: ::DatasetTree.confirmed(:confirm_create)
-        )
+    def create_new_head_tree(dataset_in_pool)
+      old_head = ::DatasetTree.find_by(dataset_in_pool:, head: true)
+      last_index = dataset_in_pool.dataset_trees.maximum('index')
 
-        append(Transactions::Storage::CreateTree, args: tree) do
-          create(tree)
-        end
+      tree = ::DatasetTree.create!(
+        dataset_in_pool:,
+        index: last_index ? last_index + 1 : 0,
+        head: true,
+        confirmed: ::DatasetTree.confirmed(:confirm_create)
+      )
+
+      append(Transactions::Storage::CreateTree, args: tree) do
+        edit(old_head, head: false) if old_head
+        create(tree)
       end
 
       tree
