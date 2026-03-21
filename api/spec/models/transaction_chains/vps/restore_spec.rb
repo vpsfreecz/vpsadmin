@@ -76,17 +76,39 @@ RSpec.describe TransactionChains::Vps::Restore do
     )
 
     chain, = described_class.fire(vps, snap2)
+    classes = tx_classes(chain)
 
-    expect(tx_classes(chain)).to eq([
-                                      Transactions::Storage::PrepareRollback,
-                                      Transactions::Storage::Recv,
-                                      Transactions::Storage::Send,
-                                      Transactions::Storage::RecvCheck,
-                                      Transactions::Vps::Stop,
-                                      Transactions::Storage::ApplyRollback,
-                                      Transactions::Vps::Start,
-                                      Transactions::Storage::BranchDataset,
-                                      Transactions::Utils::NoOp
-                                    ])
+    expect(classes).to include(
+      Transactions::Storage::CreateTree,
+      Transactions::Storage::BranchDataset,
+      Transactions::Queue::Reserve,
+      Transactions::Queue::Release,
+      Transactions::Storage::PrepareRollback,
+      Transactions::Storage::Recv,
+      Transactions::Storage::Send,
+      Transactions::Storage::RecvCheck,
+      Transactions::Vps::Stop,
+      Transactions::Storage::ApplyRollback,
+      Transactions::Vps::Start,
+      Transactions::Utils::NoOp
+    )
+    expect(classes.count(Transactions::Storage::BranchDataset)).to eq(2)
+    expect(classes.count(Transactions::Storage::Recv)).to eq(2)
+    expect(classes.count(Transactions::Storage::Send)).to eq(2)
+    expect(classes.count(Transactions::Storage::RecvCheck)).to eq(2)
+    expect(classes.count(Transactions::Queue::Reserve)).to eq(2)
+    expect(classes.count(Transactions::Queue::Release)).to eq(2)
+    expect(
+      classes.index(Transactions::Storage::CreateTree)
+    ).to be < classes.index(Transactions::Storage::PrepareRollback)
+    expect(
+      classes.index(Transactions::Storage::PrepareRollback)
+    ).to be < classes.index(Transactions::Vps::Stop)
+    expect(
+      classes.index(Transactions::Vps::Stop)
+    ).to be < classes.index(Transactions::Storage::ApplyRollback)
+    expect(
+      classes.index(Transactions::Storage::ApplyRollback)
+    ).to be < classes.index(Transactions::Vps::Start)
   end
 end
