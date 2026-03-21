@@ -148,15 +148,23 @@ RSpec.describe TransactionChains::Dataset::Rollback do
     )
 
     chain, = described_class.fire(primary, snap2)
+    classes = tx_classes(chain)
 
-    expect(tx_classes(chain)).to eq([
-                                      Transactions::Storage::PrepareRollback,
-                                      Transactions::Storage::Recv,
-                                      Transactions::Storage::Send,
-                                      Transactions::Storage::RecvCheck,
-                                      Transactions::Storage::ApplyRollback,
-                                      Transactions::Storage::BranchDataset
-                                    ])
+    expect(classes).to include(
+      Transactions::Storage::CreateTree,
+      Transactions::Storage::BranchDataset,
+      Transactions::Storage::PrepareRollback,
+      Transactions::Storage::Recv,
+      Transactions::Storage::Send,
+      Transactions::Storage::RecvCheck,
+      Transactions::Storage::ApplyRollback
+    )
+    expect(classes.count(Transactions::Storage::BranchDataset)).to eq(2)
+    expect(classes.count(Transactions::Storage::Recv)).to eq(2)
+    expect(classes.count(Transactions::Storage::Send)).to eq(2)
+    expect(classes.count(Transactions::Storage::RecvCheck)).to eq(2)
+    expect(classes.index(Transactions::Storage::CreateTree)).to be < classes.index(Transactions::Storage::PrepareRollback)
+    expect(classes.index(Transactions::Storage::PrepareRollback)).to be < classes.index(Transactions::Storage::ApplyRollback)
   end
 
   it 'moves the backup head without creating a new branch when the rollback target is already a branch tip' do
@@ -181,16 +189,53 @@ RSpec.describe TransactionChains::Dataset::Rollback do
     attach_snapshot_to_branch!(sip: mirror_snapshot!(snapshot: snap3, dip: backup), branch: current_head)
 
     chain, = described_class.fire(primary, snap2)
+    classes = tx_classes(chain)
 
-    expect(tx_classes(chain)).to eq([
-                                      Transactions::Storage::Rollback,
-                                      Transactions::Utils::NoOp
-                                    ])
-    expect(backup.reload.dataset_trees.take!.branches.count).to eq(2)
+    expect(classes).to include(
+      Transactions::Storage::CreateTree,
+      Transactions::Storage::BranchDataset,
+      Transactions::Storage::Recv,
+      Transactions::Storage::Send,
+      Transactions::Storage::RecvCheck,
+      Transactions::Storage::Rollback,
+      Transactions::Utils::NoOp
+    )
+    expect(classes.count(Transactions::Storage::BranchDataset)).to eq(1)
+    expect(tree.reload.branches.count).to eq(2)
     expect(confirmations_for(chain).map { |row| [row.class_name, row.row_pks, row.attr_changes] }).to include(
       ['Branch', { 'id' => current_head.id }, { 'head' => 0 }],
       ['Branch', { 'id' => target_branch.id }, { 'head' => 1 }]
     )
     expect(entry2.reload.branch_id).to eq(target_branch.id)
+  end
+
+  it 'switches the backup head tree when rolling back to a snapshot from a different tree' do
+    dataset, primary, backup = create_primary_with_backup!
+
+    tree0 = create_tree!(dip: backup, index: 0, head: false)
+    tree1 = create_tree!(dip: backup, index: 1, head: true)
+    branch0 = create_branch!(tree: tree0, name: 'old-tree-head', head: true)
+    branch1 = create_branch!(tree: tree1, name: 'current-tree-head', head: true)
+
+    snap1, = create_snapshot!(dataset: dataset, dip: primary, name: 'snap-1')
+    snap2, = create_snapshot!(dataset: dataset, dip: primary, name: 'snap-2')
+    snap3, = create_snapshot!(dataset: dataset, dip: primary, name: 'snap-3')
+
+    attach_snapshot_to_branch!(sip: mirror_snapshot!(snapshot: snap1, dip: backup), branch: branch0)
+    attach_snapshot_to_branch!(sip: mirror_snapshot!(snapshot: snap2, dip: backup), branch: branch0)
+    attach_snapshot_to_branch!(sip: mirror_snapshot!(snapshot: snap3, dip: backup), branch: branch1)
+
+    chain, = described_class.fire(primary, snap2)
+
+    expect(tx_classes(chain)).to eq([
+                                      Transactions::Storage::Rollback,
+                                      Transactions::Utils::NoOp
+                                    ])
+    expect(branch0.reload.head).to be(true)
+    expect(tree0.branches.where(head: true).count).to eq(1)
+    expect(confirmations_for(chain).map { |row| [row.class_name, row.row_pks, row.attr_changes] }).to include(
+      ['DatasetTree', { 'id' => tree1.id }, { 'head' => 0 }],
+      ['DatasetTree', { 'id' => tree0.id }, { 'head' => 1 }]
+    )
   end
 end

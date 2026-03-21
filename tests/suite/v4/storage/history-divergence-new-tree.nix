@@ -13,12 +13,12 @@ import ../../../make-test.nix (
     };
   in
   {
-    name = "storage-history-divergence-new-tree-pending";
+    name = "storage-history-divergence-new-tree";
 
     description = ''
       Create remote backup history, reinstall the VPS to reset primary snapshot
-      history, take a new snapshot, and keep the desired “new tree instead of
-      silent warning/no-op” behavior as a pending bug contract.
+      history, take a new snapshot, and verify the next backup creates a new
+      head tree instead of silently warning and returning.
     '';
 
     tags = [
@@ -46,7 +46,7 @@ import ../../../make-test.nix (
         end
 
         it 'creates a new backup tree instead of silently warning and returning' do
-          create_and_backup_snapshot(
+          @snap1 = create_and_backup_snapshot(
             services,
             admin_user_id: admin_user_id,
             dataset_id: @setup.fetch('dataset_id'),
@@ -54,7 +54,7 @@ import ../../../make-test.nix (
             dst_dip_id: @setup.fetch('dst_dip_id'),
             label: 'divergence-s1'
           )
-          create_and_backup_snapshot(
+          @snap2 = create_and_backup_snapshot(
             services,
             admin_user_id: admin_user_id,
             dataset_id: @setup.fetch('dataset_id'),
@@ -81,18 +81,40 @@ import ../../../make-test.nix (
             label: 'divergence-s3'
           )
 
-          pending 'history divergence should create a new tree or fail explicitly instead of warning and returning'
-
           response = fire_backup(
             services,
             admin_user_id: admin_user_id,
             src_dip_id: @setup.fetch('src_dip_id'),
             dst_dip_id: @setup.fetch('dst_dip_id')
           )
-
           services.wait_for_tree_count(@setup.fetch('dst_dip_id'), count: 2)
+
+          transactions = chain_transactions(services, response.fetch('chain_id'))
+          handles = transactions.map { |row| row.fetch('handle') }
+          report = backup_topology_report(
+            services,
+            backup_node: node2,
+            dst_dip_id: @setup.fetch('dst_dip_id'),
+            backup_dataset_path: @setup.fetch('backup_dataset_path')
+          )
+          old_tree_entries = report.fetch('db').fetch('entries').select { |row| row.fetch('tree_index') == 0 }
+          new_tree_entries = report.fetch('db').fetch('entries').select { |row| row.fetch('tree_index') == 1 }
+
+          expect(response.fetch('chain_id')).not_to be_nil
+          expect(report.fetch('db').fetch('trees').count).to eq(2)
+          expect(handles).to include(
+            @tx_types.fetch('send'),
+            @tx_types.fetch('recv'),
+            @tx_types.fetch('recv_check')
+          )
+          expect(handles).not_to include(@tx_types.fetch('local_send'))
+          expect(report.fetch('db').fetch('branches').map { |row| row.fetch('tree_index') }.uniq.sort).to eq([0, 1])
           expect(head_tree_row(services, @setup.fetch('dst_dip_id')).fetch('tree_index')).to eq(1)
-          expect(response.fetch('chain_id')).to be_present
+          expect(old_tree_entries.map { |row| row.fetch('snapshot_name') }.uniq.sort).to eq([
+            @snap1.fetch('name'),
+            @snap2.fetch('name')
+          ])
+          expect(new_tree_entries.map { |row| row.fetch('snapshot_name') }.uniq).to eq([@snap3.fetch('name')])
         end
       end
     '';
