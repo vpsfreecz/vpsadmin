@@ -1,0 +1,96 @@
+# frozen_string_literal: true
+
+require 'spec_helper'
+require 'nodectld/commands/base'
+require 'nodectld/commands/dataset/recv_check'
+
+RSpec.describe NodeCtld::Commands::Dataset::RecvCheck do
+  let(:driver) { build_storage_driver }
+  let(:db) { instance_double(NodeCtld::Db, close: nil) }
+
+  it 'checks a confirmed snapshot on a root dataset' do
+    allow(NodeCtld::Db).to receive(:new)
+
+    cmd = described_class.new(
+      driver,
+      'dst_pool_fs' => 'tank/backup',
+      'dataset_name' => '101',
+      'snapshot' => { 'id' => 1, 'name' => 'snap-root', 'confirmed' => 'confirmed' }
+    )
+    allow(cmd).to receive(:try_harder).and_yield
+    allow(cmd).to receive(:zfs)
+
+    cmd.exec
+
+    expect(cmd).to have_received(:try_harder)
+    expect(cmd).to have_received(:zfs).with(
+      :get,
+      '-H -ovalue name',
+      'tank/backup/101@snap-root'
+    )
+    expect(NodeCtld::Db).not_to have_received(:new)
+  end
+
+  it 'looks up an unconfirmed root snapshot in the database and closes the connection' do
+    allow(NodeCtld::Db).to receive(:new).and_return(db)
+    allow(db).to receive(:prepared).with(
+      'SELECT name FROM snapshots WHERE id = ?',
+      42
+    ).and_return(double(get!: { 'name' => 'snap-db' }))
+
+    cmd = described_class.new(
+      driver,
+      'dst_pool_fs' => 'tank/backup',
+      'dataset_name' => '101',
+      'snapshot' => { 'id' => 42, 'name' => 'ignored', 'confirmed' => 'confirm_create' }
+    )
+    allow(cmd).to receive(:try_harder).and_yield
+    allow(cmd).to receive(:zfs)
+
+    cmd.exec
+
+    expect(cmd).to have_received(:try_harder)
+    expect(cmd).to have_received(:zfs).with(
+      :get,
+      '-H -ovalue name',
+      'tank/backup/101@snap-db'
+    )
+    expect(db).to have_received(:close)
+  end
+
+  it 'checks a confirmed snapshot on a branched backup dataset' do
+    allow(NodeCtld::Db).to receive(:new)
+
+    cmd = described_class.new(
+      driver,
+      'dst_pool_fs' => 'tank/backup',
+      'dataset_name' => '101',
+      'tree' => 'tree.0',
+      'branch' => 'branch-head.0',
+      'snapshot' => { 'id' => 7, 'name' => 'snap-branch', 'confirmed' => 'confirmed' }
+    )
+    allow(cmd).to receive(:try_harder).and_yield
+    allow(cmd).to receive(:zfs)
+
+    cmd.exec
+
+    expect(cmd).to have_received(:try_harder)
+    expect(cmd).to have_received(:zfs).with(
+      :get,
+      '-H -ovalue name',
+      'tank/backup/101/tree.0/branch-head.0@snap-branch'
+    )
+    expect(NodeCtld::Db).not_to have_received(:new)
+  end
+
+  it 'returns ok from rollback' do
+    cmd = described_class.new(
+      driver,
+      'dst_pool_fs' => 'tank/backup',
+      'dataset_name' => '101',
+      'snapshot' => { 'id' => 1, 'name' => 'snap-root', 'confirmed' => 'confirmed' }
+    )
+
+    expect(cmd.rollback).to eq(ret: :ok)
+  end
+end

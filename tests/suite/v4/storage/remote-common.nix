@@ -24,9 +24,12 @@
     end
   end
 
-  def prepare_node_queues(node)
+  def prepare_node_queues(node, send_timeout: 120, receive_timeout: 120)
     node.succeeds('nodectl set config vpsadmin.queues.zfs_send.start_delay=0')
     node.succeeds('nodectl set config vpsadmin.queues.zfs_recv.start_delay=0')
+    node.succeeds("nodectl set config mbuffer.send.timeout=#{Integer(send_timeout)}")
+    node.succeeds("nodectl set config mbuffer.receive.timeout=#{Integer(receive_timeout)}")
+    node.succeeds('nodectl set config mbuffer.receive.start_writing_at=60')
     node.succeeds('nodectl queue resume all')
   end
 
@@ -60,7 +63,9 @@
         local_send: Transactions::Storage::LocalSend.t_type,
         prepare_rollback: Transactions::Storage::PrepareRollback.t_type,
         apply_rollback: Transactions::Storage::ApplyRollback.t_type,
-        branch_dataset: Transactions::Storage::BranchDataset.t_type
+        branch_dataset: Transactions::Storage::BranchDataset.t_type,
+        destroy_snapshot: Transactions::Storage::DestroySnapshot.t_type,
+        rollback: Transactions::Storage::Rollback.t_type
       )
     RUBY
   end
@@ -229,6 +234,18 @@
     end
   end
 
+  def zfs_reference_counts_by_snapshot(node, backup_dataset_path)
+    zfs_snapshot_clone_map(node, backup_dataset_path).each_with_object(Hash.new(0)) do |(path, clones), acc|
+      acc[path.split('@', 2).last] += clones.count
+    end
+  end
+
+  def db_reference_counts_by_snapshot(entries)
+    entries.each_with_object({}) do |row, acc|
+      acc[row.fetch('snapshot_name')] = row.fetch('reference_count')
+    end
+  end
+
   def backup_topology_report(services, backup_node:, dst_dip_id:, backup_dataset_path:)
     trees = services.mysql_json_rows(sql: <<~SQL)
       SELECT JSON_OBJECT('id', id, 'index', `index`, 'head', head)
@@ -310,6 +327,134 @@
     SQL
   end
 
+  def chain_failure_details(services, chain_id)
+    rows = services.mysql_json_rows(sql: <<~SQL)
+      SELECT JSON_OBJECT(
+        'id', id,
+        'handle', handle,
+        'done', done,
+        'status', status,
+        'output', output
+      )
+      FROM transactions
+      WHERE transaction_chain_id = #{Integer(chain_id)}
+        AND (
+          status = 0
+          OR (
+            output IS NOT NULL
+            AND CHAR_LENGTH(output) > 0
+            AND output <> '{}'
+            AND output <> 'null'
+          )
+        )
+      ORDER BY id
+    SQL
+
+    rows.map do |row|
+      parsed = row['output'] && !row['output'].empty? ? JSON.parse(row['output']) : {}
+
+      row.merge(
+        'output' => parsed,
+        'error' => parsed['error']
+      )
+    end
+  end
+
+  def wait_for_chain_failure_detail(services, chain_id, handle:, timeout: 60)
+    deadline = Time.now + timeout
+
+    loop do
+      detail = chain_failure_details(services, chain_id).detect do |tx|
+        tx.fetch('handle') == Integer(handle)
+      end
+
+      return detail if detail
+
+      if Time.now >= deadline
+        raise OsVm::TimeoutError,
+              "Timed out waiting for failure detail on chain ##{chain_id} " \
+              "handle=#{handle}"
+      end
+
+      sleep 1
+    end
+  end
+
+  def wait_for_chain_failure_output_value(services, chain_id, handle:, path:, timeout: 60)
+    keys = Array(path)
+    deadline = Time.now + timeout
+
+    loop do
+      detail = wait_for_chain_failure_detail(
+        services,
+        chain_id,
+        handle: handle,
+        timeout: [deadline - Time.now, 1].max
+      )
+      value = keys.reduce(detail) do |memo, key|
+        memo.is_a?(Hash) ? memo[key] : nil
+      end
+
+      return detail if !value.nil?
+
+      if Time.now >= deadline
+        raise OsVm::TimeoutError,
+              "Timed out waiting for failure detail value on chain ##{chain_id} " \
+              "handle=#{handle} path=#{keys.inspect}"
+      end
+
+      sleep 1
+    end
+  end
+  STORAGE_CHAIN_STATES = {
+    staged: 0,
+    queued: 1,
+    done: 2,
+    rollbacking: 3,
+    failed: 4,
+    fatal: 5,
+    resolved: 6
+  }.freeze
+
+  def wait_for_chain_states_local(services, chain_id, states, timeout: 300)
+    expected = Array(states).map do |state|
+      state.is_a?(Symbol) ? STORAGE_CHAIN_STATES.fetch(state) : Integer(state)
+    end
+    deadline = Time.now + timeout
+
+    loop do
+      row = services.mysql_json_rows(sql: <<~SQL).first
+        SELECT JSON_OBJECT('state', state)
+        FROM transaction_chains
+        WHERE id = #{Integer(chain_id)}
+        LIMIT 1
+      SQL
+      current = row && Integer(row.fetch('state'))
+
+      return current if current && expected.include?(current)
+
+      if Time.now >= deadline
+        raise OsVm::TimeoutError,
+              "Timed out waiting for chain ##{chain_id} " \
+              "state in #{states.inspect}"
+      end
+
+      sleep 1
+    end
+  end
+
+  def wait_for_tx_handle_started(services, chain_id, handle)
+    wait_until_block_succeeds(name: "chain #{chain_id} handle #{handle} started") do
+      services.mysql_scalar(sql: <<~SQL).to_i > 0
+        SELECT COUNT(*)
+        FROM transactions
+        WHERE transaction_chain_id = #{Integer(chain_id)}
+          AND handle = #{Integer(handle)}
+          AND started_at IS NOT NULL
+      SQL
+    end
+  end
+
   def failed_chain_transactions(services, chain_id)
     services.mysql_json_rows(sql: <<~SQL)
       SELECT JSON_OBJECT(
@@ -321,8 +466,7 @@
       )
       FROM transactions
       WHERE transaction_chain_id = #{Integer(chain_id)}
-        AND status IS NOT NULL
-        AND CHAR_LENGTH(status) > 0
+        AND status = 0
       ORDER BY id
     SQL
   end
@@ -343,6 +487,38 @@
 
   def current_history_id(services, dataset_id)
     services.mysql_scalar(sql: "SELECT current_history_id FROM datasets WHERE id = #{Integer(dataset_id)}").to_i
+  end
+
+  def wait_for_snapshot_names(
+    services,
+    dip_id:,
+    include_names: [],
+    exclude_names: [],
+    timeout: 60
+  )
+    deadline = Time.now + timeout
+
+    loop do
+      names = snapshot_rows_for_dip(services, dip_id).map do |row|
+        row.fetch('name')
+      end
+
+      include_ok = Array(include_names).all? do |name|
+        names.include?(name)
+      end
+      exclude_ok = Array(exclude_names).none? do |name|
+        names.include?(name)
+      end
+
+      return names if include_ok && exclude_ok
+
+      if Time.now >= deadline
+        raise OsVm::TimeoutError,
+              "Timed out waiting for snapshots on dip=#{dip_id}"
+      end
+
+      sleep 1
+    end
   end
 
   def set_snapshot_retention(services, dip_id:, min_snapshots:, max_snapshots:, snapshot_max_age:)
@@ -383,6 +559,18 @@
     response
   end
 
+  def fire_backup_async(services, admin_user_id:, src_dip_id:, dst_dip_id:)
+    services.api_ruby_json(code: <<~RUBY)
+      #{api_session_prelude(admin_user_id)}
+
+      src = DatasetInPool.find(#{src_dip_id})
+      dst = DatasetInPool.find(#{dst_dip_id})
+      chain, = TransactionChains::Dataset::Backup.fire(src, dst)
+
+      puts JSON.dump(chain_id: chain.id)
+    RUBY
+  end
+
   def create_and_backup_snapshot(services, admin_user_id:, dataset_id:, src_dip_id:, dst_dip_id:, label:)
     snapshot = create_snapshot(
       services,
@@ -398,6 +586,33 @@
     )
 
     snapshot.merge('chain_id' => response.fetch('chain_id'))
+  end
+
+  def create_descendant_dataset(services, admin_user_id:, parent_dataset_id:, name:, pool_fs:, refquota: 10_240)
+    response = services.api_ruby_json(code: <<~RUBY)
+      #{api_session_prelude(admin_user_id)}
+
+      parent = Dataset.find(#{Integer(parent_dataset_id)})
+      chain, dataset = VpsAdmin::API::Operations::Dataset::Create.run(
+        #{name.inspect},
+        parent,
+        automount: false,
+        properties: { refquota: #{Integer(refquota)} }
+      )
+
+      puts JSON.dump(
+        chain_id: chain.id,
+        dataset_id: dataset.id,
+        dip_id: dataset.primary_dataset_in_pool!.id,
+        full_name: dataset.full_name
+      )
+    RUBY
+
+    services.wait_for_chain_state(response.fetch('chain_id'), state: :done)
+
+    response.merge(
+      'dataset_path' => "#{pool_fs}/#{response.fetch('full_name')}"
+    )
   end
 
   def build_repeated_rollback_topology(services, admin_user_id:, dataset_id:, src_dip_id:, dst_dip_id:, vps_id:,
@@ -554,6 +769,47 @@
     }
   end
 
+  def dataset_mountpoint(node, dataset_path)
+    escaped = Shellwords.escape(dataset_path)
+    node.succeeds("zfs mount #{escaped} >/dev/null 2>&1 || true", timeout: 60)
+    _, output = node.succeeds("zfs get -H -o value mountpoint #{escaped}", timeout: 60)
+    output.strip
+  end
+
+  def write_dataset_text(node, dataset_path:, relative_path:, content:)
+    mountpoint = dataset_mountpoint(node, dataset_path)
+    full_path = File.join(mountpoint, relative_path)
+    node.succeeds("mkdir -p #{Shellwords.escape(File.dirname(full_path))}", timeout: 60)
+    node.succeeds("cat > #{Shellwords.escape(full_path)} <<'EOF'\n#{content}EOF", timeout: 60)
+    content
+  end
+
+  def read_dataset_text(node, dataset_path:, relative_path:)
+    mountpoint = dataset_mountpoint(node, dataset_path)
+    full_path = File.join(mountpoint, relative_path)
+    _, output = node.succeeds("cat #{Shellwords.escape(full_path)}", timeout: 60)
+    output
+  end
+
+  def write_dataset_payload(node, dataset_path:, relative_path:, mib:)
+    mountpoint = dataset_mountpoint(node, dataset_path)
+    full_path = File.join(mountpoint, relative_path)
+    node.succeeds("mkdir -p #{Shellwords.escape(File.dirname(full_path))}", timeout: 60)
+    node.succeeds(
+      "dd if=/dev/urandom of=#{Shellwords.escape(full_path)} bs=1M count=#{Integer(mib)} status=none conv=fsync",
+      timeout: 900
+    )
+    _, output = node.succeeds("sha256sum #{Shellwords.escape(full_path)}", timeout: 60)
+    output.split.first
+  end
+
+  def file_checksum(node, dataset_path:, relative_path:)
+    mountpoint = dataset_mountpoint(node, dataset_path)
+    full_path = File.join(mountpoint, relative_path)
+    _, output = node.succeeds("sha256sum #{Shellwords.escape(full_path)}", timeout: 60)
+    output.split.first
+  end
+
   def reinstall_vps(services, admin_user_id:, vps_id:, os_template_id: 1)
     services.api_ruby_json(code: <<~RUBY)
       #{api_session_prelude(admin_user_id)}
@@ -564,6 +820,205 @@
 
       puts JSON.dump(chain_id: chain.id)
     RUBY
+  end
+
+  def wait_for_recv_mbuffer(node, port)
+    wait_until_block_succeeds(name: "recv mbuffer on #{node.name}:#{port}") do
+      node.succeeds("pgrep -fa '[m]buffer .* -I .*#{Integer(port)}( |$)'", timeout: 10)
+      true
+    end
+  end
+
+  def wait_for_mbuffer_on_port(node, port)
+    wait_until_block_succeeds(name: "mbuffer on #{node.name} for port #{port}") do
+      node.succeeds("pgrep -fa '[m]buffer .*#{Integer(port)}( |$)'", timeout: 10)
+      true
+    end
+  end
+
+  def kill_mbuffer_on_port(node, port)
+    node.succeeds("pkill -TERM -f '[m]buffer .*#{Integer(port)}( |$)'", timeout: 30)
+  end
+
+  def wait_for_send_mbuffer(node)
+    wait_until_block_succeeds(name: "send mbuffer on #{node.name}") do
+      node.succeeds("pgrep -fa '[m]buffer .* -O '", timeout: 10)
+      true
+    end
+  end
+
+  def kill_send_mbuffer(node)
+    node.succeeds("pkill -TERM -f '[m]buffer .* -O '", timeout: 30)
+  end
+
+  def install_faulty_mbuffer(node, path:, fail_after_bytes:)
+    script = <<~RUBY
+      #!/usr/bin/env ruby
+      # frozen_string_literal: true
+
+      require 'socket'
+
+      FAIL_AFTER = #{Integer(fail_after_bytes)}
+
+      def parse_args(argv)
+        args = argv.dup
+        options = {}
+
+        until args.empty?
+          arg = args.shift
+
+          case arg
+          when '-O'
+            host, port = args.shift.split(':', 2)
+            options[:mode] = :send
+            options[:host] = host
+            options[:port] = Integer(port)
+          when /\\A-O(.+)\\z/
+            host, port = Regexp.last_match(1).split(':', 2)
+            options[:mode] = :send
+            options[:host] = host
+            options[:port] = Integer(port)
+          when '-I'
+            options[:mode] = :recv
+            options[:port] = Integer(args.shift)
+          when /\\A-I(.+)\\z/
+            options[:mode] = :recv
+            options[:port] = Integer(Regexp.last_match(1))
+          when '-l'
+            options[:log_file] = args.shift
+          when /\\A-l(.+)\\z/
+            options[:log_file] = Regexp.last_match(1)
+          when '-s', '-m', '-P', '-W'
+            args.shift
+          else
+            # Ignore compatibility flags such as -q or inline-valued options.
+          end
+        end
+
+        options
+      end
+
+      def log(log_file, message)
+        return unless log_file
+
+        File.open(log_file, 'a') do |f|
+          f.puts(message)
+        end
+      rescue StandardError
+        nil
+      end
+
+      def fail_send(host, port, log_file)
+        socket = TCPSocket.new(host, port)
+        transferred = 0
+
+        loop do
+          chunk = STDIN.readpartial(16 * 1024)
+          remaining = FAIL_AFTER - transferred
+          break if remaining <= 0
+
+          payload = chunk.byteslice(0, remaining)
+          socket.write(payload)
+          transferred += payload.bytesize
+
+          next unless transferred >= FAIL_AFTER
+
+          log(log_file, "faulty-mbuffer send abort after \#{transferred} bytes")
+          exit 1
+        rescue EOFError
+          break
+        end
+
+        socket.close
+        exit 0
+      end
+
+      def fail_recv(port, log_file)
+        server = TCPServer.new('0.0.0.0', port)
+        socket = server.accept
+        transferred = 0
+        $stdout.sync = true
+
+        loop do
+          chunk = socket.readpartial(16 * 1024)
+          remaining = FAIL_AFTER - transferred
+          break if remaining <= 0
+
+          payload = chunk.byteslice(0, remaining)
+          STDOUT.write(payload)
+          transferred += payload.bytesize
+
+          next unless transferred >= FAIL_AFTER
+
+          STDOUT.flush
+          log(log_file, "faulty-mbuffer recv abort after \#{transferred} bytes")
+          exit 1
+        rescue EOFError
+          break
+        end
+
+        socket.close
+        server.close
+        exit 0
+      end
+
+      options = parse_args(ARGV)
+
+      case options.fetch(:mode)
+      when :send
+        fail_send(options.fetch(:host), options.fetch(:port), options[:log_file])
+      when :recv
+        fail_recv(options.fetch(:port), options[:log_file])
+      end
+    RUBY
+
+    node.succeeds(<<~SH, timeout: 60)
+      cat > #{Shellwords.escape(path)} <<'RUBY'
+      #{script}
+      RUBY
+      chmod 755 #{Shellwords.escape(path)}
+    SH
+  end
+
+  def set_mbuffer_command(node, direction:, command:)
+    node.succeeds(
+      "nodectl set config mbuffer.#{direction}.command=#{Shellwords.escape(command)}",
+      timeout: 60
+    )
+  end
+
+  def reset_mbuffer_command(node, direction:)
+    set_mbuffer_command(node, direction: direction, command: 'mbuffer')
+  end
+
+  def block_tcp_port(node, port)
+    node.succeeds(
+      "iptables -I INPUT -p tcp --dport #{Integer(port)} -j REJECT --reject-with tcp-reset",
+      timeout: 60
+    )
+  end
+
+  def unblock_tcp_port(node, port)
+    node.succeeds(
+      "iptables -D INPUT -p tcp --dport #{Integer(port)} -j REJECT --reject-with tcp-reset || true",
+      timeout: 60
+    )
+  end
+
+  def rollback_dataset_exists?(node, dataset_path)
+    node.zfs_exists?("#{dataset_path}.rollback", type: 'filesystem', timeout: 30)
+  end
+
+  def snapshot_exists?(node, dataset_path, snapshot_name)
+    node.zfs_exists?("#{dataset_path}@#{snapshot_name}", type: 'snapshot', timeout: 30)
+  end
+
+  def grep_nodectld_log(node, pattern)
+    _, output = node.succeeds(
+      "grep -F #{Shellwords.escape(pattern)} /var/log/nodectld",
+      timeout: 60
+    )
+    output
   end
 
   def destroy_backup_dataset(services, admin_user_id:, dip_id:)
@@ -587,7 +1042,11 @@
       puts JSON.dump(chain_id: chain.id)
     RUBY
 
-    services.wait_for_chain_states(response.fetch('chain_id'), states: %i[done failed fatal resolved])
+    wait_for_chain_states_local(
+      services,
+      response.fetch('chain_id'),
+      %i[done failed fatal resolved]
+    )
     response
   end
 
@@ -631,6 +1090,12 @@
         role: 'backup'
       )
     end
+
+    wait_for_pool_online(services, primary_pool.fetch('id'))
+    backup_pools.each_value do |pool|
+      wait_for_pool_online(services, pool.fetch('id'))
+    end
+
     vps = create_vps(
       services,
       admin_user_id: admin_user_id,

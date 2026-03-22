@@ -61,7 +61,11 @@ import ../../../make-test.nix (
             admin_user_id: admin_user_id,
             dip_id: @setup.fetch('dst_dip_id')
           )
-          services.wait_for_chain_states(response.fetch('chain_id'), states: %i[done failed fatal resolved])
+          wait_for_chain_states_local(
+            services,
+            response.fetch('chain_id'),
+            %i[done failed fatal resolved]
+          )
 
           final_state = services.mysql_scalar(
             sql: "SELECT state FROM transaction_chains WHERE id = #{response.fetch('chain_id')}"

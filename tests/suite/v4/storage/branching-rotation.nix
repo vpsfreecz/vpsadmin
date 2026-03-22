@@ -40,7 +40,11 @@ import ../../../make-test.nix (
           puts JSON.dump(chain_id: chain.id)
         RUBY
 
-        services.wait_for_chain_states(response.fetch('chain_id'), states: %i[done failed fatal resolved])
+        wait_for_chain_states_local(
+          services,
+          response.fetch('chain_id'),
+          %i[done failed fatal resolved]
+        )
         response
       end
 
