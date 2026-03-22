@@ -406,7 +406,7 @@ module NodeCtld
 
     def patch(what)
       sync do
-        @cfg = merge(@cfg, what)
+        @cfg = merge(@cfg, symbolize_keys(what))
       end
 
       call_on_update
@@ -426,6 +426,20 @@ module NodeCtld
 
     def load_yaml(v)
       YAML.safe_load(v, permitted_classes: [Symbol], symbolize_names: true)
+    end
+
+    def symbolize_keys(value)
+      case value
+      when Hash
+        value.each_with_object({}) do |(k, v), acc|
+          key = k.respond_to?(:to_sym) ? k.to_sym : k
+          acc[key] = symbolize_keys(v)
+        end
+      when Array
+        value.map { |v| symbolize_keys(v) }
+      else
+        value
+      end
     end
 
     def on_update(name, &block)
