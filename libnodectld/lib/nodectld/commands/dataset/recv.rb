@@ -1,3 +1,5 @@
+require 'shellwords'
+
 module NodeCtld
   class Commands::Dataset::Recv < Commands::Base
     handle 5220
@@ -7,7 +9,7 @@ module NodeCtld
       ds_name = @branch ? "#{@dataset_name}/#{@tree}/#{@branch}" : @dataset_name
       recv = "zfs recv -F -u #{@dst_pool_fs}/#{ds_name}"
       cmd = [
-        'mbuffer',
+        Shellwords.escape(mbuffer_command(:receive)),
         '-q',
         "-I #{@port}",
         "-s #{$CFG.get(:mbuffer, :receive, :block_size)}",

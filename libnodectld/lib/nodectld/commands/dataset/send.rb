@@ -26,6 +26,7 @@ module NodeCtld
         stream.send_to(
           @addr,
           @port,
+          command: mbuffer_command(:send),
           block_size: $CFG.get(:mbuffer, :send, :block_size),
           buffer_size: $CFG.get(:mbuffer, :send, :buffer_size),
           log_file: mbuffer_log_file,

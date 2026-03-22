@@ -202,11 +202,13 @@ module NodeCtld
 
     mbuffer: {
       send: {
+        command: 'mbuffer',
         block_size: '1M',
         buffer_size: '256M',
         timeout: 90 * 60
       },
       receive: {
+        command: 'mbuffer',
         block_size: '1M',
         buffer_size: '128M',
         start_writing_at: 60,

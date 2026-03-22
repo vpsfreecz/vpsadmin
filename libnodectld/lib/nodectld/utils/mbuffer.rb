@@ -2,6 +2,10 @@ require 'tempfile'
 
 module NodeCtld
   module Utils::MBuffer
+    def mbuffer_command(direction)
+      $CFG.get(:mbuffer, direction, :command)
+    end
+
     def mbuffer_log_file
       @mbuffer_log_file ||= File.join(
         ENV['TMPDIR'] || '/tmp',
