@@ -118,4 +118,29 @@ RSpec.describe TransactionChains::Dataset::Rotate do
                               '2014-01-08T01:00:00'
                             ])
   end
+
+  it 'eventually releases source snapshots whose old backup copy is already gone' do
+    primary_pool = create_pool!(node: SpecSeed.node, role: :primary)
+    backup_pool = create_pool!(node: SpecSeed.other_node, role: :backup)
+
+    dataset, primary = create_dataset_with_pool!(user: user, pool: primary_pool, name: "rotate-#{SecureRandom.hex(4)}")
+    backup = attach_dataset_to_pool!(dataset: dataset, pool: backup_pool)
+
+    _, sip1 = backdated_snapshot!(dataset: dataset, dip: primary, name: 'snap-1', days_ago: 3)
+    snap2, = backdated_snapshot!(dataset: dataset, dip: primary, name: 'snap-2', days_ago: 2)
+    snap3, = backdated_snapshot!(dataset: dataset, dip: primary, name: 'snap-3', days_ago: 1)
+
+    branch = create_branch!(tree: create_tree!(dip: backup, index: 0, head: true), name: 'head', head: true)
+    attach_snapshot_to_branch!(sip: mirror_snapshot!(snapshot: snap2, dip: backup), branch: branch)
+    attach_snapshot_to_branch!(sip: mirror_snapshot!(snapshot: snap3, dip: backup), branch: branch)
+
+    primary.update!(min_snapshots: 1, max_snapshots: 1, snapshot_max_age: 0)
+
+    pending 'source rotation can retain an obsolete snapshot forever after its old backup copy disappears'
+
+    chain, = described_class.fire(primary)
+
+    expect(tx_classes(chain)).to eq([Transactions::Storage::DestroySnapshot])
+    expect(sip1.reload.confirmed).to eq(:confirm_destroy)
+  end
 end
