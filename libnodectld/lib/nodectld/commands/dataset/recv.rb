@@ -36,6 +36,8 @@ module NodeCtld
     end
 
     def rollback
+      killall_subprocesses
+
       # Kill nc - just connect and close.
       # This will not stop an ongoing transfer.
       begin
