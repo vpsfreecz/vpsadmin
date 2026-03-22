@@ -284,7 +284,8 @@ module NodeCtld
       threads = $CFG.get(:vpsadmin, :threads)
       urgent = $CFG.get(:vpsadmin, :urgent_threads)
 
-      if chain_blocked?(cmd.chain_id)
+      if chain_blocked?(cmd.chain_id) \
+         && cmd.current_chain_direction != :rollback
         log(:debug, cmd, 'Transaction is blocked - waiting for child process to finish')
         return
       end
