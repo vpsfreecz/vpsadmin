@@ -57,12 +57,22 @@ import ../../../make-test.nix (
             label_prefix: 'repeat-topology'
           )
 
-          branches = branch_rows_for_dip(services, @setup.fetch('dst_dip_id'))
-          entries = branch_entries_for_dip(services, @setup.fetch('dst_dip_id'))
+          report = backup_topology_report(
+            services,
+            backup_node: node2,
+            dst_dip_id: @setup.fetch('dst_dip_id'),
+            backup_dataset_path: @setup.fetch('backup_dataset_path')
+          )
+          diagnostic = delete_order_diagnostic(report)
+          branches = report.fetch('db').fetch('branches')
+          entries = report.fetch('db').fetch('entries')
           entry_ids = entries.map { |row| row.fetch('entry_id') }
           snapshot_names = entries.map { |row| row.fetch('snapshot_name') }.uniq
-          zfs_refcounts = zfs_reference_counts_by_snapshot(node2, @setup.fetch('backup_dataset_path'))
+          zfs_refcounts = report.fetch('zfs').fetch('clones').each_with_object(Hash.new(0)) do |(path, clones), acc|
+            acc[path.split('@', 2).last] += clones.count
+          end
           db_refcounts = db_reference_counts_by_snapshot(entries)
+          failure_message = diagnostic.inspect
 
           pending 'multiple rollback branching can lose enough dependency information that delete ordering becomes unsafe'
 
@@ -85,15 +95,16 @@ import ../../../make-test.nix (
           end
 
           expect(db_refcounts).to eq(zfs_refcounts)
+          expect(diagnostic.fetch('db_but_not_zfs')).to eq([]), failure_message
 
           expect(
             services.mysql_scalar(
               sql: "SELECT COUNT(*) FROM dataset_trees WHERE dataset_in_pool_id = #{@setup.fetch('dst_dip_id')} AND head = 1"
             )
-          ).to eq('1')
+          ).to eq('1'), failure_message
 
           branches.group_by { |row| row.fetch('tree_id') }.each_value do |tree_branches|
-            expect(tree_branches.count { |row| row.fetch('head') == 1 }).to eq(1)
+            expect(tree_branches.count { |row| row.fetch('head') == 1 }).to eq(1), failure_message
           end
 
           expect(topology.fetch('snapshots').fetch('s8').fetch('name')).to be_present
