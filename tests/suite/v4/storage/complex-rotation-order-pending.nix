@@ -119,7 +119,9 @@ import ../../../make-test.nix (
             dst_dip_id: @setup.fetch('dst_dip_id'),
             backup_dataset_path: @setup.fetch('backup_dataset_path')
           ).fetch('db').fetch('trees').count
+          unexpected = failure_details.values.flatten.reject { |detail| dependency_failure?(detail) }
 
+          expect(unexpected).to eq([]), failure_details.inspect
           expect(failed_chain_ids).to eq([]), "actual failures: #{failure_details.inspect}"
           expect(remaining.count).to be < count_before
           expect(branch_count_after).to be <= branch_count_before

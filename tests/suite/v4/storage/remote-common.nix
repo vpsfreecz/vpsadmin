@@ -267,12 +267,73 @@
     }
   end
 
+  def delete_order_diagnostic(report)
+    zfs_leaf_snapshots = report.fetch('zfs').fetch('clones').select { |_, clones| clones.empty? }
+                               .keys.map { |path| path.split('@', 2).last }
+                               .uniq.sort
+
+    db_candidate_snapshots = report.fetch('db').fetch('entries')
+                                 .select { |row| row.fetch('reference_count').to_i.zero? }
+                                 .map { |row| row.fetch('snapshot_name') }
+                                 .uniq.sort
+
+    {
+      'zfs_leaf_snapshots' => zfs_leaf_snapshots,
+      'db_candidate_snapshots' => db_candidate_snapshots,
+      'db_but_not_zfs' => (db_candidate_snapshots - zfs_leaf_snapshots).sort,
+      'zfs_but_not_db' => (zfs_leaf_snapshots - db_candidate_snapshots).sort
+    }
+  end
+
   def dataset_in_pool_info(services, dataset_id:, pool_id:)
     services.mysql_json_rows(sql: <<~SQL).first
       SELECT JSON_OBJECT('dataset_in_pool_id', dip.id)
       FROM dataset_in_pools dip
       WHERE dip.dataset_id = #{Integer(dataset_id)} AND dip.pool_id = #{Integer(pool_id)}
       LIMIT 1
+    SQL
+  end
+
+  def dataset_record_counts(services, dataset_id:)
+    services.mysql_json_rows(sql: <<~SQL).first
+      SELECT JSON_OBJECT(
+        'datasets', (
+          SELECT COUNT(*)
+          FROM datasets
+          WHERE id = #{Integer(dataset_id)}
+        ),
+        'dataset_in_pools', (
+          SELECT COUNT(*)
+          FROM dataset_in_pools
+          WHERE dataset_id = #{Integer(dataset_id)}
+        ),
+        'dataset_trees', (
+          SELECT COUNT(*)
+          FROM dataset_trees t
+          INNER JOIN dataset_in_pools dip ON dip.id = t.dataset_in_pool_id
+          WHERE dip.dataset_id = #{Integer(dataset_id)}
+        ),
+        'branches', (
+          SELECT COUNT(*)
+          FROM branches b
+          INNER JOIN dataset_trees t ON t.id = b.dataset_tree_id
+          INNER JOIN dataset_in_pools dip ON dip.id = t.dataset_in_pool_id
+          WHERE dip.dataset_id = #{Integer(dataset_id)}
+        ),
+        'snapshot_in_pools', (
+          SELECT COUNT(*)
+          FROM snapshot_in_pools sip
+          INNER JOIN dataset_in_pools dip ON dip.id = sip.dataset_in_pool_id
+          WHERE dip.dataset_id = #{Integer(dataset_id)}
+        ),
+        'snapshot_in_pool_in_branches', (
+          SELECT COUNT(*)
+          FROM snapshot_in_pool_in_branches e
+          INNER JOIN snapshot_in_pools sip ON sip.id = e.snapshot_in_pool_id
+          INNER JOIN dataset_in_pools dip ON dip.id = sip.dataset_in_pool_id
+          WHERE dip.dataset_id = #{Integer(dataset_id)}
+        )
+      )
     SQL
   end
 
@@ -405,6 +466,23 @@
 
       sleep 1
     end
+  end
+
+  DEPENDENCY_ERROR_PATTERNS = [
+    /dependent clones/i,
+    /has children/i,
+    /cannot destroy/i,
+    /use '-R' to destroy/i
+  ].freeze
+
+  def dependency_failure?(detail)
+    payload = detail.fetch('output', {})
+    text = [
+      detail['error'],
+      payload.is_a?(Hash) ? payload.values.map(&:to_s).join(' ') : payload.to_s
+    ].compact.join(' ')
+
+    DEPENDENCY_ERROR_PATTERNS.any? { |rx| rx.match?(text) }
   end
   STORAGE_CHAIN_STATES = {
     staged: 0,
@@ -615,7 +693,7 @@
     )
   end
 
-  def build_repeated_rollback_topology(services, admin_user_id:, dataset_id:, src_dip_id:, dst_dip_id:, vps_id:,
+  def build_repeated_rollback_topology(services, admin_user_id:, dataset_id:, src_dip_id:, dst_dip_id:, vps_id: nil,
                                        label_prefix: 'repeated')
     snapshots = {}
 
@@ -636,7 +714,7 @@
       snapshot_id: snapshots.fetch('s3').fetch('id')
     )
     services.wait_for_chain_state(rollback_s3.fetch('chain_id'), state: :done)
-    wait_for_vps_running(services, vps_id)
+    wait_for_vps_running(services, vps_id) if vps_id
 
     %w[s6 s7].each do |name|
       snapshots[name] = create_and_backup_snapshot(
@@ -655,7 +733,7 @@
       snapshot_id: snapshots.fetch('s2').fetch('id')
     )
     services.wait_for_chain_state(rollback_s2.fetch('chain_id'), state: :done)
-    wait_for_vps_running(services, vps_id)
+    wait_for_vps_running(services, vps_id) if vps_id
 
     snapshots['s8'] = create_and_backup_snapshot(
       services,
@@ -675,7 +753,7 @@
     }
   end
 
-  def build_complex_multi_tree_topology(services, admin_user_id:, dataset_id:, src_dip_id:, dst_dip_id:, vps_id:,
+  def build_complex_multi_tree_topology(services, admin_user_id:, dataset_id:, src_dip_id:, dst_dip_id:, vps_id: nil,
                                         label_prefix: 'complex')
     snapshots = {}
 
@@ -696,7 +774,7 @@
       snapshot_id: snapshots.fetch('s3').fetch('id')
     )
     services.wait_for_chain_state(rollback_s3.fetch('chain_id'), state: :done)
-    wait_for_vps_running(services, vps_id)
+    wait_for_vps_running(services, vps_id) if vps_id
 
     %w[s6 s7].each do |name|
       snapshots[name] = create_and_backup_snapshot(
@@ -709,11 +787,20 @@
       )
     end
 
-    reinstall = reinstall_vps(
-      services,
-      admin_user_id: admin_user_id,
-      vps_id: vps_id
-    )
+    reinstall =
+      if vps_id
+        reinstall_vps(
+          services,
+          admin_user_id: admin_user_id,
+          vps_id: vps_id
+        )
+      else
+        reset_standalone_dataset(
+          services,
+          admin_user_id: admin_user_id,
+          src_dip_id: src_dip_id
+        )
+      end
     services.wait_for_chain_state(reinstall.fetch('chain_id'), state: :done)
 
     wait_until_block_succeeds(name: "local snapshots removed after reinstall for #{label_prefix}") do
@@ -737,7 +824,7 @@
       snapshot_id: snapshots.fetch('s2').fetch('id')
     )
     services.wait_for_chain_state(rollback_s2.fetch('chain_id'), state: :done)
-    wait_for_vps_running(services, vps_id)
+    wait_for_vps_running(services, vps_id) if vps_id
 
     snapshots['s10'] = create_and_backup_snapshot(
       services,
@@ -817,6 +904,38 @@
       vps = Vps.find(#{vps_id})
       template = OsTemplate.find(#{os_template_id})
       chain, = TransactionChains::Vps::Reinstall.fire(vps, template, {})
+
+      puts JSON.dump(chain_id: chain.id)
+    RUBY
+  end
+
+  def reset_standalone_dataset(services, admin_user_id:, src_dip_id:)
+    services.api_ruby_json(code: <<~RUBY)
+      #{api_session_prelude(admin_user_id)}
+
+      unless defined?(::TestStandaloneDatasetReset)
+        class ::TestStandaloneDatasetReset < ::TransactionChain
+          label 'Test standalone dataset reset'
+
+          def link_chain(dataset_in_pool)
+            lock(dataset_in_pool)
+            concerns(:affect, [dataset_in_pool.dataset.class.name, dataset_in_pool.dataset_id])
+
+            dataset_in_pool.snapshot_in_pools.order(:id).each do |sip|
+              use_chain(TransactionChains::SnapshotInPool::Destroy, args: sip)
+            end
+
+            use_chain(TransactionChains::DatasetInPool::DetachBackupHeads, args: dataset_in_pool)
+
+            append_t(Transactions::Utils::NoOp, args: dataset_in_pool.pool.node_id) do |t|
+              t.increment(dataset_in_pool.dataset, 'current_history_id')
+            end
+          end
+        end
+      end
+
+      dip = DatasetInPool.find(#{src_dip_id})
+      chain, = TestStandaloneDatasetReset.fire(dip)
 
       puts JSON.dump(chain_id: chain.id)
     RUBY
@@ -1032,6 +1151,17 @@
     RUBY
   end
 
+  def destroy_dataset(services, admin_user_id:, dataset_id:)
+    services.api_ruby_json(code: <<~RUBY)
+      #{api_session_prelude(admin_user_id)}
+
+      ds = Dataset.find(#{Integer(dataset_id)})
+      chain, = TransactionChains::Dataset::Destroy.fire(ds, nil, nil, nil)
+
+      puts JSON.dump(chain_id: chain.id)
+    RUBY
+  end
+
   def rotate_dataset(services, admin_user_id:, dip_id:)
     response = services.api_ruby_json(code: <<~RUBY)
       #{api_session_prelude(admin_user_id)}
@@ -1151,6 +1281,142 @@
       'dataset_full_name' => info.fetch('dataset_full_name'),
       'primary_dataset_path' => primary_dataset_path,
       'backup_dataset_paths' => backup_dataset_paths
+    }
+  end
+
+  def create_remote_backup_dataset_with_backups(services, primary_node:, backup_node:, admin_user_id:, primary_node_id:,
+                                                backup_node_id:, dataset_name:, primary_pool_fs:, backup_pool_defs:,
+                                                refquota: 10_240)
+    primary_pool = create_pool(
+      services,
+      node_id: primary_node_id,
+      label: "#{dataset_name}-primary",
+      filesystem: primary_pool_fs,
+      role: 'primary'
+    )
+    backup_pools = backup_pool_defs.each_with_object({}) do |pool_def, acc|
+      label = pool_def.fetch(:label)
+
+      acc[label] = create_pool(
+        services,
+        node_id: backup_node_id,
+        label: "#{dataset_name}-#{label}",
+        filesystem: pool_def.fetch(:filesystem),
+        role: 'backup'
+      )
+    end
+
+    wait_for_pool_online(services, primary_pool.fetch('id'))
+    backup_pools.each_value do |pool|
+      wait_for_pool_online(services, pool.fetch('id'))
+    end
+
+    info = services.api_ruby_json(code: <<~RUBY)
+      #{api_session_prelude(admin_user_id)}
+
+      user = User.find(#{Integer(admin_user_id)})
+      pool = Pool.find(#{Integer(primary_pool.fetch('id'))})
+      dataset = Dataset.new(
+        name: #{dataset_name.inspect},
+        user: user,
+        user_editable: true,
+        user_create: true,
+        user_destroy: true,
+        confirmed: Dataset.confirmed(:confirm_create)
+      )
+      chain, created = TransactionChains::Dataset::Create.fire(
+        pool,
+        nil,
+        [dataset],
+        automount: false,
+        properties: { refquota: #{Integer(refquota)} },
+        user: user,
+        label: #{dataset_name.inspect}
+      )
+      dip = Array(created).last
+
+      puts JSON.dump(
+        chain_id: chain.id,
+        dataset_id: dataset.id,
+        dataset_in_pool_id: dip.id,
+        dataset_full_name: dataset.full_name
+      )
+    RUBY
+
+    services.wait_for_chain_state(info.fetch('chain_id'), state: :done)
+
+    backup_pool_ids = {}
+    dst_dip_ids = {}
+    backup_dataset_paths = {}
+
+    backup_pool_defs.each do |pool_def|
+      label = pool_def.fetch(:label)
+      pool = backup_pools.fetch(label)
+
+      backup_info = ensure_dataset_in_pool(
+        services,
+        admin_user_id: admin_user_id,
+        dataset_id: info.fetch('dataset_id'),
+        pool_id: pool.fetch('id')
+      )
+
+      backup_pool_ids[label] = pool.fetch('id')
+      dst_dip_ids[label] = backup_info.fetch('dataset_in_pool_id')
+      backup_dataset_paths[label] = "#{pool_def.fetch(:filesystem)}/#{info.fetch('dataset_full_name')}"
+    end
+
+    primary_dataset_path = "#{primary_pool_fs}/#{info.fetch('dataset_full_name')}"
+
+    wait_until_block_succeeds(name: "primary dataset #{primary_dataset_path} exists") do
+      primary_node.zfs_exists?(primary_dataset_path, type: 'filesystem', timeout: 30)
+    end
+
+    backup_dataset_paths.each do |label, dataset_path|
+      wait_until_block_succeeds(name: "backup dataset #{label} #{dataset_path} exists") do
+        backup_node.zfs_exists?(dataset_path, type: 'filesystem', timeout: 30)
+      end
+    end
+
+    {
+      'primary_pool_id' => primary_pool.fetch('id'),
+      'backup_pool_ids' => backup_pool_ids,
+      'dataset_id' => info.fetch('dataset_id'),
+      'src_dip_id' => info.fetch('dataset_in_pool_id'),
+      'dst_dip_ids' => dst_dip_ids,
+      'dataset_full_name' => info.fetch('dataset_full_name'),
+      'primary_dataset_path' => primary_dataset_path,
+      'backup_dataset_paths' => backup_dataset_paths
+    }
+  end
+
+  def create_remote_backup_dataset(services, primary_node:, backup_node:, admin_user_id:, primary_node_id:,
+                                   backup_node_id:, dataset_name:, primary_pool_fs:, backup_pool_fs:)
+    setup = create_remote_backup_dataset_with_backups(
+      services,
+      primary_node: primary_node,
+      backup_node: backup_node,
+      admin_user_id: admin_user_id,
+      primary_node_id: primary_node_id,
+      backup_node_id: backup_node_id,
+      dataset_name: dataset_name,
+      primary_pool_fs: primary_pool_fs,
+      backup_pool_defs: [
+        {
+          label: 'backup',
+          filesystem: backup_pool_fs
+        }
+      ]
+    )
+
+    {
+      'primary_pool_id' => setup.fetch('primary_pool_id'),
+      'backup_pool_id' => setup.fetch('backup_pool_ids').fetch('backup'),
+      'dataset_id' => setup.fetch('dataset_id'),
+      'src_dip_id' => setup.fetch('src_dip_id'),
+      'dst_dip_id' => setup.fetch('dst_dip_ids').fetch('backup'),
+      'dataset_full_name' => setup.fetch('dataset_full_name'),
+      'primary_dataset_path' => setup.fetch('primary_dataset_path'),
+      'backup_dataset_path' => setup.fetch('backup_dataset_paths').fetch('backup')
     }
   end
 
