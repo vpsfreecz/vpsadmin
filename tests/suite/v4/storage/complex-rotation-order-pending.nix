@@ -93,6 +93,7 @@ import ../../../make-test.nix (
           pending 'complex repeated rollback + tree switching can strand old snapshots because metadata is not enough to derive safe rotation order'
 
           failed_chain_ids = []
+          failure_details = {}
 
           8.times do
             rotation = rotate_dataset(
@@ -104,7 +105,10 @@ import ../../../make-test.nix (
               sql: "SELECT state FROM transaction_chains WHERE id = #{rotation.fetch('chain_id')}"
             ).to_i
 
-            failed_chain_ids << rotation.fetch('chain_id') unless final_state == services.class::CHAIN_STATES[:done]
+            next if final_state == services.class::CHAIN_STATES[:done]
+
+            failed_chain_ids << rotation.fetch('chain_id')
+            failure_details[rotation.fetch('chain_id')] = chain_failure_details(services, rotation.fetch('chain_id'))
           end
 
           remaining = snapshot_rows_for_dip(services, @setup.fetch('dst_dip_id')).map { |row| row.fetch('name') }
@@ -116,7 +120,7 @@ import ../../../make-test.nix (
             backup_dataset_path: @setup.fetch('backup_dataset_path')
           ).fetch('db').fetch('trees').count
 
-          expect(failed_chain_ids).to eq([])
+          expect(failed_chain_ids).to eq([]), "actual failures: #{failure_details.inspect}"
           expect(remaining.count).to be < count_before
           expect(branch_count_after).to be <= branch_count_before
           expect(tree_count_after).to be <= tree_count_before

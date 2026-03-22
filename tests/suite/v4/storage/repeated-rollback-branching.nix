@@ -61,19 +61,8 @@ import ../../../make-test.nix (
           entries = branch_entries_for_dip(services, @setup.fetch('dst_dip_id'))
           entry_ids = entries.map { |row| row.fetch('entry_id') }
           snapshot_names = entries.map { |row| row.fetch('snapshot_name') }.uniq
-          expected_refcounts = Hash.new(0)
-
-          branches.each do |branch|
-            origin = node2.zfs_get(
-              fs: branch_dataset_path(backup_pool_fs, @setup.fetch('dataset_full_name'), branch),
-              property: 'origin',
-              timeout: 30
-            ).last
-
-            next if origin.nil? || origin.empty? || origin == '-'
-
-            expected_refcounts[origin.split('@', 2).last] += 1
-          end
+          zfs_refcounts = zfs_reference_counts_by_snapshot(node2, @setup.fetch('backup_dataset_path'))
+          db_refcounts = db_reference_counts_by_snapshot(entries)
 
           pending 'multiple rollback branching can lose enough dependency information that delete ordering becomes unsafe'
 
@@ -95,9 +84,7 @@ import ../../../make-test.nix (
             expect(entry_ids).to include(entry.fetch('parent_entry_id'))
           end
 
-          entries.each do |entry|
-            expect(entry.fetch('reference_count')).to eq(expected_refcounts.fetch(entry.fetch('snapshot_name'), 0))
-          end
+          expect(db_refcounts).to eq(zfs_refcounts)
 
           expect(
             services.mysql_scalar(

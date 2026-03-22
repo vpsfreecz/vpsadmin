@@ -7,7 +7,11 @@ require 'nodectld/daemon'
 RSpec.describe NodeCtld::Daemon do
   let(:daemon) do
     described_class.allocate.tap do |d|
-      d.instance_variable_set(:@queues, instance_double(NodeCtld::Queues, total_limit: 50))
+      d.instance_variable_set(
+        :@queues,
+        instance_double(NodeCtld::Queues, total_limit: 50)
+      )
+      d.instance_variable_set(:@cmd_counter, 0)
     end
   end
 
@@ -182,5 +186,44 @@ RSpec.describe NodeCtld::Daemon do
     end
 
     expect(selected_ids(2)).to eq(ids.first(2))
+  end
+
+  it 'skips execute commands while the chain is blocked' do
+    cmd = instance_double(
+      NodeCtld::Command,
+      chain_id: 6,
+      current_chain_direction: :execute,
+      id: 19,
+      worker_id: 6
+    )
+    queues = daemon.instance_variable_get(:@queues)
+
+    allow(daemon).to receive(:chain_blocked?).with(6).and_return(true)
+    allow(daemon).to receive(:log)
+    allow(queues).to receive(:execute)
+
+    daemon.send(:do_command, cmd)
+
+    expect(queues).not_to have_received(:execute)
+  end
+
+  it 'allows rollback commands to run even when the chain is blocked' do
+    cmd = instance_double(
+      NodeCtld::Command,
+      chain_id: 6,
+      current_chain_direction: :rollback,
+      id: 18,
+      worker_id: 6
+    )
+    queues = daemon.instance_variable_get(:@queues)
+
+    allow(daemon).to receive(:chain_blocked?).with(6).and_return(true)
+    allow(daemon).to receive(:log)
+    allow(queues).to receive(:execute).with(cmd).and_return(true)
+
+    daemon.send(:do_command, cmd)
+
+    expect(queues).to have_received(:execute).with(cmd)
+    expect(daemon.instance_variable_get(:@cmd_counter)).to eq(1)
   end
 end
