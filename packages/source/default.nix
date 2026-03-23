@@ -12,11 +12,7 @@ let
     && !(type == "directory" && baseNameOf path == "result")
     && !(type == "directory" && baseNameOf path == "tests");
 
-  copiedRepo =
-    if lib.isStorePath vpsadminPath then
-      vpsadminPath
-    else
-      builtins.filterSource filterRepository vpsadminPath;
+  copiedRepo = builtins.filterSource filterRepository vpsadminPath;
 
   revision = builtins.replaceStrings [ "\n" ] [ "" ] (toString vpsadminRev);
 
