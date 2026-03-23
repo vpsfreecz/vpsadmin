@@ -1,6 +1,8 @@
 {
   pkgs ? <nixpkgs>,
   system ? builtins.currentSystem,
+  configuration ? null,
+  testConfig ? { },
   suiteArgs ? { },
   configuration ? null,
   testConfig ? { },
@@ -14,6 +16,8 @@ let
       pkgs
       system
       lib
+      configuration
+      testConfig
       suiteArgs
       configuration
       testConfig
