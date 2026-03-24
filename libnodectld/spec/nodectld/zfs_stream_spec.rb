@@ -40,4 +40,30 @@ RSpec.describe NodeCtld::ZfsStream do
 
     expect { stream.send(:pipe_cmd, ['mbuffer', '-q', '-O', '127.0.0.1:39001']) }.not_to raise_error
   end
+
+  it 'passes transport helper options as separate argv elements' do
+    allow(stream).to receive(:pipe_cmd)
+
+    stream.send_to(
+      '127.0.0.1',
+      39_001,
+      command: '/run/test/faulty-mbuffer',
+      block_size: '1M',
+      buffer_size: '256M',
+      log_file: '/run/test/mbuffer.log',
+      timeout: 5
+    )
+
+    expect(stream).to have_received(:pipe_cmd).with(
+      [
+        '/run/test/faulty-mbuffer',
+        '-q',
+        '-O', '127.0.0.1:39001',
+        '-s', '1M',
+        '-m', '256M',
+        '-l', '/run/test/mbuffer.log',
+        '-W', '5'
+      ]
+    )
+  end
 end
