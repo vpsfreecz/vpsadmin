@@ -24,6 +24,15 @@
     end
   end
 
+  def wait_for_node_ready(services, node_id)
+    wait_until_block_succeeds(name: "node #{node_id} ready in API") do
+      _, output = services.vpsadminctl.succeeds(args: ['node', 'show', node_id.to_s])
+      node = output.fetch('node')
+
+      node.fetch('status') == true && node.fetch('pool_status') == true
+    end
+  end
+
   def prepare_node_queues(node, send_timeout: 120, receive_timeout: 120)
     node.succeeds('nodectl set config vpsadmin.queues.zfs_send.start_delay=0')
     node.succeeds('nodectl set config vpsadmin.queues.zfs_recv.start_delay=0')
@@ -1463,6 +1472,8 @@
     wait_for_running_nodectld(node2)
     prepare_node_queues(node1)
     prepare_node_queues(node2)
+    wait_for_node_ready(services, node1_id)
+    wait_for_node_ready(services, node2_id)
     services.unlock_transaction_signing_key(passphrase: 'test')
     @tx_types = storage_tx_types(services)
   end
