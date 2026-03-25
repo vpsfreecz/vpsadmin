@@ -62,6 +62,8 @@ module TransactionChains
                   end
                 end
 
+          next if cnt == 0
+
           uses << user_env.reallocate_resource!(
             r,
             user_env.send(r) - cnt,
