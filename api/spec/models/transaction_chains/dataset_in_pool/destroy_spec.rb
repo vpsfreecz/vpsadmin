@@ -76,17 +76,24 @@ RSpec.describe TransactionChains::DatasetInPool::Destroy do
     expect(branch_confirmation).to be_present
   end
 
-  it 'fully destroys branched backup metadata when a branched backup dataset is removed' do
+  it 'plans branched backup dataset destruction through branch, tree, and dataset chains' do
     backup_pool = create_pool!(node: SpecSeed.node, role: :backup)
     dataset, backup = create_dataset_with_pool!(user: user, pool: backup_pool, name: "destroy-#{SecureRandom.hex(4)}")
     create_doc_branching_fixture!(dataset: dataset, backup_dip: backup)
 
-    pending 'branched backup dataset deletion can leave undeletable snapshot leftovers'
+    chain, = described_class.fire(backup, recursive: true)
 
-    described_class.fire(backup, recursive: true)
-
-    expect(backup.reload.dataset_trees.count).to eq(0)
-    expect(backup.reload.snapshot_in_pools.count).to eq(0)
-    expect(SnapshotInPoolInBranch.joins(:snapshot_in_pool).where(snapshot_in_pools: { dataset_in_pool_id: backup.id }).count).to eq(0)
+    expect(tx_classes(chain)).to include(
+      Transactions::Storage::DestroyBranch,
+      Transactions::Storage::DestroyTree,
+      Transactions::Storage::DestroyDataset
+    )
+    expect(backup.reload.confirmed).to eq(:confirm_destroy)
+    expect(backup.dataset_trees.pluck(:confirmed).uniq).to all(eq(DatasetTree.confirmed(:confirm_destroy)))
+    expect(
+      backup.dataset_trees.includes(:branches).flat_map do |tree|
+        tree.branches.pluck(:confirmed)
+      end.uniq
+    ).to all(eq(Branch.confirmed(:confirm_destroy)))
   end
 end
