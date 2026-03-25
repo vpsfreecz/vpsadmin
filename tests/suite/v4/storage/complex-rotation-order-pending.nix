@@ -75,12 +75,14 @@ import ../../../make-test.nix (
 
           count_before = snapshot_rows_for_dip(services, @setup.fetch('dst_dip_id')).count
           branch_count_before = branch_rows_for_dip(services, @setup.fetch('dst_dip_id')).count
-          tree_count_before = backup_topology_report(
+          report_before = backup_topology_report(
             services,
             backup_node: node2,
             dst_dip_id: @setup.fetch('dst_dip_id'),
             backup_dataset_path: @setup.fetch('backup_dataset_path')
-          ).fetch('db').fetch('trees').count
+          )
+          diagnostic_before = delete_order_diagnostic(report_before)
+          tree_count_before = report_before.fetch('db').fetch('trees').count
 
           set_snapshot_retention(
             services,
@@ -92,8 +94,12 @@ import ../../../make-test.nix (
 
           pending 'complex repeated rollback + tree switching can strand old snapshots because metadata is not enough to derive safe rotation order'
 
+          expect(diagnostic_before.fetch('db_but_not_zfs')).to eq([]), diagnostic_before.inspect
+
           failed_chain_ids = []
           failure_details = {}
+          dependency_failures = {}
+          unexpected_failures = {}
 
           8.times do
             rotation = rotate_dataset(
@@ -108,7 +114,14 @@ import ../../../make-test.nix (
             next if final_state == services.class::CHAIN_STATES[:done]
 
             failed_chain_ids << rotation.fetch('chain_id')
-            failure_details[rotation.fetch('chain_id')] = chain_failure_details(services, rotation.fetch('chain_id'))
+            details = chain_failure_details(services, rotation.fetch('chain_id'))
+            failure_details[rotation.fetch('chain_id')] = details
+            dependency_failures[rotation.fetch('chain_id')] = details.select do |detail|
+              dependency_failure?(detail)
+            end
+            unexpected_failures[rotation.fetch('chain_id')] = details.reject do |detail|
+              dependency_failure?(detail)
+            end
           end
 
           remaining = snapshot_rows_for_dip(services, @setup.fetch('dst_dip_id')).map { |row| row.fetch('name') }
@@ -119,9 +132,9 @@ import ../../../make-test.nix (
             dst_dip_id: @setup.fetch('dst_dip_id'),
             backup_dataset_path: @setup.fetch('backup_dataset_path')
           ).fetch('db').fetch('trees').count
-          unexpected = failure_details.values.flatten.reject { |detail| dependency_failure?(detail) }
 
-          expect(unexpected).to eq([]), failure_details.inspect
+          expect(dependency_failures.values.flatten).to eq([]), failure_details.inspect
+          expect(unexpected_failures.values.flatten).to eq([]), failure_details.inspect
           expect(failed_chain_ids).to eq([]), "actual failures: #{failure_details.inspect}"
           expect(remaining.count).to be < count_before
           expect(branch_count_after).to be <= branch_count_before
