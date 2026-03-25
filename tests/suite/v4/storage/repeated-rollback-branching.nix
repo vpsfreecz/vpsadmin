@@ -96,6 +96,7 @@ import ../../../make-test.nix (
 
           expect(db_refcounts).to eq(zfs_refcounts)
           expect(diagnostic.fetch('db_but_not_zfs')).to eq([]), failure_message
+          expect(diagnostic.fetch('zfs_but_not_db')).to eq([]), failure_message
 
           expect(
             services.mysql_scalar(
@@ -107,7 +108,26 @@ import ../../../make-test.nix (
             expect(tree_branches.count { |row| row.fetch('head') == 1 }).to eq(1), failure_message
           end
 
-          expect(topology.fetch('snapshots').fetch('s8').fetch('name')).to be_present
+          response = destroy_backup_dataset(
+            services,
+            admin_user_id: admin_user_id,
+            dip_id: @setup.fetch('dst_dip_id')
+          )
+          wait_for_chain_states_local(
+            services,
+            response.fetch('chain_id'),
+            %i[done failed fatal resolved]
+          )
+          final_state = services.mysql_scalar(
+            sql: "SELECT state FROM transaction_chains WHERE id = #{response.fetch('chain_id')}"
+          ).to_i
+          destroy_failures = chain_failure_details(services, response.fetch('chain_id'))
+          dependency_failures = dependency_failure_details(services, response.fetch('chain_id'))
+
+          expect(final_state).to eq(services.class::CHAIN_STATES[:done]), destroy_failures.inspect
+          expect(dependency_failures).to eq([]), destroy_failures.inspect
+          expect(topology.fetch('snapshots').fetch('s8').fetch('name')).not_to be_nil
+          expect(topology.fetch('snapshots').fetch('s8').fetch('name').to_s).not_to eq("")
         end
       end
     '';

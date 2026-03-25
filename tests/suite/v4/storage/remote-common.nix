@@ -276,15 +276,22 @@
     }
   end
 
-  def delete_order_diagnostic(report)
-    zfs_leaf_snapshots = report.fetch('zfs').fetch('clones').select { |_, clones| clones.empty? }
-                               .keys.map { |path| path.split('@', 2).last }
-                               .uniq.sort
+  def zfs_leaf_snapshot_names(report)
+    report.fetch('zfs').fetch('clones').select { |_, clones| clones.empty? }
+          .keys.map { |path| path.split('@', 2).last }
+          .uniq.sort
+  end
 
-    db_candidate_snapshots = report.fetch('db').fetch('entries')
-                                 .select { |row| row.fetch('reference_count').to_i.zero? }
-                                 .map { |row| row.fetch('snapshot_name') }
-                                 .uniq.sort
+  def db_leaf_candidate_snapshot_names(report)
+    report.fetch('db').fetch('entries')
+          .select { |row| row.fetch('reference_count').to_i.zero? }
+          .map { |row| row.fetch('snapshot_name') }
+          .uniq.sort
+  end
+
+  def delete_order_diagnostic(report)
+    zfs_leaf_snapshots = zfs_leaf_snapshot_names(report)
+    db_candidate_snapshots = db_leaf_candidate_snapshot_names(report)
 
     {
       'zfs_leaf_snapshots' => zfs_leaf_snapshots,
@@ -493,6 +500,13 @@
 
     DEPENDENCY_ERROR_PATTERNS.any? { |rx| rx.match?(text) }
   end
+
+  def dependency_failure_details(services, chain_id)
+    chain_failure_details(services, chain_id).select do |detail|
+      dependency_failure?(detail)
+    end
+  end
+
   STORAGE_CHAIN_STATES = {
     staged: 0,
     queued: 1,
@@ -700,6 +714,88 @@
     response.merge(
       'dataset_path' => "#{pool_fs}/#{response.fetch('full_name')}"
     )
+  end
+
+  def hard_delete_vps(services, admin_user_id:, vps_id:, reason: 'storage test hard delete')
+    response = services.api_ruby_json(code: <<~RUBY)
+      #{api_session_prelude(admin_user_id)}
+
+      vps = Vps.unscoped.find(#{Integer(vps_id)})
+      chain = vps.set_object_state(
+        :hard_delete,
+        user: User.current,
+        reason: #{reason.inspect}
+      )
+
+      puts JSON.dump(chain_id: chain.id)
+    RUBY
+
+    wait_for_chain_states_local(
+      services,
+      response.fetch('chain_id'),
+      %i[done failed fatal resolved]
+    )
+    response
+  end
+
+  def vps_unscoped_row(services, vps_id)
+    services.mysql_json_rows(sql: <<~SQL).first
+      SELECT JSON_OBJECT(
+        'id', id,
+        'object_state', CASE object_state
+          WHEN 0 THEN 'active'
+          WHEN 1 THEN 'suspended'
+          WHEN 2 THEN 'soft_delete'
+          WHEN 3 THEN 'hard_delete'
+          WHEN 4 THEN 'deleted'
+        END,
+        'object_state_id', object_state,
+        'dataset_in_pool_id', dataset_in_pool_id,
+        'user_namespace_map_id', user_namespace_map_id
+      )
+      FROM vpses
+      WHERE id = #{Integer(vps_id)}
+      LIMIT 1
+    SQL
+  end
+
+  def backup_head_counts(services, dataset_id:)
+    services.mysql_json_rows(sql: <<~SQL).first
+      SELECT JSON_OBJECT(
+        'tree_heads', (
+          SELECT COUNT(*)
+          FROM dataset_trees t
+          INNER JOIN dataset_in_pools dip ON dip.id = t.dataset_in_pool_id
+          INNER JOIN pools p ON p.id = dip.pool_id
+          WHERE dip.dataset_id = #{Integer(dataset_id)}
+            AND p.role = 2
+            AND t.head = 1
+        ),
+        'branch_heads', (
+          SELECT COUNT(*)
+          FROM branches b
+          INNER JOIN dataset_trees t ON t.id = b.dataset_tree_id
+          INNER JOIN dataset_in_pools dip ON dip.id = t.dataset_in_pool_id
+          INNER JOIN pools p ON p.id = dip.pool_id
+          WHERE dip.dataset_id = #{Integer(dataset_id)}
+            AND p.role = 2
+            AND b.head = 1
+        )
+      )
+    SQL
+  end
+
+  def dataset_subtree_ids(services, root_dataset_id)
+    root_id = Integer(root_dataset_id)
+
+    services.mysql_json_rows(sql: <<~SQL).map { |row| row.fetch('id') }
+      SELECT JSON_OBJECT('id', id)
+      FROM datasets
+      WHERE id = #{root_id}
+         OR ancestry = #{root_id.to_s.inspect}
+         OR ancestry LIKE #{("#{root_id}/%").inspect}
+      ORDER BY id
+    SQL
   end
 
   def build_repeated_rollback_topology(services, admin_user_id:, dataset_id:, src_dip_id:, dst_dip_id:, vps_id: nil,

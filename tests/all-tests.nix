@@ -51,6 +51,8 @@ testLib.makeTests [
   "v4/storage/dataset-destroy-complex-history"
   "v4/storage/complex-destroy-order"
   "v4/storage/complex-rotation-order-pending"
+  "v4/storage/vps-hard-delete-after-complex-history"
+  "v4/storage/vps-hard-delete-complex-history-with-descendants"
   "v4/tx/chain-lifecycle"
   "v4/tx/invalid-signature"
   "v4/tx/manual-confirmations"
