@@ -2,6 +2,7 @@ function VpsAdminConsole(element, vpsId, session) {
   this.element = element;
   this.url = "/console/feed/" + vpsId;
   this.session = session;
+  this.outputDecoder = typeof TextDecoder === 'undefined' ? null : new TextDecoder('utf-8');
 
   this.term = new Terminal();
   this.fitAddon = new FitAddon.FitAddon();
@@ -110,9 +111,7 @@ VpsAdminConsole.prototype.sendData = function () {
       if (request.status == 200) {
         var jsonResponse = JSON.parse(request.responseText);
 
-        // For some reason it appears that the data gets encoded twice, which
-        // then breaks rendering and so decoding before writing helps.
-        that.term.write(that.decodeUtf8(atob(jsonResponse.data)));
+        that.term.write(that.decodeOutput(jsonResponse.data));
 
         if (jsonResponse.session) {
           that.scheduleNextRequest();
@@ -139,6 +138,30 @@ VpsAdminConsole.prototype.scheduleNextRequest = function () {
   }, this.rate);
 };
 
+VpsAdminConsole.prototype.decodeOutput = function (v) {
+  if (!this.outputDecoder) {
+    return this.decodeUtf8(atob(v));
+  }
+
+  // Console output is polled in chunks, so UTF-8 code points can span requests.
+  return this.outputDecoder.decode(this.base64ToBytes(v), {stream: true});
+};
+
+VpsAdminConsole.prototype.base64ToBytes = function (v) {
+  var binary = atob(v);
+  var bytes = new Uint8Array(binary.length);
+
+  for (var i = 0; i < binary.length; i++) {
+    bytes[i] = binary.charCodeAt(i);
+  }
+
+  return bytes;
+};
+
 VpsAdminConsole.prototype.decodeUtf8 = function (v) {
-  return decodeURIComponent(escape(v));
+  try {
+    return decodeURIComponent(escape(v));
+  } catch (err) {
+    return v;
+  }
 };
