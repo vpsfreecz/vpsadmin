@@ -127,8 +127,8 @@ RSpec.describe TransactionChains::Dataset::Rotate do
     backup = attach_dataset_to_pool!(dataset: dataset, pool: backup_pool)
 
     _, sip1 = backdated_snapshot!(dataset: dataset, dip: primary, name: 'snap-1', days_ago: 3)
-    snap2, = backdated_snapshot!(dataset: dataset, dip: primary, name: 'snap-2', days_ago: 2)
-    snap3, = backdated_snapshot!(dataset: dataset, dip: primary, name: 'snap-3', days_ago: 1)
+    snap2, sip2 = backdated_snapshot!(dataset: dataset, dip: primary, name: 'snap-2', days_ago: 2)
+    snap3, sip3 = backdated_snapshot!(dataset: dataset, dip: primary, name: 'snap-3', days_ago: 1)
 
     branch = create_branch!(tree: create_tree!(dip: backup, index: 0, head: true), name: 'head', head: true)
     attach_snapshot_to_branch!(sip: mirror_snapshot!(snapshot: snap2, dip: backup), branch: branch)
@@ -136,11 +136,15 @@ RSpec.describe TransactionChains::Dataset::Rotate do
 
     primary.update!(min_snapshots: 1, max_snapshots: 1, snapshot_max_age: 0)
 
-    pending 'source rotation can retain an obsolete snapshot forever after its old backup copy disappears'
-
     chain, = described_class.fire(primary)
 
-    expect(tx_classes(chain)).to eq([Transactions::Storage::DestroySnapshot])
+    expect(tx_classes(chain)).to eq([
+                                      Transactions::Utils::NoOp,
+                                      Transactions::Storage::DestroySnapshot,
+                                      Transactions::Storage::DestroySnapshot
+                                    ])
     expect(sip1.reload.confirmed).to eq(:confirm_destroy)
+    expect(sip2.reload.confirmed).to eq(:confirm_destroy)
+    expect(sip3.reload.confirmed).to eq(:confirmed)
   end
 end
