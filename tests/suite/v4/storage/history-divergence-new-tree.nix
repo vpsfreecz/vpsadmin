@@ -103,11 +103,11 @@ import ../../../make-test.nix (
           expect(response.fetch('chain_id')).not_to be_nil
           expect(report.fetch('db').fetch('trees').count).to eq(2)
           expect(handles).to include(
-            @tx_types.fetch('send'),
-            @tx_types.fetch('recv'),
-            @tx_types.fetch('recv_check')
+            tx_types(services).fetch('send'),
+            tx_types(services).fetch('recv'),
+            tx_types(services).fetch('recv_check')
           )
-          expect(handles).not_to include(@tx_types.fetch('local_send'))
+          expect(handles).not_to include(tx_types(services).fetch('local_send'))
           expect(report.fetch('db').fetch('branches').map { |row| row.fetch('tree_index') }.uniq.sort).to eq([0, 1])
           expect(head_tree_row(services, @setup.fetch('dst_dip_id')).fetch('tree_index')).to eq(1)
           expect(old_tree_entries.map { |row| row.fetch('snapshot_name') }.uniq.sort).to eq([

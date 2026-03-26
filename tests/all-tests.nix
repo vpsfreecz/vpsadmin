@@ -41,6 +41,7 @@ testLib.makeTests [
   "v4/storage/restore-remote-interrupted-recv"
   "v4/storage/topology-reconciliation"
   "v4/storage/history-divergence-new-tree"
+  "v4/storage/topology-fixture-roundtrip"
   "v4/storage/rollback-across-trees"
   "v4/storage/backup-multiple-destinations-remote"
   "v4/storage/backup-multiple-destinations-diverged-remote"

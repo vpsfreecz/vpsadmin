@@ -57,6 +57,7 @@ import ../../../make-test.nix (
             label_prefix: 'repeat-topology'
           )
 
+          storage_types = storage_tx_types(services)
           report = backup_topology_report(
             services,
             backup_node: node2,
@@ -64,6 +65,7 @@ import ../../../make-test.nix (
             backup_dataset_path: @setup.fetch('backup_dataset_path')
           )
           diagnostic = delete_order_diagnostic(report)
+          leaf_contract = delete_order_leaf_contract(report)
           branches = report.fetch('db').fetch('branches')
           entries = report.fetch('db').fetch('entries')
           entry_ids = entries.map { |row| row.fetch('entry_id') }
@@ -72,41 +74,6 @@ import ../../../make-test.nix (
             acc[path.split('@', 2).last] += clones.count
           end
           db_refcounts = db_reference_counts_by_snapshot(entries)
-          failure_message = diagnostic.inspect
-
-          pending 'multiple rollback branching can lose enough dependency information that delete ordering becomes unsafe'
-
-          branches.each do |branch|
-            origin = node2.zfs_get(
-              fs: branch_dataset_path(backup_pool_fs, @setup.fetch('dataset_full_name'), branch),
-              property: 'origin',
-              timeout: 30
-            ).last
-
-            next if origin.nil? || origin.empty? || origin == '-'
-
-            expect(snapshot_names).to include(origin.split('@', 2).last)
-          end
-
-          entries.each do |entry|
-            next if entry.fetch('parent_entry_id').nil?
-
-            expect(entry_ids).to include(entry.fetch('parent_entry_id'))
-          end
-
-          expect(db_refcounts).to eq(zfs_refcounts)
-          expect(diagnostic.fetch('db_but_not_zfs')).to eq([]), failure_message
-          expect(diagnostic.fetch('zfs_but_not_db')).to eq([]), failure_message
-
-          expect(
-            services.mysql_scalar(
-              sql: "SELECT COUNT(*) FROM dataset_trees WHERE dataset_in_pool_id = #{@setup.fetch('dst_dip_id')} AND head = 1"
-            )
-          ).to eq('1'), failure_message
-
-          branches.group_by { |row| row.fetch('tree_id') }.each_value do |tree_branches|
-            expect(tree_branches.count { |row| row.fetch('head') == 1 }).to eq(1), failure_message
-          end
 
           response = destroy_backup_dataset(
             services,
@@ -123,6 +90,61 @@ import ../../../make-test.nix (
           ).to_i
           destroy_failures = chain_failure_details(services, response.fetch('chain_id'))
           dependency_failures = dependency_failure_details(services, response.fetch('chain_id'))
+          failure_message = {
+            diagnostic: diagnostic,
+            leaf_contract: leaf_contract,
+            destroy_failures: destroy_failures
+          }.inspect
+
+          pending 'multiple rollback branching can lose enough dependency information that delete ordering becomes unsafe'
+
+          if final_state != services.class::CHAIN_STATES[:done]
+            assert_known_dependency_failure!(
+              services,
+              chain_id: response.fetch('chain_id'),
+              allowed_handles: [storage_types.fetch('destroy_snapshot')],
+              diagnostic: leaf_contract
+            )
+
+            expect(leaf_contract.fetch('leaf_sets_match')).to be(false), {
+              destroy_failures: destroy_failures,
+              leaf_contract: leaf_contract
+            }.inspect
+          end
+
+          branches.each do |branch|
+            branch_path = branch_dataset_path(
+              backup_pool_fs,
+              @setup.fetch('dataset_full_name'),
+              branch
+            )
+            origin = report.fetch('zfs').fetch('origins')[branch_path]
+
+            next if origin.nil? || origin.empty? || origin == '-'
+
+            expect(snapshot_names).to include(origin.split('@', 2).last), failure_message
+          end
+
+          entries.each do |entry|
+            next if entry.fetch('parent_entry_id').nil?
+
+            expect(entry_ids).to include(entry.fetch('parent_entry_id')), failure_message
+          end
+
+          expect(db_refcounts).to eq(zfs_refcounts), failure_message
+          expect(leaf_contract.fetch('leaf_sets_match')).to be(true), leaf_contract.inspect
+          expect(leaf_contract.fetch('db_but_not_zfs')).to eq([]), leaf_contract.inspect
+          expect(leaf_contract.fetch('zfs_but_not_db')).to eq([]), leaf_contract.inspect
+
+          expect(
+            services.mysql_scalar(
+              sql: "SELECT COUNT(*) FROM dataset_trees WHERE dataset_in_pool_id = #{@setup.fetch('dst_dip_id')} AND head = 1"
+            )
+          ).to eq('1'), failure_message
+
+          branches.group_by { |row| row.fetch('tree_id') }.each_value do |tree_branches|
+            expect(tree_branches.count { |row| row.fetch('head') == 1 }).to eq(1), failure_message
+          end
 
           expect(final_state).to eq(services.class::CHAIN_STATES[:done]), destroy_failures.inspect
           expect(dependency_failures).to eq([]), destroy_failures.inspect

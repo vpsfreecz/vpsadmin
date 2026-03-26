@@ -112,11 +112,11 @@ import ../../../make-test.nix (
           rollback_handles = chain_transactions(services, rollback.fetch('chain_id')).map { |row| row.fetch('handle') }
 
           expect(rollback_handles).to include(
-            @tx_types.fetch('send'),
-            @tx_types.fetch('recv'),
-            @tx_types.fetch('recv_check')
+            tx_types(services).fetch('send'),
+            tx_types(services).fetch('recv'),
+            tx_types(services).fetch('recv_check')
           )
-          expect(rollback_handles).not_to include(@tx_types.fetch('local_send'))
+          expect(rollback_handles).not_to include(tx_types(services).fetch('local_send'))
           expect(head_tree_row(services, @setup.fetch('dst_dip_id')).fetch('tree_index')).to eq(0)
           expect(head_branch_row(services, @setup.fetch('dst_dip_id')).fetch('tree_index')).to eq(0)
           expect(
@@ -150,13 +150,13 @@ import ../../../make-test.nix (
           expect(report_after.fetch('db').fetch('trees').count).to eq(2)
           expect(head_tree_row(services, @setup.fetch('dst_dip_id')).fetch('tree_index')).to eq(0)
           expect(backup_handles).to include(
-            @tx_types.fetch('send'),
-            @tx_types.fetch('recv'),
-            @tx_types.fetch('recv_check')
+            tx_types(services).fetch('send'),
+            tx_types(services).fetch('recv'),
+            tx_types(services).fetch('recv_check')
           )
-          expect(backup_handles).not_to include(@tx_types.fetch('local_send'))
-          expect(backup_handles).not_to include(@tx_types.fetch('create_tree'))
-          expect(backup_handles).not_to include(@tx_types.fetch('branch_dataset'))
+          expect(backup_handles).not_to include(tx_types(services).fetch('local_send'))
+          expect(backup_handles).not_to include(tx_types(services).fetch('create_tree'))
+          expect(backup_handles).not_to include(tx_types(services).fetch('branch_dataset'))
           expect(head_branch_entries.map { |row| row.fetch('snapshot_name') }).to include(@snap5.fetch('name'))
 
           report_after.fetch('db').fetch('entries').each do |entry|

@@ -7,7 +7,9 @@
 }:
 ''
   require 'json'
+  require 'fileutils'
   require 'shellwords'
+  require 'time'
 
   admin_user_id = ${toString adminUserId}
   node1_id = ${toString node1Id}
@@ -77,6 +79,10 @@
         rollback: Transactions::Storage::Rollback.t_type
       )
     RUBY
+  end
+
+  def tx_types(services)
+    @tx_types ||= storage_tx_types(services)
   end
 
   def create_pool(services, node_id:, label:, filesystem:, role:)
@@ -276,6 +282,56 @@
     }
   end
 
+  def normalize_backup_topology_report(report)
+    normalized = JSON.parse(JSON.generate(report))
+
+    normalized.fetch('db').fetch('trees').sort_by! do |row|
+      [row.fetch('index'), row.fetch('id')]
+    end
+
+    normalized.fetch('db').fetch('branches').sort_by! do |row|
+      [row.fetch('tree_index'), row.fetch('index'), row.fetch('id')]
+    end
+
+    normalized.fetch('db').fetch('entries').sort_by! do |row|
+      [
+        row.fetch('tree_index'),
+        row.fetch('branch_index'),
+        row.fetch('snapshot_name'),
+        row.fetch('entry_id')
+      ]
+    end
+
+    normalized['zfs']['origins'] = normalized.fetch('zfs').fetch('origins').sort.to_h
+    normalized['zfs']['clones'] = normalized.fetch('zfs').fetch('clones').sort.map do |name, clones|
+      [name, Array(clones).sort]
+    end.to_h
+
+    normalized
+  end
+
+  def topology_fixture_payload(report, metadata: {})
+    normalized = normalize_backup_topology_report(report)
+
+    {
+      'version' => 1,
+      'generated_at' => Time.now.utc.iso8601,
+      'metadata' => metadata,
+      'report' => normalized,
+      'diagnostic' => delete_order_diagnostic(normalized)
+    }
+  end
+
+  def write_topology_fixture(path, payload)
+    FileUtils.mkdir_p(File.dirname(path))
+    File.write(path, JSON.pretty_generate(payload) + "\n")
+    path
+  end
+
+  def load_topology_fixture(path)
+    JSON.parse(File.read(path))
+  end
+
   def zfs_leaf_snapshot_names(report)
     report.fetch('zfs').fetch('clones').select { |_, clones| clones.empty? }
           .keys.map { |path| path.split('@', 2).last }
@@ -299,6 +355,46 @@
       'db_but_not_zfs' => (db_candidate_snapshots - zfs_leaf_snapshots).sort,
       'zfs_but_not_db' => (zfs_leaf_snapshots - db_candidate_snapshots).sort
     }
+  end
+
+  def delete_order_leaf_contract(report)
+    diagnostic = delete_order_diagnostic(report)
+
+    {
+      'zfs_leaf_snapshots' => diagnostic.fetch('zfs_leaf_snapshots'),
+      'db_candidate_snapshots' => diagnostic.fetch('db_candidate_snapshots'),
+      'db_but_not_zfs' => diagnostic.fetch('db_but_not_zfs'),
+      'zfs_but_not_db' => diagnostic.fetch('zfs_but_not_db'),
+      'leaf_sets_match' => (
+        diagnostic.fetch('db_but_not_zfs').empty? &&
+        diagnostic.fetch('zfs_but_not_db').empty?
+      )
+    }
+  end
+
+  def delete_order_leaf_contract_from_fixture(path)
+    fixture = load_topology_fixture(path)
+    delete_order_leaf_contract(fixture.fetch('report'))
+  end
+
+  def capture_backup_topology_fixture(
+    services,
+    backup_node:,
+    dst_dip_id:,
+    backup_dataset_path:,
+    path:,
+    metadata: {}
+  )
+    report = backup_topology_report(
+      services,
+      backup_node: backup_node,
+      dst_dip_id: dst_dip_id,
+      backup_dataset_path: backup_dataset_path
+    )
+    payload = topology_fixture_payload(report, metadata: metadata)
+
+    write_topology_fixture(path, payload)
+    payload
   end
 
   def dataset_in_pool_info(services, dataset_id:, pool_id:)
@@ -505,6 +601,31 @@
     chain_failure_details(services, chain_id).select do |detail|
       dependency_failure?(detail)
     end
+  end
+
+  def dependency_failure_handles(details)
+    details.map { |row| Integer(row.fetch('handle')) }.uniq.sort
+  end
+
+  def assert_known_dependency_failure!(services, chain_id:, allowed_handles:, diagnostic: nil)
+    details = chain_failure_details(services, chain_id)
+    dependency = dependency_failure_details(services, chain_id)
+    handles = dependency_failure_handles(dependency)
+    allowed = Array(allowed_handles).map { |handle| Integer(handle) }.sort
+
+    expect(dependency).not_to eq([]), {
+      details: details,
+      diagnostic: diagnostic
+    }.inspect
+
+    expect((handles - allowed)).to eq([]), {
+      details: details,
+      handles: handles,
+      allowed: allowed,
+      diagnostic: diagnostic
+    }.inspect
+
+    details
   end
 
   STORAGE_CHAIN_STATES = {
@@ -1562,7 +1683,9 @@
   end
 
   before(:suite) do
-    [services, node1, node2].each(&:start)
+    services.start
+    node1.start
+    node2.start
     services.wait_for_vpsadmin_api
     wait_for_running_nodectld(node1)
     wait_for_running_nodectld(node2)
@@ -1571,6 +1694,5 @@
     wait_for_node_ready(services, node1_id)
     wait_for_node_ready(services, node2_id)
     services.unlock_transaction_signing_key(passphrase: 'test')
-    @tx_types = storage_tx_types(services)
   end
 ''

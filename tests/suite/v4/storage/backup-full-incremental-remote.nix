@@ -73,16 +73,16 @@ import ../../../make-test.nix (
           handles = transactions.map { |row| row.fetch('handle') }
 
           expect(handles).to include(
-            @tx_types.fetch('send'),
-            @tx_types.fetch('recv'),
-            @tx_types.fetch('recv_check')
+            tx_types(services).fetch('send'),
+            tx_types(services).fetch('recv'),
+            tx_types(services).fetch('recv_check')
           )
-          expect(handles).not_to include(@tx_types.fetch('local_send'))
+          expect(handles).not_to include(tx_types(services).fetch('local_send'))
           expect(
-            transactions.select { |row| row.fetch('handle') == @tx_types.fetch('send') }.map { |row| row.fetch('node_id') }.uniq
+            transactions.select { |row| row.fetch('handle') == tx_types(services).fetch('send') }.map { |row| row.fetch('node_id') }.uniq
           ).to eq([node1_id])
           expect(
-            transactions.select { |row| [@tx_types.fetch('recv'), @tx_types.fetch('recv_check')].include?(row.fetch('handle')) }
+            transactions.select { |row| [tx_types(services).fetch('recv'), tx_types(services).fetch('recv_check')].include?(row.fetch('handle')) }
                         .map { |row| row.fetch('node_id') }
                         .uniq
           ).to eq([node2_id])
@@ -141,11 +141,11 @@ import ../../../make-test.nix (
           expect(head_branch.fetch('branch_id')).to eq(@head_branch.fetch('branch_id'))
           expect(backup_snapshots).to include(@snap2.fetch('name'), @snap3.fetch('name'))
           expect(handles).to include(
-            @tx_types.fetch('send'),
-            @tx_types.fetch('recv'),
-            @tx_types.fetch('recv_check')
+            tx_types(services).fetch('send'),
+            tx_types(services).fetch('recv'),
+            tx_types(services).fetch('recv_check')
           )
-          expect(handles).not_to include(@tx_types.fetch('local_send'))
+          expect(handles).not_to include(tx_types(services).fetch('local_send'))
           expect(chain_port_reservations(services, @snap3.fetch('chain_id'))).to be_empty
           expect(
             node2.zfs_exists?(

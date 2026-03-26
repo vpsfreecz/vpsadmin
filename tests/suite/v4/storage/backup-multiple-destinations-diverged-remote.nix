@@ -169,12 +169,12 @@ import ../../../make-test.nix (
 
           expect(source_names_before_catch_up).to include(@snap2.fetch('name'))
           expect(rebuild_handles).to include(
-            @tx_types.fetch('create_tree'),
-            @tx_types.fetch('send'),
-            @tx_types.fetch('recv'),
-            @tx_types.fetch('recv_check')
+            tx_types(services).fetch('create_tree'),
+            tx_types(services).fetch('send'),
+            tx_types(services).fetch('recv'),
+            tx_types(services).fetch('recv_check')
           )
-          expect(rebuild_handles).not_to include(@tx_types.fetch('local_send'))
+          expect(rebuild_handles).not_to include(tx_types(services).fetch('local_send'))
           expect(branch_rows_for_dip(services, dst_b).count).to eq(1)
           expect(head_tree_row(services, dst_b).fetch('tree_index')).to eq(0)
           expect(rebuild_failures).to eq([]), rebuild_failures.inspect
@@ -191,13 +191,13 @@ import ../../../make-test.nix (
           dst_b_names = snapshot_rows_for_dip(services, dst_b).map { |row| row.fetch('name') }
 
           expect(catch_up_handles).to include(
-            @tx_types.fetch('send'),
-            @tx_types.fetch('recv'),
-            @tx_types.fetch('recv_check')
+            tx_types(services).fetch('send'),
+            tx_types(services).fetch('recv'),
+            tx_types(services).fetch('recv_check')
           )
-          expect(catch_up_handles).not_to include(@tx_types.fetch('create_tree'))
-          expect(catch_up_handles).not_to include(@tx_types.fetch('branch_dataset'))
-          expect(catch_up_handles).not_to include(@tx_types.fetch('local_send'))
+          expect(catch_up_handles).not_to include(tx_types(services).fetch('create_tree'))
+          expect(catch_up_handles).not_to include(tx_types(services).fetch('branch_dataset'))
+          expect(catch_up_handles).not_to include(tx_types(services).fetch('local_send'))
           expect(branch_rows_for_dip(services, dst_a).count).to eq(1)
           expect(dst_a_names).to include(@snap4.fetch('name'))
           expect(dst_b_names).to include(@snap4.fetch('name'))

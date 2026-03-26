@@ -97,7 +97,7 @@ import ../../../make-test.nix (
           send_detail = wait_for_chain_failure_output_value(
             services,
             response.fetch('chain_id'),
-            handle: @tx_types.fetch('send'),
+            handle: tx_types(services).fetch('send'),
             path: %w[output exitstatus]
           )
           backup_names = wait_for_snapshot_names(
@@ -115,7 +115,7 @@ import ../../../make-test.nix (
           expect(send_detail.dig('output', 'cmd')).to include(
             '/run/vpsadmin-test-faulty-mbuffer'
           )
-          expect(failed_handles).to include(@tx_types.fetch('recv_check'))
+          expect(failed_handles).to include(tx_types(services).fetch('recv_check'))
           expect(backup_names).to include(base.fetch('name'))
           expect(backup_names).not_to include(snap2.fetch('name'))
           expect(chain_port_reservations(services, response.fetch('chain_id'))).to eq([])

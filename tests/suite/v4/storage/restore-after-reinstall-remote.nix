@@ -96,13 +96,13 @@ import ../../../make-test.nix (
           primary_snapshot_names = snapshot_rows_for_dip(services, @setup.fetch('src_dip_id')).map { |row| row.fetch('name') }
 
           expect(restore_handles).to include(
-            @tx_types.fetch('prepare_rollback'),
-            @tx_types.fetch('send'),
-            @tx_types.fetch('recv'),
-            @tx_types.fetch('recv_check'),
-            @tx_types.fetch('apply_rollback')
+            tx_types(services).fetch('prepare_rollback'),
+            tx_types(services).fetch('send'),
+            tx_types(services).fetch('recv'),
+            tx_types(services).fetch('recv_check'),
+            tx_types(services).fetch('apply_rollback')
           )
-          expect(restore_handles).not_to include(@tx_types.fetch('local_send'))
+          expect(restore_handles).not_to include(tx_types(services).fetch('local_send'))
           expect(primary_snapshot_names).to include(@snap2.fetch('name'))
           expect(head_tree_row(services, @setup.fetch('dst_dip_id'))).not_to be_nil
           expect(head_branch_row(services, @setup.fetch('dst_dip_id'))).not_to be_nil
@@ -129,11 +129,11 @@ import ../../../make-test.nix (
           expect(branches.count).to eq(1)
           expect(s3_entry.fetch('branch_id')).to eq(head_branch.fetch('id'))
           expect(backup_handles).to include(
-            @tx_types.fetch('send'),
-            @tx_types.fetch('recv'),
-            @tx_types.fetch('recv_check')
+            tx_types(services).fetch('send'),
+            tx_types(services).fetch('recv'),
+            tx_types(services).fetch('recv_check')
           )
-          expect(backup_handles).not_to include(@tx_types.fetch('local_send'))
+          expect(backup_handles).not_to include(tx_types(services).fetch('local_send'))
           expect(
             node2.zfs_exists?(
               "#{branch_dataset_path(backup_pool_fs, @setup.fetch('dataset_full_name'), head_branch)}@#{@snap3.fetch('name')}",
