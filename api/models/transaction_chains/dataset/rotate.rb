@@ -33,38 +33,17 @@ module TransactionChains
         end
 
       else # primary or hypervisor
+        backups = dataset_in_pool.dataset.dataset_in_pools
+                                 .joins(:pool)
+                                 .where(pools: { role: ::Pool.roles[:backup], is_open: true })
+                                 .to_a
 
         dataset_in_pool.snapshot_in_pools.includes(:snapshot).all.order('snapshots.id').each do |s|
           if s.reference_count > 0
             next
 
           elsif destroy?(s)
-            # Check if it is backed up.
-            # Check if destroying it won't break the history.
-            dataset_in_pool.dataset.dataset_in_pools
-                           .joins(:pool)
-                           .where(pools: { role: ::Pool.roles[:backup], is_open: true }).each do |backup|
-              # Is the snapshot in this dataset_in_pool? -> continue
-              unless backup.snapshot_in_pools.find_by(snapshot_id: s.snapshot_id)
-                # This snapshot is not backed up in dataset_in_pool +backup+.
-                # It cannot be destroyed as it would break the history flow.
-                #
-                # TODO: it is possible that this snapshot WAS backed up, but the
-                # backup was already deleted when the snapshot was held up on
-                # the hypervisor...
-                return # rubocop:disable Lint/NonLocalExitFromIterator
-              end
-
-              # Is it the last snapshot of this dataset_in_pool? -> break
-              last = backup.snapshot_in_pools.all.order('snapshot_id DESC').take
-
-              if last && last.snapshot_id == s.snapshot_id
-                # This snapshot is backed up in dataset_in_pool +backup+ but
-                # it is the last snapshot there.
-                # It cannot be destroyed as it would break the history flow.
-                return # rubocop:disable Lint/NonLocalExitFromIterator
-              end
-            end
+            break unless source_snapshot_destroyable_with_backups?(dataset_in_pool, backups, s.snapshot_id)
 
             @deleted += 1
             use_chain(SnapshotInPool::Destroy, args: s)
@@ -81,6 +60,22 @@ module TransactionChains
 
     def stop?(snapshot_in_pool)
       (@count - @deleted) <= @min || (snapshot_in_pool.snapshot.created_at.localtime > @oldest && (@count - @deleted) <= @max)
+    end
+
+    protected
+
+    def source_snapshot_destroyable_with_backups?(source_dip, backups, snapshot_id)
+      backups.each do |backup|
+        return false unless backup_history_preserved_if_source_snapshot_removed?(source_dip, backup, snapshot_id)
+      end
+
+      true
+    end
+
+    def backup_history_preserved_if_source_snapshot_removed?(source_dip, backup_dip, snapshot_id)
+      newer_source_ids = source_dip.snapshot_in_pools.where('snapshot_id > ?', snapshot_id).select(:snapshot_id)
+
+      backup_dip.snapshot_in_pools.where(snapshot_id: newer_source_ids).exists?
     end
   end
 end

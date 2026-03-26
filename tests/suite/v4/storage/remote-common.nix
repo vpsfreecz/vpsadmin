@@ -139,7 +139,12 @@
 
   def snapshot_rows_for_dip(services, dip_id)
     services.mysql_json_rows(sql: <<~SQL)
-      SELECT JSON_OBJECT('id', s.id, 'name', s.name, 'history_id', s.history_id)
+      SELECT JSON_OBJECT(
+        'id', s.id,
+        'snapshot_in_pool_id', sip.id,
+        'name', s.name,
+        'history_id', s.history_id
+      )
       FROM snapshot_in_pools sip
       INNER JOIN snapshots s ON s.id = sip.snapshot_id
       WHERE sip.dataset_in_pool_id = #{Integer(dip_id)}
@@ -1375,6 +1380,25 @@
 
       puts JSON.dump(chain_id: chain.id)
     RUBY
+  end
+
+  def destroy_snapshot_in_pool(services, admin_user_id:, sip_id:)
+    response = services.api_ruby_json(code: <<~RUBY)
+      #{api_session_prelude(admin_user_id)}
+
+      sip = SnapshotInPool.find(#{Integer(sip_id)})
+      target = sip.snapshot_in_pool_in_branches.order(:id).take || sip
+      chain, = TransactionChains::SnapshotInPool::Destroy.fire(target)
+
+      puts JSON.dump(chain_id: chain.id)
+    RUBY
+
+    wait_for_chain_states_local(
+      services,
+      response.fetch('chain_id'),
+      %i[done failed fatal resolved]
+    )
+    response
   end
 
   def destroy_dataset(services, admin_user_id:, dataset_id:)
