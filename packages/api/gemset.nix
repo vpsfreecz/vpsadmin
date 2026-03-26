@@ -471,10 +471,10 @@
     platforms = [ ];
     source = {
       remotes = [ "https://rubygems.org" ];
-      sha256 = "1kw39sqnr0lprwsd2h0zx1ic96skhqf88i14xv7c8drcicqvvqg7";
+      sha256 = "0il6qxkxqql7n7sgrws5bi5a36v51dswqcxb6j6gm8aj62shp6r8";
       type = "gem";
     };
-    version = "2.19.2";
+    version = "2.19.3";
   };
   json-jwt = {
     dependencies = [
@@ -810,10 +810,10 @@
     platforms = [ ];
     source = {
       remotes = [ "https://rubygems.org" ];
-      sha256 = "0mwk9syajzdradzqzp3agf03d0cazqwbfd1439nxpkmxli5chq3g";
+      sha256 = "1c8r9wsicxvxhrj2mk70krc0yvli9hp3rjs3w4y2h8cj5nwwqa7y";
       type = "gem";
     };
-    version = "3.3.10.2";
+    version = "3.3.11.0";
   };
   prism = {
     groups = [
