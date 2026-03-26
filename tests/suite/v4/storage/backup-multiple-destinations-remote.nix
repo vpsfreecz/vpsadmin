@@ -127,16 +127,16 @@ import ../../../make-test.nix (
           expect(branch_rows_for_dip(services, dst_a).count).to eq(1)
           expect(head_tree_row(services, dst_a).fetch('tree_index')).to eq(0)
           expect(handles).to include(
-            @tx_types.fetch('send'),
-            @tx_types.fetch('recv'),
-            @tx_types.fetch('recv_check')
+            tx_types(services).fetch('send'),
+            tx_types(services).fetch('recv'),
+            tx_types(services).fetch('recv_check')
           )
-          expect(handles).not_to include(@tx_types.fetch('local_send'))
-          expect(handles).not_to include(@tx_types.fetch('create_tree'))
-          expect(handles).not_to include(@tx_types.fetch('branch_dataset'))
-          expect(handles.count { |handle| handle == @tx_types.fetch('send') }).to eq(1)
-          expect(handles.count { |handle| handle == @tx_types.fetch('recv') }).to eq(1)
-          expect(handles.count { |handle| handle == @tx_types.fetch('recv_check') }).to eq(1)
+          expect(handles).not_to include(tx_types(services).fetch('local_send'))
+          expect(handles).not_to include(tx_types(services).fetch('create_tree'))
+          expect(handles).not_to include(tx_types(services).fetch('branch_dataset'))
+          expect(handles.count { |handle| handle == tx_types(services).fetch('send') }).to eq(1)
+          expect(handles.count { |handle| handle == tx_types(services).fetch('recv') }).to eq(1)
+          expect(handles.count { |handle| handle == tx_types(services).fetch('recv_check') }).to eq(1)
         end
       end
     '';

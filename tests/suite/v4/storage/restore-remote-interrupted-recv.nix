@@ -113,10 +113,10 @@ import ../../../make-test.nix (
           recv_check_detail = wait_for_chain_failure_detail(
             services,
             response.fetch('chain_id'),
-            handle: @tx_types.fetch('recv_check')
+            handle: tx_types(services).fetch('recv_check')
           )
           recv_tx = chain_txs.detect do |tx|
-            tx.fetch('handle') == @tx_types.fetch('recv')
+            tx.fetch('handle') == tx_types(services).fetch('recv')
           end
 
           reset_mbuffer_command(node1, direction: :receive)

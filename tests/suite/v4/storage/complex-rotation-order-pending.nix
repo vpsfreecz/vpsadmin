@@ -73,6 +73,7 @@ import ../../../make-test.nix (
             label: 'complex-rotation-s12'
           )
 
+          storage_types = storage_tx_types(services)
           count_before = snapshot_rows_for_dip(services, @setup.fetch('dst_dip_id')).count
           branch_count_before = branch_rows_for_dip(services, @setup.fetch('dst_dip_id')).count
           report_before = backup_topology_report(
@@ -82,6 +83,7 @@ import ../../../make-test.nix (
             backup_dataset_path: @setup.fetch('backup_dataset_path')
           )
           diagnostic_before = delete_order_diagnostic(report_before)
+          leaf_contract_before = delete_order_leaf_contract(report_before)
           tree_count_before = report_before.fetch('db').fetch('trees').count
 
           set_snapshot_retention(
@@ -126,16 +128,39 @@ import ../../../make-test.nix (
 
           remaining = snapshot_rows_for_dip(services, @setup.fetch('dst_dip_id')).map { |row| row.fetch('name') }
           branch_count_after = branch_rows_for_dip(services, @setup.fetch('dst_dip_id')).count
-          tree_count_after = backup_topology_report(
+          report_after = backup_topology_report(
             services,
             backup_node: node2,
             dst_dip_id: @setup.fetch('dst_dip_id'),
             backup_dataset_path: @setup.fetch('backup_dataset_path')
-          ).fetch('db').fetch('trees').count
+          )
+          leaf_contract_after = delete_order_leaf_contract(report_after)
+          tree_count_after = report_after.fetch('db').fetch('trees').count
+          failure_message = {
+            diagnostic_before: diagnostic_before,
+            leaf_contract_before: leaf_contract_before,
+            leaf_contract_after: leaf_contract_after,
+            failure_details: failure_details
+          }.inspect
 
-          expect(dependency_failures.values.flatten).to eq([]), failure_details.inspect
-          expect(unexpected_failures.values.flatten).to eq([]), failure_details.inspect
-          expect(failed_chain_ids).to eq([]), "actual failures: #{failure_details.inspect}"
+          failed_chain_ids.each do |chain_id|
+            assert_known_dependency_failure!(
+              services,
+              chain_id: chain_id,
+              allowed_handles: [storage_types.fetch('destroy_snapshot')],
+              diagnostic: leaf_contract_before
+            )
+          end
+
+          if failed_chain_ids.any?
+            expect(leaf_contract_before.fetch('leaf_sets_match')).to be(false), failure_message
+          end
+
+          expect(leaf_contract_before.fetch('leaf_sets_match')).to be(true), leaf_contract_before.inspect
+          expect(leaf_contract_after.fetch('leaf_sets_match')).to be(true), leaf_contract_after.inspect
+          expect(dependency_failures.values.flatten).to eq([]), failure_message
+          expect(unexpected_failures.values.flatten).to eq([]), failure_message
+          expect(failed_chain_ids).to eq([]), failure_message
           expect(remaining.count).to be < count_before
           expect(branch_count_after).to be <= branch_count_before
           expect(tree_count_after).to be <= tree_count_before

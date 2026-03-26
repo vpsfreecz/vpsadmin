@@ -88,8 +88,8 @@ import ../../../make-test.nix (
           expect(s3_entry.fetch('parent_entry_id')).to eq(s2_entry.fetch('entry_id'))
           expect(s2_entry.fetch('reference_count')).to be >= 1
           expect(current_history_id(services, @setup.fetch('dataset_id'))).to eq(@history_before + 1)
-          expect(rollback_handles).to include(@tx_types.fetch('branch_dataset'))
-          expect(rollback_handles).not_to include(@tx_types.fetch('local_send'))
+          expect(rollback_handles).to include(tx_types(services).fetch('branch_dataset'))
+          expect(rollback_handles).not_to include(tx_types(services).fetch('local_send'))
           expect(
             node2.zfs_exists?(
               branch_dataset_path(backup_pool_fs, @setup.fetch('dataset_full_name'), old_branch),
@@ -121,11 +121,11 @@ import ../../../make-test.nix (
           expect(branches.count).to eq(2)
           expect(s4_entry.fetch('branch_id')).to eq(@head_branch_id)
           expect(backup_handles).to include(
-            @tx_types.fetch('send'),
-            @tx_types.fetch('recv'),
-            @tx_types.fetch('recv_check')
+            tx_types(services).fetch('send'),
+            tx_types(services).fetch('recv'),
+            tx_types(services).fetch('recv_check')
           )
-          expect(backup_handles).not_to include(@tx_types.fetch('local_send'))
+          expect(backup_handles).not_to include(tx_types(services).fetch('local_send'))
         end
       end
     '';
