@@ -55,7 +55,13 @@ module VpsAdmin::Supervisor
           next
         end
 
-        dnskeys.delete_at(i)
+        dnskey = dnskeys.delete_at(i)
+        record.assign_attributes(
+          dnskey_algorithm: dnskey['algorithm'],
+          dnskey_pubkey: dnskey['pubkey']
+        )
+        dnskey_to_ds(dnskey, record)
+        record.save! if record.changed?
       end
 
       # Add new records

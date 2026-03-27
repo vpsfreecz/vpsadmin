@@ -53,6 +53,10 @@ jobs:
             patterns: |
               spec/api/plugins/**/*_spec.rb
 
+          - topic: supervisor
+            patterns: |
+              spec/supervisor/**/*_spec.rb
+
           # --- Resources by domain ---
           - topic: dns
             patterns: |
