@@ -95,7 +95,12 @@ class DnsRecord < ApplicationRecord
         errors.add(:content, 'must be an IPv6 address, not IPv4')
       end
 
-    when 'CNAME', 'MX', 'NS', 'PTR'
+    when 'MX'
+      unless (priority == 0 && content == '.') || valid_fqdn?(content)
+        errors.add(:content, 'must be a fully qualified domain name or null record')
+      end
+
+    when 'CNAME', 'NS', 'PTR'
       unless valid_fqdn?(content)
         errors.add(:content, 'must be a fully qualified domain name')
       end
