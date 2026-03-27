@@ -29,7 +29,8 @@ module Transactions::DnsServerZone
               name: r.name,
               type: r.record_type,
               content: r.content,
-              ttl: r.ttl
+              ttl: r.ttl,
+              priority: r.priority
             }
           end
         )
