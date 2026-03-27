@@ -95,7 +95,10 @@ class DnsRecord < ApplicationRecord
         errors.add(:content, 'must be an IPv6 address, not IPv4')
       end
 
-    when 'CNAME', 'MX', 'NS', 'PTR'
+    when 'MX'
+      check_mx_content
+
+    when 'CNAME', 'NS', 'PTR'
       unless valid_fqdn?(content)
         errors.add(:content, 'must be a fully qualified domain name')
       end
@@ -161,6 +164,16 @@ class DnsRecord < ApplicationRecord
         "string for digest type #{digest_type_str} (#{digest_opts[:type]})"
       )
     end
+  end
+
+  def check_mx_content
+    return if null_mx_record? || valid_fqdn?(content)
+
+    errors.add(:content, 'must be a fully qualified domain name or null record')
+  end
+
+  def null_mx_record?
+    priority == 0 && content == '.'
   end
 
   # rubocop:enable Style/GuardClause
