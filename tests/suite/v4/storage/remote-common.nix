@@ -1,15 +1,17 @@
 {
-  adminUserId,
-  node1Id,
-  node2Id,
+  adminUserId ? 0,
+  node1Id ? 0,
+  node2Id ? 0,
   primaryPoolFs ? "tank/ct",
   backupPoolFs ? "tank/backup",
+  manageCluster ? true,
 }:
 ''
   require 'json'
   require 'fileutils'
   require 'shellwords'
   require 'time'
+  require ${builtins.toJSON ../../../../api/lib/storage_topology_fixture.rb}
 
   admin_user_id = ${toString adminUserId}
   node1_id = ${toString node1Id}
@@ -254,18 +256,6 @@
     end
   end
 
-  def zfs_reference_counts_by_snapshot(node, backup_dataset_path)
-    zfs_snapshot_clone_map(node, backup_dataset_path).each_with_object(Hash.new(0)) do |(path, clones), acc|
-      acc[path.split('@', 2).last] += clones.count
-    end
-  end
-
-  def db_reference_counts_by_snapshot(entries)
-    entries.each_with_object({}) do |row, acc|
-      acc[row.fetch('snapshot_name')] = row.fetch('reference_count')
-    end
-  end
-
   def backup_topology_report(services, backup_node:, dst_dip_id:, backup_dataset_path:)
     trees = services.mysql_json_rows(sql: <<~SQL)
       SELECT JSON_OBJECT('id', id, 'index', `index`, 'head', head)
@@ -287,99 +277,90 @@
     }
   end
 
-  def normalize_backup_topology_report(report)
-    normalized = JSON.parse(JSON.generate(report))
-
-    normalized.fetch('db').fetch('trees').sort_by! do |row|
-      [row.fetch('index'), row.fetch('id')]
-    end
-
-    normalized.fetch('db').fetch('branches').sort_by! do |row|
-      [row.fetch('tree_index'), row.fetch('index'), row.fetch('id')]
-    end
-
-    normalized.fetch('db').fetch('entries').sort_by! do |row|
-      [
-        row.fetch('tree_index'),
-        row.fetch('branch_index'),
-        row.fetch('snapshot_name'),
-        row.fetch('entry_id')
-      ]
-    end
-
-    normalized['zfs']['origins'] = normalized.fetch('zfs').fetch('origins').sort.to_h
-    normalized['zfs']['clones'] = normalized.fetch('zfs').fetch('clones').sort.map do |name, clones|
-      [name, Array(clones).sort]
-    end.to_h
-
-    normalized
+  def backup_dataset_exists?(backup_node, backup_dataset_path)
+    backup_node.zfs_exists?(backup_dataset_path, type: 'filesystem', timeout: 30)
   end
 
-  def topology_fixture_payload(report, metadata: {})
-    normalized = normalize_backup_topology_report(report)
+  def normalize_backup_topology_report(report)
+    StorageTopologyFixture.normalize_backup_topology_report(report)
+  end
 
-    {
-      'version' => 1,
-      'generated_at' => Time.now.utc.iso8601,
-      'metadata' => metadata,
-      'report' => normalized,
-      'diagnostic' => delete_order_diagnostic(normalized)
-    }
+  def topology_fixture_payload(report, metadata: {}, generated_at: nil)
+    StorageTopologyFixture.topology_fixture_payload(
+      report,
+      metadata: metadata,
+      generated_at: generated_at
+    )
   end
 
   def write_topology_fixture(path, payload)
-    FileUtils.mkdir_p(File.dirname(path))
-    File.write(path, JSON.pretty_generate(payload) + "\n")
-    path
+    StorageTopologyFixture.write_topology_fixture(path, payload)
   end
 
   def load_topology_fixture(path)
-    JSON.parse(File.read(path))
+    StorageTopologyFixture.load_topology_fixture(path)
   end
 
   def zfs_leaf_snapshot_names(report)
-    report.fetch('zfs').fetch('clones').select { |_, clones| clones.empty? }
-          .keys.map { |path| path.split('@', 2).last }
-          .uniq.sort
+    StorageTopologyFixture.zfs_leaf_snapshot_names(report)
   end
 
   def db_leaf_candidate_snapshot_names(report)
-    report.fetch('db').fetch('entries')
-          .select { |row| row.fetch('reference_count').to_i.zero? }
-          .map { |row| row.fetch('snapshot_name') }
-          .uniq.sort
+    StorageTopologyFixture.db_leaf_candidate_snapshot_names(report)
   end
 
   def delete_order_diagnostic(report)
-    zfs_leaf_snapshots = zfs_leaf_snapshot_names(report)
-    db_candidate_snapshots = db_leaf_candidate_snapshot_names(report)
-
-    {
-      'zfs_leaf_snapshots' => zfs_leaf_snapshots,
-      'db_candidate_snapshots' => db_candidate_snapshots,
-      'db_but_not_zfs' => (db_candidate_snapshots - zfs_leaf_snapshots).sort,
-      'zfs_but_not_db' => (zfs_leaf_snapshots - db_candidate_snapshots).sort
-    }
+    StorageTopologyFixture.delete_order_diagnostic(report)
   end
 
   def delete_order_leaf_contract(report)
-    diagnostic = delete_order_diagnostic(report)
-
-    {
-      'zfs_leaf_snapshots' => diagnostic.fetch('zfs_leaf_snapshots'),
-      'db_candidate_snapshots' => diagnostic.fetch('db_candidate_snapshots'),
-      'db_but_not_zfs' => diagnostic.fetch('db_but_not_zfs'),
-      'zfs_but_not_db' => diagnostic.fetch('zfs_but_not_db'),
-      'leaf_sets_match' => (
-        diagnostic.fetch('db_but_not_zfs').empty? &&
-        diagnostic.fetch('zfs_but_not_db').empty?
-      )
-    }
+    StorageTopologyFixture.delete_order_leaf_contract(report)
   end
 
   def delete_order_leaf_contract_from_fixture(path)
-    fixture = load_topology_fixture(path)
-    delete_order_leaf_contract(fixture.fetch('report'))
+    StorageTopologyFixture.delete_order_leaf_contract_from_fixture(path)
+  end
+
+  def validate_topology_fixture!(fixture)
+    result = StorageTopologyFixture.validate_fixture(fixture)
+
+    expect(result.fetch(:errors)).to eq([]), result.inspect
+    expect(fixture.fetch('report')).to eq(result.fetch(:normalized_report))
+    expect(fixture.fetch('diagnostic')).to eq(result.fetch(:diagnostic))
+
+    contract = result.fetch(:contract)
+    expected = result.fetch(:expected_leaf_sets_match)
+
+    expect(contract.fetch('leaf_sets_match')).to eq(expected) unless expected.nil?
+
+    contract
+  end
+
+  def fixture_failure_artifact_dir
+    ENV['STORAGE_TOPOLOGY_FIXTURE_DIR'].to_s.strip
+  end
+
+  def maybe_capture_topology_fixture(
+    services,
+    backup_node:,
+    dst_dip_id:,
+    backup_dataset_path:,
+    file_name:,
+    metadata: {},
+    generated_at: nil
+  )
+    base = fixture_failure_artifact_dir
+    return nil if base.empty?
+
+    capture_backup_topology_fixture(
+      services,
+      backup_node: backup_node,
+      dst_dip_id: dst_dip_id,
+      backup_dataset_path: backup_dataset_path,
+      path: File.join(base, file_name),
+      metadata: metadata,
+      generated_at: generated_at
+    )
   end
 
   def capture_backup_topology_fixture(
@@ -388,7 +369,8 @@
     dst_dip_id:,
     backup_dataset_path:,
     path:,
-    metadata: {}
+    metadata: {},
+    generated_at: nil
   )
     report = backup_topology_report(
       services,
@@ -396,7 +378,11 @@
       dst_dip_id: dst_dip_id,
       backup_dataset_path: backup_dataset_path
     )
-    payload = topology_fixture_payload(report, metadata: metadata)
+    payload = topology_fixture_payload(
+      report,
+      metadata: metadata,
+      generated_at: generated_at
+    )
 
     write_topology_fixture(path, payload)
     payload
@@ -633,6 +619,31 @@
     details
   end
 
+  def assert_dependency_failure_contract!(
+    services,
+    chain_id:,
+    allowed_handles:,
+    report:
+  )
+    details = assert_known_dependency_failure!(
+      services,
+      chain_id: chain_id,
+      allowed_handles: allowed_handles,
+      diagnostic: delete_order_leaf_contract(report)
+    )
+
+    message = details.map do |row|
+      [row['handle'], row['status'], row['error']].compact.join(' | ')
+    end.join("\n")
+
+    expect(message).to match(/cannot destroy|dependent clones|has children|use '-R'/i)
+
+    contract = delete_order_leaf_contract(report)
+    expect(contract.fetch('leaf_sets_match')).to be(false), contract.inspect
+
+    contract
+  end
+
   STORAGE_CHAIN_STATES = {
     staged: 0,
     queued: 1,
@@ -782,7 +793,17 @@
       puts JSON.dump(chain_id: chain.id)
     RUBY
 
-    services.wait_for_chain_state(response.fetch('chain_id'), state: :done)
+    final_state = wait_for_chain_states_local(
+      services,
+      response.fetch('chain_id'),
+      %i[done failed fatal resolved],
+      timeout: 1200
+    )
+    expect(final_state).to eq(services.class::CHAIN_STATES[:done]), {
+      chain_id: response.fetch('chain_id'),
+      final_state: final_state,
+      failure_details: chain_failure_details(services, response.fetch('chain_id'))
+    }.inspect
     response
   end
 
@@ -1417,10 +1438,17 @@
       #{api_session_prelude(admin_user_id)}
 
       dip = DatasetInPool.find(#{dip_id})
-      chain, = TransactionChains::Dataset::Rotate.fire(dip)
+      begin
+        chain, = TransactionChains::Dataset::Rotate.fire(dip)
+        puts JSON.dump(chain_id: chain.id, empty: false)
+      rescue RuntimeError => e
+        raise unless e.message == 'empty'
 
-      puts JSON.dump(chain_id: chain.id)
+        puts JSON.dump(chain_id: nil, empty: true, error: e.message)
+      end
     RUBY
+
+    return response if response.fetch('empty', false)
 
     wait_for_chain_states_local(
       services,
@@ -1706,17 +1734,24 @@
     config.default_order = :defined
   end
 
-  before(:suite) do
-    services.start
-    node1.start
-    node2.start
-    services.wait_for_vpsadmin_api
-    wait_for_running_nodectld(node1)
-    wait_for_running_nodectld(node2)
-    prepare_node_queues(node1)
-    prepare_node_queues(node2)
-    wait_for_node_ready(services, node1_id)
-    wait_for_node_ready(services, node2_id)
-    services.unlock_transaction_signing_key(passphrase: 'test')
-  end
+  ${
+    if manageCluster then
+      ''
+        before(:suite) do
+          services.start
+          node1.start
+          node2.start
+          services.wait_for_vpsadmin_api
+          wait_for_running_nodectld(node1)
+          wait_for_running_nodectld(node2)
+          prepare_node_queues(node1)
+          prepare_node_queues(node2)
+          wait_for_node_ready(services, node1_id)
+          wait_for_node_ready(services, node2_id)
+          services.unlock_transaction_signing_key(passphrase: 'test')
+        end
+      ''
+    else
+      ""
+  }
 ''

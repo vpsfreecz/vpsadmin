@@ -1,0 +1,81 @@
+{
+  "version": 1,
+  "generated_at": "2026-01-01T00:00:00Z",
+  "metadata": {
+    "case": "synthetic-good-topology",
+    "expected_leaf_sets_match": true,
+    "notes": "Generated from a simple good backup topology for fixture-replay CI coverage"
+  },
+  "report": {
+    "db": {
+      "trees": [
+        {
+          "id": 1,
+          "index": 0,
+          "head": 1
+        }
+      ],
+      "branches": [
+        {
+          "id": 10,
+          "name": "head",
+          "index": 0,
+          "head": 1,
+          "tree_id": 1,
+          "tree_index": 0
+        }
+      ],
+      "entries": [
+        {
+          "entry_id": 100,
+          "parent_entry_id": null,
+          "branch_id": 10,
+          "branch_name": "head",
+          "branch_index": 0,
+          "branch_head": 1,
+          "tree_id": 1,
+          "tree_index": 0,
+          "snapshot_in_pool_id": 1000,
+          "snapshot_id": 2000,
+          "snapshot_name": "snap-1",
+          "reference_count": 1
+        },
+        {
+          "entry_id": 101,
+          "parent_entry_id": 100,
+          "branch_id": 10,
+          "branch_name": "head",
+          "branch_index": 0,
+          "branch_head": 1,
+          "tree_id": 1,
+          "tree_index": 0,
+          "snapshot_in_pool_id": 1001,
+          "snapshot_id": 2001,
+          "snapshot_name": "snap-2",
+          "reference_count": 0
+        }
+      ]
+    },
+    "zfs": {
+      "origins": {
+        "tank/backup/example/tree.0/branch-head": "tank/backup/example/tree.0/branch-head@snap-1"
+      },
+      "clones": {
+        "tank/backup/example/tree.0/branch-head@snap-1": [
+          "tank/backup/example/tree.0/branch-head"
+        ],
+        "tank/backup/example/tree.0/branch-head@snap-2": []
+      }
+    }
+  },
+  "diagnostic": {
+    "zfs_leaf_snapshots": [
+      "snap-2"
+    ],
+    "db_candidate_snapshots": [
+      "snap-2"
+    ],
+    "db_but_not_zfs": [],
+    "zfs_but_not_db": []
+  }
+}
