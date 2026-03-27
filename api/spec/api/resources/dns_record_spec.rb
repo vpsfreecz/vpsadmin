@@ -388,6 +388,46 @@ RSpec.describe 'VpsAdmin::API::Resources::DnsRecord' do
       expect(record_obj['content']).to eq('192.0.2.200')
     end
 
+    it 'allows users to create null MX records' do
+      ensure_signer_unlocked!
+
+      payload = {
+        dns_zone: seed[:user_zone].id,
+        name: '@',
+        type: 'MX',
+        content: '.',
+        priority: 0,
+        ttl: 3600
+      }
+
+      expect do
+        as(SpecSeed.user) { json_post index_path, dns_record: payload }
+      end.to change(DnsRecord, :count).by(1)
+
+      expect_status(200)
+      expect(json['status']).to be(true)
+      expect(record_obj['type']).to eq('MX')
+      expect(record_obj['content']).to eq('.')
+      expect(record_obj['priority']).to eq(0)
+    end
+
+    it 'rejects null MX records with non-zero priority' do
+      as(SpecSeed.user) do
+        json_post index_path, dns_record: {
+          dns_zone: seed[:user_zone].id,
+          name: '@',
+          type: 'MX',
+          content: '.',
+          priority: 10,
+          ttl: 3600
+        }
+      end
+
+      expect_status(200)
+      expect(json['status']).to be(false)
+      expect(errors.keys.map(&:to_s)).to include('content')
+    end
+
     it 'allows admins to create records with a transaction chain' do
       ensure_signer_unlocked!
 
@@ -456,6 +496,21 @@ RSpec.describe 'VpsAdmin::API::Resources::DnsRecord' do
       expect(record_obj).to be_a(Hash)
       expect(record_obj['content']).to eq('192.0.2.212')
       expect(seed[:record_user_a].reload.content).to eq('192.0.2.212')
+    end
+
+    it 'allows users to update an MX record to a null MX record' do
+      ensure_signer_unlocked!
+
+      as(SpecSeed.user) do
+        json_put show_path(seed[:record_user_mx].id), dns_record: { content: '.', priority: 0 }
+      end
+
+      expect_status(200)
+      expect(json['status']).to be(true)
+      expect(record_obj['content']).to eq('.')
+      expect(record_obj['priority']).to eq(0)
+      expect(seed[:record_user_mx].reload.content).to eq('.')
+      expect(seed[:record_user_mx].reload.priority).to eq(0)
     end
 
     it 'allows admins to update records with a transaction chain' do
