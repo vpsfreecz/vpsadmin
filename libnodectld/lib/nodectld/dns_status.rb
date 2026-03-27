@@ -113,7 +113,7 @@ module NodeCtld
 
             dnskey.update(
               algorithm: Regexp.last_match(1).to_i,
-              pubkey: Regexp.last_match(2).strip
+              pubkey: Regexp.last_match(2).gsub(/\s+/, '')
             )
 
             break
