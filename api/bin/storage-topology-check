@@ -1,0 +1,50 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require 'optparse'
+
+require_relative '../lib/storage_topology_fixture'
+
+options = {
+  require_leaf_match: false
+}
+
+parser = OptionParser.new do |opts|
+  opts.banner = 'Usage: storage-topology-check [--require-leaf-match] FIXTURE.json'
+
+  opts.on('--require-leaf-match') do
+    options[:require_leaf_match] = true
+  end
+end
+
+parser.parse!
+
+if ARGV.length != 1
+  warn parser
+  exit(1)
+end
+
+path = ARGV.first
+
+begin
+  fixture = StorageTopologyFixture.load_topology_fixture(path)
+  summary = StorageTopologyFixture.fixture_summary(fixture)
+rescue Errno::ENOENT => e
+  warn e.message
+  exit(1)
+rescue JSON::ParserError, ArgumentError => e
+  warn "invalid fixture: #{e.message}"
+  exit(1)
+end
+
+puts "fixture: #{path}"
+puts "case: #{summary.fetch('metadata').fetch('case', '(none)')}"
+puts "generated_at: #{summary.fetch('generated_at')}"
+puts "leaf_sets_match: #{summary.fetch('leaf_sets_match')}"
+puts "db_candidate_snapshots: #{summary.fetch('db_candidate_snapshots').join(', ')}"
+puts "zfs_leaf_snapshots: #{summary.fetch('zfs_leaf_snapshots').join(', ')}"
+
+if options[:require_leaf_match] && !summary.fetch('leaf_sets_match')
+  warn 'leaf set mismatch detected'
+  exit(1)
+end

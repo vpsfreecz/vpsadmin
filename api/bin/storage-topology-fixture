@@ -1,0 +1,192 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require 'json'
+require 'mysql2'
+require 'open3'
+require 'optparse'
+require 'time'
+
+require_relative '../lib/storage_topology_fixture'
+
+options = {
+  db_host: '127.0.0.1',
+  db_port: 3306
+}
+
+parser = OptionParser.new do |opts|
+  opts.banner = 'Usage: storage-topology-fixture [options]'
+
+  opts.on('--db-host HOST') { |v| options[:db_host] = v }
+  opts.on('--db-port PORT', Integer) { |v| options[:db_port] = v }
+  opts.on('--db-user USER') { |v| options[:db_user] = v }
+  opts.on('--db-pass PASS') { |v| options[:db_pass] = v }
+  opts.on('--db-name NAME') { |v| options[:db_name] = v }
+  opts.on('--dip-id ID', Integer) { |v| options[:dip_id] = v }
+  opts.on('--backup-dataset-path PATH') { |v| options[:backup_dataset_path] = v }
+  opts.on('--output PATH') { |v| options[:output] = v }
+  opts.on('--case NAME') { |v| options[:case_name] = v }
+  opts.on('--expected-leaf-sets-match VALUE') do |v|
+    options[:expected_leaf_sets_match] = case v
+                                         when 'true' then true
+                                         when 'false' then false
+                                         else
+                                           raise OptionParser::InvalidArgument,
+                                                 '--expected-leaf-sets-match must be true or false'
+                                         end
+  end
+  opts.on('--generated-at TS') do |v|
+    options[:generated_at] = Time.parse(v).utc.iso8601
+  end
+end
+
+parser.parse!
+
+required = %i[db_user db_name dip_id backup_dataset_path output]
+missing = required.select { |key| options[key].nil? }
+
+unless missing.empty?
+  warn "Missing options: #{missing.join(', ')}"
+  warn parser
+  exit(1)
+end
+
+def sql_rows(client, sql)
+  client.query(sql).to_a
+end
+
+def tree_rows_for_dip(client, dip_id)
+  sql_rows(client, <<~SQL)
+    SELECT id, `index`, head
+    FROM dataset_trees
+    WHERE dataset_in_pool_id = #{Integer(dip_id)}
+    ORDER BY `index`, id
+  SQL
+end
+
+def branch_rows_for_dip(client, dip_id)
+  sql_rows(client, <<~SQL)
+    SELECT
+      b.id,
+      b.name,
+      b.`index` AS `index`,
+      b.head,
+      t.id AS tree_id,
+      t.`index` AS tree_index
+    FROM branches b
+    INNER JOIN dataset_trees t ON t.id = b.dataset_tree_id
+    WHERE t.dataset_in_pool_id = #{Integer(dip_id)}
+    ORDER BY b.id
+  SQL
+end
+
+def branch_entries_for_dip(client, dip_id)
+  sql_rows(client, <<~SQL)
+    SELECT
+      e.id AS entry_id,
+      e.snapshot_in_pool_in_branch_id AS parent_entry_id,
+      b.id AS branch_id,
+      b.name AS branch_name,
+      b.`index` AS branch_index,
+      b.head AS branch_head,
+      t.id AS tree_id,
+      t.`index` AS tree_index,
+      sip.id AS snapshot_in_pool_id,
+      s.id AS snapshot_id,
+      s.name AS snapshot_name,
+      sip.reference_count
+    FROM snapshot_in_pool_in_branches e
+    INNER JOIN branches b ON b.id = e.branch_id
+    INNER JOIN dataset_trees t ON t.id = b.dataset_tree_id
+    INNER JOIN snapshot_in_pools sip ON sip.id = e.snapshot_in_pool_id
+    INNER JOIN snapshots s ON s.id = sip.snapshot_id
+    WHERE t.dataset_in_pool_id = #{Integer(dip_id)}
+    ORDER BY s.id, e.id
+  SQL
+end
+
+def zfs_lines(*command)
+  stdout, stderr, status = Open3.capture3(*command)
+  return stdout.lines if status.success?
+
+  warn stderr unless stderr.empty?
+  raise "Command failed: #{command.join(' ')}"
+end
+
+def zfs_branch_origin_map(backup_dataset_path)
+  zfs_lines(
+    'zfs', 'get', '-H', '-o', 'name,value', 'origin',
+    '-t', 'filesystem', '-r', backup_dataset_path
+  ).each_with_object({}) do |line, acc|
+    name, origin = line.strip.split("\t", 2)
+    next unless name.include?('/tree.') && name.include?('/branch-')
+
+    acc[name] = origin
+  end
+end
+
+def zfs_snapshot_clone_map(backup_dataset_path)
+  zfs_lines(
+    'zfs', 'get', '-H', '-o', 'name,value', 'clones',
+    '-t', 'snapshot', '-r', backup_dataset_path
+  ).each_with_object({}) do |line, acc|
+    name, clones = line.strip.split("\t", 2)
+    next unless name.include?('@')
+
+    acc[name] = clones.to_s.split(',').reject { |value| value.empty? || value == '-' }
+  end
+end
+
+def backup_topology_report(client, dip_id:, backup_dataset_path:)
+  {
+    'db' => {
+      'trees' => tree_rows_for_dip(client, dip_id),
+      'branches' => branch_rows_for_dip(client, dip_id),
+      'entries' => branch_entries_for_dip(client, dip_id)
+    },
+    'zfs' => {
+      'origins' => zfs_branch_origin_map(backup_dataset_path),
+      'clones' => zfs_snapshot_clone_map(backup_dataset_path)
+    }
+  }
+end
+
+def fixture_metadata(options)
+  metadata = {}
+  metadata['case'] = options[:case_name] if options[:case_name]
+  unless options[:expected_leaf_sets_match].nil?
+    metadata['expected_leaf_sets_match'] = options[:expected_leaf_sets_match]
+  end
+  metadata
+end
+
+client = Mysql2::Client.new(
+  host: options[:db_host],
+  port: options[:db_port],
+  username: options[:db_user],
+  password: options[:db_pass],
+  database: options[:db_name],
+  cast_booleans: true
+)
+
+report = backup_topology_report(
+  client,
+  dip_id: options[:dip_id],
+  backup_dataset_path: options[:backup_dataset_path]
+)
+
+payload = StorageTopologyFixture.topology_fixture_payload(
+  report,
+  metadata: fixture_metadata(options),
+  generated_at: options[:generated_at]
+)
+
+StorageTopologyFixture.validate_fixture!(payload)
+StorageTopologyFixture.write_topology_fixture(options[:output], payload)
+
+summary = StorageTopologyFixture.fixture_summary(payload)
+
+puts "wrote #{options[:output]}"
+puts "case: #{summary.fetch('metadata').fetch('case', '(none)')}"
+puts "generated_at: #{summary.fetch('generated_at')}"
+puts "leaf_sets_match: #{summary.fetch('leaf_sets_match')}"
