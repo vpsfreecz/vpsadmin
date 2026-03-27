@@ -71,6 +71,7 @@ import ../../../make-test.nix (
           loaded = load_topology_fixture(fixture_path)
           live_contract = delete_order_leaf_contract(payload.fetch('report'))
           fixture_contract = delete_order_leaf_contract_from_fixture(fixture_path)
+          validated_contract = validate_topology_fixture!(loaded)
 
           expect(File.exist?(fixture_path)).to be(true)
           expect(loaded.fetch('version')).to eq(1)
@@ -78,11 +79,10 @@ import ../../../make-test.nix (
             'suite' => 'storage-topology-fixture-roundtrip',
             'dataset_id' => @setup.fetch('dataset_id')
           )
-          expect(normalize_backup_topology_report(loaded.fetch('report'))).to eq(loaded.fetch('report'))
           expect(loaded.fetch('report')).to eq(payload.fetch('report'))
           expect(loaded.fetch('diagnostic')).to eq(payload.fetch('diagnostic'))
-          expect(loaded.fetch('diagnostic')).to eq(delete_order_diagnostic(loaded.fetch('report')))
           expect(fixture_contract).to eq(live_contract)
+          expect(validated_contract).to eq(live_contract)
         end
       end
     '';

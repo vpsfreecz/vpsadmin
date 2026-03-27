@@ -85,6 +85,23 @@ import ../../../make-test.nix (
           diagnostic_before = delete_order_diagnostic(report_before)
           leaf_contract_before = delete_order_leaf_contract(report_before)
           tree_count_before = report_before.fetch('db').fetch('trees').count
+          puts JSON.pretty_generate(
+            'case' => 'complex-rotation-order-pending',
+            'stage' => 'before-rotation',
+            'diagnostic' => diagnostic_before,
+            'leaf_contract' => leaf_contract_before
+          )
+          maybe_capture_topology_fixture(
+            services,
+            backup_node: node2,
+            dst_dip_id: @setup.fetch('dst_dip_id'),
+            backup_dataset_path: @setup.fetch('backup_dataset_path'),
+            file_name: 'complex-rotation-before.json',
+            metadata: {
+              'case' => 'complex-rotation-order-pending',
+              'expected_leaf_sets_match' => leaf_contract_before.fetch('leaf_sets_match')
+            }
+          )
 
           set_snapshot_retention(
             services,
@@ -94,11 +111,9 @@ import ../../../make-test.nix (
             snapshot_max_age: 0
           )
 
-          pending 'complex repeated rollback + tree switching can strand old snapshots because metadata is not enough to derive safe rotation order'
-
-          expect(diagnostic_before.fetch('db_but_not_zfs')).to eq([]), diagnostic_before.inspect
-
           failed_chain_ids = []
+          final_states = {}
+          empty_rotations = []
           failure_details = {}
           dependency_failures = {}
           unexpected_failures = {}
@@ -109,11 +124,30 @@ import ../../../make-test.nix (
               admin_user_id: admin_user_id,
               dip_id: @setup.fetch('dst_dip_id')
             )
+            if rotation.fetch('empty', false)
+              empty_rotations << rotation
+              next
+            end
+
+            final_state = wait_for_chain_states_local(
+              services,
+              rotation.fetch('chain_id'),
+              %i[done failed fatal resolved]
+            )
+            final_states[rotation.fetch('chain_id')] = final_state
+
+            next if final_state == services.class::CHAIN_STATES[:done]
+
+            expect([
+              services.class::CHAIN_STATES[:failed],
+              services.class::CHAIN_STATES[:fatal],
+              services.class::CHAIN_STATES[:resolved]
+            ]).to include(final_state), final_states.inspect
+
             final_state = services.mysql_scalar(
               sql: "SELECT state FROM transaction_chains WHERE id = #{rotation.fetch('chain_id')}"
             ).to_i
-
-            next if final_state == services.class::CHAIN_STATES[:done]
+            final_states[rotation.fetch('chain_id')] = final_state
 
             failed_chain_ids << rotation.fetch('chain_id')
             details = chain_failure_details(services, rotation.fetch('chain_id'))
@@ -134,21 +168,51 @@ import ../../../make-test.nix (
             dst_dip_id: @setup.fetch('dst_dip_id'),
             backup_dataset_path: @setup.fetch('backup_dataset_path')
           )
+          diagnostic_after = delete_order_diagnostic(report_after)
           leaf_contract_after = delete_order_leaf_contract(report_after)
           tree_count_after = report_after.fetch('db').fetch('trees').count
+          puts JSON.pretty_generate(
+            'case' => 'complex-rotation-order-pending',
+            'stage' => 'after-rotation',
+            'failed_chain_ids' => failed_chain_ids,
+            'final_states' => final_states,
+            'diagnostic' => diagnostic_after,
+            'leaf_contract' => leaf_contract_after
+          )
+          maybe_capture_topology_fixture(
+            services,
+            backup_node: node2,
+            dst_dip_id: @setup.fetch('dst_dip_id'),
+            backup_dataset_path: @setup.fetch('backup_dataset_path'),
+            file_name: 'complex-rotation-after.json',
+            metadata: {
+              'case' => 'complex-rotation-order-pending',
+              'failed_chain_ids' => failed_chain_ids,
+              'final_states' => final_states,
+              'expected_leaf_sets_match' => leaf_contract_after.fetch('leaf_sets_match')
+            }
+          )
           failure_message = {
             diagnostic_before: diagnostic_before,
+            diagnostic_after: diagnostic_after,
             leaf_contract_before: leaf_contract_before,
             leaf_contract_after: leaf_contract_after,
+            empty_rotations: empty_rotations,
+            final_states: final_states,
             failure_details: failure_details
           }.inspect
 
+          pending 'complex repeated rollback + tree switching can strand old snapshots because metadata is not enough to derive safe rotation order'
+
+          expect(diagnostic_before.fetch('db_but_not_zfs')).to eq([]), diagnostic_before.inspect
+          expect(empty_rotations).to eq([]), failure_message
+
           failed_chain_ids.each do |chain_id|
-            assert_known_dependency_failure!(
+            assert_dependency_failure_contract!(
               services,
               chain_id: chain_id,
               allowed_handles: [storage_types.fetch('destroy_snapshot')],
-              diagnostic: leaf_contract_before
+              report: report_before
             )
           end
 
