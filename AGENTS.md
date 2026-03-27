@@ -32,6 +32,12 @@
 
 ## Commit & Pull Request Guidelines
 - Use short imperative subjects, often scoped (`api: add StoragePool resource`, `webui: fix payset form`); keep one logical change per commit.
+- Every commit message must explain what the change does and why it is
+  needed; use the subject for the action and the body for the rationale
+  when needed.
+- Wrap every commit message line at 80 characters or fewer.
+- Always write the commit message to a temporary file and commit with
+  `git commit -F <tmpfile>` instead of passing the message inline.
 - Flake input updates (`vpsadminos`) flow:
   1. Read current rev: `nix flake metadata --json . | jq -r '.locks.nodes.vpsadminos.locked.rev'`.
   2. Update input: `nix flake update vpsadminos` (or `nix flake lock --update-input vpsadminos`).
