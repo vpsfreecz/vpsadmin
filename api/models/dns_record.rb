@@ -107,15 +107,7 @@ class DnsRecord < ApplicationRecord
       check_ds_content
 
     when 'SRV'
-      weight, port, domain = content.split(' ', 4)
-
-      unless [weight, port].all? { |v| v.to_i.to_s == v }
-        errors.add(:content, 'SRV weight and port must be numbers')
-      end
-
-      unless valid_fqdn?(domain)
-        errors.add(:content, 'SRV target must be a fully qualified domain name')
-      end
+      check_srv_content
 
     when 'TXT'
       # pass
@@ -174,6 +166,22 @@ class DnsRecord < ApplicationRecord
 
   def null_mx_record?
     priority == 0 && content == '.'
+  end
+
+  def check_srv_content
+    weight, port, domain = content.split(' ', 4)
+
+    unless [weight, port].all? { |v| v.to_i.to_s == v }
+      errors.add(:content, 'SRV weight and port must be numbers')
+    end
+
+    return if null_srv_target?(domain) || valid_fqdn?(domain)
+
+    errors.add(:content, 'SRV target must be a fully qualified domain name or .')
+  end
+
+  def null_srv_target?(domain)
+    domain == '.'
   end
 
   # rubocop:enable Style/GuardClause

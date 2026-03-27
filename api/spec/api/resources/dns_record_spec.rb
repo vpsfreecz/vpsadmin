@@ -428,6 +428,29 @@ RSpec.describe 'VpsAdmin::API::Resources::DnsRecord' do
       expect(errors.keys.map(&:to_s)).to include('content')
     end
 
+    it 'allows users to create null SRV records' do
+      ensure_signer_unlocked!
+
+      payload = {
+        dns_zone: seed[:user_zone].id,
+        name: '_sip._tcp',
+        type: 'SRV',
+        content: '0 0 .',
+        priority: 0,
+        ttl: 3600
+      }
+
+      expect do
+        as(SpecSeed.user) { json_post index_path, dns_record: payload }
+      end.to change(DnsRecord, :count).by(1)
+
+      expect_status(200)
+      expect(json['status']).to be(true)
+      expect(record_obj['type']).to eq('SRV')
+      expect(record_obj['content']).to eq('0 0 .')
+      expect(record_obj['priority']).to eq(0)
+    end
+
     it 'allows users to create MX records with explicit priority' do
       ensure_signer_unlocked!
 
@@ -633,6 +656,29 @@ RSpec.describe 'VpsAdmin::API::Resources::DnsRecord' do
       expect(record_obj['priority']).to eq(0)
       expect(seed[:record_user_mx].reload.content).to eq('.')
       expect(seed[:record_user_mx].reload.priority).to eq(0)
+    end
+
+    it 'allows users to update an SRV record to a null SRV target' do
+      ensure_signer_unlocked!
+
+      srv_record = create_record!(
+        zone: seed[:user_zone],
+        name: '_xmpp._tcp',
+        record_type: 'SRV',
+        content: '10 5222 xmpp.user.example.test.',
+        priority: 10
+      )
+
+      as(SpecSeed.user) do
+        json_put show_path(srv_record.id), dns_record: { content: '0 0 .', priority: 0 }
+      end
+
+      expect_status(200)
+      expect(json['status']).to be(true)
+      expect(record_obj['content']).to eq('0 0 .')
+      expect(record_obj['priority']).to eq(0)
+      expect(srv_record.reload.content).to eq('0 0 .')
+      expect(srv_record.reload.priority).to eq(0)
     end
 
     it 'allows admins to update records with a transaction chain' do
