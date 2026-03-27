@@ -9,7 +9,7 @@ module VpsAdmin::API
       ret[:content].strip!
 
       # Extract priority from MX and SRV
-      if %w[MX SRV].include?(record_type) && /\A(\d+)\s+([^$]+)\z/ =~ ret[:content]
+      if ret[:priority].nil? && %w[MX SRV].include?(record_type) && /\A(\d+)\s+([^$]+)\z/ =~ ret[:content]
         ret[:priority] = Regexp.last_match(1).to_i
         ret[:content] = Regexp.last_match(2)
       end

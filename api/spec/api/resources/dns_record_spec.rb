@@ -428,6 +428,128 @@ RSpec.describe 'VpsAdmin::API::Resources::DnsRecord' do
       expect(errors.keys.map(&:to_s)).to include('content')
     end
 
+    it 'allows users to create MX records with explicit priority' do
+      ensure_signer_unlocked!
+
+      payload = {
+        dns_zone: seed[:user_zone].id,
+        name: '@',
+        type: 'MX',
+        content: 'mail2.user.example.test.',
+        priority: 20,
+        ttl: 3600
+      }
+
+      expect do
+        as(SpecSeed.user) { json_post index_path, dns_record: payload }
+      end.to change(DnsRecord, :count).by(1)
+
+      expect_status(200)
+      expect(json['status']).to be(true)
+      expect(record_obj['type']).to eq('MX')
+      expect(record_obj['content']).to eq('mail2.user.example.test.')
+      expect(record_obj['priority']).to eq(20)
+    end
+
+    it 'allows users to create MX records with priority embedded in content' do
+      ensure_signer_unlocked!
+
+      payload = {
+        dns_zone: seed[:user_zone].id,
+        name: '@',
+        type: 'MX',
+        content: '30 mail3.user.example.test.',
+        ttl: 3600
+      }
+
+      expect do
+        as(SpecSeed.user) { json_post index_path, dns_record: payload }
+      end.to change(DnsRecord, :count).by(1)
+
+      expect_status(200)
+      expect(json['status']).to be(true)
+      expect(record_obj['content']).to eq('mail3.user.example.test.')
+      expect(record_obj['priority']).to eq(30)
+    end
+
+    it 'rejects MX records with priority set explicitly and in content' do
+      as(SpecSeed.user) do
+        json_post index_path, dns_record: {
+          dns_zone: seed[:user_zone].id,
+          name: '@',
+          type: 'MX',
+          content: '30 mail4.user.example.test.',
+          priority: 20,
+          ttl: 3600
+        }
+      end
+
+      expect_status(200)
+      expect(json['status']).to be(false)
+      expect(errors.keys.map(&:to_s)).to include('content')
+    end
+
+    it 'allows users to create SRV records with explicit priority' do
+      ensure_signer_unlocked!
+
+      payload = {
+        dns_zone: seed[:user_zone].id,
+        name: '_sip._tcp',
+        type: 'SRV',
+        content: '5 443 service.user.example.test.',
+        priority: 20,
+        ttl: 3600
+      }
+
+      expect do
+        as(SpecSeed.user) { json_post index_path, dns_record: payload }
+      end.to change(DnsRecord, :count).by(1)
+
+      expect_status(200)
+      expect(json['status']).to be(true)
+      expect(record_obj['type']).to eq('SRV')
+      expect(record_obj['content']).to eq('5 443 service.user.example.test.')
+      expect(record_obj['priority']).to eq(20)
+    end
+
+    it 'allows users to create SRV records with priority embedded in content' do
+      ensure_signer_unlocked!
+
+      payload = {
+        dns_zone: seed[:user_zone].id,
+        name: '_xmpp._tcp',
+        type: 'SRV',
+        content: '30 5 5222 xmpp.user.example.test.',
+        ttl: 3600
+      }
+
+      expect do
+        as(SpecSeed.user) { json_post index_path, dns_record: payload }
+      end.to change(DnsRecord, :count).by(1)
+
+      expect_status(200)
+      expect(json['status']).to be(true)
+      expect(record_obj['content']).to eq('5 5222 xmpp.user.example.test.')
+      expect(record_obj['priority']).to eq(30)
+    end
+
+    it 'rejects SRV records with priority set explicitly and in content' do
+      as(SpecSeed.user) do
+        json_post index_path, dns_record: {
+          dns_zone: seed[:user_zone].id,
+          name: '_xmpp._tcp',
+          type: 'SRV',
+          content: '30 5 5222 xmpp2.user.example.test.',
+          priority: 20,
+          ttl: 3600
+        }
+      end
+
+      expect_status(200)
+      expect(json['status']).to be(false)
+      expect(errors.keys.map(&:to_s)).to include('content')
+    end
+
     it 'allows admins to create records with a transaction chain' do
       ensure_signer_unlocked!
 
