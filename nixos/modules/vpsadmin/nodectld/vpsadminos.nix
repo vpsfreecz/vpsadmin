@@ -8,6 +8,7 @@
 with lib;
 let
   cfg = config.vpsadmin.nodectld;
+  rubyCrashReportTemplate = config.system.vpsadminos.rubyCrashReportTemplate;
 in
 {
   imports = [
@@ -28,6 +29,9 @@ in
         export HOME=${config.users.extraUsers.root.home}
         export LANG=en_US.UTF-8
         export LOCALE_ARCHIVE=/run/current-system/sw/lib/locale/locale-archive
+        ${optionalString (!isNull rubyCrashReportTemplate) ''
+          export RUBY_CRASH_REPORT=${escapeShellArg rubyCrashReportTemplate}
+        ''}
         exec 2>&1
         exec ${pkgs.nodectld}/bin/nodectld --log syslog --log-facility local3
       '';
