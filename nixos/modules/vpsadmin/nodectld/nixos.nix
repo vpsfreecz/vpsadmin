@@ -41,6 +41,7 @@ in
         ln -sfn /run/current-system/sw/bin/nodectl /run/nodectl/nodectl
       '';
       serviceConfig = {
+        Environment = "RUBY_CRASH_REPORT=/dev/null";
         Type = "simple";
         ExecStart = "${pkgs.nodectld}/bin/nodectld --no-wrapper";
         Restart = "on-failure";
