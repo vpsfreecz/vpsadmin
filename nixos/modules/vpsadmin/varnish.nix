@@ -165,6 +165,7 @@ in
   config = mkIf cfg.enable {
     services.varnish = {
       enable = true;
+      package = lib.mkDefault pkgs.varnish80;
       listen = [ { inherit (cfg.bind) address port mode; } ];
       config = varnishConfig;
     };
