@@ -49,6 +49,10 @@ jobs:
             patterns: |
               spec/api/routes/**/*_spec.rb
 
+          - topic: engine
+            patterns: |
+              spec/models/**/*_spec.rb
+
           - topic: plugins
             patterns: |
               spec/api/plugins/**/*_spec.rb
