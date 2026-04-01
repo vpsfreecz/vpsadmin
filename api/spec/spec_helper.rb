@@ -7,6 +7,11 @@ require 'rspec'
 
 Dir[File.join(__dir__, 'support', '**', '*.rb')].each { |f| require f }
 
+SpecDbSetup.establish_connection!
+SpecDbSetup.ensure_database_exists!
+SpecDbSetup.load_schema!
+require_relative '../lib/vpsadmin'
+
 RSpec.configure do |config|
   config.order = :random
   Kernel.srand config.seed
@@ -20,10 +25,6 @@ RSpec.configure do |config|
   end
 
   config.before(:suite) do
-    SpecDbSetup.establish_connection!
-    SpecDbSetup.ensure_database_exists!
-    SpecDbSetup.load_schema!
-    require_relative '../lib/vpsadmin'
     SpecSeed.seed_language_if_needed!
     SpecDbSetup.seed_minimal_sysconfig!
     SpecDbSetup.seed_minimal_cluster_resources!

@@ -3,13 +3,16 @@
 require 'active_record'
 require 'yaml'
 require 'erb'
+require 'uri'
 
 module SpecDbSetup
   module_function
 
-  def establish_connection!
+  def establish_connection!(db_name_suffix: nil)
     if ENV['DATABASE_URL'] && !ENV['DATABASE_URL'].empty?
-      ActiveRecord::Base.establish_connection(ENV['DATABASE_URL'])
+      url = ENV['DATABASE_URL']
+      url = with_db_name_suffix(url, db_name_suffix) if db_name_suffix
+      ActiveRecord::Base.establish_connection(url)
       return
     end
 
@@ -25,6 +28,7 @@ module SpecDbSetup
     cfg = YAML.safe_load(raw, aliases: true)
     test_cfg = cfg.fetch('test') { raise "Missing 'test:' config in #{yml_path}" }
     test_cfg = coerce_adapter(test_cfg)
+    test_cfg = with_db_name_suffix(test_cfg, db_name_suffix) if db_name_suffix
     ensure_database_url!(test_cfg)
 
     ActiveRecord::Base.establish_connection(test_cfg)
@@ -33,7 +37,7 @@ module SpecDbSetup
   def ensure_database_exists!
     conn_cfg = ActiveRecord::Base.connection_db_config.configuration_hash
     adapter = conn_cfg[:adapter].to_s
-    dbname = conn_cfg[:database] || conn_cfg[:dbname]
+    dbname = configured_database_name(conn_cfg)
 
     raise 'Database name not configured' if dbname.to_s.empty?
 
@@ -165,6 +169,24 @@ module SpecDbSetup
     cfg
   end
 
+  def with_db_name_suffix(cfg_or_url, suffix)
+    return cfg_or_url if suffix.to_s.empty?
+
+    if cfg_or_url.is_a?(String)
+      uri = URI.parse(cfg_or_url)
+      dbname = uri.path.sub(%r{\A/}, '')
+      raise 'Database name not configured in DATABASE_URL' if dbname.empty?
+
+      uri.path = "/#{dbname}_#{suffix}"
+      uri.to_s
+    else
+      cfg = cfg_or_url.dup
+      dbname = configured_database_name(cfg)
+      set_configured_database_name(cfg, "#{dbname}_#{suffix}")
+    end
+  end
+  private_class_method :with_db_name_suffix
+
   def ensure_database_url!(cfg)
     return if ENV['DATABASE_URL'] && !ENV['DATABASE_URL'].empty?
     return unless cfg.is_a?(Hash)
@@ -177,7 +199,7 @@ module SpecDbSetup
     pass = cfg[:password] || cfg['password']
     host = cfg[:host] || cfg['host'] || 'localhost'
     port = cfg[:port] || cfg['port']
-    dbname = cfg[:database] || cfg['database'] || cfg[:dbname] || cfg['dbname']
+    dbname = configured_database_name(cfg)
     return if dbname.to_s.empty?
 
     scheme = adapter == 'postgres' ? 'postgresql' : adapter
@@ -193,4 +215,28 @@ module SpecDbSetup
 
     ENV['DATABASE_URL'] = url
   end
+
+  def configured_database_name(cfg)
+    if cfg.has_key?(:database)
+      cfg[:database]
+    elsif cfg.has_key?('database')
+      cfg['database']
+    else
+      raise 'Database name not configured'
+    end
+  end
+  private_class_method :configured_database_name
+
+  def set_configured_database_name(cfg, dbname)
+    if cfg.has_key?(:database)
+      cfg[:database] = dbname
+    elsif cfg.has_key?('database')
+      cfg['database'] = dbname
+    else
+      raise 'Database name not configured'
+    end
+
+    cfg
+  end
+  private_class_method :set_configured_database_name
 end
