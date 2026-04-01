@@ -19,7 +19,7 @@ module Transactions::Vps
       self.node_id = vps.node_id
 
       {
-        node: node.ip_addr,
+        node: node.transfer_ip_for(vps.node),
         pool_name: pool.name,
         as_id: (opts[:as_id] || vps.id).to_s,
         network_interfaces: opts[:network_interfaces] || false,

@@ -132,10 +132,12 @@ module TransactionChains
 
       snap_in_branch = backup_snap.snapshot_in_pool_in_branches
                                   .where.not(confirmed: ::SnapshotInPoolInBranch.confirmed(:confirm_destroy)).take!
+      dst_node = dataset_in_pool.pool.node
+      src_node = backup_snap.dataset_in_pool.pool.node
 
       port = ::PortReservation.reserve(
-        dataset_in_pool.pool.node,
-        dataset_in_pool.pool.node.addr,
+        dst_node,
+        dst_node.transfer_ip_for(src_node),
         id ? self : dst_chain
       )
 

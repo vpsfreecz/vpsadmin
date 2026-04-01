@@ -220,6 +220,13 @@ class Node < ApplicationRecord
     "#{name}.#{location.domain}"
   end
 
+  def transfer_ip_for(peer)
+    return ip_addr if peer.nil? || peer.id == id
+
+    conn = NodeTransferConnection.between(self, peer).enabled.take
+    conn ? conn.ip_addr_for(self) : ip_addr
+  end
+
   def vps_running
     vpses.joins(:vps_current_status).where(
       vps_current_statuses: { is_running: true }

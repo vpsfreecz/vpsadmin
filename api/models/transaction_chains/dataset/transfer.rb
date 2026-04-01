@@ -13,10 +13,12 @@ module TransactionChains
       tree = nil
       branch = nil
       dst_last_snapshot = dst_dataset_in_pool.snapshot_in_pools.all.order('snapshot_id DESC').take
+      dst_node = dst_dataset_in_pool.pool.node
+      src_node = src_dataset_in_pool.pool.node
 
       port = ::PortReservation.reserve(
-        dst_dataset_in_pool.pool.node,
-        dst_dataset_in_pool.pool.node.addr,
+        dst_node,
+        dst_node.transfer_ip_for(src_node),
         id ? self : dst_chain
       )
 

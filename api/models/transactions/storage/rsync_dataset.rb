@@ -8,7 +8,7 @@ module Transactions::Storage
       self.node_id = dst.pool.node_id
 
       {
-        src_addr: src.pool.node.ip_addr,
+        src_addr: src.pool.node.transfer_ip_for(dst.pool.node),
         src_pool_fs: src.pool.filesystem,
         dst_pool_name: dst.pool.name,
         dst_pool_fs: dst.pool.filesystem,
