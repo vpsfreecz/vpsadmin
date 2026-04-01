@@ -8,6 +8,7 @@ module Transactions::Storage
       self.node_id = pool.node_id
 
       {
+        pool_name: pool.name,
         pool_fs: pool.filesystem,
         options: properties
       }

@@ -64,7 +64,8 @@ module NodeCtld
 
     def grant_device_access
       pool_devices.each do |ident, devnode|
-        osctl(
+        osctl_pool(
+          @pool_name,
           %i[group devices add],
           ['/default', *ident, 'rwm', devnode],
           {
@@ -80,7 +81,8 @@ module NodeCtld
     def revoke_device_access
       # rubocop:disable Style/HashEachMethods
       pool_devices.each do |ident, _devnode|
-        osctl(
+        osctl_pool(
+          @pool_name,
           %i[group devices del],
           ['/default', *ident],
           {},
