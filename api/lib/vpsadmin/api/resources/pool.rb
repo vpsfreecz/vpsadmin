@@ -15,6 +15,9 @@ module VpsAdmin::API::Resources
       string :state, choices: ::Pool::STATE_VALUES.map(&:to_s), db_name: :state_value
       string :scan, choices: ::Pool::SCAN_VALUES.map(&:to_s), db_name: :scan_value
       float :scan_percent
+      integer :total_space
+      integer :used_space
+      integer :available_space
       datetime :checked_at
     end
 
@@ -47,7 +50,9 @@ module VpsAdmin::API::Resources
       authorize do |u|
         allow if u.role == :admin
         input whitelist: %i[node role]
-        output whitelist: %i[id node name role state scan scan_percent checked_at]
+        output whitelist: %i[
+          id node name role state scan scan_percent checked_at
+        ]
         allow
       end
 
@@ -80,7 +85,9 @@ module VpsAdmin::API::Resources
 
       authorize do |u|
         allow if u.role == :admin
-        output whitelist: %i[id node name role state scan scan_percent checked_at]
+        output whitelist: %i[
+          id node name role state scan scan_percent checked_at
+        ]
         allow
       end
 

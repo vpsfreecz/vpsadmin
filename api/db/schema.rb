@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_04_01_100000) do
+ActiveRecord::Schema[8.1].define(version: 2026_04_02_100000) do
   create_table "auth_tokens", id: { type: :integer, unsigned: true }, charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
     t.string "api_ip_addr", limit: 46
     t.string "api_ip_ptr"
@@ -1160,6 +1160,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_01_100000) do
   end
 
   create_table "pools", id: { type: :integer, unsigned: true }, charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
+    t.bigint "available_space"
     t.datetime "checked_at", precision: nil
     t.string "export_root", limit: 100, default: "/export", null: false
     t.string "filesystem", limit: 500, null: false
@@ -1175,6 +1176,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_01_100000) do
     t.integer "scan", default: 0, null: false
     t.float "scan_percent"
     t.integer "state", default: 0, null: false
+    t.bigint "total_space"
+    t.bigint "used_space"
     t.index ["is_open"], name: "index_pools_on_is_open"
   end
 
