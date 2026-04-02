@@ -6,9 +6,11 @@ module NodeCtld
     def exec
       syscmd("#{$CFG.get(:bin, :rm)} -f \"#{file_path}\"") if File.exist?(file_path)
 
-      return unless File.exist?(secret_dir_path)
+      if File.exist?(secret_dir_path)
+        syscmd("#{$CFG.get(:bin, :rmdir)} \"#{secret_dir_path}\"")
+      end
 
-      syscmd("#{$CFG.get(:bin, :rmdir)} \"#{secret_dir_path}\"")
+      ok
     end
 
     protected
