@@ -149,9 +149,17 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
           node = input[:node]
 
         elsif input[:location] || input[:environment]
+          environment = input[:environment] || input[:location]&.environment
+          required_diskspace =
+            VpsAdmin::API::Operations::Utils::PoolSpace.required_default_new_vps_diskspace!(
+              environment:,
+              os_template: input[:os_template]
+            )
+
           node = VpsAdmin::API::Operations::Node::Pick.run(
             environment: input[:environment],
-            location: input[:location]
+            location: input[:location],
+            required_diskspace:
           )
 
         else
@@ -172,6 +180,8 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
       user
     rescue ActiveRecord::RecordInvalid
       error!('create failed', to_param_names(user.errors.to_hash, :input))
+    rescue VpsAdmin::API::Exceptions::OperationError => e
+      error!(e.message)
     end
 
     def state_id

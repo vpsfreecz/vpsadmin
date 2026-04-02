@@ -12,7 +12,13 @@ module TransactionChains
       lock(vps)
 
       @src_pool = vps.dataset_in_pool.pool
-      @dst_pool = ::Pool.take_by_node!(node, role: :hypervisor)
+      @dst_pool = ::Pool.take_by_node!(
+        node,
+        role: :hypervisor,
+        required_diskspace: VpsAdmin::API::Operations::Utils::PoolSpace.required_dataset_tree_diskspace(
+          vps.dataset_in_pool
+        )
+      )
 
       dst_features = {}
       vps_resources = nil

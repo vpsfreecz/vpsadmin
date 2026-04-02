@@ -279,11 +279,25 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
 
         error!('provide either an environment or a location') if input[:environment].nil? && input[:location].nil?
 
+        requested_environment = input[:environment] || input[:location]&.environment
+        requested_diskspace =
+          input[:diskspace] ||
+          VpsAdmin::API::Operations::Utils::PoolSpace.default_vps_diskspace!(
+            environment: requested_environment
+          )
+
+        required_diskspace =
+          VpsAdmin::API::Operations::Utils::PoolSpace.required_new_vps_diskspace!(
+            os_template: input[:os_template],
+            diskspace: requested_diskspace
+          )
+
         node = VpsAdmin::API::Operations::Node::Pick.run(
           environment: input[:environment],
           location: input[:location],
           hypervisor_type: input[:os_template].hypervisor_type,
-          cgroup_version: input[:cgroup_version] || input[:os_template].cgroup_version
+          cgroup_version: input[:cgroup_version] || input[:os_template].cgroup_version,
+          required_diskspace:
         )
 
         error!('no free node is available in selected environment/location') unless node
@@ -896,12 +910,18 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
         node = input[:node]
 
       elsif input[:location] || input[:environment]
+        required_diskspace =
+          VpsAdmin::API::Operations::Utils::PoolSpace.required_dataset_tree_diskspace(
+            vps.dataset_in_pool
+          )
+
         node = VpsAdmin::API::Operations::Node::Pick.run(
           environment: input[:environment],
           location: input[:location],
           except: vps.node,
           hypervisor_type: input[:platform] == 'same' ? vps.os_template.hypervisor_type : input[:platform],
-          cgroup_version: vps.os_template.cgroup_version
+          cgroup_version: vps.os_template.cgroup_version,
+          required_diskspace:
         )
 
       else

@@ -22,7 +22,17 @@ module TransactionChains
         chain: self
       )
 
-      pool = ::Pool.take_by_node!(vps.node, role: :hypervisor)
+      required_diskspace =
+        VpsAdmin::API::Operations::Utils::PoolSpace.required_new_vps_diskspace!(
+          os_template: vps.os_template,
+          diskspace: vps.diskspace
+        )
+
+      pool = ::Pool.take_by_node!(
+        vps.node,
+        role: :hypervisor,
+        required_diskspace:
+      )
 
       vps.user_namespace_map ||= ::UserNamespaceMap.joins(:user_namespace).where(
         user_namespaces: { user_id: vps.user_id }
@@ -275,26 +285,11 @@ module TransactionChains
     protected
 
     def dataset_refquota(vps, lookup_name)
-      tpl_ds = vps.os_template.datasets.detect do |v|
-        v['name'] == lookup_name
-      end
-      tpl_ds ||= {}
-
-      refquota = tpl_ds.dig('properties', 'refquota')
-
-      if refquota.nil?
-        return vps.diskspace if lookup_name == '/'
-
-        raise "OS template #{vps.os_template.label} is missing refquota option for dataset #{dataset.name}"
-      end
-
-      if refquota.is_a?(Integer)
-        refquota
-      elsif /\A(\d+)%\z/ =~ refquota
-        (vps.diskspace / 100.0 * Regexp.last_match(1).to_i).floor
-      else
-        raise "OS template #{vps.os_template.label} has unknown refquota format: #{refquota.inspect}"
-      end
+      VpsAdmin::API::Operations::Utils::PoolSpace.template_refquota!(
+        os_template: vps.os_template,
+        diskspace: vps.diskspace,
+        lookup_name:
+      )
     end
   end
 end

@@ -77,7 +77,13 @@ module TransactionChains
       @was_running = vps.running?
 
       @src_pool = vps.dataset_in_pool.pool
-      @dst_pool = ::Pool.take_by_node!(dst_node, role: :hypervisor)
+      @dst_pool = ::Pool.take_by_node!(
+        dst_node,
+        role: :hypervisor,
+        required_diskspace: VpsAdmin::API::Operations::Utils::PoolSpace.required_dataset_tree_diskspace(
+          vps.dataset_in_pool
+        )
+      )
 
       @datasets = []
 

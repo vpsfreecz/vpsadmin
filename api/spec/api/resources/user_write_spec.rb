@@ -272,6 +272,50 @@ RSpec.describe 'VpsAdmin::API::Resources::User write actions' do # rubocop:disab
       expect(json['status']).to be(false)
       expect(errors.keys.map(&:to_s)).to include('login')
     end
+
+    it 'passes required_diskspace when creating a user with an initial VPS' do
+      diskspace = ClusterResource.find_by!(name: 'diskspace')
+      record = DefaultObjectClusterResource.find_or_initialize_by(
+        environment: SpecSeed.environment,
+        cluster_resource: diskspace,
+        class_name: 'Vps'
+      )
+      record.value = 20_480
+      record.save!
+
+      seen = nil
+      allow(VpsAdmin::API::Operations::Node::Pick).to receive(:run) do |**kwargs|
+        seen = kwargs
+        Node.find_by!(name: 'spec-node')
+      end
+
+      allow(TransactionChains::User::Create).to receive(:fire) do |user, *_args|
+        user.save!
+        [
+          TransactionChain.create!(
+            name: TransactionChains::User::Create.chain_name,
+            type: TransactionChains::User::Create.name,
+            state: :queued,
+            size: 1,
+            user: SpecSeed.admin,
+            user_session: nil
+          ),
+          user
+        ]
+      end
+
+      as(SpecSeed.admin) do
+        json_post index_path, user: payload[:user].merge(
+          vps: true,
+          environment: SpecSeed.environment.id,
+          os_template: SpecSeed.os_template.id
+        )
+      end
+
+      expect_status(200)
+      expect(json['status']).to be(true)
+      expect(seen[:required_diskspace]).to eq(20_480)
+    end
   end
 
   describe 'Update' do

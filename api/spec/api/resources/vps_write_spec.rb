@@ -299,6 +299,61 @@ RSpec.describe 'VpsAdmin::API::Resources::VPS write actions' do # rubocop:disabl
         expect(record.node_id).to eq(SpecSeed.node.id)
       end
 
+      it 'passes required_diskspace to node picking for VPS create' do
+        set_env_config!(
+          user: SpecSeed.user,
+          environment: SpecSeed.environment,
+          attrs: { can_create_vps: true, max_vps_count: 10 }
+        )
+
+        seen = nil
+        allow(VpsAdmin::API::Operations::Node::Pick).to receive(:run) do |**kwargs|
+          seen = kwargs
+          SpecSeed.node
+        end
+
+        as(SpecSeed.user) { json_post index_path, vps: user_payload }
+
+        expect_status(200)
+        expect(json['status']).to be(true)
+        expect(seen[:required_diskspace]).to eq(user_payload[:diskspace])
+      end
+
+      it 'uses default diskspace for node picking when omitted from VPS create' do
+        set_env_config!(
+          user: SpecSeed.user,
+          environment: SpecSeed.environment,
+          attrs: { can_create_vps: true, max_vps_count: 10 }
+        )
+
+        diskspace = ClusterResource.find_by!(name: 'diskspace')
+        record = DefaultObjectClusterResource.find_or_initialize_by(
+          environment: SpecSeed.environment,
+          cluster_resource: diskspace,
+          class_name: 'Vps'
+        )
+        record.value = 20_480
+        record.save!
+
+        expected_default_diskspace =
+          VpsAdmin::API::Operations::Utils::PoolSpace.required_new_vps_diskspace!(
+            os_template: SpecSeed.os_template,
+            diskspace: record.value
+          )
+
+        seen = nil
+        allow(VpsAdmin::API::Operations::Node::Pick).to receive(:run) do |**kwargs|
+          seen = kwargs
+          SpecSeed.node
+        end
+
+        as(SpecSeed.user) { json_post index_path, vps: user_payload.except(:diskspace) }
+
+        expect_status(200)
+        expect(json['status']).to be(true)
+        expect(seen[:required_diskspace]).to eq(expected_default_diskspace)
+      end
+
       it 'ignores user and node overrides' do
         set_env_config!(
           user: SpecSeed.user,
@@ -1169,6 +1224,16 @@ RSpec.describe 'VpsAdmin::API::Resources::VPS write actions' do # rubocop:disabl
         attrs: { can_create_vps: true, max_vps_count: 10 }
       )
 
+      seen = nil
+      allow(VpsAdmin::API::Operations::Utils::PoolSpace)
+        .to receive(:required_dataset_tree_diskspace)
+        .with(vps.dataset_in_pool)
+        .and_return(4_096)
+      allow(VpsAdmin::API::Operations::Node::Pick).to receive(:run) do |**kwargs|
+        seen = kwargs
+        destination_node
+      end
+
       allow(TransactionChains::Vps::Clone).to receive(:chain_for) do |_src, _dst|
         class_double(TransactionChains::Vps::Clone::OsToOs).tap do |chain|
           allow(chain).to receive(:fire) do |_src_vps, node, input|
@@ -1188,6 +1253,7 @@ RSpec.describe 'VpsAdmin::API::Resources::VPS write actions' do # rubocop:disabl
       cloned_id = vps_obj['id']
       expect(Vps.where(id: cloned_id)).to exist
       expect(Vps.find(cloned_id).user_id).to eq(SpecSeed.user.id)
+      expect(seen[:required_diskspace]).to eq(4_096)
     end
 
     it 'sets default hostname when missing' do
@@ -1403,7 +1469,13 @@ RSpec.describe 'VpsAdmin::API::Resources::VPS write actions' do # rubocop:disabl
       )
     end
 
-    DatasetInPool.create!(dataset: dataset, pool: pool)
+    dip = DatasetInPool.create!(
+      dataset: dataset,
+      pool: pool,
+      confirmed: :confirmed
+    )
+    allocate_dip_diskspace!(dip, user: user, value: 4_096)
+    dip
   end
 
   def create_vps!(user:, node:, hostname: nil, os_template: SpecSeed.os_template,
@@ -1541,5 +1613,24 @@ RSpec.describe 'VpsAdmin::API::Resources::VPS write actions' do # rubocop:disabl
       save: true,
       confirmed: ::ClusterResourceUse.confirmed(:confirmed)
     )
+  end
+
+  def allocate_dip_diskspace!(dip, user:, value:)
+    ensure_user_cluster_resource!(
+      user: user,
+      environment: dip.pool.node.location.environment,
+      resource: :diskspace,
+      value: [value * 2, 10_000].max
+    )
+
+    with_current_user(SpecSeed.admin) do
+      dip.allocate_resource!(
+        :diskspace,
+        value,
+        user: user,
+        confirmed: ClusterResourceUse.confirmed(:confirmed),
+        admin_override: true
+      )
+    end
   end
 end
