@@ -19,11 +19,31 @@
   primary_pool_fs = '${primaryPoolFs}'
   backup_pool_fs = '${backupPoolFs}'
 
+  def admin_user_id
+    ${toString adminUserId}
+  end
+
+  def node1_id
+    ${toString node1Id}
+  end
+
+  def node2_id
+    ${toString node2Id}
+  end
+
+  def primary_pool_fs
+    ${builtins.toJSON primaryPoolFs}
+  end
+
+  def backup_pool_fs
+    ${builtins.toJSON backupPoolFs}
+  end
+
   def wait_for_running_nodectld(node)
     node.wait_for_service('nodectld')
-    wait_until_block_succeeds(name: "nodectld running on #{node.name}") do
-      _, output = node.succeeds('nodectl status', timeout: 180)
-      expect(output).to include('State: running')
+    wait_until_block_succeeds(name: "nodectld supervised on #{node.name}") do
+      _, output = node.succeeds('sv check nodectld', timeout: 30)
+      expect(output).to include('ok: run: nodectld')
       true
     end
   end
@@ -38,12 +58,9 @@
   end
 
   def prepare_node_queues(node, send_timeout: 120, receive_timeout: 120)
-    node.succeeds('nodectl set config vpsadmin.queues.zfs_send.start_delay=0')
-    node.succeeds('nodectl set config vpsadmin.queues.zfs_recv.start_delay=0')
-    node.succeeds("nodectl set config mbuffer.send.timeout=#{Integer(send_timeout)}")
-    node.succeeds("nodectl set config mbuffer.receive.timeout=#{Integer(receive_timeout)}")
-    node.succeeds('nodectl set config mbuffer.receive.start_writing_at=60')
-    node.succeeds('nodectl queue resume all')
+    node.succeeds('nodectl set config vpsadmin.queues.zfs_send.start_delay=0', timeout: 60)
+    node.succeeds('nodectl set config vpsadmin.queues.zfs_recv.start_delay=0', timeout: 60)
+    node.succeeds('nodectl queue resume all', timeout: 60)
   end
 
   def wait_for_pool_online(services, pool_id)
@@ -73,18 +90,56 @@
         recv: Transactions::Storage::Recv.t_type,
         send: Transactions::Storage::Send.t_type,
         recv_check: Transactions::Storage::RecvCheck.t_type,
+        download_snapshot: Transactions::Storage::DownloadSnapshot.t_type,
+        remove_download: Transactions::Storage::RemoveDownload.t_type,
+        rsync_dataset: Transactions::Storage::RsyncDataset.t_type,
         local_send: Transactions::Storage::LocalSend.t_type,
         prepare_rollback: Transactions::Storage::PrepareRollback.t_type,
         apply_rollback: Transactions::Storage::ApplyRollback.t_type,
         branch_dataset: Transactions::Storage::BranchDataset.t_type,
         destroy_snapshot: Transactions::Storage::DestroySnapshot.t_type,
-        rollback: Transactions::Storage::Rollback.t_type
+        rollback: Transactions::Storage::Rollback.t_type,
+        queue_reserve: Transactions::Queue::Reserve.t_type,
+        queue_release: Transactions::Queue::Release.t_type,
+        export_create: Transactions::Export::Create.t_type,
+        export_destroy: Transactions::Export::Destroy.t_type,
+        export_disable: Transactions::Export::Disable.t_type,
+        export_add_hosts: Transactions::Export::AddHosts.t_type,
+        export_enable: Transactions::Export::Enable.t_type,
+        authorize_send_key: Transactions::Pool::AuthorizeSendKey.t_type,
+        vps_send_config: Transactions::Vps::SendConfig.t_type,
+        vps_send_rootfs: Transactions::Vps::SendRootfs.t_type,
+        vps_send_state: Transactions::Vps::SendState.t_type,
+        vps_send_cleanup: Transactions::Vps::SendCleanup.t_type,
+        vps_remove_config: Transactions::Vps::RemoveConfig.t_type,
+        vps_stop: Transactions::Vps::Stop.t_type,
+        vps_start: Transactions::Vps::Start.t_type
       )
     RUBY
   end
 
   def tx_types(services)
     @tx_types ||= storage_tx_types(services)
+  end
+
+  def ensure_snapshot_download_base_url(services, base_url: 'https://downloads.example.test')
+    services.api_ruby_json(code: <<~RUBY)
+      #{api_session_prelude(admin_user_id)}
+
+      cfg = SysConfig.find_or_initialize_by(
+        category: 'core',
+        name: 'snapshot_download_base_url'
+      )
+      cfg.data_type ||= 'String'
+      cfg.value = #{base_url.inspect}
+      cfg.save! if cfg.changed?
+
+      puts JSON.dump(base_url: cfg.value)
+    RUBY
+  end
+
+  def generate_migration_keys(services)
+    services.vpsadminctl.succeeds(args: %w[cluster generate_migration_keys])
   end
 
   def create_pool(services, node_id:, label:, filesystem:, role:)
@@ -130,11 +185,14 @@
       SELECT JSON_OBJECT(
         'dataset_id', d.id,
         'dataset_in_pool_id', dip.id,
-        'dataset_full_name', d.full_name
+        'dataset_full_name', d.full_name,
+        'pool_id', p.id,
+        'pool_filesystem', p.filesystem
       )
       FROM vpses v
       INNER JOIN dataset_in_pools dip ON dip.id = v.dataset_in_pool_id
       INNER JOIN datasets d ON d.id = dip.dataset_id
+      INNER JOIN pools p ON p.id = dip.pool_id
       WHERE v.id = #{Integer(vps_id)}
     SQL
   end
@@ -782,6 +840,128 @@
     )
   end
 
+  def create_snapshot_download(services, snapshot_id:, format:, from_snapshot_id: nil, send_mail: false)
+    parameters = {
+      snapshot: snapshot_id,
+      format: format,
+      send_mail: send_mail
+    }
+    parameters[:from_snapshot] = from_snapshot_id if from_snapshot_id
+
+    _, output = services.vpsadminctl.succeeds(
+      args: %w[snapshot_download create],
+      parameters: parameters
+    )
+
+    output.fetch('snapshot_download').merge(
+      'chain_id' => output.fetch('_meta').fetch('action_state_id')
+    )
+  end
+
+  def delete_snapshot_download(services, download_id:)
+    _, output = services.vpsadminctl.succeeds(
+      args: ['snapshot_download', 'delete', download_id.to_s]
+    )
+
+    {
+      'chain_id' => output.fetch('_meta').fetch('action_state_id')
+    }
+  end
+
+  def snapshot_download_row(services, download_id)
+    services.api_ruby_json(code: <<~RUBY)
+      dl = SnapshotDownload.includes(pool: { node: { location: :environment } }).find_by(
+        id: #{Integer(download_id)}
+      )
+
+      if dl.nil?
+        puts JSON.dump(nil)
+      else
+        puts JSON.dump(
+          id: dl.id,
+          snapshot_id: dl.snapshot_id,
+          from_snapshot_id: dl.from_snapshot_id,
+          pool_id: dl.pool_id,
+          node_id: dl.pool.node_id,
+          secret_key: dl.secret_key,
+          file_name: dl.file_name,
+          size: dl.size,
+          sha256sum: dl.sha256sum,
+          format: dl.format,
+          confirmed: dl.confirmed,
+          url: dl.url
+        )
+      end
+    RUBY
+  end
+
+  def wait_for_snapshot_download_ready(services, download_id, timeout: 300)
+    deadline = Time.now + timeout
+
+    loop do
+      row = snapshot_download_row(services, download_id)
+
+      return row if row &&
+                    row.fetch('confirmed') == 'confirmed' &&
+                    !row.fetch('sha256sum').to_s.empty? &&
+                    !row['size'].nil?
+
+      if Time.now >= deadline
+        raise OsVm::TimeoutError,
+              "Timed out waiting for snapshot download ##{download_id} to become ready"
+      end
+
+      sleep 1
+    end
+  end
+
+  def wait_for_snapshot_download_deleted(services, download_id, timeout: 300)
+    deadline = Time.now + timeout
+
+    loop do
+      return true if snapshot_download_row(services, download_id).nil?
+
+      if Time.now >= deadline
+        raise OsVm::TimeoutError,
+              "Timed out waiting for snapshot download ##{download_id} to be deleted"
+      end
+
+      sleep 1
+    end
+  end
+
+  def download_secret_dir_path(pool_fs:, secret_key:)
+    File.join('/', pool_fs, 'vpsadmin/download', secret_key)
+  end
+
+  def download_file_path(pool_fs:, secret_key:, file_name:)
+    File.join(download_secret_dir_path(pool_fs: pool_fs, secret_key: secret_key), file_name)
+  end
+
+  def gzip_stream_listing(node, file_path)
+    _, output = node.succeeds(
+      "tar -tzf #{Shellwords.escape(file_path)}",
+      timeout: 120
+    )
+    output.to_s.lines.map(&:strip).reject(&:empty?)
+  end
+
+  def zstreamdump_output(node, file_path)
+    _, output = node.succeeds(
+      "bash -lc #{Shellwords.escape("gzip -dc #{Shellwords.escape(file_path)} | zstreamdump -v 2>&1")}",
+      timeout: 300
+    )
+    output
+  end
+
+  def zfs_guid(node, dataset_path)
+    _, output = node.succeeds(
+      "zfs get -H -p -o value guid #{Shellwords.escape(dataset_path)}",
+      timeout: 60
+    )
+    Integer(output.strip, 10).to_s(16)
+  end
+
   def fire_backup(services, admin_user_id:, src_dip_id:, dst_dip_id:)
     response = services.api_ruby_json(code: <<~RUBY)
       #{api_session_prelude(admin_user_id)}
@@ -861,6 +1041,246 @@
     response.merge(
       'dataset_path' => "#{pool_fs}/#{response.fetch('full_name')}"
     )
+  end
+
+  def create_top_level_dataset(services, admin_user_id:, pool_id:, dataset_name:, refquota: 10_240)
+    response = services.api_ruby_json(code: <<~RUBY)
+      #{api_session_prelude(admin_user_id)}
+
+      user = User.find(#{Integer(admin_user_id)})
+      pool = Pool.find(#{Integer(pool_id)})
+      dataset = Dataset.new(
+        name: #{dataset_name.inspect},
+        user: user,
+        user_editable: true,
+        user_create: true,
+        user_destroy: true,
+        confirmed: Dataset.confirmed(:confirm_create)
+      )
+      chain, created = TransactionChains::Dataset::Create.fire(
+        pool,
+        nil,
+        [dataset],
+        automount: false,
+        properties: { refquota: #{Integer(refquota)} },
+        user: user,
+        label: #{dataset_name.inspect}
+      )
+      dip = Array(created).last
+
+      puts JSON.dump(
+        chain_id: chain.id,
+        dataset_id: dataset.id,
+        dataset_in_pool_id: dip.id,
+        dataset_full_name: dataset.full_name
+      )
+    RUBY
+
+    services.wait_for_chain_state(response.fetch('chain_id'), state: :done)
+    response
+  end
+
+  def create_primary_dataset(services, primary_node:, admin_user_id:, primary_node_id:, dataset_name:, primary_pool_fs:,
+                             refquota: 10_240)
+    primary_pool = create_pool(
+      services,
+      node_id: primary_node_id,
+      label: "#{dataset_name}-primary",
+      filesystem: primary_pool_fs,
+      role: 'primary'
+    )
+
+    wait_for_pool_online(services, primary_pool.fetch('id'))
+
+    info = create_top_level_dataset(
+      services,
+      admin_user_id: admin_user_id,
+      pool_id: primary_pool.fetch('id'),
+      dataset_name: dataset_name,
+      refquota: refquota
+    )
+
+    primary_dataset_path = "#{primary_pool_fs}/#{info.fetch('dataset_full_name')}"
+
+    wait_until_block_succeeds(name: "primary dataset #{primary_dataset_path} exists") do
+      primary_node.zfs_exists?(primary_dataset_path, type: 'filesystem', timeout: 30)
+    end
+
+    {
+      'primary_pool_id' => primary_pool.fetch('id'),
+      'dataset_id' => info.fetch('dataset_id'),
+      'src_dip_id' => info.fetch('dataset_in_pool_id'),
+      'dataset_full_name' => info.fetch('dataset_full_name'),
+      'primary_dataset_path' => primary_dataset_path
+    }
+  end
+
+  def export_row(services, export_id)
+    row = services.mysql_json_rows(sql: <<~SQL).first
+      SELECT JSON_OBJECT(
+        'id', e.id,
+        'dataset_in_pool_id', e.dataset_in_pool_id,
+        'pool_id', dip.pool_id,
+        'node_id', p.node_id,
+        'path', e.path,
+        'enabled', e.enabled
+      )
+      FROM exports e
+      INNER JOIN dataset_in_pools dip ON dip.id = e.dataset_in_pool_id
+      INNER JOIN pools p ON p.id = dip.pool_id
+      WHERE e.id = #{Integer(export_id)}
+      LIMIT 1
+    SQL
+
+    return nil if row.nil?
+
+    row.merge(
+      'enabled' => row.fetch('enabled') == true || row.fetch('enabled').to_i == 1
+    )
+  end
+
+  def ensure_private_export_network_with_ips(services, admin_user_id:, dataset_id:, count: 1)
+    services.api_ruby_json(code: <<~RUBY)
+      #{api_session_prelude(admin_user_id)}
+
+      dataset = Dataset.find(#{Integer(dataset_id)})
+      location = dataset.primary_dataset_in_pool!.pool.node.location
+
+      network = Network.find_or_initialize_by(address: '198.51.100.0', prefix: 24)
+      network.assign_attributes(
+        label: 'Storage Export Net',
+        ip_version: 4,
+        role: :private_access,
+        managed: true,
+        split_access: :no_access,
+        split_prefix: 32,
+        purpose: :export,
+        primary_location: location
+      )
+      network.save! if network.changed?
+
+      loc_net = LocationNetwork.find_or_initialize_by(location: location, network: network)
+      loc_net.assign_attributes(
+        primary: true,
+        priority: 10,
+        autopick: true,
+        userpick: true
+      )
+      loc_net.save! if loc_net.changed?
+
+      seeded_ips = []
+
+      #{Integer(count)}.times do |i|
+        addr = '198.51.100.' + (10 + i).to_s
+        ip = IpAddress.find_by(ip_addr: addr)
+
+        if ip.nil?
+          ip = IpAddress.register(
+            IPAddress.parse(addr + '/' + network.split_prefix.to_s),
+            network: network,
+            user: nil,
+            location: location,
+            prefix: network.split_prefix,
+            size: 1
+          )
+        end
+
+        seeded_ips << {
+          id: ip.id,
+          addr: ip.ip_addr
+        }
+      end
+
+      puts JSON.dump(
+        network_id: network.id,
+        location_id: location.id,
+        ip_addresses: seeded_ips
+      )
+    RUBY
+  end
+
+  def create_export(services, admin_user_id:, dataset_id:, all_vps: false, enabled: true)
+    response = services.api_ruby_json(code: <<~RUBY)
+      #{api_session_prelude(admin_user_id)}
+
+      dataset = Dataset.find(#{Integer(dataset_id)})
+      chain, export = VpsAdmin::API::Operations::Export::Create.run(
+        dataset,
+        all_vps: #{all_vps ? 'true' : 'false'},
+        rw: true,
+        sync: true,
+        subtree_check: false,
+        root_squash: false,
+        threads: 8,
+        enabled: #{enabled ? 'true' : 'false'}
+      )
+
+      puts JSON.dump(chain_id: chain.id, export_id: export.id)
+    RUBY
+
+    services.wait_for_chain_state(response.fetch('chain_id'), state: :done)
+    export_row(services, response.fetch('export_id')).merge(
+      'chain_id' => response.fetch('chain_id')
+    )
+  end
+
+  def add_export_host(services, admin_user_id:, export_id:, ip_address_id:)
+    response = services.api_ruby_json(code: <<~RUBY)
+      #{api_session_prelude(admin_user_id)}
+
+      export = Export.find(#{Integer(export_id)})
+      ip_address = IpAddress.find(#{Integer(ip_address_id)})
+      chain, host = VpsAdmin::API::Operations::Export::AddHost.run(
+        export,
+        ip_address: ip_address
+      )
+
+      puts JSON.dump(chain_id: chain.id, export_host_id: host.id)
+    RUBY
+
+    services.wait_for_chain_state(response.fetch('chain_id'), state: :done)
+    response
+  end
+
+  def dataset_migrate(services, dataset_id:, pool_id:, rsync: false, restart_vps: false, cleanup_data: true,
+                      send_mail: false, block: true)
+    _, output = services.vpsadminctl.succeeds(
+      args: ['dataset', 'migrate', dataset_id.to_s],
+      opts: {
+        block: block
+      },
+      parameters: {
+        pool: pool_id,
+        rsync: rsync,
+        restart_vps: restart_vps,
+        cleanup_data: cleanup_data,
+        optional_maintenance_window: true,
+        send_mail: send_mail
+      }
+    )
+
+    {
+      'chain_id' => output.fetch('_meta').fetch('action_state_id')
+    }
+  end
+
+  def vps_migrate(services, vps_id:, node_id:, cleanup_data: true, no_start: false, skip_start: false,
+                  send_mail: false)
+    _, output = services.vpsadminctl.succeeds(
+      args: ['vps', 'migrate', vps_id.to_s],
+      parameters: {
+        node: node_id,
+        maintenance_window: false,
+        cleanup_data: cleanup_data,
+        no_start: no_start,
+        skip_start: skip_start,
+        send_mail: send_mail
+      }
+    )
+
+    {
+      'chain_id' => output.fetch('_meta').fetch('action_state_id')
+    }
   end
 
   def hard_delete_vps(services, admin_user_id:, vps_id:, reason: 'storage test hard delete')
@@ -1115,6 +1535,22 @@
     output.strip
   end
 
+  def find_dataset_path_on_node(node, dataset_full_name, timeout: 60)
+    _, output = node.succeeds('zfs list -H -o name -t filesystem', timeout: timeout)
+    suffix = "/#{dataset_full_name}"
+    matches = output.to_s.lines.map(&:strip).reject(&:empty?).select do |name|
+      name.end_with?(suffix)
+    end
+
+    if matches.empty?
+      raise "Unable to find dataset with suffix #{suffix} on #{node.name}"
+    elsif matches.size > 1
+      raise "Found multiple datasets with suffix #{suffix} on #{node.name}: #{matches.inspect}"
+    end
+
+    matches.first
+  end
+
   def write_dataset_text(node, dataset_path:, relative_path:, content:)
     mountpoint = dataset_mountpoint(node, dataset_path)
     full_path = File.join(mountpoint, relative_path)
@@ -1362,6 +1798,67 @@
     set_mbuffer_command(node, direction: direction, command: 'mbuffer')
   end
 
+  def install_switchable_rsync(node, path:, marker_path:)
+    script = <<~SH
+      #!/usr/bin/env bash
+      set -euo pipefail
+
+      if [ -e #{Shellwords.escape(marker_path)} ]; then
+        echo "faulty rsync triggered by #{marker_path}" >&2
+        exit 1
+      fi
+
+      exec rsync "$@"
+    SH
+
+    node.succeeds(<<~CMD, timeout: 60)
+      cat > #{Shellwords.escape(path)} <<'SH'
+      #{script}
+      SH
+      chmod 755 #{Shellwords.escape(path)}
+    CMD
+  end
+
+  def install_counting_rsync(node, path:, counter_path:, fail_on_invocation:)
+    script = <<~SH
+      #!/usr/bin/env bash
+      set -euo pipefail
+
+      count=0
+      if [ -f #{Shellwords.escape(counter_path)} ]; then
+        count="$(cat #{Shellwords.escape(counter_path)})"
+      fi
+
+      count="$((count + 1))"
+      printf '%s' "$count" > #{Shellwords.escape(counter_path)}
+
+      if [ "$count" -ge #{Integer(fail_on_invocation)} ]; then
+        echo "faulty rsync invocation $count" >&2
+        exit 1
+      fi
+
+      exec rsync "$@"
+    SH
+
+    node.succeeds(<<~CMD, timeout: 60)
+      cat > #{Shellwords.escape(path)} <<'SH'
+      #{script}
+      SH
+      chmod 755 #{Shellwords.escape(path)}
+    CMD
+  end
+
+  def set_rsync_command(node, command:)
+    node.succeeds(
+      "nodectl set config bin.rsync=#{Shellwords.escape(command)}",
+      timeout: 60
+    )
+  end
+
+  def reset_rsync_command(node)
+    set_rsync_command(node, command: 'rsync')
+  end
+
   def block_tcp_port(node, port)
     node.succeeds(
       "iptables -I INPUT -p tcp --dport #{Integer(port)} -j REJECT --reject-with tcp-reset",
@@ -1462,6 +1959,27 @@
     wait_until_block_succeeds(name: "VPS #{vps_id} running") do
       _, output = services.vpsadminctl.succeeds(args: ['vps', 'show', vps_id.to_s])
       output.fetch('vps').fetch('is_running')
+    end
+  end
+
+  def wait_for_vps_on_node(services, vps_id:, node_id:, running: nil, timeout: 300)
+    deadline = Time.now + timeout
+
+    loop do
+      _, output = services.vpsadminctl.succeeds(args: ['vps', 'show', vps_id.to_s])
+      vps = output.fetch('vps')
+
+      node_ok = vps.fetch('node').fetch('id') == Integer(node_id)
+      running_ok = running.nil? || vps.fetch('is_running') == running
+
+      return vps if node_ok && running_ok
+
+      if Time.now >= deadline
+        raise OsVm::TimeoutError,
+              "Timed out waiting for VPS #{vps_id} on node #{node_id} running=#{running.inspect}"
+      end
+
+      sleep 1
     end
   end
 
@@ -1744,10 +2262,10 @@
           services.wait_for_vpsadmin_api
           wait_for_running_nodectld(node1)
           wait_for_running_nodectld(node2)
-          prepare_node_queues(node1)
-          prepare_node_queues(node2)
           wait_for_node_ready(services, node1_id)
           wait_for_node_ready(services, node2_id)
+          prepare_node_queues(node1)
+          prepare_node_queues(node2)
           services.unlock_transaction_signing_key(passphrase: 'test')
         end
       ''
