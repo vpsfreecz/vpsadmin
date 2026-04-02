@@ -16,12 +16,13 @@ module NodeCtldSpec
       end
     end
 
-    def build_storage_driver
+    def build_storage_driver(chain_id: 1)
       instance_double(
         NodeCtld::Command,
         progress: nil,
         'progress=': nil,
-        log_type: :spec
+        log_type: :spec,
+        chain_id: chain_id
       )
     end
 
