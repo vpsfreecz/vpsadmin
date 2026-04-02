@@ -4,6 +4,7 @@ module NodeCtld
   class PoolStatus
     STATES = %i[unknown online degraded suspended faulted error].freeze
     SCANS = %i[unknown none scrub resilver error].freeze
+    Pool = Struct.new(:name, :filesystem)
 
     include OsCtl::Lib::Utils::Log
 
@@ -56,22 +57,34 @@ module NodeCtld
       scan_percent_summary = nil
 
       begin
-        st = OsCtl::Lib::Zfs::ZpoolStatus.new(pools: @pools.values.uniq)
+        st = OsCtl::Lib::Zfs::ZpoolStatus.new(pools: @pools.values.map(&:name).uniq)
       rescue SystemCommandFailed => e
         log(:fatal, :pool_status, e.message)
       end
 
-      @pools.each do |id, name|
-        pool_st = st && st[name]
+      @pools.each do |id, pool|
+        pool_st = st && st[pool.name]
 
         state = :error
         scan = :error
         scan_percent = nil
+        used_bytes = nil
+        available_bytes = nil
+        total_bytes = nil
 
         if pool_st
           state = pool_st.state
           scan = pool_st.scan
           scan_percent = pool_st.scan_percent
+        end
+
+        begin
+          used_bytes, available_bytes, total_bytes = read_pool_space(pool)
+        rescue SystemCommandFailed => e
+          log(
+            :warn,
+            "Failed to get pool space of #{pool.filesystem}: #{e.message}"
+          )
         end
 
         state_summary = state if STATES.index(state) > STATES.index(state_summary)
@@ -88,7 +101,10 @@ module NodeCtld
             time: t.to_i,
             state:,
             scan:,
-            scan_percent:
+            scan_percent:,
+            used_bytes:,
+            available_bytes:,
+            total_bytes:
           }.to_json,
           content_type: 'application/json',
           routing_key: 'pool_statuses'
@@ -108,11 +124,24 @@ module NodeCtld
 
       RpcClient.run do |rpc|
         rpc.list_pools.each do |pool|
-          ret[pool['id']] = pool['name']
+          ret[pool['id']] = Pool.new(pool['name'], pool['filesystem'])
         end
       end
 
       ret
+    end
+
+    def read_pool_space(pool)
+      reader = OsCtl::Lib::Zfs::PropertyReader.new
+      tree = reader.read([pool.filesystem], %w[used available])
+      fs = tree[pool.filesystem]
+
+      raise "filesystem #{pool.filesystem} not found in property output" if fs.nil?
+
+      used_bytes = fs.properties['used'].to_i
+      available_bytes = fs.properties['available'].to_i
+
+      [used_bytes, available_bytes, used_bytes + available_bytes]
     end
   end
 end
