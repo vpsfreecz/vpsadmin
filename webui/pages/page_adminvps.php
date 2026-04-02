@@ -329,6 +329,11 @@ if (isLoggedIn()) {
                     $params = [];
 
                     foreach ($vps_resources as $r) {
+                        if ($r === 'cpu_limit' && isset($_POST[$r]) && $_POST[$r] === '') {
+                            $params[$r] = null;
+                            continue;
+                        }
+
                         if (!isset($_POST[$r]) || $_POST[$r] === '') {
                             continue;
                         }

@@ -33,7 +33,8 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
                       desc: 'Start VPS on start all action?', default: true
     string :config, label: 'Config', desc: 'Custom configuration options',
                     default: ''
-    integer :cpu_limit, label: 'CPU limit', desc: 'Limit of maximum CPU usage'
+    integer :cpu_limit, label: 'CPU limit', desc: 'Limit of maximum CPU usage',
+                        nullable: true
     integer :start_menu_timeout, label: 'Start menu timeout',
                                  desc: 'Number of seconds the start menu waits for the user'
     bool :allow_admin_modifications, label: 'Allow admin modifications'

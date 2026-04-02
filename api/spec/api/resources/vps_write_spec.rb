@@ -471,6 +471,17 @@ RSpec.describe 'VpsAdmin::API::Resources::VPS write actions' do # rubocop:disabl
       expect(vps.reload.dns_resolver_id).to be_nil
     end
 
+    it 'allows admin to clear cpu_limit with nil' do
+      vps = create_vps!(user: SpecSeed.user, node: SpecSeed.node)
+      vps.update!(cpu_limit: 400)
+
+      as(SpecSeed.admin) { json_put show_path(vps.id), vps: { cpu_limit: nil } }
+
+      expect_status(200)
+      expect(json['status']).to be(true)
+      expect(vps.reload.cpu_limit).to be_nil
+    end
+
     it 'rejects swap on vpsAdminOS nodes without swap' do
       node = create_node!(
         name_prefix: 'spec-noswap',
