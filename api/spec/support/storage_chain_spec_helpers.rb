@@ -188,6 +188,93 @@ module StorageChainSpecHelpers
     vps
   end
 
+  def create_node!(location: SpecSeed.location, role: :node, hypervisor_type: :vpsadminos, name: nil,
+                   ip_addr: nil, max_vps: 10, cpus: 4, total_memory: 4096, total_swap: 1024,
+                   active: true)
+    suffix = SecureRandom.hex(3)
+    host_octet = (Node.maximum(:id).to_i % 200) + 20
+
+    Node.create!(
+      location: location,
+      role: role,
+      hypervisor_type: hypervisor_type,
+      name: name || "spec-node-#{suffix}",
+      ip_addr: ip_addr || "198.51.100.#{host_octet}",
+      max_vps: max_vps,
+      cpus: cpus,
+      total_memory: total_memory,
+      total_swap: total_swap,
+      active: active
+    )
+  end
+
+  def create_ip_address!(network: SpecSeed.network_v4, location: SpecSeed.location, user: nil,
+                         addr: nil, prefix: nil, size: 1, network_interface: nil)
+    prefix ||= network.split_prefix
+    addr ||= "192.0.2.#{(IpAddress.maximum(:id).to_i % 200) + 20}"
+
+    ip = IpAddress.register(
+      IPAddress.parse("#{addr}/#{prefix}"),
+      network: network,
+      user: user,
+      location: location,
+      prefix: prefix,
+      size: size
+    )
+
+    ip.update!(network_interface: network_interface) if network_interface
+    ip
+  end
+
+  def create_export_for_dataset!(dataset_in_pool:, user: dataset_in_pool.dataset.user, path: nil,
+                                 enabled: true, threads: 8, host_ip: nil)
+    export = nil
+
+    Uuid.generate_for_new_record! do |uuid|
+      export = Export.new(
+        dataset_in_pool: dataset_in_pool,
+        snapshot_in_pool_clone: nil,
+        snapshot_in_pool_clone_n: 0,
+        user: user,
+        all_vps: false,
+        path: path || "/export/#{dataset_in_pool.dataset.full_name}",
+        rw: true,
+        sync: true,
+        subtree_check: false,
+        root_squash: false,
+        threads: threads,
+        enabled: enabled,
+        object_state: :active,
+        confirmed: :confirmed
+      )
+      export.uuid = uuid
+      export.save!
+      export
+    end
+
+    netif = NetworkInterface.create!(
+      export: export,
+      kind: 'veth_routed',
+      name: 'eth0'
+    )
+
+    ip = host_ip || create_ip_address!(
+      location: dataset_in_pool.pool.node.location,
+      network_interface: netif
+    )
+
+    [export.reload, netif, ip]
+  end
+
+  def set_vps_running!(vps, is_running: true, status: true, update_count: 1)
+    VpsCurrentStatus.create!(
+      vps: vps,
+      status: status,
+      is_running: is_running,
+      update_count: update_count
+    )
+  end
+
   def transactions_for(chain)
     chain.transactions.order(:id).to_a
   end
