@@ -25,6 +25,9 @@ function node_details_table($node_id)
     $xtpl->table_add_category(_('Name'));
     $xtpl->table_add_category(_('State'));
     $xtpl->table_add_category(_('Scan'));
+    if (isAdmin()) {
+        $xtpl->table_add_category(_('Space usage'));
+    }
     $xtpl->table_add_category(_('Performance'));
 
     $pools = $api->pool->list([
@@ -81,6 +84,26 @@ function node_details_table($node_id)
         }
 
         $xtpl->table_td($scan);
+
+        if (isAdmin()) {
+            $usedSpace = $pool->used_space;
+            $totalSpace = $pool->total_space;
+            $availableSpace = $pool->available_space;
+
+            if ($usedSpace === null || $totalSpace === null || $availableSpace === null
+                || $totalSpace <= 0) {
+                $space_usage = _('unknown');
+            } else {
+                $used = data_size_to_humanreadable($usedSpace);
+                $total = data_size_to_humanreadable($totalSpace);
+                $free = data_size_to_humanreadable($availableSpace);
+                $pct = round(($usedSpace / $totalSpace) * 100, 1);
+
+                $space_usage = sprintf(_('%s used of %s (%s free, %s%%)'), $used, $total, $free, $pct);
+            }
+
+            $xtpl->table_td($space_usage);
+        }
         $xtpl->table_td($perf);
 
         if ($pool->state != 'online' || $pool->scan != 'none') {
