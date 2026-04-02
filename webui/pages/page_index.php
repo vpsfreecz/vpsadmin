@@ -207,7 +207,7 @@ foreach ($nodes as $node) {
     );
 
     if ($goresheatUrl) {
-        if ($node->type == 'node' && $node->maintenance_lock == 'no') {
+        if (in_array($node->type, ['node', 'storage'], true) && $node->maintenance_lock == 'no') {
             $fullGoresheatUrl = $goresheatUrl . '/' . $node->fqdn . '/';
             $xtpl->table_td('<a href="#heatmap-' . $node->fqdn . '" onclick="showGoresheatWindow(\'' . $goresheatUrl . '\', \'' . $fullGoresheatUrl . '\', \'' . $node->fqdn . '\', event)"><img src="template/icons/heatmap.png" width="16" alt="' . _('Heatmap') . '" title="' . _('Heatmap') . '"></a>');
         } else {
