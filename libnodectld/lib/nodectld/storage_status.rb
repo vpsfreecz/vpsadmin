@@ -9,7 +9,7 @@ module NodeCtld
 
     SAVE_PROPERTIES = %w[used referenced available refquota compressratio refcompressratio].freeze
 
-    Pool = Struct.new(:name, :fs, :role, :refquota_check, :datasets)
+    Pool = Struct.new(:name, :fs, :role, :refquota_check, :datasets, :used_bytes, :available_bytes)
 
     Dataset = Struct.new(:type, :name, :id, :dip_id, :vps_id, :properties)
 
@@ -105,7 +105,9 @@ module NodeCtld
             fs: pool['filesystem'],
             role: pool['role'],
             refquota_check: pool['refquota_check'],
-            datasets: {}
+            datasets: {},
+            used_bytes: nil,
+            available_bytes: nil
           )
         end
 
@@ -172,7 +174,13 @@ module NodeCtld
         vpsadmin_prefix = File.join(pool.fs, 'vpsadmin')
 
         tree.each_tree_dataset do |tree_ds|
-          next if tree_ds.name.nil? || tree_ds.name == pool.name || tree_ds.name == pool.fs
+          next if tree_ds.name.nil? || tree_ds.name == pool.name
+
+          if tree_ds.name == pool.fs
+            pool.used_bytes = parse_value('used', tree_ds.properties['used'])
+            pool.available_bytes = parse_value('available', tree_ds.properties['available'])
+            next
+          end
 
           # Skip pool's internal datasets
           next if tree_ds.name.start_with?("#{vpsadmin_prefix}/") || tree_ds.name == vpsadmin_prefix

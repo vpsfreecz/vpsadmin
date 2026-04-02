@@ -42,6 +42,16 @@ module NodeCtld
 
       min_avail_bytes = $CFG.get(:dataset_expander, :min_avail_bytes)
       min_avail_pct = $CFG.get(:dataset_expander, :min_avail_percent)
+      min_pool_avail_bytes = $CFG.get(:dataset_expander, :min_pool_avail_bytes)
+      min_pool_avail_pct = $CFG.get(:dataset_expander, :min_pool_avail_percent)
+
+      if pool.used_bytes.nil? || pool.available_bytes.nil?
+        log(
+          :warn,
+          "Skipping dataset auto-expansion on #{pool.fs}, pool space metrics are unavailable"
+        )
+        return
+      end
 
       pool.datasets.each_value do |ds|
         next unless ds.properties.has_key?('available')
@@ -52,9 +62,30 @@ module NodeCtld
         refquota_bytes = ds.properties['refquota'].value
         next if refquota_bytes == 0 # no refquota is set, this should never happen
 
-        if avail_bytes < min_avail_bytes \
-            || ((avail_bytes.to_f / refquota_bytes) * 100) < min_avail_pct
-          expand_dataset(ds, refquota_bytes:)
+        next unless avail_bytes < min_avail_bytes \
+                    || ((avail_bytes.to_f / refquota_bytes) * 100) < min_avail_pct
+
+        add_bytes = expansion_size(refquota_bytes)
+        pool_total = pool.used_bytes + pool.available_bytes
+        pool_min_avail = [
+          min_pool_avail_bytes,
+          ((min_pool_avail_pct / 100.0) * pool_total).round
+        ].max
+        remaining_after = pool.available_bytes - add_bytes
+
+        if remaining_after < pool_min_avail
+          log(
+            :info,
+            "Skipping expansion of #{ds.name}, pool #{pool.fs} would have " \
+            "#{humanize_data(remaining_after)} free, below minimum " \
+            "#{humanize_data(pool_min_avail)}"
+          )
+          next
+        end
+
+        if expand_dataset(ds, refquota_bytes:, add_bytes:)
+          pool.used_bytes += add_bytes
+          pool.available_bytes -= add_bytes
         end
       end
     end
@@ -87,17 +118,8 @@ module NodeCtld
     end
 
     # @param ds [StorageStatus::Dataset]
-    def expand_dataset(ds, refquota_bytes:)
+    def expand_dataset(ds, refquota_bytes:, add_bytes:)
       t = Time.now
-
-      min_add_bytes = $CFG.get(:dataset_expander, :min_expand_bytes)
-      min_add_pct = $CFG.get(:dataset_expander, :min_expand_percent)
-
-      add_bytes = [
-        min_add_bytes,
-        ((min_add_pct / 100.0) * refquota_bytes).round
-      ].max
-
       new_refquota_bytes = refquota_bytes + add_bytes
 
       log(
@@ -110,7 +132,7 @@ module NodeCtld
 
       if rs.error?
         log(:warn, "Failed to expand #{ds.name}, exit status #{rs.exitstatus}: #{rs.output}")
-        return
+        return false
       end
 
       @submit_queue << Event.new(
@@ -120,6 +142,17 @@ module NodeCtld
         added_space: (add_bytes / 1024.0 / 1024).round,
         time: t
       )
+      true
+    end
+
+    def expansion_size(refquota_bytes)
+      min_add_bytes = $CFG.get(:dataset_expander, :min_expand_bytes)
+      min_add_pct = $CFG.get(:dataset_expander, :min_expand_percent)
+
+      [
+        min_add_bytes,
+        ((min_add_pct / 100.0) * refquota_bytes).round
+      ].max
     end
   end
 end

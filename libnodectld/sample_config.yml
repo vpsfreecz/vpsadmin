@@ -17,3 +17,7 @@
 :console:
     :host: localhost
     :port: 8081
+
+:dataset_expander:
+    :min_pool_avail_bytes: 21474836480
+    :min_pool_avail_percent: 5
