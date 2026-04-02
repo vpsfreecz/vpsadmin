@@ -4,8 +4,6 @@
   configuration ? null,
   testConfig ? { },
   suiteArgs ? { },
-  configuration ? null,
-  testConfig ? { },
 }:
 let
   vpsadminosPath = suiteArgs.vpsadminosPath or (throw "suiteArgs.vpsadminosPath is required");
@@ -19,8 +17,6 @@ let
       configuration
       testConfig
       suiteArgs
-      configuration
-      testConfig
       ;
     suitePath = ./suite;
   };
@@ -39,6 +35,13 @@ testLib.makeTests [
   "v4/storage/backup-remote-interrupted-send"
   "v4/storage/backup-remote-interrupted-recv"
   "v4/storage/restore-remote-interrupted-recv"
+  "v4/storage/snapshot-download-full-archive"
+  "v4/storage/snapshot-download-full-stream"
+  "v4/storage/snapshot-download-incremental-stream"
+  "v4/storage/snapshot-download-incremental-transfer"
+  "v4/storage/snapshot-download-remove"
+  "v4/storage/dataset-migrate-remote"
+  "v4/storage/dataset-migrate-with-exports"
   "v4/storage/topology-reconciliation"
   "v4/storage/topology-fixture-roundtrip"
   "v4/storage/topology-fixture-replay"
@@ -64,5 +67,8 @@ testLib.makeTests [
   "v4/tx/release-retry-resolve"
   "v4/vps/create"
   "v4/vps/migrate"
+  "v4/vps/migrate-with-data-check"
+  "v4/vps/migrate-with-descendants"
+  "v4/vps/migrate-interrupted-rsync"
   "vpsadmin/services-up"
 ]
