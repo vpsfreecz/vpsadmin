@@ -1,0 +1,107 @@
+name: libnodectld Specs
+
+on:
+  push:
+    paths:
+      - ".github/workflows/libnodectld-specs.yml"
+      - ".ruby-version"
+      - "api/db/schema.rb"
+      - "api/spec/support/db_setup.rb"
+      - "flake.lock"
+      - "libnodectld/**"
+  pull_request:
+    paths:
+      - ".github/workflows/libnodectld-specs.yml"
+      - ".ruby-version"
+      - "api/db/schema.rb"
+      - "api/spec/support/db_setup.rb"
+      - "flake.lock"
+      - "libnodectld/**"
+
+concurrency:
+  group: libnodectld-specs-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  libnodectld-specs:
+    name: libnodectld specs
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    services:
+      mysql:
+        image: mariadb:latest
+        env:
+          MARIADB_ROOT_PASSWORD: root
+        ports:
+          - 3306:3306
+
+    env:
+      RACK_ENV: test
+      BUNDLE_WITHOUT: development
+      BUNDLE_JOBS: "4"
+      BUNDLE_RETRY: "3"
+      DATABASE_URL: mysql2://root:root@127.0.0.1:3306/vpsadmin_test
+
+    steps:
+      - name: Checkout vpsadmin
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v31
+        with:
+          extra_nix_config: |
+            extra-substituters = https://cache.vpsadminos.org
+            extra-trusted-public-keys = cache.vpsadminos.org:wpIJlNZQIhS+0gFf1U3MC9sLZdLW3sh5qakOWGDoDrE=
+            fallback = true
+            connect-timeout = 15
+
+      - name: Resolve vpsadminos flake input path
+        id: vpsadminos-path
+        run: |
+          set -euo pipefail
+
+          echo "value=$(nix flake archive --json . | jq -r '.inputs.vpsadminos.path')" >> "$GITHUB_OUTPUT"
+
+      - name: Prepare vpsadminos source tree
+        id: vpsadminos-source
+        run: |
+          set -euo pipefail
+
+          os_dir="$(mktemp -d)"
+          cp -a "${{ steps.vpsadminos-path.outputs.value }}/." "$os_dir"
+          chmod -R u+w "$os_dir"
+
+          echo "value=$os_dir" >> "$GITHUB_OUTPUT"
+
+      - name: Run RSpec
+        env:
+          OS: ${{ steps.vpsadminos-source.outputs.value }}
+        run: |
+          set -euo pipefail
+
+          nix develop .#libnodectld --command bash -lc '
+            set -euo pipefail
+
+            for i in {1..60}; do
+              if mariadb -h 127.0.0.1 -uroot -proot -e "SELECT 1" >/dev/null 2>&1; then
+                break
+              fi
+              sleep 1
+            done
+
+            mariadb -h 127.0.0.1 -uroot -proot -e "SELECT 1"
+
+            cd "$OS/libosctl/ext/libosctl"
+            ruby extconf.rb
+            make
+            cp native.so "$OS/libosctl/lib/libosctl/native.so"
+
+            cd "$GITHUB_WORKSPACE/libnodectld"
+            bundle exec rspec
+          '
