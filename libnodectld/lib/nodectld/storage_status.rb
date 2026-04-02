@@ -174,13 +174,18 @@ module NodeCtld
         vpsadmin_prefix = File.join(pool.fs, 'vpsadmin')
 
         tree.each_tree_dataset do |tree_ds|
-          next if tree_ds.name.nil? || tree_ds.name == pool.name
+          next if tree_ds.name.nil?
 
           if tree_ds.name == pool.fs
             pool.used_bytes = parse_value('used', tree_ds.properties['used'])
             pool.available_bytes = parse_value('available', tree_ds.properties['available'])
             next
           end
+
+          # Storage pools can live under a dataset like tank/ct while ZFS also
+          # returns the parent zpool root. That dataset is not tracked in the
+          # database and should not be treated as a missing dataset.
+          next if tree_ds.name == pool.name
 
           # Skip pool's internal datasets
           next if tree_ds.name.start_with?("#{vpsadmin_prefix}/") || tree_ds.name == vpsadmin_prefix

@@ -28,6 +28,15 @@ require 'nodectld/db'
 require 'nodectld/command'
 require 'nodectld/commands/base'
 
+module NodeCtld
+  const_set(:NodeBunny, Class.new) unless const_defined?(:NodeBunny)
+  const_set(:RpcClient, Class.new) unless const_defined?(:RpcClient)
+end
+
+require 'nodectld/pool_status'
+require 'nodectld/storage_status'
+require 'nodectld/dataset_expander'
+
 OsCtl::Lib::Logger.setup(:none)
 
 Dir[File.join(__dir__, 'support', '**', '*.rb')].each { |f| require f }
