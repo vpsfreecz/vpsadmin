@@ -140,6 +140,13 @@ module TransactionChains
       # Transfer datasets
       migration_snapshots = []
 
+      if rsync
+        append(
+          Transactions::Pool::AuthorizeRsyncKey,
+          args: [src_pool, dst_pool]
+        )
+      end
+
       # Reserve a slot in zfs_recv and zfs_send queue
       append(Transactions::Queue::Reserve, args: [src_node, :zfs_send])
       append(Transactions::Queue::Reserve, args: [dst_node, :zfs_recv])
@@ -239,6 +246,8 @@ module TransactionChains
           use_chain(Dataset::Transfer, args: [src, dst], urgent: true)
         end
       end
+
+      append(Transactions::Pool::RevokeRsyncKey, args: [src_pool, dst_pool]) if rsync
 
       # Set quotas when all data is transfered
       datasets.each do |pair|

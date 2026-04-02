@@ -2,7 +2,7 @@ module Transactions::Storage
   class RsyncDataset < ::Transaction
     t_name :storage_rsync_dataset
     t_type 5229
-    queue :zfs_send
+    queue :zfs_recv
 
     def params(src, dst, allow_partial: false)
       self.node_id = dst.pool.node_id
