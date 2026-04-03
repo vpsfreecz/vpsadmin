@@ -1152,7 +1152,7 @@ function dns_record_list($zone)
         $xtpl->table_td($r->ttl ? $r->ttl : '-');
         $xtpl->table_td(h($r->type));
         $xtpl->table_td($r->priority ? $r->priority : '-');
-        $xtpl->table_td(nl2br(h(truncateString($r->content, 60))));
+        $xtpl->table_td(dnsRecordListContent($r));
 
         if ($r->managed) {
             $xtpl->table_td(boolean_icon($r->dynamic_update_enabled));
@@ -1505,6 +1505,50 @@ function dnsRecordChangeType($type)
         default:
             return $type;
     }
+}
+
+function dnsRecordListContent($record)
+{
+    $full = (string) $record->content;
+    $display = dnsRecordDisplayContent($record->type, $full);
+    $safeDisplay = nl2br(h($display));
+
+    if ($display === $full) {
+        return $safeDisplay;
+    }
+
+    return '<span title="' . h($full) . '">' . $safeDisplay . '</span>';
+}
+
+function dnsRecordDisplayContent($type, string $content): string
+{
+    switch ($type) {
+        case 'DS':
+            return dnsRecordShortHexContent($content, 4);
+        case 'SSHFP':
+            return dnsRecordShortHexContent($content, 3);
+        case 'TLSA':
+            return dnsRecordShortHexContent($content, 4);
+        default:
+            return truncateString($content, 50);
+    }
+}
+
+function dnsRecordShortHexContent(string $content, int $componentCount): string
+{
+    $components = preg_split('/\s+/', trim($content), $componentCount);
+
+    if (!$components || count($components) !== $componentCount) {
+        return truncateString($content, 50);
+    }
+
+    $hex = array_pop($components);
+
+    if (mb_strlen($hex) > 19) {
+        $hex = mb_substr($hex, 0, 8) . '...' . mb_substr($hex, -8);
+    }
+
+    return implode(' ', array_merge($components, [$hex]));
 }
 
 function showDnsRecordUser($zone)
