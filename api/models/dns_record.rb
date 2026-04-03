@@ -140,6 +140,8 @@ class DnsRecord < ApplicationRecord
   end
 
   def check_ds_content
+    return unless single_line_content?
+
     components = content.split
 
     if components.size != 4

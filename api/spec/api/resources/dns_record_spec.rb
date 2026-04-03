@@ -781,6 +781,22 @@ RSpec.describe 'VpsAdmin::API::Resources::DnsRecord' do
       expect(errors.keys.map(&:to_s)).to include('content')
     end
 
+    it 'returns validation errors for multiline DS content' do
+      as(SpecSeed.admin) do
+        json_post index_path, dns_record: {
+          dns_zone: seed[:user_zone].id,
+          name: 'delegation',
+          type: 'DS',
+          content: "60485\n13 2 #{'D' * 64}",
+          ttl: 3600
+        }
+      end
+
+      expect_status(200)
+      expect(json['status']).to be(false)
+      expect(errors.keys.map(&:to_s)).to include('content')
+    end
+
     it 'returns validation errors for invalid SSHFP content' do
       as(SpecSeed.admin) do
         json_post index_path, dns_record: {
