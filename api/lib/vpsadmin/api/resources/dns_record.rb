@@ -7,7 +7,7 @@ module VpsAdmin::API::Resources
       resource DnsZone, value_label: :name
       resource User, value_label: :login, nullable: true
       string :name, desc: 'Domain name, @ as alias to origin, * for wildcards'
-      string :type, db_name: :record_type
+      string :type, db_name: :record_type, choices: ::DnsRecord::RECORD_TYPES
       string :content
       integer :ttl, label: 'TTL', desc: 'Optional TTL in seconds, defaults to zone TTL', nullable: true
       integer :priority, label: 'Priority', desc: 'Optional priority, used for MX and SRV records', nullable: true

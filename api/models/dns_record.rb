@@ -2,6 +2,20 @@ require 'ipaddress'
 require_relative 'confirmable'
 
 class DnsRecord < ApplicationRecord
+  RECORD_TYPES = %w[A AAAA CNAME DS MX NS PTR SRV TLSA TXT].freeze
+
+  TLSA_MATCHING_TYPES = {
+    0 => { length: nil, type: 'Exact match' },
+    1 => { length: 64, type: 'SHA-256' },
+    2 => { length: 128, type: 'SHA-512' }
+  }.freeze
+
+  DS_DIGEST_TYPES = {
+    1 => { length: 40, type: 'SHA-1' },
+    2 => { length: 64, type: 'SHA-256' },
+    4 => { length: 96, type: 'SHA-384' }
+  }.freeze
+
   belongs_to :dns_zone
   belongs_to :host_ip_address
   belongs_to :user
@@ -13,7 +27,7 @@ class DnsRecord < ApplicationRecord
     where(confirmed: [confirmed(:confirm_create), confirmed(:confirmed)])
   }
 
-  validates :record_type, presence: true, inclusion: { in: %w[A AAAA CNAME DS MX NS PTR SRV TXT] }
+  validates :record_type, presence: true, inclusion: { in: RECORD_TYPES }
   validates :ttl, numericality: { in: (60..(7 * 86_400)) }, unless: -> { ttl.blank? }
   validates :priority, numericality: { in: (0..65_535) }, unless: -> { priority.blank? }
   validates :content, presence: true
@@ -109,16 +123,13 @@ class DnsRecord < ApplicationRecord
     when 'SRV'
       check_srv_content
 
+    when 'TLSA'
+      check_tlsa_content
+
     when 'TXT'
       # pass
     end
   end
-
-  DS_DIGEST_TYPES = {
-    1 => { length: 40, type: 'SHA-1' },
-    2 => { length: 64, type: 'SHA-256' },
-    4 => { length: 96, type: 'SHA-384' }
-  }.freeze
 
   def check_ds_content
     components = content.split
@@ -164,6 +175,62 @@ class DnsRecord < ApplicationRecord
     errors.add(:content, 'must be a fully qualified domain name or null record')
   end
 
+  def check_tlsa_content
+    return unless single_line_content?
+
+    components = content.split
+
+    if components.size != 4
+      errors.add(
+        :content,
+        'must have exactly four components: usage, selector, matching type, and certificate association data'
+      )
+      return
+    end
+
+    usage, selector, matching_type_str, association_data = components
+
+    unless usage =~ /\A\d+\z/
+      errors.add(:content, 'invalid usage: must be a numeric value')
+    end
+
+    unless selector =~ /\A\d+\z/
+      errors.add(:content, 'invalid selector: must be a numeric value')
+    end
+
+    unless matching_type_str =~ /\A[012]\z/
+      errors.add(
+        :content,
+        'invalid matching type: must be one of ' \
+        "#{TLSA_MATCHING_TYPES.map { |k, v| "#{k} (#{v[:type]})" }.join(', ')}"
+      )
+      return
+    end
+
+    matching_type = matching_type_str.to_i
+    matching_opts = TLSA_MATCHING_TYPES[matching_type]
+
+    case matching_type
+    when 0
+      unless association_data =~ /\A(?:[a-fA-F0-9]{2})+\z/
+        errors.add(
+          :content,
+          'invalid certificate association data: must be a non-empty even-length hexadecimal ' \
+          'string for matching type 0 (Exact match)'
+        )
+      end
+
+    when 1, 2
+      if association_data.length != matching_opts[:length] || association_data !~ /\A[a-fA-F0-9]+\z/
+        errors.add(
+          :content,
+          "invalid certificate association data: must be a #{matching_opts[:length]}-character " \
+          "hexadecimal string for matching type #{matching_type_str} (#{matching_opts[:type]})"
+        )
+      end
+    end
+  end
+
   def null_mx_record?
     priority == 0 && content == '.'
   end
@@ -185,6 +252,14 @@ class DnsRecord < ApplicationRecord
   end
 
   # rubocop:enable Style/GuardClause
+
+  def single_line_content?
+    return false if content.blank?
+    return true unless content.match?(/[\r\n]/)
+
+    errors.add(:content, 'must be a single-line value')
+    false
+  end
 
   def valid_fqdn?(v)
     /\A((?!-)[A-Za-z0-9-]{1,63}(?<!-)\.)+[A-Za-z]{2,63}\.\z/ =~ v
