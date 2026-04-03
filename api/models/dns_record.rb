@@ -166,11 +166,12 @@ class DnsRecord < ApplicationRecord
         'invalid digest type: must be one of ' \
         "#{DS_DIGEST_TYPES.map { |k, v| "#{k} (#{v[:type]})" }.join(', ')}"
       )
+      return
     end
 
-    digest_opts = DS_DIGEST_TYPES[digest_type]
+    digest_opts = DS_DIGEST_TYPES.fetch(digest_type)
 
-    if digest_opts && (digest.length != digest_opts[:length] || digest !~ /\A[a-fA-F0-9]+\z/)
+    if digest.length != digest_opts[:length] || digest !~ /\A[a-fA-F0-9]+\z/
       errors.add(
         :content,
         "invalid digest: must be a #{digest_opts[:length]}-character hexadecimal " \
