@@ -14,6 +14,8 @@ class Pool < ApplicationRecord
   STATE_VALUES = %i[unknown online degraded suspended faulted error].freeze
   SCAN_VALUES = %i[unknown none scrub resilver error].freeze
   ALLOCATION_STATUS_MAX_AGE = 120
+  PROJECTED_FILL_SOFT_MAX = 0.75
+  PROJECTED_FILL_HARD_MAX = 0.95
 
   enum :state, STATE_VALUES, prefix: :state
   enum :scan, SCAN_VALUES, prefix: :scan
@@ -54,17 +56,18 @@ class Pool < ApplicationRecord
 
     return candidates.sort_by(&:dataset_pressure) if fresh_candidates.empty?
 
-    fresh_candidates
-      .select(&:allocation_state_eligible?)
-      .select { |pool| pool.total_space.to_i > 0 && pool.available_space >= required_diskspace }
-      .sort_by do |pool|
-        [
-          pool.state_online? ? 0 : 1,
-          pool.projected_fill(required_diskspace),
-          -(pool.available_space - required_diskspace),
-          pool.dataset_pressure
-        ]
-      end
+    eligible = fresh_candidates
+               .select(&:allocation_state_eligible?)
+               .select do |pool|
+                 pool.total_space.to_i > 0 &&
+                   pool.available_space >= required_diskspace &&
+                   pool.projected_fill(required_diskspace) < PROJECTED_FILL_HARD_MAX
+               end
+    preferred = eligible.select do |pool|
+      pool.projected_fill(required_diskspace) < PROJECTED_FILL_SOFT_MAX
+    end
+
+    rank_by_live_metrics(preferred.any? ? preferred : eligible, required_diskspace)
   end
 
   # @param node [::Node]
@@ -138,5 +141,18 @@ class Pool < ApplicationRecord
     q = q.where(role: role.to_s) if role
     q
   end
+
+  def self.rank_by_live_metrics(pools, required_diskspace)
+    pools.sort_by do |pool|
+      [
+        pool.state_online? ? 0 : 1,
+        pool.projected_fill(required_diskspace),
+        -(pool.available_space - required_diskspace),
+        pool.dataset_pressure
+      ]
+    end
+  end
+
   private_class_method :candidate_query
+  private_class_method :rank_by_live_metrics
 end

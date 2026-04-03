@@ -16,8 +16,8 @@ RSpec.describe Pool do
     )
     fallback = create_hypervisor_pool!(
       total_space: 20_000,
-      used_space: 14_000,
-      available_space: 6_000,
+      used_space: 10_000,
+      available_space: 10_000,
       checked_at: now
     )
 
@@ -93,6 +93,75 @@ RSpec.describe Pool do
 
     expect(pools.map(&:id)).to eq([online.id, degraded.id])
     expect(pools).not_to include(faulted)
+  end
+
+  it 'excludes pools that would reach the projected fill cap when alternatives exist' do
+    capped = create_hypervisor_pool!(
+      state: :online,
+      total_space: 10_000,
+      used_space: 6_800,
+      available_space: 3_200,
+      checked_at: now
+    )
+    preferred = create_hypervisor_pool!(
+      state: :degraded,
+      total_space: 10_000,
+      used_space: 5_500,
+      available_space: 4_500,
+      checked_at: now
+    )
+
+    pools = described_class.pick_by_node(
+      node,
+      role: :hypervisor,
+      required_diskspace: 1_000
+    )
+
+    expect(pools.map(&:id)).to eq([preferred.id])
+    expect(pools).not_to include(capped)
+  end
+
+  it 'falls back to capped pools when every eligible pool would exceed the cap' do
+    fuller = create_hypervisor_pool!(
+      total_space: 10_000,
+      used_space: 8_100,
+      available_space: 1_900,
+      checked_at: now
+    )
+    less_full = create_hypervisor_pool!(
+      total_space: 10_000,
+      used_space: 7_100,
+      available_space: 2_900,
+      checked_at: now
+    )
+
+    pools = described_class.pick_by_node(
+      node,
+      role: :hypervisor,
+      required_diskspace: 1_000
+    )
+
+    expect(pools.map(&:id)).to eq([less_full.id, fuller.id])
+  end
+
+  it 'rejects pools that would reach the hard projected fill cap' do
+    create_hypervisor_pool!(
+      total_space: 10_000,
+      used_space: 9_000,
+      available_space: 1_000,
+      checked_at: now
+    )
+
+    expect do
+      described_class.take_by_node!(
+        node,
+        role: :hypervisor,
+        required_diskspace: 500
+      )
+    end.to raise_error(
+      RuntimeError,
+      "no suitable pool available on #{node.domain_name} for 500 MiB"
+    )
   end
 
   it 'falls back to legacy dataset pressure ordering when no fresh metrics exist' do
