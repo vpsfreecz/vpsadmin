@@ -183,6 +183,32 @@ RSpec.describe Pool do
     expect(pools.map(&:id)).to eq([preferred.id, other.id])
   end
 
+  it 'uses live metrics that are under fifteen minutes old' do
+    fresher = create_hypervisor_pool!(
+      total_space: 10_000,
+      used_space: 7_000,
+      available_space: 3_000,
+      checked_at: now - 840
+    )
+    fallback = create_hypervisor_pool!(checked_at: now - 840)
+
+    5.times do |i|
+      create_dataset_with_pool!(
+        user: SpecSeed.user,
+        pool: fresher,
+        name: "fresh-window-#{i}-#{SecureRandom.hex(2)}"
+      )
+    end
+
+    pools = described_class.pick_by_node(
+      node,
+      role: :hypervisor,
+      required_diskspace: 1_000
+    )
+
+    expect(pools.first).to eq(fresher)
+  end
+
   it 'ignores stale metrics when deciding whether live mode is available' do
     stale = create_hypervisor_pool!(
       total_space: 10_000,

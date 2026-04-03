@@ -205,9 +205,9 @@ class Node < ApplicationRecord
 
     t = Time.now.utc.to_i
 
-    return (t - node_current_status.pool_checked_at.to_i) <= 120 if node_current_status.pool_checked_at
+    return (t - node_current_status.pool_checked_at.to_i) <= Pool::ALLOCATION_STATUS_MAX_AGE if node_current_status.pool_checked_at
 
-    (t - node_current_status.created_at.to_i) <= 120
+    (t - node_current_status.created_at.to_i) <= Pool::ALLOCATION_STATUS_MAX_AGE
   end
 
   def last_report

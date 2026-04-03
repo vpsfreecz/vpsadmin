@@ -13,7 +13,7 @@ class Pool < ApplicationRecord
 
   STATE_VALUES = %i[unknown online degraded suspended faulted error].freeze
   SCAN_VALUES = %i[unknown none scrub resilver error].freeze
-  ALLOCATION_STATUS_MAX_AGE = 120
+  ALLOCATION_STATUS_MAX_AGE = 900
   PROJECTED_FILL_SOFT_MAX = 0.75
   PROJECTED_FILL_HARD_MAX = 0.95
 
