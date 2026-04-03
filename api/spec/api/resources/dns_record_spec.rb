@@ -449,6 +449,47 @@ RSpec.describe 'VpsAdmin::API::Resources::DnsRecord' do
       expect(record_obj['content']).to eq(payload[:content])
     end
 
+    it 'allows users to create SSHFP records' do
+      ensure_signer_unlocked!
+
+      payload = {
+        dns_zone: seed[:user_zone].id,
+        name: 'ssh',
+        type: 'SSHFP',
+        content: "4 2 #{'B' * 64}",
+        ttl: 3600
+      }
+
+      expect do
+        as(SpecSeed.user) { json_post index_path, dns_record: payload }
+      end.to change(DnsRecord, :count).by(1)
+
+      expect_status(200)
+      expect(json['status']).to be(true)
+      expect(record_obj['type']).to eq('SSHFP')
+      expect(record_obj['content']).to eq(payload[:content])
+    end
+
+    it 'allows users to create SSHFP records with fingerprint type 1' do
+      ensure_signer_unlocked!
+
+      payload = {
+        dns_zone: seed[:user_zone].id,
+        name: 'ssh-sha1',
+        type: 'SSHFP',
+        content: "4 1 #{'C' * 40}",
+        ttl: 3600
+      }
+
+      expect do
+        as(SpecSeed.user) { json_post index_path, dns_record: payload }
+      end.to change(DnsRecord, :count).by(1)
+
+      expect_status(200)
+      expect(json['status']).to be(true)
+      expect(record_obj['content']).to eq(payload[:content])
+    end
+
     it 'allows users to create null MX records' do
       ensure_signer_unlocked!
 
@@ -740,12 +781,76 @@ RSpec.describe 'VpsAdmin::API::Resources::DnsRecord' do
       expect(errors.keys.map(&:to_s)).to include('content')
     end
 
+    it 'returns validation errors for invalid SSHFP content' do
+      as(SpecSeed.admin) do
+        json_post index_path, dns_record: {
+          dns_zone: seed[:user_zone].id,
+          name: 'ssh',
+          type: 'SSHFP',
+          content: "4 2 #{'B' * 63}",
+          ttl: 3600
+        }
+      end
+
+      expect_status(200)
+      expect(json['status']).to be(false)
+      expect(errors.keys.map(&:to_s)).to include('content')
+    end
+
+    it 'returns validation errors for multiline SSHFP content' do
+      as(SpecSeed.admin) do
+        json_post index_path, dns_record: {
+          dns_zone: seed[:user_zone].id,
+          name: 'ssh',
+          type: 'SSHFP',
+          content: "4\n2 #{'B' * 64}",
+          ttl: 3600
+        }
+      end
+
+      expect_status(200)
+      expect(json['status']).to be(false)
+      expect(errors.keys.map(&:to_s)).to include('content')
+    end
+
     it 'returns validation errors for malformed TLSA content' do
       as(SpecSeed.admin) do
         json_post index_path, dns_record: {
           dns_zone: seed[:user_zone].id,
           name: '_443._tcp.www',
           type: 'TLSA',
+          content: 'malformed',
+          ttl: 3600
+        }
+      end
+
+      expect_status(200)
+      expect(json['status']).to be(false)
+      expect(errors.keys.map(&:to_s)).to include('content')
+    end
+
+    it 'returns validation errors for invalid SSHFP fingerprint type 1 content' do
+      as(SpecSeed.admin) do
+        json_post index_path, dns_record: {
+          dns_zone: seed[:user_zone].id,
+          name: 'ssh-sha1',
+          type: 'SSHFP',
+          content: "4 1 #{'C' * 39}",
+          ttl: 3600
+        }
+      end
+
+      expect_status(200)
+      expect(json['status']).to be(false)
+      expect(errors.keys.map(&:to_s)).to include('content')
+    end
+
+    it 'returns validation errors for malformed SSHFP content' do
+      as(SpecSeed.admin) do
+        json_post index_path, dns_record: {
+          dns_zone: seed[:user_zone].id,
+          name: 'ssh',
+          type: 'SSHFP',
           content: 'malformed',
           ttl: 3600
         }
@@ -795,6 +900,29 @@ RSpec.describe 'VpsAdmin::API::Resources::DnsRecord' do
       )
 
       new_content = "3 1 0 #{'AB' * 8}"
+
+      as(SpecSeed.user) do
+        json_put show_path(record.id), dns_record: { content: new_content, ttl: 7200 }
+      end
+
+      expect_status(200)
+      expect(json['status']).to be(true)
+      expect(record_obj['content']).to eq(new_content)
+      expect(record.reload.content).to eq(new_content)
+      expect(record.reload.ttl).to eq(7200)
+    end
+
+    it 'allows users to update an SSHFP record' do
+      ensure_signer_unlocked!
+
+      record = create_record!(
+        zone: seed[:user_zone],
+        name: 'ssh',
+        record_type: 'SSHFP',
+        content: "4 2 #{'B' * 64}"
+      )
+
+      new_content = "4 1 #{'C' * 40}"
 
       as(SpecSeed.user) do
         json_put show_path(record.id), dns_record: { content: new_content, ttl: 7200 }

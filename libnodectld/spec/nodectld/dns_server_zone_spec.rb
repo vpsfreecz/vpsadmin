@@ -85,4 +85,15 @@ RSpec.describe NodeCtld::DnsServerZone do
     expect(zone_text).not_to include(updated['content'])
     expect(zone_text.lines.any? { |line| line.match?(/^\S+\s+\d+\s+IN\s+TLSA\b/) }).to be(false)
   end
+
+  it 'writes SSHFP records unchanged into the zone file' do
+    content = "4 2 #{'B' * 64}"
+    record_re = /^ssh\s+3600\s+IN\s+SSHFP\s+#{Regexp.escape(content)}$/
+
+    zone.replace_all_records([
+                               build_record(id: 202, name: 'ssh', type: 'SSHFP', content: content)
+                             ])
+
+    expect(zone_text.lines.any? { |line| line.match?(record_re) }).to be(true)
+  end
 end

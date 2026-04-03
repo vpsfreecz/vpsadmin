@@ -2,12 +2,17 @@ require 'ipaddress'
 require_relative 'confirmable'
 
 class DnsRecord < ApplicationRecord
-  RECORD_TYPES = %w[A AAAA CNAME DS MX NS PTR SRV TLSA TXT].freeze
+  RECORD_TYPES = %w[A AAAA CNAME DS MX NS PTR SRV SSHFP TLSA TXT].freeze
 
   TLSA_MATCHING_TYPES = {
     0 => { length: nil, type: 'Exact match' },
     1 => { length: 64, type: 'SHA-256' },
     2 => { length: 128, type: 'SHA-512' }
+  }.freeze
+
+  SSHFP_FINGERPRINT_TYPES = {
+    1 => { length: 40, type: 'SHA-1' },
+    2 => { length: 64, type: 'SHA-256' }
   }.freeze
 
   DS_DIGEST_TYPES = {
@@ -122,6 +127,9 @@ class DnsRecord < ApplicationRecord
 
     when 'SRV'
       check_srv_content
+
+    when 'SSHFP'
+      check_sshfp_content
 
     when 'TLSA'
       check_tlsa_content
@@ -249,6 +257,46 @@ class DnsRecord < ApplicationRecord
 
   def null_srv_target?(domain)
     domain == '.'
+  end
+
+  def check_sshfp_content
+    return unless single_line_content?
+
+    components = content.split
+
+    if components.size != 3
+      errors.add(
+        :content,
+        'must have exactly three components: algorithm, fingerprint type, and fingerprint'
+      )
+      return
+    end
+
+    algorithm, fingerprint_type_str, fingerprint = components
+
+    unless algorithm =~ /\A\d+\z/
+      errors.add(:content, 'invalid algorithm: must be a numeric value')
+    end
+
+    unless fingerprint_type_str =~ /\A[12]\z/
+      errors.add(
+        :content,
+        'invalid fingerprint type: must be one of ' \
+        "#{SSHFP_FINGERPRINT_TYPES.map { |k, v| "#{k} (#{v[:type]})" }.join(', ')}"
+      )
+      return
+    end
+
+    fingerprint_type = fingerprint_type_str.to_i
+    fingerprint_opts = SSHFP_FINGERPRINT_TYPES[fingerprint_type]
+
+    if fingerprint.length != fingerprint_opts[:length] || fingerprint !~ /\A[a-fA-F0-9]+\z/
+      errors.add(
+        :content,
+        "invalid fingerprint: must be a #{fingerprint_opts[:length]}-character hexadecimal " \
+        "string for fingerprint type #{fingerprint_type_str} (#{fingerprint_opts[:type]})"
+      )
+    end
   end
 
   # rubocop:enable Style/GuardClause
