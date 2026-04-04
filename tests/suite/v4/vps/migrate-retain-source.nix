@@ -13,14 +13,15 @@ import ../../../make-test.nix (
     };
   in
   {
-    name = "vps-migrate-retain-source-pending";
+    name = "vps-migrate-retain-source";
 
     description = ''
-      Pin the current cleanup_data=false behavior for VPS migration as a
-      pending contract until source-side cleanup is skipped correctly.
+      Migrate a VPS with cleanup_data=false, keep the source dataset intact,
+      and verify source and destination data both remain readable afterwards.
     '';
 
     tags = [
+      "ci"
       "vpsadmin"
       "vps"
       "storage"
@@ -30,7 +31,7 @@ import ../../../make-test.nix (
 
     testScript = common + ''
       describe 'VPS migration with retained source data', order: :defined do
-        it 'will eventually keep the source root dataset when cleanup_data is false' do
+        it 'keeps the source root dataset when cleanup_data is false' do
           src_pool = create_pool(
             services,
             node_id: node1_id,
@@ -79,8 +80,6 @@ import ../../../make-test.nix (
             mib: 4
           )
 
-          pending('VPS OsToOs migration does not yet honor cleanup_data: false')
-
           response = vps_migrate(
             services,
             vps_id: vps.fetch('id'),
@@ -99,6 +98,7 @@ import ../../../make-test.nix (
             services,
             response.fetch('chain_id')
           ).inspect
+          expect(node1.zfs_exists?(src_dataset_path, type: 'filesystem', timeout: 30)).to be(true)
           expect(read_dataset_text(
             node2,
             dataset_path: dst_dataset_path,

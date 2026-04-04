@@ -78,6 +78,6 @@ testLib.makeTests [
   "v4/vps/migrate-with-subdataset-mounts"
   "v4/vps/migrate-with-descendants"
   "v4/vps/migrate-interrupted-rsync"
-  "v4/vps/migrate-retain-source-pending"
+  "v4/vps/migrate-retain-source"
   "vpsadmin/services-up"
 ]

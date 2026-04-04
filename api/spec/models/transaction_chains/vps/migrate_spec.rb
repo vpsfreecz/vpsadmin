@@ -214,8 +214,6 @@ RSpec.describe TransactionChains::Vps::Migrate do
   it 'retains source data when cleanup_data is false' do
     _dataset, _dip, vps, dst_node = create_vps_migration_fixture
 
-    pending('VPS OsToOs migration does not yet honor cleanup_data: false')
-
     chain, = described_class.chain_for(vps, dst_node).fire(
       vps,
       dst_node,
@@ -225,5 +223,6 @@ RSpec.describe TransactionChains::Vps::Migrate do
     )
 
     expect(tx_classes(chain)).not_to include(Transactions::Vps::SendCleanup)
+    expect(tx_classes(chain)).to include(Transactions::Vps::RemoveConfig)
   end
 end
