@@ -20,7 +20,8 @@
 - Plugins: keep plugin gems inside the plugin directory; they are pulled via the `### vpsAdmin plugin marker ###` in `api/Gemfile`.
 
 ## Testing Guidelines
-- Integration tests live in `tests/` and reuse the vpsAdminOS test framework; `vpsadminos` is usually available at `../vpsadminos`. If not, you can clone it next to this repo (or set `VPSADMINOS_PATH`) so the runner can add it to `NIX_PATH`.
+- Integration tests live in `tests/` and reuse the vpsAdminOS test framework via the flake input, so no sibling `vpsadminos` checkout or `NIX_PATH` setup is required.
+- For local gem development of `libnodectld`, `nodectl`, or `nodectld` against a checkout, set `VPSADMINOS_PATH=/path/to/vpsadminos`.
 - Use `./test-runner.sh ls` to enumerate tests and `./test-runner.sh test <test>` (e.g. `vpsadmin/services-up`).
 - Test definitions are in `tests/all-tests.nix` and `tests/suite/*`; machines compose `tests/machines/v4/cluster/*.nix` plus seeds from `api/db/seeds/test*.nix` to spin up services and vpsAdminOS nodes on user+socket networks.
 - Services VM config `tests/configs/nixos/vpsadmin-services.nix` seeds MariaDB/RabbitMQ/Redis credentials from `tests/configs/nixos/vpsadmin-credentials.nix`, enables API/webui/supervisor/console_router; adjust socket addresses via `vpsadmin.test.*`.
