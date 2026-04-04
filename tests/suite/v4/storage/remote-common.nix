@@ -86,6 +86,7 @@
   def storage_tx_types(services)
     services.api_ruby_json(code: <<~RUBY)
       puts JSON.dump(
+        create_snapshots: Transactions::Storage::CreateSnapshots.t_type,
         create_tree: Transactions::Storage::CreateTree.t_type,
         recv: Transactions::Storage::Recv.t_type,
         send: Transactions::Storage::Send.t_type,
@@ -104,8 +105,11 @@
         export_create: Transactions::Export::Create.t_type,
         export_destroy: Transactions::Export::Destroy.t_type,
         export_disable: Transactions::Export::Disable.t_type,
+        export_del_hosts: Transactions::Export::DelHosts.t_type,
         export_add_hosts: Transactions::Export::AddHosts.t_type,
         export_enable: Transactions::Export::Enable.t_type,
+        authorize_rsync_key: Transactions::Pool::AuthorizeRsyncKey.t_type,
+        revoke_rsync_key: Transactions::Pool::RevokeRsyncKey.t_type,
         authorize_send_key: Transactions::Pool::AuthorizeSendKey.t_type,
         vps_send_config: Transactions::Vps::SendConfig.t_type,
         vps_send_rootfs: Transactions::Vps::SendRootfs.t_type,
@@ -159,7 +163,7 @@
     output.fetch('pool')
   end
 
-  def create_vps(services, admin_user_id:, node_id:, hostname:)
+  def create_vps(services, admin_user_id:, node_id:, hostname:, diskspace: 10_240)
     _, output = services.vpsadminctl.succeeds(
       args: %w[vps new],
       parameters: {
@@ -170,7 +174,7 @@
         cpu: 1,
         memory: 1024,
         swap: 0,
-        diskspace: 10240,
+        diskspace: Integer(diskspace),
         ipv4: 0,
         ipv4_private: 0,
         ipv6: 0
@@ -455,6 +459,22 @@
     SQL
   end
 
+  def dataset_in_pool_info_on_node(services, dataset_id:, node_id:)
+    services.mysql_json_rows(sql: <<~SQL).first
+      SELECT JSON_OBJECT(
+        'dataset_in_pool_id', dip.id,
+        'pool_id', p.id,
+        'pool_filesystem', p.filesystem
+      )
+      FROM dataset_in_pools dip
+      INNER JOIN pools p ON p.id = dip.pool_id
+      WHERE dip.dataset_id = #{Integer(dataset_id)}
+        AND p.node_id = #{Integer(node_id)}
+      ORDER BY dip.id
+      LIMIT 1
+    SQL
+  end
+
   def dataset_record_counts(services, dataset_id:)
     services.mysql_json_rows(sql: <<~SQL).first
       SELECT JSON_OBJECT(
@@ -579,6 +599,50 @@
         'output' => parsed,
         'error' => parsed['error']
       )
+    end
+  end
+
+  def wait_for_chain_locks_released(services, chain_id, timeout: 60)
+    deadline = Time.now + timeout
+
+    loop do
+      count = services.mysql_scalar(sql: <<~SQL).to_i
+        SELECT COUNT(*)
+        FROM resource_locks
+        WHERE locked_by_type = 'TransactionChain'
+          AND locked_by_id = #{Integer(chain_id)}
+      SQL
+
+      return true if count == 0
+
+      if Time.now >= deadline
+        raise OsVm::TimeoutError,
+              "Timed out waiting for locks of chain ##{chain_id} to be released"
+      end
+
+      sleep 1
+    end
+  end
+
+  def wait_for_resource_unlocked(services, resource:, row_id:, timeout: 60)
+    deadline = Time.now + timeout
+
+    loop do
+      count = services.mysql_scalar(sql: <<~SQL).to_i
+        SELECT COUNT(*)
+        FROM resource_locks
+        WHERE resource = #{resource.inspect}
+          AND row_id = #{Integer(row_id)}
+      SQL
+
+      return true if count == 0
+
+      if Time.now >= deadline
+        raise OsVm::TimeoutError,
+              "Timed out waiting for #{resource}[#{row_id}] to become unlocked"
+      end
+
+      sleep 1
     end
   end
 
@@ -1242,6 +1306,86 @@
     response
   end
 
+  def create_vps_mount(services, admin_user_id:, vps_id:, dataset_id:, mountpoint:, mode: 'rw', enabled: true)
+    response = services.api_ruby_json(code: <<~RUBY)
+      #{api_session_prelude(admin_user_id)}
+
+      vps = Vps.find(#{Integer(vps_id)})
+      dataset = Dataset.find(#{Integer(dataset_id)})
+      chain, mount = TransactionChains::Vps::MountDataset.fire(
+        vps,
+        dataset,
+        #{mountpoint.inspect},
+        mode: #{mode.inspect},
+        enabled: #{enabled ? 'true' : 'false'}
+      )
+
+      puts JSON.dump(
+        chain_id: chain.id,
+        mount_id: mount.id,
+        dataset_in_pool_id: mount.dataset_in_pool_id
+      )
+    RUBY
+
+    final_state = wait_for_chain_states_local(
+      services,
+      response.fetch('chain_id'),
+      %i[done failed fatal resolved]
+    )
+    expect(final_state).to eq(services.class::CHAIN_STATES[:done]), {
+      chain_id: response.fetch('chain_id'),
+      final_state: final_state,
+      failure_details: chain_failure_details(services, response.fetch('chain_id'))
+    }.inspect
+    wait_for_chain_locks_released(services, response.fetch('chain_id'))
+    wait_for_resource_unlocked(services, resource: 'Vps', row_id: vps_id)
+    wait_for_resource_unlocked(
+      services,
+      resource: 'DatasetInPool',
+      row_id: response.fetch('dataset_in_pool_id')
+    )
+
+    response
+  end
+
+  def vps_mount_rows(services, vps_id)
+    services.mysql_json_rows(sql: <<~SQL)
+      SELECT JSON_OBJECT(
+        'id', m.id,
+        'dataset_in_pool_id', m.dataset_in_pool_id,
+        'snapshot_in_pool_id', m.snapshot_in_pool_id,
+        'dst', m.dst,
+        'enabled', m.enabled,
+        'mount_type', m.mount_type,
+        'confirmed', m.confirmed
+      )
+      FROM mounts m
+      WHERE m.vps_id = #{Integer(vps_id)}
+      ORDER BY m.id
+    SQL
+  end
+
+  def group_snapshot(services, admin_user_id:, dip_ids:)
+    ids = dip_ids.map { |id| Integer(id) }
+
+    response = services.api_ruby_json(code: <<~RUBY)
+      #{api_session_prelude(admin_user_id)}
+
+      dips = DatasetInPool.find([#{ids.join(',')}])
+      chain, = TransactionChains::Dataset::GroupSnapshot.fire(dips)
+
+      puts JSON.dump(chain_id: chain.id)
+    RUBY
+
+    wait_for_chain_states_local(
+      services,
+      response.fetch('chain_id'),
+      %i[done failed fatal resolved]
+    )
+
+    response
+  end
+
   def dataset_migrate(services, dataset_id:, pool_id:, rsync: false, restart_vps: false, cleanup_data: true,
                       send_mail: false, block: true)
     _, output = services.vpsadminctl.succeeds(
@@ -1281,6 +1425,68 @@
     {
       'chain_id' => output.fetch('_meta').fetch('action_state_id')
     }
+  rescue StandardError => e
+    diagnostic = services.api_ruby_json(code: <<~RUBY)
+      #{api_session_prelude(admin_user_id)}
+
+      vps = Vps.find(#{Integer(vps_id)})
+      node = Node.find(#{Integer(node_id)})
+      result = {}
+
+      ActiveRecord::Base.transaction(requires_new: true) do
+        result[:locks] = ResourceLock.where(
+          resource: ['Vps', 'DatasetInPool'],
+          row_id: [vps.id, vps.dataset_in_pool_id]
+        ).map do |lock|
+          {
+            resource: lock.resource,
+            row_id: lock.row_id,
+            locked_by_type: lock.locked_by_type,
+            locked_by_id: lock.locked_by_id
+          }
+        end
+        result[:mounts] = vps.mounts.order(:id).map do |mnt|
+          {
+            id: mnt.id,
+            dataset_in_pool_id: mnt.dataset_in_pool_id,
+            snapshot_in_pool_id: mnt.snapshot_in_pool_id,
+            dst: mnt.dst,
+            mount_type: mnt.mount_type,
+            mode: mnt.mode,
+            enabled: mnt.enabled,
+            master_enabled: mnt.master_enabled,
+            confirmed: mnt.confirmed
+          }
+        end
+
+        begin
+          chain, = TransactionChains::Vps::Migrate.chain_for(vps, node).fire(
+            vps,
+            node,
+            maintenance_window: false,
+            cleanup_data: #{cleanup_data ? 'true' : 'false'},
+            no_start: #{no_start ? 'true' : 'false'},
+            skip_start: #{skip_start ? 'true' : 'false'},
+            send_mail: #{send_mail ? 'true' : 'false'}
+          )
+
+          result[:chain_id] = chain.id
+          result[:handles] = chain.transactions.order(:id).pluck(:handle)
+          result[:ok] = true
+        rescue StandardError => err
+          result[:ok] = false
+          result[:error_class] = err.class.name
+          result[:error_message] = err.message
+          result[:backtrace] = err.backtrace.first(20)
+        ensure
+          raise ActiveRecord::Rollback
+        end
+      end
+
+      puts JSON.dump(result)
+    RUBY
+
+    raise RuntimeError, "#{e.message}\nVPS migrate diagnostic: #{diagnostic.inspect}"
   end
 
   def hard_delete_vps(services, admin_user_id:, vps_id:, reason: 'storage test hard delete')
