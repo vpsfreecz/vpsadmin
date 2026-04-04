@@ -73,6 +73,7 @@ testLib.makeTests [
   "v4/vps/create"
   "v4/vps/migrate"
   "v4/vps/migrate-no-start"
+  "v4/vps/migrate-skip-start"
   "v4/vps/migrate-with-data-check"
   "v4/vps/migrate-with-subdataset-mounts"
   "v4/vps/migrate-with-descendants"

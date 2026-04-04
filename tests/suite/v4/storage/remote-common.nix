@@ -1451,6 +1451,55 @@
     }
   end
 
+  def vps_migrate_with_hooks(
+    services,
+    admin_user_id:,
+    vps_id:,
+    node_id:,
+    cleanup_data: true,
+    no_start: false,
+    skip_start: false,
+    send_mail: false,
+    corrupt_start_transaction: false
+  )
+    services.api_ruby_json(code: <<~RUBY)
+      #{api_session_prelude(admin_user_id)}
+
+      vps = Vps.find(#{Integer(vps_id)})
+      node = Node.find(#{Integer(node_id)})
+      migration_chain = TransactionChains::Vps::Migrate.chain_for(vps, node)
+
+      if #{corrupt_start_transaction ? 'true' : 'false'}
+        hooks = HaveAPI::Hooks.hooks || {}
+        unless hooks[migration_chain] && hooks[migration_chain][:post_start]
+          migration_chain.has_hook(:post_start)
+        end
+
+        migration_chain.connect_hook(:post_start) do |ret, chain:, **|
+          tx = Transaction.find(chain.last_id)
+          unless tx.handle == Transactions::Vps::Start.t_type
+            raise "expected last transaction to be vps_start, got handle=\#{tx.handle}"
+          end
+
+          tx.update!(input: '{bad-json')
+          ret
+        end
+      end
+
+      chain, = migration_chain.fire(
+        vps,
+        node,
+        maintenance_window: false,
+        cleanup_data: #{cleanup_data ? 'true' : 'false'},
+        no_start: #{no_start ? 'true' : 'false'},
+        skip_start: #{skip_start ? 'true' : 'false'},
+        send_mail: #{send_mail ? 'true' : 'false'}
+      )
+
+      puts JSON.dump(chain_id: chain.id)
+    RUBY
+  end
+
   def vps_migrate(services, vps_id:, node_id:, cleanup_data: true, no_start: false, skip_start: false,
                   send_mail: false)
     _, output = services.vpsadminctl.succeeds(
