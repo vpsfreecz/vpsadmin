@@ -194,12 +194,15 @@ RSpec.describe TransactionChains::Vps::Migrate do
     )
   end
 
-  it 'migrates VPSes with multiple network interfaces' do
+  it 'preserves all network interfaces and attached addresses during migration' do
     _dataset, _dip, vps, dst_node = create_vps_migration_fixture
     create_network_interface!(vps, name: 'eth0')
     create_network_interface!(vps, name: 'eth1')
 
-    pending('migration of VPS with multiple network interfaces is not implemented')
+    pending(
+      'migration should preserve all interfaces and attached addresses, but ' \
+      'Base#migrate_network_interfaces still rejects when the interface count exceeds one'
+    )
 
     expect do
       described_class.chain_for(vps, dst_node).fire(
