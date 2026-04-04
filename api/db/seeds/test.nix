@@ -129,7 +129,7 @@ let
       id = 4;
       name = "diskspace";
       label = "Disk space";
-      min = 10 * 1024;
+      min = 128;
       max = 10 * 1024 * 1024;
       stepsize = 1;
       resource_type = "numeric";
