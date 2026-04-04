@@ -129,7 +129,7 @@ RSpec.describe TransactionChains::Vps::Migrate::MountMigrator do
     expect(changes.fetch(dst_sip)).to include(mount_id: nil)
   end
 
-  it 'marks matching mounts for confirm-destroy and tracks primary mounts' do
+  it 'marks matching mounts for confirm-destroy' do
     fixture = create_vps_fixture
     primary_pool = create_pool!(
       node: fixture.fetch(:src_node),
@@ -155,12 +155,12 @@ RSpec.describe TransactionChains::Vps::Migrate::MountMigrator do
     migrator.delete_mine_if { |candidate| candidate.id == mount.id }
 
     expect(mount.reload.confirmed).to eq(:confirm_destroy)
-    expect(migrator.instance_variable_get(:@my_deleted_primary_mounts)).to contain_exactly(mount)
+    expect(migrator.instance_variable_get(:@my_deleted)).to contain_exactly(mount)
   end
 
-  it 'migrates local and remote mount transitions' do
+  it 'rejects mounts that would become remote after migration' do
     fixture = create_vps_fixture
-    extra_dataset, extra_dip = create_dataset_with_pool!(
+    _extra_dataset, extra_dip = create_dataset_with_pool!(
       user: user,
       pool: fixture.fetch(:src_root_dip).pool,
       name: "mount-extra-#{SecureRandom.hex(4)}"
@@ -171,12 +171,8 @@ RSpec.describe TransactionChains::Vps::Migrate::MountMigrator do
       dst: '/mnt/extra'
     )
 
-    pending('remote mount transitions are not implemented')
-
     expect do
       fixture.fetch(:migrator).send(:migrate_mine_mount, mount)
-    end.not_to raise_error
-
-    expect(extra_dataset).to be_present
+    end.to raise_error(RuntimeError, 'remote mounts not supported')
   end
 end
