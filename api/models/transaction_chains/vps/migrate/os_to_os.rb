@@ -207,7 +207,7 @@ module TransactionChains
       end
 
       # Destroy old VPS
-      append(Transactions::Vps::SendCleanup, args: src_vps)
+      append(Transactions::Vps::SendCleanup, args: src_vps) if @opts[:cleanup_data]
       append(Transactions::Vps::RemoveConfig, args: src_vps)
 
       # Free userns map
