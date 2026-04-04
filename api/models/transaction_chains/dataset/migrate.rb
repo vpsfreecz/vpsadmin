@@ -221,7 +221,20 @@ module TransactionChains
 
         if dst_pool.node_id == src_pool.node_id
           # In case of migration between two pools on the same node, the export must be
-          # destroyed, because export names are global and future ::Create would fail.
+          # stopped and removed from the source server first, because export names are
+          # global and future ::Create would fail.
+          append_t(Transactions::Export::Disable, args: [src_export], urgent: true) do |t|
+            t.edit(src_export, enabled: false)
+          end
+
+          if src_export.export_hosts.any?
+            append_t(
+              Transactions::Export::DelHosts,
+              args: [src_export, src_export.export_hosts],
+              urgent: true
+            )
+          end
+
           append_t(Transactions::Export::Destroy, args: [src_export, src_export.host_ip_address], urgent: true)
         else
           append_t(Transactions::Export::Disable, args: [src_export], urgent: true) do |t|
