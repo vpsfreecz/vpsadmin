@@ -154,18 +154,29 @@ RSpec.describe TransactionChains::Dataset::Migrate do
       properties: { compression: false }
     )
     export, = create_export_for_dataset!(dataset_in_pool: src_dip)
+    ExportHost.create!(
+      export: export,
+      ip_address: create_ip_address!(location: src_pool.node.location),
+      rw: export.rw,
+      sync: export.sync,
+      subtree_check: export.subtree_check,
+      root_squash: export.root_squash
+    )
 
     chain, = described_class.fire(src_dip, dst_pool, send_mail: false)
     classes = tx_classes(chain)
 
     expect(export.host_ip_address).to be_present
     expect(classes).to include(
+      Transactions::Export::Disable,
+      Transactions::Export::DelHosts,
       Transactions::Export::Destroy,
       Transactions::Export::Create,
       Transactions::Export::AddHosts,
       Transactions::Export::Enable
     )
-    expect(classes).not_to include(Transactions::Export::Disable)
+    expect(classes.index(Transactions::Export::Disable)).to be < classes.index(Transactions::Export::DelHosts)
+    expect(classes.index(Transactions::Export::DelHosts)).to be < classes.index(Transactions::Export::Destroy)
     expect(classes.index(Transactions::Export::Destroy)).to be < classes.index(Transactions::Export::Create)
   end
 

@@ -23,6 +23,14 @@ RSpec.describe TransactionChains::Vps::Migrate do
     [dataset, dip, vps, dst_node]
   end
 
+  def create_network_interface!(vps, name:)
+    NetworkInterface.create!(
+      vps: vps,
+      kind: :veth_routed,
+      name: name
+    )
+  end
+
   it 'returns OsToOs for vpsadminos to vpsadminos migrations' do
     _dataset, _dip, vps, dst_node = create_vps_migration_fixture
 
@@ -99,5 +107,123 @@ RSpec.describe TransactionChains::Vps::Migrate do
     expect(classes.index(Transactions::Vps::SendRootfs)).to be < classes.index(Transactions::Vps::SendState)
     expect(classes.index(Transactions::Vps::SendState)).to be < classes.index(Transactions::Vps::SendCleanup)
     expect(classes.rindex(Transactions::Queue::Release)).to be < classes.index(Transactions::Vps::SendCleanup)
+  end
+
+  it 'omits destination start when no_start is true' do
+    _dataset, _dip, vps, dst_node = create_vps_migration_fixture
+    set_vps_running!(vps)
+
+    chain, = described_class.chain_for(vps, dst_node).fire(
+      vps,
+      dst_node,
+      maintenance_window: false,
+      no_start: true,
+      send_mail: false
+    )
+    classes = tx_classes(chain)
+
+    expect(classes).not_to include(Transactions::Vps::Start)
+    expect(classes).to include(Transactions::Queue::Release, Transactions::Vps::SendCleanup)
+  end
+
+  it 'marks destination start as keep-going when skip_start is true' do
+    _dataset, _dip, vps, dst_node = create_vps_migration_fixture
+    set_vps_running!(vps)
+
+    chain, = described_class.chain_for(vps, dst_node).fire(
+      vps,
+      dst_node,
+      maintenance_window: false,
+      skip_start: true,
+      send_mail: false
+    )
+
+    start_tx = transactions_for(chain).find do |tx|
+      Transaction.for_type(tx.handle) == Transactions::Vps::Start
+    end
+
+    expect(start_tx).not_to be_nil
+    expect(start_tx.reversible).to eq('keep_going')
+  end
+
+  it 'builds a migration chain for VPSes with mounted subdatasets' do
+    dataset, dip, vps, dst_node = create_vps_migration_fixture
+    child_dataset, _child_dip = create_dataset_with_pool!(
+      user: user,
+      pool: dip.pool,
+      parent: dataset,
+      name: "mount-child-#{SecureRandom.hex(4)}"
+    )
+    mount_chain, = TransactionChains::Vps::MountDataset.fire(
+      vps,
+      child_dataset,
+      '/mnt/sub',
+      mode: 'rw',
+      enabled: true
+    )
+    mount_chain.release_locks
+    set_vps_running!(vps)
+
+    expect do
+      chain, = described_class.chain_for(vps, dst_node).fire(
+        vps,
+        dst_node,
+        maintenance_window: false,
+        send_mail: false
+      )
+
+      expect(tx_classes(chain)).to include(Transactions::Vps::Mounts)
+    end.not_to raise_error
+  end
+
+  it 'rejects migration of VPSes with multiple network interfaces' do
+    _dataset, _dip, vps, dst_node = create_vps_migration_fixture
+    create_network_interface!(vps, name: 'eth0')
+    create_network_interface!(vps, name: 'eth1')
+
+    expect do
+      described_class.chain_for(vps, dst_node).fire(
+        vps,
+        dst_node,
+        maintenance_window: false,
+        send_mail: false
+      )
+    end.to raise_error(
+      VpsAdmin::API::Exceptions::VpsMigrationError,
+      /multiple network interfaces/
+    )
+  end
+
+  it 'migrates VPSes with multiple network interfaces' do
+    _dataset, _dip, vps, dst_node = create_vps_migration_fixture
+    create_network_interface!(vps, name: 'eth0')
+    create_network_interface!(vps, name: 'eth1')
+
+    pending('migration of VPS with multiple network interfaces is not implemented')
+
+    expect do
+      described_class.chain_for(vps, dst_node).fire(
+        vps,
+        dst_node,
+        maintenance_window: false,
+        send_mail: false
+      )
+    end.not_to raise_error
+  end
+
+  it 'retains source data when cleanup_data is false' do
+    _dataset, _dip, vps, dst_node = create_vps_migration_fixture
+
+    pending('VPS OsToOs migration does not yet honor cleanup_data: false')
+
+    chain, = described_class.chain_for(vps, dst_node).fire(
+      vps,
+      dst_node,
+      maintenance_window: false,
+      cleanup_data: false,
+      send_mail: false
+    )
+
+    expect(tx_classes(chain)).not_to include(Transactions::Vps::SendCleanup)
   end
 end
