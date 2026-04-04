@@ -1408,6 +1408,49 @@
     }
   end
 
+  def vps_migrate_with_hooks(
+    services,
+    admin_user_id:,
+    vps_id:,
+    node_id:,
+    cleanup_data: true,
+    no_start: false,
+    skip_start: false,
+    send_mail: false,
+    remove_dst_config_before_start: false
+  )
+    services.api_ruby_json(code: <<~RUBY)
+      #{api_session_prelude(admin_user_id)}
+
+      vps = Vps.find(#{Integer(vps_id)})
+      node = Node.find(#{Integer(node_id)})
+      hooks = {}
+
+      if #{remove_dst_config_before_start ? 'true' : 'false'}
+        hooks[:pre_start] = lambda do |_ret, chain:, dst_vps:, **|
+          chain.append(
+            Transactions::Vps::RemoveConfig,
+            args: dst_vps,
+            urgent: true
+          )
+        end
+      end
+
+      chain, = TransactionChains::Vps::Migrate.chain_for(vps, node).fire(
+        vps,
+        node,
+        maintenance_window: false,
+        cleanup_data: #{cleanup_data ? 'true' : 'false'},
+        no_start: #{no_start ? 'true' : 'false'},
+        skip_start: #{skip_start ? 'true' : 'false'},
+        send_mail: #{send_mail ? 'true' : 'false'},
+        hooks: hooks
+      )
+
+      puts JSON.dump(chain_id: chain.id)
+    RUBY
+  end
+
   def vps_migrate(services, vps_id:, node_id:, cleanup_data: true, no_start: false, skip_start: false,
                   send_mail: false)
     _, output = services.vpsadminctl.succeeds(
