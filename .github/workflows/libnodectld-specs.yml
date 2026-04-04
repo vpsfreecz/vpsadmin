@@ -81,7 +81,7 @@ jobs:
 
       - name: Run RSpec
         env:
-          OS: ${{ steps.vpsadminos-source.outputs.value }}
+          VPSADMINOS_PATH: ${{ steps.vpsadminos-source.outputs.value }}
         run: |
           set -euo pipefail
 
@@ -97,10 +97,10 @@ jobs:
 
             mariadb -h 127.0.0.1 -uroot -proot -e "SELECT 1"
 
-            cd "$OS/libosctl/ext/libosctl"
+            cd "$VPSADMINOS_PATH/libosctl/ext/libosctl"
             ruby extconf.rb
             make
-            cp native.so "$OS/libosctl/lib/libosctl/native.so"
+            cp native.so "$VPSADMINOS_PATH/libosctl/lib/libosctl/native.so"
 
             cd "$GITHUB_WORKSPACE/libnodectld"
             bundle exec rspec

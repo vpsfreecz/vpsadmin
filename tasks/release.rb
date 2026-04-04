@@ -1,3 +1,5 @@
+require_relative '../tools/vpsadminos'
+
 namespace :vpsadmin do
   desc 'Set vpsAdmin version'
   task :version do
@@ -86,25 +88,12 @@ namespace :vpsadmin do
   namespace :gems do
     desc 'Setup parameters for gem building'
     task :environment do
-      ENV['VPSADMIN_BUILD_ID'] = Time.now.strftime('%Y%m%d%H%M%S') unless ENV.has_key?('VPSADMIN_BUILD_ID')
+      ENV['VPSADMIN_BUILD_ID'] ||= Time.now.strftime('%Y%m%d%H%M%S')
 
-      unless ENV.has_key?('OS_BUILD_ID')
-        begin
-          os = File.realpath(ENV['OS'] || '../vpsadminos')
-        rescue Errno::ENOENT
-          warn "vpsAdminOS not found at '#{ENV['OS'] || '../vpsadminos'}'"
-          exit(false)
-        end
-
-        os_build_id_path = File.join(os, '.build_id')
-
-        begin
-          os_build_id = File.read(os_build_id_path)
-        rescue Errno::ENOENT
-          abort "vpsAdminOS build ID not found at '#{os_build_id_path}'"
-        end
-
-        ENV['OS_BUILD_ID'] = os_build_id
+      begin
+        ENV['OS_BUILD_ID'] ||= Vpsadminos.build_id
+      rescue Vpsadminos::Error => e
+        abort e.message
       end
     end
 
