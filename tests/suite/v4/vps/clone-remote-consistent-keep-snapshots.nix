@@ -13,11 +13,11 @@ import ../../../make-test.nix (
     };
   in
   {
-    name = "vps-clone-remote-consistent";
+    name = "vps-clone-remote-consistent-keep-snapshots";
 
     description = ''
-      Clone a running VPS remotely with stop=true, verify the extra sync steps
-      are present, and ensure both source and clone end up usable.
+      Pending contract for keeping transfer snapshots during a remote
+      consistent clone.
     '';
 
     tags = [
@@ -30,20 +30,20 @@ import ../../../make-test.nix (
     machines = import ../../../machines/v4/cluster/2-node.nix args;
 
     testScript = common + ''
-      describe 'remote consistent VPS clone', order: :defined do
-        it 'stops, syncs, and restarts the source before finishing the clone' do
+      describe 'remote consistent VPS clone with keep_snapshots', order: :defined do
+        it 'keeps transfer snapshots on the source as a pending contract' do
           src_pool = create_pool(
             services,
             node_id: node1_id,
-            label: 'vps-clone-consistent-src',
+            label: 'vps-clone-consistent-keep-src',
             filesystem: primary_pool_fs,
             role: 'hypervisor'
           )
-          dst_pool_fs = 'tank/ct-clone-consistent'
+          dst_pool_fs = 'tank/ct-clone-consistent-keep'
           dst_pool = create_pool(
             services,
             node_id: node2_id,
-            label: 'vps-clone-consistent-dst',
+            label: 'vps-clone-consistent-keep-dst',
             filesystem: dst_pool_fs,
             role: 'hypervisor'
           )
@@ -56,7 +56,7 @@ import ../../../make-test.nix (
             services,
             admin_user_id: admin_user_id,
             node_id: node1_id,
-            hostname: 'vps-clone-consistent'
+            hostname: 'vps-clone-consistent-keep'
           )
 
           src_info = nil
@@ -73,22 +73,17 @@ import ../../../make-test.nix (
             node1,
             dataset_path: src_dataset_path,
             relative_path: 'root/spec-clone.txt',
-            content: "remote consistent clone sentinel\n"
+            content: "remote consistent keep snapshots sentinel\n"
           )
           source_snapshots_before = zfs_snapshot_names(node1, src_dataset_path)
-          checksum = write_dataset_payload(
-            node1,
-            dataset_path: src_dataset_path,
-            relative_path: 'root/blob.bin',
-            mib: 4
-          )
 
           response = vps_clone(
             services,
             admin_user_id: admin_user_id,
             vps_id: vps.fetch('id'),
             node_id: node2_id,
-            stop: true
+            stop: true,
+            keep_snapshots: true
           )
           final_state = wait_for_chain_states_local(
             services,
@@ -99,14 +94,6 @@ import ../../../make-test.nix (
           handles = chain_transactions(services, response.fetch('chain_id')).map do |row|
             row.fetch('handle')
           end
-          chain_diagnostic = {
-            chain_id: response.fetch('chain_id'),
-            final_state: final_state,
-            failure_details: failure_details,
-            handles: handles
-          }
-
-          expect(final_state).to eq(services.class::CHAIN_STATES[:done]), chain_diagnostic.inspect
 
           clone_info = nil
           wait_until_block_succeeds(name: "clone dataset info for VPS #{response.fetch('cloned_vps_id')}") do
@@ -123,6 +110,7 @@ import ../../../make-test.nix (
           )
           clone_dataset_path = find_dataset_path_on_node(node2, clone_info.fetch('dataset_full_name'))
           source_snapshots_after = zfs_snapshot_names(node1, src_dataset_path)
+          preserved_snapshots = source_snapshots_after - source_snapshots_before
           diagnostic = {
             chain_id: response.fetch('chain_id'),
             final_state: final_state,
@@ -130,26 +118,24 @@ import ../../../make-test.nix (
             handles: handles,
             clone_info: clone_info,
             source_snapshots_before: source_snapshots_before,
-            source_snapshots_after: source_snapshots_after
+            source_snapshots_after: source_snapshots_after,
+            preserved_snapshots: preserved_snapshots
           }
 
-          expect(handles).to include(
-            tx_types(services).fetch('vps_stop'),
-            tx_types(services).fetch('vps_send_sync'),
-            tx_types(services).fetch('vps_start'),
-            tx_types(services).fetch('vps_send_cleanup')
-          ), diagnostic.inspect
-          expect(source_snapshots_after).to eq(source_snapshots_before), diagnostic.inspect
+          expect(final_state).to eq(services.class::CHAIN_STATES[:done]), diagnostic.inspect
           expect(read_dataset_text(
             node2,
             dataset_path: clone_dataset_path,
             relative_path: 'root/spec-clone.txt'
-          )).to include('remote consistent clone sentinel'), diagnostic.inspect
-          expect(file_checksum(
-            node2,
-            dataset_path: clone_dataset_path,
-            relative_path: 'root/blob.bin'
-          )).to eq(checksum), diagnostic.inspect
+          )).to include('remote consistent keep snapshots sentinel'), diagnostic.inspect
+
+          pending(
+            'keep_snapshots=true still requires source send-state cleanup, and the current node-side ' \
+            'cleanup destroys transfer snapshots while closing the send state'
+          )
+
+          expect(handles).not_to include(tx_types(services).fetch('vps_send_cleanup')), diagnostic.inspect
+          expect(preserved_snapshots).not_to eq([]), diagnostic.inspect
         end
       end
     '';

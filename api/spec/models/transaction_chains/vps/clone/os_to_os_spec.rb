@@ -720,8 +720,9 @@ RSpec.describe TransactionChains::Vps::Clone::OsToOs do
 
   it 'keeps keep_snapshots=true as a pending contract until remote snapshot retention is wired' do
     pending(
-      'keep_snapshots=true should preserve temporary snapshots created for remote consistent clones, ' \
-      'but TransactionChains::Vps::Clone::OsToOs does not consult the flag'
+      'keep_snapshots=true should preserve transfer snapshots, but the clone chain still appends ' \
+      'source cleanup and the current node-side cleanup destroys those snapshots while closing ' \
+      'the send state'
     )
 
     fixture = create_clone_fixture

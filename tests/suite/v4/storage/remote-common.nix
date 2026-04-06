@@ -408,6 +408,18 @@
     end
   end
 
+  def zfs_snapshot_names(node, dataset_path)
+    _, output = node.succeeds(
+      "zfs list -H -t snapshot -o name -r #{Shellwords.escape(dataset_path)}",
+      timeout: 60
+    )
+
+    output.lines.map(&:strip)
+          .grep(/@/)
+          .map { |name| name.split('@', 2).last }
+          .sort
+  end
+
   def backup_topology_report(services, backup_node:, dst_dip_id:, backup_dataset_path:)
     trees = services.mysql_json_rows(sql: <<~SQL)
       SELECT JSON_OBJECT('id', id, 'index', `index`, 'head', head)
