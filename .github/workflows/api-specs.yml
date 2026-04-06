@@ -155,7 +155,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Write database.yml for CI
         run: |
@@ -294,7 +294,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Write database.yml for CI
         run: |
@@ -401,7 +401,7 @@ jobs:
 
     steps:
       - name: Checkout (for git ls-files)
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Download per-topic file lists
         uses: actions/download-artifact@v4
