@@ -74,6 +74,7 @@ testLib.makeTests [
   "v4/vps/clone-same-node"
   "v4/vps/clone-remote"
   "v4/vps/clone-remote-consistent"
+  "v4/vps/clone-remote-consistent-keep-snapshots"
   "v4/vps/clone-different-owner"
   "v4/vps/clone-with-descendants-and-mounts"
   "v4/vps/migrate"
