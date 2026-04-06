@@ -1,0 +1,32 @@
+# frozen_string_literal: true
+
+require 'spec_helper'
+require 'nodectld/commands/base'
+require 'nodectld/commands/vps/recover_cleanup'
+
+RSpec.describe NodeCtld::Commands::Vps::RecoverCleanup do
+  let(:driver) { build_storage_driver }
+  let(:cmd) do
+    described_class.new(
+      driver,
+      'vps_id' => 101,
+      'cgroups' => true,
+      'network_interfaces' => false
+    )
+  end
+
+  it 'passes only enabled cleanup flags to osctl' do
+    allow(cmd).to receive(:osctl).and_return(ret: :ok)
+
+    expect(cmd.exec).to eq(ret: :ok)
+    expect(cmd).to have_received(:osctl).with(
+      %i[ct recover cleanup],
+      101,
+      cgroups: true
+    )
+  end
+
+  it 'has a no-op rollback' do
+    expect(cmd.rollback).to eq(ret: :ok)
+  end
+end
