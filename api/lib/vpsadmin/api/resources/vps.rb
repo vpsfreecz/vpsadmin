@@ -898,16 +898,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
         input[:user] = current_user
       end
 
-      error!('cannot clone into itself') if input[:vps] == vps
-
-      if input[:vps]
-        node = input[:vps].node
-
-        if current_user.role != :admin && vps.user != input[:vps].user
-          error!('insufficient permission to clone into this VPS')
-        end
-
-      elsif input[:node]
+      if input[:node]
         node = input[:node]
 
       elsif input[:location] || input[:environment]
@@ -936,8 +927,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
       if current_user.role != :admin && !current_user.env_config(env, :can_create_vps)
         error!('insufficient permission to create a VPS in this environment')
 
-      elsif !input[:vps] &&
-            current_user.role != :admin &&
+      elsif current_user.role != :admin &&
             current_user.vps_in_env(env) >= current_user.env_config(env, :max_vps_count)
         error!('cannot create more VPSes in this environment')
       end

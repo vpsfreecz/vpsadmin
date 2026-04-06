@@ -2,7 +2,7 @@ require_relative 'base'
 require 'securerandom'
 
 module TransactionChains
-  # Clone VPS to new or another VPS.
+  # Clone a VPS to a new VPS.
   class Vps::Clone::OsToOs < ::TransactionChain
     label 'Clone'
 
@@ -19,13 +19,6 @@ module TransactionChains
       # - Clone mounts (generate action scripts, snapshot mount references)
       # - Transfer data (one or two runs depending on attrs[stop])
       # - Set features
-
-      # When cloning into another VPS:
-      # - Transfer all local snapshots to the backup
-      # - Stop target VPS
-      # - Destroy all datasets
-      # - Reallocate resources if attrs[resources]
-      # - Continue the process as above, except creating vz root
 
       check_cgroup_version!(vps, node)
 
@@ -301,7 +294,7 @@ module TransactionChains
       use_chain(Vps::SetResources, args: [dst_vps, vps_resources]) if vps_resources
 
       # IP addresses
-      clone_network_interfaces(vps, dst_vps, attrs) unless attrs[:vps]
+      clone_network_interfaces(vps, dst_vps, attrs)
 
       # DNS resolver
       dst_vps.dns_resolver = dns_resolver(vps, dst_vps)
@@ -315,13 +308,7 @@ module TransactionChains
       end
 
       # Features
-      append(Transactions::Vps::Features, args: [dst_vps, confirm_features]) do
-        if attrs[:vps]
-          dst_vps.vps_features.each do |f|
-            edit(f, enabled: dst_features[f.name.to_sym] ? 1 : 0)
-          end
-        end
-      end
+      append(Transactions::Vps::Features, args: [dst_vps, confirm_features])
 
       # Start the new VPS
       use_chain(TransactionChains::Vps::Start, args: dst_vps) if vps.running?
