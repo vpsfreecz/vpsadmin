@@ -193,7 +193,8 @@ module TransactionChains
           use = dst.allocate_resource!(
             :diskspace,
             src.diskspace,
-            user: dst_vps.user
+            user: dst_vps.user,
+            admin_override: true
           )
 
           properties = ::DatasetProperty.clone_properties!(src, dst)
