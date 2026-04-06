@@ -454,7 +454,9 @@ module TransactionChains
         environment: dst_vps.node.location.environment
       )
 
-      changes = sums.map do |r, sum|
+      changes = sums.filter_map do |r, sum|
+        next if sum == 0
+
         user_env.reallocate_resource!(
           r,
           user_env.send(r) + sum,
