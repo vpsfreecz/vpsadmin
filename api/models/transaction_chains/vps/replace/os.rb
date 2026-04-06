@@ -306,14 +306,16 @@ module TransactionChains
 
       dst_vps.save!
 
-      mail(:vps_replaced, {
-        user: vps.user,
-        vars: {
-          original_vps: vps,
-          new_vps: dst_vps,
-          reason: attrs[:reason]
-        }
-      })
+      if vps.user.mailer_enabled
+        mail(:vps_replaced, {
+          user: vps.user,
+          vars: {
+            original_vps: vps,
+            new_vps: dst_vps,
+            reason: attrs[:reason]
+          }
+        })
+      end
 
       dst_vps
     end
