@@ -1235,28 +1235,77 @@ RSpec.describe 'VpsAdmin::API::Resources::VPS write actions' do # rubocop:disabl
         attrs: { can_create_vps: true, max_vps_count: 10 }
       )
 
-      seen = nil
+      location_suffix = SecureRandom.hex(3)
+      address_location = Location.create!(
+        label: "clone-address-#{location_suffix}",
+        environment: SpecSeed.environment,
+        domain: "clone-address-#{location_suffix}.test",
+        has_ipv6: false,
+        remote_console_server: '',
+        description: 'Clone address location'
+      )
+      shared_network = Network.create!(
+        label: "clone-shared-#{location_suffix}",
+        ip_version: 4,
+        address: "198.51.#{SecureRandom.random_number(200)}.0",
+        prefix: 24,
+        role: :public_access,
+        managed: true,
+        split_access: :no_access,
+        split_prefix: 32,
+        purpose: :any,
+        primary_location: address_location
+      )
+      LocationNetwork.create!(
+        location: address_location,
+        network: shared_network,
+        primary: true,
+        priority: 10,
+        autopick: true,
+        userpick: true
+      )
+      LocationNetwork.create!(
+        location: destination_node.location,
+        network: shared_network,
+        primary: false,
+        priority: 20,
+        autopick: true,
+        userpick: true
+      )
+
+      pick_input = nil
+      fire_input = nil
       allow(VpsAdmin::API::Operations::Utils::PoolSpace)
         .to receive(:required_dataset_tree_diskspace)
         .with(vps.dataset_in_pool)
         .and_return(4_096)
       allow(VpsAdmin::API::Operations::Node::Pick).to receive(:run) do |**kwargs|
-        seen = kwargs
+        pick_input = kwargs
         destination_node
       end
 
       allow(TransactionChains::Vps::Clone).to receive(:chain_for) do |_src, _dst|
         class_double(TransactionChains::Vps::Clone::OsToOs).tap do |chain|
           allow(chain).to receive(:fire) do |_src_vps, node, input|
+            fire_input = { node: node, input: input.dup }
             cloned = create_vps!(user: input[:user], node: node, hostname: input[:hostname])
             [fake_chain!(TransactionChains::Vps::Clone::OsToOs), cloned]
           end
         end
       end
 
-      expect do
-        as(SpecSeed.user) { json_post clone_path(vps.id), vps: { environment: SpecSeed.environment.id } }
-      end.to change(TransactionChain, :count).by(1)
+      as(SpecSeed.user) do
+        json_post clone_path(vps.id), vps: {
+          environment: SpecSeed.environment.id,
+          address_location: address_location.id,
+          stop: false,
+          dataset_plans: false,
+          resources: false,
+          features: false,
+          subdatasets: false,
+          keep_snapshots: true
+        }
+      end
 
       expect_status(200)
       expect(json['status']).to be(true)
@@ -1264,48 +1313,79 @@ RSpec.describe 'VpsAdmin::API::Resources::VPS write actions' do # rubocop:disabl
       cloned_id = vps_obj['id']
       expect(Vps.where(id: cloned_id)).to exist
       expect(Vps.find(cloned_id).user_id).to eq(SpecSeed.user.id)
-      expect(seen[:required_diskspace]).to eq(4_096)
+      expect(pick_input.fetch(:required_diskspace)).to eq(4_096)
+      expect(fire_input.fetch(:node)).to eq(destination_node)
+      expect(fire_input.fetch(:input)).to include(
+        user: SpecSeed.user,
+        hostname: "#{vps.hostname}-#{vps.id}-clone",
+        stop: false,
+        dataset_plans: false,
+        resources: false,
+        features: false,
+        subdatasets: false,
+        keep_snapshots: true
+      )
+      expect(fire_input.fetch(:input).fetch(:address_location)).to eq(address_location)
     end
 
-    it 'sets default hostname when missing' do
+    it 'allows admin to clone to explicit node' do
+      seen = nil
+      allow(TransactionChains::Vps::Clone).to receive(:chain_for).with(vps, destination_node) do
+        class_double(TransactionChains::Vps::Clone::OsToOs).tap do |chain|
+          allow(chain).to receive(:fire) do |_src_vps, node, input|
+            seen = { node: node, input: input.dup }
+            cloned = create_vps!(user: input[:user], node: node, hostname: input[:hostname])
+            [fake_chain!(TransactionChains::Vps::Clone::OsToOs), cloned]
+          end
+        end
+      end
+
+      as(SpecSeed.admin) do
+        json_post clone_path(vps.id), vps: {
+          node: destination_node.id,
+          user: SpecSeed.other_user.id,
+          hostname: 'admin-clone'
+        }
+      end
+
+      expect_status(200)
+      expect(json['status']).to be(true)
+      expect(seen.fetch(:node)).to eq(destination_node)
+      expect(seen.fetch(:input)).to include(
+        user: SpecSeed.other_user,
+        hostname: 'admin-clone'
+      )
+    end
+
+    it 'forces non-admin clone ownership to the current user' do
       set_env_config!(
         user: SpecSeed.user,
         environment: SpecSeed.environment,
         attrs: { can_create_vps: true, max_vps_count: 10 }
       )
 
-      seen = {}
+      seen = nil
       allow(TransactionChains::Vps::Clone).to receive(:chain_for) do |_src, _dst|
         class_double(TransactionChains::Vps::Clone::OsToOs).tap do |chain|
           allow(chain).to receive(:fire) do |_src_vps, node, input|
-            seen[:hostname] = input[:hostname]
+            seen = input.dup
             cloned = create_vps!(user: input[:user], node: node, hostname: input[:hostname])
             [fake_chain!(TransactionChains::Vps::Clone::OsToOs), cloned]
           end
         end
       end
 
-      as(SpecSeed.user) { json_post clone_path(vps.id), vps: { environment: SpecSeed.environment.id } }
-
-      expect_status(200)
-      expect(json['status']).to be(true)
-      expect(seen[:hostname]).to eq("#{vps.hostname}-#{vps.id}-clone")
-    end
-
-    it 'allows admin to clone to explicit node' do
-      allow(TransactionChains::Vps::Clone).to receive(:chain_for).with(vps, destination_node) do
-        class_double(TransactionChains::Vps::Clone::OsToOs).tap do |chain|
-          allow(chain).to receive(:fire) do |_src_vps, node, input|
-            cloned = create_vps!(user: input[:user], node: node, hostname: input[:hostname])
-            [fake_chain!(TransactionChains::Vps::Clone::OsToOs), cloned]
-          end
-        end
+      as(SpecSeed.user) do
+        json_post clone_path(vps.id), vps: {
+          environment: SpecSeed.environment.id,
+          user: SpecSeed.other_user.id,
+          hostname: 'owner-should-stay-current'
+        }
       end
 
-      as(SpecSeed.admin) { json_post clone_path(vps.id), vps: { node: destination_node.id } }
-
       expect_status(200)
       expect(json['status']).to be(true)
+      expect(seen.fetch(:user)).to eq(SpecSeed.user)
     end
   end
 
@@ -1387,20 +1467,65 @@ RSpec.describe 'VpsAdmin::API::Resources::VPS write actions' do # rubocop:disabl
     end
 
     it 'allows admin to replace VPS' do
-      allow(TransactionChains::Vps::Replace).to receive(:chain_for) do |_src, _dst|
+      expiration = Time.utc(2042, 1, 2, 3, 4, 5)
+      seen = nil
+      allow(TransactionChains::Vps::Replace).to receive(:chain_for).with(vps, vps.node) do
         class_double(TransactionChains::Vps::Replace::Os).tap do |chain|
-          allow(chain).to receive(:fire) do |_src_vps, node, _input|
+          allow(chain).to receive(:fire) do |_src_vps, node, input|
+            seen = { node: node, input: input.dup }
             replaced = create_vps!(user: vps.user, node: node, hostname: "spec-replace-#{SecureRandom.hex(4)}")
             [fake_chain!(TransactionChains::Vps::Replace::Os), replaced]
           end
         end
       end
 
-      as(SpecSeed.admin) { json_post replace_path(vps.id), vps: {} }
+      as(SpecSeed.admin) do
+        json_post replace_path(vps.id), vps: {
+          start: false,
+          expiration_date: expiration.strftime('%Y-%m-%dT%H:%M:%SZ'),
+          reason: 'spec reason'
+        }
+      end
 
       expect_status(200)
       expect(json['status']).to be(true)
       expect(Vps.where(id: vps_obj['id'])).to exist
+      expect(seen.fetch(:node)).to eq(vps.node)
+      expect(seen.fetch(:input)).to include(start: false, reason: 'spec reason')
+      expect(seen.fetch(:input).fetch(:expiration_date)).to be_within(1).of(expiration)
+    end
+
+    it 'passes explicit target node through to replace chain' do
+      target_node = create_node!(
+        name_prefix: 'spec-replace',
+        location: SpecSeed.location,
+        role: :node,
+        hypervisor_type: :vpsadminos
+      )
+      seen = nil
+
+      allow(TransactionChains::Vps::Replace).to receive(:chain_for).with(vps, target_node) do
+        class_double(TransactionChains::Vps::Replace::Os).tap do |chain|
+          allow(chain).to receive(:fire) do |_src_vps, node, input|
+            seen = { node: node, input: input.dup }
+            replaced = create_vps!(user: vps.user, node: node, hostname: "spec-replace-#{SecureRandom.hex(4)}")
+            [fake_chain!(TransactionChains::Vps::Replace::Os), replaced]
+          end
+        end
+      end
+
+      as(SpecSeed.admin) do
+        json_post replace_path(vps.id), vps: {
+          node: target_node.id,
+          start: true,
+          reason: 'explicit node'
+        }
+      end
+
+      expect_status(200)
+      expect(json['status']).to be(true)
+      expect(seen.fetch(:node)).to eq(target_node)
+      expect(seen.fetch(:input)).to include(start: true, reason: 'explicit node')
     end
   end
 
