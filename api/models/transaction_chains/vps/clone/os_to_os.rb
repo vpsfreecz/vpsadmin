@@ -230,7 +230,12 @@ module TransactionChains
           args: [
             vps,
             dst_vps.id,
-            { consistent: attrs[:stop], network_interfaces: false, pool: @dst_pool }
+            {
+              consistent: attrs[:stop],
+              network_interfaces: false,
+              pool: @dst_pool,
+              dataset: File.join(@dst_pool.filesystem, dst_vps.dataset_in_pool.dataset.full_name)
+            }
           ],
           &confirm_creation
         )

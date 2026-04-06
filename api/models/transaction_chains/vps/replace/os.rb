@@ -214,7 +214,16 @@ module TransactionChains
         # Full copy
         append_t(
           Transactions::Vps::Copy,
-          args: [vps, dst_vps.id, { consistent: false, network_interfaces: true, pool: @dst_pool }],
+          args: [
+            vps,
+            dst_vps.id,
+            {
+              consistent: false,
+              network_interfaces: true,
+              pool: @dst_pool,
+              dataset: File.join(@dst_pool.filesystem, dst_vps.dataset_in_pool.dataset.full_name)
+            }
+          ],
           &confirm_creation
         )
       end
