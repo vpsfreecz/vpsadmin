@@ -10,16 +10,21 @@ module Transactions::Vps
     # @option opts [Boolean] :consistent
     # @option opts [Boolean] :network_interfaces
     # @option opts [::Pool] :pool
+    # @option opts [String] :dataset
     def params(vps, as_id, opts = {})
       self.vps_id = vps.id
       self.node_id = vps.node_id
 
-      {
+      ret = {
         as_pool_name: opts.fetch(:pool, vps.dataset_in_pool.pool).name,
         as_id: as_id.to_s,
         consistent: opts[:consistent].nil? ? true : opts[:consistent],
         network_interfaces: opts[:network_interfaces] || false
       }
+
+      ret[:as_dataset] = opts[:dataset] if opts[:dataset]
+
+      ret
     end
   end
 end

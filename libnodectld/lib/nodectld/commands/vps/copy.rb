@@ -9,6 +9,7 @@ module NodeCtld
         [@vps_id, @as_id],
         {
           pool: @as_pool_name,
+          dataset: @as_dataset,
           consistent: @consistent,
           network_interfaces: @network_interfaces
         }
