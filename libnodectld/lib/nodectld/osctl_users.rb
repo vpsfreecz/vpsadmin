@@ -21,6 +21,7 @@ module NodeCtld
 
     def initialize
       @pool_users = {}
+      @pool_groups = {}
     end
 
     def setup
@@ -32,7 +33,17 @@ module NodeCtld
     def add_pool(pool_fs)
       return if @pool_users.has_key?(pool_fs)
 
-      @pool_users[pool_fs] = PoolUsers.new(pool_fs)
+      pool_name = pool_fs.split('/').first
+      group = @pool_groups[pool_name]
+
+      if group.nil?
+        group = PoolUsers.new(pool_name, [pool_fs])
+        @pool_groups[pool_name] = group
+      else
+        group.add_pool_fs(pool_fs)
+      end
+
+      @pool_users[pool_fs] = group
     end
 
     # Ensure presence of osctl user for a VPS
@@ -62,11 +73,17 @@ module NodeCtld
 
     def setup_pool_users
       RpcClient.run do |rpc|
-        rpc.list_pools.each do |pool|
-          pu = PoolUsers.new(pool['filesystem'])
-          pu.setup(rpc, pool['id'])
+        rpc.list_pools.group_by { |pool| pool['name'] }.each do |pool_name, pools|
+          pu = PoolUsers.new(
+            pool_name,
+            pools.map { |pool| pool['filesystem'] }
+          )
+          pu.setup(rpc, pools.map { |pool| pool['id'] })
 
-          @pool_users[pool['filesystem']] = pu
+          @pool_groups[pool_name] = pu
+          pools.each do |pool|
+            @pool_users[pool['filesystem']] = pu
+          end
         end
       end
     end
@@ -75,31 +92,40 @@ module NodeCtld
       include Utils::Pool
       include OsCtl::Lib::Utils::File
 
-      attr_reader :pool_fs
+      attr_reader :pool_name
 
-      def initialize(pool_fs)
-        @pool_fs = pool_fs
-        @pool_name = pool_fs.split('/').first
+      def initialize(pool_name, pool_fses)
+        @pool_name = pool_name
+        @pool_fses = pool_fses.dup
         @users = {}
         @mutex = Mutex.new
       end
 
-      def setup(rpc, pool_id)
+      def add_pool_fs(pool_fs)
+        sync do
+          @pool_fses << pool_fs unless @pool_fses.include?(pool_fs)
+        end
+      end
+
+      def setup(rpc, pool_ids)
         if config_exist?
           load_config
+          save
           return
         end
 
-        rpc.each_vps_user_namespace_map(pool_id) do |vps_map|
-          name = vps_map['map_name']
-          u = @users[name]
+        pool_ids.each do |pool_id|
+          rpc.each_vps_user_namespace_map(pool_id) do |vps_map|
+            name = vps_map['map_name']
+            u = @users[name]
 
-          if u.nil?
-            u = User.new_from_rpc(@pool_name, vps_map)
-            @users[name] = u
+            if u.nil?
+              u = User.new_from_rpc(@pool_name, vps_map)
+              @users[name] = u
+            end
+
+            u.add_vps(vps_map['vps_id'])
           end
-
-          u.add_vps(vps_map['vps_id'])
         end
 
         save
@@ -149,38 +175,52 @@ module NodeCtld
 
       def save
         sync do
-          FileUtils.mkdir_p(config_dir)
+          config_paths.each do |path|
+            FileUtils.mkdir_p(File.dirname(path))
 
-          regenerate_file(config_path, 0o644) do |new|
-            new.puts(OsCtl::Lib::ConfigFile.dump_yaml(dump))
+            regenerate_file(path, 0o644) do |new|
+              new.puts(OsCtl::Lib::ConfigFile.dump_yaml(dump))
+            end
           end
         end
       end
 
       def load_config
-        cfg = OsCtl::Lib::ConfigFile.load_yaml_file(config_path)
+        config_paths.each do |path|
+          next unless File.exist?(path)
 
-        cfg['users'].each do |cfg_user|
-          u = User.load_from_config(@pool_name, cfg_user)
-          @users[u.name] = u
+          cfg = OsCtl::Lib::ConfigFile.load_yaml_file(path)
+
+          Array(cfg['users']).each do |cfg_user|
+            u = @users[cfg_user['name']]
+
+            if u
+              u.merge_from_config(cfg_user)
+            else
+              u = User.load_from_config(@pool_name, cfg_user)
+              @users[u.name] = u
+            end
+          end
         end
       end
 
       def config_exist?
-        File.exist?(config_path)
+        config_paths.any? { |path| File.exist?(path) }
       end
 
-      def config_dir
-        @config_dir ||= File.join(
-          '/',
-          @pool_fs,
-          path_to_pool_working_dir(:config),
-          'users'
-        )
+      def config_dirs
+        @pool_fses.map do |pool_fs|
+          File.join(
+            '/',
+            pool_fs,
+            path_to_pool_working_dir(:config),
+            'users'
+          )
+        end
       end
 
-      def config_path
-        @config_path ||= File.join(config_dir, 'user-list.yml')
+      def config_paths
+        config_dirs.map { |dir| File.join(dir, 'user-list.yml') }
       end
 
       def sync(&)
@@ -277,6 +317,16 @@ module NodeCtld
             'gidmap' => @gidmap,
             'vpses' => @vpses.keys
           }
+        end
+      end
+
+      def merge_from_config(cfg)
+        sync do
+          @created ||= cfg['created']
+
+          Array(cfg['vpses']).each do |vps_id|
+            @vpses[vps_id] = true
+          end
         end
       end
 
