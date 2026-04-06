@@ -304,18 +304,6 @@ module TransactionChains
       # Start the new VPS
       use_chain(Vps::Start, args: dst_vps, reversible: :keep_going) if attrs[:start]
 
-      if remote
-        # Add IPS to accounting and shaper on the destination node
-        vps.ip_addresses.each do |ip|
-          append(Transactions::Shaper::Set, args: [dst_vps, ip])
-        end
-
-        # Remove IPs from accounting and shaper on the source node
-        vps.ip_addresses.each do |ip|
-          append(Transactions::Shaper::Unset, args: [vps, ip])
-        end
-      end
-
       dst_vps.save!
 
       mail(:vps_replaced, {
