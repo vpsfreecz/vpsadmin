@@ -1,3 +1,5 @@
+require 'nodectld/vps_config/network_interface'
+
 module NodeCtld
   class VpsConfig::NetworkInterfaceList
     # @param data [Array]

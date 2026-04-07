@@ -1,5 +1,14 @@
 module NodeCtld
   module VpsConfig
+  end
+end
+
+require 'require_all'
+require 'nodectld/utils'
+require 'nodectld/vps_config/top_level'
+
+module NodeCtld
+  module VpsConfig
     # @param pool_fs [String]
     # @param vps_id [Integer]
     # @yiledparam cfg [VpsConfig::TopLevel]
