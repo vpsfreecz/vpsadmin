@@ -15,6 +15,13 @@ module TransactionChains
     label 'Swap'
 
     def link_chain(primary_vps, secondary_vps, opts)
+      if primary_vps.user_id != secondary_vps.user_id
+        raise VpsAdmin::API::Exceptions::OperationError, 'access denied'
+      elsif primary_vps.node.location_id == secondary_vps.node.location_id
+        raise VpsAdmin::API::Exceptions::OperationError,
+              'swap within one location is not needed, simply exchange IP addresses'
+      end
+
       lock(primary_vps)
       lock(secondary_vps)
       concerns(:transform,
