@@ -125,6 +125,14 @@
         vps_send_cleanup: Transactions::Vps::SendCleanup.t_type,
         vps_remove_config: Transactions::Vps::RemoveConfig.t_type,
         vps_autostart: Transactions::Vps::Autostart.t_type,
+        vps_boot: Transactions::Vps::Boot.t_type,
+        vps_restart: Transactions::Vps::Restart.t_type,
+        vps_reinstall: Transactions::Vps::Reinstall.t_type,
+        vps_resources: Transactions::Vps::Resources.t_type,
+        vps_features: Transactions::Vps::Features.t_type,
+        vps_deploy_public_key: Transactions::Vps::DeployPublicKey.t_type,
+        vps_deploy_user_data: Transactions::Vps::DeployUserData.t_type,
+        vps_apply_user_data: Transactions::Vps::ApplyUserData.t_type,
         vps_stop: Transactions::Vps::Stop.t_type,
         vps_start: Transactions::Vps::Start.t_type
       )
@@ -164,6 +172,27 @@
 
   def generate_migration_keys(services)
     services.vpsadminctl.succeeds(args: %w[cluster generate_migration_keys])
+  end
+
+  def generate_pool_migration_key(node, pool_name:, timeout: 120)
+    escaped_pool = Shellwords.escape(pool_name)
+    node.succeeds("osctl --pool #{escaped_pool} send key gen --force", timeout: timeout)
+    _, output = node.succeeds(
+      "cat $(osctl --pool #{escaped_pool} send key path public)",
+      timeout: timeout
+    )
+    output.strip
+  end
+
+  def set_pool_migration_public_key(services, admin_user_id:, pool_id:, public_key:)
+    services.api_ruby_json(code: <<~RUBY)
+      #{api_session_prelude(admin_user_id)}
+
+      pool = Pool.find(#{Integer(pool_id)})
+      pool.update!(migration_public_key: #{public_key.inspect})
+
+      puts JSON.dump(pool_id: pool.id, migration_public_key: pool.migration_public_key)
+    RUBY
   end
 
   def create_pool(services, node_id:, label:, filesystem:, role:)
@@ -213,8 +242,51 @@
     output.fetch('vps')
   end
 
-  def attach_test_vps_ip(services, admin_user_id:, vps_id:, addr:)
+  def deploy_user_public_key(services, admin_user_id:, user_id:, label:, key:, auto_add: false)
     services.api_ruby_json(code: <<~RUBY)
+      #{api_session_prelude(admin_user_id)}
+
+      user = User.find(#{Integer(user_id)})
+      public_key = UserPublicKey.create!(
+        user: user,
+        label: #{label.inspect},
+        key: #{key.inspect},
+        auto_add: #{auto_add ? 'true' : 'false'}
+      )
+
+      puts JSON.dump(
+        id: public_key.id,
+        user_id: public_key.user_id,
+        label: public_key.label,
+        key: public_key.key,
+        auto_add: public_key.auto_add
+      )
+    RUBY
+  end
+
+  def create_vps_user_data(services, admin_user_id:, user_id:, label:, format:, content:)
+    services.api_ruby_json(code: <<~RUBY)
+      #{api_session_prelude(admin_user_id)}
+
+      user = User.find(#{Integer(user_id)})
+      user_data = VpsUserData.create!(
+        user: user,
+        label: #{label.inspect},
+        format: #{format.inspect},
+        content: #{content.inspect}
+      )
+
+      puts JSON.dump(
+        id: user_data.id,
+        user_id: user_data.user_id,
+        label: user_data.label,
+        format: user_data.format
+      )
+    RUBY
+  end
+
+  def attach_test_vps_ip(services, admin_user_id:, vps_id:, addr:)
+    response = services.api_ruby_json(code: <<~RUBY)
       #{api_session_prelude(admin_user_id)}
 
       vps = Vps.find(#{Integer(vps_id)})
@@ -231,13 +303,13 @@
         split_access: :no_access,
         split_prefix: 32,
         purpose: :vps,
-        primary_location: location
+        primary_location: network.primary_location || location
       )
       network.save! if network.changed?
 
       loc_net = LocationNetwork.find_or_initialize_by(location: location, network: network)
       loc_net.assign_attributes(
-        primary: true,
+        primary: network.primary_location_id == location.id,
         priority: 10,
         autopick: true,
         userpick: true
@@ -257,21 +329,48 @@
         )
       end
 
-      order = netif.ip_addresses.maximum(:order)
-      ip.assign_attributes(
-        network_interface: netif,
-        order: order.nil? ? 0 : order + 1,
-        charged_environment: location.environment,
-        user: location.environment.user_ip_ownership ? vps.user : nil
-      )
-      ip.save! if ip.changed?
+      if ip.network_interface_id.nil?
+        chain, = netif.add_route(ip, is_user: false)
+      elsif ip.network_interface_id != netif.id
+        raise ip.ip_addr + ' is already assigned to interface #' + ip.network_interface_id.to_s
+      end
 
       puts JSON.dump(
+        chain_id: chain&.id,
         ip_id: ip.id,
         addr: ip.ip_addr,
         network_interface_id: netif.id
       )
     RUBY
+
+    if response['chain_id']
+      final_state = wait_for_chain_states_local(
+        services,
+        response.fetch('chain_id'),
+        %i[done failed fatal resolved]
+      )
+
+      expect(final_state).to eq(services.class::CHAIN_STATES[:done]), {
+        response: response,
+        final_state: final_state,
+        failure_details: chain_failure_details(services, response.fetch('chain_id'))
+      }.inspect
+    end
+
+    response
+  end
+
+  def vps_exec(machine, vps_id:, command:, timeout: 60)
+    machine.succeeds(
+      "osctl ct exec #{Integer(vps_id)} sh -c #{Shellwords.escape(command)}",
+      timeout: timeout
+    )
+  end
+
+  def vps_authorized_keys_lines(machine, vps_id:, timeout: 60)
+    _, output = vps_exec(machine, vps_id: vps_id, command: 'cat /root/.ssh/authorized_keys', timeout: timeout)
+
+    output.lines.map(&:strip).reject(&:empty?)
   end
 
   def dataset_info(services, vps_id)
@@ -662,6 +761,7 @@
         'node_id', node_id,
         'queue', queue,
         'depends_on_id', depends_on_id,
+        'reversible', reversible,
         'done', done,
         'status', status
       )
@@ -909,6 +1009,15 @@
 
       sleep 1
     end
+  end
+
+  def wait_for_vps_chain_done(services, chain_id, timeout: 300)
+    wait_for_chain_states_local(
+      services,
+      chain_id,
+      %i[done failed fatal resolved],
+      timeout: timeout
+    )
   end
 
   def wait_for_tx_handle_started(services, chain_id, handle)
@@ -1538,6 +1647,53 @@
     RUBY
   end
 
+  def vps_boot(services, admin_user_id:, vps_id:, os_template_id: nil, mount_root_dataset: nil, start_timeout: 60)
+    parameters = {}
+    parameters[:os_template] = Integer(os_template_id) unless os_template_id.nil?
+    parameters[:mount_root_dataset] = mount_root_dataset unless mount_root_dataset.nil?
+
+    _, output = services.vpsadminctl.succeeds(
+      args: ['vps', 'boot', Integer(vps_id).to_s],
+      parameters: parameters
+    )
+
+    {
+      'chain_id' => output.dig('_meta', 'action_state_id') || output.dig('response', '_meta', 'action_state_id')
+    }
+  end
+
+  def vps_reinstall(services, admin_user_id:, vps_id:, os_template_id: nil, send_mail: false, user_data_id: nil)
+    parameters = {}
+    parameters[:os_template] = Integer(os_template_id) unless os_template_id.nil?
+    parameters[:vps_user_data] = Integer(user_data_id) unless user_data_id.nil?
+
+    _, output = services.vpsadminctl.succeeds(
+      args: ['vps', 'reinstall', Integer(vps_id).to_s],
+      parameters: parameters
+    )
+
+    {
+      'chain_id' => output.dig('_meta', 'action_state_id') || output.dig('response', '_meta', 'action_state_id')
+    }
+  end
+
+  def vps_update(services, admin_user_id:, vps_id:, attrs:)
+    attrs_json = attrs.to_json
+
+    services.api_ruby_json(code: <<~RUBY)
+      #{api_session_prelude(admin_user_id)}
+
+      vps = Vps.find(#{Integer(vps_id)})
+      attrs = JSON.parse(#{attrs_json.inspect}, symbolize_names: true)
+      chain, updated_vps = TransactionChains::Vps::Update.fire(vps, attrs)
+
+      puts JSON.dump(
+        chain_id: chain&.id,
+        vps_id: updated_vps.id
+      )
+    RUBY
+  end
+
   def vps_replace(
     services,
     admin_user_id:,
@@ -1566,6 +1722,25 @@
       chain, replaced_vps = chain_class.fire(vps, target_node, attrs)
 
       puts JSON.dump(chain_id: chain.id, replaced_vps_id: replaced_vps.id)
+    RUBY
+  end
+
+  def vps_swap(services, admin_user_id:, vps_id:, other_vps_id:, resources: false, hostname: false,
+               expirations: false)
+    services.api_ruby_json(code: <<~RUBY)
+      #{api_session_prelude(admin_user_id)}
+
+      primary = Vps.find(#{Integer(vps_id)})
+      secondary = Vps.find(#{Integer(other_vps_id)})
+      opts = {
+        resources: #{resources ? 'true' : 'false'},
+        hostname: #{hostname ? 'true' : 'false'},
+        expirations: #{expirations ? 'true' : 'false'}
+      }
+
+      chain, = TransactionChains::Vps::Swap.fire(primary, secondary, opts)
+
+      puts JSON.dump(chain_id: chain.id)
     RUBY
   end
 
@@ -1760,6 +1935,57 @@
       FROM vpses
       WHERE id = #{Integer(vps_id)}
       LIMIT 1
+    SQL
+  end
+
+  def vps_row(services, vps_id)
+    services.mysql_json_rows(sql: <<~SQL).first
+      SELECT JSON_OBJECT(
+        'id', id,
+        'node_id', node_id,
+        'user_id', user_id,
+        'hostname', hostname,
+        'cpu_limit', cpu_limit,
+        'autostart_enable', autostart_enable,
+        'autostart_priority', autostart_priority,
+        'manage_hostname', manage_hostname,
+        'enable_network', enable_network,
+        'map_mode', map_mode
+      )
+      FROM vpses
+      WHERE id = #{Integer(vps_id)}
+      LIMIT 1
+    SQL
+  end
+
+  def vps_feature_rows(services, vps_id)
+    services.mysql_json_rows(sql: <<~SQL)
+      SELECT JSON_OBJECT(
+        'id', id,
+        'name', name,
+        'enabled', enabled
+      )
+      FROM vps_features
+      WHERE vps_id = #{Integer(vps_id)}
+      ORDER BY name
+    SQL
+  end
+
+  def vps_resource_uses(services, vps_id)
+    services.mysql_json_rows(sql: <<~SQL)
+      SELECT JSON_OBJECT(
+        'resource', cr.name,
+        'value', cru.value,
+        'admin_limit', cru.admin_limit,
+        'admin_lock_type', cru.admin_lock_type
+      )
+      FROM cluster_resource_uses cru
+      INNER JOIN user_cluster_resources ucr ON ucr.id = cru.user_cluster_resource_id
+      INNER JOIN cluster_resources cr ON cr.id = ucr.cluster_resource_id
+      WHERE cru.class_name = 'Vps'
+        AND cru.table_name = 'vpses'
+        AND cru.row_id = #{Integer(vps_id)}
+      ORDER BY cr.name
     SQL
   end
 
