@@ -1,3 +1,5 @@
+require 'nodectld/vps_config/route'
+
 module NodeCtld
   class VpsConfig::NetworkInterface
     # @parma data [Hash]

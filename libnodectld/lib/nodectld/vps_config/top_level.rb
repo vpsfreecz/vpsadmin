@@ -1,5 +1,8 @@
 require 'filelock'
 require 'fileutils'
+require 'yaml'
+require 'nodectld/vps_config/mount'
+require 'nodectld/vps_config/network_interface_list'
 
 module NodeCtld
   class VpsConfig::TopLevel
