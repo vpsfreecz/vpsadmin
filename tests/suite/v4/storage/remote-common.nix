@@ -88,11 +88,16 @@
     RUBY
   end
 
+  def action_state_id(output)
+    output.dig('_meta', 'action_state_id') || output.dig('response', '_meta', 'action_state_id')
+  end
+
   def storage_tx_types(services)
     services.api_ruby_json(code: <<~RUBY)
       puts JSON.dump(
         create_snapshots: Transactions::Storage::CreateSnapshots.t_type,
         create_tree: Transactions::Storage::CreateTree.t_type,
+        storage_set_dataset: Transactions::Storage::SetDataset.t_type,
         recv: Transactions::Storage::Recv.t_type,
         send: Transactions::Storage::Send.t_type,
         recv_check: Transactions::Storage::RecvCheck.t_type,
@@ -126,6 +131,10 @@
         vps_remove_config: Transactions::Vps::RemoveConfig.t_type,
         vps_autostart: Transactions::Vps::Autostart.t_type,
         vps_boot: Transactions::Vps::Boot.t_type,
+        vps_destroy: Transactions::Vps::Destroy.t_type,
+        vps_mount: Transactions::Vps::Mount.t_type,
+        vps_mounts: Transactions::Vps::Mounts.t_type,
+        vps_passwd: Transactions::Vps::Passwd.t_type,
         vps_restart: Transactions::Vps::Restart.t_type,
         vps_reinstall: Transactions::Vps::Reinstall.t_type,
         vps_resources: Transactions::Vps::Resources.t_type,
@@ -134,7 +143,8 @@
         vps_deploy_user_data: Transactions::Vps::DeployUserData.t_type,
         vps_apply_user_data: Transactions::Vps::ApplyUserData.t_type,
         vps_stop: Transactions::Vps::Stop.t_type,
-        vps_start: Transactions::Vps::Start.t_type
+        vps_start: Transactions::Vps::Start.t_type,
+        vps_umount: Transactions::Vps::Umount.t_type
       )
     RUBY
   end
@@ -264,6 +274,18 @@
     RUBY
   end
 
+  def vps_deploy_public_key(services, admin_user_id:, vps_id:, public_key_id:)
+    services.api_ruby_json(code: <<~RUBY)
+      #{api_session_prelude(admin_user_id)}
+
+      vps = Vps.find(#{Integer(vps_id)})
+      public_key = UserPublicKey.find(#{Integer(public_key_id)})
+      chain, = TransactionChains::Vps::DeployPublicKey.fire(vps, public_key)
+
+      puts JSON.dump(chain_id: chain.id)
+    RUBY
+  end
+
   def create_vps_user_data(services, admin_user_id:, user_id:, label:, format:, content:)
     services.api_ruby_json(code: <<~RUBY)
       #{api_session_prelude(admin_user_id)}
@@ -282,6 +304,18 @@
         label: user_data.label,
         format: user_data.format
       )
+    RUBY
+  end
+
+  def vps_deploy_user_data(services, admin_user_id:, vps_user_data_id:, vps_id:)
+    services.api_ruby_json(code: <<~RUBY)
+      #{api_session_prelude(admin_user_id)}
+
+      data = VpsUserData.find(#{Integer(vps_user_data_id)})
+      vps = Vps.find(#{Integer(vps_id)})
+      chain, = TransactionChains::Vps::DeployUserData.fire(vps, data)
+
+      puts JSON.dump(chain_id: chain.id)
     RUBY
   end
 
@@ -374,19 +408,70 @@
   end
 
   def dataset_info(services, vps_id)
+    services.api_ruby_json(code: <<~RUBY)
+      vps = Vps.find(#{Integer(vps_id)})
+      dip = vps.dataset_in_pool
+
+      puts JSON.dump(
+        dataset_id: dip.dataset_id,
+        dataset_in_pool_id: dip.id,
+        refquota: dip.refquota,
+        dataset_full_name: dip.dataset.full_name,
+        pool_id: dip.pool_id,
+        pool_filesystem: dip.pool.filesystem
+      )
+    RUBY
+  end
+
+  def dataset_in_pool_row(services, dip_id)
+    services.api_ruby_json(code: <<~RUBY)
+      dip = DatasetInPool.find(#{Integer(dip_id)})
+
+      puts JSON.dump(
+        id: dip.id,
+        dataset_id: dip.dataset_id,
+        pool_id: dip.pool_id,
+        refquota: dip.refquota
+      )
+    RUBY
+  end
+
+  def dataset_expansion_row(services, dataset_expansion_id)
     services.mysql_json_rows(sql: <<~SQL).first
       SELECT JSON_OBJECT(
-        'dataset_id', d.id,
-        'dataset_in_pool_id', dip.id,
-        'dataset_full_name', d.full_name,
-        'pool_id', p.id,
-        'pool_filesystem', p.filesystem
+        'id', id,
+        'dataset_id', dataset_id,
+        'vps_id', vps_id,
+        'state', CASE state
+          WHEN 0 THEN 'active'
+          WHEN 1 THEN 'resolved'
+        END,
+        'state_id', state,
+        'original_refquota', original_refquota,
+        'added_space', added_space,
+        'enable_notifications', enable_notifications,
+        'enable_shrink', enable_shrink,
+        'stop_vps', stop_vps
       )
-      FROM vpses v
-      INNER JOIN dataset_in_pools dip ON dip.id = v.dataset_in_pool_id
-      INNER JOIN datasets d ON d.id = dip.dataset_id
-      INNER JOIN pools p ON p.id = dip.pool_id
-      WHERE v.id = #{Integer(vps_id)}
+      FROM dataset_expansions
+      WHERE id = #{Integer(dataset_expansion_id)}
+      LIMIT 1
+    SQL
+  end
+
+  def dataset_expansion_history_rows(services, dataset_expansion_id)
+    services.mysql_json_rows(sql: <<~SQL)
+      SELECT JSON_OBJECT(
+        'id', id,
+        'dataset_expansion_id', dataset_expansion_id,
+        'admin_id', admin_id,
+        'added_space', added_space,
+        'original_refquota', original_refquota,
+        'new_refquota', new_refquota
+      )
+      FROM dataset_expansion_histories
+      WHERE dataset_expansion_id = #{Integer(dataset_expansion_id)}
+      ORDER BY id
     SQL
   end
 
@@ -1020,6 +1105,30 @@
     )
   end
 
+  def expect_chain_done(services, response, label:, expected_handles: [], timeout: 300)
+    final_state = wait_for_vps_chain_done(
+      services,
+      response.fetch('chain_id'),
+      timeout: timeout
+    )
+    transactions = chain_transactions(services, response.fetch('chain_id'))
+    handles = transactions.map { |row| row.fetch('handle') }
+    audit = {
+      chain_id: response.fetch('chain_id'),
+      final_state: final_state,
+      handles: handles,
+      failure_details: chain_failure_details(services, response.fetch('chain_id'))
+    }
+
+    expect(final_state).to eq(services.class::CHAIN_STATES[:done]), "#{label}: #{audit.inspect}"
+
+    expected_handles.each do |handle|
+      expect(handles).to include(handle), "#{label}: #{audit.inspect}"
+    end
+
+    [audit, transactions]
+  end
+
   def wait_for_tx_handle_started(services, chain_id, handle)
     wait_until_block_succeeds(name: "chain #{chain_id} handle #{handle} started") do
       services.mysql_scalar(sql: <<~SQL).to_i > 0
@@ -1361,6 +1470,119 @@
     response
   end
 
+  def create_dataset_expansion(
+    services,
+    admin_user_id:,
+    dataset_id:,
+    added_space:,
+    enable_notifications: false,
+    enable_shrink: true,
+    stop_vps: false,
+    max_over_refquota_seconds: 3600
+  )
+    response = services.api_ruby_json(code: <<~RUBY)
+      #{api_session_prelude(admin_user_id)}
+
+      dataset = Dataset.find(#{Integer(dataset_id)})
+      dip = dataset.root.primary_dataset_in_pool!
+      exp = DatasetExpansion.new(
+        vps: dip.vpses.take!,
+        dataset: dataset,
+        added_space: #{Integer(added_space)},
+        enable_notifications: #{enable_notifications ? 'true' : 'false'},
+        enable_shrink: #{enable_shrink ? 'true' : 'false'},
+        stop_vps: #{stop_vps ? 'true' : 'false'},
+        max_over_refquota_seconds: #{Integer(max_over_refquota_seconds)}
+      )
+      chain, created = TransactionChains::Vps::ExpandDataset.fire(exp)
+
+      puts JSON.dump(
+        chain_id: chain.id,
+        dataset_expansion_id: created.id,
+        dataset_in_pool_id: dip.id
+      )
+    RUBY
+
+    wait_for_chain_states_local(
+      services,
+      response.fetch('chain_id'),
+      %i[done failed fatal resolved]
+    )
+    wait_for_chain_locks_released(services, response.fetch('chain_id'))
+    wait_for_resource_unlocked(
+      services,
+      resource: 'DatasetInPool',
+      row_id: response.fetch('dataset_in_pool_id')
+    )
+
+    response
+  end
+
+  def create_dataset_expansion_again(services, admin_user_id:, dataset_expansion_id:, added_space:)
+    response = services.api_ruby_json(code: <<~RUBY)
+      #{api_session_prelude(admin_user_id)}
+
+      exp = DatasetExpansion.find(#{Integer(dataset_expansion_id)})
+      dip = exp.dataset.root.primary_dataset_in_pool!
+      hist = exp.dataset_expansion_histories.new(
+        added_space: #{Integer(added_space)},
+        admin: User.current
+      )
+      chain, created = TransactionChains::Vps::ExpandDatasetAgain.fire(hist)
+
+      puts JSON.dump(
+        chain_id: chain.id,
+        history_id: created.id,
+        dataset_expansion_id: exp.id,
+        dataset_in_pool_id: dip.id
+      )
+    RUBY
+
+    wait_for_chain_states_local(
+      services,
+      response.fetch('chain_id'),
+      %i[done failed fatal resolved]
+    )
+    wait_for_chain_locks_released(services, response.fetch('chain_id'))
+    wait_for_resource_unlocked(
+      services,
+      resource: 'DatasetInPool',
+      row_id: response.fetch('dataset_in_pool_id')
+    )
+
+    response
+  end
+
+  def shrink_dataset_expansion(services, admin_user_id:, dataset_expansion_id:)
+    response = services.api_ruby_json(code: <<~RUBY)
+      #{api_session_prelude(admin_user_id)}
+
+      exp = DatasetExpansion.find(#{Integer(dataset_expansion_id)})
+      dip = exp.dataset.root.primary_dataset_in_pool!
+      chain, = TransactionChains::Vps::ShrinkDataset.fire(dip, exp)
+
+      puts JSON.dump(
+        chain_id: chain.id,
+        dataset_expansion_id: exp.id,
+        dataset_in_pool_id: dip.id
+      )
+    RUBY
+
+    wait_for_chain_states_local(
+      services,
+      response.fetch('chain_id'),
+      %i[done failed fatal resolved]
+    )
+    wait_for_chain_locks_released(services, response.fetch('chain_id'))
+    wait_for_resource_unlocked(
+      services,
+      resource: 'DatasetInPool',
+      row_id: response.fetch('dataset_in_pool_id')
+    )
+
+    response
+  end
+
   def create_primary_dataset(services, primary_node:, admin_user_id:, primary_node_id:, dataset_name:, primary_pool_fs:,
                              refquota: 10_240)
     primary_pool = create_pool(
@@ -1565,6 +1787,53 @@
     response
   end
 
+  def update_vps_mount(services, admin_user_id:, vps_id:, mount_id:, attrs:)
+    attrs_json = attrs.to_json
+
+    response = services.api_ruby_json(code: <<~RUBY)
+      #{api_session_prelude(admin_user_id)}
+
+      vps = Vps.find(#{Integer(vps_id)})
+      mount = Mount.find_by!(vps: vps, id: #{Integer(mount_id)})
+      attrs = JSON.parse(#{attrs_json.inspect}, symbolize_names: true)
+      chain, = mount.update_chain(attrs)
+
+      puts JSON.dump(chain_id: chain.id, mount_id: mount.id)
+    RUBY
+
+    wait_for_chain_states_local(
+      services,
+      response.fetch('chain_id'),
+      %i[done failed fatal resolved]
+    )
+    wait_for_chain_locks_released(services, response.fetch('chain_id'))
+    wait_for_resource_unlocked(services, resource: 'Vps', row_id: vps_id)
+
+    response
+  end
+
+  def destroy_vps_mount(services, admin_user_id:, vps_id:, mount_id:)
+    response = services.api_ruby_json(code: <<~RUBY)
+      #{api_session_prelude(admin_user_id)}
+
+      vps = Vps.find(#{Integer(vps_id)})
+      mount = Mount.find_by!(vps: vps, id: #{Integer(mount_id)})
+      chain, = TransactionChains::Vps::UmountDataset.fire(vps, mount)
+
+      puts JSON.dump(chain_id: chain.id, mount_id: mount.id)
+    RUBY
+
+    wait_for_chain_states_local(
+      services,
+      response.fetch('chain_id'),
+      %i[done failed fatal resolved]
+    )
+    wait_for_chain_locks_released(services, response.fetch('chain_id'))
+    wait_for_resource_unlocked(services, resource: 'Vps', row_id: vps_id)
+
+    response
+  end
+
   def vps_mount_rows(services, vps_id)
     services.mysql_json_rows(sql: <<~SQL)
       SELECT JSON_OBJECT(
@@ -1573,6 +1842,12 @@
         'snapshot_in_pool_id', m.snapshot_in_pool_id,
         'dst', m.dst,
         'enabled', m.enabled,
+        'on_start_fail', CASE m.on_start_fail
+          WHEN 0 THEN 'skip'
+          WHEN 1 THEN 'mount_later'
+          WHEN 2 THEN 'fail_start'
+          WHEN 3 THEN 'wait_for_mount'
+        END,
         'mount_type', m.mount_type,
         'confirmed', m.confirmed
       )
@@ -1658,7 +1933,7 @@
     )
 
     {
-      'chain_id' => output.dig('_meta', 'action_state_id') || output.dig('response', '_meta', 'action_state_id')
+      'chain_id' => action_state_id(output)
     }
   end
 
@@ -1673,8 +1948,22 @@
     )
 
     {
-      'chain_id' => output.dig('_meta', 'action_state_id') || output.dig('response', '_meta', 'action_state_id')
+      'chain_id' => action_state_id(output)
     }
+  end
+
+  def vps_passwd(services, admin_user_id:, vps_id:, type: 'secure')
+    services.api_ruby_json(code: <<~RUBY)
+      #{api_session_prelude(admin_user_id)}
+
+      vps = Vps.find(#{Integer(vps_id)})
+      chain, password = VpsAdmin::API::Operations::Vps::Passwd.run(
+        vps,
+        #{type.inspect}
+      )
+
+      puts JSON.dump(chain_id: chain.id, password: password)
+    RUBY
   end
 
   def vps_update(services, admin_user_id:, vps_id:, attrs:)
@@ -1890,7 +2179,7 @@
     raise RuntimeError, "#{e.message}\nVPS migrate diagnostic: #{diagnostic.inspect}"
   end
 
-  def hard_delete_vps(services, admin_user_id:, vps_id:, reason: 'storage test hard delete')
+  def hard_delete_vps(services, admin_user_id:, vps_id:, reason: 'storage test hard delete', timeout: 900)
     response = services.api_ruby_json(code: <<~RUBY)
       #{api_session_prelude(admin_user_id)}
 
@@ -1907,7 +2196,8 @@
     wait_for_chain_states_local(
       services,
       response.fetch('chain_id'),
-      %i[done failed fatal resolved]
+      %i[done failed fatal resolved],
+      timeout: timeout
     )
     response
   end
