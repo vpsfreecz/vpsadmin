@@ -1302,7 +1302,6 @@ RSpec.describe 'VpsAdmin::API::Resources::VPS write actions' do # rubocop:disabl
           dataset_plans: false,
           resources: false,
           features: false,
-          subdatasets: false,
           keep_snapshots: true
         }
       end
@@ -1322,7 +1321,6 @@ RSpec.describe 'VpsAdmin::API::Resources::VPS write actions' do # rubocop:disabl
         dataset_plans: false,
         resources: false,
         features: false,
-        subdatasets: false,
         keep_snapshots: true
       )
       expect(fire_input.fetch(:input).fetch(:address_location)).to eq(address_location)

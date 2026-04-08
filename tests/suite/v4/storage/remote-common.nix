@@ -1932,7 +1932,6 @@
     dataset_plans: true,
     resources: true,
     features: true,
-    subdatasets: true,
     keep_snapshots: false,
     address_location_id: nil
   )
@@ -1951,7 +1950,6 @@
         dataset_plans: #{dataset_plans ? 'true' : 'false'},
         resources: #{resources ? 'true' : 'false'},
         features: #{features ? 'true' : 'false'},
-        subdatasets: #{subdatasets ? 'true' : 'false'},
         keep_snapshots: #{keep_snapshots ? 'true' : 'false'},
         address_location: #{location_expr}
       }
