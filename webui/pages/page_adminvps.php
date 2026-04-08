@@ -1022,7 +1022,6 @@ if (isLoggedIn()) {
             $vps = $api->vps->find($_GET['veid']);
             $params = [
                 'hostname' => $_POST['hostname'],
-                'subdatasets' => isset($_POST['subdatasets']),
                 'dataset_plans' => isset($_POST['dataset_plans']),
                 'resources' => isset($_POST['resources']),
                 'features' => isset($_POST['features']),

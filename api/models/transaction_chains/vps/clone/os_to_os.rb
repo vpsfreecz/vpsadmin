@@ -169,7 +169,7 @@ module TransactionChains
 
       # Datasets to clone
       datasets = serialize_datasets(vps.dataset_in_pool, dst_vps.dataset_in_pool)
-      datasets.insert(0, [vps.dataset_in_pool, dst_vps.dataset_in_pool])
+      datasets.unshift([vps.dataset_in_pool, dst_vps.dataset_in_pool])
 
       confirm_creation = proc do |t|
         t.create(dst_vps)
@@ -302,7 +302,8 @@ module TransactionChains
 
       # Mounts
       clone_mounts(vps, dst_vps, datasets) do |mnt|
-        # Remove all mounts except those of subdatasets
+        # Keep mounts for the root dataset and cloned descendants.
+        # Keep mounts for the root dataset and cloned descendants.
         dst_vps.dataset_in_pool_id == mnt.dataset_in_pool_id \
           || dst_vps.dataset_in_pool.dataset.ancestor_of?(mnt.dataset_in_pool.dataset)
       end
