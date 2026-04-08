@@ -1672,7 +1672,6 @@ function vps_clone_form_step2($vps_id, $user_id, $loc_id)
         255
     );
 
-    api_param_to_form('subdatasets', $input->subdatasets);
     api_param_to_form('dataset_plans', $input->dataset_plans);
     api_param_to_form('resources', $input->resources);
     api_param_to_form('features', $input->features);

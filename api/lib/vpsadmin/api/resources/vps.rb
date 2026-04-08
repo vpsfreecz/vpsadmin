@@ -854,7 +854,6 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
                                                    desc: 'Location to select IP addresses from'
       # resource VpsAdmin::API::Resources::VPS, desc: 'Clone into an existing VPS', value_label: :hostname
       string :platform, default: 'same', fill: true, choices: %w[same vpsadminos]
-      bool :subdatasets, default: true, fill: true
       bool :dataset_plans, default: true, fill: true, label: 'Dataset plans'
       bool :resources, default: true, fill: true,
                        desc: 'Clone resources such as memory and CPU'
