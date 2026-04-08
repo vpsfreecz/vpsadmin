@@ -571,36 +571,83 @@ module VpsAdmin::API::Tasks
       message.each_answer do |answer|
         last_rdata = answer.rdata
 
-        case record.record_type
-        when 'AAAA'
-          return true if answer.rdata.to_s.downcase == record.content.downcase
-        when 'CNAME', 'PTR'
-          return true if answer.rdata.to_s.downcase == record.content.downcase.chop
-        when 'DS'
-          key_tag, algorithm, digest_type, digest = answer.rdata
-          answer_str = [
-            key_tag,
-            algorithm,
-            digest_type,
-            digest.each_byte.map { |b| b.to_s(16) }.join
-          ].join(' ')
-          return true if answer_str == record.content
-        when 'MX'
-          prio, name = answer.rdata
-          return true if prio == record.priority && name.to_s.downcase == record.content.downcase.chop
-        when 'SRV'
-          prio, weight, port, domain = answer.rdata
-          return true if prio == record.priority && [weight, port, "#{domain}."].join(' ') == record.content
-        when 'TXT'
-          return true if answer.rdata.join.strip == record.content.strip
-        else
-          return true if answer.rdata.to_s.strip == record.content.strip
-        end
+        return true if record_matches_answer?(record, answer.rdata)
       end
 
       warn "Answer mismatch: got #{last_rdata.inspect}, expected #{record.content.inspect} (#{desc})"
 
       false
+    end
+
+    def record_matches_answer?(record, rdata)
+      case record.record_type
+      when 'AAAA'
+        rdata.to_s.downcase == record.content.downcase
+      when 'CNAME', 'PTR'
+        rdata.to_s.downcase == record.content.downcase.chop
+      when 'DS'
+        key_tag, algorithm, digest_type, digest = rdata
+        answer_str = [
+          key_tag,
+          algorithm,
+          digest_type,
+          digest.each_byte.map { |b| b.to_s(16) }.join
+        ].join(' ')
+        answer_str == record.content
+      when 'MX'
+        prio, name = rdata
+        prio == record.priority && name.to_s.downcase == record.content.downcase.chop
+      when 'SRV'
+        prio, weight, port, domain = rdata
+        prio == record.priority && [weight, port, "#{domain}."].join(' ') == record.content
+      when 'SSHFP'
+        sshfp_matches?(record.content, rdata)
+      when 'TLSA'
+        tlsa_matches?(record.content, rdata)
+      when 'TXT'
+        rdata.join.strip == record.content.strip
+      else
+        rdata.to_s.strip == record.content.strip
+      end
+    end
+
+    def sshfp_matches?(expected, rdata)
+      algorithm, fingerprint_type, fingerprint = expected.split(/\s+/, 3)
+      return false if fingerprint.nil?
+
+      answer_algorithm, answer_fingerprint_type, answer_fingerprint = sshfp_rdata_values(rdata)
+
+      answer_algorithm == algorithm.to_i \
+        && answer_fingerprint_type == fingerprint_type.to_i \
+        && normalize_hex(answer_fingerprint.unpack1('H*')) == normalize_hex(fingerprint)
+    end
+
+    def tlsa_matches?(expected, rdata)
+      usage, selector, matching_type, association_data = expected.split(/\s+/, 4)
+      return false if association_data.nil?
+
+      answer_usage, answer_selector, answer_matching_type, answer_association_data = tlsa_rdata_values(rdata)
+
+      answer_usage == usage.to_i \
+        && answer_selector == selector.to_i \
+        && answer_matching_type == matching_type.to_i \
+        && normalize_hex(answer_association_data.unpack1('H*')) == normalize_hex(association_data)
+    end
+
+    def sshfp_rdata_values(rdata)
+      return rdata if rdata.is_a?(Array)
+
+      [rdata.alg.code, rdata.fptype.code, rdata.fp]
+    end
+
+    def tlsa_rdata_values(rdata)
+      return rdata if rdata.is_a?(Array)
+
+      [rdata.usage, rdata.selector, rdata.matching_type, rdata.databin]
+    end
+
+    def normalize_hex(v)
+      v.delete(" \t\r\n").downcase
     end
 
     def save(name)
