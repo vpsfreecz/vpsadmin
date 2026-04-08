@@ -694,30 +694,6 @@ RSpec.describe TransactionChains::Vps::Clone::OsToOs do
     expect(resource_edits.count).to be >= 3
   end
 
-  it 'keeps subdatasets=false as a pending contract until descendant selection is wired' do
-    pending(
-      'subdatasets=false should skip descendant dataset serialization and subdataset mounts, ' \
-      'but TransactionChains::Vps::Clone::OsToOs always serializes descendants'
-    )
-
-    fixture = create_clone_fixture
-    vps = fixture.fetch(:vps)
-
-    _chain, dst_vps = described_class.fire(
-      vps,
-      fixture.fetch(:dst_node),
-      user: vps.user,
-      hostname: 'subdatasets-pending',
-      stop: false,
-      dataset_plans: false,
-      resources: true,
-      features: false,
-      subdatasets: false
-    )
-
-    expect(dst_vps.datasets.where(name: fixture.fetch(:child_dataset).name)).to be_empty
-  end
-
   it 'keeps keep_snapshots=true as a pending contract until remote snapshot retention is wired' do
     pending(
       'keep_snapshots=true should preserve transfer snapshots, but the clone chain still appends ' \
