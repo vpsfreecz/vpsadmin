@@ -95,7 +95,7 @@ module TransactionChains
         confirm_features << ::VpsFeature.create!(
           vps: dst_vps,
           name:,
-          enabled: attrs[:features] && f.support?(vps.node) ? dst_features[name] : false
+          enabled: attrs[:features] && f.support?(vps.node) ? dst_features.fetch(name, false) : false
         )
       end
 

@@ -63,7 +63,7 @@ module TransactionChains
         confirm_features << ::VpsFeature.create!(
           vps: dst_vps,
           name:,
-          enabled: dst_features[name]
+          enabled: dst_features.fetch(name, false)
         )
       end
 
@@ -259,7 +259,10 @@ module TransactionChains
       append(
         Transactions::Vps::PopulateConfig,
         args: [dst_vps],
-        kwargs: { network_interfaces: vps.network_interfaces.all }
+        kwargs: {
+          pool: @dst_pool,
+          network_interfaces: vps.network_interfaces.all
+        }
       )
 
       # Resources

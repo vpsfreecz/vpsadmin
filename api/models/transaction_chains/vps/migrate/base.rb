@@ -334,7 +334,10 @@ module TransactionChains
       append(
         Transactions::Vps::PopulateConfig,
         args: dst_vps,
-        kwargs: { add_routes: opts[:handle_ips] },
+        kwargs: {
+          pool: dst_pool,
+          add_routes: opts[:handle_ips]
+        },
         urgent: true
       )
 
