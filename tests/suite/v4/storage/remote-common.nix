@@ -228,6 +228,7 @@
     node_id:,
     hostname:,
     diskspace: 10_240,
+    start: true,
     ipv4: 0,
     ipv4_private: 0,
     ipv6: 0
@@ -243,6 +244,7 @@
         memory: 1024,
         swap: 0,
         diskspace: Integer(diskspace),
+        start: start,
         ipv4: Integer(ipv4),
         ipv4_private: Integer(ipv4_private),
         ipv6: Integer(ipv6)
