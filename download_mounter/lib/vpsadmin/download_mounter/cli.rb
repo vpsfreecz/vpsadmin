@@ -151,6 +151,8 @@ module VpsAdmin::DownloadMounter
     end
 
     def each_pool_mounter
+      success = true
+
       @api.pool.list(meta: { includes: 'node__environment' }).each do |pool|
         puts "Pool #{pool.filesystem} of #{pool.node.domain_name}"
 
@@ -160,10 +162,19 @@ module VpsAdmin::DownloadMounter
           next
         end
 
-        yield(VpsAdmin::DownloadMounter::Mounter.new(@opts, ARGV[1], pool))
+        begin
+          success = false unless yield(
+            VpsAdmin::DownloadMounter::Mounter.new(@opts, ARGV[1], pool)
+          )
+        rescue StandardError => e
+          puts "  #{e.class}: #{e.message}"
+          success = false
+        end
 
         puts "\n"
       end
+
+      success
     end
   end
 end
