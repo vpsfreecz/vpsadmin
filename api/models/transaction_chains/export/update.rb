@@ -38,7 +38,7 @@ module TransactionChains
 
       add_hosts = create_missing_hosts(new_export) if new_export.all_vps
 
-      if toggle.nil? && !set && add_hosts.empty?
+      if toggle.nil? && !set && add_hosts.empty? && db_changes.empty?
         new_export.save!
         return new_export
       end
@@ -50,6 +50,11 @@ module TransactionChains
       end
 
       append_t(Transactions::Export::Set, args: [export, new_export]) if set
+
+      if db_changes.any? && toggle.nil? && !set && add_hosts.empty? && !included?
+        new_export.save!
+        return new_export
+      end
 
       if db_changes.any?
         append_t(Transactions::Utils::NoOp, args: find_node_id) do |t|
