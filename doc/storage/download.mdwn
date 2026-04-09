@@ -13,6 +13,12 @@ URL to this server is set in sysconfig under key `snapshot_download_base_url`.
 
     snapshot_download_base_url = "https://vpsadmin.vpsfree.cz/backup/"
 
+Every `vpsadmin/download` dataset also contains a well-known file
+`_vpsadmin-download-healthcheck`, which can be used to verify that the pool's
+download directory is reachable through the HTTP proxy. The file contains the
+numeric pool ID, so checks can verify that the directory is mounted at the
+correct path.
+
 ## Incremental streams
 Until a history flow is broken, snapshots can be downloaded incrementally, i.e.
 transfer only changed data from selected snapshots. History flow is broken by

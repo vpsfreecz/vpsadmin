@@ -13,6 +13,7 @@ module NodeCtld
 
       vps_config = File.join('/', @pool_fs, path_to_pool_working_dir(:config), 'vps')
       FileUtils.mkdir_p(vps_config)
+      ensure_pool_download_healthcheck(@pool_fs, @pool_id)
 
       OsCtlUsers.add_pool(@pool_fs)
 

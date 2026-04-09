@@ -5,10 +5,11 @@ require 'nodectld/utils'
 module NodeCtld
   class Node
     include OsCtl::Lib::Utils::Log
+    include Utils::Pool
     include Utils::System
     include Utils::OsCtl
 
-    Pool = Struct.new(:name, :filesystem, :role, :online)
+    Pool = Struct.new(:id, :name, :filesystem, :role, :online)
 
     def initialize
       @pools = {}
@@ -85,6 +86,7 @@ module NodeCtld
 
         new_pools.each do |pool|
           if (existing = @pools[pool.name])
+            existing.id = pool.id
             existing.filesystem = pool.filesystem
             existing.role = pool.role
           else
@@ -128,6 +130,16 @@ module NodeCtld
       end
 
       log(:info, "Pool #{pool.filesystem} is ready")
+
+      begin
+        ensure_pool_download_healthcheck(pool.filesystem, pool.id)
+      rescue SystemCallError, IOError => e
+        log(
+          :warn,
+          "Failed to create download healthcheck file on #{pool.filesystem}: #{e.message}"
+        )
+      end
+
       pool_up(pool.name)
 
       # Install pool hooks
@@ -161,6 +173,7 @@ module NodeCtld
       RpcClient.run do |rpc|
         rpc.list_pools.each do |pool|
           ret << Pool.new(
+            pool['id'],
             pool['name'],
             pool['filesystem'],
             pool['role'].to_sym,
