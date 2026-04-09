@@ -38,7 +38,7 @@ module TransactionChains
 
       add_hosts = create_missing_hosts(new_export) if new_export.all_vps
 
-      if toggle.nil? && !set && add_hosts.empty?
+      if toggle.nil? && !set && add_hosts.empty? && db_changes.empty?
         new_export.save!
         return new_export
       end
