@@ -1,4 +1,5 @@
 # List of custom routes covered by request specs
 covered_custom_routes:
 - "GET /metrics"
+- "GET /sd/download-pools"
 - "GET /webauthn/registration/new"

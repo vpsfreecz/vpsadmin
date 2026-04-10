@@ -53,6 +53,13 @@ module VpsAdmin
           [200, { 'content-type' => 'text/plain' }, m.render]
         end
 
+        sinatra.get '/sd/download-pools' do
+          sd = DownloadPoolServiceDiscovery.new(request)
+          next [403, 'Access denied'] unless sd.authenticate
+
+          [200, { 'content-type' => 'application/json' }, JSON.dump(sd.render)]
+        end
+
         sinatra.get '/webauthn/registration/new' do
           unless authenticated?(settings.api_server.default_version)
             if params[:redirect_uri]

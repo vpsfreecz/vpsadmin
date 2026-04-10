@@ -7,6 +7,7 @@ RSpec.describe 'VpsAdmin::API' do
     it 'ensures all known custom routes are listed as covered' do
       known = [
         'GET /metrics',
+        'GET /sd/download-pools',
         'GET /webauthn/registration/new'
       ]
 
