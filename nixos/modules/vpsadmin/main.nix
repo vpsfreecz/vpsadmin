@@ -9,6 +9,7 @@
 with lib;
 let
   cfg = config.vpsadmin;
+  jsonFormat = pkgs.formats.json { };
   vpsadminosPath =
     if vpsadminos == null then
       null
@@ -42,6 +43,15 @@ in
         type = types.listOf types.str;
         default = [ ];
         description = "List of plugins to enable.";
+      };
+
+      deploymentConfig = mkOption {
+        type = jsonFormat.type;
+        default = { };
+        description = ''
+          Generic deployment configuration rendered to `deployment.json` for
+          vpsAdmin API-based services.
+        '';
       };
 
       rabbitmq = {

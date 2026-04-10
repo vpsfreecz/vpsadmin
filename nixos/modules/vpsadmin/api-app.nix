@@ -19,6 +19,9 @@ let
     ;
 
   vpsadminCfg = config.vpsadmin;
+  deploymentConfigJson = pkgs.writeText "deployment.json" (
+    builtins.toJSON vpsadminCfg.deploymentConfig
+  );
 
   databaseYml = pkgs.writeText "database.yml" ''
     production:
@@ -123,6 +126,10 @@ in
     for v in "${configDirectory}"/* ; do
       ln -sf "$v" "${stateDirectory}/config/$(basename $v)"
     done
+
+    rm -f "${stateDirectory}/config/deployment.json"
+    cp -f ${deploymentConfigJson} "${stateDirectory}/config/deployment.json"
+    chmod 440 "${stateDirectory}/config/deployment.json"
 
     # Link in enabled plugins
     for plugin in ${concatStringsSep " " vpsadminCfg.plugins}; do
