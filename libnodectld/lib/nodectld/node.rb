@@ -19,7 +19,7 @@ module NodeCtld
     def init
       fetch_pools.each do |pool|
         @mutex.synchronize do
-          @pools[pool.name] = pool
+          @pools[pool.id] = pool
         end
       end
 
@@ -56,17 +56,17 @@ module NodeCtld
 
     def pool_down(pool_name)
       @mutex.synchronize do
-        next if @pools[pool_name].nil?
-
-        @pools[pool_name].online = false
+        @pools.each_value do |pool|
+          pool.online = false if pool.name == pool_name
+        end
       end
     end
 
     def pool_up(pool_name)
       @mutex.synchronize do
-        next if @pools[pool_name].nil?
-
-        @pools[pool_name].online = true
+        @pools.each_value do |pool|
+          pool.online = true if pool.name == pool_name
+        end
       end
     end
 
@@ -76,21 +76,21 @@ module NodeCtld
 
     def refresh_pools
       new_pools = fetch_pools
-      new_pool_names = new_pools.map(&:name)
+      new_pool_ids = new_pools.map(&:id)
       added = []
 
       @mutex.synchronize do
-        (@pools.keys - new_pool_names).each do |name|
-          @pools.delete(name)
+        (@pools.keys - new_pool_ids).each do |id|
+          @pools.delete(id)
         end
 
         new_pools.each do |pool|
-          if (existing = @pools[pool.name])
-            existing.id = pool.id
+          if (existing = @pools[pool.id])
+            existing.name = pool.name
             existing.filesystem = pool.filesystem
             existing.role = pool.role
           else
-            @pools[pool.name] = pool
+            @pools[pool.id] = pool
             added << pool
           end
         end
