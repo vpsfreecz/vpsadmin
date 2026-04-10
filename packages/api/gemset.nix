@@ -624,10 +624,10 @@
     platforms = [ ];
     source = {
       remotes = [ "https://rubygems.org" ];
-      sha256 = "1drisvysgvnjlz49a0qcbs294id6mvj3i8iik5rvym68ybwfzvvs";
+      sha256 = "0h9yjaxkb7h9smda6ivd88k7fgdqxd97nbfli3rxfjqiwpx0chf6";
       type = "gem";
     };
-    version = "1.19.1";
+    version = "1.20.0";
   };
   multi_xml = {
     dependencies = [ "bigdecimal" ];
@@ -793,10 +793,10 @@
     platforms = [ ];
     source = {
       remotes = [ "https://rubygems.org" ];
-      sha256 = "158w8xkk63vhv8spg7ypygh9h37jdam5hi5359s7x0n0mb2qxik6";
+      sha256 = "0z9cbfdfr83k8xhrh1nr4f4z8ryfivfr3gv3fpk22hczwg9q4xrk";
       type = "gem";
     };
-    version = "2.0.0";
+    version = "2.0.1";
   };
   parser = {
     dependencies = [
