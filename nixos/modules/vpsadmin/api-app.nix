@@ -117,6 +117,7 @@ in
 
   setup = ''
     set -euo pipefail
+    shopt -s nullglob
 
     # Cleanup previous state
     rm -f "${stateDirectory}/plugins/"*
