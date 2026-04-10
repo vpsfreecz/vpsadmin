@@ -85,16 +85,6 @@ class SysConfig < ApplicationRecord
   register :core, :ipv4_ddns_url, String, min_user_level: 99
   register :core, :ipv6_ddns_url, String, min_user_level: 99
   register :dns, :protected_zones, Array, min_user_level: 99
-  register :monitoring, :download_pool_sd_allowed_networks, Array,
-           label: 'Download pool SD allowed networks',
-           description: 'CIDR networks allowed to query /sd/download-pools',
-           default: [],
-           min_user_level: 99
-  register :monitoring, :download_pool_sd_trusted_proxies, Array,
-           label: 'Download pool SD trusted proxies',
-           description: 'CIDR networks trusted to forward Client-IP/X-Real-IP for /sd/download-pools',
-           default: [],
-           min_user_level: 99
 
   def get_value
     case data_type

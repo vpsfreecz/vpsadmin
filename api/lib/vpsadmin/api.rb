@@ -58,6 +58,8 @@ module VpsAdmin
           next [403, 'Access denied'] unless sd.authenticate
 
           [200, { 'content-type' => 'application/json' }, JSON.dump(sd.render)]
+        rescue VpsAdmin::API::Exceptions::ConfigurationError => e
+          [500, { 'content-type' => 'text/plain' }, e.message]
         end
 
         sinatra.get '/webauthn/registration/new' do

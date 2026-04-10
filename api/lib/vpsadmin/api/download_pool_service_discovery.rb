@@ -1,6 +1,7 @@
 module VpsAdmin::API
   class DownloadPoolServiceDiscovery
     HEALTHCHECK_FILE = '_vpsadmin-download-healthcheck'.freeze
+    CONFIG_PATH = %w[monitoring download_pool_service_discovery].freeze
 
     def initialize(request)
       @request = request
@@ -11,7 +12,7 @@ module VpsAdmin::API
       return false if client_ip.nil?
 
       allowed_networks.any? do |network|
-        network.include?(client_ip)
+        network_include_ip?(network, client_ip)
       end
     end
 
@@ -46,7 +47,7 @@ module VpsAdmin::API
       return false if peer_ip.nil?
 
       trusted_proxy_networks.any? do |network|
-        network.include?(peer_ip)
+        network_include_ip?(network, peer_ip)
       end
     end
 
@@ -61,28 +62,51 @@ module VpsAdmin::API
     end
 
     def allowed_networks
-      @allowed_networks ||= load_networks(
-        ::SysConfig.get('monitoring', 'download_pool_sd_allowed_networks')
-      )
+      @allowed_networks ||= load_networks(config_value('allowed_networks'), 'allowed_networks')
     end
 
     def trusted_proxy_networks
-      @trusted_proxy_networks ||= load_networks(
-        ::SysConfig.get('monitoring', 'download_pool_sd_trusted_proxies')
-      )
+      @trusted_proxy_networks ||= load_networks(config_value('trusted_proxies'), 'trusted_proxies')
     end
 
-    def load_networks(networks)
-      Array(networks).filter_map do |network|
-        parse_network(network)
+    def config
+      @config ||= begin
+        cfg = VpsAdmin::API::DeploymentConfig.dig(*CONFIG_PATH)
+
+        if cfg.nil?
+          {}
+        elsif cfg.is_a?(Hash)
+          cfg
+        else
+          raise VpsAdmin::API::Exceptions::ConfigurationError,
+                'monitoring.download_pool_service_discovery in deployment.json must be an object'
+        end
       end
     end
 
-    def parse_network(network)
+    def config_value(key)
+      config[key]
+    end
+
+    def load_networks(networks, key_name)
+      return [] if networks.nil?
+
+      unless networks.is_a?(Array)
+        raise VpsAdmin::API::Exceptions::ConfigurationError,
+              "monitoring.download_pool_service_discovery.#{key_name} in deployment.json must be an array"
+      end
+
+      Array(networks).filter_map do |network|
+        parse_network(network, key_name)
+      end
+    end
+
+    def parse_network(network, key_name)
       IPAddress.parse(network.to_s.strip)
     rescue ArgumentError, IPAddress::InvalidAddressError => e
-      warn "Ignoring invalid CIDR in download pool service discovery config: #{network.inspect} (#{e.message})"
-      nil
+      raise VpsAdmin::API::Exceptions::ConfigurationError,
+            "Invalid CIDR in monitoring.download_pool_service_discovery.#{key_name}: " \
+            "#{network.inspect} (#{e.message})"
     end
 
     def parse_ip(ip)
@@ -91,6 +115,13 @@ module VpsAdmin::API
       IPAddress.parse(ip)
     rescue ArgumentError, IPAddress::InvalidAddressError
       nil
+    end
+
+    def network_include_ip?(network, ip)
+      return false if ip.nil?
+      return false if network.ipv4? != ip.ipv4?
+
+      network.include?(ip)
     end
 
     def target_url(pool)

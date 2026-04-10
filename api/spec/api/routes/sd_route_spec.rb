@@ -1,8 +1,23 @@
 # frozen_string_literal: true
 
+require 'fileutils'
 require 'json'
 
 RSpec.describe 'VpsAdmin::API::ServiceDiscovery' do
+  def deployment_config_path
+    File.join(VpsAdmin::API.root, 'config', 'deployment.json')
+  end
+
+  def write_deployment_config!(cfg)
+    File.write(deployment_config_path, JSON.pretty_generate(cfg))
+    VpsAdmin::API::DeploymentConfig.reload!
+  end
+
+  def remove_deployment_config!
+    FileUtils.rm_f(deployment_config_path)
+    VpsAdmin::API::DeploymentConfig.reload!
+  end
+
   def set_sysconfig(category:, name:, data_type:, value:)
     cfg = SysConfig.find_or_initialize_by(category:, name:)
     cfg.data_type = data_type
@@ -22,17 +37,13 @@ RSpec.describe 'VpsAdmin::API::ServiceDiscovery' do
   end
 
   def configure_download_pool_sd!(allowed_networks:, trusted_proxies: [])
-    set_sysconfig(
-      category: 'monitoring',
-      name: 'download_pool_sd_allowed_networks',
-      data_type: 'Array',
-      value: allowed_networks
-    )
-    set_sysconfig(
-      category: 'monitoring',
-      name: 'download_pool_sd_trusted_proxies',
-      data_type: 'Array',
-      value: trusted_proxies
+    write_deployment_config!(
+      'monitoring' => {
+        'download_pool_service_discovery' => {
+          'allowed_networks' => allowed_networks,
+          'trusted_proxies' => trusted_proxies
+        }
+      }
     )
   end
 
@@ -50,10 +61,31 @@ RSpec.describe 'VpsAdmin::API::ServiceDiscovery' do
 
     before do
       ensure_snapshot_download_base_url!
-      configure_download_pool_sd!(allowed_networks: [], trusted_proxies: [])
+      remove_deployment_config!
     end
 
-    it 'rejects access when the client IP is not allowed' do
+    after do
+      remove_deployment_config!
+    end
+
+    it 'rejects access when deployment.json is not present' do
+      request_download_pool_sd(
+        'REMOTE_ADDR' => '198.51.100.10'
+      )
+
+      expect(last_response.status).to eq(403)
+      expect(last_response.body).to include('Access denied')
+    end
+
+    it 'rejects access when allowed networks are not configured' do
+      write_deployment_config!(
+        'monitoring' => {
+          'download_pool_service_discovery' => {
+            'trusted_proxies' => ['203.0.113.0/24']
+          }
+        }
+      )
+
       request_download_pool_sd(
         'REMOTE_ADDR' => '198.51.100.10'
       )
@@ -118,6 +150,30 @@ RSpec.describe 'VpsAdmin::API::ServiceDiscovery' do
       expect(last_response.status).to eq(200)
     end
 
+    it 'allows direct access from an allowed IPv6 network' do
+      configure_download_pool_sd!(allowed_networks: ['2001:db8:1::/64'])
+
+      request_download_pool_sd(
+        'REMOTE_ADDR' => '2001:db8:1::10'
+      )
+
+      expect(last_response.status).to eq(200)
+    end
+
+    it 'allows access through an IPv6 trusted proxy' do
+      configure_download_pool_sd!(
+        allowed_networks: ['2001:db8:1::/64'],
+        trusted_proxies: ['2001:db8:2::/64']
+      )
+
+      request_download_pool_sd(
+        'REMOTE_ADDR' => '2001:db8:2::20',
+        'HTTP_X_REAL_IP' => '2001:db8:1::10'
+      )
+
+      expect(last_response.status).to eq(200)
+    end
+
     it 'rejects forwarded addresses from untrusted proxies' do
       configure_download_pool_sd!(allowed_networks: ['198.51.100.0/24'])
 
@@ -128,6 +184,44 @@ RSpec.describe 'VpsAdmin::API::ServiceDiscovery' do
 
       expect(last_response.status).to eq(403)
       expect(last_response.body).to include('Access denied')
+    end
+
+    it 'rejects a direct IPv6 client when only IPv4 networks are allowed' do
+      configure_download_pool_sd!(allowed_networks: ['198.51.100.0/24'])
+
+      request_download_pool_sd(
+        'REMOTE_ADDR' => '2001:db8::10'
+      )
+
+      expect(last_response.status).to eq(403)
+      expect(last_response.body).to include('Access denied')
+    end
+
+    it 'rejects an IPv6 proxy when trusted proxies are configured only for IPv4' do
+      configure_download_pool_sd!(
+        allowed_networks: ['198.51.100.0/24'],
+        trusted_proxies: ['203.0.113.0/24']
+      )
+
+      request_download_pool_sd(
+        'REMOTE_ADDR' => '2001:db8::20',
+        'HTTP_X_REAL_IP' => '198.51.100.10'
+      )
+
+      expect(last_response.status).to eq(403)
+      expect(last_response.body).to include('Access denied')
+    end
+
+    it 'returns an error on malformed deployment config' do
+      File.write(deployment_config_path, '{"monitoring":')
+      VpsAdmin::API::DeploymentConfig.reload!
+
+      request_download_pool_sd(
+        'REMOTE_ADDR' => '198.51.100.10'
+      )
+
+      expect(last_response.status).to eq(500)
+      expect(last_response.body).to include('Unable to parse deployment.json')
     end
   end
 end
