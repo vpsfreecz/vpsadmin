@@ -105,6 +105,20 @@ RSpec.describe 'VpsAdmin::API::Resources::Export' do
     pool
   end
 
+  def create_backup_pool!(node: SpecSeed.other_node)
+    pool = Pool.new(
+      node: node,
+      label: "Spec Backup Pool #{SecureRandom.hex(3)}",
+      filesystem: "spec_backup_#{SecureRandom.hex(4)}",
+      role: :backup,
+      export_root: '/export',
+      max_datasets: 100,
+      is_open: true
+    )
+    pool.save!
+    pool
+  end
+
   def create_dataset_in_pool!(user:, pool:)
     dataset = Dataset.create!(
       name: "spec-#{SecureRandom.hex(4)}",
@@ -449,6 +463,154 @@ RSpec.describe 'VpsAdmin::API::Resources::Export' do
 
       expect(export_obj).not_to have_key('user')
       expect(export_obj).not_to have_key('threads')
+    end
+
+    it 'uses an existing backup snapshot for snapshot exports' do
+      primary_pool = create_primary_pool!(node: SpecSeed.node)
+      backup_pool = create_backup_pool!(node: SpecSeed.other_node)
+      dataset, primary_dip = create_dataset_with_pool!(
+        user: SpecSeed.user,
+        pool: primary_pool,
+        name: "spec-export-#{SecureRandom.hex(4)}"
+      )
+      backup_dip = attach_dataset_to_pool!(dataset: dataset, pool: backup_pool)
+      snapshot, = create_snapshot!(dataset: dataset, dip: primary_dip)
+      tree = create_tree!(dip: backup_dip, index: 0, head: true)
+      branch = create_branch!(tree: tree, name: 'head', head: true)
+      backup_sip = mirror_snapshot!(snapshot: snapshot, dip: backup_dip)
+      attach_snapshot_to_branch!(sip: backup_sip, branch: branch)
+      create_private_export_network_with_ips!(
+        location: backup_pool.node.location,
+        count: 1
+      )
+      ensure_signer_unlocked!
+
+      as(SpecSeed.user) { json_post index_path, export: { snapshot: snapshot.id } }
+
+      expect_status(200)
+      expect(json['status']).to be(true)
+      expect(action_state_id.to_i).to be > 0
+
+      export = Export.order(:id).last
+      chain = TransactionChain.find(action_state_id)
+      handles = chain.transactions.order(:id).pluck(:handle)
+      export_tx = chain.transactions.find_by!(
+        handle: Transactions::Export::Create.t_type
+      )
+
+      aggregate_failures do
+        expect(export.dataset_in_pool_id).to eq(backup_dip.id)
+        expect(export.snapshot_in_pool_clone.snapshot_in_pool.dataset_in_pool_id)
+          .to eq(backup_dip.id)
+        expect(handles).to include(Transactions::Storage::CloneSnapshot.t_type)
+        expect(handles).to include(Transactions::Export::Create.t_type)
+        expect(handles).not_to include(Transactions::Storage::Send.t_type)
+        expect(handles).not_to include(Transactions::Storage::Recv.t_type)
+        expect(handles).not_to include(Transactions::Storage::RecvCheck.t_type)
+        expect(export_tx.node_id).to eq(backup_pool.node_id)
+      end
+    end
+
+    it 'transfers the snapshot to backup before creating a snapshot export' do
+      primary_pool = create_primary_pool!(node: SpecSeed.node)
+      backup_pool = create_backup_pool!(node: SpecSeed.other_node)
+      dataset, primary_dip = create_dataset_with_pool!(
+        user: SpecSeed.user,
+        pool: primary_pool,
+        name: "spec-export-#{SecureRandom.hex(4)}"
+      )
+      backup_dip = attach_dataset_to_pool!(dataset: dataset, pool: backup_pool)
+      snapshot, local_sip = create_snapshot!(dataset: dataset, dip: primary_dip)
+      create_port_reservations!(node: backup_pool.node)
+      create_private_export_network_with_ips!(
+        location: backup_pool.node.location,
+        count: 1
+      )
+      ensure_signer_unlocked!
+
+      as(SpecSeed.user) { json_post index_path, export: { snapshot: snapshot.id } }
+
+      expect_status(200)
+      expect(json['status']).to be(true)
+      expect(action_state_id.to_i).to be > 0
+
+      export = Export.order(:id).last
+      chain = TransactionChain.find(action_state_id)
+      classes = tx_classes(chain)
+      backup_sip = SnapshotInPool.find_by!(
+        snapshot: snapshot,
+        dataset_in_pool: backup_dip
+      )
+      backup_increment = confirmations_for(chain).find do |c|
+        c.class_name == 'SnapshotInPool' &&
+          c.confirm_type == 'increment_type' &&
+          c.row_pks['id'] == backup_sip.id &&
+          c.attr_changes == 'reference_count'
+      end
+      local_increment = confirmations_for(chain).find do |c|
+        c.class_name == 'SnapshotInPool' &&
+          c.confirm_type == 'increment_type' &&
+          c.row_pks['id'] == local_sip.id &&
+          c.attr_changes == 'reference_count'
+      end
+
+      aggregate_failures do
+        expect(export.dataset_in_pool_id).to eq(backup_dip.id)
+        expect(export.snapshot_in_pool_clone.snapshot_in_pool.dataset_in_pool_id)
+          .to eq(backup_dip.id)
+        expect(
+          SnapshotInPool.where(snapshot: snapshot, dataset_in_pool: backup_dip)
+                        .exists?
+        ).to be(true)
+        expect(local_sip.reload.reference_count).to eq(0)
+        expect(backup_increment).not_to be_nil
+        expect(local_increment).to be_nil
+        expect(classes).to include(Transactions::Storage::Recv)
+        expect(classes).to include(Transactions::Storage::Send)
+        expect(classes).to include(Transactions::Storage::RecvCheck)
+        expect(classes).to include(Transactions::Storage::CloneSnapshot)
+        expect(classes).to include(Transactions::Export::Create)
+        expect(classes.index(Transactions::Storage::CloneSnapshot))
+          .to be > classes.index(Transactions::Storage::RecvCheck)
+        expect(classes.index(Transactions::Export::Create))
+          .to be > classes.index(Transactions::Storage::CloneSnapshot)
+      end
+    end
+
+    it 'falls back to the local dataset when no backup dataset exists' do
+      primary_pool = create_primary_pool!(node: SpecSeed.node)
+      dataset, primary_dip = create_dataset_with_pool!(
+        user: SpecSeed.user,
+        pool: primary_pool,
+        name: "spec-export-#{SecureRandom.hex(4)}"
+      )
+      snapshot, = create_snapshot!(dataset: dataset, dip: primary_dip)
+      create_private_export_network_with_ips!(
+        location: primary_pool.node.location,
+        count: 1
+      )
+      ensure_signer_unlocked!
+
+      as(SpecSeed.user) { json_post index_path, export: { snapshot: snapshot.id } }
+
+      expect_status(200)
+      expect(json['status']).to be(true)
+      expect(action_state_id.to_i).to be > 0
+
+      export = Export.order(:id).last
+      handles = TransactionChain.find(action_state_id)
+                                .transactions
+                                .order(:id)
+                                .pluck(:handle)
+
+      aggregate_failures do
+        expect(export.dataset_in_pool_id).to eq(primary_dip.id)
+        expect(export.snapshot_in_pool_clone.snapshot_in_pool.dataset_in_pool_id)
+          .to eq(primary_dip.id)
+        expect(handles).not_to include(Transactions::Storage::Send.t_type)
+        expect(handles).not_to include(Transactions::Storage::Recv.t_type)
+        expect(handles).not_to include(Transactions::Storage::RecvCheck.t_type)
+      end
     end
 
     it 'ignores threads for non-admin users' do

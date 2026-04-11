@@ -16,7 +16,7 @@ module TransactionChains
     # @option opts [Boolean] :enabled
     def link_chain(dataset, opts = {})
       if opts[:snapshot]
-        sip = find_snap_in_pool(opts[:snapshot])
+        sip = prepare_snapshot_export_source(opts[:snapshot])
         dip = sip.dataset_in_pool
       else
         dip = dataset.primary_dataset_in_pool!
@@ -148,24 +148,50 @@ module TransactionChains
       end
     end
 
-    def find_snap_in_pool(snapshot)
-      hv = pr = bc = nil
+    def prepare_snapshot_export_source(snapshot)
+      backup_sip, local_sip = find_existing_snapshot_candidates(snapshot)
+
+      return backup_sip if backup_sip
+
+      backup_dip = find_open_backup_dataset_in_pool(snapshot)
+      return local_sip unless backup_dip && local_sip
+
+      use_chain(
+        TransactionChains::Dataset::Transfer,
+        args: [local_sip.dataset_in_pool, backup_dip]
+      )
+
+      ::SnapshotInPool.where(snapshot:, dataset_in_pool: backup_dip).take!
+    end
+
+    def find_existing_snapshot_candidates(snapshot)
+      hypervisor_sip = nil
+      primary_sip = nil
+      backup_sip = nil
 
       snapshot.snapshot_in_pools
               .includes(dataset_in_pool: [:pool])
               .joins(dataset_in_pool: [:pool])
-              .all.group('pools.role').each do |sip|
+              .order('dataset_in_pools.id ASC').each do |sip|
         case sip.dataset_in_pool.pool.role.to_sym
         when :hypervisor
-          hv = sip
+          hypervisor_sip ||= sip
         when :primary
-          pr = sip
+          primary_sip ||= sip
         when :backup
-          bc = sip
+          backup_sip ||= sip
         end
       end
 
-      bc || pr || hv
+      [backup_sip, primary_sip || hypervisor_sip]
+    end
+
+    def find_open_backup_dataset_in_pool(snapshot)
+      snapshot.dataset.dataset_in_pools
+              .joins(:pool)
+              .where(pools: { role: ::Pool.roles[:backup], is_open: true })
+              .order('dataset_in_pools.id ASC')
+              .take
     end
 
     def export_path(dip, sip)
