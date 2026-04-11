@@ -39,8 +39,9 @@ module Transactions::DnsServerZone
           primaries: dns_server_zone.primaries,
           # For external zones, all vpsAdmin DNS servers are secondaries.
           # Keep secondaries populated so the servers can AXFR/IXFR between
-          # themselves (distribution when the user allows transfers only to a
-          # subset of our secondaries).
+          # themselves and so libnodectld can render explicit peer NOTIFY
+          # targets when the user allows transfers only to a subset of our
+          # secondaries.
           secondaries: dns_server_zone.secondaries
         )
       end

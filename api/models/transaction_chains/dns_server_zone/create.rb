@@ -34,10 +34,10 @@ module TransactionChains
             secondaries = [dns_server_zone.server_opts]
           end
         else
-          # External source has only secondary server zones; we add the new dns_server_zone
-          # to both primaries and secondaries of every server, so that the secondary servers
-          # can notify and update each other, in case the external source does not notify all
-          # of our servers.
+          # External source has only secondary server zones; add the new
+          # dns_server_zone to both primaries and secondaries of every server.
+          # libnodectld uses primaries as transfer sources and secondaries for
+          # allow-transfer plus explicit peer also-notify targets.
           primaries = [dns_server_zone.server_opts]
           secondaries = [dns_server_zone.server_opts]
         end

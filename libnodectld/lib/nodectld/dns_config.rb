@@ -114,11 +114,15 @@ module NodeCtld
             end
           else
             f.puts('  type secondary;')
-            f.puts("  primaries { #{list_primaries(zone.primaries)} };")
+            f.puts("  primaries { #{list_remote_servers(zone.primaries)} };")
 
             if zone.secondaries.any?
               f.puts("  allow-transfer { #{allow_transfer(zone.secondaries)} };")
               f.puts('  notify yes;')
+
+              if zone.source == 'external_source'
+                f.puts("  also-notify { #{list_remote_servers(zone.secondaries)} };")
+              end
             else
               f.puts('  allow-transfer { none; };')
             end
@@ -141,7 +145,7 @@ module NodeCtld
       end.join(' ')
     end
 
-    def list_primaries(servers)
+    def list_remote_servers(servers)
       servers.map do |s|
         if s['tsig_key']
           "#{s['ip_addr']} key #{s['tsig_key']['name']};"

@@ -42,9 +42,9 @@ class DnsServerZone < ApplicationRecord
       if dns_zone.internal_source?
         dns_zone.dns_server_zones.primary_type
       else
-        # All secondary server zones are also added to primaries, so that it is enough
-        # to notify only one secondary server, which will then send notification to other
-        # secondary servers.
+        # For external zones, peer vpsAdmin secondaries are added to primaries as
+        # potential transfer sources. libnodectld then renders those peer
+        # secondaries from #secondaries into BIND also-notify targets.
         dns_zone.dns_server_zones.all
       end
 
