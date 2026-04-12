@@ -624,10 +624,10 @@
     platforms = [ ];
     source = {
       remotes = [ "https://rubygems.org" ];
-      sha256 = "0h9yjaxkb7h9smda6ivd88k7fgdqxd97nbfli3rxfjqiwpx0chf6";
+      sha256 = "0vfaab23d85617ps412ydb8ap4ci1sfzi8ainn8yyifc0pl38f9g";
       type = "gem";
     };
-    version = "1.20.0";
+    version = "1.20.1";
   };
   multi_xml = {
     dependencies = [ "bigdecimal" ];
