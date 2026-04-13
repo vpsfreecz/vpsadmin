@@ -278,12 +278,22 @@ module VpsAdmin::Supervisor
 
         q = q.where('vpses.id > ?', from_id) if from_id
 
-        q.map do |vps|
+        q.filter_map do |vps|
+          user_namespace_map = vps.user_namespace_map
+
+          unless user_namespace_map
+            warn(
+              "Node::Rpc#list_vps_user_namespace_maps: skipping VPS #{vps.id} " \
+              "on node #{@node.id}, missing user_namespace_map"
+            )
+            next
+          end
+
           {
             vps_id: vps.id,
             map_name: vps.user_namespace_map_id.to_s,
-            uidmap: vps.user_namespace_map.build_map(:uid),
-            gidmap: vps.user_namespace_map.build_map(:gid)
+            uidmap: user_namespace_map.build_map(:uid),
+            gidmap: user_namespace_map.build_map(:gid)
           }
         end
       end
@@ -293,14 +303,19 @@ module VpsAdmin::Supervisor
       # @return [Array<Hash>]
       def list_exports(limit:, from_id: nil)
         q = ::Export
-            .joins(dataset_in_pool: :pool)
-            .includes(
-              :host_ip_addresses,
-              :snapshot_in_pool_clone,
-              dataset_in_pool: %i[pool dataset],
-              network_interface: { ip_addresses: :host_ip_addresses },
-              export_hosts: :ip_address
+            .joins(dataset_in_pool: %i[pool dataset])
+            .left_outer_joins(:snapshot_in_pool_clone, :uuid)
+            .select(
+              'exports.id,
+              exports.path,
+              exports.threads,
+              exports.enabled,
+              pools.filesystem AS pool_fs,
+              datasets.full_name AS dataset_name,
+              snapshot_in_pool_clones.name AS clone_name,
+              uuids.uuid AS fsid'
             )
+            .preload(:host_ip_addresses, export_hosts: :ip_address)
             .where(
               pools: { node_id: @node.id }
             )
@@ -308,21 +323,44 @@ module VpsAdmin::Supervisor
 
         q = q.where('exports.id > ?', from_id) if from_id
 
-        q.map do |ex|
+        q.filter_map do |ex|
+          pool_fs = ex[:pool_fs]
+          dataset_name = ex[:dataset_name]
+          fsid = ex[:fsid]
+          host_ip_address = ex.host_ip_addresses.first
+
+          unless pool_fs && dataset_name && fsid && host_ip_address
+            warn(
+              "Node::Rpc#list_exports: skipping export #{ex.id} " \
+              "on node #{@node.id}, incomplete related rows"
+            )
+            next
+          end
+
           {
             id: ex.id,
-            pool_fs: ex.dataset_in_pool.pool.filesystem,
-            dataset_name: ex.dataset_in_pool.dataset.full_name,
-            clone_name: ex.snapshot_in_pool_clone && ex.snapshot_in_pool_clone.name,
+            pool_fs:,
+            dataset_name:,
+            clone_name: ex[:clone_name],
             path: ex.path,
             threads: ex.threads,
             enabled: ex.enabled,
-            ip_address: ex.network_interface.ip_addresses.first.host_ip_addresses.first.ip_addr,
-            hosts: ex.export_hosts.map do |host|
+            ip_address: host_ip_address.ip_addr,
+            hosts: ex.export_hosts.filter_map do |host|
+              host_ip_address = host.ip_address
+
+              unless host_ip_address
+                warn(
+                  "Node::Rpc#list_exports: skipping export host #{host.id} " \
+                  "of export #{ex.id} on node #{@node.id}, missing ip_address"
+                )
+                next
+              end
+
               {
-                ip_address: host.ip_address.ip_addr,
-                prefix: host.ip_address.prefix,
-                fsid: ex.fsid,
+                ip_address: host_ip_address.ip_addr,
+                prefix: host_ip_address.prefix,
+                fsid:,
                 rw: host.rw,
                 sync: host.sync,
                 subtree_check: host.subtree_check,
