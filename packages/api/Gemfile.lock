@@ -277,7 +277,7 @@ GEM
       safety_net_attestation (~> 0.5.0)
       tpm-key_attestation (~> 0.14.0)
     webrick (1.9.2)
-    yard (0.9.39)
+    yard (0.9.40)
 
 PLATFORMS
   ruby

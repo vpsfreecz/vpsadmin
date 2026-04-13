@@ -1469,9 +1469,9 @@
     platforms = [ ];
     source = {
       remotes = [ "https://rubygems.org" ];
-      sha256 = "0mkvmyp8vr29pm4hh2arfa3v7zzixsfx7fw97x684cnizy3wvfqb";
+      sha256 = "19y4m13p1ixpha0xzlmmd22nf5nkrgygxd7z58lyjvaxkd20b8m4";
       type = "gem";
     };
-    version = "0.9.39";
+    version = "0.9.40";
   };
 }
