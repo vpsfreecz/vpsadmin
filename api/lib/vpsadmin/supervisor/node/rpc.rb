@@ -168,11 +168,21 @@ module VpsAdmin::Supervisor
           node: @node,
           object_state: %w[active suspended],
           confirmed: ::Vps.confirmed(:confirmed)
-        ).map do |vps|
+        ).includes(dataset_in_pool: :pool).filter_map do |vps|
+          pool = vps.dataset_in_pool&.pool
+
+          unless pool
+            warn(
+              "Node::Rpc#list_vps_status_check: skipping VPS #{vps.id} " \
+              "on node #{@node.id}, missing dataset_in_pool/pool"
+            )
+            next
+          end
+
           {
             id: vps.id,
             read_hostname: !vps.manage_hostname,
-            pool_fs: vps.dataset_in_pool.pool.filesystem
+            pool_fs: pool.filesystem
           }
         end
       end
