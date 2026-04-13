@@ -164,27 +164,30 @@ module VpsAdmin::Supervisor
       end
 
       def list_vps_status_check
-        ::Vps.where(
-          node: @node,
-          object_state: %w[active suspended],
-          confirmed: ::Vps.confirmed(:confirmed)
-        ).includes(dataset_in_pool: :pool).filter_map do |vps|
-          pool = vps.dataset_in_pool&.pool
+        ::Vps
+          .where(
+            node: @node,
+            object_state: %w[active suspended],
+            confirmed: ::Vps.confirmed(:confirmed)
+          ).left_outer_joins(dataset_in_pool: :pool)
+          .select('vpses.id, vpses.manage_hostname, pools.filesystem AS pool_fs')
+          .filter_map do |vps|
+            pool_fs = vps[:pool_fs]
 
-          unless pool
-            warn(
-              "Node::Rpc#list_vps_status_check: skipping VPS #{vps.id} " \
-              "on node #{@node.id}, missing dataset_in_pool/pool"
-            )
-            next
+            unless pool_fs
+              warn(
+                "Node::Rpc#list_vps_status_check: skipping VPS #{vps.id} " \
+                "on node #{@node.id}, missing dataset_in_pool/pool"
+              )
+              next
+            end
+
+            {
+              id: vps.id,
+              read_hostname: !vps.manage_hostname,
+              pool_fs:
+            }
           end
-
-          {
-            id: vps.id,
-            read_hostname: !vps.manage_hostname,
-            pool_fs: pool.filesystem
-          }
-        end
       end
 
       def list_vps_network_interfaces
