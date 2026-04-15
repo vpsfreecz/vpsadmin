@@ -590,10 +590,10 @@
     platforms = [ ];
     source = {
       remotes = [ "https://rubygems.org" ];
-      sha256 = "1cxdij526ricyg5rqdc2wxg6b84fylds2yjj6r8kaccp0b7rb4wh";
+      sha256 = "1k28j6ww8rf43r5i8278jvm2cq3pnzsvqm7yqpb4p93kadjlq726";
       type = "gem";
     };
-    version = "3.2026.0407";
+    version = "3.2026.0414";
   };
   mini_mime = {
     groups = [ "default" ];
@@ -614,10 +614,10 @@
     platforms = [ ];
     source = {
       remotes = [ "https://rubygems.org" ];
-      sha256 = "048ls6kn009jkwj1rvka2b5vnwq73b0krjz740j6j03cwcfqmb48";
+      sha256 = "18fw91yyphazl5bi9bkw1p7b0rpqa72gsiwj1130zm498mk084yz";
       type = "gem";
     };
-    version = "6.0.3";
+    version = "6.0.4";
   };
   multi_json = {
     groups = [ "default" ];
@@ -978,10 +978,10 @@
     platforms = [ ];
     source = {
       remotes = [ "https://rubygems.org" ];
-      sha256 = "0pabv9hmgfh3k4zzh7gs22nm9lhv14hg17zs22x5587jg3m5z058";
+      sha256 = "1j278hlv5grfbwgc97kxs2nd2g52qr7857b1k5kqlc28lzb1ps5l";
       type = "gem";
     };
-    version = "13.4.0";
+    version = "13.4.1";
   };
   rbtree = {
     groups = [ "default" ];
@@ -1458,9 +1458,9 @@
     platforms = [ ];
     source = {
       remotes = [ "https://rubygems.org" ];
-      sha256 = "19y4m13p1ixpha0xzlmmd22nf5nkrgygxd7z58lyjvaxkd20b8m4";
+      sha256 = "17x8fxl64ild9gsj5kqi3jpb8l7wbk9q3svsyc0k3dnf5cv2zb9g";
       type = "gem";
     };
-    version = "0.9.40";
+    version = "0.9.41";
   };
 }

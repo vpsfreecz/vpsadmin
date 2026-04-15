@@ -116,9 +116,9 @@ GEM
     mime-types (3.7.0)
       logger
       mime-types-data (~> 3.2025, >= 3.2025.0507)
-    mime-types-data (3.2026.0407)
+    mime-types-data (3.2026.0414)
     mini_mime (1.1.5)
-    minitest (6.0.3)
+    minitest (6.0.4)
       drb (~> 2.0)
       prism (~> 1.5)
     multi_json (1.20.1)
@@ -181,7 +181,7 @@ GEM
     rackup (2.3.1)
       rack (>= 3)
     rainbow (3.1.1)
-    rake (13.4.0)
+    rake (13.4.1)
     rbtree (0.4.6)
     redcarpet (3.6.1)
     regexp_parser (2.12.0)
@@ -275,7 +275,7 @@ GEM
       safety_net_attestation (~> 0.5.0)
       tpm-key_attestation (~> 0.14.0)
     webrick (1.9.2)
-    yard (0.9.40)
+    yard (0.9.41)
 
 PLATFORMS
   ruby
