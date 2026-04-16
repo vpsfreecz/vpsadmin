@@ -978,10 +978,10 @@
     platforms = [ ];
     source = {
       remotes = [ "https://rubygems.org" ];
-      sha256 = "1j278hlv5grfbwgc97kxs2nd2g52qr7857b1k5kqlc28lzb1ps5l";
+      sha256 = "009p524zl0p0kfa65nii8wdmaigkmawv9pbvlcffky7islmmp0nb";
       type = "gem";
     };
-    version = "13.4.1";
+    version = "13.4.2";
   };
   rbtree = {
     groups = [ "default" ];
