@@ -645,10 +645,10 @@
     platforms = [ ];
     source = {
       remotes = [ "https://rubygems.org" ];
-      sha256 = "1fb8hy3qaq00kh9s4617abjy3n8d5ridd9q3jfp3wx3zzdph0fz7";
+      sha256 = "163i29mdcr1h0nximk3d51a1fgp7vz3sfasn8p1rjm2d4g3p0qac";
       type = "gem";
     };
-    version = "3.1.0";
+    version = "3.1.1";
   };
   mysql2 = {
     dependencies = [ "bigdecimal" ];
@@ -1458,9 +1458,9 @@
     platforms = [ ];
     source = {
       remotes = [ "https://rubygems.org" ];
-      sha256 = "17x8fxl64ild9gsj5kqi3jpb8l7wbk9q3svsyc0k3dnf5cv2zb9g";
+      sha256 = "0s5spcxxhpfxl8spmv2rjxy0sq0yh16d8cbp969n0m93hqgy0asf";
       type = "gem";
     };
-    version = "0.9.41";
+    version = "0.9.42";
   };
 }

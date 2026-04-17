@@ -48,10 +48,10 @@
     platforms = [ ];
     source = {
       remotes = [ "https://rubygems.org" ];
-      sha256 = "1fb8hy3qaq00kh9s4617abjy3n8d5ridd9q3jfp3wx3zzdph0fz7";
+      sha256 = "163i29mdcr1h0nximk3d51a1fgp7vz3sfasn8p1rjm2d4g3p0qac";
       type = "gem";
     };
-    version = "3.1.0";
+    version = "3.1.1";
   };
   nio4r = {
     groups = [ "default" ];

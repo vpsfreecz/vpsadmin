@@ -7,7 +7,7 @@ GEM
       amq-protocol (~> 2.3)
       sorted_set (~> 1, >= 1.0.2)
     logger (1.7.0)
-    mustermann (3.1.0)
+    mustermann (3.1.1)
     nio4r (2.7.5)
     puma (8.0.0)
       nio4r (~> 2.0)
