@@ -29,7 +29,7 @@ GEM
     attr_required (1.0.2)
     base64 (0.3.0)
     bcrypt (3.1.22)
-    bigdecimal (4.1.1)
+    bigdecimal (4.1.2)
     bindata (2.5.1)
     bunny (2.24.0)
       amq-protocol (~> 2.3)
@@ -83,7 +83,7 @@ GEM
     highline (3.1.2)
       reline
     http-accept (1.7.0)
-    http-cookie (1.1.4)
+    http-cookie (1.1.5)
       domain_name (~> 0.5)
     httparty (0.24.2)
       csv
@@ -93,7 +93,7 @@ GEM
       concurrent-ruby (~> 1.0)
     io-console (0.8.2)
     ipaddress (0.8.3)
-    json (2.19.3)
+    json (2.19.4)
     json-jwt (1.17.0)
       activesupport (>= 4.2)
       aes_key_wrap
