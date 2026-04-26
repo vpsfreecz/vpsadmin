@@ -64,10 +64,10 @@
     platforms = [ ];
     source = {
       remotes = [ "https://rubygems.org" ];
-      sha256 = "1z1sbgd3xbcj6lm2i4sjpjn747r0hnbx0f9p34jq5kvny28xm657";
+      sha256 = "1awj6gcamgng249xh5h1a1qr2wmcilw59a7majclb0x63wsbnsyh";
       type = "gem";
     };
-    version = "2.7.0";
+    version = "2.8.0";
   };
   ancestry = {
     dependencies = [ "activerecord" ];

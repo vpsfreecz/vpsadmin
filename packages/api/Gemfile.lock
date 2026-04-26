@@ -21,7 +21,7 @@ GEM
       tzinfo (~> 2.0, >= 2.0.5)
       uri (>= 0.13.1)
     aes_key_wrap (1.1.0)
-    amq-protocol (2.7.0)
+    amq-protocol (2.8.0)
     ancestry (4.3.3)
       activerecord (>= 5.2.6)
     android_key_attestation (0.3.0)
