@@ -7,6 +7,7 @@ module TransactionChains
 
       lock(node)
       concerns(:affect, [node.class.name, node.id])
+      reserved_ports = reservation_port_range
 
       if opts[:maintenance]
         m = ::MaintenanceLock.lock_for(node)
@@ -17,10 +18,10 @@ module TransactionChains
       # Port reservations
       append(Transactions::Utils::NoOp, args: node.id) do
         if %w[node storage].include?(node.role)
-          10_000.times do |i|
+          reserved_ports.each do |port|
             r = ::PortReservation.create!(
               node:,
-              port: 10_000 + i
+              port:
             )
 
             just_create(r)
@@ -29,6 +30,12 @@ module TransactionChains
 
         just_create(node)
       end
+    end
+
+    protected
+
+    def reservation_port_range
+      10_000...20_000
     end
   end
 end
