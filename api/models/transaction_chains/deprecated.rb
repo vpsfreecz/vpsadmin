@@ -76,4 +76,10 @@ module TransactionChains
     class Cluster < Deprecated; end
     class Node < Deprecated; end
   end
+
+  module Cluster
+    class GenerateKnownHosts < Deprecated
+      label 'Known hosts'
+    end
+  end
 end
