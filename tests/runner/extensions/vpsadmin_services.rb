@@ -244,6 +244,150 @@ class VpsadminServicesMachine < OsVm::NixosMachine
     JSON.parse(output.to_s.lines.last)
   end
 
+  def run_vps_migration_task(timeout: nil)
+    api_ruby_json(code: <<~RUBY, timeout: timeout)
+      VpsAdmin::API::Tasks::VpsMigration.new.run_plans
+      puts JSON.dump(ok: true)
+    RUBY
+  end
+
+  def migration_plan_row(plan_id)
+    api_ruby_json(code: <<~RUBY)
+      plan = MigrationPlan.find(#{Integer(plan_id)})
+      puts JSON.dump(
+        id: plan.id,
+        state: plan.state,
+        concurrency: plan.concurrency,
+        stop_on_error: plan.stop_on_error,
+        finished_at: plan.finished_at,
+        lock_count: plan.resource_locks.count
+      )
+    RUBY
+  end
+
+  def vps_migration_rows(plan_id)
+    api_ruby_json(code: <<~RUBY)
+      rows = VpsMigration.where(
+        migration_plan_id: #{Integer(plan_id)}
+      ).order(:id).map do |migration|
+        {
+          id: migration.id,
+          vps_id: migration.vps_id,
+          src_node_id: migration.src_node_id,
+          dst_node_id: migration.dst_node_id,
+          state: migration.state,
+          started_at: migration.started_at,
+          finished_at: migration.finished_at,
+          chain_id: migration.transaction_chain_id
+        }
+      end
+
+      puts JSON.dump(rows)
+    RUBY
+  end
+
+  def migration_plan_debug_snapshot(plan_id)
+    api_ruby_json(code: <<~RUBY, timeout: 120)
+      def fmt_time(value)
+        value && value.utc.strftime('%Y-%m-%dT%H:%M:%SZ')
+      end
+
+      def output_tail(value)
+        return nil if value.nil?
+
+        str = value.to_s
+        str.length > 500 ? str[-500, 500] : str
+      end
+
+      plan = MigrationPlan.find(#{Integer(plan_id)})
+      migrations = plan.vps_migrations.includes(transaction_chain: :transactions).order(:id).map do |migration|
+        chain = migration.transaction_chain
+        transactions =
+          if chain
+            unfinished = chain.transactions.where(done: Transaction.dones[:waiting]).order(:id).limit(12).to_a
+            selected = unfinished.any? ? unfinished : chain.transactions.order(id: :desc).limit(12).to_a.reverse
+
+            selected.map do |tx|
+              {
+                id: tx.id,
+                name: tx.name,
+                handle: tx.handle,
+                node_id: tx.node_id,
+                queue: tx.queue,
+                done: tx.done,
+                status: tx.status,
+                urgent: tx.urgent,
+                started_at: fmt_time(tx.started_at),
+                finished_at: fmt_time(tx.finished_at),
+                output_tail: output_tail(tx.output)
+              }
+            end
+          else
+            []
+          end
+
+        {
+          id: migration.id,
+          vps_id: migration.vps_id,
+          state: migration.state,
+          src_node_id: migration.src_node_id,
+          dst_node_id: migration.dst_node_id,
+          started_at: fmt_time(migration.started_at),
+          finished_at: fmt_time(migration.finished_at),
+          chain: chain && {
+            id: chain.id,
+            state: chain.state,
+            progress: chain.progress,
+            size: chain.size
+          },
+          transactions: transactions
+        }
+      end
+
+      puts JSON.dump(
+        plan: {
+          id: plan.id,
+          state: plan.state,
+          concurrency: plan.concurrency,
+          stop_on_error: plan.stop_on_error,
+          lock_count: plan.resource_locks.count,
+          finished_at: fmt_time(plan.finished_at)
+        },
+        migrations: migrations
+      )
+    RUBY
+  end
+
+  def wait_for_migration_plan_state(plan_id, state:, timeout: @default_timeout || 300)
+    expected = state.to_s
+    row = nil
+
+    wait_for_condition(
+      timeout: timeout,
+      error_message: "Timed out waiting for migration plan ##{plan_id} state=#{expected}"
+    ) do
+      row = migration_plan_row(plan_id)
+      row.fetch('state') == expected
+    end
+
+    row
+  end
+
+  def wait_for_vps_migration_state(plan_id, vps_id:, state:, timeout: @default_timeout || 300)
+    expected = state.to_s
+    row = nil
+
+    wait_for_condition(
+      timeout: timeout,
+      error_message: "Timed out waiting for VPS #{vps_id} migration in plan ##{plan_id} state=#{expected}"
+    ) do
+      row = vps_migration_rows(plan_id).detect { |migration| migration.fetch('vps_id') == Integer(vps_id) }
+      row && row.fetch('state') == expected
+    end
+
+    row
+  end
+
   def mysql_raw(sql:, database: 'vpsadmin', user: 'api', timeout: nil)
     cmd = mysql_command(sql:, database:, user:)
 

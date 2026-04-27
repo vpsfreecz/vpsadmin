@@ -144,7 +144,9 @@
         vps_apply_user_data: Transactions::Vps::ApplyUserData.t_type,
         vps_stop: Transactions::Vps::Stop.t_type,
         vps_start: Transactions::Vps::Start.t_type,
-        vps_umount: Transactions::Vps::Umount.t_type
+        vps_umount: Transactions::Vps::Umount.t_type,
+        maintenance_window_wait: Transactions::MaintenanceWindow::Wait.t_type,
+        maintenance_window_in_or_fail: Transactions::MaintenanceWindow::InOrFail.t_type
       )
     RUBY
   end
