@@ -244,6 +244,78 @@ class VpsadminServicesMachine < OsVm::NixosMachine
     JSON.parse(output.to_s.lines.last)
   end
 
+  def run_vps_migration_task(timeout: nil)
+    api_ruby_json(code: <<~RUBY, timeout: timeout)
+      VpsAdmin::API::Tasks::VpsMigration.new.run_plans
+      puts JSON.dump(ok: true)
+    RUBY
+  end
+
+  def migration_plan_row(plan_id)
+    api_ruby_json(code: <<~RUBY)
+      plan = MigrationPlan.find(#{Integer(plan_id)})
+      puts JSON.dump(
+        id: plan.id,
+        state: plan.state,
+        concurrency: plan.concurrency,
+        stop_on_error: plan.stop_on_error,
+        finished_at: plan.finished_at,
+        lock_count: plan.resource_locks.count
+      )
+    RUBY
+  end
+
+  def vps_migration_rows(plan_id)
+    api_ruby_json(code: <<~RUBY)
+      rows = VpsMigration.where(
+        migration_plan_id: #{Integer(plan_id)}
+      ).order(:id).map do |migration|
+        {
+          id: migration.id,
+          vps_id: migration.vps_id,
+          src_node_id: migration.src_node_id,
+          dst_node_id: migration.dst_node_id,
+          state: migration.state,
+          started_at: migration.started_at,
+          finished_at: migration.finished_at,
+          chain_id: migration.transaction_chain_id
+        }
+      end
+
+      puts JSON.dump(rows)
+    RUBY
+  end
+
+  def wait_for_migration_plan_state(plan_id, state:, timeout: @default_timeout || 300)
+    expected = state.to_s
+    row = nil
+
+    wait_for_condition(
+      timeout: timeout,
+      error_message: "Timed out waiting for migration plan ##{plan_id} state=#{expected}"
+    ) do
+      row = migration_plan_row(plan_id)
+      row.fetch('state') == expected
+    end
+
+    row
+  end
+
+  def wait_for_vps_migration_state(plan_id, vps_id:, state:, timeout: @default_timeout || 300)
+    expected = state.to_s
+    row = nil
+
+    wait_for_condition(
+      timeout: timeout,
+      error_message: "Timed out waiting for VPS #{vps_id} migration in plan ##{plan_id} state=#{expected}"
+    ) do
+      row = vps_migration_rows(plan_id).detect { |migration| migration.fetch('vps_id') == Integer(vps_id) }
+      row && row.fetch('state') == expected
+    end
+
+    row
+  end
+
   def mysql_raw(sql:, database: 'vpsadmin', user: 'api', timeout: nil)
     cmd = mysql_command(sql:, database:, user:)
 
