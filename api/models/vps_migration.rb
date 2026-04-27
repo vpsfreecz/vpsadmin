@@ -22,10 +22,10 @@ class VpsMigration < ApplicationRecord
       ],
       migration_plans: {
         state: [
-          ::VpsMigration.states[:staged],
-          ::VpsMigration.states[:running],
-          ::VpsMigration.states[:cancelling],
-          ::VpsMigration.states[:failing]
+          ::MigrationPlan.states[:staged],
+          ::MigrationPlan.states[:running],
+          ::MigrationPlan.states[:cancelling],
+          ::MigrationPlan.states[:failing]
         ]
       }
     ).any?
