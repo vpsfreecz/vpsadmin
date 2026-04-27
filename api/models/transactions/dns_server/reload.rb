@@ -7,7 +7,9 @@ module Transactions::DnsServer
     def params(dns_server, zone: nil)
       self.node_id = dns_server.node_id
 
-      { zone: }
+      {
+        zone: zone && zone != '.' ? zone.delete_suffix('.') : zone
+      }
     end
   end
 end
