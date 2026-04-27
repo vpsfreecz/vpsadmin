@@ -69,6 +69,8 @@ testLib.makeTests [
   "v4/network/network-interface-shaper-and-rename"
   "v4/network/export-lifecycle"
   "v4/network/export-enable-disable-hosts"
+  "v4/network/dns-server-zone-lifecycle"
+  "v4/network/dns-zone-transfer-config"
   "v4/tx/chain-lifecycle"
   "v4/tx/invalid-signature"
   "v4/tx/manual-confirmations"
