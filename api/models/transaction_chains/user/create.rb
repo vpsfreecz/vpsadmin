@@ -104,10 +104,8 @@ module TransactionChains
         use_chain(Vps::Create, args: [vps, vps_opts])
       end
 
-      unless empty?
-        append(Transactions::Utils::NoOp, args: find_node_id) do
-          objects.each { |o| just_create(o) }
-        end
+      append(Transactions::Utils::NoOp, args: find_node_id) do
+        objects.each { |o| just_create(o) }
       end
 
       mail(:user_create, {
