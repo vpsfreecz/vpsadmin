@@ -7,6 +7,9 @@
 with lib;
 let
   cfg = config.vpsadmin.nodectld;
+  rndcWrapper = pkgs.writeShellScriptBin "rndc" ''
+    exec ${config.services.bind.package}/bin/rndc -k /etc/bind/rndc.key "$@"
+  '';
 in
 {
   imports = [
@@ -27,6 +30,7 @@ in
       after = [ "network.target" ];
       wantedBy = [ "multi-user.target" ];
       path = with pkgs; [
+        rndcWrapper
         config.services.bind.package
         coreutils
         glibc
