@@ -3,6 +3,12 @@
 require 'securerandom'
 module VpsStandaloneChainSpecHelpers
   def ensure_available_node_status!(node)
+    node.update!(
+      active: true,
+      maintenance_lock: MaintenanceLock.maintain_lock(:no),
+      maintenance_lock_reason: nil
+    )
+
     NodeCurrentStatus.find_or_create_by!(node: node) do |status|
       status.vpsadmin_version = 'spec'
       status.kernel = 'spec'
