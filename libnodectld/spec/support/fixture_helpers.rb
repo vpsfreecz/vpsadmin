@@ -135,6 +135,27 @@ module NodeCtldSpec
       })
     end
 
+    def insert_pool!(node_id: NodeCtldSpec::BaselineSeed.ids.fetch(:node_id),
+                     filesystem: 'tank/spec-pool', label: nil, role: 1,
+                     migration_public_key: nil)
+      pool_id = sql_insert('pools', {
+        node_id: node_id,
+        label: label || filesystem,
+        filesystem: filesystem,
+        role: role,
+        is_open: 1,
+        max_datasets: 100,
+        refquota_check: 1,
+        state: 1,
+        scan: 1,
+        export_root: '/export',
+        maintenance_lock: 0,
+        migration_public_key: migration_public_key
+      })
+
+      sql_row('SELECT * FROM pools WHERE id = ?', pool_id)
+    end
+
     def insert_cluster_resource_use(user_cluster_resource_id: NodeCtldSpec::BaselineSeed.ids.fetch(:user_cluster_resource_id),
                                     class_name: 'SpecRecord',
                                     table_name: 'spec_records',
