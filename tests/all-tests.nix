@@ -24,7 +24,9 @@ in
 testLib.makeTests [
   "v4/cluster/1-node"
   "v4/cluster/2-node"
+  "v4/cluster/generate-migration-keys"
   "v4/node/register"
+  "v4/pool/create"
   "v4/storage/backup-full-incremental"
   "v4/storage/backup-full-incremental-remote"
   "v4/storage/rollback-from-backup"

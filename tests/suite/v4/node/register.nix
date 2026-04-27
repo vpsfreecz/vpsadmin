@@ -106,7 +106,7 @@ import ../../../make-test.nix (
 
       def register_node(services, node_id:, name:, location_id:, ip_addr:, cpus:, mem_mib:, swap_mib:, max_vps:)
         # TODO: this command fails on timeout, because it takes a long time to create node port reservations
-        services.vpsadminctl.execute(
+        _, output = services.vpsadminctl.execute(
           args: %w[node create],
           opts: {
             block: false
@@ -124,6 +124,8 @@ import ../../../make-test.nix (
             max_vps: max_vps
           }
         )
+
+        output
       end
 
       def expect_running_nodectld(node)
@@ -133,6 +135,51 @@ import ../../../make-test.nix (
           expect(output).to include('State: running')
           true
         end
+      end
+
+      def wait_for_registration_chain_id(services, node_id)
+        chain_id = nil
+
+        wait_until_block_succeeds(name: "registration chain for node #{node_id}") do
+          chain_id = services.mysql_scalar(sql: <<~SQL)
+            SELECT c.transaction_chain_id
+            FROM transaction_chain_concerns c
+            INNER JOIN transaction_chains ch ON ch.id = c.transaction_chain_id
+            WHERE c.class_name = 'Node'
+              AND c.row_id = #{Integer(node_id)}
+              AND ch.name = 'register'
+            ORDER BY c.transaction_chain_id DESC
+            LIMIT 1
+          SQL
+
+          chain_id && !chain_id.empty?
+        end
+
+        Integer(chain_id)
+      end
+
+      def node_row(services, node_id)
+        services.mysql_json_rows(sql: <<~SQL).first
+          SELECT JSON_OBJECT(
+            'id', id,
+            'name', name,
+            'active', active,
+            'role', role,
+            'hypervisor_type', hypervisor_type,
+            'ip_addr', ip_addr
+          )
+          FROM nodes
+          WHERE id = #{Integer(node_id)}
+          LIMIT 1
+        SQL
+      end
+
+      def node_port_reservation_count(services, node_id)
+        services.mysql_json_rows(sql: <<~SQL).first.fetch('count')
+          SELECT JSON_OBJECT('count', COUNT(*))
+          FROM port_reservations
+          WHERE node_id = #{Integer(node_id)}
+        SQL
       end
 
       configure_examples do |config|
@@ -177,6 +224,7 @@ import ../../../make-test.nix (
             swap_mib: ${toString nodeSpec.swapMiB},
             max_vps: ${toString nodeSpec.maxVps}
           )
+          @registration_chain_id = wait_for_registration_chain_id(services, ${toString nodeSpec.id})
 
           sleep(120)
 
@@ -185,6 +233,21 @@ import ../../../make-test.nix (
 
           node.succeeds('sv restart nodectld')
           expect_running_nodectld(node)
+          services.wait_for_chain_state(@registration_chain_id, state: :done, timeout: 300)
+          row = node_row(services, ${toString nodeSpec.id})
+
+          expect(row.fetch('name')).to eq("${nodeSpec.name}")
+          expect(row.fetch('ip_addr')).to eq("${socket.node}")
+          expect(row.fetch('active')).to eq(1)
+          expect(row.fetch('role')).to eq(0)
+          expect(row.fetch('hypervisor_type')).to eq(1)
+          expect(node_port_reservation_count(services, ${toString nodeSpec.id})).to eq(10_000)
+          expect(services.mysql_scalar(sql: <<~SQL).to_i).to eq(0)
+            SELECT COUNT(*)
+            FROM resource_locks
+            WHERE locked_by_type = 'TransactionChain'
+              AND locked_by_id = #{@registration_chain_id}
+          SQL
         end
       end
     '';
