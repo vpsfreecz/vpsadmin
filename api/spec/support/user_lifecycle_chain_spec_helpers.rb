@@ -9,6 +9,7 @@ module UserLifecycleChainSpecHelpers
     user_suspend
     user_resume
     user_revive
+    vps_resume
     user_new_login
     user_new_token
     user_failed_logins
