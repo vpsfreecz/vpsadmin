@@ -859,10 +859,10 @@
     platforms = [ ];
     source = {
       remotes = [ "https://rubygems.org" ];
-      sha256 = "122b6vwqpjsb43wccgz4cg84rimfnrcanm9j0g9v3yk0ic5hb08n";
+      sha256 = "0z6k79ns8wgz12k3m2r0jc9ddiq6zh8imr4azg0ihmv50w6fb53v";
       type = "gem";
     };
-    version = "8.0.0";
+    version = "8.0.1";
   };
   racc = {
     groups = [
