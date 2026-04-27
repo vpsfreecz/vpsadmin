@@ -102,7 +102,7 @@ module VpsAdmin::API::Tasks
 
         begin
           puts "   VPS ##{m.vps.id} from #{m.vps.node.domain_name} to #{m.dst_node.domain_name} "
-          migrate_vps(m, locks)
+          migrate_vps(m, plan, locks)
           i += 1
 
           break if i >= schedule_n
@@ -115,7 +115,7 @@ module VpsAdmin::API::Tasks
       end
     end
 
-    def migrate_vps(m, locks)
+    def migrate_vps(m, plan, locks)
       if m.vps.node_id != m.src_node_id
         raise SkipMigration, 'the VPS has been migrated elsewhere in the meantime'
 
@@ -126,7 +126,9 @@ module VpsAdmin::API::Tasks
       chain, = TransactionChains::Vps::Migrate.chain_for(m.vps, m.dst_node).fire2(
         args: [m.vps, m.dst_node, {
           maintenance_window: m.maintenance_window,
-          cleanup_data: m.cleanup_data
+          cleanup_data: m.cleanup_data,
+          send_mail: plan.send_mail,
+          reason: plan.reason
         }],
         locks:
       )
