@@ -43,7 +43,7 @@ module TransactionChains
       end
 
       if empty?
-        zone_transfer.update!(confirmed: ::ZoneTransfer.confirmed(:confirmed))
+        zone_transfer.update!(confirmed: ::DnsZoneTransfer.confirmed(:confirmed))
         return zone_transfer
       end
 
