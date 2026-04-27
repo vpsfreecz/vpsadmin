@@ -79,7 +79,7 @@ module TransactionChains
         # TODO: what about owned networks?
 
         # Delete TSIG keys
-        user.dns_tsig_keys do |tsig_key|
+        user.dns_tsig_keys.each do |tsig_key|
           t.just_destroy(tsig_key)
         end
 
