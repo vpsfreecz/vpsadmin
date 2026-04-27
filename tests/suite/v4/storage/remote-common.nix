@@ -205,7 +205,48 @@
     RUBY
   end
 
-  def create_pool(services, node_id:, label:, filesystem:, role:)
+  def pool_id_by_filesystem(services, filesystem)
+    services.mysql_json_rows(sql: <<~SQL).first.fetch('id')
+      SELECT JSON_OBJECT('id', id)
+      FROM pools
+      WHERE filesystem = #{filesystem.inspect}
+      LIMIT 1
+    SQL
+  end
+
+  def pool_migration_public_key(services, pool_id)
+    services.mysql_json_rows(sql: <<~SQL).first.fetch('migration_public_key')
+      SELECT JSON_OBJECT('migration_public_key', migration_public_key)
+      FROM pools
+      WHERE id = #{Integer(pool_id)}
+      LIMIT 1
+    SQL
+  end
+
+  def node_port_reservation_count(services, node_id)
+    services.mysql_json_rows(sql: <<~SQL).first.fetch('count')
+      SELECT JSON_OBJECT('count', COUNT(*))
+      FROM port_reservations
+      WHERE node_id = #{Integer(node_id)}
+    SQL
+  end
+
+  def pool_dataset_properties(services, pool_id)
+    services.api_ruby_json(code: <<~RUBY)
+      properties = DatasetProperty.where(pool_id: #{Integer(pool_id)}).order(:name).map do |prop|
+        {
+          name: prop.name,
+          value: prop.value,
+          confirmed: prop.confirmed,
+          inherited: prop.inherited
+        }
+      end
+
+      puts JSON.dump(properties)
+    RUBY
+  end
+
+  def create_pool(services, node_id:, label:, filesystem:, role:, properties: {})
     _, output = services.vpsadminctl.succeeds(
       args: %w[pool create],
       parameters: {
@@ -216,7 +257,7 @@
         is_open: true,
         max_datasets: 100,
         refquota_check: true
-      }
+      }.merge(properties)
     )
 
     output.fetch('pool')
