@@ -28,6 +28,29 @@ base
     vps_id
   end
 
+  def wait_for_nixos_nodectld(node)
+    node.wait_for_service('vpsadmin-nodectld.service')
+    wait_until_block_succeeds(name: "nodectld systemd service on #{node.name}") do
+      node.succeeds('systemctl is-active --quiet vpsadmin-nodectld.service', timeout: 30)
+      node.succeeds('test -S /run/nodectl/nodectld.sock', timeout: 30)
+      true
+    end
+  end
+
+  def restart_nixos_nodectld(node)
+    node.succeeds('systemctl reset-failed vpsadmin-nodectld.service', timeout: 30)
+    node.succeeds('systemctl restart vpsadmin-nodectld.service', timeout: 60)
+  end
+
+  def wait_for_dns_node_ready(services, node_id)
+    wait_until_block_succeeds(name: "dns node #{node_id} ready in API") do
+      _, output = services.vpsadminctl.succeeds(args: ['node', 'show', node_id.to_s])
+      node = output.fetch('node')
+
+      node.fetch('status') == true
+    end
+  end
+
   def tx_types(services)
     @network_tx_types ||= services.api_ruby_json(code: <<~RUBY)
       puts JSON.dump({
@@ -47,7 +70,16 @@ base
         netif_add_route: Transactions::NetworkInterface::AddRoute.t_type,
         netif_del_route: Transactions::NetworkInterface::DelRoute.t_type,
         netif_add_host_ip: Transactions::NetworkInterface::AddHostIp.t_type,
-        netif_del_host_ip: Transactions::NetworkInterface::DelHostIp.t_type
+        netif_del_host_ip: Transactions::NetworkInterface::DelHostIp.t_type,
+        dns_server_zone_create: Transactions::DnsServerZone::Create.t_type,
+        dns_server_zone_update: Transactions::DnsServerZone::Update.t_type,
+        dns_server_zone_destroy: Transactions::DnsServerZone::Destroy.t_type,
+        dns_server_zone_add_servers: Transactions::DnsServerZone::AddServers.t_type,
+        dns_server_zone_remove_servers: Transactions::DnsServerZone::RemoveServers.t_type,
+        dns_server_zone_create_records: Transactions::DnsServerZone::CreateRecords.t_type,
+        dns_server_zone_update_records: Transactions::DnsServerZone::UpdateRecords.t_type,
+        dns_server_zone_delete_records: Transactions::DnsServerZone::DeleteRecords.t_type,
+        dns_server_reload: Transactions::DnsServer::Reload.t_type
       })
     RUBY
   end
@@ -469,6 +501,286 @@ base
         host_ip_runtime_dump(node, vps_id: vps_id, name: name),
         cidr
       )
+    end
+  end
+
+  def create_dns_server_runtime(services, admin_user_id:, node_id:, name:)
+    services.api_ruby_json(code: <<~RUBY)
+      #{api_session_prelude(admin_user_id)}
+
+      node = Node.find(#{Integer(node_id)})
+      server = DnsServer.create!(
+        node: node,
+        name: #{name.inspect},
+        ipv4_addr: node.ip_addr,
+        hidden: false,
+        enable_user_dns_zones: true,
+        user_dns_zone_type: :primary_type
+      )
+
+      puts JSON.dump(
+        id: server.id,
+        node_id: server.node_id,
+        name: server.name,
+        ipv4_addr: server.ipv4_addr
+      )
+    RUBY
+  end
+
+  def create_dns_zone_runtime(
+    services,
+    admin_user_id:,
+    name:,
+    source: 'internal_source',
+    role: 'forward_role',
+    default_ttl: 3600,
+    email: 'dns@example.test',
+    enabled: true
+  )
+    services.api_ruby_json(code: <<~RUBY)
+      #{api_session_prelude(admin_user_id)}
+
+      zone = DnsZone.create!(
+        name: #{name.inspect},
+        zone_source: #{source.inspect},
+        zone_role: #{role.inspect},
+        default_ttl: #{Integer(default_ttl)},
+        email: #{email.inspect},
+        enabled: #{enabled ? 'true' : 'false'},
+        label: ""
+      )
+
+      puts JSON.dump(
+        id: zone.id,
+        name: zone.name,
+        source: zone.zone_source,
+        role: zone.zone_role,
+        default_ttl: zone.default_ttl,
+        email: zone.email,
+        enabled: zone.enabled
+      )
+    RUBY
+  end
+
+  def create_dns_server_zone_runtime(
+    services,
+    admin_user_id:,
+    dns_zone_id:,
+    dns_server_id:,
+    zone_type:
+  )
+    services.api_ruby_json(code: <<~RUBY)
+      #{api_session_prelude(admin_user_id)}
+
+      server_zone = DnsServerZone.new(
+        dns_zone: DnsZone.find(#{Integer(dns_zone_id)}),
+        dns_server: DnsServer.find(#{Integer(dns_server_id)}),
+        zone_type: #{zone_type.inspect}
+      )
+      chain, created = TransactionChains::DnsServerZone::Create.fire(server_zone)
+
+      puts JSON.dump(
+        chain_id: chain.id,
+        id: created.id,
+        dns_zone_id: created.dns_zone_id,
+        dns_server_id: created.dns_server_id,
+        zone_type: created.zone_type
+      )
+    RUBY
+  end
+
+  def update_dns_zone_runtime(services, admin_user_id:, dns_zone_id:, attrs:)
+    services.api_ruby_json(code: <<~RUBY)
+      #{api_session_prelude(admin_user_id)}
+
+      attrs = #{attrs.inspect}.transform_keys(&:to_sym)
+      zone = DnsZone.find(#{Integer(dns_zone_id)})
+      chain, updated = TransactionChains::DnsZone::Update.fire(zone, attrs)
+
+      puts JSON.dump(
+        chain_id: chain&.id,
+        id: updated.id,
+        default_ttl: updated.default_ttl,
+        email: updated.email,
+        enabled: updated.enabled
+      )
+    RUBY
+  end
+
+  def create_dns_record_runtime(services, admin_user_id:, dns_zone_id:, attrs:)
+    services.api_ruby_json(code: <<~RUBY)
+      #{api_session_prelude(admin_user_id)}
+
+      attrs = #{attrs.inspect}.transform_keys(&:to_sym)
+      record = DnsRecord.create!(
+        attrs.merge(
+          dns_zone: DnsZone.find(#{Integer(dns_zone_id)})
+        )
+      )
+      chain, created = TransactionChains::DnsZone::CreateRecord.fire(record)
+
+      puts JSON.dump(
+        chain_id: chain&.id,
+        id: created.id,
+        name: created.name,
+        record_type: created.record_type,
+        content: created.content,
+        ttl: created.ttl,
+        enabled: created.enabled
+      )
+    RUBY
+  end
+
+  def update_dns_record_runtime(services, admin_user_id:, dns_record_id:, attrs:)
+    services.api_ruby_json(code: <<~RUBY)
+      #{api_session_prelude(admin_user_id)}
+
+      attrs = #{attrs.inspect}.transform_keys(&:to_sym)
+      record = DnsRecord.find(#{Integer(dns_record_id)})
+      record.assign_attributes(attrs)
+      chain, updated = TransactionChains::DnsZone::UpdateRecord.fire(record)
+
+      puts JSON.dump(
+        chain_id: chain&.id,
+        id: updated.id,
+        content: updated.content,
+        ttl: updated.ttl,
+        enabled: updated.enabled
+      )
+    RUBY
+  end
+
+  def destroy_dns_record_runtime(services, admin_user_id:, dns_record_id:)
+    services.api_ruby_json(code: <<~RUBY)
+      #{api_session_prelude(admin_user_id)}
+
+      record = DnsRecord.find(#{Integer(dns_record_id)})
+      chain, = TransactionChains::DnsZone::DestroyRecord.fire(record)
+
+      puts JSON.dump(chain_id: chain&.id, id: #{Integer(dns_record_id)})
+    RUBY
+  end
+
+  def destroy_dns_server_zone_runtime(services, admin_user_id:, dns_server_zone_id:)
+    services.api_ruby_json(code: <<~RUBY)
+      #{api_session_prelude(admin_user_id)}
+
+      server_zone = DnsServerZone.find(#{Integer(dns_server_zone_id)})
+      chain, = TransactionChains::DnsServerZone::Destroy.fire(server_zone)
+
+      puts JSON.dump(chain_id: chain.id, id: #{Integer(dns_server_zone_id)})
+    RUBY
+  end
+
+  def create_dns_transfer_host_ip_runtime(services, admin_user_id:, node_id:, addr:)
+    services.api_ruby_json(code: <<~RUBY)
+      #{api_session_prelude(admin_user_id)}
+
+      node = Node.find(#{Integer(node_id)})
+      network = Network.find_or_initialize_by(address: '203.0.113.0', prefix: 24)
+      network.assign_attributes(
+        label: 'DNS transfer peers',
+        ip_version: 4,
+        role: :private_access,
+        managed: true,
+        split_access: :no_access,
+        split_prefix: 32,
+        purpose: :vps,
+        primary_location: node.location
+      )
+      network.save! if network.changed?
+
+      loc_net = LocationNetwork.find_or_initialize_by(location: node.location, network: network)
+      loc_net.assign_attributes(
+        primary: true,
+        priority: 10,
+        autopick: true,
+        userpick: true
+      )
+      loc_net.save! if loc_net.changed?
+
+      ip = IpAddress.find_by(ip_addr: #{addr.inspect})
+      ip ||= IpAddress.register(
+        IPAddress.parse(#{addr.inspect} + '/' + network.split_prefix.to_s),
+        network: network,
+        user: nil,
+        location: node.location,
+        prefix: network.split_prefix,
+        size: 1
+      )
+      host_ip = ip.host_ip_addresses.first
+
+      puts JSON.dump(
+        ip_id: ip.id,
+        host_ip_id: host_ip.id,
+        addr: host_ip.ip_addr
+      )
+    RUBY
+  end
+
+  def create_dns_zone_transfer_runtime(
+    services,
+    admin_user_id:,
+    dns_zone_id:,
+    host_ip_id:,
+    peer_type:
+  )
+    services.api_ruby_json(code: <<~RUBY)
+      #{api_session_prelude(admin_user_id)}
+
+      transfer = DnsZoneTransfer.new(
+        dns_zone: DnsZone.find(#{Integer(dns_zone_id)}),
+        host_ip_address: HostIpAddress.find(#{Integer(host_ip_id)}),
+        peer_type: #{peer_type.inspect}
+      )
+      chain, created = TransactionChains::DnsZoneTransfer::Create.fire(transfer)
+
+      puts JSON.dump(
+        chain_id: chain&.id,
+        id: created.id,
+        dns_zone_id: created.dns_zone_id,
+        host_ip_id: created.host_ip_address_id,
+        peer_type: created.peer_type
+      )
+    RUBY
+  end
+
+  def destroy_dns_zone_transfer_runtime(services, admin_user_id:, dns_zone_transfer_id:)
+    services.api_ruby_json(code: <<~RUBY)
+      #{api_session_prelude(admin_user_id)}
+
+      transfer = DnsZoneTransfer.find(#{Integer(dns_zone_transfer_id)})
+      chain, = TransactionChains::DnsZoneTransfer::Destroy.fire(transfer)
+
+      puts JSON.dump(chain_id: chain&.id, id: #{Integer(dns_zone_transfer_id)})
+    RUBY
+  end
+
+  def named_config_text(node)
+    _, output = node.succeeds('cat /var/named/vpsadmin/named.conf')
+    output
+  end
+
+  def dns_zone_file_path(name:, source:, type:)
+    "/var/named/vpsadmin/#{type}/#{name}zone"
+  end
+
+  def dns_zone_db_path(name:, source: nil, type: nil)
+    "/var/named/vpsadmin/db/#{name}json"
+  end
+
+  def wait_for_dns_text(node, path:, includes:)
+    wait_until_block_succeeds(name: "#{path} contains expected DNS text") do
+      _, output = node.succeeds("cat #{Shellwords.escape(path)}")
+      Array(includes).each { |needle| expect(output).to include(needle) }
+      true
+    end
+  end
+
+  def wait_for_dns_path_absent(node, path:)
+    wait_until_block_succeeds(name: "#{path} is absent") do
+      node.succeeds("test ! -e #{Shellwords.escape(path)}")
+      true
     end
   end
 ''
