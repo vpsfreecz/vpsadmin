@@ -133,7 +133,8 @@ module NetworkExportDnsChainSpecHelpers
     content: '192.0.2.20',
     ttl: nil,
     priority: nil,
-    enabled: true
+    enabled: true,
+    update_token: nil
   )
     DnsRecord.create!(
       dns_zone: dns_zone,
@@ -142,7 +143,65 @@ module NetworkExportDnsChainSpecHelpers
       content: content,
       ttl: ttl,
       priority: priority,
-      enabled: enabled
+      enabled: enabled,
+      update_token: update_token
+    )
+  end
+
+  def create_dns_tsig_key!(
+    name: "spec-key-#{SecureRandom.hex(4)}.",
+    algorithm: 'hmac-sha256',
+    secret: SecureRandom.base64(32),
+    user: nil
+  )
+    DnsTsigKey.create!(
+      name: name,
+      algorithm: algorithm,
+      secret: secret,
+      user: user
+    )
+  end
+
+  def create_dns_zone_transfer!(
+    dns_zone:,
+    host_ip_address:,
+    peer_type:,
+    dns_tsig_key: nil,
+    confirmed: :confirmed
+  )
+    DnsZoneTransfer.create!(
+      dns_zone: dns_zone,
+      host_ip_address: host_ip_address,
+      peer_type: peer_type,
+      dns_tsig_key: dns_tsig_key,
+      confirmed: DnsZoneTransfer.confirmed(confirmed)
+    )
+  end
+
+  def create_dns_update_token_record!(dns_zone:, **attrs)
+    Token.for_new_record! do |token|
+      create_dns_record!(
+        dns_zone: dns_zone,
+        **attrs.merge(update_token: token)
+      )
+    end
+  end
+
+  def create_reverse_dns_zone!(
+    name: '2.0.192.in-addr.arpa.',
+    network_address: '192.0.2.0',
+    network_prefix: 24
+  )
+    DnsZone.create!(
+      name: name,
+      zone_role: :reverse_role,
+      zone_source: :internal_source,
+      enabled: true,
+      label: '',
+      default_ttl: 3600,
+      email: 'dns@example.test',
+      reverse_network_address: network_address,
+      reverse_network_prefix: network_prefix
     )
   end
 
@@ -161,6 +220,17 @@ module NetworkExportDnsChainSpecHelpers
       addr: addr,
       network_interface: network_interface
     )
+  end
+
+  def use_chain_method_in_root!(chain_class, method:, args: [], kwargs: {})
+    chain = build_transaction_chain!(name: chain_class.chain_name)
+    _child, ret = chain_class.use_in(
+      chain,
+      args: args,
+      kwargs: kwargs,
+      method: method
+    )
+    [chain, ret]
   end
 end
 
