@@ -1436,6 +1436,7 @@
   end
 
   def create_top_level_dataset(services, admin_user_id:, pool_id:, dataset_name:, refquota: 10_240)
+    properties = refquota.nil? ? {} : { refquota: Integer(refquota) }
     response = services.api_ruby_json(code: <<~RUBY)
       #{api_session_prelude(admin_user_id)}
 
@@ -1454,7 +1455,7 @@
         nil,
         [dataset],
         automount: false,
-        properties: { refquota: #{Integer(refquota)} },
+        properties: #{properties.inspect},
         user: user,
         label: #{dataset_name.inspect}
       )
