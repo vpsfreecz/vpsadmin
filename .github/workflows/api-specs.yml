@@ -112,6 +112,7 @@ jobs:
 
           - topic: platform
             patterns: |
+              spec/lib/**/*_spec.rb
               spec/api/resources/action_state_spec.rb
               spec/api/resources/api_server_spec.rb
               spec/api/resources/cluster*_spec.rb
