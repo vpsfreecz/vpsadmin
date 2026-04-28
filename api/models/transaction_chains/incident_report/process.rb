@@ -7,7 +7,7 @@ module TransactionChains
     include IncidentReport::Utils
 
     def link_chain(incidents)
-      concerns(:affect, *incidents.map { |inc| [inc.vps.class.name, inc.vps_id] })
+      concerns(:affect, *incidents.map { |inc| [inc.vps.class.name, inc.vps_id] }.uniq)
 
       use_chain(IncidentReport::Send, args: [
                   VpsAdmin::API::IncidentReports::Result.new(incidents:)
