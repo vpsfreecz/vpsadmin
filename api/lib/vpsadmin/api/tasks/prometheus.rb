@@ -513,13 +513,14 @@ module VpsAdmin::API::Tasks
         server_zone.dns_zone.dns_records.where(enabled: true).each do |r|
           sleep(0.05)
 
-          next if check_record(server_zone, resolver, r)
-
-          @dns_record_answer_error.set(1, labels: labels.merge({
-            record_id: r.id,
-            record_name: r.name,
-            record_type: r.record_type
-          }))
+          @dns_record_answer_error.set(
+            check_record(server_zone, resolver, r) ? 0 : 1,
+            labels: labels.merge({
+              record_id: r.id,
+              record_name: r.name,
+              record_type: r.record_type
+            })
+          )
         end
       end
 
