@@ -1,8 +1,8 @@
 module VpsAdmin::API::Tasks
   class OomReport < Base
-    COOLDOWN = ENV['COOLDOWN'] ? ENV['COOLDOWN'].to_i : 3 * 60 * 60
+    DEFAULT_COOLDOWN = 3 * 60 * 60
 
-    DAYS = ENV['DAYS'] ? ENV['DAYS'].to_i : 90
+    DEFAULT_DAYS = 90
 
     # Notify users about stale and previously unreported OOM reports
     #
@@ -13,10 +13,11 @@ module VpsAdmin::API::Tasks
       vpses = ::Vps.joins(:oom_reports).where(
         oom_reports: { reported_at: nil, ignored: false }
       ).group('vpses.id')
+      return unless vpses.exists?
 
       TransactionChains::Vps::OomReports.fire2(
         args: [vpses],
-        kwargs: { cooldown: COOLDOWN }
+        kwargs: { cooldown: cooldown }
       )
     end
 
@@ -31,7 +32,7 @@ module VpsAdmin::API::Tasks
       loop do
         any = false
 
-        ::OomReport.where('created_at < ?', DAYS.day.ago).limit(10_000).each do |report|
+        ::OomReport.where('created_at < ?', days.day.ago).limit(10_000).each do |report|
           report.destroy!
           any = true
           total += 1
@@ -41,6 +42,16 @@ module VpsAdmin::API::Tasks
       end
 
       puts "Deleted #{total} OOM reports"
+    end
+
+    protected
+
+    def cooldown
+      ENV.fetch('COOLDOWN', DEFAULT_COOLDOWN).to_i
+    end
+
+    def days
+      ENV.fetch('DAYS', DEFAULT_DAYS).to_i
     end
   end
 end
