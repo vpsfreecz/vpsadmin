@@ -2,7 +2,7 @@ module VpsAdmin::API::Tasks
   class Mail < Base
     FOLDERS = %w[INBOX Junk].freeze
 
-    COUNT = ENV['COUNT'] ? ENV['COUNT'].to_i : 10
+    DEFAULT_COUNT = 10
 
     # Mail daily report to administrators.
     #
@@ -46,7 +46,7 @@ module VpsAdmin::API::Tasks
           warn 'Dry run: received messages are not removed from the mail server'
           retriever.all(mailbox: folder)
         else
-          retriever.find_and_delete(mailbox: folder, count: COUNT)
+          retriever.find_and_delete(mailbox: folder, count: count)
         end
 
       messages.each do |m|
@@ -74,6 +74,10 @@ module VpsAdmin::API::Tasks
       end
 
       handled
+    end
+
+    def count
+      ENV.fetch('COUNT', DEFAULT_COUNT).to_i
     end
   end
 end
