@@ -315,6 +315,10 @@ module TransactionChains
                           .sort { |a, b| b[1] <=> a[1] }
         },
 
+        oom_preventions: ::OomPrevention
+                         .where('DATE_ADD(oom_preventions.created_at, INTERVAL 1 DAY) >= ?', t)
+                         .order('created_at'),
+
         incident_reports: {
           new: ::IncidentReport
                .includes(:user, :vps)
