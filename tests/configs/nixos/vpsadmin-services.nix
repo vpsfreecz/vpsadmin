@@ -254,6 +254,19 @@ in
       "d /run/varnish 0755 varnish varnish -"
     ];
 
+    systemd.services = {
+      "container@mailer" = {
+        after = [
+          "vpsadmin-database-setup.service"
+          "vpsadmin-rabbitmq-setup.service"
+        ];
+        requires = [
+          "vpsadmin-database-setup.service"
+          "vpsadmin-rabbitmq-setup.service"
+        ];
+      };
+    };
+
     # webui must be nested inside a container, because it is using nginx same
     # as frontend, but we wish to test the proxy setup and haproxy integration
     containers.webui = {
