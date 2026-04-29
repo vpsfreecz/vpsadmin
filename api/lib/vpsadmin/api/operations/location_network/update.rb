@@ -15,6 +15,10 @@ module VpsAdmin::API
           if ln.primary && !opts[:primary]
             ln.network.update!(primary_location: nil)
           elsif !ln.primary && opts[:primary]
+            ln.network.location_networks
+              .where(primary: true)
+              .where.not(id: ln.id)
+              .update_all(primary: nil)
             ln.network.update!(primary_location: ln.location)
           end
         end
