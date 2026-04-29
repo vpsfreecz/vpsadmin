@@ -65,11 +65,21 @@ module VpsAdmin::API
           },
           dataset_in_pool: dip
         ).take!
+        action = gsnap.dataset_action
+        orphan_action = !action.group_snapshots.where.not(id: gsnap.id).exists?
+        task = ::RepeatableTask.find_for(action) if orphan_action
 
         if confirm?
           confirm(:just_destroy, gsnap)
+          confirm(:just_destroy, task) if task
+          confirm(:just_destroy, action) if orphan_action
         else
           gsnap.destroy!
+
+          if orphan_action
+            task&.destroy!
+            action.destroy!
+          end
         end
       end
 
@@ -234,7 +244,7 @@ module VpsAdmin::API
       rescue ::ActiveRecord::RecordNotFound
         raise Exceptions::DatasetPlanNotInEnvironment.new(
           dataset_plan,
-          dip.pool.node.environment
+          dip.pool.node.location.environment
         )
       end
     end
