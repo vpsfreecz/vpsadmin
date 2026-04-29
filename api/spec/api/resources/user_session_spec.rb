@@ -314,6 +314,24 @@ RSpec.describe 'VpsAdmin::API::Resources::UserSession' do
       expect(session_obj['auth_type']).to eq('token')
       expect(session_obj['token_full']).not_to be_nil
     end
+
+    it 'allows admin to create a permanent token session without an interval' do
+      as(admin) do
+        json_post index_path, user_session: {
+          user: user.id,
+          token_lifetime: 'permanent',
+          scope: 'all',
+          label: 'Permanent spec token'
+        }
+      end
+
+      expect_status(200)
+      expect(json['status']).to be(true)
+      expect(session_obj['token_lifetime']).to eq('permanent')
+
+      session = UserSession.joins(:token).find_by!(tokens: { token: session_obj['token_full'] })
+      expect(session.token.valid_to).to be_nil
+    end
   end
 
   describe 'Update' do

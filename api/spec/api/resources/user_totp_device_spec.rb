@@ -362,6 +362,10 @@ RSpec.describe 'VpsAdmin::API::Resources::User::TotpDevice' do
       expect(device.confirmed).to be(true)
       expect(device.enabled).to be(true)
       expect(device.recovery_code).not_to be_nil
+      expect(device.recovery_code).not_to eq(recovery_code)
+      matches_recovery_code =
+        VpsAdmin::API::CryptoProviders::Bcrypt.matches?(device.recovery_code, nil, recovery_code)
+      expect(matches_recovery_code).to be(true)
 
       user.reload
       expect(user.enable_multi_factor_auth).to be(true)
@@ -443,7 +447,7 @@ RSpec.describe 'VpsAdmin::API::Resources::User::TotpDevice' do
     it 'cannot enable an unconfirmed device' do
       device = create_device!(user: user, confirmed: false, enabled: false)
 
-      as(user) { json_put show_path(user.id, device.id), totp_device: { enabled: true } }
+      as(admin) { json_put show_path(user.id, device.id), totp_device: { enabled: true } }
 
       expect_status(200)
       expect(json['status']).to be(false)

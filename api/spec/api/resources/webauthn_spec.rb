@@ -278,6 +278,7 @@ RSpec.describe 'VpsAdmin::API::Resources::Webauthn' do
 
       json_post authentication_begin_path, authentication: { auth_token: auth_token.token.to_s }
       response = authentication_response
+      challenge = find_challenge(response['challenge_token'])
 
       options = response.fetch('options')
       allow_ids = Array(options['allowCredentials']).map { |cred| cred['id'] }
@@ -304,6 +305,7 @@ RSpec.describe 'VpsAdmin::API::Resources::Webauthn' do
 
       auth_token.reload
       expect(auth_token.fulfilled).to be(true)
+      expect(WebauthnChallenge.exists?(challenge.id)).to be(false)
     end
   end
 end
