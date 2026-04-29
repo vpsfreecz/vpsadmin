@@ -27,12 +27,15 @@ module VpsAdmin::Supervisor
 
     def update_vps_keys(vps_keys)
       t = Time.at(vps_keys['time'])
+      vps = ::Vps.find_by(id: vps_keys['vps_id'], node_id: node.id)
+      return if vps.nil?
+
+      remaining_keys = vps_keys['keys'].dup
 
       ::VpsSshHostKey
-        .joins(:vps)
-        .where(vps_id: vps_keys['vps_id'], vpses: { node_id: node.id })
+        .where(vps:)
         .each do |host_key|
-        key_update = vps_keys['keys'].detect { |v| v['algorithm'] == host_key.algorithm }
+        key_update = remaining_keys.detect { |v| v['algorithm'] == host_key.algorithm }
 
         if key_update.nil?
           host_key.destroy!
@@ -45,15 +48,17 @@ module VpsAdmin::Supervisor
           updated_at: t
         )
 
-        vps_keys['keys'].delete(key_update)
+        remaining_keys.delete(key_update)
       end
 
-      vps_keys['keys'].each do |k|
+      remaining_keys.each do |k|
         ::VpsSshHostKey.create!(
-          vps: ::Vps.find(vps_keys['vps_id']),
+          vps:,
           bits: k['bits'],
           algorithm: k['algorithm'],
-          fingerprint: k['fingerprint']
+          fingerprint: k['fingerprint'],
+          created_at: t,
+          updated_at: t
         )
       end
     end
