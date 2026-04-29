@@ -108,6 +108,10 @@ module VpsAdmin::Supervisor
           next if avg_value.nil?
 
           cur_value = current_status.send(attr)
+          if cur_value.nil?
+            current_status.assign_attributes(avg_attr => nil)
+            next
+          end
 
           current_status.assign_attributes(avg_attr => avg_value + cur_value)
         end
