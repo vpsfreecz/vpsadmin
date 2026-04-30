@@ -80,7 +80,7 @@ namespace :vpsadmin do
           mail_honeypot: resp[:honeypot],
           mail_spam_trap_score: resp[:spam_trap_score],
           mail_recent_abuse: resp[:recent_abuse],
-          mail_frequent_complainer: resp[:frequent_complaner]
+          mail_frequent_complainer: resp[:frequent_complainer]
         )
       end
     end
