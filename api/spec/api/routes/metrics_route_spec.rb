@@ -43,5 +43,19 @@ RSpec.describe 'VpsAdmin::API::Metrics' do
       expect(token.use_count).to eq(1)
       expect(token.last_use).not_to be_nil
     end
+
+    context 'with payments plugin metrics', requires_plugins: :payments do
+      it 'includes plugin metrics for the token user' do
+        user.user_account.update!(monthly_payment: 456, paid_until: Time.local(2026, 6, 1))
+        allow(VpsAdmin::API::Metrics).to receive(:plugins)
+          .and_return([VpsAdmin::API::Plugins::Payments::Metrics])
+
+        request_metrics(access_token: token.access_token)
+
+        expect(last_response.status).to eq(200)
+        expect(last_response.body).to include('spec_metricsuser_monthly_payment 456')
+        expect(last_response.body).to include('spec_metricsuser_paid_until')
+      end
+    end
   end
 end

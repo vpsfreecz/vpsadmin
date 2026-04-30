@@ -70,4 +70,47 @@ RSpec.describe TransactionChains::Mail::DailyReport do
     expect(captured_vars).to include(hook_output: { ok: true })
     expect(captured_vars).to include(:users, :transactions)
   end
+
+  context 'with payments plugin hooks', requires_plugins: :payments do
+    it 'augments vars with incoming and accepted payments' do
+      incoming = build_incoming_payment!(transaction_id: 'daily-incoming', state: :queued)
+      accepted = UserPayment.new(
+        incoming_payment: incoming,
+        user: SpecSeed.user,
+        accounted_by: SpecSeed.admin,
+        amount: 100,
+        from_date: 1.month.ago,
+        to_date: Time.now
+      ).tap(&:save!)
+      captured_vars = nil
+
+      allow(MailTemplate).to receive(:send_mail!) do |_name, opts|
+        captured_vars = opts.fetch(:vars)
+        build_mail_log_double
+      end
+
+      described_class.fire2(args: [SpecSeed.language])
+
+      expect(captured_vars.dig(:payments, :incoming)).to include(incoming)
+      expect(captured_vars.dig(:payments, :queued)).to include(incoming)
+      expect(captured_vars.dig(:payments, :accepted)).to include(accepted)
+    end
+  end
+
+  context 'with webui plugin hook', requires_plugins: :webui do
+    it 'adds the configured webui base URL' do
+      SysConfig.find_by!(category: 'webui', name: 'base_url')
+               .update!(value: 'https://webui.example.test')
+      captured_vars = nil
+
+      allow(MailTemplate).to receive(:send_mail!) do |_name, opts|
+        captured_vars = opts.fetch(:vars)
+        build_mail_log_double
+      end
+
+      described_class.fire2(args: [SpecSeed.language])
+
+      expect(captured_vars[:base_url]).to eq('https://webui.example.test')
+    end
+  end
 end

@@ -1,0 +1,129 @@
+# frozen_string_literal: true
+
+require 'spec_helper'
+
+RSpec.describe 'outage reports update chain', requires_plugins: :outage_reports do # rubocop:disable RSpec/DescribeClass
+  include OutageReportsSpecHelpers
+
+  let(:chain_class) { VpsAdmin::API::Plugins::OutageReports::TransactionChains::Update }
+  let(:lang) { SpecSeed.language }
+
+  around do |example|
+    unlock_transaction_signer!
+    with_current_context(user: SpecSeed.admin) { example.run }
+  end
+
+  before do
+    ensure_mailer_available!
+    SpecSeed.user.update!(mailer_enabled: true, object_state: :active)
+  end
+
+  def build_outage(attrs = {}, summary: 'Old summary', **kwattrs)
+    create_outage_with_translation!(
+      {
+        state: :staged,
+        outage_type: :maintenance,
+        impact_type: :tbd,
+        begins_at: Time.local(2026, 4, 1, 10, 0, 0),
+        duration: 30,
+        auto_resolve: true
+      }.merge(attrs).merge(kwattrs),
+      summary: summary,
+      description: 'Old description'
+    )
+  end
+
+  it 'creates an update and edits outage translations without mailing while staged' do
+    outage = build_outage
+    allow(MailTemplate).to receive(:send_mail!)
+
+    chain, ret = chain_class.fire2(args: [
+                                     outage,
+                                     { duration: 45, state: Outage.states[:staged] },
+                                     { lang => { summary: 'New summary', description: 'New description' } },
+                                     { send_mail: true }
+                                   ])
+
+    outage.reload
+    update = outage.outage_updates.order(:id).last
+    expect(ret).to eq(outage)
+    expect(chain).to be_nil
+    expect(update.duration).to eq(45)
+    expect(update.outage_translations.find_by!(language: lang).summary).to eq('New summary')
+    expect(outage.duration).to eq(45)
+    expect(outage.outage_translations.find_by!(language: lang).summary).to eq('New summary')
+    expect(MailTemplate).not_to have_received(:send_mail!)
+  end
+
+  it 'announces outages, refreshes affected objects, and threads generic/user mail' do
+    outage = build_outage
+    last_report = OutageUpdate.create!(
+      outage: outage,
+      reported_by: SpecSeed.admin,
+      state: :staged,
+      begins_at: outage.begins_at,
+      duration: outage.duration
+    )
+    OutageUser.create!(outage: outage, user: SpecSeed.user, vps_count: 1, export_count: 0)
+    attempts = []
+
+    allow(outage).to receive(:set_affected_vpses)
+    allow(outage).to receive(:set_affected_exports)
+    allow(outage).to receive(:set_affected_users)
+    allow(MailTemplate).to receive(:send_mail!) do |name, opts|
+      attempts << [name, opts]
+      build_mail_log_double
+    end
+
+    chain, = chain_class.fire2(args: [
+                                 outage,
+                                 { state: Outage.states[:announced], impact_type: Outage.impact_types[:network] },
+                                 { lang => { summary: 'Announced', description: 'Announced desc' } },
+                                 { send_mail: true }
+                               ])
+
+    outage.reload
+    report = outage.outage_updates.order(:id).last
+    expect(chain.transaction_chain_concerns.pluck(:class_name, :row_id)).to include(
+      ['Outage', outage.id]
+    )
+    expect(outage.state).to eq('announced')
+    expect(outage.impact_type).to eq('network')
+    expect(outage).to have_received(:set_affected_vpses)
+    expect(outage).to have_received(:set_affected_exports)
+    expect(outage).to have_received(:set_affected_users)
+
+    generic = attempts.find { |_name, opts| opts[:user].nil? }
+    direct = attempts.find { |_name, opts| opts[:user] == SpecSeed.user }
+    expect(generic).not_to be_nil
+    expect(direct).not_to be_nil
+
+    expected_reply = "<vpsadmin-outage-#{outage.id}-0-announce@vpsadmin.vpsfree.cz>"
+    expected_direct_reply = "<vpsadmin-outage-#{outage.id}-#{SpecSeed.user.id}-announce@vpsadmin.vpsfree.cz>"
+    expect(generic.last[:message_id]).to eq(
+      "<vpsadmin-outage-#{outage.id}-0-announce@vpsadmin.vpsfree.cz>"
+    )
+    expect(generic.last[:in_reply_to]).to eq(expected_reply)
+    expect(direct.last[:message_id]).to eq(
+      "<vpsadmin-outage-#{outage.id}-#{SpecSeed.user.id}-announce@vpsadmin.vpsfree.cz>"
+    )
+    expect(direct.last[:in_reply_to]).to eq(expected_direct_reply)
+    expect(report.id).not_to eq(last_report.id)
+  end
+
+  it 'suppresses mail when requested' do
+    outage = build_outage(state: :announced)
+    allow(MailTemplate).to receive(:send_mail!)
+
+    chain, = chain_class.fire2(args: [
+                                 outage,
+                                 { state: Outage.states[:resolved] },
+                                 {},
+                                 { send_mail: false }
+                               ])
+
+    expect(chain).to be_nil
+    expect(outage.reload.state).to eq('resolved')
+    expect(MailTemplate).not_to have_received(:send_mail!)
+  end
+end
