@@ -5,6 +5,7 @@ module VpsAdmin::API
 
       record_type ||= attrs[:record_type]
       ret = attrs.clone
+      ret[:content] = ret[:content].dup
 
       ret[:content].strip!
 
