@@ -259,6 +259,48 @@ base
     RUBY
   end
 
+  def scheduler_socket_call(services, command:, arguments: [])
+    services.api_ruby_json(code: <<~RUBY)
+      require 'json'
+      require 'socket'
+
+      sock = UNIXSocket.new('/var/lib/vpsadmin/api/scheduler.sock')
+      sock.puts(JSON.dump(command: #{command.inspect}, arguments: #{arguments.inspect}))
+      sock.close_write
+      puts sock.read
+    RUBY
+  end
+
+  def scheduler_status(services)
+    scheduler_socket_call(services, command: 'status').fetch('response')
+  end
+
+  def scheduler_tasks(services)
+    scheduler_socket_call(services, command: 'get-tasks')
+      .fetch('response')
+      .fetch('tasks')
+  end
+
+  def scheduler_update(services)
+    scheduler_socket_call(services, command: 'update')
+  end
+
+  def scheduler_run_task(services, task_id:)
+    scheduler_socket_call(
+      services,
+      command: 'run-task',
+      arguments: [Integer(task_id)]
+    )
+  end
+
+  def dataset_snapshot_count(services, dataset_id:)
+    services.mysql_scalar(sql: <<~SQL).to_i
+      SELECT COUNT(*)
+      FROM snapshots
+      WHERE dataset_id = #{Integer(dataset_id)}
+    SQL
+  end
+
   def create_location_network_primary_fixture(services)
     services.api_ruby_json(code: <<~RUBY)
       env = Environment.first

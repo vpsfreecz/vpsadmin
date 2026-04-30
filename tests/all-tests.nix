@@ -30,6 +30,7 @@ testLib.makeTests [
   "v4/admin/environment-defaults-propagation"
   "v4/admin/cluster-resource-package-assignment"
   "v4/admin/dataset-plan-lifecycle"
+  "v4/admin/scheduler-socket-control"
   "v4/admin/location-network-primary-switch"
   "v4/alerts/incident-report-process"
   "v4/alerts/oom-report-notify-and-prune"
