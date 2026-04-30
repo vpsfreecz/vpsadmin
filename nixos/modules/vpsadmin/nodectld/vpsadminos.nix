@@ -24,6 +24,12 @@ in
     '';
 
     runit.services.nodectld = {
+      path = [
+        # Prefer the wrapped osctl-exportfs package. The Ruby dependency also
+        # exposes an unwrapped executable without nfs-utils in PATH.
+        pkgs.osctl-exportfs
+        pkgs.nfs-utils
+      ];
       run = ''
         ulimit -c unlimited
         export HOME=${config.users.extraUsers.root.home}
@@ -57,6 +63,7 @@ in
 
     environment.systemPackages = with pkgs; [
       mbuffer
+      nfs-utils
       nodectl
       openssh
     ];
