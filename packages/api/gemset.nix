@@ -614,10 +614,10 @@
     platforms = [ ];
     source = {
       remotes = [ "https://rubygems.org" ];
-      sha256 = "0p0m046nqiwwvq3bm44wvhf8ba5bqvbjr102jmafmzpldcjdf1zh";
+      sha256 = "1wfnqyfayx9n9j7x871v2ars4hjhfisi1dl24fa64ylq3mns6ghm";
       type = "gem";
     };
-    version = "6.0.5";
+    version = "6.0.6";
   };
   multi_json = {
     groups = [ "default" ];
