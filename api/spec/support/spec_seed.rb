@@ -21,6 +21,12 @@ module SpecSeed
     seed_user_accounts!
   end
 
+  def reset_cache!
+    instance_variables.each do |ivar|
+      remove_instance_variable(ivar)
+    end
+  end
+
   def admin
     @admin ||= User.find_by!(login: 'admin')
   end

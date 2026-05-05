@@ -172,6 +172,8 @@ RSpec.configure do |config|
   config.include AuthOperationHelpers
 
   config.before do
+    next if User.current || UserSession.current
+
     User.current = nil
     UserSession.current = nil
   end

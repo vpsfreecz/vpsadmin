@@ -8,6 +8,7 @@ module GlobalReset
     reset_current_session!
     reset_papertrail!
     reset_transaction_signer!
+    reset_spec_seed!
   end
 
   def reset_current_user!
@@ -41,6 +42,14 @@ module GlobalReset
     %i[@key @pkey @unlocked].each do |ivar|
       signer.instance_variable_set(ivar, nil) if signer.instance_variable_defined?(ivar)
     end
+  rescue StandardError
+    # ignore
+  end
+
+  def reset_spec_seed!
+    return unless defined?(::SpecSeed)
+
+    ::SpecSeed.reset_cache!
   rescue StandardError
     # ignore
   end

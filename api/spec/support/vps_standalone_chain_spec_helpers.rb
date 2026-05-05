@@ -9,16 +9,18 @@ module VpsStandaloneChainSpecHelpers
       maintenance_lock_reason: nil
     )
 
-    NodeCurrentStatus.find_or_create_by!(node: node) do |status|
+    now = Time.now.utc
+    NodeCurrentStatus.find_or_initialize_by(node: node).tap do |status|
       status.vpsadmin_version = 'spec'
       status.kernel = 'spec'
-      status.update_count = 1
+      status.update_count ||= 1
       status.cgroup_version = :cgroup_v2
       status.pool_state = :online
       status.pool_scan = :none
-      status.pool_checked_at = Time.now.utc
-      status.created_at = Time.now.utc
-      status.updated_at = Time.now.utc
+      status.pool_checked_at = now
+      status.created_at = now if status.new_record?
+      status.updated_at = now
+      status.save!
     end
   end
 
