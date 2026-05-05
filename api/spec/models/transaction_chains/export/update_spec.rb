@@ -84,8 +84,18 @@ RSpec.describe TransactionChains::Export::Update do
       row.class_name == 'Export' &&
         row.attr_changes.is_a?(Hash) &&
         row.attr_changes['rw'] == 0 &&
-        row.attr_changes['sync'] == 0
+      row.attr_changes['sync'] == 0
     end).to be_present
+  end
+
+  it 'saves direct db-only changes without runtime transactions' do
+    export = create_update_fixture(enabled: true)
+
+    chain, returned = described_class.fire(export, rw: false, sync: false)
+
+    expect(chain).to be_nil
+    expect(returned.id).to eq(export.id)
+    expect(export.reload).to have_attributes(rw: false, sync: false)
   end
 
   it 'returns an empty chain when nothing changes' do

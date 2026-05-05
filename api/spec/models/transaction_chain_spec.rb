@@ -235,4 +235,22 @@ RSpec.describe TransactionChain do
     expect(inner.current_chain).to eq(outer)
     expect(observed).to eq([true, outer])
   end
+
+  it 'uses an active node with a fresh status as the mail server fallback' do
+    Node.where(role: Node.roles[:mailer]).update_all(active: false)
+    Node.where.not(role: Node.roles[:mailer]).find_each do |existing_node|
+      stale_node_status!(existing_node)
+    end
+    stale_node = create_node!(name: "stale-mail-fallback-#{SecureRandom.hex(3)}")
+    fresh_node = create_node!(name: "fresh-mail-fallback-#{SecureRandom.hex(3)}")
+    inactive_node = create_node!(name: "inactive-mail-fallback-#{SecureRandom.hex(3)}", active: false)
+
+    stale_node_status!(stale_node)
+    fresh_node_status!(fresh_node, updated_at: 30.seconds.ago.utc)
+    fresh_node_status!(inactive_node, updated_at: 30.seconds.ago.utc)
+
+    chain = described_class.new
+
+    expect(chain.send(:find_mail_server)).to eq(fresh_node)
+  end
 end
