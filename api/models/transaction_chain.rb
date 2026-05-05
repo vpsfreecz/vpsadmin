@@ -418,16 +418,17 @@ class TransactionChain < ApplicationRecord
     chain = dst_chain || self
     return chain.mail_server if chain.mail_server
 
-    t = ::NodeCurrentStatus.table_name
+    status_table = ::NodeCurrentStatus.table_name
+    threshold = 120.seconds.ago.utc
+
     chain.mail_server = ::Node.find_by(role: ::Node.roles[:mailer], active: true)
     chain.mail_server ||= ::Node
                           .joins(:node_current_status)
+                          .where(active: true)
                           .where(
-                            "(#{t}.updated_at IS NULL AND UNIX_TIMESTAMP() - UNIX_TIMESTAMP(CONVERT_TZ(#{t}.created_at, 'UTC', 'Europe/Prague')) <= 120)
-        OR
-        (UNIX_TIMESTAMP() - UNIX_TIMESTAMP(CONVERT_TZ(#{t}.updated_at, 'UTC', 'Europe/Prague')) <= 120)"
-                          ).where(
-                            active: true
+                            "#{status_table}.created_at >= ? OR #{status_table}.updated_at >= ?",
+                            threshold,
+                            threshold
                           ).take!
   end
 end
