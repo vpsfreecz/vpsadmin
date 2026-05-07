@@ -48,10 +48,12 @@ module NodeCtld
 
     def reserve(queues, cmd)
       queues = [queues] unless queues.is_a?(::Array)
+      chain_id = cmd.chain_id
+      priority = cmd.priority || 0
 
       sync do
         queues.each do |q|
-          @queues[q].reserve(cmd)
+          @queues[q].reserve(chain_id, priority:)
         end
       end
     end
