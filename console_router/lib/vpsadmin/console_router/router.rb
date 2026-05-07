@@ -177,16 +177,18 @@ module VpsAdmin::ConsoleRouter
         sleep(60)
 
         sync do
-          now = Time.now
+          prune_cache(Time.now)
+        end
+      end
+    end
 
-          @cache.delete_if do |_key, entry|
-            if entry.last_use + 60 < now
-              entry.channel.close
-              true
-            else
-              false
-            end
-          end
+    def prune_cache(now)
+      @cache.delete_if do |_key, entry|
+        if entry.last_use + 60 < now
+          entry.channel.close
+          true
+        else
+          false
         end
       end
     end
