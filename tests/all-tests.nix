@@ -105,6 +105,7 @@ testLib.makeTests [
   "v4/vps/create"
   "v4/vps/deploy-public-key-and-user-data"
   "v4/vps/passwd"
+  "v4/console-router"
   "v4/vps/hard-delete-basic"
   "v4/vps/mount-lifecycle"
   "v4/vps/expand-and-shrink-dataset"

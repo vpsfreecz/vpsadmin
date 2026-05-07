@@ -132,8 +132,30 @@ import ../../make-test.nix (
           services.wait_for_service('vpsadmin-supervisor.service')
         end
 
-        example 'console-router is running' do
-          services.wait_for_service('vpsadmin-console-router.service')
+        describe 'console-router' do
+          it 'is running' do
+            services.wait_for_service('vpsadmin-console-router.service')
+          end
+
+          it 'is responding through nginx/haproxy' do
+            wait_until_block_succeeds(name: 'console-router via proxy responds') do
+              _, output = services.succeeds(
+                'curl --silent --fail-with-body http://console.vpsadmin.test/console.js'
+              )
+              expect(output).to include('function VpsAdminConsole')
+              true
+            end
+          end
+
+          it 'is responding directly' do
+            wait_until_block_succeeds(name: 'console-router direct responds') do
+              _, output = services.succeeds(
+                'curl --silent --fail-with-body http://127.0.0.1:8000/console.js'
+              )
+              expect(output).to include('function VpsAdminConsole')
+              true
+            end
+          end
         end
 
         describe 'webui' do
