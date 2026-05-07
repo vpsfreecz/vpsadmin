@@ -69,6 +69,7 @@ import ../../../make-test.nix (
             services.vpsadminctl.succeeds(args: ['vps', 'start', vps.fetch('id').to_s])
           end
           wait_for_vps_on_node(services, vps_id: vps.fetch('id'), node_id: node1_id, running: true)
+          write_vps_migration_proof(node1, vps_id: vps.fetch('id'))
 
           child = create_descendant_dataset(
             services,
@@ -124,6 +125,8 @@ import ../../../make-test.nix (
           ).inspect
 
           wait_for_vps_on_node(services, vps_id: vps.fetch('id'), node_id: node2_id, running: true)
+          expect_vps_migration_proof(node2, vps_id: vps.fetch('id'))
+          expect_vps_container_absent(node1, vps_id: vps.fetch('id'))
           dst_dataset_path = find_dataset_path_on_node(node2, info.fetch('dataset_full_name'))
           dst_child_path = find_dataset_path_on_node(node2, child.fetch('full_name'))
           dst_grandchild_path = find_dataset_path_on_node(node2, grandchild.fetch('full_name'))

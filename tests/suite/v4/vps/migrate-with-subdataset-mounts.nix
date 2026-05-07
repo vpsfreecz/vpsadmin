@@ -67,6 +67,7 @@ import ../../../make-test.nix (
 
           services.vpsadminctl.succeeds(args: ['vps', 'start', vps.fetch('id').to_s])
           wait_for_vps_on_node(services, vps_id: vps.fetch('id'), node_id: node1_id, running: true)
+          write_vps_migration_proof(node1, vps_id: vps.fetch('id'))
 
           child = create_descendant_dataset(
             services,
@@ -147,6 +148,8 @@ import ../../../make-test.nix (
           expect(sentinel_content).to include('subdataset mount sentinel'), diagnostic.inspect
 
           wait_for_vps_on_node(services, vps_id: vps.fetch('id'), node_id: node2_id, running: true)
+          expect_vps_migration_proof(node2, vps_id: vps.fetch('id'))
+          expect_vps_container_absent(node1, vps_id: vps.fetch('id'))
         end
       end
     '';

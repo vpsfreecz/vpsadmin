@@ -67,6 +67,7 @@ import ../../../make-test.nix (
 
           services.vpsadminctl.succeeds(args: ['vps', 'start', vps.fetch('id').to_s])
           wait_for_vps_on_node(services, vps_id: vps.fetch('id'), node_id: node1_id, running: true)
+          write_vps_migration_proof(node1, vps_id: vps.fetch('id'))
 
           src_dataset_path = find_dataset_path_on_node(node1, info.fetch('dataset_full_name'))
 
@@ -126,8 +127,10 @@ import ../../../make-test.nix (
           expect(start_detail.fetch('error').to_s).not_to eq("")
           expect(vps_output.fetch('vps').fetch('node').fetch('id')).to eq(node2_id), diagnostic.inspect
           expect(vps_output.fetch('vps').fetch('is_running')).to eq(false), diagnostic.inspect
+          expect_vps_container_absent(node1, vps_id: vps.fetch('id'))
 
           dst_dataset_path = find_dataset_path_on_node(node2, info.fetch('dataset_full_name'))
+          expect_vps_migration_proof_on_dataset(node2, dataset_path: dst_dataset_path)
           expect(read_dataset_text(
             node2,
             dataset_path: dst_dataset_path,

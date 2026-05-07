@@ -78,6 +78,7 @@ import ../../../make-test.nix (
           wait_for_vps_on_node(services, vps_id: vps.fetch('id'), node_id: node1_id, running: false)
           services.vpsadminctl.succeeds(args: ['vps', 'start', vps.fetch('id').to_s], timeout: 900)
           wait_for_vps_on_node(services, vps_id: vps.fetch('id'), node_id: node1_id, running: true)
+          write_vps_migration_proof(node1, vps_id: vps.fetch('id'))
           set_today_fully_open_window(services, vps.fetch('id'))
 
           info = dataset_info(services, vps.fetch('id'))
@@ -115,6 +116,8 @@ import ../../../make-test.nix (
           )
 
           wait_for_vps_on_node(services, vps_id: vps.fetch('id'), node_id: node2_id, running: true)
+          expect_vps_migration_proof(node2, vps_id: vps.fetch('id'))
+          expect_vps_container_absent(node1, vps_id: vps.fetch('id'))
           dst_dataset_path = find_dataset_path_on_node(node2, info.fetch('dataset_full_name'))
           expect(read_dataset_text(
             node2,

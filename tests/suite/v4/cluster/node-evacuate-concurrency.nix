@@ -71,6 +71,7 @@ import ../../../make-test.nix (
             wait_for_vps_on_node(services, vps_id: vps.fetch('id'), node_id: node1_id, running: false)
             services.vpsadminctl.succeeds(args: ['vps', 'start', vps.fetch('id').to_s], timeout: 900)
             wait_for_vps_on_node(services, vps_id: vps.fetch('id'), node_id: node1_id, running: true)
+            write_vps_migration_proof(node1, vps_id: vps.fetch('id'))
             vps
           end
           vps_ids = vpses.map { |vps| vps.fetch('id') }
@@ -124,6 +125,8 @@ import ../../../make-test.nix (
 
           vps_ids.each do |vps_id|
             wait_for_vps_on_node(services, vps_id: vps_id, node_id: node2_id, running: true)
+            expect_vps_migration_proof(node2, vps_id: vps_id)
+            expect_vps_container_absent(node1, vps_id: vps_id)
           end
         ensure
           node1.succeeds('nodectl queue resume all', timeout: 60) if defined?(node1)

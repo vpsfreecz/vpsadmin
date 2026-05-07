@@ -7,6 +7,11 @@ import ../../../make-test.nix (
     clusterSeed = import ../../../../api/db/seeds/test-2-node.nix;
     node1 = clusterSeed.node1;
     node2 = clusterSeed.node2;
+    common = import ../storage/remote-common.nix {
+      adminUserId = adminUser.id;
+      node1Id = node1.id;
+      node2Id = node2.id;
+    };
   in
   {
     name = "vps-migrate";
@@ -24,9 +29,7 @@ import ../../../make-test.nix (
 
     machines = import ../../../machines/v4/cluster/2-node.nix args;
 
-    testScript = ''
-      require 'shellwords'
-
+    testScript = common + ''
       location_id = ${toString location.id}
       user_id = ${toString adminUser.id}
       node1_id = ${toString node1.id}
@@ -43,46 +46,6 @@ import ../../../make-test.nix (
       ipv4 = 0
       ipv4_private = 0
       ipv6 = 0
-      migration_proof_path = '/root/vpsadmin-migration-proof.txt'
-      migration_proof_content = 'vps migration data retention proof'
-
-      def self.ct_exec(machine, vps_id, command)
-        machine.succeeds(
-          "osctl ct exec #{Shellwords.escape(vps_id.to_s)} /bin/sh -c #{Shellwords.escape(command)}"
-        )
-      end
-
-      def self.wait_for_ct_exec(machine, vps_id)
-        machine.wait_until_succeeds(
-          "osctl ct exec #{Shellwords.escape(vps_id.to_s)} true",
-          timeout: 120
-        )
-      end
-
-      def self.write_ct_file(machine, vps_id, path, value)
-        ct_exec(
-          machine,
-          vps_id,
-          "mkdir -p #{Shellwords.escape(File.dirname(path))} && " \
-            "printf '%s\\n' #{Shellwords.escape(value)} > #{Shellwords.escape(path)}"
-        )
-      end
-
-      def self.expect_ct_file(machine, vps_id, path, value)
-        _, output = ct_exec(machine, vps_id, "cat #{Shellwords.escape(path)}")
-        expect(output.strip).to eq(value)
-      end
-
-      def self.expect_ct_absent(machine, vps_id)
-        wait_until_block_fails(name: "container #{vps_id} to disappear", timeout: 120) do
-          machine.succeeds("osctl ct show #{Shellwords.escape(vps_id.to_s)}")
-        end
-      end
-
-      before(:suite) do
-        [services, node1, node2].each(&:start)
-        services.wait_for_vpsadmin_api
-      end
 
       describe 'vps migration', order: :defined do
         it 'responds to API requests' do
@@ -174,12 +137,11 @@ import ../../../make-test.nix (
           end
 
           node1.wait_for_osctl_container(@vps_id.to_s, state: 'running', timeout: 120)
-          wait_for_ct_exec(node1, @vps_id)
+          wait_for_vps_exec(node1, vps_id: @vps_id)
         end
 
         it 'writes data inside the VPS before migration' do
-          write_ct_file(node1, @vps_id, migration_proof_path, migration_proof_content)
-          expect_ct_file(node1, @vps_id, migration_proof_path, migration_proof_content)
+          write_vps_migration_proof(node1, vps_id: @vps_id)
         end
 
         it 'migrates the VPS to node2' do
@@ -199,9 +161,8 @@ import ../../../make-test.nix (
           end
 
           node2.wait_for_osctl_container(@vps_id.to_s, state: 'running', timeout: 120)
-          wait_for_ct_exec(node2, @vps_id)
-          expect_ct_file(node2, @vps_id, migration_proof_path, migration_proof_content)
-          expect_ct_absent(node1, @vps_id)
+          expect_vps_migration_proof(node2, vps_id: @vps_id)
+          expect_vps_container_absent(node1, vps_id: @vps_id)
         end
       end
     '';

@@ -446,6 +446,70 @@
     )
   end
 
+  VPS_MIGRATION_PROOF_PATH = '/root/vpsadmin-migration-proof.txt'
+  VPS_MIGRATION_PROOF_RELATIVE_PATH = 'private/root/vpsadmin-migration-proof.txt'
+  VPS_MIGRATION_PROOF_CONTENT = 'vps migration data retention proof'
+
+  def wait_for_vps_exec(machine, vps_id:, timeout: 120)
+    machine.wait_until_succeeds(
+      "osctl ct exec #{Integer(vps_id)} true",
+      timeout: timeout
+    )
+  end
+
+  def write_vps_migration_proof(
+    machine,
+    vps_id:,
+    path: VPS_MIGRATION_PROOF_PATH,
+    content: VPS_MIGRATION_PROOF_CONTENT
+  )
+    wait_for_vps_exec(machine, vps_id: vps_id)
+    vps_exec(
+      machine,
+      vps_id: vps_id,
+      command: "mkdir -p #{Shellwords.escape(File.dirname(path))} && " \
+        "printf '%s\\n' #{Shellwords.escape(content)} > #{Shellwords.escape(path)} && " \
+        "sync",
+      timeout: 120
+    )
+    expect_vps_migration_proof(machine, vps_id: vps_id, path: path, content: content)
+  end
+
+  def expect_vps_migration_proof(
+    machine,
+    vps_id:,
+    path: VPS_MIGRATION_PROOF_PATH,
+    content: VPS_MIGRATION_PROOF_CONTENT
+  )
+    wait_for_vps_exec(machine, vps_id: vps_id)
+    _, output = vps_exec(
+      machine,
+      vps_id: vps_id,
+      command: "cat #{Shellwords.escape(path)}",
+      timeout: 120
+    )
+    expect(output.strip).to eq(content)
+  end
+
+  def expect_vps_migration_proof_on_dataset(
+    node,
+    dataset_path:,
+    relative_path: VPS_MIGRATION_PROOF_RELATIVE_PATH,
+    content: VPS_MIGRATION_PROOF_CONTENT
+  )
+    expect(read_dataset_text(
+      node,
+      dataset_path: dataset_path,
+      relative_path: relative_path
+    ).strip).to eq(content)
+  end
+
+  def expect_vps_container_absent(machine, vps_id:, timeout: 120)
+    wait_until_block_fails(name: "container #{vps_id} to disappear", timeout: timeout) do
+      machine.succeeds("osctl ct show #{Integer(vps_id)}")
+    end
+  end
+
   def vps_authorized_keys_lines(machine, vps_id:, timeout: 60)
     _, output = vps_exec(machine, vps_id: vps_id, command: 'cat /root/.ssh/authorized_keys', timeout: timeout)
 
@@ -2654,6 +2718,7 @@
     full_path = File.join(mountpoint, relative_path)
     node.succeeds("mkdir -p #{Shellwords.escape(File.dirname(full_path))}", timeout: 60)
     node.succeeds("cat > #{Shellwords.escape(full_path)} <<'EOF'\n#{content}EOF", timeout: 60)
+    node.succeeds('sync', timeout: 120)
     content
   end
 
