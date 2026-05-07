@@ -4,6 +4,7 @@ module NodeCtldSpec
   class FakeCfg
     def initialize(data)
       @data = data
+      @callbacks = Hash.new { |hash, key| hash[key] = [] }
     end
 
     def get(*keys)
@@ -12,8 +13,35 @@ module NodeCtldSpec
       end
     end
 
+    def patch(change)
+      deep_merge!(@data, change)
+      @callbacks.each_value do |callbacks|
+        callbacks.each(&:call)
+      end
+    end
+
+    def on_update(name, &block)
+      @callbacks[name] << block
+    end
+
+    def reload; end
+
     def minimal?
       false
+    end
+
+    protected
+
+    def deep_merge!(target, change)
+      change.each do |key, value|
+        if target[key].is_a?(Hash) && value.is_a?(Hash)
+          deep_merge!(target[key], value)
+        else
+          target[key] = value
+        end
+      end
+
+      target
     end
   end
 
@@ -41,7 +69,41 @@ module NodeCtldSpec
             check_interval: 10,
             threads: 4,
             urgent_threads: 2,
-            type: :node
+            type: :node,
+            veth_map_interval: 60,
+            queues: {
+              general: { threads: 2, urgent: 1, start_delay: 0 },
+              storage: { threads: 2, urgent: 1, start_delay: 0 },
+              network: { threads: 2, urgent: 1, start_delay: 0 },
+              vps: { threads: 2, urgent: 1, start_delay: 0 },
+              zfs_send: { threads: 2, urgent: 1, start_delay: 0 },
+              zfs_recv: { threads: 2, urgent: 1, start_delay: 0 },
+              mail: { threads: 2, urgent: 1, start_delay: 0 },
+              dns: { threads: 2, urgent: 1, start_delay: 0 },
+              outage: { threads: 2, urgent: 1, start_delay: 0 },
+              queue: { threads: 2, urgent: 1, start_delay: 0 },
+              rollback: { threads: 2, urgent: 1, start_delay: 0 }
+            }
+          },
+          console: {
+            enable: true
+          },
+          route_check: {
+            default_timeout: 30
+          },
+          traffic_accounting: {
+            enable: true,
+            update_interval: 60,
+            log_interval: 300,
+            batch_size: 100
+          },
+          node: {
+            cpu_usage_measure_delay: 60
+          },
+          dns_server: {
+            status_interval: 60,
+            statistics_url: 'http://127.0.0.1:8053/',
+            bind_workdir: Dir.tmpdir
           }
         )
       end

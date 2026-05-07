@@ -25,6 +25,56 @@ base
     value == true || value.to_i == 1
   end
 
+  def nodectl_remote_json(node, command:, params: {})
+    script = <<~RUBY
+      require 'json'
+      require 'socket'
+
+      sock = UNIXSocket.new('/run/nodectl/nodectld.sock')
+      sock.gets
+      sock.puts(JSON.dump(command: #{command.to_sym.inspect}, params: #{params.inspect}))
+      response = sock.gets
+      sock.close
+
+      puts response
+    RUBY
+
+    _, out = node.succeeds([
+      'ruby',
+      '-e',
+      script
+    ].shelljoin)
+
+    JSON.parse(out)
+  end
+
+  def node_current_status_row(services, node_id:)
+    services.mysql_json_rows(sql: <<~SQL).first
+      SELECT JSON_OBJECT(
+        'node_id', node_id,
+        'time', UNIX_TIMESTAMP(COALESCE(updated_at, created_at)),
+        'loadavg', loadavg1,
+        'cpus', cpus
+      )
+      FROM node_current_statuses
+      WHERE node_id = #{Integer(node_id)}
+      LIMIT 1
+    SQL
+  end
+
+  def vps_mount_state_row(services, mount_id:)
+    services.mysql_json_rows(sql: <<~SQL).first
+      SELECT JSON_OBJECT(
+        'id', id,
+        'vps_id', vps_id,
+        'current_state', current_state
+      )
+      FROM mounts
+      WHERE id = #{Integer(mount_id)}
+      LIMIT 1
+    SQL
+  end
+
   def environment_defaults_row(services, env_id)
     services.mysql_json_rows(sql: <<~SQL).first
       SELECT JSON_OBJECT(

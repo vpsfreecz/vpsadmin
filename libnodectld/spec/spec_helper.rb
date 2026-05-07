@@ -49,6 +49,7 @@ RSpec.configure do |config|
   config.include NodeCtldSpec::OutputHelpers
   config.include NodeCtldSpec::StorageCommandHelpers
   config.include NodeCtldSpec::VpsCommandHelpers
+  config.include NodeCtldSpec::RuntimeHelpers
 
   config.before(:suite) do
     NodeCtldSpec::BaselineSeed.bootstrap!
