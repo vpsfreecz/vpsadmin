@@ -6,6 +6,11 @@ gem 'puma'
 gem 'require_all', '~> 2.0.0'
 gem 'sinatra', '~> 4.0'
 
+group :test do
+  gem 'rack-test'
+  gem 'rspec'
+end
+
 group :development do
   gem 'rackup'
   gem 'webrick'
