@@ -12,7 +12,7 @@ module NodeCtld::RemoteCommands
         ok
 
       else
-        raise SystemCommandFailed.new(nil, nil, "Unknown resource #{@resource}")
+        raise NodeCtld::SystemCommandFailed.new(nil, nil, "Unknown resource #{@resource}")
       end
     end
   end
