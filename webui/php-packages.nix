@@ -152,10 +152,10 @@ let
     "symfony/deprecation-contracts" = {
       targetDir = "";
       src = composerEnv.buildZipPackage {
-        name = "symfony-deprecation-contracts-63afe740e99a13ba87ec199bb07bbdee937a5b62";
+        name = "symfony-deprecation-contracts-50f59d1f3ca46d41ac911f97a78626b6756af35b";
         src = fetchurl {
-          url = "https://api.github.com/repos/symfony/deprecation-contracts/zipball/63afe740e99a13ba87ec199bb07bbdee937a5b62";
-          sha256 = "1blzjsmk38b36l15khbx2qs3c6xqmfp32l9xxq3305ifshw7ldby";
+          url = "https://api.github.com/repos/symfony/deprecation-contracts/zipball/50f59d1f3ca46d41ac911f97a78626b6756af35b";
+          sha256 = "0ssbi6dgnd101f303ivzdy2hjpjlhhzczg0ffbjhnlx1wjy3gmh0";
         };
       };
     };
