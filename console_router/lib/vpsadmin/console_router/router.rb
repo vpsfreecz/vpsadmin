@@ -23,25 +23,24 @@ module VpsAdmin::ConsoleRouter
     # @return [String]
     attr_reader :api_url
 
-    def initialize
-      cfg = parse_config
+    def initialize(
+      connection: nil,
+      config: nil,
+      config_path: nil,
+      rpc_client: RpcClient,
+      start_upkeep: true
+    )
+      @rpc_client = rpc_client
+      @connection = connection || build_connection(config || parse_config(config_path))
+      @connection.start unless connection
 
-      @connection = Bunny.new(
-        hosts: cfg.fetch('hosts'),
-        vhost: cfg.fetch('vhost', '/'),
-        username: cfg.fetch('username'),
-        password: cfg.fetch('password'),
-        log_file: $stderr
-      )
-      @connection.start
-
-      RpcClient.run(@connection) do |rpc|
+      @rpc_client.run(@connection) do |rpc|
         @api_url = rpc.get_api_url
       end
 
       @cache = {}
       @mutex = Mutex.new
-      @upkeep = Thread.new { run_upkeep }
+      @upkeep = Thread.new { run_upkeep } if start_upkeep
     end
 
     # Check session validity
@@ -85,7 +84,7 @@ module VpsAdmin::ConsoleRouter
         entry = @cache[k]
 
         if entry.nil? || (entry.last_check + SESSION_TIMEOUT < now)
-          node_name = RpcClient.run(@connection) do |rpc|
+          node_name = @rpc_client.run(@connection) do |rpc|
             rpc.get_session_node(vps_id, session)
           end
 
@@ -192,8 +191,18 @@ module VpsAdmin::ConsoleRouter
       end
     end
 
-    def parse_config
-      path = File.join(__dir__, '../../../', 'config/rabbitmq.yml')
+    def build_connection(cfg)
+      Bunny.new(
+        hosts: cfg.fetch('hosts'),
+        vhost: cfg.fetch('vhost', '/'),
+        username: cfg.fetch('username'),
+        password: cfg.fetch('password'),
+        log_file: $stderr
+      )
+    end
+
+    def parse_config(path = nil)
+      path ||= File.join(__dir__, '../../../', 'config/rabbitmq.yml')
       YAML.safe_load_file(path)
     end
 
