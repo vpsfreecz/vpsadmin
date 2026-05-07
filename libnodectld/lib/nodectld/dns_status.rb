@@ -34,6 +34,7 @@ module NodeCtld
 
       now = Time.now
       xml = fetch_bind_stats
+      return if xml.nil?
 
       zones = []
 
