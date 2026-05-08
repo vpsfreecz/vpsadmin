@@ -115,23 +115,23 @@ module VpsAdmin::DownloadMounter
       elsif @opts[:auth] == 'token'
         token = @opts[:token]
 
-        unless token
-          if @opts[:load]
-            @api.authenticate(:token, token: File.new(@opts[:load]).read.strip)
+        if token
+          @api.authenticate(:token, token:)
 
-          else
-            u, p = get_credentials
-            @api.authenticate(:token, user: u, password: p, lifetime: @opts[:lifetime])
+        elsif @opts[:load]
+          @api.authenticate(:token, token: File.new(@opts[:load]).read.strip)
 
-            if @opts[:save]
-              token = @api.auth.token
+        else
+          u, p = get_credentials
+          @api.authenticate(:token, user: u, password: p, lifetime: @opts[:lifetime])
 
-              f = File.new(@opts[:save], 'w')
-              f.write(token)
-              f.close
-            end
+          if @opts[:save]
+            token = @api.auth.token
+
+            f = File.new(@opts[:save], 'w')
+            f.write(token)
+            f.close
           end
-
         end
 
       else
