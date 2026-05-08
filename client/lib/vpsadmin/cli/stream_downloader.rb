@@ -60,7 +60,7 @@ module VpsAdmin::CLI
         )
       end
 
-      args = [uri.host] + Array.new(5, nil) + [{ use_ssl: uri.scheme == 'https' }]
+      args = [uri.host, uri.port] + Array.new(4, nil) + [{ use_ssl: uri.scheme == 'https' }]
 
       Net::HTTP.start(*args) do |http|
         loop do
@@ -91,7 +91,7 @@ module VpsAdmin::CLI
           headers = {}
           headers['Range'] = "bytes=#{downloaded}-" if downloaded > 0
 
-          http.request_get(uri.path, headers) do |res|
+          http.request_get(uri.request_uri, headers) do |res|
             case res.code
             when '404' # Not Found
               raise DownloadError, 'The download has failed, most likely transaction failure' if downloaded > 0
