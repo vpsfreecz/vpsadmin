@@ -12,10 +12,12 @@ module NodeCtld
       ds += "/#{@tree}/#{@branch}" if @tree
 
       FileUtils.mkdir_p(secret_dir_path)
+      File.chmod(0o755, secret_dir_path)
 
       approx_size(ds)
       method(@format).call(ds)
 
+      File.chmod(0o644, file_path)
       @size = File.size(file_path)
       ok
     end

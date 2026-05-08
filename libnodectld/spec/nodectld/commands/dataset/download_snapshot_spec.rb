@@ -77,6 +77,8 @@ RSpec.describe NodeCtld::Commands::Dataset::DownloadSnapshot do
 
     expect(cmd.exec).to eq(ret: :ok)
     expect(File.exist?(cmd.send(:file_path))).to be(true)
+    expect(File.stat(cmd.send(:secret_dir_path)).mode & 0o777).to eq(0o755)
+    expect(File.stat(cmd.send(:file_path)).mode & 0o777).to eq(0o644)
     expect(db).to have_received(:prepared).with(
       'UPDATE snapshot_downloads SET size = ? WHERE id = ?',
       20,
