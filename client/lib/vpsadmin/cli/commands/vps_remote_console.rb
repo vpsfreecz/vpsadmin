@@ -55,6 +55,7 @@ module VpsAdmin::CLI::Commands
         data.each_char do |char|
           if char == @end_seq[@end_i]
             if @end_i == @end_seq.size - 1
+              http_client.write(buffer) unless buffer.empty?
               @stop = true
               return # rubocop:disable Lint/NonLocalExitFromIterator
             end
