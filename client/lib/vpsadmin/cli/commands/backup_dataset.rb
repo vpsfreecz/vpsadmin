@@ -60,7 +60,12 @@ module VpsAdmin::CLI::Commands
         @opts[:safe] = s
       end
 
-      opts.on('--retry-attemps N', Integer, 'Retry N times to recover from download error (10)') do |n|
+      opts.on(
+        '--retry-attempts N',
+        '--retry-attemps N',
+        Integer,
+        'Retry N times to recover from download error (10)'
+      ) do |n|
         exit_msg('--retry-attempts must be greater than zero') if n <= 0
         @opts[:attempts] = n
       end
