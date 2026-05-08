@@ -43,6 +43,7 @@ testLib.makeTests [
   "v4/tasks/dns-reverse-record-check"
   "v4/tasks/prometheus-export"
   "v4/supervisor/runtime-ingestion"
+  "v4/download-mounter"
   "v4/node/register"
   "v4/pool/create"
   "v4/storage/backup-full-incremental"
