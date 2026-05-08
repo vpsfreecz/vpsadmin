@@ -73,3 +73,20 @@ class FakeCollection
     @deleted << id
   end
 end
+
+module ClientSpecIoHelpers
+  def capture_stdout
+    original = $stdout
+    $stdout = StringIO.new
+
+    yield
+
+    $stdout.string
+  ensure
+    $stdout = original
+  end
+end
+
+RSpec.configure do |config|
+  config.include ClientSpecIoHelpers
+end
