@@ -1,3 +1,13 @@
+PATH
+  remote: ../../client
+  specs:
+    vpsadmin-client (4.1.0)
+      base64
+      curses
+      haveapi-client (~> 0.27.0)
+      json
+      ruby-progressbar
+
 GEM
   remote: https://rubygems.org/
   specs:
@@ -21,7 +31,7 @@ GEM
     curses (1.6.0)
     domain_name (0.6.20240107)
     drb (2.2.3)
-    haveapi-client (0.26.5)
+    haveapi-client (0.27.3)
       activesupport (>= 7.0)
       highline (~> 3.1)
       json
@@ -60,18 +70,13 @@ GEM
     tzinfo (2.0.6)
       concurrent-ruby (~> 1.0)
     uri (1.1.1)
-    vpsadmin-client (4.1.0)
-      base64
-      curses
-      haveapi-client (~> 0.26.0)
-      json
 
 PLATFORMS
   ruby
   x86_64-linux
 
 DEPENDENCIES
-  vpsadmin-client
+  vpsadmin-client!
 
 BUNDLED WITH
-   2.7.2
+   2.6.9
