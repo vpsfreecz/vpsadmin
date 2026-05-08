@@ -1,0 +1,51 @@
+name: Console Router Specs
+
+on:
+  push:
+    paths:
+      - ".github/workflows/console-router-specs.yml"
+      - ".ruby-version"
+      - "console_router/**"
+  pull_request:
+    paths:
+      - ".github/workflows/console-router-specs.yml"
+      - ".ruby-version"
+      - "console_router/**"
+
+concurrency:
+  group: console-router-specs-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  console-router-specs:
+    name: console router specs
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout vpsadmin
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+
+      - name: Read Ruby series
+        id: ruby-version
+        run: |
+          set -euo pipefail
+          # ruby/setup-ruby resolves exact 3.4.0 to a preview build on
+          # GitHub-hosted runners, so use the latest stable 3.4.x instead.
+          echo "version=$(cut -d. -f1,2 .ruby-version)" >> "$GITHUB_OUTPUT"
+
+      - name: Set up Ruby + Bundler cache
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: ${{ steps.ruby-version.outputs.version }}
+          bundler-cache: true
+          working-directory: console_router
+
+      - name: Run RSpec
+        working-directory: console_router
+        run: bundle exec rspec
