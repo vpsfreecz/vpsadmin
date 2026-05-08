@@ -22,4 +22,5 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'curses'
   spec.add_dependency 'haveapi-client', '~> 0.27.0'
   spec.add_dependency 'json'
+  spec.add_dependency 'ruby-progressbar'
 end
