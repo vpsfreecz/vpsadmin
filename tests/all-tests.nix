@@ -92,6 +92,7 @@ testLib.makeTests [
   "v4/network/export-lifecycle"
   "v4/network/export-enable-disable-hosts"
   "v4/network/dns-server-zone-lifecycle"
+  "v4/network/dns-secondary-transfer-errors"
   "v4/network/dns-zone-transfer-config"
   "v4/user/create-with-initial-vps"
   "v4/user/suspend-resume-cascade"
