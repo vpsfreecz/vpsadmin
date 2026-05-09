@@ -117,6 +117,48 @@ RSpec.describe 'VpsAdmin::API::Resources::DnsRecord' do
     )
   end
 
+  def record_validation_zone
+    @record_validation_zone ||= create_zone!(
+      name: "spec-records-#{SecureRandom.hex(4)}.example.test.",
+      user: SpecSeed.user,
+      role: :forward_role,
+      source: :internal_source,
+      email: 'user@example.test'
+    )
+  end
+
+  def valid_record_cases(zone_name)
+    [
+      { name: 'www', type: 'A', content: '192.0.2.10' },
+      { name: 'v6', type: 'AAAA', content: '2001:db8::10' },
+      { name: 'alias', type: 'CNAME', content: "www.#{zone_name}" },
+      { name: 'child', type: 'NS', content: "ns2.#{zone_name}" },
+      { name: 'child', type: 'DS', content: "60485 13 2 #{'A' * 64}" },
+      { name: '@', type: 'MX', content: "mail.#{zone_name}", priority: 10 },
+      { name: 'ptr', type: 'PTR', content: "target.#{zone_name}" },
+      { name: '_sip._tcp', type: 'SRV', content: "5 5060 sip.#{zone_name}", priority: 20 },
+      { name: 'ssh', type: 'SSHFP', content: "4 2 #{'B' * 64}" },
+      { name: '_443._tcp.www', type: 'TLSA', content: "3 1 1 #{'C' * 64}" },
+      { name: 'txt', type: 'TXT', content: 'hello world' }
+    ]
+  end
+
+  def invalid_record_content_cases(zone_name)
+    [
+      { name: 'bad-a', type: 'A', content: 'not-an-ip' },
+      { name: 'bad-aaaa', type: 'AAAA', content: '192.0.2.10' },
+      { name: 'bad-cname', type: 'CNAME', content: 'not a domain' },
+      { name: 'bad-ds', type: 'DS', content: "60485 13 2 #{'A' * 63}" },
+      { name: 'bad-mx', type: 'MX', content: 'not a domain', priority: 10 },
+      { name: 'bad-ns', type: 'NS', content: 'not a domain' },
+      { name: 'bad-ptr', type: 'PTR', content: 'not a domain' },
+      { name: '_bad._tcp', type: 'SRV', content: "5 bad-port srv.#{zone_name}", priority: 10 },
+      { name: 'bad-sshfp', type: 'SSHFP', content: "4 2 #{'B' * 63}" },
+      { name: '_443._tcp.bad', type: 'TLSA', content: "3 1 1 #{'C' * 63}" },
+      { name: 'bad-txt', type: 'TXT', content: '' }
+    ]
+  end
+
   let(:seed) do
     system_zone = create_zone!(
       name: 'spec-system.example.test.',
@@ -386,6 +428,36 @@ RSpec.describe 'VpsAdmin::API::Resources::DnsRecord' do
       expect(record_obj['name']).to eq('api')
       expect(record_obj['type']).to eq('A')
       expect(record_obj['content']).to eq('192.0.2.200')
+    end
+
+    it 'allows users to create every supported record type with valid content' do
+      ensure_signer_unlocked!
+
+      zone = record_validation_zone
+      cases = valid_record_cases(zone.name)
+
+      expect(cases.map { |c| c.fetch(:type) }).to match_array(DnsRecord::RECORD_TYPES)
+
+      cases.each do |record_case|
+        payload = {
+          dns_zone: zone.id,
+          name: record_case.fetch(:name),
+          type: record_case.fetch(:type),
+          content: record_case.fetch(:content),
+          ttl: 3600
+        }
+        payload[:priority] = record_case[:priority] if record_case.has_key?(:priority)
+
+        expect do
+          as(SpecSeed.user) { json_post index_path, dns_record: payload }
+        end.to change(DnsRecord, :count).by(1)
+
+        expect_status(200)
+        expect(json['status']).to be(true)
+        expect(record_obj['type']).to eq(record_case.fetch(:type))
+        expect(record_obj['content']).to eq(record_case.fetch(:content))
+        expect(record_obj['priority']).to eq(record_case[:priority]) if record_case.has_key?(:priority)
+      end
     end
 
     it 'allows users to create TLSA records' do
@@ -717,6 +789,50 @@ RSpec.describe 'VpsAdmin::API::Resources::DnsRecord' do
       expect(errors.keys.map(&:to_s)).to include('content')
     end
 
+    it 'rejects invalid content for every supported record type' do
+      ensure_signer_unlocked!
+
+      zone = record_validation_zone
+      cases = invalid_record_content_cases(zone.name)
+
+      expect(cases.map { |c| c.fetch(:type) }).to match_array(DnsRecord::RECORD_TYPES)
+
+      cases.each do |record_case|
+        payload = {
+          dns_zone: zone.id,
+          name: record_case.fetch(:name),
+          type: record_case.fetch(:type),
+          content: record_case.fetch(:content),
+          ttl: 3600
+        }
+        payload[:priority] = record_case[:priority] if record_case.has_key?(:priority)
+
+        expect do
+          as(SpecSeed.user) { json_post index_path, dns_record: payload }
+        end.not_to change(DnsRecord, :count)
+
+        expect_status(200)
+        expect(json['status']).to be(false)
+        expect(errors.keys.map(&:to_s)).to include('content')
+      end
+    end
+
+    it 'rejects invalid record names before they can reach DNS runtime' do
+      as(SpecSeed.user) do
+        json_post index_path, dns_record: {
+          dns_zone: record_validation_zone.id,
+          name: 'bad name',
+          type: 'A',
+          content: '192.0.2.10',
+          ttl: 3600
+        }
+      end
+
+      expect_status(200)
+      expect(json['status']).to be(false)
+      expect(errors.keys.map(&:to_s)).to include('name')
+    end
+
     it 'returns validation errors for invalid TLSA content' do
       as(SpecSeed.admin) do
         json_post index_path, dns_record: {
@@ -903,6 +1019,36 @@ RSpec.describe 'VpsAdmin::API::Resources::DnsRecord' do
       expect(record_obj).to be_a(Hash)
       expect(record_obj['content']).to eq('192.0.2.212')
       expect(seed[:record_user_a].reload.content).to eq('192.0.2.212')
+    end
+
+    it 'rejects invalid updates for every supported record type without changing stored records' do
+      ensure_signer_unlocked!
+
+      zone = record_validation_zone
+      invalid_by_type = invalid_record_content_cases(zone.name).to_h { |c| [c.fetch(:type), c] }
+
+      valid_record_cases(zone.name).each do |record_case|
+        record = create_record!(
+          zone: zone,
+          name: "#{record_case.fetch(:name)}-update".tr('@', 'apex').gsub(/[^*A-Za-z0-9_.-]/, '-'),
+          record_type: record_case.fetch(:type),
+          content: record_case.fetch(:content),
+          priority: record_case[:priority]
+        )
+        invalid_case = invalid_by_type.fetch(record_case.fetch(:type))
+        original_content = record.content
+        original_priority = record.priority
+
+        as(SpecSeed.user) do
+          json_put show_path(record.id), dns_record: { content: invalid_case.fetch(:content) }
+        end
+
+        expect_status(200)
+        expect(json['status']).to be(false)
+        expect(errors.keys.map(&:to_s)).to include('content')
+        expect(record.reload.content).to eq(original_content)
+        expect(record.priority).to eq(original_priority)
+      end
     end
 
     it 'allows users to update a TLSA record' do

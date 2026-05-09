@@ -527,6 +527,54 @@ base
     RUBY
   end
 
+  def ensure_dns_server_runtime(services, admin_user_id:, node_id:, name:)
+    services.api_ruby_json(code: <<~RUBY)
+      #{api_session_prelude(admin_user_id)}
+
+      node = Node.find(#{Integer(node_id)})
+      server = DnsServer.find_or_initialize_by(name: #{name.inspect})
+      server.assign_attributes(
+        node: node,
+        ipv4_addr: node.ip_addr,
+        hidden: false,
+        enable_user_dns_zones: true,
+        user_dns_zone_type: :primary_type
+      )
+      server.save! if server.changed? || server.new_record?
+
+      puts JSON.dump(
+        id: server.id,
+        node_id: server.node_id,
+        name: server.name,
+        ipv4_addr: server.ipv4_addr
+      )
+    RUBY
+  end
+
+  def create_dns_test_user_runtime(services, login:, password:)
+    services.api_ruby_json(code: <<~RUBY)
+      user = User.find_or_initialize_by(login: #{login.inspect})
+
+      if user.new_record?
+        user.assign_attributes(
+          full_name: #{login.inspect},
+          email: #{"#{login}@example.test".inspect},
+          level: 1,
+          language: Language.first,
+          enable_basic_auth: true,
+          enable_token_auth: true,
+          mailer_enabled: true,
+          password_reset: false,
+          lockout: false
+        )
+        user.set_password(#{password.inspect})
+        user.save!
+      end
+
+      puts JSON.dump(id: user.id, login: user.login)
+    RUBY
+  end
+
   def create_dns_zone_runtime(
     services,
     admin_user_id:,
@@ -551,6 +599,26 @@ base
       )
 
       puts JSON.dump(
+        id: zone.id,
+        name: zone.name,
+        source: zone.zone_source,
+        role: zone.zone_role,
+        default_ttl: zone.default_ttl,
+        email: zone.email,
+        enabled: zone.enabled
+      )
+    RUBY
+  end
+
+  def create_dns_user_zone_runtime(services, user_id:, attrs:)
+    services.api_ruby_json(code: <<~RUBY)
+      #{api_session_prelude(user_id)}
+
+      attrs = #{attrs.inspect}.transform_keys(&:to_sym)
+      chain, zone = VpsAdmin::API::Operations::DnsZone::CreateUser.run(attrs)
+
+      puts JSON.dump(
+        chain_id: chain&.id,
         id: zone.id,
         name: zone.name,
         source: zone.zone_source,
@@ -631,6 +699,44 @@ base
     RUBY
   end
 
+  def create_dns_record_api_runtime(services, user_id:, dns_zone_id:, attrs:)
+    services.api_ruby_json(code: <<~RUBY)
+      #{api_session_prelude(user_id)}
+
+      attrs = #{attrs.inspect}.transform_keys(&:to_sym)
+      attrs[:dns_zone] = DnsZone.find(#{Integer(dns_zone_id)})
+
+      begin
+        chain, created = VpsAdmin::API::Operations::DnsZone::CreateRecord.run(attrs)
+        result = {
+          status: true,
+          chain_id: chain&.id,
+          id: created.id,
+          name: created.name,
+          record_type: created.record_type,
+          content: created.content,
+          priority: created.priority,
+          ttl: created.ttl,
+          enabled: created.enabled
+        }
+      rescue ActiveRecord::RecordInvalid => e
+        result = {
+          status: false,
+          chain_id: nil,
+          errors: e.record.errors.to_hash.transform_keys(&:to_s)
+        }
+      rescue VpsAdmin::API::Exceptions::OperationError => e
+        result = {
+          status: false,
+          chain_id: nil,
+          error: e.message
+        }
+      end
+
+      puts JSON.dump(result)
+    RUBY
+  end
+
   def update_dns_record_runtime(services, admin_user_id:, dns_record_id:, attrs:)
     services.api_ruby_json(code: <<~RUBY)
       #{api_session_prelude(admin_user_id)}
@@ -659,6 +765,163 @@ base
 
       puts JSON.dump(chain_id: chain&.id, id: #{Integer(dns_record_id)})
     RUBY
+  end
+
+  def dns_record_runtime_cases(zone_name)
+    [
+      {
+        name: 'www',
+        record_type: 'A',
+        content: '192.0.2.10',
+        answer: '192.0.2.10'
+      },
+      {
+        name: 'v6',
+        record_type: 'AAAA',
+        content: '2001:db8::10',
+        answer: '2001:db8::10'
+      },
+      {
+        name: 'alias',
+        record_type: 'CNAME',
+        content: "www.#{zone_name}",
+        answer: "www.#{zone_name}"
+      },
+      {
+        name: 'child',
+        record_type: 'NS',
+        content: "ns2.#{zone_name}",
+        answer: "ns2.#{zone_name}"
+      },
+      {
+        name: 'child',
+        record_type: 'DS',
+        content: "60485 13 2 #{'A' * 64}",
+        answer: "60485 13 2 #{'A' * 64}"
+      },
+      {
+        name: '@',
+        record_type: 'MX',
+        content: "mail.#{zone_name}",
+        priority: 10,
+        answer: "10 mail.#{zone_name}"
+      },
+      {
+        name: 'ptr',
+        record_type: 'PTR',
+        content: "target.#{zone_name}",
+        answer: "target.#{zone_name}"
+      },
+      {
+        name: '_sip._tcp',
+        record_type: 'SRV',
+        content: "5 5060 sip.#{zone_name}",
+        priority: 20,
+        answer: "20 5 5060 sip.#{zone_name}"
+      },
+      {
+        name: 'ssh',
+        record_type: 'SSHFP',
+        content: "4 2 #{'B' * 64}",
+        answer: "4 2 #{'B' * 64}"
+      },
+      {
+        name: '_443._tcp.www',
+        record_type: 'TLSA',
+        content: "3 1 1 #{'C' * 64}",
+        answer: "3 1 1 #{'C' * 64}"
+      },
+      {
+        name: 'txt',
+        record_type: 'TXT',
+        content: 'hello world',
+        answer: '"hello world"'
+      }
+    ]
+  end
+
+  def invalid_dns_record_runtime_cases(zone_name)
+    [
+      { name: 'bad-a', record_type: 'A', content: 'not-an-ip' },
+      { name: 'bad-aaaa', record_type: 'AAAA', content: '192.0.2.10' },
+      { name: 'bad-cname', record_type: 'CNAME', content: 'not a domain' },
+      { name: 'bad-ds', record_type: 'DS', content: "60485 13 2 #{'A' * 63}" },
+      { name: 'bad-mx', record_type: 'MX', content: 'not a domain', priority: 10 },
+      { name: 'bad-ns', record_type: 'NS', content: 'not a domain' },
+      { name: 'bad-ptr', record_type: 'PTR', content: 'not a domain' },
+      { name: '_bad._tcp', record_type: 'SRV', content: "5 bad-port srv.#{zone_name}", priority: 10 },
+      { name: 'bad-sshfp', record_type: 'SSHFP', content: "4 2 #{'B' * 63}" },
+      { name: '_443._tcp.bad', record_type: 'TLSA', content: "3 1 1 #{'C' * 63}" },
+      { name: 'bad-txt', record_type: 'TXT', content: "" }
+    ]
+  end
+
+  def dns_record_query_name(zone_name, record_name)
+    return zone_name if record_name == '@'
+
+    "#{record_name}.#{zone_name}"
+  end
+
+  def normalize_dns_answer(value)
+    value.strip.gsub(/\s+/, ' ').downcase
+  end
+
+  def normalize_dns_record_answer(value, type)
+    normalized = normalize_dns_answer(value)
+    fields = normalized.split(/\s+/)
+
+    case type.to_s.upcase
+    when 'DS'
+      return [fields[0, 3].join(' '), fields[3..].join].join(' ') if fields.size > 4
+    when 'SSHFP'
+      return [fields[0, 2].join(' '), fields[2..].join].join(' ') if fields.size > 3
+    when 'TLSA'
+      return [fields[0, 3].join(' '), fields[3..].join].join(' ') if fields.size > 4
+    end
+
+    normalized
+  end
+
+  def dns_query_short(node, server:, name:, type:)
+    query_type = type.to_s.upcase
+    dig_args = [
+      'dig',
+      '+time=2',
+      '+tries=1',
+    ]
+
+    if query_type == 'NS'
+      dig_args += ['+norecurse', '+noall', '+answer', '+authority']
+    else
+      dig_args << '+short'
+    end
+
+    dig_args += ["@#{server}", name, type]
+    cmd = Shellwords.join(dig_args)
+    _, output = node.succeeds(cmd)
+
+    if query_type == 'NS'
+      return output.lines.filter_map do |line|
+        fields = line.strip.split(/\s+/)
+
+        next if fields.size < 5 || fields[-2].casecmp(query_type) != 0
+
+        normalize_dns_answer(fields[-1])
+      end
+    end
+
+    output.lines.map { |line| normalize_dns_record_answer(line, query_type) }.reject(&:empty?)
+  end
+
+  def wait_for_dns_answer(node, server:, zone_name:, record:)
+    query_name = dns_record_query_name(zone_name, record.fetch(:name))
+    query_type = record.fetch(:record_type)
+    expected = normalize_dns_record_answer(record.fetch(:answer), query_type)
+
+    wait_until_block_succeeds(name: "#{query_name} #{query_type} resolves from bind") do
+      expect(dns_query_short(node, server:, name: query_name, type: query_type)).to include(expected)
+      true
+    end
   end
 
   def destroy_dns_server_zone_runtime(services, admin_user_id:, dns_server_zone_id:)
@@ -782,5 +1045,20 @@ base
       node.succeeds("test ! -e #{Shellwords.escape(path)}")
       true
     end
+  end
+
+  def assert_dns_bind_healthy(node, zone_name: nil, zone_file: nil)
+    node.succeeds('systemctl is-active --quiet bind.service')
+    node.succeeds('rndc status')
+
+    if zone_name && zone_file
+      node.succeeds(Shellwords.join([
+        'named-checkzone',
+        zone_name.delete_suffix('.'),
+        zone_file
+      ]))
+    end
+
+    true
   end
 ''

@@ -21,6 +21,13 @@ let
   dbUser = creds.database.users.nodectld;
   rabbitUser = creds.rabbitmq.users.node;
 
+  rndcWrapper = pkgs.writeShellScriptBin "rndc" ''
+    exec ${config.services.bind.package}/bin/rndc -k /etc/bind/rndc.key "$@"
+  '';
+  namedCheckzoneWrapper = pkgs.writeShellScriptBin "named-checkzone" ''
+    exec ${config.services.bind.package}/bin/named-checkzone "$@"
+  '';
+
   socketPeersAsHosts = mapAttrs' (host: addr: nameValuePair addr [ host ]) cfg.socketPeers;
 in
 {
@@ -111,6 +118,12 @@ in
     };
 
     environment.etc."vpsadmin/transaction.key".text = cfg.transactionPublicKey;
+
+    environment.systemPackages = [
+      pkgs.dnsutils
+      namedCheckzoneWrapper
+      rndcWrapper
+    ];
 
     systemd.tmpfiles.rules = [
       "d /var/named 0755 named named -"
