@@ -363,6 +363,10 @@ if (isLoggedIn()) {
             dns_record_log_list();
             break;
 
+        case 'transfer_log':
+            dns_transfer_log_list($_GET['server_zone'], $_GET['id'] ?? null);
+            break;
+
         case 'tsig_key_list':
             tsig_key_list();
             break;

@@ -233,6 +233,7 @@ function dns_zone_show($id)
     $xtpl->table_add_category(_('Next refresh'));
     $xtpl->table_add_category(_('Expires'));
     $xtpl->table_add_category(_('Last check'));
+    $xtpl->table_add_category(_('Last transfer'));
 
     if (isAdmin()) {
         $xtpl->table_add_category('');
@@ -247,6 +248,7 @@ function dns_zone_show($id)
         $xtpl->table_td($sz->refresh_at ? tolocaltz($sz->refresh_at) : '-');
         $xtpl->table_td($sz->expires_at ? tolocaltz($sz->expires_at) : '-');
         $xtpl->table_td($sz->last_check_at ? tolocaltz($sz->last_check_at) : '-');
+        $xtpl->table_td(dnsTransferStatus($zone, $sz), false, true);
 
         if (isAdmin()) {
             $xtpl->table_td('<a href="?page=dns&action=server_zone_delete&id=' . $zone->id . '&server_zone=' . $sz->id . '&t=' . csrf_token() . '" onclick="return confirm(\'' . _('Do you really wish to this server?') . '\');"><img src="template/icons/vps_delete.png" alt="' . _('Remove from server') . '" title="' . _('Remove from server') . '"></a>');
@@ -260,7 +262,7 @@ function dns_zone_show($id)
             '<a href="?page=dns&action=server_zone_new&id=' . $zone->id . '">' . _('Add server') . '</a>',
             false,
             true,
-            9
+            10
         );
         $xtpl->table_tr();
     }
@@ -323,6 +325,75 @@ function dns_zone_show($id)
 
 
     dns_record_list($zone);
+}
+
+function dns_transfer_log_list($serverZoneId, $zoneId = null)
+{
+    global $xtpl, $api;
+
+    $serverZone = $api->dns_server_zone->show($serverZoneId, [
+        'meta' => ['includes' => 'dns_zone,dns_server'],
+    ]);
+
+    $xtpl->title(_('DNS transfer log') . ' ' . h($serverZone->dns_zone->name));
+    $xtpl->sbar_add(_('Back to zone'), '?page=dns&action=zone_show&id=' . ($zoneId ?? $serverZone->dns_zone_id));
+
+    $params = [
+        'limit' => api_get_uint('limit', 25),
+        'from_id' => api_get_uint('from_id', 0),
+    ];
+
+    $status = api_get('status');
+    if ($status !== null) {
+        $params['status'] = $status;
+    }
+
+    $reasonCode = api_get('reason_code');
+    if ($reasonCode !== null) {
+        $params['reason_code'] = $reasonCode;
+    }
+
+    $logs = $api->dns_server_zone($serverZone->id)->transfer_log->list($params);
+    $pagination = new \Pagination\System($logs);
+
+    $xtpl->table_title(_('Filters'));
+    $xtpl->form_create('', 'get', 'dns-transfer-log-filter', false);
+    $xtpl->form_set_hidden_fields([
+        'page' => 'dns',
+        'action' => 'transfer_log',
+        'server_zone' => $serverZone->id,
+        'id' => $zoneId ?? $serverZone->dns_zone_id,
+    ]);
+
+    $input = $api->dns_server_zone($serverZone->id)->transfer_log->list->getParameters('input');
+    $xtpl->form_add_input(_('Limit') . ':', 'text', '40', 'limit', get_val('limit', '25'), '');
+    $xtpl->form_add_input(_("From ID") . ':', 'text', '40', 'from_id', get_val('from_id', '0'), '');
+    api_param_to_form('status', $input->status, get_val('status'), null, true);
+    api_param_to_form('reason_code', $input->reason_code, get_val('reason_code'));
+    $xtpl->form_out(_('Show'));
+
+    $xtpl->table_title(_('Transfer log'));
+    $xtpl->table_add_category(_('Time'));
+    $xtpl->table_add_category(_('Server'));
+    $xtpl->table_add_category(_('Status'));
+    $xtpl->table_add_category(_('Primary'));
+    $xtpl->table_add_category(_('Serial'));
+    $xtpl->table_add_category(_('Reason'));
+    $xtpl->table_add_category(_('Message'));
+
+    foreach ($logs as $log) {
+        $xtpl->table_td(tolocaltz($log->event_at));
+        $xtpl->table_td(h($serverZone->dns_server->name));
+        $xtpl->table_td(dnsTransferStatusLabel($log->status));
+        $xtpl->table_td($log->primary_addr ? h($log->primary_addr) : '-');
+        $xtpl->table_td(is_null($log->serial) ? '-' : $log->serial);
+        $xtpl->table_td($log->reason ? h($log->reason) : '-');
+        $xtpl->table_td($log->message ? h($log->message) : '-');
+        $xtpl->table_tr();
+    }
+
+    $xtpl->table_pagination($pagination);
+    $xtpl->table_out();
 }
 
 function dns_zone_delete($id)
@@ -1490,6 +1561,47 @@ function zoneSourceLabel($source)
             return _('External zone');
         default:
             return _('Unknown');
+    }
+}
+
+function dnsTransferStatus($zone, $serverZone)
+{
+    if ($zone->source != 'external_source') {
+        return '-';
+    }
+
+    if (!$serverZone->last_transfer_status) {
+        return '<a href="?page=dns&action=transfer_log&id=' . $zone->id . '&server_zone=' . $serverZone->id . '">' . _('No transfers recorded') . '</a>';
+    }
+
+    $ret = dnsTransferStatusLabel($serverZone->last_transfer_status);
+
+    if ($serverZone->last_transfer_at) {
+        $ret .= '<br>' . tolocaltz($serverZone->last_transfer_at);
+    }
+
+    if ($serverZone->last_transfer_primary_addr) {
+        $ret .= '<br>' . h($serverZone->last_transfer_primary_addr);
+    }
+
+    if ($serverZone->last_transfer_reason) {
+        $ret .= '<br><strong>' . h($serverZone->last_transfer_reason) . '</strong>';
+    }
+
+    return '<a href="?page=dns&action=transfer_log&id=' . $zone->id . '&server_zone=' . $serverZone->id . '">' . $ret . '</a>';
+}
+
+function dnsTransferStatusLabel($status)
+{
+    switch ($status) {
+        case 'started':
+            return _('Started');
+        case 'success':
+            return _('Successful');
+        case 'failed':
+            return _('Failed');
+        default:
+            return $status;
     }
 }
 
