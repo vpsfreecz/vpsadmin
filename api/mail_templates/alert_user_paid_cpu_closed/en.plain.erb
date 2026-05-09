@@ -1,0 +1,16 @@
+Hello <%= @user.login %>,
+
+vpsAdmin monitoring has closed an issue affecting your service.
+
+Alert: <%= @event.label %>
+Closed at: <%= @event.closed_at.localtime.strftime('%Y-%m-%d %H:%M %Z') %>
+<% if @object -%>
+Object: <%= @object.class.name %> #<%= @object.respond_to?(:id) ? @object.id : @event.row_id %>
+<% end -%>
+<% if @base_url && !@base_url.empty? -%>
+vpsAdmin: <%= @base_url %>
+<% end -%>
+
+Best regards,
+
+vpsAdmin

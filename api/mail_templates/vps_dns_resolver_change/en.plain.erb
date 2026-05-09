@@ -1,0 +1,10 @@
+Hello <%= @vps.user.login %>,
+
+the DNS resolver assigned to VPS #<%= @vps.id %> (<%= @vps.hostname %>) has changed.
+
+Previous resolver: <%= @old_dns_resolver.label %> (<%= @old_dns_resolver.addrs %>)
+New resolver: <%= @new_dns_resolver.label %> (<%= @new_dns_resolver.addrs %>)
+
+Best regards,
+
+vpsAdmin

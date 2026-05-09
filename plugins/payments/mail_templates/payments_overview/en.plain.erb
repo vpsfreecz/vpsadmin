@@ -1,0 +1,15 @@
+Payments overview
+
+Period: <%= @start.localtime.strftime('%Y-%m-%d %H:%M %Z') %> - <%= @end.localtime.strftime('%Y-%m-%d %H:%M %Z') %>
+
+Incoming payments:
+- total: <%= @incoming.count %>
+- queued: <%= @queued.count %>
+- unmatched: <%= @unmatched.count %>
+- processed: <%= @processed.count %>
+- ignored: <%= @ignored.count %>
+
+Accepted user payments: <%= @accepted.count %>
+<% if @base_url && !@base_url.empty? -%>
+vpsAdmin: <%= @base_url %>
+<% end -%>

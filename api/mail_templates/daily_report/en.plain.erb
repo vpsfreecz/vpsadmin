@@ -1,0 +1,35 @@
+vpsAdmin daily report
+
+Period: <%= @date[:start].localtime.strftime('%Y-%m-%d %H:%M %Z') %> - <%= @date[:end].localtime.strftime('%Y-%m-%d %H:%M %Z') %>
+
+Users:
+- new: <%= @users[:new][:changed].count %>
+- active: <%= @users[:active][:all].count %> total, <%= @users[:active][:changed].count %> changed
+- suspended: <%= @users[:suspended][:all].count %> total, <%= @users[:suspended][:changed].count %> changed
+- soft deleted: <%= @users[:soft_deleted][:all].count %> total, <%= @users[:soft_deleted][:changed].count %> changed
+
+VPS:
+- new: <%= @vps[:new][:changed].count %>
+- active: <%= @vps[:active][:all].count %> total, <%= @vps[:active][:changed].count %> changed
+- suspended: <%= @vps[:suspended][:all].count %> total, <%= @vps[:suspended][:changed].count %> changed
+
+Storage:
+- datasets: <%= @datasets[:all].count %>
+- snapshots: <%= @snapshots[:all].count %> total, <%= @snapshots[:new].count %> new
+- snapshot downloads: <%= @downloads[:all].count %> total, <%= @downloads[:new].count %> new
+
+Transactions:
+- chains: <%= @chains[:total].count %> total, <%= @chains[:all_failed].count %> failed
+- transactions: <%= @transactions[:total].count %> total, <%= @transactions[:failed].count %> failed, <%= @transactions[:warning].count %> warning, <%= @transactions[:pending].count %> pending
+<% if @payments -%>
+
+Payments:
+- incoming: <%= @payments[:incoming].count if @payments[:incoming] %>
+- queued: <%= @payments[:queued].count if @payments[:queued] %>
+- unmatched: <%= @payments[:unmatched].count if @payments[:unmatched] %>
+- accepted: <%= @payments[:accepted].count if @payments[:accepted] %>
+<% end -%>
+<% if @incident_reports -%>
+
+Incident reports: <%= @incident_reports[:new].count %> new
+<% end -%>

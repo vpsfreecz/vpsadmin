@@ -1,0 +1,15 @@
+Hello <%= @user.login %>,
+
+vpsAdmin detected many zombie processes on VPS #<%= @vps.id %> (<%= @vps.hostname %>) and scheduled a restart.
+
+Current count: <%= @zombie_process_count %>
+Threshold: <%= @threshold %>
+Maintenance finish weekday: <%= @finish_weekday %>
+Maintenance finish minute: <%= @finish_minutes %>
+<% if @base_url && !@base_url.empty? -%>
+vpsAdmin: <%= @base_url %>
+<% end -%>
+
+Best regards,
+
+vpsAdmin

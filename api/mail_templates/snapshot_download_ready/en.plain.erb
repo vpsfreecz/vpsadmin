@@ -1,0 +1,13 @@
+Hello <%= @dl.user.login %>,
+
+the snapshot download for <%= @dl.snapshot.dataset.full_name %>@<%= @dl.snapshot.name %> is ready.
+
+File: <%= @dl.file_name %>
+<% if @base_url && !@base_url.empty? -%>
+Download: <%= @base_url %>?page=backup&action=download_link&id=<%= @dl.id %>
+<% end -%>
+Available until: <%= @dl.expiration_date.localtime.strftime('%Y-%m-%d %H:%M %Z') %>
+
+Best regards,
+
+vpsAdmin

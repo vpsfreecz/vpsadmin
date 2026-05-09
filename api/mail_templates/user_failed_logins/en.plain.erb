@@ -1,0 +1,17 @@
+Hello <%= @user.login %>,
+
+vpsAdmin recorded failed sign-in attempts for your user account.
+
+<% groups = @attempt_groups || @attempts || [] -%>
+<% groups.each_with_index do |group, index| -%>
+Group <%= index + 1 %>:
+<% group.each do |attempt| -%>
+- <%= attempt.created_at.localtime.strftime('%Y-%m-%d %H:%M %Z') %>, <%= attempt.auth_type %>, <%= attempt.client_ip_addr || attempt.api_ip_addr || 'unknown IP' %>, <%= attempt.reason %>
+<% end -%>
+<% end -%>
+
+If these attempts were not yours, check your password and two-factor authentication settings.
+
+Best regards,
+
+vpsAdmin

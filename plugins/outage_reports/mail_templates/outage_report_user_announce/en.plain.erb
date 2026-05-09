@@ -1,4 +1,4 @@
-Hi <%= @user.login %>,
+Hello <%= @user.login %>,
 
 <%= @o.outage_type.capitalize %> has been reported.
 
@@ -6,7 +6,7 @@ Hi <%= @user.login %>,
 Directly affected VPS:
 
 <% @direct_vpses.each do |vps| -%>
-  - VPS #<%= vps.vps_id %> - <%= vps.vps.hostname %> (on <%= vps.node.domain_name %>)
+- VPS #<%= vps.vps_id %> - <%= vps.vps.hostname %> on <%= vps.node.domain_name %>
 <% end -%>
 
 <% end -%>
@@ -14,10 +14,10 @@ Directly affected VPS:
 Indirectly affected VPS:
 
 <% @indirect_vpses.each do |vps| -%>
-  - VPS #<%= vps.vps_id %> - <%= vps.vps.hostname %> (on <%= vps.node.domain_name %>)
-    <% vps.outage_vps_mounts.order('mountpoint').each do |mnt| -%>
-    Mount <%= mnt.mountpoint %> of <%= mnt.snapshot_name ? 'snapshot' : 'dataset' %> <%= mnt.dataset_name %><%= mnt.snapshot_name ? "@#{mnt.snapshot_name}" : '' %> (from <%= mnt.src_node.domain_name %>)
-    <% end -%>
+- VPS #<%= vps.vps_id %> - <%= vps.vps.hostname %> on <%= vps.node.domain_name %>
+  <% vps.outage_vps_mounts.order('mountpoint').each do |mnt| -%>
+  Mount <%= mnt.mountpoint %> of <%= mnt.snapshot_name ? 'snapshot' : 'dataset' %> <%= mnt.dataset_name %><%= mnt.snapshot_name ? "@#{mnt.snapshot_name}" : '' %> from <%= mnt.src_node.domain_name %>
+  <% end -%>
 <% end -%>
 
 <% end -%>
@@ -25,7 +25,7 @@ Indirectly affected VPS:
 Affected NFS exports:
 
 <% @exports.each do |ex| -%>
-  - Export #<%= ex.export_id %> - <%= ex.export.host_ip_address.ip_addr %>:<%= ex.export.path %> of dataset <%= ex.export.dataset.full_name %> from <%= ex.export.dataset_in_pool.pool.node.domain_name %>
+- Export #<%= ex.export_id %> - <%= ex.export.host_ip_address.ip_addr %>:<%= ex.export.path %> of dataset <%= ex.export.dataset.full_name %> from <%= ex.export.dataset_in_pool.pool.node.domain_name %>
 <% end -%>
 
 <% end -%>

@@ -1,0 +1,26 @@
+<% if @user -%>
+Hello <%= @user.login %>,
+
+this is an outage report affecting your service.
+<% else -%>
+Outage report
+<% end -%>
+
+Outage: #<%= @o.id %>
+Type: <%= @o.outage_type %>
+State: <%= @o.state %>
+Date and time: <%= @o.begins_at.localtime.strftime('%Y-%m-%d %H:%M %Z') %>
+Expected duration: <%= @o.duration %> minutes
+Affected systems: <%= @o.outage_entities.map { |e| e.real_name }.join(', ') %>
+Impact type: <%= @o.impact_type %>
+Reason: <%= @o.en_summary %>
+<% if @update -%>
+
+Update: <%= @update.summary %>
+<% if @update.description && !@update.description.empty? -%>
+<%= @update.description %>
+<% end -%>
+<% elsif @o.en_description && !@o.en_description.empty? -%>
+
+<%= @o.en_description %>
+<% end -%>

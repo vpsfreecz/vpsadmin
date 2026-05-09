@@ -1,0 +1,14 @@
+Hello <%= @vps.user.login %>,
+
+vpsAdmin detected repeated out-of-memory events on VPS #<%= @vps.id %> (<%= @vps.hostname %>).
+
+Events in period: <%= @ooms_in_period %>
+Period: <%= @period_seconds %> seconds
+Action: <%= @action %>
+<% if @base_url && !@base_url.empty? -%>
+vpsAdmin: <%= @base_url %>
+<% end -%>
+
+Best regards,
+
+vpsAdmin

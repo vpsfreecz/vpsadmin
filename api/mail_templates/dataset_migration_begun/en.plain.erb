@@ -1,0 +1,17 @@
+Hello <%= @dataset.user.login %>,
+
+migration of dataset <%= @dataset.full_name %> has started.
+
+From pool: <%= @src_pool.filesystem %>
+To pool: <%= @dst_pool.filesystem %>
+Exports: <%= @exports.count %>
+Affected VPS: <%= @vpses ? @vpses.map { |vps| "##{vps.id} #{vps.hostname}" }.join(', ') : 'none' %>
+Maintenance window: <%= @maintenance_window ? 'yes' : 'no' %>
+Restart VPS: <%= @restart_vps ? 'yes' : 'no' %>
+<% if @reason && !@reason.empty? -%>
+Reason: <%= @reason %>
+<% end -%>
+
+Best regards,
+
+vpsAdmin

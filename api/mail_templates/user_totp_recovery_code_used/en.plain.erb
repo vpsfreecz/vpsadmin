@@ -1,0 +1,15 @@
+Hello <%= @user.login %>,
+
+a recovery code for your vpsAdmin two-factor authentication device has been used.
+
+Device: <%= @totp_device.label %>
+Time: <%= @time.localtime.strftime('%Y-%m-%d %H:%M %Z') %>
+<% if @request && @request.respond_to?(:ip) -%>
+IP address: <%= @request.ip %>
+<% end -%>
+
+If this was not you, review your two-factor authentication settings and change your password.
+
+Best regards,
+
+vpsAdmin

@@ -1,0 +1,12 @@
+Hello <%= @user.login %>,
+
+dataset <%= @dataset.full_name %> for VPS #<%= @vps.id %> (<%= @vps.hostname %>) is over its quota.
+
+Temporary expansion: <%= @expansion.added_space %> MiB
+<% if @base_url && !@base_url.empty? -%>
+vpsAdmin: <%= @base_url %>
+<% end -%>
+
+Best regards,
+
+vpsAdmin

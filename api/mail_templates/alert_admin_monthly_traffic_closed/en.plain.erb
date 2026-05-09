@@ -1,0 +1,19 @@
+Hello,
+
+vpsAdmin monitoring has closed an alert.
+
+Alert: <%= @event.label %>
+State: <%= @event.state %>
+<% if @object -%>
+Object: <%= @object.class.name %> #<%= @object.respond_to?(:id) ? @object.id : @event.row_id %>
+<% else -%>
+Object: <%= @event.class_name %> #<%= @event.row_id %>
+<% end -%>
+Closed at: <%= @event.closed_at.localtime.strftime('%Y-%m-%d %H:%M %Z') %>
+<% if @base_url && !@base_url.empty? -%>
+vpsAdmin: <%= @base_url %>
+<% end -%>
+
+Best regards,
+
+vpsAdmin

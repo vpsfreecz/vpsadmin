@@ -1,0 +1,12 @@
+Hello <%= @vps.user.login %>,
+
+dataset <%= @dataset.full_name %> for VPS #<%= @vps.id %> (<%= @vps.hostname %>) has been expanded.
+
+Added space: <%= @expansion.added_space %> MiB
+<% if @base_url && !@base_url.empty? -%>
+vpsAdmin: <%= @base_url %>
+<% end -%>
+
+Best regards,
+
+vpsAdmin

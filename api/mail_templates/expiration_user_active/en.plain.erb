@@ -1,0 +1,21 @@
+Hello <%= @user.login %>,
+
+your vpsAdmin user account is nearing expiration.
+
+<% if @expires_in_a_day -%>
+It expires in less than one day.
+<% elsif @expires_in_days && @expires_in_days >= 0 -%>
+It expires in approximately <%= @expires_in_days.ceil %> days.
+<% else -%>
+It expired approximately <%= @expired_days_ago.ceil %> days ago.
+<% end -%>
+<% if @state && @state.expiration_date -%>
+Expiration date: <%= @state.expiration_date.localtime.strftime('%Y-%m-%d %H:%M %Z') %>
+<% end -%>
+<% if @base_url && !@base_url.empty? -%>
+vpsAdmin: <%= @base_url %>
+<% end -%>
+
+Best regards,
+
+vpsAdmin

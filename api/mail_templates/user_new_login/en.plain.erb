@@ -1,0 +1,17 @@
+Hello <%= @user.login %>,
+
+a new sign-in to your vpsAdmin user account was recorded.
+
+Time: <%= @user_session.created_at.localtime.strftime('%Y-%m-%d %H:%M %Z') %>
+IP address: <%= @user_session.client_ip_addr || @user_session.api_ip_addr || 'unknown' %>
+Client: <%= @user_session.client_version %>
+<% if @user_device -%>
+Device address: <%= @user_device.client_ip_addr %>
+User agent: <%= @user_device.user_agent_string %>
+<% end -%>
+
+If this was not you, change your password and review your active sessions.
+
+Best regards,
+
+vpsAdmin

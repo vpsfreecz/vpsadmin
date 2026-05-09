@@ -1,0 +1,16 @@
+Hello <%= @user.login %>,
+
+vpsAdmin monitoring has closed a disk space alert.
+
+Dataset: <%= @ds.full_name %>
+Pool role: <%= @dip.pool.role %>
+<% if @vps -%>
+VPS: #<%= @vps.id %> <%= @vps.hostname %>
+<% end -%>
+<% if @base_url && !@base_url.empty? -%>
+vpsAdmin: <%= @base_url %>
+<% end -%>
+
+Best regards,
+
+vpsAdmin

@@ -1,0 +1,14 @@
+Hello <%= @dataset.user.login %>,
+
+migration of dataset <%= @dataset.full_name %> has finished.
+
+From pool: <%= @src_pool.filesystem %>
+To pool: <%= @dst_pool.filesystem %>
+Exports: <%= @exports.count %>
+<% if @reason && !@reason.empty? -%>
+Reason: <%= @reason %>
+<% end -%>
+
+Best regards,
+
+vpsAdmin

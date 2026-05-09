@@ -1,0 +1,11 @@
+Hello <%= @new_vps.user.login %>,
+
+VPS #<%= @original_vps.id %> (<%= @original_vps.hostname %>) has been replaced by VPS #<%= @new_vps.id %> (<%= @new_vps.hostname %>).
+<% if @reason && !@reason.empty? -%>
+
+Reason: <%= @reason %>
+<% end -%>
+
+Best regards,
+
+vpsAdmin

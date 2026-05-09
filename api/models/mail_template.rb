@@ -337,7 +337,10 @@ class MailTemplate < ApplicationRecord
   register :vps_oom_report, vars: {
     base_url: [String, 'URL to the web UI'],
     vps: ::Vps,
-    oom_reports: 'Array<::OomReport>'
+    all_oom_reports: 'Array<::OomReport>',
+    all_oom_count: Integer,
+    selected_oom_reports: 'Array<::OomReport>',
+    selected_oom_count: Integer
   }, roles: %i[admin], public: true
 
   register :vps_oom_prevention, vars: {
@@ -423,6 +426,6 @@ class MailTemplate < ApplicationRecord
   end
 
   def desc
-    self.class.templates[template_id.to_sym]
+    self.class.templates[template_id.to_sym] || {}
   end
 end

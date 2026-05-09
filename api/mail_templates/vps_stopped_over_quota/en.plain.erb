@@ -1,0 +1,12 @@
+Hello <%= @vps.user.login %>,
+
+VPS #<%= @vps.id %> (<%= @vps.hostname %>) has been stopped because dataset <%= @dataset.full_name %> exceeded its temporary quota expansion.
+
+Expansion size: <%= @expansion.added_space %> MiB
+<% if @base_url && !@base_url.empty? -%>
+vpsAdmin: <%= @base_url %>
+<% end -%>
+
+Best regards,
+
+vpsAdmin

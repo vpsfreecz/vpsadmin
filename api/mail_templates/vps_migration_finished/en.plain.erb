@@ -1,0 +1,13 @@
+Hello <%= @vps.user.login %>,
+
+migration of VPS #<%= @vps.id %> (<%= @vps.hostname %>) has finished.
+
+From: <%= @src_node.domain_name %>
+To: <%= @dst_node.domain_name %>
+<% if @reason && !@reason.empty? -%>
+Reason: <%= @reason %>
+<% end -%>
+
+Best regards,
+
+vpsAdmin

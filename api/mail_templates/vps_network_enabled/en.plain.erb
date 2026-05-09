@@ -1,0 +1,11 @@
+Hello <%= @user.login %>,
+
+network access has been enabled for VPS #<%= @vps.id %> (<%= @vps.hostname %>).
+<% if @reason && !@reason.empty? -%>
+
+Reason: <%= @reason %>
+<% end -%>
+
+Best regards,
+
+vpsAdmin

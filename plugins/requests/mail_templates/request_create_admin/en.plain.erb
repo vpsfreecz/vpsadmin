@@ -1,6 +1,17 @@
-Hi,
+Hello,
 
-new request #<%= @r.id %> has been created.
+vpsAdmin request #<%= @r.id %> has been created.
+
+User: <%= @r.user ? @r.user.login : @r.user_mail %>
+Type: <%= @r.type_name %>
+State: <%= @r.state %>
+<% if @webui_url && !@webui_url.empty? -%>
+Request URL: <%= @webui_url %>
+<% end -%>
+<% if @r.admin_response && !@r.admin_response.empty? -%>
+
+Response: <%= @r.admin_response %>
+<% end -%>
 
 Best regards,
 

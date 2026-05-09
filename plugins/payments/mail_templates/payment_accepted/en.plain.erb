@@ -1,0 +1,10 @@
+Hello <%= @user.login %>,
+
+vpsAdmin accepted payment of <%= @payment.received_amount %> <%= @payment.received_currency.to_s.upcase %> for user account #<%= @user.id %>.
+
+Payment period: <%= @payment.from_date.strftime('%Y-%m-%d') %> - <%= @payment.to_date.strftime('%Y-%m-%d') %>
+Account paid until: <%= @account.paid_until.strftime('%Y-%m-%d') %>
+
+Best regards,
+
+vpsAdmin

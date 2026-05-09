@@ -1,0 +1,13 @@
+Hello <%= @vps.user.login %>,
+
+migration of VPS #<%= @vps.id %> (<%= @vps.hostname %>) has been planned.
+
+From: <%= @src_node.domain_name %>
+To: <%= @dst_node.domain_name %>
+<% if @m.respond_to?(:maintenance_window) -%>
+Maintenance window: <%= @m.maintenance_window ? 'yes' : 'no' %>
+<% end -%>
+
+Best regards,
+
+vpsAdmin

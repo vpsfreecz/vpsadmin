@@ -1,8 +1,5 @@
 template :request_action_role do
-  label        'Create request (admin)'
-  from         'noreply@vpsadmin.invalid'
-  reply_to     'support@vpsadmin.invalid'
-  return_path  'noreply@vpsadmin.invalid'
+  label 'Create request (admin)'
 
   lang :en do
     subject '[vpsAdmin Request #<%= @r.id %> <%= @r.type_name %>] <%= @r.state %>'

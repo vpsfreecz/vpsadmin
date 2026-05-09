@@ -1,6 +1,16 @@
-Hi,
+Hello,
 
-this an automated message confirming creation of vpsAdmin Request #<%= @r.id %>.
+this is an automated confirmation that vpsAdmin request #<%= @r.id %> has been created.
+
+Type: <%= @r.type_name %>
+State: <%= @r.state %>
+<% if @webui_url && !@webui_url.empty? -%>
+Request URL: <%= @webui_url %>
+<% end -%>
+<% if @r.admin_response && !@r.admin_response.empty? -%>
+
+Response: <%= @r.admin_response %>
+<% end -%>
 
 Best regards,
 

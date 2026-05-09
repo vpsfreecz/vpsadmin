@@ -11,6 +11,7 @@ RSpec.describe 'VpsAdmin::API::Resources::UserRequest::Registration', requires_p
     SpecSeed.language
     SpecSeed.location
     SpecSeed.os_template
+    ensure_mailer_available!
   end
 
   def index_path

@@ -161,9 +161,9 @@ module VpsAdmin::API
       def params
         defaults = @template.translation_defaults(lang)
         {
-          from: defaults[:from] || DEFAULT_FROM,
-          reply_to: defaults[:reply_to],
-          return_path: defaults[:return_path],
+          from: defaults.fetch(:from, MailTemplates.default_from),
+          reply_to: defaults.fetch(:reply_to, MailTemplates.default_reply_to),
+          return_path: defaults.fetch(:return_path, MailTemplates.default_return_path),
           subject: defaults[:subject] || default_subject,
           text_plain: @plain,
           text_html: @html
@@ -177,55 +177,13 @@ module VpsAdmin::API
       end
     end
 
-    class GeneratedTemplate
-      attr_reader :name, :id, :translations
-
-      def initialize(name, template_id)
-        @name = name.to_s
-        @id = template_id.to_s
-        @translations = [GeneratedTranslation.new(@name)]
-      end
-
-      def params
-        {
-          name:,
-          label: name.tr('_', ' ').split.map(&:capitalize).join(' '),
-          template_id: id,
-          user_visibility: 'default'
-        }
-      end
-    end
-
-    class GeneratedTranslation
-      attr_reader :lang
-
-      def initialize(template_name)
-        @template_name = template_name
-        @lang = 'en'
-      end
-
-      def params
-        {
-          from: DEFAULT_FROM,
-          subject: "[vpsAdmin] #{@template_name.tr('_', ' ')}",
-          text_plain: <<~MAIL
-            Hello,
-
-            this is an automated vpsAdmin notification.
-
-            Template: #{@template_name}
-          MAIL
-        }
-      end
-    end
-
     def self.install_defaults!(paths: default_template_paths)
       result = {
         templates_created: 0,
         translations_created: 0
       }
 
-      templates = unique_templates(find_templates(paths) + generated_templates)
+      templates = registered_templates(unique_templates(find_templates(paths)))
 
       ActiveRecord::Base.transaction do
         templates.each do |template|
@@ -250,6 +208,18 @@ module VpsAdmin::API
       end
 
       result
+    end
+
+    def self.default_from
+      configured_support_mail || DEFAULT_FROM
+    end
+
+    def self.default_reply_to
+      configured_support_mail
+    end
+
+    def self.default_return_path
+      default_from
     end
 
     def self.default_template_paths
@@ -278,20 +248,26 @@ module VpsAdmin::API
       end
     end
 
-    def self.generated_templates
+    def self.required_default_templates
       registered = ::MailTemplate.templates
 
-      non_parameterized = registered.filter_map do |id, desc|
-        GeneratedTemplate.new(id, id) unless desc[:name]
-      end
+      registered.filter_map do |id, desc|
+        [id.to_s, id.to_s] unless desc[:name]
+      end.to_h.merge(
+        CONCRETE_DEFAULTS.filter_map do |name, template_id|
+          next unless registered.has_key?(template_id)
 
-      concrete = CONCRETE_DEFAULTS.filter_map do |name, template_id|
-        next unless registered.has_key?(template_id)
+          [name.to_s, template_id.to_s]
+        end.to_h
+      )
+    end
 
-        GeneratedTemplate.new(name, template_id)
-      end
-
-      non_parameterized + concrete
+    def self.configured_support_mail
+      value = ::SysConfig.get(:core, :support_mail)
+      value = value.to_s.strip
+      value unless value.empty?
+    rescue ActiveRecord::ActiveRecordError
+      nil
     end
 
     def self.ensure_language!(code)
@@ -311,6 +287,14 @@ module VpsAdmin::API
       end
     end
 
-    private_class_method :ensure_language!, :unique_templates
+    def self.registered_templates(templates)
+      registered = ::MailTemplate.templates
+      templates.select { |template| registered.has_key?(template.id.to_sym) }
+    end
+
+    private_class_method :configured_support_mail,
+                         :ensure_language!,
+                         :unique_templates,
+                         :registered_templates
   end
 end

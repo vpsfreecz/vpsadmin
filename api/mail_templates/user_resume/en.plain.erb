@@ -1,0 +1,14 @@
+Hello <%= @user.login %>,
+
+your vpsAdmin user account has been resumed.
+<% if @state && @state.reason && !@state.reason.empty? -%>
+
+Reason: <%= @state.reason %>
+<% end -%>
+<% if @state && @state.expiration_date -%>
+Expiration: <%= @state.expiration_date.localtime.strftime('%Y-%m-%d %H:%M %Z') %>
+<% end -%>
+
+Best regards,
+
+vpsAdmin

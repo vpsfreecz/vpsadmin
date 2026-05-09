@@ -1,0 +1,11 @@
+Hello <%= @user.login %>,
+
+VPS #<%= @vps.id %> (<%= @vps.hostname %>) is currently running in rescue mode.
+
+<% if @base_url && !@base_url.empty? -%>
+vpsAdmin: <%= @base_url %>
+<% end -%>
+
+Best regards,
+
+vpsAdmin

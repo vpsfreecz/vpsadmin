@@ -2,6 +2,7 @@
 
 require 'fileutils'
 require 'tmpdir'
+require 'erb'
 
 RSpec.describe VpsAdmin::API::MailTemplates do
   def write_template(dir, name, meta:, plain:)
@@ -9,6 +10,10 @@ RSpec.describe VpsAdmin::API::MailTemplates do
     FileUtils.mkdir_p(path)
     File.write(File.join(path, 'meta.rb'), meta)
     File.write(File.join(path, 'en.plain.erb'), plain)
+  end
+
+  def compile_erb(source)
+    RubyVM::InstructionSequence.compile(ERB.new(source, trim_mode: '-').src)
   end
 
   it 'loads template directories in vpsadmin-mail-templates format' do
@@ -112,15 +117,75 @@ RSpec.describe VpsAdmin::API::MailTemplates do
     end
   end
 
-  it 'generates neutral English fallbacks for registered templates' do
-    generated = described_class.generated_templates.to_h do |template|
-      [template.name, template.id]
+  it 'uses the configured support mail as the default sender' do
+    SysConfig.find_or_create_by!(category: 'core', name: 'support_mail').update!(
+      value: 'support@example.test'
+    )
+
+    Dir.mktmpdir do |dir|
+      write_template(
+        dir,
+        'spec_default_sender_template',
+        meta: <<~RUBY,
+          template :user_create do
+            label 'Default sender template'
+            subject 'Default sender subject'
+          end
+        RUBY
+        plain: 'Default sender body'
+      )
+
+      translation = described_class.find_templates([dir]).first.translations.first
+
+      expect(translation.params).to include(
+        from: 'support@example.test',
+        reply_to: 'support@example.test',
+        return_path: 'support@example.test'
+      )
+    end
+  end
+
+  it 'ships directory-backed English templates for all registered defaults' do
+    templates = described_class.find_templates(described_class.default_template_paths).to_h do |template|
+      [template.name, template]
     end
 
-    expect(generated).to include(
-      'user_create' => 'user_create',
-      'daily_report' => 'daily_report',
-      'expiration_user_active' => 'expiration_warning'
-    )
+    described_class.required_default_templates.each do |name, template_id|
+      template = templates[name]
+
+      expect(template).to be_present, "#{name} is missing"
+      expect(template.id.to_s).to eq(template_id)
+      expect(template.translations.map(&:lang)).to include('en')
+    end
+  end
+
+  it 'ships usable built-in template content' do
+    templates = described_class.find_templates(described_class.default_template_paths)
+    expect(templates).not_to be_empty
+
+    templates.each do |template|
+      translation = template.translations.detect { |tr| tr.lang == 'en' }
+      expect(translation).to be_present, "#{template.name} is missing English"
+
+      params = translation.params
+      expect(params[:subject]).to be_present
+      expect(params[:text_plain]).to be_present
+
+      [params[:subject], params[:text_plain], params[:text_html]].compact.each do |source|
+        compile_erb(source)
+      end
+
+      content = [
+        template.name,
+        template.params[:label],
+        params[:subject],
+        params[:text_plain],
+        params[:text_html]
+      ].compact.join("\n")
+
+      expect(content).not_to include('Template:')
+      expect(content).not_to match(/vpsFree/i)
+      expect(content).not_to match(/\bmember(ship|s)?\b/i)
+    end
   end
 end

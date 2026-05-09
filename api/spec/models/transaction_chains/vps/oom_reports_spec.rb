@@ -53,6 +53,22 @@ RSpec.describe TransactionChains::Vps::OomReports do
     expect(reports.map { |report| report.reload.reported_at }).to all(be_present)
   end
 
+  it 'renders the installed mail template with the chain variables' do
+    allow(MailTemplate).to receive(:send_mail!).and_call_original
+
+    vps = create_vps!
+    2.times do |i|
+      create_oom_report_fixture!(vps:, count: i + 1, created_at: (5 - i).minutes.ago)
+    end
+
+    chain, = described_class.fire2(args: [[vps]], kwargs: { cooldown: 1.hour })
+    mail = MailLog.where(mail_template: MailTemplate.find_by!(name: 'vps_oom_report')).last
+
+    expect(tx_classes(chain)).to include(Transactions::Mail::Send)
+    expect(mail.text_plain).to include('Selected events: 3 of 3')
+    expect(mail.text_plain).to include("VPS ##{vps.id}")
+  end
+
   it 'considers only reports after the most recently reported report' do
     captured_ids = nil
     allow(MailTemplate).to receive(:send_mail!) do |_name, opts|

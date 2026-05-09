@@ -1,0 +1,14 @@
+Hello <%= @vps.user.login %>,
+
+migration of VPS #<%= @vps.id %> (<%= @vps.hostname %>) has started.
+
+From: <%= @src_node.domain_name %>
+To: <%= @dst_node.domain_name %>
+Maintenance window: <%= @maintenance_window ? 'yes' : 'no' %>
+<% if @reason && !@reason.empty? -%>
+Reason: <%= @reason %>
+<% end -%>
+
+Best regards,
+
+vpsAdmin

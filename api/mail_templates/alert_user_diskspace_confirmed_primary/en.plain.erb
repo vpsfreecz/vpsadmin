@@ -1,0 +1,16 @@
+Hello <%= @user.login %>,
+
+vpsAdmin monitoring detected low disk space for one of your datasets.
+
+Dataset: <%= @ds.full_name %>
+Pool role: <%= @dip.pool.role %>
+<% if @event.respond_to?(:issue) && @event.issue -%>
+Issue: <%= @event.issue %>
+<% end -%>
+<% if @base_url && !@base_url.empty? -%>
+vpsAdmin: <%= @base_url %>
+<% end -%>
+
+Best regards,
+
+vpsAdmin

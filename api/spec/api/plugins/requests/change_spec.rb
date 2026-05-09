@@ -6,6 +6,7 @@ RSpec.describe 'VpsAdmin::API::Resources::UserRequest::Change', requires_plugins
     SpecSeed.user
     SpecSeed.other_user
     SpecSeed.admin
+    ensure_mailer_available!
   end
 
   def index_path

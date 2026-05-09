@@ -1,17 +1,15 @@
+Outage update
+
 <% @update.each_change do |attr, old, new| -%>
 <%= case attr
     when :begins_at
       "Begins at: moved from #{old.localtime.strftime('%Y-%m-%d %H:%M %Z')} to #{new.localtime.strftime('%Y-%m-%d %H:%M %Z')}"
-
     when :finished_at
       "Finished at: #{new.localtime.strftime('%Y-%m-%d %H:%M %Z')}"
-
     when :duration
       "Duration: #{old} -> #{new} minutes"
-
     when :state
       "State: #{old} -> #{new}"
-
     when :impact_type
       "Impact type: #{old} -> #{new}"
     end

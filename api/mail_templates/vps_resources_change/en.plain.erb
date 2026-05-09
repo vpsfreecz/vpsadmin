@@ -1,0 +1,12 @@
+Hello <%= @vps.user.login %>,
+
+resources assigned to VPS #<%= @vps.id %> (<%= @vps.hostname %>) have been changed.
+
+Changed by: <%= @admin ? @admin.login : 'vpsAdmin' %>
+<% if @reason && !@reason.empty? -%>
+Reason: <%= @reason %>
+<% end -%>
+
+Best regards,
+
+vpsAdmin

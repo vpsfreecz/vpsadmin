@@ -1,0 +1,14 @@
+Hello <%= @user.login %>,
+
+a new access token or persistent session has been created for your vpsAdmin user account.
+
+Time: <%= @user_session.created_at.localtime.strftime('%Y-%m-%d %H:%M %Z') %>
+IP address: <%= @user_session.client_ip_addr || @user_session.api_ip_addr || 'unknown' %>
+Client: <%= @user_session.client_version %>
+Scope: <%= @user_session.scope_str %>
+
+If this was not you, revoke the token and change your password.
+
+Best regards,
+
+vpsAdmin

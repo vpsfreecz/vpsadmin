@@ -1,0 +1,21 @@
+Hello,
+
+vpsAdmin monitoring has confirmed an alert that requires attention.
+
+Alert: <%= @event.label %>
+State: <%= @event.state %>
+<% if @event.respond_to?(:issue) && @event.issue -%>
+Issue: <%= @event.issue %>
+<% end -%>
+<% if @object -%>
+Object: <%= @object.class.name %> #<%= @object.respond_to?(:id) ? @object.id : @event.row_id %>
+<% else -%>
+Object: <%= @event.class_name %> #<%= @event.row_id %>
+<% end -%>
+<% if @base_url && !@base_url.empty? -%>
+vpsAdmin: <%= @base_url %>
+<% end -%>
+
+Best regards,
+
+vpsAdmin

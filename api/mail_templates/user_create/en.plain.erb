@@ -1,0 +1,14 @@
+Hello <%= @user.login %>,
+
+your vpsAdmin user account has been created.
+
+Login: <%= @user.login %>
+<% if @user.password_plain && !@user.password_plain.empty? -%>
+Temporary password: <%= @user.password_plain %>
+
+Please sign in and change the temporary password.
+<% end -%>
+
+Best regards,
+
+vpsAdmin
