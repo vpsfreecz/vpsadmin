@@ -21,6 +21,7 @@ module NodeCtld
         urgent_rollback: trans['chain_urgent_rollback'].to_i == 1
       }
       @trans = trans
+      @outputs = load_outputs
       @output = {}
       @status = :failed
       @m_attr = Mutex.new
@@ -30,14 +31,14 @@ module NodeCtld
       klass = handler
 
       unless klass
-        @output[:error] = 'Unsupported command'
+        record_output(original_chain_direction, { error: 'Unsupported command' })
         rollback_without_execute
         return false
       end
 
       if @trans['signature'] \
          && !TransactionVerifier.verify_base64(@trans['input'], @trans['signature'])
-        @output[:error] = 'Invalid signature'
+        record_output(original_chain_direction, { error: 'Invalid signature' })
         rollback_without_execute
         return false
       end
@@ -46,13 +47,16 @@ module NodeCtld
         input = JSON.parse(@trans['input'])
         param = input['input']
       rescue StandardError
-        @output[:error] = 'Bad input syntax'
+        record_output(original_chain_direction, { error: 'Bad input syntax' })
         rollback_without_execute
         return false
       end
 
       unless check_signed_opts(input)
-        @output[:error] = 'Signed options do not match relational options'
+        record_output(
+          original_chain_direction,
+          { error: 'Signed options do not match relational options' }
+        )
         rollback_without_execute
         return false
       end
@@ -131,7 +135,10 @@ module NodeCtld
     def save_transaction(db)
       log(:debug, self, 'Saving transaction')
 
-      @cmd.on_save(db) if @cmd && current_chain_direction == :execute && @status != :failed
+      if @cmd && current_chain_direction == :execute && @status != :failed
+        @cmd.on_save(db)
+        record_output(:execute, @cmd.output)
+      end
 
       done = if current_chain_direction == :execute
                1
@@ -148,7 +155,7 @@ module NodeCtld
             finished_at = ?
         WHERE id = ?',
         done, { failed: 0, ok: 1, warning: 2 }[@status],
-        (@cmd ? @output.merge(@cmd.output) : @output).to_json,
+        output_json,
         @time_start && @time_start.strftime('%Y-%m-%d %H:%M:%S'),
         @time_end && @time_end.strftime('%Y-%m-%d %H:%M:%S'),
         @trans['id']
@@ -240,7 +247,7 @@ module NodeCtld
         WHERE
           transaction_chain_id = ?
           AND id > ?',
-        { error: 'Dependency failed' }.to_json,
+        output_json(:execute, { error: 'Dependency failed' }),
         chain_id,
         id
       )
@@ -253,7 +260,7 @@ module NodeCtld
         SET done = 1, status = 0, output = ?
         WHERE
           transaction_chain_id = ?',
-        { error: 'Chain failed' }.to_json,
+        output_json(:execute, { error: 'Chain failed' }),
         chain_id
       )
     end
@@ -261,8 +268,11 @@ module NodeCtld
     def killed(hard)
       return unless hard
 
-      @output[:error] = 'Killed'
       @status = :failed
+      record_output(
+        method_direction(@current_method) || current_chain_direction,
+        { error: 'Killed' }
+      )
 
       return unless @current_method == :exec
 
@@ -356,6 +366,75 @@ module NodeCtld
 
     private
 
+    def load_outputs
+      raw = trans['output']
+      return {} if raw.nil? || raw.empty?
+
+      parsed = JSON.parse(raw)
+      return {} unless parsed.is_a?(Hash)
+
+      if direction_outputs?(parsed)
+        parsed
+      else
+        { legacy_output_direction.to_s => with_status(parsed, transaction_status) }
+      end
+    rescue JSON::ParserError
+      {
+        legacy_output_direction.to_s => with_status(
+          { error: raw.to_s },
+          transaction_status
+        )
+      }
+    end
+
+    def direction_outputs?(output)
+      output.has_key?('execute') || output.has_key?('rollback')
+    end
+
+    def legacy_output_direction
+      trans['done'].to_i == 2 ? :rollback : :execute
+    end
+
+    def transaction_status
+      { 0 => :failed, 1 => :ok, 2 => :warning }.fetch(trans['status'].to_i, :failed)
+    end
+
+    def method_direction(m)
+      case m
+      when :exec
+        :execute
+      when :rollback
+        :rollback
+      end
+    end
+
+    def with_status(output, status)
+      stringify_keys(output).merge('status' => status.to_s)
+    end
+
+    def stringify_keys(hash)
+      hash.each_with_object({}) do |(k, v), ret|
+        ret[k.to_s] = v
+      end
+    end
+
+    def output_delta(before, after)
+      after.reject { |k, v| before[k] == v }
+    end
+
+    def record_output(direction, output = {}, status: @status)
+      @outputs[direction.to_s] ||= {}
+      @outputs[direction.to_s].merge!(with_status(output, status))
+    end
+
+    def output_json(direction = nil, output = {}, status: :failed)
+      if direction
+        { direction.to_s => with_status(output, status) }.to_json
+      else
+        @outputs.to_json
+      end
+    end
+
     def check_signed_opts(input)
       input['transaction_chain'] == trans['transaction_chain_id'] \
         && input['depends_on'] == trans['depends_on_id'] \
@@ -373,6 +452,8 @@ module NodeCtld
     def safe_call(klass, m)
       @current_klass = klass
       @current_method = m
+      direction = method_direction(m)
+      handler_output_before = @cmd.output.clone
 
       begin
         ret = @cmd.send(m)
@@ -385,50 +466,60 @@ module NodeCtld
         else
           bad_value(klass)
         end
+
+        record_output(
+          direction,
+          output_delta(handler_output_before, @cmd.output)
+        )
       rescue SystemCommandFailed => e
         @status = :failed
-        @output[:cmd] = e.cmd
-        @output[:exitstatus] = e.rc
-        @output[:error] = e.output.byteslice(0, 2**15)
+        @output = {
+          cmd: e.cmd,
+          exitstatus: e.rc,
+          error: e.output.byteslice(0, 2**15)
+        }
+        record_output(
+          direction,
+          @output.merge(output_delta(handler_output_before, @cmd.output))
+        )
 
-        # FIXME: if rollback fails, original error is overwritten!
         if m == :exec
-          if keep_going?
-            log(:debug, self, 'Transaction failed but keep going on')
-
-          elsif reversible?
-            log(:debug, self, 'Transaction failed, running rollback')
-            @rolledback = true
-            safe_call(klass, :rollback)
-
-          else
-            log(:debug, self, 'Transaction failed and is irreversible')
-          end
+          handle_exec_failure(klass)
         end
       rescue CommandNotImplemented
         @status = :failed
-        @output[:error] = 'Command not implemented'
+        @output = { error: 'Command not implemented' }
+        record_output(direction, @output)
         rollback_without_execute if m == :exec
       rescue StandardError => e
         @status = :failed
-        @output[:error] = e.inspect
-        @output[:backtrace] = e.backtrace
+        @output = {
+          error: e.inspect,
+          backtrace: e.backtrace
+        }
+        record_output(
+          direction,
+          @output.merge(output_delta(handler_output_before, @cmd.output))
+        )
         p @output
 
-        # FIXME: if rollback fails, original error is overwritten!
         if m == :exec
-          if keep_going?
-            log(:debug, self, 'Transaction failed but keep going on')
-
-          elsif reversible?
-            log(:debug, self, 'Transaction failed, running rollback')
-            @rolledback = true
-            safe_call(klass, :rollback)
-
-          else
-            log(:debug, self, 'Transaction failed and is irreversible')
-          end
+          handle_exec_failure(klass)
         end
+      end
+    end
+
+    def handle_exec_failure(klass)
+      if keep_going?
+        log(:debug, self, 'Transaction failed but keep going on')
+
+      elsif reversible?
+        log(:debug, self, 'Transaction failed, running rollback')
+        @rolledback = true
+        safe_call(klass, :rollback)
+
+      else
+        log(:debug, self, 'Transaction failed and is irreversible')
       end
     end
 

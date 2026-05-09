@@ -10,6 +10,7 @@ module NodeCtldSpec
     NOT_IMPLEMENTED = 999_006
     HOOKS_PROBE = 999_007
     INVALID_RETURN = 999_008
+    FAIL_EXEC_AND_ROLLBACK = 999_009
   end
 
   module TestHandlers
@@ -121,6 +122,18 @@ module NodeCtldSpec
 
       def rollback
         ok
+      end
+    end
+
+    class FailExecAndRollback < NodeCtld::Commands::Base
+      handle NodeCtldSpec::TestHandles::FAIL_EXEC_AND_ROLLBACK
+
+      def exec
+        raise NodeCtld::SystemCommandFailed.new('spec-fail-exec', 23, 'exec failed')
+      end
+
+      def rollback
+        raise NodeCtld::SystemCommandFailed.new('spec-fail-rollback', 42, 'rollback failed')
       end
     end
   end

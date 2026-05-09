@@ -111,8 +111,8 @@ import ../../../make-test.nix (
 
           expect(failure_details).not_to eq([])
           expect(send_detail).not_to be_nil
-          expect(send_detail.dig('output', 'exitstatus')).to eq(1)
-          expect(send_detail.dig('output', 'cmd')).to include(
+          expect(send_detail.dig('failure_output', 'exitstatus')).to eq(1)
+          expect(send_detail.dig('failure_output', 'cmd')).to include(
             '/run/vpsadmin-test-faulty-mbuffer'
           )
           expect(failed_handles).to include(tx_types(services).fetch('recv_check'))

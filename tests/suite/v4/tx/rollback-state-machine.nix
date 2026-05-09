@@ -79,6 +79,11 @@ import ../../../make-test.nix (
         )
       end
 
+      def transaction_direction_output(services, tx_id, direction)
+        output = transaction_output(services, tx_id)
+        output.fetch(direction.to_s, output)
+      end
+
       def setup_rollback_fixture(services, chain_id:, tx_ids:, confirmation_id:, row_id:, lock_row_id:, port_id:, node_id:, user_id:)
         tx1, tx2, tx3 = tx_ids
 
@@ -257,8 +262,12 @@ import ../../../make-test.nix (
             ).first
           ).to eq(['1', '0'])
 
-          expect(transaction_output(services, tx_ids[1])).to include('error' => 'Unsupported command')
-          expect(transaction_output(services, tx_ids[2])).to include('error' => 'Dependency failed')
+          expect(
+            transaction_direction_output(services, tx_ids[1], :execute)
+          ).to include('error' => 'Unsupported command')
+          expect(
+            transaction_direction_output(services, tx_ids[2], :execute)
+          ).to include('error' => 'Dependency failed')
           expect(
             services.mysql_scalar(sql: "SELECT COUNT(*) FROM spec_tx_records WHERE id = #{row_id}")
           ).to eq('0')

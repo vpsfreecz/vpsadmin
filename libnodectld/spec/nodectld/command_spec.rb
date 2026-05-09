@@ -38,6 +38,10 @@ RSpec.describe NodeCtld::Command do
     }
   end
 
+  def direction_output(tx_id, direction)
+    transaction_output(tx_id).fetch(direction.to_s)
+  end
+
   it 'persists an unsupported handle error' do
     chain_id = insert_chain
     tx_id = insert_transaction(transaction_chain_id: chain_id, handle: 123_456)
@@ -50,7 +54,10 @@ RSpec.describe NodeCtld::Command do
       'done' => NodeCtldSpec::TxState::TX_DONE_ROLLED_BACK,
       'status' => NodeCtldSpec::TxState::TX_STATUS_FAILED
     )
-    expect(transaction_output(tx_id)).to include('error' => 'Unsupported command')
+    expect(direction_output(tx_id, :execute)).to include(
+      'status' => 'failed',
+      'error' => 'Unsupported command'
+    )
     expect(chain_state(chain_id)).to include(
       'state' => NodeCtldSpec::TxState::CHAIN_FAILED
     )
@@ -72,7 +79,10 @@ RSpec.describe NodeCtld::Command do
       'done' => NodeCtldSpec::TxState::TX_DONE_ROLLED_BACK,
       'status' => NodeCtldSpec::TxState::TX_STATUS_FAILED
     )
-    expect(transaction_output(tx_id)).to include('error' => 'Bad input syntax')
+    expect(direction_output(tx_id, :execute)).to include(
+      'status' => 'failed',
+      'error' => 'Bad input syntax'
+    )
     expect(chain_state(chain_id)).to include(
       'state' => NodeCtldSpec::TxState::CHAIN_FAILED
     )
@@ -92,11 +102,12 @@ RSpec.describe NodeCtld::Command do
       'done' => NodeCtldSpec::TxState::TX_DONE_DONE,
       'status' => NodeCtldSpec::TxState::TX_STATUS_FAILED
     )
-    expect(transaction_output(tx_id)).to include(
+    expect(direction_output(tx_id, :execute)).to include(
+      'status' => 'failed',
       'cmd' => 'process handler return value',
       'exitstatus' => 1
     )
-    expect(transaction_output(tx_id).fetch('error')).to include(
+    expect(direction_output(tx_id, :execute).fetch('error')).to include(
       'did not return expected value'
     )
     expect(chain_state(chain_id)).to include(
@@ -146,7 +157,10 @@ RSpec.describe NodeCtld::Command do
       'done' => NodeCtldSpec::TxState::TX_DONE_ROLLED_BACK,
       'status' => NodeCtldSpec::TxState::TX_STATUS_FAILED
     )
-    expect(transaction_output(tx_id)).to include('error' => 'Invalid signature')
+    expect(direction_output(tx_id, :execute)).to include(
+      'status' => 'failed',
+      'error' => 'Invalid signature'
+    )
     expect(chain_state(chain_id)).to include(
       'state' => NodeCtldSpec::TxState::CHAIN_FAILED
     )
@@ -178,7 +192,8 @@ RSpec.describe NodeCtld::Command do
       'done' => NodeCtldSpec::TxState::TX_DONE_ROLLED_BACK,
       'status' => NodeCtldSpec::TxState::TX_STATUS_FAILED
     )
-    expect(transaction_output(tx_id)).to include(
+    expect(direction_output(tx_id, :execute)).to include(
+      'status' => 'failed',
       'error' => 'Signed options do not match relational options'
     )
     expect(chain_state(chain_id)).to include(
@@ -223,7 +238,10 @@ RSpec.describe NodeCtld::Command do
     execute_and_save(tx_id)
 
     expect(sql_value('SELECT status FROM transactions WHERE id = ?', tx_id)).to eq(1)
-    expect(transaction_output(tx_id)).to include('handler' => 'ok')
+    expect(direction_output(tx_id, :execute)).to include(
+      'status' => 'ok',
+      'handler' => 'ok'
+    )
   end
 
   it 'stores warning status and still treats the chain as successful' do
@@ -286,7 +304,10 @@ RSpec.describe NodeCtld::Command do
     cmd.killed(true)
     cmd.save(shared_db)
 
-    expect(transaction_output(tx_id)).to include('error' => 'Killed')
+    expect(direction_output(tx_id, :execute)).to include(
+      'status' => 'failed',
+      'error' => 'Killed'
+    )
     expect(tx_state(tx_id)).to eq(
       'done' => NodeCtldSpec::TxState::TX_DONE_DONE,
       'status' => NodeCtldSpec::TxState::TX_STATUS_FAILED
@@ -311,11 +332,50 @@ RSpec.describe NodeCtld::Command do
     expect(sql_value('SELECT state FROM transaction_chains WHERE id = ?', chain_id)).to eq(
       NodeCtldSpec::TxState::CHAIN_FAILED
     )
-    expect(transaction_output(tx_id)).to include(
+    output = transaction_output(tx_id)
+    expect(output).not_to have_key('error')
+    expect(output.fetch('execute')).to include(
+      'status' => 'failed',
       'cmd' => 'spec-fail-exec',
       'exitstatus' => 23,
-      'error' => 'exec failed',
+      'error' => 'exec failed'
+    )
+    expect(output.fetch('rollback')).to include(
+      'status' => 'ok',
       'rolled_back' => true
+    )
+  end
+
+  it 'preserves exec and rollback failures from the same transaction' do
+    chain_id = insert_chain
+    tx_id = insert_transaction(
+      transaction_chain_id: chain_id,
+      handle: NodeCtldSpec::TestHandles::FAIL_EXEC_AND_ROLLBACK,
+      reversible: NodeCtldSpec::TxState::TX_REVERSIBLE
+    )
+
+    execute_and_save(tx_id)
+
+    expect(tx_state(tx_id)).to eq(
+      'done' => NodeCtldSpec::TxState::TX_DONE_ROLLED_BACK,
+      'status' => NodeCtldSpec::TxState::TX_STATUS_FAILED
+    )
+    expect(sql_value('SELECT state FROM transaction_chains WHERE id = ?', chain_id)).to eq(
+      NodeCtldSpec::TxState::CHAIN_FAILED
+    )
+
+    output = transaction_output(tx_id)
+    expect(output.fetch('execute')).to include(
+      'status' => 'failed',
+      'cmd' => 'spec-fail-exec',
+      'exitstatus' => 23,
+      'error' => 'exec failed'
+    )
+    expect(output.fetch('rollback')).to include(
+      'status' => 'failed',
+      'cmd' => 'spec-fail-rollback',
+      'exitstatus' => 42,
+      'error' => 'rollback failed'
     )
   end
 
@@ -334,7 +394,10 @@ RSpec.describe NodeCtld::Command do
     expect(sql_value('SELECT state FROM transaction_chains WHERE id = ?', chain_id)).to eq(
       NodeCtldSpec::TxState::CHAIN_FAILED
     )
-    expect(transaction_output(tx_id).fetch('error')).to include('generic failure from spec handler')
+    expect(direction_output(tx_id, :execute).fetch('error')).to include(
+      'generic failure from spec handler'
+    )
+    expect(direction_output(tx_id, :rollback)).to include('status' => 'ok')
   end
 
   it 'persists command not implemented failures' do
@@ -354,7 +417,10 @@ RSpec.describe NodeCtld::Command do
     expect(sql_value('SELECT state FROM transaction_chains WHERE id = ?', chain_id)).to eq(
       NodeCtldSpec::TxState::CHAIN_FAILED
     )
-    expect(transaction_output(tx_id)).to include('error' => 'Command not implemented')
+    expect(direction_output(tx_id, :execute)).to include(
+      'status' => 'failed',
+      'error' => 'Command not implemented'
+    )
   end
 
   it 'marks unsupported reversible transactions as rolled back before chain rollback starts' do
@@ -396,8 +462,16 @@ RSpec.describe NodeCtld::Command do
       'done' => NodeCtldSpec::TxState::TX_DONE_DONE,
       'status' => NodeCtldSpec::TxState::TX_STATUS_FAILED
     )
-    expect(transaction_output(tx2)).to include('error' => 'Unsupported command')
-    expect(transaction_output(tx3)).to eq('error' => 'Dependency failed')
+    expect(direction_output(tx2, :execute)).to include(
+      'status' => 'failed',
+      'error' => 'Unsupported command'
+    )
+    expect(transaction_output(tx3)).to eq(
+      'execute' => {
+        'status' => 'failed',
+        'error' => 'Dependency failed'
+      }
+    )
   end
 
   it 'fails followers when a non-reversible transaction fails' do
@@ -419,7 +493,12 @@ RSpec.describe NodeCtld::Command do
     expect(sql_value('SELECT status FROM transactions WHERE id = ?', tx1)).to eq(0)
     expect(sql_value('SELECT done FROM transactions WHERE id = ?', tx2)).to eq(1)
     expect(sql_value('SELECT status FROM transactions WHERE id = ?', tx2)).to eq(0)
-    expect(transaction_output(tx2)).to eq('error' => 'Dependency failed')
+    expect(transaction_output(tx2)).to eq(
+      'execute' => {
+        'status' => 'failed',
+        'error' => 'Dependency failed'
+      }
+    )
     expect(sql_value('SELECT state FROM transaction_chains WHERE id = ?', chain_id)).to eq(
       NodeCtldSpec::TxState::CHAIN_FAILED
     )
@@ -480,13 +559,23 @@ RSpec.describe NodeCtld::Command do
       'done' => NodeCtldSpec::TxState::TX_DONE_DONE,
       'status' => NodeCtldSpec::TxState::TX_STATUS_FAILED
     )
-    expect(transaction_output(tx2)).to include(
+    output = transaction_output(tx2)
+    expect(output.fetch('execute')).to include(
+      'status' => 'failed',
       'cmd' => 'spec-fail-exec',
       'exitstatus' => 23,
-      'error' => 'exec failed',
+      'error' => 'exec failed'
+    )
+    expect(output.fetch('rollback')).to include(
+      'status' => 'ok',
       'rolled_back' => true
     )
-    expect(transaction_output(tx3)).to eq('error' => 'Dependency failed')
+    expect(transaction_output(tx3)).to eq(
+      'execute' => {
+        'status' => 'failed',
+        'error' => 'Dependency failed'
+      }
+    )
 
     execute_and_save(tx1)
 
@@ -498,7 +587,15 @@ RSpec.describe NodeCtld::Command do
       'done' => NodeCtldSpec::TxState::TX_DONE_ROLLED_BACK,
       'status' => NodeCtldSpec::TxState::TX_STATUS_OK
     )
-    expect(transaction_output(tx1)).to include('handler' => 'ok-rollback')
+    output = transaction_output(tx1)
+    expect(output.fetch('execute')).to include(
+      'status' => 'ok',
+      'handler' => 'ok'
+    )
+    expect(output.fetch('rollback')).to include(
+      'status' => 'ok',
+      'handler' => 'ok-rollback'
+    )
     expect(sql_value('SELECT COUNT(*) FROM cluster_resource_uses WHERE id = ?', confirmation_row_id)).to eq(0)
     expect(sql_value('SELECT done FROM transaction_confirmations WHERE transaction_id = ?', tx1)).to eq(1)
     expect(
@@ -536,7 +633,10 @@ RSpec.describe NodeCtld::Command do
 
     expect(sql_value('SELECT done FROM transactions WHERE id = ?', tx1)).to eq(1)
     expect(sql_value('SELECT status FROM transactions WHERE id = ?', tx1)).to eq(0)
-    expect(transaction_output(tx1)).to include('error' => 'exec failed')
+    expect(direction_output(tx1, :execute)).to include(
+      'status' => 'failed',
+      'error' => 'exec failed'
+    )
     expect(sql_value('SELECT state FROM transaction_chains WHERE id = ?', chain_id)).to eq(
       NodeCtldSpec::TxState::CHAIN_QUEUED
     )
@@ -592,7 +692,10 @@ RSpec.describe NodeCtld::Command do
       'done' => NodeCtldSpec::TxState::TX_DONE_DONE,
       'status' => NodeCtldSpec::TxState::TX_STATUS_FAILED
     )
-    expect(transaction_output(tx2)).to include('error' => 'exec failed')
+    expect(direction_output(tx2, :execute)).to include(
+      'status' => 'failed',
+      'error' => 'exec failed'
+    )
     expect(tx_state(tx3)).to include('done' => NodeCtldSpec::TxState::TX_DONE_WAITING)
 
     execute_and_save(tx3)
@@ -667,6 +770,38 @@ RSpec.describe NodeCtld::Command do
     )
   end
 
+  it 'wraps legacy execute output before recording rollback output' do
+    chain_id = insert_chain(
+      state: NodeCtldSpec::TxState::CHAIN_ROLLBACKING,
+      size: 1,
+      progress: 0
+    )
+    tx_id = insert_transaction(
+      transaction_chain_id: chain_id,
+      handle: NodeCtldSpec::TestHandles::OK,
+      done: NodeCtldSpec::TxState::TX_DONE_DONE,
+      status: NodeCtldSpec::TxState::TX_STATUS_OK
+    )
+    sql_update(
+      'transactions',
+      { output: { handler: 'legacy-ok' }.to_json },
+      'id = ?',
+      tx_id
+    )
+
+    execute_and_save(tx_id)
+
+    output = transaction_output(tx_id)
+    expect(output.fetch('execute')).to include(
+      'status' => 'ok',
+      'handler' => 'legacy-ok'
+    )
+    expect(output.fetch('rollback')).to include(
+      'status' => 'ok',
+      'handler' => 'ok-rollback'
+    )
+  end
+
   it 'closes the chain as fatal when rollback fails in rollback mode' do
     chain_id = insert_chain(
       state: NodeCtldSpec::TxState::CHAIN_ROLLBACKING,
@@ -686,6 +821,12 @@ RSpec.describe NodeCtld::Command do
     expect(sql_value('SELECT done FROM transactions WHERE id = ?', tx_id)).to eq(2)
     expect(sql_value('SELECT state FROM transaction_chains WHERE id = ?', chain_id)).to eq(
       NodeCtldSpec::TxState::CHAIN_FATAL
+    )
+    expect(direction_output(tx_id, :rollback)).to include(
+      'status' => 'failed',
+      'cmd' => 'spec-fail-rollback',
+      'exitstatus' => 42,
+      'error' => 'rollback failed'
     )
     expect(
       sql_value(

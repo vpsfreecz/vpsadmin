@@ -988,14 +988,39 @@
       ORDER BY id
     SQL
 
-    rows.map do |row|
+    rows.filter_map do |row|
       parsed = row['output'] && !row['output'].empty? ? JSON.parse(row['output']) : {}
+      failure_outputs = failure_output_payloads(parsed)
+      failed = Integer(row.fetch('status')) == 0
+
+      next if !failed && failure_outputs.empty?
+
+      failure_output = failure_outputs.first
 
       row.merge(
         'output' => parsed,
-        'error' => parsed['error']
+        'failure_output' => failure_output,
+        'error' => failure_output&.fetch('error', nil) || parsed['error']
       )
     end
+  end
+
+  def failure_output_payloads(output)
+    return [] unless output.is_a?(Hash)
+
+    if output.has_key?('execute') || output.has_key?('rollback')
+      output.values.select { |payload| failure_output_payload?(payload) }
+    elsif failure_output_payload?(output)
+      [output]
+    else
+      []
+    end
+  end
+
+  def failure_output_payload?(payload)
+    return false unless payload.is_a?(Hash)
+
+    payload['status'] == 'failed' || payload.has_key?('error')
   end
 
   def wait_for_chain_locks_released(services, chain_id, timeout: 60)
@@ -1073,9 +1098,8 @@
         handle: handle,
         timeout: [deadline - Time.now, 1].max
       )
-      value = keys.reduce(detail) do |memo, key|
-        memo.is_a?(Hash) ? memo[key] : nil
-      end
+      value = value_at_path(detail, keys)
+      value ||= value_at_path(detail['failure_output'], keys.drop(1)) if keys.first == 'output'
 
       return detail if !value.nil?
 
@@ -1089,6 +1113,12 @@
     end
   end
 
+  def value_at_path(value, keys)
+    keys.reduce(value) do |memo, key|
+      memo.is_a?(Hash) ? memo[key] : nil
+    end
+  end
+
   DEPENDENCY_ERROR_PATTERNS = [
     /dependent clones/i,
     /has children/i,
@@ -1097,13 +1127,24 @@
   ].freeze
 
   def dependency_failure?(detail)
-    payload = detail.fetch('output', {})
+    payload = detail.fetch('failure_output', nil) || detail.fetch('output', {})
     text = [
       detail['error'],
-      payload.is_a?(Hash) ? payload.values.map(&:to_s).join(' ') : payload.to_s
+      output_text(payload)
     ].compact.join(' ')
 
     DEPENDENCY_ERROR_PATTERNS.any? { |rx| rx.match?(text) }
+  end
+
+  def output_text(value)
+    case value
+    when Hash
+      value.values.map { |v| output_text(v) }.join(' ')
+    when Array
+      value.map { |v| output_text(v) }.join(' ')
+    else
+      value.to_s
+    end
   end
 
   def dependency_failure_details(services, chain_id)
