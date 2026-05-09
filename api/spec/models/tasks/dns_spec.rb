@@ -99,4 +99,43 @@ RSpec.describe VpsAdmin::API::Tasks::Dns do
 
     expect(opened).to eq([[selected.ipv4_addr]])
   end
+
+  it 'prunes only old DNS transfer logs and keeps latest status fields' do
+    stub_const("#{described_class}::DAYS", 1)
+    zone = create_dns_zone!(user: SpecSeed.user, source: :external_source)
+    server = create_dns_server!(node: SpecSeed.node)
+    server_zone = create_dns_server_zone!(
+      dns_zone: zone,
+      dns_server: server,
+      zone_type: :secondary_type
+    )
+    old = DnsServerZoneTransferLog.create!(
+      dns_server_zone: server_zone,
+      event_key: SecureRandom.hex(32),
+      event_at: 2.days.ago,
+      status: :failed,
+      reason_code: 'refused'
+    )
+    recent = DnsServerZoneTransferLog.create!(
+      dns_server_zone: server_zone,
+      event_key: SecureRandom.hex(32),
+      event_at: 12.hours.ago,
+      status: :success
+    )
+    server_zone.update!(
+      last_transfer_log: old,
+      last_transfer_at: old.event_at,
+      last_transfer_status: old.status,
+      last_transfer_reason_code: old.reason_code,
+      last_transfer_reason: 'The primary DNS server refused the transfer'
+    )
+
+    expect { task.prune_transfer_logs }.to output("Deleted 1 DNS transfer logs\n").to_stdout
+
+    expect(DnsServerZoneTransferLog.find_by(id: old.id)).to be_nil
+    expect(DnsServerZoneTransferLog.find_by(id: recent.id)).to be_present
+    expect(server_zone.reload.last_transfer_log_id).to be_nil
+    expect(server_zone.last_transfer_status).to eq('failed')
+    expect(server_zone.last_transfer_reason_code).to eq('refused')
+  end
 end

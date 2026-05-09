@@ -1,5 +1,7 @@
 module VpsAdmin::API::Tasks
   class Dns < Base
+    DAYS = ENV['DAYS'] ? ENV['DAYS'].to_i : 365
+
     # Check that DNS servers return the configured reverse records
     #
     # Accepts the following environment variables:
@@ -50,6 +52,14 @@ module VpsAdmin::API::Tasks
       puts "#{cnt_fail} dns errors"
       puts "#{cnt_incorrect} records incorrect"
       exit(false) if cnt_fail > 0 || cnt_incorrect > 0
+    end
+
+    # Prune DNS server zone transfer logs
+    # Accepts the following environment variables:
+    # [DAYS] Delete DNS transfer logs older than number of DAYS
+    def prune_transfer_logs
+      cnt = ::DnsServerZoneTransferLog.prune!(days: DAYS)
+      puts "Deleted #{cnt} DNS transfer logs"
     end
   end
 end

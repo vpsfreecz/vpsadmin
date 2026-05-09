@@ -285,6 +285,19 @@ in
           };
         };
 
+        dns-transfer-logs-prune = {
+          rake = [ "vpsadmin:dns:prune_transfer_logs" ];
+          service.config = {
+            TimeoutStartSec = "infinity";
+          };
+          timer.enable = true;
+          timer.config = {
+            OnCalendar = "daily";
+            RandomizedDelaySec = "900s";
+            FixedRandomDelay = true;
+          };
+        };
+
         daily-report = {
           rake = [ "vpsadmin:mail_daily_report" ];
           timer.enable = true;

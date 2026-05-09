@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_04_02_100000) do
+ActiveRecord::Schema[8.1].define(version: 2026_05_09_120000) do
   create_table "auth_tokens", id: { type: :integer, unsigned: true }, charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
     t.string "api_ip_addr", limit: 46
     t.string "api_ip_ptr"
@@ -301,6 +301,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_02_100000) do
     t.bigint "dns_zone_id", null: false
     t.datetime "expires_at"
     t.datetime "last_check_at"
+    t.datetime "last_transfer_at"
+    t.bigint "last_transfer_log_id"
+    t.string "last_transfer_primary_addr", limit: 46
+    t.string "last_transfer_reason"
+    t.string "last_transfer_reason_code", limit: 40
+    t.integer "last_transfer_serial", unsigned: true
+    t.integer "last_transfer_status"
     t.datetime "loaded_at"
     t.datetime "refresh_at"
     t.integer "serial", unsigned: true
@@ -309,6 +316,26 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_02_100000) do
     t.index ["dns_server_id", "dns_zone_id"], name: "index_dns_server_zones_on_dns_server_id_and_dns_zone_id", unique: true
     t.index ["dns_server_id"], name: "index_dns_server_zones_on_dns_server_id"
     t.index ["dns_zone_id"], name: "index_dns_server_zones_on_dns_zone_id"
+    t.index ["last_transfer_status"], name: "index_dns_server_zones_on_last_transfer_status"
+  end
+
+  create_table "dns_server_zone_transfer_logs", charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.bigint "dns_server_zone_id", null: false
+    t.datetime "event_at", null: false
+    t.string "event_key", limit: 64, null: false
+    t.text "message", size: :medium
+    t.string "primary_addr", limit: 46
+    t.text "raw_message", size: :medium
+    t.string "reason"
+    t.string "reason_code", limit: 40
+    t.integer "serial", unsigned: true
+    t.string "source_cursor", limit: 191
+    t.integer "status", null: false
+    t.datetime "updated_at", null: false
+    t.index ["dns_server_zone_id", "event_at"], name: "idx_dns_server_zone_transfer_logs_on_zone_and_event_at"
+    t.index ["dns_server_zone_id"], name: "index_dns_server_zone_transfer_logs_on_dns_server_zone_id"
+    t.index ["event_key"], name: "index_dns_server_zone_transfer_logs_on_event_key", unique: true
   end
 
   create_table "dns_servers", charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|

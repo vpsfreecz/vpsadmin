@@ -14,6 +14,7 @@ module VpsAdmin::Supervisor
       klasses = [
         Node::DatasetExpansions,
         Node::DnsStatus,
+        Node::DnsTransferLog,
         Node::ExportMounts,
         Node::NetAccounting,
         Node::NetMonitor,
@@ -38,9 +39,9 @@ module VpsAdmin::Supervisor
       ::Node.includes(:location).where(active: true).each do |node|
         use_klasses =
           if %w[node storage].include?(node.role)
-            klasses.reject { |klass, _| klass == Node::DnsStatus }
+            klasses.except(Node::DnsStatus, Node::DnsTransferLog)
           elsif node.role == 'dns_server'
-            klasses.slice(Node::Rpc, Node::Status, Node::DnsStatus)
+            klasses.slice(Node::Rpc, Node::Status, Node::DnsStatus, Node::DnsTransferLog)
           else
             klasses.slice(Node::Rpc, Node::Status)
           end

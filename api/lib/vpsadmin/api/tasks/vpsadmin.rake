@@ -154,6 +154,12 @@ namespace :vpsadmin do
     task :check_reverse_records do
       VpsAdmin::API::Tasks.run(:dns, :check_reverse_records)
     end
+
+    desc 'Prune DNS transfer logs'
+    task :prune_transfer_logs do
+      puts 'Pruning DNS transfer logs'
+      VpsAdmin::API::Tasks.run(:dns, :prune_transfer_logs)
+    end
   end
 
   namespace :plugins do

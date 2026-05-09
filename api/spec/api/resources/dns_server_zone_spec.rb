@@ -22,6 +22,14 @@ RSpec.describe 'VpsAdmin::API::Resources::DnsServerZone' do
     vpath("/dns_server_zones/#{id}")
   end
 
+  def transfer_log_index_path(server_zone_id)
+    vpath("/dns_server_zones/#{server_zone_id}/transfer_logs")
+  end
+
+  def transfer_log_show_path(server_zone_id, log_id)
+    vpath("/dns_server_zones/#{server_zone_id}/transfer_logs/#{log_id}")
+  end
+
   def json_get(path, params = nil)
     get path, params, {
       'CONTENT_TYPE' => 'application/json',
@@ -43,6 +51,19 @@ RSpec.describe 'VpsAdmin::API::Resources::DnsServerZone' do
 
   def server_zone_obj
     json.dig('response', 'dns_server_zone') || json['response']
+  end
+
+  def transfer_logs
+    json.dig('response', 'transfer_logs') ||
+      json.dig('response', 'dns_server_zone_transfer_logs') ||
+      json.dig('response', 'logs') ||
+      []
+  end
+
+  def transfer_log_obj
+    json.dig('response', 'transfer_log') ||
+      json.dig('response', 'dns_server_zone_transfer_log') ||
+      json['response']
   end
 
   def errors
@@ -101,6 +122,21 @@ RSpec.describe 'VpsAdmin::API::Resources::DnsServerZone' do
       dns_zone: dns_zone,
       zone_type: zone_type,
       confirmed: DnsServerZone.confirmed(:confirm_create)
+    )
+  end
+
+  def create_transfer_log!(server_zone:, status: :failed, reason_code: 'refused', event_at: Time.now)
+    DnsServerZoneTransferLog.create!(
+      dns_server_zone: server_zone,
+      event_key: SecureRandom.hex(32),
+      event_at: event_at,
+      status: status,
+      reason_code: reason_code,
+      reason: reason_code ? 'The primary DNS server refused the transfer' : nil,
+      primary_addr: '192.0.2.1',
+      message: 'Transfer status: REFUSED',
+      raw_message: 'raw bind message',
+      source_cursor: SecureRandom.hex(16)
     )
   end
 
@@ -205,7 +241,9 @@ RSpec.describe 'VpsAdmin::API::Resources::DnsServerZone' do
         'dns_server_zone#index',
         'dns_server_zone#show',
         'dns_server_zone#create',
-        'dns_server_zone#delete'
+        'dns_server_zone#delete',
+        'dns_server_zone.transfer_log#index',
+        'dns_server_zone.transfer_log#show'
       )
     end
   end
@@ -362,9 +400,95 @@ RSpec.describe 'VpsAdmin::API::Resources::DnsServerZone' do
       expect(json['status']).to be(true)
     end
 
+    it 'shows the latest transfer status fields' do
+      log = create_transfer_log!(server_zone: sz_user_external_visible)
+      sz_user_external_visible.update!(
+        last_transfer_log: log,
+        last_transfer_at: log.event_at,
+        last_transfer_status: log.status,
+        last_transfer_reason_code: log.reason_code,
+        last_transfer_reason: log.reason,
+        last_transfer_primary_addr: log.primary_addr
+      )
+
+      as(SpecSeed.user) { json_get show_path(sz_user_external_visible.id) }
+
+      expect_status(200)
+      expect(server_zone_obj).to include(
+        'last_transfer_status' => 'failed',
+        'last_transfer_reason_code' => 'refused',
+        'last_transfer_reason' => 'The primary DNS server refused the transfer',
+        'last_transfer_primary_addr' => '192.0.2.1',
+        'last_transfer_log_id' => log.id
+      )
+    end
+
     it 'returns 404 for unknown zone' do
       missing = DnsServerZone.maximum(:id).to_i + 100
       as(SpecSeed.admin) { json_get show_path(missing) }
+
+      expect_status(404)
+      expect(json['status']).to be(false)
+    end
+  end
+
+  describe 'TransferLog' do
+    let!(:user_log) do
+      create_transfer_log!(
+        server_zone: sz_user_external_visible,
+        event_at: 2.hours.ago
+      )
+    end
+
+    let!(:recent_user_log) do
+      create_transfer_log!(
+        server_zone: sz_user_external_visible,
+        status: :success,
+        reason_code: nil,
+        event_at: 1.hour.ago
+      )
+    end
+
+    let!(:support_log) do
+      create_transfer_log!(server_zone: sz_support_visible)
+    end
+
+    it 'rejects unauthenticated access' do
+      json_get transfer_log_index_path(sz_user_external_visible.id)
+
+      expect_status(401)
+      expect(json['status']).to be(false)
+    end
+
+    it 'lists user logs without raw admin fields' do
+      as(SpecSeed.user) { json_get transfer_log_index_path(sz_user_external_visible.id) }
+
+      expect_status(200)
+      ids = transfer_logs.map { |row| row['id'] }
+      expect(ids).to include(user_log.id, recent_user_log.id)
+      expect(ids).not_to include(support_log.id)
+
+      row = transfer_logs.find { |item| item['id'] == user_log.id }
+      expect(row).to include('status' => 'failed', 'reason_code' => 'refused')
+      expect(row).not_to include('raw_message', 'source_cursor', 'event_key')
+    end
+
+    it 'allows admins to see raw fields' do
+      as(SpecSeed.admin) { json_get transfer_log_show_path(sz_user_external_visible.id, user_log.id) }
+
+      expect_status(200)
+      expect(transfer_log_obj).to include(
+        'id' => user_log.id,
+        'raw_message' => 'raw bind message',
+        'source_cursor' => user_log.source_cursor,
+        'event_key' => user_log.event_key
+      )
+    end
+
+    it 'does not expose hidden server logs to users' do
+      hidden_log = create_transfer_log!(server_zone: sz_user_hidden)
+
+      as(SpecSeed.user) { json_get transfer_log_show_path(sz_user_hidden.id, hidden_log.id) }
 
       expect_status(404)
       expect(json['status']).to be(false)

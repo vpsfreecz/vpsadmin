@@ -4,8 +4,13 @@ require_relative 'dns_zone_record_set_validator'
 class DnsServerZone < ApplicationRecord
   belongs_to :dns_server
   belongs_to :dns_zone
+  belongs_to :last_transfer_log,
+             class_name: 'DnsServerZoneTransferLog',
+             optional: true
+  has_many :dns_server_zone_transfer_logs, dependent: :delete_all
 
   enum :zone_type, %i[primary_type secondary_type]
+  enum :last_transfer_status, %i[started success failed], prefix: :last_transfer
 
   validates :dns_server, presence: true
   validates :dns_zone, presence: true
