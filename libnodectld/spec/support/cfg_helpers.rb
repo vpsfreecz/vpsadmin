@@ -103,7 +103,11 @@ module NodeCtldSpec
           dns_server: {
             status_interval: 60,
             statistics_url: 'http://127.0.0.1:8053/',
-            bind_workdir: Dir.tmpdir
+            bind_workdir: Dir.tmpdir,
+            transfer_log_cursor_file: File.join(Dir.tmpdir, 'dns-transfer-log.cursor'),
+            transfer_log_command: 'journalctl',
+            transfer_log_identifiers: ['named'],
+            transfer_log_unit: nil
           }
         )
       end

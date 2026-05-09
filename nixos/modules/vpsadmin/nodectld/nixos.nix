@@ -23,6 +23,7 @@ in
 
     systemd.tmpfiles.rules = [
       "d '/run/nodectl' 0700 root root - -"
+      "d '/var/lib/nodectld' 0700 root root - -"
     ];
 
     systemd.services.vpsadmin-nodectld = {
@@ -38,6 +39,7 @@ in
         ipset
         iptables
         procps
+        systemd
       ];
       startLimitIntervalSec = 30;
       startLimitBurst = 4;

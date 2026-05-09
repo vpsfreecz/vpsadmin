@@ -273,7 +273,11 @@ module NodeCtld
       zone_template: '/var/named/vpsadmin/%{type}/%{name}zone',
       db_template: '/var/named/vpsadmin/db/%{name}json',
       statistics_url: 'http://localhost:8053/xml/v3',
-      status_interval: 60
+      status_interval: 60,
+      transfer_log_cursor_file: '/var/lib/nodectld/dns-transfer-log.cursor',
+      transfer_log_command: 'journalctl',
+      transfer_log_identifiers: ['named'],
+      transfer_log_unit: nil
     }
   }.freeze
 
