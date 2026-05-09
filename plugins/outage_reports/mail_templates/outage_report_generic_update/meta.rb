@@ -1,8 +1,8 @@
 template :outage_report_role_event do
   label        'Generic outage report update'
-  from         'podpora@vpsfree.cz'
-  reply_to     'podpora@vpsfree.cz'
-  return_path  'podpora@vpsfree.cz'
+  from         'noreply@vpsadmin.invalid'
+  reply_to     'support@vpsadmin.invalid'
+  return_path  'noreply@vpsadmin.invalid'
 
   lang :en do
     subject "Re: <%= @o.outage_type.capitalize %> - <%= @o.outage_entities.map { |e| e.real_name }.join(', ') %> - <%= @o.begins_at.localtime.strftime('%Y-%m-%d %H:%M %Z') %>"

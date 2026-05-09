@@ -48,6 +48,16 @@ namespace :vpsadmin do
     end
   end
 
+  namespace :mail_templates do
+    desc 'Install built-in mail templates'
+    task :install_defaults do
+      puts 'Install built-in mail templates'
+      result = VpsAdmin::API::MailTemplates.install_defaults!
+      puts "Created #{result[:templates_created]} templates and " \
+           "#{result[:translations_created]} translations"
+    end
+  end
+
   desc 'Mail daily report'
   task :mail_daily_report do
     puts 'Mail daily report'

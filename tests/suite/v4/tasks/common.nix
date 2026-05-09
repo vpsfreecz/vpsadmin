@@ -48,7 +48,6 @@ base
       role: 'hypervisor'
     )
     wait_for_pool_online(services, PoolId.for(services, primary_pool_fs))
-    ensure_task_mail_templates(services)
   end
 
   module PoolId
@@ -60,33 +59,6 @@ base
         LIMIT 1
       SQL
     end
-  end
-
-  def ensure_task_mail_templates(services)
-    services.api_ruby_json(code: <<~RUBY)
-      %w[
-        user_failed_logins
-        vps_dataset_expanded
-        vps_dataset_shrunk
-        vps_stopped_over_quota
-      ].each do |name|
-        template = MailTemplate.find_or_create_by!(name: name) do |tpl|
-          tpl.label = name.tr('_', ' ').capitalize
-          tpl.template_id = name
-        end
-
-        next if template.mail_template_translations.where(language: Language.first).exists?
-
-        template.mail_template_translations.create!(
-          language: Language.first,
-          from: 'noreply@test.invalid',
-          subject: name + ' subject',
-          text_plain: name + ' body'
-        )
-      end
-
-      puts JSON.dump(ok: true)
-    RUBY
   end
 
   def max_transaction_chain_id(services)

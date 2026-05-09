@@ -62,46 +62,7 @@ base
 
   def ensure_operational_alert_templates(services)
     services.api_ruby_json(code: <<~RUBY)
-      %w[
-        daily_report
-        vps_incident_report
-        vps_oom_report
-        vps_oom_prevention
-        vps_dataset_expanded
-        vps_network_disabled
-        vps_network_enabled
-      ].each do |name|
-        template = MailTemplate.find_or_create_by!(name: name) do |tpl|
-          tpl.label = name.tr('_', ' ').capitalize
-          tpl.template_id = name
-        end
-
-        next if template.mail_template_translations.where(language: Language.first).exists?
-
-        template.mail_template_translations.create!(
-          language: Language.first,
-          from: 'noreply@test.invalid',
-          subject: name + ' subject',
-          text_plain: name + ' body'
-        )
-      end
-
-      %w[user active vps active].each_slice(2) do |object, state|
-        name = 'expiration_' + object + '_' + state
-        template = MailTemplate.find_or_create_by!(name: name) do |tpl|
-          tpl.label = name
-          tpl.template_id = 'expiration_warning'
-        end
-
-        next if template.mail_template_translations.where(language: Language.first).exists?
-
-        template.mail_template_translations.create!(
-          language: Language.first,
-          from: 'noreply@test.invalid',
-          subject: name + ' subject',
-          text_plain: name + ' body'
-        )
-      end
+      result = VpsAdmin::API::MailTemplates.install_defaults!
 
       daily_report = MailTemplate.find_by!(name: 'daily_report')
       recipient = MailRecipient.find_or_initialize_by(label: 'alerts daily report')
@@ -112,7 +73,7 @@ base
         mail_recipient: recipient
       )
 
-      puts JSON.dump(ok: true)
+      puts JSON.dump(ok: true, install: result)
     RUBY
   end
 

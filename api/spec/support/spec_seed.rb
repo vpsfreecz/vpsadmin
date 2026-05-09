@@ -19,6 +19,7 @@ module SpecSeed
     seed_pools!
     seed_os_templates!
     seed_user_accounts!
+    seed_mail_templates!
   end
 
   def reset_cache!
@@ -113,6 +114,10 @@ module SpecSeed
     Language.find_or_create_by!(code: 'en') do |lang|
       lang.label = 'English'
     end
+  end
+
+  def seed_mail_templates!
+    VpsAdmin::API::MailTemplates.install_defaults!
   end
 
   def seed_users!

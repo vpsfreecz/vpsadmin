@@ -38,7 +38,6 @@ base
     services.wait_for_service('vpsadmin-rabbitmq-setup.service')
     services.wait_for_service('vpsadmin-supervisor.service')
     wait_for_supervisor_node_process(node)
-    ensure_supervisor_mail_templates(services)
   end
 
   def wait_for_supervisor_node_process(node)
@@ -328,28 +327,6 @@ base
       )
 
       puts JSON.dump(id: mount.id, dataset_id: dataset.id, dataset_in_pool_id: dip.id)
-    RUBY
-  end
-
-  def ensure_supervisor_mail_templates(services)
-    services.api_ruby_json(code: <<~RUBY)
-      %w[vps_dataset_expanded vps_incident_report].each do |name|
-        template = MailTemplate.find_or_create_by!(name: name) do |tpl|
-          tpl.label = name.tr('_', ' ').capitalize
-          tpl.template_id = name
-        end
-
-        next if template.mail_template_translations.where(language: Language.first).exists?
-
-        template.mail_template_translations.create!(
-          language: Language.first,
-          from: 'noreply@test.invalid',
-          subject: name + ' subject',
-          text_plain: name + ' body'
-        )
-      end
-
-      puts JSON.dump(ok: true)
     RUBY
   end
 

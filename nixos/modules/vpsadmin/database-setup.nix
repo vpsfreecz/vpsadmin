@@ -85,6 +85,15 @@ in
         '';
       };
 
+      installDefaultMailTemplates = lib.mkOption {
+        type = lib.types.bool;
+        default = true;
+        description = ''
+          Install built-in mail templates after migrations. Existing templates
+          and translations are left unchanged.
+        '';
+      };
+
       user = lib.mkOption {
         type = lib.types.str;
         default = "vpsadmin-database";
@@ -158,6 +167,11 @@ in
                   ${apiApp.bundle} exec rake db:seed:file SEED_FILE=${file}
                 '') cfg.seedFiles}
               fi
+
+              ${lib.optionalString cfg.installDefaultMailTemplates ''
+                echo "Installing built-in mail templates"
+                ${apiApp.bundle} exec rake vpsadmin:mail_templates:install_defaults
+              ''}
             ''
           else
             ''

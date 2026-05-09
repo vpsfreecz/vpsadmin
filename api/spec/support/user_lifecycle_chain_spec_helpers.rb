@@ -3,35 +3,8 @@
 require 'securerandom'
 
 module UserLifecycleChainSpecHelpers
-  USER_MAIL_TEMPLATES = %w[
-    user_create
-    user_soft_delete
-    user_suspend
-    user_resume
-    user_revive
-    vps_resume
-    user_new_login
-    user_new_token
-    user_failed_logins
-    user_totp_recovery_code_used
-  ].freeze
-
   def ensure_user_mail_templates!
-    USER_MAIL_TEMPLATES.each do |template_name|
-      template = MailTemplate.find_or_create_by!(name: template_name) do |tpl|
-        tpl.label = template_name.tr('_', ' ').capitalize
-        tpl.template_id = template_name
-      end
-
-      next if template.mail_template_translations.where(language: SpecSeed.language).exists?
-
-      template.mail_template_translations.create!(
-        language: SpecSeed.language,
-        from: 'noreply@test.invalid',
-        subject: "#{template_name} subject",
-        text_plain: "#{template_name} body"
-      )
-    end
+    VpsAdmin::API::MailTemplates.install_defaults!
   end
 
   def ensure_user_namespace_blocks!(count: 8, start_index: 1)

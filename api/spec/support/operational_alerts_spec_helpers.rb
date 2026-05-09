@@ -3,18 +3,6 @@
 require 'securerandom'
 
 module OperationalAlertsSpecHelpers
-  ALERT_TEMPLATES = %w[
-    daily_report
-    vps_incident_report
-    vps_oom_report
-    vps_oom_prevention
-    vps_dataset_expanded
-    user_failed_logins
-    vps_network_disabled
-    vps_network_enabled
-    vps_resources_change
-  ].freeze
-
   def with_env(vars)
     keys = vars.keys.map(&:to_s)
     saved = keys.to_h do |key|
@@ -34,13 +22,12 @@ module OperationalAlertsSpecHelpers
   end
 
   def ensure_alert_mail_templates!
-    ALERT_TEMPLATES.each do |template_name|
-      ensure_mail_template!(template_name, template_name)
-    end
+    VpsAdmin::API::MailTemplates.install_defaults!
   end
 
   def ensure_expiration_template!(object:, state:)
     name = "expiration_#{object}_#{state}"
+    VpsAdmin::API::MailTemplates.install_defaults!
     ensure_mail_template!(name, 'expiration_warning', label: "Expiration #{object} #{state}")
   end
 

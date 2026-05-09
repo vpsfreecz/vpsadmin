@@ -35,7 +35,6 @@ base
     wait_for_pool_online(services, PoolId.for(services, primary_pool_fs))
     wait_for_pool_online(services, PoolId.for(services, 'tank/user-primary'))
 
-    ensure_user_mail_templates(services)
     ensure_user_default_resources(services)
     ensure_user_namespace_blocks(services)
     ensure_user_create_namespace_hook(services)
@@ -50,38 +49,6 @@ base
         LIMIT 1
       SQL
     end
-  end
-
-  def ensure_user_mail_templates(services)
-    services.api_ruby_json(code: <<~RUBY)
-      %w[
-        user_create
-        user_soft_delete
-        user_suspend
-        user_resume
-        user_revive
-        user_new_login
-        user_new_token
-        user_failed_logins
-        user_totp_recovery_code_used
-      ].each do |template_name|
-        template = MailTemplate.find_or_create_by!(name: template_name) do |tpl|
-          tpl.label = template_name.tr('_', ' ').capitalize
-          tpl.template_id = template_name
-        end
-
-        next if template.mail_template_translations.where(language: Language.first).exists?
-
-        template.mail_template_translations.create!(
-          language: Language.first,
-          from: 'noreply@test.invalid',
-          subject: "\#{template_name} subject",
-          text_plain: "\#{template_name} body"
-        )
-      end
-
-      puts JSON.dump(status: true)
-    RUBY
   end
 
   def ensure_user_default_resources(services)
