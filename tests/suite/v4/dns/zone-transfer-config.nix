@@ -5,7 +5,7 @@ import ../../../make-test.nix (
     adminUser = seed.adminUser;
     dnsSeed = import ../../../../api/db/seeds/test-dns-server-node.nix;
     dnsNode = dnsSeed.dnsNode;
-    common = import ./common.nix {
+    common = import ../network/common.nix {
       adminUserId = adminUser.id;
       node1Id = dnsNode.id;
       manageCluster = false;
