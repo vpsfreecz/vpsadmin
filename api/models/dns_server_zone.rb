@@ -1,4 +1,5 @@
 require_relative 'confirmable'
+require_relative 'dns_zone_record_set_validator'
 
 class DnsServerZone < ApplicationRecord
   belongs_to :dns_server
@@ -10,6 +11,7 @@ class DnsServerZone < ApplicationRecord
   validates :dns_zone, presence: true
 
   validate :check_zone_type
+  validate :check_zone_record_set
 
   include Confirmable
 
@@ -68,5 +70,11 @@ class DnsServerZone < ApplicationRecord
     message = "zone #{dns_zone.name} is external and must be of secondary type"
     errors.add(:zone_type, message)
     errors.add(:type, message)
+  end
+
+  def check_zone_record_set
+    return unless dns_zone && dns_zone.internal_source? && primary_type?
+
+    DnsZoneRecordSetValidator.validate_zone(dns_zone, errors:, attribute: :dns_zone)
   end
 end

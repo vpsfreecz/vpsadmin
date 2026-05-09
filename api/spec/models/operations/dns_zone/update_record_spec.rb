@@ -46,7 +46,7 @@ RSpec.describe VpsAdmin::API::Operations::DnsZone::UpdateRecord do
   end
 
   it 'normalizes content, validates and fires the update chain for operational changes' do
-    record = create_dns_record!(dns_zone: zone, record_type: 'CNAME', content: 'old.example.test.')
+    record = create_dns_record!(dns_zone: zone, name: 'alias', record_type: 'CNAME', content: 'old.example.test.')
     chain = instance_double(TransactionChain)
 
     allow(TransactionChains::DnsZone::UpdateRecord).to receive(:fire).and_return([chain, record])

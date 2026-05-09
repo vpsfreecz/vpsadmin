@@ -1,5 +1,6 @@
 require 'ipaddress'
 require_relative 'confirmable'
+require_relative 'dns_zone_record_set_validator'
 
 class DnsRecord < ApplicationRecord
   RECORD_TYPES = %w[A AAAA CNAME DS MX NS PTR SRV SSHFP TLSA TXT].freeze
@@ -41,6 +42,7 @@ class DnsRecord < ApplicationRecord
   validate :check_name
   validate :check_priority
   validate :check_content
+  validate :check_zone_record_set
 
   def dynamic_update_enabled
     !update_token_id.nil?
@@ -137,6 +139,10 @@ class DnsRecord < ApplicationRecord
     when 'TXT'
       # pass
     end
+  end
+
+  def check_zone_record_set
+    DnsZoneRecordSetValidator.validate_record(self)
   end
 
   def check_ds_content

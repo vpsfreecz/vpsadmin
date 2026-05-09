@@ -106,14 +106,15 @@ RSpec.describe 'VpsAdmin::API::Resources::DnsRecord' do
     )
   end
 
-  def create_record!(zone:, name:, record_type:, content:, priority: nil, user: nil)
+  def create_record!(zone:, name:, record_type:, content:, priority: nil, user: nil, enabled: true)
     DnsRecord.create!(
       dns_zone: zone,
       name: name,
       record_type: record_type,
       content: content,
       priority: priority,
-      user: user
+      user: user,
+      enabled: enabled
     )
   end
 
@@ -833,6 +834,187 @@ RSpec.describe 'VpsAdmin::API::Resources::DnsRecord' do
       expect(errors.keys.map(&:to_s)).to include('name')
     end
 
+    it 'rejects CNAME records at the zone apex' do
+      as(SpecSeed.user) do
+        json_post index_path, dns_record: {
+          dns_zone: record_validation_zone.id,
+          name: '@',
+          type: 'CNAME',
+          content: "target.#{record_validation_zone.name}",
+          ttl: 3600
+        }
+      end
+
+      expect_status(200)
+      expect(json['status']).to be(false)
+      expect(errors.keys.map(&:to_s)).to include('name')
+    end
+
+    it 'rejects DS records at the zone apex' do
+      as(SpecSeed.user) do
+        json_post index_path, dns_record: {
+          dns_zone: record_validation_zone.id,
+          name: '@',
+          type: 'DS',
+          content: "60485 13 2 #{'A' * 64}",
+          ttl: 3600
+        }
+      end
+
+      expect_status(200)
+      expect(json['status']).to be(false)
+      expect(errors.keys.map(&:to_s)).to include('name')
+    end
+
+    it 'rejects CNAME records coexisting with other enabled records' do
+      zone = record_validation_zone
+      create_record!(zone: zone, name: 'alias-conflict', record_type: 'A', content: '192.0.2.30')
+
+      as(SpecSeed.user) do
+        json_post index_path, dns_record: {
+          dns_zone: zone.id,
+          name: 'alias-conflict',
+          type: 'CNAME',
+          content: "target.#{zone.name}",
+          ttl: 3600
+        }
+      end
+
+      expect_status(200)
+      expect(json['status']).to be(false)
+      expect(errors.keys.map(&:to_s)).to include('name')
+    end
+
+    it 'rejects records coexisting with an enabled CNAME' do
+      zone = record_validation_zone
+      create_record!(zone: zone, name: 'target-conflict', record_type: 'CNAME', content: "target.#{zone.name}")
+
+      as(SpecSeed.user) do
+        json_post index_path, dns_record: {
+          dns_zone: zone.id,
+          name: 'target-conflict',
+          type: 'A',
+          content: '192.0.2.31',
+          ttl: 3600
+        }
+      end
+
+      expect_status(200)
+      expect(json['status']).to be(false)
+      expect(errors.keys.map(&:to_s)).to include('name')
+    end
+
+    it 'matches record owner names canonically for CNAME conflicts' do
+      zone = record_validation_zone
+      create_record!(zone: zone, name: 'canonical', record_type: 'A', content: '192.0.2.32')
+
+      as(SpecSeed.user) do
+        json_post index_path, dns_record: {
+          dns_zone: zone.id,
+          name: "canonical.#{zone.name}",
+          type: 'CNAME',
+          content: "target.#{zone.name}",
+          ttl: 3600
+        }
+      end
+
+      expect_status(200)
+      expect(json['status']).to be(false)
+      expect(errors.keys.map(&:to_s)).to include('name')
+    end
+
+    it 'ignores disabled records when checking CNAME conflicts' do
+      ensure_signer_unlocked!
+
+      zone = record_validation_zone
+      create_record!(
+        zone: zone,
+        name: 'disabled-conflict',
+        record_type: 'CNAME',
+        content: "target.#{zone.name}",
+        enabled: false
+      )
+
+      expect do
+        as(SpecSeed.user) do
+          json_post index_path, dns_record: {
+            dns_zone: zone.id,
+            name: 'disabled-conflict',
+            type: 'A',
+            content: '192.0.2.33',
+            ttl: 3600
+          }
+        end
+      end.to change(DnsRecord, :count).by(1)
+
+      expect_status(200)
+      expect(json['status']).to be(true)
+    end
+
+    it 'rejects reference records that target local CNAMEs' do
+      zone = record_validation_zone
+
+      [
+        { type: 'MX', name: '@', target: 'mx-alias', content: "mx-alias.#{zone.name}", priority: 10 },
+        { type: 'NS', name: 'child-ns', target: 'ns-alias', content: "ns-alias.#{zone.name}" },
+        { type: 'SRV', name: '_sip._tcp', target: 'srv-alias', content: "5 5060 srv-alias.#{zone.name}", priority: 10 }
+      ].each do |record_case|
+        create_record!(
+          zone: zone,
+          name: record_case.fetch(:target),
+          record_type: 'CNAME',
+          content: "target.#{zone.name}"
+        )
+
+        payload = {
+          dns_zone: zone.id,
+          name: record_case.fetch(:name),
+          type: record_case.fetch(:type),
+          content: record_case.fetch(:content),
+          ttl: 3600
+        }
+        payload[:priority] = record_case[:priority] if record_case.has_key?(:priority)
+
+        as(SpecSeed.user) { json_post index_path, dns_record: payload }
+
+        expect_status(200)
+        expect(json['status']).to be(false)
+        expect(errors.keys.map(&:to_s)).to include('content')
+      end
+    end
+
+    it 'rejects creating a CNAME at a local reference target' do
+      zone = record_validation_zone
+
+      [
+        { type: 'MX', name: '@', target: 'mx-targeted', content: "mx-targeted.#{zone.name}", priority: 10 },
+        { type: 'NS', name: 'child-targeted', target: 'ns-targeted', content: "ns-targeted.#{zone.name}" },
+        { type: 'SRV', name: '_xmpp._tcp', target: 'srv-targeted', content: "5 5222 srv-targeted.#{zone.name}", priority: 10 }
+      ].each do |record_case|
+        create_record!(
+          zone: zone,
+          name: record_case.fetch(:name),
+          record_type: record_case.fetch(:type),
+          content: record_case.fetch(:content),
+          priority: record_case[:priority]
+        )
+
+        as(SpecSeed.user) do
+          json_post index_path, dns_record: {
+            dns_zone: zone.id,
+            name: record_case.fetch(:target),
+            type: 'CNAME',
+            content: "target.#{zone.name}",
+            ttl: 3600
+          }
+        end
+
+        expect_status(200)
+        expect(json['status']).to be(false)
+        expect(errors.keys.map(&:to_s)).to include('name')
+      end
+    end
+
     it 'returns validation errors for invalid TLSA content' do
       as(SpecSeed.admin) do
         json_post index_path, dns_record: {
@@ -1019,6 +1201,25 @@ RSpec.describe 'VpsAdmin::API::Resources::DnsRecord' do
       expect(record_obj).to be_a(Hash)
       expect(record_obj['content']).to eq('192.0.2.212')
       expect(seed[:record_user_a].reload.content).to eq('192.0.2.212')
+    end
+
+    it 'rejects enabling a disabled CNAME that conflicts with an enabled record' do
+      zone = record_validation_zone
+      create_record!(zone: zone, name: 'enable-conflict', record_type: 'A', content: '192.0.2.40')
+      cname = create_record!(
+        zone: zone,
+        name: 'enable-conflict',
+        record_type: 'CNAME',
+        content: "target.#{zone.name}",
+        enabled: false
+      )
+
+      as(SpecSeed.user) { json_put show_path(cname.id), dns_record: { enabled: true } }
+
+      expect_status(200)
+      expect(json['status']).to be(false)
+      expect(errors.keys.map(&:to_s)).to include('name')
+      expect(cname.reload.enabled).to be(false)
     end
 
     it 'rejects invalid updates for every supported record type without changing stored records' do
