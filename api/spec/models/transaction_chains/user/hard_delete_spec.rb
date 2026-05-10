@@ -37,7 +37,7 @@ RSpec.describe TransactionChains::User::HardDelete do
     snapshot.update!(snapshot_download_id: download.id)
     userns, userns_map = create_user_namespace_with_map!(user: user, block_count: 2)
     attach_blocks_to_user_namespace!(userns)
-    token_session = create_detached_token_session!(user: user)
+    auth_cleanup = create_auth_cleanup_fixture!(user: user)
     public_key = create_user_public_key!(
       user: user,
       key: 'ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAINixoscreate create@test',
@@ -71,7 +71,7 @@ RSpec.describe TransactionChains::User::HardDelete do
       snapshot_download: download,
       user_namespace: userns,
       user_namespace_map: userns_map,
-      token_session: token_session,
+      auth_cleanup: auth_cleanup,
       public_key: public_key,
       user_data: user_data,
       totp: totp,
@@ -157,5 +157,12 @@ RSpec.describe TransactionChains::User::HardDelete do
     end
 
     expect(user_edit.attr_changes).to include('login' => nil, 'password' => '!')
+
+    auth = fixture.fetch(:auth_cleanup)
+    expect(auth.fetch(:token_session).reload.token_id).to be_nil
+    expect(auth.fetch(:token_session).closed_at).not_to be_nil
+    expect(SingleSignOn.exists?(auth.fetch(:single_sign_on).id)).to be(false)
+    expect(Oauth2Authorization.exists?(auth.fetch(:oauth2_authorization).id)).to be(false)
+    expect(MetricsAccessToken.exists?(auth.fetch(:metrics_access_token).id)).to be(false)
   end
 end

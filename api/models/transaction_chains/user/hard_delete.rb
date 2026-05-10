@@ -68,6 +68,11 @@ module TransactionChains
         use_chain(UserNamespace::Free, args: userns)
       end
 
+      user.user_sessions.where(closed_at: nil).each(&:close!)
+      user.single_sign_ons.destroy_all
+      user.oauth2_authorizations.destroy_all
+      user.metrics_access_tokens.destroy_all
+
       append_t(Transactions::Utils::NoOp, args: find_node_id) do |t|
         # Free all IP addresses
         user.environment_user_configs.each do |cfg|
