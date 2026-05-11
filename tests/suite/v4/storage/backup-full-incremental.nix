@@ -61,7 +61,7 @@ import ../../../make-test.nix (
       end
 
       def dataset_info(services, vps_id)
-        services.mysql_json_rows(sql: <<~SQL).first
+        services.mariadb_json_rows(sql: <<~SQL).first
           SELECT JSON_OBJECT(
             'dataset_id', d.id,
             'dataset_in_pool_id', dip.id,
@@ -75,7 +75,7 @@ import ../../../make-test.nix (
       end
 
       def snapshot_rows_for_dip(services, dip_id)
-        services.mysql_json_rows(sql: <<~SQL)
+        services.mariadb_json_rows(sql: <<~SQL)
           SELECT JSON_OBJECT('id', s.id, 'name', s.name)
           FROM snapshot_in_pools sip
           INNER JOIN snapshots s ON s.id = sip.snapshot_id
@@ -85,7 +85,7 @@ import ../../../make-test.nix (
       end
 
       def head_branch_row(services, dip_id)
-        services.mysql_json_rows(sql: <<~SQL).first
+        services.mariadb_json_rows(sql: <<~SQL).first
           SELECT JSON_OBJECT(
             'tree_id', t.id,
             'tree_index', t.`index`,
@@ -101,7 +101,7 @@ import ../../../make-test.nix (
       end
 
       def dataset_in_pool_info(services, dataset_id:, pool_id:)
-        services.mysql_json_rows(sql: <<~SQL).first
+        services.mariadb_json_rows(sql: <<~SQL).first
           SELECT JSON_OBJECT('dataset_in_pool_id', dip.id)
           FROM dataset_in_pools dip
           WHERE dip.dataset_id = #{Integer(dataset_id)} AND dip.pool_id = #{Integer(pool_id)}
@@ -252,7 +252,7 @@ import ../../../make-test.nix (
           @head_branch = head_branch_row(services, @dst_dip_id)
           @head_branch_dataset_path = branch_dataset_path(backup_pool_fs, @dataset_full_name, @head_branch)
 
-          expect(services.mysql_scalar(sql: "SELECT COUNT(*) FROM dataset_trees WHERE dataset_in_pool_id = #{@dst_dip_id}")).to eq('1')
+          expect(services.mariadb_scalar(sql: "SELECT COUNT(*) FROM dataset_trees WHERE dataset_in_pool_id = #{@dst_dip_id}")).to eq('1')
           expect(snapshot_rows_for_dip(services, @dst_dip_id).map { |row| row.fetch('name') }).to include(@snap1.fetch('name'))
           expect(node.zfs_exists?("#{@head_branch_dataset_path}@#{@snap1.fetch('name')}", type: 'snapshot', timeout: 30)).to be(true)
         end
@@ -263,7 +263,7 @@ import ../../../make-test.nix (
 
           head_branch = head_branch_row(services, @dst_dip_id)
 
-          expect(services.mysql_scalar(sql: "SELECT COUNT(*) FROM dataset_trees WHERE dataset_in_pool_id = #{@dst_dip_id}")).to eq('1')
+          expect(services.mariadb_scalar(sql: "SELECT COUNT(*) FROM dataset_trees WHERE dataset_in_pool_id = #{@dst_dip_id}")).to eq('1')
           expect(head_branch.fetch('branch_id')).to eq(@head_branch.fetch('branch_id'))
           expect(snapshot_rows_for_dip(services, @dst_dip_id).map { |row| row.fetch('name') }).to include(
             @snap1.fetch('name'),
@@ -285,7 +285,7 @@ import ../../../make-test.nix (
           head_branch = head_branch_row(services, @dst_dip_id)
           backup_snapshot_names = snapshot_rows_for_dip(services, @dst_dip_id).map { |row| row.fetch('name') }
 
-          expect(services.mysql_scalar(sql: "SELECT COUNT(*) FROM dataset_trees WHERE dataset_in_pool_id = #{@dst_dip_id}")).to eq('1')
+          expect(services.mariadb_scalar(sql: "SELECT COUNT(*) FROM dataset_trees WHERE dataset_in_pool_id = #{@dst_dip_id}")).to eq('1')
           expect(head_branch.fetch('branch_id')).to eq(@head_branch.fetch('branch_id'))
           expect(backup_snapshot_names).to include(@snap2.fetch('name'), @snap3.fetch('name'))
           expect(node.zfs_exists?("#{branch_dataset_path(backup_pool_fs, @dataset_full_name, head_branch)}@#{@snap3.fetch('name')}", type: 'snapshot', timeout: 30)).to be(true)

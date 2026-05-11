@@ -106,7 +106,7 @@ import ../../../make-test.nix (
             admin_user_id: admin_user_id,
             dip_id: @setup.fetch('dst_dip_id')
           )
-          final_state = services.mysql_scalar(
+          final_state = services.mariadb_scalar(
             sql: "SELECT state FROM transaction_chains WHERE id = #{rotation.fetch('chain_id')}"
           ).to_i
           backup_names = snapshot_rows_for_dip(services, @setup.fetch('dst_dip_id')).map { |row| row.fetch('name') }

@@ -67,13 +67,13 @@ import ../../../make-test.nix (
             %i[done failed fatal resolved]
           )
 
-          final_state = services.mysql_scalar(
+          final_state = services.mariadb_scalar(
             sql: "SELECT state FROM transaction_chains WHERE id = #{response.fetch('chain_id')}"
           ).to_i
-          tree_count = services.mysql_scalar(
+          tree_count = services.mariadb_scalar(
             sql: "SELECT COUNT(*) FROM dataset_trees WHERE dataset_in_pool_id = #{@setup.fetch('dst_dip_id')}"
           ).to_i
-          branch_count = services.mysql_scalar(
+          branch_count = services.mariadb_scalar(
             sql: <<~SQL
               SELECT COUNT(*)
               FROM branches b
@@ -81,10 +81,10 @@ import ../../../make-test.nix (
               WHERE t.dataset_in_pool_id = #{@setup.fetch('dst_dip_id')}
             SQL
           ).to_i
-          sip_count = services.mysql_scalar(
+          sip_count = services.mariadb_scalar(
             sql: "SELECT COUNT(*) FROM snapshot_in_pools WHERE dataset_in_pool_id = #{@setup.fetch('dst_dip_id')}"
           ).to_i
-          entry_count = services.mysql_scalar(
+          entry_count = services.mariadb_scalar(
             sql: <<~SQL
               SELECT COUNT(*)
               FROM snapshot_in_pool_in_branches e

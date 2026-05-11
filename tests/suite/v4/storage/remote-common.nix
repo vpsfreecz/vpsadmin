@@ -208,7 +208,7 @@
   end
 
   def pool_id_by_filesystem(services, filesystem)
-    services.mysql_json_rows(sql: <<~SQL).first.fetch('id')
+    services.mariadb_json_rows(sql: <<~SQL).first.fetch('id')
       SELECT JSON_OBJECT('id', id)
       FROM pools
       WHERE filesystem = #{filesystem.inspect}
@@ -217,7 +217,7 @@
   end
 
   def pool_migration_public_key(services, pool_id)
-    services.mysql_json_rows(sql: <<~SQL).first.fetch('migration_public_key')
+    services.mariadb_json_rows(sql: <<~SQL).first.fetch('migration_public_key')
       SELECT JSON_OBJECT('migration_public_key', migration_public_key)
       FROM pools
       WHERE id = #{Integer(pool_id)}
@@ -226,7 +226,7 @@
   end
 
   def node_port_reservation_count(services, node_id)
-    services.mysql_json_rows(sql: <<~SQL).first.fetch('count')
+    services.mariadb_json_rows(sql: <<~SQL).first.fetch('count')
       SELECT JSON_OBJECT('count', COUNT(*))
       FROM port_reservations
       WHERE node_id = #{Integer(node_id)}
@@ -546,7 +546,7 @@
   end
 
   def dataset_expansion_row(services, dataset_expansion_id)
-    services.mysql_json_rows(sql: <<~SQL).first
+    services.mariadb_json_rows(sql: <<~SQL).first
       SELECT JSON_OBJECT(
         'id', id,
         'dataset_id', dataset_id,
@@ -569,7 +569,7 @@
   end
 
   def dataset_expansion_history_rows(services, dataset_expansion_id)
-    services.mysql_json_rows(sql: <<~SQL)
+    services.mariadb_json_rows(sql: <<~SQL)
       SELECT JSON_OBJECT(
         'id', id,
         'dataset_expansion_id', dataset_expansion_id,
@@ -585,7 +585,7 @@
   end
 
   def snapshot_rows_for_dip(services, dip_id)
-    services.mysql_json_rows(sql: <<~SQL)
+    services.mariadb_json_rows(sql: <<~SQL)
       SELECT JSON_OBJECT(
         'id', s.id,
         'snapshot_in_pool_id', sip.id,
@@ -600,7 +600,7 @@
   end
 
   def head_tree_row(services, dip_id)
-    services.mysql_json_rows(sql: <<~SQL).first
+    services.mariadb_json_rows(sql: <<~SQL).first
       SELECT JSON_OBJECT(
         'tree_id', t.id,
         'tree_index', t.`index`,
@@ -613,7 +613,7 @@
   end
 
   def head_branch_row(services, dip_id)
-    services.mysql_json_rows(sql: <<~SQL).first
+    services.mariadb_json_rows(sql: <<~SQL).first
       SELECT JSON_OBJECT(
         'tree_id', t.id,
         'tree_index', t.`index`,
@@ -629,7 +629,7 @@
   end
 
   def branch_rows_for_dip(services, dip_id)
-    services.mysql_json_rows(sql: <<~SQL)
+    services.mariadb_json_rows(sql: <<~SQL)
       SELECT JSON_OBJECT(
         'id', b.id,
         'name', b.name,
@@ -646,7 +646,7 @@
   end
 
   def branch_entries_for_dip(services, dip_id)
-    services.mysql_json_rows(sql: <<~SQL)
+    services.mariadb_json_rows(sql: <<~SQL)
       SELECT JSON_OBJECT(
         'entry_id', e.id,
         'parent_entry_id', e.snapshot_in_pool_in_branch_id,
@@ -714,7 +714,7 @@
   end
 
   def backup_topology_report(services, backup_node:, dst_dip_id:, backup_dataset_path:)
-    trees = services.mysql_json_rows(sql: <<~SQL)
+    trees = services.mariadb_json_rows(sql: <<~SQL)
       SELECT JSON_OBJECT('id', id, 'index', `index`, 'head', head)
       FROM dataset_trees
       WHERE dataset_in_pool_id = #{Integer(dst_dip_id)}
@@ -846,7 +846,7 @@
   end
 
   def dataset_in_pool_info(services, dataset_id:, pool_id:)
-    services.mysql_json_rows(sql: <<~SQL).first
+    services.mariadb_json_rows(sql: <<~SQL).first
       SELECT JSON_OBJECT('dataset_in_pool_id', dip.id)
       FROM dataset_in_pools dip
       WHERE dip.dataset_id = #{Integer(dataset_id)} AND dip.pool_id = #{Integer(pool_id)}
@@ -855,7 +855,7 @@
   end
 
   def dataset_in_pool_info_on_node(services, dataset_id:, node_id:)
-    services.mysql_json_rows(sql: <<~SQL).first
+    services.mariadb_json_rows(sql: <<~SQL).first
       SELECT JSON_OBJECT(
         'dataset_in_pool_id', dip.id,
         'pool_id', p.id,
@@ -871,7 +871,7 @@
   end
 
   def dataset_record_counts(services, dataset_id:)
-    services.mysql_json_rows(sql: <<~SQL).first
+    services.mariadb_json_rows(sql: <<~SQL).first
       SELECT JSON_OBJECT(
         'datasets', (
           SELECT COUNT(*)
@@ -948,7 +948,7 @@
   end
 
   def chain_transactions(services, chain_id)
-    services.mysql_json_rows(sql: <<~SQL)
+    services.mariadb_json_rows(sql: <<~SQL)
       SELECT JSON_OBJECT(
         'id', id,
         'handle', handle,
@@ -966,7 +966,7 @@
   end
 
   def chain_failure_details(services, chain_id)
-    rows = services.mysql_json_rows(sql: <<~SQL)
+    rows = services.mariadb_json_rows(sql: <<~SQL)
       SELECT JSON_OBJECT(
         'id', id,
         'handle', handle,
@@ -1027,7 +1027,7 @@
     deadline = Time.now + timeout
 
     loop do
-      count = services.mysql_scalar(sql: <<~SQL).to_i
+      count = services.mariadb_scalar(sql: <<~SQL).to_i
         SELECT COUNT(*)
         FROM resource_locks
         WHERE locked_by_type = 'TransactionChain'
@@ -1049,7 +1049,7 @@
     deadline = Time.now + timeout
 
     loop do
-      count = services.mysql_scalar(sql: <<~SQL).to_i
+      count = services.mariadb_scalar(sql: <<~SQL).to_i
         SELECT COUNT(*)
         FROM resource_locks
         WHERE resource = #{resource.inspect}
@@ -1220,7 +1220,7 @@
     deadline = Time.now + timeout
 
     loop do
-      row = services.mysql_json_rows(sql: <<~SQL).first
+      row = services.mariadb_json_rows(sql: <<~SQL).first
         SELECT JSON_OBJECT('state', state)
         FROM transaction_chains
         WHERE id = #{Integer(chain_id)}
@@ -1281,7 +1281,7 @@
 
   def wait_for_tx_handle_started(services, chain_id, handle)
     wait_until_block_succeeds(name: "chain #{chain_id} handle #{handle} started") do
-      services.mysql_scalar(sql: <<~SQL).to_i > 0
+      services.mariadb_scalar(sql: <<~SQL).to_i > 0
         SELECT COUNT(*)
         FROM transactions
         WHERE transaction_chain_id = #{Integer(chain_id)}
@@ -1292,7 +1292,7 @@
   end
 
   def failed_chain_transactions(services, chain_id)
-    services.mysql_json_rows(sql: <<~SQL)
+    services.mariadb_json_rows(sql: <<~SQL)
       SELECT JSON_OBJECT(
         'id', id,
         'handle', handle,
@@ -1308,7 +1308,7 @@
   end
 
   def chain_port_reservations(services, chain_id)
-    services.mysql_json_rows(sql: <<~SQL)
+    services.mariadb_json_rows(sql: <<~SQL)
       SELECT JSON_OBJECT(
         'id', id,
         'node_id', node_id,
@@ -1322,7 +1322,7 @@
   end
 
   def current_history_id(services, dataset_id)
-    services.mysql_scalar(sql: "SELECT current_history_id FROM datasets WHERE id = #{Integer(dataset_id)}").to_i
+    services.mariadb_scalar(sql: "SELECT current_history_id FROM datasets WHERE id = #{Integer(dataset_id)}").to_i
   end
 
   def wait_for_snapshot_names(
@@ -1358,7 +1358,7 @@
   end
 
   def set_snapshot_retention(services, dip_id:, min_snapshots:, max_snapshots:, snapshot_max_age:)
-    services.mysql_raw(sql: <<~SQL)
+    services.mariadb_raw(sql: <<~SQL)
       UPDATE dataset_in_pools
       SET min_snapshots = #{Integer(min_snapshots)},
           max_snapshots = #{Integer(max_snapshots)},
@@ -1770,7 +1770,7 @@
   end
 
   def export_row(services, export_id)
-    row = services.mysql_json_rows(sql: <<~SQL).first
+    row = services.mariadb_json_rows(sql: <<~SQL).first
       SELECT JSON_OBJECT(
         'id', e.id,
         'dataset_in_pool_id', e.dataset_in_pool_id,
@@ -2029,7 +2029,7 @@
   end
 
   def vps_mount_rows(services, vps_id)
-    services.mysql_json_rows(sql: <<~SQL)
+    services.mariadb_json_rows(sql: <<~SQL)
       SELECT JSON_OBJECT(
         'id', m.id,
         'dataset_in_pool_id', m.dataset_in_pool_id,
@@ -2401,7 +2401,7 @@
   end
 
   def vps_unscoped_row(services, vps_id)
-    services.mysql_json_rows(sql: <<~SQL).first
+    services.mariadb_json_rows(sql: <<~SQL).first
       SELECT JSON_OBJECT(
         'id', id,
         'node_id', node_id,
@@ -2427,7 +2427,7 @@
   end
 
   def vps_row(services, vps_id)
-    services.mysql_json_rows(sql: <<~SQL).first
+    services.mariadb_json_rows(sql: <<~SQL).first
       SELECT JSON_OBJECT(
         'id', id,
         'node_id', node_id,
@@ -2447,7 +2447,7 @@
   end
 
   def vps_feature_rows(services, vps_id)
-    services.mysql_json_rows(sql: <<~SQL)
+    services.mariadb_json_rows(sql: <<~SQL)
       SELECT JSON_OBJECT(
         'id', id,
         'name', name,
@@ -2460,7 +2460,7 @@
   end
 
   def vps_resource_uses(services, vps_id)
-    services.mysql_json_rows(sql: <<~SQL)
+    services.mariadb_json_rows(sql: <<~SQL)
       SELECT JSON_OBJECT(
         'resource', cr.name,
         'value', cru.value,
@@ -2478,7 +2478,7 @@
   end
 
   def vps_network_interface_rows(services, vps_id)
-    services.mysql_json_rows(sql: <<~SQL)
+    services.mariadb_json_rows(sql: <<~SQL)
       SELECT JSON_OBJECT(
         'id', n.id,
         'vps_id', n.vps_id,
@@ -2494,7 +2494,7 @@
   end
 
   def vps_ip_rows(services, vps_id)
-    services.mysql_json_rows(sql: <<~SQL)
+    services.mariadb_json_rows(sql: <<~SQL)
       SELECT JSON_OBJECT(
         'id', ip.id,
         'addr', ip.ip_addr,
@@ -2513,7 +2513,7 @@
   end
 
   def vps_dataset_rows(services, vps_id)
-    services.mysql_json_rows(sql: <<~SQL)
+    services.mariadb_json_rows(sql: <<~SQL)
       SELECT JSON_OBJECT(
         'dataset_id', d.id,
         'full_name', d.full_name,
@@ -2530,7 +2530,7 @@
   end
 
   def backup_head_counts(services, dataset_id:)
-    services.mysql_json_rows(sql: <<~SQL).first
+    services.mariadb_json_rows(sql: <<~SQL).first
       SELECT JSON_OBJECT(
         'tree_heads', (
           SELECT COUNT(*)
@@ -2558,7 +2558,7 @@
   def dataset_subtree_ids(services, root_dataset_id)
     root_id = Integer(root_dataset_id)
 
-    services.mysql_json_rows(sql: <<~SQL).map { |row| row.fetch('id') }
+    services.mariadb_json_rows(sql: <<~SQL).map { |row| row.fetch('id') }
       SELECT JSON_OBJECT('id', id)
       FROM datasets
       WHERE id = #{root_id}

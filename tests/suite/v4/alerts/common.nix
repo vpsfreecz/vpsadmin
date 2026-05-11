@@ -172,7 +172,7 @@ base
   end
 
   def incident_report_row(services, incident_id)
-    services.mysql_json_rows(sql: <<~SQL).first
+    services.mariadb_json_rows(sql: <<~SQL).first
       SELECT JSON_OBJECT(
         'id', id,
         'reported_at', reported_at
@@ -210,7 +210,7 @@ base
   def oom_report_rows(services, ids)
     return [] if ids.empty?
 
-    services.mysql_json_rows(sql: <<~SQL)
+    services.mariadb_json_rows(sql: <<~SQL)
       SELECT JSON_OBJECT(
         'id', id,
         'reported_at', reported_at
@@ -222,7 +222,7 @@ base
   end
 
   def old_oom_report_count(services)
-    services.mysql_scalar(sql: <<~SQL).to_i
+    services.mariadb_scalar(sql: <<~SQL).to_i
       SELECT COUNT(*)
       FROM oom_reports
       WHERE created_at < DATE_SUB(NOW(), INTERVAL 1 DAY)
@@ -242,7 +242,7 @@ base
   end
 
   def mail_log_count(services, template_name)
-    services.mysql_scalar(sql: <<~SQL).to_i
+    services.mariadb_scalar(sql: <<~SQL).to_i
       SELECT COUNT(*)
       FROM mail_logs ml
       INNER JOIN mail_templates mt ON mt.id = ml.mail_template_id

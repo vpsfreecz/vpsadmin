@@ -129,7 +129,7 @@ import ../../../make-test.nix (
             %i[done failed fatal resolved]
           )
 
-          destroy_state = services.mysql_scalar(
+          destroy_state = services.mariadb_scalar(
             sql: "SELECT state FROM transaction_chains WHERE id = #{destroy_response.fetch('chain_id')}"
           ).to_i
           destroy_failures = chain_failure_details(services, destroy_response.fetch('chain_id'))

@@ -94,7 +94,7 @@ import ../../../make-test.nix (
             after_hash.strip != before_hash.strip
           end
 
-          saved_input = services.mysql_scalar(sql: <<~SQL)
+          saved_input = services.mariadb_scalar(sql: <<~SQL)
             SELECT input
             FROM transactions
             WHERE transaction_chain_id = #{Integer(response.fetch('chain_id'))}

@@ -73,7 +73,7 @@ import ../../../make-test.nix (
             %i[done failed fatal resolved]
           )
 
-          final_state = services.mysql_scalar(
+          final_state = services.mariadb_scalar(
             sql: "SELECT state FROM transaction_chains WHERE id = #{response.fetch('chain_id')}"
           ).to_i
           failure_details = chain_failure_details(services, response.fetch('chain_id'))

@@ -100,14 +100,14 @@ import ../../../make-test.nix (
             vps_id: setup.fetch('vps_id')
           )
 
-          final_state = services.mysql_scalar(
+          final_state = services.mariadb_scalar(
             sql: "SELECT state FROM transaction_chains WHERE id = #{response.fetch('chain_id')}"
           ).to_i
           failure_details = chain_failure_details(services, response.fetch('chain_id'))
           dependency_failures = dependency_failure_details(services, response.fetch('chain_id'))
           vps_row = vps_unscoped_row(services, setup.fetch('vps_id'))
           head_counts = backup_head_counts(services, dataset_id: setup.fetch('dataset_id'))
-          remaining_datasets = services.mysql_scalar(sql: <<~SQL).to_i
+          remaining_datasets = services.mariadb_scalar(sql: <<~SQL).to_i
             SELECT COUNT(*)
             FROM datasets
             WHERE id IN (#{subtree_ids.join(',')})
@@ -151,11 +151,11 @@ import ../../../make-test.nix (
             destroy.fetch('chain_id'),
             %i[done failed fatal resolved]
           )
-          destroy_final_state = services.mysql_scalar(
+          destroy_final_state = services.mariadb_scalar(
             sql: "SELECT state FROM transaction_chains WHERE id = #{destroy.fetch('chain_id')}"
           ).to_i
           destroy_failures = chain_failure_details(services, destroy.fetch('chain_id'))
-          remaining_after_destroy = services.mysql_scalar(sql: <<~SQL).to_i
+          remaining_after_destroy = services.mariadb_scalar(sql: <<~SQL).to_i
             SELECT COUNT(*)
             FROM datasets
             WHERE id IN (#{subtree_ids.join(',')})

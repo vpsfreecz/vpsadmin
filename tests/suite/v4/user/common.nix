@@ -42,7 +42,7 @@ base
 
   module PoolId
     def self.for(services, filesystem)
-      services.mysql_json_rows(sql: <<~SQL).first.fetch('id')
+      services.mariadb_json_rows(sql: <<~SQL).first.fetch('id')
         SELECT JSON_OBJECT('id', id)
         FROM pools
         WHERE filesystem = #{filesystem.inspect}

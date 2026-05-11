@@ -115,19 +115,19 @@ import ../../../make-test.nix (
           services.wait_for_chain_state(@chain_id, state: :queued)
           services.wait_for_chain_progress(@chain_id, progress: 0)
 
-          @transaction_id = services.mysql_scalar(
+          @transaction_id = services.mariadb_scalar(
             sql: "SELECT id FROM transactions WHERE transaction_chain_id = #{@chain_id}"
           ).to_i
 
           expect(@transaction_id).to be > 0
           expect(
-            services.mysql_scalar(sql: "SELECT size FROM transaction_chains WHERE id = #{@chain_id}")
+            services.mariadb_scalar(sql: "SELECT size FROM transaction_chains WHERE id = #{@chain_id}")
           ).to eq('1')
           expect(
-            services.mysql_scalar(sql: "SELECT done FROM transactions WHERE id = #{@transaction_id}")
+            services.mariadb_scalar(sql: "SELECT done FROM transactions WHERE id = #{@transaction_id}")
           ).to eq('0')
           expect(
-            services.mysql_scalar(
+            services.mariadb_scalar(
               sql: "SELECT signature IS NULL FROM transactions WHERE id = #{@transaction_id}"
             )
           ).to eq('1')
@@ -144,16 +144,16 @@ import ../../../make-test.nix (
           services.wait_for_no_confirmations(@chain_id)
 
           expect(
-            services.mysql_scalar(sql: "SELECT state FROM transaction_chains WHERE id = #{@chain_id}")
+            services.mariadb_scalar(sql: "SELECT state FROM transaction_chains WHERE id = #{@chain_id}")
           ).to eq('2')
           expect(
-            services.mysql_scalar(sql: "SELECT done FROM transactions WHERE id = #{@transaction_id}")
+            services.mariadb_scalar(sql: "SELECT done FROM transactions WHERE id = #{@transaction_id}")
           ).to eq('1')
           expect(
-            services.mysql_scalar(sql: "SELECT status FROM transactions WHERE id = #{@transaction_id}")
+            services.mariadb_scalar(sql: "SELECT status FROM transactions WHERE id = #{@transaction_id}")
           ).to eq('1')
           expect(
-            services.mysql_scalar(
+            services.mariadb_scalar(
               sql: <<~SQL
                 SELECT COUNT(*)
                 FROM transaction_confirmations c
@@ -163,12 +163,12 @@ import ../../../make-test.nix (
             )
           ).to eq('0')
           expect(
-            services.mysql_scalar(
+            services.mariadb_scalar(
               sql: "SELECT COUNT(*) FROM resource_locks WHERE locked_by_type = 'TransactionChain' AND locked_by_id = #{@chain_id}"
             )
           ).to eq('0')
           expect(
-            services.mysql_scalar(
+            services.mariadb_scalar(
               sql: "SELECT COUNT(*) FROM port_reservations WHERE transaction_chain_id = #{@chain_id}"
             )
           ).to eq('0')

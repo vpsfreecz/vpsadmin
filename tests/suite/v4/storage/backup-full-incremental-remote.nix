@@ -109,7 +109,7 @@ import ../../../make-test.nix (
           head_branch = head_branch_row(services, @setup.fetch('dst_dip_id'))
           source_snapshots = snapshot_rows_for_dip(services, @setup.fetch('src_dip_id')).map { |row| row.fetch('name') }
 
-          expect(services.mysql_scalar(sql: "SELECT COUNT(*) FROM dataset_trees WHERE dataset_in_pool_id = #{@setup.fetch('dst_dip_id')}")).to eq('1')
+          expect(services.mariadb_scalar(sql: "SELECT COUNT(*) FROM dataset_trees WHERE dataset_in_pool_id = #{@setup.fetch('dst_dip_id')}")).to eq('1')
           expect(head_branch.fetch('branch_id')).to eq(@head_branch.fetch('branch_id'))
           expect(source_snapshots).not_to include(@snap1.fetch('name'))
           expect(source_snapshots).to include(@snap2.fetch('name'))
@@ -137,7 +137,7 @@ import ../../../make-test.nix (
           handles = transactions.map { |row| row.fetch('handle') }
           backup_snapshots = snapshot_rows_for_dip(services, @setup.fetch('dst_dip_id')).map { |row| row.fetch('name') }
 
-          expect(services.mysql_scalar(sql: "SELECT COUNT(*) FROM dataset_trees WHERE dataset_in_pool_id = #{@setup.fetch('dst_dip_id')}")).to eq('1')
+          expect(services.mariadb_scalar(sql: "SELECT COUNT(*) FROM dataset_trees WHERE dataset_in_pool_id = #{@setup.fetch('dst_dip_id')}")).to eq('1')
           expect(head_branch.fetch('branch_id')).to eq(@head_branch.fetch('branch_id'))
           expect(backup_snapshots).to include(@snap2.fetch('name'), @snap3.fetch('name'))
           expect(handles).to include(

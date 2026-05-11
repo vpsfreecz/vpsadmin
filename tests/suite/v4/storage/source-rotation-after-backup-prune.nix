@@ -78,7 +78,7 @@ import ../../../make-test.nix (
             admin_user_id: admin_user_id,
             sip_id: oldest_backup.fetch('snapshot_in_pool_id')
           )
-          prune_state = services.mysql_scalar(
+          prune_state = services.mariadb_scalar(
             sql: "SELECT state FROM transaction_chains WHERE id = #{prune.fetch('chain_id')}"
           ).to_i
           prune_failures = chain_failure_details(services, prune.fetch('chain_id'))
@@ -103,7 +103,7 @@ import ../../../make-test.nix (
             admin_user_id: admin_user_id,
             dip_id: @setup.fetch('src_dip_id')
           )
-          rotation_state = services.mysql_scalar(
+          rotation_state = services.mariadb_scalar(
             sql: "SELECT state FROM transaction_chains WHERE id = #{rotation.fetch('chain_id')}"
           ).to_i
           rotation_failures = chain_failure_details(services, rotation.fetch('chain_id'))

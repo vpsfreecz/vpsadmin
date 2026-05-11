@@ -388,8 +388,8 @@ class VpsadminServicesMachine < OsVm::NixosMachine
     row
   end
 
-  def mysql_raw(sql:, database: 'vpsadmin', user: 'api', timeout: nil)
-    cmd = mysql_command(sql:, database:, user:)
+  def mariadb_raw(sql:, database: 'vpsadmin', user: 'api', timeout: nil)
+    cmd = mariadb_command(sql:, database:, user:)
 
     if timeout.nil?
       succeeds(cmd)
@@ -398,18 +398,18 @@ class VpsadminServicesMachine < OsVm::NixosMachine
     end
   end
 
-  def mysql_scalar(sql:, database: 'vpsadmin', user: 'api', timeout: nil)
-    _, output = mysql_raw(sql:, database:, user:, timeout:)
+  def mariadb_scalar(sql:, database: 'vpsadmin', user: 'api', timeout: nil)
+    _, output = mariadb_raw(sql:, database:, user:, timeout:)
     output.to_s.lines.first&.strip
   end
 
-  def mysql_rows(sql:, database: 'vpsadmin', user: 'api', timeout: nil)
-    _, output = mysql_raw(sql:, database:, user:, timeout:)
+  def mariadb_rows(sql:, database: 'vpsadmin', user: 'api', timeout: nil)
+    _, output = mariadb_raw(sql:, database:, user:, timeout:)
     output.to_s.lines.map { |line| line.chomp.split("\t", -1) }
   end
 
-  def mysql_json_rows(sql:, database: 'vpsadmin', user: 'api', timeout: nil)
-    mysql_rows(sql:, database:, user:, timeout:).map do |row|
+  def mariadb_json_rows(sql:, database: 'vpsadmin', user: 'api', timeout: nil)
+    mariadb_rows(sql:, database:, user:, timeout:).map do |row|
       JSON.parse(row.fetch(0))
     end
   end
@@ -421,7 +421,7 @@ class VpsadminServicesMachine < OsVm::NixosMachine
       timeout:,
       error_message: "Timed out waiting for chain ##{chain_id} state=#{state}"
     ) do
-      current = mysql_scalar(
+      current = mariadb_scalar(
         sql: "SELECT state FROM transaction_chains WHERE id = #{Integer(chain_id)}"
       )
 
@@ -436,7 +436,7 @@ class VpsadminServicesMachine < OsVm::NixosMachine
       timeout:,
       error_message: "Timed out waiting for chain ##{chain_id} progress=#{expected}"
     ) do
-      current = mysql_scalar(
+      current = mariadb_scalar(
         sql: "SELECT progress FROM transaction_chains WHERE id = #{Integer(chain_id)}"
       )
 
@@ -453,7 +453,7 @@ class VpsadminServicesMachine < OsVm::NixosMachine
       timeout:,
       error_message: "Timed out waiting for chain ##{chain_id} state in #{states.inspect}"
     ) do
-      current = mysql_scalar(
+      current = mariadb_scalar(
         sql: "SELECT state FROM transaction_chains WHERE id = #{Integer(chain_id)}"
       )
 
@@ -469,7 +469,7 @@ class VpsadminServicesMachine < OsVm::NixosMachine
       timeout:,
       error_message: "Timed out waiting for transaction ##{transaction_id} done=#{expected_done} status=#{expected_status.inspect}"
     ) do
-      row = mysql_rows(
+      row = mariadb_rows(
         sql: <<~SQL
           SELECT done, status
           FROM transactions
@@ -489,7 +489,7 @@ class VpsadminServicesMachine < OsVm::NixosMachine
       timeout:,
       error_message: "Timed out waiting for chain ##{chain_id} confirmations to finish"
     ) do
-      current = mysql_scalar(
+      current = mariadb_scalar(
         sql: <<~SQL
           SELECT COUNT(*)
           FROM transaction_confirmations c
@@ -516,7 +516,7 @@ class VpsadminServicesMachine < OsVm::NixosMachine
       timeout: timeout,
       error_message: "Timed out waiting for snapshot #{snapshot_id} in DatasetInPool ##{dip_id}"
     ) do
-      current = mysql_scalar(
+      current = mariadb_scalar(
         sql: <<~SQL
           SELECT COUNT(*)
           FROM snapshot_in_pools
@@ -533,7 +533,7 @@ class VpsadminServicesMachine < OsVm::NixosMachine
       timeout: timeout,
       error_message: "Timed out waiting for DatasetInPool dataset=#{dataset_id} pool=#{pool_id}"
     ) do
-      current = mysql_scalar(
+      current = mariadb_scalar(
         sql: <<~SQL
           SELECT id
           FROM dataset_in_pools
@@ -551,7 +551,7 @@ class VpsadminServicesMachine < OsVm::NixosMachine
       timeout: timeout,
       error_message: "Timed out waiting for DatasetInPool ##{dip_id} branch count=#{count}"
     ) do
-      current = mysql_scalar(
+      current = mariadb_scalar(
         sql: <<~SQL
           SELECT COUNT(*)
           FROM branches b
@@ -569,7 +569,7 @@ class VpsadminServicesMachine < OsVm::NixosMachine
       timeout: timeout,
       error_message: "Timed out waiting for DatasetInPool ##{dip_id} tree count=#{count}"
     ) do
-      current = mysql_scalar(
+      current = mariadb_scalar(
         sql: <<~SQL
           SELECT COUNT(*)
           FROM dataset_trees
@@ -583,7 +583,7 @@ class VpsadminServicesMachine < OsVm::NixosMachine
 
   private
 
-  def mysql_command(sql:, database:, user:)
+  def mariadb_command(sql:, database:, user:)
     password_file = "/etc/vpsadmin-test/mariadb-#{user}-password"
 
     inner = [

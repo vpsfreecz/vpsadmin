@@ -144,7 +144,7 @@ import ../../../make-test.nix (
               services.class::CHAIN_STATES[:resolved]
             ]).to include(final_state), final_states.inspect
 
-            final_state = services.mysql_scalar(
+            final_state = services.mariadb_scalar(
               sql: "SELECT state FROM transaction_chains WHERE id = #{rotation.fetch('chain_id')}"
             ).to_i
             final_states[rotation.fetch('chain_id')] = final_state

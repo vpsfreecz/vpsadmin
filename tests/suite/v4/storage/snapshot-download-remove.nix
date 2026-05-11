@@ -99,7 +99,7 @@ import ../../../make-test.nix (
 
           expect(snapshot_download_row(services, created.fetch('id'))).to be_nil
           expect(
-            services.mysql_scalar(
+            services.mariadb_scalar(
               sql: "SELECT snapshot_download_id FROM snapshots WHERE id = #{snapshot.fetch('id')}"
             ).to_s
           ).to eq("NULL")

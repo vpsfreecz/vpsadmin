@@ -237,7 +237,7 @@ base
   end
 
   def network_interface_row(services, netif_id)
-    row = services.mysql_json_rows(sql: <<~SQL).first
+    row = services.mariadb_json_rows(sql: <<~SQL).first
       SELECT JSON_OBJECT(
         'id', n.id,
         'vps_id', n.vps_id,
@@ -260,7 +260,7 @@ base
   end
 
   def ip_address_row(services, ip_id)
-    services.mysql_json_rows(sql: <<~SQL).first
+    services.mariadb_json_rows(sql: <<~SQL).first
       SELECT JSON_OBJECT(
         'id', ip.id,
         'addr', ip.ip_addr,
@@ -277,7 +277,7 @@ base
   end
 
   def host_ip_address_row(services, host_ip_id)
-    services.mysql_json_rows(sql: <<~SQL).first
+    services.mariadb_json_rows(sql: <<~SQL).first
       SELECT JSON_OBJECT(
         'id', h.id,
         'ip_address_id', h.ip_address_id,
@@ -291,7 +291,7 @@ base
   end
 
   def environment_user_resource_uses(services, user_id:, environment_id:)
-    services.mysql_json_rows(sql: <<~SQL)
+    services.mariadb_json_rows(sql: <<~SQL)
       SELECT JSON_OBJECT(
         'resource', cr.name,
         'value', cru.value,
@@ -309,7 +309,7 @@ base
   end
 
   def export_runtime_row(services, export_id)
-    row = services.mysql_json_rows(sql: <<~SQL).first
+    row = services.mariadb_json_rows(sql: <<~SQL).first
       SELECT JSON_OBJECT(
         'id', e.id,
         'path', e.path,
@@ -335,7 +335,7 @@ base
   end
 
   def export_host_rows(services, export_id)
-    services.mysql_json_rows(sql: <<~SQL)
+    services.mariadb_json_rows(sql: <<~SQL)
       SELECT JSON_OBJECT(
         'id', h.id,
         'export_id', h.export_id,

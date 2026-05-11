@@ -57,7 +57,7 @@ import ../../make-test.nix (
           end
 
           it 'is responding' do
-            services.wait_until_succeeds("mysql --user=${dbApiUser.user} --password=${dbApiUser.password} -e 'SELECT 1'")
+            services.wait_until_succeeds("mariadb --user=${dbApiUser.user} --password=${dbApiUser.password} -e 'SELECT 1'")
           end
 
           it 'is set up' do
@@ -66,7 +66,7 @@ import ../../make-test.nix (
 
           it 'is populated' do
             wait_until_block_succeeds(name: 'mariadb tables populated') do
-              _, output = services.succeeds("mysql --user=${dbApiUser.user} --password=${dbApiUser.password} -D ${dbName} -e 'SHOW TABLES'")
+              _, output = services.succeeds("mariadb --user=${dbApiUser.user} --password=${dbApiUser.password} -D ${dbName} -e 'SHOW TABLES'")
               expect(output).to include('users')
               true
             end
@@ -75,14 +75,14 @@ import ../../make-test.nix (
           it 'has built-in mail templates' do
             wait_until_block_succeeds(name: 'built-in mail templates installed') do
               _, output = services.succeeds(
-                "mysql --batch --skip-column-names --user=${dbApiUser.user} --password=${dbApiUser.password} -D ${dbName} -e \"" \
+                "mariadb --batch --skip-column-names --user=${dbApiUser.user} --password=${dbApiUser.password} -D ${dbName} -e \"" \
                 "SELECT COUNT(*) FROM mail_templates mt " \
                 "INNER JOIN mail_template_translations mtt ON mtt.mail_template_id = mt.id " \
                 "INNER JOIN languages l ON l.id = mtt.language_id " \
                 "WHERE mt.name IN ('user_create', 'daily_report', 'expiration_user_active') " \
                 "AND l.code = 'en'\""
               )
-              count = output.lines.map(&:strip).grep(/\A\d+\z/).last.to_i
+              count = Integer(output.strip)
               expect(count).to eq(3)
               true
             end

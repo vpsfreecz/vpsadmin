@@ -49,7 +49,7 @@ base
   end
 
   def node_current_status_row(services, node_id:)
-    services.mysql_json_rows(sql: <<~SQL).first
+    services.mariadb_json_rows(sql: <<~SQL).first
       SELECT JSON_OBJECT(
         'node_id', node_id,
         'time', UNIX_TIMESTAMP(COALESCE(updated_at, created_at)),
@@ -63,7 +63,7 @@ base
   end
 
   def vps_mount_state_row(services, mount_id:)
-    services.mysql_json_rows(sql: <<~SQL).first
+    services.mariadb_json_rows(sql: <<~SQL).first
       SELECT JSON_OBJECT(
         'id', id,
         'vps_id', vps_id,
@@ -76,7 +76,7 @@ base
   end
 
   def environment_defaults_row(services, env_id)
-    services.mysql_json_rows(sql: <<~SQL).first
+    services.mariadb_json_rows(sql: <<~SQL).first
       SELECT JSON_OBJECT(
         'id', id,
         'can_create_vps', can_create_vps,
@@ -91,7 +91,7 @@ base
   end
 
   def environment_user_configs(services, env_id:, user_id:)
-    services.mysql_json_rows(sql: <<~SQL)
+    services.mariadb_json_rows(sql: <<~SQL)
       SELECT JSON_OBJECT(
         'id', id,
         'environment_id', environment_id,
@@ -205,7 +205,7 @@ base
   end
 
   def user_cluster_resource_values(services, user_id:, environment_id:)
-    rows = services.mysql_json_rows(sql: <<~SQL)
+    rows = services.mariadb_json_rows(sql: <<~SQL)
       SELECT JSON_OBJECT('name', cr.name, 'value', ucr.value)
       FROM user_cluster_resources ucr
       INNER JOIN cluster_resources cr ON cr.id = ucr.cluster_resource_id
@@ -218,7 +218,7 @@ base
   end
 
   def package_item_values(services, package_id:)
-    rows = services.mysql_json_rows(sql: <<~SQL)
+    rows = services.mariadb_json_rows(sql: <<~SQL)
       SELECT JSON_OBJECT('name', cr.name, 'value', item.value)
       FROM cluster_resource_package_items item
       INNER JOIN cluster_resources cr ON cr.id = item.cluster_resource_id
@@ -344,7 +344,7 @@ base
   end
 
   def dataset_snapshot_count(services, dataset_id:)
-    services.mysql_scalar(sql: <<~SQL).to_i
+    services.mariadb_scalar(sql: <<~SQL).to_i
       SELECT COUNT(*)
       FROM snapshots
       WHERE dataset_id = #{Integer(dataset_id)}
@@ -412,7 +412,7 @@ base
   end
 
   def location_network_rows(services, network_id:)
-    services.mysql_json_rows(sql: <<~SQL)
+    services.mariadb_json_rows(sql: <<~SQL)
       SELECT JSON_OBJECT(
         'id', id,
         'location_id', location_id,
@@ -429,7 +429,7 @@ base
   end
 
   def network_row(services, network_id:)
-    services.mysql_json_rows(sql: <<~SQL).first
+    services.mariadb_json_rows(sql: <<~SQL).first
       SELECT JSON_OBJECT(
         'id', id,
         'primary_location_id', primary_location_id

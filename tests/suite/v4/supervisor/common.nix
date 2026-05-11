@@ -342,7 +342,7 @@ base
   end
 
   def node_current_status_row(services, node_id:)
-    services.mysql_json_rows(sql: <<~SQL).first
+    services.mariadb_json_rows(sql: <<~SQL).first
       SELECT JSON_OBJECT(
         'node_id', node_id,
         'uptime', uptime,
@@ -363,7 +363,7 @@ base
   end
 
   def vps_current_status_row(services, vps_id:)
-    services.mysql_json_rows(sql: <<~SQL).first
+    services.mariadb_json_rows(sql: <<~SQL).first
       SELECT JSON_OBJECT(
         'vps_id', vps_id,
         'status', status,
@@ -395,7 +395,7 @@ base
   end
 
   def dataset_property_history_rows(services, property_id:)
-    services.mysql_json_rows(sql: <<~SQL)
+    services.mariadb_json_rows(sql: <<~SQL)
       SELECT JSON_OBJECT('id', id, 'value', value, 'created_at', UNIX_TIMESTAMP(created_at))
       FROM dataset_property_histories
       WHERE dataset_property_id = #{Integer(property_id)}
@@ -404,7 +404,7 @@ base
   end
 
   def dataset_expansion_history_rows(services, dataset_id:)
-    services.mysql_json_rows(sql: <<~SQL)
+    services.mariadb_json_rows(sql: <<~SQL)
       SELECT JSON_OBJECT(
         'id', h.id,
         'dataset_expansion_id', h.dataset_expansion_id,
@@ -420,7 +420,7 @@ base
   end
 
   def net_monitor_row(services, netif_id:)
-    services.mysql_json_rows(sql: <<~SQL).first
+    services.mariadb_json_rows(sql: <<~SQL).first
       SELECT JSON_OBJECT(
         'network_interface_id', network_interface_id,
         'bytes', bytes,
@@ -446,7 +446,7 @@ base
     conditions << "month = #{Integer(month)}" unless month.nil?
     conditions << "day = #{Integer(day)}" unless day.nil?
 
-    services.mysql_json_rows(sql: <<~SQL).first
+    services.mariadb_json_rows(sql: <<~SQL).first
       SELECT JSON_OBJECT(
         'bytes_in', bytes_in,
         'bytes_out', bytes_out,
@@ -460,7 +460,7 @@ base
   end
 
   def export_mount_rows(services, vps_id:)
-    services.mysql_json_rows(sql: <<~SQL)
+    services.mariadb_json_rows(sql: <<~SQL)
       SELECT JSON_OBJECT(
         'id', id,
         'export_id', export_id,
@@ -474,7 +474,7 @@ base
   end
 
   def vps_mount_row(services, mount_id:)
-    services.mysql_json_rows(sql: <<~SQL).first
+    services.mariadb_json_rows(sql: <<~SQL).first
       SELECT JSON_OBJECT('id', id, 'current_state', current_state)
       FROM mounts
       WHERE id = #{Integer(mount_id)}
@@ -483,7 +483,7 @@ base
   end
 
   def object_history_count(services, object_type:, object_id:, event_type:)
-    services.mysql_json_rows(sql: <<~SQL).first.fetch('count').to_i
+    services.mariadb_json_rows(sql: <<~SQL).first.fetch('count').to_i
       SELECT JSON_OBJECT('count', COUNT(*))
       FROM object_histories
       WHERE tracked_object_type = #{object_type.inspect}
@@ -493,7 +493,7 @@ base
   end
 
   def incident_reports_for_vps(services, vps_id:)
-    services.mysql_json_rows(sql: <<~SQL)
+    services.mariadb_json_rows(sql: <<~SQL)
       SELECT JSON_OBJECT(
         'id', id,
         'codename', codename,

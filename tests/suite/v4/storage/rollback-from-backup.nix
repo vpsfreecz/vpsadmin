@@ -61,7 +61,7 @@ import ../../../make-test.nix (
       end
 
       def dataset_info(services, vps_id)
-        services.mysql_json_rows(sql: <<~SQL).first
+        services.mariadb_json_rows(sql: <<~SQL).first
           SELECT JSON_OBJECT(
             'dataset_id', d.id,
             'dataset_in_pool_id', dip.id,
@@ -75,7 +75,7 @@ import ../../../make-test.nix (
       end
 
       def snapshot_rows_for_dip(services, dip_id)
-        services.mysql_json_rows(sql: <<~SQL)
+        services.mariadb_json_rows(sql: <<~SQL)
           SELECT JSON_OBJECT('id', s.id, 'name', s.name)
           FROM snapshot_in_pools sip
           INNER JOIN snapshots s ON s.id = sip.snapshot_id
@@ -85,7 +85,7 @@ import ../../../make-test.nix (
       end
 
       def branch_rows_for_dip(services, dip_id)
-        services.mysql_json_rows(sql: <<~SQL)
+        services.mariadb_json_rows(sql: <<~SQL)
           SELECT JSON_OBJECT(
             'id', b.id,
             'name', b.name,
@@ -102,7 +102,7 @@ import ../../../make-test.nix (
       end
 
       def branch_entries_for_dip(services, dip_id)
-        services.mysql_json_rows(sql: <<~SQL)
+        services.mariadb_json_rows(sql: <<~SQL)
           SELECT JSON_OBJECT(
             'entry_id', e.id,
             'parent_entry_id', e.snapshot_in_pool_in_branch_id,
@@ -125,7 +125,7 @@ import ../../../make-test.nix (
       end
 
       def dataset_in_pool_info(services, dataset_id:, pool_id:)
-        services.mysql_json_rows(sql: <<~SQL).first
+        services.mariadb_json_rows(sql: <<~SQL).first
           SELECT JSON_OBJECT('dataset_in_pool_id', dip.id)
           FROM dataset_in_pools dip
           WHERE dip.dataset_id = #{Integer(dataset_id)} AND dip.pool_id = #{Integer(pool_id)}
@@ -281,7 +281,7 @@ import ../../../make-test.nix (
             fire_backup(services, admin_user_id: admin_user_id, src_dip_id: @src_dip_id, dst_dip_id: @dst_dip_id)
           end
 
-          @history_before = services.mysql_scalar(
+          @history_before = services.mariadb_scalar(
             sql: "SELECT current_history_id FROM datasets WHERE id = #{@dataset_id}"
           ).to_i
 
@@ -314,10 +314,10 @@ import ../../../make-test.nix (
           expect(s3_entry.fetch('parent_entry_id')).to eq(s2_entry.fetch('entry_id'))
           expect(s2_entry.fetch('reference_count')).to be >= 1
           expect(
-            services.mysql_scalar(sql: "SELECT current_history_id FROM datasets WHERE id = #{@dataset_id}").to_i
+            services.mariadb_scalar(sql: "SELECT current_history_id FROM datasets WHERE id = #{@dataset_id}").to_i
           ).to eq(@history_before + 1)
           expect(
-            services.mysql_scalar(
+            services.mariadb_scalar(
               sql: <<~SQL
                 SELECT COUNT(*)
                 FROM object_histories

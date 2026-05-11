@@ -78,17 +78,17 @@ import ../../../make-test.nix (
       end
 
       def scratch_row(services, row_id)
-        services.mysql_rows(
+        services.mariadb_rows(
           sql: "SELECT name, flag, value, counter, confirmed FROM spec_tx_records WHERE id = #{row_id}"
         ).first
       end
 
       def scratch_count(services, row_id)
-        services.mysql_scalar(sql: "SELECT COUNT(*) FROM spec_tx_records WHERE id = #{row_id}")
+        services.mariadb_scalar(sql: "SELECT COUNT(*) FROM spec_tx_records WHERE id = #{row_id}")
       end
 
       def setup_manual_confirmation_fixture(services, chain_id:, tx_ids:, row_ids:, node_id:, user_id:)
-        services.mysql_raw(
+        services.mariadb_raw(
           sql: <<~SQL
             DELETE FROM transaction_confirmations WHERE transaction_id IN (#{tx_ids.values.join(', ')});
             DELETE FROM transactions WHERE id IN (#{tx_ids.values.join(', ')});
@@ -120,7 +120,7 @@ import ../../../make-test.nix (
           "(#{id}, #{sql_quote(name)}, #{sql_quote(flag)}, #{sql_quote(value)}, #{counter}, #{confirmed})"
         end.join(",\n")
 
-        services.mysql_raw(
+        services.mariadb_raw(
           sql: <<~SQL
             INSERT INTO spec_tx_records (id, name, flag, value, counter, confirmed)
             VALUES
@@ -128,7 +128,7 @@ import ../../../make-test.nix (
           SQL
         )
 
-        services.mysql_raw(
+        services.mariadb_raw(
           sql: <<~SQL
             INSERT INTO transaction_chains
               (id, name, type, state, size, progress, user_id, urgent_rollback, concern_type)
@@ -141,7 +141,7 @@ import ../../../make-test.nix (
           "(#{tx_id}, #{user_id}, #{node_id}, #{990_100 + idx}, 0, 0, 1, 1, '{}', #{chain_id}, 0, 'general')"
         end.join(",\n")
 
-        services.mysql_raw(
+        services.mariadb_raw(
           sql: <<~SQL
             INSERT INTO transactions
               (id, user_id, node_id, handle, urgent, priority, status, done, input, transaction_chain_id, reversible, queue)
@@ -188,7 +188,7 @@ import ../../../make-test.nix (
           "(#{id}, #{tx_id}, #{class_name}, #{table_name}, #{row_pks}, #{attr_changes}, #{confirm_type}, #{done})"
         end.join(",\n")
 
-        services.mysql_raw(
+        services.mariadb_raw(
           sql: <<~SQL
             INSERT INTO transaction_confirmations
               (id, transaction_id, class_name, table_name, row_pks, attr_changes, confirm_type, done)
@@ -239,7 +239,7 @@ import ../../../make-test.nix (
           )
 
           expect(
-            services.mysql_scalar(sql: "SELECT confirmed FROM spec_tx_records WHERE id = #{row_ids[:create_success]}")
+            services.mariadb_scalar(sql: "SELECT confirmed FROM spec_tx_records WHERE id = #{row_ids[:create_success]}")
           ).to eq('1')
         end
 
@@ -318,7 +318,7 @@ import ../../../make-test.nix (
 
           expect(scratch_count(services, row_ids[:destroy_failure])).to eq('1')
           expect(
-            services.mysql_scalar(sql: "SELECT confirmed FROM spec_tx_records WHERE id = #{row_ids[:destroy_failure]}")
+            services.mariadb_scalar(sql: "SELECT confirmed FROM spec_tx_records WHERE id = #{row_ids[:destroy_failure]}")
           ).to eq('1')
         end
 
@@ -344,7 +344,7 @@ import ../../../make-test.nix (
           )
 
           expect(
-            services.mysql_scalar(sql: "SELECT counter FROM spec_tx_records WHERE id = #{row_ids[:decrement_success]}")
+            services.mariadb_scalar(sql: "SELECT counter FROM spec_tx_records WHERE id = #{row_ids[:decrement_success]}")
           ).to eq('4')
         end
 
@@ -358,7 +358,7 @@ import ../../../make-test.nix (
           )
 
           expect(
-            services.mysql_scalar(sql: "SELECT counter FROM spec_tx_records WHERE id = #{row_ids[:increment_success]}")
+            services.mariadb_scalar(sql: "SELECT counter FROM spec_tx_records WHERE id = #{row_ids[:increment_success]}")
           ).to eq('6')
         end
       end

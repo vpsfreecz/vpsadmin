@@ -75,7 +75,7 @@ import ../../../make-test.nix (
 
       def transaction_output(services, tx_id)
         JSON.parse(
-          services.mysql_scalar(sql: "SELECT output FROM transactions WHERE id = #{tx_id}")
+          services.mariadb_scalar(sql: "SELECT output FROM transactions WHERE id = #{tx_id}")
         )
       end
 
@@ -87,7 +87,7 @@ import ../../../make-test.nix (
       def setup_rollback_fixture(services, chain_id:, tx_ids:, confirmation_id:, row_id:, lock_row_id:, port_id:, node_id:, user_id:)
         tx1, tx2, tx3 = tx_ids
 
-        services.mysql_raw(
+        services.mariadb_raw(
           sql: <<~SQL
             DELETE FROM transaction_confirmations WHERE id = #{confirmation_id};
             DELETE FROM transaction_confirmations WHERE transaction_id IN (#{tx_ids.join(', ')});
@@ -104,11 +104,11 @@ import ../../../make-test.nix (
           SQL
         )
 
-        services.mysql_raw(
+        services.mariadb_raw(
           sql: "INSERT INTO spec_tx_records (id, name, confirmed) VALUES (#{row_id}, 'rollback-create', 0)"
         )
 
-        services.mysql_raw(
+        services.mariadb_raw(
           sql: <<~SQL
             INSERT INTO transaction_chains
               (id, name, type, state, size, progress, user_id, urgent_rollback, concern_type)
@@ -117,7 +117,7 @@ import ../../../make-test.nix (
           SQL
         )
 
-        services.mysql_raw(
+        services.mariadb_raw(
           sql: <<~SQL
             INSERT INTO transactions
               (id, user_id, node_id, handle, depends_on_id, urgent, priority, status, done, input, transaction_chain_id, reversible, queue)
@@ -140,7 +140,7 @@ import ../../../make-test.nix (
           SQL
         )
 
-        services.mysql_raw(
+        services.mariadb_raw(
           sql: <<~SQL
             INSERT INTO transaction_confirmations
               (id, transaction_id, class_name, table_name, row_pks, attr_changes, confirm_type, done)
@@ -152,14 +152,14 @@ import ../../../make-test.nix (
           SQL
         )
 
-        services.mysql_raw(
+        services.mariadb_raw(
           sql: <<~SQL
             INSERT INTO resource_locks (resource, row_id, locked_by_type, locked_by_id)
             VALUES ('SpecTxLock', #{lock_row_id}, 'TransactionChain', #{chain_id});
           SQL
         )
 
-        services.mysql_raw(
+        services.mariadb_raw(
           sql: <<~SQL
             INSERT INTO port_reservations (id, node_id, addr, port, transaction_chain_id)
             VALUES (#{port_id}, #{node_id}, '192.0.2.251', 39101, #{chain_id});
@@ -193,13 +193,13 @@ import ../../../make-test.nix (
       describe 'rollback state machine', order: :defined do
         it 'keeps the synthetic chain queued while the queue is paused' do
           expect(
-            services.mysql_rows(
+            services.mariadb_rows(
               sql: "SELECT state, progress FROM transaction_chains WHERE id = #{chain_id}"
             ).first
           ).to eq(['1', '0'])
 
           expect(
-            services.mysql_rows(
+            services.mariadb_rows(
               sql: "SELECT id, done, status FROM transactions WHERE transaction_chain_id = #{chain_id} ORDER BY id"
             )
           ).to eq([
@@ -216,22 +216,22 @@ import ../../../make-test.nix (
 
           wait_until_block_succeeds(name: 'chain enters rollbacking') do
             expect(
-              services.mysql_rows(
+              services.mariadb_rows(
                 sql: "SELECT state, progress FROM transaction_chains WHERE id = #{chain_id}"
               ).first
             ).to eq(['3', '0'])
             expect(
-              services.mysql_rows(
+              services.mariadb_rows(
                 sql: "SELECT done, status FROM transactions WHERE id = #{tx_ids[0]}"
               ).first
             ).to eq(['1', '1'])
             expect(
-              services.mysql_rows(
+              services.mariadb_rows(
                 sql: "SELECT done, status FROM transactions WHERE id = #{tx_ids[2]}"
               ).first
             ).to eq(['1', '0'])
             expect(
-              services.mysql_rows(
+              services.mariadb_rows(
                 sql: "SELECT done, status FROM transactions WHERE id = #{tx_ids[1]}"
               ).first
             ).to eq(['2', '0'])
@@ -242,22 +242,22 @@ import ../../../make-test.nix (
           services.wait_for_no_confirmations(chain_id)
 
           expect(
-            services.mysql_rows(
+            services.mariadb_rows(
               sql: "SELECT state, progress FROM transaction_chains WHERE id = #{chain_id}"
             ).first
           ).to eq(['4', '0'])
           expect(
-            services.mysql_rows(
+            services.mariadb_rows(
               sql: "SELECT done, status FROM transactions WHERE id = #{tx_ids[0]}"
             ).first
           ).to eq(['2', '1'])
           expect(
-            services.mysql_rows(
+            services.mariadb_rows(
               sql: "SELECT done, status FROM transactions WHERE id = #{tx_ids[1]}"
             ).first
           ).to eq(['2', '0'])
           expect(
-            services.mysql_rows(
+            services.mariadb_rows(
               sql: "SELECT done, status FROM transactions WHERE id = #{tx_ids[2]}"
             ).first
           ).to eq(['1', '0'])
@@ -269,20 +269,20 @@ import ../../../make-test.nix (
             transaction_direction_output(services, tx_ids[2], :execute)
           ).to include('error' => 'Dependency failed')
           expect(
-            services.mysql_scalar(sql: "SELECT COUNT(*) FROM spec_tx_records WHERE id = #{row_id}")
+            services.mariadb_scalar(sql: "SELECT COUNT(*) FROM spec_tx_records WHERE id = #{row_id}")
           ).to eq('0')
           expect(
-            services.mysql_scalar(
+            services.mariadb_scalar(
               sql: "SELECT COUNT(*) FROM resource_locks WHERE locked_by_type = 'TransactionChain' AND locked_by_id = #{chain_id}"
             )
           ).to eq('0')
           expect(
-            services.mysql_scalar(
+            services.mariadb_scalar(
               sql: "SELECT COUNT(*) FROM port_reservations WHERE transaction_chain_id = #{chain_id}"
             )
           ).to eq('0')
           expect(
-            services.mysql_scalar(
+            services.mariadb_scalar(
               sql: <<~SQL
                 SELECT COUNT(*)
                 FROM transaction_confirmations

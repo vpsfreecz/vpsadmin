@@ -101,7 +101,7 @@ import ../../../make-test.nix (
           end
 
           vps_row = vps_unscoped_row(services, vps.fetch('id'))
-          vps_lock_count = services.mysql_scalar(sql: <<~SQL).to_i
+          vps_lock_count = services.mariadb_scalar(sql: <<~SQL).to_i
             SELECT COUNT(*)
             FROM resource_locks
             WHERE resource = 'Vps'

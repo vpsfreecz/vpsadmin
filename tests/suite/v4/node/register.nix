@@ -141,7 +141,7 @@ import ../../../make-test.nix (
         chain_id = nil
 
         wait_until_block_succeeds(name: "registration chain for node #{node_id}") do
-          chain_id = services.mysql_scalar(sql: <<~SQL)
+          chain_id = services.mariadb_scalar(sql: <<~SQL)
             SELECT c.transaction_chain_id
             FROM transaction_chain_concerns c
             INNER JOIN transaction_chains ch ON ch.id = c.transaction_chain_id
@@ -159,7 +159,7 @@ import ../../../make-test.nix (
       end
 
       def node_row(services, node_id)
-        services.mysql_json_rows(sql: <<~SQL).first
+        services.mariadb_json_rows(sql: <<~SQL).first
           SELECT JSON_OBJECT(
             'id', id,
             'name', name,
@@ -175,7 +175,7 @@ import ../../../make-test.nix (
       end
 
       def node_port_reservation_count(services, node_id)
-        services.mysql_json_rows(sql: <<~SQL).first.fetch('count')
+        services.mariadb_json_rows(sql: <<~SQL).first.fetch('count')
           SELECT JSON_OBJECT('count', COUNT(*))
           FROM port_reservations
           WHERE node_id = #{Integer(node_id)}
@@ -242,7 +242,7 @@ import ../../../make-test.nix (
           expect(row.fetch('role')).to eq(0)
           expect(row.fetch('hypervisor_type')).to eq(1)
           expect(node_port_reservation_count(services, ${toString nodeSpec.id})).to eq(10_000)
-          expect(services.mysql_scalar(sql: <<~SQL).to_i).to eq(0)
+          expect(services.mariadb_scalar(sql: <<~SQL).to_i).to eq(0)
             SELECT COUNT(*)
             FROM resource_locks
             WHERE locked_by_type = 'TransactionChain'

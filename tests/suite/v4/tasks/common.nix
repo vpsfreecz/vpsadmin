@@ -52,7 +52,7 @@ base
 
   module PoolId
     def self.for(services, filesystem)
-      services.mysql_json_rows(sql: <<~SQL).first.fetch('id')
+      services.mariadb_json_rows(sql: <<~SQL).first.fetch('id')
         SELECT JSON_OBJECT('id', id)
         FROM pools
         WHERE filesystem = #{filesystem.inspect}
@@ -62,14 +62,14 @@ base
   end
 
   def max_transaction_chain_id(services)
-    services.mysql_scalar(sql: 'SELECT COALESCE(MAX(id), 0) FROM transaction_chains').to_i
+    services.mariadb_scalar(sql: 'SELECT COALESCE(MAX(id), 0) FROM transaction_chains').to_i
   end
 
   def wait_for_chain_after(services, before_id:, type:, label:)
     chain_id = nil
 
     wait_until_block_succeeds(name: "chain #{type} after #{before_id}") do
-      row = services.mysql_json_rows(sql: <<~SQL).first
+      row = services.mariadb_json_rows(sql: <<~SQL).first
         SELECT JSON_OBJECT('id', id)
         FROM transaction_chains
         WHERE id > #{Integer(before_id)}

@@ -123,18 +123,18 @@ import ../../../make-test.nix (
           services.wait_for_chain_state(@chain_id, state: :queued)
           services.wait_for_chain_progress(@chain_id, progress: 0)
 
-          @transaction_id = services.mysql_scalar(
+          @transaction_id = services.mariadb_scalar(
             sql: "SELECT id FROM transactions WHERE transaction_chain_id = #{@chain_id}"
           ).to_i
 
           expect(@transaction_id).to be > 0
           expect(
-            services.mysql_scalar(
+            services.mariadb_scalar(
               sql: "SELECT signature IS NOT NULL FROM transactions WHERE id = #{@transaction_id}"
             )
           ).to eq('1')
 
-          services.mysql_raw(
+          services.mariadb_raw(
             sql: "UPDATE transactions SET input = CONCAT(input, ' ') WHERE id = #{@transaction_id}"
           )
         end
@@ -146,25 +146,25 @@ import ../../../make-test.nix (
           services.wait_for_no_confirmations(@chain_id)
 
           expect(
-            services.mysql_scalar(sql: "SELECT state FROM transaction_chains WHERE id = #{@chain_id}")
+            services.mariadb_scalar(sql: "SELECT state FROM transaction_chains WHERE id = #{@chain_id}")
           ).to eq('4')
           expect(
-            services.mysql_scalar(sql: "SELECT done FROM transactions WHERE id = #{@transaction_id}")
+            services.mariadb_scalar(sql: "SELECT done FROM transactions WHERE id = #{@transaction_id}")
           ).to eq('2')
           expect(
-            services.mysql_scalar(sql: "SELECT status FROM transactions WHERE id = #{@transaction_id}")
+            services.mariadb_scalar(sql: "SELECT status FROM transactions WHERE id = #{@transaction_id}")
           ).to eq('0')
 
-          output = services.mysql_scalar(
+          output = services.mariadb_scalar(
             sql: "SELECT output FROM transactions WHERE id = #{@transaction_id}"
           )
 
           expect(output).to include('Invalid signature')
           expect(
-            services.mysql_scalar(sql: "SELECT autostart_enable FROM vpses WHERE id = #{@vps_id}")
+            services.mariadb_scalar(sql: "SELECT autostart_enable FROM vpses WHERE id = #{@vps_id}")
           ).to eq('0')
           expect(
-            services.mysql_scalar(
+            services.mariadb_scalar(
               sql: "SELECT COUNT(*) FROM resource_locks WHERE locked_by_type = 'TransactionChain' AND locked_by_id = #{@chain_id}"
             )
           ).to eq('0')
@@ -172,7 +172,7 @@ import ../../../make-test.nix (
           _, vps_output = services.vpsadminctl.succeeds(args: ['vps', 'show', @vps_id.to_s])
           expect(vps_output.fetch('vps').fetch('is_running')).not_to be(true)
           expect(
-            services.mysql_scalar(
+            services.mariadb_scalar(
               sql: "SELECT COUNT(*) FROM vps_current_statuses WHERE vps_id = #{@vps_id} AND is_running = 1"
             )
           ).to eq('0')

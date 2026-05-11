@@ -82,7 +82,7 @@ import ../../../make-test.nix (
           wait_for_vps_on_node(services, vps_id: vps.fetch('id'), node_id: node1_id, running: true)
 
           dataset = dataset_info(services, vps.fetch('id'))
-          history_before = services.mysql_scalar(sql: <<~SQL).to_i
+          history_before = services.mariadb_scalar(sql: <<~SQL).to_i
             SELECT current_history_id
             FROM datasets
             WHERE id = #{Integer(dataset.fetch('dataset_id'))}
@@ -127,7 +127,7 @@ import ../../../make-test.nix (
           wait_for_vps_on_node(services, vps_id: vps.fetch('id'), node_id: node1_id, running: true)
 
           snapshots_after = snapshot_rows_for_dip(services, dataset.fetch('dataset_in_pool_id'))
-          history_after = services.mysql_scalar(sql: <<~SQL).to_i
+          history_after = services.mariadb_scalar(sql: <<~SQL).to_i
             SELECT current_history_id
             FROM datasets
             WHERE id = #{Integer(dataset.fetch('dataset_id'))}

@@ -53,7 +53,7 @@ import ../../../make-test.nix (
         node_id:,
         user_id:
       )
-        services.mysql_raw(
+        services.mariadb_raw(
           sql: <<~SQL
             DELETE FROM resource_locks WHERE locked_by_type = 'TransactionChain'
               AND locked_by_id IN (#{release_chain_id}, #{resolve_chain_id}, #{retry_from_chain_id}, #{retry_all_chain_id});
@@ -64,7 +64,7 @@ import ../../../make-test.nix (
           SQL
         )
 
-        services.mysql_raw(
+        services.mariadb_raw(
           sql: <<~SQL
             INSERT INTO transaction_chains
               (id, name, type, state, size, progress, user_id, urgent_rollback, concern_type)
@@ -76,7 +76,7 @@ import ../../../make-test.nix (
           SQL
         )
 
-        services.mysql_raw(
+        services.mariadb_raw(
           sql: <<~SQL
             INSERT INTO resource_locks
               (resource, row_id, locked_by_type, locked_by_id)
@@ -85,7 +85,7 @@ import ../../../make-test.nix (
           SQL
         )
 
-        services.mysql_raw(
+        services.mariadb_raw(
           sql: <<~SQL
             INSERT INTO port_reservations
               (id, node_id, addr, port, transaction_chain_id)
@@ -94,7 +94,7 @@ import ../../../make-test.nix (
           SQL
         )
 
-        services.mysql_raw(
+        services.mariadb_raw(
           sql: <<~SQL
             INSERT INTO transactions
               (id, user_id, node_id, handle, depends_on_id, urgent, priority, status, done, input, transaction_chain_id, reversible, queue)
@@ -143,15 +143,15 @@ import ../../../make-test.nix (
           expect(output).to include('Released 1 ports')
 
           expect(
-            services.mysql_scalar(
+            services.mariadb_scalar(
               sql: "SELECT COUNT(*) FROM resource_locks WHERE locked_by_type = 'TransactionChain' AND locked_by_id = #{release_chain_id}"
             )
           ).to eq('0')
           expect(
-            services.mysql_scalar(sql: "SELECT transaction_chain_id IS NULL FROM port_reservations WHERE id = #{release_port_id}")
+            services.mariadb_scalar(sql: "SELECT transaction_chain_id IS NULL FROM port_reservations WHERE id = #{release_port_id}")
           ).to eq('1')
           expect(
-            services.mysql_scalar(sql: "SELECT addr IS NULL FROM port_reservations WHERE id = #{release_port_id}")
+            services.mariadb_scalar(sql: "SELECT addr IS NULL FROM port_reservations WHERE id = #{release_port_id}")
           ).to eq('1')
         end
 
@@ -159,7 +159,7 @@ import ../../../make-test.nix (
           node.succeeds("nodectl chain #{resolve_chain_id} resolve")
 
           expect(
-            services.mysql_scalar(sql: "SELECT state FROM transaction_chains WHERE id = #{resolve_chain_id}")
+            services.mariadb_scalar(sql: "SELECT state FROM transaction_chains WHERE id = #{resolve_chain_id}")
           ).to eq('6')
         end
 
@@ -167,7 +167,7 @@ import ../../../make-test.nix (
           node.succeeds("nodectl chain #{retry_from_chain_id} retry #{retry_from_tx_ids[1]}")
 
           expect(
-            services.mysql_rows(
+            services.mariadb_rows(
               sql: "SELECT id, done, status FROM transactions WHERE transaction_chain_id = #{retry_from_chain_id} ORDER BY id"
             )
           ).to eq([
@@ -176,7 +176,7 @@ import ../../../make-test.nix (
             [retry_from_tx_ids[2].to_s, '0', '0']
           ])
           expect(
-            services.mysql_rows(
+            services.mariadb_rows(
               sql: "SELECT state, progress FROM transaction_chains WHERE id = #{retry_from_chain_id}"
             ).first
           ).to eq(['1', '1'])
@@ -186,7 +186,7 @@ import ../../../make-test.nix (
           node.succeeds("nodectl chain #{retry_all_chain_id} retry")
 
           expect(
-            services.mysql_rows(
+            services.mariadb_rows(
               sql: "SELECT id, done, status FROM transactions WHERE transaction_chain_id = #{retry_all_chain_id} ORDER BY id"
             )
           ).to eq([
@@ -194,7 +194,7 @@ import ../../../make-test.nix (
             [retry_all_tx_ids[1].to_s, '0', '0']
           ])
           expect(
-            services.mysql_rows(
+            services.mariadb_rows(
               sql: "SELECT state, progress FROM transaction_chains WHERE id = #{retry_all_chain_id}"
             ).first
           ).to eq(['1', '0'])

@@ -98,7 +98,7 @@ import ../../../make-test.nix (
             expected_handles: [tx_types(services).fetch('storage_set_dataset')]
           )
 
-          dataset_row_after_expand = services.mysql_json_rows(sql: <<~SQL).first
+          dataset_row_after_expand = services.mariadb_json_rows(sql: <<~SQL).first
             SELECT JSON_OBJECT('dataset_expansion_id', dataset_expansion_id)
             FROM datasets
             WHERE id = #{Integer(info.fetch('dataset_id'))}
@@ -188,7 +188,7 @@ import ../../../make-test.nix (
             expected_handles: [tx_types(services).fetch('storage_set_dataset')]
           )
 
-          dataset_row_after_shrink = services.mysql_json_rows(sql: <<~SQL).first
+          dataset_row_after_shrink = services.mariadb_json_rows(sql: <<~SQL).first
             SELECT JSON_OBJECT('dataset_expansion_id', dataset_expansion_id)
             FROM datasets
             WHERE id = #{Integer(info.fetch('dataset_id'))}
