@@ -14,15 +14,24 @@ module TransactionChains
         lock(s.snapshot_in_pool)
 
         s.update!(confirmed: ::SnapshotInPoolInBranch.confirmed(:confirm_destroy))
-        s.snapshot_in_pool.update!(confirmed: ::SnapshotInPool.confirmed(:confirm_destroy))
-        cleanup = cleanup_snapshot?(s.snapshot_in_pool)
+        destroy_sip = last_live_branch_entry?(s.snapshot_in_pool)
 
-        destroy_snapshot(s.snapshot_in_pool) if cleanup
+        if destroy_sip
+          s.snapshot_in_pool.update!(confirmed: ::SnapshotInPool.confirmed(:confirm_destroy))
+          cleanup = cleanup_snapshot?(s.snapshot_in_pool)
+
+          destroy_snapshot(s.snapshot_in_pool) if cleanup
+        else
+          cleanup = false
+        end
 
         append_or_noop_t(Transactions::Storage::DestroySnapshot, args: [s.snapshot_in_pool, s.branch], noop: !@opts[:destroy]) do |t|
           t.destroy(s)
-          t.destroy(s.snapshot_in_pool)
-          t.destroy(s.snapshot_in_pool.snapshot) if cleanup
+
+          if destroy_sip
+            t.destroy(s.snapshot_in_pool)
+            t.destroy(s.snapshot_in_pool.snapshot) if cleanup
+          end
 
           if s.snapshot_in_pool_in_branch
             t.decrement(s.snapshot_in_pool_in_branch.snapshot_in_pool, :reference_count)
@@ -71,6 +80,10 @@ module TransactionChains
     end
 
     protected
+
+    def last_live_branch_entry?(snapshot_in_pool)
+      ::SnapshotInPoolInBranch.live.where(snapshot_in_pool_id: snapshot_in_pool.id).none?
+    end
 
     def cleanup_snapshot?(snapshot_in_pool)
       ::Snapshot.joins(:snapshot_in_pools)

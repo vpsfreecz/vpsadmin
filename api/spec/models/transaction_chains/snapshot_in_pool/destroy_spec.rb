@@ -68,6 +68,31 @@ RSpec.describe TransactionChains::SnapshotInPool::Destroy do
     expect(tree.reload.confirmed).to eq(:confirm_destroy)
   end
 
+  it 'keeps a shared SnapshotInPool while another live branch entry references it' do
+    backup_pool = create_pool!(node: SpecSeed.node, role: :backup)
+    dataset, backup = create_dataset_with_pool!(user: user, pool: backup_pool, name: "snap-destroy-#{SecureRandom.hex(4)}")
+    old_tree = create_tree!(dip: backup, index: 0, head: false)
+    old_branch = create_branch!(tree: old_tree, name: 'old', head: false)
+    new_tree = create_tree!(dip: backup, index: 1, head: true)
+    new_branch = create_branch!(tree: new_tree, name: 'new', head: true)
+    _, sip = create_snapshot!(dataset: dataset, dip: backup, name: 'snap-1')
+    old_entry = attach_snapshot_to_branch!(sip: sip, branch: old_branch)
+    new_entry = attach_snapshot_to_branch!(sip: sip, branch: new_branch)
+
+    chain, = described_class.fire(old_entry)
+
+    expect(tx_classes(chain)).to eq([
+                                      Transactions::Storage::DestroySnapshot,
+                                      Transactions::Storage::DestroyBranch,
+                                      Transactions::Storage::DestroyTree
+                                    ])
+    expect(old_entry.reload.confirmed).to eq(:confirm_destroy)
+    expect(new_entry.reload.confirmed).to eq(:confirmed)
+    expect(sip.reload.confirmed).to eq(:confirmed)
+    expect(confirmations_for(chain).map(&:class_name)).to include('SnapshotInPoolInBranch')
+    expect(confirmations_for(chain).map(&:class_name)).not_to include('SnapshotInPool')
+  end
+
   it 'nullifies SnapshotDownload references before destroying the snapshot' do
     pool = create_pool!(node: SpecSeed.node, role: :primary)
     dataset, dip = create_dataset_with_pool!(user: user, pool: pool, name: "snap-destroy-#{SecureRandom.hex(4)}")

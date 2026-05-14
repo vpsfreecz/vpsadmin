@@ -10,18 +10,22 @@ module TransactionChains
       @min = dataset_in_pool.min_snapshots
       @max = dataset_in_pool.max_snapshots
       @oldest = Time.now.localtime - dataset_in_pool.snapshot_max_age # in seconds
-      @count = dataset_in_pool.snapshot_in_pools.all.count
+
+      @count =
+        if dataset_in_pool.pool.role == 'backup'
+          live_branch_entries(dataset_in_pool).count
+        else
+          dataset_in_pool.snapshot_in_pools
+                         .where.not(confirmed: ::SnapshotInPool.confirmed(:confirm_destroy))
+                         .count
+        end
 
       return if @count <= @min
 
       if dataset_in_pool.pool.role == 'backup'
-
-        ::SnapshotInPoolInBranch.includes(
-          snapshot_in_pool: [:snapshot],
-          branch: [{ dataset_tree: :dataset_in_pool }]
-        ).where(
-          dataset_trees: { dataset_in_pool_id: dataset_in_pool.id }
-        ).order('snapshots.id').each do |s|
+        live_branch_entries(dataset_in_pool).includes(
+          snapshot_in_pool: [:snapshot]
+        ).order('snapshot_in_pools.snapshot_id').each do |s|
           next if s.snapshot_in_pool.reference_count > 0
 
           if destroy?(s.snapshot_in_pool)
@@ -73,9 +77,17 @@ module TransactionChains
     end
 
     def backup_history_preserved_if_source_snapshot_removed?(source_dip, backup_dip, snapshot_id)
-      newer_source_ids = source_dip.snapshot_in_pools.where('snapshot_id > ?', snapshot_id).select(:snapshot_id)
+      ::SnapshotInPoolInBranch.head_contains_newer_source_snapshot?(
+        backup_dip:,
+        source_dip:,
+        snapshot_id:
+      )
+    end
 
-      backup_dip.snapshot_in_pools.where(snapshot_id: newer_source_ids).exists?
+    def live_branch_entries(dataset_in_pool)
+      ::SnapshotInPoolInBranch.live.where(
+        dataset_trees: { dataset_in_pool_id: dataset_in_pool.id }
+      )
     end
   end
 end

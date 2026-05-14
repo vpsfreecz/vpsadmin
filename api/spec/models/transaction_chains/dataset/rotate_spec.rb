@@ -147,4 +147,33 @@ RSpec.describe TransactionChains::Dataset::Rotate do
     expect(sip2.reload.confirmed).to eq(:confirm_destroy)
     expect(sip3.reload.confirmed).to eq(:confirmed)
   end
+
+  it 'keeps source snapshots when newer backup copies exist only outside the head branch' do
+    primary_pool = create_pool!(node: SpecSeed.node, role: :primary)
+    backup_pool = create_pool!(node: SpecSeed.other_node, role: :backup)
+
+    dataset, primary = create_dataset_with_pool!(user: user, pool: primary_pool, name: "rotate-#{SecureRandom.hex(4)}")
+    backup = attach_dataset_to_pool!(dataset: dataset, pool: backup_pool)
+
+    snap1, sip1 = backdated_snapshot!(dataset: dataset, dip: primary, name: 'snap-1', days_ago: 3)
+    snap2, sip2 = backdated_snapshot!(dataset: dataset, dip: primary, name: 'snap-2', days_ago: 2)
+    snap3, sip3 = backdated_snapshot!(dataset: dataset, dip: primary, name: 'snap-3', days_ago: 1)
+
+    head_branch = create_branch!(tree: create_tree!(dip: backup, index: 0, head: true), name: 'head', head: true)
+    old_branch = create_branch!(tree: create_tree!(dip: backup, index: 1, head: false), name: 'old', head: false)
+
+    attach_snapshot_to_branch!(sip: mirror_snapshot!(snapshot: snap1, dip: backup), branch: head_branch)
+    attach_snapshot_to_branch!(sip: mirror_snapshot!(snapshot: snap2, dip: backup), branch: old_branch)
+    attach_snapshot_to_branch!(sip: mirror_snapshot!(snapshot: snap3, dip: backup), branch: old_branch)
+
+    primary.update!(min_snapshots: 1, max_snapshots: 1, snapshot_max_age: 0)
+
+    expect do
+      described_class.fire(primary)
+    end.to raise_error(RuntimeError, 'empty')
+
+    expect(sip1.reload.confirmed).to eq(:confirmed)
+    expect(sip2.reload.confirmed).to eq(:confirmed)
+    expect(sip3.reload.confirmed).to eq(:confirmed)
+  end
 end
