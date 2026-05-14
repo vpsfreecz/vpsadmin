@@ -22,9 +22,18 @@ module NodeCtld
       daemon.chain_blockers do |blockers|
         next unless blockers
 
-        log('Killing all subprocesses')
+        chain_id = @command&.chain_id
+        selected = if chain_id
+                     { chain_id => blockers[chain_id] || [] }
+                   else
+                     blockers
+                   end
 
-        blockers.each_value do |pids|
+        selected.each do |selected_chain_id, pids|
+          next if pids.empty?
+
+          log("Killing subprocesses for chain #{selected_chain_id}")
+
           pids.each do |pid|
             log("Sending SIGTERM to subprocess group #{pid}")
 
