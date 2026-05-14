@@ -138,6 +138,93 @@ import ../../../make-test.nix (
           expect(backup_names_after).to include(snap4.fetch('name'))
           expect(handles).not_to include(storage_types.fetch('create_tree'))
         end
+
+        it 'keeps a source snapshot when newer backup copies are only in a non-head tree' do
+          setup = create_remote_backup_dataset(
+            services,
+            primary_node: node1,
+            backup_node: node2,
+            admin_user_id: admin_user_id,
+            primary_node_id: node1_id,
+            backup_node_id: node2_id,
+            dataset_name: 'storage-source-rotation-nonhead',
+            primary_pool_fs: primary_pool_fs,
+            backup_pool_fs: backup_pool_fs
+          )
+
+          snap1 = create_and_backup_snapshot(
+            services,
+            admin_user_id: admin_user_id,
+            dataset_id: setup.fetch('dataset_id'),
+            src_dip_id: setup.fetch('src_dip_id'),
+            dst_dip_id: setup.fetch('dst_dip_id'),
+            label: 'source-rotation-nonhead-s1'
+          )
+          snap2 = create_snapshot(
+            services,
+            dataset_id: setup.fetch('dataset_id'),
+            dip_id: setup.fetch('src_dip_id'),
+            label: 'source-rotation-nonhead-s2'
+          )
+          snap3 = create_snapshot(
+            services,
+            dataset_id: setup.fetch('dataset_id'),
+            dip_id: setup.fetch('src_dip_id'),
+            label: 'source-rotation-nonhead-s3'
+          )
+
+          nonhead = services.api_ruby_json(code: <<~RUBY)
+            #{api_session_prelude(admin_user_id)}
+
+            dip = DatasetInPool.find(#{Integer(setup.fetch('dst_dip_id'))})
+            tree = DatasetTree.create!(
+              dataset_in_pool: dip,
+              index: dip.dataset_trees.maximum(:index).to_i + 1,
+              head: false,
+              confirmed: DatasetTree.confirmed(:confirmed)
+            )
+            branch = Branch.create!(
+              dataset_tree: tree,
+              name: 'nonhead',
+              index: 0,
+              head: false,
+              confirmed: Branch.confirmed(:confirmed)
+            )
+
+            [#{Integer(snap2.fetch('id'))}, #{Integer(snap3.fetch('id'))}].each do |snapshot_id|
+              sip = SnapshotInPool.create!(
+                snapshot_id: snapshot_id,
+                dataset_in_pool: dip,
+                confirmed: SnapshotInPool.confirmed(:confirmed)
+              )
+              SnapshotInPoolInBranch.create!(
+                snapshot_in_pool: sip,
+                branch: branch,
+                confirmed: SnapshotInPoolInBranch.confirmed(:confirmed)
+              )
+            end
+
+            puts JSON.dump(tree_index: tree.index)
+          RUBY
+
+          set_snapshot_retention(
+            services,
+            dip_id: setup.fetch('src_dip_id'),
+            min_snapshots: 1,
+            max_snapshots: 1,
+            snapshot_max_age: 0
+          )
+
+          rotation = rotate_dataset(
+            services,
+            admin_user_id: admin_user_id,
+            dip_id: setup.fetch('src_dip_id')
+          )
+          source_names = snapshot_rows_for_dip(services, setup.fetch('src_dip_id')).map { |row| row.fetch('name') }
+
+          expect(rotation.fetch('empty')).to eq(true)
+          expect(source_names).to include(snap1.fetch('name'))
+        end
       end
     '';
   }

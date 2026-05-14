@@ -111,10 +111,24 @@ import ../../../make-test.nix (
           ).to_i
           backup_names = snapshot_rows_for_dip(services, @setup.fetch('dst_dip_id')).map { |row| row.fetch('name') }
           entries = branch_entries_for_dip(services, @setup.fetch('dst_dip_id'))
+          sip_ids = snapshot_rows_for_dip(services, @setup.fetch('dst_dip_id')).map do |row|
+            row.fetch('snapshot_in_pool_id')
+          end
 
           expect(final_state).to eq(services.class::CHAIN_STATES[:done])
           expect(backup_names.count).to be < (count_before + 2)
           expect(backup_names).not_to include(topology.fetch('snapshots').fetch('s1').fetch('name'))
+
+          entries.each do |entry|
+            branch_path = branch_dataset_path(
+              backup_pool_fs,
+              @setup.fetch('dataset_full_name'),
+              entry
+            )
+
+            expect(sip_ids).to include(entry.fetch('snapshot_in_pool_id'))
+            expect(node2.zfs_exists?("#{branch_path}@#{entry.fetch('snapshot_name')}", type: 'snapshot', timeout: 30)).to be(true)
+          end
 
           entries.select { |row| row.fetch('reference_count') > 0 }.each do |entry|
             expect(backup_names).to include(entry.fetch('snapshot_name'))
