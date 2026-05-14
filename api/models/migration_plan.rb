@@ -11,14 +11,17 @@ class MigrationPlan < ApplicationRecord
     self.class.transaction(requires_new: true) do
       i = 0
 
-      vps_migrations.order('created_at').each do |m|
+      locks = resource_locks.to_a
+
+      vps_migrations.order(:created_at, :id).each do |m|
         chain, = TransactionChains::Vps::Migrate.chain_for(m.vps, m.dst_node).fire2(
           args: [m.vps, m.dst_node, {
             maintenance_window: m.maintenance_window,
             cleanup_data: m.cleanup_data,
             send_mail:,
             reason:
-          }]
+          }],
+          locks:
         )
 
         m.update!(

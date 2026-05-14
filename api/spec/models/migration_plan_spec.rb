@@ -75,6 +75,22 @@ RSpec.describe MigrationPlan do
       expect(plan.reload.state).to eq('running')
     end
 
+    it 'passes plan resource locks to started migrations' do
+      plan, = create_plan_with_migrations!(count: 1)
+      lock = SpecSeed.node.acquire_lock(plan)
+      captured_locks = []
+
+      allow(TransactionChains::Vps::Migrate).to receive(:chain_for).and_return(chain_class)
+      allow(chain_class).to receive(:fire2) do |**kwargs|
+        captured_locks << kwargs.fetch(:locks)
+        [build_active_chain!, nil]
+      end
+
+      plan.start!
+
+      expect(captured_locks).to eq([[lock]])
+    end
+
     it 'sends migration-plan mail when enabled' do
       plan, = create_plan_with_migrations!(count: 1, send_mail: true)
       stub_migration_chain!
