@@ -19,12 +19,26 @@ module Transactions::Storage
       ret[:from_snapshot] = dl.from_snapshot.name if dl.from_snapshot
 
       if dl.pool.role == 'backup'
-        in_branch = ::SnapshotInPoolInBranch.joins(
-          snapshot_in_pool: [:dataset_in_pool]
-        ).find_by!(
-          dataset_in_pools: { pool_id: dl.pool_id },
-          snapshot_in_pools: { snapshot_id: dl.snapshot_id }
+        dataset_in_pool = ::DatasetInPool.find_by!(
+          dataset: dl.snapshot.dataset,
+          pool_id: dl.pool_id
         )
+
+        in_branch =
+          if dl.from_snapshot
+            _base, target = ::SnapshotInPoolInBranch.find_pair_for_incremental!(
+              dataset_in_pool:,
+              snapshot: dl.snapshot,
+              from_snapshot: dl.from_snapshot
+            )
+            target
+
+          else
+            ::SnapshotInPoolInBranch.find_for_snapshot!(
+              dataset_in_pool:,
+              snapshot: dl.snapshot
+            )
+          end
 
         ret[:tree] = in_branch.branch.dataset_tree.full_name
         ret[:branch] = in_branch.branch.full_name

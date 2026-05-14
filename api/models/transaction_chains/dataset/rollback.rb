@@ -130,8 +130,10 @@ module TransactionChains
       backup_snap = snapshot.snapshot_in_pools.joins(dataset_in_pool: [:pool])
                             .where('pools.role = ?', ::Pool.roles[:backup]).take!
 
-      snap_in_branch = backup_snap.snapshot_in_pool_in_branches
-                                  .where.not(confirmed: ::SnapshotInPoolInBranch.confirmed(:confirm_destroy)).take!
+      snap_in_branch = ::SnapshotInPoolInBranch.find_for_snapshot!(
+        dataset_in_pool: backup_snap.dataset_in_pool,
+        snapshot:
+      )
       dst_node = dataset_in_pool.pool.node
       src_node = backup_snap.dataset_in_pool.pool.node
 
@@ -178,8 +180,10 @@ module TransactionChains
         lock(ds)
 
         snap_in_pool = snapshot.snapshot_in_pools.where(dataset_in_pool: ds).take!
-        snap_in_branch = snap_in_pool.snapshot_in_pool_in_branches
-                                     .where.not(confirmed: ::SnapshotInPoolInBranch.confirmed(:confirm_destroy)).take!
+        snap_in_branch = ::SnapshotInPoolInBranch.find_tip_for_snapshot!(
+          dataset_in_pool: ds,
+          snapshot:
+        )
         snap_tree = snap_in_branch.branch.dataset_tree
         head_tree = ds.dataset_trees.find_by(head: true)
         old_head = head_tree && head_tree.branches.find_by(head: true)

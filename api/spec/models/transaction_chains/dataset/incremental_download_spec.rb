@@ -72,6 +72,46 @@ RSpec.describe TransactionChains::Dataset::IncrementalDownload do
                                     ])
   end
 
+  it 'uses backup only when one live branch contains both incremental endpoints' do
+    dataset, primary_dip, backup_dip = create_dataset_pair!(
+      user: user,
+      pool: primary_pool,
+      backup_pool: backup_pool,
+      name: "inc-#{SecureRandom.hex(4)}"
+    )
+    old_branch = create_branch!(
+      tree: create_tree!(dip: backup_dip, index: 0, head: false),
+      name: 'old',
+      head: false
+    )
+    head_branch = create_branch!(
+      tree: create_tree!(dip: backup_dip, index: 1, head: true),
+      name: 'head',
+      head: true
+    )
+
+    from_snapshot, = create_snapshot!(dataset: dataset, dip: primary_dip, name: 'snap-1')
+    target_snapshot, = create_snapshot!(dataset: dataset, dip: primary_dip, name: 'snap-2')
+    attach_snapshot_to_branch!(
+      sip: mirror_snapshot!(snapshot: from_snapshot, dip: backup_dip),
+      branch: old_branch
+    )
+    attach_snapshot_to_branch!(
+      sip: mirror_snapshot!(snapshot: target_snapshot, dip: backup_dip),
+      branch: head_branch
+    )
+
+    chain, dl = described_class.fire(
+      target_snapshot,
+      format: :incremental_stream,
+      from_snapshot: from_snapshot,
+      send_mail: false
+    )
+
+    expect(dl.pool_id).to eq(primary_pool.id)
+    expect(tx_classes(chain)).to eq([Transactions::Storage::DownloadSnapshot])
+  end
+
   it 'raises when neither a common pool nor a backup base snapshot exists' do
     dataset, primary_dip, backup_dip = create_dataset_pair!(
       user: user,
@@ -89,7 +129,7 @@ RSpec.describe TransactionChains::Dataset::IncrementalDownload do
         from_snapshot: from_snapshot,
         send_mail: false
       )
-    end.to raise_error(ActiveRecord::RecordNotFound)
+    end.to raise_error(RuntimeError, 'no common snapshot history found for incremental download')
   end
 
   it 'includes both endpoints in the incremental filename' do

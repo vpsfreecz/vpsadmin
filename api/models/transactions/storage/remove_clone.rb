@@ -20,9 +20,9 @@ module Transactions::Storage
       }
 
       if cl.snapshot_in_pool.dataset_in_pool.pool.role == 'backup'
-        in_branch = ::SnapshotInPoolInBranch.joins(branch: [:dataset_tree]).find_by!(
-          dataset_trees: { dataset_in_pool_id: cl.snapshot_in_pool.dataset_in_pool_id },
-          snapshot_in_pool_id: cl.snapshot_in_pool_id
+        in_branch = ::SnapshotInPoolInBranch.find_for_snapshot!(
+          dataset_in_pool: cl.snapshot_in_pool.dataset_in_pool,
+          snapshot: cl.snapshot_in_pool.snapshot
         )
 
         ret[:dataset_tree] = in_branch.branch.dataset_tree.full_name

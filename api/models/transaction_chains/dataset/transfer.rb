@@ -12,7 +12,10 @@ module TransactionChains
 
       tree = nil
       branch = nil
-      dst_last_snapshot = dst_dataset_in_pool.snapshot_in_pools.all.order('snapshot_id DESC').take
+      dst_snapshots = dst_dataset_in_pool.snapshot_in_pools
+      dst_last_snapshot = dst_snapshots
+                          .where.not(confirmed: ::SnapshotInPool.confirmed(:confirm_destroy))
+                          .order('snapshot_id DESC').take
       dst_node = dst_dataset_in_pool.pool.node
       src_node = src_dataset_in_pool.pool.node
 
@@ -66,9 +69,10 @@ module TransactionChains
           branch = get_or_create_branch(tree)
 
           # select last snapshot from head branch
-          dst_last_snapshot = branch.snapshot_in_pool_in_branches
-                                    .joins(:snapshot_in_pool)
-                                    .order('snapshot_id DESC').take!.snapshot_in_pool
+          dst_last_snapshot = ::SnapshotInPoolInBranch.live
+                                                      .where(branch:)
+                                                      .order('snapshot_in_pools.snapshot_id DESC')
+                                                      .take!.snapshot_in_pool
 
           # dst_last_snapshot = SnapshotInPool
           #   .select('snapshot_in_pools.*')
@@ -147,7 +151,7 @@ module TransactionChains
 
       return false unless tree
 
-      ::SnapshotInPoolInBranch.joins(branch: [:dataset_tree])
+      ::SnapshotInPoolInBranch.live
                               .where(branches: { dataset_tree_id: tree.id }).any?
     end
 
