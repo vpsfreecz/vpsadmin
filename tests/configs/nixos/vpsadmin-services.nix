@@ -20,6 +20,7 @@ let
 
   seed = import ../../../api/db/seeds/test.nix;
   adminUser = seed.adminUser;
+  webuiOauth2Client = seed.webuiOauth2Client;
 
   cfg = config.vpsadmin.test;
 
@@ -136,6 +137,14 @@ let
     "webui"
   ];
 
+  loopbackHosts = [
+    "api.vpsadmin.test"
+    "console.vpsadmin.test"
+    "download.vpsadmin.test"
+    "webui.vpsadmin.test"
+    "varnish.vpsadmin.test"
+  ];
+
   webuiPort = 8134;
   socketNetwork = "${cfg.socketAddress}/24";
 
@@ -194,13 +203,7 @@ in
         }
       ];
       hosts = {
-        "127.0.0.1" = [
-          "api.vpsadmin.test"
-          "console.vpsadmin.test"
-          "download.vpsadmin.test"
-          "webui.vpsadmin.test"
-          "varnish.vpsadmin.test"
-        ];
+        "127.0.0.1" = loopbackHosts;
         "${cfg.socketAddress}" = [
           "vpsadmin-services"
           mailerNode.domain
@@ -280,6 +283,8 @@ in
             ../../../nixos/modules/nixos-modules.nix
           ];
 
+          networking.hosts."127.0.0.1" = loopbackHosts;
+
           time.timeZone = "UTC";
 
           services.nginx.defaultListen = [
@@ -302,6 +307,10 @@ in
               exportPublic = true;
               nasPublic = true;
               errorReporting = "E_ALL";
+              extraConfig = ''
+                define ('OAUTH2_CLIENT_ID', '${webuiOauth2Client.client_id}');
+                define ('OAUTH2_CLIENT_SECRET', '${webuiOauth2Client.client_secret}');
+              '';
             };
           };
 

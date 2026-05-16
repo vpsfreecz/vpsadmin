@@ -7,6 +7,14 @@ let
     email = "test-admin@example.test";
   };
 
+  webuiOauth2Client = {
+    name = "vpsAdmin test web UI";
+    client_id = "vpsadmin-webui-test";
+    client_secret = "testWebuiSecret";
+    client_secret_hash = "$2a$04$.CjIL4ngBsIDUHhlnpxt/efUr7asDojkCktOFYvhYqyzCPv5OnaM6";
+    redirect_uri = "http://webui.vpsadmin.test/?page=login&action=callback";
+  };
+
   transactionKey = {
     private = ''
       -----BEGIN PRIVATE KEY-----
@@ -337,6 +345,7 @@ in
     environment
     location
     mailerNode
+    webuiOauth2Client
     ;
 
   seed = [
@@ -443,6 +452,20 @@ in
           object_state = "active";
         }
       ];
+    }
+    {
+      model = "UserAccount";
+      records = [
+        {
+          user_id = adminUser.id;
+          monthly_payment = 0;
+          paid_until = null;
+        }
+      ];
+    }
+    {
+      model = "Oauth2Client";
+      records = [ (builtins.removeAttrs webuiOauth2Client [ "client_secret" ]) ];
     }
     {
       model = "DnsResolver";

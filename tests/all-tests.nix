@@ -138,4 +138,5 @@ testLib.makeTests [
   "v4/vps/replace-no-start"
   "v4/vps/replace-with-descendants-and-mounts"
   "vpsadmin/services-up"
+  "vpsadmin/webui"
 ]

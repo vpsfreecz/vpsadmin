@@ -2,7 +2,7 @@
 
 ## Project Structure & Module Organization
 - `api/`: Ruby 3.4 API with business logic, migrations in `db/migrate`, specs in `spec/`, plugins under `plugins/`.
-- `webui/`: PHP front end (Composer-managed) plus light RSpec checks in `spec/`; config samples near `config_cfg.php`.
+- `webui/`: PHP front end (Composer-managed); config samples near `config_cfg.php`.
 - `client/`, `nodectl*/`, `nodectld*/`, `libnodectld*/`: CLI tools and node daemons, each with its own `Gemfile`/`.rubocop.yml`.
 - `nixos/`, `packages/`: NixOS modules and Nix package definitions for deployments.
 - `doc/`: Architecture notes (`overview.mdwn`, `transactions.mdwn`) and operational docs.
@@ -10,7 +10,7 @@
 ## Build, Test, and Development Commands
 - Enter a dev shell with flakes: `nix develop` (or `nix develop .#vpsadmin`) for root actions, and `nix develop .#api` / `nix develop .#webui` / `nix develop .#client` / `nix develop .#console-router` / `nix develop .#nodectl` / `nix develop .#nodectld` / `nix develop .#libnodectld` for component scopes.
 - API: `cd api && bundle install && bundle exec rspec`; lint with `bundle exec rubocop`; local run via `bundle exec rackup -p 9292 config.ru`.
-- Web UI: `composer install --working-dir=webui`; tests with `cd webui && bundle exec rspec`.
+- Web UI: `composer install --working-dir=webui`; browser integration tests run with `./test-runner.sh test vpsadmin/webui`.
 - Nix builds: `nix-build packages -A <attr>` or `nix-build nixos -A <module>` for module outputs.
 
 ## Coding Style & Naming Conventions
