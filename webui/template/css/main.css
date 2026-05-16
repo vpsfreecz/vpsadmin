@@ -190,6 +190,42 @@ div.page_listing {text-align: center;}
 #vps_swap_preview td {vertical-align: top;}
 form[name="userns-map-entries"] input[type="text"] {text-align: right;}
 
+#dns-zone-name-servers {
+  width: 100%;
+  table-layout: fixed;
+}
+
+#dns-zone-name-servers th,
+#dns-zone-name-servers td {
+  vertical-align: top;
+}
+
+#dns-zone-name-servers td {
+  padding-top: 6px;
+  padding-bottom: 6px;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+#dns-zone-name-servers dl.inline {
+  margin: 0;
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: 2px 10px;
+}
+
+#dns-zone-name-servers th:empty {
+  width: 26px;
+}
+
+#dns-zone-name-servers .dns-zone-server-name {
+  font-weight: bold;
+  margin-bottom: 4px;
+}
+
+#dns-zone-name-servers .dns-zone-server-action {
+  text-align: center;
+}
+
 a.user-unpaid {color: #fff;}
 
 /* Dropdown menu */
