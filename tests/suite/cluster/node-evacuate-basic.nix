@@ -1,0 +1,162 @@
+import ../../make-test.nix (
+  { ... }@args:
+  let
+    seed = import ../../../api/db/seeds/test-2-node.nix;
+    common = import ../storage/remote-common.nix {
+      adminUserId = seed.adminUser.id;
+      node1Id = seed.nodes.node1.id;
+      node2Id = seed.nodes.node2.id;
+    };
+  in
+  {
+    name = "node-evacuate-basic";
+
+    description = ''
+      Evacuate a node with two running VPSes and verify the migration plan
+      completes, releases its lock, and moves both VPSes to the target node.
+    '';
+
+    tags = [
+      "ci"
+      "vpsadmin"
+      "cluster"
+    ];
+
+    machines = import ../../machines/cluster/2-node.nix args;
+
+    testScript = common + ''
+      def fail_with_migration_plan_debug(services, plan_id, reason)
+        snapshot = services.migration_plan_debug_snapshot(plan_id)
+        raise "#{reason}\n#{JSON.pretty_generate(snapshot)}"
+      end
+
+      def run_migration_plan_until_done(services, plan_id, timeout: 1800)
+        deadline = Time.now + timeout
+
+        loop do
+          remaining = deadline - Time.now
+          fail_with_migration_plan_debug(
+            services,
+            plan_id,
+            "Timed out waiting for migration plan #{plan_id} to finish"
+          ) if remaining <= 0
+
+          task_timeout = [[remaining.ceil, 1].max, 300].min
+
+          begin
+            services.run_vps_migration_task(timeout: task_timeout)
+          rescue OsVm::TimeoutError => e
+            fail_with_migration_plan_debug(
+              services,
+              plan_id,
+              "Timed out while running migration task for plan #{plan_id}: #{e.message}"
+            )
+          end
+
+          plan = services.migration_plan_row(plan_id)
+          return plan if plan.fetch('state') == 'done'
+
+          rows = services.vps_migration_rows(plan_id)
+          if %w[cancelled error].include?(plan.fetch('state')) ||
+             rows.any? { |row| %w[cancelled error].include?(row.fetch('state')) }
+            fail_with_migration_plan_debug(
+              services,
+              plan_id,
+              "Migration plan #{plan_id} reached non-success state"
+            )
+          end
+
+          sleep 1
+        end
+      end
+
+      def migration_plan_id(output)
+        output['migration_plan_id'] || output.dig('node', 'migration_plan_id') ||
+          output.dig('response', 'migration_plan_id')
+      end
+
+      describe 'node evacuation', order: :defined do
+        it 'migrates all VPSes off the source node' do
+          src_pool = create_pool(
+            services,
+            node_id: node1_id,
+            label: 'evacuate-src',
+            filesystem: primary_pool_fs,
+            role: 'hypervisor'
+          )
+          dst_pool = create_pool(
+            services,
+            node_id: node2_id,
+            label: 'evacuate-dst',
+            filesystem: 'tank/ct-evacuate-dst',
+            role: 'hypervisor'
+          )
+
+          wait_for_pool_online(services, src_pool.fetch('id'))
+          wait_for_pool_online(services, dst_pool.fetch('id'))
+          generate_migration_keys(services)
+
+          vpses = 2.times.map do |index|
+            vps = create_vps(
+              services,
+              admin_user_id: admin_user_id,
+              node_id: node1_id,
+              hostname: "evacuate-basic-#{index}",
+              start: false
+            )
+            wait_for_vps_on_node(services, vps_id: vps.fetch('id'), node_id: node1_id, running: false)
+            services.vpsadminctl.succeeds(args: ['vps', 'start', vps.fetch('id').to_s], timeout: 900)
+            wait_for_vps_on_node(services, vps_id: vps.fetch('id'), node_id: node1_id, running: true)
+            write_vps_migration_proof(node1, vps_id: vps.fetch('id'))
+
+            info = dataset_info(services, vps.fetch('id'))
+            dataset_path = find_dataset_path_on_node(node1, info.fetch('dataset_full_name'))
+            write_dataset_text(
+              node1,
+              dataset_path: dataset_path,
+              relative_path: "root/evacuate-#{index}.txt",
+              content: "evacuation sentinel #{index}\n"
+            )
+
+            vps.merge('dataset_info' => info, 'sentinel_path' => "root/evacuate-#{index}.txt")
+          end
+
+          _, output = services.vpsadminctl.succeeds(
+            args: ['node', 'evacuate', node1_id.to_s],
+            parameters: {
+              dst_node: node2_id,
+              concurrency: 2,
+              maintenance_window: false,
+              cleanup_data: true,
+              send_mail: false
+            },
+            timeout: 900
+          )
+          plan_id = migration_plan_id(output)
+
+          plan = run_migration_plan_until_done(services, plan_id)
+          expect(plan.fetch('state')).to eq('done')
+          expect(plan.fetch('lock_count')).to eq(0)
+
+          rows = services.vps_migration_rows(plan_id)
+          expect(rows.map { |row| row.fetch('state') }).to all(eq('done'))
+
+          vpses.each_with_index do |vps, index|
+            wait_for_vps_on_node(services, vps_id: vps.fetch('id'), node_id: node2_id, running: true)
+            expect_vps_migration_proof(node2, vps_id: vps.fetch('id'))
+            expect_vps_container_absent(node1, vps_id: vps.fetch('id'))
+            dst_dataset_path = find_dataset_path_on_node(
+              node2,
+              vps.fetch('dataset_info').fetch('dataset_full_name')
+            )
+            expect(read_dataset_text(
+              node2,
+              dataset_path: dst_dataset_path,
+              relative_path: vps.fetch('sentinel_path')
+            )).to include("evacuation sentinel #{index}")
+          end
+        end
+      end
+    '';
+  }
+)

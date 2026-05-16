@@ -7,8 +7,8 @@ vpsadminos checkout is required.
 
 ## Running tests
 
-- Use `./test-runner.sh ls` (list tests), `./test-runner.sh test vpsadmin/services-up`
-  for the service smoke test, or `./test-runner.sh test vpsadmin/webui` for the
+- Use `./test-runner.sh ls` (list tests), `./test-runner.sh test services-up`
+  for the service smoke test, or `./test-runner.sh test webui` for the
   Playwright browser test.
 - The runner supports the usual flags from vpsAdminOS; run
   `./test-runner.sh --help` for details.
@@ -28,9 +28,9 @@ vpsadminos checkout is required.
     automatically;
   - configures RabbitMQ/Redis with simple test credentials stored under
     `/etc/vpsadmin-test/`.
-- `tests/suite/vpsadmin/services-up.nix` boots the service VM and asserts core
+- `tests/suite/services-up.nix` boots the service VM and asserts core
   units start, migrations ran (`users` table exists) and key ports respond.
-- `tests/suite/vpsadmin/webui.nix` boots the same service VM and uses Playwright
+- `tests/suite/webui.nix` boots the same service VM and uses Playwright
   to verify the OAuth login/logout flow through the PHP web UI.
 
 ## Cluster definitions
@@ -41,7 +41,7 @@ vpsadminos checkout is required.
 - Cluster seed files such as `api/db/seeds/test-1-node.nix` call
   `mkClusterSeed` with `nodeRefs` to pick which predefined nodes to include;
   Node and PortReservation seed data are generated for the chosen nodes.
-- Machine definitions in `tests/machines/v4/cluster/*.nix` import the same
+- Machine definitions in `tests/machines/cluster/*.nix` import the same
   cluster seed and pass `clusterSeed.nodes` into `mk-cluster.nix`, so adding a
   new cluster only requires a thin wrapper that lists the nodes to include.
 
