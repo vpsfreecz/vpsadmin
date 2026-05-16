@@ -225,47 +225,67 @@ function dns_zone_show($id)
         'meta' => ['includes' => 'dns_server'],
     ]);
 
-    $nameServerColumns = 2;
+    if (!isAdmin() && $zone->source == 'internal_source') {
+        $xtpl->table_add_category(_('Server'));
+        $xtpl->table_add_category(_('IPv4 address'));
+        $xtpl->table_add_category(_('IPv6 address'));
+        $xtpl->table_add_category(_('Serial'));
+        $xtpl->table_add_category(_('Last check'));
 
-    $xtpl->table_add_category(_('Server'));
-    $xtpl->table_add_category(_('Zone state'));
+        foreach ($serverZones as $sz) {
+            $xtpl->table_td(h($sz->dns_server->name));
+            $xtpl->table_td($sz->dns_server->ipv4_addr ? h($sz->dns_server->ipv4_addr) : '-');
+            $xtpl->table_td($sz->dns_server->ipv6_addr ? h($sz->dns_server->ipv6_addr) : '-');
+            $xtpl->table_td(is_null($sz->serial) ? '-' : h($sz->serial));
+            $xtpl->table_td($sz->last_check_at ? tolocaltz($sz->last_check_at) : '-');
+            $xtpl->table_tr();
+        }
 
-    if ($zone->source == 'external_source') {
-        $xtpl->table_add_category(_('Last transfer'));
-        $nameServerColumns += 1;
-    }
+        $xtpl->table_out();
+    } else {
+        $nameServerColumns = 2;
+        $showTransferStatus = $zone->source == 'external_source' || isAdmin();
 
-    if (isAdmin()) {
-        $xtpl->table_add_category('');
-        $nameServerColumns += 1;
-    }
+        $xtpl->table_add_category(_('Server'));
+        $xtpl->table_add_category(_('Zone state'));
 
-    foreach ($serverZones as $sz) {
-        $xtpl->table_td(dnsServerZoneServerInfo($sz), false, false, 1, 1, 'top');
-        $xtpl->table_td(dnsServerZoneState($sz), false, false, 1, 1, 'top');
-
-        if ($zone->source == 'external_source') {
-            $xtpl->table_td(dnsTransferStatus($zone, $sz), false, false, 1, 1, 'top');
+        if ($showTransferStatus) {
+            $xtpl->table_add_category(_('Last transfer'));
+            $nameServerColumns += 1;
         }
 
         if (isAdmin()) {
-            $xtpl->table_td('<div class="dns-zone-server-action"><a href="?page=dns&action=server_zone_delete&id=' . $zone->id . '&server_zone=' . $sz->id . '&t=' . csrf_token() . '" onclick="return confirm(\'' . _('Do you really wish to this server?') . '\');"><img src="template/icons/vps_delete.png" alt="' . _('Remove from server') . '" title="' . _('Remove from server') . '"></a></div>', false, false, 1, 1, 'top');
-        };
+            $xtpl->table_add_category('');
+            $nameServerColumns += 1;
+        }
 
-        $xtpl->table_tr();
+        foreach ($serverZones as $sz) {
+            $xtpl->table_td(dnsServerZoneServerInfo($sz), false, false, 1, 1, 'top');
+            $xtpl->table_td(dnsServerZoneState($sz), false, false, 1, 1, 'top');
+
+            if ($showTransferStatus) {
+                $xtpl->table_td(dnsTransferStatus($zone, $sz), false, false, 1, 1, 'top');
+            }
+
+            if (isAdmin()) {
+                $xtpl->table_td('<div class="dns-zone-server-action"><a href="?page=dns&action=server_zone_delete&id=' . $zone->id . '&server_zone=' . $sz->id . '&t=' . csrf_token() . '" onclick="return confirm(\'' . _('Do you really wish to this server?') . '\');"><img src="template/icons/vps_delete.png" alt="' . _('Remove from server') . '" title="' . _('Remove from server') . '"></a></div>', false, false, 1, 1, 'top');
+            };
+
+            $xtpl->table_tr();
+        }
+
+        if (isAdmin()) {
+            $xtpl->table_td(
+                '<a href="?page=dns&action=server_zone_new&id=' . $zone->id . '">' . _('Add server') . '</a>',
+                false,
+                true,
+                $nameServerColumns
+            );
+            $xtpl->table_tr();
+        }
+
+        $xtpl->table_out('dns-zone-name-servers');
     }
-
-    if (isAdmin()) {
-        $xtpl->table_td(
-            '<a href="?page=dns&action=server_zone_new&id=' . $zone->id . '">' . _('Add server') . '</a>',
-            false,
-            true,
-            $nameServerColumns
-        );
-        $xtpl->table_tr();
-    }
-
-    $xtpl->table_out('dns-zone-name-servers');
 
     $xtpl->table_title($zone->source == 'internal_source' ? _('Secondary servers') : _('Primary servers'));
 
@@ -1596,7 +1616,7 @@ function dnsServerZoneDefinitionList($items)
 
 function dnsTransferStatus($zone, $serverZone)
 {
-    if ($zone->source != 'external_source') {
+    if (!dnsServerZoneShowsTransferStatus($zone, $serverZone)) {
         return '-';
     }
 
@@ -1614,6 +1634,17 @@ function dnsTransferStatus($zone, $serverZone)
         [_('Primary'), $serverZone->last_transfer_primary_addr ? h($serverZone->last_transfer_primary_addr) : '-'],
         [_('Reason'), $serverZone->last_transfer_reason ? '<strong>' . h($serverZone->last_transfer_reason) . '</strong>' : '-'],
     ]);
+}
+
+function dnsServerZoneShowsTransferStatus($zone, $serverZone)
+{
+    if ($zone->source == 'external_source') {
+        return true;
+    }
+
+    return isAdmin()
+        && $zone->source == 'internal_source'
+        && ($serverZone->type ?? null) == 'secondary_type';
 }
 
 function dnsTransferStatusLabel($status)
