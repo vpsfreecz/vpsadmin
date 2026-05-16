@@ -201,6 +201,14 @@ function getSelfUri()
 
     $ret .= '://';
 
+    if (isset($_SERVER['HTTP_X_FORWARDED_HOST']) && $_SERVER['HTTP_X_FORWARDED_HOST']) {
+        return $ret . trim(explode(',', $_SERVER['HTTP_X_FORWARDED_HOST'])[0]);
+    }
+
+    if (isset($_SERVER['HTTP_HOST']) && $_SERVER['HTTP_HOST']) {
+        return $ret . $_SERVER['HTTP_HOST'];
+    }
+
     if ($_SERVER['SERVER_PORT'] != '80') {
         $ret .= $_SERVER['SERVER_NAME'] . ':' . $_SERVER['SERVER_PORT'];
     } else {
