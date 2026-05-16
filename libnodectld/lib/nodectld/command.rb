@@ -8,6 +8,8 @@ module NodeCtld
     include Utils::Compat
     include OsCtl::Lib::Utils::Log
 
+    FAILURE_LOG_ERROR_BYTES = 4096
+
     attr_reader :trans
 
     @@handlers = {}
@@ -424,7 +426,58 @@ module NodeCtld
 
     def record_output(direction, output = {}, status: @status)
       @outputs[direction.to_s] ||= {}
-      @outputs[direction.to_s].merge!(with_status(output, status))
+      formatted_output = with_status(output, status)
+      @outputs[direction.to_s].merge!(formatted_output)
+      log_failure_output(direction, formatted_output)
+    end
+
+    def log_failure_output(direction, output)
+      return unless output['status'] == 'failed'
+
+      log(
+        :error,
+        failure_log_type(direction),
+        failure_log_message(output)
+      )
+    end
+
+    def failure_log_type(direction)
+      parts = [
+        "chain=#{chain_id}",
+        "trans=#{id}",
+        "direction=#{direction}",
+        "handle=#{type}"
+      ]
+      klass = @current_klass || handler
+      parts << "handler=#{klass}" if klass
+      parts.join(',')
+    end
+
+    def failure_log_message(output)
+      parts = ['Transaction failed']
+      parts << "cmd=#{log_value(output['cmd'])}" if output.has_key?('cmd')
+      if output.has_key?('exitstatus')
+        parts << "exitstatus=#{log_value(output['exitstatus'])}"
+      end
+      if output.has_key?('error')
+        parts << "error=#{log_value(output['error'], max_bytes: FAILURE_LOG_ERROR_BYTES)}"
+      end
+      parts.join(' ')
+    end
+
+    def log_value(value, max_bytes: nil)
+      ret = value.to_s.encode(
+        Encoding::UTF_8,
+        invalid: :replace,
+        undef: :replace,
+        replace: '?'
+      ).gsub(/[[:space:]]+/, ' ').strip
+
+      if max_bytes && ret.bytesize > max_bytes
+        "#{ret.byteslice(0, max_bytes).scrub('?')}..."
+      else
+        ret
+      end
     end
 
     def output_json(direction = nil, output = {}, status: :failed)
@@ -501,7 +554,6 @@ module NodeCtld
           direction,
           @output.merge(output_delta(handler_output_before, @cmd.output))
         )
-        p @output
 
         if m == :exec
           handle_exec_failure(klass)

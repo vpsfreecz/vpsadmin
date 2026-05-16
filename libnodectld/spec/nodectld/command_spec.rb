@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'spec_helper'
+require 'stringio'
 require 'nodectld/transaction_verifier'
 require 'nodectld/confirmations'
 require 'nodectld/command'
@@ -40,6 +41,19 @@ RSpec.describe NodeCtld::Command do
 
   def direction_output(tx_id, direction)
     transaction_output(tx_id).fetch(direction.to_s)
+  end
+
+  def capture_logs
+    log_io = StringIO.new
+    OsCtl::Lib::Logger.setup(:io, io: log_io)
+    yield
+    log_io.string
+  ensure
+    OsCtl::Lib::Logger.setup(:none)
+  end
+
+  def expect_log_to_include(log, *parts)
+    parts.each { |part| expect(log).to include(part) }
   end
 
   it 'persists an unsupported handle error' do
@@ -841,5 +855,145 @@ RSpec.describe NodeCtld::Command do
         chain_id
       )
     ).to eq(1)
+  end
+
+  describe 'failure logging' do
+    it 'logs direct command failures with transaction context' do
+      chain_id = insert_chain
+      tx_id = insert_transaction(
+        transaction_chain_id: chain_id,
+        handle: NodeCtldSpec::TestHandles::FAIL_EXEC,
+        reversible: NodeCtldSpec::TxState::TX_NOT_REVERSIBLE
+      )
+
+      log = capture_logs { execute_and_save(tx_id) }
+
+      expect_log_to_include(
+        log,
+        "chain=#{chain_id}",
+        "trans=#{tx_id}",
+        'direction=execute',
+        "handle=#{NodeCtldSpec::TestHandles::FAIL_EXEC}",
+        'handler=NodeCtldSpec::TestHandlers::FailExec',
+        'Transaction failed',
+        'cmd=spec-fail-exec',
+        'exitstatus=23',
+        'error=exec failed'
+      )
+    end
+
+    it 'logs rollback failures with rollback direction' do
+      chain_id = insert_chain(
+        state: NodeCtldSpec::TxState::CHAIN_ROLLBACKING,
+        size: 1,
+        progress: 0
+      )
+      tx_id = insert_transaction(
+        transaction_chain_id: chain_id,
+        handle: NodeCtldSpec::TestHandles::FAIL_ROLLBACK,
+        reversible: NodeCtldSpec::TxState::TX_REVERSIBLE
+      )
+
+      log = capture_logs { execute_and_save(tx_id) }
+
+      expect_log_to_include(
+        log,
+        "chain=#{chain_id}",
+        "trans=#{tx_id}",
+        'direction=rollback',
+        'handler=NodeCtldSpec::TestHandlers::FailRollback',
+        'cmd=spec-fail-rollback',
+        'exitstatus=42',
+        'error=rollback failed'
+      )
+    end
+
+    it 'logs validation failures without an exception object' do
+      chain_id = insert_chain
+      tx_id = insert_transaction(transaction_chain_id: chain_id, handle: 123_456)
+
+      log = capture_logs { execute_and_save(tx_id) }
+
+      expect_log_to_include(
+        log,
+        "chain=#{chain_id}",
+        "trans=#{tx_id}",
+        'direction=execute',
+        'handle=123456',
+        'Transaction failed',
+        'error=Unsupported command'
+      )
+    end
+
+    it 'logs hard kills' do
+      chain_id = insert_chain
+      tx_id = insert_transaction(
+        transaction_chain_id: chain_id,
+        handle: NodeCtldSpec::TestHandles::OK,
+        reversible: NodeCtldSpec::TxState::TX_NOT_REVERSIBLE
+      )
+      cmd = build_command(tx_id)
+      handler = NodeCtldSpec::TestHandlers::Ok.new(cmd, {})
+
+      cmd.instance_variable_set(:@cmd, handler)
+      cmd.instance_variable_set(:@current_method, :exec)
+      cmd.instance_variable_set(
+        :@current_klass,
+        NodeCtldSpec::TestHandlers::Ok.name
+      )
+
+      log = capture_logs do
+        cmd.killed(true)
+        cmd.save(shared_db)
+      end
+
+      expect_log_to_include(
+        log,
+        "chain=#{chain_id}",
+        "trans=#{tx_id}",
+        'direction=execute',
+        'handler=NodeCtldSpec::TestHandlers::Ok',
+        'error=Killed'
+      )
+    end
+
+    it 'does not log follower dependency failures' do
+      chain_id = insert_chain(size: 2, progress: 0)
+      tx1 = insert_transaction(
+        transaction_chain_id: chain_id,
+        handle: NodeCtldSpec::TestHandles::FAIL_EXEC,
+        reversible: NodeCtldSpec::TxState::TX_NOT_REVERSIBLE
+      )
+      insert_transaction(
+        transaction_chain_id: chain_id,
+        handle: NodeCtldSpec::TestHandles::OK,
+        depends_on_id: tx1
+      )
+
+      log = capture_logs { execute_and_save(tx1) }
+
+      expect(log).to include('error=exec failed')
+      expect(log).not_to include('Dependency failed')
+    end
+
+    it 'does not log successful or warning transactions as failures' do
+      chain_id = insert_chain(size: 2, progress: 0)
+      tx1 = insert_transaction(
+        transaction_chain_id: chain_id,
+        handle: NodeCtldSpec::TestHandles::OK
+      )
+      tx2 = insert_transaction(
+        transaction_chain_id: chain_id,
+        handle: NodeCtldSpec::TestHandles::WARNING,
+        depends_on_id: tx1
+      )
+
+      log = capture_logs do
+        execute_and_save(tx1)
+        execute_and_save(tx2)
+      end
+
+      expect(log).not_to include('Transaction failed')
+    end
   end
 end
