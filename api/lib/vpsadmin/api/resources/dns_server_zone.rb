@@ -28,6 +28,42 @@ module VpsAdmin::API::Resources
       datetime :updated_at
     end
 
+    class MaskedTransferState
+      MASKED = %i[
+        last_transfer_at
+        last_transfer_status
+        last_transfer_reason_code
+        last_transfer_reason
+        last_transfer_primary_addr
+        last_transfer_serial
+        last_transfer_log_id
+      ].freeze
+
+      def initialize(server_zone)
+        @server_zone = server_zone
+      end
+
+      def respond_to_missing?(name, include_private = false)
+        return false if MASKED.include?(name.to_sym)
+
+        @server_zone.respond_to?(name, include_private)
+      end
+
+      def method_missing(name, *, &)
+        return super if MASKED.include?(name.to_sym)
+
+        @server_zone.public_send(name, *, &)
+      end
+    end
+
+    def self.mask_transfer_state(server_zone, user)
+      if user.role != :admin && server_zone.dns_zone.internal_source?
+        MaskedTransferState.new(server_zone)
+      else
+        server_zone
+      end
+    end
+
     class Index < HaveAPI::Actions::Default::Index
       desc 'List DNS zones on servers'
 
@@ -60,7 +96,10 @@ module VpsAdmin::API::Resources
       end
 
       def exec
-        with_pagination(with_includes(query))
+        q = with_pagination(with_includes(query))
+        return q if current_user.role == :admin
+
+        q.map { |server_zone| self.class.resource.mask_transfer_state(server_zone, current_user) }
       end
     end
 
@@ -82,7 +121,7 @@ module VpsAdmin::API::Resources
       end
 
       def exec
-        @server_zone
+        self.class.resource.mask_transfer_state(@server_zone, current_user)
       end
     end
 
@@ -175,7 +214,7 @@ module VpsAdmin::API::Resources
         authorize do |u|
           allow if u.role == :admin
           restrict dns_server_zones: {
-            dns_zones: { user_id: u.id },
+            dns_zones: { user_id: u.id, zone_source: 'external_source' },
             dns_servers: { hidden: false }
           }
           output blacklist: %i[raw_message source_cursor event_key]
@@ -196,6 +235,19 @@ module VpsAdmin::API::Resources
 
         def count
           query.count
+        end
+
+        def prepare
+          q = ::DnsServerZone.joins(:dns_zone, :dns_server).where(id: params[:dns_server_zone_id])
+
+          if current_user.role != :admin
+            q = q.where(
+              dns_zones: { user_id: current_user.id, zone_source: 'external_source' },
+              dns_servers: { hidden: false }
+            )
+          end
+
+          @server_zone = q.take!
         end
 
         def exec
@@ -220,7 +272,7 @@ module VpsAdmin::API::Resources
         authorize do |u|
           allow if u.role == :admin
           restrict dns_server_zones: {
-            dns_zones: { user_id: u.id },
+            dns_zones: { user_id: u.id, zone_source: 'external_source' },
             dns_servers: { hidden: false }
           }
           output blacklist: %i[raw_message source_cursor event_key]

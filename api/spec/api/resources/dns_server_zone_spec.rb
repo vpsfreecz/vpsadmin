@@ -66,6 +66,18 @@ RSpec.describe 'VpsAdmin::API::Resources::DnsServerZone' do
       json['response']
   end
 
+  def transfer_field_keys
+    %w[
+      last_transfer_at
+      last_transfer_status
+      last_transfer_reason_code
+      last_transfer_reason
+      last_transfer_primary_addr
+      last_transfer_serial
+      last_transfer_log_id
+    ]
+  end
+
   def errors
     json.dig('response', 'errors') || json['errors'] || {}
   end
@@ -140,9 +152,30 @@ RSpec.describe 'VpsAdmin::API::Resources::DnsServerZone' do
     )
   end
 
+  def set_last_transfer!(server_zone, log)
+    server_zone.update!(
+      last_transfer_log: log,
+      last_transfer_at: log.event_at,
+      last_transfer_status: log.status,
+      last_transfer_reason_code: log.reason_code,
+      last_transfer_reason: log.reason,
+      last_transfer_primary_addr: log.primary_addr,
+      last_transfer_serial: log.serial
+    )
+  end
+
   let!(:server_visible) do
     create_server!(
       name: "spec-dns-#{SecureRandom.hex(4)}",
+      node: SpecSeed.node,
+      hidden: false,
+      enable_user_dns_zones: true
+    )
+  end
+
+  let!(:server_secondary_visible) do
+    create_server!(
+      name: "spec-dns-secondary-#{SecureRandom.hex(4)}",
       node: SpecSeed.node,
       hidden: false,
       enable_user_dns_zones: true
@@ -199,6 +232,14 @@ RSpec.describe 'VpsAdmin::API::Resources::DnsServerZone' do
       dns_server: server_visible,
       dns_zone: zone_user_internal,
       zone_type: :primary_type
+    )
+  end
+
+  let!(:sz_user_internal_secondary_visible) do
+    create_server_zone!(
+      dns_server: server_secondary_visible,
+      dns_zone: zone_user_internal,
+      zone_type: :secondary_type
     )
   end
 
@@ -352,6 +393,35 @@ RSpec.describe 'VpsAdmin::API::Resources::DnsServerZone' do
       expect(json['status']).to be(false)
       expect(errors.keys.map(&:to_s)).to include('type')
     end
+
+    it 'hides internal transfer status fields from users only' do
+      internal_log = create_transfer_log!(server_zone: sz_user_internal_secondary_visible)
+      external_log = create_transfer_log!(server_zone: sz_user_external_visible)
+      set_last_transfer!(sz_user_internal_secondary_visible, internal_log)
+      set_last_transfer!(sz_user_external_visible, external_log)
+
+      as(SpecSeed.user) { json_get index_path }
+
+      expect_status(200)
+      internal_row = server_zones.find { |row| row['id'] == sz_user_internal_secondary_visible.id }
+      external_row = server_zones.find { |row| row['id'] == sz_user_external_visible.id }
+
+      expect(internal_row.keys).not_to include(*transfer_field_keys)
+      expect(external_row).to include(
+        'last_transfer_status' => 'failed',
+        'last_transfer_reason_code' => 'refused',
+        'last_transfer_log_id' => external_log.id
+      )
+
+      as(SpecSeed.admin) { json_get index_path }
+
+      admin_row = server_zones.find { |row| row['id'] == sz_user_internal_secondary_visible.id }
+      expect(admin_row).to include(
+        'last_transfer_status' => 'failed',
+        'last_transfer_reason_code' => 'refused',
+        'last_transfer_log_id' => internal_log.id
+      )
+    end
   end
 
   describe 'Show' do
@@ -402,14 +472,7 @@ RSpec.describe 'VpsAdmin::API::Resources::DnsServerZone' do
 
     it 'shows the latest transfer status fields' do
       log = create_transfer_log!(server_zone: sz_user_external_visible)
-      sz_user_external_visible.update!(
-        last_transfer_log: log,
-        last_transfer_at: log.event_at,
-        last_transfer_status: log.status,
-        last_transfer_reason_code: log.reason_code,
-        last_transfer_reason: log.reason,
-        last_transfer_primary_addr: log.primary_addr
-      )
+      set_last_transfer!(sz_user_external_visible, log)
 
       as(SpecSeed.user) { json_get show_path(sz_user_external_visible.id) }
 
@@ -419,6 +482,25 @@ RSpec.describe 'VpsAdmin::API::Resources::DnsServerZone' do
         'last_transfer_reason_code' => 'refused',
         'last_transfer_reason' => 'The primary DNS server refused the transfer',
         'last_transfer_primary_addr' => '192.0.2.1',
+        'last_transfer_log_id' => log.id
+      )
+    end
+
+    it 'hides internal transfer status fields from users only' do
+      log = create_transfer_log!(server_zone: sz_user_internal_secondary_visible)
+      set_last_transfer!(sz_user_internal_secondary_visible, log)
+
+      as(SpecSeed.user) { json_get show_path(sz_user_internal_secondary_visible.id) }
+
+      expect_status(200)
+      expect(server_zone_obj.keys).not_to include(*transfer_field_keys)
+
+      as(SpecSeed.admin) { json_get show_path(sz_user_internal_secondary_visible.id) }
+
+      expect_status(200)
+      expect(server_zone_obj).to include(
+        'last_transfer_status' => 'failed',
+        'last_transfer_reason_code' => 'refused',
         'last_transfer_log_id' => log.id
       )
     end
@@ -453,6 +535,10 @@ RSpec.describe 'VpsAdmin::API::Resources::DnsServerZone' do
       create_transfer_log!(server_zone: sz_support_visible)
     end
 
+    let!(:internal_log) do
+      create_transfer_log!(server_zone: sz_user_internal_secondary_visible)
+    end
+
     it 'rejects unauthenticated access' do
       json_get transfer_log_index_path(sz_user_external_visible.id)
 
@@ -473,6 +559,20 @@ RSpec.describe 'VpsAdmin::API::Resources::DnsServerZone' do
       expect(row).not_to include('raw_message', 'source_cursor', 'event_key')
     end
 
+    it 'does not expose internal zone transfer logs to users' do
+      as(SpecSeed.user) { json_get transfer_log_index_path(sz_user_internal_secondary_visible.id) }
+
+      expect_status(404)
+      expect(json['status']).to be(false)
+
+      as(SpecSeed.user) do
+        json_get transfer_log_show_path(sz_user_internal_secondary_visible.id, internal_log.id)
+      end
+
+      expect_status(404)
+      expect(json['status']).to be(false)
+    end
+
     it 'allows admins to see raw fields' do
       as(SpecSeed.admin) { json_get transfer_log_show_path(sz_user_external_visible.id, user_log.id) }
 
@@ -482,6 +582,25 @@ RSpec.describe 'VpsAdmin::API::Resources::DnsServerZone' do
         'raw_message' => 'raw bind message',
         'source_cursor' => user_log.source_cursor,
         'event_key' => user_log.event_key
+      )
+    end
+
+    it 'allows admins to see internal zone transfer logs' do
+      as(SpecSeed.admin) { json_get transfer_log_index_path(sz_user_internal_secondary_visible.id) }
+
+      expect_status(200)
+      expect(transfer_logs.map { |row| row['id'] }).to include(internal_log.id)
+
+      as(SpecSeed.admin) do
+        json_get transfer_log_show_path(sz_user_internal_secondary_visible.id, internal_log.id)
+      end
+
+      expect_status(200)
+      expect(transfer_log_obj).to include(
+        'id' => internal_log.id,
+        'raw_message' => 'raw bind message',
+        'source_cursor' => internal_log.source_cursor,
+        'event_key' => internal_log.event_key
       )
     end
 
