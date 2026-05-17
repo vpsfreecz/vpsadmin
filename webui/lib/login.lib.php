@@ -163,7 +163,7 @@ function regainAdminUser()
 
     $admin = $_SESSION["original_admin"];
 
-    if ($_SESSION["borrowed_token"]) {
+    if ($_SESSION["borrowed_token"] ?? false) {
         try {
             $api->logout();
             $api->authenticate('oauth2', ['access_token' => $admin['access_token']]);
