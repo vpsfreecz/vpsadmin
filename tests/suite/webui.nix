@@ -157,6 +157,34 @@ import ../make-test.nix (
         end
       end
 
+      editable_userns_map = UserNamespaceMap
+        .where(user_namespace: userns)
+        .where('label LIKE ?', 'Webui Editable Browser Map%')
+        .first
+      editable_userns_map ||= UserNamespaceMap.create!(
+        user_namespace: userns,
+        label: 'Webui Editable Browser Map'
+      )
+      if editable_userns_map.label != 'Webui Editable Browser Map'
+        editable_userns_map.update!(label: 'Webui Editable Browser Map')
+      end
+
+      editable_userns_map.user_namespace_map_entries.delete_all
+      editable_userns_uid_entry = UserNamespaceMapEntry.create!(
+        user_namespace_map: editable_userns_map,
+        kind: :uid,
+        vps_id: 0,
+        ns_id: 0,
+        count: 1
+      )
+      editable_userns_gid_entry = UserNamespaceMapEntry.create!(
+        user_namespace_map: editable_userns_map,
+        kind: :gid,
+        vps_id: 0,
+        ns_id: 0,
+        count: 1
+      )
+
       public_key = UserPublicKey.find_or_initialize_by(
         user: user,
         label: 'Webui Browser Key'
@@ -208,9 +236,31 @@ import ../make-test.nix (
             'id' => user_data.id,
             'label' => user_data.label
           },
+          'userNamespace' => {
+            'id' => userns.id,
+            'size' => userns.size
+          },
           'userNamespaceMap' => {
             'id' => userns_map.id,
             'label' => userns_map.label
+          },
+          'editableUserNamespaceMap' => {
+            'id' => editable_userns_map.id,
+            'label' => editable_userns_map.label,
+            'entries' => {
+              'uid' => {
+                'id' => editable_userns_uid_entry.id,
+                'vpsId' => editable_userns_uid_entry.vps_id,
+                'nsId' => editable_userns_uid_entry.ns_id,
+                'count' => editable_userns_uid_entry.count
+              },
+              'gid' => {
+                'id' => editable_userns_gid_entry.id,
+                'vpsId' => editable_userns_gid_entry.vps_id,
+                'nsId' => editable_userns_gid_entry.ns_id,
+                'count' => editable_userns_gid_entry.count
+              }
+            }
           }
         },
         'location' => {
