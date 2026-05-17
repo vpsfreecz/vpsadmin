@@ -6,6 +6,11 @@ const loginButton = (page) =>
 const logoutButton = (page) =>
   page.locator('form[action="?page=login&action=logout"] input[type="submit"]');
 
+const navLink = (page, href) => page.locator(`#nav a[href="${href}"]`);
+
+const accountMenuLink = (page, text) =>
+  page.locator('#logout .account-menu a', { hasText: text });
+
 async function openWebuiLogin(page, user) {
   const params = user ? `?page=login&action=login&user=${encodeURIComponent(user)}` : '/';
 
@@ -51,11 +56,25 @@ async function logout(page, username) {
   await expect(loginButton(page)).toHaveValue('Log in');
 }
 
+async function openAccountMenu(page) {
+  await page.locator('#logout').hover();
+  await expect(page.locator('#logout .account-menu')).toBeVisible();
+}
+
+async function clickAccountMenuLink(page, text) {
+  await openAccountMenu(page);
+  await accountMenuLink(page, text).click();
+}
+
 module.exports = {
+  accountMenuLink,
+  clickAccountMenuLink,
   login,
   loginButton,
   logout,
   logoutButton,
+  navLink,
+  openAccountMenu,
   openWebuiLogin,
   submitCredentials,
 };

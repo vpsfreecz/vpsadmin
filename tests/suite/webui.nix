@@ -173,6 +173,20 @@ import ../make-test.nix (
       user_data.content = "#!/bin/sh\\nprintf 'webui-playwright-user-data\\n' > /root/webui-playwright-user-data.txt\\n"
       user_data.save!
 
+      news_log_message = 'Webui Browser Notice'
+      quoted_news_log_message = ActiveRecord::Base.connection.quote(news_log_message)
+      quoted_news_log_published_at = ActiveRecord::Base.connection.quote(Time.now - 60)
+      ActiveRecord::Base.connection.execute(<<~SQL)
+        DELETE FROM news_logs WHERE message = #{quoted_news_log_message}
+      SQL
+      ActiveRecord::Base.connection.execute(<<~SQL)
+        INSERT INTO news_logs (message, published_at, created_at, updated_at)
+        VALUES (#{quoted_news_log_message}, #{quoted_news_log_published_at}, #{quoted_now}, #{quoted_now})
+      SQL
+      news_log_id = ActiveRecord::Base.connection.select_value(<<~SQL)
+        SELECT id FROM news_logs WHERE message = #{quoted_news_log_message} ORDER BY id DESC LIMIT 1
+      SQL
+
       primary_template = OsTemplate.find(1)
       reinstall_template = OsTemplate.find(2)
 
@@ -223,6 +237,10 @@ import ../make-test.nix (
             'ipv4_private' => 0,
             'ipv6' => 0
           }
+        },
+        'newsLog' => {
+          'id' => news_log_id,
+          'message' => news_log_message
         }
       )
       fixture_stdout.flush
