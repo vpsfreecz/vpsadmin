@@ -218,6 +218,25 @@ RSpec.describe 'VpsAdmin::API::Resources::MailTemplate' do
     json['message'] || json.dig('response', 'message') || json['error']
   end
 
+  def action_input_params(resource_path, action_name)
+    header 'Accept', 'application/json'
+    options vpath('/')
+    expect(last_response.status).to eq(200)
+
+    data = json
+    data = data['response'] if data.is_a?(Hash) && data['response'].is_a?(Hash)
+
+    resources = data['resources'] || {}
+    resource = nil
+    resource_path.to_s.split('.').each do |part|
+      resource = resources[part] || {}
+      resources = resource['resources'] || {}
+    end
+
+    action = resource.dig('actions', action_name.to_s) || {}
+    action.dig('input', 'parameters') || {}
+  end
+
   def expect_status(code)
     path = last_request&.path
     message = "Expected status #{code} for #{path}, got #{last_response.status} body=#{last_response.body}"
@@ -248,6 +267,17 @@ RSpec.describe 'VpsAdmin::API::Resources::MailTemplate' do
         'mail_template.translation#update',
         'mail_template.translation#delete'
       )
+    end
+
+    it 'documents nullable translation input fields' do
+      %w[create update].each do |action|
+        input_params = action_input_params('mail_template.translation', action)
+
+        expect(input_params.dig('reply_to', 'nullable')).to be(true)
+        expect(input_params.dig('return_path', 'nullable')).to be(true)
+        expect(input_params.dig('text_plain', 'nullable')).to be(true)
+        expect(input_params.dig('text_html', 'nullable')).to be(true)
+      end
     end
   end
 
@@ -850,6 +880,31 @@ RSpec.describe 'VpsAdmin::API::Resources::MailTemplate' do
       tr_en.reload
       expect(tr_en.subject).to eq('Updated subject')
       expect(tr_en.text_plain).to eq('Updated text')
+    end
+
+    it 'allows admin to clear optional translation fields' do
+      tr_en.update!(
+        reply_to: 'reply@example.test',
+        return_path: 'bounce@example.test'
+      )
+
+      as(admin) do
+        json_put translation_path(tpl_a.id, tr_en.id), translation: {
+          reply_to: nil,
+          return_path: nil,
+          text_plain: nil,
+          text_html: nil
+        }
+      end
+
+      expect_status(200)
+      expect(json['status']).to be(true)
+
+      tr_en.reload
+      expect(tr_en.reply_to).to be_nil
+      expect(tr_en.return_path).to be_nil
+      expect(tr_en.text_plain).to be_nil
+      expect(tr_en.text_html).to be_nil
     end
 
     it 'validates presence of subject' do

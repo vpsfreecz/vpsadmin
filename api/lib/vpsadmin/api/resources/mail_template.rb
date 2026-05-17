@@ -247,11 +247,11 @@ module VpsAdmin::API::Resources
       params(:common) do
         resource Language
         string :from
-        string :reply_to
-        string :return_path
+        string :reply_to, nullable: true
+        string :return_path, nullable: true
         string :subject
-        text :text_plain
-        text :text_html
+        text :text_plain, nullable: true
+        text :text_html, nullable: true
       end
 
       params(:all) do
