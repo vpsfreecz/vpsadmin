@@ -256,6 +256,9 @@ function userns_map_show($map_id)
     $xtpl->title(_('UID/GID map') . ' #' . $m->id . ' - ' . $m->label);
 
     $xtpl->form_create('?page=userns&action=map_edit&id=' . $m->id, 'post');
+    $xtpl->form_set_hidden_fields([
+        'user_namespace' => $m->user_namespace->id,
+    ]);
     $xtpl->table_td(_('User namespace') . ':');
     $xtpl->table_td(
         '<a href="?page=userns&action=show&id=' . $m->user_namespace->id . '">'
