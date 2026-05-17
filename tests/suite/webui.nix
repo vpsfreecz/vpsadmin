@@ -390,6 +390,91 @@ import ../make-test.nix (
         SELECT id FROM news_logs WHERE message = #{quoted_news_log_message} ORDER BY id DESC LIMIT 1
       SQL
 
+      node = Node.find(${toString nodeSeed.id})
+
+      readonly_session = UserSession.create!(
+        user: user,
+        user_agent: UserAgent.find_or_create!('webui-playwright-readonly'),
+        auth_type: 'basic',
+        api_ip_addr: '127.0.0.1',
+        client_version: 'webui-playwright-readonly',
+        label: 'Webui Browser Readonly Fixture'
+      )
+
+      history_message = 'Webui Browser History Event'
+      ObjectHistory
+        .where(
+          tracked_object_type: 'User',
+          tracked_object_id: user.id,
+          event_type: 'webui_readonly'
+        )
+        .delete_all
+      history = ObjectHistory.create!(
+        tracked_object: user,
+        user: user,
+        user_session: readonly_session,
+        event_type: 'webui_readonly',
+        event_data: { 'message' => history_message },
+        created_at: Time.now - 30
+      )
+
+      readonly_chain_ids = ActiveRecord::Base.connection.select_values(<<~SQL)
+        SELECT id FROM transaction_chains WHERE name = 'webui_readonly'
+      SQL
+      if readonly_chain_ids.any?
+        ActiveRecord::Base.connection.execute(<<~SQL)
+          DELETE FROM transactions
+          WHERE transaction_chain_id IN (#{readonly_chain_ids.join(',')})
+        SQL
+        ActiveRecord::Base.connection.execute(<<~SQL)
+          DELETE FROM transaction_chain_concerns
+          WHERE transaction_chain_id IN (#{readonly_chain_ids.join(',')})
+        SQL
+        ActiveRecord::Base.connection.execute(<<~SQL)
+          DELETE FROM transaction_chains
+          WHERE id IN (#{readonly_chain_ids.join(',')})
+        SQL
+      end
+
+      readonly_chain_time = ActiveRecord::Base.connection.quote(Time.now - 20)
+      ActiveRecord::Base.connection.execute(<<~SQL)
+        INSERT INTO transaction_chains
+          (name, type, state, size, progress, user_id, user_session_id,
+           urgent_rollback, concern_type, created_at, updated_at)
+        VALUES
+          ('webui_readonly', 'TransactionChains::User::NewLogin', 2, 1, 1,
+           #{user.id}, #{readonly_session.id}, 0, 0,
+           #{readonly_chain_time}, #{readonly_chain_time})
+      SQL
+      readonly_chain_id = ActiveRecord::Base.connection.select_value('SELECT LAST_INSERT_ID()')
+      ActiveRecord::Base.connection.execute(<<~SQL)
+        INSERT INTO transaction_chain_concerns
+          (transaction_chain_id, class_name, row_id)
+        VALUES
+          (#{readonly_chain_id}, 'User', #{user.id})
+      SQL
+      readonly_tx_input = ActiveRecord::Base.connection.quote({
+        transaction_chain: readonly_chain_id.to_i,
+        depends_on: nil,
+        handle: 10_001,
+        node: node.id,
+        reversible: 0,
+        input: { sleep: nil }
+      }.to_json)
+      readonly_tx_output = ActiveRecord::Base.connection.quote({ ok: true }.to_json)
+      ActiveRecord::Base.connection.execute(<<~SQL)
+        INSERT INTO transactions
+          (user_id, node_id, handle, depends_on_id, urgent, priority, status,
+           done, input, output, transaction_chain_id, reversible, queue,
+           created_at, started_at, finished_at)
+        VALUES
+          (#{user.id}, #{node.id}, 10001, NULL, 0, 0, 1,
+           1, #{readonly_tx_input}, #{readonly_tx_output}, #{readonly_chain_id},
+           0, 'general', #{readonly_chain_time}, #{readonly_chain_time},
+           #{readonly_chain_time})
+      SQL
+      readonly_transaction_id = ActiveRecord::Base.connection.select_value('SELECT LAST_INSERT_ID()')
+
       primary_template = OsTemplate.find(1)
       reinstall_template = OsTemplate.find(2)
 
@@ -444,6 +529,11 @@ import ../make-test.nix (
           'id' => ${toString location.id},
           'label' => ${builtins.toJSON location.label}
         },
+        'node' => {
+          'id' => node.id,
+          'name' => node.name,
+          'domainName' => node.domain_name
+        },
         'osTemplates' => {
           'primary' => {
             'id' => primary_template.id,
@@ -468,6 +558,18 @@ import ../make-test.nix (
         'newsLog' => {
           'id' => news_log_id,
           'message' => news_log_message
+        },
+        'objectHistory' => {
+          'id' => history.id,
+          'eventType' => history.event_type,
+          'message' => history_message
+        },
+        'transactionChain' => {
+          'id' => readonly_chain_id.to_i,
+          'transactionId' => readonly_transaction_id.to_i,
+          'name' => 'webui_readonly',
+          'label' => 'New login',
+          'state' => 'done'
         }
       )
       fixture_stdout.flush
@@ -540,6 +642,19 @@ import ../make-test.nix (
           describe 'webui VPS lifecycle browser flow' do
             it 'passes Playwright VPS lifecycle tests' do
               run_playwright('vps-lifecycle', 'specs/vps-lifecycle.spec.cjs')
+            end
+          end
+        '';
+      };
+
+      navigation-readonly = {
+        description = ''
+          Run read-only overview, navigation, history, node, and transaction browser tests.
+        '';
+        script = webuiTestScriptCommon + ''
+          describe 'webui read-only navigation browser flow' do
+            it 'passes Playwright read-only navigation tests' do
+              run_playwright('navigation-readonly', 'specs/navigation-readonly.spec.cjs')
             end
           end
         '';
