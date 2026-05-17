@@ -390,7 +390,6 @@ function dns_transfer_log_list($serverZoneId, $zoneId = null)
 
     $input = $api->dns_server_zone_transfer_log->list->getParameters('input');
     $xtpl->form_add_input(_('Limit') . ':', 'text', '40', 'limit', get_val('limit', '25'), '');
-    $xtpl->form_add_input(_("From ID") . ':', 'text', '40', 'from_id', get_val('from_id'), '');
     api_param_to_form('status', $input->status, get_val('status'), null, true);
     api_param_to_form('reason_code', $input->reason_code, get_val('reason_code'));
     $xtpl->form_out(_('Show'));
