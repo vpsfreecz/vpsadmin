@@ -446,9 +446,9 @@
     )
   end
 
-  VPS_MIGRATION_PROOF_PATH = '/root/vpsadmin-migration-proof.txt'
-  VPS_MIGRATION_PROOF_RELATIVE_PATH = 'private/root/vpsadmin-migration-proof.txt'
-  VPS_MIGRATION_PROOF_CONTENT = 'vps migration data retention proof'
+  VPS_MIGRATION_PROOF_PATH = '/root/vpsadmin-migration-proof.txt' unless defined?(VPS_MIGRATION_PROOF_PATH)
+  VPS_MIGRATION_PROOF_RELATIVE_PATH = 'private/root/vpsadmin-migration-proof.txt' unless defined?(VPS_MIGRATION_PROOF_RELATIVE_PATH)
+  VPS_MIGRATION_PROOF_CONTENT = 'vps migration data retention proof' unless defined?(VPS_MIGRATION_PROOF_CONTENT)
 
   def wait_for_vps_exec(machine, vps_id:, timeout: 120)
     machine.wait_until_succeeds(
@@ -1124,7 +1124,7 @@
     /has children/i,
     /cannot destroy/i,
     /use '-R' to destroy/i
-  ].freeze
+  ].freeze unless defined?(DEPENDENCY_ERROR_PATTERNS)
 
   def dependency_failure?(detail)
     payload = detail.fetch('failure_output', nil) || detail.fetch('output', {})
@@ -1211,7 +1211,7 @@
     failed: 4,
     fatal: 5,
     resolved: 6
-  }.freeze
+  }.freeze unless defined?(STORAGE_CHAIN_STATES)
 
   def wait_for_chain_states_local(services, chain_id, states, timeout: 300)
     expected = Array(states).map do |state|

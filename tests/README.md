@@ -8,8 +8,11 @@ vpsadminos checkout is required.
 ## Running tests
 
 - Use `./test-runner.sh ls` (list tests), `./test-runner.sh test services-up`
-  for the service smoke test, or `./test-runner.sh test webui` for the
-  Playwright browser test.
+  for the service smoke test, or `./test-runner.sh test 'webui#*'` for all
+  Playwright browser tests.
+- Individual webui browser components can be run by script, for example
+  `./test-runner.sh test 'webui#auth'` or
+  `./test-runner.sh test 'webui#vps-lifecycle'`.
 - The runner supports the usual flags from vpsAdminOS; run
   `./test-runner.sh --help` for details.
 
@@ -30,8 +33,9 @@ vpsadminos checkout is required.
     `/etc/vpsadmin-test/`.
 - `tests/suite/services-up.nix` boots the service VM and asserts core
   units start, migrations ran (`users` table exists) and key ports respond.
-- `tests/suite/webui.nix` boots the same service VM and uses Playwright
-  to verify the OAuth login/logout flow through the PHP web UI.
+- `tests/suite/webui.nix` boots the same service VM and exposes independent
+  Playwright scripts for auth/session, user namespace, and VPS lifecycle
+  browser coverage.
 
 ## Cluster definitions
 

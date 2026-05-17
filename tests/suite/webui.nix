@@ -28,6 +28,176 @@ import ../make-test.nix (
       mkdir -p "$out"
       cp -R ${../playwright/webui}/. "$out/"
     '';
+    webuiTestScriptCommon = common + ''
+      require 'shellwords'
+
+      configure_examples do |config|
+        config.default_order = :defined
+      end
+
+      WEBUI_FIXTURES = '/tmp/vpsadmin-webui-fixtures.json' unless defined?(WEBUI_FIXTURES)
+
+      def start_webui_machine(machine)
+        machine.start unless machine.running?
+      end
+
+      def wait_for_webui
+        wait_until_block_succeeds(name: 'webui responds') do
+          _, output = services.succeeds('curl --silent --fail-with-body http://webui.vpsadmin.test/')
+          expect(output).to include('vpsAdmin')
+          expect(output).not_to include('Unable to connect to the API server')
+          true
+        end
+      end
+
+      def webui_pool_id
+        row = services.mariadb_json_rows(sql: <<~SQL).first
+          SELECT JSON_OBJECT('id', id)
+          FROM pools
+          WHERE filesystem = #{primary_pool_fs.inspect}
+          LIMIT 1
+        SQL
+
+        row && row.fetch('id')
+      end
+
+      def ensure_webui_pool
+        pool_id = webui_pool_id
+
+        unless pool_id
+          pool = create_pool(
+            services,
+            node_id: node1_id,
+            label: 'webui-browser-vps',
+            filesystem: primary_pool_fs,
+            role: 'hypervisor'
+          )
+          pool_id = pool.fetch('id')
+        end
+
+        wait_for_pool_online(services, pool_id)
+      end
+
+      def unlock_webui_transaction_signing_key
+        services.unlock_transaction_signing_key(passphrase: 'test')
+      rescue OsVm::CommandFailed => e
+        raise unless e.message.include?('already unlocked')
+      end
+
+      def create_webui_browser_fixtures(services)
+        _, output = services.succeeds(<<~SH)
+          set -euo pipefail
+
+          api_dir="$(systemctl show -p WorkingDirectory --value vpsadmin-api)"
+          api_root="$(dirname "$api_dir")"
+
+          API_DIR="$api_dir" "$api_root/ruby-env-wrapped/bin/ruby" ${fixtureScript}
+        SH
+
+        JSON.parse(output.to_s.lines.last)
+      end
+
+      def write_playwright_fixtures(services, fixtures)
+        services.succeeds("cat > #{WEBUI_FIXTURES} <<'JSON'\n#{JSON.pretty_generate(fixtures)}\nJSON\n")
+      end
+
+      def prepare_webui_playwright
+        [services, node].each { |machine| start_webui_machine(machine) }
+        services.wait_for_vpsadmin_api
+        wait_for_webui
+        wait_for_running_nodectld(node)
+        wait_for_node_ready(services, node1_id)
+        unlock_webui_transaction_signing_key
+        ensure_webui_pool
+
+        write_playwright_fixtures(
+          services,
+          create_webui_browser_fixtures(services)
+        )
+      end
+
+      def webui_pending_transaction_chains
+        queued = services.class::CHAIN_STATES.fetch(:queued)
+        rollbacking = services.class::CHAIN_STATES.fetch(:rollbacking)
+
+        services.mariadb_json_rows(sql: <<~SQL)
+          SELECT JSON_OBJECT(
+            'id', id,
+            'name', name,
+            'state', state,
+            'progress', progress,
+            'size', size
+          )
+          FROM transaction_chains
+          WHERE state IN (#{queued}, #{rollbacking})
+            AND (name IS NULL OR name NOT LIKE 'webui_tx_%')
+          ORDER BY id
+          LIMIT 25
+        SQL
+      end
+
+      def wait_for_webui_transaction_chains_idle(timeout: 900)
+        pending = []
+        deadline = Time.now + timeout
+
+        loop do
+          pending = webui_pending_transaction_chains
+          return true if pending.empty?
+
+          raise OsVm::TimeoutError if Time.now >= deadline
+
+          sleep 1
+        end
+      rescue OsVm::TimeoutError
+        raise "Timed out waiting for webui transaction chains to become idle: #{pending.inspect}"
+      end
+
+      def run_playwright(script_name, *specs)
+        raise ArgumentError, 'at least one Playwright spec is required' if specs.empty?
+
+        safe_name = script_name.gsub(/[^A-Za-z0-9_.-]/, '-')
+        spec_args = specs.map { |spec| Shellwords.escape(spec) }.join(' ')
+
+        wait_for_webui_transaction_chains_idle
+
+        playwright_failed = false
+
+        begin
+          services.succeeds(<<~SH, timeout: 1800)
+            set -euo pipefail
+
+            export CI=1
+            export HOME=/tmp/vpsadmin-webui-playwright-home-#{safe_name}
+            export PLAYWRIGHT_BROWSERS_PATH=${playwrightBrowsers}
+            export WEBUI_BASE_URL=http://webui.vpsadmin.test
+            export VPSADMIN_WEBUI_FIXTURES=#{WEBUI_FIXTURES}
+
+            rm -rf "$HOME" /tmp/vpsadmin-webui-playwright-results-#{safe_name}
+            mkdir -p "$HOME"
+
+            cd ${playwrightSuite}
+            ${playwrightRunner}/bin/vpsadmin-webui-playwright test #{spec_args} \
+              --config=${playwrightSuite}/playwright.config.cjs \
+              --output=/tmp/vpsadmin-webui-playwright-results-#{safe_name}
+          SH
+        rescue StandardError
+          playwright_failed = true
+          raise
+        ensure
+          begin
+            wait_for_webui_transaction_chains_idle
+          rescue StandardError => e
+            raise unless playwright_failed
+
+            warn "Unable to wait for webui transaction chains after #{script_name} failed: #{e.message}"
+          end
+        end
+      end
+
+      before(:suite) do
+        prepare_webui_playwright
+      end
+    '';
     fixtureScript = pkgs.writeText "vpsadmin-webui-browser-fixtures.rb" ''
       ENV['RACK_ENV'] ||= 'production'
       require 'json'
@@ -335,87 +505,45 @@ import ../make-test.nix (
       };
     };
 
-    testScript = common + ''
-      configure_examples do |config|
-        config.default_order = :defined
-      end
+    testScripts = {
+      auth = {
+        description = ''
+          Run anonymous, authentication, session, and role menu browser tests.
+        '';
+        script = webuiTestScriptCommon + ''
+          describe 'webui auth browser flow' do
+            it 'passes Playwright auth tests' do
+              run_playwright('auth', 'specs/auth.spec.cjs')
+            end
+          end
+        '';
+      };
 
-      WEBUI_FIXTURES = '/tmp/vpsadmin-webui-fixtures.json'
+      userns = {
+        description = ''
+          Run user namespace browser tests for user and admin roles.
+        '';
+        script = webuiTestScriptCommon + ''
+          describe 'webui user namespace browser flow' do
+            it 'passes Playwright user namespace tests' do
+              run_playwright('userns', 'specs/userns.spec.cjs')
+            end
+          end
+        '';
+      };
 
-      def wait_for_webui
-        wait_until_block_succeeds(name: 'webui responds') do
-          _, output = services.succeeds('curl --silent --fail-with-body http://webui.vpsadmin.test/')
-          expect(output).to include('vpsAdmin')
-          expect(output).not_to include('Unable to connect to the API server')
-          true
-        end
-      end
-
-      def create_webui_browser_fixtures(services)
-        _, output = services.succeeds(<<~SH)
-          set -euo pipefail
-
-          api_dir="$(systemctl show -p WorkingDirectory --value vpsadmin-api)"
-          api_root="$(dirname "$api_dir")"
-
-          API_DIR="$api_dir" "$api_root/ruby-env-wrapped/bin/ruby" ${fixtureScript}
-        SH
-
-        JSON.parse(output.to_s.lines.last)
-      end
-
-      def write_playwright_fixtures(services, fixtures)
-        services.succeeds("cat > #{WEBUI_FIXTURES} <<'JSON'\n#{JSON.pretty_generate(fixtures)}\nJSON\n")
-      end
-
-      def run_playwright
-        services.succeeds(<<~SH, timeout: 1800)
-          set -euo pipefail
-
-          export CI=1
-          export HOME=/tmp/vpsadmin-webui-playwright-home
-          export PLAYWRIGHT_BROWSERS_PATH=${playwrightBrowsers}
-          export WEBUI_BASE_URL=http://webui.vpsadmin.test
-          export VPSADMIN_WEBUI_FIXTURES=#{WEBUI_FIXTURES}
-
-          rm -rf "$HOME" /tmp/vpsadmin-webui-playwright-results
-          mkdir -p "$HOME"
-
-          cd ${playwrightSuite}
-          ${playwrightRunner}/bin/vpsadmin-webui-playwright test \
-            --config=${playwrightSuite}/playwright.config.cjs \
-            --output=/tmp/vpsadmin-webui-playwright-results
-        SH
-      end
-
-      before(:suite) do
-        [services, node].each(&:start)
-        services.wait_for_vpsadmin_api
-        wait_for_webui
-        wait_for_running_nodectld(node)
-        wait_for_node_ready(services, node1_id)
-        services.unlock_transaction_signing_key(passphrase: 'test')
-
-        pool = create_pool(
-          services,
-          node_id: node1_id,
-          label: 'webui-browser-vps',
-          filesystem: primary_pool_fs,
-          role: 'hypervisor'
-        )
-        wait_for_pool_online(services, pool.fetch('id'))
-
-        write_playwright_fixtures(
-          services,
-          create_webui_browser_fixtures(services)
-        )
-      end
-
-      describe 'webui browser flow' do
-        it 'passes Playwright user and admin tests' do
-          run_playwright
-        end
-      end
-    '';
+      vps-lifecycle = {
+        description = ''
+          Run VPS lifecycle browser tests.
+        '';
+        script = webuiTestScriptCommon + ''
+          describe 'webui VPS lifecycle browser flow' do
+            it 'passes Playwright VPS lifecycle tests' do
+              run_playwright('vps-lifecycle', 'specs/vps-lifecycle.spec.cjs')
+            end
+          end
+        '';
+      };
+    };
   }
 )
