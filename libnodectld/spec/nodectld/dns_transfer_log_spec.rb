@@ -76,7 +76,7 @@ RSpec.describe NodeCtld::DnsTransferLog do
       published = []
       log = described_class.new
       entry = {
-        '_CURSOR' => 'cursor-1',
+        '__CURSOR' => 'cursor-1',
         '__REALTIME_TIMESTAMP' => '1778323200000000',
         'MESSAGE' => "transfer of 'refused.test/IN' from 192.0.2.1#53: Transfer status: REFUSED"
       }

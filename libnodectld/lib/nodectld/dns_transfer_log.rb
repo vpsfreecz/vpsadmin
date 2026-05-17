@@ -79,7 +79,7 @@ module NodeCtld
 
     def process_journal_line(line)
       entry = JSON.parse(line)
-      cursor = entry['_CURSOR']
+      cursor = entry['__CURSOR']
       message = entry['MESSAGE'].to_s
       event = parse_message(message)
 
