@@ -67,9 +67,13 @@ module VpsAdmin::API::Resources
 
         case input[:order]
         when 'oldest'
-          with_asc_pagination(q).order('event_at')
+          with_asc_pagination(q).order(
+            'dns_server_zone_transfer_logs.event_at ASC, dns_server_zone_transfer_logs.id ASC'
+          )
         when 'latest'
-          with_desc_pagination(q).order('event_at DESC')
+          with_desc_pagination(q).order(
+            'dns_server_zone_transfer_logs.event_at DESC, dns_server_zone_transfer_logs.id DESC'
+          )
         end
       end
     end
