@@ -161,11 +161,9 @@ module NodeCtld
       primary_addr = Regexp.last_match(2)
       status = Regexp.last_match(3).strip
 
-      if status.casecmp('success') == 0
-        event(zone, 'success', primary_addr:, message: 'Transfer completed successfully')
-      else
-        failed_event(zone, primary_addr, status)
-      end
+      return if status.casecmp('success') == 0
+
+      failed_event(zone, primary_addr, status)
     end
 
     def parse_transfer_failed(message)

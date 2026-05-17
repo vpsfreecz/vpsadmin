@@ -66,6 +66,16 @@ RSpec.describe NodeCtld::DnsTransferLog do
     )
   end
 
+  it 'ignores successful transfer status messages' do
+    log = described_class.new
+    event = log.send(
+      :parse_message,
+      "transfer of 'ok.test/IN' from 192.0.2.1#53: Transfer status: success"
+    )
+
+    expect(event).to be_nil
+  end
+
   it 'publishes recognized events and advances the cursor afterwards' do
     Dir.mktmpdir do |dir|
       cursor_file = File.join(dir, 'dns-transfer.cursor')
