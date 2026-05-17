@@ -443,7 +443,13 @@ function dns_transfer_log_list()
         );
     }
 
-    api_param_to_form('status', $input->status, get_val('status'), null, true);
+    api_param_to_form('status', $input->status, get_val('status'), function ($status) {
+        if (!isAdmin() && $status == 'started') {
+            return null;
+        }
+
+        return dnsTransferStatusLabel($status);
+    }, true);
     api_param_to_form('reason_code', $input->reason_code, get_val('reason_code'));
     $xtpl->form_out(_('Show'));
 
