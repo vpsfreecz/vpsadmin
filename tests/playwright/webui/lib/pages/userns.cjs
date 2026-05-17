@@ -113,10 +113,13 @@ async function deleteMapEntry(page, values) {
   await expectNotification(page, 'Entry removed');
 }
 
-async function createUserNamespaceMap(page, label) {
+async function createUserNamespaceMap(page, label, options = {}) {
   await page.goto('/?page=userns&action=map_new', { waitUntil: 'domcontentloaded' });
 
   const form = formByAction(page, 'action=map_new');
+  if (options.userNamespaceId) {
+    await form.locator('input[name="user_namespace"]').fill(String(options.userNamespaceId));
+  }
   await form.locator('input[name="label"]').fill(label);
   await submitForm(form);
   await expectNotification(page, 'Map created');

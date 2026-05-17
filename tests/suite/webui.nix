@@ -185,6 +185,11 @@ import ../make-test.nix (
         count: 1
       )
 
+      UserNamespaceMap
+        .where(user_namespace: userns)
+        .where('label LIKE ?', 'Webui Admin Temporary Browser Map%')
+        .find_each(&:destroy!)
+
       public_key = UserPublicKey.find_or_initialize_by(
         user: user,
         label: 'Webui Browser Key'
@@ -238,6 +243,8 @@ import ../make-test.nix (
           },
           'userNamespace' => {
             'id' => userns.id,
+            'offset' => userns.offset,
+            'blockCount' => userns.block_count,
             'size' => userns.size
           },
           'userNamespaceMap' => {
