@@ -69,6 +69,13 @@ class Cluster
     end
 
     q = ActiveRecord::Base.connection.quote(value)
+    dns_zone_value = value.end_with?('.') ? value : "#{value}."
+    dns_zone_q = ActiveRecord::Base.connection.quote(dns_zone_value)
+    dns_zone_confirmed = [
+      ::DnsZone.confirmed(:confirm_create),
+      ::DnsZone.confirmed(:confirmed)
+    ].join(', ')
+
     ActiveRecord::Base.connection.execute(
       "SELECT 'User', id, 'login', login
       FROM users WHERE login = #{q}
@@ -126,6 +133,11 @@ class Cluster
       WHERE hostname = #{q} AND object_state < 3
 
       UNION
+      SELECT 'DnsZone', id, 'name', name
+      FROM dns_zones
+      WHERE name = #{dns_zone_q} AND confirmed IN (#{dns_zone_confirmed})
+
+      UNION
       SELECT 'User', id, 'login', login
       FROM users WHERE login LIKE CONCAT('%', #{q}, '%')
 
@@ -140,7 +152,12 @@ class Cluster
       UNION
       SELECT 'Vps', id, 'hostname', hostname
       FROM vpses
-      WHERE hostname LIKE CONCAT('%', #{q}, '%') AND object_state < 3"
+      WHERE hostname LIKE CONCAT('%', #{q}, '%') AND object_state < 3
+
+      UNION
+      SELECT 'DnsZone', id, 'name', name
+      FROM dns_zones
+      WHERE name LIKE CONCAT('%', #{q}, '%') AND confirmed IN (#{dns_zone_confirmed})"
     ).each do |result|
       ret << { resource: result[0], id: result[1], attribute: result[2], value: result[3] }
     end

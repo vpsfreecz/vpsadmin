@@ -151,7 +151,7 @@ class VpsAdmin::API::Resources::Cluster < HaveAPI::Resource
 
   class Search < HaveAPI::Action
     http_method :post
-    desc 'Search users and VPSes by IDs, names and owned objects'
+    desc 'Search users, VPSes and DNS zones by IDs, names and owned objects'
 
     input(:hash) do
       string :value, label: 'Value', desc: 'Value to be searched for',

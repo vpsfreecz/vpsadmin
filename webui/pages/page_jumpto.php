@@ -19,6 +19,10 @@ if (isLoggedIn() && isAdmin()) {
                 case 'Vps':
                     redirect('?page=adminvps&action=info&veid=' . $v->id);
                     break;
+
+                case 'DnsZone':
+                    redirect('?page=dns&action=zone_show&id=' . $v->id);
+                    break;
             }
         }
 
@@ -57,6 +61,10 @@ if (isLoggedIn() && isAdmin()) {
 
                     case 'IpAddress':
                         $link = '?page=networking&action=route_edit&id=' . $v->id;
+                        break;
+
+                    case 'DnsZone':
+                        $link = '?page=dns&action=zone_show&id=' . $v->id;
                         break;
                 }
 

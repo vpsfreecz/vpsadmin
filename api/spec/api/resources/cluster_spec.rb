@@ -372,6 +372,67 @@ RSpec.describe 'VpsAdmin::API::Resources::Cluster' do
       result = search_results.find { |row| row['resource'] == 'User' }
       expect(result).not_to be_nil
     end
+
+    it 'returns DNS zone results for canonical name search' do
+      zone = create_dns_zone!(name: "search-#{SecureRandom.hex(4)}.example.test.")
+
+      as(SpecSeed.admin) { json_post search_path, cluster: { value: zone.name } }
+
+      expect_status(200)
+      expect(json['status']).to be(true)
+
+      result = search_results.find do |row|
+        row['resource'] == 'DnsZone' && row['id'].to_i == zone.id
+      end
+
+      expect(result).not_to be_nil
+      expect(result['attribute'].to_s).to eq('name')
+      expect(result['value'].to_s).to eq(zone.name)
+    end
+
+    it 'returns DNS zone results when the trailing dot is omitted' do
+      zone = create_dns_zone!(name: "search-#{SecureRandom.hex(4)}.example.test.")
+
+      as(SpecSeed.admin) { json_post search_path, cluster: { value: zone.name.delete_suffix('.') } }
+
+      expect_status(200)
+
+      result = search_results.find do |row|
+        row['resource'] == 'DnsZone' && row['id'].to_i == zone.id
+      end
+
+      expect(result).not_to be_nil
+    end
+
+    it 'returns DNS zone results for partial name search' do
+      suffix = SecureRandom.hex(4)
+      zone = create_dns_zone!(name: "partial-#{suffix}.example.test.")
+
+      as(SpecSeed.admin) { json_post search_path, cluster: { value: "partial-#{suffix}" } }
+
+      expect_status(200)
+
+      result = search_results.find do |row|
+        row['resource'] == 'DnsZone' && row['id'].to_i == zone.id
+      end
+
+      expect(result).not_to be_nil
+    end
+
+    it 'does not return DNS zones pending deletion' do
+      zone = create_dns_zone!(name: "deleted-#{SecureRandom.hex(4)}.example.test.")
+      zone.update!(confirmed: DnsZone.confirmed(:confirm_destroy))
+
+      as(SpecSeed.admin) { json_post search_path, cluster: { value: zone.name } }
+
+      expect_status(200)
+
+      result = search_results.find do |row|
+        row['resource'] == 'DnsZone' && row['id'].to_i == zone.id
+      end
+
+      expect(result).to be_nil
+    end
   end
 
   describe 'GenerateMigrationKeys' do
