@@ -27,6 +27,7 @@ if (isLoggedIn()) {
 
             try {
                 $api->user_namespace_map($_GET['id'])->update([
+                    'user_namespace' => $_POST['user_namespace'],
                     'label' => $_POST['label'],
                 ]);
 
@@ -76,7 +77,6 @@ if (isLoggedIn()) {
                 try {
                     foreach ($_POST['entry_id'] as $i => $id) {
                         $api->user_namespace_map($_GET['id'])->entry($id)->update([
-                            'kind' => $_POST['kind'][$i],
                             'vps_id' => $_POST['vps_id'][$i],
                             'ns_id' => $_POST['ns_id'][$i],
                             'count' => $_POST['count'][$i],
