@@ -160,10 +160,20 @@ function dns_zone_show($id)
     ]);
 
     if ($zone->source == 'internal_source') {
+        $returnUrl = urlencode($_SERVER['REQUEST_URI']);
+
         $xtpl->sbar_add(
             _('DNS record log'),
-            '?page=dns&action=record_log&dns_zone=' . $zone->id . '&list=1&return_url=' . urlencode($_SERVER['REQUEST_URI'])
+            '?page=dns&action=record_log&dns_zone=' . $zone->id . '&list=1&return_url=' . $returnUrl
         );
+
+        if (isAdmin()) {
+            $xtpl->sbar_add(
+                _('DNS transfer log'),
+                '?page=dns&action=transfer_log&dns_zone=' . $zone->id . '&return_url=' . $returnUrl
+            );
+        }
+
         $xtpl->sbar_out(_('DNS zone'));
 
     } elseif ($zone->source == 'external_source') {
