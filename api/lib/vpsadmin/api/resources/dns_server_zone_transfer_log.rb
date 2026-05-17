@@ -8,7 +8,7 @@ module VpsAdmin::API::Resources
       resource DnsServerZone, value_label: :id
       datetime :event_at
       string :status, choices: ::DnsServerZoneTransferLog.statuses.keys.map(&:to_s)
-      string :reason_code
+      string :reason_code, label: 'Reason code'
       string :reason
       string :primary_addr
       integer :serial
