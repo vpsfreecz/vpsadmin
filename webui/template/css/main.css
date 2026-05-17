@@ -226,6 +226,27 @@ form[name="userns-map-entries"] input[type="text"] {text-align: right;}
   text-align: center;
 }
 
+#dns-transfer-log {
+  width: 100%;
+  table-layout: fixed;
+}
+
+#dns-transfer-log th,
+#dns-transfer-log td {
+  vertical-align: top;
+}
+
+#dns-transfer-log td {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+#dns-transfer-log dl.inline {
+  margin: 0;
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: 2px 10px;
+}
+
 a.user-unpaid {color: #fff;}
 
 /* Dropdown menu */

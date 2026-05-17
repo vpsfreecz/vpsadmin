@@ -401,8 +401,6 @@ function dns_transfer_log_list($serverZoneId, $zoneId = null)
     $xtpl->table_add_category(_('Status'));
     $xtpl->table_add_category(_('Primary'));
     $xtpl->table_add_category(_('Serial'));
-    $xtpl->table_add_category(_('Reason'));
-    $xtpl->table_add_category(_('Message'));
 
     foreach ($logs as $log) {
         $xtpl->table_td(tolocaltz($log->event_at));
@@ -410,13 +408,23 @@ function dns_transfer_log_list($serverZoneId, $zoneId = null)
         $xtpl->table_td(dnsTransferStatusLabel($log->status));
         $xtpl->table_td($log->primary_addr ? h($log->primary_addr) : '-');
         $xtpl->table_td(is_null($log->serial) ? '-' : $log->serial);
-        $xtpl->table_td($log->reason ? h($log->reason) : '-');
-        $xtpl->table_td($log->message ? h($log->message) : '-');
-        $xtpl->table_tr();
+        $xtpl->table_tr(false, dnsTransferStatusClass($log->status));
+
+        $xtpl->table_td(
+            dnsServerZoneDefinitionList([
+                [_('Reason code'), $log->reason_code ? h($log->reason_code) : '-'],
+                [_('Reason'), $log->reason ? h($log->reason) : '-'],
+                [_('Message'), $log->message ? h($log->message) : '-'],
+            ]),
+            false,
+            false,
+            5
+        );
+        $xtpl->table_tr(false, 'dns-transfer-log-details', 'dns-transfer-log-details');
     }
 
     $xtpl->table_pagination($pagination);
-    $xtpl->table_out();
+    $xtpl->table_out('dns-transfer-log');
 }
 
 function dns_zone_delete($id)
@@ -1663,6 +1671,20 @@ function dnsTransferStatusLabel($status)
             return _('Failed');
         default:
             return $status;
+    }
+}
+
+function dnsTransferStatusClass($status)
+{
+    switch ($status) {
+        case 'started':
+            return 'pending';
+        case 'success':
+            return 'ok';
+        case 'failed':
+            return 'failed';
+        default:
+            return false;
     }
 }
 
