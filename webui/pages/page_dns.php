@@ -364,7 +364,7 @@ if (isLoggedIn()) {
             break;
 
         case 'transfer_log':
-            dns_transfer_log_list($_GET['server_zone'], $_GET['id'] ?? null);
+            dns_transfer_log_list();
             break;
 
         case 'tsig_key_list':

@@ -567,6 +567,19 @@ RSpec.describe 'VpsAdmin::API::Resources::DnsServerZone' do
       expect(row).not_to include('raw_message', 'source_cursor', 'event_key')
     end
 
+    it 'filters user logs by DNS zone' do
+      as(SpecSeed.user) do
+        json_get transfer_log_index_path, {
+          dns_server_zone_transfer_log: { dns_zone: zone_user_external.id }
+        }
+      end
+
+      expect_status(200)
+      ids = transfer_logs.map { |row| row['id'] }
+      expect(ids).to include(user_log.id, recent_user_log.id)
+      expect(ids).not_to include(support_log.id, internal_log.id)
+    end
+
     it 'does not expose internal zone transfer logs to users' do
       as(SpecSeed.user) do
         json_get transfer_log_index_path, transfer_log_filter(sz_user_internal_secondary_visible)
@@ -614,6 +627,19 @@ RSpec.describe 'VpsAdmin::API::Resources::DnsServerZone' do
         'source_cursor' => internal_log.source_cursor,
         'event_key' => internal_log.event_key
       )
+    end
+
+    it 'filters admin logs by DNS zone' do
+      as(SpecSeed.admin) do
+        json_get transfer_log_index_path, {
+          dns_server_zone_transfer_log: { dns_zone: zone_user_internal.id }
+        }
+      end
+
+      expect_status(200)
+      ids = transfer_logs.map { |row| row['id'] }
+      expect(ids).to include(internal_log.id)
+      expect(ids).not_to include(user_log.id, recent_user_log.id, support_log.id)
     end
 
     it 'does not expose hidden server logs to users' do

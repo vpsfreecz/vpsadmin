@@ -5,7 +5,7 @@ module VpsAdmin::API::Resources
 
     params(:all) do
       integer :id, label: 'ID'
-      resource DnsServerZone, value_label: :id
+      resource DnsServerZone, value_label: :id, label: 'DNS server zone'
       datetime :event_at
       string :status, choices: ::DnsServerZoneTransferLog.statuses.keys.map(&:to_s)
       string :reason_code, label: 'Reason code'
@@ -24,6 +24,7 @@ module VpsAdmin::API::Resources
       desc 'List DNS zone transfer logs'
 
       input do
+        resource DnsZone, value_label: :name, label: 'DNS zone'
         use :all, include: %i[dns_server_zone status reason_code primary_addr]
         string :order, choices: %w[oldest latest], default: 'latest', fill: true
         patch :limit, default: 25, fill: true
@@ -47,6 +48,8 @@ module VpsAdmin::API::Resources
         q = self.class.model
                 .joins(dns_server_zone: %i[dns_zone dns_server])
                 .where(with_restricted)
+
+        q = q.where(dns_server_zones: { dns_zone_id: input[:dns_zone].id }) if input[:dns_zone]
 
         %i[dns_server_zone status reason_code primary_addr].each do |v|
           q = q.where(v => input[v]) if input[v]

@@ -12,6 +12,7 @@ function dns_submenu()
     $xtpl->sbar_add(_('Reverse records'), '?page=dns&action=ptr_list');
     $xtpl->sbar_add(_('Primary zones'), '?page=dns&action=primary_zone_list');
     $xtpl->sbar_add(_('Secondary zones'), '?page=dns&action=secondary_zone_list');
+    $xtpl->sbar_add(_('Transfer logs'), '?page=dns&action=transfer_log');
     $xtpl->sbar_add(_('Record logs'), '?page=dns&action=record_log');
     $xtpl->sbar_add(_('TSIG keys'), '?page=dns&action=tsig_key_list');
     $xtpl->sbar_add(_('Resolvers'), '?page=dns&action=resolver_list');
@@ -160,6 +161,11 @@ function dns_zone_show($id)
 
     if ($zone->source == 'internal_source') {
         $xtpl->sbar_add(_('DNS record log'), '?page=dns&action=record_log&dns_zone=' . $zone->id . '&list=1');
+        $xtpl->sbar_out(_('DNS zone'));
+
+    } elseif ($zone->source == 'external_source') {
+        $returnUrl = urlencode($_SERVER['REQUEST_URI']);
+        $xtpl->sbar_add(_('DNS transfer log'), '?page=dns&action=transfer_log&dns_zone=' . $zone->id . '&return_url=' . $returnUrl);
         $xtpl->sbar_out(_('DNS zone'));
     }
 
@@ -345,21 +351,31 @@ function dns_zone_show($id)
     dns_record_list($zone);
 }
 
-function dns_transfer_log_list($serverZoneId, $zoneId = null)
+function dns_transfer_log_list()
 {
     global $xtpl, $api;
 
-    $serverZone = $api->dns_server_zone->show($serverZoneId, [
-        'meta' => ['includes' => 'dns_zone,dns_server'],
-    ]);
+    $xtpl->title(_('DNS transfer log'));
 
-    $xtpl->title(_('DNS transfer log') . ' ' . h($serverZone->dns_zone->name));
-    $xtpl->sbar_add(_('Back to zone'), '?page=dns&action=zone_show&id=' . ($zoneId ?? $serverZone->dns_zone_id));
+    if (isset($_GET['return_url'])) {
+        $xtpl->sbar_add(_('Back to zone'), $_GET['return_url']);
+        $xtpl->sbar_out(_('DNS zone'));
+    }
 
     $params = [
-        'dns_server_zone' => $serverZone->id,
         'limit' => api_get_uint('limit', 25),
+        'meta' => ['includes' => 'dns_server_zone__dns_zone,dns_server_zone__dns_server'],
     ];
+
+    $dnsZoneId = api_get_uint('dns_zone');
+    if ($dnsZoneId !== null && $dnsZoneId > 0) {
+        $params['dns_zone'] = $dnsZoneId;
+    }
+
+    $serverZoneId = api_get_uint('dns_server_zone');
+    if ($serverZoneId !== null && $serverZoneId > 0) {
+        $params['dns_server_zone'] = $serverZoneId;
+    }
 
     $fromId = api_get_uint('from_id');
     if ($fromId !== null && $fromId > 0) {
@@ -381,28 +397,56 @@ function dns_transfer_log_list($serverZoneId, $zoneId = null)
 
     $xtpl->table_title(_('Filters'));
     $xtpl->form_create('', 'get', 'dns-transfer-log-filter', false);
-    $xtpl->form_set_hidden_fields([
+
+    $hiddenFields = [
         'page' => 'dns',
         'action' => 'transfer_log',
-        'server_zone' => $serverZone->id,
-        'id' => $zoneId ?? $serverZone->dns_zone_id,
-    ]);
+    ];
+
+    if (isset($_GET['return_url'])) {
+        $hiddenFields['return_url'] = $_GET['return_url'];
+    }
+
+    $xtpl->form_set_hidden_fields($hiddenFields);
 
     $input = $api->dns_server_zone_transfer_log->list->getParameters('input');
     $xtpl->form_add_input(_('Limit') . ':', 'text', '40', 'limit', get_val('limit', '25'), '');
+
+    if (isAdmin()) {
+        $xtpl->form_add_input(_('DNS zone ID') . ':', 'text', '40', 'dns_zone', get_val('dns_zone', ''), '');
+        $xtpl->form_add_input(_('DNS server zone ID') . ':', 'text', '40', 'dns_server_zone', get_val('dns_server_zone', ''), '');
+    } else {
+        $xtpl->form_add_select(
+            _('DNS zone') . ':',
+            'dns_zone',
+            resource_list_to_options($api->dns_zone->list(), 'id', 'name'),
+            get_val('dns_zone', 0)
+        );
+        $xtpl->form_add_select(
+            _('DNS server zone') . ':',
+            'dns_server_zone',
+            dnsTransferLogServerZoneOptions(),
+            get_val('dns_server_zone', 0)
+        );
+    }
+
     api_param_to_form('status', $input->status, get_val('status'), null, true);
     api_param_to_form('reason_code', $input->reason_code, get_val('reason_code'));
     $xtpl->form_out(_('Show'));
 
     $xtpl->table_title(_('Transfer log'));
     $xtpl->table_add_category(_('Time'));
+    $xtpl->table_add_category(_('Zone'));
     $xtpl->table_add_category(_('Server'));
     $xtpl->table_add_category(_('Status'));
     $xtpl->table_add_category(_('Primary'));
     $xtpl->table_add_category(_('Serial'));
 
     foreach ($logs as $log) {
+        $serverZone = $log->dns_server_zone;
+
         $xtpl->table_td(tolocaltz($log->event_at));
+        $xtpl->table_td('<a href="?page=dns&action=zone_show&id=' . $serverZone->dns_zone_id . '">' . h($serverZone->dns_zone->name) . '</a>');
         $xtpl->table_td(h($serverZone->dns_server->name));
         $xtpl->table_td(dnsTransferStatusLabel($log->status));
         $xtpl->table_td($log->primary_addr ? h($log->primary_addr) : '-');
@@ -417,13 +461,30 @@ function dns_transfer_log_list($serverZoneId, $zoneId = null)
             ]),
             false,
             false,
-            5
+            6
         );
         $xtpl->table_tr(false, 'dns-transfer-log-details', 'dns-transfer-log-details');
     }
 
     $xtpl->table_pagination($pagination);
     $xtpl->table_out('dns-transfer-log');
+}
+
+function dnsTransferLogServerZoneOptions()
+{
+    global $api;
+
+    return resource_list_to_options(
+        $api->dns_server_zone->list([
+            'meta' => ['includes' => 'dns_zone,dns_server'],
+        ]),
+        'id',
+        'id',
+        true,
+        function ($serverZone) {
+            return $serverZone->dns_zone->name . ' / ' . $serverZone->dns_server->name . ' (#' . $serverZone->id . ')';
+        }
+    );
 }
 
 function dns_zone_delete($id)
@@ -1632,7 +1693,7 @@ function dnsTransferStatus($zone, $serverZone)
         return '-';
     }
 
-    $url = '?page=dns&action=transfer_log&id=' . $zone->id . '&server_zone=' . $serverZone->id;
+    $url = '?page=dns&action=transfer_log&dns_server_zone=' . $serverZone->id . '&return_url=' . urlencode($_SERVER['REQUEST_URI']);
 
     if (!$serverZone->last_transfer_status) {
         return dnsServerZoneDefinitionList([
