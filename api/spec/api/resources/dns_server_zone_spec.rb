@@ -22,12 +22,20 @@ RSpec.describe 'VpsAdmin::API::Resources::DnsServerZone' do
     vpath("/dns_server_zones/#{id}")
   end
 
-  def transfer_log_index_path(server_zone_id)
-    vpath("/dns_server_zones/#{server_zone_id}/transfer_logs")
+  def transfer_log_index_path
+    vpath('/dns_server_zone_transfer_logs')
   end
 
-  def transfer_log_show_path(server_zone_id, log_id)
-    vpath("/dns_server_zones/#{server_zone_id}/transfer_logs/#{log_id}")
+  def transfer_log_show_path(log_id)
+    vpath("/dns_server_zone_transfer_logs/#{log_id}")
+  end
+
+  def transfer_log_filter(server_zone)
+    {
+      dns_server_zone_transfer_log: {
+        dns_server_zone: server_zone.id
+      }
+    }
   end
 
   def json_get(path, params = nil)
@@ -283,8 +291,8 @@ RSpec.describe 'VpsAdmin::API::Resources::DnsServerZone' do
         'dns_server_zone#show',
         'dns_server_zone#create',
         'dns_server_zone#delete',
-        'dns_server_zone.transfer_log#index',
-        'dns_server_zone.transfer_log#show'
+        'dns_server_zone_transfer_log#index',
+        'dns_server_zone_transfer_log#show'
       )
     end
   end
@@ -514,7 +522,7 @@ RSpec.describe 'VpsAdmin::API::Resources::DnsServerZone' do
     end
   end
 
-  describe 'TransferLog' do
+  describe 'DnsServerZoneTransferLog' do
     let!(:user_log) do
       create_transfer_log!(
         server_zone: sz_user_external_visible,
@@ -540,14 +548,14 @@ RSpec.describe 'VpsAdmin::API::Resources::DnsServerZone' do
     end
 
     it 'rejects unauthenticated access' do
-      json_get transfer_log_index_path(sz_user_external_visible.id)
+      json_get transfer_log_index_path, transfer_log_filter(sz_user_external_visible)
 
       expect_status(401)
       expect(json['status']).to be(false)
     end
 
     it 'lists user logs without raw admin fields' do
-      as(SpecSeed.user) { json_get transfer_log_index_path(sz_user_external_visible.id) }
+      as(SpecSeed.user) { json_get transfer_log_index_path, transfer_log_filter(sz_user_external_visible) }
 
       expect_status(200)
       ids = transfer_logs.map { |row| row['id'] }
@@ -560,13 +568,15 @@ RSpec.describe 'VpsAdmin::API::Resources::DnsServerZone' do
     end
 
     it 'does not expose internal zone transfer logs to users' do
-      as(SpecSeed.user) { json_get transfer_log_index_path(sz_user_internal_secondary_visible.id) }
+      as(SpecSeed.user) do
+        json_get transfer_log_index_path, transfer_log_filter(sz_user_internal_secondary_visible)
+      end
 
-      expect_status(404)
-      expect(json['status']).to be(false)
+      expect_status(200)
+      expect(transfer_logs.map { |row| row['id'] }).not_to include(internal_log.id)
 
       as(SpecSeed.user) do
-        json_get transfer_log_show_path(sz_user_internal_secondary_visible.id, internal_log.id)
+        json_get transfer_log_show_path(internal_log.id)
       end
 
       expect_status(404)
@@ -574,7 +584,7 @@ RSpec.describe 'VpsAdmin::API::Resources::DnsServerZone' do
     end
 
     it 'allows admins to see raw fields' do
-      as(SpecSeed.admin) { json_get transfer_log_show_path(sz_user_external_visible.id, user_log.id) }
+      as(SpecSeed.admin) { json_get transfer_log_show_path(user_log.id) }
 
       expect_status(200)
       expect(transfer_log_obj).to include(
@@ -586,13 +596,15 @@ RSpec.describe 'VpsAdmin::API::Resources::DnsServerZone' do
     end
 
     it 'allows admins to see internal zone transfer logs' do
-      as(SpecSeed.admin) { json_get transfer_log_index_path(sz_user_internal_secondary_visible.id) }
+      as(SpecSeed.admin) do
+        json_get transfer_log_index_path, transfer_log_filter(sz_user_internal_secondary_visible)
+      end
 
       expect_status(200)
       expect(transfer_logs.map { |row| row['id'] }).to include(internal_log.id)
 
       as(SpecSeed.admin) do
-        json_get transfer_log_show_path(sz_user_internal_secondary_visible.id, internal_log.id)
+        json_get transfer_log_show_path(internal_log.id)
       end
 
       expect_status(200)
@@ -607,7 +619,7 @@ RSpec.describe 'VpsAdmin::API::Resources::DnsServerZone' do
     it 'does not expose hidden server logs to users' do
       hidden_log = create_transfer_log!(server_zone: sz_user_hidden)
 
-      as(SpecSeed.user) { json_get transfer_log_show_path(sz_user_hidden.id, hidden_log.id) }
+      as(SpecSeed.user) { json_get transfer_log_show_path(hidden_log.id) }
 
       expect_status(404)
       expect(json['status']).to be(false)

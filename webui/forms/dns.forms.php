@@ -357,6 +357,7 @@ function dns_transfer_log_list($serverZoneId, $zoneId = null)
     $xtpl->sbar_add(_('Back to zone'), '?page=dns&action=zone_show&id=' . ($zoneId ?? $serverZone->dns_zone_id));
 
     $params = [
+        'dns_server_zone' => $serverZone->id,
         'limit' => api_get_uint('limit', 25),
         'from_id' => api_get_uint('from_id', 0),
     ];
@@ -371,7 +372,7 @@ function dns_transfer_log_list($serverZoneId, $zoneId = null)
         $params['reason_code'] = $reasonCode;
     }
 
-    $logs = $api->dns_server_zone($serverZone->id)->transfer_log->list($params);
+    $logs = $api->dns_server_zone_transfer_log->list($params);
     $pagination = new \Pagination\System($logs);
 
     $xtpl->table_title(_('Filters'));
@@ -383,7 +384,7 @@ function dns_transfer_log_list($serverZoneId, $zoneId = null)
         'id' => $zoneId ?? $serverZone->dns_zone_id,
     ]);
 
-    $input = $api->dns_server_zone($serverZone->id)->transfer_log->list->getParameters('input');
+    $input = $api->dns_server_zone_transfer_log->list->getParameters('input');
     $xtpl->form_add_input(_('Limit') . ':', 'text', '40', 'limit', get_val('limit', '25'), '');
     $xtpl->form_add_input(_("From ID") . ':', 'text', '40', 'from_id', get_val('from_id', '0'), '');
     api_param_to_form('status', $input->status, get_val('status'), null, true);
