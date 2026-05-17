@@ -230,6 +230,24 @@ import ../make-test.nix (
         resource
       end
 
+      def ensure_dataset_in_pool(user, pool, name)
+        dataset = Dataset.find_or_initialize_by(name: name, user: user)
+        dataset.assign_attributes(
+          user: user,
+          user_editable: true,
+          user_create: true,
+          user_destroy: true,
+          object_state: :active,
+          confirmed: :confirmed
+        )
+        dataset.save! if dataset.changed? || dataset.new_record?
+
+        DatasetInPool.find_or_initialize_by(dataset: dataset, pool: pool).tap do |dip|
+          dip.confirmed = :confirmed
+          dip.save! if dip.changed? || dip.new_record?
+        end
+      end
+
       env = Environment.find(${toString seed.environment.id})
       language = Language.find_by(code: 'en') || Language.first
       user = User.find_or_initialize_by(login: 'webui-user')
@@ -477,6 +495,168 @@ import ../make-test.nix (
 
       primary_template = OsTemplate.find(1)
       reinstall_template = OsTemplate.find(2)
+      webui_pool = Pool.where(node: node, role: Pool.roles[:hypervisor]).order(:id).first
+      raise 'webui hypervisor pool not found' unless webui_pool
+
+      jumpto_network = Network.find_or_initialize_by(
+        address: '203.0.113.128',
+        prefix: 29
+      )
+      jumpto_network.assign_attributes(
+        ip_version: 4,
+        label: 'Webui Jumpto Network',
+        managed: false,
+        primary_location: Location.find(${toString location.id}),
+        role: :public_access,
+        purpose: :export,
+        split_access: :no_access,
+        split_prefix: 32
+      )
+      jumpto_network.save! if jumpto_network.changed? || jumpto_network.new_record?
+
+      LocationNetwork.find_or_initialize_by(
+        location: Location.find(${toString location.id}),
+        network: jumpto_network
+      ).tap do |locnet|
+        locnet.primary = true
+        locnet.priority = 10
+        locnet.autopick = true
+        locnet.userpick = true
+        locnet.save! if locnet.changed? || locnet.new_record?
+      end
+
+      jumpto_export_dip = ensure_dataset_in_pool(
+        user,
+        webui_pool,
+        'webui-jumpto-export-dataset'
+      )
+
+      jumpto_export = Export.find_or_initialize_by(
+        dataset_in_pool: jumpto_export_dip,
+        snapshot_in_pool_clone_n: 0
+      )
+      export_attrs = {
+        snapshot_in_pool_clone: nil,
+        user: user,
+        all_vps: false,
+        path: "/export/#{jumpto_export_dip.dataset.full_name}",
+        rw: true,
+        sync: true,
+        subtree_check: false,
+        root_squash: false,
+        threads: 8,
+        enabled: true,
+        object_state: :active,
+        confirmed: :confirmed
+      }
+      if jumpto_export.new_record?
+        Uuid.generate_for_new_record! do |uuid|
+          jumpto_export.assign_attributes(export_attrs)
+          jumpto_export.uuid = uuid
+          jumpto_export.save!
+          jumpto_export
+        end
+      else
+        jumpto_export.assign_attributes(export_attrs)
+        jumpto_export.uuid ||= Uuid.generate!
+        jumpto_export.save! if jumpto_export.changed?
+      end
+
+      jumpto_export_netif = NetworkInterface.find_or_initialize_by(
+        export: jumpto_export,
+        name: 'eth0'
+      )
+      jumpto_export_netif.assign_attributes(
+        kind: :veth_routed,
+        enable: true,
+        max_tx: 0,
+        max_rx: 0
+      )
+      jumpto_export_netif.save! if jumpto_export_netif.changed? || jumpto_export_netif.new_record?
+
+      jumpto_ip = IpAddress.find_or_initialize_by(ip_addr: '203.0.113.130')
+      jumpto_ip.assign_attributes(
+        prefix: 32,
+        size: 1,
+        network: jumpto_network,
+        user: nil,
+        network_interface: jumpto_export_netif
+      )
+      jumpto_ip.save! if jumpto_ip.changed? || jumpto_ip.new_record?
+
+      HostIpAddress.find_or_initialize_by(
+        ip_address: jumpto_ip,
+        ip_addr: jumpto_ip.ip_addr
+      ).tap do |host_ip|
+        host_ip.auto_add = true
+        host_ip.order = nil
+        host_ip.user_created = false
+        host_ip.save! if host_ip.changed? || host_ip.new_record?
+      end
+
+      jumpto_vps_dip = ensure_dataset_in_pool(
+        user,
+        webui_pool,
+        'webui-jumpto-vps-dataset'
+      )
+      jumpto_vps = Vps.find_or_initialize_by(hostname: 'webui-jumpto-vps')
+      jumpto_vps.assign_attributes(
+        user: user,
+        node: node,
+        os_template: primary_template,
+        dns_resolver: DnsResolver.first,
+        dataset_in_pool: jumpto_vps_dip,
+        user_namespace_map: userns_map,
+        object_state: :active,
+        confirmed: :confirmed,
+        manage_hostname: true
+      )
+      jumpto_vps.save! if jumpto_vps.changed? || jumpto_vps.new_record?
+
+      VpsCurrentStatus.find_or_initialize_by(vps: jumpto_vps).tap do |status|
+        status.status = true
+        status.is_running = false
+        status.in_rescue_mode = false
+        status.halted = false
+        status.update_count = 1
+        status.uptime = 0
+        status.process_count = 0
+        status.cpus = 1
+        status.cpu_idle = 100.0
+        status.cpu_user = 0.0
+        status.cpu_nice = 0.0
+        status.cpu_system = 0.0
+        status.cpu_iowait = 0.0
+        status.cpu_irq = 0.0
+        status.cpu_softirq = 0.0
+        status.loadavg1 = 0.0
+        status.loadavg5 = 0.0
+        status.loadavg15 = 0.0
+        status.total_memory = 1024
+        status.used_memory = 0
+        status.total_swap = 0
+        status.used_swap = 0
+        status.total_diskspace = 10_240
+        status.used_diskspace = 0
+        status.save! if status.changed? || status.new_record?
+      end
+
+      jumpto_dns_zone = DnsZone.find_or_initialize_by(
+        name: 'webui-jumpto.example.test.'
+      )
+      jumpto_dns_zone.assign_attributes(
+        user: user,
+        label: 'Webui Jumpto Zone',
+        email: 'hostmaster@example.test',
+        default_ttl: 3600,
+        enabled: true,
+        original_enabled: true,
+        dnssec_enabled: false,
+        zone_role: :forward_role,
+        zone_source: :internal_source,
+        confirmed: :confirmed
+      )
+      jumpto_dns_zone.save! if jumpto_dns_zone.changed? || jumpto_dns_zone.new_record?
 
       fixture_stdout.puts JSON.dump(
         'admin' => {
@@ -570,6 +750,33 @@ import ../make-test.nix (
           'name' => 'webui_readonly',
           'label' => 'New login',
           'state' => 'done'
+        },
+        'jumpto' => {
+          'textSearch' => 'webui',
+          'ipSearch' => jumpto_ip.ip_addr,
+          'user' => {
+            'id' => user.id,
+            'login' => user.login
+          },
+          'vps' => {
+            'id' => jumpto_vps.id,
+            'hostname' => jumpto_vps.hostname
+          },
+          'dnsZone' => {
+            'id' => jumpto_dns_zone.id,
+            'name' => jumpto_dns_zone.name
+          },
+          'export' => {
+            'id' => jumpto_export.id
+          },
+          'network' => {
+            'id' => jumpto_network.id,
+            'cidr' => jumpto_network.to_s
+          },
+          'ipAddress' => {
+            'id' => jumpto_ip.id,
+            'addr' => jumpto_ip.ip_addr
+          }
         }
       )
       fixture_stdout.flush
@@ -655,6 +862,19 @@ import ../make-test.nix (
           describe 'webui read-only navigation browser flow' do
             it 'passes Playwright read-only navigation tests' do
               run_playwright('navigation-readonly', 'specs/navigation-readonly.spec.cjs')
+            end
+          end
+        '';
+      };
+
+      jumpto = {
+        description = ''
+          Run admin jumpto browser search tests.
+        '';
+        script = webuiTestScriptCommon + ''
+          describe 'webui admin jumpto browser flow' do
+            it 'passes Playwright jumpto tests' do
+              run_playwright('jumpto', 'specs/jumpto.spec.cjs')
             end
           end
         '';
