@@ -160,7 +160,10 @@ function dns_zone_show($id)
     ]);
 
     if ($zone->source == 'internal_source') {
-        $xtpl->sbar_add(_('DNS record log'), '?page=dns&action=record_log&dns_zone=' . $zone->id . '&list=1');
+        $xtpl->sbar_add(
+            _('DNS record log'),
+            '?page=dns&action=record_log&dns_zone=' . $zone->id . '&list=1&return_url=' . urlencode($_SERVER['REQUEST_URI'])
+        );
         $xtpl->sbar_out(_('DNS zone'));
 
     } elseif ($zone->source == 'external_source') {
@@ -1458,16 +1461,27 @@ function dns_record_log_list()
 
     $xtpl->title(_('DNS record log'));
 
+    if (isset($_GET['return_url'])) {
+        $xtpl->sbar_add(_('Back to zone'), $_GET['return_url']);
+        $xtpl->sbar_out(_('DNS zone'));
+    }
+
     $xtpl->table_title(_('Filters'));
 
     $input = $api->dns_record_log->list->getparameters('input');
     $xtpl->form_create('', 'get', 'user-session-filter', false);
 
-    $xtpl->form_set_hidden_fields([
+    $hiddenFields = [
         'page' => 'dns',
         'action' => 'record_log',
         'list' => '1',
-    ]);
+    ];
+
+    if (isset($_GET['return_url'])) {
+        $hiddenFields['return_url'] = $_GET['return_url'];
+    }
+
+    $xtpl->form_set_hidden_fields($hiddenFields);
 
     $xtpl->form_add_input(_('Limit') . ':', 'text', '40', 'limit', get_val('limit', '25'), '');
     $xtpl->form_add_input(_("From ID") . ':', 'text', '40', 'from_id', get_val('from_id', '0'), '');
