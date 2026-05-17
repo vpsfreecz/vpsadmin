@@ -301,7 +301,7 @@ function dns_zone_show($id)
         if ($zt->dns_tsig_key_id) {
             $xtpl->table_td(h($zt->dns_tsig_key->name));
             $xtpl->table_td(h($zt->dns_tsig_key->algorithm));
-            $xtpl->table_td('<code>' . h($zt->dns_tsig_key->secret) . '</code>');
+            $xtpl->table_td('<textarea cols="40" rows="1" readonly>' . h($zt->dns_tsig_key->secret) . '</textarea>');
         } else {
             $xtpl->table_td('-');
             $xtpl->table_td('-');
