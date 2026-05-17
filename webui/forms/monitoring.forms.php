@@ -23,9 +23,9 @@ function monitoring_list()
         $params[$paginateBy] = $paginateValue;
     }
 
-    $monitorId = api_get_uint('monitor');
-    if ($monitorId !== null && $monitorId > 0) {
-        $params['monitor'] = $monitorId;
+    $monitor = api_get('monitor');
+    if ($monitor !== null) {
+        $params['monitor'] = $monitor;
     }
 
     $userId = api_get_uint('user');
