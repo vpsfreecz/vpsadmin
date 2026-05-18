@@ -4,13 +4,14 @@ import ../make-test.nix (
     seed = import ../../api/db/seeds/test.nix;
     adminUser = seed.adminUser;
     location = seed.location;
-    clusterSeed = import ../../api/db/seeds/test-1-node.nix;
-    nodeSeed = clusterSeed.nodes.node;
+    clusterSeed = import ../../api/db/seeds/test-2-node.nix;
+    node1Seed = clusterSeed.nodes.node1;
+    node2Seed = clusterSeed.nodes.node2;
 
     common = import ./storage/remote-common.nix {
       adminUserId = adminUser.id;
-      node1Id = nodeSeed.id;
-      node2Id = nodeSeed.id;
+      node1Id = node1Seed.id;
+      node2Id = node2Seed.id;
       manageCluster = false;
     };
 
@@ -30,7 +31,6 @@ import ../make-test.nix (
     '';
     webuiTestScriptCommon = common + ''
       require 'shellwords'
-      require 'base64'
 
       configure_examples do |config|
         config.default_order = :defined
@@ -51,32 +51,79 @@ import ../make-test.nix (
         end
       end
 
-      def webui_pool_id
+      WEBUI_NODE1_SECONDARY_POOL_FS = 'tank/webui-node1-secondary' unless defined?(WEBUI_NODE1_SECONDARY_POOL_FS)
+      WEBUI_NODE2_POOL_FS = 'tank/webui-node2' unless defined?(WEBUI_NODE2_POOL_FS)
+
+      def webui_pool_id(filesystem = primary_pool_fs)
         row = services.mariadb_json_rows(sql: <<~SQL).first
           SELECT JSON_OBJECT('id', id)
           FROM pools
-          WHERE filesystem = #{primary_pool_fs.inspect}
+          WHERE filesystem = #{filesystem.inspect}
           LIMIT 1
         SQL
 
         row && row.fetch('id')
       end
 
-      def ensure_webui_pool
-        pool_id = webui_pool_id
+      def ensure_webui_pool(
+        node_id: node1_id,
+        label: 'webui-browser-vps',
+        filesystem: primary_pool_fs,
+        role: 'hypervisor'
+      )
+        pool_id = webui_pool_id(filesystem)
 
         unless pool_id
           pool = create_pool(
             services,
-            node_id: node1_id,
-            label: 'webui-browser-vps',
-            filesystem: primary_pool_fs,
-            role: 'hypervisor'
+            node_id: node_id,
+            label: label,
+            filesystem: filesystem,
+            role: role
           )
           pool_id = pool.fetch('id')
         end
 
         wait_for_pool_online(services, pool_id)
+        pool_id
+      end
+
+      def ensure_webui_default_pool
+        ensure_webui_pool
+      end
+
+      def prepare_webui_node2
+        start_webui_machine(node2)
+        wait_for_running_nodectld(node2)
+        wait_for_webui_node_ready(node2, node2_id)
+        prepare_node_queues(node2)
+      end
+
+      def ensure_webui_migration_pools
+        prepare_webui_node2
+        node1_primary = ensure_webui_default_pool
+        node1_secondary = ensure_webui_pool(
+          node_id: node1_id,
+          label: 'webui-browser-node1-secondary',
+          filesystem: WEBUI_NODE1_SECONDARY_POOL_FS
+        )
+        node2_primary = ensure_webui_pool(
+          node_id: node2_id,
+          label: 'webui-browser-node2',
+          filesystem: WEBUI_NODE2_POOL_FS
+        )
+
+        {
+          'node1Primary' => node1_primary,
+          'node1Secondary' => node1_secondary,
+          'node2Primary' => node2_primary
+        }
+      end
+
+      def prepare_webui_migration_keys
+        pools = ensure_webui_migration_pools
+        generate_migration_keys(services)
+        pools
       end
 
       def unlock_webui_transaction_signing_key
@@ -92,32 +139,45 @@ import ../make-test.nix (
           api_dir="$(systemctl show -p WorkingDirectory --value vpsadmin-api)"
           api_root="$(dirname "$api_dir")"
 
-          API_DIR="$api_dir" "$api_root/ruby-env-wrapped/bin/ruby" ${fixtureScript}
+          API_DIR="$api_dir" "$api_root/ruby-env-wrapped/bin/ruby" ${fixtureScript} > #{WEBUI_FIXTURES}
+          cat #{WEBUI_FIXTURES}
         SH
 
         JSON.parse(output.to_s.lines.last)
       end
 
-      def write_playwright_fixtures(services, fixtures)
-        encoded = Base64.strict_encode64(JSON.generate(fixtures))
-        services.succeeds(
-          "printf %s #{Shellwords.escape(encoded)} | base64 -d > #{WEBUI_FIXTURES}"
-        )
+      def refresh_webui_node_status(node)
+        wait_until_block_succeeds(name: "refresh #{node.name} runtime status", timeout: 300) do
+          node.succeeds('nodectl refresh', timeout: 180)
+          true
+        end
+      end
+
+      def wait_for_webui_node_ready(node, node_id)
+        last_node = nil
+
+        refresh_webui_node_status(node)
+
+        wait_until_block_succeeds(name: "node #{node_id} ready in API", timeout: 1200) do
+          _, output = services.vpsadminctl.succeeds(args: ['node', 'show', node_id.to_s])
+          last_node = output.fetch('node')
+
+          last_node.fetch('status') == true && last_node.fetch('pool_status') == true
+        end
+      rescue OsVm::TimeoutError
+        raise "Timed out waiting for node #{node_id} ready in API: #{last_node.inspect}"
       end
 
       def prepare_webui_playwright
-        [services, node].each { |machine| start_webui_machine(machine) }
+        [services, node1].each { |machine| start_webui_machine(machine) }
         services.wait_for_vpsadmin_api
         wait_for_webui
-        wait_for_running_nodectld(node)
-        wait_for_node_ready(services, node1_id)
+        wait_for_running_nodectld(node1)
+        wait_for_webui_node_ready(node1, node1_id)
         unlock_webui_transaction_signing_key
-        ensure_webui_pool
+        ensure_webui_default_pool
 
-        write_playwright_fixtures(
-          services,
-          create_webui_browser_fixtures(services)
-        )
+        create_webui_browser_fixtures(services)
       end
 
       def webui_pending_transaction_chains
@@ -252,43 +312,66 @@ import ../make-test.nix (
         end
       end
 
+      def ensure_webui_user(login:, full_name:, email:, password:, env:, language:)
+        user = User.find_or_initialize_by(login: login)
+        user.assign_attributes(
+          full_name: full_name,
+          email: email,
+          level: 2,
+          language: language,
+          enable_basic_auth: true,
+          enable_token_auth: true,
+          enable_oauth2_auth: true,
+          mailer_enabled: false,
+          password_reset: false,
+          lockout: false,
+          object_state: :active
+        )
+        user.set_password(password)
+        user.save!
+
+        quoted_now = ActiveRecord::Base.connection.quote(Time.now)
+        ActiveRecord::Base.connection.execute(<<~SQL)
+          INSERT INTO user_accounts (user_id, monthly_payment, paid_until, updated_at)
+          VALUES (#{user.id}, 0, NULL, #{quoted_now})
+          ON DUPLICATE KEY UPDATE
+            monthly_payment = VALUES(monthly_payment),
+            paid_until = VALUES(paid_until),
+            updated_at = VALUES(updated_at)
+        SQL
+
+        EnvironmentUserConfig.find_or_initialize_by(user: user, environment: env).tap do |cfg|
+          cfg.can_create_vps = true
+          cfg.can_destroy_vps = true
+          cfg.vps_lifetime = 0
+          cfg.max_vps_count = 10
+          cfg.default = true
+          cfg.save! if cfg.changed?
+        end
+
+        user
+      end
+
       env = Environment.find(${toString seed.environment.id})
       language = Language.find_by(code: 'en') || Language.first
-      user = User.find_or_initialize_by(login: 'webui-user')
-      user.assign_attributes(
+      user = ensure_webui_user(
+        login: 'webui-user',
         full_name: 'Webui Browser User',
         email: 'webui-user@example.test',
-        level: 2,
-        language: language,
-        enable_basic_auth: true,
-        enable_token_auth: true,
-        enable_oauth2_auth: true,
-        mailer_enabled: false,
-        password_reset: false,
-        lockout: false,
-        object_state: :active
+        password: 'webuiUserPassword',
+        env: env,
+        language: language
       )
-      user.set_password('webuiUserPassword')
-      user.save!
+      secondary_user = ensure_webui_user(
+        login: 'webui-user-secondary',
+        full_name: 'Webui Browser Secondary User',
+        email: 'webui-user-secondary@example.test',
+        password: 'webuiSecondaryPassword',
+        env: env,
+        language: language
+      )
 
       quoted_now = ActiveRecord::Base.connection.quote(Time.now)
-      ActiveRecord::Base.connection.execute(<<~SQL)
-        INSERT INTO user_accounts (user_id, monthly_payment, paid_until, updated_at)
-        VALUES (#{user.id}, 0, NULL, #{quoted_now})
-        ON DUPLICATE KEY UPDATE
-          monthly_payment = VALUES(monthly_payment),
-          paid_until = VALUES(paid_until),
-          updated_at = VALUES(updated_at)
-      SQL
-
-      EnvironmentUserConfig.find_or_initialize_by(user: user, environment: env).tap do |cfg|
-        cfg.can_create_vps = true
-        cfg.can_destroy_vps = true
-        cfg.vps_lifetime = 0
-        cfg.max_vps_count = 10
-        cfg.default = true
-        cfg.save! if cfg.changed?
-      end
 
       resources = [
         [:cpu, 'CPU', 1, 64, 1, :numeric, nil, 8, 1],
@@ -303,13 +386,15 @@ import ../make-test.nix (
       resources.each do |resource_row|
         resource = ensure_cluster_resource(resource_row)
 
-        UserClusterResource.find_or_initialize_by(
-          user: user,
-          environment: env,
-          cluster_resource: resource
-        ).tap do |user_resource|
-          user_resource.value = resource_row[7]
-          user_resource.save! if user_resource.changed?
+        [user, secondary_user].each do |resource_user|
+          UserClusterResource.find_or_initialize_by(
+            user: resource_user,
+            environment: env,
+            cluster_resource: resource
+          ).tap do |user_resource|
+            user_resource.value = resource_row[7]
+            user_resource.save! if user_resource.changed?
+          end
         end
 
         DefaultObjectClusterResource.find_or_initialize_by(
@@ -390,6 +475,28 @@ import ../make-test.nix (
       public_key.auto_add = false
       public_key.save!
 
+      extra_public_keys = [
+        ['Webui Browser Key Auto', 'ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFwebuiautokey webui-browser-auto@test', true],
+        ['Webui Browser Key Spare', 'ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFwebuisparekey webui-browser-spare@test', false]
+      ].map do |label, key, auto_add|
+        UserPublicKey.find_or_initialize_by(
+          user: user,
+          label: label
+        ).tap do |pubkey|
+          pubkey.key = key
+          pubkey.auto_add = auto_add
+          pubkey.save!
+        end
+      end
+
+      secondary_public_key = UserPublicKey.find_or_initialize_by(
+        user: secondary_user,
+        label: 'Webui Secondary Browser Key'
+      )
+      secondary_public_key.key = 'ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFwebuisecondary webui-secondary@test'
+      secondary_public_key.auto_add = false
+      secondary_public_key.save!
+
       user_data = VpsUserData.find_or_initialize_by(
         user: user,
         label: 'Webui Browser Script'
@@ -397,6 +504,28 @@ import ../make-test.nix (
       user_data.format = 'script'
       user_data.content = "#!/bin/sh\\nprintf 'webui-playwright-user-data\\n' > /root/webui-playwright-user-data.txt\\n"
       user_data.save!
+
+      extra_user_data = [
+        ['Webui Browser Cloud Config', 'cloudinit_config', "#cloud-config\\nwrite_files:\\n  - path: /root/webui-cloud-config.txt\\n    content: webui-cloud-config\\n"],
+        ['Webui Browser Vendor Data', 'script', "#!/bin/sh\\nprintf 'webui-vendor-data\\n' > /root/webui-vendor-data.txt\\n"]
+      ].map do |label, format, content|
+        VpsUserData.find_or_initialize_by(
+          user: user,
+          label: label
+        ).tap do |data|
+          data.format = format
+          data.content = content
+          data.save!
+        end
+      end
+
+      secondary_user_data = VpsUserData.find_or_initialize_by(
+        user: secondary_user,
+        label: 'Webui Secondary Browser Script'
+      )
+      secondary_user_data.format = 'script'
+      secondary_user_data.content = "#!/bin/sh\\nprintf 'webui-secondary-user-data\\n' > /root/webui-secondary-user-data.txt\\n"
+      secondary_user_data.save!
 
       news_log_message = 'Webui Browser Notice'
       quoted_news_log_message = ActiveRecord::Base.connection.quote(news_log_message)
@@ -412,7 +541,8 @@ import ../make-test.nix (
         SELECT id FROM news_logs WHERE message = #{quoted_news_log_message} ORDER BY id DESC LIMIT 1
       SQL
 
-      node = Node.find(${toString nodeSeed.id})
+      node = Node.find(${toString node1Seed.id})
+      node2 = Node.find(${toString node2Seed.id})
 
       readonly_session = UserSession.create!(
         user: user,
@@ -808,6 +938,232 @@ import ../make-test.nix (
       )
       jumpto_dns_zone.save! if jumpto_dns_zone.changed? || jumpto_dns_zone.new_record?
 
+      fixture_storage_dip = ensure_dataset_in_pool(
+        user,
+        webui_pool,
+        'webui-fixture-storage-dataset'
+      )
+      fixture_snapshot = Snapshot.find_or_initialize_by(
+        dataset: fixture_storage_dip.dataset,
+        name: 'webui-fixture-snapshot'
+      )
+      fixture_snapshot.assign_attributes(
+        label: 'Webui Fixture Snapshot',
+        confirmed: :confirmed
+      )
+      fixture_snapshot.save! if fixture_snapshot.changed? || fixture_snapshot.new_record?
+
+      fixture_snapshot_in_pool = SnapshotInPool.find_or_initialize_by(
+        snapshot: fixture_snapshot,
+        dataset_in_pool: fixture_storage_dip
+      )
+      fixture_snapshot_in_pool.confirmed = :confirmed
+      fixture_snapshot_in_pool.save! if fixture_snapshot_in_pool.changed? || fixture_snapshot_in_pool.new_record?
+
+      fixture_network = Network.find_or_initialize_by(
+        address: '203.0.113.136',
+        prefix: 29
+      )
+      fixture_network.assign_attributes(
+        ip_version: 4,
+        label: 'Webui Fixture Network',
+        managed: false,
+        primary_location: Location.find(${toString location.id}),
+        role: :public_access,
+        purpose: :any,
+        split_access: :user_split,
+        split_prefix: 32
+      )
+      fixture_network.save! if fixture_network.changed? || fixture_network.new_record?
+
+      LocationNetwork.find_or_initialize_by(
+        location: Location.find(${toString location.id}),
+        network: fixture_network
+      ).tap do |locnet|
+        locnet.primary = true
+        locnet.priority = 20
+        locnet.autopick = true
+        locnet.userpick = true
+        locnet.save! if locnet.changed? || locnet.new_record?
+      end
+
+      fixture_free_ip = IpAddress.find_or_initialize_by(ip_addr: '203.0.113.137')
+      fixture_free_ip.assign_attributes(
+        prefix: 32,
+        size: 1,
+        network: fixture_network,
+        user: user,
+        network_interface: nil
+      )
+      fixture_free_ip.save! if fixture_free_ip.changed? || fixture_free_ip.new_record?
+
+      HostIpAddress.find_or_initialize_by(
+        ip_address: fixture_free_ip,
+        ip_addr: fixture_free_ip.ip_addr
+      ).tap do |host_ip|
+        host_ip.auto_add = true
+        host_ip.order = nil
+        host_ip.user_created = false
+        host_ip.save! if host_ip.changed? || host_ip.new_record?
+      end
+
+      support_vps_dip = ensure_dataset_in_pool(
+        user,
+        webui_pool,
+        'webui-fixture-support-vps-dataset'
+      )
+      support_vps = Vps.find_or_initialize_by(hostname: 'webui-fixture-support-vps')
+      support_vps.assign_attributes(
+        user: user,
+        node: node,
+        os_template: primary_template,
+        dns_resolver: DnsResolver.first,
+        dataset_in_pool: support_vps_dip,
+        user_namespace_map: userns_map,
+        object_state: :active,
+        confirmed: :confirmed,
+        manage_hostname: true
+      )
+      support_vps.save! if support_vps.changed? || support_vps.new_record?
+
+      support_netif = NetworkInterface.find_or_initialize_by(
+        vps: support_vps,
+        name: 'eth0'
+      )
+      support_netif.assign_attributes(
+        kind: :veth_routed,
+        enable: true,
+        max_tx: 0,
+        max_rx: 0
+      )
+      support_netif.save! if support_netif.changed? || support_netif.new_record?
+
+      fixture_assigned_ip = IpAddress.find_or_initialize_by(ip_addr: '203.0.113.138')
+      fixture_assigned_ip.assign_attributes(
+        prefix: 32,
+        size: 1,
+        network: fixture_network,
+        user: user,
+        network_interface: support_netif
+      )
+      fixture_assigned_ip.save! if fixture_assigned_ip.changed? || fixture_assigned_ip.new_record?
+
+      support_host_ip = HostIpAddress.find_or_initialize_by(
+        ip_address: fixture_assigned_ip,
+        ip_addr: fixture_assigned_ip.ip_addr
+      )
+      support_host_ip.auto_add = true
+      support_host_ip.order = 0
+      support_host_ip.user_created = false
+      support_host_ip.save! if support_host_ip.changed? || support_host_ip.new_record?
+
+      support_assignment = IpAddressAssignment.find_or_initialize_by(
+        ip_address: fixture_assigned_ip,
+        vps: support_vps,
+        to_date: nil
+      )
+      support_assignment.assign_attributes(
+        user: user,
+        ip_addr: fixture_assigned_ip.ip_addr,
+        ip_prefix: fixture_assigned_ip.prefix,
+        from_date: Time.now - 3600,
+        reconstructed: false
+      )
+      support_assignment.save! if support_assignment.changed? || support_assignment.new_record?
+
+      fixture_dns_zone = DnsZone.find_or_initialize_by(
+        name: 'webui-fixture.example.test.'
+      )
+      fixture_dns_zone.assign_attributes(
+        user: user,
+        label: 'Webui Fixture Zone',
+        email: 'hostmaster@example.test',
+        default_ttl: 3600,
+        enabled: true,
+        original_enabled: true,
+        dnssec_enabled: false,
+        zone_role: :forward_role,
+        zone_source: :internal_source,
+        confirmed: :confirmed
+      )
+      fixture_dns_zone.save! if fixture_dns_zone.changed? || fixture_dns_zone.new_record?
+
+      fixture_dns_record = DnsRecord.find_or_initialize_by(
+        dns_zone: fixture_dns_zone,
+        name: 'www',
+        record_type: 'A'
+      )
+      fixture_dns_record.assign_attributes(
+        content: fixture_assigned_ip.ip_addr,
+        ttl: 3600,
+        enabled: true,
+        original_enabled: true,
+        confirmed: :confirmed,
+        managed: false,
+        user: nil
+      )
+      fixture_dns_record.save! if fixture_dns_record.changed? || fixture_dns_record.new_record?
+
+      support_mailbox = Mailbox.find_or_initialize_by(label: 'Webui Fixture Mailbox')
+      support_mailbox.assign_attributes(
+        server: 'mail.example.test',
+        port: 993,
+        enable_ssl: true,
+        user: 'webui-fixture',
+        password: 'webui-fixture-password'
+      )
+      support_mailbox.save! if support_mailbox.changed? || support_mailbox.new_record?
+
+      support_incident = IncidentReport.find_or_initialize_by(
+        user: user,
+        vps: support_vps,
+        subject: 'Webui Fixture Incident'
+      )
+      support_incident.assign_attributes(
+        filed_by: admin,
+        ip_address_assignment: support_assignment,
+        mailbox: support_mailbox,
+        codename: 'WEBUI-FIXTURE',
+        text: 'Deterministic webui browser fixture incident.',
+        detected_at: Time.now - 1800,
+        reported_at: Time.now - 1700,
+        vps_action: :none
+      )
+      support_incident.save! if support_incident.changed? || support_incident.new_record?
+
+      oom_rule = OomReportRule.find_or_initialize_by(
+        vps: support_vps,
+        cgroup_pattern: '/'
+      )
+      oom_rule.action = :notify
+      oom_rule.save! if oom_rule.changed? || oom_rule.new_record?
+
+      oom_report = OomReport.unscoped.find_or_initialize_by(
+        vps: support_vps,
+        invoked_by_pid: 1234,
+        cgroup: '/'
+      )
+      oom_report.assign_attributes(
+        oom_report_rule: oom_rule,
+        processed: true,
+        ignored: false,
+        invoked_by_name: 'webui-fixture',
+        killed_name: 'webui-killed',
+        killed_pid: 1235,
+        count: 1,
+        reported_at: Time.now - 1200,
+        created_at: Time.now - 1200
+      )
+      oom_report.save! if oom_report.changed? || oom_report.new_record?
+
+      pools_by_filesystem = Pool
+        .where(filesystem: [
+          ${builtins.toJSON "tank/ct"},
+          ${builtins.toJSON "tank/webui-node1-secondary"},
+          ${builtins.toJSON "tank/webui-node2"}
+        ])
+        .index_by(&:filesystem)
+
       fixture_stdout.puts JSON.dump(
         'admin' => {
           'id' => ${toString adminUser.id},
@@ -822,10 +1178,24 @@ import ../make-test.nix (
             'id' => public_key.id,
             'label' => public_key.label
           },
+          'publicKeys' => ([public_key] + extra_public_keys).map do |pubkey|
+            {
+              'id' => pubkey.id,
+              'label' => pubkey.label,
+              'autoAdd' => pubkey.auto_add
+            }
+          end,
           'userData' => {
             'id' => user_data.id,
             'label' => user_data.label
           },
+          'userDataItems' => ([user_data] + extra_user_data).map do |data|
+            {
+              'id' => data.id,
+              'label' => data.label,
+              'format' => data.format
+            }
+          end,
           'userNamespace' => {
             'id' => userns.id,
             'offset' => userns.offset,
@@ -855,6 +1225,22 @@ import ../make-test.nix (
             }
           }
         },
+        'users' => {
+          'secondary' => {
+            'id' => secondary_user.id,
+            'username' => secondary_user.login,
+            'password' => 'webuiSecondaryPassword',
+            'publicKey' => {
+              'id' => secondary_public_key.id,
+              'label' => secondary_public_key.label
+            },
+            'userData' => {
+              'id' => secondary_user_data.id,
+              'label' => secondary_user_data.label,
+              'format' => secondary_user_data.format
+            }
+          }
+        },
         'location' => {
           'id' => ${toString location.id},
           'label' => ${builtins.toJSON location.label}
@@ -863,6 +1249,37 @@ import ../make-test.nix (
           'id' => node.id,
           'name' => node.name,
           'domainName' => node.domain_name
+        },
+        'cluster' => {
+          'nodes' => {
+            'node1' => {
+              'id' => node.id,
+              'name' => node.name,
+              'domainName' => node.domain_name
+            },
+            'node2' => {
+              'id' => node2.id,
+              'name' => node2.name,
+              'domainName' => node2.domain_name
+            }
+          },
+          'pools' => {
+            'node1Primary' => pools_by_filesystem[${builtins.toJSON "tank/ct"}] && {
+              'id' => pools_by_filesystem[${builtins.toJSON "tank/ct"}].id,
+              'filesystem' => pools_by_filesystem[${builtins.toJSON "tank/ct"}].filesystem,
+              'nodeId' => pools_by_filesystem[${builtins.toJSON "tank/ct"}].node_id
+            },
+            'node1Secondary' => pools_by_filesystem[${builtins.toJSON "tank/webui-node1-secondary"}] && {
+              'id' => pools_by_filesystem[${builtins.toJSON "tank/webui-node1-secondary"}].id,
+              'filesystem' => pools_by_filesystem[${builtins.toJSON "tank/webui-node1-secondary"}].filesystem,
+              'nodeId' => pools_by_filesystem[${builtins.toJSON "tank/webui-node1-secondary"}].node_id
+            },
+            'node2Primary' => pools_by_filesystem[${builtins.toJSON "tank/webui-node2"}] && {
+              'id' => pools_by_filesystem[${builtins.toJSON "tank/webui-node2"}].id,
+              'filesystem' => pools_by_filesystem[${builtins.toJSON "tank/webui-node2"}].filesystem,
+              'nodeId' => pools_by_filesystem[${builtins.toJSON "tank/webui-node2"}].node_id
+            }
+          }
         },
         'osTemplates' => {
           'primary' => {
@@ -883,6 +1300,87 @@ import ../make-test.nix (
             'ipv4' => 0,
             'ipv4_private' => 0,
             'ipv6' => 0
+          },
+          'fixtures' => {
+            'jumpto' => {
+              'id' => jumpto_vps.id,
+              'hostname' => jumpto_vps.hostname,
+              'nodeId' => jumpto_vps.node_id,
+              'datasetInPoolId' => jumpto_vps.dataset_in_pool_id
+            },
+            'support' => {
+              'id' => support_vps.id,
+              'hostname' => support_vps.hostname,
+              'nodeId' => support_vps.node_id,
+              'datasetInPoolId' => support_vps.dataset_in_pool_id
+            }
+          }
+        },
+        'storage' => {
+          'dataset' => {
+            'id' => fixture_storage_dip.dataset.id,
+            'name' => fixture_storage_dip.dataset.name,
+            'fullName' => fixture_storage_dip.dataset.full_name
+          },
+          'datasetInPool' => {
+            'id' => fixture_storage_dip.id,
+            'poolId' => fixture_storage_dip.pool_id
+          },
+          'snapshot' => {
+            'id' => fixture_snapshot.id,
+            'name' => fixture_snapshot.name,
+            'label' => fixture_snapshot.label
+          },
+          'snapshotInPool' => {
+            'id' => fixture_snapshot_in_pool.id
+          }
+        },
+        'networking' => {
+          'network' => {
+            'id' => fixture_network.id,
+            'cidr' => fixture_network.to_s,
+            'label' => fixture_network.label
+          },
+          'ipAddresses' => {
+            'free' => {
+              'id' => fixture_free_ip.id,
+              'addr' => fixture_free_ip.ip_addr
+            },
+            'assigned' => {
+              'id' => fixture_assigned_ip.id,
+              'addr' => fixture_assigned_ip.ip_addr,
+              'networkInterfaceId' => support_netif.id,
+              'assignmentId' => support_assignment.id
+            }
+          }
+        },
+        'dns' => {
+          'zone' => {
+            'id' => fixture_dns_zone.id,
+            'name' => fixture_dns_zone.name,
+            'label' => fixture_dns_zone.label
+          },
+          'record' => {
+            'id' => fixture_dns_record.id,
+            'name' => fixture_dns_record.name,
+            'type' => fixture_dns_record.record_type,
+            'content' => fixture_dns_record.content
+          }
+        },
+        'support' => {
+          'mailbox' => {
+            'id' => support_mailbox.id,
+            'label' => support_mailbox.label
+          },
+          'incidentReport' => {
+            'id' => support_incident.id,
+            'subject' => support_incident.subject,
+            'vpsId' => support_vps.id
+          },
+          'oomReport' => {
+            'id' => oom_report.id,
+            'vpsId' => support_vps.id,
+            'ruleId' => oom_rule.id
           }
         },
         'newsLog' => {
@@ -939,14 +1437,15 @@ import ../make-test.nix (
       fixture_stdout.flush
     '';
 
-    baseMachines = import ../machines/cluster/1-node.nix args;
+    baseMachines = import ../machines/cluster/2-node.nix args;
   in
   {
     name = "vpsadmin-webui";
 
     description = ''
-      Boot a single-node vpsAdmin cluster and exercise user/admin PHP web UI
-      flows through Playwright.
+      Boot a vpsAdmin cluster and exercise user/admin PHP web UI flows through
+      Playwright. Existing scripts prepare node1 only; node2 is available for
+      future scripts that explicitly start it.
     '';
 
     tags = [
