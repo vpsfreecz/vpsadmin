@@ -41,7 +41,26 @@ _theframe.contentWindow.location.href = _theframe.src;
 
     $xtpl->assign('AJAX_SCRIPT', $xtpl->vars['AJAX_SCRIPT'] . '
 <script type="text/javascript">
+function vps_action_label(cmd) {
+	var labels = {
+		start: "' . _('Start') . '",
+		stop: "' . _('Stop') . '",
+		restart: "' . _('Restart') . '",
+		force_restart: "' . _('Reset') . '",
+		force_stop: "' . _('Poweroff') . '"
+	};
+
+	return labels[cmd] || cmd;
+}
+function vps_action_status(text) {
+	$("#vps-action-status").text(text);
+}
 function vps_do(cmd) {
+	var originalCmd = cmd;
+	var label = vps_action_label(cmd);
+
+	vps_action_status(label + "...");
+
 	apiClient.after("authenticated", function() {
 		var params = {};
 		if (cmd === "force_restart" || cmd === "force_stop") {
@@ -54,8 +73,20 @@ function vps_do(cmd) {
 			{
 				params: params,
 				onReply: function(c, reply) {
-					if (!reply.isOk())
+					if (reply.isOk()) {
+						vps_action_status(label + " ' . _('planned') . '");
+					} else {
+						vps_action_status(label + " ' . _('failed') . '");
 						alert(cmd + " failed: " + reply.apiResponse().message());
+					}
+				},
+				onDone: function(c, reply) {
+					if (reply.isOk()) {
+						vps_action_status(label + " ' . _('done') . '");
+					} else {
+						vps_action_status(label + " ' . _('failed') . '");
+						alert(originalCmd + " failed: " + reply.apiResponse().message());
+					}
 				}
 			}
 		);
@@ -119,6 +150,7 @@ function vps_boot(cmd) {
     $xtpl->sbar_add('<img src="template/icons/vps_restart.png"  title="' . _("Restart") . '" /> ' . _("Restart"), "javascript:vps_do('restart');");
     $xtpl->sbar_add('<img src="template/icons/vps_reset.png"  title="' . _("Reset") . '" /> ' . _("Reset"), "javascript:vps_do('force_restart');");
     $xtpl->sbar_add('<img src="template/icons/vps_poweroff.png"  title="' . _("Poweroff") . '" /> ' . _("Poweroff"), "javascript:vps_do('force_stop');");
+    $xtpl->sbar_add_fragment('<p id="vps-action-status" role="status"></p>');
 
     $xtpl->sbar_add_fragment(
         '<h3>' . _('Set password') . '</h3>'
