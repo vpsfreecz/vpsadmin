@@ -48,7 +48,6 @@ module VpsAdmin::API::Resources
         q = self.class.model
                 .joins(dns_server_zone: %i[dns_zone dns_server])
                 .where(with_restricted)
-        q = q.where.not(status: :started) if current_user.role != :admin
 
         q = q.where(dns_server_zones: { dns_zone_id: input[:dns_zone].id }) if input[:dns_zone]
 
@@ -100,7 +99,6 @@ module VpsAdmin::API::Resources
         q = self.class.model
                 .joins(dns_server_zone: %i[dns_zone dns_server])
                 .where(with_restricted(id: params[:dns_server_zone_transfer_log_id]))
-        q = q.where.not(status: :started) if current_user.role != :admin
 
         @log = q.take!
       end

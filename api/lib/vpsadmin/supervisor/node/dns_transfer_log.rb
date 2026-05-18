@@ -3,6 +3,8 @@ require_relative 'base'
 
 module VpsAdmin::Supervisor
   class Node::DnsTransferLog < Node::Base
+    SUPPORTED_STATUSES = %w[success failed].freeze
+
     def start
       exchange = channel.direct(exchange_name)
       queue = channel.queue(
@@ -29,11 +31,14 @@ module VpsAdmin::Supervisor
       )
       return if dns_server_zone.nil?
 
+      status = event.fetch('status')
+      return unless SUPPORTED_STATUSES.include?(status)
+
       event_at = Time.at(event.fetch('time'))
       attrs = {
         dns_server_zone:,
         event_at:,
-        status: event.fetch('status'),
+        status:,
         reason_code: event['reason_code'],
         reason: event['reason'],
         primary_addr: event['primary_addr'],
@@ -54,7 +59,6 @@ module VpsAdmin::Supervisor
     end
 
     def update_latest_transfer(dns_server_zone, log)
-      return if log.started?
       return if dns_server_zone.last_transfer_at && dns_server_zone.last_transfer_at > log.event_at
 
       dns_server_zone.update!(

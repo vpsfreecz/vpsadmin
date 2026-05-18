@@ -1,7 +1,7 @@
 class DnsServerZoneTransferLog < ApplicationRecord
   belongs_to :dns_server_zone
 
-  enum :status, %i[started success failed]
+  enum :status, %i[success failed]
 
   validates :dns_server_zone, :event_key, :event_at, :status, presence: true
   validates :event_key, uniqueness: true

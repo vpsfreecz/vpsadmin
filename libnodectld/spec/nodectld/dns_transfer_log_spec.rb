@@ -44,7 +44,7 @@ RSpec.describe NodeCtld::DnsTransferLog do
     end
   end
 
-  it 'normalizes successful and started transfers' do
+  it 'normalizes successful transfers and ignores started transfers' do
     log = described_class.new
 
     completed = log.send(
@@ -60,10 +60,7 @@ RSpec.describe NodeCtld::DnsTransferLog do
       primary_addr: '192.0.2.1',
       serial: 2_026_050_901
     )
-    expect(started).to include(
-      name: 'ok.test.',
-      status: 'started'
-    )
+    expect(started).to be_nil
   end
 
   it 'ignores successful transfer status messages' do

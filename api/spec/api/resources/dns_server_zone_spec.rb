@@ -567,56 +567,6 @@ RSpec.describe 'VpsAdmin::API::Resources::DnsServerZone' do
       expect(row).not_to include('raw_message', 'source_cursor', 'event_key')
     end
 
-    it 'hides started logs from users' do
-      started_log = create_transfer_log!(
-        server_zone: sz_user_external_visible,
-        status: :started,
-        reason_code: nil
-      )
-
-      as(SpecSeed.user) { json_get transfer_log_index_path, transfer_log_filter(sz_user_external_visible) }
-
-      expect_status(200)
-      ids = transfer_logs.map { |row| row['id'] }
-      expect(ids).to include(user_log.id, recent_user_log.id)
-      expect(ids).not_to include(started_log.id)
-
-      as(SpecSeed.user) { json_get transfer_log_show_path(started_log.id) }
-
-      expect_status(404)
-      expect(json['status']).to be(false)
-    end
-
-    it 'orders same-time transfer results before started logs for admins' do
-      event_at = Time.now.change(usec: 0)
-      started_log = create_transfer_log!(
-        server_zone: sz_user_external_visible,
-        status: :started,
-        reason_code: nil,
-        event_at:
-      )
-      result_log = create_transfer_log!(
-        server_zone: sz_user_external_visible,
-        status: :success,
-        reason_code: nil,
-        event_at:
-      )
-
-      as(SpecSeed.admin) { json_get transfer_log_index_path, transfer_log_filter(sz_user_external_visible) }
-
-      expect_status(200)
-      ids = transfer_logs.map { |row| row['id'] }
-      expect(ids.index(result_log.id)).to be < ids.index(started_log.id)
-
-      as(SpecSeed.admin) { json_get transfer_log_show_path(started_log.id) }
-
-      expect_status(200)
-      expect(transfer_log_obj).to include(
-        'id' => started_log.id,
-        'status' => 'started'
-      )
-    end
-
     it 'filters user logs by DNS zone' do
       as(SpecSeed.user) do
         json_get transfer_log_index_path, {

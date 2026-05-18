@@ -138,8 +138,7 @@ module NodeCtld
         parse_transfer_status(message) ||
         parse_transfer_failed(message) ||
         parse_refresh_failed(message) ||
-        parse_zone_load_failed(message) ||
-        parse_transfer_started(message)
+        parse_zone_load_failed(message)
     end
 
     def parse_transfer_completed(message)
@@ -188,12 +187,6 @@ module NodeCtld
         reason: REASON_TEXT.fetch('invalid_zone'),
         message:
       )
-    end
-
-    def parse_transfer_started(message)
-      return unless %r{zone ([^/]+)/IN: Transfer started} =~ message
-
-      event(Regexp.last_match(1), 'started', message: 'Transfer started')
     end
 
     def failed_event(zone, primary_addr, reason)

@@ -10,7 +10,7 @@ class DnsServerZone < ApplicationRecord
   has_many :dns_server_zone_transfer_logs, dependent: :delete_all
 
   enum :zone_type, %i[primary_type secondary_type]
-  enum :last_transfer_status, %i[started success failed], prefix: :last_transfer
+  enum :last_transfer_status, %i[success failed], prefix: :last_transfer
 
   validates :dns_server, presence: true
   validates :dns_zone, presence: true

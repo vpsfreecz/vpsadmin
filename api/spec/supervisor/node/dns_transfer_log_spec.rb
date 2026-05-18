@@ -94,23 +94,25 @@ RSpec.describe VpsAdmin::Supervisor::Node::DnsTransferLog do
     expect(DnsServerZoneTransferLog.where(event_key: 'duplicate-key').count).to eq(1)
   end
 
-  it 'does not let a started event clear an existing failure' do
+  it 'ignores unsupported transfer statuses from older nodes' do
     server_zone = create_server_zone!
     supervisor = described_class.new(nil, SpecSeed.node)
     supervisor.send(:save_event, transfer_event(server_zone))
 
-    supervisor.send(
-      :save_event,
-      transfer_event(
-        server_zone,
-        'status' => 'started',
-        'reason_code' => nil,
-        'reason' => nil,
-        'message' => 'Transfer started',
-        'event_key' => SecureRandom.hex(32),
-        'time' => Time.utc(2026, 5, 9, 12, 5, 0).to_i
+    expect do
+      supervisor.send(
+        :save_event,
+        transfer_event(
+          server_zone,
+          'status' => 'started',
+          'reason_code' => nil,
+          'reason' => nil,
+          'message' => 'Transfer started',
+          'event_key' => SecureRandom.hex(32),
+          'time' => Time.utc(2026, 5, 9, 12, 5, 0).to_i
+        )
       )
-    )
+    end.not_to change(DnsServerZoneTransferLog, :count)
 
     expect(server_zone.reload.last_transfer_status).to eq('failed')
     expect(server_zone.last_transfer_reason_code).to eq('refused')

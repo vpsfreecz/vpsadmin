@@ -444,10 +444,6 @@ function dns_transfer_log_list()
     }
 
     api_param_to_form('status', $input->status, get_val('status'), function ($status) {
-        if (!isAdmin() && $status == 'started') {
-            return null;
-        }
-
         return dnsTransferStatusLabel($status);
     }, true);
     api_param_to_form('reason_code', $input->reason_code, get_val('reason_code'));
@@ -1753,8 +1749,6 @@ function dnsServerZoneShowsTransferStatus($zone, $serverZone)
 function dnsTransferStatusLabel($status)
 {
     switch ($status) {
-        case 'started':
-            return _('Started');
         case 'success':
             return _('Successful');
         case 'failed':
@@ -1767,8 +1761,6 @@ function dnsTransferStatusLabel($status)
 function dnsTransferStatusClass($status)
 {
     switch ($status) {
-        case 'started':
-            return 'pending';
         case 'success':
             return 'ok';
         case 'failed':
