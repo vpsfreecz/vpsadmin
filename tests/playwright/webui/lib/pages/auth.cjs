@@ -29,7 +29,7 @@ async function openWebuiLogin(page, user) {
 async function submitCredentials(page, username, password) {
   await page.locator('input[name="user"]').fill(username);
   await page.locator('input[name="password"]').fill(password);
-  await page.locator('input[name="login_credentials"]').click();
+  await page.locator('input[name="login_credentials"]').click({ noWaitAfter: true });
 }
 
 async function login(page, account) {
