@@ -26,7 +26,7 @@ async function submitForm(form, valuePattern = null) {
       : new RegExp(`^${escapeRegExp(String(valuePattern))}$`);
 
     for (const control of controls) {
-      const value = (await control.getAttribute('value')) || (await control.innerText()).trim();
+      const value = ((await control.getAttribute('value')) || (await control.innerText())).trim();
 
       if (pattern.test(value)) {
         await control.click();
