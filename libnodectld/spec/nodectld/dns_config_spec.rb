@@ -106,4 +106,26 @@ RSpec.describe NodeCtld::DnsConfig do
     expect(config_text).to include('  allow-transfer { 198.51.100.20; };')
     expect(config_text).not_to include('also-notify')
   end
+
+  it 'finds zones using canonical DNS names' do
+    zone = NodeCtld::DnsServerZone.new(
+      name: 'Example.TEST.',
+      source: 'internal_source',
+      type: 'primary_type',
+      default_ttl: 3600,
+      nameservers: ['ns1.example.test'],
+      serial: 1,
+      email: 'dns@example.test',
+      primaries: [],
+      secondaries: [],
+      dnssec_enabled: false,
+      enabled: true,
+      load_db: false
+    )
+
+    described_class.instance.add_zone(zone)
+
+    expect(described_class.instance['Example.TEST.']).to eq(zone)
+    expect(described_class.instance['example.test']).to eq(zone)
+  end
 end

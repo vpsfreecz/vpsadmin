@@ -18,11 +18,13 @@ module NodeCtld
         rescue Errno::ENOENT
           {}
         end
+      @zone_index = build_zone_index
     end
 
     def add_zone(dns_server_zone)
       @mutex.synchronize do
         @zones[dns_server_zone.name] = dns_server_zone
+        @zone_index = build_zone_index
         save
       end
 
@@ -32,6 +34,7 @@ module NodeCtld
     def update_zone(dns_server_zone)
       @mutex.synchronize do
         @zones[dns_server_zone.name] = dns_server_zone
+        @zone_index = build_zone_index
         save
       end
 
@@ -41,6 +44,7 @@ module NodeCtld
     def remove_zone(dns_server_zone)
       @mutex.synchronize do
         @zones.delete(dns_server_zone.name)
+        @zone_index = build_zone_index
         save
       end
 
@@ -52,10 +56,29 @@ module NodeCtld
     end
 
     def [](name)
-      @mutex.synchronize { @zones[name] }
+      @mutex.synchronize do
+        @zones[name] || begin
+          canonical = canonical_zone_name(name)
+          canonical && @zones[@zone_index[canonical]]
+        end
+      end
     end
 
     protected
+
+    def build_zone_index
+      @zones.each_with_object({}) do |(name, _zone), index|
+        canonical = canonical_zone_name(name)
+        index[canonical] ||= name if canonical
+      end
+    end
+
+    def canonical_zone_name(name)
+      return if name.nil? || name.empty?
+
+      normalized = name.end_with?('.') ? name : "#{name}."
+      normalized.downcase
+    end
 
     def save
       regenerate_file(@db_file, 0o644) do |f|

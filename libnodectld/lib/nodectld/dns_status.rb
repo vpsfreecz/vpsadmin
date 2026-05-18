@@ -18,7 +18,11 @@ module NodeCtld
       @thread = Thread.new do
         loop do
           sleep($CFG.get(:dns_server, :status_interval))
-          check_status
+          begin
+            check_status
+          rescue StandardError => e
+            log(:warn, "DNS status check failed with #{e.class}: #{e.message}")
+          end
         end
       end
     end
@@ -39,31 +43,17 @@ module NodeCtld
       zones = []
 
       xml.elements.each('//statistics/views/view/zones/zone') do |xml_zone|
-        name = "#{xml_zone.attributes['name']}."
+        name = normalize_zone_name(xml_zone.attributes['name'])
+        next if name.nil?
+
         zone = DnsConfig.instance[name]
         next if zone.nil?
 
-        type = xml_zone.elements['type'].text
-        serial = xml_zone.elements['serial'].text
-
-        status = {
-          time: now.to_i,
-          name:,
-          type:,
-          serial: serial == '-' ? nil : serial.to_i,
-          loaded: Time.parse(xml_zone.elements['loaded'].text).to_i,
-          dnskeys: []
-        }
-
-        if type == 'secondary'
-          status.update(
-            expires: Time.parse(xml_zone.elements['expires'].text).to_i,
-            refresh: Time.parse(xml_zone.elements['refresh'].text).to_i
-          )
-        end
-
-        if type == 'primary' && zone.dnssec_enabled
-          status[:dnskeys] = find_dnskeys(zone)
+        begin
+          status = parse_zone_status(xml_zone, zone, zone.name, now)
+        rescue StandardError => e
+          log(:warn, "Failed to parse BIND status for DNS zone #{name}: #{e.class}: #{e.message}")
+          next
         end
 
         zones << status
@@ -78,6 +68,50 @@ module NodeCtld
         content_type: 'application/json',
         routing_key: 'dns_statuses'
       )
+    end
+
+    def parse_zone_status(xml_zone, zone, name, now)
+      type = xml_zone.elements['type']&.text
+      serial = xml_zone.elements['serial']&.text
+      status = {
+        time: now.to_i,
+        name:,
+        type:,
+        serial: serial && serial != '-' ? serial.to_i : nil,
+        loaded: parse_time(xml_zone, 'loaded')
+      }
+
+      if type == 'secondary'
+        status.update(
+          expires: parse_time(xml_zone, 'expires'),
+          refresh: parse_time(xml_zone, 'refresh')
+        )
+      end
+
+      if type == 'primary' && zone.dnssec_enabled
+        begin
+          status[:dnskeys] = find_dnskeys(zone)
+        rescue StandardError => e
+          log(:warn, "Failed to read DNSSEC keys for DNS zone #{name}: #{e.class}: #{e.message}")
+        end
+      else
+        status[:dnskeys] = []
+      end
+
+      status
+    end
+
+    def parse_time(xml_zone, element_name)
+      value = xml_zone.elements[element_name]&.text
+      return if value.nil? || value == '-'
+
+      Time.parse(value).to_i
+    end
+
+    def normalize_zone_name(name)
+      return if name.nil? || name.empty?
+
+      name.end_with?('.') ? name : "#{name}."
     end
 
     def fetch_bind_stats

@@ -21,7 +21,13 @@ RSpec.describe NodeCtld::DnsStatus do
       end
 
       def [](name)
-        zones[name]
+        zones[name] ||
+          zones.find { |zone_name, _zone| canonical(zone_name) == canonical(name) }&.last
+      end
+
+      def canonical(name)
+        normalized = name.end_with?('.') ? name : "#{name}."
+        normalized.downcase
       end
     end.new(zones)
   end
@@ -54,7 +60,7 @@ RSpec.describe NodeCtld::DnsStatus do
           <views>
             <view>
               <zones>
-                <zone name="example.test">
+                <zone name="example.test.">
                   <type>primary</type>
                   <serial>123</serial>
                   <loaded>2026-01-01T00:00:00Z</loaded>
@@ -105,6 +111,93 @@ RSpec.describe NodeCtld::DnsStatus do
         )
       )
     end
+  end
+
+  it 'publishes the configured zone name when BIND reports a different canonical form' do
+    zones = {
+      'Example.TEST.' => zone('Example.TEST.', false)
+    }
+    xml = <<~XML
+      <statistics>
+        <views>
+          <view>
+            <zones>
+              <zone name="example.test">
+                <type>primary</type>
+                <serial>488</serial>
+                <loaded>2026-01-01T00:00:00Z</loaded>
+              </zone>
+            </zones>
+          </view>
+        </views>
+      </statistics>
+    XML
+    published = []
+    status = described_class.new
+
+    allow(NodeCtld::DnsConfig).to receive(:instance).and_return(dns_config(zones))
+    allow(Net::HTTP).to receive(:get_response).and_return(bind_response(xml))
+    allow(NodeCtld::NodeBunny).to receive(:publish_drop) do |_exchange, payload, **_opts|
+      published << JSON.parse(payload)
+    end
+
+    status.send(:check_status)
+
+    expect(published.length).to eq(1)
+    expect(published.first.fetch('zones')).to contain_exactly(
+      include(
+        'name' => 'Example.TEST.',
+        'serial' => 488
+      )
+    )
+  end
+
+  it 'skips malformed zone statuses without dropping valid zones' do
+    zones = {
+      'ok.test.' => zone('ok.test.', false),
+      'bad.test.' => zone('bad.test.', false)
+    }
+    xml = <<~XML
+      <statistics>
+        <views>
+          <view>
+            <zones>
+              <zone name="bad.test">
+                <type>primary</type>
+                <serial>123</serial>
+                <loaded>not-a-time</loaded>
+              </zone>
+              <zone name="ok.test">
+                <type>primary</type>
+                <serial>124</serial>
+                <loaded>2026-01-01T00:00:00Z</loaded>
+              </zone>
+            </zones>
+          </view>
+        </views>
+      </statistics>
+    XML
+    published = []
+    status = described_class.new
+
+    allow(NodeCtld::DnsConfig).to receive(:instance).and_return(dns_config(zones))
+    allow(Net::HTTP).to receive(:get_response).and_return(bind_response(xml))
+    allow(status).to receive(:log)
+    allow(NodeCtld::NodeBunny).to receive(:publish_drop) do |_exchange, payload, **_opts|
+      published << JSON.parse(payload)
+    end
+
+    status.send(:check_status)
+
+    expect(status).to have_received(:log).with(:warn, /bad\.test/)
+    expect(published.length).to eq(1)
+    expect(published.first.fetch('zones')).to contain_exactly(
+      include(
+        'name' => 'ok.test.',
+        'serial' => 124,
+        'loaded' => Time.parse('2026-01-01T00:00:00Z').to_i
+      )
+    )
   end
 
   it 'logs and returns nil on HTTP failure' do
