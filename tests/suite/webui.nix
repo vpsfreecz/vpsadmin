@@ -53,6 +53,7 @@ import ../make-test.nix (
 
       WEBUI_NODE1_SECONDARY_POOL_FS = 'tank/webui-node1-secondary' unless defined?(WEBUI_NODE1_SECONDARY_POOL_FS)
       WEBUI_NODE2_POOL_FS = 'tank/webui-node2' unless defined?(WEBUI_NODE2_POOL_FS)
+      WEBUI_SECONDARY_LOCATION_LABEL = 'webui-browser-location-b' unless defined?(WEBUI_SECONDARY_LOCATION_LABEL)
 
       def webui_pool_id(filesystem = primary_pool_fs)
         row = services.mariadb_json_rows(sql: <<~SQL).first
@@ -126,6 +127,70 @@ import ../make-test.nix (
         pools
       end
 
+      def move_webui_node2_to_secondary_location
+        services.api_ruby_json(code: <<~RUBY)
+          #{api_session_prelude(admin_user_id)}
+
+          env = Environment.find(${toString seed.environment.id})
+          location = Location.find_or_initialize_by(
+            label: '#{WEBUI_SECONDARY_LOCATION_LABEL}'
+          )
+          location.assign_attributes(
+            environment: env,
+            domain: 'lab',
+            description: 'Webui browser secondary location',
+            remote_console_server: 'http://console.vpsadmin.test',
+            has_ipv6: false
+          )
+          location.save! if location.changed?
+
+          node = Node.find(#{node2_id})
+          node.update!(location: location) if node.location_id != location.id
+
+          puts JSON.dump(location_id: location.id, node_id: node.id)
+        RUBY
+      end
+
+      def prepare_webui_cross_location_swap
+        prepare_webui_node2
+        prepare_node_queues(node1)
+        secondary_location = move_webui_node2_to_secondary_location
+        node1_primary = ensure_webui_default_pool
+        node2_primary = ensure_webui_pool(
+          node_id: node2_id,
+          label: 'webui-browser-node2',
+          filesystem: WEBUI_NODE2_POOL_FS
+        )
+
+        node1_key = generate_pool_migration_key(
+          node1,
+          pool_name: primary_pool_fs.split('/').first
+        )
+        node2_key = generate_pool_migration_key(
+          node2,
+          pool_name: WEBUI_NODE2_POOL_FS.split('/').first
+        )
+
+        set_pool_migration_public_key(
+          services,
+          admin_user_id: admin_user_id,
+          pool_id: node1_primary,
+          public_key: node1_key
+        )
+        set_pool_migration_public_key(
+          services,
+          admin_user_id: admin_user_id,
+          pool_id: node2_primary,
+          public_key: node2_key
+        )
+
+        {
+          'node1Primary' => node1_primary,
+          'node2Primary' => node2_primary,
+          'secondaryLocation' => secondary_location
+        }
+      end
+
       def unlock_webui_transaction_signing_key
         services.unlock_transaction_signing_key(passphrase: 'test')
       rescue OsVm::CommandFailed => e
@@ -176,9 +241,12 @@ import ../make-test.nix (
         wait_for_webui_node_ready(node1, node1_id)
         unlock_webui_transaction_signing_key
         ensure_webui_default_pool
+        prepare_webui_component
 
         create_webui_browser_fixtures(services)
       end
+
+      def prepare_webui_component; end
 
       def webui_pending_transaction_chains
         queued = services.class::CHAIN_STATES.fetch(:queued)
@@ -354,6 +422,17 @@ import ../make-test.nix (
 
       env = Environment.find(${toString seed.environment.id})
       language = Language.find_by(code: 'en') || Language.first
+      DefaultLifetimeValue.find_or_initialize_by(
+        environment: env,
+        class_name: 'Vps',
+        direction: DefaultLifetimeValue.directions[:enter],
+        state: DefaultLifetimeValue.states[:soft_delete]
+      ).tap do |lifetime|
+        lifetime.add_expiration = 7 * 24 * 60 * 60
+        lifetime.reason = 'Webui browser VPS delete'
+        lifetime.save! if lifetime.changed? || lifetime.new_record?
+      end
+
       user = ensure_webui_user(
         login: 'webui-user',
         full_name: 'Webui Browser User',
@@ -1264,22 +1343,35 @@ import ../make-test.nix (
           'id' => ${toString location.id},
           'label' => ${builtins.toJSON location.label}
         },
+        'locations' => {
+          'primary' => {
+            'id' => ${toString location.id},
+            'label' => ${builtins.toJSON location.label}
+          },
+          'secondary' => {
+            'id' => node2.location.id,
+            'label' => node2.location.label
+          }
+        },
         'node' => {
           'id' => node.id,
           'name' => node.name,
-          'domainName' => node.domain_name
+          'domainName' => node.domain_name,
+          'locationId' => node.location_id
         },
         'cluster' => {
           'nodes' => {
             'node1' => {
               'id' => node.id,
               'name' => node.name,
-              'domainName' => node.domain_name
+              'domainName' => node.domain_name,
+              'locationId' => node.location_id
             },
             'node2' => {
               'id' => node2.id,
               'name' => node2.name,
-              'domainName' => node2.domain_name
+              'domainName' => node2.domain_name,
+              'locationId' => node2.location_id
             }
           },
           'pools' => {
@@ -1537,6 +1629,23 @@ import ../make-test.nix (
           describe 'webui user VPS core browser flow' do
             it 'passes Playwright user VPS core tests' do
               run_playwright('vps-user-core', 'specs/vps-user-core.spec.cjs')
+            end
+          end
+        '';
+      };
+
+      vps-user-ops = {
+        description = ''
+          Run user-mode VPS side operation and console browser tests.
+        '';
+        script = webuiTestScriptCommon + ''
+          def prepare_webui_component
+            prepare_webui_cross_location_swap
+          end
+
+          describe 'webui user VPS side operation browser flow' do
+            it 'passes Playwright user VPS side operation tests' do
+              run_playwright('vps-user-ops', 'specs/vps-user-ops.spec.cjs')
             end
           end
         '';
