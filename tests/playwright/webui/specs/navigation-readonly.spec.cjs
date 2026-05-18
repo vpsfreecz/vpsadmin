@@ -84,12 +84,12 @@ test('user transaction log opens and can filter to an owned chain', async ({ pag
 
   const filterForm = page.locator('form[name="vps-filter"]').first();
   await expect(filterForm).toBeVisible();
-  await filterForm.locator('input[name="chain"]').fill(String(fixtures.transactionChain.id));
+  await filterForm.locator('input[name="name"]').fill(fixtures.transactionChain.name);
   await submitForm(filterForm);
 
   const chainHref = `?page=transactions&chain=${fixtures.transactionChain.id}`;
   const row = tableRowWithLink(page, chainHref).first();
-  await expect(row).toHaveClass(/done/);
+  await expect(row).toHaveClass(/ok/);
   await expect(row).toContainText(fixtures.transactionChain.label);
   await expect(row).toContainText('100');
 
@@ -128,12 +128,12 @@ test('admin transaction log shows admin filters and user column', async ({ page 
   const filterForm = page.locator('form[name="vps-filter"]').first();
   await expect(filterForm.locator('input[name="user"]')).toBeVisible();
   await filterForm.locator('input[name="user"]').fill(String(fixtures.user.id));
-  await filterForm.locator('input[name="chain"]').fill(String(fixtures.transactionChain.id));
+  await filterForm.locator('input[name="name"]').fill(fixtures.transactionChain.name);
   await submitForm(filterForm);
 
   const chainHref = `?page=transactions&chain=${fixtures.transactionChain.id}`;
   const row = tableRowWithLink(page, chainHref).first();
-  await expect(row).toHaveClass(/done/);
+  await expect(row).toHaveClass(/ok/);
   await expect(row).toContainText(`User ${fixtures.user.id}`);
   await expect(row).toContainText(fixtures.transactionChain.label);
   await expect(row).toContainText('100');

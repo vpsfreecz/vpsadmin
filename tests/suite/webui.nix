@@ -30,6 +30,7 @@ import ../make-test.nix (
     '';
     webuiTestScriptCommon = common + ''
       require 'shellwords'
+      require 'base64'
 
       configure_examples do |config|
         config.default_order = :defined
@@ -98,7 +99,10 @@ import ../make-test.nix (
       end
 
       def write_playwright_fixtures(services, fixtures)
-        services.succeeds("cat > #{WEBUI_FIXTURES} <<'JSON'\n#{JSON.pretty_generate(fixtures)}\nJSON\n")
+        encoded = Base64.strict_encode64(JSON.generate(fixtures))
+        services.succeeds(
+          "printf %s #{Shellwords.escape(encoded)} | base64 -d > #{WEBUI_FIXTURES}"
+        )
       end
 
       def prepare_webui_playwright
@@ -493,6 +497,152 @@ import ../make-test.nix (
       SQL
       readonly_transaction_id = ActiveRecord::Base.connection.select_value('SELECT LAST_INSERT_ID()')
 
+      webui_transaction_names = %w[
+        webui_tx_queued
+        webui_tx_done
+        webui_tx_rollbacking
+        webui_tx_failed
+      ]
+      webui_transaction_chain_ids = TransactionChain
+        .where(name: webui_transaction_names)
+        .pluck(:id)
+      if webui_transaction_chain_ids.any?
+        ids = webui_transaction_chain_ids.join(',')
+        ActiveRecord::Base.connection.execute("DELETE FROM transactions WHERE transaction_chain_id IN (#{ids})")
+        ActiveRecord::Base.connection.execute("DELETE FROM transaction_chain_concerns WHERE transaction_chain_id IN (#{ids})")
+        ActiveRecord::Base.connection.execute("DELETE FROM transaction_chains WHERE id IN (#{ids})")
+      end
+
+      def create_webui_transaction_fixture(name:, state:, progress:, status:, done:, user:, session:, node:, concern_class:, concern_id:, transaction: true)
+        created_at = Time.now - 10
+        chain = TransactionChain.create!(
+          name: name,
+          type: TransactionChains::User::NewLogin.name,
+          state: state,
+          size: 1,
+          progress: progress,
+          user: user,
+          user_session: session,
+          concern_type: :chain_affect,
+          urgent_rollback: false,
+          created_at: created_at,
+          updated_at: created_at
+        )
+
+        TransactionChainConcern.create!(
+          transaction_chain: chain,
+          class_name: concern_class,
+          row_id: concern_id
+        )
+
+        tx = nil
+        if transaction
+          prev_user = User.current
+          begin
+            User.current = user
+            tx = Transaction.create!(
+              transaction_chain: chain,
+              user: user,
+              node: node,
+              handle: Transactions::Utils::NoOp.t_type,
+              queue: 'general',
+              urgent: false,
+              priority: 0
+            )
+          ensure
+            User.current = prev_user
+          end
+          transaction_time = done == :done ? created_at : nil
+          tx.update_columns(
+            status: status,
+            done: Transaction.dones.fetch(done),
+            input: {
+              transaction_chain: chain.id,
+              depends_on: nil,
+              handle: tx.handle,
+              node: node.id,
+              reversible: Transaction.reversibles.fetch(:is_reversible),
+              input: {
+                fixture: name
+              }
+            }.to_json,
+            output: {
+              fixture: name,
+              status: status == 1 ? 'ok' : 'failed'
+            }.to_json,
+            created_at: created_at,
+            started_at: transaction_time,
+            finished_at: transaction_time
+          )
+        end
+
+        {
+          'id' => chain.id,
+          'name' => chain.name,
+          'label' => chain.label,
+          'state' => chain.state,
+          'progress' => chain.progress,
+          'transactionId' => tx&.id,
+          'transactionName' => tx&.name,
+          'transactionType' => tx&.handle,
+          'transactionDone' => tx&.done,
+          'transactionSuccess' => tx&.status,
+          'fixture' => name
+        }
+      end
+
+      webui_transactions = {
+        'queued' => create_webui_transaction_fixture(
+          name: 'webui_tx_queued',
+          state: :queued,
+          progress: 0,
+          status: 0,
+          done: :waiting,
+          user: user,
+          session: readonly_session,
+          node: node,
+          concern_class: 'User',
+          concern_id: user.id,
+          transaction: false
+        ),
+        'done' => create_webui_transaction_fixture(
+          name: 'webui_tx_done',
+          state: :done,
+          progress: 1,
+          status: 1,
+          done: :done,
+          user: user,
+          session: readonly_session,
+          node: node,
+          concern_class: 'User',
+          concern_id: user.id
+        ),
+        'rollbacking' => create_webui_transaction_fixture(
+          name: 'webui_tx_rollbacking',
+          state: :rollbacking,
+          progress: 0,
+          status: 0,
+          done: :waiting,
+          user: user,
+          session: readonly_session,
+          node: node,
+          concern_class: 'User',
+          concern_id: user.id
+        ),
+        'failed' => create_webui_transaction_fixture(
+          name: 'webui_tx_failed',
+          state: :failed,
+          progress: 1,
+          status: 0,
+          done: :done,
+          user: user,
+          session: readonly_session,
+          node: node,
+          concern_class: 'User',
+          concern_id: user.id
+        )
+      }
+
       primary_template = OsTemplate.find(1)
       reinstall_template = OsTemplate.find(2)
       webui_pool = Pool.where(node: node, role: Pool.roles[:hypervisor]).order(:id).first
@@ -751,6 +901,13 @@ import ../make-test.nix (
           'label' => 'New login',
           'state' => 'done'
         },
+        'transactions' => {
+          'states' => webui_transactions,
+          'userSession' => {
+            'id' => readonly_session.id,
+            'label' => readonly_session.label
+          }
+        },
         'jumpto' => {
           'textSearch' => 'webui',
           'ipSearch' => jumpto_ip.ip_addr,
@@ -875,6 +1032,19 @@ import ../make-test.nix (
           describe 'webui admin jumpto browser flow' do
             it 'passes Playwright jumpto tests' do
               run_playwright('jumpto', 'specs/jumpto.spec.cjs')
+            end
+          end
+        '';
+      };
+
+      transactions = {
+        description = ''
+          Run transaction list, filter, and chain detail browser tests.
+        '';
+        script = webuiTestScriptCommon + ''
+          describe 'webui transactions browser flow' do
+            it 'passes Playwright transaction tests' do
+              run_playwright('transactions', 'specs/transactions.spec.cjs')
             end
           end
         '';
