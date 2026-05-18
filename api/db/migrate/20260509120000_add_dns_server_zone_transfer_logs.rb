@@ -1,4 +1,4 @@
-class AddDnsServerZoneTransferLogs < ActiveRecord::Migration[7.1]
+class AddDnsServerZoneTransferLogs < ActiveRecord::Migration[8.1]
   def change
     add_column :dns_server_zones, :last_transfer_log_id, :bigint, null: true
     add_column :dns_server_zones, :last_transfer_at, :datetime, null: true
