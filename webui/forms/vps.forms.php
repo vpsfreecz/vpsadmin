@@ -728,6 +728,13 @@ function vps_list_form()
 
         $p = $api->vps->index->getParameters('input')->object_state;
         api_param_to_form('object_state', $p, $_GET['object_state'] ?? null);
+        $xtpl->form_add_input(
+            _("UID/GID mapping ID") . ':',
+            'text',
+            '40',
+            'user_namespace_map',
+            get_val('user_namespace_map')
+        );
 
         $xtpl->form_out(_('Show'));
     }
