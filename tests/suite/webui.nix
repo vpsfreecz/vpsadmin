@@ -344,7 +344,7 @@ import ../make-test.nix (
           cfg.can_create_vps = true
           cfg.can_destroy_vps = true
           cfg.vps_lifetime = 0
-          cfg.max_vps_count = 10
+          cfg.max_vps_count = 120
           cfg.default = true
           cfg.save! if cfg.changed?
         end
@@ -374,13 +374,13 @@ import ../make-test.nix (
       quoted_now = ActiveRecord::Base.connection.quote(Time.now)
 
       resources = [
-        [:cpu, 'CPU', 1, 64, 1, :numeric, nil, 8, 1],
-        [:memory, 'Memory', 1024, 131_072, 1, :numeric, nil, 16_384, 1024],
-        [:swap, 'Swap', 0, 65_536, 1, :numeric, nil, 4096, 0],
-        [:diskspace, 'Disk space', 128, 10_485_760, 1, :numeric, nil, 102_400, 10_240],
-        [:ipv4, 'IPv4 address', 0, 64, 1, :object, 'Ip::Free', 4, 0],
-        [:ipv4_private, 'Private IPv4 address', 0, 1024, 1, :object, 'Ip::Free', 4, 0],
-        [:ipv6, 'IPv6 address', 0, 64, 1, :object, 'Ip::Free', 4, 0]
+        [:cpu, 'CPU', 1, 64, 1, :numeric, nil, 64, 1],
+        [:memory, 'Memory', 1024, 131_072, 1, :numeric, nil, 131_072, 1024],
+        [:swap, 'Swap', 0, 65_536, 1, :numeric, nil, 65_536, 0],
+        [:diskspace, 'Disk space', 128, 10_485_760, 1, :numeric, nil, 1_048_576, 10_240],
+        [:ipv4, 'IPv4 address', 0, 64, 1, :object, 'Ip::Free', 64, 0],
+        [:ipv4_private, 'Private IPv4 address', 0, 1024, 1, :object, 'Ip::Free', 64, 0],
+        [:ipv6, 'IPv6 address', 0, 64, 1, :object, 'Ip::Free', 64, 0]
       ]
 
       resources.each do |resource_row|
@@ -432,6 +432,21 @@ import ../make-test.nix (
           entry.count = userns.size
           entry.save! if entry.changed?
         end
+      end
+
+      alternate_userns_map = UserNamespaceMap.find_or_create_by!(
+        user_namespace: userns,
+        label: 'Webui VPS Alternate Browser Map'
+      )
+      alternate_userns_map.user_namespace_map_entries.delete_all
+      [:uid, :gid].each do |kind|
+        UserNamespaceMapEntry.create!(
+          user_namespace_map: alternate_userns_map,
+          kind: kind,
+          vps_id: 0,
+          ns_id: 0,
+          count: userns.size
+        )
       end
 
       editable_userns_map = UserNamespaceMap
@@ -1206,6 +1221,10 @@ import ../make-test.nix (
             'id' => userns_map.id,
             'label' => userns_map.label
           },
+          'alternateUserNamespaceMap' => {
+            'id' => alternate_userns_map.id,
+            'label' => alternate_userns_map.label
+          },
           'editableUserNamespaceMap' => {
             'id' => editable_userns_map.id,
             'label' => editable_userns_map.label,
@@ -1505,6 +1524,19 @@ import ../make-test.nix (
           describe 'webui VPS lifecycle browser flow' do
             it 'passes Playwright VPS lifecycle tests' do
               run_playwright('vps-lifecycle', 'specs/vps-lifecycle.spec.cjs')
+            end
+          end
+        '';
+      };
+
+      vps-user-core = {
+        description = ''
+          Run user-mode VPS list, create, and detail form browser tests.
+        '';
+        script = webuiTestScriptCommon + ''
+          describe 'webui user VPS core browser flow' do
+            it 'passes Playwright user VPS core tests' do
+              run_playwright('vps-user-core', 'specs/vps-user-core.spec.cjs')
             end
           end
         '';
