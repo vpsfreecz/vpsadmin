@@ -1343,6 +1343,10 @@ import ../make-test.nix (
           'id' => ${toString location.id},
           'label' => ${builtins.toJSON location.label}
         },
+        'environment' => {
+          'id' => env.id,
+          'label' => env.label
+        },
         'locations' => {
           'primary' => {
             'id' => ${toString location.id},
@@ -1646,6 +1650,19 @@ import ../make-test.nix (
           describe 'webui user VPS side operation browser flow' do
             it 'passes Playwright user VPS side operation tests' do
               run_playwright('vps-user-ops', 'specs/vps-user-ops.spec.cjs')
+            end
+          end
+        '';
+      };
+
+      vps-admin-core = {
+        description = ''
+          Run admin-mode VPS list, create, and detail form browser tests.
+        '';
+        script = webuiTestScriptCommon + ''
+          describe 'webui admin VPS core browser flow' do
+            it 'passes Playwright admin VPS core tests' do
+              run_playwright('vps-admin-core', 'specs/vps-admin-core.spec.cjs')
             end
           end
         '';

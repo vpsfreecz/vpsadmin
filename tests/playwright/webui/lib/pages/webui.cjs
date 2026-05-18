@@ -92,8 +92,12 @@ async function waitForDetailValue(page, vpsId, label, pattern, options = {}) {
   await expect
     .poll(
       async () => {
-        await gotoVpsDetail(page, vpsId);
-        return detailValue(page, label);
+        try {
+          await gotoVpsDetail(page, vpsId);
+          return detailValue(page, label);
+        } catch (error) {
+          return `Unable to read VPS detail ${label}: ${error.message}`;
+        }
       },
       {
         timeout,
