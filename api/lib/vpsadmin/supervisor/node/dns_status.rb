@@ -15,15 +15,20 @@ module VpsAdmin::Supervisor
       queue.bind(exchange, routing_key: 'dns_statuses')
 
       queue.subscribe do |_delivery_info, _properties, payload|
-        status = JSON.parse(payload)
-
-        status['zones'].each do |zone|
-          update_zone(zone)
-        end
+        process_status(JSON.parse(payload))
       end
     end
 
     protected
+
+    def process_status(status)
+      status.fetch('zones').each do |zone|
+        update_zone(zone)
+      rescue StandardError => e
+        warn "Failed to update DNS status for zone #{zone['name'].inspect} " \
+             "on node #{node.domain_name}: #{e.class}: #{e.message}"
+      end
+    end
 
     def update_zone(zone)
       dns_server_zone = ::DnsServerZone.joins(:dns_zone, :dns_server).find_by(
@@ -35,12 +40,13 @@ module VpsAdmin::Supervisor
       dns_server_zone.update!(
         last_check_at: Time.at(zone['time']),
         serial: zone['serial'],
-        loaded_at: Time.at(zone['loaded']),
+        loaded_at: zone['loaded'] && Time.at(zone['loaded']),
         expires_at: zone['expires'] && Time.at(zone['expires']),
-        refresh_at: zone['expires'] && Time.at(zone['refresh'])
+        refresh_at: zone['refresh'] && Time.at(zone['refresh'])
       )
 
       return if !dns_server_zone.primary_type? || !dns_server_zone.dns_zone.dnssec_enabled
+      return unless zone['dnskeys'].is_a?(Array)
 
       update_dnskeys(dns_server_zone.dns_zone, zone['dnskeys'])
     end

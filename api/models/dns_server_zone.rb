@@ -79,6 +79,7 @@ class DnsServerZone < ApplicationRecord
 
   def check_zone_record_set
     return unless dns_zone && dns_zone.internal_source? && primary_type?
+    return unless new_record? || will_save_change_to_dns_zone_id? || will_save_change_to_zone_type?
 
     DnsZoneRecordSetValidator.validate_zone(dns_zone, errors:, attribute: :dns_zone)
   end
