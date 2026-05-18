@@ -495,7 +495,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
 
     input do
       bool :lazy, label: 'Lazy delete', desc: 'Only mark VPS as deleted',
-                  default: true, fill: true
+                  default: true
     end
 
     authorize do |u|
@@ -511,7 +511,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
       object_state_check!(vps.user)
 
       state = if current_user.role == :admin
-                input[:lazy] ? :soft_delete : :hard_delete
+                input[:lazy] == false ? :hard_delete : :soft_delete
 
               else
                 :soft_delete
