@@ -144,6 +144,7 @@ RSpec.describe TransactionChains::Vps::Update do
 
     chain, = described_class.fire(vps, {
       enable_network: false,
+      change_reason: 'disable for maintenance',
       map_mode: 'zfs'
     })
 
@@ -154,6 +155,17 @@ RSpec.describe TransactionChains::Vps::Update do
     expect(tx_payload(chain, Transactions::Vps::MapMode)).to include(
       'new_map_mode' => 'zfs',
       'original_map_mode' => 'native'
+    )
+    expect(MailTemplate).to have_received(:send_mail!).with(
+      :vps_network_disabled,
+      hash_including(
+        user: user,
+        vars: hash_including(
+          user: user,
+          vps: vps,
+          reason: 'disable for maintenance'
+        )
+      )
     )
   end
 

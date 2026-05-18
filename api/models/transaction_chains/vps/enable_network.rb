@@ -19,6 +19,7 @@ module TransactionChains
       mail(enable ? :vps_network_enabled : :vps_network_disabled, {
              user: vps.user,
              vars: {
+               user: vps.user,
                vps:,
                reason:
              }
