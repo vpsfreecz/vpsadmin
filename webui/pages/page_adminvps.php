@@ -220,9 +220,13 @@ if (isLoggedIn()) {
         case 'delete2':
             try {
                 csrf_check();
-                $api->vps->destroy($_GET['veid'], [
-                    'lazy' => $_POST['lazy_delete'] ? true : false,
-                ]);
+                $delete_params = [];
+
+                if (isAdmin()) {
+                    $delete_params['lazy'] = !empty($_POST['lazy_delete']);
+                }
+
+                $api->vps->destroy($_GET['veid'], $delete_params);
 
                 notify_user(
                     _('Delete VPS') . ' #' . $_GET['veid'],
