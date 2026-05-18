@@ -82,6 +82,32 @@ async function selectUserData(form, userData = { type: 'none' }) {
   }
 }
 
+async function setCheckbox(checkbox, enabled) {
+  if (enabled) {
+    await checkbox.check();
+  } else {
+    await checkbox.uncheck();
+  }
+}
+
+async function withoutDialogs(page, callback) {
+  const dialogs = [];
+  const handler = async (dialog) => {
+    dialogs.push(`${dialog.type()}: ${dialog.message()}`);
+    await dialog.accept();
+  };
+
+  page.on('dialog', handler);
+  try {
+    await callback();
+    await page.waitForTimeout(250);
+  } finally {
+    page.off('dialog', handler);
+  }
+
+  expect(dialogs).toEqual([]);
+}
+
 async function fillCreateResources(form, fixtures, overrides = {}) {
   const resources = {
     ...fixtures.vps.resources,
@@ -97,8 +123,7 @@ async function fillCreateResources(form, fixtures, overrides = {}) {
   }
 }
 
-async function createVps(page, fixtures, hostname, options = {}) {
-  await page.goto('/?page=adminvps&action=new-step-1', { waitUntil: 'domcontentloaded' });
+async function selectCreateLocation(page, fixtures, userId, options = {}) {
   await expect(page.locator('#content-in h1')).toContainText('Create a VPS: Select a location');
 
   const locationId = options.locationId || fixtures.location.id;
@@ -107,6 +132,7 @@ async function createVps(page, fixtures, hostname, options = {}) {
   await submitForm(locationForm);
 
   await expect(page.locator('#content-in h1')).toContainText('Create a VPS: Select distribution');
+  await expect(page).toHaveURL(new RegExp(`user=${userId || ''}`));
   await page.locator('details').first().evaluate((el) => {
     el.open = true;
   });
@@ -123,6 +149,11 @@ async function createVps(page, fixtures, hostname, options = {}) {
   await submitForm(paramsForm);
 
   await expect(page.locator('#content-in h1')).toContainText('Create a VPS: Final touches');
+}
+
+async function createVps(page, fixtures, hostname, options = {}) {
+  await page.goto('/?page=adminvps&action=new-step-1', { waitUntil: 'domcontentloaded' });
+  await selectCreateLocation(page, fixtures, '', options);
   const finalForm = formByAction(page, 'action=new-submit');
   await finalForm.locator('input[name="hostname"]').fill(hostname);
   const userNamespaceSelect = finalForm.locator('select[name="user_namespace_map"]');
@@ -139,6 +170,43 @@ async function createVps(page, fixtures, hostname, options = {}) {
   const vpsId = vpsIdFromCurrentUrl(page);
   await waitForVpsTransactionsSettled(page, vpsId);
   await waitForVpsStatus(page, vpsId, 'running');
+
+  return vpsId;
+}
+
+async function createAdminVps(page, fixtures, hostname, options = {}) {
+  const userId = options.userId || fixtures.user.id;
+
+  await page.goto('/?page=adminvps&action=new-step-0', { waitUntil: 'domcontentloaded' });
+  await expect(page.locator('#content-in h1')).toContainText('Create a VPS: Select user');
+
+  const userForm = page.locator('form[name="newvps-step0"]');
+  await expect(userForm.locator('input[name="user"]')).toBeVisible();
+  await userForm.locator('input[name="user"]').fill(String(userId));
+  await submitForm(userForm, 'Next');
+
+  await selectCreateLocation(page, fixtures, userId, options);
+
+  const finalForm = formByAction(page, 'action=new-submit');
+  const nodeId = String(options.nodeId || fixtures.node.id);
+  await expect(finalForm.locator('select[name="node"]')).toBeVisible();
+  await finalForm.locator('select[name="node"]').selectOption(nodeId);
+  await finalForm.locator('input[name="hostname"]').fill(hostname);
+  await setCheckbox(
+    finalForm.locator('input[name="boot_after_create"]'),
+    options.bootAfterCreate !== false,
+  );
+  await finalForm.locator('textarea[name="info"]').fill(options.info || '');
+  await selectUserData(finalForm, options.userData || { type: 'none' });
+  await finalForm
+    .locator('input[type="submit"], button[type="submit"], button:not([type])')
+    .last()
+    .click({ timeout: 60 * 1000 });
+
+  await expectNotification(page, 'VPS create');
+  const vpsId = vpsIdFromCurrentUrl(page);
+  await waitForVpsTransactionsSettled(page, vpsId);
+  await waitForVpsStatus(page, vpsId, options.bootAfterCreate === false ? 'stopped' : 'running');
 
   return vpsId;
 }
@@ -277,7 +345,7 @@ async function expectUserAdminOnlyControlsHidden(page, vpsId) {
 }
 
 async function gotoVpsList(page) {
-  await page.goto('/?page=adminvps', { waitUntil: 'domcontentloaded' });
+  await page.goto('/?page=adminvps&action=list', { waitUntil: 'domcontentloaded' });
   await expect(page.locator('#content-in h1')).toContainText('VPS list');
 }
 
@@ -287,18 +355,27 @@ function vpsListRow(page, vpsId) {
   }).first();
 }
 
-async function runListAction(page, vpsId, action, expectedNotification, expectedStatus) {
+async function runListAction(page, vpsId, action, expectedNotification, expectedStatus, options = {}) {
   await gotoVpsList(page);
 
-  if (['stop', 'restart'].includes(action)) {
+  if (['stop', 'restart'].includes(action) && options.confirm !== false) {
     await acceptNextDialog(page);
   }
 
-  await vpsListRow(page, vpsId)
-    .locator(`a[href*="run=${action}"][href*="veid=${vpsId}"]`)
-    .first()
-    .click();
-  await expectNotification(page, expectedNotification);
+  const clickAction = async () => {
+    await vpsListRow(page, vpsId)
+      .locator(`a[href*="run=${action}"][href*="veid=${vpsId}"]`)
+      .first()
+      .click();
+    await expectNotification(page, expectedNotification);
+  };
+
+  if (options.confirm === false) {
+    await withoutDialogs(page, clickAction);
+  } else {
+    await clickAction();
+  }
+
   await waitForVpsTransactionsSettled(page, vpsId);
 
   if (expectedStatus) {
@@ -306,15 +383,24 @@ async function runListAction(page, vpsId, action, expectedNotification, expected
   }
 }
 
-async function runDetailAction(page, vpsId, action, expectedNotification, expectedStatus) {
+async function runDetailAction(page, vpsId, action, expectedNotification, expectedStatus, options = {}) {
   await gotoVpsDetail(page, vpsId);
 
-  if (['stop', 'restart', 'force_restart', 'force_stop'].includes(action)) {
+  if (['stop', 'restart', 'force_restart', 'force_stop'].includes(action) && options.confirm !== false) {
     await acceptNextDialog(page);
   }
 
-  await page.locator(`a[href*="run=${action}"][href*="veid=${vpsId}"]`).first().click();
-  await expectNotification(page, expectedNotification);
+  const clickAction = async () => {
+    await page.locator(`a[href*="run=${action}"][href*="veid=${vpsId}"]`).first().click();
+    await expectNotification(page, expectedNotification);
+  };
+
+  if (options.confirm === false) {
+    await withoutDialogs(page, clickAction);
+  } else {
+    await clickAction();
+  }
+
   await waitForVpsTransactionsSettled(page, vpsId);
 
   if (expectedStatus) {
@@ -668,13 +754,141 @@ async function setUserNamespaceMap(page, vpsId, userNamespaceMapId) {
   await expect(formByAction(page, 'action=userns_map').locator('select[name="user_namespace_map"]')).toHaveValue(String(userNamespaceMapId));
 }
 
+async function submitAdminResources(page, vpsId, options = {}) {
+  await gotoVpsDetail(page, vpsId);
+
+  const form = formByAction(page, 'action=resources');
+  await expect(form.locator('input[name="cpu_limit"]')).toBeVisible();
+  await expect(form.locator('textarea[name="change_reason"]')).toBeVisible();
+  await expect(form.locator('input[name="admin_override"]')).toBeVisible();
+  await expect(form.locator('select[name="admin_lock_type"]')).toBeVisible();
+
+  await form.locator('input[name="cpu_limit"]').fill(String(options.cpuLimit || 75));
+  await form.locator('textarea[name="change_reason"]').fill(options.changeReason || 'Webui admin resource coverage');
+  await setCheckbox(form.locator('input[name="admin_override"]'), options.adminOverride !== false);
+  await form.locator('select[name="admin_lock_type"]').selectOption(options.adminLockType || 'no_lock');
+  await submitForm(form);
+
+  await expectNotification(page, 'Resources changed');
+  await waitForVpsTransactionsSettled(page, vpsId);
+  await gotoVpsDetail(page, vpsId);
+  await expect(formByAction(page, 'action=resources').locator('input[name="cpu_limit"]')).toHaveValue(
+    String(options.cpuLimit || 75),
+  );
+}
+
+async function submitAdminNetworkInterface(page, vpsId, options = {}) {
+  await gotoVpsDetail(page, vpsId);
+
+  const form = formByAction(page, 'action=netif');
+  await expect(form.locator('input[name="max_tx"]')).toBeVisible();
+  await expect(form.locator('input[name="max_rx"]')).toBeVisible();
+  await expect(form.locator('input[name="enable"]')).toBeVisible();
+
+  await form.locator('input[name="max_tx"]').fill(String(options.maxTx || 8));
+  await form.locator('input[name="max_rx"]').fill(String(options.maxRx || 16));
+  await setCheckbox(form.locator('input[name="enable"]'), options.enable !== false);
+  await submitForm(form);
+
+  await expectNotification(page, 'Interface updated');
+  await waitForVpsTransactionsSettled(page, vpsId);
+  await gotoVpsDetail(page, vpsId);
+  const updatedForm = formByAction(page, 'action=netif');
+  await expect(updatedForm.locator('input[name="max_tx"]')).toHaveValue(String(options.maxTx || 8));
+  await expect(updatedForm.locator('input[name="max_rx"]')).toHaveValue(String(options.maxRx || 16));
+  await expect(updatedForm.locator('input[name="enable"]')).toBeChecked();
+}
+
+async function disableAdminNetwork(page, vpsId, reason) {
+  await gotoVpsDetail(page, vpsId);
+
+  const form = formByAction(page, 'action=disable_network');
+  await expect(form.locator('input[name="disable_network"]')).toBeVisible();
+  await expect(form.locator('textarea[name="change_reason"]')).toBeVisible();
+  await form.locator('input[name="disable_network"]').check();
+  await form.locator('textarea[name="change_reason"]').fill(reason || 'Webui admin disable network coverage');
+  await submitForm(form);
+
+  await expectNotification(page, 'Network disabled');
+  await waitForVpsTransactionsSettled(page, vpsId);
+  await gotoVpsDetail(page, vpsId);
+  await expect(formByAction(page, 'action=enable_network')).toBeVisible();
+}
+
+async function enableAdminNetwork(page, vpsId) {
+  await gotoVpsDetail(page, vpsId);
+
+  const form = formByAction(page, 'action=enable_network');
+  await expect(form).toBeVisible();
+  await submitForm(form);
+
+  await expectNotification(page, 'Network enabled');
+  await waitForVpsTransactionsSettled(page, vpsId);
+  await gotoVpsDetail(page, vpsId);
+  await expect(formByAction(page, 'action=disable_network')).toBeVisible();
+}
+
+async function setAdminAutostartPriority(page, vpsId, priority) {
+  await gotoVpsDetail(page, vpsId);
+
+  const form = formByAction(page, 'action=autostart');
+  await expect(form.locator('input[name="autostart_priority"]')).toBeVisible();
+  await form.locator('input[name="autostart_priority"]').fill(String(priority));
+  await submitForm(form);
+
+  await expectNotification(page, 'Auto-Start priority set');
+  await waitForVpsTransactionsSettled(page, vpsId);
+  await gotoVpsDetail(page, vpsId);
+  await expect(formByAction(page, 'action=autostart').locator('input[name="autostart_priority"]')).toHaveValue(
+    String(priority),
+  );
+}
+
+async function setAdminMapMode(page, vpsId, mode = null) {
+  await gotoVpsDetail(page, vpsId);
+
+  const form = formByAction(page, 'action=map_mode');
+  const select = form.locator('select[name="map_mode"]');
+  await expect(select).toBeVisible();
+
+  const currentMode = await select.inputValue();
+  const targetMode = mode || (currentMode === 'zfs' ? 'native' : 'zfs');
+  await select.selectOption(targetMode);
+  await submitForm(form);
+
+  await expectNotification(page, 'Map mode set');
+  await waitForVpsTransactionsSettled(page, vpsId);
+  await gotoVpsDetail(page, vpsId);
+  await expect(formByAction(page, 'action=map_mode').locator('select[name="map_mode"]')).toHaveValue(targetMode);
+}
+
+async function setAdminObjectState(page, vpsId, options = {}) {
+  await gotoVpsDetail(page, vpsId);
+
+  const form = formByAction(page, 'action=set_state');
+  await expect(form.locator('select[name="object_state"]')).toBeVisible();
+  await expect(form.locator('input[name="expiration_date"]')).toBeVisible();
+  await expect(form.locator('textarea[name="change_reason"]')).toBeVisible();
+  await form.locator('select[name="object_state"]').selectOption(options.state || 'active');
+  await form.locator('input[name="expiration_date"]').fill(options.expirationDate || '2026-05-19 00:00:00');
+  await form.locator('textarea[name="change_reason"]').fill(options.changeReason || 'Webui admin state coverage');
+  await submitForm(form);
+
+  await expectNotification(page, 'State set');
+  await expect(page).toHaveURL(new RegExp(`page=adminvps.*veid=${vpsId}`));
+  await expect(page.locator('table.table-style01 tr', { hasText: 'Expiration:' }).first()).toBeVisible();
+}
+
 module.exports = {
   addAndRemoveRoutedIpAndHostAddress,
   bootFromTemplate,
   chooseRadio,
+  createAdminVps,
   cloneVps,
   createVps,
   deleteStoppedVps,
+  disableAdminNetwork,
+  enableAdminNetwork,
   deployPublicKey,
   expectUserAdminOnlyControlsHidden,
   gotoVpsList,
@@ -688,6 +902,9 @@ module.exports = {
   runDetailAction,
   selectFirstUsableOption,
   setAdminModifications,
+  setAdminAutostartPriority,
+  setAdminMapMode,
+  setAdminObjectState,
   setCgroupVersion,
   setDnsResolverMode,
   setDistributionInformation,
@@ -695,10 +912,13 @@ module.exports = {
   setHostname,
   setMaintenanceWindowsPerDay,
   setMaintenanceWindowsUnified,
+  setCheckbox,
   setOsTemplateAutoUpdate,
   setStartMenuTimeout,
   setUserNamespaceMap,
   stopVpsIfRunning,
+  submitAdminNetworkInterface,
+  submitAdminResources,
   submitVpsSwapPreview,
   submitFeatures,
   updateResources,
