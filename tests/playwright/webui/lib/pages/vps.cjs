@@ -101,8 +101,9 @@ async function createVps(page, fixtures, hostname, options = {}) {
   await page.goto('/?page=adminvps&action=new-step-1', { waitUntil: 'domcontentloaded' });
   await expect(page.locator('#content-in h1')).toContainText('Create a VPS: Select a location');
 
+  const locationId = options.locationId || fixtures.location.id;
   const locationForm = page.locator('form[name="newvps-step2"]');
-  await chooseRadio(locationForm.locator(`input[name="location"][value="${fixtures.location.id}"]`));
+  await chooseRadio(locationForm.locator(`input[name="location"][value="${locationId}"]`));
   await submitForm(locationForm);
 
   await expect(page.locator('#content-in h1')).toContainText('Create a VPS: Select distribution');
@@ -129,7 +130,10 @@ async function createVps(page, fixtures, hostname, options = {}) {
     await userNamespaceSelect.selectOption(String(options.userNamespaceMapId || fixtures.user.userNamespaceMap.id));
   }
   await selectUserData(finalForm, options.userData || { type: 'none' });
-  await submitForm(finalForm);
+  await finalForm
+    .locator('input[type="submit"], button[type="submit"], button:not([type])')
+    .last()
+    .click({ timeout: 60 * 1000 });
 
   await expectNotification(page, 'VPS create');
   const vpsId = vpsIdFromCurrentUrl(page);
@@ -137,6 +141,139 @@ async function createVps(page, fixtures, hostname, options = {}) {
   await waitForVpsStatus(page, vpsId, 'running');
 
   return vpsId;
+}
+
+async function cloneVps(page, fixtures, sourceVpsId, hostname, options = {}) {
+  const locationId = options.locationId || fixtures.location.id;
+
+  await page.goto(`/?page=adminvps&action=clone-step-1&veid=${sourceVpsId}`, {
+    waitUntil: 'domcontentloaded',
+  });
+  await expect(page.locator('#content-in h1')).toContainText('Clone a VPS: Select a location');
+
+  const locationForm = page.locator('form[name="clonevps-step1"]');
+  await chooseRadio(locationForm.locator(`input[name="location"][value="${locationId}"]`));
+  await submitForm(locationForm);
+
+  await expect(page.locator('#content-in h1')).toContainText('Clone a VPS: Final touches');
+  const finalForm = formByAction(page, 'action=clone-submit');
+  await expect(finalForm.locator('select[name="node"]')).toHaveCount(0);
+  await finalForm.locator('input[name="hostname"]').fill(hostname);
+
+  for (const field of ['dataset_plans', 'resources', 'features', 'stop']) {
+    if (options[field] === undefined) {
+      continue;
+    }
+
+    const checkbox = finalForm.locator(`input[name="${field}"]`);
+    if ((await checkbox.count()) === 0) {
+      continue;
+    }
+
+    if (options[field]) {
+      await checkbox.check();
+    } else {
+      await checkbox.uncheck();
+    }
+  }
+
+  await Promise.all([
+    page.waitForURL(/action=info.*veid=\d+/, { timeout: 2 * 60 * 1000 }),
+    finalForm
+      .locator('input[type="submit"], button[type="submit"], button:not([type])')
+      .first()
+      .click({ noWaitAfter: true, timeout: 60 * 1000 }),
+  ]);
+
+  await expectNotification(page, 'Clone in progress');
+  const clonedVpsId = vpsIdFromCurrentUrl(page);
+  await waitForVpsTransactionsSettled(page, clonedVpsId);
+
+  return clonedVpsId;
+}
+
+async function previewVpsSwap(page, primaryVpsId, secondaryVpsId) {
+  await page.goto(`/?page=adminvps&action=swap&veid=${primaryVpsId}`, {
+    waitUntil: 'domcontentloaded',
+  });
+  await expect(page.locator('#content-in h1')).toContainText(`VPS #${primaryVpsId}`);
+
+  const swapForm = formByAction(page, 'action=swap_preview', { name: 'vps-swap' });
+  const select = swapForm.locator('select[name="vps"]');
+
+  if ((await select.count()) > 0) {
+    await select.selectOption(String(secondaryVpsId));
+  } else {
+    await swapForm.locator('input[name="vps"]').fill(String(secondaryVpsId));
+  }
+
+  await submitForm(swapForm, 'Preview');
+
+  await expect(page).toHaveURL(/action=swap_preview/);
+  await expect(page.locator('#content-in')).toContainText(
+    new RegExp(`Replace VPS\\s+#${primaryVpsId}\\s+with\\s+#${secondaryVpsId}`),
+  );
+  await expect(page.locator('#content-in')).toContainText('First migration');
+  await expect(page.locator('#content-in')).toContainText('Second migration');
+}
+
+async function submitVpsSwapPreview(page, primaryVpsId, secondaryVpsId) {
+  const previewForm = formByAction(page, `action=swap&veid=${primaryVpsId}`);
+  await expect(previewForm.locator(`input[name="vps"][value="${secondaryVpsId}"]`)).toHaveCount(1);
+  await submitForm(previewForm, /Go/);
+
+  await expectNotification(page, 'Swap in progress');
+  await expect(page).toHaveURL(new RegExp(`action=info.*veid=${primaryVpsId}`));
+  await waitForVpsTransactionsSettled(page, primaryVpsId);
+  await waitForVpsTransactionsSettled(page, secondaryVpsId);
+}
+
+async function deleteStoppedVps(page, vpsId, hostname) {
+  await page.goto(`/?page=adminvps&action=delete&veid=${vpsId}`, {
+    waitUntil: 'domcontentloaded',
+  });
+  await expect(page.locator('#perex')).toContainText(`delete VPS number ${vpsId}`);
+  if (hostname) {
+    await expect(page.locator('#content-in')).toContainText(hostname);
+  }
+
+  const form = formByAction(page, 'action=delete2');
+  await expect(form.locator('input[name="lazy_delete"]')).toHaveCount(0);
+  await submitForm(form, 'Delete');
+
+  await expectNotification(page, `Delete VPS #${vpsId}`);
+  await expect(page).toHaveURL(/page=adminvps/);
+  await waitForVpsTransactionsSettled(page, vpsId);
+}
+
+async function expectUserAdminOnlyControlsHidden(page, vpsId) {
+  await gotoVpsDetail(page, vpsId);
+
+  await expect(page.locator('#content-in h1')).toContainText('[User mode]');
+  await expect(page.locator('#aside a', { hasText: 'Migrate VPS' })).toHaveCount(0);
+  await expect(page.locator('#aside a', { hasText: 'Change owner' })).toHaveCount(0);
+  await expect(page.locator('#aside a', { hasText: 'Replace VPS' })).toHaveCount(0);
+  await expect(page.locator('#aside a[href*="action=clone-step-0"]')).toHaveCount(0);
+  await expect(page.locator('#aside a[href*="action=clone-step-1"]', { hasText: 'Clone VPS' })).toBeVisible();
+
+  const resourcesForm = formByAction(page, 'action=resources');
+  await expect(resourcesForm.locator('input[name="cpu_limit"]')).toHaveCount(0);
+  await expect(resourcesForm.locator('textarea[name="change_reason"]')).toHaveCount(0);
+  await expect(resourcesForm.locator('input[name="admin_override"]')).toHaveCount(0);
+  await expect(resourcesForm.locator('select[name="admin_lock_type"]')).toHaveCount(0);
+
+  const netifForm = formByAction(page, 'action=netif');
+  await expect(netifForm.locator('input[name="max_tx"]')).toHaveCount(0);
+  await expect(netifForm.locator('input[name="max_rx"]')).toHaveCount(0);
+  await expect(netifForm.locator('input[name="enable"]')).toHaveCount(0);
+
+  await expect(page.locator('form[action*="action=autostart"]')).toHaveCount(0);
+  await expect(page.locator('form[action*="action=map_mode"]')).toHaveCount(0);
+  await expect(page.locator('form[action*="action=disable_network"]')).toHaveCount(0);
+  await expect(page.locator('form[action*="action=enable_network"]')).toHaveCount(0);
+  await expect(page.locator('#content-in h2', { hasText: 'Auto-Start' })).toHaveCount(0);
+  await expect(page.locator('#content-in h2', { hasText: 'Map mode' })).toHaveCount(0);
+  await expect(page.locator('#content-in h2', { hasText: /Disable network|Enable network/ })).toHaveCount(0);
 }
 
 async function gotoVpsList(page) {
@@ -183,6 +320,21 @@ async function runDetailAction(page, vpsId, action, expectedNotification, expect
   if (expectedStatus) {
     await waitForVpsStatus(page, vpsId, expectedStatus);
   }
+}
+
+async function stopVpsIfRunning(page, vpsId) {
+  await gotoVpsDetail(page, vpsId);
+
+  const stopAction = page.locator(`a[href*="run=stop"][href*="veid=${vpsId}"]`).first();
+  if ((await stopAction.count()) === 0) {
+    return;
+  }
+
+  await acceptNextDialog(page);
+  await stopAction.click();
+  await expectNotification(page, 'Stop VPS');
+  await waitForVpsTransactionsSettled(page, vpsId);
+  await waitForVpsStatus(page, vpsId, 'stopped');
 }
 
 async function resetRootPassword(page, vpsId) {
@@ -520,10 +672,14 @@ module.exports = {
   addAndRemoveRoutedIpAndHostAddress,
   bootFromTemplate,
   chooseRadio,
+  cloneVps,
   createVps,
+  deleteStoppedVps,
   deployPublicKey,
+  expectUserAdminOnlyControlsHidden,
   gotoVpsList,
   openRemoteConsole,
+  previewVpsSwap,
   reinstallVps,
   reinstallVpsWithOptions,
   renameNetworkInterface,
@@ -542,7 +698,10 @@ module.exports = {
   setOsTemplateAutoUpdate,
   setStartMenuTimeout,
   setUserNamespaceMap,
+  stopVpsIfRunning,
+  submitVpsSwapPreview,
   submitFeatures,
   updateResources,
   vpsListRow,
+  vpsIdFromCurrentUrl,
 };
