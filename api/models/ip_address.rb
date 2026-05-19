@@ -184,7 +184,7 @@ class IpAddress < ApplicationRecord
   end
 
   def check_ownership
-    return unless user && network_interface && user.id != network_interface.vps.user_id
+    return unless user && network_interface&.vps && user.id != network_interface.vps.user_id
 
     errors.add(
       :user,

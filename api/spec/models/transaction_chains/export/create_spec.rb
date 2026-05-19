@@ -14,7 +14,7 @@ RSpec.describe TransactionChains::Export::Create do
     dataset, dip = create_dataset_with_pool!(user: user, pool: pool, name: name)
     export_network = create_private_network!(location: pool.node.location)
     create_ipv4_address_in_network!(network: export_network, location: pool.node.location)
-    [dataset, dip]
+    [dataset, dip, export_network]
   end
 
   it 'creates export runtime, hosts, and enable transactions for primary datasets' do
@@ -67,6 +67,21 @@ RSpec.describe TransactionChains::Export::Create do
     expect(export.expiration_date).to be_within(5.seconds).of(3.days.from_now)
     expect(export.path).to include(dataset.full_name)
     expect(export.path).to include(snapshot.created_at.iso8601)
+  end
+
+  it 'allows a user-owned export server address on an export interface' do
+    dataset, dip, export_network = create_exportable_dataset(name: "export-user-ip-#{SecureRandom.hex(4)}")
+    create_ipv4_address_in_network!(
+      network: export_network,
+      location: dip.pool.node.location,
+      user: user
+    )
+
+    _chain, export = described_class.fire(dataset, enabled: false)
+
+    expect(export.ip_address.user).to eq(user)
+    expect(export.ip_address.network_interface).to eq(export.network_interface)
+    expect(export.network_interface.vps).to be_nil
   end
 
   it 'raises OperationNotSupported for datasets on unsupported pools' do
