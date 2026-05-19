@@ -138,7 +138,7 @@ function export_create_form($dataset_id, $snapshot_id)
         $desc = $input->{$p};
 
         $xtpl->table_td(($desc->label ?? $p) . ':');
-        api_param_to_form_pure($p, $input->{$p}, $ex->{$p});
+        api_param_to_form_pure($p, $input->{$p});
 
         if ($desc->description) {
             $xtpl->table_td($desc->description);
