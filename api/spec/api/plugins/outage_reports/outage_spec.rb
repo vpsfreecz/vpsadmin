@@ -180,6 +180,20 @@ RSpec.describe 'VpsAdmin::API::Resources::Outage', requires_plugins: :outage_rep
       expect(ids).to contain_exactly(target.id)
     end
 
+    it 'filters by affected user' do
+      target = build_outage(state: :announced, begins_at: Time.utc(2026, 1, 3, 12, 0, 0))
+      other = build_outage(state: :announced, begins_at: Time.utc(2026, 1, 4, 12, 0, 0))
+
+      ::OutageUser.create!(outage: target, user:, vps_count: 1, export_count: 0)
+      ::OutageUser.create!(outage: other, user: other_user, vps_count: 1, export_count: 0)
+
+      as(admin) { json_get index_path, outage: { user: user.id } }
+
+      expect_status(200)
+      ids = outages.map { |row| row['id'] }
+      expect(ids).to contain_exactly(target.id)
+    end
+
     it 'orders results by begins_at for oldest' do
       older = build_outage(state: :announced, begins_at: Time.utc(2026, 1, 1, 8, 0, 0))
       newer = build_outage(state: :announced, begins_at: Time.utc(2026, 1, 1, 10, 0, 0))
