@@ -588,15 +588,7 @@ function request_approve()
         return;
     }
 
-    if (isset($_POST['action'])) {
-        $params = client_params_to_api(
-            $api->user_request->{$_GET['type']}->resolve,
-            $_POST
-        );
-
-    } else {
-        $params = ['action' => 'approve'];
-    }
+    $params = request_process_params('approve');
 
     try {
         $api->user_request->{$_GET['type']}->resolve($_GET['id'], $params);
@@ -618,15 +610,7 @@ function request_deny()
         return;
     }
 
-    if (isset($_POST['action'])) {
-        $params = client_params_to_api(
-            $api->user_request->{$_GET['type']}->resolve,
-            $_POST
-        );
-
-    } else {
-        $params = ['action' => 'deny'];
-    }
+    $params = request_process_params('deny');
 
     try {
         $api->user_request->{$_GET['type']}->resolve($_GET['id'], $params);
@@ -648,15 +632,7 @@ function request_ignore()
         return;
     }
 
-    if (isset($_POST['action'])) {
-        $params = client_params_to_api(
-            $api->user_request->{$_GET['type']}->resolve,
-            $_POST
-        );
-
-    } else {
-        $params = ['action' => 'ignore'];
-    }
+    $params = request_process_params('ignore');
 
     try {
         $api->user_request->{$_GET['type']}->resolve($_GET['id'], $params);
@@ -668,6 +644,30 @@ function request_ignore()
         $xtpl->perex_format_errors(_('Request ignore failed'), $e->getResponse());
         approval_requests_details($_GET['type'], $_GET['id']);
     }
+}
+
+function request_process_params($default_action)
+{
+    global $api;
+
+    if (!isset($_POST['action'])) {
+        return ['action' => $default_action];
+    }
+
+    $post = $_POST;
+
+    if (($_GET['type'] ?? null) == 'change') {
+        foreach (['full_name', 'email', 'address'] as $field) {
+            if (isset($post[$field]) && trim($post[$field]) == '') {
+                unset($post[$field]);
+            }
+        }
+    }
+
+    return client_params_to_api(
+        $api->user_request->{$_GET['type']}->resolve,
+        $post
+    );
 }
 
 function request_correction()
