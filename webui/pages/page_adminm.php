@@ -1065,7 +1065,7 @@ if (isLoggedIn()) {
                         'level' => $_POST['m_level'],
                         'info' => $_POST['m_info'],
                         'monthly_payment' => $_POST['m_monthly_payment'],
-                        'mailer_enabled' => $_POST['m_mailer_enable'],
+                        'mailer_enabled' => isset($_POST['m_mailer_enable']),
                     ]);
 
                     notify_user(_('User created'), _('The user was successfully created.'));
