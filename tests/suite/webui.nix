@@ -1104,6 +1104,13 @@ import ../make-test.nix (
       )
 
       quoted_now = ActiveRecord::Base.connection.quote(Time.now)
+      reminder_expiration = Time.now + 90 * 24 * 60 * 60
+      [user, secondary_user, admin_managed_user].each do |reminder_user|
+        reminder_user.update_columns(
+          expiration_date: reminder_expiration,
+          remind_after_date: nil
+        )
+      end
 
       resources = [
         [:cpu, 'CPU', 1, 64, 1, :numeric, nil, 64, 1],
@@ -1381,6 +1388,16 @@ import ../make-test.nix (
         paid_until: nil,
         updated_at: Time.now
       )
+
+      admin_redirect_payment = UserPayment.new(
+        user: admin_managed_user,
+        accounted_by: admin,
+        amount: 100,
+        from_date: Time.now - 60 * 60 * 24 * 30,
+        to_date: Time.now + 60 * 60 * 24 * 30,
+        created_at: Time.now - 600
+      )
+      admin_redirect_payment.save!
 
       admin_incoming_tx = 'webui-admin-managed-incoming'
       admin_old_incoming_ids = IncomingPayment
@@ -2227,6 +2244,10 @@ import ../make-test.nix (
         manage_hostname: true
       )
       support_vps.save! if support_vps.changed? || support_vps.new_record?
+      support_vps.update_columns(
+        expiration_date: reminder_expiration,
+        remind_after_date: nil
+      )
 
       VpsCurrentStatus.find_or_initialize_by(vps: support_vps).tap do |status|
         status.status = true
@@ -3398,6 +3419,10 @@ import ../make-test.nix (
               'amount' => admin_incoming_payment.amount.to_i,
               'state' => admin_incoming_payment.state
             },
+            'userPayment' => {
+              'id' => admin_redirect_payment.id,
+              'amount' => admin_redirect_payment.amount.to_i
+            },
             'approvalRequests' => {
               'approve' => {
                 'id' => admin_approval_approve.id,
@@ -4195,6 +4220,19 @@ import ../make-test.nix (
           describe 'webui support and status browser flow' do
             it 'passes Playwright support and status tests' do
               run_playwright('support-pages', 'specs/support-pages.spec.cjs')
+            end
+          end
+        '';
+      };
+
+      misc-pages = {
+        description = ''
+          Run miscellaneous webui page browser tests.
+        '';
+        script = webuiTestScriptCommon + ''
+          describe 'webui miscellaneous page browser flow' do
+            it 'passes Playwright miscellaneous page tests' do
+              run_playwright('misc-pages', 'specs/misc-pages.spec.cjs')
             end
           end
         '';
