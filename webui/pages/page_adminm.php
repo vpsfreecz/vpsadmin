@@ -1095,7 +1095,7 @@ if (isLoggedIn()) {
                         . ' ' . $u->login . '?',
                     '<a href="?page=adminm">'
                         . strtoupper(_("No"))
-                        . '</a> | <a href="?page=adminm&section=members&action=delete3&id=' . $u->id . '&state=' . $_POST["object_state"] . '&t=' . csrf_token() . '">'
+                        . '</a> | <a href="?page=adminm&section=members&action=delete3&id=' . $u->id . '&object_state=' . $_POST["object_state"] . '&t=' . csrf_token() . '">'
                         . strtoupper(_("Yes")) . '</a>'
                 );
             }
