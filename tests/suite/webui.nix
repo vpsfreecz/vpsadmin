@@ -662,6 +662,105 @@ import ../make-test.nix (
         ip
       end
 
+      def ensure_host_ip_fixture(ip, addr, order: nil, user_created: false)
+        HostIpAddress.find_or_initialize_by(
+          ip_address: ip,
+          ip_addr: addr
+        ).tap do |host_ip|
+          host_ip.auto_add = true
+          host_ip.order = order
+          host_ip.user_created = user_created
+          host_ip.save! if host_ip.changed? || host_ip.new_record?
+        end
+      end
+
+      def ensure_dns_zone_fixture(
+        name,
+        user: nil,
+        label: nil,
+        source: :internal_source,
+        role: :forward_role,
+        email: 'hostmaster@example.test',
+        dnssec_enabled: false,
+        enabled: true,
+        reverse_network_address: nil,
+        reverse_network_prefix: nil
+      )
+        zone = DnsZone.find_or_initialize_by(name: name)
+        zone.assign_attributes(
+          user: user,
+          label: label || name,
+          email: source == :internal_source ? email : nil,
+          default_ttl: 3600,
+          enabled: enabled,
+          original_enabled: enabled,
+          dnssec_enabled: dnssec_enabled,
+          zone_role: role,
+          zone_source: source,
+          reverse_network_address: reverse_network_address,
+          reverse_network_prefix: reverse_network_prefix,
+          confirmed: :confirmed
+        )
+        zone.save! if zone.changed? || zone.new_record?
+        zone
+      end
+
+      def ensure_dns_record_fixture(
+        zone,
+        name,
+        type,
+        content,
+        ttl: 3600,
+        priority: nil,
+        comment: "",
+        enabled: true,
+        user: nil,
+        managed: false
+      )
+        record = DnsRecord.find_or_initialize_by(
+          dns_zone: zone,
+          name: name,
+          record_type: type
+        )
+        record.assign_attributes(
+          content: content,
+          ttl: ttl,
+          priority: priority,
+          comment: comment,
+          enabled: enabled,
+          original_enabled: enabled,
+          confirmed: :confirmed,
+          managed: managed,
+          user: user
+        )
+        record.save! if record.changed? || record.new_record?
+        record
+      end
+
+      def reset_dns_record_token(record)
+        if record.update_token
+          token = record.update_token
+          record.update!(update_token: nil)
+          token.destroy!
+        end
+      end
+
+      def cleanup_dns_zone_fixture(name)
+        zone = DnsZone.find_by(name: name)
+        return unless zone
+
+        clear_fixture_locks(zone)
+        zone.dns_server_zones.delete_all
+        zone.dns_zone_transfers.delete_all
+        zone.dnssec_records.delete_all
+        zone.dns_records.find_each do |record|
+          record.update_token&.destroy!
+          record.destroy!
+        end
+        zone.dns_record_logs.update_all(dns_zone_id: nil)
+        zone.destroy!
+      end
+
       def ensure_export_fixture(user, dataset_in_pool, server_ip, key, enabled: true, host_ip: nil)
         export = Export.find_or_initialize_by(
           dataset_in_pool: dataset_in_pool,
@@ -1841,6 +1940,533 @@ import ../make-test.nix (
       )
       support_assignment.save! if support_assignment.changed? || support_assignment.new_record?
 
+      [
+        'webui-user-primary-create.example.test.',
+        'webui-user-secondary-create.example.test.',
+        'webui-admin-primary-create.example.test.',
+        'webui-admin-secondary-create.example.test.'
+      ].each { |zone_name| cleanup_dns_zone_fixture(zone_name) }
+
+      DnsTsigKey
+        .where(name: [
+          "#{user.id}-webui-user-tsig-create",
+          "#{admin_managed_user.id}-webui-admin-tsig-create"
+        ])
+        .destroy_all
+
+      networking_reverse_zone = ensure_dns_zone_fixture(
+        '113.0.203.in-addr.arpa.',
+        label: 'Webui Networking Reverse Zone',
+        role: :reverse_role,
+        reverse_network_address: '203.0.113.0',
+        reverse_network_prefix: 24
+      )
+
+      networking_network = Network.find_or_initialize_by(
+        address: '203.0.113.160',
+        prefix: 27
+      )
+      networking_network.assign_attributes(
+        ip_version: 4,
+        label: 'Webui Networking Coverage Network',
+        managed: false,
+        primary_location: Location.find(${toString location.id}),
+        role: :public_access,
+        purpose: :any,
+        split_access: :user_split,
+        split_prefix: 32
+      )
+      networking_network.save! if networking_network.changed? || networking_network.new_record?
+
+      networking_multihost_network = Network.find_or_initialize_by(
+        address: '203.0.113.192',
+        prefix: 28
+      )
+      networking_multihost_network.assign_attributes(
+        ip_version: 4,
+        label: 'Webui Networking Multi-host Network',
+        managed: false,
+        primary_location: Location.find(${toString location.id}),
+        role: :public_access,
+        purpose: :any,
+        split_access: :user_split,
+        split_prefix: 30
+      )
+      networking_multihost_network.save! if networking_multihost_network.changed? || networking_multihost_network.new_record?
+
+      [networking_network, networking_multihost_network].each_with_index do |net, idx|
+        LocationNetwork.find_or_initialize_by(
+          location: Location.find(${toString location.id}),
+          network: net
+        ).tap do |locnet|
+          locnet.primary = true
+          locnet.priority = 30 + idx
+          locnet.autopick = true
+          locnet.userpick = true
+          locnet.save! if locnet.changed? || locnet.new_record?
+        end
+      end
+
+      make_networking_vps = lambda do |key|
+        root_dip = ensure_dataset_in_pool(
+          user,
+          webui_pool,
+          "webui-networking-#{key}-root"
+        )
+        vps = ensure_storage_vps(
+          user,
+          root_dip,
+          "webui-networking-#{key}",
+          node,
+          primary_template,
+          DnsResolver.first,
+          userns_map
+        )
+        netif = NetworkInterface.find_or_initialize_by(
+          vps: vps,
+          name: 'eth0'
+        )
+        netif.assign_attributes(
+          kind: :veth_routed,
+          enable: true,
+          max_tx: 0,
+          max_rx: 0
+        )
+        netif.save! if netif.changed? || netif.new_record?
+        clear_fixture_locks(vps, netif)
+
+        { vps: vps, netif: netif }
+      end
+
+      networking_vps = {
+        list: make_networking_vps.call('list'),
+        user_route_assign: make_networking_vps.call('user-route-assign'),
+        user_route_unassign: make_networking_vps.call('user-route-unassign'),
+        user_host_assign: make_networking_vps.call('user-host-assign'),
+        user_host_unassign: make_networking_vps.call('user-host-unassign'),
+        user_ptr: make_networking_vps.call('user-ptr'),
+        admin_route_only: make_networking_vps.call('admin-route-only'),
+        admin_route_host: make_networking_vps.call('admin-route-host'),
+        admin_route_unassign: make_networking_vps.call('admin-route-unassign'),
+        admin_host_assign: make_networking_vps.call('admin-host-assign'),
+        admin_host_unassign: make_networking_vps.call('admin-host-unassign'),
+        admin_ptr: make_networking_vps.call('admin-ptr'),
+        dns_transfer: make_networking_vps.call('dns-transfer')
+      }
+
+      networking_ip_specs = {
+        list_free: ['203.0.113.161', user, nil, nil],
+        user_route_assign: ['203.0.113.162', user, nil, nil],
+        admin_route_only: ['203.0.113.163', nil, nil, nil],
+        admin_route_host: ['203.0.113.164', nil, nil, nil],
+        user_route_unassign: ['203.0.113.165', user, networking_vps.fetch(:user_route_unassign).fetch(:netif), 0],
+        admin_route_unassign: ['203.0.113.166', user, networking_vps.fetch(:admin_route_unassign).fetch(:netif), 0],
+        user_host_assign: ['203.0.113.167', user, networking_vps.fetch(:user_host_assign).fetch(:netif), nil],
+        user_host_unassign: ['203.0.113.168', user, networking_vps.fetch(:user_host_unassign).fetch(:netif), 0],
+        admin_host_assign: ['203.0.113.169', user, networking_vps.fetch(:admin_host_assign).fetch(:netif), nil],
+        admin_host_unassign: ['203.0.113.170', user, networking_vps.fetch(:admin_host_unassign).fetch(:netif), 0],
+        user_ptr: ['203.0.113.171', user, networking_vps.fetch(:user_ptr).fetch(:netif), 0],
+        admin_ptr: ['203.0.113.172', user, networking_vps.fetch(:admin_ptr).fetch(:netif), 0],
+        admin_owner_edit: ['203.0.113.173', nil, nil, nil],
+        dns_transfer: ['203.0.113.174', user, networking_vps.fetch(:dns_transfer).fetch(:netif), 0]
+      }
+
+      networking_ips = networking_ip_specs.to_h do |key, (addr, owner, netif, host_order)|
+        ip = IpAddress.find_or_initialize_by(ip_addr: addr)
+        ip.assign_attributes(
+          prefix: networking_network.split_prefix,
+          size: 1,
+          network: networking_network,
+          user: owner,
+          charged_environment: owner ? env : nil,
+          network_interface: netif,
+          reverse_dns_zone: networking_reverse_zone
+        )
+        ip.save! if ip.changed? || ip.new_record?
+
+        host_ip = ensure_host_ip_fixture(ip, addr, order: host_order)
+        clear_fixture_locks(ip, host_ip, netif, netif&.vps)
+
+        [key, { ip: ip, host_ip: host_ip }]
+      end
+
+      networking_assignment_specs = {
+        user_route_unassign: networking_vps.fetch(:user_route_unassign).fetch(:vps),
+        admin_route_unassign: networking_vps.fetch(:admin_route_unassign).fetch(:vps),
+        user_host_assign: networking_vps.fetch(:user_host_assign).fetch(:vps),
+        user_host_unassign: networking_vps.fetch(:user_host_unassign).fetch(:vps),
+        admin_host_assign: networking_vps.fetch(:admin_host_assign).fetch(:vps),
+        admin_host_unassign: networking_vps.fetch(:admin_host_unassign).fetch(:vps),
+        user_ptr: networking_vps.fetch(:user_ptr).fetch(:vps),
+        admin_ptr: networking_vps.fetch(:admin_ptr).fetch(:vps),
+        dns_transfer: networking_vps.fetch(:dns_transfer).fetch(:vps)
+      }
+
+      networking_assignments = networking_assignment_specs.to_h do |key, vps|
+        ip = networking_ips.fetch(key).fetch(:ip)
+        assignment = IpAddressAssignment.find_or_initialize_by(
+          ip_address: ip,
+          vps: vps,
+          to_date: nil
+        )
+        assignment.assign_attributes(
+          user: vps.user,
+          ip_addr: ip.ip_addr,
+          ip_prefix: ip.prefix,
+          from_date: Time.now - 1800,
+          reconstructed: false
+        )
+        assignment.save! if assignment.changed? || assignment.new_record?
+        [key, assignment]
+      end
+
+      networking_multihost_user_ip = IpAddress.find_or_initialize_by(ip_addr: '203.0.113.196')
+      networking_multihost_user_ip.assign_attributes(
+        prefix: networking_multihost_network.split_prefix,
+        size: 4,
+        network: networking_multihost_network,
+        user: user,
+        charged_environment: env,
+        network_interface: nil,
+        reverse_dns_zone: networking_reverse_zone
+      )
+      networking_multihost_user_ip.save! if networking_multihost_user_ip.changed? || networking_multihost_user_ip.new_record?
+      HostIpAddress
+        .where(ip_address: networking_multihost_user_ip, ip_addr: '203.0.113.197')
+        .delete_all
+      networking_multihost_user_host = ensure_host_ip_fixture(
+        networking_multihost_user_ip,
+        '203.0.113.196'
+      )
+
+      networking_multihost_admin_ip = IpAddress.find_or_initialize_by(ip_addr: '203.0.113.200')
+      networking_multihost_admin_ip.assign_attributes(
+        prefix: networking_multihost_network.split_prefix,
+        size: 4,
+        network: networking_multihost_network,
+        user: nil,
+        charged_environment: nil,
+        network_interface: nil,
+        reverse_dns_zone: networking_reverse_zone
+      )
+      networking_multihost_admin_ip.save! if networking_multihost_admin_ip.changed? || networking_multihost_admin_ip.new_record?
+      HostIpAddress
+        .where(ip_address: networking_multihost_admin_ip, ip_addr: '203.0.113.201')
+        .delete_all
+      networking_multihost_admin_host = ensure_host_ip_fixture(
+        networking_multihost_admin_ip,
+        '203.0.113.200'
+      )
+      clear_fixture_locks(
+        networking_multihost_user_ip,
+        networking_multihost_user_host,
+        networking_multihost_admin_ip,
+        networking_multihost_admin_host
+      )
+
+      now = Time.now
+      networking_accounting = NetworkInterfaceMonthlyAccounting.find_or_initialize_by(
+        network_interface: networking_vps.fetch(:list).fetch(:netif),
+        user: user,
+        year: now.year,
+        month: now.month
+      )
+      networking_accounting.assign_attributes(
+        bytes_in: 64 * 1024 * 1024,
+        bytes_out: 32 * 1024 * 1024,
+        packets_in: 6400,
+        packets_out: 3200,
+        created_at: now - 600,
+        updated_at: now - 300
+      )
+      networking_accounting.save! if networking_accounting.changed? || networking_accounting.new_record?
+
+      networking_monitor = NetworkInterfaceMonitor.find_or_initialize_by(
+        network_interface: networking_vps.fetch(:list).fetch(:netif)
+      )
+      networking_monitor.assign_attributes(
+        bytes: 96 * 1024,
+        bytes_in: 64 * 1024,
+        bytes_out: 32 * 1024,
+        bytes_in_readout: 1024 * 1024,
+        bytes_out_readout: 512 * 1024,
+        packets: 96,
+        packets_in: 64,
+        packets_out: 32,
+        packets_in_readout: 640,
+        packets_out_readout: 320,
+        delta: 10,
+        created_at: now - 60,
+        updated_at: now
+      )
+      networking_monitor.save! if networking_monitor.changed? || networking_monitor.new_record?
+
+      dns_server = DnsServer.find_or_initialize_by(name: 'webui-ns1.example.test')
+      dns_server.assign_attributes(
+        node: node,
+        ipv4_addr: '203.0.113.10',
+        ipv6_addr: nil,
+        hidden: false,
+        enable_user_dns_zones: false,
+        user_dns_zone_type: :secondary_type
+      )
+      dns_server.save! if dns_server.changed? || dns_server.new_record?
+
+      hidden_dns_server = DnsServer.find_or_initialize_by(name: 'webui-hidden-ns.example.test')
+      hidden_dns_server.assign_attributes(
+        node: node,
+        ipv4_addr: '203.0.113.11',
+        ipv6_addr: nil,
+        hidden: true,
+        enable_user_dns_zones: false,
+        user_dns_zone_type: :secondary_type
+      )
+      hidden_dns_server.save! if hidden_dns_server.changed? || hidden_dns_server.new_record?
+
+      dns_zone_names = {
+        user_update: 'webui-dns-user-update.example.test.',
+        user_delete: 'webui-dns-user-delete.example.test.',
+        user_record_create: 'webui-dns-user-record-create.example.test.',
+        user_record_edit: 'webui-dns-user-record-edit.example.test.',
+        user_record_toggle: 'webui-dns-user-record-toggle.example.test.',
+        user_record_ddns: 'webui-dns-user-record-ddns.example.test.',
+        user_record_delete: 'webui-dns-user-record-delete.example.test.',
+        user_dnssec: 'webui-dns-user-dnssec.example.test.',
+        user_transfer_log: 'webui-dns-user-transfer.example.test.',
+        admin_update: 'webui-dns-admin-update.example.test.',
+        admin_delete: 'webui-dns-admin-delete.example.test.',
+        admin_server_zone_add: 'webui-dns-admin-server-add.example.test.',
+        admin_server_zone_delete: 'webui-dns-admin-server-delete.example.test.',
+        admin_transfer_add: 'webui-dns-admin-transfer-add.example.test.',
+        admin_transfer_delete: 'webui-dns-admin-transfer-delete.example.test.',
+        admin_record: 'webui-dns-admin-record.example.test.',
+        admin_dnssec: '168.192.in-addr.arpa.',
+        admin_log: 'webui-dns-admin-log.example.test.'
+      }
+
+      dns_zones = dns_zone_names.to_h do |key, name|
+        attrs = case key
+                when :user_transfer_log
+                  { user: user, source: :external_source }
+                when :admin_record, :admin_log
+                  { user: nil }
+                when :admin_dnssec
+                  {
+                    user: nil,
+                    role: :reverse_role,
+                    reverse_network_address: '192.168.0.0',
+                    reverse_network_prefix: 16,
+                    dnssec_enabled: true
+                  }
+                else
+                  { user: key.to_s.start_with?('user_') ? user : user }
+                end
+
+        [key, ensure_dns_zone_fixture(
+          name,
+          **attrs,
+          label: "Webui DNS #{key}",
+          dnssec_enabled: attrs.fetch(:dnssec_enabled, false)
+        )]
+      end
+
+      dns_records = {
+        user_update: ensure_dns_record_fixture(
+          dns_zones.fetch(:user_update),
+          'www',
+          'A',
+          networking_ips.fetch(:list_free).fetch(:ip).ip_addr
+        ),
+        user_edit: ensure_dns_record_fixture(
+          dns_zones.fetch(:user_record_edit),
+          'edit',
+          'A',
+          '198.51.100.20'
+        ),
+        user_toggle: ensure_dns_record_fixture(
+          dns_zones.fetch(:user_record_toggle),
+          'toggle',
+          'A',
+          '198.51.100.21',
+          enabled: true
+        ),
+        user_ddns: ensure_dns_record_fixture(
+          dns_zones.fetch(:user_record_ddns),
+          'ddns',
+          'A',
+          '198.51.100.22'
+        ),
+        user_delete: ensure_dns_record_fixture(
+          dns_zones.fetch(:user_record_delete),
+          'delete-me',
+          'A',
+          '198.51.100.23'
+        ),
+        admin_edit: ensure_dns_record_fixture(
+          dns_zones.fetch(:admin_record),
+          'edit',
+          'A',
+          '198.51.100.30',
+          user: nil
+        ),
+        admin_toggle: ensure_dns_record_fixture(
+          dns_zones.fetch(:admin_record),
+          'toggle',
+          'A',
+          '198.51.100.31',
+          enabled: true,
+          user: nil
+        ),
+        admin_ddns: ensure_dns_record_fixture(
+          dns_zones.fetch(:admin_record),
+          'ddns',
+          'A',
+          '198.51.100.32',
+          user: nil
+        ),
+        admin_delete: ensure_dns_record_fixture(
+          dns_zones.fetch(:admin_record),
+          'delete-me',
+          'A',
+          '198.51.100.33',
+          user: nil
+        )
+      }
+      dns_records.each_value { |record| reset_dns_record_token(record) }
+
+      DnssecRecord.find_or_initialize_by(
+        dns_zone: dns_zones.fetch(:user_dnssec),
+        keyid: 12345
+      ).tap do |record|
+        record.dnskey_algorithm = 13
+        record.dnskey_pubkey = 'AwEAAc3WebuiUserKey'
+        record.ds_algorithm = 13
+        record.ds_digest_type = 2
+        record.ds_digest = 'a' * 64
+        record.save! if record.changed? || record.new_record?
+      end
+
+      DnssecRecord.find_or_initialize_by(
+        dns_zone: dns_zones.fetch(:admin_dnssec),
+        keyid: 54321
+      ).tap do |record|
+        record.dnskey_algorithm = 13
+        record.dnskey_pubkey = 'AwEAAc3WebuiAdminKey'
+        record.ds_algorithm = 13
+        record.ds_digest_type = 2
+        record.ds_digest = 'b' * 64
+        record.save! if record.changed? || record.new_record?
+      end
+
+      dns_tsig_keys = {
+        user_list: DnsTsigKey.find_or_initialize_by(name: 'webui-user-tsig-list'),
+        user_delete: DnsTsigKey.find_or_initialize_by(name: 'webui-user-tsig-delete'),
+        admin_list: DnsTsigKey.find_or_initialize_by(name: 'webui-admin-tsig-list'),
+        admin_delete: DnsTsigKey.find_or_initialize_by(name: 'webui-admin-tsig-delete'),
+        transfer: DnsTsigKey.find_or_initialize_by(name: 'webui-transfer-tsig')
+      }
+      dns_tsig_keys.each do |key, record|
+        record.assign_attributes(
+          user: key.to_s.start_with?('admin') ? admin_managed_user : user,
+          algorithm: 'hmac-sha256',
+          secret: 'd2VidWktZXk='
+        )
+        record.save! if record.changed? || record.new_record?
+      end
+
+      dns_server_zone_log = DnsServerZone.find_or_initialize_by(
+        dns_zone: dns_zones.fetch(:user_transfer_log),
+        dns_server: dns_server
+      )
+      dns_server_zone_log.assign_attributes(
+        zone_type: :secondary_type,
+        confirmed: :confirmed,
+        serial: 2026051901,
+        loaded_at: now - 1200,
+        last_check_at: now - 600,
+        last_transfer_at: now - 600,
+        last_transfer_status: :success,
+        last_transfer_primary_addr: networking_ips.fetch(:dns_transfer).fetch(:host_ip).ip_addr,
+        last_transfer_serial: 2026051901
+      )
+      dns_server_zone_log.save! if dns_server_zone_log.changed? || dns_server_zone_log.new_record?
+
+      dns_server_zone_delete = DnsServerZone.find_or_initialize_by(
+        dns_zone: dns_zones.fetch(:admin_server_zone_delete),
+        dns_server: dns_server
+      )
+      dns_server_zone_delete.assign_attributes(
+        zone_type: :secondary_type,
+        confirmed: :confirmed,
+        serial: 2026051902
+      )
+      dns_server_zone_delete.save! if dns_server_zone_delete.changed? || dns_server_zone_delete.new_record?
+
+      dns_transfer_delete = DnsZoneTransfer.find_or_initialize_by(
+        dns_zone: dns_zones.fetch(:admin_transfer_delete),
+        host_ip_address: networking_ips.fetch(:dns_transfer).fetch(:host_ip)
+      )
+      dns_transfer_delete.assign_attributes(
+        peer_type: :secondary_type,
+        dns_tsig_key: dns_tsig_keys.fetch(:transfer),
+        confirmed: :confirmed
+      )
+      dns_transfer_delete.save! if dns_transfer_delete.changed? || dns_transfer_delete.new_record?
+
+      DnsServerZoneTransferLog
+        .where(event_key: ['webui-transfer-user', 'webui-transfer-admin'])
+        .delete_all
+      user_transfer_log = DnsServerZoneTransferLog.create!(
+        dns_server_zone: dns_server_zone_log,
+        event_at: now - 500,
+        event_key: 'webui-transfer-user',
+        status: :success,
+        primary_addr: networking_ips.fetch(:dns_transfer).fetch(:host_ip).ip_addr,
+        serial: 2026051901,
+        reason_code: 'webui-ok',
+        reason: 'Webui transfer fixture',
+        message: 'Webui transfer fixture succeeded',
+        raw_message: 'webui transfer raw message',
+        source_cursor: 'webui-transfer-cursor'
+      )
+      admin_transfer_log = DnsServerZoneTransferLog.create!(
+        dns_server_zone: dns_server_zone_log,
+        event_at: now - 400,
+        event_key: 'webui-transfer-admin',
+        status: :failed,
+        primary_addr: networking_ips.fetch(:dns_transfer).fetch(:host_ip).ip_addr,
+        serial: 2026051900,
+        reason_code: 'webui-failed',
+        reason: 'Webui transfer admin fixture',
+        message: 'Webui transfer admin fixture failed',
+        raw_message: 'webui transfer admin raw message',
+        source_cursor: 'webui-transfer-admin-cursor'
+      )
+
+      DnsRecordLog
+        .where(dns_zone_name: dns_zone_names.values)
+        .delete_all
+      user_record_log = DnsRecordLog.create!(
+        user: user,
+        dns_zone: dns_zones.fetch(:user_update),
+        dns_zone_name: dns_zones.fetch(:user_update).name,
+        change_type: :update_record,
+        name: 'www',
+        record_type: 'A',
+        attr_changes: { content: dns_records.fetch(:user_update).content },
+        transaction_chain_id: readonly_chain_id
+      )
+      admin_record_log = DnsRecordLog.create!(
+        user: admin,
+        dns_zone: dns_zones.fetch(:admin_log),
+        dns_zone_name: dns_zones.fetch(:admin_log).name,
+        change_type: :create_record,
+        name: 'admin',
+        record_type: 'A',
+        attr_changes: { content: '198.51.100.40' },
+        transaction_chain_id: readonly_chain_id
+      )
+
       SysConfig.find_or_initialize_by(
         category: 'core',
         name: 'snapshot_download_base_url'
@@ -2559,10 +3185,26 @@ import ../make-test.nix (
         },
         'networking' => {
           'network' => {
+            'id' => networking_network.id,
+            'cidr' => networking_network.to_s,
+            'label' => networking_network.label
+          },
+          'legacyNetwork' => {
             'id' => fixture_network.id,
             'cidr' => fixture_network.to_s,
             'label' => fixture_network.label
           },
+          'vps' => networking_vps.transform_values do |vps_fixture|
+            vps = vps_fixture.fetch(:vps)
+            netif = vps_fixture.fetch(:netif)
+
+            {
+              'id' => vps.id,
+              'hostname' => vps.hostname,
+              'networkInterfaceId' => netif.id,
+              'networkInterfaceName' => netif.name
+            }
+          end,
           'ipAddresses' => {
             'free' => {
               'id' => fixture_free_ip.id,
@@ -2574,6 +3216,55 @@ import ../make-test.nix (
               'networkInterfaceId' => support_netif.id,
               'assignmentId' => support_assignment.id
             }
+          }.merge(networking_ips.to_h do |key, ip_fixture|
+            ip = ip_fixture.fetch(:ip)
+            host_ip = ip_fixture.fetch(:host_ip)
+
+            [key, {
+              'id' => ip.id,
+              'addr' => ip.ip_addr,
+              'prefix' => ip.prefix,
+              'hostAddressId' => host_ip.id,
+              'hostAddress' => host_ip.ip_addr,
+              'assignmentId' => networking_assignments[key]&.id
+            }]
+          end),
+          'hostAddresses' => networking_ips.transform_values do |ip_fixture|
+            ip = ip_fixture.fetch(:ip)
+            host_ip = ip_fixture.fetch(:host_ip)
+            netif = ip.network_interface
+            vps = netif&.vps
+
+            {
+              'id' => host_ip.id,
+              'addr' => host_ip.ip_addr,
+              'ipAddressId' => ip.id,
+              'routedAddress' => ip.ip_addr,
+              'assigned' => host_ip.assigned?,
+              'vpsId' => vps&.id,
+              'networkInterfaceId' => netif&.id
+            }
+          end,
+          'multihost' => {
+            'user' => {
+              'id' => networking_multihost_user_ip.id,
+              'addr' => networking_multihost_user_ip.ip_addr,
+              'prefix' => networking_multihost_user_ip.prefix,
+              'newHostAddress' => '203.0.113.197'
+            },
+            'admin' => {
+              'id' => networking_multihost_admin_ip.id,
+              'addr' => networking_multihost_admin_ip.ip_addr,
+              'prefix' => networking_multihost_admin_ip.prefix,
+              'newHostAddress' => '203.0.113.201'
+            }
+          },
+          'accounting' => {
+            'year' => networking_accounting.year,
+            'month' => networking_accounting.month,
+            'vpsId' => networking_vps.fetch(:list).fetch(:vps).id,
+            'networkInterfaceId' => networking_vps.fetch(:list).fetch(:netif).id,
+            'networkInterfaceName' => networking_vps.fetch(:list).fetch(:netif).name
           }
         },
         'dns' => {
@@ -2587,6 +3278,98 @@ import ../make-test.nix (
             'name' => fixture_dns_record.name,
             'type' => fixture_dns_record.record_type,
             'content' => fixture_dns_record.content
+          },
+          'server' => {
+            'id' => dns_server.id,
+            'name' => dns_server.name,
+            'ipv4' => dns_server.ipv4_addr
+          },
+          'zones' => dns_zones.transform_values do |zone|
+            {
+              'id' => zone.id,
+              'name' => zone.name,
+              'label' => zone.label,
+              'source' => zone.zone_source,
+              'role' => zone.zone_role,
+              'defaultTtl' => zone.default_ttl
+            }
+          end,
+          'records' => dns_records.transform_values do |record|
+            {
+              'id' => record.id,
+              'zoneId' => record.dns_zone_id,
+              'name' => record.name,
+              'type' => record.record_type,
+              'content' => record.content,
+              'enabled' => record.enabled
+            }
+          end,
+          'dnssec' => {
+            'userKeyId' => 12345,
+            'adminKeyId' => 54321
+          },
+          'serverZones' => {
+            'transferLog' => {
+              'id' => dns_server_zone_log.id,
+              'zoneId' => dns_server_zone_log.dns_zone_id,
+              'serverId' => dns_server_zone_log.dns_server_id
+            },
+            'delete' => {
+              'id' => dns_server_zone_delete.id,
+              'zoneId' => dns_server_zone_delete.dns_zone_id,
+              'serverId' => dns_server_zone_delete.dns_server_id
+            }
+          },
+          'transfers' => {
+            'delete' => {
+              'id' => dns_transfer_delete.id,
+              'zoneId' => dns_transfer_delete.dns_zone_id,
+              'hostIpAddressId' => dns_transfer_delete.host_ip_address_id
+            },
+            'hostIpAddressId' => networking_ips.fetch(:dns_transfer).fetch(:host_ip).id,
+            'hostIpAddress' => networking_ips.fetch(:dns_transfer).fetch(:host_ip).ip_addr
+          },
+          'logs' => {
+            'recordUser' => {
+              'id' => user_record_log.id,
+              'zoneId' => user_record_log.dns_zone_id,
+              'zoneName' => user_record_log.dns_zone_name,
+              'name' => user_record_log.name
+            },
+            'recordAdmin' => {
+              'id' => admin_record_log.id,
+              'zoneId' => admin_record_log.dns_zone_id,
+              'zoneName' => admin_record_log.dns_zone_name,
+              'name' => admin_record_log.name
+            },
+            'transferUser' => {
+              'id' => user_transfer_log.id,
+              'zoneId' => dns_server_zone_log.dns_zone_id,
+              'serverZoneId' => user_transfer_log.dns_server_zone_id,
+              'reasonCode' => user_transfer_log.reason_code
+            },
+            'transferAdmin' => {
+              'id' => admin_transfer_log.id,
+              'zoneId' => dns_server_zone_log.dns_zone_id,
+              'serverZoneId' => admin_transfer_log.dns_server_zone_id,
+              'reasonCode' => admin_transfer_log.reason_code
+            }
+          },
+          'tsigKeys' => dns_tsig_keys.transform_values do |key|
+            {
+              'id' => key.id,
+              'name' => key.name,
+              'algorithm' => key.algorithm,
+              'userId' => key.user_id
+            }
+          end,
+          'createNames' => {
+            'userPrimary' => 'webui-user-primary-create.example.test',
+            'userSecondary' => 'webui-user-secondary-create.example.test',
+            'adminPrimary' => 'webui-admin-primary-create.example.test',
+            'adminSecondary' => 'webui-admin-secondary-create.example.test',
+            'userTsig' => 'webui-user-tsig-create',
+            'adminTsig' => 'webui-admin-tsig-create'
           }
         },
         'support' => {
@@ -2826,6 +3609,19 @@ import ../make-test.nix (
           describe 'webui storage backup export browser flow' do
             it 'passes Playwright storage, backup, dataset, and export tests' do
               run_playwright('storage-backup-export', 'specs/storage-backup-export.spec.cjs')
+            end
+          end
+        '';
+      };
+
+      networking-dns = {
+        description = ''
+          Run networking and DNS browser tests for user and admin roles.
+        '';
+        script = webuiTestScriptCommon + ''
+          describe 'webui networking and DNS browser flow' do
+            it 'passes Playwright networking and DNS tests' do
+              run_playwright('networking-dns', 'specs/networking.spec.cjs', 'specs/dns.spec.cjs')
             end
           end
         '';
