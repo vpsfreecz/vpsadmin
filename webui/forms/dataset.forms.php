@@ -473,7 +473,7 @@ function dataset_edit_form()
     foreach ($plans as $plan) {
         $xtpl->table_td($plan->environment_dataset_plan->label);
         $xtpl->table_td($plan->environment_dataset_plan->dataset_plan->description);
-        $xtpl->table_td('<a href="?page=dataset&action=plan_delete&id=' . $ds->id . '&plan=' . $plan->id . '&return=' . urlencode($_GET['return'] ? $_GET['return'] : $_POST['return']) . '&t=' . csrf_token() . '"><img src="template/icons/delete.png" title="' . _("Delete") . '"></a>');
+        $xtpl->table_td('<a href="?page=dataset&action=plan_delete&role=' . $_GET['role'] . '&id=' . $ds->id . '&plan=' . $plan->id . '&return=' . urlencode($_GET['return'] ? $_GET['return'] : $_POST['return']) . '&t=' . csrf_token() . '"><img src="template/icons/delete.png" title="' . _("Delete") . '"></a>');
         $xtpl->table_tr();
     }
 
