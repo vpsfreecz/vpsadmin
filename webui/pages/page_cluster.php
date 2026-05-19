@@ -316,9 +316,17 @@ if (isAdmin()) {
 
             $xtpl->form_create('?page=cluster&action=location_new_save', 'post');
             $xtpl->form_add_input(_("Label") . ':', 'text', '30', 'location_label', '', _("Location name"));
+            $xtpl->form_add_textarea(_("Description") . ':', 40, 5, 'description', '');
+            $xtpl->form_add_select(
+                _("Environment") . ':',
+                'environment',
+                resource_list_to_options($api->environment->list()),
+                '',
+                ''
+            );
             $xtpl->form_add_checkbox(_("Has this location IPv6 support?") . ':', 'has_ipv6', '1', false, '');
             $xtpl->form_add_input(_("Remote console server") . ':', 'text', '30', 'remote_console_server', '', _("URL"));
-            $xtpl->form_add_input(_("Domain") . ':', 'text', '30', 'domain', $item["domain"], '');
+            $xtpl->form_add_input(_("Domain") . ':', 'text', '30', 'domain', '', '');
             $xtpl->form_out(_("Save changes"));
 
             break;
@@ -329,8 +337,9 @@ if (isAdmin()) {
             try {
                 $api->location->create([
                     'label' => $_POST['location_label'],
-                    'type' => $_POST['type'],
-                    'has_ipv6' => (bool) $_POST['has_ipv6'],
+                    'description' => $_POST['description'],
+                    'environment' => $_POST['environment'],
+                    'has_ipv6' => isset($_POST['has_ipv6']),
                     'remote_console_server' => $_POST['remote_console_server'],
                     'domain' => $_POST['domain'],
                 ]);
@@ -353,6 +362,7 @@ if (isAdmin()) {
                 $xtpl->table_add_category('');
                 $xtpl->form_create('?page=cluster&action=location_edit_save&id=' . $loc->id, 'post');
                 $xtpl->form_add_input(_("Label") . ':', 'text', '30', 'location_label', $loc->label, _("Location name"));
+                $xtpl->form_add_textarea(_("Description") . ':', 40, 5, 'description', $loc->description);
                 $xtpl->form_add_checkbox(_("Has this location IPv6 support?") . ':', 'has_ipv6', '1', $loc->has_ipv6, '');
                 $xtpl->form_add_input(_("Remote console server") . ':', 'text', '30', 'remote_console_server', $loc->remote_console_server, _("URL"));
                 $xtpl->form_add_input(_("Domain") . ':', 'text', '30', 'domain', $loc->domain, '');
@@ -371,8 +381,8 @@ if (isAdmin()) {
             try {
                 $api->location->update($_GET['id'], [
                     'label' => $_POST['location_label'],
-                    'type' => $_POST['type'],
-                    'has_ipv6' => (bool) $_POST['has_ipv6'],
+                    'description' => $_POST['description'],
+                    'has_ipv6' => isset($_POST['has_ipv6']),
                     'remote_console_server' => $_POST['remote_console_server'],
                     'domain' => $_POST['domain'],
                 ]);
