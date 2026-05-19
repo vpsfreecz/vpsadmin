@@ -401,7 +401,7 @@ import ../make-test.nix (
       require 'vpsadmin'
 
       plugin_root = File.expand_path('../plugins', ENV.fetch('API_DIR'))
-      %w[payments requests].each do |plugin|
+      %w[payments requests outage_reports monitoring].each do |plugin|
         Dir[File.join(plugin_root, plugin, 'api', 'models', '*.rb')]
           .sort
           .each { |path| require path }
@@ -832,6 +832,187 @@ import ../make-test.nix (
           host_ip: server_host_ip,
           export_host: export_host
         }
+      end
+
+      def ensure_outage_fixture(
+        summary:,
+        description:,
+        state:,
+        outage_type:,
+        impact_type:,
+        begins_at:,
+        duration:,
+        node:,
+        handler:,
+        vps: nil,
+        export: nil
+      )
+        translation = OutageTranslation.find_by(
+          summary: summary,
+          outage_update_id: nil
+        )
+        outage = translation&.outage || Outage.new
+        outage.assign_attributes(
+          begins_at: begins_at,
+          finished_at: nil,
+          duration: duration,
+          state: state,
+          outage_type: outage_type,
+          impact_type: impact_type,
+          auto_resolve: false
+        )
+        outage.save! if outage.changed? || outage.new_record?
+
+        Language.find_each do |lang|
+          localized_summary = lang.code == 'en' ? summary : "#{summary} #{lang.code}"
+          localized_description = lang.code == 'en' ? description : "#{description} #{lang.code}"
+
+          OutageTranslation.find_or_initialize_by(
+            outage: outage,
+            outage_update: nil,
+            language: lang
+          ).tap do |tr|
+            tr.summary = localized_summary
+            tr.description = localized_description
+            tr.save! if tr.changed? || tr.new_record?
+          end
+        end
+
+        update = outage.outage_updates.order(:id).first || OutageUpdate.new(outage: outage)
+        update.assign_attributes(
+          reported_by: handler,
+          reporter_name: handler.full_name,
+          begins_at: begins_at,
+          duration: duration,
+          state: state,
+          impact_type: impact_type
+        )
+        update.save! if update.changed? || update.new_record?
+
+        Language.find_each do |lang|
+          localized_summary = lang.code == 'en' ? summary : "#{summary} #{lang.code}"
+          localized_description = lang.code == 'en' ? description : "#{description} #{lang.code}"
+
+          OutageTranslation.find_or_initialize_by(
+            outage: nil,
+            outage_update: update,
+            language: lang
+          ).tap do |tr|
+            tr.summary = localized_summary
+            tr.description = localized_description
+            tr.save! if tr.changed? || tr.new_record?
+          end
+        end
+
+        OutageEntity
+          .where(outage: outage)
+          .where.not(name: 'Node', row_id: node.id)
+          .destroy_all
+        OutageEntity.find_or_create_by!(
+          outage: outage,
+          name: 'Node',
+          row_id: node.id
+        )
+
+        OutageHandler
+          .where(outage: outage)
+          .where.not(user_id: handler.id)
+          .destroy_all
+        OutageHandler.find_or_initialize_by(outage: outage, user: handler).tap do |h|
+          h.full_name = handler.full_name
+          h.save! if h.changed? || h.new_record?
+        end
+
+        if state == :staged
+          outage.outage_vpses.destroy_all
+          outage.outage_exports.destroy_all
+          outage.outage_users.destroy_all
+        else
+          affected_vps_count = 0
+          affected_export_count = 0
+
+          if vps
+            OutageVps.find_or_initialize_by(outage: outage, vps: vps).tap do |out|
+              out.user = vps.user
+              out.node = vps.node
+              out.location = vps.node.location
+              out.environment = vps.node.location.environment
+              out.direct = true
+              out.save! if out.changed? || out.new_record?
+            end
+            affected_vps_count = 1
+          else
+            outage.outage_vpses.destroy_all
+          end
+
+          if export
+            OutageExport.find_or_initialize_by(outage: outage, export: export).tap do |out|
+              out.user = export.user
+              out.node = node
+              out.location = node.location
+              out.environment = node.location.environment
+              out.save! if out.changed? || out.new_record?
+            end
+            affected_export_count = 1
+          else
+            outage.outage_exports.destroy_all
+          end
+
+          if vps || export
+            affected_user = (vps || export).user
+            OutageUser.find_or_initialize_by(outage: outage, user: affected_user).tap do |out|
+              out.vps_count = affected_vps_count
+              out.export_count = affected_export_count
+              out.save! if out.changed? || out.new_record?
+            end
+            outage.outage_users.where.not(user_id: affected_user.id).destroy_all
+          else
+            outage.outage_users.destroy_all
+          end
+        end
+
+        outage.reload
+      end
+
+      def ensure_monitored_event_fixture(
+        monitor:,
+        object:,
+        user:,
+        state: :confirmed,
+        value: 'webui fixture value'
+      )
+        event = MonitoredEvent.find_or_initialize_by(
+          monitor_name: monitor.to_s,
+          class_name: object.class.name,
+          row_id: object.id
+        )
+        event.assign_attributes(
+          user: user,
+          state: state,
+          access_level: 0,
+          last_report_at: Time.now - 900,
+          saved_until: nil,
+          action_state: nil,
+          alert_count: 0,
+          created_at: Time.now - 3600,
+          updated_at: Time.now - 1800
+        )
+        event.save! if event.changed? || event.new_record?
+
+        event.monitored_event_logs.delete_all
+        event.monitored_event_logs.create!(
+          passed: false,
+          value: value,
+          created_at: Time.now - 1200
+        )
+
+        event.monitored_event_states.delete_all
+        event.monitored_event_states.create!(
+          state: event.state,
+          created_at: Time.now - 1200
+        )
+
+        event.reload
       end
 
       def ensure_webui_user(login:, full_name:, email:, password:, env:, language:, monthly_payment: 0)
@@ -1895,6 +2076,34 @@ import ../make-test.nix (
       )
       support_vps.save! if support_vps.changed? || support_vps.new_record?
 
+      VpsCurrentStatus.find_or_initialize_by(vps: support_vps).tap do |status|
+        status.status = true
+        status.is_running = false
+        status.in_rescue_mode = false
+        status.halted = false
+        status.update_count = 1
+        status.uptime = 0
+        status.process_count = 0
+        status.cpus = 1
+        status.cpu_idle = 100.0
+        status.cpu_user = 0.0
+        status.cpu_nice = 0.0
+        status.cpu_system = 0.0
+        status.cpu_iowait = 0.0
+        status.cpu_irq = 0.0
+        status.cpu_softirq = 0.0
+        status.loadavg1 = 0.0
+        status.loadavg5 = 0.0
+        status.loadavg15 = 0.0
+        status.total_memory = 1024
+        status.used_memory = 0
+        status.total_swap = 0
+        status.used_swap = 0
+        status.total_diskspace = 10_240
+        status.used_diskspace = 0
+        status.save! if status.changed? || status.new_record?
+      end
+
       support_netif = NetworkInterface.find_or_initialize_by(
         vps: support_vps,
         name: 'eth0'
@@ -2727,6 +2936,79 @@ import ../make-test.nix (
         admin_host_delete: make_export.call(:admin_export_host_delete, host_ip: fixture_assigned_ip)
       }
 
+      support_outage_public = ensure_outage_fixture(
+        summary: 'Webui Support Public Outage',
+        description: 'Deterministic outage visible to users and the public.',
+        state: :announced,
+        outage_type: :maintenance,
+        impact_type: :network,
+        begins_at: Time.now + 3600,
+        duration: 45,
+        node: node,
+        handler: admin,
+        vps: support_vps,
+        export: storage_exports.fetch(:list).fetch(:export)
+      )
+
+      support_outage_admin = ensure_outage_fixture(
+        summary: 'Webui Support Admin Outage',
+        description: 'Deterministic outage used for admin edit coverage.',
+        state: :announced,
+        outage_type: :outage,
+        impact_type: :performance,
+        begins_at: Time.now + 7200,
+        duration: 30,
+        node: node,
+        handler: admin,
+        vps: support_vps,
+        export: storage_exports.fetch(:list).fetch(:export)
+      )
+
+      support_outage_staged = ensure_outage_fixture(
+        summary: 'Webui Support Staged Outage',
+        description: 'Deterministic staged outage used for state changes.',
+        state: :staged,
+        outage_type: :maintenance,
+        impact_type: :unavailability,
+        begins_at: Time.now + 10_800,
+        duration: 60,
+        node: node,
+        handler: admin,
+        vps: support_vps
+      )
+
+      monitoring_events = {
+        user_show: ensure_monitored_event_fixture(
+          monitor: :vps_in_rescue_mode,
+          object: support_vps,
+          user: user,
+          value: 'webui support show event'
+        ),
+        user_ack: ensure_monitored_event_fixture(
+          monitor: :vps_zombie_processes,
+          object: jumpto_vps,
+          user: user,
+          value: 'webui support acknowledge event'
+        ),
+        user_ignore: ensure_monitored_event_fixture(
+          monitor: :outgoing_data_flow,
+          object: networking_vps.fetch(:list).fetch(:vps),
+          user: user,
+          value: 'webui support ignore event'
+        ),
+        admin_ack: ensure_monitored_event_fixture(
+          monitor: :vps_zombie_processes,
+          object: storage_vps.fetch(:backup).fetch(:vps),
+          user: user,
+          value: 'webui admin acknowledge event'
+        ),
+        admin_ignore: ensure_monitored_event_fixture(
+          monitor: :outgoing_data_flow,
+          object: storage_vps.fetch(:user_mount_create).fetch(:vps),
+          user: user,
+          value: 'webui admin ignore event'
+        )
+      }
       fixture_dns_zone = DnsZone.find_or_initialize_by(
         name: 'webui-fixture.example.test.'
       )
@@ -2811,6 +3093,11 @@ import ../make-test.nix (
         created_at: Time.now - 1200
       )
       oom_report.save! if oom_report.changed? || oom_report.new_record?
+
+      OomReportRule
+        .where(vps: support_vps)
+        .where('cgroup_pattern LIKE ?', '/webui-playwright-%')
+        .destroy_all
 
       pools_by_filesystem = Pool
         .where(filesystem: [
@@ -3373,6 +3660,13 @@ import ../make-test.nix (
           }
         },
         'support' => {
+          'vps' => {
+            'id' => support_vps.id,
+            'hostname' => support_vps.hostname,
+            'networkInterfaceId' => support_netif.id,
+            'ipAddress' => fixture_assigned_ip.ip_addr,
+            'assignmentId' => support_assignment.id
+          },
           'mailbox' => {
             'id' => support_mailbox.id,
             'label' => support_mailbox.label
@@ -3380,13 +3674,47 @@ import ../make-test.nix (
           'incidentReport' => {
             'id' => support_incident.id,
             'subject' => support_incident.subject,
-            'vpsId' => support_vps.id
+            'codename' => support_incident.codename,
+            'text' => support_incident.text,
+            'vpsId' => support_vps.id,
+            'ipAddress' => support_assignment.ip_addr,
+            'assignmentId' => support_assignment.id
           },
           'oomReport' => {
             'id' => oom_report.id,
             'vpsId' => support_vps.id,
-            'ruleId' => oom_rule.id
-          }
+            'ruleId' => oom_rule.id,
+            'cgroup' => oom_report.cgroup,
+            'killedName' => oom_report.killed_name
+          },
+          'outages' => {
+            'public' => {
+              'id' => support_outage_public.id,
+              'summary' => 'Webui Support Public Outage',
+              'vpsId' => support_vps.id,
+              'vpsHostname' => support_vps.hostname,
+              'exportId' => storage_exports.fetch(:list).fetch(:export).id,
+              'exportPath' => storage_exports.fetch(:list).fetch(:export).path
+            },
+            'admin' => {
+              'id' => support_outage_admin.id,
+              'summary' => 'Webui Support Admin Outage'
+            },
+            'staged' => {
+              'id' => support_outage_staged.id,
+              'summary' => 'Webui Support Staged Outage'
+            }
+          },
+          'monitoring' => monitoring_events.transform_values { |event| {
+            'id' => event.id,
+            'monitor' => event.monitor_name,
+            'label' => event.monitor_name,
+            'issue' => event.monitor_name,
+            'objectName' => event.class_name,
+            'objectId' => event.row_id,
+            'state' => event.state,
+            'userId' => event.user_id
+          } }
         },
         'newsLog' => {
           'id' => news_log_id,
@@ -3622,6 +3950,19 @@ import ../make-test.nix (
           describe 'webui networking and DNS browser flow' do
             it 'passes Playwright networking and DNS tests' do
               run_playwright('networking-dns', 'specs/networking.spec.cjs', 'specs/dns.spec.cjs')
+            end
+          end
+        '';
+      };
+
+      support-pages = {
+        description = ''
+          Run support, outage, OOM report, incident, and monitoring browser tests.
+        '';
+        script = webuiTestScriptCommon + ''
+          describe 'webui support and status browser flow' do
+            it 'passes Playwright support and status tests' do
+              run_playwright('support-pages', 'specs/support-pages.spec.cjs')
             end
           end
         '';
