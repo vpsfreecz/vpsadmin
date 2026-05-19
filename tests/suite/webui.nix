@@ -401,7 +401,7 @@ import ../make-test.nix (
       require 'vpsadmin'
 
       plugin_root = File.expand_path('../plugins', ENV.fetch('API_DIR'))
-      %w[payments requests outage_reports monitoring].each do |plugin|
+      %w[payments requests outage_reports monitoring newslog webui].each do |plugin|
         Dir[File.join(plugin_root, plugin, 'api', 'models', '*.rb')]
           .sort
           .each { |path| require path }
@@ -1806,6 +1806,158 @@ import ../make-test.nix (
 
       primary_template = OsTemplate.find(1)
       reinstall_template = OsTemplate.find(2)
+      cluster_admin_prefix = 'Webui Cluster Admin'
+      cluster_admin_os_family = primary_template.os_family
+
+      MaintenanceLock
+        .where(class_name: 'Cluster', row_id: nil, active: true)
+        .find_each do |lock|
+          lock.unlock!(nil)
+        rescue ActiveRecord::RecordInvalid
+          lock.update!(active: false)
+        end
+
+      DnsResolver
+        .where('label LIKE ?', "#{cluster_admin_prefix} DNS%")
+        .find_each do |resolver|
+          next if resolver.in_use?
+
+          clear_fixture_locks(resolver)
+          resolver.destroy!
+        end
+
+      ClusterResourcePackage
+        .where(user_id: nil, environment_id: nil)
+        .where('label LIKE ?', "#{cluster_admin_prefix} Package%")
+        .find_each(&:destroy!)
+
+      OsTemplate
+        .where('label LIKE ?', "#{cluster_admin_prefix} Template%")
+        .find_each do |template|
+          template.destroy! unless template.in_use?
+        end
+
+      NewsLog
+        .where('message LIKE ?', "#{cluster_admin_prefix} News%")
+        .delete_all
+
+      HelpBox
+        .where('content LIKE ?', "#{cluster_admin_prefix} Help%")
+        .delete_all
+
+      cluster_admin_env = Environment.find_or_initialize_by(
+        label: "#{cluster_admin_prefix} Environment"
+      )
+      cluster_admin_env.assign_attributes(
+        domain: 'cluster-admin.vpsadmin.test',
+        description: 'Webui cluster admin coverage environment',
+        can_create_vps: true,
+        can_destroy_vps: true,
+        vps_lifetime: 0,
+        max_vps_count: 25,
+        user_ip_ownership: false
+      )
+      cluster_admin_env.save! if cluster_admin_env.changed? || cluster_admin_env.new_record?
+
+      Location
+        .where('label LIKE ?', "#{cluster_admin_prefix} Created Location%")
+        .find_each do |loc|
+          loc.location_networks.destroy_all
+          loc.destroy! if loc.nodes.empty?
+        end
+
+      cluster_admin_location = Location.find_or_initialize_by(
+        label: "#{cluster_admin_prefix} Location A"
+      )
+      cluster_admin_location.assign_attributes(
+        environment: cluster_admin_env,
+        domain: 'cluster-admin-a',
+        description: 'Webui cluster admin coverage location A',
+        remote_console_server: 'http://console.vpsadmin.test',
+        has_ipv6: false
+      )
+      cluster_admin_location.save! if cluster_admin_location.changed? || cluster_admin_location.new_record?
+
+      cluster_admin_other_location = Location.find_or_initialize_by(
+        label: "#{cluster_admin_prefix} Location B"
+      )
+      cluster_admin_other_location.assign_attributes(
+        environment: cluster_admin_env,
+        domain: 'cluster-admin-b',
+        description: 'Webui cluster admin coverage location B',
+        remote_console_server: 'http://console.vpsadmin.test',
+        has_ipv6: false
+      )
+      cluster_admin_other_location.save! if cluster_admin_other_location.changed? || cluster_admin_other_location.new_record?
+
+      def ensure_cluster_admin_network(address, label, primary_location)
+        network = Network.find_or_initialize_by(address: address, prefix: 29)
+        network.assign_attributes(
+          ip_version: 4,
+          label: label,
+          managed: true,
+          primary_location: primary_location,
+          role: :public_access,
+          purpose: :vps,
+          split_access: :no_access,
+          split_prefix: 32
+        )
+        network.save! if network.changed? || network.new_record?
+        network
+      end
+
+      cluster_admin_network = ensure_cluster_admin_network(
+        '198.51.110.0',
+        "#{cluster_admin_prefix} Network A",
+        cluster_admin_location
+      )
+      cluster_admin_other_network = ensure_cluster_admin_network(
+        '198.51.110.8',
+        "#{cluster_admin_prefix} Network B",
+        cluster_admin_location
+      )
+      cluster_admin_ip_network = ensure_cluster_admin_network(
+        '198.51.111.0',
+        "#{cluster_admin_prefix} IP Add Network",
+        cluster_admin_location
+      )
+
+      cluster_admin_ip_addr = '198.51.111.2'
+      IpAddress.where(ip_addr: cluster_admin_ip_addr).find_each do |ip|
+        clear_fixture_locks(ip)
+        HostIpAddress.where(ip_address: ip).delete_all
+        IpAddressAssignment.where(ip_address: ip).delete_all
+        ip.destroy!
+      end
+
+      LocationNetwork
+        .where(
+          location: cluster_admin_other_location,
+          network: [cluster_admin_network, cluster_admin_other_network]
+        )
+        .destroy_all
+
+      [
+        cluster_admin_network,
+        cluster_admin_other_network,
+        cluster_admin_ip_network
+      ].each_with_index do |network, idx|
+        network.location_networks.where.not(location: cluster_admin_location).update_all(primary: nil)
+
+        LocationNetwork.find_or_initialize_by(
+          location: cluster_admin_location,
+          network: network
+        ).tap do |locnet|
+          locnet.primary = true
+          locnet.priority = 30 + idx
+          locnet.autopick = true
+          locnet.userpick = true
+          locnet.save! if locnet.changed? || locnet.new_record?
+        end
+
+        network.update!(primary_location: cluster_admin_location)
+      end
+
       webui_pool = Pool.where(node: node, role: Pool.roles[:hypervisor]).order(:id).first
       raise 'webui hypervisor pool not found' unless webui_pool
       storage_primary_pool = ensure_webui_pool_record(
@@ -3332,6 +3484,86 @@ import ../make-test.nix (
             }
           }
         },
+        'clusterAdmin' => {
+          'environment' => {
+            'id' => cluster_admin_env.id,
+            'label' => cluster_admin_env.label,
+            'domain' => cluster_admin_env.domain,
+            'description' => cluster_admin_env.description,
+            'updatedDescription' => "#{cluster_admin_prefix} Environment updated"
+          },
+          'locations' => {
+            'base' => {
+              'id' => cluster_admin_location.id,
+              'label' => cluster_admin_location.label,
+              'domain' => cluster_admin_location.domain
+            },
+            'other' => {
+              'id' => cluster_admin_other_location.id,
+              'label' => cluster_admin_other_location.label,
+              'domain' => cluster_admin_other_location.domain
+            },
+            'create' => {
+              'label' => "#{cluster_admin_prefix} Created Location",
+              'editedLabel' => "#{cluster_admin_prefix} Created Location Edited",
+              'description' => "#{cluster_admin_prefix} Created Location Description",
+              'editedDescription' => "#{cluster_admin_prefix} Created Location Updated",
+              'domain' => 'cluster-admin-created',
+              'editedDomain' => 'cluster-admin-created-b',
+              'remoteConsoleServer' => 'http://console.vpsadmin.test'
+            }
+          },
+          'networks' => {
+            'networkToLocation' => {
+              'id' => cluster_admin_network.id,
+              'cidr' => cluster_admin_network.to_s,
+              'label' => cluster_admin_network.label
+            },
+            'locationToNetwork' => {
+              'id' => cluster_admin_other_network.id,
+              'cidr' => cluster_admin_other_network.to_s,
+              'label' => cluster_admin_other_network.label
+            },
+            'ipAdd' => {
+              'id' => cluster_admin_ip_network.id,
+              'cidr' => cluster_admin_ip_network.to_s,
+              'label' => cluster_admin_ip_network.label,
+              'address' => "#{cluster_admin_ip_addr}/32",
+              'hostAddress' => cluster_admin_ip_addr
+            }
+          },
+          'dnsResolver' => {
+            'label' => "#{cluster_admin_prefix} DNS Resolver",
+            'updatedLabel' => "#{cluster_admin_prefix} DNS Resolver Updated",
+            'ip' => '198.51.100.53',
+            'updatedIp' => '198.51.100.54'
+          },
+          'resourcePackage' => {
+            'label' => "#{cluster_admin_prefix} Package",
+            'updatedLabel' => "#{cluster_admin_prefix} Package Updated",
+            'resourceId' => ClusterResource.find_by!(name: 'cpu').id,
+            'resourceLabel' => ClusterResource.find_by!(name: 'cpu').label
+          },
+          'osTemplate' => {
+            'osFamilyId' => cluster_admin_os_family.id,
+            'label' => "#{cluster_admin_prefix} Template",
+            'vendor' => 'webui',
+            'variant' => 'cluster-admin',
+            'arch' => 'x86_64',
+            'distribution' => 'webui-cluster',
+            'version' => '1'
+          },
+          'eventLog' => {
+            'message' => "#{cluster_admin_prefix} News",
+            'updatedMessage' => "#{cluster_admin_prefix} News Updated"
+          },
+          'helpBox' => {
+            'page' => 'cluster',
+            'action' => 'webui_cluster_admin',
+            'content' => "#{cluster_admin_prefix} Help Content",
+            'updatedContent' => "#{cluster_admin_prefix} Help Content Updated"
+          }
+        },
         'osTemplates' => {
           'primary' => {
             'id' => primary_template.id,
@@ -3963,6 +4195,19 @@ import ../make-test.nix (
           describe 'webui support and status browser flow' do
             it 'passes Playwright support and status tests' do
               run_playwright('support-pages', 'specs/support-pages.spec.cjs')
+            end
+          end
+        '';
+      };
+
+      admin-cluster = {
+        description = ''
+          Run admin cluster management browser tests.
+        '';
+        script = webuiTestScriptCommon + ''
+          describe 'webui admin cluster browser flow' do
+            it 'passes Playwright admin cluster tests' do
+              run_playwright('admin-cluster', 'specs/admin-cluster.spec.cjs')
             end
           end
         '';
