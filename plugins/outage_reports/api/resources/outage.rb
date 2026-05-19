@@ -137,8 +137,8 @@ module VpsAdmin::API::Resources
         end
 
         if input[:user]
-          q = q.joins(:outage_vpses).group('outages.id').where(
-            user: input[:user]
+          q = q.joins(:outage_users).group('outages.id').where(
+            outage_users: { user_id: input[:user].id }
           )
         end
 
