@@ -141,24 +141,20 @@ class MonitoredEvent < ApplicationRecord
     updated_at
   end
 
-  def label
-    unless monitor
-      self.monitor = VpsAdmin::API::Plugins::Monitoring.monitors.detect do |v|
-        v.name == monitor_name.to_sym
-      end
-    end
+  def monitor_definition
+    return monitor if monitor
 
-    monitor.label
+    self.monitor = VpsAdmin::API::Plugins::Monitoring.monitors.detect do |v|
+      v.name == monitor_name.to_sym
+    end
+  end
+
+  def label
+    monitor_definition&.label || monitor_name
   end
 
   def issue
-    unless monitor
-      self.monitor = VpsAdmin::API::Plugins::Monitoring.monitors.detect do |v|
-        v.name == monitor_name.to_sym
-      end
-    end
-
-    monitor.desc
+    monitor_definition&.desc || monitor_name
   end
 
   def duration
@@ -166,23 +162,11 @@ class MonitoredEvent < ApplicationRecord
   end
 
   def skip_acknowledged
-    unless monitor
-      self.monitor = VpsAdmin::API::Plugins::Monitoring.monitors.detect do |v|
-        v.name == monitor_name.to_sym
-      end
-    end
-
-    monitor.skip_acknowledged
+    monitor_definition&.skip_acknowledged || true
   end
 
   def skip_ignored
-    unless monitor
-      self.monitor = VpsAdmin::API::Plugins::Monitoring.monitors.detect do |v|
-        v.name == monitor_name.to_sym
-      end
-    end
-
-    monitor.skip_ignored
+    monitor_definition&.skip_ignored || true
   end
 
   def next_alert_id
