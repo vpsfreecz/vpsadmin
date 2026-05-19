@@ -22,6 +22,10 @@ function vpsIdFromCurrentUrl(page) {
   return Number.parseInt(id, 10);
 }
 
+function escapeRegExp(value) {
+  return String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 async function chooseRadio(locator) {
   if (await locator.isChecked()) {
     return;
@@ -88,6 +92,27 @@ async function setCheckbox(checkbox, enabled) {
   } else {
     await checkbox.uncheck();
   }
+}
+
+async function setNamedCheckbox(form, name, enabled, options = {}) {
+  const checkbox = form.locator(`input[name="${name}"]`);
+
+  if ((await checkbox.count()) === 0) {
+    if (options.required) {
+      throw new Error(`Missing checkbox ${name}`);
+    }
+
+    return false;
+  }
+
+  await setCheckbox(checkbox, enabled);
+  if (enabled) {
+    await expect(checkbox).toBeChecked();
+  } else {
+    await expect(checkbox).not.toBeChecked();
+  }
+
+  return true;
 }
 
 async function withoutDialogs(page, callback) {
@@ -260,7 +285,66 @@ async function cloneVps(page, fixtures, sourceVpsId, hostname, options = {}) {
   return clonedVpsId;
 }
 
-async function previewVpsSwap(page, primaryVpsId, secondaryVpsId) {
+async function cloneAdminVps(page, fixtures, sourceVpsId, hostname, options = {}) {
+  const targetUserId = options.userId || fixtures.user.id;
+  const targetNodeId = options.nodeId || fixtures.node.id;
+  const targetLocationId = options.locationId || fixtures.location.id;
+
+  await page.goto(`/?page=adminvps&action=clone-step-0&veid=${sourceVpsId}`, {
+    waitUntil: 'domcontentloaded',
+  });
+  await expect(page.locator('#content-in h1')).toContainText('Clone a VPS: Select user');
+
+  const userForm = page.locator('form[name="clonevps-step0"]');
+  await expect(userForm.locator('input[name="user"]')).toBeVisible();
+  await userForm.locator('input[name="user"]').fill(String(targetUserId));
+  await submitForm(userForm, 'Next');
+
+  await expect(page.locator('#content-in h1')).toContainText('Clone a VPS: Select a location');
+  const locationForm = page.locator('form[name="clonevps-step1"]');
+  await chooseRadio(locationForm.locator(`input[name="location"][value="${targetLocationId}"]`));
+  await submitForm(locationForm, 'Next');
+
+  await expect(page.locator('#content-in h1')).toContainText('Clone a VPS: Final touches');
+  const finalForm = formByAction(page, 'action=clone-submit');
+  await expect(finalForm.locator('select[name="node"]')).toBeVisible();
+  await finalForm.locator('select[name="node"]').selectOption(String(targetNodeId));
+  await finalForm.locator('input[name="hostname"]').fill(hostname);
+
+  for (const field of ['dataset_plans', 'resources', 'features', 'stop']) {
+    if (options[field] === undefined) {
+      await expect(finalForm.locator(`input[name="${field}"]`)).toBeVisible();
+      continue;
+    }
+
+    await setNamedCheckbox(finalForm, field, options[field], { required: true });
+  }
+
+  await Promise.all([
+    page.waitForURL(/action=info.*veid=\d+/, { timeout: 2 * 60 * 1000 }),
+    finalForm
+      .locator('input[type="submit"], button[type="submit"], button:not([type])')
+      .first()
+      .click({ noWaitAfter: true, timeout: 60 * 1000 }),
+  ]);
+
+  await expectNotification(page, 'Clone in progress');
+  const clonedVpsId = vpsIdFromCurrentUrl(page);
+  await waitForVpsTransactionsSettled(page, clonedVpsId);
+  await waitForDetailValue(page, clonedVpsId, 'Hostname', new RegExp(`^${escapeRegExp(hostname)}$`));
+
+  if (options.userLogin) {
+    await waitForDetailValue(page, clonedVpsId, 'Owner', new RegExp(escapeRegExp(options.userLogin)));
+  }
+
+  if (options.nodeDomainName) {
+    await waitForDetailValue(page, clonedVpsId, 'Node', new RegExp(escapeRegExp(options.nodeDomainName)));
+  }
+
+  return clonedVpsId;
+}
+
+async function previewVpsSwap(page, primaryVpsId, secondaryVpsId, options = {}) {
   await page.goto(`/?page=adminvps&action=swap&veid=${primaryVpsId}`, {
     waitUntil: 'domcontentloaded',
   });
@@ -275,6 +359,12 @@ async function previewVpsSwap(page, primaryVpsId, secondaryVpsId) {
     await swapForm.locator('input[name="vps"]').fill(String(secondaryVpsId));
   }
 
+  for (const field of ['resources', 'hostname', 'expirations']) {
+    if (options[field] !== undefined) {
+      await setNamedCheckbox(swapForm, field, options[field]);
+    }
+  }
+
   await submitForm(swapForm, 'Preview');
 
   await expect(page).toHaveURL(/action=swap_preview/);
@@ -285,15 +375,138 @@ async function previewVpsSwap(page, primaryVpsId, secondaryVpsId) {
   await expect(page.locator('#content-in')).toContainText('Second migration');
 }
 
-async function submitVpsSwapPreview(page, primaryVpsId, secondaryVpsId) {
+async function submitVpsSwapPreview(page, primaryVpsId, secondaryVpsId, options = {}) {
   const previewForm = formByAction(page, `action=swap&veid=${primaryVpsId}`);
   await expect(previewForm.locator(`input[name="vps"][value="${secondaryVpsId}"]`)).toHaveCount(1);
+
+  for (const field of ['resources', 'hostname', 'expirations']) {
+    if (options[field]) {
+      await expect(previewForm.locator(`input[name="${field}"][value="1"]`)).toHaveCount(1);
+    }
+  }
+
   await submitForm(previewForm, /Go/);
 
   await expectNotification(page, 'Swap in progress');
   await expect(page).toHaveURL(new RegExp(`action=info.*veid=${primaryVpsId}`));
   await waitForVpsTransactionsSettled(page, primaryVpsId);
   await waitForVpsTransactionsSettled(page, secondaryVpsId);
+}
+
+async function changeVpsOwner(page, vpsId, targetUser, options = {}) {
+  await page.goto(`/?page=adminvps&action=chown&veid=${vpsId}`, {
+    waitUntil: 'domcontentloaded',
+  });
+  await expect(page.locator('#content-in')).toContainText('VPS owner');
+
+  const form = formByAction(page, 'action=chown_confirm');
+  await expect(form.locator('input[name="user"]')).toBeVisible();
+  await form.locator('input[name="user"]').fill(String(targetUser.id));
+  await submitForm(form, 'Continue');
+
+  await expect(page.locator('#content-in')).toContainText('New owner');
+  await expect(page.locator('#content-in')).toContainText(targetUser.username);
+
+  const confirmForm = formByAction(page, 'action=chown_confirm');
+  await expect(confirmForm.locator(`input[name="user"][value="${targetUser.id}"]`)).toHaveCount(1);
+
+  if (options.cancel) {
+    await submitForm(confirmForm, 'Cancel');
+    await expect(page).toHaveURL(new RegExp(`action=chown.*veid=${vpsId}`));
+    await expect(formByAction(page, 'action=chown_confirm').locator('input[name="user"]')).toBeVisible();
+    return;
+  }
+
+  await confirmForm.locator('input[name="confirm"]').check();
+  await submitForm(confirmForm, 'Change owner');
+
+  await expectNotification(page, 'Owner changed');
+  await expect(page).toHaveURL(new RegExp(`action=info.*veid=${vpsId}`));
+  await waitForVpsTransactionsSettled(page, vpsId);
+  await waitForDetailValue(page, vpsId, 'Owner', new RegExp(escapeRegExp(targetUser.username)));
+}
+
+async function migrateVps(page, vpsId, targetNode, options = {}) {
+  await page.goto(`/?page=adminvps&action=migrate-step-1&veid=${vpsId}`, {
+    waitUntil: 'domcontentloaded',
+  });
+  await expect(page.locator('#content-in h1')).toContainText('Migrate a VPS: Select node');
+
+  const nodeForm = page.locator('form[name="migrate-step1"]');
+  await nodeForm.locator('select[name="node"]').selectOption(String(targetNode.id));
+  await submitForm(nodeForm, 'Next');
+
+  await expect(page.locator('#content-in h1')).toContainText('Migrate a VPS: Preferences');
+  await expect(page.locator('#content-in')).toContainText(targetNode.domainName);
+
+  const prefsForm = page.locator('form[name="migrate-step2"]');
+  const enabled = {
+    transferIpAddresses: await setNamedCheckbox(
+      prefsForm,
+      'transfer_ip_addresses',
+      options.transferIpAddresses === true,
+      { required: options.requireTransferIpAddresses },
+    ),
+    replaceIpAddresses: await setNamedCheckbox(
+      prefsForm,
+      'replace_ip_addresses',
+      options.replaceIpAddresses === true,
+      { required: options.requireReplaceIpAddresses },
+    ),
+  };
+
+  await setNamedCheckbox(prefsForm, 'maintenance_window', options.maintenanceWindow !== false, {
+    required: true,
+  });
+
+  if (options.finishWeekday !== undefined) {
+    await prefsForm.locator('select[name="finish_weekday"]').selectOption(String(options.finishWeekday));
+  }
+
+  if (options.finishMinutes !== undefined) {
+    await prefsForm.locator('select[name="finish_minutes"]').selectOption(String(options.finishMinutes));
+  }
+
+  await setNamedCheckbox(prefsForm, 'cleanup_data', options.cleanupData !== false, { required: true });
+  await setNamedCheckbox(prefsForm, 'no_start', options.noStart === true, { required: true });
+  await setNamedCheckbox(prefsForm, 'skip_start', options.skipStart === true, { required: true });
+  await setNamedCheckbox(prefsForm, 'send_mail', options.sendMail !== false, { required: true });
+  await prefsForm.locator('textarea[name="reason"]').fill(options.reason || '');
+  await submitForm(prefsForm, 'Next');
+
+  await expect(page.locator('#content-in h1')).toContainText('Migrate a VPS: Overview');
+  await expect(page.locator('#content-in')).toContainText(targetNode.domainName);
+
+  const overviewForm = page.locator('form[name="migrate-step3"]');
+  await expect(overviewForm.locator(`input[name="veid"][value="${vpsId}"]`)).toHaveCount(1);
+  await expect(overviewForm.locator(`input[name="node"][value="${targetNode.id}"]`)).toHaveCount(1);
+
+  if (enabled.transferIpAddresses && options.transferIpAddresses) {
+    await expect(overviewForm.locator('input[name="transfer_ip_addresses"][value="1"]')).toHaveCount(1);
+    await expect(page.locator('#content-in')).toContainText('Transfer IP addresses');
+  }
+
+  if (enabled.replaceIpAddresses && options.replaceIpAddresses) {
+    await expect(overviewForm.locator('input[name="replace_ip_addresses"][value="1"]')).toHaveCount(1);
+    await expect(page.locator('#content-in')).toContainText('Replace IP addresses');
+  }
+
+  if (options.maintenanceWindow === false) {
+    await expect(overviewForm.locator('input[name="maintenance_window"][value=""]')).toHaveCount(1);
+    await expect(page.locator('#content-in')).toContainText('now');
+  }
+
+  await expect(overviewForm.locator('input[name="no_start"][value="1"]')).toHaveCount(options.noStart ? 1 : 0);
+  await expect(overviewForm.locator('input[name="skip_start"][value="1"]')).toHaveCount(options.skipStart ? 1 : 0);
+  await expect(page.locator('#content-in')).toContainText(options.reason || '');
+
+  await overviewForm.locator('input[name="confirm"]').check();
+  await submitForm(overviewForm, 'Migrate');
+
+  await expectNotification(page, 'Migration planned');
+  await expect(page).toHaveURL(new RegExp(`action=info.*veid=${vpsId}`));
+  await waitForVpsTransactionsSettled(page, vpsId);
+  await waitForDetailValue(page, vpsId, 'Node', new RegExp(escapeRegExp(targetNode.domainName)));
 }
 
 async function deleteStoppedVps(page, vpsId, hostname) {
@@ -312,6 +525,57 @@ async function deleteStoppedVps(page, vpsId, hostname) {
   await expectNotification(page, `Delete VPS #${vpsId}`);
   await expect(page).toHaveURL(/page=adminvps/);
   await waitForVpsTransactionsSettled(page, vpsId);
+}
+
+async function deleteAdminVps(page, vpsId, options = {}) {
+  await page.goto(`/?page=adminvps&action=delete&veid=${vpsId}`, {
+    waitUntil: 'domcontentloaded',
+  });
+  await expect(page.locator('#perex')).toContainText(`delete VPS number ${vpsId}`);
+
+  if (options.hostname) {
+    await expect(page.locator('#content-in')).toContainText(options.hostname);
+  }
+
+  const form = formByAction(page, 'action=delete2');
+  const lazyDelete = form.locator('input[name="lazy_delete"]');
+  await expect(lazyDelete).toBeVisible();
+  await setCheckbox(lazyDelete, options.lazy !== false);
+  await submitForm(form, 'Delete');
+
+  await expectNotification(page, `Delete VPS #${vpsId}`);
+  await expect(page).toHaveURL(/page=adminvps/);
+  if (options.waitForTransactions !== false) {
+    await waitForVpsTransactionsSettled(page, vpsId);
+  }
+}
+
+async function replaceVps(page, vpsId, targetNode, options = {}) {
+  await page.goto(`/?page=adminvps&action=replace&veid=${vpsId}`, {
+    waitUntil: 'domcontentloaded',
+  });
+  await expect(page.locator('#content-in')).toContainText('Replace VPS');
+
+  const form = formByAction(page, 'action=replace');
+  await expect(form.locator('select[name="node"]')).toBeVisible();
+  await form.locator('select[name="node"]').selectOption(String(targetNode.id));
+  await form.locator('input[name="expiration_date"]').fill(options.expirationDate);
+  await setCheckbox(form.locator('input[name="start"]'), options.start !== false);
+  await form.locator('textarea[name="reason"]').fill(options.reason || '');
+  await form.locator('input[name="confirm"]').check();
+  await submitForm(form, 'Replace');
+
+  await expectNotification(page, 'VPS replace in progress');
+  await expect(page).toHaveURL(/action=info.*veid=\d+/);
+  const replacementVpsId = vpsIdFromCurrentUrl(page);
+  expect(replacementVpsId).not.toBe(vpsId);
+
+  await waitForVpsTransactionsSettled(page, vpsId);
+  await waitForVpsTransactionsSettled(page, replacementVpsId);
+  await waitForDetailValue(page, replacementVpsId, 'Node', new RegExp(escapeRegExp(targetNode.domainName)));
+  await waitForVpsStatus(page, replacementVpsId, options.start === false ? 'stopped' : 'running');
+
+  return replacementVpsId;
 }
 
 async function expectUserAdminOnlyControlsHidden(page, vpsId) {
@@ -882,10 +1146,13 @@ async function setAdminObjectState(page, vpsId, options = {}) {
 module.exports = {
   addAndRemoveRoutedIpAndHostAddress,
   bootFromTemplate,
+  changeVpsOwner,
   chooseRadio,
+  cloneAdminVps,
   createAdminVps,
   cloneVps,
   createVps,
+  deleteAdminVps,
   deleteStoppedVps,
   disableAdminNetwork,
   enableAdminNetwork,
@@ -917,6 +1184,8 @@ module.exports = {
   setStartMenuTimeout,
   setUserNamespaceMap,
   stopVpsIfRunning,
+  migrateVps,
+  replaceVps,
   submitAdminNetworkInterface,
   submitAdminResources,
   submitVpsSwapPreview,
