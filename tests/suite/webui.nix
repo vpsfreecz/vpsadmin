@@ -467,6 +467,11 @@ import ../make-test.nix (
           enable_basic_auth: true,
           enable_token_auth: true,
           enable_oauth2_auth: true,
+          enable_single_sign_on: true,
+          enable_new_login_notification: true,
+          enable_multi_factor_auth: false,
+          preferred_session_length: 20 * 60,
+          preferred_logout_all: false,
           mailer_enabled: false,
           password_reset: false,
           lockout: false,
@@ -746,6 +751,95 @@ import ../make-test.nix (
       secondary_public_key.key = 'ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFwebuisecondary webui-secondary@test'
       secondary_public_key.auto_add = false
       secondary_public_key.save!
+
+      self_service_prefix = 'Webui Self-Service'
+      UserPublicKey
+        .where(user: user)
+        .where('label LIKE ?', "#{self_service_prefix} Key%")
+        .find_each(&:destroy!)
+      UserTotpDevice
+        .where(user: user)
+        .where('label LIKE ?', "#{self_service_prefix} TOTP%")
+        .find_each(&:destroy!)
+      MetricsAccessToken
+        .where(user: user)
+        .where('metric_prefix LIKE ?', 'webui_self_service%')
+        .find_each(&:destroy!)
+
+      self_service_webauthn_external_id = 'webui-self-service-passkey'
+      WebauthnCredential
+        .where(user: user)
+        .where(
+          'external_id = ? OR label LIKE ?',
+          self_service_webauthn_external_id,
+          "#{self_service_prefix} Passkey%"
+        )
+        .find_each(&:destroy!)
+      self_service_webauthn = WebauthnCredential.create!(
+        user: user,
+        external_id: self_service_webauthn_external_id,
+        public_key: 'webui-self-service-public-key',
+        label: "#{self_service_prefix} Passkey",
+        sign_count: 0,
+        enabled: true
+      )
+
+      self_service_device_agent = UserAgent.find_or_create!(
+        'Mozilla/5.0 (X11; Linux x86_64) Firefox/128.0 WebuiSelfService'
+      )
+      UserDevice
+        .where(user: user, user_agent: self_service_device_agent)
+        .find_each(&:destroy!)
+      self_service_known_device = Token.for_new_record!(Time.now + UserDevice::LIFETIME) do |token|
+        UserDevice.create!(
+          user: user,
+          token: token,
+          client_ip_addr: '192.0.2.20',
+          client_ip_ptr: 'webui-self-service.example.test',
+          user_agent: self_service_device_agent,
+          known: true,
+          skip_multi_factor_auth_until: Time.now + 3600,
+          last_seen_at: Time.now - 60
+        )
+      end
+
+      self_service_session_agent = UserAgent.find_or_create!(
+        'webui-playwright-self-service-session'
+      )
+      UserSession
+        .where(user: user, label: [
+          "#{self_service_prefix} Session",
+          "#{self_service_prefix} Session Edited"
+        ])
+        .delete_all
+      self_service_session = UserSession.create!(
+        user: user,
+        user_agent: self_service_session_agent,
+        auth_type: 'token',
+        api_ip_addr: '198.51.100.40',
+        client_ip_addr: '198.51.100.41',
+        client_version: 'webui-playwright-self-service',
+        label: "#{self_service_prefix} Session",
+        request_count: 3,
+        last_request_at: Time.now - 90
+      )
+
+      payment_instructions_template =
+        'Payment instructions for <%= user.login %>: monthly=<%= monthly_payment %>'
+      SysConfig.find_or_initialize_by(
+        category: 'plugin_payments',
+        name: 'payment_instructions'
+      ).tap do |cfg|
+        cfg.value = payment_instructions_template
+        cfg.data_type = 'Text'
+        cfg.min_user_level = 99
+        cfg.save! if cfg.changed? || cfg.new_record?
+      end
+      self_service_monthly_payment = ActiveRecord::Base.connection.select_value(<<~SQL)
+        SELECT monthly_payment FROM user_accounts WHERE user_id = #{user.id}
+      SQL
+      self_service_payment_instructions =
+        "Payment instructions for #{user.login}: monthly=#{self_service_monthly_payment}"
 
       user_data = VpsUserData.find_or_initialize_by(
         user: user,
@@ -1480,6 +1574,24 @@ import ../make-test.nix (
                 'count' => editable_userns_gid_entry.count
               }
             }
+          },
+          'selfService' => {
+            'knownDevice' => {
+              'id' => self_service_known_device.id,
+              'ip' => self_service_known_device.client_ip_addr,
+              'ptr' => self_service_known_device.client_ip_ptr
+            },
+            'paymentInstructions' => self_service_payment_instructions,
+            'userSession' => {
+              'id' => self_service_session.id,
+              'label' => self_service_session.label,
+              'editedLabel' => "#{self_service_prefix} Session Edited"
+            },
+            'webauthnCredential' => {
+              'id' => self_service_webauthn.id,
+              'label' => self_service_webauthn.label,
+              'editedLabel' => "#{self_service_prefix} Passkey Edited"
+            }
           }
         },
         'users' => {
@@ -1853,6 +1965,19 @@ import ../make-test.nix (
           describe 'webui admin VPS long operation browser flow' do
             it 'passes Playwright admin VPS long operation tests' do
               run_playwright('vps-admin-ops', 'specs/vps-admin-ops.spec.cjs')
+            end
+          end
+        '';
+      };
+
+      users-self-service = {
+        description = ''
+          Run normal-user member profile and self-service browser tests.
+        '';
+        script = webuiTestScriptCommon + ''
+          describe 'webui user self-service browser flow' do
+            it 'passes Playwright user self-service tests' do
+              run_playwright('users-self-service', 'specs/users-self-service.spec.cjs')
             end
           end
         '';
