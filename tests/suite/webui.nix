@@ -54,6 +54,8 @@ import ../make-test.nix (
       WEBUI_NODE1_SECONDARY_POOL_FS = 'tank/webui-node1-secondary' unless defined?(WEBUI_NODE1_SECONDARY_POOL_FS)
       WEBUI_NODE2_POOL_FS = 'tank/webui-node2' unless defined?(WEBUI_NODE2_POOL_FS)
       WEBUI_SECONDARY_LOCATION_LABEL = 'webui-browser-location-b' unless defined?(WEBUI_SECONDARY_LOCATION_LABEL)
+      WEBUI_ADMIN_OPS_ENV_LABEL = 'webui-browser-env-b' unless defined?(WEBUI_ADMIN_OPS_ENV_LABEL)
+      WEBUI_ADMIN_OPS_LOCATION_LABEL = 'webui-browser-admin-location-b' unless defined?(WEBUI_ADMIN_OPS_LOCATION_LABEL)
 
       def webui_pool_id(filesystem = primary_pool_fs)
         row = services.mariadb_json_rows(sql: <<~SQL).first
@@ -151,6 +153,47 @@ import ../make-test.nix (
         RUBY
       end
 
+      def move_webui_node2_to_admin_ops_location
+        services.api_ruby_json(code: <<~RUBY)
+          #{api_session_prelude(admin_user_id)}
+
+          env = Environment.find_or_initialize_by(
+            label: '#{WEBUI_ADMIN_OPS_ENV_LABEL}'
+          )
+          env.assign_attributes(
+            domain: 'admin-ops.vpsadmin.test',
+            description: 'Webui browser admin operation environment',
+            can_create_vps: true,
+            can_destroy_vps: true,
+            vps_lifetime: 0,
+            max_vps_count: 120,
+            user_ip_ownership: false
+          )
+          env.save! if env.changed? || env.new_record?
+
+          location = Location.find_or_initialize_by(
+            label: '#{WEBUI_ADMIN_OPS_LOCATION_LABEL}'
+          )
+          location.assign_attributes(
+            environment: env,
+            domain: 'lab-admin-b',
+            description: 'Webui browser admin operation location',
+            remote_console_server: 'http://console.vpsadmin.test',
+            has_ipv6: false
+          )
+          location.save! if location.changed? || location.new_record?
+
+          node = Node.find(#{node2_id})
+          node.update!(location: location) if node.location_id != location.id
+
+          puts JSON.dump(
+            environment_id: env.id,
+            location_id: location.id,
+            node_id: node.id
+          )
+        RUBY
+      end
+
       def prepare_webui_cross_location_swap
         prepare_webui_node2
         prepare_node_queues(node1)
@@ -183,6 +226,25 @@ import ../make-test.nix (
           pool_id: node2_primary,
           public_key: node2_key
         )
+
+        {
+          'node1Primary' => node1_primary,
+          'node2Primary' => node2_primary,
+          'secondaryLocation' => secondary_location
+        }
+      end
+
+      def prepare_webui_admin_ops_cluster
+        prepare_webui_node2
+        prepare_node_queues(node1)
+        secondary_location = move_webui_node2_to_admin_ops_location
+        node1_primary = ensure_webui_default_pool
+        node2_primary = ensure_webui_pool(
+          node_id: node2_id,
+          label: 'webui-browser-node2',
+          filesystem: WEBUI_NODE2_POOL_FS
+        )
+        generate_migration_keys(services)
 
         {
           'node1Primary' => node1_primary,
@@ -380,6 +442,21 @@ import ../make-test.nix (
         end
       end
 
+      def ensure_pool_dataset_properties(pool)
+        VpsAdmin::API::DatasetProperties::Registrator.properties.each do |name, prop|
+          DatasetProperty.find_or_create_by!(
+            pool: pool,
+            dataset_in_pool_id: nil,
+            dataset_id: nil,
+            name: name.to_s
+          ) do |p|
+            p.value = prop.meta[:default]
+            p.inherited = false
+            p.confirmed = DatasetProperty.confirmed(:confirmed)
+          end
+        end
+      end
+
       def ensure_webui_user(login:, full_name:, email:, password:, env:, language:)
         user = User.find_or_initialize_by(login: login)
         user.assign_attributes(
@@ -422,16 +499,20 @@ import ../make-test.nix (
 
       env = Environment.find(${toString seed.environment.id})
       language = Language.find_by(code: 'en') || Language.first
-      DefaultLifetimeValue.find_or_initialize_by(
-        environment: env,
-        class_name: 'Vps',
-        direction: DefaultLifetimeValue.directions[:enter],
-        state: DefaultLifetimeValue.states[:soft_delete]
-      ).tap do |lifetime|
-        lifetime.add_expiration = 7 * 24 * 60 * 60
-        lifetime.reason = 'Webui browser VPS delete'
-        lifetime.save! if lifetime.changed? || lifetime.new_record?
+      ensure_vps_lifetime = lambda do |target_env, state, reason|
+        DefaultLifetimeValue.find_or_initialize_by(
+          environment: target_env,
+          class_name: 'Vps',
+          direction: DefaultLifetimeValue.directions[:enter],
+          state: DefaultLifetimeValue.states[state]
+        ).tap do |lifetime|
+          lifetime.add_expiration = 7 * 24 * 60 * 60
+          lifetime.reason = reason
+          lifetime.save! if lifetime.changed? || lifetime.new_record?
+        end
       end
+      ensure_vps_lifetime.call(env, :soft_delete, 'Webui browser VPS delete')
+      ensure_vps_lifetime.call(env, :hard_delete, 'Webui browser VPS hard delete')
 
       user = ensure_webui_user(
         login: 'webui-user',
@@ -483,6 +564,54 @@ import ../make-test.nix (
         ).tap do |default_resource|
           default_resource.value = resource_row[8]
           default_resource.save! if default_resource.changed?
+        end
+      end
+
+      node2_env = Node.find(${toString node2Seed.id}).location.environment
+      if node2_env.id != env.id
+        ensure_vps_lifetime.call(node2_env, :soft_delete, 'Webui browser VPS delete')
+        ensure_vps_lifetime.call(
+          node2_env,
+          :hard_delete,
+          'Webui browser VPS hard delete'
+        )
+
+        [user, secondary_user].each do |resource_user|
+          EnvironmentUserConfig.find_or_initialize_by(
+            user: resource_user,
+            environment: node2_env
+          ).tap do |cfg|
+            cfg.can_create_vps = true
+            cfg.can_destroy_vps = true
+            cfg.vps_lifetime = 0
+            cfg.max_vps_count = 120
+            cfg.default = true
+            cfg.save! if cfg.changed? || cfg.new_record?
+          end
+        end
+
+        resources.each do |resource_row|
+          resource = ensure_cluster_resource(resource_row)
+
+          [user, secondary_user].each do |resource_user|
+            UserClusterResource.find_or_initialize_by(
+              user: resource_user,
+              environment: node2_env,
+              cluster_resource: resource
+            ).tap do |user_resource|
+              user_resource.value = resource_row[7]
+              user_resource.save! if user_resource.changed? || user_resource.new_record?
+            end
+          end
+
+          DefaultObjectClusterResource.find_or_initialize_by(
+            environment: node2_env,
+            cluster_resource: resource,
+            class_name: 'Vps'
+          ).tap do |default_resource|
+            default_resource.value = resource_row[8]
+            default_resource.save! if default_resource.changed? || default_resource.new_record?
+          end
         end
       end
 
@@ -560,6 +689,33 @@ import ../make-test.nix (
         .where(user_namespace: userns)
         .where('label LIKE ?', 'Webui Admin Temporary Browser Map%')
         .find_each(&:destroy!)
+
+      secondary_userns = secondary_user.user_namespaces.first
+      unless secondary_userns
+        secondary_userns = UserNamespace.create!(
+          user: secondary_user,
+          block_count: 1,
+          offset: (UserNamespace.maximum(:offset) || 131_072) + 65_536,
+          size: 65_536
+        )
+      end
+
+      secondary_userns_map = UserNamespaceMap.find_or_create_by!(
+        user_namespace: secondary_userns,
+        label: 'Webui Secondary Browser Map'
+      )
+
+      [:uid, :gid].each do |kind|
+        UserNamespaceMapEntry.find_or_initialize_by(
+          user_namespace_map: secondary_userns_map,
+          kind: kind,
+          vps_id: 0,
+          ns_id: 0
+        ).tap do |entry|
+          entry.count = secondary_userns.size
+          entry.save! if entry.changed? || entry.new_record?
+        end
+      end
 
       public_key = UserPublicKey.find_or_initialize_by(
         user: user,
@@ -871,6 +1027,9 @@ import ../make-test.nix (
       reinstall_template = OsTemplate.find(2)
       webui_pool = Pool.where(node: node, role: Pool.roles[:hypervisor]).order(:id).first
       raise 'webui hypervisor pool not found' unless webui_pool
+      Pool.where(role: Pool.roles[:hypervisor]).find_each do |pool|
+        ensure_pool_dataset_properties(pool)
+      end
 
       jumpto_network = Network.find_or_initialize_by(
         address: '203.0.113.128',
@@ -1336,6 +1495,10 @@ import ../make-test.nix (
               'id' => secondary_user_data.id,
               'label' => secondary_user_data.label,
               'format' => secondary_user_data.format
+            },
+            'userNamespaceMap' => {
+              'id' => secondary_userns_map.id,
+              'label' => secondary_userns_map.label
             }
           }
         },
@@ -1346,6 +1509,16 @@ import ../make-test.nix (
         'environment' => {
           'id' => env.id,
           'label' => env.label
+        },
+        'environments' => {
+          'primary' => {
+            'id' => env.id,
+            'label' => env.label
+          },
+          'secondary' => {
+            'id' => node2.location.environment.id,
+            'label' => node2.location.environment.label
+          }
         },
         'locations' => {
           'primary' => {
@@ -1663,6 +1836,23 @@ import ../make-test.nix (
           describe 'webui admin VPS core browser flow' do
             it 'passes Playwright admin VPS core tests' do
               run_playwright('vps-admin-core', 'specs/vps-admin-core.spec.cjs')
+            end
+          end
+        '';
+      };
+
+      vps-admin-ops = {
+        description = ''
+          Run admin-mode VPS long operation browser tests.
+        '';
+        script = webuiTestScriptCommon + ''
+          def prepare_webui_component
+            prepare_webui_admin_ops_cluster
+          end
+
+          describe 'webui admin VPS long operation browser flow' do
+            it 'passes Playwright admin VPS long operation tests' do
+              run_playwright('vps-admin-ops', 'specs/vps-admin-ops.spec.cjs')
             end
           end
         '';
