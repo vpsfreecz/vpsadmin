@@ -993,7 +993,7 @@ function outage_affected_vps($id)
         $xtpl->table_td(
             _("User ID") . ':'
             . '<input type="hidden" name="page" value="outage">'
-            . '<input type="hidden" name="action" value="exports">'
+            . '<input type="hidden" name="action" value="vps">'
             . '<input type="hidden" name="id" value="' . $outage->id . '">'
         );
         $xtpl->form_add_input_pure('text', '30', 'user', get_val('user'), '');
@@ -1083,7 +1083,7 @@ function outage_affected_exports($id)
         $xtpl->table_td(
             _("User ID") . ':'
             . '<input type="hidden" name="page" value="outage">'
-            . '<input type="hidden" name="action" value="vps">'
+            . '<input type="hidden" name="action" value="exports">'
             . '<input type="hidden" name="id" value="' . $outage->id . '">'
         );
         $xtpl->form_add_input_pure('text', '30', 'user', get_val('user'), '');
