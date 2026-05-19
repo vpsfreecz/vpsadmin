@@ -431,10 +431,15 @@ import ../make-test.nix (
         resource
       end
 
-      def ensure_dataset_in_pool(user, pool, name)
-        dataset = Dataset.find_or_initialize_by(name: name, user: user)
+      def ensure_dataset_in_pool(user, pool, name, parent: nil, vps: nil)
+        full_name = parent ? "#{parent.full_name}/#{name}" : name
+        dataset = Dataset.find_by(user: user, full_name: full_name) ||
+          Dataset.new(name: name, user: user)
         dataset.assign_attributes(
+          name: name,
+          parent: parent,
           user: user,
+          vps: vps,
           user_editable: true,
           user_create: true,
           user_destroy: true,
@@ -447,6 +452,23 @@ import ../make-test.nix (
           dip.confirmed = :confirmed
           dip.save! if dip.changed? || dip.new_record?
         end
+      end
+
+      def ensure_webui_pool_record(node, label:, filesystem:, role:)
+        pool = Pool.find_or_initialize_by(filesystem: filesystem)
+        pool.assign_attributes(
+          node: node,
+          label: label,
+          role: role,
+          is_open: true,
+          max_datasets: 100,
+          refquota_check: true,
+          state: :online,
+          scan: :none
+        )
+        pool.save! if pool.changed? || pool.new_record?
+        ensure_pool_dataset_properties(pool)
+        pool
       end
 
       def ensure_pool_dataset_properties(pool)
@@ -462,6 +484,255 @@ import ../make-test.nix (
             p.confirmed = DatasetProperty.confirmed(:confirmed)
           end
         end
+      end
+
+      def clear_fixture_locks(*records)
+        records.compact.each do |record|
+          ResourceLock
+            .where(resource: record.class.name, row_id: record.id)
+            .delete_all
+        end
+      end
+
+      def ensure_snapshot_fixture(dataset_in_pool, name:, label:, history_id:)
+        snapshot = Snapshot.find_or_initialize_by(
+          dataset: dataset_in_pool.dataset,
+          name: name
+        )
+        snapshot.assign_attributes(
+          label: label,
+          history_id: history_id,
+          confirmed: :confirmed,
+          created_at: Time.now - history_id,
+          updated_at: Time.now - history_id
+        )
+        snapshot.save! if snapshot.changed? || snapshot.new_record?
+
+        if dataset_in_pool.dataset.current_history_id < history_id
+          dataset_in_pool.dataset.update!(current_history_id: history_id)
+        end
+
+        SnapshotInPool.find_or_initialize_by(
+          snapshot: snapshot,
+          dataset_in_pool: dataset_in_pool
+        ).tap do |sip|
+          sip.confirmed = :confirmed
+          sip.reference_count ||= 0
+          sip.save! if sip.changed? || sip.new_record?
+        end
+
+        snapshot
+      end
+
+      def ensure_snapshot_download_fixture(user, snapshot, pool, key)
+        dl = SnapshotDownload.find_or_initialize_by(
+          secret_key: "webui-storage-#{key}"
+        )
+        dl.assign_attributes(
+          user: user,
+          snapshot: snapshot,
+          pool: pool,
+          file_name: "webui-storage-#{key}.tar.gz",
+          format: :archive,
+          size: 2048,
+          sha256sum: '0' * 64,
+          expiration_date: Time.now + 7 * 24 * 60 * 60,
+          object_state: :active,
+          confirmed: :confirmed
+        )
+        dl.save! if dl.changed? || dl.new_record?
+        snapshot.update!(snapshot_download: dl)
+        dl
+      end
+
+      def ensure_storage_vps(user, dataset_in_pool, hostname, node, template, resolver, userns_map)
+        vps = Vps.find_or_initialize_by(hostname: hostname)
+        vps.assign_attributes(
+          user: user,
+          node: node,
+          os_template: template,
+          dns_resolver: resolver,
+          dataset_in_pool: dataset_in_pool,
+          user_namespace_map: userns_map,
+          object_state: :active,
+          confirmed: :confirmed,
+          manage_hostname: true
+        )
+        vps.save! if vps.changed? || vps.new_record?
+        dataset_in_pool.dataset.update!(vps: vps) if dataset_in_pool.dataset.vps_id != vps.id
+
+        VpsCurrentStatus.find_or_initialize_by(vps: vps).tap do |status|
+          status.status = true
+          status.is_running = false
+          status.in_rescue_mode = false
+          status.halted = false
+          status.update_count = 1
+          status.uptime = 0
+          status.process_count = 0
+          status.cpus = 1
+          status.cpu_idle = 100.0
+          status.cpu_user = 0.0
+          status.cpu_nice = 0.0
+          status.cpu_system = 0.0
+          status.cpu_iowait = 0.0
+          status.cpu_irq = 0.0
+          status.cpu_softirq = 0.0
+          status.loadavg1 = 0.0
+          status.loadavg5 = 0.0
+          status.loadavg15 = 0.0
+          status.total_memory = 1024
+          status.used_memory = 0
+          status.total_swap = 0
+          status.used_swap = 0
+          status.total_diskspace = 10_240
+          status.used_diskspace = 0
+          status.save! if status.changed? || status.new_record?
+        end
+
+        clear_fixture_locks(vps, dataset_in_pool, dataset_in_pool.dataset)
+        vps
+      end
+
+      def ensure_mount_fixture(vps, dataset_in_pool, mountpoint, enabled: true)
+        mount = Mount.find_or_initialize_by(vps: vps, dst: mountpoint)
+        mount.assign_attributes(
+          dataset_in_pool: dataset_in_pool,
+          mode: 'rw',
+          mount_opts: "",
+          umount_opts: "",
+          mount_type: 'dataset',
+          enabled: enabled,
+          master_enabled: true,
+          user_editable: true,
+          current_state: enabled ? :mounted : :unmounted,
+          object_state: :active,
+          confirmed: :confirmed
+        )
+        mount.save! if mount.changed? || mount.new_record?
+        clear_fixture_locks(vps, mount, dataset_in_pool)
+        mount
+      end
+
+      def ensure_storage_export_network(location)
+        network = Network.find_or_initialize_by(address: '198.51.101.0', prefix: 24)
+        network.assign_attributes(
+          ip_version: 4,
+          label: 'Webui Storage Export Network',
+          managed: true,
+          primary_location: location,
+          role: :private_access,
+          purpose: :export,
+          split_access: :no_access,
+          split_prefix: 32
+        )
+        network.save! if network.changed? || network.new_record?
+
+        LocationNetwork.find_or_initialize_by(location: location, network: network).tap do |locnet|
+          locnet.primary = true
+          locnet.priority = 5
+          locnet.autopick = true
+          locnet.userpick = true
+          locnet.save! if locnet.changed? || locnet.new_record?
+        end
+
+        network
+      end
+
+      def ensure_ip_fixture(network, addr, user: nil, network_interface: nil)
+        ip = IpAddress.find_or_initialize_by(ip_addr: addr)
+        ip.assign_attributes(
+          prefix: network.split_prefix,
+          size: 1,
+          network: network,
+          user: user,
+          network_interface: network_interface
+        )
+        ip.save! if ip.changed? || ip.new_record?
+
+        HostIpAddress.find_or_initialize_by(
+          ip_address: ip,
+          ip_addr: ip.ip_addr
+        ).tap do |host_ip|
+          host_ip.auto_add = true
+          host_ip.order = nil
+          host_ip.user_created = false
+          host_ip.save! if host_ip.changed? || host_ip.new_record?
+        end
+
+        ip
+      end
+
+      def ensure_export_fixture(user, dataset_in_pool, server_ip, key, enabled: true, host_ip: nil)
+        export = Export.find_or_initialize_by(
+          dataset_in_pool: dataset_in_pool,
+          snapshot_in_pool_clone_n: 0
+        )
+        export_attrs = {
+          snapshot_in_pool_clone: nil,
+          user: user,
+          all_vps: false,
+          path: "/export/#{dataset_in_pool.dataset.full_name}",
+          rw: true,
+          sync: true,
+          subtree_check: false,
+          root_squash: false,
+          threads: 8,
+          enabled: enabled,
+          object_state: :active,
+          confirmed: :confirmed
+        }
+        if export.new_record?
+          Uuid.generate_for_new_record! do |uuid|
+            export.assign_attributes(export_attrs)
+            export.uuid = uuid
+            export.save!
+            export
+          end
+        else
+          export.assign_attributes(export_attrs)
+          export.uuid ||= Uuid.generate!
+          export.save! if export.changed?
+        end
+
+        netif = NetworkInterface.find_or_initialize_by(export: export, name: 'eth0')
+        netif.assign_attributes(
+          kind: :veth_routed,
+          enable: true,
+          max_tx: 0,
+          max_rx: 0
+        )
+        netif.save! if netif.changed? || netif.new_record?
+
+        server_ip.update!(network_interface: netif, user: nil)
+        server_host_ip = server_ip.host_ip_addresses.first || HostIpAddress.create!(
+          ip_address: server_ip,
+          ip_addr: server_ip.ip_addr
+        )
+
+        export.export_hosts.where.not(ip_address_id: host_ip&.id).find_each(&:destroy!)
+        export_host = nil
+        if host_ip
+          export_host = ExportHost.find_or_initialize_by(
+            export: export,
+            ip_address: host_ip
+          )
+          export_host.assign_attributes(
+            rw: true,
+            sync: true,
+            subtree_check: false,
+            root_squash: false
+          )
+          export_host.save! if export_host.changed? || export_host.new_record?
+        end
+
+        clear_fixture_locks(export, netif, server_ip, server_host_ip, export_host)
+        {
+          export: export,
+          network_interface: netif,
+          server_ip: server_ip,
+          host_ip: server_host_ip,
+          export_host: export_host
+        }
       end
 
       def ensure_webui_user(login:, full_name:, email:, password:, env:, language:, monthly_payment: 0)
@@ -1257,7 +1528,23 @@ import ../make-test.nix (
       reinstall_template = OsTemplate.find(2)
       webui_pool = Pool.where(node: node, role: Pool.roles[:hypervisor]).order(:id).first
       raise 'webui hypervisor pool not found' unless webui_pool
-      Pool.where(role: Pool.roles[:hypervisor]).find_each do |pool|
+      storage_primary_pool = ensure_webui_pool_record(
+        node,
+        label: 'webui-storage-primary',
+        filesystem: 'tank/webui-storage-primary',
+        role: :primary
+      )
+      storage_backup_pool = ensure_webui_pool_record(
+        node,
+        label: 'webui-storage-backup',
+        filesystem: 'tank/webui-storage-backup',
+        role: :backup
+      )
+      Pool.where(role: [
+        Pool.roles[:hypervisor],
+        Pool.roles[:primary],
+        Pool.roles[:backup]
+      ]).find_each do |pool|
         ensure_pool_dataset_properties(pool)
       end
 
@@ -1554,6 +1841,266 @@ import ../make-test.nix (
       )
       support_assignment.save! if support_assignment.changed? || support_assignment.new_record?
 
+      SysConfig.find_or_initialize_by(
+        category: 'core',
+        name: 'snapshot_download_base_url'
+      ).tap do |cfg|
+        cfg.value = 'https://downloads.example.test'
+        cfg.data_type = 'String'
+        cfg.min_user_level = 99
+        cfg.save! if cfg.changed? || cfg.new_record?
+      end
+      SnapshotDownload.remove_instance_variable(:@base_url) if SnapshotDownload.instance_variable_defined?(:@base_url)
+
+      storage_snap_seq = 10_000
+      make_primary_dip = lambda do |key, owner = user|
+        ensure_dataset_in_pool(
+          owner,
+          storage_primary_pool,
+          "webui-storage-#{key}"
+        )
+      end
+      make_primary_with_backup = lambda do |key, owner = user|
+        dip = make_primary_dip.call(key, owner)
+        ensure_dataset_in_pool(owner, storage_backup_pool, dip.dataset.name)
+        dip
+      end
+      make_snapshot = lambda do |dip, key|
+        storage_snap_seq += 1
+        ensure_snapshot_fixture(
+          dip,
+          name: "webui-storage-#{key}",
+          label: "Webui Storage #{key}",
+          history_id: storage_snap_seq
+        )
+      end
+      make_storage_vps = lambda do |key|
+        root_dip = ensure_dataset_in_pool(
+          user,
+          webui_pool,
+          "webui-storage-#{key}-root"
+        )
+        vps = ensure_storage_vps(
+          user,
+          root_dip,
+          "webui-storage-#{key}",
+          node,
+          primary_template,
+          DnsResolver.first,
+          userns_map
+        )
+        child_dip = ensure_dataset_in_pool(
+          user,
+          webui_pool,
+          "webui-storage-#{key}-child",
+          parent: root_dip.dataset
+        )
+        { vps: vps, root_dip: root_dip, child_dip: child_dip }
+      end
+
+      storage_vps = {
+        backup: make_storage_vps.call('backup'),
+        user_mount_create: make_storage_vps.call('user-mount-create'),
+        user_mount_edit: make_storage_vps.call('user-mount-edit'),
+        user_mount_toggle: make_storage_vps.call('user-mount-toggle'),
+        user_mount_destroy: make_storage_vps.call('user-mount-destroy'),
+        admin_mount_create: make_storage_vps.call('admin-mount-create'),
+        admin_mount_edit: make_storage_vps.call('admin-mount-edit'),
+        admin_mount_toggle: make_storage_vps.call('admin-mount-toggle'),
+        admin_mount_destroy: make_storage_vps.call('admin-mount-destroy'),
+        admin_expansion_edit: make_storage_vps.call('admin-expansion-edit'),
+        admin_expansion_add: make_storage_vps.call('admin-expansion-add'),
+        admin_expansion_register: make_storage_vps.call('admin-expansion-register')
+      }
+
+      storage_backup_snapshot = make_snapshot.call(
+        storage_vps.fetch(:backup).fetch(:root_dip),
+        'vps-backup'
+      )
+
+      storage_datasets = {
+        nas_list: make_primary_with_backup.call('nas-list'),
+        user_edit: make_primary_dip.call('user-edit'),
+        snapshot_create: make_primary_dip.call('snapshot-create'),
+        restore: make_primary_dip.call('restore'),
+        download_create: make_primary_dip.call('download-create'),
+        snapshot_destroy: make_primary_dip.call('snapshot-destroy'),
+        download_show: make_primary_dip.call('download-show'),
+        download_destroy: make_primary_dip.call('download-destroy'),
+        export_selector: make_primary_dip.call('export-selector'),
+        export_create: make_primary_dip.call('export-create'),
+        export_snapshot: make_primary_dip.call('export-snapshot'),
+        export_list: make_primary_dip.call('export-list'),
+        export_edit: make_primary_dip.call('export-edit'),
+        export_enable: make_primary_dip.call('export-enable'),
+        export_disable: make_primary_dip.call('export-disable'),
+        export_destroy: make_primary_dip.call('export-destroy'),
+        export_host_add: make_primary_dip.call('export-host-add'),
+        export_host_edit: make_primary_dip.call('export-host-edit'),
+        export_host_delete: make_primary_dip.call('export-host-delete'),
+        admin_create_parent: make_primary_dip.call('admin-create-parent'),
+        admin_edit: make_primary_dip.call('admin-edit'),
+        admin_destroy: make_primary_dip.call('admin-destroy'),
+        admin_restore: make_primary_dip.call('admin-restore'),
+        admin_download_create: make_primary_dip.call('admin-download-create'),
+        admin_snapshot_destroy: make_primary_dip.call('admin-snapshot-destroy'),
+        admin_expansion_edit: storage_vps.fetch(:admin_expansion_edit).fetch(:root_dip),
+        admin_expansion_add: storage_vps.fetch(:admin_expansion_add).fetch(:root_dip),
+        admin_expansion_register: storage_vps.fetch(:admin_expansion_register).fetch(:root_dip),
+        admin_plan: make_primary_with_backup.call('admin-plan'),
+        admin_export_create: make_primary_dip.call('admin-export-create'),
+        admin_export_edit: make_primary_dip.call('admin-export-edit'),
+        admin_export_enable: make_primary_dip.call('admin-export-enable'),
+        admin_export_disable: make_primary_dip.call('admin-export-disable'),
+        admin_export_destroy: make_primary_dip.call('admin-export-destroy'),
+        admin_export_host_add: make_primary_dip.call('admin-export-host-add'),
+        admin_export_host_edit: make_primary_dip.call('admin-export-host-edit'),
+        admin_export_host_delete: make_primary_dip.call('admin-export-host-delete')
+      }
+
+      storage_snapshots = {
+        nas_list: make_snapshot.call(storage_datasets.fetch(:nas_list), 'nas-list'),
+        restore: make_snapshot.call(storage_datasets.fetch(:restore), 'restore'),
+        download_create: make_snapshot.call(storage_datasets.fetch(:download_create), 'download-create'),
+        snapshot_destroy: make_snapshot.call(storage_datasets.fetch(:snapshot_destroy), 'snapshot-destroy'),
+        download_show: make_snapshot.call(storage_datasets.fetch(:download_show), 'download-show'),
+        download_destroy: make_snapshot.call(storage_datasets.fetch(:download_destroy), 'download-destroy'),
+        export_snapshot: make_snapshot.call(storage_datasets.fetch(:export_snapshot), 'export-snapshot'),
+        admin_restore: make_snapshot.call(storage_datasets.fetch(:admin_restore), 'admin-restore'),
+        admin_download_create: make_snapshot.call(storage_datasets.fetch(:admin_download_create), 'admin-download-create'),
+        admin_snapshot_destroy: make_snapshot.call(storage_datasets.fetch(:admin_snapshot_destroy), 'admin-snapshot-destroy')
+      }
+
+      storage_downloads = {
+        show: ensure_snapshot_download_fixture(
+          user,
+          storage_snapshots.fetch(:download_show),
+          storage_primary_pool,
+          'show'
+        ),
+        destroy: ensure_snapshot_download_fixture(
+          user,
+          storage_snapshots.fetch(:download_destroy),
+          storage_primary_pool,
+          'destroy'
+        )
+      }
+
+      storage_mounts = {
+        user_edit: ensure_mount_fixture(
+          storage_vps.fetch(:user_mount_edit).fetch(:vps),
+          storage_vps.fetch(:user_mount_edit).fetch(:child_dip),
+          '/mnt/webui-user-edit'
+        ),
+        user_toggle: ensure_mount_fixture(
+          storage_vps.fetch(:user_mount_toggle).fetch(:vps),
+          storage_vps.fetch(:user_mount_toggle).fetch(:child_dip),
+          '/mnt/webui-user-toggle'
+        ),
+        user_destroy: ensure_mount_fixture(
+          storage_vps.fetch(:user_mount_destroy).fetch(:vps),
+          storage_vps.fetch(:user_mount_destroy).fetch(:child_dip),
+          '/mnt/webui-user-destroy'
+        ),
+        admin_edit: ensure_mount_fixture(
+          storage_vps.fetch(:admin_mount_edit).fetch(:vps),
+          storage_vps.fetch(:admin_mount_edit).fetch(:child_dip),
+          '/mnt/webui-admin-edit'
+        ),
+        admin_toggle: ensure_mount_fixture(
+          storage_vps.fetch(:admin_mount_toggle).fetch(:vps),
+          storage_vps.fetch(:admin_mount_toggle).fetch(:child_dip),
+          '/mnt/webui-admin-toggle'
+        ),
+        admin_destroy: ensure_mount_fixture(
+          storage_vps.fetch(:admin_mount_destroy).fetch(:vps),
+          storage_vps.fetch(:admin_mount_destroy).fetch(:child_dip),
+          '/mnt/webui-admin-destroy'
+        )
+      }
+
+      daily_plan = VpsAdmin::API::DatasetPlans::Registrator.plans.fetch(:daily_backup)
+      storage_env_plan = EnvironmentDatasetPlan.find_or_create_by!(
+        environment: env,
+        dataset_plan: daily_plan.dataset_plan
+      ) do |plan|
+        plan.user_add = true
+        plan.user_remove = true
+      end
+      storage_env_plan.update!(user_add: true, user_remove: true) unless storage_env_plan.user_add && storage_env_plan.user_remove
+
+      DatasetInPoolPlan
+        .where(dataset_in_pool: storage_datasets.fetch(:admin_plan))
+        .find_each do |plan|
+          storage_datasets.fetch(:admin_plan).del_plan(plan)
+        rescue ActiveRecord::RecordNotFound
+          plan.destroy!
+        end
+
+      storage_expansion = DatasetExpansion.find_or_initialize_by(
+        dataset: storage_datasets.fetch(:admin_expansion_edit).dataset
+      )
+      storage_expansion.assign_attributes(
+        vps: storage_vps.fetch(:admin_expansion_edit).fetch(:vps),
+        original_refquota: 10_240,
+        added_space: 1024,
+        max_over_refquota_seconds: 30 * 24 * 60 * 60,
+        enable_notifications: true,
+        enable_shrink: true,
+        stop_vps: false,
+        state: :active,
+        over_refquota_seconds: 0
+      )
+      storage_expansion.save! if storage_expansion.changed? || storage_expansion.new_record?
+      storage_datasets.fetch(:admin_expansion_edit).dataset.update!(dataset_expansion: storage_expansion)
+      DatasetExpansionHistory.find_or_initialize_by(
+        dataset_expansion: storage_expansion,
+        added_space: 1024
+      ).tap do |history|
+        history.original_refquota = 10_240
+        history.new_refquota = 11_264
+        history.admin = admin
+        history.save! if history.changed? || history.new_record?
+      end
+
+      storage_export_network = ensure_storage_export_network(node.location)
+      storage_export_ips = (10..45).map do |i|
+        ensure_ip_fixture(
+          storage_export_network,
+          "198.51.101.#{i}",
+          user: user
+        )
+      end
+      export_ip_enum = storage_export_ips.each
+      make_export = lambda do |key, enabled: true, host_ip: nil|
+        ensure_export_fixture(
+          user,
+          storage_datasets.fetch(key),
+          export_ip_enum.next,
+          key,
+          enabled: enabled,
+          host_ip: host_ip
+        )
+      end
+
+      storage_exports = {
+        list: make_export.call(:export_list),
+        edit: make_export.call(:export_edit),
+        enable: make_export.call(:export_enable, enabled: false),
+        disable: make_export.call(:export_disable, enabled: true),
+        destroy: make_export.call(:export_destroy),
+        host_add: make_export.call(:export_host_add),
+        host_edit: make_export.call(:export_host_edit, host_ip: fixture_assigned_ip),
+        host_delete: make_export.call(:export_host_delete, host_ip: fixture_assigned_ip),
+        admin_edit: make_export.call(:admin_export_edit),
+        admin_enable: make_export.call(:admin_export_enable, enabled: false),
+        admin_disable: make_export.call(:admin_export_disable, enabled: true),
+        admin_destroy: make_export.call(:admin_export_destroy),
+        admin_host_add: make_export.call(:admin_export_host_add),
+        admin_host_edit: make_export.call(:admin_export_host_edit, host_ip: fixture_assigned_ip),
+        admin_host_delete: make_export.call(:admin_export_host_delete, host_ip: fixture_assigned_ip)
+      }
+
       fixture_dns_zone = DnsZone.find_or_initialize_by(
         name: 'webui-fixture.example.test.'
       )
@@ -1643,7 +2190,9 @@ import ../make-test.nix (
         .where(filesystem: [
           ${builtins.toJSON "tank/ct"},
           ${builtins.toJSON "tank/webui-node1-secondary"},
-          ${builtins.toJSON "tank/webui-node2"}
+          ${builtins.toJSON "tank/webui-node2"},
+          ${builtins.toJSON "tank/webui-storage-primary"},
+          ${builtins.toJSON "tank/webui-storage-backup"}
         ])
         .index_by(&:filesystem)
 
@@ -1906,6 +2455,16 @@ import ../make-test.nix (
           }
         },
         'storage' => {
+          'pools' => {
+            'primary' => {
+              'id' => storage_primary_pool.id,
+              'filesystem' => storage_primary_pool.filesystem
+            },
+            'backup' => {
+              'id' => storage_backup_pool.id,
+              'filesystem' => storage_backup_pool.filesystem
+            }
+          },
           'dataset' => {
             'id' => fixture_storage_dip.dataset.id,
             'name' => fixture_storage_dip.dataset.name,
@@ -1922,6 +2481,80 @@ import ../make-test.nix (
           },
           'snapshotInPool' => {
             'id' => fixture_snapshot_in_pool.id
+          },
+          'vps' => storage_vps.transform_values do |vps_fixture|
+            vps = vps_fixture.fetch(:vps)
+            root_dip = vps_fixture.fetch(:root_dip)
+            child_dip = vps_fixture.fetch(:child_dip)
+
+            {
+              'id' => vps.id,
+              'hostname' => vps.hostname,
+              'datasetId' => root_dip.dataset.id,
+              'datasetInPoolId' => root_dip.id,
+              'childDatasetId' => child_dip.dataset.id,
+              'childDatasetName' => child_dip.dataset.name,
+              'childDatasetFullName' => child_dip.dataset.full_name
+            }
+          end,
+          'datasets' => storage_datasets.transform_values do |dip|
+            {
+              'id' => dip.dataset.id,
+              'name' => dip.dataset.name,
+              'fullName' => dip.dataset.full_name,
+              'datasetInPoolId' => dip.id,
+              'poolId' => dip.pool_id
+            }
+          end,
+          'snapshots' => storage_snapshots.merge(
+            vps_backup: storage_backup_snapshot
+          ).transform_values do |snapshot|
+            {
+              'id' => snapshot.id,
+              'datasetId' => snapshot.dataset_id,
+              'name' => snapshot.name,
+              'label' => snapshot.label
+            }
+          end,
+          'downloads' => storage_downloads.transform_values do |download|
+            {
+              'id' => download.id,
+              'snapshotId' => download.snapshot_id,
+              'fileName' => download.file_name,
+              'url' => download.url
+            }
+          end,
+          'mounts' => storage_mounts.transform_values do |mount|
+            {
+              'id' => mount.id,
+              'vpsId' => mount.vps_id,
+              'datasetId' => mount.dataset_in_pool.dataset_id,
+              'mountpoint' => mount.dst,
+              'enabled' => mount.enabled
+            }
+          end,
+          'exports' => storage_exports.transform_values do |export_fixture|
+            export = export_fixture.fetch(:export)
+            host = export_fixture.fetch(:export_host)
+
+            {
+              'id' => export.id,
+              'datasetId' => export.dataset.id,
+              'datasetName' => export.dataset.name,
+              'path' => export.path,
+              'enabled' => export.enabled,
+              'hostId' => host&.id
+            }
+          end,
+          'plan' => {
+            'environmentDatasetPlanId' => storage_env_plan.id,
+            'label' => storage_env_plan.label
+          },
+          'ipAddresses' => {
+            'assignedHost' => {
+              'id' => fixture_assigned_ip.id,
+              'addr' => fixture_assigned_ip.ip_addr
+            }
           }
         },
         'networking' => {
@@ -2180,6 +2813,19 @@ import ../make-test.nix (
           describe 'webui admin member management browser flow' do
             it 'passes Playwright admin member management tests' do
               run_playwright('users-admin', 'specs/users-admin.spec.cjs')
+            end
+          end
+        '';
+      };
+
+      storage-backup-export = {
+        description = ''
+          Run storage, backup, dataset, and export browser tests.
+        '';
+        script = webuiTestScriptCommon + ''
+          describe 'webui storage backup export browser flow' do
+            it 'passes Playwright storage, backup, dataset, and export tests' do
+              run_playwright('storage-backup-export', 'specs/storage-backup-export.spec.cjs')
             end
           end
         '';
