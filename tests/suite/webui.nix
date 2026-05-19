@@ -400,6 +400,13 @@ import ../make-test.nix (
       $LOAD_PATH.unshift(File.join(ENV.fetch('API_DIR'), 'lib'))
       require 'vpsadmin'
 
+      plugin_root = File.expand_path('../plugins', ENV.fetch('API_DIR'))
+      %w[payments requests].each do |plugin|
+        Dir[File.join(plugin_root, plugin, 'api', 'models', '*.rb')]
+          .sort
+          .each { |path| require path }
+      end
+
       fixture_stdout = $stdout.dup
       $stdout.reopen(File::NULL, 'w')
 
@@ -457,7 +464,7 @@ import ../make-test.nix (
         end
       end
 
-      def ensure_webui_user(login:, full_name:, email:, password:, env:, language:)
+      def ensure_webui_user(login:, full_name:, email:, password:, env:, language:, monthly_payment: 0)
         user = User.find_or_initialize_by(login: login)
         user.assign_attributes(
           full_name: full_name,
@@ -483,7 +490,7 @@ import ../make-test.nix (
         quoted_now = ActiveRecord::Base.connection.quote(Time.now)
         ActiveRecord::Base.connection.execute(<<~SQL)
           INSERT INTO user_accounts (user_id, monthly_payment, paid_until, updated_at)
-          VALUES (#{user.id}, 0, NULL, #{quoted_now})
+          VALUES (#{user.id}, #{monthly_payment.to_i}, NULL, #{quoted_now})
           ON DUPLICATE KEY UPDATE
             monthly_payment = VALUES(monthly_payment),
             paid_until = VALUES(paid_until),
@@ -535,6 +542,15 @@ import ../make-test.nix (
         env: env,
         language: language
       )
+      admin_managed_user = ensure_webui_user(
+        login: 'webui-admin-managed-user',
+        full_name: 'Webui Admin Managed User',
+        email: 'webui-admin-managed@example.test',
+        password: 'webuiAdminManagedPassword',
+        env: env,
+        language: language,
+        monthly_payment: 100
+      )
 
       quoted_now = ActiveRecord::Base.connection.quote(Time.now)
 
@@ -551,7 +567,7 @@ import ../make-test.nix (
       resources.each do |resource_row|
         resource = ensure_cluster_resource(resource_row)
 
-        [user, secondary_user].each do |resource_user|
+        [user, secondary_user, admin_managed_user].each do |resource_user|
           UserClusterResource.find_or_initialize_by(
             user: resource_user,
             environment: env,
@@ -581,7 +597,7 @@ import ../make-test.nix (
           'Webui browser VPS hard delete'
         )
 
-        [user, secondary_user].each do |resource_user|
+        [user, secondary_user, admin_managed_user].each do |resource_user|
           EnvironmentUserConfig.find_or_initialize_by(
             user: resource_user,
             environment: node2_env
@@ -598,7 +614,7 @@ import ../make-test.nix (
         resources.each do |resource_row|
           resource = ensure_cluster_resource(resource_row)
 
-          [user, secondary_user].each do |resource_user|
+          [user, secondary_user, admin_managed_user].each do |resource_user|
             UserClusterResource.find_or_initialize_by(
               user: resource_user,
               environment: node2_env,
@@ -751,6 +767,126 @@ import ../make-test.nix (
       secondary_public_key.key = 'ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFwebuisecondary webui-secondary@test'
       secondary_public_key.auto_add = false
       secondary_public_key.save!
+
+      admin_member_prefix = 'Webui Admin Managed'
+      admin_managed_public_key = UserPublicKey.find_or_initialize_by(
+        user: admin_managed_user,
+        label: "#{admin_member_prefix} Fixture Key"
+      )
+      admin_managed_public_key.key = 'ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFwebuiadminmanaged webui-admin-managed@test'
+      admin_managed_public_key.auto_add = false
+      admin_managed_public_key.save!
+
+      UserPublicKey
+        .where(user: admin_managed_user)
+        .where('label LIKE ?', "#{admin_member_prefix} Key Added%")
+        .find_each(&:destroy!)
+      MetricsAccessToken
+        .where(user: admin_managed_user)
+        .where('metric_prefix LIKE ?', 'webui_admin_managed%')
+        .find_each(&:destroy!)
+
+      admin_session_agent = UserAgent.find_or_create!(
+        'webui-playwright-admin-managed-session'
+      )
+      UserSession
+        .where(user: admin_managed_user, label: [
+          "#{admin_member_prefix} Session",
+          "#{admin_member_prefix} Session Edited"
+        ])
+        .delete_all
+      admin_user_session = UserSession.create!(
+        user: admin_managed_user,
+        user_agent: admin_session_agent,
+        auth_type: 'token',
+        api_ip_addr: '198.51.100.50',
+        client_ip_addr: '198.51.100.51',
+        client_version: 'webui-playwright-admin-managed',
+        label: "#{admin_member_prefix} Session",
+        request_count: 5,
+        last_request_at: Time.now - 90
+      )
+      UserMailRoleRecipient.where(user: admin_managed_user).delete_all
+      UserMailTemplateRecipient.where(user: admin_managed_user).delete_all
+
+      [
+        ['default_currency', 'String', 'CZK'],
+        ['conversion_rates', 'Hash', {}]
+      ].each do |name, data_type, value|
+        SysConfig.find_or_initialize_by(
+          category: 'plugin_payments',
+          name: name
+        ).tap do |cfg|
+          cfg.value = value
+          cfg.data_type = data_type
+          cfg.min_user_level = 99
+          cfg.save! if cfg.changed? || cfg.new_record?
+        end
+      end
+
+      UserPayment.where(user: admin_managed_user).delete_all
+      admin_managed_user.user_account.update!(
+        monthly_payment: 100,
+        paid_until: nil,
+        updated_at: Time.now
+      )
+
+      admin_incoming_tx = 'webui-admin-managed-incoming'
+      admin_old_incoming_ids = IncomingPayment
+        .where(transaction_id: admin_incoming_tx)
+        .pluck(:id)
+      UserPayment
+        .where(incoming_payment_id: admin_old_incoming_ids)
+        .delete_all if admin_old_incoming_ids.any?
+      IncomingPayment.where(id: admin_old_incoming_ids).delete_all
+      admin_incoming_payment = IncomingPayment.create!(
+        transaction_id: admin_incoming_tx,
+        date: Date.today,
+        amount: 100,
+        currency: 'CZK',
+        account_name: 'Webui Admin Managed Sender',
+        user_ident: admin_managed_user.login,
+        user_message: 'webui admin managed payment',
+        vs: admin_managed_user.id.to_s,
+        transaction_type: 'webui-admin-managed',
+        state: :unmatched,
+        created_at: Time.now - 300
+      )
+
+      admin_resource_package = ClusterResourcePackage
+        .where(label: "#{admin_member_prefix} Package", user_id: nil, environment_id: nil)
+        .first_or_initialize
+      admin_resource_package.save! if admin_resource_package.changed? || admin_resource_package.new_record?
+      admin_resource_package_item = ClusterResourcePackageItem.find_or_initialize_by(
+        cluster_resource_package: admin_resource_package,
+        cluster_resource: ClusterResource.find_by!(name: 'cpu')
+      )
+      admin_resource_package_item.value = 1
+      admin_resource_package_item.save! if admin_resource_package_item.changed? || admin_resource_package_item.new_record?
+      UserClusterResourcePackage
+        .where(user: admin_managed_user, cluster_resource_package: admin_resource_package)
+        .find_each(&:destroy!)
+
+      UserRequest
+        .where('change_reason LIKE ?', "#{admin_member_prefix} approval%")
+        .delete_all
+      create_admin_change_request = lambda do |suffix|
+        request = ChangeRequest.new(
+          user: admin_managed_user,
+          state: :awaiting,
+          api_ip_addr: '192.0.2.31',
+          api_ip_ptr: 'webui-admin-approval.example.test',
+          client_ip_addr: '198.51.100.31',
+          client_ip_ptr: 'webui-admin-client.example.test',
+          change_reason: "#{admin_member_prefix} approval #{suffix}",
+          full_name: "#{admin_member_prefix} Approval #{suffix}"
+        )
+        request.save!
+        request
+      end
+      admin_approval_approve = create_admin_change_request.call('approve')
+      admin_approval_deny = create_admin_change_request.call('deny')
+      admin_approval_ignore = create_admin_change_request.call('ignore')
 
       self_service_prefix = 'Webui Self-Service'
       UserPublicKey
@@ -1614,6 +1750,59 @@ import ../make-test.nix (
             }
           }
         },
+        'adminMembers' => {
+          'managed' => {
+            'id' => admin_managed_user.id,
+            'username' => admin_managed_user.login,
+            'password' => 'webuiAdminManagedPassword',
+            'email' => admin_managed_user.email,
+            'monthlyPayment' => 100,
+            'environmentConfig' => {
+              'id' => EnvironmentUserConfig.find_by!(
+                user: admin_managed_user,
+                environment: env
+              ).id,
+              'environmentId' => env.id
+            },
+            'publicKey' => {
+              'id' => admin_managed_public_key.id,
+              'label' => admin_managed_public_key.label
+            },
+            'userSession' => {
+              'id' => admin_user_session.id,
+              'label' => admin_user_session.label,
+              'editedLabel' => "#{admin_member_prefix} Session Edited"
+            },
+            'resourcePackage' => {
+              'id' => admin_resource_package.id,
+              'label' => admin_resource_package.label,
+              'itemId' => admin_resource_package_item.id
+            },
+            'incomingPayment' => {
+              'id' => admin_incoming_payment.id,
+              'transactionId' => admin_incoming_payment.transaction_id,
+              'amount' => admin_incoming_payment.amount.to_i,
+              'state' => admin_incoming_payment.state
+            },
+            'approvalRequests' => {
+              'approve' => {
+                'id' => admin_approval_approve.id,
+                'type' => 'change',
+                'reason' => admin_approval_approve.change_reason
+              },
+              'deny' => {
+                'id' => admin_approval_deny.id,
+                'type' => 'change',
+                'reason' => admin_approval_deny.change_reason
+              },
+              'ignore' => {
+                'id' => admin_approval_ignore.id,
+                'type' => 'change',
+                'reason' => admin_approval_ignore.change_reason
+              }
+            }
+          }
+        },
         'location' => {
           'id' => ${toString location.id},
           'label' => ${builtins.toJSON location.label}
@@ -1978,6 +2167,19 @@ import ../make-test.nix (
           describe 'webui user self-service browser flow' do
             it 'passes Playwright user self-service tests' do
               run_playwright('users-self-service', 'specs/users-self-service.spec.cjs')
+            end
+          end
+        '';
+      };
+
+      users-admin = {
+        description = ''
+          Run admin member management browser tests.
+        '';
+        script = webuiTestScriptCommon + ''
+          describe 'webui admin member management browser flow' do
+            it 'passes Playwright admin member management tests' do
+              run_playwright('users-admin', 'specs/users-admin.spec.cjs')
             end
           end
         '';
