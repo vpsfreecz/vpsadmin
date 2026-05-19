@@ -380,9 +380,10 @@ if (isLoggedIn()) {
 
             try {
                 $api->dataset($_GET['id'])->plan->delete($_GET['plan']);
+                $role = $_GET['role'] ?? 'primary';
 
                 notify_user(_('Backup plan removed.'), _('The dataset was successfully removed from the backup plan.'));
-                redirect('?page=dataset&action=edit&role=' . $_GET['role'] . '&id=' . $_GET['id'] . '&return=' . urlencode($_GET['return']));
+                redirect('?page=dataset&action=edit&role=' . $role . '&id=' . $_GET['id'] . '&return=' . urlencode($_GET['return']));
 
             } catch (\HaveAPI\Client\Exception\ActionFailed $e) {
                 $xtpl->perex_format_errors(_('Backup plan removal failed'), $e->getResponse());
