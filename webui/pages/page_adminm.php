@@ -22,7 +22,7 @@ function print_newm()
     $m_pass_uid  = $xtpl->form_add_input(_("Password") . ':', 'password', '30', 'm_pass', '', '', -8);
     $m_pass2_uid = $xtpl->form_add_input(_("Repeat password") . ':', 'password', '30', 'm_pass2', '', ' ');
 
-    $xtpl->form_add_input('', 'button', '', 'g_pass', _("Generate password"), '', '', 'onClick="javascript:formSubmit()"');
+    $xtpl->form_add_input('', 'button', '', 'g_pass', _("Generate password"), '', 0, 'onClick="javascript:formSubmit()"');
     $xtpl->form_add_input(_("Full name") . ':', 'text', '30', 'm_name', $_POST["m_name"], _("A-Z, a-z, with diacritic"), 255);
     $xtpl->form_add_input(_("E-mail") . ':', 'text', '30', 'm_mail', $_POST["m_mail"], ' ');
     $xtpl->form_add_input(_("Postal address") . ':', 'text', '30', 'm_address', $_POST["m_address"], ' ');
