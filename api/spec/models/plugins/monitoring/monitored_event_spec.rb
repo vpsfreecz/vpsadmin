@@ -34,6 +34,17 @@ RSpec.describe 'monitoring monitored event model', requires_plugins: :monitoring
     allow(VpsAdmin::API::Plugins::Monitoring::TransactionChains::Alert).to receive(:fire)
   end
 
+  it 'uses the stored monitor name when a definition is unavailable' do
+    event = create_event(monitor(:removed_monitor), state: :confirmed)
+
+    allow(VpsAdmin::API::Plugins::Monitoring).to receive(:monitors).and_return([])
+
+    expect(event.label).to eq('removed_monitor')
+    expect(event.issue).to eq('removed_monitor')
+    expect(event.skip_acknowledged).to be(true)
+    expect(event.skip_ignored).to be(true)
+  end
+
   it 'creates and confirms a new event when a failing check reaches the threshold' do
     mon = monitor(:first_failure)
 
