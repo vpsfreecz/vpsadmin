@@ -8,7 +8,7 @@ RSpec.describe TransactionChains::Cluster::GenerateMigrationKeys do
     with_current_context(user: SpecSeed.admin) { example.run }
   end
 
-  def create_pool_with_status(node:, status: :fresh, migration_public_key: nil)
+  def create_pool_with_status(node:, status: :fresh, migration_public_key: nil, filesystem: nil)
     case status
     when :fresh
       fresh_node_status!(node)
@@ -19,7 +19,7 @@ RSpec.describe TransactionChains::Cluster::GenerateMigrationKeys do
     create_pool!(
       node: node,
       role: :primary,
-      filesystem: "tank/migration-#{SecureRandom.hex(4)}",
+      filesystem: filesystem || "tank-#{SecureRandom.hex(4)}/migration",
       label: "Migration #{SecureRandom.hex(4)}"
     ).tap do |pool|
       pool.update!(migration_public_key: migration_public_key) if migration_public_key
@@ -50,6 +50,7 @@ RSpec.describe TransactionChains::Cluster::GenerateMigrationKeys do
     expect(tx_classes(chain)).to eq([Transactions::Pool::GenerateSendKey])
     expect(tx_payload(chain, Transactions::Pool::GenerateSendKey)).to include(
       'pool_id' => eligible_pool.id,
+      'pool_ids' => [eligible_pool.id],
       'pool_name' => eligible_pool.name,
       'pool_fs' => eligible_pool.filesystem
     )
@@ -61,6 +62,43 @@ RSpec.describe TransactionChains::Cluster::GenerateMigrationKeys do
       storage_pool.id,
       openvz_pool.id,
       keyed_pool.id
+    )
+  end
+
+  it 'generates one send key for all pool rows sharing an osctl pool' do
+    node = create_node!(name: "shared-#{SecureRandom.hex(3)}")
+    shared_a = create_pool_with_status(node: node, filesystem: 'tank/shared-a')
+    shared_b = create_pool_with_status(node: node, filesystem: 'tank/shared-b')
+
+    chain, = described_class.fire
+
+    expect(tx_classes(chain)).to eq([Transactions::Pool::GenerateSendKey])
+    expect(tx_payload(chain, Transactions::Pool::GenerateSendKey)).to include(
+      'pool_id' => shared_a.id,
+      'pool_ids' => contain_exactly(shared_a.id, shared_b.id),
+      'pool_name' => 'tank'
+    )
+  end
+
+  it 'regenerates a shared send key when pool rows for one osctl pool disagree' do
+    node = create_node!(name: "conflict-#{SecureRandom.hex(3)}")
+    shared_a = create_pool_with_status(
+      node: node,
+      filesystem: 'tank/conflict-a',
+      migration_public_key: 'ssh-ed25519 AAAAOLD1 old1@test'
+    )
+    shared_b = create_pool_with_status(
+      node: node,
+      filesystem: 'tank/conflict-b',
+      migration_public_key: 'ssh-ed25519 AAAAOLD2 old2@test'
+    )
+
+    chain, = described_class.fire
+
+    expect(tx_classes(chain)).to eq([Transactions::Pool::GenerateSendKey])
+    expect(tx_payload(chain, Transactions::Pool::GenerateSendKey)).to include(
+      'pool_ids' => contain_exactly(shared_a.id, shared_b.id),
+      'pool_name' => 'tank'
     )
   end
 end

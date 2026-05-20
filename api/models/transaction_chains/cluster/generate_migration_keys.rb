@@ -3,8 +3,15 @@ module TransactionChains
     label 'Migration keys'
 
     def link_chain
-      active_pools.where(migration_public_key: nil).each do |pool|
-        append(Transactions::Pool::GenerateSendKey, args: pool)
+      active_pools.group_by { |pool| [pool.node_id, pool.name] }.each_value do |pools|
+        public_keys = pools.map(&:migration_public_key).compact.uniq
+        next if public_keys.one? && pools.none? { |pool| pool.migration_public_key.nil? }
+
+        append(
+          Transactions::Pool::GenerateSendKey,
+          args: pools.first,
+          kwargs: { pool_ids: pools.map(&:id) }
+        )
       end
     end
 
