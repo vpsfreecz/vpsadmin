@@ -20,6 +20,54 @@ vpsadminos checkout is required.
   Path selection rules live in `tests/ci-selection.yml`; derived test and
   webui script tags are added by `tests/ci-tags.nix` through `tests/make-test.nix`.
 
+## CI test selection
+
+The CI workflow in `.github/workflows/ci.yml` runs the full integration suite
+on a weekly schedule and for manual full runs. For normal pushes it diffs the
+pushed commits, runs `tools/select_ci_tests.rb`, and passes the resulting
+metadata expression to the test runner:
+
+```sh
+./test-runner.sh test --filter 'tag=ci && (tag=vps || tag=storage-backup)'
+```
+
+Selection is intentionally conservative. If a changed runtime file is not
+matched by `tests/ci-selection.yml`, CI falls back to `tag=ci` and runs the
+whole integration suite. Documentation-only and spec-only changes can be
+skipped by the integration workflow when all changed files match the `skip`
+rules.
+
+When adding, moving, or renaming files that affect runtime behaviour, update
+`tests/ci-selection.yml` in the same change. Map the path to the smallest
+reasonable set of tags, but prefer a broader tag over missing coverage. For
+example, a shared VPS helper should select `vps`, while migration-specific code
+should select `vps-migrate` and any related storage tag such as
+`storage-migrate`.
+
+When adding or renaming integration tests, check that the derived tags in
+`tests/ci-tags.nix` still describe the new test name. The broad `ci` tag stays
+in the test file; additional tags are injected centrally by
+`tests/make-test.nix`. Add explicit rules to `tests/ci-tags.nix` when a new
+test does not fit the existing name-based conventions.
+
+When adding or renaming webui Playwright scripts in `tests/suite/webui.nix`,
+also update:
+
+- `tests/ci-tags.nix`, so the script can be selected with a `webui-*` tag;
+- `tests/ci-selection.yml`, so matching PHP/JS/spec changes route to that
+  script;
+- this README if the new script introduces a new selection area.
+
+Useful validation commands:
+
+```sh
+ruby tests/ci-selection-test.rb
+printf '%s\n' webui/pages/page_login.php | ruby tools/select_ci_tests.rb
+./test-runner.sh ls --filter 'tag=ci'
+./test-runner.sh ls --filter 'tag=ci && (tag=webui-auth || tag=webui-transactions)'
+./test-runner.sh ls --filter 'tag=ci && (tag=vps-migrate || tag=storage-backup)'
+```
+
 ## Test layout
 
 - `tests/all-tests.nix` mirrors the vpsAdminOS layout so the runner can
