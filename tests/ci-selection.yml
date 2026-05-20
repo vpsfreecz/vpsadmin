@@ -1,0 +1,410 @@
+skip:
+  - "*.md"
+  - "**/*.md"
+  - "*.mdwn"
+  - "**/*.mdwn"
+  - "doc/**"
+  - "api/spec/**"
+  - "client/spec/**"
+  - "console_router/spec/**"
+  - "libnodectld/spec/**"
+
+full:
+  - ".github/workflows/ci.yml"
+  - "flake.nix"
+  - "flake.lock"
+  - "packages/**"
+  - "nixos/**"
+  - "api/Gemfile*"
+  - "api/config/**"
+  - "api/db/migrate/**"
+  - "api/db/seeds/**"
+  - "api/lib/vpsadmin.rb"
+  - "api/lib/vpsadmin/api.rb"
+  - "api/lib/vpsadmin/api/plugin/**"
+  - "api/models/transaction.rb"
+  - "api/models/transaction_chain.rb"
+  - "api/models/transaction_chain_concern.rb"
+  - "api/models/transaction_confirmation.rb"
+  - "plugins/**"
+  - "tests/all-tests.nix"
+  - "tests/make-test.nix"
+  - "tests/ci-selection.yml"
+  - "tests/ci-tags.nix"
+  - "tests/machines/**"
+  - "tests/configs/**"
+  - "tests/runner/**"
+  - "tests/suite/*/common.nix"
+  - "tests/suite/storage/remote-common.nix"
+  - "tools/select_ci_tests.rb"
+
+select:
+  - paths:
+      - "tests/suite/webui.nix"
+      - "tests/playwright/webui/lib/**"
+      - "tests/playwright/webui/playwright.config.cjs"
+      - "webui/js/**"
+      - "webui/lang/**"
+      - "webui/template/**"
+      - "webui/lib/functions.lib.php"
+      - "webui/lib/helpbox.lib.php"
+      - "webui/lib/lang.lib.php"
+      - "webui/lib/pagination.lib.php"
+      - "webui/lib/version.lib.php"
+      - "webui/lib/xtemplate.lib.php"
+    tags: ["webui"]
+
+  - paths:
+      - "tests/playwright/webui/specs/auth.spec.cjs"
+      - "webui/pages/page_login.php"
+      - "webui/lib/login.lib.php"
+      - "webui/lib/security.lib.php"
+    tags: ["webui-auth", "auth"]
+
+  - paths:
+      - "tests/playwright/webui/specs/userns.spec.cjs"
+      - "webui/pages/page_userns.php"
+      - "webui/forms/userns.forms.php"
+    tags: ["webui-userns", "userns", "user"]
+
+  - paths:
+      - "tests/playwright/webui/specs/vps-lifecycle.spec.cjs"
+    tags: ["webui-vps-lifecycle", "vps"]
+
+  - paths:
+      - "tests/playwright/webui/specs/vps-user-core.spec.cjs"
+    tags: ["webui-vps-user-core", "vps", "user"]
+
+  - paths:
+      - "tests/playwright/webui/specs/vps-user-ops.spec.cjs"
+    tags: ["webui-vps-user-ops", "vps", "user"]
+
+  - paths:
+      - "tests/playwright/webui/specs/vps-admin-core.spec.cjs"
+    tags: ["webui-vps-admin-core", "vps", "admin"]
+
+  - paths:
+      - "tests/playwright/webui/specs/vps-admin-ops.spec.cjs"
+    tags: ["webui-vps-admin-ops", "vps", "admin"]
+
+  - paths:
+      - "webui/pages/page_adminvps.php"
+      - "webui/pages/page_console.php"
+      - "webui/pages/page_userdata.php"
+      - "webui/forms/vps.forms.php"
+      - "webui/forms/userdata.forms.php"
+      - "webui/lib/vps.lib.php"
+    tags:
+      - "webui-vps-lifecycle"
+      - "webui-vps-user-core"
+      - "webui-vps-user-ops"
+      - "webui-vps-admin-core"
+      - "webui-vps-admin-ops"
+      - "vps"
+
+  - paths:
+      - "tests/playwright/webui/specs/users-self-service.spec.cjs"
+      - "webui/pages/page_adminm.php"
+      - "webui/forms/users.forms.php"
+    tags: ["webui-users-self-service", "user"]
+
+  - paths:
+      - "tests/playwright/webui/specs/users-admin.spec.cjs"
+    tags: ["webui-users-admin", "user", "admin"]
+
+  - paths:
+      - "tests/playwright/webui/specs/storage-backup-export.spec.cjs"
+      - "webui/pages/page_backup.php"
+      - "webui/pages/page_dataset.php"
+      - "webui/pages/page_export.php"
+      - "webui/pages/page_nas.php"
+      - "webui/forms/backup.forms.php"
+      - "webui/forms/dataset.forms.php"
+      - "webui/forms/export.forms.php"
+    tags: ["webui-storage-backup-export", "storage", "storage-backup"]
+
+  - paths:
+      - "tests/playwright/webui/specs/networking.spec.cjs"
+      - "tests/playwright/webui/specs/dns.spec.cjs"
+      - "webui/pages/page_networking.php"
+      - "webui/pages/page_dns.php"
+      - "webui/forms/networking.forms.php"
+      - "webui/forms/dns.forms.php"
+    tags: ["webui-networking-dns", "network", "dns"]
+
+  - paths:
+      - "tests/playwright/webui/specs/support-pages.spec.cjs"
+      - "webui/pages/page_incidents.php"
+      - "webui/pages/page_lifetimes.php"
+      - "webui/pages/page_monitoring.php"
+      - "webui/pages/page_oom_reports.php"
+      - "webui/pages/page_outage.php"
+      - "webui/forms/incidents.forms.php"
+      - "webui/forms/lifetimes.forms.php"
+      - "webui/forms/monitoring.forms.php"
+      - "webui/forms/oom_reports.forms.php"
+      - "webui/forms/outage.forms.php"
+      - "webui/lib/mail.lib.php"
+      - "webui/lib/munin.lib.php"
+    tags: ["webui-support-pages", "alerts", "support", "monitoring"]
+
+  - paths:
+      - "tests/playwright/webui/specs/admin-cluster.spec.cjs"
+      - "webui/pages/page_cluster.php"
+      - "webui/pages/page_node.php"
+      - "webui/forms/cluster.forms.php"
+      - "webui/forms/node.forms.php"
+      - "webui/lib/cluster.lib.php"
+    tags: ["webui-admin-cluster", "admin", "cluster"]
+
+  - paths:
+      - "tests/playwright/webui/specs/navigation-readonly.spec.cjs"
+      - "webui/pages/page_history.php"
+      - "webui/pages/page_index.php"
+      - "webui/pages/page_log.php"
+      - "webui/forms/object_history.forms.php"
+    tags: ["webui-navigation-readonly", "navigation"]
+
+  - paths:
+      - "tests/playwright/webui/specs/jumpto.spec.cjs"
+      - "webui/pages/page_jumpto.php"
+    tags: ["webui-jumpto", "admin"]
+
+  - paths:
+      - "tests/playwright/webui/specs/transactions.spec.cjs"
+      - "webui/pages/page_transactions.php"
+      - "webui/lib/transact.lib.php"
+    tags: ["webui-transactions", "tx"]
+
+  - paths:
+      - "tests/playwright/webui/specs/misc-pages.spec.cjs"
+      - "webui/pages/page_about.php"
+      - "webui/pages/page_redirect.php"
+      - "webui/pages/page_reminder.php"
+    tags: ["webui-misc-pages"]
+
+  - paths:
+      - "tests/suite/vps/*.nix"
+      - "api/lib/vpsadmin/api/operations/vps/**"
+      - "api/lib/vpsadmin/api/resources/vps*.rb"
+      - "api/models/vps*.rb"
+      - "api/models/transaction_chains/vps/**"
+      - "api/models/transactions/vps/**"
+    tags:
+      - "vps"
+      - "webui-vps-lifecycle"
+      - "webui-vps-user-core"
+      - "webui-vps-admin-core"
+
+  - paths:
+      - "tests/suite/vps/migrate*.nix"
+      - "api/lib/vpsadmin/api/operations/vps/migrate.rb"
+      - "api/models/vps_migration.rb"
+      - "api/models/transaction_chains/vps/migrate.rb"
+      - "api/models/transaction_chains/vps/migrate/**"
+    tags: ["vps-migrate", "storage", "storage-migrate"]
+
+  - paths:
+      - "tests/suite/vps/clone*.nix"
+      - "api/models/transaction_chains/vps/clone.rb"
+      - "api/models/transaction_chains/vps/clone/**"
+    tags: ["vps-clone", "storage"]
+
+  - paths:
+      - "tests/suite/vps/replace*.nix"
+      - "api/models/transaction_chains/vps/replace.rb"
+      - "api/models/transaction_chains/vps/replace/**"
+    tags: ["vps-replace", "storage"]
+
+  - paths:
+      - "tests/suite/storage/*.nix"
+      - "api/lib/vpsadmin/api/operations/dataset/**"
+      - "api/lib/vpsadmin/api/resources/dataset*.rb"
+      - "api/lib/vpsadmin/api/resources/pool.rb"
+      - "api/lib/vpsadmin/api/resources/snapshot_download.rb"
+      - "api/models/dataset*.rb"
+      - "api/models/group_snapshot.rb"
+      - "api/models/pool.rb"
+      - "api/models/snapshot*.rb"
+      - "api/models/transaction_chains/dataset/**"
+      - "api/models/transaction_chains/dataset_in_pool/**"
+      - "api/models/transaction_chains/dataset_tree/**"
+      - "api/models/transaction_chains/pool/**"
+      - "api/models/transaction_chains/snapshot/**"
+      - "api/models/transaction_chains/snapshot_in_pool/**"
+      - "api/models/transactions/pool/**"
+      - "api/models/transactions/storage/**"
+    tags: ["storage", "webui-storage-backup-export"]
+
+  - paths:
+      - "tests/suite/storage/backup*.nix"
+      - "api/models/transaction_chains/dataset/backup.rb"
+    tags: ["storage-backup"]
+
+  - paths:
+      - "tests/suite/storage/rollback*.nix"
+      - "api/models/transaction_chains/dataset/rollback.rb"
+      - "api/models/transactions/storage/*rollback*.rb"
+    tags: ["storage-rollback"]
+
+  - paths:
+      - "tests/suite/storage/snapshot-download*.nix"
+      - "tests/suite/client/snapshot-download.nix"
+      - "api/models/transaction_chains/dataset/*download*.rb"
+      - "api/models/transactions/storage/download_snapshot.rb"
+      - "api/models/transactions/storage/remove_download.rb"
+    tags: ["storage-snapshot-download", "client"]
+
+  - paths:
+      - "tests/suite/storage/dataset-migrate*.nix"
+      - "api/models/transaction_chains/dataset/migrate.rb"
+      - "api/lib/vpsadmin/api/tasks/vps_migration.rb"
+    tags: ["storage-migrate"]
+
+  - paths:
+      - "tests/suite/network/*.nix"
+      - "api/lib/vpsadmin/api/operations/export/**"
+      - "api/lib/vpsadmin/api/operations/host_ip_address/**"
+      - "api/lib/vpsadmin/api/operations/location_network/**"
+      - "api/lib/vpsadmin/api/resources/export.rb"
+      - "api/lib/vpsadmin/api/resources/host_ip_address.rb"
+      - "api/lib/vpsadmin/api/resources/ip_address*.rb"
+      - "api/lib/vpsadmin/api/resources/location_network.rb"
+      - "api/lib/vpsadmin/api/resources/network*.rb"
+      - "api/models/export*.rb"
+      - "api/models/host_ip_address.rb"
+      - "api/models/ip_address*.rb"
+      - "api/models/location_network.rb"
+      - "api/models/network*.rb"
+      - "api/models/transaction_chains/export/**"
+      - "api/models/transaction_chains/host_ip_address/**"
+      - "api/models/transaction_chains/ip/**"
+      - "api/models/transaction_chains/network/**"
+      - "api/models/transaction_chains/network_interface/**"
+      - "api/models/transactions/export/**"
+      - "api/models/transactions/network/**"
+      - "api/models/transactions/network_interface/**"
+    tags: ["network", "webui-networking-dns"]
+
+  - paths:
+      - "tests/suite/network/network-interface*.nix"
+    tags: ["network-interface"]
+
+  - paths:
+      - "tests/suite/network/export*.nix"
+    tags: ["network-export"]
+
+  - paths:
+      - "tests/suite/dns/*.nix"
+      - "api/lib/vpsadmin/api/dns_resolver.rb"
+      - "api/lib/vpsadmin/api/operations/dns_*/**"
+      - "api/lib/vpsadmin/api/resources/dns*.rb"
+      - "api/models/dns*.rb"
+      - "api/models/transaction_chains/dns_*/**"
+      - "api/models/transactions/dns_*/**"
+    tags: ["dns", "network", "webui-networking-dns"]
+
+  - paths:
+      - "tests/suite/user/*.nix"
+      - "api/lib/vpsadmin/api/operations/user/**"
+      - "api/lib/vpsadmin/api/resources/user*.rb"
+      - "api/models/user*.rb"
+      - "api/models/transaction_chains/user/**"
+    tags: ["user", "webui-users-self-service", "webui-users-admin"]
+
+  - paths:
+      - "api/lib/vpsadmin/api/authentication/**"
+      - "api/lib/vpsadmin/api/operations/authentication/**"
+      - "api/lib/vpsadmin/api/operations/totp_device/**"
+      - "api/lib/vpsadmin/api/operations/user_session/**"
+      - "api/lib/vpsadmin/api/resources/oauth2_client.rb"
+      - "api/lib/vpsadmin/api/resources/user_session.rb"
+      - "api/lib/vpsadmin/api/resources/webauthn.rb"
+      - "api/models/auth_token.rb"
+      - "api/models/oauth2_*.rb"
+      - "api/models/token.rb"
+      - "api/models/user_session.rb"
+      - "api/models/user_totp_device.rb"
+      - "api/models/webauthn_*.rb"
+    tags: ["auth", "user", "webui-auth"]
+
+  - paths:
+      - "api/lib/vpsadmin/api/resources/user_namespace*.rb"
+      - "api/models/user_namespace*.rb"
+      - "api/models/transaction_chains/user_namespace/**"
+      - "api/models/transaction_chains/user_namespace_map/**"
+      - "api/models/transactions/user_namespace/**"
+    tags: ["userns", "user", "webui-userns"]
+
+  - paths:
+      - "tests/suite/tx/*.nix"
+    tags: ["tx", "webui-transactions"]
+
+  - paths:
+      - "tests/suite/admin/*.nix"
+      - "api/lib/vpsadmin/scheduler/**"
+    tags: ["admin"]
+
+  - paths:
+      - "tests/suite/alerts/*.nix"
+      - "api/lib/vpsadmin/api/incident_reports.rb"
+      - "api/lib/vpsadmin/api/tasks/incident_report.rb"
+      - "api/lib/vpsadmin/api/tasks/lifetimes.rb"
+      - "api/lib/vpsadmin/api/tasks/oom_report.rb"
+      - "api/lib/vpsadmin/api/resources/incident_report.rb"
+      - "api/lib/vpsadmin/api/resources/oom_report*.rb"
+      - "api/models/incident_report.rb"
+      - "api/models/oom_*.rb"
+      - "api/models/transaction_chains/incident_report/**"
+      - "api/models/transaction_chains/lifetimes/**"
+    tags: ["alerts", "webui-support-pages"]
+
+  - paths:
+      - "tests/suite/supervisor/*.nix"
+      - "api/lib/vpsadmin/supervisor/**"
+    tags: ["supervisor"]
+
+  - paths:
+      - "tests/suite/tasks/*.nix"
+      - "api/lib/vpsadmin/api/tasks/**"
+    tags: ["tasks"]
+
+  - paths:
+      - "tests/suite/cluster/*.nix"
+      - "api/models/transaction_chains/cluster/**"
+    tags: ["cluster", "node"]
+
+  - paths:
+      - "tests/suite/node/*.nix"
+      - "api/lib/vpsadmin/api/operations/node/**"
+      - "api/lib/vpsadmin/api/resources/node*.rb"
+      - "api/models/node*.rb"
+      - "api/models/transaction_chains/node/**"
+    tags: ["node"]
+
+  - paths:
+      - "tests/suite/pool/*.nix"
+    tags: ["pool", "storage"]
+
+  - paths:
+      - "tests/suite/client/*.nix"
+      - "client/**"
+    tags: ["client"]
+
+  - paths:
+      - "tests/suite/console-router.nix"
+      - "console_router/**"
+    tags: ["console-router"]
+
+  - paths:
+      - "tests/suite/download-mounter.nix"
+    tags: ["download-mounter"]
+
+  - paths:
+      - "nodectl/**"
+    tags: ["nodectl", "admin", "node", "tx"]
+
+  - paths:
+      - "nodectld/**"
+      - "libnodectld/**"
+    tags: ["node", "supervisor", "vps", "storage", "network", "dns"]

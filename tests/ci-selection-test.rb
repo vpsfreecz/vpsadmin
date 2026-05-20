@@ -1,0 +1,76 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require 'minitest/autorun'
+require_relative '../tools/select_ci_tests'
+
+class CiTestSelectionTest < Minitest::Test
+  def selector
+    @selector ||= CiTestSelector.new
+  end
+
+  def test_no_changed_files_skips
+    selection = selector.select([])
+
+    assert_equal 'skip', selection.mode
+    assert_empty selection.filter
+  end
+
+  def test_skip_only_changes_skip_integration_ci
+    selection = selector.select(['tests/README.md'])
+
+    assert_equal 'skip', selection.mode
+  end
+
+  def test_mixed_skip_and_runtime_changes_select_runtime_tags
+    selection = selector.select(['tests/README.md', 'webui/pages/page_login.php'])
+
+    assert_equal 'selected', selection.mode
+    assert_includes selection.tags, 'webui-auth'
+    assert_match(/tag=ci && /, selection.filter)
+  end
+
+  def test_full_rule_wins
+    selection = selector.select(['flake.lock'])
+
+    assert_equal 'full', selection.mode
+    assert_equal 'tag=ci', selection.filter
+  end
+
+  def test_unknown_runtime_path_falls_back_to_full
+    selection = selector.select(['api/lib/vpsadmin/api/new_shared_runtime.rb'])
+
+    assert_equal 'full', selection.mode
+    assert_match(/unmapped runtime paths/, selection.reason)
+  end
+
+  def test_webui_spec_selects_matching_script
+    selection = selector.select(['tests/playwright/webui/specs/transactions.spec.cjs'])
+
+    assert_equal 'selected', selection.mode
+    assert_includes selection.tags, 'webui-transactions'
+    refute_includes selection.tags, 'webui-auth'
+  end
+
+  def test_shared_webui_file_selects_all_webui_scripts
+    selection = selector.select(['tests/playwright/webui/lib/pages/vps.cjs'])
+
+    assert_equal 'selected', selection.mode
+    assert_includes selection.tags, 'webui'
+  end
+
+  def test_multi_area_selection_builds_single_or_expression
+    selection = selector.select(
+      [
+        'api/models/transaction_chains/vps/migrate.rb',
+        'api/models/transaction_chains/dataset/backup.rb'
+      ]
+    )
+
+    assert_equal 'selected', selection.mode
+    assert_includes selection.tags, 'vps-migrate'
+    assert_includes selection.tags, 'storage-backup'
+    assert_match(/tag=vps-migrate/, selection.filter)
+    assert_match(/ \|\| /, selection.filter)
+  end
+end
