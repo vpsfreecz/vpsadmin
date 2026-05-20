@@ -324,10 +324,10 @@
     platforms = [ ];
     source = {
       remotes = [ "https://rubygems.org" ];
-      sha256 = "0v4hfmc7d4lrqqj2wl366rm9551gd08zkv2ppwwnjlnkc217aizi";
+      sha256 = "1hgflj9qj8imf8yhbbn0aiyjija9j37yxvk9lx2z64lkxkn3pccx";
       type = "gem";
     };
-    version = "3.4.2";
+    version = "3.4.3";
   };
   fio_api = {
     dependencies = [ "httparty" ];
