@@ -10,15 +10,46 @@ vpsadminos checkout is required.
 - Use `./test-runner.sh ls` (list tests), `./test-runner.sh test services-up`
   for the service smoke test, or `./test-runner.sh test 'webui#*'` for all
   Playwright browser tests.
-- Individual webui browser components can be run by script, for example
-  `./test-runner.sh test 'webui#auth'` or
-  `./test-runner.sh test 'webui#vps-lifecycle'`.
+- Individual webui browser components can be run by script. List current
+  scripts with `./test-runner.sh ls 'webui#*'`, then run one with
+  `./test-runner.sh test 'webui#<script-name>'`.
 - The runner supports the usual flags from vpsAdminOS; run
   `./test-runner.sh --help` for details.
 - CI uses test-runner metadata expressions to run affected integration areas,
   e.g. `./test-runner.sh test --filter 'tag=ci && (tag=vps || tag=storage)'`.
   Path selection rules live in `tests/ci-selection.yml`; derived test and
   webui script tags are added by `tests/ci-tags.nix` through `tests/make-test.nix`.
+
+## Webui Playwright coverage
+
+Changes under `webui/` that affect user-visible behaviour should be covered by
+the relevant Playwright browser test when practical. This includes page/form
+changes, navigation, auth/session flows, role-specific behaviour, JavaScript,
+and template changes that can break rendered workflows. Cosmetic-only or
+dead-code changes may not need new coverage, but they should still run the
+closest existing script when the affected page is already covered.
+
+Run the full webui browser suite with:
+
+```sh
+./test-runner.sh test 'webui#*'
+```
+
+List the current webui scripts with:
+
+```sh
+./test-runner.sh ls 'webui#*'
+```
+
+Run targeted scripts while developing by passing a listed script name:
+
+```sh
+./test-runner.sh test 'webui#<script-name>'
+```
+
+When adding a new Playwright script, wire it into `tests/suite/webui.nix`,
+`tests/ci-tags.nix`, and `tests/ci-selection.yml` so local runs and selective
+CI can address it by script/tag.
 
 ## CI test selection
 
