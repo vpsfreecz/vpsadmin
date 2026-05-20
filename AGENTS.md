@@ -27,6 +27,16 @@
 - Services VM config `tests/configs/nixos/vpsadmin-services.nix` seeds MariaDB/RabbitMQ/Redis credentials from `tests/configs/nixos/vpsadmin-credentials.nix`, enables API/webui/supervisor/console_router; adjust socket addresses via `vpsadmin.test.*`.
 - Scenarios include cluster smoke tests, node registration, VPS create/start, and VPS migrate between nodes; expect long-running Nix builds/VM boots rather than quick unit specs.
 - test-runner extension `tests/runner/extensions/vpsadmin_services.rb` adds a `vpsadminctl` helper and `wait_for_vpsadmin_api` for machines tagged `vpsadmin-services`.
+- CI (GitHub Actions) runs push integration tests selectively using
+  `.github/workflows/ci.yml`, `tools/select_ci_tests.rb`,
+  `tests/ci-selection.yml`, and derived metadata tags from `tests/ci-tags.nix`.
+  When adding, renaming, or moving runtime files, integration tests, or webui
+  Playwright scripts, update the selection rules/tags in the same change so
+  affected pushes continue to run the right `tag=ci && (...)` filter. Unknown
+  runtime paths intentionally fall back to the full `tag=ci` suite; prefer
+  broader tags over under-selecting tests. Validate selector changes with
+  `ruby tests/ci-selection-test.rb` and representative
+  `./test-runner.sh ls --filter 'tag=ci && (...)'` commands.
 - CI (GitHub Actions) runs `api/spec/**` in parallel **topic jobs** defined in `.github/workflows/api-specs.yml`.
   When adding/renaming/moving API spec files, you **must** update the workflow's topic patterns so every spec is covered
   exactly once. The CI job "API specs - topic coverage" will fail if any spec is missing or matches multiple topics.
