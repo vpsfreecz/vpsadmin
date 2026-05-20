@@ -27,6 +27,11 @@
 - Services VM config `tests/configs/nixos/vpsadmin-services.nix` seeds MariaDB/RabbitMQ/Redis credentials from `tests/configs/nixos/vpsadmin-credentials.nix`, enables API/webui/supervisor/console_router; adjust socket addresses via `vpsadmin.test.*`.
 - Scenarios include cluster smoke tests, node registration, VPS create/start, and VPS migrate between nodes; expect long-running Nix builds/VM boots rather than quick unit specs.
 - test-runner extension `tests/runner/extensions/vpsadmin_services.rb` adds a `vpsadminctl` helper and `wait_for_vpsadmin_api` for machines tagged `vpsadmin-services`.
+- Changes under `webui/` that affect user-visible behaviour should be covered
+  by relevant Playwright browser tests when practical. Run all webui scripts
+  with `./test-runner.sh test 'webui#*'`. List current scripts with
+  `./test-runner.sh ls 'webui#*'`, then target one with
+  `./test-runner.sh test 'webui#<script-name>'`.
 - CI (GitHub Actions) runs push integration tests selectively using
   `.github/workflows/ci.yml`, `tools/select_ci_tests.rb`,
   `tests/ci-selection.yml`, and derived metadata tags from `tests/ci-tags.nix`.
