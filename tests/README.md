@@ -15,6 +15,10 @@ vpsadminos checkout is required.
   `./test-runner.sh test 'webui#vps-lifecycle'`.
 - The runner supports the usual flags from vpsAdminOS; run
   `./test-runner.sh --help` for details.
+- CI uses test-runner metadata expressions to run affected integration areas,
+  e.g. `./test-runner.sh test --filter 'tag=ci && (tag=vps || tag=storage)'`.
+  Path selection rules live in `tests/ci-selection.yml`; derived test and
+  webui script tags are added by `tests/ci-tags.nix` through `tests/make-test.nix`.
 
 ## Test layout
 

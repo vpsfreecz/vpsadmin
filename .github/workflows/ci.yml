@@ -18,47 +18,175 @@ on:
       - tests/**
       - tools/**
       - webui/**
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: Test selection mode
+        required: true
+        default: full
+        type: choice
+        options:
+          - full
+          - auto
+  schedule:
+    - cron: "30 2 * * 0"
 
 permissions:
   contents: read
 
 jobs:
   test:
-    name: Run ci-tagged tests
+    name: Run selected ci-tagged tests
     runs-on: self-hosted
+    if: github.event_name != 'push' || github.event.deleted != true
     timeout-minutes: 360
 
     steps:
       - name: Checkout vpsadmin
         uses: actions/checkout@v6
         with:
-          fetch-depth: 1
+          fetch-depth: 0
+
+      - name: Select integration tests
+        id: select-tests
+        env:
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+          DISPATCH_MODE: ${{ github.event.inputs.mode || '' }}
+          EVENT_BEFORE: ${{ github.event.before || '' }}
+          EVENT_NAME: ${{ github.event_name }}
+          HEAD_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+
+          write_selection() {
+            {
+              echo "mode=$1"
+              echo "filter=$2"
+              echo "reason=$3"
+              echo "tags="
+            } >> "$GITHUB_OUTPUT"
+          }
+
+          if [[ "$EVENT_NAME" == "schedule" || "$DISPATCH_MODE" == "full" ]]; then
+            write_selection "full" "tag=ci" "scheduled or manual full run"
+            exit 0
+          fi
+
+          zero_rev="0000000000000000000000000000000000000000"
+          base=""
+
+          if [[ -n "$EVENT_BEFORE" && "$EVENT_BEFORE" != "$zero_rev" ]]; then
+            base="$EVENT_BEFORE"
+
+            if ! git cat-file -e "${base}^{commit}" 2>/dev/null; then
+              base=""
+            fi
+          fi
+
+          if [[ -z "$base" ]]; then
+            git fetch --no-tags origin \
+              "+refs/heads/${DEFAULT_BRANCH}:refs/remotes/origin/${DEFAULT_BRANCH}"
+            base="$(git merge-base "$HEAD_SHA" "origin/${DEFAULT_BRANCH}" || true)"
+          fi
+
+          if [[ -z "$base" ]]; then
+            write_selection "full" "tag=ci" "unable to determine diff base"
+            exit 0
+          fi
+
+          git diff --name-only "$base" "$HEAD_SHA" | sort -u > changed-files.txt
+
+          nix shell --inputs-from . nixpkgs#ruby_3_4 -c ruby tools/select_ci_tests.rb \
+            --changed-files changed-files.txt \
+            --github-output "$GITHUB_OUTPUT"
+
+      - name: Summarise skipped integration tests
+        if: steps.select-tests.outputs.mode == 'skip'
+        run: |
+          {
+            echo "### CI integration test selection"
+            echo ""
+            echo "- Mode: skip"
+            echo "- Reason: ${{ steps.select-tests.outputs.reason }}"
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Determine job count
+        if: steps.select-tests.outputs.mode != 'skip'
         id: determine-test-jobs
         uses: vpsfreecz/vpsadminos/.github/actions/determine-test-jobs@staging
         with:
           per_job_gib: "20"
 
+      - name: Preview selected tests
+        if: steps.select-tests.outputs.mode != 'skip'
+        id: preview-tests
+        run: |
+          set -euo pipefail
+
+          filter="${{ steps.select-tests.outputs.filter }}"
+          mode="${{ steps.select-tests.outputs.mode }}"
+          reason="${{ steps.select-tests.outputs.reason }}"
+
+          ./test-runner.sh ls --filter "$filter" | tee selected-tests.txt
+          count="$(grep -cve '^[[:space:]]*$' selected-tests.txt || true)"
+
+          if [[ "$count" -eq 0 && "$mode" == "selected" ]]; then
+            filter="tag=ci"
+            mode="full"
+            reason="selector matched zero tests; falling back to full CI"
+
+            ./test-runner.sh ls --filter "$filter" | tee selected-tests.txt
+            count="$(grep -cve '^[[:space:]]*$' selected-tests.txt || true)"
+          fi
+
+          {
+            echo "mode=$mode"
+            echo "filter=$filter"
+            echo "reason=$reason"
+            echo "count=$count"
+          } >> "$GITHUB_OUTPUT"
+
+          {
+            echo "### CI integration test selection"
+            echo ""
+            echo "- Mode: $mode"
+            echo "- Filter: \`$filter\`"
+            echo "- Selected scripts: $count"
+            echo "- Reason: $reason"
+            echo ""
+            echo "<details><summary>Selected test scripts</summary>"
+            echo ""
+            echo '```'
+            cat selected-tests.txt
+            echo '```'
+            echo ""
+            echo "</details>"
+          } >> "$GITHUB_STEP_SUMMARY"
+
       - name: Run tests
+        if: steps.select-tests.outputs.mode != 'skip'
         id: run-tests
         timeout-minutes: 320
         run: |
           set -o pipefail
-          ./test-runner.sh test -f -j "${{ steps.determine-test-jobs.outputs.jobs }}" -t ci | tee test.log
+          ./test-runner.sh test \
+            -f \
+            -j "${{ steps.determine-test-jobs.outputs.jobs }}" \
+            --filter "${{ steps.preview-tests.outputs.filter }}" \
+            | tee test.log
 
       - name: Evaluate test results
-        if: always()
+        if: always() && steps.run-tests.outcome != 'skipped'
         uses: vpsfreecz/vpsadminos/.github/actions/evaluate-test-results@staging
         with:
           log-file: test.log
 
       - name: Summarise test logs
-        if: always()
+        if: always() && steps.run-tests.outcome != 'skipped'
         uses: vpsfreecz/vpsadminos/.github/actions/summarise-test-logs@staging
 
       - name: Upload full test logs
-        if: failure()
+        if: failure() && steps.run-tests.outcome != 'skipped'
         uses: vpsfreecz/vpsadminos/.github/actions/upload-test-logs@staging
         with:
           name: vpsadmin-test-logs-${{ github.run_id }}
