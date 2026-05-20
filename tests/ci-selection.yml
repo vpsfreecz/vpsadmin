@@ -1,3 +1,15 @@
+# Path-to-test mapping for selective integration CI.
+#
+# `.github/workflows/ci.yml` passes changed paths to `tools/select_ci_tests.rb`;
+# this file tells the selector which metadata tags to run. `full` rules force
+# the whole `tag=ci` suite, `skip` rules skip integration CI when all changed
+# files match them, and `select` rules build one `tag=ci && (...)` expression.
+#
+# Update this file whenever adding, moving, or renaming runtime files, tests, or
+# webui Playwright scripts. Prefer a broader tag over missing coverage. See the
+# "CI test selection" section in `tests/README.md` for the maintenance workflow
+# and validation commands.
+
 skip:
   - "*.md"
   - "**/*.md"

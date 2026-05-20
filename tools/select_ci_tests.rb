@@ -1,6 +1,13 @@
 #!/usr/bin/env ruby
 # frozen_string_literal: true
 
+# Selects integration tests for push CI from a list of changed repository paths.
+#
+# The rules live in tests/ci-selection.yml and the resulting expression is
+# consumed by `./test-runner.sh --filter`. Update the rules/tags together with
+# runtime or webui test layout changes; see tests/README.md, section
+# "CI test selection".
+
 require 'optparse'
 require 'yaml'
 

@@ -1,3 +1,14 @@
+# Derived metadata tags for selective integration CI.
+#
+# `tests/make-test.nix` imports this file and adds these tags to test metadata
+# before the upstream vpsAdminOS test runner evaluates `--filter` expressions.
+# Keep the broad `ci` tag in individual test files; use this file for derived
+# domain tags such as `vps-migrate`, `storage-backup`, and `webui-auth`.
+#
+# Update this file when adding or renaming integration tests or webui test
+# scripts, especially when a new name does not match the conventions below. See
+# the "CI test selection" section in `tests/README.md` for validation commands.
+
 let
   unique =
     list: builtins.foldl' (acc: item: if builtins.elem item acc then acc else acc ++ [ item ]) [ ] list;
