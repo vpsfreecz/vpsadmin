@@ -1,6 +1,9 @@
 #!/usr/bin/env ruby
 # frozen_string_literal: true
 
+# Unit tests for tools/select_ci_tests.rb and tests/ci-selection.yml. Add cases
+# here when selection rules gain new precedence or fallback behavior.
+
 require 'minitest/autorun'
 require_relative '../tools/select_ci_tests'
 
