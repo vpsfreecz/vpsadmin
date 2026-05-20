@@ -42,30 +42,30 @@ let
     "guzzlehttp/guzzle" = {
       targetDir = "";
       src = composerEnv.buildZipPackage {
-        name = "guzzlehttp-guzzle-b51ac707cfa420b7bfd4e4d5e510ba8008e822b4";
+        name = "guzzlehttp-guzzle-b777df1776c667e287664dda75b0298ad8ae3a14";
         src = fetchurl {
-          url = "https://api.github.com/repos/guzzle/guzzle/zipball/b51ac707cfa420b7bfd4e4d5e510ba8008e822b4";
-          sha256 = "1n40vzxq78sci9161j2w7a71xvnwjj1lzy3qs3k8j7zmbp6626dv";
+          url = "https://api.github.com/repos/guzzle/guzzle/zipball/b777df1776c667e287664dda75b0298ad8ae3a14";
+          sha256 = "0vy036k46v24fzkjhkrgkzg5wr5w7vdwqa7hq6hy3s3ibryr634n";
         };
       };
     };
     "guzzlehttp/promises" = {
       targetDir = "";
       src = composerEnv.buildZipPackage {
-        name = "guzzlehttp-promises-481557b130ef3790cf82b713667b43030dc9c957";
+        name = "guzzlehttp-promises-d2d8dfae4757f384d630fdffc2d8d6618d8f4c5e";
         src = fetchurl {
-          url = "https://api.github.com/repos/guzzle/promises/zipball/481557b130ef3790cf82b713667b43030dc9c957";
-          sha256 = "168fa8nqr7823hc0d65r5lwlc9mq4bm2b4zkwn544nrkp7wvy0sf";
+          url = "https://api.github.com/repos/guzzle/promises/zipball/d2d8dfae4757f384d630fdffc2d8d6618d8f4c5e";
+          sha256 = "0bz8v4n3fya9xzn06xzdkqyjh14ffg5gy51lf7xl10wpw3ln5ahv";
         };
       };
     };
     "guzzlehttp/psr7" = {
       targetDir = "";
       src = composerEnv.buildZipPackage {
-        name = "guzzlehttp-psr7-7d0ed42f28e42d61352a7a79de682e5e67fec884";
+        name = "guzzlehttp-psr7-73ab136360b5dfd858006eae9795e8fe43c80361";
         src = fetchurl {
-          url = "https://api.github.com/repos/guzzle/psr7/zipball/7d0ed42f28e42d61352a7a79de682e5e67fec884";
-          sha256 = "1nnwr0v2qrg22l61lvh6wk5xccqqyf6kx1r2im0s52vj2brzpc97";
+          url = "https://api.github.com/repos/guzzle/psr7/zipball/73ab136360b5dfd858006eae9795e8fe43c80361";
+          sha256 = "0liyhq34kr9wgvjkvmls5q5qda2r5riyz2as57175g2v7alimykl";
         };
       };
     };
