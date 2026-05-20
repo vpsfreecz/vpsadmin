@@ -11,10 +11,11 @@ module NodeCtld
       content = File.read(pubkey).strip
 
       db = Db.new
+      pool_ids = migration_key_pool_ids
       db.prepared(
-        'UPDATE pools SET migration_public_key = ? WHERE id = ?',
+        "UPDATE pools SET migration_public_key = ? WHERE id IN (#{pool_ids.map { '?' }.join(',')})",
         content,
-        @pool_id
+        *pool_ids
       )
       db.close
 
@@ -29,9 +30,10 @@ module NodeCtld
       end
 
       db = Db.new
+      pool_ids = migration_key_pool_ids
       db.prepared(
-        'UPDATE pools SET migration_public_key = NULL WHERE id = ?',
-        @pool_id
+        "UPDATE pools SET migration_public_key = NULL WHERE id IN (#{pool_ids.map { '?' }.join(',')})",
+        *pool_ids
       )
       db.close
 
@@ -39,6 +41,10 @@ module NodeCtld
     end
 
     protected
+
+    def migration_key_pool_ids
+      (@pool_ids || [@pool_id]).map(&:to_i)
+    end
 
     def get_key_paths
       [

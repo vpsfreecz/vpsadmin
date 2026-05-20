@@ -7,6 +7,7 @@ require 'nodectld/commands/pool/generate_send_key'
 RSpec.describe NodeCtld::Commands::Pool::GenerateSendKey do
   let(:driver) { build_storage_driver }
   let!(:pool) { insert_pool!(filesystem: 'tank/spec-send-key') }
+  let!(:sibling_pool) { insert_pool!(filesystem: 'tank/spec-send-key-sibling') }
 
   it 'stores the generated public key in the database and clears it on rollback' do
     Dir.mktmpdir('send-key') do |dir|
@@ -15,7 +16,12 @@ RSpec.describe NodeCtld::Commands::Pool::GenerateSendKey do
       File.write(pub, "ssh-ed25519 AAAATEST pool@test\n")
       File.write(priv, 'PRIVATE')
 
-      cmd = described_class.new(driver, 'pool_id' => pool.fetch('id'), 'pool_name' => 'tank')
+      cmd = described_class.new(
+        driver,
+        'pool_id' => pool.fetch('id'),
+        'pool_ids' => [pool.fetch('id'), sibling_pool.fetch('id')],
+        'pool_name' => 'tank'
+      )
       allow(NodeCtld::Db).to receive(:new).and_return(shared_db)
       allow(cmd).to receive(:osctl_pool) do |_pool_name, subcmd, *_args|
         case subcmd
@@ -34,9 +40,12 @@ RSpec.describe NodeCtld::Commands::Pool::GenerateSendKey do
       expect(cmd).to have_received(:osctl_pool).with('tank', %i[send key gen], [], { force: true })
       expect(sql_value('SELECT migration_public_key FROM pools WHERE id = ?', pool.fetch('id')))
         .to eq('ssh-ed25519 AAAATEST pool@test')
+      expect(sql_value('SELECT migration_public_key FROM pools WHERE id = ?', sibling_pool.fetch('id')))
+        .to eq('ssh-ed25519 AAAATEST pool@test')
 
       expect(cmd.rollback).to eq(ret: :ok)
       expect(sql_value('SELECT migration_public_key FROM pools WHERE id = ?', pool.fetch('id'))).to be_nil
+      expect(sql_value('SELECT migration_public_key FROM pools WHERE id = ?', sibling_pool.fetch('id'))).to be_nil
       expect(File.exist?(pub)).to be(false)
       expect(File.exist?(priv)).to be(false)
 
