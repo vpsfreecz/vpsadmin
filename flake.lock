@@ -105,11 +105,11 @@
         "nixpkgsUnstable": "nixpkgsUnstable"
       },
       "locked": {
-        "lastModified": 1779269055,
-        "narHash": "sha256-WKC31kKP1KlWM04MQwUkjxl+i7HKC9S7gIGVKjb7UU0=",
+        "lastModified": 1779298269,
+        "narHash": "sha256-elWKme8Tf+rvT7PU09Ahby0ppAEeIhokaXkiQhM97oM=",
         "owner": "vpsfreecz",
         "repo": "vpsadminos",
-        "rev": "58b01c0f340fa2664223301fc973753eb4bc8ee9",
+        "rev": "575daf8d3e9f4139a28b52838111215dfdbce447",
         "type": "github"
       },
       "original": {
