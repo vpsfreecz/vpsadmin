@@ -39,7 +39,7 @@ jobs:
     name: Run selected ci-tagged tests
     runs-on: self-hosted
     if: github.event_name != 'push' || github.event.deleted != true
-    timeout-minutes: 360
+    timeout-minutes: 540
 
     steps:
       - name: Checkout vpsadmin
@@ -166,7 +166,7 @@ jobs:
       - name: Run tests
         if: steps.select-tests.outputs.mode != 'skip'
         id: run-tests
-        timeout-minutes: 320
+        timeout-minutes: 480
         run: |
           set -o pipefail
           ./test-runner.sh test \
