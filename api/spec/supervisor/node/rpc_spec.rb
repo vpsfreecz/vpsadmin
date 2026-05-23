@@ -85,6 +85,72 @@ RSpec.describe 'VpsAdmin::Supervisor::Node::Rpc::Handler' do
     export.reload
   end
 
+  def create_network_interface_monitor!(netif, bytes_in_readout:, bytes_out_readout:)
+    now = Time.utc(2026, 5, 1, 12, 0, 0)
+
+    NetworkInterfaceMonitor.create!(
+      network_interface_id: netif.id,
+      bytes: bytes_in_readout + bytes_out_readout,
+      bytes_in: bytes_in_readout,
+      bytes_out: bytes_out_readout,
+      packets: 300,
+      packets_in: 100,
+      packets_out: 200,
+      delta: 60,
+      bytes_in_readout: bytes_in_readout,
+      bytes_out_readout: bytes_out_readout,
+      packets_in_readout: 100,
+      packets_out_readout: 200,
+      created_at: now,
+      updated_at: now
+    )
+  end
+
+  describe '#find_vps_network_interface' do
+    it 'returns local interfaces and ignores matching interfaces on other nodes' do
+      local_fixture = create_netif_vps_fixture!(
+        user: user,
+        node: node,
+        netif_name: "rpc-local-#{SecureRandom.hex(4)}"
+      )
+      foreign_fixture = create_netif_vps_fixture!(
+        user: SpecSeed.other_user,
+        node: SpecSeed.other_node,
+        netif_name: "rpc-foreign-#{SecureRandom.hex(4)}"
+      )
+      local_vps = local_fixture.fetch(:vps)
+      local_netif = local_fixture.fetch(:netif)
+      foreign_vps = foreign_fixture.fetch(:vps)
+      foreign_netif = foreign_fixture.fetch(:netif)
+
+      create_network_interface_monitor!(
+        local_netif,
+        bytes_in_readout: 10_000,
+        bytes_out_readout: 20_000
+      )
+      create_network_interface_monitor!(
+        foreign_netif,
+        bytes_in_readout: 30_000,
+        bytes_out_readout: 40_000
+      )
+
+      expect(foreign_vps.node_id).not_to eq(node.id)
+      expect(
+        handler.find_vps_network_interface(foreign_vps.id, foreign_netif.name)
+      ).to be_nil
+      expect(
+        handler.find_vps_network_interface(local_vps.id, local_netif.name)
+      ).to include(
+        id: local_netif.id,
+        name: local_netif.name,
+        vps_id: local_vps.id,
+        user_id: user.id,
+        bytes_in_readout: 10_000,
+        bytes_out_readout: 20_000
+      )
+    end
+  end
+
   describe '#list_vps_status_check' do
     it 'skips vpses with a missing dataset_in_pool' do
       _, valid_dip = create_dataset_with_pool!(

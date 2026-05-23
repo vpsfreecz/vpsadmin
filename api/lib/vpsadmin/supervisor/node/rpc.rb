@@ -253,7 +253,8 @@ module VpsAdmin::Supervisor
           .joins('LEFT JOIN network_interface_monitors ON network_interface_monitors.network_interface_id = network_interfaces.id')
           .where(
             vps_id:,
-            name: vps_name
+            name: vps_name,
+            vpses: { node_id: @node.id }
           ).take
 
         return if netif.nil?
