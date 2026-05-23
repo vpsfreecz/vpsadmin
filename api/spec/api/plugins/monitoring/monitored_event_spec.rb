@@ -71,6 +71,12 @@ RSpec.describe 'VpsAdmin::API::Resources::MonitoredEvent', requires_plugins: :mo
     json['message'] || json.dig('response', 'message') || json['error']
   end
 
+  def expect_lifecycle_denied
+    expect_status(200)
+    expect(json['status']).to be(false)
+    expect(msg).to include('Access forbidden')
+  end
+
   def expect_status(code)
     path = last_request&.path
     message = "Expected status #{code} for #{path}, got #{last_response.status} body=#{last_response.body}"
@@ -102,6 +108,21 @@ RSpec.describe 'VpsAdmin::API::Resources::MonitoredEvent', requires_plugins: :mo
 
     # Replace the monitor list to keep test runs deterministic.
     VpsAdmin::API::Plugins::Monitoring.instance_variable_set(:@monitors, [a, b])
+  end
+
+  def suspend_user!(target)
+    target.record_object_state_change(
+      :suspended,
+      reason: 'monitoring lifecycle spec',
+      user: admin
+    )
+    target.update!(
+      lockout: false,
+      password_reset: false,
+      enable_basic_auth: true,
+      enable_multi_factor_auth: false
+    )
+    target.reload
   end
 
   let(:admin) { SpecSeed.admin }
@@ -494,6 +515,20 @@ RSpec.describe 'VpsAdmin::API::Resources::MonitoredEvent', requires_plugins: :mo
       expect(event_user_confirmed.saved_until.to_i).to be_within(2).of(until_time.to_i)
     end
 
+    it 'denies suspended users acknowledging their own events' do
+      suspend_user!(user)
+
+      as(user) do
+        json_post ack_path(event_user_confirmed.id), monitored_event: { until: (now + 1.day).iso8601 }
+      end
+
+      expect_lifecycle_denied
+
+      event_user_confirmed.reload
+      expect(event_user_confirmed.state).to eq('confirmed')
+      expect(event_user_confirmed.saved_until).to be_nil
+    end
+
     it 'returns error for closed event' do
       as(user) { json_post ack_path(event_user_closed.id), monitored_event: { until: (now + 2.days).iso8601 } }
 
@@ -523,6 +558,20 @@ RSpec.describe 'VpsAdmin::API::Resources::MonitoredEvent', requires_plugins: :mo
       expect(event_other_confirmed.state).to eq('acknowledged')
       expect(event_other_confirmed.saved_until.to_i).to be_within(2).of(until_time.to_i)
     end
+
+    it 'allows admin to acknowledge suspended user events' do
+      suspend_user!(user)
+      until_time = now + 3.days
+
+      as(admin) { json_post ack_path(event_user_confirmed.id), monitored_event: { until: until_time.iso8601 } }
+
+      expect_status(200)
+      expect(json['status']).to be(true)
+
+      event_user_confirmed.reload
+      expect(event_user_confirmed.state).to eq('acknowledged')
+      expect(event_user_confirmed.saved_until.to_i).to be_within(2).of(until_time.to_i)
+    end
   end
 
   describe 'Ignore' do
@@ -543,6 +592,20 @@ RSpec.describe 'VpsAdmin::API::Resources::MonitoredEvent', requires_plugins: :mo
       event_user_confirmed.reload
       expect(event_user_confirmed.state).to eq('ignored')
       expect(event_user_confirmed.saved_until.to_i).to be_within(2).of(until_time.to_i)
+    end
+
+    it 'denies suspended users ignoring their own events' do
+      suspend_user!(user)
+
+      as(user) do
+        json_post ignore_path(event_user_confirmed.id), monitored_event: { until: (now + 1.day).iso8601 }
+      end
+
+      expect_lifecycle_denied
+
+      event_user_confirmed.reload
+      expect(event_user_confirmed.state).to eq('confirmed')
+      expect(event_user_confirmed.saved_until).to be_nil
     end
 
     it 'returns error for closed event' do
@@ -573,6 +636,20 @@ RSpec.describe 'VpsAdmin::API::Resources::MonitoredEvent', requires_plugins: :mo
       event_other_confirmed.reload
       expect(event_other_confirmed.state).to eq('ignored')
       expect(event_other_confirmed.saved_until.to_i).to be_within(2).of(until_time.to_i)
+    end
+
+    it 'allows admin to ignore suspended user events' do
+      suspend_user!(user)
+      until_time = now + 3.days
+
+      as(admin) { json_post ignore_path(event_user_confirmed.id), monitored_event: { until: until_time.iso8601 } }
+
+      expect_status(200)
+      expect(json['status']).to be(true)
+
+      event_user_confirmed.reload
+      expect(event_user_confirmed.state).to eq('ignored')
+      expect(event_user_confirmed.saved_until.to_i).to be_within(2).of(until_time.to_i)
     end
   end
 

@@ -111,6 +111,8 @@ module VpsAdmin::API::Resources
     end
 
     class Acknowledge < HaveAPI::Action
+      include VpsAdmin::API::Lifetimes::ActionHelpers
+
       http_method :post
       route '{%{resource}_id}/acknowledge'
       aliases %i[ack]
@@ -131,6 +133,7 @@ module VpsAdmin::API::Resources
                                        )).where(
                                          'access_level <= ?', current_user.level
                                        ).take!
+        object_state_check!(event.user)
 
         unless %w[confirmed acknowledged ignored].include?(event.state)
           error!("events in state '#{event.state}' cannot be acknowledged")
@@ -142,6 +145,8 @@ module VpsAdmin::API::Resources
     end
 
     class Ignore < HaveAPI::Action
+      include VpsAdmin::API::Lifetimes::ActionHelpers
+
       http_method :post
       route '{%{resource}_id}/ignore'
 
@@ -161,6 +166,7 @@ module VpsAdmin::API::Resources
                                        )).where(
                                          'access_level <= ?', current_user.level
                                        ).take!
+        object_state_check!(event.user)
 
         unless %w[confirmed acknowledged ignored].include?(event.state)
           error!("events in state '#{event.state}' cannot be ignored")
