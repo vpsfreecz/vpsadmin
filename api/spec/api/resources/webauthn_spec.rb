@@ -130,6 +130,18 @@ RSpec.describe 'VpsAdmin::API::Resources::Webauthn' do
       expect(challenge.registration?).to be(true)
       expect(user.reload.webauthn_id).not_to be_nil
     end
+
+    it 'records challenge client address from forwarded headers' do
+      header 'Client-IP', '203.0.113.80'
+      header 'X-Real-IP', '203.0.113.81'
+
+      response = begin_registration_for(user)
+      challenge = find_challenge(response.fetch('challenge_token'))
+
+      expect(challenge.client_ip_addr).to eq('203.0.113.80')
+      expect(challenge.client_ip_addr).not_to eq(challenge.api_ip_addr)
+      expect(challenge.client_ip_addr).not_to eq('203.0.113.81')
+    end
   end
 
   describe 'Registration::Finish' do

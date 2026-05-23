@@ -17,8 +17,8 @@ module VpsAdmin::API
       api_ip_addr = request.ip
       api_ip_ptr = get_ptr(api_ip_addr)
 
-      # Client-IP header is sent by HaveAPI PHP client when it is asking for OAuth2
-      # access tokens.
+      # Client-IP is sent by HaveAPI PHP client when it forwards browser
+      # requests, otherwise trusted proxies provide X-Real-IP.
       client_ip_addr = request.env['HTTP_CLIENT_IP'] || request.env['HTTP_X_REAL_IP'] || api_ip_addr
       client_ip_ptr = client_ip_addr == api_ip_addr ? api_ip_ptr : get_ptr(client_ip_addr)
 

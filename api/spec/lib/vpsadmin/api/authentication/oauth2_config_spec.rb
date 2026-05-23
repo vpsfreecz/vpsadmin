@@ -481,5 +481,66 @@ RSpec.describe VpsAdmin::API::Authentication::OAuth2Config do
       same_site: :lax
     )
   end
+
+  it 'records new-device authorization metadata from X-Real-IP' do
+    spoofed_request = build_request(
+      ip: '198.51.100.72',
+      user_agent: 'RSpec/OAuth2',
+      extra_env: {
+        'HTTP_CLIENT_IP' => '203.0.113.72',
+        'HTTP_X_REAL_IP' => '203.0.113.73'
+      }
+    )
+    auth_result = described_class::AuthResult.new(
+      authenticated: true,
+      complete: true,
+      user:
+    )
+
+    config.send(
+      :create_authorization,
+      auth_result:,
+      sinatra_request: spoofed_request,
+      oauth2_request:,
+      oauth2_response: response,
+      client:,
+      devices: []
+    )
+
+    authorization = auth_result.authorization
+    expect(authorization.client_ip_addr).to eq('203.0.113.73')
+    expect(authorization.client_ip_addr).not_to eq('203.0.113.72')
+    expect(authorization.client_ip_addr).not_to eq('198.51.100.72')
+    expect(authorization.user_device.client_ip_addr).to eq('203.0.113.73')
+  end
+
+  it 'records known-device authorization metadata from X-Real-IP' do
+    device = create_user_device!(user:, known: true)
+    spoofed_request = build_request(
+      ip: '198.51.100.74',
+      user_agent: 'RSpec/OAuth2',
+      extra_env: { 'HTTP_X_REAL_IP' => '203.0.113.74' }
+    )
+    auth_result = described_class::AuthResult.new(
+      authenticated: true,
+      complete: true,
+      user:
+    )
+
+    config.send(
+      :create_authorization,
+      auth_result:,
+      sinatra_request: spoofed_request,
+      oauth2_request:,
+      oauth2_response: response,
+      client:,
+      devices: [device]
+    )
+
+    authorization = auth_result.authorization
+    expect(authorization.client_ip_addr).to eq('203.0.113.74')
+    expect(authorization.client_ip_addr).not_to eq('198.51.100.74')
+    expect(authorization.user_device).to eq(device)
+  end
 end
 # rubocop:enable RSpec/MultipleMemoizedHelpers

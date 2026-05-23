@@ -45,6 +45,16 @@ RSpec.describe VpsAdmin::API::Operations::Authentication::Password do
     expect(result.token).to be_nil
   end
 
+  it 'authenticates suspended users' do
+    user.update!(object_state: :suspended, lockout: false, password_reset: false)
+
+    result = op.run(user.login, 'secret', request:)
+
+    expect(result).to be_authenticated
+    expect(result).to be_complete
+    expect(result.user).to eq(user)
+  end
+
   it 'returns an MFA token when MFA is required and enabled' do
     create_totp_device!(user:)
     user.update!(enable_multi_factor_auth: true)
