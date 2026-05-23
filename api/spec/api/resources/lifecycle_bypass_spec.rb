@@ -413,7 +413,8 @@ RSpec.describe 'API lifecycle bypass regressions' do # rubocop:disable RSpec/Des
 
     it 'blocks active users from exporting deleted datasets or mutating deleted exports' do
       dataset, dip = create_dataset!
-      export, _netif, ip = create_export_for_dataset!(dataset_in_pool: dip)
+      export, = create_export_for_dataset!(dataset_in_pool: dip)
+      ip = create_vps_ip_address!(user: SpecSeed.user, pool: dip.pool)
       export_host = ExportHost.create!(
         export: export,
         ip_address: ip,

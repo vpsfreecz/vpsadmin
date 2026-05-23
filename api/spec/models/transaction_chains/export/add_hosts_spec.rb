@@ -17,7 +17,7 @@ RSpec.describe TransactionChains::Export::AddHosts do
       name: "export-hosts-#{SecureRandom.hex(4)}"
     )
     export, = create_export_for_dataset!(dataset_in_pool: dip)
-    ipv4 = create_ip_address!(network: SpecSeed.network_v4, location: pool.node.location)
+    ipv4 = create_vps_ip_address!(user: user, pool: pool)
     ipv6 = create_ip_address!(
       network: SpecSeed.network_v6,
       location: SpecSeed.other_location,

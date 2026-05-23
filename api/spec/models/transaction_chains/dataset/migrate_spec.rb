@@ -156,7 +156,7 @@ RSpec.describe TransactionChains::Dataset::Migrate do
     export, = create_export_for_dataset!(dataset_in_pool: src_dip)
     ExportHost.create!(
       export: export,
-      ip_address: create_ip_address!(location: src_pool.node.location),
+      ip_address: create_vps_ip_address!(user: user, pool: src_pool),
       rw: export.rw,
       sync: export.sync,
       subtree_check: export.subtree_check,

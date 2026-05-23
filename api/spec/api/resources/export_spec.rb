@@ -221,15 +221,25 @@ RSpec.describe 'VpsAdmin::API::Resources::Export' do
     @ip_octet += 1
   end
 
+  def with_current_user(user)
+    previous = ::User.current
+    ::User.current = user
+    yield
+  ensure
+    ::User.current = previous
+  end
+
   def create_export_host_record!(export:, ip_address:, rw: nil, sync: nil, subtree_check: nil, root_squash: nil)
-    ExportHost.create!(
-      export: export,
-      ip_address: ip_address,
-      rw: rw.nil? ? export.rw : rw,
-      sync: sync.nil? ? export.sync : sync,
-      subtree_check: subtree_check.nil? ? export.subtree_check : subtree_check,
-      root_squash: root_squash.nil? ? export.root_squash : root_squash
-    )
+    with_current_user(SpecSeed.admin) do
+      ExportHost.create!(
+        export: export,
+        ip_address: ip_address,
+        rw: rw.nil? ? export.rw : rw,
+        sync: sync.nil? ? export.sync : sync,
+        subtree_check: subtree_check.nil? ? export.subtree_check : subtree_check,
+        root_squash: root_squash.nil? ? export.root_squash : root_squash
+      )
+    end
   end
 
   describe 'API description' do
@@ -238,6 +248,49 @@ RSpec.describe 'VpsAdmin::API::Resources::Export' do
       expect(scopes).to include(
         'export#index', 'export#show', 'export#create', 'export#update', 'export#delete',
         'export.host#index', 'export.host#show', 'export.host#create', 'export.host#update', 'export.host#delete'
+      )
+    end
+  end
+
+  describe 'ExportHost validation' do
+    it 'accepts an IP assigned to the export owner VPS' do
+      dip = create_dataset_in_pool!(user: SpecSeed.user, pool: SpecSeed.pool)
+      export_user = create_export_record!(dip: dip)
+      ip = create_vps_ip_address!(user: SpecSeed.user, pool: SpecSeed.pool)
+
+      host = ExportHost.new(
+        export: export_user,
+        ip_address: ip,
+        rw: true,
+        sync: true,
+        subtree_check: false,
+        root_squash: false
+      )
+
+      with_current_user(SpecSeed.user) do
+        expect(host).to be_valid
+      end
+    end
+
+    it 'rejects an unassigned IP for a non-admin caller' do
+      dip = create_dataset_in_pool!(user: SpecSeed.user, pool: SpecSeed.pool)
+      export_user = create_export_record!(dip: dip)
+      ip = create_ip!(addr: "192.0.2.#{next_ip_octet}", network: SpecSeed.network_v4)
+
+      host = ExportHost.new(
+        export: export_user,
+        ip_address: ip,
+        rw: true,
+        sync: true,
+        subtree_check: false,
+        root_squash: false
+      )
+
+      with_current_user(SpecSeed.user) do
+        expect(host).not_to be_valid
+      end
+      expect(host.errors[:ip_address]).to include(
+        'must be assigned to a VPS owned by the export owner'
       )
     end
   end
@@ -944,11 +997,7 @@ RSpec.describe 'VpsAdmin::API::Resources::Export' do
         subtree_check: true,
         root_squash: false
       )
-      ip = create_ip!(
-        addr: "192.0.2.#{next_ip_octet}",
-        network: SpecSeed.network_v4,
-        user: SpecSeed.user
-      )
+      ip = create_vps_ip_address!(user: SpecSeed.user, pool: SpecSeed.pool)
       ensure_signer_unlocked!
 
       expect do
@@ -968,14 +1017,48 @@ RSpec.describe 'VpsAdmin::API::Resources::Export' do
       expect(host.root_squash).to eq(export_user.root_squash)
     end
 
+    it 'prevents user from adding an unassigned IP to their export' do
+      dip = create_dataset_in_pool!(user: SpecSeed.user, pool: SpecSeed.pool)
+      export_user = create_export_record!(dip: dip)
+      ip = create_ip!(addr: "192.0.2.#{next_ip_octet}", network: SpecSeed.network_v4)
+      ensure_signer_unlocked!
+
+      expect do
+        as(SpecSeed.user) do
+          json_post host_index_path(export_user.id), host: { ip_address: ip.id }
+        end
+      end.not_to change(ExportHost, :count)
+
+      expect_status(200)
+      expect(json['status']).to be(false)
+      expect(msg).to include('IP address must be assigned')
+    end
+
+    it 'prevents user from adding a user-owned free IP to their export' do
+      dip = create_dataset_in_pool!(user: SpecSeed.user, pool: SpecSeed.pool)
+      export_user = create_export_record!(dip: dip)
+      ip = create_ip!(
+        addr: "192.0.2.#{next_ip_octet}",
+        network: SpecSeed.network_v4,
+        user: SpecSeed.user
+      )
+      ensure_signer_unlocked!
+
+      expect do
+        as(SpecSeed.user) do
+          json_post host_index_path(export_user.id), host: { ip_address: ip.id }
+        end
+      end.not_to change(ExportHost, :count)
+
+      expect_status(200)
+      expect(json['status']).to be(false)
+      expect(msg).to include('IP address must be assigned')
+    end
+
     it 'prevents user from adding another tenant IP to their export' do
       dip = create_dataset_in_pool!(user: SpecSeed.user, pool: SpecSeed.pool)
       export_user = create_export_record!(dip: dip)
-      foreign_ip = create_ip!(
-        addr: "192.0.2.#{next_ip_octet}",
-        network: SpecSeed.network_v4,
-        user: SpecSeed.other_user
-      )
+      foreign_ip = create_vps_ip_address!(user: SpecSeed.other_user, pool: SpecSeed.pool)
       ensure_signer_unlocked!
 
       expect do
@@ -986,7 +1069,23 @@ RSpec.describe 'VpsAdmin::API::Resources::Export' do
 
       expect_status(200)
       expect(json['status']).to be(false)
-      expect(msg).to include('IP address does not belong')
+      expect(msg).to include('IP address must be assigned')
+    end
+
+    it 'allows admin to add an unassigned IP to a user export' do
+      dip = create_dataset_in_pool!(user: SpecSeed.user, pool: SpecSeed.pool)
+      export_user = create_export_record!(dip: dip)
+      ip = create_ip!(addr: "192.0.2.#{next_ip_octet}", network: SpecSeed.network_v4)
+      ensure_signer_unlocked!
+
+      expect do
+        as(SpecSeed.admin) do
+          json_post host_index_path(export_user.id), host: { ip_address: ip.id }
+        end
+      end.to change(ExportHost, :count).by(1)
+
+      expect_status(200)
+      expect(json['status']).to be(true)
     end
 
     it 'prevents user from adding host to other exports' do

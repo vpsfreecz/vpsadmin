@@ -72,6 +72,7 @@ module TransactionChains
         end
 
         order[ip.version] += 1
+        ip.network_interface = netif
 
         host_addrs = opts[:host_addrs].select { |addr| addr.ip_address == ip }
         next unless host_addrs.any?

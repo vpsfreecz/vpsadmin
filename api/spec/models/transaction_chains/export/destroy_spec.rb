@@ -39,7 +39,7 @@ RSpec.describe TransactionChains::Export::Destroy do
 
     host = ExportHost.create!(
       export: export_obj,
-      ip_address: create_ip_address!(network: SpecSeed.network_v4, location: pool.node.location),
+      ip_address: create_vps_ip_address!(user: user, pool: pool),
       rw: true,
       sync: true,
       subtree_check: false,

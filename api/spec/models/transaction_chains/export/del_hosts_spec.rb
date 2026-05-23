@@ -19,7 +19,7 @@ RSpec.describe TransactionChains::Export::DelHosts do
     export, = create_export_for_dataset!(dataset_in_pool: dip)
     host1 = ExportHost.create!(
       export: export,
-      ip_address: create_ip_address!(network: SpecSeed.network_v4, location: pool.node.location),
+      ip_address: create_vps_ip_address!(user: user, pool: pool),
       rw: true,
       sync: true,
       subtree_check: false,
@@ -27,7 +27,7 @@ RSpec.describe TransactionChains::Export::DelHosts do
     )
     host2 = ExportHost.create!(
       export: export,
-      ip_address: create_ip_address!(network: SpecSeed.network_v4, location: pool.node.location),
+      ip_address: create_vps_ip_address!(user: user, pool: pool),
       rw: false,
       sync: true,
       subtree_check: false,

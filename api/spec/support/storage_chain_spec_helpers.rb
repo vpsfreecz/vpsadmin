@@ -226,6 +226,24 @@ module StorageChainSpecHelpers
     ip
   end
 
+  def create_vps_ip_address!(user:, pool:, node: pool.node, network: SpecSeed.network_v4,
+                             location: node.location, addr: nil)
+    _dataset, dip = create_dataset_with_pool!(
+      user: user,
+      pool: pool,
+      name: "vps-ip-#{SecureRandom.hex(4)}"
+    )
+    vps = create_vps_for_dataset!(user: user, node: node, dataset_in_pool: dip)
+    netif = create_network_interface!(vps, name: "eth#{SecureRandom.hex(3)}")
+
+    create_ip_address!(
+      network: network,
+      location: location,
+      addr: addr,
+      network_interface: netif
+    )
+  end
+
   def create_export_for_dataset!(dataset_in_pool:, user: dataset_in_pool.dataset.user, path: nil,
                                  enabled: true, threads: 8, host_ip: nil)
     export = nil

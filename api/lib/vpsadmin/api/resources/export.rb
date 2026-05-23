@@ -323,8 +323,11 @@ class VpsAdmin::API::Resources::Export < HaveAPI::Resource
 
         object_state_check!(export, export.user)
 
-        if input[:ip_address].current_owner != export.user
-          error!('IP address does not belong to this export owner')
+        if current_user.role != :admin && !::ExportHost.ip_address_assigned_to_export_owner_vps?(
+          export,
+          input[:ip_address]
+        )
+          error!('IP address must be assigned to a VPS owned by the export owner')
         end
 
         @chain, host = VpsAdmin::API::Operations::Export::AddHost.run(
