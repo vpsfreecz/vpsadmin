@@ -344,6 +344,15 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
         error!('user namespace map has to belong to VPS owner')
       end
 
+      if input[:dns_resolver] && input[:node] \
+            && !input[:dns_resolver].is_universal \
+            && input[:dns_resolver].location_id != input[:node].location_id
+        error!(
+          "DNS resolver '#{input[:dns_resolver].label}' is not available " \
+          "in location #{input[:node].location.label}"
+        )
+      end
+
       %i[start vps_user_data user_data_format user_data_content].each do |v|
         opts[v] = input.delete(v)
       end

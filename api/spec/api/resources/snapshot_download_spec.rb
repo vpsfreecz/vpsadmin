@@ -365,6 +365,62 @@ RSpec.describe 'VpsAdmin::API::Resources::SnapshotDownload' do
       expect(created.from_snapshot_id).to eq(snap_old.id)
     end
 
+    it 'prevents users from using another users snapshot as incremental base' do
+      foreign_base = create_snapshot!(
+        dataset: other_ds,
+        name: 'other-base-same-history',
+        history_id: snap_new.history_id,
+        created_at: snap_new.created_at - 1.day
+      )
+      foreign_sip = attach_snapshot_to_pool!(snapshot: foreign_base, dip: other_dip)
+
+      ensure_signer_unlocked!
+
+      expect do
+        as(user) do
+          json_post index_path, snapshot_download: {
+            snapshot: snap_new.id,
+            from_snapshot: foreign_base.id,
+            format: 'incremental_stream',
+            send_mail: false
+          }
+        end
+      end.not_to change(SnapshotDownload, :count)
+
+      expect_status(404)
+      expect(json['status']).to be(false)
+      expect(ResourceLock.find_by(resource: 'SnapshotInPool', row_id: foreign_sip.id)).to be_nil
+    end
+
+    it 'rejects incremental bases from a different owned dataset' do
+      other_owned_ds = create_dataset!(user: user, name: "user-other-ds-#{SecureRandom.hex(4)}")
+      other_owned_dip = create_dip!(dataset: other_owned_ds, pool: pool)
+      other_owned_base = create_snapshot!(
+        dataset: other_owned_ds,
+        name: 'user-other-base-same-history',
+        history_id: snap_new.history_id,
+        created_at: snap_new.created_at - 1.day
+      )
+      attach_snapshot_to_pool!(snapshot: other_owned_base, dip: other_owned_dip)
+
+      ensure_signer_unlocked!
+
+      expect do
+        as(user) do
+          json_post index_path, snapshot_download: {
+            snapshot: snap_new.id,
+            from_snapshot: other_owned_base.id,
+            format: 'incremental_stream',
+            send_mail: false
+          }
+        end
+      end.not_to change(SnapshotDownload, :count)
+
+      expect_status(200)
+      expect(json['status']).to be(false)
+      expect(msg).to include('same dataset')
+    end
+
     it 'requires from_snapshot for incremental_stream' do
       ensure_signer_unlocked!
 

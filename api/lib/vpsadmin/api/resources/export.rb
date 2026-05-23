@@ -317,11 +317,15 @@ class VpsAdmin::API::Resources::Export < HaveAPI::Resource
       include VpsAdmin::API::Lifetimes::ActionHelpers
 
       def exec
-        export = ::Export.find_by!(with_restricted(
-                                     id: params[:export_id]
-                                   ))
+        export = ::Export.find_by!(
+          with_restricted(id: params[:export_id])
+        )
 
         object_state_check!(export, export.user)
+
+        if input[:ip_address].current_owner != export.user
+          error!('IP address does not belong to this export owner')
+        end
 
         @chain, host = VpsAdmin::API::Operations::Export::AddHost.run(
           export,

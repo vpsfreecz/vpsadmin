@@ -299,6 +299,25 @@ RSpec.describe 'VpsAdmin::API::Resources::VPS write actions' do # rubocop:disabl
         expect(record.node_id).to eq(SpecSeed.node.id)
       end
 
+      it 'rejects DNS resolvers unavailable in the selected node location' do
+        resolver = create_dns_resolver!(is_universal: false, location: SpecSeed.other_location)
+        set_env_config!(
+          user: SpecSeed.user,
+          environment: SpecSeed.environment,
+          attrs: { can_create_vps: true, max_vps_count: 10 }
+        )
+
+        expect do
+          as(SpecSeed.user) do
+            json_post index_path, vps: user_payload.merge(dns_resolver: resolver.id)
+          end
+        end.not_to change(Vps, :count)
+
+        expect_status(200)
+        expect(json['status']).to be(false)
+        expect(response_message).to include('not available')
+      end
+
       it 'passes required_diskspace to node picking for VPS create' do
         set_env_config!(
           user: SpecSeed.user,

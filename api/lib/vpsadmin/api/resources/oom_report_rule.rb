@@ -110,7 +110,7 @@ module VpsAdmin::API::Resources
       desc 'Update OOM report rule'
 
       input do
-        use :common
+        use :common, include: %i[action cgroup_pattern]
       end
 
       output do
@@ -126,7 +126,6 @@ module VpsAdmin::API::Resources
       def exec
         rule = self.class.model.joins(:vps).find_by!(with_restricted(id: params[:oom_report_rule_id]))
         object_state_check!(rule.vps, rule.vps.user)
-        object_state_check!(input[:vps], input[:vps].user) if input[:vps]
 
         rule.update!(input)
         rule

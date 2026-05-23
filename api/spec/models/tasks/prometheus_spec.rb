@@ -21,7 +21,7 @@ RSpec.describe VpsAdmin::API::Tasks::Prometheus do
       user: SpecSeed.user
     )
     ip.update_column(:user_id, SpecSeed.other_user.id)
-    ExportHost.create!(
+    export_host = ExportHost.new(
       export: export,
       ip_address: ip,
       rw: true,
@@ -29,6 +29,8 @@ RSpec.describe VpsAdmin::API::Tasks::Prometheus do
       subtree_check: false,
       root_squash: false
     )
+    export_host.save!(validate: false)
+    export_host
   end
 
   def fake_dns_message(answer)

@@ -110,28 +110,36 @@ module VpsAdmin::API::Resources
         snap = ::Snapshot.includes(:dataset).joins(:dataset).find_by!(with_restricted(
                                                                         id: input[:snapshot].id
                                                                       ))
+        from_snap = nil
 
         error!('this snapshot has already been made available for download') if snap.snapshot_download_id
 
         if input[:format] == 'incremental_stream'
           error!('from_snapshot is required') unless input[:from_snapshot]
+          from_snap = ::Snapshot.includes(:dataset).joins(:dataset).find_by!(
+            with_restricted(id: input[:from_snapshot].id)
+          )
+
+          if from_snap.dataset_id != snap.dataset_id
+            error!('from_snapshot must belong to the same dataset')
+          end
 
         elsif input[:from_snapshot]
           error!('from_snapshot is for incremental_stream format only')
         end
 
-        if input[:from_snapshot]
-          if input[:snapshot].history_id != input[:from_snapshot].history_id
+        if from_snap
+          if snap.history_id != from_snap.history_id
             error!('snapshot and snapshot2 must share the same history identifier')
 
-          elsif input[:from_snapshot].created_at > input[:snapshot].created_at
+          elsif from_snap.created_at > snap.created_at
             error!('from_snapshot must precede snapshot')
           end
         end
 
         opts = {
           format: input[:format].to_sym,
-          from_snapshot: input[:from_snapshot],
+          from_snapshot: from_snap,
           send_mail: input[:send_mail]
         }
 

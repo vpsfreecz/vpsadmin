@@ -944,7 +944,11 @@ RSpec.describe 'VpsAdmin::API::Resources::Export' do
         subtree_check: true,
         root_squash: false
       )
-      ip = create_ip!(addr: "192.0.2.#{next_ip_octet}", network: SpecSeed.network_v4)
+      ip = create_ip!(
+        addr: "192.0.2.#{next_ip_octet}",
+        network: SpecSeed.network_v4,
+        user: SpecSeed.user
+      )
       ensure_signer_unlocked!
 
       expect do
@@ -962,6 +966,27 @@ RSpec.describe 'VpsAdmin::API::Resources::Export' do
       expect(host.sync).to eq(export_user.sync)
       expect(host.subtree_check).to eq(export_user.subtree_check)
       expect(host.root_squash).to eq(export_user.root_squash)
+    end
+
+    it 'prevents user from adding another tenant IP to their export' do
+      dip = create_dataset_in_pool!(user: SpecSeed.user, pool: SpecSeed.pool)
+      export_user = create_export_record!(dip: dip)
+      foreign_ip = create_ip!(
+        addr: "192.0.2.#{next_ip_octet}",
+        network: SpecSeed.network_v4,
+        user: SpecSeed.other_user
+      )
+      ensure_signer_unlocked!
+
+      expect do
+        as(SpecSeed.user) do
+          json_post host_index_path(export_user.id), host: { ip_address: foreign_ip.id }
+        end
+      end.not_to change(ExportHost, :count)
+
+      expect_status(200)
+      expect(json['status']).to be(false)
+      expect(msg).to include('IP address does not belong')
     end
 
     it 'prevents user from adding host to other exports' do

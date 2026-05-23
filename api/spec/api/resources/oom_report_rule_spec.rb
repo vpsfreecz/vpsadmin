@@ -173,7 +173,8 @@ RSpec.describe 'VpsAdmin::API::Resources::OomReportRule' do
 
       expect(index_params.keys).to include('vps')
       expect(create_params.keys).to include('vps', 'action', 'cgroup_pattern', 'hit_count')
-      expect(update_params.keys).to include('vps', 'action', 'cgroup_pattern', 'hit_count')
+      expect(update_params.keys).to include('action', 'cgroup_pattern')
+      expect(update_params.keys).not_to include('vps', 'hit_count')
     end
   end
 
@@ -415,7 +416,22 @@ RSpec.describe 'VpsAdmin::API::Resources::OomReportRule' do
       user_rule_a.reload
       expect(user_rule_a.action).to eq('ignore')
       expect(user_rule_a.cgroup_pattern).to eq('user/updated')
-      expect(user_rule_a.hit_count).to eq(123)
+      expect(user_rule_a.hit_count).to eq(0)
+    end
+
+    it 'does not let users reassign owned rules to another VPS' do
+      as(SpecSeed.user) do
+        json_put show_path(user_rule_a.id), oom_report_rule: payload.merge(vps: other_vps.id)
+      end
+
+      expect_status(200)
+      expect(json['status']).to be(true)
+
+      user_rule_a.reload
+      expect(user_rule_a.vps_id).to eq(user_vps.id)
+      expect(user_rule_a.action).to eq('ignore')
+      expect(user_rule_a.cgroup_pattern).to eq('user/updated')
+      expect(user_rule_a.hit_count).to eq(0)
     end
 
     it 'returns 404 when updating other user rule' do
@@ -434,7 +450,7 @@ RSpec.describe 'VpsAdmin::API::Resources::OomReportRule' do
       other_rule.reload
       expect(other_rule.action).to eq('ignore')
       expect(other_rule.cgroup_pattern).to eq('user/updated')
-      expect(other_rule.hit_count).to eq(123)
+      expect(other_rule.hit_count).to eq(0)
     end
 
     it 'rejects invalid action choice' do
