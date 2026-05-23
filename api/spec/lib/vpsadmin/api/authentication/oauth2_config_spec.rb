@@ -240,6 +240,49 @@ RSpec.describe VpsAdmin::API::Authentication::OAuth2Config do
     expect(authorization.reload.refresh_token.token).to eq(refresh_token)
   end
 
+  it 'revokes access tokens only for the authenticated OAuth2 client' do
+    session = create_open_session!(user:, auth_type: 'oauth2')
+    authorization = create_oauth2_authorization!(user:, client:, user_session: session)
+    other_client = create_oauth2_client!
+    token = session.token.token
+
+    expect(config.handle_post_revoke(request, token, client: other_client)).to eq(:revoked)
+    expect(session.reload.token.token).to eq(token)
+    expect(authorization.reload.user_session.closed_at).to be_nil
+
+    expect(config.handle_post_revoke(request, token, client:)).to eq(:revoked)
+    expect(session.reload.token).to be_nil
+    expect(session.closed_at).not_to be_nil
+  end
+
+  it 'revokes refresh tokens only for the authenticated OAuth2 client' do
+    session = create_open_session!(user:, auth_type: 'oauth2')
+    authorization = create_oauth2_authorization!(
+      user:,
+      client:,
+      user_session: session,
+      refresh_valid_to: 1.hour.from_now
+    )
+    other_client = create_oauth2_client!
+    token = authorization.refresh_token.token
+
+    expect(config.handle_post_revoke(request, token, client: other_client)).to eq(:revoked)
+    expect(authorization.reload.refresh_token.token).to eq(token)
+
+    expect(config.handle_post_revoke(request, token, client:)).to eq(:revoked)
+    expect(authorization.reload.refresh_token).to be_nil
+    expect(session.reload.token).not_to be_nil
+  end
+
+  it 'keeps unauthenticated revoke handling compatible with older HaveAPI' do
+    session = create_open_session!(user:, auth_type: 'oauth2')
+    token = session.token.token
+    create_oauth2_authorization!(user:, client:, user_session: session)
+
+    expect(config.handle_post_revoke(request, token)).to eq(:revoked)
+    expect(session.reload.token).to be_nil
+  end
+
   it 'finds users by access token only when OAuth2 auth is enabled' do
     session = create_open_session!(user:, auth_type: 'oauth2')
     token = session.token.token

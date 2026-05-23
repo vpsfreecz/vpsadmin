@@ -226,17 +226,20 @@ module VpsAdmin::API
       end
     end
 
-    def handle_post_revoke(sinatra_request, token, token_type_hint: nil)
+    def handle_post_revoke(sinatra_request, token, token_type_hint: nil, client: nil)
       close_sso = sinatra_request.params.fetch('close_sso', false) ? true : false
 
       # Find access token
-      ::Oauth2Authorization
-        .joins(user_session: :token)
-        .where(tokens: { token: })
-        .each do |auth|
-        token = auth.user_session.token
+      access_tokens = ::Oauth2Authorization
+                      .joins(user_session: :token)
+                      .where(tokens: { token: })
+
+      access_tokens = access_tokens.where(oauth2_client: client) if client
+
+      if (auth = access_tokens.take)
+        access_token = auth.user_session.token
         auth.user_session.update!(token: nil)
-        token.destroy!
+        access_token.destroy!
 
         unless auth.refreshable?
           auth.close
@@ -284,10 +287,13 @@ module VpsAdmin::API
       end
 
       # Find refresh token
-      ::Oauth2Authorization # rubocop:disable Lint/UnreachableLoop
-        .joins(:refresh_token)
-        .where(tokens: { token: })
-        .each do |auth|
+      refresh_tokens = ::Oauth2Authorization
+                       .joins(:refresh_token)
+                       .where(tokens: { token: })
+
+      refresh_tokens = refresh_tokens.where(oauth2_client: client) if client
+
+      if (auth = refresh_tokens.take)
         refresh_token = auth.refresh_token
         auth.update!(refresh_token: nil)
         refresh_token.destroy!
