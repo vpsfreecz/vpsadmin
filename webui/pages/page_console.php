@@ -29,9 +29,16 @@ function setup_console()
         return;
     }
 
+    $console_url = $server . '/console/' . $vps->id . '?' . http_build_query(
+        ['session' => $t->token],
+        '',
+        '&',
+        PHP_QUERY_RFC3986
+    );
+
     $xtpl->perex(
         _('Remote Console for VPS') . ' <a href="?page=adminvps&action=info&veid=' . $vps->id . '">#' . $vps->id . '</a>',
-        '<iframe src="' . $server . '/console/' . $vps->id . '?auth_type=' . $_SESSION['auth_type'] . '&auth_token=' . getAuthenticationToken() . '&session=' . $t->token . '" width="100%" height="900px" border="1" id="vpsadmin-console-frame"></iframe>
+        '<iframe src="' . htmlspecialchars($console_url, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '" width="100%" height="900px" border="1" id="vpsadmin-console-frame"></iframe>
 <script type="text/javascript">
 var _theframe = document.getElementById("vpsadmin-console-frame");
 _theframe.contentWindow.location.href = _theframe.src;

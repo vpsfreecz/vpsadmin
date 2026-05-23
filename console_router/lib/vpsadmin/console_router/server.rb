@@ -32,8 +32,6 @@ module VpsAdmin::ConsoleRouter
         erb :console, locals: {
           api_url: router.api_url,
           vps_id:,
-          auth_type: params[:auth_type],
-          auth_token: params[:auth_token],
           session: params[:session]
         }
       else

@@ -49,6 +49,27 @@ RSpec.describe VpsAdmin::ConsoleRouter::Server do
       expect(last_response.body).to include("'session-token'")
     end
 
+    it 'does not render legacy API credential query params' do
+      router = instance_spy(
+        VpsAdmin::ConsoleRouter::Router,
+        api_url: 'http://api.example.test',
+        check_session: true
+      )
+
+      described_class.set(:router, router)
+
+      get '/console/101',
+          session: 'session-token',
+          auth_type: 'token',
+          auth_token: 'secret-api-token'
+
+      expect(last_response).to be_ok
+      expect(router).to have_received(:check_session).with(101, 'session-token')
+      expect(last_response.body).not_to include('secret-api-token')
+      expect(last_response.body).not_to include('auth_token')
+      expect(last_response.body).not_to include('auth_type')
+    end
+
     it 'rejects an invalid session' do
       router = instance_spy(VpsAdmin::ConsoleRouter::Router, check_session: false)
 
