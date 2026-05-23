@@ -62,6 +62,21 @@ RSpec.describe VpsAdmin::Supervisor::Node::VpsOsRelease do
 
       expect(TransactionChains::Vps::Update).not_to have_received(:fire2)
     end
+
+    it 'ignores VPSes assigned to another node' do
+      old_template = create_os_template!(distribution: 'debian', version: '12')
+      create_os_template!(distribution: 'debian', version: '13')
+      vps = build_standalone_vps_fixture(node: SpecSeed.other_node).fetch(:vps)
+      vps.update!(
+        os_template: old_template,
+        enable_os_template_auto_update: true
+      )
+      allow(TransactionChains::Vps::Update).to receive(:fire2)
+
+      supervisor.send(:update_vps_os_release, os_release_payload(vps_id: vps.id))
+
+      expect(TransactionChains::Vps::Update).not_to have_received(:fire2)
+    end
   end
 
   describe '#os_release_to_template_version' do

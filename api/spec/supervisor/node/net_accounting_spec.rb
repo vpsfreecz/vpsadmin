@@ -68,5 +68,41 @@ RSpec.describe VpsAdmin::Supervisor::Node::NetAccounting do
         expect(row.updated_at).to eq(later)
       end
     end
+
+    it 'ignores foreign interfaces and derives the user from the local interface owner' do
+      local_netif = create_netif_vps_fixture!(node:, user: SpecSeed.user).fetch(:netif)
+      foreign_netif = create_netif_vps_fixture!(node: SpecSeed.other_node, user: SpecSeed.other_user).fetch(:netif)
+      forged_user_id = SpecSeed.other_user.id
+
+      supervisor.send(
+        :save_accounting,
+        [
+          accounting_payload(local_netif).merge('user_id' => forged_user_id),
+          accounting_payload(foreign_netif)
+        ]
+      )
+
+      expect(
+        NetworkInterfaceMonthlyAccounting.where(
+          network_interface: foreign_netif,
+          user_id: foreign_netif.vps.user_id
+        )
+      ).not_to exist
+      expect(
+        NetworkInterfaceMonthlyAccounting.where(
+          network_interface: local_netif,
+          user_id: forged_user_id
+        )
+      ).not_to exist
+
+      monthly = NetworkInterfaceMonthlyAccounting.find_by!(
+        network_interface: local_netif,
+        user_id: local_netif.vps.user_id,
+        year: time.year,
+        month: time.month
+      )
+      expect(monthly.bytes_in).to eq(100)
+      expect(monthly.bytes_out).to eq(200)
+    end
   end
 end

@@ -48,13 +48,13 @@ module VpsAdmin::Supervisor
         handler = Handler.new
         cmd = req['command']
 
-        unless handler.respond_to?(cmd)
+        unless Handler::COMMANDS.include?(cmd)
           send_error("Command #{cmd.inspect} not found")
           return
         end
 
         begin
-          response = handler.send(
+          response = handler.public_send(
             cmd,
             *req.fetch('args', []),
             **symbolize_hash_keys(req.fetch('kwargs', {}))
@@ -103,6 +103,11 @@ module VpsAdmin::Supervisor
     end
 
     class Handler
+      COMMANDS = %w[
+        get_api_url
+        get_session_node
+      ].freeze
+
       # @return [String] API URL
       def get_api_url
         ::SysConfig.select('value').where(

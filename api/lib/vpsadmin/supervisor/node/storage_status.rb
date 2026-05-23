@@ -38,11 +38,32 @@ module VpsAdmin::Supervisor
       updated_at = Time.at(status['time'])
       save_log = status['message_id'] % LOG_NTH_MESSAGE == 0
       vps_sums = {}
+      properties = status['properties']
+      dataset_properties =
+        ::DatasetProperty
+        .joins(dataset_in_pool: :pool)
+        .includes(:dataset)
+        .where(
+          id: properties.map { |prop| prop['id'] },
+          pools: { node_id: node.id }
+        )
+        .index_by(&:id)
+      vpses =
+        ::Vps
+        .includes(:dataset)
+        .where(
+          id: properties.filter_map { |prop| prop['vps_id'] },
+          node_id: node.id
+        )
+        .index_by(&:id)
 
-      status['properties'].each do |prop|
+      properties.each do |prop|
+        dataset_property = dataset_properties[prop['id']]
+        next if dataset_property.nil?
+
         value = save_value(prop['name'], prop['value'])
 
-        ::DatasetProperty.where(id: prop['id']).update_all(
+        ::DatasetProperty.where(id: dataset_property.id).update_all(
           value:,
           updated_at:
         )
@@ -51,6 +72,9 @@ module VpsAdmin::Supervisor
         # and not spread out over two or more batches. As batches are processed
         # independently, the VPS sums would be incorrect.
         if %w[refquota referenced].include?(prop['name']) && (vps_id = prop['vps_id'])
+          vps = vpses[vps_id]
+          next if vps.nil? || !dataset_property_belongs_to_vps?(dataset_property, vps)
+
           vps_sums[vps_id] ||= { 'refquota' => 0, 'referenced' => 0 }
           vps_sums[vps_id][prop['name']] += value
         end
@@ -58,7 +82,7 @@ module VpsAdmin::Supervisor
         next unless save_log && LOG_PROPERTIES.include?(prop['name'])
 
         ::DatasetPropertyHistory.create!(
-          dataset_property_id: prop['id'],
+          dataset_property_id: dataset_property.id,
           value:,
           created_at: updated_at
         )
@@ -70,6 +94,16 @@ module VpsAdmin::Supervisor
           used_diskspace: sums['referenced']
         )
       end
+    end
+
+    def dataset_property_belongs_to_vps?(dataset_property, vps)
+      property_dataset = dataset_property.dataset
+      vps_dataset = vps.dataset
+
+      return false if property_dataset.nil? || vps_dataset.nil?
+
+      property_dataset.id == vps_dataset.id ||
+        property_dataset.ancestor_ids.include?(vps_dataset.id)
     end
 
     def save_value(name, value)

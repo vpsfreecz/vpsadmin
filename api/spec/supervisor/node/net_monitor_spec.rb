@@ -68,5 +68,22 @@ RSpec.describe VpsAdmin::Supervisor::Node::NetMonitor do
       expect(monitor.created_at).to eq(timestamp)
       expect(monitor.updated_at).to eq(timestamp + 60)
     end
+
+    it 'ignores interfaces assigned to VPSes on another node' do
+      local_netif = create_netif_vps_fixture!(node:).fetch(:netif)
+      foreign_netif = create_netif_vps_fixture!(node: SpecSeed.other_node).fetch(:netif)
+
+      supervisor.send(
+        :update_monitors,
+        [
+          monitor_payload(foreign_netif),
+          monitor_payload(local_netif, 'bytes_in' => 500, 'bytes_out' => 700)
+        ]
+      )
+
+      expect(NetworkInterfaceMonitor.where(network_interface: foreign_netif)).not_to exist
+      monitor = NetworkInterfaceMonitor.find_by!(network_interface: local_netif)
+      expect(monitor.bytes).to eq(1200)
+    end
   end
 end

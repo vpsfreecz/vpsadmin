@@ -16,7 +16,7 @@ RSpec.describe VpsAdmin::Supervisor::Node::VpsMounts do
     }
   end
 
-  def create_mount_fixture
+  def create_mount_fixture(node: self.node)
     fixture = build_standalone_vps_fixture(node:)
     vps = fixture.fetch(:vps)
     _subdataset, sub_dip = create_vps_subdataset!(
@@ -54,6 +54,25 @@ RSpec.describe VpsAdmin::Supervisor::Node::VpsMounts do
       expect(first.reload.current_state).to eq('delayed')
       expect(first.updated_at).to eq(timestamp)
       expect(second.reload.current_state).to eq('created')
+    end
+
+    it 'ignores mount reports for VPSes on another node' do
+      foreign_vps, first, second = create_mount_fixture(node: SpecSeed.other_node)
+
+      supervisor.send(:update_mount_state, mount_state_payload(foreign_vps, id: 'all', state: 'delayed'))
+      supervisor.send(:update_mount_state, mount_state_payload(foreign_vps, id: first.id, state: 'waiting'))
+
+      expect(first.reload.current_state).to eq('created')
+      expect(first.updated_at).not_to eq(timestamp)
+      expect(second.reload.current_state).to eq('created')
+    end
+
+    it 'ignores unknown mount states' do
+      vps, first, = create_mount_fixture
+
+      supervisor.send(:update_mount_state, mount_state_payload(vps, id: first.id, state: 'not-a-state'))
+
+      expect(first.reload.current_state).to eq('created')
     end
   end
 end

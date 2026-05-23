@@ -22,11 +22,15 @@ module VpsAdmin::Supervisor
     protected
 
     def update_mount_state(state)
+      return unless ::Mount.current_states.has_key?(state['state'])
+
+      base = ::Mount.joins(:vps).where(vpses: { node_id: node.id })
+
       q =
         if state['id'] == 'all'
-          ::Mount.where(vps_id: state['vps_id'])
+          base.where(vps_id: state['vps_id'])
         else
-          ::Mount.where(id: state['id'])
+          base.where(id: state['id'], vps_id: state['vps_id'])
         end
 
       q.update_all(current_state: state['state'], updated_at: Time.at(state['time']))

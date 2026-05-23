@@ -39,6 +39,19 @@ RSpec.describe VpsAdmin::Supervisor::Node::VpsStatus do
 
       expect(VpsCurrentStatus.where(vps: other_vps)).not_to exist
     end
+
+    it 'ignores unknown VPS ids without crashing the subscriber' do
+      unknown_id = Vps.maximum(:id).to_i + 10_000
+      channel = SupervisorConsumerHelpers::FakeSupervisorChannel.new
+      described_class.new(channel, node).start
+      queue = channel.queues.fetch("node:#{node.domain_name}:vps_statuses")
+
+      expect do
+        queue.publish(status_payload(Vps.new(id: unknown_id)).to_json)
+      end.not_to raise_error
+
+      expect(VpsCurrentStatus.where(vps_id: unknown_id)).not_to exist
+    end
   end
 
   describe '#update_status' do

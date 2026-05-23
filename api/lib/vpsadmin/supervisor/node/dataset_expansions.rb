@@ -23,18 +23,28 @@ module VpsAdmin::Supervisor
 
     def process_event(event)
       t = Time.at(event['time'])
+      dataset = ::Dataset.find_by(id: event['dataset_id'])
+      return if dataset.nil?
+
+      primary_dataset_in_pool =
+        dataset
+        .dataset_in_pools
+        .includes(:pool)
+        .joins(:pool)
+        .where.not(pools: { role: ::Pool.roles[:backup] })
+        .take
+
+      return if primary_dataset_in_pool.nil? ||
+                primary_dataset_in_pool.pool.node_id != node.id
 
       new_event = ::DatasetExpansionEvent.new(
-        dataset_id: event['dataset_id'],
+        dataset:,
         original_refquota: event['original_refquota'],
         new_refquota: event['new_refquota'],
         added_space: event['added_space'],
         created_at: t,
         updated_at: t
       )
-
-      # Check if we're authorized to handle expansions from this node
-      return if new_event.dataset.primary_dataset_in_pool!.pool.node_id != node.id
 
       begin
         exp = VpsAdmin::API::Operations::DatasetExpansion::ProcessEvent.run(

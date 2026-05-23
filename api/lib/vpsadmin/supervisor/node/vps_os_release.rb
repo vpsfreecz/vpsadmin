@@ -49,7 +49,11 @@ module VpsAdmin::Supervisor
       tpl_distribution, tpl_version = os_release_to_template_version(name, id, version_id)
 
       # Find VPS
-      vps = ::Vps.find_by!(id: os_release['vps_id'], enable_os_template_auto_update: true)
+      vps = ::Vps.find_by!(
+        id: os_release['vps_id'],
+        node_id: node.id,
+        enable_os_template_auto_update: true
+      )
 
       # Proceed with update only if the distribution matches and the version does not
       return if vps.os_template.distribution != tpl_distribution \

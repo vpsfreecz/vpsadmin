@@ -74,5 +74,36 @@ RSpec.describe VpsAdmin::Supervisor::Node::ExportMounts do
 
       expect(ExportMount.where(vps:)).to be_empty
     end
+
+    it 'ignores export mount reports for VPSes on another node' do
+      fixture = build_standalone_vps_fixture(node:)
+      export, _netif, host_ip = create_export_for_dataset!(dataset_in_pool: fixture.fetch(:dataset_in_pool))
+      foreign_vps = build_standalone_vps_fixture(node: SpecSeed.other_node).fetch(:vps)
+
+      supervisor.send(
+        :update_export_mounts,
+        export_payload(foreign_vps, export, host_ip, [{ mountpoint: '/mnt/forged', nfs_version: '4.2' }])
+      )
+
+      expect(ExportMount.where(vps: foreign_vps, export:)).not_to exist
+
+      real_mount = ExportMount.create!(
+        vps: foreign_vps,
+        export:,
+        mountpoint: '/mnt/real',
+        nfs_version: '4.2'
+      )
+
+      supervisor.send(
+        :update_export_mounts,
+        {
+          'vps_id' => foreign_vps.id,
+          'time' => timestamp.to_i,
+          'mounts' => []
+        }
+      )
+
+      expect(ExportMount.where(id: real_mount.id)).to exist
+    end
   end
 end

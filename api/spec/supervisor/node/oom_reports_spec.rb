@@ -23,6 +23,21 @@ RSpec.describe VpsAdmin::Supervisor::Node::OomReports do
     end
   end
 
+  describe '#start' do
+    it 'ignores reports for VPSes on another node without dereferencing nil' do
+      foreign_vps = build_standalone_vps_fixture(user: SpecSeed.user, node: SpecSeed.other_node).fetch(:vps)
+      channel = SupervisorConsumerHelpers::FakeSupervisorChannel.new
+      described_class.new(channel, SpecSeed.node).start
+      queue = channel.queues.fetch("node:#{SpecSeed.node.domain_name}:oom_reports")
+
+      expect do
+        queue.publish(build_oom_report_payload(vps: foreign_vps, count: described_class::THRESHOLD).to_json)
+      end.not_to raise_error
+
+      expect(OomReport.where(vps: foreign_vps)).to be_empty
+    end
+  end
+
   describe '#save_report' do
     it 'creates report, usage, stat, task and counter rows' do
       vps = create_vps!

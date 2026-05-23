@@ -22,6 +22,30 @@ RSpec.describe VpsAdmin::Supervisor::Node::DatasetExpansions do
     allow(TransactionChains::Mail::VpsDatasetExpanded).to receive(:fire)
   end
 
+  describe '#start' do
+    it 'acks and ignores events for unknown datasets' do
+      channel = SupervisorConsumerHelpers::FakeSupervisorChannel.new
+      described_class.new(channel, node).start
+      queue = channel.queues.fetch("node:#{node.domain_name}:dataset_expansions")
+      allow(operation).to receive(:run)
+
+      expect do
+        queue.publish(
+          {
+            'dataset_id' => Dataset.maximum(:id).to_i + 10_000,
+            'original_refquota' => 10_240,
+            'new_refquota' => 12_288,
+            'added_space' => 2048,
+            'time' => timestamp.to_i
+          }.to_json
+        )
+      end.not_to raise_error
+
+      expect(channel.acked_tags).to eq([1])
+      expect(operation).not_to have_received(:run)
+    end
+  end
+
   describe '#process_event' do
     it 'ignores expansions whose primary pool is not on the current node' do
       fixture = build_active_dataset_expansion_fixture(user: SpecSeed.other_user)

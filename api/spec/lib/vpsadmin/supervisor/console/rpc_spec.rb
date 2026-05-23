@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require 'tmpdir'
+
 RSpec.describe VpsAdmin::Supervisor::Console::Rpc do
   describe described_class::Handler do
     subject(:handler) { described_class.new }
@@ -121,6 +123,7 @@ RSpec.describe VpsAdmin::Supervisor::Console::Rpc do
           'https://api.example.test'
         end
       end
+      handler.const_set(:COMMANDS, %w[get_api_url].freeze)
       stub_const('VpsAdmin::Supervisor::Console::Rpc::Handler', handler)
 
       request.process(JSON.dump(command: 'get_api_url'))
@@ -148,6 +151,7 @@ RSpec.describe VpsAdmin::Supervisor::Console::Rpc do
           }
         end
       end
+      handler.const_set(:COMMANDS, %w[call].freeze)
       stub_const('VpsAdmin::Supervisor::Console::Rpc::Handler', handler)
 
       request.process(
@@ -188,12 +192,35 @@ RSpec.describe VpsAdmin::Supervisor::Console::Rpc do
       )
     end
 
+    it 'rejects inherited Ruby dispatch methods' do
+      Dir.mktmpdir('vpsadmin-console-rpc-spec') do |dir|
+        path = File.join(dir, 'executed')
+        code = "::File.write(#{path.inspect}, 'executed')"
+
+        {
+          'instance_eval' => [code],
+          'send' => ['instance_eval', code],
+          'class' => []
+        }.each do |cmd, args|
+          request.process(JSON.dump(command: cmd, args: args))
+
+          expect(last_reply.fetch(:payload)).to eq(
+            'status' => false,
+            'message' => "Command #{cmd.inspect} not found"
+          )
+        end
+
+        expect(File).not_to exist(path)
+      end
+    end
+
     it 'replies with an error for handler exceptions and reraises' do
       handler = Class.new do
         def explode
           raise 'boom'
         end
       end
+      handler.const_set(:COMMANDS, %w[explode].freeze)
       stub_const('VpsAdmin::Supervisor::Console::Rpc::Handler', handler)
 
       expect do

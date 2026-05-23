@@ -28,11 +28,8 @@ module VpsAdmin::Supervisor
     def update_export_mounts(export_mounts)
       t = Time.at(export_mounts['time'])
 
-      begin
-        vps = ::Vps.find(export_mounts['vps_id'])
-      rescue ActiveRecord::RecordNotFound
-        return
-      end
+      vps = ::Vps.find_by(id: export_mounts['vps_id'], node_id: node.id)
+      return if vps.nil?
 
       vps_mounts = vps.export_mounts.to_a
 

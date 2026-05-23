@@ -38,13 +38,13 @@ module VpsAdmin::Supervisor
         handler = Handler.new(@node)
         cmd = req['command']
 
-        unless handler.respond_to?(cmd)
+        unless Handler::COMMANDS.include?(cmd)
           send_error("Command #{cmd.inspect} not found")
           return
         end
 
         begin
-          response = handler.send(
+          response = handler.public_send(
             cmd,
             *req.fetch('args', []),
             **symbolize_hash_keys(req.fetch('kwargs', {}))
@@ -96,6 +96,19 @@ module VpsAdmin::Supervisor
     end
 
     class Handler
+      COMMANDS = %w[
+        get_node_config
+        list_pools
+        list_pool_dataset_properties
+        list_vps_status_check
+        list_vps_network_interfaces
+        find_vps_network_interface
+        list_running_vps_ids
+        list_vps_user_namespace_maps
+        list_exports
+        authenticate_console_session
+      ].freeze
+
       def initialize(node)
         @node = node
       end

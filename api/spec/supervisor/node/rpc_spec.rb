@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
+require 'json'
 require 'securerandom'
+require 'tmpdir'
 require 'spec_helper'
 
 RSpec.describe 'VpsAdmin::Supervisor::Node::Rpc::Handler' do
@@ -183,6 +185,77 @@ RSpec.describe 'VpsAdmin::Supervisor::Node::Rpc::Handler' do
           hosts: []
         }
       )
+    end
+  end
+
+  describe VpsAdmin::Supervisor::Node::Rpc::Request do
+    def build_request
+      acks = []
+      published = []
+      delivery_info = Struct.new(:delivery_tag).new('delivery-tag')
+      properties = Struct.new(:reply_to, :correlation_id).new('reply.queue', 'corr-1')
+      channel = Object.new
+      exchange = Object.new
+
+      channel.define_singleton_method(:ack) { |tag| acks << tag }
+      exchange.define_singleton_method(:publish) do |payload, **opts|
+        published << {
+          payload: JSON.parse(payload),
+          opts: opts
+        }
+      end
+
+      request = described_class.new(
+        channel,
+        exchange,
+        delivery_info,
+        properties,
+        node
+      )
+
+      [request, acks, published]
+    end
+
+    it 'dispatches allowlisted handler commands' do
+      request, acks, published = build_request
+
+      request.process(JSON.dump(command: 'get_node_config'))
+
+      expect(acks).to eq(['delivery-tag'])
+      expect(published.fetch(0).fetch(:payload)).to eq(
+        'status' => true,
+        'response' => {
+          'role' => node.role,
+          'ip_addr' => node.ip_addr,
+          'max_tx' => node.max_tx,
+          'max_rx' => node.max_rx
+        }
+      )
+    end
+
+    it 'rejects inherited Ruby dispatch methods' do
+      request, _acks, published = build_request
+
+      Dir.mktmpdir('vpsadmin-node-rpc-spec') do |dir|
+        path = File.join(dir, 'executed')
+        code = "::File.write(#{path.inspect}, 'executed')"
+
+        {
+          'instance_eval' => [code],
+          'send' => ['instance_eval', code],
+          'class' => []
+        }.each do |cmd, args|
+          request.process(JSON.dump(command: cmd, args: args))
+
+          expect(published.last.fetch(:payload)).to eq(
+            'status' => false,
+            'message' => "Command #{cmd.inspect} not found",
+            'retry' => false
+          )
+        end
+
+        expect(File).not_to exist(path)
+      end
     end
   end
 end

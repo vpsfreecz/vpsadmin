@@ -33,6 +33,7 @@ module VpsAdmin::Supervisor
       queue.subscribe do |_delivery_info, _properties, payload|
         data = JSON.parse(payload)
         report = save_report(data)
+        next if report.nil?
 
         if report.count >= THRESHOLD
           handle_abuser(report.vps)

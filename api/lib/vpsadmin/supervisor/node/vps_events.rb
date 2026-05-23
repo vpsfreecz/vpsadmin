@@ -20,7 +20,7 @@ module VpsAdmin::Supervisor
     protected
 
     def process_event(event)
-      vps = ::Vps.find(event['id'])
+      vps = ::Vps.find_by(id: event['id'], node_id: node.id)
       return if vps.nil?
 
       time = Time.at(event['time'])

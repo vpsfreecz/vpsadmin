@@ -22,10 +22,11 @@ module VpsAdmin::Supervisor
 
       queue.subscribe do |_delivery_info, _properties, payload|
         new_status = JSON.parse(payload)
+        vps = ::Vps.find_by(id: new_status['id'], node_id: node.id)
+        next if vps.nil?
 
-        current_status = ::VpsCurrentStatus.find_or_initialize_by(vps_id: new_status['id'])
-
-        update_status(current_status, new_status) if current_status.vps.node_id == node.id
+        current_status = ::VpsCurrentStatus.find_or_initialize_by(vps:)
+        update_status(current_status, new_status)
       end
     end
 
