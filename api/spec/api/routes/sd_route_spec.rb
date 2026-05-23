@@ -150,6 +150,21 @@ RSpec.describe 'VpsAdmin::API::ServiceDiscovery' do
       expect(last_response.status).to eq(200)
     end
 
+    it 'prefers Client-IP from a trusted proxy request' do
+      configure_download_pool_sd!(
+        allowed_networks: ['198.51.100.0/24'],
+        trusted_proxies: ['203.0.113.0/24']
+      )
+
+      request_download_pool_sd(
+        'REMOTE_ADDR' => '203.0.113.20',
+        'HTTP_X_REAL_IP' => '192.0.2.44',
+        'HTTP_CLIENT_IP' => '198.51.100.10'
+      )
+
+      expect(last_response.status).to eq(200)
+    end
+
     it 'allows direct access from an allowed IPv6 network' do
       configure_download_pool_sd!(allowed_networks: ['2001:db8:1::/64'])
 

@@ -22,7 +22,7 @@ RSpec.describe VpsAdmin::API::Operations::DnsZone::DynamicUpdate do
     end.to raise_error(ActiveRecord::RecordNotFound)
   end
 
-  it 'uses HTTP_CLIENT_IP before other request addresses' do
+  it 'uses Client-IP before other request addresses' do
     record = create_dns_update_token_record!(dns_zone: zone, record_type: 'A', content: '198.51.100.1')
     chain = instance_double(TransactionChain)
 
@@ -43,7 +43,7 @@ RSpec.describe VpsAdmin::API::Operations::DnsZone::DynamicUpdate do
     expect(ret_record.content).to eq('198.51.100.10')
   end
 
-  it 'uses HTTP_X_REAL_IP when HTTP_CLIENT_IP is absent' do
+  it 'uses X-Real-IP when Client-IP is absent' do
     record = create_dns_update_token_record!(dns_zone: zone, record_type: 'A', content: '198.51.100.1')
 
     allow(TransactionChains::DnsZone::UpdateRecord).to receive(:fire) { |arg| [instance_double(TransactionChain), arg] }

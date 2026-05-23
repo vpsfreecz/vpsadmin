@@ -1446,18 +1446,20 @@ RSpec.describe 'VpsAdmin::API::Resources::DnsRecord' do
       record
     end
 
-    it 'updates content using the client address' do
+    it 'updates content using the forwarded client address' do
       ensure_signer_unlocked!
 
       json_get dynamic_update_path(dynamic_record.update_token.token), nil, {
-        'HTTP_X_REAL_IP' => '192.0.2.200'
+        'HTTP_CLIENT_IP' => '192.0.2.199',
+        'HTTP_X_REAL_IP' => '192.0.2.200',
+        'REMOTE_ADDR' => '192.0.2.201'
       }
 
       expect_status(200)
       expect(json['status']).to be(true)
-      expect(record_obj['content']).to eq('192.0.2.200')
+      expect(record_obj['content']).to eq('192.0.2.199')
       expect(action_state_id.to_i).to be > 0
-      expect(dynamic_record.reload.content).to eq('192.0.2.200')
+      expect(dynamic_record.reload.content).to eq('192.0.2.199')
     end
 
     it 'returns 404 for unknown token' do
