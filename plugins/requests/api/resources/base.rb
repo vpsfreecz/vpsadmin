@@ -85,6 +85,8 @@ module VpsAdmin::API::Plugins::Requests
       end
 
       res.define_action(:Create, superclass: HaveAPI::Actions::Default::Create) do
+        include VpsAdmin::API::Lifetimes::ActionHelpers
+
         input do
           use :request
         end
@@ -98,6 +100,8 @@ module VpsAdmin::API::Plugins::Requests
         end
 
         def exec
+          object_state_check!(current_user) if current_user
+
           self.class.model.create!(request, current_user, input)
         rescue ActiveRecord::RecordInvalid => e
           error!('create failed', e.record.errors.to_hash)

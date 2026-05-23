@@ -54,6 +54,10 @@ RSpec.describe 'VpsAdmin::API::Resources::UserRequest::Change', requires_plugins
     json.dig('response', 'errors') || json['errors'] || {}
   end
 
+  def response_message
+    json['message'] || json.dig('response', 'message') || json['error']
+  end
+
   def expect_status(code)
     path = last_request&.path
     message = "Expected status #{code} for #{path}, got #{last_response.status} body=#{last_response.body}"
@@ -336,6 +340,24 @@ RSpec.describe 'VpsAdmin::API::Resources::UserRequest::Change', requires_plugins
       expect(record.client_ip_addr).to eq(forwarded_client_ip)
       expect(record.client_ip_ptr).to eq("ptr-#{forwarded_client_ip}")
       expect(record.api_ip_ptr).to eq("ptr-#{socket_client_ip}")
+    end
+
+    it 'denies suspended users creating change requests' do
+      user.record_object_state_change(
+        :suspended,
+        reason: 'spec suspended account',
+        user: admin
+      )
+      user.update!(lockout: false, password_reset: false)
+      mark_user_paid_until!(user)
+
+      expect do
+        as(user) { json_post index_path, change: change_payload }
+      end.not_to change(::ChangeRequest, :count)
+
+      expect_status(200)
+      expect(json['status']).to be(false)
+      expect(response_message).to include('Access forbidden')
     end
 
     it 'returns validation errors for missing change_reason' do
