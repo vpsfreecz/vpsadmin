@@ -5,6 +5,8 @@ if (isLoggedIn() && isAdmin()) {
     switch ($_GET['action']) {
         case 'set_state':
             try {
+                csrf_check();
+
                 $state = $_POST['object_state'];
                 $params = [
                     'object_state' => $state,

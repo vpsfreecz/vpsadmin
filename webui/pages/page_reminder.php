@@ -4,6 +4,8 @@ if (isLoggedIn()) {
 
     switch ($_GET['action'] ?? null) {
         case 'set':
+            csrf_check();
+
             $now = new DateTime("now");
             $date = null;
             $error = false;

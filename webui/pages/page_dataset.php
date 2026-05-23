@@ -322,6 +322,8 @@ if (isLoggedIn()) {
 
         case 'mount_edit':
             if (isset($_POST['on_start_fail'])) {
+                csrf_check();
+
                 try {
                     $input_params = $api->vps->mount->create->getParameters('input');
                     $api->vps($_GET['vps'])->mount($_GET['id'])->update([
