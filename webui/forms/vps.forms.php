@@ -458,16 +458,13 @@ function build_resource_uri_params()
     $params = [];
 
     foreach ($resources as $r) {
-        if (isset($_GET[$r])) {
-            $params[] = $r . '=' . $_GET[$r];
+        $value = api_get_uint($r);
+        if ($value !== null) {
+            $params[$r] = $value;
         }
     }
 
-    if (count($params) > 0) {
-        return '&' . implode('&', $params);
-    } else {
-        return '';
-    }
+    return count($params) > 0 ? '&' . http_build_query($params) : '';
 }
 
 function print_newvps_page4($user_id, $loc_id, $tpl_id)
@@ -533,38 +530,42 @@ function print_newvps_page4($user_id, $loc_id, $tpl_id)
     $xtpl->table_tr();
 
     $xtpl->table_td(_('CPUs') . ':');
-    $xtpl->table_td($_GET['cpu'] . ' ' . unit_for_cluster_resource('cpu'));
+    $xtpl->table_td(h(api_get_uint('cpu', 0)) . ' ' . unit_for_cluster_resource('cpu'));
     $xtpl->table_tr();
 
     $xtpl->table_td(_('Memory') . ':');
-    $xtpl->table_td($_GET['memory'] . ' ' . unit_for_cluster_resource('memory'));
+    $xtpl->table_td(h(api_get_uint('memory', 0)) . ' ' . unit_for_cluster_resource('memory'));
     $xtpl->table_tr();
 
-    if ($_GET['swap']) {
+    $swap = api_get_uint('swap');
+    if ($swap) {
         $xtpl->table_td(_('Swap') . ':');
-        $xtpl->table_td($_GET['swap'] . ' ' . unit_for_cluster_resource('swap'));
+        $xtpl->table_td(h($swap) . ' ' . unit_for_cluster_resource('swap'));
         $xtpl->table_tr();
     }
 
     $xtpl->table_td(_('Disk') . ':');
-    $xtpl->table_td($_GET['diskspace'] . ' ' . unit_for_cluster_resource('diskspace'));
+    $xtpl->table_td(h(api_get_uint('diskspace', 0)) . ' ' . unit_for_cluster_resource('diskspace'));
     $xtpl->table_tr();
 
-    if ($_GET['ipv4']) {
+    $ipv4 = api_get_uint('ipv4');
+    if ($ipv4) {
         $xtpl->table_td(_('Public IPv4') . ':');
-        $xtpl->table_td($_GET['ipv4'] . ' ' . unit_for_cluster_resource('ipv4'));
+        $xtpl->table_td(h($ipv4) . ' ' . unit_for_cluster_resource('ipv4'));
         $xtpl->table_tr();
     }
 
-    if ($_GET['ipv6']) {
+    $ipv6 = api_get_uint('ipv6');
+    if ($ipv6) {
         $xtpl->table_td(_('Public IPv6') . ':');
-        $xtpl->table_td($_GET['ipv6'] . ' ' . unit_for_cluster_resource('ipv6'));
+        $xtpl->table_td(h($ipv6) . ' ' . unit_for_cluster_resource('ipv6'));
         $xtpl->table_tr();
     }
 
-    if ($_GET['ipv4_private']) {
+    $ipv4Private = api_get_uint('ipv4_private');
+    if ($ipv4Private) {
         $xtpl->table_td(_('Private IPv4') . ':');
-        $xtpl->table_td($_GET['ipv4_private'] . ' ' . unit_for_cluster_resource('ipv4_private'));
+        $xtpl->table_td(h($ipv4Private) . ' ' . unit_for_cluster_resource('ipv4_private'));
         $xtpl->table_tr();
     }
 
@@ -1080,7 +1081,7 @@ function vps_migrate_form_step1($vps_id)
 
     $xtpl->table_title(_('Source VPS'));
     $xtpl->table_td(_('VPS:'));
-    $xtpl->table_td(vps_link($vps) . ' ' . $vps->hostname);
+    $xtpl->table_td(vps_link($vps) . ' ' . h($vps->hostname));
     $xtpl->table_tr();
 
     $xtpl->table_td(_('User:'));
@@ -1142,7 +1143,7 @@ function vps_migrate_form_step2($vps_id, $node_id)
 
     $xtpl->table_title(_('Source VPS'));
     $xtpl->table_td(_('VPS:'));
-    $xtpl->table_td(vps_link($vps) . ' ' . $vps->hostname);
+    $xtpl->table_td(vps_link($vps) . ' ' . h($vps->hostname));
     $xtpl->table_tr();
 
     $xtpl->table_td(_('User:'));
@@ -1301,7 +1302,7 @@ function vps_migrate_form_step3($vps_id, $node_id, $opts)
 
     $xtpl->table_title(_('Source VPS'));
     $xtpl->table_td(_('VPS:'));
-    $xtpl->table_td(vps_link($vps) . ' ' . $vps->hostname);
+    $xtpl->table_td(vps_link($vps) . ' ' . h($vps->hostname));
     $xtpl->table_tr();
 
     $xtpl->table_td(_('User:'));
@@ -1450,7 +1451,7 @@ function vps_clone_form_step0($vps_id)
 
     $xtpl->table_title(_('Source VPS'));
     $xtpl->table_td(_('VPS:'));
-    $xtpl->table_td(vps_link($vps) . ' ' . $vps->hostname);
+    $xtpl->table_td(vps_link($vps) . ' ' . h($vps->hostname));
     $xtpl->table_tr();
 
     if (isAdmin()) {
@@ -1506,7 +1507,7 @@ function vps_clone_form_step1($vps_id, $user_id)
     }
 
     $xtpl->table_td(_('VPS:'));
-    $xtpl->table_td(vps_link($vps) . ' ' . $vps->hostname);
+    $xtpl->table_td(vps_link($vps) . ' ' . h($vps->hostname));
     $xtpl->table_tr();
 
     $xtpl->table_td(_('Location:'));
@@ -1613,7 +1614,7 @@ function vps_clone_form_step2($vps_id, $user_id, $loc_id)
     }
 
     $xtpl->table_td(_('VPS:'));
-    $xtpl->table_td(vps_link($vps) . ' ' . $vps->hostname);
+    $xtpl->table_td(vps_link($vps) . ' ' . h($vps->hostname));
     $xtpl->table_tr();
 
     $xtpl->table_td(_('Location:'));
@@ -2143,7 +2144,7 @@ function vps_netif_iproute_add_form()
     ] + $via_addrs;
 
     $xtpl->table_td(_('VPS') . ':');
-    $xtpl->table_td($vps->id . ' ' . $vps->hostname);
+    $xtpl->table_td(h($vps->id) . ' ' . h($vps->hostname));
     $xtpl->table_tr();
 
     $xtpl->table_td(_('Network interface') . ':');
@@ -2287,7 +2288,7 @@ function vps_delete_form($vps_id)
 
     $xtpl->table_title(_("Delete VPS"));
     $xtpl->table_td(_("Hostname") . ':');
-    $xtpl->table_td($vps->hostname);
+    $xtpl->table_td(h($vps->hostname));
     $xtpl->table_tr();
     $xtpl->form_create('?page=adminvps&section=vps&action=delete2&veid=' . $vps->id, 'post');
     $xtpl->form_csrf();

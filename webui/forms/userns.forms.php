@@ -229,7 +229,7 @@ function userns_map_list($userns_id = null)
             . ' '
             . '(' . $m->user_namespace->size . ' ' . _('IDs') . ')'
         );
-        $xtpl->table_td($m->label);
+        $xtpl->table_td(h($m->label));
         $xtpl->table_td(
             '<a href="?page=adminvps&action=list&user_namespace_map=' . $m->id . '"><img src="template/icons/vps_ip_list.png" alt="' . _('List VPS') . '" title="' . _('List VPS') . '"></a>'
         );
@@ -253,7 +253,7 @@ function userns_map_show($map_id)
 
     $m = $api->user_namespace_map->show($map_id);
 
-    $xtpl->title(_('UID/GID map') . ' #' . $m->id . ' - ' . $m->label);
+    $xtpl->title(_('UID/GID map') . ' #' . $m->id . ' - ' . h($m->label));
 
     $xtpl->form_create('?page=userns&action=map_edit&id=' . $m->id, 'post');
     $xtpl->form_set_hidden_fields([

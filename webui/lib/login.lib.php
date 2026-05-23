@@ -206,6 +206,24 @@ function isHttps()
     return ($_SERVER['HTTPS'] ?? false) || (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] == 'https');
 }
 
+function sanitizedRequestHost($host)
+{
+    if (!is_string($host) || $host === '') {
+        return null;
+    }
+
+    $host = trim(explode(',', $host)[0]);
+
+    if (
+        preg_match('/^\[[0-9a-f:.]+\](?::[0-9]{1,5})?$/i', $host)
+        || preg_match('/^[A-Za-z0-9.-]+(?::[0-9]{1,5})?$/', $host)
+    ) {
+        return $host;
+    }
+
+    return null;
+}
+
 function getSelfUri()
 {
     $ret = 'http';
@@ -216,18 +234,23 @@ function getSelfUri()
 
     $ret .= '://';
 
-    if (isset($_SERVER['HTTP_X_FORWARDED_HOST']) && $_SERVER['HTTP_X_FORWARDED_HOST']) {
-        return $ret . trim(explode(',', $_SERVER['HTTP_X_FORWARDED_HOST'])[0]);
+    $host = sanitizedRequestHost($_SERVER['HTTP_X_FORWARDED_HOST'] ?? null);
+    if ($host) {
+        return $ret . $host;
     }
 
-    if (isset($_SERVER['HTTP_HOST']) && $_SERVER['HTTP_HOST']) {
-        return $ret . $_SERVER['HTTP_HOST'];
+    $host = sanitizedRequestHost($_SERVER['HTTP_HOST'] ?? null);
+    if ($host) {
+        return $ret . $host;
     }
 
-    if ($_SERVER['SERVER_PORT'] != '80') {
-        $ret .= $_SERVER['SERVER_NAME'] . ':' . $_SERVER['SERVER_PORT'];
+    $serverName = sanitizedRequestHost($_SERVER['SERVER_NAME'] ?? null) ?? 'localhost';
+    $serverPort = $_SERVER['SERVER_PORT'] ?? '80';
+
+    if ($serverPort != '80') {
+        $ret .= $serverName . ':' . $serverPort;
     } else {
-        $ret .= $_SERVER['SERVER_NAME'];
+        $ret .= $serverName;
     }
 
     return $ret;

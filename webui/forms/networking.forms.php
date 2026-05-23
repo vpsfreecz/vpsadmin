@@ -605,7 +605,7 @@ function route_assign_form($id)
 
     if ($vps) {
         $xtpl->table_td(_('VPS') . ':');
-        $xtpl->table_td($vps->id . ' (' . $vps->hostname . ')');
+        $xtpl->table_td(h($vps->id) . ' (' . h($vps->hostname) . ')');
         $xtpl->table_tr();
 
         if ($netif) {
@@ -692,7 +692,7 @@ function route_unassign_form($id)
     $xtpl->table_td(_('VPS') . ':');
     $xtpl->table_td(
         '<a href="?page=adminvps&action=info&veid=' . $vps->id . '">#' . $vps->id . '</a>'
-        . ' ' . $vps->hostname
+        . ' ' . h($vps->hostname)
     );
     $xtpl->table_tr();
 
@@ -738,7 +738,7 @@ function hostaddr_assign_form($id)
     $xtpl->table_tr();
 
     $xtpl->table_td(_('VPS') . ':');
-    $xtpl->table_td($ip->network_interface->vps_id . ' (' . $ip->network_interface->vps->hostname . ')');
+    $xtpl->table_td(h($ip->network_interface->vps_id) . ' (' . h($ip->network_interface->vps->hostname) . ')');
     $xtpl->table_tr();
 
     $xtpl->table_td(_('Network interface') . ':');
@@ -773,7 +773,7 @@ function hostaddr_unassign_form($id)
     $xtpl->table_td(_('VPS') . ':');
     $xtpl->table_td(
         '<a href="?page=adminvps&action=info&veid=' . $vps->id . '">#' . $vps->id . '</a>'
-        . ' ' . $vps->hostname
+        . ' ' . h($vps->hostname)
     );
     $xtpl->table_tr();
 
@@ -1007,7 +1007,7 @@ function hostaddr_reverse_record_form($id)
         $xtpl->table_td(_('VPS') . ':');
         $xtpl->table_td(
             '<a href="?page=adminvps&action=info&veid=' . $vps->id . '">#' . $vps->id . '</a>'
-            . ' ' . $vps->hostname
+            . ' ' . h($vps->hostname)
         );
         $xtpl->table_tr();
 

@@ -195,7 +195,7 @@ foreach ($nodes as $node) {
     }
 
     $xtpl->table_td(
-        kernel_version($node->kernel),
+        h(kernel_version($node->kernel)),
         false,
         true
     );

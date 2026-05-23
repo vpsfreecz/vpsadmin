@@ -64,6 +64,11 @@ class CapturingTemplate
         $this->sidebar[] = [$label, $url];
     }
 
+    public function sbar_add_trusted($label, $url = null)
+    {
+        $this->sidebar[] = [$label, $url];
+    }
+
     public function sbar_add_fragment($html)
     {
         $this->sidebar[] = [$html, null];

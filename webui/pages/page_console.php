@@ -152,11 +152,11 @@ function vps_boot(cmd) {
 }
 </script>
 ');
-    $xtpl->sbar_add('<img src="template/icons/vps_start.png"  title="' . _("Start") . '" /> ' . _("Start"), "javascript:vps_do('start');");
-    $xtpl->sbar_add('<img src="template/icons/vps_stop.png"  title="' . _("Stop") . '" /> ' . _("Stop"), "javascript:vps_do('stop');");
-    $xtpl->sbar_add('<img src="template/icons/vps_restart.png"  title="' . _("Restart") . '" /> ' . _("Restart"), "javascript:vps_do('restart');");
-    $xtpl->sbar_add('<img src="template/icons/vps_reset.png"  title="' . _("Reset") . '" /> ' . _("Reset"), "javascript:vps_do('force_restart');");
-    $xtpl->sbar_add('<img src="template/icons/vps_poweroff.png"  title="' . _("Poweroff") . '" /> ' . _("Poweroff"), "javascript:vps_do('force_stop');");
+    $xtpl->sbar_add_trusted('<img src="template/icons/vps_start.png"  title="' . _("Start") . '" /> ' . _("Start"), "javascript:vps_do('start');");
+    $xtpl->sbar_add_trusted('<img src="template/icons/vps_stop.png"  title="' . _("Stop") . '" /> ' . _("Stop"), "javascript:vps_do('stop');");
+    $xtpl->sbar_add_trusted('<img src="template/icons/vps_restart.png"  title="' . _("Restart") . '" /> ' . _("Restart"), "javascript:vps_do('restart');");
+    $xtpl->sbar_add_trusted('<img src="template/icons/vps_reset.png"  title="' . _("Reset") . '" /> ' . _("Reset"), "javascript:vps_do('force_restart');");
+    $xtpl->sbar_add_trusted('<img src="template/icons/vps_poweroff.png"  title="' . _("Poweroff") . '" /> ' . _("Poweroff"), "javascript:vps_do('force_stop');");
     $xtpl->sbar_add_fragment('<p id="vps-action-status" role="status"></p>');
 
     $xtpl->sbar_add_fragment(

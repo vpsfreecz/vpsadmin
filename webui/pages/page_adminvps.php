@@ -733,7 +733,7 @@ if (isLoggedIn()) {
 
                 $xtpl->table_title(
                     _('Confirm reinstallation of VPS') . ' #' . $vps->id
-                    . ' ' . $vps->hostname
+                    . ' ' . h($vps->hostname)
                 );
                 $xtpl->form_create('?page=adminvps&action=reinstall&veid=' . $vps->id);
 
@@ -748,7 +748,7 @@ if (isLoggedIn()) {
                     '<strong>'
                     . _('All data from the VPS root filesystem will be deleted, subdatasets are kept.')
                     . '</strong>'
-                    . '<input type="hidden" name="os_template" value="' . $_POST['os_template'] . '">',
+                    . '<input type="hidden" name="os_template" value="' . h($_POST['os_template']) . '">',
                     false,
                     false,
                     2
@@ -760,7 +760,7 @@ if (isLoggedIn()) {
                 $xtpl->table_tr();
 
                 $xtpl->table_td(_('Hostname') . ':');
-                $xtpl->table_td($vps->hostname);
+                $xtpl->table_td(h($vps->hostname));
                 $xtpl->table_tr();
 
                 $xtpl->table_td(_('Current OS template') . ':');

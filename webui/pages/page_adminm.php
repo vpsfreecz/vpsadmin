@@ -174,11 +174,11 @@ function print_editm($u)
         $xtpl->table_add_category('');
 
         $xtpl->table_td(_('Account management') . ':');
-        $xtpl->table_td(implode(', ', getUserEmails($u, $mail_role_recipients, 'Account management')));
+        $xtpl->table_td(h(implode(', ', getUserEmails($u, $mail_role_recipients, 'Account management'))));
         $xtpl->table_tr();
 
         $xtpl->table_td(_('System administrator') . ':');
-        $xtpl->table_td(implode(', ', getUserEmails($u, $mail_role_recipients, 'System administrator')));
+        $xtpl->table_td(h(implode(', ', getUserEmails($u, $mail_role_recipients, 'System administrator'))));
         $xtpl->table_tr();
 
         $xtpl->table_out();
@@ -414,7 +414,7 @@ function print_deletem($u)
 
     $xtpl->table_title(_("Delete member"));
     $xtpl->table_td(_("Full name") . ':');
-    $xtpl->table_td($u->full_name);
+    $xtpl->table_td(h($u->full_name));
     $xtpl->table_tr();
     $xtpl->form_create('?page=adminm&section=members&action=delete2&id=' . $u->id, 'post');
     $xtpl->table_td(_("VPSes to be deleted") . ':');
@@ -422,7 +422,7 @@ function print_deletem($u)
     $vpses = '';
 
     foreach ($api->vps->list(['user' => $u->id]) as $vps) {
-        $vpses .= '<a href="?page=adminvps&action=info&veid=' . $vps->id . '">#' . $vps->id . ' - ' . $vps->hostname . '</a><br>';
+        $vpses .= '<a href="?page=adminvps&action=info&veid=' . $vps->id . '">#' . h($vps->id) . ' - ' . h($vps->hostname) . '</a><br>';
     }
 
     $xtpl->table_td($vpses);
@@ -1403,10 +1403,15 @@ if (isLoggedIn()) {
             webauthn_list($u);
             break;
         case 'webauthn_register':
+            $registerMessage = h($_GET['registerMessage'] ?? '');
+
             if (($_GET['registerStatus'] ?? '0') === '1') {
-                notify_user(_('Passkey registered'), $_GET['registerMessage'] ?? '');
+                notify_user(_('Passkey registered'), $registerMessage);
             } else {
-                notify_user(_('Failed to register passkey'), $_GET['registerMessage'] ?? _('Unknown error.'));
+                notify_user(
+                    _('Failed to register passkey'),
+                    $registerMessage !== '' ? $registerMessage : _('Unknown error.')
+                );
             }
 
             redirect('?page=adminm&action=webauthn_list&id=' . $_GET['id']);

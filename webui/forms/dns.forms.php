@@ -782,13 +782,13 @@ function dnssec_records_list($zone_id)
         $xtpl->table_tr();
 
         $xtpl->table_td(_('Public key') . ':');
-        $xtpl->table_td('<code>' . $r->dnskey_pubkey . '<code>');
+        $xtpl->table_td('<code>' . h($r->dnskey_pubkey) . '</code>');
         $xtpl->table_tr();
 
         $xtpl->table_td(_('DNSKEY record') . ':');
         $xtpl->table_td(
             '<textarea cols="70" rows="5" readonly>'
-            . "{$zone->name} IN DNSKEY 257 3 {$r->dnskey_algorithm} {$r->dnskey_pubkey}"
+            . h("{$zone->name} IN DNSKEY 257 3 {$r->dnskey_algorithm} {$r->dnskey_pubkey}")
             . '</textarea>'
         );
         $xtpl->table_tr();
@@ -796,7 +796,7 @@ function dnssec_records_list($zone_id)
         $xtpl->table_td(_('DS record') . ':');
         $xtpl->table_td(
             '<textarea cols="70" rows="5" readonly>'
-            . "{$zone->name} IN DS {$r->keyid} {$r->ds_algorithm} {$r->ds_digest_type} {$r->ds_digest}"
+            . h("{$zone->name} IN DS {$r->keyid} {$r->ds_algorithm} {$r->ds_digest_type} {$r->ds_digest}")
             . '</textarea>'
         );
         $xtpl->table_tr();

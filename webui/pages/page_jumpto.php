@@ -34,7 +34,7 @@ if (isLoggedIn() && isAdmin()) {
             $xtpl->table_add_category(_('Value'));
 
             foreach ($res as $v) {
-                $xtpl->table_td($v->resource);
+                $xtpl->table_td(h($v->resource));
 
                 $link = null;
 
@@ -68,15 +68,20 @@ if (isLoggedIn() && isAdmin()) {
                         break;
                 }
 
-                $xtpl->table_td($link ? '<a href="' . $link . '">' . $v->id . '</a>' : $v->id);
-                $xtpl->table_td($v->attribute);
-                $xtpl->table_td(preg_replace_callback(
-                    "/(" . preg_quote($search) . ")/i",
-                    function ($matches) {
-                        return "<strong>" . htmlspecialchars($matches[0]) . "</strong>";
-                    },
-                    $v->value
-                ));
+                $xtpl->table_td($link ? '<a href="' . h($link) . '">' . h($v->id) . '</a>' : h($v->id));
+                $xtpl->table_td(h($v->attribute));
+
+                $value = h($v->value);
+                if ($search !== '') {
+                    $value = preg_replace_callback(
+                        "/(" . preg_quote(h($search), '/') . ")/i",
+                        function ($matches) {
+                            return "<strong>" . $matches[0] . "</strong>";
+                        },
+                        $value
+                    );
+                }
+                $xtpl->table_td($value);
                 $xtpl->table_tr();
             }
 

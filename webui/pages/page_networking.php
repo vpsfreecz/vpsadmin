@@ -562,9 +562,17 @@ if (isLoggedIn()) {
         $xtpl->table_add_category(_('Total'));
 
         foreach ($stats as $stat) {
+            $href = '?' . http_build_query([
+                'page' => 'networking',
+                'action' => 'list',
+                'user' => $stat->user_id,
+                'year' => $stat->year,
+                'month' => $stat->month,
+            ]);
+
             $xtpl->table_td(
-                '<a href="?page=networking&action=list&user=' . $stat->user_id . '&year=' . $_GET['year'] . '&month=' . $_GET['month'] . '">'
-                . $stat->user->login
+                '<a href="' . h($href) . '">'
+                . h($stat->user->login)
                 . '</a>'
             );
 

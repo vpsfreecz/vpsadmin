@@ -225,7 +225,7 @@ function oom_reports_show($id)
     $xtpl->table_add_category(_('Fail count'));
 
     foreach ($r->usage->list() as $usage) {
-        $xtpl->table_td($usage->memtype);
+        $xtpl->table_td(h($usage->memtype));
         $xtpl->table_td(data_size_to_humanreadable_kb($usage->usage), false, true);
         $xtpl->table_td(data_size_to_humanreadable_kb($usage->limit), false, true);
         $xtpl->table_td($usage->failcnt, false, true);
@@ -239,7 +239,7 @@ function oom_reports_show($id)
     $xtpl->table_add_category(_('Value'));
 
     foreach ($r->stat->list() as $stat) {
-        $xtpl->table_td($stat->parameter);
+        $xtpl->table_td(h($stat->parameter));
         $xtpl->table_td(data_size_to_humanreadable_b($stat->value), false, true);
         $xtpl->table_tr();
     }

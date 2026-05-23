@@ -124,7 +124,7 @@ if (isLoggedIn()) {
 
                     $xtpl->table_td(
                         _("Confirm") . ' '
-                        . '<input type="hidden" name="return" value="' . ($_GET['return'] ? $_GET['return'] : $_POST['return']) . '">'
+                        . '<input type="hidden" name="return" value="' . h($_GET['return'] ?? $_POST['return'] ?? '') . '">'
                     );
                     $xtpl->form_add_checkbox_pure('confirm', '1', false);
                     $xtpl->table_td(_('The dataset will be destroyed along with all its descendants.
@@ -305,7 +305,7 @@ if (isLoggedIn()) {
 
                     $xtpl->table_td(
                         _("Confirm") . ' '
-                        . '<input type="hidden" name="return" value="' . ($_GET['return'] ? $_GET['return'] : $_POST['return']) . '">'
+                        . '<input type="hidden" name="return" value="' . h($_GET['return'] ?? $_POST['return'] ?? '') . '">'
                     );
                     $xtpl->form_add_checkbox_pure('confirm', '1', false);
                     $xtpl->table_td(_('The dataset will be unmounted. The data itself is not touched.'));

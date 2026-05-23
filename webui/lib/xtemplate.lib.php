@@ -595,8 +595,12 @@ class XTemplate
       */
     public function sbar_add($title, $link)
     {
+        $this->sbar_add_trusted($title, local_redirect_target($link));
+    }
+    public function sbar_add_trusted($title, $link)
+    {
         $this->assign('SBI_TITLE', $title);
-        $this->assign('SBI_LINK', $link);
+        $this->assign('SBI_LINK', h($link));
         $this->parse('main.sidebar.sb_item');
     }
     public function sbar_add_fragment($html)
@@ -788,7 +792,7 @@ class XTemplate
       */
     public function form_create($action = '?page=', $method = 'post', $name = 'generic_form', $csrf = true)
     {
-        $this->assign('TABLE_FORM_BEGIN', '<form action="' . $action . '" method="' . $method . '" name="' . $name . '" AUTOCOMPLETE=OFF>');
+        $this->assign('TABLE_FORM_BEGIN', '<form action="' . h($action) . '" method="' . h($method) . '" name="' . h($name) . '" AUTOCOMPLETE=OFF>');
 
         $this->form_csrf('common', $csrf);
     }
@@ -801,7 +805,7 @@ class XTemplate
         $str = '';
 
         foreach ($keyvals as $k => $v) {
-            $str .= '<input type="hidden" name="' . $k . '" value="' . h($v) . '">';
+            $str .= '<input type="hidden" name="' . h($k) . '" value="' . h($v) . '">';
         }
 
         $this->assign('FORM_HIDDEN_FIELDS', $str);
@@ -1105,7 +1109,7 @@ class XTemplate
 
     public function html_submit($value, $name = null)
     {
-        return '<input type="submit" name="' . $name . '" value="' . $value . '" class="button" />';
+        return '<input type="submit" name="' . h($name) . '" value="' . h($value) . '" class="button" />';
     }
 
     /**

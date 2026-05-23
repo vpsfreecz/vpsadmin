@@ -256,7 +256,7 @@ function local_redirect_target($loc, $fallback = '?page=')
 
     $target = trim($loc);
 
-    if ($target === '' || preg_match('/[\r\n]/', $target)) {
+    if ($target === '' || preg_match('/[\x00-\x1f\x7f"\'<>]/', $target)) {
         return $fallback;
     }
 
@@ -1164,7 +1164,7 @@ function h($v)
         return '';
     }
 
-    return htmlspecialchars($v);
+    return htmlspecialchars((string) $v, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
 }
 
 /**

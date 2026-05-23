@@ -27,5 +27,14 @@ module VpsAdmin::API
 
       @template.result(binding)
     end
+
+    def js_string(value)
+      JSON.dump(value.to_s)
+          .gsub('<', '\\u003c')
+          .gsub('>', '\\u003e')
+          .gsub('&', '\\u0026')
+          .gsub("\u2028", '\\u2028')
+          .gsub("\u2029", '\\u2029')
+    end
   end
 end

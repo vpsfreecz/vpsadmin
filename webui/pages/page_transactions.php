@@ -117,15 +117,15 @@ function list_chains()
 
         if (isAdmin()) {
             if ($chain->user_id) {
-                $xtpl->table_td('<a href="?page=adminm&action=edit&id=' . $chain->user_id . '">' . $chain->user->login . '</a>');
+                $xtpl->table_td('<a href="?page=adminm&action=edit&id=' . $chain->user_id . '">' . h($chain->user->login) . '</a>');
             } else {
                 $xtpl->table_td('---');
             }
         }
 
         $xtpl->table_td(transaction_chain_concerns($chain));
-        $xtpl->table_td($chain->label);
-        $xtpl->table_td($chain->state);
+        $xtpl->table_td(h($chain->label));
+        $xtpl->table_td(h($chain->state));
         $xtpl->table_td($chain->size);
         $xtpl->table_td($chain->progress . ' (' . round($chain->progress / $chain->size * 100, 0) . ' %)');
         $xtpl->table_tr(false, chain_class($chain));
@@ -162,12 +162,12 @@ function chain_transactions($chain_id)
         return;
     }
 
-    $xtpl->table_title(_('Transaction chain') . ' #' . $chain->id . ' ' . $chain->label);
+    $xtpl->table_title(_('Transaction chain') . ' #' . $chain->id . ' ' . h($chain->label));
     $xtpl->table_add_category(_('Chain info'));
     $xtpl->table_add_category('');
 
     $xtpl->table_td(_('Name'));
-    $xtpl->table_td($chain->name);
+    $xtpl->table_td(h($chain->name));
     $xtpl->table_tr();
 
     $xtpl->table_td(_('Concerns'));
@@ -175,7 +175,7 @@ function chain_transactions($chain_id)
     $xtpl->table_tr();
 
     $xtpl->table_td(_('State'));
-    $xtpl->table_td($chain->state);
+    $xtpl->table_td(h($chain->state));
     $xtpl->table_tr();
 
     $xtpl->table_td(_('Size'));
@@ -187,11 +187,11 @@ function chain_transactions($chain_id)
     $xtpl->table_tr();
 
     $xtpl->table_td(_('User'));
-    $xtpl->table_td($chain->user_id ? ('<a href="?page=adminm&action=edit&id=' . $chain->user_id . '">' . $chain->user->login . '</a>') : '---');
+    $xtpl->table_td($chain->user_id ? ('<a href="?page=adminm&action=edit&id=' . $chain->user_id . '">' . h($chain->user->login) . '</a>') : '---');
     $xtpl->table_tr();
 
     $xtpl->table_td(_('Session'));
-    $xtpl->table_td($chain->user_session_id ? ('<a href="?page=adminm&action=user_sessions&id=' . $chain->user_id . '&session_id=' . $chain->user_session_id . '&list=1&details=1">' . $chain->user_session->label . '</a>') : '---');
+    $xtpl->table_td($chain->user_session_id ? ('<a href="?page=adminm&action=user_sessions&id=' . $chain->user_id . '&session_id=' . $chain->user_session_id . '&list=1&details=1">' . h($chain->user_session->label) . '</a>') : '---');
     $xtpl->table_tr();
 
     $xtpl->table_td(_('Created at'));

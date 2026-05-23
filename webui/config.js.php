@@ -13,19 +13,19 @@ header('Content-Type: text/javascript');
 if (isLoggedIn()) {
     ?>
 (function(root) {
-root.vpsAdmin = {
-	api: {
-		url: "<?php echo EXT_API_URL ?>",
-		version: "<?php echo API_VERSION ?>"
-	},
-	webui: {
-		url: "<?php echo getSelfUri() ?>"
-	},
-<?php if ($_SESSION['auth_type'] == 'oauth2') { ?>
-	accessToken: "<?php echo $_SESSION['access_token']['access_token'] ?>",
-<?php } elseif ($_SESSION['auth_type'] == 'token') { ?>
-	sessionToken: "<?php echo $_SESSION['session_token'] ?>",
-<?php } ?>
+	root.vpsAdmin = {
+		api: {
+			url: <?php echo json_encode(EXT_API_URL, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>,
+			version: <?php echo json_encode(API_VERSION, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>
+		},
+		webui: {
+			url: <?php echo json_encode(getSelfUri(), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>
+		},
+	<?php if ($_SESSION['auth_type'] == 'oauth2') { ?>
+		accessToken: <?php echo json_encode($_SESSION['access_token']['access_token'], JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>,
+	<?php } elseif ($_SESSION['auth_type'] == 'token') { ?>
+		sessionToken: <?php echo json_encode($_SESSION['session_token'], JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>,
+	<?php } ?>
 	sessionLength: <?php echo $_SESSION['user']['session_length'] ?>,
 	logoutUrl: <?php echo json_encode('?page=login&action=logout&t=' . csrf_token()) ?>,
 	description: <?php echo json_encode($_SESSION['api_description']) ?>,

@@ -234,7 +234,7 @@ function dataset_create_form()
 
     $xtpl->table_td(
         $quota->label . ' '
-        . '<input type="hidden" name="return" value="' . ($_GET['return'] ? $_GET['return'] : $_POST['return']) . '">'
+        . '<input type="hidden" name="return" value="' . h($_GET['return'] ?? $_POST['return'] ?? '') . '">'
     );
     $xtpl->form_add_input_pure('text', '30', $quota_name, $_POST[$quota_name] ? $_POST[$quota_name] : $v[0], $quota->description);
     $xtpl->form_add_select_pure('quota_unit', ["g" => "GiB", "t" => "TiB"], $_POST[$quota_name] ? $_POST['quota_unit'] : $v[1]);
@@ -300,7 +300,7 @@ function dataset_edit_form()
 
     $xtpl->table_td(
         $quota->label . ' '
-        . '<input type="hidden" name="return" value="' . ($_GET['return'] ? $_GET['return'] : $_POST['return']) . '">'
+        . '<input type="hidden" name="return" value="' . h($_GET['return'] ?? $_POST['return'] ?? '') . '">'
     );
     $xtpl->form_add_input_pure('text', '30', $quota_name, $_POST[$quota_name] ? $_POST[$quota_name] : $v[0], $quota->description);
     $xtpl->form_add_select_pure('quota_unit', ["g" => "GiB", "t" => "TiB"], $_POST[$quota_name] ? $_POST['quota_unit'] : $v[1]);
@@ -479,7 +479,7 @@ function dataset_edit_form()
 
     $xtpl->table_td(
         _('Add backup plan') . ':' . ' '
-        . '<input type="hidden" name="return" value="' . ($_GET['return'] ? $_GET['return'] : $_POST['return']) . '">'
+        . '<input type="hidden" name="return" value="' . h($_GET['return'] ?? $_POST['return'] ?? '') . '">'
     );
     $xtpl->form_add_select_pure('environment_dataset_plan', resource_list_to_options($ds->environment->dataset_plan->list()));
     $xtpl->table_td('');
@@ -505,7 +505,7 @@ function dataset_snapshot_list($datasets, $vps = null)
         }
 
         if ($vps && $ds->id == $vps->dataset_id) {
-            $xtpl->table_title(_('VPS') . ' #' . $vps->id . ' ' . $vps->hostname);
+            $xtpl->table_title(_('VPS') . ' #' . $vps->id . ' ' . h($vps->hostname));
         } else {
             $xtpl->table_title($ds->name);
         }
@@ -677,7 +677,7 @@ function mount_create_form()
     $xtpl->table_td($ds->name . ' <input type="hidden" name="dataset" value="' . $ds->id . '">');
     $xtpl->table_tr();
 
-    $xtpl->table_td($params->mountpoint->label . ' <input type="hidden" name="return" value="' . ($_GET['return'] ? $_GET['return'] : $_POST['return']) . '">');
+    $xtpl->table_td($params->mountpoint->label . ' <input type="hidden" name="return" value="' . h($_GET['return'] ?? $_POST['return'] ?? '') . '">');
     api_param_to_form_pure('mountpoint', $params->mountpoint, '');
     $xtpl->table_tr();
 
@@ -713,7 +713,7 @@ function mount_edit_form($vps_id, $mnt_id)
 
     $xtpl->form_create('?page=dataset&action=mount_edit&vps=' . $vps_id . '&id=' . $mnt_id, 'post');
 
-    $xtpl->table_td($params->on_start_fail->label . ' <input type="hidden" name="return" value="' . ($_GET['return'] ? $_GET['return'] : $_POST['return']) . '">');
+    $xtpl->table_td($params->on_start_fail->label . ' <input type="hidden" name="return" value="' . h($_GET['return'] ?? $_POST['return'] ?? '') . '">');
 
     api_param_to_form_pure(
         'on_start_fail',

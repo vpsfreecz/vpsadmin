@@ -16,7 +16,7 @@
         <div class="col-sm-6 col-lg-4 mx-auto">
           <div class="card">
             <article class="card-body">
-              <img src="<%= logo_url %>" class="card-img-top" alt="vpsFree.cz">
+              <img src="<%= ERB::Util.html_escape(logo_url.to_s) %>" class="card-img-top" alt="vpsFree.cz">
               <h4 class="card-title text-center mb-4 mt-1">Register passkey into vpsAdmin</h4>
               <hr>
               <div id="alert-area"></div>
@@ -56,7 +56,7 @@
 
       async function registerCredential(label) {
         const authHeaders = {
-          'X-HaveAPI-OAuth2-Token': <%= JSON.dump(access_token) %>
+          'X-HaveAPI-OAuth2-Token': <%= js_string(access_token) %>
         };
 
         if (navigator.credentials === undefined) {
@@ -140,7 +140,7 @@
       }
 
       function redirectUser (status, message) {
-        const url = new URL('<%= redirect_uri %>');
+        const url = new URL(<%= js_string(redirect_uri) %>);
 
         url.searchParams.set('registerStatus', status ? '1' : '0');
         url.searchParams.set('registerMessage', message);

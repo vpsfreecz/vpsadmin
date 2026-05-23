@@ -53,19 +53,19 @@ if (isLoggedIn() && isAdmin()) {
 
             foreach ($states as $s) {
                 $xtpl->table_td(tolocaltz($s->changed_at));
-                $xtpl->table_td($s->state);
+                $xtpl->table_td(h($s->state));
                 $xtpl->table_td($s->expiration ? tolocaltz($s->expiration) : '---');
                 $xtpl->table_td($s->remind_after ? tolocaltz($s->remind_after) : '---');
 
                 if ($s->user_id) {
-                    $xtpl->table_td('<a href="?page=adminm&action=edit&id=' . $s->user->id . '">' . $s->user->login . '</a>');
+                    $xtpl->table_td('<a href="?page=adminm&action=edit&id=' . $s->user->id . '">' . h($s->user->login) . '</a>');
                 } else {
                     $xtpl->table_td('---');
                 }
 
                 $xtpl->table_tr();
                 $xtpl->table_td(
-                    _('Reason') . ': ' . nl2br($s->reason),
+                    _('Reason') . ': ' . nl2br(h($s->reason)),
                     false,
                     false,
                     5
