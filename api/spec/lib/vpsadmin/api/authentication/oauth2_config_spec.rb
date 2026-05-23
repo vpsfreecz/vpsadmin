@@ -465,8 +465,21 @@ RSpec.describe VpsAdmin::API::Authentication::OAuth2Config do
     expect(authorization.code).to be_present
     expect(authorization.single_sign_on).to be_present
     expect(authorization.user_device).to be_present
-    expect(response.cookies).to have_key(described_class::SSO_COOKIE)
-    expect(response.cookies).to have_key(described_class::DEVICES_COOKIE)
+
+    expect(response.cookies.fetch(described_class::SSO_COOKIE)).to include(
+      value: authorization.single_sign_on.token.token,
+      max_age: 24 * 60 * 60,
+      httponly: true,
+      secure: true,
+      same_site: :lax
+    )
+    expect(response.cookies.fetch(described_class::DEVICES_COOKIE)).to include(
+      value: authorization.user_device.token.token,
+      max_age: UserDevice::LIFETIME,
+      httponly: true,
+      secure: true,
+      same_site: :lax
+    )
   end
 end
 # rubocop:enable RSpec/MultipleMemoizedHelpers
