@@ -7,6 +7,21 @@
     Web-admin interface for vpsAdminOS (see https://vpsadminos.org)
     Copyright (C) 2008-2011 Pavel Snajdr, snajpa@snajpa.net
 */
+function context_switch_form($user_id, $next, $label = '')
+{
+    $title = h(_("Switch context"));
+
+    return '<form action="?page=login&action=switch_context" method="post" style="display:inline" autocomplete="off">'
+        . '<input type="hidden" name="csrf_token" value="' . h(csrf_token()) . '">'
+        . '<input type="hidden" name="m_id" value="' . h($user_id) . '">'
+        . '<input type="hidden" name="next" value="' . h($next) . '">'
+        . '<button type="submit" title="' . $title . '" style="border:0;background:transparent;padding:0;margin:0;cursor:pointer;vertical-align:middle">'
+        . '<img src="template/icons/m_switch.png" title="' . $title . '">'
+        . ($label ? ' ' . h($label) : '')
+        . '</button>'
+        . '</form>';
+}
+
 function print_newm()
 {
     global $xtpl, $cfg_privlevel, $config;
@@ -365,7 +380,7 @@ function print_editm($u)
     if (isAdmin()) {
         lifetimes_set_state_form('user', $u->id, $u);
 
-        $xtpl->sbar_add("<br><img src=\"template/icons/m_switch.png\"  title=" . _("Switch context") . " /> Switch context", "?page=login&action=switch_context&m_id={$u->id}&next=" . $return_url);
+        $xtpl->sbar_add_fragment('<br>' . context_switch_form($u->id, $_SERVER["REQUEST_URI"], _('Switch context')));
         $xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="' . _("State log") . '" />' . _('State log'), '?page=lifetimes&action=changelog&resource=user&id=' . $u->id . '&return=' . $return_url);
     }
 
@@ -822,8 +837,7 @@ function list_members()
 
             if ((isAdmin()) && ($u->id != $_SESSION["user"]["id"])) {
                 $xtpl->table_td(
-                    '<a href="?page=login&action=switch_context&m_id=' . $u->id . '&next=' . urlencode($_SERVER["REQUEST_URI"]) . '">'
-                    . '<img src="template/icons/m_switch.png" title="' . _("Switch context") . '"></a>'
+                    context_switch_form($u->id, $_SERVER["REQUEST_URI"])
                     . $u->login
                 );
 

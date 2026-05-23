@@ -165,7 +165,7 @@ function switchUserContext($target_user_id)
                 . $cfg_privlevel[$user->level]
         );
 
-        redirect($_GET["next"]);
+        redirect($_POST["next"] ?? $_GET["next"] ?? '?page=');
 
     } catch (\HaveAPI\Client\Exception\ActionFailed $e) {
         $xtpl->perex_format_errors(_('Failed to switch context'), $e->getResponse());

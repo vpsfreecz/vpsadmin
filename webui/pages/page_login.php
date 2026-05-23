@@ -77,8 +77,14 @@ if (isAdmin() && ($_GET["action"] == 'drop_admin')) {
     redirect($_GET["next"]);
 }
 
-if (isAdmin() && ($_GET["action"] == 'switch_context') && isset($_GET["m_id"]) && !$_SESSION["context_switch"]) {
-    switchUserContext($_GET['m_id']);
+if (isAdmin() && ($_GET["action"] == 'switch_context') && !$_SESSION["context_switch"]) {
+    if ($_SERVER['REQUEST_METHOD'] !== 'POST' || !isset($_POST['m_id'])) {
+        $xtpl->perex(_('Invalid request'), _('Context switch must use POST.'));
+        return;
+    }
+
+    csrf_check();
+    switchUserContext($_POST['m_id']);
 }
 
 if ($_GET["action"] == "regain_admin" && $_SESSION["context_switch"]) {
