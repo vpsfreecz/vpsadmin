@@ -358,6 +358,19 @@ function getClientIdentity()
     return  "vpsadmin-webui " . $short;
 }
 
+function getApiOAuth2TrustedOrigins()
+{
+    return defined('API_OAUTH2_TRUSTED_ORIGINS') ? API_OAUTH2_TRUSTED_ORIGINS : [];
+}
+
+function getApiClientOptions()
+{
+    return [
+        'verify' => defined('API_SSL_VERIFY') ? API_SSL_VERIFY : true,
+        'oauth2_trusted_origins' => getApiOAuth2TrustedOrigins(),
+    ];
+}
+
 function api_description_changed($api)
 {
     $_SESSION["api_description"] = $api->getDescription();

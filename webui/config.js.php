@@ -16,7 +16,8 @@ if (isLoggedIn()) {
 	root.vpsAdmin = {
 		api: {
 			url: <?php echo json_encode(EXT_API_URL, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>,
-			version: <?php echo json_encode(API_VERSION, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>
+			version: <?php echo json_encode(API_VERSION, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>,
+			oauth2TrustedOrigins: <?php echo json_encode(getApiOAuth2TrustedOrigins(), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>
 		},
 		webui: {
 			url: <?php echo json_encode(getSelfUri(), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>
@@ -33,7 +34,10 @@ if (isLoggedIn()) {
 };
 
 var chainTimeout;
-var api = root.apiClient = new HaveAPI.Client(root.vpsAdmin.api.url, {version: root.vpsAdmin.api.version});
+var api = root.apiClient = new HaveAPI.Client(root.vpsAdmin.api.url, {
+	version: root.vpsAdmin.api.version,
+	oauth2TrustedOrigins: root.vpsAdmin.api.oauth2TrustedOrigins
+});
 api.useDescription(root.vpsAdmin.description);
 
 <?php if ($_SESSION['auth_type'] == 'oauth2') { ?>

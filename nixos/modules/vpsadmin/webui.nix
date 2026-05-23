@@ -74,6 +74,15 @@ in
         '';
       };
 
+      api.oauth2TrustedOrigins = mkOption {
+        type = types.listOf types.str;
+        default = [ ];
+        description = ''
+          OAuth2 endpoint origins that the web UI clients may trust in
+          addition to the configured API origin.
+        '';
+      };
+
       productionEnvironmentId = mkOption {
         type = types.int;
         description = ''
@@ -239,6 +248,7 @@ in
       <?php
       define ('EXT_API_URL', '${cfg.api.externalUrl}');
       define ('INT_API_URL', '${cfg.api.internalUrl}');
+      define ('API_OAUTH2_TRUSTED_ORIGINS', ${builtins.toJSON cfg.api.oauth2TrustedOrigins});
       define ('ENV_VPS_PRODUCTION_ID', ${toString cfg.productionEnvironmentId});
 
       define ('PRIV_POORUSER', 1);
