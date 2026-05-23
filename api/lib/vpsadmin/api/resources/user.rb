@@ -1351,6 +1351,10 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
       def prepare
         error!('Access denied') if current_user.role != :admin && current_user.id != params[:user_id].to_i
 
+        unless ::UserMailRoleRecipient.registered_role?(params[:mail_role_recipient_id])
+          raise ActiveRecord::RecordNotFound
+        end
+
         @recp = ::UserMailRoleRecipient.find_by!(
           user_id: params[:user_id],
           role: params[:mail_role_recipient_id]

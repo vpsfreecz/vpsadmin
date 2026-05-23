@@ -112,6 +112,27 @@ RSpec.describe 'VpsAdmin::API::Resources::User::MailRoleRecipient' do
       expect(json['status']).to be(true)
       expect(recipients.map { |row| row['id'] }).to include('account', 'admin')
     end
+
+    it 'ignores persisted recipients for unregistered roles' do
+      role = 'spec_unknown_role'
+      UserMailRoleRecipient.where(user: SpecSeed.user, role:).delete_all
+      legacy_recipient = UserMailRoleRecipient.new(
+        user: SpecSeed.user,
+        role:,
+        to: 'poison@test.invalid'
+      )
+      legacy_recipient.save!(validate: false)
+
+      expect(legacy_recipient.label).to be_nil
+      expect(legacy_recipient.description).to be_nil
+
+      as(SpecSeed.user) { json_get index_path(SpecSeed.user.id) }
+
+      expect_status(200)
+      expect(json['status']).to be(true)
+      expect(recipients.map { |row| row['id'] }).not_to include(role)
+      expect(recipients.map { |row| row['id'] }).to include('account', 'admin')
+    end
   end
 
   describe 'Show' do
@@ -165,6 +186,22 @@ RSpec.describe 'VpsAdmin::API::Resources::User::MailRoleRecipient' do
       expect(json['status']).to be(true)
       expect(recipient['id']).to eq('account')
       expect(recipient['to']).to eq('other@test.invalid')
+    end
+
+    it 'returns 404 for a persisted unregistered role' do
+      role = 'spec_unknown_role'
+      UserMailRoleRecipient.where(user: SpecSeed.user, role:).delete_all
+      legacy_recipient = UserMailRoleRecipient.new(
+        user: SpecSeed.user,
+        role:,
+        to: 'poison@test.invalid'
+      )
+      legacy_recipient.save!(validate: false)
+
+      as(SpecSeed.user) { json_get show_path(SpecSeed.user.id, role) }
+
+      expect_status(404)
+      expect(json['status']).to be(false)
     end
   end
 
@@ -226,6 +263,26 @@ RSpec.describe 'VpsAdmin::API::Resources::User::MailRoleRecipient' do
 
       messages = Array(errors['to'] || errors[:to]).join(' ')
       expect(messages).to match(/not a valid e-mail address/i)
+    end
+
+    it 'rejects unregistered roles without persisting them' do
+      role = 'spec_unknown_role'
+      UserMailRoleRecipient.where(user: SpecSeed.user, role:).delete_all
+
+      as(SpecSeed.user) do
+        json_put update_path(SpecSeed.user.id, role),
+                 mail_role_recipient: { to: 'attacker@example.test' }
+      end
+
+      expect_status(200)
+      expect(json['status']).to be(false)
+
+      errors = response_errors
+      expect(errors.keys.map(&:to_s)).to include('role')
+
+      messages = Array(errors['role'] || errors[:role]).join(' ')
+      expect(messages).to match(/not a registered mail role/i)
+      expect(UserMailRoleRecipient.where(user: SpecSeed.user, role:)).to be_empty
     end
 
     it 'denies updating another user recipient' do
