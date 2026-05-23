@@ -63,7 +63,10 @@ module VpsAdmin::API::Resources
       end
 
       def prepare
-        @news = ::NewsLog.find(params[:news_log_id])
+        q = ::NewsLog.where(id: params[:news_log_id])
+        q = q.where('published_at <= ?', Time.now) if current_user.nil? || current_user.role != :admin
+
+        @news = q.take!
       end
 
       def exec

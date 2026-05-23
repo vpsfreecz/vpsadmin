@@ -167,8 +167,27 @@ RSpec.describe 'VpsAdmin::API::Resources::NewsLog', requires_plugins: :newslog d
       expect(news_log['published_at']).not_to be_nil
     end
 
-    it 'allows unauthenticated access for future news by id' do
+    it 'hides future news from unauthenticated users' do
       json_get show_path(news_future.id)
+
+      expect_status(404)
+      expect(json['status']).to be(false)
+    end
+
+    it 'hides future news from non-admin users' do
+      as(SpecSeed.user) { json_get show_path(news_future.id) }
+
+      expect_status(404)
+      expect(json['status']).to be(false)
+
+      as(SpecSeed.support) { json_get show_path(news_future.id) }
+
+      expect_status(404)
+      expect(json['status']).to be(false)
+    end
+
+    it 'allows admins to view future news by id' do
+      as(SpecSeed.admin) { json_get show_path(news_future.id) }
 
       expect_status(200)
       expect(json['status']).to be(true)
