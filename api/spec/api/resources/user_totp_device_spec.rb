@@ -85,6 +85,16 @@ RSpec.describe 'VpsAdmin::API::Resources::User::TotpDevice' do
     )
   end
 
+  def suspend_user!(target = user)
+    target.update!(
+      object_state: :suspended,
+      enable_basic_auth: true,
+      lockout: false,
+      password_reset: false
+    )
+    mark_user_paid_until!(target)
+  end
+
   def create_devices
     {
       user_unconfirmed: create_device!(user: user, label: 'Spec A', confirmed: false, enabled: false),
@@ -318,6 +328,18 @@ RSpec.describe 'VpsAdmin::API::Resources::User::TotpDevice' do
       expect(response_message).to include('access denied')
     end
 
+    it 'denies creating device while suspended' do
+      suspend_user!
+
+      expect do
+        as(user) { json_post index_path(user.id), totp_device: { label: 'Suspended phone' } }
+      end.not_to change(UserTotpDevice, :count)
+
+      expect_status(200)
+      expect(json['status']).to be(false)
+      expect(response_message).to include('Access forbidden')
+    end
+
     it 'allows admin to create device for other user' do
       as(admin) { json_post index_path(other_user.id), totp_device: { label: 'Admin created' } }
 
@@ -410,6 +432,20 @@ RSpec.describe 'VpsAdmin::API::Resources::User::TotpDevice' do
       expect(json['status']).to be(false)
       expect(response_message).to include('access denied')
     end
+
+    it 'denies confirming device while suspended' do
+      device = create_device!(user: user, confirmed: false, enabled: false)
+      t = Time.at(1_700_000_000)
+      allow(Time).to receive(:now).and_return(t)
+      suspend_user!
+
+      as(user) { json_post confirm_path(user.id, device.id), totp_device: { code: device.totp.at(t) } }
+
+      expect_status(200)
+      expect(json['status']).to be(false)
+      expect(response_message).to include('Access forbidden')
+      expect(device.reload.confirmed).to be(false)
+    end
   end
 
   describe 'Update' do
@@ -492,6 +528,18 @@ RSpec.describe 'VpsAdmin::API::Resources::User::TotpDevice' do
       expect(response_message).to include('access denied')
     end
 
+    it 'denies updating device while suspended' do
+      device = create_device!(user: user, label: 'Old')
+      suspend_user!
+
+      as(user) { json_put show_path(user.id, device.id), totp_device: { label: 'New label' } }
+
+      expect_status(200)
+      expect(json['status']).to be(false)
+      expect(response_message).to include('Access forbidden')
+      expect(device.reload.label).to eq('Old')
+    end
+
     it 'returns 404 for missing device id' do
       missing = UserTotpDevice.maximum(:id).to_i + 100
 
@@ -540,6 +588,18 @@ RSpec.describe 'VpsAdmin::API::Resources::User::TotpDevice' do
       expect_status(200)
       expect(json['status']).to be(true)
       expect(UserTotpDevice.exists?(device.id)).to be(false)
+    end
+
+    it 'denies deleting device while suspended' do
+      device = create_device!(user: user)
+      suspend_user!
+
+      as(user) { json_delete show_path(user.id, device.id) }
+
+      expect_status(200)
+      expect(json['status']).to be(false)
+      expect(response_message).to include('Access forbidden')
+      expect(UserTotpDevice.exists?(device.id)).to be(true)
     end
 
     it 'returns 404 for missing device id' do

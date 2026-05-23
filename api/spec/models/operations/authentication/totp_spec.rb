@@ -76,7 +76,27 @@ RSpec.describe VpsAdmin::API::Operations::Authentication::Totp do
     result = described_class.run(auth_token.token.to_s, '000000')
 
     expect(result).not_to be_authenticated
+    expect(result).not_to be_failure_limit_exceeded
     expect(result.auth_token).to eq(auth_token)
+    expect(auth_token.reload.opts['totp_failed_attempts']).to eq(1)
     expect(AuthToken.exists?(auth_token.id)).to be(true)
+  end
+
+  it 'invalidates the MFA token after too many invalid codes' do
+    auth_token = create_auth_token!(user:, purpose: 'mfa')
+    token_value = auth_token.token.to_s
+
+    result = nil
+    described_class::MAX_FAILED_ATTEMPTS.times do
+      result = described_class.run(token_value, '000000')
+    end
+
+    expect(result).not_to be_authenticated
+    expect(result).to be_failure_limit_exceeded
+    expect(AuthToken.exists?(auth_token.id)).to be(false)
+
+    expect do
+      described_class.run(token_value, code_at(Time.at(1_700_000_000)))
+    end.to raise_error(VpsAdmin::API::Exceptions::AuthenticationError, 'invalid token')
   end
 end

@@ -43,6 +43,10 @@ RSpec.describe 'VpsAdmin::API::Resources::Webauthn' do
     json.dig('response', 'errors') || json['errors'] || {}
   end
 
+  def response_message
+    json['message'] || json.dig('response', 'message') || json['error']
+  end
+
   def registration_response
     json.dig('response', 'registration') || {}
   end
@@ -196,6 +200,19 @@ RSpec.describe 'VpsAdmin::API::Resources::Webauthn' do
 
       expect_status(404)
       expect(json['status']).to be(false)
+    end
+
+    it 'rejects an expired auth_token without creating a challenge' do
+      auth_token = create_auth_token(user)
+      auth_token.token.update!(valid_to: 1.minute.ago)
+
+      expect do
+        json_post authentication_begin_path, authentication: { auth_token: auth_token.token.to_s }
+      end.not_to change(WebauthnChallenge, :count)
+
+      expect_status(200)
+      expect(json['status']).to be(false)
+      expect(response_message).to include('auth token expired')
     end
 
     it 'returns options and stores a challenge' do

@@ -2,6 +2,8 @@ require 'vpsadmin/api/operations/base'
 
 module VpsAdmin::API
   class Operations::Authentication::Totp < Operations::Base
+    MAX_FAILED_ATTEMPTS = 5
+
     class Result
       # @return [::User]
       attr_reader :user
@@ -18,12 +20,16 @@ module VpsAdmin::API
       # @return [Boolean]
       attr_reader :authenticated
 
-      def initialize(user:, auth_token:, recovery_device: nil, reset_password: false, authenticated: false)
+      # @return [Boolean]
+      attr_reader :failure_limit_exceeded
+
+      def initialize(user:, auth_token:, recovery_device: nil, reset_password: false, authenticated: false, failure_limit_exceeded: false)
         @user = user
         @auth_token = auth_token
         @recovery_device = recovery_device
         @reset_password = reset_password
         @authenticated = authenticated
+        @failure_limit_exceeded = failure_limit_exceeded
       end
 
       def used_recovery_code?
@@ -33,6 +39,8 @@ module VpsAdmin::API
       alias reset_password? reset_password
 
       alias authenticated? authenticated
+
+      alias failure_limit_exceeded? failure_limit_exceeded
     end
 
     # @param token [String]
@@ -81,7 +89,26 @@ module VpsAdmin::API
         )
       end
 
-      Result.new(user:, auth_token:)
+      auth_token.with_lock do
+        opts = auth_token.opts || {}
+        attempts = opts.fetch('totp_failed_attempts', 0).to_i + 1
+
+        if attempts >= MAX_FAILED_ATTEMPTS
+          auth_token.destroy!
+
+          Result.new(
+            user:,
+            auth_token:,
+            failure_limit_exceeded: true
+          )
+        else
+          auth_token.update!(
+            opts: opts.merge('totp_failed_attempts' => attempts)
+          )
+
+          Result.new(user:, auth_token:)
+        end
+      end
     end
 
     protected

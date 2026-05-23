@@ -135,7 +135,7 @@ class VpsAdmin::API::Resources::Webauthn < HaveAPI::Resource
           purpose: 'mfa'
         ).take!
 
-        error!('auth token expired') unless auth_token.valid?
+        error!('auth token expired') unless auth_token.token_valid?
 
         options = WebAuthn::Credential.options_for_get(
           allow: auth_token.user.webauthn_credentials.where(enabled: true).pluck(:external_id),

@@ -51,6 +51,19 @@ RSpec.describe VpsAdmin::API::Authentication::Basic do
     )
   end
 
+  it 'raises when password reset is required' do
+    user.update!(password_reset: true)
+
+    expect do
+      provider.send(:find_user, request, user.login, 'secret')
+    end.to raise_error(
+      VpsAdmin::API::Exceptions::AuthenticationError,
+      'password reset required'
+    )
+
+    expect(UserSession.where(user:, auth_type: 'basic').count).to eq(0)
+  end
+
   it 'returns the user and creates a closed basic session on success' do
     result = provider.send(:find_user, request, user.login, 'secret')
 

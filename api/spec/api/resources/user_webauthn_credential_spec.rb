@@ -75,6 +75,16 @@ RSpec.describe 'VpsAdmin::API::Resources::User::WebauthnCredential' do
     )
   end
 
+  def suspend_user!(target = user)
+    target.update!(
+      object_state: :suspended,
+      enable_basic_auth: true,
+      lockout: false,
+      password_reset: false
+    )
+    mark_user_paid_until!(target)
+  end
+
   def create_creds
     {
       user_enabled: create_cred!(owner: user, label: 'Spec Enabled', enabled: true),
@@ -328,6 +338,18 @@ RSpec.describe 'VpsAdmin::API::Resources::User::WebauthnCredential' do
       record.reload
       expect(record.label).to eq('Admin Updated')
     end
+
+    it 'denies updating credentials while suspended' do
+      record = create_cred!(owner: user, label: 'Old Label')
+      suspend_user!
+
+      as(user) { json_put show_path(user.id, record.id), webauthn_credential: { label: 'New Label' } }
+
+      expect_status(200)
+      expect(json['status']).to be(false)
+      expect(response_message).to include('Access forbidden')
+      expect(record.reload.label).to eq('Old Label')
+    end
   end
 
   describe 'Delete' do
@@ -368,6 +390,18 @@ RSpec.describe 'VpsAdmin::API::Resources::User::WebauthnCredential' do
 
       expect_status(200)
       expect(json['status']).to be(true)
+    end
+
+    it 'denies deleting credentials while suspended' do
+      record = create_cred!(owner: user, label: 'Spec')
+      suspend_user!
+
+      expect { as(user) { json_delete show_path(user.id, record.id) } }
+        .not_to change(WebauthnCredential, :count)
+
+      expect_status(200)
+      expect(json['status']).to be(false)
+      expect(response_message).to include('Access forbidden')
     end
 
     it 'returns 404 for missing credential id' do

@@ -26,6 +26,10 @@ module VpsAdmin::API
         raise Exceptions::AuthenticationError,
               'multi-factor authentication required, use token auth instead'
 
+      elsif auth.reset_password?
+        raise Exceptions::AuthenticationError,
+              'password reset required'
+
       elsif !auth.user.enable_basic_auth
         raise Exceptions::AuthenticationError,
               'HTTP basic authentication is disabled on this account'

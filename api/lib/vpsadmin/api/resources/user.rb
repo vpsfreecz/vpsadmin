@@ -841,6 +841,8 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
     end
 
     class Create < HaveAPI::Actions::Default::Create
+      include VpsAdmin::API::Lifetimes::ActionHelpers
+
       desc 'Create a new TOTP device'
 
       input do
@@ -861,6 +863,8 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
         error!('access denied') if current_user.role != :admin && current_user.id != params[:user_id].to_i
 
         u = ::User.find(params[:user_id])
+        object_state_check!(u)
+
         VpsAdmin::API::Operations::TotpDevice::Create.run(u, input[:label])
       rescue VpsAdmin::API::Exceptions::OperationError => e
         error!(e.message)
@@ -868,6 +872,8 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
     end
 
     class Confirm < HaveAPI::Action
+      include VpsAdmin::API::Lifetimes::ActionHelpers
+
       desc 'Confirm device'
       route '{totp_device_id}/confirm'
       http_method :post
@@ -891,6 +897,7 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
           user_id: params[:user_id],
           id: params[:totp_device_id]
         )
+        object_state_check!(device.user)
 
         recovery_code = VpsAdmin::API::Operations::TotpDevice::Confirm.run(
           device,
@@ -904,6 +911,8 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
     end
 
     class Update < HaveAPI::Actions::Default::Update
+      include VpsAdmin::API::Lifetimes::ActionHelpers
+
       desc 'Update device label'
 
       input do
@@ -930,6 +939,7 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
           user_id: params[:user_id],
           id: params[:totp_device_id]
         )
+        object_state_check!(device.user)
 
         if input[:label]
           VpsAdmin::API::Operations::TotpDevice::Update.run(
@@ -956,6 +966,8 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
     end
 
     class Delete < HaveAPI::Actions::Default::Delete
+      include VpsAdmin::API::Lifetimes::ActionHelpers
+
       desc 'Delete TOTP device'
 
       authorize do |_u|
@@ -969,6 +981,7 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
           user_id: params[:user_id],
           id: params[:totp_device_id]
         )
+        object_state_check!(device.user)
 
         VpsAdmin::API::Operations::TotpDevice::Delete.run(device)
         ok!
@@ -1052,6 +1065,8 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
     end
 
     class Update < HaveAPI::Actions::Default::Update
+      include VpsAdmin::API::Lifetimes::ActionHelpers
+
       desc 'Update WebAuthn credential'
 
       input do
@@ -1077,6 +1092,8 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
           user_id: params[:user_id],
           id: params[:webauthn_credential_id]
         )
+        object_state_check!(cred.user)
+
         cred.update!(input)
         cred
       rescue ActiveRecord::RecordInvalid => e
@@ -1087,6 +1104,8 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
     end
 
     class Delete < HaveAPI::Actions::Default::Delete
+      include VpsAdmin::API::Lifetimes::ActionHelpers
+
       desc 'Delete WebAuthn credential'
 
       authorize do |_u|
@@ -1096,10 +1115,13 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
       def exec
         error!('access denied') if current_user.role != :admin && current_user.id != params[:user_id].to_i
 
-        self.class.model.find_by!(
+        cred = self.class.model.find_by!(
           user_id: params[:user_id],
           id: params[:webauthn_credential_id]
-        ).destroy!
+        )
+        object_state_check!(cred.user)
+
+        cred.destroy!
 
         ok!
       rescue VpsAdmin::API::Exceptions::OperationError => e

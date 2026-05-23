@@ -81,7 +81,7 @@ module VpsAdmin::API
       devices = find_devices(sinatra_handler)
 
       if sso && devices.detect { |d| d.user == sso.user } && sso.user.enable_oauth2_auth
-        auth_sso(
+        auth_result = auth_sso(
           sso:,
           sinatra_request:,
           oauth2_request:,
@@ -89,6 +89,19 @@ module VpsAdmin::API
           client:,
           devices:
         )
+
+        if auth_result.complete
+          auth_result
+        else
+          render_authorize_page(
+            oauth2_request:,
+            oauth2_response:,
+            sinatra_params:,
+            client:,
+            auth_result:,
+            devices:
+          )
+        end
       else
         render_authorize_page(
           oauth2_request:,
@@ -317,7 +330,14 @@ module VpsAdmin::API
       ::Oauth2Authorization.joins(:code, :user).where(
         oauth2_client: client,
         tokens: { token: code },
-        users: { object_state: %w[active suspended] }
+        users: {
+          object_state: %w[active suspended],
+          lockout: false,
+          password_reset: false,
+          enable_oauth2_auth: true
+        }
+      ).where(
+        'tokens.valid_to > ?', Time.now
       ).take
     end
 
@@ -325,7 +345,12 @@ module VpsAdmin::API
       ::Oauth2Authorization.joins(:refresh_token, :user).where(
         oauth2_client: client,
         tokens: { token: refresh_token },
-        users: { object_state: %w[active suspended] }
+        users: {
+          object_state: %w[active suspended],
+          lockout: false,
+          password_reset: false,
+          enable_oauth2_auth: true
+        }
       ).where(
         'tokens.valid_to > ?', Time.now
       ).take
@@ -391,16 +416,15 @@ module VpsAdmin::API
       ret = AuthResult.from_password_result(auth)
 
       if auth.authenticated?
-        unless auth.user.enable_oauth2_auth
-          return AuthResult.new(errors: ['OAuth2 authentication is disabled on this account'])
-        end
+        error = oauth2_login_error(
+          auth.user,
+          sinatra_request,
+          allow_password_reset: auth.user.password_reset
+        )
 
-        # Check that the user can login at an earlier stage, so that we can
-        # show the user an error message now and not fail in {#get_tokens} later.
-        begin
-          Operations::User::CheckLogin.run(auth.user, sinatra_request)
-        rescue Exceptions::OperationError => e
-          return AuthResult.new(errors: [e.message])
+        if error
+          ret.auth_token&.destroy!
+          return AuthResult.new(errors: [error])
         end
       else
         Operations::User::FailedLogin.run(
@@ -416,6 +440,7 @@ module VpsAdmin::API
 
       device = devices.detect { |d| d.user == auth.user }
       skip_multi_factor_auth = device && device.known && device.skip_multi_factor_auth?
+      skip_multi_factor_auth = false if auth.user.password_reset
 
       if auth.authenticated? && (auth.complete? || skip_multi_factor_auth) && !auth.reset_password?
         ret.complete = true unless auth.complete?
@@ -639,6 +664,13 @@ module VpsAdmin::API
     end
 
     def create_authorization(auth_result:, sinatra_request:, oauth2_request:, oauth2_response:, client:, devices:, sso: nil, skip_multi_factor_auth_until: nil, last_next_multi_factor_auth: 'require', set_multi_factor_auth_until: false)
+      if (error = oauth2_login_error(auth_result.user, sinatra_request))
+        auth_result.errors << error
+        auth_result.complete = false
+        auth_result.authorization = nil
+        return
+      end
+
       now = Time.now
       expires_at = now + (10 * 60)
 
@@ -745,6 +777,21 @@ module VpsAdmin::API
 
         auth_result.authorization = authorization
       end
+    end
+
+    def oauth2_login_error(user, sinatra_request, allow_password_reset: false)
+      unless user.enable_oauth2_auth
+        return 'OAuth2 authentication is disabled on this account'
+      end
+
+      Operations::User::CheckLogin.run(
+        user,
+        sinatra_request,
+        allow_password_reset:
+      )
+      nil
+    rescue Exceptions::OperationError => e
+      e.message
     end
 
     def client_info(sinatra_request, device)

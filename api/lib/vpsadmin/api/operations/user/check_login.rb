@@ -11,10 +11,15 @@ module VpsAdmin::API
     # @param user [::User]
     # @param request [Sinatra::Request]
     # @raise [Exceptions::OperationError]
-    def run(user, request)
+    def run(user, request, allow_password_reset: false)
       if user.lockout
         raise Exceptions::OperationError,
               'account is locked out, contact support'
+      end
+
+      if user.password_reset && !allow_password_reset
+        raise Exceptions::OperationError,
+              'password reset required'
       end
 
       call_hooks_for(:check_login, kwargs: { user:, request: })

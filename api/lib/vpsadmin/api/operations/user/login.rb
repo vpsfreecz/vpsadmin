@@ -12,7 +12,6 @@ module VpsAdmin::API
       user.current_login_at = Time.now
       user.last_login_ip = user.current_login_ip
       user.current_login_ip = request.ip
-      user.lockout = true if user.password_reset
       user.save!
       ::User.current = user
     end

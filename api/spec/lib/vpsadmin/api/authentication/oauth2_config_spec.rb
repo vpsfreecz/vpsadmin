@@ -221,6 +221,27 @@ RSpec.describe VpsAdmin::API::Authentication::OAuth2Config do
     expect(refresh_token).to eq(authorization.refresh_token.token)
   end
 
+  it 'does not find expired authorization codes' do
+    authorization = create_oauth2_authorization!(
+      user:,
+      client:,
+      code_valid_to: 1.minute.ago
+    )
+
+    expect(config.find_authorization_by_code(client, authorization.code.token)).to be_nil
+  end
+
+  it 'does not find authorization codes for locked or forced-reset users' do
+    %i[lockout password_reset].each do |flag|
+      user.update!(lockout: false, password_reset: false)
+      authorization = create_oauth2_authorization!(user:, client:)
+      code = authorization.code.token
+      user.update!(flag => true)
+
+      expect(config.find_authorization_by_code(client, code)).to be_nil
+    end
+  end
+
   it 'refreshes tokens by replacing the access token and refresh token' do
     session = create_open_session!(user:, auth_type: 'oauth2')
     authorization = create_oauth2_authorization!(
@@ -238,6 +259,23 @@ RSpec.describe VpsAdmin::API::Authentication::OAuth2Config do
     expect(Token.exists?(old_refresh_id)).to be(false)
     expect(session.reload.token.token).to eq(access_token)
     expect(authorization.reload.refresh_token.token).to eq(refresh_token)
+  end
+
+  it 'does not find refresh tokens for locked or forced-reset users' do
+    %i[lockout password_reset].each do |flag|
+      user.update!(lockout: false, password_reset: false)
+      session = create_open_session!(user:, auth_type: 'oauth2')
+      authorization = create_oauth2_authorization!(
+        user:,
+        client:,
+        user_session: session,
+        refresh_valid_to: 1.hour.from_now
+      )
+      refresh_token = authorization.refresh_token.token
+      user.update!(flag => true)
+
+      expect(config.find_authorization_by_refresh_token(client, refresh_token)).to be_nil
+    end
   end
 
   it 'revokes access tokens only for the authenticated OAuth2 client' do
@@ -291,6 +329,118 @@ RSpec.describe VpsAdmin::API::Authentication::OAuth2Config do
 
     user.update!(enable_oauth2_auth: false)
     expect(config.find_user_by_access_token(request, token)).to be_nil
+  end
+
+  it 'does not authorize from SSO when password reset is pending' do
+    client.update!(allow_single_sign_on: true)
+    user.update!(password_reset: true)
+    sso = create_single_sign_on!(user:)
+    device = create_user_device!(user:, known: true)
+    cookie_handler = OAuth2ConfigSpecFixtures::FakeSinatraHandler.new(
+      described_class::SSO_COOKIE => sso.token.token,
+      described_class::DEVICES_COOKIE => device.token.token
+    )
+
+    expect do
+      config.handle_get_authorize(
+        sinatra_handler: cookie_handler,
+        sinatra_request: request,
+        sinatra_params: {},
+        oauth2_request:,
+        oauth2_response: response,
+        client:
+      )
+    end.not_to change(Oauth2Authorization, :count)
+
+    expect(response.body).to include('password reset required')
+  end
+
+  it 'does not skip MFA on a remembered device when password reset is pending' do
+    create_totp_device!(user:)
+    user.update!(enable_multi_factor_auth: true, password_reset: true)
+    device = create_user_device!(
+      user:,
+      known: true,
+      skip_multi_factor_auth_until: 1.week.from_now,
+      last_next_multi_factor_auth: 'week'
+    )
+    cookie_handler = OAuth2ConfigSpecFixtures::FakeSinatraHandler.new(
+      described_class::DEVICES_COOKIE => device.token.token
+    )
+
+    result = config.handle_post_authorize(
+      sinatra_handler: cookie_handler,
+      sinatra_request: request,
+      sinatra_params: {
+        login_credentials: '1',
+        user: user.login,
+        password: 'secret'
+      },
+      oauth2_request:,
+      oauth2_response: response,
+      client:
+    )
+
+    expect(result.authenticated).to be(true)
+    expect(result.complete).to be(false)
+    expect(result.auth_token).to be_mfa
+    expect(result.authorization).to be_nil
+    expect(response.body).to include('TOTP code')
+  end
+
+  it 'rechecks login eligibility before TOTP completion creates an authorization' do
+    device = create_totp_device!(user:)
+    auth_token = create_auth_token!(user:, purpose: 'mfa')
+    t = Time.at(1_700_000_000)
+    allow(Time).to receive(:now).and_return(t)
+    user.update!(lockout: true)
+
+    expect do
+      result = config.handle_post_authorize(
+        sinatra_handler: handler,
+        sinatra_request: request,
+        sinatra_params: {
+          login_totp: '1',
+          auth_token: auth_token.to_s,
+          totp_code: device.totp.at(t),
+          next_multi_factor_auth: 'require'
+        },
+        oauth2_request:,
+        oauth2_response: response,
+        client:
+      )
+
+      expect(result.authenticated).to be(true)
+      expect(result.complete).to be(false)
+      expect(result.authorization).to be_nil
+      expect(result.errors).to include('account is locked out, contact support')
+    end.not_to change(Oauth2Authorization, :count)
+  end
+
+  it 'rechecks OAuth2 enablement before reset completion creates an authorization' do
+    user.update!(password_reset: true, enable_oauth2_auth: false)
+    auth_token = create_auth_token!(user:, purpose: 'reset_password')
+
+    expect do
+      result = config.handle_post_authorize(
+        sinatra_handler: handler,
+        sinatra_request: request,
+        sinatra_params: {
+          login_reset_password: '1',
+          auth_token: auth_token.to_s,
+          new_password1: 'new-password',
+          new_password2: 'new-password'
+        },
+        oauth2_request:,
+        oauth2_response: response,
+        client:
+      )
+
+      expect(result.authenticated).to be(true)
+      expect(result.complete).to be(false)
+      expect(result.authorization).to be_nil
+      expect(result.errors).to include('OAuth2 authentication is disabled on this account')
+    end.not_to change(Oauth2Authorization, :count)
   end
 
   it 'creates authorization cookies and SSO metadata' do

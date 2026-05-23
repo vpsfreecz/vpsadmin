@@ -15,6 +15,28 @@ RSpec.describe VpsAdmin::API::Operations::UserSession::ResumeOAuth2 do
     expect(UserSession.current).to be_nil
   end
 
+  it 'returns nil for locked or forced-reset users' do
+    %i[lockout password_reset].each do |flag|
+      user.update!(lockout: false, password_reset: false)
+      session = create_open_session!(user:, auth_type: 'oauth2')
+      token = session.token.token
+      user.update!(flag => true)
+
+      expect(described_class.run(token)).to be_nil
+      expect(User.current).to be_nil
+      expect(UserSession.current).to be_nil
+    end
+  end
+
+  it 'accepts suspended users when no reset or lockout is pending' do
+    session = create_open_session!(user:, auth_type: 'oauth2')
+    token = session.token.token
+    user.update!(object_state: :suspended, lockout: false, password_reset: false)
+
+    expect(described_class.run(token)).to eq(session)
+    expect(User.current).to eq(user)
+  end
+
   it 'renews renewable_auto tokens, extends SSO, and sets currents' do
     session = create_open_session!(
       user:,

@@ -8,7 +8,45 @@ RSpec.describe VpsAdmin::API::Authentication::TokenConfig do
   let(:request) { build_request(user_agent: 'RSpec/TokenConfig') }
 
   before do
-    user.reload.update!(enable_token_auth: true)
+    user.reload
+    SpecSeed.set_password!(user, 'secret')
+    user.update!(
+      enable_token_auth: true,
+      enable_multi_factor_auth: false,
+      enable_new_login_notification: false,
+      password_reset: false,
+      lockout: false
+    )
+  end
+
+  def request_token(password: 'secret')
+    described_class.request.handle.call(
+      HaveAPI::Authentication::Token::ActionRequest.new(
+        request:,
+        input: {
+          user: user.login,
+          password:,
+          lifetime: 'fixed',
+          interval: 3600,
+          scope: 'all'
+        }
+      ),
+      HaveAPI::Authentication::Token::ActionResult.new
+    )
+  end
+
+  def reset_password(token, new_password1: 'new-secret', new_password2: 'new-secret')
+    described_class.actions.fetch(:reset_password).handle.call(
+      HaveAPI::Authentication::Token::ActionRequest.new(
+        request:,
+        input: {
+          token:,
+          new_password1:,
+          new_password2:
+        }
+      ),
+      HaveAPI::Authentication::Token::ActionResult.new
+    )
   end
 
   it 'finds a user only for a valid open token session with token auth enabled' do
@@ -24,6 +62,52 @@ RSpec.describe VpsAdmin::API::Authentication::TokenConfig do
     disabled = create_open_session!(user:, auth_type: 'token')
     user.update!(enable_token_auth: false)
     expect(config.find_user_by_token(request, disabled.token.token)).to be_nil
+  end
+
+  it 'returns a reset-password continuation instead of a session' do
+    user.update!(password_reset: true)
+
+    result = request_token
+
+    expect(result).to be_ok
+    expect(result).not_to be_complete
+    expect(result.next_action).to eq(:reset_password)
+    expect(result.token).to be_present
+    expect(UserSession.where(user:, auth_type: 'token').count).to eq(0)
+
+    auth_token = AuthToken.joins(:token).find_by!(tokens: { token: result.token })
+    expect(auth_token).to be_reset_password
+    expect(auth_token.opts).to include(
+      'lifetime' => 'fixed',
+      'interval' => 3600,
+      'scope' => ['all']
+    )
+  end
+
+  it 'can complete the reset-password continuation and create a token session' do
+    user.update!(password_reset: true, lockout: true)
+    auth_token = create_auth_token!(
+      user:,
+      purpose: 'reset_password',
+      opts: {
+        'lifetime' => 'fixed',
+        'interval' => 3600,
+        'scope' => ['all']
+      }
+    )
+
+    result = reset_password(auth_token.to_s)
+
+    expect(result).to be_ok
+    expect(result).to be_complete
+    expect(result.token).to be_present
+    expect(AuthToken.exists?(auth_token.id)).to be(false)
+
+    session = UserSession.joins(:token).find_by!(tokens: { token: result.token })
+    expect(session.user).to eq(user)
+    expect(session.auth_type).to eq('token')
+    expect(user.reload.password_reset).to be(false)
+    expect(user.lockout).to be(false)
   end
 
   it 'renews renewable tokens through the provider action handler' do

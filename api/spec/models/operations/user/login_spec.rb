@@ -34,12 +34,16 @@ RSpec.describe VpsAdmin::API::Operations::User::Login do
     expect(User.current).to eq(user)
   end
 
-  it 'locks the account when password reset is pending' do
+  it 'rejects login when password reset is pending' do
     user.update!(password_reset: true, lockout: false)
 
-    described_class.run(user, request)
+    expect do
+      described_class.run(user, request)
+    end.to raise_error(VpsAdmin::API::Exceptions::OperationError, 'password reset required')
 
-    expect(user.reload.lockout).to be(true)
+    user.reload
+    expect(user.login_count).to eq(2)
+    expect(user.lockout).to be(false)
   end
 
   context 'with payments plugin login gate', requires_plugins: :payments do
