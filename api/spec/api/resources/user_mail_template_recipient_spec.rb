@@ -232,6 +232,13 @@ RSpec.describe 'VpsAdmin::API::Resources::User::MailTemplateRecipient' do
       expect(json['status']).to be(false)
     end
 
+    it 'returns 404 for invisible templates even when a record exists' do
+      as(user) { json_get show_path(user.id, tpl_invisible.name) }
+
+      expect_status(404)
+      expect(json['status']).to be(false)
+    end
+
     it 'denies user showing another user recipient' do
       as(user) { json_get show_path(other_user.id, tpl_public_saved.name) }
 
@@ -332,6 +339,18 @@ RSpec.describe 'VpsAdmin::API::Resources::User::MailTemplateRecipient' do
       expect(response_message).to match(/access denied/i)
     end
 
+    it 'rejects invisible template updates for normal users' do
+      recp = UserMailTemplateRecipient.find_by!(user: user, mail_template: tpl_invisible)
+      original = recp.to
+      payload = { mail_template_recipient: { to: 'hidden-update@test.invalid' } }
+
+      as(user) { json_put update_path(user.id, tpl_invisible.name), payload }
+
+      expect_status(404)
+      expect(json['status']).to be(false)
+      expect(recp.reload.to).to eq(original)
+    end
+
     it 'allows admin to update another user recipient' do
       payload = { mail_template_recipient: { to: 'admin@test.invalid' } }
 
@@ -342,6 +361,18 @@ RSpec.describe 'VpsAdmin::API::Resources::User::MailTemplateRecipient' do
 
       recp = UserMailTemplateRecipient.find_by!(user: other_user, mail_template: tpl_public_saved)
       expect(recp.to).to eq('admin@test.invalid')
+    end
+
+    it 'allows admin to update invisible templates' do
+      payload = { mail_template_recipient: { to: 'admin-hidden@test.invalid' } }
+
+      as(admin) { json_put update_path(user.id, tpl_invisible.name), payload }
+
+      expect_status(200)
+      expect(json['status']).to be(true)
+
+      recp = UserMailTemplateRecipient.find_by!(user: user, mail_template: tpl_invisible)
+      expect(recp.to).to eq('admin-hidden@test.invalid')
     end
 
     it 'returns 404 for unknown template name' do

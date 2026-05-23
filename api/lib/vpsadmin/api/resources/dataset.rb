@@ -791,12 +791,20 @@ module VpsAdmin::API::Resources
 
         def exec
           s = ::Dataset.find_by!(with_restricted(id: params[:dataset_id]))
+          dip = s.primary_dataset_in_pool!
+          submitted_plan = input[:environment_dataset_plan]
+          plan_def = VpsAdmin::API::DatasetPlans.plans[submitted_plan.dataset_plan.name.to_sym]
+          env_plan = plan_def.env_dataset_plan(dip)
 
-          error!('Insufficient permission') if !input[:environment_dataset_plan].user_add && current_user.role != :admin
+          if submitted_plan.id != env_plan.id
+            error!('environment dataset plan does not belong to the dataset environment')
+          end
+
+          error!('Insufficient permission') if !env_plan.user_add && current_user.role != :admin
 
           object_state_check!(s, s.user)
 
-          s.primary_dataset_in_pool!.add_plan(input[:environment_dataset_plan])
+          dip.add_plan(env_plan)
         end
       end
 

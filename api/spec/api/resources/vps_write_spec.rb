@@ -338,6 +338,53 @@ RSpec.describe 'VpsAdmin::API::Resources::VPS write actions' do # rubocop:disabl
         expect(seen[:required_diskspace]).to eq(user_payload[:diskspace])
       end
 
+      it 'uses the OS template cgroup requirement for VPS create node picking' do
+        set_env_config!(
+          user: SpecSeed.user,
+          environment: SpecSeed.environment,
+          attrs: { can_create_vps: true, max_vps_count: 10 }
+        )
+        template = create_os_template!(hypervisor_type: :vpsadminos, cgroup_version: :cgroup_v1)
+
+        seen = nil
+        allow(VpsAdmin::API::Operations::Node::Pick).to receive(:run) do |**kwargs|
+          seen = kwargs
+          SpecSeed.node
+        end
+
+        as(SpecSeed.user) do
+          json_post index_path, vps: user_payload.merge(
+            os_template: template.id,
+            cgroup_version: 'cgroup_any'
+          )
+        end
+
+        expect_status(200)
+        expect(json['status']).to be(true)
+        expect(seen[:cgroup_version]).to eq('cgroup_v1')
+      end
+
+      it 'rejects VPS create cgroup requests that conflict with the OS template' do
+        set_env_config!(
+          user: SpecSeed.user,
+          environment: SpecSeed.environment,
+          attrs: { can_create_vps: true, max_vps_count: 10 }
+        )
+        template = create_os_template!(hypervisor_type: :vpsadminos, cgroup_version: :cgroup_v1)
+
+        as(SpecSeed.user) do
+          json_post index_path, vps: user_payload.merge(
+            os_template: template.id,
+            cgroup_version: 'cgroup_v2'
+          )
+        end
+
+        expect_status(200)
+        expect(json['status']).to be(false)
+        expect(response_message).to include('requested cgroup_v2')
+        expect(VpsAdmin::API::Operations::Node::Pick).not_to have_received(:run)
+      end
+
       it 'uses default diskspace for node picking when omitted from VPS create' do
         set_env_config!(
           user: SpecSeed.user,
@@ -478,6 +525,48 @@ RSpec.describe 'VpsAdmin::API::Resources::VPS write actions' do # rubocop:disabl
       expect_status(200)
       expect(json['status']).to be(false)
       expect(response_message).to include('not available')
+    end
+
+    it 'rejects disabled OS template changes' do
+      vps = create_vps!(user: SpecSeed.user, node: SpecSeed.node)
+      template = create_os_template!(hypervisor_type: :vpsadminos, enabled: false)
+
+      expect do
+        as(SpecSeed.user) { json_put show_path(vps.id), vps: { os_template: template.id } }
+      end.not_to change(TransactionChain, :count)
+
+      expect_status(200)
+      expect(json['status']).to be(false)
+      expect(response_message).to include('selected os template is disabled')
+    end
+
+    it 'rejects hypervisor-incompatible OS template changes' do
+      vps = create_vps!(user: SpecSeed.user, node: SpecSeed.node)
+      template = create_os_template!(hypervisor_type: :openvz)
+
+      expect do
+        as(SpecSeed.user) { json_put show_path(vps.id), vps: { os_template: template.id } }
+      end.not_to change(TransactionChain, :count)
+
+      expect_status(200)
+      expect(json['status']).to be(false)
+      expect(response_message).to include('incompatible template')
+    end
+
+    it 'rejects cgroup-incompatible OS template changes' do
+      ensure_available_node_status!(SpecSeed.node)
+      vps = create_vps!(user: SpecSeed.user, node: SpecSeed.node)
+      template = create_os_template!(hypervisor_type: :vpsadminos, cgroup_version: :cgroup_v1)
+
+      expect(SpecSeed.node.cgroup_version).to eq('cgroup_v2')
+
+      expect do
+        as(SpecSeed.user) { json_put show_path(vps.id), vps: { os_template: template.id } }
+      end.not_to change(TransactionChain, :count)
+
+      expect_status(200)
+      expect(json['status']).to be(false)
+      expect(response_message).to include('incompatible cgroup version')
     end
 
     it 'allows clearing dns_resolver with nil' do

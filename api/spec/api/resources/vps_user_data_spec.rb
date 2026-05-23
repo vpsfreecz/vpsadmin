@@ -96,7 +96,7 @@ RSpec.describe 'VpsAdmin::API::Resources::VpsUserData' do
     DatasetInPool.create!(dataset: dataset, pool: pool)
   end
 
-  def create_vps!(user:, node:, hostname:)
+  def create_vps!(user:, node:, hostname:, os_template: SpecSeed.os_template)
     pool = node == SpecSeed.other_node ? SpecSeed.other_pool : SpecSeed.pool
     dip = create_dataset_in_pool!(user: user, pool: pool)
 
@@ -104,7 +104,7 @@ RSpec.describe 'VpsAdmin::API::Resources::VpsUserData' do
       user: user,
       node: node,
       hostname: hostname,
-      os_template: SpecSeed.os_template,
+      os_template: os_template,
       dns_resolver: SpecSeed.dns_resolver,
       dataset_in_pool: dip,
       object_state: :active
@@ -678,6 +678,31 @@ RSpec.describe 'VpsAdmin::API::Resources::VpsUserData' do
       expect_status(200)
       expect(json['status']).to be(false)
       expect(msg).to include('access denied')
+      expect(action_state_id).to be_nil
+    end
+
+    it 'rejects deployment when the VPS OS template does not support the user data format' do
+      ensure_signer_unlocked!
+
+      template = create_os_template!(enable_script: false, enable_cloud_init: true)
+      vps = create_vps!(
+        user: SpecSeed.user,
+        node: SpecSeed.node,
+        hostname: 'unsupported-user-data-vps',
+        os_template: template
+      )
+
+      expect(template.support_user_data?(user_data)).to be(false)
+
+      expect do
+        as(SpecSeed.user) do
+          json_post deploy_path(user_data.id), vps_user_data: { vps: vps.id }
+        end
+      end.not_to change(TransactionChain, :count)
+
+      expect_status(200)
+      expect(json['status']).to be(false)
+      expect(msg).to include('does not support script user data')
       expect(action_state_id).to be_nil
     end
 

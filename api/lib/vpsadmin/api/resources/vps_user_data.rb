@@ -166,6 +166,12 @@ module VpsAdmin::API::Resources
         data = self.class.model.find_by!(with_restricted(id: params[:vps_user_data_id]))
         error!('access denied') if input[:vps].user_id != data.user_id
 
+        unless input[:vps].os_template.support_user_data?(data)
+          error!(
+            "OS template #{input[:vps].os_template.label} does not support #{data.format} user data"
+          )
+        end
+
         maintenance_check!(input[:vps])
         object_state_check!(input[:vps], input[:vps].user, data.user)
 

@@ -1400,6 +1400,16 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
     route '{user_id}/mail_template_recipients'
     model ::UserMailTemplateRecipient
 
+    def self.user_visible_template!(name)
+      tpl = ::MailTemplate.find_by!(name:)
+
+      if tpl.user_visibility == 'visible' || (tpl.user_visibility == 'default' && tpl.desc[:public])
+        return tpl
+      end
+
+      raise ActiveRecord::RecordNotFound
+    end
+
     params(:all) do
       string :id, db_name: :name
       string :label
@@ -1448,7 +1458,12 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
       def prepare
         error!('Access denied') if current_user.role != :admin && current_user.id != params[:user_id].to_i
 
-        tpl = ::MailTemplate.find_by!(name: params[:mail_template_recipient_id])
+        tpl =
+          if current_user.role == :admin
+            ::MailTemplate.find_by!(name: params[:mail_template_recipient_id])
+          else
+            self.class.resource.user_visible_template!(params[:mail_template_recipient_id])
+          end
 
         @recp = ::UserMailTemplateRecipient.find_by!(
           user_id: params[:user_id],
@@ -1482,10 +1497,16 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
         error!('Access denied') if current_user.role != :admin && current_user.id != params[:user_id].to_i
         user = ::User.find(params[:user_id])
         object_state_check!(user)
+        tpl =
+          if current_user.role == :admin
+            ::MailTemplate.find_by!(name: params[:mail_template_recipient_id])
+          else
+            self.class.resource.user_visible_template!(params[:mail_template_recipient_id])
+          end
 
         ::UserMailTemplateRecipient.handle_update!(
           user,
-          ::MailTemplate.find_by!(name: params[:mail_template_recipient_id]),
+          tpl,
           input
         )
       rescue ActiveRecord::RecordInvalid => e

@@ -292,12 +292,31 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
             os_template: input[:os_template],
             diskspace: requested_diskspace
           )
+        template_cgroup = input[:os_template].cgroup_version
+        requested_cgroup = input[:cgroup_version]
+
+        if template_cgroup != 'cgroup_any' \
+           && requested_cgroup \
+           && requested_cgroup != 'cgroup_any' \
+           && requested_cgroup != template_cgroup
+          error!(
+            "incompatible cgroup version: #{input[:os_template].label} needs " \
+            "#{template_cgroup}, requested #{requested_cgroup}"
+          )
+        end
+
+        required_cgroup =
+          if template_cgroup == 'cgroup_any'
+            requested_cgroup
+          else
+            template_cgroup
+          end
 
         node = VpsAdmin::API::Operations::Node::Pick.run(
           environment: input[:environment],
           location: input[:location],
           hypervisor_type: input[:os_template].hypervisor_type,
-          cgroup_version: input[:cgroup_version] || input[:os_template].cgroup_version,
+          cgroup_version: required_cgroup,
           required_diskspace:
         )
 
@@ -465,6 +484,23 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
         error!(
           "DNS resolver '#{input[:dns_resolver].label}' is not available " \
           "in location #{vps.node.location.label}"
+        )
+
+      elsif input[:os_template] && !input[:os_template].enabled?
+        error!('selected os template is disabled')
+
+      elsif input[:os_template] && input[:os_template].hypervisor_type != vps.node.hypervisor_type
+        error!(
+          "incompatible template: needs #{input[:os_template].hypervisor_type}, but VPS is " \
+          "using #{vps.node.hypervisor_type}"
+        )
+
+      elsif input[:os_template] \
+            && input[:os_template].cgroup_version != 'cgroup_any' \
+            && input[:os_template].cgroup_version != vps.node.cgroup_version
+        error!(
+          "incompatible cgroup version: #{input[:os_template].label} needs " \
+          "#{input[:os_template].cgroup_version}, but node is using #{vps.node.cgroup_version}"
         )
 
       elsif vps.node.vpsadminos? \
@@ -1102,6 +1138,8 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
                        ])
 
   class Feature < HaveAPI::Resource
+    include VpsAdmin::API::Maintainable::Check
+
     model ::VpsFeature
     route '{vps_id}/features'
     desc 'Toggle VPS features'
@@ -1192,6 +1230,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
         vps = ::Vps.find_by!(
           with_restricted(id: params[:vps_id])
         )
+        maintenance_check!(vps)
         object_state_check!(vps, vps.user)
 
         feature = vps.vps_features.find(params[:feature_id])
@@ -1235,6 +1274,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
         vps = ::Vps.find_by!(
           with_restricted(id: params[:vps_id])
         )
+        maintenance_check!(vps)
         object_state_check!(vps, vps.user)
         @chain = VpsAdmin::API::Operations::Vps::SetFeatures.run(vps, input)
         ok!

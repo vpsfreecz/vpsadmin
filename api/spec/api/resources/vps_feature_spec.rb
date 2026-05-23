@@ -292,6 +292,23 @@ RSpec.describe 'VpsAdmin::API::Resources::VPS::Feature' do
       expect(json['status']).to be(false)
     end
 
+    it 'blocks users from updating features during maintenance' do
+      user_vps.update!(
+        maintenance_lock: MaintenanceLock.maintain_lock(:lock),
+        maintenance_lock_reason: 'spec maintenance'
+      )
+
+      expect do
+        as(SpecSeed.user) do
+          json_put update_path(user_vps.id, user_feature.id), feature: { enabled: !user_feature.enabled }
+        end
+      end.not_to change(TransactionChain, :count)
+
+      expect_status(423)
+      expect(json['status']).to be(false)
+      expect(msg).to include('Resource is under maintenance: spec maintenance')
+    end
+
     it 'returns 404 for unknown feature id' do
       missing_id = VpsFeature.maximum(:id).to_i + 100
 
@@ -355,6 +372,21 @@ RSpec.describe 'VpsAdmin::API::Resources::VPS::Feature' do
 
       expect_status(404)
       expect(json['status']).to be(false)
+    end
+
+    it 'blocks users from updating all features during maintenance' do
+      user_vps.update!(
+        maintenance_lock: MaintenanceLock.maintain_lock(:lock),
+        maintenance_lock_reason: 'spec maintenance'
+      )
+
+      expect do
+        as(SpecSeed.user) { json_post update_all_path(user_vps.id), feature: { tun: false } }
+      end.not_to change(TransactionChain, :count)
+
+      expect_status(423)
+      expect(json['status']).to be(false)
+      expect(msg).to include('Resource is under maintenance: spec maintenance')
     end
 
     it 'allows admin to update all features for any VPS' do
