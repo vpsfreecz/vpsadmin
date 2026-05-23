@@ -96,6 +96,23 @@ RSpec.describe 'VpsAdmin::API::Resources::UserRequest::Registration', requires_p
     }.merge(overrides)
   end
 
+  def create_os_template!(attrs = {})
+    ::OsTemplate.create!({
+      os_family: SpecSeed.os_family,
+      label: "Spec Template #{SecureRandom.hex(4)}",
+      distribution: 'specos',
+      version: "requests-#{SecureRandom.hex(4)}",
+      arch: 'x86_64',
+      vendor: 'spec',
+      variant: 'base',
+      hypervisor_type: :vpsadminos,
+      cgroup_version: :cgroup_any,
+      enabled: true,
+      supported: true,
+      config: {}
+    }.merge(attrs))
+  end
+
   def ensure_mail_template(template_name)
     template = MailTemplate.find_or_create_by!(name: template_name) do |tpl|
       tpl.label = template_name.tr('_', ' ').capitalize
@@ -384,6 +401,22 @@ RSpec.describe 'VpsAdmin::API::Resources::UserRequest::Registration', requires_p
       expect(json['status']).to be(false)
       expect(errors.keys.map(&:to_s)).to include('email')
     end
+
+    it 'rejects OS templates that are unavailable for public registration' do
+      template = create_os_template!(enabled: false, supported: false)
+      payload = registration_payload(
+        login: unique_login('reg-template'),
+        overrides: { os_template: template.id }
+      )
+
+      expect do
+        json_post index_path, registration: payload
+      end.not_to change(::RegistrationRequest, :count)
+
+      expect_status(200)
+      expect(json['status']).to be(false)
+      expect(errors.keys.map(&:to_s)).to include('os_template')
+    end
   end
 
   describe 'Preview' do
@@ -505,6 +538,38 @@ RSpec.describe 'VpsAdmin::API::Resources::UserRequest::Registration', requires_p
       expect(req.state).to eq(original_state)
       expect(req.email).to eq(original_email)
     end
+
+    it 'rejects resubmission with an unavailable OS template' do
+      payload = registration_payload(login: unique_login('reg-update-template'))
+      json_post index_path, registration: payload
+
+      req_id = resource_id(registration_obj)
+      req = ::RegistrationRequest.find(req_id)
+
+      as(admin) do
+        json_post resolve_path(req.id),
+                  registration: { action: 'request_correction', reason: 'fix data' }
+      end
+
+      unavailable_template = create_os_template!(enabled: false, supported: false)
+      original_template_id = req.os_template_id
+      original_state = req.reload.state
+
+      updated_payload = registration_payload(
+        login: payload[:login],
+        overrides: { os_template: unavailable_template.id }
+      )
+
+      json_put update_path(req.id, req.access_token), registration: updated_payload
+
+      expect_status(200)
+      expect(json['status']).to be(false)
+      expect(errors.keys.map(&:to_s)).to include('os_template')
+
+      req.reload
+      expect(req.state).to eq(original_state)
+      expect(req.os_template_id).to eq(original_template_id)
+    end
   end
 
   describe 'Resolve' do
@@ -561,6 +626,28 @@ RSpec.describe 'VpsAdmin::API::Resources::UserRequest::Registration', requires_p
       expect(json['status']).to be(false)
       expect(errors.keys.map(&:to_s)).to include('state')
     end
+
+    it 'allows admins to deny requests whose OS template later became unavailable' do
+      template = create_os_template!
+      req = build_registration(
+        user: nil,
+        state: :awaiting,
+        attrs: {
+          login: unique_login('reg-deny-template'),
+          os_template: template
+        }
+      )
+      template.update!(enabled: false, supported: false)
+
+      as(admin) do
+        json_post resolve_path(req.id),
+                  registration: { action: 'deny', reason: 'retired template' }
+      end
+
+      expect_status(200)
+      expect(json['status']).to be(true)
+      expect(req.reload.state).to eq('denied')
+    end
   end
 
   describe 'Resolve approve' do
@@ -600,6 +687,37 @@ RSpec.describe 'VpsAdmin::API::Resources::UserRequest::Registration', requires_p
       expect(req.state).to eq('approved')
       expect(req.admin_id).to eq(admin.id)
       expect(::User.find_by(login: login)).not_to be_nil
+    end
+
+    it 'rejects VPS creation when the requested OS template became unavailable' do
+      login = unique_login('reg-approve-template')
+      template = create_os_template!
+      req = build_registration(
+        user: nil,
+        state: :awaiting,
+        attrs: {
+          login: login,
+          os_template: template
+        }
+      )
+      template.update!(enabled: false, supported: false)
+
+      as(admin) do
+        json_post resolve_path(req.id), registration: {
+          action: 'approve',
+          reason: 'ok',
+          create_vps: true,
+          activate: false,
+          node: SpecSeed.node.id
+        }
+      end
+
+      expect_status(200)
+      expect(json['status']).to be(false)
+      expect(errors.keys.map(&:to_s)).to include('os_template')
+
+      expect(req.reload.state).to eq('awaiting')
+      expect(::User.find_by(login: login)).to be_nil
     end
   end
 end

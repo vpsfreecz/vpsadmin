@@ -23,6 +23,7 @@ class RegistrationRequest < UserRequest
   validates :currency, length: { maximum: 10 }
   validate :check_login
   validate :check_org
+  validate :check_os_template_available, if: :os_template_availability_changed?
 
   before_save :generate_token
 
@@ -48,6 +49,10 @@ class RegistrationRequest < UserRequest
   end
 
   def approve(chain, params)
+    if params[:create_vps]
+      ensure_os_template_available!
+    end
+
     new_user = ::User.new(
       login:,
       address:,
@@ -117,5 +122,27 @@ class RegistrationRequest < UserRequest
     return unless org_name && !org_id
 
     errors.add(:org_id, 'must be set when org_name is set')
+  end
+
+  def os_template_availability_changed?
+    new_record? || os_template_id_changed?
+  end
+
+  def check_os_template_available
+    return unless os_template
+    return if os_template_available?
+
+    errors.add(:os_template, 'is not available for registration')
+  end
+
+  def ensure_os_template_available!
+    return if os_template_available?
+
+    errors.add(:os_template, 'is not available for registration')
+    raise ActiveRecord::RecordInvalid, self
+  end
+
+  def os_template_available?
+    os_template && os_template.enabled? && os_template.supported?
   end
 end
