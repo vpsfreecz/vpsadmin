@@ -31,7 +31,10 @@ module VpsAdmin::API::Resources
       end
 
       def query
-        q = ::OutageExport.where(with_restricted)
+        q = ::OutageExport
+            .joins(:outage)
+            .merge(::Outage.visible_to(current_user))
+            .where(with_restricted)
 
         %i[outage export user environment location node].each do |v|
           q = q.where(v => input[v]) if input[v]
@@ -63,9 +66,11 @@ module VpsAdmin::API::Resources
       end
 
       def prepare
-        @outage = ::OutageExport.find_by!(with_restricted(
-                                            id: params[:export_outage_id]
-                                          ))
+        q = ::OutageExport
+            .joins(:outage)
+            .merge(::Outage.visible_to(current_user))
+            .where(with_restricted(id: params[:export_outage_id]))
+        @outage = with_includes(q).take!
       end
 
       def exec

@@ -119,6 +119,29 @@ RSpec.describe 'VpsAdmin::API::Resources::VpsOutage', requires_plugins: :outage_
       expect(ids).to contain_exactly(user_row.id)
     end
 
+    it 'hides rows whose parent outage is staged from normal users' do
+      staged = build_outage(state: :staged, begins_at: Time.utc(2026, 1, 3, 12, 0, 0))
+      staged_row = ::OutageVps.create!(
+        outage: staged,
+        vps: user_vps,
+        user: user,
+        environment: user_vps.node.location.environment,
+        location: user_vps.node.location,
+        node: user_vps.node,
+        direct: true
+      )
+
+      as(user) { json_get index_path }
+
+      expect_status(200)
+      expect(vps_outages.map { |row| row['id'] }).not_to include(staged_row.id)
+
+      as(admin) { json_get index_path }
+
+      expect_status(200)
+      expect(vps_outages.map { |row| row['id'] }).to include(staged_row.id)
+    end
+
     it 'shows all rows for admins' do
       as(admin) { json_get index_path }
 
@@ -175,6 +198,29 @@ RSpec.describe 'VpsAdmin::API::Resources::VpsOutage', requires_plugins: :outage_
 
       expect_status(200)
       expect(vps_outage_obj['id']).to eq(user_row.id)
+    end
+
+    it 'hides own rows whose parent outage is staged from normal users' do
+      staged = build_outage(state: :staged, begins_at: Time.utc(2026, 1, 3, 12, 0, 0))
+      staged_row = ::OutageVps.create!(
+        outage: staged,
+        vps: user_vps,
+        user: user,
+        environment: user_vps.node.location.environment,
+        location: user_vps.node.location,
+        node: user_vps.node,
+        direct: true
+      )
+
+      as(user) { json_get show_path(staged_row.id) }
+
+      expect_status(404)
+      expect(json['status']).to be(false)
+
+      as(admin) { json_get show_path(staged_row.id) }
+
+      expect_status(200)
+      expect(vps_outage_obj['id']).to eq(staged_row.id)
     end
 
     it 'hides other users rows from normal users' do

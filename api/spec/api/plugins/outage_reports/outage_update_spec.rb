@@ -64,6 +64,38 @@ RSpec.describe 'VpsAdmin::API::Resources::OutageUpdate', requires_plugins: :outa
     create_outage_with_translation!(defaults.merge(attrs))
   end
 
+  def create_update_rows!
+    outage = build_outage(state: :announced)
+    staged_outage = build_outage(state: :staged, begins_at: Time.utc(2026, 1, 5, 12, 0, 0))
+
+    {
+      staged: ::OutageUpdate.create!(
+        outage: outage,
+        reported_by: admin,
+        state: :staged,
+        created_at: Time.utc(2026, 1, 1, 10, 0, 0)
+      ),
+      announced: ::OutageUpdate.create!(
+        outage: outage,
+        reported_by: admin,
+        state: :announced,
+        created_at: Time.utc(2026, 1, 2, 10, 0, 0)
+      ),
+      staged_parent: ::OutageUpdate.create!(
+        outage: staged_outage,
+        reported_by: admin,
+        state: :announced,
+        created_at: Time.utc(2026, 1, 3, 10, 0, 0)
+      ),
+      nil_state_staged_parent: ::OutageUpdate.create!(
+        outage: staged_outage,
+        reported_by: admin,
+        duration: 90,
+        created_at: Time.utc(2026, 1, 4, 10, 0, 0)
+      )
+    }
+  end
+
   let(:admin) { SpecSeed.admin }
   let(:user) { SpecSeed.user }
 
@@ -75,23 +107,7 @@ RSpec.describe 'VpsAdmin::API::Resources::OutageUpdate', requires_plugins: :outa
   end
 
   describe 'Index' do
-    let!(:outage) { build_outage(state: :staged) }
-    let!(:staged_update) do
-      ::OutageUpdate.create!(
-        outage: outage,
-        reported_by: admin,
-        state: :staged,
-        created_at: Time.utc(2026, 1, 1, 10, 0, 0)
-      )
-    end
-    let!(:announced_update) do
-      ::OutageUpdate.create!(
-        outage: outage,
-        reported_by: admin,
-        state: :announced,
-        created_at: Time.utc(2026, 1, 2, 10, 0, 0)
-      )
-    end
+    let!(:update_rows) { create_update_rows! }
 
     it 'allows unauthenticated access' do
       json_get index_path
@@ -105,8 +121,10 @@ RSpec.describe 'VpsAdmin::API::Resources::OutageUpdate', requires_plugins: :outa
 
       expect_status(200)
       ids = updates.map { |row| row['id'] }
-      expect(ids).to include(announced_update.id)
-      expect(ids).not_to include(staged_update.id)
+      expect(ids).to include(update_rows[:announced].id)
+      expect(ids).not_to include(update_rows[:staged].id)
+      expect(ids).not_to include(update_rows[:staged_parent].id)
+      expect(ids).not_to include(update_rows[:nil_state_staged_parent].id)
     end
 
     it 'shows staged updates to admins' do
@@ -114,7 +132,12 @@ RSpec.describe 'VpsAdmin::API::Resources::OutageUpdate', requires_plugins: :outa
 
       expect_status(200)
       ids = updates.map { |row| row['id'] }
-      expect(ids).to include(announced_update.id, staged_update.id)
+      expect(ids).to include(
+        update_rows[:announced].id,
+        update_rows[:staged].id,
+        update_rows[:staged_parent].id,
+        update_rows[:nil_state_staged_parent].id
+      )
     end
 
     it 'filters by outage' do
@@ -140,48 +163,53 @@ RSpec.describe 'VpsAdmin::API::Resources::OutageUpdate', requires_plugins: :outa
 
       expect_status(200)
       ids = updates.map { |row| row['id'] }
-      expect(ids).to contain_exactly(announced_update.id)
+      expect(ids).to contain_exactly(
+        update_rows[:announced].id,
+        update_rows[:staged_parent].id,
+        update_rows[:nil_state_staged_parent].id
+      )
     end
   end
 
   describe 'Show' do
-    let!(:outage) { build_outage(state: :staged) }
-    let!(:staged_update) do
-      ::OutageUpdate.create!(
-        outage: outage,
-        reported_by: admin,
-        state: :staged,
-        created_at: Time.utc(2026, 1, 1, 10, 0, 0)
-      )
-    end
-    let!(:announced_update) do
-      ::OutageUpdate.create!(
-        outage: outage,
-        reported_by: admin,
-        state: :announced,
-        created_at: Time.utc(2026, 1, 2, 10, 0, 0)
-      )
-    end
+    let!(:update_rows) { create_update_rows! }
 
     it 'allows unauthenticated access to announced updates' do
-      json_get show_path(announced_update.id)
+      json_get show_path(update_rows[:announced].id)
 
       expect_status(200)
-      expect(update_obj['id']).to eq(announced_update.id)
+      expect(update_obj['id']).to eq(update_rows[:announced].id)
     end
 
     it 'hides staged updates from unauthenticated users' do
-      json_get show_path(staged_update.id)
+      json_get show_path(update_rows[:staged].id)
+
+      expect_status(404)
+      expect(json['status']).to be(false)
+    end
+
+    it 'hides updates whose parent outage is staged from unauthenticated users' do
+      json_get show_path(update_rows[:staged_parent].id)
+
+      expect_status(404)
+      expect(json['status']).to be(false)
+
+      json_get show_path(update_rows[:nil_state_staged_parent].id)
 
       expect_status(404)
       expect(json['status']).to be(false)
     end
 
     it 'allows admins to view staged updates' do
-      as(admin) { json_get show_path(staged_update.id) }
+      as(admin) { json_get show_path(update_rows[:staged].id) }
 
       expect_status(200)
-      expect(update_obj['id']).to eq(staged_update.id)
+      expect(update_obj['id']).to eq(update_rows[:staged].id)
+
+      as(admin) { json_get show_path(update_rows[:staged_parent].id) }
+
+      expect_status(200)
+      expect(update_obj['id']).to eq(update_rows[:staged_parent].id)
     end
   end
 

@@ -3,6 +3,14 @@ module VpsAdmin::API::Resources
     desc 'Report and browse outages'
     model ::Outage
 
+    NON_ADMIN_OUTPUT_BLACKLIST = %i[
+      affected_user_count
+      affected_direct_vps_count
+      affected_indirect_vps_count
+      affected_export_count
+      auto_resolve
+    ].freeze
+
     params(:texts) do
       ::Language.all.each do |lang|
         string :"#{lang.code}_summary", label: "#{lang.label} summary"
@@ -93,16 +101,15 @@ module VpsAdmin::API::Resources
 
       authorize do |u|
         allow if u && u.role == :admin
-        output blacklist: %i[affected_user_count affected_vps_count auto_resolve]
+        output blacklist: NON_ADMIN_OUTPUT_BLACKLIST
+        input blacklist: %i[user vps export handled_by]
         allow if u
-        input blacklist: %i[affected user handled_by]
+        input blacklist: %i[affected user vps export handled_by]
         allow
       end
 
       def query
-        q = ::Outage.all
-
-        q = q.where.not(state: ::Outage.states[:staged]) if current_user.nil? || current_user.role != :admin
+        q = ::Outage.visible_to(current_user)
 
         q = q.where(outage_type: input[:type]) if input[:type]
         q = q.where(state: ::Outage.states[input[:state]]) if input[:state]
@@ -211,18 +218,14 @@ module VpsAdmin::API::Resources
 
       authorize do |u|
         allow if u && u.role == :admin
-        output blacklist: %i[affected_user_count affected_vps_count auto_resolve]
+        output blacklist: NON_ADMIN_OUTPUT_BLACKLIST
         allow if u
         input blacklist: %i[affected]
         allow
       end
 
       def prepare
-        q = ::Outage.where(id: params[:outage_id])
-
-        q = q.where.not(state: ::Outage.states[:staged]) if current_user.nil? || current_user.role != :admin
-
-        @outage = q.take!
+        @outage = ::Outage.visible_to(current_user).find(params[:outage_id])
       end
 
       def exec
@@ -335,7 +338,10 @@ module VpsAdmin::API::Resources
         end
 
         def query
-          ::OutageEntity.where(outage_id: params[:outage_id])
+          ::OutageEntity
+            .joins(:outage)
+            .merge(::Outage.visible_to(current_user))
+            .where(outage_id: params[:outage_id])
         end
 
         def count
@@ -360,10 +366,13 @@ module VpsAdmin::API::Resources
         end
 
         def prepare
-          @entity = ::OutageEntity.find_by!(
-            outage_id: params[:outage_id],
-            id: params[:entity_id]
-          )
+          @entity = ::OutageEntity
+                    .joins(:outage)
+                    .merge(::Outage.visible_to(current_user))
+                    .find_by!(
+                      outage_id: params[:outage_id],
+                      id: params[:entity_id]
+                    )
         end
 
         def exec
@@ -447,7 +456,10 @@ module VpsAdmin::API::Resources
         end
 
         def query
-          ::OutageHandler.where(outage_id: params[:outage_id])
+          ::OutageHandler
+            .joins(:outage)
+            .merge(::Outage.visible_to(current_user))
+            .where(outage_id: params[:outage_id])
         end
 
         def count
@@ -474,10 +486,13 @@ module VpsAdmin::API::Resources
         end
 
         def prepare
-          @handler = ::OutageHandler.find_by!(
-            outage_id: params[:outage_id],
-            id: params[:handler_id]
-          )
+          @handler = ::OutageHandler
+                     .joins(:outage)
+                     .merge(::Outage.visible_to(current_user))
+                     .find_by!(
+                       outage_id: params[:outage_id],
+                       id: params[:handler_id]
+                     )
         end
 
         def exec

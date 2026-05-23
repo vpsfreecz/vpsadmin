@@ -115,6 +115,31 @@ RSpec.describe 'VpsAdmin::API::Resources::Outage', requires_plugins: :outage_rep
     create_outage_with_translation!(defaults.merge(attrs))
   end
 
+  def create_outage_vps!(outage:, vps:, direct:)
+    ::OutageVps.create!(
+      outage: outage,
+      vps: vps,
+      user: vps.user,
+      environment: vps.node.location.environment,
+      location: vps.node.location,
+      node: vps.node,
+      direct: direct
+    )
+  end
+
+  def create_outage_export!(outage:, export:)
+    pool = export.dataset_in_pool.pool
+
+    ::OutageExport.create!(
+      outage: outage,
+      export: export,
+      user: export.user,
+      environment: pool.node.location.environment,
+      location: pool.node.location,
+      node: pool.node
+    )
+  end
+
   let(:admin) { SpecSeed.admin }
   let(:user) { SpecSeed.user }
   let(:other_user) { SpecSeed.other_user }
@@ -143,6 +168,42 @@ RSpec.describe 'VpsAdmin::API::Resources::Outage', requires_plugins: :outage_rep
       ids = outages.map { |row| row['id'] }
       expect(ids).not_to include(staged.id)
       expect(ids).to include(announced.id)
+    end
+
+    it 'hides affected resource counts from non-admin output' do
+      outage = build_outage(state: :announced)
+      direct_vps = create_vps!(user: user, node: SpecSeed.node, hostname: 'spec-direct-count')
+      indirect_vps = create_vps!(user: other_user, node: SpecSeed.other_node, hostname: 'spec-indirect-count')
+      export = create_export!(user: other_user, pool: SpecSeed.other_pool, path: '/export/spec-count')
+
+      create_outage_vps!(outage: outage, vps: direct_vps, direct: true)
+      create_outage_vps!(outage: outage, vps: indirect_vps, direct: false)
+      create_outage_export!(outage: outage, export: export)
+      outage.set_affected_users
+
+      json_get index_path
+
+      expect_status(200)
+      row = outages.find { |item| item['id'] == outage.id }
+      expect(row).not_to include(
+        'affected_user_count',
+        'affected_direct_vps_count',
+        'affected_indirect_vps_count',
+        'affected_export_count',
+        'auto_resolve'
+      )
+
+      as(admin) { json_get index_path }
+
+      expect_status(200)
+      row = outages.find { |item| item['id'] == outage.id }
+      expect(row).to include(
+        'affected_user_count' => 2,
+        'affected_direct_vps_count' => 1,
+        'affected_indirect_vps_count' => 1,
+        'affected_export_count' => 1,
+        'auto_resolve' => true
+      )
     end
 
     it 'shows staged outages to admins' do
@@ -178,6 +239,51 @@ RSpec.describe 'VpsAdmin::API::Resources::Outage', requires_plugins: :outage_rep
       expect_status(200)
       ids = outages.map { |row| row['id'] }
       expect(ids).to contain_exactly(target.id)
+    end
+
+    it 'ignores private affected resource filters for non-admin callers' do
+      affected_vps = create_vps!(
+        user: other_user,
+        node: SpecSeed.other_node,
+        hostname: 'spec-private-filter-vps'
+      )
+      affected_export = create_export!(
+        user: other_user,
+        pool: SpecSeed.other_pool,
+        path: '/export/spec-private-filter'
+      )
+      affected_outage = build_outage(
+        state: :announced,
+        begins_at: Time.utc(2026, 1, 3, 12, 0, 0)
+      )
+      decoy_outage = build_outage(
+        state: :announced,
+        begins_at: Time.utc(2026, 1, 4, 12, 0, 0)
+      )
+
+      create_outage_vps!(outage: affected_outage, vps: affected_vps, direct: true)
+      create_outage_export!(outage: affected_outage, export: affected_export)
+
+      json_get index_path, outage: { vps: affected_vps.id }
+
+      expect_status(200)
+      expect(outages.map { |row| row['id'] }).to contain_exactly(
+        affected_outage.id,
+        decoy_outage.id
+      )
+
+      as(user) { json_get index_path, outage: { export: affected_export.id } }
+
+      expect_status(200)
+      expect(outages.map { |row| row['id'] }).to contain_exactly(
+        affected_outage.id,
+        decoy_outage.id
+      )
+
+      as(admin) { json_get index_path, outage: { vps: affected_vps.id } }
+
+      expect_status(200)
+      expect(outages.map { |row| row['id'] }).to contain_exactly(affected_outage.id)
     end
 
     it 'filters by affected user' do
@@ -232,6 +338,36 @@ RSpec.describe 'VpsAdmin::API::Resources::Outage', requires_plugins: :outage_rep
       expect_status(200)
       expect(json['status']).to be(true)
       expect(outage_obj['id']).to eq(announced.id)
+    end
+
+    it 'hides affected resource counts from non-admin detail output' do
+      outage = build_outage(state: :announced)
+      vps = create_vps!(user: user, node: SpecSeed.node, hostname: 'spec-show-count')
+
+      create_outage_vps!(outage: outage, vps: vps, direct: true)
+      outage.set_affected_users
+
+      json_get show_path(outage.id)
+
+      expect_status(200)
+      expect(outage_obj).not_to include(
+        'affected_user_count',
+        'affected_direct_vps_count',
+        'affected_indirect_vps_count',
+        'affected_export_count',
+        'auto_resolve'
+      )
+
+      as(admin) { json_get show_path(outage.id) }
+
+      expect_status(200)
+      expect(outage_obj).to include(
+        'affected_user_count' => 1,
+        'affected_direct_vps_count' => 1,
+        'affected_indirect_vps_count' => 0,
+        'affected_export_count' => 0,
+        'auto_resolve' => true
+      )
     end
 
     it 'hides staged outages from unauthenticated users' do
@@ -458,6 +594,35 @@ RSpec.describe 'VpsAdmin::API::Resources::Outage', requires_plugins: :outage_rep
       expect(entity_obj['id']).to eq(entity.id)
     end
 
+    it 'hides staged outage entities from non-admin readers' do
+      staged = build_outage(state: :staged)
+      staged_entity = ::OutageEntity.create!(
+        outage: staged,
+        name: 'Node',
+        row_id: SpecSeed.node.id
+      )
+
+      json_get entity_index_path(staged.id)
+
+      expect_status(200)
+      expect(entities.map { |row| row['id'] }).not_to include(staged_entity.id)
+
+      json_get entity_show_path(staged.id, staged_entity.id)
+
+      expect_status(404)
+      expect(json['status']).to be(false)
+
+      as(user) { json_get entity_show_path(staged.id, staged_entity.id) }
+
+      expect_status(404)
+      expect(json['status']).to be(false)
+
+      as(admin) { json_get entity_show_path(staged.id, staged_entity.id) }
+
+      expect_status(200)
+      expect(entity_obj['id']).to eq(staged_entity.id)
+    end
+
     it 'rejects unauthenticated create' do
       json_post entity_index_path(outage.id), entity: { name: 'Node', entity_id: SpecSeed.node.id }
 
@@ -542,6 +707,35 @@ RSpec.describe 'VpsAdmin::API::Resources::Outage', requires_plugins: :outage_rep
       expect_status(200)
       expect(json['status']).to be(true)
       expect(handler_obj['id']).to eq(handler.id)
+    end
+
+    it 'hides staged outage handlers from non-admin readers' do
+      staged = build_outage(state: :staged)
+      staged_handler = ::OutageHandler.create!(
+        outage: staged,
+        user: admin,
+        note: 'Private staging note'
+      )
+
+      json_get handler_index_path(staged.id)
+
+      expect_status(200)
+      expect(handlers.map { |row| row['id'] }).not_to include(staged_handler.id)
+
+      json_get handler_show_path(staged.id, staged_handler.id)
+
+      expect_status(404)
+      expect(json['status']).to be(false)
+
+      as(user) { json_get handler_show_path(staged.id, staged_handler.id) }
+
+      expect_status(404)
+      expect(json['status']).to be(false)
+
+      as(admin) { json_get handler_show_path(staged.id, staged_handler.id) }
+
+      expect_status(200)
+      expect(handler_obj['id']).to eq(staged_handler.id)
     end
 
     it 'includes user for admins' do

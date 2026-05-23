@@ -23,6 +23,12 @@ class Outage < ApplicationRecord
 
   after_initialize :load_translations
 
+  def self.visible_to(user)
+    return all if user && user.role == :admin
+
+    where.not(state: states[:staged])
+  end
+
   def self.create_outage!(attrs, translations = {})
     transaction do
       outage = new(attrs)

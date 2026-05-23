@@ -60,12 +60,18 @@ module VpsAdmin::API::Resources
         q = ::OutageUpdate.includes(:outage).all
 
         if current_user.nil? || current_user.role != :admin
-          q = q.where('state != ? OR state is NULL', ::Outage.states[:staged])
+          q = q
+              .joins(:outage)
+              .merge(::Outage.visible_to(current_user))
+              .where(
+                'outage_updates.state != ? OR outage_updates.state IS NULL',
+                ::OutageUpdate.states[:staged]
+              )
         end
 
         q = q.where(outage: input[:outage]) if input[:outage]
         q = q.where(reported_by: input[:reported_by]) if input[:reported_by]
-        q = q.where('created_at > ?', input[:since]) if input[:since]
+        q = q.where('outage_updates.created_at > ?', input[:since]) if input[:since]
         q
       end
 
@@ -74,7 +80,7 @@ module VpsAdmin::API::Resources
       end
 
       def exec
-        with_pagination(with_includes(query)).order('created_at')
+        with_pagination(with_includes(query)).order('outage_updates.created_at')
       end
     end
 
@@ -96,7 +102,13 @@ module VpsAdmin::API::Resources
         q = ::OutageUpdate.includes(:outage).where(id: params[:outage_update_id])
 
         if current_user.nil? || current_user.role != :admin
-          q = q.where('state != ? OR state is NULL', ::Outage.states[:staged])
+          q = q
+              .joins(:outage)
+              .merge(::Outage.visible_to(current_user))
+              .where(
+                'outage_updates.state != ? OR outage_updates.state IS NULL',
+                ::OutageUpdate.states[:staged]
+              )
         end
 
         @outage = q.take!
