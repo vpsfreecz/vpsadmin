@@ -14,13 +14,20 @@ RSpec.describe 'VpsAdmin::API::Resources::HelpBox', requires_plugins: :webui do
     lang_en = SpecSeed.language
     lang_cs = Language.find_or_create_by!(code: 'cs') { |lang| lang.label = 'Czech' }
 
-    b1 = HelpBox.create!(page: 'dashboard', action: 'show', language: lang_en, content: 'Box 1', order: 10)
-    b2 = HelpBox.create!(page: 'dashboard', action: '*', language: lang_en, content: 'Box 2', order: 20)
+    b1 = HelpBox.create!(page: 'adminvps', action: 'info', language: lang_en, content: 'Box 1', order: 10)
+    b2 = HelpBox.create!(page: 'adminvps', action: '*', language: lang_en, content: 'Box 2', order: 20)
     b3 = HelpBox.create!(page: '*', action: '*', language: lang_en, content: 'Box 3', order: 30)
-    b4 = HelpBox.create!(page: '*', action: 'show', language: lang_en, content: 'Box 4', order: 40)
-    b5 = HelpBox.create!(page: 'other', action: 'show', language: lang_en, content: 'Box 5', order: 50)
-    b6 = HelpBox.create!(page: 'dashboard', action: 'show', language: lang_cs, content: 'Box 6', order: 60)
-    b7 = HelpBox.create!(page: 'dashboard', action: 'show', language: nil, content: 'Box 7', order: 70)
+    b4 = HelpBox.create!(page: '*', action: 'info', language: lang_en, content: 'Box 4', order: 40)
+    b5 = HelpBox.create!(page: 'other', action: 'info', language: lang_en, content: 'Box 5', order: 50)
+    b6 = HelpBox.create!(page: 'adminvps', action: 'info', language: lang_cs, content: 'Box 6', order: 60)
+    b7 = HelpBox.create!(page: 'adminvps', action: 'info', language: nil, content: 'Box 7', order: 70)
+    b8 = HelpBox.create!(
+      page: 'cluster',
+      action: 'helpboxes_add',
+      language: lang_en,
+      content: 'Admin-only help',
+      order: 80
+    )
 
     {
       lang_en: lang_en,
@@ -31,7 +38,8 @@ RSpec.describe 'VpsAdmin::API::Resources::HelpBox', requires_plugins: :webui do
       b4: b4,
       b5: b5,
       b6: b6,
-      b7: b7
+      b7: b7,
+      b8: b8
     }
   end
 
@@ -127,9 +135,29 @@ RSpec.describe 'VpsAdmin::API::Resources::HelpBox', requires_plugins: :webui do
     fixtures.fetch(:b7)
   end
 
+  def b8
+    fixtures.fetch(:b8)
+  end
+
   describe 'Index' do
-    it 'allows unauthenticated access' do
+    it 'does not expose browse results to unauthenticated users' do
       json_get index_path
+
+      expect_status(200)
+      expect(json['status']).to be(true)
+      expect(help_boxes).to eq([])
+    end
+
+    it 'does not expose browse results to normal users' do
+      as(user) { json_get index_path }
+
+      expect_status(200)
+      expect(json['status']).to be(true)
+      expect(help_boxes).to eq([])
+    end
+
+    it 'allows admins to browse all help boxes' do
+      as(admin) { json_get index_path }
 
       expect_status(200)
       expect(json['status']).to be(true)
@@ -137,8 +165,36 @@ RSpec.describe 'VpsAdmin::API::Resources::HelpBox', requires_plugins: :webui do
       expect(help_boxes.length).to eq(HelpBox.count)
     end
 
+    it 'allows unauthenticated view access for public pages' do
+      json_get index_path, help_box: { view: true, page: '' }
+
+      expect_status(200)
+      expect(json['status']).to be(true)
+
+      ids = help_boxes.map { |row| row['id'] }
+      expect(ids).to eq([b3.id])
+    end
+
+    it 'hides admin-only page boxes from unauthenticated view requests' do
+      json_get index_path, help_box: { view: true, page: 'cluster', action: 'helpboxes_add' }
+
+      expect_status(200)
+      expect(json['status']).to be(true)
+      expect(help_boxes).to eq([])
+    end
+
+    it 'hides admin-only page boxes from non-admin view requests' do
+      as(user) do
+        json_get index_path, help_box: { view: true, page: 'cluster', action: 'helpboxes_add' }
+      end
+
+      expect_status(200)
+      expect(json['status']).to be(true)
+      expect(help_boxes).to eq([])
+    end
+
     it 'does not apply wildcard matching by default' do
-      json_get index_path, help_box: { page: 'dashboard', action: 'show' }
+      as(admin) { json_get index_path, help_box: { page: 'adminvps', action: 'info' } }
 
       expect_status(200)
       expect(json['status']).to be(true)
@@ -148,7 +204,7 @@ RSpec.describe 'VpsAdmin::API::Resources::HelpBox', requires_plugins: :webui do
     end
 
     it 'applies wildcard matching when view=true' do
-      json_get index_path, help_box: { view: true, page: 'dashboard', action: 'show' }
+      as(user) { json_get index_path, help_box: { view: true, page: 'adminvps', action: 'info' } }
 
       expect_status(200)
       expect(json['status']).to be(true)
@@ -158,7 +214,7 @@ RSpec.describe 'VpsAdmin::API::Resources::HelpBox', requires_plugins: :webui do
     end
 
     it 'includes NULL-language boxes when view=true without explicit language' do
-      json_get index_path, help_box: { view: true, page: 'dashboard', action: 'show' }
+      as(user) { json_get index_path, help_box: { view: true, page: 'adminvps', action: 'info' } }
 
       expect_status(200)
       expect(json['status']).to be(true)
@@ -168,7 +224,9 @@ RSpec.describe 'VpsAdmin::API::Resources::HelpBox', requires_plugins: :webui do
     end
 
     it 'filters to explicit language when view=true and language provided' do
-      json_get index_path, help_box: { view: true, language: lang_cs.id }
+      as(user) do
+        json_get index_path, help_box: { view: true, page: 'adminvps', action: 'info', language: lang_cs.id }
+      end
 
       expect_status(200)
       expect(json['status']).to be(true)
@@ -179,7 +237,7 @@ RSpec.describe 'VpsAdmin::API::Resources::HelpBox', requires_plugins: :webui do
     end
 
     it 'returns total_count when requested' do
-      json_get index_path, _meta: { count: true }
+      as(admin) { json_get index_path, _meta: { count: true } }
 
       expect_status(200)
       expect(json['status']).to be(true)
@@ -188,8 +246,22 @@ RSpec.describe 'VpsAdmin::API::Resources::HelpBox', requires_plugins: :webui do
   end
 
   describe 'Show' do
-    it 'allows unauthenticated access' do
+    it 'rejects unauthenticated direct lookup' do
       json_get show_path(b1.id)
+
+      expect_status(401)
+      expect(json['status']).to be(false)
+    end
+
+    it 'forbids normal users' do
+      as(user) { json_get show_path(b1.id) }
+
+      expect_status(403)
+      expect(json['status']).to be(false)
+    end
+
+    it 'allows admins to view help boxes by id' do
+      as(admin) { json_get show_path(b1.id) }
 
       expect_status(200)
       expect(json['status']).to be(true)
@@ -206,7 +278,7 @@ RSpec.describe 'VpsAdmin::API::Resources::HelpBox', requires_plugins: :webui do
     it 'returns 404 for unknown id' do
       missing = HelpBox.maximum(:id).to_i + 100
 
-      json_get show_path(missing)
+      as(admin) { json_get show_path(missing) }
 
       expect_status(404)
       expect(json['status']).to be(false)

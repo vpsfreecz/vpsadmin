@@ -3,6 +3,22 @@ module VpsAdmin::API::Resources
     desc 'Browse and manage help boxes'
     model ::HelpBox
 
+    PUBLIC_HELP_PAGES = {
+      '' => [nil, ''],
+      'about' => [nil, ''],
+      'log' => [nil, ''],
+      'login' => [nil, '', 'callback'],
+      'outage' => %w[list show]
+    }.freeze
+
+    AUTHENTICATED_HELP_PAGES = %w[
+      adminm adminvps backup console dataset dns export history incidents
+      monitoring nas networking node oom_reports outage redirect reminder
+      transactions userns userdata
+    ].freeze
+
+    ADMIN_HELP_PAGES = %w[cluster jumpto lifetimes].freeze
+
     params(:filters) do
       string :page
       string :action
@@ -42,6 +58,8 @@ module VpsAdmin::API::Resources
         q = ::HelpBox.all
 
         if input[:view]
+          return ::HelpBox.none unless view_allowed?
+
           if input.has_key?(:page) || input.has_key?(:action)
             q = q.where(
               "(page = ? AND (action = ? OR action = '*'))
@@ -61,6 +79,8 @@ module VpsAdmin::API::Resources
                 )
               end
         else
+          return ::HelpBox.none unless current_user && current_user.role == :admin
+
           %i[page action].each do |f|
             q = q.where(f => input[f]) if input[f]
           end
@@ -69,6 +89,26 @@ module VpsAdmin::API::Resources
         end
 
         q
+      end
+
+      protected
+
+      def view_allowed?
+        return true if current_user && current_user.role == :admin
+        return false unless input.has_key?(:page)
+
+        page = input[:page].to_s
+        action = input.has_key?(:action) ? input[:action].to_s : nil
+
+        return false if page == '*' || ADMIN_HELP_PAGES.include?(page)
+        return true if public_help_page?(page, action)
+
+        !current_user.nil? && AUTHENTICATED_HELP_PAGES.include?(page)
+      end
+
+      def public_help_page?(page, action)
+        actions = PUBLIC_HELP_PAGES[page]
+        actions && actions.include?(action)
       end
 
       def count
@@ -82,14 +122,13 @@ module VpsAdmin::API::Resources
 
     class Show < HaveAPI::Actions::Default::Show
       desc 'Show helpbox'
-      auth false
 
       output do
         use :all
       end
 
-      authorize do |_u|
-        allow
+      authorize do |u|
+        allow if u.role == :admin
       end
 
       def prepare
