@@ -620,7 +620,7 @@ function outage_details($id)
         }
 
         $xtpl->table_td(implode("\n<br>\n", $summary));
-        $xtpl->table_td($update->reporter_name);
+        $xtpl->table_td(h($update->reporter_name));
 
         $changes = [];
         $check = ['begins_at', 'finished_at', 'state', 'type', 'duration'];
