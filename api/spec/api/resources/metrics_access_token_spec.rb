@@ -25,6 +25,17 @@ RSpec.describe 'VpsAdmin::API::Resources::MetricsAccessToken' do
     MetricsAccessToken.create_for!(user, metric_prefix)
   end
 
+  def suspend_user!(target = user)
+    target.update!(
+      object_state: :suspended,
+      enable_basic_auth: true,
+      enable_multi_factor_auth: false,
+      lockout: false,
+      password_reset: false
+    )
+    mark_user_paid_until!(target)
+  end
+
   def user
     users.fetch(:user)
   end
@@ -220,6 +231,18 @@ RSpec.describe 'VpsAdmin::API::Resources::MetricsAccessToken' do
       expect(token_obj['metric_prefix']).to eq('spec_created')
     end
 
+    it 'denies creating a token while suspended' do
+      suspend_user!
+
+      expect do
+        as(user) { json_post index_path, metrics_access_token: { metric_prefix: 'spec_suspended' } }
+      end.not_to change(MetricsAccessToken, :count)
+
+      expect_status(200)
+      expect(json['status']).to be(false)
+      expect(last_response.body).to include('Access forbidden')
+    end
+
     it 'ignores user selection for normal users' do
       as(user) do
         json_post index_path, metrics_access_token: { user: other_user.id, metric_prefix: 'spec_owned' }
@@ -269,6 +292,17 @@ RSpec.describe 'VpsAdmin::API::Resources::MetricsAccessToken' do
       expect_status(200)
       expect(json['status']).to be(true)
       expect(MetricsAccessToken.where(id: user_primary.id)).to be_empty
+    end
+
+    it 'denies deleting own token while suspended' do
+      suspend_user!
+
+      as(user) { json_delete show_path(user_primary.id) }
+
+      expect_status(200)
+      expect(json['status']).to be(false)
+      expect(last_response.body).to include('Access forbidden')
+      expect(MetricsAccessToken.where(id: user_primary.id)).not_to be_empty
     end
 
     it 'hides other users tokens from normal users' do

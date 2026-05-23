@@ -65,6 +65,17 @@ RSpec.describe 'VpsAdmin::API::Resources::Webauthn' do
     end
   end
 
+  def suspend_user!(target_user = user)
+    target_user.update!(
+      object_state: :suspended,
+      enable_basic_auth: true,
+      enable_multi_factor_auth: false,
+      lockout: false,
+      password_reset: false
+    )
+    mark_user_paid_until!(target_user)
+  end
+
   def begin_registration_for(target_user)
     as(target_user) { json_post registration_begin_path }
     expect_status(200)
@@ -131,6 +142,20 @@ RSpec.describe 'VpsAdmin::API::Resources::Webauthn' do
       expect(user.reload.webauthn_id).not_to be_nil
     end
 
+    it 'denies creating a registration challenge while suspended' do
+      user.update!(webauthn_id: nil)
+      suspend_user!
+
+      expect do
+        as(user) { json_post registration_begin_path }
+      end.not_to change(WebauthnChallenge, :count)
+
+      expect_status(200)
+      expect(json['status']).to be(false)
+      expect(response_message).to include('Access forbidden')
+      expect(user.reload.webauthn_id).to be_nil
+    end
+
     it 'records challenge client address from forwarded headers' do
       header 'Client-IP', '203.0.113.80'
       header 'X-Real-IP', '203.0.113.81'
@@ -195,6 +220,28 @@ RSpec.describe 'VpsAdmin::API::Resources::Webauthn' do
       expect(credential).not_to be_nil
       expect(credential.label).to eq('Spec Key')
       expect(credential.public_key).not_to be_nil
+    end
+
+    it 'denies finishing registration while suspended' do
+      response = begin_registration_for(user)
+      options = response.fetch('options')
+      credential = fake_client.create(
+        challenge: options.fetch('challenge'),
+        rp_id: options.dig('rp', 'id')
+      )
+      suspend_user!
+
+      expect do
+        finish_registration_for(user,
+                                challenge_token: response.fetch('challenge_token'),
+                                label: 'Suspended Key',
+                                credential: credential)
+      end.not_to change(WebauthnCredential, :count)
+
+      expect_status(200)
+      expect(json['status']).to be(false)
+      expect(response_message).to include('Access forbidden')
+      expect(find_challenge(response.fetch('challenge_token'))).not_to be_nil
     end
   end
 

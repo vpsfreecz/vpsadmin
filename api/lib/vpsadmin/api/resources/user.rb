@@ -332,6 +332,8 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
   end
 
   class Update < HaveAPI::Actions::Default::Update
+    include VpsAdmin::API::Lifetimes::ActionHelpers
+
     blocking true
 
     input do
@@ -368,6 +370,7 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
       error!('provide at least one attribute to update') if input.empty?
 
       update_object_state!(u) if change_object_state?
+      object_state_check!(u)
 
       if input.has_key?(:new_password)
         if current_user.role != :admin && !input.has_key?(:password)
@@ -742,6 +745,8 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
     end
 
     class Delete < HaveAPI::Actions::Default::Delete
+      include VpsAdmin::API::Lifetimes::ActionHelpers
+
       desc 'Delete known device'
 
       authorize do |_u|
@@ -751,10 +756,13 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
       def exec
         error!('access denied') if current_user.role != :admin && current_user.id != params[:user_id].to_i
 
-        self.class.model.active.find_by!(
+        device = self.class.model.active.find_by!(
           user_id: params[:user_id],
           id: params[:known_device_id]
-        ).close
+        )
+        object_state_check!(device.user)
+
+        device.close
         ok!
       rescue VpsAdmin::API::Exceptions::OperationError => e
         error!(e.message)

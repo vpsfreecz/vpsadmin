@@ -58,6 +58,17 @@ RSpec.describe 'VpsAdmin::API::Resources::UserSession' do
     )
   end
 
+  def suspend_user!(target = user)
+    target.update!(
+      object_state: :suspended,
+      enable_basic_auth: true,
+      enable_multi_factor_auth: false,
+      lockout: false,
+      password_reset: false
+    )
+    mark_user_paid_until!(target)
+  end
+
   def user
     users.fetch(:user)
   end
@@ -350,6 +361,17 @@ RSpec.describe 'VpsAdmin::API::Resources::UserSession' do
       expect(session_user_primary.reload.label).to eq('Updated')
     end
 
+    it 'denies updating own session label while suspended' do
+      suspend_user!
+
+      as(user) { json_put show_path(session_user_primary.id), user_session: { label: 'Updated' } }
+
+      expect_status(200)
+      expect(json['status']).to be(false)
+      expect(last_response.body).to include('Access forbidden')
+      expect(session_user_primary.reload.label).to eq('Spec Session 1')
+    end
+
     it 'hides other users sessions from normal users' do
       as(user) { json_put show_path(session_other_user.id), user_session: { label: 'Nope' } }
 
@@ -380,6 +402,17 @@ RSpec.describe 'VpsAdmin::API::Resources::UserSession' do
       expect_status(200)
       expect(json['status']).to be(true)
       expect(session_user_primary.reload.closed_at).not_to be_nil
+    end
+
+    it 'denies closing own session while suspended' do
+      suspend_user!
+
+      as(user) { json_post close_path(session_user_primary.id), {} }
+
+      expect_status(200)
+      expect(json['status']).to be(false)
+      expect(last_response.body).to include('Access forbidden')
+      expect(session_user_primary.reload.closed_at).to be_nil
     end
 
     it 'hides other users sessions from normal users' do

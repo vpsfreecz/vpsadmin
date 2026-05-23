@@ -70,6 +70,8 @@ module VpsAdmin::API::Resources
     end
 
     class Create < HaveAPI::Actions::Default::Create
+      include VpsAdmin::API::Lifetimes::ActionHelpers
+
       desc 'Create a new access token'
 
       input do
@@ -94,11 +96,14 @@ module VpsAdmin::API::Resources
             current_user
           end
 
+        object_state_check!(target_user)
         ::MetricsAccessToken.create_for!(target_user, input[:metric_prefix])
       end
     end
 
     class Delete < HaveAPI::Actions::Default::Delete
+      include VpsAdmin::API::Lifetimes::ActionHelpers
+
       desc 'Delete access token'
 
       authorize do |u|
@@ -109,6 +114,7 @@ module VpsAdmin::API::Resources
 
       def exec
         token = self.class.model.find_by!(with_restricted(id: params[:metrics_access_token_id]))
+        object_state_check!(token.user)
         token.destroy!
         ok!
       end

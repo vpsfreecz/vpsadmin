@@ -150,6 +150,8 @@ module VpsAdmin::API::Resources
     end
 
     class Update < HaveAPI::Actions::Default::Update
+      include VpsAdmin::API::Lifetimes::ActionHelpers
+
       desc 'Update user session'
 
       input do
@@ -169,6 +171,7 @@ module VpsAdmin::API::Resources
 
       def exec
         user_session = ::UserSession.find_by!(with_restricted(id: params[:user_session_id]))
+        object_state_check!(user_session.user)
         user_session.update!(label: input[:label])
       rescue ActiveRecord::RecordInvalid
         error!('failed to create user session')
@@ -176,6 +179,8 @@ module VpsAdmin::API::Resources
     end
 
     class Close < HaveAPI::Action
+      include VpsAdmin::API::Lifetimes::ActionHelpers
+
       desc 'Close user session, revoke access token'
       http_method :post
       route '{%{resource}_id}'
@@ -188,6 +193,7 @@ module VpsAdmin::API::Resources
 
       def exec
         user_session = ::UserSession.find_by!(with_restricted(id: params[:user_session_id]))
+        object_state_check!(user_session.user)
         VpsAdmin::API::Operations::UserSession::Close.run(user_session)
         ok!
       rescue ActiveRecord::RecordInvalid

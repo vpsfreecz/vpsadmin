@@ -90,6 +90,17 @@ RSpec.describe 'VpsAdmin::API::Resources::User::KnownDevice' do
     device
   end
 
+  def suspend_user!(target = user)
+    target.update!(
+      object_state: :suspended,
+      enable_basic_auth: true,
+      enable_multi_factor_auth: false,
+      lockout: false,
+      password_reset: false
+    )
+    mark_user_paid_until!(target)
+  end
+
   def create_devices
     {
       user_device_a: create_device!(user: user, ip: '192.0.2.10', ua: 'Spec UA A'),
@@ -299,6 +310,24 @@ RSpec.describe 'VpsAdmin::API::Resources::User::KnownDevice' do
 
       expect_status(404)
       expect(json['status']).to be(false)
+    end
+
+    it 'denies deleting own device while suspended' do
+      data = create_devices
+      device = data[:user_device_a]
+      old_token_id = device.token_id
+      suspend_user!
+
+      as(user) { json_delete delete_path(user.id, device.id) }
+
+      expect_status(200)
+      expect(json['status']).to be(false)
+      expect(response_message).to include('Access forbidden')
+
+      device.reload
+      expect(device.token_id).to eq(old_token_id)
+      expect(Token.where(id: old_token_id)).not_to be_empty
+      expect(UserDevice.active.where(id: device.id)).not_to be_empty
     end
 
     it 'allows admin to delete any user device' do

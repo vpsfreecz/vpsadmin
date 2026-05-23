@@ -47,9 +47,12 @@ class VpsAdmin::API::Resources::Webauthn < HaveAPI::Resource
 
       authorize { allow }
 
+      include VpsAdmin::API::Lifetimes::ActionHelpers
       include VpsAdmin::API::Resources::Webauthn::Utils
 
       def exec
+        object_state_check!(current_user)
+
         if current_user.webauthn_id.nil?
           current_user.update!(webauthn_id: WebAuthn.generate_user_id)
         end
@@ -76,7 +79,11 @@ class VpsAdmin::API::Resources::Webauthn < HaveAPI::Resource
 
       authorize { allow }
 
+      include VpsAdmin::API::Lifetimes::ActionHelpers
+
       def exec
+        object_state_check!(current_user)
+
         challenge = ::WebauthnChallenge.joins(:token).where(
           user: current_user,
           tokens: { token: input[:challenge_token] },

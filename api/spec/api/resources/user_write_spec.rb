@@ -74,6 +74,25 @@ RSpec.describe 'VpsAdmin::API::Resources::User write actions' do # rubocop:disab
     "#{safe_prefix}-#{SecureRandom.hex(4)}"
   end
 
+  def suspend_user!(target = SpecSeed.user)
+    SpecSeed.set_password!(target, SpecSeed::PASSWORD)
+    target.update!(
+      object_state: :suspended,
+      enable_basic_auth: true,
+      enable_token_auth: false,
+      enable_oauth2_auth: false,
+      enable_single_sign_on: false,
+      enable_new_login_notification: true,
+      enable_multi_factor_auth: false,
+      mailer_enabled: true,
+      preferred_logout_all: false,
+      preferred_session_length: 1200,
+      lockout: false,
+      password_reset: false
+    )
+    mark_user_paid_until!(target)
+  end
+
   def ensure_mail_template(template_name)
     template = MailTemplate.find_or_create_by!(name: template_name) do |tpl|
       tpl.label = template_name.tr('_', ' ').capitalize
@@ -339,6 +358,35 @@ RSpec.describe 'VpsAdmin::API::Resources::User write actions' do # rubocop:disab
       expect(SpecSeed.user.reload.mailer_enabled).to eq(new_value)
     end
 
+    it 'denies suspended users updating authentication settings' do
+      suspend_user!
+
+      as(SpecSeed.user) do
+        json_put show_path(SpecSeed.user.id), user: {
+          enable_token_auth: true,
+          enable_oauth2_auth: true,
+          enable_single_sign_on: true,
+          enable_new_login_notification: false,
+          mailer_enabled: false,
+          preferred_logout_all: true,
+          preferred_session_length: 3600
+        }
+      end
+
+      expect_status(200)
+      expect(json['status']).to be(false)
+      expect(response_message).to include('Access forbidden')
+
+      SpecSeed.user.reload
+      expect(SpecSeed.user.enable_token_auth).to be(false)
+      expect(SpecSeed.user.enable_oauth2_auth).to be(false)
+      expect(SpecSeed.user.enable_single_sign_on).to be(false)
+      expect(SpecSeed.user.enable_new_login_notification).to be(true)
+      expect(SpecSeed.user.mailer_enabled).to be(true)
+      expect(SpecSeed.user.preferred_logout_all).to be(false)
+      expect(SpecSeed.user.preferred_session_length).to eq(1200)
+    end
+
     it 'rejects users updating another account' do
       as(SpecSeed.user) do
         json_put show_path(SpecSeed.other_user.id), user: { mailer_enabled: false }
@@ -404,6 +452,36 @@ RSpec.describe 'VpsAdmin::API::Resources::User write actions' do # rubocop:disab
       expect_status(200)
       expect(json['status']).to be(true)
       expect(login_from(user_obj)).to eq('user')
+    ensure
+      clear_login
+    end
+
+    it 'denies suspended users changing their password' do
+      suspend_user!
+
+      as(SpecSeed.user) do
+        json_put show_path(SpecSeed.user.id), user: {
+          password: SpecSeed::PASSWORD,
+          new_password: new_password,
+          logout_sessions: false
+        }
+      end
+
+      expect_status(200)
+      expect(json['status']).to be(false)
+      expect(response_message).to include('Access forbidden')
+
+      clear_login
+      basic_authorize(SpecSeed.user.login, new_password)
+      json_get current_path
+      expect(last_response.status).not_to eq(200)
+
+      clear_login
+      basic_authorize(SpecSeed.user.login, SpecSeed::PASSWORD)
+      json_get current_path
+      expect_status(200)
+      expect(json['status']).to be(true)
+      expect(login_from(user_obj)).to eq(SpecSeed.user.login)
     ensure
       clear_login
     end
