@@ -67,6 +67,8 @@ module VpsAdmin::API::Resources
     end
 
     class Create < HaveAPI::Actions::Default::Create
+      include VpsAdmin::API::Lifetimes::ActionHelpers
+
       desc 'Create a new OOM report rule'
 
       input do
@@ -90,6 +92,8 @@ module VpsAdmin::API::Resources
           error!('access denied')
         end
 
+        object_state_check!(input[:vps], input[:vps].user)
+
         if input[:vps].oom_report_rules.count > 100
           error!('rule limit reached, refusing to add another one')
         end
@@ -101,6 +105,8 @@ module VpsAdmin::API::Resources
     end
 
     class Update < HaveAPI::Actions::Default::Update
+      include VpsAdmin::API::Lifetimes::ActionHelpers
+
       desc 'Update OOM report rule'
 
       input do
@@ -118,11 +124,18 @@ module VpsAdmin::API::Resources
       end
 
       def exec
-        self.class.model.joins(:vps).find_by!(with_restricted(id: params[:oom_report_rule_id])).update!(input)
+        rule = self.class.model.joins(:vps).find_by!(with_restricted(id: params[:oom_report_rule_id]))
+        object_state_check!(rule.vps, rule.vps.user)
+        object_state_check!(input[:vps], input[:vps].user) if input[:vps]
+
+        rule.update!(input)
+        rule
       end
     end
 
     class Delete < HaveAPI::Actions::Default::Delete
+      include VpsAdmin::API::Lifetimes::ActionHelpers
+
       desc 'Delete OOM report rule'
 
       authorize do |u|
@@ -132,7 +145,10 @@ module VpsAdmin::API::Resources
       end
 
       def exec
-        self.class.model.joins(:vps).find_by!(with_restricted(id: params[:oom_report_rule_id])).destroy!
+        rule = self.class.model.joins(:vps).find_by!(with_restricted(id: params[:oom_report_rule_id]))
+        object_state_check!(rule.vps, rule.vps.user)
+
+        rule.destroy!
         ok!
       end
     end

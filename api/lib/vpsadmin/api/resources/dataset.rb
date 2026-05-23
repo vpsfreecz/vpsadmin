@@ -157,6 +157,8 @@ module VpsAdmin::API::Resources
     end
 
     class Create < HaveAPI::Actions::Default::Create
+      include VpsAdmin::API::Lifetimes::ActionHelpers
+
       desc 'Create a subdataset'
       blocking true
 
@@ -193,6 +195,9 @@ module VpsAdmin::API::Resources
           error!('access denied')
         end
 
+        object_state_check!(current_user)
+        object_state_check!(input[:dataset], input[:dataset].user) if input[:dataset]
+
         properties = VpsAdmin::API::DatasetProperties.validate_params(input)
 
         @chain, dataset = VpsAdmin::API::Operations::Dataset::Create.run(
@@ -222,6 +227,8 @@ module VpsAdmin::API::Resources
     end
 
     class Update < HaveAPI::Actions::Default::Update
+      include VpsAdmin::API::Lifetimes::ActionHelpers
+
       desc 'Update a dataset'
       blocking true
 
@@ -248,6 +255,7 @@ module VpsAdmin::API::Resources
         end
 
         ds.maintenance_check!(ds.primary_dataset_in_pool!.pool)
+        object_state_check!(ds, ds.user)
 
         properties = VpsAdmin::API::DatasetProperties.validate_params(input)
 
@@ -273,6 +281,8 @@ module VpsAdmin::API::Resources
     end
 
     class Delete < HaveAPI::Actions::Default::Delete
+      include VpsAdmin::API::Lifetimes::ActionHelpers
+
       desc 'Destroy a dataset with all its subdatasets and snapshots'
       blocking true
 
@@ -293,6 +303,7 @@ module VpsAdmin::API::Resources
         end
 
         ds.maintenance_check!(ds.primary_dataset_in_pool!.pool)
+        object_state_check!(ds, ds.user)
 
         @chain, = ds.destroy
         ok!
@@ -306,6 +317,8 @@ module VpsAdmin::API::Resources
     end
 
     class Inherit < HaveAPI::Action
+      include VpsAdmin::API::Lifetimes::ActionHelpers
+
       desc 'Inherit dataset property'
       route '{%{resource}_id}/inherit'
       http_method :post
@@ -329,6 +342,7 @@ module VpsAdmin::API::Resources
         error!('insufficient permission to inherit this property') if current_user.role != :admin && !ds.user_editable
 
         ds.maintenance_check!(ds.primary_dataset_in_pool!.pool)
+        object_state_check!(ds, ds.user)
 
         not_exists = []
         not_inheritable = []
@@ -533,6 +547,8 @@ module VpsAdmin::API::Resources
       end
 
       class Create < HaveAPI::Actions::Default::Create
+        include VpsAdmin::API::Lifetimes::ActionHelpers
+
         desc 'Create snapshot'
         blocking true
 
@@ -554,6 +570,7 @@ module VpsAdmin::API::Resources
           ds = ::Dataset.find_by!(with_restricted(id: params[:dataset_id]))
 
           ds.maintenance_check!(ds.primary_dataset_in_pool!.pool)
+          object_state_check!(ds, ds.user)
 
           max_snapshots = ds.max_snapshots
 
@@ -577,6 +594,8 @@ module VpsAdmin::API::Resources
       end
 
       class Delete < HaveAPI::Actions::Default::Delete
+        include VpsAdmin::API::Lifetimes::ActionHelpers
+
         desc 'Destroy a snapshot'
         blocking true
 
@@ -601,6 +620,7 @@ module VpsAdmin::API::Resources
           end
 
           snap.dataset.maintenance_check!(snap.dataset.primary_dataset_in_pool!.pool)
+          object_state_check!(snap.dataset, snap.dataset.user)
 
           @chain, = TransactionChains::Snapshot::Destroy.fire(snap)
           ok!
@@ -612,6 +632,8 @@ module VpsAdmin::API::Resources
       end
 
       class Rollback < HaveAPI::Action
+        include VpsAdmin::API::Lifetimes::ActionHelpers
+
         desc 'Rollback to a snapshot'
         route '{%{resource}_id}/rollback'
         http_method :post
@@ -630,6 +652,7 @@ module VpsAdmin::API::Resources
                                                                         ))
 
           snap.dataset.maintenance_check!(snap.dataset.primary_dataset_in_pool!.pool)
+          object_state_check!(snap.dataset, snap.dataset.user)
 
           # Check if any snapshots on primary pool are mounted
           mnt = snap.dataset.snapshots.select(
@@ -662,6 +685,7 @@ module VpsAdmin::API::Resources
             if dip.pool.role == 'hypervisor'
               vps = Vps.find_by!(dataset_in_pool: dip.dataset.root.primary_dataset_in_pool!)
               maintenance_check!(vps)
+              object_state_check!(vps, vps.user)
 
               TransactionChains::Vps::Restore.fire(vps, snap)
             else
@@ -747,6 +771,8 @@ module VpsAdmin::API::Resources
       end
 
       class Create < HaveAPI::Actions::Default::Create
+        include VpsAdmin::API::Lifetimes::ActionHelpers
+
         desc 'Assign new dataset plan'
 
         input do
@@ -768,11 +794,15 @@ module VpsAdmin::API::Resources
 
           error!('Insufficient permission') if !input[:environment_dataset_plan].user_add && current_user.role != :admin
 
+          object_state_check!(s, s.user)
+
           s.primary_dataset_in_pool!.add_plan(input[:environment_dataset_plan])
         end
       end
 
       class Delete < HaveAPI::Actions::Default::Delete
+        include VpsAdmin::API::Lifetimes::ActionHelpers
+
         desc 'Remove dataset plan'
 
         authorize do |u|
@@ -790,6 +820,8 @@ module VpsAdmin::API::Resources
           if !dip_plan.environment_dataset_plan.user_remove && current_user.role != :admin
             error!('Insufficient permission')
           end
+
+          object_state_check!(ds, ds.user)
 
           dip.del_plan(dip_plan)
           ok!

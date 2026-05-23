@@ -122,10 +122,13 @@ module VpsAdmin::Supervisor
       def get_session_node(vps_id, session)
         now = Time.now
         console = ::VpsConsole
-                  .includes(vps: { node: :location })
+                  .includes(:user, vps: { node: :location })
                   .find_by(vps_id:, token: session)
 
         return unless console && console.expiration > now
+        return unless console.user.role == :admin || (
+          console.user.object_state == 'active' && console.vps.object_state == 'active'
+        )
 
         console.update!(expiration: now + 60)
         console.vps.node.domain_name

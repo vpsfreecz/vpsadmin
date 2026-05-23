@@ -390,9 +390,15 @@ module VpsAdmin::Supervisor
       def authenticate_console_session(token)
         console = ::VpsConsole
                   .select('vps_id')
-                  .joins(:vps)
+                  .joins(:user, :vps)
                   .where(token:, vpses: { node_id: @node.id })
                   .where('expiration > ?', Time.now)
+                  .where(
+                    'users.level >= ? OR (users.object_state = ? AND vpses.object_state = ?)',
+                    90,
+                    ::User.object_states[:active],
+                    ::Vps.object_states[:active]
+                  )
                   .take
 
         console && console.vps_id

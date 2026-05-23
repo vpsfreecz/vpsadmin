@@ -137,7 +137,7 @@ class VpsAdmin::API::Resources::Export < HaveAPI::Resource
 
       error!('access denied') if current_user.role != :admin && ds.user_id != current_user.id
 
-      object_state_check!(ds.user)
+      object_state_check!(ds, ds.user)
 
       @chain, export = VpsAdmin::API::Operations::Export::Create.run(
         ds,
@@ -181,7 +181,7 @@ class VpsAdmin::API::Resources::Export < HaveAPI::Resource
                                            id: params[:export_id]
                                          ))
 
-      object_state_check!(export.user)
+      object_state_check!(export, export.user)
 
       @chain, export = VpsAdmin::API::Operations::Export::Update.run(
         export,
@@ -213,7 +213,7 @@ class VpsAdmin::API::Resources::Export < HaveAPI::Resource
                                            id: params[:export_id]
                                          ))
 
-      object_state_check!(export.user)
+      object_state_check!(export, export.user)
 
       @chain, export = VpsAdmin::API::Operations::Export::Destroy.run(export)
       ok!
@@ -321,7 +321,7 @@ class VpsAdmin::API::Resources::Export < HaveAPI::Resource
                                      id: params[:export_id]
                                    ))
 
-        object_state_check!(export.user)
+        object_state_check!(export, export.user)
 
         @chain, host = VpsAdmin::API::Operations::Export::AddHost.run(
           export,
@@ -364,7 +364,7 @@ class VpsAdmin::API::Resources::Export < HaveAPI::Resource
                                                           id: params[:host_id]
                                                         ))
 
-        object_state_check!(host.export.user)
+        object_state_check!(host.export, host.export.user)
 
         @chain, host = VpsAdmin::API::Operations::Export::EditHost.run(
           host,
@@ -397,7 +397,7 @@ class VpsAdmin::API::Resources::Export < HaveAPI::Resource
                                                           id: params[:host_id]
                                                         ))
 
-        object_state_check!(host.export.user)
+        object_state_check!(host.export, host.export.user)
 
         @chain = VpsAdmin::API::Operations::Export::DelHost.run(
           host.export,

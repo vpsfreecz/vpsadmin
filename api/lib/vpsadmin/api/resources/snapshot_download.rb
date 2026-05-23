@@ -151,6 +151,8 @@ module VpsAdmin::API::Resources
     end
 
     class Delete < HaveAPI::Actions::Default::Delete
+      include VpsAdmin::API::Lifetimes::ActionHelpers
+
       desc 'Delete download link'
       blocking true
 
@@ -162,6 +164,8 @@ module VpsAdmin::API::Resources
 
       def exec
         dl = ::SnapshotDownload.find_by!(with_restricted(id: params[:snapshot_download_id]))
+        object_state_check!(dl.user)
+
         @chain, = TransactionChains::Dataset::RemoveDownload.fire(dl)
         ok!
       end

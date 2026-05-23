@@ -332,8 +332,6 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
   end
 
   class Update < HaveAPI::Actions::Default::Update
-    include VpsAdmin::API::Lifetimes::ActionHelpers
-
     blocking true
 
     input do
@@ -1212,6 +1210,8 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
     end
 
     class Create < HaveAPI::Actions::Default::Create
+      include VpsAdmin::API::Lifetimes::ActionHelpers
+
       desc 'Store a public key'
 
       input do
@@ -1232,7 +1232,10 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
       def exec
         error!('Access denied') if current_user.role != :admin && current_user.id != params[:user_id].to_i
 
-        input[:user] = ::User.find(params[:user_id])
+        user = ::User.find(params[:user_id])
+        object_state_check!(user)
+
+        input[:user] = user
         input[:key].strip!
 
         ::UserPublicKey.create!(input)
@@ -1242,6 +1245,8 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
     end
 
     class Update < HaveAPI::Actions::Default::Update
+      include VpsAdmin::API::Lifetimes::ActionHelpers
+
       desc 'Update a public key'
 
       input do
@@ -1262,6 +1267,7 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
         error!('Provide at least one input parameter') if input.empty?
 
         key = ::UserPublicKey.find_by!(user_id: params[:user_id], id: params[:public_key_id])
+        object_state_check!(key.user)
 
         input[:key].strip! if input[:key]
 
@@ -1273,6 +1279,8 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
     end
 
     class Delete < HaveAPI::Actions::Default::Delete
+      include VpsAdmin::API::Lifetimes::ActionHelpers
+
       desc 'Delete public key'
 
       authorize do |_u|
@@ -1283,6 +1291,8 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
         error!('Access denied') if current_user.role != :admin && current_user.id != params[:user_id].to_i
 
         key = ::UserPublicKey.find_by!(user_id: params[:user_id], id: params[:public_key_id])
+        object_state_check!(key.user)
+
         key.destroy!
         ok!
       end
@@ -1353,6 +1363,8 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
     end
 
     class Update < HaveAPI::Actions::Default::Update
+      include VpsAdmin::API::Lifetimes::ActionHelpers
+
       desc 'Update user mail role recipient'
 
       input do
@@ -1369,9 +1381,11 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
 
       def exec
         error!('Access denied') if current_user.role != :admin && current_user.id != params[:user_id].to_i
+        user = ::User.find(params[:user_id])
+        object_state_check!(user)
 
         ::UserMailRoleRecipient.handle_update!(
-          ::User.find(params[:user_id]),
+          user,
           params[:mail_role_recipient_id],
           input
         )
@@ -1448,6 +1462,8 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
     end
 
     class Update < HaveAPI::Actions::Default::Update
+      include VpsAdmin::API::Lifetimes::ActionHelpers
+
       desc 'Update user mail template recipient'
 
       input do
@@ -1464,9 +1480,11 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
 
       def exec
         error!('Access denied') if current_user.role != :admin && current_user.id != params[:user_id].to_i
+        user = ::User.find(params[:user_id])
+        object_state_check!(user)
 
         ::UserMailTemplateRecipient.handle_update!(
-          ::User.find(params[:user_id]),
+          user,
           ::MailTemplate.find_by!(name: params[:mail_template_recipient_id]),
           input
         )
@@ -1478,5 +1496,6 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
 
   include VpsAdmin::API::Lifetimes::Resource
 
+  add_lifetime_methods([Update])
   add_lifetime_params(Current, :output, :lifetime_expiration)
 end

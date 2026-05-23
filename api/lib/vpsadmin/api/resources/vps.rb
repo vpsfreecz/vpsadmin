@@ -508,7 +508,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
     def exec
       vps = ::Vps.including_deleted.find_by!(with_restricted(id: params[:vps_id]))
       maintenance_check!(vps)
-      object_state_check!(vps.user)
+      object_state_check!(vps, vps.user)
 
       state = if current_user.role == :admin
                 input[:lazy] == false ? :hard_delete : :soft_delete
@@ -640,6 +640,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
     def exec
       vps = ::Vps.find_by!(with_restricted(id: params[:vps_id]))
       maintenance_check!(vps)
+      object_state_check!(vps, vps.user)
 
       @chain, password = VpsAdmin::API::Operations::Vps::Passwd.run(vps, input[:type])
       { password: }
@@ -743,6 +744,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
     def exec
       vps = ::Vps.find_by!(with_restricted(id: params[:vps_id]))
       maintenance_check!(vps)
+      object_state_check!(vps, vps.user)
 
       input[:os_template] ||= vps.os_template
 
@@ -888,7 +890,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
     def exec
       vps = ::Vps.find_by!(with_restricted(id: params[:vps_id]))
       maintenance_check!(vps)
-      object_state_check!(vps.user)
+      object_state_check!(vps, vps.user)
 
       if current_user.role == :admin
         input[:user] ||= current_user
@@ -984,13 +986,15 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
         with_restricted(id: params[:vps_id])
       )
       maintenance_check!(vps)
-      maintenance_check!(input[:vps])
-      object_state_check!(vps.user)
 
       if vps.user != input[:vps].user
         error!('access denied')
+      end
 
-      elsif vps.node.location_id == input[:vps].node.location_id
+      maintenance_check!(input[:vps])
+      object_state_check!(vps, input[:vps], vps.user)
+
+      if vps.node.location_id == input[:vps].node.location_id
         error!('swap within one location is not needed, simply exchange IP addresses')
       end
 
@@ -1068,6 +1072,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
         with_restricted(id: params[:vps_id])
       )
       maintenance_check!(vps)
+      object_state_check!(vps, vps.user)
 
       @chain, = TransactionChains::Vps::DeployPublicKey.fire(vps, input[:public_key])
       ok!
@@ -1081,7 +1086,11 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
   include VpsAdmin::API::Maintainable::Action
   include VpsAdmin::API::Lifetimes::Resource
 
-  add_lifetime_methods([Start, Stop, Restart, Boot, Create, Clone, Update, Delete, SwapWith, Replace])
+  add_lifetime_methods([
+                         Start, Stop, Restart, Passwd, Boot, Reinstall,
+                         Create, Clone, Update, Delete, SwapWith, Replace,
+                         DeployPublicKey
+                       ])
 
   class Feature < HaveAPI::Resource
     model ::VpsFeature
@@ -1155,6 +1164,8 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
     end
 
     class Update < HaveAPI::Actions::Default::Update
+      include VpsAdmin::API::Lifetimes::ActionHelpers
+
       desc 'Toggle VPS feature'
       blocking true
 
@@ -1172,6 +1183,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
         vps = ::Vps.find_by!(
           with_restricted(id: params[:vps_id])
         )
+        object_state_check!(vps, vps.user)
 
         feature = vps.vps_features.find(params[:feature_id])
 
@@ -1191,6 +1203,8 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
     end
 
     class UpdateAll < HaveAPI::Action
+      include VpsAdmin::API::Lifetimes::ActionHelpers
+
       desc 'Set all features at once'
       http_method :post
       route 'update_all'
@@ -1212,6 +1226,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
         vps = ::Vps.find_by!(
           with_restricted(id: params[:vps_id])
         )
+        object_state_check!(vps, vps.user)
         @chain = VpsAdmin::API::Operations::Vps::SetFeatures.run(vps, input)
         ok!
       rescue VpsAdmin::API::Exceptions::VpsFeatureConflict => e
@@ -1301,6 +1316,8 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
     end
 
     class Create < HaveAPI::Actions::Default::Create
+      include VpsAdmin::API::Lifetimes::ActionHelpers
+
       desc 'Mount local dataset to directory in VPS'
       blocking true
 
@@ -1331,6 +1348,8 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
           error!('insufficient permission to mount selected snapshot')
         end
 
+        object_state_check!(vps, vps.user, input[:dataset], input[:dataset].user)
+
         @chain, ret = TransactionChains::Vps::MountDataset.fire(
           vps,
           input[:dataset],
@@ -1352,6 +1371,8 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
     end
 
     class Update < HaveAPI::Actions::Default::Update
+      include VpsAdmin::API::Lifetimes::ActionHelpers
+
       desc 'Update a mount'
       blocking true
 
@@ -1375,6 +1396,13 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
         maintenance_check!(vps)
 
         mnt = ::Mount.find_by!(vps:, id: params[:mount_id])
+        object_state_check!(
+          vps,
+          vps.user,
+          mnt.dataset_in_pool.dataset,
+          mnt.dataset_in_pool.dataset.user
+        )
+
         @chain, = mnt.update_chain(input)
         mnt
       end
@@ -1385,6 +1413,8 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
     end
 
     class Delete < HaveAPI::Actions::Default::Delete
+      include VpsAdmin::API::Lifetimes::ActionHelpers
+
       desc 'Delete mount from VPS'
       blocking true
 
@@ -1399,6 +1429,13 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
         maintenance_check!(vps)
 
         mnt = ::Mount.find_by!(vps:, id: params[:mount_id])
+        object_state_check!(
+          vps,
+          vps.user,
+          mnt.dataset_in_pool.dataset,
+          mnt.dataset_in_pool.dataset.user
+        )
+
         @chain, = TransactionChains::Vps::UmountDataset.fire(vps, mnt)
 
         ok!
@@ -1478,6 +1515,8 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
     end
 
     class Update < HaveAPI::Actions::Default::Update
+      include VpsAdmin::API::Lifetimes::ActionHelpers
+
       desc 'Resize maintenance window'
 
       input do
@@ -1497,6 +1536,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
       def exec
         vps = ::Vps.find_by!(with_restricted(id: params[:vps_id]))
         maintenance_check!(vps)
+        object_state_check!(vps, vps.user)
         window = vps.vps_maintenance_windows.find_by!(weekday: params[:maintenance_window_id])
 
         error!('provide parameters to change') if input.empty?
@@ -1520,6 +1560,8 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
     end
 
     class UpdateAll < HaveAPI::Action
+      include VpsAdmin::API::Lifetimes::ActionHelpers
+
       desc 'Update maintenance windows for all week days at once'
       http_method :put
       route ''
@@ -1541,6 +1583,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
       def exec
         vps = ::Vps.find_by!(with_restricted(id: params[:vps_id]))
         maintenance_check!(vps)
+        object_state_check!(vps, vps.user)
 
         error!('provide parameters to change') if input.empty?
 
@@ -1586,6 +1629,8 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
     end
 
     class Create < HaveAPI::Actions::Default::Create
+      include VpsAdmin::API::Lifetimes::ActionHelpers
+
       output do
         use :all
       end
@@ -1599,6 +1644,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
       def exec
         vps = ::Vps.find_by!(with_restricted(id: params[:vps_id]))
         maintenance_check!(vps)
+        object_state_check!(vps, vps.user)
 
         t = ::VpsConsole.find_for(vps, current_user)
 
@@ -1609,6 +1655,8 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
     end
 
     class Show < HaveAPI::Actions::Default::Show
+      include VpsAdmin::API::Lifetimes::ActionHelpers
+
       output do
         use :all
       end
@@ -1622,12 +1670,15 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
       def exec
         vps = ::Vps.find_by!(with_restricted(id: params[:vps_id]))
         maintenance_check!(vps)
+        object_state_check!(vps, vps.user)
 
         ::VpsConsole.find_for!(vps, current_user)
       end
     end
 
     class Delete < HaveAPI::Actions::Default::Delete
+      include VpsAdmin::API::Lifetimes::ActionHelpers
+
       authorize do |u|
         allow if u.role == :admin
         restrict user_id: u.id
@@ -1637,6 +1688,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
       def exec
         vps = ::Vps.find_by!(with_restricted(id: params[:vps_id]))
         maintenance_check!(vps)
+        object_state_check!(vps, vps.user)
 
         ::VpsConsole.find_for!(vps, current_user).update!(token: nil)
       end

@@ -123,6 +123,7 @@ jobs:
               spec/api/resources/environment_write_spec.rb
               spec/api/resources/incident_report_spec.rb
               spec/api/resources/language_spec.rb
+              spec/api/resources/lifecycle_bypass_spec.rb
               spec/api/resources/location_read_spec.rb
               spec/api/resources/location_write_spec.rb
               spec/api/resources/metrics_access_token_spec.rb

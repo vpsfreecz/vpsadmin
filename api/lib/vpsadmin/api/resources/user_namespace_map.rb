@@ -79,6 +79,8 @@ class VpsAdmin::API::Resources::UserNamespaceMap < HaveAPI::Resource
   end
 
   class Create < HaveAPI::Actions::Default::Create
+    include VpsAdmin::API::Lifetimes::ActionHelpers
+
     desc 'Create user namespace map'
 
     input do
@@ -98,11 +100,15 @@ class VpsAdmin::API::Resources::UserNamespaceMap < HaveAPI::Resource
     def exec
       error!('access denied') if current_user.role != :admin && input[:user_namespace].user_id != current_user.id
 
+      object_state_check!(input[:user_namespace].user)
+
       UserNamespaceMap.create_direct!(input[:user_namespace], input[:label])
     end
   end
 
   class Update < HaveAPI::Actions::Default::Update
+    include VpsAdmin::API::Lifetimes::ActionHelpers
+
     desc 'Edit user namespace map'
 
     input do
@@ -125,6 +131,7 @@ class VpsAdmin::API::Resources::UserNamespaceMap < HaveAPI::Resource
       map = self.class.model.joins(:user_namespace).find_by!(with_restricted(
                                                                id: params[:user_namespace_map_id]
                                                              ))
+      object_state_check!(map.user_namespace.user)
 
       map.update!(label: input[:label]) if input[:label]
       map
@@ -132,6 +139,8 @@ class VpsAdmin::API::Resources::UserNamespaceMap < HaveAPI::Resource
   end
 
   class Delete < HaveAPI::Actions::Default::Delete
+    include VpsAdmin::API::Lifetimes::ActionHelpers
+
     desc 'Delete user namespace map'
 
     authorize do |u|
@@ -144,6 +153,7 @@ class VpsAdmin::API::Resources::UserNamespaceMap < HaveAPI::Resource
       map = self.class.model.joins(:user_namespace).find_by!(with_restricted(
                                                                id: params[:user_namespace_map_id]
                                                              ))
+      object_state_check!(map.user_namespace.user)
 
       error!('the map is in use, unable to delete at this time') if map.in_use?
 
@@ -227,6 +237,8 @@ class VpsAdmin::API::Resources::UserNamespaceMap < HaveAPI::Resource
     end
 
     class Create < HaveAPI::Actions::Default::Create
+      include VpsAdmin::API::Lifetimes::ActionHelpers
+
       desc 'Create a new map entry'
 
       input do
@@ -250,6 +262,7 @@ class VpsAdmin::API::Resources::UserNamespaceMap < HaveAPI::Resource
         map = ::UserNamespaceMap.joins(:user_namespace).find_by!(with_restricted(
                                                                    user_namespace_maps: { id: params[:user_namespace_map_id] }
                                                                  ))
+        object_state_check!(map.user_namespace.user)
 
         if current_user.role != :admin && map.user_namespace.user_id != current_user.id
           error!('access denied')
@@ -274,6 +287,8 @@ class VpsAdmin::API::Resources::UserNamespaceMap < HaveAPI::Resource
     end
 
     class Update < HaveAPI::Actions::Default::Update
+      include VpsAdmin::API::Lifetimes::ActionHelpers
+
       desc 'Edit map entry'
 
       input do
@@ -296,6 +311,7 @@ class VpsAdmin::API::Resources::UserNamespaceMap < HaveAPI::Resource
         ).find_by!(with_restricted(
                      user_namespace_map_entries: { id: params[:entry_id] }
                    ))
+        object_state_check!(entry.user_namespace_map.user_namespace.user)
 
         error!('the map is in use, it cannot be changed at this time') if entry.user_namespace_map.in_use?
 
@@ -310,6 +326,8 @@ class VpsAdmin::API::Resources::UserNamespaceMap < HaveAPI::Resource
     end
 
     class Delete < HaveAPI::Actions::Default::Delete
+      include VpsAdmin::API::Lifetimes::ActionHelpers
+
       desc 'Delete map entry'
 
       authorize do |u|
@@ -324,6 +342,7 @@ class VpsAdmin::API::Resources::UserNamespaceMap < HaveAPI::Resource
         ).find_by!(with_restricted(
                      user_namespace_map_entries: { id: params[:entry_id] }
                    ))
+        object_state_check!(entry.user_namespace_map.user_namespace.user)
 
         error!('the map is in use, it cannot be changed at this time') if entry.user_namespace_map.in_use?
 

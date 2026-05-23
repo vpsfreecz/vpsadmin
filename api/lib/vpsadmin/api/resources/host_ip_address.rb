@@ -219,6 +219,8 @@ module VpsAdmin::API::Resources
     end
 
     class Create < HaveAPI::Actions::Default::Create
+      include VpsAdmin::API::Lifetimes::ActionHelpers
+
       desc 'Add host IP address'
 
       input do
@@ -242,6 +244,9 @@ module VpsAdmin::API::Resources
 
         error!('access denied') if current_user.role != :admin && ip.current_owner != current_user
 
+        lifetime_objects = [ip.current_owner, ip.network_interface&.vps].compact
+        object_state_check!(*lifetime_objects) if lifetime_objects.any?
+
         VpsAdmin::API::Operations::HostIpAddress::Create.run(ip, input[:addr])
       rescue VpsAdmin::API::Exceptions::OperationError => e
         error!("create failed: #{e.message}")
@@ -249,6 +254,8 @@ module VpsAdmin::API::Resources
     end
 
     class Update < HaveAPI::Actions::Default::Update
+      include VpsAdmin::API::Lifetimes::ActionHelpers
+
       desc 'Update host IP address'
       blocking true
 
@@ -268,6 +275,9 @@ module VpsAdmin::API::Resources
         host = ::HostIpAddress.find(params[:host_ip_address_id])
 
         error!('access denied') if current_user.role != :admin && host.current_owner != current_user
+
+        lifetime_objects = [host.current_owner, host.ip_address.network_interface&.vps].compact
+        object_state_check!(*lifetime_objects) if lifetime_objects.any?
 
         ptr_content = input[:reverse_record_value].to_s.strip
 
@@ -294,6 +304,8 @@ module VpsAdmin::API::Resources
     end
 
     class Delete < HaveAPI::Actions::Default::Delete
+      include VpsAdmin::API::Lifetimes::ActionHelpers
+
       desc 'Delete host IP address'
       blocking true
 
@@ -305,6 +317,9 @@ module VpsAdmin::API::Resources
         host = ::HostIpAddress.find(params[:host_ip_address_id])
 
         error!('access denied') if current_user.role != :admin && host.current_owner != current_user
+
+        lifetime_objects = [host.current_owner, host.ip_address.network_interface&.vps].compact
+        object_state_check!(*lifetime_objects) if lifetime_objects.any?
 
         @chain, = VpsAdmin::API::Operations::HostIpAddress::Destroy.run(host)
         ok!

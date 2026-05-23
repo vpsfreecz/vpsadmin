@@ -77,6 +77,8 @@ module VpsAdmin::API::Resources
     end
 
     class Create < HaveAPI::Actions::Default::Create
+      include VpsAdmin::API::Lifetimes::ActionHelpers
+
       desc 'Store VPS user data'
 
       input do
@@ -101,6 +103,8 @@ module VpsAdmin::API::Resources
             current_user
           end
 
+        object_state_check!(input[:user])
+
         self.class.model.create!(input)
       rescue ActiveRecord::RecordInvalid => e
         error!('create failed', e.record.errors.to_hash)
@@ -108,6 +112,8 @@ module VpsAdmin::API::Resources
     end
 
     class Update < HaveAPI::Actions::Default::Update
+      include VpsAdmin::API::Lifetimes::ActionHelpers
+
       desc 'Update VPS user data'
 
       input do
@@ -128,6 +134,7 @@ module VpsAdmin::API::Resources
         ok! if input.empty?
 
         data = self.class.model.find_by!(with_restricted(id: params[:vps_user_data_id]))
+        object_state_check!(data.user)
 
         data.update!(input)
         data
@@ -137,6 +144,9 @@ module VpsAdmin::API::Resources
     end
 
     class Deploy < HaveAPI::Action
+      include VpsAdmin::API::Maintainable::Check
+      include VpsAdmin::API::Lifetimes::ActionHelpers
+
       desc 'Deploy user data to VPS'
       route '{%{resource}_id}/deploy'
       http_method :post
@@ -156,6 +166,9 @@ module VpsAdmin::API::Resources
         data = self.class.model.find_by!(with_restricted(id: params[:vps_user_data_id]))
         error!('access denied') if input[:vps].user_id != data.user_id
 
+        maintenance_check!(input[:vps])
+        object_state_check!(input[:vps], input[:vps].user, data.user)
+
         @chain, = TransactionChains::Vps::DeployUserData.fire(input[:vps], data)
         ok!
       end
@@ -166,6 +179,8 @@ module VpsAdmin::API::Resources
     end
 
     class Delete < HaveAPI::Actions::Default::Delete
+      include VpsAdmin::API::Lifetimes::ActionHelpers
+
       desc 'Delete VPS user data'
 
       authorize do |u|
@@ -176,6 +191,8 @@ module VpsAdmin::API::Resources
 
       def exec
         data = self.class.model.find_by!(with_restricted(id: params[:vps_user_data_id]))
+        object_state_check!(data.user)
+
         data.destroy!
 
         ok!

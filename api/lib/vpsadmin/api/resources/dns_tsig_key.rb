@@ -18,6 +18,8 @@ module VpsAdmin::API::Resources
     end
 
     class Index < HaveAPI::Actions::Default::Index
+      include VpsAdmin::API::Lifetimes::ActionHelpers
+
       desc 'List DNS TSIG key'
 
       input do
@@ -35,6 +37,8 @@ module VpsAdmin::API::Resources
       end
 
       def query
+        object_state_check!(current_user)
+
         q = self.class.model.where(with_restricted)
 
         %i[user algorithm].each do |v|
@@ -54,6 +58,8 @@ module VpsAdmin::API::Resources
     end
 
     class Show < HaveAPI::Actions::Default::Show
+      include VpsAdmin::API::Lifetimes::ActionHelpers
+
       desc 'Show DNS TSIG key'
 
       output do
@@ -68,6 +74,7 @@ module VpsAdmin::API::Resources
 
       def prepare
         @key = self.class.model.find_by!(with_restricted(id: params[:dns_tsig_key_id]))
+        object_state_check!(@key.user) if @key.user
       end
 
       def exec
@@ -76,6 +83,8 @@ module VpsAdmin::API::Resources
     end
 
     class Create < HaveAPI::Actions::Default::Create
+      include VpsAdmin::API::Lifetimes::ActionHelpers
+
       desc 'Create a DNS TSIG key'
 
       input do
@@ -95,6 +104,8 @@ module VpsAdmin::API::Resources
       end
 
       def exec
+        object_state_check!(current_user)
+
         VpsAdmin::API::Operations::DnsTsigKey::Create.run(to_db_names(input))
       rescue ActiveRecord::RecordInvalid => e
         error!('create failed', e.record.errors.to_hash)
@@ -104,6 +115,8 @@ module VpsAdmin::API::Resources
     end
 
     class Delete < HaveAPI::Actions::Default::Delete
+      include VpsAdmin::API::Lifetimes::ActionHelpers
+
       desc 'Delete DNS TSIG key'
 
       authorize do |u|
@@ -114,6 +127,8 @@ module VpsAdmin::API::Resources
 
       def exec
         key = self.class.model.find_by!(with_restricted(id: params[:dns_tsig_key_id]))
+        object_state_check!(key.user) if key.user
+
         VpsAdmin::API::Operations::DnsTsigKey::Destroy.run(key)
       rescue ActiveRecord::DeleteRestrictionError
         error!("key #{key.name} is in use")
