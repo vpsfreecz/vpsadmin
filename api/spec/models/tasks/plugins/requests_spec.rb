@@ -17,7 +17,10 @@ RSpec.describe 'requests plugin rake tasks', requires_plugins: :requests do # ru
   end
 
   it 'persists successful registration IP checks' do
-    req = build_registration_request!(client_ip_addr: '198.51.100.8')
+    req = build_registration_request!(
+      api_ip_addr: '203.0.113.8',
+      client_ip_addr: '198.51.100.8'
+    )
 
     allow(ipqs).to receive(:check_ip).with('198.51.100.8').and_return(
       ipqs_response(
@@ -47,9 +50,16 @@ RSpec.describe 'requests plugin rake tasks', requires_plugins: :requests do # ru
   end
 
   it 'persists failed registration IP checks and skips ineligible requests' do
-    checked = build_registration_request!(client_ip_addr: '198.51.100.9', ip_checked: true)
+    checked = build_registration_request!(
+      api_ip_addr: '203.0.113.9',
+      client_ip_addr: '198.51.100.9',
+      ip_checked: true
+    )
     without_ip = build_registration_request!
-    target = build_registration_request!(client_ip_addr: '198.51.100.10')
+    target = build_registration_request!(
+      api_ip_addr: '203.0.113.10',
+      client_ip_addr: '198.51.100.10'
+    )
 
     allow(ipqs).to receive(:check_ip).with('198.51.100.10').and_return(
       ipqs_response(
@@ -149,7 +159,10 @@ RSpec.describe 'requests plugin rake tasks', requires_plugins: :requests do # ru
   end
 
   it 'runs both registration check subtasks' do
-    req = build_registration_request!(client_ip_addr: '198.51.100.11')
+    req = build_registration_request!(
+      api_ip_addr: '203.0.113.11',
+      client_ip_addr: '198.51.100.11'
+    )
 
     allow(ipqs).to receive_messages(
       check_ip: ipqs_response(success: true, request_id: 'ip-2'),

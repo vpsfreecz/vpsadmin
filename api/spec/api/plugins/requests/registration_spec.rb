@@ -41,8 +41,8 @@ RSpec.describe 'VpsAdmin::API::Resources::UserRequest::Registration', requires_p
     }
   end
 
-  def json_post(path, payload)
-    post path, JSON.dump(payload), { 'CONTENT_TYPE' => 'application/json' }
+  def json_post(path, payload, env = {})
+    post path, JSON.dump(payload), { 'CONTENT_TYPE' => 'application/json' }.merge(env)
   end
 
   def json_put(path, payload)
@@ -328,22 +328,30 @@ RSpec.describe 'VpsAdmin::API::Resources::UserRequest::Registration', requires_p
 
   describe 'Create' do
     it 'allows public registration' do
-      header 'Client-IP', '203.0.113.10'
+      forwarded_client_ip = '203.0.113.10'
+      socket_client_ip = '198.51.100.10'
       payload = registration_payload(login: unique_login('reg-public'))
 
       expect do
-        json_post index_path, registration: payload
+        json_post(
+          index_path,
+          { registration: payload },
+          {
+            'HTTP_CLIENT_IP' => forwarded_client_ip,
+            'HTTP_X_REAL_IP' => '203.0.113.11',
+            'REMOTE_ADDR' => socket_client_ip
+          }
+        )
       end.to change(::RegistrationRequest, :count).by(1)
-
-      header 'Client-IP', nil
 
       expect_status(200)
       expect(json['status']).to be(true)
 
       record = ::RegistrationRequest.find(resource_id(registration_obj))
-      expect(record.client_ip_addr).to eq('203.0.113.10')
-      expect(record.client_ip_ptr).to eq('ptr-203.0.113.10')
-      expect(record.api_ip_ptr).to eq("ptr-#{record.api_ip_addr}")
+      expect(record.api_ip_addr).to eq(socket_client_ip)
+      expect(record.client_ip_addr).to eq(forwarded_client_ip)
+      expect(record.client_ip_ptr).to eq("ptr-#{forwarded_client_ip}")
+      expect(record.api_ip_ptr).to eq("ptr-#{socket_client_ip}")
       expect(record.access_token).to be_present
     end
 

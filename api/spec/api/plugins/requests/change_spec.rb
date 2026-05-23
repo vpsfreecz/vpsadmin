@@ -28,8 +28,8 @@ RSpec.describe 'VpsAdmin::API::Resources::UserRequest::Change', requires_plugins
     }
   end
 
-  def json_post(path, payload)
-    post path, JSON.dump(payload), { 'CONTENT_TYPE' => 'application/json' }
+  def json_post(path, payload, env = {})
+    post path, JSON.dump(payload), { 'CONTENT_TYPE' => 'application/json' }.merge(env)
   end
 
   def json_put(path, payload)
@@ -228,13 +228,22 @@ RSpec.describe 'VpsAdmin::API::Resources::UserRequest::Change', requires_plugins
     end
 
     it 'allows normal users to create change requests' do
-      header 'Client-IP', '203.0.113.9'
+      forwarded_client_ip = '203.0.113.9'
+      socket_client_ip = '198.51.100.9'
 
       expect do
-        as(user) { json_post index_path, change: change_payload }
+        as(user) do
+          json_post(
+            index_path,
+            { change: change_payload },
+            {
+              'HTTP_CLIENT_IP' => forwarded_client_ip,
+              'HTTP_X_REAL_IP' => '203.0.113.8',
+              'REMOTE_ADDR' => socket_client_ip
+            }
+          )
+        end
       end.to change(::ChangeRequest, :count).by(1)
-
-      header 'Client-IP', nil
 
       expect_status(200)
       expect(json['status']).to be(true)
@@ -242,9 +251,10 @@ RSpec.describe 'VpsAdmin::API::Resources::UserRequest::Change', requires_plugins
       record = ::ChangeRequest.order(:id).last
       expect(record.user_id).to eq(user.id)
       expect(record.change_reason).to eq('Spec change reason')
-      expect(record.client_ip_addr).to eq('203.0.113.9')
-      expect(record.client_ip_ptr).to eq('ptr-203.0.113.9')
-      expect(record.api_ip_ptr).to eq("ptr-#{record.api_ip_addr}")
+      expect(record.api_ip_addr).to eq(socket_client_ip)
+      expect(record.client_ip_addr).to eq(forwarded_client_ip)
+      expect(record.client_ip_ptr).to eq("ptr-#{forwarded_client_ip}")
+      expect(record.api_ip_ptr).to eq("ptr-#{socket_client_ip}")
     end
 
     it 'returns validation errors for missing change_reason' do
