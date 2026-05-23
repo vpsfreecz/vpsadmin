@@ -3,6 +3,13 @@ module VpsAdmin::API::Resources
     desc 'Browser monitored events'
     model ::MonitoredEvent
 
+    USER_VISIBLE_STATES = %i[
+      confirmed
+      acknowledged
+      ignored
+      closed
+    ].map { |state| ::MonitoredEvent.states[state] }.freeze
+
     params(:all) do
       id :id
       string :monitor, db_name: :monitor_name
@@ -34,12 +41,7 @@ module VpsAdmin::API::Resources
 
       authorize do |u|
         allow if u.role == :admin
-        restrict user_id: u.id, state: [
-          ::MonitoredEvent.states[:confirmed],
-          ::MonitoredEvent.states[:acknowledged],
-          ::MonitoredEvent.states[:ignored],
-          ::MonitoredEvent.states[:closed]
-        ]
+        restrict user_id: u.id, state: USER_VISIBLE_STATES
         input blacklist: %i[user]
         allow
       end
@@ -91,12 +93,7 @@ module VpsAdmin::API::Resources
 
       authorize do |u|
         allow if u.role == :admin
-        restrict user_id: u.id, state: [
-          ::MonitoredEvent.states[:confirmed],
-          ::MonitoredEvent.states[:acknowledged],
-          ::MonitoredEvent.states[:ignored],
-          ::MonitoredEvent.states[:closed]
-        ]
+        restrict user_id: u.id, state: USER_VISIBLE_STATES
         allow
       end
 
@@ -124,12 +121,7 @@ module VpsAdmin::API::Resources
 
       authorize do |u|
         allow if u.role == :admin
-        restrict user_id: u.id, state: [
-          ::MonitoredEvent.states[:confirmed],
-          ::MonitoredEvent.states[:acknowledged],
-          ::MonitoredEvent.states[:ignored],
-          ::MonitoredEvent.states[:closed]
-        ]
+        restrict user_id: u.id, state: USER_VISIBLE_STATES
         allow
       end
 
@@ -159,12 +151,7 @@ module VpsAdmin::API::Resources
 
       authorize do |u|
         allow if u.role == :admin
-        restrict user_id: u.id, state: [
-          ::MonitoredEvent.states[:confirmed],
-          ::MonitoredEvent.states[:acknowledged],
-          ::MonitoredEvent.states[:ignored],
-          ::MonitoredEvent.states[:closed]
-        ]
+        restrict user_id: u.id, state: USER_VISIBLE_STATES
         allow
       end
 
@@ -211,7 +198,10 @@ module VpsAdmin::API::Resources
 
         authorize do |u|
           allow if u.role == :admin
-          restrict monitored_events: { user_id: u.id }
+          restrict monitored_events: {
+            user_id: u.id,
+            state: USER_VISIBLE_STATES
+          }
           allow
         end
 
@@ -250,7 +240,10 @@ module VpsAdmin::API::Resources
 
         authorize do |u|
           allow if u.role == :admin
-          restrict monitored_events: { user_id: u.id }
+          restrict monitored_events: {
+            user_id: u.id,
+            state: USER_VISIBLE_STATES
+          }
           allow
         end
 

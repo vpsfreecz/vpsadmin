@@ -209,6 +209,13 @@ RSpec.describe 'VpsAdmin::API::Resources::MonitoredEvent', requires_plugins: :mo
       created_at: now - 20.minutes
     )
 
+    log_hidden = ::MonitoredEventLog.create!(
+      monitored_event: event_user_monitoring,
+      passed: false,
+      value: 'hidden pre-confirmation value',
+      created_at: now - 10.minutes
+    )
+
     {
       event_user_confirmed: event_user_confirmed,
       event_user_closed: event_user_closed,
@@ -219,7 +226,8 @@ RSpec.describe 'VpsAdmin::API::Resources::MonitoredEvent', requires_plugins: :mo
       log_ok: log_ok,
       log_fail: log_fail,
       log_ok_again: log_ok_again,
-      log_other: log_other
+      log_other: log_other,
+      log_hidden: log_hidden
     }
   end
 
@@ -261,6 +269,10 @@ RSpec.describe 'VpsAdmin::API::Resources::MonitoredEvent', requires_plugins: :mo
 
   def log_other
     fixtures.fetch(:log_other)
+  end
+
+  def log_hidden
+    fixtures.fetch(:log_hidden)
   end
 
   describe 'API description' do
@@ -614,6 +626,14 @@ RSpec.describe 'VpsAdmin::API::Resources::MonitoredEvent', requires_plugins: :mo
       expect(logs).to eq([])
     end
 
+    it 'hides logs for own events in non-visible states' do
+      as(user) { json_get logs_path(event_user_monitoring.id) }
+
+      expect_status(200)
+      expect(json['status']).to be(true)
+      expect(logs).to eq([])
+    end
+
     it 'returns meta count' do
       as(user) { json_get logs_path(event_user_confirmed.id), _meta: { count: true } }
 
@@ -643,6 +663,13 @@ RSpec.describe 'VpsAdmin::API::Resources::MonitoredEvent', requires_plugins: :mo
 
     it 'does not allow user to show other user log' do
       as(user) { json_get log_path(event_other_confirmed.id, log_other.id) }
+
+      expect_status(404)
+      expect(json['status']).to be(false)
+    end
+
+    it 'does not allow user to show logs for own events in non-visible states' do
+      as(user) { json_get log_path(event_user_monitoring.id, log_hidden.id) }
 
       expect_status(404)
       expect(json['status']).to be(false)
