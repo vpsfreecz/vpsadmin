@@ -36,6 +36,7 @@ module VpsAdmin::API::Plugins::Requests
           allow if u.role == :admin
           restrict user_id: u.id
           input whitelist: %i[state]
+          output blacklist: %i[admin]
           allow
         end
 
@@ -68,6 +69,7 @@ module VpsAdmin::API::Plugins::Requests
           deny unless u
           allow if u.role == :admin
           restrict user_id: u.id
+          output blacklist: %i[admin]
           allow
         end
 

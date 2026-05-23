@@ -166,6 +166,37 @@ RSpec.describe 'VpsAdmin::API::Resources::UserRequest::Change', requires_plugins
       expect(ids).to eq([c_user_approved.id])
     end
 
+    it 'does not expose handling admin details to normal users through includes' do
+      admin.update!(
+        full_name: 'Private Request Operator',
+        email: 'requests-admin@example.test',
+        address: 'Request team private address',
+        info: 'internal request handling note'
+      )
+      request = build_change(
+        user: user,
+        state: :approved,
+        attrs: {
+          admin: admin,
+          change_reason: 'Resolved private-admin request',
+          full_name: 'Spec User Three'
+        }
+      )
+
+      as(user) { json_get index_path, _meta: { includes: ['admin'] } }
+
+      expect_status(200)
+      expect(json['status']).to be(true)
+
+      row = changes.find { |item| item['id'].to_i == request.id }
+      expect(row).not_to be_nil
+      expect(row).not_to have_key('admin')
+      expect(last_response.body).not_to include('Private Request Operator')
+      expect(last_response.body).not_to include('requests-admin@example.test')
+      expect(last_response.body).not_to include('Request team private address')
+      expect(last_response.body).not_to include('internal request handling note')
+    end
+
     it 'lists all requests for admins' do
       as(admin) { json_get index_path }
 
@@ -203,6 +234,35 @@ RSpec.describe 'VpsAdmin::API::Resources::UserRequest::Change', requires_plugins
       expect(change_obj['id'].to_i).to eq(c_user_awaiting.id)
     end
 
+    it 'does not expose handling admin details to normal users on show through includes' do
+      admin.update!(
+        full_name: 'Private Show Operator',
+        email: 'requests-show-admin@example.test',
+        address: 'Request show private address',
+        info: 'internal show handling note'
+      )
+      request = build_change(
+        user: user,
+        state: :approved,
+        attrs: {
+          admin: admin,
+          change_reason: 'Resolved show request',
+          full_name: 'Spec User Show'
+        }
+      )
+
+      as(user) { json_get show_path(request.id), _meta: { includes: ['admin'] } }
+
+      expect_status(200)
+      expect(json['status']).to be(true)
+      expect(change_obj['id'].to_i).to eq(request.id)
+      expect(change_obj).not_to have_key('admin')
+      expect(last_response.body).not_to include('Private Show Operator')
+      expect(last_response.body).not_to include('requests-show-admin@example.test')
+      expect(last_response.body).not_to include('Request show private address')
+      expect(last_response.body).not_to include('internal show handling note')
+    end
+
     it 'returns 404 for other user requests' do
       as(user) { json_get show_path(c_other.id) }
 
@@ -216,6 +276,27 @@ RSpec.describe 'VpsAdmin::API::Resources::UserRequest::Change', requires_plugins
       expect_status(200)
       expect(json['status']).to be(true)
       expect(change_obj['id'].to_i).to eq(c_other.id)
+    end
+
+    it 'allows admins to see the handling admin association' do
+      request = build_change(
+        user: user,
+        state: :approved,
+        attrs: {
+          admin: admin,
+          change_reason: 'Admin-visible handled request',
+          full_name: 'Spec User Admin'
+        }
+      )
+
+      as(admin) { json_get show_path(request.id), _meta: { includes: ['admin'] } }
+
+      expect_status(200)
+      expect(json['status']).to be(true)
+
+      admin_obj = change_obj.fetch('admin')
+      expect(admin_obj['id'].to_i).to eq(admin.id)
+      expect(admin_obj['login']).to eq(admin.login)
     end
   end
 
