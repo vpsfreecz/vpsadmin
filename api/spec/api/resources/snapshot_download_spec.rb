@@ -328,6 +328,22 @@ RSpec.describe 'VpsAdmin::API::Resources::SnapshotDownload' do
       expect(created.snapshot_id).to eq(snap_new.id)
     end
 
+    it 'allows suspended users to create archive downloads' do
+      user.update!(object_state: :suspended, lockout: false, password_reset: false)
+      mark_user_paid_until!(user)
+      ensure_signer_unlocked!
+
+      expect do
+        as(user) do
+          json_post index_path, snapshot_download: { snapshot: snap_new.id, send_mail: false }
+        end
+      end.to change(SnapshotDownload, :count).by(1)
+
+      expect_status(200)
+      expect(json['status']).to be(true)
+      expect(download_obj['format']).to eq('archive')
+    end
+
     it 'creates an incremental_stream download with from_snapshot' do
       ensure_signer_unlocked!
 
