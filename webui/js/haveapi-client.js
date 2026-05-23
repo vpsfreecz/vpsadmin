@@ -30,6 +30,7 @@ function Client(url, opts) {
 		url: url,
 		version: (opts !== undefined && opts.version !== undefined) ? opts.version : null,
 		description: null,
+		attachedResourceNames: Object.create(null),
 		debug: (opts !== undefined && opts.debug !== undefined) ? opts.debug : 0,
 	};
 
@@ -58,11 +59,91 @@ Client.Version = '0.27.0';
 /** @constant HaveAPI.Client.ProtocolVersion */
 Client.ProtocolVersion = '2.0';
 
+Client.unsafeAttachmentNames = Object.create(null);
+Client.unsafeAttachmentNames['__proto__'] = true;
+Client.unsafeAttachmentNames['prototype'] = true;
+Client.unsafeAttachmentNames['constructor'] = true;
+
 /**
  * @namespace Exceptions
  * @memberof HaveAPI.Client
  */
 Client.Exceptions = {};
+
+Client.hasOwn = function(obj, prop) {
+	return Object.prototype.hasOwnProperty.call(obj, prop);
+};
+
+Client.canAttachDescriptionMember = function(target, name, reservedNames) {
+	if (typeof(name) !== 'string')
+		return false;
+
+	if (Client.hasOwn(Client.unsafeAttachmentNames, name))
+		return false;
+
+	if (reservedNames && Client.hasOwn(reservedNames, name))
+		return false;
+
+	return !(name in target);
+};
+
+Client.attachDescriptionMember = function(target, name, value, reservedNames) {
+	if (!Client.canAttachDescriptionMember(target, name, reservedNames))
+		return false;
+
+	target[name] = value;
+	return true;
+};
+
+/**
+ * Resolve a URL from an API description and require it to stay on the
+ * configured API origin.
+ * @method HaveAPI.Client#sameOriginUrl
+ * @param {String} url URL or path to resolve
+ * @param {Object} opts
+ * @return {String} absolute URL
+ * @private
+ */
+Client.prototype.sameOriginUrl = function(url, opts) {
+	opts = opts || {};
+
+	if (typeof(url) !== 'string' || url.length == 0) {
+		throw new Client.Exceptions.ProtocolError('Invalid API URL');
+	}
+
+	if (/[\x00-\x1f\x7f]/.test(url) || url.indexOf('\\') != -1) {
+		throw new Client.Exceptions.ProtocolError('Unsafe API URL');
+	}
+
+	var base = new URL(this._private.url);
+	var resolved;
+
+	if (opts.actionPath) {
+		if (url[0] != '/' || url[1] == '/' || url.indexOf('@') != -1) {
+			throw new Client.Exceptions.ProtocolError('Unsafe API action path');
+		}
+
+		resolved = new URL(this._private.url + url);
+
+	} else {
+		if (url[0] == '/' && url[1] == '/') {
+			throw new Client.Exceptions.ProtocolError('Unsafe API URL');
+		}
+
+		if (url[0] == '/') {
+			resolved = new URL(this._private.url + url);
+
+		} else {
+			resolved = new URL(url, this._private.url + '/');
+		}
+	}
+
+	if (resolved.origin != base.origin || resolved.username || resolved.password) {
+		throw new Client.Exceptions.ProtocolError('Unsafe API URL origin');
+	}
+
+	return resolved.href;
+};
 
 /**
  * @callback HaveAPI.Client~doneCallback
@@ -275,11 +356,16 @@ Client.prototype.attachResources = function() {
 		this.destroyResources();
 	}
 
+	this._private.attachedResourceNames = Object.create(null);
+
 	for(var r in this._private.description.resources) {
+		if (!Client.hasOwn(this._private.description.resources, r))
+			continue;
+
 		if (this._private.debug > 10)
 			console.log("Attach resource", r);
 
-		this[r] = new Client.Resource(
+		var resource = new Client.Resource(
 			this,
 			null,
 			r,
@@ -287,7 +373,10 @@ Client.prototype.attachResources = function() {
 			[]
 		);
 
-		this.resources.push(this[r]);
+		this.resources.push(resource);
+
+		if (Client.attachDescriptionMember(this, r, resource))
+			this._private.attachedResourceNames[r] = true;
 	}
 };
 
@@ -366,15 +455,18 @@ Client.prototype.logout = function(callback) {
  * @param {HaveAPI.Client~ActionCall} opts
  */
 Client.prototype.directInvoke = function(action, opts) {
+	var path = opts.path === undefined ? action.preparedPath : opts.path;
+
 	if (this._private.debug > 5)
-		console.log("Executing", action, "with opts", opts, "at", action.preparedPath);
+		console.log("Executing", action, "with opts", opts, "at", path);
 
 	var that = this;
 	var block = opts.block === undefined ? true : opts.block;
+	var url = this.sameOriginUrl(path, {actionPath: true});
 
 	var httpOpts = {
 		method: action.httpMethod(),
-		url: this._private.url + action.preparedPath,
+		url: url,
 		credentials: this.authProvider.credentials(),
 		headers: this.authProvider.headers(),
 		queryParameters: this.authProvider.queryParameters(),
@@ -407,7 +499,8 @@ Client.prototype.directInvoke = function(action, opts) {
 		httpOpts.url = this.addParamsToQuery(
 			httpOpts.url,
 			action.namespace('input'),
-			opts.params
+			opts.params,
+			action.description.input ? action.description.input.parameters : null
 		);
 
 		if (opts.meta) {
@@ -431,7 +524,12 @@ Client.prototype.directInvoke = function(action, opts) {
 		httpOpts.params = scopedParams;
 	}
 
-	this._private.http.request(httpOpts);
+	try {
+		this._private.http.request(httpOpts);
+
+	} finally {
+		action.preparedPath = null;
+	}
 };
 
 /**
@@ -522,8 +620,18 @@ Client.prototype.createSettings = function() {
  */
 Client.prototype.destroyResources = function() {
 	while (this.resources.length > 0) {
-		delete this[ this.resources.shift().getName() ];
+		var resource = this.resources.shift();
+		var name = resource.getName();
+
+		if (
+			this._private.attachedResourceNames[name]
+			&& this[name] === resource
+		) {
+			delete this[name];
+		}
 	}
+
+	this._private.attachedResourceNames = Object.create(null);
 };
 
 /**
@@ -547,10 +655,24 @@ Client.prototype.sendAsQueryParams = function(method) {
  * @param {Object} params
  * @private
  */
-Client.prototype.addParamsToQuery = function(url, namespace, params) {
+Client.prototype.addParamsToQuery = function(url, namespace, params, paramDesc) {
+	if (!params)
+		return url;
+
 	var first = true;
 
 	for (var key in params) {
+		if (!params.hasOwnProperty(key))
+			continue;
+
+		var value = params[key];
+
+		if (value === null) {
+			value = '';
+		} else if (value === undefined) {
+			continue;
+		}
+
 		if (first) {
 			if (url.indexOf('?') == -1)
 				url += '?';
@@ -562,7 +684,7 @@ Client.prototype.addParamsToQuery = function(url, namespace, params) {
 
 		} else url += '&';
 
-		url += encodeURI(namespace) + '[' + encodeURI(key) + ']=' + encodeURI(params[key]);
+		url += encodeURIComponent(namespace) + '[' + encodeURIComponent(key) + ']=' + encodeURIComponent(value);
 	}
 
 	return url;
@@ -898,8 +1020,9 @@ Authentication.OAuth2.prototype.headers = function() {
 Authentication.OAuth2.prototype.logout = function(callback) {
 	var http = new XMLHttpRequest();
 	var that = this;
+	var revokeUrl = this.client.sameOriginUrl(this.description.revoke_url);
 
-	http.open('POST', this.description.revoke_url, true);
+	http.open('POST', revokeUrl, true);
 	http.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
 
 	http.onreadystatechange = function() {
@@ -908,7 +1031,7 @@ Authentication.OAuth2.prototype.logout = function(callback) {
 		}
 	}
 
-	http.send("token=" + this.access_token.access_token);
+	http.send("token=" + encodeURIComponent(this.access_token.access_token));
 };
 
 /**
@@ -1147,6 +1270,12 @@ Authentication.Token.prototype.getCustomActionCredentials = function(action) {
  */
 function BaseResource (){};
 
+BaseResource.reservedAttachmentNames = Object.create(null);
+BaseResource.reservedAttachmentNames['_private'] = true;
+BaseResource.reservedAttachmentNames['resources'] = true;
+BaseResource.reservedAttachmentNames['actions'] = true;
+BaseResource.reservedAttachmentNames['new'] = true;
+
 /**
  * Attach child resources as properties.
  * @method HaveAPI.Client.BaseResource#attachResources
@@ -1158,8 +1287,14 @@ BaseResource.prototype.attachResources = function(description, args) {
 	this.resources = [];
 
 	for(var r in description.resources) {
-		this[r] = new Client.Resource(this._private.client, this, r, description.resources[r], args);
-		this.resources.push(this[r]);
+		if (!Client.hasOwn(description.resources, r))
+			continue;
+
+		var resource = new Client.Resource(this._private.client, this, r, description.resources[r], args);
+
+		this.resources.push(resource);
+
+		Client.attachDescriptionMember(this, r, resource, BaseResource.reservedAttachmentNames);
 	}
 };
 
@@ -1174,14 +1309,19 @@ BaseResource.prototype.attachActions = function(description, args) {
 	this.actions = [];
 
 	for(var a in description.actions) {
-		var names = [a].concat(description.actions[a].aliases);
+		if (!Client.hasOwn(description.actions, a))
+			continue;
+
+		var names = [a].concat(description.actions[a].aliases || []);
 		var actionInstance = new Client.Action(this._private.client, this, a, description.actions[a], args);
 
 		for(var i = 0; i < names.length; i++) {
-			if (names[i] == 'new')
-				continue;
-
-			this[names[i]] = actionInstance;
+			Client.attachDescriptionMember(
+				this,
+				names[i],
+				actionInstance,
+				BaseResource.reservedAttachmentNames
+			);
 		}
 
 		this.actions.push(a);
@@ -1481,30 +1621,34 @@ Action.prototype.directInvoke = function() {
 Action.prototype.prepareInvoke = function(new_args) {
 	var args = this.args.concat(Array.prototype.slice.call(new_args));
 	var rx = /(\{[a-zA-Z0-9\-_]+\})/;
-
-	if (!this.preparedPath)
-		this.preparedPath = this.description.path;
+	var preparedPath = this.preparedPath || this.description.path;
+	var providedIdArgs = this.providedIdArgs.slice();
 
 	// First, apply ids returned from the API
-	for (var i = 0; i < this.providedIdArgs.length; i++) {
-		if (this.preparedPath.search(rx) == -1)
+	for (var i = 0; i < providedIdArgs.length; i++) {
+		if (preparedPath.search(rx) == -1)
 			break;
 
-		this.preparedPath = this.preparedPath.replace(rx, this.providedIdArgs[i]);
+		preparedPath = preparedPath.replace(rx, encodeURIComponent(providedIdArgs[i]));
 	}
 
 	// Apply ids passed as arguments
 	while (args.length > 0) {
-		if (this.preparedPath.search(rx) == -1)
+		if (preparedPath.search(rx) == -1)
 			break;
 
-		var arg = args.shift();
-		this.providedIdArgs.push(arg);
+		var arg = args[0];
 
-		this.preparedPath = this.preparedPath.replace(rx, arg);
+		if (typeof(arg) === 'function' || (arg && (arg.params || arg.onReply)))
+			break;
+
+		args.shift();
+		providedIdArgs.push(arg);
+
+		preparedPath = preparedPath.replace(rx, encodeURIComponent(arg));
 	}
 
-	if (args.length == 0 && this.preparedPath.search(rx) != -1) {
+	if (preparedPath.search(rx) != -1) {
 		console.log("UnresolvedArguments", "Unable to execute action '"+ this.name +"': unresolved arguments");
 
 		throw new Client.Exceptions.UnresolvedArguments(this);
@@ -1530,6 +1674,7 @@ Action.prototype.prepareInvoke = function(new_args) {
 	}
 
 	return Object.assign({}, params, {
+		path: preparedPath,
 		params: new Parameters(this, params.params),
 		onReply: function(c, response) {
 			that.preparedPath = null;
@@ -2409,11 +2554,25 @@ Parameters.prototype.coerceParams = function (params) {
 			continue;
 
 		var v = params[p];
+		var desc = input[p];
 
-		if (v === undefined || v === null)
+		if (v === undefined)
 			continue;
 
-		switch (input[p].type) {
+		if (v === null) {
+			if (desc.nullable === true)
+				ret[p] = null;
+			else
+				this._addTypeError(p, 'cannot be null');
+			continue;
+		}
+
+		if (typeof v === 'string' && v.trim() === '' && desc.nullable === true) {
+			ret[p] = null;
+			continue;
+		}
+
+		switch (desc.type) {
 			case 'Resource':
 				var resourceId = v;
 
