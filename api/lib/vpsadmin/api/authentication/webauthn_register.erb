@@ -55,13 +55,18 @@
       }
 
       async function registerCredential(label) {
+        const authHeaders = {
+          'X-HaveAPI-OAuth2-Token': <%= JSON.dump(access_token) %>
+        };
+
         if (navigator.credentials === undefined) {
           reportAlert('danger', 'Credentials are not available.');
           return;
         }
 
-        const resp1 = await fetch('/webauthn/registration/begin?access_token=<%= access_token %>', {
-          method: 'POST'
+        const resp1 = await fetch('/webauthn/registration/begin', {
+          method: 'POST',
+          headers: authHeaders
         });
         const resp1Json = await resp1.json();
         const options = resp1Json.response.registration.options;
@@ -99,9 +104,10 @@
           }
         };
 
-        const resp2 = await fetch('/webauthn/registration/finish?access_token=<%= access_token %>', {
+        const resp2 = await fetch('/webauthn/registration/finish', {
           method: 'POST',
           headers: {
+            ...authHeaders,
             'Content-Type': 'application/json',
           },
           body: JSON.stringify(data)

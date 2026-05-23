@@ -1,8 +1,10 @@
 # frozen_string_literal: true
 
 RSpec.describe 'VpsAdmin::API' do
-  describe 'GET /webauthn/registration/new' do
+  describe '/webauthn/registration/new' do
     let(:redirect_uri) { 'https://example.invalid/return' }
+    let(:user) { SpecSeed.user }
+    let(:session) { create_open_session!(user:, auth_type: 'oauth2') }
 
     it 'rejects unauthenticated access without redirect' do
       get '/webauthn/registration/new'
@@ -21,18 +23,29 @@ RSpec.describe 'VpsAdmin::API' do
       expect(location).to include('registerMessage=Access+denied')
     end
 
-    it 'returns HTML for authenticated users' do
-      as(SpecSeed.user) do
-        get '/webauthn/registration/new',
-            access_token: 'spec-access-token',
-            redirect_uri: redirect_uri
-      end
+    it 'rejects access tokens sent in URLs' do
+      get '/webauthn/registration/new',
+          access_token: session.token.token,
+          redirect_uri: redirect_uri
+
+      expect(last_response.status).to eq(400)
+      expect(last_response.body).to include('must not be sent in URL')
+    end
+
+    it 'returns HTML for users authenticated by POST body' do
+      post '/webauthn/registration/new',
+           access_token: session.token.token,
+           redirect_uri: redirect_uri
 
       expect(last_response.status).to eq(200)
       expect(last_response.headers['Content-Type']).to include('text/html')
       expect(last_response.body).to include('vpsAdmin Passkey Registration')
       expect(last_response.body).to include('registerCredential')
-      expect(last_response.body).to include('spec-access-token')
+      expect(last_response.body).to include('X-HaveAPI-OAuth2-Token')
+      expect(last_response.body).to include(session.token.token)
+      expect(last_response.body).not_to include('access_token=')
+      expect(last_response.body).not_to include('/webauthn/registration/begin?')
+      expect(last_response.body).not_to include('/webauthn/registration/finish?')
     end
   end
 end

@@ -62,7 +62,11 @@ module VpsAdmin
           [500, { 'content-type' => 'text/plain' }, e.message]
         end
 
-        sinatra.get '/webauthn/registration/new' do
+        webauthn_registration_new = proc do
+          if request.get? && (params.has_key?('access_token') || params.has_key?(:access_token))
+            halt 400, 'access_token must not be sent in URL'
+          end
+
           unless authenticated?(settings.api_server.default_version)
             if params[:redirect_uri]
               uri = URI(params[:redirect_uri])
@@ -77,8 +81,18 @@ module VpsAdmin
             end
           end
 
-          VpsAdmin::API::Authentication::WebauthnRegister.run(current_user, params)
+          access_token = ::UserSession.current&.token&.token
+          halt 401, 'Access denied' unless access_token
+
+          VpsAdmin::API::Authentication::WebauthnRegister.run(
+            current_user,
+            params,
+            access_token:
+          )
         end
+
+        sinatra.get('/webauthn/registration/new', &webauthn_registration_new)
+        sinatra.post('/webauthn/registration/new', &webauthn_registration_new)
 
         ret
       end

@@ -1727,7 +1727,7 @@ function webauthn_list($user)
         $xtpl->table_title(_('Register a new passkey'));
 
         if ($_SESSION['auth_type'] == 'oauth2') {
-            $xtpl->form_create(getWebAuthnNewRegistrationUrl(), 'get', 'webauthn_register', false);
+            $xtpl->form_create(getWebAuthnNewRegistrationUrl(), 'post', 'webauthn_register', false);
             $xtpl->form_set_hidden_fields([
                 'access_token' => $_SESSION['access_token']['access_token'],
                 'redirect_uri' => getSelfUri() . '/?page=adminm&action=webauthn_register&id=' . $user->id,

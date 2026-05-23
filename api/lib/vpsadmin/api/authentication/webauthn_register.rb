@@ -1,9 +1,10 @@
 require 'erb'
+require 'json'
 
 module VpsAdmin::API
   class Authentication::WebauthnRegister
-    def self.run(user, params)
-      new(user).run(params)
+    def self.run(user, params, access_token:)
+      new(user).run(params, access_token:)
     end
 
     def initialize(user)
@@ -14,14 +15,13 @@ module VpsAdmin::API
       )
     end
 
-    def run(params)
-      [200, { 'content-type' => 'text/html' }, render(params)]
+    def run(params, access_token:)
+      [200, { 'content-type' => 'text/html' }, render(params, access_token:)]
     end
 
     protected
 
-    def render(params)
-      access_token = params['access_token']
+    def render(params, access_token:)
       redirect_uri = params['redirect_uri']
       logo_url = ::SysConfig.get(:core, :logo_url)
 
