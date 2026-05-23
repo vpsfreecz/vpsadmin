@@ -5,6 +5,7 @@ session_start();
 
 include WWW_ROOT . 'lib/version.lib.php';
 include WWW_ROOT . 'lib/functions.lib.php';
+include WWW_ROOT . 'lib/security.lib.php';
 include WWW_ROOT . 'lib/login.lib.php';
 
 header('Content-Type: text/javascript');
@@ -26,6 +27,7 @@ root.vpsAdmin = {
 	sessionToken: "<?php echo $_SESSION['session_token'] ?>",
 <?php } ?>
 	sessionLength: <?php echo $_SESSION['user']['session_length'] ?>,
+	logoutUrl: <?php echo json_encode('?page=login&action=logout&t=' . csrf_token()) ?>,
 	description: <?php echo json_encode($_SESSION['api_description']) ?>,
 	sessionManagement: true
 };

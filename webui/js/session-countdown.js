@@ -65,9 +65,7 @@
 
 		countdown = new countDownTimer(vpsAdmin.sessionLength * 1000, sessionCountdown, function() {
 			clearTimeout(chainTimeout);
-			api.logout(function() {
-				document.location = '?page=';
-			});
+			document.location = root.vpsAdmin.logoutUrl;
 		});
 
 		if (root.vpsAdmin.sessionManagement) {

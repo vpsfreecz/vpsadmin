@@ -14,6 +14,14 @@ function setupOAuth2ForLogin()
     ]);
 }
 
+function getOAuth2RevokeParams($params = [])
+{
+    return array_merge($params, [
+        'client_id' => OAUTH2_CLIENT_ID,
+        'client_secret' => OAUTH2_CLIENT_SECRET,
+    ]);
+}
+
 function loginUser($access_url)
 {
     global $xtpl, $api;
@@ -73,9 +81,14 @@ function logoutUser()
     global $xtpl, $api;
 
     csrf_check();
+    $authType = $_SESSION["auth_type"] ?? null;
     destroySession();
 
-    $api->logout();
+    if ($authType == 'oauth2') {
+        $api->getAuthenticationProvider()->revokeAccessToken(getOAuth2RevokeParams());
+    } else {
+        $api->logout();
+    }
 
     $xtpl->perex(_("Goodbye"), _("Logout successful"));
 }
@@ -93,7 +106,9 @@ function logoutAndSwitchUser()
 
     destroySession();
 
-    $api->getAuthenticationProvider()->revokeAccessToken(['close_sso' => '1']);
+    $api->getAuthenticationProvider()->revokeAccessToken(
+        getOAuth2RevokeParams(['close_sso' => '1'])
+    );
 
     $redirectPath = '?page=login&action=login';
 
