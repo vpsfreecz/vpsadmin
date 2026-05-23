@@ -277,14 +277,18 @@ class VpsAdmin::API::Resources::Environment < HaveAPI::Resource
         use :all
       end
 
-      authorize do |_u|
+      authorize do |u|
+        allow if u.role == :admin
+        restrict user_add: true
         allow
       end
 
       def exec
         ::EnvironmentDatasetPlan.find_by!(
-          environment_id: params[:environment_id],
-          id: params[:dataset_plan_id]
+          with_restricted(
+            environment_id: params[:environment_id],
+            id: params[:dataset_plan_id]
+          )
         )
       end
     end

@@ -220,8 +220,22 @@ RSpec.describe 'VpsAdmin::API::Resources::Environment::DatasetPlan' do
       expect(rid(plan['dataset_plan']).to_i).to eq(ds_plan.id)
     end
 
-    it 'allows users to show non-addable plans' do
+    it 'hides non-addable plans from users' do
       as(user) { json_get show_path(environment.id, env_plan_not_addable.id) }
+
+      expect_status(404)
+      expect(json['status']).to be(false)
+    end
+
+    it 'hides non-addable plans from support' do
+      as(support) { json_get show_path(environment.id, env_plan_not_addable.id) }
+
+      expect_status(404)
+      expect(json['status']).to be(false)
+    end
+
+    it 'allows admins to show non-addable plans' do
+      as(admin) { json_get show_path(environment.id, env_plan_not_addable.id) }
 
       expect_status(200)
       expect(json['status']).to be(true)

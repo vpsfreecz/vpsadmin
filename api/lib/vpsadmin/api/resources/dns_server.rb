@@ -29,7 +29,7 @@ module VpsAdmin::API::Resources
 
       authorize do |u|
         allow if u.role == :admin
-        restrict enable_user_dns_zones: true
+        restrict enable_user_dns_zones: true, hidden: false
         allow
       end
 
@@ -55,7 +55,7 @@ module VpsAdmin::API::Resources
 
       authorize do |u|
         allow if u.role == :admin
-        restrict enable_user_dns_zones: true
+        restrict enable_user_dns_zones: true, hidden: false
         allow
       end
 

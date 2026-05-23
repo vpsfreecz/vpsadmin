@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require 'securerandom'
+
 RSpec.describe 'VpsAdmin::API::Resources::DnsResolver' do
   let(:dns_resolver) { SpecSeed.dns_resolver }
   let(:other_dns_resolver) { SpecSeed.other_dns_resolver }
@@ -33,6 +35,10 @@ RSpec.describe 'VpsAdmin::API::Resources::DnsResolver' do
     json.dig('response', 'dns_resolver')
   end
 
+  def response_message
+    json['message'] || json.dig('response', 'message')
+  end
+
   def resource_id(value)
     return value['id'] if value.is_a?(Hash)
 
@@ -43,6 +49,21 @@ RSpec.describe 'VpsAdmin::API::Resources::DnsResolver' do
     path = last_request&.path
     message = "Expected status #{code} for #{path}, got #{last_response.status} body=#{last_response.body}"
     expect(last_response.status).to eq(code), message
+  end
+
+  def create_foreign_vps!
+    _dataset, dip = create_dataset_with_pool!(
+      user: SpecSeed.other_user,
+      pool: SpecSeed.other_pool,
+      name: "spec-dns-resolver-#{SecureRandom.hex(4)}"
+    )
+
+    create_vps_for_dataset!(
+      user: SpecSeed.other_user,
+      node: SpecSeed.other_node,
+      dataset_in_pool: dip,
+      hostname: "spec-dns-resolver-#{SecureRandom.hex(4)}"
+    )
   end
 
   describe 'Index' do
@@ -110,6 +131,18 @@ RSpec.describe 'VpsAdmin::API::Resources::DnsResolver' do
 
       expect_status(200)
       expect(json.dig('response', '_meta', 'total_count')).to eq(DnsResolver.count)
+    end
+
+    it 'rejects filtering by another users VPS' do
+      foreign_vps = create_foreign_vps!
+
+      as(SpecSeed.user) do
+        json_get index_path, dns_resolver: { vps: foreign_vps.id }
+      end
+
+      expect_status(200)
+      expect(json['status']).to be(false)
+      expect(response_message).to include('access denied')
     end
   end
 

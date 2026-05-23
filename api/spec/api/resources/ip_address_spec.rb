@@ -147,6 +147,36 @@ RSpec.describe 'VpsAdmin::API::Resources::IpAddress' do
     ip
   end
 
+  def create_non_userpick_network!
+    octet = (40..220).detect do |candidate|
+      !Network.exists?(address: "198.51.#{candidate}.0", prefix: 24)
+    end
+
+    network = Network.create!(
+      address: "198.51.#{octet}.0",
+      prefix: 24,
+      label: "Spec Non Userpick #{SecureRandom.hex(4)}",
+      ip_version: 4,
+      role: :public_access,
+      managed: true,
+      split_access: :no_access,
+      split_prefix: 32,
+      purpose: :any,
+      primary_location: SpecSeed.location
+    )
+
+    LocationNetwork.create!(
+      location: SpecSeed.location,
+      network: network,
+      primary: true,
+      priority: 999,
+      autopick: false,
+      userpick: false
+    )
+
+    network
+  end
+
   describe 'API description' do
     it 'includes ip address endpoints' do
       scopes = EndpointInventory.scopes_for_version(self, api_version)
@@ -205,6 +235,24 @@ RSpec.describe 'VpsAdmin::API::Resources::IpAddress' do
       ids = ip_list.map { |row| row['id'] }
       expect(ids).to include(data[:ip_free].id, data[:ip_user_owned].id, data[:ip_user_routed].id)
       expect(ids).not_to include(data[:ip_other_owned].id, data[:ip_other_routed].id)
+    end
+
+    it 'hides free addresses from non-userpick networks for normal users' do
+      network = create_non_userpick_network!
+      hidden_ip = create_ip!(addr: network.address.sub(/\.0\z/, '.20'), network: network)
+
+      as(SpecSeed.user) do
+        json_get index_path, ip_address: { addr: hidden_ip.ip_addr }
+      end
+
+      expect_status(200)
+      expect(json['status']).to be(true)
+      expect(ip_list.map { |row| row['id'] }).not_to include(hidden_ip.id)
+
+      as(SpecSeed.user) { json_get show_path(hidden_ip.id) }
+
+      expect_status(404)
+      expect(json['status']).to be(false)
     end
 
     it 'shows accessible addresses for support users' do

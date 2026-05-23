@@ -378,8 +378,8 @@ RSpec.describe 'VpsAdmin::API::Resources::OsTemplate' do
       expect_status(200)
       expect(json['status']).to be(true)
       expect(os_template['id']).to eq(fixture(:enabled_vpsadminos_a).id)
-      expect(os_template).to include('enabled')
       expect(os_template.keys).not_to include(
+        'enabled',
         'order',
         'manage_hostname',
         'manage_dns_resolver',
@@ -387,11 +387,25 @@ RSpec.describe 'VpsAdmin::API::Resources::OsTemplate' do
       )
     end
 
-    it 'shows disabled template for users' do
+    it 'shows disabled templates for users with restricted output' do
       as(SpecSeed.user) { json_get show_path(fixture(:disabled_vpsadminos).id) }
 
       expect_status(200)
       expect(json['status']).to be(true)
+      expect(os_template['id']).to eq(fixture(:disabled_vpsadminos).id)
+      expect(os_template.keys).not_to include(
+        'enabled',
+        'order',
+        'manage_hostname',
+        'manage_dns_resolver',
+        'config'
+      )
+    end
+
+    it 'shows disabled templates to admins' do
+      as(SpecSeed.admin) { json_get show_path(fixture(:disabled_vpsadminos).id) }
+
+      expect_status(200)
       expect(os_template['enabled']).to be(false)
     end
 

@@ -279,6 +279,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
         object_state_check!(current_user)
 
         error!('provide either an environment or a location') if input[:environment].nil? && input[:location].nil?
+        error!('selected os template is disabled') if input[:os_template] && !input[:os_template].enabled?
 
         requested_environment = input[:environment] || input[:location]&.environment
         requested_diskspace =
@@ -1118,6 +1119,10 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
       )
       maintenance_check!(vps)
       object_state_check!(vps, vps.user)
+
+      if current_user.role != :admin && input[:public_key].user_id != vps.user_id
+        error!('access denied')
+      end
 
       @chain, = TransactionChains::Vps::DeployPublicKey.fire(vps, input[:public_key])
       ok!

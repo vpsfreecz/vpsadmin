@@ -311,6 +311,7 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
     authorize do |u|
       allow if u.role == :admin
       output whitelist: %i[id name domain_name fqdn location hypervisor_type cgroup_version]
+      restrict active: true
       allow
     end
 
@@ -331,7 +332,7 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
     end
 
     def prepare
-      @node = ::Node.find(params[:node_id])
+      @node = ::Node.find_by!(with_restricted(id: params[:node_id]))
     end
 
     def exec

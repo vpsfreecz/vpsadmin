@@ -299,6 +299,26 @@ RSpec.describe 'VpsAdmin::API::Resources::VPS write actions' do # rubocop:disabl
         expect(record.node_id).to eq(SpecSeed.node.id)
       end
 
+      it 'rejects disabled OS templates' do
+        disabled_template = create_os_template!(hypervisor_type: :vpsadminos, enabled: false)
+        set_env_config!(
+          user: SpecSeed.user,
+          environment: SpecSeed.environment,
+          attrs: { can_create_vps: true, max_vps_count: 10 }
+        )
+
+        expect do
+          as(SpecSeed.user) do
+            json_post index_path, vps: user_payload.merge(os_template: disabled_template.id)
+          end
+        end.not_to change(TransactionChain, :count)
+
+        expect_status(200)
+        expect(json['status']).to be(false)
+        expect(response_message).to include('selected os template is disabled')
+        expect(VpsAdmin::API::Operations::Node::Pick).not_to have_received(:run)
+      end
+
       it 'rejects DNS resolvers unavailable in the selected node location' do
         resolver = create_dns_resolver!(is_universal: false, location: SpecSeed.other_location)
         set_env_config!(
@@ -1664,6 +1684,20 @@ RSpec.describe 'VpsAdmin::API::Resources::VPS write actions' do # rubocop:disabl
 
       expect_status(200)
       expect(json['status']).to be(true)
+    end
+
+    it 'rejects public keys owned by another user' do
+      foreign_key = create_public_key!(user: SpecSeed.other_user)
+      allow(TransactionChains::Vps::DeployPublicKey).to receive(:fire)
+
+      as(SpecSeed.user) do
+        json_post deploy_public_key_path(vps.id), vps: { public_key: foreign_key.id }
+      end
+
+      expect_status(200)
+      expect(json['status']).to be(false)
+      expect(response_message).to include('access denied')
+      expect(TransactionChains::Vps::DeployPublicKey).not_to have_received(:fire)
     end
   end
 

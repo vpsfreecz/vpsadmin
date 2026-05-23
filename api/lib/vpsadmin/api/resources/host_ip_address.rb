@@ -42,6 +42,13 @@ module VpsAdmin::API::Resources
       patch :addr, label: 'Address'
     end
 
+    def self.user_visible_scope(user, scope = ::HostIpAddress.all)
+      scope.joins(ip_address: { network_interface: :vps }).where(
+        'ip_addresses.user_id = ? OR vpses.user_id = ?',
+        user.id, user.id
+      )
+    end
+
     class Index < HaveAPI::Actions::Default::Index
       desc 'List IP addresses'
 
@@ -148,10 +155,7 @@ module VpsAdmin::API::Resources
         end
 
         if current_user.role != :admin
-          ips = ips.joins(ip_address: { network_interface: :vps }).where(
-            'ip_addresses.user_id = ? OR vpses.user_id = ?',
-            current_user.id, current_user.id
-          )
+          ips = self.class.resource.user_visible_scope(current_user, ips)
         end
 
         ips
@@ -193,23 +197,9 @@ module VpsAdmin::API::Resources
                 ::HostIpAddress.find(params[:host_ip_address_id])
 
               else
-                ::HostIpAddress.joins(:ip_address).joins(
-                  'LEFT JOIN network_interfaces my_netifs
-             ON my_netifs.id = ip_addresses.network_interface_id'
-                ).joins(
-                  'LEFT JOIN vpses my_vps ON my_vps.id = my_netifs.vps_id'
-                ).joins(
-                  'LEFT JOIN exports my_export ON my_export.id = my_netifs.export_id'
-                ).where(
-                  'ip_addresses.user_id = ?
-             OR
-             (
-               ip_addresses.network_interface_id IS NOT NULL
-               AND
-               (my_vps.user_id = ? OR my_export.user_id = ?)
-             )',
-                  current_user.id, current_user.id, current_user.id
-                ).where(id: params[:host_ip_address_id]).take!
+                self.class.resource.user_visible_scope(current_user)
+                    .where(id: params[:host_ip_address_id])
+                    .take!
               end
       end
 

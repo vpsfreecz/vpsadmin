@@ -40,6 +40,34 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
              label: 'Charged environment'
   end
 
+  def self.user_visible_scope(user, scope = ::IpAddress.joins(:network))
+    scope.joins(
+      'LEFT JOIN network_interfaces my_netifs
+       ON my_netifs.id = ip_addresses.network_interface_id'
+    ).joins(
+      'LEFT JOIN vpses my_vps ON my_vps.id = my_netifs.vps_id'
+    ).where(
+      networks: { role: [
+        ::Network.roles[:public_access],
+        ::Network.roles[:private_access]
+      ] }
+    ).where(
+      'ip_addresses.user_id = ?
+        OR (ip_addresses.network_interface_id IS NOT NULL AND my_vps.user_id = ?)
+        OR (
+          ip_addresses.user_id IS NULL
+          AND ip_addresses.network_interface_id IS NULL
+          AND EXISTS (
+            SELECT 1
+            FROM location_networks readable_lns
+            WHERE readable_lns.network_id = networks.id
+              AND readable_lns.userpick = 1
+          )
+        )',
+      user.id, user.id
+    )
+  end
+
   class Index < HaveAPI::Actions::Default::Index
     desc 'List IP addresses'
 
@@ -133,22 +161,7 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
       end
 
       if current_user.role != :admin
-        ips = ips.joins(
-          'LEFT JOIN network_interfaces my_netifs
-           ON my_netifs.id = ip_addresses.network_interface_id'
-        ).joins(
-          'LEFT JOIN vpses my_vps ON my_vps.id = my_netifs.vps_id'
-        ).where(
-          networks: { role: [
-            ::Network.roles[:public_access],
-            ::Network.roles[:private_access]
-          ] }
-        ).where(
-          'ip_addresses.user_id = ?
-            OR (ip_addresses.network_interface_id IS NOT NULL AND my_vps.user_id = ?)
-            OR (ip_addresses.user_id IS NULL AND ip_addresses.network_interface_id IS NULL)',
-          current_user.id, current_user.id
-        )
+        ips = self.class.resource.user_visible_scope(current_user, ips)
       end
 
       ips
@@ -190,26 +203,14 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
     end
 
     def prepare
-      if current_user.role == :admin
-        @ip = ::IpAddress.find(params[:ip_address_id])
-      else
-        @ip = ::IpAddress.where(
-          'user_id = ? OR user_id IS NULL',
-          current_user.id
-        ).where(id: params[:ip_address_id]).take!
-
-        @ip = ::IpAddress.joins(
-          'LEFT JOIN network_interfaces my_netifs
-           ON my_netifs.id = ip_addresses.network_interface_id'
-        ).joins(
-          'LEFT JOIN vpses my_vps ON my_vps.id = my_netifs.vps_id'
-        ).where(
-          'ip_addresses.user_id = ?
-           OR (ip_addresses.network_interface_id IS NOT NULL AND my_vps.user_id = ?)
-           OR (ip_addresses.user_id IS NULL AND ip_addresses.network_interface_id IS NULL)',
-          current_user.id, current_user.id
-        ).where(id: params[:ip_address_id]).take!
-      end
+      @ip =
+        if current_user.role == :admin
+          ::IpAddress.find(params[:ip_address_id])
+        else
+          self.class.resource.user_visible_scope(current_user)
+              .where(id: params[:ip_address_id])
+              .take!
+        end
     end
 
     def exec

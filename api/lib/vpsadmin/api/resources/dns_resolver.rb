@@ -55,6 +55,10 @@ class VpsAdmin::API::Resources::DnsResolver < HaveAPI::Resource
       q = ::DnsResolver.all
 
       if input[:vps]
+        if current_user.role != :admin && input[:vps].user_id != current_user.id
+          error!('access denied')
+        end
+
         q = q.where(
           'location_id = ? OR is_universal = 1',
           input[:vps].node.location_id

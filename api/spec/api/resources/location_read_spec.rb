@@ -181,16 +181,16 @@ RSpec.describe 'VpsAdmin::API::Resources::Location' do
       expect(location_obj['label']).to eq(location.label)
       expect(location_obj).to have_key('description')
       expect(resource_id(location_obj['environment'])).to eq(location.environment_id)
-      expect(location_obj['domain']).to eq(location.domain)
-      expect(location_obj['has_ipv6']).to eq(location.has_ipv6)
+      expect(location_obj).not_to have_key('domain')
+      expect(location_obj).not_to have_key('has_ipv6')
     end
 
     it 'allows support to show locations with limited output' do
       as(SpecSeed.support) { json_get show_path(location.id) }
 
       expect_status(200)
-      expect(location_obj['domain']).to eq(location.domain)
-      expect(location_obj['has_ipv6']).to eq(location.has_ipv6)
+      expect(location_obj).not_to have_key('domain')
+      expect(location_obj).not_to have_key('has_ipv6')
     end
 
     it 'allows admins to show locations with full output' do

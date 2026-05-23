@@ -414,6 +414,31 @@ RSpec.describe 'VpsAdmin::API::Resources::HostIpAddress' do
       expect_status(404)
     end
 
+    it 'hides unrouted host IPs owned through the parent address from users' do
+      network = create_split_network!(location: SpecSeed.location)
+      hidden_ip = create_ip_address!(
+        network: network,
+        ip_addr: '198.51.100.32',
+        prefix: network.split_prefix,
+        size: 8,
+        netif: nil,
+        user: SpecSeed.user
+      )
+      hidden_host = create_host_ip!(ip_address: hidden_ip, ip_addr: '198.51.100.33')
+
+      as(SpecSeed.user) do
+        json_get index_path, host_ip_address: { addr: hidden_host.ip_addr }
+      end
+
+      expect_status(200)
+      expect(host_list.map { |row| row['id'] }).not_to include(hidden_host.id)
+
+      as(SpecSeed.user) { json_get show_path(hidden_host.id) }
+
+      expect_status(404)
+      expect(json['status']).to be(false)
+    end
+
     it 'allows admins to view other users host IPs' do
       host = show_data.fetch(:other_host)
       as(SpecSeed.admin) { json_get show_path(host.id) }

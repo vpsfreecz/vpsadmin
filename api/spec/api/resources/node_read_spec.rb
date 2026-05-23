@@ -53,6 +53,23 @@ RSpec.describe 'VpsAdmin::API::Resources::Node' do
     expect(last_response.status).to eq(code), message
   end
 
+  def create_inactive_node!
+    suffix = Node.maximum(:id).to_i + 100
+
+    Node.create!(
+      location: node.location,
+      name: "spec-inactive-node-#{suffix}",
+      role: :node,
+      hypervisor_type: :vpsadminos,
+      ip_addr: "192.0.2.#{(suffix % 200) + 1}",
+      max_vps: 10,
+      cpus: 4,
+      total_memory: 2048,
+      total_swap: 1024,
+      active: false
+    )
+  end
+
   describe 'Index' do
     it 'rejects unauthenticated access' do
       json_get index_path
@@ -189,6 +206,20 @@ RSpec.describe 'VpsAdmin::API::Resources::Node' do
       expect(node_obj).not_to have_key('max_vps')
     end
 
+    it 'hides inactive nodes from users and support' do
+      inactive_node = create_inactive_node!
+
+      as(SpecSeed.user) { json_get show_path(inactive_node.id) }
+
+      expect_status(404)
+      expect(json['status']).to be(false)
+
+      as(SpecSeed.support) { json_get show_path(inactive_node.id) }
+
+      expect_status(404)
+      expect(json['status']).to be(false)
+    end
+
     it 'allows admins to show nodes with full output' do
       as(SpecSeed.admin) { json_get show_path(node.id) }
 
@@ -199,6 +230,15 @@ RSpec.describe 'VpsAdmin::API::Resources::Node' do
       expect(node_obj['cpus']).to eq(node.cpus)
       expect(node_obj['total_memory']).to eq(node.total_memory)
       expect(node_obj['type']).to eq(node.role)
+    end
+
+    it 'allows admins to show inactive nodes' do
+      inactive_node = create_inactive_node!
+
+      as(SpecSeed.admin) { json_get show_path(inactive_node.id) }
+
+      expect_status(200)
+      expect(node_obj['id']).to eq(inactive_node.id)
     end
 
     it 'returns 404 for unknown node' do
