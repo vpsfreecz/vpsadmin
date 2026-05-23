@@ -248,9 +248,37 @@ function show_notification()
     unset($_SESSION["notification"]);
 }
 
+function local_redirect_target($loc, $fallback = '?page=')
+{
+    if (!is_string($loc)) {
+        return $fallback;
+    }
+
+    $target = trim($loc);
+
+    if ($target === '' || preg_match('/[\r\n]/', $target)) {
+        return $fallback;
+    }
+
+    if (
+        preg_match('#^[a-z][a-z0-9+.-]*:#i', $target)
+        || str_starts_with($target, '//')
+        || str_contains($target, '\\')
+    ) {
+        return $fallback;
+    }
+
+    $parts = parse_url($target);
+    if ($parts === false || isset($parts['scheme']) || isset($parts['host'])) {
+        return $fallback;
+    }
+
+    return preg_replace('#^/+#', '/', $target);
+}
+
 function redirect($loc)
 {
-    header('Location: ' . preg_replace('#^/+#', '/', $loc));
+    header('Location: ' . local_redirect_target($loc));
     exit;
 }
 

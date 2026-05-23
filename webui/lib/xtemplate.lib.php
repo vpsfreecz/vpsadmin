@@ -1233,11 +1233,17 @@ class XTemplate
       */
     public function get_prev_url()
     {
-        if (isset($_GET['prev_url'])) {
-            return base64_decode($_GET['prev_url']);
+        if (!isset($_GET['prev_url'])) {
+            return './index.php';
         }
 
-        return false;
+        $url = base64_decode($_GET['prev_url'], true);
+
+        if ($url === false) {
+            return './index.php';
+        }
+
+        return local_redirect_target($url, './index.php');
     }
 }
 /**

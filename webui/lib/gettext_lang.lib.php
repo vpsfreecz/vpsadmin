@@ -37,7 +37,7 @@ class Lang
     {
         if (isset($this->langs[$newlang])) {
             $this->set_current_lang($newlang);
-            Header("Location: " . $this->xtpl->get_prev_url());
+            header("Location: " . $this->xtpl->get_prev_url());
 
             return true;
         } else {
