@@ -40,6 +40,8 @@ module VpsAdmin::API::Resources
           dns_zones: { user_id: u.id, zone_source: 'external_source' },
           dns_servers: { hidden: false }
         }
+        input whitelist: %i[dns_zone dns_server_zone status reason_code
+                            primary_addr order from_id limit]
         output blacklist: %i[raw_message source_cursor event_key]
         allow
       end

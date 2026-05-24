@@ -199,6 +199,15 @@ RSpec.describe 'VpsAdmin::API::Resources::DnsServerZone' do
     )
   end
 
+  let!(:server_association_only_visible) do
+    create_server!(
+      name: "spec-dns-association-#{SecureRandom.hex(4)}",
+      node: SpecSeed.node,
+      hidden: false,
+      enable_user_dns_zones: false
+    )
+  end
+
   let!(:zone_user_internal) do
     create_zone!(
       name: "spec-user-int-#{SecureRandom.hex(4)}.example.test.",
@@ -267,6 +276,14 @@ RSpec.describe 'VpsAdmin::API::Resources::DnsServerZone' do
     )
   end
 
+  let!(:sz_user_external_association_only_visible) do
+    create_server_zone!(
+      dns_server: server_association_only_visible,
+      dns_zone: zone_user_external,
+      zone_type: :secondary_type
+    )
+  end
+
   let!(:sz_support_visible) do
     create_server_zone!(
       dns_server: server_visible,
@@ -313,13 +330,32 @@ RSpec.describe 'VpsAdmin::API::Resources::DnsServerZone' do
       expect(server_zones).to be_an(Array)
 
       ids = server_zones.map { |row| row['id'] }
-      expect(ids).to include(sz_user_visible.id, sz_user_external_visible.id)
+      expect(ids).to include(
+        sz_user_visible.id,
+        sz_user_external_visible.id,
+        sz_user_external_association_only_visible.id
+      )
       expect(ids).not_to include(sz_user_hidden.id, sz_support_visible.id, sz_system_visible.id)
 
       row = server_zones.find { |item| item['id'] == sz_user_visible.id }
       expect(row).to include('id', 'dns_server', 'dns_zone', 'type')
       expect(rid(row['dns_server'])).to eq(server_visible.id)
       expect(rid(row['dns_zone'])).to eq(zone_user_internal.id)
+    end
+
+    it 'resolves visible DNS servers included through user server zones' do
+      as(SpecSeed.user) do
+        json_get index_path, {
+          _meta: { includes: 'dns_server,dns_zone' },
+          dns_server_zone: { dns_zone: zone_user_external.id }
+        }
+      end
+
+      expect_status(200)
+      row = server_zones.find { |item| item['id'] == sz_user_external_association_only_visible.id }
+      expect(row).not_to be_nil
+      expect(rid(row['dns_server'])).to eq(server_association_only_visible.id)
+      expect(rid(row['dns_zone'])).to eq(zone_user_external.id)
     end
 
     it 'restricts support to their own zones' do
@@ -340,6 +376,7 @@ RSpec.describe 'VpsAdmin::API::Resources::DnsServerZone' do
         sz_user_visible.id,
         sz_user_hidden.id,
         sz_user_external_visible.id,
+        sz_user_external_association_only_visible.id,
         sz_support_visible.id,
         sz_system_visible.id
       )
@@ -578,6 +615,25 @@ RSpec.describe 'VpsAdmin::API::Resources::DnsServerZone' do
       ids = transfer_logs.map { |row| row['id'] }
       expect(ids).to include(user_log.id, recent_user_log.id)
       expect(ids).not_to include(support_log.id, internal_log.id)
+    end
+
+    it 'filters user logs by reason code' do
+      as(SpecSeed.user) do
+        json_get transfer_log_index_path, {
+          _meta: {
+            includes: 'dns_server_zone__dns_zone,dns_server_zone__dns_server'
+          },
+          dns_server_zone_transfer_log: {
+            dns_zone: zone_user_external.id,
+            limit: 25,
+            reason_code: user_log.reason_code
+          }
+        }
+      end
+
+      expect_status(200)
+      ids = transfer_logs.map { |row| row['id'] }
+      expect(ids).to contain_exactly(user_log.id)
     end
 
     it 'does not expose internal zone transfer logs to users' do

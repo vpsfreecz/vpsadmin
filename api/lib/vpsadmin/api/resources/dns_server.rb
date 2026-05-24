@@ -53,14 +53,27 @@ module VpsAdmin::API::Resources
         use :all
       end
 
-      authorize do |u|
-        allow if u.role == :admin
-        restrict enable_user_dns_zones: true, hidden: false
+      authorize do |_u|
         allow
       end
 
       def prepare
-        @server = with_includes(self.class.model.where(with_restricted(id: path_params['dns_server_id']))).take!
+        scope = if current_user.role == :admin
+                  self.class.model.where(id: path_params['dns_server_id'])
+
+                else
+                  conditions = if flags[:inner_assoc]
+                                 { hidden: false }
+                               else
+                                 { enable_user_dns_zones: true, hidden: false }
+                               end
+
+                  self.class.model.where(conditions.merge(id: path_params['dns_server_id']))
+                end
+
+        @server = with_includes(scope).take
+
+        error!('DNS server not found', {}, http_status: 404) unless @server
       end
 
       def exec

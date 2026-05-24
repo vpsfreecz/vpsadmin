@@ -143,6 +143,15 @@ RSpec.describe 'VpsAdmin::API::Resources::DnsServer' do
     )
   end
 
+  let!(:association_only_dns_server) do
+    create_server!(
+      name_prefix: 'spec-association-dns',
+      enable_user_dns_zones: false,
+      hidden: false,
+      node: SpecSeed.other_node
+    )
+  end
+
   let!(:hidden_user_dns_server) do
     create_server!(
       name_prefix: 'spec-hidden-user-dns',
@@ -207,7 +216,11 @@ RSpec.describe 'VpsAdmin::API::Resources::DnsServer' do
 
       ids = servers.map { |row| row['id'] }
       expect(ids).to include(user_dns_server.id)
-      expect(ids).not_to include(internal_dns_server.id, hidden_user_dns_server.id)
+      expect(ids).not_to include(
+        association_only_dns_server.id,
+        internal_dns_server.id,
+        hidden_user_dns_server.id
+      )
 
       row = servers.find { |item| item['id'] == user_dns_server.id }
       expect(row).to include(
@@ -233,7 +246,11 @@ RSpec.describe 'VpsAdmin::API::Resources::DnsServer' do
 
       ids = servers.map { |row| row['id'] }
       expect(ids).to include(user_dns_server.id)
-      expect(ids).not_to include(internal_dns_server.id, hidden_user_dns_server.id)
+      expect(ids).not_to include(
+        association_only_dns_server.id,
+        internal_dns_server.id,
+        hidden_user_dns_server.id
+      )
     end
 
     it 'returns all servers for admins' do
@@ -241,7 +258,12 @@ RSpec.describe 'VpsAdmin::API::Resources::DnsServer' do
 
       expect_status(200)
       ids = servers.map { |row| row['id'] }
-      expect(ids).to include(user_dns_server.id, internal_dns_server.id, hidden_user_dns_server.id)
+      expect(ids).to include(
+        user_dns_server.id,
+        association_only_dns_server.id,
+        internal_dns_server.id,
+        hidden_user_dns_server.id
+      )
     end
 
     it 'supports limit pagination' do
@@ -303,6 +325,13 @@ RSpec.describe 'VpsAdmin::API::Resources::DnsServer' do
       expect(json['status']).to be(false)
     end
 
+    it 'returns 404 for users directly accessing non-user-zone servers' do
+      as(SpecSeed.user) { json_get show_path(association_only_dns_server.id) }
+
+      expect_status(404)
+      expect(json['status']).to be(false)
+    end
+
     it 'returns 404 for users accessing hidden user-enabled servers' do
       as(SpecSeed.user) { json_get show_path(hidden_user_dns_server.id) }
 
@@ -319,6 +348,13 @@ RSpec.describe 'VpsAdmin::API::Resources::DnsServer' do
 
     it 'returns 404 for support accessing internal servers' do
       as(SpecSeed.support) { json_get show_path(internal_dns_server.id) }
+
+      expect_status(404)
+      expect(json['status']).to be(false)
+    end
+
+    it 'returns 404 for support directly accessing non-user-zone servers' do
+      as(SpecSeed.support) { json_get show_path(association_only_dns_server.id) }
 
       expect_status(404)
       expect(json['status']).to be(false)
