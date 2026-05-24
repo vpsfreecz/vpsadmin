@@ -165,7 +165,9 @@ test.describe.serial('User namespace browser coverage', () => {
     });
     await renameUserNamespaceMap(page, editableMap.id, editableMap.label);
 
-    const temporaryMapId = await createUserNamespaceMap(page, temporaryLabel);
+    const temporaryMapId = await createUserNamespaceMap(page, temporaryLabel, {
+      userNamespaceId: fixtures.user.userNamespace.id,
+    });
     await page.goto('/?page=userns&action=maps', { waitUntil: 'domcontentloaded' });
     await expect(userNamespaceMapRow(page, temporaryMapId)).toContainText(temporaryLabel);
     await deleteUserNamespaceMap(page, temporaryMapId);

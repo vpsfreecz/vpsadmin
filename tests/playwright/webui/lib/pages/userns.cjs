@@ -118,7 +118,14 @@ async function createUserNamespaceMap(page, label, options = {}) {
 
   const form = formByAction(page, 'action=map_new');
   if (options.userNamespaceId) {
-    await form.locator('input[name="user_namespace"]').fill(String(options.userNamespaceId));
+    const namespaceSelect = form.locator('select[name="user_namespace"]');
+    const namespaceInput = form.locator('input[name="user_namespace"]:not([type="hidden"])');
+
+    if (await namespaceSelect.count()) {
+      await namespaceSelect.selectOption(String(options.userNamespaceId));
+    } else if (await namespaceInput.count()) {
+      await namespaceInput.fill(String(options.userNamespaceId));
+    }
   }
   await form.locator('input[name="label"]').fill(label);
   await submitForm(form);

@@ -166,10 +166,17 @@ test('admin can drop and regain privileges', async ({ page }) => {
 test('admin can switch into user context and regain admin', async ({ page }) => {
   await login(page, fixtures.admin);
 
-  await page.goto(
-    `/?page=login&action=switch_context&m_id=${fixtures.user.id}&next=${encodeURIComponent('/?page=')}`,
-    { waitUntil: 'domcontentloaded' },
-  );
+  await page.goto(`/?page=adminm&action=edit&id=${fixtures.user.id}`, {
+    waitUntil: 'domcontentloaded',
+  });
+  const switchForm = page.locator('form[action="?page=login&action=switch_context"]', {
+    has: page.locator(`input[name="m_id"][value="${fixtures.user.id}"]`),
+  }).first();
+  await expect(switchForm).toBeVisible();
+  await switchForm.locator('input[name="next"]').evaluate((input) => {
+    input.value = '/?page=';
+  });
+  await switchForm.locator('input[type="image"], input[type="submit"], button[type="submit"]').first().click();
   await expect(logoutButton(page)).toHaveValue(new RegExp(`Logout \\(${fixtures.user.username}\\)`));
   await expect(navLink(page, '?page=adminvps')).toBeVisible();
   await expect(navLink(page, '?page=cluster')).toHaveCount(0);

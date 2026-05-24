@@ -34,8 +34,8 @@ async function expectConsoleIframe(page, vpsId) {
   const url = new URL(src);
   expect(url.pathname).toBe(`/console/${vpsId}`);
   expect(url.searchParams.get('session')).toMatch(/[A-Za-z0-9_-]+/);
-  expect(url.searchParams.get('auth_type')).toBeTruthy();
-  expect(url.searchParams.get('auth_token')).toBeTruthy();
+  expect(url.searchParams.get('auth_type')).toBeNull();
+  expect(url.searchParams.get('auth_token')).toBeNull();
 
   return true;
 }
