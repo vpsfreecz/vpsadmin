@@ -406,6 +406,13 @@ function dns_transfer_log_list()
     }
 
     $logs = $api->dns_server_zone_transfer_log->list($params);
+    $serverZones = dnsTransferLogServerZones();
+    $serverZonesById = [];
+
+    foreach ($serverZones as $serverZone) {
+        $serverZonesById[$serverZone->id] = $serverZone;
+    }
+
     $pagination = new \Pagination\System($logs);
 
     $xtpl->table_title(_('Filters'));
@@ -438,7 +445,7 @@ function dns_transfer_log_list()
         $xtpl->form_add_select(
             _('DNS server zone') . ':',
             'dns_server_zone',
-            dnsTransferLogServerZoneOptions(),
+            dnsTransferLogServerZoneOptions($serverZones),
             get_val('dns_server_zone', 0)
         );
     }
@@ -458,7 +465,7 @@ function dns_transfer_log_list()
     $xtpl->table_add_category(_('Serial'));
 
     foreach ($logs as $log) {
-        $serverZone = $log->dns_server_zone;
+        $serverZone = $serverZonesById[$log->dns_server_zone_id] ?? $log->dns_server_zone;
 
         $xtpl->table_td(tolocaltz($log->event_at));
         $xtpl->table_td('<a href="?page=dns&action=zone_show&id=' . $serverZone->dns_zone_id . '">' . h($serverZone->dns_zone->name) . '</a>');
@@ -485,14 +492,21 @@ function dns_transfer_log_list()
     $xtpl->table_out('dns-transfer-log');
 }
 
-function dnsTransferLogServerZoneOptions()
+function dnsTransferLogServerZones()
 {
     global $api;
 
+    return $api->dns_server_zone->list([
+        'meta' => ['includes' => 'dns_zone,dns_server'],
+    ]);
+}
+
+function dnsTransferLogServerZoneOptions($serverZones = null)
+{
+    $serverZones ??= dnsTransferLogServerZones();
+
     return resource_list_to_options(
-        $api->dns_server_zone->list([
-            'meta' => ['includes' => 'dns_zone,dns_server'],
-        ]),
+        $serverZones,
         'id',
         'id',
         true,
