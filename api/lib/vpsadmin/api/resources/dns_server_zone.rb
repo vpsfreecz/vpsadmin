@@ -84,7 +84,7 @@ module VpsAdmin::API::Resources
       def query
         q = self.class.model.existing.joins(:dns_zone, :dns_server).where(with_restricted)
 
-        %w[dns_server dns_zone].each do |v|
+        %i[dns_server dns_zone].each do |v|
           q = q.where(v => input[v]) if input[v]
         end
 

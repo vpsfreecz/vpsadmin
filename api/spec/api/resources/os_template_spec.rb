@@ -365,11 +365,20 @@ RSpec.describe 'VpsAdmin::API::Resources::OsTemplate' do
   end
 
   describe 'Show' do
-    it 'rejects unauthenticated access' do
+    it 'rejects unauthenticated access (core)', without_plugins: :requests do
       json_get show_path(SpecSeed.os_template.id)
 
       expect_status(401)
       expect(json['status']).to be(false)
+    end
+
+    it 'allows unauthenticated access (requests plugin)', requires_plugins: :requests do
+      json_get show_path(SpecSeed.os_template.id)
+
+      expect_status(200)
+      expect(json['status']).to be(true)
+      expect(os_template['id']).to eq(SpecSeed.os_template.id)
+      expect(os_template.keys).to contain_exactly('id', 'name', 'label', 'hypervisor_type')
     end
 
     it 'shows enabled template for users with restricted output' do

@@ -32,6 +32,19 @@ class VpsAdmin::API::Resources::Webauthn < HaveAPI::Resource
         )
       end
     end
+
+    def stringify_credential_keys(value)
+      case value
+      when Hash
+        value.each_with_object({}) do |(key, val), ret|
+          ret[key.to_s] = stringify_credential_keys(val)
+        end
+      when Array
+        value.map { |val| stringify_credential_keys(val) }
+      else
+        value
+      end
+    end
   end
 
   class Registration < HaveAPI::Resource
@@ -80,6 +93,7 @@ class VpsAdmin::API::Resources::Webauthn < HaveAPI::Resource
       authorize { allow }
 
       include VpsAdmin::API::Lifetimes::ActionHelpers
+      include VpsAdmin::API::Resources::Webauthn::Utils
 
       def exec
         object_state_check!(current_user)
@@ -92,7 +106,9 @@ class VpsAdmin::API::Resources::Webauthn < HaveAPI::Resource
 
         error!('challenge token expired') unless challenge.token_valid?
 
-        webauthn_credential = WebAuthn::Credential.from_create(input[:public_key_credential])
+        webauthn_credential = WebAuthn::Credential.from_create(
+          stringify_credential_keys(input[:public_key_credential])
+        )
 
         begin
           webauthn_credential.verify(challenge.challenge)
@@ -167,6 +183,8 @@ class VpsAdmin::API::Resources::Webauthn < HaveAPI::Resource
 
       authorize { allow }
 
+      include VpsAdmin::API::Resources::Webauthn::Utils
+
       def exec
         challenge = ::WebauthnChallenge.joins(:token).where(
           tokens: { token: input[:challenge_token] },
@@ -183,7 +201,9 @@ class VpsAdmin::API::Resources::Webauthn < HaveAPI::Resource
 
         error!('auth token expired') unless auth_token.token_valid?
 
-        webauthn_credential = WebAuthn::Credential.from_get(input[:public_key_credential])
+        webauthn_credential = WebAuthn::Credential.from_get(
+          stringify_credential_keys(input[:public_key_credential])
+        )
 
         stored_credential = challenge.user.webauthn_credentials.find_by!(
           external_id: Base64.strict_encode64(webauthn_credential.raw_id),

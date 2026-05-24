@@ -165,11 +165,23 @@ RSpec.describe 'VpsAdmin::API::Resources::Location' do
   end
 
   describe 'Show' do
-    it 'rejects unauthenticated access' do
+    it 'rejects unauthenticated access (core)', without_plugins: :requests do
       json_get show_path(location.id)
 
       expect_status(401)
       expect(json['status']).to be(false)
+    end
+
+    it 'allows unauthenticated access (requests plugin)', requires_plugins: :requests do
+      json_get show_path(location.id)
+
+      expect_status(200)
+      expect(json['status']).to be(true)
+      expect(location_obj['id']).to eq(location.id)
+      expect(location_obj).to include('id', 'label', 'description', 'environment')
+      expect(location_obj).not_to have_key('remote_console_server')
+      expect(location_obj).not_to have_key('domain')
+      expect(location_obj).not_to have_key('has_ipv6')
     end
 
     it 'allows users to show locations with limited output' do

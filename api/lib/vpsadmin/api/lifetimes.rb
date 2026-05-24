@@ -564,8 +564,10 @@ module VpsAdmin::API
           lifetime_params = %w[
             object_state change_reason expiration_date remind_after_date
           ]
+          input_params = input.keys.map(&:to_sym)
+          path_params = send(:extract_path_params).keys.map(&:to_sym)
 
-          if (input.keys - lifetime_params).any?
+          if ((input_params - path_params).map(&:to_s) - lifetime_params).any?
             raise VpsAdmin::API::Exceptions::TooManyParameters,
                   'cannot update any parameters when changing object state'
           end

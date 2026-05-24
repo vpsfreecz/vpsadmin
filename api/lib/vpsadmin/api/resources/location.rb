@@ -53,7 +53,7 @@ class VpsAdmin::API::Resources::Location < HaveAPI::Resource
     end
 
     authorize do |u|
-      allow if u.role == :admin
+      allow if u && u.role == :admin
       output whitelist: %i[id label description environment remote_console_server]
       allow
     end
@@ -212,7 +212,7 @@ class VpsAdmin::API::Resources::Location < HaveAPI::Resource
     end
 
     def exec
-      attrs = to_db_names(params[:location])
+      attrs = to_db_names(input)
       attrs[:remote_console_server] = '' if attrs[:remote_console_server].nil?
       loc = ::Location.new(attrs)
 
@@ -232,7 +232,7 @@ class VpsAdmin::API::Resources::Location < HaveAPI::Resource
     end
 
     authorize do |u|
-      allow if u.role == :admin
+      allow if u && u.role == :admin
       output whitelist: %i[id label description environment remote_console_server]
       allow
     end
@@ -284,7 +284,7 @@ class VpsAdmin::API::Resources::Location < HaveAPI::Resource
     def exec
       loc = ::Location.find(path_params['location_id'])
 
-      attrs = to_db_names(params[:location])
+      attrs = to_db_names(input)
       if attrs.has_key?(:remote_console_server) && attrs[:remote_console_server].nil?
         attrs[:remote_console_server] = ''
       end

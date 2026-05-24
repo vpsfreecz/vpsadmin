@@ -39,7 +39,7 @@ class VpsAdmin::API::Resources::Environment < HaveAPI::Resource
     end
 
     authorize do |u|
-      allow if u.role == :admin
+      allow if u && u.role == :admin
       output whitelist: %i[id label description]
       allow
     end
@@ -144,7 +144,7 @@ class VpsAdmin::API::Resources::Environment < HaveAPI::Resource
     end
 
     authorize do |u|
-      allow if u.role == :admin
+      allow if u && u.role == :admin
       output whitelist: %i[id label description]
       allow
     end

@@ -49,6 +49,15 @@ module VpsAdmin::API::Resources
       )
     end
 
+    def self.user_visible_as_association_scope(user, scope = ::HostIpAddress.all)
+      scope.joins(:ip_address)
+           .left_joins(ip_address: { network_interface: :vps })
+           .where(
+             'ip_addresses.user_id = ? OR vpses.user_id = ?',
+             user.id, user.id
+           )
+    end
+
     class Index < HaveAPI::Actions::Default::Index
       desc 'List IP addresses'
 
@@ -194,13 +203,19 @@ module VpsAdmin::API::Resources
 
       def prepare
         @ip = if current_user.role == :admin
-                ::HostIpAddress.find(path_params['host_ip_address_id'])
+                ::HostIpAddress.find_by(id: path_params['host_ip_address_id'])
 
               else
-                self.class.resource.user_visible_scope(current_user)
-                    .where(id: path_params['host_ip_address_id'])
-                    .take!
+                scope = if flags[:inner_assoc]
+                          self.class.resource.user_visible_as_association_scope(current_user)
+                        else
+                          self.class.resource.user_visible_scope(current_user)
+                        end
+
+                scope.where(id: path_params['host_ip_address_id']).take
               end
+
+        error!('host IP address not found', {}, http_status: 404) unless @ip
       end
 
       def exec

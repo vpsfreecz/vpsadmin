@@ -213,8 +213,8 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
     desc 'Update last activity'
     route '{user_id}/touch'
 
-    authorize do |_u|
-      allow
+    authorize do |u|
+      allow if u
     end
 
     def prepare
@@ -234,8 +234,8 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
       use :all
     end
 
-    authorize do |_u|
-      allow
+    authorize do |u|
+      allow if u
     end
 
     def prepare

@@ -205,12 +205,14 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
     def prepare
       @ip =
         if current_user.role == :admin
-          ::IpAddress.find(path_params['ip_address_id'])
+          ::IpAddress.find_by(id: path_params['ip_address_id'])
         else
           self.class.resource.user_visible_scope(current_user)
               .where(id: path_params['ip_address_id'])
-              .take!
+              .take
         end
+
+      error!('IP address not found', {}, http_status: 404) unless @ip
     end
 
     def exec
