@@ -43,18 +43,20 @@ module VpsAdmin::API::Resources
     end
 
     def self.user_visible_scope(user, scope = ::HostIpAddress.all)
-      scope.joins(ip_address: { network_interface: :vps }).where(
-        'ip_addresses.user_id = ? OR vpses.user_id = ?',
-        user.id, user.id
-      )
+      scope.joins(ip_address: :network_interface)
+           .left_joins(ip_address: { network_interface: %i[vps export] })
+           .where(
+             'ip_addresses.user_id = ? OR vpses.user_id = ? OR exports.user_id = ?',
+             user.id, user.id, user.id
+           )
     end
 
     def self.user_visible_as_association_scope(user, scope = ::HostIpAddress.all)
       scope.joins(:ip_address)
-           .left_joins(ip_address: { network_interface: :vps })
+           .left_joins(ip_address: { network_interface: %i[vps export] })
            .where(
-             'ip_addresses.user_id = ? OR vpses.user_id = ?',
-             user.id, user.id
+             'ip_addresses.user_id = ? OR vpses.user_id = ? OR exports.user_id = ?',
+             user.id, user.id, user.id
            )
     end
 

@@ -407,6 +407,17 @@ RSpec.describe 'VpsAdmin::API::Resources::HostIpAddress' do
       expect(host_obj['id']).to eq(host.id)
     end
 
+    it 'allows users to view host IPs assigned to their exports' do
+      _export, host = create_export_with_host_ip!(user: SpecSeed.user)
+
+      as(SpecSeed.user) { json_get show_path(host.id) }
+
+      expect_status(200)
+      expect(json['status']).to be(true)
+      expect(host_obj['id']).to eq(host.id)
+      expect(host_addr(host_obj)).to eq(host.ip_addr)
+    end
+
     it 'denies users access to other users host IPs' do
       host = show_data.fetch(:other_host)
       as(SpecSeed.user) { json_get show_path(host.id) }
@@ -1054,6 +1065,46 @@ RSpec.describe 'VpsAdmin::API::Resources::HostIpAddress' do
     vps = create_vps!(user: user, node: SpecSeed.node, dataset_in_pool: dataset_in_pool)
     netif = create_netif!(vps: vps)
     [vps, netif]
+  end
+
+  def create_export_with_host_ip!(user:)
+    network = create_split_network!(location: SpecSeed.location)
+    dip = create_dataset_in_pool!(pool: SpecSeed.pool, user: user)
+    export = nil
+
+    Uuid.generate_for_new_record! do |uuid|
+      export = Export.new(
+        dataset_in_pool: dip,
+        snapshot_in_pool_clone: nil,
+        snapshot_in_pool_clone_n: 0,
+        user: user,
+        all_vps: false,
+        path: "/export/#{dip.dataset.full_name}",
+        rw: true,
+        sync: true,
+        subtree_check: false,
+        root_squash: false,
+        threads: 8,
+        enabled: true,
+        object_state: :active,
+        confirmed: :confirmed
+      )
+      export.uuid = uuid
+      export.save!
+      export
+    end
+
+    netif = NetworkInterface.create!(export: export, name: 'eth0', kind: :veth_routed)
+    ip = create_ip_address!(
+      network: network,
+      ip_addr: '198.51.100.64',
+      prefix: network.split_prefix,
+      size: 8,
+      netif: netif
+    )
+    host = create_host_ip!(ip_address: ip, ip_addr: '198.51.100.65')
+
+    [export, host]
   end
 
   def create_ip_address!(network:, ip_addr:, prefix:, size:, netif:, user: nil, reverse_dns_zone: nil, route_via: nil)
