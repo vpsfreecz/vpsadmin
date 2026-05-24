@@ -122,6 +122,7 @@ RSpec.describe 'VpsAdmin::API::Resources::MonitoredEvent', requires_plugins: :mo
       enable_basic_auth: true,
       enable_multi_factor_auth: false
     )
+    mark_user_paid_until!(target)
     target.reload
   end
 
