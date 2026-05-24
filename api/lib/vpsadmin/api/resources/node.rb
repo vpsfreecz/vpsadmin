@@ -332,7 +332,7 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
     end
 
     def prepare
-      @node = ::Node.find_by!(with_restricted(id: params[:node_id]))
+      @node = ::Node.find_by!(with_restricted(id: path_params['node_id']))
     end
 
     def exec
@@ -364,7 +364,7 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
     end
 
     def exec
-      node = ::Node.find(params[:node_id])
+      node = ::Node.find(path_params['node_id'])
 
       if node.update(to_db_names(input))
         ok!
@@ -387,7 +387,7 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
   #   end
   #
   #   def exec
-  #     ::Node.find(params[:node_id]).destroy
+  #     ::Node.find(path_params['node_id']).destroy
   #   end
   # end
 
@@ -418,7 +418,7 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
     end
 
     def exec
-      n = ::Node.find(params[:node_id])
+      n = ::Node.find(path_params['node_id'])
       dst = input[:dst_node]
 
       if n.location_id != dst.location_id
@@ -487,7 +487,7 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
       end
 
       def query
-        node = ::Node.find(params[:node_id])
+        node = ::Node.find(path_params['node_id'])
         q = node.node_statuses
         q = q.where('created_at >= ?', input[:from]) if input[:from]
         q = q.where('created_at <= ?', input[:to]) if input[:to]
@@ -513,8 +513,8 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
       end
 
       def exec
-        node = ::Node.find(params[:node_id])
-        node.node_statuses.find(params[:status_id])
+        node = ::Node.find(path_params['node_id'])
+        node.node_statuses.find(path_params['status_id'])
       end
     end
   end

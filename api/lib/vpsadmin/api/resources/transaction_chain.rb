@@ -89,7 +89,7 @@ class VpsAdmin::API::Resources::TransactionChain < HaveAPI::Resource
     end
 
     def prepare
-      @chain = ::TransactionChain.find_by!(with_restricted(id: params[:transaction_chain_id]))
+      @chain = ::TransactionChain.find_by!(with_restricted(id: path_params['transaction_chain_id']))
     end
 
     def exec

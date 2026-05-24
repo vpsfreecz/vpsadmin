@@ -47,7 +47,7 @@ module VpsAdmin::API::Resources
       end
 
       def prepare
-        @os_family = self.class.model.find_by!(id: params[:os_family_id])
+        @os_family = self.class.model.find_by!(id: path_params['os_family_id'])
       end
 
       def exec
@@ -89,7 +89,7 @@ module VpsAdmin::API::Resources
       end
 
       def exec
-        os_family = self.class.model.find(params[:os_family_id])
+        os_family = self.class.model.find(path_params['os_family_id'])
         os_family.update!(input)
         os_family
       rescue ActiveRecord::RecordInvalid => e
@@ -103,7 +103,7 @@ module VpsAdmin::API::Resources
       end
 
       def exec
-        os_family = self.class.model.find(params[:os_family_id])
+        os_family = self.class.model.find(path_params['os_family_id'])
         os_family.destroy!
         ok!
       rescue ActiveRecord::DeleteRestrictionError

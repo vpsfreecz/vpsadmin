@@ -422,7 +422,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
       @vps = with_includes(::Vps.including_deleted).includes(
         dataset_in_pool: [:dataset_properties]
       ).find_by!(with_restricted(
-                   id: params[:vps_id]
+                   id: path_params['vps_id']
                  ))
     end
 
@@ -458,7 +458,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
     end
 
     def exec
-      vps = ::Vps.including_deleted.find_by!(with_restricted(id: params[:vps_id]))
+      vps = ::Vps.including_deleted.find_by!(with_restricted(id: path_params['vps_id']))
       maintenance_check!(vps)
       object_state_check!(vps, vps.user)
 
@@ -552,7 +552,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
     end
 
     def exec
-      vps = ::Vps.including_deleted.find_by!(with_restricted(id: params[:vps_id]))
+      vps = ::Vps.including_deleted.find_by!(with_restricted(id: path_params['vps_id']))
       maintenance_check!(vps)
       object_state_check!(vps, vps.user)
 
@@ -589,7 +589,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
     end
 
     def exec
-      vps = ::Vps.find_by!(with_restricted(id: params[:vps_id]))
+      vps = ::Vps.find_by!(with_restricted(id: path_params['vps_id']))
       maintenance_check!(vps)
       object_state_check!(vps, vps.user)
 
@@ -619,7 +619,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
     end
 
     def exec
-      vps = ::Vps.find_by!(with_restricted(id: params[:vps_id]))
+      vps = ::Vps.find_by!(with_restricted(id: path_params['vps_id']))
       maintenance_check!(vps)
       object_state_check!(vps, vps.user)
 
@@ -649,7 +649,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
     end
 
     def exec
-      vps = ::Vps.find_by!(with_restricted(id: params[:vps_id]))
+      vps = ::Vps.find_by!(with_restricted(id: path_params['vps_id']))
       maintenance_check!(vps)
       object_state_check!(vps, vps.user)
 
@@ -684,7 +684,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
     end
 
     def exec
-      vps = ::Vps.find_by!(with_restricted(id: params[:vps_id]))
+      vps = ::Vps.find_by!(with_restricted(id: path_params['vps_id']))
       maintenance_check!(vps)
       object_state_check!(vps, vps.user)
 
@@ -715,7 +715,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
     end
 
     def exec
-      vps = ::Vps.find_by!(with_restricted(id: params[:vps_id]))
+      vps = ::Vps.find_by!(with_restricted(id: path_params['vps_id']))
       maintenance_check!(vps)
       object_state_check!(vps, vps.user)
 
@@ -788,7 +788,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
     end
 
     def exec
-      vps = ::Vps.find_by!(with_restricted(id: params[:vps_id]))
+      vps = ::Vps.find_by!(with_restricted(id: path_params['vps_id']))
       maintenance_check!(vps)
       object_state_check!(vps, vps.user)
 
@@ -852,7 +852,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
     end
 
     def exec
-      vps = ::Vps.includes(dataset_in_pool: [:dataset]).find(params[:vps_id])
+      vps = ::Vps.includes(dataset_in_pool: [:dataset]).find(path_params['vps_id'])
 
       if vps.node == input[:node]
         error!('the VPS already is on this very node')
@@ -934,7 +934,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
     end
 
     def exec
-      vps = ::Vps.find_by!(with_restricted(id: params[:vps_id]))
+      vps = ::Vps.find_by!(with_restricted(id: path_params['vps_id']))
       maintenance_check!(vps)
       object_state_check!(vps, vps.user)
 
@@ -1029,7 +1029,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
 
     def exec
       vps = ::Vps.includes(:node).find_by!(
-        with_restricted(id: params[:vps_id])
+        with_restricted(id: path_params['vps_id'])
       )
       maintenance_check!(vps)
 
@@ -1077,7 +1077,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
     end
 
     def exec
-      vps = ::Vps.find_by!(with_restricted(id: params[:vps_id]))
+      vps = ::Vps.find_by!(with_restricted(id: path_params['vps_id']))
       maintenance_check!(vps)
       object_state_check!(vps.user)
 
@@ -1115,7 +1115,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
 
     def exec
       vps = ::Vps.includes(:node).find_by!(
-        with_restricted(id: params[:vps_id])
+        with_restricted(id: path_params['vps_id'])
       )
       maintenance_check!(vps)
       object_state_check!(vps, vps.user)
@@ -1178,7 +1178,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
       end
 
       def query
-        ::Vps.find_by!(with_restricted(id: params[:vps_id])).vps_features
+        ::Vps.find_by!(with_restricted(id: path_params['vps_id'])).vps_features
       end
 
       def count
@@ -1206,8 +1206,8 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
 
       def prepare
         @feature = ::Vps.find_by!(
-          with_restricted(id: params[:vps_id])
-        ).vps_features.find(params[:feature_id])
+          with_restricted(id: path_params['vps_id'])
+        ).vps_features.find(path_params['feature_id'])
       end
 
       def exec
@@ -1233,12 +1233,12 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
 
       def exec
         vps = ::Vps.find_by!(
-          with_restricted(id: params[:vps_id])
+          with_restricted(id: path_params['vps_id'])
         )
         maintenance_check!(vps)
         object_state_check!(vps, vps.user)
 
-        feature = vps.vps_features.find(params[:feature_id])
+        feature = vps.vps_features.find(path_params['feature_id'])
 
         @chain = VpsAdmin::API::Operations::Vps::SetFeatures.run(
           vps,
@@ -1277,7 +1277,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
 
       def exec
         vps = ::Vps.find_by!(
-          with_restricted(id: params[:vps_id])
+          with_restricted(id: path_params['vps_id'])
         )
         maintenance_check!(vps)
         object_state_check!(vps, vps.user)
@@ -1331,7 +1331,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
       end
 
       def query
-        ::Mount.joins(:vps).where(with_restricted(vps_id: params[:vps_id]))
+        ::Mount.joins(:vps).where(with_restricted(vps_id: path_params['vps_id']))
       end
 
       def count
@@ -1359,8 +1359,8 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
 
       def prepare
         @mount = ::Mount.joins(:vps).find_by!(with_restricted(
-                                                vps_id: params[:vps_id],
-                                                id: params[:mount_id]
+                                                vps_id: path_params['vps_id'],
+                                                id: path_params['mount_id']
                                               ))
       end
 
@@ -1395,7 +1395,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
       end
 
       def exec
-        vps = ::Vps.find_by!(with_restricted(id: params[:vps_id]))
+        vps = ::Vps.find_by!(with_restricted(id: path_params['vps_id']))
         maintenance_check!(vps)
 
         if current_user.role != :admin && input[:dataset].user != current_user
@@ -1446,10 +1446,10 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
       end
 
       def exec
-        vps = ::Vps.find_by!(with_restricted(id: params[:vps_id]))
+        vps = ::Vps.find_by!(with_restricted(id: path_params['vps_id']))
         maintenance_check!(vps)
 
-        mnt = ::Mount.find_by!(vps:, id: params[:mount_id])
+        mnt = ::Mount.find_by!(vps:, id: path_params['mount_id'])
         object_state_check!(
           vps,
           vps.user,
@@ -1479,10 +1479,10 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
       end
 
       def exec
-        vps = ::Vps.find_by!(with_restricted(id: params[:vps_id]))
+        vps = ::Vps.find_by!(with_restricted(id: path_params['vps_id']))
         maintenance_check!(vps)
 
-        mnt = ::Mount.find_by!(vps:, id: params[:mount_id])
+        mnt = ::Mount.find_by!(vps:, id: path_params['mount_id'])
         object_state_check!(
           vps,
           vps.user,
@@ -1531,7 +1531,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
       end
 
       def query
-        vps = ::Vps.find_by!(with_restricted(id: params[:vps_id]))
+        vps = ::Vps.find_by!(with_restricted(id: path_params['vps_id']))
         vps.vps_maintenance_windows
       end
 
@@ -1559,8 +1559,8 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
       end
 
       def prepare
-        vps = ::Vps.find_by!(with_restricted(id: params[:vps_id]))
-        @window = vps.vps_maintenance_windows.find_by!(weekday: params[:maintenance_window_id])
+        vps = ::Vps.find_by!(with_restricted(id: path_params['vps_id']))
+        @window = vps.vps_maintenance_windows.find_by!(weekday: path_params['maintenance_window_id'])
       end
 
       def exec
@@ -1588,10 +1588,10 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
       end
 
       def exec
-        vps = ::Vps.find_by!(with_restricted(id: params[:vps_id]))
+        vps = ::Vps.find_by!(with_restricted(id: path_params['vps_id']))
         maintenance_check!(vps)
         object_state_check!(vps, vps.user)
-        window = vps.vps_maintenance_windows.find_by!(weekday: params[:maintenance_window_id])
+        window = vps.vps_maintenance_windows.find_by!(weekday: path_params['maintenance_window_id'])
 
         error!('provide parameters to change') if input.empty?
 
@@ -1635,7 +1635,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
       end
 
       def exec
-        vps = ::Vps.find_by!(with_restricted(id: params[:vps_id]))
+        vps = ::Vps.find_by!(with_restricted(id: path_params['vps_id']))
         maintenance_check!(vps)
         object_state_check!(vps, vps.user)
 
@@ -1696,7 +1696,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
       end
 
       def exec
-        vps = ::Vps.find_by!(with_restricted(id: params[:vps_id]))
+        vps = ::Vps.find_by!(with_restricted(id: path_params['vps_id']))
         maintenance_check!(vps)
         object_state_check!(vps, vps.user)
 
@@ -1722,7 +1722,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
       end
 
       def exec
-        vps = ::Vps.find_by!(with_restricted(id: params[:vps_id]))
+        vps = ::Vps.find_by!(with_restricted(id: path_params['vps_id']))
         maintenance_check!(vps)
         object_state_check!(vps, vps.user)
 
@@ -1740,7 +1740,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
       end
 
       def exec
-        vps = ::Vps.find_by!(with_restricted(id: params[:vps_id]))
+        vps = ::Vps.find_by!(with_restricted(id: path_params['vps_id']))
         maintenance_check!(vps)
         object_state_check!(vps, vps.user)
 
@@ -1779,7 +1779,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
       end
 
       def query
-        vps = ::Vps.find_by!(with_restricted(id: params[:vps_id]))
+        vps = ::Vps.find_by!(with_restricted(id: path_params['vps_id']))
         q = vps.vps_ssh_host_keys
         q = q.where(algorithm: input[:algorithm]) if input[:algorithm]
         q
@@ -1806,8 +1806,8 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
       end
 
       def exec
-        vps = ::Vps.find_by!(with_restricted(id: params[:vps_id]))
-        vps.vps_ssh_host_keys.find(params[:ssh_host_key_id])
+        vps = ::Vps.find_by!(with_restricted(id: path_params['vps_id']))
+        vps.vps_ssh_host_keys.find(path_params['ssh_host_key_id'])
       end
     end
   end
@@ -1863,7 +1863,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
       end
 
       def query
-        vps = ::Vps.find_by!(with_restricted(id: params[:vps_id]))
+        vps = ::Vps.find_by!(with_restricted(id: path_params['vps_id']))
         q = vps.vps_statuses
         q = q.where('created_at >= ?', input[:from]) if input[:from]
         q = q.where('created_at <= ?', input[:to]) if input[:to]
@@ -1893,8 +1893,8 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
       end
 
       def exec
-        vps = ::Vps.find_by!(with_restricted(id: params[:vps_id]))
-        vps.vps_statuses.find(params[:status_id])
+        vps = ::Vps.find_by!(with_restricted(id: path_params['vps_id']))
+        vps.vps_statuses.find(path_params['status_id'])
       end
     end
   end

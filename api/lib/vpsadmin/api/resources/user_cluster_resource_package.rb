@@ -73,7 +73,7 @@ class VpsAdmin::API::Resources::UserClusterResourcePackage < HaveAPI::Resource
 
     def prepare
       @p = with_includes.where(with_restricted(
-                                 id: params[:user_cluster_resource_package_id]
+                                 id: path_params['user_cluster_resource_package_id']
                                )).take!
     end
 
@@ -136,7 +136,7 @@ class VpsAdmin::API::Resources::UserClusterResourcePackage < HaveAPI::Resource
     end
 
     def exec
-      upkg = ::UserClusterResourcePackage.find(params[:user_cluster_resource_package_id])
+      upkg = ::UserClusterResourcePackage.find(path_params['user_cluster_resource_package_id'])
       upkg.update!(input)
       upkg
     rescue ActiveRecord::RecordInvalid => e
@@ -152,7 +152,7 @@ class VpsAdmin::API::Resources::UserClusterResourcePackage < HaveAPI::Resource
     end
 
     def exec
-      user_pkg = ::UserClusterResourcePackage.find(params[:user_cluster_resource_package_id])
+      user_pkg = ::UserClusterResourcePackage.find(path_params['user_cluster_resource_package_id'])
 
       if user_pkg.can_destroy?
         user_pkg.destroy!
@@ -193,7 +193,7 @@ class VpsAdmin::API::Resources::UserClusterResourcePackage < HaveAPI::Resource
 
       def query
         urp = ::UserClusterResourcePackage.where(with_restricted(
-                                                   id: params[:user_cluster_resource_package_id]
+                                                   id: path_params['user_cluster_resource_package_id']
                                                  )).take!
 
         ::ClusterResourcePackageItem.where(
@@ -225,12 +225,12 @@ class VpsAdmin::API::Resources::UserClusterResourcePackage < HaveAPI::Resource
 
       def prepare
         urp = ::UserClusterResourcePackage.where(with_restricted(
-                                                   id: params[:user_cluster_resource_package_id]
+                                                   id: path_params['user_cluster_resource_package_id']
                                                  )).take!
 
         @it = ::ClusterResourcePackageItem.where(
           cluster_resource_package_id: urp.cluster_resource_package_id,
-          id: params[:item_id]
+          id: path_params['item_id']
         ).take!
       end
 

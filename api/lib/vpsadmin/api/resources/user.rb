@@ -218,9 +218,9 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
     end
 
     def prepare
-      error!('access denied') if current_user.role != :admin && current_user.id != params[:user_id].to_i
+      error!('access denied') if current_user.role != :admin && current_user.id != path_params['user_id'].to_i
 
-      @user = User.find(params[:user_id])
+      @user = User.find(path_params['user_id'])
     end
 
     def exec
@@ -239,9 +239,9 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
     end
 
     def prepare
-      error!('access denied') if current_user.role != :admin && current_user.id != params[:user_id].to_i
+      error!('access denied') if current_user.role != :admin && current_user.id != path_params['user_id'].to_i
 
-      @user = ::User.find(params[:user_id])
+      @user = ::User.find(path_params['user_id'])
     end
 
     def exec
@@ -272,9 +272,9 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
     end
 
     def exec
-      error!('access denied') if current_user.role != :admin && current_user.id != params[:user_id].to_i
+      error!('access denied') if current_user.role != :admin && current_user.id != path_params['user_id'].to_i
 
-      @user = ::User.find(params[:user_id])
+      @user = ::User.find(path_params['user_id'])
       @location = input[:location]
       @address_location = input[:address_location]
 
@@ -361,9 +361,9 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
     end
 
     def exec
-      error!('access denied') if current_user.role != :admin && current_user.id != params[:user_id].to_i
+      error!('access denied') if current_user.role != :admin && current_user.id != path_params['user_id'].to_i
 
-      u = ::User.including_deleted.find(params[:user_id])
+      u = ::User.including_deleted.find(path_params['user_id'])
 
       error!('provide at least one attribute to update') if input.empty?
 
@@ -432,7 +432,7 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
     end
 
     def exec
-      u = ::User.including_deleted.find(params[:user_id])
+      u = ::User.including_deleted.find(path_params['user_id'])
       update_object_state!(u)
     end
 
@@ -482,9 +482,9 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
       end
 
       def query
-        error!('access denied') if current_user.role != :admin && params[:user_id].to_i != current_user.id
+        error!('access denied') if current_user.role != :admin && path_params['user_id'].to_i != current_user.id
 
-        q = ::EnvironmentUserConfig.where(user_id: params[:user_id])
+        q = ::EnvironmentUserConfig.where(user_id: path_params['user_id'])
 
         q = q.where(environment: input[:environment]) if input[:environment]
 
@@ -514,11 +514,11 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
       end
 
       def prepare
-        error!('access denied') if current_user.role != :admin && params[:user_id].to_i != current_user.id
+        error!('access denied') if current_user.role != :admin && path_params['user_id'].to_i != current_user.id
 
         @cfg = ::EnvironmentUserConfig.where(
-          user_id: params[:user_id],
-          id: params[:environment_config_id]
+          user_id: path_params['user_id'],
+          id: path_params['environment_config_id']
         ).take!
       end
 
@@ -546,8 +546,8 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
         error!('provide at least one parameter to update') if input.empty?
 
         cfg = ::EnvironmentUserConfig.find_by!(
-          user_id: params[:user_id],
-          id: params[:environment_config_id]
+          user_id: path_params['user_id'],
+          id: path_params['environment_config_id']
         )
 
         VpsAdmin::API::Operations::Environment::UpdateUserConfig.run(cfg, input)
@@ -599,11 +599,11 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
       end
 
       def query
-        if current_user.role != :admin && current_user.id != params[:user_id].to_i
+        if current_user.role != :admin && current_user.id != path_params['user_id'].to_i
           error!("I don't like the smell of this")
         end
 
-        q = ::UserClusterResource.where(user_id: params[:user_id])
+        q = ::UserClusterResource.where(user_id: path_params['user_id'])
         q = q.where(environment: input[:environment]) if input[:environment]
         q
       end
@@ -631,13 +631,13 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
 
       def prepare
         @r = with_includes.find_by!(
-          user_id: params[:user_id],
-          id: params[:cluster_resource_id]
+          user_id: path_params['user_id'],
+          id: path_params['cluster_resource_id']
         )
       end
 
       def exec
-        if current_user.role != :admin && current_user.id != params[:user_id].to_i
+        if current_user.role != :admin && current_user.id != path_params['user_id'].to_i
           error!("I don't like the smell of this")
         end
 
@@ -664,7 +664,7 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
 
       def exec
         ::UserClusterResource.create!(input.update({
-                                                     user: ::User.find(params[:user_id])
+                                                     user: ::User.find(path_params['user_id'])
                                                    }))
       rescue ActiveRecord::RecordInvalid => e
         error!('create failed', e.record.errors.to_hash)
@@ -702,9 +702,9 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
       end
 
       def query
-        error!('access denied') if current_user.role != :admin && current_user.id != params[:user_id].to_i
+        error!('access denied') if current_user.role != :admin && current_user.id != path_params['user_id'].to_i
 
-        self.class.model.active.where(user_id: params[:user_id])
+        self.class.model.active.where(user_id: path_params['user_id'])
       end
 
       def count
@@ -729,11 +729,11 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
       end
 
       def prepare
-        error!('access denied') if current_user.role != :admin && current_user.id != params[:user_id].to_i
+        error!('access denied') if current_user.role != :admin && current_user.id != path_params['user_id'].to_i
 
         @device = self.class.model.active.find_by!(
-          user_id: params[:user_id],
-          id: params[:known_device_id]
+          user_id: path_params['user_id'],
+          id: path_params['known_device_id']
         )
       end
 
@@ -752,11 +752,11 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
       end
 
       def exec
-        error!('access denied') if current_user.role != :admin && current_user.id != params[:user_id].to_i
+        error!('access denied') if current_user.role != :admin && current_user.id != path_params['user_id'].to_i
 
         device = self.class.model.active.find_by!(
-          user_id: params[:user_id],
-          id: params[:known_device_id]
+          user_id: path_params['user_id'],
+          id: path_params['known_device_id']
         )
         object_state_check!(device.user)
 
@@ -800,9 +800,9 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
       end
 
       def query
-        error!('access denied') if current_user.role != :admin && current_user.id != params[:user_id].to_i
+        error!('access denied') if current_user.role != :admin && current_user.id != path_params['user_id'].to_i
 
-        q = ::UserTotpDevice.where(user_id: params[:user_id])
+        q = ::UserTotpDevice.where(user_id: path_params['user_id'])
 
         %i[confirmed enabled].each do |v|
           q = q.where(v => input[v]) if input.has_key?(v)
@@ -833,11 +833,11 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
       end
 
       def prepare
-        error!('access denied') if current_user.role != :admin && current_user.id != params[:user_id].to_i
+        error!('access denied') if current_user.role != :admin && current_user.id != path_params['user_id'].to_i
 
         @device = ::UserTotpDevice.find_by!(
-          user_id: params[:user_id],
-          id: params[:totp_device_id]
+          user_id: path_params['user_id'],
+          id: path_params['totp_device_id']
         )
       end
 
@@ -866,9 +866,9 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
       end
 
       def exec
-        error!('access denied') if current_user.role != :admin && current_user.id != params[:user_id].to_i
+        error!('access denied') if current_user.role != :admin && current_user.id != path_params['user_id'].to_i
 
-        u = ::User.find(params[:user_id])
+        u = ::User.find(path_params['user_id'])
         object_state_check!(u)
 
         VpsAdmin::API::Operations::TotpDevice::Create.run(u, input[:label])
@@ -897,11 +897,11 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
       end
 
       def exec
-        error!('access denied') if current_user.role != :admin && current_user.id != params[:user_id].to_i
+        error!('access denied') if current_user.role != :admin && current_user.id != path_params['user_id'].to_i
 
         device = ::UserTotpDevice.find_by!(
-          user_id: params[:user_id],
-          id: params[:totp_device_id]
+          user_id: path_params['user_id'],
+          id: path_params['totp_device_id']
         )
         object_state_check!(device.user)
 
@@ -935,15 +935,15 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
       end
 
       def exec
-        if current_user.role != :admin && current_user.id != params[:user_id].to_i
+        if current_user.role != :admin && current_user.id != path_params['user_id'].to_i
           error!('access denied')
         elsif input.empty?
           error!('nothing to do')
         end
 
         device = ::UserTotpDevice.find_by!(
-          user_id: params[:user_id],
-          id: params[:totp_device_id]
+          user_id: path_params['user_id'],
+          id: path_params['totp_device_id']
         )
         object_state_check!(device.user)
 
@@ -981,11 +981,11 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
       end
 
       def exec
-        error!('access denied') if current_user.role != :admin && current_user.id != params[:user_id].to_i
+        error!('access denied') if current_user.role != :admin && current_user.id != path_params['user_id'].to_i
 
         device = ::UserTotpDevice.find_by!(
-          user_id: params[:user_id],
-          id: params[:totp_device_id]
+          user_id: path_params['user_id'],
+          id: path_params['totp_device_id']
         )
         object_state_check!(device.user)
 
@@ -1028,9 +1028,9 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
       end
 
       def query
-        error!('access denied') if current_user.role != :admin && current_user.id != params[:user_id].to_i
+        error!('access denied') if current_user.role != :admin && current_user.id != path_params['user_id'].to_i
 
-        q = self.class.model.where(user_id: params[:user_id])
+        q = self.class.model.where(user_id: path_params['user_id'])
         q = q.where(enabled: input[:enabled]) if input.has_key?(:enabled)
         q
       end
@@ -1057,11 +1057,11 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
       end
 
       def prepare
-        error!('access denied') if current_user.role != :admin && current_user.id != params[:user_id].to_i
+        error!('access denied') if current_user.role != :admin && current_user.id != path_params['user_id'].to_i
 
         @cred = self.class.model.find_by!(
-          user_id: params[:user_id],
-          id: params[:webauthn_credential_id]
+          user_id: path_params['user_id'],
+          id: path_params['webauthn_credential_id']
         )
       end
 
@@ -1088,15 +1088,15 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
       end
 
       def exec
-        if current_user.role != :admin && current_user.id != params[:user_id].to_i
+        if current_user.role != :admin && current_user.id != path_params['user_id'].to_i
           error!('access denied')
         elsif input.empty?
           error!('nothing to do')
         end
 
         cred = self.class.model.find_by!(
-          user_id: params[:user_id],
-          id: params[:webauthn_credential_id]
+          user_id: path_params['user_id'],
+          id: path_params['webauthn_credential_id']
         )
         object_state_check!(cred.user)
 
@@ -1119,11 +1119,11 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
       end
 
       def exec
-        error!('access denied') if current_user.role != :admin && current_user.id != params[:user_id].to_i
+        error!('access denied') if current_user.role != :admin && current_user.id != path_params['user_id'].to_i
 
         cred = self.class.model.find_by!(
-          user_id: params[:user_id],
-          id: params[:webauthn_credential_id]
+          user_id: path_params['user_id'],
+          id: path_params['webauthn_credential_id']
         )
         object_state_check!(cred.user)
 
@@ -1173,9 +1173,9 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
       end
 
       def query
-        error!('Access denied') if current_user.role != :admin && current_user.id != params[:user_id].to_i
+        error!('Access denied') if current_user.role != :admin && current_user.id != path_params['user_id'].to_i
 
-        ::UserPublicKey.where(user_id: params[:user_id])
+        ::UserPublicKey.where(user_id: path_params['user_id'])
       end
 
       def count
@@ -1199,9 +1199,9 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
       end
 
       def prepare
-        error!('Access denied') if current_user.role != :admin && current_user.id != params[:user_id].to_i
+        error!('Access denied') if current_user.role != :admin && current_user.id != path_params['user_id'].to_i
 
-        @key = ::UserPublicKey.find_by!(user_id: params[:user_id], id: params[:public_key_id])
+        @key = ::UserPublicKey.find_by!(user_id: path_params['user_id'], id: path_params['public_key_id'])
       end
 
       def exec
@@ -1230,9 +1230,9 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
       end
 
       def exec
-        error!('Access denied') if current_user.role != :admin && current_user.id != params[:user_id].to_i
+        error!('Access denied') if current_user.role != :admin && current_user.id != path_params['user_id'].to_i
 
-        user = ::User.find(params[:user_id])
+        user = ::User.find(path_params['user_id'])
         object_state_check!(user)
 
         input[:user] = user
@@ -1262,11 +1262,11 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
       end
 
       def exec
-        error!('Access denied') if current_user.role != :admin && current_user.id != params[:user_id].to_i
+        error!('Access denied') if current_user.role != :admin && current_user.id != path_params['user_id'].to_i
 
         error!('Provide at least one input parameter') if input.empty?
 
-        key = ::UserPublicKey.find_by!(user_id: params[:user_id], id: params[:public_key_id])
+        key = ::UserPublicKey.find_by!(user_id: path_params['user_id'], id: path_params['public_key_id'])
         object_state_check!(key.user)
 
         input[:key].strip! if input[:key]
@@ -1288,9 +1288,9 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
       end
 
       def exec
-        error!('Access denied') if current_user.role != :admin && current_user.id != params[:user_id].to_i
+        error!('Access denied') if current_user.role != :admin && current_user.id != path_params['user_id'].to_i
 
-        key = ::UserPublicKey.find_by!(user_id: params[:user_id], id: params[:public_key_id])
+        key = ::UserPublicKey.find_by!(user_id: path_params['user_id'], id: path_params['public_key_id'])
         object_state_check!(key.user)
 
         key.destroy!
@@ -1323,9 +1323,9 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
       end
 
       def query
-        error!('Access denied') if current_user.role != :admin && current_user.id != params[:user_id].to_i
+        error!('Access denied') if current_user.role != :admin && current_user.id != path_params['user_id'].to_i
 
-        ::UserMailRoleRecipient.all_roles_for(::User.find(params[:user_id]))
+        ::UserMailRoleRecipient.all_roles_for(::User.find(path_params['user_id']))
       end
 
       def count
@@ -1349,15 +1349,15 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
       end
 
       def prepare
-        error!('Access denied') if current_user.role != :admin && current_user.id != params[:user_id].to_i
+        error!('Access denied') if current_user.role != :admin && current_user.id != path_params['user_id'].to_i
 
-        unless ::UserMailRoleRecipient.registered_role?(params[:mail_role_recipient_id])
+        unless ::UserMailRoleRecipient.registered_role?(path_params['mail_role_recipient_id'])
           raise ActiveRecord::RecordNotFound
         end
 
         @recp = ::UserMailRoleRecipient.find_by!(
-          user_id: params[:user_id],
-          role: params[:mail_role_recipient_id]
+          user_id: path_params['user_id'],
+          role: path_params['mail_role_recipient_id']
         )
       end
 
@@ -1384,13 +1384,13 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
       end
 
       def exec
-        error!('Access denied') if current_user.role != :admin && current_user.id != params[:user_id].to_i
-        user = ::User.find(params[:user_id])
+        error!('Access denied') if current_user.role != :admin && current_user.id != path_params['user_id'].to_i
+        user = ::User.find(path_params['user_id'])
         object_state_check!(user)
 
         ::UserMailRoleRecipient.handle_update!(
           user,
-          params[:mail_role_recipient_id],
+          path_params['mail_role_recipient_id'],
           input
         )
       rescue ActiveRecord::RecordInvalid => e
@@ -1434,9 +1434,9 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
       end
 
       def query
-        error!('Access denied') if current_user.role != :admin && current_user.id != params[:user_id].to_i
+        error!('Access denied') if current_user.role != :admin && current_user.id != path_params['user_id'].to_i
 
-        ::UserMailTemplateRecipient.all_templates_for(::User.find(params[:user_id]))
+        ::UserMailTemplateRecipient.all_templates_for(::User.find(path_params['user_id']))
       end
 
       def count
@@ -1460,17 +1460,17 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
       end
 
       def prepare
-        error!('Access denied') if current_user.role != :admin && current_user.id != params[:user_id].to_i
+        error!('Access denied') if current_user.role != :admin && current_user.id != path_params['user_id'].to_i
 
         tpl =
           if current_user.role == :admin
-            ::MailTemplate.find_by!(name: params[:mail_template_recipient_id])
+            ::MailTemplate.find_by!(name: path_params['mail_template_recipient_id'])
           else
-            self.class.resource.user_visible_template!(params[:mail_template_recipient_id])
+            self.class.resource.user_visible_template!(path_params['mail_template_recipient_id'])
           end
 
         @recp = ::UserMailTemplateRecipient.find_by!(
-          user_id: params[:user_id],
+          user_id: path_params['user_id'],
           mail_template: tpl
         )
       end
@@ -1498,14 +1498,14 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
       end
 
       def exec
-        error!('Access denied') if current_user.role != :admin && current_user.id != params[:user_id].to_i
-        user = ::User.find(params[:user_id])
+        error!('Access denied') if current_user.role != :admin && current_user.id != path_params['user_id'].to_i
+        user = ::User.find(path_params['user_id'])
         object_state_check!(user)
         tpl =
           if current_user.role == :admin
-            ::MailTemplate.find_by!(name: params[:mail_template_recipient_id])
+            ::MailTemplate.find_by!(name: path_params['mail_template_recipient_id'])
           else
-            self.class.resource.user_visible_template!(params[:mail_template_recipient_id])
+            self.class.resource.user_visible_template!(path_params['mail_template_recipient_id'])
           end
 
         ::UserMailTemplateRecipient.handle_update!(

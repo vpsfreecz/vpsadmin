@@ -79,7 +79,7 @@ module VpsAdmin::API::Resources
       end
 
       def prepare
-        @dl = ::SnapshotDownload.find_by!(with_restricted(id: params[:snapshot_download_id]))
+        @dl = ::SnapshotDownload.find_by!(with_restricted(id: path_params['snapshot_download_id']))
       end
 
       def exec
@@ -171,7 +171,7 @@ module VpsAdmin::API::Resources
       end
 
       def exec
-        dl = ::SnapshotDownload.find_by!(with_restricted(id: params[:snapshot_download_id]))
+        dl = ::SnapshotDownload.find_by!(with_restricted(id: path_params['snapshot_download_id']))
         object_state_check!(dl.user)
 
         @chain, = TransactionChains::Dataset::RemoveDownload.fire(dl)

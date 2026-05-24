@@ -63,7 +63,7 @@ module VpsAdmin::API::Resources
       end
 
       def prepare
-        q = ::NewsLog.where(id: params[:news_log_id])
+        q = ::NewsLog.where(id: path_params['news_log_id'])
         q = q.where('published_at <= ?', Time.now) if current_user.nil? || current_user.role != :admin
 
         @news = q.take!
@@ -115,7 +115,7 @@ module VpsAdmin::API::Resources
       end
 
       def exec
-        n = ::NewsLog.find(params[:news_log_id])
+        n = ::NewsLog.find(path_params['news_log_id'])
         n.update!(input)
         n
       rescue ActiveRecord::RecordInvalid => e
@@ -131,7 +131,7 @@ module VpsAdmin::API::Resources
       end
 
       def exec
-        n = ::NewsLog.find(params[:news_log_id])
+        n = ::NewsLog.find(path_params['news_log_id'])
         n.destroy!
         ok!
       end

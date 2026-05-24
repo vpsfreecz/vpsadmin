@@ -107,7 +107,7 @@ module VpsAdmin::API::Resources
       end
 
       def prepare
-        @session = ::UserSession.find_by!(with_restricted(id: params[:user_session_id]))
+        @session = ::UserSession.find_by!(with_restricted(id: path_params['user_session_id']))
       end
 
       def exec
@@ -170,7 +170,7 @@ module VpsAdmin::API::Resources
       end
 
       def exec
-        user_session = ::UserSession.find_by!(with_restricted(id: params[:user_session_id]))
+        user_session = ::UserSession.find_by!(with_restricted(id: path_params['user_session_id']))
         object_state_check!(user_session.user)
         user_session.update!(label: input[:label])
       rescue ActiveRecord::RecordInvalid
@@ -192,7 +192,7 @@ module VpsAdmin::API::Resources
       end
 
       def exec
-        user_session = ::UserSession.find_by!(with_restricted(id: params[:user_session_id]))
+        user_session = ::UserSession.find_by!(with_restricted(id: path_params['user_session_id']))
         object_state_check!(user_session.user)
         VpsAdmin::API::Operations::UserSession::Close.run(user_session)
         ok!

@@ -74,7 +74,7 @@ module VpsAdmin::API::Resources
       end
 
       def prepare
-        @log = self.class.model.joins(:dns_zone).find_by(with_restricted(id: params[:dns_record_log_id]))
+        @log = self.class.model.joins(:dns_zone).find_by(with_restricted(id: path_params['dns_record_log_id']))
       end
 
       def exec

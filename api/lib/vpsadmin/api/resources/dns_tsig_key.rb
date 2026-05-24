@@ -73,7 +73,7 @@ module VpsAdmin::API::Resources
       end
 
       def prepare
-        @key = self.class.model.find_by!(with_restricted(id: params[:dns_tsig_key_id]))
+        @key = self.class.model.find_by!(with_restricted(id: path_params['dns_tsig_key_id']))
         object_state_check!(@key.user) if @key.user
       end
 
@@ -126,7 +126,7 @@ module VpsAdmin::API::Resources
       end
 
       def exec
-        key = self.class.model.find_by!(with_restricted(id: params[:dns_tsig_key_id]))
+        key = self.class.model.find_by!(with_restricted(id: path_params['dns_tsig_key_id']))
         object_state_check!(key.user) if key.user
 
         VpsAdmin::API::Operations::DnsTsigKey::Destroy.run(key)

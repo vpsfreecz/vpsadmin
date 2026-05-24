@@ -97,7 +97,7 @@ module VpsAdmin::API::Resources
 
       def prepare
         @incident = with_includes(::IncidentReport).find_by!(with_restricted(
-                                                               id: params[:incident_report_id]
+                                                               id: path_params['incident_report_id']
                                                              ))
       end
 

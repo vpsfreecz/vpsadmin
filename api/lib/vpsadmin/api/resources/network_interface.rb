@@ -74,7 +74,7 @@ module VpsAdmin::API::Resources
 
       def prepare
         @netif = ::NetworkInterface.joins(:vps).find_by!(with_restricted(
-                                                           network_interfaces: { id: params[:network_interface_id] }
+                                                           network_interfaces: { id: path_params['network_interface_id'] }
                                                          ))
       end
 
@@ -107,7 +107,7 @@ module VpsAdmin::API::Resources
 
       def exec
         netif = ::NetworkInterface.joins(:vps).find_by!(with_restricted(
-                                                          network_interfaces: { id: params[:network_interface_id] }
+                                                          network_interfaces: { id: path_params['network_interface_id'] }
                                                         ))
 
         ok!(netif) if input.empty?

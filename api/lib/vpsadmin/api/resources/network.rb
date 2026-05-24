@@ -88,7 +88,7 @@ module VpsAdmin::API::Resources
       end
 
       def prepare
-        @net = ::Network.find(params[:network_id])
+        @net = ::Network.find(path_params['network_id'])
       end
 
       def exec
@@ -154,7 +154,7 @@ module VpsAdmin::API::Resources
       end
 
       def exec
-        net = ::Network.find(params[:network_id])
+        net = ::Network.find(path_params['network_id'])
         net.update!(input)
         net
       rescue ActiveRecord::RecordInvalid => e
@@ -186,7 +186,7 @@ module VpsAdmin::API::Resources
       end
 
       def exec
-        net = ::Network.find(params[:network_id])
+        net = ::Network.find(path_params['network_id'])
 
         error!('this action can be used only on managed networks') unless net.managed
 

@@ -205,10 +205,10 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
     def prepare
       @ip =
         if current_user.role == :admin
-          ::IpAddress.find(params[:ip_address_id])
+          ::IpAddress.find(path_params['ip_address_id'])
         else
           self.class.resource.user_visible_scope(current_user)
-              .where(id: params[:ip_address_id])
+              .where(id: path_params['ip_address_id'])
               .take!
         end
     end
@@ -274,7 +274,7 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
     end
 
     def exec
-      ip = ::IpAddress.find(params[:ip_address_id])
+      ip = ::IpAddress.find(path_params['ip_address_id'])
 
       # Check if the IP is assigned to a VPS in an environment with IP ownership
       if input.has_key?(:user) && ip.user != input[:user] && ip.network_interface && ip.network_interface.vps.node.location.environment.user_ip_ownership
@@ -320,7 +320,7 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
     include VpsAdmin::API::Lifetimes::ActionHelpers
 
     def exec
-      ip = ::IpAddress.find(params[:ip_address_id])
+      ip = ::IpAddress.find(path_params['ip_address_id'])
       netif = input[:network_interface]
 
       if current_user.role != :admin && ( \
@@ -377,7 +377,7 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
     include VpsAdmin::API::Lifetimes::ActionHelpers
 
     def exec
-      ip = ::IpAddress.find(params[:ip_address_id])
+      ip = ::IpAddress.find(path_params['ip_address_id'])
       netif = input[:network_interface]
 
       if current_user.role != :admin && ( \
@@ -429,7 +429,7 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
     include VpsAdmin::API::Lifetimes::ActionHelpers
 
     def exec
-      ip = ::IpAddress.find(params[:ip_address_id])
+      ip = ::IpAddress.find(path_params['ip_address_id'])
 
       if current_user.role != :admin && ( \
            (ip.user_id && ip.user_id != current_user.id) \

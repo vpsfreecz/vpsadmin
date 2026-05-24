@@ -133,7 +133,7 @@ module VpsAdmin::API::Resources
 
         q = q.joins(network_interface: :vps).where(vpses: { user_id: current_user.id }) if current_user.role != :admin
 
-        @mon = q.find_by!(network_interface_id: params[:network_interface_monitor_id])
+        @mon = q.find_by!(network_interface_id: path_params['network_interface_monitor_id'])
       end
 
       def exec

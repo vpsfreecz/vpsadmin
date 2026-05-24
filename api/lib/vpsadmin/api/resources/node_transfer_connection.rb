@@ -65,7 +65,7 @@ module VpsAdmin::API::Resources
 
       def prepare
         @conn = with_includes(
-          ::NodeTransferConnection.includes(:node_a, :node_b).find(params[:node_transfer_connection_id])
+          ::NodeTransferConnection.includes(:node_a, :node_b).find(path_params['node_transfer_connection_id'])
         )
       end
 
@@ -118,7 +118,7 @@ module VpsAdmin::API::Resources
       end
 
       def exec
-        conn = ::NodeTransferConnection.find(params[:node_transfer_connection_id])
+        conn = ::NodeTransferConnection.find(path_params['node_transfer_connection_id'])
         conn.update!(input)
         conn
       rescue ActiveRecord::RecordInvalid => e
@@ -134,7 +134,7 @@ module VpsAdmin::API::Resources
       end
 
       def exec
-        ::NodeTransferConnection.find(params[:node_transfer_connection_id]).destroy!
+        ::NodeTransferConnection.find(path_params['node_transfer_connection_id']).destroy!
         ok!
       end
     end

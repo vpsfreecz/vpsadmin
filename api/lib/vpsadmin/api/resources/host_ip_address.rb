@@ -194,11 +194,11 @@ module VpsAdmin::API::Resources
 
       def prepare
         @ip = if current_user.role == :admin
-                ::HostIpAddress.find(params[:host_ip_address_id])
+                ::HostIpAddress.find(path_params['host_ip_address_id'])
 
               else
                 self.class.resource.user_visible_scope(current_user)
-                    .where(id: params[:host_ip_address_id])
+                    .where(id: path_params['host_ip_address_id'])
                     .take!
               end
       end
@@ -262,7 +262,7 @@ module VpsAdmin::API::Resources
       end
 
       def exec
-        host = ::HostIpAddress.find(params[:host_ip_address_id])
+        host = ::HostIpAddress.find(path_params['host_ip_address_id'])
 
         error!('access denied') if current_user.role != :admin && host.current_owner != current_user
 
@@ -304,7 +304,7 @@ module VpsAdmin::API::Resources
       end
 
       def exec
-        host = ::HostIpAddress.find(params[:host_ip_address_id])
+        host = ::HostIpAddress.find(path_params['host_ip_address_id'])
 
         error!('access denied') if current_user.role != :admin && host.current_owner != current_user
 
@@ -339,7 +339,7 @@ module VpsAdmin::API::Resources
       include VpsAdmin::API::Lifetimes::ActionHelpers
 
       def exec
-        host = ::HostIpAddress.find(params[:host_ip_address_id])
+        host = ::HostIpAddress.find(path_params['host_ip_address_id'])
         netif = host.ip_address.network_interface
 
         if netif.nil?
@@ -381,7 +381,7 @@ module VpsAdmin::API::Resources
       include VpsAdmin::API::Lifetimes::ActionHelpers
 
       def exec
-        host = ::HostIpAddress.find(params[:host_ip_address_id])
+        host = ::HostIpAddress.find(path_params['host_ip_address_id'])
         netif = host.ip_address.network_interface
 
         if netif.nil?

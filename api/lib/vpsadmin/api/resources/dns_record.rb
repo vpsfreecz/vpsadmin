@@ -74,7 +74,7 @@ module VpsAdmin::API::Resources
       end
 
       def prepare
-        @record = self.class.model.joins(:dns_zone).existing.find_by(with_restricted(id: params[:dns_record_id]))
+        @record = self.class.model.joins(:dns_zone).existing.find_by(with_restricted(id: path_params['dns_record_id']))
       end
 
       def exec
@@ -150,7 +150,7 @@ module VpsAdmin::API::Resources
       include VpsAdmin::API::Lifetimes::ActionHelpers
 
       def exec
-        record = self.class.model.joins(:dns_zone).existing.find_by!(with_restricted(id: params[:dns_record_id]))
+        record = self.class.model.joins(:dns_zone).existing.find_by!(with_restricted(id: path_params['dns_record_id']))
         object_state_check!(record.dns_zone.user) if record.dns_zone.user_id
 
         @chain, ret = VpsAdmin::API::Operations::DnsZone::UpdateRecord.run(record, to_db_names(input))
@@ -179,7 +179,7 @@ module VpsAdmin::API::Resources
       include VpsAdmin::API::Lifetimes::ActionHelpers
 
       def exec
-        record = self.class.model.joins(:dns_zone).existing.find_by!(with_restricted(id: params[:dns_record_id]))
+        record = self.class.model.joins(:dns_zone).existing.find_by!(with_restricted(id: path_params['dns_record_id']))
 
         object_state_check!(record.dns_zone.user) if record.dns_zone.user_id
 
@@ -210,7 +210,7 @@ module VpsAdmin::API::Resources
       include VpsAdmin::API::Lifetimes::ActionHelpers
 
       def exec
-        @chain, ret = VpsAdmin::API::Operations::DnsZone::DynamicUpdate.run(request, params[:access_token]) do |record|
+        @chain, ret = VpsAdmin::API::Operations::DnsZone::DynamicUpdate.run(request, path_params['access_token']) do |record|
           object_state_check!(record.dns_zone.user) if record.dns_zone.user_id
         end
 

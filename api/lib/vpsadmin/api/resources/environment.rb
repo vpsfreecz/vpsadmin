@@ -160,7 +160,7 @@ class VpsAdmin::API::Resources::Environment < HaveAPI::Resource
     end
 
     def exec
-      ::Environment.find(params[:environment_id])
+      ::Environment.find(path_params['environment_id'])
     end
   end
 
@@ -191,7 +191,7 @@ class VpsAdmin::API::Resources::Environment < HaveAPI::Resource
 
     def exec
       VpsAdmin::API::Operations::Environment::Update.run(
-        ::Environment.find(params[:environment_id]),
+        ::Environment.find(path_params['environment_id']),
         input
       )
     rescue ActiveRecord::RecordInvalid => e
@@ -212,7 +212,7 @@ class VpsAdmin::API::Resources::Environment < HaveAPI::Resource
   #   end
   #
   #   def exec
-  #     ::Environment.find(params[:environment_id]).destroy
+  #     ::Environment.find(path_params['environment_id']).destroy
   #   end
   # end
 
@@ -256,7 +256,7 @@ class VpsAdmin::API::Resources::Environment < HaveAPI::Resource
 
       def query
         ::EnvironmentDatasetPlan.where(with_restricted(
-                                         environment_id: params[:environment_id]
+                                         environment_id: path_params['environment_id']
                                        ))
       end
 
@@ -286,8 +286,8 @@ class VpsAdmin::API::Resources::Environment < HaveAPI::Resource
       def exec
         ::EnvironmentDatasetPlan.find_by!(
           with_restricted(
-            environment_id: params[:environment_id],
-            id: params[:dataset_plan_id]
+            environment_id: path_params['environment_id'],
+            id: path_params['dataset_plan_id']
           )
         )
       end

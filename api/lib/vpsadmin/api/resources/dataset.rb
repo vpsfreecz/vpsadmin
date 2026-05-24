@@ -148,7 +148,7 @@ module VpsAdmin::API::Resources
       end
 
       def prepare
-        @ds = with_includes.find_by!(with_restricted(id: params[:dataset_id]))
+        @ds = with_includes.find_by!(with_restricted(id: path_params['dataset_id']))
       end
 
       def exec
@@ -248,7 +248,7 @@ module VpsAdmin::API::Resources
       end
 
       def exec
-        ds = ::Dataset.find_by!(with_restricted(id: params[:dataset_id]))
+        ds = ::Dataset.find_by!(with_restricted(id: path_params['dataset_id']))
 
         if current_user.role != :admin && !ds.user_editable
           error!('insufficient permission to update this dataset')
@@ -293,7 +293,7 @@ module VpsAdmin::API::Resources
       end
 
       def exec
-        ds = ::Dataset.find_by!(with_restricted(id: params[:dataset_id]))
+        ds = ::Dataset.find_by!(with_restricted(id: path_params['dataset_id']))
 
         if current_user.role != :admin && !ds.user_destroy
           error!('insufficient permission to destroy this dataset')
@@ -337,7 +337,7 @@ module VpsAdmin::API::Resources
       end
 
       def exec
-        ds = ::Dataset.find_by!(with_restricted(id: params[:dataset_id]))
+        ds = ::Dataset.find_by!(with_restricted(id: path_params['dataset_id']))
 
         error!('insufficient permission to inherit this property') if current_user.role != :admin && !ds.user_editable
 
@@ -417,7 +417,7 @@ module VpsAdmin::API::Resources
       end
 
       def exec
-        ds = ::Dataset.find(params[:dataset_id])
+        ds = ::Dataset.find(path_params['dataset_id'])
         dip = ds.primary_dataset_in_pool!
 
         if dip.pool == input[:pool]
@@ -507,7 +507,7 @@ module VpsAdmin::API::Resources
 
         def query
           ::Snapshot.joins(:dataset).where(
-            with_restricted(dataset_id: params[:dataset_id])
+            with_restricted(dataset_id: path_params['dataset_id'])
           )
         end
 
@@ -536,8 +536,8 @@ module VpsAdmin::API::Resources
 
         def prepare
           @snapshot = ::Snapshot.joins(:dataset).find_by!(
-            with_restricted(dataset_id: params[:dataset_id],
-                            snapshots: { id: params[:snapshot_id] })
+            with_restricted(dataset_id: path_params['dataset_id'],
+                            snapshots: { id: path_params['snapshot_id'] })
           )
         end
 
@@ -567,7 +567,7 @@ module VpsAdmin::API::Resources
         end
 
         def exec
-          ds = ::Dataset.find_by!(with_restricted(id: params[:dataset_id]))
+          ds = ::Dataset.find_by!(with_restricted(id: path_params['dataset_id']))
 
           ds.maintenance_check!(ds.primary_dataset_in_pool!.pool)
           object_state_check!(ds, ds.user)
@@ -607,8 +607,8 @@ module VpsAdmin::API::Resources
 
         def exec
           snap = ::Snapshot.includes(:dataset).joins(:dataset).find_by!(with_restricted(
-                                                                          dataset_id: params[:dataset_id],
-                                                                          id: params[:snapshot_id]
+                                                                          dataset_id: path_params['dataset_id'],
+                                                                          id: path_params['snapshot_id']
                                                                         ))
 
           if snap.snapshot_in_pools.where('reference_count > 0').exists?
@@ -647,8 +647,8 @@ module VpsAdmin::API::Resources
 
         def exec
           snap = ::Snapshot.includes(:dataset).joins(:dataset).find_by!(with_restricted(
-                                                                          dataset_id: params[:dataset_id],
-                                                                          id: params[:snapshot_id]
+                                                                          dataset_id: path_params['dataset_id'],
+                                                                          id: path_params['snapshot_id']
                                                                         ))
 
           snap.dataset.maintenance_check!(snap.dataset.primary_dataset_in_pool!.pool)
@@ -731,7 +731,7 @@ module VpsAdmin::API::Resources
         end
 
         def query
-          ds = ::Dataset.find_by!(with_restricted(id: params[:dataset_id]))
+          ds = ::Dataset.find_by!(with_restricted(id: path_params['dataset_id']))
           ds.primary_dataset_in_pool!.dataset_in_pool_plans
         end
 
@@ -761,8 +761,8 @@ module VpsAdmin::API::Resources
         end
 
         def prepare
-          ds = ::Dataset.find_by!(with_restricted(id: params[:dataset_id]))
-          @plan = ds.primary_dataset_in_pool!.dataset_in_pool_plans.find_by!(params[:plan_id])
+          ds = ::Dataset.find_by!(with_restricted(id: path_params['dataset_id']))
+          @plan = ds.primary_dataset_in_pool!.dataset_in_pool_plans.find_by!(path_params['plan_id'])
         end
 
         def exec
@@ -790,7 +790,7 @@ module VpsAdmin::API::Resources
         end
 
         def exec
-          s = ::Dataset.find_by!(with_restricted(id: params[:dataset_id]))
+          s = ::Dataset.find_by!(with_restricted(id: path_params['dataset_id']))
           dip = s.primary_dataset_in_pool!
           submitted_plan = input[:environment_dataset_plan]
           plan_def = VpsAdmin::API::DatasetPlans.plans[submitted_plan.dataset_plan.name.to_sym]
@@ -820,10 +820,10 @@ module VpsAdmin::API::Resources
         end
 
         def exec
-          ds = ::Dataset.find_by!(with_restricted(id: params[:dataset_id]))
+          ds = ::Dataset.find_by!(with_restricted(id: path_params['dataset_id']))
           dip = ds.primary_dataset_in_pool!
 
-          dip_plan = dip.dataset_in_pool_plans.find(params[:plan_id])
+          dip_plan = dip.dataset_in_pool_plans.find(path_params['plan_id'])
 
           if !dip_plan.environment_dataset_plan.user_remove && current_user.role != :admin
             error!('Insufficient permission')
@@ -869,7 +869,7 @@ module VpsAdmin::API::Resources
         end
 
         def query
-          ds = ::Dataset.find_by!(with_restricted(id: params[:dataset_id]))
+          ds = ::Dataset.find_by!(with_restricted(id: path_params['dataset_id']))
           props = ds.dataset_properties
           props = props.where(name: input[:name]) if input[:name]
 
@@ -902,14 +902,14 @@ module VpsAdmin::API::Resources
         end
 
         def exec
-          ds = ::Dataset.find_by!(with_restricted(id: params[:dataset_id]))
+          ds = ::Dataset.find_by!(with_restricted(id: path_params['dataset_id']))
           ::DatasetPropertyHistory.includes(
             :dataset_property
           ).joins(
             :dataset_property
           ).find_by!(
             dataset_properties: { dataset_id: ds.id },
-            id: params[:property_history_id]
+            id: path_params['property_history_id']
           )
         end
       end

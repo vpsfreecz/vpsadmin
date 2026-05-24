@@ -70,7 +70,7 @@ module VpsAdmin::API::Resources
 
       def prepare
         @exp = ::DatasetExpansion.joins(:dataset).find_by!(with_restricted(
-                                                             id: params[:dataset_expansion_id]
+                                                             id: path_params['dataset_expansion_id']
                                                            ))
       end
 
@@ -148,7 +148,7 @@ module VpsAdmin::API::Resources
 
       def exec
         exp = ::DatasetExpansion.joins(:dataset).find_by!(with_restricted(
-                                                            id: params[:dataset_expansion_id]
+                                                            id: path_params['dataset_expansion_id']
                                                           ))
         exp.update!(input)
       end
@@ -232,7 +232,7 @@ module VpsAdmin::API::Resources
 
         def query
           ::DatasetExpansionHistory.joins(dataset_expansion: :dataset).where(
-            with_restricted(dataset_expansions: { id: params[:dataset_expansion_id] })
+            with_restricted(dataset_expansions: { id: path_params['dataset_expansion_id'] })
           )
         end
 
@@ -262,8 +262,8 @@ module VpsAdmin::API::Resources
         def prepare
           @hist = ::DatasetExpansionHistory.joins(dataset_expansion: :dataset).find_by!(
             with_restricted(
-              dataset_expansions: { id: params[:dataset_expansion_id] },
-              id: params[:history_id]
+              dataset_expansions: { id: path_params['dataset_expansion_id'] },
+              id: path_params['history_id']
             )
           )
         end
@@ -291,7 +291,7 @@ module VpsAdmin::API::Resources
         end
 
         def exec
-          exp = ::DatasetExpansion.find(params[:dataset_expansion_id])
+          exp = ::DatasetExpansion.find(path_params['dataset_expansion_id'])
 
           error!('this expansion is already resolved') if exp.state != 'active'
 

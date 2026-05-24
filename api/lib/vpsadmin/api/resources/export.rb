@@ -87,7 +87,7 @@ class VpsAdmin::API::Resources::Export < HaveAPI::Resource
 
     def prepare
       @export = self.class.model.find_by!(with_restricted(
-                                            id: params[:export_id]
+                                            id: path_params['export_id']
                                           ))
     end
 
@@ -178,7 +178,7 @@ class VpsAdmin::API::Resources::Export < HaveAPI::Resource
 
     def exec
       export = self.class.model.find_by!(with_restricted(
-                                           id: params[:export_id]
+                                           id: path_params['export_id']
                                          ))
 
       object_state_check!(export, export.user)
@@ -210,7 +210,7 @@ class VpsAdmin::API::Resources::Export < HaveAPI::Resource
 
     def exec
       export = self.class.model.find_by!(with_restricted(
-                                           id: params[:export_id]
+                                           id: path_params['export_id']
                                          ))
 
       object_state_check!(export, export.user)
@@ -259,7 +259,7 @@ class VpsAdmin::API::Resources::Export < HaveAPI::Resource
 
       def query
         self.class.model.joins(:export).where(with_restricted).where(
-          exports: { id: params[:export_id] }
+          exports: { id: path_params['export_id'] }
         )
       end
 
@@ -285,8 +285,8 @@ class VpsAdmin::API::Resources::Export < HaveAPI::Resource
 
       def prepare
         @host = self.class.model.joins(:export).find_by!(with_restricted(
-                                                           exports: { id: params[:export_id] },
-                                                           id: params[:host_id]
+                                                           exports: { id: path_params['export_id'] },
+                                                           id: path_params['host_id']
                                                          ))
       end
 
@@ -318,7 +318,7 @@ class VpsAdmin::API::Resources::Export < HaveAPI::Resource
 
       def exec
         export = ::Export.find_by!(
-          with_restricted(id: params[:export_id])
+          with_restricted(id: path_params['export_id'])
         )
 
         object_state_check!(export, export.user)
@@ -367,8 +367,8 @@ class VpsAdmin::API::Resources::Export < HaveAPI::Resource
 
       def exec
         host = self.class.model.joins(:export).find_by!(with_restricted(
-                                                          exports: { id: params[:export_id] },
-                                                          id: params[:host_id]
+                                                          exports: { id: path_params['export_id'] },
+                                                          id: path_params['host_id']
                                                         ))
 
         object_state_check!(host.export, host.export.user)
@@ -400,8 +400,8 @@ class VpsAdmin::API::Resources::Export < HaveAPI::Resource
 
       def exec
         host = self.class.model.joins(:export).find_by!(with_restricted(
-                                                          exports: { id: params[:export_id] },
-                                                          id: params[:host_id]
+                                                          exports: { id: path_params['export_id'] },
+                                                          id: path_params['host_id']
                                                         ))
 
         object_state_check!(host.export, host.export.user)

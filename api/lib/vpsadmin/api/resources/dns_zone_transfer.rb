@@ -67,7 +67,7 @@ module VpsAdmin::API::Resources
       end
 
       def prepare
-        @zone = self.class.model.existing.joins(:dns_zone).find_by!(with_restricted(id: params[:dns_zone_transfer_id]))
+        @zone = self.class.model.existing.joins(:dns_zone).find_by!(with_restricted(id: path_params['dns_zone_transfer_id']))
       end
 
       def exec
@@ -129,7 +129,7 @@ module VpsAdmin::API::Resources
       include VpsAdmin::API::Lifetimes::ActionHelpers
 
       def exec
-        transfer = self.class.model.existing.joins(:dns_zone).find_by!(with_restricted(id: params[:dns_zone_transfer_id]))
+        transfer = self.class.model.existing.joins(:dns_zone).find_by!(with_restricted(id: path_params['dns_zone_transfer_id']))
 
         object_state_check!(transfer.dns_zone.user) if transfer.dns_zone.user_id
 

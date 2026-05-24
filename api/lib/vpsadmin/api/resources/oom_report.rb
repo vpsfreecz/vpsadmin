@@ -102,7 +102,7 @@ module VpsAdmin::API::Resources
       end
 
       def prepare
-        @oom = ::OomReport.joins(:vps).find_by(with_restricted(id: params[:oom_report_id]))
+        @oom = ::OomReport.joins(:vps).find_by(with_restricted(id: path_params['oom_report_id']))
       end
 
       def exec
@@ -138,7 +138,7 @@ module VpsAdmin::API::Resources
 
         def query
           self.class.model.joins(oom_report: :vps).all.where(with_restricted(
-                                                               oom_report_id: params[:oom_report_id]
+                                                               oom_report_id: path_params['oom_report_id']
                                                              ))
         end
 
@@ -166,8 +166,8 @@ module VpsAdmin::API::Resources
 
         def prepare
           @usage = self.class.model.joins(oom_report: :vps).find_by(with_restricted(
-                                                                      oom_report_id: params[:oom_report_id],
-                                                                      id: params[:usage_id]
+                                                                      oom_report_id: path_params['oom_report_id'],
+                                                                      id: path_params['usage_id']
                                                                     ))
         end
 
@@ -203,7 +203,7 @@ module VpsAdmin::API::Resources
 
         def query
           self.class.model.joins(oom_report: :vps).all.where(with_restricted(
-                                                               oom_report_id: params[:oom_report_id]
+                                                               oom_report_id: path_params['oom_report_id']
                                                              ))
         end
 
@@ -231,8 +231,8 @@ module VpsAdmin::API::Resources
 
         def prepare
           @stat = self.class.model.joins(oom_report: :vps).find_by(with_restricted(
-                                                                     oom_report_id: params[:oom_report_id],
-                                                                     id: params[:stat_id]
+                                                                     oom_report_id: path_params['oom_report_id'],
+                                                                     id: path_params['stat_id']
                                                                    ))
         end
 
@@ -279,7 +279,7 @@ module VpsAdmin::API::Resources
 
         def query
           self.class.model.joins(oom_report: :vps).all.where(with_restricted(
-                                                               oom_report_id: params[:oom_report_id]
+                                                               oom_report_id: path_params['oom_report_id']
                                                              ))
         end
 
@@ -307,8 +307,8 @@ module VpsAdmin::API::Resources
 
         def prepare
           @task = self.class.model.joins(oom_report: :vps).find_by(with_restricted(
-                                                                     oom_report_id: params[:oom_report_id],
-                                                                     id: params[:task_id]
+                                                                     oom_report_id: path_params['oom_report_id'],
+                                                                     id: path_params['task_id']
                                                                    ))
         end
 

@@ -70,7 +70,7 @@ module VpsAdmin::API::Resources
       end
 
       def prepare
-        @net = ::LocationNetwork.find(params[:location_network_id])
+        @net = ::LocationNetwork.find(path_params['location_network_id'])
       end
 
       def exec
@@ -120,7 +120,7 @@ module VpsAdmin::API::Resources
 
       def exec
         VpsAdmin::API::Operations::LocationNetwork::Update.run(
-          ::LocationNetwork.find(params[:location_network_id]),
+          ::LocationNetwork.find(path_params['location_network_id']),
           input
         )
       rescue ActiveRecord::RecordInvalid => e
@@ -137,7 +137,7 @@ module VpsAdmin::API::Resources
 
       def exec
         VpsAdmin::API::Operations::LocationNetwork::Delete.run(
-          ::LocationNetwork.find(params[:location_network_id])
+          ::LocationNetwork.find(path_params['location_network_id'])
         )
         ok!
       end

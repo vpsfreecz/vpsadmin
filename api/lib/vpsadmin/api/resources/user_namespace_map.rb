@@ -69,7 +69,7 @@ class VpsAdmin::API::Resources::UserNamespaceMap < HaveAPI::Resource
 
     def prepare
       @map = self.class.model.joins(:user_namespace).find_by!(with_restricted(
-                                                                user_namespace_maps: { id: params[:user_namespace_map_id] }
+                                                                user_namespace_maps: { id: path_params['user_namespace_map_id'] }
                                                               ))
     end
 
@@ -129,7 +129,7 @@ class VpsAdmin::API::Resources::UserNamespaceMap < HaveAPI::Resource
 
     def exec
       map = self.class.model.joins(:user_namespace).find_by!(with_restricted(
-                                                               id: params[:user_namespace_map_id]
+                                                               id: path_params['user_namespace_map_id']
                                                              ))
       object_state_check!(map.user_namespace.user)
 
@@ -151,7 +151,7 @@ class VpsAdmin::API::Resources::UserNamespaceMap < HaveAPI::Resource
 
     def exec
       map = self.class.model.joins(:user_namespace).find_by!(with_restricted(
-                                                               id: params[:user_namespace_map_id]
+                                                               id: path_params['user_namespace_map_id']
                                                              ))
       object_state_check!(map.user_namespace.user)
 
@@ -199,7 +199,7 @@ class VpsAdmin::API::Resources::UserNamespaceMap < HaveAPI::Resource
         self.class.model.joins(
           user_namespace_map: :user_namespace
         ).where(with_restricted(
-                  user_namespace_maps: { id: params[:user_namespace_map_id] }
+                  user_namespace_maps: { id: path_params['user_namespace_map_id'] }
                 ))
       end
 
@@ -227,7 +227,7 @@ class VpsAdmin::API::Resources::UserNamespaceMap < HaveAPI::Resource
         @entry = self.class.model.joins(
           user_namespace_map: :user_namespace
         ).find_by!(with_restricted(
-                     user_namespace_map_entries: { id: params[:entry_id] }
+                     user_namespace_map_entries: { id: path_params['entry_id'] }
                    ))
       end
 
@@ -260,7 +260,7 @@ class VpsAdmin::API::Resources::UserNamespaceMap < HaveAPI::Resource
 
       def exec
         map = ::UserNamespaceMap.joins(:user_namespace).find_by!(with_restricted(
-                                                                   user_namespace_maps: { id: params[:user_namespace_map_id] }
+                                                                   user_namespace_maps: { id: path_params['user_namespace_map_id'] }
                                                                  ))
         object_state_check!(map.user_namespace.user)
 
@@ -309,7 +309,7 @@ class VpsAdmin::API::Resources::UserNamespaceMap < HaveAPI::Resource
         entry = self.class.model.joins(
           user_namespace_map: :user_namespace
         ).find_by!(with_restricted(
-                     user_namespace_map_entries: { id: params[:entry_id] }
+                     user_namespace_map_entries: { id: path_params['entry_id'] }
                    ))
         object_state_check!(entry.user_namespace_map.user_namespace.user)
 
@@ -340,7 +340,7 @@ class VpsAdmin::API::Resources::UserNamespaceMap < HaveAPI::Resource
         entry = self.class.model.joins(
           user_namespace_map: :user_namespace
         ).find_by!(with_restricted(
-                     user_namespace_map_entries: { id: params[:entry_id] }
+                     user_namespace_map_entries: { id: path_params['entry_id'] }
                    ))
         object_state_check!(entry.user_namespace_map.user_namespace.user)
 

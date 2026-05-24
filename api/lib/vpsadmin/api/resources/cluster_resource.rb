@@ -65,7 +65,7 @@ module VpsAdmin::API::Resources
       end
 
       def prepare
-        @r = ::ClusterResource.find(params[:cluster_resource_id])
+        @r = ::ClusterResource.find(path_params['cluster_resource_id'])
       end
 
       def exec
@@ -111,7 +111,7 @@ module VpsAdmin::API::Resources
       end
 
       def exec
-        r = ::ClusterResource.find(params[:cluster_resource_id])
+        r = ::ClusterResource.find(path_params['cluster_resource_id'])
         r.update!(input)
         r
       rescue ActiveRecord::RecordInvalid => e

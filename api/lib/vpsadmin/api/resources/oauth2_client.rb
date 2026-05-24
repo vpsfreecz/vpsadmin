@@ -62,7 +62,7 @@ module VpsAdmin::API::Resources
       end
 
       def prepare
-        @client = self.class.model.find(params[:oauth2_client_id])
+        @client = self.class.model.find(path_params['oauth2_client_id'])
       end
 
       def exec
@@ -117,7 +117,7 @@ module VpsAdmin::API::Resources
       def exec
         secret = input.delete(:client_secret)
 
-        client = self.class.model.find(params[:oauth2_client_id])
+        client = self.class.model.find(path_params['oauth2_client_id'])
         client.set_secret(secret) if secret
         client.assign_attributes(input)
         client.save!
@@ -133,7 +133,7 @@ module VpsAdmin::API::Resources
       end
 
       def exec
-        client = self.class.model.find(params[:oauth2_client_id])
+        client = self.class.model.find(path_params['oauth2_client_id'])
         client.destroy!
         ok!
       rescue ActiveRecord::RecordInvalid => e

@@ -72,7 +72,7 @@ module VpsAdmin::API::Resources
       end
 
       def prepare
-        @payment = ::IncomingPayment.find(params['incoming_payment_id'])
+        @payment = ::IncomingPayment.find(path_params['incoming_payment_id'])
       end
 
       def exec
@@ -97,7 +97,7 @@ module VpsAdmin::API::Resources
       end
 
       def exec
-        payment = ::IncomingPayment.find(params[:incoming_payment_id])
+        payment = ::IncomingPayment.find(path_params['incoming_payment_id'])
         payment.update!(state: ::IncomingPayment.states[input[:state]])
         payment
       end

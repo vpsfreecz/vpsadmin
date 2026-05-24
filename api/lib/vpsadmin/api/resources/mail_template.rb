@@ -53,7 +53,7 @@ module VpsAdmin::API::Resources
       end
 
       def prepare
-        @tpl = ::MailTemplate.find(params[:mail_template_id])
+        @tpl = ::MailTemplate.find(path_params['mail_template_id'])
       end
 
       def exec
@@ -104,7 +104,7 @@ module VpsAdmin::API::Resources
       end
 
       def exec
-        tpl = ::MailTemplate.find(params[:mail_template_id])
+        tpl = ::MailTemplate.find(path_params['mail_template_id'])
 
         if tpl.update(input)
           ok!(tpl)
@@ -123,7 +123,7 @@ module VpsAdmin::API::Resources
       end
 
       def exec
-        ::MailTemplate.find(params[:mail_template_id]).destroy!
+        ::MailTemplate.find(path_params['mail_template_id']).destroy!
         ok!
       end
     end
@@ -154,7 +154,7 @@ module VpsAdmin::API::Resources
         end
 
         def query
-          ::MailTemplateRecipient.where(mail_template_id: params[:mail_template_id])
+          ::MailTemplateRecipient.where(mail_template_id: path_params['mail_template_id'])
         end
 
         def count
@@ -179,8 +179,8 @@ module VpsAdmin::API::Resources
 
         def prepare
           @r = ::MailTemplateRecipient.find_by!(
-            mail_template_id: params[:mail_template_id],
-            mail_recipient_id: params[:recipient_id]
+            mail_template_id: path_params['mail_template_id'],
+            mail_recipient_id: path_params['recipient_id']
           )
         end
 
@@ -206,7 +206,7 @@ module VpsAdmin::API::Resources
         end
 
         def exec
-          tpl = ::MailTemplate.find(params[:mail_template_id])
+          tpl = ::MailTemplate.find(path_params['mail_template_id'])
 
           r = ::MailTemplateRecipient.new(
             mail_template: tpl,
@@ -231,8 +231,8 @@ module VpsAdmin::API::Resources
 
         def exec
           ::MailTemplateRecipient.find_by!(
-            mail_template_id: params[:mail_template_id],
-            mail_recipient_id: params[:recipient_id]
+            mail_template_id: path_params['mail_template_id'],
+            mail_recipient_id: path_params['recipient_id']
           ).destroy
           ok!
         end
@@ -273,7 +273,7 @@ module VpsAdmin::API::Resources
         end
 
         def query
-          ::MailTemplateTranslation.where(mail_template_id: params[:mail_template_id])
+          ::MailTemplateTranslation.where(mail_template_id: path_params['mail_template_id'])
         end
 
         def count
@@ -298,8 +298,8 @@ module VpsAdmin::API::Resources
 
         def prepare
           @tr = ::MailTemplateTranslation.find_by!(
-            id: params[:translation_id],
-            mail_template_id: params[:mail_template_id]
+            id: path_params['translation_id'],
+            mail_template_id: path_params['mail_template_id']
           )
         end
 
@@ -324,7 +324,7 @@ module VpsAdmin::API::Resources
         end
 
         def exec
-          input.update(mail_template: ::MailTemplate.find(params[:mail_template_id]))
+          input.update(mail_template: ::MailTemplate.find(path_params['mail_template_id']))
           tr = ::MailTemplateTranslation.new(input)
 
           if tr.save
@@ -353,8 +353,8 @@ module VpsAdmin::API::Resources
 
         def exec
           tr = ::MailTemplateTranslation.find_by!(
-            id: params[:translation_id],
-            mail_template_id: params[:mail_template_id]
+            id: path_params['translation_id'],
+            mail_template_id: path_params['mail_template_id']
           )
 
           if tr.update(input)
@@ -375,8 +375,8 @@ module VpsAdmin::API::Resources
 
         def exec
           ::MailTemplateTranslation.find_by!(
-            id: params[:translation_id],
-            mail_template_id: params[:mail_template_id]
+            id: path_params['translation_id'],
+            mail_template_id: path_params['mail_template_id']
           ).destroy!
           ok!
         end

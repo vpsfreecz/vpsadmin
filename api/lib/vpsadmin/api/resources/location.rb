@@ -250,7 +250,7 @@ class VpsAdmin::API::Resources::Location < HaveAPI::Resource
     end
 
     def exec
-      ::Location.find(params[:location_id])
+      ::Location.find(path_params['location_id'])
     end
   end
 
@@ -282,7 +282,7 @@ class VpsAdmin::API::Resources::Location < HaveAPI::Resource
     end
 
     def exec
-      loc = ::Location.find(params[:location_id])
+      loc = ::Location.find(path_params['location_id'])
 
       attrs = to_db_names(params[:location])
       if attrs.has_key?(:remote_console_server) && attrs[:remote_console_server].nil?
@@ -308,7 +308,7 @@ class VpsAdmin::API::Resources::Location < HaveAPI::Resource
   #   end
   #
   #   def exec
-  #     ::Location.find(params[:location_id]).destroy
+  #     ::Location.find(path_params['location_id']).destroy
   #   end
   # end
 

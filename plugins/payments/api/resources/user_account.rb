@@ -49,7 +49,7 @@ module VpsAdmin::API::Resources
       end
 
       def prepare
-        @acc = ::UserAccount.find_by!(user_id: params['user_account_id'])
+        @acc = ::UserAccount.find_by!(user_id: path_params['user_account_id'])
       end
 
       def exec
@@ -73,7 +73,7 @@ module VpsAdmin::API::Resources
       end
 
       def exec
-        acc = ::UserAccount.find_by!(user_id: params['user_account_id'])
+        acc = ::UserAccount.find_by!(user_id: path_params['user_account_id'])
 
         acc.class.transaction do
           acc.update!(input)

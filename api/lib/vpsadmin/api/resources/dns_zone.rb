@@ -78,7 +78,7 @@ module VpsAdmin::API::Resources
       end
 
       def prepare
-        @zone = self.class.model.existing.find_by!(with_restricted(id: params[:dns_zone_id]))
+        @zone = self.class.model.existing.find_by!(with_restricted(id: path_params['dns_zone_id']))
       end
 
       def exec
@@ -161,7 +161,7 @@ module VpsAdmin::API::Resources
       include VpsAdmin::API::Lifetimes::ActionHelpers
 
       def exec
-        zone = self.class.model.existing.find_by!(with_restricted(id: params[:dns_zone_id]))
+        zone = self.class.model.existing.find_by!(with_restricted(id: path_params['dns_zone_id']))
         object_state_check!(zone.user) if zone.user_id
 
         @chain, ret = VpsAdmin::API::Operations::DnsZone::Update.run(zone, to_db_names(input))
@@ -188,7 +188,7 @@ module VpsAdmin::API::Resources
       include VpsAdmin::API::Lifetimes::ActionHelpers
 
       def exec
-        zone = self.class.model.existing.find_by!(with_restricted(id: params[:dns_zone_id]))
+        zone = self.class.model.existing.find_by!(with_restricted(id: path_params['dns_zone_id']))
         object_state_check!(zone.user) if zone.user_id
 
         op =

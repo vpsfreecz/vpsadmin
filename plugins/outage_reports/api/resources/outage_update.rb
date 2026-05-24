@@ -99,7 +99,7 @@ module VpsAdmin::API::Resources
       end
 
       def prepare
-        q = ::OutageUpdate.includes(:outage).where(id: params[:outage_update_id])
+        q = ::OutageUpdate.includes(:outage).where(id: path_params['outage_update_id'])
 
         if current_user.nil? || current_user.role != :admin
           q = q

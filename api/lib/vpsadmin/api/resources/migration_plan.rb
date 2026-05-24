@@ -63,7 +63,7 @@ module VpsAdmin::API::Resources
       end
 
       def prepare
-        @plan = ::MigrationPlan.find(params[:migration_plan_id])
+        @plan = ::MigrationPlan.find(path_params['migration_plan_id'])
       end
 
       def exec
@@ -110,7 +110,7 @@ module VpsAdmin::API::Resources
       end
 
       def exec
-        plan = ::MigrationPlan.find(params[:migration_plan_id])
+        plan = ::MigrationPlan.find(path_params['migration_plan_id'])
 
         error!('This migration plan has already been started') if plan.state != 'staged'
 
@@ -133,7 +133,7 @@ module VpsAdmin::API::Resources
       end
 
       def exec
-        plan = ::MigrationPlan.find(params[:migration_plan_id])
+        plan = ::MigrationPlan.find(path_params['migration_plan_id'])
 
         error!('This migration plan is not running') if plan.state != 'running'
 
@@ -150,7 +150,7 @@ module VpsAdmin::API::Resources
       end
 
       def exec
-        plan = ::MigrationPlan.find(params[:migration_plan_id])
+        plan = ::MigrationPlan.find(path_params['migration_plan_id'])
 
         error!('This migration plan is not in the staging phase anymore') if plan.state != 'staged'
 
@@ -200,7 +200,7 @@ module VpsAdmin::API::Resources
         end
 
         def query
-          q = with_includes.where(migration_plan_id: params[:migration_plan_id])
+          q = with_includes.where(migration_plan_id: path_params['migration_plan_id'])
           q = q.where(state: ::VpsMigration.states[input[:state]]) if input[:state]
           q = q.where(src_node: input[:src_node]) if input[:src_node]
           q = q.where(dst_node: input[:dst_node]) if input[:dst_node]
@@ -229,8 +229,8 @@ module VpsAdmin::API::Resources
 
         def prepare
           @m = ::VpsMigration.find_by!(
-            migration_plan_id: params[:migration_plan_id],
-            id: params[:vps_migration_id]
+            migration_plan_id: path_params['migration_plan_id'],
+            id: path_params['vps_migration_id']
           )
         end
 
@@ -257,7 +257,7 @@ module VpsAdmin::API::Resources
         end
 
         def exec
-          plan = ::MigrationPlan.find(params[:migration_plan_id])
+          plan = ::MigrationPlan.find(path_params['migration_plan_id'])
 
           error!('This migration plans has already been started.') if plan.state != 'staged'
 

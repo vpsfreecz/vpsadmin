@@ -60,7 +60,7 @@ module VpsAdmin::API::Resources
       end
 
       def prepare
-        @server = with_includes(self.class.model.where(with_restricted(id: params[:dns_server_id]))).take!
+        @server = with_includes(self.class.model.where(with_restricted(id: path_params['dns_server_id']))).take!
       end
 
       def exec
@@ -108,7 +108,7 @@ module VpsAdmin::API::Resources
       end
 
       def exec
-        server = self.class.model.find(params[:dns_server_id])
+        server = self.class.model.find(path_params['dns_server_id'])
         server.update!(input)
         server
       end
@@ -122,7 +122,7 @@ module VpsAdmin::API::Resources
       end
 
       def exec
-        server = self.class.model.find(params[:dns_server_id])
+        server = self.class.model.find(path_params['dns_server_id'])
 
         if server.dns_server_zones.any?
           error!('DNS server is in use, remove server zones first')

@@ -117,7 +117,7 @@ module VpsAdmin::API::Resources
       end
 
       def prepare
-        @server_zone = with_includes(self.class.model.existing.joins(:dns_zone, :dns_server).where(with_restricted(id: params[:dns_server_zone_id]))).take!
+        @server_zone = with_includes(self.class.model.existing.joins(:dns_zone, :dns_server).where(with_restricted(id: path_params['dns_server_zone_id']))).take!
       end
 
       def exec
@@ -166,7 +166,7 @@ module VpsAdmin::API::Resources
       end
 
       def exec
-        dns_server_zone = self.class.model.existing.find(params[:dns_server_zone_id])
+        dns_server_zone = self.class.model.existing.find(path_params['dns_server_zone_id'])
         @chain = VpsAdmin::API::Operations::DnsServerZone::Destroy.run(dns_server_zone)
         ok!
       end

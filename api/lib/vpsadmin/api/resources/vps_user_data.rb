@@ -68,7 +68,7 @@ module VpsAdmin::API::Resources
       end
 
       def prepare
-        @data = self.class.model.find_by!(with_restricted(id: params[:vps_user_data_id]))
+        @data = self.class.model.find_by!(with_restricted(id: path_params['vps_user_data_id']))
       end
 
       def exec
@@ -133,7 +133,7 @@ module VpsAdmin::API::Resources
       def exec
         ok! if input.empty?
 
-        data = self.class.model.find_by!(with_restricted(id: params[:vps_user_data_id]))
+        data = self.class.model.find_by!(with_restricted(id: path_params['vps_user_data_id']))
         object_state_check!(data.user)
 
         data.update!(input)
@@ -163,7 +163,7 @@ module VpsAdmin::API::Resources
       end
 
       def exec
-        data = self.class.model.find_by!(with_restricted(id: params[:vps_user_data_id]))
+        data = self.class.model.find_by!(with_restricted(id: path_params['vps_user_data_id']))
         error!('access denied') if input[:vps].user_id != data.user_id
 
         unless input[:vps].os_template.support_user_data?(data)
@@ -196,7 +196,7 @@ module VpsAdmin::API::Resources
       end
 
       def exec
-        data = self.class.model.find_by!(with_restricted(id: params[:vps_user_data_id]))
+        data = self.class.model.find_by!(with_restricted(id: path_params['vps_user_data_id']))
         object_state_check!(data.user)
 
         data.destroy!

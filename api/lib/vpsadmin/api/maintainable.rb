@@ -42,7 +42,7 @@ module VpsAdmin::API
           def exec
             m = self.class.model
             res = self.class.resource
-            obj = res.singular ? nil : m.find(params[:"#{res.to_s.demodulize.underscore}_id"])
+            obj = res.singular ? nil : m.find(path_params["#{res.to_s.demodulize.underscore}_id"])
 
             if input[:lock]
               lock = MaintenanceLock.new(

@@ -132,7 +132,7 @@ module VpsAdmin::API::Resources
       end
 
       def prepare
-        @box = ::HelpBox.find(params[:help_box_id])
+        @box = ::HelpBox.find(path_params['help_box_id'])
       end
 
       def exec
@@ -179,7 +179,7 @@ module VpsAdmin::API::Resources
       end
 
       def exec
-        box = ::HelpBox.find(params[:help_box_id])
+        box = ::HelpBox.find(path_params['help_box_id'])
         box.update!(input)
         box
       rescue ActiveRecord::RecordInvalid => e
@@ -195,7 +195,7 @@ module VpsAdmin::API::Resources
       end
 
       def exec
-        box = ::HelpBox.find(params[:help_box_id])
+        box = ::HelpBox.find(path_params['help_box_id'])
         box.destroy!
         ok!
       end

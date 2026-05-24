@@ -106,7 +106,7 @@ module VpsAdmin::API
     #   class Update < HaveAPI::Actions::Defaults::Update
     #       ...
     #       def exec
-    #         obj = MyObject.find(params[:my_object_id])
+    #         obj = MyObject.find(path_params['my_object_id'])
     #         update_object_state(obj) if input[:object_state]
     #       end
     #   end
@@ -170,7 +170,7 @@ module VpsAdmin::API
           def query
             ::ObjectState.where(
               class_name: self.class::PARENT_RESOURCE.model.name,
-              row_id: params[self.class::PARENT_OBJECT_ID]
+              row_id: path_params[self.class::PARENT_OBJECT_ID.to_s]
             )
           end
 
@@ -199,8 +199,8 @@ module VpsAdmin::API
           def prepare
             @state = with_includes.where(
               class_name: self.class::PARENT_RESOURCE.model.name,
-              row_id: params[self.class::PARENT_OBJECT_ID],
-              id: params[:state_log_id]
+              row_id: path_params[self.class::PARENT_OBJECT_ID.to_s],
+              id: path_params['state_log_id']
             ).take!
           end
 

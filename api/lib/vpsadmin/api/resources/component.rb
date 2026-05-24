@@ -48,7 +48,7 @@ module VpsAdmin::API::Resources
       end
 
       def prepare
-        @component = self.class.model.find(params[:component_id])
+        @component = self.class.model.find(path_params['component_id'])
       end
 
       def exec

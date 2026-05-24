@@ -75,7 +75,7 @@ module VpsAdmin::API::Plugins::Requests
 
         def prepare
           @req = ::UserRequest.find_by!(with_restricted(
-                                          id: params[:"#{self.class.resource.to_s.demodulize.underscore}_id"]
+                                          id: path_params["#{self.class.resource.to_s.demodulize.underscore}_id"]
                                         ))
         end
 
@@ -134,7 +134,7 @@ module VpsAdmin::API::Plugins::Requests
 
         def exec
           r = ::UserRequest.find(
-            params[:"#{self.class.resource.to_s.demodulize.underscore}_id"]
+            path_params["#{self.class.resource.to_s.demodulize.underscore}_id"]
           )
 
           request_params = input.clone

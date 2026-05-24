@@ -62,7 +62,7 @@ module VpsAdmin::API::Resources
       end
 
       def exec
-        self.class.model.joins(:vps).find_by!(with_restricted(id: params[:oom_report_rule_id]))
+        self.class.model.joins(:vps).find_by!(with_restricted(id: path_params['oom_report_rule_id']))
       end
     end
 
@@ -124,7 +124,7 @@ module VpsAdmin::API::Resources
       end
 
       def exec
-        rule = self.class.model.joins(:vps).find_by!(with_restricted(id: params[:oom_report_rule_id]))
+        rule = self.class.model.joins(:vps).find_by!(with_restricted(id: path_params['oom_report_rule_id']))
         object_state_check!(rule.vps, rule.vps.user)
 
         rule.update!(input)
@@ -144,7 +144,7 @@ module VpsAdmin::API::Resources
       end
 
       def exec
-        rule = self.class.model.joins(:vps).find_by!(with_restricted(id: params[:oom_report_rule_id]))
+        rule = self.class.model.joins(:vps).find_by!(with_restricted(id: path_params['oom_report_rule_id']))
         object_state_check!(rule.vps, rule.vps.user)
 
         rule.destroy!

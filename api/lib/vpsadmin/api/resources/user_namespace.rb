@@ -65,7 +65,7 @@ class VpsAdmin::API::Resources::UserNamespace < HaveAPI::Resource
     end
 
     def prepare
-      @userns = self.class.model.find_by!(with_restricted(id: params[:user_namespace_id]))
+      @userns = self.class.model.find_by!(with_restricted(id: path_params['user_namespace_id']))
     end
 
     def exec

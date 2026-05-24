@@ -98,7 +98,7 @@ module VpsAdmin::API::Resources
       def prepare
         q = self.class.model
                 .joins(dns_server_zone: %i[dns_zone dns_server])
-                .where(with_restricted(id: params[:dns_server_zone_transfer_log_id]))
+                .where(with_restricted(id: path_params['dns_server_zone_transfer_log_id']))
 
         @log = q.take!
       end

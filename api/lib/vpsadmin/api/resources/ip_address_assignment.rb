@@ -137,7 +137,7 @@ module VpsAdmin::API::Resources
 
       def prepare
         @assignment = ::IpAddressAssignment.find_by(with_restricted(
-                                                      id: params[:ip_address_assignment_id]
+                                                      id: path_params['ip_address_assignment_id']
                                                     ))
       end
 

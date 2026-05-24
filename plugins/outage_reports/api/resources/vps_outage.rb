@@ -71,7 +71,7 @@ module VpsAdmin::API::Resources
         q = ::OutageVps
             .joins(:outage)
             .merge(::Outage.visible_to(current_user))
-            .where(with_restricted(id: params[:vps_outage_id]))
+            .where(with_restricted(id: path_params['vps_outage_id']))
         @outage = with_includes(q).take!
       end
 

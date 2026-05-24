@@ -52,7 +52,7 @@ class VpsAdmin::API::Resources::DatasetPlan < HaveAPI::Resource
     end
 
     def exec
-      ::DatasetPlan.find(params[:dataset_plan_id])
+      ::DatasetPlan.find(path_params['dataset_plan_id'])
     end
   end
 end

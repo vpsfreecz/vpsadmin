@@ -225,7 +225,7 @@ module VpsAdmin::API::Resources
       end
 
       def prepare
-        @outage = ::Outage.visible_to(current_user).find(params[:outage_id])
+        @outage = ::Outage.visible_to(current_user).find(path_params['outage_id'])
       end
 
       def exec
@@ -282,7 +282,7 @@ module VpsAdmin::API::Resources
       end
 
       def exec
-        outage = ::Outage.find(params[:outage_id])
+        outage = ::Outage.find(path_params['outage_id'])
         tr = extract_translations
 
         outage.update_outage!(to_db_names(input), tr)
@@ -301,7 +301,7 @@ module VpsAdmin::API::Resources
       end
 
       def exec
-        outage = ::Outage.find(params[:outage_id])
+        outage = ::Outage.find(path_params['outage_id'])
         outage.set_affected_vpses
         outage.set_affected_exports
         outage.set_affected_users
@@ -341,7 +341,7 @@ module VpsAdmin::API::Resources
           ::OutageEntity
             .joins(:outage)
             .merge(::Outage.visible_to(current_user))
-            .where(outage_id: params[:outage_id])
+            .where(outage_id: path_params['outage_id'])
         end
 
         def count
@@ -370,8 +370,8 @@ module VpsAdmin::API::Resources
                     .joins(:outage)
                     .merge(::Outage.visible_to(current_user))
                     .find_by!(
-                      outage_id: params[:outage_id],
-                      id: params[:entity_id]
+                      outage_id: path_params['outage_id'],
+                      id: path_params['entity_id']
                     )
         end
 
@@ -397,7 +397,7 @@ module VpsAdmin::API::Resources
 
         def exec
           ::OutageEntity.create!(
-            outage: ::Outage.find(params[:outage_id]),
+            outage: ::Outage.find(path_params['outage_id']),
             name: input[:name],
             row_id: input[:entity_id]
           )
@@ -417,8 +417,8 @@ module VpsAdmin::API::Resources
 
         def exec
           ::OutageEntity.find_by!(
-            outage_id: params[:outage_id],
-            id: params[:entity_id]
+            outage_id: path_params['outage_id'],
+            id: path_params['entity_id']
           ).destroy!
           ok!
         end
@@ -459,7 +459,7 @@ module VpsAdmin::API::Resources
           ::OutageHandler
             .joins(:outage)
             .merge(::Outage.visible_to(current_user))
-            .where(outage_id: params[:outage_id])
+            .where(outage_id: path_params['outage_id'])
         end
 
         def count
@@ -490,8 +490,8 @@ module VpsAdmin::API::Resources
                      .joins(:outage)
                      .merge(::Outage.visible_to(current_user))
                      .find_by!(
-                       outage_id: params[:outage_id],
-                       id: params[:handler_id]
+                       outage_id: path_params['outage_id'],
+                       id: path_params['handler_id']
                      )
         end
 
@@ -517,7 +517,7 @@ module VpsAdmin::API::Resources
 
         def exec
           ::OutageHandler.create!(
-            outage: ::Outage.find(params[:outage_id]),
+            outage: ::Outage.find(path_params['outage_id']),
             user: input[:user],
             note: input[:note]
           )
@@ -546,8 +546,8 @@ module VpsAdmin::API::Resources
 
         def exec
           ::OutageHandler.find_by!(
-            outage_id: ::Outage.find(params[:outage_id]),
-            id: params[:handler_id]
+            outage_id: ::Outage.find(path_params['outage_id']),
+            id: path_params['handler_id']
           ).update!(note: input[:note])
         rescue ActiveRecord::RecordInvalid => e
           error!('update failed', e.record.errors.to_hash)
@@ -563,8 +563,8 @@ module VpsAdmin::API::Resources
 
         def exec
           ::OutageHandler.find_by!(
-            outage_id: params[:outage_id],
-            id: params[:handler_id]
+            outage_id: path_params['outage_id'],
+            id: path_params['handler_id']
           ).destroy!
           ok!
         end

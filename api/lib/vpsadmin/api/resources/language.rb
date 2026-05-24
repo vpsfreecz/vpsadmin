@@ -41,7 +41,7 @@ module VpsAdmin::API::Resources
       authorize { allow }
 
       def prepare
-        @lang = ::Language.find(params[:language_id])
+        @lang = ::Language.find(path_params['language_id'])
       end
 
       def exec

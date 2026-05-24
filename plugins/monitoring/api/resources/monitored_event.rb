@@ -99,7 +99,7 @@ module VpsAdmin::API::Resources
 
       def prepare
         @event = ::MonitoredEvent.where(with_restricted(
-                                          id: params[:monitored_event_id]
+                                          id: path_params['monitored_event_id']
                                         )).where(
                                           'access_level <= ?', current_user.level
                                         ).take!
@@ -129,7 +129,7 @@ module VpsAdmin::API::Resources
 
       def exec
         event = ::MonitoredEvent.where(with_restricted(
-                                         id: params[:monitored_event_id]
+                                         id: path_params['monitored_event_id']
                                        )).where(
                                          'access_level <= ?', current_user.level
                                        ).take!
@@ -162,7 +162,7 @@ module VpsAdmin::API::Resources
 
       def exec
         event = ::MonitoredEvent.where(with_restricted(
-                                         id: params[:monitored_event_id]
+                                         id: path_params['monitored_event_id']
                                        )).where(
                                          'access_level <= ?', current_user.level
                                        ).take!
@@ -213,7 +213,7 @@ module VpsAdmin::API::Resources
 
         def query
           q = ::MonitoredEventLog.joins(:monitored_event).where(with_restricted(
-                                                                  monitored_event_id: params[:monitored_event_id]
+                                                                  monitored_event_id: path_params['monitored_event_id']
                                                                 )).where(
                                                                   'monitored_events.access_level <= ?', current_user.level
                                                                 )
@@ -255,8 +255,8 @@ module VpsAdmin::API::Resources
 
         def prepare
           @event = ::MonitoredEventLog.joins(:monitored_event).where(with_restricted(
-                                                                       monitored_event_id: params[:monitored_event_id],
-                                                                       id: params[:log_id]
+                                                                       monitored_event_id: path_params['monitored_event_id'],
+                                                                       id: path_params['log_id']
                                                                      )).where(
                                                                        'monitored_events.access_level <= ?', current_user.level
                                                                      ).take!

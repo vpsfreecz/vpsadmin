@@ -62,7 +62,7 @@ module VpsAdmin::API::Resources
       end
 
       def prepare
-        @p = ::ClusterResourcePackage.find(params[:cluster_resource_package_id])
+        @p = ::ClusterResourcePackage.find(path_params['cluster_resource_package_id'])
       end
 
       def exec
@@ -110,7 +110,7 @@ module VpsAdmin::API::Resources
       end
 
       def exec
-        pkg = ::ClusterResourcePackage.find(params[:cluster_resource_package_id])
+        pkg = ::ClusterResourcePackage.find(path_params['cluster_resource_package_id'])
         pkg.update!(input)
         pkg
       rescue ActiveRecord::RecordInvalid => e
@@ -126,7 +126,7 @@ module VpsAdmin::API::Resources
       end
 
       def exec
-        pkg = ::ClusterResourcePackage.find(params[:cluster_resource_package_id])
+        pkg = ::ClusterResourcePackage.find(path_params['cluster_resource_package_id'])
 
         if pkg.can_destroy?
           pkg.destroy!
@@ -166,7 +166,7 @@ module VpsAdmin::API::Resources
 
         def query
           ::ClusterResourcePackageItem.where(
-            cluster_resource_package_id: params[:cluster_resource_package_id]
+            cluster_resource_package_id: path_params['cluster_resource_package_id']
           )
         end
 
@@ -192,8 +192,8 @@ module VpsAdmin::API::Resources
 
         def prepare
           @it = ::ClusterResourcePackageItem.where(
-            cluster_resource_package_id: params[:cluster_resource_package_id],
-            id: params[:item_id]
+            cluster_resource_package_id: path_params['cluster_resource_package_id'],
+            id: path_params['item_id']
           ).take!
         end
 
@@ -219,7 +219,7 @@ module VpsAdmin::API::Resources
 
         def exec
           ::ClusterResourcePackage
-            .find(params[:cluster_resource_package_id])
+            .find(path_params['cluster_resource_package_id'])
             .add_item(input[:cluster_resource], input[:value])
         rescue ActiveRecord::RecordInvalid => e
           error!('create failed', e.record.errors.to_hash)
@@ -245,8 +245,8 @@ module VpsAdmin::API::Resources
 
         def exec
           item = ::ClusterResourcePackageItem.where(
-            cluster_resource_package_id: params[:cluster_resource_package_id],
-            id: params[:item_id]
+            cluster_resource_package_id: path_params['cluster_resource_package_id'],
+            id: path_params['item_id']
           ).take!
           item.cluster_resource_package.update_item(item, input[:value])
         rescue ActiveRecord::RecordInvalid => e
@@ -263,8 +263,8 @@ module VpsAdmin::API::Resources
 
         def exec
           item = ::ClusterResourcePackageItem.where(
-            cluster_resource_package_id: params[:cluster_resource_package_id],
-            id: params[:item_id]
+            cluster_resource_package_id: path_params['cluster_resource_package_id'],
+            id: path_params['item_id']
           ).take!
           item.cluster_resource_package.remove_item(item)
           ok!

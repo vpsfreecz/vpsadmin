@@ -59,7 +59,7 @@ module VpsAdmin::API::Resources
       end
 
       def prepare
-        @mailbox = ::Mailbox.find(params[:mailbox_id])
+        @mailbox = ::Mailbox.find(path_params['mailbox_id'])
       end
 
       def exec
@@ -109,7 +109,7 @@ module VpsAdmin::API::Resources
       end
 
       def exec
-        m = ::Mailbox.find(params[:mailbox_id])
+        m = ::Mailbox.find(path_params['mailbox_id'])
         m.update!(input)
         m
       end
@@ -123,7 +123,7 @@ module VpsAdmin::API::Resources
       end
 
       def exec
-        ::Mailbox.find(params[:mailbox_id]).destroy!
+        ::Mailbox.find(path_params['mailbox_id']).destroy!
         ok!
       end
     end
@@ -159,7 +159,7 @@ module VpsAdmin::API::Resources
 
         def query
           ::MailboxHandler.joins(:mailbox).where(
-            mailboxes: { id: params[:mailbox_id] }
+            mailboxes: { id: path_params['mailbox_id'] }
           )
         end
 
@@ -186,8 +186,8 @@ module VpsAdmin::API::Resources
 
         def prepare
           @handler = ::MailboxHandler.joins(:mailbox).find_by!(
-            mailboxes: { id: params[:mailbox_id] },
-            id: params[:handler_id]
+            mailboxes: { id: path_params['mailbox_id'] },
+            id: path_params['handler_id']
           )
         end
 
@@ -214,7 +214,7 @@ module VpsAdmin::API::Resources
 
         def exec
           ::MailboxHandler.create!(input.merge(
-                                     mailbox: ::Mailbox.find(params[:mailbox_id])
+                                     mailbox: ::Mailbox.find(path_params['mailbox_id'])
                                    ))
         end
       end
@@ -236,8 +236,8 @@ module VpsAdmin::API::Resources
 
         def exec
           h = ::MailboxHandler.joins(:mailbox).find_by!(
-            mailboxes: { id: params[:mailbox_id] },
-            id: params[:handler_id]
+            mailboxes: { id: path_params['mailbox_id'] },
+            id: path_params['handler_id']
           )
           h.update!(input)
           h
@@ -253,8 +253,8 @@ module VpsAdmin::API::Resources
 
         def exec
           ::MailboxHandler.joins(:mailbox).find_by!(
-            mailboxes: { id: params[:mailbox_id] },
-            id: params[:handler_id]
+            mailboxes: { id: path_params['mailbox_id'] },
+            id: path_params['handler_id']
           ).destroy!
           ok!
         end

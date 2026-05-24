@@ -51,7 +51,7 @@ module VpsAdmin::API::Resources
       end
 
       def prepare
-        @r = ::MailRecipient.find(params[:mail_recipient_id])
+        @r = ::MailRecipient.find(path_params['mail_recipient_id'])
       end
 
       def exec
@@ -102,7 +102,7 @@ module VpsAdmin::API::Resources
       end
 
       def exec
-        tpl = ::MailRecipient.find(params[:mail_recipient_id])
+        tpl = ::MailRecipient.find(path_params['mail_recipient_id'])
 
         if tpl.update(input)
           ok!(tpl)
@@ -121,7 +121,7 @@ module VpsAdmin::API::Resources
       end
 
       def exec
-        ::MailRecipient.find(params[:mail_recipient_id]).destroy!
+        ::MailRecipient.find(path_params['mail_recipient_id']).destroy!
         ok!
       end
     end

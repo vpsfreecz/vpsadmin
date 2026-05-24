@@ -63,7 +63,7 @@ module VpsAdmin::API::Resources
       end
 
       def prepare
-        @mail = ::MailLog.find(params[:mail_log_id])
+        @mail = ::MailLog.find(path_params['mail_log_id'])
       end
 
       def exec

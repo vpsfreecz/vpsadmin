@@ -89,7 +89,7 @@ class VpsAdmin::API::Resources::DnsResolver < HaveAPI::Resource
     end
 
     def prepare
-      @dns_resolver = ::DnsResolver.find(params[:dns_resolver_id])
+      @dns_resolver = ::DnsResolver.find(path_params['dns_resolver_id'])
     end
 
     def exec
@@ -138,7 +138,7 @@ class VpsAdmin::API::Resources::DnsResolver < HaveAPI::Resource
     end
 
     def exec
-      resolver = ::DnsResolver.find(params[:dns_resolver_id])
+      resolver = ::DnsResolver.find(path_params['dns_resolver_id'])
       @chain, ret = TransactionChains::DnsResolver::Update.fire(resolver, to_db_names(input))
       ret
     rescue ActiveRecord::RecordInvalid => e
@@ -163,7 +163,7 @@ class VpsAdmin::API::Resources::DnsResolver < HaveAPI::Resource
     end
 
     def exec
-      ns = ::DnsResolver.find(params[:dns_resolver_id])
+      ns = ::DnsResolver.find(path_params['dns_resolver_id'])
       error!('The DNS resolver is in use. Use force=true to override.') if !input[:force] && ns.in_use?
 
       @chain, = TransactionChains::DnsResolver::Destroy.fire(ns)

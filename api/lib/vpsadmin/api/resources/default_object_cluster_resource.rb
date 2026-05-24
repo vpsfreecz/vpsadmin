@@ -61,7 +61,7 @@ module VpsAdmin::API::Resources
       end
 
       def prepare
-        @defaut_resource_value = self.class.model.find(params[:default_object_cluster_resource_id])
+        @defaut_resource_value = self.class.model.find(path_params['default_object_cluster_resource_id'])
       end
 
       def exec
@@ -112,7 +112,7 @@ module VpsAdmin::API::Resources
       end
 
       def exec
-        record = ::DefaultObjectClusterResource.find(params[:default_object_cluster_resource_id])
+        record = ::DefaultObjectClusterResource.find(path_params['default_object_cluster_resource_id'])
         record.update!(input)
         record
       rescue ActiveRecord::RecordInvalid => e
@@ -129,7 +129,7 @@ module VpsAdmin::API::Resources
 
       def exec
         ::DefaultObjectClusterResource
-          .find(params[:default_object_cluster_resource_id])
+          .find(path_params['default_object_cluster_resource_id'])
           .destroy!
         ok!
       end

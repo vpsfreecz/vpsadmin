@@ -113,7 +113,7 @@ class VpsAdmin::API::Resources::OsTemplate < HaveAPI::Resource
     end
 
     def prepare
-      @os_template = ::OsTemplate.find_by!(with_restricted(id: params[:os_template_id]))
+      @os_template = ::OsTemplate.find_by!(with_restricted(id: path_params['os_template_id']))
     end
 
     def exec
@@ -173,7 +173,7 @@ class VpsAdmin::API::Resources::OsTemplate < HaveAPI::Resource
       attrs = to_db_names(input)
       attrs[:config] = YAML.safe_load(cfg) if cfg
 
-      t = ::OsTemplate.find(params[:os_template_id])
+      t = ::OsTemplate.find(path_params['os_template_id'])
       t.update!(attrs)
       t
     rescue ActiveRecord::RecordInvalid => e
@@ -189,7 +189,7 @@ class VpsAdmin::API::Resources::OsTemplate < HaveAPI::Resource
     end
 
     def exec
-      t = ::OsTemplate.find(params[:os_template_id])
+      t = ::OsTemplate.find(path_params['os_template_id'])
 
       error!('The OS template is in use') if t.in_use?
       t.destroy

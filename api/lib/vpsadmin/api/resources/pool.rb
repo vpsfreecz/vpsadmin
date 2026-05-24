@@ -92,7 +92,7 @@ module VpsAdmin::API::Resources
       end
 
       def prepare
-        @pool = ::Pool.find(params[:pool_id])
+        @pool = ::Pool.find(path_params['pool_id'])
       end
 
       def exec
