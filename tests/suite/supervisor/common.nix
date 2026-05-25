@@ -245,6 +245,8 @@ base
 
   def seed_supervisor_export(services, dataset_id:, ip_address_id:)
     services.api_ruby_json(code: <<~RUBY)
+      #{api_session_prelude(admin_user_id)}
+
       dataset = Dataset.find(#{Integer(dataset_id)})
       dip = dataset.primary_dataset_in_pool!
       ip = IpAddress.find(#{Integer(ip_address_id)})
