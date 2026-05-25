@@ -240,14 +240,14 @@ module VpsAdmin::API
     end
 
     def handle_post_revoke(sinatra_request, token, token_type_hint: nil, client: nil)
+      raise ArgumentError, 'OAuth2 revoke client is required' unless client
+
       close_sso = sinatra_request.params.fetch('close_sso', false) ? true : false
 
       # Find access token
       access_tokens = ::Oauth2Authorization
                       .joins(user_session: :token)
-                      .where(tokens: { token: })
-
-      access_tokens = access_tokens.where(oauth2_client: client) if client
+                      .where(oauth2_client: client, tokens: { token: })
 
       if (auth = access_tokens.take)
         access_token = auth.user_session.token
@@ -302,9 +302,7 @@ module VpsAdmin::API
       # Find refresh token
       refresh_tokens = ::Oauth2Authorization
                        .joins(:refresh_token)
-                       .where(tokens: { token: })
-
-      refresh_tokens = refresh_tokens.where(oauth2_client: client) if client
+                       .where(oauth2_client: client, tokens: { token: })
 
       if (auth = refresh_tokens.take)
         refresh_token = auth.refresh_token
