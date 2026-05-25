@@ -146,6 +146,9 @@ async function runFilteredListAction(page, vpsId, action, expectedNotification, 
     await expectNotification(page, expectedNotification);
   });
 
+  await expect(page).toHaveURL(/[\?&]page=adminvps(?:&|$).*[\?&]action=list(?:&|$)/);
+  await expect(vpsListRow(page, vpsId)).toBeVisible();
+
   await waitForVpsTransactionsSettled(page, vpsId);
   if (expectedStatus) {
     await waitForVpsStatus(page, vpsId, expectedStatus);

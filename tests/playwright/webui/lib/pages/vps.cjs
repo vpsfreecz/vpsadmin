@@ -640,6 +640,8 @@ async function runListAction(page, vpsId, action, expectedNotification, expected
     await clickAction();
   }
 
+  await expect(page).toHaveURL(/[\?&]page=adminvps(?:&|$).*[\?&]action=list(?:&|$)/);
+
   await waitForVpsTransactionsSettled(page, vpsId);
 
   if (expectedStatus) {
@@ -664,6 +666,10 @@ async function runDetailAction(page, vpsId, action, expectedNotification, expect
   } else {
     await clickAction();
   }
+
+  await expect(page).toHaveURL(
+    new RegExp(`[\\?&]page=adminvps(?:&|$).*[\\?&]action=info(?:&|$).*[\\?&]veid=${vpsId}(?:&|$)`),
+  );
 
   await waitForVpsTransactionsSettled(page, vpsId);
 

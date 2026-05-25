@@ -23,19 +23,6 @@
 
 function print_editvps($vps) {}
 
-function vps_run_redirect_path($veid)
-{
-    $current_url = "http" . (isset($_SERVER["HTTPS"]) ? "s" : "") . "://$_SERVER[HTTP_HOST]$_SERVER[REQUEST_URI]";
-
-    if ($_SERVER["HTTP_REFERER"] && $_SERVER["HTTP_REFERER"] != $current_url) {
-        return $_SERVER["HTTP_REFERER"];
-    } elseif ($_GET["action"] == "info") {
-        return '?page=adminvps&action=info&veid=' . $veid;
-    } else {
-        return '?page=adminvps';
-    }
-}
-
 if (isLoggedIn()) {
 
     $_GET["run"] ??= false;
