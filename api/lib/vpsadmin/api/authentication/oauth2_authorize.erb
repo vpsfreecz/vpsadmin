@@ -47,76 +47,86 @@
           .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
       }
 
-      async function webAuthn() {
-        event.preventDefault();
+      function webAuthnButtonLabel() {
+        return "<% if mfa_methods.size > 1 %>Use a passkey instead<% else %>Log in with a passkey<% end %>";
+      }
+
+      async function webAuthn(event) {
+        if (event) {
+          event.preventDefault();
+        }
 
         const button = document.getElementById('webauthnBtn');
         button.disabled = true;
         button.value = "Signing in with a passkey...";
 
-        const resp1 = await fetch('/webauthn/authentication/begin', {
-          method: 'POST',
-          body: JSON.stringify({
-            authentication: {
-              auth_token: '<%= auth_token %>'
-            }
-          })
-        });
-        const resp1Json = await resp1.json();
-        const options = resp1Json.response.authentication.options;
-
-        options.challenge = bufferDecode(options.challenge);
-
-        if (options.allowCredentials) {
-          for (let i = 0; i < options.allowCredentials.length; i++) {
-            options.allowCredentials[i].id = bufferDecode(options.allowCredentials[i].id);
-          }
-        }
-
-        var assertion;
-
         try {
-          assertion = await navigator.credentials.get({ publicKey: options });
-        } catch (error) {
-          reportAlert('danger', 'Failed to authenticate: ' + error.message);
-          button.disabled = false;
-          button.value = "<% if mfa_methods.size > 1 %>Use a passkey instead<% else %>Log in with a passkey<% end %>";
-          return;
-        }
+          if (navigator.credentials === undefined) {
+            throw new Error('Credentials are not available.');
+          }
 
-        const rawId = bufferEncode(assertion.rawId);
-        const authenticatorData = bufferEncode(assertion.response.authenticatorData);
-        const clientDataJSON = bufferEncode(assertion.response.clientDataJSON);
-        const signature = bufferEncode(assertion.response.signature);
-        const userHandle = assertion.response.userHandle
-          ? bufferEncode(assertion.response.userHandle)
-          : null;
+          const resp1 = await fetch('/webauthn/authentication/begin', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              authentication: {
+                auth_token: '<%= auth_token %>'
+              }
+            })
+          });
+          const resp1Json = await resp1.json();
 
-        const data = {
-          authentication: {
-            challenge_token: resp1Json.response.authentication.challenge_token,
-            auth_token: '<%= auth_token %>',
-            public_key_credential: {
-              id: assertion.id,
-              rawId: rawId,
-              type: assertion.type,
-              response: {
-                authenticatorData,
-                clientDataJSON,
-                signature,
-                userHandle
+          if (!resp1.ok || !resp1Json.status) {
+            throw new Error(resp1Json.message || 'Passkey authentication could not start.');
+          }
+
+          const options = resp1Json.response.authentication.options;
+
+          options.challenge = bufferDecode(options.challenge);
+
+          if (options.allowCredentials) {
+            for (let i = 0; i < options.allowCredentials.length; i++) {
+              options.allowCredentials[i].id = bufferDecode(options.allowCredentials[i].id);
+            }
+          }
+
+          const assertion = await navigator.credentials.get({ publicKey: options });
+          const rawId = bufferEncode(assertion.rawId);
+          const authenticatorData = bufferEncode(assertion.response.authenticatorData);
+          const clientDataJSON = bufferEncode(assertion.response.clientDataJSON);
+          const signature = bufferEncode(assertion.response.signature);
+          const userHandle = assertion.response.userHandle
+            ? bufferEncode(assertion.response.userHandle)
+            : null;
+
+          const data = {
+            authentication: {
+              challenge_token: resp1Json.response.authentication.challenge_token,
+              auth_token: '<%= auth_token %>',
+              public_key_credential: {
+                id: assertion.id,
+                rawId: rawId,
+                type: assertion.type,
+                response: {
+                  authenticatorData,
+                  clientDataJSON,
+                  signature,
+                  userHandle
+                }
               }
             }
+          };
+
+          const resp2 = await fetch('/webauthn/authentication/finish', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+          });
+
+          if (!resp2.ok) {
+            throw new Error(await resp2.text());
           }
-        };
 
-        const resp2 = await fetch('/webauthn/authentication/finish', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(data)
-        });
-
-        if (resp2.ok) {
           const resp2Json = await resp2.json();
 
           if (resp2Json.status) {
@@ -126,11 +136,12 @@
             document.getElementById('loginForm').submit();
 
           } else {
-            reportAlert('danger', 'Failed to authenticate: ' + resp2Json.message);
+            throw new Error(resp2Json.message || 'Passkey authentication failed.');
           }
-        } else {
-          const errText = await resp2.text();
-          reportAlert('danger', 'Failed to register passkey: ' + errText);
+        } catch (error) {
+          reportAlert('danger', 'Failed to authenticate: ' + error.message);
+          button.disabled = false;
+          button.value = webAuthnButtonLabel();
         }
       }
 
@@ -141,12 +152,6 @@
           </div>
         `;
       }
-
-      document.addEventListener('DOMContentLoaded', async function () {
-        <% if mfa_methods == [:webauthn] -%>
-          webAuthn();
-        <% end -%>
-      });
 
     </script>
   </head>

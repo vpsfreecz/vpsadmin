@@ -86,6 +86,17 @@ RSpec.describe VpsAdmin::API::Authentication::OAuth2Config do
     allow(Resolv).to receive(:new).and_return(resolver)
   end
 
+  def create_webauthn_credential!(target_user)
+    WebauthnCredential.create!(
+      user: target_user,
+      label: 'RSpec passkey',
+      enabled: true,
+      external_id: SecureRandom.hex(16),
+      public_key: 'spec-public-key',
+      sign_count: 0
+    )
+  end
+
   it 'renders the authorize page for a valid client' do
     result = config.handle_get_authorize(
       sinatra_handler: handler,
@@ -124,6 +135,34 @@ RSpec.describe VpsAdmin::API::Authentication::OAuth2Config do
     expect(result.auth_token).to be_mfa
     expect(response.body).to include(result.auth_token.to_s)
     expect(response.body).to include('TOTP code')
+  end
+
+  it 'renders passkey MFA without automatically starting WebAuthn' do
+    create_webauthn_credential!(user)
+    user.update!(enable_multi_factor_auth: true)
+
+    result = config.handle_post_authorize(
+      sinatra_handler: handler,
+      sinatra_request: request,
+      sinatra_params: {
+        login_credentials: '1',
+        user: user.login,
+        password: 'secret'
+      },
+      oauth2_request:,
+      oauth2_response: response,
+      client:
+    )
+
+    expect(result.authenticated).to be(true)
+    expect(result.complete).to be(false)
+    expect(result.auth_token).to be_mfa
+    expect(response.body).to include('Log in with a passkey')
+    expect(response.body).to include('Ask again in a day')
+    expect(response.body).to include('async function webAuthn(event)')
+    expect(response.body).to include('onclick="webAuthn(event);"')
+    expect(response.body).not_to include('webAuthn();')
+    expect(response.body).not_to include('DOMContentLoaded')
   end
 
   it 'completes TOTP authentication and creates an authorization code' do
