@@ -26,6 +26,17 @@ function escapeRegExp(value) {
   return String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
+async function waitForQueryParams(page, params) {
+  await page.waitForURL(
+    (url) => Object.entries(params).every(
+      ([name, value]) => url.searchParams.get(name) === String(value),
+    ),
+    {
+      timeout: 20000,
+    },
+  );
+}
+
 async function chooseRadio(locator) {
   if (await locator.isChecked()) {
     return;
@@ -640,7 +651,7 @@ async function runListAction(page, vpsId, action, expectedNotification, expected
     await clickAction();
   }
 
-  await expect(page).toHaveURL(/[\?&]page=adminvps(?:&|$).*[\?&]action=list(?:&|$)/);
+  await waitForQueryParams(page, { page: 'adminvps', action: 'list' });
 
   await waitForVpsTransactionsSettled(page, vpsId);
 
@@ -667,9 +678,7 @@ async function runDetailAction(page, vpsId, action, expectedNotification, expect
     await clickAction();
   }
 
-  await expect(page).toHaveURL(
-    new RegExp(`[\\?&]page=adminvps(?:&|$).*[\\?&]action=info(?:&|$).*[\\?&]veid=${vpsId}(?:&|$)`),
-  );
+  await waitForQueryParams(page, { page: 'adminvps', action: 'info', veid: vpsId });
 
   await waitForVpsTransactionsSettled(page, vpsId);
 
