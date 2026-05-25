@@ -4,7 +4,7 @@ PATH
     vpsadmin-client (4.1.0)
       base64
       curses
-      haveapi-client (~> 0.28.2)
+      haveapi-client (~> 0.28.3)
       json
       ruby-progressbar
 
