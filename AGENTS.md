@@ -54,11 +54,11 @@
 - Wrap every commit message line at 80 characters or fewer.
 - Always write the commit message to a temporary file and commit with
   `git commit -F <tmpfile>` instead of passing the message inline.
-- Flake input updates (`vpsadminos`) flow:
-  1. Read current rev: `nix flake metadata --json . | jq -r '.locks.nodes.vpsadminos.locked.rev'`.
-  2. Update input: `nix flake update vpsadminos` (or `nix flake lock --update-input vpsadminos`).
-  3. Verify only `flake.lock` changed for this update commit.
-  4. Commit with subject format: `flake: vpsadminos <old9> -> <new9>` (example: `flake: vpsadminos 2cab01000 -> 08bb11324`).
+- Flake input updates (`vpsadminos`) must be done with
+  `tools/update_vpsadminos_flake.sh`. The script reads the current and new
+  revs, updates only the `vpsadminos` input, verifies that only `flake.lock`
+  changed, and commits with subject format
+  `flake: vpsadminos <old9> -> <new9>`.
 - PRs should state intent, note risky areas, list test commands run, and link issues; add screenshots/logs for UI/API behavior changes.
 
 ## Security & Configuration Tips
