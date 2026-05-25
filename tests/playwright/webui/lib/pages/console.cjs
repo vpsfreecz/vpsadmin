@@ -7,6 +7,7 @@ const {
 } = require('./webui.cjs');
 
 const CONSOLE_OPERATION_TIMEOUT = 10 * 60 * 1000;
+const CONSOLE_LOGIN_TIMEOUT = 3 * 60 * 1000;
 
 async function openConsole(page, vpsId) {
   await gotoVpsDetail(page, vpsId);
@@ -40,6 +41,109 @@ async function expectConsoleIframe(page, vpsId) {
   return true;
 }
 
+async function waitForConsoleFrame(page, vpsId, options = {}) {
+  const timeout = options.timeout || 30 * 1000;
+  const deadline = Date.now() + timeout;
+
+  while (Date.now() < deadline) {
+    const frame = page.frames().find((candidate) => {
+      try {
+        return new URL(candidate.url()).pathname === `/console/${vpsId}`;
+      } catch (error) {
+        return false;
+      }
+    });
+
+    if (frame) {
+      await frame.waitForFunction(() => window.remoteConsole && window.remoteConsole.term);
+      return frame;
+    }
+
+    await page.waitForTimeout(250);
+  }
+
+  throw new Error(`Timed out waiting for console frame for VPS ${vpsId}`);
+}
+
+async function consoleText(frame) {
+  return frame.evaluate(() => {
+    const buffer = window.remoteConsole.term.buffer.active;
+    const lines = [];
+
+    for (let i = 0; i < buffer.length; i += 1) {
+      const line = buffer.getLine(i);
+
+      if (line) {
+        lines.push(line.translateToString(true));
+      }
+    }
+
+    return lines.join('\n');
+  });
+}
+
+async function sendConsoleInput(frame, keys) {
+  await frame.evaluate((input) => {
+    window.remoteConsole.pendingData += input;
+  }, keys);
+}
+
+async function waitForConsoleText(frame, pattern, name, options = {}) {
+  const timeout = options.timeout || CONSOLE_LOGIN_TIMEOUT;
+  const from = options.from || 0;
+  const intervals = options.intervals || [1000, 2000, 5000];
+  const deadline = Date.now() + timeout;
+  let i = 0;
+  let lastText = '';
+
+  while (Date.now() < deadline) {
+    lastText = await consoleText(frame);
+
+    if (consoleTextMatches(lastText, pattern, from)) {
+      return lastText;
+    }
+
+    await frame.page().waitForTimeout(intervals[Math.min(i, intervals.length - 1)]);
+    i += 1;
+  }
+
+  throw new Error(`Timed out waiting for ${name}:\n${lastText}`);
+}
+
+function consoleTextMatches(text, pattern, from = 0) {
+  const slice = text.slice(from);
+
+  return pattern instanceof RegExp ? pattern.test(slice) : slice.includes(pattern);
+}
+
+function hasLoginPrompt(text) {
+  return /login:\s*(?:\n\s*)*$/i.test(text);
+}
+
+async function expectConsoleRootLogin(page, vpsId, password) {
+  await openConsole(page, vpsId);
+
+  const frame = await waitForConsoleFrame(page, vpsId);
+  let text = await consoleText(frame);
+
+  if (!hasLoginPrompt(text)) {
+    const loginPromptStart = text.length;
+    await sendConsoleInput(frame, '\n');
+    text = await waitForConsoleText(frame, /login:\s*/i, `console login prompt for VPS ${vpsId}`, {
+      from: loginPromptStart,
+    });
+  }
+
+  await sendConsoleInput(frame, 'root\n');
+  text = await waitForConsoleText(frame, /password:\s*/i, `console password prompt for VPS ${vpsId}`);
+
+  await sendConsoleInput(frame, `${password}\n`);
+  text = await waitForConsoleText(frame, /root@.*[#]/m, `console shell prompt for VPS ${vpsId}`);
+
+  await sendConsoleInput(frame, 'printf \'%s\\n\' "$((40 + 2))"\n');
+  await waitForConsoleText(frame, /(?:^|[\r\n])42[\r\n]/, `console command output for VPS ${vpsId}`);
+}
+
 async function runConsoleVpsAction(page, vpsId, command, label, expectedStatus) {
   await openConsole(page, vpsId);
 
@@ -67,7 +171,10 @@ async function generateConsoleRootPassword(page, vpsId) {
   await expect(password).toContainText(/^[a-zA-Z2-9]{8}$/, {
     timeout: CONSOLE_OPERATION_TIMEOUT,
   });
+  const generatedPassword = (await password.innerText()).trim();
   await waitForVpsTransactionsSettled(page, vpsId);
+
+  return generatedPassword;
 }
 
 async function bootConsoleRescue(page, vpsId, osTemplateId) {
@@ -90,6 +197,7 @@ function escapeRegExp(value) {
 
 module.exports = {
   bootConsoleRescue,
+  expectConsoleRootLogin,
   expectConsoleIframe,
   generateConsoleRootPassword,
   openConsole,

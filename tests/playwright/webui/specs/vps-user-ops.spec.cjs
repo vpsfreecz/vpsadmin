@@ -5,6 +5,7 @@ const { login, logout } = require('../lib/pages/auth.cjs');
 const {
   bootConsoleRescue,
   expectConsoleIframe,
+  expectConsoleRootLogin,
   generateConsoleRootPassword,
   runConsoleVpsAction,
 } = require('../lib/pages/console.cjs');
@@ -77,12 +78,18 @@ test.describe.serial('VPS user side operations and console coverage', () => {
   test('user console sidebar controls use the API', async ({ page }) => {
     await login(page, fixtures.user);
 
-    const vpsId = await createVps(page, fixtures, hostname('webui-console-ops'), createOptions());
+    const vpsId = await createVps(
+      page,
+      fixtures,
+      hostname('webui-console-ops'),
+      createOptions({ resources: fixtures.vps.resources }),
+    );
 
     const iframeRendered = await expectConsoleIframe(page, vpsId);
     test.skip(!iframeRendered, 'Fixture location has no remote console server');
 
-    await generateConsoleRootPassword(page, vpsId);
+    const password = await generateConsoleRootPassword(page, vpsId);
+    await expectConsoleRootLogin(page, vpsId, password);
     await bootConsoleRescue(page, vpsId, fixtures.osTemplates.reinstall.id);
     await runConsoleVpsAction(page, vpsId, 'restart', 'Restart', 'running');
     await runConsoleVpsAction(page, vpsId, 'force_restart', 'Reset', 'running');
