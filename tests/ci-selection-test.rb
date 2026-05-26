@@ -62,6 +62,13 @@ class CiTestSelectionTest < Minitest::Test
     assert_includes selection.tags, 'webui'
   end
 
+  def test_webui_php_test_selects_all_webui_scripts
+    selection = selector.select(['tests/php/webui/xtemplate_table_pagination.php'])
+
+    assert_equal 'selected', selection.mode
+    assert_includes selection.tags, 'webui'
+  end
+
   def test_multi_area_selection_builds_single_or_expression
     selection = selector.select(
       [

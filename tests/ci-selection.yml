@@ -53,6 +53,7 @@ full:
 select:
   - paths:
       - "tests/suite/webui.nix"
+      - "tests/php/webui/**"
       - "tests/playwright/webui/lib/**"
       - "tests/playwright/webui/playwright.config.cjs"
       - "webui/js/**"
