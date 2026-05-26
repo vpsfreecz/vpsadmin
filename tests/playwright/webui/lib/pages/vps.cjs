@@ -7,6 +7,7 @@ const {
   gotoVpsDetail,
   submitForm,
   waitForDetailValue,
+  waitForQueryParams,
   waitForVpsTransactionsSettled,
   waitForVpsStatus,
 } = require('./webui.cjs');
@@ -24,17 +25,6 @@ function vpsIdFromCurrentUrl(page) {
 
 function escapeRegExp(value) {
   return String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-}
-
-async function waitForQueryParams(page, params) {
-  await page.waitForURL(
-    (url) => Object.entries(params).every(
-      ([name, value]) => url.searchParams.get(name) === String(value),
-    ),
-    {
-      timeout: 20000,
-    },
-  );
 }
 
 async function chooseRadio(locator) {

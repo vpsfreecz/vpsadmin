@@ -48,6 +48,17 @@ async function expectNotification(page, text) {
   await expect(notification(page)).toContainText(text);
 }
 
+async function waitForQueryParams(page, params, options = {}) {
+  await page.waitForURL(
+    (url) => Object.entries(params).every(
+      ([name, value]) => url.searchParams.get(name) === String(value),
+    ),
+    {
+      timeout: options.timeout || 20000,
+    },
+  );
+}
+
 async function detailValue(page, label) {
   const row = detailRow(page, label);
   await expect(row).toBeVisible();
@@ -278,6 +289,7 @@ module.exports = {
   submitForm,
   visibleTransactionChainIds,
   waitForDetailValue,
+  waitForQueryParams,
   waitForTransactionChainsSettled,
   waitForVpsTransactionsSettled,
   waitForVpsStatus,
