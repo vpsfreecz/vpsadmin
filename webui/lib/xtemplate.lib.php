@@ -65,6 +65,7 @@ class XTemplate
     public $table_rows = 0;
     public $table_max_cols = 0;
     public $table_cur_cols = 0;
+    public $table_counting_header = false;
     public function __construct($file, $tpldir = '', $files = null, $mainblock = 'main', $autosetup = true)
     {
         $this->filename = $file;
@@ -631,6 +632,7 @@ class XTemplate
         $this->assign('TABLE_CATEGORY', $name);
         $this->parse('main.table.category');
 
+        $this->table_counting_header = true;
         $this->table_increment_cols();
     }
     /**
@@ -641,6 +643,11 @@ class XTemplate
       */
     public function table_td($content, $td_back_color = false, $toright = false, $colspan = '1', $rowspan = '1', $valign = null)
     {
+        if ($this->table_counting_header) {
+            $this->table_cur_cols = 0;
+            $this->table_counting_header = false;
+        }
+
         $tdstyle = 'style="';
         if ($td_back_color) {
             $tdstyle .= 'background:' . $td_back_color . ';';
@@ -782,6 +789,7 @@ class XTemplate
         $this->table_rows = 0;
         $this->table_max_cols = 0;
         $this->table_cur_cols = 0;
+        $this->table_counting_header = false;
         $this->parse('main.table');
     }
     /**
