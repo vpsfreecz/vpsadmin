@@ -51,6 +51,13 @@ import ../make-test.nix (
         end
       end
 
+      def wait_for_webui_services_ready
+        services.wait_for_vpsadmin_api
+        services.wait_for_service('vpsadmin-rabbitmq-setup.service')
+        services.wait_for_service('vpsadmin-supervisor.service')
+        wait_for_webui
+      end
+
       WEBUI_NODE1_SECONDARY_POOL_FS = 'tank/webui-node1-secondary' unless defined?(WEBUI_NODE1_SECONDARY_POOL_FS)
       WEBUI_NODE2_POOL_FS = 'tank/webui-node2' unless defined?(WEBUI_NODE2_POOL_FS)
       WEBUI_SECONDARY_LOCATION_LABEL = 'webui-browser-location-b' unless defined?(WEBUI_SECONDARY_LOCATION_LABEL)
@@ -297,8 +304,7 @@ import ../make-test.nix (
 
       def prepare_webui_playwright
         [services, node1].each { |machine| start_webui_machine(machine) }
-        services.wait_for_vpsadmin_api
-        wait_for_webui
+        wait_for_webui_services_ready
         wait_for_running_nodectld(node1)
         wait_for_webui_node_ready(node1, node1_id)
         unlock_webui_transaction_signing_key
