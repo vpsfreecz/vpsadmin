@@ -272,7 +272,7 @@ in
       define ('EXPORT_PUBLIC', ${boolToPhp cfg.exportPublic});
       define ('NAS_PUBLIC', ${boolToPhp cfg.nasPublic});
 
-      define ('WWW_ROOT', '${rootDir}/');
+      define ('WEBUI_ROOT', '${rootDir}/');
 
       ${cfg.extraConfig}
     '';

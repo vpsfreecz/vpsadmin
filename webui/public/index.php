@@ -26,43 +26,43 @@ define("CRON_MODE", false);
 define("DEBUG", false);
 
 // Include libraries
-include WWW_ROOT . 'vendor/autoload.php';
-include WWW_ROOT . 'lib/version.lib.php';
-include WWW_ROOT . 'lib/xtemplate.lib.php';
-include WWW_ROOT . 'lib/functions.lib.php';
-include WWW_ROOT . 'lib/transact.lib.php';
-include WWW_ROOT . 'lib/vps.lib.php';
-include WWW_ROOT . 'lib/cluster.lib.php';
-include WWW_ROOT . 'lib/mail.lib.php';
-include WWW_ROOT . 'lib/helpbox.lib.php';
-include WWW_ROOT . 'lib/security.lib.php';
-include WWW_ROOT . 'lib/munin.lib.php';
-include WWW_ROOT . 'lib/login.lib.php';
-include WWW_ROOT . 'lib/pagination.lib.php';
+include WEBUI_ROOT . 'vendor/autoload.php';
+include WEBUI_ROOT . 'lib/version.lib.php';
+include WEBUI_ROOT . 'lib/xtemplate.lib.php';
+include WEBUI_ROOT . 'lib/functions.lib.php';
+include WEBUI_ROOT . 'lib/transact.lib.php';
+include WEBUI_ROOT . 'lib/vps.lib.php';
+include WEBUI_ROOT . 'lib/cluster.lib.php';
+include WEBUI_ROOT . 'lib/mail.lib.php';
+include WEBUI_ROOT . 'lib/helpbox.lib.php';
+include WEBUI_ROOT . 'lib/security.lib.php';
+include WEBUI_ROOT . 'lib/munin.lib.php';
+include WEBUI_ROOT . 'lib/login.lib.php';
+include WEBUI_ROOT . 'lib/pagination.lib.php';
 
-include WWW_ROOT . 'forms/backup.forms.php';
-include WWW_ROOT . 'forms/cluster.forms.php';
-include WWW_ROOT . 'forms/dataset.forms.php';
-include WWW_ROOT . 'forms/export.forms.php';
-include WWW_ROOT . 'forms/vps.forms.php';
-include WWW_ROOT . 'forms/users.forms.php';
-include WWW_ROOT . 'forms/lifetimes.forms.php';
-include WWW_ROOT . 'forms/object_history.forms.php';
-include WWW_ROOT . 'forms/networking.forms.php';
-include WWW_ROOT . 'forms/outage.forms.php';
-include WWW_ROOT . 'forms/monitoring.forms.php';
-include WWW_ROOT . 'forms/userns.forms.php';
-include WWW_ROOT . 'forms/oom_reports.forms.php';
-include WWW_ROOT . 'forms/node.forms.php';
-include WWW_ROOT . 'forms/incidents.forms.php';
-include WWW_ROOT . 'forms/dns.forms.php';
-include WWW_ROOT . 'forms/userdata.forms.php';
+include WEBUI_ROOT . 'forms/backup.forms.php';
+include WEBUI_ROOT . 'forms/cluster.forms.php';
+include WEBUI_ROOT . 'forms/dataset.forms.php';
+include WEBUI_ROOT . 'forms/export.forms.php';
+include WEBUI_ROOT . 'forms/vps.forms.php';
+include WEBUI_ROOT . 'forms/users.forms.php';
+include WEBUI_ROOT . 'forms/lifetimes.forms.php';
+include WEBUI_ROOT . 'forms/object_history.forms.php';
+include WEBUI_ROOT . 'forms/networking.forms.php';
+include WEBUI_ROOT . 'forms/outage.forms.php';
+include WEBUI_ROOT . 'forms/monitoring.forms.php';
+include WEBUI_ROOT . 'forms/userns.forms.php';
+include WEBUI_ROOT . 'forms/oom_reports.forms.php';
+include WEBUI_ROOT . 'forms/node.forms.php';
+include WEBUI_ROOT . 'forms/incidents.forms.php';
+include WEBUI_ROOT . 'forms/dns.forms.php';
+include WEBUI_ROOT . 'forms/userdata.forms.php';
 
-include WWW_ROOT . 'lib/gettext_stream.lib.php';
-include WWW_ROOT . 'lib/gettext_inc.lib.php';
-include WWW_ROOT . 'lib/gettext_lang.lib.php';
+include WEBUI_ROOT . 'lib/gettext_stream.lib.php';
+include WEBUI_ROOT . 'lib/gettext_inc.lib.php';
+include WEBUI_ROOT . 'lib/gettext_lang.lib.php';
 // include configuration
-include WWW_ROOT . 'config_cfg.php';
+include WEBUI_ROOT . 'config_cfg.php';
 
 $api = new \HaveAPI\Client(INT_API_URL, API_VERSION, getClientIdentity(), getApiClientOptions());
 $api->registerDescriptionChangeFunc('api_description_changed');
@@ -72,7 +72,7 @@ if (isset($_SESSION["api_description"]) && $_SESSION["api_description"]) {
 }
 
 // Create a template class
-$xtpl = new XTemplate(WWW_ROOT . 'template/template.html');
+$xtpl = new XTemplate(WEBUI_ROOT . 'template/template.html');
 // Create a langauge class
 $lang = new Lang($langs, $xtpl);
 
@@ -125,7 +125,7 @@ try {
                     && (!isAdmin())
                     && $api_cluster && $api_cluster->maintenance_lock) {
         $request_page = "";
-        include WWW_ROOT . 'pages/page_index.php';
+        include WEBUI_ROOT . 'pages/page_index.php';
         $xtpl->perex(_("Maintenance mode"), _("vpsAdmin is currently in maintenance mode, any actions are disabled. <br />
 											This is usually used during outage to prevent data corruption.<br />")
                                         . "<br>" . ($api_cluster->maintenance_lock_reason ? _('Reason') . ': ' . $api_cluster->maintenance_lock_reason . '<br><br>' : '')
@@ -139,88 +139,88 @@ try {
 
         switch ($_GET["page"]) {
             case 'adminvps':
-                include WWW_ROOT . 'pages/page_adminvps.php';
+                include WEBUI_ROOT . 'pages/page_adminvps.php';
                 break;
             case 'about':
-                include WWW_ROOT . 'pages/page_about.php';
+                include WEBUI_ROOT . 'pages/page_about.php';
                 break;
             case 'login':
-                include WWW_ROOT . 'pages/page_login.php';
+                include WEBUI_ROOT . 'pages/page_login.php';
                 break;
             case 'adminm':
-                include WWW_ROOT . 'pages/page_adminm.php';
+                include WEBUI_ROOT . 'pages/page_adminm.php';
                 break;
             case 'transactions':
-                include WWW_ROOT . 'pages/page_transactions.php';
+                include WEBUI_ROOT . 'pages/page_transactions.php';
                 break;
             case 'networking':
-                include WWW_ROOT . 'pages/page_networking.php';
+                include WEBUI_ROOT . 'pages/page_networking.php';
                 break;
             case 'cluster':
-                include WWW_ROOT . 'pages/page_cluster.php';
+                include WEBUI_ROOT . 'pages/page_cluster.php';
                 break;
             case 'log':
-                include WWW_ROOT . 'pages/page_log.php';
+                include WEBUI_ROOT . 'pages/page_log.php';
                 break;
             case 'dataset':
-                include WWW_ROOT . 'pages/page_dataset.php';
+                include WEBUI_ROOT . 'pages/page_dataset.php';
                 break;
             case 'export':
-                include WWW_ROOT . 'pages/page_export.php';
+                include WEBUI_ROOT . 'pages/page_export.php';
                 break;
             case 'backup':
-                include WWW_ROOT . 'pages/page_backup.php';
+                include WEBUI_ROOT . 'pages/page_backup.php';
                 break;
             case 'nas':
-                include WWW_ROOT . 'pages/page_nas.php';
+                include WEBUI_ROOT . 'pages/page_nas.php';
                 break;
             case 'incidents':
-                include WWW_ROOT . 'pages/page_incidents.php';
+                include WEBUI_ROOT . 'pages/page_incidents.php';
                 break;
             case 'lang':
                 $lang->change($_GET['newlang']);
                 break;
             case 'console':
-                include WWW_ROOT . 'pages/page_console.php';
+                include WEBUI_ROOT . 'pages/page_console.php';
                 break;
             case 'jumpto':
-                include WWW_ROOT . 'pages/page_jumpto.php';
+                include WEBUI_ROOT . 'pages/page_jumpto.php';
                 break;
             case 'lifetimes':
-                include WWW_ROOT . 'pages/page_lifetimes.php';
+                include WEBUI_ROOT . 'pages/page_lifetimes.php';
                 break;
             case 'reminder':
-                include WWW_ROOT . 'pages/page_reminder.php';
+                include WEBUI_ROOT . 'pages/page_reminder.php';
                 break;
             case 'history':
-                include WWW_ROOT . 'pages/page_history.php';
+                include WEBUI_ROOT . 'pages/page_history.php';
                 break;
             case 'redirect':
-                include WWW_ROOT . 'pages/page_redirect.php';
+                include WEBUI_ROOT . 'pages/page_redirect.php';
                 break;
             case 'outage':
-                include WWW_ROOT . 'pages/page_outage.php';
+                include WEBUI_ROOT . 'pages/page_outage.php';
                 break;
             case 'monitoring':
-                include WWW_ROOT . 'pages/page_monitoring.php';
+                include WEBUI_ROOT . 'pages/page_monitoring.php';
                 break;
             case 'userns':
-                include WWW_ROOT . 'pages/page_userns.php';
+                include WEBUI_ROOT . 'pages/page_userns.php';
                 break;
             case 'oom_reports':
-                include WWW_ROOT . 'pages/page_oom_reports.php';
+                include WEBUI_ROOT . 'pages/page_oom_reports.php';
                 break;
             case 'node':
-                include WWW_ROOT . 'pages/page_node.php';
+                include WEBUI_ROOT . 'pages/page_node.php';
                 break;
             case 'dns':
-                include WWW_ROOT . 'pages/page_dns.php';
+                include WEBUI_ROOT . 'pages/page_dns.php';
                 break;
             case 'userdata':
-                include WWW_ROOT . 'pages/page_userdata.php';
+                include WEBUI_ROOT . 'pages/page_userdata.php';
                 break;
             default:
-                include WWW_ROOT . 'pages/page_index.php';
+                include WEBUI_ROOT . 'pages/page_index.php';
         }
         $request_page = $_GET["page"];
     }

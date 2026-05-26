@@ -3,10 +3,10 @@ include '/etc/vpsadmin/config.php';
 
 session_start();
 
-include WWW_ROOT . 'lib/version.lib.php';
-include WWW_ROOT . 'lib/functions.lib.php';
-include WWW_ROOT . 'lib/security.lib.php';
-include WWW_ROOT . 'lib/login.lib.php';
+include WEBUI_ROOT . 'lib/version.lib.php';
+include WEBUI_ROOT . 'lib/functions.lib.php';
+include WEBUI_ROOT . 'lib/security.lib.php';
+include WEBUI_ROOT . 'lib/login.lib.php';
 
 header('Content-Type: text/javascript');
 

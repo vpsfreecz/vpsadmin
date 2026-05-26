@@ -53,7 +53,7 @@ class Lang
 
         @putenv("LC_ALL=" . $newlang); // for WinXP SP3
         T_setlocale(LC_ALL, $newlang);
-        T_bindtextdomain("vpsAdmin", WWW_ROOT . "/lang/locale/");
+        T_bindtextdomain("vpsAdmin", WEBUI_ROOT . "/lang/locale/");
         T_bind_textdomain_codeset("vpsAdmin", "UTF-8");
         T_textdomain("vpsAdmin");
 

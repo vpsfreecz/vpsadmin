@@ -1226,13 +1226,13 @@ function getCommitHash()
 
 function readCommitHash()
 {
-    $revisionFile = WWW_ROOT . '/.git-revision';
+    $revisionFile = WEBUI_ROOT . '/.git-revision';
 
     if (file_exists($revisionFile)) {
         return trim(file_get_contents($revisionFile));
     }
 
-    $gitDir = WWW_ROOT . '/../.git';
+    $gitDir = WEBUI_ROOT . '/../.git';
 
     if (!file_exists($gitDir)) {
         return null;
