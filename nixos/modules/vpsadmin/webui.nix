@@ -11,6 +11,21 @@ let
   app = "vpsadmin-webui";
   boolToPhp = v: if v then "true" else "false";
   rootDir = if isNull cfg.sourceCodeDir then cfg.package else cfg.sourceCodeDir;
+  phpEntrypointConfig = ''
+    fastcgi_split_path_info ^(.+\.php)(/.+)$;
+    fastcgi_pass unix:${config.services.phpfpm.pools.${app}.socket};
+    include ${pkgs.nginx}/conf/fastcgi_params;
+    include ${pkgs.nginx}/conf/fastcgi.conf;
+
+    fastcgi_index index.php;
+    fastcgi_connect_timeout 60;
+    fastcgi_send_timeout 180;
+    fastcgi_read_timeout 180;
+    fastcgi_buffer_size 128k;
+    fastcgi_buffers 4 256k;
+    fastcgi_busy_buffers_size 256k;
+    fastcgi_temp_file_write_size 256k;
+  '';
 in
 {
   options = {
@@ -23,15 +38,18 @@ in
 
       package = mkOption {
         default = pkgs.vpsadmin-webui pkgs;
-        description = "Which vpsAdmin webui package to use";
+        description = ''
+          Which vpsAdmin webui package to use. The package path is the
+          application root and must contain the public/ document root.
+        '';
       };
 
       sourceCodeDir = mkOption {
         type = types.nullOr types.str;
         default = null;
         description = ''
-          Instead of the packaged app, run it from the source code mounted at
-          a configured path
+          Instead of the packaged app, run the webui from the application root
+          mounted at a configured path. The directory must contain public/.
         '';
       };
 
@@ -202,22 +220,14 @@ in
       enable = true;
 
       virtualHosts.${cfg.domain} = {
-        root = rootDir;
+        root = "${rootDir}/public";
 
-        locations."~* .php$".extraConfig = ''
-          fastcgi_split_path_info ^(.+\.php)(/.+)$;
-          fastcgi_pass unix:${config.services.phpfpm.pools.${app}.socket};
-          include ${pkgs.nginx}/conf/fastcgi_params;
-          include ${pkgs.nginx}/conf/fastcgi.conf;
+        locations."= /index.php".extraConfig = phpEntrypointConfig;
+        locations."= /config.js.php".extraConfig = phpEntrypointConfig;
+        locations."= /keepalive.php".extraConfig = phpEntrypointConfig;
 
-          fastcgi_index index.php;
-          fastcgi_connect_timeout 60;
-          fastcgi_send_timeout 180;
-          fastcgi_read_timeout 180;
-          fastcgi_buffer_size 128k;
-          fastcgi_buffers 4 256k;
-          fastcgi_busy_buffers_size 256k;
-          fastcgi_temp_file_write_size 256k;
+        locations."~ \\.php$".extraConfig = ''
+          return 404;
         '';
 
         # Deny access to hidden files
