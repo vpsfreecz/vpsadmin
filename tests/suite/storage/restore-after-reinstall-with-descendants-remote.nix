@@ -73,6 +73,8 @@ import ../../make-test.nix (
             label: 'restore-descendants-s2'
           )
 
+          wait_for_vps_running(services, setup.fetch('vps_id'))
+
           reinstall = reinstall_vps(
             services,
             admin_user_id: admin_user_id,
