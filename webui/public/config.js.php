@@ -28,7 +28,7 @@ if (isLoggedIn()) {
 		sessionToken: <?php echo json_encode($_SESSION['session_token'], JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>,
 	<?php } ?>
 	sessionLength: <?php echo $_SESSION['user']['session_length'] ?>,
-	logoutUrl: <?php echo json_encode('?page=login&action=logout&t=' . csrf_token()) ?>,
+	logoutUrl: <?php echo json_encode('?page=login&action=logout&timeout=1&t=' . csrf_token()) ?>,
 	description: <?php echo json_encode($_SESSION['api_description']) ?>,
 	sessionManagement: true
 };

@@ -76,13 +76,34 @@ function destroySession()
     session_destroy();
 }
 
+function isSessionTimeoutLogout()
+{
+    return isset($_GET['timeout']) && $_GET['timeout'];
+}
+
+function showLogoutMessage($sessionExpired = false)
+{
+    global $xtpl;
+
+    if ($sessionExpired) {
+        $xtpl->perex(
+            _("Session expired"),
+            _("You have been logged out because your session expired. Please sign in again to continue.")
+        );
+    } else {
+        $xtpl->perex(_("Goodbye"), _("Logout successful"));
+    }
+}
+
 function logoutUser()
 {
-    global $xtpl, $api;
+    global $api;
+
+    $sessionExpired = isSessionTimeoutLogout();
 
     if (!isLoggedIn()) {
         destroySession();
-        $xtpl->perex(_("Goodbye"), _("Logout successful"));
+        showLogoutMessage(true);
         return;
     }
 
@@ -96,7 +117,7 @@ function logoutUser()
         $api->logout();
     }
 
-    $xtpl->perex(_("Goodbye"), _("Logout successful"));
+    showLogoutMessage($sessionExpired);
 }
 
 function logoutAndSwitchUser()
