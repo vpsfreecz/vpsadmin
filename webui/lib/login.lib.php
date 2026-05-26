@@ -80,6 +80,12 @@ function logoutUser()
 {
     global $xtpl, $api;
 
+    if (!isLoggedIn()) {
+        destroySession();
+        $xtpl->perex(_("Goodbye"), _("Logout successful"));
+        return;
+    }
+
     csrf_check();
     $authType = $_SESSION["auth_type"] ?? null;
     destroySession();
@@ -96,6 +102,17 @@ function logoutUser()
 function logoutAndSwitchUser()
 {
     global $xtpl, $api;
+
+    if (!isLoggedIn()) {
+        $redirectPath = '?page=login&action=login';
+
+        if (isset($_GET['user']) && $_GET['user']) {
+            $redirectPath .= '&user=' . urlencode($_GET['user']);
+        }
+
+        destroySession();
+        redirect($redirectPath);
+    }
 
     csrf_check();
 
