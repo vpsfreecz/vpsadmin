@@ -3,9 +3,15 @@
 use PHPUnit\Framework\TestCase;
 
 if (!class_exists('CsrfTokenInvalid')) {
-    class CsrfTokenInvalid extends Exception
-    {
-    }
+    class CsrfTokenInvalid extends Exception {}
+}
+
+if (!defined('OAUTH2_CLIENT_ID')) {
+    define('OAUTH2_CLIENT_ID', 'test-client-id');
+}
+
+if (!defined('OAUTH2_CLIENT_SECRET')) {
+    define('OAUTH2_CLIENT_SECRET', 'test-client-secret');
 }
 
 class CapturingLogoutTemplate
@@ -33,6 +39,31 @@ class ExplodingLogoutApi
     }
 }
 
+class SuccessfulOAuthLogoutApi
+{
+    public SuccessfulOAuthLogoutProvider $provider;
+
+    public function __construct()
+    {
+        $this->provider = new SuccessfulOAuthLogoutProvider();
+    }
+
+    public function getAuthenticationProvider()
+    {
+        return $this->provider;
+    }
+}
+
+class SuccessfulOAuthLogoutProvider
+{
+    public bool $revoked = false;
+
+    public function revokeAccessToken($params = [])
+    {
+        $this->revoked = true;
+    }
+}
+
 class CapturedLogoutRedirect extends Exception
 {
     public function __construct(public string $url)
@@ -57,10 +88,13 @@ function isLoggedIn()
 
 function csrf_check($name = 'common', $t = null)
 {
-    global $logoutExpiredSessionCsrfCalled;
+    global $logoutExpiredSessionCsrfCalled, $logoutExpiredSessionCsrfValid;
 
     $logoutExpiredSessionCsrfCalled = true;
-    throw new CsrfTokenInvalid();
+
+    if (!$logoutExpiredSessionCsrfValid) {
+        throw new CsrfTokenInvalid();
+    }
 }
 
 function redirect($url)
@@ -74,12 +108,14 @@ final class LogoutExpiredSessionTest extends TestCase
 {
     protected function setUp(): void
     {
-        global $logoutExpiredSessionLoggedIn, $logoutExpiredSessionCsrfCalled, $xtpl, $api;
+        global $logoutExpiredSessionLoggedIn, $logoutExpiredSessionCsrfCalled,
+        $logoutExpiredSessionCsrfValid, $xtpl, $api;
 
         $this->startSession();
 
         $logoutExpiredSessionLoggedIn = false;
         $logoutExpiredSessionCsrfCalled = false;
+        $logoutExpiredSessionCsrfValid = false;
         $xtpl = new CapturingLogoutTemplate();
         $api = new ExplodingLogoutApi();
         $_GET = [];
@@ -105,8 +141,7 @@ final class LogoutExpiredSessionTest extends TestCase
         logoutUser();
 
         self::assertFalse($logoutExpiredSessionCsrfCalled);
-        self::assertSame('Goodbye', $xtpl->lastTitle);
-        self::assertSame('Logout successful', $xtpl->lastMessage);
+        self::assertSame('Session expired', $xtpl->lastTitle);
         self::assertFalse($_SESSION['logged_in']);
     }
 
@@ -127,6 +162,47 @@ final class LogoutExpiredSessionTest extends TestCase
         } finally {
             self::assertTrue($logoutExpiredSessionCsrfCalled);
         }
+    }
+
+    public function testAutomatedLogoutShowsSessionExpiredMessage(): void
+    {
+        global $logoutExpiredSessionLoggedIn, $logoutExpiredSessionCsrfCalled,
+        $logoutExpiredSessionCsrfValid, $xtpl, $api;
+
+        $logoutExpiredSessionLoggedIn = true;
+        $logoutExpiredSessionCsrfValid = true;
+        $api = new SuccessfulOAuthLogoutApi();
+        $_GET = ['timeout' => '1'];
+        $_SESSION = [
+            'logged_in' => true,
+            'auth_type' => 'oauth2',
+        ];
+
+        logoutUser();
+
+        self::assertTrue($logoutExpiredSessionCsrfCalled);
+        self::assertTrue($api->provider->revoked);
+        self::assertSame('Session expired', $xtpl->lastTitle);
+    }
+
+    public function testIntentionalLogoutKeepsGoodbyeMessage(): void
+    {
+        global $logoutExpiredSessionLoggedIn, $logoutExpiredSessionCsrfValid, $xtpl, $api;
+
+        $logoutExpiredSessionLoggedIn = true;
+        $logoutExpiredSessionCsrfValid = true;
+        $api = new SuccessfulOAuthLogoutApi();
+        $_GET = [];
+        $_SESSION = [
+            'logged_in' => true,
+            'auth_type' => 'oauth2',
+        ];
+
+        logoutUser();
+
+        self::assertTrue($api->provider->revoked);
+        self::assertSame('Goodbye', $xtpl->lastTitle);
+        self::assertSame('Logout successful', $xtpl->lastMessage);
     }
 
     public function testExpiredSwitchUserRequestRedirectsToLoginWithoutCsrf(): void
