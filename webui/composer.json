@@ -3,5 +3,11 @@
         "haveapi/client": "0.28.3",
         "endroid/qr-code": "4.5.*",
         "whichbrowser/parser": ">=2.1 <3.0"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^13"
+    },
+    "scripts": {
+        "test": "vendor/bin/phpunit"
     }
 }

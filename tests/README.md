@@ -22,6 +22,11 @@ vpsadminos checkout is required.
 
 ## Webui Playwright coverage
 
+The webui application root is `webui/`. Only browser entrypoints and assets
+belong under `webui/public/`, which is the nginx document root. PHP
+application code, config samples, Composer files, `vendor/`, language files,
+forms, pages, and `webui/template/template.html` stay outside the document root.
+
 Changes under `webui/` that affect user-visible behaviour should be covered by
 the relevant Playwright browser test when practical. This includes page/form
 changes, navigation, auth/session flows, role-specific behaviour, JavaScript,
@@ -51,6 +56,19 @@ When adding a new Playwright script, wire it into `tests/suite/webui.nix`,
 `tests/ci-tags.nix`, and `tests/ci-selection.yml` so local runs and selective
 CI can address it by script/tag.
 
+## Webui PHPUnit coverage
+
+Fast PHP regression tests for shared helpers and source-level security
+guardrails live under `webui/tests/`. Run them with:
+
+```sh
+nix develop .#webui --command bash -lc 'composer install && composer test'
+```
+
+Use PHPUnit for helper-level regressions that do not need a browser or service
+VM. Keep Playwright for rendered workflows, authentication/session behavior,
+role-specific browser behavior, and JavaScript interactions.
+
 ## CI test selection
 
 The CI workflow in `.github/workflows/ci.yml` runs the full integration suite
@@ -64,9 +82,9 @@ metadata expression to the test runner:
 
 Selection is intentionally conservative. If a changed runtime file is not
 matched by `tests/ci-selection.yml`, CI falls back to `tag=ci` and runs the
-whole integration suite. Documentation-only and spec-only changes can be
-skipped by the integration workflow when all changed files match the `skip`
-rules.
+whole integration suite. Documentation-only, spec-only, and webui PHPUnit-only
+changes can be skipped by the integration workflow when all changed files match
+the `skip` rules.
 
 When adding, moving, or renaming files that affect runtime behaviour, update
 `tests/ci-selection.yml` in the same change. Map the path to the smallest

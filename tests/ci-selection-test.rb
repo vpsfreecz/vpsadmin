@@ -62,11 +62,36 @@ class CiTestSelectionTest < Minitest::Test
     assert_includes selection.tags, 'webui'
   end
 
-  def test_webui_php_test_selects_all_webui_scripts
-    selection = selector.select(['tests/php/webui/xtemplate_table_pagination.php'])
+  def test_public_webui_asset_selects_all_webui_scripts
+    selection = selector.select(['webui/public/js/transaction-chains.js'])
 
     assert_equal 'selected', selection.mode
     assert_includes selection.tags, 'webui'
+  end
+
+  def test_public_webui_entrypoint_selects_all_webui_scripts
+    selection = selector.select(['webui/public/index.php'])
+
+    assert_equal 'selected', selection.mode
+    assert_includes selection.tags, 'webui'
+  end
+
+  def test_webui_phpunit_tests_skip_integration_ci
+    selection = selector.select(['webui/tests/Regression/XTemplateTablePaginationTest.php'])
+
+    assert_equal 'skip', selection.mode
+  end
+
+  def test_webui_phpunit_config_skips_integration_ci
+    selection = selector.select(['webui/phpunit.xml.dist'])
+
+    assert_equal 'skip', selection.mode
+  end
+
+  def test_webui_phpunit_workflow_skips_integration_ci
+    selection = selector.select(['.github/workflows/webui-phpunit.yml'])
+
+    assert_equal 'skip', selection.mode
   end
 
   def test_multi_area_selection_builds_single_or_expression
