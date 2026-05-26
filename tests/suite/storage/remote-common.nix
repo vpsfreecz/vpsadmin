@@ -45,6 +45,7 @@
       _, output = node.succeeds('sv check nodectld', timeout: 30)
       expect(output).to include('ok: run: nodectld')
       node.succeeds('test -S /run/nodectl/nodectld.sock', timeout: 30)
+      node.succeeds('nodectl ping', timeout: 30)
       true
     end
   end
