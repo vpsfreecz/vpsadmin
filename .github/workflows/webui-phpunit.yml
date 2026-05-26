@@ -1,0 +1,53 @@
+name: Webui PHPUnit
+
+on:
+  push:
+    paths:
+      - ".github/workflows/webui-phpunit.yml"
+      - "flake.lock"
+      - "flake.nix"
+      - "webui/**"
+      - "api/lib/vpsadmin/api/authentication/webauthn_register.erb"
+      - "api/lib/vpsadmin/api/authentication/webauthn_register.rb"
+  pull_request:
+    paths:
+      - ".github/workflows/webui-phpunit.yml"
+      - "flake.lock"
+      - "flake.nix"
+      - "webui/**"
+      - "api/lib/vpsadmin/api/authentication/webauthn_register.erb"
+      - "api/lib/vpsadmin/api/authentication/webauthn_register.rb"
+
+concurrency:
+  group: webui-phpunit-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  webui-phpunit:
+    name: webui PHPUnit
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout vpsadmin
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v31
+        with:
+          extra_nix_config: |
+            extra-substituters = https://cache.vpsadminos.org
+            extra-trusted-public-keys = cache.vpsadminos.org:wpIJlNZQIhS+0gFf1U3MC9sLZdLW3sh5qakOWGDoDrE=
+            fallback = true
+            connect-timeout = 15
+
+      - name: Run PHPUnit
+        run: |
+          set -euo pipefail
+
+          nix develop .#webui --command bash -lc 'composer install && composer test'
