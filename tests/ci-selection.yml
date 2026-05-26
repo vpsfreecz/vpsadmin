@@ -16,10 +16,13 @@ skip:
   - "*.mdwn"
   - "**/*.mdwn"
   - "doc/**"
+  - ".github/workflows/webui-phpunit.yml"
   - "api/spec/**"
   - "client/spec/**"
   - "console_router/spec/**"
   - "libnodectld/spec/**"
+  - "webui/phpunit.xml.dist"
+  - "webui/tests/**"
 
 full:
   - ".github/workflows/ci.yml"
@@ -53,7 +56,6 @@ full:
 select:
   - paths:
       - "tests/suite/webui.nix"
-      - "tests/php/webui/**"
       - "tests/playwright/webui/lib/**"
       - "tests/playwright/webui/playwright.config.cjs"
       - "webui/public/index.php"
