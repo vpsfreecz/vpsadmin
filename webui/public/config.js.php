@@ -46,9 +46,9 @@ api.authenticate('oauth2', {access_token: {access_token: root.vpsAdmin.accessTok
 api.authenticate('token', {token: root.vpsAdmin.sessionToken}, function(){}, false);
 <?php } ?>
 
-<?php include 'js/keepalive.js'; ?>
-<?php include 'js/transaction-chains.js'; ?>
-<?php include 'js/session-countdown.js'; ?>
+<?php include __DIR__ . '/js/keepalive.js'; ?>
+<?php include __DIR__ . '/js/transaction-chains.js'; ?>
+<?php include __DIR__ . '/js/session-countdown.js'; ?>
 
 })(window);
 <?php } ?>

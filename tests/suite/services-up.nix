@@ -190,6 +190,41 @@ import ../make-test.nix (
               true
             end
           end
+
+          it 'serves public entrypoints and assets directly' do
+            [
+              '/',
+              '/js/haveapi-client.js',
+              '/template/css/main.css',
+              '/template/icons/info.png',
+            ].each do |path|
+              wait_until_block_succeeds(name: "webui serves #{path}") do
+                _, status = services.succeeds(
+                  "curl --silent --output /dev/null --write-out '%{http_code}' http://127.0.0.1:8134#{path}"
+                )
+                expect(Integer(status.strip)).to be_between(200, 399)
+                true
+              end
+            end
+          end
+
+          it 'does not serve private application files directly' do
+            [
+              '/lib/functions.lib.php',
+              '/pages/page_login.php',
+              '/template/template.html',
+              '/composer.json',
+              '/vendor/autoload.php',
+            ].each do |path|
+              wait_until_block_succeeds(name: "webui rejects #{path}") do
+                _, status = services.succeeds(
+                  "curl --silent --output /dev/null --write-out '%{http_code}' http://127.0.0.1:8134#{path}"
+                )
+                expect(status.strip).to eq('404')
+                true
+              end
+            end
+          end
         end
 
         describe 'mailer node' do
