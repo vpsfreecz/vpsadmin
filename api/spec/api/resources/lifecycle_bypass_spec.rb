@@ -262,15 +262,21 @@ RSpec.describe 'API lifecycle bypass regressions' do # rubocop:disable RSpec/Des
       expect_lifecycle_denied
     end
 
-    it 'blocks active users from cloning, deleting, or swapping suspended VPSes' do
+    it 'blocks suspended users from deleting suspended VPSes' do
+      vps = create_vps!(hostname: 'lifecycle-suspended-user-delete')
+      set_lifecycle_state!(vps, :suspended)
+      suspend_user!
+
+      as(SpecSeed.user) { json_delete vpath("/vpses/#{vps.id}") }
+      expect_lifecycle_denied
+    end
+
+    it 'blocks active users from cloning or swapping suspended VPSes' do
       suspended_vps = create_vps!(hostname: 'lifecycle-suspended-source')
       peer_vps = create_vps!(node: SpecSeed.other_node, hostname: 'lifecycle-swap-peer')
       set_lifecycle_state!(suspended_vps, :suspended)
 
       as(SpecSeed.user) { json_post vpath("/vpses/#{suspended_vps.id}/clone"), vps: {} }
-      expect_lifecycle_denied
-
-      as(SpecSeed.user) { json_delete vpath("/vpses/#{suspended_vps.id}") }
       expect_lifecycle_denied
 
       as(SpecSeed.user) do
