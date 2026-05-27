@@ -5,7 +5,15 @@ module NodeCtl
     cmd :'halt-reason'
     description 'Look up reported planned/unplanned outages for halt reason'
 
-    IMPACT_TYPES = %i[tbd system_restart system_reset network performance unavailability].freeze
+    IMPACT_TYPES = [
+      'TBD',
+      'System restart',
+      'System reset',
+      'Network',
+      'Performance',
+      'Unavailability',
+      'NFS export'
+    ].freeze
     OUTAGE_TYPES = ['planned outage', 'unplanned outage'].freeze
 
     def execute
