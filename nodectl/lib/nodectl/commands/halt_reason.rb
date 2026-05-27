@@ -3,9 +3,10 @@ require 'timeout'
 module NodeCtl
   class Commands::HaltReason < Command::Local
     cmd :'halt-reason'
-    description 'Look up reported maintenaces/outages for halt reason'
+    description 'Look up reported planned/unplanned outages for halt reason'
 
     IMPACT_TYPES = %i[tbd system_restart system_reset network performance unavailability].freeze
+    OUTAGE_TYPES = ['planned outage', 'unplanned outage'].freeze
 
     def execute
       # Access db from a subprocess in case it is not accessible
@@ -95,7 +96,7 @@ module NodeCtl
         outages.each do |outage|
           puts '#'
           puts "# Outage ##{outage['id']}"
-          puts "System is #{get_action_verb} due to a reported #{outage['outage_type'] === 0 ? 'maintenance' : 'outage'}:"
+          puts "System is #{get_action_verb} due to a reported #{OUTAGE_TYPES[outage['outage_type']]}:"
           puts "  Reported at: #{fmt_date(outage['begins_at'].localtime)}"
           puts "  Impact type: #{IMPACT_TYPES[outage['impact_type']]}"
           puts "  Duration:    #{outage['duration']} minutes"
