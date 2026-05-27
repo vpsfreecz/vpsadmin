@@ -723,6 +723,21 @@ RSpec.describe 'VpsAdmin::API::Resources::VPS write actions' do # rubocop:disabl
       expect(vps.reload.object_state).to eq('soft_delete')
     end
 
+    it 'soft deletes suspended VPSes for active owners' do
+      vps = create_vps!(user: SpecSeed.user, node: SpecSeed.node)
+      vps.record_object_state_change(
+        :suspended,
+        reason: 'spec setup',
+        user: SpecSeed.admin
+      )
+
+      as(SpecSeed.user) { json_delete show_path(vps.id) }
+
+      expect_status(200)
+      expect(json['status']).to be(true)
+      expect(vps.reload.object_state).to eq('soft_delete')
+    end
+
     it 'soft deletes for admin by default' do
       vps = create_vps!(user: SpecSeed.user, node: SpecSeed.node)
 

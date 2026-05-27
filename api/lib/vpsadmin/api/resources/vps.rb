@@ -554,7 +554,6 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
     def exec
       vps = ::Vps.including_deleted.find_by!(with_restricted(id: path_params['vps_id']))
       maintenance_check!(vps)
-      object_state_check!(vps, vps.user)
 
       state = if current_user.role == :admin
                 input[:lazy] == false ? :hard_delete : :soft_delete
@@ -562,6 +561,9 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
               else
                 :soft_delete
               end
+
+      object_state_check!(vps.user)
+      object_state_check!(vps) unless state == :soft_delete && vps.object_state == 'suspended'
 
       @chain, = vps.set_object_state(
         state,
