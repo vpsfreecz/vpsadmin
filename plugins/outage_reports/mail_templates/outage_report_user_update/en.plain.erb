@@ -13,7 +13,7 @@ there is an update for the <%= @o.outage_type_label.downcase %> affecting your s
     when :state
       "State: #{old} -> #{new}"
     when :impact_type
-      "Impact type: #{old} -> #{new}"
+      "Impact type: #{Outage.impact_type_label(old)} -> #{Outage.impact_type_label(new)}"
     end
 %>
 <% end -%>

@@ -92,6 +92,35 @@ function outage_type_label($type)
     }
 }
 
+function outage_impact_label($impact)
+{
+    switch ($impact) {
+        case 'tbd':
+            return _('TBD');
+
+        case 'system_restart':
+            return _('System restart');
+
+        case 'system_reset':
+            return _('System reset');
+
+        case 'network':
+            return _('Network');
+
+        case 'performance':
+            return _('Performance');
+
+        case 'unavailability':
+            return _('Unavailability');
+
+        case 'export':
+            return _('NFS export');
+
+        default:
+            return h($impact);
+    }
+}
+
 function outage_report_form()
 {
     global $xtpl, $api;
@@ -550,7 +579,7 @@ function outage_details($id)
     $xtpl->table_tr();
 
     $xtpl->table_td(_('Impact') . ':');
-    $xtpl->table_td($outage->impact);
+    $xtpl->table_td(outage_impact_label($outage->impact));
     $xtpl->table_tr();
 
     if (isAdmin()) {
@@ -637,7 +666,7 @@ function outage_details($id)
         $xtpl->table_td(h($update->reporter_name));
 
         $changes = [];
-        $check = ['begins_at', 'finished_at', 'state', 'type', 'duration'];
+        $check = ['begins_at', 'finished_at', 'state', 'impact', 'duration'];
 
         foreach ($check as $p) {
             if ($update->{$p}) {
@@ -655,7 +684,7 @@ function outage_details($id)
                         break;
 
                     case 'impact':
-                        $changes[] = _("Impact type:") . ' ' . $update->impact;
+                        $changes[] = _("Impact type:") . ' ' . outage_impact_label($update->impact);
                         break;
 
                     case 'duration':
@@ -908,7 +937,7 @@ function outage_list()
             function ($v) { return h($v->label); },
             $outage->entity->list()->asArray()
         )));
-        $xtpl->table_td($outage->impact);
+        $xtpl->table_td(outage_impact_label($outage->impact));
         $xtpl->table_td(h($outage->en_summary));
 
         if (isAdmin()) {
@@ -1263,7 +1292,7 @@ function outage_list_overview($outages)
             function ($v) { return h($v->label); },
             $outage->entity->list()->asArray()
         )));
-        $xtpl->table_td($outage->impact);
+        $xtpl->table_td(outage_impact_label($outage->impact));
         $xtpl->table_td(h($outage->en_summary));
 
         if (isAdmin()) {

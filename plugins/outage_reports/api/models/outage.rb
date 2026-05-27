@@ -14,6 +14,16 @@ class Outage < ApplicationRecord
     'unplanned_outage' => 'Unplanned outage'
   }.freeze
 
+  IMPACT_TYPE_LABELS = {
+    'tbd' => 'TBD',
+    'system_restart' => 'System restart',
+    'system_reset' => 'System reset',
+    'network' => 'Network',
+    'performance' => 'Performance',
+    'unavailability' => 'Unavailability',
+    'export' => 'NFS export'
+  }.freeze
+
   enum :state, %i[staged announced resolved cancelled]
   enum :outage_type, {
     planned_outage: 0,
@@ -42,11 +52,27 @@ class Outage < ApplicationRecord
   end
 
   def self.outage_type_label(type)
-    OUTAGE_TYPE_LABELS.fetch(type.to_s, type.to_s)
+    name = type.is_a?(Integer) ? outage_types.key(type) : type.to_s
+    name ||= type.to_s
+    OUTAGE_TYPE_LABELS.fetch(name, name)
   end
 
   def outage_type_label
     self.class.outage_type_label(outage_type)
+  end
+
+  def self.impact_type_labels
+    IMPACT_TYPE_LABELS
+  end
+
+  def self.impact_type_label(type)
+    name = type.is_a?(Integer) ? impact_types.key(type) : type.to_s
+    name ||= type.to_s
+    IMPACT_TYPE_LABELS.fetch(name, name)
+  end
+
+  def impact_type_label
+    self.class.impact_type_label(impact_type)
   end
 
   def self.create_outage!(attrs, translations = {})

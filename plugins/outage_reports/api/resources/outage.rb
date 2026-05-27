@@ -26,7 +26,7 @@ module VpsAdmin::API::Resources
                     choices: { values: ::Outage.outage_type_labels }
       string :state, label: 'State', choices: ::Outage.states.keys.map(&:to_s)
       string :impact, db_name: :impact_type, label: 'Impact',
-                      choices: ::Outage.impact_types.keys.map(&:to_s)
+                      choices: { values: ::Outage.impact_type_labels }
       bool :auto_resolve, label: 'Auto-resolve', default: true
       use :texts
     end

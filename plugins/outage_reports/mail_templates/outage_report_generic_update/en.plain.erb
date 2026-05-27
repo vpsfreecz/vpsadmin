@@ -11,7 +11,7 @@ Outage update
     when :state
       "State: #{old} -> #{new}"
     when :impact_type
-      "Impact type: #{old} -> #{new}"
+      "Impact type: #{Outage.impact_type_label(old)} -> #{Outage.impact_type_label(new)}"
     end
 %>
 <% end -%>
