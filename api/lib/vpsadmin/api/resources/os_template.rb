@@ -108,7 +108,7 @@ class VpsAdmin::API::Resources::OsTemplate < HaveAPI::Resource
       allow if u.role == :admin
       output whitelist: %i[id name label info supported hypervisor_type cgroup_version
                            vendor variant arch distribution version os_family
-                           enable_script enable_cloud_init]
+                           enable_script enable_cloud_init enabled]
       allow
     end
 

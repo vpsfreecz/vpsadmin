@@ -50,7 +50,7 @@ module VpsAdmin::API::Resources
     if u
       output whitelist: %i[id name label info supported hypervisor_type cgroup_version
                            vendor variant arch distribution version os_family
-                           enable_script enable_cloud_init]
+                           enable_script enable_cloud_init enabled]
     else
       restrict enabled: true, supported: true
       output whitelist: %i[id name label hypervisor_type]

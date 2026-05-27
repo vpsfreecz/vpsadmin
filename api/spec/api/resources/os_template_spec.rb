@@ -387,8 +387,8 @@ RSpec.describe 'VpsAdmin::API::Resources::OsTemplate' do
       expect_status(200)
       expect(json['status']).to be(true)
       expect(os_template['id']).to eq(fixture(:enabled_vpsadminos_a).id)
+      expect(os_template['enabled']).to be(true)
       expect(os_template.keys).not_to include(
-        'enabled',
         'order',
         'manage_hostname',
         'manage_dns_resolver',
@@ -402,8 +402,8 @@ RSpec.describe 'VpsAdmin::API::Resources::OsTemplate' do
       expect_status(200)
       expect(json['status']).to be(true)
       expect(os_template['id']).to eq(fixture(:disabled_vpsadminos).id)
+      expect(os_template['enabled']).to be(false)
       expect(os_template.keys).not_to include(
-        'enabled',
         'order',
         'manage_hostname',
         'manage_dns_resolver',

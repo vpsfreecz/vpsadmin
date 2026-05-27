@@ -188,6 +188,19 @@ RSpec.describe 'VpsAdmin::API::Resources::VPS' do
       expect(vps_obj['hostname']).to eq(user_vps.hostname)
     end
 
+    it 'includes OS template enabled state for owners' do
+      as(SpecSeed.user) do
+        json_get show_path(user_vps.id), _meta: { includes: 'os_template' }
+      end
+
+      expect_status(200)
+      expect(json['status']).to be(true)
+      expect(vps_obj['os_template']).to include(
+        'id' => user_vps.os_template_id,
+        'enabled' => true
+      )
+    end
+
     it 'hides other users VPSes' do
       as(SpecSeed.other_user) { json_get show_path(user_vps.id) }
 
