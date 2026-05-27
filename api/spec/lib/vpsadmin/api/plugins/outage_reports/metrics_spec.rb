@@ -39,7 +39,7 @@ RSpec.describe 'outage reports plugin metrics', requires_plugins: :outage_report
     outage = create_outage_with_translation!(
       {
         state: :announced,
-        outage_type: :maintenance,
+        outage_type: :planned_outage,
         impact_type: :network,
         begins_at: Time.local(2026, 4, 1, 10, 0, 0),
         duration: 60,

@@ -22,7 +22,8 @@ module VpsAdmin::API::Resources
       datetime :begins_at, label: 'Begins at', nullable: true
       datetime :finished_at, label: 'Finished at', nullable: true
       integer :duration, label: 'Duration', desc: 'Outage duration in minutes'
-      string :type, db_name: :outage_type, label: 'Type', choices: ::Outage.outage_types.keys.map(&:to_s)
+      string :type, db_name: :outage_type, label: 'Type',
+                    choices: { values: ::Outage.outage_type_labels }
       string :state, label: 'State', choices: ::Outage.states.keys.map(&:to_s)
       string :impact, db_name: :impact_type, label: 'Impact',
                       choices: ::Outage.impact_types.keys.map(&:to_s)

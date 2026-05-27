@@ -14,7 +14,7 @@ RSpec.describe 'outage reports plugin rake tasks', requires_plugins: :outage_rep
 
   def outage(attrs)
     create_outage_with_translation!({
-      outage_type: :maintenance,
+      outage_type: :planned_outage,
       impact_type: :network,
       duration: 30,
       begins_at: 2.hours.ago,

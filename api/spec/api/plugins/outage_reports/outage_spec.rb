@@ -107,7 +107,7 @@ RSpec.describe 'VpsAdmin::API::Resources::Outage', requires_plugins: :outage_rep
     defaults = {
       begins_at: Time.utc(2026, 1, 1, 12, 0, 0),
       duration: 60,
-      outage_type: :outage,
+      outage_type: :unplanned_outage,
       impact_type: :network,
       state: :staged,
       auto_resolve: true
@@ -402,7 +402,7 @@ RSpec.describe 'VpsAdmin::API::Resources::Outage', requires_plugins: :outage_rep
         outage: {
           begins_at: Time.utc(2026, 1, 10, 10, 0, 0).iso8601,
           duration: 60,
-          type: 'outage',
+          type: 'unplanned_outage',
           impact: 'network',
           auto_resolve: true,
           en_summary: 'Spec outage',
@@ -431,7 +431,7 @@ RSpec.describe 'VpsAdmin::API::Resources::Outage', requires_plugins: :outage_rep
       expect_status(200)
       expect(json['status']).to be(true)
       expect(outage_obj['state']).to eq('staged')
-      expect(outage_obj['type']).to eq('outage')
+      expect(outage_obj['type']).to eq('unplanned_outage')
       expect(outage_obj['impact']).to eq('network')
       expect(outage_obj['en_summary']).to eq('Spec outage')
       expect(outage_obj['en_description']).to eq('Spec description')

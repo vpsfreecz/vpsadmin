@@ -77,7 +77,8 @@ class OutageParser
       outage[:en_summary] = data[:reason_en]
       outage[:cs_summary] = data[:reason_cs]
       outage[:cs_description], outage[:en_description] = get_description(data[:description_cs])
-      outage[:type] = get_type(outage)
+      outage[:type] = outage[:planned] ? 'planned_outage' : 'unplanned_outage'
+      outage[:impact] = get_impact(outage)
 
       if outage[:entities].empty?
         puts "No servers in #{f}"
@@ -91,10 +92,10 @@ class OutageParser
   def import
     @outages.each do |data|
       outage = @api.outage.create({
-        planned: data[:planned],
         begins_at: data[:date],
         duration: data[:duration],
         type: data[:type],
+        impact: data[:impact],
         en_summary: data[:en_summary],
         cs_summary: data[:cs_summary],
         en_description: data[:en_description],
@@ -125,16 +126,16 @@ class OutageParser
 
   protected
 
-  def get_type(outage)
+  def get_impact(outage)
     if outage[:entities].detect { |v| v[0] == 'Location' } \
        && !outage[:entities].detect { |v| v[0] == 'Node' }
       return 'network'
     end
 
-    return 'maintenance' if outage[:entities].detect { |v| v[0] == 'Node' && v[1] == 5 }
-    return 'restart' if outage[:planned]
+    return 'unavailability' if outage[:entities].detect { |v| v[0] == 'Node' && v[1] == 5 }
+    return 'system_restart' if outage[:planned]
 
-    'reset'
+    'system_reset'
   end
 
   def get_date(data)

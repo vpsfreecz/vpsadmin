@@ -25,7 +25,8 @@ module VpsAdmin::API::Resources
     params(:all) do
       id :id
       resource VpsAdmin::API::Resources::Outage, value_label: :begins_at
-      string :type, db_name: :outage_type, label: 'Type', choices: ::Outage.outage_types.keys.map(&:to_s)
+      string :type, db_name: :outage_type, label: 'Type',
+                    choices: { values: ::Outage.outage_type_labels }
       use :editable
       resource VpsAdmin::API::Resources::User, name: :reported_by, value_label: :login,
                                                label: 'Reported by'

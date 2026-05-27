@@ -9,8 +9,16 @@ class Outage < ApplicationRecord
   has_many :outage_exports
   has_many :exports, through: :outage_exports
 
+  OUTAGE_TYPE_LABELS = {
+    'planned_outage' => 'Planned outage',
+    'unplanned_outage' => 'Unplanned outage'
+  }.freeze
+
   enum :state, %i[staged announced resolved cancelled]
-  enum :outage_type, %i[maintenance outage]
+  enum :outage_type, {
+    planned_outage: 0,
+    unplanned_outage: 1
+  }
   enum :impact_type, %i[
     tbd
     system_restart
@@ -27,6 +35,18 @@ class Outage < ApplicationRecord
     return all if user && user.role == :admin
 
     where.not(state: states[:staged])
+  end
+
+  def self.outage_type_labels
+    OUTAGE_TYPE_LABELS
+  end
+
+  def self.outage_type_label(type)
+    OUTAGE_TYPE_LABELS.fetch(type.to_s, type.to_s)
+  end
+
+  def outage_type_label
+    self.class.outage_type_label(outage_type)
   end
 
   def self.create_outage!(attrs, translations = {})

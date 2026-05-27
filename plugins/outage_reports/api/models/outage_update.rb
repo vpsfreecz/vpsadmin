@@ -24,6 +24,10 @@ class OutageUpdate < ApplicationRecord
     outage.outage_type
   end
 
+  def outage_type_label
+    outage.outage_type_label
+  end
+
   # @yieldparam attribute [Symbol]
   # @yieldparam old_value [any]
   # @yieldparam new_value [any]

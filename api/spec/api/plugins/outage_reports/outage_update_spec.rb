@@ -56,7 +56,7 @@ RSpec.describe 'VpsAdmin::API::Resources::OutageUpdate', requires_plugins: :outa
     defaults = {
       begins_at: Time.utc(2026, 1, 1, 12, 0, 0),
       duration: 60,
-      outage_type: :outage,
+      outage_type: :unplanned_outage,
       impact_type: :network,
       state: :staged,
       auto_resolve: true

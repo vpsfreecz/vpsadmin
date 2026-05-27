@@ -78,6 +78,20 @@ function outage_entities_to_array($outage)
     return $ret;
 }
 
+function outage_type_label($type)
+{
+    switch ($type) {
+        case 'planned_outage':
+            return _('Planned outage');
+
+        case 'unplanned_outage':
+            return _('Unplanned outage');
+
+        default:
+            return h($type);
+    }
+}
+
 function outage_report_form()
 {
     global $xtpl, $api;
@@ -90,7 +104,7 @@ function outage_report_form()
 
     $xtpl->form_add_input(_('Date and time') . ':', 'text', '30', 'begins_at', date('Y-m-d H:i'));
     $xtpl->form_add_number(_('Duration') . ':', 'duration', post_val('duration'), 0, 999999, 1, 'minutes');
-    api_param_to_form('type', $input->type, post_val('type', 'outage'));
+    api_param_to_form('type', $input->type, post_val('type', 'unplanned_outage'));
     api_param_to_form('impact', $input->impact);
     api_param_to_form('auto_resolve', $input->auto_resolve);
 
@@ -528,7 +542,7 @@ function outage_details($id)
     $xtpl->table_tr();
 
     $xtpl->table_td(_('Type') . ':');
-    $xtpl->table_td($outage->type);
+    $xtpl->table_td(outage_type_label($outage->type));
     $xtpl->table_tr();
 
     $xtpl->table_td(_('State') . ':');
@@ -888,7 +902,7 @@ function outage_list()
     foreach ($outages as $outage) {
         $xtpl->table_td(tolocaltz($outage->begins_at, 'Y-m-d H:i'));
         $xtpl->table_td($outage->duration, false, true);
-        $xtpl->table_td($outage->type);
+        $xtpl->table_td(outage_type_label($outage->type));
         $xtpl->table_td($outage->state);
         $xtpl->table_td(implode(', ', array_map(
             function ($v) { return h($v->label); },
@@ -1198,7 +1212,7 @@ function outage_list_title($prefix, $outages)
     $hasOutage = false;
 
     foreach ($outages as $outage) {
-        if ($outage->type == 'maintenance') {
+        if ($outage->type == 'planned_outage') {
             $hasMaintenance = true;
         } else {
             $hasOutage = true;
@@ -1210,13 +1224,13 @@ function outage_list_title($prefix, $outages)
     }
 
     if ($hasMaintenance && $hasOutage) {
-        return $prefix . ' ' . _('maintenances and outages');
+        return $prefix . ' ' . _('planned and unplanned outages');
     } elseif ($hasMaintenance) {
-        return $prefix . ' ' . _('maintenances');
+        return $prefix . ' ' . _('planned outages');
     } elseif ($hasOutage) {
-        return $prefix . ' ' . _('outages');
+        return $prefix . ' ' . _('unplanned outages');
     } else {
-        return $prefix . ' ' . _('maintenances and outages');
+        return $prefix . ' ' . _('planned and unplanned outages');
     }
 }
 
@@ -1244,7 +1258,7 @@ function outage_list_overview($outages)
     foreach ($outages as $outage) {
         $xtpl->table_td(tolocaltz($outage->begins_at, 'Y-m-d H:i'));
         $xtpl->table_td($outage->duration . ' min', false, true);
-        $xtpl->table_td($outage->type);
+        $xtpl->table_td(outage_type_label($outage->type));
         $xtpl->table_td(implode(', ', array_map(
             function ($v) { return h($v->label); },
             $outage->entity->list()->asArray()

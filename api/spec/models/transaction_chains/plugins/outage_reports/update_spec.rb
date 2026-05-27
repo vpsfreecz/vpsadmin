@@ -22,7 +22,7 @@ RSpec.describe 'outage reports update chain', requires_plugins: :outage_reports 
     create_outage_with_translation!(
       {
         state: :staged,
-        outage_type: :maintenance,
+        outage_type: :planned_outage,
         impact_type: :tbd,
         begins_at: Time.local(2026, 4, 1, 10, 0, 0),
         duration: 30,

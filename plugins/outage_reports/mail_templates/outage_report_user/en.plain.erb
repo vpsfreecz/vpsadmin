@@ -7,7 +7,7 @@ Outage report
 <% end -%>
 
 Outage: #<%= @o.id %>
-Type: <%= @o.outage_type %>
+Type: <%= @o.outage_type_label %>
 State: <%= @o.state %>
 Date and time: <%= @o.begins_at.localtime.strftime('%Y-%m-%d %H:%M %Z') %>
 Expected duration: <%= @o.duration %> minutes

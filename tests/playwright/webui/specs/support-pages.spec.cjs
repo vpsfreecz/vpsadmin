@@ -242,7 +242,7 @@ test.describe('support and status browser coverage', () => {
     const outage = s.outages.public;
 
     await page.goto(
-      '/?page=outage&action=list&type=maintenance&state=announced&impact=network',
+      '/?page=outage&action=list&type=planned_outage&state=announced&impact=network',
       { waitUntil: 'domcontentloaded' },
     );
     await expect(heading(page)).toContainText('Outage list');
@@ -296,7 +296,7 @@ test.describe('support and status browser coverage', () => {
     await login(page, fixtures.admin);
     await page.goto(
       [
-        '/?page=outage&action=list&type=outage&state=announced&impact=performance',
+        '/?page=outage&action=list&type=unplanned_outage&state=announced&impact=performance',
         `user=${fixtures.user.id}`,
         `vps=${s.outages.public.vpsId}`,
         `entity_name=Node`,
