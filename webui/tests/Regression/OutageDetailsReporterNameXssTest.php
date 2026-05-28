@@ -48,7 +48,7 @@ class FakeOutage
     public string $state = 'announced';
     public string $begins_at = '2026-05-21 10:00:00 UTC';
     public int $duration = 10;
-    public string $type = 'maintenance';
+    public string $type = 'planned_outage';
     public string $impact = 'network';
     public bool $auto_resolve = false;
     public int $affected_user_count = 0;

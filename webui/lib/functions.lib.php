@@ -448,6 +448,11 @@ function api_param_to_form_pure($name, $desc, $v = null, $label_callback = null,
         case 'Float':
             if ($desc->validators && property_exists($desc->validators, 'include')) {
                 $desc_choices = $desc->validators->include->values;
+
+                if (is_object($desc_choices)) {
+                    $desc_choices = get_object_vars($desc_choices);
+                }
+
                 $assoc = is_assoc($desc_choices);
                 $choices = [];
 
@@ -472,7 +477,7 @@ function api_param_to_form_pure($name, $desc, $v = null, $label_callback = null,
 
                 } else {
                     if ($assoc) {
-                        $choices = $desc_choices;
+                        $choices += $desc_choices;
 
                     } else {
                         foreach ($desc_choices as $val) {
