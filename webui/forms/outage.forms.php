@@ -92,6 +92,20 @@ function outage_type_label($type)
     }
 }
 
+function outage_type_list_label($type)
+{
+    switch ($type) {
+        case 'planned_outage':
+            return _('Planned');
+
+        case 'unplanned_outage':
+            return _('Unplanned');
+
+        default:
+            return h($type);
+    }
+}
+
 function outage_impact_label($impact)
 {
     switch ($impact) {
@@ -816,7 +830,7 @@ function outage_list()
 
     $xtpl->table_add_category(_('Date'));
     $xtpl->table_add_category(_('Duration'));
-    $xtpl->table_add_category(_('Type'));
+    $xtpl->table_add_category(_('Outage'));
     $xtpl->table_add_category(_('State'));
     $xtpl->table_add_category(_('Systems'));
     $xtpl->table_add_category(_('Impact'));
@@ -931,7 +945,7 @@ function outage_list()
     foreach ($outages as $outage) {
         $xtpl->table_td(tolocaltz($outage->begins_at, 'Y-m-d H:i'));
         $xtpl->table_td($outage->duration, false, true);
-        $xtpl->table_td(outage_type_label($outage->type));
+        $xtpl->table_td(outage_type_list_label($outage->type));
         $xtpl->table_td($outage->state);
         $xtpl->table_td(implode(', ', array_map(
             function ($v) { return h($v->label); },
@@ -1269,7 +1283,7 @@ function outage_list_overview($outages)
 
     $xtpl->table_add_category(_('Date'));
     $xtpl->table_add_category(_('Duration'));
-    $xtpl->table_add_category(_('Type'));
+    $xtpl->table_add_category(_('Outage'));
     $xtpl->table_add_category(_('Systems'));
     $xtpl->table_add_category(_('Impact'));
     $xtpl->table_add_category(_('Reason'));
@@ -1287,7 +1301,7 @@ function outage_list_overview($outages)
     foreach ($outages as $outage) {
         $xtpl->table_td(tolocaltz($outage->begins_at, 'Y-m-d H:i'));
         $xtpl->table_td($outage->duration . ' min', false, true);
-        $xtpl->table_td(outage_type_label($outage->type));
+        $xtpl->table_td(outage_type_list_label($outage->type));
         $xtpl->table_td(implode(', ', array_map(
             function ($v) { return h($v->label); },
             $outage->entity->list()->asArray()

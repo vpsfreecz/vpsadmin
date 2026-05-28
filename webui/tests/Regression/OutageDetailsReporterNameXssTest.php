@@ -189,6 +189,10 @@ final class OutageDetailsReporterNameXssTest extends TestCase
 
         require dirname(__DIR__, 2) . '/forms/outage.forms.php';
 
+        self::assertSame('Planned', outage_type_list_label('planned_outage'));
+        self::assertSame('Unplanned', outage_type_list_label('unplanned_outage'));
+        self::assertSame('Planned outage', outage_type_label('planned_outage'));
+
         outage_details(31337);
         $html = implode("\n", $xtpl->cells);
 
