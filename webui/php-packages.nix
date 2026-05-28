@@ -42,10 +42,10 @@ let
     "guzzlehttp/guzzle" = {
       targetDir = "";
       src = composerEnv.buildZipPackage {
-        name = "guzzlehttp-guzzle-aec528da477062d3af11f51e6b33402be233b21f";
+        name = "guzzlehttp-guzzle-7c8d84b39e680315f687e8662a9d6fb0865c5148";
         src = fetchurl {
-          url = "https://api.github.com/repos/guzzle/guzzle/zipball/aec528da477062d3af11f51e6b33402be233b21f";
-          sha256 = "010b5qv4dplw5zxh3w9gr5yk45d8vzj757h3fiwd545283lhbcm2";
+          url = "https://api.github.com/repos/guzzle/guzzle/zipball/7c8d84b39e680315f687e8662a9d6fb0865c5148";
+          sha256 = "0gl3m61iyrj32r0z37rhja2li3d0pcv9d50ggh742nm4d10w5w0h";
         };
       };
     };
@@ -62,10 +62,10 @@ let
     "guzzlehttp/psr7" = {
       targetDir = "";
       src = composerEnv.buildZipPackage {
-        name = "guzzlehttp-psr7-a1bbdc172f32a25fe999965b65b6e71fd87da9ed";
+        name = "guzzlehttp-psr7-7c1472269227dc6f18930bd903d7a88fe6c52130";
         src = fetchurl {
-          url = "https://api.github.com/repos/guzzle/psr7/zipball/a1bbdc172f32a25fe999965b65b6e71fd87da9ed";
-          sha256 = "1a63cy3kyzc6km9zh6hgv022kfarb7v3i58vfrvcjy45bm6qnk2l";
+          url = "https://api.github.com/repos/guzzle/psr7/zipball/7c1472269227dc6f18930bd903d7a88fe6c52130";
+          sha256 = "0gm4npwrym2wcc60g93xlpic2129w8mcndcdcna97ya7vip098vr";
         };
       };
     };
@@ -274,10 +274,10 @@ let
     "phpunit/phpunit" = {
       targetDir = "";
       src = composerEnv.buildZipPackage {
-        name = "phpunit-phpunit-ca98c9f757c0e1e0778ab8ff80c4fb84152facf8";
+        name = "phpunit-phpunit-ddf7f25d9ee9652b464475d7f3bacde2613e355e";
         src = fetchurl {
-          url = "https://api.github.com/repos/sebastianbergmann/phpunit/zipball/ca98c9f757c0e1e0778ab8ff80c4fb84152facf8";
-          sha256 = "12w2pp87wlk1h62cwhcdzb8k21cdzmvq6drvdk6zx45pki1aigmf";
+          url = "https://api.github.com/repos/sebastianbergmann/phpunit/zipball/ddf7f25d9ee9652b464475d7f3bacde2613e355e";
+          sha256 = "1236s9wjfay66pkfdqq5j5cyrg6kvy3xbd98d0xja07r1bwyhn4r";
         };
       };
     };
