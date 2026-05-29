@@ -1,0 +1,4 @@
+interface:
+  display_name: "Update vpsAdmin HaveAPI"
+  short_description: "Update vpsAdmin HaveAPI dependency and gemsets."
+  default_prompt: "Update vpsAdmin to HaveAPI <version>."
