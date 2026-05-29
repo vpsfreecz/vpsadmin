@@ -260,6 +260,23 @@ RSpec.describe VpsAdmin::API::Authentication::OAuth2Config do
     expect(refresh_token).to eq(authorization.refresh_token.token)
   end
 
+  it 'creates OAuth2 token sessions without a user agent header' do
+    [nil, ''].each do |user_agent|
+      authorization = create_oauth2_authorization!(user:, client:)
+      auth_request = build_request(ip: '198.51.100.71', user_agent:)
+
+      access_token, = config.get_tokens(authorization, auth_request)
+
+      session = authorization.reload.user_session
+      expect(session).to be_present
+      expect(session.auth_type).to eq('oauth2')
+      expect(access_token).to eq(session.token.token)
+      expect(session.client_version).to eq('')
+      expect(session.label).to eq('')
+      expect(session.user_agent.agent).to eq('')
+    end
+  end
+
   it 'does not find expired authorization codes' do
     authorization = create_oauth2_authorization!(
       user:,

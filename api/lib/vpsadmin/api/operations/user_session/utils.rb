@@ -14,6 +14,7 @@ module VpsAdmin::API
     # @param admin [::User]
     # @return [::UserSession]
     def open_session(user:, request:, auth_type:, scope:, generate_token:, token_lifetime: 'fixed', token_interval: nil, admin: nil, label: nil)
+      user_agent = request.user_agent.to_s
       api_ip_addr = request.ip
       api_ip_ptr = get_ptr(api_ip_addr)
 
@@ -31,11 +32,11 @@ module VpsAdmin::API
         api_ip_ptr:,
         client_ip_addr:,
         client_ip_ptr:,
-        user_agent: ::UserAgent.find_or_create!(request.user_agent || ''),
-        client_version: request.user_agent || '',
+        user_agent: ::UserAgent.find_or_create!(user_agent),
+        client_version: user_agent,
         token_lifetime:,
         token_interval:,
-        label: label || request.user_agent
+        label: label.nil? ? user_agent : label
       )
 
       if generate_token

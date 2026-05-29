@@ -74,4 +74,19 @@ RSpec.describe VpsAdmin::API::Authentication::Basic do
     expect(session.closed_at).not_to be_nil
     expect(session.token).to be_nil
   end
+
+  it 'creates basic sessions without a user agent header' do
+    [nil, ''].each do |user_agent|
+      auth_request = build_request(ip: '198.51.100.70', user_agent:)
+      result = provider.send(:find_user, auth_request, user.login, 'secret')
+
+      expect(result).to eq(user)
+
+      session = UserSession.order(:id).last
+      expect(session.auth_type).to eq('basic')
+      expect(session.client_version).to eq('')
+      expect(session.label).to eq('')
+      expect(session.user_agent.agent).to eq('')
+    end
+  end
 end

@@ -19,10 +19,10 @@ RSpec.describe VpsAdmin::API::Authentication::TokenConfig do
     )
   end
 
-  def request_token(password: 'secret')
+  def request_token(password: 'secret', auth_request: request)
     described_class.request.handle.call(
       HaveAPI::Authentication::Token::ActionRequest.new(
-        request:,
+        request: auth_request,
         input: {
           user: user.login,
           password:,
@@ -33,6 +33,12 @@ RSpec.describe VpsAdmin::API::Authentication::TokenConfig do
       ),
       HaveAPI::Authentication::Token::ActionResult.new
     )
+  end
+
+  def expect_empty_user_agent_session(session)
+    expect(session.client_version).to eq('')
+    expect(session.label).to eq('')
+    expect(session.user_agent.agent).to eq('')
   end
 
   def reset_password(token, new_password1: 'new-secret', new_password2: 'new-secret')
@@ -82,6 +88,19 @@ RSpec.describe VpsAdmin::API::Authentication::TokenConfig do
       'interval' => 3600,
       'scope' => ['all']
     )
+  end
+
+  it 'creates token sessions without a user agent header' do
+    [nil, ''].each do |user_agent|
+      result = request_token(auth_request: build_request(user_agent:))
+
+      expect(result).to be_ok
+      expect(result).to be_complete
+
+      session = UserSession.joins(:token).find_by!(tokens: { token: result.token })
+      expect(session.auth_type).to eq('token')
+      expect_empty_user_agent_session(session)
+    end
   end
 
   it 'can complete the reset-password continuation and create a token session' do

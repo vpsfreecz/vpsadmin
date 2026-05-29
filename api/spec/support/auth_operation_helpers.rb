@@ -5,12 +5,12 @@ require 'securerandom'
 
 module AuthOperationHelpers
   def build_request(ip: '127.0.0.1', user_agent: 'RSpec auth', extra_env: {})
+    env_options = { 'REMOTE_ADDR' => ip }
+    env_options['HTTP_USER_AGENT'] = user_agent unless user_agent.nil?
+
     env = Rack::MockRequest.env_for(
       '/',
-      {
-        'REMOTE_ADDR' => ip,
-        'HTTP_USER_AGENT' => user_agent
-      }.merge(extra_env)
+      env_options.merge(extra_env)
     )
 
     Sinatra::Request.new(env)
