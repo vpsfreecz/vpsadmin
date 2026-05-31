@@ -105,6 +105,29 @@ RSpec.describe VpsAdmin::Supervisor::Node::Status do
       expect(current.arc_hitpercent).to be_nil
     end
 
+    it 'resets invalid rolling average state before logging' do
+      current = NodeCurrentStatus.create!(
+        node:,
+        created_at: timestamp - 60,
+        updated_at: timestamp - 60,
+        kernel: 'devcluster',
+        vpsadmin_version: 'dev',
+        update_count: 0
+      )
+
+      expect do
+        supervisor.send(:update_status, current, payload)
+      end.not_to raise_error
+
+      current.reload
+      expect(current.kernel).to eq('6.8.0')
+      expect(current.update_count).to eq(1)
+      expect(current.sum_loadavg1).to eq(0.5)
+
+      log = NodeStatus.find_by!(node:)
+      expect(log.loadavg1).to eq(0.5)
+    end
+
     it 'updates rolling sums and update count between log intervals' do
       current = NodeCurrentStatus.find_or_initialize_by(node:)
       supervisor.send(:update_status, current, payload)

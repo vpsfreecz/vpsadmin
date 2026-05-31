@@ -38,7 +38,14 @@ module VpsAdmin::Supervisor
       now = Time.now
       check_time = Time.at(new_status['time'])
       current_status.created_at ||= check_time
-      current_status.update_count ||= 1
+      if current_status.update_count.to_i <= 0
+        current_status.update_count = 1
+        current_status.last_log_at = nil
+
+        AVERAGES.each do |attr|
+          current_status.assign_attributes("sum_#{attr}": nil)
+        end
+      end
 
       current_status.assign_attributes(
         updated_at: check_time,
