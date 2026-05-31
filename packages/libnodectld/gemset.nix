@@ -150,10 +150,10 @@
     platforms = [ ];
     source = {
       remotes = [ "https://rubygems.org" ];
-      sha256 = "0n9ch455pnvl9vxs2f3j77bpdmxg5g3mn3vyr9wxa0a87raii2i1";
+      sha256 = "0gncbcg6x03jxa0zjmiip4d5in856y552fypz5lzzvzn7632qhzy";
       type = "gem";
     };
-    version = "2.19.5";
+    version = "2.19.7";
   };
   libnodectld = {
     dependencies = [
@@ -179,10 +179,10 @@
     platforms = [ ];
     source = {
       remotes = [ "https://rubygems.vpsfree.cz" ];
-      sha256 = "069g31cm306ll50ar7zqv69hlp13fg750l5x4z91321i4i53y3zp";
+      sha256 = "0p6ngih408l0vr49isrlpl9w1kn4kxdvml32apdmx65qf7y9mba2";
       type = "gem";
     };
-    version = "4.1.0.build20260527231221";
+    version = "4.1.0.build20260531174549";
   };
   libosctl = {
     dependencies = [
