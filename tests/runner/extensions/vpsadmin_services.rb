@@ -712,14 +712,7 @@ class VpsadminServicesMachine < OsVm::NixosMachine
       mailpit_api_url(path)
     ]
 
-    if body
-      args.concat([
-        '--header',
-        'Content-Type: application/json',
-        '--data',
-        JSON.dump(body)
-      ])
-    end
+    args.push('--header', 'Content-Type: application/json', '--data', JSON.dump(body)) if body
 
     Shellwords.join(args)
   end
