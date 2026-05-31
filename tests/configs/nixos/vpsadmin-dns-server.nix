@@ -6,9 +6,11 @@
 }:
 let
   inherit (lib)
+    concatMapStringsSep
     mapAttrs'
     mkOption
     nameValuePair
+    optionalString
     types
     ;
 
@@ -75,6 +77,12 @@ in
       type = types.str;
       default = txKey.public;
       description = "Public key used to verify signed transactions from vpsAdmin.";
+    };
+
+    forwarders = mkOption {
+      type = types.listOf types.str;
+      default = [ ];
+      description = "DNS resolvers used by BIND for out-of-zone lookups.";
     };
   };
 
@@ -158,6 +166,10 @@ in
           allow-query { any; };
           recursion no;
           dnssec-validation no;
+          ${optionalString (cfg.forwarders != [ ]) ''
+            forward only;
+            forwarders { ${concatMapStringsSep " " (ip: "${ip};") cfg.forwarders} };
+          ''}
         };
 
         statistics-channels {
