@@ -9,6 +9,8 @@ module NodeCtld
 
     # @param hooks [Array<String>]
     def install_hooks(hooks)
+      FileUtils.mkdir_p(hook_dir)
+
       hooks.each do |hook|
         dst = hook_path(hook)
 
