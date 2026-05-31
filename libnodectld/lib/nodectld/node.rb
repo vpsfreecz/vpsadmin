@@ -1,5 +1,6 @@
 require 'fileutils'
 require 'libosctl'
+require 'nodectld/root'
 require 'nodectld/utils'
 
 module NodeCtld

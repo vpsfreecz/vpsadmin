@@ -1,13 +1,10 @@
 require 'require_all'
+require 'nodectld/root'
 
 module NodeCtld
   STANDALONE = false unless const_defined?(:STANDALONE)
 
   module KernelLog; end
-
-  def self.root
-    File.join(__dir__, '..')
-  end
 end
 
 require 'nodectld/utils'

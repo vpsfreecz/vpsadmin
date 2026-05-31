@@ -1,3 +1,6 @@
+require 'fileutils'
+require 'nodectld/root'
+
 module NodeCtld
   class CtHookInstaller
     # @param pool_fs [String]
