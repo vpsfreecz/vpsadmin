@@ -4,6 +4,7 @@ require 'json'
 require 'osvm'
 require 'shellwords'
 require 'test-runner/hook'
+require 'uri'
 
 class Vpsadminctl
   def initialize(machine)
@@ -181,6 +182,8 @@ class Vpsadminctl
 end
 
 class VpsadminServicesMachine < OsVm::NixosMachine
+  MAILPIT_API_URL = 'http://127.0.0.1:8025/api/v1'
+
   CHAIN_STATES = {
     staged: 0,
     queued: 1,
@@ -214,6 +217,75 @@ class VpsadminServicesMachine < OsVm::NixosMachine
 
       sleep 1
     end
+  end
+
+  def wait_for_mailpit(timeout: @default_timeout || 300)
+    wait_until_succeeds(mailpit_curl_command('/info'), timeout:)
+    true
+  end
+
+  def mailpit_info(timeout: nil)
+    mailpit_json('/info', timeout:)
+  end
+
+  def clear_mailpit(timeout: nil)
+    mailpit_request('/messages', method: 'DELETE', timeout:)
+    true
+  end
+
+  def mailpit_messages(start: 0, limit: 50, timeout: nil)
+    query = URI.encode_www_form(start:, limit:)
+    mailpit_json("/messages?#{query}", timeout:)
+  end
+
+  def mailpit_message(id, timeout: nil)
+    mailpit_json("/message/#{URI.encode_www_form_component(id)}", timeout:)
+  end
+
+  def wait_for_mailpit_message(
+    to: nil,
+    subject: nil,
+    subject_prefix: nil,
+    text_includes: [],
+    html_includes: [],
+    timeout: @default_timeout || 300
+  )
+    found = nil
+    criteria = mailpit_criteria(to:, subject:, subject_prefix:)
+
+    wait_for_condition(
+      timeout:,
+      error_message: "Timed out waiting for Mailpit message #{criteria.inspect}"
+    ) do
+      found = find_mailpit_message(
+        to:,
+        subject:,
+        subject_prefix:,
+        text_includes:,
+        html_includes:
+      )
+    end
+
+    found
+  end
+
+  def find_mailpit_message(
+    to: nil,
+    subject: nil,
+    subject_prefix: nil,
+    text_includes: [],
+    html_includes: []
+  )
+    mailpit_messages(limit: 100).fetch('messages').each do |summary|
+      next unless mailpit_summary_matches?(summary, to:, subject:, subject_prefix:)
+
+      message = mailpit_message(summary.fetch('ID'))
+      next unless mailpit_message_body_matches?(message, text_includes:, html_includes:)
+
+      return message
+    end
+
+    nil
   end
 
   def api_ruby(code:, timeout: nil)
@@ -582,6 +654,79 @@ class VpsadminServicesMachine < OsVm::NixosMachine
   end
 
   private
+
+  def mailpit_criteria(to:, subject:, subject_prefix:)
+    {
+      to:,
+      subject:,
+      subject_prefix:
+    }.compact
+  end
+
+  def mailpit_summary_matches?(summary, to:, subject:, subject_prefix:)
+    expected_to = Array(to).compact
+    addresses = mailpit_addresses(summary, 'To')
+
+    return false if expected_to.any? && (expected_to - addresses).any?
+    return false if subject && summary['Subject'] != subject
+    return false if subject_prefix && !summary['Subject'].to_s.start_with?(subject_prefix)
+
+    true
+  end
+
+  def mailpit_message_body_matches?(message, text_includes:, html_includes:)
+    Array(text_includes).all? { |needle| message['Text'].to_s.include?(needle) } &&
+      Array(html_includes).all? { |needle| message['HTML'].to_s.include?(needle) }
+  end
+
+  def mailpit_addresses(message, field)
+    Array(message[field]).map { |addr| addr.fetch('Address').to_s }
+  end
+
+  def mailpit_json(path, method: 'GET', body: nil, timeout: nil)
+    _, output = mailpit_request(path, method:, body:, timeout:)
+    JSON.parse(output)
+  end
+
+  def mailpit_request(path, method: 'GET', body: nil, timeout: nil)
+    cmd = mailpit_curl_command(path, method:, body:)
+    timeout ? succeeds(cmd, timeout:) : succeeds(cmd)
+  end
+
+  def mailpit_curl_command(path, method: 'GET', body: nil)
+    args = [
+      'nixos-container',
+      'run',
+      'mailer',
+      '--',
+      'curl',
+      '--silent',
+      '--show-error',
+      '--fail-with-body',
+      '--connect-timeout',
+      '2',
+      '--max-time',
+      '10',
+      '--request',
+      method,
+      mailpit_api_url(path)
+    ]
+
+    if body
+      args.concat([
+        '--header',
+        'Content-Type: application/json',
+        '--data',
+        JSON.dump(body)
+      ])
+    end
+
+    Shellwords.join(args)
+  end
+
+  def mailpit_api_url(path)
+    "#{MAILPIT_API_URL}#{path.start_with?('/') ? path : "/#{path}"}"
+  end
 
   def mariadb_command(sql:, database:, user:)
     password_file = "/etc/vpsadmin-test/mariadb-#{user}-password"

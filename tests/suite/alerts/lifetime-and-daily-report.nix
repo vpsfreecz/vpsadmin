@@ -44,6 +44,7 @@ import ../../make-test.nix (
             expiration_sql: '2.days.ago'
           )
 
+          services.clear_mailpit
           expiration_response = run_api_task(
             services,
             klass: 'VpsAdmin::API::Tasks::Lifetime',
@@ -55,8 +56,18 @@ import ../../make-test.nix (
             }
           )
           expect(expiration_response.fetch('chain_ids')).not_to be_empty
+          wait_for_task_chains_done(services, expiration_response, label: 'expiration warning')
           expect(mail_log_count(services, 'expiration_vps_active')).to be >= 1
+          expect_delivered_mail(
+            services,
+            to: ${builtins.toJSON adminUser.email},
+            subject: '[vpsAdmin] VPS alerts-lifetime is nearing expiration',
+            text_includes: [
+              "VPS ##{vps.fetch('id')} (alerts-lifetime) is nearing expiration."
+            ]
+          )
 
+          services.clear_mailpit
           daily_response = run_api_task(
             services,
             klass: 'VpsAdmin::API::Tasks::Mail',
@@ -64,7 +75,14 @@ import ../../make-test.nix (
             env: { VPSADMIN_LANG: 'en' }
           )
           expect(daily_response.fetch('chain_ids')).not_to be_empty
+          wait_for_task_chains_done(services, daily_response, label: 'daily report')
           expect(mail_log_count(services, 'daily_report')).to be >= 1
+          expect_delivered_mail(
+            services,
+            to: ${builtins.toJSON adminUser.email},
+            subject_prefix: '[vpsAdmin] Daily report ',
+            text_includes: 'vpsAdmin daily report'
+          )
         end
       end
     '';

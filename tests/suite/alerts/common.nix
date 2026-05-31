@@ -12,6 +12,7 @@ base
   def setup_alerts_cluster(services, node)
     setup_user_lifecycle_cluster(services, node)
     wait_for_mailer_nodectld(services)
+    services.wait_for_mailpit
     ensure_operational_alert_templates(services)
   end
 
@@ -58,6 +59,25 @@ base
         details: details
       }.inspect
     end
+  end
+
+  def expect_delivered_mail(services, to:, subject: nil, subject_prefix: nil, text_includes: [])
+    message = services.wait_for_mailpit_message(
+      to: to,
+      subject: subject,
+      subject_prefix: subject_prefix,
+      text_includes: text_includes
+    )
+
+    expect(message.fetch('Subject')).to eq(subject) if subject
+    expect(message.fetch('Subject')).to start_with(subject_prefix) if subject_prefix
+    expect(message.fetch('To').map { |addr| addr.fetch('Address') }).to include(to)
+
+    Array(text_includes).each do |text|
+      expect(message.fetch('Text')).to include(text)
+    end
+
+    message
   end
 
   def ensure_operational_alert_templates(services)

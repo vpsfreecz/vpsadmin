@@ -188,6 +188,26 @@ in
         default = [ ];
         description = "RabbitMQ user names (node domain names) to create for nodes in the cluster.";
       };
+
+      mailpit = {
+        enable = mkOption {
+          type = types.bool;
+          default = true;
+          description = "Enable Mailpit as the integration-test SMTP sink.";
+        };
+
+        smtpPort = mkOption {
+          type = types.port;
+          default = 1025;
+          description = "Local Mailpit SMTP port inside the mailer container.";
+        };
+
+        webPort = mkOption {
+          type = types.port;
+          default = 8025;
+          description = "Local Mailpit web/API port inside the mailer container.";
+        };
+      };
     };
   };
 
@@ -343,7 +363,22 @@ in
 
           services.postfix.enable = true;
 
+          environment.systemPackages = lib.optional cfg.mailpit.enable pkgs.curl;
+
           environment.etc."vpsadmin/transaction.key".text = seed.transactionKey.public;
+
+          systemd.services.mailpit = lib.mkIf cfg.mailpit.enable {
+            description = "Integration test mail capture service";
+            wantedBy = [ "multi-user.target" ];
+            after = [ "network.target" ];
+            serviceConfig = {
+              DynamicUser = true;
+              StateDirectory = "mailpit";
+              ExecStart = "${pkgs.mailpit}/bin/mailpit --database /var/lib/mailpit/mailpit.db --disable-version-check --smtp 127.0.0.1:${toString cfg.mailpit.smtpPort} --listen 127.0.0.1:${toString cfg.mailpit.webPort}";
+              Restart = "always";
+              RestartSec = "2s";
+            };
+          };
 
           vpsadmin = {
             rabbitmq = {
@@ -379,7 +414,7 @@ in
 
                 mailer = {
                   smtp_server = "127.0.0.1";
-                  smtp_port = 25;
+                  smtp_port = if cfg.mailpit.enable then cfg.mailpit.smtpPort else 25;
                 };
               };
             };

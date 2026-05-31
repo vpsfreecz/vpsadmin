@@ -40,6 +40,7 @@ import ../../make-test.nix (
           vps = create_alert_vps(services, hostname: 'alerts-oom', start: false)
           seeded = seed_oom_reports(services, vps_id: vps.fetch('id'), count: 3)
 
+          services.clear_mailpit
           response = run_api_task(
             services,
             klass: 'VpsAdmin::API::Tasks::OomReport',
@@ -49,6 +50,16 @@ import ../../make-test.nix (
           wait_for_task_chains_done(services, response, label: 'oom notify')
 
           expect(mail_log_count(services, 'vps_oom_report')).to be >= 1
+          expect_delivered_mail(
+            services,
+            to: ${builtins.toJSON adminUser.email},
+            subject: '[vpsAdmin] VPS alerts-oom had out-of-memory events',
+            text_includes: [
+              'vpsAdmin recorded out-of-memory events',
+              'Selected events:'
+            ]
+          )
+
           rows = oom_report_rows(services, seeded.fetch('ids'))
           reported_at = rows.map { |row| row.fetch('reported_at') }
           expect(reported_at).not_to include(nil)

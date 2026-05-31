@@ -243,6 +243,14 @@ import ../make-test.nix (
               true
             end
           end
+
+          it 'mailpit API is responding' do
+            services.wait_for_mailpit
+            info = services.mailpit_info
+
+            expect(info.fetch('Version')).not_to be_empty
+            expect(info.fetch('Messages')).to be >= 0
+          end
         end
       end
     '';

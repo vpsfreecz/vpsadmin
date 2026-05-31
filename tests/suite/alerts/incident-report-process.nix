@@ -44,6 +44,7 @@ import ../../make-test.nix (
             action: :stop
           )
 
+          services.clear_mailpit
           response = run_api_task(
             services,
             klass: 'VpsAdmin::API::Tasks::IncidentReport',
@@ -60,6 +61,15 @@ import ../../make-test.nix (
             running: false
           )
           expect(mail_log_count(services, 'vps_incident_report')).to be >= 1
+          expect_delivered_mail(
+            services,
+            to: ${builtins.toJSON adminUser.email},
+            subject: '[vpsAdmin] Incident report for VPS alerts-incident',
+            text_includes: [
+              'Incident body',
+              'Action: stop'
+            ]
+          )
         end
       end
     '';
