@@ -18,9 +18,17 @@ module SpecDbSetup
 
     yml_path = File.expand_path('../../config/database.yml', __dir__)
     unless File.exist?(yml_path)
+      if auto_database_url
+        url = ENV.fetch('DATABASE_URL')
+        url = with_db_name_suffix(url, db_name_suffix) if db_name_suffix
+        ActiveRecord::Base.establish_connection(url)
+        return
+      end
+
       raise <<~MSG
         No test DB configured.
-        Set DATABASE_URL or create api/config/database.yml with a 'test:' section.
+        Set DATABASE_URL, create api/config/database.yml with a 'test:' section,
+        or run inside a Nix dev shell with MariaDB available on PATH.
       MSG
     end
 
@@ -105,6 +113,16 @@ module SpecDbSetup
     ENV['RACK_ENV'].to_s == 'test'
   end
   private_class_method :reset_enabled?
+
+  def auto_database_url
+    return nil unless ENV['RACK_ENV'].to_s == 'test'
+    return nil if ENV['VPSADMIN_TEST_DB_AUTO'].to_s == '0'
+
+    require File.expand_path('../../../tools/test_db', __dir__)
+
+    ENV['DATABASE_URL'] = VpsAdmin::TestDb.auto_start!
+  end
+  private_class_method :auto_database_url
 
   def load_schema!
     schema_path = File.expand_path('../../db/schema.rb', __dir__)

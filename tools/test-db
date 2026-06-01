@@ -1,0 +1,83 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require 'shellwords'
+require_relative 'test_db'
+
+module VpsAdmin
+  module TestDbCli
+    module_function
+
+    def run(argv)
+      command = argv.shift
+
+      case command
+      when 'start'
+        instance.start
+        puts "MariaDB test database is running at #{instance.url}"
+      when 'stop'
+        if instance.stop
+          puts 'MariaDB test database stopped'
+        else
+          puts 'MariaDB test database is not running'
+        end
+      when 'restart'
+        instance.stop
+        instance.start
+        puts "MariaDB test database restarted at #{instance.url}"
+      when 'status'
+        if instance.running?
+          puts "MariaDB test database is running at #{instance.url}"
+        else
+          warn 'MariaDB test database is not running'
+          exit 1
+        end
+      when 'url'
+        puts instance.url
+      when 'env'
+        puts "export DATABASE_URL=#{Shellwords.escape(instance.url)}"
+      when 'client'
+        exec(instance.client_env, *instance.client_args, *argv)
+      when 'prune'
+        instance.prune
+        puts "Removed #{instance.state_dir}"
+      when 'help', '--help', '-h', nil
+        puts usage
+      else
+        warn "Unknown command: #{command}"
+        warn usage
+        exit 2
+      end
+    rescue Error => e
+      warn e.message
+      exit 1
+    end
+
+    def instance
+      @instance ||= TestDb.manual_instance
+    end
+
+    def usage
+      <<~USAGE
+        Usage: tools/test-db <command>
+
+        Commands:
+          start     Start the persistent local MariaDB test database
+          stop      Stop the persistent local MariaDB test database
+          restart   Restart the persistent local MariaDB test database
+          status    Check whether the database is running
+          url       Print the DATABASE_URL value
+          env       Print shell exports for local specs
+          client    Open the MariaDB client, forwarding any extra arguments
+          prune     Stop the database and remove its local state directory
+
+        Environment:
+          VPSADMIN_TEST_DB_PORT       Override the port, default 13306
+          VPSADMIN_TEST_DB_NAME       Override the database, default vpsadmin_test
+          VPSADMIN_TEST_DB_STATE_DIR  Override the persistent state directory
+      USAGE
+    end
+  end
+end
+
+VpsAdmin::TestDbCli.run(ARGV)
