@@ -280,6 +280,161 @@ import ../make-test.nix (
         JSON.parse(output.to_s.lines.last)
       end
 
+      def prepare_webui_runtime(_fixtures); end
+
+      def prepare_webui_storage_runtime(storage)
+        datasets = {}
+
+        add_dataset = lambda do |id, full_name, pool_fs|
+          return unless id && full_name && pool_fs
+
+          datasets[Integer(id)] = {
+            'full_name' => full_name,
+            'pool_fs' => pool_fs
+          }
+        end
+
+        if storage['dataset']
+          add_dataset.call(
+            storage['dataset']['id'],
+            storage['dataset']['fullName'],
+            storage.dig('datasetInPool', 'poolFilesystem')
+          )
+        end
+
+        storage.fetch('datasets', {}).each_value do |dataset|
+          add_dataset.call(
+            dataset['id'],
+            dataset['fullName'],
+            dataset['poolFilesystem']
+          )
+        end
+
+        storage.fetch('vps', {}).each_value do |vps|
+          add_dataset.call(
+            vps['datasetId'],
+            vps['datasetFullName'],
+            vps['datasetPoolFilesystem']
+          )
+          add_dataset.call(
+            vps['childDatasetId'],
+            vps['childDatasetFullName'],
+            vps['childDatasetPoolFilesystem']
+          )
+        end
+
+        dataset_lines = datasets
+          .values
+          .uniq
+          .sort_by { |dataset| [dataset.fetch('pool_fs'), dataset.fetch('full_name')] }
+          .map { |dataset| "#{dataset.fetch('pool_fs')}|#{dataset.fetch('full_name')}" }
+          .join("\n")
+
+        pool_lines = datasets
+          .values
+          .map { |dataset| dataset.fetch('pool_fs') }
+          .uniq
+          .sort
+          .join("\n")
+
+        vps_lines = storage
+          .fetch('vps', {})
+          .values
+          .filter_map do |vps|
+            next unless vps['id'] && vps['datasetPoolFilesystem']
+
+            [
+              vps.fetch('id'),
+              vps.fetch('datasetPoolFilesystem')
+            ].join('|')
+          end
+          .join("\n")
+
+        snapshot_lines = storage
+          .fetch('snapshots', {})
+          .values
+          .filter_map do |snapshot|
+            dataset = datasets[Integer(snapshot.fetch('datasetId'))]
+            next unless dataset
+
+            "#{dataset.fetch('pool_fs')}|#{dataset.fetch('full_name')}|#{snapshot.fetch('name')}"
+          end
+          .uniq
+          .sort
+          .join("\n")
+
+        node1.succeeds(<<~SH, timeout: 600)
+          set -euo pipefail
+
+          ensure_dataset() {
+            local dataset="$1"
+
+            if ! zfs list -H -o name "$dataset" >/dev/null 2>&1; then
+              zfs create -p "$dataset"
+            fi
+
+            if ! zfs list -H -o name "$dataset" >/dev/null 2>&1; then
+              echo "missing ZFS dataset after creation: $dataset" >&2
+              exit 1
+            fi
+
+            mkdir -p "/$dataset/private"
+          }
+
+          while IFS='|' read -r pool_fs dataset_name; do
+            [ -n "$pool_fs" ] || continue
+            ensure_dataset "$pool_fs/$dataset_name"
+          done <<'WEBUI_STORAGE_DATASETS'
+          #{dataset_lines}
+          WEBUI_STORAGE_DATASETS
+
+          while IFS='|' read -r pool_fs; do
+            [ -n "$pool_fs" ] || continue
+            ensure_dataset "$pool_fs/vpsadmin/config"
+            ensure_dataset "$pool_fs/vpsadmin/download"
+            ensure_dataset "$pool_fs/vpsadmin/mount"
+          done <<'WEBUI_STORAGE_POOLS'
+          #{pool_lines}
+          WEBUI_STORAGE_POOLS
+
+          container_exists() {
+            osctl -j ct show "$1" >/dev/null 2>&1
+          }
+
+          while IFS='|' read -r vps_id pool_fs; do
+            [ -n "$vps_id" ] || continue
+
+            pool_name="''${pool_fs%%/*}"
+
+            if ! container_exists "$vps_id"; then
+              osctl --pool "$pool_name" ct new \\
+                --skip-image \\
+                --distribution debian \\
+                --version latest \\
+                --arch x86_64 \\
+                "$vps_id"
+              osctl --pool "$pool_name" ct mounts clear "$vps_id" >/dev/null 2>&1 || true
+            fi
+          done <<'WEBUI_STORAGE_VPSES'
+          #{vps_lines}
+          WEBUI_STORAGE_VPSES
+
+          while IFS='|' read -r pool_fs dataset_name snapshot_name; do
+            [ -n "$pool_fs" ] || continue
+            ensure_dataset "$pool_fs/$dataset_name"
+
+            if ! zfs list -H -t snapshot "$pool_fs/$dataset_name@$snapshot_name" >/dev/null 2>&1; then
+              zfs snapshot "$pool_fs/$dataset_name@$snapshot_name"
+            fi
+          done <<'WEBUI_STORAGE_SNAPSHOTS'
+          #{snapshot_lines}
+          WEBUI_STORAGE_SNAPSHOTS
+        SH
+
+        node1.succeeds('sv restart nodectld', timeout: 60)
+        wait_for_running_nodectld(node1)
+      end
+
       def refresh_webui_node_status(node)
         wait_until_block_succeeds(name: "refresh #{node.name} runtime status", timeout: 300) do
           node.succeeds('nodectl refresh', timeout: 180)
@@ -311,7 +466,9 @@ import ../make-test.nix (
         ensure_webui_default_pool
         prepare_webui_component
 
-        create_webui_browser_fixtures(services)
+        fixtures = create_webui_browser_fixtures(services)
+        prepare_webui_runtime(fixtures)
+        fixtures
       end
 
       def prepare_webui_component; end
@@ -2935,7 +3092,7 @@ import ../make-test.nix (
       storage_datasets = {
         nas_list: make_primary_with_backup.call('nas-list'),
         user_edit: make_primary_dip.call('user-edit'),
-        snapshot_create: make_primary_dip.call('snapshot-create'),
+        snapshot_create: make_primary_dip.call('manual-create'),
         restore: make_primary_dip.call('restore'),
         download_create: make_primary_dip.call('download-create'),
         snapshot_destroy: make_primary_dip.call('snapshot-destroy'),
@@ -3648,7 +3805,8 @@ import ../make-test.nix (
           },
           'datasetInPool' => {
             'id' => fixture_storage_dip.id,
-            'poolId' => fixture_storage_dip.pool_id
+            'poolId' => fixture_storage_dip.pool_id,
+            'poolFilesystem' => fixture_storage_dip.pool.filesystem
           },
           'snapshot' => {
             'id' => fixture_snapshot.id,
@@ -3667,10 +3825,13 @@ import ../make-test.nix (
               'id' => vps.id,
               'hostname' => vps.hostname,
               'datasetId' => root_dip.dataset.id,
+              'datasetFullName' => root_dip.dataset.full_name,
               'datasetInPoolId' => root_dip.id,
+              'datasetPoolFilesystem' => root_dip.pool.filesystem,
               'childDatasetId' => child_dip.dataset.id,
               'childDatasetName' => child_dip.dataset.name,
-              'childDatasetFullName' => child_dip.dataset.full_name
+              'childDatasetFullName' => child_dip.dataset.full_name,
+              'childDatasetPoolFilesystem' => child_dip.pool.filesystem
             }
           end,
           'datasets' => storage_datasets.transform_values do |dip|
@@ -3679,7 +3840,8 @@ import ../make-test.nix (
               'name' => dip.dataset.name,
               'fullName' => dip.dataset.full_name,
               'datasetInPoolId' => dip.id,
-              'poolId' => dip.pool_id
+              'poolId' => dip.pool_id,
+              'poolFilesystem' => dip.pool.filesystem
             }
           end,
           'snapshots' => storage_snapshots.merge(
@@ -3717,6 +3879,7 @@ import ../make-test.nix (
               'id' => export.id,
               'datasetId' => export.dataset.id,
               'datasetName' => export.dataset.name,
+              'poolFilesystem' => export.dataset_in_pool.pool.filesystem,
               'path' => export.path,
               'enabled' => export.enabled,
               'hostId' => host&.id
@@ -4197,6 +4360,10 @@ import ../make-test.nix (
           Run storage, backup, dataset, and export browser tests.
         '';
         script = webuiTestScriptCommon + ''
+          def prepare_webui_runtime(fixtures)
+            prepare_webui_storage_runtime(fixtures.fetch('storage'))
+          end
+
           describe 'webui storage backup export browser flow' do
             it 'passes Playwright storage, backup, dataset, and export tests' do
               run_playwright('storage-backup-export', 'specs/storage-backup-export.spec.cjs')

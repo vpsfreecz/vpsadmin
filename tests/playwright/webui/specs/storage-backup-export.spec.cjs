@@ -5,6 +5,8 @@ const { login, logout } = require('../lib/pages/auth.cjs');
 const {
   formByAction,
   submitForm,
+  visibleTransactionChainIds,
+  waitForTransactionChainsSettled,
 } = require('../lib/pages/webui.cjs');
 const {
   actionLink,
@@ -32,12 +34,33 @@ function returnToBackup() {
   return encodeURIComponent('/?page=backup');
 }
 
+async function currentTransactionChainIds(page) {
+  return new Set(await visibleTransactionChainIds(page));
+}
+
+async function waitForNewTransactionChains(page, beforeIds) {
+  const chainIds = (await visibleTransactionChainIds(page))
+    .filter((id) => !beforeIds.has(id));
+
+  if (chainIds.length > 0) {
+    await waitForTransactionChainsSettled(page, { chainIds });
+  }
+}
+
+async function runWithTransactionWait(page, callback) {
+  const beforeIds = await currentTransactionChainIds(page);
+  await callback();
+  await waitForNewTransactionChains(page, beforeIds);
+}
+
 async function confirmCurrentForm(page, actionPart, button, notification) {
+  const beforeIds = await currentTransactionChainIds(page);
   const form = formByAction(page, actionPart);
   await expect(form).toBeVisible();
   await setCheckbox(form, 'confirm', true, { required: true });
   await submitForm(form, button);
   await expectNotification(page, notification);
+  await waitForNewTransactionChains(page, beforeIds);
 }
 
 async function submitSnapshotRestore(page, dataset, snapshot, listUrl = '/?page=backup&action=nas') {
@@ -64,8 +87,10 @@ async function submitSnapshotDownload(page, dataset, snapshot) {
   await expect(form).toBeVisible();
   await form.locator('select[name="format"]').selectOption('archive');
   await setCheckbox(form, 'confirm', true, { required: true });
+  const beforeIds = await currentTransactionChainIds(page);
   await submitForm(form, 'Download snapshot');
   await expectNotification(page, 'Download of snapshot of');
+  await waitForNewTransactionChains(page, beforeIds);
 }
 
 async function submitSnapshotDestroy(page, dataset, snapshot) {
@@ -94,8 +119,10 @@ async function createExportFrom(page, params) {
 
   const form = formByAction(page, `action=create&dataset=${params.dataset.id}`);
   await expect(form).toBeVisible();
+  const beforeIds = await currentTransactionChainIds(page);
   await submitForm(form, 'Create');
   await expectNotification(page, 'Export created');
+  await waitForNewTransactionChains(page, beforeIds);
   await expect(page).toHaveURL(/page=export.*action=edit.*export=/);
 }
 
@@ -113,8 +140,10 @@ async function createMountFromVpsDetail(page, vps) {
   await form.locator('input[name="mountpoint"]').fill(`/mnt/${vps.hostname}`);
   await setSelectIfPresent(form, 'mode', 'rw');
   await setSelectIfPresent(form, 'on_start_fail', 'skip');
+  const beforeIds = await currentTransactionChainIds(page);
   await submitForm(form, 'Save');
   await expectNotification(page, 'Mount created');
+  await waitForNewTransactionChains(page, beforeIds);
 }
 
 async function editMount(page, mount, onStartFail) {
@@ -126,8 +155,10 @@ async function editMount(page, mount, onStartFail) {
   const form = formByAction(page, `action=mount_edit&vps=${mount.vpsId}`);
   await expect(form).toBeVisible();
   await form.locator('select[name="on_start_fail"]').selectOption(onStartFail);
+  const beforeIds = await currentTransactionChainIds(page);
   await submitForm(form, 'Save');
   await expectNotification(page, 'Changes saved');
+  await waitForNewTransactionChains(page, beforeIds);
 }
 
 async function destroyMount(page, mount) {
@@ -142,11 +173,13 @@ async function toggleMount(page, mount) {
   await page.goto(`/?page=adminvps&action=info&veid=${mount.vpsId}`, {
     waitUntil: 'domcontentloaded',
   });
+  const beforeIds = await currentTransactionChainIds(page);
   await actionLink(page, 'mount_toggle', {
     vps: mount.vpsId,
     id: mount.id,
   }).click();
   await expectNotification(page, 'Mount disabled');
+  await waitForNewTransactionChains(page, beforeIds);
 }
 
 async function addExportHost(page, exportFixture, ipAddress) {
@@ -159,8 +192,10 @@ async function addExportHost(page, exportFixture, ipAddress) {
   await form.locator('select[name="ip_address"]').selectOption(String(ipAddress.id));
   await setCheckbox(form, 'rw', true);
   await setCheckbox(form, 'sync', true);
+  const beforeIds = await currentTransactionChainIds(page);
   await submitForm(form, 'Save');
   await expectNotification(page, 'Host added');
+  await waitForNewTransactionChains(page, beforeIds);
 }
 
 async function editExportHost(page, exportFixture, options = {}) {
@@ -173,19 +208,23 @@ async function editExportHost(page, exportFixture, options = {}) {
   await expect(form).toBeVisible();
   await setCheckbox(form, 'rw', options.rw ?? false);
   await setCheckbox(form, 'root_squash', options.rootSquash ?? true);
+  const beforeIds = await currentTransactionChainIds(page);
   await submitForm(form, 'Save');
   await expectNotification(page, 'Host settings updated');
+  await waitForNewTransactionChains(page, beforeIds);
 }
 
 async function deleteExportHost(page, exportFixture) {
   await page.goto(`/?page=export&action=edit&export=${exportFixture.id}`, {
     waitUntil: 'domcontentloaded',
   });
+  const beforeIds = await currentTransactionChainIds(page);
   await actionLink(page, 'del_host', {
     export: exportFixture.id,
     host: exportFixture.hostId,
   }).click();
   await expectNotification(page, 'Host removed');
+  await waitForNewTransactionChains(page, beforeIds);
 }
 
 test.describe.serial('storage, backup, dataset, and export browser coverage', () => {
@@ -228,8 +267,10 @@ test.describe.serial('storage, backup, dataset, and export browser coverage', ()
     );
     const snapshotForm = formByAction(page, 'action=snapshot_create');
     await snapshotForm.locator('input[name="label"]').fill('Webui user snapshot create');
+    const beforeIds = await currentTransactionChainIds(page);
     await submitForm(snapshotForm, 'Go >>');
     await expectNotification(page, 'Snapshot creation scheduled');
+    await waitForNewTransactionChains(page, beforeIds);
 
     await submitSnapshotRestore(page, s.datasets.restore, s.snapshots.restore);
     await submitSnapshotDownload(page, s.datasets.download_create, s.snapshots.download_create);
@@ -281,14 +322,26 @@ test.describe.serial('storage, backup, dataset, and export browser coverage', ()
       dataset: s.datasets.export_snapshot,
       snapshot: s.snapshots.export_snapshot,
     });
-    await submitExportSettings(page, s.exports.edit.id, {
+    await runWithTransactionWait(page, async () => submitExportSettings(page, s.exports.edit.id, {
       checkboxes: {
         rw: false,
         root_squash: true,
       },
-    });
-    await submitExportStatus(page, s.exports.enable.id, 'enable', 'Start', 'Export activated');
-    await submitExportStatus(page, s.exports.disable.id, 'disable', 'Stop', 'Export deactivated');
+    }));
+    await runWithTransactionWait(page, async () => submitExportStatus(
+      page,
+      s.exports.enable.id,
+      'enable',
+      'Start',
+      'Export activated',
+    ));
+    await runWithTransactionWait(page, async () => submitExportStatus(
+      page,
+      s.exports.disable.id,
+      'disable',
+      'Stop',
+      'Export deactivated',
+    ));
 
     await page.goto(`/?page=export&action=destroy&export=${s.exports.destroy.id}`, {
       waitUntil: 'domcontentloaded',
