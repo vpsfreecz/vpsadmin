@@ -395,36 +395,29 @@ function export_host_add_form($export_id)
 
     $xtpl->form_create('?page=export&action=add_host&export=' . $ex->id, 'post');
 
-    $addr_filters = [
-        'version' => 4,
-        'assigned_to_interface' => true,
-        'limit' => 50,
-        'meta' => ['includes' => 'network_interface__vps'],
-    ];
-
+    $vps_filters = ['limit' => 1000];
     if (isAdmin()) {
-        $addr_filters['user'] = $ex->user_id;
+        $vps_filters['user'] = $ex->user_id;
+    }
+
+    $ip_options = [];
+    foreach ($api->vps->list($vps_filters) as $vps) {
+        $ips = $api->ip_address->list([
+            'version' => 4,
+            'vps' => $vps->id,
+            'limit' => 50,
+        ]);
+
+        foreach ($ips as $ip) {
+            $ip_options[$ip->id] =
+                "{$ip->addr}/{$ip->prefix} (VPS #{$vps->id} {$vps->hostname})";
+        }
     }
 
     $xtpl->form_add_select(
         _('IPv4 address') . ':',
         'ip_address',
-        resource_list_to_options(
-            $api->ip_address->list($addr_filters),
-            'id',
-            'addr',
-            false,
-            function ($ip) {
-                $s = "{$ip->addr}/{$ip->prefix}";
-
-                if ($ip->network_interface_id && $ip->network_interface->vps_id) {
-                    $vps = $ip->network_interface->vps;
-                    $s .= " (VPS #{$vps->id} {$vps->hostname})";
-                }
-
-                return $s;
-            }
-        ),
+        $ip_options,
         post_val('ip_address')
     );
 
