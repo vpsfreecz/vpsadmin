@@ -25,10 +25,9 @@ import ../../make-test.nix (
     machines = import ../../machines/cluster/2-node.nix args;
 
     testScript = common + ''
-      def set_today_fully_open_window(services, vps_id)
+      def set_always_open_window(services, vps_id)
         services.api_ruby_json(code: <<~RUBY)
           vps = Vps.find(#{Integer(vps_id)})
-          today = Time.now.wday
 
           VpsMaintenanceWindow.where(vps: vps).delete_all
 
@@ -36,14 +35,14 @@ import ../../make-test.nix (
             window = VpsMaintenanceWindow.new(
               vps: vps,
               weekday: weekday,
-              is_open: weekday == today,
-              opens_at: weekday == today ? 0 : nil,
-              closes_at: weekday == today ? 24 * 60 : nil
+              is_open: true,
+              opens_at: 0,
+              closes_at: 24 * 60
             )
             window.save!(validate: false)
           end
 
-          puts JSON.dump(ok: true, weekday: today)
+          puts JSON.dump(ok: true)
         RUBY
       end
 
@@ -79,7 +78,7 @@ import ../../make-test.nix (
           services.vpsadminctl.succeeds(args: ['vps', 'start', vps.fetch('id').to_s], timeout: 900)
           wait_for_vps_on_node(services, vps_id: vps.fetch('id'), node_id: node1_id, running: true)
           write_vps_migration_proof(node1, vps_id: vps.fetch('id'))
-          set_today_fully_open_window(services, vps.fetch('id'))
+          set_always_open_window(services, vps.fetch('id'))
 
           info = dataset_info(services, vps.fetch('id'))
           src_dataset_path = find_dataset_path_on_node(node1, info.fetch('dataset_full_name'))
