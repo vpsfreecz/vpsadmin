@@ -489,10 +489,10 @@
     platforms = [ ];
     source = {
       remotes = [ "https://rubygems.org" ];
-      sha256 = "1k64mp59jlbqd5hyy46pf93s3yl1xdngfy8i8flq2hn5nhk91ybg";
+      sha256 = "0ihz7l0yqyd5rlk2j4s9jy0nlhn10djrxqgygrb4qsr0gc7ys72y";
       type = "gem";
     };
-    version = "1.17.0";
+    version = "1.17.1";
   };
   jwt = {
     dependencies = [ "base64" ];
