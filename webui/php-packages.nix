@@ -42,10 +42,10 @@ let
     "guzzlehttp/guzzle" = {
       targetDir = "";
       src = composerEnv.buildZipPackage {
-        name = "guzzlehttp-guzzle-7c8d84b39e680315f687e8662a9d6fb0865c5148";
+        name = "guzzlehttp-guzzle-e7412b3180912c01650cc66647f18c1d1cbe9b94";
         src = fetchurl {
-          url = "https://api.github.com/repos/guzzle/guzzle/zipball/7c8d84b39e680315f687e8662a9d6fb0865c5148";
-          sha256 = "0gl3m61iyrj32r0z37rhja2li3d0pcv9d50ggh742nm4d10w5w0h";
+          url = "https://api.github.com/repos/guzzle/guzzle/zipball/e7412b3180912c01650cc66647f18c1d1cbe9b94";
+          sha256 = "05w51b7zd66n7a7vlkgx8yvgsk6algknsmnnqqkh9wpqzymmclqq";
         };
       };
     };
@@ -224,10 +224,10 @@ let
     "phpunit/php-code-coverage" = {
       targetDir = "";
       src = composerEnv.buildZipPackage {
-        name = "phpunit-php-code-coverage-655533a65696bbc4231cd8027af150dadc40ec88";
+        name = "phpunit-php-code-coverage-3719c5b6c045761798238ebacfee1fe06e4ce5be";
         src = fetchurl {
-          url = "https://api.github.com/repos/sebastianbergmann/php-code-coverage/zipball/655533a65696bbc4231cd8027af150dadc40ec88";
-          sha256 = "10n9ga30lnvp63425232rhaggdmh11iajy5af0gsn87g4xvi0zj6";
+          url = "https://api.github.com/repos/sebastianbergmann/php-code-coverage/zipball/3719c5b6c045761798238ebacfee1fe06e4ce5be";
+          sha256 = "1pxgrcpvr6vpfp6dpfa2cbsnbrhgvmy6w9g26s6rnpm57y225jfg";
         };
       };
     };
@@ -354,10 +354,10 @@ let
     "sebastian/global-state" = {
       targetDir = "";
       src = composerEnv.buildZipPackage {
-        name = "sebastian-global-state-e52e3dc22441e6218c710afe72c3042f8fc41ea7";
+        name = "sebastian-global-state-ba68ba79da690cf7eddefd3ce5b78b20b9ba9945";
         src = fetchurl {
-          url = "https://api.github.com/repos/sebastianbergmann/global-state/zipball/e52e3dc22441e6218c710afe72c3042f8fc41ea7";
-          sha256 = "12ji342qfvc1l1cssp359d4lprpxbb3vy0ndaykxq8ilixl2n114";
+          url = "https://api.github.com/repos/sebastianbergmann/global-state/zipball/ba68ba79da690cf7eddefd3ce5b78b20b9ba9945";
+          sha256 = "1v7v3smnb565mri4lwdzcfkk1vi7hkxrj3yf8sfmc71npwjzphs0";
         };
       };
     };
