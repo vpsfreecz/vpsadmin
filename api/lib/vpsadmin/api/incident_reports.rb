@@ -127,8 +127,14 @@ module VpsAdmin::API
         # No match
         return if ip.nil?
 
+        assignments = ::IpAddressAssignment.arel_table
+
         ip.ip_address_assignments
-          .where('from_date <= ? AND (to_date >= ? OR to_date IS NULL)', time, time)
+          .where(
+            assignments[:from_date].lteq(time).and(
+              assignments[:to_date].gteq(time).or(assignments[:to_date].eq(nil))
+            )
+          )
           .order('id DESC')
           .take
       end
