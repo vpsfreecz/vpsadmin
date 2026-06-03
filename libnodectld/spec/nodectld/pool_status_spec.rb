@@ -41,6 +41,17 @@ RSpec.describe NodeCtld::PoolStatus do
     # rubocop:enable RSpec/ReceiveMessages
   end
 
+  it 'can be updated before pools are loaded' do
+    allow(OsCtl::Lib::Zfs::ZpoolStatus).to receive(:new)
+    allow(NodeCtld::NodeBunny).to receive(:publish_drop)
+
+    status = described_class.new
+
+    expect { status.update }.not_to raise_error
+    expect(OsCtl::Lib::Zfs::ZpoolStatus).not_to have_received(:new)
+    expect(NodeCtld::NodeBunny).not_to have_received(:publish_drop)
+  end
+
   it 'reads pool space from the configured filesystem' do
     rpc = instance_double(
       PoolStatusSpecRpcClient,
