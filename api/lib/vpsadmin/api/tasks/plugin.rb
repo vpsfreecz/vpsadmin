@@ -22,7 +22,8 @@ module VpsAdmin::API::Tasks
       plugin = VpsAdmin::API::Plugin.registered[ENV['PLUGIN'].to_sym]
       raise 'plugin not found' unless plugin
 
-      sm_table = ::ActiveRecord::Base.connection.schema_migration.table_name
+      schema_migration = ::ActiveRecord::Base.connection.pool.schema_migration
+      sm_table = schema_migration.table_name
 
       unless ActiveRecord::Base.connection.table_exists?(sm_table)
         puts 'Schema migrations table does not exist yet.'
@@ -34,7 +35,7 @@ module VpsAdmin::API::Tasks
       ).delete_if do |v|
         v.match(/-#{plugin.id}$/).nil?
       end.map! do |version|
-        ::ActiveRecord::Base.connection.schema_migration.normalize_migration_number(version)
+        schema_migration.normalize_migration_number(version)
       end
 
       file_list = []
@@ -42,7 +43,7 @@ module VpsAdmin::API::Tasks
       Dir.foreach(plugin.migration_directory) do |file|
         # match "20091231235959_some_name.rb" and "001_some_name.rb" pattern
         if (match_data = /^(\d{3,})_(.+)\.rb$/.match(file))
-          version = ::ActiveRecord::Base.connection.schema_migration.normalize_migration_number(match_data[1])
+          version = schema_migration.normalize_migration_number(match_data[1])
           status = db_list.delete(version) ? 'up' : 'down'
           file_list << [status, version, match_data[2].humanize]
         end

@@ -49,7 +49,6 @@ module VpsAdmin::API::Plugin
 
       def rollback_plugin(plugin, steps)
         self.current_plugin = plugin
-        return if current_version(plugin) == version
 
         MigrationContext.new(
           plugin.migration_directory,
