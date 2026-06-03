@@ -172,10 +172,10 @@
     platforms = [ ];
     source = {
       remotes = [ "https://rubygems.org" ];
-      sha256 = "0gncbcg6x03jxa0zjmiip4d5in856y552fypz5lzzvzn7632qhzy";
+      sha256 = "1anz6a6n33x4s3906s0bz6x161kk1ns3h7xxsn3rpxkfsw7k2m33";
       type = "gem";
     };
-    version = "2.19.7";
+    version = "2.19.8";
   };
   logger = {
     groups = [ "default" ];
