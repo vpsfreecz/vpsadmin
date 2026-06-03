@@ -14,6 +14,7 @@ module NodeCtld
       @state_summary_value = :unknown
       @scan_summary_value = :unknown
       @scan_percent_summary = nil
+      @pools = {}
 
       @channel = NodeBunny.create_channel
       @exchange = @channel.direct(NodeBunny.exchange_name)
