@@ -4393,6 +4393,7 @@ import ../make-test.nix (
             'name' => 'Webui Browser Advisory Created',
             'editedName' => 'Webui Browser Advisory Edited',
             'publishedAt' => '2026-05-29 12:00',
+            'editedPublishedAt' => '2026-05-29 12:30',
             'vulnerableUntil' => '2026-05-29 08:00',
             'mitigatedSince' => '2026-05-29 10:30',
             'nodeNote' => 'Kernel updated by Playwright fixture',

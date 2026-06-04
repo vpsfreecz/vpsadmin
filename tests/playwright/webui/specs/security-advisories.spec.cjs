@@ -35,6 +35,7 @@ function requireSecurityAdvisoryFixtures() {
     || !advisories.publishedNotAffected
     || !advisories.draftHidden
     || !advisories.uiCreate
+    || !advisories.uiCreate.editedPublishedAt
   ) {
     throw new Error('security advisory coverage requires fixtures.securityAdvisories');
   }
@@ -57,6 +58,17 @@ async function expectAdvisoryRow(page, advisory) {
 async function expectAdvisoryAbsent(page, advisory) {
   await expect(content(page)).not.toContainText(advisory.name);
   await expect(content(page)).not.toContainText(advisory.summary);
+}
+
+function expectedAdvisoryTime(value) {
+  const [date, time] = String(value).split(' ');
+  const parts = time.split(':');
+
+  while (parts.length < 3) {
+    parts.push('00');
+  }
+
+  return `${date} ${parts.slice(0, 3).join(':')} UTC`;
 }
 
 async function expectAdvisoryDetail(page, advisory, options = {}) {
@@ -197,11 +209,30 @@ test.describe('security advisory admin browser workflow', () => {
     await expect(content(page)).toContainText('draft');
     await expect(content(page)).toContainText(ui.name);
     await expect(content(page)).toContainText(ui.summary);
+    await expect(content(page)).toContainText(expectedAdvisoryTime(ui.publishedAt));
     await expect(content(page)).toContainText(ui.nodeNote);
 
     for (const cve of ui.cves) {
       await expect(content(page)).toContainText(cve);
     }
+  });
+
+  test('edits staged publication time before publishing', async ({ page }) => {
+    const s = requireSecurityAdvisoryFixtures();
+    const ui = s.uiCreate;
+
+    await gotoAdvisory(page, 'edit', { id: advisoryId });
+    const form = formByAction(page, `action=edit&id=${advisoryId}`);
+    await expect(form).toBeVisible();
+    await expect(form.locator('input[name="published_at"]')).toHaveValue(ui.publishedAt);
+    await fillAdvisoryTextFields(form, {
+      publishedAt: ui.editedPublishedAt,
+    });
+    await submitForm(form, 'Save');
+
+    await expect(heading(page)).toContainText(`Security advisory #${advisoryId}`);
+    await expect(content(page)).toContainText('draft');
+    await expect(content(page)).toContainText(expectedAdvisoryTime(ui.editedPublishedAt));
   });
 
   test('edits node statuses and restores publishable defaults', async ({ page }) => {
@@ -251,13 +282,14 @@ test.describe('security advisory admin browser workflow', () => {
     const form = formByAction(page, `action=publish&id=${advisoryId}`);
     await expect(form).toBeVisible();
     await expect(form.locator('input[name="send_mail"]')).not.toBeChecked();
-    await form.locator('input[name="published_at"]').fill(ui.publishedAt);
+    await expect(form.locator('input[name="published_at"]')).toHaveValue(ui.editedPublishedAt);
     await setCheckboxIfPresent(form, 'send_mail', false);
     await submitForm(form, 'Publish');
 
     await expect(heading(page)).toContainText(`Security advisory #${advisoryId}`);
     await expect(content(page)).toContainText('published');
     await expect(content(page)).toContainText(ui.name);
+    await expect(content(page)).toContainText(expectedAdvisoryTime(ui.editedPublishedAt));
   });
 
   test('edits advisory CVEs, name, and translated text', async ({ page }) => {
@@ -268,7 +300,6 @@ test.describe('security advisory admin browser workflow', () => {
     const form = formByAction(page, `action=edit&id=${advisoryId}`);
     await expect(form).toBeVisible();
     await fillAdvisoryTextFields(form, {
-      publishedAt: ui.publishedAt,
       cves: ui.editedCves,
       name: ui.editedName,
       summary: ui.editedSummary,
@@ -282,6 +313,7 @@ test.describe('security advisory admin browser workflow', () => {
     await expect(content(page)).toContainText(ui.editedSummary);
     await expect(content(page)).toContainText(ui.editedDescription);
     await expect(content(page)).toContainText(ui.editedResponse);
+    await expect(content(page)).toContainText(expectedAdvisoryTime(ui.editedPublishedAt));
 
     for (const cve of ui.editedCves) {
       await expect(content(page)).toContainText(cve);
@@ -296,8 +328,8 @@ test.describe('security advisory admin browser workflow', () => {
     let form = formByAction(page, `action=update&id=${advisoryId}`);
     await expect(form).toBeVisible();
     await expect(form.locator('input[name="send_mail"]')).not.toBeChecked();
+    await expect(form.locator('input[name="published_at"]')).toHaveValue(ui.editedPublishedAt);
     await fillUpdateTextFields(form, {
-      publishedAt: ui.publishedAt,
       summary: ui.updateSummary,
       message: ui.updateMessage,
     });
