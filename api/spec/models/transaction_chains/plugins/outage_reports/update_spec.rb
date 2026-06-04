@@ -33,6 +33,19 @@ RSpec.describe 'outage reports update chain', requires_plugins: :outage_reports 
     )
   end
 
+  def build_security_advisory
+    SecurityAdvisory.create!(
+      state: :published,
+      name: 'Spec vulnerability',
+      created_by: SpecSeed.admin,
+      published_by: SpecSeed.admin,
+      published_at: Time.local(2026, 4, 1, 9, 0, 0)
+    ).tap do |advisory|
+      advisory.security_advisory_cves.create!(cve_id: 'CVE-2026-3001')
+      advisory.security_advisory_cves.create!(cve_id: 'CVE-2026-3002')
+    end
+  end
+
   it 'creates an update and edits outage translations without mailing while staged' do
     outage = build_outage
     allow(MailTemplate).to receive(:send_mail!)
@@ -57,6 +70,7 @@ RSpec.describe 'outage reports update chain', requires_plugins: :outage_reports 
 
   it 'announces outages, refreshes affected objects, and threads generic/user mail' do
     outage = build_outage
+    advisory = build_security_advisory
     last_report = OutageUpdate.create!(
       outage: outage,
       reported_by: SpecSeed.admin,
@@ -64,7 +78,12 @@ RSpec.describe 'outage reports update chain', requires_plugins: :outage_reports 
       begins_at: outage.begins_at,
       duration: outage.duration
     )
+    OutageSecurityAdvisory.create!(outage:, security_advisory: advisory)
     OutageUser.create!(outage: outage, user: SpecSeed.user, vps_count: 1, export_count: 0)
+    cfg = SysConfig.find_or_initialize_by(category: 'webui', name: 'base_url')
+    cfg.data_type ||= 'String'
+    cfg.value = 'https://webui.example.test/'
+    cfg.save!
     attempts = []
 
     allow(outage).to receive(:set_affected_vpses)
@@ -109,6 +128,24 @@ RSpec.describe 'outage reports update chain', requires_plugins: :outage_reports 
     )
     expect(direct.last[:in_reply_to]).to eq(expected_direct_reply)
     expect(report.id).not_to eq(last_report.id)
+
+    [generic, direct].each do |_name, opts|
+      expect(opts.dig(:vars, :webui_url)).to eq('https://webui.example.test')
+      expect(opts.dig(:vars, :security_advisory_cves)).to contain_exactly(
+        hash_including(
+          advisory_id: advisory.id,
+          advisory_name: 'Spec vulnerability',
+          cve_id: 'CVE-2026-3001',
+          cve_url: 'https://www.cve.org/CVERecord?id=CVE-2026-3001'
+        ),
+        hash_including(
+          advisory_id: advisory.id,
+          advisory_name: 'Spec vulnerability',
+          cve_id: 'CVE-2026-3002',
+          cve_url: 'https://www.cve.org/CVERecord?id=CVE-2026-3002'
+        )
+      )
+    end
   end
 
   it 'suppresses mail when requested' do

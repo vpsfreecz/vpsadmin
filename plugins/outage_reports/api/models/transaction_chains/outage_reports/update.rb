@@ -122,9 +122,34 @@ module VpsAdmin::API::Plugins::OutageReports::TransactionChains
           vpses: u && outage.outage_vpses.where(user: u),
           direct_vpses: u && outage.outage_vpses.where(user: u, direct: true),
           indirect_vpses: u && outage.outage_vpses.where(user: u, direct: false),
-          exports: u && outage.outage_exports.where(user: u)
+          exports: u && outage.outage_exports.where(user: u),
+          security_advisory_cves: security_advisory_cves(outage),
+          webui_url: webui_url
         }
       )
+    end
+
+    def security_advisory_cves(outage)
+      outage.outage_security_advisories
+            .includes(security_advisory: :security_advisory_cves)
+            .flat_map do |link|
+        advisory = link.security_advisory
+
+        advisory.security_advisory_cves.order(:cve_id).map do |cve|
+          {
+            advisory_id: advisory.id,
+            advisory_name: advisory.name,
+            cve_id: cve.cve_id,
+            cve_url: cve.url
+          }
+        end
+      end.uniq { |row| [row[:advisory_id], row[:cve_id]] }
+    end
+
+    def webui_url
+      (::SysConfig.get(:webui, :base_url) || '').chomp('/')
+    rescue StandardError
+      ''
     end
 
     def send_first(templates, opts)

@@ -950,6 +950,7 @@ function post_val_issetto($name, $value, $default = false)
 function transaction_concern_class($klass)
 {
     $tr = [
+        'SecurityAdvisory' => _('Security advisory'),
         'Vps' => 'VPS',
     ];
 
@@ -980,6 +981,9 @@ function transaction_concern_link($klass, $row_id)
 
         case 'Outage':
             return '<a href="?page=outage&action=show&id=' . $row_id . '">' . $row_id . '</a>';
+
+        case 'SecurityAdvisory':
+            return '<a href="?page=security_advisory&action=show&id=' . $row_id . '">' . $row_id . '</a>';
 
         case 'Export':
             return '<a href="?page=export&action=edit&export=' . $row_id . '">' . $row_id . '</a>';

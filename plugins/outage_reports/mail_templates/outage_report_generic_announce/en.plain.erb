@@ -6,6 +6,15 @@ Affected systems: <%= @o.outage_entities.map { |e| e.real_name }.join(', ') %>
 Impact type: <%= @o.impact_type_label %>
 Reason: <%= @o.en_summary %>
 Handled by: <%= @o.outage_handlers.map { |h| h.user.full_name }.join(', ') %>
+<% if @security_advisory_cves && @security_advisory_cves.any? -%>
+Related CVEs:
+<% @security_advisory_cves.each do |cve| -%>
+- <%= cve[:cve_id] %><%= cve[:advisory_name] && !cve[:advisory_name].empty? ? " - #{cve[:advisory_name]}" : '' %>
+<% end -%>
+<% end -%>
+<% if @webui_url && !@webui_url.empty? -%>
+Outage details: <%= @webui_url %>/?page=outage&action=show&id=<%= @o.id %>
+<% end -%>
 
 <% if @o.en_description && !@o.en_description.empty? -%>
 <%= @o.en_description %>

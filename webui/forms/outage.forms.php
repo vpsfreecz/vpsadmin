@@ -475,6 +475,14 @@ function outage_details($id)
 
     $outage = $api->outage->show($id);
     $langs = $api->language->list();
+    $securityAdvisoryLinks = null;
+
+    if ($api->outage_security_advisory) {
+        $securityAdvisoryLinks = $api->outage_security_advisory->list([
+            'outage' => $outage->id,
+            'meta' => ['includes' => 'security_advisory'],
+        ]);
+    }
 
     $xtpl->title(_('Outage') . ' #' . $id);
 
@@ -629,50 +637,82 @@ function outage_details($id)
         $xtpl->table_tr();
     }
 
+    if ($securityAdvisoryLinks !== null) {
+        $xtpl->table_td(_('CVEs') . ':');
+
+        if ($securityAdvisoryLinks->count()) {
+            $xtpl->table_td(implode("\n<br>\n", array_map(
+                function ($link) use ($outage) {
+                    $text = security_advisory_detail_label($link->security_advisory);
+
+                    if (isAdmin()) {
+                        $text .= ' ' . security_advisory_unlink_form(
+                            '?page=outage&action=unlink_security_advisory&id=' . $outage->id
+                                . '&link=' . $link->id,
+                            _('Do you really wish to unlink this security advisory?')
+                        );
+                    }
+
+                    return $text;
+                },
+                $securityAdvisoryLinks->asArray()
+            )));
+        } else {
+            $xtpl->table_td('-');
+        }
+
+        $xtpl->table_tr();
+    }
+
     $xtpl->table_td(_('Handled by') . ':');
     $xtpl->table_td(implode(', ', array_map(
         function ($h) { return h($h->full_name); },
         $outage->handler->list()->asArray()
     )));
     $xtpl->table_tr();
-
-    if ($api->security_advisory) {
-        $links = $outage->security_advisory->list(['meta' => ['includes' => 'security_advisory']]);
-        $xtpl->table_td(_('Security advisories') . ':');
-        if ($links->count()) {
-            $xtpl->table_td(implode("\n<br>\n", array_map(
-                function ($link) {
-                    return security_advisory_link($link->security_advisory)
-                        . ' - '
-                        . security_advisory_cve_links(security_advisory_cve_rows($link->security_advisory));
-                },
-                $links->asArray()
-            )));
-        } else {
-            $xtpl->table_td('-');
-        }
-        $xtpl->table_tr();
-    }
     $xtpl->table_out();
 
-    if (isAdmin() && $api->security_advisory) {
+    if (isAdmin() && $api->security_advisory && $api->outage_security_advisory) {
         $xtpl->table_title(_('Link security advisory'));
-        $xtpl->form_create('?page=outage&action=link_security_advisory&id=' . $id, 'post');
-        $xtpl->form_add_select(
-            _('Security advisory') . ':',
-            'security_advisory',
-            resource_list_to_options(
-                $api->security_advisory->list(),
-                'id',
-                'id',
+
+        $linkedAdvisories = [];
+
+        foreach ($securityAdvisoryLinks as $link) {
+            $advisoryId = security_advisory_link_advisory_id($link);
+
+            if ($advisoryId !== null) {
+                $linkedAdvisories[] = (int) $advisoryId;
+            }
+        }
+
+        $advisoryOptions = [];
+
+        foreach ($api->security_advisory->list() as $advisory) {
+            if (in_array((int) $advisory->id, $linkedAdvisories)) {
+                continue;
+            }
+
+            $advisoryOptions[$advisory->id] = security_advisory_option_label($advisory);
+        }
+
+        if (count($advisoryOptions) > 0) {
+            $xtpl->form_create('?page=outage&action=link_security_advisory&id=' . $id, 'post');
+            $xtpl->form_add_select(
+                _('Security advisories') . ':',
+                'security_advisory[]',
+                $advisoryOptions,
+                post_val('security_advisory', []),
+                '',
                 true,
-                function ($advisory) {
-                    return security_advisory_option_label($advisory);
-                }
-            ),
-            post_val('security_advisory')
-        );
-        $xtpl->form_out(_('Link'));
+                min(10, max(5, count($advisoryOptions)))
+            );
+            $xtpl->form_out(_('Link'));
+
+        } else {
+            $xtpl->table_td(_('All visible security advisories are already linked.'));
+            $xtpl->table_tr();
+            $xtpl->table_out();
+        }
     }
 
     if (isAdmin() && $outage->state == 'staged') {

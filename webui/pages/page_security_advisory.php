@@ -248,6 +248,60 @@ switch ($_GET['action'] ?? 'list') {
         }
         break;
 
+    case 'link_outage':
+        if (isAdmin() && $_SERVER['REQUEST_METHOD'] === 'POST') {
+            csrf_check();
+
+            try {
+                $outageId = trim($_POST['outage'] ?? '');
+                if (!preg_match('/^\d+$/', $outageId)) {
+                    throw new \InvalidArgumentException(_('Outage ID must be a number.'));
+                }
+
+                $linked = false;
+
+                foreach ($api->outage_security_advisory->list([
+                    'outage' => $outageId,
+                    'security_advisory' => $_GET['id'],
+                ]) as $link) {
+                    if ((int) security_advisory_link_advisory_id($link) === (int) $_GET['id']) {
+                        $linked = true;
+                        break;
+                    }
+                }
+
+                if (!$linked) {
+                    $api->outage_security_advisory->create([
+                        'outage' => $outageId,
+                        'security_advisory' => $_GET['id'],
+                    ]);
+                }
+
+                redirect('?page=security_advisory&action=show&id=' . $_GET['id']);
+            } catch (\InvalidArgumentException $e) {
+                $xtpl->perex(_('Link failed'), h($e->getMessage()));
+                security_advisory_details($_GET['id']);
+            } catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+                $xtpl->perex_format_errors(_('Link failed'), $e->getResponse());
+                security_advisory_details($_GET['id']);
+            }
+        }
+        break;
+
+    case 'unlink_outage':
+        if (isAdmin() && $_SERVER['REQUEST_METHOD'] === 'POST') {
+            csrf_check();
+
+            try {
+                $api->outage_security_advisory->delete($_GET['link']);
+                redirect('?page=security_advisory&action=show&id=' . $_GET['id']);
+            } catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+                $xtpl->perex_format_errors(_('Unlink failed'), $e->getResponse());
+                security_advisory_details($_GET['id']);
+            }
+        }
+        break;
+
     case 'users':
         if (isAdmin()) {
             security_advisory_sbar($_GET['id']);
