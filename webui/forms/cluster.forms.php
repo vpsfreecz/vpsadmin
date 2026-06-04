@@ -24,6 +24,10 @@ function cluster_header()
         $xtpl->sbar_add(_("Outage list"), '?page=outage&action=list');
     }
 
+    if ($api->security_advisory) {
+        $xtpl->sbar_add(_("Security advisories"), '?page=security_advisory&action=list');
+    }
+
     if ($api->monitored_event) {
         $xtpl->sbar_add(_("Monitoring"), '?page=monitoring&action=list');
     }

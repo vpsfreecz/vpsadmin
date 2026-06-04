@@ -89,6 +89,8 @@ module VpsAdmin::API::Resources
                  desc: 'Filter outages by node'
         resource VpsAdmin::API::Resources::Component,
                  desc: 'Filter outages by vpsAdmin component'
+        resource VpsAdmin::API::Resources::SecurityAdvisory,
+                 desc: 'Filter outages linked to a security advisory'
         string :entity_name, label: 'Entity name', desc: 'Filter outages by entity name'
         integer :entity_id, label: 'Entity ID', desc: 'Filter outages by entity ID'
         string :order, label: 'Order', choices: %w[newest oldest], default: 'newest',
@@ -165,6 +167,12 @@ module VpsAdmin::API::Resources
         if input[:handled_by]
           q = q.joins(:outage_handlers).group('outages.id').where(
             outage_handlers: { user_id: input[:handled_by].id }
+          )
+        end
+
+        if input[:security_advisory]
+          q = q.joins(:outage_security_advisories).group('outages.id').where(
+            outage_security_advisories: { security_advisory_id: input[:security_advisory].id }
           )
         end
 
@@ -567,6 +575,93 @@ module VpsAdmin::API::Resources
             outage_id: path_params['outage_id'],
             id: path_params['handler_id']
           ).destroy!
+          ok!
+        end
+      end
+    end
+
+    class SecurityAdvisory < HaveAPI::Resource
+      desc 'Security advisories linked to outage'
+      model ::OutageSecurityAdvisory
+      route '{outage_id}/security_advisories'
+
+      params(:all) do
+        id :id
+        resource VpsAdmin::API::Resources::Outage, value_label: :begins_at
+        resource VpsAdmin::API::Resources::SecurityAdvisory, value_label: :id
+      end
+
+      class Index < HaveAPI::Actions::Default::Index
+        desc 'List linked security advisories'
+        auth false
+
+        output(:object_list) do
+          use :all
+        end
+
+        authorize do |_u|
+          allow
+        end
+
+        def query
+          ::OutageSecurityAdvisory
+            .joins(:outage, :security_advisory)
+            .merge(::Outage.visible_to(current_user))
+            .merge(::SecurityAdvisory.visible_to(current_user))
+            .where(outage_id: path_params['outage_id'])
+        end
+
+        def count
+          query.count
+        end
+
+        def exec
+          with_pagination(with_includes(query)).order('outage_security_advisories.id')
+        end
+      end
+
+      class Create < HaveAPI::Actions::Default::Create
+        desc 'Link security advisory to outage'
+
+        input do
+          resource VpsAdmin::API::Resources::SecurityAdvisory, value_label: :id
+          patch :security_advisory, required: true
+        end
+
+        output do
+          use :all
+        end
+
+        authorize do |u|
+          allow if u.role == :admin
+        end
+
+        def exec
+          ::OutageSecurityAdvisory.create!(
+            outage_id: path_params['outage_id'],
+            security_advisory: input[:security_advisory]
+          )
+        rescue ActiveRecord::RecordInvalid => e
+          error!('create failed', to_param_names(e.record.errors.to_hash))
+        end
+      end
+
+      class Delete < HaveAPI::Actions::Default::Delete
+        desc 'Unlink security advisory from outage'
+
+        authorize do |u|
+          allow if u.role == :admin
+        end
+
+        def prepare
+          @link = ::OutageSecurityAdvisory.find_by!(
+            outage_id: path_params['outage_id'],
+            id: path_params['security_advisory_id']
+          )
+        end
+
+        def exec
+          @link.destroy!
           ok!
         end
       end

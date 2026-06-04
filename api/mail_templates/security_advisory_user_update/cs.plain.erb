@@ -1,0 +1,18 @@
+Ahoj <%= @user.login %>,
+
+máme pro Tebe aktualizaci k bezpečnostnímu oznámení #<%= @a.id %>.
+
+<%= @update.cs_summary %>
+<% if @update.cs_message && !@update.cs_message.empty? -%>
+
+<%= @update.cs_message %>
+<% end -%>
+
+Více informací:
+<%= @webui_url %>/?page=security_advisory&action=show&id=<%= @a.id %>
+
+S pozdravem
+
+tým vpsAdmin
+
+(Tento mail automaticky rozesílá vpsAdmin, Tvoje odpověď se zašle na naši podporu)

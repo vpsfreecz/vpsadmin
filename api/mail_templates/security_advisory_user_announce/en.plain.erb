@@ -1,0 +1,31 @@
+Hi <%= @user.login %>,
+
+we would like to inform you about a security advisory for vpsAdmin infrastructure.
+The vulnerability has already been mitigated on affected nodes.
+
+Advisory: #<%= @a.id %><%= @a.name ? " - #{@a.name}" : '' %>
+CVEs: <%= @a.cves %>
+Published at: <%= @a.published_at.localtime.strftime('%Y-%m-%d %H:%M %Z') %>
+
+Your affected VPS:
+
+<% @vpses.each do |vps| -%>
+  - VPS #<%= vps.vps_id %> - <%= vps.vps.hostname %> (on <%= vps.node.domain_name %>)
+    Vulnerable until: <%= vps.vulnerable_until.localtime.strftime('%Y-%m-%d %H:%M %Z') %>
+    Mitigated since: <%= vps.mitigated_since.localtime.strftime('%Y-%m-%d %H:%M %Z') %>
+<% end -%>
+
+Summary:
+<%= @a.en_summary %>
+
+Response:
+<%= @a.en_response %>
+
+More information:
+<%= @webui_url %>/?page=security_advisory&action=show&id=<%= @a.id %>
+
+Best regards,
+
+vpsAdmin team
+
+(This is an automated mail from vpsAdmin, your reply will be sent to our support)

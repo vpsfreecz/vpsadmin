@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_05_18_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_01_120000) do
   create_table "auth_tokens", id: { type: :integer, unsigned: true }, charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
     t.string "api_ip_addr", limit: 46
     t.string "api_ip_ptr"
@@ -1248,6 +1248,90 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_18_120000) do
     t.bigint "user_id", null: false
     t.index ["token_id"], name: "index_single_sign_ons_on_token_id"
     t.index ["user_id"], name: "index_single_sign_ons_on_user_id"
+  end
+
+  create_table "security_advisories", charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.integer "created_by_id"
+    t.string "name"
+    t.datetime "published_at"
+    t.integer "published_by_id"
+    t.datetime "retracted_at"
+    t.integer "state", default: 0, null: false
+    t.datetime "updated_at", null: false
+    t.index ["created_by_id"], name: "index_security_advisories_on_created_by_id"
+    t.index ["published_at"], name: "index_security_advisories_on_published_at"
+    t.index ["published_by_id"], name: "index_security_advisories_on_published_by_id"
+    t.index ["state"], name: "index_security_advisories_on_state"
+  end
+
+  create_table "security_advisory_cves", charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
+    t.string "cve_id", limit: 32, null: false
+    t.bigint "security_advisory_id", null: false
+    t.index ["cve_id"], name: "index_security_advisory_cves_on_cve_id"
+    t.index ["security_advisory_id", "cve_id"], name: "index_security_advisory_cves_unique", unique: true
+  end
+
+  create_table "security_advisory_node_statuses", charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
+    t.datetime "mitigated_since"
+    t.bigint "node_id", null: false
+    t.text "note"
+    t.bigint "security_advisory_id", null: false
+    t.integer "state", default: 0, null: false
+    t.datetime "vulnerable_until"
+    t.index ["node_id"], name: "index_security_advisory_node_statuses_on_node_id"
+    t.index ["security_advisory_id", "node_id"], name: "index_sans_on_advisory_node", unique: true
+    t.index ["state"], name: "index_security_advisory_node_statuses_on_state"
+  end
+
+  create_table "security_advisory_translations", charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
+    t.text "description"
+    t.bigint "language_id", null: false
+    t.text "message"
+    t.text "response"
+    t.bigint "security_advisory_id"
+    t.bigint "security_advisory_update_id"
+    t.string "summary"
+    t.index ["language_id"], name: "index_security_advisory_translations_on_language_id"
+    t.index ["security_advisory_id", "language_id"], name: "index_sat_on_advisory_language", unique: true
+    t.index ["security_advisory_update_id", "language_id"], name: "index_sat_on_update_language", unique: true
+  end
+
+  create_table "security_advisory_updates", charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.bigint "reported_by_id"
+    t.string "reporter_name", limit: 100
+    t.bigint "security_advisory_id", null: false
+    t.integer "state"
+    t.datetime "updated_at"
+    t.index ["reported_by_id"], name: "index_security_advisory_updates_on_reported_by_id"
+    t.index ["security_advisory_id"], name: "index_security_advisory_updates_on_security_advisory_id"
+    t.index ["state"], name: "index_security_advisory_updates_on_state"
+  end
+
+  create_table "security_advisory_users", charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
+    t.bigint "security_advisory_id", null: false
+    t.bigint "user_id", null: false
+    t.integer "vps_count", default: 0, null: false
+    t.index ["security_advisory_id", "user_id"], name: "index_sau_on_advisory_user", unique: true
+    t.index ["user_id"], name: "index_security_advisory_users_on_user_id"
+  end
+
+  create_table "security_advisory_vpses", charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
+    t.bigint "environment_id", null: false
+    t.bigint "location_id", null: false
+    t.datetime "mitigated_since"
+    t.bigint "node_id", null: false
+    t.integer "node_state", null: false
+    t.bigint "security_advisory_id", null: false
+    t.bigint "user_id", null: false
+    t.bigint "vps_id", null: false
+    t.datetime "vulnerable_until"
+    t.index ["environment_id"], name: "index_security_advisory_vpses_on_environment_id"
+    t.index ["location_id"], name: "index_security_advisory_vpses_on_location_id"
+    t.index ["node_id"], name: "index_security_advisory_vpses_on_node_id"
+    t.index ["security_advisory_id", "vps_id"], name: "index_sav_on_advisory_vps", unique: true
+    t.index ["user_id"], name: "index_security_advisory_vpses_on_user_id"
   end
 
   create_table "snapshot_downloads", id: { type: :integer, unsigned: true }, charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|

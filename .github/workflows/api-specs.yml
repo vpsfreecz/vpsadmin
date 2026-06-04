@@ -132,6 +132,7 @@ jobs:
               spec/api/resources/object_history_spec.rb
               spec/api/resources/oom_report*_spec.rb
               spec/api/resources/os_*_spec.rb
+              spec/api/resources/security_advisory*_spec.rb
               spec/api/resources/system_config_spec.rb
               spec/api/resources/transaction*_spec.rb
 

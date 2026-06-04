@@ -50,6 +50,7 @@ include WEBUI_ROOT . 'forms/lifetimes.forms.php';
 include WEBUI_ROOT . 'forms/object_history.forms.php';
 include WEBUI_ROOT . 'forms/networking.forms.php';
 include WEBUI_ROOT . 'forms/outage.forms.php';
+include WEBUI_ROOT . 'forms/security_advisory.forms.php';
 include WEBUI_ROOT . 'forms/monitoring.forms.php';
 include WEBUI_ROOT . 'forms/userns.forms.php';
 include WEBUI_ROOT . 'forms/oom_reports.forms.php';
@@ -200,6 +201,9 @@ try {
                 break;
             case 'outage':
                 include WEBUI_ROOT . 'pages/page_outage.php';
+                break;
+            case 'security_advisory':
+                include WEBUI_ROOT . 'pages/page_security_advisory.php';
                 break;
             case 'monitoring':
                 include WEBUI_ROOT . 'pages/page_monitoring.php';
