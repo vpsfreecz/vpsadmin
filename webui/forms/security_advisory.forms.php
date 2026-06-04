@@ -106,6 +106,67 @@ function security_advisory_option_label($advisory)
     return $label;
 }
 
+function security_advisory_detail_label($advisory)
+{
+    $parts = [
+        security_advisory_cve_links(security_advisory_cve_rows($advisory)),
+    ];
+
+    if ($advisory->name) {
+        $parts[] = h($advisory->name);
+    }
+
+    $parts[] = security_advisory_link($advisory);
+
+    return implode(' - ', array_filter($parts));
+}
+
+function security_advisory_link_advisory_id($link)
+{
+    if (is_array($link)) {
+        if (array_key_exists('security_advisory_id', $link)) {
+            return $link['security_advisory_id'];
+        }
+
+        if (
+            isset($link['security_advisory'])
+            && is_array($link['security_advisory'])
+            && array_key_exists('id', $link['security_advisory'])
+        ) {
+            return $link['security_advisory']['id'];
+        }
+
+        if (
+            isset($link['security_advisory'])
+            && is_object($link['security_advisory'])
+            && $link['security_advisory']->id !== null
+        ) {
+            return $link['security_advisory']->id;
+        }
+
+        return null;
+    }
+
+    if ($link->security_advisory_id !== null) {
+        return $link->security_advisory_id;
+    }
+
+    if ($link->security_advisory && $link->security_advisory->id !== null) {
+        return $link->security_advisory->id;
+    }
+
+    return null;
+}
+
+function security_advisory_unlink_form($url, $confirm)
+{
+    return '<form action="' . h($url) . '" method="post" style="display:inline">'
+        . '<input type="hidden" name="csrf_token" value="' . h(csrf_token()) . '">'
+        . '<input type="image" src="template/icons/vps_delete.png" title="' . _('Unlink') . '" alt="' . _('Unlink') . '"'
+        . ' onclick="return confirm(\'' . h(addslashes($confirm)) . '\');">'
+        . '</form>';
+}
+
 function security_advisory_save_cves($id, $desired = null)
 {
     global $api;
@@ -730,34 +791,70 @@ function security_advisory_outage_table($id)
 {
     global $xtpl, $api;
 
-    if (!$api->outage) {
+    if (!$api->outage_security_advisory) {
         return;
     }
 
-    $outages = $api->outage->list(['security_advisory' => $id]);
+    $links = $api->outage_security_advisory->list([
+        'security_advisory' => $id,
+        'meta' => ['includes' => 'outage'],
+    ]);
 
-    if ($outages->count() == 0) {
+    if ($links->count() == 0 && !isAdmin()) {
         return;
     }
 
     $xtpl->table_title(_('Related outages'));
     $xtpl->table_add_category(_('Date'));
+    $xtpl->table_add_category(_('Type'));
+    $xtpl->table_add_category(_('Impact'));
     $xtpl->table_add_category(_('Summary'));
     $xtpl->table_add_category('');
 
-    foreach ($outages as $outage) {
+    foreach ($links as $link) {
+        $outage = $link->outage;
+
         $xtpl->table_td(security_advisory_time($outage->begins_at));
+        $xtpl->table_td(outage_type_label($outage->type));
+        $xtpl->table_td(outage_impact_label($outage->impact));
         $xtpl->table_td(h(security_advisory_localized_text($outage, 'summary')));
-        $xtpl->table_td('<a href="?page=outage&action=show&id=' . $outage->id . '">' . _('Show') . '</a>');
+
+        $actions = '<a href="?page=outage&action=show&id=' . $outage->id . '">'
+            . '<img src="template/icons/m_edit.png" title="' . _('Details') . '" alt="' . _('Details') . '">'
+            . '</a>';
+
+        if (isAdmin()) {
+            $actions .= ' ' . security_advisory_unlink_form(
+                '?page=security_advisory&action=unlink_outage&id=' . $id
+                    . '&link=' . $link->id,
+                _('Do you really wish to unlink this outage?')
+            );
+        }
+
+        $xtpl->table_td($actions);
+        $xtpl->table_tr();
+    }
+
+    if ($links->count() == 0) {
+        $xtpl->table_td(_('No outages linked.'), false, false, 5);
         $xtpl->table_tr();
     }
 
     $xtpl->table_out();
+
+    if (isAdmin()) {
+        $xtpl->table_title(_('Link outage'));
+        $xtpl->form_create('?page=security_advisory&action=link_outage&id=' . $id, 'post');
+        $xtpl->form_add_input(_('Outage ID') . ':', 'text', '15', 'outage', post_val('outage'), '');
+        $xtpl->form_out(_('Link outage'));
+    }
 }
 
 function security_advisory_updates_table($id)
 {
     global $xtpl, $api;
+
+    security_advisory_clear_form_context();
 
     $updates = $api->security_advisory_update->list([
         'security_advisory' => $id,
@@ -802,6 +899,16 @@ function security_advisory_updates_table($id)
     }
 
     $xtpl->table_out();
+}
+
+function security_advisory_clear_form_context()
+{
+    global $xtpl;
+
+    $xtpl->assign('TABLE_FORM_BEGIN', '');
+    $xtpl->assign('FORM_CSRF_TOKEN', '');
+    $xtpl->assign('FORM_HIDDEN_FIELDS', '');
+    $xtpl->assign('TABLE_FORM_END', '');
 }
 
 function security_advisory_node_form($id)

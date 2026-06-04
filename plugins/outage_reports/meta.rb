@@ -27,7 +27,9 @@ VpsAdmin::API::Plugin.register(:outage_reports) do
                               o: '::Outage',
                               update: '::OutageUpdate',
                               user: '::User',
-                              vpses: 'Array<::Vps>'
+                              vpses: 'Array<::Vps>',
+                              security_advisory_cves: 'Array<Hash>',
+                              webui_url: String
                             }, public: true
 
     ::MailTemplate.register :outage_report_role,
@@ -38,7 +40,9 @@ VpsAdmin::API::Plugin.register(:outage_reports) do
                               o: '::Outage',
                               update: '::OutageUpdate',
                               user: '::User',
-                              vpses: 'OutageVps relation'
+                              vpses: 'OutageVps relation',
+                              security_advisory_cves: 'Array<Hash>',
+                              webui_url: String
                             }, public: true
   end
 end

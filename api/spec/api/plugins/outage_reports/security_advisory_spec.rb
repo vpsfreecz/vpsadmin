@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-RSpec.describe 'VpsAdmin::API::Resources::Outage::SecurityAdvisory',
+RSpec.describe 'VpsAdmin::API::Resources::OutageSecurityAdvisory',
                requires_plugins: :outage_reports do
   include OutageReportsSpecHelpers
 
@@ -18,12 +18,12 @@ RSpec.describe 'VpsAdmin::API::Resources::Outage::SecurityAdvisory',
     SpecSeed.dns_resolver
   end
 
-  def outage_security_advisory_index_path(outage_id)
-    vpath("/outages/#{outage_id}/security_advisories")
+  def index_path
+    vpath('/outage_security_advisories')
   end
 
-  def outage_security_advisory_path(outage_id, link_id)
-    vpath("/outages/#{outage_id}/security_advisories/#{link_id}")
+  def show_path(id)
+    vpath("/outage_security_advisories/#{id}")
   end
 
   def json_get(path, params = nil)
@@ -42,15 +42,15 @@ RSpec.describe 'VpsAdmin::API::Resources::Outage::SecurityAdvisory',
   end
 
   def outage_security_advisories
-    json.dig('response', 'security_advisories') ||
-      json.dig('response', 'outage_security_advisories') ||
-      []
+    json.dig('response', 'outage_security_advisories') || []
   end
 
   def outage_security_advisory_obj
-    json.dig('response', 'security_advisory') ||
-      json.dig('response', 'outage_security_advisory') ||
-      json['response']
+    json.dig('response', 'outage_security_advisory') || json['response']
+  end
+
+  def errors
+    json.dig('response', 'errors') || json['errors'] || {}
   end
 
   def expect_status(code)
@@ -100,9 +100,15 @@ RSpec.describe 'VpsAdmin::API::Resources::Outage::SecurityAdvisory',
   end
 
   describe 'API description' do
-    it 'includes outage advisory link endpoints' do
+    it 'includes top-level outage advisory link endpoints' do
       scopes = EndpointInventory.scopes_for_version(self, api_version)
       expect(scopes).to include(
+        'outage_security_advisory#index',
+        'outage_security_advisory#show',
+        'outage_security_advisory#create',
+        'outage_security_advisory#delete'
+      )
+      expect(scopes).not_to include(
         'outage.security_advisory#index',
         'outage.security_advisory#create',
         'outage.security_advisory#delete'
@@ -111,43 +117,122 @@ RSpec.describe 'VpsAdmin::API::Resources::Outage::SecurityAdvisory',
   end
 
   describe 'Outage links' do
-    it 'hides draft advisory links from public outage output' do
+    it 'hides links when the outage or advisory is not public' do
       outage = build_outage
+      staged_outage = build_outage(state: :staged, begins_at: Time.utc(2026, 1, 2, 12, 0, 0))
       draft = build_advisory
       published = build_published_advisory
       ::OutageSecurityAdvisory.create!(outage: outage, security_advisory: draft)
+      hidden_outage_link = ::OutageSecurityAdvisory.create!(
+        outage: staged_outage,
+        security_advisory: published
+      )
       public_link = ::OutageSecurityAdvisory.create!(outage: outage, security_advisory: published)
 
-      json_get outage_security_advisory_index_path(outage.id)
+      json_get index_path
 
       expect_status(200)
       expect(outage_security_advisories.map { |row| row['id'] }).to contain_exactly(public_link.id)
 
-      as(SpecSeed.admin) { json_get outage_security_advisory_index_path(outage.id) }
+      as(SpecSeed.admin) { json_get index_path }
 
       expect_status(200)
-      expect(outage_security_advisories.map { |row| row['id'] }).to include(public_link.id)
+      expect(outage_security_advisories.map { |row| row['id'] }).to include(
+        hidden_outage_link.id,
+        public_link.id
+      )
     end
 
-    it 'allows admins to create and remove outage links' do
+    it 'filters links by outage and security advisory' do
+      outage = build_outage
+      other_outage = build_outage(begins_at: Time.utc(2026, 1, 2, 12, 0, 0))
+      advisory = build_published_advisory
+      other_advisory = build_advisory(
+        state: :published,
+        published_at: Time.utc(2026, 1, 1, 10, 0, 0),
+        published_by: SpecSeed.admin,
+        cves: 'CVE-2026-3001'
+      )
+      link = ::OutageSecurityAdvisory.create!(outage: outage, security_advisory: advisory)
+      ::OutageSecurityAdvisory.create!(outage: other_outage, security_advisory: other_advisory)
+
+      as(SpecSeed.admin) do
+        json_get index_path, outage_security_advisory: {
+          outage: outage.id,
+          security_advisory: advisory.id
+        }
+      end
+
+      expect_status(200)
+      expect(outage_security_advisories.map { |row| row['id'] }).to contain_exactly(link.id)
+    end
+
+    it 'allows admins to create, show and remove outage links' do
       outage = build_outage
       advisory = build_published_advisory
 
       as(SpecSeed.admin) do
-        json_post outage_security_advisory_index_path(outage.id), security_advisory: {
+        json_post index_path, outage_security_advisory: {
+          outage: outage.id,
           security_advisory: advisory.id
         }
       end
 
       expect_status(200)
       expect(json['status']).to be(true)
+      expect(outage_security_advisory_obj).to include(
+        'outage_id' => outage.id,
+        'security_advisory_id' => advisory.id
+      )
       link_id = outage_security_advisory_obj.fetch('id')
 
-      as(SpecSeed.admin) { json_delete outage_security_advisory_path(outage.id, link_id) }
+      as(SpecSeed.admin) { json_get show_path(link_id) }
+
+      expect_status(200)
+      expect(outage_security_advisory_obj['id']).to eq(link_id)
+
+      as(SpecSeed.admin) { json_delete show_path(link_id) }
 
       expect_status(200)
       expect(json['status']).to be(true)
       expect(::OutageSecurityAdvisory.where(id: link_id)).to be_empty
+    end
+
+    it 'allows only admins to create and delete links' do
+      outage = build_outage
+      advisory = build_published_advisory
+      link = ::OutageSecurityAdvisory.create!(outage: outage, security_advisory: advisory)
+
+      as(SpecSeed.user) do
+        json_post index_path, outage_security_advisory: {
+          outage: outage.id,
+          security_advisory: advisory.id
+        }
+      end
+
+      expect_status(403)
+
+      as(SpecSeed.user) { json_delete show_path(link.id) }
+
+      expect_status(403)
+      expect(::OutageSecurityAdvisory.where(id: link.id)).to exist
+    end
+
+    it 'rejects duplicate outage links' do
+      outage = build_outage
+      advisory = build_published_advisory
+      ::OutageSecurityAdvisory.create!(outage: outage, security_advisory: advisory)
+
+      as(SpecSeed.admin) do
+        json_post index_path, outage_security_advisory: {
+          outage: outage.id,
+          security_advisory: advisory.id
+        }
+      end
+
+      expect_status(200)
+      expect(json['status']).to be(false)
+      expect(errors.values.flatten.join(' ')).to include('has already been taken')
     end
   end
 end

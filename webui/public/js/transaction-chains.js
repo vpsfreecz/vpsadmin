@@ -45,6 +45,9 @@
 			case 'Outage':
 				return '<a href="?page=outage&action=show&id='+ obj[1] +'">'+ obj[1] +'</a>';
 
+			case 'SecurityAdvisory':
+				return '<a href="?page=security_advisory&action=show&id='+ obj[1] +'">'+ obj[1] +'</a>';
+
 			case 'Export':
 				return '<a href="?page=export&action=edit&export='+ obj[1] +'">'+ obj[1] +'</a>';
 
@@ -61,6 +64,7 @@
 
 	function chainConcernClass(obj) {
 		var klassMap = {
+			SecurityAdvisory: 'Security advisory',
 			Vps: 'VPS'
 		};
 

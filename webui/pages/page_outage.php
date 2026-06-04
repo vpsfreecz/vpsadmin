@@ -325,13 +325,47 @@ if (isLoggedIn()) {
                 csrf_check();
 
                 try {
-                    $outage = $api->outage->show($_GET['id']);
-                    $outage->security_advisory->create([
-                        'security_advisory' => $_POST['security_advisory'],
-                    ]);
+                    $selected = $_POST['security_advisory'] ?? [];
+                    $selected = is_array($selected) ? $selected : [$selected];
+                    $selected = array_unique(array_filter(array_map('intval', $selected)));
+                    $linked = [];
+
+                    foreach ($api->outage_security_advisory->list(['outage' => $_GET['id']]) as $link) {
+                        $advisoryId = security_advisory_link_advisory_id($link);
+
+                        if ($advisoryId !== null) {
+                            $linked[(int) $advisoryId] = true;
+                        }
+                    }
+
+                    foreach ($selected as $advisoryId) {
+                        if ($advisoryId <= 0 || isset($linked[$advisoryId])) {
+                            continue;
+                        }
+
+                        $api->outage_security_advisory->create([
+                            'outage' => $_GET['id'],
+                            'security_advisory' => $advisoryId,
+                        ]);
+                    }
+
                     redirect('?page=outage&action=show&id=' . $_GET['id']);
                 } catch (\HaveAPI\Client\Exception\ActionFailed $e) {
                     $xtpl->perex_format_errors(_('Link failed'), $e->getResponse());
+                    outage_details($_GET['id']);
+                }
+            }
+            break;
+
+        case 'unlink_security_advisory':
+            if (isAdmin() && $_SERVER['REQUEST_METHOD'] === 'POST') {
+                csrf_check();
+
+                try {
+                    $api->outage_security_advisory->delete($_GET['link']);
+                    redirect('?page=outage&action=show&id=' . $_GET['id']);
+                } catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+                    $xtpl->perex_format_errors(_('Unlink failed'), $e->getResponse());
                     outage_details($_GET['id']);
                 }
             }

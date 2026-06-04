@@ -214,9 +214,10 @@ covered:
 - outage.handler#index
 - outage.handler#show
 - outage.handler#update
-- outage.security_advisory#create
-- outage.security_advisory#delete
-- outage.security_advisory#index
+- outage_security_advisory#create
+- outage_security_advisory#delete
+- outage_security_advisory#index
+- outage_security_advisory#show
 - outage_update#create
 - outage_update#index
 - outage_update#show
