@@ -55,6 +55,24 @@ class CiTestSelectionTest < Minitest::Test
     refute_includes selection.tags, 'webui-auth'
   end
 
+  def test_security_advisory_webui_spec_selects_dedicated_script
+    selection = selector.select(['tests/playwright/webui/specs/security-advisories.spec.cjs'])
+
+    assert_equal 'selected', selection.mode
+    assert_includes selection.tags, 'webui-security-advisories'
+    assert_includes selection.tags, 'alerts'
+    assert_includes selection.tags, 'support'
+  end
+
+  def test_security_advisory_api_path_selects_browser_coverage
+    selection = selector.select(['api/models/security_advisory.rb'])
+
+    assert_equal 'selected', selection.mode
+    assert_includes selection.tags, 'webui-security-advisories'
+    assert_includes selection.tags, 'webui-support-pages'
+    assert_includes selection.tags, 'alerts'
+  end
+
   def test_shared_webui_file_selects_all_webui_scripts
     selection = selector.select(['tests/playwright/webui/lib/pages/vps.cjs'])
 

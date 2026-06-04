@@ -84,6 +84,11 @@ let
       "support"
       "webui-support-pages"
     ];
+    security-advisories = [
+      "alerts"
+      "support"
+      "webui-security-advisories"
+    ];
     misc-pages = [
       "webui-misc-pages"
     ];
