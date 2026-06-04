@@ -22,6 +22,10 @@ RSpec.describe TransactionChains::NetworkInterface::AddRoute do
       network: export_network,
       location: fixture[:pool].node.location
     )
+    route_network = create_private_network!(
+      location: fixture[:pool].node.location,
+      purpose: :vps
+    )
 
     export = create_export_for_dataset!(
       dataset_in_pool: fixture[:dataset_in_pool],
@@ -29,25 +33,22 @@ RSpec.describe TransactionChains::NetworkInterface::AddRoute do
     ).first
     export.update!(all_vps: true)
 
-    existing_ip = create_ip_address!(
-      network: SpecSeed.network_v4,
+    existing_ip = create_ipv4_address_in_network!(
+      network: route_network,
       location: fixture[:pool].node.location,
-      network_interface: fixture[:netif],
-      addr: '192.0.2.70'
+      network_interface: fixture[:netif]
     )
     existing_ip.update!(order: 4)
 
-    via_parent_ip = create_ip_address!(
-      network: SpecSeed.network_v4,
-      location: fixture[:pool].node.location,
-      addr: '192.0.2.71'
+    via_parent_ip = create_ipv4_address_in_network!(
+      network: route_network,
+      location: fixture[:pool].node.location
     )
     via_addr = via_parent_ip.host_ip_addresses.take!
 
-    routed_ip = create_ip_address!(
-      network: SpecSeed.network_v4,
-      location: fixture[:pool].node.location,
-      addr: '192.0.2.72'
+    routed_ip = create_ipv4_address_in_network!(
+      network: route_network,
+      location: fixture[:pool].node.location
     )
     host_addr = routed_ip.host_ip_addresses.take!
 
