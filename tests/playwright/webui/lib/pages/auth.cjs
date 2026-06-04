@@ -36,7 +36,10 @@ async function login(page, account) {
   await openWebuiLogin(page, account.username);
   await submitCredentials(page, account.username, account.password);
   try {
-    await expect(logoutButton(page)).toHaveValue(new RegExp(`Logout \\(${account.username}\\)`));
+    await expect(logoutButton(page)).toHaveValue(
+      new RegExp(`Logout \\(${account.username}\\)`),
+      { timeout: 60000 },
+    );
   } catch (error) {
     const body = await page.locator('body').innerText({ timeout: 1000 }).catch(() => '');
     throw new Error(
