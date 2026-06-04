@@ -20,10 +20,6 @@ in
   };
 
   config = mkIf (cfg.enable && cfg.scheduler.enable) {
-    nixpkgs.overlays = [
-      (self: super: { cron = super.callPackage ../../../../packages/cronie { }; })
-    ];
-
     systemd.services.vpsadmin-scheduler = {
       after = [
         "network.target"
@@ -43,12 +39,6 @@ in
         Restart = "on-failure";
         RestartSec = 30;
       };
-    };
-
-    # TODO: cron is no longer necessary
-    services.cron = {
-      enable = true;
-      permitAnyCrontab = true;
     };
   };
 }

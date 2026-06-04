@@ -1,6 +1,5 @@
 {
   nixos = [
-    ./services/scheduling/cronie.nix
     ./vpsadmin/api/default.nix
     ./vpsadmin/api/rake-tasks.nix
     ./vpsadmin/api/scheduler.nix
