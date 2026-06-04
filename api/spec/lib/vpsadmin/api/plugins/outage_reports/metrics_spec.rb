@@ -76,6 +76,7 @@ RSpec.describe 'outage reports plugin metrics', requires_plugins: :outage_report
     expect(output).to include('spec_outage_vps_outage_report')
     expect(output).to include('spec_outage_export_outage_report')
     expect(output).to include('outage_summary_en="Network outage"')
+    expect(output).to include('outage_summary_cs=""')
     expect(output).to include("vps_id=\"#{vps.id}\"")
     expect(output).to include("export_id=\"#{export.id}\"")
 

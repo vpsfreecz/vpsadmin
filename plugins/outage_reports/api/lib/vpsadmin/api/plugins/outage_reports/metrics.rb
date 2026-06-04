@@ -33,7 +33,7 @@ module VpsAdmin::API::Plugins::OutageReports
     end
 
     def compute
-      ::Outage.where(state: 'announced').each do |outage|
+      ::Outage.includes(outage_translations: :language).where(state: 'announced').each do |outage|
         next unless outage.affected(user:)
 
         outage_user = outage.outage_users.find_by(user:)
@@ -84,8 +84,12 @@ module VpsAdmin::API::Plugins::OutageReports
         location_label: node.location.label
       }
 
+      summaries = outage.outage_translations.to_h do |tr|
+        [tr.language.code, tr.summary]
+      end
+
       ::Language.all.each do |lang|
-        ret[:"outage_summary_#{lang.code}"] = outage.send(:"#{lang.code}_summary")
+        ret[:"outage_summary_#{lang.code}"] = summaries.fetch(lang.code, '')
       end
 
       ret
