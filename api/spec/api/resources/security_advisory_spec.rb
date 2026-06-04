@@ -447,6 +447,20 @@ RSpec.describe 'VpsAdmin::API::Resources::SecurityAdvisory' do
       expect(errors['cve_id'].join(' ')).to include('has already been taken')
     end
 
+    it 'rejects CVEs for missing advisories' do
+      missing = ::SecurityAdvisory.maximum(:id).to_i + 100
+
+      as(SpecSeed.admin) do
+        json_post cve_index_path, security_advisory_cve: {
+          security_advisory: missing,
+          cve_id: 'CVE-2026-1999'
+        }
+      end
+
+      expect(json['status']).to be(false)
+      expect(::SecurityAdvisoryCve.where(security_advisory_id: missing)).to be_empty
+    end
+
     it 'limits public CVE lists to visible advisories' do
       draft = build_advisory(cves: 'CVE-2026-1001')
       published = build_published_advisory
@@ -535,6 +549,21 @@ RSpec.describe 'VpsAdmin::API::Resources::SecurityAdvisory' do
       snapshot = ::SecurityAdvisoryVps.find_by!(security_advisory: advisory, vps: user_vps)
       expect(snapshot.user).to eq(SpecSeed.user)
       expect(snapshot.node_state).to eq('mitigated')
+    end
+
+    it 'rejects node statuses for missing advisories' do
+      missing = ::SecurityAdvisory.maximum(:id).to_i + 100
+
+      as(SpecSeed.admin) do
+        json_post node_status_index_path(missing), node_status: {
+          node: SpecSeed.node.id,
+          state: 'not_affected'
+        }
+      end
+
+      expect_status(404)
+      expect(json['status']).to be(false)
+      expect(::SecurityAdvisoryNodeStatus.where(security_advisory_id: missing)).to be_empty
     end
 
     it 'lists node statuses publicly only for published advisories' do
@@ -641,6 +670,20 @@ RSpec.describe 'VpsAdmin::API::Resources::SecurityAdvisory' do
 
       expect_status(200)
       expect(security_advisory_updates.map { |row| row['id'] }).to include(update_id)
+    end
+
+    it 'rejects updates for missing advisories' do
+      missing = ::SecurityAdvisory.maximum(:id).to_i + 100
+
+      as(SpecSeed.admin) do
+        json_post update_index_path, security_advisory_update: {
+          security_advisory: missing,
+          en_summary: 'Orphan update'
+        }
+      end
+
+      expect(json['status']).to be(false)
+      expect(::SecurityAdvisoryUpdate.where(security_advisory_id: missing)).to be_empty
     end
 
     it 'requires update summaries and lets admins edit and delete update text' do

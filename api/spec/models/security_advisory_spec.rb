@@ -82,6 +82,58 @@ RSpec.describe SecurityAdvisory do
     )
   end
 
+  it 'rejects raw child rows for missing advisory ids' do
+    missing = described_class.maximum(:id).to_i + 100
+    vps = create_vps!(user: SpecSeed.user, node: SpecSeed.node, hostname: 'spec-advisory-orphan')
+
+    rows = {
+      cve: SecurityAdvisoryCve.new(
+        security_advisory_id: missing,
+        cve_id: 'CVE-2026-2999'
+      ),
+      node_status: SecurityAdvisoryNodeStatus.new(
+        security_advisory_id: missing,
+        node: SpecSeed.node,
+        state: :not_affected
+      ),
+      update: SecurityAdvisoryUpdate.new(
+        security_advisory_id: missing
+      ),
+      user: SecurityAdvisoryUser.new(
+        security_advisory_id: missing,
+        user: SpecSeed.user
+      ),
+      vps: SecurityAdvisoryVps.new(
+        security_advisory_id: missing,
+        vps: vps,
+        user: vps.user,
+        environment: vps.node.location.environment,
+        location: vps.node.location,
+        node: vps.node,
+        node_state: :not_affected
+      ),
+      translation: SecurityAdvisoryTranslation.new(
+        security_advisory_id: missing,
+        language: SpecSeed.language,
+        summary: 'Orphan translation'
+      )
+    }
+
+    rows.each_value do |row|
+      expect(row).not_to be_valid
+      expect(row.errors[:security_advisory]).not_to be_empty
+    end
+
+    update_translation = SecurityAdvisoryTranslation.new(
+      security_advisory_update_id: missing,
+      language: SpecSeed.language,
+      summary: 'Orphan update translation'
+    )
+
+    expect(update_translation).not_to be_valid
+    expect(update_translation.errors[:security_advisory_update]).not_to be_empty
+  end
+
   it 'mails affected users only when requested' do
     advisory = build_advisory
     add_mitigated_status!(advisory)

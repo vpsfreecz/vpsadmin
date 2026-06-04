@@ -426,8 +426,9 @@ module VpsAdmin::API::Resources
         end
 
         def exec
+          advisory = ::SecurityAdvisory.find(path_params['security_advisory_id'])
           ::SecurityAdvisoryNodeStatus.create!(
-            to_db_names(input).merge(security_advisory_id: path_params['security_advisory_id'])
+            to_db_names(input).merge(security_advisory: advisory)
           )
         rescue ActiveRecord::RecordInvalid => e
           error!('create failed', to_param_names(e.record.errors.to_hash))

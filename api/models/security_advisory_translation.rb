@@ -9,7 +9,11 @@ class SecurityAdvisoryTranslation < ApplicationRecord
   protected
 
   def belongs_to_advisory_or_update
-    return if security_advisory_id.present? ^ security_advisory_update_id.present?
+    if security_advisory_id.present? ^ security_advisory_update_id.present?
+      errors.add(:security_advisory, 'must exist') if security_advisory_id.present? && security_advisory.nil?
+      errors.add(:security_advisory_update, 'must exist') if security_advisory_update_id.present? && security_advisory_update.nil?
+      return
+    end
 
     errors.add(:base, 'must belong either to advisory or update')
   end

@@ -2,6 +2,7 @@ class OutageSecurityAdvisory < ApplicationRecord
   belongs_to :outage
   belongs_to :security_advisory
 
+  validates :outage, :security_advisory, presence: true
   validates :security_advisory_id, uniqueness: { scope: :outage_id }
 end
 

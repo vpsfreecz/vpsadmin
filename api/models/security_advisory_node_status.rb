@@ -4,6 +4,7 @@ class SecurityAdvisoryNodeStatus < ApplicationRecord
 
   enum :state, %i[unknown not_affected vulnerable mitigated]
 
+  validates :security_advisory, :node, presence: true
   validates :node_id, uniqueness: { scope: :security_advisory_id }
   validate :node_in_advisory_scope
   validate :mitigated_times_present

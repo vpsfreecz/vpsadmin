@@ -1,6 +1,7 @@
 class SecurityAdvisoryCve < ApplicationRecord
   belongs_to :security_advisory
 
+  validates :security_advisory, presence: true
   validates :cve_id, presence: true,
                      format: {
                        with: /\ACVE-\d{4}-\d{4,}\z/,

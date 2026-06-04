@@ -234,5 +234,20 @@ RSpec.describe 'VpsAdmin::API::Resources::OutageSecurityAdvisory',
       expect(json['status']).to be(false)
       expect(errors.values.flatten.join(' ')).to include('has already been taken')
     end
+
+    it 'rejects links to missing security advisories' do
+      outage = build_outage
+      missing = ::SecurityAdvisory.maximum(:id).to_i + 100
+
+      as(SpecSeed.admin) do
+        json_post index_path, outage_security_advisory: {
+          outage: outage.id,
+          security_advisory: missing
+        }
+      end
+
+      expect(json['status']).to be(false)
+      expect(::OutageSecurityAdvisory.where(security_advisory_id: missing)).to be_empty
+    end
   end
 end

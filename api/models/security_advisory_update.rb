@@ -7,6 +7,7 @@ class SecurityAdvisoryUpdate < ApplicationRecord
 
   after_initialize :load_translations
   before_validation :set_reporter_name
+  validates :security_advisory, presence: true
 
   def cves
     security_advisory.cves
