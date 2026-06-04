@@ -4,12 +4,14 @@ set -euo pipefail
 
 usage() {
 	cat <<'EOF'
-Usage: tools/update_vpsadminos_flake.sh
+Usage: tools/update_vpsadminos_flake.sh [flake-url]
 
-Update the vpsadminos flake input and commit the isolated flake.lock
-change as:
+Update the vpsadminos flake input and commit the isolated flake.lock change as:
 
   flake: vpsadminos <old9> -> <new9>
+
+With no argument, update vpsadminos from the flake input URL. With flake-url,
+pin vpsadminos to that exact flake URL while leaving flake.nix unchanged.
 
 The script refuses to start with tracked changes present and refuses to
 commit if the update modifies anything other than flake.lock.
@@ -42,16 +44,36 @@ staged_files() {
 	git diff --cached --name-only
 }
 
+update_vpsadminos() {
+	local flake_url="${1:-}"
+	local tmp_lock
+
+	if [ -z "$flake_url" ]; then
+		nix flake update vpsadminos
+		return
+	fi
+
+	tmp_lock="$(mktemp)"
+	trap 'rm -f "$tmp_lock"' RETURN
+
+	nix flake update vpsadminos \
+		--override-input vpsadminos "$flake_url" \
+		--output-lock-file "$tmp_lock"
+	mv "$tmp_lock" flake.lock
+
+	trap - RETURN
+}
+
 case "${1:-}" in
 	-h|--help)
 		usage
 		exit 0
 		;;
-	'')
-		;;
 	*)
-		usage >&2
-		exit 1
+		if [ "$#" -gt 1 ]; then
+			usage >&2
+			exit 1
+		fi
 		;;
 esac
 
@@ -72,7 +94,7 @@ old_rev="$(vpsadminos_rev)"
 old_short="$(short_rev "$old_rev")"
 
 printf 'Current vpsadminos revision: %s\n' "$old_rev"
-nix flake update vpsadminos
+update_vpsadminos "${1:-}"
 
 mapfile -t changed < <(changed_files)
 
@@ -103,6 +125,9 @@ if [ "$old_rev" = "$new_rev" ]; then
 fi
 
 subject="flake: vpsadminos ${old_short} -> ${new_short}"
+commit_msg="$(mktemp)"
+trap 'rm -f "$commit_msg"' EXIT
+printf '%s\n' "$subject" >"$commit_msg"
 
 git add flake.lock
 mapfile -t staged < <(staged_files)
@@ -113,5 +138,5 @@ if [ "${#staged[@]}" -ne 1 ] || [ "${staged[0]}" != "flake.lock" ]; then
 	exit 1
 fi
 
-git commit -m "$subject"
+git commit -F "$commit_msg"
 printf 'Committed: %s\n' "$subject"
