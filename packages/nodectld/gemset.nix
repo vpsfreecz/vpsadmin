@@ -179,10 +179,10 @@
     platforms = [ ];
     source = {
       remotes = [ "https://rubygems.vpsfree.cz" ];
-      sha256 = "1y06xgx7qf6r08czd19z6gkzjqp8k51pp85ckmrmnvrcfiknv78d";
+      sha256 = "1hlaf5lpmzl7rix6rf3g6kz4c14vasz6l9xjwld65cgmk8g2nc3k";
       type = "gem";
     };
-    version = "4.1.0.build20260603174938";
+    version = "4.1.0.build20260604181618";
   };
   libosctl = {
     dependencies = [
@@ -196,10 +196,10 @@
     platforms = [ ];
     source = {
       remotes = [ "https://rubygems.vpsfree.cz" ];
-      sha256 = "1rbvfl749x6d4yk2wfyrpjkg4zagyc2fsmfnrmsvc6l1rclkr1yk";
+      sha256 = "0sxl3bghmjbx0n0bikxv0w9xnp69ly3n4w0v8nawapakchwbpaf9";
       type = "gem";
     };
-    version = "25.11.0.build20260524195326";
+    version = "26.05.0.build20260604154538";
   };
   logger = {
     groups = [ "default" ];
@@ -311,10 +311,10 @@
     platforms = [ ];
     source = {
       remotes = [ "https://rubygems.vpsfree.cz" ];
-      sha256 = "0fcf4zxpf4kpmkbc2gx47ad2nib0bnlxhylpkz2kdb3pp19hprqw";
+      sha256 = "1hypkq83pwmqbn8g9a2iq1y08gwhd2f2jbwmrhp97d49qgvayl6l";
       type = "gem";
     };
-    version = "4.1.0.build20260603174938";
+    version = "4.1.0.build20260604181618";
   };
   osctl = {
     dependencies = [
@@ -334,10 +334,10 @@
     platforms = [ ];
     source = {
       remotes = [ "https://rubygems.vpsfree.cz" ];
-      sha256 = "0c0dpm282qfw3l3sasbiys741k2945g6ank26ba0801nv7wpbgsn";
+      sha256 = "0f96m503zlymglyycc7ylj0kc86bafnzcg1hahmanljpv91zw35x";
       type = "gem";
     };
-    version = "25.11.0.build20260524195326";
+    version = "26.05.0.build20260604154538";
   };
   osctl-exportfs = {
     dependencies = [
@@ -350,10 +350,10 @@
     platforms = [ ];
     source = {
       remotes = [ "https://rubygems.vpsfree.cz" ];
-      sha256 = "0vsrbxc3h120xk2cwcls508d859864rd1has3hmkrxkj0v3dqk74";
+      sha256 = "0aq1aprf33qcsav4d9dd5mfwc89sh8wfdwllzqp5ng5nrhx0laa1";
       type = "gem";
     };
-    version = "25.11.0.build20260524195326";
+    version = "26.05.0.build20260604154538";
   };
   ostruct = {
     groups = [ "default" ];
