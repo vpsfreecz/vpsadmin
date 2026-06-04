@@ -6,6 +6,9 @@ require 'erb'
 require 'uri'
 
 module SpecDbSetup
+  MYSQL_DEFAULT_ENCODING = 'utf8mb3'
+  MYSQL_DEFAULT_COLLATION = 'utf8mb3_unicode_ci'
+
   module_function
 
   def establish_connection!(db_name_suffix: nil)
@@ -79,7 +82,13 @@ module SpecDbSetup
     quoted = ActiveRecord::Base.connection.quote_table_name(dbname)
 
     ActiveRecord::Base.connection.execute("DROP DATABASE IF EXISTS #{quoted}")
-    ActiveRecord::Base.connection.execute("CREATE DATABASE #{quoted}")
+    if adapter.include?('mysql')
+      ActiveRecord::Base.connection.execute(
+        mysql_create_database_sql(quoted, conn_cfg)
+      )
+    else
+      ActiveRecord::Base.connection.execute("CREATE DATABASE #{quoted}")
+    end
 
     ActiveRecord::Base.establish_connection(conn_cfg)
   end
@@ -95,7 +104,9 @@ module SpecDbSetup
     quoted = ActiveRecord::Base.connection.quote_table_name(dbname)
 
     if adapter.include?('mysql')
-      ActiveRecord::Base.connection.execute("CREATE DATABASE IF NOT EXISTS #{quoted}")
+      ActiveRecord::Base.connection.execute(
+        mysql_create_database_sql(quoted, conn_cfg, if_not_exists: true)
+      )
     else
       ActiveRecord::Base.connection.execute("CREATE DATABASE #{quoted}")
     end
@@ -103,6 +114,15 @@ module SpecDbSetup
     ActiveRecord::Base.establish_connection(conn_cfg)
   end
   private_class_method :create_database!
+
+  def mysql_create_database_sql(quoted, conn_cfg, if_not_exists: false)
+    encoding = conn_cfg[:encoding] || conn_cfg['encoding'] || MYSQL_DEFAULT_ENCODING
+    collation = conn_cfg[:collation] || conn_cfg['collation'] || MYSQL_DEFAULT_COLLATION
+    exists = if_not_exists ? ' IF NOT EXISTS' : ''
+
+    "CREATE DATABASE#{exists} #{quoted} CHARACTER SET #{encoding} COLLATE #{collation}"
+  end
+  private_class_method :mysql_create_database_sql
 
   def resettable_adapter?(adapter)
     adapter.include?('mysql') || adapter.include?('postgres')

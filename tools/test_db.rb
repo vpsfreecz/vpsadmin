@@ -11,6 +11,8 @@ module VpsAdmin
     class Error < StandardError; end
 
     DEFAULT_DATABASE = 'vpsadmin_test'
+    DEFAULT_ENCODING = 'utf8mb3'
+    DEFAULT_COLLATION = 'utf8mb3_unicode_ci'
     DEFAULT_HOST = '127.0.0.1'
     DEFAULT_PASSWORD = 'root'
     DEFAULT_PORT = 13_306
@@ -69,7 +71,8 @@ module VpsAdmin
       end
 
       def url(database_name = database)
-        "mysql2://#{DEFAULT_USER}:#{DEFAULT_PASSWORD}@#{host}:#{port}/#{database_name}"
+        "mysql2://#{DEFAULT_USER}:#{DEFAULT_PASSWORD}@#{host}:#{port}/#{database_name}" \
+          "?encoding=#{DEFAULT_ENCODING}&collation=#{DEFAULT_COLLATION}"
       end
 
       def client_args
@@ -176,7 +179,10 @@ module VpsAdmin
       end
 
       def ensure_database!
-        tcp_query!("CREATE DATABASE IF NOT EXISTS #{quote_identifier(database)}")
+        tcp_query!(
+          "CREATE DATABASE IF NOT EXISTS #{quote_identifier(database)} " \
+          "CHARACTER SET #{DEFAULT_ENCODING} COLLATE #{DEFAULT_COLLATION}"
+        )
       end
 
       def auth_sql

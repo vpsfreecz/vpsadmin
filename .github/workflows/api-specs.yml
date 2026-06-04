@@ -136,45 +136,17 @@ jobs:
               spec/api/resources/system_config_spec.rb
               spec/api/resources/transaction*_spec.rb
 
-    services:
-      mysql:
-        image: mariadb:latest
-        env:
-          MARIADB_ROOT_PASSWORD: root
-          MARIADB_DATABASE: vpsadmin_api_specs_full
-          MARIADB_USER: vpsadmin
-          MARIADB_PASSWORD: vpsadmin
-        ports:
-          - 3306:3306
-
     env:
       RACK_ENV: test
       # CI should not install dev-only gems (rubocop, yard, etc.)
       BUNDLE_WITHOUT: development
       BUNDLE_JOBS: "4"
       BUNDLE_RETRY: "3"
-      DB_NAME: vpsadmin_api_specs_full
       VPSADMIN_PLUGINS: all
 
     steps:
       - name: Checkout
         uses: actions/checkout@v6
-
-      - name: Write database.yml for CI
-        run: |
-          mkdir -p api/config
-          cat > api/config/database.yml <<YAML
-          test:
-            adapter: mysql2
-            host: 127.0.0.1
-            port: 3306
-            database: ${DB_NAME}
-            username: vpsadmin
-            password: vpsadmin
-            encoding: utf8mb3
-            collation: utf8mb3_unicode_ci
-            pool: 5
-          YAML
 
       - name: Select spec files for topic
         working-directory: api
@@ -225,11 +197,15 @@ jobs:
           if-no-files-found: error
           retention-days: 7
 
-      # mysql2 gem needs client headers; use MariaDB client for readiness checks.
-      - name: Install system dependencies (MariaDB client + headers)
+      # mysql2 needs client headers; specs start an isolated MariaDB server.
+      - name: Install system dependencies (MariaDB server + headers)
         run: |
           sudo apt-get update
-          sudo apt-get install -y libmariadb-dev libmariadb-dev-compat mariadb-client
+          sudo apt-get install -y \
+            libmariadb-dev \
+            libmariadb-dev-compat \
+            mariadb-client \
+            mariadb-server
 
       - name: Read Ruby series
         id: ruby-version
@@ -245,19 +221,6 @@ jobs:
           ruby-version: ${{ steps.ruby-version.outputs.version }}
           bundler-cache: true
           working-directory: api
-
-      - name: Wait for MariaDB
-        run: |
-          set -euo pipefail
-
-          for i in {1..60}; do
-            if mariadb -h 127.0.0.1 -uvpsadmin -pvpsadmin -e "SELECT 1" >/dev/null 2>&1; then
-              break
-            fi
-            sleep 1
-          done
-
-          mariadb -h 127.0.0.1 -uvpsadmin -pvpsadmin -e "SELECT 1"
 
       - name: Run RSpec (topic)
         working-directory: api
@@ -275,45 +238,17 @@ jobs:
       matrix:
         include: *api_spec_topics
 
-    services:
-      mysql:
-        image: mariadb:latest
-        env:
-          MARIADB_ROOT_PASSWORD: root
-          MARIADB_DATABASE: vpsadmin_api_specs_core
-          MARIADB_USER: vpsadmin
-          MARIADB_PASSWORD: vpsadmin
-        ports:
-          - 3306:3306
-
     env:
       RACK_ENV: test
       # CI should not install dev-only gems (rubocop, yard, etc.)
       BUNDLE_WITHOUT: development
       BUNDLE_JOBS: "4"
       BUNDLE_RETRY: "3"
-      DB_NAME: vpsadmin_api_specs_core
       VPSADMIN_PLUGINS: none
 
     steps:
       - name: Checkout
         uses: actions/checkout@v6
-
-      - name: Write database.yml for CI
-        run: |
-          mkdir -p api/config
-          cat > api/config/database.yml <<YAML
-          test:
-            adapter: mysql2
-            host: 127.0.0.1
-            port: 3306
-            database: ${DB_NAME}
-            username: vpsadmin
-            password: vpsadmin
-            encoding: utf8mb3
-            collation: utf8mb3_unicode_ci
-            pool: 5
-          YAML
 
       - name: Select spec files for topic
         working-directory: api
@@ -355,11 +290,15 @@ jobs:
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
 
-      # mysql2 gem needs client headers; use MariaDB client for readiness checks.
-      - name: Install system dependencies (MariaDB client + headers)
+      # mysql2 needs client headers; specs start an isolated MariaDB server.
+      - name: Install system dependencies (MariaDB server + headers)
         run: |
           sudo apt-get update
-          sudo apt-get install -y libmariadb-dev libmariadb-dev-compat mariadb-client
+          sudo apt-get install -y \
+            libmariadb-dev \
+            libmariadb-dev-compat \
+            mariadb-client \
+            mariadb-server
 
       - name: Read Ruby series
         id: ruby-version
@@ -375,19 +314,6 @@ jobs:
           ruby-version: ${{ steps.ruby-version.outputs.version }}
           bundler-cache: true
           working-directory: api
-
-      - name: Wait for MariaDB
-        run: |
-          set -euo pipefail
-
-          for i in {1..60}; do
-            if mariadb -h 127.0.0.1 -uvpsadmin -pvpsadmin -e "SELECT 1" >/dev/null 2>&1; then
-              break
-            fi
-            sleep 1
-          done
-
-          mariadb -h 127.0.0.1 -uvpsadmin -pvpsadmin -e "SELECT 1"
 
       - name: Run RSpec (topic)
         working-directory: api
