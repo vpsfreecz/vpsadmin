@@ -170,6 +170,17 @@ select:
     tags: ["webui-support-pages", "alerts", "support", "monitoring"]
 
   - paths:
+      - "tests/playwright/webui/specs/security-advisories.spec.cjs"
+      - "tests/playwright/webui/lib/pages/security-advisory.cjs"
+      - "webui/pages/page_index.php"
+      - "webui/pages/page_outage.php"
+      - "webui/pages/page_security_advisory.php"
+      - "webui/forms/outage.forms.php"
+      - "webui/forms/security_advisory.forms.php"
+      - "webui/forms/vps.forms.php"
+    tags: ["webui-security-advisories", "alerts", "support"]
+
+  - paths:
       - "tests/playwright/webui/specs/admin-cluster.spec.cjs"
       - "webui/pages/page_cluster.php"
       - "webui/pages/page_node.php"
@@ -383,7 +394,7 @@ select:
       - "api/models/transaction_chains/incident_report/**"
       - "api/models/transaction_chains/lifetimes/**"
       - "api/models/transaction_chains/security_advisories/**"
-    tags: ["alerts", "webui-support-pages"]
+    tags: ["alerts", "webui-support-pages", "webui-security-advisories"]
 
   - paths:
       - "tests/suite/supervisor/*.nix"

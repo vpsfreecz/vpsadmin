@@ -1137,6 +1137,113 @@ import ../make-test.nix (
         outage.reload
       end
 
+      def cleanup_security_advisory_fixtures
+        ids = SecurityAdvisoryCve
+          .where('cve_id LIKE ?', 'CVE-2099-%')
+          .pluck(:security_advisory_id)
+
+        ids.concat(
+          SecurityAdvisory
+            .where('name LIKE ?', 'Webui Security Advisory%')
+            .pluck(:id)
+        )
+        ids.concat(
+          SecurityAdvisory
+            .where('name LIKE ?', 'Webui Browser Advisory%')
+            .pluck(:id)
+        )
+
+        SecurityAdvisory.where(id: ids.uniq).find_each(&:destroy!)
+      end
+
+      def advisory_translation_attrs(summary, description, response, lang)
+        suffix = lang.code == 'en' ? "" : " #{lang.code}"
+
+        {
+          summary: "#{summary}#{suffix}",
+          description: "#{description}#{suffix}",
+          response: "#{response}#{suffix}"
+        }
+      end
+
+      def ensure_security_advisory_fixture(
+        name:,
+        cves:,
+        summary:,
+        description:,
+        response:,
+        node_statuses:,
+        published_at: nil,
+        publish: false,
+        admin:
+      )
+        advisory = SecurityAdvisory.create!(
+          name: name,
+          created_by: admin,
+          published_at: published_at
+        )
+
+        advisory.update_cves!(cves.join(', '))
+
+        Language.find_each do |lang|
+          advisory.security_advisory_translations.create!(
+            advisory_translation_attrs(summary, description, response, lang)
+              .merge(language: lang)
+          )
+        end
+
+        SecurityAdvisory.advisory_nodes.each do |node|
+          status = node_statuses.fetch(node.id) do
+            {
+              state: :not_affected,
+              vulnerable_until: nil,
+              mitigated_since: nil,
+              note: 'Not affected in deterministic fixture'
+            }
+          end
+
+          advisory.security_advisory_node_statuses.create!(
+            {
+              node: node,
+              state: status.fetch(:state),
+              vulnerable_until: status[:vulnerable_until],
+              mitigated_since: status[:mitigated_since],
+              note: status[:note]
+            }
+          )
+        end
+
+        if publish
+          advisory.publish!(
+            send_mail: false,
+            published_by: admin,
+            published_at: published_at
+          )
+        end
+
+        advisory.reload
+      end
+
+      def security_advisory_fixture_json(advisory)
+        en = advisory
+          .security_advisory_translations
+          .joins(:language)
+          .find_by!(languages: { code: 'en' })
+
+        {
+          'id' => advisory.id,
+          'state' => advisory.state,
+          'name' => advisory.name,
+          'cves' => advisory.security_advisory_cves.order(:cve_id).pluck(:cve_id),
+          'summary' => en.summary,
+          'description' => en.description,
+          'response' => en.response,
+          'affectedUserCount' => advisory.affected_user_count,
+          'affectedVpsCount' => advisory.affected_vps_count,
+          'affectedNodeCount' => advisory.affected_node_count
+        }
+      end
+
       def ensure_monitored_event_fixture(
         monitor:,
         object:,
@@ -3313,6 +3420,82 @@ import ../make-test.nix (
         vps: support_vps
       )
 
+      cleanup_security_advisory_fixtures
+
+      advisory_vulnerable_until = Time.now - 2 * 60 * 60
+      advisory_mitigated_since = Time.now - 60 * 60
+      advisory_nodes = SecurityAdvisory.advisory_nodes.to_a
+      affected_node_statuses = advisory_nodes.to_h do |advisory_node|
+        if advisory_node.id == support_vps.node_id
+          [
+            advisory_node.id,
+            {
+              state: :mitigated,
+              vulnerable_until: advisory_vulnerable_until,
+              mitigated_since: advisory_mitigated_since,
+              note: 'Kernel updated on the affected webui fixture node'
+            }
+          ]
+        else
+          [
+            advisory_node.id,
+            {
+              state: :not_affected,
+              vulnerable_until: nil,
+              mitigated_since: nil,
+              note: 'Not affected in deterministic fixture'
+            }
+          ]
+        end
+      end
+      unknown_node_statuses = advisory_nodes.to_h do |advisory_node|
+        [
+          advisory_node.id,
+          {
+            state: :unknown,
+            vulnerable_until: nil,
+            mitigated_since: nil,
+            note: 'Draft fixture status has not been assessed'
+          }
+        ]
+      end
+
+      security_advisory_published_affected = ensure_security_advisory_fixture(
+        name: 'Webui Security Advisory Affected',
+        cves: ['CVE-2099-10001', 'CVE-2099-10002'],
+        summary: 'Webui published advisory affecting fixture VPS',
+        description: 'Deterministic advisory that affects the support VPS.',
+        response: 'The affected node was mitigated in the fixture.',
+        node_statuses: affected_node_statuses,
+        published_at: Time.now - 4 * 60 * 60,
+        publish: true,
+        admin: admin
+      )
+
+      security_advisory_published_not_affected = ensure_security_advisory_fixture(
+        name: 'Webui Security Advisory Not Affected',
+        cves: ['CVE-2099-10003'],
+        summary: 'Webui published advisory not affecting fixture VPS',
+        description: 'Deterministic advisory with all nodes marked not affected.',
+        response: 'No user VPS was affected by this fixture advisory.',
+        node_statuses: {},
+        published_at: Time.now - 3 * 60 * 60,
+        publish: true,
+        admin: admin
+      )
+
+      security_advisory_draft_hidden = ensure_security_advisory_fixture(
+        name: 'Webui Security Advisory Draft Hidden',
+        cves: ['CVE-2099-10004'],
+        summary: 'Webui draft advisory hidden from users',
+        description: 'Deterministic draft advisory visible only to admins.',
+        response: 'This draft has not been published.',
+        node_statuses: unknown_node_statuses,
+        published_at: nil,
+        publish: false,
+        admin: admin
+      )
+
       monitoring_events = {
         user_show: ensure_monitored_event_fixture(
           monitor: :vps_in_rescue_mode,
@@ -4142,6 +4325,56 @@ import ../make-test.nix (
             'userId' => event.user_id
           } }
         },
+        'securityAdvisories' => {
+          'nodes' => advisory_nodes.map do |advisory_node|
+            {
+              'id' => advisory_node.id,
+              'name' => advisory_node.name,
+              'domainName' => advisory_node.domain_name,
+              'type' => advisory_node.role
+            }
+          end,
+          'publishedAffected' => security_advisory_fixture_json(
+            security_advisory_published_affected
+          ).merge(
+            'vpsId' => support_vps.id,
+            'vpsHostname' => support_vps.hostname,
+            'nodeId' => support_vps.node_id
+          ),
+          'publishedNotAffected' => security_advisory_fixture_json(
+            security_advisory_published_not_affected
+          ),
+          'draftHidden' => security_advisory_fixture_json(
+            security_advisory_draft_hidden
+          ),
+          'uiCreate' => {
+            'cves' => ['CVE-2099-20001', 'CVE-2099-20002'],
+            'editedCves' => ['CVE-2099-20001', 'CVE-2099-20003'],
+            'name' => 'Webui Browser Advisory Created',
+            'editedName' => 'Webui Browser Advisory Edited',
+            'publishedAt' => '2026-05-29 12:00',
+            'vulnerableUntil' => '2026-05-29 08:00',
+            'mitigatedSince' => '2026-05-29 10:30',
+            'nodeNote' => 'Kernel updated by Playwright fixture',
+            'notAffectedNote' => 'Temporarily marked not affected by Playwright',
+            'summary' => 'Webui browser created advisory summary',
+            'description' => 'Webui browser created advisory description.',
+            'response' => 'Webui browser created advisory response.',
+            'editedSummary' => 'Webui browser edited advisory summary',
+            'editedDescription' => 'Webui browser edited advisory description.',
+            'editedResponse' => 'Webui browser edited advisory response.',
+            'updateSummary' => 'Webui browser advisory update summary',
+            'updateMessage' => 'Webui browser advisory update message.',
+            'editedUpdateSummary' => 'Webui browser advisory edited update',
+            'editedUpdateMessage' => 'Webui browser advisory edited message.',
+            'outage' => {
+              'id' => support_outage_admin.id,
+              'summary' => 'Webui Support Admin Outage',
+              'typeText' => 'Unplanned outage',
+              'impactText' => 'Performance'
+            }
+          }
+        },
         'newsLog' => {
           'id' => news_log_id,
           'message' => news_log_message
@@ -4393,6 +4626,19 @@ import ../make-test.nix (
           describe 'webui support and status browser flow' do
             it 'passes Playwright support and status tests' do
               run_playwright('support-pages', 'specs/support-pages.spec.cjs')
+            end
+          end
+        '';
+      };
+
+      security-advisories = {
+        description = ''
+          Run security advisory browser tests for public, user, and admin flows.
+        '';
+        script = webuiTestScriptCommon + ''
+          describe 'webui security advisory browser flow' do
+            it 'passes Playwright security advisory tests' do
+              run_playwright('security-advisories', 'specs/security-advisories.spec.cjs')
             end
           end
         '';
