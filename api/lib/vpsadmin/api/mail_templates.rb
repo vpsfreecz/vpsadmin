@@ -4,7 +4,8 @@ module VpsAdmin::API
   module MailTemplates
     DEFAULT_FROM = 'noreply@vpsadmin.invalid'
     LANGUAGE_LABELS = {
-      'en' => 'English'
+      'en' => 'English',
+      'cs' => 'Česky'
     }.freeze
 
     CONCRETE_DEFAULTS = {
@@ -271,8 +272,11 @@ module VpsAdmin::API
     end
 
     def self.ensure_language!(code)
-      ::Language.find_or_create_by!(code:) do |language|
-        language.label = LANGUAGE_LABELS.fetch(code, code)
+      label = LANGUAGE_LABELS.fetch(code, code)
+
+      ::Language.find_or_initialize_by(code:).tap do |language|
+        language.label = label if language.new_record? || language.label == code
+        language.save! if language.changed?
       end
     end
 

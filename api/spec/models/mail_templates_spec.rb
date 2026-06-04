@@ -117,6 +117,16 @@ RSpec.describe VpsAdmin::API::MailTemplates do
     end
   end
 
+  it 'repairs known language labels created from template language codes' do
+    language = Language.find_or_initialize_by(code: 'cs')
+    language.label = 'cs'
+    language.save!
+
+    described_class.send(:ensure_language!, 'cs')
+
+    expect(language.reload.label).to eq('Česky')
+  end
+
   it 'uses the configured support mail as the default sender' do
     SysConfig.find_or_create_by!(category: 'core', name: 'support_mail').update!(
       value: 'support@example.test'

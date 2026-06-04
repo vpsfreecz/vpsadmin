@@ -1,0 +1,18 @@
+Hi <%= @user.login %>,
+
+we have an update regarding security advisory #<%= @a.id %>.
+
+<%= @update.en_summary %>
+<% if @update.en_message && !@update.en_message.empty? -%>
+
+<%= @update.en_message %>
+<% end -%>
+
+More information:
+<%= @webui_url %>/?page=security_advisory&action=show&id=<%= @a.id %>
+
+Best regards,
+
+vpsAdmin team
+
+(This is an automated mail from vpsAdmin, your reply will be sent to our support)

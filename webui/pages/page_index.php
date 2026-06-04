@@ -24,6 +24,9 @@
 $return_url = urlencode($_SERVER['REQUEST_URI']);
 
 $xtpl->sbar_add(_('Outages'), '?page=outage&action=list');
+if ($api->security_advisory) {
+    $xtpl->sbar_add(_('Security advisories'), '?page=security_advisory&action=list');
+}
 
 if (isLoggedIn()) {
     if ($api->monitored_event) {
@@ -68,6 +71,10 @@ $xtpl->table_out("notice_board");
 
 if ($api->outage) {
     outage_list_recent();
+}
+
+if ($api->security_advisory) {
+    security_advisory_list(true);
 }
 
 $xtpl->table_title(_("Cluster statistics"));

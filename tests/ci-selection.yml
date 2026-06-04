@@ -158,11 +158,13 @@ select:
       - "webui/pages/page_monitoring.php"
       - "webui/pages/page_oom_reports.php"
       - "webui/pages/page_outage.php"
+      - "webui/pages/page_security_advisory.php"
       - "webui/forms/incidents.forms.php"
       - "webui/forms/lifetimes.forms.php"
       - "webui/forms/monitoring.forms.php"
       - "webui/forms/oom_reports.forms.php"
       - "webui/forms/outage.forms.php"
+      - "webui/forms/security_advisory.forms.php"
       - "webui/lib/mail.lib.php"
       - "webui/lib/munin.lib.php"
     tags: ["webui-support-pages", "alerts", "support", "monitoring"]
@@ -372,10 +374,15 @@ select:
       - "api/lib/vpsadmin/api/tasks/oom_report.rb"
       - "api/lib/vpsadmin/api/resources/incident_report.rb"
       - "api/lib/vpsadmin/api/resources/oom_report*.rb"
+      - "api/lib/vpsadmin/api/resources/security_advisory*.rb"
+      - "api/lib/vpsadmin/api/resources/user_security_advisory.rb"
+      - "api/lib/vpsadmin/api/resources/vps_security_advisory.rb"
       - "api/models/incident_report.rb"
       - "api/models/oom_*.rb"
+      - "api/models/security_advisory*.rb"
       - "api/models/transaction_chains/incident_report/**"
       - "api/models/transaction_chains/lifetimes/**"
+      - "api/models/transaction_chains/security_advisories/**"
     tags: ["alerts", "webui-support-pages"]
 
   - paths:

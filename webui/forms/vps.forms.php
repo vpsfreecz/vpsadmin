@@ -977,6 +977,10 @@ function vps_details_submenu($vps)
         $xtpl->sbar_add(_('Outages'), '?page=outage&action=list&vps=' . $vps->id);
     }
 
+    if ($api->security_advisory) {
+        $xtpl->sbar_add(_('Security advisories'), '?page=security_advisory&action=list&vps=' . $vps->id);
+    }
+
     $xtpl->sbar_add(_('Transaction log'), '?page=transactions&class_name=Vps&row_id=' . $vps->id);
     $xtpl->sbar_add(_('User data'), '?page=userdata&action=list&user=' . $vps->user_id);
     $xtpl->sbar_add(_('User namespaces'), '?page=userns');

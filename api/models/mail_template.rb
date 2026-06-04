@@ -391,6 +391,23 @@ class MailTemplate < ApplicationRecord
     incident: ::IncidentReport
   }, roles: %i[admin], public: true
 
+  register :security_advisory_user_announce, vars: {
+    advisory: '::SecurityAdvisory',
+    a: '::SecurityAdvisory',
+    user: ::User,
+    vpses: 'SecurityAdvisoryVps relation',
+    webui_url: String
+  }, roles: %i[admin], public: true
+
+  register :security_advisory_user_update, vars: {
+    advisory: '::SecurityAdvisory',
+    a: '::SecurityAdvisory',
+    update: '::SecurityAdvisoryUpdate',
+    user: ::User,
+    vpses: 'SecurityAdvisoryVps relation',
+    webui_url: String
+  }, roles: %i[admin], public: true
+
   register :dataset_migration_begun, vars: {
     dataset: ::Dataset,
     src_pool: ::Pool,

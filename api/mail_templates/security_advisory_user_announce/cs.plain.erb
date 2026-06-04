@@ -1,0 +1,31 @@
+Ahoj <%= @user.login %>,
+
+chtěli bychom Tě informovat o bezpečnostním oznámení pro infrastrukturu vpsAdmin.
+Zranitelnost už byla na zasažených nodech mitigována.
+
+Oznámení: #<%= @a.id %><%= @a.name ? " - #{@a.name}" : '' %>
+CVEs: <%= @a.cves %>
+Publikováno: <%= @a.published_at.localtime.strftime('%Y-%m-%d %H:%M %Z') %>
+
+Tvoje zasažené VPS:
+
+<% @vpses.each do |vps| -%>
+  - VPS #<%= vps.vps_id %> - <%= vps.vps.hostname %> (na <%= vps.node.domain_name %>)
+    Zranitelné do: <%= vps.vulnerable_until.localtime.strftime('%Y-%m-%d %H:%M %Z') %>
+    Mitigováno od: <%= vps.mitigated_since.localtime.strftime('%Y-%m-%d %H:%M %Z') %>
+<% end -%>
+
+Shrnutí:
+<%= @a.cs_summary %>
+
+Reakce:
+<%= @a.cs_response %>
+
+Více informací:
+<%= @webui_url %>/?page=security_advisory&action=show&id=<%= @a.id %>
+
+S pozdravem
+
+tým vpsAdmin
+
+(Tento mail automaticky rozesílá vpsAdmin, Tvoje odpověď se zašle na naši podporu)

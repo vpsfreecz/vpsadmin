@@ -635,7 +635,45 @@ function outage_details($id)
         $outage->handler->list()->asArray()
     )));
     $xtpl->table_tr();
+
+    if ($api->security_advisory) {
+        $links = $outage->security_advisory->list(['meta' => ['includes' => 'security_advisory']]);
+        $xtpl->table_td(_('Security advisories') . ':');
+        if ($links->count()) {
+            $xtpl->table_td(implode("\n<br>\n", array_map(
+                function ($link) {
+                    return security_advisory_link($link->security_advisory)
+                        . ' - '
+                        . security_advisory_cve_links(security_advisory_cve_rows($link->security_advisory));
+                },
+                $links->asArray()
+            )));
+        } else {
+            $xtpl->table_td('-');
+        }
+        $xtpl->table_tr();
+    }
     $xtpl->table_out();
+
+    if (isAdmin() && $api->security_advisory) {
+        $xtpl->table_title(_('Link security advisory'));
+        $xtpl->form_create('?page=outage&action=link_security_advisory&id=' . $id, 'post');
+        $xtpl->form_add_select(
+            _('Security advisory') . ':',
+            'security_advisory',
+            resource_list_to_options(
+                $api->security_advisory->list(),
+                'id',
+                'id',
+                true,
+                function ($advisory) {
+                    return security_advisory_option_label($advisory);
+                }
+            ),
+            post_val('security_advisory')
+        );
+        $xtpl->form_out(_('Link'));
+    }
 
     if (isAdmin() && $outage->state == 'staged') {
         $xtpl->table_title(_('Change state'));

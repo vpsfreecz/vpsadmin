@@ -28,6 +28,10 @@
 - PHP/JS in `webui`: mirror nearby code style; avoid sprawling scripts.
 - Tests: name specs `*_spec.rb` with clear example names.
 - Plugins: keep plugin gems inside the plugin directory; they are pulled via the `### vpsAdmin plugin marker ###` in `api/Gemfile`.
+- Database schema: `api/db/schema.rb` is for core vpsAdmin tables only. Dump it
+  from a core-only environment, e.g. with `VPSADMIN_PLUGINS=none`; plugin
+  tables belong in `plugins/*/api/db/migrate` and must not be committed to the
+  core schema file.
 
 ## Testing Guidelines
 - Integration tests live in `tests/` and reuse the vpsAdminOS test framework via the flake input, so no sibling `vpsadminos` checkout or `NIX_PATH` setup is required.

@@ -320,6 +320,23 @@ if (isLoggedIn()) {
             }
             break;
 
+        case 'link_security_advisory':
+            if (isAdmin() && $_SERVER['REQUEST_METHOD'] === 'POST') {
+                csrf_check();
+
+                try {
+                    $outage = $api->outage->show($_GET['id']);
+                    $outage->security_advisory->create([
+                        'security_advisory' => $_POST['security_advisory'],
+                    ]);
+                    redirect('?page=outage&action=show&id=' . $_GET['id']);
+                } catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+                    $xtpl->perex_format_errors(_('Link failed'), $e->getResponse());
+                    outage_details($_GET['id']);
+                }
+            }
+            break;
+
         case 'list':
             outage_list();
             break;
