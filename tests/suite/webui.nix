@@ -341,11 +341,16 @@ import ../make-test.nix (
           .fetch('vps', {})
           .values
           .filter_map do |vps|
-            next unless vps['id'] && vps['datasetPoolFilesystem']
+            next unless vps['id'] &&
+              vps['datasetPoolFilesystem'] &&
+              vps['userNamespaceMapId']
 
             [
               vps.fetch('id'),
-              vps.fetch('datasetPoolFilesystem')
+              vps.fetch('datasetPoolFilesystem'),
+              vps.fetch('userNamespaceMapId'),
+              vps.fetch('uidMap', []).join(','),
+              vps.fetch('gidMap', []).join(',')
             ].join('|')
           end
           .join("\n")
@@ -401,14 +406,46 @@ import ../make-test.nix (
             osctl -j ct show "$1" >/dev/null 2>&1
           }
 
-          while IFS='|' read -r vps_id pool_fs; do
+          ensure_osctl_user() {
+            local pool_name="$1"
+            local user_name="$2"
+            local uid_maps="$3"
+            local gid_maps="$4"
+
+            if osctl --pool "$pool_name" user show "$user_name" >/dev/null 2>&1; then
+              return
+            fi
+
+            local user_args=(osctl --pool "$pool_name" user new)
+            local uid_map
+            local gid_map
+
+            IFS=',' read -ra uid_map_args <<< "$uid_maps"
+            for uid_map in "''${uid_map_args[@]}"; do
+              [ -n "$uid_map" ] || continue
+              user_args+=(--map-uid "$uid_map")
+            done
+
+            IFS=',' read -ra gid_map_args <<< "$gid_maps"
+            for gid_map in "''${gid_map_args[@]}"; do
+              [ -n "$gid_map" ] || continue
+              user_args+=(--map-gid "$gid_map")
+            done
+
+            user_args+=("$user_name")
+            "''${user_args[@]}"
+          }
+
+          while IFS='|' read -r vps_id pool_fs userns_map_id uid_maps gid_maps; do
             [ -n "$vps_id" ] || continue
 
             pool_name="''${pool_fs%%/*}"
+            ensure_osctl_user "$pool_name" "$userns_map_id" "$uid_maps" "$gid_maps"
 
             if ! container_exists "$vps_id"; then
               osctl --pool "$pool_name" ct new \\
                 --skip-image \\
+                --user "$userns_map_id" \\
                 --distribution debian \\
                 --version latest \\
                 --arch x86_64 \\
@@ -4007,6 +4044,9 @@ import ../make-test.nix (
             {
               'id' => vps.id,
               'hostname' => vps.hostname,
+              'userNamespaceMapId' => vps.user_namespace_map_id,
+              'uidMap' => vps.user_namespace_map.build_map(:uid),
+              'gidMap' => vps.user_namespace_map.build_map(:gid),
               'datasetId' => root_dip.dataset.id,
               'datasetFullName' => root_dip.dataset.full_name,
               'datasetInPoolId' => root_dip.id,
