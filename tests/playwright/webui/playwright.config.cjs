@@ -20,7 +20,19 @@ function chromiumExecutable() {
     return undefined;
   }
 
-  return path.join(browsersPath, chromiumDir, 'chrome-linux', 'chrome');
+  const candidates = [
+    path.join(browsersPath, chromiumDir, 'chrome-linux64', 'chrome'),
+    path.join(browsersPath, chromiumDir, 'chrome-linux', 'chrome'),
+  ];
+  const executable = candidates.find((candidate) => fs.existsSync(candidate));
+
+  if (!executable) {
+    throw new Error(
+      `Unable to find Chromium executable; checked: ${candidates.join(', ')}`,
+    );
+  }
+
+  return executable;
 }
 
 module.exports = {
