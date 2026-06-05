@@ -1206,16 +1206,17 @@
   rubocop-rspec = {
     dependencies = [
       "lint_roller"
+      "regexp_parser"
       "rubocop"
     ];
     groups = [ "development" ];
     platforms = [ ];
     source = {
       remotes = [ "https://rubygems.org" ];
-      sha256 = "1qjmvcpk6qwxjdh3w5smr2n7c1glxsdzpv5fi7bkg0j034v0m9wg";
+      sha256 = "0nq485r1l2maqmvi0zq7k48wmav7ja86yg71wwaca9gqxj1g1kkb";
       type = "gem";
     };
-    version = "3.9.0";
+    version = "3.10.0";
   };
   ruby-progressbar = {
     groups = [
