@@ -234,10 +234,10 @@ let
     "phpunit/php-code-coverage" = {
       targetDir = "";
       src = composerEnv.buildZipPackage {
-        name = "phpunit-php-code-coverage-3719c5b6c045761798238ebacfee1fe06e4ce5be";
+        name = "phpunit-php-code-coverage-ab8a36c9bd98c51f6cfe665a732bfadf72e18e8d";
         src = fetchurl {
-          url = "https://api.github.com/repos/sebastianbergmann/php-code-coverage/zipball/3719c5b6c045761798238ebacfee1fe06e4ce5be";
-          sha256 = "1pxgrcpvr6vpfp6dpfa2cbsnbrhgvmy6w9g26s6rnpm57y225jfg";
+          url = "https://api.github.com/repos/sebastianbergmann/php-code-coverage/zipball/ab8a36c9bd98c51f6cfe665a732bfadf72e18e8d";
+          sha256 = "0c3qz5kkc5chw38av641s3c4xj3mlrxxyirkkk55bswfhp6fhj0y";
         };
       };
     };
@@ -284,10 +284,10 @@ let
     "phpunit/phpunit" = {
       targetDir = "";
       src = composerEnv.buildZipPackage {
-        name = "phpunit-phpunit-cdd419c33c040c6b570e51dba8ecbe81d399da53";
+        name = "phpunit-phpunit-3796ea973f1e7698f0d432c1c66662af9764fd9a";
         src = fetchurl {
-          url = "https://api.github.com/repos/sebastianbergmann/phpunit/zipball/cdd419c33c040c6b570e51dba8ecbe81d399da53";
-          sha256 = "01cbfwz0hsl9ni9r59kfx5jmzzpihcgmim46ikqdcqivz369cy38";
+          url = "https://api.github.com/repos/sebastianbergmann/phpunit/zipball/3796ea973f1e7698f0d432c1c66662af9764fd9a";
+          sha256 = "07mncx8n62awzrjpw2y0n2sysscai00p1yzbbxx67jc4k4l08j2q";
         };
       };
     };
@@ -304,10 +304,10 @@ let
     "sebastian/comparator" = {
       targetDir = "";
       src = composerEnv.buildZipPackage {
-        name = "sebastian-comparator-ce999bf08b2c387a5423fe56961c32eed3f88089";
+        name = "sebastian-comparator-c025fc7604afab3f195fab7cdaf72327331af241";
         src = fetchurl {
-          url = "https://api.github.com/repos/sebastianbergmann/comparator/zipball/ce999bf08b2c387a5423fe56961c32eed3f88089";
-          sha256 = "0d63881h0a7ix1s28d77ap677nwqwk2ivdqhw6pvp8rxg7zs02ml";
+          url = "https://api.github.com/repos/sebastianbergmann/comparator/zipball/c025fc7604afab3f195fab7cdaf72327331af241";
+          sha256 = "16zkyjy87nsa15sg9vn04n039mqc4v74mp18zvpql8pm07pm7gh9";
         };
       };
     };
@@ -324,10 +324,10 @@ let
     "sebastian/diff" = {
       targetDir = "";
       src = composerEnv.buildZipPackage {
-        name = "sebastian-diff-b36d33b6e796513de7cb7df053afb3f55eefcd47";
+        name = "sebastian-diff-a3fb6a298a265ff487a91bbea46e03cd01dbb226";
         src = fetchurl {
-          url = "https://api.github.com/repos/sebastianbergmann/diff/zipball/b36d33b6e796513de7cb7df053afb3f55eefcd47";
-          sha256 = "15dy6930min4h2p1iv3q0xx1gvzqa8kn9cdydg60g8z8b8if15lf";
+          url = "https://api.github.com/repos/sebastianbergmann/diff/zipball/a3fb6a298a265ff487a91bbea46e03cd01dbb226";
+          sha256 = "1p0iiaqbjlcn8sc3wi2ls9jbdc86d4qrwln7ahqhh3r6fpgr7m10";
         };
       };
     };
@@ -348,6 +348,16 @@ let
         src = fetchurl {
           url = "https://api.github.com/repos/sebastianbergmann/exporter/zipball/c0d29a945f8cf82f300a05e69874508e307ca4c6";
           sha256 = "0mvs2s4cf28hswkmbbhfyf49rf5hz2a6ssl9wlarsp5d0q4ba0zj";
+        };
+      };
+    };
+    "sebastian/file-filter" = {
+      targetDir = "";
+      src = composerEnv.buildZipPackage {
+        name = "sebastian-file-filter-33a26f394330f6faa7684bb9cc73afb7727aae93";
+        src = fetchurl {
+          url = "https://api.github.com/repos/sebastianbergmann/file-filter/zipball/33a26f394330f6faa7684bb9cc73afb7727aae93";
+          sha256 = "0vvw64580v9mlfd181g6d654wghvkk9ydi1b8ib21mf8ywgyvzd3";
         };
       };
     };
