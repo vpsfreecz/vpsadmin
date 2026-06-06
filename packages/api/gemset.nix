@@ -1213,10 +1213,10 @@
     platforms = [ ];
     source = {
       remotes = [ "https://rubygems.org" ];
-      sha256 = "0nq485r1l2maqmvi0zq7k48wmav7ja86yg71wwaca9gqxj1g1kkb";
+      sha256 = "0p5z5jqr7vk9ybm39gxy8dnszbsmz8ixdbnad1cs7cig1ycxzkg3";
       type = "gem";
     };
-    version = "3.10.0";
+    version = "3.10.1";
   };
   ruby-progressbar = {
     groups = [
