@@ -92,7 +92,8 @@ RSpec.describe 'VpsAdmin::API::Resources::UserRequest::Registration', requires_p
       os_template: SpecSeed.os_template.id,
       location: SpecSeed.location.id,
       currency: 'eur',
-      language: SpecSeed.language.id
+      language: SpecSeed.language.id,
+      time_zone: 'Europe/Prague'
     }.merge(overrides)
   end
 
@@ -219,7 +220,8 @@ RSpec.describe 'VpsAdmin::API::Resources::UserRequest::Registration', requires_p
       os_template: SpecSeed.os_template,
       location: SpecSeed.location,
       currency: 'eur',
-      language: SpecSeed.language
+      language: SpecSeed.language,
+      time_zone: 'Europe/Prague'
     }.merge(attrs))
     record.save!
     record
@@ -370,6 +372,22 @@ RSpec.describe 'VpsAdmin::API::Resources::UserRequest::Registration', requires_p
       expect(record.client_ip_ptr).to eq("ptr-#{forwarded_client_ip}")
       expect(record.api_ip_ptr).to eq("ptr-#{socket_client_ip}")
       expect(record.access_token).to be_present
+      expect(record.time_zone).to eq('Europe/Prague')
+    end
+
+    it 'allows public registration without a time zone' do
+      payload = registration_payload(
+        login: unique_login('reg-no-timezone'),
+        overrides: { time_zone: nil }
+      )
+
+      json_post index_path, registration: payload
+
+      expect_status(200)
+      expect(json['status']).to be(true)
+
+      record = ::RegistrationRequest.find(resource_id(registration_obj))
+      expect(record.time_zone).to be_nil
     end
 
     it 'returns validation errors for invalid login format' do
@@ -400,6 +418,19 @@ RSpec.describe 'VpsAdmin::API::Resources::UserRequest::Registration', requires_p
       expect_status(200)
       expect(json['status']).to be(false)
       expect(errors.keys.map(&:to_s)).to include('email')
+    end
+
+    it 'returns validation errors for invalid time zone' do
+      payload = registration_payload(
+        login: unique_login('reg-timezone'),
+        overrides: { time_zone: 'Invalid/Zone' }
+      )
+
+      json_post index_path, registration: payload
+
+      expect_status(200)
+      expect(json['status']).to be(false)
+      expect(errors.keys.map(&:to_s)).to include('time_zone')
     end
 
     it 'rejects OS templates that are unavailable for public registration' do
@@ -445,6 +476,7 @@ RSpec.describe 'VpsAdmin::API::Resources::UserRequest::Registration', requires_p
       expect(registration_obj['admin_response']).to include('fix data')
       expect(registration_obj['login']).to eq(payload[:login])
       expect(registration_obj['email']).to eq(payload[:email])
+      expect(registration_obj['time_zone']).to eq(payload[:time_zone])
     end
 
     it 'returns 404 for wrong token' do
@@ -506,6 +538,7 @@ RSpec.describe 'VpsAdmin::API::Resources::UserRequest::Registration', requires_p
       expect(req.state).to eq('awaiting')
       expect(req.last_mail_id).to eq(mail_id + 1)
       expect(req.email).to eq('updated@test.invalid')
+      expect(req.time_zone).to eq('Europe/Prague')
     end
 
     it 'returns validation errors and keeps state when update fails' do
@@ -686,7 +719,9 @@ RSpec.describe 'VpsAdmin::API::Resources::UserRequest::Registration', requires_p
 
       expect(req.state).to eq('approved')
       expect(req.admin_id).to eq(admin.id)
-      expect(::User.find_by(login: login)).not_to be_nil
+      user = ::User.find_by(login: login)
+      expect(user).not_to be_nil
+      expect(user.time_zone).to eq('Europe/Prague')
     end
 
     it 'rejects VPS creation when the requested OS template became unavailable' do

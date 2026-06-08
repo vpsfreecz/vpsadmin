@@ -41,7 +41,9 @@ function loginUser($access_url)
         'id' => $m->id,
         'login' => $m->login,
         'session_length' => $m->preferred_session_length,
+        'time_zone' => $m->time_zone ?? null,
     ];
+    set_request_time_zone($_SESSION["user"]["time_zone"]);
     $_SESSION["is_user"] =       ($m->level >= PRIV_USER) ? true : false;
     $_SESSION["is_poweruser"] =  ($m->level >= PRIV_POWERUSER) ? true : false;
     $_SESSION["is_admin"] =      ($m->level >= PRIV_ADMIN) ? true : false;
@@ -188,7 +190,9 @@ function switchUserContext($target_user_id)
             'id' => $user->id,
             'login' => $user->login,
             'session_length' => 20 * 60,
+            'time_zone' => $user->time_zone ?? null,
         ];
+        set_request_time_zone($_SESSION["user"]["time_zone"]);
         $_SESSION["is_user"] =       ($user->level >= PRIV_USER) ? true : false;
         $_SESSION["is_poweruser"] =  ($user->level >= PRIV_POWERUSER) ? true : false;
         $_SESSION["is_admin"] =      ($user->level >= PRIV_ADMIN) ? true : false;

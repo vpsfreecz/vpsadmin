@@ -103,6 +103,10 @@ try {
         }
 
         try {
+            $current_user = $api->user->current();
+            $_SESSION["user"]["time_zone"] = $current_user->time_zone ?? null;
+            set_request_time_zone($_SESSION["user"]["time_zone"]);
+
             $api_cluster = $api->cluster->show();
 
             if (!isset($_SESSION["context_switch"]) || !$_SESSION["context_switch"]) {

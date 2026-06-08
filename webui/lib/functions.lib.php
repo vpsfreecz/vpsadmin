@@ -29,6 +29,10 @@ $DATA_SIZE_UNITS = [
     "t" => "TiB",
 ];
 
+if (!defined('VPSADMIN_SERVER_TIME_ZONE')) {
+    define('VPSADMIN_SERVER_TIME_ZONE', date_default_timezone_get());
+}
+
 
 function get_free_route_list($res, $vps, $role = null, $limit = null)
 {
@@ -305,6 +309,46 @@ function tolocaltz($datetime, $format = "Y-m-d H:i:s")
     $t = new DateTime($datetime);
     $t->setTimezone(new DateTimeZone(date_default_timezone_get()));
     return $t->format($format);
+}
+
+function time_zone_options($includeDefault = false)
+{
+    $ret = [];
+
+    if ($includeDefault) {
+        $ret[''] = _('Server default') . ' (' . VPSADMIN_SERVER_TIME_ZONE . ')';
+    }
+
+    foreach (DateTimeZone::listIdentifiers() as $timeZone) {
+        $ret[$timeZone] = $timeZone;
+    }
+
+    return $ret;
+}
+
+function valid_time_zone($timeZone)
+{
+    static $timeZones = null;
+
+    if ($timeZone === null || $timeZone === '') {
+        return true;
+    }
+
+    if ($timeZones === null) {
+        $timeZones = array_flip(DateTimeZone::listIdentifiers());
+    }
+
+    return isset($timeZones[$timeZone]);
+}
+
+function set_request_time_zone($timeZone)
+{
+    if (!$timeZone || !valid_time_zone($timeZone)) {
+        date_default_timezone_set(VPSADMIN_SERVER_TIME_ZONE);
+        return;
+    }
+
+    date_default_timezone_set($timeZone);
 }
 
 function toutc($datetime)
