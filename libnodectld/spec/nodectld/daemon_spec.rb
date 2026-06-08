@@ -15,6 +15,10 @@ RSpec.describe NodeCtld::Daemon do
     end
   end
 
+  after do
+    daemon.resume
+  end
+
   def selected_ids(limit = nil)
     ids = []
 
@@ -186,6 +190,28 @@ RSpec.describe NodeCtld::Daemon do
     end
 
     expect(selected_ids(2)).to eq(ids.first(2))
+  end
+
+  it 'stops enqueuing selected commands after the daemon is paused' do
+    rows = [
+      { 'queue' => 'vps' },
+      { 'queue' => 'vps' }
+    ]
+    cmd1 = instance_double(NodeCtld::Command)
+    cmd2 = instance_double(NodeCtld::Command)
+
+    daemon.resume
+    allow(daemon).to receive_messages(check_commands?: true, select_commands: rows)
+    allow(NodeCtld::Command).to receive(:new).and_return(cmd1, cmd2)
+    allow(daemon).to receive(:do_command) do
+      daemon.pause(true)
+    end
+
+    daemon.do_commands(shared_db)
+
+    expect(daemon).to have_received(:do_command).with(cmd1)
+    expect(daemon).not_to have_received(:do_command).with(cmd2)
+    expect(NodeCtld::Command).to have_received(:new).once
   end
 
   it 'skips execute commands while the chain is blocked' do

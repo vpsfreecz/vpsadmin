@@ -266,6 +266,7 @@ module NodeCtld
     end
 
     def do_commands(db)
+      return unless run?
       return unless check_commands?(db)
 
       rs = select_commands(db)
@@ -279,6 +280,8 @@ module NodeCtld
       end
 
       cmds.each do |row|
+        break unless run?
+
         c = Command.new(row)
         do_command(c)
       end
@@ -411,7 +414,7 @@ module NodeCtld
     end
 
     def run?
-      @@run
+      @@mutex.synchronize { @@run }
     end
 
     def paused?
