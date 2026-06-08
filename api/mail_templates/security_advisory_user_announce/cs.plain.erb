@@ -5,14 +5,14 @@ Zranitelnost už byla na zasažených nodech mitigována.
 
 Oznámení: #<%= @a.id %><%= @a.name ? " - #{@a.name}" : '' %>
 CVEs: <%= @a.cves %>
-Publikováno: <%= @a.published_at.localtime.strftime('%Y-%m-%d %H:%M %Z') %>
+Publikováno: <%= local_time(@a.published_at, '%Y-%m-%d %H:%M %Z') %>
 
 Tvoje zasažené VPS:
 
 <% @vpses.each do |vps| -%>
   - VPS #<%= vps.vps_id %> - <%= vps.vps.hostname %> (na <%= vps.node.domain_name %>)
-    Zranitelné do: <%= vps.vulnerable_until.localtime.strftime('%Y-%m-%d %H:%M %Z') %>
-    Mitigováno od: <%= vps.mitigated_since.localtime.strftime('%Y-%m-%d %H:%M %Z') %>
+    Zranitelné do: <%= local_time(vps.vulnerable_until, '%Y-%m-%d %H:%M %Z') %>
+    Mitigováno od: <%= local_time(vps.mitigated_since, '%Y-%m-%d %H:%M %Z') %>
 <% end -%>
 
 Shrnutí:

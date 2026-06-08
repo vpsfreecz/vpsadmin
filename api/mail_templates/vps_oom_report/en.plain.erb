@@ -5,7 +5,7 @@ vpsAdmin recorded out-of-memory events on VPS #<%= @vps.id %> (<%= @vps.hostname
 Selected events: <%= @selected_oom_count %> of <%= @all_oom_count %>
 
 <% @selected_oom_reports.each do |report| -%>
-- <%= report.created_at.localtime.strftime('%Y-%m-%d %H:%M %Z') %>: invoked by <%= report.invoked_by_name %>[<%= report.invoked_by_pid %>], killed <%= report.killed_name || 'unknown' %><%= report.killed_pid ? "[#{report.killed_pid}]" : '' %>, count <%= report.count %>
+- <%= local_time(report.created_at, '%Y-%m-%d %H:%M %Z') %>: invoked by <%= report.invoked_by_name %>[<%= report.invoked_by_pid %>], killed <%= report.killed_name || 'unknown' %><%= report.killed_pid ? "[#{report.killed_pid}]" : '' %>, count <%= report.count %>
 <% end -%>
 <% if @all_oom_count > @selected_oom_count -%>
 

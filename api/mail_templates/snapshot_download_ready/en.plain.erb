@@ -6,7 +6,7 @@ File: <%= @dl.file_name %>
 <% if @base_url && !@base_url.empty? -%>
 Download: <%= @base_url %>?page=backup&action=download_link&id=<%= @dl.id %>
 <% end -%>
-Available until: <%= @dl.expiration_date.localtime.strftime('%Y-%m-%d %H:%M %Z') %>
+Available until: <%= local_time(@dl.expiration_date, '%Y-%m-%d %H:%M %Z') %>
 
 Best regards,
 

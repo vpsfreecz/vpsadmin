@@ -6,7 +6,7 @@ your vpsAdmin user account has been suspended.
 Reason: <%= @state.reason %>
 <% end -%>
 <% if @state && @state.expiration_date -%>
-Expiration: <%= @state.expiration_date.localtime.strftime('%Y-%m-%d %H:%M %Z') %>
+Expiration: <%= local_time(@state.expiration_date, '%Y-%m-%d %H:%M %Z') %>
 <% end -%>
 
 Best regards,

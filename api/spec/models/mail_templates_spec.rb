@@ -155,6 +155,31 @@ RSpec.describe VpsAdmin::API::MailTemplates do
     end
   end
 
+  it 'renders template times in the delivery user time zone' do
+    MailTemplate.register :spec_time_zone_template, name: 'spec_time_zone_template'
+    template = MailTemplate.create!(
+      name: 'spec_time_zone_template',
+      label: 'Spec time zone template',
+      template_id: 'spec_time_zone_template'
+    )
+    template.mail_template_translations.create!(
+      language: SpecSeed.language,
+      from: 'noreply@test.invalid',
+      subject: 'At <%= local_time(@time, "%Y-%m-%d %H:%M %Z") %>',
+      text_plain: 'At <%= local_time(@time, "%Y-%m-%d %H:%M %Z") %>'
+    )
+    SpecSeed.user.update!(time_zone: 'America/New_York')
+
+    mail = MailTemplate.send_mail!(
+      :spec_time_zone_template,
+      user: SpecSeed.user,
+      vars: { time: Time.utc(2024, 1, 1, 12, 0, 0) }
+    )
+
+    expect(mail.subject).to eq('At 2024-01-01 07:00 EST')
+    expect(mail.text_plain).to eq('At 2024-01-01 07:00 EST')
+  end
+
   it 'ships directory-backed English templates for all registered defaults' do
     templates = described_class.find_templates(described_class.default_template_paths).to_h do |template|
       [template.name, template]

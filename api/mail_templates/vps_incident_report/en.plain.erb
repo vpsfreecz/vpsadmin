@@ -3,7 +3,7 @@ Hello <%= @user.login %>,
 vpsAdmin received an incident report related to VPS #<%= @vps.id %> (<%= @vps.hostname %>).
 
 Subject: <%= @incident.subject %>
-Detected at: <%= @incident.detected_at.localtime.strftime('%Y-%m-%d %H:%M %Z') %>
+Detected at: <%= local_time(@incident.detected_at, '%Y-%m-%d %H:%M %Z') %>
 <% if @incident.ip_address -%>
 IP address: <%= @incident.ip_address %>
 <% end -%>

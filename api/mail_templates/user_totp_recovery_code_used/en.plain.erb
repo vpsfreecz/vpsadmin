@@ -3,7 +3,7 @@ Hello <%= @user.login %>,
 a recovery code for your vpsAdmin two-factor authentication device has been used.
 
 Device: <%= @totp_device.label %>
-Time: <%= @time.localtime.strftime('%Y-%m-%d %H:%M %Z') %>
+Time: <%= local_time(@time, '%Y-%m-%d %H:%M %Z') %>
 <% if @request && @request.respond_to?(:ip) -%>
 IP address: <%= @request.ip %>
 <% end -%>
