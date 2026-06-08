@@ -23,8 +23,10 @@ class RegistrationRequest < UserRequest
   validates :currency, length: { maximum: 10 }
   validate :check_login
   validate :check_org
+  validate :check_time_zone
   validate :check_os_template_available, if: :os_template_availability_changed?
 
+  before_validation :normalize_time_zone
   before_save :generate_token
 
   def user_mail
@@ -58,6 +60,7 @@ class RegistrationRequest < UserRequest
       address:,
       email:,
       language:,
+      time_zone:,
       level: 2,
       mailer_enabled: true,
       password_reset: true
@@ -101,6 +104,16 @@ class RegistrationRequest < UserRequest
 
   def generate_token
     self.access_token = SecureRandom.hex(10) unless access_token
+  end
+
+  def normalize_time_zone
+    self.time_zone = nil if time_zone == ''
+  end
+
+  def check_time_zone
+    return if VpsAdmin::API::TimeZones.valid?(time_zone)
+
+    errors.add(:time_zone, 'is not a valid time zone')
   end
 
   def check_login

@@ -11,6 +11,8 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
     string :full_name, label: 'Full name', desc: 'First and last name'
     string :email, label: 'E-mail'
     string :address, label: 'Address'
+    string :time_zone, label: 'Time zone', nullable: true,
+                       desc: 'IANA time zone identifier, e.g. Europe/Prague'
     integer :level, label: 'Access level'
     string :info, label: 'Info'
     bool :mailer_enabled, label: 'Enabled mailer', default: true
@@ -353,6 +355,7 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
       allow if u.role == :admin
       input whitelist: %i[
         password new_password logout_sessions mailer_enabled language
+        time_zone
         enable_basic_auth enable_token_auth enable_oauth2_auth enable_single_sign_on
         enable_new_login_notification enable_multi_factor_auth
         preferred_session_length preferred_logout_all remind_after_date

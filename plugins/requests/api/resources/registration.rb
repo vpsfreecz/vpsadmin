@@ -19,6 +19,8 @@ module VpsAdmin::API::Resources
         string :currency, label: 'Currency', required: true,
                           choices: ::SysConfig.get(:plugin_requests, :currencies).split(',')
         resource VpsAdmin::API::Resources::Language, label: 'Language', required: true
+        string :time_zone, label: 'Time zone', nullable: true,
+                           desc: 'IANA time zone identifier, e.g. Europe/Prague'
       end
 
       params(:resolve) do

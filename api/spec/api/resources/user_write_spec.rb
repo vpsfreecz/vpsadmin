@@ -227,6 +227,7 @@ RSpec.describe 'VpsAdmin::API::Resources::User write actions' do # rubocop:disab
           vps: false,
           password: password,
           language: SpecSeed.language.id,
+          time_zone: 'Europe/Prague',
           enable_basic_auth: true
         }
       }
@@ -262,6 +263,7 @@ RSpec.describe 'VpsAdmin::API::Resources::User write actions' do # rubocop:disab
 
       created = User.find_by(login: login)
       expect(created).not_to be_nil
+      expect(created.time_zone).to eq('Europe/Prague')
 
       clear_login
       basic_authorize(login, password)
@@ -290,6 +292,16 @@ RSpec.describe 'VpsAdmin::API::Resources::User write actions' do # rubocop:disab
       expect_status(200)
       expect(json['status']).to be(false)
       expect(errors.keys.map(&:to_s)).to include('login')
+    end
+
+    it 'returns validation errors for invalid time zone' do
+      as(SpecSeed.admin) do
+        json_post index_path, user: payload[:user].merge(time_zone: 'Invalid/Zone')
+      end
+
+      expect_status(200)
+      expect(json['status']).to be(false)
+      expect(errors.keys.map(&:to_s)).to include('time_zone')
     end
 
     it 'passes required_diskspace when creating a user with an initial VPS' do
@@ -356,6 +368,40 @@ RSpec.describe 'VpsAdmin::API::Resources::User write actions' do # rubocop:disab
       expect(json['status']).to be(true)
       expect(user_obj['mailer_enabled']).to eq(new_value)
       expect(SpecSeed.user.reload.mailer_enabled).to eq(new_value)
+    end
+
+    it 'allows users to update their time zone' do
+      as(SpecSeed.user) do
+        json_put show_path(SpecSeed.user.id), user: { time_zone: 'America/New_York' }
+      end
+
+      expect_status(200)
+      expect(json['status']).to be(true)
+      expect(user_obj['time_zone']).to eq('America/New_York')
+      expect(SpecSeed.user.reload.time_zone).to eq('America/New_York')
+    end
+
+    it 'normalizes empty time zone to server default' do
+      SpecSeed.user.update!(time_zone: 'Europe/Prague')
+
+      as(SpecSeed.user) do
+        json_put show_path(SpecSeed.user.id), user: { time_zone: '' }
+      end
+
+      expect_status(200)
+      expect(json['status']).to be(true)
+      expect(user_obj['time_zone']).to be_nil
+      expect(SpecSeed.user.reload.time_zone).to be_nil
+    end
+
+    it 'returns validation errors for invalid updated time zone' do
+      as(SpecSeed.user) do
+        json_put show_path(SpecSeed.user.id), user: { time_zone: 'Invalid/Zone' }
+      end
+
+      expect_status(200)
+      expect(json['status']).to be(false)
+      expect(errors.keys.map(&:to_s)).to include('time_zone')
     end
 
     it 'denies suspended users updating authentication settings' do

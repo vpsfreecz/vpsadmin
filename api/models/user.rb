@@ -43,12 +43,13 @@ class User < ApplicationRecord
   enum :password_version, VpsAdmin::API::CryptoProviders::PROVIDERS
 
   before_validation :set_no_password
+  before_validation :normalize_time_zone
 
   alias_attribute :role, :level
 
   attr_reader :password_plain
 
-  has_paper_trail only: %i[login level full_name email address
+  has_paper_trail only: %i[login level full_name email address time_zone
                            mailer_enabled object_state expiration_date]
 
   validates :level, :login, :password, :language_id, presence: true
@@ -63,6 +64,7 @@ class User < ApplicationRecord
     only_integer: true,
     greater_or_equal_than: 0
   }
+  validate :check_time_zone
 
   include Lockable
   include HaveAPI::Hookable
@@ -165,6 +167,16 @@ class User < ApplicationRecord
 
     self.password_reset = false
     self.lockout = false
+  end
+
+  def normalize_time_zone
+    self.time_zone = nil if time_zone == ''
+  end
+
+  def check_time_zone
+    return if VpsAdmin::API::TimeZones.valid?(time_zone)
+
+    errors.add(:time_zone, 'is not a valid time zone')
   end
 
   def env_config(env, name)

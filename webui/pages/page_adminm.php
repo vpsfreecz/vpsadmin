@@ -158,6 +158,13 @@ function print_editm($u)
         null,
         false
     );
+    $xtpl->form_add_select(
+        _('Time zone') . ':',
+        'time_zone',
+        time_zone_options(true),
+        post_val('time_zone', $u->time_zone ?? ''),
+        _('Used to format dates and times in vpsAdmin and e-mails.')
+    );
 
     if (isAdmin()) {
         $xtpl->form_add_input(_("Monthly payment") . ':', 'text', '30', 'm_monthly_payment', $u->monthly_payment, ' ');
@@ -1144,6 +1151,7 @@ if (isLoggedIn()) {
                 $params = [
                     'mailer_enabled' => isset($_POST['m_mailer_enable']),
                     'language' => $_POST['language'],
+                    'time_zone' => $_POST['time_zone'] ?? null,
                 ];
 
                 if (isAdmin()) {
@@ -1155,6 +1163,10 @@ if (isLoggedIn()) {
                 }
 
                 $user->update($params);
+                if ($_SESSION['user']['id'] == $user->id) {
+                    $_SESSION['user']['time_zone'] = $params['time_zone'] ?: null;
+                    set_request_time_zone($_SESSION['user']['time_zone']);
+                }
 
                 if (isAdmin() && $user->monthly_payment != $_POST['m_monthly_payment']) {
                     $api->user_account->update($user->id, [
