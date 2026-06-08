@@ -32,6 +32,7 @@ RSpec.describe NodeCtld::Node do
     allow(node).to receive(:osctl_parse).with(%i[pool show], 'storage').and_return(state: 'active')
     allow(node).to receive(:ensure_pool_download_healthcheck)
     allow(node).to receive(:install_pool_hooks)
+    allow(node).to receive(:install_daemon_hooks)
     allow(node).to receive(:log)
 
     node.init
@@ -66,5 +67,54 @@ RSpec.describe NodeCtld::Node do
 
     node.pool_up('storage')
     expect(pools.values).to all(have_attributes(online: true))
+  end
+
+  it 'installs osctld daemon hooks' do
+    tmpdir = Dir.mktmpdir('node-daemon-hook-spec')
+    node = described_class.new
+
+    stub_const('NodeCtld::Node::DAEMON_HOOK_DIR', tmpdir)
+
+    node.send(:install_daemon_hooks)
+
+    hook_path = File.join(tmpdir, 'pre-stop')
+    expect(File.file?(hook_path)).to be(true)
+    expect(File.stat(hook_path).mode & 0o777).to eq(0o500)
+    expect(File.read(hook_path)).to include('NodeCtld::DaemonHook.pre_stop(ENV)')
+  ensure
+    FileUtils.rm_rf(tmpdir) if tmpdir
+  end
+
+  it 'skips osctld daemon hook installation when the runtime directory is absent' do
+    tmpdir = Dir.mktmpdir('node-daemon-hook-spec')
+    hook_dir = File.join(tmpdir, 'missing')
+    node = described_class.new
+
+    stub_const('NodeCtld::Node::DAEMON_HOOK_DIR', hook_dir)
+    allow(node).to receive(:log)
+
+    node.send(:install_daemon_hooks)
+
+    expect(node).to have_received(:log).with(
+      :warn,
+      "osctld daemon hook dir not found at #{hook_dir.inspect}"
+    )
+  ensure
+    FileUtils.rm_rf(tmpdir) if tmpdir
+  end
+
+  it 'skips osctld daemon hook installation outside hypervisor nodes' do
+    tmpdir = Dir.mktmpdir('node-daemon-hook-spec')
+    node = described_class.new
+
+    $CFG.patch(vpsadmin: { type: :dns_server })
+    stub_const('NodeCtld::Node::DAEMON_HOOK_DIR', tmpdir)
+    allow(FileUtils).to receive(:cp)
+
+    node.send(:install_daemon_hooks)
+
+    expect(FileUtils).not_to have_received(:cp)
+  ensure
+    FileUtils.rm_rf(tmpdir) if tmpdir
   end
 end

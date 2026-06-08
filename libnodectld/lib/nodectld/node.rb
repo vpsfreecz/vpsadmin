@@ -10,6 +10,8 @@ module NodeCtld
     include Utils::System
     include Utils::OsCtl
 
+    DAEMON_HOOK_DIR = '/run/osctl/hooks/daemon'.freeze
+
     Pool = Struct.new(:id, :name, :filesystem, :role, :online)
 
     def initialize
@@ -27,6 +29,8 @@ module NodeCtld
       @pools.each_value do |pool|
         wait_for_pool(pool)
       end
+
+      install_daemon_hooks
     end
 
     def any_pools?
@@ -100,6 +104,8 @@ module NodeCtld
       added.each do |pool|
         wait_for_pool(pool)
       end
+
+      install_daemon_hooks
     end
 
     protected
@@ -160,6 +166,27 @@ module NodeCtld
 
         FileUtils.cp(
           File.join(NodeCtld.root, 'templates', 'pool', 'hook', hook),
+          "#{dst}.new"
+        )
+
+        File.chmod(0o500, "#{dst}.new")
+        File.rename("#{dst}.new", dst)
+      end
+    end
+
+    def install_daemon_hooks
+      return unless $CFG.get(:vpsadmin, :type) == :node
+
+      unless Dir.exist?(DAEMON_HOOK_DIR)
+        log(:warn, "osctld daemon hook dir not found at #{DAEMON_HOOK_DIR.inspect}")
+        return
+      end
+
+      %w[pre-stop].each do |hook|
+        dst = File.join(DAEMON_HOOK_DIR, hook)
+
+        FileUtils.cp(
+          File.join(NodeCtld.root, 'templates', 'daemon', 'hook', hook),
           "#{dst}.new"
         )
 
