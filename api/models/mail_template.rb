@@ -88,7 +88,12 @@ class MailTemplate < ApplicationRecord
     tr = tpl.mail_template_translations.find_by(language: lang)
     raise VpsAdmin::API::Exceptions::MailTemplateDoesNotExist, name unless tr
 
-    tr.resolve(opts[:vars]) if opts[:vars]
+    if opts[:vars]
+      tr.resolve(
+        opts[:vars],
+        time_zone: opts[:time_zone] || opts[:user]&.time_zone
+      )
+    end
 
     mail = MailLog.new(
       user: opts[:user],
@@ -152,7 +157,10 @@ class MailTemplate < ApplicationRecord
       raise 'from needed'
     end
 
-    builder = MailTemplateTranslation::TemplateBuilder.new(opts[:vars] || {})
+    builder = MailTemplateTranslation::TemplateBuilder.new(
+      opts[:vars] || {},
+      time_zone: opts[:time_zone] || opts[:user]&.time_zone
+    )
 
     mail = MailLog.new(
       user: opts[:user],

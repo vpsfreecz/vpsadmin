@@ -1,6 +1,6 @@
 vpsAdmin daily report
 
-Period: <%= @date[:start].localtime.strftime('%Y-%m-%d %H:%M %Z') %> - <%= @date[:end].localtime.strftime('%Y-%m-%d %H:%M %Z') %>
+Period: <%= local_time(@date[:start], '%Y-%m-%d %H:%M %Z') %> - <%= local_time(@date[:end], '%Y-%m-%d %H:%M %Z') %>
 
 Users:
 - new: <%= @users[:new][:changed].count %>

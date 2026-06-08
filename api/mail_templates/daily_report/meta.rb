@@ -2,6 +2,6 @@ template :daily_report do
   label 'Daily report'
 
   lang :en do
-    subject "[vpsAdmin] Daily report <%= @date[:start].localtime.strftime('%Y-%m-%d') %>"
+    subject "[vpsAdmin] Daily report <%= local_time(@date[:start], '%Y-%m-%d') %>"
   end
 end

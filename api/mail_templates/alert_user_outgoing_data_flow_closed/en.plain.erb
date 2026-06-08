@@ -3,7 +3,7 @@ Hello <%= @user.login %>,
 vpsAdmin monitoring has closed an issue affecting your service.
 
 Alert: <%= @event.label %>
-Closed at: <%= @event.closed_at.localtime.strftime('%Y-%m-%d %H:%M %Z') %>
+Closed at: <%= local_time(@event.closed_at, '%Y-%m-%d %H:%M %Z') %>
 <% if @object -%>
 Object: <%= @object.class.name %> #<%= @object.respond_to?(:id) ? @object.id : @event.row_id %>
 <% end -%>

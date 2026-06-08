@@ -1,6 +1,6 @@
 Outage report
 
-Date and time: <%= @o.begins_at.localtime.strftime('%Y-%m-%d %H:%M %Z') %>
+Date and time: <%= local_time(@o.begins_at, '%Y-%m-%d %H:%M %Z') %>
 Expected duration: <%= @o.duration %> minutes
 Affected systems: <%= @o.outage_entities.map { |e| e.real_name }.join(', ') %>
 Impact type: <%= @o.impact_type_label %>

@@ -5,14 +5,14 @@ The vulnerability has already been mitigated on affected nodes.
 
 Advisory: #<%= @a.id %><%= @a.name ? " - #{@a.name}" : '' %>
 CVEs: <%= @a.cves %>
-Published at: <%= @a.published_at.localtime.strftime('%Y-%m-%d %H:%M %Z') %>
+Published at: <%= local_time(@a.published_at, '%Y-%m-%d %H:%M %Z') %>
 
 Your affected VPS:
 
 <% @vpses.each do |vps| -%>
   - VPS #<%= vps.vps_id %> - <%= vps.vps.hostname %> (on <%= vps.node.domain_name %>)
-    Vulnerable until: <%= vps.vulnerable_until.localtime.strftime('%Y-%m-%d %H:%M %Z') %>
-    Mitigated since: <%= vps.mitigated_since.localtime.strftime('%Y-%m-%d %H:%M %Z') %>
+    Vulnerable until: <%= local_time(vps.vulnerable_until, '%Y-%m-%d %H:%M %Z') %>
+    Mitigated since: <%= local_time(vps.mitigated_since, '%Y-%m-%d %H:%M %Z') %>
 <% end -%>
 
 Summary:

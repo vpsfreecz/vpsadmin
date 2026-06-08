@@ -1,6 +1,6 @@
 Payments overview
 
-Period: <%= @start.localtime.strftime('%Y-%m-%d %H:%M %Z') %> - <%= @end.localtime.strftime('%Y-%m-%d %H:%M %Z') %>
+Period: <%= local_time(@start, '%Y-%m-%d %H:%M %Z') %> - <%= local_time(@end, '%Y-%m-%d %H:%M %Z') %>
 
 Incoming payments:
 - total: <%= @incoming.count %>

@@ -6,7 +6,7 @@ vpsAdmin recorded failed sign-in attempts for your user account.
 <% groups.each_with_index do |group, index| -%>
 Group <%= index + 1 %>:
 <% group.each do |attempt| -%>
-- <%= attempt.created_at.localtime.strftime('%Y-%m-%d %H:%M %Z') %>, <%= attempt.auth_type %>, <%= attempt.client_ip_addr || attempt.api_ip_addr || 'unknown IP' %>, <%= attempt.reason %>
+- <%= local_time(attempt.created_at, '%Y-%m-%d %H:%M %Z') %>, <%= attempt.auth_type %>, <%= attempt.client_ip_addr || attempt.api_ip_addr || 'unknown IP' %>, <%= attempt.reason %>
 <% end -%>
 <% end -%>
 

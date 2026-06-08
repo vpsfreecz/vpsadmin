@@ -10,7 +10,7 @@ It expires in approximately <%= @expires_in_days.ceil %> days.
 It expired approximately <%= @expired_days_ago.ceil %> days ago.
 <% end -%>
 <% if @state && @state.expiration_date -%>
-Expiration date: <%= @state.expiration_date.localtime.strftime('%Y-%m-%d %H:%M %Z') %>
+Expiration date: <%= local_time(@state.expiration_date, '%Y-%m-%d %H:%M %Z') %>
 <% end -%>
 <% if @base_url && !@base_url.empty? -%>
 vpsAdmin: <%= @base_url %>

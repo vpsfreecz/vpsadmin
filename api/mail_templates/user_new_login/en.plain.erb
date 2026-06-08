@@ -2,7 +2,7 @@ Hello <%= @user.login %>,
 
 a new sign-in to your vpsAdmin user account was recorded.
 
-Time: <%= @user_session.created_at.localtime.strftime('%Y-%m-%d %H:%M %Z') %>
+Time: <%= local_time(@user_session.created_at, '%Y-%m-%d %H:%M %Z') %>
 IP address: <%= @user_session.client_ip_addr || @user_session.api_ip_addr || 'unknown' %>
 Client: <%= @user_session.client_version %>
 <% if @user_device -%>
