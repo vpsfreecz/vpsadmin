@@ -1322,11 +1322,21 @@ import ../make-test.nix (
         event.reload
       end
 
-      def ensure_webui_user(login:, full_name:, email:, password:, env:, language:, monthly_payment: 0)
+      def ensure_webui_user(
+        login:,
+        full_name:,
+        email:,
+        password:,
+        env:,
+        language:,
+        monthly_payment: 0,
+        time_zone: nil
+      )
         user = User.find_or_initialize_by(login: login)
         user.assign_attributes(
           full_name: full_name,
           email: email,
+          time_zone: time_zone,
           level: 2,
           language: language,
           enable_basic_auth: true,
@@ -1409,6 +1419,46 @@ import ../make-test.nix (
         language: language,
         monthly_payment: 100
       )
+      time_zone_tip_set_user = ensure_webui_user(
+        login: 'webui-time-zone-tip-set',
+        full_name: 'Webui Time Zone Tip Set',
+        email: 'webui-time-zone-tip-set@example.test',
+        password: 'webuiTimeZoneTipSetPassword',
+        env: env,
+        language: language,
+        time_zone: nil
+      )
+      time_zone_tip_dismiss_user = ensure_webui_user(
+        login: 'webui-time-zone-tip-dismiss',
+        full_name: 'Webui Time Zone Tip Dismiss',
+        email: 'webui-time-zone-tip-dismiss@example.test',
+        password: 'webuiTimeZoneTipDismissPassword',
+        env: env,
+        language: language,
+        time_zone: nil
+      )
+      time_zone_tip_utc_user = ensure_webui_user(
+        login: 'webui-time-zone-tip-utc',
+        full_name: 'Webui Time Zone Tip UTC',
+        email: 'webui-time-zone-tip-utc@example.test',
+        password: 'webuiTimeZoneTipUtcPassword',
+        env: env,
+        language: language,
+        time_zone: nil
+      )
+
+      if defined?(WebuiUserSetting)
+        WebuiUserSetting
+          .where(
+            user: [
+              time_zone_tip_set_user,
+              time_zone_tip_dismiss_user,
+              time_zone_tip_utc_user
+            ],
+            namespace: 'tips'
+          )
+          .delete_all
+      end
 
       quoted_now = ActiveRecord::Base.connection.quote(Time.now)
       reminder_expiration = Time.now + 90 * 24 * 60 * 60
@@ -3766,6 +3816,23 @@ import ../make-test.nix (
               'id' => secondary_userns_map.id,
               'label' => secondary_userns_map.label
             }
+          }
+        },
+        'timeZoneTip' => {
+          'set' => {
+            'id' => time_zone_tip_set_user.id,
+            'username' => time_zone_tip_set_user.login,
+            'password' => 'webuiTimeZoneTipSetPassword'
+          },
+          'dismiss' => {
+            'id' => time_zone_tip_dismiss_user.id,
+            'username' => time_zone_tip_dismiss_user.login,
+            'password' => 'webuiTimeZoneTipDismissPassword'
+          },
+          'utc' => {
+            'id' => time_zone_tip_utc_user.id,
+            'username' => time_zone_tip_utc_user.login,
+            'password' => 'webuiTimeZoneTipUtcPassword'
           }
         },
         'adminMembers' => {

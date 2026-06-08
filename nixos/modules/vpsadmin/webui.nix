@@ -225,6 +225,7 @@ in
         locations."= /index.php".extraConfig = phpEntrypointConfig;
         locations."= /config.js.php".extraConfig = phpEntrypointConfig;
         locations."= /keepalive.php".extraConfig = phpEntrypointConfig;
+        locations."= /session-time-zone.php".extraConfig = phpEntrypointConfig;
 
         locations."~ \\.php$".extraConfig = ''
           return 404;

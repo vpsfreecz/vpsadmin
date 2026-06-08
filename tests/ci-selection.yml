@@ -61,6 +61,7 @@ select:
       - "webui/public/index.php"
       - "webui/public/config.js.php"
       - "webui/public/keepalive.php"
+      - "webui/public/session-time-zone.php"
       - "webui/public/js/**"
       - "webui/public/template/**"
       - "webui/lang/**"
@@ -69,6 +70,7 @@ select:
       - "webui/lib/helpbox.lib.php"
       - "webui/lib/lang.lib.php"
       - "webui/lib/pagination.lib.php"
+      - "webui/lib/tips.lib.php"
       - "webui/lib/version.lib.php"
       - "webui/lib/xtemplate.lib.php"
     tags: ["webui"]
