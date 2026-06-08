@@ -35,6 +35,7 @@ include WEBUI_ROOT . 'lib/vps.lib.php';
 include WEBUI_ROOT . 'lib/cluster.lib.php';
 include WEBUI_ROOT . 'lib/mail.lib.php';
 include WEBUI_ROOT . 'lib/helpbox.lib.php';
+include WEBUI_ROOT . 'lib/tips.lib.php';
 include WEBUI_ROOT . 'lib/security.lib.php';
 include WEBUI_ROOT . 'lib/munin.lib.php';
 include WEBUI_ROOT . 'lib/login.lib.php';
@@ -103,10 +104,7 @@ try {
         }
 
         try {
-            $current_user = $api->user->current();
-            $_SESSION["user"]["time_zone"] = $current_user->time_zone ?? null;
-            set_request_time_zone($_SESSION["user"]["time_zone"]);
-
+            set_request_time_zone($_SESSION["user"]["time_zone"] ?? null);
             $api_cluster = $api->cluster->show();
 
             if (!isset($_SESSION["context_switch"]) || !$_SESSION["context_switch"]) {
@@ -313,6 +311,8 @@ $xtpl->logbox(
 if ($config) {
     $xtpl->adminbox($config->get("webui", "sidebar"));
 }
+
+webui_render_sidebar_tips();
 
 try {
     $help = get_helpbox();

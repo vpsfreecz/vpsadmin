@@ -22,6 +22,14 @@ if (isLoggedIn()) {
 		webui: {
 			url: <?php echo json_encode(getSelfUri(), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>
 		},
+		csrf: {
+			sessionTimeZone: <?php echo json_encode(csrf_token('session_time_zone'), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>
+		},
+		user: {
+			id: <?php echo json_encode($_SESSION['user']['id'] ?? null, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>,
+			timeZone: <?php echo json_encode($_SESSION['user']['time_zone'] ?? null, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>
+		},
+		serverTimeZone: <?php echo json_encode(VPSADMIN_SERVER_TIME_ZONE, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>,
 	<?php if ($_SESSION['auth_type'] == 'oauth2') { ?>
 		accessToken: <?php echo json_encode($_SESSION['access_token']['access_token'], JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>,
 	<?php } elseif ($_SESSION['auth_type'] == 'token') { ?>

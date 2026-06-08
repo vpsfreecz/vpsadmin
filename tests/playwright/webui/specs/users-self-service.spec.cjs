@@ -25,9 +25,27 @@ const {
 } = require('../lib/pages/users.cjs');
 
 const fixtures = readFixtures();
+const webuiBaseURL = process.env.WEBUI_BASE_URL || 'http://webui.vpsadmin.test';
 
 const selfServicePublicKey =
   'ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAICdl1OmUwRKSkYjismjOiW46qAeMkIFwYfKNNSUaIbC6 webui-users-self-service@test';
+
+const timeZoneTip = (page) =>
+  page.locator('.webui-tip[data-webui-tip-id="time_zone_settings_v1"]');
+
+async function withTimeZonePage(browser, timezoneId, callback) {
+  const context = await browser.newContext({
+    baseURL: webuiBaseURL,
+    timezoneId,
+  });
+  const page = await context.newPage();
+
+  try {
+    await callback(page);
+  } finally {
+    await context.close();
+  }
+}
 
 function rowWithText(page, text) {
   return page.locator('table.table-style01 tr', { hasText: text }).first();
@@ -93,6 +111,68 @@ async function expectAdminOnlyActionHidden(page, url, forbiddenText, selector = 
 }
 
 test.describe.serial('user members self-service browser coverage', () => {
+  test('time zone tip can apply browser time zone', async ({ browser }) => {
+    const account = fixtures.timeZoneTip.set;
+
+    await withTimeZonePage(browser, 'Europe/Prague', async (page) => {
+      await login(page, account);
+
+      const tip = timeZoneTip(page);
+      await expect(tip).toBeVisible();
+      await expect(tip).toContainText('Europe/Prague');
+
+      await Promise.all([
+        page.waitForNavigation({ waitUntil: 'domcontentloaded' }),
+        tip.locator('button[data-webui-tip-action="use-browser-time-zone"]').click(),
+      ]);
+      await expect(timeZoneTip(page)).toHaveCount(0);
+      await expect.poll(
+        () => page.evaluate(() => window.vpsAdmin.user.timeZone),
+      ).toBe('Europe/Prague');
+
+      await gotoMemberEdit(page, account.id);
+      await expect(
+        formByAction(page, 'action=edit_member').locator('select[name="time_zone"]'),
+      ).toHaveValue('Europe/Prague');
+
+      await logout(page, account.username);
+    });
+  });
+
+  test('time zone tip can be dismissed permanently', async ({ browser }) => {
+    const account = fixtures.timeZoneTip.dismiss;
+
+    await withTimeZonePage(browser, 'Europe/Prague', async (page) => {
+      await login(page, account);
+
+      const tip = timeZoneTip(page);
+      await expect(tip).toBeVisible();
+      await tip.locator('button[data-webui-tip-action="dismiss"]').last().click();
+      await expect(tip).toBeHidden();
+
+      await page.reload({ waitUntil: 'domcontentloaded' });
+      await expect(timeZoneTip(page)).toHaveCount(0);
+
+      await gotoMemberEdit(page, account.id);
+      await expect(
+        formByAction(page, 'action=edit_member').locator('select[name="time_zone"]'),
+      ).toHaveValue('');
+
+      await logout(page, account.username);
+    });
+  });
+
+  test('time zone tip stays hidden when browser uses server default', async ({ browser }) => {
+    const account = fixtures.timeZoneTip.utc;
+
+    await withTimeZonePage(browser, 'UTC', async (page) => {
+      await login(page, account);
+
+      await expect(timeZoneTip(page)).toBeHidden();
+      await logout(page, account.username);
+    });
+  });
+
   test('user member list and profile forms stay in self-service mode', async ({ page }) => {
     await login(page, fixtures.user);
 

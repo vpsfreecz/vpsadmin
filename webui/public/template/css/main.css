@@ -142,6 +142,18 @@ dl.inline dd {
     	   #aside ul {margin:5px 0 15px 0; padding:0; list-style:none;}
     	   #aside ul li {margin:0; padding:4px 10px 4px 0;}
 	   #aside table {width: 100%; }
+
+       .webui-tip {position:relative; margin:0 10px 15px 0; padding:10px; border:1px solid #B2DAFF; background:#E1EEFA;}
+       .webui-tip-hidden {display:none;}
+       .webui-tip h3 {margin:0 20px 8px 0; padding:0; background:none !important;}
+       .webui-tip p {margin:8px 0;}
+       .webui-tip button {margin:0 6px 6px 0; padding:3px 7px; cursor:pointer;}
+       .webui-tip button:disabled {cursor:default; opacity:0.65;}
+       .webui-tip-close {position:absolute; top:6px; right:6px; margin:0 !important; padding:0 5px !important; font-weight:bold;}
+       .webui-tip-actions {margin-bottom:4px !important;}
+       .webui-tip-profile {font-size:90%;}
+       .webui-tip-error {display:none; color:#B00020; font-weight:bold;}
+       .webui-tip-error-visible {display:block;}
 	#footer {clear:both; padding:15px 0;}
     #footer p {margin:0;}
 
