@@ -110,13 +110,6 @@ jobs:
             echo "- Reason: ${{ steps.select-tests.outputs.reason }}"
           } >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Determine job count
-        if: steps.select-tests.outputs.mode != 'skip'
-        id: determine-test-jobs
-        uses: vpsfreecz/vpsadminos/.github/actions/determine-test-jobs@staging
-        with:
-          per_job_gib: "20"
-
       - name: Preview selected tests
         if: steps.select-tests.outputs.mode != 'skip'
         id: preview-tests
@@ -171,7 +164,7 @@ jobs:
           set -o pipefail
           ./test-runner.sh test \
             -f \
-            -j "${{ steps.determine-test-jobs.outputs.jobs }}" \
+            --jobs auto \
             --filter "${{ steps.preview-tests.outputs.filter }}" \
             | tee test.log
 
