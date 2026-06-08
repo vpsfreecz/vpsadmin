@@ -131,6 +131,10 @@ covered:
 - help_box#index
 - help_box#show
 - help_box#update
+- webui_user_setting#delete
+- webui_user_setting#index
+- webui_user_setting#set
+- webui_user_setting#show
 - host_ip_address#assign
 - host_ip_address#create
 - host_ip_address#delete
