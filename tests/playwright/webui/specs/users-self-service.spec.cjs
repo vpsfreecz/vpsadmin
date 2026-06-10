@@ -173,6 +173,17 @@ test.describe.serial('user members self-service browser coverage', () => {
     });
   });
 
+  test('time zone tip stays hidden when browser zone is equivalent to server default', async ({ browser }) => {
+    const account = fixtures.timeZoneTip.utc;
+
+    await withTimeZonePage(browser, 'Africa/Abidjan', async (page) => {
+      await login(page, account);
+
+      await expect(timeZoneTip(page)).toBeHidden();
+      await logout(page, account.username);
+    });
+  });
+
   test('user member list and profile forms stay in self-service mode', async ({ page }) => {
     await login(page, fixtures.user);
 

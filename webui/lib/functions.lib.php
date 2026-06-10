@@ -341,6 +341,44 @@ function valid_time_zone($timeZone)
     return isset($timeZones[$timeZone]);
 }
 
+function time_zones_have_same_offsets($timeZone, $otherTimeZone, $referenceTime = null)
+{
+    if (
+        $timeZone === null
+        || $timeZone === ''
+        || $otherTimeZone === null
+        || $otherTimeZone === ''
+        || !valid_time_zone($timeZone)
+        || !valid_time_zone($otherTimeZone)
+    ) {
+        return false;
+    }
+
+    if ($timeZone === $otherTimeZone) {
+        return true;
+    }
+
+    $referenceTime = $referenceTime !== null ? (int) $referenceTime : time();
+    $sampleDistance = 120 * 24 * 60 * 60;
+    $samples = [
+        $referenceTime - $sampleDistance,
+        $referenceTime,
+        $referenceTime + $sampleDistance,
+    ];
+    $zone = new DateTimeZone($timeZone);
+    $otherZone = new DateTimeZone($otherTimeZone);
+
+    foreach ($samples as $sample) {
+        $time = new DateTimeImmutable('@' . $sample);
+
+        if ($zone->getOffset($time) !== $otherZone->getOffset($time)) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
 function set_request_time_zone($timeZone)
 {
     if (!$timeZone || !valid_time_zone($timeZone)) {

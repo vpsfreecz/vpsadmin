@@ -168,7 +168,7 @@
 		});
 	}
 
-	function initTimeZoneTip(api, validTimeZones) {
+	function initTimeZoneTip(api, validTimeZones, serverEquivalentTimeZones) {
 		var $tip = $('.webui-tip[data-webui-tip-id="time_zone_settings_v1"]');
 
 		if (!$tip.length) {
@@ -178,7 +178,12 @@
 		var serverZone = $tip.attr('data-server-time-zone');
 		var zone = browserTimeZone();
 
-		if (!zone || !validTimeZones[zone] || zone === serverZone) {
+		if (
+			!zone
+			|| !validTimeZones[zone]
+			|| zone === serverZone
+			|| serverEquivalentTimeZones[zone]
+		) {
 			return;
 		}
 
@@ -214,7 +219,8 @@
 
 		initTimeZoneTip(
 			root.apiClient,
-			validTimeZoneMap(root.vpsAdminTips.validTimeZones || [])
+			validTimeZoneMap(root.vpsAdminTips.validTimeZones || []),
+			validTimeZoneMap(root.vpsAdminTips.serverEquivalentTimeZones || [])
 		);
 	});
 })(window, window.jQuery);

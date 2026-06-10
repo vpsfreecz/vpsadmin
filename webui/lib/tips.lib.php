@@ -48,6 +48,27 @@ function webui_tip_append_script($settings)
     );
 }
 
+function webui_server_equivalent_time_zones()
+{
+    static $cache = [];
+
+    if (isset($cache[VPSADMIN_SERVER_TIME_ZONE])) {
+        return $cache[VPSADMIN_SERVER_TIME_ZONE];
+    }
+
+    $ret = [];
+    $referenceTime = time();
+
+    foreach (DateTimeZone::listIdentifiers() as $timeZone) {
+        if (time_zones_have_same_offsets($timeZone, VPSADMIN_SERVER_TIME_ZONE, $referenceTime)) {
+            $ret[] = $timeZone;
+        }
+    }
+
+    $cache[VPSADMIN_SERVER_TIME_ZONE] = $ret;
+    return $ret;
+}
+
 function webui_render_time_zone_tip($settings)
 {
     global $xtpl;
@@ -119,6 +140,7 @@ function webui_render_sidebar_tips()
 
     webui_tip_append_script([
         'validTimeZones' => DateTimeZone::listIdentifiers(),
+        'serverEquivalentTimeZones' => webui_server_equivalent_time_zones(),
         'messages' => [
             'saving' => _('Saving...'),
             'saveTipFailed' => _('Unable to save this tip. Please try again.'),
