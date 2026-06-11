@@ -82,33 +82,27 @@ namespace :vpsadmin do
     nodectld: [:libnodectld]
   }
 
-  desc 'Build all gems and deploy to rubygems'
+  desc 'Refresh packaged gem dependencies'
   multitask gems: gems.each_key.map { |v| "gems:#{v}" }
 
   namespace :gems do
-    desc 'Setup parameters for gem building'
+    desc 'Resolve vpsAdminOS source for packaged gem updates'
     task :environment do
-      ENV['VPSADMIN_BUILD_ID'] ||= Time.now.strftime('%Y%m%d%H%M%S')
-
-      begin
-        ENV['OS_BUILD_ID'] ||= Vpsadminos.build_id
-      rescue Vpsadminos::Error => e
-        abort e.message
-      end
+      Vpsadminos.export_env!
+    rescue Vpsadminos::Error => e
+      abort e.message
     end
 
     gems.each do |gem, deps|
-      desc "Build and deploy #{gem} gem"
+      desc "Refresh #{gem} package metadata"
       task gem => [:environment] + deps do
         ret = system(
-          './tools/update_gem.sh',
+          './tools/update_gem.rb',
           'packages',
-          gem.to_s,
-          ENV.fetch('VPSADMIN_BUILD_ID'),
-          ENV.fetch('OS_BUILD_ID')
+          gem.to_s
         )
 
-        raise "unable to build #{gem}: failed with exit status #{$?.exitstatus}" unless ret
+        raise "unable to update #{gem}: failed with exit status #{$?.exitstatus}" unless ret
       end
     end
   end

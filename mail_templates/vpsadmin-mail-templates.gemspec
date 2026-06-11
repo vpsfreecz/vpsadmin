@@ -9,7 +9,10 @@ Gem::Specification.new do |s|
     s.description = 'Mail template installer'
   s.authors     = 'Jakub Skokan'
   s.email       = 'jakub.skokan@vpsfree.cz'
-  s.files       = `git ls-files -z`.split("\x0")
+  s.files = Dir[
+    'bin/*',
+    'lib/**/*'
+  ].select { |f| File.file?(f) }
   s.executables = s.files.grep(%r{^bin/}) { |f| File.basename(f) }
   s.license     = 'GPL'
 

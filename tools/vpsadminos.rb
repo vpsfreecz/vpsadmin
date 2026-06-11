@@ -56,16 +56,15 @@ module Vpsadminos
     local_path || flake_input_path
   end
 
-  def build_id
-    build_id_path = File.join(source_path, '.build_id')
-    File.read(build_id_path).strip
+  def version
+    version_path = File.join(source_path, '.version')
+    "#{File.read(version_path).strip}.0"
   rescue Errno::ENOENT
-    raise Error, "vpsAdminOS build ID not found at '#{build_id_path}'"
+    raise Error, "vpsAdminOS version not found at '#{version_path}'"
   end
 
-  def export_build_id_env!
-    return if local_checkout?
-
-    ENV['OS_BUILD_ID'] ||= build_id
+  def export_env!
+    ENV['VPSADMINOS_PATH'] = source_path
+    ENV['VPSADMINOS_GEM_VERSION'] ||= version
   end
 end

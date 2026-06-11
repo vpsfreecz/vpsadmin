@@ -19,7 +19,7 @@ let
       vpsadminos;
   vpsadminosRubyOverlay =
     if vpsadminosPath == null then null else import (vpsadminosPath + "/os/overlays/ruby.nix");
-  overlayList = import ../../overlays { inherit vpsadminRev; };
+  overlayList = import ../../overlays { inherit vpsadminRev vpsadminosPath; };
 in
 {
   options = {

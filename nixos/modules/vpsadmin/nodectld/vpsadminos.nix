@@ -2,12 +2,20 @@
   config,
   lib,
   pkgs,
+  vpsadminos ? null,
   vpsadminRev,
   ...
 }:
 with lib;
 let
   cfg = config.vpsadmin.nodectld;
+  vpsadminosPath =
+    if vpsadminos == null then
+      null
+    else if builtins.isAttrs vpsadminos && vpsadminos ? outPath then
+      vpsadminos.outPath
+    else
+      vpsadminos;
   rubyCrashReportTemplate = config.system.vpsadminos.rubyCrashReportTemplate;
 in
 {
@@ -16,7 +24,7 @@ in
   ];
 
   config = mkIf cfg.enable {
-    nixpkgs.overlays = import ../../../overlays { inherit vpsadminRev; };
+    nixpkgs.overlays = import ../../../overlays { inherit vpsadminRev vpsadminosPath; };
 
     boot.postBootCommands = ''
       mkdir -m 0700 /run/nodectl

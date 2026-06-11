@@ -5,17 +5,18 @@ require 'nodectld/version'
 Gem::Specification.new do |s|
   s.name = 'libnodectld'
 
-  s.version = if ENV['VPSADMIN_BUILD_ID']
-                "#{NodeCtld::VERSION}.build#{ENV['VPSADMIN_BUILD_ID']}"
-              else
-                NodeCtld::VERSION
-              end
+  s.version = NodeCtld::VERSION
 
   s.summary     =
     s.description = 'Daemon for vpsAdmin node'
   s.authors     = 'Jakub Skokan'
   s.email       = 'jakub.skokan@vpsfree.cz'
-  s.files       = `git ls-files -z`.split("\x0")
+  s.files       = Dir[
+    'bin/*',
+    'lib/**/*',
+    'man/man?/*.?',
+    'templates/**/*'
+  ].select { |f| File.file?(f) }
   s.executables = s.files.grep(%r{^bin/}) { |f| File.basename(f) }
   s.license     = 'GPL'
 
@@ -26,11 +27,11 @@ Gem::Specification.new do |s|
   s.add_dependency 'filelock'
   s.add_dependency 'ipaddress', '~> 0.8.3'
   s.add_dependency 'json'
-  s.add_dependency 'libosctl', ENV.fetch('OS_BUILD_ID', nil)
+  s.add_dependency 'libosctl', ENV.fetch('VPSADMINOS_GEM_VERSION', nil)
   s.add_dependency 'mail', '~> 2.9.0'
   s.add_dependency 'mysql2', '0.5.6'
-  s.add_dependency 'osctl', ENV.fetch('OS_BUILD_ID', nil)
-  s.add_dependency 'osctl-exportfs', ENV.fetch('OS_BUILD_ID', nil)
+  s.add_dependency 'osctl', ENV.fetch('VPSADMINOS_GEM_VERSION', nil)
+  s.add_dependency 'osctl-exportfs', ENV.fetch('VPSADMINOS_GEM_VERSION', nil)
   s.add_dependency 'prometheus-client', '~> 4.2.3'
   s.add_dependency 'pry', '~> 0.14.2'
   s.add_dependency 'pry-remote'

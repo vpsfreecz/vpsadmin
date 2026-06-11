@@ -1,7 +1,7 @@
 require_relative '../tools/vpsadminos'
 
 begin
-  Vpsadminos.export_build_id_env!
+  Vpsadminos.export_env!
 rescue Vpsadminos::Error => e
   abort e.message
 end
@@ -9,23 +9,11 @@ end
 source 'https://rubygems.org'
 gemspec
 
-published_vpsadminos_gems = proc do
-  source 'https://rubygems.vpsfree.cz' do
-    gem 'libosctl'
-    gem 'osctl'
-    gem 'osctl-exportfs'
-  end
-end
+os_path = ENV.fetch('VPSADMINOS_PATH')
 
-if Vpsadminos.local_checkout?
-  os_path = Vpsadminos.source_path
-
-  gem 'libosctl', path: File.join(os_path, 'libosctl')
-  gem 'osctl', path: File.join(os_path, 'osctl')
-  gem 'osctl-exportfs', path: File.join(os_path, 'osctl-exportfs')
-else
-  published_vpsadminos_gems.call
-end
+gem 'libosctl', path: File.join(os_path, 'libosctl')
+gem 'osctl', path: File.join(os_path, 'osctl')
+gem 'osctl-exportfs', path: File.join(os_path, 'osctl-exportfs')
 
 group :development do
   gem 'rake'

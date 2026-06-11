@@ -2,12 +2,15 @@
   lib,
   bundlerApp,
   ruby,
+  defaultGemConfig,
+  gemConfig ? defaultGemConfig,
 }:
 
 bundlerApp {
   pname = "libnodectld";
   gemdir = ./.;
   inherit ruby;
+  inherit gemConfig;
 
   meta = with lib; {
     description = "";

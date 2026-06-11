@@ -16,8 +16,12 @@
       supportedSystems = [ "x86_64-linux" ];
       forAllSystems = nixpkgs.lib.genAttrs supportedSystems;
       flakeRevision = nixpkgs.lib.removeSuffix "-dirty" (self.rev or self.dirtyRev);
+      vpsadminosVersion = "${
+        nixpkgs.lib.removeSuffix "\n" (builtins.readFile (vpsadminos.outPath + "/.version"))
+      }.0";
       overlayList = import ./nixos/overlays/default.nix {
         vpsadminRev = flakeRevision;
+        vpsadminosPath = vpsadminos.outPath;
       };
       vpsadminosRubyOverlay = import (vpsadminos.outPath + "/os/overlays/ruby.nix");
 
@@ -158,6 +162,8 @@
 
                 export BUNDLE_PATH="$GEM_HOME"
                 export BUNDLE_GEMFILE="$PWD/Gemfile"
+                export VPSADMINOS_PATH="''${VPSADMINOS_PATH:-${vpsadminos.outPath}}"
+                export VPSADMINOS_GEM_VERSION="''${VPSADMINOS_GEM_VERSION:-${vpsadminosVersion}}"
 
               ''
               + lib.optionalString purityDisabled ''
@@ -217,7 +223,7 @@
               zlib
               mariadb
               mariadb-connector-c
-              nixfmt-rfc-style
+              nixfmt
               nixfmt-tree
               php83Packages.php-cs-fixer
             ];
@@ -229,6 +235,8 @@
               export RUBOCOP_CACHE_ROOT="$(pwd)/.rubocop_cache"
               export PATH="$(ruby -e 'puts Gem.bindir'):$PATH"
               export RUBYLIB="$GEM_HOME"
+              export VPSADMINOS_PATH="''${VPSADMINOS_PATH:-${vpsadminos.outPath}}"
+              export VPSADMINOS_GEM_VERSION="''${VPSADMINOS_GEM_VERSION:-${vpsadminosVersion}}"
               gem install --no-document bundler
 
               # Purity disabled because of prism gem, which has a native extension.
@@ -261,7 +269,7 @@
             name = "vpsadmin-webui";
             componentPath = "webui";
             packages = with pkgs; [
-              nixfmt-rfc-style
+              nixfmt
               php
               phpPackages.composer
             ];

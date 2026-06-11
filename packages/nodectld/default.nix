@@ -2,6 +2,8 @@
   lib,
   bundlerApp,
   ruby,
+  defaultGemConfig,
+  gemConfig ? defaultGemConfig,
 }:
 
 bundlerApp {
@@ -9,6 +11,7 @@ bundlerApp {
   gemdir = ./.;
   exes = [ "nodectld" ];
   inherit ruby;
+  inherit gemConfig;
 
   meta = with lib; {
     description = "";
