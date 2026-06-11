@@ -2,6 +2,21 @@ name: Daily update
 on:
   schedule:
     - cron: '20 6 * * *'
+  workflow_dispatch:
+    inputs:
+      scope:
+        description: Update scope
+        required: true
+        default: gems
+        type: choice
+        options:
+          - gems
+          - webui
+          - all
+      vpsadminos_input:
+        description: Optional vpsAdminOS flake input override
+        required: false
+        type: string
 
 permissions:
   contents: write
@@ -36,18 +51,39 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
       - name: Update gem dependencies
+        if: >-
+          github.event_name == 'schedule'
+          || inputs.scope == 'gems'
+          || inputs.scope == 'all'
+        env:
+          VPSADMINOS_INPUT: >-
+            ${{ github.event_name == 'workflow_dispatch'
+                && inputs.vpsadminos_input
+                || '' }}
         run: |
+          if [ -n "$VPSADMINOS_INPUT" ]; then
+            nix flake lock --allow-dirty-locks --override-input vpsadminos "$VPSADMINOS_INPUT"
+          fi
+
           nix develop .#vpsadmin --command bash -lc '
             ./tools/bundix_all.sh
+            rake vpsadmin:gems
             nixfmt packages/*/gemset.nix
           '
 
-          git add packages
+          git add packages/*/Gemfile packages/*/Gemfile.lock packages/*/gemset.nix
           git diff --cached --quiet && exit 0
 
-          git commit -m "packages: update gem dependencies"
+          msg=$(mktemp)
+          printf '%s\n' "packages: update gem dependencies" > "$msg"
+          git commit -F "$msg"
+          rm -f "$msg"
 
       - name: Update webui dependencies
+        if: >-
+          github.event_name == 'schedule'
+          || inputs.scope == 'webui'
+          || inputs.scope == 'all'
         run: |
           cd webui
 
@@ -65,4 +101,4 @@ jobs:
 
       - name: Push updates
         run: |
-          git push origin master
+          git push origin "HEAD:${GITHUB_REF_NAME}"
