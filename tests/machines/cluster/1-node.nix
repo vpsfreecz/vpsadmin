@@ -1,4 +1,13 @@
-{ pkgs, vpsadminosPath, ... }@args:
+{
+  pkgs,
+  testFramework ? null,
+  vpsadminosPath ?
+    if testFramework == null then
+      throw "testFramework or vpsadminosPath is required"
+    else
+      testFramework.sourcePath,
+  ...
+}@args:
 let
   seedPath = ../../../api/db/seeds/test-1-node.nix;
   clusterSeed = import seedPath;

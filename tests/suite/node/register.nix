@@ -1,5 +1,9 @@
+{ testFramework, ... }@args:
+let
+  vpsadminosPath = testFramework.sourcePath;
+in
 import ../../make-test.nix (
-  { pkgs, vpsadminosPath, ... }:
+  { pkgs, ... }:
   let
     seed = import ../../../api/db/seeds/test.nix;
     creds = import ../../configs/nixos/vpsadmin-credentials.nix;
@@ -252,4 +256,4 @@ import ../../make-test.nix (
       end
     '';
   }
-)
+) args

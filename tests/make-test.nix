@@ -1,5 +1,5 @@
 testFn:
-{ vpsadminosPath, ... }@args:
+{ testFramework, ... }@args:
 let
   ciTags = import ./ci-tags.nix;
   unique =
@@ -31,13 +31,14 @@ let
       else
         { }
     );
-  upstream = import (vpsadminosPath + "/tests/make-test.nix") taggedTestFn;
+  upstream = testFramework.makeTest taggedTestFn;
   mergedExtraArgs = {
-    vpsadminos = vpsadminosPath;
+    vpsadminos = testFramework.sourcePath;
   }
   // (args.extraArgs or { });
   argsWithExtra = args // {
     extraArgs = mergedExtraArgs;
+    vpsadminosPath = testFramework.sourcePath;
   };
 in
 upstream argsWithExtra

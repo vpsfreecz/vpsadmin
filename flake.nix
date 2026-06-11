@@ -70,9 +70,6 @@
           inherit system;
           pkgsPath = nixpkgs.outPath;
           testsRoot = ./tests;
-          suiteArgs = {
-            vpsadminosPath = vpsadminos.outPath;
-          };
         }
       );
 
@@ -82,9 +79,6 @@
           inherit system;
           pkgsPath = nixpkgs.outPath;
           testsRoot = ./tests;
-          suiteArgs = {
-            vpsadminosPath = vpsadminos.outPath;
-          };
         }
       );
 

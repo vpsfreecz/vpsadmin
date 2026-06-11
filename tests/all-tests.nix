@@ -4,12 +4,12 @@
   configuration ? null,
   testConfig ? { },
   suiteArgs ? { },
+  testFramework,
 }:
 let
-  vpsadminosPath = suiteArgs.vpsadminosPath or (throw "suiteArgs.vpsadminosPath is required");
   nixpkgs = import pkgs { inherit system; };
   lib = nixpkgs.lib;
-  testLib = import (vpsadminosPath + "/test-runner/nix/lib.nix") {
+  testLib = testFramework.makeTestLib {
     inherit
       pkgs
       system

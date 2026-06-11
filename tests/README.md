@@ -121,8 +121,8 @@ printf '%s\n' webui/pages/page_login.php | ruby tools/select_ci_tests.rb
 
 - `tests/all-tests.nix` mirrors the vpsAdminOS layout so the runner can
   discover tests (the runner evaluates the `testsMeta` flake output).
-- `tests/make-test.nix` delegates to the vpsAdminOS test framework via the
-  `vpsadminosPath` suite argument.
+- `tests/make-test.nix` delegates to the vpsAdminOS flake-exported
+  `testFramework`.
 - `tests/configs/nixos/vpsadmin-services.nix` defines a NixOS VM profile with
   API, supervisor, console_router, webui, varnish, frontend, rabbitmq and redis.
   It:
