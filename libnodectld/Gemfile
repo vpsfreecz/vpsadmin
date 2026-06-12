@@ -1,15 +1,14 @@
-require_relative '../tools/vpsadminos'
-
-begin
-  Vpsadminos.export_env!
-rescue Vpsadminos::Error => e
-  abort e.message
-end
-
 source 'https://rubygems.org'
 gemspec
 
-os_path = ENV.fetch('VPSADMINOS_PATH')
+os_path = ENV.fetch('VPSADMINOS_PATH') do
+  abort 'VPSADMINOS_PATH is not set; run `nix develop .#libnodectld` or set ' \
+        'it to a vpsAdminOS checkout'
+end
+
+unless File.directory?(os_path)
+  abort "VPSADMINOS_PATH does not exist: #{os_path}"
+end
 
 gem 'libosctl', path: File.join(os_path, 'libosctl')
 gem 'osctl', path: File.join(os_path, 'osctl')
