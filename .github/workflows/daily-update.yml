@@ -66,9 +66,7 @@ jobs:
           fi
 
           nix develop .#vpsadmin --command bash -lc '
-            ./tools/bundix_all.sh
             rake vpsadmin:gems
-            nixfmt packages/*/gemset.nix
           '
 
           git add packages/*/Gemfile packages/*/Gemfile.lock packages/*/gemset.nix

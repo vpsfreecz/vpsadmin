@@ -1,5 +1,3 @@
-require_relative '../tools/vpsadminos'
-
 namespace :vpsadmin do
   desc 'Set vpsAdmin version'
   task :version do
@@ -72,37 +70,6 @@ namespace :vpsadmin do
 
       else
         puts "#{file}: invalid first line, ignoring"
-      end
-    end
-  end
-
-  gems = {
-    libnodectld: [],
-    nodectl: [:libnodectld],
-    nodectld: [:libnodectld]
-  }
-
-  desc 'Refresh packaged gem dependencies'
-  multitask gems: gems.each_key.map { |v| "gems:#{v}" }
-
-  namespace :gems do
-    desc 'Resolve vpsAdminOS source for packaged gem updates'
-    task :environment do
-      Vpsadminos.export_env!
-    rescue Vpsadminos::Error => e
-      abort e.message
-    end
-
-    gems.each do |gem, deps|
-      desc "Refresh #{gem} package metadata"
-      task gem => [:environment] + deps do
-        ret = system(
-          './tools/update_gem.rb',
-          'packages',
-          gem.to_s
-        )
-
-        raise "unable to update #{gem}: failed with exit status #{$?.exitstatus}" unless ret
       end
     end
   end
