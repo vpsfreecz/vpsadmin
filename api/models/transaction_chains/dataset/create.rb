@@ -105,7 +105,12 @@ module TransactionChains
         tmp.each_value { |p| t.create(p) }
       end
 
-      dip.call_class_hooks_for(:create, self, args: [dip])
+      dip.call_class_hooks_for(
+        :create,
+        self,
+        args: [dip],
+        kwargs: { purpose: :dataset_create }
+      )
 
       create_mounts(dip) if @automount
 

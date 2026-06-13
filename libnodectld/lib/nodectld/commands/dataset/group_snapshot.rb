@@ -6,6 +6,9 @@ module NodeCtld
     include Utils::Zfs
 
     def exec
+      @name = nil
+      @created_at = nil
+
       # In case nodectld has crashed while saving the result of the transaction,
       # recover it from the state file and do not create new snapshots.
       if has_saved_state?
@@ -21,6 +24,8 @@ module NodeCtld
           zfs(:list, '-H -o name', "#{first_snap['pool_fs']}/#{first_snap['dataset_name']}@#{@name}")
         rescue SystemCommandFailed
           log(:work, self, 'Pre-crash snapshot not found, disregarding old state')
+          @name = nil
+          @created_at = nil
         else
           log(:work, self, 'Reusing pre-crash group snapshot state')
           return ok
@@ -29,8 +34,8 @@ module NodeCtld
 
       # Create new snapshots
       t = Time.now.utc
-      @created_at = t.strftime('%Y-%m-%d %H:%M:%S')
-      @name = t.strftime('%Y-%m-%dT%H:%M:%S')
+      @created_at ||= t.strftime('%Y-%m-%d %H:%M:%S')
+      @name ||= t.strftime('%Y-%m-%dT%H:%M:%S')
 
       zfs(
         :snapshot,

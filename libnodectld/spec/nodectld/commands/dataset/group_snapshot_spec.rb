@@ -58,6 +58,29 @@ RSpec.describe NodeCtld::Commands::Dataset::GroupSnapshot do
     )
   end
 
+  it 'ignores supplied names and uses its own timestamp' do
+    fixed_time = Time.utc(2026, 6, 13, 12, 0, 0)
+    named_cmd = described_class.new(
+      driver,
+      'snapshots' => snapshots,
+      'name' => 'custom-name',
+      'created_at' => '2026-06-13 12:00:00'
+    )
+
+    allow(Time).to receive(:now).and_return(fixed_time)
+    allow(named_cmd).to receive(:zfs).with(
+      :snapshot,
+      nil,
+      'tank/ct/101@2026-06-13T12:00:00 tank/ct/102@2026-06-13T12:00:00'
+    ).and_return(ret: :ok)
+
+    expect(named_cmd.exec).to eq(ret: :ok)
+    expect(JSON.parse(File.read(named_cmd.send(:state_file_path)))).to eq(
+      'name' => '2026-06-13T12:00:00',
+      'created_at' => '2026-06-13 12:00:00'
+    )
+  end
+
   it 'reuses saved state when the snapshot already exists' do
     File.write(
       cmd.send(:state_file_path),

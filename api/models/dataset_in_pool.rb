@@ -33,6 +33,11 @@ class DatasetInPool < ApplicationRecord
            context: 'TransactionChains::Dataset::Create instance',
            args: {
              dataset_in_pool: 'instance of DatasetInPool'
+           },
+           kwargs: {
+             purpose: 'why the DatasetInPool is being created',
+             source_dataset_in_pool: 'source DatasetInPool for clone/replace operations',
+             preserve_existing_backups: 'true when VPS replace will move existing backup datasets'
            }
   has_hook :migrated,
            desc: 'Called when a DatasetInPool is being migrated with a VPS',

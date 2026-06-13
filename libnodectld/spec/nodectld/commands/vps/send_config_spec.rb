@@ -16,7 +16,7 @@ RSpec.describe NodeCtld::Commands::Vps::SendConfig do
       'network_interfaces' => true,
       'snapshots' => false,
       'passphrase' => 'secret',
-      'from_snapshot' => 'base',
+      'from_snapshot' => 'base-snapshot',
       'preexisting_datasets' => true
     )
   end
@@ -34,10 +34,42 @@ RSpec.describe NodeCtld::Commands::Vps::SendConfig do
         network_interfaces: true,
         snapshots: false,
         passphrase: 'secret',
-        from_snapshot: 'base',
+        from_snapshot: 'base-snapshot',
         preexisting_datasets: true
       )
     )
+  end
+
+  it 'resolves an unconfirmed snapshot name from the database' do
+    db = instance_double(NodeCtld::Db, close: nil)
+    rs = double(get!: { 'name' => '2026-06-13T12:00:00' })
+    cmd = described_class.new(
+      driver,
+      'vps_id' => 101,
+      'node' => '10.0.0.2',
+      'pool_name' => 'tank',
+      'as_id' => '202',
+      'network_interfaces' => true,
+      'snapshots' => false,
+      'passphrase' => 'secret',
+      'from_snapshot' => {
+        'id' => 42,
+        'name' => '2026-06-13T12:00:00 (unconfirmed)',
+        'confirmed' => 'confirm_create'
+      }
+    )
+
+    allow(NodeCtld::Db).to receive(:new).and_return(db)
+    allow(db).to receive(:prepared).with('SELECT name FROM snapshots WHERE id = ?', 42).and_return(rs)
+    allow(cmd).to receive(:osctl).and_return(ret: :ok)
+
+    expect(cmd.exec).to eq(ret: :ok)
+    expect(cmd).to have_received(:osctl).with(
+      %i[ct send config],
+      [101, '10.0.0.2'],
+      hash_including(from_snapshot: '2026-06-13T12:00:00')
+    )
+    expect(db).to have_received(:close)
   end
 
   it 'cancels the local send state on rollback' do

@@ -44,6 +44,42 @@ RSpec.describe TransactionChains::Dataset::GroupSnapshot do
     expect(SnapshotInPool.where(dataset_in_pool_id: dip_b.id).count).to eq(0)
   end
 
+  it 'raises on locked datasets in strict mode' do
+    pool = create_pool!(node: SpecSeed.node, role: :primary)
+    _dataset_a, dip_a = create_dataset_with_pool!(user: user, pool: pool, name: "group-a-#{SecureRandom.hex(4)}")
+    _dataset_b, dip_b = create_dataset_with_pool!(user: user, pool: pool, name: "group-b-#{SecureRandom.hex(4)}")
+    lock_holder = build_transaction_chain!(name: 'lock-holder')
+
+    lock_holder.lock(dip_b)
+
+    expect do
+      described_class.fire([dip_a, dip_b], strict: true)
+    end.to raise_error(ResourceLocked)
+  end
+
+  it 'uses supplied snapshot label and lets nodectld confirm the final name' do
+    pool = create_pool!(node: SpecSeed.node, role: :primary)
+    dataset_a, dip_a = create_dataset_with_pool!(user: user, pool: pool, name: "group-a-#{SecureRandom.hex(4)}")
+    dataset_b, dip_b = create_dataset_with_pool!(user: user, pool: pool, name: "group-b-#{SecureRandom.hex(4)}")
+
+    chain, = described_class.fire(
+      [dip_a, dip_b],
+      label: 'Created for VPS replace 1 -> 2',
+      strict: true
+    )
+
+    payload = tx_payloads(chain).first
+    snapshots = Snapshot.where(dataset_id: [dataset_a.id, dataset_b.id]).order(:id).to_a
+
+    expect(snapshots.map(&:name)).to all(match(/\A\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2} \(unconfirmed\)\z/))
+    expect(snapshots.map(&:label)).to eq([
+                                           'Created for VPS replace 1 -> 2',
+                                           'Created for VPS replace 1 -> 2'
+                                         ])
+    expect(payload.keys).to eq(['snapshots'])
+    expect(payload.fetch('snapshots').map { |row| row.fetch('snapshot_id') }).to match_array(snapshots.map(&:id))
+  end
+
   it 'uses one generated timestamp prefix for all created snapshots' do
     pool = create_pool!(node: SpecSeed.node, role: :primary)
     dataset_a, dip_a = create_dataset_with_pool!(user: user, pool: pool, name: "group-a-#{SecureRandom.hex(4)}")

@@ -11,6 +11,7 @@ module Transactions::Vps
     # @option opts [Boolean] :network_interfaces
     # @option opts [::Pool] :pool
     # @option opts [String] :dataset
+    # @option opts [String, Snapshot] :from_snapshot
     def params(vps, as_id, opts = {})
       self.vps_id = vps.id
       self.node_id = vps.node_id
@@ -23,8 +24,21 @@ module Transactions::Vps
       }
 
       ret[:as_dataset] = opts[:dataset] if opts[:dataset]
+      ret[:from_snapshot] = snapshot_param(opts[:from_snapshot]) if opts[:from_snapshot]
 
       ret
+    end
+
+    protected
+
+    def snapshot_param(snapshot)
+      return snapshot unless snapshot.is_a?(::Snapshot)
+
+      {
+        id: snapshot.id,
+        name: snapshot.name,
+        confirmed: snapshot.confirmed
+      }
     end
   end
 end

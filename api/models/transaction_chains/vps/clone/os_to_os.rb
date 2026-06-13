@@ -236,7 +236,15 @@ module TransactionChains
       # Invoke dataset creation hooks and clone dataset plans
       datasets.each do |src, dst|
         # Invoke dataset create hook
-        dst.call_class_hooks_for(:create, self, args: [dst])
+        dst.call_class_hooks_for(
+          :create,
+          self,
+          args: [dst],
+          kwargs: {
+            purpose: :vps_clone,
+            source_dataset_in_pool: src
+          }
+        )
 
         # Clone dataset plans
         clone_dataset_plans(src, dst) if attrs[:dataset_plans]

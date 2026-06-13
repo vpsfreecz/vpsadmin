@@ -30,11 +30,32 @@ RSpec.describe Transactions::Vps::SendConfig do
       nil,
       urgent: false,
       args: [vps, dst_node, dst_pool],
-      kwargs: { network_interfaces: true }
+      kwargs: { network_interfaces: true, from_snapshot: 'base' }
     )
 
     payload = JSON.parse(tx.input).fetch('input')
     expect(payload.fetch('node')).to eq(dst_node.ip_addr)
+    expect(payload.fetch('from_snapshot')).to eq('base')
+  end
+
+  it 'serializes snapshot records for deferred nodectld lookup' do
+    vps, dst_pool = build_vps_fixture!
+    snapshot, = create_snapshot!(dataset: vps.dataset_in_pool.dataset, dip: vps.dataset_in_pool, name: 'snap-base')
+
+    tx = described_class.fire_chained(
+      build_transaction_chain!,
+      nil,
+      urgent: false,
+      args: [vps, dst_node, dst_pool],
+      kwargs: { network_interfaces: true, from_snapshot: snapshot }
+    )
+
+    payload = JSON.parse(tx.input).fetch('input')
+    expect(payload.fetch('from_snapshot')).to include(
+      'id' => snapshot.id,
+      'name' => 'snap-base',
+      'confirmed' => snapshot.confirmed.to_s
+    )
   end
 
   it 'uses the destination-side transfer ip when present' do

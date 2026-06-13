@@ -1632,11 +1632,16 @@ RSpec.describe 'VpsAdmin::API::Resources::VPS write actions' do # rubocop:disabl
       expect(json['status']).to be(true)
       expect(Vps.where(id: vps_obj['id'])).to exist
       expect(seen.fetch(:node)).to eq(vps.node)
-      expect(seen.fetch(:input)).to include(start: false, reason: 'spec reason')
+      expect(seen.fetch(:input)).to include(
+        start: false,
+        preserve_backups: true,
+        preserve_backup_history: true,
+        reason: 'spec reason'
+      )
       expect(seen.fetch(:input).fetch(:expiration_date)).to be_within(1).of(expiration)
     end
 
-    it 'passes explicit target node through to replace chain' do
+    it 'passes explicit target node and backup preferences through to replace chain' do
       target_node = create_node!(
         name_prefix: 'spec-replace',
         location: SpecSeed.location,
@@ -1659,6 +1664,8 @@ RSpec.describe 'VpsAdmin::API::Resources::VPS write actions' do # rubocop:disabl
         json_post replace_path(vps.id), vps: {
           node: target_node.id,
           start: true,
+          preserve_backups: false,
+          preserve_backup_history: false,
           reason: 'explicit node'
         }
       end
@@ -1666,7 +1673,12 @@ RSpec.describe 'VpsAdmin::API::Resources::VPS write actions' do # rubocop:disabl
       expect_status(200)
       expect(json['status']).to be(true)
       expect(seen.fetch(:node)).to eq(target_node)
-      expect(seen.fetch(:input)).to include(start: true, reason: 'explicit node')
+      expect(seen.fetch(:input)).to include(
+        start: true,
+        preserve_backups: false,
+        preserve_backup_history: false,
+        reason: 'explicit node'
+      )
     end
   end
 
