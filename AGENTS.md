@@ -7,6 +7,16 @@
 - `nixos/`, `packages/`: NixOS modules and Nix package definitions for deployments.
 - `doc/`: Architecture notes (`overview.mdwn`, `transactions.mdwn`) and operational docs.
 
+## Relationship With vpsAdminOS
+- vpsAdmin commonly drives vpsAdminOS feature needs, but vpsAdminOS remains an
+  independent general-purpose container host platform.
+- When a vpsAdmin feature needs vpsAdminOS changes, keep vpsAdmin-specific
+  policy, database semantics, backup ownership, and orchestration in vpsAdmin
+  or nodectld/libnodectld integration code where possible.
+- Shape osctld/osctl-facing requests as reusable primitives that make sense for
+  non-vpsAdmin users. If a vpsAdmin-specific contract is unavoidable, document
+  the boundary and compatibility expectations in the change.
+
 ## Build, Test, and Development Commands
 - Enter a dev shell with flakes: `nix develop` (or `nix develop .#vpsadmin`) for root actions, and `nix develop .#api` / `nix develop .#webui` / `nix develop .#client` / `nix develop .#console-router` / `nix develop .#nodectl` / `nix develop .#nodectld` / `nix develop .#libnodectld` for component scopes.
 - API: `cd api && bundle install && bundle exec rspec`; lint with `bundle exec rubocop`; local run via `bundle exec rackup -p 9292 config.ru`.
