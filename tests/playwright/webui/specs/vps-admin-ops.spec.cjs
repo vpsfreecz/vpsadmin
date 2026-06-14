@@ -203,7 +203,7 @@ test.describe.serial('VPS admin long operation browser coverage', () => {
     await logout(page, fixtures.admin.username);
   });
 
-  test('admin replace form submits node, expiration, start, reason, and confirm', async ({ page }) => {
+  test('admin replace form submits node, expiration, backup flags, start, reason, and confirm', async ({ page }) => {
     const targetNode = node2();
 
     await login(page, fixtures.admin);
@@ -217,6 +217,8 @@ test.describe.serial('VPS admin long operation browser coverage', () => {
 
     const replacementVpsId = await replaceVps(page, sourceVpsId, targetNode, {
       expirationDate: futureDateTime(30),
+      preserveBackups: false,
+      preserveBackupHistory: false,
       reason: 'Webui admin replace coverage',
       start: true,
     });

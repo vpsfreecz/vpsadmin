@@ -1067,8 +1067,14 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
       resource VpsAdmin::API::Resources::Node, desc: 'Clone to node', value_label: :name
       datetime :expiration_date, desc: 'How long should the original VPS be kept'
       bool :start, desc: 'Start thew new VPS', default: true, fill: true
-      bool :preserve_backups, desc: 'Preserve backups', default: true, fill: true
-      bool :preserve_backup_history, desc: 'Preserve backup history', default: true, fill: true
+      bool :preserve_backups, label: 'Preserve backups',
+                              desc: 'Move existing backup datasets to the replacement VPS',
+                              default: true,
+                              fill: true
+      bool :preserve_backup_history, label: 'Preserve backup history',
+                                     desc: 'Back up a replacement snapshot so future backups can continue incrementally',
+                                     default: true,
+                                     fill: true
       text :reason
     end
 

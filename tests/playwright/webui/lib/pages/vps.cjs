@@ -562,6 +562,14 @@ async function replaceVps(page, vpsId, targetNode, options = {}) {
   await form.locator('select[name="node"]').selectOption(String(targetNode.id));
   await form.locator('input[name="expiration_date"]').fill(options.expirationDate);
   await setCheckbox(form.locator('input[name="start"]'), options.start !== false);
+  await setCheckbox(
+    form.locator('input[type="checkbox"][name="preserve_backups"]'),
+    options.preserveBackups !== false,
+  );
+  await setCheckbox(
+    form.locator('input[type="checkbox"][name="preserve_backup_history"]'),
+    options.preserveBackupHistory !== false,
+  );
   await form.locator('textarea[name="reason"]').fill(options.reason || '');
   await form.locator('input[name="confirm"]').check();
   await submitForm(form, 'Replace');

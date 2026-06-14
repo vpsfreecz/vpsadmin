@@ -1106,6 +1106,8 @@ if (isLoggedIn()) {
                 $params = [
                     'expiration_date' => date('c', strtotime($_POST['expiration_date'])),
                     'start' => isset($_POST['start']),
+                    'preserve_backups' => post_val_issetto('preserve_backups', '1'),
+                    'preserve_backup_history' => post_val_issetto('preserve_backup_history', '1'),
                     'reason' => $_POST['reason'],
                 ];
 

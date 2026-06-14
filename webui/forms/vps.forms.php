@@ -2251,6 +2251,10 @@ function vps_replace_form($vps)
 
     $xtpl->table_title(_('Replace VPS'));
     $xtpl->form_create('?page=adminvps&action=replace&veid=' . $vps->id, 'post');
+    $xtpl->form_set_hidden_fields([
+        'preserve_backups' => '0',
+        'preserve_backup_history' => '0',
+    ]);
 
     $input = $api->vps->replace->getParameters('input');
 
@@ -2258,7 +2262,9 @@ function vps_replace_form($vps)
         'node',
         $input->node,
         post_val('node', $vps->node_id),
-        function ($node) { return $node->domain_name; }
+        function ($node) {
+            return $node->domain_name;
+        }
     );
     api_param_to_form(
         'expiration_date',
@@ -2266,6 +2272,8 @@ function vps_replace_form($vps)
         post_val('expiration_date', date('Y-m-d H:i:s', strtotime('+2 months')))
     );
     api_param_to_form('start', $input->start);
+    api_param_to_form('preserve_backups', $input->preserve_backups);
+    api_param_to_form('preserve_backup_history', $input->preserve_backup_history);
     api_param_to_form('reason', $input->reason);
 
     $xtpl->form_add_checkbox(_('Confirm') . ':', 'confirm', '1');
