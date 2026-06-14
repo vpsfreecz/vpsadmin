@@ -172,10 +172,10 @@
     platforms = [ ];
     source = {
       remotes = [ "https://rubygems.org" ];
-      sha256 = "0b65lw8a5s0x7g6c4h0mfzhqn83nwaql2m2hwqii321clvvh8lfz";
+      sha256 = "12nj07lblrdvzbbjvzkg4xi6r4npi3sm9mdywj6zxgwvgq61van3";
       type = "gem";
     };
-    version = "0.5.10.2";
+    version = "0.5.10.3";
   };
   coderay = {
     groups = [
