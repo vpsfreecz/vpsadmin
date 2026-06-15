@@ -136,6 +136,8 @@ testLib.makeTests [
   "vps/replace-same-node"
   "vps/replace-remote"
   "vps/replace-no-start"
+  "vps/replace-with-backups"
+  "vps/replace-with-backups-remote"
   "vps/replace-with-descendants-and-mounts"
   "services-up"
   "webui"

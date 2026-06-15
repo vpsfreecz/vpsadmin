@@ -59,7 +59,7 @@ import ../../make-test.nix (
             filesystem: primary_pool_fs,
             role: 'hypervisor'
           )
-          dst_pool_fs = 'tank/ct-replace-remote'
+          dst_pool_fs = primary_pool_fs
           dst_pool = create_pool(
             services,
             node_id: node2_id,

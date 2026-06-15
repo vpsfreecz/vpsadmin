@@ -1,5 +1,6 @@
-DatasetInPool.connect_hook(:create) do |ret, dataset_in_pool|
+DatasetInPool.connect_hook(:create) do |ret, dataset_in_pool, purpose: nil, preserve_existing_backups: false, **|
   next ret unless dataset_in_pool.pool.role == 'hypervisor'
+  next ret if purpose == :vps_replace && preserve_existing_backups
 
   backup_pool = Pool.where(role: 'backup', is_open: true).where('max_datasets > 0').take
   next ret if backup_pool.nil?

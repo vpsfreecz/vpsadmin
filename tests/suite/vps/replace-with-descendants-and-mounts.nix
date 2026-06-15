@@ -60,7 +60,10 @@ import ../../make-test.nix (
             filesystem: primary_pool_fs,
             role: 'hypervisor'
           )
-          dst_pool_fs = 'tank/ct-replace-desc'
+          # osctld remote receive places containers under its pool layout. Keep
+          # the vpsAdmin pool filesystem aligned with it so replacement
+          # snapshot checks verify the final on-disk path.
+          dst_pool_fs = primary_pool_fs
           dst_pool = create_pool(
             services,
             node_id: node2_id,

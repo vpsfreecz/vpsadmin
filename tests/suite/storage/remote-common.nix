@@ -99,10 +99,12 @@
       puts JSON.dump(
         create_snapshots: Transactions::Storage::CreateSnapshots.t_type,
         create_tree: Transactions::Storage::CreateTree.t_type,
+        destroy_dataset: Transactions::Storage::DestroyDataset.t_type,
         storage_set_dataset: Transactions::Storage::SetDataset.t_type,
         recv: Transactions::Storage::Recv.t_type,
         send: Transactions::Storage::Send.t_type,
         recv_check: Transactions::Storage::RecvCheck.t_type,
+        rename_dataset: Transactions::Storage::RenameDataset.t_type,
         download_snapshot: Transactions::Storage::DownloadSnapshot.t_type,
         remove_download: Transactions::Storage::RemoveDownload.t_type,
         rsync_dataset: Transactions::Storage::RsyncDataset.t_type,
@@ -601,6 +603,28 @@
     SQL
   end
 
+  def snapshot_row_by_label(services, dataset_id:, label:)
+    row = services.mariadb_json_rows(sql: <<~SQL).first
+      SELECT JSON_OBJECT(
+        'id', id,
+        'dataset_id', dataset_id,
+        'name', name,
+        'label', label,
+        'confirmed', confirmed,
+        'created_at', created_at
+      )
+      FROM snapshots
+      WHERE dataset_id = #{Integer(dataset_id)}
+        AND label = #{label.inspect}
+      ORDER BY id DESC
+      LIMIT 1
+    SQL
+
+    raise "snapshot label #{label.inspect} not found on dataset #{dataset_id}" unless row
+
+    row
+  end
+
   def head_tree_row(services, dip_id)
     services.mariadb_json_rows(sql: <<~SQL).first
       SELECT JSON_OBJECT(
@@ -713,6 +737,22 @@
           .grep(/@/)
           .map { |name| name.split('@', 2).last }
           .sort
+  end
+
+  def expect_dip_snapshots_match_zfs(services, node, dip_id:, dataset_path:, diagnostic: {})
+    db_names = snapshot_rows_for_dip(services, dip_id).map do |row|
+      row.fetch('name')
+    end.sort
+    zfs_names = zfs_snapshot_names(node, dataset_path)
+
+    expect(zfs_names).to eq(db_names), diagnostic.merge(
+      dip_id: dip_id,
+      dataset_path: dataset_path,
+      db_snapshot_names: db_names,
+      zfs_snapshot_names: zfs_names
+    ).inspect
+
+    db_names
   end
 
   def backup_topology_report(services, backup_node:, dst_dip_id:, backup_dataset_path:)
@@ -2184,10 +2224,14 @@
     node_id: nil,
     start: true,
     expiration_date: nil,
-    reason: nil
+    reason: nil,
+    preserve_backups: nil,
+    preserve_backup_history: nil
   )
     node_expr = node_id.nil? ? 'vps.node' : "Node.find(#{Integer(node_id)})"
     expiration_expr = expiration_date.nil? ? 'nil' : "Time.parse(#{expiration_date.inspect})"
+    preserve_backups_expr = preserve_backups.nil? ? 'nil' : (preserve_backups ? 'true' : 'false')
+    preserve_expr = preserve_backup_history.nil? ? 'nil' : (preserve_backup_history ? 'true' : 'false')
 
     services.api_ruby_json(code: <<~RUBY)
       #{api_session_prelude(admin_user_id)}
@@ -2197,7 +2241,9 @@
       attrs = {
         start: #{start ? 'true' : 'false'},
         expiration_date: #{expiration_expr},
-        reason: #{reason.inspect}
+        reason: #{reason.inspect},
+        preserve_backups: #{preserve_backups_expr},
+        preserve_backup_history: #{preserve_expr}
       }
       attrs.delete_if { |_k, v| v.nil? }
 
