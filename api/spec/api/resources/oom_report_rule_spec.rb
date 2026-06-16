@@ -154,6 +154,12 @@ RSpec.describe 'VpsAdmin::API::Resources::OomReportRule' do
     expect(last_response.status).to eq(code), message
   end
 
+  def expect_deprecated_write
+    expect_status(200)
+    expect(json['status']).to be(false)
+    expect(response_message).to include('notification event routes')
+  end
+
   describe 'API description' do
     it 'includes oom_report_rule endpoints' do
       scopes = EndpointInventory.scopes_for_version(self, api_version)
@@ -292,15 +298,14 @@ RSpec.describe 'VpsAdmin::API::Resources::OomReportRule' do
       expect(json['status']).to be(false)
     end
 
-    it 'allows user to create for own vps' do
+    it 'rejects create because OOM report rules moved to event routes' do
+      count_before = OomReportRule.count
+
       as(SpecSeed.user) { json_post index_path, oom_report_rule: payload }
 
-      expect_status(200)
-      expect(json['status']).to be(true)
-
-      record = OomReportRule.find_by!(vps: user_vps, cgroup_pattern: payload[:cgroup_pattern])
-      expect(record.action).to eq('notify')
-      expect(record.hit_count).to eq(0)
+      expect_deprecated_write
+      expect(OomReportRule.count).to eq(count_before)
+      expect(OomReportRule.find_by(vps: user_vps, cgroup_pattern: payload[:cgroup_pattern])).to be_nil
     end
 
     it 'prevents user from creating for other vps' do
@@ -316,14 +321,16 @@ RSpec.describe 'VpsAdmin::API::Resources::OomReportRule' do
       expect(OomReportRule.count).to eq(count_before)
     end
 
-    it 'allows admin to create for other vps' do
+    it 'rejects admin create because OOM report rules moved to event routes' do
+      count_before = OomReportRule.count
+
       as(SpecSeed.admin) do
         json_post index_path, oom_report_rule: payload.merge(vps: other_vps.id, cgroup_pattern: 'other/new')
       end
 
-      expect_status(200)
-      expect(json['status']).to be(true)
-      expect(OomReportRule.find_by(vps: other_vps, cgroup_pattern: 'other/new')).not_to be_nil
+      expect_deprecated_write
+      expect(OomReportRule.count).to eq(count_before)
+      expect(OomReportRule.find_by(vps: other_vps, cgroup_pattern: 'other/new')).to be_nil
     end
 
     it 'returns validation errors for missing action' do
@@ -358,18 +365,21 @@ RSpec.describe 'VpsAdmin::API::Resources::OomReportRule' do
       expect(response_errors.keys.map(&:to_s)).to include('action')
     end
 
-    it 'rejects too long cgroup_pattern' do
+    it 'rejects too long cgroup_pattern before the deprecated write path' do
+      count_before = OomReportRule.count
+
       as(SpecSeed.user) do
         json_post index_path, oom_report_rule: payload.merge(cgroup_pattern: 'a' * 256)
       end
 
       expect_status(200)
       expect(json['status']).to be(false)
-      expect(response_message).to match(/create failed|input parameters not valid/)
+      expect(response_message).to include('input parameters not valid')
       expect(response_errors.keys.map(&:to_s)).to include('cgroup_pattern')
+      expect(OomReportRule.count).to eq(count_before)
     end
 
-    it 'rejects create when rule limit is exceeded' do
+    it 'rejects create as a deprecated write before checking the legacy rule limit' do
       now = Time.now
       rows = Array.new(101) do |i|
         {
@@ -387,7 +397,7 @@ RSpec.describe 'VpsAdmin::API::Resources::OomReportRule' do
 
       expect_status(200)
       expect(json['status']).to be(false)
-      expect(response_message).to include('rule limit reached')
+      expect(response_message).to include('notification event routes')
     end
   end
 
@@ -407,30 +417,28 @@ RSpec.describe 'VpsAdmin::API::Resources::OomReportRule' do
       expect(json['status']).to be(false)
     end
 
-    it 'allows user to update own rule' do
+    it 'rejects update because OOM report rules moved to event routes' do
       as(SpecSeed.user) { json_put show_path(user_rule_a.id), oom_report_rule: payload }
 
-      expect_status(200)
-      expect(json['status']).to be(true)
+      expect_deprecated_write
 
       user_rule_a.reload
-      expect(user_rule_a.action).to eq('ignore')
-      expect(user_rule_a.cgroup_pattern).to eq('user/updated')
+      expect(user_rule_a.action).to eq('notify')
+      expect(user_rule_a.cgroup_pattern).to eq('user/a')
       expect(user_rule_a.hit_count).to eq(0)
     end
 
-    it 'does not let users reassign owned rules to another VPS' do
+    it 'rejects update with a VPS reassignment parameter without changing the rule' do
       as(SpecSeed.user) do
         json_put show_path(user_rule_a.id), oom_report_rule: payload.merge(vps: other_vps.id)
       end
 
-      expect_status(200)
-      expect(json['status']).to be(true)
+      expect_deprecated_write
 
       user_rule_a.reload
       expect(user_rule_a.vps_id).to eq(user_vps.id)
-      expect(user_rule_a.action).to eq('ignore')
-      expect(user_rule_a.cgroup_pattern).to eq('user/updated')
+      expect(user_rule_a.action).to eq('notify')
+      expect(user_rule_a.cgroup_pattern).to eq('user/a')
       expect(user_rule_a.hit_count).to eq(0)
     end
 
@@ -441,15 +449,14 @@ RSpec.describe 'VpsAdmin::API::Resources::OomReportRule' do
       expect(json['status']).to be(false)
     end
 
-    it 'allows admin to update other user rule' do
+    it 'rejects admin update because OOM report rules moved to event routes' do
       as(SpecSeed.admin) { json_put show_path(other_rule.id), oom_report_rule: payload }
 
-      expect_status(200)
-      expect(json['status']).to be(true)
+      expect_deprecated_write
 
       other_rule.reload
-      expect(other_rule.action).to eq('ignore')
-      expect(other_rule.cgroup_pattern).to eq('user/updated')
+      expect(other_rule.action).to eq('notify')
+      expect(other_rule.cgroup_pattern).to eq('other/a')
       expect(other_rule.hit_count).to eq(0)
     end
 
@@ -470,12 +477,11 @@ RSpec.describe 'VpsAdmin::API::Resources::OomReportRule' do
       expect(json['status']).to be(false)
     end
 
-    it 'allows user to delete own rule' do
+    it 'rejects delete because OOM report rules moved to event routes' do
       as(SpecSeed.user) { json_delete show_path(user_rule_a.id) }
 
-      expect_status(200)
-      expect(json['status']).to be(true)
-      expect(OomReportRule.find_by(id: user_rule_a.id)).to be_nil
+      expect_deprecated_write
+      expect(OomReportRule.find_by(id: user_rule_a.id)).to eq(user_rule_a)
     end
 
     it 'returns 404 when deleting other user rule' do
@@ -485,12 +491,11 @@ RSpec.describe 'VpsAdmin::API::Resources::OomReportRule' do
       expect(json['status']).to be(false)
     end
 
-    it 'allows admin to delete other user rule' do
+    it 'rejects admin delete because OOM report rules moved to event routes' do
       as(SpecSeed.admin) { json_delete show_path(other_rule.id) }
 
-      expect_status(200)
-      expect(json['status']).to be(true)
-      expect(OomReportRule.find_by(id: other_rule.id)).to be_nil
+      expect_deprecated_write
+      expect(OomReportRule.find_by(id: other_rule.id)).to eq(other_rule)
     end
 
     it 'returns 404 for missing id' do

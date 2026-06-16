@@ -119,6 +119,7 @@ class AddEvents < ActiveRecord::Migration[8.1]
     add_index :event_deliveries, :transaction_id
 
     backfill_default_routes
+    backfill_oom_report_routes
   end
 
   def down
@@ -193,5 +194,160 @@ class AddEvents < ActiveRecord::Migration[8.1]
         FROM notification_receivers
       SQL
     end
+  end
+
+  def backfill_oom_report_routes
+    return unless table_exists?(:oom_report_rules)
+    return unless table_exists?(:vpses)
+
+    say_with_time('Creating event routes from OOM report rules') do
+      ignored_receivers = backfill_oom_ignored_receivers
+      default_receivers = default_receiver_ids
+      positions = Hash.new(100)
+
+      select_all(<<~SQL.squish).each do |rule|
+        SELECT oom_report_rules.*, vpses.user_id
+        FROM oom_report_rules
+        INNER JOIN vpses ON vpses.id = oom_report_rules.vps_id
+        ORDER BY vpses.user_id, oom_report_rules.id
+      SQL
+        user_id = rule.fetch('user_id').to_i
+        receiver_id =
+          if rule.fetch('action').to_i == 1
+            ignored_receivers.fetch(user_id)
+          else
+            default_receivers[user_id]
+          end
+        next unless receiver_id
+
+        positions[user_id] += 1
+        route_id = create_oom_report_route(
+          user_id:,
+          receiver_id:,
+          rule:,
+          position: positions[user_id]
+        )
+
+        create_oom_report_matcher(
+          route_id:,
+          field: 'vps_id',
+          operator: '==',
+          value: rule.fetch('vps_id').to_s
+        )
+        create_oom_report_matcher(
+          route_id:,
+          field: 'parameters.cgroup',
+          operator: '=*',
+          value: rule.fetch('cgroup_pattern')
+        )
+      end
+    end
+  end
+
+  def backfill_oom_ignored_receivers
+    ret = {}
+
+    select_all(<<~SQL.squish).each do |row|
+      SELECT DISTINCT vpses.user_id
+      FROM oom_report_rules
+      INNER JOIN vpses ON vpses.id = oom_report_rules.vps_id
+      WHERE oom_report_rules.action = 1
+    SQL
+      user_id = row.fetch('user_id').to_i
+      ret[user_id] = insert_row(
+        'notification_receivers',
+        user_id:,
+        label: 'Ignored OOM reports',
+        description: 'Created from OOM report ignore rules',
+        enabled: true,
+        mute: true,
+        created_at: current_timestamp,
+        updated_at: current_timestamp
+      )
+    end
+
+    ret
+  end
+
+  def default_receiver_ids
+    ret = {}
+
+    select_all(<<~SQL.squish).each do |row|
+      SELECT user_id, notification_receiver_id
+      FROM event_routes
+      WHERE parent_id IS NULL
+        AND label = 'Default route'
+        AND event_type IS NULL
+        AND event_type_pattern IS NULL
+    SQL
+      ret[row.fetch('user_id').to_i] = row.fetch('notification_receiver_id').to_i
+    end
+
+    ret
+  end
+
+  def create_oom_report_route(user_id:, receiver_id:, rule:, position:)
+    action = rule.fetch('action').to_i == 1 ? 'ignore' : 'notify'
+    pattern = rule.fetch('cgroup_pattern').to_s
+
+    insert_row(
+      'event_routes',
+      user_id:,
+      parent_id: nil,
+      notification_receiver_id: receiver_id,
+      label: "OOM report #{action} #{pattern}"[0, 255],
+      position:,
+      enabled: true,
+      event_type: 'vps.oom_report',
+      event_type_pattern: nil,
+      continue: false,
+      hit_count: 0,
+      created_at: current_timestamp,
+      updated_at: current_timestamp
+    )
+  end
+
+  def create_oom_report_matcher(route_id:, field:, operator:, value:)
+    insert_row(
+      'event_route_matchers',
+      event_route_id: route_id,
+      field:,
+      operator:,
+      value:,
+      created_at: current_timestamp,
+      updated_at: current_timestamp
+    )
+  end
+
+  def insert_row(table, attrs)
+    quoted_columns = attrs.keys.map { |name| quote_column_name(name) }.join(', ')
+    quoted_values = attrs.values.map { |value| quote(value) }.join(', ')
+
+    execute <<~SQL.squish
+      INSERT INTO #{quote_table_name(table)} (#{quoted_columns})
+      VALUES (#{quoted_values})
+    SQL
+
+    connection.select_value('SELECT LAST_INSERT_ID()').to_i
+  end
+
+  def select_all(sql)
+    connection.select_all(sql)
+  end
+
+  def quote(value)
+    connection.quote(value)
+  end
+
+  def quote_column_name(name)
+    connection.quote_column_name(name)
+  end
+
+  def quote_table_name(name)
+    connection.quote_table_name(name)
+  end
+
+  def current_timestamp
+    @current_timestamp ||= Time.now.utc
   end
 end

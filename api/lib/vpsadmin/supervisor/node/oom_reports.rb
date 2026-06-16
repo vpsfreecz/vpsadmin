@@ -56,12 +56,23 @@ module VpsAdmin::Supervisor
       counter = ::OomReportCounter.find_or_create_by!(vps:, cgroup:)
       ::OomReportCounter.increment_counter(:counter, counter.id, by: count)
 
-      rule = evaluate_rules(vps, full_cgroup)
+      rule = nil
+      ignored = nil
+      routed = evaluate_event_routes(vps, full_cgroup, report)
 
-      if rule
-        ::OomReportRule.increment_counter(:hit_count, rule.id)
+      if routed
+        ignored = routed.suppressed_by_mute?
+
       else
-        ::Vps.increment_counter(:implicit_oom_report_rule_hit_count, vps.id)
+        rule = evaluate_rules(vps, full_cgroup)
+
+        if rule
+          ::OomReportRule.increment_counter(:hit_count, rule.id)
+        else
+          ::Vps.increment_counter(:implicit_oom_report_rule_hit_count, vps.id)
+        end
+
+        ignored = rule&.action == 'ignore'
       end
 
       new_report = ::OomReport.create!(
@@ -74,7 +85,7 @@ module VpsAdmin::Supervisor
         count:,
         created_at: Time.at(report.fetch('time')),
         processed: true,
-        ignored: rule&.action == 'ignore',
+        ignored:,
         oom_report_rule: rule
       )
 
@@ -171,6 +182,30 @@ module VpsAdmin::Supervisor
       vps.oom_report_rules.order('id').detect do |rule|
         File.fnmatch?(rule.cgroup_pattern, full_cgroup, File::FNM_PATHNAME | File::FNM_EXTGLOB)
       end
+    end
+
+    def evaluate_event_routes(vps, full_cgroup, report)
+      return unless vps.user.event_routes.where(event_type: 'vps.oom_report').exists?
+
+      count = report.fetch('count')
+
+      VpsAdmin::API::Events.plan(
+        'vps.oom_report',
+        user: vps.user,
+        vps:,
+        subject: "OOM report for VPS ##{vps.id}",
+        summary: "vpsAdmin recorded #{count} out-of-memory events",
+        parameters: {
+          cgroup: full_cgroup,
+          cgroups: [full_cgroup],
+          count:,
+          oom_count: count,
+          killed_name: report.fetch('killed_name'),
+          report_count: 1,
+          selected_report_count: 1,
+          selected_oom_count: count
+        }
+      )
     end
   end
 end

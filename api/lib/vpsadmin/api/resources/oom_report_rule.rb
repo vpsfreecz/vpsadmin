@@ -1,6 +1,9 @@
 module VpsAdmin::API::Resources
   class OomReportRule < HaveAPI::Resource
-    desc 'Manage VPS OOM report rules'
+    LEGACY_WRITE_DISABLED_MESSAGE =
+      'OOM report rules have moved to notification event routes'.freeze
+
+    desc 'Inspect deprecated VPS OOM report rules'
     model ::OomReportRule
 
     params(:common) do
@@ -69,7 +72,7 @@ module VpsAdmin::API::Resources
     class Create < HaveAPI::Actions::Default::Create
       include VpsAdmin::API::Lifetimes::ActionHelpers
 
-      desc 'Create a new OOM report rule'
+      desc 'Deprecated; configure vps.oom_report event routes instead'
 
       input do
         use :common
@@ -93,21 +96,14 @@ module VpsAdmin::API::Resources
         end
 
         object_state_check!(input[:vps], input[:vps].user)
-
-        if input[:vps].oom_report_rules.count > 100
-          error!('rule limit reached, refusing to add another one')
-        end
-
-        self.class.model.create!(input)
-      rescue ActiveRecord::RecordInvalid => e
-        error!('create failed', e.record.errors.to_hash)
+        error!(::VpsAdmin::API::Resources::OomReportRule::LEGACY_WRITE_DISABLED_MESSAGE)
       end
     end
 
     class Update < HaveAPI::Actions::Default::Update
       include VpsAdmin::API::Lifetimes::ActionHelpers
 
-      desc 'Update OOM report rule'
+      desc 'Deprecated; configure vps.oom_report event routes instead'
 
       input do
         use :common, include: %i[action cgroup_pattern]
@@ -126,16 +122,14 @@ module VpsAdmin::API::Resources
       def exec
         rule = self.class.model.joins(:vps).find_by!(with_restricted(id: path_params['oom_report_rule_id']))
         object_state_check!(rule.vps, rule.vps.user)
-
-        rule.update!(input)
-        rule
+        error!(::VpsAdmin::API::Resources::OomReportRule::LEGACY_WRITE_DISABLED_MESSAGE)
       end
     end
 
     class Delete < HaveAPI::Actions::Default::Delete
       include VpsAdmin::API::Lifetimes::ActionHelpers
 
-      desc 'Delete OOM report rule'
+      desc 'Deprecated; configure vps.oom_report event routes instead'
 
       authorize do |u|
         allow if u.role == :admin
@@ -146,9 +140,7 @@ module VpsAdmin::API::Resources
       def exec
         rule = self.class.model.joins(:vps).find_by!(with_restricted(id: path_params['oom_report_rule_id']))
         object_state_check!(rule.vps, rule.vps.user)
-
-        rule.destroy!
-        ok!
+        error!(::VpsAdmin::API::Resources::OomReportRule::LEGACY_WRITE_DISABLED_MESSAGE)
       end
     end
   end

@@ -278,6 +278,34 @@ RSpec.describe EventRoute do
     expect(event.event_deliveries.sole.target_value).to eq('audit@example.test')
   end
 
+  it 'matches glob sigil operators' do
+    receiver = create_receiver!(
+      action: {
+        action: :email,
+        target_kind: :custom,
+        target_value: 'audit@example.test'
+      }
+    )
+    route = create_route!(receiver:, event_type: 'vps.oom_report')
+    route.event_route_matchers.create!(
+      field: 'parameters.cgroup',
+      operator: '=*',
+      value: '/user.slice/*.scope'
+    )
+
+    event = VpsAdmin::API::Events.emit!(
+      'vps.oom_report',
+      user: SpecSeed.user,
+      subject: 'Spec OOM',
+      parameters: {
+        'cgroup' => '/user.slice/a.scope'
+      }
+    )
+
+    expect(event.reload).to be_routed_routing_state
+    expect(event.event_deliveries.sole.target_value).to eq('audit@example.test')
+  end
+
   it 'rejects events with a VPS that belongs to another user' do
     vps = build_standalone_vps_fixture(user: SpecSeed.other_user).fetch(:vps)
 

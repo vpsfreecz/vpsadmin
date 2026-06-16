@@ -33,7 +33,15 @@ module VpsAdmin::API
       :routing_state,
       :matched_event_route,
       :deliveries
-    )
+    ) do
+      def suppressed_by_mute?
+        routing_state == 'suppressed' &&
+          deliveries.any? do |delivery|
+            receiver = delivery.notification_receiver
+            receiver&.enabled? && receiver.mute?
+          end
+      end
+    end
 
     @types = {}
 
@@ -235,6 +243,29 @@ module VpsAdmin::API
       types.any? { |type| type.parameters.has_key?(name.to_sym) || type.parameters.has_key?(name) }
     end
 
+    def plan(event_type, user: nil, vps: nil, subject: nil, summary: nil,
+             parameters: {}, severity: nil, category: nil, ip_addr: nil)
+      type = type_for(event_type)
+      if user && vps && vps.user_id != user.id
+        raise ArgumentError, 'user and VPS owner do not match'
+      end
+
+      owner = user || vps&.user
+      event = ::Event.new(
+        user: owner,
+        vps:,
+        event_type: event_type.to_s,
+        category: category || type&.category || 'general',
+        severity: severity || type&.severity || 'info',
+        subject: subject || type&.label || event_type.to_s,
+        summary:,
+        parameters: parameters || {},
+        ip_addr:
+      )
+
+      Router.new(event).plan
+    end
+
     def emit!(event_type, user: nil, vps: nil, source: nil, source_class: nil,
               source_id: nil, subject: nil, summary: nil, parameters: {},
               severity: nil, category: nil, ip_addr: nil, route: true)
@@ -279,9 +310,7 @@ module VpsAdmin::API
         event.class.transaction do
           event.lock!
           event.event_deliveries.delete_all
-          ensure_default_routes
-
-          result = plan_route
+          result = plan
 
           event.update!(
             routing_state: result.routing_state,
@@ -294,6 +323,11 @@ module VpsAdmin::API
         end
 
         event
+      end
+
+      def plan
+        ensure_default_routes
+        plan_route
       end
 
       protected

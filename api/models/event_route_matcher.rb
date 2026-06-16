@@ -30,6 +30,8 @@ class EventRouteMatcher < ApplicationRecord
     '!=' => '!=',
     '=~' => '=~',
     '!~' => '!~',
+    '=*' => '=*',
+    '!*' => '!*',
     '>' => '>',
     '>=' => '>=',
     '<' => '<',
@@ -38,7 +40,9 @@ class EventRouteMatcher < ApplicationRecord
 
   OPERATORS = OPERATOR_LABELS.keys.freeze
   REGEXP_OPERATORS = %w[=~ !~].freeze
+  GLOB_OPERATORS = %w[=* !*].freeze
   NUMERIC_OPERATORS = %w[> >= < <=].freeze
+  GLOB_FLAGS = File::FNM_PATHNAME | File::FNM_EXTGLOB
   REGEXP_TIMEOUT = 0.05
 
   belongs_to :event_route
@@ -86,6 +90,10 @@ class EventRouteMatcher < ApplicationRecord
       actual && actual.to_s.match?(regexp_value)
     when '!~'
       actual.nil? || !actual.to_s.match?(regexp_value)
+    when '=*'
+      actual && File.fnmatch?(expected, actual.to_s, GLOB_FLAGS)
+    when '!*'
+      actual.nil? || !File.fnmatch?(expected, actual.to_s, GLOB_FLAGS)
     when '>'
       numeric_value(actual) > numeric_value(expected)
     when '>='
