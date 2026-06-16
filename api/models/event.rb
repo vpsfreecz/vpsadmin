@@ -24,6 +24,8 @@ class Event < ApplicationRecord
   belongs_to :matched_event_route, class_name: 'EventRoute', optional: true
   has_many :event_deliveries, dependent: :delete_all
 
+  attr_accessor :runtime_email_vars
+
   enum :severity, %i[info warning error critical], suffix: true
   enum :routing_state, %i[pending routed suppressed failed], suffix: true
 

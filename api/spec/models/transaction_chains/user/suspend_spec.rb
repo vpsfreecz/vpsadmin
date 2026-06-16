@@ -23,6 +23,9 @@ RSpec.describe TransactionChains::User::Suspend do
       Transactions::DnsServerZone::DeleteRecords
     )
     expect(MailLog.joins(:mail_template).exists?(mail_templates: { name: 'user_suspend' })).to be(true)
+    event = expect_routed_event!('user.suspended', user: fixture.fetch(:user))
+    expect(event.source_class).to eq('ObjectState')
+    expect(event.parameters).to include('state' => 'suspended')
     expect(confirmations_for(chain).any? do |row|
       row.class_name == 'DnsRecord' &&
         row.row_pks == { 'id' => fixture.fetch(:user_record).id } &&

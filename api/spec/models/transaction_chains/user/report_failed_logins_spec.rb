@@ -32,6 +32,31 @@ RSpec.describe TransactionChains::User::ReportFailedLogins do
       ['User', user_b.id]
     )
     expect(tx_classes(chain).count(Transactions::Mail::Send)).to eq(2)
+    event_a = expect_routed_event!('user.failed_logins', user: user_a)
+    event_b = expect_routed_event!('user.failed_logins', user: user_b)
+    expect(event_a.parameters).to include(
+      'attempt_count' => 2,
+      'group_count' => 1,
+      'attempt_group_ids' => [attempts_a.map(&:id)]
+    )
+    expect(event_b.parameters).to include(
+      'attempt_count' => 1,
+      'group_count' => 1,
+      'attempt_group_ids' => [attempts_b.map(&:id)]
+    )
     expect(UserFailedLogin.where(id: attempts_a.concat(attempts_b).map(&:id)).where(reported_at: nil)).to be_empty
+  end
+
+  it 'does not mark attempts reported when local routed e-mail rendering fails' do
+    user = create_lifecycle_user!
+    attempt = create_failed_login!(user:)
+
+    allow(MailTemplate).to receive(:send_mail!).and_raise(ArgumentError, 'render failed')
+
+    expect do
+      described_class.fire(user => [[attempt]])
+    end.to raise_error(RuntimeError, /failed-login notification was not queued/)
+
+    expect(attempt.reload.reported_at).to be_nil
   end
 end

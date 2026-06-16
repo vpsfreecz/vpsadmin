@@ -4,13 +4,22 @@ module TransactionChains
 
     def link_chain(user, target, _state, log)
       if target
-        mail(:user_resume, {
-               user:,
-               vars: {
-                 user:,
-                 state: log
-               }
-             })
+        route_event!(
+          'user.resumed',
+          user:,
+          source: log,
+          subject: 'User account resumed',
+          summary: "User #{user.login} was resumed",
+          parameters: {
+            state: log.state || 'active',
+            reason: log.reason,
+            expiration_date: log.expiration_date&.iso8601
+          },
+          email_vars: {
+            user:,
+            state: log
+          }
+        )
       end
 
       user.vpses.where(object_state: ::Vps.object_states[:active]).each do |vps|

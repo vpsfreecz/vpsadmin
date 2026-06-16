@@ -225,6 +225,18 @@ module UserLifecycleChainSpecHelpers
       created_at: created_at
     )
   end
+
+  def expect_routed_event!(event_type, user:)
+    event = Event.where(event_type:, user:).order(:id).last
+    expect(event).to be_present
+    expect(event).to be_routed_routing_state
+
+    delivery = event.event_deliveries.sole
+    expect(delivery).to be_queued_state
+    expect(delivery.mail_log).to be_present
+
+    event
+  end
 end
 
 RSpec.configure do |config|

@@ -475,6 +475,42 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
     expect(Event.where(subject: 'nope')).to be_empty
   end
 
+  it 'does not rehydrate other users objects from test-event parameters' do
+    other_attempt = create_failed_login!(user: SpecSeed.other_user)
+    other_totp = UserTotpDevice.create!(
+      user: SpecSeed.other_user,
+      label: 'Other TOTP',
+      secret: ROTP::Base32.random_base32,
+      recovery_code: 'recovery',
+      confirmed: true,
+      enabled: true
+    )
+
+    as(SpecSeed.user) do
+      json_post event_test_path, event: {
+        event_type: 'user.failed_logins',
+        subject: 'foreign failed login ids',
+        parameters_json: JSON.dump(attempt_group_ids: [[other_attempt.id]])
+      }
+    end
+
+    expect_status(200)
+    failed_logins_event = Event.find(event_obj['id'])
+    expect(VpsAdmin::API::Events.email_vars_for(failed_logins_event).fetch(:attempt_groups)).to eq([[]])
+
+    as(SpecSeed.user) do
+      json_post event_test_path, event: {
+        event_type: 'user.totp_recovery_code_used',
+        subject: 'foreign totp id',
+        parameters_json: JSON.dump(totp_device_id: other_totp.id)
+      }
+    end
+
+    expect_status(200)
+    totp_event = Event.find(event_obj['id'])
+    expect(VpsAdmin::API::Events.email_vars_for(totp_event).fetch(:totp_device)).to be_nil
+  end
+
   it 'rejects oversized test-event parameters' do
     expect do
       as(SpecSeed.user) do

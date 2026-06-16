@@ -365,6 +365,34 @@ RSpec.describe EventRoute do
     )
   end
 
+  it 'backfills account role recipients for user account events' do
+    reset_advanced_mail_settings!
+    UserMailRoleRecipient.create!(
+      user: SpecSeed.user,
+      role: 'account',
+      to: 'account-role@example.test'
+    )
+
+    run_events_migration_backfill!
+
+    event = VpsAdmin::API::Events.emit!(
+      'user.suspended',
+      user: SpecSeed.user,
+      subject: 'Spec suspended user',
+      parameters: {
+        'state' => 'suspended'
+      }
+    )
+    delivery = event.event_deliveries.sole
+
+    expect(event.reload).to be_routed_routing_state
+    expect(event.matched_event_route.position).to be >= 1_000
+    expect(event.matched_event_route.label).to eq('Account management e-mail for User account suspended')
+    expect(delivery.target_kind).to eq('custom')
+    expect(delivery.target_value).to eq('account-role@example.test')
+    expect(delivery.template_name).to eq('user_suspend')
+  end
+
   it 'backfills disabled OOM template recipients only for notification events' do
     reset_advanced_mail_settings!
     template = event_mail_template!('vps_oom_report')

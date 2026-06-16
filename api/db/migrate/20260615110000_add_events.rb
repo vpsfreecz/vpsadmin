@@ -3,6 +3,69 @@ class AddEvents < ActiveRecord::Migration[8.1]
   ADVANCED_MAIL_ROLE_ROUTE_POSITION = 1_000
   ADVANCED_MAIL_EVENT_TEMPLATES = [
     {
+      event_type: 'user.created',
+      template_name: 'user_create',
+      label: 'User account created',
+      roles: %w[account],
+      matchers: []
+    },
+    {
+      event_type: 'user.suspended',
+      template_name: 'user_suspend',
+      label: 'User account suspended',
+      roles: %w[account],
+      matchers: []
+    },
+    {
+      event_type: 'user.soft_deleted',
+      template_name: 'user_soft_delete',
+      label: 'User account disabled',
+      roles: %w[account],
+      matchers: []
+    },
+    {
+      event_type: 'user.resumed',
+      template_name: 'user_resume',
+      label: 'User account resumed',
+      roles: %w[account],
+      matchers: []
+    },
+    {
+      event_type: 'user.revived',
+      template_name: 'user_revive',
+      label: 'User account restored',
+      roles: %w[account],
+      matchers: []
+    },
+    {
+      event_type: 'user.new_login',
+      template_name: 'user_new_login',
+      label: 'New sign-in',
+      roles: %w[admin],
+      matchers: []
+    },
+    {
+      event_type: 'user.new_token',
+      template_name: 'user_new_token',
+      label: 'New access token',
+      roles: %w[admin],
+      matchers: []
+    },
+    {
+      event_type: 'user.totp_recovery_code_used',
+      template_name: 'user_totp_recovery_code_used',
+      label: 'TOTP recovery code used',
+      roles: %w[account],
+      matchers: []
+    },
+    {
+      event_type: 'user.failed_logins',
+      template_name: 'user_failed_logins',
+      label: 'Failed sign-in report',
+      roles: %w[account],
+      matchers: []
+    },
+    {
       event_type: 'vps.incident_report',
       template_name: 'vps_incident_report',
       label: 'Incident report',

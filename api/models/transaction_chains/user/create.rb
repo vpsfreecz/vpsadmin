@@ -110,12 +110,24 @@ module TransactionChains
         end
       end
 
-      mail(:user_create, {
-             user:,
-             vars: {
-               user:
-             }
-           })
+      route_event!(
+        'user.created',
+        user:,
+        source: user,
+        subject: 'User account created',
+        summary: "User #{user.login} was created",
+        parameters: {
+          login: user.login,
+          email: user.email,
+          level: user.level,
+          object_state: user.object_state,
+          create_vps: create_vps,
+          active: activate
+        },
+        email_vars: {
+          user:
+        }
+      )
 
       user
     end

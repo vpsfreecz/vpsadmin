@@ -22,5 +22,13 @@ RSpec.describe TransactionChains::User::NewToken do
     expect(chain.transaction_chain_concerns.pluck(:class_name, :row_id)).to include(['User', user.id])
     expect(tx_classes(chain)).to include(Transactions::Mail::Send)
     expect(MailLog.joins(:mail_template).exists?(mail_templates: { name: 'user_new_token' })).to be(true)
+
+    event = expect_routed_event!('user.new_token', user:)
+    expect(event.source).to eq(session)
+    expect(event.parameters).to include(
+      'auth_type' => 'token',
+      'scope' => '*',
+      'label' => 'spec-token'
+    )
   end
 end

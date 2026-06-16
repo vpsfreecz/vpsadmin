@@ -25,6 +25,9 @@ RSpec.describe TransactionChains::User::Revive do
       Transactions::Vps::Start
     )
     expect(MailLog.joins(:mail_template).exists?(mail_templates: { name: 'user_revive' })).to be(true)
+    event = expect_routed_event!('user.revived', user: fixture.fetch(:user))
+    expect(event.source_class).to eq('ObjectState')
+    expect(event.parameters).to include('state' => 'active')
     expect(confirmations_for(chain).any? do |row|
       row.class_name == 'Vps' &&
         row.row_pks == { 'id' => fixture.fetch(:vps).id } &&

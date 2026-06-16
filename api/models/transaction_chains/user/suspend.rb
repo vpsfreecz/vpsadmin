@@ -4,13 +4,22 @@ module TransactionChains
 
     def link_chain(user, target, _state, log)
       if target
-        mail(:user_suspend, {
-               user:,
-               vars: {
-                 user:,
-                 state: log
-               }
-             })
+        route_event!(
+          'user.suspended',
+          user:,
+          source: log,
+          subject: 'User account suspended',
+          summary: "User #{user.login} was suspended",
+          parameters: {
+            state: log.state || 'suspended',
+            reason: log.reason,
+            expiration_date: log.expiration_date&.iso8601
+          },
+          email_vars: {
+            user:,
+            state: log
+          }
+        )
       end
 
       user.vpses.where(object_state: [

@@ -27,6 +27,9 @@ RSpec.describe TransactionChains::User::SoftDelete do
       Transactions::DnsServerZone::DeleteRecords
     )
     expect(MailLog.joins(:mail_template).exists?(mail_templates: { name: 'user_soft_delete' })).to be(true)
+    event = expect_routed_event!('user.soft_deleted', user:)
+    expect(event.source_class).to eq('ObjectState')
+    expect(event.parameters).to include('state' => 'soft_delete')
     expect(confirmations.any? do |row|
       row.class_name == 'Vps' &&
         row.row_pks == { 'id' => fixture.fetch(:vps).id } &&

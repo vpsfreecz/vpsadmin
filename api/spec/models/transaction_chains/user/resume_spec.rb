@@ -30,6 +30,9 @@ RSpec.describe TransactionChains::User::Resume do
       Transactions::DnsServerZone::CreateRecords
     )
     expect(MailLog.joins(:mail_template).exists?(mail_templates: { name: 'user_resume' })).to be(true)
+    event = expect_routed_event!('user.resumed', user: fixture.fetch(:user))
+    expect(event.source_class).to eq('ObjectState')
+    expect(event.parameters).to include('state' => 'active')
     expect(confirmations_for(chain).any? do |row|
       row.class_name == 'DnsRecord' &&
         row.row_pks == { 'id' => fixture.fetch(:user_record).id } &&

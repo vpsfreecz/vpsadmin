@@ -15,6 +15,8 @@ module VpsAdmin::API
       :email_template
     )
 
+    RequestInfo = Struct.new(:ip)
+
     DeliveryPlan = Struct.new(
       :action,
       :target_kind,
@@ -121,7 +123,21 @@ module VpsAdmin::API
     end
 
     def email_vars_for(event)
+      return event.runtime_email_vars if event.runtime_email_vars
+
       case event.event_type
+      when 'user.created'
+        user_email_vars(event)
+      when 'user.suspended', 'user.soft_deleted', 'user.resumed', 'user.revived'
+        user_state_email_vars(event)
+      when 'user.new_login'
+        user_new_login_email_vars(event)
+      when 'user.new_token'
+        user_new_token_email_vars(event)
+      when 'user.totp_recovery_code_used'
+        user_totp_recovery_email_vars(event)
+      when 'user.failed_logins'
+        user_failed_logins_email_vars(event)
       when 'vps.incident_report'
         incident_email_vars(event)
       when 'vps.oom_report'
@@ -135,6 +151,131 @@ module VpsAdmin::API
           parameters: event.parameters || {}
         }
       end
+    end
+
+    def user_email_vars(event)
+      {
+        user: event.user || user_source(event)
+      }
+    end
+
+    def user_state_email_vars(event)
+      {
+        user: event.user,
+        state: object_state_source(event) || object_state_from_parameters(event)
+      }
+    end
+
+    def user_new_login_email_vars(event)
+      session = user_session_source(event)
+      authorization = find_from_parameters(event, ::Oauth2Authorization, 'authorization_id')
+      user_device = authorization&.user_device ||
+                    find_from_parameters(event, ::UserDevice, 'user_device_id')
+
+      {
+        user: event.user || session&.user,
+        user_session: session,
+        authorization:,
+        user_device:
+      }
+    end
+
+    def user_new_token_email_vars(event)
+      session = user_session_source(event)
+
+      {
+        user: event.user || session&.user,
+        user_session: session
+      }
+    end
+
+    def user_totp_recovery_email_vars(event)
+      params = event.parameters || {}
+      request_ip = params['request_ip'] || params[:request_ip]
+      totp_device = user_totp_device_source(event) ||
+                    find_from_parameters(event, ::UserTotpDevice, 'totp_device_id')
+
+      {
+        user: event.user,
+        totp_device:,
+        request: request_ip.present? ? RequestInfo.new(request_ip) : nil,
+        time: parse_time(params['used_at'] || params[:used_at]) || event.created_at
+      }
+    end
+
+    def user_failed_logins_email_vars(event)
+      {
+        user: event.user,
+        attempt_groups: failed_login_groups(event)
+      }
+    end
+
+    def user_source(event)
+      source = event.source
+      return unless source.is_a?(::User)
+      return if event.user_id.present? && source.id != event.user_id
+
+      source
+    end
+
+    def object_state_source(event)
+      event.source if event.source.is_a?(::ObjectState)
+    end
+
+    def object_state_from_parameters(event)
+      params = event.parameters || {}
+
+      ::ObjectState.new(
+        state: params['state'] || params[:state],
+        reason: params['reason'] || params[:reason],
+        expiration_date: parse_time(params['expiration_date'] || params[:expiration_date])
+      )
+    end
+
+    def user_session_source(event)
+      user_owned_source(event, ::UserSession)
+    end
+
+    def user_totp_device_source(event)
+      user_owned_source(event, ::UserTotpDevice)
+    end
+
+    def find_from_parameters(event, model, key)
+      value = (event.parameters || {})[key] || (event.parameters || {})[key.to_sym]
+      return if value.blank?
+
+      scope = model.all
+      if event.user_id.present? && model.column_names.include?('user_id')
+        scope = scope.where(user_id: event.user_id)
+      end
+
+      scope.find_by(id: value)
+    end
+
+    def failed_login_groups(event)
+      params = event.parameters || {}
+      group_ids = Array(params['attempt_group_ids'] || params[:attempt_group_ids])
+      ids = group_ids.flatten.map(&:to_i).uniq
+      return [] if ids.empty?
+
+      attempts = ::UserFailedLogin
+                 .includes(:user_agent)
+                 .where(user_id: event.user_id)
+                 .where(id: ids)
+                 .to_a
+                 .index_by(&:id)
+
+      group_ids.map do |group|
+        Array(group).filter_map { |id| attempts[id.to_i] }
+      end
+    end
+
+    def user_owned_source(event, model)
+      source = event.source
+      return unless source.is_a?(model)
+      return if event.user_id.present? && source.user_id != event.user_id
+
+      source
     end
 
     def incident_email_vars(event)
@@ -223,6 +364,10 @@ module VpsAdmin::API
       nil
     end
 
+    def parse_time(value)
+      parse_batch_time(value)
+    end
+
     def custom_email_body(event)
       ret = [
         event.summary.presence,
@@ -268,7 +413,8 @@ module VpsAdmin::API
 
     def emit!(event_type, user: nil, vps: nil, source: nil, source_class: nil,
               source_id: nil, subject: nil, summary: nil, parameters: {},
-              severity: nil, category: nil, ip_addr: nil, route: true)
+              severity: nil, category: nil, ip_addr: nil, route: true,
+              email_vars: nil)
       type = type_for(event_type)
       if user && vps && vps.user_id != user.id
         raise ArgumentError, 'user and VPS owner do not match'
@@ -289,6 +435,7 @@ module VpsAdmin::API
         source_id: source_id || source&.id,
         ip_addr:
       )
+      event.runtime_email_vars = email_vars if email_vars
 
       route!(event) if route
 
@@ -591,6 +738,139 @@ module VpsAdmin::API
         monotonic_time >= deadline
       end
     end
+
+    register(
+      'user.created',
+      label: 'User account created',
+      category: 'account',
+      severity: :info,
+      email_template: :user_create,
+      parameters: {
+        login: 'User login',
+        email: 'User e-mail',
+        level: 'User level',
+        object_state: 'Initial account state',
+        create_vps: 'Whether an initial VPS was requested',
+        active: 'Whether the account was activated'
+      }
+    )
+
+    register(
+      'user.suspended',
+      label: 'User account suspended',
+      category: 'account',
+      severity: :warning,
+      email_template: :user_suspend,
+      parameters: {
+        state: 'Lifecycle state',
+        reason: 'Lifecycle reason',
+        expiration_date: 'Expiration date'
+      }
+    )
+
+    register(
+      'user.soft_deleted',
+      label: 'User account disabled',
+      category: 'account',
+      severity: :warning,
+      email_template: :user_soft_delete,
+      parameters: {
+        state: 'Lifecycle state',
+        reason: 'Lifecycle reason',
+        expiration_date: 'Expiration date'
+      }
+    )
+
+    register(
+      'user.resumed',
+      label: 'User account resumed',
+      category: 'account',
+      severity: :info,
+      email_template: :user_resume,
+      parameters: {
+        state: 'Lifecycle state',
+        reason: 'Lifecycle reason',
+        expiration_date: 'Expiration date'
+      }
+    )
+
+    register(
+      'user.revived',
+      label: 'User account restored',
+      category: 'account',
+      severity: :info,
+      email_template: :user_revive,
+      parameters: {
+        state: 'Lifecycle state',
+        reason: 'Lifecycle reason',
+        expiration_date: 'Expiration date'
+      }
+    )
+
+    register(
+      'user.new_login',
+      label: 'New sign-in',
+      category: 'security',
+      severity: :warning,
+      email_template: :user_new_login,
+      parameters: {
+        auth_type: 'Authentication type',
+        client_ip_addr: 'Client IP address',
+        api_ip_addr: 'API IP address',
+        client_version: 'Client version',
+        user_agent: 'User agent',
+        user_device_id: 'User device ID',
+        authorization_id: 'OAuth authorization ID',
+        oauth2_client_id: 'OAuth client ID'
+      }
+    )
+
+    register(
+      'user.new_token',
+      label: 'New access token',
+      category: 'security',
+      severity: :warning,
+      email_template: :user_new_token,
+      parameters: {
+        auth_type: 'Authentication type',
+        client_ip_addr: 'Client IP address',
+        api_ip_addr: 'API IP address',
+        client_version: 'Client version',
+        scope: 'Token scope',
+        token_lifetime: 'Token lifetime',
+        label: 'Token label'
+      }
+    )
+
+    register(
+      'user.totp_recovery_code_used',
+      label: 'TOTP recovery code used',
+      category: 'security',
+      severity: :critical,
+      email_template: :user_totp_recovery_code_used,
+      parameters: {
+        totp_device_id: 'TOTP device ID',
+        totp_device_label: 'TOTP device label',
+        request_ip: 'Request IP address',
+        used_at: 'Recovery time'
+      }
+    )
+
+    register(
+      'user.failed_logins',
+      label: 'Failed sign-in report',
+      category: 'security',
+      severity: :warning,
+      email_template: :user_failed_logins,
+      parameters: {
+        attempt_count: 'Failed attempt count',
+        group_count: 'Attempt group count',
+        attempt_group_ids: 'Failed attempt IDs grouped by similarity',
+        ip_addrs: 'Client IP addresses',
+        auth_types: 'Authentication types',
+        reasons: 'Failure reasons'
+      }
+    )
 
     register(
       'user.test_notification',
