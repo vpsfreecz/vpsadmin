@@ -48,6 +48,7 @@ class User < ApplicationRecord
   before_validation :set_no_password
   before_validation :normalize_time_zone
   after_create :create_default_notification_routing
+  after_update :sync_default_notification_routing, if: :saved_change_to_mailer_enabled?
 
   alias_attribute :role, :level
 
@@ -244,9 +245,19 @@ class User < ApplicationRecord
   end
 
   def create_default_notification_routing
-    return unless ActiveRecord::Base.connection.table_exists?(:notification_receivers)
-    return unless ActiveRecord::Base.connection.table_exists?(:event_routes)
+    return unless notification_routing_tables_exist?
 
     NotificationReceiver.ensure_defaults_for!(self)
+  end
+
+  def sync_default_notification_routing
+    return unless notification_routing_tables_exist?
+
+    NotificationReceiver.sync_mailer_enabled!(self)
+  end
+
+  def notification_routing_tables_exist?
+    ActiveRecord::Base.connection.table_exists?(:notification_receivers) &&
+      ActiveRecord::Base.connection.table_exists?(:event_routes)
   end
 end

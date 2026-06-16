@@ -11,6 +11,7 @@ module VpsAdmin::API::Tasks
     MAX_ATTEMPTS = 5
     TRANSACTION_SUCCESS = 1
     RESPONSE_BODY_LIMIT = 8192
+    WEBHOOK_CLAIM_TIMEOUT = 5 * 60
     PRIVATE_ADDRESS_RANGES = [
       '0.0.0.0/8',
       '10.0.0.0/8',
@@ -129,27 +130,15 @@ module VpsAdmin::API::Tasks
         return
       end
 
-      claimed = delivery.with_lock do
-        next false unless %w[planned queued].include?(delivery.state)
-
-        delivery.update!(
-          state: 'queued',
-          attempt_count: delivery.attempt_count + 1,
-          last_attempt_at: Time.now,
-          next_attempt_at: nil
-        )
-
-        true
-      end
-
-      return unless claimed
+      return unless claim_webhook_delivery(delivery)
 
       body = JSON.dump(payload_for(delivery))
-      response = post_json(action.target_value, body, headers_for(delivery, action, body))
+      response = post_json(delivery.target_value, body, headers_for(delivery, action, body))
 
       if response.code.to_i.between?(200, 299)
         delivery.update!(
           state: 'sent',
+          next_attempt_at: nil,
           response_status: response.code.to_i,
           response_body: truncate_body(response.body),
           error_summary: nil
@@ -169,6 +158,29 @@ module VpsAdmin::API::Tasks
         response_body: nil,
         error_summary: "#{e.class}: #{e.message}"
       )
+    end
+
+    def claim_webhook_delivery(delivery)
+      delivery.with_lock do
+        next false unless delivery.webhook_action?
+        next false unless delivery_due?(delivery)
+
+        delivery.update!(
+          state: 'queued',
+          attempt_count: delivery.attempt_count + 1,
+          last_attempt_at: Time.now,
+          next_attempt_at: Time.now + WEBHOOK_CLAIM_TIMEOUT
+        )
+
+        true
+      end
+    end
+
+    def delivery_due?(delivery)
+      return true if delivery.planned_state?
+      return false unless delivery.queued_state?
+
+      delivery.next_attempt_at.nil? || delivery.next_attempt_at <= Time.now
     end
 
     def post_json(url, body, headers)

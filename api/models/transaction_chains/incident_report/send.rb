@@ -11,7 +11,7 @@ module TransactionChains
       use_chain(IncidentReport::Reply, args: [message, result]) if message && result.reply
 
       result.active.each do |inc|
-        route_event!(
+        event = route_event!(
           'vps.incident_report',
           user: inc.user,
           vps: inc.vps,
@@ -21,10 +21,22 @@ module TransactionChains
           ip_addr: incident_ip_addr(inc),
           parameters: incident_parameters(inc)
         )
+        ensure_email_deliveries_queued!(event)
       end
     end
 
     protected
+
+    def ensure_email_deliveries_queued!(event)
+      failed = event
+               .event_deliveries
+               .where(action: 'email', state: 'failed')
+               .order(:id)
+               .first
+      return unless failed
+
+      raise "failed to queue incident report e-mail delivery: #{failed.error_summary}"
+    end
 
     def incident_parameters(incident)
       {

@@ -92,6 +92,18 @@ RSpec.describe VpsAdmin::API::Tasks::EventDelivery do
     expect(delivery.attempt_count).to eq(1)
   end
 
+  it 'resolves default e-mail recipients when the delivery is queued' do
+    delivery, = create_email_delivery!
+    SpecSeed.user.update!(email: 'changed-default@example.test')
+
+    task.deliver_emails
+
+    delivery.reload
+    expect(delivery.target_value).to eq('default')
+    expect(delivery.target_label).to eq('Default recipient')
+    expect(delivery.mail_log.to).to eq('changed-default@example.test')
+  end
+
   it 'retries e-mail deliveries when no mail server is available' do
     delivery, = create_email_delivery!
     Node.update_all(active: false)
@@ -176,6 +188,18 @@ RSpec.describe VpsAdmin::API::Tasks::EventDelivery do
     expect(delivery.reload.mail_log.to).to eq('custom@example.test')
   end
 
+  it 'uses the snapshotted e-mail target when the action is edited later' do
+    delivery, action = create_email_delivery!(
+      target_kind: :custom,
+      target_value: 'old-target@example.test'
+    )
+    action.update!(target_value: 'new-target@example.test')
+
+    task.deliver_emails
+
+    expect(delivery.reload.mail_log.to).to eq('old-target@example.test')
+  end
+
   it 'does not render OOM reports that belong to another user' do
     foreign_vps = build_standalone_vps_fixture(user: SpecSeed.other_user).fetch(:vps)
     foreign_report = create_oom_report_fixture!(vps: foreign_vps, killed_name: 'foreign-process')
@@ -248,6 +272,42 @@ RSpec.describe VpsAdmin::API::Tasks::EventDelivery do
     expect(delivery.response_status).to eq(202)
     expect(delivery.response_body).to eq('accepted')
     expect(delivery.attempt_count).to eq(1)
+  end
+
+  it 'claims webhook deliveries exclusively across stale worker reads' do
+    delivery, = create_webhook_delivery!(url: 'https://webhook.example/events')
+    stale_delivery = EventDelivery.find(delivery.id)
+
+    expect(task.send(:claim_webhook_delivery, delivery)).to be(true)
+    expect(task.send(:claim_webhook_delivery, stale_delivery)).to be(false)
+
+    expect(delivery.reload).to be_queued_state
+    expect(delivery.attempt_count).to eq(1)
+    expect(delivery.next_attempt_at).to be > Time.now
+  end
+
+  it 'posts webhooks to the snapshotted target when the action is edited later' do
+    delivery, action = create_webhook_delivery!(url: 'https://webhook.example/events')
+    action.update!(target_value: 'https://changed.example/events')
+    http = instance_double(Net::HTTP)
+    response = instance_double(Net::HTTPOK, code: '204', body: '')
+
+    allow(Resolv).to receive(:getaddresses)
+      .with('webhook.example')
+      .and_return(['93.184.216.34'])
+    allow(Resolv).to receive(:getaddresses)
+      .with('changed.example')
+      .and_raise('changed target should not be resolved')
+    allow(Net::HTTP).to receive(:start) do |host, _port, **_options, &block|
+      expect(host).to eq('webhook.example')
+      block.call(http)
+    end
+    allow(http).to receive(:request).and_return(response)
+
+    task.deliver_webhooks
+
+    expect(delivery.reload).to be_sent_state
+    expect(Resolv).not_to have_received(:getaddresses).with('changed.example')
   end
 
   it 'does not retry webhook deliveries for muted receivers' do

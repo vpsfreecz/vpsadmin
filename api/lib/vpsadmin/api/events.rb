@@ -98,9 +98,12 @@ module VpsAdmin::API
 
     def email_target_addresses(event, delivery)
       if delivery.default_recipient_target_kind?
-        raise ArgumentError, 'event has no user e-mail recipient' if event.user&.email.blank?
+        address = delivery.target_value.presence
+        address = nil if address == 'default'
+        address ||= event.user&.email
+        raise ArgumentError, 'event has no user e-mail recipient' if address.blank?
 
-        return [event.user.email]
+        return [address]
       end
 
       addresses = delivery.target_value.to_s.split(',').map(&:strip).reject(&:blank?)
@@ -418,7 +421,7 @@ module VpsAdmin::API
             receiver,
             receiver_action,
             target_value: 'default',
-            target_label: event.user.email
+            target_label: 'Default recipient'
           )
         end
 
@@ -506,17 +509,28 @@ module VpsAdmin::API
 
       def deduplicate(deliveries)
         deliveries.uniq do |delivery|
-          [
-            delivery.action,
-            delivery.target_kind,
-            delivery.target_value,
+          deduplication_key(delivery)
+        end
+      end
+
+      def deduplication_key(delivery)
+        if delivery.state == 'skipped'
+          return [
+            delivery.state,
+            delivery.event_route&.id,
             delivery.notification_receiver&.id,
             delivery.notification_receiver_action&.id,
-            delivery.template_name,
-            delivery.state,
             delivery.error_summary
           ]
         end
+
+        [
+          delivery.action,
+          delivery.target_kind,
+          delivery.target_value,
+          delivery.template_name,
+          delivery.state
+        ]
       end
 
       def create_delivery!(delivery)

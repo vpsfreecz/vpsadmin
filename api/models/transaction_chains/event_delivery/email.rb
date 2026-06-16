@@ -87,8 +87,8 @@ module TransactionChains
 
     def render_mail(delivery)
       event = delivery.event
-      action = delivery.notification_receiver_action
-      template_name = VpsAdmin::API::Events.email_template_name_for(event, action)
+      template_name = delivery.template_name.presence&.to_sym ||
+                      VpsAdmin::API::Events.email_template_name_for(event)
 
       if template_name
         return ::MailTemplate.send_mail!(

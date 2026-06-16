@@ -63,9 +63,53 @@ RSpec.describe EventRoute do
     expect(event.matched_event_route).to be_present
     expect(delivery.action).to eq('email')
     expect(delivery.target_kind).to eq('default_recipient')
-    expect(delivery.target_label).to eq(SpecSeed.user.email)
+    expect(delivery.target_value).to eq('default')
+    expect(delivery.target_label).to eq('Default recipient')
     expect(delivery.template_name).to eq('vps_incident_report')
     expect(delivery).to be_planned_state
+  end
+
+  it 'syncs generated default routing when the legacy mailer switch changes' do
+    emit_incident!
+
+    SpecSeed.user.update!(mailer_enabled: false)
+    muted_event = emit_incident!
+    muted_delivery = muted_event.event_deliveries.sole
+
+    expect(muted_event.reload).to be_suppressed_routing_state
+    expect(muted_delivery).to be_skipped_state
+    expect(muted_delivery.notification_receiver).to be_mute
+
+    SpecSeed.user.update!(mailer_enabled: true)
+    routed_event = emit_incident!
+    routed_delivery = routed_event.event_deliveries.sole
+
+    expect(routed_event.reload).to be_routed_routing_state
+    expect(routed_delivery).to be_planned_state
+    expect(routed_delivery.action).to eq('email')
+    expect(routed_delivery.target_value).to eq('default')
+  end
+
+  it 'does not sync the legacy mailer switch into user-managed receivers' do
+    emit_incident!
+    generated_receiver = SpecSeed.user.notification_receivers.sole
+    default_route = described_class.default_route_for(SpecSeed.user)
+    custom_receiver = create_receiver!(
+      label: 'Custom receiver',
+      action: {
+        action: :webhook,
+        target_kind: :custom,
+        target_value: 'https://example.test/events'
+      }
+    )
+
+    default_route.update!(notification_receiver: custom_receiver)
+    SpecSeed.user.update!(mailer_enabled: false)
+
+    expect(custom_receiver.reload.label).to eq('Custom receiver')
+    expect(custom_receiver).not_to be_mute
+    expect(custom_receiver.notification_receiver_actions.count).to eq(1)
+    expect(generated_receiver.reload).to be_mute
   end
 
   it 'routes to a matching child receiver instead of the parent receiver' do
@@ -134,16 +178,24 @@ RSpec.describe EventRoute do
   end
 
   it 'deduplicates equivalent actions from continuing routes' do
-    receiver = create_receiver!(
-      label: 'Webhook receiver',
+    first_receiver = create_receiver!(
+      label: 'First webhook receiver',
       action: {
         action: :webhook,
         target_kind: :custom,
         target_value: 'https://example.test/events'
       }
     )
-    create_route!(receiver:, position: 1, continue: true)
-    create_route!(receiver:, position: 2)
+    second_receiver = create_receiver!(
+      label: 'Second webhook receiver',
+      action: {
+        action: :webhook,
+        target_kind: :custom,
+        target_value: 'https://example.test/events'
+      }
+    )
+    create_route!(receiver: first_receiver, position: 1, continue: true)
+    create_route!(receiver: second_receiver, position: 2)
 
     event = emit_incident!
     deliveries = event.event_deliveries.to_a
@@ -151,6 +203,32 @@ RSpec.describe EventRoute do
     expect(deliveries.count).to eq(1)
     expect(deliveries.first.action).to eq('webhook')
     expect(deliveries.first.target_value).to eq('https://example.test/events')
+  end
+
+  it 'deduplicates default e-mail actions with the same late-bound target' do
+    first_receiver = create_receiver!(
+      label: 'First e-mail receiver',
+      action: {
+        action: :email,
+        target_kind: :default_recipient
+      }
+    )
+    second_receiver = create_receiver!(
+      label: 'Second e-mail receiver',
+      action: {
+        action: :email,
+        target_kind: :default_recipient
+      }
+    )
+    create_route!(receiver: first_receiver, position: 1, continue: true)
+    create_route!(receiver: second_receiver, position: 2)
+
+    event = emit_incident!
+    deliveries = event.event_deliveries.to_a
+
+    expect(deliveries.count).to eq(1)
+    expect(deliveries.first.action).to eq('email')
+    expect(deliveries.first.target_value).to eq('default')
   end
 
   it 'suppresses events through a mute receiver' do
