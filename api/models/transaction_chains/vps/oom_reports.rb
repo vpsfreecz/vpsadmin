@@ -74,6 +74,7 @@ module TransactionChains
       killed_names = reports.map(&:killed_name).compact.uniq
 
       {
+        stage: 'notification',
         cgroup: cgroups.one? ? cgroups.first : cgroups.join(', '),
         cgroups:,
         count: all_oom_count,

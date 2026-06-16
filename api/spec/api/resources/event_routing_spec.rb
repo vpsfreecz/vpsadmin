@@ -414,6 +414,8 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
     incident = event_types.detect { |row| row['name'] == 'vps.incident_report' }
     expect(incident).to be_present
     expect(incident['fields']).to include('parameters.codename' => 'Incident report: Report codename')
+    oom = event_types.detect { |row| row['name'] == 'vps.oom_report' }
+    expect(oom['fields']).to include('parameters.stage' => 'OOM report: OOM event stage')
   end
 
   it 'creates test events for the current user' do

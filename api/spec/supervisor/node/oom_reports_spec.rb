@@ -95,6 +95,11 @@ RSpec.describe VpsAdmin::Supervisor::Node::OomReports do
         value: vps.id.to_s
       )
       route.event_route_matchers.create!(
+        field: 'parameters.stage',
+        operator: '==',
+        value: 'raw'
+      )
+      route.event_route_matchers.create!(
         field: 'parameters.cgroup',
         operator: '=*',
         value: '/user.slice/*'
@@ -105,6 +110,46 @@ RSpec.describe VpsAdmin::Supervisor::Node::OomReports do
       expect(report.oom_report_rule).to be_nil
       expect(report.ignored).to be(true)
       expect(route.reload.hit_count).to eq(1)
+    end
+
+    it 'does not use raw OOM ignore routes for notification-stage events' do
+      vps = create_vps!
+      receiver = NotificationReceiver.create!(
+        user: vps.user,
+        label: 'Ignore raw OOM reports',
+        mute: true
+      )
+      route = EventRoute.create!(
+        user: vps.user,
+        notification_receiver: receiver,
+        event_type: 'vps.oom_report',
+        position: 1
+      )
+      route.event_route_matchers.create!(
+        field: 'parameters.stage',
+        operator: '==',
+        value: 'raw'
+      )
+      route.event_route_matchers.create!(
+        field: 'parameters.cgroup',
+        operator: '=*',
+        value: '/user.slice/*'
+      )
+
+      event = VpsAdmin::API::Events.emit!(
+        'vps.oom_report',
+        user: vps.user,
+        vps:,
+        subject: 'OOM notification',
+        parameters: {
+          stage: 'notification',
+          cgroup: '/user.slice/a.scope'
+        }
+      )
+
+      event.reload
+      expect(event.matched_event_route).not_to eq(route)
+      expect(route.reload.hit_count).to eq(0)
     end
 
     it 'does not mark reports ignored for non-mute skipped OOM routes' do

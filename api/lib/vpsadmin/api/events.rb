@@ -624,6 +624,7 @@ module VpsAdmin::API
       severity: :warning,
       email_template: :vps_oom_report,
       parameters: {
+        stage: 'OOM event stage',
         cgroup: 'Affected cgroup',
         cgroups: 'Affected cgroups',
         count: 'OOM count',

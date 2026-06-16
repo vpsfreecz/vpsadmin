@@ -141,6 +141,7 @@ RSpec.describe TransactionChains::Vps::OomReports do
     delivery = event.event_deliveries.sole
 
     expect(delivery).to be_queued_state
+    expect(event.parameters['stage']).to eq('notification')
     expect(event.parameters['selected_report_ids'].count).to eq(30)
     expect(event.parameters).not_to have_key('report_ids')
     expect(event.parameters['report_count']).to eq(101)

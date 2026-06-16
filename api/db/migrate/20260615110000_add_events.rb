@@ -236,6 +236,12 @@ class AddEvents < ActiveRecord::Migration[8.1]
         )
         create_oom_report_matcher(
           route_id:,
+          field: 'parameters.stage',
+          operator: '==',
+          value: 'raw'
+        )
+        create_oom_report_matcher(
+          route_id:,
           field: 'parameters.cgroup',
           operator: '=*',
           value: rule.fetch('cgroup_pattern')
