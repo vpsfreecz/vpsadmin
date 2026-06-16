@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'spec_helper'
+require_relative '../../db/migrate/20260615110000_add_events'
 
 RSpec.describe EventRoute do
   before do
@@ -52,6 +53,51 @@ RSpec.describe EventRoute do
         event_type: 'vps.incident_report',
         position:
       }.merge(attrs)
+    )
+  end
+
+  def event_mail_template!(name)
+    MailTemplate.find_or_create_by!(name:) do |template|
+      template.label = name.tr('_', ' ').capitalize
+      template.template_id = name
+      template.user_visibility = :default
+    end
+  end
+
+  def reset_all_event_routing!
+    EventDelivery.delete_all
+    Event.delete_all
+    EventRouteMatcher.delete_all
+    NotificationReceiverAction.delete_all
+    EventRoute.delete_all
+    NotificationReceiver.delete_all
+  end
+
+  def reset_advanced_mail_settings!
+    UserMailTemplateRecipient.delete_all
+    UserMailRoleRecipient.delete_all
+  end
+
+  def run_events_migration_backfill!
+    verbose = ActiveRecord::Migration.verbose
+    reset_all_event_routing!
+    migration = AddEvents.new
+    ActiveRecord::Migration.verbose = false
+    migration.send(:backfill_default_routes)
+    migration.send(:backfill_advanced_mail_routes)
+  ensure
+    ActiveRecord::Migration.verbose = verbose
+  end
+
+  def emit_oom_report!(stage)
+    VpsAdmin::API::Events.emit!(
+      'vps.oom_report',
+      user: SpecSeed.user,
+      subject: 'Spec OOM',
+      parameters: {
+        'stage' => stage,
+        'cgroup' => '/user.slice/a.scope'
+      }
     )
   end
 
@@ -255,6 +301,118 @@ RSpec.describe EventRoute do
     expect(event.reload).to be_suppressed_routing_state
     expect(delivery).to be_skipped_state
     expect(delivery.notification_receiver).to eq(receiver)
+  end
+
+  it 'backfills template recipient overrides into explicit e-mail routes' do
+    reset_advanced_mail_settings!
+    template = event_mail_template!('vps_incident_report')
+    UserMailTemplateRecipient.create!(
+      user: SpecSeed.user,
+      mail_template: template,
+      to: 'incident-override@example.test',
+      enabled: true
+    )
+
+    run_events_migration_backfill!
+
+    event = emit_incident!
+    delivery = event.event_deliveries.sole
+
+    expect(event.reload).to be_routed_routing_state
+    expect(event.matched_event_route.position).to eq(10)
+    expect(delivery.action).to eq('email')
+    expect(delivery.target_kind).to eq('custom')
+    expect(delivery.target_value).to eq('incident-override@example.test')
+    expect(delivery.template_name).to eq('vps_incident_report')
+  end
+
+  it 'backfills role recipients behind template-specific routes' do
+    reset_advanced_mail_settings!
+    UserMailRoleRecipient.create!(
+      user: SpecSeed.user,
+      role: 'admin',
+      to: 'admin-role@example.test'
+    )
+
+    run_events_migration_backfill!
+
+    event = VpsAdmin::API::Events.emit!(
+      'vps.oom_prevention',
+      user: SpecSeed.user,
+      subject: 'Spec OOM prevention',
+      parameters: {
+        'action' => 'restart'
+      }
+    )
+    delivery = event.event_deliveries.sole
+    oom_report_route = described_class.find_by!(
+      user: SpecSeed.user,
+      event_type: 'vps.oom_report',
+      label: 'System administrator e-mail for OOM report'
+    )
+
+    expect(event.reload).to be_routed_routing_state
+    expect(event.matched_event_route.position).to be >= 1_000
+    expect(delivery.target_kind).to eq('custom')
+    expect(delivery.target_value).to eq('admin-role@example.test')
+    expect(delivery.template_name).to eq('vps_oom_prevention')
+    expect(
+      oom_report_route.event_route_matchers.map { |m| [m.field, m.operator, m.value] }
+    ).to eq(
+      [
+        ['parameters.stage', '==', 'notification']
+      ]
+    )
+  end
+
+  it 'backfills disabled OOM template recipients only for notification events' do
+    reset_advanced_mail_settings!
+    template = event_mail_template!('vps_oom_report')
+    UserMailTemplateRecipient.create!(
+      user: SpecSeed.user,
+      mail_template: template,
+      to: '',
+      enabled: false
+    )
+
+    run_events_migration_backfill!
+
+    muted_route = described_class.find_by!(
+      user: SpecSeed.user,
+      event_type: 'vps.oom_report',
+      label: "#{template.label} disabled"
+    )
+    notification_event = emit_oom_report!('notification')
+    raw_event = emit_oom_report!('raw')
+
+    expect(notification_event.reload).to be_suppressed_routing_state
+    expect(notification_event.matched_event_route).to eq(muted_route)
+    expect(notification_event.event_deliveries.sole).to be_skipped_state
+    expect(raw_event.reload).to be_routed_routing_state
+    expect(raw_event.matched_event_route).not_to eq(muted_route)
+    expect(muted_route.reload.hit_count).to eq(1)
+  end
+
+  it 'keeps advanced e-mail overrides muted for mailer-disabled users' do
+    reset_advanced_mail_settings!
+    SpecSeed.user.update!(mailer_enabled: false)
+    template = event_mail_template!('vps_incident_report')
+    UserMailTemplateRecipient.create!(
+      user: SpecSeed.user,
+      mail_template: template,
+      to: 'incident-override@example.test',
+      enabled: true
+    )
+
+    run_events_migration_backfill!
+
+    event = emit_incident!
+    delivery = event.event_deliveries.sole
+
+    expect(event.reload).to be_suppressed_routing_state
+    expect(delivery).to be_skipped_state
+    expect(delivery.notification_receiver).to be_mute
+    expect(described_class.where(user: SpecSeed.user, event_type: 'vps.incident_report')).to be_empty
   end
 
   it 'matches with sigil operators' do

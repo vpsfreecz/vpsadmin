@@ -1,4 +1,36 @@
 class AddEvents < ActiveRecord::Migration[8.1]
+  ADVANCED_MAIL_TEMPLATE_ROUTE_POSITION = 10
+  ADVANCED_MAIL_ROLE_ROUTE_POSITION = 1_000
+  ADVANCED_MAIL_EVENT_TEMPLATES = [
+    {
+      event_type: 'vps.incident_report',
+      template_name: 'vps_incident_report',
+      label: 'Incident report',
+      roles: %w[admin],
+      matchers: []
+    },
+    {
+      event_type: 'vps.oom_report',
+      template_name: 'vps_oom_report',
+      label: 'OOM report',
+      roles: %w[admin],
+      matchers: [
+        ['parameters.stage', '==', 'notification']
+      ]
+    },
+    {
+      event_type: 'vps.oom_prevention',
+      template_name: 'vps_oom_prevention',
+      label: 'OOM prevention',
+      roles: %w[admin],
+      matchers: []
+    }
+  ].freeze
+  ADVANCED_MAIL_ROLE_LABELS = {
+    'account' => 'Account management',
+    'admin' => 'System administrator'
+  }.freeze
+
   def up
     create_table :notification_receivers do |t|
       t.references  :user,                     null: false
@@ -119,6 +151,7 @@ class AddEvents < ActiveRecord::Migration[8.1]
     add_index :event_deliveries, :transaction_id
 
     backfill_default_routes
+    backfill_advanced_mail_routes
     backfill_oom_report_routes
   end
 
@@ -228,23 +261,147 @@ class AddEvents < ActiveRecord::Migration[8.1]
           position: positions[user_id]
         )
 
-        create_oom_report_matcher(
+        create_event_route_matcher(
           route_id:,
           field: 'vps_id',
           operator: '==',
           value: rule.fetch('vps_id').to_s
         )
-        create_oom_report_matcher(
+        create_event_route_matcher(
           route_id:,
           field: 'parameters.stage',
           operator: '==',
           value: 'raw'
         )
-        create_oom_report_matcher(
+        create_event_route_matcher(
           route_id:,
           field: 'parameters.cgroup',
           operator: '=*',
           value: rule.fetch('cgroup_pattern')
+        )
+      end
+    end
+  end
+
+  def backfill_advanced_mail_routes
+    return unless table_exists?(:users)
+
+    say_with_time('Creating event routes from advanced e-mail settings') do
+      backfill_mail_template_recipient_routes
+      backfill_mail_role_recipient_routes
+    end
+  end
+
+  def backfill_mail_template_recipient_routes
+    return unless table_exists?(:user_mail_template_recipients)
+    return unless table_exists?(:mail_templates)
+
+    template_names = ADVANCED_MAIL_EVENT_TEMPLATES.map { |cfg| cfg.fetch(:template_name) }
+    positions = Hash.new(ADVANCED_MAIL_TEMPLATE_ROUTE_POSITION - 1)
+
+    select_all(<<~SQL.squish).each do |row|
+      SELECT
+        user_mail_template_recipients.*,
+        mail_templates.name AS template_name,
+        mail_templates.label AS template_label,
+        users.mailer_enabled
+      FROM user_mail_template_recipients
+      INNER JOIN mail_templates
+        ON mail_templates.id = user_mail_template_recipients.mail_template_id
+      INNER JOIN users ON users.id = user_mail_template_recipients.user_id
+      WHERE mail_templates.name IN (#{quoted_list(template_names)})
+      ORDER BY user_mail_template_recipients.user_id, mail_templates.name
+    SQL
+      next unless truthy?(row.fetch('mailer_enabled'))
+
+      cfg = advanced_mail_event_template_by_name.fetch(row.fetch('template_name'), nil)
+      next unless cfg
+
+      disabled = !truthy?(row.fetch('enabled'))
+      target = row.fetch('to').to_s
+      next if !disabled && target.strip.empty?
+
+      user_id = row.fetch('user_id').to_i
+      template_label = label_or_name(row.fetch('template_label'), row.fetch('template_name'))
+      positions[user_id] += 1
+
+      if disabled
+        receiver_id = create_advanced_mail_receiver(
+          user_id:,
+          label: "#{template_label} disabled",
+          description: 'Created from an advanced e-mail template setting',
+          mute: true
+        )
+        route_label = "#{template_label} disabled"
+      else
+        receiver_id = create_advanced_mail_receiver(
+          user_id:,
+          label: "#{template_label} e-mail",
+          description: 'Created from an advanced e-mail template recipient',
+          mute: false
+        )
+        create_advanced_mail_action(
+          receiver_id:,
+          label: "#{template_label} e-mail",
+          target_value: target,
+          template_name: cfg.fetch(:template_name)
+        )
+        route_label = "#{template_label} e-mail"
+      end
+
+      create_advanced_mail_route(
+        user_id:,
+        receiver_id:,
+        event_config: cfg,
+        label: route_label,
+        position: positions[user_id]
+      )
+    end
+  end
+
+  def backfill_mail_role_recipient_routes
+    return unless table_exists?(:user_mail_role_recipients)
+
+    positions = Hash.new(ADVANCED_MAIL_ROLE_ROUTE_POSITION - 1)
+
+    select_all(<<~SQL.squish).each do |row|
+      SELECT user_mail_role_recipients.*, users.mailer_enabled
+      FROM user_mail_role_recipients
+      INNER JOIN users ON users.id = user_mail_role_recipients.user_id
+      WHERE user_mail_role_recipients.role IN (#{quoted_list(advanced_mail_roles)})
+      ORDER BY user_mail_role_recipients.user_id, user_mail_role_recipients.role
+    SQL
+      next unless truthy?(row.fetch('mailer_enabled'))
+
+      target = row.fetch('to').to_s
+      next if target.strip.empty?
+
+      role = row.fetch('role').to_s
+      templates = advanced_mail_event_templates_for_role(role)
+      next if templates.empty?
+
+      user_id = row.fetch('user_id').to_i
+      role_label = ADVANCED_MAIL_ROLE_LABELS.fetch(role, role)
+      receiver_id = create_advanced_mail_receiver(
+        user_id:,
+        label: "#{role_label} e-mail",
+        description: 'Created from an advanced e-mail role recipient',
+        mute: false
+      )
+      create_advanced_mail_action(
+        receiver_id:,
+        label: "#{role_label} e-mail",
+        target_value: target
+      )
+
+      templates.each do |cfg|
+        positions[user_id] += 1
+        create_advanced_mail_route(
+          user_id:,
+          receiver_id:,
+          event_config: cfg,
+          label: "#{role_label} e-mail for #{cfg.fetch(:label)}",
+          position: positions[user_id]
         )
       end
     end
@@ -313,7 +470,59 @@ class AddEvents < ActiveRecord::Migration[8.1]
     )
   end
 
-  def create_oom_report_matcher(route_id:, field:, operator:, value:)
+  def create_advanced_mail_receiver(user_id:, label:, description:, mute:)
+    insert_row(
+      'notification_receivers',
+      user_id:,
+      label: limit_label(label),
+      description:,
+      enabled: true,
+      mute:,
+      created_at: current_timestamp,
+      updated_at: current_timestamp
+    )
+  end
+
+  def create_advanced_mail_action(receiver_id:, label:, target_value:, template_name: nil)
+    insert_row(
+      'notification_receiver_actions',
+      notification_receiver_id: receiver_id,
+      action: 0,
+      label: limit_label(label),
+      target_kind: 1,
+      target_value:,
+      template_name:,
+      enabled: true,
+      created_at: current_timestamp,
+      updated_at: current_timestamp
+    )
+  end
+
+  def create_advanced_mail_route(user_id:, receiver_id:, event_config:, label:, position:)
+    route_id = insert_row(
+      'event_routes',
+      user_id:,
+      parent_id: nil,
+      notification_receiver_id: receiver_id,
+      label: limit_label(label),
+      position:,
+      enabled: true,
+      event_type: event_config.fetch(:event_type),
+      event_type_pattern: nil,
+      continue: false,
+      hit_count: 0,
+      created_at: current_timestamp,
+      updated_at: current_timestamp
+    )
+
+    event_config.fetch(:matchers).each do |field, operator, value|
+      create_event_route_matcher(route_id:, field:, operator:, value:)
+    end
+
+    route_id
+  end
+
+  def create_event_route_matcher(route_id:, field:, operator:, value:)
     insert_row(
       'event_route_matchers',
       event_route_id: route_id,
@@ -323,6 +532,36 @@ class AddEvents < ActiveRecord::Migration[8.1]
       created_at: current_timestamp,
       updated_at: current_timestamp
     )
+  end
+
+  def advanced_mail_event_template_by_name
+    @advanced_mail_event_template_by_name ||=
+      ADVANCED_MAIL_EVENT_TEMPLATES.to_h { |cfg| [cfg.fetch(:template_name), cfg] }
+  end
+
+  def advanced_mail_event_templates_for_role(role)
+    ADVANCED_MAIL_EVENT_TEMPLATES.select { |cfg| cfg.fetch(:roles).include?(role.to_s) }
+  end
+
+  def advanced_mail_roles
+    ADVANCED_MAIL_EVENT_TEMPLATES.flat_map { |cfg| cfg.fetch(:roles) }.uniq
+  end
+
+  def truthy?(value)
+    value == true || value.to_s == '1'
+  end
+
+  def label_or_name(label, name)
+    ret = label.to_s
+    ret.empty? ? name.to_s : ret
+  end
+
+  def limit_label(value)
+    value.to_s[0, 255]
+  end
+
+  def quoted_list(values)
+    values.map { |v| quote(v) }.join(', ')
   end
 
   def insert_row(table, attrs)
