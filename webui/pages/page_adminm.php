@@ -46,8 +46,6 @@ function print_newm()
         $xtpl->form_add_input(_("Monthly payment") . ':', 'text', '30', 'm_monthly_payment', $_POST["m_monthly_payment"] ? $_POST["m_monthly_payment"] : '300', ' ');
     }
 
-    $xtpl->form_add_checkbox(_("Enable vpsAdmin mailer") . ':', 'm_mailer_enable', '1', $_POST["m_nick"] ? $_POST["m_mailer_enable"] : true, $hint = '');
-
     $xtpl->form_add_textarea(_("Info") . ':', 28, 4, 'm_info', $_POST["m_info"], _("Note for administrators"));
     $xtpl->form_out(_("Add"));
 
@@ -146,9 +144,11 @@ function print_editm($u)
         $xtpl->table_tr();
     }
 
-    $xtpl->table_td(_('Enable mail notifications from vpsAdmin') . ':');
-    $xtpl->form_add_checkbox_pure('m_mailer_enable', '1', $u->mailer_enabled, $hint = '');
-    $xtpl->table_td('<a href="?page=reminder&action=reminder&resource=user&id=' . $u->id . '">' . _('Configure payment reminder') . '</a>');
+    $xtpl->table_td(_('Notifications') . ':');
+    $xtpl->table_td(
+        '<a href="?page=notifications&action=routes&user=' . $u->id . '">' . _('Configure event routes') . '</a>'
+        . ' | <a href="?page=reminder&action=reminder&resource=user&id=' . $u->id . '">' . _('Configure payment reminder') . '</a>'
+    );
     $xtpl->table_tr();
 
     api_param_to_form(
@@ -748,8 +748,6 @@ function list_members()
         $xtpl->form_add_input(_("Access level") . ':', 'text', '40', 'level', get_val('level', ''), '');
         $xtpl->form_add_input(_("Info") . ':', 'text', '40', 'info', get_val('info', ''), '');
         $xtpl->form_add_input(_("Monthly payment") . ':', 'text', '40', 'monthly_payment', get_val('monthly_payment', ''), '');
-        $xtpl->form_add_checkbox(_("Mailer enabled") . ':', 'mailer_enabled', 1, get_val('mailer_enabled', ''));
-
         $p = $api->vps->index->getParameters('input')->object_state;
         api_param_to_form('object_state', $p, get_val('object_state'));
 
@@ -817,11 +815,6 @@ function list_members()
             $monthlyPayment = api_get('monthly_payment');
             if ($monthlyPayment !== null) {
                 $params['monthly_payment'] = $monthlyPayment;
-            }
-
-            $mailerEnabled = api_get('mailer_enabled');
-            if ($mailerEnabled !== null) {
-                $params['mailer_enabled'] = $mailerEnabled;
             }
 
             $objectState = api_get('object_state');
@@ -1086,7 +1079,7 @@ if (isLoggedIn()) {
                         'level' => $_POST['m_level'],
                         'info' => $_POST['m_info'],
                         'monthly_payment' => $_POST['m_monthly_payment'],
-                        'mailer_enabled' => isset($_POST['m_mailer_enable']),
+                        'mailer_enabled' => true,
                     ]);
 
                     notify_user(_('User created'), _('The user was successfully created.'));
@@ -1149,7 +1142,6 @@ if (isLoggedIn()) {
                 $user = $api->user->show($_GET['id']);
 
                 $params = [
-                    'mailer_enabled' => isset($_POST['m_mailer_enable']),
                     'language' => $_POST['language'],
                     'time_zone' => $_POST['time_zone'] ?? null,
                 ];

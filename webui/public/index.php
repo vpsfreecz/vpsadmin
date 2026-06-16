@@ -59,6 +59,7 @@ include WEBUI_ROOT . 'forms/node.forms.php';
 include WEBUI_ROOT . 'forms/incidents.forms.php';
 include WEBUI_ROOT . 'forms/dns.forms.php';
 include WEBUI_ROOT . 'forms/userdata.forms.php';
+include WEBUI_ROOT . 'forms/notifications.forms.php';
 
 include WEBUI_ROOT . 'lib/gettext_stream.lib.php';
 include WEBUI_ROOT . 'lib/gettext_inc.lib.php';
@@ -225,6 +226,9 @@ try {
             case 'userdata':
                 include WEBUI_ROOT . 'pages/page_userdata.php';
                 break;
+            case 'notifications':
+                include WEBUI_ROOT . 'pages/page_notifications.php';
+                break;
             default:
                 include WEBUI_ROOT . 'pages/page_index.php';
         }
@@ -255,6 +259,7 @@ if (isLoggedIn()) {
     $xtpl->menu_add(_("Status"), '?page=', ($_GET["page"] == ''));
     $xtpl->menu_add(_("Members"), '?page=adminm', ($_GET["page"] == 'adminm'));
     $xtpl->menu_add(_("VPS"), '?page=adminvps', ($_GET["page"] == 'adminvps'));
+    $xtpl->menu_add(_("Notifications"), '?page=notifications', ($_GET["page"] == 'notifications'));
     if (isAdmin()) {
         $xtpl->menu_add(_("Backups"), '?page=backup', ($_GET["page"] == 'backup'));
 

@@ -3,6 +3,7 @@ const { test, expect } = require('@playwright/test');
 const { readFixtures } = require('../lib/fixtures.cjs');
 const { login, logout } = require('../lib/pages/auth.cjs');
 const {
+  acceptNextDialog,
   expectNotification,
   formByAction,
   submitForm,
@@ -11,6 +12,8 @@ const {
   createOomRule,
   deleteOomRule,
   editOomRule,
+  hrefParam,
+  linkWithParams,
   rowWithText,
   selectIfPresent,
   setCheckboxIfPresent,
@@ -142,6 +145,112 @@ test.describe('support and status browser coverage', () => {
     await expect(form.locator('input[type="submit"]')).toHaveValue(/^\s*Report\s*$/);
 
     await logout(page, fixtures.admin.username);
+  });
+
+  test('user notification settings and test events are wired', async ({ page }) => {
+    await login(page, fixtures.user);
+
+    await page.goto('/?page=notifications&action=receivers', {
+      waitUntil: 'domcontentloaded',
+    });
+    await expect(heading(page)).toContainText('Notification receivers');
+    await expect(content(page)).toContainText(/Default e-mail|Do not notify/);
+
+    const receiverLabel = 'Webui notification receiver';
+    const receiverForm = formByAction(page, 'action=receiver_new');
+    await receiverForm.locator('input[name="label"]').fill(receiverLabel);
+    await submitForm(receiverForm, 'Add');
+    await expectNotification(page, 'Receiver added');
+
+    const receiverRow = rowWithText(page, receiverLabel);
+    await expect(receiverRow).toBeVisible();
+    const receiverEditLink = linkWithParams(receiverRow, { action: 'receiver_edit' });
+    const receiverId = await hrefParam(receiverEditLink, 'id', page.url());
+
+    await receiverEditLink.click();
+    await expect(heading(page)).toContainText(`Notification receiver #${receiverId}`);
+    await expect(content(page)).toContainText('Actions');
+
+    const actionForm = formByAction(page, 'action=receiver_action_save');
+    await actionForm.locator('select[name="new_action"]').selectOption('webhook');
+    await actionForm.locator('input[name="new_label"]').fill('Webui webhook action');
+    await actionForm.locator('select[name="new_target_kind"]').selectOption('custom');
+    await actionForm.locator('input[name="new_target_value"]').fill('https://example.test/webui');
+    await actionForm.locator('input[name="new_secret"]').fill('webui-secret');
+    await submitForm(actionForm, 'Add');
+    await expectNotification(page, 'Action added');
+    await expect(
+      page.locator('input[name^="actions["][name$="[label]"]').first(),
+    ).toHaveValue('Webui webhook action');
+    await expect(
+      page.locator('input[name^="actions["][name$="[target_value]"]').first(),
+    ).toHaveValue('https://example.test/webui');
+
+    await page.goto('/?page=notifications&action=routes', {
+      waitUntil: 'domcontentloaded',
+    });
+    await expect(heading(page)).toContainText('Notification routes');
+    await expect(content(page)).toContainText('Default route');
+
+    const routeLabel = 'Webui notification route';
+    const routeForm = formByAction(page, 'action=route_new');
+    await expect(routeForm).toBeVisible();
+    await routeForm.locator('input[name="label"]').fill(routeLabel);
+    await routeForm.locator('select[name="event_type"]').selectOption('user.test_notification');
+    await routeForm.locator('select[name="notification_receiver_id"]').selectOption(receiverId);
+    await submitForm(routeForm, 'Add');
+    await expectNotification(page, 'Route added');
+
+    const routeRow = rowWithText(page, routeLabel);
+    await expect(routeRow).toBeVisible();
+    await expect(routeRow).toContainText(receiverLabel);
+    const routeEditLink = linkWithParams(routeRow, { action: 'route_edit' });
+    const routeId = await hrefParam(routeEditLink, 'id', page.url());
+
+    await routeEditLink.click();
+    await expect(heading(page)).toContainText(`Notification route #${routeId}`);
+    await expect(content(page)).toContainText('Matchers');
+    await expect(content(page)).toContainText('Receiver');
+
+    await page.goto('/?page=notifications&action=test', {
+      waitUntil: 'domcontentloaded',
+    });
+    await expect(heading(page)).toContainText('Test notification event');
+    const testForm = formByAction(page, 'action=test');
+    const subject = 'Webui notification test event';
+    await testForm.locator('input[name="subject"]').fill(subject);
+    await submitForm(testForm, 'Create event');
+    await expectNotification(page, 'Test event created');
+    await expect(heading(page)).toContainText('Event #');
+    await expect(content(page)).toContainText(subject);
+    await expect(content(page)).toContainText('Deliveries');
+    await expect(content(page)).toContainText('webhook');
+
+    await page.goto('/?page=notifications&action=routes', {
+      waitUntil: 'domcontentloaded',
+    });
+    const createdRouteRow = rowWithText(page, routeLabel);
+    await expect(createdRouteRow).toBeVisible();
+    await acceptNextDialog(page);
+    await linkWithParams(createdRouteRow, {
+      action: 'route_delete',
+      id: routeId,
+    }).click();
+    await expectNotification(page, 'Route deleted');
+
+    await page.goto('/?page=notifications&action=receivers', {
+      waitUntil: 'domcontentloaded',
+    });
+    const createdReceiverRow = rowWithText(page, receiverLabel);
+    await expect(createdReceiverRow).toBeVisible();
+    await acceptNextDialog(page);
+    await linkWithParams(createdReceiverRow, {
+      action: 'receiver_delete',
+      id: receiverId,
+    }).click();
+    await expectNotification(page, 'Receiver deleted');
+
+    await logout(page, fixtures.user.username);
   });
 
   test('user OOM reports and rule CRUD are wired', async ({ page }) => {
