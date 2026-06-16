@@ -3,6 +3,7 @@ require 'uri'
 
 class NotificationReceiverAction < ApplicationRecord
   MAX_ACTIONS_PER_RECEIVER = 20
+  MAIL_TARGET_VALUE_LIMIT = 500
 
   ACTION_LABELS = {
     'email' => 'E-mail',
@@ -25,6 +26,7 @@ class NotificationReceiverAction < ApplicationRecord
 
   before_validation :set_default_target_kind
   before_validation :set_default_label
+  before_validation :clean_email_target
 
   validates :action, :target_kind, :label, presence: true
   validates :label, length: { maximum: 255 }, allow_nil: true
@@ -136,6 +138,11 @@ class NotificationReceiverAction < ApplicationRecord
       return
     end
 
+    if target_value.length > MAIL_TARGET_VALUE_LIMIT
+      errors.add(:target_value, "is too long (maximum is #{MAIL_TARGET_VALUE_LIMIT} characters)")
+      return
+    end
+
     target_value.split(',').each do |mail|
       next if mail.strip.include?('@')
 
@@ -161,5 +168,11 @@ class NotificationReceiverAction < ApplicationRecord
     errors.add(:target_value, 'must be an HTTP or HTTPS URL')
   rescue URI::InvalidURIError
     errors.add(:target_value, 'must be an HTTP or HTTPS URL')
+  end
+
+  def clean_email_target
+    return unless email_action? && custom_target_kind? && target_value
+
+    target_value.gsub!(/\s/, '')
   end
 end

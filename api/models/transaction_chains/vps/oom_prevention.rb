@@ -15,16 +15,25 @@ module TransactionChains
       lock(vps)
       concerns(:affect, [vps.class.name, vps.id])
 
-      mail(:vps_oom_prevention, {
+      prevention = ::OomPrevention.create!(
+        vps:,
+        action:
+      )
+
+      route_event!(
+        'vps.oom_prevention',
         user: vps.user,
-        vars: {
-          base_url: ::SysConfig.get(:webui, :base_url),
-          vps:,
-          action:,
+        vps:,
+        source: prevention,
+        subject: "OOM prevention for VPS ##{vps.id}",
+        summary: "vpsAdmin will #{action} VPS ##{vps.id} after #{ooms_in_period} OOM events",
+        parameters: {
+          action: action.to_s,
+          reason: 'repeated out-of-memory events',
           ooms_in_period:,
           period_seconds:
         }
-      })
+      )
 
       case action
       when :restart
@@ -33,10 +42,7 @@ module TransactionChains
         use_chain(Vps::Stop, args: [vps])
       end
 
-      ::OomPrevention.create!(
-        vps:,
-        action:
-      )
+      prevention
     end
   end
 end

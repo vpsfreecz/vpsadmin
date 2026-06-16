@@ -18,6 +18,16 @@ RSpec.describe TransactionChains::Vps::OomPrevention do
     build_standalone_vps_fixture(user: SpecSeed.user).fetch(:vps)
   end
 
+  def reset_routing!(user)
+    EventRouteMatcher.joins(:event_route).where(event_routes: { user_id: user.id }).delete_all
+    NotificationReceiverAction
+      .joins(:notification_receiver)
+      .where(notification_receivers: { user_id: user.id })
+      .delete_all
+    EventRoute.where(user:).delete_all
+    NotificationReceiver.where(user:).delete_all
+  end
+
   def fire_prevention(vps, action)
     described_class.fire2(
       kwargs: {
@@ -36,6 +46,32 @@ RSpec.describe TransactionChains::Vps::OomPrevention do
 
     expect(prevention).to be_persisted
     expect(tx_classes(chain)).to include(Transactions::Vps::Restart)
+  end
+
+  it 'does not let stale long custom e-mail labels block restart actions' do
+    vps = create_vps!
+    reset_routing!(vps.user)
+    receiver = NotificationReceiver.create!(user: vps.user, label: 'Spec receiver')
+    action = receiver.notification_receiver_actions.create!(
+      action: :email,
+      target_kind: :custom,
+      target_value: 'custom@example.test'
+    )
+    long_target = "#{'a' * 287}@example.test"
+    action.update_columns(target_value: long_target)
+    EventRoute.create!(
+      user: vps.user,
+      notification_receiver: receiver,
+      event_type: 'vps.oom_prevention'
+    )
+
+    chain, = fire_prevention(vps, :restart)
+    event = Event.order(:id).last
+    delivery = event.event_deliveries.sole
+
+    expect(tx_classes(chain)).to include(Transactions::Vps::Restart)
+    expect(delivery.target_value).to eq(long_target)
+    expect(delivery.target_label.length).to eq(255)
   end
 
   it 'uses Vps::Stop for stop actions' do

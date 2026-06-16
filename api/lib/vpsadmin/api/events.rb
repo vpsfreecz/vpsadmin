@@ -1,13 +1,18 @@
+require 'json'
+require 'time'
+
 module VpsAdmin::API
   module Events
     EVALUATION_TIMEOUT = 0.5
+    DELIVERY_LABEL_LIMIT = 255
 
     Type = Struct.new(
       :name,
       :label,
       :category,
       :severity,
-      :parameters
+      :parameters,
+      :email_template
     )
 
     DeliveryPlan = Struct.new(
@@ -34,13 +39,15 @@ module VpsAdmin::API
 
     module_function
 
-    def register(name, label:, category:, severity: :info, parameters: {})
+    def register(name, label:, category:, severity: :info, parameters: {},
+                 email_template: nil)
       @types[name.to_s] = Type.new(
         name: name.to_s,
         label:,
         category: category.to_s,
         severity: severity.to_s,
-        parameters:
+        parameters:,
+        email_template: email_template&.to_s
       )
     end
 
@@ -58,6 +65,164 @@ module VpsAdmin::API
 
     def field_labels(event_type: nil)
       EventRouteMatcher.field_labels(event_type:)
+    end
+
+    def email_template_name_for(event, action = nil)
+      (action&.template_name.presence || type_for(event.event_type)&.email_template)&.to_sym
+    end
+
+    def email_template_options_for(event, delivery)
+      opts = {
+        user: event.user,
+        vars: email_vars_for(event)
+      }
+
+      if delivery.custom_target_kind?
+        opts[:to] = email_target_addresses(event, delivery)
+        opts[:include_default_recipients] = false
+        opts[:include_template_recipients] = false
+      end
+
+      opts
+    end
+
+    def email_custom_options_for(event, delivery)
+      {
+        user: event.user,
+        from: MailTemplates.default_from,
+        to: email_target_addresses(event, delivery),
+        subject: event.subject,
+        text_plain: custom_email_body(event)
+      }
+    end
+
+    def email_target_addresses(event, delivery)
+      if delivery.default_recipient_target_kind?
+        raise ArgumentError, 'event has no user e-mail recipient' if event.user&.email.blank?
+
+        return [event.user.email]
+      end
+
+      addresses = delivery.target_value.to_s.split(',').map(&:strip).reject(&:blank?)
+      raise ArgumentError, 'e-mail delivery has no recipient address' if addresses.empty?
+
+      addresses
+    end
+
+    def email_vars_for(event)
+      case event.event_type
+      when 'vps.incident_report'
+        incident_email_vars(event)
+      when 'vps.oom_report'
+        oom_report_email_vars(event)
+      when 'vps.oom_prevention'
+        oom_prevention_email_vars(event)
+      else
+        {
+          event:,
+          user: event.user,
+          parameters: event.parameters || {}
+        }
+      end
+    end
+
+    def incident_email_vars(event)
+      incident = event.source if event.source.is_a?(::IncidentReport)
+      raise ArgumentError, 'incident report source is missing' unless incident
+
+      {
+        base_url: ::SysConfig.get(:webui, :base_url),
+        user: incident.user,
+        vps: incident.vps,
+        incident:
+      }
+    end
+
+    def oom_report_email_vars(event)
+      params = event.parameters || {}
+      selected_reports = oom_reports_from_ids(
+        event,
+        params['selected_report_ids'] || params[:selected_report_ids]
+      )
+      reports = oom_reports_from_batch(event, selected_reports)
+
+      raise ArgumentError, 'OOM report parameters are missing report ids' if reports.empty?
+
+      selected_reports = reports.first(30) if selected_reports.empty?
+
+      {
+        base_url: ::SysConfig.get(:webui, :base_url),
+        vps: event.vps || reports.first.vps,
+        all_oom_reports: reports,
+        all_oom_count: params['oom_count'] || params[:oom_count] || reports.sum(&:count),
+        selected_oom_reports: selected_reports,
+        selected_oom_count: params['selected_oom_count'] || params[:selected_oom_count] || selected_reports.sum(&:count)
+      }
+    end
+
+    def oom_prevention_email_vars(event)
+      params = event.parameters || {}
+      vps = event.vps
+
+      raise ArgumentError, 'OOM prevention VPS is missing' unless vps
+
+      {
+        base_url: ::SysConfig.get(:webui, :base_url),
+        vps:,
+        action: (params['action'] || params[:action])&.to_sym,
+        ooms_in_period: params['ooms_in_period'] || params[:ooms_in_period],
+        period_seconds: params['period_seconds'] || params[:period_seconds]
+      }
+    end
+
+    def oom_reports_from_ids(event, ids)
+      ids = Array(ids).map(&:to_i).uniq
+      return [] if ids.empty?
+
+      reports = oom_report_scope(event).where(id: ids).to_a.index_by(&:id)
+      ids.filter_map { |id| reports[id] }
+    end
+
+    def oom_reports_from_batch(event, selected_reports)
+      params = event.parameters || {}
+      batch_time = parse_batch_time(params['batch_reported_at'] || params[:batch_reported_at])
+
+      return selected_reports if batch_time.nil?
+
+      scope = oom_report_scope(event).order('oom_reports.created_at')
+      last_reported_id = params['last_reported_id'] || params[:last_reported_id]
+      scope = scope.where('oom_reports.id > ?', last_reported_id.to_i) if last_reported_id.present?
+      scope = scope.where('oom_reports.created_at <= ?', batch_time)
+      scope.to_a
+    end
+
+    def oom_report_scope(event)
+      raise ArgumentError, 'OOM report event has no user' if event.user_id.blank?
+
+      scope = ::OomReport.joins(:vps).where(vpses: { user_id: event.user_id })
+      scope = scope.where(vps_id: event.vps_id) if event.vps_id.present?
+      scope.where(ignored: false)
+    end
+
+    def parse_batch_time(value)
+      return if value.blank?
+
+      Time.iso8601(value.to_s)
+    rescue ArgumentError
+      nil
+    end
+
+    def custom_email_body(event)
+      ret = [
+        event.summary.presence,
+        "Event type: #{event.event_type}",
+        "Severity: #{event.severity}",
+        event.vps && "VPS: ##{event.vps.id} #{event.vps.hostname}",
+        event.ip_addr && "IP address: #{event.ip_addr}",
+        "Parameters:\n#{JSON.pretty_generate(event.parameters || {})}"
+      ].compact
+
+      ret.join("\n\n")
     end
 
     def parameter_field?(field)
@@ -262,7 +427,7 @@ module VpsAdmin::API
           receiver,
           receiver_action,
           target_value: receiver_action.target_value,
-          target_label: receiver_action.target_value
+          target_label: delivery_label(receiver_action.target_value)
         )
       end
 
@@ -297,8 +462,8 @@ module VpsAdmin::API
           action: receiver_action.action,
           target_kind: receiver_action.target_kind,
           target_value:,
-          target_label:,
-          template_name: receiver_action.template_name,
+          target_label: delivery_label(target_label),
+          template_name: delivery_template_name(receiver_action),
           event_route: route,
           notification_receiver: receiver,
           notification_receiver_action: receiver_action,
@@ -312,7 +477,7 @@ module VpsAdmin::API
           action: receiver_action&.action || 'email',
           target_kind: receiver_action&.target_kind || 'default_recipient',
           target_value: receiver_action&.target_value,
-          target_label: receiver_action&.display_target || receiver&.label,
+          target_label: delivery_label(receiver_action&.display_target || receiver&.label),
           template_name: receiver_action&.template_name,
           event_route: route,
           notification_receiver: receiver,
@@ -320,6 +485,19 @@ module VpsAdmin::API
           state: 'skipped',
           error_summary: reason
         )
+      end
+
+      def delivery_label(label)
+        return if label.nil?
+
+        label.to_s[0, DELIVERY_LABEL_LIMIT]
+      end
+
+      def delivery_template_name(receiver_action)
+        return receiver_action.template_name if receiver_action.template_name.present?
+        return unless receiver_action.email_action?
+
+        VpsAdmin::API::Events.email_template_name_for(event, receiver_action)
       end
 
       def routing_state_for(deliveries)
@@ -381,6 +559,7 @@ module VpsAdmin::API
       label: 'Incident report',
       category: 'incidents',
       severity: :warning,
+      email_template: :vps_incident_report,
       parameters: {
         subject: 'Report subject',
         text: 'Report text',
@@ -395,10 +574,15 @@ module VpsAdmin::API
       label: 'OOM report',
       category: 'vps',
       severity: :warning,
+      email_template: :vps_oom_report,
       parameters: {
         cgroup: 'Affected cgroup',
+        cgroups: 'Affected cgroups',
         count: 'OOM count',
-        killed_name: 'Killed process'
+        killed_name: 'Killed process',
+        report_count: 'Report count',
+        selected_report_count: 'Selected report count',
+        selected_oom_count: 'Selected OOM count'
       }
     )
 
@@ -407,9 +591,12 @@ module VpsAdmin::API
       label: 'OOM prevention',
       category: 'vps',
       severity: :critical,
+      email_template: :vps_oom_prevention,
       parameters: {
         action: 'Prevention action',
-        reason: 'Reason'
+        reason: 'Reason',
+        ooms_in_period: 'OOM count in period',
+        period_seconds: 'Period in seconds'
       }
     )
   end

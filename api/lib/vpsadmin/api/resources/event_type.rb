@@ -10,6 +10,7 @@ module VpsAdmin::API::Resources
         string :label
         string :category
         string :severity
+        string :email_template, nullable: true
         custom :parameters
         custom :fields
       end
@@ -31,6 +32,7 @@ module VpsAdmin::API::Resources
             label: type.label,
             category: type.category,
             severity: type.severity,
+            email_template: type.email_template,
             parameters: type.parameters,
             fields:
           }

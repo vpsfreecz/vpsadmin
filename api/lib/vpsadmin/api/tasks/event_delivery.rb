@@ -9,6 +9,7 @@ module VpsAdmin::API::Tasks
   class EventDelivery < Base
     DEFAULT_LIMIT = 100
     MAX_ATTEMPTS = 5
+    TRANSACTION_SUCCESS = 1
     RESPONSE_BODY_LIMIT = 8192
     PRIVATE_ADDRESS_RANGES = [
       '0.0.0.0/8',
@@ -34,6 +35,11 @@ module VpsAdmin::API::Tasks
       'ff00::/8'
     ].map { |range| IPAddr.new(range) }.freeze
 
+    def deliver_emails
+      queue_email_deliveries
+      sync_email_deliveries
+    end
+
     def deliver_webhooks
       deliveries = ::EventDelivery
                    .includes(
@@ -52,12 +58,72 @@ module VpsAdmin::API::Tasks
 
     protected
 
+    def queue_email_deliveries
+      deliveries = ::EventDelivery
+                   .includes(
+                     :event,
+                     :notification_receiver,
+                     :notification_receiver_action
+                   )
+                   .where(action: 'email', state: %w[planned queued])
+                   .where(transaction_id: nil)
+                   .where('next_attempt_at IS NULL OR next_attempt_at <= ?', Time.now)
+                   .order(:id)
+                   .limit(limit)
+
+      deliveries.each do |delivery|
+        TransactionChains::EventDelivery::Email.fire2(args: [delivery])
+      end
+    end
+
+    def sync_email_deliveries
+      deliveries = ::EventDelivery
+                   .includes(delivery_transaction: :transaction_chain)
+                   .where(action: 'email', state: 'queued')
+                   .where.not(transaction_id: nil)
+                   .order(:id)
+                   .limit(limit)
+
+      deliveries.each { |delivery| sync_email_delivery(delivery) }
+    end
+
+    def sync_email_delivery(delivery)
+      transaction = delivery.delivery_transaction
+      chain = transaction&.transaction_chain
+      return unless transaction && chain
+
+      if transaction.done? && transaction.status == TRANSACTION_SUCCESS
+        delivery.update!(
+          state: 'sent',
+          error_summary: nil
+        )
+      elsif transaction.done?
+        delivery.update!(
+          state: 'failed',
+          error_summary: "mail transaction failed with status #{transaction.status}"
+        )
+      elsif chain.failed? || chain.fatal? || chain.resolved?
+        delivery.update!(
+          state: 'failed',
+          error_summary: "mail transaction chain is #{chain.state}"
+        )
+      end
+    end
+
     def deliver_webhook(delivery)
       action = delivery.notification_receiver_action
 
+      unless delivery.notification_receiver_available?
+        delivery.update!(
+          state: 'canceled',
+          error_summary: 'notification receiver is disabled or muted'
+        )
+        return
+      end
+
       unless action&.webhook_action? && action.enabled?
         delivery.update!(
-          state: 'failed',
+          state: 'canceled',
           error_summary: 'webhook action is not available'
         )
         return

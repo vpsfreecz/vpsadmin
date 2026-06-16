@@ -50,4 +50,8 @@ class EventDelivery < ApplicationRecord
   def self.state_labels
     STATE_LABELS
   end
+
+  def notification_receiver_available?
+    notification_receiver&.enabled? && !notification_receiver.mute?
+  end
 end

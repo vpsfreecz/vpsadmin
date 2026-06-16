@@ -323,6 +323,19 @@ class TransactionChain < ApplicationRecord
     m
   end
 
+  def route_event!(event_type, **)
+    event = VpsAdmin::API::Events.emit!(event_type, **)
+
+    event.event_deliveries
+         .where(action: 'email', state: 'planned')
+         .order(:id)
+         .each do |delivery|
+      use_chain(TransactionChains::EventDelivery::Email, args: [delivery])
+    end
+
+    event
+  end
+
   # Set chain concerns.
   # +type+ can be one of:
   # [affect]     the chain affects these objects
@@ -457,6 +470,7 @@ module TransactionChains
   module Network; end
   module UserNamespace; end
   module UserNamespaceMap; end
+  module EventDelivery; end
 
   module NetworkInterface
     module Venet; end

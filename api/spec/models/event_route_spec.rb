@@ -64,6 +64,7 @@ RSpec.describe EventRoute do
     expect(delivery.action).to eq('email')
     expect(delivery.target_kind).to eq('default_recipient')
     expect(delivery.target_label).to eq(SpecSeed.user.email)
+    expect(delivery.template_name).to eq('vps_incident_report')
     expect(delivery).to be_planned_state
   end
 
@@ -98,6 +99,7 @@ RSpec.describe EventRoute do
     expect(event.reload.matched_event_route).to eq(child)
     expect(deliveries.map(&:action)).to eq(['webhook'])
     expect(deliveries.first.target_value).to eq('https://example.test/events')
+    expect(deliveries.first.template_name).to be_nil
     expect(deliveries.first).to be_queued_state
   end
 
