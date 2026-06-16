@@ -42,10 +42,10 @@ let
     "guzzlehttp/guzzle" = {
       targetDir = "";
       src = composerEnv.buildZipPackage {
-        name = "guzzlehttp-guzzle-5af96f374e0ab4ebd747b8310888c99d3adb0a8c";
+        name = "guzzlehttp-guzzle-bf5f35ad4b774b9d7c5766c02035e865e7e3fdab";
         src = fetchurl {
-          url = "https://api.github.com/repos/guzzle/guzzle/zipball/5af96f374e0ab4ebd747b8310888c99d3adb0a8c";
-          sha256 = "12m88mssm4p16qs9f95br0cnkjniwsfvqng71ajgx16bp8b2fb8l";
+          url = "https://api.github.com/repos/guzzle/guzzle/zipball/bf5f35ad4b774b9d7c5766c02035e865e7e3fdab";
+          sha256 = "1xyd67b358hs3pjymaydpdnq3pqz9vd6vkr982g8hx946w0bk45v";
         };
       };
     };
@@ -62,10 +62,10 @@ let
     "guzzlehttp/psr7" = {
       targetDir = "";
       src = composerEnv.buildZipPackage {
-        name = "guzzlehttp-psr7-bbb5e61349fa5cb822b3e87842b951088b76b81f";
+        name = "guzzlehttp-psr7-640e2897bbee822dbc8af761d49e1a29b1f2a6b1";
         src = fetchurl {
-          url = "https://api.github.com/repos/guzzle/psr7/zipball/bbb5e61349fa5cb822b3e87842b951088b76b81f";
-          sha256 = "0maic4rfqjgvd1mim4rcv3fhllb7sv1vsjmig4h51rv1iahdxj3n";
+          url = "https://api.github.com/repos/guzzle/psr7/zipball/640e2897bbee822dbc8af761d49e1a29b1f2a6b1";
+          sha256 = "16bhw4k1jv5rxm8ymia88flh7szzfm10xa200dipx4fzrgj6pjkm";
         };
       };
     };
@@ -284,10 +284,10 @@ let
     "phpunit/phpunit" = {
       targetDir = "";
       src = composerEnv.buildZipPackage {
-        name = "phpunit-phpunit-3796ea973f1e7698f0d432c1c66662af9764fd9a";
+        name = "phpunit-phpunit-60da0ff1e10a0f72ee18a24117ec3b613a346bba";
         src = fetchurl {
-          url = "https://api.github.com/repos/sebastianbergmann/phpunit/zipball/3796ea973f1e7698f0d432c1c66662af9764fd9a";
-          sha256 = "07mncx8n62awzrjpw2y0n2sysscai00p1yzbbxx67jc4k4l08j2q";
+          url = "https://api.github.com/repos/sebastianbergmann/phpunit/zipball/60da0ff1e10a0f72ee18a24117ec3b613a346bba";
+          sha256 = "0sg98i7n1q78nzgjhlyvisl8b2hl1h010v7xhsdlwblz32szabsx";
         };
       };
     };
