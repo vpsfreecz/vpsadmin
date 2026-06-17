@@ -56,7 +56,7 @@ RSpec.describe 'payments plugin create chain', requires_plugins: :payments do # 
       'accounted_by_id' => SpecSeed.admin.id,
       'accounted_by_login' => SpecSeed.admin.login
     )
-    expect(delivery).to be_queued_state
+    expect(delivery).to be_prepared_state
     expect(delivery.action).to eq('email')
     expect(delivery.template_name).to eq('payment_accepted')
     expect(chain.transaction_chain_concerns.pluck(:class_name, :row_id)).to include(

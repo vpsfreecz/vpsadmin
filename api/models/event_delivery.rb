@@ -31,8 +31,9 @@ class EventDelivery < ApplicationRecord
   }.freeze
 
   STATE_LABELS = {
-    'planned' => 'planned',
-    'queued' => 'queued',
+    'prepared' => 'prepared',
+    'released' => 'released',
+    'sending' => 'sending',
     'sent' => 'sent',
     'skipped' => 'skipped',
     'failed' => 'failed',
@@ -48,16 +49,19 @@ class EventDelivery < ApplicationRecord
              class_name: 'Transaction',
              foreign_key: :transaction_id,
              optional: true
+  has_many :event_delivery_attempts, dependent: :delete_all
 
   enum :action, ACTIONS, suffix: true
   enum :target_kind, %i[default_recipient custom], suffix: true
-  enum :state, %i[planned queued sent skipped failed canceled], suffix: true
+  enum :state, %i[prepared released sending sent skipped failed canceled], suffix: true
 
   validates :action, :target_kind, :state, presence: true
   validates :target_label, :provider_message_id, length: { maximum: 255 }, allow_nil: true
   validates :template_name, length: { maximum: 100 }, allow_nil: true
   validates :response_status, numericality: { only_integer: true }, allow_nil: true
   validates :attempt_count, numericality: { only_integer: true, greater_than_or_equal_to: 0 }
+
+  scope :due, -> { where('next_attempt_at IS NULL OR next_attempt_at <= ?', Time.now) }
 
   def self.action_labels
     ACTION_LABELS
@@ -75,6 +79,26 @@ class EventDelivery < ApplicationRecord
     return true if direct_email_delivery?
 
     notification_receiver&.enabled? && !notification_receiver.mute?
+  end
+
+  def receiver_action_available?
+    action = notification_receiver_action
+    return true if action.nil? && direct_email_delivery?
+    return false unless action&.enabled?
+
+    case self.action
+    when 'email'
+      action.email_action?
+    when 'webhook'
+      action.webhook_action? && action.target_value.present?
+    else
+      false
+    end
+  end
+
+  def due_for_delivery?
+    (released_state? || sending_state?) &&
+      (next_attempt_at.nil? || next_attempt_at <= Time.now)
   end
 
   def direct_email_delivery?

@@ -53,14 +53,13 @@ module TransactionChains
       return if deliveries.any? { |delivery| delivery_handled?(delivery) }
 
       failed = deliveries.find(&:failed_state?) || deliveries.first
-      detail = failed&.error_summary.presence || 'no delivery was queued'
-      raise "failed-login notification was not queued: #{detail}"
+      detail = failed&.error_summary.presence || 'no delivery was prepared'
+      raise "failed-login notification was not prepared: #{detail}"
     end
 
     def delivery_handled?(delivery)
       return true if delivery.skipped_state? || delivery.canceled_state? || delivery.sent_state?
-      return true if delivery.email_action? && delivery.queued_state? && delivery.transaction_id.present?
-      return true if !delivery.email_action? && (delivery.planned_state? || delivery.queued_state?)
+      return true if delivery.prepared_state? || delivery.released_state? || delivery.sending_state?
 
       false
     end

@@ -51,7 +51,7 @@ RSpec.describe TransactionChains::IncidentReport::Reply do
 
     chain, = described_class.fire2(args: [message, result])
 
-    expect(tx_classes(chain)).to include(Transactions::Mail::Send)
+    expect(tx_classes(chain)).to include(Transactions::EventDelivery::Release)
     expect(MailTemplate).to have_received(:send_custom).with(
       hash_including(
         from: 'abuse@test.invalid',
@@ -74,7 +74,7 @@ RSpec.describe TransactionChains::IncidentReport::Reply do
       'vps_count' => 1
     )
     expect(event.parameters.fetch('incident_ids')).to match_array(result.incidents.map(&:id))
-    expect(delivery).to be_queued_state
+    expect(delivery).to be_prepared_state
     expect(delivery).to be_direct_email_delivery
     expect(delivery.target_kind).to eq('custom')
     expect(delivery.target_value).to eq('sender@test.invalid')
@@ -116,14 +116,14 @@ RSpec.describe TransactionChains::IncidentReport::Reply do
     expect(event.parameters.fetch('incident_ids').length).to eq(VpsAdmin::API::Events::PARAMETER_SAMPLE_LIMIT)
   end
 
-  it 'raises when the event e-mail delivery cannot be queued' do
+  it 'raises when the event e-mail delivery cannot be prepared' do
     allow(MailTemplate).to receive(:send_custom).and_raise(ArgumentError, 'invalid recipient')
 
     expect do
       described_class.fire2(args: [message, result_for(1)])
     end.to raise_error(
       RuntimeError,
-      /failed to queue incident report reply e-mail delivery: ArgumentError: invalid recipient/
+      /failed to prepare incident report reply e-mail delivery: ArgumentError: invalid recipient/
     )
   end
 end

@@ -30,7 +30,7 @@ RSpec.describe TransactionChains::Vps::Unblock do
 
     expect(tx_classes(chain)).to include(
       Transactions::Vps::Start,
-      Transactions::Mail::Send
+      Transactions::EventDelivery::Release
     )
     event = expect_routed_event!('vps.resumed', user: vps.user)
     expect(event.vps).to eq(vps)

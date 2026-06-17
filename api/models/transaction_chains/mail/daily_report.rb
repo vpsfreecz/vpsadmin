@@ -55,15 +55,14 @@ module TransactionChains
                .first
       raise "failed to queue daily report e-mail delivery: #{failed.error_summary}" if failed
 
-      pending = event.event_deliveries.where(action: 'email', state: 'planned').order(:id).first
-      pending ||= event
-                  .event_deliveries
-                  .where(action: 'email', state: 'queued', transaction_id: nil)
-                  .order(:id)
-                  .first
-      return unless pending
+      prepared = event.event_deliveries.where(action: 'email', state: 'prepared').exists?
+      released = event.event_deliveries.where(action: 'email', state: 'released').exists?
+      return if prepared || released || event.event_deliveries.where(action: 'email', state: 'sent').exists?
 
-      raise "failed to queue daily report e-mail delivery: #{pending.error_summary || pending.state}"
+      skipped = event.event_deliveries.where(action: 'email', state: %w[skipped canceled]).order(:id).first
+      return if skipped
+
+      raise 'failed to prepare daily report e-mail delivery: no delivery was prepared'
     end
 
     def vars(now)

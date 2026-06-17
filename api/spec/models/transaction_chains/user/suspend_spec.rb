@@ -17,11 +17,15 @@ RSpec.describe TransactionChains::User::Suspend do
     classes = tx_classes(chain)
 
     expect(classes).to include(
-      Transactions::Mail::Send,
+      Transactions::EventDelivery::Release,
       Transactions::Vps::Stop,
       Transactions::DnsServerZone::Update,
       Transactions::DnsServerZone::DeleteRecords
     )
+    release_idx = classes.index(Transactions::EventDelivery::Release)
+    expect(classes.rindex(Transactions::Vps::Stop)).to be < release_idx
+    expect(classes.rindex(Transactions::DnsServerZone::Update)).to be < release_idx
+    expect(classes.rindex(Transactions::DnsServerZone::DeleteRecords)).to be < release_idx
     expect(MailLog.joins(:mail_template).exists?(mail_templates: { name: 'user_suspend' })).to be(true)
     event = expect_routed_event!('user.suspended', user: fixture.fetch(:user))
     expect(event.source_class).to eq('ObjectState')
@@ -41,7 +45,7 @@ RSpec.describe TransactionChains::User::Suspend do
 
     expect(tx_classes(chain)).to include(Transactions::Vps::Stop)
     expect(tx_classes(chain)).not_to include(
-      Transactions::Mail::Send,
+      Transactions::EventDelivery::Release,
       Transactions::DnsServerZone::Update,
       Transactions::DnsServerZone::DeleteRecords
     )

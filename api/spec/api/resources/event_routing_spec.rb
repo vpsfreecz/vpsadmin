@@ -69,6 +69,10 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
     vpath("/events/#{event_id}/deliveries/#{delivery_id}")
   end
 
+  def delivery_attempt_index_path(event_id, delivery_id)
+    vpath("/events/#{event_id}/deliveries/#{delivery_id}/attempts")
+  end
+
   def json_get(path, params = nil)
     get path, params, {
       'CONTENT_TYPE' => 'application/json',
@@ -127,6 +131,10 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
     json.dig('response', 'deliveries') || json.dig('response', 'event_deliveries') || []
   end
 
+  def attempts
+    json.dig('response', 'attempts') || json.dig('response', 'event_delivery_attempts') || []
+  end
+
   def event_types
     json.dig('response', 'event_types') || json.dig('response', 'types') || json['response'] || []
   end
@@ -158,6 +166,8 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
         'event_type#index',
         'event.delivery#index',
         'event.delivery#show',
+        'event.delivery.attempt#index',
+        'event.delivery.attempt#show',
         'event_route#index',
         'event_route#show',
         'event_route#create',
@@ -284,6 +294,23 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
 
     expect_status(200)
     expect(delivery_obj['target_label']).to eq('Spec webhook')
+
+    attempt = delivery.event_delivery_attempts.create!(
+      action: delivery.action,
+      state: :failed,
+      attempt_number: 1,
+      started_at: Time.now,
+      finished_at: Time.now,
+      response_status: 500,
+      error_summary: 'spec transport failure'
+    )
+
+    as(SpecSeed.user) { json_get delivery_attempt_index_path(event.id, delivery.id) }
+
+    expect_status(200)
+    expect(attempts.map { |row| row['id'] }).to eq([attempt.id])
+    expect(attempts.first['response_status']).to eq(500)
+    expect(attempts.first['error_summary']).to eq('spec transport failure')
   end
 
   it 'places new root routes before the generated default catch-all' do

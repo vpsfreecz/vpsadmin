@@ -3,7 +3,7 @@ module TransactionChains
     label 'Soft delete'
 
     def link_chain(user, target, _state, log)
-      route_event!(
+      event = prepare_event!(
         'user.soft_deleted',
         user:,
         source: log,
@@ -53,6 +53,8 @@ module TransactionChains
       user.single_sign_ons.destroy_all
       user.oauth2_authorizations.destroy_all
       user.metrics_access_tokens.destroy_all
+
+      release_event_deliveries!(event)
     end
   end
 end

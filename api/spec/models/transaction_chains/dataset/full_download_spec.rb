@@ -97,7 +97,7 @@ RSpec.describe TransactionChains::Dataset::FullDownload do
 
     expect(tx_classes(chain)).to include(
       Transactions::Storage::DownloadSnapshot,
-      Transactions::Mail::Send
+      Transactions::EventDelivery::Release
     )
     event = expect_routed_event!('snapshot.download_ready', user: user)
     expect(event.source).to eq(download)

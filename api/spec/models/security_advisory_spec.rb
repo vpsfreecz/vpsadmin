@@ -182,7 +182,7 @@ RSpec.describe SecurityAdvisory do
         'vps_hostname' => user_vps.hostname
       )
     )
-    expect(user_event.event_deliveries.sole).to be_queued_state
+    expect(user_event.event_deliveries.sole).to be_prepared_state
     expect(user_event.event_deliveries.sole.mail_log).to be_present
 
     expect(muted_event).to be_suppressed_routing_state
@@ -194,7 +194,7 @@ RSpec.describe SecurityAdvisory do
     )
     expect(muted_event.event_deliveries.sole).to be_skipped_state
     expect(muted_event.event_deliveries.sole.error_summary).to include('does not notify')
-    expect(tx_classes(advisory.last_chain)).to include(Transactions::Mail::Send)
+    expect(tx_classes(advisory.last_chain)).to include(Transactions::EventDelivery::Release)
   end
 
   it 'rebuilds advisory e-mail variables from persisted event parameters' do

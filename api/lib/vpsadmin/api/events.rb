@@ -217,7 +217,8 @@ module VpsAdmin::API
       :notification_receiver_action,
       :state,
       :error_summary,
-      :next_attempt_at
+      :next_attempt_at,
+      :payload
     )
 
     RouteResult = Struct.new(
@@ -1455,7 +1456,7 @@ module VpsAdmin::API
     def emit!(event_type, user: nil, vps: nil, source: nil, source_class: nil,
               source_id: nil, subject: nil, summary: nil, parameters: {},
               severity: nil, category: nil, ip_addr: nil, route: true,
-              email_vars: nil)
+              release: true, email_vars: nil)
       type = type_for(event_type)
       if user && vps && vps.user_id != user.id
         raise ArgumentError, 'user and VPS owner do not match'
@@ -1480,6 +1481,7 @@ module VpsAdmin::API
 
       route!(event) if route
       event.runtime_email_vars = email_vars if email_vars
+      VpsAdmin::API::Notifications::Release.release!(event.event_deliveries.where(state: 'prepared')) if route && release
 
       event
     end
@@ -1592,7 +1594,7 @@ module VpsAdmin::API
               target_value: custom_target,
               target_label: custom_target,
               template_name: VpsAdmin::API::Events.email_template_name_for(event),
-              state: 'planned'
+              state: 'prepared'
             )
           ]
         end
@@ -1608,7 +1610,7 @@ module VpsAdmin::API
               target_value: nil,
               target_label: 'Template recipients',
               template_name: VpsAdmin::API::Events.email_template_name_for(event),
-              state: 'planned'
+              state: 'prepared'
             )
           ]
         end
@@ -1621,7 +1623,7 @@ module VpsAdmin::API
             target_value: target,
             target_label: target,
             template_name: VpsAdmin::API::Events.email_template_name_for(event),
-            state: 'planned'
+            state: 'prepared'
           )
         ]
       end
@@ -1714,14 +1716,12 @@ module VpsAdmin::API
           receiver,
           receiver_action,
           target_value: receiver_action.target_value,
-          target_label: receiver_action.label,
-          state: 'queued',
-          next_attempt_at: Time.now
+          target_label: receiver_action.label
         )
       end
 
       def build_delivery(route, receiver, receiver_action, target_value:, target_label:, template_name: nil,
-                         target_kind: nil, state: 'planned', next_attempt_at: nil)
+                         target_kind: nil, state: 'prepared', next_attempt_at: nil, payload: nil)
         DeliveryPlan.new(
           action: receiver_action&.action || 'email',
           target_kind: target_kind || receiver_action&.target_kind || 'default_recipient',
@@ -1732,7 +1732,8 @@ module VpsAdmin::API
           notification_receiver: receiver,
           notification_receiver_action: receiver_action,
           state:,
-          next_attempt_at:
+          next_attempt_at:,
+          payload:
         )
       end
 
@@ -1796,7 +1797,7 @@ module VpsAdmin::API
       end
 
       def create_delivery!(delivery)
-        event.event_deliveries.create!(
+        record = event.event_deliveries.create!(
           event_route: delivery.event_route,
           notification_receiver: delivery.notification_receiver,
           notification_receiver_action: delivery.notification_receiver_action,
@@ -1807,8 +1808,19 @@ module VpsAdmin::API
           template_name: delivery.template_name,
           state: delivery.state,
           error_summary: delivery.error_summary,
-          next_attempt_at: delivery.next_attempt_at
+          next_attempt_at: delivery.next_attempt_at,
+          payload: delivery.payload
         )
+
+        record.association(:event).target = event if event.runtime_email_vars
+
+        if record.email_action? && record.prepared_state?
+          VpsAdmin::API::Notifications.render_email_delivery!(record)
+        elsif record.webhook_action? && record.prepared_state? && record.payload.blank?
+          record.update!(payload: JSON.dump(VpsAdmin::API::Notifications.webhook_payload_for(record)))
+        end
+
+        record
       end
 
       def monotonic_time

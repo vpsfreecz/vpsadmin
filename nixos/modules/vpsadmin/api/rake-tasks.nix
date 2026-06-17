@@ -228,28 +228,6 @@ in
           };
         };
 
-        event-webhooks = {
-          rake = [ "vpsadmin:event_delivery:webhooks" ];
-          timer.enable = true;
-          timer.config = {
-            OnBootSec = "1min";
-            OnUnitActiveSec = "1min";
-            RandomizedDelaySec = "10s";
-            FixedRandomDelay = true;
-          };
-        };
-
-        event-emails = {
-          rake = [ "vpsadmin:event_delivery:emails" ];
-          timer.enable = true;
-          timer.config = {
-            OnBootSec = "1min";
-            OnUnitActiveSec = "1min";
-            RandomizedDelaySec = "10s";
-            FixedRandomDelay = true;
-          };
-        };
-
         oom-reports-run = {
           rake = [ "vpsadmin:oom_report:run" ];
           timer.enable = true;

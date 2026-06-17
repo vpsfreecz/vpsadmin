@@ -35,7 +35,7 @@ module TransactionChains
                .first
       return unless failed
 
-      raise "failed to queue incident report e-mail delivery: #{failed.error_summary}"
+      raise "failed to prepare incident report e-mail delivery: #{failed.error_summary}"
     end
 
     def incident_parameters(incident)

@@ -73,6 +73,8 @@ RSpec.describe VpsAdmin::API::Tasks::EventDelivery do
   end
 
   def create_direct_request_email_delivery!
+    VpsAdmin::API::MailTemplates.install_defaults!
+    allow(MailTemplate).to receive(:send_mail!).and_return(build_mail_log_double)
     event = VpsAdmin::API::Events.emit!(
       'request.created',
       subject: 'Spec public registration',
@@ -83,7 +85,8 @@ RSpec.describe VpsAdmin::API::Tasks::EventDelivery do
         request_state: 'pending',
         recipient_email: 'public-registration@example.test',
         mail_id: 1
-      }
+      },
+      email_vars: { request: 'spec request' }
     )
 
     event.event_deliveries.sole
@@ -237,123 +240,125 @@ RSpec.describe VpsAdmin::API::Tasks::EventDelivery do
     [event.event_deliveries.sole, action, route]
   end
 
-  it 'queues planned e-mail deliveries through mail transactions' do
+  def stub_mail_delivery!(error = nil)
+    allow(::Mail).to receive(:new).and_wrap_original do |original, *args|
+      message = original.call(*args)
+      allow(message).to receive(:deliver) do
+        raise error if error
+
+        true
+      end
+
+      message
+    end
+  end
+
+  it 'sends released e-mail deliveries and records the attempt' do
     delivery, action, route = create_email_delivery!
+    stub_mail_delivery!
 
     expect do
       task.deliver_emails
-    end.to change(Transaction, :count).by(1)
+    end.to change(EventDeliveryAttempt, :count).by(1)
 
     delivery.reload
-    transaction = delivery.delivery_transaction
+    attempt = delivery.event_delivery_attempts.sole
 
-    expect(delivery).to be_queued_state
+    expect(delivery).to be_sent_state
     expect(delivery.notification_receiver_action).to eq(action)
     expect(delivery.event_route).to eq(route)
     expect(delivery.mail_log).to be_present
     expect(delivery.mail_log.to).to eq(SpecSeed.user.email)
     expect(delivery.mail_log.subject).to eq('Spec e-mail event')
-    expect(Transaction.for_type(transaction.handle)).to eq(Transactions::Mail::Send)
     expect(delivery.attempt_count).to eq(1)
+    expect(attempt).to be_succeeded_state
   end
 
-  it 'resolves default e-mail recipients when the delivery is queued' do
+  it 'snapshots default e-mail recipients when the delivery is prepared' do
     delivery, = create_email_delivery!
+    original_recipient = delivery.mail_log.to
     SpecSeed.user.update!(email: 'changed-default@example.test')
+    stub_mail_delivery!
 
     task.deliver_emails
 
     delivery.reload
     expect(delivery.target_value).to eq('default')
     expect(delivery.target_label).to eq('Default recipient')
-    expect(delivery.mail_log.to).to eq('changed-default@example.test')
-  end
-
-  it 'fails delayed VPS e-mail rendering when the VPS no longer belongs to the event user' do
-    delivery, = create_vps_email_delivery!
-    delivery.event.vps.update_column(:user_id, SpecSeed.other_user.id)
-
-    expect do
-      expect do
-        task.deliver_emails
-      end.not_to change(Transaction, :count)
-    end.not_to change(MailLog, :count)
-
-    delivery.reload
-
-    expect(delivery).to be_failed_state
-    expect(delivery.mail_log).to be_nil
-    expect(delivery.error_summary).to include('VPS does not belong to event user')
+    expect(delivery.mail_log.to).to eq(original_recipient)
   end
 
   it 'clamps delayed dataset migration fallback collection sizes' do
     delivery, = create_dataset_migration_email_delivery!(export_count: 1_000_000)
+    stub_mail_delivery!
 
     expect do
       task.deliver_emails
-    end.to change(Transaction, :count).by(1)
+    end.to change(EventDeliveryAttempt, :count).by(1)
 
     delivery.reload
 
-    expect(delivery).to be_queued_state
+    expect(delivery).to be_sent_state
     expect(delivery.mail_log.text_plain).to include('Exports: 100')
     expect(delivery.mail_log.text_plain).to include('Affected VPS: #42 sample-vps')
   end
 
-  it 'retries e-mail deliveries when no mail server is available' do
+  it 'retries e-mail deliveries when SMTP delivery fails' do
     delivery, = create_email_delivery!
-    Node.update_all(active: false)
+    stub_mail_delivery!(StandardError.new('smtp rejected'))
 
     expect do
       expect do
         task.deliver_emails
-      end.not_to change(Transaction, :count)
-    end.not_to change(MailLog, :count)
+      end.to change(EventDeliveryAttempt, :count).by(1)
+    end.not_to change(Transaction, :count)
 
     delivery.reload
 
-    expect(delivery).to be_queued_state
-    expect(delivery.mail_log).to be_nil
+    expect(delivery).to be_released_state
+    expect(delivery.mail_log).to be_present
     expect(delivery.transaction_id).to be_nil
     expect(delivery.next_attempt_at).to be_present
-    expect(delivery.error_summary).to include('ActiveRecord::RecordNotFound')
+    expect(delivery.error_summary).to include('StandardError: smtp rejected')
     expect(delivery.attempt_count).to eq(1)
+    expect(delivery.event_delivery_attempts.sole).to be_failed_state
   end
 
-  it 'retries direct e-mail deliveries when no mail server is available' do
+  it 'retries direct e-mail deliveries when SMTP delivery fails' do
     delivery = create_direct_request_email_delivery!
-    Node.update_all(active: false)
+    stub_mail_delivery!(StandardError.new('smtp rejected'))
 
     expect(delivery).to be_direct_email_delivery
 
     expect do
       expect do
         task.deliver_emails
-      end.not_to change(Transaction, :count)
-    end.not_to change(MailLog, :count)
+      end.to change(EventDeliveryAttempt, :count).by(1)
+    end.not_to change(Transaction, :count)
 
     delivery.reload
 
-    expect(delivery).to be_queued_state
-    expect(delivery.mail_log).to be_nil
+    expect(delivery).to be_released_state
+    expect(delivery.mail_log).to be_present
     expect(delivery.transaction_id).to be_nil
     expect(delivery.next_attempt_at).to be_present
-    expect(delivery.error_summary).to include('ActiveRecord::RecordNotFound')
+    expect(delivery.error_summary).to include('StandardError: smtp rejected')
     expect(delivery.attempt_count).to eq(1)
   end
 
-  it 'queues direct custom e-mail deliveries through mail transactions' do
+  it 'sends direct custom e-mail deliveries with their rendered snapshot' do
     delivery = create_direct_custom_email_delivery!
+    stub_mail_delivery!
 
     expect(delivery).to be_direct_email_delivery
 
     expect do
       task.deliver_emails
-    end.to change(Transaction, :count).by(1)
+    end.to change(EventDeliveryAttempt, :count).by(1)
 
     delivery.reload
 
-    expect(delivery).to be_queued_state
+    expect(delivery).to be_sent_state
     expect(delivery.mail_log).to be_present
     expect(delivery.mail_log.from).to eq('abuse@example.test')
     expect(delivery.mail_log.to).to eq('sender@example.test')
@@ -367,6 +372,7 @@ RSpec.describe VpsAdmin::API::Tasks::EventDelivery do
 
   it 'ignores incident reply sender and threading parameters for user-routed e-mails' do
     delivery = create_user_incident_reply_email_delivery!
+    stub_mail_delivery!
 
     expect(delivery).not_to be_direct_email_delivery
 
@@ -383,6 +389,7 @@ RSpec.describe VpsAdmin::API::Tasks::EventDelivery do
 
   it 'renders user-routed system report events as generic e-mails' do
     delivery = create_user_system_report_email_delivery!
+    stub_mail_delivery!
 
     expect(delivery).not_to be_direct_email_delivery
 
@@ -396,33 +403,25 @@ RSpec.describe VpsAdmin::API::Tasks::EventDelivery do
     expect(mail_log.text_plain).to include('Event type: system.daily_report')
   end
 
-  it 'marks queued e-mail deliveries sent after the mail transaction succeeds' do
+  it 'marks released e-mail deliveries sent after SMTP succeeds' do
     delivery, = create_email_delivery!
-
-    task.deliver_emails
-    delivery.reload.delivery_transaction.update_columns(
-      done: Transaction.dones[:done],
-      status: 1
-    )
+    stub_mail_delivery!
 
     task.deliver_emails
 
     expect(delivery.reload).to be_sent_state
+    expect(delivery.event_delivery_attempts.sole).to be_succeeded_state
   end
 
-  it 'marks queued e-mail deliveries failed after the mail transaction fails' do
+  it 'marks released e-mail deliveries failed after the last SMTP retry' do
     delivery, = create_email_delivery!
-
-    task.deliver_emails
-    delivery.reload.delivery_transaction.update_columns(
-      done: Transaction.dones[:done],
-      status: 0
-    )
+    delivery.update!(attempt_count: VpsAdmin::API::Notifications::MAX_ATTEMPTS - 1)
+    stub_mail_delivery!(StandardError.new('smtp rejected'))
 
     task.deliver_emails
 
     expect(delivery.reload).to be_failed_state
-    expect(delivery.error_summary).to include('mail transaction failed')
+    expect(delivery.error_summary).to include('StandardError: smtp rejected')
   end
 
   it 'does not queue e-mail deliveries for disabled receivers' do
@@ -471,6 +470,7 @@ RSpec.describe VpsAdmin::API::Tasks::EventDelivery do
       target_kind: :custom,
       target_value: 'custom@example.test'
     )
+    stub_mail_delivery!
 
     task.deliver_emails
 
@@ -483,6 +483,7 @@ RSpec.describe VpsAdmin::API::Tasks::EventDelivery do
       target_value: 'old-target@example.test'
     )
     action.update!(target_value: 'new-target@example.test')
+    stub_mail_delivery!
 
     task.deliver_emails
 
@@ -515,7 +516,7 @@ RSpec.describe VpsAdmin::API::Tasks::EventDelivery do
 
     expect do
       task.deliver_emails
-    end.not_to change(Transaction, :count)
+    end.not_to change(EventDeliveryAttempt, :count)
 
     expect(delivery.reload).to be_failed_state
     expect(delivery.error_summary).to include('missing report ids')
@@ -556,23 +557,42 @@ RSpec.describe VpsAdmin::API::Tasks::EventDelivery do
     expect(body.dig('event', 'type')).to eq('user.test_notification')
     expect(body.dig('delivery', 'id')).to eq(delivery.id)
     expect(body.dig('delivery', 'route', 'id')).to eq(route.id)
-    expect(request['X-Hub-Signature-256']).to eq("sha256=#{expected_signature}")
+    expect(request['X-VpsAdmin-Event']).to eq('user.test_notification')
+    expect(request['X-VpsAdmin-Delivery']).to eq(delivery.id.to_s)
+    expect(request['X-VpsAdmin-Signature-256']).to eq("sha256=#{expected_signature}")
     expect(delivery.reload).to be_sent_state
     expect(delivery.response_status).to eq(202)
     expect(delivery.response_body).to eq('accepted')
     expect(delivery.attempt_count).to eq(1)
+    expect(delivery.event_delivery_attempts.sole).to be_succeeded_state
   end
 
   it 'claims webhook deliveries exclusively across stale worker reads' do
     delivery, = create_webhook_delivery!(url: 'https://webhook.example/events')
     stale_delivery = EventDelivery.find(delivery.id)
+    dispatcher = VpsAdmin::API::Notifications::Dispatcher.new('webhook')
 
-    expect(task.send(:claim_webhook_delivery, delivery)).to be(true)
-    expect(task.send(:claim_webhook_delivery, stale_delivery)).to be(false)
+    expect(dispatcher.send(:claim_delivery, delivery)).to be_present
+    expect(dispatcher.send(:claim_delivery, stale_delivery)).to be_nil
 
-    expect(delivery.reload).to be_queued_state
+    expect(delivery.reload).to be_sending_state
     expect(delivery.attempt_count).to eq(1)
     expect(delivery.next_attempt_at).to be > Time.now
+  end
+
+  it 'marks stale running attempts failed before reclaiming a delivery' do
+    delivery, = create_webhook_delivery!(url: 'https://webhook.example/events')
+    dispatcher = VpsAdmin::API::Notifications::Dispatcher.new('webhook')
+    first_attempt = dispatcher.send(:claim_delivery, delivery)
+
+    delivery.reload.update!(next_attempt_at: Time.now - 60)
+    second_attempt = dispatcher.send(:claim_delivery, delivery.reload)
+
+    expect(second_attempt.attempt_number).to eq(2)
+    expect(first_attempt.reload).to be_failed_state
+    expect(first_attempt.finished_at).to be_present
+    expect(first_attempt.error_summary).to eq('delivery attempt timed out')
+    expect(delivery.reload.attempt_count).to eq(2)
   end
 
   it 'posts webhooks to the snapshotted target when the action is edited later' do
@@ -601,7 +621,7 @@ RSpec.describe VpsAdmin::API::Tasks::EventDelivery do
 
   it 'does not retry webhook deliveries for muted receivers' do
     delivery, = create_webhook_delivery!(url: 'https://webhook.example/events')
-    delivery.update!(state: :queued, attempt_count: 1)
+    delivery.update!(state: :released, attempt_count: 1)
     delivery.notification_receiver.update!(mute: true)
 
     allow(Net::HTTP).to receive(:start)
@@ -624,7 +644,7 @@ RSpec.describe VpsAdmin::API::Tasks::EventDelivery do
     task.deliver_webhooks
 
     expect(Net::HTTP).not_to have_received(:start)
-    expect(delivery.reload).to be_queued_state
+    expect(delivery.reload).to be_released_state
     expect(delivery.attempt_count).to eq(1)
     expect(delivery.next_attempt_at).to be_present
     expect(delivery.error_summary).to include('private address')
@@ -641,7 +661,7 @@ RSpec.describe VpsAdmin::API::Tasks::EventDelivery do
     task.deliver_webhooks
 
     expect(Net::HTTP).not_to have_received(:start)
-    expect(delivery.reload).to be_queued_state
+    expect(delivery.reload).to be_released_state
     expect(delivery.error_summary).to include('private address')
   end
 end

@@ -49,12 +49,12 @@ namespace :vpsadmin do
   end
 
   namespace :event_delivery do
-    desc 'Deliver queued event e-mails'
+    desc 'Deliver released event e-mails once'
     task :emails do
       VpsAdmin::API::Tasks.run(:event_delivery, :deliver_emails)
     end
 
-    desc 'Deliver queued event webhooks'
+    desc 'Deliver released event webhooks once'
     task :webhooks do
       VpsAdmin::API::Tasks.run(:event_delivery, :deliver_webhooks)
     end

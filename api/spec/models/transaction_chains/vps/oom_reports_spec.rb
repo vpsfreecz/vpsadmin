@@ -42,7 +42,7 @@ RSpec.describe TransactionChains::Vps::OomReports do
 
     chain, = described_class.fire2(args: [[vps]], kwargs: { cooldown: 1.hour })
 
-    expect(tx_classes(chain)).to include(Transactions::Mail::Send)
+    expect(tx_classes(chain)).to include(Transactions::EventDelivery::Release)
     expect(MailTemplate).to have_received(:send_mail!).with(
       :vps_oom_report,
       hash_including(
@@ -64,7 +64,7 @@ RSpec.describe TransactionChains::Vps::OomReports do
     chain, = described_class.fire2(args: [[vps]], kwargs: { cooldown: 1.hour })
     mail = MailLog.where(mail_template: MailTemplate.find_by!(name: 'vps_oom_report')).last
 
-    expect(tx_classes(chain)).to include(Transactions::Mail::Send)
+    expect(tx_classes(chain)).to include(Transactions::EventDelivery::Release)
     expect(mail.text_plain).to include('Selected events: 3 of 3')
     expect(mail.text_plain).to include("VPS ##{vps.id}")
   end
@@ -79,7 +79,7 @@ RSpec.describe TransactionChains::Vps::OomReports do
 
     expect do
       described_class.fire2(args: [[vps]], kwargs: { cooldown: 1.hour })
-    end.to raise_error(RuntimeError, /failed to queue OOM report e-mail delivery/)
+    end.to raise_error(RuntimeError, /failed to prepare OOM report e-mail delivery/)
 
     expect(report.reload.reported_at).to be_nil
     expect(Event.where(event_type: 'vps.oom_report')).to be_empty
@@ -140,7 +140,7 @@ RSpec.describe TransactionChains::Vps::OomReports do
     event = Event.order(:id).last
     delivery = event.event_deliveries.sole
 
-    expect(delivery).to be_queued_state
+    expect(delivery).to be_prepared_state
     expect(event.parameters['stage']).to eq('notification')
     expect(event.parameters['selected_report_ids'].count).to eq(30)
     expect(event.parameters).not_to have_key('report_ids')

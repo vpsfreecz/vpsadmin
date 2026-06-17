@@ -318,7 +318,7 @@ RSpec.describe TransactionChains::Vps::Replace::Os do
       'new_vps_id' => dst_vps.id,
       'reason' => 'replace without mail'
     )
-    expect(tx_classes(chain)).not_to include(Transactions::Mail::Send)
+    expect(tx_classes(chain)).not_to include(Transactions::EventDelivery::Release)
     expect(MailTemplate).not_to have_received(:send_mail!)
   end
 

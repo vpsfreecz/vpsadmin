@@ -65,7 +65,7 @@ module TransactionChains
                .first
       return unless failed
 
-      raise "failed to queue OOM report e-mail delivery: #{failed.error_summary}"
+      raise "failed to prepare OOM report e-mail delivery: #{failed.error_summary}"
     end
 
     def oom_event_parameters(reports:, last_reported_id:, batch_reported_at:, report_count:,

@@ -457,7 +457,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_15_110000) do
     t.datetime "next_attempt_at"
     t.bigint "notification_receiver_action_id"
     t.bigint "notification_receiver_id"
+    t.text "payload", size: :long
     t.string "provider_message_id"
+    t.datetime "released_at"
     t.text "response_body"
     t.integer "response_status"
     t.integer "state", null: false
@@ -467,6 +469,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_15_110000) do
     t.string "template_name", limit: 100
     t.integer "transaction_id"
     t.datetime "updated_at", null: false
+    t.index ["action", "state", "next_attempt_at"], name: "idx_event_deliveries_on_action_state_next_attempt"
     t.index ["event_id", "action", "state"], name: "index_event_deliveries_on_event_id_and_action_and_state"
     t.index ["event_id"], name: "index_event_deliveries_on_event_id"
     t.index ["event_route_id"], name: "index_event_deliveries_on_event_route_id"
@@ -474,8 +477,28 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_15_110000) do
     t.index ["next_attempt_at"], name: "index_event_deliveries_on_next_attempt_at"
     t.index ["notification_receiver_action_id"], name: "idx_event_deliveries_on_receiver_action"
     t.index ["notification_receiver_id"], name: "index_event_deliveries_on_notification_receiver_id"
+    t.index ["released_at"], name: "index_event_deliveries_on_released_at"
     t.index ["state"], name: "index_event_deliveries_on_state"
     t.index ["transaction_id"], name: "index_event_deliveries_on_transaction_id"
+  end
+
+  create_table "event_delivery_attempts", charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
+    t.integer "action", null: false
+    t.integer "attempt_number", null: false
+    t.datetime "created_at", null: false
+    t.text "error_summary"
+    t.bigint "event_delivery_id", null: false
+    t.datetime "finished_at"
+    t.string "provider_message_id"
+    t.text "response_body"
+    t.integer "response_status"
+    t.datetime "started_at"
+    t.integer "state", null: false
+    t.datetime "updated_at", null: false
+    t.index ["action", "state"], name: "idx_delivery_attempts_on_action_state"
+    t.index ["created_at"], name: "index_event_delivery_attempts_on_created_at"
+    t.index ["event_delivery_id", "attempt_number"], name: "idx_delivery_attempts_on_delivery_number", unique: true
+    t.index ["event_delivery_id"], name: "index_event_delivery_attempts_on_event_delivery_id"
   end
 
   create_table "event_route_matchers", charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|

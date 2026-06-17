@@ -232,7 +232,7 @@ module UserLifecycleChainSpecHelpers
     expect(event).to be_routed_routing_state
 
     delivery = event.event_deliveries.sole
-    expect(delivery).to be_queued_state
+    expect(delivery).to be_prepared_state
     expect(delivery.mail_log).to be_present
 
     event

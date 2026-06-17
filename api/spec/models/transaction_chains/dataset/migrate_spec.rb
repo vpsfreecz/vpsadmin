@@ -224,7 +224,7 @@ RSpec.describe TransactionChains::Dataset::Migrate do
     events = Event.where(event_type: %w[dataset.migration_begun dataset.migration_finished])
                   .order(:id)
 
-    expect(tx_classes(chain).count(Transactions::Mail::Send)).to eq(2)
+    expect(tx_classes(chain).count(Transactions::EventDelivery::Release)).to eq(2)
     expect(events.map(&:event_type)).to eq(%w[dataset.migration_begun dataset.migration_finished])
     events.each do |event|
       expect(event).to be_routed_routing_state
@@ -237,7 +237,7 @@ RSpec.describe TransactionChains::Dataset::Migrate do
         'export_count' => 1,
         'reason' => 'rebalance'
       )
-      expect(event.event_deliveries.sole).to be_queued_state
+      expect(event.event_deliveries.sole).to be_prepared_state
     end
   end
 

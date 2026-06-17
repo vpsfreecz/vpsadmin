@@ -473,6 +473,8 @@ class AddEvents < ActiveRecord::Migration[8.1]
       t.integer     :state,                    null: false
       t.integer     :mail_log_id,              null: true
       t.integer     :transaction_id,           null: true
+      t.datetime    :released_at,              null: true
+      t.text        :payload,                  null: true, limit: 4_294_967_295
       t.integer     :attempt_count,            null: false, default: 0
       t.datetime    :next_attempt_at,          null: true
       t.datetime    :last_attempt_at,          null: true
@@ -484,10 +486,33 @@ class AddEvents < ActiveRecord::Migration[8.1]
     end
 
     add_index :event_deliveries, %i[event_id action state]
+    add_index :event_deliveries, %i[action state next_attempt_at],
+              name: 'idx_event_deliveries_on_action_state_next_attempt'
     add_index :event_deliveries, :state
     add_index :event_deliveries, :next_attempt_at
     add_index :event_deliveries, :mail_log_id
     add_index :event_deliveries, :transaction_id
+    add_index :event_deliveries, :released_at
+
+    create_table :event_delivery_attempts do |t|
+      t.references  :event_delivery,           null: false
+      t.integer     :action,                   null: false
+      t.integer     :state,                    null: false
+      t.integer     :attempt_number,           null: false
+      t.datetime    :started_at,               null: true
+      t.datetime    :finished_at,              null: true
+      t.string      :provider_message_id,      null: true, limit: 255
+      t.integer     :response_status,          null: true
+      t.text        :response_body,            null: true
+      t.text        :error_summary,            null: true
+      t.timestamps                             null: false
+    end
+
+    add_index :event_delivery_attempts, %i[event_delivery_id attempt_number],
+              unique: true, name: 'idx_delivery_attempts_on_delivery_number'
+    add_index :event_delivery_attempts, %i[action state],
+              name: 'idx_delivery_attempts_on_action_state'
+    add_index :event_delivery_attempts, :created_at
 
     backfill_default_routes
     backfill_advanced_mail_routes
@@ -495,6 +520,7 @@ class AddEvents < ActiveRecord::Migration[8.1]
   end
 
   def down
+    drop_table :event_delivery_attempts
     drop_table :event_deliveries
     drop_table :events
     drop_table :event_route_matchers

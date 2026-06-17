@@ -6,6 +6,10 @@ require_relative '../../db/migrate/20260615110000_add_events'
 RSpec.describe EventRoute do
   before do
     reset_routing!(SpecSeed.user)
+    allow(MailTemplate).to receive_messages(
+      send_mail!: build_mail_log_double,
+      send_custom: build_mail_log_double
+    )
   end
 
   def reset_routing!(user, mailer_enabled: true)
@@ -30,7 +34,8 @@ RSpec.describe EventRoute do
         'codename' => codename,
         'subject' => 'Spec incident',
         'text' => 'Spec incident body'
-      }
+      },
+      email_vars: { event: 'spec incident' }
     )
   end
 
@@ -112,7 +117,7 @@ RSpec.describe EventRoute do
     expect(delivery.target_value).to eq('default')
     expect(delivery.target_label).to eq('Default recipient')
     expect(delivery.template_name).to eq('vps_incident_report')
-    expect(delivery).to be_planned_state
+    expect(delivery.reload).to be_released_state
   end
 
   it 'syncs generated default routing when the legacy mailer switch changes' do
@@ -131,7 +136,7 @@ RSpec.describe EventRoute do
     routed_delivery = routed_event.event_deliveries.sole
 
     expect(routed_event.reload).to be_routed_routing_state
-    expect(routed_delivery).to be_planned_state
+    expect(routed_delivery.reload).to be_released_state
     expect(routed_delivery.action).to eq('email')
     expect(routed_delivery.target_value).to eq('default')
   end
@@ -190,7 +195,7 @@ RSpec.describe EventRoute do
     expect(deliveries.map(&:action)).to eq(['webhook'])
     expect(deliveries.first.target_value).to eq('https://example.test/events')
     expect(deliveries.first.template_name).to be_nil
-    expect(deliveries.first).to be_queued_state
+    expect(deliveries.first).to be_released_state
   end
 
   it 'uses continue on matching sibling routes for additive delivery' do

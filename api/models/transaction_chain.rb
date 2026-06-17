@@ -324,17 +324,22 @@ class TransactionChain < ApplicationRecord
   end
 
   def route_event!(event_type, **)
-    event = VpsAdmin::API::Events.emit!(event_type, **)
-
-    event.event_deliveries
-         .where(action: 'email', state: 'planned')
-         .order(:id)
-         .each do |delivery|
-      delivery.association(:event).target = event
-      use_chain(TransactionChains::EventDelivery::Email, args: [delivery])
-    end
-
+    event = prepare_event!(event_type, **)
+    release_event_deliveries!(event)
     event
+  end
+
+  def prepare_event!(event_type, **)
+    VpsAdmin::API::Events.emit!(event_type, **, release: false)
+  end
+
+  def release_event_deliveries!(event)
+    return if event.nil?
+
+    ids = event.event_deliveries.where(state: 'prepared').order(:id).pluck(:id)
+    return if ids.empty?
+
+    append_t(Transactions::EventDelivery::Release, args: [find_node_id, ids])
   end
 
   # Set chain concerns.

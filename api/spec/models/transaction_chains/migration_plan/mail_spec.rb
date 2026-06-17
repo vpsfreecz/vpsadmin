@@ -50,10 +50,10 @@ RSpec.describe TransactionChains::MigrationPlan::Mail do
     expect(chain.transaction_chain_concerns.pluck(:class_name, :row_id)).to include(
       ['MigrationPlan', plan.id]
     )
-    expect(tx_classes(chain)).to include(Transactions::Mail::Send)
+    expect(tx_classes(chain)).to include(Transactions::EventDelivery::Release)
     expect(events.size).to eq(2)
     expect(routed_event.user).to eq(mail_user)
-    expect(routed_event.event_deliveries.sole).to be_queued_state
+    expect(routed_event.event_deliveries.sole).to be_prepared_state
     expect(suppressed_event.user).to eq(vpses.last.user)
     expect(suppressed_event.event_deliveries.sole).to be_skipped_state
   end

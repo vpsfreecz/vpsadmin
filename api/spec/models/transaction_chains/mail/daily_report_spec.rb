@@ -17,7 +17,7 @@ RSpec.describe TransactionChains::Mail::DailyReport do
   it 'queues a mail send transaction' do
     chain, = described_class.fire2(args: [SpecSeed.language])
 
-    expect(tx_classes(chain)).to include(Transactions::Mail::Send)
+    expect(tx_classes(chain)).to include(Transactions::EventDelivery::Release)
     expect(MailTemplate).to have_received(:send_mail!).with(
       :daily_report,
       hash_including(language: SpecSeed.language)

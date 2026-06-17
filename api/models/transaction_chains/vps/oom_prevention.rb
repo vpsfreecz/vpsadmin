@@ -20,7 +20,7 @@ module TransactionChains
         action:
       )
 
-      route_event!(
+      event = prepare_event!(
         'vps.oom_prevention',
         user: vps.user,
         vps:,
@@ -41,6 +41,8 @@ module TransactionChains
       when :stop
         use_chain(Vps::Stop, args: [vps])
       end
+
+      release_event_deliveries!(event)
 
       prevention
     end

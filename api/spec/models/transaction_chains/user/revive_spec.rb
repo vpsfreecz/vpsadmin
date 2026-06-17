@@ -20,10 +20,13 @@ RSpec.describe TransactionChains::User::Revive do
     classes = tx_classes(chain)
 
     expect(classes).to include(
-      Transactions::Mail::Send,
+      Transactions::EventDelivery::Release,
       Transactions::Export::Enable,
       Transactions::Vps::Start
     )
+    release_idx = classes.index(Transactions::EventDelivery::Release)
+    expect(classes.rindex(Transactions::Export::Enable)).to be < release_idx
+    expect(classes.rindex(Transactions::Vps::Start)).to be < release_idx
     expect(MailLog.joins(:mail_template).exists?(mail_templates: { name: 'user_revive' })).to be(true)
     event = expect_routed_event!('user.revived', user: fixture.fetch(:user))
     expect(event.source_class).to eq('ObjectState')

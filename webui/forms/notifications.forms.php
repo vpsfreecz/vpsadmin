@@ -177,6 +177,14 @@ function notifications_text_input_html($name, $value, $size = 30, $form_id = nul
     return '<input type="text" name="' . h($name) . '" id="input" size="' . (int) $size . '" value="' . h($value) . '"' . $form_attr . '>';
 }
 
+function notifications_password_input_html($name, $value, $size = 30, $form_id = null, $placeholder = null)
+{
+    $form_attr = $form_id ? ' form="' . h($form_id) . '"' : '';
+    $placeholder_attr = $placeholder !== null ? ' placeholder="' . h($placeholder) . '"' : '';
+
+    return '<input type="password" name="' . h($name) . '" id="input" size="' . (int) $size . '" value="' . h($value) . '"' . $form_attr . $placeholder_attr . '>';
+}
+
 function notifications_checkbox_html($name, $checked, $form_id = null)
 {
     $form_attr = $form_id ? ' form="' . h($form_id) . '"' : '';
@@ -845,7 +853,7 @@ function notifications_receiver_actions_summary_html($receiver)
     $lines = [];
 
     foreach ($receiver->action->list() as $action) {
-        $line = $action->action . ' -> ' . ($action->display_target ?: $action->target_kind);
+        $line = $action->action . ': ' . ($action->display_target ?: $action->target_kind);
         if (!$action->enabled) {
             $line .= ' (' . _('disabled') . ')';
         }
@@ -955,11 +963,11 @@ function notifications_receiver_edit($receiver_id)
     $xtpl->form_create('?page=notifications&action=receiver_action_save&receiver=' . $receiver->id . notifications_user_qs($receiver->user_id), 'post');
     $xtpl->table_add_category(_('Action'));
     $xtpl->table_add_category(_('Label'));
-    $xtpl->table_add_category(_('Target'));
-    $xtpl->table_add_category(_('Value'));
-    $xtpl->table_add_category(_('Template'));
+    $xtpl->table_add_category(_('Target kind'));
+    $xtpl->table_add_category(_('Address / URL'));
+    $xtpl->table_add_category(_('E-mail template'));
     $xtpl->table_add_category(_('Enabled'));
-    $xtpl->table_add_category(_('Secret'));
+    $xtpl->table_add_category(_('Webhook secret'));
     $xtpl->table_add_category('');
     $xtpl->table_add_category('');
 
@@ -973,7 +981,11 @@ function notifications_receiver_edit($receiver_id)
         $xtpl->table_td(notifications_text_input_html($prefix . '[target_value]', $action->target_value, 28));
         $xtpl->table_td(notifications_text_input_html($prefix . '[template_name]', $action->template_name, 16));
         $xtpl->table_td(notifications_checkbox_html($prefix . '[enabled]', $action->enabled));
-        $xtpl->table_td(boolean_icon($action->secret_present) . '<br>' . notifications_text_input_html($prefix . '[secret]', '', 16));
+        $xtpl->table_td(
+            boolean_icon($action->secret_present)
+            . '<br>'
+            . notifications_password_input_html($prefix . '[secret]', '', 16, null, _('leave empty to keep'))
+        );
         $xtpl->table_td('');
         $xtpl->table_td(
             '<a href="?page=notifications&action=receiver_action_delete&receiver=' . $receiver->id . '&id=' . $action->id
@@ -993,7 +1005,7 @@ function notifications_receiver_edit($receiver_id)
     $xtpl->table_td(notifications_text_input_html('new_target_value', post_val('new_target_value'), 28));
     $xtpl->table_td(notifications_text_input_html('new_template_name', post_val('new_template_name'), 16));
     $xtpl->table_td(notifications_checkbox_html('new_enabled', post_val('new_enabled', true)));
-    $xtpl->table_td(notifications_text_input_html('new_secret', post_val('new_secret'), 16));
+    $xtpl->table_td(notifications_password_input_html('new_secret', post_val('new_secret'), 16));
     $buttons = notifications_submit_html(_('Add'), null, 'add_action');
 
     if ($receiver_actions->count() > 0) {
@@ -1006,6 +1018,43 @@ function notifications_receiver_edit($receiver_id)
 
     $xtpl->sbar_add(_('Back to receivers'), '?page=notifications&action=receivers' . notifications_user_qs($receiver->user_id));
     notifications_sidebar('receivers', $receiver->user_id);
+}
+
+function notifications_time_or_dash($value)
+{
+    return $value ? tolocaltz($value) : '-';
+}
+
+function notifications_delivery_attempts_html($delivery)
+{
+    $lines = [];
+
+    foreach ($delivery->attempt->list() as $attempt) {
+        $line = '#' . $attempt->attempt_number
+            . ' ' . $attempt->state
+            . ' ' . notifications_time_or_dash($attempt->started_at)
+            . ' - ' . notifications_time_or_dash($attempt->finished_at);
+
+        if ($attempt->provider_message_id) {
+            $line .= ' ' . _('message') . ' ' . $attempt->provider_message_id;
+        }
+
+        if ($attempt->response_status) {
+            $line .= ' HTTP ' . $attempt->response_status;
+        }
+
+        if ($attempt->error_summary) {
+            $line .= ' ' . $attempt->error_summary;
+        }
+
+        $lines[] = '<code>' . h($line) . '</code>';
+
+        if ($attempt->response_body) {
+            $lines[] = '<pre>' . h(notifications_short_value($attempt->response_body, 1024)) . '</pre>';
+        }
+    }
+
+    return $lines ? implode('<br>', $lines) : '-';
 }
 
 function notifications_events()
@@ -1089,7 +1138,7 @@ function notifications_events()
             if ($delivery->response_status) {
                 $label .= ':' . $delivery->response_status;
             }
-            $action_labels[] = $label;
+            $action_labels[] = '<code>' . h($label) . '</code>';
         }
 
         $xtpl->table_td(tolocaltz($event->created_at));
@@ -1103,7 +1152,7 @@ function notifications_events()
         $xtpl->table_td(h($event->subject));
         $xtpl->table_td(h($event->severity));
         $xtpl->table_td(h($event->routing_state));
-        $xtpl->table_td($action_labels ? h(implode(', ', $action_labels)) : '-');
+        $xtpl->table_td($action_labels ? implode(' ', $action_labels) : '-');
         $xtpl->table_td('<a href="?page=notifications&action=event_show&id=' . $event->id . '"><img src="template/icons/vps_edit.png" title="' . _('Details') . '"></a>');
         $xtpl->table_tr();
     }
@@ -1168,8 +1217,10 @@ function notifications_event_show($event_id)
     $xtpl->table_add_category(_('State'));
     $xtpl->table_add_category(_('Route'));
     $xtpl->table_add_category(_('Attempts'));
-    $xtpl->table_add_category(_('HTTP'));
-    $xtpl->table_add_category(_('Error'));
+    $xtpl->table_add_category(_('Released'));
+    $xtpl->table_add_category(_('Last attempt'));
+    $xtpl->table_add_category(_('Next retry'));
+    $xtpl->table_add_category(_('Result'));
 
     foreach ($event->delivery->list() as $delivery) {
         $xtpl->table_td(h($delivery->action));
@@ -1178,13 +1229,29 @@ function notifications_event_show($event_id)
         $xtpl->table_td(h($delivery->state));
         $xtpl->table_td($delivery->event_route_id ? '<a href="?page=notifications&action=route_edit&id=' . $delivery->event_route_id . notifications_user_qs($event->user_id) . '">' . $delivery->event_route_id . '</a>' : '-');
         $xtpl->table_td($delivery->attempt_count, false, true);
-        $xtpl->table_td($delivery->response_status ? h($delivery->response_status) : '-');
-        $xtpl->table_td($delivery->error_summary ? h($delivery->error_summary) : '-');
+        $xtpl->table_td(notifications_time_or_dash($delivery->released_at));
+        $xtpl->table_td(notifications_time_or_dash($delivery->last_attempt_at));
+        $xtpl->table_td(notifications_time_or_dash($delivery->next_attempt_at));
+        $result = [];
+        if ($delivery->provider_message_id) {
+            $result[] = _('message') . ' ' . $delivery->provider_message_id;
+        }
+        if ($delivery->response_status) {
+            $result[] = 'HTTP ' . $delivery->response_status;
+        }
+        if ($delivery->error_summary) {
+            $result[] = $delivery->error_summary;
+        }
+        $xtpl->table_td($result ? h(implode(', ', $result)) : '-');
+        $xtpl->table_tr();
+
+        $xtpl->table_td(_('Delivery attempts') . ':', false, false, 2);
+        $xtpl->table_td(notifications_delivery_attempts_html($delivery), false, true, 8);
         $xtpl->table_tr();
 
         if ($delivery->response_body) {
             $xtpl->table_td(_('Response') . ':', false, false, 2);
-            $xtpl->table_td('<pre>' . h(notifications_short_value($delivery->response_body, 1024)) . '</pre>', false, false, 6);
+            $xtpl->table_td('<pre>' . h(notifications_short_value($delivery->response_body, 1024)) . '</pre>', false, false, 8);
             $xtpl->table_tr();
         }
     }

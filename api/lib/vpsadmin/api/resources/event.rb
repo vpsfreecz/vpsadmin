@@ -193,6 +193,7 @@ module VpsAdmin::API::Resources
         integer :mail_log_id, nullable: true
         integer :transaction_id, nullable: true
         integer :attempt_count
+        datetime :released_at, nullable: true
         datetime :next_attempt_at, nullable: true
         datetime :last_attempt_at, nullable: true
         string :provider_message_id, nullable: true
@@ -251,6 +252,95 @@ module VpsAdmin::API::Resources
               id: path_params['delivery_id']
             )
           )
+        end
+      end
+
+      class Attempt < HaveAPI::Resource
+        model ::EventDeliveryAttempt
+        route '{delivery_id}/attempts'
+        desc 'List event delivery attempts'
+
+        params(:all) do
+          id :id
+          integer :event_delivery_id
+          string :action,
+                 choices: { values: ::EventDelivery.action_labels },
+                 load_validators: false
+          string :state,
+                 choices: { values: ::EventDeliveryAttempt.state_labels },
+                 load_validators: false
+          integer :attempt_number
+          datetime :started_at, nullable: true
+          datetime :finished_at, nullable: true
+          string :provider_message_id, nullable: true
+          integer :response_status, nullable: true
+          text :response_body, nullable: true
+          text :error_summary, nullable: true
+          datetime :created_at
+          datetime :updated_at
+        end
+
+        class Index < HaveAPI::Actions::Default::Index
+          desc 'List event delivery attempts'
+
+          output(:object_list) do
+            use :all
+          end
+
+          authorize do |u|
+            allow if u.role == :admin
+            restrict events: { user_id: u.id }
+            allow
+          end
+
+          def query
+            self.class.model
+                .joins(event_delivery: :event)
+                .where(
+                  with_restricted(
+                    event_deliveries: {
+                      event_id: path_params['event_id'],
+                      id: path_params['delivery_id']
+                    }
+                  )
+                )
+          end
+
+          def count
+            query.count
+          end
+
+          def exec
+            with_pagination(query.order(:attempt_number))
+          end
+        end
+
+        class Show < HaveAPI::Actions::Default::Show
+          desc 'Show event delivery attempt'
+
+          output do
+            use :all
+          end
+
+          authorize do |u|
+            allow if u.role == :admin
+            restrict events: { user_id: u.id }
+            allow
+          end
+
+          def exec
+            self.class.model
+                .joins(event_delivery: :event)
+                .find_by!(
+                  with_restricted(
+                    event_deliveries: {
+                      event_id: path_params['event_id'],
+                      id: path_params['delivery_id']
+                    },
+                    id: path_params['attempt_id']
+                  )
+                )
+          end
         end
       end
     end

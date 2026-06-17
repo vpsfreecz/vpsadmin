@@ -32,7 +32,7 @@ RSpec.describe TransactionChains::Vps::ExpandDataset do
     expect(returned_expansion).to eq(expansion)
     expect(tx_classes(chain)).to include(
       Transactions::Storage::SetDataset,
-      Transactions::Mail::Send,
+      Transactions::EventDelivery::Release,
       Transactions::Utils::NoOp
     )
     expect(tx_payload(chain, Transactions::Storage::SetDataset)).to include(
@@ -77,7 +77,7 @@ RSpec.describe TransactionChains::Vps::ExpandDataset do
     chain, = described_class.fire(fixture.fetch(:expansion))
 
     expect(tx_classes(chain)).to include(Transactions::Storage::SetDataset, Transactions::Utils::NoOp)
-    expect(tx_classes(chain)).not_to include(Transactions::Mail::Send)
+    expect(tx_classes(chain)).not_to include(Transactions::EventDelivery::Release)
     expect(Event.where(event_type: 'vps.dataset_expanded')).to be_empty
   end
 end

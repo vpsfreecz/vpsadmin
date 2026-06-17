@@ -34,7 +34,7 @@ RSpec.describe 'requests plugin create chain', requires_plugins: :requests do # 
     expect(chain.transaction_chain_concerns.pluck(:class_name, :row_id)).to include(
       ['RegistrationRequest', request.id]
     )
-    expect(tx_classes(chain)).to all(eq(Transactions::Mail::Send))
+    expect(tx_classes(chain)).to all(eq(Transactions::EventDelivery::Release))
 
     events = request_events('request.created', request)
     user_event = events.find { |event| event.parameters.fetch('role') == 'user' }
@@ -63,7 +63,7 @@ RSpec.describe 'requests plugin create chain', requires_plugins: :requests do # 
     expect(enabled_admin_events.map(&:user)).to contain_exactly(SpecSeed.admin, admin2)
     enabled_admin_events.each do |event|
       delivery = event.event_deliveries.sole
-      expect(delivery).to be_queued_state
+      expect(delivery).to be_prepared_state
       expect(delivery.mail_log.mail_template.name).to eq('request_create_admin')
       expect(delivery.mail_log.message_id).to eq("<vpsadmin-request-#{request.id}-3@vpsadmin.vpsfree.cz>")
     end
@@ -88,10 +88,10 @@ RSpec.describe 'requests plugin create chain', requires_plugins: :requests do # 
     delivery = user_event.event_deliveries.sole
     mail = delivery.mail_log
 
-    expect(tx_classes(chain)).to include(Transactions::Mail::Send)
+    expect(tx_classes(chain)).to include(Transactions::EventDelivery::Release)
     expect(user_event.user).to be_nil
     expect(user_event).to be_routed_routing_state
-    expect(delivery).to be_queued_state
+    expect(delivery).to be_prepared_state
     expect(delivery).to be_direct_email_delivery
     expect(delivery.target_value).to eq('public-registration-owner@test.invalid')
     expect(mail.to).to include('public-registration-owner@test.invalid')

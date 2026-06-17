@@ -40,7 +40,7 @@ module TransactionChains
                .first
       return unless failed
 
-      raise "failed to queue incident report reply e-mail delivery: #{failed.error_summary}"
+      raise "failed to prepare incident report reply e-mail delivery: #{failed.error_summary}"
     end
 
     def reply_text(result, user_cnt, vps_cnt)

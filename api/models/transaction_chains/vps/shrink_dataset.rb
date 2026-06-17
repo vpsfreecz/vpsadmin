@@ -22,8 +22,9 @@ module TransactionChains
 
       vps = dataset_expansion.vps
       dataset = dataset_expansion.dataset
+      event = nil
       if vps.active? && dataset_expansion.enable_notifications
-        route_event!(
+        event = prepare_event!(
           'vps.dataset_shrunk',
           user: vps.user,
           vps:,
@@ -55,6 +56,8 @@ module TransactionChains
         t.edit(dataset_in_pool.dataset, dataset_expansion_id: nil)
         t.edit(dataset_expansion, state: ::DatasetExpansion.states[:resolved])
       end
+
+      release_event_deliveries!(event)
     end
   end
 end

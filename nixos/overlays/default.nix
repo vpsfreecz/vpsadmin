@@ -57,6 +57,9 @@
     {
       vpsadmin-database = super.callPackage ../../packages/api/database.nix { inherit ruby; };
       vpsadmin-api = super.callPackage ../../packages/api/api.nix { inherit ruby; };
+      vpsadmin-notification-dispatcher =
+        super.callPackage ../../packages/api/notification-dispatcher.nix
+          { inherit ruby; };
       vpsadmin-console-router = super.callPackage ../../packages/console-router { inherit ruby; };
       vpsadmin-download-mounter = super.callPackage ../../packages/download-mounter { inherit ruby; };
       vpsadmin-client = super.callPackage ../../packages/client { inherit ruby; };

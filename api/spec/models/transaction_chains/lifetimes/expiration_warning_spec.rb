@@ -14,6 +14,14 @@ RSpec.describe TransactionChains::Lifetimes::ExpirationWarning do
     ensure_mailer_available!
   end
 
+  def stub_mail_delivery!
+    allow(::Mail).to receive(:new).and_wrap_original do |original, *args|
+      message = original.call(*args)
+      allow(message).to receive(:deliver).and_return(true)
+      message
+    end
+  end
+
   it 'resolves a User as its own owner' do
     user = SpecSeed.create_or_update_user!(
       login: "expires-#{SecureRandom.hex(4)}",
@@ -24,7 +32,7 @@ RSpec.describe TransactionChains::Lifetimes::ExpirationWarning do
 
     chain, = described_class.fire2(args: [User, [user]])
 
-    expect(tx_classes(chain)).to include(Transactions::Mail::Send)
+    expect(tx_classes(chain)).to include(Transactions::EventDelivery::Release)
     event = expect_routed_event!('lifetime.expiration_warning', user:)
     expect(event.source).to eq(user)
     expect(event.parameters).to include(
@@ -42,7 +50,7 @@ RSpec.describe TransactionChains::Lifetimes::ExpirationWarning do
 
     chain, = described_class.fire2(args: [Vps, [vps]])
 
-    expect(tx_classes(chain)).to include(Transactions::Mail::Send)
+    expect(tx_classes(chain)).to include(Transactions::EventDelivery::Release)
     event = expect_routed_event!('lifetime.expiration_warning', user: vps.user)
     expect(event.vps).to eq(vps)
     expect(event.source).to eq(vps)
@@ -110,15 +118,17 @@ RSpec.describe TransactionChains::Lifetimes::ExpirationWarning do
       }
     )
     delivery = event.event_deliveries.sole
+    delivery.reload
 
-    expect(delivery).to be_planned_state
+    expect(delivery).to be_released_state
+    expect(delivery.mail_log.mail_template.name).to eq('expiration_user_active')
+    expect(delivery.mail_log.text_plain).to include('approximately 2 days')
 
+    stub_mail_delivery!
     VpsAdmin::API::Tasks::EventDelivery.new.deliver_emails
 
     delivery.reload
-    expect(delivery).to be_queued_state
-    expect(delivery.mail_log.mail_template.name).to eq('expiration_user_active')
-    expect(delivery.mail_log.text_plain).to include('approximately 2 days')
+    expect(delivery).to be_sent_state
   end
 
   it 'raises when no owner can be inferred' do

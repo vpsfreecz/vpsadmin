@@ -128,7 +128,7 @@ RSpec.describe 'outage reports update chain', requires_plugins: :outage_reports 
       'update_id' => report.id,
       'impact_type' => 'network'
     )
-    expect(generic_delivery).to be_queued_state
+    expect(generic_delivery).to be_prepared_state
     expect(generic_delivery.notification_receiver).to be_nil
     expect(generic_delivery.target_label).to eq('Template recipients')
     expect(generic_delivery.template_name).to eq('outage_report_role_event')
@@ -145,7 +145,7 @@ RSpec.describe 'outage reports update chain', requires_plugins: :outage_reports 
       'CVE-2026-3001',
       'CVE-2026-3002'
     )
-    expect(user_delivery).to be_queued_state
+    expect(user_delivery).to be_prepared_state
     expect(user_delivery.notification_receiver).not_to be_nil
     expect(user_delivery.template_name).to eq('outage_report_role_event')
 

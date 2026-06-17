@@ -21,6 +21,7 @@ module TransactionChains
 
       db_changes = {}
       changed_vpses = []
+      events = []
 
       new_ns.changed.each do |attr|
         raise "cannot change attribute '#{attr}'" unless %w[addrs label is_universal location_id].include?(attr)
@@ -73,7 +74,7 @@ module TransactionChains
       end
 
       changed_vpses.each do |vps_update|
-        route_event!(
+        events << prepare_event!(
           'vps.dns_resolver_changed',
           user: vps_update.vps.user,
           vps: vps_update.vps,
@@ -105,6 +106,8 @@ module TransactionChains
           edit(new_ns, db_changes)
         end
       end
+
+      events.each { |event| release_event_deliveries!(event) }
 
       new_ns
     end
