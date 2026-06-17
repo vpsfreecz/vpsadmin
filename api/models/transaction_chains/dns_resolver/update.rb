@@ -73,14 +73,28 @@ module TransactionChains
       end
 
       changed_vpses.each do |vps_update|
-        mail(:vps_dns_resolver_change, {
+        route_event!(
+          'vps.dns_resolver_changed',
           user: vps_update.vps.user,
-          vars: {
+          vps: vps_update.vps,
+          subject: "VPS ##{vps_update.vps.id} DNS resolver changed",
+          summary: "#{vps_update.old_ns.label} -> #{vps_update.new_ns.label}",
+          parameters: {
+            vps_id: vps_update.vps.id,
+            vps_hostname: vps_update.vps.hostname,
+            old_dns_resolver_id: vps_update.old_ns.id,
+            old_dns_resolver_label: vps_update.old_ns.label,
+            old_dns_resolver_addrs: vps_update.old_ns.addrs,
+            new_dns_resolver_id: vps_update.new_ns.id,
+            new_dns_resolver_label: vps_update.new_ns.label,
+            new_dns_resolver_addrs: vps_update.new_ns.addrs
+          },
+          email_vars: {
             vps: vps_update.vps,
             old_dns_resolver: vps_update.old_ns,
             new_dns_resolver: vps_update.new_ns
           }
-        })
+        )
       end
 
       if empty?

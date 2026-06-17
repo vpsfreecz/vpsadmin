@@ -16,14 +16,23 @@ module TransactionChains
         t.edit(vps, enable_network: enable)
       end
 
-      mail(enable ? :vps_network_enabled : :vps_network_disabled, {
-             user: vps.user,
-             vars: {
-               user: vps.user,
-               vps:,
-               reason:
-             }
-           })
+      route_event!(
+        enable ? 'vps.network_enabled' : 'vps.network_disabled',
+        user: vps.user,
+        vps:,
+        subject: "VPS ##{vps.id} network #{enable ? 'enabled' : 'disabled'}",
+        summary: reason,
+        parameters: {
+          vps_id: vps.id,
+          vps_hostname: vps.hostname,
+          reason:
+        },
+        email_vars: {
+          user: vps.user,
+          vps:,
+          reason:
+        }
+      )
     end
   end
 end

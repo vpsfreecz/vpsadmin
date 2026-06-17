@@ -16,6 +16,19 @@ module VpsAdmin::API
     )
 
     RequestInfo = Struct.new(:ip)
+    UserInfo = Struct.new(:id, :login, :full_name)
+    ObjectStateInfo = Struct.new(:state, :reason, :expiration_date, :user)
+    DnsResolverInfo = Struct.new(:id, :label, :addrs)
+    DatasetInfo = Struct.new(:id, :full_name, :refquota, :referenced)
+    DatasetExpansionInfo = Struct.new(
+      :id,
+      :original_refquota,
+      :added_space,
+      :expansion_count,
+      :over_refquota_seconds,
+      :max_over_refquota_seconds,
+      :enable_shrink
+    )
 
     DeliveryPlan = Struct.new(
       :action,
@@ -144,6 +157,16 @@ module VpsAdmin::API
         oom_report_email_vars(event)
       when 'vps.oom_prevention'
         oom_prevention_email_vars(event)
+      when 'vps.suspended', 'vps.resumed'
+        vps_state_email_vars(event)
+      when 'vps.resources_changed'
+        vps_resources_email_vars(event)
+      when 'vps.dns_resolver_changed'
+        vps_dns_resolver_email_vars(event)
+      when 'vps.network_disabled', 'vps.network_enabled'
+        vps_network_email_vars(event)
+      when 'vps.stopped_over_quota'
+        vps_stopped_over_quota_email_vars(event)
       else
         {
           event:,
@@ -225,10 +248,11 @@ module VpsAdmin::API
     def object_state_from_parameters(event)
       params = event.parameters || {}
 
-      ::ObjectState.new(
+      ObjectStateInfo.new(
         state: params['state'] || params[:state],
         reason: params['reason'] || params[:reason],
-        expiration_date: parse_time(params['expiration_date'] || params[:expiration_date])
+        expiration_date: parse_time(params['expiration_date'] || params[:expiration_date]),
+        user: user_info_from_parameters(params, 'changed_by')
       )
     end
 
@@ -325,6 +349,119 @@ module VpsAdmin::API
         ooms_in_period: params['ooms_in_period'] || params[:ooms_in_period],
         period_seconds: params['period_seconds'] || params[:period_seconds]
       }
+    end
+
+    def vps_state_email_vars(event)
+      {
+        vps: required_vps(event),
+        state: object_state_source(event) || object_state_from_parameters(event)
+      }
+    end
+
+    def vps_resources_email_vars(event)
+      params = event.parameters || {}
+
+      {
+        vps: required_vps(event),
+        admin: user_info_from_parameters(params, 'admin'),
+        reason: params['reason'] || params[:reason]
+      }
+    end
+
+    def vps_dns_resolver_email_vars(event)
+      {
+        vps: required_vps(event),
+        old_dns_resolver: dns_resolver_from_parameters(event, 'old'),
+        new_dns_resolver: dns_resolver_from_parameters(event, 'new')
+      }
+    end
+
+    def vps_network_email_vars(event)
+      params = event.parameters || {}
+
+      {
+        user: event.user,
+        vps: required_vps(event),
+        reason: params['reason'] || params[:reason] || ''
+      }
+    end
+
+    def vps_stopped_over_quota_email_vars(event)
+      expansion = dataset_expansion_source(event) || dataset_expansion_from_parameters(event)
+      dataset = expansion.is_a?(::DatasetExpansion) ? expansion.dataset : dataset_from_parameters(event)
+
+      {
+        base_url: ::SysConfig.get(:webui, :base_url),
+        vps: required_vps(event),
+        expansion:,
+        dataset:
+      }
+    end
+
+    def required_vps(event)
+      vps = event.vps
+      raise ArgumentError, "#{event.event_type} VPS is missing" unless vps
+
+      if event.user_id.present? && vps.user_id != event.user_id
+        raise ArgumentError, "#{event.event_type} VPS does not belong to event user"
+      end
+
+      vps
+    end
+
+    def dns_resolver_from_parameters(event, prefix)
+      params = event.parameters || {}
+
+      DnsResolverInfo.new(
+        id: params["#{prefix}_dns_resolver_id"] || params[:"#{prefix}_dns_resolver_id"],
+        label: params["#{prefix}_dns_resolver_label"] || params[:"#{prefix}_dns_resolver_label"],
+        addrs: params["#{prefix}_dns_resolver_addrs"] || params[:"#{prefix}_dns_resolver_addrs"] || ''
+      )
+    end
+
+    def user_info_from_parameters(params, prefix)
+      full_name = params["#{prefix}_name"] || params[:"#{prefix}_name"]
+      return if full_name.blank?
+
+      UserInfo.new(
+        id: params["#{prefix}_id"] || params[:"#{prefix}_id"],
+        login: full_name,
+        full_name:
+      )
+    end
+
+    def dataset_expansion_source(event)
+      source = event.source
+      return unless source.is_a?(::DatasetExpansion)
+      return if event.vps_id.present? && source.vps_id != event.vps_id
+      return if event.user_id.present? && source.vps.user_id != event.user_id
+
+      source
+    end
+
+    def dataset_expansion_from_parameters(event)
+      params = event.parameters || {}
+
+      DatasetExpansionInfo.new(
+        id: params['expansion_id'] || params[:expansion_id],
+        original_refquota: (params['original_refquota'] || params[:original_refquota]).to_i,
+        added_space: (params['added_space'] || params[:added_space]).to_i,
+        expansion_count: (params['expansion_count'] || params[:expansion_count]).to_i,
+        over_refquota_seconds: (params['over_refquota_seconds'] || params[:over_refquota_seconds]).to_i,
+        max_over_refquota_seconds: (params['max_over_refquota_seconds'] || params[:max_over_refquota_seconds]).to_i,
+        enable_shrink: params['enable_shrink'] || params[:enable_shrink]
+      )
+    end
+
+    def dataset_from_parameters(event)
+      params = event.parameters || {}
+
+      DatasetInfo.new(
+        id: params['dataset_id'] || params[:dataset_id],
+        full_name: params['dataset_full_name'] || params[:dataset_full_name],
+        refquota: (params['dataset_refquota'] || params[:dataset_refquota]).to_i,
+        referenced: (params['dataset_referenced'] || params[:dataset_referenced]).to_i
+      )
     end
 
     def oom_reports_from_ids(event, ids)
@@ -926,6 +1063,126 @@ module VpsAdmin::API
         reason: 'Reason',
         ooms_in_period: 'OOM count in period',
         period_seconds: 'Period in seconds'
+      }
+    )
+
+    register(
+      'vps.suspended',
+      label: 'VPS suspended',
+      category: 'vps',
+      severity: :warning,
+      email_template: :vps_suspend,
+      parameters: {
+        vps_id: 'VPS ID',
+        vps_hostname: 'VPS hostname',
+        state: 'Lifecycle state',
+        reason: 'Lifecycle reason',
+        expiration_date: 'Expiration date',
+        changed_by_id: 'User ID that changed the state',
+        changed_by_name: 'User name that changed the state'
+      }
+    )
+
+    register(
+      'vps.resumed',
+      label: 'VPS resumed',
+      category: 'vps',
+      severity: :info,
+      email_template: :vps_resume,
+      parameters: {
+        vps_id: 'VPS ID',
+        vps_hostname: 'VPS hostname',
+        state: 'Lifecycle state',
+        reason: 'Lifecycle reason',
+        expiration_date: 'Expiration date',
+        changed_by_id: 'User ID that changed the state',
+        changed_by_name: 'User name that changed the state'
+      }
+    )
+
+    register(
+      'vps.resources_changed',
+      label: 'VPS resources changed',
+      category: 'vps',
+      severity: :info,
+      email_template: :vps_resources_change,
+      parameters: {
+        vps_id: 'VPS ID',
+        vps_hostname: 'VPS hostname',
+        cpu: 'CPU cores',
+        cpu_limit: 'CPU limit',
+        memory: 'Memory in MiB',
+        swap: 'Swap in MiB',
+        reason: 'Change reason',
+        admin_id: 'Admin user ID',
+        admin_name: 'Admin name'
+      }
+    )
+
+    register(
+      'vps.dns_resolver_changed',
+      label: 'VPS DNS resolver changed',
+      category: 'vps',
+      severity: :info,
+      email_template: :vps_dns_resolver_change,
+      parameters: {
+        vps_id: 'VPS ID',
+        vps_hostname: 'VPS hostname',
+        old_dns_resolver_id: 'Previous DNS resolver ID',
+        old_dns_resolver_label: 'Previous DNS resolver label',
+        old_dns_resolver_addrs: 'Previous DNS resolver addresses',
+        new_dns_resolver_id: 'New DNS resolver ID',
+        new_dns_resolver_label: 'New DNS resolver label',
+        new_dns_resolver_addrs: 'New DNS resolver addresses'
+      }
+    )
+
+    register(
+      'vps.network_disabled',
+      label: 'VPS network disabled',
+      category: 'vps',
+      severity: :warning,
+      email_template: :vps_network_disabled,
+      parameters: {
+        vps_id: 'VPS ID',
+        vps_hostname: 'VPS hostname',
+        reason: 'Disable reason'
+      }
+    )
+
+    register(
+      'vps.network_enabled',
+      label: 'VPS network enabled',
+      category: 'vps',
+      severity: :info,
+      email_template: :vps_network_enabled,
+      parameters: {
+        vps_id: 'VPS ID',
+        vps_hostname: 'VPS hostname',
+        reason: 'Enable reason'
+      }
+    )
+
+    register(
+      'vps.stopped_over_quota',
+      label: 'VPS stopped over quota',
+      category: 'vps',
+      severity: :warning,
+      email_template: :vps_stopped_over_quota,
+      parameters: {
+        vps_id: 'VPS ID',
+        vps_hostname: 'VPS hostname',
+        dataset_id: 'Dataset ID',
+        dataset_full_name: 'Dataset name',
+        dataset_refquota: 'Dataset refquota',
+        dataset_referenced: 'Dataset referenced space',
+        expansion_id: 'Dataset expansion ID',
+        original_refquota: 'Original refquota',
+        added_space: 'Added space',
+        expansion_count: 'Expansion count',
+        over_refquota_seconds: 'Time over quota in seconds',
+        max_over_refquota_seconds: 'Maximum time over quota in seconds',
+        enable_shrink: 'Whether automatic shrink is enabled'
       }
     )
   end

@@ -72,6 +72,34 @@ RSpec.describe VpsAdmin::API::Tasks::EventDelivery do
     [event.event_deliveries.sole, action, route]
   end
 
+  def create_vps_email_delivery!
+    VpsAdmin::API::MailTemplates.install_defaults!
+    vps = build_standalone_vps_fixture(user: SpecSeed.user).fetch(:vps)
+    receiver = NotificationReceiver.create!(user: SpecSeed.user, label: 'Spec VPS receiver')
+    action = receiver.notification_receiver_actions.create!(
+      action: :email,
+      label: 'Spec VPS e-mail',
+      target_kind: :default_recipient
+    )
+    route = EventRoute.create!(
+      user: SpecSeed.user,
+      notification_receiver: receiver,
+      event_type: 'vps.suspended'
+    )
+    event = VpsAdmin::API::Events.emit!(
+      'vps.suspended',
+      user: SpecSeed.user,
+      vps:,
+      subject: 'Spec VPS suspended',
+      parameters: {
+        state: 'suspended',
+        reason: 'spec reason'
+      }
+    )
+
+    [event.event_deliveries.sole, action, route, vps]
+  end
+
   it 'queues planned e-mail deliveries through mail transactions' do
     delivery, action, route = create_email_delivery!
 
@@ -102,6 +130,23 @@ RSpec.describe VpsAdmin::API::Tasks::EventDelivery do
     expect(delivery.target_value).to eq('default')
     expect(delivery.target_label).to eq('Default recipient')
     expect(delivery.mail_log.to).to eq('changed-default@example.test')
+  end
+
+  it 'fails delayed VPS e-mail rendering when the VPS no longer belongs to the event user' do
+    delivery, = create_vps_email_delivery!
+    delivery.event.vps.update_column(:user_id, SpecSeed.other_user.id)
+
+    expect do
+      expect do
+        task.deliver_emails
+      end.not_to change(Transaction, :count)
+    end.not_to change(MailLog, :count)
+
+    delivery.reload
+
+    expect(delivery).to be_failed_state
+    expect(delivery.mail_log).to be_nil
+    expect(delivery.error_summary).to include('VPS does not belong to event user')
   end
 
   it 'retries e-mail deliveries when no mail server is available' do

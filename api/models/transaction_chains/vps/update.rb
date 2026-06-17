@@ -174,14 +174,30 @@ module TransactionChains
 
         use_chain(Vps::SetResources, args: [vps, resources])
         if opts[:change_reason]
-          mail(:vps_resources_change, {
-                 user: vps.user,
-                 vars: {
-                   vps:,
-                   admin: admin || ::User.current,
-                   reason: opts[:change_reason]
-                 }
-               })
+          effective_admin = admin || ::User.current
+          route_event!(
+            'vps.resources_changed',
+            user: vps.user,
+            vps:,
+            subject: "VPS ##{vps.id} resources changed",
+            summary: opts[:change_reason],
+            parameters: {
+              vps_id: vps.id,
+              vps_hostname: vps.hostname,
+              cpu: vps.cpu,
+              cpu_limit: vps.cpu_limit,
+              memory: vps.memory,
+              swap: vps.swap,
+              reason: opts[:change_reason],
+              admin_id: effective_admin&.id,
+              admin_name: effective_admin&.full_name
+            },
+            email_vars: {
+              vps:,
+              admin: effective_admin,
+              reason: opts[:change_reason]
+            }
+          )
         end
       end
 

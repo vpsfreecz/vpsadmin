@@ -12,15 +12,37 @@ module TransactionChains
 
       use_chain(Vps::Stop, args: [dataset_expansion.vps])
 
-      mail(:vps_stopped_over_quota, {
-             user: dataset_expansion.vps.user,
-             vars: {
-               base_url: ::SysConfig.get(:webui, :base_url),
-               vps: dataset_expansion.vps,
-               expansion: dataset_expansion,
-               dataset: dataset_expansion.dataset
-             }
-           })
+      vps = dataset_expansion.vps
+      dataset = dataset_expansion.dataset
+      route_event!(
+        'vps.stopped_over_quota',
+        user: vps.user,
+        vps:,
+        source: dataset_expansion,
+        subject: "VPS ##{vps.id} stopped over quota",
+        summary: "Dataset #{dataset.full_name} is over quota",
+        parameters: {
+          vps_id: vps.id,
+          vps_hostname: vps.hostname,
+          dataset_id: dataset.id,
+          dataset_full_name: dataset.full_name,
+          dataset_refquota: dataset.refquota,
+          dataset_referenced: dataset.referenced,
+          expansion_id: dataset_expansion.id,
+          original_refquota: dataset_expansion.original_refquota,
+          added_space: dataset_expansion.added_space,
+          expansion_count: dataset_expansion.expansion_count,
+          over_refquota_seconds: dataset_expansion.over_refquota_seconds,
+          max_over_refquota_seconds: dataset_expansion.max_over_refquota_seconds,
+          enable_shrink: dataset_expansion.enable_shrink
+        },
+        email_vars: {
+          base_url: ::SysConfig.get(:webui, :base_url),
+          vps:,
+          expansion: dataset_expansion,
+          dataset:
+        }
+      )
     end
   end
 end

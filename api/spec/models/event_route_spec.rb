@@ -393,6 +393,50 @@ RSpec.describe EventRoute do
     expect(delivery.template_name).to eq('user_suspend')
   end
 
+  it 'backfills all matching role recipients for multi-role templates' do
+    reset_advanced_mail_settings!
+    UserMailRoleRecipient.create!(
+      user: SpecSeed.user,
+      role: 'account',
+      to: 'account-role@example.test'
+    )
+    UserMailRoleRecipient.create!(
+      user: SpecSeed.user,
+      role: 'admin',
+      to: 'admin-role@example.test'
+    )
+
+    run_events_migration_backfill!
+
+    event = VpsAdmin::API::Events.emit!(
+      'vps.suspended',
+      user: SpecSeed.user,
+      subject: 'Spec suspended VPS',
+      parameters: {
+        'state' => 'suspended'
+      }
+    )
+    deliveries = event.event_deliveries.order(:id)
+    account_route = described_class.find_by!(
+      user: SpecSeed.user,
+      event_type: 'vps.suspended',
+      label: 'Account management e-mail for VPS suspended'
+    )
+    admin_route = described_class.find_by!(
+      user: SpecSeed.user,
+      event_type: 'vps.suspended',
+      label: 'System administrator e-mail for VPS suspended'
+    )
+
+    expect(event.reload).to be_routed_routing_state
+    expect(account_route).to be_continue
+    expect(admin_route).not_to be_continue
+    expect(deliveries.map(&:target_value)).to eq(
+      %w[account-role@example.test admin-role@example.test]
+    )
+    expect(deliveries.map(&:template_name)).to eq(%w[vps_suspend vps_suspend])
+  end
+
   it 'backfills disabled OOM template recipients only for notification events' do
     reset_advanced_mail_settings!
     template = event_mail_template!('vps_oom_report')

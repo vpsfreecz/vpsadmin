@@ -87,6 +87,55 @@ class AddEvents < ActiveRecord::Migration[8.1]
       label: 'OOM prevention',
       roles: %w[admin],
       matchers: []
+    },
+    {
+      event_type: 'vps.suspended',
+      template_name: 'vps_suspend',
+      label: 'VPS suspended',
+      roles: %w[account admin],
+      matchers: []
+    },
+    {
+      event_type: 'vps.resumed',
+      template_name: 'vps_resume',
+      label: 'VPS resumed',
+      roles: %w[account admin],
+      matchers: []
+    },
+    {
+      event_type: 'vps.resources_changed',
+      template_name: 'vps_resources_change',
+      label: 'VPS resources changed',
+      roles: %w[admin],
+      matchers: []
+    },
+    {
+      event_type: 'vps.dns_resolver_changed',
+      template_name: 'vps_dns_resolver_change',
+      label: 'VPS DNS resolver changed',
+      roles: %w[admin],
+      matchers: []
+    },
+    {
+      event_type: 'vps.network_disabled',
+      template_name: 'vps_network_disabled',
+      label: 'VPS network disabled',
+      roles: %w[admin],
+      matchers: []
+    },
+    {
+      event_type: 'vps.network_enabled',
+      template_name: 'vps_network_enabled',
+      label: 'VPS network enabled',
+      roles: %w[admin],
+      matchers: []
+    },
+    {
+      event_type: 'vps.stopped_over_quota',
+      template_name: 'vps_stopped_over_quota',
+      label: 'VPS stopped over quota',
+      roles: %w[admin],
+      matchers: []
     }
   ].freeze
   ADVANCED_MAIL_ROLE_LABELS = {
@@ -427,23 +476,24 @@ class AddEvents < ActiveRecord::Migration[8.1]
 
     positions = Hash.new(ADVANCED_MAIL_ROLE_ROUTE_POSITION - 1)
 
-    select_all(<<~SQL.squish).each do |row|
+    rows = select_all(<<~SQL.squish).to_a.select do |row|
       SELECT user_mail_role_recipients.*, users.mailer_enabled
       FROM user_mail_role_recipients
       INNER JOIN users ON users.id = user_mail_role_recipients.user_id
       WHERE user_mail_role_recipients.role IN (#{quoted_list(advanced_mail_roles)})
       ORDER BY user_mail_role_recipients.user_id, user_mail_role_recipients.role
     SQL
-      next unless truthy?(row.fetch('mailer_enabled'))
+      truthy?(row.fetch('mailer_enabled')) && row.fetch('to').to_s.strip.present?
+    end
+    rows_by_user = rows.group_by { |row| row.fetch('user_id').to_i }
 
-      target = row.fetch('to').to_s
-      next if target.strip.empty?
-
+    rows.each do |row|
       role = row.fetch('role').to_s
       templates = advanced_mail_event_templates_for_role(role)
       next if templates.empty?
 
       user_id = row.fetch('user_id').to_i
+      target = row.fetch('to').to_s
       role_label = ADVANCED_MAIL_ROLE_LABELS.fetch(role, role)
       receiver_id = create_advanced_mail_receiver(
         user_id:,
@@ -464,7 +514,12 @@ class AddEvents < ActiveRecord::Migration[8.1]
           receiver_id:,
           event_config: cfg,
           label: "#{role_label} e-mail for #{cfg.fetch(:label)}",
-          position: positions[user_id]
+          position: positions[user_id],
+          continue: continue_advanced_mail_role_route?(
+            rows_by_user.fetch(user_id),
+            role,
+            cfg
+          )
         )
       end
     end
@@ -561,7 +616,7 @@ class AddEvents < ActiveRecord::Migration[8.1]
     )
   end
 
-  def create_advanced_mail_route(user_id:, receiver_id:, event_config:, label:, position:)
+  def create_advanced_mail_route(user_id:, receiver_id:, event_config:, label:, position:, continue: false)
     route_id = insert_row(
       'event_routes',
       user_id:,
@@ -572,7 +627,7 @@ class AddEvents < ActiveRecord::Migration[8.1]
       enabled: true,
       event_type: event_config.fetch(:event_type),
       event_type_pattern: nil,
-      continue: false,
+      continue:,
       hit_count: 0,
       created_at: current_timestamp,
       updated_at: current_timestamp
@@ -604,6 +659,15 @@ class AddEvents < ActiveRecord::Migration[8.1]
 
   def advanced_mail_event_templates_for_role(role)
     ADVANCED_MAIL_EVENT_TEMPLATES.select { |cfg| cfg.fetch(:roles).include?(role.to_s) }
+  end
+
+  def continue_advanced_mail_role_route?(rows, role, cfg)
+    roles = rows
+            .map { |row| row.fetch('role').to_s }
+            .select { |row_role| cfg.fetch(:roles).include?(row_role) }
+    role_index = roles.index(role.to_s)
+
+    !!(role_index && role_index < roles.length - 1)
   end
 
   def advanced_mail_roles
