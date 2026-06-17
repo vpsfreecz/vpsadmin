@@ -150,6 +150,22 @@ test.describe('support and status browser coverage', () => {
   test('user notification settings and test events are wired', async ({ page }) => {
     await login(page, fixtures.user);
 
+    await page.goto('/?page=notifications&action=event_types', {
+      waitUntil: 'domcontentloaded',
+    });
+    await expect(heading(page)).toContainText('Event types');
+    await expect(content(page)).toContainText('Matchable fields');
+    await expect(content(page)).toContainText('user.test_notification');
+
+    await page.goto('/?page=notifications&action=events', {
+      waitUntil: 'domcontentloaded',
+    });
+    await expect(heading(page)).toContainText('Event log');
+    const eventLogFilter = formByName(page, 'notification-events');
+    await expect(eventLogFilter).toBeVisible();
+    await expect(eventLogFilter.locator('select[name="delivery_action"]')).toBeVisible();
+    await expect(eventLogFilter.locator('select[name="action"]')).toHaveCount(0);
+
     await page.goto('/?page=notifications&action=receivers', {
       waitUntil: 'domcontentloaded',
     });
@@ -191,6 +207,18 @@ test.describe('support and status browser coverage', () => {
     });
     await expect(heading(page)).toContainText('Notification routes');
     await expect(content(page)).toContainText('Default route');
+    const defaultRouteRow = rowWithText(page, 'Default route');
+    const defaultRouteEditLink = linkWithParams(defaultRouteRow, { action: 'route_edit' });
+    const defaultRouteId = await hrefParam(defaultRouteEditLink, 'id', page.url());
+
+    await defaultRouteEditLink.click();
+    await expect(heading(page)).toContainText(`Notification route #${defaultRouteId}`);
+    await expect(content(page)).toContainText('Matchers');
+
+    await page.goto('/?page=notifications&action=routes', {
+      waitUntil: 'domcontentloaded',
+    });
+    await expect(heading(page)).toContainText('Notification routes');
 
     const routeLabel = 'Webui notification route';
     const routeForm = formByAction(page, 'action=route_new');

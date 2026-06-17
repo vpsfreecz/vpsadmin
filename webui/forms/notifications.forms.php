@@ -101,10 +101,45 @@ function notifications_event_types_cached()
     static $types = null;
 
     if ($types === null) {
-        $types = iterator_to_array($api->event_type->list());
+        $types = notifications_api_list_to_array($api->event_type->list());
     }
 
     return $types;
+}
+
+function notifications_api_list_to_array($list)
+{
+    if (is_array($list)) {
+        return $list;
+    }
+
+    if ($list instanceof Traversable) {
+        return iterator_to_array($list);
+    }
+
+    if (is_object($list) && method_exists($list, 'asArray')) {
+        return $list->asArray();
+    }
+
+    if (!is_object($list) || !method_exists($list, 'getResponse')) {
+        return [];
+    }
+
+    $response = $list->getResponse();
+
+    if (is_array($response)) {
+        return $response;
+    }
+
+    if ($response instanceof Traversable) {
+        return iterator_to_array($response);
+    }
+
+    if (is_object($response)) {
+        return array_values(get_object_vars($response));
+    }
+
+    return [];
 }
 
 function notifications_event_type_fields($event_type, $fallback_fields)
@@ -504,7 +539,7 @@ function notifications_route_options($user_id, $empty = true, $exclude_id = null
     global $api;
 
     $ret = $empty ? ['' => '---'] : [];
-    $routes = iterator_to_array($api->event_route->list(['user' => $user_id]));
+    $routes = notifications_api_list_to_array($api->event_route->list(['user' => $user_id]));
 
     foreach (notifications_ordered_routes($routes) as $row) {
         [$route, $depth] = $row;
@@ -622,7 +657,7 @@ function notifications_route_move($id, $direction)
     global $api;
 
     $route = $api->event_route->show($id);
-    $routes = iterator_to_array($api->event_route->list(['user' => $route->user_id]));
+    $routes = notifications_api_list_to_array($api->event_route->list(['user' => $route->user_id]));
     $siblings = [];
 
     foreach ($routes as $candidate) {
@@ -669,7 +704,7 @@ function notifications_routes_list($user_id = null)
 
     $user_id = notifications_target_user_id($user_id);
     $user = $api->user->show($user_id);
-    $routes = iterator_to_array($api->event_route->list(['user' => $user_id]));
+    $routes = notifications_api_list_to_array($api->event_route->list(['user' => $user_id]));
     $input = $api->event_route->create->getParameters('input');
     $event_types = notifications_param_choices($input->event_type, true);
     $event_type_labels = notifications_param_choices($input->event_type);
@@ -778,7 +813,7 @@ function notifications_route_edit($route_id)
     $operators = notifications_param_choices($matcher_input->operator);
     $receiver_options = notifications_receiver_options($route->user_id);
     $route_options = notifications_route_options($route->user_id, true, $route->id);
-    $matchers = iterator_to_array($route->matcher->list());
+    $matchers = notifications_api_list_to_array($route->matcher->list());
     $fields = notifications_route_matcher_fields($route, $all_fields, $matchers);
     $default_field = array_key_first($fields) ?: 'event_type';
     $default_operator = array_key_first($operators) ?: '==';
@@ -1066,11 +1101,16 @@ function notifications_events()
         'meta' => ['includes' => 'user,vps'],
     ];
 
-    foreach (['event_type', 'category', 'severity', 'routing_state', 'action'] as $name) {
+    foreach (['event_type', 'category', 'severity', 'routing_state'] as $name) {
         $value = api_get($name);
         if ($value !== null) {
             $params[$name] = $value;
         }
+    }
+
+    $delivery_action = api_get('delivery_action');
+    if ($delivery_action !== null) {
+        $params['action'] = $delivery_action;
     }
 
     $route_id = api_get_uint('matched_event_route_id');
@@ -1112,7 +1152,18 @@ function notifications_events()
     api_param_to_form('category', $input->category, get_val('category'));
     api_param_to_form('severity', $input->severity, get_val('severity'), null, true);
     api_param_to_form('routing_state', $input->routing_state, get_val('routing_state'), null, true);
-    api_param_to_form('action', $input->action, get_val('action'), null, true);
+    $action_label = isset($input->action->label) && $input->action->label ? $input->action->label : _('Action');
+    $xtpl->table_td($action_label . ':');
+    $xtpl->table_td(
+        notifications_select_html(
+            'delivery_action',
+            notifications_param_choices($input->action, true),
+            get_val('delivery_action')
+        ),
+        false,
+        true
+    );
+    $xtpl->table_tr();
     $xtpl->form_out(_('Show'));
 
     $xtpl->table_add_category(_('Time'));
