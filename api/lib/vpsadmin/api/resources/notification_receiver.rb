@@ -263,7 +263,7 @@ module VpsAdmin::API::Resources
             with_restricted(id: path_params['notification_receiver_id'])
           )
 
-          action = receiver.notification_receiver_actions.create!(
+          receiver.notification_receiver_actions.create!(
             action: input[:action],
             label: input[:label],
             target_kind: input[:target_kind] || default_target_kind,
@@ -272,9 +272,6 @@ module VpsAdmin::API::Resources
             enabled: input.has_key?(:enabled) ? input[:enabled] : true,
             secret: input[:secret]
           )
-
-          action.generate_verification_token! if action.telegram_action?
-          action
         rescue ActiveRecord::RecordInvalid => e
           error!('create failed', e.record.errors.to_hash)
         end
@@ -348,35 +345,6 @@ module VpsAdmin::API::Resources
           )
           action.destroy!
           ok!
-        end
-      end
-
-      class CreatePairingToken < HaveAPI::Action
-        desc 'Create Telegram pairing token'
-        route '{action_id}/create_pairing_token'
-        http_method :post
-
-        output do
-          use :all
-        end
-
-        authorize do |u|
-          allow if u.role == :admin
-          restrict notification_receivers: { user_id: u.id }
-          allow
-        end
-
-        def exec
-          action = ::NotificationReceiverAction.joins(:notification_receiver).find_by!(
-            with_restricted(
-              notification_receiver_id: path_params['notification_receiver_id'],
-              id: path_params['action_id']
-            )
-          )
-          error!('receiver action is not Telegram') unless action.telegram_action?
-
-          action.generate_verification_token!
-          action
         end
       end
     end

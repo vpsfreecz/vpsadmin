@@ -1674,8 +1674,6 @@ module VpsAdmin::API
         case receiver_action.action
         when 'email'
           email_delivery(route, receiver, receiver_action)
-        when 'telegram'
-          telegram_delivery(route, receiver, receiver_action)
         when 'webhook'
           webhook_delivery(route, receiver, receiver_action)
         else
@@ -1705,18 +1703,6 @@ module VpsAdmin::API
           receiver_action,
           target_value: receiver_action.target_value,
           target_label: delivery_label(receiver_action.target_value)
-        )
-      end
-
-      def telegram_delivery(route, receiver, receiver_action)
-        return skipped_delivery(route, receiver, receiver_action, 'Telegram chat is not linked') if receiver_action.target_value.blank?
-
-        build_delivery(
-          route,
-          receiver,
-          receiver_action,
-          target_value: receiver_action.target_value,
-          target_label: receiver_action.display_target
         )
       end
 

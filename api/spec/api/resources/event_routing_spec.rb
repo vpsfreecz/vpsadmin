@@ -33,10 +33,6 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
     vpath("/notification_receivers/#{receiver_id}/action")
   end
 
-  def receiver_action_pairing_path(receiver_id, action_id)
-    vpath("/notification_receivers/#{receiver_id}/action/#{action_id}/create_pairing_token")
-  end
-
   def route_index_path
     vpath('/event_routes')
   end
@@ -181,8 +177,7 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
         'notification_receiver.action#show',
         'notification_receiver.action#create',
         'notification_receiver.action#update',
-        'notification_receiver.action#delete',
-        'notification_receiver.action#create_pairing_token'
+        'notification_receiver.action#delete'
       )
     end
 
@@ -334,38 +329,6 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
 
     expect(event.reload.matched_event_route).to eq(route)
     expect(event.event_deliveries.sole.action).to eq('webhook')
-  end
-
-  it 'creates Telegram pairing tokens' do
-    as(SpecSeed.user) do
-      json_post receiver_index_path, notification_receiver: {
-        label: 'Spec receiver'
-      }
-    end
-
-    expect_status(200)
-    receiver = NotificationReceiver.find(receiver_obj['id'])
-
-    as(SpecSeed.user) do
-      json_post receiver_action_index_path(receiver.id), action: {
-        action: 'telegram',
-        label: 'Spec Telegram'
-      }
-    end
-
-    expect_status(200)
-    original_token = action_obj['verification_token']
-    expect(original_token).to be_present
-    expect(action_obj['target_kind']).to eq('custom')
-    expect(action_obj['target_value']).to be_nil
-
-    action = NotificationReceiverAction.find(action_obj['id'])
-
-    as(SpecSeed.user) { json_post receiver_action_pairing_path(receiver.id, action.id), {} }
-
-    expect_status(200)
-    expect(action_obj['verification_token']).to be_present
-    expect(action_obj['verification_token']).not_to eq(original_token)
   end
 
   it 'limits receiver and action fan-out' do

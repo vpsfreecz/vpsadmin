@@ -4,10 +4,13 @@ require 'uri'
 class NotificationReceiverAction < ApplicationRecord
   MAX_ACTIONS_PER_RECEIVER = 20
   MAIL_TARGET_VALUE_LIMIT = 500
+  ACTIONS = {
+    email: 0,
+    webhook: 1
+  }.freeze
 
   ACTION_LABELS = {
     'email' => 'E-mail',
-    'telegram' => 'Telegram',
     'webhook' => 'Webhook'
   }.freeze
 
@@ -19,7 +22,7 @@ class NotificationReceiverAction < ApplicationRecord
   belongs_to :notification_receiver
   has_many :event_deliveries, dependent: :nullify
 
-  enum :action, %i[email telegram webhook], suffix: true
+  enum :action, ACTIONS, suffix: true
   enum :target_kind, %i[default_recipient custom], suffix: true
 
   serialize :config, coder: JSON
@@ -68,7 +71,7 @@ class NotificationReceiverAction < ApplicationRecord
     return true if email_action?
     return true if webhook_action?
 
-    verified?
+    false
   end
 
   def generate_verification_token!
@@ -82,8 +85,6 @@ class NotificationReceiverAction < ApplicationRecord
     case action
     when 'email'
       target_value.presence || 'Account e-mail'
-    when 'telegram'
-      target_value.presence || 'Linked Telegram chat'
     when 'webhook'
       target_value.presence || 'Webhook URL'
     else
@@ -123,8 +124,6 @@ class NotificationReceiverAction < ApplicationRecord
     case action
     when 'email'
       check_email_target
-    when 'telegram'
-      check_telegram_target
     when 'webhook'
       check_webhook_target
     end
@@ -148,12 +147,6 @@ class NotificationReceiverAction < ApplicationRecord
 
       errors.add(:target_value, "'#{mail}' is not a valid e-mail address")
     end
-  end
-
-  def check_telegram_target
-    return if custom_target_kind?
-
-    errors.add(:target_kind, 'must be custom')
   end
 
   def check_webhook_target

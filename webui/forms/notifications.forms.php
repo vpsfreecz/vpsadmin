@@ -849,10 +849,6 @@ function notifications_receiver_actions_summary_html($receiver)
         if (!$action->enabled) {
             $line .= ' (' . _('disabled') . ')';
         }
-        if ($action->action === 'telegram' && !$action->verified) {
-            $line .= ' (' . _('unverified') . ')';
-        }
-
         $lines[] = '<code>' . h($line) . '</code>';
     }
 
@@ -963,7 +959,6 @@ function notifications_receiver_edit($receiver_id)
     $xtpl->table_add_category(_('Value'));
     $xtpl->table_add_category(_('Template'));
     $xtpl->table_add_category(_('Enabled'));
-    $xtpl->table_add_category(_('Verified'));
     $xtpl->table_add_category(_('Secret'));
     $xtpl->table_add_category('');
     $xtpl->table_add_category('');
@@ -978,13 +973,8 @@ function notifications_receiver_edit($receiver_id)
         $xtpl->table_td(notifications_text_input_html($prefix . '[target_value]', $action->target_value, 28));
         $xtpl->table_td(notifications_text_input_html($prefix . '[template_name]', $action->template_name, 16));
         $xtpl->table_td(notifications_checkbox_html($prefix . '[enabled]', $action->enabled));
-        $xtpl->table_td(boolean_icon($action->verified));
         $xtpl->table_td(boolean_icon($action->secret_present) . '<br>' . notifications_text_input_html($prefix . '[secret]', '', 16));
-        $xtpl->table_td(
-            $action->action === 'telegram'
-                ? '<a href="?page=notifications&action=receiver_action_pair&receiver=' . $receiver->id . '&id=' . $action->id . notifications_user_qs($receiver->user_id) . '&t=' . csrf_token() . '">' . _('new token') . '</a>'
-                : ''
-        );
+        $xtpl->table_td('');
         $xtpl->table_td(
             '<a href="?page=notifications&action=receiver_action_delete&receiver=' . $receiver->id . '&id=' . $action->id
             . notifications_user_qs($receiver->user_id) . '&t=' . csrf_token() . '"><img src="template/icons/vps_delete.png" title="' . _('Delete') . '"></a>'
@@ -993,7 +983,7 @@ function notifications_receiver_edit($receiver_id)
     }
 
     if ($receiver_actions->count() == 0) {
-        $xtpl->table_td(_('No actions configured.'), false, false, 10);
+        $xtpl->table_td(_('No actions configured.'), false, false, 9);
         $xtpl->table_tr();
     }
 
@@ -1003,7 +993,6 @@ function notifications_receiver_edit($receiver_id)
     $xtpl->table_td(notifications_text_input_html('new_target_value', post_val('new_target_value'), 28));
     $xtpl->table_td(notifications_text_input_html('new_template_name', post_val('new_template_name'), 16));
     $xtpl->table_td(notifications_checkbox_html('new_enabled', post_val('new_enabled', true)));
-    $xtpl->table_td('-');
     $xtpl->table_td(notifications_text_input_html('new_secret', post_val('new_secret'), 16));
     $buttons = notifications_submit_html(_('Add'), null, 'add_action');
 

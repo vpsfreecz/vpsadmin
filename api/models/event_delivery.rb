@@ -1,4 +1,8 @@
 class EventDelivery < ApplicationRecord
+  ACTIONS = {
+    email: 0,
+    webhook: 1
+  }.freeze
   DIRECT_REQUEST_EVENT_TYPES = %w[
     request.created
     request.updated
@@ -18,7 +22,6 @@ class EventDelivery < ApplicationRecord
 
   ACTION_LABELS = {
     'email' => 'E-mail',
-    'telegram' => 'Telegram',
     'webhook' => 'Webhook'
   }.freeze
 
@@ -46,7 +49,7 @@ class EventDelivery < ApplicationRecord
              foreign_key: :transaction_id,
              optional: true
 
-  enum :action, %i[email telegram webhook], suffix: true
+  enum :action, ACTIONS, suffix: true
   enum :target_kind, %i[default_recipient custom], suffix: true
   enum :state, %i[planned queued sent skipped failed canceled], suffix: true
 
