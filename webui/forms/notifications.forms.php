@@ -94,6 +94,53 @@ function notifications_param_choices($desc, $empty = false)
     return $ret;
 }
 
+function notifications_event_types_cached()
+{
+    global $api;
+
+    static $types = null;
+
+    if ($types === null) {
+        $types = iterator_to_array($api->event_type->list());
+    }
+
+    return $types;
+}
+
+function notifications_event_type_fields($event_type, $fallback_fields)
+{
+    if (!$event_type) {
+        return $fallback_fields;
+    }
+
+    foreach (notifications_event_types_cached() as $type) {
+        if ($type->name !== $event_type) {
+            continue;
+        }
+
+        $fields = is_object($type->fields) ? get_object_vars($type->fields) : (array) $type->fields;
+
+        return $fields ?: $fallback_fields;
+    }
+
+    return $fallback_fields;
+}
+
+function notifications_route_matcher_fields($route, $all_fields, $matchers)
+{
+    $fields = notifications_event_type_fields($route->event_type, $all_fields);
+
+    foreach ($matchers as $matcher) {
+        if (isset($fields[$matcher->field])) {
+            continue;
+        }
+
+        $fields[$matcher->field] = $all_fields[$matcher->field] ?? $matcher->field;
+    }
+
+    return $fields;
+}
+
 function notifications_label($labels, $value)
 {
     return $labels[$value] ?? $value;
@@ -719,10 +766,12 @@ function notifications_route_edit($route_id)
     $input = $api->event_route->update->getParameters('input');
     $matcher_input = $route->matcher->create->getParameters('input');
     $event_types = notifications_param_choices($input->event_type, true);
-    $fields = notifications_param_choices($matcher_input->field);
+    $all_fields = notifications_param_choices($matcher_input->field);
     $operators = notifications_param_choices($matcher_input->operator);
     $receiver_options = notifications_receiver_options($route->user_id);
     $route_options = notifications_route_options($route->user_id, true, $route->id);
+    $matchers = iterator_to_array($route->matcher->list());
+    $fields = notifications_route_matcher_fields($route, $all_fields, $matchers);
     $default_field = array_key_first($fields) ?: 'event_type';
     $default_operator = array_key_first($operators) ?: '==';
 
@@ -752,8 +801,6 @@ function notifications_route_edit($route_id)
     $xtpl->table_add_category(_('Value'));
     $xtpl->table_add_category('');
 
-    $matchers = $route->matcher->list();
-
     foreach ($matchers as $matcher) {
         $prefix = 'matchers[' . $matcher->id . ']';
         $xtpl->table_td(notifications_select_html($prefix . '[field]', $fields, $matcher->field));
@@ -766,7 +813,7 @@ function notifications_route_edit($route_id)
         $xtpl->table_tr();
     }
 
-    if ($matchers->count() == 0) {
+    if (count($matchers) == 0) {
         $xtpl->table_td(_('No matchers configured.'), false, false, 4);
         $xtpl->table_tr();
     } else {
@@ -1161,9 +1208,9 @@ function notifications_event_show($event_id)
 
 function notifications_fields_table($event_type = null)
 {
-    global $xtpl, $api;
+    global $xtpl;
 
-    $types = $api->event_type->list();
+    $types = notifications_event_types_cached();
 
     foreach ($types as $type) {
         if ($event_type && $type->name !== $event_type) {
@@ -1188,21 +1235,21 @@ function notifications_fields_table($event_type = null)
 
 function notifications_event_types($user_id = null)
 {
-    global $xtpl, $api;
+    global $xtpl;
 
     $xtpl->title(_('Event types'));
     $xtpl->table_title(_('Event types'));
     $xtpl->table_add_category(_('Name'));
     $xtpl->table_add_category(_('Category'));
     $xtpl->table_add_category(_('Severity'));
-    $xtpl->table_add_category(_('Parameters'));
+    $xtpl->table_add_category(_('Matchable fields'));
 
-    foreach ($api->event_type->list() as $type) {
-        $parameters = is_object($type->parameters) ? get_object_vars($type->parameters) : (array) $type->parameters;
+    foreach (notifications_event_types_cached() as $type) {
+        $fields = is_object($type->fields) ? get_object_vars($type->fields) : (array) $type->fields;
         $lines = [];
 
-        foreach ($parameters as $name => $label) {
-            $lines[] = '<code>parameters.' . h($name) . '</code> ' . h($label);
+        foreach ($fields as $name => $label) {
+            $lines[] = '<code>' . h($name) . '</code> ' . h($label);
         }
 
         $xtpl->table_td('<code>' . h($type->name) . '</code><br>' . h($type->label), false, true);
