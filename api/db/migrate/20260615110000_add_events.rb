@@ -66,6 +66,20 @@ class AddEvents < ActiveRecord::Migration[8.1]
       matchers: []
     },
     {
+      event_type: 'security_advisory.announced',
+      template_name: 'security_advisory_user_announce',
+      label: 'Security advisory announced',
+      roles: %w[admin],
+      matchers: []
+    },
+    {
+      event_type: 'security_advisory.updated',
+      template_name: 'security_advisory_user_update',
+      label: 'Security advisory updated',
+      roles: %w[admin],
+      matchers: []
+    },
+    {
       event_type: 'vps.incident_report',
       template_name: 'vps_incident_report',
       label: 'Incident report',

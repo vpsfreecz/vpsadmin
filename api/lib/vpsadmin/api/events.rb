@@ -159,6 +159,8 @@ module VpsAdmin::API
         user_totp_recovery_email_vars(event)
       when 'user.failed_logins'
         user_failed_logins_email_vars(event)
+      when 'security_advisory.announced', 'security_advisory.updated'
+        security_advisory_email_vars(event)
       when 'vps.incident_report'
         incident_email_vars(event)
       when 'vps.oom_report'
@@ -499,6 +501,27 @@ module VpsAdmin::API
       }
     end
 
+    def security_advisory_email_vars(event)
+      advisory = security_advisory_source(event) ||
+                 security_advisory_from_parameters(event)
+      raise ArgumentError, 'security advisory is missing' unless advisory
+
+      update = security_advisory_update_source(event, advisory) ||
+               security_advisory_update_from_parameters(event, advisory)
+      if event.event_type == 'security_advisory.updated' && update.nil?
+        raise ArgumentError, 'security advisory update is missing'
+      end
+
+      {
+        advisory:,
+        a: advisory,
+        update:,
+        user: event.user,
+        vpses: security_advisory_vpses_for(advisory, event.user),
+        webui_url: webui_url
+      }
+    end
+
     def required_vps(event)
       vps = event.vps
       raise ArgumentError, "#{event.event_type} VPS is missing" unless vps
@@ -572,6 +595,46 @@ module VpsAdmin::API
       return if event.user_id.present? && source.user_id != event.user_id
 
       source
+    end
+
+    def security_advisory_source(event)
+      case event.source
+      when ::SecurityAdvisory
+        event.source
+      when ::SecurityAdvisoryUpdate
+        event.source.security_advisory
+      end
+    end
+
+    def security_advisory_update_source(event, advisory)
+      source = event.source
+      return unless source.is_a?(::SecurityAdvisoryUpdate)
+      return unless source.security_advisory_id == advisory.id
+
+      source
+    end
+
+    def security_advisory_from_parameters(event)
+      params = event.parameters || {}
+      advisory_id = params['advisory_id'] || params[:advisory_id]
+      return if advisory_id.blank?
+
+      ::SecurityAdvisory.visible_to(event.user).find_by(id: advisory_id)
+    end
+
+    def security_advisory_update_from_parameters(event, advisory)
+      params = event.parameters || {}
+      update_id = params['update_id'] || params[:update_id]
+      return if update_id.blank?
+
+      advisory.security_advisory_updates.find_by(id: update_id)
+    end
+
+    def security_advisory_vpses_for(advisory, user)
+      scope = advisory.security_advisory_vpses.includes(:vps, :node).order(:vps_id)
+      return scope.none unless user
+
+      scope.where(user:)
     end
 
     def dataset_expansion_from_parameters(event)
@@ -711,6 +774,12 @@ module VpsAdmin::API
       ].compact
 
       ret.join("\n\n")
+    end
+
+    def webui_url
+      (::SysConfig.get(:webui, :base_url) || '').chomp('/')
+    rescue StandardError
+      ''
     end
 
     def parameter_field?(field)
@@ -1211,6 +1280,42 @@ module VpsAdmin::API
       severity: :info,
       parameters: {
         note: 'Test note'
+      }
+    )
+
+    register(
+      'security_advisory.announced',
+      label: 'Security advisory announced',
+      category: 'security',
+      severity: :warning,
+      email_template: :security_advisory_user_announce,
+      parameters: {
+        advisory_id: 'Security advisory ID',
+        advisory_name: 'Security advisory name',
+        cves: 'CVE identifiers',
+        state: 'Security advisory state',
+        published_at: 'Publication time',
+        affected_vps_count: 'Affected VPS count',
+        affected_vpses: 'Affected VPS sample'
+      }
+    )
+
+    register(
+      'security_advisory.updated',
+      label: 'Security advisory updated',
+      category: 'security',
+      severity: :warning,
+      email_template: :security_advisory_user_update,
+      parameters: {
+        advisory_id: 'Security advisory ID',
+        advisory_name: 'Security advisory name',
+        update_id: 'Security advisory update ID',
+        update_summary: 'Update summary',
+        cves: 'CVE identifiers',
+        state: 'Security advisory state',
+        published_at: 'Publication time',
+        affected_vps_count: 'Affected VPS count',
+        affected_vpses: 'Affected VPS sample'
       }
     )
 
