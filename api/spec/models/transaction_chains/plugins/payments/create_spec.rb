@@ -13,6 +13,7 @@ RSpec.describe 'payments plugin create chain', requires_plugins: :payments do # 
 
   before do
     ensure_mailer_available!
+    seed_payments_sysconfig!
     user.update!(object_state: :active, mailer_enabled: true)
     user.user_account.update!(monthly_payment: 100, paid_until: nil)
     allow(MailTemplate).to receive(:send_mail!).and_return(build_mail_log_double)
@@ -42,6 +43,22 @@ RSpec.describe 'payments plugin create chain', requires_plugins: :payments do # 
       :payment_accepted,
       hash_including(user: user, vars: hash_including(payment: payment))
     )
+    event = Event.where(event_type: 'payment.accepted').sole
+    delivery = event.event_deliveries.sole
+    expect(event.user).to eq(user)
+    expect(event.source).to eq(payment)
+    expect(event.parameters).to include(
+      'payment_id' => payment.id,
+      'received_amount' => payment.received_amount.to_s('F'),
+      'received_currency' => payment.received_currency,
+      'incoming_payment_id' => incoming.id,
+      'incoming_transaction_id' => incoming.transaction_id,
+      'accounted_by_id' => SpecSeed.admin.id,
+      'accounted_by_login' => SpecSeed.admin.login
+    )
+    expect(delivery).to be_queued_state
+    expect(delivery.action).to eq('email')
+    expect(delivery.template_name).to eq('payment_accepted')
     expect(chain.transaction_chain_concerns.pluck(:class_name, :row_id)).to include(
       ['UserPayment', payment.id]
     )
@@ -59,6 +76,21 @@ RSpec.describe 'payments plugin create chain', requires_plugins: :payments do # 
     expect(payment.to_date.to_i).to eq(Time.local(2026, 7, 1, 10, 0, 0).to_i)
     expect(user.user_account.reload.paid_until.to_i).to eq(payment.to_date.to_i)
     expect(incoming.reload.state).to eq('processed')
+  end
+
+  it 'emits readable event parameters for manual payments' do
+    payment = build_user_payment(user: user, amount: 200)
+
+    chain_class.fire2(args: [payment])
+
+    event = Event.where(event_type: 'payment.accepted').sole
+    expect(event.parameters).to include(
+      'amount' => 200,
+      'received_amount' => 200,
+      'received_currency' => 'CZK'
+    )
+    expect(event.parameters).not_to have_key('incoming_payment_id')
+    expect(event.parameters).not_to have_key('incoming_transaction_id')
   end
 
   it 'uses the object-state chain and confirmation operations for suspended users' do

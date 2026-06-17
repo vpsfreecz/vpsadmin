@@ -189,6 +189,13 @@ class AddEvents < ActiveRecord::Migration[8.1]
       ]
     },
     {
+      event_type: 'payment.accepted',
+      template_name: 'payment_accepted',
+      label: 'Payment accepted',
+      roles: %w[account],
+      matchers: []
+    },
+    {
       event_type: 'security_advisory.announced',
       template_name: 'security_advisory_user_announce',
       label: 'Security advisory announced',

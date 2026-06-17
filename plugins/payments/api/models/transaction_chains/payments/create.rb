@@ -60,21 +60,55 @@ module VpsAdmin::API::Plugins::Payments::TransactionChains
               "Account #{u.id} is in state #{u.object_state}, cannot add payment"
       end
 
-      if u.mailer_enabled
-        mail(:payment_accepted, {
-               user: u,
-               vars: {
-                 user: u,
-                 account: u.user_account,
-                 payment:
-               }
-             })
-      end
+      route_event!(
+        'payment.accepted',
+        user: u,
+        source: payment,
+        subject: 'Payment accepted',
+        summary: payment_event_summary(payment),
+        parameters: payment_event_parameters(payment),
+        email_vars: payment_event_vars(payment)
+      )
 
       payment
     end
 
     protected
+
+    def payment_event_vars(payment)
+      {
+        user: payment.user,
+        account: payment.user.user_account,
+        payment:
+      }
+    end
+
+    def payment_event_parameters(payment)
+      incoming = payment.incoming_payment
+      accounted_by = payment.accounted_by
+
+      {
+        payment_id: payment.id,
+        amount: payment.amount,
+        received_amount: payment_amount_parameter(payment.received_amount),
+        received_currency: payment.received_currency,
+        from_date: payment.from_date&.iso8601,
+        to_date: payment.to_date&.iso8601,
+        incoming_payment_id: payment.incoming_payment_id,
+        incoming_transaction_id: incoming&.transaction_id,
+        accounted_by_id: accounted_by&.id,
+        accounted_by_login: accounted_by&.login
+      }.compact
+    end
+
+    def payment_amount_parameter(amount)
+      amount.is_a?(BigDecimal) ? amount.to_s('F') : amount
+    end
+
+    def payment_event_summary(payment)
+      "Accepted payment of #{payment.received_amount} " \
+        "#{payment.received_currency.to_s.upcase} for account #{payment.user_id}"
+    end
 
     # @param time [Time]
     # @param n [Integer] months to add

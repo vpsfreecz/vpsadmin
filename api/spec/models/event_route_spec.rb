@@ -368,6 +368,37 @@ RSpec.describe EventRoute do
     )
   end
 
+  it 'backfills payment accepted template recipient overrides' do
+    reset_advanced_mail_settings!
+    template = event_mail_template!('payment_accepted')
+    UserMailTemplateRecipient.create!(
+      user: SpecSeed.user,
+      mail_template: template,
+      to: 'payment-override@example.test',
+      enabled: true
+    )
+
+    run_events_migration_backfill!
+
+    event = VpsAdmin::API::Events.emit!(
+      'payment.accepted',
+      user: SpecSeed.user,
+      subject: 'Spec payment accepted',
+      parameters: {
+        payment_id: 123,
+        received_amount: 200,
+        received_currency: 'CZK'
+      }
+    )
+    delivery = event.event_deliveries.sole
+
+    expect(event.reload).to be_routed_routing_state
+    expect(event.matched_event_route.event_type).to eq('payment.accepted')
+    expect(delivery.target_kind).to eq('custom')
+    expect(delivery.target_value).to eq('payment-override@example.test')
+    expect(delivery.template_name).to eq('payment_accepted')
+  end
+
   it 'backfills request template overrides in fallback order' do
     reset_advanced_mail_settings!
     specific = event_mail_template!('request_resolve_user_change_approved')

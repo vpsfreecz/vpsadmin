@@ -58,6 +58,15 @@ module VpsAdmin::API
     SnapshotInfo = Struct.new(:id, :name, :dataset)
     SnapshotDownloadInfo = Struct.new(:id, :file_name, :expiration_date, :user, :snapshot)
     VpsMigrationInfo = Struct.new(:id, :maintenance_window)
+    PaymentInfo = Struct.new(
+      :id,
+      :amount,
+      :from_date,
+      :to_date,
+      :received_amount,
+      :received_currency,
+      :incoming_payment_id
+    )
 
     DeliveryPlan = Struct.new(
       :action,
@@ -203,6 +212,8 @@ module VpsAdmin::API
         user_failed_logins_email_vars(event)
       when 'lifetime.expiration_warning'
         expiration_warning_email_vars(event)
+      when 'payment.accepted'
+        payment_accepted_email_vars(event)
       when *REQUEST_EVENT_TYPES
         request_email_vars(event)
       when 'security_advisory.announced', 'security_advisory.updated'
@@ -318,6 +329,17 @@ module VpsAdmin::API
       }
       ret[object_key] = object if object_key.present?
       ret
+    end
+
+    def payment_accepted_email_vars(event)
+      payment = payment_source(event) || payment_from_parameters(event)
+      raise ArgumentError, 'payment source is missing' unless payment
+
+      {
+        user: event.user,
+        account: event.user&.user_account,
+        payment:
+      }
     end
 
     def request_email_vars(event)
@@ -477,6 +499,32 @@ module VpsAdmin::API
 
         source
       end
+    end
+
+    def payment_source(event)
+      return unless defined?(::UserPayment)
+
+      source = event.source
+      return unless source.is_a?(::UserPayment)
+      return if event.user_id.present? && source.user_id != event.user_id
+
+      source
+    end
+
+    def payment_from_parameters(event)
+      params = event.parameters || {}
+      payment = find_from_parameters(event, ::UserPayment, 'payment_id') if defined?(::UserPayment)
+      return payment if payment
+
+      PaymentInfo.new(
+        params['payment_id'] || params[:payment_id],
+        params['amount'] || params[:amount],
+        parse_time(params['from_date'] || params[:from_date]),
+        parse_time(params['to_date'] || params[:to_date]),
+        params['received_amount'] || params[:received_amount],
+        params['received_currency'] || params[:received_currency],
+        params['incoming_payment_id'] || params[:incoming_payment_id]
+      )
     end
 
     def request_source(event)
@@ -1520,6 +1568,26 @@ module VpsAdmin::API
       severity: :info,
       parameters: {
         note: 'Test note'
+      }
+    )
+
+    register(
+      'payment.accepted',
+      label: 'Payment accepted',
+      category: 'payments',
+      severity: :info,
+      email_template: :payment_accepted,
+      parameters: {
+        payment_id: 'Payment ID',
+        amount: 'Accounted amount',
+        received_amount: 'Received amount',
+        received_currency: 'Received currency',
+        from_date: 'Paid from date',
+        to_date: 'Paid until date',
+        incoming_payment_id: 'Incoming payment ID',
+        incoming_transaction_id: 'Incoming bank transaction ID',
+        accounted_by_id: 'Accounting admin user ID',
+        accounted_by_login: 'Accounting admin login'
       }
     )
 
