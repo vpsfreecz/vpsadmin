@@ -67,7 +67,9 @@ module TransactionChains
       end
 
       action = delivery.notification_receiver_action
-      unless action&.email_action? && action.enabled?
+      direct_delivery = action.nil? && delivery.direct_email_delivery?
+
+      unless direct_delivery || (action&.email_action? && action.enabled?)
         delivery.update!(
           state: 'canceled',
           error_summary: 'e-mail action is not available'

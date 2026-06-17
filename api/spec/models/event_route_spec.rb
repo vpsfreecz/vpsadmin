@@ -368,6 +368,56 @@ RSpec.describe EventRoute do
     )
   end
 
+  it 'backfills request template overrides in fallback order' do
+    reset_advanced_mail_settings!
+    specific = event_mail_template!('request_resolve_user_change_approved')
+    specific.update!(template_id: 'request_resolve_role_type_state')
+    generic = event_mail_template!('request_resolve_user')
+    generic.update!(template_id: 'request_action_role')
+    UserMailTemplateRecipient.create!(
+      user: SpecSeed.user,
+      mail_template: generic,
+      to: 'request-generic@example.test',
+      enabled: true
+    )
+    UserMailTemplateRecipient.create!(
+      user: SpecSeed.user,
+      mail_template: specific,
+      to: 'request-specific@example.test',
+      enabled: true
+    )
+
+    run_events_migration_backfill!
+
+    event = VpsAdmin::API::Events.emit!(
+      'request.resolved',
+      user: SpecSeed.user,
+      subject: 'Spec request resolved',
+      parameters: {
+        role: 'user',
+        action: 'resolve',
+        request_type: 'change',
+        request_state: 'approved',
+        request_id: 123,
+        mail_id: 2
+      }
+    )
+    delivery = event.event_deliveries.sole
+    matchers = event.matched_event_route.event_route_matchers.order(:id)
+
+    expect(event.reload).to be_routed_routing_state
+    expect(delivery.target_kind).to eq('custom')
+    expect(delivery.target_value).to eq('request-specific@example.test')
+    expect(delivery.template_name).to eq('request_resolve_role_type_state')
+    expect(matchers.map { |m| [m.field, m.operator, m.value] }).to eq(
+      [
+        ['parameters.role', '==', 'user'],
+        ['parameters.request_type', '==', 'change'],
+        ['parameters.request_state', '==', 'approved']
+      ]
+    )
+  end
+
   it 'backfills role recipients behind template-specific routes' do
     reset_advanced_mail_settings!
     UserMailRoleRecipient.create!(

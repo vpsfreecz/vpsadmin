@@ -1,4 +1,10 @@
 class EventDelivery < ApplicationRecord
+  DIRECT_REQUEST_EVENT_TYPES = %w[
+    request.created
+    request.updated
+    request.resolved
+  ].freeze
+
   ACTION_LABELS = {
     'email' => 'E-mail',
     'telegram' => 'Telegram',
@@ -52,6 +58,25 @@ class EventDelivery < ApplicationRecord
   end
 
   def notification_receiver_available?
+    return true if direct_email_delivery?
+
     notification_receiver&.enabled? && !notification_receiver.mute?
+  end
+
+  def direct_email_delivery?
+    return false unless email_action? &&
+                        notification_receiver.nil? &&
+                        notification_receiver_action.nil? &&
+                        default_recipient_target_kind? &&
+                        target_value.present?
+    return false unless event&.user_id.nil?
+    return false unless DIRECT_REQUEST_EVENT_TYPES.include?(event.event_type)
+
+    params = event.parameters || {}
+    recipient = params['recipient_email'] || params[:recipient_email]
+
+    (params['role'] || params[:role]).to_s == 'user' &&
+      recipient.present? &&
+      target_value == recipient.to_s
   end
 end

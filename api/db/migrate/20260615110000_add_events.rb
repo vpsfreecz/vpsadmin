@@ -1,6 +1,107 @@
 class AddEvents < ActiveRecord::Migration[8.1]
   ADVANCED_MAIL_TEMPLATE_ROUTE_POSITION = 10
   ADVANCED_MAIL_ROLE_ROUTE_POSITION = 1_000
+  REQUEST_MAIL_TYPES = %w[registration change].freeze
+  REQUEST_MAIL_ROLES = %w[user admin].freeze
+  REQUEST_MAIL_RESOLVE_STATES = %w[approved denied ignored pending_correction awaiting].freeze
+  REQUEST_ADVANCED_MAIL_EVENT_TEMPLATES = begin
+    ret = []
+
+    %w[create update].each do |action|
+      event_type = action == 'create' ? 'request.created' : 'request.updated'
+
+      REQUEST_MAIL_ROLES.each do |role|
+        REQUEST_MAIL_TYPES.each do |type|
+          ret << {
+            event_type:,
+            template_name: 'request_action_role_type',
+            legacy_template_names: ["request_#{action}_#{role}_#{type}"],
+            label: "Request #{action} #{role} #{type}",
+            roles: [],
+            priority: 10,
+            matchers: [
+              ['parameters.role', '==', role],
+              ['parameters.request_type', '==', type]
+            ]
+          }
+        end
+
+        ret << {
+          event_type:,
+          template_name: 'request_action_role',
+          legacy_template_names: ["request_#{action}_#{role}"],
+          label: "Request #{action} #{role}",
+          roles: [],
+          priority: 30,
+          matchers: [
+            ['parameters.role', '==', role]
+          ]
+        }
+      end
+    end
+
+    REQUEST_MAIL_ROLES.each do |role|
+      REQUEST_MAIL_TYPES.each do |type|
+        REQUEST_MAIL_RESOLVE_STATES.each do |state|
+          ret << {
+            event_type: 'request.resolved',
+            template_name: 'request_resolve_role_type_state',
+            legacy_template_names: ["request_resolve_#{role}_#{type}_#{state}"],
+            label: "Request resolve #{role} #{type} #{state}",
+            roles: [],
+            priority: 0,
+            matchers: [
+              ['parameters.role', '==', role],
+              ['parameters.request_type', '==', type],
+              ['parameters.request_state', '==', state]
+            ]
+          }
+        end
+
+        ret << {
+          event_type: 'request.resolved',
+          template_name: 'request_action_role_type',
+          legacy_template_names: ["request_resolve_#{role}_#{type}"],
+          label: "Request resolve #{role} #{type}",
+          roles: [],
+          priority: 10,
+          matchers: [
+            ['parameters.role', '==', role],
+            ['parameters.request_type', '==', type]
+          ]
+        }
+      end
+
+      REQUEST_MAIL_RESOLVE_STATES.each do |state|
+        ret << {
+          event_type: 'request.resolved',
+          template_name: 'request_resolve_role_state',
+          legacy_template_names: ["request_resolve_#{role}_#{state}"],
+          label: "Request resolve #{role} #{state}",
+          roles: [],
+          priority: 20,
+          matchers: [
+            ['parameters.role', '==', role],
+            ['parameters.request_state', '==', state]
+          ]
+        }
+      end
+
+      ret << {
+        event_type: 'request.resolved',
+        template_name: 'request_action_role',
+        legacy_template_names: ["request_resolve_#{role}"],
+        label: "Request resolve #{role}",
+        roles: [],
+        priority: 30,
+        matchers: [
+          ['parameters.role', '==', role]
+        ]
+      }
+    end
+
+    ret
+  end.freeze
   ADVANCED_MAIL_EVENT_TEMPLATES = [
     {
       event_type: 'user.created',
@@ -236,7 +337,7 @@ class AddEvents < ActiveRecord::Migration[8.1]
       roles: %w[admin],
       matchers: []
     }
-  ].freeze
+  ].concat(REQUEST_ADVANCED_MAIL_EVENT_TEMPLATES).freeze
   ADVANCED_MAIL_ROLE_LABELS = {
     'account' => 'Account management',
     'admin' => 'System administrator'
@@ -510,7 +611,7 @@ class AddEvents < ActiveRecord::Migration[8.1]
     template_names = advanced_mail_template_names
     positions = Hash.new(ADVANCED_MAIL_TEMPLATE_ROUTE_POSITION - 1)
 
-    select_all(<<~SQL.squish).each do |row|
+    rows = select_all(<<~SQL.squish).to_a
       SELECT
         user_mail_template_recipients.*,
         mail_templates.name AS template_name,
@@ -523,6 +624,10 @@ class AddEvents < ActiveRecord::Migration[8.1]
       WHERE mail_templates.name IN (#{quoted_list(template_names)})
       ORDER BY user_mail_template_recipients.user_id, mail_templates.name
     SQL
+
+    rows.sort_by! { |row| advanced_mail_event_template_sort_key(row) }
+
+    rows.each do |row|
       next unless truthy?(row.fetch('mailer_enabled'))
 
       cfg = advanced_mail_event_template_by_name.fetch(row.fetch('template_name'), nil)
@@ -767,6 +872,15 @@ class AddEvents < ActiveRecord::Migration[8.1]
     ADVANCED_MAIL_EVENT_TEMPLATES.flat_map do |cfg|
       cfg.fetch(:legacy_template_names, [cfg.fetch(:template_name)])
     end
+  end
+
+  def advanced_mail_event_template_sort_key(row)
+    cfg = advanced_mail_event_template_by_name.fetch(row.fetch('template_name'), nil)
+    [
+      row.fetch('user_id').to_i,
+      cfg&.fetch(:priority, 0) || 0,
+      row.fetch('template_name').to_s
+    ]
   end
 
   def continue_advanced_mail_role_route?(rows, role, cfg)

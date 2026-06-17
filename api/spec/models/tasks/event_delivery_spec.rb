@@ -72,6 +72,23 @@ RSpec.describe VpsAdmin::API::Tasks::EventDelivery do
     [event.event_deliveries.sole, action, route]
   end
 
+  def create_direct_request_email_delivery!
+    event = VpsAdmin::API::Events.emit!(
+      'request.created',
+      subject: 'Spec public registration',
+      parameters: {
+        role: 'user',
+        action: 'create',
+        request_type: 'registration',
+        request_state: 'pending',
+        recipient_email: 'public-registration@example.test',
+        mail_id: 1
+      }
+    )
+
+    event.event_deliveries.sole
+  end
+
   def create_vps_email_delivery!
     VpsAdmin::API::MailTemplates.install_defaults!
     vps = build_standalone_vps_fixture(user: SpecSeed.user).fetch(:vps)
@@ -223,6 +240,28 @@ RSpec.describe VpsAdmin::API::Tasks::EventDelivery do
     expect(delivery.attempt_count).to eq(1)
   end
 
+  it 'retries direct e-mail deliveries when no mail server is available' do
+    delivery = create_direct_request_email_delivery!
+    Node.update_all(active: false)
+
+    expect(delivery).to be_direct_email_delivery
+
+    expect do
+      expect do
+        task.deliver_emails
+      end.not_to change(Transaction, :count)
+    end.not_to change(MailLog, :count)
+
+    delivery.reload
+
+    expect(delivery).to be_queued_state
+    expect(delivery.mail_log).to be_nil
+    expect(delivery.transaction_id).to be_nil
+    expect(delivery.next_attempt_at).to be_present
+    expect(delivery.error_summary).to include('ActiveRecord::RecordNotFound')
+    expect(delivery.attempt_count).to eq(1)
+  end
+
   it 'marks queued e-mail deliveries sent after the mail transaction succeeds' do
     delivery, = create_email_delivery!
 
@@ -261,6 +300,23 @@ RSpec.describe VpsAdmin::API::Tasks::EventDelivery do
     end.not_to change(Transaction, :count)
 
     expect(delivery.reload).to be_canceled_state
+    expect(delivery.error_summary).to include('receiver')
+  end
+
+  it 'does not treat receiver-backed e-mail deliveries as direct after receiver deletion' do
+    delivery, = create_email_delivery!
+    delivery.notification_receiver.destroy!
+
+    expect do
+      task.deliver_emails
+    end.not_to change(Transaction, :count)
+
+    delivery.reload
+
+    expect(delivery.notification_receiver).to be_nil
+    expect(delivery.notification_receiver_action).to be_nil
+    expect(delivery).not_to be_direct_email_delivery
+    expect(delivery).to be_canceled_state
     expect(delivery.error_summary).to include('receiver')
   end
 

@@ -7,6 +7,27 @@ module VpsAdmin::API
     DELIVERY_LABEL_LIMIT = 255
     PARAMETER_SAMPLE_LIMIT = 30
     FALLBACK_COLLECTION_LIMIT = 100
+    REQUEST_EVENT_TYPES = %w[
+      request.created
+      request.updated
+      request.resolved
+    ].freeze
+    REQUEST_TEMPLATE_CANDIDATES = {
+      'request.created' => %i[
+        request_action_role_type
+        request_action_role
+      ],
+      'request.updated' => %i[
+        request_action_role_type
+        request_action_role
+      ],
+      'request.resolved' => %i[
+        request_resolve_role_type_state
+        request_action_role_type
+        request_resolve_role_state
+        request_action_role
+      ]
+    }.freeze
 
     Type = Struct.new(
       :name,
@@ -99,7 +120,10 @@ module VpsAdmin::API
     end
 
     def email_template_name_for(event, action = nil)
-      (action&.template_name.presence || type_for(event.event_type)&.email_template)&.to_sym
+      return action.template_name.to_sym if action&.template_name.present?
+      return request_email_template_name_for(event) if REQUEST_EVENT_TYPES.include?(event.event_type)
+
+      type_for(event.event_type)&.email_template&.to_sym
     end
 
     def email_template_params_for(event)
@@ -110,6 +134,8 @@ module VpsAdmin::API
           object: params['object'] || params[:object],
           state: params['state'] || params[:state]
         }
+      when *REQUEST_EVENT_TYPES
+        request_email_template_params(event)
       end
     end
 
@@ -125,8 +151,11 @@ module VpsAdmin::API
         opts[:to] = email_target_addresses(event, delivery)
         opts[:include_default_recipients] = false
         opts[:include_template_recipients] = false
+      elsif explicit_default_target?(delivery)
+        opts[:to] = email_target_addresses(event, delivery)
       end
 
+      opts.merge!(email_template_extra_options_for(event))
       opts
     end
 
@@ -174,6 +203,8 @@ module VpsAdmin::API
         user_failed_logins_email_vars(event)
       when 'lifetime.expiration_warning'
         expiration_warning_email_vars(event)
+      when *REQUEST_EVENT_TYPES
+        request_email_vars(event)
       when 'security_advisory.announced', 'security_advisory.updated'
         security_advisory_email_vars(event)
       when 'vps.incident_report'
@@ -289,6 +320,78 @@ module VpsAdmin::API
       ret
     end
 
+    def request_email_vars(event)
+      request = request_source(event) || request_from_parameters(event)
+      raise ArgumentError, 'request source is missing' unless request
+
+      {
+        request:,
+        r: request,
+        webui_url:
+      }
+    end
+
+    def request_email_template_name_for(event)
+      candidates = REQUEST_TEMPLATE_CANDIDATES.fetch(event.event_type)
+      params = request_email_template_params(event)
+      language = request_email_language(event)
+
+      candidates.find do |candidate|
+        email_template_available?(candidate, params, language)
+      end || candidates.first
+    end
+
+    def request_email_template_params(event)
+      params = event.parameters || {}
+      {
+        action: params['action'] || params[:action],
+        role: params['role'] || params[:role],
+        type: params['request_type'] || params[:request_type],
+        state: params['request_state'] || params[:request_state]
+      }
+    end
+
+    def request_email_language(event)
+      params = event.parameters || {}
+      return event.user&.language unless (params['role'] || params[:role]).to_s == 'user'
+
+      request = request_source(event) || request_from_parameters(event)
+      request&.user_language || event.user&.language
+    end
+
+    def email_template_available?(name, params, language)
+      resolved_name = ::MailTemplate.resolve_name(name, params)
+      template = ::MailTemplate.find_by(name: resolved_name)
+      return false unless template
+      return true unless language
+
+      template.mail_template_translations.where(language:).exists?
+    rescue StandardError
+      false
+    end
+
+    def email_template_extra_options_for(event)
+      return {} unless REQUEST_EVENT_TYPES.include?(event.event_type)
+
+      params = event.parameters || {}
+      ret = {
+        language: request_email_language(event),
+        message_id: request_message_id(params, 'mail_id')
+      }.compact
+      reply_to = request_message_id(params, 'reply_to_mail_id')
+      if reply_to
+        ret[:in_reply_to] = reply_to
+        ret[:references] = reply_to
+      end
+      ret
+    end
+
+    def explicit_default_target?(delivery)
+      delivery.default_recipient_target_kind? &&
+        delivery.target_value.present? &&
+        delivery.target_value != 'default'
+    end
+
     def user_source(event)
       source = event.source
       return unless source.is_a?(::User)
@@ -374,6 +477,49 @@ module VpsAdmin::API
 
         source
       end
+    end
+
+    def request_source(event)
+      source = event.source
+      return unless defined?(::UserRequest) && source.is_a?(::UserRequest)
+      return unless request_visible_to_event_user?(event, source)
+
+      source
+    end
+
+    def request_from_parameters(event)
+      return unless defined?(::UserRequest)
+
+      request_id = (event.parameters || {})['request_id'] || (event.parameters || {})[:request_id]
+      return if request_id.blank?
+
+      request = ::UserRequest.find_by(id: request_id)
+      return unless request && request_visible_to_event_user?(event, request)
+
+      request
+    end
+
+    def request_visible_to_event_user?(event, request)
+      params = event.parameters || {}
+      role = (params['role'] || params[:role]).to_s
+
+      if role == 'admin'
+        event.user&.role == :admin
+      elsif event.user_id.blank?
+        recipient = params['recipient_email'] || params[:recipient_email]
+        recipient.present? && recipient == request.user_mail
+      else
+        request.user_id == event.user_id
+      end
+    end
+
+    def default_email_target_for(event)
+      return unless REQUEST_EVENT_TYPES.include?(event.event_type)
+
+      params = event.parameters || {}
+      return unless (params['role'] || params[:role]).to_s == 'user'
+
+      params['recipient_email'] || params[:recipient_email]
     end
 
     def incident_email_vars(event)
@@ -825,6 +971,16 @@ module VpsAdmin::API
       parse_batch_time(value)
     end
 
+    def request_message_id(params, key)
+      mail_id = params[key] || params[key.to_sym]
+      request_id = params['request_id'] || params[:request_id]
+      return if request_id.blank? || mail_id.blank?
+
+      format(::SysConfig.get(:plugin_requests, :message_id), id: request_id, mail_id:)
+    rescue StandardError
+      nil
+    end
+
     def custom_email_body(event)
       ret = [
         event.summary.presence,
@@ -964,7 +1120,8 @@ module VpsAdmin::API
         end
 
         if deliveries.empty?
-          deliveries = [skipped_delivery(nil, nil, nil, 'no route matched the event')]
+          deliveries = direct_deliveries
+          deliveries = [skipped_delivery(nil, nil, nil, 'no route matched the event')] if deliveries.empty?
         end
 
         first_delivery_route = deliveries.map(&:event_route).compact.first
@@ -995,6 +1152,25 @@ module VpsAdmin::API
         return deliveries if matched_child
 
         deliveries_for_route(route)
+      end
+
+      def direct_deliveries
+        return [] if event.user
+
+        target = VpsAdmin::API::Events.default_email_target_for(event)
+        return [] if target.blank?
+
+        [
+          build_delivery(
+            nil,
+            nil,
+            nil,
+            target_value: target,
+            target_label: target,
+            template_name: VpsAdmin::API::Events.email_template_name_for(event),
+            state: 'planned'
+          )
+        ]
       end
 
       def child_routes(parent_id)
@@ -1060,12 +1236,13 @@ module VpsAdmin::API
             return skipped_delivery(route, receiver, receiver_action, 'event has no user')
           end
 
+          target = VpsAdmin::API::Events.default_email_target_for(event)
           return build_delivery(
             route,
             receiver,
             receiver_action,
-            target_value: 'default',
-            target_label: 'Default recipient'
+            target_value: target.presence || 'default',
+            target_label: target.present? ? target : 'Default recipient'
           )
         end
 
@@ -1104,13 +1281,14 @@ module VpsAdmin::API
         )
       end
 
-      def build_delivery(route, receiver, receiver_action, target_value:, target_label:, state: 'planned', next_attempt_at: nil)
+      def build_delivery(route, receiver, receiver_action, target_value:, target_label:, template_name: nil,
+                         state: 'planned', next_attempt_at: nil)
         DeliveryPlan.new(
-          action: receiver_action.action,
-          target_kind: receiver_action.target_kind,
+          action: receiver_action&.action || 'email',
+          target_kind: receiver_action&.target_kind || 'default_recipient',
           target_value:,
           target_label: delivery_label(target_label),
-          template_name: delivery_template_name(receiver_action),
+          template_name: template_name || delivery_template_name(receiver_action),
           event_route: route,
           notification_receiver: receiver,
           notification_receiver_action: receiver_action,
@@ -1342,6 +1520,68 @@ module VpsAdmin::API
       severity: :info,
       parameters: {
         note: 'Test note'
+      }
+    )
+
+    register(
+      'request.created',
+      label: 'Request created',
+      category: 'requests',
+      severity: :info,
+      parameters: {
+        action: 'Request action',
+        role: 'Recipient role',
+        request_id: 'Request ID',
+        request_type: 'Request type',
+        request_state: 'Request state',
+        request_label: 'Request label',
+        user_id: 'Request owner user ID',
+        user_login: 'Request owner login',
+        recipient_email: 'Recipient e-mail',
+        mail_id: 'Request mail thread ID'
+      }
+    )
+
+    register(
+      'request.updated',
+      label: 'Request updated',
+      category: 'requests',
+      severity: :info,
+      parameters: {
+        action: 'Request action',
+        role: 'Recipient role',
+        request_id: 'Request ID',
+        request_type: 'Request type',
+        request_state: 'Request state',
+        request_label: 'Request label',
+        user_id: 'Request owner user ID',
+        user_login: 'Request owner login',
+        recipient_email: 'Recipient e-mail',
+        mail_id: 'Request mail thread ID',
+        reply_to_mail_id: 'Previous request mail thread ID'
+      }
+    )
+
+    register(
+      'request.resolved',
+      label: 'Request resolved',
+      category: 'requests',
+      severity: :info,
+      parameters: {
+        action: 'Request action',
+        role: 'Recipient role',
+        request_id: 'Request ID',
+        request_type: 'Request type',
+        request_state: 'Request state',
+        request_label: 'Request label',
+        user_id: 'Request owner user ID',
+        user_login: 'Request owner login',
+        recipient_email: 'Recipient e-mail',
+        admin_id: 'Resolving admin user ID',
+        admin_login: 'Resolving admin login',
+        reason: 'Resolution reason',
+        mail_id: 'Request mail thread ID',
+        reply_to_mail_id: 'Previous request mail thread ID'
       }
     )
 
