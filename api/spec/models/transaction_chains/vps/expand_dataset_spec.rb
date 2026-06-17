@@ -10,9 +10,12 @@ RSpec.describe TransactionChains::Vps::ExpandDataset do
 
   let(:user) { SpecSeed.user }
 
-  it 'creates the expansion and history rows, raises refquota, and schedules mail when notifications are enabled' do
-    allow(MailTemplate).to receive(:send_mail!).and_return(build_mail_log_double)
+  before do
+    ensure_alert_mail_templates!
+    ensure_mailer_available!
+  end
 
+  it 'creates the expansion and history rows, raises refquota, and routes mail when notifications are enabled' do
     fixture = build_dataset_expansion_fixture(
       user: user,
       original_refquota: 10_240,
@@ -52,11 +55,18 @@ RSpec.describe TransactionChains::Vps::ExpandDataset do
         row.row_pks == { 'id' => fixture.fetch(:dataset).id } &&
         row.attr_changes['dataset_expansion_id'] == expansion.id
     end).to be(true)
+
+    event = expect_routed_event!('vps.dataset_expanded', user: user)
+    expect(event.vps).to eq(fixture.fetch(:vps))
+    expect(event.source).to eq(expansion)
+    expect(event.parameters).to include(
+      'dataset_id' => fixture.fetch(:dataset).id,
+      'dataset_full_name' => fixture.fetch(:dataset).full_name,
+      'added_space' => expansion.added_space
+    )
   end
 
   it 'does not enqueue mail when notifications are disabled' do
-    allow(MailTemplate).to receive(:send_mail!).and_return(build_mail_log_double)
-
     fixture = build_dataset_expansion_fixture(
       user: user,
       original_refquota: 10_240,
@@ -68,5 +78,6 @@ RSpec.describe TransactionChains::Vps::ExpandDataset do
 
     expect(tx_classes(chain)).to include(Transactions::Storage::SetDataset, Transactions::Utils::NoOp)
     expect(tx_classes(chain)).not_to include(Transactions::Mail::Send)
+    expect(Event.where(event_type: 'vps.dataset_expanded')).to be_empty
   end
 end

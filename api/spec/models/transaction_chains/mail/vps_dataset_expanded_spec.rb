@@ -11,10 +11,9 @@ RSpec.describe TransactionChains::Mail::VpsDatasetExpanded do
   before do
     ensure_alert_mail_templates!
     ensure_mailer_available!
-    allow(MailTemplate).to receive(:send_mail!).and_return(build_mail_log_double)
   end
 
-  it 'targets the affected VPS and sends dataset expansion mail' do
+  it 'targets the affected VPS and routes a dataset expansion event' do
     fixture = build_active_dataset_expansion_fixture(user: SpecSeed.user)
     expansion = fixture.fetch(:expansion)
     vps = fixture.fetch(:vps)
@@ -24,16 +23,15 @@ RSpec.describe TransactionChains::Mail::VpsDatasetExpanded do
     expect(chain).to be_present
     expect(tx_classes(chain)).to include(Transactions::Mail::Send)
     expect(chain.transaction_chain_concerns.pluck(:class_name, :row_id)).to eq([['Vps', vps.id]])
-    expect(MailTemplate).to have_received(:send_mail!).with(
-      :vps_dataset_expanded,
-      hash_including(
-        user: vps.user,
-        vars: hash_including(
-          vps:,
-          expansion:,
-          dataset: fixture.fetch(:dataset)
-        )
-      )
+    event = expect_routed_event!('vps.dataset_expanded', user: vps.user)
+    expect(event.vps).to eq(vps)
+    expect(event.source).to eq(expansion)
+    expect(event.parameters).to include(
+      'vps_id' => vps.id,
+      'vps_hostname' => vps.hostname,
+      'dataset_id' => fixture.fetch(:dataset).id,
+      'dataset_full_name' => fixture.fetch(:dataset).full_name,
+      'added_space' => expansion.added_space
     )
   end
 end

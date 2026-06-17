@@ -5,6 +5,8 @@ module VpsAdmin::API
   module Events
     EVALUATION_TIMEOUT = 0.5
     DELIVERY_LABEL_LIMIT = 255
+    PARAMETER_SAMPLE_LIMIT = 30
+    FALLBACK_COLLECTION_LIMIT = 100
 
     Type = Struct.new(
       :name,
@@ -17,9 +19,12 @@ module VpsAdmin::API
 
     RequestInfo = Struct.new(:ip)
     UserInfo = Struct.new(:id, :login, :full_name)
+    VpsInfo = Struct.new(:id, :hostname, :user)
     ObjectStateInfo = Struct.new(:state, :reason, :expiration_date, :user)
+    NodeInfo = Struct.new(:id, :domain_name)
+    PoolInfo = Struct.new(:id, :filesystem)
     DnsResolverInfo = Struct.new(:id, :label, :addrs)
-    DatasetInfo = Struct.new(:id, :full_name, :refquota, :referenced)
+    DatasetInfo = Struct.new(:id, :full_name, :refquota, :referenced, :user)
     DatasetExpansionInfo = Struct.new(
       :id,
       :original_refquota,
@@ -29,6 +34,9 @@ module VpsAdmin::API
       :max_over_refquota_seconds,
       :enable_shrink
     )
+    SnapshotInfo = Struct.new(:id, :name, :dataset)
+    SnapshotDownloadInfo = Struct.new(:id, :file_name, :expiration_date, :user, :snapshot)
+    VpsMigrationInfo = Struct.new(:id, :maintenance_window)
 
     DeliveryPlan = Struct.new(
       :action,
@@ -167,6 +175,16 @@ module VpsAdmin::API
         vps_network_email_vars(event)
       when 'vps.stopped_over_quota'
         vps_stopped_over_quota_email_vars(event)
+      when 'vps.dataset_expanded', 'vps.dataset_shrunk'
+        vps_dataset_expansion_email_vars(event)
+      when 'snapshot.download_ready'
+        snapshot_download_email_vars(event)
+      when 'dataset.migration_begun', 'dataset.migration_finished'
+        dataset_migration_email_vars(event)
+      when 'vps.migration_planned', 'vps.migration_begun', 'vps.migration_finished'
+        vps_migration_email_vars(event)
+      when 'vps.replaced'
+        vps_replaced_email_vars(event)
       else
         {
           event:,
@@ -387,6 +405,10 @@ module VpsAdmin::API
     end
 
     def vps_stopped_over_quota_email_vars(event)
+      vps_dataset_expansion_email_vars(event)
+    end
+
+    def vps_dataset_expansion_email_vars(event)
       expansion = dataset_expansion_source(event) || dataset_expansion_from_parameters(event)
       dataset = expansion.is_a?(::DatasetExpansion) ? expansion.dataset : dataset_from_parameters(event)
 
@@ -395,6 +417,85 @@ module VpsAdmin::API
         vps: required_vps(event),
         expansion:,
         dataset:
+      }
+    end
+
+    def snapshot_download_email_vars(event)
+      download = snapshot_download_source(event)
+      return { base_url: ::SysConfig.get(:webui, :base_url), dl: download } if download
+
+      params = event.parameters || {}
+      dataset = dataset_from_parameters(event)
+      snapshot = SnapshotInfo.new(
+        id: params['snapshot_id'] || params[:snapshot_id],
+        name: params['snapshot_name'] || params[:snapshot_name],
+        dataset:
+      )
+      download = SnapshotDownloadInfo.new(
+        id: params['download_id'] || params[:download_id],
+        file_name: params['file_name'] || params[:file_name],
+        expiration_date: parse_time(params['expiration_date'] || params[:expiration_date]),
+        user: event.user,
+        snapshot:
+      )
+
+      {
+        base_url: ::SysConfig.get(:webui, :base_url),
+        dl: download
+      }
+    end
+
+    def dataset_migration_email_vars(event)
+      params = event.parameters || {}
+      dataset = dataset_source(event) || dataset_from_parameters(event)
+
+      {
+        dataset:,
+        src_pool: pool_info_from_parameters(params, 'src'),
+        dst_pool: pool_info_from_parameters(params, 'dst'),
+        exports: Array.new(bounded_collection_count(params['export_count'] || params[:export_count])),
+        export_mounts: [],
+        vpses: vps_infos_from_parameters(event),
+        restart_vps: truthy_param(params['restart_vps'] || params[:restart_vps]),
+        maintenance_window: truthy_param(params['maintenance_window'] || params[:maintenance_window]),
+        maintenance_windows: [],
+        custom_window: truthy_param(params['custom_window'] || params[:custom_window]),
+        finish_weekday: params['finish_weekday'] || params[:finish_weekday],
+        finish_minutes: params['finish_minutes'] || params[:finish_minutes],
+        reason: params['reason'] || params[:reason]
+      }
+    end
+
+    def vps_migration_email_vars(event)
+      params = event.parameters || {}
+
+      {
+        m: vps_migration_source(event) || VpsMigrationInfo.new(
+          id: params['migration_id'] || params[:migration_id],
+          maintenance_window: truthy_param(params['maintenance_window'] || params[:maintenance_window])
+        ),
+        vps: required_vps(event),
+        src_node: node_info_from_parameters(params, 'src'),
+        dst_node: node_info_from_parameters(params, 'dst'),
+        maintenance_window: truthy_param(params['maintenance_window'] || params[:maintenance_window]),
+        maintenance_windows: [],
+        custom_window: truthy_param(params['custom_window'] || params[:custom_window]),
+        finish_weekday: params['finish_weekday'] || params[:finish_weekday],
+        finish_minutes: params['finish_minutes'] || params[:finish_minutes],
+        reason: params['reason'] || params[:reason]
+      }
+    end
+
+    def vps_replaced_email_vars(event)
+      params = event.parameters || {}
+      new_vps = secondary_vps_source(event) ||
+                find_vps_from_parameters(event, 'new_vps_id') ||
+                vps_info_from_parameters(event, 'new')
+
+      {
+        original_vps: required_vps(event),
+        new_vps:,
+        reason: params['reason'] || params[:reason]
       }
     end
 
@@ -420,12 +521,13 @@ module VpsAdmin::API
     end
 
     def user_info_from_parameters(params, prefix)
-      full_name = params["#{prefix}_name"] || params[:"#{prefix}_name"]
+      login = params["#{prefix}_login"] || params[:"#{prefix}_login"]
+      full_name = params["#{prefix}_name"] || params[:"#{prefix}_name"] || login
       return if full_name.blank?
 
       UserInfo.new(
         id: params["#{prefix}_id"] || params[:"#{prefix}_id"],
-        login: full_name,
+        login: login || full_name,
         full_name:
       )
     end
@@ -435,6 +537,39 @@ module VpsAdmin::API
       return unless source.is_a?(::DatasetExpansion)
       return if event.vps_id.present? && source.vps_id != event.vps_id
       return if event.user_id.present? && source.vps.user_id != event.user_id
+
+      source
+    end
+
+    def snapshot_download_source(event)
+      source = event.source
+      return unless source.is_a?(::SnapshotDownload)
+      return if event.user_id.present? && source.user_id != event.user_id
+
+      source
+    end
+
+    def dataset_source(event)
+      source = event.source
+      return unless source.is_a?(::Dataset)
+      return if event.user_id.present? && source.user_id != event.user_id
+
+      source
+    end
+
+    def vps_migration_source(event)
+      source = event.source
+      return unless source.is_a?(::VpsMigration)
+      return if event.user_id.present? && source.vps.user_id != event.user_id
+
+      source
+    end
+
+    def secondary_vps_source(event)
+      source = event.source
+      return unless source.is_a?(::Vps)
+      return if event.vps_id.present? && source.id == event.vps_id
+      return if event.user_id.present? && source.user_id != event.user_id
 
       source
     end
@@ -460,8 +595,68 @@ module VpsAdmin::API
         id: params['dataset_id'] || params[:dataset_id],
         full_name: params['dataset_full_name'] || params[:dataset_full_name],
         refquota: (params['dataset_refquota'] || params[:dataset_refquota]).to_i,
-        referenced: (params['dataset_referenced'] || params[:dataset_referenced]).to_i
+        referenced: (params['dataset_referenced'] || params[:dataset_referenced]).to_i,
+        user: event.user || user_info_from_parameters(params, 'user')
       )
+    end
+
+    def node_info_from_parameters(params, prefix)
+      NodeInfo.new(
+        id: params["#{prefix}_node_id"] || params[:"#{prefix}_node_id"],
+        domain_name: params["#{prefix}_node_domain_name"] || params[:"#{prefix}_node_domain_name"]
+      )
+    end
+
+    def pool_info_from_parameters(params, prefix)
+      PoolInfo.new(
+        id: params["#{prefix}_pool_id"] || params[:"#{prefix}_pool_id"],
+        filesystem: params["#{prefix}_pool_filesystem"] || params[:"#{prefix}_pool_filesystem"]
+      )
+    end
+
+    def vps_infos_from_parameters(event)
+      params = event.parameters || {}
+
+      Array(params['affected_vpses'] || params[:affected_vpses]).map do |item|
+        data = item.respond_to?(:to_h) ? item.to_h : {}
+        VpsInfo.new(
+          id: data['id'] || data[:id],
+          hostname: data['hostname'] || data[:hostname],
+          user: event.user
+        )
+      end
+    end
+
+    def vps_info_from_parameters(event, prefix)
+      params = event.parameters || {}
+      hostname = params["#{prefix}_vps_hostname"] || params[:"#{prefix}_vps_hostname"]
+      return if hostname.blank?
+
+      VpsInfo.new(
+        id: params["#{prefix}_vps_id"] || params[:"#{prefix}_vps_id"],
+        hostname:,
+        user: event.user
+      )
+    end
+
+    def find_vps_from_parameters(event, key)
+      value = (event.parameters || {})[key] || (event.parameters || {})[key.to_sym]
+      return if value.blank?
+
+      scope = ::Vps.including_deleted
+      scope = scope.where(user_id: event.user_id) if event.user_id.present?
+      scope.find_by(id: value)
+    end
+
+    def truthy_param(value)
+      value == true || value.to_s == 'true' || value.to_s == '1'
+    end
+
+    def bounded_collection_count(value)
+      count = value.to_i
+      return 0 if count < 0
+
+      [count, FALLBACK_COLLECTION_LIMIT].min
     end
 
     def oom_reports_from_ids(event, ids)
@@ -1183,6 +1378,197 @@ module VpsAdmin::API
         over_refquota_seconds: 'Time over quota in seconds',
         max_over_refquota_seconds: 'Maximum time over quota in seconds',
         enable_shrink: 'Whether automatic shrink is enabled'
+      }
+    )
+
+    register(
+      'vps.dataset_expanded',
+      label: 'VPS dataset expanded',
+      category: 'vps',
+      severity: :info,
+      email_template: :vps_dataset_expanded,
+      parameters: {
+        vps_id: 'VPS ID',
+        vps_hostname: 'VPS hostname',
+        dataset_id: 'Dataset ID',
+        dataset_full_name: 'Dataset name',
+        dataset_refquota: 'Dataset refquota',
+        dataset_referenced: 'Dataset referenced space',
+        expansion_id: 'Dataset expansion ID',
+        original_refquota: 'Original refquota',
+        added_space: 'Added space',
+        expansion_count: 'Expansion count'
+      }
+    )
+
+    register(
+      'vps.dataset_shrunk',
+      label: 'VPS dataset shrunk',
+      category: 'vps',
+      severity: :info,
+      email_template: :vps_dataset_shrunk,
+      parameters: {
+        vps_id: 'VPS ID',
+        vps_hostname: 'VPS hostname',
+        dataset_id: 'Dataset ID',
+        dataset_full_name: 'Dataset name',
+        dataset_refquota: 'Dataset refquota',
+        dataset_referenced: 'Dataset referenced space',
+        expansion_id: 'Dataset expansion ID',
+        original_refquota: 'Original refquota',
+        added_space: 'Added space',
+        expansion_count: 'Expansion count'
+      }
+    )
+
+    register(
+      'snapshot.download_ready',
+      label: 'Snapshot download ready',
+      category: 'storage',
+      severity: :info,
+      email_template: :snapshot_download_ready,
+      parameters: {
+        download_id: 'Snapshot download ID',
+        snapshot_id: 'Snapshot ID',
+        snapshot_name: 'Snapshot name',
+        dataset_id: 'Dataset ID',
+        dataset_full_name: 'Dataset name',
+        file_name: 'Download file name',
+        format: 'Download format',
+        expiration_date: 'Download expiration date'
+      }
+    )
+
+    register(
+      'dataset.migration_begun',
+      label: 'Dataset migration begun',
+      category: 'storage',
+      severity: :warning,
+      email_template: :dataset_migration_begun,
+      parameters: {
+        dataset_id: 'Dataset ID',
+        dataset_full_name: 'Dataset name',
+        user_id: 'Dataset owner user ID',
+        user_login: 'Dataset owner login',
+        user_name: 'Dataset owner name',
+        src_pool_id: 'Source pool ID',
+        src_pool_filesystem: 'Source pool filesystem',
+        dst_pool_id: 'Destination pool ID',
+        dst_pool_filesystem: 'Destination pool filesystem',
+        export_count: 'Export count',
+        affected_vps_count: 'Affected VPS count',
+        affected_vpses: 'Affected VPS sample',
+        restart_vps: 'Whether affected VPSes are restarted',
+        maintenance_window: 'Whether a maintenance window is used',
+        custom_window: 'Whether a custom maintenance window is used',
+        finish_weekday: 'Maintenance window weekday',
+        finish_minutes: 'Maintenance window minute',
+        reason: 'Migration reason'
+      }
+    )
+
+    register(
+      'dataset.migration_finished',
+      label: 'Dataset migration finished',
+      category: 'storage',
+      severity: :info,
+      email_template: :dataset_migration_finished,
+      parameters: {
+        dataset_id: 'Dataset ID',
+        dataset_full_name: 'Dataset name',
+        user_id: 'Dataset owner user ID',
+        user_login: 'Dataset owner login',
+        user_name: 'Dataset owner name',
+        src_pool_id: 'Source pool ID',
+        src_pool_filesystem: 'Source pool filesystem',
+        dst_pool_id: 'Destination pool ID',
+        dst_pool_filesystem: 'Destination pool filesystem',
+        export_count: 'Export count',
+        affected_vps_count: 'Affected VPS count',
+        affected_vpses: 'Affected VPS sample',
+        restart_vps: 'Whether affected VPSes are restarted',
+        maintenance_window: 'Whether a maintenance window is used',
+        custom_window: 'Whether a custom maintenance window is used',
+        finish_weekday: 'Maintenance window weekday',
+        finish_minutes: 'Maintenance window minute',
+        reason: 'Migration reason'
+      }
+    )
+
+    register(
+      'vps.migration_planned',
+      label: 'VPS migration planned',
+      category: 'vps',
+      severity: :warning,
+      email_template: :vps_migration_planned,
+      parameters: {
+        migration_id: 'Migration ID',
+        vps_id: 'VPS ID',
+        vps_hostname: 'VPS hostname',
+        src_node_id: 'Source node ID',
+        src_node_domain_name: 'Source node domain name',
+        dst_node_id: 'Destination node ID',
+        dst_node_domain_name: 'Destination node domain name',
+        maintenance_window: 'Whether a maintenance window is used'
+      }
+    )
+
+    register(
+      'vps.migration_begun',
+      label: 'VPS migration begun',
+      category: 'vps',
+      severity: :warning,
+      email_template: :vps_migration_begun,
+      parameters: {
+        vps_id: 'VPS ID',
+        vps_hostname: 'VPS hostname',
+        src_node_id: 'Source node ID',
+        src_node_domain_name: 'Source node domain name',
+        dst_node_id: 'Destination node ID',
+        dst_node_domain_name: 'Destination node domain name',
+        maintenance_window: 'Whether a maintenance window is used',
+        custom_window: 'Whether a custom maintenance window is used',
+        finish_weekday: 'Maintenance window weekday',
+        finish_minutes: 'Maintenance window minute',
+        reason: 'Migration reason'
+      }
+    )
+
+    register(
+      'vps.migration_finished',
+      label: 'VPS migration finished',
+      category: 'vps',
+      severity: :info,
+      email_template: :vps_migration_finished,
+      parameters: {
+        vps_id: 'VPS ID',
+        vps_hostname: 'VPS hostname',
+        src_node_id: 'Source node ID',
+        src_node_domain_name: 'Source node domain name',
+        dst_node_id: 'Destination node ID',
+        dst_node_domain_name: 'Destination node domain name',
+        maintenance_window: 'Whether a maintenance window is used',
+        custom_window: 'Whether a custom maintenance window is used',
+        finish_weekday: 'Maintenance window weekday',
+        finish_minutes: 'Maintenance window minute',
+        reason: 'Migration reason'
+      }
+    )
+
+    register(
+      'vps.replaced',
+      label: 'VPS replaced',
+      category: 'vps',
+      severity: :warning,
+      email_template: :vps_replaced,
+      parameters: {
+        vps_id: 'VPS ID',
+        vps_hostname: 'VPS hostname',
+        original_vps_id: 'Original VPS ID',
+        original_vps_hostname: 'Original VPS hostname',
+        new_vps_id: 'New VPS ID',
+        new_vps_hostname: 'New VPS hostname',
+        reason: 'Replacement reason'
       }
     )
   end

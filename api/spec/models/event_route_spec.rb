@@ -345,6 +345,15 @@ RSpec.describe EventRoute do
       }
     )
     delivery = event.event_deliveries.sole
+    storage_event = VpsAdmin::API::Events.emit!(
+      'vps.dataset_expanded',
+      user: SpecSeed.user,
+      subject: 'Spec dataset expanded',
+      parameters: {
+        'added_space' => 1024
+      }
+    )
+    storage_delivery = storage_event.event_deliveries.sole
     oom_report_route = described_class.find_by!(
       user: SpecSeed.user,
       event_type: 'vps.oom_report',
@@ -356,6 +365,9 @@ RSpec.describe EventRoute do
     expect(delivery.target_kind).to eq('custom')
     expect(delivery.target_value).to eq('admin-role@example.test')
     expect(delivery.template_name).to eq('vps_oom_prevention')
+    expect(storage_event.reload).to be_routed_routing_state
+    expect(storage_delivery.target_value).to eq('admin-role@example.test')
+    expect(storage_delivery.template_name).to eq('vps_dataset_expanded')
     expect(
       oom_report_route.event_route_matchers.map { |m| [m.field, m.operator, m.value] }
     ).to eq(

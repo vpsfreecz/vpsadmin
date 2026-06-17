@@ -100,6 +100,46 @@ RSpec.describe VpsAdmin::API::Tasks::EventDelivery do
     [event.event_deliveries.sole, action, route, vps]
   end
 
+  def create_dataset_migration_email_delivery!(export_count:)
+    VpsAdmin::API::MailTemplates.install_defaults!
+    receiver = NotificationReceiver.create!(user: SpecSeed.user, label: 'Spec storage receiver')
+    action = receiver.notification_receiver_actions.create!(
+      action: :email,
+      label: 'Spec storage e-mail',
+      target_kind: :default_recipient
+    )
+    route = EventRoute.create!(
+      user: SpecSeed.user,
+      notification_receiver: receiver,
+      event_type: 'dataset.migration_begun'
+    )
+    event = VpsAdmin::API::Events.emit!(
+      'dataset.migration_begun',
+      user: SpecSeed.user,
+      subject: 'Spec dataset migration',
+      parameters: {
+        dataset_id: 123,
+        dataset_full_name: 'tank/spec',
+        user_id: SpecSeed.user.id,
+        user_login: SpecSeed.user.login,
+        user_name: SpecSeed.user.full_name,
+        src_pool_id: 1,
+        src_pool_filesystem: 'src-pool',
+        dst_pool_id: 2,
+        dst_pool_filesystem: 'dst-pool',
+        export_count: export_count,
+        affected_vps_count: 1,
+        affected_vpses: [
+          { id: 42, hostname: 'sample-vps' }
+        ],
+        restart_vps: true,
+        maintenance_window: false
+      }
+    )
+
+    [event.event_deliveries.sole, action, route]
+  end
+
   it 'queues planned e-mail deliveries through mail transactions' do
     delivery, action, route = create_email_delivery!
 
@@ -147,6 +187,20 @@ RSpec.describe VpsAdmin::API::Tasks::EventDelivery do
     expect(delivery).to be_failed_state
     expect(delivery.mail_log).to be_nil
     expect(delivery.error_summary).to include('VPS does not belong to event user')
+  end
+
+  it 'clamps delayed dataset migration fallback collection sizes' do
+    delivery, = create_dataset_migration_email_delivery!(export_count: 1_000_000)
+
+    expect do
+      task.deliver_emails
+    end.to change(Transaction, :count).by(1)
+
+    delivery.reload
+
+    expect(delivery).to be_queued_state
+    expect(delivery.mail_log.text_plain).to include('Exports: 100')
+    expect(delivery.mail_log.text_plain).to include('Affected VPS: #42 sample-vps')
   end
 
   it 'retries e-mail deliveries when no mail server is available' do

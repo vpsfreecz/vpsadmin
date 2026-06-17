@@ -136,6 +136,69 @@ class AddEvents < ActiveRecord::Migration[8.1]
       label: 'VPS stopped over quota',
       roles: %w[admin],
       matchers: []
+    },
+    {
+      event_type: 'vps.dataset_expanded',
+      template_name: 'vps_dataset_expanded',
+      label: 'VPS dataset expanded',
+      roles: %w[admin],
+      matchers: []
+    },
+    {
+      event_type: 'vps.dataset_shrunk',
+      template_name: 'vps_dataset_shrunk',
+      label: 'VPS dataset shrunk',
+      roles: %w[admin],
+      matchers: []
+    },
+    {
+      event_type: 'snapshot.download_ready',
+      template_name: 'snapshot_download_ready',
+      label: 'Snapshot download ready',
+      roles: %w[admin],
+      matchers: []
+    },
+    {
+      event_type: 'dataset.migration_begun',
+      template_name: 'dataset_migration_begun',
+      label: 'Dataset migration begun',
+      roles: %w[admin],
+      matchers: []
+    },
+    {
+      event_type: 'dataset.migration_finished',
+      template_name: 'dataset_migration_finished',
+      label: 'Dataset migration finished',
+      roles: %w[admin],
+      matchers: []
+    },
+    {
+      event_type: 'vps.migration_planned',
+      template_name: 'vps_migration_planned',
+      label: 'VPS migration planned',
+      roles: %w[admin],
+      matchers: []
+    },
+    {
+      event_type: 'vps.migration_begun',
+      template_name: 'vps_migration_begun',
+      label: 'VPS migration begun',
+      roles: %w[admin],
+      matchers: []
+    },
+    {
+      event_type: 'vps.migration_finished',
+      template_name: 'vps_migration_finished',
+      label: 'VPS migration finished',
+      roles: %w[admin],
+      matchers: []
+    },
+    {
+      event_type: 'vps.replaced',
+      template_name: 'vps_replaced',
+      label: 'VPS replaced',
+      roles: %w[admin],
+      matchers: []
     }
   ].freeze
   ADVANCED_MAIL_ROLE_LABELS = {
