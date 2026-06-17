@@ -12,6 +12,10 @@ module VpsAdmin::API
       request.updated
       request.resolved
     ].freeze
+    OUTAGE_EVENT_TYPES = %w[
+      outage.announced
+      outage.updated
+    ].freeze
     REQUEST_TEMPLATE_CANDIDATES = {
       'request.created' => %i[
         request_action_role_type
@@ -58,6 +62,135 @@ module VpsAdmin::API
     SnapshotInfo = Struct.new(:id, :name, :dataset)
     SnapshotDownloadInfo = Struct.new(:id, :file_name, :expiration_date, :user, :snapshot)
     VpsMigrationInfo = Struct.new(:id, :maintenance_window)
+    OutageEntityInfo = Struct.new(:real_name)
+    OutageHandlerInfo = Struct.new(:full_name)
+    OutageInfo = Struct.new(
+      :id,
+      :outage_type,
+      :state,
+      :impact_type,
+      :begins_at,
+      :finished_at,
+      :duration,
+      :summary,
+      :description,
+      :entity_labels,
+      :handler_names
+    ) do
+      def outage_type_label
+        ::Outage.outage_type_label(outage_type)
+      rescue NameError
+        outage_type.to_s
+      end
+
+      def impact_type_label
+        ::Outage.impact_type_label(impact_type)
+      rescue NameError
+        impact_type.to_s
+      end
+
+      def en_summary
+        summary.to_s
+      end
+
+      def en_description
+        description.to_s
+      end
+
+      def outage_entities
+        Array(entity_labels).map { |label| OutageEntityInfo.new(label) }
+      end
+
+      def outage_handlers
+        Array(handler_names).map { |name| OutageHandlerInfo.new(name) }
+      end
+
+      def to_hash
+        {
+          id:,
+          type: outage_type,
+          begins_at: begins_at&.iso8601,
+          duration:,
+          impact: impact_type,
+          entities: outage_entities.map { |entity| { label: entity.real_name } },
+          handlers: outage_handlers.map(&:full_name),
+          translations: {
+            en: {
+              summary: en_summary,
+              description: en_description
+            }
+          }
+        }
+      end
+    end
+    OutageUpdateInfo = Struct.new(
+      :id,
+      :outage,
+      :state,
+      :impact_type,
+      :begins_at,
+      :finished_at,
+      :duration,
+      :summary,
+      :description,
+      :reporter_name,
+      :changes
+    ) do
+      def outage_type
+        outage&.outage_type
+      end
+
+      def outage_type_label
+        outage&.outage_type_label.to_s
+      end
+
+      def impact_type_label
+        ::Outage.impact_type_label(impact_type)
+      rescue NameError
+        impact_type.to_s
+      end
+
+      def each_change
+        Array(changes).each do |change|
+          data = change.respond_to?(:to_h) ? change.to_h : {}
+          field = data['field'] || data[:field]
+          next if field.blank?
+
+          yield(
+            field.to_sym,
+            normalize_change_value(field, data['from'] || data[:from]),
+            normalize_change_value(field, data['to'] || data[:to])
+          )
+        end
+      end
+
+      def to_hash
+        ret = {
+          id:,
+          changes: {},
+          translations: {
+            en: {
+              summary: summary.to_s,
+              description: description.to_s
+            }
+          }
+        }
+
+        each_change do |attr, old, new|
+          key = attr == :impact_type ? :type : attr
+          ret[:changes][key] = { from: old, to: new }
+        end
+
+        ret
+      end
+
+      def normalize_change_value(field, value)
+        return if value.nil?
+        return VpsAdmin::API::Events.parse_time(value) if %w[begins_at finished_at].include?(field.to_s)
+
+        value
+      end
+    end
     PaymentInfo = Struct.new(
       :id,
       :amount,
@@ -131,6 +264,7 @@ module VpsAdmin::API
     def email_template_name_for(event, action = nil)
       return action.template_name.to_sym if action&.template_name.present?
       return request_email_template_name_for(event) if REQUEST_EVENT_TYPES.include?(event.event_type)
+      return outage_email_template_choice(event).first if OUTAGE_EVENT_TYPES.include?(event.event_type)
 
       type_for(event.event_type)&.email_template&.to_sym
     end
@@ -145,6 +279,8 @@ module VpsAdmin::API
         }
       when *REQUEST_EVENT_TYPES
         request_email_template_params(event)
+      when *OUTAGE_EVENT_TYPES
+        outage_email_template_choice(event).last
       end
     end
 
@@ -216,6 +352,8 @@ module VpsAdmin::API
         payment_accepted_email_vars(event)
       when *REQUEST_EVENT_TYPES
         request_email_vars(event)
+      when *OUTAGE_EVENT_TYPES
+        outage_email_vars(event)
       when 'security_advisory.announced', 'security_advisory.updated'
         security_advisory_email_vars(event)
       when 'vps.incident_report'
@@ -353,6 +491,29 @@ module VpsAdmin::API
       }
     end
 
+    def outage_email_vars(event)
+      outage = outage_source(event) || outage_from_parameters(event)
+      raise ArgumentError, 'outage is missing' unless outage
+
+      update = outage_update_from_parameters(event, outage)
+      params = event.parameters || {}
+      role = (params['role'] || params[:role]).to_s
+      user = role == 'user' ? event.user : nil
+
+      {
+        outage:,
+        o: outage,
+        update:,
+        user:,
+        vpses: outage_vpses_for(outage, user),
+        direct_vpses: outage_vpses_for(outage, user, direct: true),
+        indirect_vpses: outage_vpses_for(outage, user, direct: false),
+        exports: outage_exports_for(outage, user),
+        security_advisory_cves: outage_security_advisory_cves(outage),
+        webui_url:
+      }
+    end
+
     def request_email_template_name_for(event)
       candidates = REQUEST_TEMPLATE_CANDIDATES.fetch(event.event_type)
       params = request_email_template_params(event)
@@ -381,6 +542,30 @@ module VpsAdmin::API
       request&.user_language || event.user&.language
     end
 
+    def outage_email_template_choice(event)
+      params = outage_email_template_params(event)
+      role = params[:role]
+      event_name = params[:event]
+      language = role == 'generic' ? ::Language.take : event.user&.language
+      choices = [
+        [:outage_report_role_event, { role:, event: event_name }],
+        [:outage_report_role_event, { role:, event: 'update' }],
+        [:outage_report_role, { role: }]
+      ]
+
+      choices.find do |name, choice_params|
+        email_template_available?(name, choice_params, language)
+      end || choices.first
+    end
+
+    def outage_email_template_params(event)
+      params = event.parameters || {}
+      {
+        role: params['role'] || params[:role] || 'user',
+        event: params['event'] || params[:event] || 'update'
+      }
+    end
+
     def email_template_available?(name, params, language)
       resolved_name = ::MailTemplate.resolve_name(name, params)
       template = ::MailTemplate.find_by(name: resolved_name)
@@ -393,8 +578,13 @@ module VpsAdmin::API
     end
 
     def email_template_extra_options_for(event)
-      return {} unless REQUEST_EVENT_TYPES.include?(event.event_type)
+      return request_email_template_extra_options(event) if REQUEST_EVENT_TYPES.include?(event.event_type)
+      return outage_email_template_extra_options(event) if OUTAGE_EVENT_TYPES.include?(event.event_type)
 
+      {}
+    end
+
+    def request_email_template_extra_options(event)
       params = event.parameters || {}
       ret = {
         language: request_email_language(event),
@@ -405,6 +595,21 @@ module VpsAdmin::API
         ret[:in_reply_to] = reply_to
         ret[:references] = reply_to
       end
+      ret
+    end
+
+    def outage_email_template_extra_options(event)
+      params = event.parameters || {}
+      role = (params['role'] || params[:role]).to_s
+      ret = {
+        message_id: params['mail_message_id'] || params[:mail_message_id]
+      }.compact
+      reply_to = params['reply_to_message_id'] || params[:reply_to_message_id]
+      if reply_to
+        ret[:in_reply_to] = reply_to
+        ret[:references] = reply_to
+      end
+      ret[:language] = ::Language.take if role == 'generic'
       ret
     end
 
@@ -561,6 +766,111 @@ module VpsAdmin::API
       end
     end
 
+    def outage_source(event)
+      return unless defined?(::Outage)
+
+      source = event.source
+      outage = if source.is_a?(::Outage)
+                 source
+               elsif defined?(::OutageUpdate) && source.is_a?(::OutageUpdate)
+                 source.outage
+               end
+      return unless outage && outage_visible_to_event_user?(event, outage)
+
+      outage
+    end
+
+    def outage_from_parameters(event)
+      params = event.parameters || {}
+      outage_id = params['outage_id'] || params[:outage_id]
+      outage = if defined?(::Outage) && outage_id.present?
+                 ::Outage.visible_to(event.user).find_by(id: outage_id)
+               end
+      return outage if outage && outage_visible_to_event_user?(event, outage)
+
+      OutageInfo.new(
+        outage_id,
+        params['outage_type'] || params[:outage_type],
+        params['state'] || params[:state],
+        params['impact_type'] || params[:impact_type],
+        parse_time(params['begins_at'] || params[:begins_at]),
+        parse_time(params['finished_at'] || params[:finished_at]),
+        params['duration'] || params[:duration],
+        params['outage_summary'] || params[:outage_summary] || params['summary'] || params[:summary],
+        params['outage_description'] || params[:outage_description] || params['description'] || params[:description],
+        params['entity_labels'] || params[:entity_labels] || [],
+        params['handler_names'] || params[:handler_names] || []
+      )
+    end
+
+    def outage_update_from_parameters(event, outage)
+      params = event.parameters || {}
+
+      OutageUpdateInfo.new(
+        params['update_id'] || params[:update_id],
+        outage,
+        params['update_state'] || params[:update_state] || params['state'] || params[:state],
+        params['update_impact_type'] || params[:update_impact_type] || params['impact_type'] || params[:impact_type],
+        parse_time(params['update_begins_at'] || params[:update_begins_at] || params['begins_at'] || params[:begins_at]),
+        parse_time(params['update_finished_at'] || params[:update_finished_at] || params['finished_at'] || params[:finished_at]),
+        params['update_duration'] || params[:update_duration] || params['duration'] || params[:duration],
+        params['summary'] || params[:summary],
+        params['description'] || params[:description],
+        params['reported_by_name'] || params[:reported_by_name],
+        params['changes'] || params[:changes] || []
+      )
+    end
+
+    def outage_visible_to_event_user?(event, outage)
+      return true if event.user_id.blank?
+
+      params = event.parameters || {}
+      role = (params['role'] || params[:role]).to_s
+      case role
+      when 'user'
+        outage.outage_users.where(user_id: event.user_id).exists?
+      when 'generic'
+        event.user&.role == :admin
+      else
+        false
+      end
+    end
+
+    def outage_vpses_for(outage, user, direct: nil)
+      return unless user
+      return [] unless outage.respond_to?(:outage_vpses)
+
+      scope = outage.outage_vpses.where(user:)
+      scope = scope.where(direct:) unless direct.nil?
+      scope
+    end
+
+    def outage_exports_for(outage, user)
+      return unless user
+      return [] unless outage.respond_to?(:outage_exports)
+
+      outage.outage_exports.where(user:)
+    end
+
+    def outage_security_advisory_cves(outage)
+      return [] unless outage.respond_to?(:outage_security_advisories)
+
+      outage.outage_security_advisories
+            .includes(security_advisory: :security_advisory_cves)
+            .flat_map do |link|
+        advisory = link.security_advisory
+
+        advisory.security_advisory_cves.order(:cve_id).map do |cve|
+          {
+            advisory_id: advisory.id,
+            advisory_name: advisory.name,
+            cve_id: cve.cve_id,
+            cve_url: cve.url
+          }
+        end
+      end.uniq { |row| [row[:advisory_id], row[:cve_id]] }
+    end
+
     def default_email_target_for(event)
       return unless REQUEST_EVENT_TYPES.include?(event.event_type)
 
@@ -568,6 +878,13 @@ module VpsAdmin::API
       return unless (params['role'] || params[:role]).to_s == 'user'
 
       params['recipient_email'] || params[:recipient_email]
+    end
+
+    def system_template_email?(event)
+      return false unless OUTAGE_EVENT_TYPES.include?(event.event_type)
+
+      params = event.parameters || {}
+      (params['role'] || params[:role]).to_s == 'generic'
     end
 
     def incident_email_vars(event)
@@ -1206,7 +1523,21 @@ module VpsAdmin::API
         return [] if event.user
 
         target = VpsAdmin::API::Events.default_email_target_for(event)
-        return [] if target.blank?
+        if target.blank?
+          return [] unless VpsAdmin::API::Events.system_template_email?(event)
+
+          return [
+            build_delivery(
+              nil,
+              nil,
+              nil,
+              target_value: nil,
+              target_label: 'Template recipients',
+              template_name: VpsAdmin::API::Events.email_template_name_for(event),
+              state: 'planned'
+            )
+          ]
+        end
 
         [
           build_delivery(
@@ -1588,6 +1919,75 @@ module VpsAdmin::API
         incoming_transaction_id: 'Incoming bank transaction ID',
         accounted_by_id: 'Accounting admin user ID',
         accounted_by_login: 'Accounting admin login'
+      }
+    )
+
+    register(
+      'outage.announced',
+      label: 'Outage announced',
+      category: 'outages',
+      severity: :warning,
+      parameters: {
+        role: 'Recipient role',
+        event: 'Outage mail event',
+        outage_id: 'Outage ID',
+        update_id: 'Outage update ID',
+        outage_type: 'Outage type',
+        state: 'Outage state',
+        impact_type: 'Impact type',
+        begins_at: 'Beginning time',
+        finished_at: 'Finish time',
+        duration: 'Expected duration in minutes',
+        summary: 'Update summary',
+        description: 'Update description',
+        outage_summary: 'Outage summary',
+        outage_description: 'Outage description',
+        entity_labels: 'Affected entity labels',
+        handler_names: 'Handler names',
+        affected_user_id: 'Affected user ID',
+        affected_user_login: 'Affected user login',
+        affected_vps_count: 'Affected VPS count',
+        direct_vps_count: 'Directly affected VPS count',
+        indirect_vps_count: 'Indirectly affected VPS count',
+        affected_export_count: 'Affected export count',
+        cves: 'Related CVE identifiers',
+        reported_by_id: 'Reporting admin user ID',
+        reported_by_login: 'Reporting admin login',
+        reported_by_name: 'Reporting admin name'
+      }
+    )
+
+    register(
+      'outage.updated',
+      label: 'Outage updated',
+      category: 'outages',
+      severity: :warning,
+      parameters: {
+        role: 'Recipient role',
+        event: 'Outage mail event',
+        outage_id: 'Outage ID',
+        update_id: 'Outage update ID',
+        outage_type: 'Outage type',
+        state: 'Outage state',
+        impact_type: 'Impact type',
+        begins_at: 'Beginning time',
+        finished_at: 'Finish time',
+        duration: 'Expected duration in minutes',
+        summary: 'Update summary',
+        description: 'Update description',
+        outage_summary: 'Outage summary',
+        outage_description: 'Outage description',
+        changes: 'Changed outage fields',
+        affected_user_id: 'Affected user ID',
+        affected_user_login: 'Affected user login',
+        affected_vps_count: 'Affected VPS count',
+        direct_vps_count: 'Directly affected VPS count',
+        indirect_vps_count: 'Indirectly affected VPS count',
+        affected_export_count: 'Affected export count',
+        cves: 'Related CVE identifiers',
+        reported_by_id: 'Reporting admin user ID',
+        reported_by_login: 'Reporting admin login',
+        reported_by_name: 'Reporting admin name'
       }
     )
 

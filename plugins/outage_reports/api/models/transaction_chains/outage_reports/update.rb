@@ -61,7 +61,7 @@ module VpsAdmin::API::Plugins::OutageReports::TransactionChains
       return outage unless opts[:send_mail]
 
       # Generic mail announcement
-      send_mail('generic', nil, outage, report, attrs, last_report)
+      route_outage_event!('generic', nil, outage, report, attrs, last_report)
 
       # Mail affected users directly
       outage.outage_users.includes(:user).joins(:user).where(
@@ -69,11 +69,10 @@ module VpsAdmin::API::Plugins::OutageReports::TransactionChains
           object_state: [
             ::User.object_states[:active],
             ::User.object_states[:suspended]
-          ],
-          mailer_enabled: true
+          ]
         }
       ).each do |ou|
-        send_mail('user', ou.user, outage, report, attrs, last_report)
+        route_outage_event!('user', ou.user, outage, report, attrs, last_report)
       end
 
       outage
@@ -81,87 +80,134 @@ module VpsAdmin::API::Plugins::OutageReports::TransactionChains
 
     protected
 
-    def send_mail(role, u, outage, report, attrs, last_report)
-      event = {
-        ::Outage.states[:announced] => 'announce',
-        ::Outage.states[:cancelled] => 'cancel',
-        ::Outage.states[:resolved] => 'resolve'
-      }
+    def route_outage_event!(role, user, outage, report, attrs, last_report)
       msg_id = message_id(
         attrs[:state] == ::Outage.states[:announced] ? :announce : :update,
-        outage, report, u
+        outage, report, user
       )
 
-      in_reply_to = (message_id(:announce, outage, last_report, u) if last_report)
+      in_reply_to = (message_id(:announce, outage, last_report, user) if last_report)
 
-      send_first(
-        [
-          [
-            :outage_report_role_event,
-            { role:, event: event[attrs[:state]] || 'update' }
-          ],
-          [
-            :outage_report_role_event,
-            { role:, event: 'update' }
-          ],
-          [
-            :outage_report_role,
-            { role: }
-          ]
-        ],
-        user: u,
-        language: u ? nil : ::Language.take, # TODO: configurable language
-        message_id: msg_id,
-        in_reply_to:,
-        references: in_reply_to,
-        vars: {
-          outage:,
-          o: outage,
-          update: report,
-          user: u,
-          vpses: u && outage.outage_vpses.where(user: u),
-          direct_vpses: u && outage.outage_vpses.where(user: u, direct: true),
-          indirect_vpses: u && outage.outage_vpses.where(user: u, direct: false),
-          exports: u && outage.outage_exports.where(user: u),
-          security_advisory_cves: security_advisory_cves(outage),
-          webui_url: webui_url
-        }
+      route_event!(
+        outage_event_type(attrs),
+        user:,
+        source: report,
+        subject: outage_event_subject(outage, attrs),
+        summary: report.summary,
+        parameters: outage_event_parameters(
+          role,
+          user,
+          outage,
+          report,
+          attrs,
+          msg_id,
+          in_reply_to
+        ),
+        email_vars: outage_email_vars(role, user, outage, report)
       )
     end
 
-    def security_advisory_cves(outage)
-      outage.outage_security_advisories
-            .includes(security_advisory: :security_advisory_cves)
-            .flat_map do |link|
-        advisory = link.security_advisory
+    def outage_event_type(attrs)
+      attrs[:state] == ::Outage.states[:announced] ? 'outage.announced' : 'outage.updated'
+    end
 
-        advisory.security_advisory_cves.order(:cve_id).map do |cve|
-          {
-            advisory_id: advisory.id,
-            advisory_name: advisory.name,
-            cve_id: cve.cve_id,
-            cve_url: cve.url
-          }
-        end
-      end.uniq { |row| [row[:advisory_id], row[:cve_id]] }
+    def outage_mail_event(attrs)
+      {
+        ::Outage.states[:announced] => 'announce',
+        ::Outage.states[:cancelled] => 'cancel',
+        ::Outage.states[:resolved] => 'resolve'
+      }.fetch(attrs[:state], 'update')
+    end
+
+    def outage_event_subject(outage, attrs)
+      prefix = attrs[:state] == ::Outage.states[:announced] ? 'Outage report' : 'Outage update'
+      "#{prefix} ##{outage.id}"
+    end
+
+    def outage_email_vars(role, user, outage, report)
+      {
+        outage:,
+        o: outage,
+        update: report,
+        user:,
+        vpses: user && outage.outage_vpses.where(user:),
+        direct_vpses: user && outage.outage_vpses.where(user:, direct: true),
+        indirect_vpses: user && outage.outage_vpses.where(user:, direct: false),
+        exports: user && outage.outage_exports.where(user:),
+        security_advisory_cves: security_advisory_cves(outage),
+        webui_url: webui_url
+      }
+    end
+
+    def outage_event_parameters(role, user, outage, report, attrs, msg_id, in_reply_to)
+      {
+        role:,
+        event: outage_mail_event(attrs),
+        outage_id: outage.id,
+        update_id: report.id,
+        outage_type: outage.outage_type,
+        state: outage.state,
+        impact_type: outage.impact_type,
+        begins_at: outage.begins_at&.iso8601,
+        finished_at: outage.finished_at&.iso8601,
+        duration: outage.duration,
+        summary: report.summary,
+        description: bounded_text(report.description),
+        outage_summary: outage_translation(outage, :summary),
+        outage_description: bounded_text(outage_translation(outage, :description)),
+        entity_labels: outage.outage_entities.map(&:real_name).first(VpsAdmin::API::Events::PARAMETER_SAMPLE_LIMIT),
+        handler_names: outage.outage_handlers.map(&:full_name).first(VpsAdmin::API::Events::PARAMETER_SAMPLE_LIMIT),
+        affected_user_id: user&.id,
+        affected_user_login: user&.login,
+        affected_vps_count: user && outage.outage_vpses.where(user:).count,
+        direct_vps_count: user && outage.outage_vpses.where(user:, direct: true).count,
+        indirect_vps_count: user && outage.outage_vpses.where(user:, direct: false).count,
+        affected_export_count: user && outage.outage_exports.where(user:).count,
+        cves: security_advisory_cves(outage).map { |cve| cve[:cve_id] },
+        changes: outage_changes(report),
+        reported_by_id: report.reported_by_id,
+        reported_by_login: report.reported_by&.login,
+        reported_by_name: report.reporter_name,
+        mail_message_id: msg_id,
+        reply_to_message_id: in_reply_to
+      }.compact
+    end
+
+    def outage_changes(report)
+      ret = []
+      report.each_change do |field, from, to|
+        ret << {
+          field:,
+          from: serialize_change_value(from),
+          to: serialize_change_value(to)
+        }
+      end
+      ret
+    end
+
+    def serialize_change_value(value)
+      value.respond_to?(:iso8601) ? value.iso8601 : value
+    end
+
+    def bounded_text(value)
+      value&.to_s&.slice(0, ::Event::MAX_SUMMARY_LENGTH)
+    end
+
+    def outage_translation(outage, attr)
+      method_name = "en_#{attr}"
+      return outage.public_send(method_name) if outage.respond_to?(method_name)
+
+      outage.outage_translations.first&.public_send(attr).to_s
+    end
+
+    def security_advisory_cves(outage)
+      VpsAdmin::API::Events.outage_security_advisory_cves(outage)
     end
 
     def webui_url
       (::SysConfig.get(:webui, :base_url) || '').chomp('/')
     rescue StandardError
       ''
-    end
-
-    def send_first(templates, opts)
-      templates.each do |id, params|
-        args = { params: }
-        args.update(opts)
-
-        mail(id, args)
-        break
-      rescue VpsAdmin::API::Exceptions::MailTemplateDoesNotExist
-        next
-      end
     end
 
     def message_id(type, outage, update, user)

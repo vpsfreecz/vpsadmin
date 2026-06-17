@@ -196,6 +196,26 @@ class AddEvents < ActiveRecord::Migration[8.1]
       matchers: []
     },
     {
+      event_type: 'outage.announced',
+      template_name: 'outage_report_role_event',
+      legacy_template_names: %w[outage_report_user_announce],
+      label: 'Outage announced',
+      roles: %w[admin],
+      matchers: [
+        ['parameters.role', '==', 'user']
+      ]
+    },
+    {
+      event_type: 'outage.updated',
+      template_name: 'outage_report_role_event',
+      legacy_template_names: %w[outage_report_user_update],
+      label: 'Outage updated',
+      roles: %w[admin],
+      matchers: [
+        ['parameters.role', '==', 'user']
+      ]
+    },
+    {
       event_type: 'security_advisory.announced',
       template_name: 'security_advisory_user_announce',
       label: 'Security advisory announced',

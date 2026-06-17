@@ -399,6 +399,41 @@ RSpec.describe EventRoute do
     expect(delivery.template_name).to eq('payment_accepted')
   end
 
+  it 'backfills outage update template overrides for all update events' do
+    reset_advanced_mail_settings!
+    template = event_mail_template!('outage_report_user_update')
+    UserMailTemplateRecipient.create!(
+      user: SpecSeed.user,
+      mail_template: template,
+      to: 'outage-update@example.test',
+      enabled: true
+    )
+
+    run_events_migration_backfill!
+
+    event = VpsAdmin::API::Events.emit!(
+      'outage.updated',
+      user: SpecSeed.user,
+      subject: 'Spec outage resolved',
+      parameters: {
+        role: 'user',
+        event: 'resolve',
+        outage_id: 123,
+        update_id: 456
+      }
+    )
+    delivery = event.event_deliveries.sole
+
+    expect(event.reload).to be_routed_routing_state
+    expect(event.matched_event_route.event_type).to eq('outage.updated')
+    expect(event.matched_event_route.event_route_matchers.map(&:summary)).to contain_exactly(
+      'parameters.role == user'
+    )
+    expect(delivery.target_kind).to eq('custom')
+    expect(delivery.target_value).to eq('outage-update@example.test')
+    expect(delivery.template_name).to eq('outage_report_role_event')
+  end
+
   it 'backfills request template overrides in fallback order' do
     reset_advanced_mail_settings!
     specific = event_mail_template!('request_resolve_user_change_approved')

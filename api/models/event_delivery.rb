@@ -4,6 +4,10 @@ class EventDelivery < ApplicationRecord
     request.updated
     request.resolved
   ].freeze
+  DIRECT_SYSTEM_TEMPLATE_EVENT_TYPES = %w[
+    outage.announced
+    outage.updated
+  ].freeze
 
   ACTION_LABELS = {
     'email' => 'E-mail',
@@ -64,6 +68,10 @@ class EventDelivery < ApplicationRecord
   end
 
   def direct_email_delivery?
+    direct_request_email_delivery? || direct_system_template_email_delivery?
+  end
+
+  def direct_request_email_delivery?
     return false unless email_action? &&
                         notification_receiver.nil? &&
                         notification_receiver_action.nil? &&
@@ -78,5 +86,18 @@ class EventDelivery < ApplicationRecord
     (params['role'] || params[:role]).to_s == 'user' &&
       recipient.present? &&
       target_value == recipient.to_s
+  end
+
+  def direct_system_template_email_delivery?
+    return false unless email_action? &&
+                        notification_receiver.nil? &&
+                        notification_receiver_action.nil? &&
+                        default_recipient_target_kind? &&
+                        target_value.blank?
+    return false unless event&.user_id.nil?
+    return false unless DIRECT_SYSTEM_TEMPLATE_EVENT_TYPES.include?(event.event_type)
+
+    params = event.parameters || {}
+    (params['role'] || params[:role]).to_s == 'generic'
   end
 end
