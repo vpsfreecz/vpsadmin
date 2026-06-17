@@ -330,6 +330,7 @@ class TransactionChain < ApplicationRecord
          .where(action: 'email', state: 'planned')
          .order(:id)
          .each do |delivery|
+      delivery.association(:event).target = event
       use_chain(TransactionChains::EventDelivery::Email, args: [delivery])
     end
 

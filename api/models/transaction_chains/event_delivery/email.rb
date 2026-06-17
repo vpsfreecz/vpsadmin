@@ -5,7 +5,10 @@ module TransactionChains
     MAX_ATTEMPTS = 5
 
     def link_chain(delivery)
+      runtime_event = delivery.association(:event).target
       return unless claim_delivery(delivery)
+
+      delivery.association(:event).target = runtime_event if runtime_event&.runtime_email_vars
 
       mail_log = nil
       mail_server = find_delivery_mail_server(delivery)

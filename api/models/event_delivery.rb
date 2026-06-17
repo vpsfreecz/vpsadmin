@@ -8,6 +8,10 @@ class EventDelivery < ApplicationRecord
     outage.announced
     outage.updated
   ].freeze
+  DIRECT_SYSTEM_REPORT_EVENT_TYPES = %w[
+    system.daily_report
+    payments.overview
+  ].freeze
   DIRECT_CUSTOM_EVENT_TYPES = %w[
     incident_report.reply
   ].freeze
@@ -100,6 +104,9 @@ class EventDelivery < ApplicationRecord
                         default_recipient_target_kind? &&
                         target_value.blank?
     return false unless event&.user_id.nil?
+    if DIRECT_SYSTEM_REPORT_EVENT_TYPES.include?(event.event_type)
+      return true
+    end
     return false unless DIRECT_SYSTEM_TEMPLATE_EVENT_TYPES.include?(event.event_type)
 
     params = event.parameters || {}

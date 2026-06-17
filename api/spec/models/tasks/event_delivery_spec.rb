@@ -139,6 +139,36 @@ RSpec.describe VpsAdmin::API::Tasks::EventDelivery do
     event.event_deliveries.sole
   end
 
+  def create_user_system_report_email_delivery!
+    receiver = NotificationReceiver.create!(user: SpecSeed.user, label: 'Spec report receiver')
+    receiver.notification_receiver_actions.create!(
+      action: :email,
+      label: 'Spec report e-mail',
+      target_kind: :custom,
+      target_value: 'custom@example.test'
+    )
+    EventRoute.create!(
+      user: SpecSeed.user,
+      notification_receiver: receiver,
+      event_type: 'system.daily_report'
+    )
+    event = VpsAdmin::API::Events.emit!(
+      'system.daily_report',
+      user: SpecSeed.user,
+      subject: 'User-created daily report event',
+      summary: 'User-created daily report event',
+      parameters: {
+        language_id: SpecSeed.language.id,
+        language_code: SpecSeed.language.code,
+        period_start: '2026-04-01T00:00:00Z',
+        period_end: '2026-04-02T00:00:00Z',
+        period_seconds: 86_400
+      }
+    )
+
+    event.event_deliveries.sole
+  end
+
   def create_vps_email_delivery!
     VpsAdmin::API::MailTemplates.install_defaults!
     vps = build_standalone_vps_fixture(user: SpecSeed.user).fetch(:vps)
@@ -349,6 +379,21 @@ RSpec.describe VpsAdmin::API::Tasks::EventDelivery do
     expect(mail_log.text_plain).to include('Event type: incident_report.reply')
     expect(mail_log.in_reply_to).to be_nil
     expect(mail_log.references).to be_nil
+  end
+
+  it 'renders user-routed system report events as generic e-mails' do
+    delivery = create_user_system_report_email_delivery!
+
+    expect(delivery).not_to be_direct_email_delivery
+
+    task.deliver_emails
+
+    mail_log = delivery.reload.mail_log
+    expect(mail_log.mail_template).to be_nil
+    expect(mail_log.from).to eq(VpsAdmin::API::MailTemplates.default_from)
+    expect(mail_log.to).to eq('custom@example.test')
+    expect(mail_log.subject).to eq('User-created daily report event')
+    expect(mail_log.text_plain).to include('Event type: system.daily_report')
   end
 
   it 'marks queued e-mail deliveries sent after the mail transaction succeeds' do

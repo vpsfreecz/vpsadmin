@@ -22,6 +22,19 @@ RSpec.describe TransactionChains::Mail::DailyReport do
       :daily_report,
       hash_including(language: SpecSeed.language)
     )
+    event = Event.where(event_type: 'system.daily_report').sole
+    delivery = event.event_deliveries.sole
+    expect(event.user).to be_nil
+    expect(event.parameters).to include(
+      'language_id' => SpecSeed.language.id,
+      'language_code' => SpecSeed.language.code,
+      'period_seconds' => described_class::PERIOD_SECONDS
+    )
+    expect(event.parameters.fetch('period_start')).to be_present
+    expect(event.parameters.fetch('period_end')).to be_present
+    expect(delivery).to be_direct_email_delivery
+    expect(delivery.template_name).to eq('daily_report')
+    expect(delivery.target_label).to eq('Template recipients')
   end
 
   it 'builds the major template sections' do
@@ -69,6 +82,17 @@ RSpec.describe TransactionChains::Mail::DailyReport do
 
     expect(captured_vars).to include(hook_output: { ok: true })
     expect(captured_vars).to include(:users, :transactions)
+  end
+
+  it 'raises when the event e-mail delivery cannot be queued' do
+    allow(MailTemplate).to receive(:send_mail!).and_raise(ArgumentError, 'invalid report')
+
+    expect do
+      described_class.fire2(args: [SpecSeed.language])
+    end.to raise_error(
+      RuntimeError,
+      /failed to queue daily report e-mail delivery: ArgumentError: invalid report/
+    )
   end
 
   context 'with payments plugin hooks', requires_plugins: :payments do

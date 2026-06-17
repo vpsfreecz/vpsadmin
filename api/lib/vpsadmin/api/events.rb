@@ -16,6 +16,11 @@ module VpsAdmin::API
       outage.announced
       outage.updated
     ].freeze
+    SYSTEM_REPORT_TEMPLATES = {
+      'system.daily_report' => :daily_report,
+      'payments.overview' => :payments_overview
+    }.freeze
+    SYSTEM_REPORT_EVENT_TYPES = SYSTEM_REPORT_TEMPLATES.keys.freeze
     REQUEST_TEMPLATE_CANDIDATES = {
       'request.created' => %i[
         request_action_role_type
@@ -265,6 +270,9 @@ module VpsAdmin::API
       return action.template_name.to_sym if action&.template_name.present?
       return request_email_template_name_for(event) if REQUEST_EVENT_TYPES.include?(event.event_type)
       return outage_email_template_choice(event).first if OUTAGE_EVENT_TYPES.include?(event.event_type)
+      if event.user_id.blank? && SYSTEM_REPORT_EVENT_TYPES.include?(event.event_type)
+        return SYSTEM_REPORT_TEMPLATES.fetch(event.event_type)
+      end
 
       type_for(event.event_type)&.email_template&.to_sym
     end
@@ -596,8 +604,22 @@ module VpsAdmin::API
     def email_template_extra_options_for(event)
       return request_email_template_extra_options(event) if REQUEST_EVENT_TYPES.include?(event.event_type)
       return outage_email_template_extra_options(event) if OUTAGE_EVENT_TYPES.include?(event.event_type)
+      if event.user_id.blank? && SYSTEM_REPORT_EVENT_TYPES.include?(event.event_type)
+        return system_report_email_template_extra_options(event)
+      end
 
       {}
+    end
+
+    def system_report_email_template_extra_options(event)
+      { language: system_report_language(event) }.compact
+    end
+
+    def system_report_language(event)
+      params = event.parameters || {}
+      language = ::Language.find_by(id: params['language_id'] || params[:language_id])
+      language ||= ::Language.find_by(code: params['language_code'] || params[:language_code])
+      language || ::Language.take
     end
 
     def request_email_template_extra_options(event)
@@ -909,6 +931,7 @@ module VpsAdmin::API
     end
 
     def system_template_email?(event)
+      return true if SYSTEM_REPORT_EVENT_TYPES.include?(event.event_type)
       return false unless OUTAGE_EVENT_TYPES.include?(event.event_type)
 
       params = event.parameters || {}
@@ -1456,6 +1479,7 @@ module VpsAdmin::API
       event.runtime_email_vars = email_vars if email_vars
 
       route!(event) if route
+      event.runtime_email_vars = email_vars if email_vars
 
       event
     end
@@ -1954,6 +1978,20 @@ module VpsAdmin::API
     )
 
     register(
+      'system.daily_report',
+      label: 'Daily report',
+      category: 'system',
+      severity: :info,
+      parameters: {
+        language_id: 'Mail language ID',
+        language_code: 'Mail language code',
+        period_start: 'Report period start',
+        period_end: 'Report period end',
+        period_seconds: 'Report period in seconds'
+      }
+    )
+
+    register(
       'payment.accepted',
       label: 'Payment accepted',
       category: 'payments',
@@ -1970,6 +2008,22 @@ module VpsAdmin::API
         incoming_transaction_id: 'Incoming bank transaction ID',
         accounted_by_id: 'Accounting admin user ID',
         accounted_by_login: 'Accounting admin login'
+      }
+    )
+
+    register(
+      'payments.overview',
+      label: 'Payments overview',
+      category: 'payments',
+      severity: :info,
+      parameters: {
+        language_id: 'Mail language ID',
+        language_code: 'Mail language code',
+        period_start: 'Report period start',
+        period_end: 'Report period end',
+        period_seconds: 'Report period in seconds',
+        incoming_payment_count: 'Incoming payment count',
+        accepted_payment_count: 'Accepted payment count'
       }
     )
 
