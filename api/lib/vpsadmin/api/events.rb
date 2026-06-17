@@ -310,8 +310,24 @@ module VpsAdmin::API
         from: MailTemplates.default_from,
         to: email_target_addresses(event, delivery),
         subject: event.subject,
-        text_plain: custom_email_body(event)
-      }
+        text_plain: custom_email_body(event, delivery)
+      }.merge(custom_email_extra_options_for(event, delivery))
+    end
+
+    def custom_email_extra_options_for(event, delivery)
+      return {} unless direct_incident_reply_delivery?(event, delivery)
+
+      params = event.parameters || {}
+      {
+        from: params['from_email'] || params[:from_email],
+        in_reply_to: params['in_reply_to_message_id'] || params[:in_reply_to_message_id],
+        references: params['references_message_id'] || params[:references_message_id]
+      }.compact
+    end
+
+    def direct_incident_reply_delivery?(event, delivery)
+      event.event_type == 'incident_report.reply' &&
+        delivery&.direct_custom_email_delivery?
     end
 
     def email_target_addresses(event, delivery)
@@ -880,6 +896,18 @@ module VpsAdmin::API
       params['recipient_email'] || params[:recipient_email]
     end
 
+    def custom_email_target_for(event)
+      return unless event.event_type == 'incident_report.reply'
+
+      params = event.parameters || {}
+      recipients = Array(params['recipient_emails'] || params[:recipient_emails])
+                   .map(&:to_s)
+                   .reject(&:blank?)
+      return if recipients.empty?
+
+      recipients.join(',')
+    end
+
     def system_template_email?(event)
       return false unless OUTAGE_EVENT_TYPES.include?(event.event_type)
 
@@ -1346,7 +1374,13 @@ module VpsAdmin::API
       nil
     end
 
-    def custom_email_body(event)
+    def custom_email_body(event, delivery)
+      if direct_incident_reply_delivery?(event, delivery)
+        params = event.parameters || {}
+        text = params['text'] || params[:text]
+        return text if text.present?
+      end
+
       ret = [
         event.summary.presence,
         "Event type: #{event.event_type}",
@@ -1523,6 +1557,22 @@ module VpsAdmin::API
         return [] if event.user
 
         target = VpsAdmin::API::Events.default_email_target_for(event)
+        custom_target = VpsAdmin::API::Events.custom_email_target_for(event)
+        if custom_target.present?
+          return [
+            build_delivery(
+              nil,
+              nil,
+              nil,
+              target_kind: 'custom',
+              target_value: custom_target,
+              target_label: custom_target,
+              template_name: VpsAdmin::API::Events.email_template_name_for(event),
+              state: 'planned'
+            )
+          ]
+        end
+
         if target.blank?
           return [] unless VpsAdmin::API::Events.system_template_email?(event)
 
@@ -1661,10 +1711,10 @@ module VpsAdmin::API
       end
 
       def build_delivery(route, receiver, receiver_action, target_value:, target_label:, template_name: nil,
-                         state: 'planned', next_attempt_at: nil)
+                         target_kind: nil, state: 'planned', next_attempt_at: nil)
         DeliveryPlan.new(
           action: receiver_action&.action || 'email',
-          target_kind: receiver_action&.target_kind || 'default_recipient',
+          target_kind: target_kind || receiver_action&.target_kind || 'default_recipient',
           target_value:,
           target_label: delivery_label(target_label),
           template_name: template_name || delivery_template_name(receiver_action),
@@ -1698,6 +1748,7 @@ module VpsAdmin::API
       end
 
       def delivery_template_name(receiver_action)
+        return unless receiver_action
         return receiver_action.template_name if receiver_action.template_name.present?
         return unless receiver_action.email_action?
 
@@ -2120,6 +2171,24 @@ module VpsAdmin::API
         codename: 'Report codename',
         ip_addr: 'Affected IP address',
         vps_id: 'Affected VPS ID'
+      }
+    )
+
+    register(
+      'incident_report.reply',
+      label: 'Incident report reply',
+      category: 'incidents',
+      severity: :info,
+      parameters: {
+        from_email: 'Reply sender e-mail',
+        recipient_emails: 'Reply recipient e-mail addresses',
+        in_reply_to_message_id: 'Original Message-ID',
+        references_message_id: 'References Message-ID',
+        incident_count: 'Created incident report count',
+        user_count: 'Affected user count',
+        vps_count: 'Affected VPS count',
+        incident_ids: 'Created incident report ID sample',
+        text: 'Reply text'
       }
     )
 

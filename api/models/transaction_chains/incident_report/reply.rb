@@ -9,28 +9,52 @@ module TransactionChains
 
       user_cnt = result.incidents.map(&:user_id).uniq.length
       vps_cnt = result.incidents.map(&:vps_id).uniq.length
-      text = ''
+      text = reply_text(result, user_cnt, vps_cnt)
 
-      if result.incidents.length <= 100
-        text << "Created #{result.incidents.length} incident reports of #{user_cnt} users and #{vps_cnt} VPS:\n"
+      event = route_event!(
+        'incident_report.reply',
+        subject: "Re: #{message.subject}",
+        summary: text.truncate(::Event::MAX_SUMMARY_LENGTH),
+        parameters: {
+          from_email: result.reply[:from],
+          recipient_emails: result.reply[:to],
+          in_reply_to_message_id: message.message_id,
+          references_message_id: message.message_id,
+          incident_count: result.incidents.length,
+          user_count: user_cnt,
+          vps_count: vps_cnt,
+          incident_ids: result.incidents.map(&:id).first(VpsAdmin::API::Events::PARAMETER_SAMPLE_LIMIT),
+          text:
+        }
+      )
+      ensure_email_deliveries_queued!(event)
+    end
 
-        result.incidents.each do |inc|
-          text << "  Incident ##{inc.id}: user=#{inc.user_id} vps=#{inc.vps_id}\n"
-        end
-      else
-        text << "Created #{result.incidents.length} incident reports of #{user_cnt} users and #{vps_cnt} VPS\n"
+    protected
+
+    def ensure_email_deliveries_queued!(event)
+      failed = event
+               .event_deliveries
+               .where(action: 'email', state: 'failed')
+               .order(:id)
+               .first
+      return unless failed
+
+      raise "failed to queue incident report reply e-mail delivery: #{failed.error_summary}"
+    end
+
+    def reply_text(result, user_cnt, vps_cnt)
+      if result.incidents.length > 100
+        return "Created #{result.incidents.length} incident reports of #{user_cnt} users and #{vps_cnt} VPS\n"
       end
 
-      mail_custom({
-                    user: nil,
-                    vars: {},
-                    from: result.reply[:from],
-                    to: result.reply[:to],
-                    in_reply_to: message.message_id,
-                    references: message.message_id,
-                    subject: "Re: #{message.subject}",
-                    text_plain: text
-                  })
+      text = "Created #{result.incidents.length} incident reports of #{user_cnt} users and #{vps_cnt} VPS:\n"
+
+      result.incidents.each do |inc|
+        text << "  Incident ##{inc.id}: user=#{inc.user_id} vps=#{inc.vps_id}\n"
+      end
+
+      text
     end
   end
 end

@@ -61,6 +61,23 @@ RSpec.describe TransactionChains::IncidentReport::Reply do
         subject: 'Re: Abuse report'
       )
     )
+    event = Event.where(event_type: 'incident_report.reply').sole
+    delivery = event.event_deliveries.sole
+    expect(event.user).to be_nil
+    expect(event.parameters).to include(
+      'from_email' => 'abuse@test.invalid',
+      'recipient_emails' => ['sender@test.invalid'],
+      'in_reply_to_message_id' => 'incident-source@test.invalid',
+      'references_message_id' => 'incident-source@test.invalid',
+      'incident_count' => 2,
+      'user_count' => 1,
+      'vps_count' => 1
+    )
+    expect(event.parameters.fetch('incident_ids')).to match_array(result.incidents.map(&:id))
+    expect(delivery).to be_queued_state
+    expect(delivery).to be_direct_email_delivery
+    expect(delivery.target_kind).to eq('custom')
+    expect(delivery.target_value).to eq('sender@test.invalid')
   end
 
   it 'uses verbose text for small incident sets' do
@@ -76,6 +93,11 @@ RSpec.describe TransactionChains::IncidentReport::Reply do
         )
       )
     )
+    event = Event.where(event_type: 'incident_report.reply').sole
+    expect(event.parameters.fetch('text')).to include(
+      'Created 2 incident reports',
+      "Incident ##{result.incidents.first.id}"
+    )
   end
 
   it 'uses compact text for large incident sets' do
@@ -90,5 +112,18 @@ RSpec.describe TransactionChains::IncidentReport::Reply do
 
     expect(sent_opts.fetch(:text_plain)).to include('Created 101 incident reports')
     expect(sent_opts.fetch(:text_plain)).not_to include("Incident ##{result.incidents.first.id}:")
+    event = Event.where(event_type: 'incident_report.reply').sole
+    expect(event.parameters.fetch('incident_ids').length).to eq(VpsAdmin::API::Events::PARAMETER_SAMPLE_LIMIT)
+  end
+
+  it 'raises when the event e-mail delivery cannot be queued' do
+    allow(MailTemplate).to receive(:send_custom).and_raise(ArgumentError, 'invalid recipient')
+
+    expect do
+      described_class.fire2(args: [message, result_for(1)])
+    end.to raise_error(
+      RuntimeError,
+      /failed to queue incident report reply e-mail delivery: ArgumentError: invalid recipient/
+    )
   end
 end

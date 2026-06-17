@@ -89,6 +89,56 @@ RSpec.describe VpsAdmin::API::Tasks::EventDelivery do
     event.event_deliveries.sole
   end
 
+  def create_direct_custom_email_delivery!
+    event = VpsAdmin::API::Events.emit!(
+      'incident_report.reply',
+      subject: 'Re: Abuse report',
+      summary: 'Created incident reports',
+      parameters: {
+        from_email: 'abuse@example.test',
+        recipient_emails: ['sender@example.test'],
+        in_reply_to_message_id: 'incident-source@example.test',
+        references_message_id: 'incident-source@example.test',
+        incident_count: 1,
+        user_count: 1,
+        vps_count: 1,
+        text: "Created 1 incident reports of 1 users and 1 VPS:\n"
+      }
+    )
+
+    event.event_deliveries.sole
+  end
+
+  def create_user_incident_reply_email_delivery!
+    receiver = NotificationReceiver.create!(user: SpecSeed.user, label: 'Spec incident receiver')
+    receiver.notification_receiver_actions.create!(
+      action: :email,
+      label: 'Spec incident e-mail',
+      target_kind: :custom,
+      target_value: 'custom@example.test'
+    )
+    EventRoute.create!(
+      user: SpecSeed.user,
+      notification_receiver: receiver,
+      event_type: 'incident_report.reply'
+    )
+    event = VpsAdmin::API::Events.emit!(
+      'incident_report.reply',
+      user: SpecSeed.user,
+      subject: 'Spoofed incident reply',
+      summary: 'User-created incident reply test',
+      parameters: {
+        from_email: 'spoofed@example.test',
+        recipient_emails: ['sender@example.test'],
+        in_reply_to_message_id: 'spoofed-message@example.test',
+        references_message_id: 'spoofed-message@example.test',
+        text: 'spoofed body'
+      }
+    )
+
+    event.event_deliveries.sole
+  end
+
   def create_vps_email_delivery!
     VpsAdmin::API::MailTemplates.install_defaults!
     vps = build_standalone_vps_fixture(user: SpecSeed.user).fetch(:vps)
@@ -260,6 +310,45 @@ RSpec.describe VpsAdmin::API::Tasks::EventDelivery do
     expect(delivery.next_attempt_at).to be_present
     expect(delivery.error_summary).to include('ActiveRecord::RecordNotFound')
     expect(delivery.attempt_count).to eq(1)
+  end
+
+  it 'queues direct custom e-mail deliveries through mail transactions' do
+    delivery = create_direct_custom_email_delivery!
+
+    expect(delivery).to be_direct_email_delivery
+
+    expect do
+      task.deliver_emails
+    end.to change(Transaction, :count).by(1)
+
+    delivery.reload
+
+    expect(delivery).to be_queued_state
+    expect(delivery.mail_log).to be_present
+    expect(delivery.mail_log.from).to eq('abuse@example.test')
+    expect(delivery.mail_log.to).to eq('sender@example.test')
+    expect(delivery.mail_log.subject).to eq('Re: Abuse report')
+    expect(delivery.mail_log.text_plain).to eq(
+      "Created 1 incident reports of 1 users and 1 VPS:\n"
+    )
+    expect(delivery.mail_log.in_reply_to).to eq('incident-source@example.test')
+    expect(delivery.mail_log.references).to eq('incident-source@example.test')
+  end
+
+  it 'ignores incident reply sender and threading parameters for user-routed e-mails' do
+    delivery = create_user_incident_reply_email_delivery!
+
+    expect(delivery).not_to be_direct_email_delivery
+
+    task.deliver_emails
+
+    mail_log = delivery.reload.mail_log
+    expect(mail_log.from).to eq(VpsAdmin::API::MailTemplates.default_from)
+    expect(mail_log.to).to eq('custom@example.test')
+    expect(mail_log.text_plain).not_to eq('spoofed body')
+    expect(mail_log.text_plain).to include('Event type: incident_report.reply')
+    expect(mail_log.in_reply_to).to be_nil
+    expect(mail_log.references).to be_nil
   end
 
   it 'marks queued e-mail deliveries sent after the mail transaction succeeds' do
