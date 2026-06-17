@@ -187,20 +187,41 @@ test.describe('support and status browser coverage', () => {
     await expect(heading(page)).toContainText(`Notification receiver #${receiverId}`);
     await expect(content(page)).toContainText('Actions');
 
-    const actionForm = formByAction(page, 'action=receiver_action_save');
-    await actionForm.locator('select[name="new_action"]').selectOption('webhook');
-    await actionForm.locator('input[name="new_label"]').fill('Webui webhook action');
-    await actionForm.locator('select[name="new_target_kind"]').selectOption('custom');
-    await actionForm.locator('input[name="new_target_value"]').fill('https://example.test/webui');
-    await actionForm.locator('input[name="new_secret"]').fill('webui-secret');
+    await linkWithParams(content(page), {
+      action: 'receiver_action_new',
+      receiver: receiverId,
+    }).click();
+    await expect(heading(page)).toContainText('Add receiver action');
+    const actionTypeForm = formByName(page, 'notification-action-type');
+    await actionTypeForm.locator('select[name="type"]').selectOption('webhook');
+    await submitForm(actionTypeForm, 'Continue');
+
+    const actionForm = formByAction(page, 'action=receiver_action_new');
+    await expect(actionForm).toBeVisible();
+    await expect(content(page)).toContainText('Webhook URL');
+    await expect(content(page)).toContainText('X-VpsAdmin-Signature-256');
+    await actionForm.locator('input[name="label"]').fill('Webui webhook action');
+    await actionForm.locator('input[name="target_value"]').fill('https://example.test/webui');
+    await actionForm.locator('input[name="secret"]').fill('webui-secret');
     await submitForm(actionForm, 'Add');
     await expectNotification(page, 'Action added');
-    await expect(
-      page.locator('input[name^="actions["][name$="[label]"]').first(),
-    ).toHaveValue('Webui webhook action');
-    await expect(
-      page.locator('input[name^="actions["][name$="[target_value]"]').first(),
-    ).toHaveValue('https://example.test/webui');
+    const actionRow = rowWithText(page, 'Webui webhook action');
+    await expect(actionRow).toBeVisible();
+    await expect(actionRow).toContainText('Webhook');
+    await expect(actionRow).toContainText('https://example.test/webui');
+
+    const actionEditLink = linkWithParams(actionRow, {
+      action: 'receiver_action_edit',
+      receiver: receiverId,
+    });
+    await actionEditLink.click();
+    await expect(heading(page)).toContainText('Receiver action #');
+    const actionEditForm = formByAction(page, 'action=receiver_action_edit');
+    await expect(actionEditForm.locator('select[name="action"]')).toHaveCount(0);
+    await actionEditForm.locator('input[name="label"]').fill('Webui webhook action edited');
+    await submitForm(actionEditForm, 'Save');
+    await expectNotification(page, 'Action updated');
+    await expect(rowWithText(page, 'Webui webhook action edited')).toBeVisible();
 
     await page.goto('/?page=notifications&action=routes', {
       waitUntil: 'domcontentloaded',
@@ -210,9 +231,14 @@ test.describe('support and status browser coverage', () => {
     const defaultRouteRow = rowWithText(page, 'Default route');
     const defaultRouteEditLink = linkWithParams(defaultRouteRow, { action: 'route_edit' });
     const defaultRouteId = await hrefParam(defaultRouteEditLink, 'id', page.url());
+    await expect(linkWithParams(defaultRouteRow, {
+      action: 'route_new',
+      parent: defaultRouteId,
+    })).toBeVisible();
 
     await defaultRouteEditLink.click();
     await expect(heading(page)).toContainText(`Notification route #${defaultRouteId}`);
+    await expect(content(page)).toContainText('Subroutes');
     await expect(content(page)).toContainText('Matchers');
 
     await page.goto('/?page=notifications&action=routes', {
@@ -221,6 +247,12 @@ test.describe('support and status browser coverage', () => {
     await expect(heading(page)).toContainText('Notification routes');
 
     const routeLabel = 'Webui notification route';
+    await content(page)
+      .locator('a[href*="action=route_new"]')
+      .filter({ hasText: 'Add route' })
+      .last()
+      .click();
+    await expect(heading(page)).toContainText('Add notification route');
     const routeForm = formByAction(page, 'action=route_new');
     await expect(routeForm).toBeVisible();
     await routeForm.locator('input[name="label"]').fill(routeLabel);
@@ -228,12 +260,20 @@ test.describe('support and status browser coverage', () => {
     await routeForm.locator('select[name="notification_receiver_id"]').selectOption(receiverId);
     await submitForm(routeForm, 'Add');
     await expectNotification(page, 'Route added');
+    await expect(heading(page)).toContainText('Notification route #');
+    await expect(content(page)).toContainText('Subroutes');
+    await expect(content(page)).toContainText('Matchers');
+    await expect(content(page)).toContainText('Receiver');
+    const routeId = new URL(page.url()).searchParams.get('id');
 
+    await page.goto('/?page=notifications&action=routes', {
+      waitUntil: 'domcontentloaded',
+    });
     const routeRow = rowWithText(page, routeLabel);
     await expect(routeRow).toBeVisible();
     await expect(routeRow).toContainText(receiverLabel);
     const routeEditLink = linkWithParams(routeRow, { action: 'route_edit' });
-    const routeId = await hrefParam(routeEditLink, 'id', page.url());
+    await expect(routeEditLink).toHaveAttribute('href', new RegExp(`id=${routeId}`));
 
     await routeEditLink.click();
     await expect(heading(page)).toContainText(`Notification route #${routeId}`);

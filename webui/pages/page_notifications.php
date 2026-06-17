@@ -20,16 +20,16 @@ if (isLoggedIn()) {
                 $user_id = notifications_target_user_id();
 
                 try {
-                    $api->event_route->create(notifications_route_params(true));
+                    $route = $api->event_route->create(notifications_route_params(true));
 
                     notify_user(_('Route added'), '');
-                    redirect('?page=notifications&action=routes' . notifications_user_qs($user_id));
+                    redirect('?page=notifications&action=route_edit&id=' . $route->id . notifications_user_qs($user_id));
                 } catch (\HaveAPI\Client\Exception\ActionFailed $e) {
                     $xtpl->perex_format_errors(_('Failed to add route'), $e->getResponse());
-                    notifications_routes_list($user_id);
+                    notifications_route_new($user_id, notifications_nullable_id('parent_id'));
                 }
             } else {
-                notifications_routes_list(api_get_uint('user'));
+                notifications_route_new(api_get_uint('user'), api_get_uint('parent'));
             }
             break;
 
@@ -101,7 +101,11 @@ if (isLoggedIn()) {
             $user_id = notifications_target_user_id();
 
             try {
-                $reordered = $user_id && notifications_route_reorder($user_id, notifications_posted_ids());
+                $reordered = $user_id && notifications_route_reorder(
+                    $user_id,
+                    notifications_nullable_id('parent_id'),
+                    notifications_posted_ids()
+                );
             } catch (\HaveAPI\Client\Exception\ActionFailed $e) {
                 if (notifications_is_ajax()) {
                     notifications_ajax_response(false, _('Failed to reorder routes'));
@@ -249,26 +253,57 @@ if (isLoggedIn()) {
 
             try {
                 $receiver = $api->notification_receiver->show($_GET['receiver']);
-
-                if (isset($_POST['add_action'])) {
-                    $receiver->action->create(notifications_receiver_action_params('new_'));
-                    notify_user(_('Action added'), '');
-                } elseif (isset($_POST['save_actions']) && isset($_POST['actions']) && is_array($_POST['actions'])) {
-                    foreach ($_POST['actions'] as $id => $row) {
-                        if (!ctype_digit((string) $id) || !is_array($row)) {
-                            continue;
-                        }
-
-                        $receiver->action->update($id, notifications_receiver_action_params_from_row($row));
-                    }
-
-                    notify_user(_('Actions updated'), '');
-                }
-
                 redirect('?page=notifications&action=receiver_edit&id=' . $receiver->id . notifications_user_qs($receiver->user_id));
             } catch (\HaveAPI\Client\Exception\ActionFailed $e) {
-                $xtpl->perex_format_errors(_('Failed to save actions'), $e->getResponse());
+                $xtpl->perex_format_errors(_('Failed to update action'), $e->getResponse());
                 notifications_receiver_edit($_GET['receiver']);
+            }
+            break;
+
+        case 'receiver_action_new':
+            if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+                csrf_check();
+
+                try {
+                    $receiver = $api->notification_receiver->show($_GET['receiver']);
+                    $action_type = notifications_receiver_action_type_from_request($receiver);
+
+                    if ($action_type === null) {
+                        $xtpl->perex(_('Failed to add action'), _('Invalid action type'));
+                        notifications_receiver_action_new($receiver->id);
+                        break;
+                    }
+
+                    $receiver->action->create(notifications_receiver_action_params($action_type, true));
+
+                    notify_user(_('Action added'), '');
+                    redirect('?page=notifications&action=receiver_edit&id=' . $receiver->id . notifications_user_qs($receiver->user_id));
+                } catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+                    $xtpl->perex_format_errors(_('Failed to add action'), $e->getResponse());
+                    notifications_receiver_action_new($_GET['receiver'], api_post('action_type') ?: api_get('type'));
+                }
+            } else {
+                notifications_receiver_action_new($_GET['receiver'], api_get('type'));
+            }
+            break;
+
+        case 'receiver_action_edit':
+            if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+                csrf_check();
+
+                try {
+                    $receiver = $api->notification_receiver->show($_GET['receiver']);
+                    $action = $receiver->action->show($_GET['id']);
+                    $receiver->action->update($action->id, notifications_receiver_action_params($action->action));
+
+                    notify_user(_('Action updated'), '');
+                    redirect('?page=notifications&action=receiver_edit&id=' . $receiver->id . notifications_user_qs($receiver->user_id));
+                } catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+                    $xtpl->perex_format_errors(_('Failed to update action'), $e->getResponse());
+                    notifications_receiver_action_edit($_GET['receiver'], $_GET['id']);
+                }
+            } else {
+                notifications_receiver_action_edit($_GET['receiver'], $_GET['id']);
             }
             break;
 
