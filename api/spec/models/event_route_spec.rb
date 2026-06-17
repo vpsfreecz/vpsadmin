@@ -326,6 +326,48 @@ RSpec.describe EventRoute do
     expect(delivery.template_name).to eq('vps_incident_report')
   end
 
+  it 'backfills parameterized expiration template recipient overrides' do
+    reset_advanced_mail_settings!
+    template = event_mail_template!('expiration_vps_active')
+    template.update!(template_id: 'expiration_warning')
+    UserMailTemplateRecipient.create!(
+      user: SpecSeed.user,
+      mail_template: template,
+      to: 'expiration-override@example.test',
+      enabled: true
+    )
+    vps = build_standalone_vps_fixture(user: SpecSeed.user).fetch(:vps)
+
+    run_events_migration_backfill!
+
+    event = VpsAdmin::API::Events.emit!(
+      'lifetime.expiration_warning',
+      user: SpecSeed.user,
+      vps:,
+      source: vps,
+      subject: 'Spec VPS expiration',
+      parameters: {
+        object: 'vps',
+        object_id: vps.id,
+        object_label: vps.hostname,
+        state: 'active'
+      }
+    )
+    delivery = event.event_deliveries.sole
+    matchers = event.matched_event_route.event_route_matchers.order(:id)
+
+    expect(event.reload).to be_routed_routing_state
+    expect(delivery.target_kind).to eq('custom')
+    expect(delivery.target_value).to eq('expiration-override@example.test')
+    expect(delivery.template_name).to eq('expiration_warning')
+    expect(matchers.map { |m| [m.field, m.operator, m.value] }).to eq(
+      [
+        ['parameters.object', '==', 'vps'],
+        ['parameters.state', '==', 'active']
+      ]
+    )
+  end
+
   it 'backfills role recipients behind template-specific routes' do
     reset_advanced_mail_settings!
     UserMailRoleRecipient.create!(

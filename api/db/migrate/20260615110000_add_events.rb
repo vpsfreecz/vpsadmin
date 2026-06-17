@@ -66,6 +66,28 @@ class AddEvents < ActiveRecord::Migration[8.1]
       matchers: []
     },
     {
+      event_type: 'lifetime.expiration_warning',
+      template_name: 'expiration_warning',
+      legacy_template_names: %w[expiration_user_active],
+      label: 'User expiration warning',
+      roles: %w[account],
+      matchers: [
+        ['parameters.object', '==', 'user'],
+        ['parameters.state', '==', 'active']
+      ]
+    },
+    {
+      event_type: 'lifetime.expiration_warning',
+      template_name: 'expiration_warning',
+      legacy_template_names: %w[expiration_vps_active],
+      label: 'VPS expiration warning',
+      roles: %w[account],
+      matchers: [
+        ['parameters.object', '==', 'vps'],
+        ['parameters.state', '==', 'active']
+      ]
+    },
+    {
       event_type: 'security_advisory.announced',
       template_name: 'security_advisory_user_announce',
       label: 'Security advisory announced',
@@ -485,7 +507,7 @@ class AddEvents < ActiveRecord::Migration[8.1]
     return unless table_exists?(:user_mail_template_recipients)
     return unless table_exists?(:mail_templates)
 
-    template_names = ADVANCED_MAIL_EVENT_TEMPLATES.map { |cfg| cfg.fetch(:template_name) }
+    template_names = advanced_mail_template_names
     positions = Hash.new(ADVANCED_MAIL_TEMPLATE_ROUTE_POSITION - 1)
 
     select_all(<<~SQL.squish).each do |row|
@@ -731,11 +753,20 @@ class AddEvents < ActiveRecord::Migration[8.1]
 
   def advanced_mail_event_template_by_name
     @advanced_mail_event_template_by_name ||=
-      ADVANCED_MAIL_EVENT_TEMPLATES.to_h { |cfg| [cfg.fetch(:template_name), cfg] }
+      ADVANCED_MAIL_EVENT_TEMPLATES.flat_map do |cfg|
+        names = cfg.fetch(:legacy_template_names, [cfg.fetch(:template_name)])
+        names.map { |name| [name, cfg] }
+      end.to_h
   end
 
   def advanced_mail_event_templates_for_role(role)
     ADVANCED_MAIL_EVENT_TEMPLATES.select { |cfg| cfg.fetch(:roles).include?(role.to_s) }
+  end
+
+  def advanced_mail_template_names
+    ADVANCED_MAIL_EVENT_TEMPLATES.flat_map do |cfg|
+      cfg.fetch(:legacy_template_names, [cfg.fetch(:template_name)])
+    end
   end
 
   def continue_advanced_mail_role_route?(rows, role, cfg)

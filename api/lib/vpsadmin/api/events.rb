@@ -102,11 +102,24 @@ module VpsAdmin::API
       (action&.template_name.presence || type_for(event.event_type)&.email_template)&.to_sym
     end
 
+    def email_template_params_for(event)
+      case event.event_type
+      when 'lifetime.expiration_warning'
+        params = event.parameters || {}
+        {
+          object: params['object'] || params[:object],
+          state: params['state'] || params[:state]
+        }
+      end
+    end
+
     def email_template_options_for(event, delivery)
       opts = {
         user: event.user,
         vars: email_vars_for(event)
       }
+      template_params = email_template_params_for(event)
+      opts[:params] = template_params if template_params
 
       if delivery.custom_target_kind?
         opts[:to] = email_target_addresses(event, delivery)
@@ -159,6 +172,8 @@ module VpsAdmin::API
         user_totp_recovery_email_vars(event)
       when 'user.failed_logins'
         user_failed_logins_email_vars(event)
+      when 'lifetime.expiration_warning'
+        expiration_warning_email_vars(event)
       when 'security_advisory.announced', 'security_advisory.updated'
         security_advisory_email_vars(event)
       when 'vps.incident_report'
@@ -253,6 +268,27 @@ module VpsAdmin::API
       }
     end
 
+    def expiration_warning_email_vars(event)
+      params = event.parameters || {}
+      object = expiration_warning_object(event)
+      object_key = params['object'] || params[:object]
+      state = object_state_from_parameters(event)
+      expires_in_days = numeric_param(params['expires_in_days'] || params[:expires_in_days])
+      expired_days_ago = numeric_param(params['expired_days_ago'] || params[:expired_days_ago])
+
+      ret = {
+        base_url: ::SysConfig.get(:webui, :base_url),
+        user: event.user,
+        object:,
+        state:,
+        expires_in_days:,
+        expired_days_ago:,
+        expires_in_a_day: truthy_param(params['expires_in_a_day'] || params[:expires_in_a_day])
+      }
+      ret[object_key] = object if object_key.present?
+      ret
+    end
+
     def user_source(event)
       source = event.source
       return unless source.is_a?(::User)
@@ -320,6 +356,24 @@ module VpsAdmin::API
       return if event.user_id.present? && source.user_id != event.user_id
 
       source
+    end
+
+    def expiration_warning_object(event)
+      params = event.parameters || {}
+
+      case params['object'] || params[:object]
+      when 'user'
+        event.user
+      when 'vps'
+        required_vps(event)
+      else
+        source = event.source
+        return if source.nil?
+        return unless source.respond_to?(:user_id)
+        return if event.user_id.present? && source.user_id != event.user_id
+
+        source
+      end
     end
 
     def incident_email_vars(event)
@@ -713,6 +767,14 @@ module VpsAdmin::API
 
     def truthy_param(value)
       value == true || value.to_s == 'true' || value.to_s == '1'
+    end
+
+    def numeric_param(value)
+      return if value.blank?
+
+      Float(value)
+    rescue ArgumentError, TypeError
+      nil
     end
 
     def bounded_collection_count(value)
@@ -1280,6 +1342,25 @@ module VpsAdmin::API
       severity: :info,
       parameters: {
         note: 'Test note'
+      }
+    )
+
+    register(
+      'lifetime.expiration_warning',
+      label: 'Expiration warning',
+      category: 'account',
+      severity: :warning,
+      email_template: :expiration_warning,
+      parameters: {
+        object: 'Expiring object type',
+        object_id: 'Expiring object ID',
+        object_label: 'Expiring object label',
+        state: 'Object lifecycle state',
+        expiration_date: 'Expiration date',
+        remind_after_date: 'Reminder silence date',
+        expires_in_days: 'Days until expiration',
+        expired_days_ago: 'Days since expiration',
+        expires_in_a_day: 'Whether expiration is within a day'
       }
     )
 
