@@ -726,6 +726,59 @@ RSpec.describe VpsAdmin::API::Tasks::EventDelivery do
     expect(delivery.error_summary).to include('private address')
   end
 
+  it 'calls private webhook addresses from configured allowed ranges' do
+    delivery, = create_webhook_delivery!(url: 'http://127.0.0.1:9292/events')
+    dispatcher = VpsAdmin::API::Notifications::Dispatcher.new(
+      'webhook',
+      config: {
+        'webhook' => {
+          'allowed_private_ranges' => ['127.0.0.0/8']
+        }
+      }
+    )
+    http = instance_double(Net::HTTP)
+    response = instance_double(Net::HTTPOK, code: '204', body: '', to_hash: {})
+
+    allow(Resolv).to receive(:getaddresses)
+      .with('127.0.0.1')
+      .and_return(['127.0.0.1'])
+    allow(Net::HTTP).to receive(:start) do |host, port, **options, &block|
+      expect(host).to eq('127.0.0.1')
+      expect(port).to eq(9292)
+      expect(options).to include(ipaddr: '127.0.0.1', use_ssl: false)
+      block.call(http)
+    end
+    allow(http).to receive(:request).and_return(response)
+
+    dispatcher.dispatch_due
+
+    expect(delivery.reload).to be_sent_state
+    expect(delivery.response_status).to eq(204)
+  end
+
+  it 'does not call private webhook addresses outside configured allowed ranges' do
+    delivery, = create_webhook_delivery!(url: 'http://10.0.0.1/events')
+    dispatcher = VpsAdmin::API::Notifications::Dispatcher.new(
+      'webhook',
+      config: {
+        'webhook' => {
+          'allowed_private_ranges' => ['127.0.0.0/8']
+        }
+      }
+    )
+
+    allow(Resolv).to receive(:getaddresses)
+      .with('10.0.0.1')
+      .and_return(['10.0.0.1'])
+    allow(Net::HTTP).to receive(:start)
+
+    dispatcher.dispatch_due
+
+    expect(Net::HTTP).not_to have_received(:start)
+    expect(delivery.reload).to be_released_state
+    expect(delivery.error_summary).to include('private address')
+  end
+
   it 'does not call IPv4-mapped private webhook addresses' do
     delivery, = create_webhook_delivery!(url: 'https://webhook.example/events')
 

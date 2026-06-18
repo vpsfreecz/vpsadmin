@@ -65,6 +65,9 @@ let
         password = "#rabbitmq_pass#";
       };
       smtp = smtpConfig;
+      webhook = {
+        allowed_private_ranges = cfg.webhook.allowedPrivateRanges;
+      };
       poll_interval = cfg.pollInterval;
     }
   );
@@ -254,6 +257,22 @@ in
           type = types.int;
           default = 60;
           description = "SMTP read timeout in seconds.";
+        };
+      };
+
+      webhook = {
+        allowedPrivateRanges = mkOption {
+          type = types.listOf types.str;
+          default = [ ];
+          example = [
+            "172.16.0.0/12"
+          ];
+          description = ''
+            Private, loopback, link-local, or otherwise reserved destination
+            ranges that webhook delivery is allowed to call. Other private or
+            special-use addresses remain blocked to prevent SSRF against
+            internal services.
+          '';
         };
       };
 

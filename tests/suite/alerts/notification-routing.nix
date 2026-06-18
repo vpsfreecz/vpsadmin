@@ -32,15 +32,7 @@ import ../../make-test.nix (
           { type = "user"; }
           { type = "socket"; }
         ];
-        config = {
-          imports = [
-            ../../configs/nixos/vpsadmin-services.nix
-            {
-              systemd.services.vpsadmin-notification-dispatcher-webhook.environment.VPSADMIN_EVENT_WEBHOOK_ALLOW_PRIVATE =
-                "1";
-            }
-          ];
-        };
+        config.imports = [ ../../configs/nixos/vpsadmin-services.nix ];
       };
     };
 

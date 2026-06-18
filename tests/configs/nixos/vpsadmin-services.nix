@@ -557,6 +557,10 @@ in
           address = "127.0.0.1";
           port = if cfg.mailpit.enable then cfg.mailpit.smtpPort else 25;
         };
+        webhook.allowedPrivateRanges = [
+          "127.0.0.0/8"
+          "::1/128"
+        ];
       };
 
       console-router = {

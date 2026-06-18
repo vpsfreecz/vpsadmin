@@ -705,8 +705,8 @@ module VpsAdmin::API
 
         addresses.each do |address|
           ip = IPAddr.new(address)
-          next if ENV['VPSADMIN_EVENT_WEBHOOK_ALLOW_PRIVATE'] == '1'
           next unless private_webhook_address?(ip)
+          next if allowed_private_webhook_address?(ip)
 
           raise ArgumentError, 'webhook host resolves to a private address'
         end
@@ -718,6 +718,22 @@ module VpsAdmin::API
 
       def private_webhook_address?(ip)
         PRIVATE_ADDRESS_RANGES.any? { |range| range.include?(ip) }
+      end
+
+      def allowed_private_webhook_address?(ip)
+        allowed_private_webhook_ranges.any? { |range| range.include?(ip) }
+      end
+
+      def allowed_private_webhook_ranges
+        @allowed_private_webhook_ranges ||= Array(
+          webhook_config.fetch('allowed_private_ranges', [])
+        ).map { |range| IPAddr.new(range) }
+      rescue IPAddr::InvalidAddressError => e
+        raise ArgumentError, "invalid webhook allowed private range: #{e.message}"
+      end
+
+      def webhook_config
+        @config.fetch('webhook', {})
       end
 
       def smtp_options
