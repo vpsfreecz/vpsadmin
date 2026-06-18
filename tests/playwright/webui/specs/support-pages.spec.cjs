@@ -9,9 +9,6 @@ const {
   submitForm,
 } = require('../lib/pages/webui.cjs');
 const {
-  createOomRule,
-  deleteOomRule,
-  editOomRule,
   hrefParam,
   linkWithParams,
   rowWithText,
@@ -48,6 +45,44 @@ function heading(page) {
 
 function formByName(page, name) {
   return page.locator(`form[name="${name}"]`).first();
+}
+
+async function routeDomIds(page) {
+  return page
+    .locator('#notification-routes-table tr[id^="route_"]')
+    .evaluateAll((rows) => rows.map((row) => row.id));
+}
+
+async function rootRouteIds(page) {
+  const ids = await routeDomIds(page);
+
+  return ids
+    .map((id) => {
+      const match = id.match(/^route_(\d+)_p_root$/);
+      return match ? match[1] : null;
+    })
+    .filter(Boolean);
+}
+
+async function dragBetween(page, source, target, targetVerticalRatio = 0.5) {
+  const sourceBox = await source.boundingBox();
+  const targetBox = await target.boundingBox();
+
+  if (!sourceBox || !targetBox) {
+    throw new Error('Unable to resolve drag source or target box');
+  }
+
+  await page.mouse.move(
+    sourceBox.x + sourceBox.width / 2,
+    sourceBox.y + sourceBox.height / 2,
+  );
+  await page.mouse.down();
+  await page.mouse.move(
+    targetBox.x + targetBox.width / 2,
+    targetBox.y + targetBox.height * targetVerticalRatio,
+    { steps: 8 },
+  );
+  await page.mouse.up();
 }
 
 async function fillEnglishText(form, summary, description = null) {
@@ -150,10 +185,16 @@ test.describe('support and status browser coverage', () => {
   test('user notification settings and test events are wired', async ({ page }) => {
     await login(page, fixtures.user);
 
+    await page.goto('/?page=notifications', {
+      waitUntil: 'domcontentloaded',
+    });
+    await expect(heading(page)).toContainText('Event log');
+
     await page.goto('/?page=notifications&action=event_types', {
       waitUntil: 'domcontentloaded',
     });
     await expect(heading(page)).toContainText('Event types');
+    await expect(content(page).locator('details summary').first()).toBeVisible();
     await expect(content(page)).toContainText('Matchable fields');
     await expect(content(page)).toContainText('user.test_notification');
 
@@ -200,6 +241,7 @@ test.describe('support and status browser coverage', () => {
     await expect(actionForm).toBeVisible();
     await expect(content(page)).toContainText('Webhook URL');
     await expect(content(page)).toContainText('X-VpsAdmin-Signature-256');
+    await expect(actionForm.locator('input[name="target_value"]')).toHaveAttribute('size', '50');
     await actionForm.locator('input[name="label"]').fill('Webui webhook action');
     await actionForm.locator('input[name="target_value"]').fill('https://example.test/webui');
     await actionForm.locator('input[name="secret"]').fill('webui-secret');
@@ -214,6 +256,7 @@ test.describe('support and status browser coverage', () => {
       action: 'receiver_action_edit',
       receiver: receiverId,
     });
+    const receiverActionId = await hrefParam(actionEditLink, 'id', page.url());
     await actionEditLink.click();
     await expect(heading(page)).toContainText('Receiver action #');
     const actionEditForm = formByAction(page, 'action=receiver_action_edit');
@@ -280,6 +323,24 @@ test.describe('support and status browser coverage', () => {
     await expect(content(page)).toContainText('Matchers');
     await expect(content(page)).toContainText('Receiver');
 
+    await linkWithParams(content(page), {
+      action: 'matcher_new',
+      route: routeId,
+    }).click();
+    await expect(heading(page)).toContainText('Add matcher');
+    await expect(formByName(page, 'notification-matcher-event-type')).toHaveCount(0);
+    const matcherForm = formByAction(page, 'action=matcher_new');
+    await expect(matcherForm.locator('select[name="operator"]')).toContainText('== (equals)');
+    await matcherForm.locator('select[name="field"]').selectOption('parameters.note');
+    await matcherForm.locator('select[name="operator"]').selectOption('==');
+    await matcherForm.locator('input[name="value"]').fill('testing notification routing');
+    await submitForm(matcherForm, 'Add');
+    await expectNotification(page, 'Matcher added');
+    const matcherRow = rowWithText(page, 'parameters.note');
+    await expect(matcherRow).toBeVisible();
+    await expect(matcherRow.locator('select[name*="[field]"]')).toHaveCount(0);
+    await expect(matcherRow).toContainText('parameters.note');
+
     await page.goto('/?page=notifications&action=test', {
       waitUntil: 'domcontentloaded',
     });
@@ -294,9 +355,104 @@ test.describe('support and status browser coverage', () => {
     await expect(content(page)).toContainText('Deliveries');
     await expect(content(page)).toContainText('webhook');
 
+    const deliveryDetailLink = linkWithParams(content(page), {
+      action: 'delivery_show',
+    });
+    await deliveryDetailLink.first().click();
+    await expect(heading(page)).toContainText('Event delivery #');
+    await expect(content(page)).toContainText('Webhook');
+    await expect(content(page)).toContainText('Request payload');
+    await expect(content(page)).toContainText('user.test_notification');
+    await expect(content(page)).toContainText('Delivery attempts');
+
+    await page.goto('/?page=notifications&action=receivers', {
+      waitUntil: 'domcontentloaded',
+    });
+    const receiverEventLink = linkWithParams(rowWithText(page, receiverLabel), {
+      action: 'events',
+      notification_receiver_id: receiverId,
+    });
+    await receiverEventLink.click();
+    await expect(heading(page)).toContainText('Event log');
+    await expect(formByName(page, 'notification-events').locator('input[name="notification_receiver_id"]')).toHaveValue(receiverId);
+    await expect(content(page)).toContainText(subject);
+
+    await page.goto(`/?page=notifications&action=receiver_edit&id=${receiverId}`, {
+      waitUntil: 'domcontentloaded',
+    });
+    const actionEventLink = linkWithParams(rowWithText(page, 'Webui webhook action edited'), {
+      action: 'events',
+      notification_receiver_action_id: receiverActionId,
+    });
+    await actionEventLink.click();
+    await expect(heading(page)).toContainText('Event log');
+    await expect(formByName(page, 'notification-events').locator('input[name="notification_receiver_action_id"]')).toHaveValue(receiverActionId);
+    await expect(content(page)).toContainText(subject);
+
+    const childRouteLabel = 'Webui notification child route';
+    await page.goto(`/?page=notifications&action=route_new&parent=${routeId}`, {
+      waitUntil: 'domcontentloaded',
+    });
+    const childRouteForm = formByAction(page, 'action=route_new');
+    await childRouteForm.locator('input[name="label"]').fill(childRouteLabel);
+    await childRouteForm.locator('select[name="event_type"]').selectOption('user.test_notification');
+    await submitForm(childRouteForm, 'Add');
+    await expectNotification(page, 'Route added');
+    const childRouteId = new URL(page.url()).searchParams.get('id');
+
     await page.goto('/?page=notifications&action=routes', {
       waitUntil: 'domcontentloaded',
     });
+    const routeTable = page.locator('#notification-routes-table');
+    const parentRow = routeTable.locator(`#route_${routeId}_p_root`);
+    const childRow = routeTable.locator(`#route_${childRouteId}_p_${routeId}`);
+    const defaultRow = routeTable.locator(`#route_${defaultRouteId}_p_root`);
+    await expect(parentRow).toBeVisible();
+    await expect(childRow).toBeVisible();
+    await expect(defaultRow).toBeVisible();
+    const idsWithChild = await routeDomIds(page);
+    expect(idsWithChild[idsWithChild.indexOf(`route_${routeId}_p_root`) + 1])
+      .toBe(`route_${childRouteId}_p_${routeId}`);
+
+    const handle = parentRow.locator('.notification-drag-handle');
+    await expect(handle).toHaveCSS('cursor', 'move');
+    await expect(parentRow.locator('td').nth(1)).not.toHaveCSS('cursor', 'move');
+
+    const orderBeforeCellDrag = await routeDomIds(page);
+    await dragBetween(page, parentRow.locator('td').nth(1), defaultRow, 0.9);
+    expect(await routeDomIds(page)).toEqual(orderBeforeCellDrag);
+
+    const rootsBeforeHandleDrag = await rootRouteIds(page);
+    expect(rootsBeforeHandleDrag.indexOf(routeId)).toBeLessThan(
+      rootsBeforeHandleDrag.indexOf(defaultRouteId),
+    );
+    const reorderResponse = page.waitForResponse(
+      (response) => response.url().includes('action=route_reorder')
+        && response.request().method() === 'POST',
+    );
+    await dragBetween(page, handle, defaultRow, 0.9);
+    await reorderResponse;
+    await expect
+      .poll(async () => {
+        const ids = await rootRouteIds(page);
+        return ids.indexOf(routeId) > ids.indexOf(defaultRouteId);
+      })
+      .toBe(true);
+    const idsAfterDrag = await routeDomIds(page);
+    expect(idsAfterDrag[idsAfterDrag.indexOf(`route_${routeId}_p_root`) + 1])
+      .toBe(`route_${childRouteId}_p_${routeId}`);
+
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    const idsAfterReload = await routeDomIds(page);
+    expect(idsAfterReload[idsAfterReload.indexOf(`route_${routeId}_p_root`) + 1])
+      .toBe(`route_${childRouteId}_p_${routeId}`);
+    await expect
+      .poll(async () => {
+        const ids = await rootRouteIds(page);
+        return ids.indexOf(routeId) > ids.indexOf(defaultRouteId);
+      })
+      .toBe(true);
+
     const createdRouteRow = rowWithText(page, routeLabel);
     await expect(createdRouteRow).toBeVisible();
     await acceptNextDialog(page);
@@ -321,7 +477,7 @@ test.describe('support and status browser coverage', () => {
     await logout(page, fixtures.user.username);
   });
 
-  test('user OOM reports and rule CRUD are wired', async ({ page }) => {
+  test('user OOM reports and notification route redirect are wired', async ({ page }) => {
     const s = requireSupportFixtures();
 
     await login(page, fixtures.user);
@@ -346,29 +502,15 @@ test.describe('support and status browser coverage', () => {
     await page.goto(`/?page=oom_reports&action=rule_list&vps=${s.vps.id}`, {
       waitUntil: 'domcontentloaded',
     });
-    await expect(content(page)).toContainText(`OOM report rules for VPS ${s.vps.id}`);
-    await expect(rowWithText(page, s.oomReport.cgroup)).toBeVisible();
-    await expect(formByAction(page, `action=rule_new&vps=${s.vps.id}`)).toBeVisible();
-
-    const ruleId = await createOomRule(
-      page,
-      s.vps.id,
-      'ignore',
-      '/webui-playwright-user-rule',
-    );
-    await editOomRule(
-      page,
-      s.vps.id,
-      ruleId,
-      'notify',
-      '/webui-playwright-user-rule-edited',
-    );
-    await deleteOomRule(page, s.vps.id, ruleId, '/webui-playwright-user-rule-edited');
+    await expect(page).toHaveURL(/page=notifications/);
+    await expect(page).toHaveURL(/action=routes/);
+    await expectNotification(page, 'OOM report rules moved');
+    await expect(heading(page)).toContainText('Notification routes');
 
     await logout(page, fixtures.user.username);
   });
 
-  test('admin OOM filters, fields, and rule CRUD are wired', async ({ page }) => {
+  test('admin OOM filters, fields, and notification route redirect are wired', async ({ page }) => {
     const s = requireSupportFixtures();
 
     await login(page, fixtures.admin);
@@ -396,20 +538,14 @@ test.describe('support and status browser coverage', () => {
     await expect(content(page)).toContainText(fixtures.user.username);
     await expect(content(page)).toContainText(s.oomReport.killedName);
 
-    const ruleId = await createOomRule(
-      page,
-      s.vps.id,
-      'ignore',
-      '/webui-playwright-admin-rule',
-    );
-    await editOomRule(
-      page,
-      s.vps.id,
-      ruleId,
-      'notify',
-      '/webui-playwright-admin-rule-edited',
-    );
-    await deleteOomRule(page, s.vps.id, ruleId, '/webui-playwright-admin-rule-edited');
+    await page.goto(`/?page=oom_reports&action=rule_list&vps=${s.vps.id}`, {
+      waitUntil: 'domcontentloaded',
+    });
+    await expect(page).toHaveURL(/page=notifications/);
+    await expect(page).toHaveURL(/action=routes/);
+    await expect(page).toHaveURL(new RegExp(`user=${fixtures.user.id}`));
+    await expectNotification(page, 'OOM report rules moved');
+    await expect(heading(page)).toContainText('Notification routes');
 
     await logout(page, fixtures.admin.username);
   });

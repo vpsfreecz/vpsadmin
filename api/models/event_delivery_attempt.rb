@@ -11,6 +11,8 @@ class EventDeliveryAttempt < ApplicationRecord
   enum :action, ACTIONS, suffix: true
   enum :state, %i[running succeeded failed], suffix: true
 
+  serialize :response_headers, coder: JSON
+
   validates :action, :state, :attempt_number, presence: true
   validates :attempt_number, numericality: { only_integer: true, greater_than: 0 }
   validates :provider_message_id, length: { maximum: 255 }, allow_nil: true
@@ -18,5 +20,9 @@ class EventDeliveryAttempt < ApplicationRecord
 
   def self.state_labels
     STATE_LABELS
+  end
+
+  def response_headers_json
+    JSON.dump(response_headers || {})
   end
 end

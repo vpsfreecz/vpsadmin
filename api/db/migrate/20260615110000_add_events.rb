@@ -481,6 +481,7 @@ class AddEvents < ActiveRecord::Migration[8.1]
       t.string      :provider_message_id,      null: true, limit: 255
       t.integer     :response_status,          null: true
       t.text        :response_body,            null: true
+      t.text        :response_headers,         null: true
       t.text        :error_summary,            null: true
       t.timestamps                             null: false
     end
@@ -504,6 +505,7 @@ class AddEvents < ActiveRecord::Migration[8.1]
       t.string      :provider_message_id,      null: true, limit: 255
       t.integer     :response_status,          null: true
       t.text        :response_body,            null: true
+      t.text        :response_headers,         null: true
       t.text        :error_summary,            null: true
       t.timestamps                             null: false
     end

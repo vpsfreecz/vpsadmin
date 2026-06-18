@@ -1,7 +1,7 @@
 <?php
 
 if (isLoggedIn()) {
-    switch ($_GET['action'] ?? 'routes') {
+    switch ($_GET['action'] ?? 'events') {
         case 'rules':
             redirect('?page=notifications&action=routes' . notifications_user_qs(api_get_uint('user')));
             break;
@@ -128,6 +128,25 @@ if (isLoggedIn()) {
                 }
 
                 redirect('?page=notifications&action=routes' . notifications_user_qs($user_id));
+            }
+            break;
+
+        case 'matcher_new':
+            if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+                csrf_check();
+
+                try {
+                    $route = $api->event_route->show($_GET['route']);
+                    $route->matcher->create(notifications_matcher_new_params());
+
+                    notify_user(_('Matcher added'), '');
+                    redirect('?page=notifications&action=route_edit&id=' . $route->id . notifications_user_qs($route->user_id));
+                } catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+                    $xtpl->perex_format_errors(_('Failed to add matcher'), $e->getResponse());
+                    notifications_matcher_new($_GET['route'], api_get('event_type'));
+                }
+            } else {
+                notifications_matcher_new($_GET['route'], api_get('event_type'));
             }
             break;
 
@@ -330,6 +349,10 @@ if (isLoggedIn()) {
             notifications_event_show($_GET['id']);
             break;
 
+        case 'delivery_show':
+            notifications_delivery_show(api_get_uint('event'), api_get_uint('id'));
+            break;
+
         case 'event_types':
             notifications_event_types(api_get_uint('user'));
             break;
@@ -363,7 +386,7 @@ if (isLoggedIn()) {
             break;
 
         default:
-            notifications_routes_list(api_get_uint('user'));
+            notifications_events();
     }
 
     $xtpl->sbar_out(_('Notifications'));

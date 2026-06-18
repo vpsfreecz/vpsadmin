@@ -195,6 +195,7 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
       route_create = action_input_params(:event_route, :create)
       matcher_create = action_input_params('event_route.matcher', :create)
       action_create = action_input_params('notification_receiver.action', :create)
+      event_index = action_input_params(:event, :index)
 
       expect(
         route_create.dig('event_type', 'validators', 'include', 'values')
@@ -211,6 +212,10 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
       expect(
         action_create.dig('target_kind', 'validators', 'include', 'values')
       ).to eq(::NotificationReceiverAction.target_kind_labels)
+      expect(event_index).to include(
+        'notification_receiver_id',
+        'notification_receiver_action_id'
+      )
     end
   end
 
@@ -277,6 +282,16 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
     expect(events.map { |row| row['id'] }).to include(event.id)
 
     as(SpecSeed.user) { json_get event_index_path, matched_event_route_id: route.id }
+
+    expect_status(200)
+    expect(events.map { |row| row['id'] }).to eq([event.id])
+
+    as(SpecSeed.user) { json_get event_index_path, notification_receiver_id: receiver.id }
+
+    expect_status(200)
+    expect(events.map { |row| row['id'] }).to eq([event.id])
+
+    as(SpecSeed.user) { json_get event_index_path, notification_receiver_action_id: receiver_action.id }
 
     expect_status(200)
     expect(events.map { |row| row['id'] }).to eq([event.id])
@@ -451,6 +466,117 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
     end.not_to change(Event, :count)
 
     expect(json['status']).to be(false)
+  end
+
+  it 'exposes action-specific delivery details' do
+    receiver = NotificationReceiver.create!(user: SpecSeed.user, label: 'Spec detail receiver')
+    receiver.notification_receiver_actions.create!(
+      action: :email,
+      label: 'Spec detail e-mail',
+      target_kind: :default_recipient
+    )
+    receiver.notification_receiver_actions.create!(
+      action: :webhook,
+      label: 'Spec detail webhook',
+      target_kind: :custom,
+      target_value: 'https://example.test/detail'
+    )
+    EventRoute.create!(
+      user: SpecSeed.user,
+      notification_receiver: receiver,
+      event_type: 'user.test_notification'
+    )
+
+    event = VpsAdmin::API::Events.emit!(
+      'user.test_notification',
+      user: SpecSeed.user,
+      subject: 'Spec delivery detail event',
+      summary: 'Spec delivery detail summary',
+      parameters: { note: 'delivery detail' }
+    )
+    email_delivery = event.event_deliveries.email_action.sole
+    webhook_delivery = event.event_deliveries.webhook_action.sole
+    webhook_delivery.update!(
+      response_status: 202,
+      response_body: 'accepted',
+      response_headers: { 'x-spec-detail' => ['delivery'] }
+    )
+    attempt = webhook_delivery.event_delivery_attempts.create!(
+      action: webhook_delivery.action,
+      state: :succeeded,
+      attempt_number: 1,
+      started_at: Time.now,
+      finished_at: Time.now,
+      response_status: 202,
+      response_body: 'accepted',
+      response_headers: { 'x-spec-attempt' => ['attempt'] }
+    )
+
+    as(SpecSeed.user) { json_get delivery_path(event.id, email_delivery.id) }
+
+    expect_status(200)
+    expect(delivery_obj['mail_to']).to eq(SpecSeed.user.email)
+    expect(delivery_obj).not_to include('mail_bcc')
+    expect(delivery_obj).to include('mail_return_path', 'mail_message_id')
+    expect(delivery_obj['mail_subject']).to eq('Spec delivery detail event')
+    expect(delivery_obj['mail_text_plain']).to include('Spec delivery detail summary')
+    expect(delivery_obj['payload']).to be_nil
+
+    as(SpecSeed.user) { json_get delivery_path(event.id, webhook_delivery.id) }
+
+    expect_status(200)
+    expect(JSON.parse(delivery_obj['payload']).dig('event', 'id')).to eq(event.id)
+    expect(JSON.parse(delivery_obj['response_headers_json'])).to eq(
+      'x-spec-detail' => ['delivery']
+    )
+    expect(delivery_obj['response_body']).to eq('accepted')
+
+    as(SpecSeed.user) { json_get delivery_attempt_index_path(event.id, webhook_delivery.id) }
+
+    expect_status(200)
+    expect(attempts.map { |row| row['id'] }).to eq([attempt.id])
+    expect(JSON.parse(attempts.first['response_headers_json'])).to eq(
+      'x-spec-attempt' => ['attempt']
+    )
+  end
+
+  it 'does not expose delivery details across users' do
+    receiver = NotificationReceiver.create!(user: SpecSeed.user, label: 'Spec private receiver')
+    receiver.notification_receiver_actions.create!(
+      action: :email,
+      label: 'Spec private e-mail',
+      target_kind: :default_recipient
+    )
+    EventRoute.create!(
+      user: SpecSeed.user,
+      notification_receiver: receiver,
+      event_type: 'user.test_notification'
+    )
+
+    event = VpsAdmin::API::Events.emit!(
+      'user.test_notification',
+      user: SpecSeed.user,
+      subject: 'Spec private delivery detail',
+      summary: 'Private delivery detail summary'
+    )
+    delivery = event.event_deliveries.sole
+    attempt = delivery.event_delivery_attempts.create!(
+      action: delivery.action,
+      state: :succeeded,
+      attempt_number: 1
+    )
+
+    as(SpecSeed.other_user) { json_get delivery_path(event.id, delivery.id) }
+    expect_status(404)
+
+    as(SpecSeed.other_user) { json_get delivery_attempt_index_path(event.id, delivery.id) }
+    expect_status(200)
+    expect(attempts).to eq([])
+
+    as(SpecSeed.other_user) do
+      json_get vpath("/events/#{event.id}/deliveries/#{delivery.id}/attempts/#{attempt.id}")
+    end
+    expect_status(404)
   end
 
   it 'does not let users create test events for another user' do

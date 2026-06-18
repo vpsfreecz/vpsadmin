@@ -24,6 +24,13 @@ module VpsAdmin::API
     MAX_ATTEMPTS = 5
     CLAIM_TIMEOUT = 5 * 60
     RESPONSE_BODY_LIMIT = 8192
+    RESPONSE_HEADERS_LIMIT = 8192
+    RESPONSE_HEADER_NAME_LIMIT = 100
+    RESPONSE_HEADER_VALUE_LIMIT = 1024
+    RESPONSE_HEADER_VALUE_COUNT_LIMIT = 10
+    RESPONSE_HEADERS_TRUNCATED = {
+      'x-vpsadmin-truncated' => ['response headers truncated']
+    }.freeze
     DEFAULT_POLL_INTERVAL = 5
     PRIVATE_ADDRESS_RANGES = [
       '0.0.0.0/8',
@@ -445,14 +452,15 @@ module VpsAdmin::API
           attempt,
           response_status: e.response_status,
           response_body: e.response_body,
+          response_headers: e.response_headers,
           error_summary: e.message
         )
       rescue StandardError => e
         mark_failure!(
           delivery,
           attempt,
-          response_status: nil,
-          response_body: nil,
+          response_status: exception_response_status(e),
+          response_body: exception_response_body(e),
           error_summary: "#{e.class}: #{e.message}"
         )
       end
@@ -563,10 +571,14 @@ module VpsAdmin::API
         end
 
         message.header['X-Mailer'] = 'vpsAdmin'
-        message.delivery_method(:smtp, smtp_options)
-        message.deliver
+        message.delivery_method(:smtp, smtp_options.merge(return_response: true))
+        response = message.deliver!
 
-        { provider_message_id: message.message_id }
+        {
+          provider_message_id: message.message_id,
+          response_status: smtp_response_status(response),
+          response_body: smtp_response_body(response)
+        }
       end
 
       def deliver_webhook(delivery)
@@ -580,13 +592,15 @@ module VpsAdmin::API
         unless response.code.to_i.between?(200, 299)
           raise WebhookResponseError.new(
             response.code.to_i,
-            truncate_body(response.body)
+            truncate_body(response.body),
+            response_headers(response)
           )
         end
 
         {
           response_status: response.code.to_i,
-          response_body: truncate_body(response.body)
+          response_body: truncate_body(response.body),
+          response_headers: response_headers(response)
         }
       end
 
@@ -600,6 +614,7 @@ module VpsAdmin::API
           provider_message_id: result[:provider_message_id],
           response_status: result[:response_status],
           response_body: result[:response_body],
+          response_headers: result[:response_headers],
           error_summary: nil
         )
 
@@ -609,11 +624,12 @@ module VpsAdmin::API
           provider_message_id: result[:provider_message_id],
           response_status: result[:response_status],
           response_body: result[:response_body],
+          response_headers: result[:response_headers],
           error_summary: nil
         )
       end
 
-      def mark_failure!(delivery, attempt, response_status:, response_body:, error_summary:)
+      def mark_failure!(delivery, attempt, response_status:, response_body:, error_summary:, response_headers: nil)
         now = Time.now
 
         attempt&.update!(
@@ -621,12 +637,14 @@ module VpsAdmin::API
           finished_at: now,
           response_status:,
           response_body:,
+          response_headers:,
           error_summary:
         )
 
         attrs = {
           response_status:,
           response_body:,
+          response_headers:,
           error_summary:
         }
 
@@ -720,6 +738,82 @@ module VpsAdmin::API
         opts
       end
 
+      def smtp_response_status(response)
+        return unless response.respond_to?(:status)
+
+        status = response.status
+        return if status.blank?
+
+        status.to_i
+      end
+
+      def smtp_response_body(response)
+        return if response.nil?
+
+        body = response.respond_to?(:string) ? response.string : response.to_s
+        truncate_body(body)
+      end
+
+      def response_headers(response)
+        return {} unless response.respond_to?(:to_hash)
+
+        headers = {}
+        truncated = false
+
+        response.to_hash.each do |name, values|
+          raw_key = name.to_s.downcase
+          key = truncate_header_part(raw_key, RESPONSE_HEADER_NAME_LIMIT)
+          raw_values = Array(values)
+          truncated ||= key.bytesize < raw_key.bytesize
+          truncated ||= raw_values.length > RESPONSE_HEADER_VALUE_COUNT_LIMIT
+          vals = raw_values.first(RESPONSE_HEADER_VALUE_COUNT_LIMIT).map do |value|
+            raw_value = value.to_s
+            ret = truncate_header_part(raw_value, RESPONSE_HEADER_VALUE_LIMIT)
+            truncated ||= ret.bytesize < raw_value.bytesize
+            ret
+          end
+          candidate = headers.merge(key => vals)
+
+          if JSON.dump(candidate).bytesize > RESPONSE_HEADERS_LIMIT
+            truncated = true
+            break
+          end
+
+          headers = candidate
+        end
+
+        truncated ? mark_headers_truncated(headers) : headers
+      end
+
+      def truncate_header_part(value, limit)
+        value.byteslice(0, limit).to_s.scrub
+      end
+
+      def mark_headers_truncated(headers)
+        ret = headers.dup
+
+        loop do
+          candidate = ret.merge(RESPONSE_HEADERS_TRUNCATED)
+          return candidate if JSON.dump(candidate).bytesize <= RESPONSE_HEADERS_LIMIT || ret.empty?
+
+          ret.delete(ret.keys.last)
+        end
+      end
+
+      def exception_response_status(error)
+        smtp_response_status(exception_response(error))
+      end
+
+      def exception_response_body(error)
+        smtp_response_body(exception_response(error))
+      end
+
+      def exception_response(error)
+        return unless error.respond_to?(:response)
+
+        error.response
+      end
+
       def connection
         @connection ||= Bunny.new(
           hosts: Array(rabbitmq_config.fetch('hosts')),
@@ -773,11 +867,12 @@ module VpsAdmin::API
     end
 
     class WebhookResponseError < StandardError
-      attr_reader :response_status, :response_body
+      attr_reader :response_status, :response_body, :response_headers
 
-      def initialize(response_status, response_body)
+      def initialize(response_status, response_body, response_headers)
         @response_status = response_status
         @response_body = response_body
+        @response_headers = response_headers
         super("webhook returned HTTP #{response_status}")
       end
     end

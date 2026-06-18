@@ -240,13 +240,19 @@ RSpec.describe VpsAdmin::API::Tasks::EventDelivery do
     [event.event_deliveries.sole, action, route]
   end
 
-  def stub_mail_delivery!(error = nil)
+  def smtp_response(status = '250', body = '250 2.0.0 queued as spec-message-id')
+    instance_double(Net::SMTP::Response, status:, string: body)
+  end
+
+  def stub_mail_delivery!(error = nil, response: nil)
+    response ||= smtp_response
+
     allow(::Mail).to receive(:new).and_wrap_original do |original, *args|
       message = original.call(*args)
-      allow(message).to receive(:deliver) do
+      allow(message).to receive(:deliver!) do
         raise error if error
 
-        true
+        response
       end
 
       message
@@ -270,8 +276,12 @@ RSpec.describe VpsAdmin::API::Tasks::EventDelivery do
     expect(delivery.mail_log).to be_present
     expect(delivery.mail_log.to).to eq(SpecSeed.user.email)
     expect(delivery.mail_log.subject).to eq('Spec e-mail event')
+    expect(delivery.response_status).to eq(250)
+    expect(delivery.response_body).to eq('250 2.0.0 queued as spec-message-id')
     expect(delivery.attempt_count).to eq(1)
     expect(attempt).to be_succeeded_state
+    expect(attempt.response_status).to eq(250)
+    expect(attempt.response_body).to eq('250 2.0.0 queued as spec-message-id')
   end
 
   it 'snapshots default e-mail recipients when the delivery is prepared' do
@@ -322,6 +332,27 @@ RSpec.describe VpsAdmin::API::Tasks::EventDelivery do
     expect(delivery.error_summary).to include('StandardError: smtp rejected')
     expect(delivery.attempt_count).to eq(1)
     expect(delivery.event_delivery_attempts.sole).to be_failed_state
+  end
+
+  it 'records SMTP error responses when e-mail delivery fails' do
+    delivery, = create_email_delivery!
+    response = Net::SMTP::Response.parse("550 5.1.1 recipient rejected\n")
+    stub_mail_delivery!(Net::SMTPFatalError.new(response))
+
+    expect do
+      task.deliver_emails
+    end.to change(EventDeliveryAttempt, :count).by(1)
+
+    delivery.reload
+    attempt = delivery.event_delivery_attempts.sole
+
+    expect(delivery).to be_released_state
+    expect(delivery.response_status).to eq(550)
+    expect(delivery.response_body).to eq("550 5.1.1 recipient rejected\n")
+    expect(delivery.error_summary).to include('Net::SMTPFatalError: 550 5.1.1 recipient rejected')
+    expect(attempt).to be_failed_state
+    expect(attempt.response_status).to eq(550)
+    expect(attempt.response_body).to eq("550 5.1.1 recipient rejected\n")
   end
 
   it 'retries direct e-mail deliveries when SMTP delivery fails' do
@@ -527,7 +558,16 @@ RSpec.describe VpsAdmin::API::Tasks::EventDelivery do
     delivery, action, route = create_webhook_delivery!(secret: 'super-secret')
     request = nil
     http = instance_double(Net::HTTP)
-    response = instance_double(Net::HTTPOK, code: '202', body: 'accepted')
+    response_headers = {
+      'content-type' => ['text/plain'],
+      'x-webhook-result' => ['stored']
+    }
+    response = instance_double(
+      Net::HTTPOK,
+      code: '202',
+      body: 'accepted',
+      to_hash: response_headers
+    )
 
     allow(Resolv).to receive(:getaddresses)
       .with('webhook.example')
@@ -563,8 +603,44 @@ RSpec.describe VpsAdmin::API::Tasks::EventDelivery do
     expect(delivery.reload).to be_sent_state
     expect(delivery.response_status).to eq(202)
     expect(delivery.response_body).to eq('accepted')
+    expect(delivery.response_headers).to eq(response_headers)
     expect(delivery.attempt_count).to eq(1)
-    expect(delivery.event_delivery_attempts.sole).to be_succeeded_state
+    attempt = delivery.event_delivery_attempts.sole
+    expect(attempt).to be_succeeded_state
+    expect(attempt.response_headers).to eq(response_headers)
+  end
+
+  it 'bounds stored webhook response headers' do
+    delivery, = create_webhook_delivery!
+    http = instance_double(Net::HTTP)
+    response = instance_double(
+      Net::HTTPOK,
+      code: '202',
+      body: 'accepted',
+      to_hash: {
+        'x-large-header' => ['a' * 20_000],
+        'x-second-large-header' => ['b' * 20_000]
+      }
+    )
+
+    allow(Resolv).to receive(:getaddresses)
+      .with('webhook.example')
+      .and_return(['93.184.216.34'])
+    allow(Net::HTTP).to receive(:start).and_yield(http)
+    allow(http).to receive(:request).and_return(response)
+
+    task.deliver_webhooks
+
+    delivery.reload
+    attempt = delivery.event_delivery_attempts.sole
+
+    expect(delivery).to be_sent_state
+    expect(JSON.dump(delivery.response_headers).bytesize)
+      .to be <= VpsAdmin::API::Notifications::RESPONSE_HEADERS_LIMIT
+    expect(delivery.response_headers).to include('x-vpsadmin-truncated')
+    expect(delivery.response_headers.fetch('x-large-header').first.bytesize)
+      .to eq(VpsAdmin::API::Notifications::RESPONSE_HEADER_VALUE_LIMIT)
+    expect(attempt.response_headers).to eq(delivery.response_headers)
   end
 
   it 'claims webhook deliveries exclusively across stale worker reads' do
@@ -599,7 +675,7 @@ RSpec.describe VpsAdmin::API::Tasks::EventDelivery do
     delivery, action = create_webhook_delivery!(url: 'https://webhook.example/events')
     action.update!(target_value: 'https://changed.example/events')
     http = instance_double(Net::HTTP)
-    response = instance_double(Net::HTTPOK, code: '204', body: '')
+    response = instance_double(Net::HTTPOK, code: '204', body: '', to_hash: {})
 
     allow(Resolv).to receive(:getaddresses)
       .with('webhook.example')

@@ -55,6 +55,8 @@ class EventDelivery < ApplicationRecord
   enum :target_kind, %i[default_recipient custom], suffix: true
   enum :state, %i[prepared released sending sent skipped failed canceled], suffix: true
 
+  serialize :response_headers, coder: JSON
+
   validates :action, :target_kind, :state, presence: true
   validates :target_label, :provider_message_id, length: { maximum: 255 }, allow_nil: true
   validates :template_name, length: { maximum: 100 }, allow_nil: true
@@ -73,6 +75,46 @@ class EventDelivery < ApplicationRecord
 
   def self.state_labels
     STATE_LABELS
+  end
+
+  def response_headers_json
+    JSON.dump(response_headers || {})
+  end
+
+  def mail_to
+    mail_log&.to
+  end
+
+  def mail_cc
+    mail_log&.cc
+  end
+
+  def mail_from
+    mail_log&.from
+  end
+
+  def mail_reply_to
+    mail_log&.reply_to
+  end
+
+  def mail_return_path
+    mail_log&.return_path
+  end
+
+  def mail_message_id
+    mail_log&.message_id
+  end
+
+  def mail_subject
+    mail_log&.subject
+  end
+
+  def mail_text_plain
+    mail_log&.text_plain
+  end
+
+  def mail_text_html
+    mail_log&.text_html
   end
 
   def notification_receiver_available?

@@ -40,6 +40,8 @@ module VpsAdmin::API::Resources
         string :action,
                choices: { values: ::EventDelivery.action_labels },
                load_validators: false
+        integer :notification_receiver_id, nullable: true
+        integer :notification_receiver_action_id, nullable: true
       end
 
       output(:object_list) do
@@ -59,8 +61,17 @@ module VpsAdmin::API::Resources
           q = q.where(v => input[v]) if input.has_key?(v)
         end
 
-        if input[:action]
-          q = q.joins(:event_deliveries).where(event_deliveries: { action: input[:action] }).distinct
+        delivery_filters = {}
+        delivery_filters[:action] = input[:action] if input[:action].present?
+        if input[:notification_receiver_id].present?
+          delivery_filters[:notification_receiver_id] = input[:notification_receiver_id]
+        end
+        if input[:notification_receiver_action_id].present?
+          delivery_filters[:notification_receiver_action_id] = input[:notification_receiver_action_id]
+        end
+
+        if delivery_filters.any?
+          q = q.joins(:event_deliveries).where(event_deliveries: delivery_filters).distinct
         end
 
         q
@@ -204,6 +215,20 @@ module VpsAdmin::API::Resources
         datetime :updated_at
       end
 
+      params(:detail) do
+        text :payload, nullable: true
+        text :response_headers_json, label: 'Response headers'
+        string :mail_to, nullable: true
+        string :mail_cc, nullable: true
+        string :mail_from, nullable: true
+        string :mail_reply_to, nullable: true
+        string :mail_return_path, nullable: true
+        string :mail_message_id, nullable: true
+        string :mail_subject, nullable: true
+        text :mail_text_plain, nullable: true
+        text :mail_text_html, nullable: true
+      end
+
       class Index < HaveAPI::Actions::Default::Index
         desc 'List event deliveries'
 
@@ -237,6 +262,7 @@ module VpsAdmin::API::Resources
 
         output do
           use :all
+          use :detail
         end
 
         authorize do |u|
@@ -275,6 +301,7 @@ module VpsAdmin::API::Resources
           string :provider_message_id, nullable: true
           integer :response_status, nullable: true
           text :response_body, nullable: true
+          text :response_headers_json, label: 'Response headers'
           text :error_summary, nullable: true
           datetime :created_at
           datetime :updated_at

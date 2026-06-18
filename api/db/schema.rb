@@ -461,6 +461,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_15_110000) do
     t.string "provider_message_id"
     t.datetime "released_at"
     t.text "response_body"
+    t.text "response_headers"
     t.integer "response_status"
     t.integer "state", null: false
     t.string "target_label"
@@ -491,6 +492,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_15_110000) do
     t.datetime "finished_at"
     t.string "provider_message_id"
     t.text "response_body"
+    t.text "response_headers"
     t.integer "response_status"
     t.datetime "started_at"
     t.integer "state", null: false
