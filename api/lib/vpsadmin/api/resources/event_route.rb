@@ -153,10 +153,24 @@ module VpsAdmin::API::Resources
 
       def exec
         route = self.class.model.find_by!(with_restricted(id: path_params['event_route_id']))
-        route.update!(input)
+        attrs = {}
+        %i[parent_id notification_receiver_id label position enabled event_type event_type_pattern continue].each do |v|
+          attrs[v] = input[v] if input.has_key?(v)
+        end
+
+        attrs[:email_template_name] = nil if clears_email_template_name?(route, attrs)
+        route.update!(attrs)
         route
       rescue ActiveRecord::RecordInvalid => e
         error!('update failed', e.record.errors.to_hash)
+      end
+
+      def clears_email_template_name?(route, attrs)
+        return false if route.email_template_name.blank?
+
+        %i[parent_id event_type event_type_pattern].any? do |v|
+          attrs.has_key?(v) && route.public_send(v) != attrs[v]
+        end
       end
     end
 
@@ -275,11 +289,15 @@ module VpsAdmin::API::Resources
             error!('matcher limit reached, refusing to add another one')
           end
 
-          route.event_route_matchers.create!(
-            field: input[:field],
-            operator: input[:operator],
-            value: input[:value]
-          )
+          route.transaction do
+            ret = route.event_route_matchers.create!(
+              field: input[:field],
+              operator: input[:operator],
+              value: input[:value]
+            )
+            route.update!(email_template_name: nil) if route.email_template_name.present?
+            ret
+          end
         rescue ActiveRecord::RecordInvalid => e
           error!('create failed', e.record.errors.to_hash)
         end
@@ -309,10 +327,25 @@ module VpsAdmin::API::Resources
               id: path_params['matcher_id']
             )
           )
-          matcher.update!(input)
+          attrs = {}
+          %i[field operator value].each { |v| attrs[v] = input[v] if input.has_key?(v) }
+
+          matcher.transaction do
+            clear_template_name = clears_email_template_name?(matcher, attrs)
+            matcher.update!(attrs)
+            matcher.event_route.update!(email_template_name: nil) if clear_template_name
+          end
           matcher
         rescue ActiveRecord::RecordInvalid => e
           error!('update failed', e.record.errors.to_hash)
+        end
+
+        def clears_email_template_name?(matcher, attrs)
+          return false if matcher.event_route.email_template_name.blank?
+
+          attrs.any? do |attr, value|
+            matcher.public_send(attr) != value
+          end
         end
       end
 
@@ -332,7 +365,11 @@ module VpsAdmin::API::Resources
               id: path_params['matcher_id']
             )
           )
-          matcher.destroy!
+          matcher.transaction do
+            route = matcher.event_route
+            matcher.destroy!
+            route.update!(email_template_name: nil) if route.email_template_name.present?
+          end
           ok!
         end
       end

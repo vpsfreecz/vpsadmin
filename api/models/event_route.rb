@@ -51,6 +51,7 @@ class EventRoute < ApplicationRecord
   validates :label, length: { maximum: 255 }, allow_nil: true
   validates :event_type, length: { maximum: 100 }, allow_nil: true
   validates :event_type_pattern, length: { maximum: 100 }, allow_nil: true
+  validates :email_template_name, length: { maximum: 100 }, allow_nil: true
   validates :position, numericality: { only_integer: true }
   validate :check_event_type_selector
   validate :check_parent_owner

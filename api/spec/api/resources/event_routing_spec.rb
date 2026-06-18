@@ -45,6 +45,10 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
     vpath("/event_routes/#{route_id}/matcher")
   end
 
+  def matcher_path(route_id, id)
+    vpath("/event_routes/#{route_id}/matcher/#{id}")
+  end
+
   def event_index_path
     vpath('/events')
   end
@@ -247,6 +251,7 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
     expect_status(200)
     receiver_action = NotificationReceiverAction.find(action_obj['id'])
     expect(action_obj['secret_present']).to be(true)
+    expect(action_obj).not_to include('template_name')
 
     as(SpecSeed.user) do
       json_post route_index_path, event_route: {
@@ -310,6 +315,7 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
     expect(deliveries.first['notification_receiver_action_id']).to eq(receiver_action.id)
     expect(deliveries.first['notification_receiver_action_label']).to eq('Spec webhook')
     expect(deliveries.first['notification_receiver_action_display_target']).to eq('https://example.test/events')
+    expect(deliveries.first).not_to include('template_name')
 
     delivery = event.event_deliveries.sole
 
@@ -319,6 +325,7 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
     expect(delivery_obj['target_label']).to eq('Spec webhook')
     expect(delivery_obj['notification_receiver_label']).to eq('Spec receiver')
     expect(delivery_obj['notification_receiver_action_label']).to eq('Spec webhook')
+    expect(delivery_obj).not_to include('template_name')
 
     attempt = delivery.event_delivery_attempts.create!(
       action: delivery.action,
@@ -336,6 +343,70 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
     expect(attempts.map { |row| row['id'] }).to eq([attempt.id])
     expect(attempts.first['response_status']).to eq(500)
     expect(attempts.first['error_summary']).to eq('spec transport failure')
+  end
+
+  it 'clears hidden migrated templates when route matching is edited' do
+    receiver = NotificationReceiver.create!(
+      user: SpecSeed.user,
+      label: 'Spec receiver'
+    )
+    route = EventRoute.create!(
+      user: SpecSeed.user,
+      notification_receiver: receiver,
+      label: 'Migrated route',
+      event_type: 'vps.incident_report',
+      email_template_name: 'vps_incident_report'
+    )
+
+    as(SpecSeed.user) do
+      json_put route_path(route.id), event_route: {
+        label: 'Renamed route'
+      }
+    end
+
+    expect_status(200)
+    expect(route.reload.email_template_name).to eq('vps_incident_report')
+
+    as(SpecSeed.user) do
+      json_put route_path(route.id), event_route: {
+        event_type: 'vps.oom_report'
+      }
+    end
+
+    expect_status(200)
+    expect(route.reload.email_template_name).to be_nil
+
+    route.update!(email_template_name: 'vps_oom_report')
+
+    as(SpecSeed.user) do
+      json_post matcher_index_path(route.id), matcher: {
+        field: 'parameters.cgroup',
+        operator: '==',
+        value: '/system.slice/spec.service'
+      }
+    end
+
+    expect_status(200)
+    expect(route.reload.email_template_name).to be_nil
+
+    matcher = route.event_route_matchers.sole
+    route.update!(email_template_name: 'vps_oom_report')
+
+    as(SpecSeed.user) do
+      json_put matcher_path(route.id, matcher.id), matcher: {
+        value: '/system.slice/other.service'
+      }
+    end
+
+    expect_status(200)
+    expect(route.reload.email_template_name).to be_nil
+
+    route.update!(email_template_name: 'vps_oom_report')
+
+    as(SpecSeed.user) { json_delete matcher_path(route.id, matcher.id) }
+
+    expect_status(200)
+    expect(route.reload.email_template_name).to be_nil
   end
 
   it 'lets users retry failed deliveries' do
@@ -562,6 +633,7 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
     )
     email_delivery = event.event_deliveries.email_action.sole
     webhook_delivery = event.event_deliveries.webhook_action.sole
+    email_delivery.update!(template_name: 'spec_internal_template')
     webhook_delivery.update!(
       response_status: 202,
       response_body: 'accepted',
@@ -587,6 +659,12 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
     expect(delivery_obj['mail_subject']).to eq('Spec delivery detail event')
     expect(delivery_obj['mail_text_plain']).to include('Spec delivery detail summary')
     expect(delivery_obj['payload']).to be_nil
+    expect(delivery_obj).not_to include('template_name')
+
+    as(SpecSeed.admin) { json_get delivery_path(event.id, email_delivery.id) }
+
+    expect_status(200)
+    expect(delivery_obj['template_name']).to eq('spec_internal_template')
 
     as(SpecSeed.user) { json_get delivery_path(event.id, webhook_delivery.id) }
 

@@ -844,15 +844,12 @@ function notifications_receiver_action_params($action_type, $create = false)
 
         $params['target_kind'] = $target_kind;
         $params['target_value'] = $target_kind === 'default_recipient' ? null : api_post('target_value');
-        $params['template_name'] = api_post('template_name');
     } elseif ($action_type === 'webhook') {
         $params['target_kind'] = 'custom';
         $params['target_value'] = api_post('target_value');
-        $params['template_name'] = null;
     } else {
         $params['target_kind'] = api_post('target_kind');
         $params['target_value'] = api_post('target_value');
-        $params['template_name'] = api_post('template_name');
     }
 
     $secret = isset($_POST['secret']) ? trim((string) $_POST['secret']) : '';
@@ -873,7 +870,6 @@ function notifications_receiver_action_params_from_row($row)
         'label' => trim((string) ($row['label'] ?? '')),
         'target_kind' => $target_kind,
         'target_value' => trim((string) ($row['target_value'] ?? '')),
-        'template_name' => trim((string) ($row['template_name'] ?? '')),
         'enabled' => isset($row['enabled']),
     ];
 
@@ -1708,15 +1704,6 @@ function notifications_receiver_action_target_html($action)
     return $target ? h($target) : '-';
 }
 
-function notifications_receiver_action_template_html($action)
-{
-    if ($action->action !== 'email') {
-        return '-';
-    }
-
-    return $action->template_name ? '<code>' . h($action->template_name) . '</code>' : _('default');
-}
-
 function notifications_receiver_action_secret_html($action)
 {
     if ($action->action !== 'webhook') {
@@ -1769,14 +1756,6 @@ function notifications_receiver_action_form_fields($receiver, $action_type, $act
             'target_value',
             post_val('target_value', $action ? $action->target_value : ''),
             _('Used only when custom target is selected.')
-        );
-        $xtpl->form_add_input(
-            _('Template') . ':',
-            'text',
-            '40',
-            'template_name',
-            post_val('template_name', $action ? $action->template_name : ''),
-            _('Leave empty to use the event default e-mail template.')
         );
     } elseif ($action_type === 'webhook') {
         $xtpl->form_add_input(
@@ -1912,7 +1891,6 @@ function notifications_receiver_edit($receiver_id)
     $xtpl->table_add_category(_('Action'));
     $xtpl->table_add_category(_('Label'));
     $xtpl->table_add_category(_('Target'));
-    $xtpl->table_add_category(_('Template'));
     $xtpl->table_add_category(_('Enabled'));
     $xtpl->table_add_category(_('Webhook secret'));
     $xtpl->table_add_category(_('Events'));
@@ -1925,7 +1903,6 @@ function notifications_receiver_edit($receiver_id)
         $xtpl->table_td(h($action_labels[$action->action] ?? $action->action));
         $xtpl->table_td(h($action->label));
         $xtpl->table_td(notifications_receiver_action_target_html($action), false, true);
-        $xtpl->table_td(notifications_receiver_action_template_html($action), false, true);
         $xtpl->table_td(boolean_icon($action->enabled));
         $xtpl->table_td(notifications_receiver_action_secret_html($action));
         $xtpl->table_td(notifications_event_log_link(_('Event log'), $receiver->user_id, [
@@ -2291,6 +2268,13 @@ function notifications_delivery_show($event_id, $delivery_id)
     $xtpl->table_td(_('Action') . ':');
     $xtpl->table_td(h($delivery->action));
     $xtpl->table_tr();
+
+    $template_name = notifications_prop($delivery, 'template_name');
+    if (isAdmin() && $delivery->action === 'email' && $template_name) {
+        $xtpl->table_td(_('Template') . ':');
+        $xtpl->table_td('<code>' . h($template_name) . '</code>');
+        $xtpl->table_tr();
+    }
 
     $xtpl->table_td(_('State') . ':');
     $xtpl->table_td(h($delivery->state));

@@ -517,6 +517,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_15_110000) do
     t.boolean "continue", default: false, null: false
     t.datetime "created_at", null: false
     t.boolean "enabled", default: true, null: false
+    t.string "email_template_name", limit: 100
     t.string "event_type", limit: 100
     t.string "event_type_pattern", limit: 100
     t.bigint "hit_count", default: 0, null: false
@@ -1132,7 +1133,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_15_110000) do
     t.text "secret"
     t.integer "target_kind", default: 0, null: false
     t.text "target_value"
-    t.string "template_name", limit: 100
     t.datetime "updated_at", null: false
     t.string "verification_token"
     t.datetime "verified_at"

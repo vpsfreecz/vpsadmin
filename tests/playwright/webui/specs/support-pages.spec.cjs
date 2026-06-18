@@ -241,6 +241,16 @@ test.describe('support and status browser coverage', () => {
     await expect(heading(page)).toContainText(`Notification receiver #${receiverId}`);
     await expect(content(page)).toContainText('Actions');
 
+    await page.goto(`/?page=notifications&action=receiver_action_new&receiver=${receiverId}&type=email`, {
+      waitUntil: 'domcontentloaded',
+    });
+    const emailActionForm = formByAction(page, 'action=receiver_action_new');
+    await expect(emailActionForm).toBeVisible();
+    await expect(emailActionForm.locator('input[name="template_name"]')).toHaveCount(0);
+
+    await page.goto(`/?page=notifications&action=receiver_edit&id=${receiverId}`, {
+      waitUntil: 'domcontentloaded',
+    });
     await linkWithParams(content(page), {
       action: 'receiver_action_new',
       receiver: receiverId,

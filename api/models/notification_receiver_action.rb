@@ -33,7 +33,6 @@ class NotificationReceiverAction < ApplicationRecord
 
   validates :action, :target_kind, :label, presence: true
   validates :label, length: { maximum: 255 }, allow_nil: true
-  validates :template_name, length: { maximum: 100 }, allow_nil: true
   validates :verification_token, length: { maximum: 255 }, allow_nil: true
   validate :check_action_limit, on: :create
   validate :check_target

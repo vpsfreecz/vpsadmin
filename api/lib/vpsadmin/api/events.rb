@@ -267,8 +267,7 @@ module VpsAdmin::API
       EventRouteMatcher.field_labels(event_type:)
     end
 
-    def email_template_name_for(event, action = nil)
-      return action.template_name.to_sym if action&.template_name.present?
+    def email_template_name_for(event)
       return request_email_template_name_for(event) if REQUEST_EVENT_TYPES.include?(event.event_type)
       return outage_email_template_choice(event).first if OUTAGE_EVENT_TYPES.include?(event.event_type)
       if event.user_id.blank? && SYSTEM_REPORT_EVENT_TYPES.include?(event.event_type)
@@ -1727,7 +1726,7 @@ module VpsAdmin::API
           target_kind: target_kind || receiver_action&.target_kind || 'default_recipient',
           target_value:,
           target_label: delivery_label(target_label),
-          template_name: template_name || delivery_template_name(receiver_action),
+          template_name: template_name || delivery_template_name(route, receiver_action),
           event_route: route,
           notification_receiver: receiver,
           notification_receiver_action: receiver_action,
@@ -1743,7 +1742,7 @@ module VpsAdmin::API
           target_kind: receiver_action&.target_kind || 'default_recipient',
           target_value: receiver_action&.target_value,
           target_label: delivery_label(receiver_action&.display_target || receiver&.label),
-          template_name: receiver_action&.template_name,
+          template_name: delivery_template_name(route, receiver_action),
           event_route: route,
           notification_receiver: receiver,
           notification_receiver_action: receiver_action,
@@ -1758,12 +1757,14 @@ module VpsAdmin::API
         label.to_s[0, DELIVERY_LABEL_LIMIT]
       end
 
-      def delivery_template_name(receiver_action)
-        return unless receiver_action
-        return receiver_action.template_name if receiver_action.template_name.present?
-        return unless receiver_action.email_action?
+      def delivery_template_name(route, receiver_action)
+        return unless receiver_action.nil? || receiver_action.email_action?
 
-        VpsAdmin::API::Events.email_template_name_for(event, receiver_action)
+        route_template_name = route&.email_template_name.presence
+        return route_template_name if route_template_name
+        return unless receiver_action&.email_action?
+
+        VpsAdmin::API::Events.email_template_name_for(event)
       end
 
       def routing_state_for(deliveries)

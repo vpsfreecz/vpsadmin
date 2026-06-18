@@ -130,7 +130,6 @@ RSpec.describe VpsAdmin::API::Tasks::EventDelivery do
       target_kind: :custom,
       target_value: url,
       target_label: action.label,
-      template_name: action.template_name,
       notification_receiver: receiver,
       notification_receiver_action: action,
       state: :released,

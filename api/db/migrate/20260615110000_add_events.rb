@@ -392,7 +392,6 @@ class AddEvents < ActiveRecord::Migration[8.1]
       t.string      :label,                    null: true, limit: 255
       t.integer     :target_kind,              null: false, default: 0
       t.text        :target_value,             null: true
-      t.string      :template_name,            null: true, limit: 100
       t.text        :config,                   null: true
       t.text        :secret,                   null: true
       t.string      :verification_token,       null: true, limit: 255
@@ -415,6 +414,7 @@ class AddEvents < ActiveRecord::Migration[8.1]
       t.boolean     :enabled,                  null: false, default: true
       t.string      :event_type,               null: true, limit: 100
       t.string      :event_type_pattern,       null: true, limit: 100
+      t.string      :email_template_name,      null: true, limit: 100
       t.boolean     :continue,                 null: false, default: false
       t.bigint      :hit_count,                null: false, default: 0
       t.timestamps                             null: false
@@ -557,13 +557,12 @@ class AddEvents < ActiveRecord::Migration[8.1]
       execute <<~SQL.squish
         INSERT INTO notification_receiver_actions
           (notification_receiver_id, action, label, target_kind, target_value,
-           template_name, enabled, created_at, updated_at)
+           enabled, created_at, updated_at)
         SELECT
           notification_receivers.id,
           0,
           'Default e-mail',
           0,
-          NULL,
           NULL,
           1,
           CURRENT_TIMESTAMP,
@@ -714,8 +713,7 @@ class AddEvents < ActiveRecord::Migration[8.1]
         create_advanced_mail_action(
           receiver_id:,
           label: "#{template_label} e-mail",
-          target_value: target,
-          template_name: cfg.fetch(:template_name)
+          target_value: target
         )
         route_label = "#{template_label} e-mail"
       end
@@ -860,7 +858,7 @@ class AddEvents < ActiveRecord::Migration[8.1]
     )
   end
 
-  def create_advanced_mail_action(receiver_id:, label:, target_value:, template_name: nil)
+  def create_advanced_mail_action(receiver_id:, label:, target_value:)
     insert_row(
       'notification_receiver_actions',
       notification_receiver_id: receiver_id,
@@ -868,7 +866,6 @@ class AddEvents < ActiveRecord::Migration[8.1]
       label: limit_label(label),
       target_kind: 1,
       target_value:,
-      template_name:,
       enabled: true,
       created_at: current_timestamp,
       updated_at: current_timestamp
@@ -886,6 +883,7 @@ class AddEvents < ActiveRecord::Migration[8.1]
       enabled: true,
       event_type: event_config.fetch(:event_type),
       event_type_pattern: nil,
+      email_template_name: event_config.fetch(:template_name),
       continue:,
       hit_count: 0,
       created_at: current_timestamp,

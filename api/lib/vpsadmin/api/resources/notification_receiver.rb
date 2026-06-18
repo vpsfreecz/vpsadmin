@@ -163,7 +163,6 @@ module VpsAdmin::API::Resources
                choices: { values: ::NotificationReceiverAction.target_kind_labels },
                load_validators: false
         text :target_value, nullable: true
-        string :template_name, nullable: true
         bool :enabled
         datetime :verified_at, nullable: true
         bool :verified
@@ -241,7 +240,6 @@ module VpsAdmin::API::Resources
             label
             target_kind
             target_value
-            template_name
             enabled
           ]
           text :secret, nullable: true
@@ -268,7 +266,6 @@ module VpsAdmin::API::Resources
             label: input[:label],
             target_kind: input[:target_kind] || default_target_kind,
             target_value: input[:target_value],
-            template_name: input[:template_name],
             enabled: input.has_key?(:enabled) ? input[:enabled] : true,
             secret: input[:secret]
           )
@@ -290,7 +287,6 @@ module VpsAdmin::API::Resources
             label
             target_kind
             target_value
-            template_name
             enabled
           ]
           text :secret, nullable: true
@@ -315,7 +311,7 @@ module VpsAdmin::API::Resources
           )
 
           attrs = {}
-          %i[action label target_kind target_value template_name enabled].each do |v|
+          %i[action label target_kind target_value enabled].each do |v|
             attrs[v] = input[v] if input.has_key?(v)
           end
           attrs[:secret] = input[:secret] if input.has_key?(:secret) && !input[:secret].nil?

@@ -242,6 +242,7 @@ module VpsAdmin::API::Resources
         authorize do |u|
           allow if u.role == :admin
           restrict events: { user_id: u.id }
+          output blacklist: %i[template_name]
           allow
         end
 
@@ -271,6 +272,7 @@ module VpsAdmin::API::Resources
         authorize do |u|
           allow if u.role == :admin
           restrict events: { user_id: u.id }
+          output blacklist: %i[template_name]
           allow
         end
 
@@ -296,6 +298,7 @@ module VpsAdmin::API::Resources
         authorize do |u|
           allow if u.role == :admin
           restrict events: { user_id: u.id }
+          output blacklist: %i[template_name]
           allow
         end
 
