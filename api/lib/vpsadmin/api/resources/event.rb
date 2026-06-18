@@ -188,7 +188,10 @@ module VpsAdmin::API::Resources
         id :id
         integer :event_route_id, nullable: true
         integer :notification_receiver_id, nullable: true
+        string :notification_receiver_label, nullable: true
         integer :notification_receiver_action_id, nullable: true
+        string :notification_receiver_action_label, nullable: true
+        string :notification_receiver_action_display_target, nullable: true
         string :action,
                choices: { values: ::EventDelivery.action_labels },
                load_validators: false
@@ -278,6 +281,35 @@ module VpsAdmin::API::Resources
               id: path_params['delivery_id']
             )
           )
+        end
+      end
+
+      class Retry < HaveAPI::Action
+        desc 'Retry event delivery'
+        route '{delivery_id}/retry'
+        http_method :post
+
+        output do
+          use :all
+        end
+
+        authorize do |u|
+          allow if u.role == :admin
+          restrict events: { user_id: u.id }
+          allow
+        end
+
+        def exec
+          delivery = ::EventDelivery.joins(:event).find_by!(
+            with_restricted(
+              event_id: path_params['event_id'],
+              id: path_params['delivery_id']
+            )
+          )
+
+          VpsAdmin::API::Notifications::Retry.retry!(delivery)
+        rescue VpsAdmin::API::Notifications::Retry::InvalidState => e
+          error!(e.message)
         end
       end
 

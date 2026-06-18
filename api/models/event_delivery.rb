@@ -81,6 +81,18 @@ class EventDelivery < ApplicationRecord
     JSON.dump(response_headers || {})
   end
 
+  def notification_receiver_label
+    notification_receiver&.label
+  end
+
+  def notification_receiver_action_label
+    notification_receiver_action&.label
+  end
+
+  def notification_receiver_action_display_target
+    notification_receiver_action&.display_target
+  end
+
   def mail_to
     mail_log&.to
   end

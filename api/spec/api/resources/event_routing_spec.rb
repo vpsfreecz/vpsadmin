@@ -69,6 +69,10 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
     vpath("/events/#{event_id}/deliveries/#{delivery_id}")
   end
 
+  def delivery_retry_path(event_id, delivery_id)
+    vpath("/events/#{event_id}/deliveries/#{delivery_id}/retry")
+  end
+
   def delivery_attempt_index_path(event_id, delivery_id)
     vpath("/events/#{event_id}/deliveries/#{delivery_id}/attempts")
   end
@@ -165,6 +169,7 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
         'event#test',
         'event_type#index',
         'event.delivery#index',
+        'event.delivery#retry',
         'event.delivery#show',
         'event.delivery.attempt#index',
         'event.delivery.attempt#show',
@@ -301,7 +306,10 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
     expect_status(200)
     expect(deliveries.map { |row| row['action'] }).to eq(['webhook'])
     expect(deliveries.first['notification_receiver_id']).to eq(receiver.id)
+    expect(deliveries.first['notification_receiver_label']).to eq('Spec receiver')
     expect(deliveries.first['notification_receiver_action_id']).to eq(receiver_action.id)
+    expect(deliveries.first['notification_receiver_action_label']).to eq('Spec webhook')
+    expect(deliveries.first['notification_receiver_action_display_target']).to eq('https://example.test/events')
 
     delivery = event.event_deliveries.sole
 
@@ -309,6 +317,8 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
 
     expect_status(200)
     expect(delivery_obj['target_label']).to eq('Spec webhook')
+    expect(delivery_obj['notification_receiver_label']).to eq('Spec receiver')
+    expect(delivery_obj['notification_receiver_action_label']).to eq('Spec webhook')
 
     attempt = delivery.event_delivery_attempts.create!(
       action: delivery.action,
@@ -326,6 +336,62 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
     expect(attempts.map { |row| row['id'] }).to eq([attempt.id])
     expect(attempts.first['response_status']).to eq(500)
     expect(attempts.first['error_summary']).to eq('spec transport failure')
+  end
+
+  it 'lets users retry failed deliveries' do
+    event = Event.create!(
+      user: SpecSeed.user,
+      event_type: 'user.test_notification',
+      category: 'test',
+      severity: 'info',
+      subject: 'Retryable delivery',
+      parameters: {}
+    )
+    delivery = EventDelivery.create!(
+      event:,
+      action: :webhook,
+      target_kind: :custom,
+      target_value: 'https://example.test/retry',
+      target_label: 'Retry webhook',
+      state: :failed,
+      attempt_count: 1,
+      error_summary: 'temporary failure'
+    )
+    publisher = instance_double(VpsAdmin::API::Notifications::Publisher, publish_after_commit: nil)
+    allow(VpsAdmin::API::Notifications::Publisher).to receive(:default).and_return(publisher)
+
+    as(SpecSeed.user) { json_post delivery_retry_path(event.id, delivery.id), {} }
+
+    expect_status(200)
+    expect(json['status']).to be(true), last_response.body
+    expect(delivery.reload).to be_released_state
+    expect(delivery.next_attempt_at).to be <= Time.now
+    expect(delivery.error_summary).to be_nil
+    expect(publisher).to have_received(:publish_after_commit).with([delivery])
+  end
+
+  it 'rejects manual retry for non-failed deliveries' do
+    event = Event.create!(
+      user: SpecSeed.user,
+      event_type: 'user.test_notification',
+      category: 'test',
+      severity: 'info',
+      subject: 'Sent delivery',
+      parameters: {}
+    )
+    delivery = EventDelivery.create!(
+      event:,
+      action: :webhook,
+      target_kind: :custom,
+      target_value: 'https://example.test/sent',
+      state: :sent,
+      attempt_count: 1
+    )
+
+    as(SpecSeed.user) { json_post delivery_retry_path(event.id, delivery.id), {} }
+
+    expect(json['status']).to be(false)
+    expect(delivery.reload).to be_sent_state
   end
 
   it 'places new root routes before the generated default catch-all' do

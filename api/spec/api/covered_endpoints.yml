@@ -120,6 +120,7 @@ covered:
 - event#show
 - event#test
 - event.delivery#index
+- event.delivery#retry
 - event.delivery#show
 - event_type#index
 - event_route#create

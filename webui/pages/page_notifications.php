@@ -353,6 +353,24 @@ if (isLoggedIn()) {
             notifications_delivery_show(api_get_uint('event'), api_get_uint('id'));
             break;
 
+        case 'delivery_retry':
+            csrf_check();
+
+            $event_id = api_get_uint('event');
+            $delivery_id = api_get_uint('id');
+
+            try {
+                $event = $api->event->show($event_id);
+                $event->delivery($delivery_id)->retry();
+
+                notify_user(_('Delivery retry scheduled'), '');
+                redirect(notifications_delivery_url($event_id, $delivery_id));
+            } catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+                $xtpl->perex_format_errors(_('Failed to retry delivery'), $e->getResponse());
+                notifications_delivery_show($event_id, $delivery_id);
+            }
+            break;
+
         case 'event_types':
             notifications_event_types(api_get_uint('user'));
             break;
