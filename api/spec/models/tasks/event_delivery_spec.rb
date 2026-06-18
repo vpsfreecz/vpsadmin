@@ -25,8 +25,8 @@ RSpec.describe VpsAdmin::API::Tasks::EventDelivery do
     NotificationReceiver.where(user:).delete_all
   end
 
-  def create_webhook_delivery!(url: 'https://webhook.example/events', secret: nil)
-    receiver = NotificationReceiver.create!(user: SpecSeed.user, label: 'Spec receiver')
+  def create_webhook_delivery!(url: 'https://webhook.example/events', secret: nil, user: SpecSeed.user)
+    receiver = NotificationReceiver.create!(user:, label: 'Spec receiver')
     action = receiver.notification_receiver_actions.create!(
       action: :webhook,
       label: 'Spec webhook',
@@ -35,18 +35,61 @@ RSpec.describe VpsAdmin::API::Tasks::EventDelivery do
       secret:
     )
     route = EventRoute.create!(
-      user: SpecSeed.user,
+      user:,
       notification_receiver: receiver,
       event_type: 'user.test_notification'
     )
     event = VpsAdmin::API::Events.emit!(
       'user.test_notification',
-      user: SpecSeed.user,
+      user:,
       subject: 'Spec event',
       parameters: { note: 'from task spec' }
     )
 
     [event.event_deliveries.sole, action, route]
+  end
+
+  def create_managed_private_ip!(user: nil)
+    network = create_private_network!(purpose: :any)
+    create_ipv4_address_in_network!(
+      network:,
+      location: SpecSeed.location,
+      user:
+    )
+  end
+
+  def create_managed_public_ip!(user: nil)
+    network = create_private_network!(
+      address: '8.18.0.0',
+      role: :public_access,
+      purpose: :any
+    )
+    create_ipv4_address_in_network!(
+      network:,
+      location: SpecSeed.location,
+      user:
+    )
+  end
+
+  def create_public_network!(address:, prefix:, split_prefix:)
+    create_private_network!(
+      address:,
+      prefix:,
+      split_prefix:,
+      role: :public_access,
+      purpose: :any
+    )
+  end
+
+  def create_public_subnet_ip!(network:, addr:, user:)
+    create_ip_address!(
+      network:,
+      location: SpecSeed.location,
+      addr:,
+      prefix: network.split_prefix,
+      size: 2**(32 - network.split_prefix),
+      user:
+    )
   end
 
   def create_email_delivery!(target_kind: :default_recipient, target_value: nil)
@@ -70,6 +113,29 @@ RSpec.describe VpsAdmin::API::Tasks::EventDelivery do
     )
 
     [event.event_deliveries.sole, action, route]
+  end
+
+  def create_manual_webhook_delivery!(event:, url: 'https://webhook.example/events')
+    receiver = NotificationReceiver.create!(user: SpecSeed.user, label: 'Manual spec receiver')
+    action = receiver.notification_receiver_actions.create!(
+      action: :webhook,
+      label: 'Manual spec webhook',
+      target_kind: :custom,
+      target_value: url
+    )
+
+    EventDelivery.create!(
+      event:,
+      action: :webhook,
+      target_kind: :custom,
+      target_value: url,
+      target_label: action.label,
+      template_name: action.template_name,
+      notification_receiver: receiver,
+      notification_receiver_action: action,
+      state: :released,
+      next_attempt_at: Time.now
+    )
   end
 
   def create_direct_request_email_delivery!
@@ -726,13 +792,13 @@ RSpec.describe VpsAdmin::API::Tasks::EventDelivery do
     expect(delivery.error_summary).to include('private address')
   end
 
-  it 'calls private webhook addresses from configured allowed ranges' do
+  it 'calls untracked private webhook addresses from configured exception ranges' do
     delivery, = create_webhook_delivery!(url: 'http://127.0.0.1:9292/events')
     dispatcher = VpsAdmin::API::Notifications::Dispatcher.new(
       'webhook',
       config: {
         'webhook' => {
-          'allowed_private_ranges' => ['127.0.0.0/8']
+          'allowed_untracked_private_ranges' => ['127.0.0.0/8']
         }
       }
     )
@@ -756,13 +822,13 @@ RSpec.describe VpsAdmin::API::Tasks::EventDelivery do
     expect(delivery.response_status).to eq(204)
   end
 
-  it 'does not call private webhook addresses outside configured allowed ranges' do
+  it 'does not call untracked private webhook addresses outside configured exception ranges' do
     delivery, = create_webhook_delivery!(url: 'http://10.0.0.1/events')
     dispatcher = VpsAdmin::API::Notifications::Dispatcher.new(
       'webhook',
       config: {
         'webhook' => {
-          'allowed_private_ranges' => ['127.0.0.0/8']
+          'allowed_untracked_private_ranges' => ['127.0.0.0/8']
         }
       }
     )
@@ -777,6 +843,211 @@ RSpec.describe VpsAdmin::API::Tasks::EventDelivery do
     expect(Net::HTTP).not_to have_received(:start)
     expect(delivery.reload).to be_released_state
     expect(delivery.error_summary).to include('private address')
+  end
+
+  it 'calls same-user managed private webhook addresses without configured exception ranges' do
+    ip_address = create_managed_private_ip!(user: SpecSeed.user)
+    delivery, = create_webhook_delivery!(url: "http://#{ip_address.addr}:9292/events")
+    http = instance_double(Net::HTTP)
+    response = instance_double(Net::HTTPOK, code: '204', body: '', to_hash: {})
+
+    allow(Resolv).to receive(:getaddresses)
+      .with(ip_address.addr)
+      .and_return([ip_address.addr])
+    allow(Net::HTTP).to receive(:start) do |host, port, **options, &block|
+      expect(host).to eq(ip_address.addr)
+      expect(port).to eq(9292)
+      expect(options).to include(ipaddr: ip_address.addr, use_ssl: false)
+      block.call(http)
+    end
+    allow(http).to receive(:request).and_return(response)
+
+    task.deliver_webhooks
+
+    expect(delivery.reload).to be_sent_state
+    expect(delivery.response_status).to eq(204)
+  end
+
+  it 'does not call other-user managed private webhook addresses' do
+    ip_address = create_managed_private_ip!(user: SpecSeed.other_user)
+    delivery, = create_webhook_delivery!(url: "http://#{ip_address.addr}:9292/events")
+
+    allow(Resolv).to receive(:getaddresses)
+      .with(ip_address.addr)
+      .and_return([ip_address.addr])
+    allow(Net::HTTP).to receive(:start)
+
+    task.deliver_webhooks
+
+    expect(Net::HTTP).not_to have_received(:start)
+    expect(delivery.reload).to be_released_state
+    expect(delivery.error_summary).to include('not owned by the event user')
+  end
+
+  it 'does not call other-user managed public webhook addresses' do
+    ip_address = create_managed_public_ip!(user: SpecSeed.other_user)
+    delivery, = create_webhook_delivery!(url: "http://#{ip_address.addr}:9292/events")
+
+    allow(Resolv).to receive(:getaddresses)
+      .with(ip_address.addr)
+      .and_return([ip_address.addr])
+    allow(Net::HTTP).to receive(:start)
+
+    task.deliver_webhooks
+
+    expect(Net::HTTP).not_to have_received(:start)
+    expect(delivery.reload).to be_released_state
+    expect(delivery.error_summary).to include('not owned by the event user')
+  end
+
+  it 'does not call managed unowned webhook addresses' do
+    ip_address = create_managed_private_ip!
+    delivery, = create_webhook_delivery!(url: "http://#{ip_address.addr}:9292/events")
+
+    allow(Resolv).to receive(:getaddresses)
+      .with(ip_address.addr)
+      .and_return([ip_address.addr])
+    allow(Net::HTTP).to receive(:start)
+
+    task.deliver_webhooks
+
+    expect(Net::HTTP).not_to have_received(:start)
+    expect(delivery.reload).to be_released_state
+    expect(delivery.error_summary).to include('not owned by the event user')
+  end
+
+  it 'does not call managed webhook addresses from ownerless events' do
+    ip_address = create_managed_private_ip!(user: SpecSeed.user)
+    event = VpsAdmin::API::Events.emit!(
+      'user.test_notification',
+      subject: 'Ownerless spec event',
+      route: false,
+      release: false
+    )
+    delivery = create_manual_webhook_delivery!(
+      event:,
+      url: "http://#{ip_address.addr}:9292/events"
+    )
+
+    allow(Resolv).to receive(:getaddresses)
+      .with(ip_address.addr)
+      .and_return([ip_address.addr])
+    allow(Net::HTTP).to receive(:start)
+
+    task.deliver_webhooks
+
+    expect(Net::HTTP).not_to have_received(:start)
+    expect(delivery.reload).to be_released_state
+    expect(delivery.error_summary).to include('not owned by the event user')
+  end
+
+  it 'allows managed webhook addresses owned through a VPS network interface' do
+    fixture = create_netif_vps_fixture!(user: SpecSeed.user)
+    network = create_private_network!(purpose: :any)
+    ip_address = create_ipv4_address_in_network!(
+      network:,
+      location: SpecSeed.location,
+      network_interface: fixture.fetch(:netif)
+    )
+    delivery, = create_webhook_delivery!(url: "http://#{ip_address.addr}:9292/events")
+    http = instance_double(Net::HTTP)
+    response = instance_double(Net::HTTPOK, code: '204', body: '', to_hash: {})
+
+    allow(Resolv).to receive(:getaddresses)
+      .with(ip_address.addr)
+      .and_return([ip_address.addr])
+    allow(Net::HTTP).to receive(:start) do |host, _port, **options, &block|
+      expect(host).to eq(ip_address.addr)
+      expect(options).to include(ipaddr: ip_address.addr)
+      block.call(http)
+    end
+    allow(http).to receive(:request).and_return(response)
+
+    task.deliver_webhooks
+
+    expect(delivery.reload).to be_sent_state
+  end
+
+  it 'finds managed webhook addresses in later overlapping networks' do
+    create_public_network!(
+      address: '8.18.0.0',
+      prefix: 16,
+      split_prefix: 24
+    )
+    network = create_public_network!(
+      address: '8.18.42.0',
+      prefix: 24,
+      split_prefix: 24
+    )
+    create_public_subnet_ip!(
+      network:,
+      addr: '8.18.42.0',
+      user: SpecSeed.other_user
+    )
+    delivery, = create_webhook_delivery!(url: 'http://8.18.42.15/events')
+
+    allow(Resolv).to receive(:getaddresses)
+      .with('8.18.42.15')
+      .and_return(['8.18.42.15'])
+    allow(Net::HTTP).to receive(:start)
+
+    task.deliver_webhooks
+
+    expect(Net::HTTP).not_to have_received(:start)
+    expect(delivery.reload).to be_released_state
+    expect(delivery.error_summary).to include('not owned by the event user')
+  end
+
+  it 'does not call managed webhook addresses with conflicting overlapping owners' do
+    broad_network = create_public_network!(
+      address: '8.19.0.0',
+      prefix: 16,
+      split_prefix: 24
+    )
+    create_public_subnet_ip!(
+      network: broad_network,
+      addr: '8.19.42.0',
+      user: SpecSeed.user
+    )
+    narrow_network = create_public_network!(
+      address: '8.19.42.0',
+      prefix: 24,
+      split_prefix: 32
+    )
+    create_public_subnet_ip!(
+      network: narrow_network,
+      addr: '8.19.42.15',
+      user: SpecSeed.other_user
+    )
+    delivery, = create_webhook_delivery!(url: 'http://8.19.42.15/events')
+
+    allow(Resolv).to receive(:getaddresses)
+      .with('8.19.42.15')
+      .and_return(['8.19.42.15'])
+    allow(Net::HTTP).to receive(:start)
+
+    task.deliver_webhooks
+
+    expect(Net::HTTP).not_to have_received(:start)
+    expect(delivery.reload).to be_released_state
+    expect(delivery.error_summary).to include('not owned by the event user')
+  end
+
+  it 'does not call webhook hosts with any forbidden DNS address' do
+    owned_ip = create_managed_private_ip!(user: SpecSeed.user)
+    other_ip = create_managed_private_ip!(user: SpecSeed.other_user)
+    delivery, = create_webhook_delivery!(url: 'http://webhook.example/events')
+
+    allow(Resolv).to receive(:getaddresses)
+      .with('webhook.example')
+      .and_return([owned_ip.addr, other_ip.addr])
+    allow(Net::HTTP).to receive(:start)
+
+    task.deliver_webhooks
+
+    expect(Net::HTTP).not_to have_received(:start)
+    expect(delivery.reload).to be_released_state
+    expect(delivery.error_summary).to include('not owned by the event user')
   end
 
   it 'does not call IPv4-mapped private webhook addresses' do

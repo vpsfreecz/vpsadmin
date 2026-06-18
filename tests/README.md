@@ -25,8 +25,9 @@ vpsadminos checkout is required.
 Use `tools/webhook-test-server.rb` inside the services VM when testing
 notification webhooks from the dev cluster. Binding to VM localhost avoids host
 firewall and routing issues. The dev cluster allows webhook delivery to
-loopback addresses; production deployments should allow only the private ranges
-they intentionally want users to reach:
+loopback addresses as an untracked private destination exception. Production
+deployments should rely on vpsAdmin IP ownership for managed VPS addresses and
+configure private exceptions only for deliberate non-vpsAdmin targets:
 
 ```sh
 cd /path/to/vpsfree.cz-workspace

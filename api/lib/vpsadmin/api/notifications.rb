@@ -586,7 +586,8 @@ module VpsAdmin::API
         response = post_json(
           delivery.target_value,
           body,
-          webhook_headers(delivery, body)
+          webhook_headers(delivery, body),
+          delivery
         )
 
         unless response.code.to_i.between?(200, 299)
@@ -659,13 +660,13 @@ module VpsAdmin::API
         delivery.update!(attrs)
       end
 
-      def post_json(url, body, headers)
+      def post_json(url, body, headers, delivery)
         uri = URI.parse(url)
         unless uri.is_a?(URI::HTTP) && uri.host.present?
           raise ArgumentError, 'webhook URL must use HTTP or HTTPS'
         end
 
-        ipaddr = resolve_public_webhook_address!(uri.host)
+        ipaddr = resolve_webhook_address!(uri.host, delivery)
 
         request = Net::HTTP::Post.new(uri.request_uri, headers)
         request.body = body
@@ -699,16 +700,13 @@ module VpsAdmin::API
         headers
       end
 
-      def resolve_public_webhook_address!(host)
+      def resolve_webhook_address!(host, delivery)
         addresses = Resolv.getaddresses(host)
         raise ArgumentError, 'webhook host did not resolve' if addresses.empty?
 
         addresses.each do |address|
           ip = IPAddr.new(address)
-          next unless private_webhook_address?(ip)
-          next if allowed_private_webhook_address?(ip)
-
-          raise ArgumentError, 'webhook host resolves to a private address'
+          validate_webhook_destination!(ip, delivery)
         end
 
         addresses.first
@@ -716,20 +714,60 @@ module VpsAdmin::API
         raise ArgumentError, 'webhook host did not resolve to an IP address'
       end
 
+      def validate_webhook_destination!(ip, delivery)
+        managed_ips = managed_webhook_ip_addresses(ip)
+        if managed_ips.any?
+          event_user_id = delivery.event&.user_id
+          owners = managed_ips.map(&:current_owner)
+          return if event_user_id && owners.all? { |owner| owner&.id == event_user_id }
+
+          raise ArgumentError,
+                'webhook destination is managed by vpsAdmin and is not owned by the event user'
+        end
+
+        return unless private_webhook_address?(ip)
+        return if allowed_untracked_private_webhook_address?(ip)
+
+        raise ArgumentError, 'webhook host resolves to a private address'
+      end
+
+      def managed_webhook_ip_addresses(ip)
+        addr = parse_webhook_ip_address(ip)
+        return [] if addr.nil?
+
+        matches = ::IpAddress.where(ip_addr: addr.to_s).to_a
+
+        ::Network.where(ip_version: addr.ipv4? ? 4 : 6).find_each do |net|
+          next unless net.include?(addr)
+
+          matches.concat(
+            net.ip_addresses.select { |ip_address| ip_address.include?(addr) }
+          )
+        end
+
+        matches.uniq
+      end
+
+      def parse_webhook_ip_address(ip)
+        ::IPAddress.parse(ip.to_s)
+      rescue ArgumentError
+        nil
+      end
+
       def private_webhook_address?(ip)
         PRIVATE_ADDRESS_RANGES.any? { |range| range.include?(ip) }
       end
 
-      def allowed_private_webhook_address?(ip)
-        allowed_private_webhook_ranges.any? { |range| range.include?(ip) }
+      def allowed_untracked_private_webhook_address?(ip)
+        allowed_untracked_private_webhook_ranges.any? { |range| range.include?(ip) }
       end
 
-      def allowed_private_webhook_ranges
-        @allowed_private_webhook_ranges ||= Array(
-          webhook_config.fetch('allowed_private_ranges', [])
+      def allowed_untracked_private_webhook_ranges
+        @allowed_untracked_private_webhook_ranges ||= Array(
+          webhook_config.fetch('allowed_untracked_private_ranges', [])
         ).map { |range| IPAddr.new(range) }
       rescue IPAddr::InvalidAddressError => e
-        raise ArgumentError, "invalid webhook allowed private range: #{e.message}"
+        raise ArgumentError, "invalid webhook allowed untracked private range: #{e.message}"
       end
 
       def webhook_config

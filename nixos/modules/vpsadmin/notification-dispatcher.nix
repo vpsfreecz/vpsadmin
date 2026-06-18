@@ -66,7 +66,7 @@ let
       };
       smtp = smtpConfig;
       webhook = {
-        allowed_private_ranges = cfg.webhook.allowedPrivateRanges;
+        allowed_untracked_private_ranges = cfg.webhook.allowedUntrackedPrivateRanges;
       };
       poll_interval = cfg.pollInterval;
     }
@@ -261,17 +261,17 @@ in
       };
 
       webhook = {
-        allowedPrivateRanges = mkOption {
+        allowedUntrackedPrivateRanges = mkOption {
           type = types.listOf types.str;
           default = [ ];
           example = [
-            "172.16.0.0/12"
+            "127.0.0.0/8"
           ];
           description = ''
             Private, loopback, link-local, or otherwise reserved destination
-            ranges that webhook delivery is allowed to call. Other private or
-            special-use addresses remain blocked to prevent SSRF against
-            internal services.
+            ranges that webhook delivery is allowed to call when the address is
+            not managed by vpsAdmin. vpsAdmin-managed addresses are allowed only
+            when they currently belong to the event user.
           '';
         };
       };
