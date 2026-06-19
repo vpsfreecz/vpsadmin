@@ -53,6 +53,10 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
     vpath('/events')
   end
 
+  def event_delivery_index_path
+    vpath('/event_deliveries')
+  end
+
   def event_path(id)
     vpath("/events/#{id}")
   end
@@ -171,6 +175,7 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
         'event#index',
         'event#show',
         'event#test',
+        'event_delivery#index',
         'event_type#index',
         'event.delivery#index',
         'event.delivery#retry',
@@ -343,6 +348,102 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
     expect(attempts.map { |row| row['id'] }).to eq([attempt.id])
     expect(attempts.first['response_status']).to eq(500)
     expect(attempts.first['error_summary']).to eq('spec transport failure')
+  end
+
+  it 'lets admins inspect delivery queues and logs' do
+    receiver = NotificationReceiver.create!(user: SpecSeed.user, label: 'Spec queue receiver')
+    receiver_action = receiver.notification_receiver_actions.create!(
+      action: :email,
+      label: 'Spec queue e-mail',
+      target_kind: :custom,
+      target_value: 'queue@example.test'
+    )
+    event = Event.create!(
+      user: SpecSeed.user,
+      event_type: 'user.test_notification',
+      category: 'general',
+      severity: 'info',
+      subject: 'Spec queue event',
+      parameters: {}
+    )
+    common = {
+      event:,
+      notification_receiver: receiver,
+      notification_receiver_action: receiver_action,
+      action: :email,
+      target_kind: :custom,
+      target_value: 'queue@example.test',
+      target_label: 'queue@example.test'
+    }
+    prepared = EventDelivery.create!(common.merge(state: :prepared, template_name: 'spec_queue_template'))
+    released_due = EventDelivery.create!(common.merge(state: :released, next_attempt_at: nil))
+    released_later = EventDelivery.create!(
+      common.merge(state: :released, next_attempt_at: Time.now + 3600)
+    )
+    sending = EventDelivery.create!(common.merge(state: :sending, next_attempt_at: Time.now - 60))
+    sent = EventDelivery.create!(common.merge(state: :sent, released_at: Time.now - 60, last_attempt_at: Time.now - 30))
+    failed = EventDelivery.create!(
+      common.merge(
+        state: :failed,
+        released_at: Time.now - 50,
+        last_attempt_at: Time.now - 10,
+        error_summary: 'spec failure'
+      )
+    )
+    canceled = EventDelivery.create!(common.merge(state: :canceled, error_summary: 'spec canceled'))
+    skipped = EventDelivery.create!(common.merge(state: :skipped, error_summary: 'spec skipped'))
+
+    as(SpecSeed.user) { json_get event_delivery_index_path, event_delivery: { state_group: 'queue' } }
+
+    expect(json['status']).to be(false)
+
+    as(SpecSeed.admin) do
+      json_get event_delivery_index_path,
+               event_delivery: {
+                 state_group: 'queue',
+                 notification_receiver_id: receiver.id
+               }
+    end
+
+    expect_status(200)
+    expect(deliveries.map { |row| row['id'] }).to eq(
+      [sending.id, released_due.id, released_later.id, prepared.id]
+    )
+    row = deliveries.detect { |delivery| delivery['id'] == prepared.id }
+    expect(row).to include(
+      'event_id' => event.id,
+      'event_type' => 'user.test_notification',
+      'event_subject' => 'Spec queue event',
+      'event_user_id' => SpecSeed.user.id,
+      'event_user_login' => SpecSeed.user.login,
+      'notification_receiver_label' => 'Spec queue receiver',
+      'notification_receiver_action_label' => 'Spec queue e-mail',
+      'template_name' => 'spec_queue_template'
+    )
+
+    as(SpecSeed.admin) do
+      json_get event_delivery_index_path,
+               event_delivery: {
+                 state_group: 'queue',
+                 state: 'released',
+                 notification_receiver_id: receiver.id
+               }
+    end
+
+    expect_status(200)
+    expect(deliveries.map { |row| row['id'] }).to eq([released_due.id, released_later.id])
+
+    as(SpecSeed.admin) do
+      json_get event_delivery_index_path,
+               event_delivery: {
+                 state_group: 'log',
+                 notification_receiver_id: receiver.id
+               }
+    end
+
+    expect_status(200)
+    expect(deliveries.map { |row| row['id'] }).to contain_exactly(sent.id, failed.id, canceled.id, skipped.id)
+    expect(deliveries.map { |row| row['id'] }).not_to include(prepared.id, released_due.id, sending.id)
   end
 
   it 'clears hidden migrated templates when route matching is edited' do

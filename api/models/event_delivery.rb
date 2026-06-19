@@ -93,6 +93,38 @@ class EventDelivery < ApplicationRecord
     notification_receiver_action&.display_target
   end
 
+  def event_user_id
+    event&.user_id
+  end
+
+  def event_user_login
+    event&.user&.login
+  end
+
+  def event_vps_id
+    event&.vps_id
+  end
+
+  def event_vps_hostname
+    event&.vps&.hostname
+  end
+
+  def event_type
+    event&.event_type
+  end
+
+  def event_subject
+    event&.subject
+  end
+
+  def event_severity
+    event&.severity
+  end
+
+  def event_created_at
+    event&.created_at
+  end
+
   def mail_to
     mail_log&.to
   end

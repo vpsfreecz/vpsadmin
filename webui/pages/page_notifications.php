@@ -345,6 +345,14 @@ if (isLoggedIn()) {
             notifications_events();
             break;
 
+        case 'delivery_queue':
+            notifications_deliveries_admin('queue');
+            break;
+
+        case 'delivery_log':
+            notifications_deliveries_admin('log');
+            break;
+
         case 'event_show':
             notifications_event_show($_GET['id']);
             break;

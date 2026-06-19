@@ -37,6 +37,10 @@ function notifications_sidebar($current, $user_id = null)
     $user_qs = notifications_user_qs($user_id);
 
     $xtpl->sbar_add(_('Event log'), '?page=notifications&action=events' . $user_qs);
+    if (isAdmin()) {
+        $xtpl->sbar_add(_('Delivery queue'), '?page=notifications&action=delivery_queue');
+        $xtpl->sbar_add(_('Delivery log'), '?page=notifications&action=delivery_log');
+    }
     $xtpl->sbar_add(_('Routes'), '?page=notifications&action=routes' . $user_qs);
     $xtpl->sbar_add(_('Receivers'), '?page=notifications&action=receivers' . $user_qs);
     $xtpl->sbar_add(_('Event types'), '?page=notifications&action=event_types' . $user_qs);
@@ -1487,6 +1491,16 @@ function notifications_delivery_link($event_id, $delivery_id, $label)
     return '<a href="' . notifications_delivery_url($event_id, $delivery_id) . '">' . h($label) . '</a>';
 }
 
+function notifications_event_url($event_id)
+{
+    return '?page=notifications&action=event_show&id=' . rawurlencode((string) $event_id);
+}
+
+function notifications_event_link($event_id, $label)
+{
+    return '<a href="' . notifications_event_url($event_id) . '">' . h($label) . '</a>';
+}
+
 function notifications_delivery_retry_form_html($event_id, $delivery_id)
 {
     return '<form action="?page=notifications&action=delivery_retry&event='
@@ -1541,6 +1555,106 @@ function notifications_delivery_receiver_action_link($delivery, $user_id = null)
     }
 
     return '<a href="' . notifications_receiver_action_url($receiver_id, $action_id, $user_id) . '">' . h($label) . '</a>';
+}
+
+function notifications_delivery_user_link($delivery)
+{
+    $user_id = notifications_prop($delivery, 'event_user_id');
+    if (!$user_id) {
+        return '-';
+    }
+
+    $label = notifications_prop($delivery, 'event_user_login') ?: ('#' . $user_id);
+
+    return '<a href="?page=adminm&action=edit&id=' . rawurlencode((string) $user_id) . '">' . h($label) . '</a>';
+}
+
+function notifications_delivery_vps_link($delivery)
+{
+    $vps_id = notifications_prop($delivery, 'event_vps_id');
+    if (!$vps_id) {
+        return '-';
+    }
+
+    $label = '#' . $vps_id;
+    $hostname = notifications_prop($delivery, 'event_vps_hostname');
+    if ($hostname) {
+        $label .= ' ' . $hostname;
+    }
+
+    return '<a href="?page=adminvps&action=info&veid=' . rawurlencode((string) $vps_id) . '">' . h($label) . '</a>';
+}
+
+function notifications_delivery_state_group_states($state_group)
+{
+    if ($state_group === 'queue') {
+        return ['prepared', 'released', 'sending'];
+    } elseif ($state_group === 'log') {
+        return ['sent', 'failed', 'canceled', 'skipped'];
+    }
+
+    return [];
+}
+
+function notifications_delivery_state_choices($state_group, $empty = false)
+{
+    $ret = $empty ? ['' => '---'] : [];
+
+    foreach (notifications_delivery_state_group_states($state_group) as $state) {
+        $ret[$state] = $state;
+    }
+
+    return $ret;
+}
+
+function notifications_delivery_state_label($delivery)
+{
+    $state = notifications_prop($delivery, 'state');
+
+    if ($state === 'prepared') {
+        return _('prepared (waiting for transaction release)');
+    } elseif ($state === 'released') {
+        $next_attempt_at = notifications_prop($delivery, 'next_attempt_at');
+
+        return $next_attempt_at ? _('released (scheduled)') : _('released');
+    } elseif ($state === 'sending') {
+        return _('sending');
+    }
+
+    return $state ?: '-';
+}
+
+function notifications_delivery_result_label($delivery)
+{
+    $state = notifications_prop($delivery, 'state');
+    if ($state === 'prepared') {
+        return _('Waiting for transaction release');
+    } elseif ($state === 'released') {
+        return _('Waiting for dispatcher');
+    } elseif ($state === 'sending') {
+        return _('Delivery attempt is running');
+    }
+
+    $result = [];
+    $provider_message_id = notifications_prop($delivery, 'provider_message_id');
+    if ($provider_message_id) {
+        $result[] = 'Message-ID ' . $provider_message_id;
+    }
+
+    $response_status_label = notifications_response_status_label(
+        notifications_prop($delivery, 'action'),
+        notifications_prop($delivery, 'response_status')
+    );
+    if ($response_status_label) {
+        $result[] = $response_status_label;
+    }
+
+    $error_summary = notifications_prop($delivery, 'error_summary');
+    if ($error_summary) {
+        $result[] = $error_summary;
+    }
+
+    return $result ? implode(', ', $result) : '-';
 }
 
 function notifications_json_pretty($value)
@@ -1990,6 +2104,158 @@ function notifications_delivery_attempts_html($event, $delivery)
     }
 
     return $lines ? implode('<br>', $lines) : '-';
+}
+
+function notifications_deliveries_admin($state_group)
+{
+    global $xtpl, $api;
+
+    if (!isAdmin()) {
+        $xtpl->perex(_('Access forbidden'), _('Only administrators can view notification delivery queues.'));
+        notifications_sidebar('events');
+        return;
+    }
+
+    $action = $state_group === 'log' ? 'delivery_log' : 'delivery_queue';
+    $title = $state_group === 'log' ? _('Delivery log') : _('Delivery queue');
+    $params = [
+        'limit' => api_get_uint('limit', 25),
+        'state_group' => $state_group,
+    ];
+
+    $delivery_action = api_get('delivery_action');
+    if ($delivery_action !== null) {
+        $params['action'] = $delivery_action;
+    }
+
+    $delivery_state = api_get('delivery_state');
+    if ($delivery_state !== null) {
+        $params['state'] = $delivery_state;
+    }
+
+    $event_type = api_get('event_type');
+    if ($event_type !== null) {
+        $params['event_type'] = $event_type;
+    }
+
+    foreach (['event_route_id', 'notification_receiver_id', 'notification_receiver_action_id'] as $name) {
+        $id = api_get_uint($name);
+        if ($id !== null && $id > 0) {
+            $params[$name] = $id;
+        }
+    }
+
+    $user_id = api_get_uint('user');
+    if ($user_id !== null && $user_id > 0) {
+        $params['user'] = $user_id;
+    }
+
+    $deliveries = $api->event_delivery->list($params);
+    $pagination = new \Pagination\System($deliveries);
+    $input = $api->event_delivery->list->getParameters('input');
+
+    $xtpl->title($title);
+    $xtpl->table_title(_('Filters'));
+    $xtpl->form_create('', 'get', 'notification-deliveries', false);
+    $xtpl->form_set_hidden_fields([
+        'page' => 'notifications',
+        'action' => $action,
+    ]);
+
+    $xtpl->form_add_input(_('Limit') . ':', 'text', '20', 'limit', get_val('limit', '25'));
+    $xtpl->form_add_input(_('User ID') . ':', 'text', '20', 'user', get_val('user'));
+    $xtpl->form_add_input(_('Route ID') . ':', 'text', '20', 'event_route_id', get_val('event_route_id'));
+    $xtpl->form_add_input(_('Receiver ID') . ':', 'text', '20', 'notification_receiver_id', get_val('notification_receiver_id'));
+    $xtpl->form_add_input(_('Action ID') . ':', 'text', '20', 'notification_receiver_action_id', get_val('notification_receiver_action_id'));
+    api_param_to_form('event_type', $input->event_type, get_val('event_type'), null, true);
+
+    $action_label = isset($input->action->label) && $input->action->label ? $input->action->label : _('Action');
+    $xtpl->table_td($action_label . ':');
+    $xtpl->table_td(
+        notifications_select_html(
+            'delivery_action',
+            notifications_param_choices($input->action, true),
+            get_val('delivery_action')
+        ),
+        false,
+        true
+    );
+    $xtpl->table_tr();
+
+    $xtpl->table_td(_('State') . ':');
+    $xtpl->table_td(
+        notifications_select_html(
+            'delivery_state',
+            notifications_delivery_state_choices($state_group, true),
+            get_val('delivery_state')
+        ),
+        false,
+        true
+    );
+    $xtpl->table_tr();
+    $xtpl->form_out(_('Show'));
+
+    $xtpl->table_add_category(_('Delivery'));
+    $xtpl->table_add_category(_('Event'));
+    $xtpl->table_add_category(_('User'));
+    $xtpl->table_add_category(_('VPS'));
+    $xtpl->table_add_category(_('Receiver'));
+    $xtpl->table_add_category(_('Receiver action'));
+    $xtpl->table_add_category(_('Target'));
+    $xtpl->table_add_category(_('State'));
+    $xtpl->table_add_category(_('Attempts'));
+    $xtpl->table_add_category(_('Released'));
+    $xtpl->table_add_category(_('Last attempt'));
+    $xtpl->table_add_category(_('Next retry'));
+    $xtpl->table_add_category(_('Result'));
+    $xtpl->table_add_category('');
+
+    foreach ($deliveries as $delivery) {
+        $event_label = '#' . $delivery->event_id;
+        $event_type = notifications_prop($delivery, 'event_type');
+        if ($event_type) {
+            $event_label .= ' ' . $event_type;
+        }
+        $event_subject = notifications_prop($delivery, 'event_subject');
+        $target = notifications_prop($delivery, 'target_label')
+            ?: notifications_prop($delivery, 'target_value')
+            ?: notifications_prop($delivery, 'target_kind');
+
+        $xtpl->table_td(notifications_delivery_link(
+            $delivery->event_id,
+            $delivery->id,
+            '#' . $delivery->id . ' ' . $delivery->action
+        ));
+        $xtpl->table_td(
+            notifications_event_link($delivery->event_id, $event_label)
+            . ($event_subject ? '<br>' . h(notifications_short_value($event_subject, 120)) : ''),
+            false,
+            true
+        );
+        $xtpl->table_td(notifications_delivery_user_link($delivery), false, true);
+        $xtpl->table_td(notifications_delivery_vps_link($delivery), false, true);
+        $xtpl->table_td(notifications_delivery_receiver_link($delivery, notifications_prop($delivery, 'event_user_id')));
+        $xtpl->table_td(notifications_delivery_receiver_action_link($delivery, notifications_prop($delivery, 'event_user_id')));
+        $xtpl->table_td($target ? h(notifications_short_value($target, 120)) : '-');
+        $xtpl->table_td(h(notifications_delivery_state_label($delivery)));
+        $xtpl->table_td(notifications_prop($delivery, 'attempt_count', 0), false, true);
+        $xtpl->table_td(notifications_time_or_dash(notifications_prop($delivery, 'released_at')));
+        $xtpl->table_td(notifications_time_or_dash(notifications_prop($delivery, 'last_attempt_at')));
+        $xtpl->table_td(notifications_time_or_dash(notifications_prop($delivery, 'next_attempt_at')));
+        $xtpl->table_td(h(notifications_short_value(notifications_delivery_result_label($delivery), 200)));
+        $xtpl->table_td('<a href="' . notifications_delivery_url($delivery->event_id, $delivery->id) . '"><img src="template/icons/vps_edit.png" title="' . _('Details') . '"></a>');
+        $xtpl->table_tr();
+    }
+
+    if ($deliveries->count() == 0) {
+        $xtpl->table_td(_('No deliveries found.'), false, false, 14);
+        $xtpl->table_tr();
+    }
+
+    $xtpl->table_pagination($pagination);
+    $xtpl->table_out();
+
+    notifications_sidebar($action);
 }
 
 function notifications_events()

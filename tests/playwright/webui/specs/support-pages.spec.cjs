@@ -220,6 +220,19 @@ test.describe('support and status browser coverage', () => {
       'Test event',
     ]);
 
+    await page.goto('/?page=notifications&action=delivery_queue', {
+      waitUntil: 'domcontentloaded',
+    });
+    await expect(page.locator('#perex')).toContainText('Access forbidden');
+    await expect(page.locator('#perex')).toContainText(
+      'Only administrators can view notification delivery queues.',
+    );
+
+    await page.goto('/?page=notifications&action=delivery_log', {
+      waitUntil: 'domcontentloaded',
+    });
+    await expect(page.locator('#perex')).toContainText('Access forbidden');
+
     await page.goto('/?page=notifications&action=receivers', {
       waitUntil: 'domcontentloaded',
     });
@@ -521,6 +534,40 @@ test.describe('support and status browser coverage', () => {
     await expectNotification(page, 'Receiver deleted');
 
     await logout(page, fixtures.user.username);
+  });
+
+  test('admin notification delivery queues are wired', async ({ page }) => {
+    await login(page, fixtures.admin);
+
+    await page.goto('/?page=notifications&action=events', {
+      waitUntil: 'domcontentloaded',
+    });
+    await expect(heading(page)).toContainText('Event log');
+    await expect(notificationSidebarLinks(page)).toHaveText([
+      'Event log',
+      'Delivery queue',
+      'Delivery log',
+      'Routes',
+      'Receivers',
+      'Event types',
+      'Test event',
+    ]);
+
+    await page.goto('/?page=notifications&action=delivery_queue', {
+      waitUntil: 'domcontentloaded',
+    });
+    await expect(heading(page)).toContainText('Delivery queue');
+    await expect(formByName(page, 'notification-deliveries')).toBeVisible();
+    await expect(content(page)).toContainText('Next retry');
+
+    await page.goto('/?page=notifications&action=delivery_log', {
+      waitUntil: 'domcontentloaded',
+    });
+    await expect(heading(page)).toContainText('Delivery log');
+    await expect(formByName(page, 'notification-deliveries')).toBeVisible();
+    await expect(content(page)).toContainText('Result');
+
+    await logout(page, fixtures.admin.username);
   });
 
   test('user OOM reports and notification route redirect are wired', async ({ page }) => {
