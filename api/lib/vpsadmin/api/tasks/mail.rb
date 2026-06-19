@@ -11,7 +11,10 @@ module VpsAdmin::API::Tasks
     #                  defaults to 'en'
     def daily_report
       lang = ::Language.find_by!(code: ENV['VPSADMIN_LANG'] || 'en')
-      TransactionChains::Mail::DailyReport.fire(lang)
+      VpsAdmin::API::NotificationEvents.run_chain(
+        TransactionChains::Mail::DailyReport,
+        args: [lang]
+      )
     end
 
     # Process incoming mail

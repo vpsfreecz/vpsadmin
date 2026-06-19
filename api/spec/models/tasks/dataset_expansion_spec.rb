@@ -54,7 +54,7 @@ RSpec.describe VpsAdmin::API::Tasks::DatasetExpansion do
 
   describe '#process_events' do
     before do
-      allow(TransactionChains::Mail::VpsDatasetExpanded).to receive(:fire)
+      allow(VpsAdmin::API::NotificationEvents).to receive(:run_chain)
     end
 
     it 'does nothing when ProcessEvent returns nil' do
@@ -66,7 +66,7 @@ RSpec.describe VpsAdmin::API::Tasks::DatasetExpansion do
 
       task.process_events
 
-      expect(TransactionChains::Mail::VpsDatasetExpanded).not_to have_received(:fire)
+      expect(VpsAdmin::API::NotificationEvents).not_to have_received(:run_chain)
     end
 
     it 'does not notify when notifications are disabled' do
@@ -78,7 +78,7 @@ RSpec.describe VpsAdmin::API::Tasks::DatasetExpansion do
 
       task.process_events
 
-      expect(TransactionChains::Mail::VpsDatasetExpanded).not_to have_received(:fire)
+      expect(VpsAdmin::API::NotificationEvents).not_to have_received(:run_chain)
     end
 
     it 'notifies each returned expansion only once' do
@@ -90,8 +90,9 @@ RSpec.describe VpsAdmin::API::Tasks::DatasetExpansion do
 
       task.process_events
 
-      expect(TransactionChains::Mail::VpsDatasetExpanded).to have_received(:fire).once.with(
-        fixture.fetch(:expansion)
+      expect(VpsAdmin::API::NotificationEvents).to have_received(:run_chain).once.with(
+        TransactionChains::Mail::VpsDatasetExpanded,
+        args: [fixture.fetch(:expansion)]
       )
     end
 
@@ -105,7 +106,7 @@ RSpec.describe VpsAdmin::API::Tasks::DatasetExpansion do
 
       task.process_events
 
-      expect(TransactionChains::Mail::VpsDatasetExpanded).not_to have_received(:fire)
+      expect(VpsAdmin::API::NotificationEvents).not_to have_received(:run_chain)
     end
 
     it 'rescues locked resources and continues with later events' do
@@ -120,8 +121,9 @@ RSpec.describe VpsAdmin::API::Tasks::DatasetExpansion do
       end
 
       expect { task.process_events }.to output(/Dataset id=#{locked_event.dataset_id} .* locked/).to_stderr
-      expect(TransactionChains::Mail::VpsDatasetExpanded).to have_received(:fire).once.with(
-        ok_fixture.fetch(:expansion)
+      expect(VpsAdmin::API::NotificationEvents).to have_received(:run_chain).once.with(
+        TransactionChains::Mail::VpsDatasetExpanded,
+        args: [ok_fixture.fetch(:expansion)]
       )
     end
   end

@@ -61,7 +61,7 @@ module VpsAdmin::Supervisor
           detected_at: time
         )
 
-        TransactionChains::IncidentReport::New.fire(incident)
+        TransactionChains::IncidentReport::Utils.fire_new(incident)
       end
     end
   end

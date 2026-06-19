@@ -131,12 +131,12 @@ class Outage < ApplicationRecord
   def create_outage_update!(attrs = {}, translations = {}, opts = {})
     attrs[:state] = ::Outage.states[attrs[:state]] if attrs[:state]
 
-    VpsAdmin::API::Plugins::OutageReports::TransactionChains::Update.fire(
-      self,
-      attrs,
-      translations,
-      opts
+    ret = VpsAdmin::API::NotificationEvents.run_chain(
+      VpsAdmin::API::Plugins::OutageReports::TransactionChains::Update,
+      args: [self, attrs, translations, opts]
     )
+
+    [nil, ret]
   end
 
   def do_auto_resolve
@@ -144,12 +144,7 @@ class Outage < ApplicationRecord
 
     attrs[:finished_at] = begins_at + (duration * 60) if finished_at.nil?
 
-    VpsAdmin::API::Plugins::OutageReports::TransactionChains::Update.fire(
-      self,
-      attrs,
-      {},
-      { send_mail: false }
-    )
+    create_outage_update!(attrs, {}, { send_mail: false })
   end
 
   def load_translations

@@ -144,11 +144,11 @@ RSpec.describe VpsAdmin::API::Tasks::Authentication do
     it 'prints grouped counts in dry-run mode without firing the chain' do
       create_failed_login_row!
       create_failed_login_row!
-      allow(TransactionChains::User::ReportFailedLogins).to receive(:fire2)
+      allow(VpsAdmin::API::NotificationEvents).to receive(:run_chain)
 
       expect { task.report_failed_logins }.to output(/User #{user.id}: 2 failed attempts/).to_stdout
 
-      expect(TransactionChains::User::ReportFailedLogins).not_to have_received(:fire2)
+      expect(VpsAdmin::API::NotificationEvents).not_to have_received(:run_chain)
     end
 
     it 'groups unreported attempts by user and attempt attributes in execute mode' do
@@ -162,13 +162,16 @@ RSpec.describe VpsAdmin::API::Tasks::Authentication do
       ]
       create_failed_login_row!(reported_at: 1.hour.ago)
       captured = nil
-      allow(TransactionChains::User::ReportFailedLogins).to receive(:fire2) do |args:|
+      allow(VpsAdmin::API::NotificationEvents).to receive(:run_chain) do |_klass, args:|
         captured = args.fetch(0)
       end
 
       with_env('EXECUTE' => 'yes') { task.report_failed_logins }
 
-      expect(TransactionChains::User::ReportFailedLogins).to have_received(:fire2).once
+      expect(VpsAdmin::API::NotificationEvents).to have_received(:run_chain).once.with(
+        TransactionChains::User::ReportFailedLogins,
+        args: [captured]
+      )
       expect(captured.keys).to contain_exactly(user, other_user)
       expect(captured.fetch(user).map { |grp| grp.map(&:id) }).to contain_exactly(
         grouped[0..1].map(&:id),
