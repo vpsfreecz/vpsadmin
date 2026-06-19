@@ -256,7 +256,7 @@ module TransactionChains
       db_changes.update(vps.transfer_resources!(vps.user))
 
       ## IP addresses
-      ip_changes, all_ips = transfer_ip_addresses(vps)
+      ip_changes, ip_resource_uses, all_ips = transfer_ip_addresses(vps)
       db_changes.update(ip_changes)
 
       # Chown user namespace mapping
@@ -265,6 +265,14 @@ module TransactionChains
                ]) do |t|
         db_changes.each do |obj, changes|
           t.edit(obj, changes) unless changes.empty?
+        end
+
+        ip_resource_uses.each do |use|
+          if use.updating?
+            t.edit(use, use.attr_changes)
+          else
+            t.create(use)
+          end
         end
 
         t.just_create(vps.log(:user, {
@@ -387,6 +395,7 @@ module TransactionChains
     # new one.
     def transfer_ip_addresses(vps)
       ret = {}
+      resource_uses = []
       all_ips = []
       src_env = ::User.find(vps.user_id_was).environment_user_configs.find_by!(
         environment: vps.node.location.environment
@@ -408,21 +417,21 @@ module TransactionChains
           r,
           src_env.send(r) - cnt,
           user: src_env.user,
-          confirmed: ::ClusterResourceUse.confirmed(:confirmed)
+          chain: self
         )
 
         dst_use = dst_env.reallocate_resource!(
           r,
           dst_env.send(r) + cnt,
           user: dst_env.user,
-          confirmed: ::ClusterResourceUse.confirmed(:confirmed)
+          chain: self
         )
 
-        ret[src_use] = { value: src_use.value }
-        ret[dst_use] = { value: dst_use.value }
+        resource_uses << src_use
+        resource_uses << dst_use
       end
 
-      [ret, all_ips]
+      [ret, resource_uses, all_ips]
     end
 
     def standalone_ips(vps, r)

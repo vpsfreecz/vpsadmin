@@ -49,6 +49,31 @@ RSpec.describe TransactionChains::Vps::Update do
     [dataset, vps]
   end
 
+  def environment_config_for(user, environment = SpecSeed.environment)
+    user.environment_user_configs.find_by!(environment: environment)
+  end
+
+  def user_cluster_resource_for(user, resource, environment = SpecSeed.environment)
+    UserClusterResource.joins(:cluster_resource).find_by!(
+      user: user,
+      environment: environment,
+      cluster_resources: { name: resource.to_s }
+    )
+  end
+
+  def environment_resource_use_for(user, resource, environment = SpecSeed.environment)
+    ClusterResourceUse.joins(user_cluster_resource: :cluster_resource).find_by(
+      user_cluster_resources: {
+        user_id: user.id,
+        environment_id: environment.id
+      },
+      cluster_resources: { name: resource.to_s },
+      class_name: 'EnvironmentUserConfig',
+      table_name: 'environment_user_configs',
+      row_id: environment_config_for(user, environment).id
+    )
+  end
+
   it 'queues hostname and DNS resolver updates' do
     _dataset, vps = create_update_vps_fixture
     original_hostname = vps.hostname
@@ -137,6 +162,53 @@ RSpec.describe TransactionChains::Vps::Update do
       'original_userns_map' => original_map_id.to_s,
       'new_userns_map' => other_map.id.to_s
     )
+  end
+
+  it 'creates missing chown destination IP accounting as a confirmable row' do
+    _dataset, vps = create_update_vps_fixture
+    other_user = SpecSeed.other_user
+    ensure_numeric_resources!(user: other_user, environment: SpecSeed.environment)
+    create_user_namespace_map!(user: other_user)
+
+    ip = create_ip_address!(
+      network: SpecSeed.network_v4,
+      location: SpecSeed.location,
+      network_interface: vps.network_interfaces.first
+    )
+    environment_config_for(user).reallocate_resource!(
+      :ipv4,
+      ip.size,
+      user: user,
+      save: true,
+      confirmed: ClusterResourceUse.confirmed(:confirmed)
+    )
+
+    expect(environment_resource_use_for(other_user, :ipv4)).to be_nil
+
+    chain, = described_class.fire(vps, { user_id: other_user.id })
+
+    source_use = environment_resource_use_for(user, :ipv4)
+    destination_use = environment_resource_use_for(other_user, :ipv4)
+
+    expect(source_use.reload.value).to eq(ip.size)
+    expect(destination_use.value).to eq(ip.size)
+    expect(destination_use.confirmed).to eq(:confirm_create)
+    expect(user_cluster_resource_for(other_user, :ipv4).used).to eq(0)
+
+    source_confirmation = confirmations_for(chain).find do |row|
+      row.class_name == 'ClusterResourceUse' &&
+        row.row_pks == { 'id' => source_use.id }
+    end
+    destination_confirmation = confirmations_for(chain).find do |row|
+      row.class_name == 'ClusterResourceUse' &&
+        row.row_pks == { 'id' => destination_use.id }
+    end
+
+    expect(source_confirmation).to have_attributes(
+      confirm_type: 'edit_after_type',
+      attr_changes: include('value' => 0)
+    )
+    expect(destination_confirmation).to have_attributes(confirm_type: 'create_type')
   end
 
   it 'delegates enable_network changes and map mode changes to the expected transactions' do
