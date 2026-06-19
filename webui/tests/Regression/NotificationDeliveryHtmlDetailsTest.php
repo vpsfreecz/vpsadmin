@@ -36,10 +36,29 @@ final class NotificationDeliveryHtmlDetailsTest extends TestCase
         $css = file_get_contents(dirname(__DIR__, 2) . '/public/template/css/main.css');
 
         self::assertStringContainsString('.notification-delivery-html-preview', $css);
-        self::assertStringContainsString('width: 790px;', $css);
+        self::assertStringContainsString('#notification-delivery-html', $css);
+        self::assertStringContainsString('width: 100%;', $css);
+        self::assertStringContainsString('max-width: none;', $css);
         self::assertStringContainsString('min-height: 650px;', $css);
         self::assertStringContainsString('height: 70vh;', $css);
         self::assertStringContainsString('max-height: 900px;', $css);
+        self::assertStringNotContainsString('width: 790px;', $css);
+    }
+
+    public function testDeliveryQueueAndLogTableOmitsWideSummaryColumns(): void
+    {
+        $source = file_get_contents(dirname(__DIR__, 2) . '/forms/notifications.forms.php');
+        $start = strpos($source, 'function notifications_deliveries_admin(');
+        $end = strpos($source, 'function notifications_events(', $start);
+
+        self::assertNotFalse($start);
+        self::assertNotFalse($end);
+
+        $functionSource = substr($source, $start, $end - $start);
+
+        self::assertStringNotContainsString('$xtpl->table_add_category(_(\'Target\'))', $functionSource);
+        self::assertStringNotContainsString('$xtpl->table_add_category(_(\'Result\'))', $functionSource);
+        self::assertStringContainsString('false, false, 12', $functionSource);
     }
 
     private function loadNotificationsForms(): void

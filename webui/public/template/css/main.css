@@ -261,8 +261,18 @@ form[name="userns-map-entries"] input[type="text"] {text-align: right;}
 
 .notification-delivery-html-preview,
 .notification-delivery-html-source {
-  width: 790px;
-  max-width: 100%;
+  width: 100%;
+  max-width: none;
+}
+
+#notification-delivery-html {
+  width: 100%;
+  table-layout: fixed;
+}
+
+#notification-delivery-html td {
+  max-width: none;
+  overflow-x: visible;
 }
 
 .notification-delivery-html-preview iframe {

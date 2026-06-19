@@ -1747,13 +1747,6 @@ function notifications_html_source_details($html)
         . '</details>';
 }
 
-function notifications_delivery_wide_table_td($content)
-{
-    global $xtpl;
-
-    $xtpl->table_td($content, 'transparent;max-width:none;width:100%;', false, 2, 1, 'top');
-}
-
 function notifications_receivers($user_id = null)
 {
     global $xtpl, $api;
@@ -2221,13 +2214,11 @@ function notifications_deliveries_admin($state_group)
     $xtpl->table_add_category(_('VPS'));
     $xtpl->table_add_category(_('Receiver'));
     $xtpl->table_add_category(_('Receiver action'));
-    $xtpl->table_add_category(_('Target'));
     $xtpl->table_add_category(_('State'));
     $xtpl->table_add_category(_('Attempts'));
     $xtpl->table_add_category(_('Released'));
     $xtpl->table_add_category(_('Last attempt'));
     $xtpl->table_add_category(_('Next retry'));
-    $xtpl->table_add_category(_('Result'));
     $xtpl->table_add_category('');
 
     foreach ($deliveries as $delivery) {
@@ -2237,9 +2228,6 @@ function notifications_deliveries_admin($state_group)
             $event_label .= ' ' . $event_type;
         }
         $event_subject = notifications_prop($delivery, 'event_subject');
-        $target = notifications_prop($delivery, 'target_label')
-            ?: notifications_prop($delivery, 'target_value')
-            ?: notifications_prop($delivery, 'target_kind');
 
         $xtpl->table_td(notifications_delivery_link(
             $delivery->event_id,
@@ -2256,19 +2244,17 @@ function notifications_deliveries_admin($state_group)
         $xtpl->table_td(notifications_delivery_vps_link($delivery), false, true);
         $xtpl->table_td(notifications_delivery_receiver_link($delivery, notifications_prop($delivery, 'event_user_id')));
         $xtpl->table_td(notifications_delivery_receiver_action_link($delivery, notifications_prop($delivery, 'event_user_id')));
-        $xtpl->table_td($target ? h(notifications_short_value($target, 120)) : '-');
         $xtpl->table_td(h(notifications_delivery_state_label($delivery)));
         $xtpl->table_td(notifications_prop($delivery, 'attempt_count', 0), false, true);
         $xtpl->table_td(notifications_time_or_dash(notifications_prop($delivery, 'released_at')));
         $xtpl->table_td(notifications_time_or_dash(notifications_prop($delivery, 'last_attempt_at')));
         $xtpl->table_td(notifications_time_or_dash(notifications_prop($delivery, 'next_attempt_at')));
-        $xtpl->table_td(h(notifications_short_value(notifications_delivery_result_label($delivery), 200)));
         $xtpl->table_td('<a href="' . notifications_delivery_url($delivery->event_id, $delivery->id) . '"><img src="template/icons/vps_edit.png" title="' . _('Details') . '"></a>');
         $xtpl->table_tr();
     }
 
     if ($deliveries->count() == 0) {
-        $xtpl->table_td(_('No deliveries found.'), false, false, 14);
+        $xtpl->table_td(_('No deliveries found.'), false, false, 12);
         $xtpl->table_tr();
     }
 
@@ -2681,24 +2667,21 @@ function notifications_delivery_email_show($delivery)
     }
 
     $html = notifications_prop($delivery, 'mail_text_html');
-    if ($html) {
-        notifications_delivery_wide_table_td('<strong>' . h(_('HTML preview')) . '</strong>');
-        $xtpl->table_tr();
-
-        notifications_delivery_wide_table_td(notifications_html_preview($html));
-        $xtpl->table_tr();
-
-        notifications_delivery_wide_table_td(notifications_html_source_details($html));
-        $xtpl->table_tr();
-        $shown = true;
-    }
-
-    if (!$shown) {
+    if (!$shown && !$html) {
         $xtpl->table_td(_('No e-mail snapshot recorded for this delivery.'), false, false, 2);
         $xtpl->table_tr();
     }
 
     $xtpl->table_out();
+
+    if ($html) {
+        $xtpl->table_title(_('HTML preview'));
+        $xtpl->table_td(notifications_html_preview($html), false, false, 1, 1, 'top');
+        $xtpl->table_tr();
+        $xtpl->table_td(notifications_html_source_details($html), false, false, 1, 1, 'top');
+        $xtpl->table_tr();
+        $xtpl->table_out('notification-delivery-html');
+    }
 }
 
 function notifications_delivery_webhook_show($delivery)

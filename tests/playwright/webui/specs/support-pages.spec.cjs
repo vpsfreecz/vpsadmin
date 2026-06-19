@@ -53,6 +53,14 @@ function notificationSidebarLinks(page) {
     .locator('xpath=following-sibling::ul[1]/li/a');
 }
 
+function notificationDeliveryTable(page) {
+  return page
+    .locator('table.table-style01')
+    .filter({ has: page.locator('th', { hasText: 'Delivery' }) })
+    .filter({ has: page.locator('th', { hasText: 'Receiver action' }) })
+    .last();
+}
+
 async function routeDomIds(page) {
   return page
     .locator('#notification-routes-table tr[id^="route_"]')
@@ -558,14 +566,40 @@ test.describe('support and status browser coverage', () => {
     });
     await expect(heading(page)).toContainText('Delivery queue');
     await expect(formByName(page, 'notification-deliveries')).toBeVisible();
-    await expect(content(page)).toContainText('Next retry');
+    await expect(notificationDeliveryTable(page).locator('th')).toHaveText([
+      'Delivery',
+      'Event',
+      'User',
+      'VPS',
+      'Receiver',
+      'Receiver action',
+      'State',
+      'Attempts',
+      'Released',
+      'Last attempt',
+      'Next retry',
+      '',
+    ]);
 
     await page.goto('/?page=notifications&action=delivery_log', {
       waitUntil: 'domcontentloaded',
     });
     await expect(heading(page)).toContainText('Delivery log');
     await expect(formByName(page, 'notification-deliveries')).toBeVisible();
-    await expect(content(page)).toContainText('Result');
+    await expect(notificationDeliveryTable(page).locator('th')).toHaveText([
+      'Delivery',
+      'Event',
+      'User',
+      'VPS',
+      'Receiver',
+      'Receiver action',
+      'State',
+      'Attempts',
+      'Released',
+      'Last attempt',
+      'Next retry',
+      '',
+    ]);
 
     await logout(page, fixtures.admin.username);
   });
