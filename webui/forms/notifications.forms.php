@@ -209,13 +209,19 @@ function notifications_event_type_fields($event_type, $fallback_fields)
     return $fallback_fields;
 }
 
-function notifications_event_type_labels()
+function notifications_event_type_labels($empty = true)
 {
-    global $api;
+    $ret = [];
 
-    $input = $api->event_route->create->getParameters('input');
+    if ($empty) {
+        $ret[''] = '---';
+    }
 
-    return notifications_param_choices($input->event_type, true);
+    foreach (notifications_event_types_cached() as $type) {
+        $ret[$type->name] = isset($type->label) && $type->label ? $type->label : $type->name;
+    }
+
+    return $ret;
 }
 
 function notifications_matcher_operator_descriptions($operators)
@@ -1136,8 +1142,7 @@ function notifications_routes_list($user_id = null)
     $user_id = notifications_target_user_id($user_id);
     $user = $api->user->show($user_id);
     $routes = notifications_api_list_to_array($api->event_route->list(['user' => $user_id]));
-    $input = $api->event_route->create->getParameters('input');
-    $event_type_labels = notifications_param_choices($input->event_type);
+    $event_type_labels = notifications_event_type_labels(false);
     $receiver_labels = notifications_receiver_labels($user_id);
     $route_labels = notifications_route_labels($routes);
     $sibling_positions = notifications_sibling_positions($routes);
@@ -1231,7 +1236,7 @@ function notifications_route_new($user_id = null, $parent_id = null)
     $user_id = notifications_target_user_id($user_id);
     $user = $api->user->show($user_id);
     $input = $api->event_route->create->getParameters('input');
-    $event_types = notifications_param_choices($input->event_type, true);
+    $event_types = notifications_event_type_labels(true);
     $receiver_options = notifications_receiver_options($user_id);
     $route_options = notifications_route_options($user_id);
 
@@ -1266,8 +1271,7 @@ function notifications_route_subroutes($route)
 
     $routes = notifications_api_list_to_array($api->event_route->list(['user' => $route->user_id]));
     $children = notifications_ordered_routes($routes, (int) $route->id);
-    $input = $api->event_route->create->getParameters('input');
-    $event_type_labels = notifications_param_choices($input->event_type);
+    $event_type_labels = notifications_event_type_labels(false);
     $receiver_labels = notifications_receiver_labels($route->user_id);
     $route_labels = notifications_route_labels($routes);
 
@@ -1312,7 +1316,7 @@ function notifications_route_edit($route_id)
     $route = $api->event_route->show($route_id, ['meta' => ['includes' => 'user']]);
     $input = $api->event_route->update->getParameters('input');
     $matcher_input = $route->matcher->create->getParameters('input');
-    $event_types = notifications_param_choices($input->event_type, true);
+    $event_types = notifications_event_type_labels(true);
     $operators = notifications_param_choices($matcher_input->operator);
     $receiver_options = notifications_receiver_options($route->user_id);
     $route_options = notifications_route_options($route->user_id, true, $route->id);
@@ -2208,7 +2212,17 @@ function notifications_deliveries_admin($state_group)
     $xtpl->form_add_input(_('Route ID') . ':', 'text', '20', 'event_route_id', get_val('event_route_id'));
     $xtpl->form_add_input(_('Receiver ID') . ':', 'text', '20', 'notification_receiver_id', get_val('notification_receiver_id'));
     $xtpl->form_add_input(_('Action ID') . ':', 'text', '20', 'notification_receiver_action_id', get_val('notification_receiver_action_id'));
-    api_param_to_form('event_type', $input->event_type, get_val('event_type'), null, true);
+    $xtpl->table_td(_('Event type') . ':');
+    $xtpl->table_td(
+        notifications_select_html(
+            'event_type',
+            notifications_event_type_labels(true),
+            get_val('event_type')
+        ),
+        false,
+        true
+    );
+    $xtpl->table_tr();
 
     $action_label = isset($input->action->label) && $input->action->label ? $input->action->label : _('Action');
     $xtpl->table_td($action_label . ':');
@@ -2357,7 +2371,17 @@ function notifications_events()
         $xtpl->form_add_input(_('User ID') . ':', 'text', '20', 'user', get_val('user'));
     }
 
-    api_param_to_form('event_type', $input->event_type, get_val('event_type'), null, true);
+    $xtpl->table_td(_('Event type') . ':');
+    $xtpl->table_td(
+        notifications_select_html(
+            'event_type',
+            notifications_event_type_labels(true),
+            get_val('event_type')
+        ),
+        false,
+        true
+    );
+    $xtpl->table_tr();
     api_param_to_form('category', $input->category, get_val('category'));
     api_param_to_form('severity', $input->severity, get_val('severity'), null, true);
     api_param_to_form('routing_state', $input->routing_state, get_val('routing_state'), null, true);
@@ -2876,7 +2900,12 @@ function notifications_test_event($user_id = null)
         $xtpl->form_add_input(_('User ID') . ':', 'text', '20', 'user', $user_id);
     }
 
-    api_param_to_form('event_type', $input->event_type, post_val('event_type', 'user.test_notification'), null, true);
+    $xtpl->form_add_select(
+        _('Event type') . ':',
+        'event_type',
+        notifications_event_type_labels(true),
+        post_val('event_type', 'user.test_notification')
+    );
     api_param_to_form('subject', $input->subject, post_val('subject', _('Test notification')));
     api_param_to_form('summary', $input->summary, post_val('summary', _('This event was created from notification settings.')));
     $xtpl->form_add_textarea(_('Parameters') . ':', 70, 8, 'parameters_json', post_val('parameters_json', "{\n  \"note\": \"testing notification routing\"\n}"));

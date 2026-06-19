@@ -1,8 +1,4 @@
 class EventDelivery < ApplicationRecord
-  ACTIONS = {
-    email: 0,
-    webhook: 1
-  }.freeze
   DIRECT_REQUEST_EVENT_TYPES = %w[
     request.created
     request.updated
@@ -19,11 +15,6 @@ class EventDelivery < ApplicationRecord
   DIRECT_CUSTOM_EVENT_TYPES = %w[
     incident_report.reply
   ].freeze
-
-  ACTION_LABELS = {
-    'email' => 'E-mail',
-    'webhook' => 'Webhook'
-  }.freeze
 
   TARGET_KIND_LABELS = {
     'default_recipient' => 'default recipient',
@@ -51,26 +42,28 @@ class EventDelivery < ApplicationRecord
              optional: true
   has_many :event_delivery_attempts, dependent: :delete_all
 
-  enum :action, ACTIONS, suffix: true
   enum :target_kind, %i[default_recipient custom], suffix: true
   enum :state, %i[prepared released sending sent skipped failed canceled], suffix: true
 
   serialize :response_headers, coder: JSON
 
   validates :action, :target_kind, :state, presence: true
+  validates :action, inclusion: { in: ->(_) { VpsAdmin::API::Notifications::Actions.names } }
   validates :target_label, :provider_message_id, length: { maximum: 255 }, allow_nil: true
   validates :template_name, length: { maximum: 100 }, allow_nil: true
   validates :response_status, numericality: { only_integer: true }, allow_nil: true
   validates :attempt_count, numericality: { only_integer: true, greater_than_or_equal_to: 0 }
 
   scope :due, -> { where('next_attempt_at IS NULL OR next_attempt_at <= ?', Time.now) }
+  scope :email_action, -> { where(action: 'email') }
+  scope :webhook_action, -> { where(action: 'webhook') }
 
   def self.action_labels
-    ACTION_LABELS
+    VpsAdmin::API::Notifications::Actions.labels
   end
 
   def self.target_kind_labels
-    TARGET_KIND_LABELS
+    VpsAdmin::API::Notifications::Actions.target_kind_labels
   end
 
   def self.state_labels
@@ -170,16 +163,10 @@ class EventDelivery < ApplicationRecord
   def receiver_action_available?
     action = notification_receiver_action
     return true if action.nil? && direct_email_delivery?
-    return false unless action&.enabled?
 
-    case self.action
-    when 'email'
-      action.email_action?
-    when 'webhook'
-      action.webhook_action? && action.target_value.present?
-    else
-      false
-    end
+    action_definition.receiver_action_available?(action)
+  rescue KeyError
+    false
   end
 
   def due_for_delivery?
@@ -191,6 +178,14 @@ class EventDelivery < ApplicationRecord
     direct_request_email_delivery? ||
       direct_system_template_email_delivery? ||
       direct_custom_email_delivery?
+  end
+
+  def email_action?
+    action == 'email'
+  end
+
+  def webhook_action?
+    action == 'webhook'
   end
 
   def direct_request_email_delivery?
@@ -241,5 +236,11 @@ class EventDelivery < ApplicationRecord
                  .reject(&:blank?)
 
     recipients.present? && target_value == recipients.join(',')
+  end
+
+  protected
+
+  def action_definition
+    VpsAdmin::API::Notifications::Actions.fetch(action)
   end
 end

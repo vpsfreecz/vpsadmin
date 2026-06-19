@@ -1,5 +1,4 @@
 class EventDeliveryAttempt < ApplicationRecord
-  ACTIONS = EventDelivery::ACTIONS
   STATE_LABELS = {
     'running' => 'running',
     'succeeded' => 'succeeded',
@@ -8,12 +7,12 @@ class EventDeliveryAttempt < ApplicationRecord
 
   belongs_to :event_delivery
 
-  enum :action, ACTIONS, suffix: true
   enum :state, %i[running succeeded failed], suffix: true
 
   serialize :response_headers, coder: JSON
 
   validates :action, :state, :attempt_number, presence: true
+  validates :action, inclusion: { in: ->(_) { VpsAdmin::API::Notifications::Actions.names } }
   validates :attempt_number, numericality: { only_integer: true, greater_than: 0 }
   validates :provider_message_id, length: { maximum: 255 }, allow_nil: true
   validates :response_status, numericality: { only_integer: true }, allow_nil: true

@@ -388,7 +388,7 @@ class AddEvents < ActiveRecord::Migration[8.1]
     create_table :notification_receiver_actions do |t|
       t.references  :notification_receiver,    null: false,
                                                index: { name: 'idx_receiver_actions_on_receiver' }
-      t.integer     :action,                   null: false
+      t.string      :action,                   null: false, limit: 50
       t.string      :label,                    null: true, limit: 255
       t.integer     :target_kind,              null: false, default: 0
       t.text        :target_value,             null: true
@@ -474,7 +474,7 @@ class AddEvents < ActiveRecord::Migration[8.1]
       t.references  :notification_receiver,    null: true
       t.references  :notification_receiver_action, null: true,
                                                    index: { name: 'idx_event_deliveries_on_receiver_action' }
-      t.integer     :action,                   null: false
+      t.string      :action,                   null: false, limit: 50
       t.integer     :target_kind,              null: false
       t.text        :target_value,             null: true
       t.string      :target_label,             null: true, limit: 255
@@ -506,7 +506,7 @@ class AddEvents < ActiveRecord::Migration[8.1]
 
     create_table :event_delivery_attempts do |t|
       t.references  :event_delivery,           null: false
-      t.integer     :action,                   null: false
+      t.string      :action,                   null: false, limit: 50
       t.integer     :state,                    null: false
       t.integer     :attempt_number,           null: false
       t.datetime    :started_at,               null: true
@@ -569,7 +569,7 @@ class AddEvents < ActiveRecord::Migration[8.1]
            enabled, created_at, updated_at)
         SELECT
           notification_receivers.id,
-          0,
+          'email',
           'Default e-mail',
           0,
           NULL,
@@ -876,7 +876,7 @@ class AddEvents < ActiveRecord::Migration[8.1]
     insert_row(
       'notification_receiver_actions',
       notification_receiver_id: receiver_id,
-      action: 0,
+      action: 'email',
       label: limit_label(label),
       target_kind: 1,
       target_value:,

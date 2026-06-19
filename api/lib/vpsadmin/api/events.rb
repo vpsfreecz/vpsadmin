@@ -56,8 +56,276 @@ module VpsAdmin::API
       :parameters,
       :email_template,
       :default_routed,
-      :severity_description
+      :severity_description,
+      :definition
     )
+
+    Argument = Struct.new(:name, :type, :optional, :default, :has_default) do
+      def validate!(event_name, value, provided:)
+        if !provided && !has_default && !optional
+          raise ArgumentError, "#{event_name} argument #{name} is required"
+        end
+        return if value.nil? && optional
+        return if type.nil?
+        return if valid_type?(value)
+
+        expected = type.is_a?(Array) ? type.join(' or ') : type.to_s
+        actual = value.nil? ? 'nil' : value.class.to_s
+        raise ArgumentError, "#{event_name} argument #{name} must be #{expected}, got #{actual}"
+      end
+
+      def valid_type?(value)
+        if type.is_a?(Array)
+          type.any? { |candidate| value.is_a?(resolve_type(candidate)) }
+        else
+          value.is_a?(resolve_type(type))
+        end
+      end
+
+      def resolve_type(value)
+        return value unless value.is_a?(String) || value.is_a?(Symbol)
+
+        value.to_s.safe_constantize || Object.const_get(value.to_s)
+      end
+    end
+
+    class DeliveryDefinition
+      attr_reader :action
+
+      def initialize(action)
+        @action = action.to_s
+      end
+
+      def template(value = nil, &block)
+        @template = block || value
+      end
+
+      def params(value = nil, &block)
+        @params = block || value
+      end
+
+      def vars(value = nil, &block)
+        @vars = block || value
+      end
+
+      def options(value = nil, &block)
+        @options = block || value
+      end
+
+      def evaluate_template(context)
+        evaluate(context, @template)
+      end
+
+      def evaluate_params(context)
+        evaluate(context, @params)
+      end
+
+      def evaluate_vars(context)
+        evaluate(context, @vars)
+      end
+
+      def evaluate_options(context)
+        evaluate(context, @options) || {}
+      end
+
+      protected
+
+      def evaluate(context, value)
+        value.respond_to?(:call) ? context.instance_exec(&value) : value
+      end
+    end
+
+    class EventDefinition
+      attr_reader :name, :owner, :label, :category_name, :default_severity,
+                  :default_routed, :severity_description, :email_template_name,
+                  :arguments, :parameter_labels
+
+      def initialize(name, label:, category:, default_routed:, owner: nil,
+                     severity: :info, email_template: nil,
+                     severity_description: nil)
+        @name = name.to_s
+        @owner = owner
+        @label = label
+        @category_name = category.to_s
+        @default_severity = severity.to_s
+        @default_routed = default_routed ? true : false
+        @severity_description = severity_description
+        @email_template_name = email_template&.to_s
+        @arguments = {}
+        @parameter_labels = {}
+        @parameter_blocks = {}
+        @delivery_definitions = {}
+        @helpers = {}
+      end
+
+      def argument(name, type:, optional: false, default: nil)
+        @arguments[name.to_sym] = Argument.new(
+          name: name.to_sym,
+          type:,
+          optional:,
+          default:,
+          has_default: !default.nil?
+        )
+      end
+
+      %i[user vps source subject summary ip_addr severity category].each do |field|
+        define_method(field) do |value = nil, &block|
+          instance_variable_set("@#{field}_block", block || proc { value })
+        end
+      end
+
+      def parameter(name, label, &block)
+        @parameter_labels[name.to_sym] = label
+        @parameter_blocks[name.to_sym] = block if block
+      end
+
+      def parameters(hash)
+        hash.each { |name, label| parameter(name, label) }
+      end
+
+      def extra_parameters(&block)
+        @extra_parameters_block = block
+      end
+
+      def deliver(action, &block)
+        definition = DeliveryDefinition.new(action)
+        definition.instance_exec(&block) if block
+        @delivery_definitions[definition.action] = definition
+      end
+
+      def delivery(action)
+        @delivery_definitions[action.to_s]
+      end
+
+      def helper(name, &block)
+        @helpers[name.to_sym] = block
+      end
+
+      def helper?(name)
+        @helpers.has_key?(name.to_sym)
+      end
+
+      def call_helper(context, name, *)
+        context.instance_exec(*, &@helpers.fetch(name.to_sym))
+      end
+
+      def build_context(values = {}, event: nil)
+        values = (values || {}).transform_keys(&:to_sym)
+        unknown = values.keys - @arguments.keys
+        if unknown.any?
+          raise ArgumentError, "#{name} does not accept argument #{unknown.first}"
+        end
+
+        resolved = {}
+        @arguments.each_value do |arg|
+          provided = values.has_key?(arg.name)
+          value = if provided
+                    values.fetch(arg.name)
+                  elsif arg.has_default
+                    arg.default
+                  end
+          arg.validate!(name, value, provided:)
+          resolved[arg.name] = value if provided || arg.has_default || arg.optional
+        end
+
+        EventContext.new(self, resolved, event:)
+      end
+
+      def build_attributes(context)
+        {
+          user: evaluate(context, @user_block),
+          vps: evaluate(context, @vps_block),
+          source: evaluate(context, @source_block),
+          subject: evaluate(context, @subject_block),
+          summary: evaluate(context, @summary_block),
+          ip_addr: evaluate(context, @ip_addr_block),
+          severity: evaluate(context, @severity_block),
+          category: evaluate(context, @category_block),
+          parameters: build_parameters(context)
+        }.compact
+      end
+
+      protected
+
+      def build_parameters(context)
+        ret = @parameter_blocks.each_with_object({}) do |(name, block), memo|
+          value = context.instance_exec(&block)
+          memo[name] = value unless value.nil?
+        end
+        extra = context.instance_exec(&@extra_parameters_block) if @extra_parameters_block
+        ret.merge!(extra || {})
+        ret
+      end
+
+      def evaluate(context, block)
+        context.instance_exec(&block) if block
+      end
+    end
+
+    class EventContext
+      attr_reader :definition, :arguments
+      attr_accessor :event
+
+      def initialize(definition, arguments, event: nil)
+        @definition = definition
+        @arguments = arguments
+        @event = event
+      end
+
+      def delivery(action)
+        DeliveryContext.new(self, definition.delivery(action))
+      end
+
+      def webui_url
+        VpsAdmin::API::Events.webui_url
+      end
+
+      def method_missing(name, *args, &block)
+        return arguments.fetch(name) if args.empty? && block.nil? && arguments.has_key?(name)
+        return definition.call_helper(self, name, *args) if definition.helper?(name)
+
+        super
+      end
+
+      def respond_to_missing?(name, include_private = false)
+        arguments.has_key?(name) || definition.helper?(name) || super
+      end
+    end
+
+    class DeliveryContext
+      def initialize(event_context, definition)
+        @event_context = event_context
+        @definition = definition
+      end
+
+      def template
+        @definition&.evaluate_template(@event_context)
+      end
+
+      def params
+        @definition&.evaluate_params(@event_context)
+      end
+
+      def vars
+        @definition&.evaluate_vars(@event_context)
+      end
+
+      def options
+        @definition&.evaluate_options(@event_context) || {}
+      end
+    end
+
+    class DefinitionSet
+      def initialize(owner)
+        @owner = owner
+      end
+
+      def event(name, **, &block)
+        definition = EventDefinition.new(name, owner: @owner, **)
+        definition.instance_exec(&block) if block
+        VpsAdmin::API::Events.register_definition(definition)
+      end
+    end
 
     RequestInfo = Struct.new(:ip)
     UserInfo = Struct.new(:id, :login, :full_name)
@@ -252,19 +520,38 @@ module VpsAdmin::API
 
     module_function
 
+    def define(owner: nil, &)
+      DefinitionSet.new(owner).instance_exec(&)
+    end
+
+    def register_definition(definition)
+      @types[definition.name] = Type.new(
+        name: definition.name,
+        label: definition.label,
+        category: definition.category_name,
+        severity: definition.default_severity,
+        parameters: definition.parameter_labels,
+        email_template: definition.email_template_name,
+        default_routed: definition.default_routed,
+        severity_description: definition.severity_description,
+        definition:
+      )
+    end
+
     def register(name, label:, category:, default_routed:, severity: :info,
                  parameters: {}, email_template: nil,
                  severity_description: nil)
-      @types[name.to_s] = Type.new(
-        name: name.to_s,
+      definition = EventDefinition.new(
+        name,
         label:,
         category: category.to_s,
-        severity: severity.to_s,
-        parameters:,
+        severity:,
         email_template: email_template&.to_s,
-        default_routed: !!default_routed,
+        default_routed: default_routed ? true : false,
         severity_description:
       )
+      definition.parameters(parameters)
+      register_definition(definition)
     end
 
     def types
@@ -288,6 +575,8 @@ module VpsAdmin::API
     end
 
     def email_template_name_for(event)
+      template = event.runtime_event_context&.delivery(:email)&.template
+      return template.to_sym if template.present?
       return event.runtime_email_template_name.to_sym if event.runtime_email_template_name.present?
       return request_email_template_name_for(event) if REQUEST_EVENT_TYPES.include?(event.event_type)
       return outage_email_template_choice(event).first if OUTAGE_EVENT_TYPES.include?(event.event_type)
@@ -299,6 +588,8 @@ module VpsAdmin::API
     end
 
     def email_template_params_for(event)
+      params = event.runtime_event_context&.delivery(:email)&.params
+      return params if params.present?
       return event.runtime_email_template_params if event.runtime_email_template_params.present?
 
       case event.event_type
@@ -378,6 +669,8 @@ module VpsAdmin::API
     end
 
     def email_vars_for(event)
+      vars = event.runtime_event_context&.delivery(:email)&.vars
+      return vars if vars
       return event.runtime_email_vars if event.runtime_email_vars
 
       case event.event_type
@@ -625,6 +918,7 @@ module VpsAdmin::API
     end
 
     def email_template_extra_options_for(event)
+      context_options = event.runtime_event_context&.delivery(:email)&.options || {}
       ret =
         if REQUEST_EVENT_TYPES.include?(event.event_type)
           request_email_template_extra_options(event)
@@ -636,6 +930,7 @@ module VpsAdmin::API
           {}
         end
 
+      ret.merge!(context_options)
       ret.merge(event.runtime_email_options || {})
     end
 
@@ -1458,53 +1753,67 @@ module VpsAdmin::API
     end
 
     def plan(event_type, user: nil, vps: nil, subject: nil, summary: nil,
-             parameters: {}, severity: nil, category: nil, ip_addr: nil)
+             parameters: nil, severity: nil, category: nil, ip_addr: nil,
+             **event_args)
       type = type_for(event_type)
+      context = event_context_for(type, event_args)
+      attrs = context ? type.definition.build_attributes(context) : {}
       if user && vps && vps.user_id != user.id
         raise ArgumentError, 'user and VPS owner do not match'
       end
 
+      user ||= attrs[:user]
+      vps ||= attrs[:vps]
       owner = user || vps&.user
       event = ::Event.new(
         user: owner,
         vps:,
         event_type: event_type.to_s,
-        category: category || type&.category || 'general',
-        severity: severity || type&.severity || 'info',
-        subject: subject || type&.label || event_type.to_s,
-        summary:,
-        parameters: parameters || {},
-        ip_addr:
+        category: category || attrs[:category] || type&.category || 'general',
+        severity: severity || attrs[:severity] || type&.severity || 'info',
+        subject: subject || attrs[:subject] || type&.label || event_type.to_s,
+        summary: summary || attrs[:summary],
+        parameters: parameters || attrs[:parameters] || {},
+        ip_addr: ip_addr || attrs[:ip_addr]
       )
+      context.event = event if context
+      event.runtime_event_context = context
 
       Router.new(event).plan
     end
 
     def emit!(event_type, user: nil, vps: nil, source: nil, source_class: nil,
-              source_id: nil, subject: nil, summary: nil, parameters: {},
+              source_id: nil, subject: nil, summary: nil, parameters: nil,
               severity: nil, category: nil, ip_addr: nil, route: true,
               release: true, email_vars: nil, email_template_name: nil,
-              email_template_params: nil, email_options: nil)
+              email_template_params: nil, email_options: nil, **event_args)
       type = type_for(event_type)
+      context = event_context_for(type, event_args)
+      attrs = context ? type.definition.build_attributes(context) : {}
       if user && vps && vps.user_id != user.id
         raise ArgumentError, 'user and VPS owner do not match'
       end
 
+      user ||= attrs[:user]
+      vps ||= attrs[:vps]
+      source ||= attrs[:source]
       owner = user || vps&.user
 
       event = ::Event.create!(
         user: owner,
         vps:,
         event_type: event_type.to_s,
-        category: category || type&.category,
-        severity: severity || type&.severity,
-        subject: subject || type&.label,
-        summary:,
-        parameters: parameters || {},
+        category: category || attrs[:category] || type&.category,
+        severity: severity || attrs[:severity] || type&.severity,
+        subject: subject || attrs[:subject] || type&.label,
+        summary: summary || attrs[:summary],
+        parameters: parameters || attrs[:parameters] || {},
         source_class: source_class || source&.class&.name,
         source_id: source_id || source&.id,
-        ip_addr:
+        ip_addr: ip_addr || attrs[:ip_addr]
       )
+      context.event = event if context
+      event.runtime_event_context = context
       event.runtime_email_vars = email_vars if email_vars
       event.runtime_email_template_name = email_template_name if email_template_name
       event.runtime_email_template_params = email_template_params if email_template_params
@@ -1518,6 +1827,13 @@ module VpsAdmin::API
       VpsAdmin::API::Notifications::Release.release!(event.event_deliveries.where(state: 'prepared')) if route && release
 
       event
+    end
+
+    def event_context_for(type, event_args)
+      return if event_args.empty?
+      raise ArgumentError, "event does not accept typed arguments: #{event_args.keys.join(', ')}" unless type&.definition
+
+      type.definition.build_context(event_args)
     end
 
     def route!(event)
@@ -1857,14 +2173,13 @@ module VpsAdmin::API
           return skipped_delivery(route, receiver, receiver_action, reason)
         end
 
-        case receiver_action.action
-        when 'email'
-          email_delivery(route, receiver, receiver_action)
-        when 'webhook'
-          webhook_delivery(route, receiver, receiver_action)
-        else
-          skipped_delivery(route, receiver, receiver_action, 'unknown receiver action')
+        unless VpsAdmin::API::Notifications::Actions.known?(receiver_action.action)
+          return skipped_delivery(route, receiver, receiver_action, 'unknown receiver action')
         end
+
+        VpsAdmin::API::Notifications::Actions
+          .fetch(receiver_action.action)
+          .plan_delivery_for(self, route, receiver, receiver_action)
       end
 
       def email_delivery(route, receiver, receiver_action)
@@ -2000,10 +2315,10 @@ module VpsAdmin::API
 
         record.association(:event).target = event if event.runtime_email_context?
 
-        if record.email_action? && record.prepared_state?
-          VpsAdmin::API::Notifications.render_email_delivery!(record)
-        elsif record.webhook_action? && record.prepared_state? && record.payload.blank?
-          record.update!(payload: JSON.dump(VpsAdmin::API::Notifications.webhook_payload_for(record)))
+        if record.prepared_state?
+          VpsAdmin::API::Notifications::Actions
+            .fetch(record.action)
+            .prepare_delivery_for(self, record)
         end
 
         record
@@ -2096,25 +2411,6 @@ module VpsAdmin::API
         state: 'Lifecycle state',
         reason: 'Lifecycle reason',
         expiration_date: 'Expiration date'
-      }
-    )
-
-    register(
-      'user.new_login',
-      label: 'New sign-in',
-      category: 'security',
-      severity: :warning,
-      email_template: :user_new_login,
-      default_routed: true,
-      parameters: {
-        auth_type: 'Authentication type',
-        client_ip_addr: 'Client IP address',
-        api_ip_addr: 'API IP address',
-        client_version: 'Client version',
-        user_agent: 'User agent',
-        user_device_id: 'User device ID',
-        authorization_id: 'OAuth authorization ID',
-        oauth2_client_id: 'OAuth client ID'
       }
     )
 
@@ -2900,5 +3196,45 @@ module VpsAdmin::API
         reason: 'Replacement reason'
       }
     )
+
+    define do
+      event 'user.new_login',
+            label: 'New sign-in',
+            category: 'security',
+            severity: :warning,
+            email_template: :user_new_login,
+            default_routed: true do
+        argument :session, type: 'UserSession'
+        argument :authorization, type: 'Oauth2Authorization'
+
+        user { session.user }
+        source { session }
+        subject { 'New sign-in' }
+        summary { "New sign-in to #{session.user.login}" }
+        ip_addr { session.client_ip_addr || session.api_ip_addr }
+
+        parameter(:auth_type, 'Authentication type') { session.auth_type }
+        parameter(:client_ip_addr, 'Client IP address') { session.client_ip_addr }
+        parameter(:api_ip_addr, 'API IP address') { session.api_ip_addr }
+        parameter(:client_version, 'Client version') { session.client_version }
+        parameter(:user_agent, 'User agent') { session.user_agent_string }
+        parameter(:user_device_id, 'User device ID') { authorization.user_device&.id }
+        parameter(:authorization_id, 'OAuth authorization ID') { authorization.id }
+        parameter(:oauth2_client_id, 'OAuth client ID') { authorization.oauth2_client_id }
+
+        deliver :email do
+          template :user_new_login
+
+          vars do
+            {
+              user: session.user,
+              user_session: session,
+              authorization:,
+              user_device: authorization.user_device
+            }
+          end
+        end
+      end
+    end
   end
 end

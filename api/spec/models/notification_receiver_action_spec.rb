@@ -7,6 +7,32 @@ RSpec.describe NotificationReceiverAction do
     NotificationReceiver.create!(user: SpecSeed.user, label: 'Spec receiver')
   end
 
+  it 'stores actions as registry names' do
+    action = create_receiver!.notification_receiver_actions.create!(
+      action: :webhook,
+      target_kind: :custom,
+      target_value: 'https://example.test/events'
+    )
+
+    expect(action.action).to eq('webhook')
+    expect(action).to be_webhook_action
+    expect(described_class.action_labels).to include(
+      'email' => 'E-mail',
+      'webhook' => 'Webhook'
+    )
+  end
+
+  it 'rejects unknown action names' do
+    action = create_receiver!.notification_receiver_actions.build(
+      action: 'telegram',
+      target_kind: :custom,
+      target_value: 'https://example.test/events'
+    )
+
+    expect(action).not_to be_valid
+    expect(action.errors[:action]).to be_present
+  end
+
   it 'normalizes custom e-mail targets' do
     action = create_receiver!.notification_receiver_actions.create!(
       action: :email,

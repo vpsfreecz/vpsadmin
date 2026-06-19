@@ -446,7 +446,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_15_110000) do
   end
 
   create_table "event_deliveries", charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
-    t.integer "action", null: false
+    t.string "action", limit: 50, null: false
     t.integer "attempt_count", default: 0, null: false
     t.datetime "created_at", null: false
     t.text "error_summary"
@@ -484,7 +484,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_15_110000) do
   end
 
   create_table "event_delivery_attempts", charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
-    t.integer "action", null: false
+    t.string "action", limit: 50, null: false
     t.integer "attempt_number", null: false
     t.datetime "created_at", null: false
     t.text "error_summary"
@@ -1130,7 +1130,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_15_110000) do
   end
 
   create_table "notification_receiver_actions", charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
-    t.integer "action", null: false
+    t.string "action", limit: 50, null: false
     t.text "config"
     t.datetime "created_at", null: false
     t.boolean "enabled", default: true, null: false

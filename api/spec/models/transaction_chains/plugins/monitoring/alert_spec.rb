@@ -98,12 +98,7 @@ RSpec.describe 'monitoring alert chain', requires_plugins: :monitoring do # rubo
       chain.route_monitoring_alert!(
         ev,
         role: 'user',
-        template_name: :alert_role_event_state,
-        template_params: {
-          role: :user,
-          event: ev.monitor_name,
-          state: ev.state
-        }
+        variant: :role_event_state
       )
     end
 
@@ -126,6 +121,7 @@ RSpec.describe 'monitoring alert chain', requires_plugins: :monitoring do # rubo
     )
     expect(routed_event.parameters).to include(
       'role' => 'user',
+      'variant' => 'role_event_state',
       'monitor_name' => 'alert_chain',
       'monitored_event_id' => event.id,
       'state' => 'confirmed',
@@ -147,11 +143,7 @@ RSpec.describe 'monitoring alert chain', requires_plugins: :monitoring do # rubo
     reset_routing!(event.user)
     allow(MailTemplate).to receive(:send_mail!).and_return(build_mail_log_double)
     allow(event).to receive(:call_action) do |chain, ev|
-      chain.route_monitoring_alert!(
-        ev,
-        template_name: :alert_role_event_state,
-        email_options: chain.monitoring_mail_thread_options(ev)
-      )
+      chain.route_monitoring_alert!(ev)
     end
 
     chain, = chain_class.fire2(args: [event])
@@ -178,14 +170,80 @@ RSpec.describe 'monitoring alert chain', requires_plugins: :monitoring do # rubo
     )
   end
 
+  it 'renders e-mail from monitoring variants and context' do
+    event = build_event
+    reset_routing!(event.user)
+    captured = nil
+    language = SpecSeed.language
+    allow(MailTemplate).to receive(:send_mail!) do |name, opts|
+      captured = [name, opts]
+      build_mail_log_double
+    end
+    allow(event).to receive(:call_action) do |chain, ev|
+      chain.route_monitoring_alert!(
+        ev,
+        severity: :critical,
+        variant: 'role_event_state',
+        context: {
+          language: language
+        }
+      )
+    end
+
+    chain, = chain_class.fire2(args: [event])
+    routed_event = Event.where(event_type: 'monitoring.alert').order(:id).last
+    delivery = routed_event.event_deliveries.sole
+    template_name, opts = captured
+
+    expect(tx_classes(chain)).to include(Transactions::EventDelivery::Release)
+    expect(routed_event.severity).to eq('critical')
+    expect(delivery.template_name).to eq('alert_role_event_state')
+    expect(template_name).to eq(:alert_role_event_state)
+    expect(opts).to include(
+      user: event.user,
+      include_template_recipients: false,
+      language:,
+      message_id: "<vpsadmin-monitoring-alert-#{event.id}-1-confirmed@vpsadmin.vpsfree.cz>"
+    )
+    expect(opts.fetch(:vars)).to include(
+      event:,
+      object: event.object,
+      user: event.user
+    )
+  end
+
   it 'uses the configurable monitoring alert message id format' do
     event = build_event
     cfg = SysConfig.find_by!(category: 'plugin_monitoring', name: 'alert_message_id')
     cfg.update!(value: '<monitor-%{event_id}-%{alert_id}-%{state}@alerts.example>')
+    reset_routing!(event.user)
+    captured = nil
+    allow(MailTemplate).to receive(:send_mail!) do |_name, opts|
+      captured = opts
+      build_mail_log_double
+    end
+    allow(event).to receive(:call_action) do |chain, ev|
+      chain.route_monitoring_alert!(ev)
+    end
 
-    expect(chain_class.new.monitoring_mail_thread_options(event)).to include(
+    chain_class.fire2(args: [event])
+
+    expect(captured).to include(
       message_id: "<monitor-#{event.id}-1-confirmed@alerts.example>"
     )
+  end
+
+  it 'does not accept delivery-specific routing arguments' do
+    event = build_event
+    chain = chain_class.new
+
+    expect do
+      chain.route_monitoring_alert!(event, template_name: :alert_role_event_state)
+    end.to raise_error(ArgumentError, /unknown keyword: :template_name/)
+
+    expect do
+      chain.route_monitoring_alert!(event, email_vars: {})
+    end.to raise_error(ArgumentError, /unknown keyword: :email_vars/)
   end
 
   it 'routes admin monitoring alerts to active admins including level 90' do

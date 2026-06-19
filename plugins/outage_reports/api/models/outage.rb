@@ -129,7 +129,8 @@ class Outage < ApplicationRecord
   end
 
   def create_outage_update!(attrs = {}, translations = {}, opts = {})
-    attrs[:state] = ::Outage.states[attrs[:state]] if attrs[:state]
+    attrs = attrs.dup
+    attrs[:state] = normalize_state_value(attrs[:state]) if attrs[:state]
 
     ret = VpsAdmin::API::NotificationEvents.run_chain(
       VpsAdmin::API::Plugins::OutageReports::TransactionChains::Update,
@@ -137,6 +138,12 @@ class Outage < ApplicationRecord
     )
 
     [nil, ret]
+  end
+
+  def normalize_state_value(value)
+    return value if value.is_a?(Integer)
+
+    ::Outage.states.fetch(value.to_s)
   end
 
   def do_auto_resolve

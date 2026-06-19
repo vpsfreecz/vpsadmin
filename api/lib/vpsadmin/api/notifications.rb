@@ -11,6 +11,117 @@ require 'yaml'
 
 module VpsAdmin::API
   module Notifications
+    module Actions
+      class Definition
+        attr_reader :name, :target_kinds
+
+        def initialize(name)
+          @name = name.to_s
+          @target_kinds = {}
+        end
+
+        def label(value = nil)
+          @label = value if value
+          @label
+        end
+
+        def target_kind(name, label:)
+          @target_kinds[name.to_s] = label
+        end
+
+        def validate_receiver_action(&block)
+          @validate_receiver_action = block if block
+          @validate_receiver_action
+        end
+
+        def display_target(&block)
+          @display_target = block if block
+          @display_target
+        end
+
+        def receiver_action_available(&block)
+          @receiver_action_available = block if block
+          @receiver_action_available
+        end
+
+        def plan_delivery(&block)
+          @plan_delivery = block if block
+          @plan_delivery
+        end
+
+        def prepare_delivery(&block)
+          @prepare_delivery = block if block
+          @prepare_delivery
+        end
+
+        def deliver(&block)
+          @deliver = block if block
+          @deliver
+        end
+
+        def validate_receiver_action!(action)
+          action.instance_exec(&@validate_receiver_action) if @validate_receiver_action
+        end
+
+        def display_target_for(action)
+          return action.instance_exec(&@display_target) if @display_target
+
+          action.target_value.presence || action.target_kind.tr('_', ' ')
+        end
+
+        def receiver_action_available?(action)
+          return false unless action&.enabled? && action.action == name
+          return action.instance_exec(&@receiver_action_available) if @receiver_action_available
+
+          true
+        end
+
+        def plan_delivery_for(router, route, receiver, receiver_action)
+          router.instance_exec(route, receiver, receiver_action, &@plan_delivery)
+        end
+
+        def prepare_delivery_for(router, delivery)
+          router.instance_exec(delivery, &@prepare_delivery) if @prepare_delivery
+        end
+
+        def deliver_with(dispatcher, delivery)
+          dispatcher.instance_exec(delivery, &@deliver)
+        end
+      end
+
+      @definitions = {}
+
+      module_function
+
+      def define(name, &)
+        definition = Definition.new(name)
+        definition.instance_exec(&)
+        @definitions[definition.name] = definition
+      end
+
+      def fetch(name)
+        @definitions.fetch(name.to_s)
+      end
+
+      def known?(name)
+        @definitions.has_key?(name.to_s)
+      end
+
+      def names
+        @definitions.keys
+      end
+
+      def labels
+        @definitions.transform_values(&:label)
+      end
+
+      def target_kind_labels
+        @definitions.values.each_with_object({}) do |definition, ret|
+          ret.merge!(definition.target_kinds)
+        end
+      end
+    end
+
     EXCHANGE_NAME = 'vpsadmin.notifications'.freeze
     QUEUES = {
       'email' => 'vpsadmin.notifications.email',
@@ -181,6 +292,67 @@ module VpsAdmin::API
       end
 
       mail_log.save!(validate: false) unless mail_log.persisted?
+    end
+
+    Actions.define :email do
+      label 'E-mail'
+      target_kind :default_recipient, label: 'default recipient'
+      target_kind :custom, label: 'custom target'
+
+      validate_receiver_action do
+        check_email_target
+      end
+
+      display_target do
+        target_value.presence || 'Account e-mail'
+      end
+
+      receiver_action_available do
+        email_action?
+      end
+
+      plan_delivery do |route, receiver, receiver_action|
+        email_delivery(route, receiver, receiver_action)
+      end
+
+      prepare_delivery do |delivery|
+        VpsAdmin::API::Notifications.render_email_delivery!(delivery)
+      end
+
+      deliver do |delivery|
+        deliver_email(delivery)
+      end
+    end
+
+    Actions.define :webhook do
+      label 'Webhook'
+      target_kind :custom, label: 'custom target'
+
+      validate_receiver_action do
+        check_webhook_target
+      end
+
+      display_target do
+        target_value.presence || 'Webhook URL'
+      end
+
+      receiver_action_available do
+        webhook_action? && target_value.present?
+      end
+
+      plan_delivery do |route, receiver, receiver_action|
+        webhook_delivery(route, receiver, receiver_action)
+      end
+
+      prepare_delivery do |delivery|
+        if delivery.payload.blank?
+          delivery.update!(payload: JSON.dump(VpsAdmin::API::Notifications.webhook_payload_for(delivery)))
+        end
+      end
+
+      deliver do |delivery|
+        deliver_webhook(delivery)
+      end
     end
 
     class Config
@@ -367,7 +539,9 @@ module VpsAdmin::API
 
       def initialize(action, config: Config.load)
         @action = action.to_s
-        raise ArgumentError, "unsupported notification action #{@action}" unless QUEUES.has_key?(@action)
+        unless Actions.known?(@action) && QUEUES.has_key?(@action)
+          raise ArgumentError, "unsupported notification action #{@action}"
+        end
 
         @config = config
         @running = true
@@ -550,14 +724,7 @@ module VpsAdmin::API
       end
 
       def deliver(delivery)
-        case @action
-        when 'email'
-          deliver_email(delivery)
-        when 'webhook'
-          deliver_webhook(delivery)
-        else
-          raise ArgumentError, "unsupported notification action #{@action}"
-        end
+        Actions.fetch(@action).deliver_with(self, delivery)
       end
 
       def deliver_email(delivery)

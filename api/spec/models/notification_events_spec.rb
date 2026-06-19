@@ -88,4 +88,54 @@ RSpec.describe VpsAdmin::API::NotificationEvents do
       /attempted to use append_t/
     )
   end
+
+  it 'derives event attributes from typed event arguments' do
+    user = create_lifecycle_user!
+    auth = create_auth_cleanup_fixture!(user:)
+    session = auth.fetch(:token_session)
+    authorization = auth.fetch(:oauth2_authorization)
+
+    event = VpsAdmin::API::Events.emit!(
+      'user.new_login',
+      session:,
+      authorization:,
+      route: false
+    )
+
+    expect(event.user).to eq(user)
+    expect(event.source).to eq(session)
+    expect(event.subject).to eq('New sign-in')
+    expect(event.summary).to eq("New sign-in to #{user.login}")
+    expect(event.ip_addr).to eq('127.0.0.1')
+    expect(event.parameters).to include(
+      'auth_type' => 'token',
+      'authorization_id' => authorization.id,
+      'oauth2_client_id' => authorization.oauth2_client_id
+    )
+
+    vars = VpsAdmin::API::Events.email_vars_for(event)
+    expect(vars).to include(
+      user:,
+      user_session: session,
+      authorization:,
+      user_device: authorization.user_device
+    )
+  end
+
+  it 'validates typed event arguments before creating an event' do
+    user = create_lifecycle_user!
+    authorization = create_auth_cleanup_fixture!(user:).fetch(:oauth2_authorization)
+
+    expect do
+      VpsAdmin::API::Events.emit!(
+        'user.new_login',
+        session: user,
+        authorization:,
+        route: false
+      )
+    end.to raise_error(
+      ArgumentError,
+      /user\.new_login argument session must be UserSession, got User/
+    )
+  end
 end

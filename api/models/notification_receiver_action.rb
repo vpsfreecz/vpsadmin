@@ -4,15 +4,6 @@ require 'uri'
 class NotificationReceiverAction < ApplicationRecord
   MAX_ACTIONS_PER_RECEIVER = 20
   MAIL_TARGET_VALUE_LIMIT = 500
-  ACTIONS = {
-    email: 0,
-    webhook: 1
-  }.freeze
-
-  ACTION_LABELS = {
-    'email' => 'E-mail',
-    'webhook' => 'Webhook'
-  }.freeze
 
   TARGET_KIND_LABELS = {
     'default_recipient' => 'default recipient',
@@ -22,7 +13,6 @@ class NotificationReceiverAction < ApplicationRecord
   belongs_to :notification_receiver
   has_many :event_deliveries, dependent: :nullify
 
-  enum :action, ACTIONS, suffix: true
   enum :target_kind, %i[default_recipient custom], suffix: true
 
   serialize :config, coder: JSON
@@ -32,17 +22,18 @@ class NotificationReceiverAction < ApplicationRecord
   before_validation :clean_email_target
 
   validates :action, :target_kind, :label, presence: true
+  validates :action, inclusion: { in: ->(_) { VpsAdmin::API::Notifications::Actions.names } }
   validates :label, length: { maximum: 255 }, allow_nil: true
   validates :verification_token, length: { maximum: 255 }, allow_nil: true
   validate :check_action_limit, on: :create
   validate :check_target
 
   def self.action_labels
-    ACTION_LABELS
+    VpsAdmin::API::Notifications::Actions.labels
   end
 
   def self.target_kind_labels
-    TARGET_KIND_LABELS
+    VpsAdmin::API::Notifications::Actions.target_kind_labels
   end
 
   def verified?
@@ -67,10 +58,8 @@ class NotificationReceiverAction < ApplicationRecord
 
   def deliverable?
     return false unless enabled?
-    return true if email_action?
-    return true if webhook_action?
 
-    false
+    VpsAdmin::API::Notifications::Actions.known?(action)
   end
 
   def generate_verification_token!
@@ -81,20 +70,25 @@ class NotificationReceiverAction < ApplicationRecord
   end
 
   def display_target
-    case action
-    when 'email'
-      target_value.presence || 'Account e-mail'
-    when 'webhook'
-      target_value.presence || 'Webhook URL'
-    else
-      target_value.presence || target_kind.tr('_', ' ')
-    end
+    action_definition.display_target_for(self)
+  rescue KeyError
+    target_value.presence || target_kind.tr('_', ' ')
+  end
+
+  def email_action?
+    action == 'email'
+  end
+
+  def webhook_action?
+    action == 'webhook'
   end
 
   protected
 
   def set_default_label
-    self.label = ACTION_LABELS[action] if label.blank? && action.present?
+    self.label = action_definition.label if label.blank? && action.present?
+  rescue KeyError
+    nil
   end
 
   def set_default_target_kind
@@ -120,12 +114,9 @@ class NotificationReceiverAction < ApplicationRecord
   end
 
   def check_target
-    case action
-    when 'email'
-      check_email_target
-    when 'webhook'
-      check_webhook_target
-    end
+    action_definition.validate_receiver_action!(self)
+  rescue KeyError
+    nil
   end
 
   def check_email_target
@@ -166,5 +157,9 @@ class NotificationReceiverAction < ApplicationRecord
     return unless email_action? && custom_target_kind? && target_value
 
     target_value.gsub!(/\s/, '')
+  end
+
+  def action_definition
+    VpsAdmin::API::Notifications::Actions.fetch(action)
   end
 end

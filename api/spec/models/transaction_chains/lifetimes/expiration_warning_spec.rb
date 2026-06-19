@@ -17,7 +17,12 @@ RSpec.describe TransactionChains::Lifetimes::ExpirationWarning do
   def stub_mail_delivery!
     allow(::Mail).to receive(:new).and_wrap_original do |original, *args|
       message = original.call(*args)
-      allow(message).to receive(:deliver).and_return(true)
+      response = instance_double(
+        Net::SMTP::Response,
+        status: '250',
+        string: '250 2.0.0 queued as expiration-warning-spec'
+      )
+      allow(message).to receive(:deliver!).and_return(response)
       message
     end
   end
