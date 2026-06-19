@@ -1730,8 +1730,28 @@ function notifications_html_preview($html)
         return '-';
     }
 
-    return '<iframe sandbox="" srcdoc="' . h($html)
-        . '" style="width:100%;height:420px;border:1px solid #ccc;background:white;"></iframe>';
+    return '<div class="notification-delivery-html-preview">'
+        . '<iframe sandbox="" title="' . h(_('HTML preview')) . '" srcdoc="' . h($html) . '"></iframe>'
+        . '</div>';
+}
+
+function notifications_html_source_details($html)
+{
+    if ($html === null || $html === '') {
+        return '-';
+    }
+
+    return '<details class="notification-delivery-html-source">'
+        . '<summary>' . h(_('HTML source')) . '</summary>'
+        . notifications_pre_html($html)
+        . '</details>';
+}
+
+function notifications_delivery_wide_table_td($content)
+{
+    global $xtpl;
+
+    $xtpl->table_td($content, 'transparent;max-width:none;width:100%;', false, 2, 1, 'top');
 }
 
 function notifications_receivers($user_id = null)
@@ -2662,12 +2682,13 @@ function notifications_delivery_email_show($delivery)
 
     $html = notifications_prop($delivery, 'mail_text_html');
     if ($html) {
-        $xtpl->table_td(_('HTML preview') . ':');
-        $xtpl->table_td(notifications_html_preview($html));
+        notifications_delivery_wide_table_td('<strong>' . h(_('HTML preview')) . '</strong>');
         $xtpl->table_tr();
 
-        $xtpl->table_td(_('HTML source') . ':');
-        $xtpl->table_td(notifications_pre_html($html));
+        notifications_delivery_wide_table_td(notifications_html_preview($html));
+        $xtpl->table_tr();
+
+        notifications_delivery_wide_table_td(notifications_html_source_details($html));
         $xtpl->table_tr();
         $shown = true;
     }

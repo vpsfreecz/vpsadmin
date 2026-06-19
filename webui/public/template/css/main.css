@@ -259,6 +259,37 @@ form[name="userns-map-entries"] input[type="text"] {text-align: right;}
   gap: 2px 10px;
 }
 
+.notification-delivery-html-preview,
+.notification-delivery-html-source {
+  width: 790px;
+  max-width: 100%;
+}
+
+.notification-delivery-html-preview iframe {
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 650px;
+  height: 70vh;
+  max-height: 900px;
+  border: 1px solid #B2DAFF;
+  background: #FFF;
+}
+
+.notification-delivery-html-source {
+  margin: 0;
+}
+
+.notification-delivery-html-source summary {
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.notification-delivery-html-source pre {
+  max-height: 650px;
+  overflow: auto;
+}
+
 a.user-unpaid {color: #fff;}
 
 /* Dropdown menu */
