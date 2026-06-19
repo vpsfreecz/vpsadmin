@@ -135,9 +135,9 @@ RSpec.describe TransactionChains::Vps::OomReports do
 
     expect do
       described_class.fire2(args: [[vps]], kwargs: { cooldown: 1 })
-    end.to change(Event, :count).by(1)
+    end.to change(Event.where(event_type: 'vps.oom_report'), :count).by(1)
 
-    event = Event.order(:id).last
+    event = Event.where(event_type: 'vps.oom_report').order(:id).last
     delivery = event.event_deliveries.sole
 
     expect(delivery).to be_prepared_state

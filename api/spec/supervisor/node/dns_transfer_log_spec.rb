@@ -66,15 +66,29 @@ RSpec.describe VpsAdmin::Supervisor::Node::DnsTransferLog do
 
     expect do
       supervisor.send(:save_event, event)
-    end.to change(DnsServerZoneTransferLog, :count).by(1)
+    end.to(
+      change(DnsServerZoneTransferLog, :count).by(1)
+        .and(change(Event.where(event_type: 'dns.zone_transfer.failed'), :count).by(1))
+    )
 
     log = DnsServerZoneTransferLog.last
+    notification = Event.where(event_type: 'dns.zone_transfer.failed').last
     expect(log).to have_attributes(
       dns_server_zone: server_zone,
       status: 'failed',
       reason_code: 'refused',
       primary_addr: '192.0.2.1'
     )
+    expect(notification.user).to eq(SpecSeed.user)
+    expect(notification.source).to eq(log)
+    expect(notification.parameters).to include(
+      'dns_zone_id' => server_zone.dns_zone_id,
+      'dns_zone_name' => server_zone.dns_zone.name,
+      'dns_server_zone_id' => server_zone.id,
+      'status' => 'failed',
+      'reason_code' => 'refused'
+    )
+    expect(notification).to be_suppressed_routing_state
 
     server_zone.reload
     expect(server_zone.last_transfer_log).to eq(log)
@@ -123,24 +137,32 @@ RSpec.describe VpsAdmin::Supervisor::Node::DnsTransferLog do
     supervisor = described_class.new(nil, SpecSeed.node)
     supervisor.send(:save_event, transfer_event(server_zone))
 
-    supervisor.send(
-      :save_event,
-      transfer_event(
-        server_zone,
-        'status' => 'success',
-        'reason_code' => nil,
-        'reason' => nil,
-        'serial' => 2_026_050_901,
-        'message' => 'Transfer completed successfully',
-        'event_key' => SecureRandom.hex(32),
-        'time' => Time.utc(2026, 5, 9, 12, 10, 0).to_i
+    expect do
+      supervisor.send(
+        :save_event,
+        transfer_event(
+          server_zone,
+          'status' => 'success',
+          'reason_code' => nil,
+          'reason' => nil,
+          'serial' => 2_026_050_901,
+          'message' => 'Transfer completed successfully',
+          'event_key' => SecureRandom.hex(32),
+          'time' => Time.utc(2026, 5, 9, 12, 10, 0).to_i
+        )
       )
-    )
+    end.to change(Event.where(event_type: 'dns.zone_transfer.recovered'), :count).by(1)
 
     server_zone.reload
+    event = Event.where(event_type: 'dns.zone_transfer.recovered').last
     expect(server_zone.last_transfer_status).to eq('success')
     expect(server_zone.last_transfer_reason_code).to be_nil
     expect(server_zone.last_transfer_reason).to be_nil
     expect(server_zone.last_transfer_serial).to eq(2_026_050_901)
+    expect(event.parameters).to include(
+      'previous_status' => 'failed',
+      'status' => 'success',
+      'serial' => 2_026_050_901
+    )
   end
 end

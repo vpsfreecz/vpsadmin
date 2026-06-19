@@ -68,7 +68,7 @@ RSpec.describe TransactionChains::Vps::OomPrevention do
     )
 
     chain, = fire_prevention(vps, :restart)
-    event = Event.order(:id).last
+    event = Event.where(event_type: 'vps.oom_prevention').order(:id).last
     delivery = event.event_deliveries.sole
 
     expect(tx_classes(chain)).to include(Transactions::Vps::Restart)

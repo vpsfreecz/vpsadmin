@@ -516,21 +516,28 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_15_110000) do
   create_table "event_routes", charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
     t.boolean "continue", default: false, null: false
     t.datetime "created_at", null: false
+    t.boolean "default_route", default: false, null: false
     t.boolean "enabled", default: true, null: false
     t.string "email_template_name", limit: 100
     t.string "event_type", limit: 100
     t.string "event_type_pattern", limit: 100
+    t.datetime "expires_at"
     t.bigint "hit_count", default: 0, null: false
     t.string "label"
     t.bigint "notification_receiver_id"
     t.bigint "parent_id"
     t.integer "position", default: 0, null: false
+    t.boolean "single_use", default: false, null: false
+    t.datetime "spent_at"
     t.datetime "updated_at", null: false
     t.bigint "user_id", null: false
     t.index ["enabled"], name: "index_event_routes_on_enabled"
     t.index ["event_type"], name: "index_event_routes_on_event_type"
+    t.index ["expires_at"], name: "index_event_routes_on_expires_at"
     t.index ["notification_receiver_id"], name: "index_event_routes_on_notification_receiver_id"
     t.index ["parent_id"], name: "index_event_routes_on_parent_id"
+    t.index ["user_id", "default_route"], name: "index_event_routes_on_user_default"
+    t.index ["user_id", "single_use", "spent_at"], name: "index_event_routes_on_user_single_use_spent"
     t.index ["user_id", "parent_id", "position", "id"], name: "index_event_routes_on_user_parent_position"
     t.index ["user_id"], name: "index_event_routes_on_user_id"
   end

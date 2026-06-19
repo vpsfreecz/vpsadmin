@@ -165,7 +165,11 @@ class EventRouteMatcher < ApplicationRecord
     name.split('.').reduce(event.parameters || {}) do |hash, key|
       break nil unless hash.is_a?(Hash)
 
-      hash[key] || hash[key.to_sym]
+      if hash.has_key?(key)
+        hash[key]
+      elsif hash.has_key?(key.to_sym)
+        hash[key.to_sym]
+      end
     end
   end
 

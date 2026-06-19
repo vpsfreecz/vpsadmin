@@ -611,6 +611,28 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
     expect(event.event_deliveries.sole.action).to eq('webhook')
   end
 
+  it 'does not count expired routes toward the route limit' do
+    EventRoute::MAX_ROUTES.times do |i|
+      EventRoute.create!(
+        user: SpecSeed.user,
+        label: "Expired route #{i}",
+        position: i,
+        event_type: 'user.test_notification',
+        expires_at: 1.minute.ago
+      )
+    end
+
+    as(SpecSeed.user) do
+      json_post route_index_path, event_route: {
+        label: 'Active route',
+        event_type: 'user.test_notification'
+      }
+    end
+
+    expect_status(200)
+    expect(route_obj['label']).to eq('Active route')
+  end
+
   it 'limits receiver and action fan-out' do
     NotificationReceiver::MAX_RECEIVERS_PER_USER.times do |i|
       NotificationReceiver.create!(
@@ -656,9 +678,17 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
     expect_status(200)
     incident = event_types.detect { |row| row['name'] == 'vps.incident_report' }
     expect(incident).to be_present
+    expect(incident['default_routed']).to be(true)
     expect(incident['fields']).to include('parameters.codename' => 'Incident report: Report codename')
+    test = event_types.detect { |row| row['name'] == 'user.test_notification' }
+    expect(test['default_routed']).to be(true)
     oom = event_types.detect { |row| row['name'] == 'vps.oom_report' }
     expect(oom['fields']).to include('parameters.stage' => 'OOM report: OOM event stage')
+    chain = event_types.detect { |row| row['name'] == 'transaction_chain.state_changed' }
+    expect(chain['default_routed']).to be(false)
+    expect(chain['fields']).to include('parameters.terminal' => 'Transaction chain state changed: Whether the chain reached a terminal state')
+    dns = event_types.detect { |row| row['name'] == 'dns.zone_transfer.failed' }
+    expect(dns['default_routed']).to be(false)
   end
 
   it 'creates test events for the current user' do

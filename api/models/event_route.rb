@@ -24,10 +24,13 @@ class EventRoute < ApplicationRecord
     where(
       user:,
       parent_id: nil,
-      label: DEFAULT_ROUTE_LABEL,
-      event_type: nil,
-      event_type_pattern: nil
+      default_route: true
     ).order(:position, :id).first
+  end
+
+  def self.active
+    where(spent_at: nil)
+      .where('expires_at IS NULL OR expires_at > ?', Time.now)
   end
 
   def self.next_position_for(user, parent_id)
@@ -48,6 +51,13 @@ class EventRoute < ApplicationRecord
     default_route.position
   end
 
+  def self.prepend_position_for(user, parent_id = nil)
+    scope = where(user:, parent_id:)
+    min = scope.minimum(:position)
+
+    min ? min - 1 : 0
+  end
+
   validates :label, length: { maximum: 255 }, allow_nil: true
   validates :event_type, length: { maximum: 100 }, allow_nil: true
   validates :event_type_pattern, length: { maximum: 100 }, allow_nil: true
@@ -63,6 +73,8 @@ class EventRoute < ApplicationRecord
   end
 
   def matches?(event, deadline: nil)
+    return false unless active?
+    return false if default_route? && !VpsAdmin::API::Events.default_routed?(event.event_type)
     return false unless event_type_matches?(event.event_type)
 
     event_route_matchers.all? do |matcher|
@@ -84,6 +96,17 @@ class EventRoute < ApplicationRecord
 
   def display_label
     label.presence || matcher_summary
+  end
+
+  def active?
+    return false if spent_at.present?
+    return false if expires_at && expires_at <= Time.now
+
+    true
+  end
+
+  def spend!
+    update!(enabled: false, spent_at: Time.now) if single_use? && spent_at.blank?
   end
 
   protected

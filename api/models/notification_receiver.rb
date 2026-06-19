@@ -19,6 +19,12 @@ class NotificationReceiver < ApplicationRecord
     return if user.notification_receivers.exists?
 
     transaction do
+      ensure_default_receiver_for!(user)
+    end
+  end
+
+  def self.ensure_default_receiver_for!(user)
+    transaction do
       receiver = default_receiver_for(user) || create_default_receiver!(user)
 
       if user.mailer_enabled?
@@ -26,6 +32,7 @@ class NotificationReceiver < ApplicationRecord
       end
 
       ensure_default_route!(user, receiver)
+      receiver
     end
   end
 
@@ -95,7 +102,8 @@ class NotificationReceiver < ApplicationRecord
     user.event_routes.create!(
       notification_receiver: receiver,
       label: ::EventRoute::DEFAULT_ROUTE_LABEL,
-      position: ::EventRoute::DEFAULT_ROUTE_POSITION
+      position: ::EventRoute::DEFAULT_ROUTE_POSITION,
+      default_route: true
     )
   end
 

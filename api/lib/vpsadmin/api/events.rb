@@ -37,6 +37,16 @@ module VpsAdmin::API
         request_action_role
       ]
     }.freeze
+    TRANSACTION_CHAIN_TERMINAL_STATES = %w[done failed fatal resolved].freeze
+    TRANSACTION_CHAIN_FAILED_STATES = %w[failed fatal].freeze
+    TRANSACTION_CHAIN_STATE_SEVERITIES = {
+      'queued' => 'info',
+      'done' => 'info',
+      'resolved' => 'info',
+      'rollbacking' => 'warning',
+      'failed' => 'error',
+      'fatal' => 'critical'
+    }.freeze
 
     Type = Struct.new(
       :name,
@@ -44,7 +54,9 @@ module VpsAdmin::API
       :category,
       :severity,
       :parameters,
-      :email_template
+      :email_template,
+      :default_routed,
+      :severity_description
     )
 
     RequestInfo = Struct.new(:ip)
@@ -224,7 +236,8 @@ module VpsAdmin::API
     RouteResult = Struct.new(
       :routing_state,
       :matched_event_route,
-      :deliveries
+      :deliveries,
+      :spent_event_routes
     ) do
       def suppressed_by_mute?
         routing_state == 'suppressed' &&
@@ -239,15 +252,18 @@ module VpsAdmin::API
 
     module_function
 
-    def register(name, label:, category:, severity: :info, parameters: {},
-                 email_template: nil)
+    def register(name, label:, category:, default_routed:, severity: :info,
+                 parameters: {}, email_template: nil,
+                 severity_description: nil)
       @types[name.to_s] = Type.new(
         name: name.to_s,
         label:,
         category: category.to_s,
         severity: severity.to_s,
         parameters:,
-        email_template: email_template&.to_s
+        email_template: email_template&.to_s,
+        default_routed: !!default_routed,
+        severity_description:
       )
     end
 
@@ -257,6 +273,10 @@ module VpsAdmin::API
 
     def type_for(name)
       @types[name.to_s]
+    end
+
+    def default_routed?(name)
+      type_for(name)&.default_routed == true
     end
 
     def type_labels
@@ -1489,11 +1509,156 @@ module VpsAdmin::API
       Router.new(event).route!
     end
 
+    def emit_transaction_chain_state!(chain, previous_state: nil, state: nil,
+                                      changed_at: nil, node: nil)
+      state ||= chain.state
+      return unless state
+
+      emit!(
+        'transaction_chain.state_changed',
+        user: chain.user,
+        source: chain,
+        source_class: ::TransactionChain.name,
+        subject: transaction_chain_subject(chain, state),
+        summary: transaction_chain_summary(chain, previous_state, state),
+        severity: TRANSACTION_CHAIN_STATE_SEVERITIES.fetch(state.to_s, 'info'),
+        parameters: transaction_chain_parameters(
+          chain,
+          previous_state:,
+          state:,
+          changed_at:,
+          node:
+        )
+      )
+    end
+
+    def transaction_chain_parameters(chain, previous_state:, state:, changed_at: nil, node: nil)
+      terminal = TRANSACTION_CHAIN_TERMINAL_STATES.include?(state.to_s)
+      failed = TRANSACTION_CHAIN_FAILED_STATES.include?(state.to_s)
+      event_time = changed_at || Time.now
+
+      {
+        chain_id: chain.id,
+        chain_name: chain.name,
+        chain_label: safe_transaction_chain_label(chain),
+        previous_state:,
+        state:,
+        terminal:,
+        successful: terminal && !failed,
+        failed:,
+        size: chain.size,
+        progress: chain.progress,
+        user_session_id: chain.user_session_id,
+        concerns: safe_transaction_chain_concerns(chain),
+        node_id: node&.id,
+        node_name: node&.domain_name,
+        changed_at: event_time.iso8601,
+        changed_at_timestamp: event_time.to_f
+      }.compact
+    end
+
+    def transaction_chain_subject(chain, state)
+      "Transaction chain ##{chain.id} #{safe_transaction_chain_label(chain)} #{state}".strip[0, 255]
+    end
+
+    def transaction_chain_summary(chain, previous_state, state)
+      previous = previous_state.present? ? "#{previous_state} -> " : ''
+      "#{safe_transaction_chain_label(chain)} changed state to #{previous}#{state}"
+    end
+
+    def safe_transaction_chain_label(chain)
+      chain.label
+    rescue StandardError
+      chain.name
+    end
+
+    def safe_transaction_chain_concerns(chain)
+      chain.format_concerns
+    rescue StandardError
+      { type: nil, objects: [] }
+    end
+
+    def emit_dns_transfer_event!(log, previous_status:)
+      return unless user_visible_dns_transfer?(log)
+
+      event_type =
+        if log.failed?
+          'dns.zone_transfer.failed'
+        elsif log.success? && previous_status.to_s == 'failed'
+          'dns.zone_transfer.recovered'
+        end
+      return unless event_type
+
+      zone = log.dns_server_zone.dns_zone
+      server = log.dns_server_zone.dns_server
+      emit!(
+        event_type,
+        user: zone.user,
+        source: log,
+        subject: dns_transfer_subject(log),
+        summary: dns_transfer_summary(log),
+        severity: log.failed? ? 'warning' : 'info',
+        parameters: dns_transfer_parameters(log, previous_status:)
+      )
+    end
+
+    def user_visible_dns_transfer?(log)
+      server_zone = log.dns_server_zone
+      zone = server_zone&.dns_zone
+      server = server_zone&.dns_server
+
+      zone&.external_source? && zone.user_id.present? && server && !server.hidden
+    end
+
+    def dns_transfer_parameters(log, previous_status:)
+      server_zone = log.dns_server_zone
+      zone = server_zone.dns_zone
+      server = server_zone.dns_server
+      node = server.node
+
+      {
+        transfer_log_id: log.id,
+        dns_zone_id: zone.id,
+        dns_zone_name: zone.name,
+        dns_server_zone_id: server_zone.id,
+        dns_server_id: server.id,
+        dns_server_name: server.name,
+        node_id: node&.id,
+        node_name: node&.domain_name,
+        previous_status:,
+        status: log.status,
+        reason_code: log.reason_code,
+        reason: log.reason,
+        primary_addr: log.primary_addr,
+        serial: log.serial,
+        message: log.message,
+        event_at: log.event_at&.iso8601
+      }.compact
+    end
+
+    def dns_transfer_subject(log)
+      zone = log.dns_server_zone.dns_zone
+      if log.failed?
+        "DNS transfer failed for #{zone.name}"[0, 255]
+      else
+        "DNS transfer recovered for #{zone.name}"[0, 255]
+      end
+    end
+
+    def dns_transfer_summary(log)
+      if log.failed?
+        [log.reason_code, log.reason, log.message].compact.join(': ')
+      else
+        log.message.presence || 'DNS zone transfer succeeded after a previous failure'
+      end
+    end
+
     class Router
       attr_reader :event
 
       def initialize(event)
         @event = event
+        @matched_routes = []
       end
 
       def route!
@@ -1510,6 +1675,8 @@ module VpsAdmin::API
           result.deliveries.each do |delivery|
             create_delivery!(delivery)
           end
+
+          spend_single_use_routes(result.spent_event_routes)
         end
 
         event
@@ -1553,12 +1720,14 @@ module VpsAdmin::API
         RouteResult.new(
           routing_state: routing_state_for(deliveries),
           matched_event_route: first_delivery_route || first_matched_route,
-          deliveries: deduplicate(deliveries)
+          deliveries: deduplicate(deliveries),
+          spent_event_routes: spent_routes
         )
       end
 
       def process_route(route, deadline)
         ::EventRoute.increment_counter(:hit_count, route.id)
+        @matched_routes << route
 
         deliveries = []
         matched_child = false
@@ -1634,6 +1803,7 @@ module VpsAdmin::API
       def routes_by_parent
         @routes_by_parent ||= if event.user
                                 event.user.event_routes
+                                     .active
                                      .where(enabled: true)
                                      .includes(:event_route_matchers, notification_receiver: :notification_receiver_actions)
                                      .order(:position, :id)
@@ -1824,6 +1994,14 @@ module VpsAdmin::API
         record
       end
 
+      def spent_routes
+        @matched_routes.select(&:single_use?).uniq
+      end
+
+      def spend_single_use_routes(routes)
+        routes.each(&:spend!)
+      end
+
       def monotonic_time
         Process.clock_gettime(Process::CLOCK_MONOTONIC)
       end
@@ -1839,6 +2017,7 @@ module VpsAdmin::API
       category: 'account',
       severity: :info,
       email_template: :user_create,
+      default_routed: true,
       parameters: {
         login: 'User login',
         email: 'User e-mail',
@@ -1855,6 +2034,7 @@ module VpsAdmin::API
       category: 'account',
       severity: :warning,
       email_template: :user_suspend,
+      default_routed: true,
       parameters: {
         state: 'Lifecycle state',
         reason: 'Lifecycle reason',
@@ -1868,6 +2048,7 @@ module VpsAdmin::API
       category: 'account',
       severity: :warning,
       email_template: :user_soft_delete,
+      default_routed: true,
       parameters: {
         state: 'Lifecycle state',
         reason: 'Lifecycle reason',
@@ -1881,6 +2062,7 @@ module VpsAdmin::API
       category: 'account',
       severity: :info,
       email_template: :user_resume,
+      default_routed: true,
       parameters: {
         state: 'Lifecycle state',
         reason: 'Lifecycle reason',
@@ -1894,6 +2076,7 @@ module VpsAdmin::API
       category: 'account',
       severity: :info,
       email_template: :user_revive,
+      default_routed: true,
       parameters: {
         state: 'Lifecycle state',
         reason: 'Lifecycle reason',
@@ -1907,6 +2090,7 @@ module VpsAdmin::API
       category: 'security',
       severity: :warning,
       email_template: :user_new_login,
+      default_routed: true,
       parameters: {
         auth_type: 'Authentication type',
         client_ip_addr: 'Client IP address',
@@ -1925,6 +2109,7 @@ module VpsAdmin::API
       category: 'security',
       severity: :warning,
       email_template: :user_new_token,
+      default_routed: true,
       parameters: {
         auth_type: 'Authentication type',
         client_ip_addr: 'Client IP address',
@@ -1942,6 +2127,7 @@ module VpsAdmin::API
       category: 'security',
       severity: :critical,
       email_template: :user_totp_recovery_code_used,
+      default_routed: true,
       parameters: {
         totp_device_id: 'TOTP device ID',
         totp_device_label: 'TOTP device label',
@@ -1956,6 +2142,7 @@ module VpsAdmin::API
       category: 'security',
       severity: :warning,
       email_template: :user_failed_logins,
+      default_routed: true,
       parameters: {
         attempt_count: 'Failed attempt count',
         group_count: 'Attempt group count',
@@ -1971,8 +2158,88 @@ module VpsAdmin::API
       label: 'Test notification',
       category: 'test',
       severity: :info,
+      default_routed: true,
       parameters: {
         note: 'Test note'
+      }
+    )
+
+    register(
+      'transaction_chain.state_changed',
+      label: 'Transaction chain state changed',
+      category: 'transactions',
+      severity: :info,
+      default_routed: false,
+      severity_description: 'Severity is derived from the new transaction chain state',
+      parameters: {
+        chain_id: 'Transaction chain ID',
+        chain_name: 'Transaction chain internal name',
+        chain_label: 'Transaction chain label',
+        previous_state: 'Previous state',
+        state: 'Current state',
+        terminal: 'Whether the chain reached a terminal state',
+        successful: 'Whether the terminal state is successful',
+        failed: 'Whether the terminal state is failed or fatal',
+        size: 'Number of transactions in the chain',
+        progress: 'Finished transaction count',
+        user_session_id: 'User session ID',
+        concerns: 'Affected objects',
+        node_id: 'Node ID that reported the change',
+        node_name: 'Node name that reported the change',
+        changed_at: 'State change time',
+        changed_at_timestamp: 'State change Unix timestamp'
+      }
+    )
+
+    register(
+      'dns.zone_transfer.failed',
+      label: 'DNS zone transfer failed',
+      category: 'dns',
+      severity: :warning,
+      default_routed: false,
+      parameters: {
+        transfer_log_id: 'DNS transfer log ID',
+        dns_zone_id: 'DNS zone ID',
+        dns_zone_name: 'DNS zone name',
+        dns_server_zone_id: 'DNS server zone ID',
+        dns_server_id: 'DNS server ID',
+        dns_server_name: 'DNS server name',
+        node_id: 'Node ID',
+        node_name: 'Node name',
+        previous_status: 'Previous transfer status',
+        status: 'Transfer status',
+        reason_code: 'Failure reason code',
+        reason: 'Failure reason',
+        primary_addr: 'Primary server address',
+        serial: 'Transferred serial',
+        message: 'Transfer message',
+        event_at: 'Transfer event time'
+      }
+    )
+
+    register(
+      'dns.zone_transfer.recovered',
+      label: 'DNS zone transfer recovered',
+      category: 'dns',
+      severity: :info,
+      default_routed: false,
+      parameters: {
+        transfer_log_id: 'DNS transfer log ID',
+        dns_zone_id: 'DNS zone ID',
+        dns_zone_name: 'DNS zone name',
+        dns_server_zone_id: 'DNS server zone ID',
+        dns_server_id: 'DNS server ID',
+        dns_server_name: 'DNS server name',
+        node_id: 'Node ID',
+        node_name: 'Node name',
+        previous_status: 'Previous transfer status',
+        status: 'Transfer status',
+        reason_code: 'Failure reason code',
+        reason: 'Failure reason',
+        primary_addr: 'Primary server address',
+        serial: 'Transferred serial',
+        message: 'Transfer message',
+        event_at: 'Transfer event time'
       }
     )
 
@@ -1981,6 +2248,7 @@ module VpsAdmin::API
       label: 'Daily report',
       category: 'system',
       severity: :info,
+      default_routed: true,
       parameters: {
         language_id: 'Mail language ID',
         language_code: 'Mail language code',
@@ -1996,6 +2264,7 @@ module VpsAdmin::API
       category: 'payments',
       severity: :info,
       email_template: :payment_accepted,
+      default_routed: true,
       parameters: {
         payment_id: 'Payment ID',
         amount: 'Accounted amount',
@@ -2015,6 +2284,7 @@ module VpsAdmin::API
       label: 'Payments overview',
       category: 'payments',
       severity: :info,
+      default_routed: true,
       parameters: {
         language_id: 'Mail language ID',
         language_code: 'Mail language code',
@@ -2031,6 +2301,7 @@ module VpsAdmin::API
       label: 'Outage announced',
       category: 'outages',
       severity: :warning,
+      default_routed: true,
       parameters: {
         role: 'Recipient role',
         event: 'Outage mail event',
@@ -2066,6 +2337,7 @@ module VpsAdmin::API
       label: 'Outage updated',
       category: 'outages',
       severity: :warning,
+      default_routed: true,
       parameters: {
         role: 'Recipient role',
         event: 'Outage mail event',
@@ -2100,6 +2372,7 @@ module VpsAdmin::API
       label: 'Request created',
       category: 'requests',
       severity: :info,
+      default_routed: true,
       parameters: {
         action: 'Request action',
         role: 'Recipient role',
@@ -2119,6 +2392,7 @@ module VpsAdmin::API
       label: 'Request updated',
       category: 'requests',
       severity: :info,
+      default_routed: true,
       parameters: {
         action: 'Request action',
         role: 'Recipient role',
@@ -2139,6 +2413,7 @@ module VpsAdmin::API
       label: 'Request resolved',
       category: 'requests',
       severity: :info,
+      default_routed: true,
       parameters: {
         action: 'Request action',
         role: 'Recipient role',
@@ -2163,6 +2438,7 @@ module VpsAdmin::API
       category: 'account',
       severity: :warning,
       email_template: :expiration_warning,
+      default_routed: true,
       parameters: {
         object: 'Expiring object type',
         object_id: 'Expiring object ID',
@@ -2182,6 +2458,7 @@ module VpsAdmin::API
       category: 'security',
       severity: :warning,
       email_template: :security_advisory_user_announce,
+      default_routed: true,
       parameters: {
         advisory_id: 'Security advisory ID',
         advisory_name: 'Security advisory name',
@@ -2199,6 +2476,7 @@ module VpsAdmin::API
       category: 'security',
       severity: :warning,
       email_template: :security_advisory_user_update,
+      default_routed: true,
       parameters: {
         advisory_id: 'Security advisory ID',
         advisory_name: 'Security advisory name',
@@ -2218,6 +2496,7 @@ module VpsAdmin::API
       category: 'incidents',
       severity: :warning,
       email_template: :vps_incident_report,
+      default_routed: true,
       parameters: {
         subject: 'Report subject',
         text: 'Report text',
@@ -2232,6 +2511,7 @@ module VpsAdmin::API
       label: 'Incident report reply',
       category: 'incidents',
       severity: :info,
+      default_routed: true,
       parameters: {
         from_email: 'Reply sender e-mail',
         recipient_emails: 'Reply recipient e-mail addresses',
@@ -2251,6 +2531,7 @@ module VpsAdmin::API
       category: 'vps',
       severity: :warning,
       email_template: :vps_oom_report,
+      default_routed: true,
       parameters: {
         stage: 'OOM event stage',
         cgroup: 'Affected cgroup',
@@ -2269,6 +2550,7 @@ module VpsAdmin::API
       category: 'vps',
       severity: :critical,
       email_template: :vps_oom_prevention,
+      default_routed: true,
       parameters: {
         action: 'Prevention action',
         reason: 'Reason',
@@ -2283,6 +2565,7 @@ module VpsAdmin::API
       category: 'vps',
       severity: :warning,
       email_template: :vps_suspend,
+      default_routed: true,
       parameters: {
         vps_id: 'VPS ID',
         vps_hostname: 'VPS hostname',
@@ -2300,6 +2583,7 @@ module VpsAdmin::API
       category: 'vps',
       severity: :info,
       email_template: :vps_resume,
+      default_routed: true,
       parameters: {
         vps_id: 'VPS ID',
         vps_hostname: 'VPS hostname',
@@ -2317,6 +2601,7 @@ module VpsAdmin::API
       category: 'vps',
       severity: :info,
       email_template: :vps_resources_change,
+      default_routed: true,
       parameters: {
         vps_id: 'VPS ID',
         vps_hostname: 'VPS hostname',
@@ -2336,6 +2621,7 @@ module VpsAdmin::API
       category: 'vps',
       severity: :info,
       email_template: :vps_dns_resolver_change,
+      default_routed: true,
       parameters: {
         vps_id: 'VPS ID',
         vps_hostname: 'VPS hostname',
@@ -2354,6 +2640,7 @@ module VpsAdmin::API
       category: 'vps',
       severity: :warning,
       email_template: :vps_network_disabled,
+      default_routed: true,
       parameters: {
         vps_id: 'VPS ID',
         vps_hostname: 'VPS hostname',
@@ -2367,6 +2654,7 @@ module VpsAdmin::API
       category: 'vps',
       severity: :info,
       email_template: :vps_network_enabled,
+      default_routed: true,
       parameters: {
         vps_id: 'VPS ID',
         vps_hostname: 'VPS hostname',
@@ -2380,6 +2668,7 @@ module VpsAdmin::API
       category: 'vps',
       severity: :warning,
       email_template: :vps_stopped_over_quota,
+      default_routed: true,
       parameters: {
         vps_id: 'VPS ID',
         vps_hostname: 'VPS hostname',
@@ -2403,6 +2692,7 @@ module VpsAdmin::API
       category: 'vps',
       severity: :info,
       email_template: :vps_dataset_expanded,
+      default_routed: true,
       parameters: {
         vps_id: 'VPS ID',
         vps_hostname: 'VPS hostname',
@@ -2423,6 +2713,7 @@ module VpsAdmin::API
       category: 'vps',
       severity: :info,
       email_template: :vps_dataset_shrunk,
+      default_routed: true,
       parameters: {
         vps_id: 'VPS ID',
         vps_hostname: 'VPS hostname',
@@ -2443,6 +2734,7 @@ module VpsAdmin::API
       category: 'storage',
       severity: :info,
       email_template: :snapshot_download_ready,
+      default_routed: true,
       parameters: {
         download_id: 'Snapshot download ID',
         snapshot_id: 'Snapshot ID',
@@ -2461,6 +2753,7 @@ module VpsAdmin::API
       category: 'storage',
       severity: :warning,
       email_template: :dataset_migration_begun,
+      default_routed: true,
       parameters: {
         dataset_id: 'Dataset ID',
         dataset_full_name: 'Dataset name',
@@ -2489,6 +2782,7 @@ module VpsAdmin::API
       category: 'storage',
       severity: :info,
       email_template: :dataset_migration_finished,
+      default_routed: true,
       parameters: {
         dataset_id: 'Dataset ID',
         dataset_full_name: 'Dataset name',
@@ -2517,6 +2811,7 @@ module VpsAdmin::API
       category: 'vps',
       severity: :warning,
       email_template: :vps_migration_planned,
+      default_routed: true,
       parameters: {
         migration_id: 'Migration ID',
         vps_id: 'VPS ID',
@@ -2535,6 +2830,7 @@ module VpsAdmin::API
       category: 'vps',
       severity: :warning,
       email_template: :vps_migration_begun,
+      default_routed: true,
       parameters: {
         vps_id: 'VPS ID',
         vps_hostname: 'VPS hostname',
@@ -2556,6 +2852,7 @@ module VpsAdmin::API
       category: 'vps',
       severity: :info,
       email_template: :vps_migration_finished,
+      default_routed: true,
       parameters: {
         vps_id: 'VPS ID',
         vps_hostname: 'VPS hostname',
@@ -2577,6 +2874,7 @@ module VpsAdmin::API
       category: 'vps',
       severity: :warning,
       email_template: :vps_replaced,
+      default_routed: true,
       parameters: {
         vps_id: 'VPS ID',
         vps_hostname: 'VPS hostname',

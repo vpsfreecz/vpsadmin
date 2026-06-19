@@ -55,11 +55,14 @@ module VpsAdmin::Supervisor
       log.assign_attributes(attrs)
       log.save!
 
-      update_latest_transfer(dns_server_zone, log)
+      previous_status = dns_server_zone.last_transfer_status
+      return unless update_latest_transfer(dns_server_zone, log)
+
+      VpsAdmin::API::Events.emit_dns_transfer_event!(log, previous_status:)
     end
 
     def update_latest_transfer(dns_server_zone, log)
-      return if dns_server_zone.last_transfer_at && dns_server_zone.last_transfer_at > log.event_at
+      return false if dns_server_zone.last_transfer_at && dns_server_zone.last_transfer_at > log.event_at
 
       dns_server_zone.update!(
         last_transfer_log: log,
@@ -70,6 +73,7 @@ module VpsAdmin::Supervisor
         last_transfer_primary_addr: log.primary_addr,
         last_transfer_serial: log.serial
       )
+      true
     end
 
     def event_key(event)

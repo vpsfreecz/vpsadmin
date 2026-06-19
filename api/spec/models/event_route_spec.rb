@@ -120,6 +120,108 @@ RSpec.describe EventRoute do
     expect(delivery.reload).to be_released_state
   end
 
+  it 'does not route opt-in events through the generated default route' do
+    event = VpsAdmin::API::Events.emit!(
+      'transaction_chain.state_changed',
+      user: SpecSeed.user,
+      subject: 'Spec transaction state',
+      parameters: {
+        'state' => 'queued',
+        'terminal' => false
+      }
+    )
+    delivery = event.event_deliveries.sole
+
+    expect(event.reload).to be_suppressed_routing_state
+    expect(event.matched_event_route).to be_nil
+    expect(delivery).to be_skipped_state
+    expect(delivery.error_summary).to eq('no route matched the event')
+    expect(described_class.default_route_for(SpecSeed.user).hit_count).to eq(0)
+  end
+
+  it 'lets explicit wildcard routes match opt-in events' do
+    receiver = create_receiver!(
+      action: {
+        action: :webhook,
+        target_kind: :custom,
+        target_value: 'https://example.test/transactions'
+      }
+    )
+    route = create_route!(receiver:, event_type: nil)
+
+    event = VpsAdmin::API::Events.emit!(
+      'transaction_chain.state_changed',
+      user: SpecSeed.user,
+      subject: 'Spec transaction state',
+      parameters: {
+        'state' => 'queued',
+        'terminal' => false
+      }
+    )
+
+    expect(event.reload).to be_routed_routing_state
+    expect(event.matched_event_route).to eq(route)
+    expect(event.event_deliveries.sole.action).to eq('webhook')
+  end
+
+  it 'matches boolean false event parameters' do
+    receiver = create_receiver!(
+      action: {
+        action: :webhook,
+        target_kind: :custom,
+        target_value: 'https://example.test/transactions'
+      }
+    )
+    route = create_route!(
+      receiver:,
+      event_type: 'transaction_chain.state_changed'
+    )
+    route.event_route_matchers.create!(
+      field: 'parameters.terminal',
+      operator: '==',
+      value: 'false'
+    )
+
+    event = VpsAdmin::API::Events.emit!(
+      'transaction_chain.state_changed',
+      user: SpecSeed.user,
+      subject: 'Spec transaction state',
+      parameters: {
+        'state' => 'queued',
+        'terminal' => false
+      }
+    )
+
+    expect(event.reload).to be_routed_routing_state
+    expect(event.matched_event_route).to eq(route)
+  end
+
+  it 'marks single-use routes as spent after their first match' do
+    receiver = create_receiver!(
+      action: {
+        action: :webhook,
+        target_kind: :custom,
+        target_value: 'https://example.test/once'
+      }
+    )
+    route = create_route!(
+      receiver:,
+      event_type: 'user.test_notification',
+      single_use: true
+    )
+
+    event = VpsAdmin::API::Events.emit!(
+      'user.test_notification',
+      user: SpecSeed.user,
+      subject: 'Spec one-shot'
+    )
+
+    expect(event.reload.matched_event_route).to eq(route)
+    expect(route.reload).to be_single_use
+    expect(route).not_to be_enabled
+    expect(route.spent_at).to be_present
+  end
+
   it 'syncs generated default routing when the legacy mailer switch changes' do
     emit_incident!
 

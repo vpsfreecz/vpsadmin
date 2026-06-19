@@ -368,6 +368,7 @@ covered:
 - transaction#index
 - transaction#show
 - transaction_chain#index
+- transaction_chain#notify_when_done
 - transaction_chain#show
 - vps#boot
 - vps#clone

@@ -73,7 +73,19 @@ class TransactionChain < ApplicationRecord
       chain.save!
     end
 
+    emit_state_changed_event(chain, previous_state: 'staged', state: 'queued') if chain
+
     [chain, ret]
+  end
+
+  def self.emit_state_changed_event(chain, previous_state:, state:)
+    VpsAdmin::API::Events.emit_transaction_chain_state!(
+      chain,
+      previous_state:,
+      state:
+    )
+  rescue StandardError => e
+    warn "Unable to emit transaction chain event for chain ##{chain.id}: #{e.class}: #{e.message}"
   end
 
   # The chain name is a class name in lowercase with added

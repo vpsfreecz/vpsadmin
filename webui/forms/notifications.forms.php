@@ -908,6 +908,10 @@ function notifications_matcher_params_from_row($row)
 
 function notifications_route_type_html($route, $event_type_labels)
 {
+    if (notifications_prop($route, 'default_route', false)) {
+        return h(_('Default event types'));
+    }
+
     if ($route->event_type) {
         return h(notifications_label($event_type_labels, $route->event_type));
     }
@@ -1332,6 +1336,28 @@ function notifications_route_edit($route_id)
     api_param_to_form('continue', $input->continue, post_val('continue', $route->continue));
     $xtpl->form_out(_('Save'));
     notifications_clear_table_form();
+
+    if (
+        notifications_prop($route, 'default_route', false)
+        || notifications_prop($route, 'single_use', false)
+        || notifications_prop($route, 'spent_at')
+        || notifications_prop($route, 'expires_at')
+    ) {
+        $xtpl->table_title(_('Route lifecycle'));
+        $xtpl->table_td(_('Default route'));
+        $xtpl->table_td(boolean_icon(notifications_prop($route, 'default_route', false)));
+        $xtpl->table_tr();
+        $xtpl->table_td(_('Single-use route'));
+        $xtpl->table_td(boolean_icon(notifications_prop($route, 'single_use', false)));
+        $xtpl->table_tr();
+        $xtpl->table_td(_('Spent at'));
+        $xtpl->table_td($route->spent_at ? tolocaltz($route->spent_at) : '-');
+        $xtpl->table_tr();
+        $xtpl->table_td(_('Expires at'));
+        $xtpl->table_td($route->expires_at ? tolocaltz($route->expires_at) : '-');
+        $xtpl->table_tr();
+        $xtpl->table_out();
+    }
 
     notifications_route_subroutes($route);
 
@@ -2793,7 +2819,7 @@ function notifications_event_types($user_id = null)
         $html .= '<details style="margin-bottom:1em;">'
             . '<summary><strong>' . h($category) . '</strong> (' . count($types) . ')</summary>'
             . '<table class="table-style01" style="margin-top:0.5em;">'
-            . '<tr><th>' . _('Name') . '</th><th>' . _('Severity') . '</th><th>' . _('Matchable fields') . '</th></tr>';
+            . '<tr><th>' . _('Name') . '</th><th>' . _('Severity') . '</th><th>' . _('Default route') . '</th><th>' . _('Matchable fields') . '</th></tr>';
 
         foreach ($types as $type) {
             $fields = notifications_event_type_fields_from_type($type);
@@ -2812,7 +2838,10 @@ function notifications_event_types($user_id = null)
 
             $html .= '<tr>'
                 . '<td><code>' . h($type->name) . '</code><br>' . h($type->label) . '</td>'
-                . '<td>' . h($type->severity) . '</td>'
+                . '<td>' . h($type->severity)
+                . (notifications_prop($type, 'severity_description') ? '<br><small>' . h($type->severity_description) . '</small>' : '')
+                . '</td>'
+                . '<td>' . (notifications_prop($type, 'default_routed', true) ? h(_('yes')) : h(_('opt-in'))) . '</td>'
                 . '<td>' . $fields_html . '</td>'
                 . '</tr>';
         }

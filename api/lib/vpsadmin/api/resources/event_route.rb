@@ -17,6 +17,10 @@ module VpsAdmin::API::Resources
       string :event_type_pattern, nullable: true
       bool :continue
       integer :hit_count, label: 'Hit count'
+      bool :default_route
+      bool :single_use
+      datetime :spent_at, nullable: true
+      datetime :expires_at, nullable: true
       string :matcher_summary
       string :display_label
     end
@@ -33,6 +37,7 @@ module VpsAdmin::API::Resources
 
       input do
         use :common, include: %i[user parent_id notification_receiver_id enabled event_type]
+        bool :include_spent, default: false, fill: true
       end
 
       output(:object_list) do
@@ -47,6 +52,7 @@ module VpsAdmin::API::Resources
 
       def query
         q = self.class.model.where(with_restricted)
+        q = q.where(spent_at: nil) unless input[:include_spent]
 
         %i[user parent_id notification_receiver_id enabled event_type].each do |v|
           q = q.where(v => input[v]) if input.has_key?(v)
@@ -106,7 +112,7 @@ module VpsAdmin::API::Resources
           error!('access denied')
         end
 
-        if owner.event_routes.count >= ::EventRoute::MAX_ROUTES
+        if owner.event_routes.active.count >= ::EventRoute::MAX_ROUTES
           error!('route limit reached, refusing to add another one')
         end
 
