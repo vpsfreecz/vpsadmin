@@ -288,6 +288,7 @@ module VpsAdmin::API
     end
 
     def email_template_name_for(event)
+      return event.runtime_email_template_name.to_sym if event.runtime_email_template_name.present?
       return request_email_template_name_for(event) if REQUEST_EVENT_TYPES.include?(event.event_type)
       return outage_email_template_choice(event).first if OUTAGE_EVENT_TYPES.include?(event.event_type)
       if event.user_id.blank? && SYSTEM_REPORT_EVENT_TYPES.include?(event.event_type)
@@ -298,6 +299,8 @@ module VpsAdmin::API
     end
 
     def email_template_params_for(event)
+      return event.runtime_email_template_params if event.runtime_email_template_params.present?
+
       case event.event_type
       when 'lifetime.expiration_warning'
         params = event.parameters || {}
@@ -622,13 +625,18 @@ module VpsAdmin::API
     end
 
     def email_template_extra_options_for(event)
-      return request_email_template_extra_options(event) if REQUEST_EVENT_TYPES.include?(event.event_type)
-      return outage_email_template_extra_options(event) if OUTAGE_EVENT_TYPES.include?(event.event_type)
-      if event.user_id.blank? && SYSTEM_REPORT_EVENT_TYPES.include?(event.event_type)
-        return system_report_email_template_extra_options(event)
-      end
+      ret =
+        if REQUEST_EVENT_TYPES.include?(event.event_type)
+          request_email_template_extra_options(event)
+        elsif OUTAGE_EVENT_TYPES.include?(event.event_type)
+          outage_email_template_extra_options(event)
+        elsif event.user_id.blank? && SYSTEM_REPORT_EVENT_TYPES.include?(event.event_type)
+          system_report_email_template_extra_options(event)
+        else
+          {}
+        end
 
-      {}
+      ret.merge(event.runtime_email_options || {})
     end
 
     def system_report_email_template_extra_options(event)
@@ -1475,7 +1483,8 @@ module VpsAdmin::API
     def emit!(event_type, user: nil, vps: nil, source: nil, source_class: nil,
               source_id: nil, subject: nil, summary: nil, parameters: {},
               severity: nil, category: nil, ip_addr: nil, route: true,
-              release: true, email_vars: nil)
+              release: true, email_vars: nil, email_template_name: nil,
+              email_template_params: nil, email_options: nil)
       type = type_for(event_type)
       if user && vps && vps.user_id != user.id
         raise ArgumentError, 'user and VPS owner do not match'
@@ -1497,9 +1506,15 @@ module VpsAdmin::API
         ip_addr:
       )
       event.runtime_email_vars = email_vars if email_vars
+      event.runtime_email_template_name = email_template_name if email_template_name
+      event.runtime_email_template_params = email_template_params if email_template_params
+      event.runtime_email_options = email_options if email_options
 
       route!(event) if route
       event.runtime_email_vars = email_vars if email_vars
+      event.runtime_email_template_name = email_template_name if email_template_name
+      event.runtime_email_template_params = email_template_params if email_template_params
+      event.runtime_email_options = email_options if email_options
       VpsAdmin::API::Notifications::Release.release!(event.event_deliveries.where(state: 'prepared')) if route && release
 
       event
@@ -1983,7 +1998,7 @@ module VpsAdmin::API
           payload: delivery.payload
         )
 
-        record.association(:event).target = event if event.runtime_email_vars
+        record.association(:event).target = event if event.runtime_email_context?
 
         if record.email_action? && record.prepared_state?
           VpsAdmin::API::Notifications.render_email_delivery!(record)

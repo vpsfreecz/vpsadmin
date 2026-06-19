@@ -691,6 +691,22 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
     expect(dns['default_routed']).to be(false)
   end
 
+  it 'lists monitoring event types and fields when the plugin is enabled', requires_plugins: :monitoring do
+    as(SpecSeed.user) { json_get event_types_path }
+
+    expect_status(200)
+    monitoring = event_types.detect { |row| row['name'] == 'monitoring.alert' }
+    expect(monitoring['default_routed']).to be(true)
+    expect(monitoring['fields']).to include(
+      'parameters.monitor_name' => 'Monitoring alert: Monitor internal name',
+      'parameters.state' => 'Monitoring alert: Monitored event state'
+    )
+  end
+
+  it 'does not register monitoring event types in core-only mode', without_plugins: :monitoring do
+    expect(VpsAdmin::API::Events.type_for('monitoring.alert')).to be_nil
+  end
+
   it 'creates test events for the current user' do
     as(SpecSeed.user) do
       json_post event_test_path, event: {
