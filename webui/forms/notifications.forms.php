@@ -1757,7 +1757,9 @@ function notifications_html_preview($html)
     }
 
     return '<div class="notification-delivery-html-preview">'
+        . '<div class="notification-delivery-html-frame">'
         . '<iframe sandbox="" title="' . h(_('HTML preview')) . '" srcdoc="' . h($html) . '"></iframe>'
+        . '</div>'
         . '</div>';
 }
 

@@ -263,31 +263,55 @@ form[name="userns-map-entries"] input[type="text"] {text-align: right;}
 .notification-delivery-html-source {
   width: 100%;
   max-width: none;
+  box-sizing: border-box;
 }
 
 #notification-delivery-html {
   width: 100%;
-  table-layout: fixed;
+  min-width: 100%;
+  max-width: none;
+  margin: 15px 0;
+  box-sizing: border-box;
+  table-layout: auto;
 }
 
+#notification-delivery-html tbody,
+#notification-delivery-html table,
+#notification-delivery-html tr,
 #notification-delivery-html td {
-  max-width: none;
+  width: 100%;
+  max-width: none !important;
   overflow-x: visible;
+  box-sizing: border-box;
+  padding: 0;
+}
+
+.notification-delivery-html-frame {
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  max-width: none;
+  height: 75vh;
+  min-height: 650px;
+  border: 1px solid #B2DAFF;
+  background: #FFF;
+  overflow: auto;
+  resize: vertical;
 }
 
 .notification-delivery-html-preview iframe {
   display: block;
   box-sizing: border-box;
   width: 100%;
-  min-height: 650px;
-  height: 70vh;
-  max-height: 900px;
-  border: 1px solid #B2DAFF;
+  max-width: none;
+  height: calc(100% - 12px);
+  min-height: 638px;
+  border: 0;
   background: #FFF;
 }
 
 .notification-delivery-html-source {
-  margin: 0;
+  margin: 8px 0 0;
 }
 
 .notification-delivery-html-source summary {

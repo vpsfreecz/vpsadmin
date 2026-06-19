@@ -11,6 +11,7 @@ final class NotificationDeliveryHtmlDetailsTest extends TestCase
         $preview = notifications_html_preview('<html><body><p>Hello</p></body></html>');
 
         self::assertStringContainsString('class="notification-delivery-html-preview"', $preview);
+        self::assertStringContainsString('class="notification-delivery-html-frame"', $preview);
         self::assertStringContainsString('<iframe sandbox=""', $preview);
         self::assertStringContainsString('title="HTML preview"', $preview);
         self::assertStringContainsString('&lt;p&gt;Hello&lt;/p&gt;', $preview);
@@ -36,13 +37,17 @@ final class NotificationDeliveryHtmlDetailsTest extends TestCase
         $css = file_get_contents(dirname(__DIR__, 2) . '/public/template/css/main.css');
 
         self::assertStringContainsString('.notification-delivery-html-preview', $css);
+        self::assertStringContainsString('.notification-delivery-html-frame', $css);
         self::assertStringContainsString('#notification-delivery-html', $css);
         self::assertStringContainsString('width: 100%;', $css);
         self::assertStringContainsString('max-width: none;', $css);
         self::assertStringContainsString('min-height: 650px;', $css);
-        self::assertStringContainsString('height: 70vh;', $css);
-        self::assertStringContainsString('max-height: 900px;', $css);
+        self::assertStringContainsString('height: 75vh;', $css);
+        self::assertStringContainsString('height: calc(100% - 12px);', $css);
+        self::assertStringContainsString('resize: vertical;', $css);
+        self::assertStringContainsString('padding: 0;', $css);
         self::assertStringNotContainsString('width: 790px;', $css);
+        self::assertStringNotContainsString('max-height: 900px;', $css);
     }
 
     public function testDeliveryQueueAndLogTableOmitsWideSummaryColumns(): void
