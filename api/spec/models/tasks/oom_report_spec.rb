@@ -15,7 +15,7 @@ RSpec.describe VpsAdmin::API::Tasks::OomReport do
 
   describe '#notify' do
     before do
-      allow(TransactionChains::Vps::OomReports).to receive(:fire2)
+      allow(VpsAdmin::API::NotificationEvents).to receive(:run_chain)
     end
 
     it 'selects VPSes with unreported non-ignored reports' do
@@ -26,7 +26,7 @@ RSpec.describe VpsAdmin::API::Tasks::OomReport do
       create_oom_report_fixture!(vps: ignored_vps, ignored: true, reported_at: nil)
       create_oom_report_fixture!(vps: reported_vps, ignored: false, reported_at: 1.hour.ago)
       captured_vps_ids = nil
-      allow(TransactionChains::Vps::OomReports).to receive(:fire2) do |args:, kwargs:|
+      allow(VpsAdmin::API::NotificationEvents).to receive(:run_chain) do |_klass, args:, kwargs:|
         captured_vps_ids = args.first.map(&:id)
         expect(kwargs).to include(:cooldown)
       end
@@ -43,7 +43,8 @@ RSpec.describe VpsAdmin::API::Tasks::OomReport do
         task.notify
       end
 
-      expect(TransactionChains::Vps::OomReports).to have_received(:fire2).with(
+      expect(VpsAdmin::API::NotificationEvents).to have_received(:run_chain).with(
+        TransactionChains::Vps::OomReports,
         args: [anything],
         kwargs: { cooldown: 42 }
       )
@@ -54,7 +55,7 @@ RSpec.describe VpsAdmin::API::Tasks::OomReport do
 
       task.notify
 
-      expect(TransactionChains::Vps::OomReports).not_to have_received(:fire2)
+      expect(VpsAdmin::API::NotificationEvents).not_to have_received(:run_chain)
     end
   end
 

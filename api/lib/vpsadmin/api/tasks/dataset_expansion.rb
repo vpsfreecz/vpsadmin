@@ -40,7 +40,10 @@ module VpsAdmin::API::Tasks
       end
 
       expansions.each do |exp|
-        TransactionChains::Mail::VpsDatasetExpanded.fire(exp)
+        VpsAdmin::API::NotificationEvents.run_chain(
+          TransactionChains::Mail::VpsDatasetExpanded,
+          args: [exp]
+        )
       end
     end
 
