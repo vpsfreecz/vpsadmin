@@ -25,6 +25,9 @@ class User < ApplicationRecord
   has_many :user_public_keys
   has_many :user_mail_role_recipients
   has_many :user_mail_template_recipients
+  has_many :notification_receivers, dependent: :destroy
+  has_many :event_routes, dependent: :destroy
+  has_many :events
   has_many :user_totp_devices
   has_many :user_sessions
   has_many :user_devices
@@ -44,6 +47,8 @@ class User < ApplicationRecord
 
   before_validation :set_no_password
   before_validation :normalize_time_zone
+  after_create :create_default_notification_routing
+  after_update :sync_default_notification_routing, if: :saved_change_to_mailer_enabled?
 
   alias_attribute :role, :level
 
@@ -237,5 +242,22 @@ class User < ApplicationRecord
 
   def set_no_password
     self.password = '!' if password.nil? || password.empty?
+  end
+
+  def create_default_notification_routing
+    return unless notification_routing_tables_exist?
+
+    NotificationReceiver.ensure_defaults_for!(self)
+  end
+
+  def sync_default_notification_routing
+    return unless notification_routing_tables_exist?
+
+    NotificationReceiver.sync_mailer_enabled!(self)
+  end
+
+  def notification_routing_tables_exist?
+    ActiveRecord::Base.connection.table_exists?(:notification_receivers) &&
+      ActiveRecord::Base.connection.table_exists?(:event_routes)
   end
 end
