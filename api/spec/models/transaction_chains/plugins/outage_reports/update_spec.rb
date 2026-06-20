@@ -116,6 +116,38 @@ RSpec.describe 'outage reports update chain', requires_plugins: :outage_reports 
     direct = attempts.find { |_name, opts| opts[:user] == SpecSeed.user }
     expect(generic).not_to be_nil
     expect(direct).not_to be_nil
+    generic_event = Event.where(event_type: 'outage.announced', user_id: nil).sole
+    user_event = Event.where(event_type: 'outage.announced', user: SpecSeed.user).sole
+    generic_delivery = generic_event.event_deliveries.sole
+    user_delivery = user_event.event_deliveries.sole
+    expect(generic_event.source).to eq(report)
+    expect(generic_event.parameters).to include(
+      'role' => 'generic',
+      'event' => 'announce',
+      'outage_id' => outage.id,
+      'update_id' => report.id,
+      'impact_type' => 'network'
+    )
+    expect(generic_delivery).to be_prepared_state
+    expect(generic_delivery.notification_receiver).to be_nil
+    expect(generic_delivery.target_label).to eq('Template recipients')
+    expect(generic_delivery.template_name).to eq('outage_report_role_event')
+    expect(user_event.source).to eq(report)
+    expect(user_event.parameters).to include(
+      'role' => 'user',
+      'event' => 'announce',
+      'affected_user_id' => SpecSeed.user.id,
+      'affected_user_login' => SpecSeed.user.login,
+      'affected_vps_count' => 0,
+      'affected_export_count' => 0
+    )
+    expect(user_event.parameters.fetch('cves')).to contain_exactly(
+      'CVE-2026-3001',
+      'CVE-2026-3002'
+    )
+    expect(user_delivery).to be_prepared_state
+    expect(user_delivery.notification_receiver).not_to be_nil
+    expect(user_delivery.template_name).to eq('outage_report_role_event')
 
     expected_reply = "<vpsadmin-outage-#{outage.id}-0-announce@vpsadmin.vpsfree.cz>"
     expected_direct_reply = "<vpsadmin-outage-#{outage.id}-#{SpecSeed.user.id}-announce@vpsadmin.vpsfree.cz>"
@@ -146,6 +178,40 @@ RSpec.describe 'outage reports update chain', requires_plugins: :outage_reports 
         )
       )
     end
+  end
+
+  it 'logs muted deliveries for affected users with disabled mailer' do
+    outage = build_outage
+    SpecSeed.user.update!(mailer_enabled: false)
+    OutageUser.create!(outage: outage, user: SpecSeed.user, vps_count: 1, export_count: 0)
+    attempts = []
+
+    allow(outage).to receive(:set_affected_vpses)
+    allow(outage).to receive(:set_affected_exports)
+    allow(outage).to receive(:set_affected_users)
+    allow(MailTemplate).to receive(:send_mail!) do |name, opts|
+      attempts << [name, opts]
+      build_mail_log_double
+    end
+
+    chain_class.fire2(args: [
+                        outage,
+                        { state: Outage.states[:announced] },
+                        { lang => { summary: 'Announced', description: 'Announced desc' } },
+                        { send_mail: true }
+                      ])
+
+    event = Event.where(event_type: 'outage.announced', user: SpecSeed.user).sole
+    delivery = event.event_deliveries.sole
+    expect(event).to be_suppressed_routing_state
+    expect(event.parameters).to include(
+      'role' => 'user',
+      'event' => 'announce',
+      'affected_user_id' => SpecSeed.user.id
+    )
+    expect(delivery).to be_skipped_state
+    expect(delivery.error_summary).to eq('receiver does not notify')
+    expect(attempts.none? { |_name, opts| opts[:user] == SpecSeed.user }).to be(true)
   end
 
   it 'suppresses mail when requested' do

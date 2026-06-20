@@ -6,6 +6,7 @@ end
 
 require_rel 'lib'
 require_rel 'models'
+require_rel 'events'
 require_rel 'resources'
 
 if defined?(namespace)
