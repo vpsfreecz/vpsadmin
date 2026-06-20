@@ -22,6 +22,15 @@ function context_switch_form($user_id, $next, $label = '')
         . '</form>';
 }
 
+function adminm_notifications_url($action, $user_id)
+{
+    $user_qs = function_exists('notifications_user_qs')
+        ? notifications_user_qs($user_id)
+        : (isAdmin() && $user_id ? '&user=' . $user_id : '');
+
+    return '?page=notifications&action=' . $action . $user_qs;
+}
+
 function print_newm()
 {
     global $xtpl, $cfg_privlevel, $config;
@@ -45,8 +54,6 @@ function print_newm()
     if (payments_enabled()) {
         $xtpl->form_add_input(_("Monthly payment") . ':', 'text', '30', 'm_monthly_payment', $_POST["m_monthly_payment"] ? $_POST["m_monthly_payment"] : '300', ' ');
     }
-
-    $xtpl->form_add_checkbox(_("Enable vpsAdmin mailer") . ':', 'm_mailer_enable', '1', $_POST["m_nick"] ? $_POST["m_mailer_enable"] : true, $hint = '');
 
     $xtpl->form_add_textarea(_("Info") . ':', 28, 4, 'm_info', $_POST["m_info"], _("Note for administrators"));
     $xtpl->form_out(_("Add"));
@@ -147,9 +154,11 @@ function print_editm($u)
         $xtpl->table_tr();
     }
 
-    $xtpl->table_td(_('Enable mail notifications from vpsAdmin') . ':');
-    $xtpl->form_add_checkbox_pure('m_mailer_enable', '1', $u->mailer_enabled, $hint = '');
-    $xtpl->table_td('<a href="?page=reminder&action=reminder&resource=user&id=' . $u->id . '">' . _('Configure payment reminder') . '</a>');
+    $xtpl->table_td(_('Notifications') . ':');
+    $xtpl->table_td(
+        '<a href="' . adminm_notifications_url('routes', $u->id) . '">' . _('Configure event routes') . '</a>'
+        . ' | <a href="?page=reminder&action=reminder&resource=user&id=' . $u->id . '">' . _('Configure payment reminder') . '</a>'
+    );
     $xtpl->table_tr();
 
     $xtpl->table_td(_('Language') . ':');
@@ -332,49 +341,19 @@ function print_editm($u)
 
     $xtpl->form_out(isAdmin() ? _("Save") : _("Request change"));
 
-    $xtpl->form_create('?page=adminm&action=role_recipients&id=' . $u->id, 'post');
-    $xtpl->table_add_category(_('E-mail roles'));
-    $xtpl->table_add_category(_('E-mails'));
-
+    $xtpl->table_add_category(_('E-mail notifications'));
+    $xtpl->table_add_category('&nbsp;');
     $xtpl->table_td(
-        _('E-mails configured here override the primary e-mail. It is a comma separated list of e-mails, may contain line breaks.'),
+        _('E-mail delivery is configured using event routes and receivers.'),
         false,
         false,
         2
     );
     $xtpl->table_tr();
-
-    foreach ($mail_role_recipients as $recp) {
-        $xtpl->table_td(
-            $recp->label,
-            false,
-            false,
-            1,
-            $recp->description ? 2 : 1
-        );
-
-        $xtpl->form_add_textarea_pure(
-            50,
-            5,
-            "to[{$recp->id}]",
-            str_replace(',', ",\n", $_POST['to'][$recp->id] ?? $recp->to ?? '')
-        );
-        $xtpl->table_tr();
-
-        if ($recp->description) {
-            $xtpl->table_td($recp->description);
-            $xtpl->table_tr();
-        }
-    }
-
-    $xtpl->table_td(
-        '<a href="?page=adminm&action=template_recipients&id=' . $u->id . '">'
-        . _('Advanced configuration')
-        . '</a>'
-    );
-    $xtpl->table_td($xtpl->html_submit(_('Save')));
+    $xtpl->table_td('<a href="' . adminm_notifications_url('routes', $u->id) . '">' . _('Configure event routes') . '</a>');
+    $xtpl->table_td('<a href="' . adminm_notifications_url('receivers', $u->id) . '">' . _('Configure receivers') . '</a>');
     $xtpl->table_tr();
-    $xtpl->form_out_raw();
+    $xtpl->table_out();
 
     $return_url = urlencode($_SERVER["REQUEST_URI"]);
 
@@ -389,7 +368,7 @@ function print_editm($u)
         $xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="' . _("Payment instructions") . '" />' . _('Payment instructions'), "?page=adminm&section=members&action=payment_instructions&id={$u->id}", 'member.payment-instructions');
     }
 
-    $xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="' . _("Advanced mail configuration") . '" />' . _('Advanced e-mail configuration'), "?page=adminm&section=members&action=template_recipients&id={$u->id}", 'member.advanced-email-configuration');
+    $xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="' . _("Notifications") . '" />' . _('Notifications'), adminm_notifications_url('routes', $u->id));
     $xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="' . _("Public keys") . '" />' . _('Public keys'), "?page=adminm&section=members&action=pubkeys&id={$u->id}", 'member.public-keys');
     $xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="' . _("TOTP devices") . '" />' . _('TOTP devices'), "?page=adminm&section=members&action=totp_devices&id={$u->id}", 'member.totp-devices');
     $xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="' . _("Passkeys") . '" />' . _('Passkeys'), "?page=adminm&section=members&action=webauthn_list&id={$u->id}", 'member.passkeys');
@@ -742,8 +721,6 @@ function list_members()
         $xtpl->form_add_input(_("Access level") . ':', 'text', '40', 'level', get_val('level', ''), '');
         $xtpl->form_add_input(_("Info") . ':', 'text', '40', 'info', get_val('info', ''), '');
         $xtpl->form_add_input(_("Monthly payment") . ':', 'text', '40', 'monthly_payment', get_val('monthly_payment', ''), '');
-        $xtpl->form_add_checkbox(_("Mailer enabled") . ':', 'mailer_enabled', 1, get_val('mailer_enabled', ''));
-
         $p = $api->vps->index->getParameters('input')->object_state;
         api_param_to_form('object_state', $p, get_val('object_state'));
 
@@ -811,11 +788,6 @@ function list_members()
             $monthlyPayment = api_get('monthly_payment');
             if ($monthlyPayment !== null) {
                 $params['monthly_payment'] = $monthlyPayment;
-            }
-
-            $mailerEnabled = api_get('mailer_enabled');
-            if ($mailerEnabled !== null) {
-                $params['mailer_enabled'] = $mailerEnabled;
             }
 
             $objectState = api_get('object_state');
@@ -1080,7 +1052,7 @@ if (isLoggedIn()) {
                         'level' => $_POST['m_level'],
                         'info' => $_POST['m_info'],
                         'monthly_payment' => $_POST['m_monthly_payment'],
-                        'mailer_enabled' => isset($_POST['m_mailer_enable']),
+                        'mailer_enabled' => true,
                     ]);
 
                     notify_user(_('User created'), _('The user was successfully created.'));
@@ -1143,7 +1115,6 @@ if (isLoggedIn()) {
                 $user = $api->user->show($_GET['id']);
 
                 $params = [
-                    'mailer_enabled' => isset($_POST['m_mailer_enable']),
                     'language' => $_POST['language'],
                     'time_zone' => $_POST['time_zone'] ?? null,
                 ];
@@ -1568,49 +1539,8 @@ if (isLoggedIn()) {
             break;
 
         case 'role_recipients':
-            csrf_check();
-
-            try {
-                foreach ($_POST['to'] as $role => $emails) {
-                    $api->user($_GET['id'])->mail_role_recipient($role)->update([
-                        'to' => $emails,
-                    ]);
-                }
-
-                notify_user(_('Role e-mails updated'), _('The changes were successfully saved.'));
-                redirect('?page=adminm&action=edit&id=' . $_GET['id']);
-
-            } catch (\HaveAPI\Client\Exception\ActionFailed $e) {
-                $xtpl->perex_format_errors(_('Update failed'), $e->getResponse());
-                print_editm($api->user->show($_GET['id']));
-            }
-            break;
-
         case 'template_recipients':
-            $xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="' . _("Back to user details") . '" />' . _('Back to user details'), "?page=adminm&action=edit&id={$_GET['id']}");
-
-            if (isset($_POST['to'])) {
-                csrf_check();
-
-                try {
-                    foreach ($_POST['to'] as $tpl => $emails) {
-                        $api->user($_GET['id'])->mail_template_recipient($tpl)->update([
-                            'to' => $emails,
-                            'enabled' => $_POST['disable'][$tpl] === '1' ? false : true,
-                        ]);
-                    }
-
-                    notify_user(_('Template e-mails updated'), _('The changes were successfully saved.'));
-                    redirect('?page=adminm&action=edit&id=' . $_GET['id']);
-
-                } catch (\HaveAPI\Client\Exception\ActionFailed $e) {
-                    $xtpl->perex_format_errors(_('Update failed'), $e->getResponse());
-                    mail_template_recipient_form($_GET['id']);
-                }
-
-            } else {
-                mail_template_recipient_form($_GET['id']);
-            }
+            redirect(adminm_notifications_url('routes', api_get_uint('id')));
             break;
 
         case 'payment_instructions':
