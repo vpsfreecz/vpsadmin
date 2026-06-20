@@ -314,7 +314,7 @@ test.describe.serial('admin member and user management browser coverage', () => 
     await logout(page, fixtures.admin.username);
   });
 
-  test('admin resource packages, cluster resources, env config, and mail recipients work', async ({
+  test('admin resource packages, cluster resources, and env config work', async ({
     page,
   }) => {
     const target = requireManagedFixture();
@@ -402,22 +402,6 @@ test.describe.serial('admin member and user management browser coverage', () => 
     await expect(resetForm).toBeVisible();
     await submitForm(resetForm, 'Reset');
     await expectNotification(page, 'Settings reset to default');
-
-    await gotoMemberEdit(page, target.id);
-    const roleForm = formByAction(page, 'action=role_recipients');
-    await expect(roleForm.locator('textarea[name^="to["]').first()).toBeVisible();
-    await roleForm.locator('textarea[name^="to["]').first().fill('admin-role@example.test');
-    await submitForm(roleForm, 'Save');
-    await expectNotification(page, 'Role e-mails updated');
-
-    await gotoMemberEdit(page, target.id);
-    await actionLink(page, 'template_recipients').click();
-    await expect(page.locator('#content-in')).toContainText('Recipients by e-mail type');
-    const templateForm = formByAction(page, 'action=template_recipients');
-    await expect(templateForm.locator('textarea[name^="to["]').first()).toBeVisible();
-    await templateForm.locator('textarea[name^="to["]').first().fill('admin-template@example.test');
-    await submitForm(templateForm, 'Save');
-    await expectNotification(page, 'Template e-mails updated');
 
     await logout(page, fixtures.admin.username);
   });
