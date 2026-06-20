@@ -32,6 +32,9 @@ let
 
   actionApiApp = action: apiAppFor (actionStateDirectory action);
 
+  positiveInt = types.addCheck types.int (value: value >= 1);
+  nonNegativeInt = types.addCheck types.int (value: value >= 0);
+
   actionTmpfilesRules =
     action:
     let
@@ -65,7 +68,13 @@ let
         password = "#rabbitmq_pass#";
       };
       smtp = smtpConfig;
+      email = {
+        concurrency = cfg.email.concurrency;
+        worker_delay = cfg.email.workerDelay;
+        domain_min_delivery_interval = cfg.email.domainMinDeliveryInterval;
+      };
       webhook = {
+        concurrency = cfg.webhook.concurrency;
         allowed_untracked_private_ranges = cfg.webhook.allowedUntrackedPrivateRanges;
       };
       poll_interval = cfg.pollInterval;
@@ -210,6 +219,37 @@ in
         };
       };
 
+      email = {
+        concurrency = mkOption {
+          type = positiveInt;
+          default = 2;
+          description = ''
+            Number of concurrent e-mail delivery workers. Per-domain and
+            per-worker throttles are shared by workers in one dispatcher
+            process.
+          '';
+        };
+
+        workerDelay = mkOption {
+          type = nonNegativeInt;
+          default = 1;
+          description = ''
+            Minimum delay in seconds between e-mail delivery starts made by the
+            same worker. Set to 0 to disable this per-worker throttle.
+          '';
+        };
+
+        domainMinDeliveryInterval = mkOption {
+          type = nonNegativeInt;
+          default = 1;
+          description = ''
+            Minimum delay in seconds between e-mail delivery starts to the same
+            recipient domain within one dispatcher process. Domains are taken
+            from To, Cc, and Bcc recipients. Set to 0 to disable this throttle.
+          '';
+        };
+      };
+
       smtp = {
         address = mkOption {
           type = types.str;
@@ -261,6 +301,14 @@ in
       };
 
       webhook = {
+        concurrency = mkOption {
+          type = positiveInt;
+          default = 4;
+          description = ''
+            Number of concurrent webhook delivery workers.
+          '';
+        };
+
         allowedUntrackedPrivateRanges = mkOption {
           type = types.listOf types.str;
           default = [ ];
