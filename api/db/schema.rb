@@ -445,6 +445,129 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_21_120000) do
     t.integer "vps_lifetime", default: 0, null: false
   end
 
+  create_table "event_deliveries", charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
+    t.string "action", limit: 50, null: false
+    t.integer "attempt_count", default: 0, null: false
+    t.datetime "created_at", null: false
+    t.text "error_summary"
+    t.bigint "event_id", null: false
+    t.bigint "event_route_id"
+    t.datetime "last_attempt_at"
+    t.integer "mail_log_id"
+    t.datetime "next_attempt_at"
+    t.bigint "notification_receiver_action_id"
+    t.bigint "notification_receiver_id"
+    t.text "payload", size: :long
+    t.string "provider_message_id"
+    t.datetime "released_at"
+    t.text "response_body"
+    t.text "response_headers"
+    t.integer "response_status"
+    t.integer "state", null: false
+    t.string "target_label"
+    t.integer "target_kind", null: false
+    t.text "target_value"
+    t.string "template_name", limit: 100
+    t.integer "transaction_id"
+    t.datetime "updated_at", null: false
+    t.index ["action", "state", "next_attempt_at"], name: "idx_event_deliveries_on_action_state_next_attempt"
+    t.index ["event_id", "action", "state"], name: "index_event_deliveries_on_event_id_and_action_and_state"
+    t.index ["event_id"], name: "index_event_deliveries_on_event_id"
+    t.index ["event_route_id"], name: "index_event_deliveries_on_event_route_id"
+    t.index ["mail_log_id"], name: "index_event_deliveries_on_mail_log_id"
+    t.index ["next_attempt_at"], name: "index_event_deliveries_on_next_attempt_at"
+    t.index ["notification_receiver_action_id"], name: "idx_event_deliveries_on_receiver_action"
+    t.index ["notification_receiver_id"], name: "index_event_deliveries_on_notification_receiver_id"
+    t.index ["released_at"], name: "index_event_deliveries_on_released_at"
+    t.index ["state"], name: "index_event_deliveries_on_state"
+    t.index ["transaction_id"], name: "index_event_deliveries_on_transaction_id"
+  end
+
+  create_table "event_delivery_attempts", charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
+    t.string "action", limit: 50, null: false
+    t.integer "attempt_number", null: false
+    t.datetime "created_at", null: false
+    t.text "error_summary"
+    t.bigint "event_delivery_id", null: false
+    t.datetime "finished_at"
+    t.string "provider_message_id"
+    t.text "response_body"
+    t.text "response_headers"
+    t.integer "response_status"
+    t.datetime "started_at"
+    t.integer "state", null: false
+    t.datetime "updated_at", null: false
+    t.index ["action", "state"], name: "idx_delivery_attempts_on_action_state"
+    t.index ["created_at"], name: "index_event_delivery_attempts_on_created_at"
+    t.index ["event_delivery_id", "attempt_number"], name: "idx_delivery_attempts_on_delivery_number", unique: true
+    t.index ["event_delivery_id"], name: "index_event_delivery_attempts_on_event_delivery_id"
+  end
+
+  create_table "event_route_matchers", charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.bigint "event_route_id", null: false
+    t.string "field", limit: 100, null: false
+    t.string "operator", limit: 50, null: false
+    t.datetime "updated_at", null: false
+    t.text "value", null: false
+    t.index ["event_route_id"], name: "index_event_route_matchers_on_event_route_id"
+  end
+
+  create_table "event_routes", charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
+    t.boolean "continue", default: false, null: false
+    t.datetime "created_at", null: false
+    t.boolean "default_route", default: false, null: false
+    t.boolean "enabled", default: true, null: false
+    t.string "email_template_name", limit: 100
+    t.string "event_type", limit: 100
+    t.string "event_type_pattern", limit: 100
+    t.datetime "expires_at"
+    t.bigint "hit_count", default: 0, null: false
+    t.string "label"
+    t.bigint "notification_receiver_id"
+    t.bigint "parent_id"
+    t.integer "position", default: 0, null: false
+    t.boolean "single_use", default: false, null: false
+    t.datetime "spent_at"
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.index ["enabled"], name: "index_event_routes_on_enabled"
+    t.index ["event_type"], name: "index_event_routes_on_event_type"
+    t.index ["expires_at"], name: "index_event_routes_on_expires_at"
+    t.index ["notification_receiver_id"], name: "index_event_routes_on_notification_receiver_id"
+    t.index ["parent_id"], name: "index_event_routes_on_parent_id"
+    t.index ["user_id", "default_route"], name: "index_event_routes_on_user_default"
+    t.index ["user_id", "single_use", "spent_at"], name: "index_event_routes_on_user_single_use_spent"
+    t.index ["user_id", "parent_id", "position", "id"], name: "index_event_routes_on_user_parent_position"
+    t.index ["user_id"], name: "index_event_routes_on_user_id"
+  end
+
+  create_table "events", charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
+    t.string "category", limit: 100, null: false
+    t.datetime "created_at", null: false
+    t.string "event_type", limit: 100, null: false
+    t.string "ip_addr", limit: 46
+    t.bigint "matched_event_route_id"
+    t.text "parameters"
+    t.integer "routing_state", default: 0, null: false
+    t.integer "severity", null: false
+    t.string "source_class", limit: 100
+    t.bigint "source_id"
+    t.string "subject", null: false
+    t.text "summary"
+    t.datetime "updated_at", null: false
+    t.bigint "user_id"
+    t.bigint "vps_id"
+    t.index ["category"], name: "index_events_on_category"
+    t.index ["created_at"], name: "index_events_on_created_at"
+    t.index ["event_type"], name: "index_events_on_event_type"
+    t.index ["matched_event_route_id"], name: "index_events_on_matched_event_route_id"
+    t.index ["routing_state"], name: "index_events_on_routing_state"
+    t.index ["severity"], name: "index_events_on_severity"
+    t.index ["user_id"], name: "index_events_on_user_id"
+    t.index ["vps_id"], name: "index_events_on_vps_id"
+  end
+
   create_table "export_hosts", id: { type: :integer, unsigned: true }, charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
     t.datetime "created_at", precision: nil, null: false
     t.integer "export_id", null: false
@@ -1251,6 +1374,38 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_21_120000) do
     t.index ["active"], name: "index_nodes_on_active"
     t.index ["hypervisor_type"], name: "index_nodes_on_hypervisor_type"
     t.index ["location_id"], name: "location_id"
+  end
+
+  create_table "notification_receiver_actions", charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
+    t.string "action", limit: 50, null: false
+    t.text "config"
+    t.datetime "created_at", null: false
+    t.boolean "enabled", default: true, null: false
+    t.string "label"
+    t.text "last_error"
+    t.bigint "notification_receiver_id", null: false
+    t.text "secret"
+    t.integer "target_kind", default: 0, null: false
+    t.text "target_value"
+    t.datetime "updated_at", null: false
+    t.string "verification_token"
+    t.datetime "verified_at"
+    t.index ["notification_receiver_id", "action", "enabled"], name: "idx_receiver_actions_on_receiver_action_enabled"
+    t.index ["notification_receiver_id"], name: "idx_receiver_actions_on_receiver"
+    t.index ["verification_token"], name: "index_notification_receiver_actions_on_verification_token", unique: true
+  end
+
+  create_table "notification_receivers", charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.text "description"
+    t.boolean "enabled", default: true, null: false
+    t.string "label", null: false
+    t.boolean "mute", default: false, null: false
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.index ["user_id", "enabled"], name: "index_notification_receivers_on_user_enabled"
+    t.index ["user_id", "mute"], name: "index_notification_receivers_on_user_mute"
+    t.index ["user_id"], name: "index_notification_receivers_on_user_id"
   end
 
   create_table "oauth2_authorizations", charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
