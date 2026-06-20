@@ -2,6 +2,7 @@ module TransactionChains
   class Mail::DailyReport < ::TransactionChain
     label 'Daily report'
     allow_empty
+    PERIOD_SECONDS = 24 * 60 * 60
 
     has_hook :send,
              desc: 'Called when daily report is being sent',
@@ -12,19 +13,57 @@ module TransactionChains
 
     def link_chain(lang)
       now = Time.now.utc
+      start = now - PERIOD_SECONDS
+      mail_vars = call_hooks_for(
+        :send,
+        self,
+        args: [start, now],
+        initial: vars(now)
+      )
 
-      mail(:daily_report, {
-             language: lang,
-             vars: call_hooks_for(
-               :send,
-               self,
-               args: [now - (24 * 60 * 60), now],
-               initial: vars(now)
-             )
-           })
+      event = route_event!(
+        'system.daily_report',
+        subject: 'Daily report',
+        summary: "Daily report from #{format_report_time(start)} to #{format_report_time(now)}",
+        parameters: report_parameters(lang, start, now),
+        report_vars: mail_vars
+      )
+      ensure_email_deliveries_queued!(event)
     end
 
     protected
+
+    def report_parameters(lang, start, finish)
+      {
+        language_id: lang.id,
+        language_code: lang.code,
+        period_start: format_report_time(start),
+        period_end: format_report_time(finish),
+        period_seconds: PERIOD_SECONDS
+      }
+    end
+
+    def format_report_time(time)
+      time.utc.strftime('%Y-%m-%dT%H:%M:%SZ')
+    end
+
+    def ensure_email_deliveries_queued!(event)
+      failed = event
+               .event_deliveries
+               .where(action: 'email', state: 'failed')
+               .order(:id)
+               .first
+      raise "failed to queue daily report e-mail delivery: #{failed.error_summary}" if failed
+
+      prepared = event.event_deliveries.where(action: 'email', state: 'prepared').exists?
+      released = event.event_deliveries.where(action: 'email', state: 'released').exists?
+      return if prepared || released || event.event_deliveries.where(action: 'email', state: 'sent').exists?
+
+      skipped = event.event_deliveries.where(action: 'email', state: %w[skipped canceled]).order(:id).first
+      return if skipped
+
+      raise 'failed to prepare daily report e-mail delivery: no delivery was prepared'
+    end
 
     def vars(now)
       t = now.strftime('%Y-%m-%d %H:%M:%S')
