@@ -78,4 +78,19 @@ RSpec.describe TransactionChains::IncidentReport::Process do
     expect(active.reload.reported_at).to be_present
     expect(inactive.reload.reported_at).to be_present
   end
+
+  it 'keeps incidents retryable when e-mail cannot be queued' do
+    allow(MailTemplate).to receive(:send_mail!).and_raise(
+      ArgumentError,
+      'render failed'
+    )
+    incident = create_process_incident!(subject: 'Retryable incident')
+
+    expect do
+      described_class.fire2(args: [[incident]])
+    end.to raise_error(RuntimeError, /failed to queue incident report e-mail delivery/)
+
+    expect(incident.reload.reported_at).to be_nil
+    expect(Event.where(event_type: 'vps.incident_report')).to be_empty
+  end
 end

@@ -20,9 +20,9 @@ module VpsAdmin::API
         return result.processed? if dry_run
 
         if result.active.any?
-          TransactionChains::IncidentReport::Send.fire(result, message:)
+          TransactionChains::IncidentReport::Utils.fire_send(result, message:)
         elsif result.incidents.any? && result.reply
-          TransactionChains::IncidentReport::Reply.fire(message, result)
+          TransactionChains::IncidentReport::Utils.fire_reply(message, result)
         end
 
         result.processed?
