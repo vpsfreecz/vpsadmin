@@ -19,6 +19,7 @@ RSpec.describe SecurityAdvisory do
     SpecSeed.pool
     SpecSeed.os_template
     SpecSeed.dns_resolver
+    ensure_alert_mail_templates!
     ensure_mailer_available!
   end
 
@@ -174,18 +175,18 @@ RSpec.describe SecurityAdvisory do
     expect(SecurityAdvisoryNodeStatusTranslation.where(id: translation.id)).to be_empty
   end
 
-  it 'mails affected users only when requested' do
+  it 'routes affected user notifications only when requested' do
     advisory = build_advisory
     add_mitigated_status!(advisory)
     add_not_affected_status!(advisory)
-    create_vps!(user: SpecSeed.user, node: SpecSeed.node, hostname: 'spec-advisory-mail')
+    user_vps = create_vps!(user: SpecSeed.user, node: SpecSeed.node, hostname: 'spec-advisory-mail')
+    other_vps = create_vps!(
+      user: SpecSeed.other_user,
+      node: SpecSeed.node,
+      hostname: 'spec-advisory-muted'
+    )
     SpecSeed.user.update!(mailer_enabled: true, object_state: :active)
-    attempts = []
-
-    allow(MailTemplate).to receive(:send_mail!) do |name, opts|
-      attempts << [name, opts]
-      build_mail_log_double
-    end
+    SpecSeed.other_user.update!(mailer_enabled: false, object_state: :active)
 
     advisory.publish!(
       expected_content_revision: advisory.content_revision,
@@ -193,22 +194,91 @@ RSpec.describe SecurityAdvisory do
       published_by: SpecSeed.admin
     )
 
-    expect(MailTemplate).not_to have_received(:send_mail!)
+    expect(Event.where(event_type: 'security_advisory.announced')).to be_empty
 
-    advisory.create_update!(
+    update = advisory.create_update!(
       {},
       { SpecSeed.language => { summary: 'Follow-up' } },
       send_mail: true
     )
+    events = Event
+             .where(
+               event_type: 'security_advisory.updated',
+               source_class: update.class.name,
+               source_id: update.id
+             )
+             .includes(:event_deliveries)
+             .to_a
+    user_event = events.detect { |event| event.user_id == SpecSeed.user.id }
+    muted_event = events.detect { |event| event.user_id == SpecSeed.other_user.id }
 
-    expect(attempts.size).to eq(1)
-    name, opts = attempts.first
-    expect(name).to eq(:security_advisory_user_update)
-    expect(opts[:user]).to eq(SpecSeed.user)
-    expect(opts.fetch(:vars)).to include(
-      advisory: advisory,
+    expect(events.size).to eq(2)
+    expect(user_event).to be_routed_routing_state
+    expect(user_event.parameters).to include(
+      'advisory_id' => advisory.id,
+      'advisory_name' => advisory.name,
+      'update_id' => update.id,
+      'affected_vps_count' => 1
+    )
+    expect(user_event.parameters.fetch('affected_vpses')).to contain_exactly(
+      a_hash_including(
+        'vps_id' => user_vps.id,
+        'vps_hostname' => user_vps.hostname
+      )
+    )
+    expect(user_event.event_deliveries.sole).to be_released_state
+    expect(user_event.event_deliveries.sole.mail_log).to be_present
+
+    expect(muted_event).to be_suppressed_routing_state
+    expect(muted_event.parameters.fetch('affected_vpses')).to contain_exactly(
+      a_hash_including(
+        'vps_id' => other_vps.id,
+        'vps_hostname' => other_vps.hostname
+      )
+    )
+    expect(muted_event.event_deliveries.sole).to be_skipped_state
+    expect(muted_event.event_deliveries.sole.error_summary).to include('does not notify')
+    expect(advisory.last_chain).to be_nil
+  end
+
+  it 'rebuilds advisory e-mail variables from persisted event parameters' do
+    advisory = build_advisory
+    add_mitigated_status!(advisory)
+    add_not_affected_status!(advisory)
+    user_vps = create_vps!(
+      user: SpecSeed.user,
+      node: SpecSeed.node,
+      hostname: 'spec-advisory-fallback'
+    )
+    create_vps!(
+      user: SpecSeed.other_user,
+      node: SpecSeed.node,
+      hostname: 'spec-advisory-foreign'
+    )
+    advisory.publish!(send_mail: false, published_by: SpecSeed.admin)
+    update = advisory.create_update!(
+      {},
+      { SpecSeed.language => { summary: 'Fallback follow-up' } },
+      send_mail: false
+    )
+    event = VpsAdmin::API::Events.emit!(
+      'security_advisory.updated',
+      user: SpecSeed.user,
+      parameters: {
+        advisory_id: advisory.id,
+        update_id: update.id
+      },
+      route: false
+    )
+
+    vars = VpsAdmin::API::Events.email_vars_for(event)
+
+    expect(vars).to include(
+      advisory:,
       a: advisory,
+      update:,
       user: SpecSeed.user
     )
+    expect(vars.fetch(:vpses).map(&:vps_id)).to eq([user_vps.id])
   end
 end

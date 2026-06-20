@@ -40,10 +40,12 @@ base
       #{assignments}
 
       before_chain_id = TransactionChain.maximum(:id).to_i
+      before_event_id = Event.maximum(:id).to_i
       #{klass}.new.public_send(#{method.to_s.inspect})
       chain_ids = TransactionChain.where('id > ?', before_chain_id).order(:id).pluck(:id)
+      event_ids = Event.where('id > ?', before_event_id).order(:id).pluck(:id)
 
-      puts JSON.dump(ok: true, chain_ids: chain_ids)
+      puts JSON.dump(ok: true, chain_ids: chain_ids, event_ids: event_ids)
     RUBY
   end
 
