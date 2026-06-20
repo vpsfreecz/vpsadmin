@@ -167,6 +167,27 @@ function transaction_class($t)
     return '';
 }
 
+function transaction_chain_is_terminal($chain)
+{
+    return in_array($chain->state, ['done', 'failed', 'fatal', 'resolved'], true);
+}
+
+function transaction_chain_notify_when_done($chain_id)
+{
+    global $api, $xtpl;
+
+    csrf_check();
+
+    try {
+        $api->transaction_chain->notify_when_done($chain_id, []);
+        notify_user(_('Notification route created'), '');
+        redirect('?page=transactions&chain=' . $chain_id);
+    } catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+        $xtpl->perex_format_errors(_('Failed to create notification route'), $e->getResponse());
+        chain_transactions($chain_id);
+    }
+}
+
 function chain_transactions($chain_id)
 {
     global $xtpl, $api;
@@ -214,6 +235,17 @@ function chain_transactions($chain_id)
     $xtpl->table_td(_('Created at'));
     $xtpl->table_td(tolocaltz($chain->created_at));
     $xtpl->table_tr();
+
+    if (!transaction_chain_is_terminal($chain)) {
+        $xtpl->table_td(_('Notifications'));
+        $xtpl->table_td(
+            '<a href="?page=transactions&action=notify_when_done&chain=' . $chain->id . '&t=' . csrf_token() . '">'
+            . _('Notify me when done') . '</a>',
+            false,
+            true
+        );
+        $xtpl->table_tr();
+    }
 
     $xtpl->table_out();
 
@@ -346,7 +378,10 @@ function chain_transactions($chain_id)
 
 if (isLoggedIn()) {
 
-    if ($_GET['chain'] ?? false) {
+    if (($_GET['action'] ?? null) === 'notify_when_done' && ($_GET['chain'] ?? false)) {
+        transaction_chain_notify_when_done($_GET['chain']);
+
+    } elseif ($_GET['chain'] ?? false) {
         chain_transactions($_GET['chain']);
 
     } else {
