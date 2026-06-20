@@ -52,6 +52,22 @@ module PluginRequestsSpecHelpers
       last_mail_id: attrs.fetch(:last_mail_id, 0)
     }.compact).tap(&:save!)
   end
+
+  def ensure_request_mail_template!(name, template_id)
+    template = MailTemplate.find_or_create_by!(name:) do |tpl|
+      tpl.label = name.tr('_', ' ').capitalize
+      tpl.template_id = template_id
+    end
+
+    return if template.mail_template_translations.where(language: SpecSeed.language).exists?
+
+    template.mail_template_translations.create!(
+      language: SpecSeed.language,
+      from: 'noreply@test.invalid',
+      subject: "#{name} subject",
+      text_plain: "#{name} body"
+    )
+  end
 end
 
 RSpec.configure do |config|
