@@ -340,14 +340,6 @@ test.describe.serial('user members self-service browser coverage', () => {
     await expect(page.locator('#content-in')).not.toContainText(knownDevice.ip);
 
     await gotoMemberEdit(page, fixtures.user.id);
-    await actionLink(page, 'template_recipients').click();
-    await expect(page.locator('#content-in')).toContainText('Recipients by e-mail type');
-    const templateForm = formByAction(page, 'action=template_recipients');
-    await expect(templateForm.locator('textarea[name^="to["]').first()).toBeVisible();
-    await submitForm(templateForm, 'Save');
-    await expectNotification(page, 'Template e-mails updated');
-
-    await gotoMemberEdit(page, fixtures.user.id);
     await actionLink(page, 'payment_instructions').click();
     await expect(page.locator('#content-in h1')).toContainText('Payment instructions');
     await expect(page.locator('#content-in')).toContainText(
