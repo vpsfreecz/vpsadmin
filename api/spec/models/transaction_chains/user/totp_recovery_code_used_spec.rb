@@ -27,9 +27,16 @@ RSpec.describe TransactionChains::User::TotpRecoveryCodeUsed do
     chain, = described_class.fire(user, device, nil)
 
     expect(chain.transaction_chain_concerns.pluck(:class_name, :row_id)).to include(['User', user.id])
-    expect(tx_classes(chain)).to include(Transactions::Mail::Send)
+    expect(tx_classes(chain)).to include(Transactions::EventDelivery::Release)
     expect(MailLog.joins(:mail_template).exists?(
              mail_templates: { name: 'user_totp_recovery_code_used' }
            )).to be(true)
+
+    event = expect_routed_event!('user.totp_recovery_code_used', user:)
+    expect(event.source).to eq(device)
+    expect(event.parameters).to include(
+      'totp_device_id' => device.id,
+      'totp_device_label' => 'Spec TOTP'
+    )
   end
 end

@@ -57,7 +57,13 @@ RSpec.describe TransactionChains::User::Create do
     chain, created = described_class.fire(user, false, nil, nil, true)
 
     expect(created).to be_persisted
-    expect(tx_classes(chain)).to include(Transactions::Mail::Send)
+    expect(tx_classes(chain)).to include(Transactions::EventDelivery::Release)
+    event = expect_routed_event!('user.created', user: created)
+    expect(event.parameters).to include(
+      'login' => created.login,
+      'email' => created.email,
+      'active' => true
+    )
     expect(EnvironmentUserConfig.where(user: created).count).to eq(Environment.count)
     expect(UserClusterResource.where(user: created).count).to eq(
       Environment.count * ClusterResource.count
