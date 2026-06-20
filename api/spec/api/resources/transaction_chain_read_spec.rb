@@ -52,7 +52,8 @@ RSpec.describe 'VpsAdmin::API::Resources::TransactionChain' do
           state: :done,
           size: 1,
           progress: 1,
-          concerns: [['Vps', 102]]
+          concerns: [['Vps', 102]],
+          type: 'TransactionChains::Vps::Start'
         ),
         c: create_chain(
           user: other_user,
@@ -182,10 +183,20 @@ RSpec.describe 'VpsAdmin::API::Resources::TransactionChain' do
       vpath("/transaction_chains/#{id}")
     end
 
+    def notify_when_done_path(id)
+      vpath("/transaction_chains/#{id}/notify_when_done")
+    end
+
     def json_get(path, params = nil)
       get path, params, {
         'CONTENT_TYPE' => 'application/json',
         'rack.input' => StringIO.new('{}')
+      }
+    end
+
+    def json_post(path, payload)
+      post path, JSON.dump(payload), {
+        'CONTENT_TYPE' => 'application/json'
       }
     end
 
@@ -195,6 +206,10 @@ RSpec.describe 'VpsAdmin::API::Resources::TransactionChain' do
 
     def chain_obj
       json.dig('response', 'transaction_chain')
+    end
+
+    def route_obj
+      json.dig('response', 'event_route') || json['response']
     end
 
     def resource_id(value)
@@ -409,6 +424,141 @@ RSpec.describe 'VpsAdmin::API::Resources::TransactionChain' do
       it 'returns 404 for unknown chain' do
         missing = TransactionChain.maximum(:id).to_i + 100
         as(admin) { json_get show_path(missing) }
+
+        expect_status(404)
+        expect(json['status']).to be(false)
+      end
+    end
+
+    describe 'NotifyWhenDone' do
+      before do
+        EventRouteMatcher.joins(:event_route).where(event_routes: { user_id: user.id }).delete_all
+        NotificationReceiverAction
+          .joins(:notification_receiver)
+          .where(notification_receivers: { user_id: user.id })
+          .delete_all
+        EventRoute.where(user: user).delete_all
+        NotificationReceiver.where(user: user).delete_all
+      end
+
+      it 'creates a top-position single-use route for terminal state changes' do
+        receiver = NotificationReceiver.create!(user:, label: 'Spec receiver')
+        receiver.notification_receiver_actions.create!(
+          action: :webhook,
+          target_kind: :custom,
+          target_value: 'https://example.test/chain'
+        )
+
+        as(user) do
+          json_post notify_when_done_path(chain_a.id), transaction_chain: {
+            notification_receiver_id: receiver.id
+          }
+        end
+
+        expect_status(200)
+        route = EventRoute.find(route_obj['id'])
+
+        expect(route).to be_single_use
+        expect(route.spent_at).to be_nil
+        expect(route.position).to eq(EventRoute.minimum(:position))
+        expect(route.event_type).to eq('transaction_chain.state_changed')
+        matcher_rows = route.event_route_matchers.map { |m| [m.field, m.operator, m.value] }
+        timestamp_matcher = route.event_route_matchers.find_by!(field: 'parameters.changed_at_timestamp')
+        expect(matcher_rows).to include(
+          ['source_class', '==', 'TransactionChain'],
+          ['source_id', '==', chain_a.id.to_s],
+          ['parameters.terminal', '==', 'true']
+        )
+        expect(timestamp_matcher.operator).to eq('>=')
+        expect(Float(timestamp_matcher.value)).to be <= Time.now.to_f
+        expect(route.event_route_matchers.count).to eq(4)
+      end
+
+      it 'spends the route immediately when the chain is already terminal' do
+        receiver = NotificationReceiver.create!(user:, label: 'Spec terminal receiver')
+        receiver.notification_receiver_actions.create!(
+          action: :webhook,
+          target_kind: :custom,
+          target_value: 'https://example.test/chain-done'
+        )
+
+        as(user) do
+          json_post notify_when_done_path(chain_b.id), transaction_chain: {
+            notification_receiver_id: receiver.id
+          }
+        end
+
+        expect_status(200)
+        route = EventRoute.find(route_obj['id'])
+        event = Event.where(event_type: 'transaction_chain.state_changed', source_class: 'TransactionChain',
+                            source_id: chain_b.id).sole
+
+        expect(route.reload.spent_at).to be_present
+        expect(route).not_to be_enabled
+        expect(event.matched_event_route).to eq(route)
+        expect(event.parameters).to include(
+          'state' => 'done',
+          'terminal' => true,
+          'successful' => true,
+          'failed' => false
+        )
+        expect(event.event_deliveries.sole.notification_receiver).to eq(receiver)
+      end
+
+      it 'ignores terminal state changes that happened before the route was created' do
+        receiver = NotificationReceiver.create!(user:, label: 'Spec retry receiver')
+        receiver.notification_receiver_actions.create!(
+          action: :webhook,
+          target_kind: :custom,
+          target_value: 'https://example.test/chain-retry'
+        )
+
+        as(user) do
+          json_post notify_when_done_path(chain_a.id), transaction_chain: {
+            notification_receiver_id: receiver.id
+          }
+        end
+
+        expect_status(200)
+        route = EventRoute.find(route_obj['id'])
+        threshold = Float(route.event_route_matchers.find_by!(field: 'parameters.changed_at_timestamp').value)
+
+        stale_event = VpsAdmin::API::Events.emit_transaction_chain_state!(
+          chain_a,
+          previous_state: 'rollbacking',
+          state: 'failed',
+          changed_at: Time.at(threshold - 60)
+        )
+
+        expect(stale_event.reload.matched_event_route).to be_nil
+        expect(route.reload.spent_at).to be_nil
+
+        fresh_event = VpsAdmin::API::Events.emit_transaction_chain_state!(
+          chain_a,
+          previous_state: 'queued',
+          state: 'done',
+          changed_at: Time.at(threshold + 60)
+        )
+
+        expect(fresh_event.reload.matched_event_route).to eq(route)
+        expect(route.reload.spent_at).to be_present
+      end
+
+      it 'repairs the default receiver when no receiver is selected' do
+        NotificationReceiver.create!(user:, label: 'Custom receiver')
+
+        as(user) { json_post notify_when_done_path(chain_a.id), transaction_chain: {} }
+
+        expect_status(200)
+        route = EventRoute.find(route_obj['id'])
+        receiver = route.notification_receiver
+
+        expect(receiver.label).to eq(NotificationReceiver::DEFAULT_EMAIL_LABEL)
+        expect(receiver.notification_receiver_actions.sole.action).to eq('email')
+      end
+
+      it 'does not let users create routes for other users chains' do
+        as(user) { json_post notify_when_done_path(chain_c.id), transaction_chain: {} }
 
         expect_status(404)
         expect(json['status']).to be(false)
