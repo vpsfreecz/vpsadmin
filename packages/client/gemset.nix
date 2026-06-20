@@ -149,10 +149,10 @@
     platforms = [ ];
     source = {
       remotes = [ "https://rubygems.org" ];
-      sha256 = "0mbjg75bsnpf3mr5ad3425wi2ps9r809gvr8n0n8lv2f3zgcapjh";
+      sha256 = "1dfikmmd9dllirsfq0kjiyxpmlq0afkxm5sslsr97r9g85ifpy80";
       type = "gem";
     };
-    version = "1.15.1";
+    version = "1.15.2";
   };
   io-console = {
     groups = [ "default" ];
