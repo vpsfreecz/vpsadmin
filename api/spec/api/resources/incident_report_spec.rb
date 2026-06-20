@@ -435,15 +435,14 @@ RSpec.describe 'VpsAdmin::API::Resources::IncidentReport' do
       expect(json['status']).to be(false)
     end
 
-    it 'allows admins to create with minimal payload' do
+    it 'allows admins to create a direct-only incident without a transaction state' do
       expect do
         as(SpecSeed.admin) { json_post index_path, incident_report: payload }
       end.to change(IncidentReport, :count).by(1)
 
       expect_status(200)
       expect(json['status']).to be(true)
-      expect(action_state_id.to_i).to be > 0
-      expect(TransactionChain.find(action_state_id)).to be_present
+      expect(action_state_id).to be_nil
 
       record = IncidentReport.find_by!(subject: payload[:subject])
       expect(record.text).to eq(payload[:text])
@@ -453,6 +452,31 @@ RSpec.describe 'VpsAdmin::API::Resources::IncidentReport' do
       expect(record.filed_by_id).to eq(SpecSeed.admin.id)
       expect(record.ip_address_assignment_id).to eq(assignment_user.id)
       expect(record.detected_at).not_to be_nil
+    end
+
+    it 'returns a transaction state when incident processing changes VPS state' do
+      chain_fixture = build_standalone_vps_fixture(user: SpecSeed.user, hostname: 'spec-chain-vps')
+      chain_vps = chain_fixture.fetch(:vps)
+      create_network_interface!(chain_vps, name: 'eth0')
+      chain_assignment = create_ip_assignment_fixture!(vps: chain_vps, user: SpecSeed.user)
+
+      expect do
+        as(SpecSeed.admin) do
+          json_post(
+            index_path,
+            incident_report: payload.merge(
+              vps: chain_vps.id,
+              ip_address_assignment: chain_assignment.id,
+              vps_action: 'stop'
+            )
+          )
+        end
+      end.to change(IncidentReport, :count).by(1)
+
+      expect_status(200)
+      expect(json['status']).to be(true)
+      expect(action_state_id.to_i).to be > 0
+      expect(TransactionChain.find(action_state_id)).to be_present
     end
 
     it 'returns validation errors for missing vps' do
