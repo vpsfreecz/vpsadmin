@@ -4,12 +4,18 @@ require 'spec_helper'
 
 RSpec.describe TransactionChains::Vps::Migrate do
   around do |example|
-    with_current_context do
+    unlock_transaction_signer!
+    with_current_context(user: user) do
       example.run
     end
   end
 
   let(:user) { SpecSeed.user }
+
+  before do
+    ensure_alert_mail_templates!
+    ensure_mailer_available!
+  end
 
   def create_vps_migration_fixture
     src_node = SpecSeed.node
@@ -107,6 +113,37 @@ RSpec.describe TransactionChains::Vps::Migrate do
     expect(classes.index(Transactions::Vps::SendRootfs)).to be < classes.index(Transactions::Vps::SendState)
     expect(classes.index(Transactions::Vps::SendState)).to be < classes.index(Transactions::Vps::SendCleanup)
     expect(classes.rindex(Transactions::Queue::Release)).to be < classes.index(Transactions::Vps::SendCleanup)
+  end
+
+  it 'routes begun and finished migration events when mail is requested' do
+    _dataset, _dip, vps, dst_node = create_vps_migration_fixture
+    set_vps_running!(vps)
+
+    chain, = described_class.chain_for(vps, dst_node).fire(
+      vps,
+      dst_node,
+      maintenance_window: false,
+      send_mail: true,
+      reason: 'balance nodes'
+    )
+    events = Event.where(event_type: %w[vps.migration_begun vps.migration_finished])
+                  .order(:id)
+
+    expect(tx_classes(chain).count(Transactions::EventDelivery::Release)).to eq(2)
+    expect(events.map(&:event_type)).to eq(%w[vps.migration_begun vps.migration_finished])
+    events.each do |event|
+      expect(event).to be_routed_routing_state
+      expect(event.vps).to eq(vps)
+      expect(event.parameters).to include(
+        'vps_id' => vps.id,
+        'vps_hostname' => vps.hostname,
+        'src_node_id' => SpecSeed.node.id,
+        'dst_node_id' => dst_node.id,
+        'maintenance_window' => false,
+        'reason' => 'balance nodes'
+      )
+      expect(event.event_deliveries.sole).to be_prepared_state
+    end
   end
 
   it 'omits destination start when no_start is true' do

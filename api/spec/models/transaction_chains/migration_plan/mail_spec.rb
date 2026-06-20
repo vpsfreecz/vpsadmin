@@ -9,8 +9,9 @@ RSpec.describe TransactionChains::MigrationPlan::Mail do
   end
 
   before do
+    ensure_alert_mail_templates!
     ensure_available_node_status!(SpecSeed.node)
-    allow(MailTemplate).to receive(:send_mail!).and_return(build_mail_log_double)
+    ensure_mailer_available!
   end
 
   def create_plan_with_user_migrations!
@@ -35,30 +36,38 @@ RSpec.describe TransactionChains::MigrationPlan::Mail do
     [plan, fixture.fetch(:vpses)]
   end
 
-  it 'sends mail only for migration users with mailer enabled' do
+  it 'routes migration events and queues mail only for users with mailer enabled' do
     plan, vpses = create_plan_with_user_migrations!
     mail_user = vpses.first.user
+    mail_user.update!(mailer_enabled: true)
     vpses.last.user.update!(mailer_enabled: false)
 
     chain, = described_class.fire(plan)
+    events = Event.where(event_type: 'vps.migration_planned').order(:id)
+    routed_event = events.find(&:routed_routing_state?)
+    suppressed_event = events.find(&:suppressed_routing_state?)
 
     expect(chain.transaction_chain_concerns.pluck(:class_name, :row_id)).to include(
       ['MigrationPlan', plan.id]
     )
-    expect(tx_classes(chain)).to include(Transactions::Mail::Send)
-    expect(MailTemplate).to have_received(:send_mail!).with(
-      :vps_migration_planned,
-      hash_including(user: mail_user)
-    ).once
+    expect(tx_classes(chain)).to include(Transactions::EventDelivery::Release)
+    expect(events.size).to eq(2)
+    expect(routed_event.user).to eq(mail_user)
+    expect(routed_event.event_deliveries.sole).to be_prepared_state
+    expect(suppressed_event.user).to eq(vpses.last.user)
+    expect(suppressed_event.event_deliveries.sole).to be_skipped_state
   end
 
-  it 'remains empty when no migration user has mailer enabled' do
+  it 'logs suppressed events and remains empty when no migration user has mailer enabled' do
     plan, vpses = create_plan_with_user_migrations!
     vpses.each { |vps| vps.user.update!(mailer_enabled: false) }
 
     chain, = described_class.fire(plan)
+    events = Event.where(event_type: 'vps.migration_planned').order(:id)
 
     expect(chain).to be_nil
-    expect(MailTemplate).not_to have_received(:send_mail!)
+    expect(events.size).to eq(2)
+    expect(events).to all(be_suppressed_routing_state)
+    expect(events.flat_map(&:event_deliveries)).to all(be_skipped_state)
   end
 end
