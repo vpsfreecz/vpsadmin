@@ -6,17 +6,15 @@ module TransactionChains
     # @param user_session [::UserSession]
     # @param authorization [::Oauth2Authorization]
     def link_chain(user_session, authorization)
-      concerns(:affect, [user_session.user.class.name, user_session.user.id])
+      session_user = user_session.user
 
-      mail(:user_new_login, {
-             user:,
-             vars: {
-               user: user_session.user,
-               user_session:,
-               authorization:,
-               user_device: authorization.user_device
-             }
-           })
+      concerns(:affect, [session_user.class.name, session_user.id])
+
+      route_event!(
+        'user.new_login',
+        session: user_session,
+        authorization:
+      )
     end
   end
 end
