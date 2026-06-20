@@ -18,12 +18,12 @@ RSpec.describe VpsAdmin::API::Operations::UserSession::NewTokenLogin do
 
   it 'performs User::Login, opens a token session, and sets current session' do
     allow(VpsAdmin::API::Operations::User::Login).to receive(:run).and_call_original
-    allow(TransactionChains::User::NewToken).to receive(:fire2)
+    allow(VpsAdmin::API::NotificationEvents).to receive(:run_chain)
 
     session = op.run(user, request, 'fixed', 3600, ['all'])
 
     expect(VpsAdmin::API::Operations::User::Login).to have_received(:run).with(user, request)
-    expect(TransactionChains::User::NewToken).not_to have_received(:fire2)
+    expect(VpsAdmin::API::NotificationEvents).not_to have_received(:run_chain)
     expect(session).to be_persisted
     expect(session.auth_type).to eq('token')
     expect(session.token).to be_present
@@ -34,10 +34,13 @@ RSpec.describe VpsAdmin::API::Operations::UserSession::NewTokenLogin do
   it 'fires NewToken only when notifications are enabled' do
     user.update!(enable_new_login_notification: true)
 
-    allow(TransactionChains::User::NewToken).to receive(:fire2)
+    allow(VpsAdmin::API::NotificationEvents).to receive(:run_chain)
 
     op.run(user, request, 'fixed', 3600, ['all'])
 
-    expect(TransactionChains::User::NewToken).to have_received(:fire2).with(args: [kind_of(UserSession)])
+    expect(VpsAdmin::API::NotificationEvents).to have_received(:run_chain).with(
+      TransactionChains::User::NewToken,
+      args: [kind_of(UserSession)]
+    )
   end
 end

@@ -59,7 +59,10 @@ module VpsAdmin::Supervisor
 
       return unless exp && exp.enable_notifications && exp.vps.active?
 
-      TransactionChains::Mail::VpsDatasetExpanded.fire(exp)
+      VpsAdmin::API::NotificationEvents.run_chain(
+        TransactionChains::Mail::VpsDatasetExpanded,
+        args: [exp]
+      )
     end
   end
 end
