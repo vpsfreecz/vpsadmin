@@ -3,15 +3,21 @@ module TransactionChains
     label 'Resume'
 
     def link_chain(user, target, _state, log)
-      if target
-        mail(:user_resume, {
-               user:,
-               vars: {
-                 user:,
-                 state: log
-               }
-             })
-      end
+      event =
+        if target
+          prepare_event!(
+            'user.resumed',
+            user:,
+            source: log,
+            subject: 'User account resumed',
+            summary: "User #{user.login} was resumed",
+            parameters: {
+              state: log.state || 'active',
+              reason: log.reason,
+              expiration_date: log.expiration_date&.iso8601
+            }
+          )
+        end
 
       user.vpses.where(object_state: ::Vps.object_states[:active]).each do |vps|
         use_chain(Vps::Start, args: vps)
@@ -26,6 +32,8 @@ module TransactionChains
       user.dns_zones.where(original_enabled: true).each do |dns_zone|
         use_chain(DnsZone::Update, args: [dns_zone, { enabled: true }])
       end
+
+      release_event_deliveries!(event)
     end
   end
 end

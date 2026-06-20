@@ -3,15 +3,21 @@ module TransactionChains
     label 'Suspend'
 
     def link_chain(user, target, _state, log)
-      if target
-        mail(:user_suspend, {
-               user:,
-               vars: {
-                 user:,
-                 state: log
-               }
-             })
-      end
+      event =
+        if target
+          prepare_event!(
+            'user.suspended',
+            user:,
+            source: log,
+            subject: 'User account suspended',
+            summary: "User #{user.login} was suspended",
+            parameters: {
+              state: log.state || 'suspended',
+              reason: log.reason,
+              expiration_date: log.expiration_date&.iso8601
+            }
+          )
+        end
 
       user.vpses.where(object_state: [
                          ::Vps.object_states[:active],
@@ -35,6 +41,8 @@ module TransactionChains
 
         use_chain(DnsZone::UpdateRecord, args: [r])
       end
+
+      release_event_deliveries!(event)
     end
   end
 end
