@@ -4,7 +4,8 @@ require 'spec_helper'
 
 RSpec.describe TransactionChains::Dataset::FullDownload do
   around do |example|
-    with_current_context do
+    unlock_transaction_signer!
+    with_current_context(user: user) do
       example.run
     end
   end
@@ -12,6 +13,11 @@ RSpec.describe TransactionChains::Dataset::FullDownload do
   let(:user) { SpecSeed.user }
   let(:primary_pool) { create_pool!(node: SpecSeed.node, role: :primary) }
   let(:backup_pool) { create_pool!(node: SpecSeed.other_node, role: :backup) }
+
+  before do
+    ensure_alert_mail_templates!
+    ensure_mailer_available!
+  end
 
   def create_backup_head!(dip)
     tree = create_tree!(dip: dip, index: 0, head: true)
@@ -76,6 +82,33 @@ RSpec.describe TransactionChains::Dataset::FullDownload do
     expect(lock_rows(chain)).to include(
       ['SnapshotInPool', primary_sip.id],
       ['DatasetInPool', primary_dip.id]
+    )
+  end
+
+  it 'routes a notification event when download mail is requested' do
+    dataset, primary_dip = create_dataset_pair!(
+      user: user,
+      pool: primary_pool,
+      name: "download-mail-#{SecureRandom.hex(4)}"
+    )
+    snapshot, = create_snapshot!(dataset: dataset, dip: primary_dip, name: 'snap-mail')
+
+    chain, download = described_class.fire(snapshot, format: :stream, send_mail: true)
+
+    expect(tx_classes(chain)).to include(
+      Transactions::Storage::DownloadSnapshot,
+      Transactions::EventDelivery::Release
+    )
+    event = expect_routed_event!('snapshot.download_ready', user: user)
+    expect(event.source).to eq(download)
+    expect(event.parameters).to include(
+      'download_id' => download.id,
+      'snapshot_id' => snapshot.id,
+      'snapshot_name' => 'snap-mail',
+      'dataset_id' => dataset.id,
+      'dataset_full_name' => dataset.full_name,
+      'file_name' => download.file_name,
+      'format' => 'stream'
     )
   end
 

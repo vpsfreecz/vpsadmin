@@ -294,21 +294,31 @@ RSpec.describe TransactionChains::Vps::Replace::Os do
     expect_snapshot_reference(payload.fetch('from_snapshot'), replace_snapshot)
   end
 
-  it 'skips replacement mail when the user has the mailer disabled' do
+  it 'suppresses replacement mail when the user has the mailer disabled' do
     fixture = create_replace_fixture(same_node: true)
     vps = fixture.fetch(:vps)
     vps.user.update!(mailer_enabled: false)
 
     allow(MailTemplate).to receive(:send_mail!)
 
-    described_class.fire(
+    chain, dst_vps = described_class.fire(
       vps,
       fixture.fetch(:dst_node),
       start: false,
       expiration_date: nil,
       reason: 'replace without mail'
     )
+    event = Event.where(event_type: 'vps.replaced').sole
 
+    expect(event).to be_suppressed_routing_state
+    expect(event.vps).to eq(vps)
+    expect(event.source).to eq(dst_vps)
+    expect(event.parameters).to include(
+      'original_vps_id' => vps.id,
+      'new_vps_id' => dst_vps.id,
+      'reason' => 'replace without mail'
+    )
+    expect(tx_classes(chain)).not_to include(Transactions::EventDelivery::Release)
     expect(MailTemplate).not_to have_received(:send_mail!)
   end
 

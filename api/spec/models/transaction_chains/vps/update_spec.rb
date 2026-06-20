@@ -11,7 +11,8 @@ RSpec.describe TransactionChains::Vps::Update do
   let(:user) { SpecSeed.user }
 
   before do
-    allow(MailTemplate).to receive(:send_mail!).and_return(nil)
+    ensure_user_mail_templates!
+    ensure_mailer_available!
   end
 
   def create_update_vps_fixture
@@ -130,7 +131,19 @@ RSpec.describe TransactionChains::Vps::Update do
       include('resource' => 'swap', 'value' => 256, 'original' => 0)
     )
     expect(ObjectHistory.where(tracked_object: vps, event_type: 'resources').count).to eq(1)
-    expect(MailTemplate).to have_received(:send_mail!)
+    classes = tx_classes(chain)
+    expect(classes).to include(Transactions::EventDelivery::Release)
+    expect(classes.index(Transactions::Vps::Resources)).to be < classes.index(Transactions::EventDelivery::Release)
+    event = expect_routed_event!('vps.resources_changed', user: vps.user)
+    expect(event.vps).to eq(vps)
+    expect(event.parameters).to include(
+      'vps_id' => vps.id,
+      'vps_hostname' => vps.hostname,
+      'cpu' => 3,
+      'memory' => 4096,
+      'swap' => 256,
+      'reason' => 'scale up'
+    )
   end
 
   it 'queues Autostart only when autostart is enabled' do
@@ -228,16 +241,13 @@ RSpec.describe TransactionChains::Vps::Update do
       'new_map_mode' => 'zfs',
       'original_map_mode' => 'native'
     )
-    expect(MailTemplate).to have_received(:send_mail!).with(
-      :vps_network_disabled,
-      hash_including(
-        user: user,
-        vars: hash_including(
-          user: user,
-          vps: vps,
-          reason: 'disable for maintenance'
-        )
-      )
+    expect(tx_classes(chain)).to include(Transactions::EventDelivery::Release)
+    event = expect_routed_event!('vps.network_disabled', user: vps.user)
+    expect(event.vps).to eq(vps)
+    expect(event.parameters).to include(
+      'vps_id' => vps.id,
+      'vps_hostname' => vps.hostname,
+      'reason' => 'disable for maintenance'
     )
   end
 
