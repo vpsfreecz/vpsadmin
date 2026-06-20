@@ -10,7 +10,6 @@ module VpsAdmin::API::Plugins::Requests::TransactionChains
     def link_chain(request, attrs)
       concerns(:affect, [request.class.name, request.id])
 
-      webui_url = ::SysConfig.get(:webui, :base_url)
       reply_to = request.last_mail_id
 
       request.assign_attributes(attrs)
@@ -20,62 +19,25 @@ module VpsAdmin::API::Plugins::Requests::TransactionChains
       )
       request.save!
 
-      [
-        [
-          :request_action_role_type,
-          { action: 'update', role: 'user', type: request.type_name }
-        ],
-        [
-          :request_action_role,
-          { action: 'update', role: 'user' }
-        ]
-      ].each do |id, params|
-        mail(id, {
-               params:,
-               user: request.user,
-               to: [request.user_mail],
-               language: request.user_language,
-               message_id: message_id(request),
-               in_reply_to: message_id(request, reply_to),
-               references: message_id(request, reply_to),
-               vars: {
-                 request:,
-                 r: request,
-                 webui_url:
-               }
-             })
-        break
-      rescue VpsAdmin::API::Exceptions::MailTemplateDoesNotExist
-        next
-      end
+      route_request_event!(
+        'request.updated',
+        request,
+        recipient: request.user,
+        role: 'user',
+        action: 'update',
+        reply_to_mail_id: reply_to,
+        recipient_email: request.user_mail
+      )
 
-      ::User.where('level > 90').where(mailer_enabled: true).each do |admin|
-        [
-          [
-            :request_action_role_type,
-            { action: 'update', role: 'admin', type: request.type_name }
-          ],
-          [
-            :request_action_role,
-            { action: 'update', role: 'admin' }
-          ]
-        ].each do |id, params|
-          mail(id, {
-                 params:,
-                 user: admin,
-                 message_id: message_id(request),
-                 in_reply_to: message_id(request, reply_to),
-                 references: message_id(request, reply_to),
-                 vars: {
-                   request:,
-                   r: request,
-                   webui_url:
-                 }
-               })
-          break
-        rescue VpsAdmin::API::Exceptions::MailTemplateDoesNotExist
-          next
-        end
+      admin_request_recipients.each do |admin|
+        route_request_event!(
+          'request.updated',
+          request,
+          recipient: admin,
+          role: 'admin',
+          action: 'update',
+          reply_to_mail_id: reply_to
+        )
       end
     end
   end
