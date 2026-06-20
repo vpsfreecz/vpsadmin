@@ -46,13 +46,24 @@ module TransactionChains
       end
 
       if opts[:send_mail]
-        mail(:snapshot_download_ready, {
-               user: ::User.current,
-               vars: {
-                 base_url: ::SysConfig.get(:webui, :base_url),
-                 dl:
-               }
-             })
+        dataset = snapshot.dataset
+        route_event!(
+          'snapshot.download_ready',
+          user: ::User.current,
+          source: dl,
+          subject: 'Snapshot download is ready',
+          summary: "#{dataset.full_name}@#{snapshot.name}",
+          parameters: {
+            download_id: dl.id,
+            snapshot_id: snapshot.id,
+            snapshot_name: snapshot.name,
+            dataset_id: dataset.id,
+            dataset_full_name: dataset.full_name,
+            file_name: dl.file_name,
+            format: dl.format,
+            expiration_date: dl.expiration_date&.iso8601
+          }
+        )
       end
 
       dl
