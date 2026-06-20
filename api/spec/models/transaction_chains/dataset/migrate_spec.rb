@@ -4,12 +4,18 @@ require 'spec_helper'
 
 RSpec.describe TransactionChains::Dataset::Migrate do
   around do |example|
-    with_current_context do
+    unlock_transaction_signer!
+    with_current_context(user: user) do
       example.run
     end
   end
 
   let(:user) { SpecSeed.user }
+
+  before do
+    ensure_alert_mail_templates!
+    ensure_mailer_available!
+  end
 
   def create_primary_pool_pair(same_node: false)
     src_node = SpecSeed.node
@@ -202,6 +208,85 @@ RSpec.describe TransactionChains::Dataset::Migrate do
     )
     expect(classes.index(Transactions::Export::Disable)).to be < classes.index(Transactions::Export::Create)
     expect(classes.index(Transactions::Export::Create)).to be < classes.rindex(Transactions::Export::Destroy)
+  end
+
+  it 'routes begun and finished notification events when mail is requested' do
+    src_pool, dst_pool = create_primary_pool_pair
+    dataset, src_dip = create_dataset_with_pool!(
+      user: user,
+      pool: src_pool,
+      name: "exports-mail-#{SecureRandom.hex(4)}",
+      properties: { compression: false }
+    )
+    create_export_for_dataset!(dataset_in_pool: src_dip)
+
+    chain, = described_class.fire(src_dip, dst_pool, send_mail: true, reason: 'rebalance')
+    events = Event.where(event_type: %w[dataset.migration_begun dataset.migration_finished])
+                  .order(:id)
+
+    expect(tx_classes(chain).count(Transactions::EventDelivery::Release)).to eq(2)
+    expect(events.map(&:event_type)).to eq(%w[dataset.migration_begun dataset.migration_finished])
+    events.each do |event|
+      expect(event).to be_routed_routing_state
+      expect(event.source).to eq(dataset)
+      expect(event.parameters).to include(
+        'dataset_id' => dataset.id,
+        'dataset_full_name' => dataset.full_name,
+        'src_pool_id' => src_pool.id,
+        'dst_pool_id' => dst_pool.id,
+        'export_count' => 1,
+        'reason' => 'rebalance'
+      )
+      expect(event.event_deliveries.sole).to be_prepared_state
+    end
+  end
+
+  it 'stores only a bounded affected VPS sample in event parameters' do
+    src_pool, dst_pool = create_primary_pool_pair
+    dataset, = create_dataset_with_pool!(
+      user: user,
+      pool: src_pool,
+      name: "exports-many-vps-#{SecureRandom.hex(4)}",
+      properties: { compression: false }
+    )
+    chain = described_class.new
+    captured = nil
+    vpses = 101.times.map do |i|
+      VpsAdmin::API::Events::VpsInfo.new(i + 1, "sample-vps-#{i + 1}", user)
+    end
+
+    chain.instance_variable_set(:@src_pool, src_pool)
+    chain.instance_variable_set(:@dst_pool, dst_pool)
+    chain.instance_variable_set(:@maintenance_windows, nil)
+    chain.define_singleton_method(:route_event!) do |_event_type, **opts|
+      captured = opts
+    end
+
+    chain.send(
+      :route_dataset_migration_event!,
+      'dataset.migration_begun',
+      dataset: dataset,
+      dataset_user: user,
+      exports: [],
+      export_mounts: [],
+      vpses: vpses,
+      restart_vps: true,
+      finish_weekday: nil,
+      finish_minutes: nil,
+      reason: 'many mounts'
+    )
+
+    params = captured.fetch(:parameters)
+
+    expect(params.fetch(:affected_vps_count)).to eq(101)
+    expect(params.fetch(:affected_vpses).count).to eq(
+      VpsAdmin::API::Events::PARAMETER_SAMPLE_LIMIT
+    )
+    expect(params.fetch(:affected_vpses).last).to eq(
+      id: VpsAdmin::API::Events::PARAMETER_SAMPLE_LIMIT,
+      hostname: "sample-vps-#{VpsAdmin::API::Events::PARAMETER_SAMPLE_LIMIT}"
+    )
+    expect(captured.fetch(:vpses).count).to eq(101)
   end
 
   it 'keeps the logical destroy path but skips dataset destruction when cleanup_data is false' do
