@@ -972,7 +972,10 @@ function vps_details_submenu($vps)
     $xtpl->sbar_add(_('History'), '?page=history&list=1&object=Vps&object_id=' . $vps->id . '&return_url=' . $return_url);
 
     $xtpl->sbar_add(_('OOM reports'), '?page=oom_reports&action=list&vps=' . $vps->id . '&list=1');
-    $xtpl->sbar_add(_('Configure OOM reports'), '?page=oom_reports&action=rule_list&vps=' . $vps->id);
+    $xtpl->sbar_add(
+        _('Configure OOM notifications'),
+        '?page=notifications&action=routes' . notifications_user_qs($vps->user_id)
+    );
     $xtpl->sbar_add(_('Incident reports'), '?page=incidents&action=list&list=1&vps=' . $vps->id . '&return=' . $return_url);
 
     if (isAdmin()) {

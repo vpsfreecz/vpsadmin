@@ -44,7 +44,7 @@ RSpec.describe TransactionChains::IncidentReport::Send do
       )]
     )
 
-    expect(tx_classes(chain)).to eq([Transactions::Mail::Send])
+    expect(tx_classes(chain)).to eq([Transactions::EventDelivery::Release])
     expect(MailTemplate).to have_received(:send_mail!).with(
       :vps_incident_report,
       hash_including(vars: hash_including(incident: active))
@@ -66,7 +66,7 @@ RSpec.describe TransactionChains::IncidentReport::Send do
     chain, = described_class.fire2(args: [result], kwargs: { message: })
 
     expect(TransactionChains::IncidentReport::Reply).to have_received(:use_in)
-    expect(tx_classes(chain)).to include(Transactions::Mail::Send)
+    expect(tx_classes(chain)).to include(Transactions::EventDelivery::Release)
     expect(MailTemplate).to have_received(:send_custom)
   end
 

@@ -151,7 +151,10 @@ function oom_reports_show($id)
         );
     }
 
-    $xtpl->sbar_add(_('Configure rules'), '?page=oom_reports&action=rule_list&vps=' . $r->vps->id);
+    $xtpl->sbar_add(
+        _('Configure OOM notifications'),
+        '?page=notifications&action=routes' . notifications_user_qs($r->vps->user_id)
+    );
 
     $tasks = $r->task->list();
     $invokedByVpsPid = null;
