@@ -79,6 +79,8 @@ class MailTemplate < ApplicationRecord
   # @option opts [String] message_id
   # @option opts [String] in_reply_to
   # @option opts [String] references
+  # @option opts [Boolean] include_default_recipients
+  # @option opts [Boolean] include_template_recipients
   # @return [MailLog]
   def self.send_mail!(name, opts = {})
     tpl = MailTemplate.find_by(name: resolve_name(name, opts[:params]))
@@ -110,12 +112,14 @@ class MailTemplate < ApplicationRecord
     )
 
     recipients = { to: opts[:to] || [], cc: opts[:cc] || [], bcc: opts[:bcc] || [] }
-    recipients[:to].concat(tpl.recipients(opts[:user]))
+    recipients[:to].concat(tpl.recipients(opts[:user])) if opts.fetch(:include_default_recipients, true)
 
-    tpl.mail_recipients.each do |recp|
-      recipients[:to].concat(recp.to.split(',')) if recp.to
-      recipients[:cc].concat(recp.cc.split(',')) if recp.cc
-      recipients[:bcc].concat(recp.bcc.split(',')) if recp.bcc
+    if opts.fetch(:include_template_recipients, true)
+      tpl.mail_recipients.each do |recp|
+        recipients[:to].concat(recp.to.split(',')) if recp.to
+        recipients[:cc].concat(recp.cc.split(',')) if recp.cc
+        recipients[:bcc].concat(recp.bcc.split(',')) if recp.bcc
+      end
     end
 
     %i[to cc bcc].each do |t|
