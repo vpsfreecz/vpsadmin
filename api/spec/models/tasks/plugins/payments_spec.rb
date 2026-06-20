@@ -71,23 +71,27 @@ RSpec.describe 'payments plugin rake tasks', requires_plugins: :payments do # ru
   end
 
   it 'passes period and language from the environment to mail_overview' do
-    allow(VpsAdmin::API::Plugins::Payments::TransactionChains::MailOverview).to receive(:fire)
+    allow(VpsAdmin::API::NotificationEvents).to receive(:run_chain)
 
     invoke_rake_task(
       'vpsadmin:payments:mail_overview',
       env: { PERIOD: '7200', VPSADMIN_LANG: SpecSeed.language.code }
     )
 
-    expect(VpsAdmin::API::Plugins::Payments::TransactionChains::MailOverview)
-      .to have_received(:fire).with(7200, SpecSeed.language)
+    expect(VpsAdmin::API::NotificationEvents).to have_received(:run_chain).with(
+      VpsAdmin::API::Plugins::Payments::TransactionChains::MailOverview,
+      args: [7200, SpecSeed.language]
+    )
   end
 
   it 'defaults mail_overview period and language' do
-    allow(VpsAdmin::API::Plugins::Payments::TransactionChains::MailOverview).to receive(:fire)
+    allow(VpsAdmin::API::NotificationEvents).to receive(:run_chain)
 
     invoke_rake_task('vpsadmin:payments:mail_overview')
 
-    expect(VpsAdmin::API::Plugins::Payments::TransactionChains::MailOverview)
-      .to have_received(:fire).with(86_400, kind_of(Language))
+    expect(VpsAdmin::API::NotificationEvents).to have_received(:run_chain).with(
+      VpsAdmin::API::Plugins::Payments::TransactionChains::MailOverview,
+      args: [86_400, kind_of(Language)]
+    )
   end
 end

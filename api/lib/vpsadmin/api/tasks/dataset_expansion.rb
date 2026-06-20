@@ -40,7 +40,11 @@ module VpsAdmin::API::Tasks
       end
 
       expansions.each_value do |exp, new_refquota|
-        TransactionChains::Mail::VpsDatasetExpanded.fire(exp, new_refquota:)
+        VpsAdmin::API::NotificationEvents.run_chain(
+          TransactionChains::Mail::VpsDatasetExpanded,
+          args: [exp],
+          kwargs: { new_refquota: }
+        )
       end
     end
 

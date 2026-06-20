@@ -38,7 +38,10 @@ in
       enable = lib.mkOption {
         type = lib.types.bool;
         readOnly = true;
-        default = vpsadminCfg.api.enable || vpsadminCfg.supervisor.enable;
+        default =
+          vpsadminCfg.api.enable
+          || vpsadminCfg.supervisor.enable
+          || vpsadminCfg.notificationDispatcher.enable;
       };
 
       package = lib.mkOption {

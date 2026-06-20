@@ -1,6 +1,7 @@
 require 'json'
 require 'libosctl'
 require 'nodectld/exceptions'
+require 'nodectld/transaction_chain_events'
 require 'nodectld/utils'
 
 module NodeCtld
@@ -27,6 +28,7 @@ module NodeCtld
       @output = {}
       @status = :failed
       @m_attr = Mutex.new
+      @chain_state_changes = []
     end
 
     def execute
@@ -131,6 +133,7 @@ module NodeCtld
         end
       end
 
+      publish_chain_state_changes
       post_save_transaction
     end
 
@@ -187,6 +190,7 @@ module NodeCtld
 
     def rollback_chain(db)
       log(:debug, self, 'Rollback chain')
+      record_chain_state_change(@chain[:state], 3)
       db.prepared(
         'UPDATE transaction_chains
         SET `state` = 3, `progress` = `progress` - 1
@@ -198,20 +202,22 @@ module NodeCtld
     def close_chain(db, fatal = false)
       log(:debug, self, 'Close chain')
 
+      direction = current_chain_direction
       state = if fatal
                 5
-              elsif current_chain_direction == :execute && @status != :failed
+              elsif direction == :execute && @status != :failed
                 2
               else
                 4
               end
+      record_chain_state_change(@chain[:state], state)
 
       # mark chain as finished
       db.prepared(
         "UPDATE transaction_chains
         SET
           `state` = ?,
-          `progress` = #{current_chain_direction == :execute ? '`progress` + 1' : '0'}
+          `progress` = #{direction == :execute ? '`progress` + 1' : '0'}
         WHERE id = ?",
         state, chain_id
       )
@@ -367,6 +373,25 @@ module NodeCtld
     end
 
     private
+
+    def record_chain_state_change(previous_state, state)
+      return if previous_state.to_i == state.to_i
+
+      @chain_state_changes << [previous_state.to_i, state.to_i]
+      @chain[:state] = state.to_i
+    end
+
+    def publish_chain_state_changes
+      @chain_state_changes.each do |previous_state, state|
+        NodeCtld::TransactionChainEvents.publish(
+          chain_id:,
+          previous_state:,
+          state:
+        )
+      rescue StandardError => e
+        log(:warn, "unable to publish transaction chain event: #{e.class}: #{e.message}")
+      end
+    end
 
     def load_outputs
       raw = trans['output']

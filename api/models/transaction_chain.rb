@@ -110,7 +110,19 @@ class TransactionChain < ApplicationRecord
       chain.save!
     end
 
+    emit_state_changed_event(chain, previous_state: 'staged', state: 'queued') if chain
+
     [chain, ret]
+  end
+
+  def self.emit_state_changed_event(chain, previous_state:, state:)
+    VpsAdmin::API::Events.emit_transaction_chain_state!(
+      chain,
+      previous_state:,
+      state:
+    )
+  rescue StandardError => e
+    warn "Unable to emit transaction chain event for chain ##{chain.id}: #{e.class}: #{e.message}"
   end
 
   # The chain name is a class name in lowercase with added
@@ -418,6 +430,25 @@ class TransactionChain < ApplicationRecord
     m
   end
 
+  def route_event!(event_type, **)
+    event = prepare_event!(event_type, **)
+    release_event_deliveries!(event)
+    event
+  end
+
+  def prepare_event!(event_type, **)
+    VpsAdmin::API::Events.emit!(event_type, **, release: false)
+  end
+
+  def release_event_deliveries!(event)
+    return if event.nil?
+
+    ids = event.event_deliveries.where(state: 'prepared').order(:id).pluck(:id)
+    return if ids.empty?
+
+    append_t(Transactions::EventDelivery::Release, args: [find_node_id, ids])
+  end
+
   # Set chain concerns.
   # +type+ can be one of:
   # [affect]     the chain affects these objects
@@ -555,6 +586,7 @@ module TransactionChains
   module Network; end
   module UserNamespace; end
   module UserNamespaceMap; end
+  module EventDelivery; end
 
   module NetworkInterface
     module Venet; end

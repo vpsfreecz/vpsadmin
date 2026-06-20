@@ -10,14 +10,17 @@ RSpec.describe VpsAdmin::API::Tasks::Mail do
   let(:task) { described_class.new }
 
   describe '#daily_report' do
-    it 'picks language from VPSADMIN_LANG and fires DailyReport' do
-      allow(TransactionChains::Mail::DailyReport).to receive(:fire)
+    it 'picks language from VPSADMIN_LANG and releases the DailyReport event directly' do
+      allow(VpsAdmin::API::NotificationEvents).to receive(:run_chain)
 
       with_env('VPSADMIN_LANG' => 'en') do
         task.daily_report
       end
 
-      expect(TransactionChains::Mail::DailyReport).to have_received(:fire).with(SpecSeed.language)
+      expect(VpsAdmin::API::NotificationEvents).to have_received(:run_chain).with(
+        TransactionChains::Mail::DailyReport,
+        args: [SpecSeed.language]
+      )
     end
   end
 

@@ -68,7 +68,8 @@ import ../../make-test.nix (
           expect(rows.fetch('sso_token_id')).to be_nil
           expect(rows.fetch('device_token_id')).to be_nil
           expect(rows.fetch('reported_failed_login_count')).to eq(2)
-          expect(rows.fetch('report_chain_count')).to be >= 1
+          expect(rows.fetch('report_event_count')).to be >= 1
+          expect(rows.fetch('report_delivery_count')).to be >= 1
         end
       end
     '';

@@ -95,7 +95,10 @@ module VpsAdmin::API::Tasks
 
       return if user_attempt_groups.empty? || ENV['EXECUTE'] != 'yes'
 
-      TransactionChains::User::ReportFailedLogins.fire2(args: [user_attempt_groups])
+      VpsAdmin::API::NotificationEvents.run_chain(
+        TransactionChains::User::ReportFailedLogins,
+        args: [user_attempt_groups]
+      )
     end
   end
 end

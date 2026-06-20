@@ -36,6 +36,7 @@ testLib.makeTests [
   "admin/remote-mount-state"
   "admin/location-network-primary-switch"
   "alerts/incident-report-process"
+  "alerts/notification-routing"
   "alerts/oom-report-notify-and-prune"
   "alerts/lifetime-and-daily-report"
   "tasks/auth-session-housekeeping"

@@ -1,3 +1,5 @@
+require 'nodectld/transaction_chain_events'
+
 module NodeCtld::RemoteCommands
   class Chain < Base
     handle :chain
@@ -5,6 +7,7 @@ module NodeCtld::RemoteCommands
     def exec
       db = ::NodeCtld::Db.new
       out = {}
+      state_change = nil
 
       case @command
       when 'confirmations'
@@ -71,15 +74,18 @@ module NodeCtld::RemoteCommands
         end
 
       when 'resolve'
+        previous_state = chain_state(db, @chain)
         db.prepared('UPDATE transaction_chains SET state = 6 WHERE id = ?', @chain)
+        state_change = [previous_state, 6]
 
       when 'retry'
         db.transaction do |t|
-          retry_chain(t, @chain, @transactions && @transactions.first)
+          state_change = retry_chain(t, @chain, @transactions && @transactions.first)
         end
       end
 
       db.close
+      publish_state_change(state_change)
 
       ok.update({ output: out })
     end
@@ -144,6 +150,8 @@ module NodeCtld::RemoteCommands
     end
 
     def retry_chain(t, chain_id, from_transaction_id)
+      previous_state = chain_state(t, chain_id)
+
       if from_transaction_id
         # Check we have a valid transaction from the given chain
         rs = t.prepared(
@@ -189,9 +197,30 @@ module NodeCtld::RemoteCommands
         progress,
         chain_id
       )
+
+      [previous_state, 1]
     end
 
     protected
+
+    def chain_state(db, chain_id)
+      db.prepared('SELECT state FROM transaction_chains WHERE id = ?', chain_id).get!['state'].to_i
+    end
+
+    def publish_state_change(change)
+      return unless change
+
+      previous_state, state = change
+      return if previous_state.to_i == state.to_i
+
+      NodeCtld::TransactionChainEvents.publish(
+        chain_id: @chain,
+        previous_state:,
+        state:
+      )
+    rescue StandardError => e
+      log(:warn, "unable to publish transaction chain event: #{e.class}: #{e.message}")
+    end
 
     def load_yaml(v)
       YAML.safe_load(v, permitted_classes: [Symbol, Time])

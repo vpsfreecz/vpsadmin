@@ -9,11 +9,13 @@
   stateDirectory,
   user,
   group,
+  runLinks ? true,
 }:
 let
   inherit (lib)
     concatStringsSep
     mkOption
+    optionals
     optionalString
     types
     ;
@@ -109,7 +111,8 @@ in
     "d '${stateDirectory}' 0750 ${user} ${group} - -"
     "d '${stateDirectory}/config' 0750 ${user} ${group} - -"
     "d '${stateDirectory}/plugins' 0750 ${user} ${group} - -"
-
+  ]
+  ++ optionals runLinks [
     "d /run/vpsadmin/${name} - - - - -"
     "L+ /run/vpsadmin/${name}/config - - - - ${stateDirectory}/config"
     "L+ /run/vpsadmin/${name}/plugins - - - - ${stateDirectory}/plugins"

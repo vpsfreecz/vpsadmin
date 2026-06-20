@@ -243,7 +243,7 @@ RSpec.describe VpsAdmin::API::Authentication::OAuth2Config do
     recovery_code = 'oauth2-recovery-code'
     device = create_totp_device!(user:, recovery_code:)
     auth_token = create_auth_token!(user:, purpose: 'mfa')
-    allow(TransactionChains::User::TotpRecoveryCodeUsed).to receive(:fire)
+    allow(VpsAdmin::API::NotificationEvents).to receive(:run_chain)
 
     result = config.handle_post_authorize(
       sinatra_handler: handler,
@@ -263,8 +263,10 @@ RSpec.describe VpsAdmin::API::Authentication::OAuth2Config do
     expect(result.complete).to be(true)
     expect(result.authorization).to be_present
     expect(device.reload.enabled).to be(false)
-    expect(TransactionChains::User::TotpRecoveryCodeUsed)
-      .to have_received(:fire).with(user, device, request)
+    expect(VpsAdmin::API::NotificationEvents).to have_received(:run_chain).with(
+      TransactionChains::User::TotpRecoveryCodeUsed,
+      args: [user, device, request]
+    )
   end
 
   it 're-renders the reset-password branch when passwords do not match' do
