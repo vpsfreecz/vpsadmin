@@ -122,6 +122,7 @@ jobs:
               spec/api/resources/default_object_cluster_resource_spec.rb
               spec/api/resources/environment_read_spec.rb
               spec/api/resources/environment_write_spec.rb
+              spec/api/resources/event*_spec.rb
               spec/api/resources/incident_report_spec.rb
               spec/api/resources/language_spec.rb
               spec/api/resources/lifecycle_bypass_spec.rb

@@ -1,0 +1,165 @@
+require 'securerandom'
+require 'uri'
+
+class NotificationReceiverAction < ApplicationRecord
+  MAX_ACTIONS_PER_RECEIVER = 20
+  MAIL_TARGET_VALUE_LIMIT = 500
+
+  TARGET_KIND_LABELS = {
+    'default_recipient' => 'default recipient',
+    'custom' => 'custom target'
+  }.freeze
+
+  belongs_to :notification_receiver
+  has_many :event_deliveries, dependent: :nullify
+
+  enum :target_kind, %i[default_recipient custom], suffix: true
+
+  serialize :config, coder: JSON
+
+  before_validation :set_default_target_kind
+  before_validation :set_default_label
+  before_validation :clean_email_target
+
+  validates :action, :target_kind, :label, presence: true
+  validates :action, inclusion: { in: ->(_) { VpsAdmin::API::Notifications::Actions.names } }
+  validates :label, length: { maximum: 255 }, allow_nil: true
+  validates :verification_token, length: { maximum: 255 }, allow_nil: true
+  validate :check_action_limit, on: :create
+  validate :check_target
+
+  def self.action_labels
+    VpsAdmin::API::Notifications::Actions.labels
+  end
+
+  def self.target_kind_labels
+    VpsAdmin::API::Notifications::Actions.target_kind_labels
+  end
+
+  def verified?
+    verified_at.present?
+  end
+
+  def verified
+    verified?
+  end
+
+  def secret_present?
+    secret.present?
+  end
+
+  def secret_present
+    secret_present?
+  end
+
+  def config_json
+    JSON.dump(config || {})
+  end
+
+  def deliverable?
+    return false unless enabled?
+
+    VpsAdmin::API::Notifications::Actions.known?(action)
+  end
+
+  def generate_verification_token!
+    update!(
+      verification_token: SecureRandom.urlsafe_base64(24),
+      verified_at: nil
+    )
+  end
+
+  def display_target
+    action_definition.display_target_for(self)
+  rescue KeyError
+    target_value.presence || target_kind.tr('_', ' ')
+  end
+
+  def email_action?
+    action == 'email'
+  end
+
+  def webhook_action?
+    action == 'webhook'
+  end
+
+  protected
+
+  def set_default_label
+    self.label = action_definition.label if label.blank? && action.present?
+  rescue KeyError
+    nil
+  end
+
+  def set_default_target_kind
+    return if action.blank?
+
+    if email_action?
+      self.target_kind ||= 'default_recipient'
+    elsif target_kind.blank? || default_recipient_target_kind?
+      self.target_kind = 'custom'
+    end
+  end
+
+  def check_action_limit
+    return unless notification_receiver
+
+    count = notification_receiver
+            .notification_receiver_actions
+            .where.not(id:)
+            .count
+    return if count < MAX_ACTIONS_PER_RECEIVER
+
+    errors.add(:base, "cannot have more than #{MAX_ACTIONS_PER_RECEIVER} receiver actions")
+  end
+
+  def check_target
+    action_definition.validate_receiver_action!(self)
+  rescue KeyError
+    nil
+  end
+
+  def check_email_target
+    return if default_recipient_target_kind?
+
+    if target_value.blank?
+      errors.add(:target_value, "can't be blank")
+      return
+    end
+
+    if target_value.length > MAIL_TARGET_VALUE_LIMIT
+      errors.add(:target_value, "is too long (maximum is #{MAIL_TARGET_VALUE_LIMIT} characters)")
+      return
+    end
+
+    target_value.split(',').each do |mail|
+      next if mail.strip.include?('@')
+
+      errors.add(:target_value, "'#{mail}' is not a valid e-mail address")
+    end
+  end
+
+  def check_webhook_target
+    if target_value.blank?
+      errors.add(:target_value, "can't be blank")
+      return
+    end
+
+    uri = URI.parse(target_value)
+    return if uri.is_a?(URI::HTTP) && uri.host.present?
+
+    errors.add(:target_value, 'must be an HTTP or HTTPS URL')
+  rescue URI::InvalidURIError
+    errors.add(:target_value, 'must be an HTTP or HTTPS URL')
+  end
+
+  def clean_email_target
+    return unless email_action? && custom_target_kind? && target_value
+
+    target_value.gsub!(/\s/, '')
+  end
+
+  def action_definition
+    VpsAdmin::API::Notifications::Actions.fetch(action)
+  end
+end
