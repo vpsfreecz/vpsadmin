@@ -10,9 +10,12 @@ RSpec.describe TransactionChains::Vps::ShrinkDataset do
 
   let(:user) { SpecSeed.user }
 
-  it 'restores refquota, clears the expansion link, resolves the expansion, and schedules mail for active VPSes' do
-    allow(MailTemplate).to receive(:send_mail!).and_return(build_mail_log_double)
+  before do
+    ensure_alert_mail_templates!
+    ensure_mailer_available!
+  end
 
+  it 'restores refquota, clears the expansion link, resolves the expansion, and routes mail for active VPSes' do
     fixture = build_active_dataset_expansion_fixture(
       user: user,
       original_refquota: 10_240,
@@ -26,9 +29,13 @@ RSpec.describe TransactionChains::Vps::ShrinkDataset do
 
     expect(tx_classes(chain)).to include(
       Transactions::Storage::SetDataset,
-      Transactions::Mail::Send,
+      Transactions::EventDelivery::Release,
       Transactions::Utils::NoOp
     )
+    classes = tx_classes(chain)
+    release_idx = classes.index(Transactions::EventDelivery::Release)
+    expect(classes.rindex(Transactions::Storage::SetDataset)).to be < release_idx
+    expect(classes.rindex(Transactions::Utils::NoOp)).to be < release_idx
     expect(tx_payload(chain, Transactions::Storage::SetDataset)).to include(
       'properties' => include('refquota' => [fixture.fetch(:current_refquota), expansion.original_refquota])
     )
@@ -43,11 +50,18 @@ RSpec.describe TransactionChains::Vps::ShrinkDataset do
         row.attr_changes['state'] == DatasetExpansion.states[:resolved]
     end).to be(true)
     expect(chain.locks.map { |lock| [lock.resource, lock.row_id] }).to include(['DatasetInPool', dip.id])
+
+    event = expect_routed_event!('vps.dataset_shrunk', user: user)
+    expect(event.vps).to eq(fixture.fetch(:vps))
+    expect(event.source).to eq(expansion)
+    expect(event.parameters).to include(
+      'dataset_id' => fixture.fetch(:dataset).id,
+      'dataset_full_name' => fixture.fetch(:dataset).full_name,
+      'added_space' => expansion.added_space
+    )
   end
 
   it 'does not enqueue mail when the VPS is not active' do
-    allow(MailTemplate).to receive(:send_mail!).and_return(build_mail_log_double)
-
     fixture = build_active_dataset_expansion_fixture(
       user: user,
       original_refquota: 10_240,
@@ -59,6 +73,7 @@ RSpec.describe TransactionChains::Vps::ShrinkDataset do
     chain, = described_class.fire(fixture.fetch(:dataset_in_pool), fixture.fetch(:expansion))
 
     expect(tx_classes(chain)).to include(Transactions::Storage::SetDataset, Transactions::Utils::NoOp)
-    expect(tx_classes(chain)).not_to include(Transactions::Mail::Send)
+    expect(tx_classes(chain)).not_to include(Transactions::EventDelivery::Release)
+    expect(Event.where(event_type: 'vps.dataset_shrunk')).to be_empty
   end
 end

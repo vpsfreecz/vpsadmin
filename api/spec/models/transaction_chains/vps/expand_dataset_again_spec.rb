@@ -10,9 +10,12 @@ RSpec.describe TransactionChains::Vps::ExpandDatasetAgain do
 
   let(:user) { SpecSeed.user }
 
-  it 'reuses the current expansion, creates another history row, and expands from the current refquota' do
-    allow(MailTemplate).to receive(:send_mail!).and_return(build_mail_log_double)
+  before do
+    ensure_alert_mail_templates!
+    ensure_mailer_available!
+  end
 
+  it 'reuses the current expansion, creates another history row, and expands from the current refquota' do
     fixture = build_active_dataset_expansion_fixture(
       user: user,
       original_refquota: 10_240,
@@ -31,7 +34,7 @@ RSpec.describe TransactionChains::Vps::ExpandDatasetAgain do
     expect(returned_history).to eq(history)
     expect(tx_classes(chain)).to include(
       Transactions::Storage::SetDataset,
-      Transactions::Mail::Send,
+      Transactions::EventDelivery::Release,
       Transactions::Utils::NoOp
     )
     expect(tx_payload(chain, Transactions::Storage::SetDataset)).to include(
@@ -47,5 +50,13 @@ RSpec.describe TransactionChains::Vps::ExpandDatasetAgain do
         row.attr_changes['added_space'] == 3_072
     end).to be(true)
     expect(chain.locks.map { |lock| [lock.resource, lock.row_id] }).to include(['DatasetInPool', dip.id])
+
+    event = expect_routed_event!('vps.dataset_expanded', user: user)
+    expect(event.vps).to eq(fixture.fetch(:vps))
+    expect(event.source).to eq(expansion)
+    expect(event.parameters).to include(
+      'dataset_id' => fixture.fetch(:dataset).id,
+      'added_space' => expansion.added_space
+    )
   end
 end
