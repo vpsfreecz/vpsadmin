@@ -1,0 +1,12 @@
+#!/usr/bin/env ruby
+require_relative '../lib/vpsadmin'
+
+$stdout.sync = true
+$stderr.sync = true
+
+action = ARGV.fetch(0) do
+  warn "Usage: #{$0} email|webhook"
+  exit(false)
+end
+
+VpsAdmin::API::Notifications::Dispatcher.run(action)

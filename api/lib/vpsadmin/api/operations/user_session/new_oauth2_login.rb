@@ -29,7 +29,10 @@ module VpsAdmin::API
       return session if authorization.user_device.known
 
       if session.user.enable_new_login_notification
-        TransactionChains::User::NewLogin.fire2(args: [session, authorization])
+        VpsAdmin::API::NotificationEvents.run_chain(
+          TransactionChains::User::NewLogin,
+          args: [session, authorization]
+        )
       end
 
       authorization.user_device.update!(known: true)

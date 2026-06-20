@@ -334,6 +334,7 @@ module Transactions
   module Storage; end
   module Utils; end
   module Mail; end
+  module EventDelivery; end
   module Network; end
   module Maintenanceindow; end
   module Pool; end
