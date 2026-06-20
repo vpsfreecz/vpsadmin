@@ -44,8 +44,24 @@ RSpec.describe 'payments plugin mail overview chain', requires_plugins: :payment
 
     chain, = chain_class.fire2(args: [86_400, SpecSeed.language])
 
-    expect(tx_classes(chain)).to eq([Transactions::Mail::Send])
+    expect(tx_classes(chain)).to eq([Transactions::EventDelivery::Release])
     expect(MailTemplate).to have_received(:send_mail!).once
+    event = Event.where(event_type: 'payments.overview').sole
+    delivery = event.event_deliveries.sole
+
+    expect(event.user).to be_nil
+    expect(event.parameters).to include(
+      'language_id' => SpecSeed.language.id,
+      'language_code' => SpecSeed.language.code,
+      'period_seconds' => 86_400,
+      'incoming_payment_count' => 4,
+      'accepted_payment_count' => 1
+    )
+    expect(event.parameters.fetch('period_start')).to eq((now - 86_400).utc.strftime('%Y-%m-%dT%H:%M:%SZ'))
+    expect(event.parameters.fetch('period_end')).to eq(now.utc.strftime('%Y-%m-%dT%H:%M:%SZ'))
+    expect(delivery).to be_direct_email_delivery
+    expect(delivery.template_name).to eq('payments_overview')
+    expect(delivery.target_label).to eq('Template recipients')
 
     expect(captured[:base_url]).to eq(SysConfig.get(:webui, :base_url))
     expect(captured[:start]).to eq(now - 86_400)
@@ -57,5 +73,16 @@ RSpec.describe 'payments plugin mail overview chain', requires_plugins: :payment
     expect(captured[:processed]).to include(processed)
     expect(captured[:ignored]).to include(ignored)
     expect(captured[:accepted]).to include(accepted)
+  end
+
+  it 'raises when the event e-mail delivery cannot be queued' do
+    allow(MailTemplate).to receive(:send_mail!).and_raise(ArgumentError, 'invalid overview')
+
+    expect do
+      chain_class.fire2(args: [86_400, SpecSeed.language])
+    end.to raise_error(
+      RuntimeError,
+      /failed to queue payments overview e-mail delivery: ArgumentError: invalid overview/
+    )
   end
 end
