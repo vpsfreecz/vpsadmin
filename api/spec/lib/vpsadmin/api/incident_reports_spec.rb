@@ -29,14 +29,14 @@ RSpec.describe VpsAdmin::API::IncidentReports do
       VpsAdmin::API::IncidentReports.config do
         handle_message { |_mailbox, _message, dry_run:| dry_run ? result : nil }
       end
-      allow(TransactionChains::IncidentReport::Send).to receive(:fire)
-      allow(TransactionChains::IncidentReport::Reply).to receive(:fire)
+      allow(TransactionChains::IncidentReport::Utils).to receive(:fire_send)
+      allow(TransactionChains::IncidentReport::Utils).to receive(:fire_reply)
 
       ret = described_class.new(mailbox).handle_message(message, dry_run: true)
 
       expect(ret).to be(true)
-      expect(TransactionChains::IncidentReport::Send).not_to have_received(:fire)
-      expect(TransactionChains::IncidentReport::Reply).not_to have_received(:fire)
+      expect(TransactionChains::IncidentReport::Utils).not_to have_received(:fire_send)
+      expect(TransactionChains::IncidentReport::Utils).not_to have_received(:fire_reply)
     end
 
     it 'fires Send for active incidents in execute mode' do
@@ -45,12 +45,12 @@ RSpec.describe VpsAdmin::API::IncidentReports do
       VpsAdmin::API::IncidentReports.config do
         handle_message { |_mailbox, _message, dry_run:| dry_run ? nil : result }
       end
-      allow(TransactionChains::IncidentReport::Send).to receive(:fire)
+      allow(TransactionChains::IncidentReport::Utils).to receive(:fire_send)
 
       ret = described_class.new(mailbox).handle_message(message, dry_run: false)
 
       expect(ret).to be(true)
-      expect(TransactionChains::IncidentReport::Send).to have_received(:fire).with(
+      expect(TransactionChains::IncidentReport::Utils).to have_received(:fire_send).with(
         result,
         message:
       )
@@ -69,12 +69,12 @@ RSpec.describe VpsAdmin::API::IncidentReports do
       VpsAdmin::API::IncidentReports.config do
         handle_message { |_mailbox, _message, dry_run:| dry_run ? nil : result }
       end
-      allow(TransactionChains::IncidentReport::Reply).to receive(:fire)
+      allow(TransactionChains::IncidentReport::Utils).to receive(:fire_reply)
 
       ret = described_class.new(mailbox).handle_message(message, dry_run: false)
 
       expect(ret).to be(true)
-      expect(TransactionChains::IncidentReport::Reply).to have_received(:fire).with(message, result)
+      expect(TransactionChains::IncidentReport::Utils).to have_received(:fire_reply).with(message, result)
     end
   end
 
