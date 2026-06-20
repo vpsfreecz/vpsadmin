@@ -74,8 +74,8 @@ import ../../make-test.nix (
             method: :daily_report,
             env: { VPSADMIN_LANG: 'en' }
           )
-          expect(daily_response.fetch('chain_ids')).not_to be_empty
-          wait_for_task_chains_done(services, daily_response, label: 'daily report')
+          expect(daily_response.fetch('chain_ids')).to be_empty
+          expect(daily_response.fetch('event_ids')).not_to be_empty
           expect(mail_log_count(services, 'daily_report')).to be >= 1
           expect_delivered_mail(
             services,

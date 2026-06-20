@@ -8,15 +8,22 @@ RSpec.describe TransactionChains::Lifetimes::ExpirationWarning do
     with_current_context(user: SpecSeed.admin) { example.run }
   end
 
-  let(:sent_mails) { [] }
-
   before do
     ensure_expiration_template!(object: 'user', state: 'active')
     ensure_expiration_template!(object: 'vps', state: 'active')
     ensure_mailer_available!
-    allow(MailTemplate).to receive(:send_mail!) do |name, opts|
-      sent_mails << [name, opts]
-      build_mail_log_double
+  end
+
+  def stub_mail_delivery!
+    allow(::Mail).to receive(:new).and_wrap_original do |original, *args|
+      message = original.call(*args)
+      response = instance_double(
+        Net::SMTP::Response,
+        status: '250',
+        string: '250 2.0.0 queued as expiration-warning-spec'
+      )
+      allow(message).to receive(:deliver!).and_return(response)
+      message
     end
   end
 
@@ -28,34 +35,40 @@ RSpec.describe TransactionChains::Lifetimes::ExpirationWarning do
     )
     user.update!(expiration_date: 2.days.from_now)
 
-    described_class.fire2(args: [User, [user]])
+    chain, = described_class.fire2(args: [User, [user]])
 
-    expect(sent_mails.size).to eq(1)
-    name, opts = sent_mails.first
-    expect(name).to eq(:expiration_warning)
-    expect(opts).to include(
-      params: { object: 'user', state: 'active' },
-      user:
+    expect(tx_classes(chain)).to include(Transactions::EventDelivery::Release)
+    event = expect_routed_event!('lifetime.expiration_warning', user:)
+    expect(event.source).to eq(user)
+    expect(event.parameters).to include(
+      'object' => 'user',
+      'object_id' => user.id,
+      'object_label' => user.login,
+      'state' => 'active'
     )
-    expect(opts.fetch(:vars)).to include(object: user)
-    expect(opts.fetch(:vars).fetch('user')).to eq(user)
+    expect(event.event_deliveries.sole.mail_log.mail_template.name).to eq('expiration_user_active')
   end
 
   it 'resolves the owner of user-owned objects such as VPSes' do
     vps = build_standalone_vps_fixture(user: SpecSeed.user).fetch(:vps)
     vps.update!(expiration_date: 2.days.from_now)
 
-    described_class.fire2(args: [Vps, [vps]])
+    chain, = described_class.fire2(args: [Vps, [vps]])
 
-    expect(sent_mails.first.last).to include(
-      params: { object: 'vps', state: 'active' },
-      user: vps.user
+    expect(tx_classes(chain)).to include(Transactions::EventDelivery::Release)
+    event = expect_routed_event!('lifetime.expiration_warning', user: vps.user)
+    expect(event.vps).to eq(vps)
+    expect(event.source).to eq(vps)
+    expect(event.parameters).to include(
+      'object' => 'vps',
+      'object_id' => vps.id,
+      'object_label' => vps.hostname,
+      'state' => 'active'
     )
-    expect(sent_mails.first.last.fetch(:vars)).to include(object: vps)
-    expect(sent_mails.first.last.fetch(:vars).fetch('vps')).to eq(vps)
+    expect(event.event_deliveries.sole.mail_log.mail_template.name).to eq('expiration_vps_active')
   end
 
-  it 'skips users with mailer disabled' do
+  it 'logs suppressed notifications for users with mailer disabled' do
     user = SpecSeed.create_or_update_user!(
       login: "no-mail-#{SecureRandom.hex(4)}",
       level: 1,
@@ -64,9 +77,12 @@ RSpec.describe TransactionChains::Lifetimes::ExpirationWarning do
     user.update!(expiration_date: 2.days.from_now, mailer_enabled: false)
 
     chain, = described_class.fire2(args: [User, [user]])
+    event = Event.where(event_type: 'lifetime.expiration_warning', user:).sole
 
     expect(chain).to be_nil
-    expect(MailTemplate).not_to have_received(:send_mail!)
+    expect(event).to be_suppressed_routing_state
+    expect(event.event_deliveries.sole).to be_skipped_state
+    expect(event.event_deliveries.sole.error_summary).to include('does not notify')
   end
 
   it 'computes expiration day helper values' do
@@ -75,10 +91,49 @@ RSpec.describe TransactionChains::Lifetimes::ExpirationWarning do
 
     described_class.fire2(args: [Vps, [vps]])
 
-    vars = sent_mails.first.last.fetch(:vars)
-    expect(vars.fetch(:expires_in_days)).to be_within(0.05).of(1.0)
-    expect(vars.fetch(:expired_days_ago)).to be_within(0.05).of(-1.0)
-    expect(vars.fetch(:expires_in_a_day)).to be(true)
+    params = Event.where(event_type: 'lifetime.expiration_warning', user: vps.user).sole.parameters
+
+    expect(params.fetch('expires_in_days')).to be_within(0.05).of(1.0)
+    expect(params.fetch('expired_days_ago')).to be_within(0.05).of(-1.0)
+    expect(params.fetch('expires_in_a_day')).to be(true)
+  end
+
+  it 'renders delayed e-mail deliveries from persisted template parameters' do
+    user = SpecSeed.create_or_update_user!(
+      login: "delayed-expiration-#{SecureRandom.hex(4)}",
+      level: 1,
+      email: 'delayed-expiration@test.invalid'
+    )
+    expiration_date = 2.days.from_now
+    user.update!(expiration_date:)
+    event = VpsAdmin::API::Events.emit!(
+      'lifetime.expiration_warning',
+      user:,
+      source: user,
+      subject: 'Delayed expiration warning',
+      parameters: {
+        object: 'user',
+        object_id: user.id,
+        object_label: user.login,
+        state: user.object_state,
+        expiration_date: expiration_date.iso8601,
+        expires_in_days: 2.0,
+        expired_days_ago: -2.0,
+        expires_in_a_day: false
+      }
+    )
+    delivery = event.event_deliveries.sole
+    delivery.reload
+
+    expect(delivery).to be_released_state
+    expect(delivery.mail_log.mail_template.name).to eq('expiration_user_active')
+    expect(delivery.mail_log.text_plain).to include('approximately 2 days')
+
+    stub_mail_delivery!
+    VpsAdmin::API::Tasks::EventDelivery.new.deliver_emails
+
+    delivery.reload
+    expect(delivery).to be_sent_state
   end
 
   it 'raises when no owner can be inferred' do

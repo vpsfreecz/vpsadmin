@@ -277,6 +277,10 @@ class SecurityAdvisory < ApplicationRecord
   end
 
   def mail_chain(event, update: nil)
-    @last_chain, = TransactionChains::SecurityAdvisories::Mail.fire(self, event, update)
+    @last_chain = nil
+    VpsAdmin::API::NotificationEvents.run_chain(
+      TransactionChains::SecurityAdvisories::Mail,
+      args: [self, event, update]
+    )
   end
 end

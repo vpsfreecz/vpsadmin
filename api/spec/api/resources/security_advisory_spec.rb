@@ -1006,7 +1006,7 @@ RSpec.describe 'VpsAdmin::API::Resources::SecurityAdvisory' do
     it 'creates public updates without sending mail by default' do
       advisory = build_published_advisory
       published_at = Time.utc(2026, 1, 2, 12, 0, 0)
-      allow(TransactionChains::SecurityAdvisories::Mail).to receive(:fire)
+      allow(VpsAdmin::API::NotificationEvents).to receive(:run_chain)
 
       as(SpecSeed.admin) do
         json_post update_index_path, security_advisory_update: {
@@ -1024,7 +1024,7 @@ RSpec.describe 'VpsAdmin::API::Resources::SecurityAdvisory' do
       expect(security_advisory_update_obj['en_message']).to eq('Follow-up message')
       expect(security_advisory_update_obj).not_to include('en_description', 'en_response')
       update_id = security_advisory_update_obj.fetch('id')
-      expect(TransactionChains::SecurityAdvisories::Mail).not_to have_received(:fire)
+      expect(VpsAdmin::API::NotificationEvents).not_to have_received(:run_chain)
       expect(advisory.reload.published_at.utc).to eq(published_at)
 
       json_get update_index_path, security_advisory_update: { security_advisory: advisory.id }
