@@ -132,6 +132,11 @@ module VpsAdmin::API
       'webhook' => 'delivery.webhook'
     }.freeze
     DEFAULT_LIMIT = 100
+    DEFAULT_EMAIL_CONCURRENCY = 2
+    DEFAULT_WEBHOOK_CONCURRENCY = 4
+    DEFAULT_EMAIL_WORKER_DELAY = 1.0
+    DEFAULT_EMAIL_DOMAIN_MIN_DELIVERY_INTERVAL = 1.0
+    EMAIL_DUE_SCAN_MULTIPLIER = 4
     MAX_ATTEMPTS = 5
     CLAIM_TIMEOUT = 5 * 60
     RESPONSE_BODY_LIMIT = 8192
@@ -529,6 +534,8 @@ module VpsAdmin::API
     end
 
     class Dispatcher
+      STOP_WORKER = Object.new.freeze
+
       def self.run(action)
         new(action).run
       end
@@ -537,61 +544,184 @@ module VpsAdmin::API
         new(action).dispatch_due(**)
       end
 
-      def initialize(action, config: Config.load)
+      def initialize(
+        action,
+        config: Config.load,
+        monotonic_clock: -> { Process.clock_gettime(Process::CLOCK_MONOTONIC) },
+        sleeper: ->(seconds) { sleep(seconds) }
+      )
         @action = action.to_s
         unless Actions.known?(@action) && QUEUES.has_key?(@action)
           raise ArgumentError, "unsupported notification action #{@action}"
         end
 
         @config = config
+        @monotonic_clock = monotonic_clock
+        @sleeper = sleeper
         @running = true
+        @long_running = false
+        @delivery_queue = Queue.new
+        @delayed_delivery_ids = []
+        @queued_delivery_ids = Set.new
+        @pool_mutex = Mutex.new
+        @pool_condition = ConditionVariable.new
+        @delayed_condition = ConditionVariable.new
+        @in_flight = 0
+        @workers = nil
+        @delayed_scheduler = nil
+        @stopping_workers = false
       end
 
       def run
         trap_signals
+        @long_running = true
+        start_workers unless inline_delivery_dispatch?
 
         if rabbitmq_configured?
           run_with_rabbitmq
         else
           run_reconciliation_loop
         end
+      ensure
+        stop_workers
       end
 
-      def dispatch_due(limit: limit_value)
-        deliveries = ::EventDelivery
-                     .includes(
-                       :event,
-                       :mail_log,
-                       :event_route,
-                       :notification_receiver,
-                       :notification_receiver_action
-                     )
-                     .where(action: @action, state: %w[released sending])
-                     .due
-                     .order(:id)
-                     .limit(limit)
+      def dispatch_due(limit: limit_value, wait: true)
+        requested_limit = limit.to_i
+        delivery_limit = available_delivery_limit(requested_limit)
+        return if delivery_limit <= 0
 
-        deliveries.each { |delivery| dispatch_delivery(delivery) }
+        deliveries = ActiveRecord::Base.connection_pool.with_connection do
+          due_deliveries(delivery_limit, scan_limit: requested_limit)
+        end
+
+        if inline_delivery_dispatch?
+          worker_state = {}
+          deliveries.each { |delivery| dispatch_delivery(delivery, worker_state:) }
+          return
+        end
+
+        deliveries.each { |delivery| submit_delivery_id(delivery.id) }
+        wait_for_idle if wait
+      ensure
+        stop_workers if wait && !@long_running
       end
 
-      def dispatch_delivery_id(id)
+      def dispatch_delivery_id(id, worker_state: nil, defer_throttles: false)
         return if id.blank?
 
-        delivery = ::EventDelivery
-                   .includes(
-                     :event,
-                     :mail_log,
-                     :event_route,
-                     :notification_receiver,
-                     :notification_receiver_action
-                   )
-                   .find_by(id:)
+        delivery = find_delivery(id)
         return unless delivery && delivery.action == @action
 
-        dispatch_delivery(delivery)
+        dispatch_delivery(delivery, worker_state:, defer_throttles:)
       end
 
       protected
+
+      def due_deliveries(limit, scan_limit: limit)
+        return due_delivery_scope.limit(limit).to_a unless email_due_selection?
+
+        select_due_email_deliveries(limit, scan_limit:)
+      end
+
+      def due_delivery_scope
+        scope = ::EventDelivery
+                .includes(
+                  :event,
+                  :mail_log,
+                  :event_route,
+                  :notification_receiver,
+                  :notification_receiver_action
+                )
+                .where(action: @action, state: %w[released sending])
+                .due
+                .order(:id)
+
+        excluded_ids = queued_delivery_ids
+        excluded_ids.empty? ? scope : scope.where.not(id: excluded_ids)
+      end
+
+      def email_due_selection?
+        @action == 'email' && email_domain_min_delivery_interval > 0
+      end
+
+      def select_due_email_deliveries(limit, scan_limit:)
+        limit = limit.to_i
+        scan_limit = [scan_limit.to_i, limit].max
+        max_scan = email_due_scan_limit(scan_limit)
+        selected = []
+        overflow = []
+        seen_domains = Set.new
+        last_id = nil
+        scanned = 0
+
+        loop do
+          batch_limit = [scan_limit, max_scan - scanned].min
+          break if batch_limit <= 0
+
+          batch_scope = due_delivery_scope
+          batch_scope = batch_scope.where('event_deliveries.id > ?', last_id) if last_id
+          batch = batch_scope.limit(batch_limit).to_a
+          break if batch.empty?
+
+          scanned += batch.size
+
+          batch.each do |delivery|
+            last_id = delivery.id
+            domains = email_recipient_domains(delivery)
+
+            if email_domains_available?(domains) && domains.any? { |domain| !seen_domains.include?(domain) }
+              selected << delivery
+              seen_domains.merge(domains)
+              return selected if selected.size >= limit
+            elsif overflow.size < limit
+              overflow << delivery
+            end
+          end
+
+          break if batch.size < batch_limit
+        end
+
+        selected.concat(overflow.first(limit - selected.size)) if selected.size < limit
+        selected
+      end
+
+      def email_due_scan_limit(scan_limit)
+        scan_limit * EMAIL_DUE_SCAN_MULTIPLIER
+      end
+
+      def email_domains_available?(domains)
+        email_domain_limiter.delay_for(domains) <= 0
+      end
+
+      def queued_delivery_ids
+        @pool_mutex.synchronize { @queued_delivery_ids.to_a }
+      end
+
+      def available_delivery_limit(requested_limit)
+        limit = requested_limit.to_i
+        return limit if inline_delivery_dispatch?
+
+        @pool_mutex.synchronize do
+          [limit, max_in_flight - @in_flight].min
+        end
+      end
+
+      def max_in_flight
+        limit_value
+      end
+
+      def find_delivery(id)
+        ::EventDelivery
+          .includes(
+            :event,
+            :mail_log,
+            :event_route,
+            :notification_receiver,
+            :notification_receiver_action
+          )
+          .find_by(id:)
+      end
 
       def run_with_rabbitmq
         channel = connection.create_channel
@@ -604,9 +734,7 @@ module VpsAdmin::API
         queue.bind(exchange, routing_key: Notifications.routing_key(@action))
 
         while @running
-          ActiveRecord::Base.connection_pool.with_connection do
-            dispatch_due
-          end
+          dispatch_due(wait: false)
 
           delivery_info, _properties, payload = queue.pop(manual_ack: true)
 
@@ -621,9 +749,13 @@ module VpsAdmin::API
       end
 
       def handle_queue_payload(channel, delivery_info, payload)
-        ActiveRecord::Base.connection_pool.with_connection do
-          data = JSON.parse(payload)
-          dispatch_delivery_id(data['delivery_id'])
+        data = JSON.parse(payload)
+        if inline_delivery_dispatch?
+          ActiveRecord::Base.connection_pool.with_connection do
+            dispatch_delivery_id(data['delivery_id'], defer_throttles: false)
+          end
+        else
+          submit_delivery_id(data['delivery_id'])
         end
         channel.ack(delivery_info.delivery_tag)
       rescue StandardError => e
@@ -633,19 +765,27 @@ module VpsAdmin::API
 
       def run_reconciliation_loop
         while @running
-          ActiveRecord::Base.connection_pool.with_connection do
-            dispatch_due
-          end
+          dispatch_due
           sleep poll_interval
         end
       end
 
-      def dispatch_delivery(delivery)
+      def dispatch_delivery(delivery, worker_state: nil, defer_throttles: false)
+        if @action == 'email'
+          if defer_throttles
+            delay = email_throttle_delay(delivery, worker_state)
+            return delay if delay
+          else
+            wait_for_email_throttles!(delivery, worker_state)
+          end
+        end
+
         attempt = claim_delivery(delivery)
         return unless attempt
 
         result = deliver(delivery.reload)
         mark_success!(delivery, attempt, result)
+        nil
       rescue WebhookResponseError => e
         mark_failure!(
           delivery,
@@ -655,6 +795,7 @@ module VpsAdmin::API
           response_headers: e.response_headers,
           error_summary: e.message
         )
+        nil
       rescue StandardError => e
         mark_failure!(
           delivery,
@@ -663,6 +804,220 @@ module VpsAdmin::API
           response_body: exception_response_body(e),
           error_summary: "#{e.class}: #{e.message}"
         )
+        nil
+      end
+
+      def submit_delivery_id(id)
+        return false if id.blank?
+
+        delivery_id = id.to_i
+        return false if delivery_id <= 0
+
+        start_workers
+        return false unless reserve_delivery_id(delivery_id)
+
+        @delivery_queue << delivery_id
+        true
+      rescue StandardError
+        release_delivery_id(delivery_id) if delivery_id
+        raise
+      end
+
+      def reserve_delivery_id(delivery_id)
+        @pool_mutex.synchronize do
+          return false if @queued_delivery_ids.include?(delivery_id)
+          return false if @in_flight >= max_in_flight
+
+          @queued_delivery_ids.add(delivery_id)
+          @in_flight += 1
+          true
+        end
+      end
+
+      def release_delivery_id(delivery_id)
+        @pool_mutex.synchronize do
+          @queued_delivery_ids.delete(delivery_id)
+          @in_flight -= 1 if @in_flight > 0
+          @pool_condition.broadcast if @in_flight == 0
+        end
+      end
+
+      def start_workers
+        @pool_mutex.synchronize do
+          return if @workers
+
+          @stopping_workers = false
+          @delayed_scheduler = Thread.new { delayed_scheduler_loop }
+          @workers = Array.new(concurrency) do |index|
+            Thread.new { worker_loop(index + 1) }
+          end
+        end
+      end
+
+      def stop_workers
+        workers, delayed_scheduler = @pool_mutex.synchronize do
+          ret_workers = @workers
+          ret_scheduler = @delayed_scheduler
+          @workers = nil
+          @delayed_scheduler = nil
+          @stopping_workers = true
+          @delayed_condition.broadcast
+          [ret_workers, ret_scheduler]
+        end
+
+        delayed_scheduler&.join
+
+        if workers
+          workers.length.times { @delivery_queue << STOP_WORKER }
+          workers.each(&:join)
+        end
+        nil
+      end
+
+      def wait_for_idle
+        @pool_mutex.synchronize do
+          @pool_condition.wait(@pool_mutex) while @in_flight > 0
+        end
+      end
+
+      def worker_loop(index)
+        worker_state = { index: }
+
+        loop do
+          delivery_id = @delivery_queue.pop
+          break if delivery_id.equal?(STOP_WORKER)
+
+          delay = nil
+          begin
+            ActiveRecord::Base.connection_pool.with_connection do
+              delay = dispatch_delivery_id(
+                delivery_id,
+                worker_state:,
+                defer_throttles: true
+              )
+            end
+          rescue StandardError => e
+            warn "Unable to process notification delivery #{delivery_id}: #{e.class}: #{e.message}"
+          ensure
+            if delay.is_a?(Numeric) && delay > 0
+              defer_delivery_id(delivery_id, delay)
+            else
+              release_delivery_id(delivery_id)
+            end
+          end
+        end
+      end
+
+      def defer_delivery_id(delivery_id, delay)
+        ready_at = monotonic_time + delay
+
+        @pool_mutex.synchronize do
+          if @stopping_workers
+            @queued_delivery_ids.delete(delivery_id)
+            @in_flight -= 1 if @in_flight > 0
+            @pool_condition.broadcast if @in_flight == 0
+            return
+          end
+
+          @delayed_delivery_ids << [ready_at, delivery_id]
+          @delayed_delivery_ids.sort_by!(&:first)
+          @delayed_condition.signal
+        end
+      end
+
+      def delayed_scheduler_loop
+        loop do
+          delivery_id = nil
+
+          @pool_mutex.synchronize do
+            loop do
+              return if @stopping_workers
+
+              if @delayed_delivery_ids.empty?
+                @delayed_condition.wait(@pool_mutex)
+                next
+              end
+
+              ready_at, id = @delayed_delivery_ids.first
+              wait_for = ready_at - monotonic_time
+
+              if wait_for <= 0
+                @delayed_delivery_ids.shift
+                delivery_id = id
+                break
+              end
+
+              @delayed_condition.wait(@pool_mutex, wait_for)
+            end
+          end
+
+          @delivery_queue << delivery_id if delivery_id
+        end
+      end
+
+      def wait_for_email_throttles!(delivery, worker_state)
+        loop do
+          delay = email_throttle_delay(delivery, worker_state)
+          return unless delay
+
+          sleep_seconds(delay)
+        end
+      end
+
+      def email_throttle_delay(delivery, worker_state)
+        worker_delay = email_worker_delay_delay(worker_state)
+        return worker_delay if worker_delay
+
+        domain_delay = email_domain_limiter.reserve_or_delay(
+          email_recipient_domains(delivery)
+        )
+        return domain_delay if domain_delay > 0
+
+        worker_state[:last_email_started_at] = monotonic_time if worker_state
+        nil
+      end
+
+      def email_worker_delay_delay(worker_state)
+        return unless worker_state && email_worker_delay > 0
+
+        last_started_at = worker_state[:last_email_started_at]
+        return unless last_started_at
+
+        wait_for = last_started_at + email_worker_delay - monotonic_time
+        wait_for if wait_for > 0
+      end
+
+      def email_domain_limiter
+        @email_domain_limiter ||= DomainRateLimiter.new(
+          interval: email_domain_min_delivery_interval,
+          clock: @monotonic_clock,
+          sleeper: @sleeper
+        )
+      end
+
+      def email_recipient_domains(delivery)
+        mail_log = delivery.mail_log
+        domains = %i[to cc bcc].flat_map do |attr|
+          email_address_domains(mail_log&.public_send(attr))
+        end
+
+        domains.uniq.presence || ['_unknown']
+      end
+
+      def email_address_domains(value)
+        return [] if value.blank?
+
+        ::Mail::AddressList
+          .new(value)
+          .addresses
+          .filter_map { |address| normalize_email_domain(address.domain) }
+      rescue StandardError
+        ['_unknown']
+      end
+
+      def normalize_email_domain(domain)
+        ret = domain.to_s.strip.downcase.sub(/\.\z/, '')
+        ret.presence
       end
 
       def claim_delivery(delivery)
@@ -967,6 +1322,10 @@ module VpsAdmin::API
         @config.fetch('webhook', {})
       end
 
+      def email_config
+        @config.fetch('email', {})
+      end
+
       def smtp_options
         smtp = @config.fetch('smtp', {})
         opts = {
@@ -1096,6 +1455,58 @@ module VpsAdmin::API
         ENV.fetch('LIMIT', DEFAULT_LIMIT).to_i
       end
 
+      def concurrency
+        @concurrency ||= begin
+          default = @action == 'email' ? DEFAULT_EMAIL_CONCURRENCY : DEFAULT_WEBHOOK_CONCURRENCY
+          positive_integer_config(action_config.fetch('concurrency', default), "#{@action}.concurrency")
+        end
+      end
+
+      def email_worker_delay
+        @email_worker_delay ||= non_negative_float_config(
+          email_config.fetch('worker_delay', DEFAULT_EMAIL_WORKER_DELAY),
+          'email.worker_delay'
+        )
+      end
+
+      def email_domain_min_delivery_interval
+        @email_domain_min_delivery_interval ||= non_negative_float_config(
+          email_config.fetch(
+            'domain_min_delivery_interval',
+            DEFAULT_EMAIL_DOMAIN_MIN_DELIVERY_INTERVAL
+          ),
+          'email.domain_min_delivery_interval'
+        )
+      end
+
+      def action_config
+        @action == 'email' ? email_config : webhook_config
+      end
+
+      def positive_integer_config(value, name)
+        ret = value.to_i
+        raise ArgumentError, "#{name} must be at least 1" if ret < 1
+
+        ret
+      end
+
+      def non_negative_float_config(value, name)
+        ret = value.to_f
+        raise ArgumentError, "#{name} must not be negative" if ret < 0
+
+        ret
+      end
+
+      def inline_delivery_dispatch?
+        concurrency == 1 || active_database_transaction?
+      end
+
+      def active_database_transaction?
+        ActiveRecord::Base.connection.transaction_open?
+      rescue StandardError
+        false
+      end
+
       def backoff_seconds(attempt_count)
         [60 * (2**[attempt_count - 1, 0].max), 3600].min
       end
@@ -1106,10 +1517,75 @@ module VpsAdmin::API
         body.to_s.byteslice(0, RESPONSE_BODY_LIMIT)
       end
 
+      def monotonic_time
+        @monotonic_clock.call
+      end
+
+      def sleep_seconds(seconds)
+        @sleeper.call(seconds)
+      end
+
       def trap_signals
         %w[INT TERM].each do |signal|
           Signal.trap(signal) { @running = false }
         end
+      end
+    end
+
+    class DomainRateLimiter
+      def initialize(interval:, clock:, sleeper:)
+        @interval = interval
+        @clock = clock
+        @sleeper = sleeper
+        @next_available_at = {}
+        @mutex = Mutex.new
+      end
+
+      def wait(domains)
+        loop do
+          delay = reserve_or_delay(domains)
+          return unless delay > 0
+
+          @sleeper.call(delay)
+        end
+      end
+
+      def delay_for(domains)
+        keys = domain_keys(domains)
+        return 0 if keys.empty? || @interval <= 0
+
+        @mutex.synchronize do
+          delay_for_keys(keys, @clock.call)
+        end
+      end
+
+      def reserve_or_delay(domains)
+        keys = domain_keys(domains)
+        return 0 if keys.empty? || @interval <= 0
+
+        @mutex.synchronize do
+          now = @clock.call
+          delay = delay_for_keys(keys, now)
+
+          if delay <= 0
+            reserved_until = now + @interval
+            keys.each { |key| @next_available_at[key] = reserved_until }
+            return 0
+          end
+
+          delay
+        end
+      end
+
+      protected
+
+      def domain_keys(domains)
+        Array(domains).map(&:to_s).reject(&:blank?).uniq.sort
+      end
+
+      def delay_for_keys(keys, now)
+        available_at = keys.map { |key| @next_available_at.fetch(key, now) }.max
+        available_at - now
       end
     end
 
