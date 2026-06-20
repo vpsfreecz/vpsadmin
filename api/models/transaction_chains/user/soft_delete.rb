@@ -3,13 +3,18 @@ module TransactionChains
     label 'Soft delete'
 
     def link_chain(user, target, _state, log)
-      mail(:user_soft_delete, {
-             user:,
-             vars: {
-               user:,
-               state: log
-             }
-           })
+      event = prepare_event!(
+        'user.soft_deleted',
+        user:,
+        source: log,
+        subject: 'User account disabled',
+        summary: "User #{user.login} was disabled",
+        parameters: {
+          state: log.state || 'soft_delete',
+          reason: log.reason,
+          expiration_date: log.expiration_date&.iso8601
+        }
+      )
 
       if target
         user.vpses.where(object_state: [
@@ -44,6 +49,8 @@ module TransactionChains
       user.single_sign_ons.destroy_all
       user.oauth2_authorizations.destroy_all
       user.metrics_access_tokens.destroy_all
+
+      release_event_deliveries!(event)
     end
   end
 end

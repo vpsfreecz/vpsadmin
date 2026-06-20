@@ -24,12 +24,19 @@ RSpec.describe TransactionChains::User::Resume do
     classes = tx_classes(chain)
 
     expect(classes).to include(
-      Transactions::Mail::Send,
+      Transactions::EventDelivery::Release,
       Transactions::Vps::Start,
       Transactions::DnsServerZone::Update,
       Transactions::DnsServerZone::CreateRecords
     )
+    release_idx = classes.index(Transactions::EventDelivery::Release)
+    expect(classes.rindex(Transactions::Vps::Start)).to be < release_idx
+    expect(classes.rindex(Transactions::DnsServerZone::Update)).to be < release_idx
+    expect(classes.rindex(Transactions::DnsServerZone::CreateRecords)).to be < release_idx
     expect(MailLog.joins(:mail_template).exists?(mail_templates: { name: 'user_resume' })).to be(true)
+    event = expect_routed_event!('user.resumed', user: fixture.fetch(:user))
+    expect(event.source_class).to eq('ObjectState')
+    expect(event.parameters).to include('state' => 'active')
     expect(confirmations_for(chain).any? do |row|
       row.class_name == 'DnsRecord' &&
         row.row_pks == { 'id' => fixture.fetch(:user_record).id } &&
@@ -44,6 +51,6 @@ RSpec.describe TransactionChains::User::Resume do
     chain, = described_class.fire(fixture.fetch(:user), false, nil, ObjectState.new)
 
     expect(tx_classes(chain)).to include(Transactions::Vps::Start)
-    expect(tx_classes(chain)).not_to include(Transactions::Mail::Send)
+    expect(tx_classes(chain)).not_to include(Transactions::EventDelivery::Release)
   end
 end
