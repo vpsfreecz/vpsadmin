@@ -139,14 +139,12 @@ module VpsAdmin::API::Resources
           cpu_limit: input[:cpu_limit],
           vps_action: input[:vps_action]
         )
-        @chain, = TransactionChains::IncidentReport::New.fire2(
-          args: [incident]
-        )
+        @chain, = TransactionChains::IncidentReport::Utils.fire_new(incident)
         incident
       end
 
       def state_id
-        @chain.id
+        @chain&.id
       end
     end
   end
