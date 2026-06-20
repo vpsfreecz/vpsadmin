@@ -23,6 +23,7 @@ module VpsAdmin::Supervisor
         Node::Rpc,
         Node::Status,
         Node::StorageStatus,
+        Node::TransactionChainEvents,
         Node::VpsEvents,
         Node::VpsMounts,
         Node::VpsOsProcesses,
@@ -41,9 +42,10 @@ module VpsAdmin::Supervisor
           if %w[node storage].include?(node.role)
             klasses.except(Node::DnsStatus, Node::DnsTransferLog)
           elsif node.role == 'dns_server'
-            klasses.slice(Node::Rpc, Node::Status, Node::DnsStatus, Node::DnsTransferLog)
+            klasses.slice(Node::Rpc, Node::Status, Node::DnsStatus, Node::DnsTransferLog,
+                          Node::TransactionChainEvents)
           else
-            klasses.slice(Node::Rpc, Node::Status)
+            klasses.slice(Node::Rpc, Node::Status, Node::TransactionChainEvents)
           end
 
         use_klasses.each do |klass, chan|
