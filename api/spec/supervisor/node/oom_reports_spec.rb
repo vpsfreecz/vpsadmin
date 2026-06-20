@@ -75,6 +75,185 @@ RSpec.describe VpsAdmin::Supervisor::Node::OomReports do
       expect(report.oom_report_rule).to eq(rule)
       expect(report.ignored).to be(true)
     end
+
+    it 'uses OOM event routes to mark matching reports ignored' do
+      vps = create_vps!
+      receiver = NotificationReceiver.create!(
+        user: vps.user,
+        label: 'Ignore OOM reports',
+        mute: true
+      )
+      route = EventRoute.create!(
+        user: vps.user,
+        notification_receiver: receiver,
+        event_type: 'vps.oom_report',
+        position: 1
+      )
+      route.event_route_matchers.create!(
+        field: 'vps_id',
+        operator: '==',
+        value: vps.id.to_s
+      )
+      route.event_route_matchers.create!(
+        field: 'parameters.stage',
+        operator: '==',
+        value: 'raw'
+      )
+      route.event_route_matchers.create!(
+        field: 'parameters.cgroup',
+        operator: '=*',
+        value: '/user.slice/*'
+      )
+
+      report = supervisor.send(:save_report, build_oom_report_payload(vps:, cgroup: '/user.slice/a.scope'))
+
+      expect(report.oom_report_rule).to be_nil
+      expect(report.ignored).to be(true)
+      expect(route.reload.hit_count).to eq(1)
+    end
+
+    it 'does not use raw OOM ignore routes for notification-stage events' do
+      vps = create_vps!
+      receiver = NotificationReceiver.create!(
+        user: vps.user,
+        label: 'Ignore raw OOM reports',
+        mute: true
+      )
+      route = EventRoute.create!(
+        user: vps.user,
+        notification_receiver: receiver,
+        event_type: 'vps.oom_report',
+        position: 1
+      )
+      route.event_route_matchers.create!(
+        field: 'parameters.stage',
+        operator: '==',
+        value: 'raw'
+      )
+      route.event_route_matchers.create!(
+        field: 'parameters.cgroup',
+        operator: '=*',
+        value: '/user.slice/*'
+      )
+
+      event = VpsAdmin::API::Events.emit!(
+        'vps.oom_report',
+        user: vps.user,
+        vps:,
+        subject: 'OOM notification',
+        parameters: {
+          stage: 'notification',
+          cgroup: '/user.slice/a.scope'
+        }
+      )
+
+      event.reload
+      expect(event.matched_event_route).not_to eq(route)
+      expect(route.reload.hit_count).to eq(0)
+    end
+
+    it 'does not mark reports ignored for non-mute skipped OOM routes' do
+      vps = create_vps!
+      receiver = NotificationReceiver.create!(
+        user: vps.user,
+        label: 'Broken OOM receiver'
+      )
+      receiver.notification_receiver_actions.create!(
+        action: :email,
+        target_kind: :custom,
+        target_value: 'audit@example.test',
+        enabled: false
+      )
+      route = EventRoute.create!(
+        user: vps.user,
+        notification_receiver: receiver,
+        event_type: 'vps.oom_report',
+        position: 1
+      )
+      route.event_route_matchers.create!(
+        field: 'vps_id',
+        operator: '==',
+        value: vps.id.to_s
+      )
+
+      report = supervisor.send(:save_report, build_oom_report_payload(vps:, cgroup: '/user.slice/a.scope'))
+
+      expect(report.oom_report_rule).to be_nil
+      expect(report.ignored).to be(false)
+      expect(route.reload.hit_count).to eq(1)
+    end
+
+    it 'does not mark reports ignored for disabled muted receivers' do
+      vps = create_vps!
+      receiver = NotificationReceiver.create!(
+        user: vps.user,
+        label: 'Disabled OOM ignore',
+        enabled: false,
+        mute: true
+      )
+      route = EventRoute.create!(
+        user: vps.user,
+        notification_receiver: receiver,
+        event_type: 'vps.oom_report',
+        position: 1
+      )
+      route.event_route_matchers.create!(
+        field: 'vps_id',
+        operator: '==',
+        value: vps.id.to_s
+      )
+
+      report = supervisor.send(:save_report, build_oom_report_payload(vps:, cgroup: '/user.slice/a.scope'))
+
+      expect(report.oom_report_rule).to be_nil
+      expect(report.ignored).to be(false)
+      expect(route.reload.hit_count).to eq(1)
+    end
+
+    it 'does not mark reports ignored when a mute route continues to a delivery' do
+      vps = create_vps!
+      muted_receiver = NotificationReceiver.create!(
+        user: vps.user,
+        label: 'Ignored OOM reports',
+        mute: true
+      )
+      mail_receiver = NotificationReceiver.create!(
+        user: vps.user,
+        label: 'OOM audit'
+      )
+      mail_receiver.notification_receiver_actions.create!(
+        action: :email,
+        target_kind: :custom,
+        target_value: 'audit@example.test'
+      )
+
+      mute_route = EventRoute.create!(
+        user: vps.user,
+        notification_receiver: muted_receiver,
+        event_type: 'vps.oom_report',
+        position: 1,
+        continue: true
+      )
+      mute_route.event_route_matchers.create!(
+        field: 'parameters.cgroup',
+        operator: '=*',
+        value: '/user.slice/*'
+      )
+
+      mail_route = EventRoute.create!(
+        user: vps.user,
+        notification_receiver: mail_receiver,
+        event_type: 'vps.oom_report',
+        position: 2
+      )
+
+      report = supervisor.send(:save_report, build_oom_report_payload(vps:, cgroup: '/user.slice/a.scope'))
+
+      expect(report.oom_report_rule).to be_nil
+      expect(report.ignored).to be(false)
+      expect(mute_route.reload.hit_count).to eq(1)
+      expect(mail_route.reload.hit_count).to eq(1)
+    end
   end
 
   describe '#evaluate_rules' do
