@@ -15,7 +15,8 @@ module VpsAdmin::API::Tasks
       ).group('vpses.id')
       return unless vpses.exists?
 
-      TransactionChains::Vps::OomReports.fire2(
+      VpsAdmin::API::NotificationEvents.run_chain(
+        TransactionChains::Vps::OomReports,
         args: [vpses],
         kwargs: { cooldown: cooldown }
       )

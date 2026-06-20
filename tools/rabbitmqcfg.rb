@@ -5,7 +5,7 @@ require 'optparse'
 class Cli
   ACTIONS = %w[setup user policies].freeze
 
-  USERS = %w[api console node supervisor].freeze
+  USERS = %w[api console node notification supervisor].freeze
 
   def self.run(args)
     cli = new(args)
@@ -124,11 +124,21 @@ class Cli
       ]
     when 'node'
       rx_name = Regexp.escape(user)
+      notification_exchange = 'vpsadmin\.notifications'
 
       [
-        "^(amq\\.gen.*|node:#{rx_name}|console:#{rx_name}:.+)$",
-        "^(amq\\.gen.*|node:#{rx_name}|console:#{rx_name}:.+)$",
+        "^(amq\\.gen.*|node:#{rx_name}|console:#{rx_name}:.+|#{notification_exchange})$",
+        "^(amq\\.gen.*|node:#{rx_name}|console:#{rx_name}:.+|#{notification_exchange})$",
         "^(amq\\.gen.*|node:#{rx_name}|node:#{rx_name}:.+|console:#{rx_name}:input)$"
+      ]
+    when 'notification'
+      notification_exchange = 'vpsadmin\.notifications'
+      notification_queue = 'vpsadmin\.notifications\.(email|webhook)'
+
+      [
+        "^(amq\\.gen.*|#{notification_exchange}|#{notification_queue})$",
+        "^(amq\\.gen.*|#{notification_exchange}|#{notification_queue})$",
+        "^(amq\\.gen.*|#{notification_exchange}|#{notification_queue})$"
       ]
     when 'supervisor'
       ['.*', '.*', '.*']
