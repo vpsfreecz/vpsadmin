@@ -211,7 +211,8 @@ base
         sso.token_id,
         device.token_id,
         UserFailedLogin.where(id: failed_ids).where.not(reported_at: nil).count,
-        TransactionChain.where(type: 'TransactionChains::User::ReportFailedLogins').count
+        Event.where(event_type: 'user.failed_logins').count,
+        EventDelivery.joins(:event).where(events: { event_type: 'user.failed_logins' }).count
       ])
     RUBY
 
@@ -227,7 +228,8 @@ base
       'sso_token_id' => values.fetch(8),
       'device_token_id' => values.fetch(9),
       'reported_failed_login_count' => values.fetch(10),
-      'report_chain_count' => values.fetch(11)
+      'report_event_count' => values.fetch(11),
+      'report_delivery_count' => values.fetch(12)
     }
   end
 

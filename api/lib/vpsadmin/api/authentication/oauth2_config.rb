@@ -581,10 +581,9 @@ module VpsAdmin::API
 
       if auth.authenticated?
         if auth.used_recovery_code?
-          TransactionChains::User::TotpRecoveryCodeUsed.fire(
-            auth.user,
-            auth.recovery_device,
-            sinatra_request
+          VpsAdmin::API::NotificationEvents.run_chain(
+            TransactionChains::User::TotpRecoveryCodeUsed,
+            args: [auth.user, auth.recovery_device, sinatra_request]
           )
         end
 

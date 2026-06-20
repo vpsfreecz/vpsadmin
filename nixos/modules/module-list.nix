@@ -10,6 +10,7 @@
     ./vpsadmin/varnish.nix
     ./vpsadmin/haproxy.nix
     ./vpsadmin/main.nix
+    ./vpsadmin/notification-dispatcher.nix
     ./vpsadmin/nixos.nix
     ./vpsadmin/database.nix
     ./vpsadmin/nodectld/nixos.nix

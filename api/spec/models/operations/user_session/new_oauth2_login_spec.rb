@@ -35,12 +35,14 @@ RSpec.describe VpsAdmin::API::Operations::UserSession::NewOAuth2Login do
     user_device = create_user_device!(user:, known: false)
     authorization = create_oauth2_authorization!(user:, client:, user_device:)
 
-    allow(TransactionChains::User::NewLogin).to receive(:fire2)
+    allow(VpsAdmin::API::NotificationEvents).to receive(:run_chain)
 
     op.run(authorization, request, 'fixed', 900, ['all'])
 
-    expect(TransactionChains::User::NewLogin)
-      .to have_received(:fire2).with(args: [kind_of(UserSession), authorization])
+    expect(VpsAdmin::API::NotificationEvents).to have_received(:run_chain).with(
+      TransactionChains::User::NewLogin,
+      args: [kind_of(UserSession), authorization]
+    )
   end
 
   it 'does not fire NewLogin for a known device' do
@@ -48,10 +50,10 @@ RSpec.describe VpsAdmin::API::Operations::UserSession::NewOAuth2Login do
     user_device = create_user_device!(user:, known: true)
     authorization = create_oauth2_authorization!(user:, client:, user_device:)
 
-    allow(TransactionChains::User::NewLogin).to receive(:fire2)
+    allow(VpsAdmin::API::NotificationEvents).to receive(:run_chain)
 
     op.run(authorization, request, 'fixed', 900, ['all'])
 
-    expect(TransactionChains::User::NewLogin).not_to have_received(:fire2)
+    expect(VpsAdmin::API::NotificationEvents).not_to have_received(:run_chain)
   end
 end

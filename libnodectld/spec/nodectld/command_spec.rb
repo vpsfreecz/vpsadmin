@@ -232,6 +232,53 @@ RSpec.describe NodeCtld::Command do
     )
   end
 
+  it 'publishes transaction chain state changes after saving the chain' do
+    chain_id = insert_chain
+    tx_id = insert_transaction(
+      transaction_chain_id: chain_id,
+      handle: NodeCtldSpec::TestHandles::OK
+    )
+    allow(NodeCtld::TransactionChainEvents).to receive(:publish)
+
+    execute_and_save(tx_id)
+
+    expect(NodeCtld::TransactionChainEvents).to have_received(:publish).with(
+      chain_id:,
+      previous_state: NodeCtldSpec::TxState::CHAIN_QUEUED,
+      state: NodeCtldSpec::TxState::CHAIN_DONE
+    )
+  end
+
+  it 'publishes chain state changes with subsecond event time' do
+    stub_node_bunny
+    now = Time.at(1_780_000_000, 123_456)
+    payload = nil
+    allow(Time).to receive(:now).and_return(now)
+    allow(NodeCtld::NodeBunny).to receive(:publish_drop) do |_exchange, body, **opts|
+      expect(opts).to include(
+        routing_key: NodeCtld::TransactionChainEvents::ROUTING_KEY,
+        persistent: true
+      )
+      payload = JSON.parse(body)
+    end
+
+    NodeCtld::TransactionChainEvents.publish(
+      chain_id: 42,
+      previous_state: NodeCtldSpec::TxState::CHAIN_QUEUED,
+      state: NodeCtldSpec::TxState::CHAIN_DONE
+    )
+
+    events = payload.fetch('events')
+    expect(events.size).to eq(1)
+    expect(events.first).to include(
+      'chain_id' => 42,
+      'previous_state' => 'queued',
+      'state' => 'done',
+      'time' => now.to_i,
+      'time_f' => now.to_f
+    )
+  end
+
   it 'accepts valid signed transactions' do
     chain_id = insert_chain
     payload, signature = NodeCtldSpec::SigningHelpers.signed_input(

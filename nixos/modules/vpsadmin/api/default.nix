@@ -31,6 +31,17 @@ let
     environment 'production'
     tag 'api'
   '';
+
+  notificationsYml = pkgs.writeText "notifications.yml" (
+    builtins.toJSON {
+      rabbitmq = {
+        hosts = vpsadminCfg.rabbitmq.hosts;
+        vhost = vpsadminCfg.rabbitmq.virtualHost;
+        username = cfg.notifications.rabbitmq.username;
+        password = "#rabbitmq_pass#";
+      };
+    }
+  );
 in
 {
   imports = apiApp.imports;
@@ -137,6 +148,22 @@ in
           Database configuration
         '';
       };
+
+      notifications.rabbitmq = {
+        enable = mkEnableOption "Enable RabbitMQ wakeups for event delivery dispatchers";
+
+        username = mkOption {
+          type = types.str;
+          default = "notification";
+          description = "RabbitMQ username for event delivery wakeups.";
+        };
+
+        passwordFile = mkOption {
+          type = types.nullOr types.path;
+          default = null;
+          description = "Path to a file containing the RabbitMQ password.";
+        };
+      };
     };
   };
 
@@ -192,14 +219,32 @@ in
       ];
       requires = [ "vpsadmin-database-setup.service" ];
       wantedBy = [ "multi-user.target" ];
-      environment.RACK_ENV = "production";
-      environment.SCHEMA = "${cfg.stateDirectory}/cache/schema.rb";
       path = with pkgs; [
         mariadb
       ];
       startLimitIntervalSec = 180;
       startLimitBurst = 5;
-      preStart = apiApp.setup;
+      environment = {
+        RACK_ENV = "production";
+        SCHEMA = "${cfg.stateDirectory}/cache/schema.rb";
+      }
+      // optionalAttrs cfg.notifications.rabbitmq.enable {
+        VPSADMIN_NOTIFICATIONS_CONFIG = "${cfg.stateDirectory}/config/notifications.yml";
+      };
+      preStart = ''
+        ${apiApp.setup}
+
+        ${optionalString cfg.notifications.rabbitmq.enable ''
+          RABBITMQ_PASS=${
+            optionalString (
+              cfg.notifications.rabbitmq.passwordFile != null
+            ) "$(head -n1 ${cfg.notifications.rabbitmq.passwordFile})"
+          }
+          cp -f ${notificationsYml} "${cfg.stateDirectory}/config/notifications.yml"
+          sed -e "s,#rabbitmq_pass#,$RABBITMQ_PASS,g" -i "${cfg.stateDirectory}/config/notifications.yml"
+          chmod 440 "${cfg.stateDirectory}/config/notifications.yml"
+        ''}
+      '';
 
       serviceConfig = {
         Type = "notify";
