@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'spec_helper'
+require 'timeout'
 
 RSpec.describe VpsAdmin::API::Tasks::EventDelivery do
   around do |example|
@@ -302,6 +303,373 @@ RSpec.describe VpsAdmin::API::Tasks::EventDelivery do
 
       message
     end
+  end
+
+  it 'defaults dispatcher concurrency and e-mail throttles' do
+    email = VpsAdmin::API::Notifications::Dispatcher.new('email')
+    webhook = VpsAdmin::API::Notifications::Dispatcher.new('webhook')
+
+    expect(email.send(:concurrency)).to eq(2)
+    expect(email.send(:email_worker_delay)).to eq(1.0)
+    expect(email.send(:email_domain_min_delivery_interval)).to eq(1.0)
+    expect(webhook.send(:concurrency)).to eq(4)
+  end
+
+  it 'runs queued deliveries with configured worker concurrency' do
+    dispatcher = VpsAdmin::API::Notifications::Dispatcher.new(
+      'webhook',
+      config: { 'webhook' => { 'concurrency' => 2 } }
+    )
+    mutex = Mutex.new
+    condition = ConditionVariable.new
+    started = []
+    release = false
+
+    dispatcher.define_singleton_method(:dispatch_delivery_id) do |id, **kwargs|
+      worker_state = kwargs.fetch(:worker_state)
+
+      mutex.synchronize do
+        started << [id, worker_state.fetch(:index)]
+        condition.broadcast
+        condition.wait(mutex) until release
+      end
+    end
+
+    expect(dispatcher.send(:submit_delivery_id, 1)).to be(true)
+    expect(dispatcher.send(:submit_delivery_id, 2)).to be(true)
+
+    Timeout.timeout(2) do
+      mutex.synchronize do
+        condition.wait(mutex) until started.size == 2
+      end
+    end
+
+    expect(started.map(&:first)).to contain_exactly(1, 2)
+    expect(started.map(&:last).uniq.size).to eq(2)
+  ensure
+    mutex.synchronize do
+      release = true
+      condition.broadcast
+    end
+    dispatcher&.send(:wait_for_idle)
+    dispatcher&.send(:stop_workers)
+  end
+
+  it 'does not queue the same delivery id while it is running' do
+    dispatcher = VpsAdmin::API::Notifications::Dispatcher.new(
+      'webhook',
+      config: { 'webhook' => { 'concurrency' => 2 } }
+    )
+    mutex = Mutex.new
+    condition = ConditionVariable.new
+    started = []
+    release = false
+
+    dispatcher.define_singleton_method(:dispatch_delivery_id) do |id, **_kwargs|
+      mutex.synchronize do
+        started << id
+        condition.broadcast
+        condition.wait(mutex) until release
+      end
+    end
+
+    expect(dispatcher.send(:submit_delivery_id, 42)).to be(true)
+
+    Timeout.timeout(2) do
+      mutex.synchronize do
+        condition.wait(mutex) until started.size == 1
+      end
+    end
+
+    expect(dispatcher.send(:submit_delivery_id, 42)).to be(false)
+    expect(started).to eq([42])
+  ensure
+    mutex.synchronize do
+      release = true
+      condition.broadcast
+    end
+    dispatcher&.send(:wait_for_idle)
+    dispatcher&.send(:stop_workers)
+  end
+
+  it 'does not treat successful worker results as throttle delays' do
+    dispatcher = VpsAdmin::API::Notifications::Dispatcher.new(
+      'webhook',
+      config: { 'webhook' => { 'concurrency' => 1 } }
+    )
+    mutex = Mutex.new
+    condition = ConditionVariable.new
+    processed = []
+
+    dispatcher.define_singleton_method(:dispatch_delivery_id) do |id, **_kwargs|
+      mutex.synchronize do
+        processed << id
+        condition.broadcast
+      end
+
+      true
+    end
+
+    expect(dispatcher.send(:submit_delivery_id, 1)).to be(true)
+
+    Timeout.timeout(2) do
+      mutex.synchronize do
+        condition.wait(mutex) until processed == [1]
+      end
+    end
+    Timeout.timeout(2) { dispatcher.send(:wait_for_idle) }
+
+    expect(dispatcher.send(:submit_delivery_id, 2)).to be(true)
+
+    Timeout.timeout(2) do
+      mutex.synchronize do
+        condition.wait(mutex) until processed == [1, 2]
+      end
+    end
+    Timeout.timeout(2) { dispatcher.send(:wait_for_idle) }
+  ensure
+    dispatcher&.send(:stop_workers)
+  end
+
+  it 'does not reserve more queued deliveries than the dispatcher limit' do
+    previous_limit = ENV.fetch('LIMIT', nil)
+    ENV['LIMIT'] = '2'
+    dispatcher = VpsAdmin::API::Notifications::Dispatcher.new(
+      'webhook',
+      config: { 'webhook' => { 'concurrency' => 1 } }
+    )
+    mutex = Mutex.new
+    condition = ConditionVariable.new
+    started = []
+    release = false
+
+    dispatcher.define_singleton_method(:dispatch_delivery_id) do |id, **_kwargs|
+      mutex.synchronize do
+        started << id
+        condition.broadcast
+        condition.wait(mutex) until release
+      end
+    end
+
+    expect(dispatcher.send(:submit_delivery_id, 1)).to be(true)
+    expect(dispatcher.send(:submit_delivery_id, 2)).to be(true)
+
+    Timeout.timeout(2) do
+      mutex.synchronize do
+        condition.wait(mutex) until started == [1]
+      end
+    end
+
+    expect(dispatcher.send(:submit_delivery_id, 3)).to be(false)
+  ensure
+    ENV['LIMIT'] = previous_limit
+    if mutex && condition
+      mutex.synchronize do
+        release = true
+        condition.broadcast
+      end
+    end
+    dispatcher&.send(:wait_for_idle)
+    dispatcher&.send(:stop_workers)
+  end
+
+  it 'scans past one e-mail domain when selecting due deliveries' do
+    dispatcher = VpsAdmin::API::Notifications::Dispatcher.new(
+      'email',
+      config: {
+        'email' => {
+          'concurrency' => 3,
+          'worker_delay' => 0,
+          'domain_min_delivery_interval' => 10
+        }
+      }
+    )
+    deliveries = [
+      create_due_email_delivery!('first@gmail.com'),
+      create_due_email_delivery!('second@gmail.com'),
+      create_due_email_delivery!('third@gmail.com'),
+      create_due_email_delivery!('other@fastmail.com')
+    ]
+    selected_ids = dispatcher.send(:due_deliveries, 3).map(&:id)
+
+    expect(selected_ids).to include(deliveries.first.id, deliveries.last.id)
+    expect(selected_ids).not_to include(deliveries.third.id)
+  end
+
+  it 'prefers a sendable e-mail domain when only one delivery slot is open' do
+    dispatcher = VpsAdmin::API::Notifications::Dispatcher.new(
+      'email',
+      config: {
+        'email' => {
+          'concurrency' => 1,
+          'worker_delay' => 0,
+          'domain_min_delivery_interval' => 10
+        }
+      }
+    )
+    throttled = create_due_email_delivery!('first@gmail.com')
+    sendable = create_due_email_delivery!('other@fastmail.com')
+
+    expect(dispatcher.send(:email_domain_limiter).reserve_or_delay(['gmail.com'])).to eq(0)
+
+    selected_ids = dispatcher.send(:due_deliveries, 1, scan_limit: 2).map(&:id)
+
+    expect(selected_ids).to eq([sendable.id])
+    expect(selected_ids).not_to include(throttled.id)
+  end
+
+  it 'does not let one throttled e-mail domain occupy all workers' do
+    mutex = nil
+    condition = nil
+    release_first = false
+    dispatcher = VpsAdmin::API::Notifications::Dispatcher.new(
+      'email',
+      config: {
+        'email' => {
+          'concurrency' => 3,
+          'worker_delay' => 0,
+          'domain_min_delivery_interval' => 10
+        }
+      }
+    )
+    mutex = Mutex.new
+    condition = ConditionVariable.new
+    deliveries = {
+      1 => fake_email_delivery(1, 'first@gmail.com'),
+      2 => fake_email_delivery(2, 'second@gmail.com'),
+      3 => fake_email_delivery(3, 'third@gmail.com'),
+      4 => fake_email_delivery(4, 'other@fastmail.com')
+    }
+    started = []
+
+    dispatcher.define_singleton_method(:find_delivery) { |id| deliveries.fetch(id) }
+    dispatcher.define_singleton_method(:claim_delivery) { |_delivery| Object.new }
+    dispatcher.define_singleton_method(:mark_success!) { |_delivery, _attempt, _result| nil }
+    dispatcher.define_singleton_method(:deliver) do |delivery|
+      mutex.synchronize do
+        started << delivery.id
+        condition.broadcast
+        condition.wait(mutex) if delivery.id == 1 && !release_first
+      end
+
+      {}
+    end
+
+    [1, 2, 3, 4].each do |id|
+      expect(dispatcher.send(:submit_delivery_id, id)).to be(true)
+    end
+
+    Timeout.timeout(2) do
+      mutex.synchronize do
+        condition.wait(mutex) until started.include?(1) && started.include?(4)
+      end
+    end
+
+    expect(started).to include(4)
+    expect(started).not_to include(2, 3)
+  ensure
+    if mutex && condition
+      mutex.synchronize do
+        release_first = true
+        condition.broadcast
+      end
+    end
+    dispatcher&.send(:stop_workers)
+  end
+
+  it 'spaces repeated e-mail starts made by one worker' do
+    now = 100.0
+    sleeps = []
+    dispatcher = VpsAdmin::API::Notifications::Dispatcher.new(
+      'email',
+      config: {
+        'email' => {
+          'worker_delay' => 1,
+          'domain_min_delivery_interval' => 0
+        }
+      },
+      monotonic_clock: -> { now },
+      sleeper: lambda { |seconds|
+        sleeps << seconds
+        now += seconds
+      }
+    )
+    delivery, = create_email_delivery!
+    worker_state = {}
+
+    dispatcher.send(:wait_for_email_throttles!, delivery, worker_state)
+    dispatcher.send(:wait_for_email_throttles!, delivery, worker_state)
+
+    expect(sleeps).to eq([1.0])
+  end
+
+  it 'throttles repeated e-mail recipient domains' do
+    now = 200.0
+    sleeps = []
+    limiter = VpsAdmin::API::Notifications::DomainRateLimiter.new(
+      interval: 1.0,
+      clock: -> { now },
+      sleeper: lambda { |seconds|
+        sleeps << seconds
+        now += seconds
+      }
+    )
+
+    limiter.wait(%w[gmail.com example.net])
+    limiter.wait(['example.net'])
+    limiter.wait(['fastmail.com'])
+
+    expect(sleeps).to eq([1.0])
+  end
+
+  it 'extracts e-mail throttle domains from to, cc, and bcc recipients' do
+    delivery, = create_email_delivery!
+    delivery.mail_log.update!(
+      to: 'User <user@gmail.com>',
+      cc: 'Copy <copy@example.net>',
+      bcc: 'Hidden <hidden@GMAIL.COM>'
+    )
+    dispatcher = VpsAdmin::API::Notifications::Dispatcher.new('email')
+
+    expect(dispatcher.send(:email_recipient_domains, delivery))
+      .to contain_exactly('gmail.com', 'example.net')
+  end
+
+  def fake_email_delivery(id, recipient)
+    mail_log = Struct.new(:to, :cc, :bcc).new(recipient, '', '')
+    delivery = Struct.new(:id, :action, :mail_log).new(id, 'email', mail_log)
+    delivery.define_singleton_method(:reload) { self }
+    delivery
+  end
+
+  def create_due_email_delivery!(recipient)
+    event = Event.create!(
+      user: SpecSeed.user,
+      event_type: 'user.test_notification',
+      category: 'test',
+      severity: 'info',
+      subject: 'Spec due e-mail',
+      parameters: {}
+    )
+    mail_log = MailLog.create!(
+      user: SpecSeed.user,
+      to: recipient,
+      cc: '',
+      bcc: '',
+      from: 'noreply@example.test',
+      subject: 'Spec due e-mail',
+      text_plain: 'Spec due e-mail body'
+    )
+
+    EventDelivery.create!(
+      event:,
+      mail_log:,
+      action: :email,
+      target_kind: :default_recipient,
+      target_label: 'Default recipient',
+      state: :released,
+      next_attempt_at: Time.now
+    )
   end
 
   it 'sends released e-mail deliveries and records the attempt' do
