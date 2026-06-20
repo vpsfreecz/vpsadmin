@@ -11,6 +11,7 @@ require_rel 'resources/registration'
 require_rel 'resources/change'
 require_rel 'resources/override'
 require_rel 'lib'
+require_rel 'events'
 
 if defined?(namespace)
   # Load tasks only if run by rake
