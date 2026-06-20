@@ -74,26 +74,19 @@ module TransactionChains
           end
       end
 
-      # Send mail
-      if dataset_user.object_state == 'active' && send_mail && exports.any? && src_dataset_in_pool.dataset.user.mailer_enabled
-        mail(:dataset_migration_begun, {
-             user: dataset_user,
-             vars: {
-               dataset: src_dataset_in_pool.dataset,
-               src_pool: src_pool,
-               dst_pool: dst_pool,
-               exports: exports.map(&:first),
-               export_mounts:,
-               vpses:,
-               restart_vps:,
-               maintenance_window: maintenance_windows,
-               maintenance_windows:,
-               custom_window: maintenance_windows && !finish_weekday.nil?,
-               finish_weekday: finish_weekday,
-               finish_minutes: finish_minutes,
-               reason: reason
-             }
-           })
+      if dataset_user.object_state == 'active' && send_mail && exports.any?
+        route_dataset_migration_event!(
+          'dataset.migration_begun',
+          dataset: src_dataset_in_pool.dataset,
+          dataset_user:,
+          exports:,
+          export_mounts:,
+          vpses:,
+          restart_vps:,
+          finish_weekday:,
+          finish_minutes:,
+          reason:
+        )
       end
 
       # Create datasets
@@ -380,26 +373,19 @@ module TransactionChains
         destroy: cleanup_data
       }])
 
-      # Send mail
-      if dataset_user.object_state == 'active' && send_mail && exports.any? && src_dataset_in_pool.dataset.user.mailer_enabled
-        mail(:dataset_migration_finished, {
-             user: dataset_user,
-             vars: {
-               dataset: src_dataset_in_pool.dataset,
-               src_pool: src_pool,
-               dst_pool: dst_pool,
-               exports: exports.map(&:first),
-               export_mounts:,
-               vpses:,
-               restart_vps:,
-               maintenance_window: maintenance_windows,
-               maintenance_windows:,
-               custom_window: maintenance_windows && !finish_weekday.nil?,
-               finish_weekday: finish_weekday,
-               finish_minutes: finish_minutes,
-               reason: reason
-             }
-           })
+      if dataset_user.object_state == 'active' && send_mail && exports.any?
+        route_dataset_migration_event!(
+          'dataset.migration_finished',
+          dataset: src_dataset_in_pool.dataset,
+          dataset_user:,
+          exports:,
+          export_mounts:,
+          vpses:,
+          restart_vps:,
+          finish_weekday:,
+          finish_minutes:,
+          reason:
+        )
       end
 
       nil
@@ -409,6 +395,46 @@ module TransactionChains
 
     attr_reader :src_node, :dst_node, :src_pool, :dst_pool, :maintenance_windows,
                 :resources_changes
+
+    def route_dataset_migration_event!(event_type, dataset:, dataset_user:, exports:,
+                                       export_mounts:, vpses:, restart_vps:,
+                                       finish_weekday:, finish_minutes:, reason:)
+      state = event_type.end_with?('_begun') ? 'started' : 'finished'
+      export_list = exports.map(&:first)
+      affected_vpses = Array(vpses)
+      affected_vps_sample = affected_vpses.first(
+        VpsAdmin::API::Events::PARAMETER_SAMPLE_LIMIT
+      )
+
+      route_event!(
+        event_type,
+        vpses: affected_vpses,
+        user: dataset_user,
+        source: dataset,
+        subject: "Dataset #{dataset.full_name} migration #{state}",
+        summary: "#{src_pool.filesystem} -> #{dst_pool.filesystem}",
+        parameters: {
+          dataset_id: dataset.id,
+          dataset_full_name: dataset.full_name,
+          user_id: dataset_user.id,
+          user_login: dataset_user.login,
+          user_name: dataset_user.full_name,
+          src_pool_id: src_pool.id,
+          src_pool_filesystem: src_pool.filesystem,
+          dst_pool_id: dst_pool.id,
+          dst_pool_filesystem: dst_pool.filesystem,
+          export_count: export_list.count,
+          affected_vps_count: affected_vpses.count,
+          affected_vpses: affected_vps_sample.map { |vps| { id: vps.id, hostname: vps.hostname } },
+          restart_vps:,
+          maintenance_window: !maintenance_windows.nil?,
+          custom_window: !maintenance_windows.nil? && !finish_weekday.nil?,
+          finish_weekday:,
+          finish_minutes:,
+          reason:
+        }
+      )
+    end
 
     def recursive_serialize(dataset, children)
       ret = []

@@ -443,7 +443,7 @@ module VpsAdmin::API::Events::Core
     source
   end
 
-  def dataset_migration_email_vars(event)
+  def dataset_migration_email_vars(event, vpses: nil)
     dataset = dataset_source(event) || dataset_from_parameters(event)
 
     {
@@ -452,7 +452,7 @@ module VpsAdmin::API::Events::Core
       dst_pool: pool_info_from_parameters(event, 'dst'),
       exports: Array.new(bounded_collection_count(param(event, 'export_count'))),
       export_mounts: [],
-      vpses: vps_infos_from_parameters(event),
+      vpses: vpses || vps_infos_from_parameters(event),
       restart_vps: truthy_param(param(event, 'restart_vps')),
       maintenance_window: truthy_param(param(event, 'maintenance_window')),
       maintenance_windows: [],
@@ -1145,6 +1145,8 @@ VpsAdmin::API::Events.define do
           category: 'storage',
           severity: event_name.end_with?('begun') ? :warning : :info,
           default_routed: true do
+      argument :vpses, type: Array, optional: true
+
       parameters(
         dataset_id: 'Dataset ID',
         dataset_full_name: 'Dataset name',
@@ -1168,7 +1170,12 @@ VpsAdmin::API::Events.define do
 
       deliver :email do
         template(event_name.end_with?('begun') ? :dataset_migration_begun : :dataset_migration_finished)
-        vars { VpsAdmin::API::Events::Core.dataset_migration_email_vars(event) }
+        vars do
+          VpsAdmin::API::Events::Core.dataset_migration_email_vars(
+            event,
+            vpses: respond_to?(:vpses) ? vpses : nil
+          )
+        end
       end
     end
   end

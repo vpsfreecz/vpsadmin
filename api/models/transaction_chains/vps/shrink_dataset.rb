@@ -20,22 +20,38 @@ module TransactionChains
                   }
                 ])
 
-      if dataset_expansion.vps.active? && dataset_expansion.enable_notifications
-        mail(:vps_dataset_shrunk, {
-               user: dataset_expansion.vps.user,
-               vars: {
-                 base_url: ::SysConfig.get(:webui, :base_url),
-                 vps: dataset_expansion.vps,
-                 expansion: dataset_expansion,
-                 dataset: dataset_expansion.dataset
-               }
-             })
+      vps = dataset_expansion.vps
+      dataset = dataset_expansion.dataset
+      event = nil
+      if vps.active? && dataset_expansion.enable_notifications
+        event = prepare_event!(
+          'vps.dataset_shrunk',
+          user: vps.user,
+          vps:,
+          source: dataset_expansion,
+          subject: "Dataset for VPS ##{vps.id} shrunk",
+          summary: "Dataset #{dataset.full_name} was shrunk after temporary expansion",
+          parameters: {
+            vps_id: vps.id,
+            vps_hostname: vps.hostname,
+            dataset_id: dataset.id,
+            dataset_full_name: dataset.full_name,
+            dataset_refquota: dataset.refquota,
+            dataset_referenced: dataset.referenced,
+            expansion_id: dataset_expansion.id,
+            original_refquota: dataset_expansion.original_refquota,
+            added_space: dataset_expansion.added_space,
+            expansion_count: dataset_expansion.expansion_count
+          }
+        )
       end
 
       append_t(Transactions::Utils::NoOp, args: find_node_id) do |t|
         t.edit(dataset_in_pool.dataset, dataset_expansion_id: nil)
         t.edit(dataset_expansion, state: ::DatasetExpansion.states[:resolved])
       end
+
+      release_event_deliveries!(event)
     end
   end
 end
