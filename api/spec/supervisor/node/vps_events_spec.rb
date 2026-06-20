@@ -41,7 +41,7 @@ RSpec.describe VpsAdmin::Supervisor::Node::VpsEvents do
 
     it 'creates an incident report for oomd stop events' do
       vps = build_standalone_vps_fixture(node:).fetch(:vps)
-      allow(TransactionChains::IncidentReport::New).to receive(:fire)
+      allow(TransactionChains::IncidentReport::Utils).to receive(:fire_new)
 
       supervisor.send(:process_event, event_payload(vps, type: 'oomd', opts: { 'action' => 'stop' }))
 
@@ -50,27 +50,27 @@ RSpec.describe VpsAdmin::Supervisor::Node::VpsEvents do
       expect(incident.subject).to eq('Stop due to abuse')
       expect(incident.text).to include('was stopped')
       expect(incident.detected_at).to eq(timestamp)
-      expect(TransactionChains::IncidentReport::New).to have_received(:fire).with(incident)
+      expect(TransactionChains::IncidentReport::Utils).to have_received(:fire_new).with(incident)
       expect(ObjectHistory.find_by!(tracked_object: vps, event_type: 'stop').created_at).to eq(timestamp)
     end
 
     it 'creates an incident report for oomd restart events' do
       vps = build_standalone_vps_fixture(node:).fetch(:vps)
-      allow(TransactionChains::IncidentReport::New).to receive(:fire)
+      allow(TransactionChains::IncidentReport::Utils).to receive(:fire_new)
 
       supervisor.send(:process_event, event_payload(vps, type: 'oomd', opts: { 'action' => 'restart' }))
 
       incident = IncidentReport.find_by!(vps:, codename: 'oomd')
       expect(incident.subject).to eq('Restart due to abuse')
       expect(incident.text).to include('was restarted')
-      expect(TransactionChains::IncidentReport::New).to have_received(:fire).with(incident)
+      expect(TransactionChains::IncidentReport::Utils).to have_received(:fire_new).with(incident)
       expect(ObjectHistory.find_by!(tracked_object: vps, event_type: 'restart').created_at).to eq(timestamp)
     end
 
     it 'ignores events for VPSes on another node' do
       foreign_vps = build_standalone_vps_fixture(node: SpecSeed.other_node).fetch(:vps)
       status = set_vps_running!(foreign_vps)
-      allow(TransactionChains::IncidentReport::New).to receive(:fire)
+      allow(TransactionChains::IncidentReport::Utils).to receive(:fire_new)
 
       supervisor.send(
         :process_event,
@@ -84,7 +84,7 @@ RSpec.describe VpsAdmin::Supervisor::Node::VpsEvents do
       expect(status.reload.halted).to be(false)
       expect(ObjectHistory.where(tracked_object: foreign_vps)).to be_empty
       expect(IncidentReport.where(vps: foreign_vps)).to be_empty
-      expect(TransactionChains::IncidentReport::New).not_to have_received(:fire)
+      expect(TransactionChains::IncidentReport::Utils).not_to have_received(:fire_new)
     end
 
     it 'raises on unsupported oomd actions' do

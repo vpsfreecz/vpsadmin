@@ -127,6 +127,7 @@ let
   rabbitApiUser = rabbitmqUsers.api;
   rabbitSupervisorUser = rabbitmqUsers.supervisor;
   rabbitConsoleUser = rabbitmqUsers.console;
+  rabbitNotificationUser = rabbitmqUsers.notification;
 
   socketPeersAsHosts = mapAttrs' (host: addr: lib.nameValuePair addr [ host ]) cfg.socketPeers;
 
@@ -470,6 +471,7 @@ in
 
           $rabbitmqcfg user --vhost ${rabbitmqVhost} --create --perms --execute api ${rabbitApiUser.user}:${rabbitApiUser.password}
           $rabbitmqcfg user --vhost ${rabbitmqVhost} --create --perms --execute console ${rabbitConsoleUser.user}:${rabbitConsoleUser.password}
+          $rabbitmqcfg user --vhost ${rabbitmqVhost} --create --perms --execute notification ${rabbitNotificationUser.user}:${rabbitNotificationUser.password}
           $rabbitmqcfg user --vhost ${rabbitmqVhost} --create --perms --execute supervisor ${rabbitSupervisorUser.user}:${rabbitSupervisorUser.password}
           ${lib.optionalString (rabbitmqNodeUsers != [ ]) ''
             for node_user in ${lib.concatStringsSep " " rabbitmqNodeUsers}; do
@@ -521,6 +523,11 @@ in
         threads.max = 8;
         workers = 2;
         address = "0.0.0.0";
+        notifications.rabbitmq = {
+          enable = true;
+          username = rabbitNotificationUser.user;
+          passwordFile = rabbitNotificationUser.passwordFile;
+        };
       };
 
       supervisor = {
@@ -538,6 +545,30 @@ in
           passwordFile = rabbitSupervisorUser.passwordFile;
         };
         servers = 1;
+      };
+
+      notificationDispatcher = {
+        enable = true;
+        configDirectory = testApiConfigDir;
+        database = {
+          name = dbName;
+          user = dbApiUser.user;
+          passwordFile = dbApiUser.passwordFile;
+          host = "127.0.0.1";
+          port = 3306;
+        };
+        rabbitmq = {
+          username = rabbitNotificationUser.user;
+          passwordFile = rabbitNotificationUser.passwordFile;
+        };
+        smtp = {
+          address = "127.0.0.1";
+          port = if cfg.mailpit.enable then cfg.mailpit.smtpPort else 25;
+        };
+        webhook.allowedUntrackedPrivateRanges = [
+          "127.0.0.0/8"
+          "::1/128"
+        ];
       };
 
       console-router = {

@@ -48,6 +48,18 @@ namespace :vpsadmin do
     end
   end
 
+  namespace :event_delivery do
+    desc 'Deliver released event e-mails once'
+    task :emails do
+      VpsAdmin::API::Tasks.run(:event_delivery, :deliver_emails)
+    end
+
+    desc 'Deliver released event webhooks once'
+    task :webhooks do
+      VpsAdmin::API::Tasks.run(:event_delivery, :deliver_webhooks)
+    end
+  end
+
   namespace :mail_templates do
     desc 'Install built-in mail templates'
     task :install_defaults do

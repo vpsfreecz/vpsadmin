@@ -108,6 +108,7 @@ module NodeCtld::Commands
   module Shaper; end
   module Utils; end
   module Mail; end
+  module EventDelivery; end
   module OutageWindow; end
   module Queue; end
   module Network; end

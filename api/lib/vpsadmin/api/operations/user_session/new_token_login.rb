@@ -27,7 +27,10 @@ module VpsAdmin::API
       ::UserSession.current = session
 
       if session.user.enable_new_login_notification
-        TransactionChains::User::NewToken.fire2(args: [session])
+        VpsAdmin::API::NotificationEvents.run_chain(
+          TransactionChains::User::NewToken,
+          args: [session]
+        )
       end
 
       session
