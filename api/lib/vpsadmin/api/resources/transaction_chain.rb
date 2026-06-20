@@ -97,4 +97,127 @@ class VpsAdmin::API::Resources::TransactionChain < HaveAPI::Resource
       @chain
     end
   end
+
+  class NotifyWhenDone < HaveAPI::Action
+    desc 'Create a single-use route notifying when this transaction chain finishes'
+    route '{%{resource}_id}/notify_when_done'
+    http_method :post
+
+    input do
+      integer :notification_receiver_id, nullable: true
+      datetime :expires_at, nullable: true
+    end
+
+    output namespace: :event_route do
+      id :id
+      integer :parent_id, nullable: true
+      integer :notification_receiver_id, nullable: true
+      string :label, nullable: true
+      integer :position
+      bool :enabled
+      string :event_type,
+             choices: { values: VpsAdmin::API::Events.type_labels },
+             load_validators: false,
+             nullable: true
+      string :event_type_pattern, nullable: true
+      bool :continue
+      integer :hit_count, label: 'Hit count'
+      bool :default_route
+      bool :single_use
+      datetime :spent_at, nullable: true
+      datetime :expires_at, nullable: true
+      string :matcher_summary
+      string :display_label
+      datetime :created_at
+      datetime :updated_at
+    end
+
+    authorize do |u|
+      allow if u.role == :admin
+      restrict user: u
+      allow
+    end
+
+    def prepare
+      @chain = ::TransactionChain.find_by(with_restricted(id: path_params['transaction_chain_id']))
+      error!('transaction chain not found', {}, http_status: 404) unless @chain
+    end
+
+    def exec
+      route = nil
+      ::EventRoute.transaction do
+        @chain.lock!
+        receiver = notification_receiver
+        state_change_threshold = Time.now.to_f
+
+        if @chain.user.event_routes.active.count >= ::EventRoute::MAX_ROUTES
+          error!('route limit reached, refusing to add another one')
+        end
+
+        route = @chain.user.event_routes.create!(
+          notification_receiver: receiver,
+          label: "Notify when transaction chain ##{@chain.id} finishes",
+          position: ::EventRoute.prepend_position_for(@chain.user),
+          event_type: 'transaction_chain.state_changed',
+          single_use: true,
+          expires_at: input[:expires_at]
+        )
+
+        route.event_route_matchers.create!(
+          field: 'source_class',
+          operator: '==',
+          value: 'TransactionChain'
+        )
+        route.event_route_matchers.create!(
+          field: 'source_id',
+          operator: '==',
+          value: @chain.id.to_s
+        )
+        route.event_route_matchers.create!(
+          field: 'parameters.terminal',
+          operator: '==',
+          value: 'true'
+        )
+        route.event_route_matchers.create!(
+          field: 'parameters.changed_at_timestamp',
+          operator: '>=',
+          value: format('%.6f', state_change_threshold)
+        )
+
+        emit_current_state!(route) if terminal_state?(@chain.state)
+      end
+
+      route.reload
+    rescue ActiveRecord::RecordInvalid => e
+      error!('create failed', e.record.errors.to_hash)
+    end
+
+    protected
+
+    def notification_receiver
+      if input[:notification_receiver_id].present?
+        receiver = ::NotificationReceiver.find_by(
+          id: input[:notification_receiver_id],
+          user_id: @chain.user_id
+        )
+        error!('notification receiver not found') unless receiver
+        return receiver
+      end
+
+      ::NotificationReceiver.ensure_default_receiver_for!(@chain.user)
+    end
+
+    def terminal_state?(state)
+      VpsAdmin::API::Events::TRANSACTION_CHAIN_TERMINAL_STATES.include?(state.to_s)
+    end
+
+    def emit_current_state!(route)
+      VpsAdmin::API::Events.emit_transaction_chain_state!(
+        @chain,
+        previous_state: nil,
+        state: @chain.state
+      )
+      route.reload
+    end
+  end
 end
