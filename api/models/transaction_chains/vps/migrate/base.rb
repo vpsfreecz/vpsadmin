@@ -175,41 +175,39 @@ module TransactionChains
     end
 
     def notify_begun
-      return unless opts[:send_mail] && vps_user.mailer_enabled
+      return unless opts[:send_mail]
 
-      mail(:vps_migration_begun, {
-             user: vps_user,
-             vars: {
-               vps: src_vps,
-               src_node: src_vps.node,
-               dst_node: dst_vps.node,
-               maintenance_window: opts[:maintenance_window],
-               maintenance_windows:,
-               custom_window: !opts[:finish_weekday].nil?,
-               finish_weekday: opts[:finish_weekday],
-               finish_minutes: opts[:finish_minutes],
-               reason: opts[:reason]
-             }
-           })
+      route_migration_event!('vps.migration_begun')
     end
 
     def notify_finished
-      return unless opts[:send_mail] && vps_user.mailer_enabled
+      return unless opts[:send_mail]
 
-      mail(:vps_migration_finished, {
-             user: vps_user,
-             vars: {
-               vps: src_vps,
-               src_node: src_vps.node,
-               dst_node: dst_vps.node,
-               maintenance_window: opts[:maintenance_window],
-               maintenance_windows:,
-               custom_window: !opts[:finish_weekday].nil?,
-               finish_weekday: opts[:finish_weekday],
-               finish_minutes: opts[:finish_minutes],
-               reason: opts[:reason]
-             }
-           })
+      route_migration_event!('vps.migration_finished')
+    end
+
+    def route_migration_event!(event_type)
+      state = event_type.end_with?('_begun') ? 'started' : 'finished'
+      route_event!(
+        event_type,
+        user: vps_user,
+        vps: src_vps,
+        subject: "VPS ##{src_vps.id} migration #{state}",
+        summary: "#{src_vps.node.domain_name} -> #{dst_vps.node.domain_name}",
+        parameters: {
+          vps_id: src_vps.id,
+          vps_hostname: src_vps.hostname,
+          src_node_id: src_vps.node.id,
+          src_node_domain_name: src_vps.node.domain_name,
+          dst_node_id: dst_vps.node.id,
+          dst_node_domain_name: dst_vps.node.domain_name,
+          maintenance_window: opts[:maintenance_window],
+          custom_window: !opts[:finish_weekday].nil?,
+          finish_weekday: opts[:finish_weekday],
+          finish_minutes: opts[:finish_minutes],
+          reason: opts[:reason]
+        }
+      )
     end
 
     def use_maintenance_window?

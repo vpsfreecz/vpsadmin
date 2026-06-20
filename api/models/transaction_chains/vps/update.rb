@@ -159,6 +159,8 @@ module TransactionChains
         lock_type: opts[:admin_lock_type]
       )
 
+      resource_event = nil
+
       if !resources.empty? || vps.cpu_limit_changed?
         append(Transactions::Utils::NoOp, args: find_node_id) do
           data = {}
@@ -174,18 +176,32 @@ module TransactionChains
 
         use_chain(Vps::SetResources, args: [vps, resources])
         if opts[:change_reason]
-          mail(:vps_resources_change, {
-                 user: vps.user,
-                 vars: {
-                   vps:,
-                   admin: admin || ::User.current,
-                   reason: opts[:change_reason]
-                 }
-               })
+          effective_admin = admin || ::User.current
+          resource_event = prepare_event!(
+            'vps.resources_changed',
+            user: vps.user,
+            vps:,
+            subject: "VPS ##{vps.id} resources changed",
+            summary: opts[:change_reason],
+            parameters: {
+              vps_id: vps.id,
+              vps_hostname: vps.hostname,
+              cpu: vps.cpu,
+              cpu_limit: vps.cpu_limit,
+              memory: vps.memory,
+              swap: vps.swap,
+              reason: opts[:change_reason],
+              admin_id: effective_admin&.id,
+              admin_name: effective_admin&.full_name
+            }
+          )
         end
       end
 
-      return vps if db_changes.empty?
+      if db_changes.empty?
+        release_event_deliveries!(resource_event)
+        return vps
+      end
 
       if empty?
         # Save changes immediately
@@ -201,6 +217,8 @@ module TransactionChains
           end
         end
       end
+
+      release_event_deliveries!(resource_event)
 
       vps
     end

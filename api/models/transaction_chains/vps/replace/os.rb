@@ -328,16 +328,23 @@ module TransactionChains
 
       dst_vps.save!
 
-      if vps.user.mailer_enabled
-        mail(:vps_replaced, {
-          user: vps.user,
-          vars: {
-            original_vps: vps,
-            new_vps: dst_vps,
-            reason: attrs[:reason]
-          }
-        })
-      end
+      route_event!(
+        'vps.replaced',
+        user: vps.user,
+        vps:,
+        source: dst_vps,
+        subject: "VPS ##{vps.id} replaced",
+        summary: "New VPS ##{dst_vps.id} #{dst_vps.hostname}",
+        parameters: {
+          vps_id: vps.id,
+          vps_hostname: vps.hostname,
+          original_vps_id: vps.id,
+          original_vps_hostname: vps.hostname,
+          new_vps_id: dst_vps.id,
+          new_vps_hostname: dst_vps.hostname,
+          reason: attrs[:reason]
+        }
+      )
 
       dst_vps
     end
