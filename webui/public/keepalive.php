@@ -9,4 +9,6 @@
 
 include '/etc/vpsadmin/config.php';
 session_start();
+$_SESSION['last_keepalive'] = time();
+session_write_close();
 exit;

@@ -1,7 +1,7 @@
 /**
  * TableDnD plug-in for JQuery, allows you to drag and drop table rows
  * You can set up various options to control how the system will work
- * Copyright © Denis Howlett <denish@isocra.com>
+ * Copyright (c) Denis Howlett <denish@isocra.com>
  * Licensed like jQuery, see http://docs.jquery.com/License.
  *
  * Configuration options:
@@ -81,6 +81,8 @@ jQuery.tableDnD = {
 				onDragClass: options.onDragClass ? options.onDragClass : "tDnD_whileDrag",
                 onDrop: options.onDrop,
                 onDragStart: options.onDragStart,
+                onAllowDrop: options.onAllowDrop,
+                dragHandle: options.dragHandle,
                 scrollAmount: options.scrollAmount ? options.scrollAmount : 5
             };
             // Now make the rows draggable
@@ -107,18 +109,33 @@ jQuery.tableDnD = {
 			// inspired by John Tarr and Famic
             var nodrag = $(rows[i]).hasClass("nodrag");
             if (! nodrag) { //There is no NoDnD attribute on rows I want to drag
-                jQuery(rows[i]).mousedown(function(ev) {
-                    if (ev.target.tagName == "TD") {
-                        jQuery.tableDnD.dragObject = this;
+                if (config.dragHandle) {
+                    jQuery(rows[i]).find(config.dragHandle).mousedown(function(ev) {
+                        var row = jQuery(this).closest("tr")[0];
+
+                        jQuery.tableDnD.dragObject = row;
                         jQuery.tableDnD.currentTable = table;
-                        jQuery.tableDnD.mouseOffset = jQuery.tableDnD.getMouseOffset(this, ev);
+                        jQuery.tableDnD.mouseOffset = jQuery.tableDnD.getMouseOffset(row, ev);
                         if (config.onDragStart) {
                             // Call the onDrop method if there is one
-                            config.onDragStart(table, this);
+                            config.onDragStart(table, row);
                         }
                         return false;
-                    }
-                }).css("cursor", "move"); // Store the tableDnD object
+                    }).css("cursor", "move");
+                } else {
+                    jQuery(rows[i]).mousedown(function(ev) {
+                        if (ev.target.tagName == "TD") {
+                            jQuery.tableDnD.dragObject = this;
+                            jQuery.tableDnD.currentTable = table;
+                            jQuery.tableDnD.mouseOffset = jQuery.tableDnD.getMouseOffset(this, ev);
+                            if (config.onDragStart) {
+                                // Call the onDrop method if there is one
+                                config.onDragStart(table, this);
+                            }
+                            return false;
+                        }
+                    }).css("cursor", "move"); // Store the tableDnD object
+                }
             }
         }
     },
