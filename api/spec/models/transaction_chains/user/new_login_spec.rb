@@ -20,7 +20,14 @@ RSpec.describe TransactionChains::User::NewLogin do
     chain, = described_class.fire(auth.fetch(:token_session), auth.fetch(:oauth2_authorization))
 
     expect(chain.transaction_chain_concerns.pluck(:class_name, :row_id)).to include(['User', user.id])
-    expect(tx_classes(chain)).to include(Transactions::Mail::Send)
+    expect(tx_classes(chain)).to include(Transactions::EventDelivery::Release)
     expect(MailLog.joins(:mail_template).exists?(mail_templates: { name: 'user_new_login' })).to be(true)
+
+    event = expect_routed_event!('user.new_login', user:)
+    expect(event.source).to eq(auth.fetch(:token_session))
+    expect(event.parameters).to include(
+      'client_ip_addr' => '127.0.0.1',
+      'authorization_id' => auth.fetch(:oauth2_authorization).id
+    )
   end
 end

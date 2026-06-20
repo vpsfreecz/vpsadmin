@@ -20,13 +20,21 @@ RSpec.describe TransactionChains::User::SoftDelete do
     confirmations = confirmations_for(chain)
 
     expect(classes).to include(
-      Transactions::Mail::Send,
+      Transactions::EventDelivery::Release,
       Transactions::Vps::Stop,
       Transactions::Export::Disable,
       Transactions::DnsServerZone::Update,
       Transactions::DnsServerZone::DeleteRecords
     )
+    release_idx = classes.index(Transactions::EventDelivery::Release)
+    expect(classes.rindex(Transactions::Vps::Stop)).to be < release_idx
+    expect(classes.rindex(Transactions::Export::Disable)).to be < release_idx
+    expect(classes.rindex(Transactions::DnsServerZone::Update)).to be < release_idx
+    expect(classes.rindex(Transactions::DnsServerZone::DeleteRecords)).to be < release_idx
     expect(MailLog.joins(:mail_template).exists?(mail_templates: { name: 'user_soft_delete' })).to be(true)
+    event = expect_routed_event!('user.soft_deleted', user:)
+    expect(event.source_class).to eq('ObjectState')
+    expect(event.parameters).to include('state' => 'soft_delete')
     expect(confirmations.any? do |row|
       row.class_name == 'Vps' &&
         row.row_pks == { 'id' => fixture.fetch(:vps).id } &&
