@@ -26,12 +26,6 @@ module TransactionChains
           original_refquota: dataset_expansion.original_refquota,
           added_space: dataset_expansion.added_space,
           expansion_count: dataset_expansion.expansion_count
-        },
-        email_vars: {
-          base_url: ::SysConfig.get(:webui, :base_url),
-          vps:,
-          expansion: dataset_expansion,
-          dataset:
         }
       )
     end

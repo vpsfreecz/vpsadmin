@@ -102,8 +102,7 @@ module VpsAdmin::API::Plugins::OutageReports::TransactionChains
           attrs,
           msg_id,
           in_reply_to
-        ),
-        email_vars: outage_email_vars(role, user, outage, report)
+        )
       )
     end
 
@@ -122,21 +121,6 @@ module VpsAdmin::API::Plugins::OutageReports::TransactionChains
     def outage_event_subject(outage, attrs)
       prefix = attrs[:state] == ::Outage.states[:announced] ? 'Outage report' : 'Outage update'
       "#{prefix} ##{outage.id}"
-    end
-
-    def outage_email_vars(role, user, outage, report)
-      {
-        outage:,
-        o: outage,
-        update: report,
-        user:,
-        vpses: user && outage.outage_vpses.where(user:),
-        direct_vpses: user && outage.outage_vpses.where(user:, direct: true),
-        indirect_vpses: user && outage.outage_vpses.where(user:, direct: false),
-        exports: user && outage.outage_exports.where(user:),
-        security_advisory_cves: security_advisory_cves(outage),
-        webui_url: webui_url
-      }
     end
 
     def outage_event_parameters(role, user, outage, report, attrs, msg_id, in_reply_to)
@@ -201,7 +185,7 @@ module VpsAdmin::API::Plugins::OutageReports::TransactionChains
     end
 
     def security_advisory_cves(outage)
-      VpsAdmin::API::Events.outage_security_advisory_cves(outage)
+      VpsAdmin::API::Plugins::OutageReports::Events.security_advisory_cves(outage)
     end
 
     def webui_url

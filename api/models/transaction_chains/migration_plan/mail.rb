@@ -23,12 +23,6 @@ module TransactionChains
             dst_node_id: m.dst_node.id,
             dst_node_domain_name: m.dst_node.domain_name,
             maintenance_window: m.maintenance_window
-          },
-          email_vars: {
-            m:,
-            vps: m.vps,
-            src_node: m.src_node,
-            dst_node: m.dst_node
           }
         )
       end

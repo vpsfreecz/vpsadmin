@@ -89,11 +89,6 @@ module TransactionChains
             new_dns_resolver_id: vps_update.new_ns.id,
             new_dns_resolver_label: vps_update.new_ns.label,
             new_dns_resolver_addrs: vps_update.new_ns.addrs
-          },
-          email_vars: {
-            vps: vps_update.vps,
-            old_dns_resolver: vps_update.old_ns,
-            new_dns_resolver: vps_update.new_ns
           }
         )
       end

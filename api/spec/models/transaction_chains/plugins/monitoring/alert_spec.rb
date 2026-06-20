@@ -49,7 +49,7 @@ RSpec.describe 'monitoring alert chain', requires_plugins: :monitoring do # rubo
     route = EventRoute.create!(
       user:,
       notification_receiver: receiver,
-      event_type: 'monitoring.alert',
+      event_type: 'monitoring.monitor_state_changed',
       position: 1
     )
 
@@ -57,10 +57,10 @@ RSpec.describe 'monitoring alert chain', requires_plugins: :monitoring do # rubo
   end
 
   it 'registers the monitoring alert event type from the plugin' do
-    type = VpsAdmin::API::Events.type_for('monitoring.alert')
+    type = VpsAdmin::API::Events.type_for('monitoring.monitor_state_changed')
 
     expect(type).to have_attributes(
-      label: 'Monitoring alert',
+      label: 'Monitoring state changed',
       category: 'monitoring',
       default_routed: true
     )
@@ -105,15 +105,15 @@ RSpec.describe 'monitoring alert chain', requires_plugins: :monitoring do # rubo
     chain = nil
     expect do
       chain, = chain_class.fire2(args: [event])
-    end.to change { Event.where(event_type: 'monitoring.alert').count }.by(1)
+    end.to change { Event.where(event_type: 'monitoring.monitor_state_changed').count }.by(1)
 
-    routed_event = Event.where(event_type: 'monitoring.alert').order(:id).last
+    routed_event = Event.where(event_type: 'monitoring.monitor_state_changed').order(:id).last
     delivery = routed_event.event_deliveries.sole
 
     expect(tx_classes(chain)).to include(Transactions::EventDelivery::Release)
     expect(routed_event).to have_attributes(
       user: event.user,
-      event_type: 'monitoring.alert',
+      event_type: 'monitoring.monitor_state_changed',
       category: 'monitoring',
       severity: 'warning',
       source_class: 'MonitoredEvent',
@@ -147,11 +147,11 @@ RSpec.describe 'monitoring alert chain', requires_plugins: :monitoring do # rubo
     end
 
     chain, = chain_class.fire2(args: [event])
-    routed_event = Event.where(event_type: 'monitoring.alert').order(:id).last
+    routed_event = Event.where(event_type: 'monitoring.monitor_state_changed').order(:id).last
     delivery = routed_event.event_deliveries.sole
 
     expect(tx_classes(chain)).to include(Transactions::EventDelivery::Release)
-    expect(routed_event.event_type).to eq('monitoring.alert')
+    expect(routed_event.event_type).to eq('monitoring.monitor_state_changed')
     expect(routed_event.matched_event_route).to eq(EventRoute.default_route_for(event.user))
     expect(delivery).to have_attributes(
       action: 'email',
@@ -191,7 +191,7 @@ RSpec.describe 'monitoring alert chain', requires_plugins: :monitoring do # rubo
     end
 
     chain, = chain_class.fire2(args: [event])
-    routed_event = Event.where(event_type: 'monitoring.alert').order(:id).last
+    routed_event = Event.where(event_type: 'monitoring.monitor_state_changed').order(:id).last
     delivery = routed_event.event_deliveries.sole
     template_name, opts = captured
 

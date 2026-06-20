@@ -24,11 +24,7 @@ module TransactionChains
           token_lifetime: user_session.token_lifetime,
           label: user_session.label
         },
-        ip_addr: user_session.client_ip_addr || user_session.api_ip_addr,
-        email_vars: {
-          user: session_user,
-          user_session:
-        }
+        ip_addr: user_session.client_ip_addr || user_session.api_ip_addr
       )
     end
   end

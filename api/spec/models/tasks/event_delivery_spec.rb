@@ -140,18 +140,24 @@ RSpec.describe VpsAdmin::API::Tasks::EventDelivery do
   def create_direct_request_email_delivery!
     VpsAdmin::API::MailTemplates.install_defaults!
     allow(MailTemplate).to receive(:send_mail!).and_return(build_mail_log_double)
+    request = build_registration_request!(
+      user: nil,
+      last_mail_id: 1,
+      email: 'public-registration@example.test'
+    )
     event = VpsAdmin::API::Events.emit!(
       'request.created',
+      source: request,
       subject: 'Spec public registration',
       parameters: {
         role: 'user',
         action: 'create',
         request_type: 'registration',
         request_state: 'pending',
+        request_id: request.id,
         recipient_email: 'public-registration@example.test',
         mail_id: 1
-      },
-      email_vars: { request: 'spec request' }
+      }
     )
 
     event.event_deliveries.sole

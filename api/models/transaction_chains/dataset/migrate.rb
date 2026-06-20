@@ -431,21 +431,6 @@ module TransactionChains
           finish_weekday:,
           finish_minutes:,
           reason:
-        },
-        email_vars: {
-          dataset:,
-          src_pool:,
-          dst_pool:,
-          exports: export_list,
-          export_mounts:,
-          vpses:,
-          restart_vps:,
-          maintenance_window: maintenance_windows,
-          maintenance_windows:,
-          custom_window: maintenance_windows && !finish_weekday.nil?,
-          finish_weekday:,
-          finish_minutes:,
-          reason:
         }
       )
     end

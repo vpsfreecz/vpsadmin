@@ -41,15 +41,7 @@ module TransactionChains
           source: update || advisory,
           subject: event_subject(advisory, action),
           summary: event_summary(update || advisory),
-          parameters: event_parameters(advisory, affected_vpses, update),
-          email_vars: {
-            advisory:,
-            a: advisory,
-            update:,
-            user:,
-            vpses: affected_vpses,
-            webui_url: webui_url
-          }
+          parameters: event_parameters(advisory, affected_vpses, update)
         )
       end
 

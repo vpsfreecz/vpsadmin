@@ -123,9 +123,6 @@ module TransactionChains
           object_state: user.object_state,
           create_vps: create_vps,
           active: activate
-        },
-        email_vars: {
-          user:
         }
       )
 

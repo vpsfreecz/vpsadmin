@@ -26,11 +26,6 @@ module TransactionChains
           vps_id: vps.id,
           vps_hostname: vps.hostname,
           reason:
-        },
-        email_vars: {
-          user: vps.user,
-          vps:,
-          reason:
         }
       )
     end

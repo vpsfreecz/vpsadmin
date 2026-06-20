@@ -343,11 +343,6 @@ module TransactionChains
           new_vps_id: dst_vps.id,
           new_vps_hostname: dst_vps.hostname,
           reason: attrs[:reason]
-        },
-        email_vars: {
-          original_vps: vps,
-          new_vps: dst_vps,
-          reason: attrs[:reason]
         }
       )
 

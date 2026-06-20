@@ -22,10 +22,6 @@ module TransactionChains
           expiration_date: log.expiration_date&.iso8601,
           changed_by_id: log.user&.id,
           changed_by_name: log.user&.full_name
-        },
-        email_vars: {
-          vps:,
-          state: log
         }
       )
     end

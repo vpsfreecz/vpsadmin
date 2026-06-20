@@ -695,15 +695,16 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
     as(SpecSeed.user) { json_get event_types_path }
 
     expect_status(200)
-    monitoring = event_types.detect { |row| row['name'] == 'monitoring.alert' }
+    monitoring = event_types.detect { |row| row['name'] == 'monitoring.monitor_state_changed' }
     expect(monitoring['default_routed']).to be(true)
     expect(monitoring['fields']).to include(
-      'parameters.monitor_name' => 'Monitoring alert: Monitor internal name',
-      'parameters.state' => 'Monitoring alert: Monitored event state'
+      'parameters.monitor_name' => 'Monitoring state changed: Monitor internal name',
+      'parameters.state' => 'Monitoring state changed: Monitored event state'
     )
   end
 
   it 'does not register monitoring event types in core-only mode', without_plugins: :monitoring do
+    expect(VpsAdmin::API::Events.type_for('monitoring.monitor_state_changed')).to be_nil
     expect(VpsAdmin::API::Events.type_for('monitoring.alert')).to be_nil
   end
 

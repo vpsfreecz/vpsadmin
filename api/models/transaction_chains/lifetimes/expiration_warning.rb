@@ -29,17 +29,7 @@ module TransactionChains
           source: obj,
           subject: "#{klass.name} #{object_label(obj)} expiration warning"[0, 255],
           summary: expiration_summary(obj, days_before, days_after),
-          parameters: event_parameters(obj, object_name, days_before, days_after),
-          email_vars: {
-            base_url:,
-            user:,
-            object: obj,
-            state:,
-            expires_in_days: days_before,
-            expired_days_ago: days_after,
-            expires_in_a_day: days_before.between?(0, 1.5),
-            object_name => obj
-          }
+          parameters: event_parameters(obj, object_name, days_before, days_after)
         )
       end
     end

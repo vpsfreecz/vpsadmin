@@ -24,18 +24,27 @@ RSpec.describe EventRoute do
   end
 
   def emit_incident!(user: SpecSeed.user, vps: nil, codename: 'Spec-Abuse')
-    VpsAdmin::API::Events.emit!(
-      'vps.incident_report',
+    fixture = create_incident_report_fixture!(
       user:,
       vps:,
       subject: 'Spec incident',
-      summary: 'Spec incident summary',
+      text: 'Spec incident body',
+      codename:
+    )
+    incident = fixture.is_a?(Hash) ? fixture.fetch(:incident) : fixture
+
+    VpsAdmin::API::Events.emit!(
+      'vps.incident_report',
+      user: incident.user,
+      vps: incident.vps,
+      source: incident,
+      subject: incident.subject,
+      summary: incident.text,
       parameters: {
-        'codename' => codename,
-        'subject' => 'Spec incident',
-        'text' => 'Spec incident body'
-      },
-      email_vars: { event: 'spec incident' }
+        'codename' => incident.codename,
+        'subject' => incident.subject,
+        'text' => incident.text
+      }
     )
   end
 

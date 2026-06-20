@@ -66,22 +66,13 @@ module VpsAdmin::API::Plugins::Payments::TransactionChains
         source: payment,
         subject: 'Payment accepted',
         summary: payment_event_summary(payment),
-        parameters: payment_event_parameters(payment),
-        email_vars: payment_event_vars(payment)
+        parameters: payment_event_parameters(payment)
       )
 
       payment
     end
 
     protected
-
-    def payment_event_vars(payment)
-      {
-        user: payment.user,
-        account: payment.user.user_account,
-        payment:
-      }
-    end
 
     def payment_event_parameters(payment)
       incoming = payment.incoming_payment

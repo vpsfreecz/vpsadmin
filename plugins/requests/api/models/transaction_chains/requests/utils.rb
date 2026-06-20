@@ -4,14 +4,6 @@ module VpsAdmin::API::Plugins::Requests::TransactionChains
       format(::SysConfig.get(:plugin_requests, :message_id), id: r.id, mail_id: mail_id || r.last_mail_id)
     end
 
-    def request_mail_vars(request)
-      {
-        request:,
-        r: request,
-        webui_url: ::SysConfig.get(:webui, :base_url)
-      }
-    end
-
     def route_request_event!(event_type, request, recipient:, role:, action:, mail_id: request.last_mail_id,
                              reply_to_mail_id: nil, state: request.state, reason: nil,
                              recipient_email: nil)
@@ -34,8 +26,7 @@ module VpsAdmin::API::Plugins::Requests::TransactionChains
         source: request,
         subject: request_event_subject(request, action, role),
         summary: request_event_summary(request, action, role, state, reason),
-        parameters:,
-        email_vars: request_mail_vars(request)
+        parameters:
       )
     end
 

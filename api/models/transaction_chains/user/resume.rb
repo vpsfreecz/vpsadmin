@@ -15,10 +15,6 @@ module TransactionChains
               state: log.state || 'active',
               reason: log.reason,
               expiration_date: log.expiration_date&.iso8601
-            },
-            email_vars: {
-              user:,
-              state: log
             }
           )
         end

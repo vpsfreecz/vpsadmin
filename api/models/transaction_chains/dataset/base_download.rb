@@ -62,10 +62,6 @@ module TransactionChains
             file_name: dl.file_name,
             format: dl.format,
             expiration_date: dl.expiration_date&.iso8601
-          },
-          email_vars: {
-            base_url: ::SysConfig.get(:webui, :base_url),
-            dl:
           }
         )
       end

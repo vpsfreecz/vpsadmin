@@ -20,13 +20,7 @@ module TransactionChains
           request_ip:,
           used_at: used_at.iso8601
         },
-        ip_addr: request_ip,
-        email_vars: {
-          user:,
-          totp_device:,
-          request:,
-          time: used_at
-        }
+        ip_addr: request_ip
       )
     end
   end

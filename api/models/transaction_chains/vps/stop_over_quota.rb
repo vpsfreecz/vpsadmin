@@ -35,12 +35,6 @@ module TransactionChains
           over_refquota_seconds: dataset_expansion.over_refquota_seconds,
           max_over_refquota_seconds: dataset_expansion.max_over_refquota_seconds,
           enable_shrink: dataset_expansion.enable_shrink
-        },
-        email_vars: {
-          base_url: ::SysConfig.get(:webui, :base_url),
-          vps:,
-          expansion: dataset_expansion,
-          dataset:
         }
       )
     end

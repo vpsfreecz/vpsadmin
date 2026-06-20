@@ -14,7 +14,11 @@ module VpsAdmin::API::Plugins::Monitoring::TransactionChains
                                 context: {}, severity: nil, subject: nil,
                                 summary: nil, parameters: {})
       route_event!(
-        'monitoring.alert',
+        VpsAdmin::API::Plugins::Monitoring::Events.event_type_for(
+          event,
+          variant,
+          alert_kind
+        ),
         alert: event,
         recipient: recipient || event.user,
         role: role.to_s,

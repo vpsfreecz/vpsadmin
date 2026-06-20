@@ -193,11 +193,6 @@ module TransactionChains
               reason: opts[:change_reason],
               admin_id: effective_admin&.id,
               admin_name: effective_admin&.full_name
-            },
-            email_vars: {
-              vps:,
-              admin: effective_admin,
-              reason: opts[:change_reason]
             }
           )
         end

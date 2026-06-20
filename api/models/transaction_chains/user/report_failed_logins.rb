@@ -32,10 +32,6 @@ module TransactionChains
             ip_addrs: attempts.map { |attempt| attempt.client_ip_addr || attempt.api_ip_addr }.compact.uniq.first(20),
             auth_types: attempts.map(&:auth_type).compact.uniq.first(20),
             reasons: attempts.map(&:reason).compact.uniq.first(20)
-          },
-          email_vars: {
-            user:,
-            attempt_groups:
           }
         )
         ensure_delivery_handled!(event)

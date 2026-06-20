@@ -1,21 +1,4 @@
 class EventDelivery < ApplicationRecord
-  DIRECT_REQUEST_EVENT_TYPES = %w[
-    request.created
-    request.updated
-    request.resolved
-  ].freeze
-  DIRECT_SYSTEM_TEMPLATE_EVENT_TYPES = %w[
-    outage.announced
-    outage.updated
-  ].freeze
-  DIRECT_SYSTEM_REPORT_EVENT_TYPES = %w[
-    system.daily_report
-    payments.overview
-  ].freeze
-  DIRECT_CUSTOM_EVENT_TYPES = %w[
-    incident_report.reply
-  ].freeze
-
   TARGET_KIND_LABELS = {
     'default_recipient' => 'default recipient',
     'custom' => 'custom target'
@@ -175,6 +158,11 @@ class EventDelivery < ApplicationRecord
   end
 
   def direct_email_delivery?
+    return false unless email_action? &&
+                        notification_receiver.nil? &&
+                        notification_receiver_action.nil? &&
+                        event&.user_id.nil?
+
     direct_request_email_delivery? ||
       direct_system_template_email_delivery? ||
       direct_custom_email_delivery?
@@ -189,53 +177,21 @@ class EventDelivery < ApplicationRecord
   end
 
   def direct_request_email_delivery?
-    return false unless email_action? &&
-                        notification_receiver.nil? &&
-                        notification_receiver_action.nil? &&
-                        default_recipient_target_kind? &&
-                        target_value.present?
-    return false unless event&.user_id.nil?
-    return false unless DIRECT_REQUEST_EVENT_TYPES.include?(event.event_type)
-
-    params = event.parameters || {}
-    recipient = params['recipient_email'] || params[:recipient_email]
-
-    (params['role'] || params[:role]).to_s == 'user' &&
-      recipient.present? &&
-      target_value == recipient.to_s
+    default_recipient_target_kind? &&
+      target_value.present? &&
+      VpsAdmin::API::Events.default_email_target_for(event).to_s == target_value.to_s
   end
 
   def direct_system_template_email_delivery?
-    return false unless email_action? &&
-                        notification_receiver.nil? &&
-                        notification_receiver_action.nil? &&
-                        default_recipient_target_kind? &&
-                        target_value.blank?
-    return false unless event&.user_id.nil?
-    if DIRECT_SYSTEM_REPORT_EVENT_TYPES.include?(event.event_type)
-      return true
-    end
-    return false unless DIRECT_SYSTEM_TEMPLATE_EVENT_TYPES.include?(event.event_type)
-
-    params = event.parameters || {}
-    (params['role'] || params[:role]).to_s == 'generic'
+    default_recipient_target_kind? &&
+      target_value.blank? &&
+      VpsAdmin::API::Events.system_template_email?(event)
   end
 
   def direct_custom_email_delivery?
-    return false unless email_action? &&
-                        notification_receiver.nil? &&
-                        notification_receiver_action.nil? &&
-                        custom_target_kind? &&
-                        target_value.present?
-    return false unless event&.user_id.nil?
-    return false unless DIRECT_CUSTOM_EVENT_TYPES.include?(event.event_type)
-
-    params = event.parameters || {}
-    recipients = Array(params['recipient_emails'] || params[:recipient_emails])
-                 .map(&:to_s)
-                 .reject(&:blank?)
-
-    recipients.present? && target_value == recipients.join(',')
+    custom_target_kind? &&
+      target_value.present? &&
+      VpsAdmin::API::Events.custom_email_target_for(event).to_s == target_value.to_s
   end
 
   protected
