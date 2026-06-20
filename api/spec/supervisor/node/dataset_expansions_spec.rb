@@ -19,7 +19,7 @@ RSpec.describe VpsAdmin::Supervisor::Node::DatasetExpansions do
   end
 
   before do
-    allow(TransactionChains::Mail::VpsDatasetExpanded).to receive(:fire)
+    allow(VpsAdmin::API::NotificationEvents).to receive(:run_chain)
   end
 
   describe '#start' do
@@ -69,7 +69,10 @@ RSpec.describe VpsAdmin::Supervisor::Node::DatasetExpansions do
         instance_of(DatasetExpansionEvent),
         max_over_refquota_seconds: VpsAdmin::API::Tasks::DatasetExpansion::MAX_OVER_REFQUOTA_SECONDS
       )
-      expect(TransactionChains::Mail::VpsDatasetExpanded).to have_received(:fire).with(expansion)
+      expect(VpsAdmin::API::NotificationEvents).to have_received(:run_chain).with(
+        TransactionChains::Mail::VpsDatasetExpanded,
+        args: [expansion]
+      )
       expect(DatasetExpansionEvent.where(dataset: fixture.fetch(:dataset))).to be_empty
     end
 
@@ -85,7 +88,7 @@ RSpec.describe VpsAdmin::Supervisor::Node::DatasetExpansions do
       expect(saved.new_refquota).to eq(12_288)
       expect(saved.added_space).to eq(2048)
       expect(saved.created_at).to eq(timestamp)
-      expect(TransactionChains::Mail::VpsDatasetExpanded).not_to have_received(:fire)
+      expect(VpsAdmin::API::NotificationEvents).not_to have_received(:run_chain)
     end
 
     it 'does not schedule mail when notifications are disabled' do
@@ -95,7 +98,7 @@ RSpec.describe VpsAdmin::Supervisor::Node::DatasetExpansions do
 
       supervisor.send(:process_event, expansion_event(fixture))
 
-      expect(TransactionChains::Mail::VpsDatasetExpanded).not_to have_received(:fire)
+      expect(VpsAdmin::API::NotificationEvents).not_to have_received(:run_chain)
     end
   end
 end

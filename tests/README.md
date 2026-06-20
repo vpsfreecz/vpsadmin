@@ -20,6 +20,34 @@ vpsadminos checkout is required.
   Path selection rules live in `tests/ci-selection.yml`; derived test and
   webui script tags are added by `tests/ci-tags.nix` through `tests/make-test.nix`.
 
+## Manual webhook testing
+
+Use `tools/webhook-test-server.rb` inside the services VM when testing
+notification webhooks from the dev cluster. Binding to VM localhost avoids host
+firewall and routing issues. The dev cluster allows webhook delivery to
+loopback addresses as an untracked private destination exception. Production
+deployments should rely on vpsAdmin IP ownership for managed VPS addresses and
+configure private exceptions only for deliberate non-vpsAdmin targets:
+
+```sh
+cd /path/to/vpsfree.cz-workspace
+dev-clusters/vpsadmin/bin/devcluster ssh <cluster-slug> services
+cd /mnt/vpsadmin
+ruby_bin=$(find /nix/store -maxdepth 3 -type f -path '*/bin/ruby' | grep 'ruby-[0-9]' | head -n 1)
+"$ruby_bin" tools/webhook-test-server.rb --host 127.0.0.1 --port 18080
+```
+
+Configure the receiver action URL as:
+
+```text
+http://127.0.0.1:18080/events
+```
+
+The server writes the latest request to `/tmp/vpsadmin-webhook-test/request.json`
+inside the services VM and prints one line for each received request. If it has
+to run on the host instead, bind `--host 0.0.0.0`, open the host firewall or use
+a tunnel, and configure an address reachable from the services VM.
+
 ## Webui Playwright coverage
 
 The webui application root is `webui/`. Only browser entrypoints and assets
