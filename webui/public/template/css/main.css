@@ -314,6 +314,71 @@ form[name="userns-map-entries"] input[type="text"] {text-align: right;}
   gap: 2px 10px;
 }
 
+.notification-delivery-html-preview,
+.notification-delivery-html-source {
+  width: 100%;
+  max-width: none;
+  box-sizing: border-box;
+}
+
+#notification-delivery-html {
+  width: 100%;
+  min-width: 100%;
+  max-width: none;
+  margin: 15px 0;
+  box-sizing: border-box;
+  table-layout: auto;
+}
+
+#notification-delivery-html tbody,
+#notification-delivery-html table,
+#notification-delivery-html tr,
+#notification-delivery-html td {
+  width: 100%;
+  max-width: none !important;
+  overflow-x: visible;
+  box-sizing: border-box;
+  padding: 0;
+}
+
+.notification-delivery-html-frame {
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  max-width: none;
+  height: 75vh;
+  min-height: 650px;
+  border: 1px solid #B2DAFF;
+  background: #FFF;
+  overflow: auto;
+  resize: vertical;
+}
+
+.notification-delivery-html-preview iframe {
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  max-width: none;
+  height: calc(100% - 12px);
+  min-height: 638px;
+  border: 0;
+  background: #FFF;
+}
+
+.notification-delivery-html-source {
+  margin: 8px 0 0;
+}
+
+.notification-delivery-html-source summary {
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.notification-delivery-html-source pre {
+  max-height: 650px;
+  overflow: auto;
+}
+
 a.user-unpaid {color: #fff;}
 
 /* Dropdown menu */
