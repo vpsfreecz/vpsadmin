@@ -24,7 +24,7 @@ module VpsAdmin::API
       :category,
       :severity,
       :parameters,
-      :email_template,
+      :template,
       :default_routed,
       :severity_description,
       :definition
@@ -155,7 +155,7 @@ module VpsAdmin::API
                   :arguments, :parameter_labels
 
       def initialize(name, label:, category:, default_routed:, owner: nil,
-                     severity: :info, email_template: nil,
+                     severity: :info, template: nil,
                      severity_description: nil)
         @name = name.to_s
         @owner = owner
@@ -164,7 +164,7 @@ module VpsAdmin::API
         @default_severity = severity.to_s
         @default_routed = default_routed ? true : false
         @severity_description = severity_description
-        @fallback_email_template_name = email_template&.to_s
+        @fallback_template_name = template&.to_s
         @arguments = {}
         @parameter_labels = {}
         @parameter_blocks = {}
@@ -263,8 +263,8 @@ module VpsAdmin::API
         }.compact
       end
 
-      def email_template_name
-        delivery(:email)&.static_template_name || @fallback_email_template_name
+      def template_name
+        delivery(:email)&.static_template_name || @fallback_template_name
       end
 
       protected
@@ -442,7 +442,7 @@ module VpsAdmin::API
         category: definition.category_name,
         severity: definition.default_severity,
         parameters: definition.parameter_labels,
-        email_template: definition.email_template_name,
+        template: definition.template_name,
         default_routed: definition.default_routed,
         severity_description: definition.severity_description,
         definition:
@@ -481,38 +481,38 @@ module VpsAdmin::API
       context.delivery(action)
     end
 
-    def email_template_name_for(event)
+    def template_name_for(event)
       email_delivery_context_for(event)&.template&.to_sym
     end
 
-    def email_template_params_for(event)
+    def template_params_for(event)
       email_delivery_context_for(event)&.params
     end
 
-    def email_template_options_for(event, delivery)
+    def template_options_for(event, delivery = nil)
       opts = {
         user: event.user,
-        vars: email_vars_for(event)
+        vars: template_vars_for(event)
       }
-      template_params = email_template_params_for(event)
+      template_params = template_params_for(event)
       opts[:params] = template_params if template_params
 
-      if delivery.custom_target_kind?
+      if delivery&.email_action? && delivery.custom_target_kind?
         opts[:to] = email_target_addresses(event, delivery)
         opts[:include_default_recipients] = false
         opts[:include_template_recipients] = false
-      elsif explicit_default_target?(delivery)
+      elsif delivery&.email_action? && explicit_default_target?(delivery)
         opts[:to] = email_target_addresses(event, delivery)
       end
 
-      opts.merge!(email_template_extra_options_for(event))
+      opts.merge!(template_extra_options_for(event))
       opts
     end
 
     def email_custom_options_for(event, delivery)
       {
         user: event.user,
-        from: MailTemplates.default_from,
+        from: NotificationTemplates.default_from,
         to: email_target_addresses(event, delivery),
         subject: event.subject,
         text_plain: custom_email_body(event, delivery)
@@ -535,15 +535,15 @@ module VpsAdmin::API
       addresses
     end
 
-    def email_vars_for(event)
-      email_delivery_context_for(event)&.vars || {
+    def template_vars_for(event)
+      {
         event:,
         user: event.user,
         parameters: event.parameters || {}
-      }
+      }.merge(email_delivery_context_for(event)&.vars || {})
     end
 
-    def email_template_extra_options_for(event)
+    def template_extra_options_for(event)
       email_delivery_context_for(event)&.options || {}
     end
 
@@ -551,13 +551,13 @@ module VpsAdmin::API
       email_delivery_context_for(event)&.custom_options || {}
     end
 
-    def email_template_available?(name, params, language)
-      resolved_name = ::MailTemplate.resolve_name(name, params)
-      template = ::MailTemplate.find_by(name: resolved_name)
+    def template_available?(name, params, language, protocol: 'email')
+      resolved_name = ::NotificationTemplate.resolve_name(name, params)
+      template = ::NotificationTemplate.find_by(name: resolved_name)
       return false unless template
       return true unless language
 
-      template.mail_template_translations.where(language:).exists?
+      template.notification_template_variants.where(language:, protocol:).exists?
     rescue StandardError
       false
     end
@@ -948,7 +948,7 @@ module VpsAdmin::API
               target_kind: 'custom',
               target_value: custom_target,
               target_label: custom_target,
-              template_name: VpsAdmin::API::Events.email_template_name_for(event),
+              template_name: VpsAdmin::API::Events.template_name_for(event),
               state: 'prepared'
             )
           ]
@@ -964,7 +964,7 @@ module VpsAdmin::API
               nil,
               target_value: nil,
               target_label: 'Template recipients',
-              template_name: VpsAdmin::API::Events.email_template_name_for(event),
+              template_name: VpsAdmin::API::Events.template_name_for(event),
               state: 'prepared'
             )
           ]
@@ -977,7 +977,7 @@ module VpsAdmin::API
             nil,
             target_value: target,
             target_label: target,
-            template_name: VpsAdmin::API::Events.email_template_name_for(event),
+            template_name: VpsAdmin::API::Events.template_name_for(event),
             state: 'prepared'
           )
         ]
@@ -1127,13 +1127,15 @@ module VpsAdmin::API
       end
 
       def delivery_template_name(route, receiver_action)
-        return unless receiver_action.nil? || receiver_action.email_action?
+        return unless receiver_action.nil? ||
+                      receiver_action.email_action? ||
+                      receiver_action.telegram_action?
 
-        route_template_name = route&.email_template_name.presence
+        route_template_name = route&.template_name.presence
         return route_template_name if route_template_name
-        return unless receiver_action&.email_action?
+        return unless receiver_action&.email_action? || receiver_action&.telegram_action?
 
-        VpsAdmin::API::Events.email_template_name_for(event)
+        VpsAdmin::API::Events.template_name_for(event)
       end
 
       def routing_state_for(deliveries)

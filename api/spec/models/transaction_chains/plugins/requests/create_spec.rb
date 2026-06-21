@@ -16,8 +16,8 @@ RSpec.describe 'requests plugin create chain', requires_plugins: :requests do # 
   end
 
   it 'concerns the request and routes user/admin mail with type fallback' do
-    ensure_request_mail_template!('request_create_user', 'request_action_role')
-    ensure_request_mail_template!('request_create_admin', 'request_action_role')
+    ensure_request_notification_template!('request_create_user', 'request_action_role')
+    ensure_request_notification_template!('request_create_admin', 'request_action_role')
     admin2 = create_lifecycle_user!(login: 'plugin-request-admin')
     admin2.update!(level: 99, mailer_enabled: true)
     disabled_admin = create_lifecycle_user!(login: 'plugin-request-muted')
@@ -57,14 +57,14 @@ RSpec.describe 'requests plugin create chain', requires_plugins: :requests do # 
     expect(user_event.event_deliveries.sole.mail_log).to have_attributes(
       message_id: "<vpsadmin-request-#{request.id}-3@vpsadmin.vpsfree.cz>"
     )
-    expect(user_event.event_deliveries.sole.mail_log.mail_template.name).to eq('request_create_user')
+    expect(user_event.event_deliveries.sole.mail_log.notification_template.name).to eq('request_create_user')
     expect(user_event.event_deliveries.sole.mail_log.to).to include(request.user_mail)
 
     expect(enabled_admin_events.map(&:user)).to contain_exactly(SpecSeed.admin, admin2)
     enabled_admin_events.each do |event|
       delivery = event.event_deliveries.sole
       expect(delivery).to be_prepared_state
-      expect(delivery.mail_log.mail_template.name).to eq('request_create_admin')
+      expect(delivery.mail_log.notification_template.name).to eq('request_create_admin')
       expect(delivery.mail_log.message_id).to eq("<vpsadmin-request-#{request.id}-3@vpsadmin.vpsfree.cz>")
     end
     expect(admin_events.map(&:user)).not_to include(disabled_same_email)
@@ -73,8 +73,8 @@ RSpec.describe 'requests plugin create chain', requires_plugins: :requests do # 
   end
 
   it 'routes public registration owner mail without a request user' do
-    ensure_request_mail_template!('request_create_user', 'request_action_role')
-    ensure_request_mail_template!('request_create_admin', 'request_action_role')
+    ensure_request_notification_template!('request_create_user', 'request_action_role')
+    ensure_request_notification_template!('request_create_admin', 'request_action_role')
     request = build_registration_request!(
       user: nil,
       last_mail_id: 7,
@@ -96,16 +96,16 @@ RSpec.describe 'requests plugin create chain', requires_plugins: :requests do # 
     expect(delivery.target_value).to eq('public-registration-owner@test.invalid')
     expect(mail.to).to include('public-registration-owner@test.invalid')
     expect(mail.message_id).to eq("<vpsadmin-request-#{request.id}-7@vpsadmin.vpsfree.cz>")
-    expect(VpsAdmin::API::Events.email_vars_for(user_event.reload).fetch(:request)).to eq(request)
+    expect(VpsAdmin::API::Events.template_options_for(user_event.reload).fetch(:vars).fetch(:request)).to eq(request)
   end
 
   it 'logs failed deliveries when every request template is missing' do
-    MailTemplate.where(name: %w[
-                         request_create_user_registration
-                         request_create_admin_registration
-                         request_create_user
-                         request_create_admin
-                       ]).destroy_all
+    NotificationTemplate.where(name: %w[
+                                 request_create_user_registration
+                                 request_create_admin_registration
+                                 request_create_user
+                                 request_create_admin
+                               ]).destroy_all
     request = build_registration_request!
 
     chain, = chain_class.fire2(args: [request])
@@ -115,7 +115,7 @@ RSpec.describe 'requests plugin create chain', requires_plugins: :requests do # 
     expect(events).not_to be_empty
     expect(events.map { |event| event.event_deliveries.sole.state }).to all(eq('failed'))
     expect(events.map { |event| event.event_deliveries.sole.error_summary }).to all(
-      include('MailTemplateDoesNotExist')
+      include('NotificationTemplateDoesNotExist')
     )
   end
 
@@ -135,7 +135,7 @@ RSpec.describe 'requests plugin create chain', requires_plugins: :requests do # 
       }
     )
 
-    expect { VpsAdmin::API::Events.email_vars_for(event) }.to raise_error(
+    expect { VpsAdmin::API::Events.template_options_for(event).fetch(:vars) }.to raise_error(
       ArgumentError,
       'request source is missing'
     )

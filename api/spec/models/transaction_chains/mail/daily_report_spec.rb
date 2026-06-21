@@ -9,16 +9,16 @@ RSpec.describe TransactionChains::Mail::DailyReport do
   end
 
   before do
-    ensure_alert_mail_templates!
+    ensure_alert_notification_templates!
     ensure_mailer_available!
-    allow(MailTemplate).to receive(:send_mail!).and_return(build_mail_log_double)
+    allow(NotificationTemplate).to receive(:send_email!).and_return(build_mail_log_double)
   end
 
   it 'queues a mail send transaction' do
     chain, = described_class.fire2(args: [SpecSeed.language])
 
     expect(tx_classes(chain)).to include(Transactions::EventDelivery::Release)
-    expect(MailTemplate).to have_received(:send_mail!).with(
+    expect(NotificationTemplate).to have_received(:send_email!).with(
       :daily_report,
       hash_including(language: SpecSeed.language)
     )
@@ -68,7 +68,7 @@ RSpec.describe TransactionChains::Mail::DailyReport do
     captured_vars = nil
     chain_instance = described_class.new
     allow(described_class).to receive(:new).and_return(chain_instance)
-    allow(MailTemplate).to receive(:send_mail!) do |_name, opts|
+    allow(NotificationTemplate).to receive(:send_email!) do |_name, opts|
       captured_vars = opts.fetch(:vars)
       build_mail_log_double
     end
@@ -85,7 +85,7 @@ RSpec.describe TransactionChains::Mail::DailyReport do
   end
 
   it 'raises when the event e-mail delivery cannot be queued' do
-    allow(MailTemplate).to receive(:send_mail!).and_raise(ArgumentError, 'invalid report')
+    allow(NotificationTemplate).to receive(:send_email!).and_raise(ArgumentError, 'invalid report')
 
     expect do
       described_class.fire2(args: [SpecSeed.language])
@@ -108,7 +108,7 @@ RSpec.describe TransactionChains::Mail::DailyReport do
       ).tap(&:save!)
       captured_vars = nil
 
-      allow(MailTemplate).to receive(:send_mail!) do |_name, opts|
+      allow(NotificationTemplate).to receive(:send_email!) do |_name, opts|
         captured_vars = opts.fetch(:vars)
         build_mail_log_double
       end
@@ -127,7 +127,7 @@ RSpec.describe TransactionChains::Mail::DailyReport do
                .update!(value: 'https://webui.example.test')
       captured_vars = nil
 
-      allow(MailTemplate).to receive(:send_mail!) do |_name, opts|
+      allow(NotificationTemplate).to receive(:send_email!) do |_name, opts|
         captured_vars = opts.fetch(:vars)
         build_mail_log_double
       end

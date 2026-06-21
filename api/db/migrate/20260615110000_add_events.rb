@@ -1,17 +1,17 @@
 class AddEvents < ActiveRecord::Migration[8.1]
-  ADVANCED_MAIL_TEMPLATE_ROUTE_POSITION = 10
-  ADVANCED_MAIL_ROLE_ROUTE_POSITION = 1_000
-  REQUEST_MAIL_TYPES = %w[registration change].freeze
-  REQUEST_MAIL_ROLES = %w[user admin].freeze
-  REQUEST_MAIL_RESOLVE_STATES = %w[approved denied ignored pending_correction awaiting].freeze
-  REQUEST_ADVANCED_MAIL_EVENT_TEMPLATES = begin
+  ADVANCED_NOTIFICATION_TEMPLATE_ROUTE_POSITION = 10
+  ADVANCED_EMAIL_ROLE_ROUTE_POSITION = 1_000
+  REQUEST_TEMPLATE_TYPES = %w[registration change].freeze
+  REQUEST_TEMPLATE_ROLES = %w[user admin].freeze
+  REQUEST_TEMPLATE_RESOLVE_STATES = %w[approved denied ignored pending_correction awaiting].freeze
+  REQUEST_ADVANCED_EVENT_TEMPLATES = begin
     ret = []
 
     %w[create update].each do |action|
       event_type = action == 'create' ? 'request.created' : 'request.updated'
 
-      REQUEST_MAIL_ROLES.each do |role|
-        REQUEST_MAIL_TYPES.each do |type|
+      REQUEST_TEMPLATE_ROLES.each do |role|
+        REQUEST_TEMPLATE_TYPES.each do |type|
           ret << {
             event_type:,
             template_name: 'request_action_role_type',
@@ -40,9 +40,9 @@ class AddEvents < ActiveRecord::Migration[8.1]
       end
     end
 
-    REQUEST_MAIL_ROLES.each do |role|
-      REQUEST_MAIL_TYPES.each do |type|
-        REQUEST_MAIL_RESOLVE_STATES.each do |state|
+    REQUEST_TEMPLATE_ROLES.each do |role|
+      REQUEST_TEMPLATE_TYPES.each do |type|
+        REQUEST_TEMPLATE_RESOLVE_STATES.each do |state|
           ret << {
             event_type: 'request.resolved',
             template_name: 'request_resolve_role_type_state',
@@ -72,7 +72,7 @@ class AddEvents < ActiveRecord::Migration[8.1]
         }
       end
 
-      REQUEST_MAIL_RESOLVE_STATES.each do |state|
+      REQUEST_TEMPLATE_RESOLVE_STATES.each do |state|
         ret << {
           event_type: 'request.resolved',
           template_name: 'request_resolve_role_state',
@@ -102,7 +102,7 @@ class AddEvents < ActiveRecord::Migration[8.1]
 
     ret
   end.freeze
-  ADVANCED_MAIL_EVENT_TEMPLATES = [
+  ADVANCED_NOTIFICATION_EVENT_TEMPLATES = [
     {
       event_type: 'user.created',
       template_name: 'user_create',
@@ -364,8 +364,8 @@ class AddEvents < ActiveRecord::Migration[8.1]
       roles: %w[admin],
       matchers: []
     }
-  ].concat(REQUEST_ADVANCED_MAIL_EVENT_TEMPLATES).freeze
-  ADVANCED_MAIL_ROLE_LABELS = {
+  ].concat(REQUEST_ADVANCED_EVENT_TEMPLATES).freeze
+  ADVANCED_EMAIL_ROLE_LABELS = {
     'account' => 'Account management',
     'admin' => 'System administrator'
   }.freeze
@@ -414,7 +414,7 @@ class AddEvents < ActiveRecord::Migration[8.1]
       t.boolean     :enabled,                  null: false, default: true
       t.string      :event_type,               null: true, limit: 100
       t.string      :event_type_pattern,       null: true, limit: 100
-      t.string      :email_template_name,      null: true, limit: 100
+      t.string      :template_name, null: true, limit: 100
       t.boolean     :continue,                 null: false, default: false
       t.boolean     :default_route,            null: false, default: false
       t.boolean     :single_use,               null: false, default: false
@@ -667,30 +667,30 @@ class AddEvents < ActiveRecord::Migration[8.1]
     return unless table_exists?(:users)
 
     say_with_time('Creating event routes from advanced e-mail settings') do
-      backfill_mail_template_recipient_routes
-      backfill_mail_role_recipient_routes
+      backfill_notification_template_recipient_routes
+      backfill_email_role_recipient_routes
     end
   end
 
-  def backfill_mail_template_recipient_routes
-    return unless table_exists?(:user_mail_template_recipients)
-    return unless table_exists?(:mail_templates)
+  def backfill_notification_template_recipient_routes
+    return unless table_exists?(:user_notification_template_recipients)
+    return unless table_exists?(:notification_templates)
 
-    template_names = advanced_mail_template_names
-    positions = Hash.new(ADVANCED_MAIL_TEMPLATE_ROUTE_POSITION - 1)
+    template_names = advanced_template_names
+    positions = Hash.new(ADVANCED_NOTIFICATION_TEMPLATE_ROUTE_POSITION - 1)
 
     rows = select_all(<<~SQL.squish).to_a
       SELECT
-        user_mail_template_recipients.*,
-        mail_templates.name AS template_name,
-        mail_templates.label AS template_label,
+        user_notification_template_recipients.*,
+        notification_templates.name AS template_name,
+        notification_templates.label AS template_label,
         users.mailer_enabled
-      FROM user_mail_template_recipients
-      INNER JOIN mail_templates
-        ON mail_templates.id = user_mail_template_recipients.mail_template_id
-      INNER JOIN users ON users.id = user_mail_template_recipients.user_id
-      WHERE mail_templates.name IN (#{quoted_list(template_names)})
-      ORDER BY user_mail_template_recipients.user_id, mail_templates.name
+      FROM user_notification_template_recipients
+      INNER JOIN notification_templates
+        ON notification_templates.id = user_notification_template_recipients.notification_template_id
+      INNER JOIN users ON users.id = user_notification_template_recipients.user_id
+      WHERE notification_templates.name IN (#{quoted_list(template_names)})
+      ORDER BY user_notification_template_recipients.user_id, notification_templates.name
     SQL
 
     rows.sort_by! { |row| advanced_mail_event_template_sort_key(row) }
@@ -713,7 +713,7 @@ class AddEvents < ActiveRecord::Migration[8.1]
         receiver_id = create_advanced_mail_receiver(
           user_id:,
           label: "#{template_label} disabled",
-          description: 'Created from an advanced e-mail template setting',
+          description: 'Created from an advanced notification template setting',
           mute: true
         )
         route_label = "#{template_label} disabled"
@@ -721,7 +721,7 @@ class AddEvents < ActiveRecord::Migration[8.1]
         receiver_id = create_advanced_mail_receiver(
           user_id:,
           label: "#{template_label} e-mail",
-          description: 'Created from an advanced e-mail template recipient',
+          description: 'Created from an advanced notification template recipient',
           mute: false
         )
         create_advanced_mail_action(
@@ -742,17 +742,17 @@ class AddEvents < ActiveRecord::Migration[8.1]
     end
   end
 
-  def backfill_mail_role_recipient_routes
-    return unless table_exists?(:user_mail_role_recipients)
+  def backfill_email_role_recipient_routes
+    return unless table_exists?(:user_email_role_recipients)
 
-    positions = Hash.new(ADVANCED_MAIL_ROLE_ROUTE_POSITION - 1)
+    positions = Hash.new(ADVANCED_EMAIL_ROLE_ROUTE_POSITION - 1)
 
     rows = select_all(<<~SQL.squish).to_a.select do |row|
-      SELECT user_mail_role_recipients.*, users.mailer_enabled
-      FROM user_mail_role_recipients
-      INNER JOIN users ON users.id = user_mail_role_recipients.user_id
-      WHERE user_mail_role_recipients.role IN (#{quoted_list(advanced_mail_roles)})
-      ORDER BY user_mail_role_recipients.user_id, user_mail_role_recipients.role
+      SELECT user_email_role_recipients.*, users.mailer_enabled
+      FROM user_email_role_recipients
+      INNER JOIN users ON users.id = user_email_role_recipients.user_id
+      WHERE user_email_role_recipients.role IN (#{quoted_list(advanced_email_roles)})
+      ORDER BY user_email_role_recipients.user_id, user_email_role_recipients.role
     SQL
       truthy?(row.fetch('mailer_enabled')) && row.fetch('to').to_s.strip.present?
     end
@@ -765,11 +765,11 @@ class AddEvents < ActiveRecord::Migration[8.1]
 
       user_id = row.fetch('user_id').to_i
       target = row.fetch('to').to_s
-      role_label = ADVANCED_MAIL_ROLE_LABELS.fetch(role, role)
+      role_label = ADVANCED_EMAIL_ROLE_LABELS.fetch(role, role)
       receiver_id = create_advanced_mail_receiver(
         user_id:,
         label: "#{role_label} e-mail",
-        description: 'Created from an advanced e-mail role recipient',
+        description: 'Created from an advanced e-email role recipient',
         mute: false
       )
       create_advanced_mail_action(
@@ -786,7 +786,7 @@ class AddEvents < ActiveRecord::Migration[8.1]
           event_config: cfg,
           label: "#{role_label} e-mail for #{cfg.fetch(:label)}",
           position: positions[user_id],
-          continue: continue_advanced_mail_role_route?(
+          continue: continue_advanced_email_role_route?(
             rows_by_user.fetch(user_id),
             role,
             cfg
@@ -897,7 +897,7 @@ class AddEvents < ActiveRecord::Migration[8.1]
       enabled: true,
       event_type: event_config.fetch(:event_type),
       event_type_pattern: nil,
-      email_template_name: event_config.fetch(:template_name),
+      template_name: event_config.fetch(:template_name),
       continue:,
       hit_count: 0,
       created_at: current_timestamp,
@@ -925,18 +925,18 @@ class AddEvents < ActiveRecord::Migration[8.1]
 
   def advanced_mail_event_template_by_name
     @advanced_mail_event_template_by_name ||=
-      ADVANCED_MAIL_EVENT_TEMPLATES.flat_map do |cfg|
+      ADVANCED_NOTIFICATION_EVENT_TEMPLATES.flat_map do |cfg|
         names = cfg.fetch(:legacy_template_names, [cfg.fetch(:template_name)])
         names.map { |name| [name, cfg] }
       end.to_h
   end
 
   def advanced_mail_event_templates_for_role(role)
-    ADVANCED_MAIL_EVENT_TEMPLATES.select { |cfg| cfg.fetch(:roles).include?(role.to_s) }
+    ADVANCED_NOTIFICATION_EVENT_TEMPLATES.select { |cfg| cfg.fetch(:roles).include?(role.to_s) }
   end
 
-  def advanced_mail_template_names
-    ADVANCED_MAIL_EVENT_TEMPLATES.flat_map do |cfg|
+  def advanced_template_names
+    ADVANCED_NOTIFICATION_EVENT_TEMPLATES.flat_map do |cfg|
       cfg.fetch(:legacy_template_names, [cfg.fetch(:template_name)])
     end
   end
@@ -950,7 +950,7 @@ class AddEvents < ActiveRecord::Migration[8.1]
     ]
   end
 
-  def continue_advanced_mail_role_route?(rows, role, cfg)
+  def continue_advanced_email_role_route?(rows, role, cfg)
     roles = rows
             .map { |row| row.fetch('role').to_s }
             .select { |row_role| cfg.fetch(:roles).include?(row_role) }
@@ -959,8 +959,8 @@ class AddEvents < ActiveRecord::Migration[8.1]
     !!(role_index && role_index < roles.length - 1)
   end
 
-  def advanced_mail_roles
-    ADVANCED_MAIL_EVENT_TEMPLATES.flat_map { |cfg| cfg.fetch(:roles) }.uniq
+  def advanced_email_roles
+    ADVANCED_NOTIFICATION_EVENT_TEMPLATES.flat_map { |cfg| cfg.fetch(:roles) }.uniq
   end
 
   def truthy?(value)

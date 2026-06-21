@@ -13,7 +13,7 @@ RSpec.describe TransactionChains::Dataset::Migrate do
   let(:user) { SpecSeed.user }
 
   before do
-    ensure_alert_mail_templates!
+    ensure_alert_notification_templates!
     ensure_mailer_available!
   end
 

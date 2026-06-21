@@ -6,9 +6,9 @@ require_relative '../../db/migrate/20260615110000_add_events'
 RSpec.describe EventRoute do
   before do
     reset_routing!(SpecSeed.user)
-    allow(MailTemplate).to receive_messages(
-      send_mail!: build_mail_log_double,
-      send_custom: build_mail_log_double
+    allow(NotificationTemplate).to receive_messages(
+      send_email!: build_mail_log_double,
+      send_custom_email: build_mail_log_double
     )
   end
 
@@ -70,8 +70,8 @@ RSpec.describe EventRoute do
     )
   end
 
-  def event_mail_template!(name)
-    MailTemplate.find_or_create_by!(name:) do |template|
+  def event_notification_template!(name)
+    NotificationTemplate.find_or_create_by!(name:) do |template|
       template.label = name.tr('_', ' ').capitalize
       template.template_id = name
       template.user_visibility = :default
@@ -88,8 +88,8 @@ RSpec.describe EventRoute do
   end
 
   def reset_advanced_mail_settings!
-    UserMailTemplateRecipient.delete_all
-    UserMailRoleRecipient.delete_all
+    UserNotificationTemplateRecipient.delete_all
+    UserEmailRoleRecipient.delete_all
   end
 
   def run_events_migration_backfill!
@@ -421,10 +421,10 @@ RSpec.describe EventRoute do
 
   it 'backfills template recipient overrides into explicit e-mail routes' do
     reset_advanced_mail_settings!
-    template = event_mail_template!('vps_incident_report')
-    UserMailTemplateRecipient.create!(
+    template = event_notification_template!('vps_incident_report')
+    UserNotificationTemplateRecipient.create!(
       user: SpecSeed.user,
-      mail_template: template,
+      notification_template: template,
       to: 'incident-override@example.test',
       enabled: true
     )
@@ -444,11 +444,11 @@ RSpec.describe EventRoute do
 
   it 'backfills parameterized expiration template recipient overrides' do
     reset_advanced_mail_settings!
-    template = event_mail_template!('expiration_vps_active')
+    template = event_notification_template!('expiration_vps_active')
     template.update!(template_id: 'expiration_warning')
-    UserMailTemplateRecipient.create!(
+    UserNotificationTemplateRecipient.create!(
       user: SpecSeed.user,
-      mail_template: template,
+      notification_template: template,
       to: 'expiration-override@example.test',
       enabled: true
     )
@@ -486,10 +486,10 @@ RSpec.describe EventRoute do
 
   it 'backfills payment accepted template recipient overrides' do
     reset_advanced_mail_settings!
-    template = event_mail_template!('payment_accepted')
-    UserMailTemplateRecipient.create!(
+    template = event_notification_template!('payment_accepted')
+    UserNotificationTemplateRecipient.create!(
       user: SpecSeed.user,
-      mail_template: template,
+      notification_template: template,
       to: 'payment-override@example.test',
       enabled: true
     )
@@ -517,10 +517,10 @@ RSpec.describe EventRoute do
 
   it 'backfills outage update template overrides for all update events' do
     reset_advanced_mail_settings!
-    template = event_mail_template!('outage_report_user_update')
-    UserMailTemplateRecipient.create!(
+    template = event_notification_template!('outage_report_user_update')
+    UserNotificationTemplateRecipient.create!(
       user: SpecSeed.user,
-      mail_template: template,
+      notification_template: template,
       to: 'outage-update@example.test',
       enabled: true
     )
@@ -552,19 +552,19 @@ RSpec.describe EventRoute do
 
   it 'backfills request template overrides in fallback order' do
     reset_advanced_mail_settings!
-    specific = event_mail_template!('request_resolve_user_change_approved')
+    specific = event_notification_template!('request_resolve_user_change_approved')
     specific.update!(template_id: 'request_resolve_role_type_state')
-    generic = event_mail_template!('request_resolve_user')
+    generic = event_notification_template!('request_resolve_user')
     generic.update!(template_id: 'request_action_role')
-    UserMailTemplateRecipient.create!(
+    UserNotificationTemplateRecipient.create!(
       user: SpecSeed.user,
-      mail_template: generic,
+      notification_template: generic,
       to: 'request-generic@example.test',
       enabled: true
     )
-    UserMailTemplateRecipient.create!(
+    UserNotificationTemplateRecipient.create!(
       user: SpecSeed.user,
-      mail_template: specific,
+      notification_template: specific,
       to: 'request-specific@example.test',
       enabled: true
     )
@@ -602,7 +602,7 @@ RSpec.describe EventRoute do
 
   it 'backfills role recipients behind template-specific routes' do
     reset_advanced_mail_settings!
-    UserMailRoleRecipient.create!(
+    UserEmailRoleRecipient.create!(
       user: SpecSeed.user,
       role: 'admin',
       to: 'admin-role@example.test'
@@ -653,7 +653,7 @@ RSpec.describe EventRoute do
 
   it 'backfills account role recipients for user account events' do
     reset_advanced_mail_settings!
-    UserMailRoleRecipient.create!(
+    UserEmailRoleRecipient.create!(
       user: SpecSeed.user,
       role: 'account',
       to: 'account-role@example.test'
@@ -681,12 +681,12 @@ RSpec.describe EventRoute do
 
   it 'backfills all matching role recipients for multi-role templates' do
     reset_advanced_mail_settings!
-    UserMailRoleRecipient.create!(
+    UserEmailRoleRecipient.create!(
       user: SpecSeed.user,
       role: 'account',
       to: 'account-role@example.test'
     )
-    UserMailRoleRecipient.create!(
+    UserEmailRoleRecipient.create!(
       user: SpecSeed.user,
       role: 'admin',
       to: 'admin-role@example.test'
@@ -725,10 +725,10 @@ RSpec.describe EventRoute do
 
   it 'backfills disabled OOM template recipients only for notification events' do
     reset_advanced_mail_settings!
-    template = event_mail_template!('vps_oom_report')
-    UserMailTemplateRecipient.create!(
+    template = event_notification_template!('vps_oom_report')
+    UserNotificationTemplateRecipient.create!(
       user: SpecSeed.user,
-      mail_template: template,
+      notification_template: template,
       to: '',
       enabled: false
     )
@@ -754,10 +754,10 @@ RSpec.describe EventRoute do
   it 'keeps advanced e-mail overrides muted for mailer-disabled users' do
     reset_advanced_mail_settings!
     SpecSeed.user.update!(mailer_enabled: false)
-    template = event_mail_template!('vps_incident_report')
-    UserMailTemplateRecipient.create!(
+    template = event_notification_template!('vps_incident_report')
+    UserNotificationTemplateRecipient.create!(
       user: SpecSeed.user,
-      mail_template: template,
+      notification_template: template,
       to: 'incident-override@example.test',
       enabled: true
     )

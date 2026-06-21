@@ -3,8 +3,8 @@
 require 'securerandom'
 
 module UserLifecycleChainSpecHelpers
-  def ensure_user_mail_templates!
-    VpsAdmin::API::MailTemplates.install_defaults!
+  def ensure_user_notification_templates!
+    VpsAdmin::API::NotificationTemplates.install_defaults!
   end
 
   def ensure_user_namespace_blocks!(count: 8, start_index: 1)

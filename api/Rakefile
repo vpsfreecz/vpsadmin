@@ -14,8 +14,8 @@ YARD::Rake::YardocTask.new do |t|
   t.before = proc do
     document_hooks.call
     File.write(
-      File.join('doc', 'Mail_templates.md'),
-      ERB.new(File.read(File.join('doc', 'mail_templates.erb'))).result(binding)
+      File.join('doc', 'Notification_templates.md'),
+      ERB.new(File.read(File.join('doc', 'notification_templates.erb'))).result(binding)
     )
   end
 end

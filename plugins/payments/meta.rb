@@ -25,13 +25,13 @@ VpsAdmin::API::Plugin.register(:payments) do
     SysConfig.register :plugin_payments, :payment_instructions, Text,
                        label: 'Payment instructions', min_user_level: 99
 
-    MailTemplate.register :payment_accepted, vars: {
+    NotificationTemplate.register :payment_accepted, vars: {
       user: '::User',
       account: '::UserAccount',
       payment: '::UserPayment'
     }, roles: %i[account], public: true
 
-    MailTemplate.register :payments_overview, vars: {
+    NotificationTemplate.register :payments_overview, vars: {
       base_url: [String, 'URL to the web UI'],
       start: ::Time,
       end: ::Time,
@@ -43,7 +43,7 @@ VpsAdmin::API::Plugin.register(:payments) do
       accepted: 'UserPayment relation'
     }
 
-    MailTemplate.register :daily_report, vars: {
+    NotificationTemplate.register :daily_report, vars: {
       payments: Hash
     }
   end

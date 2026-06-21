@@ -18,7 +18,7 @@ module VpsAdmin::API::Resources
       string :subject
       string :text_plain
       string :text_html
-      resource MailTemplate
+      resource NotificationTemplate
       # resource TransactionChain::Transaction
       datetime :created_at
     end
