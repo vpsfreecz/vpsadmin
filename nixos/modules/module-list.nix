@@ -10,7 +10,9 @@
     ./vpsadmin/varnish.nix
     ./vpsadmin/haproxy.nix
     ./vpsadmin/main.nix
+    ./vpsadmin/notifications.nix
     ./vpsadmin/notification-dispatcher.nix
+    ./vpsadmin/telegram-receiver.nix
     ./vpsadmin/nixos.nix
     ./vpsadmin/database.nix
     ./vpsadmin/nodectld/nixos.nix

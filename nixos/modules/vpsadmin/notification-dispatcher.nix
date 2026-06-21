@@ -8,6 +8,7 @@ with lib;
 let
   vpsadminCfg = config.vpsadmin;
   cfg = config.vpsadmin.notificationDispatcher;
+  telegramCfg = config.vpsadmin.notifications.telegram;
   vpsadminRoot = toString (./../../..);
 
   apiAppFor =
@@ -74,11 +75,11 @@ let
         domain_min_delivery_interval = cfg.email.domainMinDeliveryInterval;
       };
       telegram = {
+        enabled = telegramCfg.enable;
+        configured = telegramCfg.enable && telegramCfg.botTokenFile != null;
         concurrency = cfg.telegram.concurrency;
         bot_token = "#telegram_bot_token#";
-        api_base_url = cfg.telegram.apiBaseUrl;
-        updates_timeout = cfg.telegram.updatesTimeout;
-        updates_limit = cfg.telegram.updatesLimit;
+        api_base_url = telegramCfg.apiBaseUrl;
       };
       webhook = {
         concurrency = cfg.webhook.concurrency;
@@ -120,7 +121,7 @@ let
         }
         SMTP_PASS=${optionalString (cfg.smtp.passwordFile != null) "$(head -n1 ${cfg.smtp.passwordFile})"}
         TELEGRAM_BOT_TOKEN=${
-          optionalString (cfg.telegram.botTokenFile != null) "$(head -n1 ${cfg.telegram.botTokenFile})"
+          optionalString (telegramCfg.botTokenFile != null) "$(head -n1 ${telegramCfg.botTokenFile})"
         }
         cp -f ${notificationsYml} "${stateDirectory}/config/notifications.yml"
         sed -e "s,#rabbitmq_pass#,$RABBITMQ_PASS,g" -i "${stateDirectory}/config/notifications.yml"
@@ -271,43 +272,6 @@ in
           '';
         };
 
-        botTokenFile = mkOption {
-          type = types.nullOr types.path;
-          default = null;
-          example = "/run/keys/vpsadmin-telegram-bot-token";
-          description = ''
-            File containing the Telegram bot token used to pair chats and send
-            Telegram notification messages. Keep unset when Telegram delivery
-            is not enabled.
-          '';
-        };
-
-        apiBaseUrl = mkOption {
-          type = types.str;
-          default = "https://api.telegram.org";
-          description = ''
-            Telegram Bot API base URL. Override this when using a local Bot API
-            server or a test double in development.
-          '';
-        };
-
-        updatesTimeout = mkOption {
-          type = nonNegativeInt;
-          default = 0;
-          description = ''
-            Long-poll timeout in seconds used by the Telegram pairing polling
-            rake task. Values above Telegram's limit are clamped by vpsAdmin.
-          '';
-        };
-
-        updatesLimit = mkOption {
-          type = positiveInt;
-          default = 100;
-          description = ''
-            Maximum number of Telegram updates fetched by one pairing polling
-            run. Values above Telegram's limit are clamped by vpsAdmin.
-          '';
-        };
       };
 
       smtp = {
@@ -392,6 +356,13 @@ in
   };
 
   config = mkIf cfg.enable {
+    assertions = [
+      {
+        assertion = !(elem "telegram" cfg.actions) || telegramCfg.enable;
+        message = "telegram notification dispatching requires vpsadmin.notifications.telegram.enable";
+      }
+    ];
+
     vpsadmin = {
       enableOverlay = true;
       enableStateDirectory = true;
