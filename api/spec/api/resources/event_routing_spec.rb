@@ -33,6 +33,10 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
     vpath("/notification_receivers/#{receiver_id}/action")
   end
 
+  def receiver_action_pairing_token_path(receiver_id, action_id)
+    vpath("/notification_receivers/#{receiver_id}/action/#{action_id}/create_pairing_token")
+  end
+
   def route_index_path
     vpath('/event_routes')
   end
@@ -200,6 +204,7 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
         'notification_receiver.action#index',
         'notification_receiver.action#show',
         'notification_receiver.action#create',
+        'notification_receiver.action#create_pairing_token',
         'notification_receiver.action#update',
         'notification_receiver.action#delete'
       )
@@ -510,6 +515,39 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
     expect(route.reload.email_template_name).to be_nil
   end
 
+  it 'creates Telegram pairing tokens' do
+    as(SpecSeed.user) do
+      json_post receiver_index_path, notification_receiver: {
+        label: 'Telegram receiver'
+      }
+    end
+
+    expect_status(200)
+    receiver = NotificationReceiver.find(receiver_obj['id'])
+
+    as(SpecSeed.user) do
+      json_post receiver_action_index_path(receiver.id), action: {
+        action: 'telegram',
+        label: 'Spec Telegram'
+      }
+    end
+
+    expect_status(200)
+    action = NotificationReceiverAction.find(action_obj['id'])
+    original_token = action_obj['verification_token']
+    expect(action_obj['action']).to eq('telegram')
+    expect(action_obj['verified']).to be(false)
+    expect(action_obj['target_value']).to be_nil
+    expect(original_token).to be_present
+
+    as(SpecSeed.user) { json_post receiver_action_pairing_token_path(receiver.id, action.id), {} }
+
+    expect_status(200)
+    expect(action_obj['verification_token']).to be_present
+    expect(action_obj['verification_token']).not_to eq(original_token)
+    expect(action.reload).not_to be_verified
+  end
+
   it 'lets users retry failed deliveries' do
     event = Event.create!(
       user: SpecSeed.user,
@@ -766,6 +804,13 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
       target_kind: :custom,
       target_value: 'https://example.test/detail'
     )
+    receiver.notification_receiver_actions.create!(
+      action: :telegram,
+      label: 'Spec detail Telegram',
+      target_kind: :custom,
+      target_value: '123456',
+      verified_at: Time.now
+    )
     EventRoute.create!(
       user: SpecSeed.user,
       notification_receiver: receiver,
@@ -781,11 +826,16 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
     )
     email_delivery = event.event_deliveries.email_action.sole
     webhook_delivery = event.event_deliveries.webhook_action.sole
+    telegram_delivery = event.event_deliveries.telegram_action.sole
     email_delivery.update!(template_name: 'spec_internal_template')
     webhook_delivery.update!(
       response_status: 202,
       response_body: 'accepted',
       response_headers: { 'x-spec-detail' => ['delivery'] }
+    )
+    telegram_delivery.update!(
+      response_status: 200,
+      response_body: JSON.dump(ok: true, result: { message_id: 42 })
     )
     attempt = webhook_delivery.event_delivery_attempts.create!(
       action: webhook_delivery.action,
@@ -822,6 +872,14 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
       'x-spec-detail' => ['delivery']
     )
     expect(delivery_obj['response_body']).to eq('accepted')
+
+    as(SpecSeed.user) { json_get delivery_path(event.id, telegram_delivery.id) }
+
+    expect_status(200)
+    telegram_payload = JSON.parse(delivery_obj['payload'])
+    expect(telegram_payload['chat_id']).to eq('123456')
+    expect(telegram_payload['text']).to include('Spec delivery detail event')
+    expect(delivery_obj['response_body']).to include('"ok":true')
 
     as(SpecSeed.user) { json_get delivery_attempt_index_path(event.id, webhook_delivery.id) }
 
