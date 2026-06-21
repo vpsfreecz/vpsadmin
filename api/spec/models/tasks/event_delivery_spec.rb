@@ -53,6 +53,8 @@ RSpec.describe VpsAdmin::API::Tasks::EventDelivery do
   def create_telegram_delivery!(target_value: '123456789',
                                 summary: 'Spec Telegram summary',
                                 parameters: { note: 'from Telegram task spec' })
+    allow(VpsAdmin::API::Notifications).to receive(:telegram_configured?).and_return(true)
+
     receiver = NotificationReceiver.create!(user: SpecSeed.user, label: 'Spec Telegram receiver')
     action = receiver.notification_receiver_actions.create!(
       action: :telegram,

@@ -30,10 +30,11 @@ class NotificationReceiverAction < ApplicationRecord
   validates :label, length: { maximum: 255 }, allow_nil: true
   validates :verification_token, length: { maximum: 255 }, allow_nil: true
   validate :check_action_limit, on: :create
+  validate :check_action_available
   validate :check_target
 
   def self.action_labels
-    VpsAdmin::API::Notifications::Actions.labels
+    VpsAdmin::API::Notifications::Actions.available_labels
   end
 
   def self.target_kind_labels
@@ -62,8 +63,13 @@ class NotificationReceiverAction < ApplicationRecord
 
   def deliverable?
     return false unless enabled?
+    return false unless action_available?
 
     VpsAdmin::API::Notifications::Actions.known?(action)
+  end
+
+  def action_available?
+    VpsAdmin::API::Notifications::Actions.available?(action)
   end
 
   def verification_token_expired?(now = Time.now)
@@ -145,6 +151,14 @@ class NotificationReceiverAction < ApplicationRecord
     return if count < MAX_ACTIONS_PER_RECEIVER
 
     errors.add(:base, "cannot have more than #{MAX_ACTIONS_PER_RECEIVER} receiver actions")
+  end
+
+  def check_action_available
+    return if action.blank?
+    return unless new_record? || will_save_change_to_action?
+    return if action_available?
+
+    errors.add(:action, 'is not available')
   end
 
   def check_target
