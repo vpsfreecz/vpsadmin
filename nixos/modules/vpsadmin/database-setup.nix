@@ -34,7 +34,8 @@ in
         default =
           vpsadminCfg.api.enable
           || vpsadminCfg.supervisor.enable
-          || vpsadminCfg.notificationDispatcher.enable;
+          || vpsadminCfg.notificationDispatcher.enable
+          || vpsadminCfg.telegramReceiver.enable;
       };
 
       package = lib.mkOption {
