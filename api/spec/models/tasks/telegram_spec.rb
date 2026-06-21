@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'spec_helper'
+require 'rack/mock'
 
 RSpec.describe VpsAdmin::API::Tasks::Telegram do
   around do |example|
@@ -19,6 +20,8 @@ RSpec.describe VpsAdmin::API::Tasks::Telegram do
   end
 
   def create_telegram_action!(token: 'pair-token')
+    allow(VpsAdmin::API::Notifications).to receive(:telegram_configured?).and_return(true)
+
     receiver = NotificationReceiver.create!(user: SpecSeed.user, label: 'Spec Telegram receiver')
     receiver.notification_receiver_actions.create!(
       action: :telegram,
@@ -42,7 +45,7 @@ RSpec.describe VpsAdmin::API::Tasks::Telegram do
     }
   end
 
-  def stub_telegram_updates(code: '200', body: { ok: true, result: [] }, read_timeout: 15)
+  def stub_telegram_updates(code: '200', body: { ok: true, result: [] }, read_timeout: 55)
     request = nil
     http = instance_double(Net::HTTP)
     response = instance_double(Net::HTTPResponse, code:, body: JSON.dump(body))
@@ -87,7 +90,7 @@ RSpec.describe VpsAdmin::API::Tasks::Telegram do
     expect(body).to include(
       'allowed_updates' => ['message'],
       'limit' => 100,
-      'timeout' => 0
+      'timeout' => 50
     )
     expect(body).not_to have_key('offset')
     expect(stats).to eq(paired: 1, rejected: 0, ignored: 0)
@@ -104,7 +107,7 @@ RSpec.describe VpsAdmin::API::Tasks::Telegram do
       name: 'telegram_update_offset',
       value: 123
     )
-    request = stub_telegram_updates
+    request = stub_telegram_updates(read_timeout: 15)
 
     stats = with_env(
       'VPSADMIN_TELEGRAM_BOT_TOKEN' => '123:telegram-token',
@@ -217,5 +220,58 @@ RSpec.describe VpsAdmin::API::Tasks::Telegram do
     end.to raise_error(RuntimeError, /terminated by other getUpdates request/)
 
     expect(SysConfig.get('notifications', 'telegram_update_offset')).to eq(50)
+  end
+
+  it 'pairs Telegram actions from webhook updates' do
+    action = create_telegram_action!
+    receiver = VpsAdmin::API::TelegramReceiver.new(
+      config: {
+        'telegram' => {
+          'webhook' => {
+            'path' => '/_telegram/webhook',
+            'secret_token' => 'webhook-secret'
+          }
+        }
+      }
+    )
+    request = Rack::MockRequest.new(receiver.webhook_app)
+
+    response = request.post(
+      '/_telegram/webhook',
+      'CONTENT_TYPE' => 'application/json',
+      'HTTP_X_TELEGRAM_BOT_API_SECRET_TOKEN' => 'webhook-secret',
+      input: JSON.dump(update(update_id: 45, text: '/start pair-token', chat_id: 222_333))
+    )
+
+    expect(response.status).to eq(200)
+    expect(JSON.parse(response.body)).to include('ok' => true)
+    expect(action.reload).to be_verified
+    expect(action.target_value).to eq('222333')
+    expect(SysConfig.get('notifications', 'telegram_update_offset')).to be_nil
+  end
+
+  it 'rejects webhook updates with an invalid secret token' do
+    action = create_telegram_action!
+    receiver = VpsAdmin::API::TelegramReceiver.new(
+      config: {
+        'telegram' => {
+          'webhook' => {
+            'path' => '/_telegram/webhook',
+            'secret_token' => 'webhook-secret'
+          }
+        }
+      }
+    )
+    request = Rack::MockRequest.new(receiver.webhook_app)
+
+    response = request.post(
+      '/_telegram/webhook',
+      'CONTENT_TYPE' => 'application/json',
+      'HTTP_X_TELEGRAM_BOT_API_SECRET_TOKEN' => 'wrong',
+      input: JSON.dump(update(update_id: 46, text: '/start pair-token'))
+    )
+
+    expect(response.status).to eq(403)
+    expect(action.reload).not_to be_verified
   end
 end

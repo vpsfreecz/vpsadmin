@@ -1,0 +1,26 @@
+#!/usr/bin/env ruby
+require 'rackup'
+require_relative '../lib/vpsadmin'
+
+$stdout.sync = true
+$stderr.sync = true
+
+receiver = VpsAdmin::API::TelegramReceiver.new
+config = VpsAdmin::API::Notifications::Config.load
+mode = config.fetch('telegram', {}).fetch('receive_mode', 'polling')
+
+case mode
+when 'polling'
+  receiver.run_polling
+when 'webhook'
+  receiver.register_webhook!
+  Rackup::Server.start(
+    app: receiver.webhook_app,
+    server: 'puma',
+    Host: receiver.webhook_host,
+    Port: receiver.webhook_port
+  )
+else
+  warn "Unsupported Telegram receive mode #{mode.inspect}"
+  exit(false)
+end

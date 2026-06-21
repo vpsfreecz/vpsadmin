@@ -515,7 +515,7 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
     expect(route.reload.template_name).to be_nil
   end
 
-  it 'creates Telegram pairing tokens' do
+  it 'rejects Telegram receiver actions when Telegram is not configured' do
     as(SpecSeed.user) do
       json_post receiver_index_path, notification_receiver: {
         label: 'Telegram receiver'
@@ -532,20 +532,8 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
       }
     end
 
-    expect_status(200)
-    action = NotificationReceiverAction.find(action_obj['id'])
-    original_token = action_obj['verification_token']
-    expect(action_obj['action']).to eq('telegram')
-    expect(action_obj['verified']).to be(false)
-    expect(action_obj['target_value']).to be_nil
-    expect(original_token).to be_present
-
-    as(SpecSeed.user) { json_post receiver_action_pairing_token_path(receiver.id, action.id), {} }
-
-    expect_status(200)
-    expect(action_obj['verification_token']).to be_present
-    expect(action_obj['verification_token']).not_to eq(original_token)
-    expect(action.reload).not_to be_verified
+    expect(json['status']).to be(false)
+    expect(receiver.notification_receiver_actions.reload).to be_empty
   end
 
   it 'lets users retry failed deliveries' do
@@ -792,6 +780,8 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
   end
 
   it 'exposes action-specific delivery details' do
+    allow(VpsAdmin::API::Notifications).to receive(:telegram_configured?).and_return(true)
+
     receiver = NotificationReceiver.create!(user: SpecSeed.user, label: 'Spec detail receiver')
     receiver.notification_receiver_actions.create!(
       action: :email,

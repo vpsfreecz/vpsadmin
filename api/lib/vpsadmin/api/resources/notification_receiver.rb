@@ -370,6 +370,7 @@ module VpsAdmin::API::Resources
             )
           )
           error!('receiver action is not Telegram') unless action.telegram_action?
+          error!('Telegram delivery is not configured') unless action.action_available?
 
           action.generate_verification_token!
           action

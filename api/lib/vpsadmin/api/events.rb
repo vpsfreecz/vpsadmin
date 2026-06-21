@@ -1024,13 +1024,17 @@ module VpsAdmin::API
       end
 
       def delivery_from_receiver_action(route, receiver, receiver_action)
+        unless VpsAdmin::API::Notifications::Actions.known?(receiver_action.action)
+          return skipped_delivery(route, receiver, receiver_action, 'unknown receiver action')
+        end
+
+        unless receiver_action.action_available?
+          return skipped_delivery(route, receiver, receiver_action, 'receiver action is not available')
+        end
+
         unless receiver_action.deliverable?
           reason = receiver_action.enabled? ? 'receiver action is not verified' : 'receiver action is disabled'
           return skipped_delivery(route, receiver, receiver_action, reason)
-        end
-
-        unless VpsAdmin::API::Notifications::Actions.known?(receiver_action.action)
-          return skipped_delivery(route, receiver, receiver_action, 'unknown receiver action')
         end
 
         VpsAdmin::API::Notifications::Actions

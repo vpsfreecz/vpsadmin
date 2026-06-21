@@ -60,6 +60,9 @@
       vpsadmin-notification-dispatcher =
         super.callPackage ../../packages/api/notification-dispatcher.nix
           { inherit ruby; };
+      vpsadmin-telegram-receiver = super.callPackage ../../packages/api/telegram-receiver.nix {
+        inherit ruby;
+      };
       vpsadmin-console-router = super.callPackage ../../packages/console-router { inherit ruby; };
       vpsadmin-download-mounter = super.callPackage ../../packages/download-mounter { inherit ruby; };
       vpsadmin-client = super.callPackage ../../packages/client { inherit ruby; };

@@ -44,6 +44,17 @@ module VpsAdmin::API
           @receiver_action_available
         end
 
+        def available(&block)
+          @available = block if block
+          @available
+        end
+
+        def available?
+          return true unless @available
+
+          @available.call
+        end
+
         def plan_delivery(&block)
           @plan_delivery = block if block
           @plan_delivery
@@ -70,6 +81,7 @@ module VpsAdmin::API
         end
 
         def receiver_action_available?(action)
+          return false unless available?
           return false unless action&.enabled? && action.action == name
           return action.instance_exec(&@receiver_action_available) if @receiver_action_available
 
@@ -113,6 +125,22 @@ module VpsAdmin::API
 
       def labels
         @definitions.transform_values(&:label)
+      end
+
+      def available?(name)
+        fetch(name).available?
+      rescue KeyError
+        false
+      end
+
+      def available_names
+        @definitions.select { |_, definition| definition.available? }.keys
+      end
+
+      def available_labels
+        @definitions
+          .select { |_, definition| definition.available? }
+          .transform_values(&:label)
       end
 
       def target_kind_labels
@@ -283,6 +311,27 @@ module VpsAdmin::API
       text.to_s[0, TELEGRAM_TEXT_LIMIT]
     end
 
+    def telegram_configured?(config = Config.load)
+      telegram = config.fetch('telegram', {})
+      return false if telegram.has_key?('enabled') && !truthy_config?(telegram['enabled'])
+
+      truthy_config?(telegram.fetch('configured', false)) ||
+        telegram_config_has_token?(telegram)
+    rescue KeyError
+      false
+    end
+
+    def telegram_config_has_token?(telegram)
+      telegram.fetch('bot_token', nil).present? ||
+        telegram.fetch('bot_token_file', nil).present? ||
+        ENV['VPSADMIN_TELEGRAM_BOT_TOKEN'].present? ||
+        ENV['VPSADMIN_TELEGRAM_BOT_TOKEN_FILE'].present?
+    end
+
+    def truthy_config?(value)
+      value == true || value.to_s.casecmp('true') == 0 || value.to_s == '1'
+    end
+
     def render_email_delivery!(delivery)
       unless delivery.notification_receiver_available?
         delivery.update!(
@@ -412,6 +461,10 @@ module VpsAdmin::API
     Actions.define :telegram do
       label 'Telegram'
       target_kind :custom, label: 'custom target'
+
+      available do
+        VpsAdmin::API::Notifications.telegram_configured?
+      end
 
       validate_receiver_action do
         check_telegram_target
