@@ -113,7 +113,7 @@ RSpec.describe VpsAdmin::API::NotificationEvents do
       'oauth2_client_id' => authorization.oauth2_client_id
     )
 
-    vars = VpsAdmin::API::Events.email_vars_for(event)
+    vars = VpsAdmin::API::Events.template_options_for(event).fetch(:vars)
     expect(vars).to include(
       user:,
       user_session: session,

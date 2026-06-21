@@ -9,9 +9,9 @@ RSpec.describe TransactionChains::IncidentReport::Send do
   end
 
   before do
-    ensure_alert_mail_templates!
+    ensure_alert_notification_templates!
     ensure_mailer_available!
-    allow(MailTemplate).to receive_messages(send_mail!: build_mail_log_double, send_custom: build_mail_log_double)
+    allow(NotificationTemplate).to receive_messages(send_email!: build_mail_log_double, send_custom_email: build_mail_log_double)
   end
 
   def create_send_incident!(**attrs)
@@ -45,7 +45,7 @@ RSpec.describe TransactionChains::IncidentReport::Send do
     )
 
     expect(tx_classes(chain)).to eq([Transactions::EventDelivery::Release])
-    expect(MailTemplate).to have_received(:send_mail!).with(
+    expect(NotificationTemplate).to have_received(:send_email!).with(
       :vps_incident_report,
       hash_including(vars: hash_including(incident: active))
     ).once
@@ -67,7 +67,7 @@ RSpec.describe TransactionChains::IncidentReport::Send do
 
     expect(TransactionChains::IncidentReport::Reply).to have_received(:use_in)
     expect(tx_classes(chain)).to include(Transactions::EventDelivery::Release)
-    expect(MailTemplate).to have_received(:send_custom)
+    expect(NotificationTemplate).to have_received(:send_custom_email)
   end
 
   it 'allows an empty chain when there is nothing to send' do
@@ -76,6 +76,6 @@ RSpec.describe TransactionChains::IncidentReport::Send do
     )
 
     expect(chain).to be_nil
-    expect(MailTemplate).not_to have_received(:send_mail!)
+    expect(NotificationTemplate).not_to have_received(:send_email!)
   end
 end

@@ -8,7 +8,7 @@ RSpec.describe TransactionChains::User::SoftDelete do
     with_current_context(user: SpecSeed.admin) { example.run }
   end
 
-  before { ensure_user_mail_templates! }
+  before { ensure_user_notification_templates! }
 
   it 'sends mail, cascades runtime disables, records VPS soft-delete, and closes auth state' do
     fixture = create_user_lifecycle_fixture!(token_session: false)
@@ -31,7 +31,7 @@ RSpec.describe TransactionChains::User::SoftDelete do
     expect(classes.rindex(Transactions::Export::Disable)).to be < release_idx
     expect(classes.rindex(Transactions::DnsServerZone::Update)).to be < release_idx
     expect(classes.rindex(Transactions::DnsServerZone::DeleteRecords)).to be < release_idx
-    expect(MailLog.joins(:mail_template).exists?(mail_templates: { name: 'user_soft_delete' })).to be(true)
+    expect(MailLog.joins(:notification_template).exists?(notification_templates: { name: 'user_soft_delete' })).to be(true)
     event = expect_routed_event!('user.soft_deleted', user:)
     expect(event.source_class).to eq('ObjectState')
     expect(event.parameters).to include('state' => 'soft_delete')

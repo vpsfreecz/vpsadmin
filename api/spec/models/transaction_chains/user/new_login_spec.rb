@@ -9,7 +9,7 @@ RSpec.describe TransactionChains::User::NewLogin do
   end
 
   before do
-    ensure_user_mail_templates!
+    ensure_user_notification_templates!
     ensure_available_node_status!(SpecSeed.node)
   end
 
@@ -21,7 +21,7 @@ RSpec.describe TransactionChains::User::NewLogin do
 
     expect(chain.transaction_chain_concerns.pluck(:class_name, :row_id)).to include(['User', user.id])
     expect(tx_classes(chain)).to include(Transactions::EventDelivery::Release)
-    expect(MailLog.joins(:mail_template).exists?(mail_templates: { name: 'user_new_login' })).to be(true)
+    expect(MailLog.joins(:notification_template).exists?(notification_templates: { name: 'user_new_login' })).to be(true)
 
     event = expect_routed_event!('user.new_login', user:)
     expect(event.source).to eq(auth.fetch(:token_session))

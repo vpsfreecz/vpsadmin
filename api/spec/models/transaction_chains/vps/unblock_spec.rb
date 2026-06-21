@@ -9,7 +9,7 @@ RSpec.describe TransactionChains::Vps::Unblock do
   end
 
   before do
-    ensure_user_mail_templates!
+    ensure_user_notification_templates!
     ensure_mailer_available!
   end
 

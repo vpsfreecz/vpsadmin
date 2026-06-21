@@ -247,6 +247,18 @@ module VpsAdmin::API
 
     def telegram_text_for(delivery)
       event = delivery.event
+      template_name = delivery.template_name.presence&.to_sym ||
+                      VpsAdmin::API::Events.template_name_for(event)
+
+      if template_name
+        rendered = ::NotificationTemplate.render_telegram!(
+          template_name,
+          VpsAdmin::API::Events.template_options_for(event)
+        )
+        return truncate_telegram_text(rendered.fetch(:text))
+      end
+
+      event = delivery.event
       lines = [
         "[#{event.severity}] #{event.subject}",
         "Event: #{event.event_type}"
@@ -293,7 +305,7 @@ module VpsAdmin::API
       if mail_log.nil?
         delivery.update!(
           state: 'skipped',
-          error_summary: 'e-mail template is disabled'
+          error_summary: 'notification template is disabled'
         )
         return
       end
@@ -314,16 +326,16 @@ module VpsAdmin::API
     def build_mail_log(delivery)
       event = delivery.event
       template_name = delivery.template_name.presence&.to_sym ||
-                      VpsAdmin::API::Events.email_template_name_for(event)
+                      VpsAdmin::API::Events.template_name_for(event)
 
       if template_name
-        return ::MailTemplate.send_mail!(
+        return ::NotificationTemplate.send_email!(
           template_name,
-          VpsAdmin::API::Events.email_template_options_for(event, delivery)
+          VpsAdmin::API::Events.template_options_for(event, delivery)
         )
       end
 
-      ::MailTemplate.send_custom(
+      ::NotificationTemplate.send_custom_email(
         VpsAdmin::API::Events.email_custom_options_for(event, delivery)
       )
     end

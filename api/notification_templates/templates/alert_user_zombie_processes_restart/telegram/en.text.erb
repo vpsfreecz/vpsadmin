@@ -1,0 +1,14 @@
+<%= @event.subject %>
+<% if @event.summary.present? -%>
+
+<%= @event.summary %>
+<% end -%>
+<% if @event.vps -%>
+
+VPS: #<%= @event.vps.id %> <%= @event.vps.hostname %>
+<% end -%>
+<% url = webui_url("?page=notifications&action=event_show&id=#{@event.id}") -%>
+<% if url.present? -%>
+
+Open: <%= url %>
+<% end -%>

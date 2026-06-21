@@ -12,7 +12,7 @@ RSpec.describe 'VpsAdmin::API::Resources::MailLog' do
     28.times do |i|
       create_mail_log!(
         user: SpecSeed.user,
-        mail_template: template,
+        template: template,
         subject: "Bulk #{i}",
         text_plain: "bulk #{i}",
         text_html: "<p>bulk #{i}</p>"
@@ -54,7 +54,7 @@ RSpec.describe 'VpsAdmin::API::Resources::MailLog' do
   end
 
   def create_template!(name: 'spec_tpl', label: 'Spec Template', template_id: 'spec.template', user_visibility: :default)
-    MailTemplate.create!(
+    NotificationTemplate.create!(
       name: name,
       label: label,
       template_id: template_id,
@@ -62,12 +62,12 @@ RSpec.describe 'VpsAdmin::API::Resources::MailLog' do
     )
   end
 
-  def create_mail_log!(user:, mail_template:, to: 'to@example.test', cc: '', bcc: '', from: 'from@example.test',
+  def create_mail_log!(user:, template:, to: 'to@example.test', cc: '', bcc: '', from: 'from@example.test',
                        subject: 'Spec subject', text_plain: 'plain', text_html: '<p>html</p>',
                        reply_to: nil, return_path: nil, message_id: nil, in_reply_to: nil, references: nil)
     MailLog.create!(
       user: user,
-      mail_template: mail_template,
+      notification_template: template,
       to: to,
       cc: cc,
       bcc: bcc,
@@ -88,7 +88,7 @@ RSpec.describe 'VpsAdmin::API::Resources::MailLog' do
   let!(:log_a) do
     create_mail_log!(
       user: SpecSeed.user,
-      mail_template: template,
+      template: template,
       subject: 'Mail A',
       reply_to: 'reply@example.test',
       return_path: 'bounce@example.test',
@@ -103,7 +103,7 @@ RSpec.describe 'VpsAdmin::API::Resources::MailLog' do
   let!(:log_b) do
     create_mail_log!(
       user: SpecSeed.other_user,
-      mail_template: template,
+      template: template,
       subject: 'Mail B',
       text_plain: 'b',
       text_html: '<p>b</p>'
@@ -155,11 +155,11 @@ RSpec.describe 'VpsAdmin::API::Resources::MailLog' do
         'message_id',
         'in_reply_to',
         'references',
-        'mail_template',
+        'notification_template',
         'created_at'
       )
       expect(rid(row['user'])).to eq(SpecSeed.user.id)
-      expect(rid(row['mail_template'])).to eq(template.id)
+      expect(rid(row['notification_template'])).to eq(template.id)
 
       other_row = mail_logs.find { |item| item['id'] == log_b.id }
       expect(other_row).not_to be_nil
@@ -232,7 +232,7 @@ RSpec.describe 'VpsAdmin::API::Resources::MailLog' do
       expect(mail_log['text_plain']).to eq('hello')
       expect(mail_log['text_html']).to eq('<p>hello</p>')
       expect(rid(mail_log['user'])).to eq(SpecSeed.user.id)
-      expect(rid(mail_log['mail_template'])).to eq(template.id)
+      expect(rid(mail_log['notification_template'])).to eq(template.id)
       expect(mail_log['reply_to']).to eq('reply@example.test')
       expect(mail_log['return_path']).to eq('bounce@example.test')
       expect(mail_log['message_id']).to eq('<msg-a@example.test>')

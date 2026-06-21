@@ -11,7 +11,7 @@ RSpec.describe 'VpsAdmin::API::Resources::User write actions' do # rubocop:disab
       user_suspend
       user_resume
       user_revive
-    ].each { |name| ensure_mail_template(name) }
+    ].each { |name| ensure_notification_template(name) }
     ensure_user_infra
   end
 
@@ -93,19 +93,20 @@ RSpec.describe 'VpsAdmin::API::Resources::User write actions' do # rubocop:disab
     mark_user_paid_until!(target)
   end
 
-  def ensure_mail_template(template_name)
-    template = MailTemplate.find_or_create_by!(name: template_name) do |tpl|
+  def ensure_notification_template(template_name)
+    template = NotificationTemplate.find_or_create_by!(name: template_name) do |tpl|
       tpl.label = template_name.tr('_', ' ').capitalize
       tpl.template_id = template_name
     end
 
-    return if template.mail_template_translations.where(language: SpecSeed.language).exists?
+    return if template.notification_template_variants.where(language: SpecSeed.language, protocol: :email).exists?
 
-    template.mail_template_translations.create!(
+    template.notification_template_variants.create!(
       language: SpecSeed.language,
+      protocol: :email,
       from: 'noreply@test.invalid',
       subject: "#{template_name} subject",
-      text_plain: "#{template_name} body"
+      text: "#{template_name} body"
     )
   end
 

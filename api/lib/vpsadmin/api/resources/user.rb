@@ -1302,10 +1302,10 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
     end
   end
 
-  class MailRoleRecipient < HaveAPI::Resource
-    desc 'Manage user mail recipients'
-    route '{user_id}/mail_role_recipients'
-    model ::UserMailRoleRecipient
+  class EmailRoleRecipient < HaveAPI::Resource
+    desc 'Manage user email recipients'
+    route '{user_id}/email_role_recipients'
+    model ::UserEmailRoleRecipient
 
     params(:all) do
       string :id, db_name: :role
@@ -1315,7 +1315,7 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
     end
 
     class Index < HaveAPI::Actions::Default::Index
-      desc 'List user mail role recipients'
+      desc 'List user email role recipients'
 
       output(:object_list) do
         use :all
@@ -1328,7 +1328,7 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
       def query
         error!(VpsAdmin::API::I18n.message('errors.access_denied')) if current_user.role != :admin && current_user.id != path_params['user_id'].to_i
 
-        ::UserMailRoleRecipient.all_roles_for(::User.find(path_params['user_id']))
+        ::UserEmailRoleRecipient.all_roles_for(::User.find(path_params['user_id']))
       end
 
       def count
@@ -1341,7 +1341,7 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
     end
 
     class Show < HaveAPI::Actions::Default::Show
-      desc 'Show user mail role recipient'
+      desc 'Show user email role recipient'
 
       output do
         use :all
@@ -1354,13 +1354,13 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
       def prepare
         error!(VpsAdmin::API::I18n.message('errors.access_denied')) if current_user.role != :admin && current_user.id != path_params['user_id'].to_i
 
-        unless ::UserMailRoleRecipient.registered_role?(path_params['mail_role_recipient_id'])
+        unless ::UserEmailRoleRecipient.registered_role?(path_params['email_role_recipient_id'])
           raise ActiveRecord::RecordNotFound
         end
 
-        @recp = ::UserMailRoleRecipient.find_by!(
+        @recp = ::UserEmailRoleRecipient.find_by!(
           user_id: path_params['user_id'],
-          role: path_params['mail_role_recipient_id']
+          role: path_params['email_role_recipient_id']
         )
       end
 
@@ -1372,7 +1372,7 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
     class Update < HaveAPI::Actions::Default::Update
       include VpsAdmin::API::Lifetimes::ActionHelpers
 
-      desc 'Update user mail role recipient'
+      desc 'Update user email role recipient'
 
       input do
         use :all, include: %i[to]
@@ -1391,9 +1391,9 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
         user = ::User.find(path_params['user_id'])
         object_state_check!(user)
 
-        ::UserMailRoleRecipient.handle_update!(
+        ::UserEmailRoleRecipient.handle_update!(
           user,
-          path_params['mail_role_recipient_id'],
+          path_params['email_role_recipient_id'],
           input
         )
       rescue ActiveRecord::RecordInvalid => e
@@ -1402,13 +1402,13 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
     end
   end
 
-  class MailTemplateRecipient < HaveAPI::Resource
-    desc 'Manage user mail recipients'
-    route '{user_id}/mail_template_recipients'
-    model ::UserMailTemplateRecipient
+  class NotificationTemplateRecipient < HaveAPI::Resource
+    desc 'Manage user email recipients'
+    route '{user_id}/notification_template_recipients'
+    model ::UserNotificationTemplateRecipient
 
     def self.user_visible_template!(name)
-      tpl = ::MailTemplate.find_by!(name:)
+      tpl = ::NotificationTemplate.find_by!(name:)
 
       if tpl.user_visibility == 'visible' || (tpl.user_visibility == 'default' && tpl.desc[:public])
         return tpl
@@ -1426,7 +1426,7 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
     end
 
     class Index < HaveAPI::Actions::Default::Index
-      desc 'List user mail template recipients'
+      desc 'List user notification template recipients'
 
       output(:object_list) do
         use :all
@@ -1439,7 +1439,7 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
       def query
         error!(VpsAdmin::API::I18n.message('errors.access_denied')) if current_user.role != :admin && current_user.id != path_params['user_id'].to_i
 
-        ::UserMailTemplateRecipient.all_templates_for(::User.find(path_params['user_id']))
+        ::UserNotificationTemplateRecipient.all_templates_for(::User.find(path_params['user_id']))
       end
 
       def count
@@ -1452,7 +1452,7 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
     end
 
     class Show < HaveAPI::Actions::Default::Show
-      desc 'Show user mail template recipient'
+      desc 'Show user notification template recipient'
 
       output do
         use :all
@@ -1467,14 +1467,14 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
 
         tpl =
           if current_user.role == :admin
-            ::MailTemplate.find_by!(name: path_params['mail_template_recipient_id'])
+            ::NotificationTemplate.find_by!(name: path_params['notification_template_recipient_id'])
           else
-            self.class.resource.user_visible_template!(path_params['mail_template_recipient_id'])
+            self.class.resource.user_visible_template!(path_params['notification_template_recipient_id'])
           end
 
-        @recp = ::UserMailTemplateRecipient.find_by!(
+        @recp = ::UserNotificationTemplateRecipient.find_by!(
           user_id: path_params['user_id'],
-          mail_template: tpl
+          notification_template: tpl
         )
       end
 
@@ -1486,7 +1486,7 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
     class Update < HaveAPI::Actions::Default::Update
       include VpsAdmin::API::Lifetimes::ActionHelpers
 
-      desc 'Update user mail template recipient'
+      desc 'Update user notification template recipient'
 
       input do
         use :all, include: %i[to enabled]
@@ -1506,12 +1506,12 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
         object_state_check!(user)
         tpl =
           if current_user.role == :admin
-            ::MailTemplate.find_by!(name: path_params['mail_template_recipient_id'])
+            ::NotificationTemplate.find_by!(name: path_params['notification_template_recipient_id'])
           else
-            self.class.resource.user_visible_template!(path_params['mail_template_recipient_id'])
+            self.class.resource.user_visible_template!(path_params['notification_template_recipient_id'])
           end
 
-        ::UserMailTemplateRecipient.handle_update!(
+        ::UserNotificationTemplateRecipient.handle_update!(
           user,
           tpl,
           input
