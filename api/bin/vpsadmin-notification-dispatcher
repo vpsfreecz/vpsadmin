@@ -5,7 +5,7 @@ $stdout.sync = true
 $stderr.sync = true
 
 action = ARGV.fetch(0) do
-  warn "Usage: #{$0} email|webhook"
+  warn "Usage: #{$0} email|telegram|webhook"
   exit(false)
 end
 

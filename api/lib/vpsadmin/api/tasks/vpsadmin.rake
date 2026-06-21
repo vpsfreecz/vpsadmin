@@ -58,6 +58,18 @@ namespace :vpsadmin do
     task :webhooks do
       VpsAdmin::API::Tasks.run(:event_delivery, :deliver_webhooks)
     end
+
+    desc 'Deliver released event Telegram messages once'
+    task :telegrams do
+      VpsAdmin::API::Tasks.run(:event_delivery, :deliver_telegrams)
+    end
+  end
+
+  namespace :telegram do
+    desc 'Poll Telegram bot updates for notification receiver pairing'
+    task :poll_pairing_updates do
+      VpsAdmin::API::Tasks.run(:telegram, :poll_pairing_updates)
+    end
   end
 
   namespace :mail_templates do

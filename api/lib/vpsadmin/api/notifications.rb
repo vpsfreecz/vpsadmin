@@ -125,14 +125,17 @@ module VpsAdmin::API
     EXCHANGE_NAME = 'vpsadmin.notifications'.freeze
     QUEUES = {
       'email' => 'vpsadmin.notifications.email',
+      'telegram' => 'vpsadmin.notifications.telegram',
       'webhook' => 'vpsadmin.notifications.webhook'
     }.freeze
     ROUTING_KEYS = {
       'email' => 'delivery.email',
+      'telegram' => 'delivery.telegram',
       'webhook' => 'delivery.webhook'
     }.freeze
     DEFAULT_LIMIT = 100
     DEFAULT_EMAIL_CONCURRENCY = 2
+    DEFAULT_TELEGRAM_CONCURRENCY = 2
     DEFAULT_WEBHOOK_CONCURRENCY = 4
     DEFAULT_EMAIL_WORKER_DELAY = 1.0
     DEFAULT_EMAIL_DOMAIN_MIN_DELIVERY_INTERVAL = 1.0
@@ -147,6 +150,7 @@ module VpsAdmin::API
     RESPONSE_HEADERS_TRUNCATED = {
       'x-vpsadmin-truncated' => ['response headers truncated']
     }.freeze
+    TELEGRAM_TEXT_LIMIT = 4096
     DEFAULT_POLL_INTERVAL = 5
     PRIVATE_ADDRESS_RANGES = [
       '0.0.0.0/8',
@@ -232,6 +236,39 @@ module VpsAdmin::API
           }
         }
       }
+    end
+
+    def telegram_payload_for(delivery)
+      {
+        chat_id: delivery.target_value,
+        text: telegram_text_for(delivery)
+      }
+    end
+
+    def telegram_text_for(delivery)
+      event = delivery.event
+      lines = [
+        "[#{event.severity}] #{event.subject}",
+        "Event: #{event.event_type}"
+      ]
+
+      lines << "VPS: ##{event.vps.id} #{event.vps.hostname}" if event.vps
+
+      event_url = telegram_event_url(event)
+      lines << "Open: #{event_url}" if event_url.present?
+
+      truncate_telegram_text(lines.join("\n"))
+    end
+
+    def telegram_event_url(event)
+      base_url = VpsAdmin::API::Events.webui_url
+      return if base_url.blank?
+
+      "#{base_url}/?page=notifications&action=event_show&id=#{event.id}"
+    end
+
+    def truncate_telegram_text(text)
+      text.to_s[0, TELEGRAM_TEXT_LIMIT]
     end
 
     def render_email_delivery!(delivery)
@@ -357,6 +394,41 @@ module VpsAdmin::API
 
       deliver do |delivery|
         deliver_webhook(delivery)
+      end
+    end
+
+    Actions.define :telegram do
+      label 'Telegram'
+      target_kind :custom, label: 'custom target'
+
+      validate_receiver_action do
+        check_telegram_target
+      end
+
+      display_target do
+        if target_value.present?
+          "Telegram chat #{target_value}"
+        else
+          'Linked Telegram chat'
+        end
+      end
+
+      receiver_action_available do
+        telegram_action? && verified? && target_value.present?
+      end
+
+      plan_delivery do |route, receiver, receiver_action|
+        telegram_delivery(route, receiver, receiver_action)
+      end
+
+      prepare_delivery do |delivery|
+        if delivery.payload.blank?
+          delivery.update!(payload: JSON.dump(VpsAdmin::API::Notifications.telegram_payload_for(delivery)))
+        end
+      end
+
+      deliver do |delivery|
+        deliver_telegram(delivery)
       end
     end
 
@@ -796,6 +868,15 @@ module VpsAdmin::API
           error_summary: e.message
         )
         nil
+      rescue TelegramResponseError => e
+        mark_failure!(
+          delivery,
+          attempt,
+          response_status: e.response_status,
+          response_body: e.response_body,
+          error_summary: e.message
+        )
+        nil
       rescue StandardError => e
         mark_failure!(
           delivery,
@@ -1153,6 +1234,28 @@ module VpsAdmin::API
         }
       end
 
+      def deliver_telegram(delivery)
+        response = telegram_bot.post_json(
+          'sendMessage',
+          telegram_delivery_payload(delivery)
+        )
+        body = telegram_response_body(response)
+
+        unless telegram_success?(response, body)
+          raise TelegramResponseError.new(
+            response.code.to_i,
+            truncate_body(response.body),
+            telegram_error_summary(response, body)
+          )
+        end
+
+        {
+          provider_message_id: telegram_provider_message_id(body),
+          response_status: response.code.to_i,
+          response_body: truncate_body(response.body)
+        }
+      end
+
       def mark_success!(delivery, attempt, result)
         result ||= {}
         now = Time.now
@@ -1206,6 +1309,51 @@ module VpsAdmin::API
         end
 
         delivery.update!(attrs)
+      end
+
+      def telegram_delivery_payload(delivery)
+        payload = JSON.parse(delivery.payload.to_s)
+        raise 'Telegram payload is not an object' unless payload.is_a?(Hash)
+
+        {
+          chat_id: payload.fetch('chat_id'),
+          text: payload.fetch('text')
+        }
+      rescue JSON::ParserError
+        {
+          chat_id: delivery.target_value,
+          text: Notifications.telegram_text_for(delivery)
+        }
+      end
+
+      def telegram_response_body(response)
+        JSON.parse(response.body.to_s)
+      rescue JSON::ParserError
+        nil
+      end
+
+      def telegram_success?(response, body)
+        response.code.to_i.between?(200, 299) &&
+          body.is_a?(Hash) &&
+          body.fetch('ok', false)
+      end
+
+      def telegram_error_summary(response, body)
+        return 'Telegram API returned invalid JSON' if body.nil?
+        return 'Telegram API returned non-object JSON' unless body.is_a?(Hash)
+
+        description = body['description']
+        return "Telegram API: #{description}" if description.present?
+        return "Telegram returned HTTP #{response.code}" unless response.code.to_i.between?(200, 299)
+
+        'Telegram API did not confirm success'
+      end
+
+      def telegram_provider_message_id(body)
+        result = body['result']
+        return unless result.is_a?(Hash)
+
+        result['message_id']&.to_s
       end
 
       def post_json(url, body, headers, delivery)
@@ -1320,6 +1468,10 @@ module VpsAdmin::API
 
       def webhook_config
         @config.fetch('webhook', {})
+      end
+
+      def telegram_config
+        @config.fetch('telegram', {})
       end
 
       def email_config
@@ -1457,7 +1609,15 @@ module VpsAdmin::API
 
       def concurrency
         @concurrency ||= begin
-          default = @action == 'email' ? DEFAULT_EMAIL_CONCURRENCY : DEFAULT_WEBHOOK_CONCURRENCY
+          default =
+            case @action
+            when 'email'
+              DEFAULT_EMAIL_CONCURRENCY
+            when 'telegram'
+              DEFAULT_TELEGRAM_CONCURRENCY
+            else
+              DEFAULT_WEBHOOK_CONCURRENCY
+            end
           positive_integer_config(action_config.fetch('concurrency', default), "#{@action}.concurrency")
         end
       end
@@ -1480,7 +1640,14 @@ module VpsAdmin::API
       end
 
       def action_config
-        @action == 'email' ? email_config : webhook_config
+        case @action
+        when 'email'
+          email_config
+        when 'telegram'
+          telegram_config
+        else
+          webhook_config
+        end
       end
 
       def positive_integer_config(value, name)
@@ -1515,6 +1682,10 @@ module VpsAdmin::API
         return if body.nil?
 
         body.to_s.byteslice(0, RESPONSE_BODY_LIMIT)
+      end
+
+      def telegram_bot
+        @telegram_bot ||= VpsAdmin::API::TelegramBot.new(config: telegram_config)
       end
 
       def monotonic_time
@@ -1597,6 +1768,16 @@ module VpsAdmin::API
         @response_body = response_body
         @response_headers = response_headers
         super("webhook returned HTTP #{response_status}")
+      end
+    end
+
+    class TelegramResponseError < StandardError
+      attr_reader :response_status, :response_body
+
+      def initialize(response_status, response_body, message)
+        @response_status = response_status
+        @response_body = response_body
+        super(message)
       end
     end
   end
