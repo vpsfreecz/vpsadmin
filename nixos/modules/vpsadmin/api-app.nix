@@ -40,6 +40,36 @@ let
   '';
 
   bundle = "${package}/ruby-env/bin/bundle";
+  setupScript = pkgs.writeShellScript "vpsadmin-${name}-setup" ''
+    set -euo pipefail
+    shopt -s nullglob
+
+    # Cleanup previous state
+    rm -rf "${stateDirectory}/plugins/"*
+    find "${stateDirectory}/config" -type l -exec rm -f {} +
+
+    # Link in configuration
+    for v in "${configDirectory}"/* ; do
+      ln -sfn "$v" "${stateDirectory}/config/$(basename "$v")"
+    done
+
+    rm -f "${stateDirectory}/config/deployment.json"
+    cp -f ${deploymentConfigJson} "${stateDirectory}/config/deployment.json"
+    chmod 440 "${stateDirectory}/config/deployment.json"
+
+    # Link in enabled plugins
+    for plugin in ${concatStringsSep " " vpsadminCfg.plugins}; do
+      ln -sfn "${package}/plugins/$plugin" "${stateDirectory}/plugins/$plugin"
+    done
+
+    # Handle database.passwordFile & permissions
+    DBPASS=${
+      optionalString (databaseConfig.passwordFile != null) "$(head -n1 ${databaseConfig.passwordFile})"
+    }
+    cp -f ${databaseYml} "${stateDirectory}/config/database.yml"
+    sed -e "s,#dbpass#,$DBPASS,g" -i "${stateDirectory}/config/database.yml"
+    chmod 440 "${stateDirectory}/config/database.yml"
+  '';
 in
 {
   inherit bundle;
@@ -120,32 +150,6 @@ in
 
   setup = ''
     set -euo pipefail
-    shopt -s nullglob
-
-    # Cleanup previous state
-    rm -f "${stateDirectory}/plugins/"*
-    find "${stateDirectory}/config" -type l -exec rm -f {} +
-
-    # Link in configuration
-    for v in "${configDirectory}"/* ; do
-      ln -sf "$v" "${stateDirectory}/config/$(basename $v)"
-    done
-
-    rm -f "${stateDirectory}/config/deployment.json"
-    cp -f ${deploymentConfigJson} "${stateDirectory}/config/deployment.json"
-    chmod 440 "${stateDirectory}/config/deployment.json"
-
-    # Link in enabled plugins
-    for plugin in ${concatStringsSep " " vpsadminCfg.plugins}; do
-      ln -sf "${package}/plugins/$plugin" "${stateDirectory}/plugins/$plugin"
-    done
-
-    # Handle database.passwordFile & permissions
-    DBPASS=${
-      optionalString (databaseConfig.passwordFile != null) "$(head -n1 ${databaseConfig.passwordFile})"
-    }
-    cp -f ${databaseYml} "${stateDirectory}/config/database.yml"
-    sed -e "s,#dbpass#,$DBPASS,g" -i "${stateDirectory}/config/database.yml"
-    chmod 440 "${stateDirectory}/config/database.yml"
+    ${pkgs.util-linux}/bin/flock "${stateDirectory}/.setup.lock" ${setupScript}
   '';
 }

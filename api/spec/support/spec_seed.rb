@@ -19,7 +19,7 @@ module SpecSeed
     seed_pools!
     seed_os_templates!
     seed_user_accounts!
-    seed_mail_templates!
+    seed_notification_templates!
   end
 
   def reset_cache!
@@ -120,8 +120,8 @@ module SpecSeed
     end
   end
 
-  def seed_mail_templates!
-    VpsAdmin::API::MailTemplates.install_defaults!
+  def seed_notification_templates!
+    VpsAdmin::API::NotificationTemplates.install_defaults!
   end
 
   def seed_users!

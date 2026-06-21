@@ -72,14 +72,14 @@ import ../make-test.nix (
             end
           end
 
-          it 'has built-in mail templates' do
-            wait_until_block_succeeds(name: 'built-in mail templates installed') do
+          it 'has built-in notification templates' do
+            wait_until_block_succeeds(name: 'built-in notification templates installed') do
               _, output = services.succeeds(
                 "mariadb --batch --skip-column-names --user=${dbApiUser.user} --password=${dbApiUser.password} -D ${dbName} -e \"" \
-                "SELECT COUNT(*) FROM mail_templates mt " \
-                "INNER JOIN mail_template_translations mtt ON mtt.mail_template_id = mt.id " \
-                "INNER JOIN languages l ON l.id = mtt.language_id " \
-                "WHERE mt.name IN ('user_create', 'daily_report', 'expiration_user_active') " \
+                "SELECT COUNT(*) FROM notification_templates nt " \
+                "INNER JOIN notification_template_variants ntv ON ntv.notification_template_id = nt.id " \
+                "INNER JOIN languages l ON l.id = ntv.language_id " \
+                "WHERE nt.name IN ('user_create', 'daily_report', 'expiration_user_active') " \
                 "AND l.code = 'en'\""
               )
               count = Integer(output.strip)

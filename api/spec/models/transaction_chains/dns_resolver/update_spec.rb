@@ -10,7 +10,7 @@ RSpec.describe TransactionChains::DnsResolver::Update do
   let(:user) { SpecSeed.user }
 
   before do
-    ensure_user_mail_templates!
+    ensure_user_notification_templates!
     ensure_mailer_available!
   end
 

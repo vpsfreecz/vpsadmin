@@ -270,7 +270,7 @@ RSpec.describe VpsAdmin::API::Tasks::EventDelivery do
   end
 
   def create_vps_email_delivery!
-    VpsAdmin::API::MailTemplates.install_defaults!
+    VpsAdmin::API::NotificationTemplates.install_defaults!
     vps = build_standalone_vps_fixture(user: SpecSeed.user).fetch(:vps)
     receiver = NotificationReceiver.create!(user: SpecSeed.user, label: 'Spec VPS receiver')
     action = receiver.notification_receiver_actions.create!(
@@ -298,7 +298,7 @@ RSpec.describe VpsAdmin::API::Tasks::EventDelivery do
   end
 
   def create_dataset_migration_email_delivery!(export_count:)
-    VpsAdmin::API::MailTemplates.install_defaults!
+    VpsAdmin::API::NotificationTemplates.install_defaults!
     receiver = NotificationReceiver.create!(user: SpecSeed.user, label: 'Spec storage receiver')
     action = receiver.notification_receiver_actions.create!(
       action: :email,
@@ -876,7 +876,7 @@ RSpec.describe VpsAdmin::API::Tasks::EventDelivery do
     task.deliver_emails
 
     mail_log = delivery.reload.mail_log
-    expect(mail_log.from).to eq(VpsAdmin::API::MailTemplates.default_from)
+    expect(mail_log.from).to eq(VpsAdmin::API::NotificationTemplates.default_from)
     expect(mail_log.to).to eq('custom@example.test')
     expect(mail_log.text_plain).not_to eq('spoofed body')
     expect(mail_log.text_plain).to include('Event type: incident_report.reply')
@@ -893,8 +893,8 @@ RSpec.describe VpsAdmin::API::Tasks::EventDelivery do
     task.deliver_emails
 
     mail_log = delivery.reload.mail_log
-    expect(mail_log.mail_template).to be_nil
-    expect(mail_log.from).to eq(VpsAdmin::API::MailTemplates.default_from)
+    expect(mail_log.notification_template).to be_nil
+    expect(mail_log.from).to eq(VpsAdmin::API::NotificationTemplates.default_from)
     expect(mail_log.to).to eq('custom@example.test')
     expect(mail_log.subject).to eq('User-created daily report event')
     expect(mail_log.text_plain).to include('Event type: system.daily_report')

@@ -9,9 +9,9 @@ RSpec.describe TransactionChains::IncidentReport::Process do
   end
 
   before do
-    ensure_alert_mail_templates!
+    ensure_alert_notification_templates!
     ensure_mailer_available!
-    allow(MailTemplate).to receive(:send_mail!).and_return(build_mail_log_double)
+    allow(NotificationTemplate).to receive(:send_email!).and_return(build_mail_log_double)
   end
 
   def create_process_incident!(vps: nil, **attrs)
@@ -67,11 +67,11 @@ RSpec.describe TransactionChains::IncidentReport::Process do
 
     described_class.fire2(args: [[active, inactive]])
 
-    expect(MailTemplate).to have_received(:send_mail!).with(
+    expect(NotificationTemplate).to have_received(:send_email!).with(
       :vps_incident_report,
       hash_including(vars: hash_including(incident: active))
     ).once
-    expect(MailTemplate).not_to have_received(:send_mail!).with(
+    expect(NotificationTemplate).not_to have_received(:send_email!).with(
       :vps_incident_report,
       hash_including(vars: hash_including(incident: inactive))
     )
@@ -80,7 +80,7 @@ RSpec.describe TransactionChains::IncidentReport::Process do
   end
 
   it 'keeps incidents retryable when e-mail cannot be queued' do
-    allow(MailTemplate).to receive(:send_mail!).and_raise(
+    allow(NotificationTemplate).to receive(:send_email!).and_raise(
       ArgumentError,
       'render failed'
     )

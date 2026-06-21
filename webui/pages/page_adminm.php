@@ -90,7 +90,7 @@ function print_editm($u)
 {
     global $xtpl, $cfg_privlevel, $config, $api;
 
-    $mail_role_recipients = $u->mail_role_recipient->list();
+    $email_role_recipients = $u->email_role_recipient->list();
 
     $xtpl->title(_("Manage members"));
 
@@ -194,11 +194,11 @@ function print_editm($u)
         $xtpl->table_add_category('');
 
         $xtpl->table_td(_('Account management') . ':');
-        $xtpl->table_td(h(implode(', ', getUserEmails($u, $mail_role_recipients, 'Account management'))));
+        $xtpl->table_td(h(implode(', ', getUserEmails($u, $email_role_recipients, 'Account management'))));
         $xtpl->table_tr();
 
         $xtpl->table_td(_('System administrator') . ':');
-        $xtpl->table_td(h(implode(', ', getUserEmails($u, $mail_role_recipients, 'System administrator'))));
+        $xtpl->table_td(h(implode(', ', getUserEmails($u, $email_role_recipients, 'System administrator'))));
         $xtpl->table_tr();
 
         $xtpl->table_out();
@@ -1536,11 +1536,6 @@ if (isLoggedIn()) {
                 }
             }
 
-            break;
-
-        case 'role_recipients':
-        case 'template_recipients':
-            redirect(adminm_notifications_url('routes', api_get_uint('id')));
             break;
 
         case 'payment_instructions':

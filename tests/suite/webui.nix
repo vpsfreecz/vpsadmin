@@ -1765,8 +1765,8 @@ import ../make-test.nix (
         request_count: 5,
         last_request_at: Time.now - 90
       )
-      UserMailRoleRecipient.where(user: admin_managed_user).delete_all
-      UserMailTemplateRecipient.where(user: admin_managed_user).delete_all
+      UserEmailRoleRecipient.where(user: admin_managed_user).delete_all
+      UserNotificationTemplateRecipient.where(user: admin_managed_user).delete_all
 
       [
         ['default_currency', 'String', 'CZK'],
