@@ -1,6 +1,9 @@
-# vpsAdmin Mail Templates
+# vpsAdmin Notification Templates
 
-Utility for installing mail templates from text files to the API.
+Utility for installing notification templates from text files to the API.
+The current template format uploads e-mail templates. The command name
+`vpsadmin-mail-templates` remains supported for compatibility; new automation
+can use the generic `vpsadmin-notification-templates` alias.
 
 ## Requirements
 
@@ -9,8 +12,8 @@ Utility for installing mail templates from text files to the API.
 
 ## Usage
 
-    $ vpsadmin-mail-templates --help
-    Usage: vpsadmin-mail-templates [options] <api> <action>
+    $ vpsadmin-notification-templates --help
+    Usage: vpsadmin-notification-templates [options] <api> <action>
 
     Actions:
         auth                             Authenticate and exit
@@ -26,14 +29,14 @@ Utility for installing mail templates from text files to the API.
         -l, --load-token [FILE]          Load token from FILE
         -h, --help                       Show this help
 
-`vpsadmin-mail-templates` has to be run from the directory containing the
-templates.
+`vpsadmin-notification-templates` has to be run from the directory containing
+the templates.
 
 ## Templates
 
-Every template is in a subdirectory whose name is the template name.
-The template directory must contain file `meta.rb`. Templates can be translated
-to multiple languages and be in plain text or HTML.
+Every e-mail template is in a subdirectory whose name is the template name.
+The template directory must contain file `meta.rb`. Templates can be
+translated to multiple languages and be in plain text or HTML.
 
 The template directory may contain files with names in format
 `<language>.<format>.erb`, e.g. `en.plain.erb` or `en.html.erb`.
