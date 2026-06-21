@@ -359,6 +359,7 @@ covered:
 - notification_receiver#show
 - notification_receiver#update
 - notification_receiver.action#create
+- notification_receiver.action#create_pairing_token
 - notification_receiver.action#delete
 - notification_receiver.action#index
 - notification_receiver.action#show
