@@ -21,14 +21,14 @@ module OperationalAlertsSpecHelpers
     end
   end
 
-  def ensure_alert_mail_templates!
-    VpsAdmin::API::MailTemplates.install_defaults!
+  def ensure_alert_notification_templates!
+    VpsAdmin::API::NotificationTemplates.install_defaults!
   end
 
   def ensure_expiration_template!(object:, state:)
     name = "expiration_#{object}_#{state}"
-    VpsAdmin::API::MailTemplates.install_defaults!
-    ensure_mail_template!(name, 'expiration_warning', label: "Expiration #{object} #{state}")
+    VpsAdmin::API::NotificationTemplates.install_defaults!
+    ensure_notification_template!(name, 'expiration_warning', label: "Expiration #{object} #{state}")
   end
 
   def ensure_mailer_available!
@@ -179,19 +179,20 @@ module OperationalAlertsSpecHelpers
 
   private
 
-  def ensure_mail_template!(name, template_id, label: nil)
-    template = MailTemplate.find_or_create_by!(name:) do |tpl|
+  def ensure_notification_template!(name, template_id, label: nil)
+    template = NotificationTemplate.find_or_create_by!(name:) do |tpl|
       tpl.label = label || name.tr('_', ' ').capitalize
       tpl.template_id = template_id
     end
 
-    return if template.mail_template_translations.where(language: SpecSeed.language).exists?
+    return if template.notification_template_variants.where(language: SpecSeed.language, protocol: :email).exists?
 
-    template.mail_template_translations.create!(
+    template.notification_template_variants.create!(
       language: SpecSeed.language,
+      protocol: :email,
       from: 'noreply@test.invalid',
       subject: "#{name} subject",
-      text_plain: "#{name} body"
+      text: "#{name} body"
     )
   end
 end

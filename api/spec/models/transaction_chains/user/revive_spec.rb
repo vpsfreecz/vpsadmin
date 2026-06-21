@@ -8,7 +8,7 @@ RSpec.describe TransactionChains::User::Revive do
     with_current_context(user: SpecSeed.admin) { example.run }
   end
 
-  before { ensure_user_mail_templates! }
+  before { ensure_user_notification_templates! }
 
   it 'sends revive mail, re-enables exports, and moves soft-deleted VPSes to active' do
     fixture = create_user_lifecycle_fixture!
@@ -27,7 +27,7 @@ RSpec.describe TransactionChains::User::Revive do
     release_idx = classes.index(Transactions::EventDelivery::Release)
     expect(classes.rindex(Transactions::Export::Enable)).to be < release_idx
     expect(classes.rindex(Transactions::Vps::Start)).to be < release_idx
-    expect(MailLog.joins(:mail_template).exists?(mail_templates: { name: 'user_revive' })).to be(true)
+    expect(MailLog.joins(:notification_template).exists?(notification_templates: { name: 'user_revive' })).to be(true)
     event = expect_routed_event!('user.revived', user: fixture.fetch(:user))
     expect(event.source_class).to eq('ObjectState')
     expect(event.parameters).to include('state' => 'active')

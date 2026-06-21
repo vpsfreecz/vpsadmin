@@ -1,4 +1,4 @@
 class Language < ApplicationRecord
   has_many :users
-  has_many :mail_template_translations
+  has_many :notification_template_variants
 end

@@ -9,7 +9,18 @@ let
   vpsadminCfg = config.vpsadmin;
   cfg = config.vpsadmin.api;
 
-  bundle = "${cfg.package}/ruby-env/bin/bundle";
+  apiApp = import ../api-app.nix {
+    name = "api";
+    inherit config pkgs lib;
+    inherit (cfg)
+      package
+      user
+      group
+      configDirectory
+      stateDirectory
+      ;
+    databaseConfig = cfg.database;
+  };
 
   rakeTask =
     { config, pkgs, ... }:
@@ -76,12 +87,13 @@ let
       path = with pkgs; [
         mariadb
       ];
+      preStart = apiApp.setup;
       serviceConfig = {
         Type = "oneshot";
         User = cfg.user;
         Group = cfg.group;
         WorkingDirectory = "${cfg.package}/api";
-        ExecStart = "${bundle} exec rake ${toString task.rake}";
+        ExecStart = "${apiApp.bundle} exec rake ${toString task.rake}";
         TimeoutStartSec = "1h";
       }
       // task.service.config;

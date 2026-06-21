@@ -16,7 +16,7 @@ RSpec.describe 'payments plugin create chain', requires_plugins: :payments do # 
     seed_payments_sysconfig!
     user.update!(object_state: :active, mailer_enabled: true)
     user.user_account.update!(monthly_payment: 100, paid_until: nil)
-    allow(MailTemplate).to receive(:send_mail!).and_return(build_mail_log_double)
+    allow(NotificationTemplate).to receive(:send_email!).and_return(build_mail_log_double)
   end
 
   it 'extends paid_until from an existing date and processes the incoming payment' do
@@ -39,7 +39,7 @@ RSpec.describe 'payments plugin create chain', requires_plugins: :payments do # 
       payment.to_date,
       reason: "Payment ##{payment.id} accepted."
     )
-    expect(MailTemplate).to have_received(:send_mail!).with(
+    expect(NotificationTemplate).to have_received(:send_email!).with(
       :payment_accepted,
       hash_including(user: user, vars: hash_including(payment: payment))
     )

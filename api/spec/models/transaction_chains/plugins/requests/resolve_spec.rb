@@ -16,8 +16,8 @@ RSpec.describe 'requests plugin resolve chain', requires_plugins: :requests do #
   end
 
   it 'updates resolution fields, uses fallback templates, and calls the request action' do
-    ensure_request_mail_template!('request_resolve_user_approved', 'request_resolve_role_state')
-    ensure_request_mail_template!('request_resolve_admin_approved', 'request_resolve_role_state')
+    ensure_request_notification_template!('request_resolve_user_approved', 'request_resolve_role_state')
+    ensure_request_notification_template!('request_resolve_admin_approved', 'request_resolve_role_state')
     request = build_change_request!(last_mail_id: 2)
     action_call = nil
     params = { full_name: 'Resolved Name' }
@@ -60,7 +60,7 @@ RSpec.describe 'requests plugin resolve chain', requires_plugins: :requests do #
   end
 
   it 'skips user mail for ignored requests but still notifies admins' do
-    ensure_request_mail_template!('request_resolve_admin_ignored', 'request_resolve_role_state')
+    ensure_request_notification_template!('request_resolve_admin_ignored', 'request_resolve_role_state')
     request = build_change_request!(last_mail_id: 1)
 
     chain_class.fire2(args: [request, :ignored, :ignore, 'Duplicate', {}])
@@ -73,12 +73,12 @@ RSpec.describe 'requests plugin resolve chain', requires_plugins: :requests do #
     events = request_events('request.resolved', request)
     expect(events.none? { |event| event.parameters.fetch('role') == 'user' }).to be(true)
     expect(events.any? { |event| event.user == SpecSeed.admin }).to be(true)
-    expect(events.sole.event_deliveries.sole.mail_log.mail_template.name).to eq('request_resolve_admin_ignored')
+    expect(events.sole.event_deliveries.sole.mail_log.notification_template.name).to eq('request_resolve_admin_ignored')
   end
 
   it 'routes public registration resolve mail without a request user' do
-    ensure_request_mail_template!('request_resolve_user_denied', 'request_resolve_role_state')
-    ensure_request_mail_template!('request_resolve_admin_denied', 'request_resolve_role_state')
+    ensure_request_notification_template!('request_resolve_user_denied', 'request_resolve_role_state')
+    ensure_request_notification_template!('request_resolve_admin_denied', 'request_resolve_role_state')
     request = build_registration_request!(
       user: nil,
       last_mail_id: 2,

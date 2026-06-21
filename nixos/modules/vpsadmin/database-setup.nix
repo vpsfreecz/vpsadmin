@@ -88,12 +88,12 @@ in
         '';
       };
 
-      installDefaultMailTemplates = lib.mkOption {
+      installDefaultNotificationTemplates = lib.mkOption {
         type = lib.types.bool;
         default = true;
         description = ''
-          Install built-in mail templates after migrations. Existing templates
-          and translations are left unchanged.
+          Install built-in notification templates after migrations. Existing
+          templates and variants are left unchanged.
         '';
       };
 
@@ -171,9 +171,9 @@ in
                 '') cfg.seedFiles}
               fi
 
-              ${lib.optionalString cfg.installDefaultMailTemplates ''
-                echo "Installing built-in mail templates"
-                ${apiApp.bundle} exec rake vpsadmin:mail_templates:install_defaults
+              ${lib.optionalString cfg.installDefaultNotificationTemplates ''
+                echo "Installing built-in notification templates"
+                ${apiApp.bundle} exec rake vpsadmin:notification_templates:install_defaults
               ''}
             ''
           else

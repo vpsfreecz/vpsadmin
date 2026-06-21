@@ -19,7 +19,7 @@ The script updates the source Ruby dependency declarations for:
 - `download_mounter/Gemfile`
 - `plugins/outage_reports/utils/Gemfile`
 - `client/vpsadmin-client.gemspec`
-- `mail_templates/vpsadmin-mail-templates.gemspec`
+- `notification_templates/vpsadmin-notification-templates.gemspec`
 
 It then runs `tools/bundix_all.sh`, which regenerates the packaged Ruby
 Gemfiles, lockfiles, and Nix gemsets under `packages/`.

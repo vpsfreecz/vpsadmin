@@ -461,7 +461,7 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
       notification_receiver: receiver,
       label: 'Migrated route',
       event_type: 'vps.incident_report',
-      email_template_name: 'vps_incident_report'
+      template_name: 'vps_incident_report'
     )
 
     as(SpecSeed.user) do
@@ -471,7 +471,7 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
     end
 
     expect_status(200)
-    expect(route.reload.email_template_name).to eq('vps_incident_report')
+    expect(route.reload.template_name).to eq('vps_incident_report')
 
     as(SpecSeed.user) do
       json_put route_path(route.id), event_route: {
@@ -480,9 +480,9 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
     end
 
     expect_status(200)
-    expect(route.reload.email_template_name).to be_nil
+    expect(route.reload.template_name).to be_nil
 
-    route.update!(email_template_name: 'vps_oom_report')
+    route.update!(template_name: 'vps_oom_report')
 
     as(SpecSeed.user) do
       json_post matcher_index_path(route.id), matcher: {
@@ -493,10 +493,10 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
     end
 
     expect_status(200)
-    expect(route.reload.email_template_name).to be_nil
+    expect(route.reload.template_name).to be_nil
 
     matcher = route.event_route_matchers.sole
-    route.update!(email_template_name: 'vps_oom_report')
+    route.update!(template_name: 'vps_oom_report')
 
     as(SpecSeed.user) do
       json_put matcher_path(route.id, matcher.id), matcher: {
@@ -505,14 +505,14 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
     end
 
     expect_status(200)
-    expect(route.reload.email_template_name).to be_nil
+    expect(route.reload.template_name).to be_nil
 
-    route.update!(email_template_name: 'vps_oom_report')
+    route.update!(template_name: 'vps_oom_report')
 
     as(SpecSeed.user) { json_delete matcher_path(route.id, matcher.id) }
 
     expect_status(200)
-    expect(route.reload.email_template_name).to be_nil
+    expect(route.reload.template_name).to be_nil
   end
 
   it 'creates Telegram pairing tokens' do
@@ -962,7 +962,7 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
 
     expect_status(200)
     failed_logins_event = Event.find(event_obj['id'])
-    expect(VpsAdmin::API::Events.email_vars_for(failed_logins_event).fetch(:attempt_groups)).to eq([[]])
+    expect(VpsAdmin::API::Events.template_options_for(failed_logins_event).fetch(:vars).fetch(:attempt_groups)).to eq([[]])
 
     as(SpecSeed.user) do
       json_post event_test_path, event: {
@@ -974,7 +974,7 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
 
     expect_status(200)
     totp_event = Event.find(event_obj['id'])
-    expect(VpsAdmin::API::Events.email_vars_for(totp_event).fetch(:totp_device)).to be_nil
+    expect(VpsAdmin::API::Events.template_options_for(totp_event).fetch(:vars).fetch(:totp_device)).to be_nil
   end
 
   it 'rejects oversized test-event parameters' do

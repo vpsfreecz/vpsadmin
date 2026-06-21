@@ -9,7 +9,7 @@ RSpec.describe TransactionChains::MigrationPlan::Mail do
   end
 
   before do
-    ensure_alert_mail_templates!
+    ensure_alert_notification_templates!
     ensure_available_node_status!(SpecSeed.node)
     ensure_mailer_available!
   end

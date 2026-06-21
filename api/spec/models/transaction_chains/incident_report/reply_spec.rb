@@ -10,7 +10,7 @@ RSpec.describe TransactionChains::IncidentReport::Reply do
 
   before do
     ensure_mailer_available!
-    allow(MailTemplate).to receive(:send_custom).and_return(build_mail_log_double)
+    allow(NotificationTemplate).to receive(:send_custom_email).and_return(build_mail_log_double)
   end
 
   def message
@@ -52,7 +52,7 @@ RSpec.describe TransactionChains::IncidentReport::Reply do
     chain, = described_class.fire2(args: [message, result])
 
     expect(tx_classes(chain)).to include(Transactions::EventDelivery::Release)
-    expect(MailTemplate).to have_received(:send_custom).with(
+    expect(NotificationTemplate).to have_received(:send_custom_email).with(
       hash_including(
         from: 'abuse@test.invalid',
         to: ['sender@test.invalid'],
@@ -85,7 +85,7 @@ RSpec.describe TransactionChains::IncidentReport::Reply do
 
     described_class.fire2(args: [message, result])
 
-    expect(MailTemplate).to have_received(:send_custom).with(
+    expect(NotificationTemplate).to have_received(:send_custom_email).with(
       hash_including(
         text_plain: include(
           'Created 2 incident reports',
@@ -102,7 +102,7 @@ RSpec.describe TransactionChains::IncidentReport::Reply do
 
   it 'uses compact text for large incident sets' do
     sent_opts = nil
-    allow(MailTemplate).to receive(:send_custom) do |opts|
+    allow(NotificationTemplate).to receive(:send_custom_email) do |opts|
       sent_opts = opts
       build_mail_log_double
     end
@@ -117,7 +117,7 @@ RSpec.describe TransactionChains::IncidentReport::Reply do
   end
 
   it 'raises when the event e-mail delivery cannot be prepared' do
-    allow(MailTemplate).to receive(:send_custom).and_raise(ArgumentError, 'invalid recipient')
+    allow(NotificationTemplate).to receive(:send_custom_email).and_raise(ArgumentError, 'invalid recipient')
 
     expect do
       described_class.fire2(args: [message, result_for(1)])

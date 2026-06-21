@@ -317,9 +317,9 @@ class TransactionChain < ApplicationRecord
     ret
   end
 
-  # See {MailTemplate.send_mail!} for arguments
+  # See {NotificationTemplate.send_email!} for arguments
   def mail(name, opts = {})
-    m = ::MailTemplate.send_mail!(name, opts)
+    m = ::NotificationTemplate.send_email!(name, opts)
     return if m.nil?
 
     append(Transactions::Mail::Send, args: [find_mail_server, m])
@@ -327,9 +327,9 @@ class TransactionChain < ApplicationRecord
     m
   end
 
-  # See {MailTemplate.send_custom} for arguments
+  # See {NotificationTemplate.send_custom_email} for arguments
   def mail_custom(opts)
-    m = ::MailTemplate.send_custom(opts)
+    m = ::NotificationTemplate.send_custom_email(opts)
     append(Transactions::Mail::Send, args: [find_mail_server, m])
     m.update!(transaction_id: @last_id)
     m
