@@ -16,8 +16,8 @@ RSpec.describe 'requests plugin update chain', requires_plugins: :requests do # 
   end
 
   it 'updates attributes, resets state, increments mail id, and threads replies' do
-    ensure_request_mail_template!('request_update_user', 'request_action_role')
-    ensure_request_mail_template!('request_update_admin', 'request_action_role')
+    ensure_request_notification_template!('request_update_user', 'request_action_role')
+    ensure_request_notification_template!('request_update_admin', 'request_action_role')
     request = build_change_request!(
       state: :pending_correction,
       last_mail_id: 5,
@@ -61,8 +61,8 @@ RSpec.describe 'requests plugin update chain', requires_plugins: :requests do # 
   end
 
   it 'routes public registration correction mail without a request user' do
-    ensure_request_mail_template!('request_update_user', 'request_action_role')
-    ensure_request_mail_template!('request_update_admin', 'request_action_role')
+    ensure_request_notification_template!('request_update_user', 'request_action_role')
+    ensure_request_notification_template!('request_update_admin', 'request_action_role')
     request = build_registration_request!(
       user: nil,
       state: :pending_correction,

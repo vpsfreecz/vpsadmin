@@ -155,7 +155,7 @@ RSpec.describe VpsAdmin::API::Tasks::DatasetExpansion do
       stub_const("#{described_class}::STRICT_MAX_EXPANSIONS", 0)
       stub_const("#{described_class}::STRICT_OVERQUOTA_MB", 1)
       unlock_transaction_signer!
-      allow(MailTemplate).to receive(:send_mail!).and_return(build_mail_log_double)
+      allow(NotificationTemplate).to receive(:send_email!).and_return(build_mail_log_double)
 
       expect { task.stop_vps }.to change {
         TransactionChain.where(type: 'TransactionChains::Lifetimes::Wrapper').count

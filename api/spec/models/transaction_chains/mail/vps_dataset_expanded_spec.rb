@@ -9,7 +9,7 @@ RSpec.describe TransactionChains::Mail::VpsDatasetExpanded do
   end
 
   before do
-    ensure_alert_mail_templates!
+    ensure_alert_notification_templates!
     ensure_mailer_available!
   end
 

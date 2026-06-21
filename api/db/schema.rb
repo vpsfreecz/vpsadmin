@@ -518,7 +518,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_08_120000) do
     t.datetime "created_at", null: false
     t.boolean "default_route", default: false, null: false
     t.boolean "enabled", default: true, null: false
-    t.string "email_template_name", limit: 100
+    t.string "template_name", limit: 100
     t.string "event_type", limit: 100
     t.string "event_type_pattern", limit: 100
     t.datetime "expires_at"
@@ -763,7 +763,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_08_120000) do
     t.datetime "created_at", precision: nil
     t.string "from", null: false
     t.string "in_reply_to"
-    t.integer "mail_template_id"
+    t.integer "notification_template_id"
     t.string "message_id"
     t.string "references"
     t.string "reply_to"
@@ -778,41 +778,43 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_08_120000) do
     t.index ["user_id"], name: "index_mail_logs_on_user_id"
   end
 
-  create_table "mail_recipients", id: { type: :integer, unsigned: true }, charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
+  create_table "email_recipients", id: { type: :integer, unsigned: true }, charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
     t.string "bcc", limit: 500
     t.string "cc", limit: 500
     t.string "label", limit: 100, null: false
     t.string "to", limit: 500
   end
 
-  create_table "mail_template_recipients", id: { type: :integer, unsigned: true }, charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
-    t.integer "mail_recipient_id", null: false
-    t.integer "mail_template_id", null: false
-    t.index ["mail_template_id", "mail_recipient_id"], name: "mail_template_recipients_unique", unique: true
+  create_table "notification_template_email_recipients", id: { type: :integer, unsigned: true }, charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
+    t.integer "email_recipient_id", null: false
+    t.integer "notification_template_id", null: false
+    t.index ["notification_template_id", "email_recipient_id"], name: "notification_template_email_recipients_unique", unique: true
   end
 
-  create_table "mail_template_translations", id: { type: :integer, unsigned: true }, charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
+  create_table "notification_template_variants", id: { type: :integer, unsigned: true }, charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
     t.datetime "created_at", precision: nil
-    t.string "from", null: false
+    t.string "from"
+    t.text "html"
     t.integer "language_id", null: false
-    t.integer "mail_template_id", null: false
+    t.integer "notification_template_id", null: false
+    t.text "options"
+    t.integer "protocol", default: 0, null: false
     t.string "reply_to"
     t.string "return_path"
-    t.string "subject", null: false
-    t.text "text_html"
-    t.text "text_plain"
+    t.string "subject"
+    t.text "text"
     t.datetime "updated_at", precision: nil
-    t.index ["mail_template_id", "language_id"], name: "mail_template_translation_unique", unique: true
+    t.index ["notification_template_id", "protocol", "language_id"], name: "notification_template_variants_unique", unique: true
   end
 
-  create_table "mail_templates", id: { type: :integer, unsigned: true }, charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
+  create_table "notification_templates", id: { type: :integer, unsigned: true }, charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
     t.datetime "created_at", precision: nil
     t.string "label", limit: 100, null: false
     t.string "name", limit: 100, null: false
     t.string "template_id", limit: 100, null: false
     t.datetime "updated_at", precision: nil
     t.integer "user_visibility", default: 0, null: false
-    t.index ["name"], name: "index_mail_templates_on_name", unique: true
+    t.index ["name"], name: "index_notification_templates_on_name", unique: true
   end
 
   create_table "mailbox_handlers", charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
@@ -1712,21 +1714,21 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_08_120000) do
     t.index ["user_id"], name: "index_user_failed_logins_on_user_id"
   end
 
-  create_table "user_mail_role_recipients", id: { type: :integer, unsigned: true }, charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
+  create_table "user_email_role_recipients", id: { type: :integer, unsigned: true }, charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
     t.string "role", limit: 100, null: false
     t.string "to", limit: 500
     t.integer "user_id", null: false
-    t.index ["user_id", "role"], name: "index_user_mail_role_recipients_on_user_id_and_role", unique: true
-    t.index ["user_id"], name: "index_user_mail_role_recipients_on_user_id"
+    t.index ["user_id", "role"], name: "index_user_email_role_recipients_on_user_id_and_role", unique: true
+    t.index ["user_id"], name: "index_user_email_role_recipients_on_user_id"
   end
 
-  create_table "user_mail_template_recipients", id: { type: :integer, unsigned: true }, charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
+  create_table "user_notification_template_recipients", id: { type: :integer, unsigned: true }, charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
     t.boolean "enabled", default: true, null: false
-    t.integer "mail_template_id", null: false
+    t.integer "notification_template_id", null: false
     t.string "to", limit: 500, null: false
     t.integer "user_id", null: false
-    t.index ["user_id", "mail_template_id"], name: "user_id_mail_template_id", unique: true
-    t.index ["user_id"], name: "index_user_mail_template_recipients_on_user_id"
+    t.index ["user_id", "notification_template_id"], name: "user_id_notification_template_id", unique: true
+    t.index ["user_id"], name: "index_user_notification_template_recipients_on_user_id"
   end
 
   create_table "user_namespace_blocks", id: { type: :integer, unsigned: true }, charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|

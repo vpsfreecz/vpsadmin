@@ -9,9 +9,9 @@ RSpec.describe TransactionChains::IncidentReport::New do
   end
 
   before do
-    ensure_alert_mail_templates!
+    ensure_alert_notification_templates!
     ensure_mailer_available!
-    allow(MailTemplate).to receive(:send_mail!).and_return(build_mail_log_double)
+    allow(NotificationTemplate).to receive(:send_email!).and_return(build_mail_log_double)
   end
 
   def create_incident!(attrs = {})

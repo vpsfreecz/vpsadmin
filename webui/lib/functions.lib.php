@@ -1538,9 +1538,9 @@ function hasWebAuthnEnabled($user)
     ])->getTotalCount() > 0;
 }
 
-function getUserEmails($user, $mail_role_recipients, $role)
+function getUserEmails($user, $email_role_recipients, $role)
 {
-    foreach ($mail_role_recipients as $recp) {
+    foreach ($email_role_recipients as $recp) {
         if ($recp->label === $role && $recp->to != '') {
             return explode(',', $recp->to);
         }

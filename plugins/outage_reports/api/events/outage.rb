@@ -259,15 +259,15 @@ module VpsAdmin::API::Plugins::OutageReports::Events
     }
   end
 
-  def outage_email_template_params(event)
+  def outage_template_params(event)
     {
       role: param(event, 'role') || 'user',
       event: param(event, 'event') || 'update'
     }
   end
 
-  def outage_email_template_choice(event)
-    template_params = outage_email_template_params(event)
+  def outage_template_choice(event)
+    template_params = outage_template_params(event)
     role = template_params[:role]
     event_name = template_params[:event]
     language = role == 'generic' ? ::Language.take : event.user&.language
@@ -278,11 +278,11 @@ module VpsAdmin::API::Plugins::OutageReports::Events
     ]
 
     choices.find do |name, params|
-      VpsAdmin::API::Events.email_template_available?(name, params, language)
+      VpsAdmin::API::Events.template_available?(name, params, language)
     end || choices.first
   end
 
-  def outage_email_template_options(event)
+  def outage_template_options(event)
     role = param(event, 'role').to_s
     ret = {
       message_id: param(event, 'mail_message_id')
@@ -342,9 +342,9 @@ VpsAdmin::API::Events.define owner: :outage_reports do
       )
 
       deliver :email do
-        template { VpsAdmin::API::Plugins::OutageReports::Events.outage_email_template_choice(event).first }
-        params { VpsAdmin::API::Plugins::OutageReports::Events.outage_email_template_choice(event).last }
-        options { VpsAdmin::API::Plugins::OutageReports::Events.outage_email_template_options(event) }
+        template { VpsAdmin::API::Plugins::OutageReports::Events.outage_template_choice(event).first }
+        params { VpsAdmin::API::Plugins::OutageReports::Events.outage_template_choice(event).last }
+        options { VpsAdmin::API::Plugins::OutageReports::Events.outage_template_options(event) }
         system_template { VpsAdmin::API::Plugins::OutageReports::Events.param(event, 'role').to_s == 'generic' }
         vars { VpsAdmin::API::Plugins::OutageReports::Events.outage_email_vars(event) }
       end

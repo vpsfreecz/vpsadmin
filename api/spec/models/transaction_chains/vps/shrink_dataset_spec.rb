@@ -11,7 +11,7 @@ RSpec.describe TransactionChains::Vps::ShrinkDataset do
   let(:user) { SpecSeed.user }
 
   before do
-    ensure_alert_mail_templates!
+    ensure_alert_notification_templates!
     ensure_mailer_available!
   end
 
