@@ -7,6 +7,10 @@ RSpec.describe NotificationReceiverAction do
     NotificationReceiver.create!(user: SpecSeed.user, label: 'Spec receiver')
   end
 
+  def enable_telegram!
+    allow(VpsAdmin::API::Notifications).to receive(:telegram_configured?).and_return(true)
+  end
+
   it 'uses string columns for notification action registry names' do
     expect(described_class.type_for_attribute('action').type).to eq(:string)
     expect(EventDelivery.type_for_attribute('action').type).to eq(:string)
@@ -24,9 +28,39 @@ RSpec.describe NotificationReceiverAction do
     expect(action).to be_webhook_action
     expect(described_class.action_labels).to include(
       'email' => 'E-mail',
-      'telegram' => 'Telegram',
       'webhook' => 'Webhook'
     )
+    expect(described_class.action_labels).not_to include('telegram')
+  end
+
+  it 'offers Telegram actions only when Telegram is configured' do
+    expect(described_class.action_labels).not_to include('telegram')
+
+    enable_telegram!
+
+    expect(described_class.action_labels).to include('telegram' => 'Telegram')
+  end
+
+  it 'does not offer Telegram actions when configuration explicitly disables it' do
+    allow(VpsAdmin::API::Notifications::Config).to receive(:load).and_return(
+      'telegram' => {
+        'enabled' => false,
+        'configured' => true,
+        'bot_token' => '123:telegram-token'
+      }
+    )
+
+    expect(described_class.action_labels).not_to include('telegram')
+  end
+
+  it 'rejects Telegram actions when Telegram is not configured' do
+    action = create_receiver!.notification_receiver_actions.build(
+      action: :telegram,
+      target_kind: :custom
+    )
+
+    expect(action).not_to be_valid
+    expect(action.errors[:action]).to include('is not available')
   end
 
   it 'rejects unknown action names' do
@@ -64,6 +98,8 @@ RSpec.describe NotificationReceiverAction do
   end
 
   it 'clears Telegram verification when the target is edited directly' do
+    enable_telegram!
+
     action = create_receiver!.notification_receiver_actions.create!(
       action: :telegram,
       target_kind: :custom,
@@ -78,6 +114,8 @@ RSpec.describe NotificationReceiverAction do
   end
 
   it 'keeps Telegram verification when the bot pairing method sets the target' do
+    enable_telegram!
+
     action = create_receiver!.notification_receiver_actions.create!(
       action: :telegram,
       target_kind: :custom,
@@ -92,6 +130,8 @@ RSpec.describe NotificationReceiverAction do
   end
 
   it 'expires pending Telegram verification tokens' do
+    enable_telegram!
+
     action = create_receiver!.notification_receiver_actions.create!(
       action: :telegram,
       target_kind: :custom,
@@ -103,6 +143,8 @@ RSpec.describe NotificationReceiverAction do
   end
 
   it 'tracks Telegram verification token age independently of unrelated edits' do
+    enable_telegram!
+
     action = create_receiver!.notification_receiver_actions.create!(
       action: :telegram,
       target_kind: :custom

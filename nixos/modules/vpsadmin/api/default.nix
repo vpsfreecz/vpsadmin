@@ -8,7 +8,9 @@ with lib;
 let
   vpsadminCfg = config.vpsadmin;
   cfg = config.vpsadmin.api;
+  telegramCfg = config.vpsadmin.notifications.telegram;
   vpsadminRoot = toString (./../../../../.);
+  notificationsConfigEnabled = cfg.notifications.rabbitmq.enable || telegramCfg.enable;
 
   apiApp = import ../api-app.nix {
     name = "api";
@@ -33,14 +35,28 @@ let
   '';
 
   notificationsYml = pkgs.writeText "notifications.yml" (
-    builtins.toJSON {
-      rabbitmq = {
-        hosts = vpsadminCfg.rabbitmq.hosts;
-        vhost = vpsadminCfg.rabbitmq.virtualHost;
-        username = cfg.notifications.rabbitmq.username;
-        password = "#rabbitmq_pass#";
-      };
-    }
+    builtins.toJSON (
+      optionalAttrs cfg.notifications.rabbitmq.enable {
+        rabbitmq = {
+          hosts = vpsadminCfg.rabbitmq.hosts;
+          vhost = vpsadminCfg.rabbitmq.virtualHost;
+          username = cfg.notifications.rabbitmq.username;
+          password = "#rabbitmq_pass#";
+        };
+      }
+      // optionalAttrs telegramCfg.enable {
+        telegram = {
+          enabled = telegramCfg.enable;
+          configured = telegramCfg.enable && telegramCfg.botTokenFile != null;
+          api_base_url = telegramCfg.apiBaseUrl;
+          receive_mode = telegramCfg.receiveMode;
+          webhook = {
+            path = telegramCfg.webhook.path;
+            public_url = telegramCfg.webhook.publicUrl;
+          };
+        };
+      }
+    )
   );
 in
 {
@@ -228,20 +244,24 @@ in
         RACK_ENV = "production";
         SCHEMA = "${cfg.stateDirectory}/cache/schema.rb";
       }
-      // optionalAttrs cfg.notifications.rabbitmq.enable {
+      // optionalAttrs notificationsConfigEnabled {
         VPSADMIN_NOTIFICATIONS_CONFIG = "${cfg.stateDirectory}/config/notifications.yml";
       };
       preStart = ''
         ${apiApp.setup}
 
-        ${optionalString cfg.notifications.rabbitmq.enable ''
-          RABBITMQ_PASS=${
-            optionalString (
-              cfg.notifications.rabbitmq.passwordFile != null
-            ) "$(head -n1 ${cfg.notifications.rabbitmq.passwordFile})"
-          }
+        ${optionalString notificationsConfigEnabled ''
+          ${optionalString cfg.notifications.rabbitmq.enable ''
+            RABBITMQ_PASS=${
+              optionalString (
+                cfg.notifications.rabbitmq.passwordFile != null
+              ) "$(head -n1 ${cfg.notifications.rabbitmq.passwordFile})"
+            }
+          ''}
           cp -f ${notificationsYml} "${cfg.stateDirectory}/config/notifications.yml"
-          sed -e "s,#rabbitmq_pass#,$RABBITMQ_PASS,g" -i "${cfg.stateDirectory}/config/notifications.yml"
+          ${optionalString cfg.notifications.rabbitmq.enable ''
+            sed -e "s,#rabbitmq_pass#,$RABBITMQ_PASS,g" -i "${cfg.stateDirectory}/config/notifications.yml"
+          ''}
           chmod 440 "${cfg.stateDirectory}/config/notifications.yml"
         ''}
       '';
