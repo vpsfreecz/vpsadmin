@@ -8,6 +8,10 @@ module VpsAdmin::API::Tasks
       VpsAdmin::API::Notifications::Dispatcher.dispatch_due('webhook', limit:)
     end
 
+    def deliver_telegrams
+      VpsAdmin::API::Notifications::Dispatcher.dispatch_due('telegram', limit:)
+    end
+
     protected
 
     def limit
