@@ -78,7 +78,10 @@ let
     };
 
   allAppAssertions =
-    (appAssertions "api") ++ (appAssertions "console-router") ++ (appAssertions "webui");
+    (appAssertions "api")
+    ++ (appAssertions "console-router")
+    ++ (appAssertions "telegram-receiver")
+    ++ (appAssertions "webui");
 
   appAssertions =
     app:
@@ -119,6 +122,16 @@ let
       default_backend app-webui-${name}
 
     backend app-webui-${name}
+      balance roundrobin
+    ${concatStringsSep "\n" (backendsConfig instance.backends)}
+  '';
+
+  telegramReceiverConfig = name: instance: ''
+    frontend telegram-receiver-${name}
+      ${concatMapStringsSep "\n" (v: "bind ${v}") instance.frontend.bind}
+      default_backend app-telegram-receiver-${name}
+
+    backend app-telegram-receiver-${name}
       balance roundrobin
     ${concatStringsSep "\n" (backendsConfig instance.backends)}
   '';
@@ -174,6 +187,14 @@ in
           HAProxy instances for vpsAdmin web UI
         '';
       };
+
+      telegram-receiver = mkOption {
+        type = types.attrsOf (types.submodule appOpts);
+        default = { };
+        description = ''
+          HAProxy instances for vpsAdmin Telegram receiver
+        '';
+      };
     };
   };
 
@@ -215,6 +236,7 @@ in
 
         ${stringConfigs cfg.api apiConfig}
         ${stringConfigs cfg.console-router consoleRouterConfig}
+        ${stringConfigs cfg.telegram-receiver telegramReceiverConfig}
         ${stringConfigs cfg.webui webuiConfig}
       '';
     };
