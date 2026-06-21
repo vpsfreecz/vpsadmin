@@ -73,6 +73,13 @@ let
         worker_delay = cfg.email.workerDelay;
         domain_min_delivery_interval = cfg.email.domainMinDeliveryInterval;
       };
+      telegram = {
+        concurrency = cfg.telegram.concurrency;
+        bot_token = "#telegram_bot_token#";
+        api_base_url = cfg.telegram.apiBaseUrl;
+        updates_timeout = cfg.telegram.updatesTimeout;
+        updates_limit = cfg.telegram.updatesLimit;
+      };
       webhook = {
         concurrency = cfg.webhook.concurrency;
         allowed_untracked_private_ranges = cfg.webhook.allowedUntrackedPrivateRanges;
@@ -112,9 +119,13 @@ let
           optionalString (cfg.rabbitmq.passwordFile != null) "$(head -n1 ${cfg.rabbitmq.passwordFile})"
         }
         SMTP_PASS=${optionalString (cfg.smtp.passwordFile != null) "$(head -n1 ${cfg.smtp.passwordFile})"}
+        TELEGRAM_BOT_TOKEN=${
+          optionalString (cfg.telegram.botTokenFile != null) "$(head -n1 ${cfg.telegram.botTokenFile})"
+        }
         cp -f ${notificationsYml} "${stateDirectory}/config/notifications.yml"
         sed -e "s,#rabbitmq_pass#,$RABBITMQ_PASS,g" -i "${stateDirectory}/config/notifications.yml"
         sed -e "s,#smtp_pass#,$SMTP_PASS,g" -i "${stateDirectory}/config/notifications.yml"
+        sed -e "s,#telegram_bot_token#,$TELEGRAM_BOT_TOKEN,g" -i "${stateDirectory}/config/notifications.yml"
         chmod 440 "${stateDirectory}/config/notifications.yml"
 
         rm -rf "${runtimeRoot}"
@@ -175,6 +186,7 @@ in
         type = types.listOf (
           types.enum [
             "email"
+            "telegram"
             "webhook"
           ]
         );
@@ -246,6 +258,54 @@ in
             Minimum delay in seconds between e-mail delivery starts to the same
             recipient domain within one dispatcher process. Domains are taken
             from To, Cc, and Bcc recipients. Set to 0 to disable this throttle.
+          '';
+        };
+      };
+
+      telegram = {
+        concurrency = mkOption {
+          type = positiveInt;
+          default = 2;
+          description = ''
+            Number of concurrent Telegram delivery workers.
+          '';
+        };
+
+        botTokenFile = mkOption {
+          type = types.nullOr types.path;
+          default = null;
+          example = "/run/keys/vpsadmin-telegram-bot-token";
+          description = ''
+            File containing the Telegram bot token used to pair chats and send
+            Telegram notification messages. Keep unset when Telegram delivery
+            is not enabled.
+          '';
+        };
+
+        apiBaseUrl = mkOption {
+          type = types.str;
+          default = "https://api.telegram.org";
+          description = ''
+            Telegram Bot API base URL. Override this when using a local Bot API
+            server or a test double in development.
+          '';
+        };
+
+        updatesTimeout = mkOption {
+          type = nonNegativeInt;
+          default = 0;
+          description = ''
+            Long-poll timeout in seconds used by the Telegram pairing polling
+            rake task. Values above Telegram's limit are clamped by vpsAdmin.
+          '';
+        };
+
+        updatesLimit = mkOption {
+          type = positiveInt;
+          default = 100;
+          description = ''
+            Maximum number of Telegram updates fetched by one pairing polling
+            run. Values above Telegram's limit are clamped by vpsAdmin.
           '';
         };
       };

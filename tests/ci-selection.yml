@@ -385,6 +385,8 @@ select:
       - "tests/suite/alerts/*.nix"
       - "api/lib/vpsadmin/api/incident_reports.rb"
       - "api/lib/vpsadmin/api/events.rb"
+      - "api/lib/vpsadmin/api/notifications.rb"
+      - "api/lib/vpsadmin/api/telegram_bot.rb"
       - "api/lib/vpsadmin/api/tasks/incident_report.rb"
       - "api/lib/vpsadmin/api/tasks/lifetimes.rb"
       - "api/lib/vpsadmin/api/tasks/oom_report.rb"

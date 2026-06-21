@@ -854,6 +854,11 @@ function notifications_receiver_action_params($action_type, $create = false)
 
         $params['target_kind'] = $target_kind;
         $params['target_value'] = $target_kind === 'default_recipient' ? null : api_post('target_value');
+    } elseif ($action_type === 'telegram') {
+        if ($create) {
+            $params['target_kind'] = 'custom';
+            $params['target_value'] = null;
+        }
     } elseif ($action_type === 'webhook') {
         $params['target_kind'] = 'custom';
         $params['target_value'] = api_post('target_value');
@@ -1865,11 +1870,15 @@ function notifications_receiver_action_target_html($action)
 
 function notifications_receiver_action_secret_html($action)
 {
-    if ($action->action !== 'webhook') {
-        return '-';
+    if ($action->action === 'webhook') {
+        return boolean_icon($action->secret_present);
     }
 
-    return boolean_icon($action->secret_present);
+    if ($action->action === 'telegram') {
+        return boolean_icon($action->verified) . ' ' . ($action->verified ? _('paired') : _('pending'));
+    }
+
+    return '-';
 }
 
 function notifications_receiver_action_form_fields($receiver, $action_type, $action = null)
@@ -1935,6 +1944,38 @@ function notifications_receiver_action_form_fields($receiver, $action_type, $act
         if ($action && $action->secret_present) {
             $xtpl->table_td(_('Current secret') . ':');
             $xtpl->table_td(boolean_icon(true) . ' ' . notifications_checkbox_html('clear_secret', false) . ' ' . _('clear secret'), false, true);
+            $xtpl->table_tr();
+        }
+    } elseif ($action_type === 'telegram') {
+        $xtpl->table_td(_('Pairing') . ':');
+        if ($action) {
+            if ($action->verified) {
+                $xtpl->table_td(boolean_icon(true) . ' ' . h($action->display_target));
+            } else {
+                $token = $action->verification_token;
+                $cmd = $token ? '/start ' . $token : '-';
+                $xtpl->table_td('<code>' . h($cmd) . '</code>');
+            }
+        } else {
+            $xtpl->table_td(_('created after saving'));
+        }
+        $xtpl->table_tr();
+
+        if ($action && !$action->verified && $action->last_error) {
+            $xtpl->table_td(_('Last error') . ':');
+            $xtpl->table_td(h($action->last_error));
+            $xtpl->table_tr();
+        }
+
+        if ($action) {
+            $xtpl->table_td(_('Token') . ':');
+            $xtpl->table_td(
+                '<a href="?page=notifications&action=receiver_action_pairing_token&receiver=' . $receiver->id
+                . '&id=' . $action->id . notifications_user_qs($receiver->user_id)
+                . '&t=' . csrf_token() . '">' . _('create new pairing token') . '</a>',
+                false,
+                true
+            );
             $xtpl->table_tr();
         }
     }
@@ -2051,7 +2092,7 @@ function notifications_receiver_edit($receiver_id)
     $xtpl->table_add_category(_('Label'));
     $xtpl->table_add_category(_('Target'));
     $xtpl->table_add_category(_('Enabled'));
-    $xtpl->table_add_category(_('Webhook secret'));
+    $xtpl->table_add_category(_('Status'));
     $xtpl->table_add_category(_('Events'));
     $xtpl->table_add_category('');
     $xtpl->table_add_category('');
@@ -2110,7 +2151,13 @@ function notifications_response_status_label($action, $status)
         return null;
     }
 
-    return ($action === 'email' ? 'SMTP ' : 'HTTP ') . $status;
+    if ($action === 'email') {
+        return 'SMTP ' . $status;
+    } elseif ($action === 'telegram') {
+        return 'Telegram API ' . $status;
+    }
+
+    return 'HTTP ' . $status;
 }
 
 function notifications_delivery_attempts_html($event, $delivery)
@@ -2672,6 +2719,8 @@ function notifications_delivery_show($event_id, $delivery_id)
 
     if ($delivery->action === 'email') {
         notifications_delivery_email_show($delivery);
+    } elseif ($delivery->action === 'telegram') {
+        notifications_delivery_telegram_show($delivery);
     } elseif ($delivery->action === 'webhook') {
         notifications_delivery_webhook_show($delivery);
     }
@@ -2734,6 +2783,35 @@ function notifications_delivery_email_show($delivery)
         $xtpl->table_tr();
         $xtpl->table_out('notification-delivery-html');
     }
+}
+
+function notifications_delivery_telegram_show($delivery)
+{
+    global $xtpl;
+
+    $xtpl->table_title(_('Telegram'));
+
+    $payload = json_decode(notifications_prop($delivery, 'payload') ?: '{}', true);
+    if (!is_array($payload)) {
+        $payload = [];
+    }
+
+    $xtpl->table_td(_('Chat') . ':');
+    $xtpl->table_td(h($payload['chat_id'] ?? notifications_prop($delivery, 'target_value', '-')));
+    $xtpl->table_tr();
+
+    $xtpl->table_td(_('Message') . ':');
+    $xtpl->table_td(notifications_pre_html($payload['text'] ?? ''));
+    $xtpl->table_tr();
+
+    $response_body = notifications_prop($delivery, 'response_body');
+    if ($response_body) {
+        $xtpl->table_td(_('Response') . ':');
+        $xtpl->table_td(notifications_json_pre_html($response_body));
+        $xtpl->table_tr();
+    }
+
+    $xtpl->table_out();
 }
 
 function notifications_delivery_webhook_show($delivery)
