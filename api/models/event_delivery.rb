@@ -39,6 +39,7 @@ class EventDelivery < ApplicationRecord
 
   scope :due, -> { where('next_attempt_at IS NULL OR next_attempt_at <= ?', Time.now) }
   scope :email_action, -> { where(action: 'email') }
+  scope :telegram_action, -> { where(action: 'telegram') }
   scope :webhook_action, -> { where(action: 'webhook') }
 
   def self.action_labels
@@ -174,6 +175,10 @@ class EventDelivery < ApplicationRecord
 
   def webhook_action?
     action == 'webhook'
+  end
+
+  def telegram_action?
+    action == 'telegram'
   end
 
   def direct_request_email_delivery?

@@ -1075,6 +1075,19 @@ module VpsAdmin::API
         )
       end
 
+      def telegram_delivery(route, receiver, receiver_action)
+        return skipped_delivery(route, receiver, receiver_action, 'Telegram chat is not linked') if receiver_action.target_value.blank?
+        return skipped_delivery(route, receiver, receiver_action, 'Telegram chat is not verified') unless receiver_action.verified?
+
+        build_delivery(
+          route,
+          receiver,
+          receiver_action,
+          target_value: receiver_action.target_value,
+          target_label: receiver_action.display_target
+        )
+      end
+
       def build_delivery(route, receiver, receiver_action, target_value:, target_label:, template_name: nil,
                          target_kind: nil, state: 'prepared', next_attempt_at: nil, payload: nil)
         DeliveryPlan.new(

@@ -50,6 +50,57 @@ RSpec.describe VpsAdmin::API::Tasks::EventDelivery do
     [event.event_deliveries.sole, action, route]
   end
 
+  def create_telegram_delivery!(target_value: '123456789',
+                                summary: 'Spec Telegram summary',
+                                parameters: { note: 'from Telegram task spec' })
+    receiver = NotificationReceiver.create!(user: SpecSeed.user, label: 'Spec Telegram receiver')
+    action = receiver.notification_receiver_actions.create!(
+      action: :telegram,
+      label: 'Spec Telegram',
+      target_kind: :custom,
+      target_value:,
+      verified_at: Time.now
+    )
+    route = EventRoute.create!(
+      user: SpecSeed.user,
+      notification_receiver: receiver,
+      event_type: 'user.test_notification'
+    )
+    event = VpsAdmin::API::Events.emit!(
+      'user.test_notification',
+      user: SpecSeed.user,
+      subject: 'Spec Telegram event',
+      summary:,
+      parameters:
+    )
+
+    [event.event_deliveries.sole, action, route]
+  end
+
+  def stub_telegram_response(code: '200', body: { ok: true, result: { message_id: 42 } })
+    request = nil
+    http = instance_double(Net::HTTP)
+    response = instance_double(Net::HTTPResponse, code:, body: JSON.dump(body))
+
+    allow(Net::HTTP).to receive(:start) do |host, port, **options, &block|
+      expect(host).to eq('api.telegram.org')
+      expect(port).to eq(443)
+      expect(options).to include(
+        use_ssl: true,
+        open_timeout: 5,
+        read_timeout: 15
+      )
+
+      block.call(http)
+    end
+    allow(http).to receive(:request) do |req|
+      request = req
+      response
+    end
+
+    -> { request }
+  end
+
   def create_managed_private_ip!(user: nil)
     network = create_private_network!(purpose: :any)
     create_ipv4_address_in_network!(
@@ -307,11 +358,13 @@ RSpec.describe VpsAdmin::API::Tasks::EventDelivery do
 
   it 'defaults dispatcher concurrency and e-mail throttles' do
     email = VpsAdmin::API::Notifications::Dispatcher.new('email')
+    telegram = VpsAdmin::API::Notifications::Dispatcher.new('telegram')
     webhook = VpsAdmin::API::Notifications::Dispatcher.new('webhook')
 
     expect(email.send(:concurrency)).to eq(2)
     expect(email.send(:email_worker_delay)).to eq(1.0)
     expect(email.send(:email_domain_min_delivery_interval)).to eq(1.0)
+    expect(telegram.send(:concurrency)).to eq(2)
     expect(webhook.send(:concurrency)).to eq(4)
   end
 
@@ -965,6 +1018,138 @@ RSpec.describe VpsAdmin::API::Tasks::EventDelivery do
     expect(delivery.reload).to be_failed_state
     expect(delivery.error_summary).to include('missing report ids')
     expect(delivery.mail_log).to be_nil
+  end
+
+  it 'sends Telegram messages and marks deliveries sent' do
+    delivery, action, route = create_telegram_delivery!
+    request = stub_telegram_response
+
+    with_env('VPSADMIN_TELEGRAM_BOT_TOKEN' => '123:telegram-token') do
+      task.deliver_telegrams
+    end
+
+    body = JSON.parse(request.call.body)
+
+    expect(body['chat_id']).to eq('123456789')
+    expect(body['text']).to include('Spec Telegram event')
+    expect(body['text']).to include('Event: user.test_notification')
+    expect(request.call.path).to eq('/bot123:telegram-token/sendMessage')
+    expect(delivery.reload).to be_sent_state
+    expect(delivery.notification_receiver_action).to eq(action)
+    expect(delivery.event_route).to eq(route)
+    expect(delivery.response_status).to eq(200)
+    expect(delivery.provider_message_id).to eq('42')
+    expect(delivery.attempt_count).to eq(1)
+    attempt = delivery.event_delivery_attempts.sole
+    expect(attempt).to be_succeeded_state
+    expect(attempt.provider_message_id).to eq('42')
+  end
+
+  it 'does not include summaries or parameters in default Telegram messages' do
+    delivery, = create_telegram_delivery!(
+      summary: 'Sensitive incident body',
+      parameters: {
+        note: 'from Telegram task spec',
+        text: 'Sensitive incident body'
+      }
+    )
+    request = stub_telegram_response
+
+    with_env('VPSADMIN_TELEGRAM_BOT_TOKEN' => '123:telegram-token') do
+      task.deliver_telegrams
+    end
+
+    text = JSON.parse(request.call.body).fetch('text')
+
+    expect(text).to include('Spec Telegram event')
+    expect(text).not_to include('from Telegram task spec')
+    expect(text).not_to include('Sensitive incident body')
+    expect(text).not_to include('Summary:')
+    expect(delivery.reload).to be_sent_state
+  end
+
+  it 'sends Telegram messages to the snapshotted chat when the action is re-paired later' do
+    delivery, action = create_telegram_delivery!(target_value: '111')
+    action.pair_telegram_chat!('222')
+    request = stub_telegram_response
+
+    with_env('VPSADMIN_TELEGRAM_BOT_TOKEN' => '123:telegram-token') do
+      task.deliver_telegrams
+    end
+
+    expect(JSON.parse(request.call.body).fetch('chat_id')).to eq('111')
+    expect(delivery.reload).to be_sent_state
+  end
+
+  it 'does not retry Telegram deliveries for muted receivers' do
+    delivery, = create_telegram_delivery!
+    delivery.update!(state: :released, attempt_count: 1)
+    delivery.notification_receiver.update!(mute: true)
+
+    allow(Net::HTTP).to receive(:start)
+
+    with_env('VPSADMIN_TELEGRAM_BOT_TOKEN' => '123:telegram-token') do
+      task.deliver_telegrams
+    end
+
+    expect(Net::HTTP).not_to have_received(:start)
+    expect(delivery.reload).to be_canceled_state
+    expect(delivery.error_summary).to include('receiver')
+  end
+
+  it 'does not send Telegram deliveries for unverified actions' do
+    delivery, action = create_telegram_delivery!
+    action.update!(verified_at: nil)
+
+    allow(Net::HTTP).to receive(:start)
+
+    with_env('VPSADMIN_TELEGRAM_BOT_TOKEN' => '123:telegram-token') do
+      task.deliver_telegrams
+    end
+
+    expect(Net::HTTP).not_to have_received(:start)
+    expect(delivery.reload).to be_canceled_state
+    expect(delivery.error_summary).to include('telegram action is not available')
+  end
+
+  it 'retries Telegram deliveries when the bot token is missing' do
+    delivery, = create_telegram_delivery!
+
+    allow(Net::HTTP).to receive(:start)
+
+    with_env('VPSADMIN_TELEGRAM_BOT_TOKEN' => nil) do
+      task.deliver_telegrams
+    end
+
+    expect(Net::HTTP).not_to have_received(:start)
+    expect(delivery.reload).to be_released_state
+    expect(delivery.attempt_count).to eq(1)
+    expect(delivery.next_attempt_at).to be_present
+    expect(delivery.error_summary).to include('Telegram bot token is not configured')
+  end
+
+  it 'retries Telegram deliveries when the API returns an error' do
+    delivery, = create_telegram_delivery!
+    stub_telegram_response(
+      code: '429',
+      body: {
+        ok: false,
+        description: 'Too Many Requests'
+      }
+    )
+
+    with_env('VPSADMIN_TELEGRAM_BOT_TOKEN' => '123:telegram-token') do
+      task.deliver_telegrams
+    end
+
+    delivery.reload
+
+    expect(delivery).to be_released_state
+    expect(delivery.response_status).to eq(429)
+    expect(delivery.response_body).to include('Too Many Requests')
+    expect(delivery.error_summary).to include('Telegram API: Too Many Requests')
+    expect(delivery.attempt_count).to eq(1)
+    expect(delivery.next_attempt_at).to be_present
   end
 
   it 'posts signed webhook payloads and marks deliveries sent' do

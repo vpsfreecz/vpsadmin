@@ -326,6 +326,21 @@ if (isLoggedIn()) {
             }
             break;
 
+        case 'receiver_action_pairing_token':
+            csrf_check();
+
+            try {
+                $receiver = $api->notification_receiver->show($_GET['receiver']);
+                $receiver->action($_GET['id'])->create_pairing_token();
+
+                notify_user(_('Pairing token created'), '');
+                redirect('?page=notifications&action=receiver_action_edit&receiver=' . $receiver->id . '&id=' . $_GET['id'] . notifications_user_qs($receiver->user_id));
+            } catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+                $xtpl->perex_format_errors(_('Failed to create pairing token'), $e->getResponse());
+                notifications_receiver_action_edit($_GET['receiver'], $_GET['id']);
+            }
+            break;
+
         case 'receiver_action_delete':
             csrf_check();
 
