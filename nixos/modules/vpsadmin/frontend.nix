@@ -115,6 +115,41 @@ let
       };
     };
 
+  apiModule =
+    app:
+    { config, ... }:
+    let
+      opts = baseOpts app config;
+    in
+    {
+      options = {
+        inherit (opts)
+          domain
+          aliases
+          virtualHost
+          maintenance
+          backend
+          ;
+
+        telegramWebhook = {
+          enable = mkEnableOption "Route Telegram webhook requests";
+
+          path = mkOption {
+            type = types.str;
+            default = "/_telegram/webhook";
+            description = "Exact path receiving Telegram webhook requests.";
+          };
+
+          backend.address = mkOption {
+            type = types.str;
+            description = ''
+              Upstream address string for the Telegram receiver backend.
+            '';
+          };
+        };
+      };
+    };
+
   downloadMounterModule =
     app:
     { config, ... }:
@@ -130,7 +165,7 @@ let
   appModule =
     app:
     {
-      api = baseModule app;
+      api = apiModule app;
 
       auth = baseModule app;
 
@@ -180,6 +215,8 @@ let
 
   upstreamName = app: name: "${app}_${name}";
 
+  telegramWebhookUpstreamName = name: "api_${name}_telegram_webhook";
+
   baseUpstreams =
     app: instances:
     mapAttrs' (
@@ -194,7 +231,16 @@ let
   appUpstreams =
     app: instances:
     {
-      api = baseUpstreams app instances;
+      api =
+        baseUpstreams app instances
+        // mapAttrs' (
+          name: instance:
+          nameValuePair (telegramWebhookUpstreamName name) {
+            servers = {
+              "${instance.telegramWebhook.backend.address}" = { };
+            };
+          }
+        ) (filterAttrs (_: instance: instance.telegramWebhook.enable) instances);
 
       auth = baseUpstreams app instances;
 
@@ -234,6 +280,11 @@ let
           extraConfig = ''
             rewrite ^(.*)$ /${instance.maintenance.file.name} break;
           '';
+        };
+      }
+      // optionalAttrs (app == "api" && instance.telegramWebhook.enable) {
+        "= ${instance.telegramWebhook.path}" = {
+          proxyPass = "http://${telegramWebhookUpstreamName name}";
         };
       };
 
