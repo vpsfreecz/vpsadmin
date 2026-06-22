@@ -274,6 +274,7 @@ module VpsAdmin::API::Resources
           )
 
           action.generate_verification_token! if action.telegram_action?
+          action.generate_sms_verification_code! if action.sms_action?
           action
         rescue ActiveRecord::RecordInvalid => e
           error!('create failed', e.record.errors.to_hash)
@@ -376,6 +377,79 @@ module VpsAdmin::API::Resources
           error!('Telegram delivery is not configured') unless action.action_available?
 
           action.generate_verification_token!
+          action
+        rescue ActiveRecord::RecordInvalid => e
+          error!('update failed', e.record.errors.to_hash)
+        end
+      end
+
+      class SendSmsVerificationCode < HaveAPI::Action
+        desc 'Send SMS verification code'
+        route '{action_id}/send_sms_verification_code'
+        http_method :post
+
+        output do
+          use :all
+        end
+
+        authorize do |u|
+          allow if u.role == :admin
+          restrict notification_receivers: { user_id: u.id }
+          allow
+        end
+
+        def exec
+          action = ::NotificationReceiverAction.joins(:notification_receiver).find_by!(
+            with_restricted(
+              notification_receiver_id: path_params['notification_receiver_id'],
+              id: path_params['action_id']
+            )
+          )
+          error!('receiver action is not SMS') unless action.sms_action?
+          error!('SMS delivery is not configured') unless action.action_available?
+          error!('SMS notifications are not enabled for this user') unless action.sms_notifications_allowed?
+          error!('SMS verification code was sent recently') unless action.sms_verification_send_available?
+
+          action.ensure_sms_verification_code!
+          VpsAdmin::API::Notifications.send_sms_verification_code!(action)
+          action.reload
+        rescue VpsAdmin::API::Notifications::SmsGatewayResponseError => e
+          action&.update(last_error: e.message)
+          error!(e.message)
+        rescue ActiveRecord::RecordInvalid => e
+          error!('update failed', e.record.errors.to_hash)
+        end
+      end
+
+      class ConfirmSmsVerificationCode < HaveAPI::Action
+        desc 'Confirm SMS verification code'
+        route '{action_id}/confirm_sms_verification_code'
+        http_method :post
+
+        input do
+          string :code, required: true
+        end
+
+        output do
+          use :all
+        end
+
+        authorize do |u|
+          allow if u.role == :admin
+          restrict notification_receivers: { user_id: u.id }
+          allow
+        end
+
+        def exec
+          action = ::NotificationReceiverAction.joins(:notification_receiver).find_by!(
+            with_restricted(
+              notification_receiver_id: path_params['notification_receiver_id'],
+              id: path_params['action_id']
+            )
+          )
+          error!('receiver action is not SMS') unless action.sms_action?
+          error!('SMS verification code is invalid or expired') unless action.confirm_sms_verification_code!(input[:code])
+
           action
         rescue ActiveRecord::RecordInvalid => e
           error!('update failed', e.record.errors.to_hash)
