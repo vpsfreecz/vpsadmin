@@ -48,6 +48,7 @@ let
         telegram = {
           enabled = telegramCfg.enable;
           configured = telegramCfg.enable && telegramCfg.botTokenFile != null;
+          bot_username = telegramCfg.botUsername;
           api_base_url = telegramCfg.apiBaseUrl;
           receive_mode = telegramCfg.receiveMode;
           webhook = {
