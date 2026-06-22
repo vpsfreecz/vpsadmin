@@ -108,7 +108,7 @@ module VpsAdmin::API
     def prepare_polling!
       return unless polling_config.fetch('delete_webhook', true)
 
-      response = telegram_bot.post_json('deleteWebhook', drop_pending_updates: false)
+      response = telegram_bot.post_json('deleteWebhook', { drop_pending_updates: false })
       body = response_body(response)
 
       return if telegram_success?(response, body)
