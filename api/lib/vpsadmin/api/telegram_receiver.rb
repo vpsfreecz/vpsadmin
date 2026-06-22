@@ -5,7 +5,7 @@ module VpsAdmin::API
   class TelegramReceiver
     UPDATE_OFFSET_CATEGORY = 'notifications'.freeze
     UPDATE_OFFSET_NAME = 'telegram_update_offset'.freeze
-    START_COMMAND = %r{\A/start(?:@\w+)?\s+([A-Za-z0-9_-]+)\s*\z}
+    START_COMMAND = %r{\A/start(?:@\w+)?(?:\s+([A-Za-z0-9_-]+))?\s*\z}
     DEFAULT_LIMIT = 100
     DEFAULT_TIMEOUT = 50
     DEFAULT_RETRY_DELAY = 5
@@ -161,13 +161,22 @@ module VpsAdmin::API
       match = START_COMMAND.match(message['text'].to_s)
       return :ignored unless match
 
+      token = match[1]
+      if token.blank?
+        reply_to_pairing_message(message, missing_token_message)
+        return :rejected
+      end
+
       action = ::NotificationReceiverAction.find_by(
         action: 'telegram',
-        verification_token: match[1]
+        verification_token: token
       )
-      return :ignored unless action
+      unless action
+        reply_to_pairing_message(message, invalid_token_message)
+        return :rejected
+      end
 
-      pair_action(action, match[1], message)
+      pair_action(action, token, message)
     end
 
     def pair_action(action, token, message)
@@ -175,26 +184,73 @@ module VpsAdmin::API
       chat_id = chat && chat['id']
       return :ignored if chat_id.nil?
 
-      action.with_lock do
+      state, reply = action.with_lock do
         next :ignored unless action.telegram_action? && action.verification_token == token
 
         if action.verification_token_expired?
           action.generate_verification_token!(
             last_error: 'Telegram pairing token expired; use the new command shown below'
           )
-          next :rejected
+          next [:rejected, expired_token_message]
         end
 
         unless chat['type'] == 'private'
           action.generate_verification_token!(
             last_error: 'Telegram pairing must be sent from a private chat'
           )
-          next :rejected
+          next [:rejected, private_chat_required_message]
         end
 
         action.pair_telegram_chat!(chat_id)
-        :paired
+        [:paired, pairing_succeeded_message]
       end
+
+      reply_to_chat(chat_id, reply) if reply
+      state
+    end
+
+    def reply_to_pairing_message(message, text)
+      chat = message['chat']
+      chat_id = chat && chat['id']
+      return if chat_id.nil?
+
+      reply_to_chat(chat_id, text)
+    end
+
+    def reply_to_chat(chat_id, text)
+      response = telegram_bot.post_json(
+        'sendMessage',
+        {
+          chat_id:,
+          text:
+        }
+      )
+      body = response_body(response)
+      return if telegram_success?(response, body)
+
+      @logger.puts "Telegram receiver reply failed: #{telegram_error_summary(response, body)}"
+    rescue StandardError => e
+      @logger.puts "Telegram receiver reply failed: #{e.class}: #{e.message}"
+    end
+
+    def missing_token_message
+      'To pair Telegram with vpsAdmin, open the Telegram action detail in vpsAdmin and use the pairing link or command shown there.'
+    end
+
+    def invalid_token_message
+      'This vpsAdmin Telegram pairing token is not valid. Open the Telegram action detail in vpsAdmin and create a new pairing command.'
+    end
+
+    def expired_token_message
+      'This vpsAdmin Telegram pairing token has expired. Open the Telegram action detail in vpsAdmin and use the newly generated command.'
+    end
+
+    def private_chat_required_message
+      'Telegram pairing must be completed in a private chat with this bot. Open the bot directly and use the pairing command from vpsAdmin.'
+    end
+
+    def pairing_succeeded_message
+      'Telegram pairing succeeded. vpsAdmin notifications can now be delivered to this chat.'
     end
 
     def update_offset

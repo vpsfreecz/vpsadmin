@@ -111,6 +111,30 @@ class NotificationReceiverAction < ApplicationRecord
     target_value.presence || target_kind.tr('_', ' ')
   end
 
+  def telegram_pairing_command
+    return unless telegram_action? && verification_token.present? && !verified?
+
+    "/start #{verification_token}"
+  end
+
+  def telegram_bot_url
+    return unless telegram_action?
+
+    username = telegram_bot_username
+    return if username.blank?
+
+    "https://t.me/#{username}"
+  end
+
+  def telegram_pairing_url
+    return unless telegram_pairing_command
+
+    bot_url = telegram_bot_url
+    return if bot_url.blank?
+
+    "#{bot_url}?start=#{verification_token}"
+  end
+
   def email_action?
     action == 'email'
   end
@@ -256,5 +280,11 @@ class NotificationReceiverAction < ApplicationRecord
     Time.iso8601(value)
   rescue ArgumentError
     nil
+  end
+
+  def telegram_bot_username
+    cfg = VpsAdmin::API::Notifications::Config.load.fetch('telegram', {})
+    username = cfg['bot_username'].presence || cfg['botUsername'].presence
+    username&.delete_prefix('@')
   end
 end
