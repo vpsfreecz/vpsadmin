@@ -153,6 +153,22 @@ RSpec.describe VpsAdmin::API::NotificationTemplates do
     end
   end
 
+  it 'loads SMS text variants' do
+    Dir.mktmpdir do |dir|
+      path = write_template(dir)
+      FileUtils.mkdir_p(File.join(path, 'sms'))
+      File.write(File.join(path, 'sms', 'cs.text.erb'), 'Text zprávy')
+
+      variant = described_class::Directory.new(dir).templates.first.variants.find do |item|
+        item.protocol == 'sms'
+      end
+
+      expect(variant).to have_attributes(protocol: 'sms', language: 'cs')
+      expect(variant.options).to be_empty
+      expect(variant.content(:text)).to eq('Text zprávy')
+    end
+  end
+
   it 'rejects unsupported protocol directories and declarations' do
     Dir.mktmpdir do |dir|
       path = write_template(dir)

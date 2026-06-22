@@ -10,12 +10,14 @@ templates/<name>/email/<language>.text.erb
 templates/<name>/email/<language>.html.erb
 templates/<name>/telegram/<language>.text.erb
 templates/<name>/telegram/<language>.html.erb
+templates/<name>/sms/<language>.text.erb
 ```
 
 `meta.rb` defines the template ID, label, visibility, sender addresses, and
 language-specific defaults. E-mail variants need a text or HTML body. Their
 subject can come from a subject file, metadata, or vpsAdmin's default.
 Telegram variants need a text body and may also provide HTML.
+SMS variants need a text body.
 
 Despite its filename, `meta.rb` uses a restricted literal DSL and is never
 evaluated as Ruby. It accepts `template`, `protocol`, `lang`, and documented

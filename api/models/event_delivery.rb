@@ -11,7 +11,8 @@ class EventDelivery < ApplicationRecord
     'sent' => 'sent',
     'skipped' => 'skipped',
     'failed' => 'failed',
-    'canceled' => 'canceled'
+    'canceled' => 'canceled',
+    'accepted' => 'accepted'
   }.freeze
 
   belongs_to :event
@@ -26,7 +27,7 @@ class EventDelivery < ApplicationRecord
   has_many :event_delivery_attempts, dependent: :delete_all
 
   enum :target_kind, %i[default_recipient custom], suffix: true
-  enum :state, %i[prepared released sending sent skipped failed canceled], suffix: true
+  enum :state, %i[prepared released sending sent skipped failed canceled accepted], suffix: true
 
   serialize :response_headers, coder: JSON
 
@@ -41,6 +42,7 @@ class EventDelivery < ApplicationRecord
   scope :email_action, -> { where(action: 'email') }
   scope :telegram_action, -> { where(action: 'telegram') }
   scope :webhook_action, -> { where(action: 'webhook') }
+  scope :sms_action, -> { where(action: 'sms') }
 
   def self.action_labels
     VpsAdmin::API::Notifications::Actions.labels
@@ -179,6 +181,10 @@ class EventDelivery < ApplicationRecord
 
   def telegram_action?
     action == 'telegram'
+  end
+
+  def sms_action?
+    action == 'sms'
   end
 
   def direct_request_email_delivery?

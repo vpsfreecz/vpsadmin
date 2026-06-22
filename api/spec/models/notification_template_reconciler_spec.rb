@@ -644,6 +644,9 @@ RSpec.describe VpsAdmin::API::NotificationTemplateReconciler do
       expect(
         template.variants.select { |variant| variant.protocol == 'telegram' }.map(&:language)
       ).to include('en')
+      expect(
+        template.variants.select { |variant| variant.protocol == 'sms' }.map(&:language)
+      ).to include('en')
     end
   end
 
@@ -658,20 +661,26 @@ RSpec.describe VpsAdmin::API::NotificationTemplateReconciler do
       telegram = template.variants.detect do |item|
         item.protocol == 'telegram' && item.language == 'en'
       end
+      sms = template.variants.detect do |item|
+        item.protocol == 'sms' && item.language == 'en'
+      end
       expect(variant).to be_present, "#{template.name} is missing English e-mail"
       expect(telegram).to be_present, "#{template.name} is missing English Telegram"
+      expect(sms).to be_present, "#{template.name} is missing English SMS"
 
       params = described_class.send(:variant_params, template, variant)
       expect(params[:subject]).to be_present
       expect(params[:text]).to be_present
       expect(telegram.content(:text)).to be_present
+      expect(sms.content(:text)).to be_present
 
       sources = [
         params[:subject],
         params[:text],
         params[:html],
         telegram.content(:text),
-        telegram.content(:html)
+        telegram.content(:html),
+        sms.content(:text)
       ].compact
       sources.each do |source|
         compile_erb(source)
@@ -684,7 +693,8 @@ RSpec.describe VpsAdmin::API::NotificationTemplateReconciler do
         params[:text],
         params[:html],
         telegram.content(:text),
-        telegram.content(:html)
+        telegram.content(:html),
+        sms.content(:text)
       ].compact.join("\n")
 
       expect(content).not_to include('Template:')

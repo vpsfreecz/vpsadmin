@@ -4,7 +4,7 @@ module VpsAdmin::API::Resources
     model ::EventDelivery
 
     STATE_GROUPS = {
-      'queue' => %w[prepared released sending],
+      'queue' => %w[prepared released sending accepted],
       'log' => %w[sent failed canceled skipped]
     }.freeze
 
@@ -158,12 +158,13 @@ module VpsAdmin::API::Resources
         <<~SQL.squish
           CASE
             WHEN event_deliveries.state = #{states.fetch('sending')} THEN 0
+            WHEN event_deliveries.state = #{states.fetch('accepted')} THEN 1
             WHEN event_deliveries.state = #{states.fetch('released')}
               AND (event_deliveries.next_attempt_at IS NULL OR event_deliveries.next_attempt_at <= CURRENT_TIMESTAMP)
-              THEN 1
-            WHEN event_deliveries.state = #{states.fetch('released')} THEN 2
-            WHEN event_deliveries.state = #{states.fetch('prepared')} THEN 3
-            ELSE 4
+              THEN 2
+            WHEN event_deliveries.state = #{states.fetch('released')} THEN 3
+            WHEN event_deliveries.state = #{states.fetch('prepared')} THEN 4
+            ELSE 5
           END ASC,
           COALESCE(event_deliveries.next_attempt_at, event_deliveries.released_at, event_deliveries.created_at) ASC,
           event_deliveries.id ASC

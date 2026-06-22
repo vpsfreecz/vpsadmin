@@ -13,7 +13,7 @@ module VpsAdmin
       TRANSLATION_ATTRIBUTE_LIMIT = 255
       LANGUAGE_PATTERN = /\A[a-zA-Z]{2}\z/
       VARIANT_FILE_PATTERN = /\A(?<language>[a-zA-Z]{2})\.(?<format>subject|text|html)\.erb\z/
-      PROTOCOLS = %w[email telegram].freeze
+      PROTOCOLS = %w[email telegram sms].freeze
       PROTOCOL_FORMATS = {
         'email' => %w[subject text html],
         'telegram' => %w[text html],
