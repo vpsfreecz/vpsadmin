@@ -24,6 +24,16 @@ in
       '';
     };
 
+    botUsername = mkOption {
+      type = types.nullOr types.str;
+      default = null;
+      example = "vpsadmin_bot";
+      description = ''
+        Public Telegram bot username without the leading @. Used by vpsAdmin
+        to show pairing links such as https://t.me/<bot_username>.
+      '';
+    };
+
     apiBaseUrl = mkOption {
       type = types.str;
       default = "https://api.telegram.org";
