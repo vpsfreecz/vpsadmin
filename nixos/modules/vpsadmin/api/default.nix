@@ -9,8 +9,38 @@ let
   vpsadminCfg = config.vpsadmin;
   cfg = config.vpsadmin.api;
   telegramCfg = config.vpsadmin.notifications.telegram;
+  smsCfg = config.vpsadmin.notifications.sms;
   vpsadminRoot = toString (./../../../../.);
-  notificationsConfigEnabled = cfg.notifications.rabbitmq.enable || telegramCfg.enable;
+  notificationsConfigEnabled =
+    cfg.notifications.rabbitmq.enable || telegramCfg.enable || smsCfg.enable;
+
+  smsCallbackTokenCredential = "sms-callback-token";
+  smsGatewayTokenCredential = gateway: "sms-gateway-${gateway.name}-token";
+  readCredential = name: ''$(head -n1 "$CREDENTIALS_DIRECTORY/${name}")'';
+
+  smsCredentials =
+    optional (smsCfg.enable && smsCfg.callbackTokenFile != null) (
+      "${smsCallbackTokenCredential}:${smsCfg.callbackTokenFile}"
+    )
+    ++ optionals smsCfg.enable (
+      map (gateway: "${smsGatewayTokenCredential gateway}:${gateway.tokenFile}") smsCfg.gateways
+    );
+
+  smsGatewayConfig = imap0 (index: gateway: {
+    inherit (gateway) name url;
+    token = "#sms_gateway_${toString index}_token#";
+  }) smsCfg.gateways;
+
+  smsTokenSubstitutions =
+    stateDirectory:
+    concatStringsSep "\n" (
+      (optional (smsCfg.enable && smsCfg.callbackTokenFile != null) ''
+        sed -e "s,#sms_callback_token#,${readCredential smsCallbackTokenCredential},g" -i "${stateDirectory}/config/notifications.yml"
+      '')
+      ++ imap0 (index: gateway: ''
+        sed -e "s,#sms_gateway_${toString index}_token#,${readCredential (smsGatewayTokenCredential gateway)},g" -i "${stateDirectory}/config/notifications.yml"
+      '') smsCfg.gateways
+    );
 
   apiApp = import ../api-app.nix {
     name = "api";
@@ -55,6 +85,18 @@ let
             path = telegramCfg.webhook.path;
             public_url = telegramCfg.webhook.publicUrl;
           };
+        };
+      }
+      // optionalAttrs smsCfg.enable {
+        sms = {
+          enabled = smsCfg.enable;
+          configured = smsCfg.enable && smsCfg.gateways != [ ];
+          callback_url = smsCfg.callbackUrl;
+          callback_token = "#sms_callback_token#";
+          verification_text = smsCfg.verificationText;
+          open_timeout = smsCfg.openTimeout;
+          read_timeout = smsCfg.readTimeout;
+          gateways = smsGatewayConfig;
         };
       }
     )
@@ -263,6 +305,7 @@ in
           ${optionalString cfg.notifications.rabbitmq.enable ''
             sed -e "s,#rabbitmq_pass#,$RABBITMQ_PASS,g" -i "${cfg.stateDirectory}/config/notifications.yml"
           ''}
+          ${optionalString smsCfg.enable (smsTokenSubstitutions cfg.stateDirectory)}
           chmod 440 "${cfg.stateDirectory}/config/notifications.yml"
         ''}
       '';
@@ -278,6 +321,7 @@ in
         Restart = "on-failure";
         RestartSec = 30;
         WatchdogSec = 10;
+        LoadCredential = smsCredentials;
       };
     };
 

@@ -16,6 +16,7 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
     integer :level, label: 'Access level'
     string :info, label: 'Info'
     bool :mailer_enabled, label: 'Enabled mailer', default: true
+    bool :sms_notifications_enabled, label: 'Enable SMS notifications'
     bool :password_reset, label: 'Password reset'
     bool :lockout, label: 'Lock-out'
     resource VpsAdmin::API::Resources::Language, label: 'Language of e-mails'

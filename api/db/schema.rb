@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_22_161000) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_22_220000) do
   create_table "auth_tokens", id: { type: :integer, unsigned: true }, charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
     t.string "api_ip_addr", limit: 46
     t.string "api_ip_ptr"
@@ -1859,6 +1859,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_22_161000) do
     t.boolean "preferred_logout_all", default: false, null: false
     t.integer "preferred_session_length", default: 1200, null: false
     t.datetime "remind_after_date", precision: nil
+    t.boolean "sms_notifications_enabled", default: false, null: false
     t.datetime "updated_at", precision: nil
     t.string "webauthn_id"
     t.string "time_zone"
