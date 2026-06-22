@@ -35,6 +35,8 @@ let
 
   positiveInt = types.addCheck types.int (value: value >= 1);
   nonNegativeInt = types.addCheck types.int (value: value >= 0);
+  telegramBotTokenCredential = "telegram-bot-token";
+  readCredential = name: ''$(head -n1 "$CREDENTIALS_DIRECTORY/${name}")'';
 
   actionTmpfilesRules =
     action:
@@ -121,7 +123,7 @@ let
         }
         SMTP_PASS=${optionalString (cfg.smtp.passwordFile != null) "$(head -n1 ${cfg.smtp.passwordFile})"}
         TELEGRAM_BOT_TOKEN=${
-          optionalString (telegramCfg.botTokenFile != null) "$(head -n1 ${telegramCfg.botTokenFile})"
+          optionalString (telegramCfg.botTokenFile != null) (readCredential telegramBotTokenCredential)
         }
         cp -f ${notificationsYml} "${stateDirectory}/config/notifications.yml"
         sed -e "s,#rabbitmq_pass#,$RABBITMQ_PASS,g" -i "${stateDirectory}/config/notifications.yml"
@@ -154,6 +156,9 @@ let
         ExecStart = "${app.bundle} exec bin/vpsadmin-notification-dispatcher ${action}";
         Restart = "on-failure";
         RestartSec = 30;
+        LoadCredential = optional (
+          telegramCfg.botTokenFile != null
+        ) "${telegramBotTokenCredential}:${telegramCfg.botTokenFile}";
       };
     };
 in
