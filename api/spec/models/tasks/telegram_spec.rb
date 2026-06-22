@@ -140,6 +140,34 @@ RSpec.describe VpsAdmin::API::Tasks::Telegram do
     expect(JSON.parse(request.call.body)).to include('timeout' => 50)
   end
 
+  it 'deletes webhooks before polling starts' do
+    bot = instance_double(VpsAdmin::API::TelegramBot)
+    response = instance_double(
+      Net::HTTPResponse,
+      code: '200',
+      body: JSON.dump(ok: true, result: true)
+    )
+    receiver = VpsAdmin::API::TelegramReceiver.new(
+      bot:,
+      config: {
+        'telegram' => {
+          'polling' => {
+            'delete_webhook' => true
+          }
+        }
+      }
+    )
+
+    allow(bot).to receive(:post_json)
+      .with('deleteWebhook', { drop_pending_updates: false })
+      .and_return(response)
+
+    receiver.send(:prepare_polling!)
+
+    expect(bot).to have_received(:post_json)
+      .with('deleteWebhook', { drop_pending_updates: false })
+  end
+
   it 'rejects pairing attempts from non-private chats' do
     action = create_telegram_action!
     original_token = action.verification_token
