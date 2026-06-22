@@ -473,6 +473,10 @@ module VpsAdmin::API
       delivery_context_for(event, :email)
     end
 
+    def sms_delivery_context_for(event)
+      delivery_context_for(event, :sms) || email_delivery_context_for(event)
+    end
+
     def delivery_context_for(event, action)
       context = event.runtime_event_context ||
                 type_for(event.event_type)&.definition&.build_context_from_event(event)
@@ -481,20 +485,25 @@ module VpsAdmin::API
       context.delivery(action)
     end
 
-    def template_name_for(event)
-      email_delivery_context_for(event)&.template&.to_sym
+    def template_context_for(event, action)
+      action.to_s == 'sms' ? sms_delivery_context_for(event) : delivery_context_for(event, action)
     end
 
-    def template_params_for(event)
-      email_delivery_context_for(event)&.params
+    def template_name_for(event, action = :email)
+      template_context_for(event, action)&.template&.to_sym
     end
 
-    def template_options_for(event, delivery = nil)
+    def template_params_for(event, action = :email)
+      template_context_for(event, action)&.params
+    end
+
+    def template_options_for(event, delivery = nil, action: nil)
+      action ||= delivery&.action || :email
       opts = {
         user: event.user,
-        vars: template_vars_for(event)
+        vars: template_vars_for(event, action)
       }
-      template_params = template_params_for(event)
+      template_params = template_params_for(event, action)
       opts[:params] = template_params if template_params
 
       if delivery&.email_action? && delivery.custom_target_kind?
@@ -505,7 +514,7 @@ module VpsAdmin::API
         opts[:to] = email_target_addresses(event, delivery)
       end
 
-      opts.merge!(template_extra_options_for(event))
+      opts.merge!(template_extra_options_for(event, action))
       opts
     end
 
@@ -535,16 +544,16 @@ module VpsAdmin::API
       addresses
     end
 
-    def template_vars_for(event)
+    def template_vars_for(event, action = :email)
       {
         event:,
         user: event.user,
         parameters: event.parameters || {}
-      }.merge(email_delivery_context_for(event)&.vars || {})
+      }.merge(template_context_for(event, action)&.vars || {})
     end
 
-    def template_extra_options_for(event)
-      email_delivery_context_for(event)&.options || {}
+    def template_extra_options_for(event, action = :email)
+      template_context_for(event, action)&.options || {}
     end
 
     def custom_email_extra_options_for(event)
@@ -1092,6 +1101,19 @@ module VpsAdmin::API
         )
       end
 
+      def sms_delivery(route, receiver, receiver_action)
+        return skipped_delivery(route, receiver, receiver_action, 'SMS number is not configured') if receiver_action.target_value.blank?
+        return skipped_delivery(route, receiver, receiver_action, 'SMS number is not verified') unless receiver_action.verified?
+
+        build_delivery(
+          route,
+          receiver,
+          receiver_action,
+          target_value: receiver_action.target_value,
+          target_label: receiver_action.display_target
+        )
+      end
+
       def build_delivery(route, receiver, receiver_action, target_value:, target_label:, template_name: nil,
                          target_kind: nil, state: 'prepared', next_attempt_at: nil, payload: nil)
         DeliveryPlan.new(
@@ -1133,13 +1155,16 @@ module VpsAdmin::API
       def delivery_template_name(route, receiver_action)
         return unless receiver_action.nil? ||
                       receiver_action.email_action? ||
-                      receiver_action.telegram_action?
+                      receiver_action.telegram_action? ||
+                      receiver_action.sms_action?
 
         route_template_name = route&.template_name.presence
         return route_template_name if route_template_name
-        return unless receiver_action&.email_action? || receiver_action&.telegram_action?
+        return unless receiver_action&.email_action? ||
+                      receiver_action&.telegram_action? ||
+                      receiver_action&.sms_action?
 
-        VpsAdmin::API::Events.template_name_for(event)
+        VpsAdmin::API::Events.template_name_for(event, receiver_action.action)
       end
 
       def routing_state_for(deliveries)
