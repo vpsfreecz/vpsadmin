@@ -33,6 +33,10 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
     vpath("/notification_receivers/#{receiver_id}/action")
   end
 
+  def receiver_action_path(receiver_id, action_id)
+    vpath("/notification_receivers/#{receiver_id}/action/#{action_id}")
+  end
+
   def receiver_action_pairing_token_path(receiver_id, action_id)
     vpath("/notification_receivers/#{receiver_id}/action/#{action_id}/create_pairing_token")
   end
@@ -534,6 +538,40 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
 
     expect(json['status']).to be(false)
     expect(receiver.notification_receiver_actions.reload).to be_empty
+  end
+
+  it 'returns Telegram pairing metadata for pending actions' do
+    allow(VpsAdmin::API::Notifications).to receive(:telegram_configured?).and_return(true)
+    allow(VpsAdmin::API::Notifications::Config).to receive(:load).and_return(
+      'telegram' => {
+        'bot_username' => 'vpsadmin_aitherdev_bot'
+      }
+    )
+
+    as(SpecSeed.user) do
+      json_post receiver_index_path, notification_receiver: {
+        label: 'Telegram receiver'
+      }
+    end
+
+    expect_status(200)
+    receiver = NotificationReceiver.find(receiver_obj['id'])
+
+    action = receiver.notification_receiver_actions.create!(
+      action: 'telegram',
+      label: 'Spec Telegram',
+      target_kind: 'custom'
+    )
+    action.generate_verification_token!
+
+    as(SpecSeed.user) { json_get receiver_action_path(receiver.id, action.id) }
+    expect_status(200)
+    token = action.reload.verification_token
+    expect(action_obj).to include(
+      'telegram_bot_url' => 'https://t.me/vpsadmin_aitherdev_bot',
+      'telegram_pairing_url' => "https://t.me/vpsadmin_aitherdev_bot?start=#{token}",
+      'telegram_pairing_command' => "/start #{token}"
+    )
   end
 
   it 'lets users retry failed deliveries' do

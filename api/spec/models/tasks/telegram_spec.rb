@@ -45,33 +45,39 @@ RSpec.describe VpsAdmin::API::Tasks::Telegram do
     }
   end
 
-  def stub_telegram_updates(code: '200', body: { ok: true, result: [] }, read_timeout: 55)
-    request = nil
-    http = instance_double(Net::HTTP)
-    response = instance_double(Net::HTTPResponse, code:, body: JSON.dump(body))
+  def stub_telegram_updates(
+    code: '200',
+    body: { ok: true, result: [] },
+    read_timeout: 55,
+    message_code: '200',
+    message_body: { ok: true, result: true }
+  )
+    requests = []
+    updates_response = instance_double(Net::HTTPResponse, code:, body: JSON.dump(body))
+    message_response = instance_double(Net::HTTPResponse, code: message_code, body: JSON.dump(message_body))
 
     allow(Net::HTTP).to receive(:start) do |host, port, **options, &block|
       expect(host).to eq('api.telegram.org')
       expect(port).to eq(443)
       expect(options).to include(
         use_ssl: true,
-        open_timeout: 5,
-        read_timeout:
+        open_timeout: 5
       )
 
+      http = instance_double(Net::HTTP)
+      allow(http).to receive(:request) do |req|
+        requests << { request: req, options: }
+        req.path.end_with?('/sendMessage') ? message_response : updates_response
+      end
       block.call(http)
     end
-    allow(http).to receive(:request) do |req|
-      request = req
-      response
-    end
 
-    -> { request }
+    requests
   end
 
   it 'pairs Telegram actions from private /start messages' do
     action = create_telegram_action!
-    request = stub_telegram_updates(
+    requests = stub_telegram_updates(
       body: {
         ok: true,
         result: [
@@ -84,20 +90,94 @@ RSpec.describe VpsAdmin::API::Tasks::Telegram do
       task.poll_pairing_updates
     end
 
-    body = JSON.parse(request.call.body)
+    updates_request = requests[0].fetch(:request)
+    reply_request = requests[1].fetch(:request)
+    body = JSON.parse(updates_request.body)
 
-    expect(request.call.path).to eq('/bot123:telegram-token/getUpdates')
+    expect(updates_request.path).to eq('/bot123:telegram-token/getUpdates')
+    expect(requests[0].fetch(:options)).to include(read_timeout: 55)
     expect(body).to include(
       'allowed_updates' => ['message'],
       'limit' => 100,
       'timeout' => 50
     )
     expect(body).not_to have_key('offset')
+    expect(reply_request.path).to eq('/bot123:telegram-token/sendMessage')
+    expect(JSON.parse(reply_request.body)).to include(
+      'chat_id' => 987_654,
+      'text' => /pairing succeeded/
+    )
     expect(stats).to eq(paired: 1, rejected: 0, ignored: 0)
     expect(action.reload).to be_verified
     expect(action.target_value).to eq('987654')
     expect(action.verification_token).to be_nil
     expect(action.last_error).to be_nil
+    expect(SysConfig.get('notifications', 'telegram_update_offset')).to eq(43)
+  end
+
+  it 'replies with pairing instructions when /start has no token' do
+    requests = stub_telegram_updates(
+      body: {
+        ok: true,
+        result: [
+          update(update_id: 41, text: '/start')
+        ]
+      }
+    )
+
+    stats = with_env('VPSADMIN_TELEGRAM_BOT_TOKEN' => '123:telegram-token') do
+      task.poll_pairing_updates
+    end
+
+    expect(JSON.parse(requests[1].fetch(:request).body)).to include(
+      'chat_id' => 123_456,
+      'text' => /open the Telegram action detail/
+    )
+    expect(stats).to eq(paired: 0, rejected: 1, ignored: 0)
+    expect(SysConfig.get('notifications', 'telegram_update_offset')).to eq(42)
+  end
+
+  it 'replies when a pairing token is invalid' do
+    create_telegram_action!(token: 'other-token')
+    requests = stub_telegram_updates(
+      body: {
+        ok: true,
+        result: [
+          update(update_id: 41, text: '/start wrong-token')
+        ]
+      }
+    )
+
+    stats = with_env('VPSADMIN_TELEGRAM_BOT_TOKEN' => '123:telegram-token') do
+      task.poll_pairing_updates
+    end
+
+    expect(JSON.parse(requests[1].fetch(:request).body)).to include(
+      'chat_id' => 123_456,
+      'text' => /not valid/
+    )
+    expect(stats).to eq(paired: 0, rejected: 1, ignored: 0)
+  end
+
+  it 'keeps pairing when the Telegram reply fails' do
+    action = create_telegram_action!
+    stub_telegram_updates(
+      body: {
+        ok: true,
+        result: [
+          update(update_id: 42, text: '/start pair-token')
+        ]
+      },
+      message_code: '500',
+      message_body: { ok: false, description: 'Internal error' }
+    )
+
+    stats = with_env('VPSADMIN_TELEGRAM_BOT_TOKEN' => '123:telegram-token') do
+      task.poll_pairing_updates
+    end
+
+    expect(stats).to eq(paired: 1, rejected: 0, ignored: 0)
+    expect(action.reload).to be_verified
     expect(SysConfig.get('notifications', 'telegram_update_offset')).to eq(43)
   end
 
@@ -107,7 +187,7 @@ RSpec.describe VpsAdmin::API::Tasks::Telegram do
       name: 'telegram_update_offset',
       value: 123
     )
-    request = stub_telegram_updates(read_timeout: 15)
+    requests = stub_telegram_updates(read_timeout: 15)
 
     stats = with_env(
       'VPSADMIN_TELEGRAM_BOT_TOKEN' => '123:telegram-token',
@@ -117,18 +197,19 @@ RSpec.describe VpsAdmin::API::Tasks::Telegram do
       task.poll_pairing_updates
     end
 
-    body = JSON.parse(request.call.body)
+    body = JSON.parse(requests[0].fetch(:request).body)
 
     expect(body).to include(
       'offset' => 123,
       'limit' => 2,
       'timeout' => 10
     )
+    expect(requests[0].fetch(:options)).to include(read_timeout: 15)
     expect(stats).to eq(paired: 0, rejected: 0, ignored: 0)
   end
 
   it 'keeps the HTTP read timeout above the Telegram long-poll timeout' do
-    request = stub_telegram_updates(read_timeout: 55)
+    requests = stub_telegram_updates(read_timeout: 55)
 
     with_env(
       'VPSADMIN_TELEGRAM_BOT_TOKEN' => '123:telegram-token',
@@ -137,7 +218,8 @@ RSpec.describe VpsAdmin::API::Tasks::Telegram do
       task.poll_pairing_updates
     end
 
-    expect(JSON.parse(request.call.body)).to include('timeout' => 50)
+    expect(JSON.parse(requests[0].fetch(:request).body)).to include('timeout' => 50)
+    expect(requests[0].fetch(:options)).to include(read_timeout: 55)
   end
 
   it 'deletes webhooks before polling starts' do
@@ -171,7 +253,7 @@ RSpec.describe VpsAdmin::API::Tasks::Telegram do
   it 'rejects pairing attempts from non-private chats' do
     action = create_telegram_action!
     original_token = action.verification_token
-    stub_telegram_updates(
+    requests = stub_telegram_updates(
       body: {
         ok: true,
         result: [
@@ -186,6 +268,10 @@ RSpec.describe VpsAdmin::API::Tasks::Telegram do
 
     action.reload
 
+    expect(JSON.parse(requests[1].fetch(:request).body)).to include(
+      'chat_id' => 123_456,
+      'text' => /private chat/
+    )
     expect(stats).to eq(paired: 0, rejected: 1, ignored: 0)
     expect(action).not_to be_verified
     expect(action.target_value).to be_nil
@@ -202,7 +288,7 @@ RSpec.describe VpsAdmin::API::Tasks::Telegram do
       :updated_at,
       Time.now - NotificationReceiverAction::VERIFICATION_TOKEN_TTL - 60
     )
-    stub_telegram_updates(
+    requests = stub_telegram_updates(
       body: {
         ok: true,
         result: [
@@ -217,6 +303,10 @@ RSpec.describe VpsAdmin::API::Tasks::Telegram do
 
     action.reload
 
+    expect(JSON.parse(requests[1].fetch(:request).body)).to include(
+      'chat_id' => 123_456,
+      'text' => /expired/
+    )
     expect(stats).to eq(paired: 0, rejected: 1, ignored: 0)
     expect(action).not_to be_verified
     expect(action.target_value).to be_nil
