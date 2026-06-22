@@ -66,6 +66,42 @@ final class NotificationDeliveryHtmlDetailsTest extends TestCase
         self::assertStringContainsString('false, false, 12', $functionSource);
     }
 
+    public function testTelegramPairingDetailShowsGuidedPairingAndRepairFlow(): void
+    {
+        $source = file_get_contents(dirname(__DIR__, 2) . '/forms/notifications.forms.php');
+        $start = strpos($source, 'function notifications_receiver_action_form_fields(');
+        $end = strpos($source, 'function notifications_receiver_action_new(', $start);
+
+        self::assertNotFalse($start);
+        self::assertNotFalse($end);
+
+        $functionSource = substr($source, $start, $end - $start);
+
+        self::assertStringContainsString('Open Telegram bot', $source);
+        self::assertStringContainsString('notifications_telegram_pairing_link_html($action)', $functionSource);
+        self::assertStringContainsString('Generate new pairing command', $functionSource);
+        self::assertStringContainsString('Re-pair Telegram chat', $functionSource);
+        self::assertStringContainsString('pauses Telegram delivery until pairing succeeds', $functionSource);
+        self::assertStringNotContainsString('create new pairing token', $functionSource);
+    }
+
+    public function testTelegramActionCreateRedirectsToActionDetail(): void
+    {
+        $source = file_get_contents(dirname(__DIR__, 2) . '/pages/page_notifications.php');
+        $start = strpos($source, "case 'receiver_action_new':");
+        $end = strpos($source, "case 'receiver_action_edit':", $start);
+
+        self::assertNotFalse($start);
+        self::assertNotFalse($end);
+
+        $caseSource = substr($source, $start, $end - $start);
+
+        self::assertStringContainsString('$receiver_action = $receiver->action->create', $caseSource);
+        self::assertStringContainsString("\$action_type === 'telegram'", $caseSource);
+        self::assertStringContainsString('receiver_action_edit&receiver=', $caseSource);
+        self::assertStringContainsString("\$receiver_action->id", $caseSource);
+    }
+
     private function loadNotificationsForms(): void
     {
         if (!function_exists('_')) {
