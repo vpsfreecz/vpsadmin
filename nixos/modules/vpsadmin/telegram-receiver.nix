@@ -10,6 +10,9 @@ let
   cfg = config.vpsadmin.telegramReceiver;
   telegramCfg = config.vpsadmin.notifications.telegram;
   vpsadminRoot = toString (./../../..);
+  telegramBotTokenCredential = "telegram-bot-token";
+  telegramWebhookSecretCredential = "telegram-webhook-secret";
+  readCredential = name: ''$(head -n1 "$CREDENTIALS_DIRECTORY/${name}")'';
 
   apiApp = import ./api-app.nix {
     name = "telegramReceiver";
@@ -166,12 +169,12 @@ in
         ${apiApp.setup}
 
         TELEGRAM_BOT_TOKEN=${
-          optionalString (telegramCfg.botTokenFile != null) "$(head -n1 ${telegramCfg.botTokenFile})"
+          optionalString (telegramCfg.botTokenFile != null) (readCredential telegramBotTokenCredential)
         }
         TELEGRAM_WEBHOOK_SECRET=${
-          optionalString (
-            telegramCfg.webhook.secretTokenFile != null
-          ) "$(head -n1 ${telegramCfg.webhook.secretTokenFile})"
+          optionalString (telegramCfg.webhook.secretTokenFile != null) (
+            readCredential telegramWebhookSecretCredential
+          )
         }
         cp -f ${notificationsYml} "${cfg.stateDirectory}/config/notifications.yml"
         sed -e "s,#telegram_bot_token#,$TELEGRAM_BOT_TOKEN,g" -i "${cfg.stateDirectory}/config/notifications.yml"
@@ -186,6 +189,13 @@ in
         ExecStart = "${apiApp.bundle} exec bin/vpsadmin-telegram-receiver";
         Restart = "on-failure";
         RestartSec = 30;
+        LoadCredential =
+          optional (
+            telegramCfg.botTokenFile != null
+          ) "${telegramBotTokenCredential}:${telegramCfg.botTokenFile}"
+          ++ optional (
+            telegramCfg.webhook.secretTokenFile != null
+          ) "${telegramWebhookSecretCredential}:${telegramCfg.webhook.secretTokenFile}";
       };
     };
 
