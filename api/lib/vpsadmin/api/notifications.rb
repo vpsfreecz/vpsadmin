@@ -154,17 +154,20 @@ module VpsAdmin::API
     QUEUES = {
       'email' => 'vpsadmin.notifications.email',
       'telegram' => 'vpsadmin.notifications.telegram',
-      'webhook' => 'vpsadmin.notifications.webhook'
+      'webhook' => 'vpsadmin.notifications.webhook',
+      'sms' => 'vpsadmin.notifications.sms'
     }.freeze
     ROUTING_KEYS = {
       'email' => 'delivery.email',
       'telegram' => 'delivery.telegram',
-      'webhook' => 'delivery.webhook'
+      'webhook' => 'delivery.webhook',
+      'sms' => 'delivery.sms'
     }.freeze
     DEFAULT_LIMIT = 100
     DEFAULT_EMAIL_CONCURRENCY = 2
     DEFAULT_TELEGRAM_CONCURRENCY = 2
     DEFAULT_WEBHOOK_CONCURRENCY = 4
+    DEFAULT_SMS_CONCURRENCY = 1
     DEFAULT_EMAIL_WORKER_DELAY = 1.0
     DEFAULT_EMAIL_DOMAIN_MIN_DELIVERY_INTERVAL = 1.0
     EMAIL_DUE_SCAN_MULTIPLIER = 4
@@ -179,6 +182,9 @@ module VpsAdmin::API
       'x-vpsadmin-truncated' => ['response headers truncated']
     }.freeze
     TELEGRAM_TEXT_LIMIT = 4096
+    SMS_TEXT_LIMIT = 459
+    SMS_CALLBACK_PATH = '/internal/notifications/sms/callback'.freeze
+    SMS_VERIFICATION_CLIENT_ID_PREFIX = 'verification-action-'.freeze
     DEFAULT_POLL_INTERVAL = 5
     PRIVATE_ADDRESS_RANGES = [
       '0.0.0.0/8',
@@ -273,6 +279,15 @@ module VpsAdmin::API
       }
     end
 
+    def sms_payload_for(delivery)
+      {
+        to: delivery.target_value,
+        text: sms_text_for(delivery),
+        client_message_id: delivery.id.to_s,
+        callback_url: sms_callback_url
+      }
+    end
+
     def telegram_text_for(delivery)
       event = delivery.event
       template_name = delivery.template_name.presence&.to_sym ||
@@ -311,6 +326,32 @@ module VpsAdmin::API
       text.to_s[0, TELEGRAM_TEXT_LIMIT]
     end
 
+    def sms_text_for(delivery)
+      event = delivery.event
+      template_name = delivery.template_name.presence&.to_sym ||
+                      VpsAdmin::API::Events.template_name_for(event, :sms)
+
+      if template_name
+        rendered = ::NotificationTemplate.render_sms!(
+          template_name,
+          VpsAdmin::API::Events.template_options_for(event, delivery, action: :sms)
+        )
+        return truncate_sms_text(rendered.fetch(:text))
+      end
+
+      lines = [
+        "[#{event.severity}] #{event.subject}",
+        "Event: #{event.event_type}"
+      ]
+      lines << "VPS: ##{event.vps.id} #{event.vps.hostname}" if event.vps
+
+      truncate_sms_text(lines.join("\n"))
+    end
+
+    def truncate_sms_text(text)
+      text.to_s[0, SMS_TEXT_LIMIT]
+    end
+
     def telegram_configured?(config = Config.load)
       telegram = config.fetch('telegram', {})
       return false if telegram.has_key?('enabled') && !truthy_config?(telegram['enabled'])
@@ -326,6 +367,194 @@ module VpsAdmin::API
         telegram.fetch('bot_token_file', nil).present? ||
         ENV['VPSADMIN_TELEGRAM_BOT_TOKEN'].present? ||
         ENV['VPSADMIN_TELEGRAM_BOT_TOKEN_FILE'].present?
+    end
+
+    def sms_configured?(config = Config.load)
+      sms = config.fetch('sms', {})
+      return false if sms.has_key?('enabled') && !truthy_config?(sms['enabled'])
+
+      truthy_config?(sms.fetch('configured', false)) || sms_gateways(sms).any?
+    rescue KeyError
+      false
+    end
+
+    def send_sms_verification_code!(action)
+      action.ensure_sms_verification_code!
+      body = JSON.dump({
+                         to: action.target_value,
+                         text: sms_verification_text(action),
+                         client_message_id: "#{SMS_VERIFICATION_CLIENT_ID_PREFIX}#{action.id}"
+                       })
+      post_sms_to_gateway!(body)
+      action.mark_sms_verification_sent!
+    end
+
+    def apply_sms_gateway_callback!(payload)
+      payload = payload.to_h
+      client_message_id = payload.fetch('client_message_id').to_s
+      raise ArgumentError, 'client_message_id is invalid' unless client_message_id.match?(/\A[0-9]+\z/)
+
+      delivery = ::EventDelivery.find(client_message_id)
+      raise ArgumentError, 'delivery is not SMS' unless delivery.sms_action?
+
+      status = payload.fetch('status').to_s
+      now = Time.now
+      attrs = {
+        response_status: 200,
+        response_body: truncate_response_body(JSON.dump(payload)),
+        provider_message_id: sms_callback_provider_message_id(payload) || delivery.provider_message_id,
+        last_attempt_at: now,
+        updated_at: now
+      }
+
+      case status
+      when 'sent'
+        attrs[:state] = 'sent'
+        attrs[:next_attempt_at] = nil
+        attrs[:error_summary] = nil
+      when 'failed'
+        attrs[:state] = 'failed'
+        attrs[:next_attempt_at] = nil
+        attrs[:error_summary] = payload['error_summary'].presence || 'SMS gateway reported final failure'
+      else
+        raise ArgumentError, "unsupported SMS status #{status.inspect}"
+      end
+
+      delivery.update!(attrs)
+      delivery
+    end
+
+    def sms_callback_provider_message_id(payload)
+      gateway = payload['gateway'].presence
+      provider_id = payload['provider_id'].presence || payload['gateway_message_id'].presence
+      [gateway, provider_id].compact.join(':').presence
+    end
+
+    def truncate_response_body(body)
+      return if body.nil?
+
+      body.to_s.byteslice(0, RESPONSE_BODY_LIMIT).to_s.scrub
+    end
+
+    def post_sms_to_gateway!(body, sms: sms_config)
+      gateways = sms_gateways(sms)
+      raise SmsGatewayResponseError.new(nil, nil, 'SMS gateways are not configured') if gateways.empty?
+
+      last_error = nil
+      gateways.each do |gateway|
+        response = post_sms_gateway_request(gateway, body)
+        if response.code.to_i.between?(200, 299)
+          return sms_gateway_success(gateway, response)
+        end
+
+        last_error = SmsGatewayResponseError.new(
+          response.code.to_i,
+          truncate_response_body(response.body),
+          "SMS gateway #{gateway.fetch('name')} returned HTTP #{response.code}"
+        )
+      rescue StandardError => e
+        last_error = SmsGatewayResponseError.new(nil, nil, "SMS gateway #{gateway.fetch('name')} failed: #{e.message}")
+      end
+
+      raise last_error || SmsGatewayResponseError.new(nil, nil, 'SMS gateways are not configured')
+    end
+
+    def post_sms_gateway_request(gateway, body)
+      uri = URI.parse(gateway.fetch('url'))
+      raise ArgumentError, 'SMS gateway URL must use HTTP or HTTPS' unless uri.is_a?(URI::HTTP) && uri.host.present?
+
+      request = Net::HTTP::Post.new(uri.request_uri)
+      request['Content-Type'] = 'application/json'
+      request['Authorization'] = "Bearer #{gateway.fetch('token')}"
+      request.body = body
+
+      Net::HTTP.start(
+        uri.host,
+        uri.port,
+        use_ssl: uri.scheme == 'https',
+        open_timeout: sms_open_timeout,
+        read_timeout: sms_read_timeout
+      ) do |http|
+        http.request(request)
+      end
+    end
+
+    def sms_gateway_success(gateway, response)
+      body = JSON.parse(response.body.to_s)
+      id = body['id'] || Array(body['message_ids']).first
+
+      {
+        gateway: gateway.fetch('name'),
+        provider_message_id: [gateway.fetch('name'), id].compact.join(':').presence,
+        response_status: response.code.to_i,
+        response_body: truncate_response_body(response.body)
+      }
+    rescue JSON::ParserError
+      {
+        gateway: gateway.fetch('name'),
+        provider_message_id: gateway.fetch('name'),
+        response_status: response.code.to_i,
+        response_body: truncate_response_body(response.body)
+      }
+    end
+
+    def sms_gateways(sms = sms_config)
+      raw = Array(sms['gateways'])
+      if raw.empty? && sms['url'].present?
+        raw = [
+          {
+            'name' => sms.fetch('name', 'default'),
+            'url' => sms['url'],
+            'token' => sms['token']
+          }
+        ]
+      end
+
+      raw.filter_map.with_index do |gateway, index|
+        gateway = gateway.to_h
+        url = gateway['url'].presence || gateway['endpoint'].presence
+        token = gateway['token'].presence
+        next if url.blank? || token.blank?
+
+        {
+          'name' => gateway['name'].presence || "gateway-#{index + 1}",
+          'url' => url,
+          'token' => token
+        }
+      end
+    end
+
+    def sms_config
+      Config.load.fetch('sms', {})
+    end
+
+    def sms_callback_url
+      configured = sms_config['callback_url'].presence
+      return configured if configured
+
+      api_url = ::SysConfig.get(:core, :api_url).to_s.chomp('/')
+      return if api_url.blank?
+
+      "#{api_url}#{SMS_CALLBACK_PATH}"
+    rescue StandardError
+      nil
+    end
+
+    def sms_callback_token
+      sms_config['callback_token'].presence || ENV['VPSADMIN_SMS_CALLBACK_TOKEN'].presence
+    end
+
+    def sms_verification_text(action)
+      template = sms_config.fetch('verification_text', 'Your vpsAdmin verification code is %{code}')
+      format(template, code: action.send(:raw_verification_token))
+    end
+
+    def sms_open_timeout
+      sms_config.fetch('open_timeout', 5).to_i
+    end
+
+    def sms_read_timeout
+      sms_config.fetch('read_timeout', 15).to_i
     end
 
     def truthy_config?(value)
@@ -494,6 +723,41 @@ module VpsAdmin::API
 
       deliver do |delivery|
         deliver_telegram(delivery)
+      end
+    end
+
+    Actions.define :sms do
+      label 'SMS'
+      target_kind :custom, label: 'custom target'
+
+      available do
+        VpsAdmin::API::Notifications.sms_configured?
+      end
+
+      validate_receiver_action do
+        check_sms_target
+      end
+
+      display_target do
+        target_value.presence || 'Phone number'
+      end
+
+      receiver_action_available do
+        sms_action? && verified? && target_value.present? && sms_notifications_allowed?
+      end
+
+      plan_delivery do |route, receiver, receiver_action|
+        sms_delivery(route, receiver, receiver_action)
+      end
+
+      prepare_delivery do |delivery|
+        if delivery.payload.blank?
+          delivery.update!(payload: JSON.dump(VpsAdmin::API::Notifications.sms_payload_for(delivery)))
+        end
+      end
+
+      deliver do |delivery|
+        deliver_sms(delivery)
       end
     end
 
@@ -921,7 +1185,11 @@ module VpsAdmin::API
         return unless attempt
 
         result = deliver(delivery.reload)
-        mark_success!(delivery, attempt, result)
+        if result&.fetch(:accepted, false)
+          mark_accepted!(delivery, attempt, result)
+        else
+          mark_success!(delivery, attempt, result)
+        end
         nil
       rescue WebhookResponseError => e
         mark_failure!(
@@ -933,7 +1201,7 @@ module VpsAdmin::API
           error_summary: e.message
         )
         nil
-      rescue TelegramResponseError => e
+      rescue TelegramResponseError, SmsGatewayResponseError => e
         mark_failure!(
           delivery,
           attempt,
@@ -1321,6 +1589,16 @@ module VpsAdmin::API
         }
       end
 
+      def deliver_sms(delivery)
+        payload = sms_delivery_payload(delivery)
+        raise 'SMS callback URL is not configured' if payload['callback_url'].blank?
+
+        body = JSON.dump(payload)
+        result = Notifications.post_sms_to_gateway!(body, sms: sms_config)
+
+        result.merge(accepted: true)
+      end
+
       def mark_success!(delivery, attempt, result)
         result ||= {}
         now = Time.now
@@ -1337,6 +1615,31 @@ module VpsAdmin::API
 
         delivery.update!(
           state: 'sent',
+          next_attempt_at: nil,
+          provider_message_id: result[:provider_message_id],
+          response_status: result[:response_status],
+          response_body: result[:response_body],
+          response_headers: result[:response_headers],
+          error_summary: nil
+        )
+      end
+
+      def mark_accepted!(delivery, attempt, result)
+        result ||= {}
+        now = Time.now
+
+        attempt.update!(
+          state: 'succeeded',
+          finished_at: now,
+          provider_message_id: result[:provider_message_id],
+          response_status: result[:response_status],
+          response_body: result[:response_body],
+          response_headers: result[:response_headers],
+          error_summary: nil
+        )
+
+        delivery.update!(
+          state: 'accepted',
           next_attempt_at: nil,
           provider_message_id: result[:provider_message_id],
           response_status: result[:response_status],
@@ -1389,6 +1692,23 @@ module VpsAdmin::API
           chat_id: delivery.target_value,
           text: Notifications.telegram_text_for(delivery)
         }
+      end
+
+      def sms_delivery_payload(delivery)
+        payload = JSON.parse(delivery.payload.to_s)
+        raise 'SMS payload is not an object' unless payload.is_a?(Hash)
+
+        callback_url = payload['callback_url'].presence || Notifications.sms_callback_url
+        raise 'SMS callback URL is not configured' if callback_url.blank?
+
+        payload.merge(
+          'to' => payload.fetch('to'),
+          'text' => payload.fetch('text'),
+          'client_message_id' => delivery.id.to_s,
+          'callback_url' => callback_url
+        )
+      rescue JSON::ParserError
+        Notifications.sms_payload_for(delivery)
       end
 
       def telegram_response_body(response)
@@ -1539,6 +1859,10 @@ module VpsAdmin::API
         @config.fetch('telegram', {})
       end
 
+      def sms_config
+        @config.fetch('sms', {})
+      end
+
       def email_config
         @config.fetch('email', {})
       end
@@ -1680,6 +2004,8 @@ module VpsAdmin::API
               DEFAULT_EMAIL_CONCURRENCY
             when 'telegram'
               DEFAULT_TELEGRAM_CONCURRENCY
+            when 'sms'
+              DEFAULT_SMS_CONCURRENCY
             else
               DEFAULT_WEBHOOK_CONCURRENCY
             end
@@ -1710,6 +2036,8 @@ module VpsAdmin::API
           email_config
         when 'telegram'
           telegram_config
+        when 'sms'
+          sms_config
         else
           webhook_config
         end
@@ -1837,6 +2165,16 @@ module VpsAdmin::API
     end
 
     class TelegramResponseError < StandardError
+      attr_reader :response_status, :response_body
+
+      def initialize(response_status, response_body, message)
+        @response_status = response_status
+        @response_body = response_body
+        super(message)
+      end
+    end
+
+    class SmsGatewayResponseError < StandardError
       attr_reader :response_status, :response_body
 
       def initialize(response_status, response_body, message)

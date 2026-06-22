@@ -7,7 +7,7 @@ module VpsAdmin::API
       'en' => 'English',
       'cs' => 'Česky'
     }.freeze
-    PROTOCOLS = %w[email telegram].freeze
+    PROTOCOLS = %w[email telegram sms].freeze
 
     CONCRETE_DEFAULTS = {
       expiration_user_active: :expiration_warning,
