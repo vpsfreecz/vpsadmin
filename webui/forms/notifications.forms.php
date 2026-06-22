@@ -2181,7 +2181,9 @@ function notifications_receiver_edit($receiver_id)
         );
         $xtpl->table_td(
             '<a href="?page=notifications&action=receiver_action_delete&receiver=' . $receiver->id . '&id=' . $action->id
-            . notifications_user_qs($receiver->user_id) . '&t=' . csrf_token() . '"><img src="template/icons/vps_delete.png" title="' . _('Delete') . '"></a>'
+            . notifications_user_qs($receiver->user_id) . '&t=' . csrf_token() . '"'
+            . notifications_confirm_onclick(_('Do you really wish to delete this notification receiver action?'))
+            . '><img src="template/icons/vps_delete.png" title="' . _('Delete') . '"></a>'
         );
         $xtpl->table_tr();
     }

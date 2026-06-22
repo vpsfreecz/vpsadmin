@@ -102,6 +102,25 @@ final class NotificationDeliveryHtmlDetailsTest extends TestCase
         self::assertStringContainsString("\$receiver_action->id", $caseSource);
     }
 
+    public function testReceiverActionDeleteRequiresConfirmation(): void
+    {
+        $source = file_get_contents(dirname(__DIR__, 2) . '/forms/notifications.forms.php');
+        $start = strpos($source, 'function notifications_receiver_edit(');
+        $end = strpos($source, 'function notifications_time_or_dash(', $start);
+
+        self::assertNotFalse($start);
+        self::assertNotFalse($end);
+
+        $functionSource = substr($source, $start, $end - $start);
+
+        self::assertStringContainsString('receiver_action_delete', $functionSource);
+        self::assertStringContainsString('notifications_confirm_onclick', $functionSource);
+        self::assertStringContainsString(
+            'Do you really wish to delete this notification receiver action?',
+            $functionSource
+        );
+    }
+
     private function loadNotificationsForms(): void
     {
         if (!function_exists('_')) {
