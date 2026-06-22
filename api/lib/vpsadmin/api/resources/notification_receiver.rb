@@ -171,6 +171,9 @@ module VpsAdmin::API::Resources
         bool :secret_present
         text :last_error, nullable: true
         string :display_target
+        string :telegram_bot_url, nullable: true
+        string :telegram_pairing_url, nullable: true
+        string :telegram_pairing_command, nullable: true
       end
 
       params(:all) do

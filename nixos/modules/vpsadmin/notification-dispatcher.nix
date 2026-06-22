@@ -81,6 +81,7 @@ let
         configured = telegramCfg.enable && telegramCfg.botTokenFile != null;
         concurrency = cfg.telegram.concurrency;
         bot_token = "#telegram_bot_token#";
+        bot_username = telegramCfg.botUsername;
         api_base_url = telegramCfg.apiBaseUrl;
       };
       webhook = {

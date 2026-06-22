@@ -293,9 +293,16 @@ if (isLoggedIn()) {
                         break;
                     }
 
-                    $receiver->action->create(notifications_receiver_action_params($action_type, true));
+                    $receiver_action = $receiver->action->create(notifications_receiver_action_params($action_type, true));
 
                     notify_user(_('Action added'), '');
+                    if ($action_type === 'telegram') {
+                        redirect(
+                            '?page=notifications&action=receiver_action_edit&receiver=' . $receiver->id
+                            . '&id=' . $receiver_action->id . notifications_user_qs($receiver->user_id)
+                        );
+                    }
+
                     redirect('?page=notifications&action=receiver_edit&id=' . $receiver->id . notifications_user_qs($receiver->user_id));
                 } catch (\HaveAPI\Client\Exception\ActionFailed $e) {
                     $xtpl->perex_format_errors(_('Failed to add action'), $e->getResponse());
@@ -333,7 +340,7 @@ if (isLoggedIn()) {
                 $receiver = $api->notification_receiver->show($_GET['receiver']);
                 $receiver->action($_GET['id'])->create_pairing_token();
 
-                notify_user(_('Pairing token created'), '');
+                notify_user(_('Pairing command created'), '');
                 redirect('?page=notifications&action=receiver_action_edit&receiver=' . $receiver->id . '&id=' . $_GET['id'] . notifications_user_qs($receiver->user_id));
             } catch (\HaveAPI\Client\Exception\ActionFailed $e) {
                 $xtpl->perex_format_errors(_('Failed to create pairing token'), $e->getResponse());

@@ -1564,6 +1564,50 @@ function notifications_receiver_action_url($receiver_id, $action_id, $user_id = 
         . notifications_user_qs($user_id);
 }
 
+function notifications_telegram_pairing_token_url($receiver, $action)
+{
+    return '?page=notifications&action=receiver_action_pairing_token&receiver='
+        . rawurlencode((string) $receiver->id)
+        . '&id='
+        . rawurlencode((string) $action->id)
+        . notifications_user_qs($receiver->user_id)
+        . '&t='
+        . rawurlencode((string) csrf_token());
+}
+
+function notifications_telegram_pairing_link_html($action)
+{
+    $pairing_url = notifications_prop($action, 'telegram_pairing_url');
+    if (!$pairing_url) {
+        return null;
+    }
+
+    return '<a href="' . h($pairing_url) . '" target="_blank" rel="noopener">'
+        . _('Open Telegram bot') . '</a>';
+}
+
+function notifications_telegram_pairing_instructions_html($action)
+{
+    $command = notifications_prop($action, 'telegram_pairing_command');
+    if (!$command) {
+        return _('Create a new pairing command and use it in a private chat with the Telegram bot.');
+    }
+
+    $items = [];
+    $link = notifications_telegram_pairing_link_html($action);
+
+    if ($link) {
+        $items[] = sprintf(_('Open %s and press Start.'), $link);
+    } else {
+        $items[] = _('Open a private chat with the vpsAdmin Telegram bot.');
+    }
+
+    $items[] = sprintf(_('Send %s.'), '<code>' . h($command) . '</code>');
+    $items[] = _('The bot will confirm whether pairing succeeded.');
+
+    return '<ol><li>' . implode('</li><li>', $items) . '</li></ol>';
+}
+
 function notifications_delivery_receiver_link($delivery, $user_id = null)
 {
     $receiver_id = notifications_prop($delivery, 'notification_receiver_id');
@@ -1952,14 +1996,26 @@ function notifications_receiver_action_form_fields($receiver, $action_type, $act
             if ($action->verified) {
                 $xtpl->table_td(boolean_icon(true) . ' ' . h($action->display_target));
             } else {
-                $token = $action->verification_token;
-                $cmd = $token ? '/start ' . $token : '-';
-                $xtpl->table_td('<code>' . h($cmd) . '</code>');
+                $cmd = notifications_prop($action, 'telegram_pairing_command') ?: '-';
+                $pairing_link = notifications_telegram_pairing_link_html($action);
+                $pairing_html = '<code>' . h($cmd) . '</code>';
+
+                if ($pairing_link) {
+                    $pairing_html = $pairing_link . '<br>' . $pairing_html;
+                }
+
+                $xtpl->table_td($pairing_html, false, true);
             }
         } else {
             $xtpl->table_td(_('created after saving'));
         }
         $xtpl->table_tr();
+
+        if ($action && !$action->verified) {
+            $xtpl->table_td(_('Instructions') . ':');
+            $xtpl->table_td(notifications_telegram_pairing_instructions_html($action), false, true);
+            $xtpl->table_tr();
+        }
 
         if ($action && !$action->verified && $action->last_error) {
             $xtpl->table_td(_('Last error') . ':');
@@ -1968,14 +2024,24 @@ function notifications_receiver_action_form_fields($receiver, $action_type, $act
         }
 
         if ($action) {
-            $xtpl->table_td(_('Token') . ':');
-            $xtpl->table_td(
-                '<a href="?page=notifications&action=receiver_action_pairing_token&receiver=' . $receiver->id
-                . '&id=' . $action->id . notifications_user_qs($receiver->user_id)
-                . '&t=' . csrf_token() . '">' . _('create new pairing token') . '</a>',
-                false,
-                true
-            );
+            $pairing_url = notifications_telegram_pairing_token_url($receiver, $action);
+
+            if ($action->verified) {
+                $confirm = _('Re-pairing creates a new pairing command and pauses Telegram delivery until pairing succeeds. Continue?');
+                $link = '<a href="' . h($pairing_url) . '"' . notifications_confirm_onclick($confirm) . '>'
+                    . _('Re-pair Telegram chat') . '</a>';
+                $text = $link . '<br>' . _('Telegram delivery will be paused until the new chat is paired.');
+
+                $xtpl->table_td(_('Re-pair') . ':');
+                $xtpl->table_td($text, false, true);
+            } else {
+                $xtpl->table_td(_('Pairing command') . ':');
+                $xtpl->table_td(
+                    '<a href="' . h($pairing_url) . '">' . _('Generate new pairing command') . '</a>',
+                    false,
+                    true
+                );
+            }
             $xtpl->table_tr();
         }
     }

@@ -33,6 +33,7 @@ let
         enabled = telegramCfg.enable;
         configured = telegramCfg.enable && telegramCfg.botTokenFile != null;
         bot_token = "#telegram_bot_token#";
+        bot_username = telegramCfg.botUsername;
         api_base_url = telegramCfg.apiBaseUrl;
         receive_mode = telegramCfg.receiveMode;
         polling = {

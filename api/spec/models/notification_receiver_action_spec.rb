@@ -129,6 +129,39 @@ RSpec.describe NotificationReceiverAction do
     expect(action.verification_token).to be_nil
   end
 
+  it 'builds Telegram pairing links from configured bot username' do
+    enable_telegram!
+    allow(VpsAdmin::API::Notifications::Config).to receive(:load).and_return(
+      'telegram' => {
+        'bot_username' => '@vpsadmin_aitherdev_bot'
+      }
+    )
+
+    action = create_receiver!.notification_receiver_actions.create!(
+      action: :telegram,
+      target_kind: :custom,
+      verification_token: 'pair-token'
+    )
+
+    expect(action.telegram_pairing_command).to eq('/start pair-token')
+    expect(action.telegram_bot_url).to eq('https://t.me/vpsadmin_aitherdev_bot')
+    expect(action.telegram_pairing_url).to eq('https://t.me/vpsadmin_aitherdev_bot?start=pair-token')
+  end
+
+  it 'omits Telegram pairing links when the bot username is not configured' do
+    enable_telegram!
+
+    action = create_receiver!.notification_receiver_actions.create!(
+      action: :telegram,
+      target_kind: :custom,
+      verification_token: 'pair-token'
+    )
+
+    expect(action.telegram_pairing_command).to eq('/start pair-token')
+    expect(action.telegram_bot_url).to be_nil
+    expect(action.telegram_pairing_url).to be_nil
+  end
+
   it 'expires pending Telegram verification tokens' do
     enable_telegram!
 
