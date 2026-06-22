@@ -12,6 +12,10 @@ module VpsAdmin::API::Tasks
       VpsAdmin::API::Notifications::Dispatcher.dispatch_due('telegram', limit:)
     end
 
+    def deliver_smses
+      VpsAdmin::API::Notifications::Dispatcher.dispatch_due('sms', limit:)
+    end
+
     protected
 
     def limit

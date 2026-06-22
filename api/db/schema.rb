@@ -2117,6 +2117,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_21_120000) do
     t.boolean "preferred_logout_all", default: false, null: false
     t.integer "preferred_session_length", default: 1200, null: false
     t.datetime "remind_after_date", precision: nil
+    t.boolean "sms_notifications_enabled", default: false, null: false
     t.string "time_zone"
     t.datetime "updated_at", precision: nil
     t.string "webauthn_id"
