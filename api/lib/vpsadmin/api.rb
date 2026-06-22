@@ -62,6 +62,27 @@ module VpsAdmin
           [500, { 'content-type' => 'text/plain' }, e.message]
         end
 
+        sinatra.post '/internal/notifications/sms/callback' do
+          token = VpsAdmin::API::Notifications.sms_callback_token
+          halt 503, 'SMS callbacks are not configured' if token.blank?
+          halt 401, 'Access denied' unless request.env['HTTP_AUTHORIZATION'] == "Bearer #{token}"
+
+          payload = JSON.parse(request.body.read)
+          delivery = VpsAdmin::API::Notifications.apply_sms_gateway_callback!(payload)
+
+          [
+            200,
+            { 'content-type' => 'application/json' },
+            JSON.dump(ok: true, delivery_id: delivery.id)
+          ]
+        rescue JSON::ParserError
+          [400, { 'content-type' => 'text/plain' }, 'Invalid JSON']
+        rescue ActiveRecord::RecordNotFound
+          [404, { 'content-type' => 'text/plain' }, 'Delivery not found']
+        rescue ArgumentError => e
+          [400, { 'content-type' => 'text/plain' }, e.message]
+        end
+
         webauthn_registration_new = proc do
           if request.get? && (params.has_key?('access_token') || params.has_key?(:access_token))
             halt 400, 'access_token must not be sent in URL'

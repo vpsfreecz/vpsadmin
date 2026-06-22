@@ -1,0 +1,4 @@
+<%= @event.subject %>
+<% if @event.vps -%>
+VPS: #<%= @event.vps.id %> <%= @event.vps.hostname %>
+<% end -%>

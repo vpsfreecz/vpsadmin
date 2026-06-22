@@ -209,6 +209,8 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
         'notification_receiver.action#show',
         'notification_receiver.action#create',
         'notification_receiver.action#create_pairing_token',
+        'notification_receiver.action#send_sms_verification_code',
+        'notification_receiver.action#confirm_sms_verification_code',
         'notification_receiver.action#update',
         'notification_receiver.action#delete'
       )
@@ -572,6 +574,43 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
       'telegram_pairing_url' => "https://t.me/vpsadmin_aitherdev_bot?start=#{token}",
       'telegram_pairing_command' => "/start #{token}"
     )
+  end
+
+  it 'hides SMS verification codes and accepts them through confirmation' do
+    allow(VpsAdmin::API::Notifications).to receive(:sms_configured?).and_return(true)
+    SpecSeed.user.update!(sms_notifications_enabled: true)
+
+    as(SpecSeed.user) do
+      json_post receiver_index_path, notification_receiver: {
+        label: 'SMS receiver'
+      }
+    end
+
+    expect_status(200)
+    receiver = NotificationReceiver.find(receiver_obj['id'])
+
+    action = receiver.notification_receiver_actions.create!(
+      action: 'sms',
+      label: 'Spec SMS',
+      target_kind: 'custom',
+      target_value: '+420123456789'
+    )
+    action.generate_sms_verification_code!
+    code = action[:verification_token]
+
+    as(SpecSeed.user) { json_get receiver_action_path(receiver.id, action.id) }
+    expect_status(200)
+    expect(code).to match(/\A[0-9]{6}\z/)
+    expect(action_obj['verification_token']).to be_nil
+
+    as(SpecSeed.user) do
+      json_post "#{receiver_action_path(receiver.id, action.id)}/confirm_sms_verification_code", action: {
+        code:
+      }
+    end
+
+    expect_status(200)
+    expect(NotificationReceiverAction.find(action.id)).to be_verified
   end
 
   it 'lets users retry failed deliveries' do

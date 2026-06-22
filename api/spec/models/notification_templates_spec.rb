@@ -5,17 +5,20 @@ require 'tmpdir'
 require 'erb'
 
 RSpec.describe VpsAdmin::API::NotificationTemplates do
-  def write_template(dir, name, meta:, text:, telegram_text: nil)
+  def write_template(dir, name, meta:, text:, telegram_text: nil, sms_text: nil)
     base = File.join(dir, 'templates')
     path = File.join(base, name)
     email_path = File.join(path, 'email')
     telegram_path = File.join(path, 'telegram')
+    sms_path = File.join(path, 'sms')
     FileUtils.mkdir_p(email_path)
     FileUtils.mkdir_p(telegram_path)
+    FileUtils.mkdir_p(sms_path)
     File.write(File.join(path, 'meta.rb'), meta)
     File.write(File.join(email_path, 'en.subject.erb'), 'Directory subject')
     File.write(File.join(email_path, 'en.text.erb'), text)
     File.write(File.join(telegram_path, 'en.text.erb'), telegram_text || 'Telegram body')
+    File.write(File.join(sms_path, 'en.text.erb'), sms_text || 'SMS body')
     base
   end
 
@@ -61,6 +64,10 @@ RSpec.describe VpsAdmin::API::NotificationTemplates do
         protocol: 'telegram',
         text: 'Telegram body'
       )
+      expect(template.variants.find { |v| v.protocol == 'sms' }.params).to include(
+        protocol: 'sms',
+        text: 'SMS body'
+      )
     end
   end
 
@@ -85,13 +92,17 @@ RSpec.describe VpsAdmin::API::NotificationTemplates do
       template = NotificationTemplate.find_by!(name: 'spec_install_template')
       variant = template.notification_template_variants.find_by!(language: SpecSeed.language, protocol: 'email')
       telegram = template.notification_template_variants.find_by!(language: SpecSeed.language, protocol: 'telegram')
+      sms = template.notification_template_variants.find_by!(language: SpecSeed.language, protocol: 'sms')
 
-      expect(result).to eq(templates_created: 1, variants_created: 2)
+      expect(result).to eq(templates_created: 1, variants_created: 3)
       expect(template.template_id).to eq('user_create')
       expect(variant.text).to eq('Install body')
       expect(telegram.from).to be_nil
       expect(telegram.subject).to be_nil
       expect(telegram.text).to eq('Telegram body')
+      expect(sms.from).to be_nil
+      expect(sms.subject).to be_nil
+      expect(sms.text).to eq('SMS body')
     end
   end
 
@@ -128,7 +139,7 @@ RSpec.describe VpsAdmin::API::NotificationTemplates do
       template.reload
       variant = template.notification_template_variants.find_by!(language: SpecSeed.language, protocol: 'email')
 
-      expect(result).to eq(templates_created: 0, variants_created: 1)
+      expect(result).to eq(templates_created: 0, variants_created: 2)
       expect(template.label).to eq('Existing template')
       expect(template.template_id).to eq('daily_report')
       expect(variant.from).to eq('custom@example.test')
@@ -211,6 +222,7 @@ RSpec.describe VpsAdmin::API::NotificationTemplates do
       expect(template.id.to_s).to eq(template_id)
       expect(template.variants.select { |v| v.protocol == 'email' }.map(&:lang)).to include('en')
       expect(template.variants.select { |v| v.protocol == 'telegram' }.map(&:lang)).to include('en')
+      expect(template.variants.select { |v| v.protocol == 'sms' }.map(&:lang)).to include('en')
     end
   end
 
@@ -223,13 +235,16 @@ RSpec.describe VpsAdmin::API::NotificationTemplates do
       expect(variant).to be_present, "#{template.name} is missing English e-mail"
       telegram = template.variants.detect { |v| v.protocol == 'telegram' && v.lang == 'en' }
       expect(telegram).to be_present, "#{template.name} is missing English Telegram"
+      sms = template.variants.detect { |v| v.protocol == 'sms' && v.lang == 'en' }
+      expect(sms).to be_present, "#{template.name} is missing English SMS"
 
       params = variant.params
       expect(params[:subject]).to be_present
       expect(params[:text]).to be_present
       expect(telegram.params[:text]).to be_present
+      expect(sms.params[:text]).to be_present
 
-      [params[:subject], params[:text], params[:html], telegram.params[:text]].compact.each do |source|
+      [params[:subject], params[:text], params[:html], telegram.params[:text], sms.params[:text]].compact.each do |source|
         compile_erb(source)
       end
 
@@ -239,7 +254,8 @@ RSpec.describe VpsAdmin::API::NotificationTemplates do
         params[:subject],
         params[:text],
         params[:html],
-        telegram.params[:text]
+        telegram.params[:text],
+        sms.params[:text]
       ].compact.join("\n")
 
       expect(content).not_to include('Template:')

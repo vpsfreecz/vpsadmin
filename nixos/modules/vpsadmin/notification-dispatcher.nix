@@ -9,6 +9,7 @@ let
   vpsadminCfg = config.vpsadmin;
   cfg = config.vpsadmin.notificationDispatcher;
   telegramCfg = config.vpsadmin.notifications.telegram;
+  smsCfg = config.vpsadmin.notifications.sms;
   vpsadminRoot = toString (./../../..);
 
   apiAppFor =
@@ -36,7 +37,33 @@ let
   positiveInt = types.addCheck types.int (value: value >= 1);
   nonNegativeInt = types.addCheck types.int (value: value >= 0);
   telegramBotTokenCredential = "telegram-bot-token";
+  smsCallbackTokenCredential = "sms-callback-token";
+  smsGatewayTokenCredential = gateway: "sms-gateway-${gateway.name}-token";
   readCredential = name: ''$(head -n1 "$CREDENTIALS_DIRECTORY/${name}")'';
+
+  smsCredentials =
+    optional (smsCfg.enable && smsCfg.callbackTokenFile != null) (
+      "${smsCallbackTokenCredential}:${smsCfg.callbackTokenFile}"
+    )
+    ++ optionals smsCfg.enable (
+      map (gateway: "${smsGatewayTokenCredential gateway}:${gateway.tokenFile}") smsCfg.gateways
+    );
+
+  smsGatewayConfig = imap0 (index: gateway: {
+    inherit (gateway) name url;
+    token = "#sms_gateway_${toString index}_token#";
+  }) smsCfg.gateways;
+
+  smsTokenSubstitutions =
+    stateDirectory:
+    concatStringsSep "\n" (
+      (optional (smsCfg.enable && smsCfg.callbackTokenFile != null) ''
+        sed -e "s,#sms_callback_token#,${readCredential smsCallbackTokenCredential},g" -i "${stateDirectory}/config/notifications.yml"
+      '')
+      ++ imap0 (index: gateway: ''
+        sed -e "s,#sms_gateway_${toString index}_token#,${readCredential (smsGatewayTokenCredential gateway)},g" -i "${stateDirectory}/config/notifications.yml"
+      '') smsCfg.gateways
+    );
 
   actionTmpfilesRules =
     action:
@@ -88,6 +115,17 @@ let
         concurrency = cfg.webhook.concurrency;
         allowed_untracked_private_ranges = cfg.webhook.allowedUntrackedPrivateRanges;
       };
+      sms = {
+        enabled = smsCfg.enable;
+        configured = smsCfg.enable && smsCfg.gateways != [ ];
+        concurrency = cfg.sms.concurrency;
+        callback_url = smsCfg.callbackUrl;
+        callback_token = "#sms_callback_token#";
+        verification_text = smsCfg.verificationText;
+        open_timeout = smsCfg.openTimeout;
+        read_timeout = smsCfg.readTimeout;
+        gateways = smsGatewayConfig;
+      };
       poll_interval = cfg.pollInterval;
     }
   );
@@ -130,6 +168,7 @@ let
         sed -e "s,#rabbitmq_pass#,$RABBITMQ_PASS,g" -i "${stateDirectory}/config/notifications.yml"
         sed -e "s,#smtp_pass#,$SMTP_PASS,g" -i "${stateDirectory}/config/notifications.yml"
         sed -e "s,#telegram_bot_token#,$TELEGRAM_BOT_TOKEN,g" -i "${stateDirectory}/config/notifications.yml"
+        ${optionalString smsCfg.enable (smsTokenSubstitutions stateDirectory)}
         chmod 440 "${stateDirectory}/config/notifications.yml"
 
         rm -rf "${runtimeRoot}"
@@ -157,9 +196,11 @@ let
         ExecStart = "${app.bundle} exec bin/vpsadmin-notification-dispatcher ${action}";
         Restart = "on-failure";
         RestartSec = 30;
-        LoadCredential = optional (
-          telegramCfg.botTokenFile != null
-        ) "${telegramBotTokenCredential}:${telegramCfg.botTokenFile}";
+        LoadCredential =
+          (optional (
+            telegramCfg.botTokenFile != null
+          ) "${telegramBotTokenCredential}:${telegramCfg.botTokenFile}")
+          ++ smsCredentials;
       };
     };
 in
@@ -195,6 +236,7 @@ in
             "email"
             "telegram"
             "webhook"
+            "sms"
           ]
         );
         default = [
@@ -278,6 +320,16 @@ in
           '';
         };
 
+      };
+
+      sms = {
+        concurrency = mkOption {
+          type = positiveInt;
+          default = 1;
+          description = ''
+            Number of concurrent SMS delivery workers.
+          '';
+        };
       };
 
       smtp = {
@@ -366,6 +418,10 @@ in
       {
         assertion = !(elem "telegram" cfg.actions) || telegramCfg.enable;
         message = "telegram notification dispatching requires vpsadmin.notifications.telegram.enable";
+      }
+      {
+        assertion = !(elem "sms" cfg.actions) || smsCfg.enable;
+        message = "sms notification dispatching requires vpsadmin.notifications.sms.enable";
       }
     ];
 

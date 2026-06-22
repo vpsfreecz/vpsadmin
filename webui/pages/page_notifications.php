@@ -272,6 +272,10 @@ if (isLoggedIn()) {
 
             try {
                 $receiver = $api->notification_receiver->show($_GET['receiver']);
+                $action = $receiver->action->show($_GET['id']);
+                $receiver->action->update($action->id, notifications_receiver_action_params($action->action));
+
+                notify_user(_('Action updated'), '');
                 redirect('?page=notifications&action=receiver_edit&id=' . $receiver->id . notifications_user_qs($receiver->user_id));
             } catch (\HaveAPI\Client\Exception\ActionFailed $e) {
                 $xtpl->perex_format_errors(_('Failed to update action'), $e->getResponse());
@@ -296,7 +300,7 @@ if (isLoggedIn()) {
                     $receiver_action = $receiver->action->create(notifications_receiver_action_params($action_type, true));
 
                     notify_user(_('Action added'), '');
-                    if ($action_type === 'telegram') {
+                    if ($action_type === 'telegram' || $action_type === 'sms') {
                         redirect(
                             '?page=notifications&action=receiver_action_edit&receiver=' . $receiver->id
                             . '&id=' . $receiver_action->id . notifications_user_qs($receiver->user_id)
@@ -323,6 +327,13 @@ if (isLoggedIn()) {
                     $receiver->action->update($action->id, notifications_receiver_action_params($action->action));
 
                     notify_user(_('Action updated'), '');
+                    if ($action->action === 'sms') {
+                        redirect(
+                            '?page=notifications&action=receiver_action_edit&receiver=' . $receiver->id
+                            . '&id=' . $action->id . notifications_user_qs($receiver->user_id)
+                        );
+                    }
+
                     redirect('?page=notifications&action=receiver_edit&id=' . $receiver->id . notifications_user_qs($receiver->user_id));
                 } catch (\HaveAPI\Client\Exception\ActionFailed $e) {
                     $xtpl->perex_format_errors(_('Failed to update action'), $e->getResponse());
@@ -344,6 +355,42 @@ if (isLoggedIn()) {
                 redirect('?page=notifications&action=receiver_action_edit&receiver=' . $receiver->id . '&id=' . $_GET['id'] . notifications_user_qs($receiver->user_id));
             } catch (\HaveAPI\Client\Exception\ActionFailed $e) {
                 $xtpl->perex_format_errors(_('Failed to create pairing token'), $e->getResponse());
+                notifications_receiver_action_edit($_GET['receiver'], $_GET['id']);
+            }
+            break;
+
+        case 'receiver_action_sms_send':
+            csrf_check();
+
+            try {
+                $receiver = $api->notification_receiver->show($_GET['receiver']);
+                $receiver->action($_GET['id'])->send_sms_verification_code();
+
+                notify_user(_('Verification SMS sent'), '');
+                redirect('?page=notifications&action=receiver_action_edit&receiver=' . $receiver->id . '&id=' . $_GET['id'] . notifications_user_qs($receiver->user_id));
+            } catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+                $xtpl->perex_format_errors(_('Failed to send verification SMS'), $e->getResponse());
+                notifications_receiver_action_edit($_GET['receiver'], $_GET['id']);
+            }
+            break;
+
+        case 'receiver_action_sms_confirm':
+            if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+                csrf_check();
+
+                try {
+                    $receiver = $api->notification_receiver->show($_GET['receiver']);
+                    $receiver->action($_GET['id'])->confirm_sms_verification_code([
+                        'code' => api_post('code'),
+                    ]);
+
+                    notify_user(_('Phone number verified'), '');
+                    redirect('?page=notifications&action=receiver_action_edit&receiver=' . $receiver->id . '&id=' . $_GET['id'] . notifications_user_qs($receiver->user_id));
+                } catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+                    $xtpl->perex_format_errors(_('Failed to verify phone number'), $e->getResponse());
+                    notifications_receiver_action_edit($_GET['receiver'], $_GET['id']);
+                }
+            } else {
                 notifications_receiver_action_edit($_GET['receiver'], $_GET['id']);
             }
             break;

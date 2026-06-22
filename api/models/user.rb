@@ -55,7 +55,8 @@ class User < ApplicationRecord
   attr_reader :password_plain
 
   has_paper_trail only: %i[login level full_name email address time_zone
-                           mailer_enabled object_state expiration_date]
+                           mailer_enabled sms_notifications_enabled
+                           object_state expiration_date]
 
   validates :level, :login, :password, :language_id, presence: true
   validates :level, numericality: {

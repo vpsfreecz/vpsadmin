@@ -79,6 +79,36 @@ RSpec.describe VpsAdmin::API::Tasks::EventDelivery do
     [event.event_deliveries.sole, action, route]
   end
 
+  def create_sms_delivery!(target_value: '+420123456789',
+                           summary: 'Spec SMS summary',
+                           parameters: { note: 'from SMS task spec' })
+    allow(VpsAdmin::API::Notifications).to receive(:sms_configured?).and_return(true)
+    SpecSeed.user.update!(sms_notifications_enabled: true)
+
+    receiver = NotificationReceiver.create!(user: SpecSeed.user, label: 'Spec SMS receiver')
+    action = receiver.notification_receiver_actions.create!(
+      action: :sms,
+      label: 'Spec SMS',
+      target_kind: :custom,
+      target_value:,
+      verified_at: Time.now
+    )
+    route = EventRoute.create!(
+      user: SpecSeed.user,
+      notification_receiver: receiver,
+      event_type: 'user.test_notification'
+    )
+    event = VpsAdmin::API::Events.emit!(
+      'user.test_notification',
+      user: SpecSeed.user,
+      subject: 'Spec SMS event',
+      summary:,
+      parameters:
+    )
+
+    [event.event_deliveries.sole, action, route]
+  end
+
   def stub_telegram_response(code: '200', body: { ok: true, result: { message_id: 42 } })
     request = nil
     http = instance_double(Net::HTTP)
@@ -101,6 +131,52 @@ RSpec.describe VpsAdmin::API::Tasks::EventDelivery do
     end
 
     -> { request }
+  end
+
+  def stub_sms_gateway_response(code: '202', body: { id: 101, status: 'queued' }, hosts: ['sms-brq.example'])
+    requests = []
+    http = instance_double(Net::HTTP)
+    codes = code.is_a?(Array) ? code : [code]
+    bodies = body.is_a?(Array) ? body : [body]
+    responses = codes.zip(bodies).map do |response_code, response_body|
+      instance_double(Net::HTTPResponse, code: response_code, body: JSON.dump(response_body))
+    end
+
+    allow(Net::HTTP).to receive(:start) do |host, port, **options, &block|
+      expect(host).to eq(hosts[requests.length])
+      expect(port).to eq(443)
+      expect(options).to include(
+        use_ssl: true,
+        open_timeout: 5,
+        read_timeout: 15
+      )
+
+      block.call(http)
+    end
+    allow(http).to receive(:request) do |req|
+      requests << req
+      responses.fetch(requests.length - 1)
+    end
+
+    requests
+  end
+
+  def sms_notifications_config(gateways: nil)
+    {
+      'sms' => {
+        'enabled' => true,
+        'configured' => true,
+        'callback_url' => 'https://api.example.test/internal/notifications/sms/callback',
+        'callback_token' => 'callback-token',
+        'gateways' => gateways || [
+          {
+            'name' => 'brq',
+            'url' => 'https://sms-brq.example/v1/sms',
+            'token' => 'brq-token'
+          }
+        ]
+      }
+    }
   end
 
   def create_managed_private_ip!(user: nil)
@@ -362,12 +438,14 @@ RSpec.describe VpsAdmin::API::Tasks::EventDelivery do
     email = VpsAdmin::API::Notifications::Dispatcher.new('email')
     telegram = VpsAdmin::API::Notifications::Dispatcher.new('telegram')
     webhook = VpsAdmin::API::Notifications::Dispatcher.new('webhook')
+    sms = VpsAdmin::API::Notifications::Dispatcher.new('sms')
 
     expect(email.send(:concurrency)).to eq(2)
     expect(email.send(:email_worker_delay)).to eq(1.0)
     expect(email.send(:email_domain_min_delivery_interval)).to eq(1.0)
     expect(telegram.send(:concurrency)).to eq(2)
     expect(webhook.send(:concurrency)).to eq(4)
+    expect(sms.send(:concurrency)).to eq(1)
   end
 
   it 'runs queued deliveries with configured worker concurrency' do
@@ -1152,6 +1230,98 @@ RSpec.describe VpsAdmin::API::Tasks::EventDelivery do
     expect(delivery.error_summary).to include('Telegram API: Too Many Requests')
     expect(delivery.attempt_count).to eq(1)
     expect(delivery.next_attempt_at).to be_present
+  end
+
+  it 'hands SMS deliveries to a gateway and marks them accepted' do
+    allow(VpsAdmin::API::Notifications::Config).to receive(:load).and_return(sms_notifications_config)
+    delivery, action, route = create_sms_delivery!
+    requests = stub_sms_gateway_response
+
+    task.deliver_smses
+
+    body = JSON.parse(requests.sole.body)
+
+    expect(body['to']).to eq('+420123456789')
+    expect(body['text']).to include('Spec SMS event')
+    expect(body['client_message_id']).to eq(delivery.id.to_s)
+    expect(body['callback_url']).to eq('https://api.example.test/internal/notifications/sms/callback')
+    expect(requests.sole['Authorization']).to eq('Bearer brq-token')
+    expect(delivery.reload).to be_accepted_state
+    expect(delivery.notification_receiver_action).to eq(action)
+    expect(delivery.event_route).to eq(route)
+    expect(delivery.response_status).to eq(202)
+    expect(delivery.provider_message_id).to eq('brq:101')
+    expect(delivery.attempt_count).to eq(1)
+    attempt = delivery.event_delivery_attempts.sole
+    expect(attempt).to be_succeeded_state
+    expect(attempt.provider_message_id).to eq('brq:101')
+  end
+
+  it 'falls back to the next configured SMS gateway' do
+    config = sms_notifications_config(
+      gateways: [
+        {
+          'name' => 'brq',
+          'url' => 'https://sms-brq.example/v1/sms',
+          'token' => 'brq-token'
+        },
+        {
+          'name' => 'prg',
+          'url' => 'https://sms-prg.example/v1/sms',
+          'token' => 'prg-token'
+        }
+      ]
+    )
+    allow(VpsAdmin::API::Notifications::Config).to receive(:load).and_return(config)
+    delivery, = create_sms_delivery!
+    requests = stub_sms_gateway_response(
+      code: %w[500 202],
+      body: [{ error: true }, { id: 202, status: 'queued' }],
+      hosts: ['sms-brq.example', 'sms-prg.example']
+    )
+
+    task.deliver_smses
+
+    expect(requests.length).to eq(2)
+    expect(requests.first['Authorization']).to eq('Bearer brq-token')
+    expect(requests.second['Authorization']).to eq('Bearer prg-token')
+    expect(delivery.reload).to be_accepted_state
+    expect(delivery.provider_message_id).to eq('prg:202')
+  end
+
+  it 'applies successful SMS gateway callbacks' do
+    allow(VpsAdmin::API::Notifications::Config).to receive(:load).and_return(sms_notifications_config)
+    delivery, = create_sms_delivery!
+    stub_sms_gateway_response
+    task.deliver_smses
+
+    VpsAdmin::API::Notifications.apply_sms_gateway_callback!(
+      'client_message_id' => delivery.id.to_s,
+      'status' => 'sent',
+      'gateway' => 'brq',
+      'provider_id' => 'modem-message-42'
+    )
+
+    expect(delivery.reload).to be_sent_state
+    expect(delivery.provider_message_id).to eq('brq:modem-message-42')
+    expect(delivery.error_summary).to be_nil
+  end
+
+  it 'applies failed SMS gateway callbacks' do
+    allow(VpsAdmin::API::Notifications::Config).to receive(:load).and_return(sms_notifications_config)
+    delivery, = create_sms_delivery!
+    stub_sms_gateway_response
+    task.deliver_smses
+
+    VpsAdmin::API::Notifications.apply_sms_gateway_callback!(
+      'client_message_id' => delivery.id.to_s,
+      'status' => 'failed',
+      'gateway' => 'brq',
+      'error_summary' => 'modem rejected the message'
+    )
+
+    expect(delivery.reload).to be_failed_state
+    expect(delivery.error_summary).to eq('modem rejected the message')
   end
 
   it 'posts signed webhook payloads and marks deliveries sent' do

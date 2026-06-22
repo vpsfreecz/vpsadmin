@@ -8,7 +8,7 @@ class NotificationTemplateVariant < ApplicationRecord
   validates :language, uniqueness: { scope: %i[notification_template protocol] }
   validate :check_protocol_content
 
-  enum :protocol, %i[email telegram], suffix: true
+  enum :protocol, %i[email telegram sms], suffix: true
   serialize :options, coder: JSON
 
   has_paper_trail
@@ -57,7 +57,7 @@ class NotificationTemplateVariant < ApplicationRecord
       errors.add(:from, "can't be blank") if from.blank?
       errors.add(:subject, "can't be blank") if subject.blank?
       errors.add(:text, 'or html must be present') if text.blank? && html.blank?
-    when :telegram
+    when :telegram, :sms
       errors.add(:text, "can't be blank") if text.blank?
     end
   end
