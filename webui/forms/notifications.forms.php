@@ -859,6 +859,9 @@ function notifications_receiver_action_params($action_type, $create = false)
             $params['target_kind'] = 'custom';
             $params['target_value'] = null;
         }
+    } elseif ($action_type === 'sms') {
+        $params['target_kind'] = 'custom';
+        $params['target_value'] = api_post('target_value');
     } elseif ($action_type === 'webhook') {
         $params['target_kind'] = 'custom';
         $params['target_value'] = api_post('target_value');
@@ -1608,6 +1611,26 @@ function notifications_telegram_pairing_instructions_html($action)
     return '<ol><li>' . implode('</li><li>', $items) . '</li></ol>';
 }
 
+function notifications_sms_verification_send_url($receiver, $action)
+{
+    return '?page=notifications&action=receiver_action_sms_send&receiver='
+        . rawurlencode((string) $receiver->id)
+        . '&id='
+        . rawurlencode((string) $action->id)
+        . notifications_user_qs($receiver->user_id)
+        . '&t='
+        . rawurlencode((string) csrf_token());
+}
+
+function notifications_sms_verification_confirm_url($receiver, $action)
+{
+    return '?page=notifications&action=receiver_action_sms_confirm&receiver='
+        . rawurlencode((string) $receiver->id)
+        . '&id='
+        . rawurlencode((string) $action->id)
+        . notifications_user_qs($receiver->user_id);
+}
+
 function notifications_delivery_receiver_link($delivery, $user_id = null)
 {
     $receiver_id = notifications_prop($delivery, 'notification_receiver_id');
@@ -1922,6 +1945,10 @@ function notifications_receiver_action_secret_html($action)
         return boolean_icon($action->verified) . ' ' . ($action->verified ? _('paired') : _('pending'));
     }
 
+    if ($action->action === 'sms') {
+        return boolean_icon($action->verified) . ' ' . ($action->verified ? _('verified') : _('pending'));
+    }
+
     return '-';
 }
 
@@ -2044,9 +2071,81 @@ function notifications_receiver_action_form_fields($receiver, $action_type, $act
             }
             $xtpl->table_tr();
         }
+    } elseif ($action_type === 'sms') {
+        $xtpl->form_add_input(
+            _('Phone number') . ':',
+            'text',
+            '30',
+            'target_value',
+            post_val('target_value', $action ? $action->target_value : ''),
+            _('Use international E.164 format, e.g. +420123456789.')
+        );
+
+        $xtpl->table_td(_('Verification') . ':');
+        if ($action) {
+            $xtpl->table_td(
+                boolean_icon($action->verified) . ' '
+                . ($action->verified ? _('verified') : _('pending'))
+            );
+        } else {
+            $xtpl->table_td(_('created after saving'));
+        }
+        $xtpl->table_tr();
+
+        if ($action && !$action->verified) {
+            $xtpl->table_td(_('Instructions') . ':');
+            $xtpl->table_td(
+                _('Save the phone number, send a verification SMS, then enter the code from the message.'),
+                false,
+                true
+            );
+            $xtpl->table_tr();
+        }
+
+        if ($action && !$action->verified && $action->last_error) {
+            $xtpl->table_td(_('Last error') . ':');
+            $xtpl->table_td(h($action->last_error));
+            $xtpl->table_tr();
+        }
     }
 
     $xtpl->form_add_checkbox(_('Enabled') . ':', 'enabled', '1', post_val('enabled', $enabled));
+}
+
+function notifications_sms_verification_controls($receiver, $action)
+{
+    global $xtpl;
+
+    if ($action->action !== 'sms' || $action->verified) {
+        return;
+    }
+
+    $send_url = notifications_sms_verification_send_url($receiver, $action);
+    $confirm_url = notifications_sms_verification_confirm_url($receiver, $action);
+
+    $xtpl->table_title(_('SMS verification'));
+    $xtpl->table_td(_('Verification SMS') . ':');
+    $xtpl->table_td(
+        '<a href="' . h($send_url) . '"'
+        . notifications_confirm_onclick(_('Send a verification SMS to this phone number?'))
+        . '>' . _('Send verification SMS') . '</a>'
+        . '<br>' . _('Delivery is limited by a short resend cooldown.'),
+        false,
+        true
+    );
+    $xtpl->table_tr();
+    $xtpl->table_out();
+
+    $xtpl->form_create($confirm_url, 'post');
+    $xtpl->form_add_input(
+        _('Verification code') . ':',
+        'text',
+        '20',
+        'code',
+        post_val('code'),
+        _('Enter the 6-digit code from the SMS.')
+    );
+    $xtpl->form_out(_('Confirm code'));
 }
 
 function notifications_receiver_action_new($receiver_id, $action_type = null)
@@ -2125,6 +2224,8 @@ function notifications_receiver_action_edit($receiver_id, $action_id)
     ]);
     notifications_receiver_action_form_fields($receiver, $action->action, $action);
     $xtpl->form_out(_('Save'));
+
+    notifications_sms_verification_controls($receiver, $action);
 
     $xtpl->sbar_add(_('Back to receiver'), '?page=notifications&action=receiver_edit&id=' . $receiver->id . notifications_user_qs($receiver->user_id));
     notifications_sidebar('receivers', $receiver->user_id);
@@ -2789,6 +2890,8 @@ function notifications_delivery_show($event_id, $delivery_id)
         notifications_delivery_email_show($delivery);
     } elseif ($delivery->action === 'telegram') {
         notifications_delivery_telegram_show($delivery);
+    } elseif ($delivery->action === 'sms') {
+        notifications_delivery_sms_show($delivery);
     } elseif ($delivery->action === 'webhook') {
         notifications_delivery_webhook_show($delivery);
     }
@@ -2875,6 +2978,35 @@ function notifications_delivery_telegram_show($delivery)
     $response_body = notifications_prop($delivery, 'response_body');
     if ($response_body) {
         $xtpl->table_td(_('Response') . ':');
+        $xtpl->table_td(notifications_json_pre_html($response_body));
+        $xtpl->table_tr();
+    }
+
+    $xtpl->table_out();
+}
+
+function notifications_delivery_sms_show($delivery)
+{
+    global $xtpl;
+
+    $xtpl->table_title(_('SMS'));
+
+    $payload = json_decode(notifications_prop($delivery, 'payload') ?: '{}', true);
+    if (!is_array($payload)) {
+        $payload = [];
+    }
+
+    $xtpl->table_td(_('Phone number') . ':');
+    $xtpl->table_td(h($payload['to'] ?? notifications_prop($delivery, 'target_value', '-')));
+    $xtpl->table_tr();
+
+    $xtpl->table_td(_('Message') . ':');
+    $xtpl->table_td(notifications_pre_html($payload['text'] ?? ''));
+    $xtpl->table_tr();
+
+    $response_body = notifications_prop($delivery, 'response_body');
+    if ($response_body) {
+        $xtpl->table_td(_('Gateway callback') . ':');
         $xtpl->table_td(notifications_json_pre_html($response_body));
         $xtpl->table_tr();
     }

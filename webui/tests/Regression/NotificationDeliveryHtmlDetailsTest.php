@@ -98,8 +98,43 @@ final class NotificationDeliveryHtmlDetailsTest extends TestCase
 
         self::assertStringContainsString('$receiver_action = $receiver->action->create', $caseSource);
         self::assertStringContainsString("\$action_type === 'telegram'", $caseSource);
+        self::assertStringContainsString("\$action_type === 'sms'", $caseSource);
         self::assertStringContainsString('receiver_action_edit&receiver=', $caseSource);
         self::assertStringContainsString("\$receiver_action->id", $caseSource);
+    }
+
+    public function testSmsVerificationFlowIsVisibleInReceiverActionDetail(): void
+    {
+        $source = file_get_contents(dirname(__DIR__, 2) . '/forms/notifications.forms.php');
+        $start = strpos($source, 'function notifications_receiver_action_form_fields(');
+        $end = strpos($source, 'function notifications_receiver_action_new(', $start);
+
+        self::assertNotFalse($start);
+        self::assertNotFalse($end);
+
+        $functionSource = substr($source, $start, $end - $start);
+
+        self::assertStringContainsString('Phone number', $functionSource);
+        self::assertStringContainsString('SMS verification', $source);
+        self::assertStringContainsString('Send verification SMS', $source);
+        self::assertStringContainsString('confirm_sms_verification_code', file_get_contents(dirname(__DIR__, 2) . '/pages/page_notifications.php'));
+        self::assertStringContainsString('send_sms_verification_code', file_get_contents(dirname(__DIR__, 2) . '/pages/page_notifications.php'));
+    }
+
+    public function testSmsDeliveryDetailsShowsMessagePayload(): void
+    {
+        $source = file_get_contents(dirname(__DIR__, 2) . '/forms/notifications.forms.php');
+        $start = strpos($source, 'function notifications_delivery_show(');
+        $end = strpos($source, 'function notifications_delivery_email_show(', $start);
+
+        self::assertNotFalse($start);
+        self::assertNotFalse($end);
+
+        $functionSource = substr($source, $start, $end - $start);
+
+        self::assertStringContainsString('notifications_delivery_sms_show($delivery)', $functionSource);
+        self::assertStringContainsString('function notifications_delivery_sms_show($delivery)', $source);
+        self::assertStringContainsString('Gateway callback', $source);
     }
 
     public function testReceiverActionDeleteRequiresConfirmation(): void

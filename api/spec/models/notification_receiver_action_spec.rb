@@ -11,6 +11,11 @@ RSpec.describe NotificationReceiverAction do
     allow(VpsAdmin::API::Notifications).to receive(:telegram_configured?).and_return(true)
   end
 
+  def enable_sms!
+    allow(VpsAdmin::API::Notifications).to receive(:sms_configured?).and_return(true)
+    SpecSeed.user.update!(sms_notifications_enabled: true)
+  end
+
   it 'uses string columns for notification action registry names' do
     expect(described_class.type_for_attribute('action').type).to eq(:string)
     expect(EventDelivery.type_for_attribute('action').type).to eq(:string)
@@ -63,6 +68,27 @@ RSpec.describe NotificationReceiverAction do
     expect(action.errors[:action]).to include('is not available')
   end
 
+  it 'offers SMS actions only when SMS is configured' do
+    expect(described_class.action_labels).not_to include('sms')
+
+    enable_sms!
+
+    expect(described_class.action_labels).to include('sms' => 'SMS')
+  end
+
+  it 'rejects SMS actions when SMS is not enabled for the user' do
+    allow(VpsAdmin::API::Notifications).to receive(:sms_configured?).and_return(true)
+
+    action = create_receiver!.notification_receiver_actions.build(
+      action: :sms,
+      target_kind: :custom,
+      target_value: '+420123456789'
+    )
+
+    expect(action).not_to be_valid
+    expect(action.errors[:action]).to include('is not enabled for this user')
+  end
+
   it 'rejects unknown action names' do
     action = create_receiver!.notification_receiver_actions.build(
       action: 'fax',
@@ -95,6 +121,79 @@ RSpec.describe NotificationReceiverAction do
     expect(action.errors[:target_value]).to include(
       "is too long (maximum is #{NotificationReceiverAction::MAIL_TARGET_VALUE_LIMIT} characters)"
     )
+  end
+
+  it 'verifies SMS numbers using hidden short-lived codes' do
+    enable_sms!
+
+    action = create_receiver!.notification_receiver_actions.create!(
+      action: :sms,
+      target_kind: :custom,
+      target_value: '+420123456789'
+    )
+    action.generate_sms_verification_code!
+    code = action[:verification_token]
+
+    expect(action.verification_token).to be_nil
+    expect(code).to match(/\A[0-9]{6}\z/)
+    expect(action.confirm_sms_verification_code!(code)).to be(true)
+    expect(action).to be_verified
+    expect(action[:verification_token]).to be_nil
+  end
+
+  it 'locks SMS verification after repeated invalid codes' do
+    enable_sms!
+
+    action = create_receiver!.notification_receiver_actions.create!(
+      action: :sms,
+      target_kind: :custom,
+      target_value: '+420123456789'
+    )
+    action.generate_sms_verification_code!
+    code = action[:verification_token]
+    invalid_code = code == '000000' ? '000001' : '000000'
+
+    NotificationReceiverAction::SMS_VERIFICATION_MAX_FAILED_ATTEMPTS.times do
+      expect(action.confirm_sms_verification_code!(invalid_code)).to be(false)
+      action.reload
+    end
+
+    expect(action).to be_sms_verification_locked
+    expect(action.confirm_sms_verification_code!(code)).to be(false)
+    expect(action.reload).not_to be_verified
+  end
+
+  it 'clears SMS verification when the phone number is edited' do
+    enable_sms!
+
+    action = create_receiver!.notification_receiver_actions.create!(
+      action: :sms,
+      target_kind: :custom,
+      target_value: '+420123456789',
+      verified_at: Time.now
+    )
+
+    action.update!(target_value: '+420987654321')
+
+    expect(action).not_to be_verified
+    expect(action[:verification_token]).to match(/\A[0-9]{6}\z/)
+    expect(action.verification_token).to be_nil
+  end
+
+  it 'expires pending SMS verification codes quickly' do
+    enable_sms!
+
+    action = create_receiver!.notification_receiver_actions.create!(
+      action: :sms,
+      target_kind: :custom,
+      target_value: '+420123456789'
+    )
+    action.generate_sms_verification_code!
+    action.config[NotificationReceiverAction::SMS_VERIFICATION_CODE_CREATED_AT_KEY] =
+      (Time.now - NotificationReceiverAction::SMS_VERIFICATION_CODE_TTL - 1).iso8601
+    action.save!
+
+    expect(action).to be_verification_token_expired
   end
 
   it 'clears Telegram verification when the target is edited directly' do

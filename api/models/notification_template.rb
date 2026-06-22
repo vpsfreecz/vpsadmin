@@ -226,6 +226,10 @@ class NotificationTemplate < ApplicationRecord
     render_protocol!(:telegram, name, opts)
   end
 
+  def self.render_sms!(name, opts = {})
+    render_protocol!(:sms, name, opts)
+  end
+
   def self.resolve_language(opts)
     opts[:language] ||
       opts[:user]&.language ||
