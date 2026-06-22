@@ -11,6 +11,12 @@ RSpec.describe NotificationReceiverAction do
     allow(VpsAdmin::API::Notifications).to receive(:telegram_configured?).and_return(true)
   end
 
+  it 'uses string columns for notification action registry names' do
+    expect(described_class.type_for_attribute('action').type).to eq(:string)
+    expect(EventDelivery.type_for_attribute('action').type).to eq(:string)
+    expect(EventDeliveryAttempt.type_for_attribute('action').type).to eq(:string)
+  end
+
   it 'stores actions as registry names' do
     action = create_receiver!.notification_receiver_actions.create!(
       action: :webhook,
