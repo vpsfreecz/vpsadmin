@@ -31,7 +31,6 @@ module UserLifecycleChainSpecHelpers
       language: SpecSeed.language,
       enable_basic_auth: true,
       enable_token_auth: true,
-      mailer_enabled: true,
       object_state: object_state
     ).tap do |user|
       user.set_password('secret123')
