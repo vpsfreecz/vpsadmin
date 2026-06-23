@@ -185,8 +185,9 @@ RSpec.describe SecurityAdvisory do
       node: SpecSeed.node,
       hostname: 'spec-advisory-muted'
     )
-    SpecSeed.user.update!(mailer_enabled: true, object_state: :active)
-    SpecSeed.other_user.update!(mailer_enabled: false, object_state: :active)
+    SpecSeed.user.update!(object_state: :active)
+    SpecSeed.other_user.update!(object_state: :active)
+    mute_default_notifications_for!(SpecSeed.other_user)
 
     advisory.publish!(
       expected_content_revision: advisory.content_revision,

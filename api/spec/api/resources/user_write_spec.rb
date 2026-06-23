@@ -92,7 +92,6 @@ RSpec.describe 'VpsAdmin::API::Resources::User write actions' do # rubocop:disab
       enable_single_sign_on: false,
       enable_new_login_notification: true,
       enable_multi_factor_auth: false,
-      mailer_enabled: true,
       preferred_logout_all: false,
       preferred_session_length: 1200,
       lockout: false,
@@ -360,22 +359,10 @@ RSpec.describe 'VpsAdmin::API::Resources::User write actions' do # rubocop:disab
 
   describe 'Update' do
     it 'rejects unauthenticated access' do
-      json_put show_path(SpecSeed.user.id), user: { mailer_enabled: false }
+      json_put show_path(SpecSeed.user.id), user: { full_name: 'Unauthenticated Update' }
 
       expect_status(401)
       expect(json['status']).to be(false)
-    end
-
-    it 'rejects users updating the legacy mailer switch' do
-      new_value = !SpecSeed.user.mailer_enabled
-
-      as(SpecSeed.user) do
-        json_put show_path(SpecSeed.user.id), user: { mailer_enabled: new_value }
-      end
-
-      expect_status(200)
-      expect(json['status']).to be(false)
-      expect(SpecSeed.user.reload.mailer_enabled).not_to eq(new_value)
     end
 
     it 'allows users to update their time zone' do
@@ -421,7 +408,6 @@ RSpec.describe 'VpsAdmin::API::Resources::User write actions' do # rubocop:disab
           enable_oauth2_auth: true,
           enable_single_sign_on: true,
           enable_new_login_notification: false,
-          mailer_enabled: false,
           preferred_logout_all: true,
           preferred_session_length: 3600
         }
@@ -436,14 +422,13 @@ RSpec.describe 'VpsAdmin::API::Resources::User write actions' do # rubocop:disab
       expect(SpecSeed.user.enable_oauth2_auth).to be(false)
       expect(SpecSeed.user.enable_single_sign_on).to be(false)
       expect(SpecSeed.user.enable_new_login_notification).to be(true)
-      expect(SpecSeed.user.mailer_enabled).to be(true)
       expect(SpecSeed.user.preferred_logout_all).to be(false)
       expect(SpecSeed.user.preferred_session_length).to eq(1200)
     end
 
     it 'rejects users updating another account' do
       as(SpecSeed.user) do
-        json_put show_path(SpecSeed.other_user.id), user: { mailer_enabled: false }
+        json_put show_path(SpecSeed.other_user.id), user: { full_name: 'Spec Updated' }
       end
 
       expect_status(200)

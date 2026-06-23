@@ -1374,13 +1374,17 @@ import ../make-test.nix (
           enable_multi_factor_auth: false,
           preferred_session_length: 20 * 60,
           preferred_logout_all: false,
-          mailer_enabled: false,
           password_reset: false,
           lockout: false,
           object_state: :active
         )
         user.set_password(password)
         user.save!
+        NotificationReceiver.ensure_defaults_for!(user)
+        user.set_notification_delivery_method!('email', false)
+        EventRoute.default_route_for(user)&.update!(
+          notification_receiver: NotificationReceiver.default_mute_receiver_for(user)
+        )
 
         quoted_now = ActiveRecord::Base.connection.quote(Time.now)
         ActiveRecord::Base.connection.execute(<<~SQL)

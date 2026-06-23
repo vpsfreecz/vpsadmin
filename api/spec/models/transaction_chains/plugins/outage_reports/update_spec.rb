@@ -15,7 +15,7 @@ RSpec.describe 'outage reports update chain', requires_plugins: :outage_reports 
 
   before do
     ensure_mailer_available!
-    SpecSeed.user.update!(mailer_enabled: true, object_state: :active)
+    SpecSeed.user.update!(object_state: :active)
   end
 
   def build_outage(attrs = {}, summary: 'Old summary', **kwattrs)
@@ -180,9 +180,9 @@ RSpec.describe 'outage reports update chain', requires_plugins: :outage_reports 
     end
   end
 
-  it 'logs muted deliveries for affected users with disabled mailer' do
+  it 'logs muted deliveries for affected users with muted default notifications' do
     outage = build_outage
-    SpecSeed.user.update!(mailer_enabled: false)
+    mute_default_notifications_for!(SpecSeed.user)
     OutageUser.create!(outage: outage, user: SpecSeed.user, vps_count: 1, export_count: 0)
     attempts = []
 

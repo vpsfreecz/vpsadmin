@@ -34,8 +34,9 @@ module VpsAdmin::API::Plugins::Requests::TransactionChains
       scope = ::User.where('level > 90')
       return scope unless group_email
 
-      scope.order(mailer_enabled: :desc, id: :asc)
+      scope.includes(:user_notification_delivery_methods)
            .to_a
+           .sort_by { |admin| [admin.notification_delivery_method_enabled?('email') ? 0 : 1, admin.id] }
            .group_by(&:email)
            .map { |_email, admins| admins.first }
     end
