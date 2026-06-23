@@ -31,6 +31,16 @@ function adminm_notifications_url($action, $user_id)
     return '?page=notifications&action=' . $action . $user_qs;
 }
 
+function adminm_notification_delivery_method_post_name($delivery_method)
+{
+    return 'notification_delivery_method_' . preg_replace('/[^a-zA-Z0-9_]/', '_', $delivery_method);
+}
+
+function adminm_notification_delivery_methods($user)
+{
+    return $user->notification_delivery_method->list();
+}
+
 function print_newm()
 {
     global $xtpl, $cfg_privlevel, $config;
@@ -159,6 +169,20 @@ function print_editm($u)
         . ' | <a href="?page=reminder&action=reminder&resource=user&id=' . $u->id . '">' . _('Configure payment reminder') . '</a>'
     );
     $xtpl->table_tr();
+
+    if (isAdmin()) {
+        foreach (adminm_notification_delivery_methods($u) as $method) {
+            $name = adminm_notification_delivery_method_post_name($method->delivery_method);
+
+            $xtpl->form_add_checkbox(
+                h($method->label) . ':',
+                $name,
+                '1',
+                post_val($name, $method->enabled),
+                _('Allow this user to configure and receive this event delivery method.')
+            );
+        }
+    }
 
     api_param_to_form(
         'language',
@@ -1134,6 +1158,19 @@ if (isLoggedIn()) {
                 }
 
                 $user->update($params);
+                if (isAdmin()) {
+                    foreach (adminm_notification_delivery_methods($user) as $method) {
+                        $name = adminm_notification_delivery_method_post_name($method->delivery_method);
+                        $enabled = isset($_POST[$name]);
+
+                        if ((bool) $method->enabled !== $enabled) {
+                            $user->notification_delivery_method($method->delivery_method)->update([
+                                'enabled' => $enabled,
+                            ]);
+                        }
+                    }
+                }
+
                 if ($_SESSION['user']['id'] == $user->id) {
                     $_SESSION['user']['time_zone'] = $params['time_zone'] ?: null;
                     set_request_time_zone($_SESSION['user']['time_zone']);

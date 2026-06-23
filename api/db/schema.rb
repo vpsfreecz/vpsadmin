@@ -1721,6 +1721,16 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_22_220000) do
     t.index ["user_id"], name: "index_user_email_role_recipients_on_user_id"
   end
 
+  create_table "user_notification_delivery_methods", id: { type: :integer, unsigned: true }, charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "delivery_method", limit: 32, null: false
+    t.boolean "enabled", default: true, null: false
+    t.datetime "updated_at", null: false
+    t.integer "user_id", null: false
+    t.index ["delivery_method", "enabled"], name: "idx_user_notification_delivery_methods_state"
+    t.index ["user_id", "delivery_method"], name: "idx_user_notification_delivery_methods_unique", unique: true
+  end
+
   create_table "user_notification_template_recipients", id: { type: :integer, unsigned: true }, charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
     t.boolean "enabled", default: true, null: false
     t.integer "notification_template_id", null: false
@@ -1859,7 +1869,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_22_220000) do
     t.boolean "preferred_logout_all", default: false, null: false
     t.integer "preferred_session_length", default: 1200, null: false
     t.datetime "remind_after_date", precision: nil
-    t.boolean "sms_notifications_enabled", default: false, null: false
     t.datetime "updated_at", precision: nil
     t.string "webauthn_id"
     t.string "time_zone"
