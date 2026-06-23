@@ -12,7 +12,6 @@ RSpec.describe 'requests plugin resolve chain', requires_plugins: :requests do #
 
   before do
     ensure_mailer_available!
-    SpecSeed.admin.update!(mailer_enabled: true)
   end
 
   it 'updates resolution fields, uses fallback templates, and calls the request action' do

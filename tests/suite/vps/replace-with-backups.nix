@@ -37,7 +37,7 @@ import ../../make-test.nix (
         wait_for_node_ready(services, node1_id)
         prepare_node_queues(node)
         services.unlock_transaction_signing_key(passphrase: 'test')
-        set_user_mailer_enabled(
+        set_user_default_email_enabled(
           services,
           admin_user_id: admin_user_id,
           user_id: admin_user_id,

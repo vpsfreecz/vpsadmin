@@ -1076,7 +1076,6 @@ if (isLoggedIn()) {
                         'level' => $_POST['m_level'],
                         'info' => $_POST['m_info'],
                         'monthly_payment' => $_POST['m_monthly_payment'],
-                        'mailer_enabled' => true,
                     ]);
 
                     notify_user(_('User created'), _('The user was successfully created.'));

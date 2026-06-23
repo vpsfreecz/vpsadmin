@@ -2119,7 +2119,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_31_220000) do
     t.boolean "lockout", default: false, null: false
     t.string "login", limit: 63
     t.integer "login_count", default: 0, null: false
-    t.boolean "mailer_enabled", default: true, null: false
     t.integer "object_state", null: false
     t.string "orig_login", limit: 63
     t.string "password", null: false
