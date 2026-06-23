@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 require 'spec_helper'
+require 'digest'
+require 'openssl'
 require 'timeout'
 
 RSpec.describe VpsAdmin::API::Tasks::EventDelivery do
@@ -133,7 +135,8 @@ RSpec.describe VpsAdmin::API::Tasks::EventDelivery do
     -> { request }
   end
 
-  def stub_sms_gateway_response(code: '202', body: { id: 101, status: 'queued' }, hosts: ['sms-brq.example'])
+  def stub_sms_gateway_response(code: '202', body: { id: 101, status: 'queued' }, hosts: ['sms-brq.example'],
+                                on_request: nil)
     requests = []
     http = instance_double(Net::HTTP)
     codes = code.is_a?(Array) ? code : [code]
@@ -155,6 +158,7 @@ RSpec.describe VpsAdmin::API::Tasks::EventDelivery do
     end
     allow(http).to receive(:request) do |req|
       requests << req
+      on_request&.call(req, requests.length)
       responses.fetch(requests.length - 1)
     end
 
@@ -177,6 +181,56 @@ RSpec.describe VpsAdmin::API::Tasks::EventDelivery do
         ]
       }
     }
+  end
+
+  def sms_callback_payload(delivery, status: 'sent', attrs: {})
+    {
+      'client_message_id' => delivery.id.to_s,
+      'status' => status,
+      'gateway' => 'brq'
+    }.merge(attrs)
+  end
+
+  def delivery_sms_callback_secret(delivery)
+    JSON.parse(delivery.reload.payload).fetch('callback_secret')
+  end
+
+  def signed_sms_callback(delivery, payload, secret: delivery_sms_callback_secret(delivery),
+                          timestamp: Time.now.utc.iso8601,
+                          request_method: 'POST',
+                          request_path: VpsAdmin::API::Notifications::SMS_CALLBACK_PATH,
+                          raw_body: JSON.dump(payload),
+                          signature_body: raw_body,
+                          now: Time.now)
+    body_hash = Digest::SHA256.hexdigest(signature_body)
+    signature_input = [
+      VpsAdmin::API::Notifications::SMS_CALLBACK_SIGNATURE_VERSION,
+      request_method,
+      request_path,
+      timestamp,
+      body_hash
+    ].join("\n")
+    signature = "sha256=#{OpenSSL::HMAC.hexdigest('SHA256', secret, signature_input)}"
+
+    VpsAdmin::API::Notifications.apply_sms_gateway_callback!(
+      JSON.parse(raw_body),
+      raw_body:,
+      headers: {
+        'X-VpsAdmin-SMS-Signature-Version' => VpsAdmin::API::Notifications::SMS_CALLBACK_SIGNATURE_VERSION,
+        'X-VpsAdmin-SMS-Timestamp' => timestamp,
+        'X-VpsAdmin-SMS-Signature' => signature
+      },
+      request_method:,
+      request_path:,
+      now:
+    )
+  end
+
+  def legacy_sms_callback(delivery, payload)
+    VpsAdmin::API::Notifications.apply_sms_gateway_callback!(
+      payload,
+      authorization: 'Bearer callback-token'
+    )
   end
 
   def create_managed_private_ip!(user: nil)
@@ -1245,6 +1299,8 @@ RSpec.describe VpsAdmin::API::Tasks::EventDelivery do
     expect(body['text']).to include('Spec SMS event')
     expect(body['client_message_id']).to eq(delivery.id.to_s)
     expect(body['callback_url']).to eq('https://api.example.test/internal/notifications/sms/callback')
+    expect(body['callback_secret']).to be_present
+    expect(body['callback_secret']).to eq(delivery_sms_callback_secret(delivery))
     expect(requests.sole['Authorization']).to eq('Bearer brq-token')
     expect(delivery.reload).to be_accepted_state
     expect(delivery.notification_receiver_action).to eq(action)
@@ -1295,11 +1351,9 @@ RSpec.describe VpsAdmin::API::Tasks::EventDelivery do
     stub_sms_gateway_response
     task.deliver_smses
 
-    VpsAdmin::API::Notifications.apply_sms_gateway_callback!(
-      'client_message_id' => delivery.id.to_s,
-      'status' => 'sent',
-      'gateway' => 'brq',
-      'provider_id' => 'modem-message-42'
+    signed_sms_callback(
+      delivery,
+      sms_callback_payload(delivery, attrs: { 'provider_id' => 'modem-message-42' })
     )
 
     expect(delivery.reload).to be_sent_state
@@ -1313,15 +1367,173 @@ RSpec.describe VpsAdmin::API::Tasks::EventDelivery do
     stub_sms_gateway_response
     task.deliver_smses
 
-    VpsAdmin::API::Notifications.apply_sms_gateway_callback!(
-      'client_message_id' => delivery.id.to_s,
-      'status' => 'failed',
-      'gateway' => 'brq',
-      'error_summary' => 'modem rejected the message'
+    signed_sms_callback(
+      delivery,
+      sms_callback_payload(
+        delivery,
+        status: 'failed',
+        attrs: { 'error_summary' => 'modem rejected the message' }
+      )
     )
 
     expect(delivery.reload).to be_failed_state
     expect(delivery.error_summary).to eq('modem rejected the message')
+  end
+
+  it 'rejects SMS gateway callbacks with invalid HMAC signatures' do
+    allow(VpsAdmin::API::Notifications::Config).to receive(:load).and_return(sms_notifications_config)
+    delivery, = create_sms_delivery!
+    stub_sms_gateway_response
+    task.deliver_smses
+    payload = sms_callback_payload(delivery)
+
+    expect do
+      signed_sms_callback(delivery, payload, secret: 'wrong-secret')
+    end.to raise_error(VpsAdmin::API::Notifications::SmsCallbackAuthenticationError)
+  end
+
+  it 'rejects SMS gateway callbacks with stale HMAC timestamps' do
+    allow(VpsAdmin::API::Notifications::Config).to receive(:load).and_return(sms_notifications_config)
+    delivery, = create_sms_delivery!
+    stub_sms_gateway_response
+    task.deliver_smses
+    now = Time.now.utc
+
+    expect do
+      signed_sms_callback(
+        delivery,
+        sms_callback_payload(delivery),
+        timestamp: (now - VpsAdmin::API::Notifications::SMS_CALLBACK_SIGNATURE_TOLERANCE - 1).iso8601,
+        now:
+      )
+    end.to raise_error(VpsAdmin::API::Notifications::SmsCallbackAuthenticationError)
+  end
+
+  it 'rejects SMS gateway callbacks with future HMAC timestamps' do
+    allow(VpsAdmin::API::Notifications::Config).to receive(:load).and_return(sms_notifications_config)
+    delivery, = create_sms_delivery!
+    stub_sms_gateway_response
+    task.deliver_smses
+    now = Time.now.utc
+
+    expect do
+      signed_sms_callback(
+        delivery,
+        sms_callback_payload(delivery),
+        timestamp: (now + VpsAdmin::API::Notifications::SMS_CALLBACK_SIGNATURE_TOLERANCE + 1).iso8601,
+        now:
+      )
+    end.to raise_error(VpsAdmin::API::Notifications::SmsCallbackAuthenticationError)
+  end
+
+  it 'rejects SMS gateway callbacks with tampered bodies' do
+    allow(VpsAdmin::API::Notifications::Config).to receive(:load).and_return(sms_notifications_config)
+    delivery, = create_sms_delivery!
+    stub_sms_gateway_response
+    task.deliver_smses
+    payload = sms_callback_payload(delivery)
+    signed_body = JSON.dump(payload)
+    tampered_body = JSON.dump(payload.merge('provider_id' => 'tampered'))
+
+    expect do
+      signed_sms_callback(
+        delivery,
+        JSON.parse(signed_body),
+        raw_body: tampered_body,
+        signature_body: signed_body
+      )
+    end.to raise_error(VpsAdmin::API::Notifications::SmsCallbackAuthenticationError)
+  end
+
+  it 'accepts legacy SMS gateway bearer callbacks for old payloads' do
+    allow(VpsAdmin::API::Notifications::Config).to receive(:load).and_return(sms_notifications_config)
+    delivery, = create_sms_delivery!
+    stub_sms_gateway_response
+    task.deliver_smses
+    payload = JSON.parse(delivery.payload)
+    payload.delete('callback_secret')
+    delivery.update!(payload: JSON.dump(payload))
+
+    legacy_sms_callback(
+      delivery,
+      sms_callback_payload(delivery, attrs: { 'provider_id' => 'legacy-modem-message' })
+    )
+
+    expect(delivery.reload).to be_sent_state
+    expect(delivery.provider_message_id).to eq('brq:legacy-modem-message')
+  end
+
+  it 'rejects SMS gateway callbacks for unknown message IDs as authentication failures' do
+    allow(VpsAdmin::API::Notifications::Config).to receive(:load).and_return(sms_notifications_config)
+
+    expect do
+      VpsAdmin::API::Notifications.apply_sms_gateway_callback!(
+        {
+          'client_message_id' => '999999999',
+          'status' => 'sent'
+        },
+        authorization: 'Bearer callback-token'
+      )
+    end.to raise_error(VpsAdmin::API::Notifications::SmsCallbackAuthenticationError)
+  end
+
+  it 'rejects SMS gateway callbacks for non-SMS deliveries as authentication failures' do
+    allow(VpsAdmin::API::Notifications::Config).to receive(:load).and_return(sms_notifications_config)
+    delivery, = create_webhook_delivery!
+
+    expect do
+      VpsAdmin::API::Notifications.apply_sms_gateway_callback!(
+        {
+          'client_message_id' => delivery.id.to_s,
+          'status' => 'sent'
+        },
+        authorization: 'Bearer callback-token'
+      )
+    end.to raise_error(VpsAdmin::API::Notifications::SmsCallbackAuthenticationError)
+  end
+
+  it 'treats duplicate SMS gateway final callbacks as idempotent' do
+    allow(VpsAdmin::API::Notifications::Config).to receive(:load).and_return(sms_notifications_config)
+    delivery, = create_sms_delivery!
+    stub_sms_gateway_response
+    task.deliver_smses
+    payload = sms_callback_payload(delivery)
+
+    signed_sms_callback(delivery, payload)
+    signed_sms_callback(delivery, payload)
+
+    expect(delivery.reload).to be_sent_state
+  end
+
+  it 'rejects conflicting SMS gateway final callbacks' do
+    allow(VpsAdmin::API::Notifications::Config).to receive(:load).and_return(sms_notifications_config)
+    delivery, = create_sms_delivery!
+    stub_sms_gateway_response
+    task.deliver_smses
+
+    signed_sms_callback(delivery, sms_callback_payload(delivery))
+
+    expect do
+      signed_sms_callback(delivery, sms_callback_payload(delivery, status: 'failed'))
+    end.to raise_error(VpsAdmin::API::Notifications::SmsCallbackConflictError)
+  end
+
+  it 'does not overwrite a fast SMS callback with accepted state' do
+    allow(VpsAdmin::API::Notifications::Config).to receive(:load).and_return(sms_notifications_config)
+    delivery, = create_sms_delivery!
+    stub_sms_gateway_response(
+      on_request: lambda do |_req, _index|
+        signed_sms_callback(
+          delivery,
+          sms_callback_payload(delivery, attrs: { 'provider_id' => 'fast-modem-message' })
+        )
+      end
+    )
+
+    task.deliver_smses
+
+    expect(delivery.reload).to be_sent_state
+    expect(delivery.provider_message_id).to eq('brq:fast-modem-message')
   end
 
   it 'posts signed webhook payloads and marks deliveries sent' do
