@@ -15,7 +15,6 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
                        desc: 'IANA time zone identifier, e.g. Europe/Prague'
     integer :level, label: 'Access level'
     string :info, label: 'Info'
-    bool :mailer_enabled, label: 'Enabled mailer', default: true
     bool :password_reset, label: 'Password reset'
     bool :lockout, label: 'Lock-out'
     resource VpsAdmin::API::Resources::Language, label: 'Language of e-mails'
@@ -99,7 +98,7 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
         q = q.where("#{in_params[p].db_name} LIKE ? COLLATE utf8_unicode_ci", input[p].to_s)
       end
 
-      %i[level mailer_enabled].each do |p|
+      %i[level].each do |p|
         next unless input[p]
 
         q = q.where(in_params[p].db_name => input[p])

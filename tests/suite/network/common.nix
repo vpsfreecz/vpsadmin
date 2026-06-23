@@ -563,7 +563,6 @@ base
           language: Language.first,
           enable_basic_auth: true,
           enable_token_auth: true,
-          mailer_enabled: true,
           password_reset: false,
           lockout: false
         )

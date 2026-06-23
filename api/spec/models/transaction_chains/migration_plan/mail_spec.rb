@@ -36,11 +36,10 @@ RSpec.describe TransactionChains::MigrationPlan::Mail do
     [plan, fixture.fetch(:vpses)]
   end
 
-  it 'routes migration events and queues mail only for users with mailer enabled' do
+  it 'routes migration events and queues mail only for users with unmuted default notifications' do
     plan, vpses = create_plan_with_user_migrations!
     mail_user = vpses.first.user
-    mail_user.update!(mailer_enabled: true)
-    vpses.last.user.update!(mailer_enabled: false)
+    mute_default_notifications_for!(vpses.last.user)
 
     chain, = described_class.fire(plan)
     events = Event.where(event_type: 'vps.migration_planned').order(:id)
@@ -58,9 +57,9 @@ RSpec.describe TransactionChains::MigrationPlan::Mail do
     expect(suppressed_event.event_deliveries.sole).to be_skipped_state
   end
 
-  it 'logs suppressed events and remains empty when no migration user has mailer enabled' do
+  it 'logs suppressed events and remains empty when all migration users are muted' do
     plan, vpses = create_plan_with_user_migrations!
-    vpses.each { |vps| vps.user.update!(mailer_enabled: false) }
+    vpses.each { |vps| mute_default_notifications_for!(vps.user) }
 
     chain, = described_class.fire(plan)
     events = Event.where(event_type: 'vps.migration_planned').order(:id)

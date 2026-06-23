@@ -12,7 +12,7 @@ RSpec.describe EventRoute do
     )
   end
 
-  def reset_routing!(user, mailer_enabled: true)
+  def reset_routing!(user)
     EventRouteMatcher.joins(:event_route).where(event_routes: { user_id: user.id }).delete_all
     NotificationReceiverAction
       .joins(:notification_receiver)
@@ -20,7 +20,7 @@ RSpec.describe EventRoute do
       .delete_all
     EventRoute.where(user:).delete_all
     NotificationReceiver.where(user:).delete_all
-    user.update!(mailer_enabled:)
+    user.user_notification_delivery_methods.delete_all
   end
 
   def emit_incident!(user: SpecSeed.user, vps: nil, codename: 'Spec-Abuse')
@@ -118,9 +118,13 @@ RSpec.describe EventRoute do
   it 'creates and uses the default e-mail receiver when no routes exist' do
     event = emit_incident!
     delivery = event.event_deliveries.sole
+    receivers = SpecSeed.user.notification_receivers.to_a
 
     expect(event.reload).to be_routed_routing_state
     expect(event.matched_event_route).to be_present
+    expect(receivers.size).to eq(2)
+    expect(receivers).to include(default_email_receiver_for(SpecSeed.user))
+    expect(receivers).to include(default_mute_receiver_for(SpecSeed.user))
     expect(delivery.action).to eq('email')
     expect(delivery.target_kind).to eq('default_recipient')
     expect(delivery.target_value).to eq('default')
@@ -231,18 +235,18 @@ RSpec.describe EventRoute do
     expect(route.spent_at).to be_present
   end
 
-  it 'syncs generated default routing when the legacy mailer switch changes' do
+  it 'can mute and restore default-routed events with generated receivers' do
     emit_incident!
 
-    SpecSeed.user.update!(mailer_enabled: false)
+    muted_receiver = mute_default_notifications_for!(SpecSeed.user)
     muted_event = emit_incident!
     muted_delivery = muted_event.event_deliveries.sole
 
     expect(muted_event.reload).to be_suppressed_routing_state
     expect(muted_delivery).to be_skipped_state
-    expect(muted_delivery.notification_receiver).to be_mute
+    expect(muted_delivery.notification_receiver).to eq(muted_receiver)
 
-    SpecSeed.user.update!(mailer_enabled: true)
+    route_default_notifications_to_email_for!(SpecSeed.user)
     routed_event = emit_incident!
     routed_delivery = routed_event.event_deliveries.sole
 
@@ -252,9 +256,9 @@ RSpec.describe EventRoute do
     expect(routed_delivery.target_value).to eq('default')
   end
 
-  it 'does not sync the legacy mailer switch into user-managed receivers' do
+  it 'does not overwrite user-managed default route receivers' do
     emit_incident!
-    generated_receiver = SpecSeed.user.notification_receivers.sole
+    generated_mute_receiver = default_mute_receiver_for(SpecSeed.user)
     default_route = described_class.default_route_for(SpecSeed.user)
     custom_receiver = create_receiver!(
       label: 'Custom receiver',
@@ -266,12 +270,13 @@ RSpec.describe EventRoute do
     )
 
     default_route.update!(notification_receiver: custom_receiver)
-    SpecSeed.user.update!(mailer_enabled: false)
+    NotificationReceiver.ensure_defaults_for!(SpecSeed.user)
 
     expect(custom_receiver.reload.label).to eq('Custom receiver')
     expect(custom_receiver).not_to be_mute
     expect(custom_receiver.notification_receiver_actions.count).to eq(1)
-    expect(generated_receiver.reload).to be_mute
+    expect(default_route.reload.notification_receiver).to eq(custom_receiver)
+    expect(generated_mute_receiver.reload).to be_mute
   end
 
   it 'routes to a matching child receiver instead of the parent receiver' do
@@ -394,7 +399,7 @@ RSpec.describe EventRoute do
   end
 
   it 'suppresses events through a mute receiver' do
-    receiver = create_receiver!(label: 'Do not notify', mute: true)
+    receiver = create_receiver!(label: 'Mute', mute: true)
     route = create_route!(receiver:)
 
     event = emit_incident!
@@ -406,17 +411,13 @@ RSpec.describe EventRoute do
     expect(delivery.error_summary).to eq('receiver does not notify')
   end
 
-  it 'preserves disabled mailer users as a default mute receiver' do
-    reset_routing!(SpecSeed.user, mailer_enabled: false)
+  it 'creates a default mute receiver for every user' do
+    reset_routing!(SpecSeed.user)
+    muted_receiver = default_mute_receiver_for(SpecSeed.user)
 
-    event = emit_incident!
-    delivery = event.event_deliveries.sole
-    receiver = SpecSeed.user.notification_receivers.sole
-
-    expect(receiver).to be_mute
-    expect(event.reload).to be_suppressed_routing_state
-    expect(delivery).to be_skipped_state
-    expect(delivery.notification_receiver).to eq(receiver)
+    expect(muted_receiver).to be_mute
+    expect(muted_receiver.label).to eq('Mute')
+    expect(SpecSeed.user.notification_receivers.reload).to include(muted_receiver)
   end
 
   it 'backfills template recipient overrides into explicit e-mail routes' do
@@ -749,28 +750,6 @@ RSpec.describe EventRoute do
     expect(raw_event.reload).to be_routed_routing_state
     expect(raw_event.matched_event_route).not_to eq(muted_route)
     expect(muted_route.reload.hit_count).to eq(1)
-  end
-
-  it 'keeps advanced e-mail overrides muted for mailer-disabled users' do
-    reset_advanced_mail_settings!
-    SpecSeed.user.update!(mailer_enabled: false)
-    template = event_notification_template!('vps_incident_report')
-    UserNotificationTemplateRecipient.create!(
-      user: SpecSeed.user,
-      notification_template: template,
-      to: 'incident-override@example.test',
-      enabled: true
-    )
-
-    run_events_migration_backfill!
-
-    event = emit_incident!
-    delivery = event.event_deliveries.sole
-
-    expect(event.reload).to be_suppressed_routing_state
-    expect(delivery).to be_skipped_state
-    expect(delivery.notification_receiver).to be_mute
-    expect(described_class.where(user: SpecSeed.user, event_type: 'vps.incident_report')).to be_empty
   end
 
   it 'matches with sigil operators' do
