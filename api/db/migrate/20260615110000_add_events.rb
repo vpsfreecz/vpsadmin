@@ -551,13 +551,13 @@ class AddEvents < ActiveRecord::Migration[8.1]
           (user_id, label, description, enabled, mute, created_at, updated_at)
         SELECT
           id,
-          CASE WHEN mailer_enabled = 1 THEN 'Default e-mail' ELSE 'Do not notify' END,
+          CASE WHEN #{mailer_enabled_sql} = 1 THEN 'Default e-mail' ELSE 'Do not notify' END,
           CASE
-            WHEN mailer_enabled = 1 THEN 'Created from the existing mailer setting'
+            WHEN #{mailer_enabled_sql} = 1 THEN 'Created from the existing mailer setting'
             ELSE 'Created from the disabled mailer setting'
           END,
           1,
-          CASE WHEN mailer_enabled = 1 THEN 0 ELSE 1 END,
+          CASE WHEN #{mailer_enabled_sql} = 1 THEN 0 ELSE 1 END,
           CURRENT_TIMESTAMP,
           CURRENT_TIMESTAMP
         FROM users
@@ -578,7 +578,7 @@ class AddEvents < ActiveRecord::Migration[8.1]
           CURRENT_TIMESTAMP
         FROM notification_receivers
         INNER JOIN users ON users.id = notification_receivers.user_id
-        WHERE users.mailer_enabled = 1
+        WHERE #{mailer_enabled_sql} = 1
       SQL
 
       execute <<~SQL.squish
@@ -684,7 +684,7 @@ class AddEvents < ActiveRecord::Migration[8.1]
         user_notification_template_recipients.*,
         notification_templates.name AS template_name,
         notification_templates.label AS template_label,
-        users.mailer_enabled
+        #{mailer_enabled_sql} AS mailer_enabled
       FROM user_notification_template_recipients
       INNER JOIN notification_templates
         ON notification_templates.id = user_notification_template_recipients.notification_template_id
@@ -748,7 +748,7 @@ class AddEvents < ActiveRecord::Migration[8.1]
     positions = Hash.new(ADVANCED_EMAIL_ROLE_ROUTE_POSITION - 1)
 
     rows = select_all(<<~SQL.squish).to_a.select do |row|
-      SELECT user_email_role_recipients.*, users.mailer_enabled
+      SELECT user_email_role_recipients.*, #{mailer_enabled_sql} AS mailer_enabled
       FROM user_email_role_recipients
       INNER JOIN users ON users.id = user_email_role_recipients.user_id
       WHERE user_email_role_recipients.role IN (#{quoted_list(advanced_email_roles)})
@@ -1010,5 +1010,9 @@ class AddEvents < ActiveRecord::Migration[8.1]
 
   def current_timestamp
     @current_timestamp ||= Time.now.utc
+  end
+
+  def mailer_enabled_sql
+    column_exists?(:users, :mailer_enabled) ? 'users.mailer_enabled' : '1'
   end
 end

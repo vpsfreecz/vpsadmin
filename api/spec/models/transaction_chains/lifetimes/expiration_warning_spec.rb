@@ -68,13 +68,14 @@ RSpec.describe TransactionChains::Lifetimes::ExpirationWarning do
     expect(event.event_deliveries.sole.mail_log.notification_template.name).to eq('expiration_vps_active')
   end
 
-  it 'logs suppressed notifications for users with mailer disabled' do
+  it 'logs suppressed notifications for users with muted default notifications' do
     user = SpecSeed.create_or_update_user!(
       login: "no-mail-#{SecureRandom.hex(4)}",
       level: 1,
       email: 'no-mail@test.invalid'
     )
-    user.update!(expiration_date: 2.days.from_now, mailer_enabled: false)
+    user.update!(expiration_date: 2.days.from_now)
+    mute_default_notifications_for!(user)
 
     chain, = described_class.fire2(args: [User, [user]])
     event = Event.where(event_type: 'lifetime.expiration_warning', user:).sole

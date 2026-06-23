@@ -1,9 +1,12 @@
 class NotificationReceiver < ApplicationRecord
   DEFAULT_EMAIL_LABEL = 'Default e-mail'.freeze
-  DEFAULT_MUTE_LABEL = 'Do not notify'.freeze
+  DEFAULT_MUTE_LABEL = 'Mute'.freeze
+  LEGACY_DEFAULT_MUTE_LABEL = 'Do not notify'.freeze
   MAX_RECEIVERS_PER_USER = 50
-  DEFAULT_DESCRIPTION_ENABLED = 'Created from the existing mailer setting'.freeze
-  DEFAULT_DESCRIPTION_DISABLED = 'Created from the disabled mailer setting'.freeze
+  DEFAULT_EMAIL_DESCRIPTION = 'Default notification receiver'.freeze
+  DEFAULT_MUTE_DESCRIPTION = 'Default muted notification receiver'.freeze
+  LEGACY_DEFAULT_EMAIL_DESCRIPTION = 'Created from the existing mailer setting'.freeze
+  LEGACY_DEFAULT_MUTE_DESCRIPTION = 'Created from the disabled mailer setting'.freeze
 
   belongs_to :user
   has_many :notification_receiver_actions, -> { order(:id) }, dependent: :delete_all
@@ -16,70 +19,69 @@ class NotificationReceiver < ApplicationRecord
   validate :check_receiver_limit, on: :create
 
   def self.ensure_defaults_for!(user)
-    return if user.notification_receivers.exists?
-
     transaction do
-      ensure_default_receiver_for!(user)
+      email_receiver = ensure_default_email_receiver_for!(user)
+      ensure_default_mute_receiver_for!(user)
+      ensure_default_route!(user, email_receiver)
     end
   end
 
-  def self.ensure_default_receiver_for!(user)
-    transaction do
-      receiver = default_receiver_for(user) || create_default_receiver!(user)
-
-      if user.mailer_enabled?
-        ensure_default_email_action!(receiver)
-      end
-
-      ensure_default_route!(user, receiver)
-      receiver
-    end
+  def self.ensure_default_email_receiver_for!(user)
+    receiver = default_email_receiver_for(user) || create_default_email_receiver!(user)
+    ensure_default_email_action!(receiver)
+    receiver
   end
 
-  def self.default_description(user)
-    if user.mailer_enabled?
-      DEFAULT_DESCRIPTION_ENABLED
-    else
-      DEFAULT_DESCRIPTION_DISABLED
-    end
-  end
-
-  def self.sync_mailer_enabled!(user)
-    transaction do
-      ensure_defaults_for!(user)
-
-      receiver = default_receiver_for(user)
-      next unless receiver
-
-      receiver.update!(
-        label: user.mailer_enabled? ? DEFAULT_EMAIL_LABEL : DEFAULT_MUTE_LABEL,
-        description: default_description(user),
-        enabled: true,
-        mute: !user.mailer_enabled?
-      )
-
-      ensure_default_email_action!(receiver) if user.mailer_enabled?
-    end
+  def self.ensure_default_mute_receiver_for!(user)
+    receiver = default_mute_receiver_for(user) || create_default_mute_receiver!(user)
+    normalize_default_mute_receiver!(receiver)
+    receiver
   end
 
   def self.default_receiver_for(user)
+    default_email_receiver_for(user) || default_mute_receiver_for(user)
+  end
+
+  def self.default_email_receiver_for(user)
     where(
       user:,
-      label: [DEFAULT_EMAIL_LABEL, DEFAULT_MUTE_LABEL],
+      label: DEFAULT_EMAIL_LABEL,
+      mute: false,
       description: [
-        DEFAULT_DESCRIPTION_ENABLED,
-        DEFAULT_DESCRIPTION_DISABLED
+        DEFAULT_EMAIL_DESCRIPTION,
+        LEGACY_DEFAULT_EMAIL_DESCRIPTION
       ]
     ).order(:id).first
   end
 
-  def self.create_default_receiver!(user)
-    create!(
+  def self.default_mute_receiver_for(user)
+    where(
       user:,
-      label: user.mailer_enabled? ? DEFAULT_EMAIL_LABEL : DEFAULT_MUTE_LABEL,
-      description: default_description(user),
-      mute: !user.mailer_enabled?
-    )
+      label: [DEFAULT_MUTE_LABEL, LEGACY_DEFAULT_MUTE_LABEL],
+      mute: true,
+      description: [
+        DEFAULT_MUTE_DESCRIPTION,
+        LEGACY_DEFAULT_MUTE_DESCRIPTION
+      ]
+    ).order(:id).first
+  end
+
+  def self.create_default_email_receiver!(user)
+    new(
+      user:,
+      label: DEFAULT_EMAIL_LABEL,
+      description: DEFAULT_EMAIL_DESCRIPTION,
+      mute: false
+    ).tap { |receiver| receiver.save!(validate: false) }
+  end
+
+  def self.create_default_mute_receiver!(user)
+    new(
+      user:,
+      label: DEFAULT_MUTE_LABEL,
+      description: DEFAULT_MUTE_DESCRIPTION,
+      mute: true
+    ).tap { |receiver| receiver.save!(validate: false) }
   end
 
   def self.ensure_default_email_action!(receiver)
@@ -96,7 +98,7 @@ class NotificationReceiver < ApplicationRecord
     route = ::EventRoute.default_route_for(user)
 
     if route
-      route.update!(notification_receiver: receiver)
+      route.update!(notification_receiver: receiver) if route.notification_receiver.nil?
       return route
     end
 
@@ -105,6 +107,16 @@ class NotificationReceiver < ApplicationRecord
       label: ::EventRoute::DEFAULT_ROUTE_LABEL,
       position: ::EventRoute::DEFAULT_ROUTE_POSITION,
       default_route: true
+    )
+  end
+
+  def self.normalize_default_mute_receiver!(receiver)
+    return if receiver.label == DEFAULT_MUTE_LABEL &&
+              receiver.description == DEFAULT_MUTE_DESCRIPTION
+
+    receiver.update!(
+      label: DEFAULT_MUTE_LABEL,
+      description: DEFAULT_MUTE_DESCRIPTION
     )
   end
 

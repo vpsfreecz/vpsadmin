@@ -35,7 +35,7 @@ RSpec.describe 'monitoring alert chain', requires_plugins: :monitoring do # rubo
       .delete_all
     EventRoute.where(user:).delete_all
     NotificationReceiver.where(user:).delete_all
-    user.update!(mailer_enabled: true)
+    user.user_notification_delivery_methods.delete_all
   end
 
   def create_webhook_route!(user)

@@ -161,8 +161,7 @@ base
         level: 1,
         language: Language.first,
         enable_basic_auth: true,
-        enable_token_auth: true,
-        mailer_enabled: true
+        enable_token_auth: true
       )
       user.set_password(#{password.inspect})
 

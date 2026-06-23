@@ -204,7 +204,8 @@ class VpsAdmin::API::Resources::TransactionChain < HaveAPI::Resource
         return receiver
       end
 
-      ::NotificationReceiver.ensure_default_receiver_for!(@chain.user)
+      ::NotificationReceiver.ensure_defaults_for!(@chain.user)
+      ::NotificationReceiver.default_email_receiver_for(@chain.user)
     end
 
     def terminal_state?(state)
