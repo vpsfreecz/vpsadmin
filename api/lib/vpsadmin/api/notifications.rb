@@ -88,6 +88,7 @@ module VpsAdmin::API
         def receiver_action_available?(action)
           return false unless available?
           return false unless action&.enabled? && action.action == name
+          return false unless action.delivery_method_enabled?
           return action.instance_exec(&@receiver_action_available) if @receiver_action_available
 
           true
@@ -687,6 +688,14 @@ module VpsAdmin::API
         return
       end
 
+      unless delivery.delivery_method_enabled?
+        delivery.update!(
+          state: 'canceled',
+          error_summary: 'email delivery method is disabled'
+        )
+        return
+      end
+
       unless delivery.receiver_action_available?
         delivery.update!(
           state: 'canceled',
@@ -860,7 +869,7 @@ module VpsAdmin::API
       end
 
       receiver_action_available do
-        sms_action? && verified? && target_value.present? && sms_notifications_allowed?
+        sms_action? && verified? && target_value.present?
       end
 
       plan_delivery do |route, receiver, receiver_action|
@@ -1562,6 +1571,14 @@ module VpsAdmin::API
             delivery.update!(
               state: 'canceled',
               error_summary: 'notification receiver is disabled or muted'
+            )
+            next
+          end
+
+          unless delivery.delivery_method_enabled?
+            delivery.update!(
+              state: 'canceled',
+              error_summary: "#{@action} delivery method is disabled"
             )
             next
           end

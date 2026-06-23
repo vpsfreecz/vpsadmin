@@ -16,7 +16,6 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
     integer :level, label: 'Access level'
     string :info, label: 'Info'
     bool :mailer_enabled, label: 'Enabled mailer', default: true
-    bool :sms_notifications_enabled, label: 'Enable SMS notifications'
     bool :password_reset, label: 'Password reset'
     bool :lockout, label: 'Lock-out'
     resource VpsAdmin::API::Resources::Language, label: 'Language of e-mails'
@@ -355,7 +354,7 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
     authorize do |u|
       allow if u.role == :admin
       input whitelist: %i[
-        password new_password logout_sessions mailer_enabled language
+        password new_password logout_sessions language
         time_zone
         enable_basic_auth enable_token_auth enable_oauth2_auth enable_single_sign_on
         enable_new_login_notification enable_multi_factor_auth
@@ -442,6 +441,112 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
 
     def state_id
       @chain.id
+    end
+  end
+
+  class NotificationDeliveryMethod < HaveAPI::Resource
+    desc 'Manage user event delivery methods'
+    route '{user_id}/notification_delivery_methods'
+    model ::UserNotificationDeliveryMethod
+
+    params(:all) do
+      string :id, db_name: :delivery_method
+      string :delivery_method,
+             choices: { values: ::VpsAdmin::API::Notifications::Actions.labels },
+             load_validators: false
+      string :label
+      bool :enabled
+      datetime :created_at, nullable: true
+      datetime :updated_at, nullable: true
+    end
+
+    def self.find_method(user_id, delivery_method)
+      user = ::User.find(user_id)
+      method = ::UserNotificationDeliveryMethod.normalize_delivery_method(delivery_method)
+      raise ActiveRecord::RecordNotFound unless ::UserNotificationDeliveryMethod.known_delivery_method?(method)
+
+      user.user_notification_delivery_methods.find_by(delivery_method: method) ||
+        ::UserNotificationDeliveryMethod.new(
+          user:,
+          delivery_method: method,
+          enabled: ::UserNotificationDeliveryMethod.default_enabled?(method)
+        )
+    end
+
+    class Index < HaveAPI::Actions::Default::Index
+      desc 'List user event delivery methods'
+
+      output(:object_list) do
+        use :all
+      end
+
+      authorize do |_u|
+        allow
+      end
+
+      def query
+        error!('Access denied') if current_user.role != :admin && current_user.id != path_params['user_id'].to_i
+
+        ::UserNotificationDeliveryMethod.all_methods_for(::User.find(path_params['user_id']))
+      end
+
+      def count
+        query.count
+      end
+
+      def exec
+        query
+      end
+    end
+
+    class Show < HaveAPI::Actions::Default::Show
+      desc 'Show user event delivery method'
+
+      output do
+        use :all
+      end
+
+      authorize do |_u|
+        allow
+      end
+
+      def exec
+        error!('Access denied') if current_user.role != :admin && current_user.id != path_params['user_id'].to_i
+
+        self.class.resource.find_method(
+          path_params['user_id'],
+          path_params['notification_delivery_method_id']
+        )
+      end
+    end
+
+    class Update < HaveAPI::Actions::Default::Update
+      desc 'Update user event delivery method'
+
+      input do
+        bool :enabled, required: true
+      end
+
+      output do
+        use :all
+      end
+
+      authorize do |u|
+        allow if u.role == :admin
+      end
+
+      def exec
+        user = ::User.find(path_params['user_id'])
+
+        user.set_notification_delivery_method!(
+          path_params['notification_delivery_method_id'],
+          input[:enabled]
+        )
+      rescue ArgumentError => e
+        error!(e.message)
+      rescue ActiveRecord::RecordInvalid => e
+        error!('update failed', e.record.errors.to_hash)
+      end
     end
   end
 

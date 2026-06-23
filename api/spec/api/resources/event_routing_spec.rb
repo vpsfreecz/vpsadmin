@@ -18,6 +18,7 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
       .delete_all
     EventRoute.where(user:).delete_all
     NotificationReceiver.where(user:).delete_all
+    user.user_notification_delivery_methods.delete_all
     user.update!(mailer_enabled:)
   end
 
@@ -150,6 +151,10 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
 
   def action_obj
     json.dig('response', 'action') || json.dig('response', 'notification_receiver_action') || json['response']
+  end
+
+  def errors
+    json.dig('response', 'errors') || json['errors'] || {}
   end
 
   def event_obj
@@ -595,7 +600,6 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
 
   it 'hides SMS verification codes and accepts them through confirmation' do
     allow(VpsAdmin::API::Notifications).to receive(:sms_configured?).and_return(true)
-    SpecSeed.user.update!(sms_notifications_enabled: true)
 
     as(SpecSeed.user) do
       json_post receiver_index_path, notification_receiver: {
@@ -628,6 +632,135 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
 
     expect_status(200)
     expect(NotificationReceiverAction.find(action.id)).to be_verified
+  end
+
+  it 'rejects receiver actions when the delivery method is disabled for the user' do
+    SpecSeed.user.set_notification_delivery_method!(:webhook, false)
+
+    as(SpecSeed.user) do
+      json_post receiver_index_path, notification_receiver: {
+        label: 'Webhook receiver'
+      }
+    end
+
+    expect_status(200)
+    receiver = NotificationReceiver.find(receiver_obj['id'])
+
+    as(SpecSeed.user) do
+      json_post receiver_action_index_path(receiver.id), action: {
+        action: 'webhook',
+        label: 'Spec webhook',
+        target_kind: 'custom',
+        target_value: 'https://example.test/events'
+      }
+    end
+
+    expect(json['status']).to be(false)
+    expect(errors.fetch('action')).to include('is not enabled for this user')
+    expect(receiver.notification_receiver_actions.reload).to be_empty
+  end
+
+  it 'auto-enables a delivery method when admin creates a receiver action' do
+    SpecSeed.user.set_notification_delivery_method!(:webhook, false)
+    receiver = NotificationReceiver.create!(user: SpecSeed.user, label: 'Spec receiver')
+
+    as(SpecSeed.admin) do
+      json_post receiver_action_index_path(receiver.id), action: {
+        action: 'webhook',
+        label: 'Spec webhook',
+        target_kind: 'custom',
+        target_value: 'https://example.test/events'
+      }
+    end
+
+    expect_status(200)
+    expect(json['status']).to be(true), last_response.body
+    expect(SpecSeed.user.reload.notification_delivery_method_enabled?(:webhook)).to be(true)
+    expect(receiver.notification_receiver_actions.reload.sole.action).to eq('webhook')
+  end
+
+  it 'does not auto-enable a delivery method when admin receiver action create fails' do
+    SpecSeed.user.set_notification_delivery_method!(:webhook, false)
+    receiver = NotificationReceiver.create!(user: SpecSeed.user, label: 'Spec receiver')
+
+    as(SpecSeed.admin) do
+      json_post receiver_action_index_path(receiver.id), action: {
+        action: 'webhook',
+        label: 'Spec webhook',
+        target_kind: 'custom',
+        target_value: 'not a URL'
+      }
+    end
+
+    expect(json['status']).to be(false)
+    expect(errors.fetch('target_value')).to include('must be an HTTP or HTTPS URL')
+    expect(SpecSeed.user.reload.notification_delivery_method_enabled?(:webhook)).to be(false)
+    expect(receiver.notification_receiver_actions.reload).to be_empty
+  end
+
+  it 'does not auto-enable a delivery method when admin receiver action update fails' do
+    receiver = NotificationReceiver.create!(user: SpecSeed.user, label: 'Spec receiver')
+    action = receiver.notification_receiver_actions.create!(
+      action: 'webhook',
+      label: 'Spec webhook',
+      target_kind: 'custom',
+      target_value: 'https://example.test/events'
+    )
+    SpecSeed.user.set_notification_delivery_method!(:webhook, false)
+
+    as(SpecSeed.admin) do
+      json_put receiver_action_path(receiver.id, action.id), action: {
+        target_value: 'not a URL'
+      }
+    end
+
+    expect(json['status']).to be(false)
+    expect(errors.fetch('target_value')).to include('must be an HTTP or HTTPS URL')
+    expect(SpecSeed.user.reload.notification_delivery_method_enabled?(:webhook)).to be(false)
+    expect(action.reload.target_value).to eq('https://example.test/events')
+  end
+
+  it 'skips lazy default e-mail actions when the delivery method is disabled' do
+    SpecSeed.user.set_notification_delivery_method!(:email, false)
+
+    event = VpsAdmin::API::Events.emit!(
+      'user.test_notification',
+      user: SpecSeed.user,
+      subject: 'Spec disabled default e-mail event'
+    )
+    receiver = NotificationReceiver.where(user: SpecSeed.user).sole
+    action = receiver.notification_receiver_actions.sole
+    delivery = event.event_deliveries.sole
+
+    expect(action.action).to eq('email')
+    expect(delivery).to be_skipped_state
+    expect(delivery.error_summary).to eq('delivery method is disabled')
+  end
+
+  it 'skips existing receiver actions when their delivery method is disabled' do
+    receiver = NotificationReceiver.create!(user: SpecSeed.user, label: 'Spec receiver')
+    receiver.notification_receiver_actions.create!(
+      action: :webhook,
+      label: 'Spec webhook',
+      target_kind: :custom,
+      target_value: 'https://example.test/events'
+    )
+    EventRoute.create!(
+      user: SpecSeed.user,
+      notification_receiver: receiver,
+      event_type: 'user.test_notification'
+    )
+
+    SpecSeed.user.set_notification_delivery_method!(:webhook, false)
+    event = VpsAdmin::API::Events.emit!(
+      'user.test_notification',
+      user: SpecSeed.user,
+      subject: 'Spec disabled delivery event'
+    )
+    delivery = event.event_deliveries.sole
+
+    expect(delivery).to be_skipped_state
+    expect(delivery.error_summary).to eq('delivery method is disabled')
   end
 
   it 'lets users retry failed deliveries' do
@@ -879,7 +1012,6 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
       sms_configured?: true
     )
     allow(VpsAdmin::API::Notifications::Config).to receive(:load).and_return(sms_notifications_config)
-    SpecSeed.user.update!(sms_notifications_enabled: true)
 
     receiver = NotificationReceiver.create!(user: SpecSeed.user, label: 'Spec detail receiver')
     receiver.notification_receiver_actions.create!(
