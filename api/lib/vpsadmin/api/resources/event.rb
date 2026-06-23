@@ -219,7 +219,7 @@ module VpsAdmin::API::Resources
       end
 
       params(:detail) do
-        text :payload, nullable: true
+        text :payload, nullable: true, db_name: :public_payload
         text :response_headers_json, label: 'Response headers'
         string :mail_to, nullable: true
         string :mail_cc, nullable: true

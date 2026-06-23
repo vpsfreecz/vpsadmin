@@ -92,11 +92,13 @@ let
           enabled = smsCfg.enable;
           configured = smsCfg.enable && smsCfg.gateways != [ ];
           callback_url = smsCfg.callbackUrl;
-          callback_token = "#sms_callback_token#";
           verification_text = smsCfg.verificationText;
           open_timeout = smsCfg.openTimeout;
           read_timeout = smsCfg.readTimeout;
           gateways = smsGatewayConfig;
+        }
+        // optionalAttrs (smsCfg.callbackTokenFile != null) {
+          callback_token = "#sms_callback_token#";
         };
       }
     )
