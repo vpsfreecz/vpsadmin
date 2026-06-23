@@ -1001,7 +1001,13 @@ module VpsAdmin::API
                                 event.user.event_routes
                                      .active
                                      .where(enabled: true)
-                                     .includes(:event_route_matchers, notification_receiver: :notification_receiver_actions)
+                                     .includes(
+                                       :event_route_matchers,
+                                       notification_receiver: [
+                                         :notification_receiver_actions,
+                                         { user: :user_notification_delivery_methods }
+                                       ]
+                                     )
                                      .order(:position, :id)
                                      .to_a
                                      .group_by(&:parent_id)
@@ -1039,6 +1045,10 @@ module VpsAdmin::API
 
         unless receiver_action.action_available?
           return skipped_delivery(route, receiver, receiver_action, 'receiver action is not available')
+        end
+
+        unless receiver_action.delivery_method_enabled?
+          return skipped_delivery(route, receiver, receiver_action, 'delivery method is disabled')
         end
 
         unless receiver_action.deliverable?

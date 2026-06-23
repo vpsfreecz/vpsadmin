@@ -166,6 +166,17 @@ class EventDelivery < ApplicationRecord
     false
   end
 
+  def delivery_method_enabled?
+    return true if direct_email_delivery?
+
+    user = notification_receiver_action&.notification_receiver&.user ||
+           notification_receiver&.user ||
+           event&.user
+    return true unless user
+
+    user.notification_delivery_method_enabled?(action) == true
+  end
+
   def due_for_delivery?
     (released_state? || sending_state?) &&
       (next_attempt_at.nil? || next_attempt_at <= Time.now)

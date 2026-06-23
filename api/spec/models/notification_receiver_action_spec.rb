@@ -13,7 +13,6 @@ RSpec.describe NotificationReceiverAction do
 
   def enable_sms!
     allow(VpsAdmin::API::Notifications).to receive(:sms_configured?).and_return(true)
-    SpecSeed.user.update!(sms_notifications_enabled: true)
   end
 
   it 'uses string columns for notification action registry names' do
@@ -78,6 +77,7 @@ RSpec.describe NotificationReceiverAction do
 
   it 'rejects SMS actions when SMS is not enabled for the user' do
     allow(VpsAdmin::API::Notifications).to receive(:sms_configured?).and_return(true)
+    SpecSeed.user.set_notification_delivery_method!(:sms, false)
 
     action = create_receiver!.notification_receiver_actions.build(
       action: :sms,
@@ -87,6 +87,23 @@ RSpec.describe NotificationReceiverAction do
 
     expect(action).not_to be_valid
     expect(action.errors[:action]).to include('is not enabled for this user')
+  end
+
+  it 'rejects actions when their delivery method is disabled for the user' do
+    %i[email webhook].each do |delivery_method|
+      SpecSeed.user.set_notification_delivery_method!(delivery_method, false)
+
+      action = create_receiver!.notification_receiver_actions.build(
+        action: delivery_method,
+        target_kind: delivery_method == :email ? :default_recipient : :custom,
+        target_value: delivery_method == :webhook ? 'https://example.test/events' : nil
+      )
+
+      expect(action).not_to be_valid
+      expect(action.errors[:action]).to include('is not enabled for this user')
+
+      SpecSeed.user.set_notification_delivery_method!(delivery_method, true)
+    end
   end
 
   it 'rejects unknown action names' do

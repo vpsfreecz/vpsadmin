@@ -30,6 +30,8 @@ class NotificationReceiverAction < ApplicationRecord
 
   serialize :config, coder: JSON
 
+  attr_accessor :skip_delivery_method_enabled_validation
+
   before_validation :set_default_target_kind
   before_validation :set_default_label
   before_validation :clean_email_target
@@ -42,6 +44,7 @@ class NotificationReceiverAction < ApplicationRecord
   validates :verification_token, length: { maximum: 255 }, allow_nil: true
   validate :check_action_limit, on: :create
   validate :check_action_available
+  validate :check_delivery_method_enabled
   validate :check_target
 
   def self.action_labels
@@ -75,6 +78,7 @@ class NotificationReceiverAction < ApplicationRecord
   def deliverable?
     return false unless enabled?
     return false unless action_available?
+    return false unless delivery_method_enabled?
 
     VpsAdmin::API::Notifications::Actions.known?(action)
   end
@@ -205,8 +209,11 @@ class NotificationReceiverAction < ApplicationRecord
     action == 'sms'
   end
 
-  def sms_notifications_allowed?
-    notification_receiver&.user&.sms_notifications_enabled? == true
+  def delivery_method_enabled?
+    return false if action.blank?
+    return false unless VpsAdmin::API::Notifications::Actions.known?(action)
+
+    notification_receiver&.user&.notification_delivery_method_enabled?(action) == true
   end
 
   def sms_verification_sent_at
@@ -277,6 +284,16 @@ class NotificationReceiverAction < ApplicationRecord
     errors.add(:action, 'is not available')
   end
 
+  def check_delivery_method_enabled
+    return if skip_delivery_method_enabled_validation
+    return if action.blank?
+    return if notification_receiver.nil?
+    return unless VpsAdmin::API::Notifications::Actions.known?(action)
+    return if delivery_method_enabled?
+
+    errors.add(:action, 'is not enabled for this user')
+  end
+
   def check_target
     action_definition.validate_receiver_action!(self)
   rescue KeyError
@@ -310,11 +327,6 @@ class NotificationReceiverAction < ApplicationRecord
   end
 
   def check_sms_target
-    unless sms_notifications_allowed?
-      errors.add(:action, 'is not enabled for this user')
-      return
-    end
-
     unless custom_target_kind?
       errors.add(:target_kind, 'must be custom')
       return
