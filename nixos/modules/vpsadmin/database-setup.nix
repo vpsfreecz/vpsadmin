@@ -141,11 +141,6 @@ in
 
         dbStateFile="${cfg.stateDirectory}/database-initialized"
 
-        if [ ! -e "${schemaFile}" ] ; then
-          cp ${cfg.package}/database/db/schema.rb ${"${cfg.stateDirectory}/cache/schema.rb"}
-          chmod 0600 "${cfg.stateDirectory}/cache/schema.rb"
-        fi
-
         ${
           if cfg.autoSetup then
             ''
