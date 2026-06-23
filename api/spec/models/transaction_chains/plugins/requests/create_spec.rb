@@ -12,21 +12,22 @@ RSpec.describe 'requests plugin create chain', requires_plugins: :requests do # 
 
   before do
     ensure_mailer_available!
-    SpecSeed.admin.update!(mailer_enabled: true)
   end
 
   it 'concerns the request and routes user/admin mail with type fallback' do
     ensure_request_notification_template!('request_create_user', 'request_action_role')
     ensure_request_notification_template!('request_create_admin', 'request_action_role')
     admin2 = create_lifecycle_user!(login: 'plugin-request-admin')
-    admin2.update!(level: 99, mailer_enabled: true)
+    admin2.update!(level: 99)
     disabled_admin = create_lifecycle_user!(login: 'plugin-request-muted')
-    disabled_admin.update!(level: 99, mailer_enabled: false)
+    disabled_admin.update!(level: 99)
+    mute_default_notifications_for!(disabled_admin)
     disabled_same_email = create_lifecycle_user!(
       login: 'plugin-request-muted-shared',
       email: SpecSeed.admin.email
     )
-    disabled_same_email.update!(level: 99, mailer_enabled: false)
+    disabled_same_email.update!(level: 99)
+    mute_default_notifications_for!(disabled_same_email)
     request = build_registration_request!(last_mail_id: 3)
 
     chain, = chain_class.fire2(args: [request])

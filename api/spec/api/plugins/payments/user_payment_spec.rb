@@ -203,7 +203,7 @@ RSpec.describe 'VpsAdmin::API::Resources::UserPayment', requires_plugins: :payme
       ensure_signer_unlocked!
       ensure_node_current_status
       payment_user.user_account.update!(monthly_payment: 100, paid_until: nil)
-      payment_user.update!(mailer_enabled: false)
+      mute_default_notifications_for!(payment_user)
     end
 
     it 'rejects unauthenticated access' do

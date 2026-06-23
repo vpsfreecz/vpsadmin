@@ -10,7 +10,7 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
     reset_routing!(SpecSeed.other_user)
   end
 
-  def reset_routing!(user, mailer_enabled: true)
+  def reset_routing!(user)
     EventRouteMatcher.joins(:event_route).where(event_routes: { user_id: user.id }).delete_all
     NotificationReceiverAction
       .joins(:notification_receiver)
@@ -19,7 +19,6 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
     EventRoute.where(user:).delete_all
     NotificationReceiver.where(user:).delete_all
     user.user_notification_delivery_methods.delete_all
-    user.update!(mailer_enabled:)
   end
 
   def receiver_index_path
@@ -347,15 +346,16 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
     as(SpecSeed.user) { json_get delivery_index_path(event.id) }
 
     expect_status(200)
-    expect(deliveries.map { |row| row['action'] }).to eq(['webhook'])
-    expect(deliveries.first['notification_receiver_id']).to eq(receiver.id)
-    expect(deliveries.first['notification_receiver_label']).to eq('Spec receiver')
-    expect(deliveries.first['notification_receiver_action_id']).to eq(receiver_action.id)
-    expect(deliveries.first['notification_receiver_action_label']).to eq('Spec webhook')
-    expect(deliveries.first['notification_receiver_action_display_target']).to eq('https://example.test/events')
-    expect(deliveries.first).not_to include('template_name')
+    expect(deliveries.map { |row| row['action'] }).to eq(%w[webhook email])
+    webhook_delivery_obj = deliveries.find { |row| row['action'] == 'webhook' }
+    expect(webhook_delivery_obj['notification_receiver_id']).to eq(receiver.id)
+    expect(webhook_delivery_obj['notification_receiver_label']).to eq('Spec receiver')
+    expect(webhook_delivery_obj['notification_receiver_action_id']).to eq(receiver_action.id)
+    expect(webhook_delivery_obj['notification_receiver_action_label']).to eq('Spec webhook')
+    expect(webhook_delivery_obj['notification_receiver_action_display_target']).to eq('https://example.test/events')
+    expect(webhook_delivery_obj).not_to include('template_name')
 
-    delivery = event.event_deliveries.sole
+    delivery = event.event_deliveries.find_by!(action: 'webhook')
 
     as(SpecSeed.user) { json_get delivery_path(event.id, delivery.id) }
 
@@ -728,7 +728,7 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
       user: SpecSeed.user,
       subject: 'Spec disabled default e-mail event'
     )
-    receiver = NotificationReceiver.where(user: SpecSeed.user).sole
+    receiver = default_email_receiver_for(SpecSeed.user)
     action = receiver.notification_receiver_actions.sole
     delivery = event.event_deliveries.sole
 

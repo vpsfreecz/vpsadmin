@@ -784,7 +784,7 @@ RSpec.describe 'VpsAdmin::API::Resources::VPS write actions' do # rubocop:disabl
     end
 
     before do
-      SpecSeed.user.update!(mailer_enabled: false)
+      mute_default_notifications_for!(SpecSeed.user)
       allow(Vps).to receive(:including_deleted) { Vps.unscoped }
     end
 

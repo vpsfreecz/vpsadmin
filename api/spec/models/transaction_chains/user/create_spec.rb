@@ -24,8 +24,7 @@ RSpec.describe TransactionChains::User::Create do
       level: 1,
       language: SpecSeed.language,
       enable_basic_auth: true,
-      enable_token_auth: true,
-      mailer_enabled: true
+      enable_token_auth: true
     ).tap { |user| user.set_password('secret123') }
   end
 

@@ -62,7 +62,6 @@ class RegistrationRequest < UserRequest
       language:,
       time_zone:,
       level: 2,
-      mailer_enabled: true,
       password_reset: true
     )
     new_user.set_password(generate_password, resolve_password_reset: false)
