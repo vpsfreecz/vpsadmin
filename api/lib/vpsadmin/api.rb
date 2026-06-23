@@ -64,12 +64,20 @@ module VpsAdmin
         end
 
         sinatra.post '/internal/notifications/sms/callback' do
-          token = VpsAdmin::API::Notifications.sms_callback_token
-          halt 503, 'SMS callbacks are not configured' if token.blank?
-          halt 401, 'Access denied' unless request.env['HTTP_AUTHORIZATION'] == "Bearer #{token}"
+          raw_body = request.body.read(VpsAdmin::API::Notifications::SMS_CALLBACK_MAX_BODY_SIZE + 1)
+          if raw_body.bytesize > VpsAdmin::API::Notifications::SMS_CALLBACK_MAX_BODY_SIZE
+            halt 413, 'Request body too large'
+          end
 
-          payload = JSON.parse(request.body.read)
-          delivery = VpsAdmin::API::Notifications.apply_sms_gateway_callback!(payload)
+          payload = JSON.parse(raw_body)
+          delivery = VpsAdmin::API::Notifications.apply_sms_gateway_callback!(
+            payload,
+            raw_body:,
+            headers: request.env,
+            authorization: request.env['HTTP_AUTHORIZATION'],
+            request_method: request.request_method,
+            request_path: request.path_info
+          )
 
           [
             200,
@@ -79,7 +87,11 @@ module VpsAdmin
         rescue JSON::ParserError
           [400, { 'content-type' => 'text/plain' }, 'Invalid JSON']
         rescue ActiveRecord::RecordNotFound
-          [404, { 'content-type' => 'text/plain' }, 'Delivery not found']
+          [401, { 'content-type' => 'text/plain' }, 'Invalid SMS callback authorization']
+        rescue VpsAdmin::API::Notifications::SmsCallbackAuthenticationError => e
+          [401, { 'content-type' => 'text/plain' }, e.message]
+        rescue VpsAdmin::API::Notifications::SmsCallbackConflictError => e
+          [409, { 'content-type' => 'text/plain' }, e.message]
         rescue ArgumentError => e
           [400, { 'content-type' => 'text/plain' }, e.message]
         end

@@ -118,6 +118,23 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
     }
   end
 
+  def sms_notifications_config
+    {
+      'sms' => {
+        'enabled' => true,
+        'configured' => true,
+        'callback_url' => 'https://api.example.test/internal/notifications/sms/callback',
+        'gateways' => [
+          {
+            'name' => 'brq',
+            'url' => 'https://sms-brq.example/v1/sms',
+            'token' => 'brq-token'
+          }
+        ]
+      }
+    }
+  end
+
   def expect_status(code)
     expect(last_response.status).to eq(code),
                                     "body=#{last_response.body}"
@@ -857,7 +874,12 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
   end
 
   it 'exposes action-specific delivery details' do
-    allow(VpsAdmin::API::Notifications).to receive(:telegram_configured?).and_return(true)
+    allow(VpsAdmin::API::Notifications).to receive_messages(
+      telegram_configured?: true,
+      sms_configured?: true
+    )
+    allow(VpsAdmin::API::Notifications::Config).to receive(:load).and_return(sms_notifications_config)
+    SpecSeed.user.update!(sms_notifications_enabled: true)
 
     receiver = NotificationReceiver.create!(user: SpecSeed.user, label: 'Spec detail receiver')
     receiver.notification_receiver_actions.create!(
@@ -878,6 +900,13 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
       target_value: '123456',
       verified_at: Time.now
     )
+    receiver.notification_receiver_actions.create!(
+      action: :sms,
+      label: 'Spec detail SMS',
+      target_kind: :custom,
+      target_value: '+420123456789',
+      verified_at: Time.now
+    )
     EventRoute.create!(
       user: SpecSeed.user,
       notification_receiver: receiver,
@@ -894,6 +923,7 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
     email_delivery = event.event_deliveries.email_action.sole
     webhook_delivery = event.event_deliveries.webhook_action.sole
     telegram_delivery = event.event_deliveries.telegram_action.sole
+    sms_delivery = event.event_deliveries.sms_action.sole
     email_delivery.update!(template_name: 'spec_internal_template')
     webhook_delivery.update!(
       response_status: 202,
@@ -903,6 +933,10 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
     telegram_delivery.update!(
       response_status: 200,
       response_body: JSON.dump(ok: true, result: { message_id: 42 })
+    )
+    sms_delivery.update!(
+      response_status: 202,
+      response_body: JSON.dump(id: 101, status: 'queued')
     )
     attempt = webhook_delivery.event_delivery_attempts.create!(
       action: webhook_delivery.action,
@@ -947,6 +981,15 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
     expect(telegram_payload['chat_id']).to eq('123456')
     expect(telegram_payload['text']).to include('Spec delivery detail event')
     expect(delivery_obj['response_body']).to include('"ok":true')
+
+    as(SpecSeed.user) { json_get delivery_path(event.id, sms_delivery.id) }
+
+    expect_status(200)
+    sms_stored_payload = JSON.parse(sms_delivery.reload.payload)
+    sms_payload = JSON.parse(delivery_obj['payload'])
+    expect(sms_stored_payload['callback_secret']).to be_present
+    expect(sms_payload['to']).to eq('+420123456789')
+    expect(sms_payload['callback_secret']).to be_nil
 
     as(SpecSeed.user) { json_get delivery_attempt_index_path(event.id, webhook_delivery.id) }
 
