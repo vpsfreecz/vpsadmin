@@ -47,6 +47,7 @@ let
     # Cleanup previous state
     rm -rf "${stateDirectory}/plugins/"*
     find "${stateDirectory}/config" -type l -exec rm -f {} +
+    install -d -m 0750 "${stateDirectory}/cache"
 
     # Link in configuration
     for v in "${configDirectory}"/* ; do
@@ -56,6 +57,9 @@ let
     rm -f "${stateDirectory}/config/deployment.json"
     cp -f ${deploymentConfigJson} "${stateDirectory}/config/deployment.json"
     chmod 440 "${stateDirectory}/config/deployment.json"
+
+    cp -f ${package}/${name}/db/schema.rb "${stateDirectory}/cache/schema.rb"
+    chmod 0600 "${stateDirectory}/cache/schema.rb"
 
     # Link in enabled plugins
     for plugin in ${concatStringsSep " " vpsadminCfg.plugins}; do
