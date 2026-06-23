@@ -812,16 +812,52 @@ function notifications_receiver_params($create = false)
     return $params;
 }
 
-function notifications_receiver_action_type_labels($receiver)
+function notifications_delivery_method_enabled_map($user_id)
+{
+    global $api;
+
+    static $cache = [];
+
+    if (!array_key_exists($user_id, $cache)) {
+        $cache[$user_id] = [];
+
+        foreach ($api->user($user_id)->notification_delivery_method->list() as $method) {
+            $cache[$user_id][$method->delivery_method] = (bool) $method->enabled;
+        }
+    }
+
+    return $cache[$user_id];
+}
+
+function notifications_receiver_action_all_type_labels($receiver)
 {
     $input = $receiver->action->create->getParameters('input');
 
     return notifications_param_choices($input->action);
 }
 
+function notifications_receiver_action_type_labels($receiver)
+{
+    $labels = notifications_receiver_action_all_type_labels($receiver);
+    if (isAdmin()) {
+        return $labels;
+    }
+
+    $enabled_methods = notifications_delivery_method_enabled_map($receiver->user_id);
+    $ret = [];
+
+    foreach ($labels as $action => $label) {
+        if ($enabled_methods[$action] ?? true) {
+            $ret[$action] = $label;
+        }
+    }
+
+    return $ret;
+}
+
 function notifications_receiver_action_type_label($receiver, $action_type)
 {
-    $labels = notifications_receiver_action_type_labels($receiver);
+    $labels = notifications_receiver_action_all_type_labels($receiver);
 
     return $labels[$action_type] ?? $action_type;
 }
@@ -1937,6 +1973,10 @@ function notifications_receiver_action_target_html($action)
 
 function notifications_receiver_action_secret_html($action)
 {
+    if (notifications_prop($action, 'delivery_method_enabled') === false) {
+        return boolean_icon(false) . ' ' . _('delivery method disabled');
+    }
+
     if ($action->action === 'webhook') {
         return boolean_icon($action->secret_present);
     }
@@ -2160,6 +2200,14 @@ function notifications_receiver_action_new($receiver_id, $action_type = null)
     }
 
     if ($action_type === null) {
+        if (count($labels) == 0) {
+            $xtpl->title(_('Add receiver action'));
+            $xtpl->perex(_('No delivery methods enabled'), _('No event delivery methods are enabled for this user.'));
+            $xtpl->sbar_add(_('Back to receiver'), '?page=notifications&action=receiver_edit&id=' . $receiver->id . notifications_user_qs($receiver->user_id));
+            notifications_sidebar('receivers', $receiver->user_id);
+            return;
+        }
+
         $selected = api_get('type') ?: 'email';
 
         $xtpl->title(_('Add receiver action'));

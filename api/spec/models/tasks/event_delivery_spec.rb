@@ -85,7 +85,6 @@ RSpec.describe VpsAdmin::API::Tasks::EventDelivery do
                            summary: 'Spec SMS summary',
                            parameters: { note: 'from SMS task spec' })
     allow(VpsAdmin::API::Notifications).to receive(:sms_configured?).and_return(true)
-    SpecSeed.user.update!(sms_notifications_enabled: true)
 
     receiver = NotificationReceiver.create!(user: SpecSeed.user, label: 'Spec SMS receiver')
     action = receiver.notification_receiver_actions.create!(
@@ -1096,6 +1095,18 @@ RSpec.describe VpsAdmin::API::Tasks::EventDelivery do
     expect(delivery.error_summary).to include('action')
   end
 
+  it 'does not queue e-mail deliveries for disabled delivery methods' do
+    delivery, = create_email_delivery!
+    SpecSeed.user.set_notification_delivery_method!(:email, false)
+
+    expect do
+      task.deliver_emails
+    end.not_to change(Transaction, :count)
+
+    expect(delivery.reload).to be_canceled_state
+    expect(delivery.error_summary).to include('delivery method')
+  end
+
   it 'uses custom e-mail action targets without adding the account e-mail' do
     delivery, = create_email_delivery!(
       target_kind: :custom,
@@ -1689,6 +1700,20 @@ RSpec.describe VpsAdmin::API::Tasks::EventDelivery do
     expect(Net::HTTP).not_to have_received(:start)
     expect(delivery.reload).to be_canceled_state
     expect(delivery.error_summary).to include('receiver')
+  end
+
+  it 'does not retry webhook deliveries for disabled delivery methods' do
+    delivery, = create_webhook_delivery!(url: 'https://webhook.example/events')
+    delivery.update!(state: :released, attempt_count: 1)
+    SpecSeed.user.set_notification_delivery_method!(:webhook, false)
+
+    allow(Net::HTTP).to receive(:start)
+
+    task.deliver_webhooks
+
+    expect(Net::HTTP).not_to have_received(:start)
+    expect(delivery.reload).to be_canceled_state
+    expect(delivery.error_summary).to include('delivery method')
   end
 
   it 'does not call private webhook addresses by default' do

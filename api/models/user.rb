@@ -28,6 +28,7 @@ class User < ApplicationRecord
   has_many :notification_receivers, dependent: :destroy
   has_many :event_routes, dependent: :destroy
   has_many :events
+  has_many :user_notification_delivery_methods, dependent: :delete_all
   has_many :user_totp_devices
   has_many :user_sessions
   has_many :user_devices
@@ -55,7 +56,7 @@ class User < ApplicationRecord
   attr_reader :password_plain
 
   has_paper_trail only: %i[login level full_name email address time_zone
-                           mailer_enabled sms_notifications_enabled
+                           mailer_enabled
                            object_state expiration_date]
 
   validates :level, :login, :password, :language_id, presence: true
@@ -237,6 +238,32 @@ class User < ApplicationRecord
 
   def self.current=(user)
     Thread.current[:user] = user
+  end
+
+  def notification_delivery_method_enabled?(delivery_method)
+    delivery_method = UserNotificationDeliveryMethod.normalize_delivery_method(delivery_method)
+    return false unless UserNotificationDeliveryMethod.known_delivery_method?(delivery_method)
+
+    setting = if association(:user_notification_delivery_methods).loaded?
+                user_notification_delivery_methods.find { |v| v.delivery_method == delivery_method }
+              else
+                user_notification_delivery_methods.find_by(delivery_method:)
+              end
+
+    setting ? setting.enabled? : UserNotificationDeliveryMethod.default_enabled?(delivery_method)
+  end
+
+  def set_notification_delivery_method!(delivery_method, enabled)
+    delivery_method = UserNotificationDeliveryMethod.normalize_delivery_method(delivery_method)
+    unless UserNotificationDeliveryMethod.known_delivery_method?(delivery_method)
+      raise ArgumentError, "unknown notification delivery method #{delivery_method.inspect}"
+    end
+
+    setting = user_notification_delivery_methods.find_or_initialize_by(delivery_method:)
+    setting.enabled = enabled
+    setting.save!
+    association(:user_notification_delivery_methods).reset if association(:user_notification_delivery_methods).loaded?
+    setting
   end
 
   private

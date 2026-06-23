@@ -88,6 +88,7 @@ class NotificationReceiver < ApplicationRecord
       target_kind: 'default_recipient'
     ) do |action|
       action.label = DEFAULT_EMAIL_LABEL
+      action.skip_delivery_method_enabled_validation = true
     end
   end
 
