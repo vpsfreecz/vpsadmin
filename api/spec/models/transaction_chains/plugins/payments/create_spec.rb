@@ -14,7 +14,7 @@ RSpec.describe 'payments plugin create chain', requires_plugins: :payments do # 
   before do
     ensure_mailer_available!
     seed_payments_sysconfig!
-    user.update!(object_state: :active, mailer_enabled: true)
+    user.update!(object_state: :active)
     user.user_account.update!(monthly_payment: 100, paid_until: nil)
     allow(NotificationTemplate).to receive(:send_email!).and_return(build_mail_log_double)
   end
