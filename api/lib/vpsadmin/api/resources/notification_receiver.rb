@@ -154,6 +154,19 @@ module VpsAdmin::API::Resources
       route '{notification_receiver_id}/action'
       desc 'Manage notification receiver actions'
 
+      module DeliveryMethodControls
+        protected
+
+        def enable_delivery_method_for_admin!(user, delivery_method)
+          delivery_method = ::UserNotificationDeliveryMethod.normalize_delivery_method(delivery_method)
+          return unless current_user.role == :admin
+          return unless ::UserNotificationDeliveryMethod.known_delivery_method?(delivery_method)
+          return if user.notification_delivery_method_enabled?(delivery_method)
+
+          user.set_notification_delivery_method!(delivery_method, true)
+        end
+      end
+
       params(:common) do
         string :action,
                choices: { values: ::NotificationReceiverAction.action_labels },
@@ -164,6 +177,7 @@ module VpsAdmin::API::Resources
                load_validators: false
         text :target_value, nullable: true
         bool :enabled
+        bool :delivery_method_enabled
         datetime :verified_at, nullable: true
         bool :verified
         string :verification_token, nullable: true
@@ -235,6 +249,8 @@ module VpsAdmin::API::Resources
       end
 
       class Create < HaveAPI::Actions::Default::Create
+        include DeliveryMethodControls
+
         desc 'Create notification receiver action'
 
         input do
@@ -263,18 +279,25 @@ module VpsAdmin::API::Resources
           receiver = ::NotificationReceiver.find_by!(
             with_restricted(id: path_params['notification_receiver_id'])
           )
+          action = nil
 
-          action = receiver.notification_receiver_actions.create!(
-            action: input[:action],
-            label: input[:label],
-            target_kind: input[:target_kind] || default_target_kind,
-            target_value: input[:target_value],
-            enabled: input.has_key?(:enabled) ? input[:enabled] : true,
-            secret: input[:secret]
-          )
+          ::NotificationReceiverAction.transaction do
+            action = receiver.notification_receiver_actions.new(
+              action: input[:action],
+              label: input[:label],
+              target_kind: input[:target_kind] || default_target_kind,
+              target_value: input[:target_value],
+              enabled: input.has_key?(:enabled) ? input[:enabled] : true,
+              secret: input[:secret]
+            )
+            action.skip_delivery_method_enabled_validation = current_user.role == :admin
+            action.save!
 
-          action.generate_verification_token! if action.telegram_action?
-          action.generate_sms_verification_code! if action.sms_action?
+            action.generate_verification_token! if action.telegram_action?
+            action.generate_sms_verification_code! if action.sms_action?
+            enable_delivery_method_for_admin!(receiver.user, action.action)
+          end
+
           action
         rescue ActiveRecord::RecordInvalid => e
           error!('create failed', e.record.errors.to_hash)
@@ -286,6 +309,8 @@ module VpsAdmin::API::Resources
       end
 
       class Update < HaveAPI::Actions::Default::Update
+        include DeliveryMethodControls
+
         desc 'Update notification receiver action'
 
         input do
@@ -323,7 +348,12 @@ module VpsAdmin::API::Resources
           end
           attrs[:secret] = input[:secret] if input.has_key?(:secret) && !input[:secret].nil?
 
-          action.update!(attrs)
+          ::NotificationReceiverAction.transaction do
+            action.skip_delivery_method_enabled_validation = current_user.role == :admin
+            action.update!(attrs)
+            enable_delivery_method_for_admin!(action.notification_receiver.user, action.action)
+          end
+
           action
         rescue ActiveRecord::RecordInvalid => e
           error!('update failed', e.record.errors.to_hash)
@@ -407,7 +437,7 @@ module VpsAdmin::API::Resources
           )
           error!('receiver action is not SMS') unless action.sms_action?
           error!('SMS delivery is not configured') unless action.action_available?
-          error!('SMS notifications are not enabled for this user') unless action.sms_notifications_allowed?
+          error!('SMS delivery method is not enabled for this user') unless action.delivery_method_enabled?
           error!('SMS verification code was sent recently') unless action.sms_verification_send_available?
 
           action.ensure_sms_verification_code!

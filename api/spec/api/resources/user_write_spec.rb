@@ -27,6 +27,14 @@ RSpec.describe 'VpsAdmin::API::Resources::User write actions' do # rubocop:disab
     vpath('/users/current')
   end
 
+  def notification_delivery_method_index_path(user_id)
+    vpath("/users/#{user_id}/notification_delivery_methods")
+  end
+
+  def notification_delivery_method_path(user_id, delivery_method)
+    vpath("/users/#{user_id}/notification_delivery_methods/#{delivery_method}")
+  end
+
   def json_get(path, params = nil)
     get path, params, {
       'CONTENT_TYPE' => 'application/json',
@@ -358,7 +366,7 @@ RSpec.describe 'VpsAdmin::API::Resources::User write actions' do # rubocop:disab
       expect(json['status']).to be(false)
     end
 
-    it 'allows users to update themselves' do
+    it 'rejects users updating the legacy mailer switch' do
       new_value = !SpecSeed.user.mailer_enabled
 
       as(SpecSeed.user) do
@@ -366,9 +374,8 @@ RSpec.describe 'VpsAdmin::API::Resources::User write actions' do # rubocop:disab
       end
 
       expect_status(200)
-      expect(json['status']).to be(true)
-      expect(user_obj['mailer_enabled']).to eq(new_value)
-      expect(SpecSeed.user.reload.mailer_enabled).to eq(new_value)
+      expect(json['status']).to be(false)
+      expect(SpecSeed.user.reload.mailer_enabled).not_to eq(new_value)
     end
 
     it 'allows users to update their time zone' do
@@ -452,6 +459,60 @@ RSpec.describe 'VpsAdmin::API::Resources::User write actions' do # rubocop:disab
       expect(json['status']).to be(true)
       expect(user_obj['full_name']).to eq('Spec Updated')
       expect(User.find(SpecSeed.other_user.id).full_name).to eq('Spec Updated')
+    end
+
+    it 'lists effective notification delivery methods for the current user' do
+      as(SpecSeed.user) do
+        json_get notification_delivery_method_index_path(SpecSeed.user.id)
+      end
+
+      expect_status(200)
+      methods = json.dig('response', 'user_notification_delivery_methods') ||
+                json.dig('response', 'notification_delivery_methods') ||
+                json['response']
+      expect(methods.to_h { |v| [v.fetch('delivery_method'), v.fetch('enabled')] }).to include(
+        'email' => true,
+        'webhook' => true,
+        'telegram' => true,
+        'sms' => true
+      )
+    end
+
+    it 'allows admin to update notification delivery methods' do
+      as(SpecSeed.admin) do
+        json_put notification_delivery_method_path(SpecSeed.other_user.id, 'webhook'), {
+          notification_delivery_method: { enabled: false }
+        }
+      end
+
+      expect_status(200)
+      expect(json['status']).to be(true), last_response.body
+      expect(SpecSeed.other_user.reload.notification_delivery_method_enabled?(:webhook)).to be(false)
+
+      as(SpecSeed.admin) do
+        json_get notification_delivery_method_path(SpecSeed.other_user.id, 'webhook')
+      end
+
+      expect_status(200)
+      method = json.dig('response', 'user_notification_delivery_method') ||
+               json.dig('response', 'notification_delivery_method') ||
+               json['response']
+      expect(method).to include(
+        'delivery_method' => 'webhook',
+        'enabled' => false
+      )
+    end
+
+    it 'rejects user updates to notification delivery methods' do
+      as(SpecSeed.user) do
+        json_put notification_delivery_method_path(SpecSeed.user.id, 'sms'), {
+          notification_delivery_method: { enabled: false }
+        }
+      end
+
+      expect_status(403)
+      expect(json['status']).to be(false)
+      expect(SpecSeed.user.reload.notification_delivery_method_enabled?(:sms)).to be(true)
     end
 
     it 'does not allow non-admin to change protected fields' do
