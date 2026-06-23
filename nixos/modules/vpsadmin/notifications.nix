@@ -150,8 +150,8 @@ in
         default = null;
         example = "/run/keys/vpsadmin-sms-callback-token";
         description = ''
-          File containing the bearer token accepted by the vpsAdmin SMS gateway
-          callback endpoint.
+          Optional legacy bearer token accepted for SMS gateway callbacks that
+          were queued before per-message HMAC callback secrets were available.
         '';
       };
 
@@ -234,10 +234,6 @@ in
         || !telegramCfg.webhook.autoRegister
         || telegramCfg.webhook.secretTokenFile != null;
       message = "vpsadmin.notifications.telegram.webhook.secretTokenFile must be set when webhook auto-registration is enabled";
-    }
-    {
-      assertion = !smsCfg.enable || smsCfg.callbackTokenFile != null;
-      message = "vpsadmin.notifications.sms.callbackTokenFile must be set when SMS is enabled";
     }
     {
       assertion = !smsCfg.enable || smsCfg.gateways != [ ];

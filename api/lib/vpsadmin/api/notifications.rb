@@ -1,16 +1,21 @@
 require 'bunny'
+require 'digest'
 require 'ipaddr'
 require 'json'
 require 'mail'
 require 'net/http'
 require 'openssl'
 require 'resolv'
+require 'securerandom'
 require 'time'
 require 'uri'
 require 'yaml'
 
 module VpsAdmin::API
   module Notifications
+    class SmsCallbackAuthenticationError < StandardError; end
+    class SmsCallbackConflictError < StandardError; end
+
     module Actions
       class Definition
         attr_reader :name, :target_kinds
@@ -184,6 +189,9 @@ module VpsAdmin::API
     TELEGRAM_TEXT_LIMIT = 4096
     SMS_TEXT_LIMIT = 459
     SMS_CALLBACK_PATH = '/internal/notifications/sms/callback'.freeze
+    SMS_CALLBACK_MAX_BODY_SIZE = 16 * 1024
+    SMS_CALLBACK_SIGNATURE_VERSION = 'v1'.freeze
+    SMS_CALLBACK_SIGNATURE_TOLERANCE = 20 * 60
     SMS_VERIFICATION_CLIENT_ID_PREFIX = 'verification-action-'.freeze
     DEFAULT_POLL_INTERVAL = 5
     PRIVATE_ADDRESS_RANGES = [
@@ -284,7 +292,8 @@ module VpsAdmin::API
         to: delivery.target_value,
         text: sms_text_for(delivery),
         client_message_id: delivery.id.to_s,
-        callback_url: sms_callback_url
+        callback_url: sms_callback_url,
+        callback_secret: sms_callback_secret
       }
     end
 
@@ -389,39 +398,147 @@ module VpsAdmin::API
       action.mark_sms_verification_sent!
     end
 
-    def apply_sms_gateway_callback!(payload)
+    def sms_callback_secret
+      SecureRandom.hex(32)
+    end
+
+    def apply_sms_gateway_callback!(payload, raw_body: nil, headers: {}, authorization: nil,
+                                    request_method: 'POST', request_path: SMS_CALLBACK_PATH,
+                                    now: Time.now)
       payload = payload.to_h
       client_message_id = payload.fetch('client_message_id').to_s
-      raise ArgumentError, 'client_message_id is invalid' unless client_message_id.match?(/\A[0-9]+\z/)
-
-      delivery = ::EventDelivery.find(client_message_id)
-      raise ArgumentError, 'delivery is not SMS' unless delivery.sms_action?
-
-      status = payload.fetch('status').to_s
-      now = Time.now
-      attrs = {
-        response_status: 200,
-        response_body: truncate_response_body(JSON.dump(payload)),
-        provider_message_id: sms_callback_provider_message_id(payload) || delivery.provider_message_id,
-        last_attempt_at: now,
-        updated_at: now
-      }
-
-      case status
-      when 'sent'
-        attrs[:state] = 'sent'
-        attrs[:next_attempt_at] = nil
-        attrs[:error_summary] = nil
-      when 'failed'
-        attrs[:state] = 'failed'
-        attrs[:next_attempt_at] = nil
-        attrs[:error_summary] = payload['error_summary'].presence || 'SMS gateway reported final failure'
-      else
-        raise ArgumentError, "unsupported SMS status #{status.inspect}"
+      unless client_message_id.match?(/\A[0-9]+\z/)
+        raise SmsCallbackAuthenticationError, 'Invalid SMS callback authorization'
       end
 
-      delivery.update!(attrs)
+      delivery = ::EventDelivery.find_by(id: client_message_id)
+      unless delivery&.sms_action?
+        raise SmsCallbackAuthenticationError, 'Invalid SMS callback authorization'
+      end
+
+      verify_sms_gateway_callback!(
+        delivery,
+        raw_body || JSON.dump(payload),
+        headers:,
+        authorization:,
+        request_method:,
+        request_path:,
+        now:
+      )
+
+      status = payload.fetch('status').to_s
+
+      delivery.with_lock do
+        if delivery.sent_state? || delivery.failed_state?
+          unless delivery.state == status
+            raise SmsCallbackConflictError, 'SMS delivery already has a different final state'
+          end
+
+          return delivery
+        end
+
+        now = Time.now
+        attrs = {
+          response_status: 200,
+          response_body: truncate_response_body(JSON.dump(payload)),
+          provider_message_id: sms_callback_provider_message_id(payload) || delivery.provider_message_id,
+          last_attempt_at: now,
+          updated_at: now
+        }
+
+        case status
+        when 'sent'
+          attrs[:state] = 'sent'
+          attrs[:next_attempt_at] = nil
+          attrs[:error_summary] = nil
+        when 'failed'
+          attrs[:state] = 'failed'
+          attrs[:next_attempt_at] = nil
+          attrs[:error_summary] = payload['error_summary'].presence || 'SMS gateway reported final failure'
+        else
+          raise ArgumentError, "unsupported SMS status #{status.inspect}"
+        end
+
+        delivery.update!(attrs)
+      end
       delivery
+    end
+
+    def verify_sms_gateway_callback!(delivery, raw_body, headers:, authorization:, request_method:, request_path:, now:)
+      secret = sms_callback_secret_for_delivery(delivery)
+      if secret.present?
+        verify_sms_gateway_callback_hmac!(
+          secret,
+          raw_body,
+          headers:,
+          request_method:,
+          request_path:,
+          now:
+        )
+      else
+        verify_legacy_sms_gateway_callback!(authorization)
+      end
+    end
+
+    def verify_legacy_sms_gateway_callback!(authorization)
+      token = sms_callback_token
+      return if token.present? && secure_compare(authorization.to_s, "Bearer #{token}")
+
+      raise SmsCallbackAuthenticationError, 'Invalid SMS callback authorization'
+    end
+
+    def verify_sms_gateway_callback_hmac!(secret, raw_body, headers:, request_method:, request_path:, now:)
+      version = sms_callback_header(headers, 'X-VpsAdmin-SMS-Signature-Version').to_s
+      timestamp_raw = sms_callback_header(headers, 'X-VpsAdmin-SMS-Timestamp').to_s
+      signature = sms_callback_header(headers, 'X-VpsAdmin-SMS-Signature').to_s
+
+      unless version == SMS_CALLBACK_SIGNATURE_VERSION
+        raise SmsCallbackAuthenticationError, 'Invalid SMS callback signature version'
+      end
+
+      timestamp = Time.iso8601(timestamp_raw)
+      if timestamp < now - SMS_CALLBACK_SIGNATURE_TOLERANCE ||
+         timestamp > now + SMS_CALLBACK_SIGNATURE_TOLERANCE
+        raise SmsCallbackAuthenticationError, 'Stale SMS callback timestamp'
+      end
+
+      body_hash = Digest::SHA256.hexdigest(raw_body.to_s)
+      signature_input = [
+        SMS_CALLBACK_SIGNATURE_VERSION,
+        request_method.to_s.upcase,
+        request_path.presence || '/',
+        timestamp_raw,
+        body_hash
+      ].join("\n")
+      expected = "sha256=#{OpenSSL::HMAC.hexdigest('SHA256', secret, signature_input)}"
+      unless secure_compare(signature, expected)
+        raise SmsCallbackAuthenticationError, 'Invalid SMS callback signature'
+      end
+    rescue ArgumentError
+      raise SmsCallbackAuthenticationError, 'Invalid SMS callback timestamp'
+    end
+
+    def sms_callback_header(headers, name)
+      headers[name] ||
+        headers[name.downcase] ||
+        headers["HTTP_#{name.upcase.tr('-', '_')}"]
+    end
+
+    def sms_callback_secret_for_delivery(delivery)
+      payload = JSON.parse(delivery.payload.to_s)
+      return unless payload.is_a?(Hash)
+
+      payload['callback_secret'].presence
+    rescue JSON::ParserError
+      nil
+    end
+
+    def secure_compare(left, right)
+      left = left.to_s
+      right = right.to_s
+      return false unless left.bytesize == right.bytesize
+
+      OpenSSL.fixed_length_secure_compare(left, right)
     end
 
     def sms_callback_provider_message_id(payload)
@@ -1628,25 +1745,29 @@ module VpsAdmin::API
         result ||= {}
         now = Time.now
 
-        attempt.update!(
-          state: 'succeeded',
-          finished_at: now,
-          provider_message_id: result[:provider_message_id],
-          response_status: result[:response_status],
-          response_body: result[:response_body],
-          response_headers: result[:response_headers],
-          error_summary: nil
-        )
+        delivery.with_lock do
+          attempt.update!(
+            state: 'succeeded',
+            finished_at: now,
+            provider_message_id: result[:provider_message_id],
+            response_status: result[:response_status],
+            response_body: result[:response_body],
+            response_headers: result[:response_headers],
+            error_summary: nil
+          )
 
-        delivery.update!(
-          state: 'accepted',
-          next_attempt_at: nil,
-          provider_message_id: result[:provider_message_id],
-          response_status: result[:response_status],
-          response_body: result[:response_body],
-          response_headers: result[:response_headers],
-          error_summary: nil
-        )
+          return if delivery.sent_state? || delivery.failed_state?
+
+          delivery.update!(
+            state: 'accepted',
+            next_attempt_at: nil,
+            provider_message_id: result[:provider_message_id],
+            response_status: result[:response_status],
+            response_body: result[:response_body],
+            response_headers: result[:response_headers],
+            error_summary: nil
+          )
+        end
       end
 
       def mark_failure!(delivery, attempt, response_status:, response_body:, error_summary:, response_headers: nil)
