@@ -294,10 +294,10 @@ RSpec.describe TransactionChains::Vps::Replace::Os do
     expect_snapshot_reference(payload.fetch('from_snapshot'), replace_snapshot)
   end
 
-  it 'suppresses replacement mail when the user has the mailer disabled' do
+  it 'suppresses replacement mail when default notifications are muted' do
     fixture = create_replace_fixture(same_node: true)
     vps = fixture.fetch(:vps)
-    vps.user.update!(mailer_enabled: false)
+    mute_default_notifications_for!(vps.user)
 
     allow(NotificationTemplate).to receive(:send_email!)
 

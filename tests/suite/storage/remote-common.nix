@@ -175,14 +175,28 @@
     RUBY
   end
 
-  def set_user_mailer_enabled(services, admin_user_id:, user_id:, enabled:)
+  def set_user_default_email_enabled(services, admin_user_id:, user_id:, enabled:)
     services.api_ruby_json(code: <<~RUBY)
       #{api_session_prelude(admin_user_id)}
 
       user = User.find(#{Integer(user_id)})
-      user.update!(mailer_enabled: #{enabled ? 'true' : 'false'})
+      NotificationReceiver.ensure_defaults_for!(user)
+      user.set_notification_delivery_method!('email', #{enabled ? 'true' : 'false'})
 
-      puts JSON.dump(user_id: user.id, mailer_enabled: user.mailer_enabled)
+      receiver = if #{enabled ? 'true' : 'false'}
+                   NotificationReceiver.default_email_receiver_for(user)
+                 else
+                   NotificationReceiver.default_mute_receiver_for(user)
+                 end
+
+      route = EventRoute.default_route_for(user)
+      route.update!(notification_receiver: receiver) if route && receiver
+
+      puts JSON.dump(
+        user_id: user.id,
+        email_delivery_enabled: user.notification_delivery_method_enabled?('email'),
+        default_receiver: route&.reload&.notification_receiver&.label
+      )
     RUBY
   end
 
