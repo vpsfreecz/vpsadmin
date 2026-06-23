@@ -60,6 +60,17 @@ class EventDelivery < ApplicationRecord
     JSON.dump(response_headers || {})
   end
 
+  def public_payload
+    return payload unless sms_action? && payload.present?
+
+    data = JSON.parse(payload)
+    return payload unless data.is_a?(Hash) && data.has_key?('callback_secret')
+
+    JSON.dump(data.except('callback_secret'))
+  rescue JSON::ParserError
+    payload
+  end
+
   def notification_receiver_label
     notification_receiver&.label
   end
