@@ -430,6 +430,9 @@ covered:
 - user#touch
 - user#update
 - user#get_payment_instructions
+- user.notification_delivery_method#index
+- user.notification_delivery_method#show
+- user.notification_delivery_method#update
 - user_account#index
 - user_account#show
 - user_account#update
