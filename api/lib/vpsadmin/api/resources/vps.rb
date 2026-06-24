@@ -439,7 +439,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
       use :common
       VpsAdmin::API::ClusterResources.to_params(::Vps, self, resources: %i[cpu memory swap])
       text :change_reason, label: 'Change reason',
-                           desc: 'If filled, it is send to VPS owner in an email'
+                           desc: 'If filled, it is sent to the VPS owner as a notification'
       bool :admin_override, label: 'Admin override',
                             desc: 'Make it possible to assign more resource than the user actually has'
       string :admin_lock_type, label: 'Admin lock type', choices: %i[no_lock absolute not_less not_more],
@@ -843,8 +843,8 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
       bool :skip_start, label: 'Skip start',
                         desc: 'Continue even if the VPS fails to start on the target node',
                         default: false
-      bool :send_mail, label: 'Send e-mails',
-                       desc: 'Inform the VPS owner about migration progress',
+      bool :send_mail, label: 'Send notifications',
+                       desc: 'Notify the VPS owner about migration progress',
                        default: true
       string :reason
     end

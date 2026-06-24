@@ -221,7 +221,7 @@ if (isLoggedIn()) {
 
                     notify_user(
                         _("Download of snapshot of") . ' ' . $ds->name . ' ' . _('from') . ' ' . strftime("%Y-%m-%d %H:%M", strtotime($snap->created_at)) . " " . _("planned"),
-                        _("Preparing the archive may take several hours. You will receive email with download link when it is done.")
+                        _("Preparing the archive may take several hours. You will receive a notification with the download link when it is done.")
                     );
                     redirect($_POST['return'] ?? '?page=backup');
 

@@ -503,7 +503,7 @@ function security_advisory_form($id = null)
             security_advisory_param_description(
                 $input,
                 $name,
-                _('Short vulnerability-class title shown in advisory lists and emails.')
+                _('Short vulnerability-class title shown in advisory lists and notifications.')
             )
         );
 
@@ -787,7 +787,7 @@ function security_advisory_details($id)
             security_advisory_param_description($publishInput, 'published_at')
         );
         $xtpl->form_add_checkbox(
-            _('Send mails to affected users') . ':',
+            _('Send notifications to affected users') . ':',
             'send_mail',
             '1',
             false,
@@ -1347,7 +1347,7 @@ function security_advisory_update_form($id, $updateId = null)
 
     if (!$update) {
         $xtpl->form_add_checkbox(
-            _('Send mails to affected users') . ':',
+            _('Send notifications to affected users') . ':',
             'send_mail',
             '1',
             false,

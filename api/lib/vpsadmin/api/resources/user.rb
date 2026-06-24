@@ -17,7 +17,7 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
     string :info, label: 'Info'
     bool :password_reset, label: 'Password reset'
     bool :lockout, label: 'Lock-out'
-    resource VpsAdmin::API::Resources::Language, label: 'Language of e-mails'
+    resource VpsAdmin::API::Resources::Language, label: 'Language of notifications'
     bool :enable_basic_auth, label: 'Enable HTTP basic authentication'
     bool :enable_token_auth, label: 'Enable token authentication'
     bool :enable_oauth2_auth, label: 'Enable OAuth2 authentication'

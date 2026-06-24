@@ -260,7 +260,7 @@ RSpec.describe 'VpsAdmin::API::Resources::SecurityAdvisory' do
         'whether users need to take action'
       )
       expect(publish_params.dig('send_mail', 'description')).to include(
-        'affected users are emailed'
+        'affected users receive a notification'
       )
       expect(cve_params.dig('cve_id', 'description')).to include(
         'CVE-YYYY-NNNN'
