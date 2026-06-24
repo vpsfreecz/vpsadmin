@@ -1,7 +1,7 @@
 module TransactionChains
   module SecurityAdvisories
     class Mail < ::TransactionChain
-      label 'Security advisory mail'
+      label 'Security advisory notifications'
       allow_empty
 
       EVENT_TYPES = {

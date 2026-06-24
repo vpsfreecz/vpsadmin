@@ -1,6 +1,6 @@
 module TransactionChains
   class MigrationPlan::Mail < ::TransactionChain
-    label 'Mail'
+    label 'Migration notifications'
     allow_empty
 
     def link_chain(plan)

@@ -7,10 +7,10 @@ module VpsAdmin::API::Resources
     PUBLISHED_AT_DESCRIPTION =
       'Date and time shown as the advisory publication time.'.freeze
     SEND_MAIL_DESCRIPTION =
-      'When enabled, affected users are emailed after the action completes.'.freeze
+      'When enabled, affected users receive a notification after the action completes.'.freeze
     TEXT_DESCRIPTIONS = {
       summary: 'One-sentence public summary shown in advisory lists, ' \
-               'status output, IRC announcements, and emails.',
+               'status output, IRC announcements, and notifications.',
       description: 'User-facing explanation of the vulnerability, ' \
                    'affected systems, impact, and conditions.',
       response: 'User-facing explanation of the mitigation or fix ' \
@@ -283,7 +283,7 @@ module VpsAdmin::API::Resources
 
       input do
         bool :send_mail,
-             label: 'Send mail',
+             label: 'Send notifications',
              desc: SEND_MAIL_DESCRIPTION,
              default: false,
              fill: true

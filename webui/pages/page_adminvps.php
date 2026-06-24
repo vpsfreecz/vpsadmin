@@ -1495,7 +1495,7 @@ if (isLoggedIn()) {
                     $xtpl->table_title(_('Disable network'));
                     $xtpl->form_create('?page=adminvps&action=disable_network&veid=' . $vps->id, 'post');
                     $xtpl->table_td(
-                        _('This form disables all network interfaces. User is sent an email on change.'),
+                        _('This form disables all network interfaces. User is sent a notification on change.'),
                         false,
                         false,
                         2
@@ -1508,7 +1508,7 @@ if (isLoggedIn()) {
                     $xtpl->table_title(_('Enable network'));
                     $xtpl->form_create('?page=adminvps&action=enable_network&veid=' . $vps->id, 'post');
                     $xtpl->table_td(
-                        _('This form enables all network interfaces. User is sent an email on change.'),
+                        _('This form enables all network interfaces. User is sent a notification on change.'),
                         false,
                         false,
                         2
@@ -1837,7 +1837,7 @@ if (isLoggedIn()) {
                 . 'changes inside the VPS. If allowed, we can make these necessary changes '
                 . 'for you. We usually only modify the base system configuration files '
                 . 'which we would otherwise deliver in OS templates for new VPS. We do not '
-                . 'access or modify your applications or data. We will email you about any '
+                . 'access or modify your applications or data. You will be notified about any '
                 . 'changes we will make.'),
                 false,
                 false,

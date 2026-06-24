@@ -14,7 +14,7 @@ module VpsAdmin::API::Resources
       integer :original_refquota, label: 'Original reference quota'
       integer :added_space, label: 'Added space'
       bool :enable_notifications, label: 'Enable notifications',
-                                  desc: 'Send emails about the expansion'
+                                  desc: 'Send notifications about the expansion'
       bool :enable_shrink, label: 'Enable shrink',
                            desc: 'Automatically shrink the dataset when possible'
       bool :stop_vps, label: 'Stop VPS',
