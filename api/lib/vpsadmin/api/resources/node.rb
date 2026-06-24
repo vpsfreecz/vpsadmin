@@ -405,7 +405,9 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
                                 default: true, fill: true
       integer :concurrency, desc: 'How many migrations run concurrently', default: 1, fill: true
       bool :cleanup_data, default: true
-      bool :send_mail, default: true
+      bool :send_mail, label: 'Send notifications',
+                       desc: 'Notify VPS owners about migration progress',
+                       default: true
       string :reason
     end
 

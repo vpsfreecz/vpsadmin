@@ -35,7 +35,7 @@ function lifetimes_reminder_form($resource, $id)
 {
     global $xtpl, $api;
 
-    $xtpl->table_title(_('Set e-mail reminder'));
+    $xtpl->table_title(_('Configure notifications'));
     $xtpl->form_create('?page=reminder&action=set&resource=' . $resource . '&id=' . $id, 'post');
 
     $p = $api[$resource]->update->getParameters('input');
@@ -48,8 +48,8 @@ function lifetimes_reminder_form($resource, $id)
     }
 
     $xtpl->table_td(_(
-        'E-mail reminders are sent daily before the expiration date. This form '
-        . 'can be used to silent the notifications until a given date.'
+        'Notifications are sent daily before the expiration date. This form '
+        . 'can be used to silence notifications until a given date.'
     ), false, false, 3);
     $xtpl->table_tr();
 

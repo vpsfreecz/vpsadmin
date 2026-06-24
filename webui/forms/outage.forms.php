@@ -377,7 +377,9 @@ function outage_edit_systems_form($id)
         'handlers[]',
         resource_list_to_options($api->user->list(['admin' => true]), 'id', 'full_name', false),
         post_val('handlers', array_map(
-            function ($h) { return $h->user_id; },
+            function ($h) {
+                return $h->user_id;
+            },
             $outage->handler->list()->asArray()
         )),
         '',
@@ -451,7 +453,7 @@ function outage_update_form($id)
     }
 
     $xtpl->form_add_checkbox(
-        _('Send mails') . ':',
+        _('Send notifications') . ':',
         'send_mail',
         '1',
         ($_POST['state'] && !$_POST['send_mail']) ? false : true
@@ -612,7 +614,9 @@ function outage_details($id)
 
     $xtpl->table_td(_('Affected systems') . ':');
     $xtpl->table_td(implode("\n<br>\n", array_map(
-        function ($ent) { return h($ent->label); },
+        function ($ent) {
+            return h($ent->label);
+        },
         $outage->entity->list()->asArray()
     )));
     $xtpl->table_tr();
@@ -666,7 +670,9 @@ function outage_details($id)
 
     $xtpl->table_td(_('Handled by') . ':');
     $xtpl->table_td(implode(', ', array_map(
-        function ($h) { return h($h->full_name); },
+        function ($h) {
+            return h($h->full_name);
+        },
         $outage->handler->list()->asArray()
     )));
     $xtpl->table_tr();
@@ -725,7 +731,7 @@ function outage_details($id)
         ], post_val('state'));
 
         $xtpl->form_add_checkbox(
-            _('Send mails') . ':',
+            _('Send notifications') . ':',
             'send_mail',
             '1',
             ($_POST['state'] && !$_POST['send_mail']) ? false : true
@@ -1026,7 +1032,9 @@ function outage_list()
         $xtpl->table_td(outage_type_list_label($outage->type));
         $xtpl->table_td($outage->state);
         $xtpl->table_td(implode(', ', array_map(
-            function ($v) { return h($v->label); },
+            function ($v) {
+                return h($v->label);
+            },
             $outage->entity->list()->asArray()
         )));
         $xtpl->table_td(outage_impact_label($outage->impact));
@@ -1381,7 +1389,9 @@ function outage_list_overview($outages)
         $xtpl->table_td($outage->duration . ' min', false, true);
         $xtpl->table_td(outage_type_list_label($outage->type));
         $xtpl->table_td(implode(', ', array_map(
-            function ($v) { return h($v->label); },
+            function ($v) {
+                return h($v->label);
+            },
             $outage->entity->list()->asArray()
         )));
         $xtpl->table_td(outage_impact_label($outage->impact));
