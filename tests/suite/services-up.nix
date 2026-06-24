@@ -74,13 +74,16 @@ import ../make-test.nix (
 
           it 'has built-in notification templates' do
             wait_until_block_succeeds(name: 'built-in notification templates installed') do
+              # notification_template_variants.protocol is a Rails enum:
+              # email=0, telegram=1, sms=2.
               _, output = services.succeeds(
                 "mariadb --batch --skip-column-names --user=${dbApiUser.user} --password=${dbApiUser.password} -D ${dbName} -e \"" \
                 "SELECT COUNT(*) FROM notification_templates nt " \
                 "INNER JOIN notification_template_variants ntv ON ntv.notification_template_id = nt.id " \
                 "INNER JOIN languages l ON l.id = ntv.language_id " \
                 "WHERE nt.name IN ('user_create', 'daily_report', 'expiration_user_active') " \
-                "AND l.code = 'en'\""
+                "AND l.code = 'en' " \
+                "AND ntv.protocol = 0\""
               )
               count = Integer(output.strip)
               expect(count).to eq(3)
