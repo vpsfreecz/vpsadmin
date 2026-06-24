@@ -479,7 +479,7 @@ function outage_update_form($id)
     }
 
     $xtpl->form_add_checkbox(
-        _('Send mails') . ':',
+        _('Send notifications') . ':',
         'send_mail',
         '1',
         ($_POST['state'] && !$_POST['send_mail']) ? false : true
@@ -757,7 +757,7 @@ function outage_details($id)
         ], post_val('state'));
 
         $xtpl->form_add_checkbox(
-            _('Send mails') . ':',
+            _('Send notifications') . ':',
             'send_mail',
             '1',
             ($_POST['state'] && !$_POST['send_mail']) ? false : true
