@@ -1357,7 +1357,8 @@ import ../make-test.nix (
         env:,
         language:,
         monthly_payment: 0,
-        time_zone: nil
+        time_zone: nil,
+        email_delivery_enabled: false
       )
         user = User.find_or_initialize_by(login: login)
         user.assign_attributes(
@@ -1381,9 +1382,14 @@ import ../make-test.nix (
         user.set_password(password)
         user.save!
         NotificationReceiver.ensure_defaults_for!(user)
-        user.set_notification_delivery_method!('email', false)
+        user.set_notification_delivery_method!('email', email_delivery_enabled)
+        default_receiver = if email_delivery_enabled
+                             NotificationReceiver.default_email_receiver_for(user)
+                           else
+                             NotificationReceiver.default_mute_receiver_for(user)
+                           end
         EventRoute.default_route_for(user)&.update!(
-          notification_receiver: NotificationReceiver.default_mute_receiver_for(user)
+          notification_receiver: default_receiver
         )
 
         quoted_now = ActiveRecord::Base.connection.quote(Time.now)
@@ -1431,7 +1437,8 @@ import ../make-test.nix (
         email: 'webui-user@example.test',
         password: 'webuiUserPassword',
         env: env,
-        language: language
+        language: language,
+        email_delivery_enabled: true
       )
       secondary_user = ensure_webui_user(
         login: 'webui-user-secondary',
