@@ -111,7 +111,7 @@ class NotificationTemplate < ApplicationRecord
       message_id: opts[:message_id],
       in_reply_to: opts[:in_reply_to],
       references: opts[:references],
-      subject: variant.subject,
+      subject: variant.normalized_subject,
       text_plain: variant.text,
       text_html: variant.html
     )
