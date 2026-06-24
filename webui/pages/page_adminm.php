@@ -41,6 +41,40 @@ function adminm_notification_delivery_methods($user)
     return $user->notification_delivery_method->list();
 }
 
+function adminm_print_notification_delivery_methods($user)
+{
+    global $xtpl;
+
+    $xtpl->table_add_category(_('Event delivery methods'));
+    $xtpl->table_add_category('&nbsp;');
+    $xtpl->table_add_category('&nbsp;');
+    $xtpl->form_create(
+        '?page=adminm&section=members&action=notification_delivery_methods&id=' . $user->id,
+        'post'
+    );
+    $xtpl->table_td(
+        _('Enabled methods allow this user to configure receivers and receive event notifications.'),
+        false,
+        false,
+        '3'
+    );
+    $xtpl->table_tr();
+
+    foreach (adminm_notification_delivery_methods($user) as $method) {
+        $name = adminm_notification_delivery_method_post_name($method->delivery_method);
+        $label = h($method->label);
+
+        $xtpl->form_add_checkbox(
+            $label . ':',
+            $name,
+            '1',
+            post_val($name, $method->enabled)
+        );
+    }
+
+    $xtpl->form_out(_('Save'));
+}
+
 function print_newm()
 {
     global $xtpl, $cfg_privlevel, $config;
@@ -171,20 +205,6 @@ function print_editm($u)
     );
     $xtpl->table_tr();
 
-    if (isAdmin()) {
-        foreach (adminm_notification_delivery_methods($u) as $method) {
-            $name = adminm_notification_delivery_method_post_name($method->delivery_method);
-
-            $xtpl->form_add_checkbox(
-                h($method->label) . ':',
-                $name,
-                '1',
-                post_val($name, $method->enabled),
-                _('Allow this user to configure and receive this event delivery method.')
-            );
-        }
-    }
-
     $xtpl->table_td(_('Language') . ':');
     api_param_to_form_pure(
         'language',
@@ -226,6 +246,8 @@ function print_editm($u)
         $xtpl->table_tr();
 
         $xtpl->table_out();
+
+        adminm_print_notification_delivery_methods($u);
     }
 
     $xtpl->table_add_category(_("Change password"));
@@ -1151,18 +1173,6 @@ if (isLoggedIn()) {
                 }
 
                 $user->update($params);
-                if (isAdmin()) {
-                    foreach (adminm_notification_delivery_methods($user) as $method) {
-                        $name = adminm_notification_delivery_method_post_name($method->delivery_method);
-                        $enabled = isset($_POST[$name]);
-
-                        if ((bool) $method->enabled !== $enabled) {
-                            $user->notification_delivery_method($method->delivery_method)->update([
-                                'enabled' => $enabled,
-                            ]);
-                        }
-                    }
-                }
 
                 if ($_SESSION['user']['id'] == $user->id) {
                     $_SESSION['user']['time_zone'] = $params['time_zone'] ?: null;
@@ -1191,6 +1201,40 @@ if (isLoggedIn()) {
 
             } catch (\HaveAPI\Client\Exception\ActionFailed $e) {
                 $xtpl->perex_format_errors(_('User update failed'), $e->getResponse());
+                print_editm($api->user->find($_GET['id']));
+            }
+
+            break;
+        case 'notification_delivery_methods':
+            csrf_check();
+
+            if (!isAdmin()) {
+                notify_user(_('Access denied'), _('Only administrators can update event delivery methods.'));
+                redirect('?page=adminm&action=edit&id=' . $_GET['id']);
+            }
+
+            try {
+                $user = $api->user->show($_GET['id']);
+
+                foreach (adminm_notification_delivery_methods($user) as $method) {
+                    $name = adminm_notification_delivery_method_post_name($method->delivery_method);
+                    $enabled = isset($_POST[$name]);
+
+                    if ((bool) $method->enabled !== $enabled) {
+                        $user->notification_delivery_method($method->delivery_method)->update([
+                            'enabled' => $enabled,
+                        ]);
+                    }
+                }
+
+                notify_user(
+                    _('Event delivery methods updated'),
+                    _('Event delivery methods were successfully updated.')
+                );
+                redirect('?page=adminm&action=edit&id=' . $user->id);
+
+            } catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+                $xtpl->perex_format_errors(_('Event delivery method update failed'), $e->getResponse());
                 print_editm($api->user->find($_GET['id']));
             }
 
