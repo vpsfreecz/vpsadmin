@@ -46,7 +46,7 @@ GEM
     i18n (1.15.2)
       concurrent-ruby (~> 1.0)
     io-console (0.8.2)
-    json (2.19.9)
+    json (2.20.0)
     logger (1.7.0)
     mime-types (3.7.0)
       logger
