@@ -13,6 +13,10 @@ class NotificationTemplateVariant < ApplicationRecord
 
   has_paper_trail
 
+  def normalized_subject
+    normalize_subject(subject) if subject
+  end
+
   class TemplateBuilder
     def initialize(vars, time_zone: nil)
       @time_zone = time_zone
@@ -44,9 +48,15 @@ class NotificationTemplateVariant < ApplicationRecord
 
   def resolve(vars, time_zone: nil)
     b = TemplateBuilder.new(vars, time_zone:)
-    self.subject = b.build(subject) if subject
+    self.subject = normalize_subject(b.build(subject)) if subject
     self.text = b.build(text) if text
     self.html = b.build(html) if html
+  end
+
+  private
+
+  def normalize_subject(value)
+    value.to_s.gsub(/[\r\n]+/, ' ').strip
   end
 
   protected

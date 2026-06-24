@@ -195,7 +195,7 @@ RSpec.describe VpsAdmin::API::NotificationTemplates do
       language: SpecSeed.language,
       protocol: :email,
       from: 'noreply@test.invalid',
-      subject: 'At <%= local_time(@time, "%Y-%m-%d %H:%M %Z") %>',
+      subject: "At <%= local_time(@time, \"%Y-%m-%d %H:%M %Z\") %>\n",
       text: 'At <%= local_time(@time, "%Y-%m-%d %H:%M %Z") %>'
     )
     SpecSeed.user.update!(time_zone: 'America/New_York')
@@ -217,26 +217,50 @@ RSpec.describe VpsAdmin::API::NotificationTemplates do
     user = SpecSeed.user
     user.update!(language:)
 
-    MailTemplate.register :spec_language_fallback_template, name: 'spec_language_fallback_template'
-    template = MailTemplate.create!(
+    NotificationTemplate.register :spec_language_fallback_template, name: 'spec_language_fallback_template'
+    template = NotificationTemplate.create!(
       name: 'spec_language_fallback_template',
       label: 'Spec language fallback template',
       template_id: 'spec_language_fallback_template'
     )
-    template.mail_template_translations.create!(
+    template.notification_template_variants.create!(
       language: SpecSeed.language,
+      protocol: :email,
       from: 'noreply@test.invalid',
       subject: 'English subject',
-      text_plain: 'English body'
+      text: 'English body'
     )
 
-    mail = MailTemplate.send_mail!(
+    mail = NotificationTemplate.send_email!(
       :spec_language_fallback_template,
       user:
     )
 
     expect(mail.subject).to eq('English subject')
     expect(mail.text_plain).to eq('English body')
+  end
+
+  it 'normalizes static e-mail subjects without template variables' do
+    NotificationTemplate.register :spec_static_subject_template, name: 'spec_static_subject_template'
+    template = NotificationTemplate.create!(
+      name: 'spec_static_subject_template',
+      label: 'Spec static subject template',
+      template_id: 'spec_static_subject_template'
+    )
+    template.notification_template_variants.create!(
+      language: SpecSeed.language,
+      protocol: :email,
+      from: 'noreply@test.invalid',
+      subject: "Static subject\n",
+      text: 'Static body'
+    )
+
+    mail = NotificationTemplate.send_email!(
+      :spec_static_subject_template,
+      user: SpecSeed.user
+    )
+
+    expect(mail.subject).to eq('Static subject')
   end
 
   it 'ships directory-backed English templates for all registered defaults' do
