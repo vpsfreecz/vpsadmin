@@ -406,8 +406,8 @@ module VpsAdmin::API::Resources
         bool :cleanup_data, label: 'Cleanup data',
                             desc: 'Remove dataset from the source pool',
                             default: true, fill: true
-        bool :send_mail, label: 'Send e-mails',
-                         desc: 'Inform the dataset owner about migration progress',
+        bool :send_mail, label: 'Send notifications',
+                         desc: 'Notify the dataset owner about migration progress',
                          default: true, fill: true
         string :reason
       end

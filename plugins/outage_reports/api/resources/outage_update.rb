@@ -129,7 +129,7 @@ module VpsAdmin::API::Resources
       input do
         resource VpsAdmin::API::Resources::Outage, value_label: :begins_at
         use :editable
-        bool :send_mail, label: 'Send mail', default: true, fill: true
+        bool :send_mail, label: 'Send notifications', default: true, fill: true
       end
 
       output do

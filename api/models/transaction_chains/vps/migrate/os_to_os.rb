@@ -18,7 +18,7 @@ module TransactionChains
       # Check the target node is compatible with the VPS
       check_cgroup_version!
 
-      # Mail notification
+      # Notification
       notify_begun
 
       # Transfer resources if the destination node is in a different
@@ -213,7 +213,7 @@ module TransactionChains
       # Free userns map
       use_chain(UserNamespaceMap::Disuse, args: [src_vps])
 
-      # Mail notification
+      # Notification
       notify_finished
 
       # fail 'ohnoes'
