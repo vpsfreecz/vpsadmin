@@ -40,7 +40,7 @@ if (isLoggedIn()) {
                     ]);
 
                     notify_user(
-                        _('Mail reminder set'),
+                        _('Notification reminder set'),
                         _('vpsAdmin will not remind you until') . ' ' . $date->format("Y-m-d") . '.'
                     );
                     redirect('?page=reminder&resource=' . $_GET['resource'] . '&id=' . $_GET['id']);

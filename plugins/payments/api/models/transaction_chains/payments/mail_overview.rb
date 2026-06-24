@@ -1,6 +1,6 @@
 module VpsAdmin::API::Plugins::Payments::TransactionChains
   class MailOverview < ::TransactionChain
-    label 'Mail overview'
+    label 'Payments overview notifications'
 
     def link_chain(period, language)
       now = Time.now

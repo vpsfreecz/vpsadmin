@@ -6,10 +6,10 @@ module VpsAdmin::API::Resources
     PUBLISHED_AT_DESCRIPTION =
       'Date and time shown as the advisory publication time.'.freeze
     SEND_MAIL_DESCRIPTION =
-      'When enabled, affected users are emailed after the action completes.'.freeze
+      'When enabled, affected users receive a notification after the action completes.'.freeze
     TEXT_DESCRIPTIONS = {
       summary: 'One-sentence public summary of this update, shown in ' \
-               'update lists and emails.',
+               'update lists and notifications.',
       message: 'Optional user-facing message with more details about this update.'
     }.freeze
 
@@ -145,7 +145,7 @@ module VpsAdmin::API::Resources
                  desc: PUBLISHED_AT_DESCRIPTION,
                  nullable: true
         bool :send_mail,
-             label: 'Send mail',
+             label: 'Send notifications',
              desc: SEND_MAIL_DESCRIPTION,
              default: false,
              fill: true

@@ -201,7 +201,7 @@ function print_editm($u)
     $xtpl->table_td(_('Notifications') . ':');
     $xtpl->table_td(
         '<a href="' . adminm_notifications_url('routes', $u->id) . '">' . _('Configure event routes') . '</a>'
-        . ' | <a href="?page=reminder&action=reminder&resource=user&id=' . $u->id . '">' . _('Configure payment reminder') . '</a>'
+        . ' | <a href="?page=reminder&action=reminder&resource=user&id=' . $u->id . '">' . _('Configure payment notifications') . '</a>'
     );
     $xtpl->table_tr();
 
@@ -220,7 +220,7 @@ function print_editm($u)
         'time_zone',
         time_zone_options(true),
         post_val('time_zone', $u->time_zone ?? ''),
-        _('Used to format dates and times in vpsAdmin and e-mails.')
+        _('Used to format dates and times in vpsAdmin and notifications.')
     );
 
     if (isAdmin()) {
@@ -301,7 +301,7 @@ function print_editm($u)
         'enable_new_login_notification',
         '1',
         $_POST['enable_new_login_notification'] ?? $u->enable_new_login_notification,
-        _('Send emails about logins from new devices. Strongly recommended.')
+        _('Send notifications about logins from new devices. Strongly recommended.')
     );
 
     $xtpl->form_out(_('Save'));
@@ -387,10 +387,10 @@ function print_editm($u)
 
     $xtpl->form_out(isAdmin() ? _("Save") : _("Request change"));
 
-    $xtpl->table_add_category(_('E-mail notifications'));
+    $xtpl->table_add_category(_('Notifications'));
     $xtpl->table_add_category('&nbsp;');
     $xtpl->table_td(
-        _('E-mail delivery is configured using event routes and receivers.'),
+        _('Notifications are configured using event routes and receivers.'),
         false,
         false,
         2

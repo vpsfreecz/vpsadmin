@@ -93,7 +93,9 @@ module VpsAdmin::API::Resources
 
       input do
         use :input
-        bool :send_mail, default: true, fill: true
+        bool :send_mail, label: 'Send notification',
+                         desc: 'Notify the user when the snapshot download is ready',
+                         default: true, fill: true
       end
 
       output do

@@ -1424,7 +1424,7 @@ function vps_migrate_form_step3($vps_id, $node_id, $opts)
     $xtpl->table_td(boolean_icon($opts['skip_start'] == '1'));
     $xtpl->table_tr();
 
-    $xtpl->table_td(_('Send e-mails') . ':');
+    $xtpl->table_td(_('Send notifications') . ':');
     $xtpl->table_td(boolean_icon($opts['send_mail'] == '1'));
     $xtpl->table_tr();
 
