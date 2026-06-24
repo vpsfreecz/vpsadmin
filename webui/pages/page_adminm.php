@@ -52,6 +52,13 @@ function adminm_print_notification_delivery_methods($user)
         '?page=adminm&section=members&action=notification_delivery_methods&id=' . $user->id,
         'post'
     );
+    $xtpl->table_td(
+        _('Enabled methods allow this user to configure receivers and receive event notifications.'),
+        false,
+        false,
+        '3'
+    );
+    $xtpl->table_tr();
 
     foreach (adminm_notification_delivery_methods($user) as $method) {
         $name = adminm_notification_delivery_method_post_name($method->delivery_method);
@@ -61,11 +68,7 @@ function adminm_print_notification_delivery_methods($user)
             $label . ':',
             $name,
             '1',
-            post_val($name, $method->enabled),
-            sprintf(
-                _('Allow this user to configure and receive event notifications using %s.'),
-                $label
-            )
+            post_val($name, $method->enabled)
         );
     }
 
