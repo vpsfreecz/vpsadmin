@@ -315,7 +315,7 @@ VpsAdmin::API::Events.define owner: :outage_reports do
       parameters(
         {
           role: 'Recipient role',
-          event: 'Outage mail event',
+          event: 'Outage notification event',
           outage_id: 'Outage ID',
           update_id: 'Outage update ID',
           outage_type: 'Outage type',

@@ -60,10 +60,10 @@ module VpsAdmin::API::Plugins::OutageReports::TransactionChains
 
       return outage unless opts[:send_mail]
 
-      # Generic mail announcement
+      # Generic notification announcement
       route_outage_event!('generic', nil, outage, report, attrs, last_report)
 
-      # Mail affected users directly
+      # Notify affected users directly
       outage.outage_users.includes(:user).joins(:user).where(
         users: {
           object_state: [
@@ -110,7 +110,7 @@ module VpsAdmin::API::Plugins::OutageReports::TransactionChains
       attrs[:state] == ::Outage.states[:announced] ? 'outage.announced' : 'outage.updated'
     end
 
-    def outage_mail_event(attrs)
+    def outage_notification_event(attrs)
       {
         ::Outage.states[:announced] => 'announce',
         ::Outage.states[:cancelled] => 'cancel',
@@ -126,7 +126,7 @@ module VpsAdmin::API::Plugins::OutageReports::TransactionChains
     def outage_event_parameters(role, user, outage, report, attrs, msg_id, in_reply_to)
       {
         role:,
-        event: outage_mail_event(attrs),
+        event: outage_notification_event(attrs),
         outage_id: outage.id,
         update_id: report.id,
         outage_type: outage.outage_type,
