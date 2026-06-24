@@ -44,7 +44,7 @@ module VpsAdmin::API::Resources
     end
 
     params(:input) do
-      bool :send_mail, label: 'Send mail', default: true, fill: true
+      bool :send_mail, label: 'Send notifications', default: true, fill: true
     end
 
     module Helpers

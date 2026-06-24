@@ -99,8 +99,8 @@ VpsAdmin::API::Events.define owner: :payments do
     argument :report_vars, type: Hash, optional: true
 
     parameters(
-      language_id: 'Mail language ID',
-      language_code: 'Mail language code',
+      language_id: 'Notification language ID',
+      language_code: 'Notification language code',
       period_start: 'Report period start',
       period_end: 'Report period end',
       period_seconds: 'Report period in seconds',

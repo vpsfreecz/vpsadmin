@@ -5,7 +5,9 @@ module VpsAdmin::API::Resources
 
     params(:editable) do
       bool :stop_on_error, default: true, fill: true
-      bool :send_mail, default: true, fill: true
+      bool :send_mail, label: 'Send notifications',
+                       desc: 'Notify VPS owners about migration progress',
+                       default: true, fill: true
       integer :concurrency, default: 10, fill: true
       string :reason
     end
