@@ -1,6 +1,6 @@
 class ConvertNotificationActionColumnsToStrings < ActiveRecord::Migration[8.1]
   ACTION_COLUMNS = {
-    notification_receiver_actions: :action,
+    notification_targets: :action,
     event_deliveries: :action,
     event_delivery_attempts: :action
   }.freeze

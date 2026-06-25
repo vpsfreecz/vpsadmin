@@ -43,6 +43,7 @@ function notifications_sidebar($current, $user_id = null)
     }
     $xtpl->sbar_add(_('Routes'), '?page=notifications&action=routes' . $user_qs);
     $xtpl->sbar_add(_('Receivers'), '?page=notifications&action=receivers' . $user_qs);
+    $xtpl->sbar_add(_('Targets'), '?page=notifications&action=targets' . $user_qs);
     $xtpl->sbar_add(_('Event types'), '?page=notifications&action=event_types' . $user_qs);
     $xtpl->sbar_add(_('Test event'), '?page=notifications&action=test' . $user_qs);
 }
@@ -126,11 +127,14 @@ function notifications_api_list_to_array($list)
         'event_routes',
         'event_route_matchers',
         'notification_receivers',
+        'notification_targets',
+        'notification_receiver_targets',
         'notification_receiver_actions',
         'events',
         'event_deliveries',
         'event_delivery_attempts',
         'receivers',
+        'targets',
         'actions',
         'matchers',
         'deliveries',
@@ -829,21 +833,23 @@ function notifications_delivery_method_enabled_map($user_id)
     return $cache[$user_id];
 }
 
-function notifications_receiver_action_all_type_labels($receiver)
+function notifications_target_all_type_labels()
 {
-    $input = $receiver->action->create->getParameters('input');
+    global $api;
+
+    $input = $api->notification_target->create->getParameters('input');
 
     return notifications_param_choices($input->action);
 }
 
-function notifications_receiver_action_type_labels($receiver)
+function notifications_target_type_labels($user_id)
 {
-    $labels = notifications_receiver_action_all_type_labels($receiver);
+    $labels = notifications_target_all_type_labels();
     if (isAdmin()) {
         return $labels;
     }
 
-    $enabled_methods = notifications_delivery_method_enabled_map($receiver->user_id);
+    $enabled_methods = notifications_delivery_method_enabled_map($user_id);
     $ret = [];
 
     foreach ($labels as $action => $label) {
@@ -855,16 +861,16 @@ function notifications_receiver_action_type_labels($receiver)
     return $ret;
 }
 
-function notifications_receiver_action_type_label($receiver, $action_type)
+function notifications_target_type_label($action_type)
 {
-    $labels = notifications_receiver_action_all_type_labels($receiver);
+    $labels = notifications_target_all_type_labels();
 
     return $labels[$action_type] ?? $action_type;
 }
 
-function notifications_receiver_action_type_from_request($receiver)
+function notifications_target_type_from_request($user_id)
 {
-    $labels = notifications_receiver_action_type_labels($receiver);
+    $labels = notifications_target_type_labels($user_id);
     $action_type = api_get('type');
 
     if ($action_type === null) {
@@ -874,7 +880,7 @@ function notifications_receiver_action_type_from_request($receiver)
     return isset($labels[$action_type]) ? $action_type : null;
 }
 
-function notifications_receiver_action_params($action_type, $create = false)
+function notifications_target_params($action_type, $create = false)
 {
     $params = [
         'label' => api_post('label'),
@@ -916,7 +922,18 @@ function notifications_receiver_action_params($action_type, $create = false)
     return $params;
 }
 
-function notifications_receiver_action_params_from_row($row)
+function notifications_receiver_target_params($create = false)
+{
+    $params = [];
+
+    if ($create) {
+        $params['notification_target_id'] = api_post_uint('notification_target_id');
+    }
+
+    return $params;
+}
+
+function notifications_target_params_from_row($row)
 {
     $target_kind = trim((string) ($row['target_kind'] ?? 'default_recipient'));
     $params = [
@@ -1528,7 +1545,7 @@ function notifications_matcher_new($route_id, $event_type = null)
     notifications_sidebar('routes', $route->user_id);
 }
 
-function notifications_receiver_actions_summary_html($receiver)
+function notifications_receiver_targets_summary_html($receiver)
 {
     if ($receiver->mute) {
         return '<code>' . _('muted') . '</code>';
@@ -1536,9 +1553,9 @@ function notifications_receiver_actions_summary_html($receiver)
 
     $lines = [];
 
-    foreach (notifications_api_list_to_array($receiver->action->list()) as $action) {
-        $line = $action->action . ': ' . (notifications_prop($action, 'display_target') ?: $action->target_kind);
-        if (!$action->enabled) {
+    foreach (notifications_api_list_to_array($receiver->target->list()) as $target) {
+        $line = $target->action . ': ' . (notifications_prop($target, 'display_target') ?: $target->target_kind);
+        if (!notifications_prop($target, 'target_enabled', true)) {
             $line .= ' (' . _('disabled') . ')';
         }
         $lines[] = '<code>' . h($line) . '</code>';
@@ -1594,21 +1611,93 @@ function notifications_receiver_url($receiver_id, $user_id = null)
         . notifications_user_qs($user_id);
 }
 
+function notifications_target_url($target_id, $user_id = null, $receiver_id = null)
+{
+    $url = '?page=notifications&action=target_edit&id='
+        . rawurlencode((string) $target_id)
+        . notifications_user_qs($user_id);
+
+    if ($receiver_id) {
+        $url .= '&receiver=' . rawurlencode((string) $receiver_id);
+    }
+
+    return $url;
+}
+
+function notifications_receiver_target_url($receiver_id, $receiver_target_id, $user_id = null)
+{
+    return '?page=notifications&action=receiver_edit&id='
+        . rawurlencode((string) $receiver_id)
+        . notifications_user_qs($user_id)
+        . '#receiver-target-'
+        . rawurlencode((string) $receiver_target_id);
+}
+
+function notifications_target_pairing_token_url($target, $user_id = null, $receiver_id = null)
+{
+    $url = '?page=notifications&action=target_pairing_token&id='
+        . rawurlencode((string) $target->id)
+        . notifications_user_qs($user_id);
+
+    if ($receiver_id) {
+        $url .= '&receiver=' . rawurlencode((string) $receiver_id);
+    }
+
+    return $url . '&t=' . rawurlencode((string) csrf_token());
+}
+
+function notifications_sms_verification_send_url($target, $user_id = null, $receiver_id = null)
+{
+    $url = '?page=notifications&action=target_sms_send&id='
+        . rawurlencode((string) $target->id)
+        . notifications_user_qs($user_id);
+
+    if ($receiver_id) {
+        $url .= '&receiver=' . rawurlencode((string) $receiver_id);
+    }
+
+    return $url . '&t=' . rawurlencode((string) csrf_token());
+}
+
+function notifications_sms_verification_confirm_url($target, $user_id = null, $receiver_id = null)
+{
+    $url = '?page=notifications&action=target_sms_confirm&id='
+        . rawurlencode((string) $target->id)
+        . notifications_user_qs($user_id);
+
+    if ($receiver_id) {
+        $url .= '&receiver=' . rawurlencode((string) $receiver_id);
+    }
+
+    return $url;
+}
+
 function notifications_receiver_action_url($receiver_id, $action_id, $user_id = null)
 {
-    return '?page=notifications&action=receiver_action_edit&receiver='
-        . rawurlencode((string) $receiver_id)
-        . '&id='
-        . rawurlencode((string) $action_id)
-        . notifications_user_qs($user_id);
+    return notifications_receiver_target_url($receiver_id, $action_id, $user_id);
 }
 
 function notifications_telegram_pairing_token_url($receiver, $action)
 {
-    return '?page=notifications&action=receiver_action_pairing_token&receiver='
+    return notifications_target_pairing_token_url($action, $receiver->user_id);
+}
+
+function notifications_sms_verification_send_url_legacy($receiver, $action)
+{
+    return notifications_sms_verification_send_url($action, $receiver->user_id);
+}
+
+function notifications_sms_verification_confirm_url_legacy($receiver, $action)
+{
+    return notifications_sms_verification_confirm_url($action, $receiver->user_id);
+}
+
+function notifications_receiver_target_delete_url($receiver, $target)
+{
+    return '?page=notifications&action=receiver_target_delete&receiver='
         . rawurlencode((string) $receiver->id)
         . '&id='
-        . rawurlencode((string) $action->id)
+        . rawurlencode((string) $target->id)
         . notifications_user_qs($receiver->user_id)
         . '&t='
         . rawurlencode((string) csrf_token());
@@ -1639,36 +1728,28 @@ function notifications_telegram_automatic_pairing_html($action)
 function notifications_telegram_pairing_instructions_html($action)
 {
     $command = notifications_prop($action, 'telegram_pairing_command');
+    $bot_name = notifications_prop($action, 'telegram_bot_name');
     if (!$command) {
+        if ($bot_name) {
+            return sprintf(
+                _('Create a new pairing command and use it in a private chat with @%s.'),
+                h($bot_name)
+            );
+        }
+
         return _('Create a new pairing command and use it in a private chat with the Telegram bot.');
     }
 
     $items = [];
-    $items[] = _('Open a private chat with the vpsAdmin Telegram bot.');
+    if ($bot_name) {
+        $items[] = sprintf(_('Open a private chat with @%s.'), h($bot_name));
+    } else {
+        $items[] = _('Open a private chat with the vpsAdmin Telegram bot.');
+    }
     $items[] = sprintf(_('Send %s.'), '<code>' . h($command) . '</code>');
     $items[] = _('The bot will confirm whether pairing succeeded.');
 
     return '<ol><li>' . implode('</li><li>', $items) . '</li></ol>';
-}
-
-function notifications_sms_verification_send_url($receiver, $action)
-{
-    return '?page=notifications&action=receiver_action_sms_send&receiver='
-        . rawurlencode((string) $receiver->id)
-        . '&id='
-        . rawurlencode((string) $action->id)
-        . notifications_user_qs($receiver->user_id)
-        . '&t='
-        . rawurlencode((string) csrf_token());
-}
-
-function notifications_sms_verification_confirm_url($receiver, $action)
-{
-    return '?page=notifications&action=receiver_action_sms_confirm&receiver='
-        . rawurlencode((string) $receiver->id)
-        . '&id='
-        . rawurlencode((string) $action->id)
-        . notifications_user_qs($receiver->user_id);
 }
 
 function notifications_delivery_receiver_link($delivery, $user_id = null)
@@ -1685,18 +1766,16 @@ function notifications_delivery_receiver_link($delivery, $user_id = null)
 
 function notifications_delivery_receiver_action_link($delivery, $user_id = null)
 {
-    $receiver_id = notifications_prop($delivery, 'notification_receiver_id');
-    $action_id = notifications_prop($delivery, 'notification_receiver_action_id');
-    if (!$action_id) {
+    $target_id = notifications_prop($delivery, 'notification_target_id');
+    if (!$target_id) {
         return '-';
     }
 
-    $label = notifications_prop($delivery, 'notification_receiver_action_label') ?: ('#' . $action_id);
-    if (!$receiver_id) {
-        return h($label);
-    }
+    $label = notifications_prop($delivery, 'notification_target_label')
+        ?: notifications_prop($delivery, 'notification_receiver_action_label')
+        ?: ('#' . $target_id);
 
-    return '<a href="' . notifications_receiver_action_url($receiver_id, $action_id, $user_id) . '">' . h($label) . '</a>';
+    return '<a href="' . notifications_target_url($target_id, $user_id) . '">' . h($label) . '</a>';
 }
 
 function notifications_delivery_user_link($delivery)
@@ -1891,6 +1970,83 @@ function notifications_html_source_details($html)
         . '</details>';
 }
 
+function notifications_targets($user_id = null)
+{
+    global $xtpl, $api;
+
+    $user_id = notifications_target_user_id($user_id);
+    $user = $api->user->show($user_id);
+    $targets = $api->notification_target->list(['user' => $user_id]);
+    $action_labels = notifications_target_all_type_labels();
+
+    $xtpl->title(_('Notification targets'));
+
+    if (isAdmin()) {
+        $xtpl->table_title(_('User'));
+        $xtpl->form_create('?page=notifications&action=targets', 'get', 'notification-user', false);
+        $xtpl->form_set_hidden_fields([
+            'page' => 'notifications',
+            'action' => 'targets',
+        ]);
+        $xtpl->form_add_input(_('User ID') . ':', 'text', '20', 'user', $user_id);
+        $xtpl->form_out(_('Show'));
+    }
+
+    $xtpl->table_title(_('Targets') . ': ' . h($user->login));
+    $xtpl->table_add_category(_('Action'));
+    $xtpl->table_add_category(_('Label'));
+    $xtpl->table_add_category(_('Target'));
+    $xtpl->table_add_category(_('Enabled'));
+    $xtpl->table_add_category(_('Status'));
+    $xtpl->table_add_category(_('Events'));
+    $xtpl->table_add_category('');
+    $xtpl->table_add_category('');
+
+    foreach ($targets as $target) {
+        $toggle_link = '?page=notifications&action=target_toggle&id=' . $target->id
+            . notifications_user_qs($user_id) . '&t=' . csrf_token();
+        $delete_link = '?page=notifications&action=target_delete&id=' . $target->id
+            . notifications_user_qs($user_id) . '&t=' . csrf_token();
+
+        $xtpl->table_td(h($action_labels[$target->action] ?? $target->action));
+        $xtpl->table_td(h($target->label));
+        $xtpl->table_td(notifications_receiver_action_target_html($target), false, true);
+        $xtpl->table_td(
+            '<a href="' . $toggle_link . '" title="' . ($target->enabled ? _('Disable target') : _('Enable target')) . '">'
+            . boolean_icon($target->enabled) . '</a>'
+        );
+        $xtpl->table_td(notifications_receiver_action_secret_html($target));
+        $xtpl->table_td(notifications_event_log_link(_('Event log'), $user_id, [
+            'notification_target_id' => $target->id,
+        ]));
+        $xtpl->table_td('<a href="' . notifications_target_url($target->id, $user_id) . '"><img src="template/icons/vps_edit.png" title="' . _('Edit') . '"></a>');
+        $xtpl->table_td(
+            '<a href="' . $delete_link . '"'
+            . notifications_confirm_onclick(_('Do you really wish to delete this notification target? Receiver links using it will be removed.'))
+            . '><img src="template/icons/vps_delete.png" title="' . _('Delete') . '"></a>'
+        );
+        $xtpl->table_tr($target->enabled ? false : '#A6A6A6');
+    }
+
+    if ($targets->count() == 0) {
+        $xtpl->table_td(_('No targets configured.'), false, false, 8);
+        $xtpl->table_tr();
+    }
+
+    $xtpl->table_td(
+        '<a href="?page=notifications&action=target_new' . notifications_user_qs($user_id) . '">'
+        . '<img src="template/icons/vps_add.png" title="' . _('Add target') . '" alt="' . _('Add target') . '"> '
+        . _('Add target') . '</a>',
+        false,
+        true,
+        8
+    );
+    $xtpl->table_tr();
+    $xtpl->table_out();
+
+    notifications_sidebar('targets', $user_id);
+}
+
 function notifications_receivers($user_id = null)
 {
     global $xtpl, $api;
@@ -1915,7 +2071,7 @@ function notifications_receivers($user_id = null)
 
     $xtpl->table_title(_('Receivers') . ': ' . h($user->login));
     $xtpl->table_add_category(_('Label'));
-    $xtpl->table_add_category(_('Actions'));
+    $xtpl->table_add_category(_('Targets'));
     $xtpl->table_add_category(_('Enabled'));
     $xtpl->table_add_category(_('Mute'));
     $xtpl->table_add_category(_('Events'));
@@ -1929,7 +2085,7 @@ function notifications_receivers($user_id = null)
             . notifications_user_qs($user_id) . '&t=' . csrf_token();
 
         $xtpl->table_td(h($receiver->label));
-        $xtpl->table_td(notifications_receiver_actions_summary_html($receiver));
+        $xtpl->table_td(notifications_receiver_targets_summary_html($receiver));
         $xtpl->table_td(
             '<a href="' . $toggle_link . '" title="' . ($receiver->enabled ? _('Disable receiver') : _('Enable receiver')) . '">'
             . boolean_icon($receiver->enabled) . '</a>'
@@ -1975,6 +2131,10 @@ function notifications_receiver_action_target_html($action)
 
 function notifications_receiver_action_secret_html($action)
 {
+    if (notifications_prop($action, 'target_enabled') === false) {
+        return boolean_icon(false) . ' ' . _('target disabled');
+    }
+
     if (notifications_prop($action, 'delivery_method_enabled') === false) {
         return boolean_icon(false) . ' ' . _('delivery method disabled');
     }
@@ -1994,21 +2154,57 @@ function notifications_receiver_action_secret_html($action)
     return '-';
 }
 
-function notifications_receiver_action_form_fields($receiver, $action_type, $action = null)
+function notifications_target_options($user_id, $empty = false)
 {
-    global $xtpl;
+    global $api;
 
-    $input = $receiver->action->create->getParameters('input');
+    $options = $empty ? ['' => '---'] : [];
+
+    foreach ($api->notification_target->list(['user' => $user_id]) as $target) {
+        $label = $target->action . ': ' . $target->label;
+        $display_target = notifications_prop($target, 'display_target');
+        if ($display_target) {
+            $label .= ' (' . $display_target . ')';
+        }
+        if (!$target->enabled) {
+            $label .= ' - ' . _('disabled');
+        }
+
+        $options[$target->id] = $label;
+    }
+
+    return $options;
+}
+
+function notifications_target_form_fields($user_id, $action_type, $target = null, $receiver = null)
+{
+    global $xtpl, $api;
+
+    $input = $api->notification_target->create->getParameters('input');
     $target_kinds = notifications_param_choices($input->target_kind);
-    $label = $action ? $action->label : '';
-    $enabled = $action ? $action->enabled : true;
+    $label = $target ? $target->label : '';
+    $enabled = $target ? $target->enabled : true;
+    $receiver_id = $receiver ? $receiver->id : null;
 
-    $xtpl->table_td(_('Receiver') . ':');
-    $xtpl->table_td('<a href="?page=notifications&action=receiver_edit&id=' . $receiver->id . notifications_user_qs($receiver->user_id) . '">' . h($receiver->label) . '</a>');
-    $xtpl->table_tr();
+    if (isAdmin()) {
+        $xtpl->table_td(_('User') . ':');
+        $xtpl->table_td($target && isset($target->user) ? user_link($target->user) : h((string) $user_id));
+        $xtpl->table_tr();
+    }
+
+    if ($receiver) {
+        $xtpl->table_td(_('Receiver') . ':');
+        $xtpl->table_td(
+            '<a href="' . notifications_receiver_url($receiver->id, $receiver->user_id) . '">'
+            . h($receiver->label) . '</a>',
+            false,
+            true
+        );
+        $xtpl->table_tr();
+    }
 
     $xtpl->table_td(_('Action') . ':');
-    $xtpl->table_td(h(notifications_receiver_action_type_label($receiver, $action_type)));
+    $xtpl->table_td(h(notifications_target_type_label($action_type)));
     $xtpl->table_tr();
 
     $xtpl->form_add_input(
@@ -2017,11 +2213,11 @@ function notifications_receiver_action_form_fields($receiver, $action_type, $act
         '40',
         'label',
         post_val('label', $label),
-        _('Optional display name for this action.')
+        _('Optional display name for this target.')
     );
 
     if ($action_type === 'email') {
-        $target_kind = post_val('target_kind', $action ? $action->target_kind : 'default_recipient');
+        $target_kind = post_val('target_kind', $target ? $target->target_kind : 'default_recipient');
 
         $xtpl->form_add_select(
             _('Recipient') . ':',
@@ -2035,7 +2231,7 @@ function notifications_receiver_action_form_fields($receiver, $action_type, $act
             'text',
             '60',
             'target_value',
-            post_val('target_value', $action ? $action->target_value : ''),
+            post_val('target_value', $target ? $target->target_value : ''),
             _('Used only when custom target is selected.')
         );
     } elseif ($action_type === 'webhook') {
@@ -2044,33 +2240,33 @@ function notifications_receiver_action_form_fields($receiver, $action_type, $act
             'text',
             '50',
             'target_value',
-            post_val('target_value', $action ? $action->target_value : ''),
+            post_val('target_value', $target ? $target->target_value : ''),
             _('HTTP or HTTPS endpoint that receives the event JSON payload.')
         );
 
-        $placeholder = $action ? _('leave empty to keep') : null;
+        $placeholder = $target ? _('leave empty to keep') : null;
         $xtpl->table_td(_('Secret') . ':');
         $xtpl->table_td(notifications_secret_input_html('secret', '', 40, null, $placeholder));
         $xtpl->table_td(_('Optional HMAC secret sent as X-VpsAdmin-Signature-256.'));
         $xtpl->table_tr();
 
-        if ($action && $action->secret_present) {
+        if ($target && $target->secret_present) {
             $xtpl->table_td(_('Current secret') . ':');
             $xtpl->table_td(boolean_icon(true) . ' ' . notifications_checkbox_html('clear_secret', false) . ' ' . _('clear secret'), false, true);
             $xtpl->table_tr();
         }
     } elseif ($action_type === 'telegram') {
-        if ($action && $action->verified) {
+        if ($target && $target->verified) {
             $xtpl->table_td(_('Pairing') . ':');
-            $xtpl->table_td(boolean_icon(true) . ' ' . h($action->display_target));
+            $xtpl->table_td(boolean_icon(true) . ' ' . h($target->display_target));
             $xtpl->table_tr();
-        } elseif ($action) {
+        } elseif ($target) {
             $xtpl->table_td(_('Automatic pairing') . ':');
-            $xtpl->table_td(notifications_telegram_automatic_pairing_html($action), false, true);
+            $xtpl->table_td(notifications_telegram_automatic_pairing_html($target), false, true);
             $xtpl->table_tr();
 
             $xtpl->table_td(_('Manual pairing') . ':');
-            $xtpl->table_td(notifications_telegram_pairing_instructions_html($action), false, true);
+            $xtpl->table_td(notifications_telegram_pairing_instructions_html($target), false, true);
             $xtpl->table_tr();
         } else {
             $xtpl->table_td(_('Automatic pairing') . ':');
@@ -2078,18 +2274,18 @@ function notifications_receiver_action_form_fields($receiver, $action_type, $act
             $xtpl->table_tr();
         }
 
-        if ($action && !$action->verified) {
-            if ($action->last_error) {
+        if ($target && !$target->verified) {
+            if ($target->last_error) {
                 $xtpl->table_td(_('Last error') . ':');
-                $xtpl->table_td(h($action->last_error));
+                $xtpl->table_td(h($target->last_error));
                 $xtpl->table_tr();
             }
         }
 
-        if ($action) {
-            $pairing_url = notifications_telegram_pairing_token_url($receiver, $action);
+        if ($target) {
+            $pairing_url = notifications_target_pairing_token_url($target, $user_id, $receiver_id);
 
-            if ($action->verified) {
+            if ($target->verified) {
                 $confirm = _('Re-pairing creates a new pairing command and pauses Telegram delivery until pairing succeeds. Continue?');
                 $link = '<a href="' . h($pairing_url) . '"' . notifications_confirm_onclick($confirm) . '>'
                     . _('Re-pair Telegram chat') . '</a>';
@@ -2113,22 +2309,22 @@ function notifications_receiver_action_form_fields($receiver, $action_type, $act
             'text',
             '30',
             'target_value',
-            post_val('target_value', $action ? $action->target_value : ''),
+            post_val('target_value', $target ? $target->target_value : ''),
             _('Use international E.164 format, e.g. +420123456789.')
         );
 
         $xtpl->table_td(_('Verification') . ':');
-        if ($action) {
+        if ($target) {
             $xtpl->table_td(
-                boolean_icon($action->verified) . ' '
-                . ($action->verified ? _('verified') : _('pending'))
+                boolean_icon($target->verified) . ' '
+                . ($target->verified ? _('verified') : _('pending'))
             );
         } else {
             $xtpl->table_td(_('created after saving'));
         }
         $xtpl->table_tr();
 
-        if ($action && !$action->verified) {
+        if ($target && !$target->verified) {
             $xtpl->table_td(_('Instructions') . ':');
             $xtpl->table_td(
                 _('Save the phone number, send a verification SMS, then enter the code from the message.'),
@@ -2138,9 +2334,9 @@ function notifications_receiver_action_form_fields($receiver, $action_type, $act
             $xtpl->table_tr();
         }
 
-        if ($action && !$action->verified && $action->last_error) {
+        if ($target && !$target->verified && $target->last_error) {
             $xtpl->table_td(_('Last error') . ':');
-            $xtpl->table_td(h($action->last_error));
+            $xtpl->table_td(h($target->last_error));
             $xtpl->table_tr();
         }
     }
@@ -2148,16 +2344,16 @@ function notifications_receiver_action_form_fields($receiver, $action_type, $act
     $xtpl->form_add_checkbox(_('Enabled') . ':', 'enabled', '1', post_val('enabled', $enabled));
 }
 
-function notifications_sms_verification_controls($receiver, $action)
+function notifications_sms_verification_controls($target, $user_id = null, $receiver_id = null)
 {
     global $xtpl;
 
-    if ($action->action !== 'sms' || $action->verified) {
+    if ($target->action !== 'sms' || $target->verified) {
         return;
     }
 
-    $send_url = notifications_sms_verification_send_url($receiver, $action);
-    $confirm_url = notifications_sms_verification_confirm_url($receiver, $action);
+    $send_url = notifications_sms_verification_send_url($target, $user_id, $receiver_id);
+    $confirm_url = notifications_sms_verification_confirm_url($target, $user_id, $receiver_id);
 
     $xtpl->table_title(_('SMS verification'));
     $xtpl->table_td(_('Verification SMS') . ':');
@@ -2184,95 +2380,139 @@ function notifications_sms_verification_controls($receiver, $action)
     $xtpl->form_out(_('Confirm code'));
 }
 
-function notifications_receiver_action_new($receiver_id, $action_type = null)
+function notifications_target_new($user_id = null, $action_type = null, $receiver_id = null)
 {
     global $xtpl, $api;
 
-    $receiver = $api->notification_receiver->show($receiver_id, ['meta' => ['includes' => 'user']]);
-    $labels = notifications_receiver_action_type_labels($receiver);
-    $action_type = $action_type ?: notifications_receiver_action_type_from_request($receiver);
+    $receiver = null;
+    if ($receiver_id) {
+        $receiver = $api->notification_receiver->show($receiver_id, ['meta' => ['includes' => 'user']]);
+        $user_id = $receiver->user_id;
+    } else {
+        $user_id = notifications_target_user_id($user_id);
+    }
+
+    $labels = notifications_target_type_labels($user_id);
+    $action_type = $action_type ?: notifications_target_type_from_request($user_id);
     if ($action_type !== null && !isset($labels[$action_type])) {
         $action_type = null;
     }
 
     if ($action_type === null) {
         if (count($labels) == 0) {
-            $xtpl->title(_('Add receiver action'));
+            $xtpl->title(_('Add notification target'));
             $xtpl->perex(_('No delivery methods enabled'), _('No event delivery methods are enabled for this user.'));
-            $xtpl->sbar_add(_('Back to receiver'), '?page=notifications&action=receiver_edit&id=' . $receiver->id . notifications_user_qs($receiver->user_id));
-            notifications_sidebar('receivers', $receiver->user_id);
+            if ($receiver) {
+                $xtpl->sbar_add(_('Back to receiver'), notifications_receiver_url($receiver->id, $receiver->user_id));
+            } else {
+                $xtpl->sbar_add(_('Back to targets'), '?page=notifications&action=targets' . notifications_user_qs($user_id));
+            }
+            notifications_sidebar('targets', $user_id);
             return;
         }
 
         $selected = api_get('type') ?: 'email';
 
-        $xtpl->title(_('Add receiver action'));
-        $xtpl->table_title(_('Select action type'));
-        $xtpl->form_create('?page=notifications', 'get', 'notification-action-type', false);
+        $xtpl->title(_('Add notification target'));
+        $xtpl->table_title(_('Select target type'));
+        $xtpl->form_create('?page=notifications', 'get', 'notification-target-type', false);
         $hidden = [
             'page' => 'notifications',
-            'action' => 'receiver_action_new',
-            'receiver' => $receiver->id,
+            'action' => 'target_new',
         ];
         if (isAdmin()) {
-            $hidden['user'] = $receiver->user_id;
+            $hidden['user'] = $user_id;
+        }
+        if ($receiver) {
+            $hidden['receiver'] = $receiver->id;
         }
         $xtpl->form_set_hidden_fields($hidden);
         $xtpl->form_add_select(
-            _('Action type') . ':',
+            _('Target type') . ':',
             'type',
             $labels,
             isset($labels[$selected]) ? $selected : 'email',
-            _('Choose how this receiver will deliver matching events.')
+            _('Choose how matching events will be delivered.')
         );
         $xtpl->form_out(_('Continue'));
 
-        $xtpl->sbar_add(_('Back to receiver'), '?page=notifications&action=receiver_edit&id=' . $receiver->id . notifications_user_qs($receiver->user_id));
-        notifications_sidebar('receivers', $receiver->user_id);
+        if ($receiver) {
+            $xtpl->sbar_add(_('Back to receiver'), notifications_receiver_url($receiver->id, $receiver->user_id));
+        } else {
+            $xtpl->sbar_add(_('Back to targets'), '?page=notifications&action=targets' . notifications_user_qs($user_id));
+        }
+        notifications_sidebar('targets', $user_id);
         return;
     }
 
-    $xtpl->title(_('Add receiver action'));
-    $xtpl->table_title(_('Add action'));
+    $xtpl->title(_('Add notification target'));
+    $xtpl->table_title(_('Add target'));
     $xtpl->form_create(
-        '?page=notifications&action=receiver_action_new&receiver=' . $receiver->id
-        . '&type=' . urlencode($action_type) . notifications_user_qs($receiver->user_id),
+        '?page=notifications&action=target_new&type=' . urlencode($action_type)
+        . ($receiver ? '&receiver=' . rawurlencode((string) $receiver->id) : '')
+        . notifications_user_qs($user_id),
         'post'
     );
     $xtpl->form_set_hidden_fields([
         'action_type' => $action_type,
     ]);
-    notifications_receiver_action_form_fields($receiver, $action_type);
+    notifications_target_form_fields($user_id, $action_type, null, $receiver);
     $xtpl->form_out(_('Add'));
 
-    $xtpl->sbar_add(_('Back to receiver'), '?page=notifications&action=receiver_edit&id=' . $receiver->id . notifications_user_qs($receiver->user_id));
-    notifications_sidebar('receivers', $receiver->user_id);
+    if ($receiver) {
+        $xtpl->sbar_add(_('Back to receiver'), notifications_receiver_url($receiver->id, $receiver->user_id));
+    } else {
+        $xtpl->sbar_add(_('Back to targets'), '?page=notifications&action=targets' . notifications_user_qs($user_id));
+    }
+    notifications_sidebar('targets', $user_id);
 }
 
-function notifications_receiver_action_edit($receiver_id, $action_id)
+function notifications_target_context_receiver($target, $receiver_id)
+{
+    global $api;
+
+    if (!$receiver_id) {
+        return null;
+    }
+
+    try {
+        $receiver = $api->notification_receiver->show($receiver_id, ['meta' => ['includes' => 'user']]);
+    } catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+        return null;
+    }
+
+    return (int) $receiver->user_id === (int) $target->user_id ? $receiver : null;
+}
+
+function notifications_target_edit($target_id, $receiver_id = null)
 {
     global $xtpl, $api;
 
-    $receiver = $api->notification_receiver->show($receiver_id, ['meta' => ['includes' => 'user']]);
-    $action = $receiver->action->show($action_id);
+    $target = $api->notification_target->show($target_id, ['meta' => ['includes' => 'user']]);
+    $user_id = $target->user_id;
+    $receiver = notifications_target_context_receiver($target, $receiver_id);
 
-    $xtpl->title(_('Receiver action') . ' #' . $action->id);
-    $xtpl->table_title(_('Update action'));
+    $xtpl->title(_('Notification target') . ' #' . $target->id);
+    $xtpl->table_title(_('Update target'));
     $xtpl->form_create(
-        '?page=notifications&action=receiver_action_edit&receiver=' . $receiver->id
-        . '&id=' . $action->id . notifications_user_qs($receiver->user_id),
+        notifications_target_url($target->id, $user_id, $receiver ? $receiver->id : null),
         'post'
     );
     $xtpl->form_set_hidden_fields([
-        'action_type' => $action->action,
+        'action_type' => $target->action,
     ]);
-    notifications_receiver_action_form_fields($receiver, $action->action, $action);
+    notifications_target_form_fields($user_id, $target->action, $target, $receiver);
     $xtpl->form_out(_('Save'));
 
-    notifications_sms_verification_controls($receiver, $action);
+    notifications_sms_verification_controls($target, $user_id, $receiver ? $receiver->id : null);
 
-    $xtpl->sbar_add(_('Back to receiver'), '?page=notifications&action=receiver_edit&id=' . $receiver->id . notifications_user_qs($receiver->user_id));
-    notifications_sidebar('receivers', $receiver->user_id);
+    if ($receiver) {
+        $xtpl->sbar_add(_('Back to receiver'), notifications_receiver_url($receiver->id, $receiver->user_id));
+        notifications_sidebar('receivers', $user_id);
+    } else {
+        $xtpl->sbar_add(_('Back to targets'), '?page=notifications&action=targets' . notifications_user_qs($user_id));
+        notifications_sidebar('targets', $user_id);
+    }
 }
 
 function notifications_receiver_edit($receiver_id)
@@ -2281,7 +2521,7 @@ function notifications_receiver_edit($receiver_id)
 
     $receiver = $api->notification_receiver->show($receiver_id, ['meta' => ['includes' => 'user']]);
     $input = $api->notification_receiver->update->getParameters('input');
-    $action_labels = notifications_receiver_action_type_labels($receiver);
+    $target_labels = notifications_target_all_type_labels();
 
     $xtpl->title(_('Notification receiver') . ' #' . $receiver->id);
     $xtpl->table_title(_('Update receiver'));
@@ -2298,56 +2538,74 @@ function notifications_receiver_edit($receiver_id)
     $xtpl->form_out(_('Save'));
     notifications_clear_table_form();
 
-    $xtpl->table_title(_('Actions'));
+    $xtpl->table_title(_('Targets'));
     $xtpl->table_add_category(_('Action'));
     $xtpl->table_add_category(_('Label'));
     $xtpl->table_add_category(_('Target'));
-    $xtpl->table_add_category(_('Enabled'));
+    $xtpl->table_add_category(_('Target enabled'));
     $xtpl->table_add_category(_('Status'));
     $xtpl->table_add_category(_('Events'));
     $xtpl->table_add_category('');
     $xtpl->table_add_category('');
 
-    $receiver_actions = notifications_api_list_to_array($receiver->action->list());
+    $receiver_targets = notifications_api_list_to_array($receiver->target->list());
 
-    foreach ($receiver_actions as $action) {
-        $xtpl->table_td(h($action_labels[$action->action] ?? $action->action));
-        $xtpl->table_td(h($action->label));
-        $xtpl->table_td(notifications_receiver_action_target_html($action), false, true);
-        $xtpl->table_td(boolean_icon($action->enabled));
-        $xtpl->table_td(notifications_receiver_action_secret_html($action));
+    foreach ($receiver_targets as $target) {
+        $xtpl->table_td(h($target_labels[$target->action] ?? $target->action));
+        $xtpl->table_td(h($target->label));
+        $xtpl->table_td(notifications_receiver_action_target_html($target), false, true);
+        $xtpl->table_td(boolean_icon(notifications_prop($target, 'target_enabled', true)));
+        $xtpl->table_td(notifications_receiver_action_secret_html($target));
         $xtpl->table_td(notifications_event_log_link(_('Event log'), $receiver->user_id, [
             'notification_receiver_id' => $receiver->id,
-            'notification_receiver_action_id' => $action->id,
+            'notification_target_id' => notifications_prop($target, 'notification_target_id'),
+            'notification_receiver_target_id' => $target->id,
         ]));
         $xtpl->table_td(
-            '<a href="?page=notifications&action=receiver_action_edit&receiver=' . $receiver->id . '&id=' . $action->id
-            . notifications_user_qs($receiver->user_id) . '"><img src="template/icons/vps_edit.png" title="' . _('Edit') . '"></a>'
+            '<a href="' . notifications_target_url(notifications_prop($target, 'notification_target_id'), $receiver->user_id, $receiver->id)
+            . '"><img src="template/icons/vps_edit.png" title="' . _('Edit target') . '"></a>'
         );
         $xtpl->table_td(
-            '<a href="?page=notifications&action=receiver_action_delete&receiver=' . $receiver->id . '&id=' . $action->id
-            . notifications_user_qs($receiver->user_id) . '&t=' . csrf_token() . '"'
-            . notifications_confirm_onclick(_('Do you really wish to delete this notification receiver action?'))
+            '<a href="' . notifications_receiver_target_delete_url($receiver, $target) . '"'
+            . notifications_confirm_onclick(_('Do you really wish to unlink this notification target from the receiver?'))
             . '><img src="template/icons/vps_delete.png" title="' . _('Delete') . '"></a>'
         );
         $xtpl->table_tr();
     }
 
-    if (count($receiver_actions) == 0) {
-        $xtpl->table_td(_('No actions configured.'), false, false, 9);
+    if (count($receiver_targets) == 0) {
+        $xtpl->table_td(_('No targets linked.'), false, false, 8);
         $xtpl->table_tr();
     }
 
     $xtpl->table_td(
-        '<a href="?page=notifications&action=receiver_action_new&receiver=' . $receiver->id
-        . notifications_user_qs($receiver->user_id) . '"><img src="template/icons/vps_add.png" title="' . _('Add action') . '" alt="' . _('Add action') . '"> '
-        . _('Add action') . '</a>',
+        '<a href="?page=notifications&action=target_new&receiver=' . $receiver->id
+        . notifications_user_qs($receiver->user_id) . '"><img src="template/icons/vps_add.png" title="' . _('Add target') . '" alt="' . _('Add target') . '"> '
+        . _('Create and link target') . '</a>',
         false,
         true,
-        9
+        8
     );
     $xtpl->table_tr();
     $xtpl->table_out();
+
+    $target_options = notifications_target_options($receiver->user_id, true);
+    if (count($target_options) > 1) {
+        $xtpl->table_title(_('Link existing target'));
+        $xtpl->form_create(
+            '?page=notifications&action=receiver_target_link&receiver=' . $receiver->id
+            . notifications_user_qs($receiver->user_id),
+            'post'
+        );
+        $xtpl->form_add_select(
+            _('Notification target') . ':',
+            'notification_target_id',
+            $target_options,
+            post_val('notification_target_id', ''),
+            _('Select an existing reusable target.')
+        );
+        $xtpl->form_out(_('Link target'));
+    }
 
     $xtpl->sbar_add(_('Back to receivers'), '?page=notifications&action=receivers' . notifications_user_qs($receiver->user_id));
     notifications_sidebar('receivers', $receiver->user_id);
@@ -2443,7 +2701,7 @@ function notifications_deliveries_admin($state_group)
         $params['event_type'] = $event_type;
     }
 
-    foreach (['event_route_id', 'notification_receiver_id', 'notification_receiver_action_id'] as $name) {
+    foreach (['event_route_id', 'notification_receiver_id', 'notification_target_id', 'notification_receiver_target_id'] as $name) {
         $id = api_get_uint($name);
         if ($id !== null && $id > 0) {
             $params[$name] = $id;
@@ -2471,7 +2729,8 @@ function notifications_deliveries_admin($state_group)
     $xtpl->form_add_input(_('User ID') . ':', 'text', '20', 'user', get_val('user'));
     $xtpl->form_add_input(_('Route ID') . ':', 'text', '20', 'event_route_id', get_val('event_route_id'));
     $xtpl->form_add_input(_('Receiver ID') . ':', 'text', '20', 'notification_receiver_id', get_val('notification_receiver_id'));
-    $xtpl->form_add_input(_('Action ID') . ':', 'text', '20', 'notification_receiver_action_id', get_val('notification_receiver_action_id'));
+    $xtpl->form_add_input(_('Target ID') . ':', 'text', '20', 'notification_target_id', get_val('notification_target_id'));
+    $xtpl->form_add_input(_('Receiver target ID') . ':', 'text', '20', 'notification_receiver_target_id', get_val('notification_receiver_target_id'));
     $xtpl->table_td(_('Event type') . ':');
     $xtpl->table_td(
         notifications_select_html(
@@ -2509,7 +2768,7 @@ function notifications_deliveries_admin($state_group)
     $xtpl->table_add_category(_('User'));
     $xtpl->table_add_category(_('VPS'));
     $xtpl->table_add_category(_('Receiver'));
-    $xtpl->table_add_category(_('Receiver action'));
+    $xtpl->table_add_category(_('Target'));
     $xtpl->table_add_category(_('State'));
     $xtpl->table_add_category(_('Attempts'));
     $xtpl->table_add_category(_('Released'));
@@ -2581,7 +2840,7 @@ function notifications_events()
         $params['action'] = $delivery_action;
     }
 
-    foreach (['notification_receiver_id', 'notification_receiver_action_id'] as $name) {
+    foreach (['notification_receiver_id', 'notification_target_id', 'notification_receiver_target_id'] as $name) {
         $id = api_get_uint($name);
         if ($id !== null && $id > 0) {
             $params[$name] = $id;
@@ -2619,7 +2878,8 @@ function notifications_events()
     $xtpl->form_add_input(_('From ID') . ':', 'text', '20', 'from_id', get_val('from_id'));
     $xtpl->form_add_input(_('Route ID') . ':', 'text', '20', 'matched_event_route_id', get_val('matched_event_route_id'));
     $xtpl->form_add_input(_('Receiver ID') . ':', 'text', '20', 'notification_receiver_id', get_val('notification_receiver_id'));
-    $xtpl->form_add_input(_('Action ID') . ':', 'text', '20', 'notification_receiver_action_id', get_val('notification_receiver_action_id'));
+    $xtpl->form_add_input(_('Target ID') . ':', 'text', '20', 'notification_target_id', get_val('notification_target_id'));
+    $xtpl->form_add_input(_('Receiver target ID') . ':', 'text', '20', 'notification_receiver_target_id', get_val('notification_receiver_target_id'));
 
     if (isAdmin()) {
         $xtpl->form_add_input(_('User ID') . ':', 'text', '20', 'user', get_val('user'));
@@ -2635,8 +2895,8 @@ function notifications_events()
     );
     $xtpl->table_tr();
     api_param_to_form('category', $input->category, get_val('category'));
-    api_param_to_form('severity', $input->severity, get_val('severity'), null, true);
-    api_param_to_form('routing_state', $input->routing_state, get_val('routing_state'), null, true);
+    api_param_to_form('severity', $input->severity, get_val('severity'));
+    api_param_to_form('routing_state', $input->routing_state, get_val('routing_state'));
     $action_label = isset($input->action->label) && $input->action->label ? $input->action->label : _('Action');
     $xtpl->table_td($action_label . ':');
     $xtpl->table_td(
@@ -2748,7 +3008,7 @@ function notifications_event_show($event_id)
     $xtpl->table_title(_('Deliveries'));
     $xtpl->table_add_category(_('Action'));
     $xtpl->table_add_category(_('Receiver'));
-    $xtpl->table_add_category(_('Receiver action'));
+    $xtpl->table_add_category(_('Notification target'));
     $xtpl->table_add_category(_('Target'));
     $xtpl->table_add_category(_('State'));
     $xtpl->table_add_category(_('Route'));
@@ -2761,7 +3021,8 @@ function notifications_event_show($event_id)
     $deliveries = notifications_api_list_to_array($event->delivery->list());
 
     foreach ($deliveries as $delivery) {
-        $target = notifications_prop($delivery, 'target_label')
+        $target = notifications_prop($delivery, 'notification_target_display_target')
+            ?: notifications_prop($delivery, 'target_label')
             ?: notifications_prop($delivery, 'target_value')
             ?: notifications_prop($delivery, 'target_kind');
         $provider_message_id = notifications_prop($delivery, 'provider_message_id');
@@ -2821,7 +3082,8 @@ function notifications_delivery_show($event_id, $delivery_id)
 
     $event = $api->event->show($event_id, ['meta' => ['includes' => 'user,vps']]);
     $delivery = $event->delivery($delivery_id)->show();
-    $target = notifications_prop($delivery, 'target_label')
+    $target = notifications_prop($delivery, 'notification_target_display_target')
+        ?: notifications_prop($delivery, 'target_label')
         ?: notifications_prop($delivery, 'target_value')
         ?: notifications_prop($delivery, 'target_kind');
 
@@ -2862,7 +3124,7 @@ function notifications_delivery_show($event_id, $delivery_id)
     $xtpl->table_td(notifications_delivery_receiver_link($delivery, $event->user_id));
     $xtpl->table_tr();
 
-    $xtpl->table_td(_('Receiver action') . ':');
+    $xtpl->table_td(_('Notification target') . ':');
     $xtpl->table_td(notifications_delivery_receiver_action_link($delivery, $event->user_id));
     $xtpl->table_tr();
 

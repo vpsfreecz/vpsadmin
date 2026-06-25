@@ -108,18 +108,20 @@ class RemoveUsersMailerEnabled < ActiveRecord::Migration[8.1]
 
   def ensure_default_email_actions
     return unless table_exists?(:notification_receivers)
-    return unless table_exists?(:notification_receiver_actions)
+    return unless table_exists?(:notification_targets)
+    return unless table_exists?(:notification_receiver_targets)
 
     execute <<~SQL.squish
-      INSERT INTO notification_receiver_actions
-        (notification_receiver_id, action, label, target_kind, target_value,
+      INSERT INTO notification_targets
+        (user_id, action, label, target_kind, target_value, identity_key,
          enabled, created_at, updated_at)
       SELECT
-        notification_receivers.id,
+        notification_receivers.user_id,
         'email',
         #{quote(DEFAULT_EMAIL_LABEL)},
         0,
         NULL,
+        'default',
         1,
         CURRENT_TIMESTAMP,
         CURRENT_TIMESTAMP
@@ -132,11 +134,40 @@ class RemoveUsersMailerEnabled < ActiveRecord::Migration[8.1]
         )
         AND NOT EXISTS (
           SELECT 1
-          FROM notification_receiver_actions
-          WHERE notification_receiver_actions.notification_receiver_id =
+          FROM notification_targets
+          WHERE notification_targets.user_id = notification_receivers.user_id
+            AND notification_targets.action = 'email'
+            AND notification_targets.identity_key = 'default'
+        )
+    SQL
+
+    execute <<~SQL.squish
+      INSERT INTO notification_receiver_targets
+        (notification_receiver_id, notification_target_id, position, created_at, updated_at)
+      SELECT
+        notification_receivers.id,
+        notification_targets.id,
+        1,
+        CURRENT_TIMESTAMP,
+        CURRENT_TIMESTAMP
+      FROM notification_receivers
+      INNER JOIN notification_targets
+        ON notification_targets.user_id = notification_receivers.user_id
+       AND notification_targets.action = 'email'
+       AND notification_targets.identity_key = 'default'
+      WHERE notification_receivers.mute = 0
+        AND notification_receivers.label = #{quote(DEFAULT_EMAIL_LABEL)}
+        AND notification_receivers.description IN (
+          #{quote(DEFAULT_EMAIL_DESCRIPTION)},
+          #{quote(LEGACY_DEFAULT_EMAIL_DESCRIPTION)}
+        )
+        AND NOT EXISTS (
+          SELECT 1
+          FROM notification_receiver_targets
+          WHERE notification_receiver_targets.notification_receiver_id =
                 notification_receivers.id
-            AND notification_receiver_actions.action = 'email'
-            AND notification_receiver_actions.target_kind = 0
+            AND notification_receiver_targets.notification_target_id =
+                notification_targets.id
         )
     SQL
   end
