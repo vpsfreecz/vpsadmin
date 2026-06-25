@@ -365,9 +365,11 @@ covered:
 - notification_receiver.target#update
 - notification_target#create
 - notification_target#create_pairing_token
+- notification_target#confirm_email_verification
 - notification_target#confirm_sms_verification_code
 - notification_target#delete
 - notification_target#index
+- notification_target#send_email_verification
 - notification_target#send_sms_verification_code
 - notification_target#show
 - notification_target#update
