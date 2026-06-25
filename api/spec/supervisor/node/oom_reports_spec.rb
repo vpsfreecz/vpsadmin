@@ -158,12 +158,12 @@ RSpec.describe VpsAdmin::Supervisor::Node::OomReports do
         user: vps.user,
         label: 'Broken OOM receiver'
       )
-      receiver.notification_receiver_actions.create!(
+      action = receiver.notification_receiver_actions.create!(
         action: :email,
         target_kind: :custom,
-        target_value: 'audit@example.test',
-        enabled: false
+        target_value: 'audit@example.test'
       )
+      action.notification_target.update!(enabled: false)
       route = EventRoute.create!(
         user: vps.user,
         notification_receiver: receiver,
