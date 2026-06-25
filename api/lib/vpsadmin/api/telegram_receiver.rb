@@ -167,41 +167,41 @@ module VpsAdmin::API
         return :rejected
       end
 
-      action = ::NotificationReceiverAction.find_by(
+      target = ::NotificationTarget.find_by(
         action: 'telegram',
         verification_token: token
       )
-      unless action
+      unless target
         reply_to_pairing_message(message, invalid_token_message)
         return :rejected
       end
 
-      pair_action(action, token, message)
+      pair_target(target, token, message)
     end
 
-    def pair_action(action, token, message)
+    def pair_target(target, token, message)
       chat = message['chat']
       chat_id = chat && chat['id']
       return :ignored if chat_id.nil?
 
-      state, reply = action.with_lock do
-        next :ignored unless action.telegram_action? && action.verification_token == token
+      state, reply = target.with_lock do
+        next :ignored unless target.telegram_action? && target.verification_token == token
 
-        if action.verification_token_expired?
-          action.generate_verification_token!(
+        if target.verification_token_expired?
+          target.generate_verification_token!(
             last_error: 'Telegram pairing token expired; use the new command shown below'
           )
           next [:rejected, expired_token_message]
         end
 
         unless chat['type'] == 'private'
-          action.generate_verification_token!(
+          target.generate_verification_token!(
             last_error: 'Telegram pairing must be sent from a private chat'
           )
           next [:rejected, private_chat_required_message]
         end
 
-        action.pair_telegram_chat!(chat_id)
+        target.pair_telegram_chat!(chat_id)
         [:paired, pairing_succeeded_message]
       end
 

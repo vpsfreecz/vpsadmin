@@ -15,6 +15,7 @@ RSpec.describe VpsAdmin::API::Tasks::Telegram do
       .joins(:notification_receiver)
       .where(notification_receivers: { user_id: SpecSeed.user.id })
       .delete_all
+    NotificationTarget.where(user: SpecSeed.user).delete_all
     NotificationReceiver.where(user: SpecSeed.user).delete_all
     SysConfig.where(category: 'notifications', name: 'telegram_update_offset').delete_all
   end
@@ -113,6 +114,41 @@ RSpec.describe VpsAdmin::API::Tasks::Telegram do
     expect(action.verification_token).to be_nil
     expect(action.last_error).to be_nil
     expect(SysConfig.get('notifications', 'telegram_update_offset')).to eq(43)
+  end
+
+  it 'verifies an existing duplicate Telegram target when pairing succeeds' do
+    allow(VpsAdmin::API::Notifications).to receive(:telegram_configured?).and_return(true)
+
+    existing = NotificationTarget.create!(
+      user: SpecSeed.user,
+      action: 'telegram',
+      label: 'Existing Telegram',
+      target_kind: 'custom',
+      target_value: '987654',
+      verification_token: 'old-token'
+    )
+    action = create_telegram_action!
+    receiver = action.notification_receiver
+    pending_target_id = action.notification_target_id
+    stub_telegram_updates(
+      body: {
+        ok: true,
+        result: [
+          update(update_id: 42, text: '/start pair-token', chat_id: 987_654)
+        ]
+      }
+    )
+
+    stats = with_env('VPSADMIN_TELEGRAM_BOT_TOKEN' => '123:telegram-token') do
+      task.poll_pairing_updates
+    end
+
+    expect(stats).to eq(paired: 1, rejected: 0, ignored: 0)
+    expect(existing.reload).to be_verified
+    expect(existing.target_value).to eq('987654')
+    expect(existing.verification_token).to be_nil
+    expect(receiver.notification_receiver_targets.reload.sole.notification_target).to eq(existing)
+    expect(NotificationTarget.exists?(pending_target_id)).to be(false)
   end
 
   it 'replies with pairing instructions when /start has no token' do
@@ -284,9 +320,11 @@ RSpec.describe VpsAdmin::API::Tasks::Telegram do
   it 'rejects expired pairing tokens and rotates them' do
     action = create_telegram_action!
     original_token = action.verification_token
-    action.update_column(
-      :updated_at,
-      Time.now - NotificationReceiverAction::VERIFICATION_TOKEN_TTL - 60
+    action.notification_target.update!(
+      config: (action.config || {}).merge(
+        NotificationReceiverAction::PAIRING_TOKEN_CREATED_AT_KEY =>
+          (Time.now - NotificationReceiverAction::VERIFICATION_TOKEN_TTL - 60).iso8601
+      )
     )
     requests = stub_telegram_updates(
       body: {

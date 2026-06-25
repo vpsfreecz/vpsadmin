@@ -149,42 +149,29 @@ module VpsAdmin::API::Resources
       end
     end
 
-    class Action < HaveAPI::Resource
-      model ::NotificationReceiverAction
-      route '{notification_receiver_id}/action'
-      desc 'Manage notification receiver actions'
-
-      module DeliveryMethodControls
-        protected
-
-        def enable_delivery_method_for_admin!(user, delivery_method)
-          delivery_method = ::UserNotificationDeliveryMethod.normalize_delivery_method(delivery_method)
-          return unless current_user.role == :admin
-          return unless ::UserNotificationDeliveryMethod.known_delivery_method?(delivery_method)
-          return if user.notification_delivery_method_enabled?(delivery_method)
-
-          user.set_notification_delivery_method!(delivery_method, true)
-        end
-      end
+    class Target < HaveAPI::Resource
+      model ::NotificationReceiverTarget
+      route '{notification_receiver_id}/target'
+      desc 'Manage notification receiver target links'
 
       params(:common) do
+        integer :notification_target_id
         string :action,
-               choices: { values: ::NotificationReceiverAction.action_labels },
+               choices: { values: ::NotificationTarget.action_labels },
                load_validators: false
         string :label, nullable: true
         string :target_kind,
-               choices: { values: ::NotificationReceiverAction.target_kind_labels },
+               choices: { values: ::NotificationTarget.target_kind_labels },
                load_validators: false
         text :target_value, nullable: true
-        bool :enabled
+        bool :target_enabled
         bool :delivery_method_enabled
         datetime :verified_at, nullable: true
         bool :verified
-        string :verification_token, nullable: true
-        text :config_json, label: 'Configuration'
         bool :secret_present
         text :last_error, nullable: true
         string :display_target
+        string :telegram_bot_name, nullable: true
         string :telegram_bot_url, nullable: true
         string :telegram_pairing_url, nullable: true
         string :telegram_pairing_command, nullable: true
@@ -193,12 +180,13 @@ module VpsAdmin::API::Resources
       params(:all) do
         id :id
         use :common
+        integer :position
         datetime :created_at
         datetime :updated_at
       end
 
       class Index < HaveAPI::Actions::Default::Index
-        desc 'List notification receiver actions'
+        desc 'List notification receiver target links'
 
         output(:object_list) do
           use :all
@@ -211,9 +199,10 @@ module VpsAdmin::API::Resources
         end
 
         def query
-          self.class.model.joins(:notification_receiver).where(
-            with_restricted(notification_receiver_id: path_params['notification_receiver_id'])
-          )
+          self.class.model
+              .joins(:notification_receiver)
+              .includes(:notification_target)
+              .where(with_restricted(notification_receiver_id: path_params['notification_receiver_id']))
         end
 
         def count
@@ -221,12 +210,12 @@ module VpsAdmin::API::Resources
         end
 
         def exec
-          with_pagination(query.order(:id))
+          with_pagination(query.order(:position, :id))
         end
       end
 
       class Show < HaveAPI::Actions::Default::Show
-        desc 'Show notification receiver action'
+        desc 'Show notification receiver target link'
 
         output do
           use :all
@@ -242,27 +231,18 @@ module VpsAdmin::API::Resources
           self.class.model.joins(:notification_receiver).find_by!(
             with_restricted(
               notification_receiver_id: path_params['notification_receiver_id'],
-              id: path_params['action_id']
+              id: path_params['target_id']
             )
           )
         end
       end
 
       class Create < HaveAPI::Actions::Default::Create
-        include DeliveryMethodControls
-
-        desc 'Create notification receiver action'
+        desc 'Link notification target to receiver'
 
         input do
-          use :common, include: %i[
-            action
-            label
-            target_kind
-            target_value
-            enabled
-          ]
-          text :secret, nullable: true
-          %i[action].each { |v| patch v, required: true }
+          integer :notification_target_id, required: true
+          integer :position, nullable: true
         end
 
         output do
@@ -279,49 +259,22 @@ module VpsAdmin::API::Resources
           receiver = ::NotificationReceiver.find_by!(
             with_restricted(id: path_params['notification_receiver_id'])
           )
-          action = nil
+          target = ::NotificationTarget.find_by!(user_id: receiver.user_id, id: input[:notification_target_id])
 
-          ::NotificationReceiverAction.transaction do
-            action = receiver.notification_receiver_actions.new(
-              action: input[:action],
-              label: input[:label],
-              target_kind: input[:target_kind] || default_target_kind,
-              target_value: input[:target_value],
-              enabled: input.has_key?(:enabled) ? input[:enabled] : true,
-              secret: input[:secret]
-            )
-            action.skip_delivery_method_enabled_validation = current_user.role == :admin
-            action.save!
-
-            action.generate_verification_token! if action.telegram_action?
-            action.generate_sms_verification_code! if action.sms_action?
-            enable_delivery_method_for_admin!(receiver.user, action.action)
-          end
-
-          action
+          receiver.notification_receiver_targets.create!(
+            notification_target: target,
+            position: input[:position] || ::NotificationReceiver.next_receiver_target_position(receiver)
+          )
         rescue ActiveRecord::RecordInvalid => e
           error!('create failed', e.record.errors.to_hash)
-        end
-
-        def default_target_kind
-          input[:action] == 'email' ? 'default_recipient' : 'custom'
         end
       end
 
       class Update < HaveAPI::Actions::Default::Update
-        include DeliveryMethodControls
-
-        desc 'Update notification receiver action'
+        desc 'Update notification receiver target link'
 
         input do
-          use :common, include: %i[
-            action
-            label
-            target_kind
-            target_value
-            enabled
-          ]
-          text :secret, nullable: true
+          integer :position, nullable: true
         end
 
         output do
@@ -335,33 +288,24 @@ module VpsAdmin::API::Resources
         end
 
         def exec
-          action = self.class.model.joins(:notification_receiver).find_by!(
+          link = self.class.model.joins(:notification_receiver).find_by!(
             with_restricted(
               notification_receiver_id: path_params['notification_receiver_id'],
-              id: path_params['action_id']
+              id: path_params['target_id']
             )
           )
 
           attrs = {}
-          %i[action label target_kind target_value enabled].each do |v|
-            attrs[v] = input[v] if input.has_key?(v)
-          end
-          attrs[:secret] = input[:secret] if input.has_key?(:secret) && !input[:secret].nil?
-
-          ::NotificationReceiverAction.transaction do
-            action.skip_delivery_method_enabled_validation = current_user.role == :admin
-            action.update!(attrs)
-            enable_delivery_method_for_admin!(action.notification_receiver.user, action.action)
-          end
-
-          action
+          attrs[:position] = input[:position] if input.has_key?(:position)
+          link.update!(attrs)
+          link
         rescue ActiveRecord::RecordInvalid => e
           error!('update failed', e.record.errors.to_hash)
         end
       end
 
       class Delete < HaveAPI::Actions::Default::Delete
-        desc 'Delete notification receiver action'
+        desc 'Unlink notification target from receiver'
 
         authorize do |u|
           allow if u.role == :admin
@@ -370,119 +314,14 @@ module VpsAdmin::API::Resources
         end
 
         def exec
-          action = self.class.model.joins(:notification_receiver).find_by!(
+          link = self.class.model.joins(:notification_receiver).find_by!(
             with_restricted(
               notification_receiver_id: path_params['notification_receiver_id'],
-              id: path_params['action_id']
+              id: path_params['target_id']
             )
           )
-          action.destroy!
+          link.destroy!
           ok!
-        end
-      end
-
-      class CreatePairingToken < HaveAPI::Action
-        desc 'Create Telegram pairing token'
-        route '{action_id}/create_pairing_token'
-        http_method :post
-
-        output do
-          use :all
-        end
-
-        authorize do |u|
-          allow if u.role == :admin
-          restrict notification_receivers: { user_id: u.id }
-          allow
-        end
-
-        def exec
-          action = ::NotificationReceiverAction.joins(:notification_receiver).find_by!(
-            with_restricted(
-              notification_receiver_id: path_params['notification_receiver_id'],
-              id: path_params['action_id']
-            )
-          )
-          error!('receiver action is not Telegram') unless action.telegram_action?
-          error!('Telegram delivery is not configured') unless action.action_available?
-
-          action.generate_verification_token!
-          action
-        rescue ActiveRecord::RecordInvalid => e
-          error!('update failed', e.record.errors.to_hash)
-        end
-      end
-
-      class SendSmsVerificationCode < HaveAPI::Action
-        desc 'Send SMS verification code'
-        route '{action_id}/send_sms_verification_code'
-        http_method :post
-
-        output do
-          use :all
-        end
-
-        authorize do |u|
-          allow if u.role == :admin
-          restrict notification_receivers: { user_id: u.id }
-          allow
-        end
-
-        def exec
-          action = ::NotificationReceiverAction.joins(:notification_receiver).find_by!(
-            with_restricted(
-              notification_receiver_id: path_params['notification_receiver_id'],
-              id: path_params['action_id']
-            )
-          )
-          error!('receiver action is not SMS') unless action.sms_action?
-          error!('SMS delivery is not configured') unless action.action_available?
-          error!('SMS delivery method is not enabled for this user') unless action.delivery_method_enabled?
-          error!('SMS verification code was sent recently') unless action.sms_verification_send_available?
-
-          action.ensure_sms_verification_code!
-          VpsAdmin::API::Notifications.send_sms_verification_code!(action)
-          action.reload
-        rescue VpsAdmin::API::Notifications::SmsGatewayResponseError => e
-          action&.update(last_error: e.message)
-          error!(e.message)
-        rescue ActiveRecord::RecordInvalid => e
-          error!('update failed', e.record.errors.to_hash)
-        end
-      end
-
-      class ConfirmSmsVerificationCode < HaveAPI::Action
-        desc 'Confirm SMS verification code'
-        route '{action_id}/confirm_sms_verification_code'
-        http_method :post
-
-        input do
-          string :code, required: true
-        end
-
-        output do
-          use :all
-        end
-
-        authorize do |u|
-          allow if u.role == :admin
-          restrict notification_receivers: { user_id: u.id }
-          allow
-        end
-
-        def exec
-          action = ::NotificationReceiverAction.joins(:notification_receiver).find_by!(
-            with_restricted(
-              notification_receiver_id: path_params['notification_receiver_id'],
-              id: path_params['action_id']
-            )
-          )
-          error!('receiver action is not SMS') unless action.sms_action?
-          error!('SMS verification code is invalid or expired') unless action.confirm_sms_verification_code!(input[:code])
-
-          action
-        rescue ActiveRecord::RecordInvalid => e
-          error!('update failed', e.record.errors.to_hash)
         end
       end
     end
