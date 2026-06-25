@@ -1062,6 +1062,10 @@ module VpsAdmin::API
       end
 
       def email_delivery(route, receiver, receiver_action)
+        if receiver_action.email_verification_required? && !receiver_action.verified?
+          return skipped_delivery(route, receiver, receiver_action, 'e-mail target is not verified')
+        end
+
         if receiver_action.default_recipient_target_kind?
           if event.user.nil?
             return skipped_delivery(route, receiver, receiver_action, 'event has no user')

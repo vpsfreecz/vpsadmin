@@ -6,6 +6,9 @@ class NotificationReceiverTarget < ApplicationRecord
   MAX_TARGETS_PER_RECEIVER = 20
   MAIL_TARGET_VALUE_LIMIT = NotificationTarget::MAIL_TARGET_VALUE_LIMIT
   VERIFICATION_TOKEN_TTL = NotificationTarget::VERIFICATION_TOKEN_TTL
+  EMAIL_VERIFICATION_TOKEN_CREATED_AT_KEY = NotificationTarget::EMAIL_VERIFICATION_TOKEN_CREATED_AT_KEY
+  EMAIL_VERIFICATION_SENT_AT_KEY = NotificationTarget::EMAIL_VERIFICATION_SENT_AT_KEY
+  EMAIL_VERIFICATION_SEND_COOLDOWN = NotificationTarget::EMAIL_VERIFICATION_SEND_COOLDOWN
   PAIRING_TOKEN_CREATED_AT_KEY = NotificationTarget::PAIRING_TOKEN_CREATED_AT_KEY
   SMS_VERIFICATION_CODE_CREATED_AT_KEY = NotificationTarget::SMS_VERIFICATION_CODE_CREATED_AT_KEY
   SMS_VERIFICATION_SENT_AT_KEY = NotificationTarget::SMS_VERIFICATION_SENT_AT_KEY
@@ -56,6 +59,7 @@ class NotificationReceiverTarget < ApplicationRecord
            :delivery_method_enabled?,
            :display_target,
            :email_action?,
+           :email_verification_required?,
            :custom_target_kind?,
            :default_recipient_target_kind?,
            :identity_key,
@@ -115,6 +119,10 @@ class NotificationReceiverTarget < ApplicationRecord
     notification_target.generate_verification_token!(...)
   end
 
+  def generate_email_verification_token!(...)
+    notification_target.generate_email_verification_token!(...)
+  end
+
   def generate_sms_verification_code!(...)
     notification_target.generate_sms_verification_code!(...)
   end
@@ -123,12 +131,32 @@ class NotificationReceiverTarget < ApplicationRecord
     notification_target.ensure_sms_verification_code!(...)
   end
 
+  def ensure_email_verification_token!(...)
+    notification_target.ensure_email_verification_token!(...)
+  end
+
+  def email_verification_send_available?(...)
+    notification_target.email_verification_send_available?(...)
+  end
+
   def confirm_sms_verification_code!(...)
     notification_target.confirm_sms_verification_code!(...)
   end
 
+  def confirm_email_verification_token!(...)
+    notification_target.confirm_email_verification_token!(...)
+  end
+
   def pair_telegram_chat!(...)
     notification_target.pair_telegram_chat!(...)
+  end
+
+  def mark_verified!(...)
+    notification_target.mark_verified!(...)
+  end
+
+  def mark_email_verification_sent!(...)
+    notification_target.mark_email_verification_sent!(...)
   end
 
   def mark_sms_verification_sent!(...)

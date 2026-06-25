@@ -293,6 +293,7 @@ DEPENDENCIES
   fio_api!
   haveapi (~> 0.29.2)
   ipaddress (~> 0.8.3)
+  mail (~> 2.9)
   mysql2 (~> 0.5.6)
   paper_trail (~> 17.0.0)
   prometheus-client (~> 4.2.3)

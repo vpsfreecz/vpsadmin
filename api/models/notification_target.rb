@@ -1,5 +1,6 @@
 require 'active_support/security_utils'
 require 'digest'
+require 'mail'
 require 'securerandom'
 require 'time'
 require 'uri'
@@ -8,6 +9,9 @@ class NotificationTarget < ApplicationRecord
   MAX_TARGETS_PER_USER = 100
   MAIL_TARGET_VALUE_LIMIT = 500
   VERIFICATION_TOKEN_TTL = 24 * 60 * 60
+  EMAIL_VERIFICATION_TOKEN_CREATED_AT_KEY = 'email_verification_token_created_at'.freeze
+  EMAIL_VERIFICATION_SENT_AT_KEY = 'email_verification_sent_at'.freeze
+  EMAIL_VERIFICATION_SEND_COOLDOWN = 60
   PAIRING_TOKEN_CREATED_AT_KEY = 'telegram_pairing_token_created_at'.freeze
   SMS_VERIFICATION_CODE_CREATED_AT_KEY = 'sms_verification_code_created_at'.freeze
   SMS_VERIFICATION_SENT_AT_KEY = 'sms_verification_sent_at'.freeze
@@ -87,7 +91,25 @@ class NotificationTarget < ApplicationRecord
   end
 
   def self.normalize_email_target(value)
+    addresses = parsed_email_target_addresses(value)
+    if addresses&.one? && valid_email_target_address?(addresses.first)
+      return addresses.first.address
+    end
+
     value.to_s.gsub(/\s/, '').presence
+  end
+
+  def self.parsed_email_target_addresses(value)
+    raw = value.to_s.strip
+    return [] if raw.blank?
+
+    Mail::AddressList.new(raw).addresses
+  rescue Mail::Field::FieldError, ArgumentError
+    nil
+  end
+
+  def self.valid_email_target_address?(address)
+    address.address.present? && address.local.present? && address.domain.present?
   end
 
   def self.normalize_sms_target(value)
@@ -120,6 +142,14 @@ class NotificationTarget < ApplicationRecord
     return false unless delivery_method_enabled?
 
     VpsAdmin::API::Notifications::Actions.known?(action)
+  end
+
+  def email_verification_required?
+    email_action? && custom_target_kind?
+  end
+
+  def admin_verification_skippable?
+    email_verification_required? || sms_action?
   end
 
   def action_available?
@@ -157,6 +187,15 @@ class NotificationTarget < ApplicationRecord
     )
   end
 
+  def generate_email_verification_token!(last_error: nil)
+    update!(
+      verification_token: SecureRandom.urlsafe_base64(24),
+      verified_at: nil,
+      last_error:,
+      config: email_config_with_token_timestamp
+    )
+  end
+
   def generate_sms_verification_code!
     update!(
       verification_token: sms_verification_code,
@@ -170,6 +209,29 @@ class NotificationTarget < ApplicationRecord
     return if raw_verification_token.present? && !verification_token_expired?
 
     generate_sms_verification_code!
+  end
+
+  def ensure_email_verification_token!
+    return if raw_verification_token.present? && !verification_token_expired?
+
+    generate_email_verification_token!
+  end
+
+  def confirm_email_verification_token!(token)
+    return false unless email_verification_required?
+    return false if raw_verification_token.blank? || verification_token_expired?
+
+    submitted = token.to_s.strip
+    return false if submitted.bytesize != raw_verification_token.bytesize
+    return false unless ActiveSupport::SecurityUtils.secure_compare(submitted, raw_verification_token)
+
+    update!(
+      verification_token: nil,
+      verified_at: Time.now,
+      last_error: nil,
+      config: email_config_without_verification_state
+    )
+    true
   end
 
   def confirm_sms_verification_code!(code)
@@ -247,6 +309,25 @@ class NotificationTarget < ApplicationRecord
     end
   end
 
+  def mark_verified!
+    cfg = if sms_action?
+            sms_config_without_verification_state
+          elsif email_verification_required?
+            email_config_without_verification_state
+          elsif telegram_action?
+            telegram_config_without_pairing_token_timestamp
+          else
+            config || {}
+          end
+
+    update!(
+      verification_token: nil,
+      verified_at: Time.now,
+      last_error: nil,
+      config: cfg
+    )
+  end
+
   def display_target
     action_definition.display_target_for(self)
   rescue KeyError
@@ -282,7 +363,7 @@ class NotificationTarget < ApplicationRecord
   end
 
   def verification_token
-    return if sms_action?
+    return if sms_action? || email_action?
 
     raw_verification_token
   end
@@ -317,6 +398,20 @@ class NotificationTarget < ApplicationRecord
     sent_at.nil? || sent_at <= now - SMS_VERIFICATION_SEND_COOLDOWN
   end
 
+  def email_verification_sent_at
+    value = (config || {})[EMAIL_VERIFICATION_SENT_AT_KEY]
+    return if value.blank?
+
+    Time.iso8601(value)
+  rescue ArgumentError
+    nil
+  end
+
+  def email_verification_send_available?(now = Time.now)
+    sent_at = email_verification_sent_at
+    sent_at.nil? || sent_at <= now - EMAIL_VERIFICATION_SEND_COOLDOWN
+  end
+
   def sms_verification_locked?(now = Time.now)
     locked_until = sms_verification_locked_until
     locked_until.present? && locked_until > now
@@ -325,6 +420,13 @@ class NotificationTarget < ApplicationRecord
   def mark_sms_verification_sent!
     update!(
       config: (config || {}).merge(SMS_VERIFICATION_SENT_AT_KEY => Time.now.iso8601),
+      last_error: nil
+    )
+  end
+
+  def mark_email_verification_sent!
+    update!(
+      config: (config || {}).merge(EMAIL_VERIFICATION_SENT_AT_KEY => Time.now.iso8601),
       last_error: nil
     )
   end
@@ -394,11 +496,20 @@ class NotificationTarget < ApplicationRecord
       return
     end
 
-    target_value.split(',').each do |mail|
-      next if mail.strip.include?('@')
-
-      errors.add(:target_value, "'#{mail}' is not a valid e-mail address")
+    addresses = self.class.parsed_email_target_addresses(target_value)
+    if addresses.nil? || addresses.empty?
+      errors.add(:target_value, "'#{target_value}' is not a valid e-mail address")
+      return
     end
+
+    unless addresses.one?
+      errors.add(:target_value, 'must contain one e-mail address')
+      return
+    end
+
+    return if self.class.valid_email_target_address?(addresses.first)
+
+    errors.add(:target_value, "'#{target_value}' is not a valid e-mail address")
   end
 
   def check_telegram_target
@@ -453,19 +564,21 @@ class NotificationTarget < ApplicationRecord
     return if @telegram_pairing_update
     return unless persisted?
 
-    if will_save_change_to_action? && !telegram_action? && !sms_action?
-      self.verification_token = nil
-      self.verified_at = nil
-      return
-    end
-
-    return unless telegram_action? || sms_action?
     return unless will_save_change_to_action? ||
                   will_save_change_to_target_kind? ||
                   will_save_change_to_target_value?
 
     self.verified_at = nil
-    telegram_action? ? ensure_telegram_verification_token : ensure_sms_verification_code(regenerate: true)
+    if telegram_action?
+      ensure_telegram_verification_token
+    elsif sms_action?
+      ensure_sms_verification_code(regenerate: true)
+    elsif email_verification_required?
+      ensure_email_verification_token(regenerate: true)
+    else
+      self.verification_token = nil
+      self.config = config_without_verification_state
+    end
   end
 
   def set_identity_key
@@ -486,6 +599,13 @@ class NotificationTarget < ApplicationRecord
       self.verification_token = sms_verification_code
     end
     self.config = sms_config_with_code_timestamp
+  end
+
+  def ensure_email_verification_token(regenerate: false)
+    if regenerate || raw_verification_token.blank? || verification_token_expired?
+      self.verification_token = SecureRandom.urlsafe_base64(24)
+    end
+    self.config = email_config_with_token_timestamp
   end
 
   def sms_verification_code
@@ -515,9 +635,30 @@ class NotificationTarget < ApplicationRecord
     )
   end
 
+  def email_config_with_token_timestamp
+    config_without_verification_state.merge(EMAIL_VERIFICATION_TOKEN_CREATED_AT_KEY => Time.now.iso8601)
+  end
+
+  def email_config_without_verification_state
+    (config || {}).except(EMAIL_VERIFICATION_TOKEN_CREATED_AT_KEY, EMAIL_VERIFICATION_SENT_AT_KEY)
+  end
+
+  def config_without_verification_state
+    email_config_without_verification_state
+      .except(PAIRING_TOKEN_CREATED_AT_KEY)
+      .except(
+        SMS_VERIFICATION_CODE_CREATED_AT_KEY,
+        SMS_VERIFICATION_SENT_AT_KEY,
+        SMS_VERIFICATION_FAILED_ATTEMPTS_KEY,
+        SMS_VERIFICATION_LOCKED_UNTIL_KEY
+      )
+  end
+
   def verification_token_created_at
     value = if sms_action?
               (config || {})[SMS_VERIFICATION_CODE_CREATED_AT_KEY]
+            elsif email_verification_required?
+              (config || {})[EMAIL_VERIFICATION_TOKEN_CREATED_AT_KEY]
             else
               (config || {})[PAIRING_TOKEN_CREATED_AT_KEY]
             end
