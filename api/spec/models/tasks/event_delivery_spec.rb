@@ -1083,9 +1083,9 @@ RSpec.describe VpsAdmin::API::Tasks::EventDelivery do
     expect(delivery.error_summary).to include('receiver')
   end
 
-  it 'does not queue e-mail deliveries for disabled actions' do
+  it 'does not queue e-mail deliveries for disabled targets' do
     delivery, action = create_email_delivery!
-    action.update!(enabled: false)
+    action.notification_target.update!(enabled: false)
 
     expect do
       task.deliver_emails
