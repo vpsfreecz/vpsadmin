@@ -27,9 +27,12 @@ module VpsAdmin::API::Resources
       integer :event_route_id, nullable: true
       integer :notification_receiver_id, nullable: true
       string :notification_receiver_label, nullable: true
-      integer :notification_receiver_action_id, nullable: true
-      string :notification_receiver_action_label, nullable: true
-      string :notification_receiver_action_display_target, nullable: true
+      integer :notification_target_id, nullable: true
+      string :notification_target_label, nullable: true
+      string :notification_target_display_target, nullable: true
+      integer :notification_receiver_target_id, nullable: true
+      string :notification_receiver_action_label, label: 'Receiver target label', nullable: true
+      string :notification_receiver_action_display_target, label: 'Receiver target display target', nullable: true
       string :action,
              choices: { values: ::EventDelivery.action_labels },
              load_validators: false
@@ -79,7 +82,8 @@ module VpsAdmin::API::Resources
                nullable: true
         integer :event_route_id, nullable: true
         integer :notification_receiver_id, nullable: true
-        integer :notification_receiver_action_id, nullable: true
+        integer :notification_target_id, nullable: true
+        integer :notification_receiver_target_id, nullable: true
         patch :limit, default: 25, fill: true
       end
 
@@ -98,7 +102,8 @@ module VpsAdmin::API::Resources
                   { event: %i[user vps] },
                   :event_route,
                   :notification_receiver,
-                  :notification_receiver_action
+                  :notification_target,
+                  :notification_receiver_target
                 )
 
         if input[:user]
@@ -111,8 +116,11 @@ module VpsAdmin::API::Resources
         if input[:notification_receiver_id].present?
           q = q.where(notification_receiver_id: input[:notification_receiver_id])
         end
-        if input[:notification_receiver_action_id].present?
-          q = q.where(notification_receiver_action_id: input[:notification_receiver_action_id])
+        if input[:notification_target_id].present?
+          q = q.where(notification_target_id: input[:notification_target_id])
+        end
+        if input[:notification_receiver_target_id].present?
+          q = q.where(notification_receiver_target_id: input[:notification_receiver_target_id])
         end
 
         states = states_filter

@@ -41,7 +41,8 @@ module VpsAdmin::API::Resources
                choices: { values: ::EventDelivery.action_labels },
                load_validators: false
         integer :notification_receiver_id, nullable: true
-        integer :notification_receiver_action_id, nullable: true
+        integer :notification_target_id, nullable: true
+        integer :notification_receiver_target_id, nullable: true
       end
 
       output(:object_list) do
@@ -66,8 +67,11 @@ module VpsAdmin::API::Resources
         if input[:notification_receiver_id].present?
           delivery_filters[:notification_receiver_id] = input[:notification_receiver_id]
         end
-        if input[:notification_receiver_action_id].present?
-          delivery_filters[:notification_receiver_action_id] = input[:notification_receiver_action_id]
+        if input[:notification_target_id].present?
+          delivery_filters[:notification_target_id] = input[:notification_target_id]
+        end
+        if input[:notification_receiver_target_id].present?
+          delivery_filters[:notification_receiver_target_id] = input[:notification_receiver_target_id]
         end
 
         if delivery_filters.any?
@@ -189,9 +193,14 @@ module VpsAdmin::API::Resources
         integer :event_route_id, nullable: true
         integer :notification_receiver_id, nullable: true
         string :notification_receiver_label, nullable: true
-        integer :notification_receiver_action_id, nullable: true
-        string :notification_receiver_action_label, nullable: true
-        string :notification_receiver_action_display_target, nullable: true
+        integer :notification_target_id, nullable: true
+        string :notification_target_label, nullable: true
+        string :notification_target_display_target, nullable: true
+        integer :notification_receiver_target_id, nullable: true
+        string :notification_receiver_action_label, label: 'Receiver target label', nullable: true
+        string :notification_receiver_action_display_target,
+               label: 'Receiver target display target',
+               nullable: true
         string :action,
                choices: { values: ::EventDelivery.action_labels },
                load_validators: false

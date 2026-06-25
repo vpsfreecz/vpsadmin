@@ -18,7 +18,12 @@ class EventDelivery < ApplicationRecord
   belongs_to :event
   belongs_to :event_route, optional: true
   belongs_to :notification_receiver, optional: true
-  belongs_to :notification_receiver_action, optional: true
+  belongs_to :notification_target, optional: true
+  belongs_to :notification_receiver_target, optional: true
+  belongs_to :notification_receiver_action,
+             class_name: 'NotificationReceiverTarget',
+             foreign_key: :notification_receiver_target_id,
+             optional: true
   belongs_to :mail_log, optional: true
   belongs_to :delivery_transaction,
              class_name: 'Transaction',
@@ -76,11 +81,19 @@ class EventDelivery < ApplicationRecord
   end
 
   def notification_receiver_action_label
-    notification_receiver_action&.label
+    notification_target&.label || notification_receiver_action&.label
   end
 
   def notification_receiver_action_display_target
-    notification_receiver_action&.display_target
+    notification_target&.display_target || notification_receiver_action&.display_target
+  end
+
+  def notification_target_label
+    notification_target&.label
+  end
+
+  def notification_target_display_target
+    notification_target&.display_target
   end
 
   def event_user_id
@@ -158,10 +171,18 @@ class EventDelivery < ApplicationRecord
   end
 
   def receiver_action_available?
-    action = notification_receiver_action
-    return true if action.nil? && direct_email_delivery?
+    if notification_receiver_id.present? || notification_receiver_target_id.present?
+      return false unless notification_receiver
 
-    action_definition.receiver_action_available?(action)
+      target = notification_receiver_action || notification_receiver_target
+      return false unless target
+    else
+      target = notification_target
+    end
+
+    return true if target.nil? && direct_email_delivery?
+
+    action_definition.receiver_action_available?(target)
   rescue KeyError
     false
   end
@@ -169,7 +190,8 @@ class EventDelivery < ApplicationRecord
   def delivery_method_enabled?
     return true if direct_email_delivery?
 
-    user = notification_receiver_action&.notification_receiver&.user ||
+    user = notification_target&.user ||
+           notification_receiver_action&.notification_receiver&.user ||
            notification_receiver&.user ||
            event&.user
     return true unless user
@@ -185,6 +207,7 @@ class EventDelivery < ApplicationRecord
   def direct_email_delivery?
     return false unless email_action? &&
                         notification_receiver.nil? &&
+                        notification_target.nil? &&
                         notification_receiver_action.nil? &&
                         event&.user_id.nil?
 
