@@ -121,10 +121,42 @@ RSpec.describe NotificationReceiverAction do
     action = create_receiver!.notification_receiver_actions.create!(
       action: :email,
       target_kind: :custom,
-      target_value: " audit@example.test,\nops@example.test "
+      target_value: ' Audit Target <audit@example.test> '
     )
 
-    expect(action.target_value).to eq('audit@example.test,ops@example.test')
+    expect(action.target_value).to eq('audit@example.test')
+  end
+
+  it 'rejects custom e-mail targets with multiple addresses' do
+    [
+      'audit@example.test,ops@example.test',
+      'audit@example.test;ops@example.test',
+      'root,audit@example.test',
+      'root; audit@example.test',
+      'audit@example.test;root'
+    ].each do |target_value|
+      action = create_receiver!.notification_receiver_actions.build(
+        action: :email,
+        target_kind: :custom,
+        target_value:
+      )
+
+      expect(action).not_to be_valid
+      expect(action.errors[:target_value]).to include('must contain one e-mail address')
+    end
+  end
+
+  it 'rejects local-only custom e-mail targets' do
+    %w[bad root].each do |target_value|
+      action = create_receiver!.notification_receiver_actions.build(
+        action: :email,
+        target_kind: :custom,
+        target_value:
+      )
+
+      expect(action).not_to be_valid
+      expect(action.errors[:target_value]).to include("'#{target_value}' is not a valid e-mail address")
+    end
   end
 
   it 'uses compact identity keys for long custom e-mail targets' do
@@ -181,6 +213,37 @@ RSpec.describe NotificationReceiverAction do
     expect(action.errors[:target_value]).to include(
       "is too long (maximum is #{NotificationReceiverAction::MAIL_TARGET_VALUE_LIMIT} characters)"
     )
+  end
+
+  it 'verifies custom e-mail targets using hidden tokens' do
+    action = create_receiver!.notification_receiver_actions.create!(
+      action: :email,
+      target_kind: :custom,
+      target_value: 'audit@example.test'
+    )
+    action.generate_email_verification_token!
+    token = action[:verification_token]
+
+    expect(action.verification_token).to be_nil
+    expect(token).to be_present
+    expect(action.confirm_email_verification_token!('invalid')).to be(false)
+    expect(action.reload.confirm_email_verification_token!(token)).to be(true)
+    expect(action).to be_verified
+    expect(action[:verification_token]).to be_nil
+  end
+
+  it 'clears custom e-mail verification when the address is edited' do
+    action = create_receiver!.notification_receiver_actions.create!(
+      action: :email,
+      target_kind: :custom,
+      target_value: 'audit@example.test',
+      verified_at: Time.now
+    )
+
+    action.update!(target_value: 'ops@example.test')
+
+    expect(action.reload).not_to be_verified
+    expect(action[:verification_token]).to be_present
   end
 
   it 'verifies SMS numbers using hidden short-lived codes' do

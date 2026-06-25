@@ -42,6 +42,14 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
     vpath("/notification_targets/#{id}/create_pairing_token")
   end
 
+  def notification_target_email_send_path(id)
+    vpath("/notification_targets/#{id}/send_email_verification")
+  end
+
+  def notification_target_email_confirm_path(id)
+    vpath("/notification_targets/#{id}/confirm_email_verification")
+  end
+
   def receiver_target_index_path(receiver_id)
     vpath("/notification_receivers/#{receiver_id}/target")
   end
@@ -219,7 +227,9 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
       json_post notification_target_index_path, notification_target: attrs
     end
     expect_status(200)
-    NotificationTarget.find(target_obj.fetch('id'))
+    obj = target_obj
+    expect(obj).to be_present, last_response.body
+    NotificationTarget.find(obj.fetch('id'))
   end
 
   def link_notification_target!(receiver, target, actor: SpecSeed.user)
@@ -270,6 +280,8 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
         'notification_target#index',
         'notification_target#show',
         'notification_target#create',
+        'notification_target#send_email_verification',
+        'notification_target#confirm_email_verification',
         'notification_target#create_pairing_token',
         'notification_target#send_sms_verification_code',
         'notification_target#confirm_sms_verification_code',
@@ -673,6 +685,109 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
 
     expect_status(200)
     expect(NotificationTarget.find(target.id)).to be_verified
+  end
+
+  it 'hides custom e-mail verification tokens and accepts verification links' do
+    allow(VpsAdmin::API::Events).to receive(:webui_url).and_return('https://webui.example.test')
+    allow(VpsAdmin::API::Notifications).to receive(:deliver_mail_log!).and_return({})
+
+    target = create_notification_target!(
+      {
+        action: 'email',
+        label: 'Spec e-mail',
+        target_kind: 'custom',
+        target_value: 'audit@example.test'
+      }
+    )
+    token = target[:verification_token]
+
+    expect(target).not_to be_verified
+    expect(token).to be_present
+
+    as(SpecSeed.user) { json_get notification_target_path(target.id) }
+    expect_status(200)
+    expect(target_obj['verification_token']).to be_nil
+
+    expect do
+      as(SpecSeed.user) { json_post notification_target_email_send_path(target.id), {} }
+    end.to change(MailLog, :count).by(1)
+
+    expect_status(200)
+    mail_log = MailLog.order(:id).last
+    expect(mail_log.to).to eq('audit@example.test')
+    expect(mail_log.text_plain).to include('https://webui.example.test/?')
+
+    expect(target.reload.email_verification_send_available?).to be(false)
+    expect do
+      as(SpecSeed.user) { json_post notification_target_email_send_path(target.id), {} }
+    end.not_to change(MailLog, :count)
+    expect(json['status']).to be(false)
+    expect(last_response.body).to include('e-mail verification link was sent recently')
+
+    as(SpecSeed.user) do
+      json_post notification_target_email_confirm_path(target.id), notification_target: {
+        token: 'invalid'
+      }
+    end
+    expect(json['status']).to be(false)
+    expect(target.reload).not_to be_verified
+
+    as(SpecSeed.user) do
+      json_post notification_target_email_confirm_path(target.id), notification_target: {
+        token:
+      }
+    end
+
+    expect_status(200)
+    expect(target.reload).to be_verified
+    expect(target[:verification_token]).to be_nil
+  end
+
+  it 'auto-verifies custom e-mail and SMS targets saved by admins' do
+    allow(VpsAdmin::API::Notifications).to receive(:sms_configured?).and_return(true)
+
+    email_target = create_notification_target!(
+      {
+        user: SpecSeed.user.id,
+        action: 'email',
+        label: 'Admin e-mail',
+        target_kind: 'custom',
+        target_value: 'admin-managed@example.test'
+      },
+      actor: SpecSeed.admin
+    )
+    sms_target = NotificationTarget.create!(
+      user: SpecSeed.user,
+      action: 'sms',
+      label: 'Admin SMS',
+      target_kind: 'custom',
+      target_value: '+420123456789'
+    )
+    sms_target.generate_sms_verification_code!
+
+    expect(email_target).to be_verified
+    expect(email_target[:verification_token]).to be_nil
+
+    email_target.update!(verified_at: nil, verification_token: 'stale-token')
+    as(SpecSeed.admin) do
+      json_put notification_target_path(email_target.id), notification_target: {
+        target_value: 'admin-managed-updated@example.test'
+      }
+    end
+
+    expect_status(200)
+    expect(email_target.reload).to be_verified
+    expect(email_target[:verification_token]).to be_nil
+
+    as(SpecSeed.admin) do
+      json_put notification_target_path(sms_target.id), notification_target: {
+        target_value: '+420123456780'
+      }
+    end
+
+    expect_status(200)
+    expect(sms_target.reload).to be_verified
+    expect(sms_target[:verification_token]).to be_nil
   end
 
   it 'rejects targets when the delivery method is disabled for the user' do

@@ -300,7 +300,10 @@ if (isLoggedIn()) {
                     }
 
                     notify_user(_('Target added'), '');
-                    if ($action_type === 'telegram' || $action_type === 'sms') {
+                    $show_target_detail = $action_type === 'telegram'
+                        || $action_type === 'sms'
+                        || ($action_type === 'email' && ($params['target_kind'] ?? null) === 'custom');
+                    if ($show_target_detail) {
                         redirect(notifications_target_url($target->id, $user_id, $receiver ? $receiver->id : null));
                     }
 
@@ -326,10 +329,14 @@ if (isLoggedIn()) {
                 try {
                     $target = $api->notification_target->show($_GET['id']);
                     $receiver = notifications_target_context_receiver($target, $receiver_id);
-                    $api->notification_target->update($target->id, notifications_target_params($target->action));
+                    $params = notifications_target_params($target->action);
+                    $api->notification_target->update($target->id, $params);
 
                     notify_user(_('Target updated'), '');
-                    if ($target->action === 'telegram' || $target->action === 'sms') {
+                    $show_target_detail = $target->action === 'telegram'
+                        || $target->action === 'sms'
+                        || ($target->action === 'email' && ($params['target_kind'] ?? null) === 'custom');
+                    if ($show_target_detail) {
                         redirect(notifications_target_url($target->id, $target->user_id, $receiver ? $receiver->id : null));
                     }
 
@@ -376,6 +383,39 @@ if (isLoggedIn()) {
                 redirect(notifications_target_url($target->id, $target->user_id, $receiver_id));
             } catch (\HaveAPI\Client\Exception\ActionFailed $e) {
                 $xtpl->perex_format_errors(_('Failed to create pairing token'), $e->getResponse());
+                notifications_target_edit($_GET['id'], $receiver_id);
+            }
+            break;
+
+        case 'target_email_send':
+            csrf_check();
+            $receiver_id = api_get_uint('receiver');
+
+            try {
+                $target = $api->notification_target->show($_GET['id']);
+                $api->notification_target($target->id)->send_email_verification();
+
+                notify_user(_('Verification e-mail sent'), '');
+                redirect(notifications_target_url($target->id, $target->user_id, $receiver_id));
+            } catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+                $xtpl->perex_format_errors(_('Failed to send verification e-mail'), $e->getResponse());
+                notifications_target_edit($_GET['id'], $receiver_id);
+            }
+            break;
+
+        case 'target_email_confirm':
+            $receiver_id = api_get_uint('receiver');
+
+            try {
+                $target = $api->notification_target->show($_GET['id']);
+                $api->notification_target($target->id)->confirm_email_verification([
+                    'token' => api_get('token'),
+                ]);
+
+                notify_user(_('E-mail address verified'), '');
+                redirect(notifications_target_url($target->id, $target->user_id, $receiver_id));
+            } catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+                $xtpl->perex_format_errors(_('Failed to verify e-mail address'), $e->getResponse());
                 notifications_target_edit($_GET['id'], $receiver_id);
             }
             break;
