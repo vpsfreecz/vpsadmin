@@ -24,6 +24,7 @@ RSpec.describe TransactionChains::Vps::OomPrevention do
       .joins(:notification_receiver)
       .where(notification_receivers: { user_id: user.id })
       .delete_all
+    NotificationTarget.where(user:).delete_all
     EventRoute.where(user:).delete_all
     NotificationReceiver.where(user:).delete_all
   end
@@ -60,7 +61,7 @@ RSpec.describe TransactionChains::Vps::OomPrevention do
       target_value: 'custom@example.test'
     )
     long_target = "#{'a' * 287}@example.test"
-    action.update_columns(target_value: long_target)
+    action.notification_target.update_columns(target_value: long_target)
     EventRoute.create!(
       user: vps.user,
       notification_receiver: receiver,

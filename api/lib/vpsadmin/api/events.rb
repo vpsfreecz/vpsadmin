@@ -405,6 +405,7 @@ module VpsAdmin::API
       :template_name,
       :event_route,
       :notification_receiver,
+      :notification_target,
       :notification_receiver_action,
       :state,
       :error_summary,
@@ -1004,7 +1005,7 @@ module VpsAdmin::API
                                      .includes(
                                        :event_route_matchers,
                                        notification_receiver: [
-                                         :notification_receiver_actions,
+                                         { notification_receiver_actions: :notification_target },
                                          { user: :user_notification_delivery_methods }
                                        ]
                                      )
@@ -1029,10 +1030,10 @@ module VpsAdmin::API
           return [skipped_delivery(route, receiver, nil, 'receiver does not notify')]
         end
 
-        actions = receiver.notification_receiver_actions.select(&:enabled?)
+        actions = receiver.notification_receiver_actions.to_a
 
         if actions.empty?
-          return [skipped_delivery(route, receiver, nil, 'receiver has no enabled actions')]
+          return [skipped_delivery(route, receiver, nil, 'receiver has no linked targets')]
         end
 
         actions.map { |receiver_action| delivery_from_receiver_action(route, receiver, receiver_action) }
@@ -1040,11 +1041,11 @@ module VpsAdmin::API
 
       def delivery_from_receiver_action(route, receiver, receiver_action)
         unless VpsAdmin::API::Notifications::Actions.known?(receiver_action.action)
-          return skipped_delivery(route, receiver, receiver_action, 'unknown receiver action')
+          return skipped_delivery(route, receiver, receiver_action, 'unknown receiver target')
         end
 
         unless receiver_action.action_available?
-          return skipped_delivery(route, receiver, receiver_action, 'receiver action is not available')
+          return skipped_delivery(route, receiver, receiver_action, 'receiver target is not available')
         end
 
         unless receiver_action.delivery_method_enabled?
@@ -1052,8 +1053,7 @@ module VpsAdmin::API
         end
 
         unless receiver_action.deliverable?
-          reason = receiver_action.enabled? ? 'receiver action is not verified' : 'receiver action is disabled'
-          return skipped_delivery(route, receiver, receiver_action, reason)
+          return skipped_delivery(route, receiver, receiver_action, 'receiver target is disabled')
         end
 
         VpsAdmin::API::Notifications::Actions
@@ -1134,6 +1134,7 @@ module VpsAdmin::API
           template_name: template_name || delivery_template_name(route, receiver_action),
           event_route: route,
           notification_receiver: receiver,
+          notification_target: receiver_action&.notification_target,
           notification_receiver_action: receiver_action,
           state:,
           next_attempt_at:,
@@ -1150,6 +1151,7 @@ module VpsAdmin::API
           template_name: delivery_template_name(route, receiver_action),
           event_route: route,
           notification_receiver: receiver,
+          notification_target: receiver_action&.notification_target,
           notification_receiver_action: receiver_action,
           state: 'skipped',
           error_summary: reason
@@ -1193,15 +1195,23 @@ module VpsAdmin::API
             delivery.state,
             delivery.event_route&.id,
             delivery.notification_receiver&.id,
+            delivery.notification_target&.id,
             delivery.notification_receiver_action&.id,
             delivery.error_summary
           ]
         end
 
+        target_key =
+          if delivery.notification_target
+            [:target, delivery.notification_target.id]
+          else
+            [:value, delivery.target_value]
+          end
+
         [
           delivery.action,
           delivery.target_kind,
-          delivery.target_value,
+          target_key,
           delivery.template_name,
           delivery.state
         ]
@@ -1211,6 +1221,7 @@ module VpsAdmin::API
         record = event.event_deliveries.create!(
           event_route: delivery.event_route,
           notification_receiver: delivery.notification_receiver,
+          notification_target: delivery.notification_target,
           notification_receiver_action: delivery.notification_receiver_action,
           action: delivery.action,
           target_kind: delivery.target_kind,
