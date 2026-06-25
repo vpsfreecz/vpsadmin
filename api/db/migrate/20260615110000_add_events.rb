@@ -936,6 +936,7 @@ class AddEvents < ActiveRecord::Migration[8.1]
       target_value:,
       identity_key:,
       enabled: true,
+      verified_at: current_timestamp,
       created_at: current_timestamp,
       updated_at: current_timestamp
     )
