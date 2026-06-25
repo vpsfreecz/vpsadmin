@@ -78,11 +78,75 @@ final class NotificationDeliveryHtmlDetailsTest extends TestCase
         $functionSource = substr($source, $start, $end - $start);
 
         self::assertStringContainsString('Open Telegram bot', $source);
-        self::assertStringContainsString('notifications_telegram_pairing_link_html($action)', $functionSource);
+        self::assertStringContainsString('Automatic pairing', $functionSource);
+        self::assertStringContainsString('Manual pairing', $functionSource);
+        self::assertStringContainsString('notifications_telegram_automatic_pairing_html($action)', $functionSource);
         self::assertStringContainsString('Generate new pairing command', $functionSource);
         self::assertStringContainsString('Re-pair Telegram chat', $functionSource);
         self::assertStringContainsString('pauses Telegram delivery until pairing succeeds', $functionSource);
         self::assertStringNotContainsString('create new pairing token', $functionSource);
+    }
+
+    public function testTelegramPairingSeparatesAutomaticLinkFromManualCommand(): void
+    {
+        $this->loadNotificationsForms();
+
+        $action = (object) [
+            'telegram_pairing_url' => 'https://t.me/vpsadmin_bot?start=pair-token',
+            'telegram_pairing_command' => '/start pair-token',
+        ];
+
+        $automatic = notifications_telegram_automatic_pairing_html($action);
+        $manual = notifications_telegram_pairing_instructions_html($action);
+
+        self::assertStringContainsString('href="https://t.me/vpsadmin_bot?start=pair-token"', $automatic);
+        self::assertStringContainsString('The link includes the pairing command', $automatic);
+        self::assertStringContainsString('/start pair-token', $manual);
+        self::assertStringNotContainsString('href="https://t.me/vpsadmin_bot?start=pair-token"', $manual);
+    }
+
+    public function testReceiversTableDoesNotHaveUnusedActionColumn(): void
+    {
+        $source = file_get_contents(dirname(__DIR__, 2) . '/forms/notifications.forms.php');
+        $functionSource = $this->sourceBetween(
+            $source,
+            'function notifications_receivers(',
+            'function notifications_receiver_action_target_html('
+        );
+
+        self::assertSame(2, substr_count($functionSource, '$xtpl->table_add_category(\'\');'));
+        self::assertStringContainsString('false, false, 7', $functionSource);
+        self::assertStringNotContainsString('$xtpl->table_td(\'\');', $functionSource);
+    }
+
+    public function testNotificationFilterSelectsAreLeftAligned(): void
+    {
+        $source = file_get_contents(dirname(__DIR__, 2) . '/forms/notifications.forms.php');
+        $deliveryFilters = $this->sourceBetween(
+            $this->sourceBetween(
+                $source,
+                'function notifications_deliveries_admin(',
+                'function notifications_events('
+            ),
+            '$xtpl->table_title(_(\'Filters\'));',
+            '$xtpl->form_out(_(\'Show\'));'
+        );
+        $eventFilters = $this->sourceBetween(
+            $this->sourceBetween(
+                $source,
+                'function notifications_events(',
+                'function notifications_event_show('
+            ),
+            '$xtpl->table_title(_(\'Filters\'));',
+            '$xtpl->form_out(_(\'Show\'));'
+        );
+
+        foreach ([$deliveryFilters, $eventFilters] as $filterSource) {
+            self::assertDoesNotMatchRegularExpression(
+                '/notifications_select_html\([\s\S]*?\)\s*,\s*false\s*,\s*true/',
+                $filterSource
+            );
+        }
     }
 
     public function testTelegramActionCreateRedirectsToActionDetail(): void
@@ -177,5 +241,18 @@ final class NotificationDeliveryHtmlDetailsTest extends TestCase
         }
 
         require_once dirname(__DIR__, 2) . '/forms/notifications.forms.php';
+    }
+
+    private function sourceBetween(string $source, string $startNeedle, string $endNeedle): string
+    {
+        $start = strpos($source, $startNeedle);
+
+        self::assertNotFalse($start);
+
+        $end = strpos($source, $endNeedle, $start + strlen($startNeedle));
+
+        self::assertNotFalse($end);
+
+        return substr($source, $start, $end - $start);
     }
 }
