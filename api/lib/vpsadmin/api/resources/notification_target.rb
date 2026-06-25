@@ -136,7 +136,13 @@ module VpsAdmin::API::Resources
           target.skip_delivery_method_enabled_validation = current_user.role == :admin
           target.save!
           target.generate_verification_token! if target.telegram_action?
-          target.generate_sms_verification_code! if target.sms_action?
+          if current_user.role == :admin && target.admin_verification_skippable?
+            target.mark_verified!
+          elsif target.sms_action?
+            target.generate_sms_verification_code!
+          elsif target.email_verification_required?
+            target.generate_email_verification_token!
+          end
           enable_delivery_method_for_admin!(owner, target.action)
         end
 
@@ -182,6 +188,7 @@ module VpsAdmin::API::Resources
         self.class.model.transaction do
           target.skip_delivery_method_enabled_validation = current_user.role == :admin
           target.update!(attrs)
+          target.mark_verified! if current_user.role == :admin && target.admin_verification_skippable?
           enable_delivery_method_for_admin!(target.user, target.action)
         end
 
@@ -204,6 +211,70 @@ module VpsAdmin::API::Resources
         target = self.class.model.find_by!(with_restricted(id: path_params['notification_target_id']))
         target.destroy!
         ok!
+      end
+    end
+
+    class SendEmailVerification < HaveAPI::Action
+      desc 'Send e-mail verification link'
+      route '{notification_target_id}/send_email_verification'
+      http_method :post
+
+      output do
+        use :all
+      end
+
+      authorize do |u|
+        allow if u.role == :admin
+        restrict user_id: u.id
+        allow
+      end
+
+      def exec
+        target = ::NotificationTarget.find_by!(with_restricted(id: path_params['notification_target_id']))
+        error!('notification target is not a custom e-mail') unless target.email_verification_required?
+        error!('e-mail target is already verified') if target.verified?
+        error!('e-mail delivery method is not enabled for this user') unless target.delivery_method_enabled?
+        error!('e-mail verification link was sent recently') unless target.email_verification_send_available?
+
+        target.ensure_email_verification_token!
+        VpsAdmin::API::Notifications.send_email_verification!(target)
+        target.reload
+      rescue VpsAdmin::API::Notifications::EmailVerificationDeliveryError => e
+        error!(e.message)
+      rescue ActiveRecord::RecordInvalid => e
+        error!('update failed', e.record.errors.to_hash)
+      end
+    end
+
+    class ConfirmEmailVerification < HaveAPI::Action
+      desc 'Confirm e-mail verification token'
+      route '{notification_target_id}/confirm_email_verification'
+      http_method :post
+
+      input do
+        string :token, required: true
+      end
+
+      output do
+        use :all
+      end
+
+      authorize do |u|
+        allow if u.role == :admin
+        restrict user_id: u.id
+        allow
+      end
+
+      def exec
+        target = ::NotificationTarget.find_by!(with_restricted(id: path_params['notification_target_id']))
+        error!('notification target is not a custom e-mail') unless target.email_verification_required?
+        unless target.confirm_email_verification_token!(input[:token])
+          error!('e-mail verification token is invalid or expired')
+        end
+
+        target
+      rescue ActiveRecord::RecordInvalid => e
+        error!('update failed', e.record.errors.to_hash)
       end
     end
 

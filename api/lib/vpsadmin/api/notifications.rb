@@ -15,6 +15,7 @@ module VpsAdmin::API
   module Notifications
     class SmsCallbackAuthenticationError < StandardError; end
     class SmsCallbackConflictError < StandardError; end
+    class EmailVerificationDeliveryError < StandardError; end
 
     module Actions
       class Definition
@@ -406,6 +407,29 @@ module VpsAdmin::API
       action.mark_sms_verification_sent!
     end
 
+    def send_email_verification!(target)
+      target.ensure_email_verification_token!
+      mail_log = ::NotificationTemplate.send_custom_email(
+        user: target.user,
+        from: VpsAdmin::API::NotificationTemplates.default_from,
+        to: [target.target_value],
+        subject: 'Verify your vpsAdmin notification e-mail target',
+        text_plain: email_verification_text(target)
+      )
+      deliver_mail_log!(mail_log)
+      target.mark_email_verification_sent!
+      target.update!(last_error: nil)
+      mail_log
+    rescue StandardError => e
+      target&.update(last_error: e.message) if target&.persisted?
+      raise EmailVerificationDeliveryError, e.message
+    end
+
+    def deliver_mail_log!(mail_log, config: Config.load)
+      delivery = Struct.new(:mail_log).new(mail_log)
+      Dispatcher.new('email', config:).send(:deliver_email, delivery)
+    end
+
     def sms_callback_secret
       SecureRandom.hex(32)
     end
@@ -674,6 +698,31 @@ module VpsAdmin::API
       format(template, code: action.send(:raw_verification_token))
     end
 
+    def email_verification_text(target)
+      [
+        'A vpsAdmin notification target was created for this e-mail address.',
+        'Open the link below to verify that notifications may be delivered here:',
+        email_verification_url(target),
+        "Target: #{target.label} <#{target.target_value}>",
+        'The verification link expires in 24 hours.'
+      ].join("\n\n")
+    end
+
+    def email_verification_url(target)
+      token = target.send(:raw_verification_token)
+      base_url = VpsAdmin::API::Events.webui_url
+      raise 'WebUI URL is not configured' if base_url.blank?
+      raise 'verification token is missing' if token.blank?
+
+      query = URI.encode_www_form(
+        page: 'notifications',
+        action: 'target_email_confirm',
+        id: target.id,
+        token:
+      )
+      "#{base_url}/?#{query}"
+    end
+
     def sms_open_timeout
       sms_config.fetch('open_timeout', 5).to_i
     end
@@ -773,7 +822,7 @@ module VpsAdmin::API
       end
 
       receiver_action_available do
-        email_action?
+        email_action? && (!email_verification_required? || verified?)
       end
 
       plan_delivery do |route, receiver, receiver_action|

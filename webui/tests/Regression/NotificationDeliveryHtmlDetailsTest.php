@@ -140,6 +140,31 @@ final class NotificationDeliveryHtmlDetailsTest extends TestCase
         self::assertStringContainsString('false, false, 8', $receiverSource);
     }
 
+    public function testTargetListUsesTargetStatusFields(): void
+    {
+        $source = file_get_contents(dirname(__DIR__, 2) . '/forms/notifications.forms.php');
+        $targetsSource = $this->sourceBetween(
+            $source,
+            'function notifications_targets(',
+            'function notifications_receivers('
+        );
+        $targetStatusSource = $this->sourceBetween(
+            $source,
+            'function notifications_target_status_html(',
+            'function notifications_target_action_status_html('
+        );
+        $receiverStatusSource = $this->sourceBetween(
+            $source,
+            'function notifications_receiver_action_secret_html(',
+            'function notifications_target_status_html('
+        );
+
+        self::assertStringContainsString('notifications_target_status_html($target)', $targetsSource);
+        self::assertStringContainsString('enabled', $targetStatusSource);
+        self::assertStringNotContainsString('target_enabled', $targetStatusSource);
+        self::assertStringContainsString('target_enabled', $receiverStatusSource);
+    }
+
     public function testNotificationFilterSelectsAreLeftAligned(): void
     {
         $source = file_get_contents(dirname(__DIR__, 2) . '/forms/notifications.forms.php');
@@ -200,10 +225,53 @@ final class NotificationDeliveryHtmlDetailsTest extends TestCase
         $functionSource = substr($source, $start, $end - $start);
 
         self::assertStringContainsString('Phone number', $functionSource);
+        self::assertStringContainsString("'40',\n            'target_value'", $functionSource);
         self::assertStringContainsString('SMS verification', $source);
         self::assertStringContainsString('Send verification SMS', $source);
         self::assertStringContainsString('confirm_sms_verification_code', file_get_contents(dirname(__DIR__, 2) . '/pages/page_notifications.php'));
         self::assertStringContainsString('send_sms_verification_code', file_get_contents(dirname(__DIR__, 2) . '/pages/page_notifications.php'));
+    }
+
+    public function testEmailVerificationFlowIsVisibleInTargetDetail(): void
+    {
+        $source = file_get_contents(dirname(__DIR__, 2) . '/forms/notifications.forms.php');
+        $page = file_get_contents(dirname(__DIR__, 2) . '/pages/page_notifications.php');
+        $functionSource = $this->sourceBetween(
+            $source,
+            'function notifications_target_form_fields(',
+            'function notifications_sms_verification_controls('
+        );
+
+        self::assertStringContainsString('Custom e-mail address', $functionSource);
+        self::assertStringContainsString('one custom address', $functionSource);
+        self::assertStringContainsString('E-mail verification', $source);
+        self::assertStringContainsString('Send verification e-mail', $source);
+        self::assertStringContainsString('confirm_email_verification', $page);
+        self::assertStringContainsString('send_email_verification', $page);
+    }
+
+    public function testTargetFormContentIsLeftAligned(): void
+    {
+        $source = file_get_contents(dirname(__DIR__, 2) . '/forms/notifications.forms.php');
+        $functionSource = $this->sourceBetween(
+            $source,
+            'function notifications_target_form_fields(',
+            'function notifications_sms_verification_controls('
+        );
+        $smsControlsSource = $this->sourceBetween(
+            $source,
+            'function notifications_sms_verification_controls(',
+            'function notifications_email_verification_controls('
+        );
+        $emailControlsSource = $this->sourceBetween(
+            $source,
+            'function notifications_email_verification_controls(',
+            'function notifications_target_new('
+        );
+
+        foreach ([$functionSource, $smsControlsSource, $emailControlsSource] as $formSource) {
+            self::assertDoesNotMatchRegularExpression('/table_td\([\s\S]*?,\s*false\s*,\s*true/', $formSource);
+        }
     }
 
     public function testSmsDeliveryDetailsShowsMessagePayload(): void
