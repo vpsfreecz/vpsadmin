@@ -1625,6 +1625,17 @@ function notifications_telegram_pairing_link_html($action)
         . _('Open Telegram bot') . '</a>';
 }
 
+function notifications_telegram_automatic_pairing_html($action)
+{
+    $link = notifications_telegram_pairing_link_html($action);
+    if (!$link) {
+        return _('Automatic pairing link is not available. Use manual pairing below.');
+    }
+
+    return $link . '<br>'
+        . _('The link includes the pairing command. Press Start in Telegram to finish pairing.');
+}
+
 function notifications_telegram_pairing_instructions_html($action)
 {
     $command = notifications_prop($action, 'telegram_pairing_command');
@@ -1633,14 +1644,7 @@ function notifications_telegram_pairing_instructions_html($action)
     }
 
     $items = [];
-    $link = notifications_telegram_pairing_link_html($action);
-
-    if ($link) {
-        $items[] = sprintf(_('Open %s and press Start.'), $link);
-    } else {
-        $items[] = _('Open a private chat with the vpsAdmin Telegram bot.');
-    }
-
+    $items[] = _('Open a private chat with the vpsAdmin Telegram bot.');
     $items[] = sprintf(_('Send %s.'), '<code>' . h($command) . '</code>');
     $items[] = _('The bot will confirm whether pairing succeeded.');
 
@@ -1917,7 +1921,6 @@ function notifications_receivers($user_id = null)
     $xtpl->table_add_category(_('Events'));
     $xtpl->table_add_category('');
     $xtpl->table_add_category('');
-    $xtpl->table_add_category('');
 
     foreach ($receivers as $receiver) {
         $toggle_link = '?page=notifications&action=receiver_toggle&id=' . $receiver->id
@@ -1940,12 +1943,11 @@ function notifications_receivers($user_id = null)
             '<a href="' . $delete_link . '"' . notifications_confirm_onclick(_('Do you really wish to delete this notification receiver?')) . '>'
             . '<img src="template/icons/vps_delete.png" title="' . _('Delete') . '"></a>'
         );
-        $xtpl->table_td('');
         $xtpl->table_tr($receiver->enabled ? false : '#A6A6A6');
     }
 
     if ($receivers->count() == 0) {
-        $xtpl->table_td(_('No receivers configured.'), false, false, 8);
+        $xtpl->table_td(_('No receivers configured.'), false, false, 7);
         $xtpl->table_tr();
     }
 
@@ -2058,36 +2060,30 @@ function notifications_receiver_action_form_fields($receiver, $action_type, $act
             $xtpl->table_tr();
         }
     } elseif ($action_type === 'telegram') {
-        $xtpl->table_td(_('Pairing') . ':');
-        if ($action) {
-            if ($action->verified) {
-                $xtpl->table_td(boolean_icon(true) . ' ' . h($action->display_target));
-            } else {
-                $cmd = notifications_prop($action, 'telegram_pairing_command') ?: '-';
-                $pairing_link = notifications_telegram_pairing_link_html($action);
-                $pairing_html = '<code>' . h($cmd) . '</code>';
+        if ($action && $action->verified) {
+            $xtpl->table_td(_('Pairing') . ':');
+            $xtpl->table_td(boolean_icon(true) . ' ' . h($action->display_target));
+            $xtpl->table_tr();
+        } elseif ($action) {
+            $xtpl->table_td(_('Automatic pairing') . ':');
+            $xtpl->table_td(notifications_telegram_automatic_pairing_html($action), false, true);
+            $xtpl->table_tr();
 
-                if ($pairing_link) {
-                    $pairing_html = $pairing_link . '<br>' . $pairing_html;
-                }
-
-                $xtpl->table_td($pairing_html, false, true);
-            }
-        } else {
-            $xtpl->table_td(_('created after saving'));
-        }
-        $xtpl->table_tr();
-
-        if ($action && !$action->verified) {
-            $xtpl->table_td(_('Instructions') . ':');
+            $xtpl->table_td(_('Manual pairing') . ':');
             $xtpl->table_td(notifications_telegram_pairing_instructions_html($action), false, true);
             $xtpl->table_tr();
+        } else {
+            $xtpl->table_td(_('Automatic pairing') . ':');
+            $xtpl->table_td(_('created after saving'));
+            $xtpl->table_tr();
         }
 
-        if ($action && !$action->verified && $action->last_error) {
-            $xtpl->table_td(_('Last error') . ':');
-            $xtpl->table_td(h($action->last_error));
-            $xtpl->table_tr();
+        if ($action && !$action->verified) {
+            if ($action->last_error) {
+                $xtpl->table_td(_('Last error') . ':');
+                $xtpl->table_td(h($action->last_error));
+                $xtpl->table_tr();
+            }
         }
 
         if ($action) {
@@ -2482,9 +2478,7 @@ function notifications_deliveries_admin($state_group)
             'event_type',
             notifications_event_type_labels(true),
             get_val('event_type')
-        ),
-        false,
-        true
+        )
     );
     $xtpl->table_tr();
 
@@ -2495,9 +2489,7 @@ function notifications_deliveries_admin($state_group)
             'delivery_action',
             notifications_param_choices($input->action, true),
             get_val('delivery_action')
-        ),
-        false,
-        true
+        )
     );
     $xtpl->table_tr();
 
@@ -2507,9 +2499,7 @@ function notifications_deliveries_admin($state_group)
             'delivery_state',
             notifications_delivery_state_choices($state_group, true),
             get_val('delivery_state')
-        ),
-        false,
-        true
+        )
     );
     $xtpl->table_tr();
     $xtpl->form_out(_('Show'));
@@ -2641,9 +2631,7 @@ function notifications_events()
             'event_type',
             notifications_event_type_labels(true),
             get_val('event_type')
-        ),
-        false,
-        true
+        )
     );
     $xtpl->table_tr();
     api_param_to_form('category', $input->category, get_val('category'));
@@ -2656,9 +2644,7 @@ function notifications_events()
             'delivery_action',
             notifications_param_choices($input->action, true),
             get_val('delivery_action')
-        ),
-        false,
-        true
+        )
     );
     $xtpl->table_tr();
     $xtpl->form_out(_('Show'));
