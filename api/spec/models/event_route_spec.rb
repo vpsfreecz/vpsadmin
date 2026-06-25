@@ -53,6 +53,10 @@ RSpec.describe EventRoute do
     receiver = NotificationReceiver.create!(user:, label:, mute:)
 
     if action
+      if action[:action].to_s == 'email' && action[:target_kind].to_s == 'custom'
+        action = action.merge(verified_at: Time.now)
+      end
+
       receiver.notification_receiver_actions.create!(action)
     end
 
@@ -344,6 +348,22 @@ RSpec.describe EventRoute do
     expect(deliveries.map(&:target_value)).to eq(
       ['https://example.test/events', 'audit@example.test']
     )
+  end
+
+  it 'skips unverified custom e-mail targets' do
+    receiver = NotificationReceiver.create!(user: SpecSeed.user, label: 'Pending e-mail receiver')
+    receiver.notification_receiver_actions.create!(
+      action: :email,
+      target_kind: :custom,
+      target_value: 'pending@example.test'
+    )
+    create_route!(receiver:)
+
+    event = emit_incident!
+    delivery = event.event_deliveries.sole
+
+    expect(delivery).to be_skipped_state
+    expect(delivery.error_summary).to eq('e-mail target is not verified')
   end
 
   it 'deduplicates equivalent actions from continuing routes' do
