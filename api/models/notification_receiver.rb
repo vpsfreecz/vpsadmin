@@ -9,7 +9,12 @@ class NotificationReceiver < ApplicationRecord
   LEGACY_DEFAULT_MUTE_DESCRIPTION = 'Created from the disabled mailer setting'.freeze
 
   belongs_to :user
-  has_many :notification_receiver_actions, -> { order(:id) }, dependent: :delete_all
+  has_many :notification_receiver_targets, -> { order(:position, :id) }, dependent: :delete_all
+  has_many :notification_targets, through: :notification_receiver_targets
+  has_many :notification_receiver_actions,
+           -> { order(:position, :id) },
+           class_name: 'NotificationReceiverTarget',
+           dependent: :delete_all
   has_many :event_routes, dependent: :nullify
   has_many :event_deliveries, dependent: :nullify
 
@@ -85,13 +90,24 @@ class NotificationReceiver < ApplicationRecord
   end
 
   def self.ensure_default_email_action!(receiver)
-    receiver.notification_receiver_actions.find_or_create_by!(
+    target = receiver.user.notification_targets.find_or_create_by!(
       action: 'email',
-      target_kind: 'default_recipient'
-    ) do |action|
-      action.label = DEFAULT_EMAIL_LABEL
-      action.skip_delivery_method_enabled_validation = true
+      identity_key: 'default'
+    ) do |t|
+      t.label = DEFAULT_EMAIL_LABEL
+      t.target_kind = 'default_recipient'
+      t.skip_delivery_method_enabled_validation = true
     end
+
+    receiver.notification_receiver_targets.find_or_create_by!(
+      notification_target: target
+    ) do |link|
+      link.position = next_receiver_target_position(receiver)
+    end
+  end
+
+  def self.next_receiver_target_position(receiver)
+    receiver.notification_receiver_targets.maximum(:position).to_i + 1
   end
 
   def self.ensure_default_route!(user, receiver)
@@ -123,8 +139,8 @@ class NotificationReceiver < ApplicationRecord
   def display_action_summary
     return 'Muted' if mute?
 
-    count = notification_receiver_actions.count
-    count == 1 ? '1 action' : "#{count} actions"
+    count = notification_receiver_targets.count
+    count == 1 ? '1 target' : "#{count} targets"
   end
 
   def active_actions

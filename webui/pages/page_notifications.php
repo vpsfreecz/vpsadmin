@@ -267,145 +267,202 @@ if (isLoggedIn()) {
             }
             break;
 
-        case 'receiver_action_save':
-            csrf_check();
-
-            try {
-                $receiver = $api->notification_receiver->show($_GET['receiver']);
-                $action = $receiver->action->show($_GET['id']);
-                $receiver->action->update($action->id, notifications_receiver_action_params($action->action));
-
-                notify_user(_('Action updated'), '');
-                redirect('?page=notifications&action=receiver_edit&id=' . $receiver->id . notifications_user_qs($receiver->user_id));
-            } catch (\HaveAPI\Client\Exception\ActionFailed $e) {
-                $xtpl->perex_format_errors(_('Failed to update action'), $e->getResponse());
-                notifications_receiver_edit($_GET['receiver']);
-            }
+        case 'targets':
+            notifications_targets(api_get_uint('user'));
             break;
 
-        case 'receiver_action_new':
+        case 'target_new':
             if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 csrf_check();
 
-                try {
-                    $receiver = $api->notification_receiver->show($_GET['receiver']);
-                    $action_type = notifications_receiver_action_type_from_request($receiver);
+                $receiver_id = api_get_uint('receiver');
+                $receiver = $receiver_id ? $api->notification_receiver->show($receiver_id) : null;
+                $user_id = $receiver ? $receiver->user_id : notifications_target_user_id();
+                $action_type = notifications_target_type_from_request($user_id);
 
-                    if ($action_type === null) {
-                        $xtpl->perex(_('Failed to add action'), _('Invalid action type'));
-                        notifications_receiver_action_new($receiver->id);
-                        break;
+                if ($action_type === null) {
+                    $xtpl->perex(_('Failed to add target'), _('Invalid target type'));
+                    notifications_target_new($user_id, null, $receiver_id);
+                    break;
+                }
+
+                try {
+                    $params = notifications_target_params($action_type, true);
+                    if (isAdmin()) {
+                        $params['user'] = $user_id;
                     }
 
-                    $receiver_action = $receiver->action->create(notifications_receiver_action_params($action_type, true));
+                    $target = $api->notification_target->create($params);
+                    if ($receiver) {
+                        $receiver->target->create([
+                            'notification_target_id' => $target->id,
+                        ]);
+                    }
 
-                    notify_user(_('Action added'), '');
+                    notify_user(_('Target added'), '');
                     if ($action_type === 'telegram' || $action_type === 'sms') {
-                        redirect(
-                            '?page=notifications&action=receiver_action_edit&receiver=' . $receiver->id
-                            . '&id=' . $receiver_action->id . notifications_user_qs($receiver->user_id)
-                        );
+                        redirect(notifications_target_url($target->id, $user_id, $receiver ? $receiver->id : null));
                     }
 
-                    redirect('?page=notifications&action=receiver_edit&id=' . $receiver->id . notifications_user_qs($receiver->user_id));
+                    if ($receiver) {
+                        redirect(notifications_receiver_url($receiver->id, $receiver->user_id));
+                    }
+
+                    redirect('?page=notifications&action=targets' . notifications_user_qs($user_id));
                 } catch (\HaveAPI\Client\Exception\ActionFailed $e) {
-                    $xtpl->perex_format_errors(_('Failed to add action'), $e->getResponse());
-                    notifications_receiver_action_new($_GET['receiver'], api_post('action_type') ?: api_get('type'));
+                    $xtpl->perex_format_errors(_('Failed to add target'), $e->getResponse());
+                    notifications_target_new($user_id, api_post('action_type') ?: api_get('type'), $receiver_id);
                 }
             } else {
-                notifications_receiver_action_new($_GET['receiver'], api_get('type'));
+                notifications_target_new(api_get_uint('user'), api_get('type'), api_get_uint('receiver'));
             }
             break;
 
-        case 'receiver_action_edit':
+        case 'target_edit':
             if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 csrf_check();
+                $receiver_id = api_get_uint('receiver');
 
                 try {
-                    $receiver = $api->notification_receiver->show($_GET['receiver']);
-                    $action = $receiver->action->show($_GET['id']);
-                    $receiver->action->update($action->id, notifications_receiver_action_params($action->action));
+                    $target = $api->notification_target->show($_GET['id']);
+                    $receiver = notifications_target_context_receiver($target, $receiver_id);
+                    $api->notification_target->update($target->id, notifications_target_params($target->action));
 
-                    notify_user(_('Action updated'), '');
-                    if ($action->action === 'sms') {
-                        redirect(
-                            '?page=notifications&action=receiver_action_edit&receiver=' . $receiver->id
-                            . '&id=' . $action->id . notifications_user_qs($receiver->user_id)
-                        );
+                    notify_user(_('Target updated'), '');
+                    if ($target->action === 'telegram' || $target->action === 'sms') {
+                        redirect(notifications_target_url($target->id, $target->user_id, $receiver ? $receiver->id : null));
                     }
 
-                    redirect('?page=notifications&action=receiver_edit&id=' . $receiver->id . notifications_user_qs($receiver->user_id));
+                    if ($receiver) {
+                        redirect(notifications_receiver_url($receiver->id, $receiver->user_id));
+                    }
+
+                    redirect('?page=notifications&action=targets' . notifications_user_qs($target->user_id));
                 } catch (\HaveAPI\Client\Exception\ActionFailed $e) {
-                    $xtpl->perex_format_errors(_('Failed to update action'), $e->getResponse());
-                    notifications_receiver_action_edit($_GET['receiver'], $_GET['id']);
+                    $xtpl->perex_format_errors(_('Failed to update target'), $e->getResponse());
+                    notifications_target_edit($_GET['id'], $receiver_id);
                 }
             } else {
-                notifications_receiver_action_edit($_GET['receiver'], $_GET['id']);
+                notifications_target_edit($_GET['id'], api_get_uint('receiver'));
             }
             break;
 
-        case 'receiver_action_pairing_token':
+        case 'target_toggle':
             csrf_check();
 
             try {
-                $receiver = $api->notification_receiver->show($_GET['receiver']);
-                $receiver->action($_GET['id'])->create_pairing_token();
+                $target = $api->notification_target->show($_GET['id']);
+                $api->notification_target->update($target->id, [
+                    'enabled' => !$target->enabled,
+                ]);
+
+                notify_user(_('Target updated'), '');
+                redirect('?page=notifications&action=targets' . notifications_user_qs($target->user_id));
+            } catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+                $xtpl->perex_format_errors(_('Failed to update target'), $e->getResponse());
+                notifications_targets(api_get_uint('user'));
+            }
+            break;
+
+        case 'target_pairing_token':
+            csrf_check();
+            $receiver_id = api_get_uint('receiver');
+
+            try {
+                $target = $api->notification_target->show($_GET['id']);
+                $api->notification_target($target->id)->create_pairing_token();
 
                 notify_user(_('Pairing command created'), '');
-                redirect('?page=notifications&action=receiver_action_edit&receiver=' . $receiver->id . '&id=' . $_GET['id'] . notifications_user_qs($receiver->user_id));
+                redirect(notifications_target_url($target->id, $target->user_id, $receiver_id));
             } catch (\HaveAPI\Client\Exception\ActionFailed $e) {
                 $xtpl->perex_format_errors(_('Failed to create pairing token'), $e->getResponse());
-                notifications_receiver_action_edit($_GET['receiver'], $_GET['id']);
+                notifications_target_edit($_GET['id'], $receiver_id);
             }
             break;
 
-        case 'receiver_action_sms_send':
+        case 'target_sms_send':
             csrf_check();
+            $receiver_id = api_get_uint('receiver');
 
             try {
-                $receiver = $api->notification_receiver->show($_GET['receiver']);
-                $receiver->action($_GET['id'])->send_sms_verification_code();
+                $target = $api->notification_target->show($_GET['id']);
+                $api->notification_target($target->id)->send_sms_verification_code();
 
                 notify_user(_('Verification SMS sent'), '');
-                redirect('?page=notifications&action=receiver_action_edit&receiver=' . $receiver->id . '&id=' . $_GET['id'] . notifications_user_qs($receiver->user_id));
+                redirect(notifications_target_url($target->id, $target->user_id, $receiver_id));
             } catch (\HaveAPI\Client\Exception\ActionFailed $e) {
                 $xtpl->perex_format_errors(_('Failed to send verification SMS'), $e->getResponse());
-                notifications_receiver_action_edit($_GET['receiver'], $_GET['id']);
+                notifications_target_edit($_GET['id'], $receiver_id);
             }
             break;
 
-        case 'receiver_action_sms_confirm':
+        case 'target_sms_confirm':
             if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 csrf_check();
+                $receiver_id = api_get_uint('receiver');
 
                 try {
-                    $receiver = $api->notification_receiver->show($_GET['receiver']);
-                    $receiver->action($_GET['id'])->confirm_sms_verification_code([
+                    $target = $api->notification_target->show($_GET['id']);
+                    $api->notification_target($target->id)->confirm_sms_verification_code([
                         'code' => api_post('code'),
                     ]);
 
                     notify_user(_('Phone number verified'), '');
-                    redirect('?page=notifications&action=receiver_action_edit&receiver=' . $receiver->id . '&id=' . $_GET['id'] . notifications_user_qs($receiver->user_id));
+                    redirect(notifications_target_url($target->id, $target->user_id, $receiver_id));
                 } catch (\HaveAPI\Client\Exception\ActionFailed $e) {
                     $xtpl->perex_format_errors(_('Failed to verify phone number'), $e->getResponse());
-                    notifications_receiver_action_edit($_GET['receiver'], $_GET['id']);
+                    notifications_target_edit($_GET['id'], $receiver_id);
                 }
             } else {
-                notifications_receiver_action_edit($_GET['receiver'], $_GET['id']);
+                notifications_target_edit($_GET['id'], api_get_uint('receiver'));
             }
             break;
 
-        case 'receiver_action_delete':
+        case 'target_delete':
+            csrf_check();
+
+            try {
+                $target = $api->notification_target->show($_GET['id']);
+                $api->notification_target->delete($target->id);
+
+                notify_user(_('Target deleted'), '');
+                redirect('?page=notifications&action=targets' . notifications_user_qs($target->user_id));
+            } catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+                $xtpl->perex_format_errors(_('Failed to delete target'), $e->getResponse());
+                notifications_targets(api_get_uint('user'));
+            }
+            break;
+
+        case 'receiver_target_link':
+            if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+                csrf_check();
+
+                try {
+                    $receiver = $api->notification_receiver->show($_GET['receiver']);
+                    $receiver->target->create(notifications_receiver_target_params(true));
+
+                    notify_user(_('Target linked'), '');
+                    redirect(notifications_receiver_url($receiver->id, $receiver->user_id));
+                } catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+                    $xtpl->perex_format_errors(_('Failed to link target'), $e->getResponse());
+                    notifications_receiver_edit($_GET['receiver']);
+                }
+            } else {
+                notifications_receiver_edit($_GET['receiver']);
+            }
+            break;
+
+        case 'receiver_target_delete':
             csrf_check();
 
             try {
                 $receiver = $api->notification_receiver->show($_GET['receiver']);
-                $receiver->action->delete($_GET['id']);
+                $receiver->target->delete($_GET['id']);
 
-                notify_user(_('Action deleted'), '');
-                redirect('?page=notifications&action=receiver_edit&id=' . $receiver->id . notifications_user_qs($receiver->user_id));
+                notify_user(_('Target unlinked'), '');
+                redirect(notifications_receiver_url($receiver->id, $receiver->user_id));
             } catch (\HaveAPI\Client\Exception\ActionFailed $e) {
-                $xtpl->perex_format_errors(_('Failed to delete action'), $e->getResponse());
+                $xtpl->perex_format_errors(_('Failed to unlink target'), $e->getResponse());
                 notifications_receiver_edit($_GET['receiver']);
             }
             break;
