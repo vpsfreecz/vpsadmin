@@ -1659,6 +1659,19 @@ function notifications_sms_verification_send_url($target, $user_id = null, $rece
     return $url . '&t=' . rawurlencode((string) csrf_token());
 }
 
+function notifications_email_verification_send_url($target, $user_id = null, $receiver_id = null)
+{
+    $url = '?page=notifications&action=target_email_send&id='
+        . rawurlencode((string) $target->id)
+        . notifications_user_qs($user_id);
+
+    if ($receiver_id) {
+        $url .= '&receiver=' . rawurlencode((string) $receiver_id);
+    }
+
+    return $url . '&t=' . rawurlencode((string) csrf_token());
+}
+
 function notifications_sms_verification_confirm_url($target, $user_id = null, $receiver_id = null)
 {
     $url = '?page=notifications&action=target_sms_confirm&id='
@@ -2015,7 +2028,7 @@ function notifications_targets($user_id = null)
             '<a href="' . $toggle_link . '" title="' . ($target->enabled ? _('Disable target') : _('Enable target')) . '">'
             . boolean_icon($target->enabled) . '</a>'
         );
-        $xtpl->table_td(notifications_receiver_action_secret_html($target));
+        $xtpl->table_td(notifications_target_status_html($target));
         $xtpl->table_td(notifications_event_log_link(_('Event log'), $user_id, [
             'notification_target_id' => $target->id,
         ]));
@@ -2135,20 +2148,38 @@ function notifications_receiver_action_secret_html($action)
         return boolean_icon(false) . ' ' . _('target disabled');
     }
 
-    if (notifications_prop($action, 'delivery_method_enabled') === false) {
+    return notifications_target_status_html($action);
+}
+
+function notifications_target_status_html($target)
+{
+    if (notifications_prop($target, 'enabled') === false) {
+        return boolean_icon(false) . ' ' . _('target disabled');
+    }
+
+    if (notifications_prop($target, 'delivery_method_enabled') === false) {
         return boolean_icon(false) . ' ' . _('delivery method disabled');
     }
 
-    if ($action->action === 'webhook') {
-        return boolean_icon($action->secret_present);
+    return notifications_target_action_status_html($target);
+}
+
+function notifications_target_action_status_html($target)
+{
+    if ($target->action === 'webhook') {
+        return boolean_icon($target->secret_present);
     }
 
-    if ($action->action === 'telegram') {
-        return boolean_icon($action->verified) . ' ' . ($action->verified ? _('paired') : _('pending'));
+    if ($target->action === 'email' && notifications_prop($target, 'target_kind') === 'custom') {
+        return boolean_icon($target->verified) . ' ' . ($target->verified ? _('verified') : _('pending'));
     }
 
-    if ($action->action === 'sms') {
-        return boolean_icon($action->verified) . ' ' . ($action->verified ? _('verified') : _('pending'));
+    if ($target->action === 'telegram') {
+        return boolean_icon($target->verified) . ' ' . ($target->verified ? _('paired') : _('pending'));
+    }
+
+    if ($target->action === 'sms') {
+        return boolean_icon($target->verified) . ' ' . ($target->verified ? _('verified') : _('pending'));
     }
 
     return '-';
@@ -2196,9 +2227,7 @@ function notifications_target_form_fields($user_id, $action_type, $target = null
         $xtpl->table_td(_('Receiver') . ':');
         $xtpl->table_td(
             '<a href="' . notifications_receiver_url($receiver->id, $receiver->user_id) . '">'
-            . h($receiver->label) . '</a>',
-            false,
-            true
+            . h($receiver->label) . '</a>'
         );
         $xtpl->table_tr();
     }
@@ -2224,16 +2253,35 @@ function notifications_target_form_fields($user_id, $action_type, $target = null
             'target_kind',
             $target_kinds,
             $target_kind,
-            _('Use the account e-mail or provide custom comma-separated addresses.')
+            _('Use the account e-mail or provide one custom address.')
         );
         $xtpl->form_add_input(
-            _('Custom e-mail addresses') . ':',
+            _('Custom e-mail address') . ':',
             'text',
             '60',
             'target_value',
             post_val('target_value', $target ? $target->target_value : ''),
             _('Used only when custom target is selected.')
         );
+
+        if ($target && $target->target_kind === 'custom') {
+            $xtpl->table_td(_('Verification') . ':');
+            $xtpl->table_td(
+                boolean_icon($target->verified) . ' '
+                . ($target->verified ? _('verified') : _('pending'))
+            );
+            $xtpl->table_tr();
+        } elseif (!$target) {
+            $xtpl->table_td(_('Verification') . ':');
+            $xtpl->table_td(_('custom address targets are verified after saving'));
+            $xtpl->table_tr();
+        }
+
+        if ($target && $target->target_kind === 'custom' && !$target->verified && $target->last_error) {
+            $xtpl->table_td(_('Last error') . ':');
+            $xtpl->table_td(h($target->last_error));
+            $xtpl->table_tr();
+        }
     } elseif ($action_type === 'webhook') {
         $xtpl->form_add_input(
             _('Webhook URL') . ':',
@@ -2252,7 +2300,7 @@ function notifications_target_form_fields($user_id, $action_type, $target = null
 
         if ($target && $target->secret_present) {
             $xtpl->table_td(_('Current secret') . ':');
-            $xtpl->table_td(boolean_icon(true) . ' ' . notifications_checkbox_html('clear_secret', false) . ' ' . _('clear secret'), false, true);
+            $xtpl->table_td(boolean_icon(true) . ' ' . notifications_checkbox_html('clear_secret', false) . ' ' . _('clear secret'));
             $xtpl->table_tr();
         }
     } elseif ($action_type === 'telegram') {
@@ -2262,11 +2310,11 @@ function notifications_target_form_fields($user_id, $action_type, $target = null
             $xtpl->table_tr();
         } elseif ($target) {
             $xtpl->table_td(_('Automatic pairing') . ':');
-            $xtpl->table_td(notifications_telegram_automatic_pairing_html($target), false, true);
+            $xtpl->table_td(notifications_telegram_automatic_pairing_html($target));
             $xtpl->table_tr();
 
             $xtpl->table_td(_('Manual pairing') . ':');
-            $xtpl->table_td(notifications_telegram_pairing_instructions_html($target), false, true);
+            $xtpl->table_td(notifications_telegram_pairing_instructions_html($target));
             $xtpl->table_tr();
         } else {
             $xtpl->table_td(_('Automatic pairing') . ':');
@@ -2292,13 +2340,11 @@ function notifications_target_form_fields($user_id, $action_type, $target = null
                 $text = $link . '<br>' . _('Telegram delivery will be paused until the new chat is paired.');
 
                 $xtpl->table_td(_('Re-pair') . ':');
-                $xtpl->table_td($text, false, true);
+                $xtpl->table_td($text);
             } else {
                 $xtpl->table_td(_('Pairing command') . ':');
                 $xtpl->table_td(
-                    '<a href="' . h($pairing_url) . '">' . _('Generate new pairing command') . '</a>',
-                    false,
-                    true
+                    '<a href="' . h($pairing_url) . '">' . _('Generate new pairing command') . '</a>'
                 );
             }
             $xtpl->table_tr();
@@ -2307,7 +2353,7 @@ function notifications_target_form_fields($user_id, $action_type, $target = null
         $xtpl->form_add_input(
             _('Phone number') . ':',
             'text',
-            '30',
+            '40',
             'target_value',
             post_val('target_value', $target ? $target->target_value : ''),
             _('Use international E.164 format, e.g. +420123456789.')
@@ -2327,9 +2373,7 @@ function notifications_target_form_fields($user_id, $action_type, $target = null
         if ($target && !$target->verified) {
             $xtpl->table_td(_('Instructions') . ':');
             $xtpl->table_td(
-                _('Save the phone number, send a verification SMS, then enter the code from the message.'),
-                false,
-                true
+                _('Save the phone number, send a verification SMS, then enter the code from the message.')
             );
             $xtpl->table_tr();
         }
@@ -2361,9 +2405,7 @@ function notifications_sms_verification_controls($target, $user_id = null, $rece
         '<a href="' . h($send_url) . '"'
         . notifications_confirm_onclick(_('Send a verification SMS to this phone number?'))
         . '>' . _('Send verification SMS') . '</a>'
-        . '<br>' . _('Delivery is limited by a short resend cooldown.'),
-        false,
-        true
+        . '<br>' . _('Delivery is limited by a short resend cooldown.')
     );
     $xtpl->table_tr();
     $xtpl->table_out();
@@ -2378,6 +2420,28 @@ function notifications_sms_verification_controls($target, $user_id = null, $rece
         _('Enter the 6-digit code from the SMS.')
     );
     $xtpl->form_out(_('Confirm code'));
+}
+
+function notifications_email_verification_controls($target, $user_id = null, $receiver_id = null)
+{
+    global $xtpl;
+
+    if ($target->action !== 'email' || $target->target_kind !== 'custom' || $target->verified) {
+        return;
+    }
+
+    $send_url = notifications_email_verification_send_url($target, $user_id, $receiver_id);
+
+    $xtpl->table_title(_('E-mail verification'));
+    $xtpl->table_td(_('Verification e-mail') . ':');
+    $xtpl->table_td(
+        '<a href="' . h($send_url) . '"'
+        . notifications_confirm_onclick(_('Send a verification e-mail to this address?'))
+        . '>' . _('Send verification e-mail') . '</a>'
+        . '<br>' . _('Open the link from the message to verify this target.')
+    );
+    $xtpl->table_tr();
+    $xtpl->table_out();
 }
 
 function notifications_target_new($user_id = null, $action_type = null, $receiver_id = null)
@@ -2504,6 +2568,7 @@ function notifications_target_edit($target_id, $receiver_id = null)
     notifications_target_form_fields($user_id, $target->action, $target, $receiver);
     $xtpl->form_out(_('Save'));
 
+    notifications_email_verification_controls($target, $user_id, $receiver ? $receiver->id : null);
     notifications_sms_verification_controls($target, $user_id, $receiver ? $receiver->id : null);
 
     if ($receiver) {

@@ -277,11 +277,15 @@ RSpec.describe VpsAdmin::API::Tasks::EventDelivery do
 
   def create_email_delivery!(target_kind: :default_recipient, target_value: nil)
     receiver = NotificationReceiver.create!(user: SpecSeed.user, label: 'Spec receiver')
-    action = receiver.notification_receiver_actions.create!(
+    attrs = {
       action: :email,
       label: 'Spec e-mail',
       target_kind:,
       target_value:
+    }
+    attrs[:verified_at] = Time.now if target_kind.to_s == 'custom'
+    action = receiver.notification_receiver_actions.create!(
+      attrs
     )
     route = EventRoute.create!(
       user: SpecSeed.user,
@@ -346,7 +350,8 @@ RSpec.describe VpsAdmin::API::Tasks::EventDelivery do
       action: :email,
       label: 'Spec incident e-mail',
       target_kind: :custom,
-      target_value: 'custom@example.test'
+      target_value: 'custom@example.test',
+      verified_at: Time.now
     )
     EventRoute.create!(
       user: SpecSeed.user,
@@ -376,7 +381,8 @@ RSpec.describe VpsAdmin::API::Tasks::EventDelivery do
       action: :email,
       label: 'Spec report e-mail',
       target_kind: :custom,
-      target_value: 'custom@example.test'
+      target_value: 'custom@example.test',
+      verified_at: Time.now
     )
     EventRoute.create!(
       user: SpecSeed.user,
