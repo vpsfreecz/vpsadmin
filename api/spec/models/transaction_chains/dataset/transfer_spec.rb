@@ -99,6 +99,43 @@ RSpec.describe TransactionChains::Dataset::Transfer do
     ).to eq([sip1.snapshot_id, sip2.snapshot_id, src.snapshot_in_pools.order(:snapshot_id).last.snapshot_id])
   end
 
+  it 'preserves clone dependencies for snapshots appended to a dependent backup head branch' do
+    dataset, src, dst = create_primary_and_backup!
+    tree = create_tree!(dip: dst, index: 0, head: true)
+    parent_branch = create_branch!(tree: tree, name: 'rollback-target', head: false)
+    dependent_branch = create_branch!(tree: tree, name: 'dependent-head', index: 1, head: true)
+
+    snap1, = create_snapshot!(dataset: dataset, dip: src, name: 'snap-1')
+    snap2, = create_snapshot!(dataset: dataset, dip: src, name: 'snap-2')
+    snap3, = create_snapshot!(dataset: dataset, dip: src, name: 'snap-3')
+
+    parent_sip = mirror_snapshot!(snapshot: snap1, dip: dst, reference_count: 1)
+    parent_entry = attach_snapshot_to_branch!(sip: parent_sip, branch: parent_branch)
+    dependent_sip = mirror_snapshot!(snapshot: snap2, dip: dst)
+    # This is the confirmed rollback state after ZFS clone + promote: the
+    # dependent branch can later become head again, but its existing entries
+    # still point at the promoted rollback snapshot.
+    attach_snapshot_to_branch!(
+      sip: dependent_sip,
+      branch: dependent_branch,
+      parent_entry: parent_entry
+    )
+
+    chain, = described_class.fire(src, dst)
+
+    new_entry = SnapshotInPoolInBranch
+                .joins(:snapshot_in_pool)
+                .find_by!(
+                  branch: dependent_branch,
+                  snapshot_in_pools: { snapshot_id: snap3.id }
+                )
+
+    expect(new_entry.snapshot_in_pool_in_branch_id).to eq(parent_entry.id)
+    expect(confirmations_for(chain).map { |row| [row.class_name, row.row_pks, row.confirm_type] }).to include(
+      ['SnapshotInPool', { 'id' => parent_sip.id }, 'increment_type']
+    )
+  end
+
   it 'does not plan any transfer when the backup head is already up to date' do
     dataset, src, dst = create_primary_and_backup!
     tree = create_tree!(dip: dst, index: 0, head: true)

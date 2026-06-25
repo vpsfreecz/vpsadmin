@@ -246,6 +246,9 @@ module TransactionChains
                 decrement(s.snapshot_in_pool_in_branch.snapshot_in_pool, :reference_count)
               end
 
+              # BranchDataset promotes the new rollback branch. The old branch
+              # remains as a clone of the rollback snapshot for entries newer
+              # than the rollback target.
               edit(s, snapshot_in_pool_in_branch_id: snap_in_branch.id)
               i += 1
             end

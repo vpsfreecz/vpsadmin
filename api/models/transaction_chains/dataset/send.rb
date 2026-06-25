@@ -71,6 +71,12 @@ module TransactionChains
     end
 
     def confirm_block(snapshots, dst, branch)
+      # After rollback, a previously promoted-away branch can become the head
+      # again while still being a ZFS clone. Rollback records that clone origin
+      # on the branch entries newer than the origin snapshot; appended snapshots
+      # must keep depending on the same origin.
+      branch_parent = branch && branch_parent_entry(branch)
+
       proc do
         snapshots.each do |snap|
           # A backup tree can reference snapshots that are already mirrored in
@@ -98,10 +104,23 @@ module TransactionChains
           create(::SnapshotInPoolInBranch.create!(
                    snapshot_in_pool: sip,
                    branch:,
+                   snapshot_in_pool_in_branch: branch_parent,
                    confirmed: ::SnapshotInPoolInBranch.confirmed(:confirm_create)
                  ))
+          increment(branch_parent.snapshot_in_pool, :reference_count) if branch_parent
         end
       end
+    end
+
+    def branch_parent_entry(branch)
+      ::SnapshotInPoolInBranch.live
+                              .includes(:snapshot_in_pool_in_branch)
+                              .joins(:snapshot_in_pool)
+                              .where(branch:)
+                              .where.not(snapshot_in_pool_in_branch_id: nil)
+                              .order('snapshot_in_pools.snapshot_id DESC')
+                              .take
+                              &.snapshot_in_pool_in_branch
     end
   end
 end
