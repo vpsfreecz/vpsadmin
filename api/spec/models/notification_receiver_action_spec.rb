@@ -127,6 +127,49 @@ RSpec.describe NotificationReceiverAction do
     expect(action.target_value).to eq('audit@example.test,ops@example.test')
   end
 
+  it 'uses compact identity keys for long custom e-mail targets' do
+    target_value = "#{'a' * 470}@example.test"
+    action = create_receiver!.notification_receiver_actions.create!(
+      action: :email,
+      target_kind: :custom,
+      target_value:
+    )
+
+    duplicate = create_receiver!.notification_receiver_actions.create!(
+      action: :email,
+      target_kind: :custom,
+      target_value:
+    )
+
+    expect(action.target_value).to eq(target_value)
+    expect(action.identity_key).to eq("custom:#{Digest::SHA256.hexdigest(target_value)}")
+    expect(action.identity_key.length).to be < 255
+    expect(duplicate.notification_target).to eq(action.notification_target)
+  end
+
+  it 'uses compact identity keys for long webhook URLs and secret variants' do
+    target_value = "https://example.test/#{'events/' * 40}"
+    first = create_receiver!.notification_receiver_actions.create!(
+      action: :webhook,
+      target_kind: :custom,
+      target_value:,
+      secret: 'first'
+    )
+    second = create_receiver!.notification_receiver_actions.create!(
+      action: :webhook,
+      target_kind: :custom,
+      target_value:,
+      secret: 'second'
+    )
+
+    expect(first.target_value).to eq(target_value)
+    expect(first.identity_key).to eq("url:#{Digest::SHA256.hexdigest("#{target_value}\0first")}")
+    expect(first.identity_key.length).to be < 255
+    expect(second.target_value).to eq(target_value)
+    expect(second.identity_key).to eq("url:#{Digest::SHA256.hexdigest("#{target_value}\0second")}")
+    expect(second.notification_target).not_to eq(first.notification_target)
+  end
+
   it 'rejects custom e-mail targets that exceed mail log limits' do
     action = create_receiver!.notification_receiver_actions.build(
       action: :email,

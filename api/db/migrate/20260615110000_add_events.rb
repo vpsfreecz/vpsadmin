@@ -1,3 +1,5 @@
+require 'digest'
+
 class AddEvents < ActiveRecord::Migration[8.1]
   ADVANCED_NOTIFICATION_TEMPLATE_ROUTE_POSITION = 10
   ADVANCED_EMAIL_ROLE_ROUTE_POSITION = 1_000
@@ -385,13 +387,13 @@ class AddEvents < ActiveRecord::Migration[8.1]
     add_index :notification_receivers, %i[user_id mute],
               name: 'index_notification_receivers_on_user_mute'
 
-    create_table :notification_receiver_actions do |t|
-      t.references  :notification_receiver,    null: false,
-                                               index: { name: 'idx_receiver_actions_on_receiver' }
+    create_table :notification_targets do |t|
+      t.references  :user,                     null: false
       t.string      :action,                   null: false, limit: 50
       t.string      :label,                    null: true, limit: 255
       t.integer     :target_kind,              null: false, default: 0
       t.text        :target_value,             null: true
+      t.string      :identity_key,             null: true, limit: 255
       t.text        :config,                   null: true
       t.text        :secret,                   null: true
       t.string      :verification_token,       null: true, limit: 255
@@ -401,9 +403,25 @@ class AddEvents < ActiveRecord::Migration[8.1]
       t.timestamps                             null: false
     end
 
-    add_index :notification_receiver_actions, %i[notification_receiver_id action enabled],
-              name: 'idx_receiver_actions_on_receiver_action_enabled'
-    add_index :notification_receiver_actions, :verification_token, unique: true
+    add_index :notification_targets, %i[user_id action enabled],
+              name: 'idx_notification_targets_on_user_action_enabled'
+    add_index :notification_targets, %i[user_id action identity_key],
+              unique: true,
+              name: 'idx_notification_targets_on_user_action_identity'
+    add_index :notification_targets, :verification_token, unique: true
+
+    create_table :notification_receiver_targets do |t|
+      t.references  :notification_receiver,    null: false,
+                                               index: { name: 'idx_receiver_targets_on_receiver' }
+      t.references  :notification_target,      null: false,
+                                               index: { name: 'idx_receiver_targets_on_target' }
+      t.integer     :position,                 null: false, default: 0
+      t.timestamps                             null: false
+    end
+
+    add_index :notification_receiver_targets, %i[notification_receiver_id notification_target_id],
+              unique: true,
+              name: 'idx_receiver_targets_on_receiver_target'
 
     create_table :event_routes do |t|
       t.references  :user,                     null: false
@@ -472,8 +490,10 @@ class AddEvents < ActiveRecord::Migration[8.1]
       t.references  :event,                    null: false
       t.references  :event_route,              null: true
       t.references  :notification_receiver,    null: true
-      t.references  :notification_receiver_action, null: true,
-                                                   index: { name: 'idx_event_deliveries_on_receiver_action' }
+      t.references  :notification_target,      null: true,
+                                               index: { name: 'idx_event_deliveries_on_target' }
+      t.references  :notification_receiver_target, null: true,
+                                                   index: { name: 'idx_event_deliveries_on_receiver_target' }
       t.string      :action,                   null: false, limit: 50
       t.integer     :target_kind,              null: false
       t.text        :target_value,             null: true
@@ -536,7 +556,8 @@ class AddEvents < ActiveRecord::Migration[8.1]
     drop_table :events
     drop_table :event_route_matchers
     drop_table :event_routes
-    drop_table :notification_receiver_actions
+    drop_table :notification_receiver_targets
+    drop_table :notification_targets
     drop_table :notification_receivers
   end
 
@@ -564,19 +585,38 @@ class AddEvents < ActiveRecord::Migration[8.1]
       SQL
 
       execute <<~SQL.squish
-        INSERT INTO notification_receiver_actions
-          (notification_receiver_id, action, label, target_kind, target_value,
+        INSERT INTO notification_targets
+          (user_id, action, label, target_kind, target_value, identity_key,
            enabled, created_at, updated_at)
         SELECT
-          notification_receivers.id,
+          notification_receivers.user_id,
           'email',
           'Default e-mail',
           0,
           NULL,
+          'default',
           1,
           CURRENT_TIMESTAMP,
           CURRENT_TIMESTAMP
         FROM notification_receivers
+        INNER JOIN users ON users.id = notification_receivers.user_id
+        WHERE #{mailer_enabled_sql} = 1
+      SQL
+
+      execute <<~SQL.squish
+        INSERT INTO notification_receiver_targets
+          (notification_receiver_id, notification_target_id, position, created_at, updated_at)
+        SELECT
+          notification_receivers.id,
+          notification_targets.id,
+          1,
+          CURRENT_TIMESTAMP,
+          CURRENT_TIMESTAMP
+        FROM notification_receivers
+        INNER JOIN notification_targets
+          ON notification_targets.user_id = notification_receivers.user_id
+         AND notification_targets.action = 'email'
+         AND notification_targets.identity_key = 'default'
         INNER JOIN users ON users.id = notification_receivers.user_id
         WHERE #{mailer_enabled_sql} = 1
       SQL
@@ -724,7 +764,7 @@ class AddEvents < ActiveRecord::Migration[8.1]
           description: 'Created from an advanced notification template recipient',
           mute: false
         )
-        create_advanced_mail_action(
+        create_advanced_mail_target_link(
           receiver_id:,
           label: "#{template_label} e-mail",
           target_value: target
@@ -772,7 +812,7 @@ class AddEvents < ActiveRecord::Migration[8.1]
         description: 'Created from an advanced e-email role recipient',
         mute: false
       )
-      create_advanced_mail_action(
+      create_advanced_mail_target_link(
         receiver_id:,
         label: "#{role_label} e-mail",
         target_value: target
@@ -872,18 +912,50 @@ class AddEvents < ActiveRecord::Migration[8.1]
     )
   end
 
-  def create_advanced_mail_action(receiver_id:, label:, target_value:)
-    insert_row(
-      'notification_receiver_actions',
-      notification_receiver_id: receiver_id,
+  def create_advanced_mail_target_link(receiver_id:, label:, target_value:)
+    receiver = select_one(<<~SQL.squish)
+      SELECT user_id FROM notification_receivers WHERE id = #{quote(receiver_id)}
+    SQL
+    user_id = receiver.fetch('user_id').to_i
+    identity_key = "custom:#{Digest::SHA256.hexdigest(target_value.to_s.gsub(/\s/, ''))}"
+    target_id = select_value(<<~SQL.squish)
+      SELECT id
+      FROM notification_targets
+      WHERE user_id = #{quote(user_id)}
+        AND action = 'email'
+        AND identity_key = #{quote(identity_key)}
+      LIMIT 1
+    SQL
+
+    target_id ||= insert_row(
+      'notification_targets',
+      user_id:,
       action: 'email',
       label: limit_label(label),
       target_kind: 1,
       target_value:,
+      identity_key:,
       enabled: true,
       created_at: current_timestamp,
       updated_at: current_timestamp
     )
+
+    insert_row(
+      'notification_receiver_targets',
+      notification_receiver_id: receiver_id,
+      notification_target_id: target_id,
+      position: next_receiver_target_position(receiver_id),
+      created_at: current_timestamp,
+      updated_at: current_timestamp
+    )
+  end
+
+  def next_receiver_target_position(receiver_id)
+    (select_value(<<~SQL.squish).to_i + 1)
+      SELECT COALESCE(MAX(position), 0)
+      FROM notification_receiver_targets
+      WHERE notification_receiver_id = #{quote(receiver_id)}
+    SQL
   end
 
   def create_advanced_mail_route(user_id:, receiver_id:, event_config:, label:, position:, continue: false)

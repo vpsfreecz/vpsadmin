@@ -87,7 +87,9 @@ module VpsAdmin::API
 
         def receiver_action_available?(action)
           return false unless available?
-          return false unless action&.enabled? && action.action == name
+          return false unless action && action.action == name
+          return false if action.respond_to?(:target_enabled) && !action.target_enabled
+          return false if action.respond_to?(:enabled?) && !action.enabled?
           return false unless action.delivery_method_enabled?
           return action.instance_exec(&@receiver_action_available) if @receiver_action_available
 
@@ -233,7 +235,8 @@ module VpsAdmin::API
       event = delivery.event
       route = delivery.event_route
       receiver = delivery.notification_receiver
-      receiver_action = delivery.notification_receiver_action
+      target = delivery.notification_target
+      receiver_target = delivery.notification_receiver_target || delivery.notification_receiver_action
       user = event.user
       vps = event.vps
 
@@ -273,9 +276,13 @@ module VpsAdmin::API
             id: receiver.id,
             label: receiver.label
           },
-          receiver_action: receiver_action && {
-            id: receiver_action.id,
-            label: receiver_action.label
+          notification_target: target && {
+            id: target.id,
+            label: target.label,
+            display_target: target.display_target
+          },
+          receiver_target: receiver_target && {
+            id: receiver_target.id
           }
         }
       }
@@ -1158,6 +1165,7 @@ module VpsAdmin::API
                   :mail_log,
                   :event_route,
                   :notification_receiver,
+                  :notification_target,
                   :notification_receiver_action
                 )
                 .where(action: @action, state: %w[released sending])
@@ -1245,6 +1253,7 @@ module VpsAdmin::API
             :mail_log,
             :event_route,
             :notification_receiver,
+            :notification_target,
             :notification_receiver_action
           )
           .find_by(id:)
@@ -1910,9 +1919,9 @@ module VpsAdmin::API
           'X-VpsAdmin-Delivery' => delivery.id.to_s
         }
 
-        action = delivery.notification_receiver_action
-        if action&.secret.present?
-          digest = OpenSSL::HMAC.hexdigest('sha256', action.secret, body)
+        target = delivery.notification_target || delivery.notification_receiver_action
+        if target&.secret.present?
+          digest = OpenSSL::HMAC.hexdigest('sha256', target.secret, body)
           headers['X-VpsAdmin-Signature-256'] = "sha256=#{digest}"
         end
 

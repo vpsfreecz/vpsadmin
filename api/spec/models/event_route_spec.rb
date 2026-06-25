@@ -18,6 +18,7 @@ RSpec.describe EventRoute do
       .joins(:notification_receiver)
       .where(notification_receivers: { user_id: user.id })
       .delete_all
+    NotificationTarget.where(user:).delete_all
     EventRoute.where(user:).delete_all
     NotificationReceiver.where(user:).delete_all
     user.user_notification_delivery_methods.delete_all
@@ -83,6 +84,7 @@ RSpec.describe EventRoute do
     Event.delete_all
     EventRouteMatcher.delete_all
     NotificationReceiverAction.delete_all
+    NotificationTarget.delete_all
     EventRoute.delete_all
     NotificationReceiver.delete_all
   end
@@ -370,6 +372,39 @@ RSpec.describe EventRoute do
     expect(deliveries.count).to eq(1)
     expect(deliveries.first.action).to eq('webhook')
     expect(deliveries.first.target_value).to eq('https://example.test/events')
+  end
+
+  it 'keeps webhook targets with distinct secrets' do
+    first_receiver = create_receiver!(
+      label: 'First webhook receiver',
+      action: {
+        action: :webhook,
+        target_kind: :custom,
+        target_value: 'https://example.test/events',
+        secret: 'first-secret'
+      }
+    )
+    second_receiver = create_receiver!(
+      label: 'Second webhook receiver',
+      action: {
+        action: :webhook,
+        target_kind: :custom,
+        target_value: 'https://example.test/events',
+        secret: 'second-secret'
+      }
+    )
+    create_route!(receiver: first_receiver, position: 1, continue: true)
+    create_route!(receiver: second_receiver, position: 2)
+
+    event = emit_incident!
+    deliveries = event.event_deliveries.order(:id).to_a
+
+    expect(deliveries.count).to eq(2)
+    expect(deliveries.map(&:action)).to eq(%w[webhook webhook])
+    expect(deliveries.map(&:target_value)).to eq(
+      ['https://example.test/events', 'https://example.test/events']
+    )
+    expect(deliveries.map(&:notification_target_id).uniq.size).to eq(2)
   end
 
   it 'deduplicates default e-mail actions with the same late-bound target' do

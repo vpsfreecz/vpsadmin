@@ -61,7 +61,6 @@ final class NotificationDeliveryHtmlDetailsTest extends TestCase
 
         $functionSource = substr($source, $start, $end - $start);
 
-        self::assertStringNotContainsString('$xtpl->table_add_category(_(\'Target\'))', $functionSource);
         self::assertStringNotContainsString('$xtpl->table_add_category(_(\'Result\'))', $functionSource);
         self::assertStringContainsString('false, false, 12', $functionSource);
     }
@@ -69,8 +68,8 @@ final class NotificationDeliveryHtmlDetailsTest extends TestCase
     public function testTelegramPairingDetailShowsGuidedPairingAndRepairFlow(): void
     {
         $source = file_get_contents(dirname(__DIR__, 2) . '/forms/notifications.forms.php');
-        $start = strpos($source, 'function notifications_receiver_action_form_fields(');
-        $end = strpos($source, 'function notifications_receiver_action_new(', $start);
+        $start = strpos($source, 'function notifications_target_form_fields(');
+        $end = strpos($source, 'function notifications_sms_verification_controls(', $start);
 
         self::assertNotFalse($start);
         self::assertNotFalse($end);
@@ -80,7 +79,7 @@ final class NotificationDeliveryHtmlDetailsTest extends TestCase
         self::assertStringContainsString('Open Telegram bot', $source);
         self::assertStringContainsString('Automatic pairing', $functionSource);
         self::assertStringContainsString('Manual pairing', $functionSource);
-        self::assertStringContainsString('notifications_telegram_automatic_pairing_html($action)', $functionSource);
+        self::assertStringContainsString('notifications_telegram_automatic_pairing_html($target)', $functionSource);
         self::assertStringContainsString('Generate new pairing command', $functionSource);
         self::assertStringContainsString('Re-pair Telegram chat', $functionSource);
         self::assertStringContainsString('pauses Telegram delivery until pairing succeeds', $functionSource);
@@ -94,6 +93,7 @@ final class NotificationDeliveryHtmlDetailsTest extends TestCase
         $action = (object) [
             'telegram_pairing_url' => 'https://t.me/vpsadmin_bot?start=pair-token',
             'telegram_pairing_command' => '/start pair-token',
+            'telegram_bot_name' => 'vpsadmin_bot',
         ];
 
         $automatic = notifications_telegram_automatic_pairing_html($action);
@@ -101,11 +101,12 @@ final class NotificationDeliveryHtmlDetailsTest extends TestCase
 
         self::assertStringContainsString('href="https://t.me/vpsadmin_bot?start=pair-token"', $automatic);
         self::assertStringContainsString('The link includes the pairing command', $automatic);
+        self::assertStringContainsString('@vpsadmin_bot', $manual);
         self::assertStringContainsString('/start pair-token', $manual);
         self::assertStringNotContainsString('href="https://t.me/vpsadmin_bot?start=pair-token"', $manual);
     }
 
-    public function testReceiversTableDoesNotHaveUnusedActionColumn(): void
+    public function testReceiversTableSplitsEditAndDeleteActions(): void
     {
         $source = file_get_contents(dirname(__DIR__, 2) . '/forms/notifications.forms.php');
         $functionSource = $this->sourceBetween(
@@ -117,6 +118,26 @@ final class NotificationDeliveryHtmlDetailsTest extends TestCase
         self::assertSame(2, substr_count($functionSource, '$xtpl->table_add_category(\'\');'));
         self::assertStringContainsString('false, false, 7', $functionSource);
         self::assertStringNotContainsString('$xtpl->table_td(\'\');', $functionSource);
+    }
+
+    public function testTargetTablesSplitEditAndDeleteActions(): void
+    {
+        $source = file_get_contents(dirname(__DIR__, 2) . '/forms/notifications.forms.php');
+        $targetsSource = $this->sourceBetween(
+            $source,
+            'function notifications_targets(',
+            'function notifications_receivers('
+        );
+        $receiverSource = $this->sourceBetween(
+            $source,
+            'function notifications_receiver_edit(',
+            'function notifications_time_or_dash('
+        );
+
+        self::assertSame(2, substr_count($targetsSource, '$xtpl->table_add_category(\'\');'));
+        self::assertStringContainsString('false, false, 8', $targetsSource);
+        self::assertSame(2, substr_count($receiverSource, '$xtpl->table_add_category(\'\');'));
+        self::assertStringContainsString('false, false, 8', $receiverSource);
     }
 
     public function testNotificationFilterSelectsAreLeftAligned(): void
@@ -149,29 +170,29 @@ final class NotificationDeliveryHtmlDetailsTest extends TestCase
         }
     }
 
-    public function testTelegramActionCreateRedirectsToActionDetail(): void
+    public function testTelegramTargetCreateRedirectsToTargetDetail(): void
     {
         $source = file_get_contents(dirname(__DIR__, 2) . '/pages/page_notifications.php');
-        $start = strpos($source, "case 'receiver_action_new':");
-        $end = strpos($source, "case 'receiver_action_edit':", $start);
+        $start = strpos($source, "case 'target_new':");
+        $end = strpos($source, "case 'target_edit':", $start);
 
         self::assertNotFalse($start);
         self::assertNotFalse($end);
 
         $caseSource = substr($source, $start, $end - $start);
 
-        self::assertStringContainsString('$receiver_action = $receiver->action->create', $caseSource);
+        self::assertStringContainsString('$target = $api->notification_target->create($params)', $caseSource);
+        self::assertStringContainsString('$receiver->target->create', $caseSource);
         self::assertStringContainsString("\$action_type === 'telegram'", $caseSource);
         self::assertStringContainsString("\$action_type === 'sms'", $caseSource);
-        self::assertStringContainsString('receiver_action_edit&receiver=', $caseSource);
-        self::assertStringContainsString("\$receiver_action->id", $caseSource);
+        self::assertStringContainsString('notifications_target_url($target->id, $user_id, $receiver ? $receiver->id : null)', $caseSource);
     }
 
     public function testSmsVerificationFlowIsVisibleInReceiverActionDetail(): void
     {
         $source = file_get_contents(dirname(__DIR__, 2) . '/forms/notifications.forms.php');
-        $start = strpos($source, 'function notifications_receiver_action_form_fields(');
-        $end = strpos($source, 'function notifications_receiver_action_new(', $start);
+        $start = strpos($source, 'function notifications_target_form_fields(');
+        $end = strpos($source, 'function notifications_sms_verification_controls(', $start);
 
         self::assertNotFalse($start);
         self::assertNotFalse($end);
@@ -201,7 +222,7 @@ final class NotificationDeliveryHtmlDetailsTest extends TestCase
         self::assertStringContainsString('Gateway callback', $source);
     }
 
-    public function testReceiverActionDeleteRequiresConfirmation(): void
+    public function testReceiverTargetUnlinkRequiresConfirmation(): void
     {
         $source = file_get_contents(dirname(__DIR__, 2) . '/forms/notifications.forms.php');
         $start = strpos($source, 'function notifications_receiver_edit(');
@@ -212,12 +233,43 @@ final class NotificationDeliveryHtmlDetailsTest extends TestCase
 
         $functionSource = substr($source, $start, $end - $start);
 
-        self::assertStringContainsString('receiver_action_delete', $functionSource);
+        self::assertStringContainsString('receiver_target_delete', $functionSource);
         self::assertStringContainsString('notifications_confirm_onclick', $functionSource);
         self::assertStringContainsString(
-            'Do you really wish to delete this notification receiver action?',
+            "notifications_target_url(notifications_prop(\$target, 'notification_target_id'), \$receiver->user_id, \$receiver->id)",
             $functionSource
         );
+        self::assertStringContainsString(
+            'Do you really wish to unlink this notification target from the receiver?',
+            $functionSource
+        );
+    }
+
+    public function testReceiverTargetLinksDoNotHaveEnabledControls(): void
+    {
+        $forms = file_get_contents(dirname(__DIR__, 2) . '/forms/notifications.forms.php');
+        $page = file_get_contents(dirname(__DIR__, 2) . '/pages/page_notifications.php');
+
+        foreach ([$forms, $page] as $source) {
+            self::assertStringNotContainsString('Enable receiver link', $source);
+            self::assertStringNotContainsString('Link enabled', $source);
+            self::assertStringNotContainsString('link_enabled', $source);
+            self::assertStringNotContainsString('receiver_target_toggle', $source);
+        }
+    }
+
+    public function testTargetEditCanReturnToReceiverContext(): void
+    {
+        $source = file_get_contents(dirname(__DIR__, 2) . '/forms/notifications.forms.php');
+        $functionSource = $this->sourceBetween(
+            $source,
+            'function notifications_target_edit(',
+            'function notifications_receiver_edit('
+        );
+
+        self::assertStringContainsString('notifications_target_context_receiver', $functionSource);
+        self::assertStringContainsString('Back to receiver', $functionSource);
+        self::assertStringContainsString("notifications_sidebar('receivers'", $functionSource);
     }
 
     private function loadNotificationsForms(): void

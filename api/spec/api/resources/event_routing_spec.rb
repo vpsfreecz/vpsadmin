@@ -12,10 +12,11 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
 
   def reset_routing!(user)
     EventRouteMatcher.joins(:event_route).where(event_routes: { user_id: user.id }).delete_all
-    NotificationReceiverAction
+    NotificationReceiverTarget
       .joins(:notification_receiver)
       .where(notification_receivers: { user_id: user.id })
       .delete_all
+    NotificationTarget.where(user:).delete_all
     EventRoute.where(user:).delete_all
     NotificationReceiver.where(user:).delete_all
     user.user_notification_delivery_methods.delete_all
@@ -29,16 +30,24 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
     vpath("/notification_receivers/#{id}")
   end
 
-  def receiver_action_index_path(receiver_id)
-    vpath("/notification_receivers/#{receiver_id}/action")
+  def notification_target_index_path
+    vpath('/notification_targets')
   end
 
-  def receiver_action_path(receiver_id, action_id)
-    vpath("/notification_receivers/#{receiver_id}/action/#{action_id}")
+  def notification_target_path(id)
+    vpath("/notification_targets/#{id}")
   end
 
-  def receiver_action_pairing_token_path(receiver_id, action_id)
-    vpath("/notification_receivers/#{receiver_id}/action/#{action_id}/create_pairing_token")
+  def notification_target_pairing_token_path(id)
+    vpath("/notification_targets/#{id}/create_pairing_token")
+  end
+
+  def receiver_target_index_path(receiver_id)
+    vpath("/notification_receivers/#{receiver_id}/target")
+  end
+
+  def receiver_target_path(receiver_id, target_id)
+    vpath("/notification_receivers/#{receiver_id}/target/#{target_id}")
   end
 
   def route_index_path
@@ -152,6 +161,14 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
     json.dig('response', 'action') || json.dig('response', 'notification_receiver_action') || json['response']
   end
 
+  def target_obj
+    json.dig('response', 'notification_target') || json['response']
+  end
+
+  def receiver_target_obj
+    json.dig('response', 'target') || json.dig('response', 'notification_receiver_target') || json['response']
+  end
+
   def errors
     json.dig('response', 'errors') || json['errors'] || {}
   end
@@ -197,6 +214,30 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
     action.dig('input', 'parameters') || {}
   end
 
+  def create_notification_target!(attrs, actor: SpecSeed.user)
+    as(actor) do
+      json_post notification_target_index_path, notification_target: attrs
+    end
+    expect_status(200)
+    NotificationTarget.find(target_obj.fetch('id'))
+  end
+
+  def link_notification_target!(receiver, target, actor: SpecSeed.user)
+    as(actor) do
+      json_post receiver_target_index_path(receiver.id), target: {
+        notification_target_id: target.id
+      }
+    end
+    expect_status(200)
+    NotificationReceiverTarget.find(receiver_target_obj.fetch('id'))
+  end
+
+  def create_linked_target!(receiver, attrs, actor: SpecSeed.user)
+    target = create_notification_target!(attrs, actor:)
+    link = link_notification_target!(receiver, target, actor:)
+    [target, link]
+  end
+
   describe 'API description' do
     it 'includes event routing scopes' do
       scopes = EndpointInventory.scopes_for_version(self, api_version)
@@ -226,21 +267,28 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
         'notification_receiver#create',
         'notification_receiver#update',
         'notification_receiver#delete',
-        'notification_receiver.action#index',
-        'notification_receiver.action#show',
-        'notification_receiver.action#create',
-        'notification_receiver.action#create_pairing_token',
-        'notification_receiver.action#send_sms_verification_code',
-        'notification_receiver.action#confirm_sms_verification_code',
-        'notification_receiver.action#update',
-        'notification_receiver.action#delete'
+        'notification_target#index',
+        'notification_target#show',
+        'notification_target#create',
+        'notification_target#create_pairing_token',
+        'notification_target#send_sms_verification_code',
+        'notification_target#confirm_sms_verification_code',
+        'notification_target#update',
+        'notification_target#delete',
+        'notification_receiver.target#index',
+        'notification_receiver.target#show',
+        'notification_receiver.target#create',
+        'notification_receiver.target#update',
+        'notification_receiver.target#delete'
       )
     end
 
-    it 'publishes route matcher and receiver action choices' do
+    it 'publishes route matcher and notification target choices' do
       route_create = action_input_params(:event_route, :create)
       matcher_create = action_input_params('event_route.matcher', :create)
-      action_create = action_input_params('notification_receiver.action', :create)
+      target_create = action_input_params(:notification_target, :create)
+      receiver_target_create = action_input_params('notification_receiver.target', :create)
+      receiver_target_update = action_input_params('notification_receiver.target', :update)
       event_index = action_input_params(:event, :index)
 
       expect(
@@ -253,14 +301,19 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
         matcher_create.dig('operator', 'validators', 'include', 'values')
       ).to eq(::EventRouteMatcher.operator_labels)
       expect(
-        action_create.dig('action', 'validators', 'include', 'values')
-      ).to eq(::NotificationReceiverAction.action_labels)
+        target_create.dig('action', 'validators', 'include', 'values')
+      ).to eq(::NotificationTarget.action_labels)
       expect(
-        action_create.dig('target_kind', 'validators', 'include', 'values')
-      ).to eq(::NotificationReceiverAction.target_kind_labels)
+        target_create.dig('target_kind', 'validators', 'include', 'values')
+      ).to eq(::NotificationTarget.target_kind_labels)
+      expect(receiver_target_create).to include('notification_target_id')
+      expect(receiver_target_create).not_to include('enabled')
+      expect(receiver_target_update).to include('position')
+      expect(receiver_target_update).not_to include('enabled')
       expect(event_index).to include(
         'notification_receiver_id',
-        'notification_receiver_action_id'
+        'notification_target_id',
+        'notification_receiver_target_id'
       )
     end
   end
@@ -275,20 +328,25 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
     expect_status(200)
     receiver = NotificationReceiver.find(receiver_obj['id'])
 
-    as(SpecSeed.user) do
-      json_post receiver_action_index_path(receiver.id), action: {
+    target, receiver_target = create_linked_target!(
+      receiver,
+      {
         action: 'webhook',
         label: 'Spec webhook',
         target_kind: 'custom',
         target_value: 'https://example.test/events',
         secret: 'super-secret'
       }
-    end
+    )
+    expect(target.secret_present?).to be(true)
 
+    as(SpecSeed.user) { json_get receiver_target_path(receiver.id, receiver_target.id) }
     expect_status(200)
-    receiver_action = NotificationReceiverAction.find(action_obj['id'])
-    expect(action_obj['secret_present']).to be(true)
-    expect(action_obj).not_to include('template_name')
+    expect(receiver_target_obj).not_to include('enabled')
+    expect(receiver_target_obj).to include(
+      'target_enabled' => true,
+      'delivery_method_enabled' => true
+    )
 
     as(SpecSeed.user) do
       json_post route_index_path, event_route: {
@@ -338,7 +396,12 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
     expect_status(200)
     expect(events.map { |row| row['id'] }).to eq([event.id])
 
-    as(SpecSeed.user) { json_get event_index_path, notification_receiver_action_id: receiver_action.id }
+    as(SpecSeed.user) { json_get event_index_path, notification_target_id: target.id }
+
+    expect_status(200)
+    expect(events.map { |row| row['id'] }).to eq([event.id])
+
+    as(SpecSeed.user) { json_get event_index_path, notification_receiver_target_id: receiver_target.id }
 
     expect_status(200)
     expect(events.map { |row| row['id'] }).to eq([event.id])
@@ -350,9 +413,10 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
     webhook_delivery_obj = deliveries.find { |row| row['action'] == 'webhook' }
     expect(webhook_delivery_obj['notification_receiver_id']).to eq(receiver.id)
     expect(webhook_delivery_obj['notification_receiver_label']).to eq('Spec receiver')
-    expect(webhook_delivery_obj['notification_receiver_action_id']).to eq(receiver_action.id)
-    expect(webhook_delivery_obj['notification_receiver_action_label']).to eq('Spec webhook')
-    expect(webhook_delivery_obj['notification_receiver_action_display_target']).to eq('https://example.test/events')
+    expect(webhook_delivery_obj['notification_target_id']).to eq(target.id)
+    expect(webhook_delivery_obj['notification_target_label']).to eq('Spec webhook')
+    expect(webhook_delivery_obj['notification_target_display_target']).to eq('https://example.test/events')
+    expect(webhook_delivery_obj['notification_receiver_target_id']).to eq(receiver_target.id)
     expect(webhook_delivery_obj).not_to include('template_name')
 
     delivery = event.event_deliveries.find_by!(action: 'webhook')
@@ -362,7 +426,7 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
     expect_status(200)
     expect(delivery_obj['target_label']).to eq('Spec webhook')
     expect(delivery_obj['notification_receiver_label']).to eq('Spec receiver')
-    expect(delivery_obj['notification_receiver_action_label']).to eq('Spec webhook')
+    expect(delivery_obj['notification_target_label']).to eq('Spec webhook')
     expect(delivery_obj).not_to include('template_name')
 
     attempt = delivery.event_delivery_attempts.create!(
@@ -402,6 +466,7 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
     common = {
       event:,
       notification_receiver: receiver,
+      notification_target: receiver_action.notification_target,
       notification_receiver_action: receiver_action,
       action: :email,
       target_kind: :custom,
@@ -450,7 +515,7 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
       'event_user_id' => SpecSeed.user.id,
       'event_user_login' => SpecSeed.user.login,
       'notification_receiver_label' => 'Spec queue receiver',
-      'notification_receiver_action_label' => 'Spec queue e-mail',
+      'notification_target_label' => 'Spec queue e-mail',
       'template_name' => 'spec_queue_template'
     )
 
@@ -543,28 +608,19 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
     expect(route.reload.template_name).to be_nil
   end
 
-  it 'rejects Telegram receiver actions when Telegram is not configured' do
+  it 'rejects Telegram targets when Telegram is not configured' do
     as(SpecSeed.user) do
-      json_post receiver_index_path, notification_receiver: {
-        label: 'Telegram receiver'
-      }
-    end
-
-    expect_status(200)
-    receiver = NotificationReceiver.find(receiver_obj['id'])
-
-    as(SpecSeed.user) do
-      json_post receiver_action_index_path(receiver.id), action: {
+      json_post notification_target_index_path, notification_target: {
         action: 'telegram',
         label: 'Spec Telegram'
       }
     end
 
     expect(json['status']).to be(false)
-    expect(receiver.notification_receiver_actions.reload).to be_empty
+    expect(NotificationTarget.where(user: SpecSeed.user, action: 'telegram')).to be_empty
   end
 
-  it 'returns Telegram pairing metadata for pending actions' do
+  it 'returns Telegram pairing metadata for pending targets' do
     allow(VpsAdmin::API::Notifications).to receive(:telegram_configured?).and_return(true)
     allow(VpsAdmin::API::Notifications::Config).to receive(:load).and_return(
       'telegram' => {
@@ -572,26 +628,19 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
       }
     )
 
-    as(SpecSeed.user) do
-      json_post receiver_index_path, notification_receiver: {
-        label: 'Telegram receiver'
-      }
-    end
-
-    expect_status(200)
-    receiver = NotificationReceiver.find(receiver_obj['id'])
-
-    action = receiver.notification_receiver_actions.create!(
+    target = NotificationTarget.create!(
+      user: SpecSeed.user,
       action: 'telegram',
       label: 'Spec Telegram',
       target_kind: 'custom'
     )
-    action.generate_verification_token!
+    target.generate_verification_token!
 
-    as(SpecSeed.user) { json_get receiver_action_path(receiver.id, action.id) }
+    as(SpecSeed.user) { json_get notification_target_path(target.id) }
     expect_status(200)
-    token = action.reload.verification_token
-    expect(action_obj).to include(
+    token = target.reload.verification_token
+    expect(target_obj).to include(
+      'telegram_bot_name' => 'vpsadmin_aitherdev_bot',
       'telegram_bot_url' => 'https://t.me/vpsadmin_aitherdev_bot',
       'telegram_pairing_url' => "https://t.me/vpsadmin_aitherdev_bot?start=#{token}",
       'telegram_pairing_command' => "/start #{token}"
@@ -601,53 +650,36 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
   it 'hides SMS verification codes and accepts them through confirmation' do
     allow(VpsAdmin::API::Notifications).to receive(:sms_configured?).and_return(true)
 
-    as(SpecSeed.user) do
-      json_post receiver_index_path, notification_receiver: {
-        label: 'SMS receiver'
-      }
-    end
-
-    expect_status(200)
-    receiver = NotificationReceiver.find(receiver_obj['id'])
-
-    action = receiver.notification_receiver_actions.create!(
+    target = NotificationTarget.create!(
+      user: SpecSeed.user,
       action: 'sms',
       label: 'Spec SMS',
       target_kind: 'custom',
       target_value: '+420123456789'
     )
-    action.generate_sms_verification_code!
-    code = action[:verification_token]
+    target.generate_sms_verification_code!
+    code = target[:verification_token]
 
-    as(SpecSeed.user) { json_get receiver_action_path(receiver.id, action.id) }
+    as(SpecSeed.user) { json_get notification_target_path(target.id) }
     expect_status(200)
     expect(code).to match(/\A[0-9]{6}\z/)
-    expect(action_obj['verification_token']).to be_nil
+    expect(target_obj['verification_token']).to be_nil
 
     as(SpecSeed.user) do
-      json_post "#{receiver_action_path(receiver.id, action.id)}/confirm_sms_verification_code", action: {
+      json_post "#{notification_target_path(target.id)}/confirm_sms_verification_code", notification_target: {
         code:
       }
     end
 
     expect_status(200)
-    expect(NotificationReceiverAction.find(action.id)).to be_verified
+    expect(NotificationTarget.find(target.id)).to be_verified
   end
 
-  it 'rejects receiver actions when the delivery method is disabled for the user' do
+  it 'rejects targets when the delivery method is disabled for the user' do
     SpecSeed.user.set_notification_delivery_method!(:webhook, false)
 
     as(SpecSeed.user) do
-      json_post receiver_index_path, notification_receiver: {
-        label: 'Webhook receiver'
-      }
-    end
-
-    expect_status(200)
-    receiver = NotificationReceiver.find(receiver_obj['id'])
-
-    as(SpecSeed.user) do
-      json_post receiver_action_index_path(receiver.id), action: {
+      json_post notification_target_index_path, notification_target: {
         action: 'webhook',
         label: 'Spec webhook',
         target_kind: 'custom',
@@ -657,15 +689,15 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
 
     expect(json['status']).to be(false)
     expect(errors.fetch('action')).to include('is not enabled for this user')
-    expect(receiver.notification_receiver_actions.reload).to be_empty
+    expect(NotificationTarget.where(user: SpecSeed.user, action: 'webhook')).to be_empty
   end
 
-  it 'auto-enables a delivery method when admin creates a receiver action' do
+  it 'auto-enables a delivery method when admin creates a target' do
     SpecSeed.user.set_notification_delivery_method!(:webhook, false)
-    receiver = NotificationReceiver.create!(user: SpecSeed.user, label: 'Spec receiver')
 
     as(SpecSeed.admin) do
-      json_post receiver_action_index_path(receiver.id), action: {
+      json_post notification_target_index_path, notification_target: {
+        user: SpecSeed.user.id,
         action: 'webhook',
         label: 'Spec webhook',
         target_kind: 'custom',
@@ -676,15 +708,15 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
     expect_status(200)
     expect(json['status']).to be(true), last_response.body
     expect(SpecSeed.user.reload.notification_delivery_method_enabled?(:webhook)).to be(true)
-    expect(receiver.notification_receiver_actions.reload.sole.action).to eq('webhook')
+    expect(NotificationTarget.where(user: SpecSeed.user).sole.action).to eq('webhook')
   end
 
-  it 'does not auto-enable a delivery method when admin receiver action create fails' do
+  it 'does not auto-enable a delivery method when admin target create fails' do
     SpecSeed.user.set_notification_delivery_method!(:webhook, false)
-    receiver = NotificationReceiver.create!(user: SpecSeed.user, label: 'Spec receiver')
 
     as(SpecSeed.admin) do
-      json_post receiver_action_index_path(receiver.id), action: {
+      json_post notification_target_index_path, notification_target: {
+        user: SpecSeed.user.id,
         action: 'webhook',
         label: 'Spec webhook',
         target_kind: 'custom',
@@ -695,12 +727,12 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
     expect(json['status']).to be(false)
     expect(errors.fetch('target_value')).to include('must be an HTTP or HTTPS URL')
     expect(SpecSeed.user.reload.notification_delivery_method_enabled?(:webhook)).to be(false)
-    expect(receiver.notification_receiver_actions.reload).to be_empty
+    expect(NotificationTarget.where(user: SpecSeed.user, action: 'webhook')).to be_empty
   end
 
-  it 'does not auto-enable a delivery method when admin receiver action update fails' do
-    receiver = NotificationReceiver.create!(user: SpecSeed.user, label: 'Spec receiver')
-    action = receiver.notification_receiver_actions.create!(
+  it 'does not auto-enable a delivery method when admin target update fails' do
+    target = NotificationTarget.create!(
+      user: SpecSeed.user,
       action: 'webhook',
       label: 'Spec webhook',
       target_kind: 'custom',
@@ -709,7 +741,7 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
     SpecSeed.user.set_notification_delivery_method!(:webhook, false)
 
     as(SpecSeed.admin) do
-      json_put receiver_action_path(receiver.id, action.id), action: {
+      json_put notification_target_path(target.id), notification_target: {
         target_value: 'not a URL'
       }
     end
@@ -717,7 +749,7 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
     expect(json['status']).to be(false)
     expect(errors.fetch('target_value')).to include('must be an HTTP or HTTPS URL')
     expect(SpecSeed.user.reload.notification_delivery_method_enabled?(:webhook)).to be(false)
-    expect(action.reload.target_value).to eq('https://example.test/events')
+    expect(target.reload.target_value).to eq('https://example.test/events')
   end
 
   it 'skips lazy default e-mail actions when the delivery method is disabled' do
@@ -737,7 +769,7 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
     expect(delivery.error_summary).to eq('delivery method is disabled')
   end
 
-  it 'skips existing receiver actions when their delivery method is disabled' do
+  it 'skips existing receiver targets when their delivery method is disabled' do
     receiver = NotificationReceiver.create!(user: SpecSeed.user, label: 'Spec receiver')
     receiver.notification_receiver_actions.create!(
       action: :webhook,
@@ -832,16 +864,15 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
     expect_status(200)
     receiver = NotificationReceiver.find(receiver_obj['id'])
 
-    as(SpecSeed.user) do
-      json_post receiver_action_index_path(receiver.id), action: {
+    create_linked_target!(
+      receiver,
+      {
         action: 'webhook',
         label: 'Spec webhook',
         target_kind: 'custom',
         target_value: 'https://example.test/events'
       }
-    end
-
-    expect_status(200)
+    )
 
     as(SpecSeed.user) do
       json_post route_index_path, event_route: {
@@ -886,7 +917,7 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
     expect(route_obj['label']).to eq('Active route')
   end
 
-  it 'limits receiver and action fan-out' do
+  it 'limits receiver and target fan-out' do
     NotificationReceiver::MAX_RECEIVERS_PER_USER.times do |i|
       NotificationReceiver.create!(
         user: SpecSeed.user,
@@ -905,20 +936,30 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
     reset_routing!(SpecSeed.user)
     receiver = NotificationReceiver.create!(user: SpecSeed.user, label: 'Spec receiver')
 
-    NotificationReceiverAction::MAX_ACTIONS_PER_RECEIVER.times do |i|
-      receiver.notification_receiver_actions.create!(
+    NotificationReceiverTarget::MAX_TARGETS_PER_RECEIVER.times do |i|
+      target = NotificationTarget.create!(
+        user: SpecSeed.user,
         action: :email,
         label: "E-mail #{i}",
-        target_kind: :default_recipient
+        target_kind: :custom,
+        target_value: "spec-#{i}@example.test"
+      )
+      receiver.notification_receiver_targets.create!(
+        notification_target: target,
+        position: i
       )
     end
 
     as(SpecSeed.user) do
-      json_post receiver_action_index_path(receiver.id), action: {
+      target = NotificationTarget.create!(
+        user: SpecSeed.user,
         action: 'webhook',
         label: 'Too many actions',
         target_kind: 'custom',
         target_value: 'https://example.test/events'
+      )
+      json_post receiver_target_index_path(receiver.id), target: {
+        notification_target_id: target.id
       }
     end
 

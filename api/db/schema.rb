@@ -455,8 +455,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_21_120000) do
     t.datetime "last_attempt_at"
     t.integer "mail_log_id"
     t.datetime "next_attempt_at"
-    t.bigint "notification_receiver_action_id"
+    t.bigint "notification_receiver_target_id"
     t.bigint "notification_receiver_id"
+    t.bigint "notification_target_id"
     t.text "payload", size: :long
     t.string "provider_message_id"
     t.datetime "released_at"
@@ -476,8 +477,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_21_120000) do
     t.index ["event_route_id"], name: "index_event_deliveries_on_event_route_id"
     t.index ["mail_log_id"], name: "index_event_deliveries_on_mail_log_id"
     t.index ["next_attempt_at"], name: "index_event_deliveries_on_next_attempt_at"
-    t.index ["notification_receiver_action_id"], name: "idx_event_deliveries_on_receiver_action"
+    t.index ["notification_receiver_target_id"], name: "idx_event_deliveries_on_receiver_target"
     t.index ["notification_receiver_id"], name: "index_event_deliveries_on_notification_receiver_id"
+    t.index ["notification_target_id"], name: "idx_event_deliveries_on_target"
     t.index ["released_at"], name: "index_event_deliveries_on_released_at"
     t.index ["state"], name: "index_event_deliveries_on_state"
     t.index ["transaction_id"], name: "index_event_deliveries_on_transaction_id"
@@ -1378,23 +1380,15 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_21_120000) do
     t.index ["location_id"], name: "location_id"
   end
 
-  create_table "notification_receiver_actions", charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
-    t.string "action", limit: 50, null: false
-    t.text "config"
+  create_table "notification_receiver_targets", charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
     t.datetime "created_at", null: false
-    t.boolean "enabled", default: true, null: false
-    t.string "label"
-    t.text "last_error"
     t.bigint "notification_receiver_id", null: false
-    t.text "secret"
-    t.integer "target_kind", default: 0, null: false
-    t.text "target_value"
+    t.bigint "notification_target_id", null: false
+    t.integer "position", default: 0, null: false
     t.datetime "updated_at", null: false
-    t.string "verification_token"
-    t.datetime "verified_at"
-    t.index ["notification_receiver_id", "action", "enabled"], name: "idx_receiver_actions_on_receiver_action_enabled"
-    t.index ["notification_receiver_id"], name: "idx_receiver_actions_on_receiver"
-    t.index ["verification_token"], name: "index_notification_receiver_actions_on_verification_token", unique: true
+    t.index ["notification_receiver_id", "notification_target_id"], name: "idx_receiver_targets_on_receiver_target", unique: true
+    t.index ["notification_receiver_id"], name: "idx_receiver_targets_on_receiver"
+    t.index ["notification_target_id"], name: "idx_receiver_targets_on_target"
   end
 
   create_table "notification_receivers", charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
@@ -1408,6 +1402,27 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_21_120000) do
     t.index ["user_id", "enabled"], name: "index_notification_receivers_on_user_enabled"
     t.index ["user_id", "mute"], name: "index_notification_receivers_on_user_mute"
     t.index ["user_id"], name: "index_notification_receivers_on_user_id"
+  end
+
+  create_table "notification_targets", charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
+    t.string "action", limit: 50, null: false
+    t.text "config"
+    t.datetime "created_at", null: false
+    t.boolean "enabled", default: true, null: false
+    t.string "identity_key"
+    t.string "label"
+    t.text "last_error"
+    t.text "secret"
+    t.integer "target_kind", default: 0, null: false
+    t.text "target_value"
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.string "verification_token"
+    t.datetime "verified_at"
+    t.index ["user_id", "action", "enabled"], name: "idx_notification_targets_on_user_action_enabled"
+    t.index ["user_id", "action", "identity_key"], name: "idx_notification_targets_on_user_action_identity", unique: true
+    t.index ["user_id"], name: "index_notification_targets_on_user_id"
+    t.index ["verification_token"], name: "index_notification_targets_on_verification_token", unique: true
   end
 
   create_table "oauth2_authorizations", charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
