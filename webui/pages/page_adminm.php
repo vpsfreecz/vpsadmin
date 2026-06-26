@@ -771,6 +771,11 @@ function list_members()
         api_param_to_form('object_state', $p, get_val('object_state'));
 
         $xtpl->form_out(_('Show'));
+        // Prevent the filter form wrapper from carrying over to the members list.
+        $xtpl->table_begin('');
+        $xtpl->table_end('');
+        $xtpl->form_csrf('common', false);
+        $xtpl->form_set_hidden_fields([]);
 
     } else {
         $xtpl->title(_("Manage members"));
@@ -856,8 +861,7 @@ function list_members()
 
             if ((isAdmin()) && ($u->id != $_SESSION["user"]["id"])) {
                 $xtpl->table_td(
-                    context_switch_form($u->id, $_SERVER["REQUEST_URI"])
-                    . $u->login
+                    context_switch_form($u->id, $_SERVER["REQUEST_URI"], $u->login)
                 );
 
             } else {
