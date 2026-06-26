@@ -13,6 +13,10 @@ const {
   openWebuiLogin,
   submitCredentials,
 } = require('../lib/pages/auth.cjs');
+const {
+  memberRow,
+  submitMemberListFilters,
+} = require('../lib/pages/users.cjs');
 
 const fixtures = readFixtures();
 const webuiBaseURL = process.env.WEBUI_BASE_URL || 'http://webui.vpsadmin.test';
@@ -252,4 +256,38 @@ test('language flag updates logged-in user preference', async ({ page }) => {
   ).toBe('en');
 
   await logout(page, fixtures.user.username);
+});
+
+test('admin can switch into user context from members list', async ({ page }) => {
+  const target = fixtures.adminMembers.managed;
+
+  await login(page, fixtures.admin);
+
+  await submitMemberListFilters(page, {
+    limit: 1,
+    fromId: target.id - 1,
+    login: target.username,
+  });
+
+  const row = memberRow(page, target.id);
+  await expect(row).toContainText(target.username);
+
+  const switchForm = row.locator('form[action="?page=login&action=switch_context"]', {
+    has: page.locator(`input[name="m_id"][value="${target.id}"]`),
+  }).first();
+  await expect(switchForm).toContainText(target.username);
+  await switchForm.locator('input[name="next"]').evaluate((input) => {
+    input.value = '/?page=';
+  });
+  await switchForm.locator('button[type="submit"]').click();
+  await expect(logoutButton(page)).toHaveValue(new RegExp(`Logout \\(${target.username}\\)`));
+  await expect(navLink(page, '?page=cluster')).toHaveCount(0);
+
+  await page.goto(`/?page=login&action=regain_admin&next=${encodeURIComponent('/?page=cluster')}`, {
+    waitUntil: 'domcontentloaded',
+  });
+  await expect(logoutButton(page)).toHaveValue(new RegExp(`Logout \\(${fixtures.admin.username}\\)`));
+  await expect(navLink(page, '?page=cluster')).toBeVisible();
+
+  await logout(page, fixtures.admin.username);
 });

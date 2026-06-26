@@ -3,9 +3,7 @@
 use PHPUnit\Framework\TestCase;
 
 if (!class_exists('CsrfTokenInvalid')) {
-    class CsrfTokenInvalid extends Exception
-    {
-    }
+    class CsrfTokenInvalid extends Exception {}
 }
 
 class CapturingContextSwitchTemplate
@@ -107,6 +105,24 @@ final class CsrfContextSwitchTest extends TestCase
         self::assertStringNotContainsString('<a href="?page=login&action=switch_context', $html);
     }
 
+    public function testMemberListPlacesLoginInsideContextSwitchForm(): void
+    {
+        $source = file_get_contents(dirname(__DIR__, 2) . '/pages/page_adminm.php');
+
+        self::assertStringContainsString(
+            'context_switch_form($u->id, $_SERVER["REQUEST_URI"], $u->login)',
+            $source
+        );
+        self::assertStringContainsString('$xtpl->table_begin(\'\');', $source);
+        self::assertStringContainsString('$xtpl->table_end(\'\');', $source);
+        self::assertStringContainsString('$xtpl->form_csrf(\'common\', false);', $source);
+        self::assertStringNotContainsString(
+            'context_switch_form($u->id, $_SERVER["REQUEST_URI"])' . "\n"
+            . '                    . $u->login',
+            $source
+        );
+    }
+
     private function installStubs(): void
     {
         if (!function_exists('_')) {
@@ -160,20 +176,12 @@ final class CsrfContextSwitchTest extends TestCase
             throw new RuntimeException('switchUserContext() should not be reached');
         }
 
-        function setupOAuth2ForLogin()
-        {
-        }
+        function setupOAuth2ForLogin() {}
 
-        function logoutUser()
-        {
-        }
+        function logoutUser() {}
 
-        function logoutAndSwitchUser()
-        {
-        }
+        function logoutAndSwitchUser() {}
 
-        function regainAdminUser()
-        {
-        }
+        function regainAdminUser() {}
     }
 }
