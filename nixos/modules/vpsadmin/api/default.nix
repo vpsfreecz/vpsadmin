@@ -10,13 +10,19 @@ let
   cfg = config.vpsadmin.api;
   telegramCfg = config.vpsadmin.notifications.telegram;
   smsCfg = config.vpsadmin.notifications.sms;
+  smtpCfg = cfg.notifications.smtp;
   vpsadminRoot = toString (./../../../../.);
   notificationsConfigEnabled =
-    cfg.notifications.rabbitmq.enable || telegramCfg.enable || smsCfg.enable;
+    cfg.notifications.rabbitmq.enable || smtpCfg.enable || telegramCfg.enable || smsCfg.enable;
 
+  smtpPasswordCredential = "smtp-password";
   smsCallbackTokenCredential = "sms-callback-token";
   smsGatewayTokenCredential = gateway: "sms-gateway-${gateway.name}-token";
   readCredential = name: ''$(head -n1 "$CREDENTIALS_DIRECTORY/${name}")'';
+
+  smtpCredentials = optional (
+    smtpCfg.enable && smtpCfg.passwordFile != null
+  ) "${smtpPasswordCredential}:${smtpCfg.passwordFile}";
 
   smsCredentials =
     optional (smsCfg.enable && smsCfg.callbackTokenFile != null) (
@@ -30,6 +36,17 @@ let
     inherit (gateway) name url;
     token = "#sms_gateway_${toString index}_token#";
   }) smsCfg.gateways;
+
+  smtpConfig = {
+    address = smtpCfg.address;
+    port = smtpCfg.port;
+    open_timeout = smtpCfg.openTimeout;
+    read_timeout = smtpCfg.readTimeout;
+    username = smtpCfg.username;
+    password = "#smtp_pass#";
+    authentication = smtpCfg.authentication;
+    enable_starttls_auto = smtpCfg.enableStarttlsAuto;
+  };
 
   smsTokenSubstitutions =
     stateDirectory:
@@ -73,6 +90,9 @@ let
           username = cfg.notifications.rabbitmq.username;
           password = "#rabbitmq_pass#";
         };
+      }
+      // optionalAttrs smtpCfg.enable {
+        smtp = smtpConfig;
       }
       // optionalAttrs telegramCfg.enable {
         telegram = {
@@ -225,6 +245,58 @@ in
           description = "Path to a file containing the RabbitMQ password.";
         };
       };
+
+      notifications.smtp = {
+        enable = mkEnableOption "SMTP configuration for API-side notification e-mail delivery";
+
+        address = mkOption {
+          type = types.str;
+          default = "localhost";
+          description = "SMTP server address.";
+        };
+
+        port = mkOption {
+          type = types.int;
+          default = 25;
+          description = "SMTP server port.";
+        };
+
+        username = mkOption {
+          type = types.nullOr types.str;
+          default = null;
+          description = "SMTP username.";
+        };
+
+        passwordFile = mkOption {
+          type = types.nullOr types.path;
+          default = null;
+          description = "Path to a file containing the SMTP password.";
+        };
+
+        authentication = mkOption {
+          type = types.nullOr types.str;
+          default = null;
+          description = "SMTP authentication mechanism.";
+        };
+
+        enableStarttlsAuto = mkOption {
+          type = types.nullOr types.bool;
+          default = null;
+          description = "Whether to enable STARTTLS automatically.";
+        };
+
+        openTimeout = mkOption {
+          type = types.int;
+          default = 30;
+          description = "SMTP connection open timeout.";
+        };
+
+        readTimeout = mkOption {
+          type = types.int;
+          default = 60;
+          description = "SMTP read timeout.";
+        };
+      };
     };
   };
 
@@ -303,9 +375,15 @@ in
               ) "$(head -n1 ${cfg.notifications.rabbitmq.passwordFile})"
             }
           ''}
+          ${optionalString smtpCfg.enable ''
+            SMTP_PASS=${optionalString (smtpCfg.passwordFile != null) (readCredential smtpPasswordCredential)}
+          ''}
           cp -f ${notificationsYml} "${cfg.stateDirectory}/config/notifications.yml"
           ${optionalString cfg.notifications.rabbitmq.enable ''
             sed -e "s,#rabbitmq_pass#,$RABBITMQ_PASS,g" -i "${cfg.stateDirectory}/config/notifications.yml"
+          ''}
+          ${optionalString smtpCfg.enable ''
+            sed -e "s,#smtp_pass#,$SMTP_PASS,g" -i "${cfg.stateDirectory}/config/notifications.yml"
           ''}
           ${optionalString smsCfg.enable (smsTokenSubstitutions cfg.stateDirectory)}
           chmod 440 "${cfg.stateDirectory}/config/notifications.yml"
@@ -323,7 +401,7 @@ in
         Restart = "on-failure";
         RestartSec = 30;
         WatchdogSec = 10;
-        LoadCredential = smsCredentials;
+        LoadCredential = smtpCredentials ++ smsCredentials;
       };
     };
 
