@@ -14,6 +14,18 @@ module VpsAdmin::API::Resources
 
         user.set_notification_delivery_method!(delivery_method, true)
       end
+
+      def auto_send_email_verification!(target)
+        return if current_user.role == :admin
+        return unless target.email_verification_required?
+        return if target.verified?
+
+        VpsAdmin::API::Notifications.send_email_verification!(target)
+      rescue VpsAdmin::API::Notifications::EmailVerificationDeliveryError
+        nil
+      ensure
+        target.reload if target.persisted?
+      end
     end
 
     params(:common) do
@@ -146,6 +158,7 @@ module VpsAdmin::API::Resources
           enable_delivery_method_for_admin!(owner, target.action)
         end
 
+        auto_send_email_verification!(target)
         target
       rescue ActiveRecord::RecordInvalid => e
         error!('create failed', e.record.errors.to_hash)
@@ -185,13 +198,16 @@ module VpsAdmin::API::Resources
         end
         attrs[:secret] = input[:secret] if input.has_key?(:secret) && !input[:secret].nil?
 
+        send_email_verification = false
         self.class.model.transaction do
           target.skip_delivery_method_enabled_validation = current_user.role == :admin
           target.update!(attrs)
+          send_email_verification = target.saved_change_to_target_kind? || target.saved_change_to_target_value?
           target.mark_verified! if current_user.role == :admin && target.admin_verification_skippable?
           enable_delivery_method_for_admin!(target.user, target.action)
         end
 
+        auto_send_email_verification!(target) if send_email_verification
         target
       rescue ActiveRecord::RecordInvalid => e
         error!('update failed', e.record.errors.to_hash)

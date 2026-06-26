@@ -687,7 +687,54 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
     expect(NotificationTarget.find(target.id)).to be_verified
   end
 
-  it 'hides custom e-mail verification tokens and accepts verification links' do
+  it 'automatically sends custom e-mail verification for user-created targets' do
+    allow(VpsAdmin::API::Events).to receive(:webui_url).and_return('https://webui.example.test')
+    allow(VpsAdmin::API::Notifications).to receive(:deliver_mail_log!).and_return({})
+
+    target = nil
+    expect do
+      target = create_notification_target!(
+        {
+          action: 'email',
+          label: 'Spec e-mail',
+          target_kind: 'custom',
+          target_value: 'audit@example.test'
+        }
+      )
+    end.to change(MailLog, :count).by(1)
+
+    target.reload
+    expect(target).not_to be_verified
+    expect(target[:verification_token]).to be_present
+    expect(target.email_verification_sent_at).to be_present
+    expect(target.email_verification_send_available?).to be(false)
+
+    mail_log = MailLog.order(:id).last
+    expect(mail_log.to).to eq('audit@example.test')
+    expect(mail_log.text_plain).to include('https://webui.example.test/?')
+  end
+
+  it 'keeps user-created custom e-mail targets pending when automatic verification send fails' do
+    allow(VpsAdmin::API::Events).to receive(:webui_url).and_return('https://webui.example.test')
+    allow(VpsAdmin::API::Notifications).to receive(:deliver_mail_log!).and_raise('SMTP unavailable')
+
+    target = create_notification_target!(
+      {
+        action: 'email',
+        label: 'Spec e-mail',
+        target_kind: 'custom',
+        target_value: 'audit@example.test'
+      }
+    )
+
+    target.reload
+    expect(target).not_to be_verified
+    expect(target[:verification_token]).to be_present
+    expect(target.email_verification_sent_at).to be_nil
+    expect(target.last_error).to eq('SMTP unavailable')
+  end
+
+  it 'automatically resends custom e-mail verification when a user changes the address' do
     allow(VpsAdmin::API::Events).to receive(:webui_url).and_return('https://webui.example.test')
     allow(VpsAdmin::API::Notifications).to receive(:deliver_mail_log!).and_return({})
 
@@ -699,6 +746,39 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
         target_value: 'audit@example.test'
       }
     )
+    token = target[:verification_token]
+
+    expect do
+      as(SpecSeed.user) do
+        json_put notification_target_path(target.id), notification_target: {
+          target_value: 'ops@example.test'
+        }
+      end
+    end.to change(MailLog, :count).by(1)
+
+    expect_status(200)
+    target.reload
+    expect(target.target_value).to eq('ops@example.test')
+    expect(target[:verification_token]).to be_present
+    expect(target[:verification_token]).not_to eq(token)
+    expect(target.email_verification_sent_at).to be_present
+
+    mail_log = MailLog.order(:id).last
+    expect(mail_log.to).to eq('ops@example.test')
+  end
+
+  it 'hides custom e-mail verification tokens and accepts verification links' do
+    allow(VpsAdmin::API::Events).to receive(:webui_url).and_return('https://webui.example.test')
+    allow(VpsAdmin::API::Notifications).to receive(:deliver_mail_log!).and_return({})
+
+    target = NotificationTarget.create!(
+      user: SpecSeed.user,
+      action: 'email',
+      label: 'Spec e-mail',
+      target_kind: 'custom',
+      target_value: 'audit@example.test'
+    )
+    target.generate_email_verification_token!
     token = target[:verification_token]
 
     expect(target).not_to be_verified
@@ -746,16 +826,19 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
   it 'auto-verifies custom e-mail and SMS targets saved by admins' do
     allow(VpsAdmin::API::Notifications).to receive(:sms_configured?).and_return(true)
 
-    email_target = create_notification_target!(
-      {
-        user: SpecSeed.user.id,
-        action: 'email',
-        label: 'Admin e-mail',
-        target_kind: 'custom',
-        target_value: 'admin-managed@example.test'
-      },
-      actor: SpecSeed.admin
-    )
+    email_target = nil
+    expect do
+      email_target = create_notification_target!(
+        {
+          user: SpecSeed.user.id,
+          action: 'email',
+          label: 'Admin e-mail',
+          target_kind: 'custom',
+          target_value: 'admin-managed@example.test'
+        },
+        actor: SpecSeed.admin
+      )
+    end.not_to change(MailLog, :count)
     sms_target = NotificationTarget.create!(
       user: SpecSeed.user,
       action: 'sms',
