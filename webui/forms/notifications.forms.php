@@ -2207,6 +2207,48 @@ function notifications_target_options($user_id, $empty = false)
     return $options;
 }
 
+function notifications_email_target_toggle_script()
+{
+    global $xtpl;
+
+    static $added = false;
+    if ($added) {
+        return;
+    }
+    $added = true;
+
+    $xtpl->assign(
+        'AJAX_SCRIPT',
+        ($xtpl->vars['AJAX_SCRIPT'] ?? '')
+        . '<style type="text/css">'
+        . '.notification-email-custom-target-hidden{display:none;}'
+        . '</style>'
+        . '<script type="text/javascript">'
+        . 'function notificationsToggleEmailTargetValue(){'
+        . 'var isCustom=$("select[name=target_kind]").val()==="custom";'
+        . 'var rows=$(".notification-email-custom-target");'
+        . 'var input=rows.find("input[name=target_value]");'
+        . 'input.prop("disabled",!isCustom);'
+        . 'rows.stop(true,true);'
+        . 'if(isCustom){rows.fadeIn(150);}else{rows.fadeOut(150);}'
+        . '}'
+        . '$(document).ready(function(){'
+        . '$("select[name=target_kind]").on("change",notificationsToggleEmailTargetValue);'
+        . 'notificationsToggleEmailTargetValue();'
+        . '});'
+        . '</script>'
+    );
+}
+
+function notifications_email_target_custom_row_class($target_kind)
+{
+    $classes = 'notification-email-custom-target';
+    if ($target_kind !== 'custom') {
+        $classes .= ' notification-email-custom-target-hidden';
+    }
+    return $classes;
+}
+
 function notifications_target_form_fields($user_id, $action_type, $target = null, $receiver = null)
 {
     global $xtpl, $api;
@@ -2246,7 +2288,9 @@ function notifications_target_form_fields($user_id, $action_type, $target = null
     );
 
     if ($action_type === 'email') {
+        notifications_email_target_toggle_script();
         $target_kind = post_val('target_kind', $target ? $target->target_kind : 'default_recipient');
+        $custom_row_class = notifications_email_target_custom_row_class($target_kind);
 
         $xtpl->form_add_select(
             _('Recipient') . ':',
@@ -2255,14 +2299,16 @@ function notifications_target_form_fields($user_id, $action_type, $target = null
             $target_kind,
             _('Use the account e-mail or provide one custom address.')
         );
-        $xtpl->form_add_input(
-            _('Custom e-mail address') . ':',
-            'text',
-            '60',
-            'target_value',
-            post_val('target_value', $target ? $target->target_value : ''),
-            _('Used only when custom target is selected.')
+        $xtpl->table_td(_('Custom e-mail address') . ':');
+        $xtpl->table_td(
+            '<input type="text" size="60" name="target_value" value="'
+            . h(post_val('target_value', $target ? $target->target_value : ''))
+            . '"'
+            . ($target_kind === 'custom' ? '' : ' disabled')
+            . ' />'
         );
+        $xtpl->table_td(_('Used only when custom target is selected.'));
+        $xtpl->table_tr(false, $custom_row_class, $custom_row_class);
 
         if ($target && $target->target_kind === 'custom') {
             $xtpl->table_td(_('Verification') . ':');
@@ -2270,17 +2316,17 @@ function notifications_target_form_fields($user_id, $action_type, $target = null
                 boolean_icon($target->verified) . ' '
                 . ($target->verified ? _('verified') : _('pending'))
             );
-            $xtpl->table_tr();
+            $xtpl->table_tr(false, $custom_row_class, $custom_row_class);
         } elseif (!$target) {
             $xtpl->table_td(_('Verification') . ':');
-            $xtpl->table_td(_('custom address targets are verified after saving'));
-            $xtpl->table_tr();
+            $xtpl->table_td(_('A verification e-mail is sent after saving a custom address target.'));
+            $xtpl->table_tr(false, $custom_row_class, $custom_row_class);
         }
 
         if ($target && $target->target_kind === 'custom' && !$target->verified && $target->last_error) {
             $xtpl->table_td(_('Last error') . ':');
             $xtpl->table_td(h($target->last_error));
-            $xtpl->table_tr();
+            $xtpl->table_tr(false, $custom_row_class, $custom_row_class);
         }
     } elseif ($action_type === 'webhook') {
         $xtpl->form_add_input(
