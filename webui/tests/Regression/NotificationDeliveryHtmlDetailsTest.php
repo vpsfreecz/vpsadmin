@@ -244,6 +244,13 @@ final class NotificationDeliveryHtmlDetailsTest extends TestCase
 
         self::assertStringContainsString('Custom e-mail address', $functionSource);
         self::assertStringContainsString('one custom address', $functionSource);
+        self::assertStringContainsString('notifications_email_target_custom_row_class($target_kind)', $functionSource);
+        self::assertStringContainsString('notification-email-custom-target', $source);
+        self::assertStringContainsString('notification-email-custom-target-hidden', $source);
+        self::assertStringContainsString('notificationsToggleEmailTargetValue', $source);
+        self::assertStringContainsString('fadeIn(150)', $source);
+        self::assertStringContainsString('fadeOut(150)', $source);
+        self::assertStringContainsString('input.prop("disabled",!isCustom)', $source);
         self::assertStringContainsString('E-mail verification', $source);
         self::assertStringContainsString('Send verification e-mail', $source);
         self::assertStringContainsString('confirm_email_verification', $page);
