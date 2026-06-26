@@ -156,10 +156,10 @@
     platforms = [ ];
     source = {
       remotes = [ "https://rubygems.org" ];
-      sha256 = "1z0h1x7fpkzxamnvbw1nry64qd6n0nqkwprfair29z94kd3a9vhl";
+      sha256 = "1jv1s47c0c95vg4m037d9qb6hj07cnki19n8r54j5wfm7z5vpyhy";
       type = "gem";
     };
-    version = "0.4.6";
+    version = "0.4.7";
   };
   require_all = {
     groups = [ "default" ];
