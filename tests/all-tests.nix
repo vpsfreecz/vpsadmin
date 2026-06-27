@@ -74,6 +74,7 @@ testLib.makeTests [
   "storage/topology-fixture-replay"
   "storage/history-divergence-new-tree"
   "storage/rollback-across-trees"
+  "storage/rollback-dependent-branch-rotation"
   "storage/backup-multiple-destinations-remote"
   "storage/backup-multiple-destinations-diverged-remote"
   "storage/repeated-rollback-branching"
