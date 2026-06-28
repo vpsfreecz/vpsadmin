@@ -1748,8 +1748,17 @@ import ../make-test.nix (
         request_count: 5,
         last_request_at: Time.now - 90
       )
-      UserEmailRoleRecipient.where(user: admin_managed_user).delete_all
-      UserNotificationTemplateRecipient.where(user: admin_managed_user).delete_all
+      EventRouteMatcher
+        .joins(:event_route)
+        .where(event_routes: { user_id: admin_managed_user.id })
+        .delete_all
+      EventRoute.where(user: admin_managed_user).delete_all
+      NotificationReceiverTarget
+        .joins(:notification_receiver)
+        .where(notification_receivers: { user_id: admin_managed_user.id })
+        .delete_all
+      NotificationReceiver.where(user: admin_managed_user).delete_all
+      NotificationTarget.where(user: admin_managed_user).delete_all
 
       [
         ['default_currency', 'String', 'CZK'],
