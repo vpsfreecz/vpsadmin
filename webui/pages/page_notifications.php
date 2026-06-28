@@ -549,6 +549,51 @@ if (isLoggedIn()) {
             notifications_event_types(api_get_uint('user'));
             break;
 
+        case 'limits':
+            if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+                csrf_check();
+
+                if (!isAdmin()) {
+                    notify_user(_('Access denied'), _('Only administrators can update delivery limits.'));
+                    redirect('?page=notifications&action=limits');
+                }
+
+                $user_id = notifications_target_user_id();
+                $user = $api->user->show($user_id);
+
+                try {
+                    foreach (notifications_rate_limits_for_user($user) as $limit) {
+                        $name = notifications_rate_limit_post_name($limit);
+                        if (!isset($_POST[$name])) {
+                            continue;
+                        }
+
+                        $limit_count = (int) $_POST[$name];
+                        if ($limit_count < 1) {
+                            throw new \InvalidArgumentException(_('Limits must be positive integers.'));
+                        }
+
+                        if ($limit_count !== (int) $limit->limit_count) {
+                            $api->user($user_id)->notification_rate_limit($limit->id)->update([
+                                'limit_count' => $limit_count,
+                            ]);
+                        }
+                    }
+
+                    notify_user(_('Delivery limits updated'), '');
+                    redirect('?page=notifications&action=limits' . notifications_user_qs($user_id));
+                } catch (\InvalidArgumentException $e) {
+                    $xtpl->perex(_('Failed to update delivery limits'), h($e->getMessage()));
+                    notifications_rate_limits($user_id);
+                } catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+                    $xtpl->perex_format_errors(_('Failed to update delivery limits'), $e->getResponse());
+                    notifications_rate_limits($user_id);
+                }
+            } else {
+                notifications_rate_limits(api_get_uint('user'));
+            }
+            break;
+
         case 'test':
             if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 csrf_check();
@@ -561,6 +606,7 @@ if (isLoggedIn()) {
 
                 if (isAdmin()) {
                     $params['user'] = notifications_target_user_id();
+                    $params['subject_scope'] = api_post('subject_scope');
                 }
 
                 try {

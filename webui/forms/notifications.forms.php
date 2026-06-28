@@ -44,6 +44,7 @@ function notifications_sidebar($current, $user_id = null)
     $xtpl->sbar_add(_('Routes'), '?page=notifications&action=routes' . $user_qs);
     $xtpl->sbar_add(_('Receivers'), '?page=notifications&action=receivers' . $user_qs);
     $xtpl->sbar_add(_('Targets'), '?page=notifications&action=targets' . $user_qs);
+    $xtpl->sbar_add(_('Limits'), '?page=notifications&action=limits' . $user_qs);
     $xtpl->sbar_add(_('Event types'), '?page=notifications&action=event_types' . $user_qs);
     $xtpl->sbar_add(_('Test event'), '?page=notifications&action=test' . $user_qs);
 }
@@ -133,12 +134,16 @@ function notifications_api_list_to_array($list)
         'events',
         'event_deliveries',
         'event_delivery_attempts',
+        'event_route_matches',
+        'notification_rate_limits',
         'receivers',
         'targets',
+        'limits',
         'actions',
         'matchers',
         'deliveries',
         'attempts',
+        'route_matches',
     ];
 
     foreach ($wrapped_keys as $key) {
@@ -281,6 +286,23 @@ function notifications_subject_scope_label($value)
     }
 
     return notifications_subject_scope_options()[$value] ?? $value;
+}
+
+function notifications_test_subject_scope_options($desc = null)
+{
+    $labels = [
+        'self' => _('Own routes'),
+        'visible' => _('Admin visible routes'),
+        'system' => _('Admin system routes'),
+    ];
+    $choices = $desc ? notifications_param_choices($desc) : array_combine(array_keys($labels), array_keys($labels));
+    $ret = [];
+
+    foreach ($choices as $value => $label) {
+        $ret[$value] = $labels[$value] ?? $label;
+    }
+
+    return $ret;
 }
 
 function notifications_short_value($value, $len = 48)
@@ -1283,7 +1305,7 @@ function notifications_routes_list($user_id = null)
         $xtpl->table_td($route->matcher_summary ? h($route->matcher_summary) : '<code>*</code>');
         $xtpl->table_td(
             '<a href="?page=notifications&action=events&user=' . $user_id
-            . '&matched_event_route_id=' . $route->id . '">' . $route->hit_count . '</a>',
+            . '&event_route_id=' . $route->id . '">' . $route->hit_count . '</a>',
             false,
             true
         );
@@ -2185,7 +2207,11 @@ function notifications_receiver_action_secret_html($action)
         return boolean_icon(false) . ' ' . _('target disabled');
     }
 
-    return notifications_target_status_html($action);
+    if (notifications_prop($action, 'delivery_method_enabled') === false) {
+        return boolean_icon(false) . ' ' . _('delivery method disabled');
+    }
+
+    return notifications_target_action_status_html($action);
 }
 
 function notifications_target_status_html($target)
@@ -2764,6 +2790,94 @@ function notifications_time_or_dash($value)
     return $value ? tolocaltz($value) : '-';
 }
 
+function notifications_rate_limit_post_name($limit)
+{
+    return 'notification_rate_limit_' . preg_replace('/[^a-zA-Z0-9_]/', '_', $limit->id);
+}
+
+function notifications_rate_limits_for_user($user)
+{
+    global $api;
+
+    return notifications_api_list_to_array($api->user($user->id)->notification_rate_limit->list());
+}
+
+function notifications_rate_limit_source_label($limit)
+{
+    if (($limit->source ?? '') === 'override') {
+        return _('custom');
+    }
+
+    return _('default');
+}
+
+function notifications_rate_limits($user_id = null)
+{
+    global $xtpl, $api;
+
+    $user_id = notifications_target_user_id($user_id);
+    $user = $api->user->show($user_id);
+    $limits = notifications_rate_limits_for_user($user);
+
+    $xtpl->title(_('Notification delivery limits'));
+
+    if (isAdmin()) {
+        $xtpl->table_title(_('User'));
+        $xtpl->form_create('?page=notifications&action=limits', 'get', 'notification-user', false);
+        $xtpl->form_set_hidden_fields([
+            'page' => 'notifications',
+            'action' => 'limits',
+        ]);
+        $xtpl->form_add_input(_('User ID') . ':', 'text', '20', 'user', $user_id);
+        $xtpl->form_out(_('Show'));
+    }
+
+    $xtpl->table_title(_('Limits') . ': ' . h($user->login));
+    $xtpl->table_add_category(_('Method'));
+    $xtpl->table_add_category(_('Window'));
+    $xtpl->table_add_category(_('Limit'));
+    $xtpl->table_add_category(_('Used'));
+    $xtpl->table_add_category(_('Remaining'));
+    $xtpl->table_add_category(_('Resets at'));
+    $xtpl->table_add_category(_('Source'));
+
+    if (isAdmin()) {
+        $xtpl->form_create('?page=notifications&action=limits&user=' . $user->id, 'post');
+    }
+
+    foreach ($limits as $limit) {
+        $xtpl->table_td(h($limit->label ?? $limit->delivery_method));
+        $xtpl->table_td(h($limit->period_label ?? $limit->period));
+        if (isAdmin()) {
+            $xtpl->table_td(
+                '<input type="number" min="1" step="1" size="8" name="'
+                . h(notifications_rate_limit_post_name($limit))
+                . '" value="' . h((string) $limit->limit_count) . '">'
+            );
+        } else {
+            $xtpl->table_td(h((string) $limit->limit_count));
+        }
+        $xtpl->table_td(h((string) ($limit->used_count ?? 0)));
+        $xtpl->table_td(h((string) ($limit->remaining_count ?? 0)));
+        $xtpl->table_td(notifications_time_or_dash($limit->resets_at ?? null));
+        $xtpl->table_td(h(notifications_rate_limit_source_label($limit)));
+        $xtpl->table_tr();
+    }
+
+    if (!$limits) {
+        $xtpl->table_td(_('No delivery limits are configured.'), false, false, '7');
+        $xtpl->table_tr();
+    }
+
+    if (isAdmin()) {
+        $xtpl->form_out(_('Save'));
+    } else {
+        $xtpl->table_out();
+    }
+
+    notifications_sidebar('limits', $user_id);
+}
+
 function notifications_response_status_label($action, $status)
 {
     if (!$status) {
@@ -2995,9 +3109,9 @@ function notifications_events()
         }
     }
 
-    $route_id = api_get_uint('matched_event_route_id');
+    $route_id = api_get_uint('event_route_id');
     if ($route_id !== null && $route_id > 0) {
-        $params['matched_event_route_id'] = $route_id;
+        $params['event_route_id'] = $route_id;
     }
 
     $user_id = api_get_uint('user');
@@ -3024,7 +3138,7 @@ function notifications_events()
 
     $xtpl->form_add_input(_('Limit') . ':', 'text', '20', 'limit', get_val('limit', '25'));
     $xtpl->form_add_input(_('From ID') . ':', 'text', '20', 'from_id', get_val('from_id'));
-    $xtpl->form_add_input(_('Route ID') . ':', 'text', '20', 'matched_event_route_id', get_val('matched_event_route_id'));
+    $xtpl->form_add_input(_('Route ID') . ':', 'text', '20', 'event_route_id', get_val('event_route_id'));
     $xtpl->form_add_input(_('Receiver ID') . ':', 'text', '20', 'notification_receiver_id', get_val('notification_receiver_id'));
     $xtpl->form_add_input(_('Target ID') . ':', 'text', '20', 'notification_target_id', get_val('notification_target_id'));
     $xtpl->form_add_input(_('Receiver target ID') . ':', 'text', '20', 'notification_receiver_target_id', get_val('notification_receiver_target_id'));
@@ -3106,6 +3220,43 @@ function notifications_events()
     notifications_sidebar('events', notifications_target_user_id());
 }
 
+function notifications_event_route_matches($event)
+{
+    global $xtpl;
+
+    $matches = notifications_api_list_to_array($event->route_match->list());
+
+    $xtpl->table_title(_('Matched routes'));
+    $xtpl->table_add_category(_('Route'));
+    $xtpl->table_add_category(_('User'));
+    $xtpl->table_add_category(_('Relation'));
+    $xtpl->table_add_category(_('Source'));
+    $xtpl->table_add_category(_('Order'));
+
+    foreach ($matches as $match) {
+        $route_label = notifications_prop($match, 'event_route_label') ?: ('#' . $match->event_route_id);
+        $route_user_qs = notifications_user_qs(notifications_prop($match, 'route_owner_id'));
+        $owner = notifications_prop($match, 'route_owner_login') ?: ('#' . notifications_prop($match, 'route_owner_id'));
+
+        $xtpl->table_td(
+            '<a href="?page=notifications&action=route_edit&id=' . $match->event_route_id . $route_user_qs . '">'
+            . h($route_label) . '</a>'
+        );
+        $xtpl->table_td(h($owner));
+        $xtpl->table_td(h(notifications_prop($match, 'subject_relation')));
+        $xtpl->table_td(h(notifications_prop($match, 'source')));
+        $xtpl->table_td(h(notifications_prop($match, 'match_order')));
+        $xtpl->table_tr();
+    }
+
+    if (!$matches) {
+        $xtpl->table_td(_('No routes matched.'), false, false, 5);
+        $xtpl->table_tr();
+    }
+
+    $xtpl->table_out();
+}
+
 function notifications_event_show($event_id)
 {
     global $xtpl, $api;
@@ -3140,10 +3291,6 @@ function notifications_event_show($event_id)
     $xtpl->table_td(h($event->routing_state));
     $xtpl->table_tr();
 
-    $xtpl->table_td(_('Matched route') . ':');
-    $xtpl->table_td($event->matched_event_route_id ? '<a href="?page=notifications&action=route_edit&id=' . $event->matched_event_route_id . notifications_user_qs($event->user_id) . '">' . $event->matched_event_route_id . '</a>' : '-');
-    $xtpl->table_tr();
-
     $xtpl->table_td(_('Summary') . ':');
     $xtpl->table_td(h($event->summary));
     $xtpl->table_tr();
@@ -3152,6 +3299,8 @@ function notifications_event_show($event_id)
     $xtpl->table_td(notifications_json_pre_html($event->parameters_json));
     $xtpl->table_tr();
     $xtpl->table_out();
+
+    notifications_event_route_matches($event);
 
     $xtpl->table_title(_('Deliveries'));
     $xtpl->table_add_category(_('Action'));
@@ -3620,6 +3769,12 @@ function notifications_test_event($user_id = null)
 
     if (isAdmin()) {
         $xtpl->form_add_input(_('User ID') . ':', 'text', '20', 'user', $user_id);
+        $xtpl->form_add_select(
+            _('Subject scope') . ':',
+            'subject_scope',
+            notifications_test_subject_scope_options($input->subject_scope),
+            post_val('subject_scope', 'self')
+        );
     }
 
     $xtpl->form_add_select(

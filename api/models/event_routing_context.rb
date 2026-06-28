@@ -25,7 +25,6 @@ class EventRoutingContext < ApplicationRecord
 
   belongs_to :event
   belongs_to :recipient_user, class_name: 'User', foreign_key: :user_id
-  belongs_to :matched_event_route, class_name: 'EventRoute', optional: true
   has_many :event_deliveries, dependent: :nullify
 
   enum :routing_state, %i[routed suppressed failed read acknowledged bookmarked], suffix: true

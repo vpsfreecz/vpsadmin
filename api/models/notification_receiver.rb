@@ -1,5 +1,6 @@
 class NotificationReceiver < ApplicationRecord
-  DEFAULT_EMAIL_LABEL = 'Default e-mail'.freeze
+  DEFAULT_EMAIL_LABEL = 'Default'.freeze
+  LEGACY_DEFAULT_EMAIL_LABEL = 'Default e-mail'.freeze
   DEFAULT_MUTE_LABEL = 'Mute'.freeze
   LEGACY_DEFAULT_MUTE_LABEL = 'Do not notify'.freeze
   MAX_RECEIVERS_PER_USER = 50
@@ -33,6 +34,7 @@ class NotificationReceiver < ApplicationRecord
 
   def self.ensure_default_email_receiver_for!(user)
     receiver = default_email_receiver_for(user) || create_default_email_receiver!(user)
+    normalize_default_email_receiver!(receiver)
     ensure_default_email_action!(receiver)
     receiver
   end
@@ -50,7 +52,7 @@ class NotificationReceiver < ApplicationRecord
   def self.default_email_receiver_for(user)
     where(
       user:,
-      label: DEFAULT_EMAIL_LABEL,
+      label: [DEFAULT_EMAIL_LABEL, LEGACY_DEFAULT_EMAIL_LABEL],
       mute: false,
       description: [
         DEFAULT_EMAIL_DESCRIPTION,
@@ -98,6 +100,9 @@ class NotificationReceiver < ApplicationRecord
       t.target_kind = 'default_recipient'
       t.skip_delivery_method_enabled_validation = true
     end
+    if target.label != DEFAULT_EMAIL_LABEL
+      target.update_columns(label: DEFAULT_EMAIL_LABEL, updated_at: Time.now)
+    end
 
     receiver.notification_receiver_targets.find_or_create_by!(
       notification_target: target
@@ -133,6 +138,16 @@ class NotificationReceiver < ApplicationRecord
     receiver.update!(
       label: DEFAULT_MUTE_LABEL,
       description: DEFAULT_MUTE_DESCRIPTION
+    )
+  end
+
+  def self.normalize_default_email_receiver!(receiver)
+    return if receiver.label == DEFAULT_EMAIL_LABEL &&
+              receiver.description == DEFAULT_EMAIL_DESCRIPTION
+
+    receiver.update!(
+      label: DEFAULT_EMAIL_LABEL,
+      description: DEFAULT_EMAIL_DESCRIPTION
     )
   end
 

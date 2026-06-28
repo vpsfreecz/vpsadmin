@@ -22,7 +22,6 @@ module VpsAdmin::API::Resources
       string :routing_state,
              choices: { values: ::Event.routing_state_labels },
              load_validators: false
-      integer :matched_event_route_id, nullable: true
       string :subject_relation,
              choices: { values: ::EventRoutingContext.subject_relation_labels },
              load_validators: false,
@@ -40,7 +39,8 @@ module VpsAdmin::API::Resources
       desc 'List events'
 
       input do
-        use :common, include: %i[user event_type category severity routing_state matched_event_route_id]
+        use :common, include: %i[user event_type category severity routing_state]
+        integer :event_route_id, nullable: true
         string :action,
                choices: { values: ::EventDelivery.action_labels },
                load_validators: false
@@ -59,7 +59,6 @@ module VpsAdmin::API::Resources
 
       authorize do |u|
         allow if u.role == :admin
-        output blacklist: %i[matched_event_route_id]
         allow
       end
 
@@ -69,7 +68,7 @@ module VpsAdmin::API::Resources
         %i[user event_type category severity routing_state].each do |v|
           q = q.where(v => input[v]) if input.has_key?(v)
         end
-        q = matched_event_route_filter(q)
+        q = event_route_filter(q)
         q = subject_relation_filter(q)
 
         delivery_filters = {}
@@ -99,25 +98,24 @@ module VpsAdmin::API::Resources
 
       protected
 
-      def matched_event_route_filter(scope)
-        return scope unless input.has_key?(:matched_event_route_id)
-        return scope.where(matched_event_route_id: input[:matched_event_route_id]) if current_user.role == :admin
+      def event_route_filter(scope)
+        return scope unless input.has_key?(:event_route_id)
+
+        route_id = input[:event_route_id]
+        matching_events = ::EventRouteMatch.where(event_route_id: route_id)
+
+        if current_user.role == :admin
+          return scope.where(id: matching_events.select(:event_id))
+        end
 
         unless ::EventRoute.where(
-          id: input[:matched_event_route_id],
+          id: route_id,
           user_id: current_user.id
         ).exists?
           return scope.none
         end
 
-        matching_events = ::EventRoutingContext
-                          .where(
-                            user_id: current_user.id,
-                            matched_event_route_id: input[:matched_event_route_id]
-                          )
-                          .select(:event_id)
-
-        scope.where(id: matching_events)
+        scope.where(id: matching_events.where(route_owner_id: current_user.id).select(:event_id))
       end
 
       def delivery_filter(scope, filters)
@@ -195,7 +193,6 @@ module VpsAdmin::API::Resources
 
       authorize do |u|
         allow if u.role == :admin
-        output blacklist: %i[matched_event_route_id]
         allow
       end
 
@@ -208,6 +205,11 @@ module VpsAdmin::API::Resources
       TEST_EVENT_LIMIT = 20
       TEST_EVENT_SOURCE_CLASS = 'VpsAdmin::API::Resources::Event::Test'.freeze
       TEST_EVENT_WINDOW = 3600
+      SUBJECT_SCOPE_LABELS = {
+        'self' => 'Own routes',
+        'visible' => 'Admin visible routes',
+        'system' => 'Admin system routes'
+      }.freeze
 
       desc 'Create a test event and route it'
       route 'test'
@@ -222,6 +224,10 @@ module VpsAdmin::API::Resources
         string :subject, nullable: true
         text :summary, nullable: true
         text :parameters_json, label: 'Parameters', nullable: true
+        string :subject_scope,
+               choices: { values: SUBJECT_SCOPE_LABELS },
+               load_validators: false,
+               nullable: true
       end
 
       output do
@@ -234,20 +240,27 @@ module VpsAdmin::API::Resources
 
       def exec
         owner = input[:user] || current_user
+        subject_scope = input[:subject_scope].presence || 'self'
 
         if current_user.role != :admin && owner != current_user
           error!('access denied')
         end
 
-        check_test_event_limit!(owner)
+        route_context_mode, route_owner = test_route_context(subject_scope, owner)
+        event_user = subject_scope == 'system' ? nil : owner
+
+        check_test_event_limit!(event_user)
 
         VpsAdmin::API::Events.emit!(
           input[:event_type] || 'user.test_notification',
-          user: owner,
+          user: event_user,
           source_class: TEST_EVENT_SOURCE_CLASS,
           subject: input[:subject] || 'Test notification',
           summary: input[:summary],
-          parameters: parse_parameters
+          parameters: parse_parameters,
+          route_context_mode:,
+          route_owner:,
+          persist: :always
         )
       rescue JSON::ParserError
         error!('parameters are not valid JSON')
@@ -268,6 +281,24 @@ module VpsAdmin::API::Resources
         ret
       end
 
+      def test_route_context(subject_scope, owner)
+        case subject_scope
+        when 'self'
+          [:self, nil]
+        when 'visible'
+          error!('visible test events are available only to admins') unless current_user.role == :admin
+          error!('visible test events need a different subject user') if owner == current_user
+
+          [:route_owner, current_user]
+        when 'system'
+          error!('system test events are available only to admins') unless current_user.role == :admin
+
+          [:route_owner, current_user]
+        else
+          error!('invalid subject scope')
+        end
+      end
+
       def check_test_event_limit!(owner)
         count = ::Event
                 .where(user: owner, source_class: TEST_EVENT_SOURCE_CLASS)
@@ -276,6 +307,83 @@ module VpsAdmin::API::Resources
         return if count < TEST_EVENT_LIMIT
 
         error!('test event limit reached, try again later')
+      end
+    end
+
+    class RouteMatch < HaveAPI::Resource
+      model ::EventRouteMatch
+      route '{event_id}/route_matches'
+      desc 'List matched event routes'
+
+      params(:all) do
+        id :id
+        integer :event_route_id
+        string :event_route_label, nullable: true
+        integer :route_owner_id
+        string :route_owner_login, nullable: true
+        string :subject_relation,
+               choices: { values: ::EventRoutingContext.subject_relation_labels },
+               load_validators: false
+        string :source,
+               choices: { values: ::EventRoutingContext.source_labels },
+               load_validators: false
+        integer :match_order
+        datetime :created_at
+        datetime :updated_at
+      end
+
+      class Index < HaveAPI::Actions::Default::Index
+        desc 'List matched event routes'
+
+        output(:object_list) do
+          use :all
+        end
+
+        authorize do |_u|
+          allow
+        end
+
+        def query
+          q = self.class.model
+                  .joins(:event)
+                  .where(event_id: path_params['event_id'])
+          return q if current_user.role == :admin
+
+          q.where(events: { user_id: current_user.id }, route_owner_id: current_user.id)
+        end
+
+        def count
+          query.count
+        end
+
+        def exec
+          with_pagination(query.includes(:event_route, :route_owner).order(:match_order, :id))
+        end
+      end
+
+      class Show < HaveAPI::Actions::Default::Show
+        desc 'Show matched event route'
+
+        output do
+          use :all
+        end
+
+        authorize do |_u|
+          allow
+        end
+
+        def exec
+          query.find_by!(id: path_params['route_match_id'])
+        end
+
+        def query
+          q = self.class.model
+                  .joins(:event)
+                  .where(event_id: path_params['event_id'])
+          return q if current_user.role == :admin
+
+          q.where(events: { user_id: current_user.id }, route_owner_id: current_user.id)
+        end
       end
     end
 
@@ -449,6 +557,8 @@ module VpsAdmin::API::Resources
           string :action,
                  choices: { values: ::EventDelivery.action_labels },
                  load_validators: false
+          integer :recipient_user_id, nullable: true
+          string :recipient_user_login, nullable: true
           string :state,
                  choices: { values: ::EventDeliveryAttempt.state_labels },
                  load_validators: false

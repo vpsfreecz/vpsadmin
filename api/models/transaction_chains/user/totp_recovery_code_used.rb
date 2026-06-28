@@ -1,6 +1,7 @@
 module TransactionChains
   class User::TotpRecoveryCodeUsed < ::TransactionChain
     label 'TOTP recovery'
+    allow_empty
 
     def link_chain(user, totp_device, request)
       concerns(:affect, [user.class.name, user.id])

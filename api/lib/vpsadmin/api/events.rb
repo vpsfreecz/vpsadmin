@@ -466,6 +466,11 @@ module VpsAdmin::API
         !self_subject? && route_owner&.role == :admin
       end
     end
+    RouteMatchPlan = Struct.new(
+      :event_route,
+      :route_context,
+      :match_order
+    )
     DeliveryPlan = Struct.new(
       :action,
       :target_kind,
@@ -485,11 +490,19 @@ module VpsAdmin::API
 
     RouteResult = Struct.new(
       :routing_state,
-      :matched_event_route,
+      :route_matches,
       :deliveries,
       :spent_event_routes,
       :routing_context_states
     ) do
+      def releasable?
+        deliveries.any? { |delivery| delivery.state != 'skipped' }
+      end
+
+      def persistable?
+        releasable? || route_matches.any?
+      end
+
       def suppressed_by_mute?
         routing_state == 'suppressed' &&
           deliveries.any? do |delivery|
@@ -698,7 +711,7 @@ module VpsAdmin::API
 
     def plan(event_type, user: nil, vps: nil, subject: nil, summary: nil,
              parameters: nil, severity: nil, category: nil, ip_addr: nil,
-             **event_args)
+             record_route_hits: false, **event_args)
       type = type_for(event_type)
       context = event_context_for(type, event_args)
       attrs = context ? type.definition.build_attributes(context) : {}
@@ -723,13 +736,14 @@ module VpsAdmin::API
       context.event = event if context
       event.runtime_event_context = context
 
-      Router.new(event).plan
+      Router.new(event).plan(record_route_hits:)
     end
 
     def emit!(event_type, user: nil, vps: nil, source: nil, source_class: nil,
               source_id: nil, subject: nil, summary: nil, parameters: nil,
               severity: nil, category: nil, ip_addr: nil, route: true,
-              release: true, **event_args)
+              release: true, persist: :routed, route_context_mode: nil,
+              route_owner: nil, **event_args)
       type = type_for(event_type)
       context = event_context_for(type, event_args)
       attrs = context ? type.definition.build_attributes(context) : {}
@@ -742,7 +756,7 @@ module VpsAdmin::API
       source ||= attrs[:source]
       owner = user || vps&.user
 
-      event = ::Event.create!(
+      event = ::Event.new(
         user: owner,
         vps:,
         event_type: event_type.to_s,
@@ -758,8 +772,21 @@ module VpsAdmin::API
       context.event = event if context
       event.runtime_event_context = context
 
-      route!(event) if route
-      VpsAdmin::API::Notifications::Release.release!(event.event_deliveries.where(state: 'prepared')) if route && release
+      if route
+        router = Router.new(
+          event,
+          route_context_mode:,
+          route_owner:
+        )
+        result = router.plan
+
+        return nil if persist != :always && !result.persistable?
+
+        router.persist!(result)
+        VpsAdmin::API::Notifications::Release.release!(event.event_deliveries.where(state: 'prepared')) if release
+      else
+        event.save!
+      end
 
       event
     end
@@ -922,36 +949,54 @@ module VpsAdmin::API
     class Router
       attr_reader :event
 
-      def initialize(event)
+      def initialize(event, route_context_mode: nil, route_owner: nil)
         @event = event
+        @route_context_mode = route_context_mode&.to_sym
+        @route_owner = route_owner
         @matched_routes = []
+        @matched_route_matches = []
+        @match_order = 0
       end
 
       def route!
-        event.class.transaction do
-          event.lock!
-          event.event_deliveries.delete_all
-          event.event_routing_contexts.delete_all
-          result = plan
+        persist!(plan)
+      end
 
-          event.update!(
-            routing_state: result.routing_state,
-            matched_event_route: result.matched_event_route
-          )
+      def persist!(result)
+        event.class.transaction do
+          if event.persisted?
+            event.lock!
+            event.event_deliveries.delete_all
+            event.event_routing_contexts.delete_all
+            event.event_route_matches.delete_all
+            event.update!(
+              routing_state: result.routing_state
+            )
+          else
+            event.routing_state = result.routing_state
+            event.save!
+          end
+
+          result.route_matches.each do |route_match|
+            create_route_match!(route_match)
+          end
 
           result.deliveries.each do |delivery|
             create_delivery!(delivery, result.routing_context_states)
           end
 
+          record_route_hits!
           spend_single_use_routes(result.spent_event_routes)
         end
 
         event
       end
 
-      def plan
+      def plan(record_route_hits: false)
         ensure_default_routes
-        plan_all_contexts
+        plan_all_contexts.tap do
+          record_route_hits! if record_route_hits
+        end
       end
 
       protected
@@ -968,12 +1013,10 @@ module VpsAdmin::API
         end
 
         deliveries = deduplicate(context_results.flat_map(&:deliveries) + direct_email_deliveries)
-        first_delivery_route = deliveries.map(&:event_route).compact.first
-        first_matched_route = context_results.map(&:matched_event_route).compact.first
 
         RouteResult.new(
           routing_state: routing_state_for(deliveries),
-          matched_event_route: first_delivery_route || first_matched_route,
+          route_matches: @matched_route_matches,
           deliveries:,
           spent_event_routes: context_results.flat_map(&:spent_event_routes).uniq,
           routing_context_states: routing_context_states(deliveries)
@@ -981,6 +1024,10 @@ module VpsAdmin::API
       end
 
       def route_contexts
+        return [] if @route_context_mode == :self && event.user.nil?
+        return [RouteContext.for(event, event.user)] if @route_context_mode == :self
+        return @route_owner ? [RouteContext.for(event, @route_owner)] : [] if @route_context_mode == :route_owner
+
         ret = []
         ret << RouteContext.for(event, event.user) if event.user
 
@@ -1044,7 +1091,6 @@ module VpsAdmin::API
       def plan_route(route_context, emit_skipped:)
         deadline = monotonic_time + EVALUATION_TIMEOUT
         deliveries = []
-        first_matched_route = nil
         previous_route_context = @route_context
         @route_context = route_context
 
@@ -1052,7 +1098,6 @@ module VpsAdmin::API
           break if deadline_expired?(deadline)
           next unless route.matches_in_context?(route_context, deadline:)
 
-          first_matched_route ||= route
           deliveries.concat(process_route(route_context, route, deadline))
 
           break unless route.continue?
@@ -1060,11 +1105,9 @@ module VpsAdmin::API
 
         deliveries = [skipped_delivery(nil, nil, nil, 'no route matched the event')] if deliveries.empty? && emit_skipped
 
-        first_delivery_route = deliveries.map(&:event_route).compact.first
-
         RouteResult.new(
           routing_state: routing_state_for(deliveries),
-          matched_event_route: first_delivery_route || first_matched_route,
+          route_matches: [],
           deliveries:,
           spent_event_routes: spent_routes
         )
@@ -1073,8 +1116,7 @@ module VpsAdmin::API
       end
 
       def process_route(route_context, route, deadline)
-        ::EventRoute.increment_counter(:hit_count, route.id)
-        @matched_routes << route
+        record_matched_route(route_context, route)
 
         deliveries = []
         matched_child = false
@@ -1394,26 +1436,47 @@ module VpsAdmin::API
         record
       end
 
+      def create_route_match!(route_match)
+        route_context = route_match.route_context
+
+        event.event_route_matches.create!(
+          event_route: route_match.event_route,
+          route_owner: route_context.route_owner,
+          subject_relation: route_context.subject_relation,
+          source: route_context.source,
+          match_order: route_match.match_order
+        )
+      end
+
       def routing_context_for_delivery(delivery, routing_state)
         route_context = delivery.route_context
         user = route_context.route_owner
-        matched_route = delivery.event_route
 
         event.event_routing_contexts.find_or_create_by!(user_id: user.id) do |context|
           context.subject_relation = route_context.subject_relation
           context.source = route_context.source
           context.routing_state = routing_state
-          context.matched_event_route = matched_route
         end.tap do |context|
           attrs = {}
           attrs[:routing_state] = routing_state if context.routing_state != routing_state
-          attrs[:matched_event_route] = matched_route if context.matched_event_route.nil? && matched_route
           context.update!(attrs) if attrs.any?
         end
       end
 
       def spent_routes
         @matched_routes.select(&:single_use?).uniq
+      end
+
+      def record_route_hits!
+        @matched_routes.uniq.each do |route|
+          ::EventRoute.increment_counter(:hit_count, route.id)
+        end
+      end
+
+      def record_matched_route(route_context, route)
+        @matched_routes << route
+        @match_order += 1
+        @matched_route_matches << RouteMatchPlan.new(route, route_context, @match_order)
       end
 
       def spend_single_use_routes(routes)

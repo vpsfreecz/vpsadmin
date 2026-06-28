@@ -10,10 +10,15 @@ let
   cfg = config.vpsadmin.api;
   telegramCfg = config.vpsadmin.notifications.telegram;
   smsCfg = config.vpsadmin.notifications.sms;
+  rateLimitsCfg = config.vpsadmin.notifications.rateLimits;
   smtpCfg = cfg.notifications.smtp;
   vpsadminRoot = toString (./../../../../.);
   notificationsConfigEnabled =
-    cfg.notifications.rabbitmq.enable || smtpCfg.enable || telegramCfg.enable || smsCfg.enable;
+    cfg.notifications.rabbitmq.enable
+    || smtpCfg.enable
+    || telegramCfg.enable
+    || smsCfg.enable
+    || rateLimitsCfg.defaults != { };
 
   smtpPasswordCredential = "smtp-password";
   smsCallbackTokenCredential = "sms-callback-token";
@@ -89,6 +94,11 @@ let
           vhost = vpsadminCfg.rabbitmq.virtualHost;
           username = cfg.notifications.rabbitmq.username;
           password = "#rabbitmq_pass#";
+        };
+      }
+      // {
+        rate_limits = {
+          defaults = rateLimitsCfg.defaults;
         };
       }
       // optionalAttrs smtpCfg.enable {
