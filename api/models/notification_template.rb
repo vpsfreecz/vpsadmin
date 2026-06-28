@@ -11,8 +11,6 @@ require_relative 'vps_migration'
 
 class NotificationTemplate < ApplicationRecord
   has_many :notification_template_variants, dependent: :destroy
-  has_many :notification_template_email_recipients, dependent: :destroy
-  has_many :email_recipients, through: :notification_template_email_recipients
 
   validates :name, :label, :template_id, presence: true, allow_blank: false
   validates :name, uniqueness: true
@@ -85,8 +83,6 @@ class NotificationTemplate < ApplicationRecord
   # @option opts [String] message_id
   # @option opts [String] in_reply_to
   # @option opts [String] references
-  # @option opts [Boolean] include_default_recipients
-  # @option opts [Boolean] include_template_recipients
   # @return [MailLog]
   def self.send_email!(name, opts = {})
     tpl = find_resolved!(name, opts[:params])
@@ -116,17 +112,7 @@ class NotificationTemplate < ApplicationRecord
       text_html: variant.html
     )
 
-    recipients = { to: opts[:to] || [], cc: opts[:cc] || [], bcc: opts[:bcc] || [] }
-    recipients[:to].concat(tpl.recipients(opts[:user])) if opts.fetch(:include_default_recipients, true)
-
-    if opts.fetch(:include_template_recipients, true)
-      tpl.email_recipients.each do |recp|
-        recipients[:to].concat(recp.to.split(',')) if recp.to
-        recipients[:cc].concat(recp.cc.split(',')) if recp.cc
-        recipients[:bcc].concat(recp.bcc.split(',')) if recp.bcc
-      end
-    end
-
+    recipients = { to: [], cc: [], bcc: [] }
     %i[to cc bcc].each do |t|
       recipients[t].concat(opts[t]) if opts[t]
       mail.send("#{t}=", recipients[t].uniq.join(','))
@@ -143,7 +129,6 @@ class NotificationTemplate < ApplicationRecord
   # @option opts [String] text_plain
   # @option opts [String] text_html
   # @option opts [User, nil] user whom to send mail
-  # @option opts [Symbol] role contact email role
   # @option opts [Hash] vars variables passed to the template
   # @option opts [Array<String>] to
   # @option opts [Array<String>] cc
@@ -185,8 +170,6 @@ class NotificationTemplate < ApplicationRecord
     )
 
     recps = { to: opts[:to] || [], cc: opts[:cc] || [], bcc: opts[:bcc] || [] }
-
-    recps[:to].concat(recipients(nil, opts[:user], [opts[:role]])) if opts[:user] && opts[:role]
 
     %i[to cc bcc].each do |t|
       mail.send("#{t}=", recps[t].uniq.join(','))
@@ -236,38 +219,6 @@ class NotificationTemplate < ApplicationRecord
       Language.find_by(code: 'en') ||
       Language.first ||
       raise(VpsAdmin::API::Exceptions::NotificationTemplateDoesNotExist, opts[:name])
-  end
-
-  # Returns a list of e-mail recipients, tries to find role recipients,
-  # user template recipients and defaults to the primary e-mail address.
-  # @param template [NotificationTemplate, nil]
-  # @param user [User]
-  # @param roles [Array, Symbol]
-  # @return [Array<String>] list of e-mail addresses
-  def self.recipients(template, user, roles)
-    ret = []
-    return ret unless user
-
-    # Template recipients
-    if template
-      user.user_notification_template_recipients.where(
-        notification_template: template
-      ).each do |recp|
-        raise VpsAdmin::API::Exceptions::NotificationTemplateDisabled, template.name if recp.disabled?
-
-        ret.concat(recp.to.split(','))
-      end
-    end
-
-    if ret.empty?
-      user.user_email_role_recipients.where(role: roles).each do |recp|
-        ret.concat(recp.to.split(','))
-      end
-    end
-
-    ret << user.email if ret.empty?
-    ret.uniq!
-    ret
   end
 
   # Register built-in templates
@@ -496,10 +447,6 @@ class NotificationTemplate < ApplicationRecord
   }, roles: %i[admin], public: true
 
   enum :user_visibility, %i[default visible invisible]
-
-  def recipients(user)
-    self.class.recipients(self, user, desc[:roles])
-  end
 
   def desc
     self.class.templates[template_id.to_sym] || {}

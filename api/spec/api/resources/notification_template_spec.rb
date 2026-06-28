@@ -29,12 +29,6 @@ RSpec.describe 'VpsAdmin::API::Resources::NotificationTemplate' do
       user_visibility: :visible
     )
 
-    recp_a = EmailRecipient.create!(label: 'Spec Recipient A', to: 'a@example.test')
-    recp_b = EmailRecipient.create!(label: 'Spec Recipient B', cc: 'b@example.test')
-
-    tpl_a_recp_a = NotificationTemplateEmailRecipient.create!(notification_template: tpl_a, email_recipient: recp_a)
-    tpl_a_recp_b = NotificationTemplateEmailRecipient.create!(notification_template: tpl_a, email_recipient: recp_b)
-
     lang_en = Language.find_or_create_by!(code: 'en') { |l| l.label = 'English' }
     lang_cs = Language.find_or_create_by!(code: 'cs') { |l| l.label = 'Czech' }
 
@@ -60,10 +54,6 @@ RSpec.describe 'VpsAdmin::API::Resources::NotificationTemplate' do
     {
       tpl_a: tpl_a,
       tpl_b: tpl_b,
-      recp_a: recp_a,
-      recp_b: recp_b,
-      tpl_a_recp_a: tpl_a_recp_a,
-      tpl_a_recp_b: tpl_a_recp_b,
       lang_en: lang_en,
       lang_cs: lang_cs,
       tr_en: tr_en,
@@ -77,14 +67,6 @@ RSpec.describe 'VpsAdmin::API::Resources::NotificationTemplate' do
 
   def show_path(id)
     vpath("/notification_templates/#{id}")
-  end
-
-  def recipients_path(tpl_id)
-    vpath("/notification_templates/#{tpl_id}/email_recipients")
-  end
-
-  def recipient_path(tpl_id, email_recipient_id)
-    vpath("/notification_templates/#{tpl_id}/email_recipients/#{email_recipient_id}")
   end
 
   def variants_path(tpl_id)
@@ -137,22 +119,6 @@ RSpec.describe 'VpsAdmin::API::Resources::NotificationTemplate' do
     fixtures.fetch(:tpl_b)
   end
 
-  def recp_a
-    fixtures.fetch(:recp_a)
-  end
-
-  def recp_b
-    fixtures.fetch(:recp_b)
-  end
-
-  def tpl_a_recp_a
-    fixtures.fetch(:tpl_a_recp_a)
-  end
-
-  def tpl_a_recp_b
-    fixtures.fetch(:tpl_a_recp_b)
-  end
-
   def lang_en
     fixtures.fetch(:lang_en)
   end
@@ -195,14 +161,6 @@ RSpec.describe 'VpsAdmin::API::Resources::NotificationTemplate' do
 
   def template_obj
     json.dig('response', 'notification_template') || json['response']
-  end
-
-  def recipients_list
-    json.dig('response', 'recipients') || json.dig('response', 'notification_template_recipients') || []
-  end
-
-  def recipient_obj
-    json.dig('response', 'recipient') || json.dig('response', 'notification_template_recipient') || json['response']
   end
 
   def variants_list
@@ -260,10 +218,6 @@ RSpec.describe 'VpsAdmin::API::Resources::NotificationTemplate' do
         'notification_template#create',
         'notification_template#update',
         'notification_template#delete',
-        'notification_template.recipient#index',
-        'notification_template.recipient#show',
-        'notification_template.recipient#create',
-        'notification_template.recipient#delete',
         'notification_template.variant#index',
         'notification_template.variant#show',
         'notification_template.variant#create',
@@ -530,184 +484,18 @@ RSpec.describe 'VpsAdmin::API::Resources::NotificationTemplate' do
         text: 'Delete me'
       )
 
-      NotificationTemplateEmailRecipient.create!(notification_template: tpl_del, email_recipient: recp_a)
-
       as(admin) { json_delete show_path(tpl_del.id) }
 
       expect_status(200)
       expect(json['status']).to be(true)
       expect(NotificationTemplate.where(id: tpl_del.id)).to be_empty
       expect(NotificationTemplateVariant.where(notification_template_id: tpl_del.id)).to be_empty
-      expect(NotificationTemplateEmailRecipient.where(notification_template_id: tpl_del.id)).to be_empty
     end
 
     it 'returns 404 for unknown template' do
       missing = NotificationTemplate.maximum(:id).to_i + 100
 
       as(admin) { json_delete show_path(missing) }
-
-      expect_status(404)
-      expect(json['status']).to be(false)
-    end
-  end
-
-  describe 'Recipient Index' do
-    it 'rejects unauthenticated access' do
-      json_get recipients_path(tpl_a.id)
-
-      expect_status(401)
-      expect(json['status']).to be(false)
-    end
-
-    it 'forbids normal users' do
-      as(user) { json_get recipients_path(tpl_a.id) }
-
-      expect_status(403)
-      expect(json['status']).to be(false)
-    end
-
-    it 'lists recipients for admin users' do
-      as(admin) { json_get recipients_path(tpl_a.id) }
-
-      expect_status(200)
-      expect(json['status']).to be(true)
-      expect(recipients_list.length).to eq(2)
-
-      ids = recipients_list.map { |row| rid(row['email_recipient']) }
-      expect(ids).to include(recp_a.id, recp_b.id)
-    end
-
-    it 'supports pagination limit' do
-      as(admin) { json_get recipients_path(tpl_a.id), recipient: { limit: 1 } }
-
-      expect_status(200)
-      expect(recipients_list.length).to eq(1)
-    end
-
-    it 'supports pagination from_id' do
-      boundary = [tpl_a_recp_a.id, tpl_a_recp_b.id].min
-      as(admin) { json_get recipients_path(tpl_a.id), recipient: { from_id: boundary } }
-
-      expect_status(200)
-      ids = recipients_list.map { |row| row['id'] }
-      expect(ids).to all(be > boundary)
-    end
-  end
-
-  describe 'Recipient Show' do
-    it 'rejects unauthenticated access' do
-      json_get recipient_path(tpl_a.id, recp_a.id)
-
-      expect_status(401)
-      expect(json['status']).to be(false)
-    end
-
-    it 'forbids normal users' do
-      as(user) { json_get recipient_path(tpl_a.id, recp_a.id) }
-
-      expect_status(403)
-      expect(json['status']).to be(false)
-    end
-
-    it 'shows a recipient join for admin users' do
-      as(admin) { json_get recipient_path(tpl_a.id, recp_a.id) }
-
-      expect_status(200)
-      expect(json['status']).to be(true)
-      expect(rid(recipient_obj['email_recipient'])).to eq(recp_a.id)
-    end
-
-    it 'returns 404 for recipients not linked to template' do
-      as(admin) { json_get recipient_path(tpl_b.id, recp_a.id) }
-
-      expect_status(404)
-      expect(json['status']).to be(false)
-    end
-
-    it 'returns 404 for unknown template' do
-      missing = NotificationTemplate.maximum(:id).to_i + 100
-
-      as(admin) { json_get recipient_path(missing, recp_a.id) }
-
-      expect_status(404)
-      expect(json['status']).to be(false)
-    end
-
-    it 'returns 404 for unknown recipient' do
-      missing = EmailRecipient.maximum(:id).to_i + 100
-
-      as(admin) { json_get recipient_path(tpl_a.id, missing) }
-
-      expect_status(404)
-      expect(json['status']).to be(false)
-    end
-  end
-
-  describe 'Recipient Create' do
-    it 'rejects unauthenticated access' do
-      json_post recipients_path(tpl_b.id), recipient: { email_recipient: recp_a.id }
-
-      expect_status(401)
-      expect(json['status']).to be(false)
-    end
-
-    it 'forbids normal users' do
-      as(user) { json_post recipients_path(tpl_b.id), recipient: { email_recipient: recp_a.id } }
-
-      expect_status(403)
-      expect(json['status']).to be(false)
-    end
-
-    it 'allows admin to create a recipient join' do
-      as(admin) { json_post recipients_path(tpl_b.id), recipient: { email_recipient: recp_a.id } }
-
-      expect_status(200)
-      expect(json['status']).to be(true)
-      NotificationTemplateEmailRecipient.find_by!(notification_template: tpl_b, email_recipient: recp_a)
-    end
-
-    it 'validates presence of email_recipient' do
-      as(admin) { json_post recipients_path(tpl_b.id), recipient: {} }
-
-      expect_status(200)
-      expect(json['status']).to be(false)
-      expect(response_errors.keys).to include('email_recipient')
-    end
-
-    it 'validates uniqueness of email_recipient per template' do
-      as(admin) { json_post recipients_path(tpl_a.id), recipient: { email_recipient: recp_a.id } }
-
-      expect_status(200)
-      expect(json['status']).to be(false)
-      expect(response_errors.keys).to include('email_recipient')
-    end
-  end
-
-  describe 'Recipient Delete' do
-    it 'rejects unauthenticated access' do
-      json_delete recipient_path(tpl_a.id, recp_a.id)
-
-      expect_status(401)
-      expect(json['status']).to be(false)
-    end
-
-    it 'forbids normal users' do
-      as(user) { json_delete recipient_path(tpl_a.id, recp_a.id) }
-
-      expect_status(403)
-      expect(json['status']).to be(false)
-    end
-
-    it 'allows admin to delete a recipient join' do
-      as(admin) { json_delete recipient_path(tpl_a.id, recp_a.id) }
-
-      expect_status(200)
-      expect(json['status']).to be(true)
-      expect(NotificationTemplateEmailRecipient.where(notification_template: tpl_a, email_recipient: recp_a)).to be_empty
-    end
-
-    it 'returns 404 for unknown recipient join' do
-      as(admin) { json_delete recipient_path(tpl_b.id, recp_a.id) }
 
       expect_status(404)
       expect(json['status']).to be(false)

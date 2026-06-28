@@ -6,11 +6,13 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
     SpecSeed.admin
     SpecSeed.user
     SpecSeed.other_user
+    reset_routing!(SpecSeed.admin)
     reset_routing!(SpecSeed.user)
     reset_routing!(SpecSeed.other_user)
   end
 
   def reset_routing!(user)
+    EventRoutingContext.where(user_id: user.id).delete_all
     EventRouteMatcher.joins(:event_route).where(event_routes: { user_id: user.id }).delete_all
     NotificationReceiverTarget
       .joins(:notification_receiver)
@@ -248,6 +250,16 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
     [target, link]
   end
 
+  def create_delivery_context!(event, user: event.user)
+    EventRoutingContext.create!(
+      event:,
+      recipient_user: user,
+      subject_relation: event.user_id == user.id ? 'self' : 'other_user',
+      source: event.user_id == user.id ? 'direct_route' : 'visible_route',
+      routing_state: :routed
+    )
+  end
+
   describe 'API description' do
     it 'includes event routing scopes' do
       scopes = EndpointInventory.scopes_for_version(self, api_version)
@@ -307,8 +319,15 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
         route_create.dig('event_type', 'validators', 'include', 'values')
       ).to eq(VpsAdmin::API::Events.type_labels)
       expect(
+        route_create.dig('subject_scope', 'validators', 'include', 'values')
+      ).to eq(::EventRoute.subject_scope_labels)
+      expect(
         matcher_create.dig('field', 'validators', 'include', 'values')
-      ).to include('parameters.codename' => 'Incident report: Report codename')
+      ).to include(
+        'parameters.codename' => 'Incident report: Report codename',
+        'parameters.recipient_roles' => 'Recipient roles',
+        'context.subject_relation' => 'Subject relation'
+      )
       expect(
         matcher_create.dig('operator', 'validators', 'include', 'values')
       ).to eq(::EventRouteMatcher.operator_labels)
@@ -325,8 +344,24 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
       expect(event_index).to include(
         'notification_receiver_id',
         'notification_target_id',
-        'notification_receiver_target_id'
+        'notification_receiver_target_id',
+        'subject_relation'
       )
+    end
+
+    it 'keeps dedicated system report migration routes matcher-free' do
+      migration = File.expand_path(
+        '../../../db/migrate/20260624121000_migrate_legacy_email_recipients_to_routes',
+        __dir__
+      )
+      require migration unless defined?(MigrateLegacyEmailRecipientsToRoutes)
+
+      route_map = MigrateLegacyEmailRecipientsToRoutes::TEMPLATE_ROUTE_MAP
+
+      expect(route_map.fetch('daily_report')).not_to have_key(:relation)
+      expect(route_map.fetch('payments_overview')).not_to have_key(:relation)
+      expect(route_map.fetch('user_create').fetch(:relation)).to eq('other_user')
+      expect(route_map.fetch('expiration_user_active').fetch(:relation)).to eq('other_user')
     end
   end
 
@@ -371,6 +406,8 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
     expect_status(200)
     route = EventRoute.find(route_obj['id'])
     expect(route).to be_continue
+    expect(route).to be_self_subject_scope
+    expect(route_obj['subject_scope']).to eq('self')
 
     as(SpecSeed.user) do
       json_post matcher_index_path(route.id), matcher: {
@@ -397,23 +434,26 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
 
     expect_status(200)
     expect(events.map { |row| row['id'] }).to include(event.id)
+    expect(events.find { |row| row['id'] == event.id }).not_to include('matched_event_route_id')
 
-    as(SpecSeed.user) { json_get event_index_path, matched_event_route_id: route.id }
-
-    expect_status(200)
-    expect(events.map { |row| row['id'] }).to eq([event.id])
-
-    as(SpecSeed.user) { json_get event_index_path, notification_receiver_id: receiver.id }
+    as(SpecSeed.user) { json_get event_index_path, event: { matched_event_route_id: route.id } }
 
     expect_status(200)
     expect(events.map { |row| row['id'] }).to eq([event.id])
 
-    as(SpecSeed.user) { json_get event_index_path, notification_target_id: target.id }
+    as(SpecSeed.user) { json_get event_index_path, event: { notification_receiver_id: receiver.id } }
 
     expect_status(200)
     expect(events.map { |row| row['id'] }).to eq([event.id])
 
-    as(SpecSeed.user) { json_get event_index_path, notification_receiver_target_id: receiver_target.id }
+    as(SpecSeed.user) { json_get event_index_path, event: { notification_target_id: target.id } }
+
+    expect_status(200)
+    expect(events.map { |row| row['id'] }).to eq([event.id])
+
+    as(SpecSeed.user) do
+      json_get event_index_path, event: { notification_receiver_target_id: receiver_target.id }
+    end
 
     expect_status(200)
     expect(events.map { |row| row['id'] }).to eq([event.id])
@@ -423,6 +463,9 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
     expect_status(200)
     expect(deliveries.map { |row| row['action'] }).to eq(%w[webhook email])
     webhook_delivery_obj = deliveries.find { |row| row['action'] == 'webhook' }
+    expect(webhook_delivery_obj['event_routing_context_id']).to be_present
+    expect(webhook_delivery_obj['recipient_user_id']).to eq(SpecSeed.user.id)
+    expect(webhook_delivery_obj['recipient_user_login']).to eq(SpecSeed.user.login)
     expect(webhook_delivery_obj['notification_receiver_id']).to eq(receiver.id)
     expect(webhook_delivery_obj['notification_receiver_label']).to eq('Spec receiver')
     expect(webhook_delivery_obj['notification_target_id']).to eq(target.id)
@@ -457,6 +500,82 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
     expect(attempts.map { |row| row['id'] }).to eq([attempt.id])
     expect(attempts.first['response_status']).to eq(500)
     expect(attempts.first['error_summary']).to eq('spec transport failure')
+  end
+
+  it 'lets admins inspect visible events while users see only their delivery context' do
+    receiver = NotificationReceiver.create!(user: SpecSeed.admin, label: 'Admin visible receiver')
+    receiver_action = receiver.notification_receiver_actions.create!(
+      action: :email,
+      label: 'Admin default e-mail',
+      target_kind: :default_recipient
+    )
+    route = EventRoute.create!(
+      user: SpecSeed.admin,
+      notification_receiver: receiver,
+      event_type: 'user.test_notification',
+      subject_scope: :visible,
+      position: 1
+    )
+    route.event_route_matchers.create!(
+      field: 'context.subject_relation',
+      operator: '==',
+      value: 'other_user'
+    )
+
+    event = VpsAdmin::API::Events.emit!(
+      'user.test_notification',
+      user: SpecSeed.user,
+      subject: 'Spec visible event'
+    )
+    user_delivery = event.event_deliveries
+                         .joins(:event_routing_context)
+                         .find_by!(event_routing_contexts: { user_id: SpecSeed.user.id })
+    admin_delivery = event.event_deliveries
+                          .joins(:event_routing_context)
+                          .find_by!(event_routing_contexts: { user_id: SpecSeed.admin.id })
+
+    as(SpecSeed.admin) { json_get event_path(event.id) }
+    expect_status(200)
+    expect(event_obj['subject_relation']).to eq('other_user')
+    expect(event_obj).to include('matched_event_route_id')
+
+    as(SpecSeed.user) { json_get event_path(event.id) }
+    expect_status(200)
+    expect(event_obj['subject_relation']).to eq('self')
+    expect(event_obj).not_to include('matched_event_route_id')
+
+    as(SpecSeed.other_user) { json_get event_path(event.id) }
+    expect_status(404)
+
+    as(SpecSeed.admin) { json_get event_index_path, event: { subject_relation: 'other_user' } }
+    expect_status(200)
+    expect(events.map { |row| row['id'] }).to include(event.id)
+
+    as(SpecSeed.admin) { json_get event_index_path, event: { notification_receiver_id: receiver.id } }
+    expect_status(200)
+    expect(events.map { |row| row['id'] }).to include(event.id)
+
+    as(SpecSeed.user) { json_get event_index_path, event: { notification_receiver_id: receiver.id } }
+    expect_status(200)
+    expect(events.map { |row| row['id'] }).not_to include(event.id)
+
+    as(SpecSeed.user) do
+      json_get event_index_path, event: { notification_target_id: receiver_action.notification_target_id }
+    end
+    expect_status(200)
+    expect(events.map { |row| row['id'] }).not_to include(event.id)
+
+    as(SpecSeed.user) { json_get event_index_path, event: { matched_event_route_id: route.id } }
+    expect_status(200)
+    expect(events.map { |row| row['id'] }).not_to include(event.id)
+
+    as(SpecSeed.user) { json_get delivery_index_path(event.id) }
+    expect_status(200)
+    expect(deliveries.map { |row| row['id'] }).to eq([user_delivery.id])
+
+    as(SpecSeed.admin) { json_get delivery_index_path(event.id) }
+    expect_status(200)
+    expect(deliveries.map { |row| row['id'] }).to contain_exactly(user_delivery.id, admin_delivery.id)
   end
 
   it 'lets admins inspect delivery queues and logs' do
@@ -1004,6 +1123,7 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
     )
     delivery = EventDelivery.create!(
       event:,
+      event_routing_context: create_delivery_context!(event),
       action: :webhook,
       target_kind: :custom,
       target_value: 'https://example.test/retry',
@@ -1036,6 +1156,7 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
     )
     delivery = EventDelivery.create!(
       event:,
+      event_routing_context: create_delivery_context!(event),
       action: :webhook,
       target_kind: :custom,
       target_value: 'https://example.test/sent',
