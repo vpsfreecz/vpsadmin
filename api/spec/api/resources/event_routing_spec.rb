@@ -1410,6 +1410,52 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
     expect_status(404)
   end
 
+  it 'lets admins inspect direct delivery attempts without a routing context' do
+    event = Event.create!(
+      event_type: 'incident_report.reply',
+      category: 'incidents',
+      severity: :info,
+      subject: 'Direct incident reply',
+      routing_state: :routed
+    )
+    delivery = event.event_deliveries.create!(
+      action: :email,
+      target_kind: :custom,
+      target_value: 'sender@test.invalid',
+      target_label: 'sender@test.invalid',
+      state: :released
+    )
+    attempt = delivery.event_delivery_attempts.create!(
+      action: delivery.action,
+      state: :failed,
+      attempt_number: 1,
+      error_summary: 'smtp rejected'
+    )
+
+    as(SpecSeed.admin) { json_get delivery_attempt_index_path(event.id, delivery.id) }
+    expect_status(200)
+    expect(attempts.map { |row| row['id'] }).to eq([attempt.id])
+    expect(attempts.first['error_summary']).to eq('smtp rejected')
+
+    as(SpecSeed.admin) do
+      json_get vpath("/events/#{event.id}/deliveries/#{delivery.id}/attempts/#{attempt.id}")
+    end
+    expect_status(200)
+    attempt_obj = json.dig('response', 'attempt') ||
+                  json.dig('response', 'event_delivery_attempt') ||
+                  json['response']
+    expect(attempt_obj['id']).to eq(attempt.id)
+
+    as(SpecSeed.user) { json_get delivery_attempt_index_path(event.id, delivery.id) }
+    expect_status(200)
+    expect(attempts).to eq([])
+
+    as(SpecSeed.user) do
+      json_get vpath("/events/#{event.id}/deliveries/#{delivery.id}/attempts/#{attempt.id}")
+    end
+    expect_status(404)
+  end
+
   it 'does not let users create test events for another user' do
     as(SpecSeed.user) do
       json_post event_test_path, event: {
