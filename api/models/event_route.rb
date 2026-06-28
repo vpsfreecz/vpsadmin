@@ -3,6 +3,10 @@ class EventRoute < ApplicationRecord
   MAX_MATCHERS = 30
   DEFAULT_ROUTE_LABEL = 'Default route'.freeze
   DEFAULT_ROUTE_POSITION = 10_000
+  SUBJECT_SCOPE_LABELS = {
+    'self' => 'self',
+    'visible' => 'visible'
+  }.freeze
 
   belongs_to :user
   belongs_to :parent_event_route,
@@ -19,18 +23,28 @@ class EventRoute < ApplicationRecord
   has_many :event_route_matchers, -> { order(:id) }, dependent: :delete_all
   has_many :events, foreign_key: :matched_event_route_id, dependent: :nullify
   has_many :event_deliveries, dependent: :nullify
+  has_many :event_routing_contexts,
+           foreign_key: :matched_event_route_id,
+           dependent: :nullify
+
+  enum :subject_scope, %i[self visible], suffix: true
 
   def self.default_route_for(user)
     where(
       user:,
       parent_id: nil,
-      default_route: true
+      default_route: true,
+      subject_scope: subject_scopes.fetch('self')
     ).order(:position, :id).first
   end
 
   def self.active
     where(spent_at: nil)
       .where('expires_at IS NULL OR expires_at > ?', Time.now)
+  end
+
+  def self.subject_scope_labels
+    SUBJECT_SCOPE_LABELS
   end
 
   def self.next_position_for(user, parent_id)
@@ -73,14 +87,23 @@ class EventRoute < ApplicationRecord
   end
 
   def matches?(event, deadline: nil)
+    matches_in_context?(
+      VpsAdmin::API::Events::RouteContext.self_context(event),
+      deadline:
+    )
+  end
+
+  def matches_in_context?(route_context, deadline: nil)
     return false unless active?
-    return false if default_route? && !VpsAdmin::API::Events.default_routed?(event.event_type)
-    return false unless event_type_matches?(event.event_type)
+    return false unless subject_scope_matches?(route_context)
+    return false if default_route? && !route_context.default_route_allowed?
+    return false if default_route? && !VpsAdmin::API::Events.default_routed?(route_context.event.event_type)
+    return false unless event_type_matches?(route_context.event.event_type)
 
     event_route_matchers.all? do |matcher|
       return false if deadline_expired?(deadline)
 
-      ret = matcher.matches?(event)
+      ret = matcher.matches?(route_context.event, route_context:)
       return false if deadline_expired?(deadline)
 
       ret
@@ -151,6 +174,17 @@ class EventRoute < ApplicationRecord
       File.fnmatch?(event_type_pattern, tested_type)
     else
       true
+    end
+  end
+
+  def subject_scope_matches?(route_context)
+    case subject_scope
+    when 'self'
+      route_context.self_subject?
+    when 'visible'
+      route_context.visible?
+    else
+      false
     end
   end
 

@@ -224,7 +224,8 @@ RSpec.describe VpsAdmin::Supervisor::Node::OomReports do
       mail_receiver.notification_receiver_actions.create!(
         action: :email,
         target_kind: :custom,
-        target_value: 'audit@example.test'
+        target_value: 'audit@example.test',
+        verified_at: Time.now
       )
 
       mute_route = EventRoute.create!(
