@@ -1,6 +1,6 @@
 module VpsAdmin::NotificationTemplates
   class Meta
-    PROTOCOLS = %w[email telegram].freeze
+    PROTOCOLS = %w[email telegram sms].freeze
     TEMPLATE_OPTS = %i[label user_visibility].freeze
     VARIANT_OPTS = %i[from reply_to return_path subject options].freeze
 
