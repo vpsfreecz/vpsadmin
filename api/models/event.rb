@@ -21,9 +21,10 @@ class Event < ApplicationRecord
 
   belongs_to :user, optional: true
   belongs_to :vps, optional: true
-  belongs_to :matched_event_route, class_name: 'EventRoute', optional: true
   has_many :event_deliveries, dependent: :delete_all
   has_many :event_routing_contexts, dependent: :delete_all
+  has_many :event_route_matches, -> { order(:match_order, :id) }, dependent: :delete_all
+  has_many :matched_event_routes, through: :event_route_matches, source: :event_route
 
   attr_accessor :runtime_event_context
 

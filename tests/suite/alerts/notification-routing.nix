@@ -217,7 +217,7 @@ import ../../make-test.nix (
               action: delivery.action,
               state: delivery.state,
               receiver_id: delivery.notification_receiver_id,
-              receiver_action_id: delivery.notification_receiver_action_id,
+              receiver_target_id: delivery.notification_receiver_target_id,
               target_value: delivery.target_value,
               response_status: delivery.response_status,
               response_body: delivery.response_body,
@@ -295,7 +295,7 @@ import ../../make-test.nix (
           expect(body.fetch('delivery').fetch('id')).to eq(event.fetch('webhook_delivery_id'))
           expect(body.fetch('delivery').fetch('route').fetch('id')).to eq(event.fetch('route_id'))
           expect(body.fetch('delivery').fetch('receiver').fetch('id')).to eq(event.fetch('receiver_id'))
-          expect(body.fetch('delivery').fetch('receiver_action').fetch('id')).to eq(event.fetch('webhook_action_id'))
+          expect(body.fetch('delivery').fetch('receiver_target').fetch('id')).to eq(event.fetch('webhook_action_id'))
           true
         end
 

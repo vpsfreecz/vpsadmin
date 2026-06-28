@@ -25,6 +25,8 @@ module VpsAdmin::API
     end
 
     def ensure_no_failed_email!(event, message:)
+      return if event.nil?
+
       failed = event
                .event_deliveries
                .where(action: 'email', state: 'failed')
@@ -36,6 +38,8 @@ module VpsAdmin::API
     end
 
     def ensure_email_handled!(event, message:)
+      raise "#{message}: no delivery was prepared" if event.nil?
+
       deliveries = event.event_deliveries.reload.select(&:email_action?)
       return if deliveries.any? { |delivery| HANDLED_STATES.include?(delivery.state) }
 

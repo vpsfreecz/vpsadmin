@@ -101,7 +101,7 @@ base
         identity_key: 'default'
       )
       target.assign_attributes(
-        label: 'Default e-mail',
+        label: 'Default',
         target_kind: :default_recipient,
         enabled: true
       )

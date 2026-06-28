@@ -9,9 +9,69 @@ let
   smsCfg = config.vpsadmin.notifications.sms;
   positiveInt = types.addCheck types.int (value: value >= 1);
   nonNegativeInt = types.addCheck types.int (value: value >= 0);
+  rateLimitDefaultsType = types.submodule {
+    options = {
+      minute = mkOption {
+        type = positiveInt;
+        description = "Maximum deliveries started in one rolling minute.";
+      };
+
+      hour = mkOption {
+        type = positiveInt;
+        description = "Maximum deliveries started in one rolling hour.";
+      };
+
+      day = mkOption {
+        type = positiveInt;
+        description = "Maximum deliveries started in one rolling day.";
+      };
+
+      week = mkOption {
+        type = positiveInt;
+        description = "Maximum deliveries started in one rolling week.";
+      };
+    };
+  };
 in
 {
   options.vpsadmin.notifications = {
+    rateLimits = {
+      defaults = mkOption {
+        type = types.attrsOf rateLimitDefaultsType;
+        default = {
+          email = {
+            minute = 30;
+            hour = 300;
+            day = 2000;
+            week = 5000;
+          };
+          webhook = {
+            minute = 60;
+            hour = 1000;
+            day = 10000;
+            week = 25000;
+          };
+          telegram = {
+            minute = 20;
+            hour = 200;
+            day = 1000;
+            week = 2500;
+          };
+          sms = {
+            minute = 3;
+            hour = 30;
+            day = 150;
+            week = 300;
+          };
+        };
+        description = ''
+          Default per-user event delivery rate limits. Limits count delivery
+          attempts when the external provider request starts, including
+          attempts that later fail.
+        '';
+      };
+    };
+
     telegram = {
       enable = mkEnableOption "Enable Telegram notifications in vpsAdmin";
 

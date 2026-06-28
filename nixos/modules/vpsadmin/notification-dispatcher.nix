@@ -10,6 +10,7 @@ let
   cfg = config.vpsadmin.notificationDispatcher;
   telegramCfg = config.vpsadmin.notifications.telegram;
   smsCfg = config.vpsadmin.notifications.sms;
+  rateLimitsCfg = config.vpsadmin.notifications.rateLimits;
   vpsadminRoot = toString (./../../..);
 
   apiAppFor =
@@ -102,6 +103,9 @@ let
         concurrency = cfg.email.concurrency;
         worker_delay = cfg.email.workerDelay;
         domain_min_delivery_interval = cfg.email.domainMinDeliveryInterval;
+      };
+      rate_limits = {
+        defaults = rateLimitsCfg.defaults;
       };
       telegram = {
         enabled = telegramCfg.enable;

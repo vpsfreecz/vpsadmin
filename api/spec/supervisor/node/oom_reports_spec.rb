@@ -148,7 +148,7 @@ RSpec.describe VpsAdmin::Supervisor::Node::OomReports do
       )
 
       event.reload
-      expect(event.matched_event_route).not_to eq(route)
+      expect(event.event_route_matches.reload.map(&:event_route)).not_to include(route)
       expect(route.reload.hit_count).to eq(0)
     end
 

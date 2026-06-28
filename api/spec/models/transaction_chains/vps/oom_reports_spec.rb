@@ -53,6 +53,22 @@ RSpec.describe TransactionChains::Vps::OomReports do
     expect(reports.map { |report| report.reload.reported_at }).to all(be_present)
   end
 
+  it 'marks selected reports when notification routing is muted' do
+    vps = create_vps!
+    mute_default_notifications_for!(vps.user)
+    reports = 2.times.map do |i|
+      create_oom_report_fixture!(vps:, count: i + 1, created_at: (5 - i).minutes.ago)
+    end
+
+    chain, = described_class.fire2(args: [[vps]], kwargs: { cooldown: 1.hour })
+    event = expect_suppressed_event!('vps.oom_report', user: vps.user)
+
+    expect(chain).to be_nil
+    expect(NotificationTemplate).not_to have_received(:send_email!)
+    expect(event.event_deliveries.sole.error_summary).to include('does not notify')
+    expect(reports.map { |report| report.reload.reported_at }).to all(be_present)
+  end
+
   it 'renders the installed notification template with the chain variables' do
     allow(NotificationTemplate).to receive(:send_email!).and_call_original
 
