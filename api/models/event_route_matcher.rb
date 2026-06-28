@@ -25,6 +25,17 @@ class EventRouteMatcher < ApplicationRecord
     'ip_addr' => 'IP address'
   }.freeze
 
+  CONTEXT_FIELD_LABELS = {
+    'context.subject_relation' => 'Subject relation',
+    'context.subject_user_id' => 'Subject user ID',
+    'context.subject_is_self' => 'Subject is route owner',
+    'context.subject_is_admin_visible' => 'Subject is admin-visible'
+  }.freeze
+
+  SPECIAL_PARAMETER_FIELD_LABELS = {
+    'parameters.recipient_roles' => 'Recipient roles'
+  }.freeze
+
   OPERATOR_LABELS = {
     '==' => '==',
     '!=' => '!=',
@@ -32,6 +43,8 @@ class EventRouteMatcher < ApplicationRecord
     '!~' => '!~',
     '=*' => '=*',
     '!*' => '!*',
+    'contains' => 'contains',
+    'not_contains' => 'does not contain',
     '>' => '>',
     '>=' => '>=',
     '<' => '<',
@@ -54,7 +67,7 @@ class EventRouteMatcher < ApplicationRecord
   validate :check_regular_expression
 
   def self.field_labels(event_type: nil)
-    labels = FIELD_LABELS.dup
+    labels = FIELD_LABELS.merge(CONTEXT_FIELD_LABELS).merge(SPECIAL_PARAMETER_FIELD_LABELS)
 
     event_types =
       if event_type.present?
@@ -77,8 +90,8 @@ class EventRouteMatcher < ApplicationRecord
     OPERATOR_LABELS
   end
 
-  def matches?(event)
-    actual = field_value(event)
+  def matches?(event, route_context: nil)
+    actual = field_value(event, route_context:)
     expected = value.to_s
 
     case operator
@@ -94,6 +107,10 @@ class EventRouteMatcher < ApplicationRecord
       actual && File.fnmatch?(expected, actual.to_s, GLOB_FLAGS)
     when '!*'
       actual.nil? || !File.fnmatch?(expected, actual.to_s, GLOB_FLAGS)
+    when 'contains'
+      contains_value?(actual, expected)
+    when 'not_contains'
+      !contains_value?(actual, expected)
     when '>'
       numeric_value(actual) > numeric_value(expected)
     when '>='
@@ -117,6 +134,8 @@ class EventRouteMatcher < ApplicationRecord
 
   def check_field
     return if CORE_FIELDS.include?(field)
+    return if CONTEXT_FIELD_LABELS.has_key?(field)
+    return if SPECIAL_PARAMETER_FIELD_LABELS.has_key?(field)
     return if VpsAdmin::API::Events.parameter_field?(field)
 
     errors.add(:field, 'is not a supported event field')
@@ -134,7 +153,9 @@ class EventRouteMatcher < ApplicationRecord
     Regexp.new(value.to_s, timeout: REGEXP_TIMEOUT)
   end
 
-  def field_value(event)
+  def field_value(event, route_context:)
+    return context_field_value(route_context) if field.start_with?('context.')
+
     case field
     when 'event_type'
       event.event_type
@@ -170,6 +191,32 @@ class EventRouteMatcher < ApplicationRecord
       elsif hash.has_key?(key.to_sym)
         hash[key.to_sym]
       end
+    end
+  end
+
+  def context_field_value(route_context)
+    return unless route_context
+
+    case field
+    when 'context.subject_relation'
+      route_context.subject_relation
+    when 'context.subject_user_id'
+      route_context.subject_user_id
+    when 'context.subject_is_self'
+      route_context.subject_is_self
+    when 'context.subject_is_admin_visible'
+      route_context.subject_is_admin_visible
+    end
+  end
+
+  def contains_value?(actual, expected)
+    case actual
+    when Array
+      actual.map(&:to_s).include?(expected)
+    when String
+      actual.split(',').map(&:strip).include?(expected)
+    else
+      false
     end
   end
 

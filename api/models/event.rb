@@ -23,6 +23,7 @@ class Event < ApplicationRecord
   belongs_to :vps, optional: true
   belongs_to :matched_event_route, class_name: 'EventRoute', optional: true
   has_many :event_deliveries, dependent: :delete_all
+  has_many :event_routing_contexts, dependent: :delete_all
 
   attr_accessor :runtime_event_context
 
@@ -52,6 +53,29 @@ class Event < ApplicationRecord
 
   def self.routing_state_labels
     ROUTING_STATE_LABELS
+  end
+
+  def self.visible_to(user)
+    return all if user&.role == :admin
+    return none unless user
+
+    where(user_id: user.id)
+  end
+
+  def visible_to?(user)
+    return false unless user
+    return true if user.role == :admin
+
+    user_id == user.id
+  end
+
+  def subject_relation
+    viewer = ::User.current
+    return unless viewer
+    return 'system' if user_id.blank?
+    return 'self' if user_id == viewer.id
+
+    'other_user' if visible_to?(viewer)
   end
 
   def source

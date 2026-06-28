@@ -15,6 +15,9 @@ module VpsAdmin::API::Resources
              load_validators: false,
              nullable: true
       string :event_type_pattern, nullable: true
+      string :subject_scope,
+             choices: { values: ::EventRoute.subject_scope_labels },
+             load_validators: false
       bool :continue
       integer :hit_count, label: 'Hit count'
       bool :default_route
@@ -36,7 +39,7 @@ module VpsAdmin::API::Resources
       desc 'List event routes'
 
       input do
-        use :common, include: %i[user parent_id notification_receiver_id enabled event_type]
+        use :common, include: %i[user parent_id notification_receiver_id enabled event_type subject_scope]
         bool :include_spent, default: false, fill: true
       end
 
@@ -54,7 +57,7 @@ module VpsAdmin::API::Resources
         q = self.class.model.where(with_restricted)
         q = q.where(spent_at: nil) unless input[:include_spent]
 
-        %i[user parent_id notification_receiver_id enabled event_type].each do |v|
+        %i[user parent_id notification_receiver_id enabled event_type subject_scope].each do |v|
           q = q.where(v => input[v]) if input.has_key?(v)
         end
 
@@ -94,7 +97,7 @@ module VpsAdmin::API::Resources
       input do
         use :common,
             include: %i[user parent_id notification_receiver_id label position
-                        enabled event_type event_type_pattern continue]
+                        enabled event_type event_type_pattern subject_scope continue]
       end
 
       output do
@@ -126,6 +129,7 @@ module VpsAdmin::API::Resources
             enabled: input.has_key?(:enabled) ? input[:enabled] : true,
             event_type: input[:event_type],
             event_type_pattern: input[:event_type_pattern],
+            subject_scope: input[:subject_scope] || 'self',
             continue: input.has_key?(:continue) ? input[:continue] : false
           )
         end
@@ -144,7 +148,7 @@ module VpsAdmin::API::Resources
       input do
         use :common,
             include: %i[parent_id notification_receiver_id label position
-                        enabled event_type event_type_pattern continue]
+                        enabled event_type event_type_pattern subject_scope continue]
       end
 
       output do
@@ -160,7 +164,7 @@ module VpsAdmin::API::Resources
       def exec
         route = self.class.model.find_by!(with_restricted(id: path_params['event_route_id']))
         attrs = {}
-        %i[parent_id notification_receiver_id label position enabled event_type event_type_pattern continue].each do |v|
+        %i[parent_id notification_receiver_id label position enabled event_type event_type_pattern subject_scope continue].each do |v|
           attrs[v] = input[v] if input.has_key?(v)
         end
 
