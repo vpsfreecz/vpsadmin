@@ -68,7 +68,7 @@ RSpec.describe 'outage reports update chain', requires_plugins: :outage_reports 
     expect(NotificationTemplate).not_to have_received(:send_email!)
   end
 
-  it 'announces outages, refreshes affected objects, and threads generic/user mail' do
+  it 'announces outages, refreshes affected objects, and threads user mail' do
     outage = build_outage
     advisory = build_security_advisory
     last_report = OutageUpdate.create!(
@@ -112,13 +112,10 @@ RSpec.describe 'outage reports update chain', requires_plugins: :outage_reports 
     expect(outage).to have_received(:set_affected_exports)
     expect(outage).to have_received(:set_affected_users)
 
-    generic = attempts.find { |_name, opts| opts[:user].nil? }
     direct = attempts.find { |_name, opts| opts[:user] == SpecSeed.user }
-    expect(generic).not_to be_nil
     expect(direct).not_to be_nil
     generic_event = Event.where(event_type: 'outage.announced', user_id: nil).sole
     user_event = Event.where(event_type: 'outage.announced', user: SpecSeed.user).sole
-    generic_delivery = generic_event.event_deliveries.sole
     user_delivery = user_event.event_deliveries.sole
     expect(generic_event.source).to eq(report)
     expect(generic_event.parameters).to include(
@@ -128,10 +125,8 @@ RSpec.describe 'outage reports update chain', requires_plugins: :outage_reports 
       'update_id' => report.id,
       'impact_type' => 'network'
     )
-    expect(generic_delivery).to be_prepared_state
-    expect(generic_delivery.notification_receiver).to be_nil
-    expect(generic_delivery.target_label).to eq('Template recipients')
-    expect(generic_delivery.template_name).to eq('outage_report_role_event')
+    expect(generic_event).to be_suppressed_routing_state
+    expect(generic_event.event_deliveries).to be_empty
     expect(user_event.source).to eq(report)
     expect(user_event.parameters).to include(
       'role' => 'user',
@@ -149,35 +144,28 @@ RSpec.describe 'outage reports update chain', requires_plugins: :outage_reports 
     expect(user_delivery.notification_receiver).not_to be_nil
     expect(user_delivery.template_name).to eq('outage_report_role_event')
 
-    expected_reply = "<vpsadmin-outage-#{outage.id}-0-announce@vpsadmin.vpsfree.cz>"
     expected_direct_reply = "<vpsadmin-outage-#{outage.id}-#{SpecSeed.user.id}-announce@vpsadmin.vpsfree.cz>"
-    expect(generic.last[:message_id]).to eq(
-      "<vpsadmin-outage-#{outage.id}-0-announce@vpsadmin.vpsfree.cz>"
-    )
-    expect(generic.last[:in_reply_to]).to eq(expected_reply)
     expect(direct.last[:message_id]).to eq(
       "<vpsadmin-outage-#{outage.id}-#{SpecSeed.user.id}-announce@vpsadmin.vpsfree.cz>"
     )
     expect(direct.last[:in_reply_to]).to eq(expected_direct_reply)
     expect(report.id).not_to eq(last_report.id)
 
-    [generic, direct].each do |_name, opts|
-      expect(opts.dig(:vars, :webui_url)).to eq('https://webui.example.test')
-      expect(opts.dig(:vars, :security_advisory_cves)).to contain_exactly(
-        hash_including(
-          advisory_id: advisory.id,
-          advisory_name: 'Spec vulnerability',
-          cve_id: 'CVE-2026-3001',
-          cve_url: 'https://www.cve.org/CVERecord?id=CVE-2026-3001'
-        ),
-        hash_including(
-          advisory_id: advisory.id,
-          advisory_name: 'Spec vulnerability',
-          cve_id: 'CVE-2026-3002',
-          cve_url: 'https://www.cve.org/CVERecord?id=CVE-2026-3002'
-        )
+    expect(direct.last.dig(:vars, :webui_url)).to eq('https://webui.example.test')
+    expect(direct.last.dig(:vars, :security_advisory_cves)).to contain_exactly(
+      hash_including(
+        advisory_id: advisory.id,
+        advisory_name: 'Spec vulnerability',
+        cve_id: 'CVE-2026-3001',
+        cve_url: 'https://www.cve.org/CVERecord?id=CVE-2026-3001'
+      ),
+      hash_including(
+        advisory_id: advisory.id,
+        advisory_name: 'Spec vulnerability',
+        cve_id: 'CVE-2026-3002',
+        cve_url: 'https://www.cve.org/CVERecord?id=CVE-2026-3002'
       )
-    end
+    )
   end
 
   it 'logs muted deliveries for affected users with muted default notifications' do

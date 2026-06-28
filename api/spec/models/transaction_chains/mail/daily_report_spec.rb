@@ -11,7 +11,28 @@ RSpec.describe TransactionChains::Mail::DailyReport do
   before do
     ensure_alert_notification_templates!
     ensure_mailer_available!
+    create_admin_system_report_route!(
+      event_type: 'system.daily_report',
+      template_name: 'daily_report'
+    )
     allow(NotificationTemplate).to receive(:send_email!).and_return(build_mail_log_double)
+  end
+
+  def create_admin_system_report_route!(event_type:, template_name:)
+    receiver = NotificationReceiver.create!(user: SpecSeed.admin, label: "Spec #{template_name} receiver")
+    receiver.notification_receiver_actions.create!(
+      action: :email,
+      target_kind: :default_recipient
+    )
+    route = EventRoute.create!(
+      user: SpecSeed.admin,
+      notification_receiver: receiver,
+      label: "Spec #{template_name} system route",
+      event_type:,
+      template_name:,
+      subject_scope: :visible,
+      position: 1
+    )
   end
 
   it 'queues a mail send transaction' do
@@ -24,6 +45,7 @@ RSpec.describe TransactionChains::Mail::DailyReport do
     )
     event = Event.where(event_type: 'system.daily_report').sole
     delivery = event.event_deliveries.sole
+    expect(delivery.event_route.event_route_matchers).to be_empty
     expect(event.user).to be_nil
     expect(event.parameters).to include(
       'language_id' => SpecSeed.language.id,
@@ -32,9 +54,11 @@ RSpec.describe TransactionChains::Mail::DailyReport do
     )
     expect(event.parameters.fetch('period_start')).to be_present
     expect(event.parameters.fetch('period_end')).to be_present
-    expect(delivery).to be_direct_email_delivery
+    expect(delivery).not_to be_direct_email_delivery
+    expect(delivery.event_routing_context.recipient_user).to eq(SpecSeed.admin)
+    expect(delivery.event_routing_context.subject_relation).to eq('system')
     expect(delivery.template_name).to eq('daily_report')
-    expect(delivery.target_label).to eq('Template recipients')
+    expect(delivery.target_label).to eq('Default recipient')
   end
 
   it 'builds the major template sections' do
