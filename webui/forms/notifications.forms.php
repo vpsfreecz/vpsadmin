@@ -258,6 +258,31 @@ function notifications_label($labels, $value)
     return $labels[$value] ?? $value;
 }
 
+function notifications_subject_scope_options($desc = null)
+{
+    $labels = [
+        'self' => _('Own events'),
+        'visible' => _('Visible events'),
+    ];
+    $choices = $desc ? notifications_param_choices($desc) : array_combine(array_keys($labels), array_keys($labels));
+    $ret = [];
+
+    foreach ($choices as $value => $label) {
+        $ret[$value] = $labels[$value] ?? $label;
+    }
+
+    return $ret;
+}
+
+function notifications_subject_scope_label($value)
+{
+    if ($value === null || $value === '') {
+        return '-';
+    }
+
+    return notifications_subject_scope_options()[$value] ?? $value;
+}
+
 function notifications_short_value($value, $len = 48)
 {
     $value = (string) $value;
@@ -779,6 +804,10 @@ function notifications_route_params($create = false)
         'event_type_pattern' => api_post('event_type_pattern'),
         'continue' => isset($_POST['continue']),
     ];
+    $subject_scope = api_post('subject_scope');
+    if ($subject_scope !== null && $subject_scope !== '') {
+        $params['subject_scope'] = $subject_scope;
+    }
 
     if ($params['event_type'] === '') {
         $params['event_type'] = null;
@@ -1225,6 +1254,7 @@ function notifications_routes_list($user_id = null)
     $xtpl->table_add_category('');
     $xtpl->table_add_category(_('Label'));
     $xtpl->table_add_category(_('Events'));
+    $xtpl->table_add_category(_('Scope'));
     $xtpl->table_add_category(_('Receiver'));
     $xtpl->table_add_category(_('Matchers'));
     $xtpl->table_add_category(_('Hit count'));
@@ -1248,6 +1278,7 @@ function notifications_routes_list($user_id = null)
         $xtpl->table_td(notifications_drag_handle_html(), false, true);
         $xtpl->table_td($label, false, true);
         $xtpl->table_td(notifications_route_type_html($route, $event_type_labels));
+        $xtpl->table_td(h(notifications_subject_scope_label($route->subject_scope)));
         $xtpl->table_td(notifications_route_receiver_html($route, $receiver_labels));
         $xtpl->table_td($route->matcher_summary ? h($route->matcher_summary) : '<code>*</code>');
         $xtpl->table_td(
@@ -1272,11 +1303,11 @@ function notifications_routes_list($user_id = null)
     }
 
     if (!$routes) {
-        $xtpl->table_td(_('No routes configured.'), false, false, 12);
+        $xtpl->table_td(_('No routes configured.'), false, false, 13);
         $xtpl->table_tr(false, 'nodrag nodrop', 'nodrag nodrop');
     }
 
-    $xtpl->table_td(notifications_route_add_link($user_id, null, _('Add route')), false, true, 12);
+    $xtpl->table_td(notifications_route_add_link($user_id, null, _('Add route')), false, true, 13);
     $xtpl->table_tr(false, 'nodrag nodrop', 'nodrag nodrop');
 
     $xtpl->table_out('notification-routes-table');
@@ -1298,6 +1329,7 @@ function notifications_route_new($user_id = null, $parent_id = null)
     $user = $api->user->show($user_id);
     $input = $api->event_route->create->getParameters('input');
     $event_types = notifications_event_type_labels(true);
+    $subject_scope_options = notifications_subject_scope_options($input->subject_scope);
     $receiver_options = notifications_receiver_options($user_id);
     $route_options = notifications_route_options($user_id);
 
@@ -1317,6 +1349,7 @@ function notifications_route_new($user_id = null, $parent_id = null)
     $xtpl->form_add_select(_('Parent route') . ':', 'parent_id', $route_options, post_val('parent_id', $parent_id ?: ''));
     $xtpl->form_add_select(_('Event type') . ':', 'event_type', $event_types, post_val('event_type', ''));
     $xtpl->form_add_input(_('Event type pattern') . ':', 'text', '40', 'event_type_pattern', post_val('event_type_pattern'));
+    $xtpl->form_add_select(_('Scope') . ':', 'subject_scope', $subject_scope_options, post_val('subject_scope', 'self'));
     $xtpl->form_add_select(_('Receiver') . ':', 'notification_receiver_id', $receiver_options, post_val('notification_receiver_id', ''));
     $xtpl->form_add_checkbox(_('Enabled') . ':', 'enabled', '1', post_val('enabled', true));
     $xtpl->form_add_checkbox(_('Continue') . ':', 'continue', '1', post_val('continue', false));
@@ -1339,6 +1372,7 @@ function notifications_route_subroutes($route)
     $xtpl->table_title(_('Subroutes'));
     $xtpl->table_add_category(_('Label'));
     $xtpl->table_add_category(_('Events'));
+    $xtpl->table_add_category(_('Scope'));
     $xtpl->table_add_category(_('Receiver'));
     $xtpl->table_add_category(_('Matchers'));
     $xtpl->table_add_category(_('Enabled'));
@@ -1351,6 +1385,7 @@ function notifications_route_subroutes($route)
 
         $xtpl->table_td(notifications_route_tree_label_html($child, $depth, $route_labels), false, true);
         $xtpl->table_td(notifications_route_type_html($child, $event_type_labels));
+        $xtpl->table_td(h(notifications_subject_scope_label($child->subject_scope)));
         $xtpl->table_td(notifications_route_receiver_html($child, $receiver_labels));
         $xtpl->table_td($child->matcher_summary ? h($child->matcher_summary) : '<code>*</code>');
         $xtpl->table_td(boolean_icon($child->enabled));
@@ -1361,11 +1396,11 @@ function notifications_route_subroutes($route)
     }
 
     if (!$children) {
-        $xtpl->table_td(_('No subroutes configured.'), false, false, 8);
+        $xtpl->table_td(_('No subroutes configured.'), false, false, 9);
         $xtpl->table_tr();
     }
 
-    $xtpl->table_td(notifications_route_add_link($route->user_id, $route->id, _('Add subroute')), false, true, 8);
+    $xtpl->table_td(notifications_route_add_link($route->user_id, $route->id, _('Add subroute')), false, true, 9);
     $xtpl->table_tr(false, 'nodrag nodrop', 'nodrag nodrop');
     $xtpl->table_out();
 }
@@ -1378,6 +1413,7 @@ function notifications_route_edit($route_id)
     $input = $api->event_route->update->getParameters('input');
     $matcher_input = $route->matcher->create->getParameters('input');
     $event_types = notifications_event_type_labels(true);
+    $subject_scope_options = notifications_subject_scope_options($input->subject_scope);
     $operators = notifications_param_choices($matcher_input->operator);
     $receiver_options = notifications_receiver_options($route->user_id);
     $route_options = notifications_route_options($route->user_id, true, $route->id);
@@ -1396,6 +1432,7 @@ function notifications_route_edit($route_id)
     $xtpl->form_add_select(_('Parent route') . ':', 'parent_id', $route_options, post_val('parent_id', $route->parent_id));
     $xtpl->form_add_select(_('Event type') . ':', 'event_type', $event_types, post_val('event_type', $route->event_type));
     api_param_to_form('event_type_pattern', $input->event_type_pattern, post_val('event_type_pattern', $route->event_type_pattern));
+    $xtpl->form_add_select(_('Scope') . ':', 'subject_scope', $subject_scope_options, post_val('subject_scope', $route->subject_scope));
     $xtpl->form_add_select(_('Receiver') . ':', 'notification_receiver_id', $receiver_options, post_val('notification_receiver_id', $route->notification_receiver_id));
     api_param_to_form('enabled', $input->enabled, post_val('enabled', $route->enabled));
     api_param_to_form('continue', $input->continue, post_val('continue', $route->continue));
@@ -2941,13 +2978,13 @@ function notifications_events()
 
     foreach (['event_type', 'category', 'severity', 'routing_state'] as $name) {
         $value = api_get($name);
-        if ($value !== null) {
+        if ($value !== null && $value !== '') {
             $params[$name] = $value;
         }
     }
 
     $delivery_action = api_get('delivery_action');
-    if ($delivery_action !== null) {
+    if ($delivery_action !== null && $delivery_action !== '') {
         $params['action'] = $delivery_action;
     }
 
@@ -3006,8 +3043,8 @@ function notifications_events()
     );
     $xtpl->table_tr();
     api_param_to_form('category', $input->category, get_val('category'));
-    api_param_to_form('severity', $input->severity, get_val('severity'));
-    api_param_to_form('routing_state', $input->routing_state, get_val('routing_state'));
+    api_param_to_form('severity', $input->severity, get_val('severity'), null, true);
+    api_param_to_form('routing_state', $input->routing_state, get_val('routing_state'), null, true);
     $action_label = isset($input->action->label) && $input->action->label ? $input->action->label : _('Action');
     $xtpl->table_td($action_label . ':');
     $xtpl->table_td(
