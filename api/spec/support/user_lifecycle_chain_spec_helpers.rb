@@ -236,6 +236,17 @@ module UserLifecycleChainSpecHelpers
 
     event
   end
+
+  def expect_suppressed_event!(event_type, user:)
+    event = Event.where(event_type:, user:).order(:id).last
+    expect(event).to be_present
+    expect(event).to be_suppressed_routing_state
+
+    delivery = event.event_deliveries.sole
+    expect(delivery).to be_skipped_state
+
+    event
+  end
 end
 
 RSpec.configure do |config|

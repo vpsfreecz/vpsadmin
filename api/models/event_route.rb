@@ -21,11 +21,8 @@ class EventRoute < ApplicationRecord
            foreign_key: :parent_id,
            dependent: :destroy
   has_many :event_route_matchers, -> { order(:id) }, dependent: :delete_all
-  has_many :events, foreign_key: :matched_event_route_id, dependent: :nullify
   has_many :event_deliveries, dependent: :nullify
-  has_many :event_routing_contexts,
-           foreign_key: :matched_event_route_id,
-           dependent: :nullify
+  has_many :event_route_matches, dependent: :delete_all
 
   enum :subject_scope, %i[self visible], suffix: true
 

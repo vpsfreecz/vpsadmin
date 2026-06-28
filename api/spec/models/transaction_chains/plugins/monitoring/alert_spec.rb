@@ -28,6 +28,7 @@ RSpec.describe 'monitoring alert chain', requires_plugins: :monitoring do # rubo
   end
 
   def reset_routing!(user)
+    EventRouteMatch.delete_all
     EventRouteMatcher.joins(:event_route).where(event_routes: { user_id: user.id }).delete_all
     NotificationReceiverAction
       .joins(:notification_receiver)
@@ -128,7 +129,7 @@ RSpec.describe 'monitoring alert chain', requires_plugins: :monitoring do # rubo
       'object_class' => event.class_name,
       'object_id' => event.row_id
     )
-    expect(routed_event.matched_event_route).to eq(route)
+    expect(routed_event.event_route_matches.reload.map(&:event_route)).to eq([route])
     expect(delivery).to have_attributes(
       action: 'webhook',
       notification_receiver_action: action,
@@ -152,7 +153,9 @@ RSpec.describe 'monitoring alert chain', requires_plugins: :monitoring do # rubo
 
     expect(tx_classes(chain)).to include(Transactions::EventDelivery::Release)
     expect(routed_event.event_type).to eq('monitoring.monitor_state_changed')
-    expect(routed_event.matched_event_route).to eq(EventRoute.default_route_for(event.user))
+    expect(routed_event.event_route_matches.reload.map(&:event_route)).to eq(
+      [EventRoute.default_route_for(event.user)]
+    )
     expect(delivery).to have_attributes(
       action: 'email',
       target_kind: 'default_recipient',

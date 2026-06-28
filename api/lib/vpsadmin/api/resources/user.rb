@@ -549,6 +549,116 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
     end
   end
 
+  class NotificationRateLimit < HaveAPI::Resource
+    desc 'Manage user event delivery rate limits'
+    route '{user_id}/notification_rate_limits'
+    model ::UserNotificationRateLimit
+
+    params(:all) do
+      string :id, db_name: :limit_key
+      string :delivery_method,
+             choices: { values: ::VpsAdmin::API::Notifications::Actions.labels },
+             load_validators: false
+      string :label
+      string :period,
+             choices: { values: ::VpsAdmin::API::Notifications::RateLimits.period_labels },
+             load_validators: false
+      string :period_label
+      integer :limit_count
+      integer :default_limit_count
+      integer :override_limit_count, nullable: true
+      integer :used_count
+      integer :remaining_count
+      datetime :resets_at, nullable: true
+      string :source
+      datetime :created_at, nullable: true
+      datetime :updated_at, nullable: true
+    end
+
+    def self.find_limit(user_id, limit_key)
+      ::UserNotificationRateLimit.find_limit_for(::User.find(user_id), limit_key)
+    end
+
+    class Index < HaveAPI::Actions::Default::Index
+      desc 'List user event delivery rate limits'
+
+      output(:object_list) do
+        use :all
+      end
+
+      authorize do |_u|
+        allow
+      end
+
+      def query
+        error!('Access denied') if current_user.role != :admin && current_user.id != path_params['user_id'].to_i
+
+        ::UserNotificationRateLimit.all_limits_for(::User.find(path_params['user_id']))
+      end
+
+      def count
+        query.count
+      end
+
+      def exec
+        query
+      end
+    end
+
+    class Show < HaveAPI::Actions::Default::Show
+      desc 'Show user event delivery rate limit'
+
+      output do
+        use :all
+      end
+
+      authorize do |_u|
+        allow
+      end
+
+      def exec
+        error!('Access denied') if current_user.role != :admin && current_user.id != path_params['user_id'].to_i
+
+        self.class.resource.find_limit(
+          path_params['user_id'],
+          path_params['notification_rate_limit_id']
+        )
+      end
+    end
+
+    class Update < HaveAPI::Actions::Default::Update
+      desc 'Update user event delivery rate limit'
+
+      input do
+        integer :limit_count, required: true, number: { min: 1 }
+      end
+
+      output do
+        use :all
+      end
+
+      authorize do |u|
+        allow if u.role == :admin
+      end
+
+      def exec
+        user = ::User.find(path_params['user_id'])
+
+        ::UserNotificationRateLimit.set_limit!(
+          user,
+          path_params['notification_rate_limit_id'],
+          input[:limit_count]
+        )
+
+        self.class.resource.find_limit(user.id, path_params['notification_rate_limit_id'])
+      rescue ActiveRecord::RecordNotFound
+        error!('rate limit not found')
+      rescue ActiveRecord::RecordInvalid => e
+        error!('update failed', e.record.errors.to_hash)
+      end
+    end
+  end
+
   class EnvironmentConfig < HaveAPI::Resource
     desc 'User settings per environment'
     model ::EnvironmentUserConfig

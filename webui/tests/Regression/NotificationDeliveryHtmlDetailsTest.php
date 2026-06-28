@@ -347,6 +347,90 @@ final class NotificationDeliveryHtmlDetailsTest extends TestCase
         self::assertStringContainsString("notifications_sidebar('receivers'", $functionSource);
     }
 
+    public function testRateLimitListUsesNestedUserApiHandle(): void
+    {
+        $this->loadNotificationsForms();
+
+        global $api;
+
+        $api = new class {
+            public $userHandle;
+            public array $requestedUsers = [];
+
+            public function __construct()
+            {
+                $this->userHandle = new class {
+                    public $notification_rate_limit;
+
+                    public function __construct()
+                    {
+                        $this->notification_rate_limit = new class {
+                            public function __call($name, $args)
+                            {
+                                if ($name !== 'list') {
+                                    throw new BadMethodCallException($name);
+                                }
+
+                                return [
+                                    (object) [
+                                        'id' => 'email-minute',
+                                    ],
+                                ];
+                            }
+                        };
+                    }
+                };
+            }
+
+            public function user($id)
+            {
+                $this->requestedUsers[] = $id;
+
+                return $this->userHandle;
+            }
+        };
+        $user = (object) [
+            'id' => 42,
+            'notification_rate_limit' => false,
+        ];
+
+        $limits = notifications_rate_limits_for_user($user);
+
+        self::assertSame([42], $api->requestedUsers);
+        self::assertCount(1, $limits);
+        self::assertSame('email-minute', $limits[0]->id);
+    }
+
+    public function testRateLimitUpdateUsesNestedUserApiHandle(): void
+    {
+        $source = file_get_contents(dirname(__DIR__, 2) . '/pages/page_notifications.php');
+        $caseSource = $this->sourceBetween($source, "case 'limits':", "case 'test':");
+
+        self::assertStringContainsString(
+            '$api->user($user_id)->notification_rate_limit($limit->id)->update',
+            $caseSource
+        );
+        self::assertStringNotContainsString(
+            '$user->notification_rate_limit($limit->id)->update',
+            $caseSource
+        );
+    }
+
+    public function testUserDetailDeliveryMethodFormUsesTwoColumns(): void
+    {
+        $source = file_get_contents(dirname(__DIR__, 2) . '/pages/page_adminm.php');
+        $functionSource = $this->sourceBetween(
+            $source,
+            'function adminm_print_notification_delivery_methods(',
+            'function print_newm()'
+        );
+
+        self::assertSame(2, substr_count($functionSource, '$xtpl->table_add_category('));
+        self::assertSame(1, substr_count($functionSource, '$xtpl->table_add_category(\'&nbsp;\');'));
+        self::assertSame(2, preg_match_all("/false,\\s*false,\\s*'2'/", $functionSource));
+        self::assertDoesNotMatchRegularExpression("/false,\\s*false,\\s*'3'/", $functionSource);
+    }
+
     private function loadNotificationsForms(): void
     {
         if (!function_exists('_')) {
