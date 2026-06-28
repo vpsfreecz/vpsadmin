@@ -1,6 +1,8 @@
 PreCommit:
   Nixfmt:
     enabled: true
+  MigrationSpecs:
+    enabled: true
   RuboCop:
     enabled: true
   PhpCsFixer:
