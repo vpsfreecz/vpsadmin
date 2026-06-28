@@ -826,6 +826,7 @@ class AddEvents < ActiveRecord::Migration[8.1]
           event_config: cfg,
           label: "#{role_label} e-mail for #{cfg.fetch(:label)}",
           position: positions[user_id],
+          role:,
           continue: continue_advanced_email_role_route?(
             rows_by_user.fetch(user_id),
             role,
@@ -959,7 +960,7 @@ class AddEvents < ActiveRecord::Migration[8.1]
     SQL
   end
 
-  def create_advanced_mail_route(user_id:, receiver_id:, event_config:, label:, position:, continue: false)
+  def create_advanced_mail_route(user_id:, receiver_id:, event_config:, label:, position:, role: nil, continue: false)
     route_id = insert_row(
       'event_routes',
       user_id:,
@@ -976,6 +977,15 @@ class AddEvents < ActiveRecord::Migration[8.1]
       created_at: current_timestamp,
       updated_at: current_timestamp
     )
+
+    if role
+      create_event_route_matcher(
+        route_id:,
+        field: 'parameters.recipient_roles',
+        operator: 'contains',
+        value: role
+      )
+    end
 
     event_config.fetch(:matchers).each do |field, operator, value|
       create_event_route_matcher(route_id:, field:, operator:, value:)

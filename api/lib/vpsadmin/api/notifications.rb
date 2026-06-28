@@ -314,7 +314,7 @@ module VpsAdmin::API
       if template_name
         rendered = ::NotificationTemplate.render_telegram!(
           template_name,
-          VpsAdmin::API::Events.template_options_for(event)
+          VpsAdmin::API::Events.template_options_for(event, delivery, action: :telegram)
         )
         return truncate_telegram_text(rendered.fetch(:text))
       end
