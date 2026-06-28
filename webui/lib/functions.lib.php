@@ -1698,17 +1698,6 @@ function hasWebAuthnEnabled($user)
     ])->getTotalCount() > 0;
 }
 
-function getUserEmails($user, $email_role_recipients, $role)
-{
-    foreach ($email_role_recipients as $recp) {
-        if ($recp->label === $role && $recp->to != '') {
-            return explode(',', $recp->to);
-        }
-    }
-
-    return [$user->email];
-}
-
 function isExportPublic()
 {
     return isAdmin() || EXPORT_PUBLIC;

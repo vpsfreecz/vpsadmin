@@ -134,8 +134,6 @@ function print_editm($u)
 {
     global $xtpl, $cfg_privlevel, $config, $api;
 
-    $email_role_recipients = $u->email_role_recipient->list();
-
     $xtpl->title(_("Manage members"));
 
     $xtpl->table_add_category(_("Member"));
@@ -234,19 +232,6 @@ function print_editm($u)
     $xtpl->form_out(_("Save"));
 
     if (isAdmin()) {
-        $xtpl->table_add_category(_('Contact'));
-        $xtpl->table_add_category('');
-
-        $xtpl->table_td(_('Account management') . ':');
-        $xtpl->table_td(h(implode(', ', getUserEmails($u, $email_role_recipients, 'Account management'))));
-        $xtpl->table_tr();
-
-        $xtpl->table_td(_('System administrator') . ':');
-        $xtpl->table_td(h(implode(', ', getUserEmails($u, $email_role_recipients, 'System administrator'))));
-        $xtpl->table_tr();
-
-        $xtpl->table_out();
-
         adminm_print_notification_delivery_methods($u);
     }
 
