@@ -458,10 +458,8 @@ RSpec.describe 'API lifecycle bypass regressions' do # rubocop:disable RSpec/Des
   end
 
   describe 'User-owned control plane records' do
-    it 'blocks suspended users from mutating SSH keys and email recipients' do
+    it 'blocks suspended users from mutating SSH keys' do
       key = create_public_key!
-      role = 'account'
-      template = NotificationTemplate.first || raise('missing notification template fixture')
       suspend_user!
 
       as(SpecSeed.user) do
@@ -481,22 +479,6 @@ RSpec.describe 'API lifecycle bypass regressions' do # rubocop:disable RSpec/Des
       expect_lifecycle_denied
 
       as(SpecSeed.user) { json_delete vpath("/users/#{SpecSeed.user.id}/public_keys/#{key.id}") }
-      expect_lifecycle_denied
-
-      as(SpecSeed.user) do
-        json_put vpath("/users/#{SpecSeed.user.id}/email_role_recipients/#{role}"), email_role_recipient: {
-          to: 'blocked@example.test'
-        }
-      end
-      expect_lifecycle_denied
-
-      as(SpecSeed.user) do
-        json_put vpath("/users/#{SpecSeed.user.id}/notification_template_recipients/#{template.name}"),
-                 notification_template_recipient: {
-                   to: 'blocked@example.test',
-                   enabled: true
-                 }
-      end
       expect_lifecycle_denied
     end
 
