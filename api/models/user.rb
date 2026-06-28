@@ -23,8 +23,6 @@ class User < ApplicationRecord
   has_many :cluster_resource_packages
   has_many :snapshot_downloads
   has_many :user_public_keys
-  has_many :user_email_role_recipients
-  has_many :user_notification_template_recipients
   has_many :notification_receivers, dependent: :destroy
   has_many :notification_targets, dependent: :destroy
   has_many :event_routes, dependent: :destroy

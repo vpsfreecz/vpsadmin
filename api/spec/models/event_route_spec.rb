@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
 require 'spec_helper'
-require_relative '../../db/migrate/20260615110000_add_events'
 
 RSpec.describe EventRoute do
   before do
@@ -84,6 +83,7 @@ RSpec.describe EventRoute do
   end
 
   def reset_all_event_routing!
+    EventRoutingContext.delete_all
     EventDelivery.delete_all
     Event.delete_all
     EventRouteMatcher.delete_all
@@ -91,22 +91,6 @@ RSpec.describe EventRoute do
     NotificationTarget.delete_all
     EventRoute.delete_all
     NotificationReceiver.delete_all
-  end
-
-  def reset_advanced_mail_settings!
-    UserNotificationTemplateRecipient.delete_all
-    UserEmailRoleRecipient.delete_all
-  end
-
-  def run_events_migration_backfill!
-    verbose = ActiveRecord::Migration.verbose
-    reset_all_event_routing!
-    migration = AddEvents.new
-    ActiveRecord::Migration.verbose = false
-    migration.send(:backfill_default_routes)
-    migration.send(:backfill_advanced_mail_routes)
-  ensure
-    ActiveRecord::Migration.verbose = verbose
   end
 
   def emit_oom_report!(stage)
@@ -475,336 +459,147 @@ RSpec.describe EventRoute do
     expect(SpecSeed.user.notification_receivers.reload).to include(muted_receiver)
   end
 
-  it 'backfills template recipient overrides into explicit e-mail routes' do
-    reset_advanced_mail_settings!
-    template = event_notification_template!('vps_incident_report')
-    UserNotificationTemplateRecipient.create!(
-      user: SpecSeed.user,
-      notification_template: template,
-      to: 'incident-override@example.test',
-      enabled: true
+  it 'materializes an admin-visible context only when a visible route matches' do
+    reset_routing!(SpecSeed.admin)
+
+    passive_event = emit_incident!
+    passive_contexts = passive_event.event_routing_contexts.reload
+
+    receiver = create_receiver!(
+      user: SpecSeed.admin,
+      label: 'Admin audit receiver',
+      action: {
+        action: :email,
+        target_kind: :default_recipient
+      }
+    )
+    route = create_route!(
+      user: SpecSeed.admin,
+      receiver:,
+      event_type: 'vps.incident_report',
+      subject_scope: :visible
+    )
+    route.event_route_matchers.create!(
+      field: 'context.subject_relation',
+      operator: '==',
+      value: 'other_user'
     )
 
-    run_events_migration_backfill!
+    routed_event = emit_incident!
+    admin_delivery = routed_event.event_deliveries
+                                 .joins(:event_routing_context)
+                                 .find_by!(event_routing_contexts: { user_id: SpecSeed.admin.id })
+    admin_context = admin_delivery.event_routing_context
+
+    expect(passive_contexts.map(&:recipient_user)).to eq([SpecSeed.user])
+    expect(routed_event.reload).to be_routed_routing_state
+    expect(admin_context.recipient_user).to eq(SpecSeed.admin)
+    expect(admin_context.subject_relation).to eq('other_user')
+    expect(admin_context.source).to eq('visible_route')
+    expect(admin_context.matched_event_route).to eq(route)
+    expect(admin_delivery.target_value).to eq('default')
+    expect(admin_delivery.recipient_user).to eq(SpecSeed.admin)
+    expect(NotificationTemplate).to have_received(:send_email!).with(
+      :vps_incident_report,
+      hash_including(
+        user: SpecSeed.admin,
+        to: [SpecSeed.admin.email],
+        include_default_recipients: false,
+        include_template_recipients: false,
+        vars: hash_including(user: SpecSeed.user)
+      )
+    )
+  end
+
+  it 'does not allow default routes to consume admin-visible events' do
+    reset_routing!(SpecSeed.admin)
+    receiver = create_receiver!(
+      user: SpecSeed.admin,
+      label: 'Admin default receiver',
+      action: {
+        action: :email,
+        target_kind: :default_recipient
+      }
+    )
+    create_route!(
+      user: SpecSeed.admin,
+      receiver:,
+      default_route: true,
+      position: EventRoute::DEFAULT_ROUTE_POSITION,
+      event_type: nil,
+      subject_scope: :self
+    )
 
     event = emit_incident!
-    delivery = event.event_deliveries.sole
 
-    expect(event.reload).to be_routed_routing_state
-    expect(event.matched_event_route.position).to eq(10)
-    expect(delivery.action).to eq('email')
-    expect(delivery.target_kind).to eq('custom')
-    expect(delivery.target_value).to eq('incident-override@example.test')
-    expect(delivery.template_name).to eq('vps_incident_report')
+    expect(event.event_routing_contexts.where(user_id: SpecSeed.admin.id)).to be_empty
+    expect(event.event_deliveries.map(&:recipient_user)).to eq([SpecSeed.user])
   end
 
-  it 'backfills parameterized expiration template recipient overrides' do
-    reset_advanced_mail_settings!
-    template = event_notification_template!('expiration_vps_active')
-    template.update!(template_id: 'expiration_warning')
-    UserNotificationTemplateRecipient.create!(
-      user: SpecSeed.user,
-      notification_template: template,
-      to: 'expiration-override@example.test',
-      enabled: true
-    )
-    vps = build_standalone_vps_fixture(user: SpecSeed.user).fetch(:vps)
-
-    run_events_migration_backfill!
-
-    event = VpsAdmin::API::Events.emit!(
-      'lifetime.expiration_warning',
-      user: SpecSeed.user,
-      vps:,
-      source: vps,
-      subject: 'Spec VPS expiration',
-      parameters: {
-        object: 'vps',
-        object_id: vps.id,
-        object_label: vps.hostname,
-        state: 'active'
+  it 'routes role-addressed notifications with recipient role matchers' do
+    receiver = create_receiver!(
+      label: 'Account receiver',
+      action: {
+        action: :email,
+        target_kind: :custom,
+        target_value: 'account-role@example.test'
       }
     )
-    delivery = event.event_deliveries.sole
-    matchers = event.matched_event_route.event_route_matchers.order(:id)
-
-    expect(event.reload).to be_routed_routing_state
-    expect(delivery.target_kind).to eq('custom')
-    expect(delivery.target_value).to eq('expiration-override@example.test')
-    expect(delivery.template_name).to eq('expiration_warning')
-    expect(matchers.map { |m| [m.field, m.operator, m.value] }).to eq(
-      [
-        ['parameters.object', '==', 'vps'],
-        ['parameters.state', '==', 'active']
-      ]
+    route = create_route!(
+      receiver:,
+      event_type: 'user.suspended',
+      template_name: 'user_suspend'
     )
-  end
-
-  it 'backfills payment accepted template recipient overrides' do
-    reset_advanced_mail_settings!
-    template = event_notification_template!('payment_accepted')
-    UserNotificationTemplateRecipient.create!(
-      user: SpecSeed.user,
-      notification_template: template,
-      to: 'payment-override@example.test',
-      enabled: true
+    route.event_route_matchers.create!(
+      field: 'parameters.recipient_roles',
+      operator: 'contains',
+      value: 'account'
     )
-
-    run_events_migration_backfill!
-
-    event = VpsAdmin::API::Events.emit!(
-      'payment.accepted',
-      user: SpecSeed.user,
-      subject: 'Spec payment accepted',
-      parameters: {
-        payment_id: 123,
-        received_amount: 200,
-        received_currency: 'CZK'
-      }
-    )
-    delivery = event.event_deliveries.sole
-
-    expect(event.reload).to be_routed_routing_state
-    expect(event.matched_event_route.event_type).to eq('payment.accepted')
-    expect(delivery.target_kind).to eq('custom')
-    expect(delivery.target_value).to eq('payment-override@example.test')
-    expect(delivery.template_name).to eq('payment_accepted')
-  end
-
-  it 'backfills outage update template overrides for all update events' do
-    reset_advanced_mail_settings!
-    template = event_notification_template!('outage_report_user_update')
-    UserNotificationTemplateRecipient.create!(
-      user: SpecSeed.user,
-      notification_template: template,
-      to: 'outage-update@example.test',
-      enabled: true
-    )
-
-    run_events_migration_backfill!
-
-    event = VpsAdmin::API::Events.emit!(
-      'outage.updated',
-      user: SpecSeed.user,
-      subject: 'Spec outage resolved',
-      parameters: {
-        role: 'user',
-        event: 'resolve',
-        outage_id: 123,
-        update_id: 456
-      }
-    )
-    delivery = event.event_deliveries.sole
-
-    expect(event.reload).to be_routed_routing_state
-    expect(event.matched_event_route.event_type).to eq('outage.updated')
-    expect(event.matched_event_route.event_route_matchers.map(&:summary)).to contain_exactly(
-      'parameters.role == user'
-    )
-    expect(delivery.target_kind).to eq('custom')
-    expect(delivery.target_value).to eq('outage-update@example.test')
-    expect(delivery.template_name).to eq('outage_report_role_event')
-  end
-
-  it 'backfills request template overrides in fallback order' do
-    reset_advanced_mail_settings!
-    specific = event_notification_template!('request_resolve_user_change_approved')
-    specific.update!(template_id: 'request_resolve_role_type_state')
-    generic = event_notification_template!('request_resolve_user')
-    generic.update!(template_id: 'request_action_role')
-    UserNotificationTemplateRecipient.create!(
-      user: SpecSeed.user,
-      notification_template: generic,
-      to: 'request-generic@example.test',
-      enabled: true
-    )
-    UserNotificationTemplateRecipient.create!(
-      user: SpecSeed.user,
-      notification_template: specific,
-      to: 'request-specific@example.test',
-      enabled: true
-    )
-
-    run_events_migration_backfill!
-
-    event = VpsAdmin::API::Events.emit!(
-      'request.resolved',
-      user: SpecSeed.user,
-      subject: 'Spec request resolved',
-      parameters: {
-        role: 'user',
-        action: 'resolve',
-        request_type: 'change',
-        request_state: 'approved',
-        request_id: 123,
-        mail_id: 2
-      }
-    )
-    delivery = event.event_deliveries.sole
-    matchers = event.matched_event_route.event_route_matchers.order(:id)
-
-    expect(event.reload).to be_routed_routing_state
-    expect(delivery.target_kind).to eq('custom')
-    expect(delivery.target_value).to eq('request-specific@example.test')
-    expect(delivery.template_name).to eq('request_resolve_role_type_state')
-    expect(matchers.map { |m| [m.field, m.operator, m.value] }).to eq(
-      [
-        ['parameters.role', '==', 'user'],
-        ['parameters.request_type', '==', 'change'],
-        ['parameters.request_state', '==', 'approved']
-      ]
-    )
-  end
-
-  it 'backfills role recipients behind template-specific routes' do
-    reset_advanced_mail_settings!
-    UserEmailRoleRecipient.create!(
-      user: SpecSeed.user,
-      role: 'admin',
-      to: 'admin-role@example.test'
-    )
-
-    run_events_migration_backfill!
-
-    event = VpsAdmin::API::Events.emit!(
-      'vps.oom_prevention',
-      user: SpecSeed.user,
-      subject: 'Spec OOM prevention',
-      parameters: {
-        'action' => 'restart'
-      }
-    )
-    delivery = event.event_deliveries.sole
-    storage_event = VpsAdmin::API::Events.emit!(
-      'vps.dataset_expanded',
-      user: SpecSeed.user,
-      subject: 'Spec dataset expanded',
-      parameters: {
-        'added_space' => 1024
-      }
-    )
-    storage_delivery = storage_event.event_deliveries.sole
-    oom_report_route = described_class.find_by!(
-      user: SpecSeed.user,
-      event_type: 'vps.oom_report',
-      label: 'System administrator e-mail for OOM report'
-    )
-
-    expect(event.reload).to be_routed_routing_state
-    expect(event.matched_event_route.position).to be >= 1_000
-    expect(delivery.target_kind).to eq('custom')
-    expect(delivery.target_value).to eq('admin-role@example.test')
-    expect(delivery.template_name).to eq('vps_oom_prevention')
-    expect(storage_event.reload).to be_routed_routing_state
-    expect(storage_delivery.target_value).to eq('admin-role@example.test')
-    expect(storage_delivery.template_name).to eq('vps_dataset_expanded')
-    expect(
-      oom_report_route.event_route_matchers.map { |m| [m.field, m.operator, m.value] }
-    ).to eq(
-      [
-        ['parameters.stage', '==', 'notification']
-      ]
-    )
-  end
-
-  it 'backfills account role recipients for user account events' do
-    reset_advanced_mail_settings!
-    UserEmailRoleRecipient.create!(
-      user: SpecSeed.user,
-      role: 'account',
-      to: 'account-role@example.test'
-    )
-
-    run_events_migration_backfill!
 
     event = VpsAdmin::API::Events.emit!(
       'user.suspended',
       user: SpecSeed.user,
       subject: 'Spec suspended user',
       parameters: {
-        'state' => 'suspended'
+        'state' => 'suspended',
+        'recipient_roles' => %w[account]
       }
     )
     delivery = event.event_deliveries.sole
 
     expect(event.reload).to be_routed_routing_state
-    expect(event.matched_event_route.position).to be >= 1_000
-    expect(event.matched_event_route.label).to eq('Account management e-mail for User account suspended')
+    expect(event.matched_event_route).to eq(route)
     expect(delivery.target_kind).to eq('custom')
     expect(delivery.target_value).to eq('account-role@example.test')
     expect(delivery.template_name).to eq('user_suspend')
   end
 
-  it 'backfills all matching role recipients for multi-role templates' do
-    reset_advanced_mail_settings!
-    UserEmailRoleRecipient.create!(
-      user: SpecSeed.user,
-      role: 'account',
-      to: 'account-role@example.test'
-    )
-    UserEmailRoleRecipient.create!(
-      user: SpecSeed.user,
-      role: 'admin',
-      to: 'admin-role@example.test'
-    )
-
-    run_events_migration_backfill!
-
-    event = VpsAdmin::API::Events.emit!(
-      'vps.suspended',
-      user: SpecSeed.user,
-      subject: 'Spec suspended VPS',
-      parameters: {
-        'state' => 'suspended'
+  it 'matches negated recipient role predicates' do
+    receiver = create_receiver!(
+      action: {
+        action: :webhook,
+        target_kind: :custom,
+        target_value: 'https://example.test/non-account'
       }
     )
-    deliveries = event.event_deliveries.order(:id)
-    account_route = described_class.find_by!(
-      user: SpecSeed.user,
-      event_type: 'vps.suspended',
-      label: 'Account management e-mail for VPS suspended'
+    route = create_route!(receiver:, event_type: 'user.suspended')
+    route.event_route_matchers.create!(
+      field: 'parameters.recipient_roles',
+      operator: 'not_contains',
+      value: 'account'
     )
-    admin_route = described_class.find_by!(
+
+    event = VpsAdmin::API::Events.emit!(
+      'user.suspended',
       user: SpecSeed.user,
-      event_type: 'vps.suspended',
-      label: 'System administrator e-mail for VPS suspended'
+      subject: 'Spec suspended user',
+      parameters: {
+        'recipient_roles' => %w[admin]
+      }
     )
 
     expect(event.reload).to be_routed_routing_state
-    expect(account_route).to be_continue
-    expect(admin_route).not_to be_continue
-    expect(deliveries.map(&:target_value)).to eq(
-      %w[account-role@example.test admin-role@example.test]
-    )
-    expect(deliveries.map(&:template_name)).to eq(%w[vps_suspend vps_suspend])
-  end
-
-  it 'backfills disabled OOM template recipients only for notification events' do
-    reset_advanced_mail_settings!
-    template = event_notification_template!('vps_oom_report')
-    UserNotificationTemplateRecipient.create!(
-      user: SpecSeed.user,
-      notification_template: template,
-      to: '',
-      enabled: false
-    )
-
-    run_events_migration_backfill!
-
-    muted_route = described_class.find_by!(
-      user: SpecSeed.user,
-      event_type: 'vps.oom_report',
-      label: "#{template.label} disabled"
-    )
-    notification_event = emit_oom_report!('notification')
-    raw_event = emit_oom_report!('raw')
-
-    expect(notification_event.reload).to be_suppressed_routing_state
-    expect(notification_event.matched_event_route).to eq(muted_route)
-    expect(notification_event.event_deliveries.sole).to be_skipped_state
-    expect(raw_event.reload).to be_routed_routing_state
-    expect(raw_event.matched_event_route).not_to eq(muted_route)
-    expect(muted_route.reload.hit_count).to eq(1)
+    expect(event.matched_event_route).to eq(route)
   end
 
   it 'matches with sigil operators' do

@@ -86,14 +86,47 @@ base
     services.api_ruby_json(code: <<~RUBY)
       result = VpsAdmin::API::NotificationTemplates.install_defaults!
 
-      daily_report = NotificationTemplate.find_by!(name: 'daily_report')
-      recipient = EmailRecipient.find_or_initialize_by(label: 'alerts daily report')
-      recipient.assign_attributes(to: User.find(#{admin_user_id}).email)
-      recipient.save! if recipient.changed?
-      NotificationTemplateEmailRecipient.find_or_create_by!(
-        notification_template: daily_report,
-        email_recipient: recipient
+      admin = User.find(#{admin_user_id})
+      receiver = NotificationReceiver.find_or_create_by!(
+        user: admin,
+        label: 'Alerts daily report'
+      ) do |r|
+        r.description = 'Created by the alert integration test fixture'
+        r.enabled = true
+        r.mute = false
+      end
+
+      target = admin.notification_targets.find_or_initialize_by(
+        action: 'email',
+        identity_key: 'default'
       )
+      target.assign_attributes(
+        label: 'Default e-mail',
+        target_kind: :default_recipient,
+        enabled: true
+      )
+      target.skip_delivery_method_enabled_validation = true
+      target.save! if target.changed? || target.new_record?
+
+      receiver.notification_receiver_targets.find_or_create_by!(
+        notification_target: target
+      ) do |link|
+        link.position = receiver.notification_receiver_targets.maximum(:position).to_i + 1
+      end
+
+      route = EventRoute.find_or_initialize_by(
+        user: admin,
+        label: 'Alerts daily report route',
+        event_type: 'system.daily_report',
+        template_name: 'daily_report',
+        subject_scope: :visible
+      )
+      route.assign_attributes(
+        notification_receiver: receiver,
+        position: 1,
+        enabled: true
+      )
+      route.save! if route.changed? || route.new_record?
 
       puts JSON.dump(ok: true, install: result)
     RUBY
