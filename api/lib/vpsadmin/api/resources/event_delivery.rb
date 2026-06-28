@@ -16,6 +16,9 @@ module VpsAdmin::API::Resources
     params(:all) do
       id :id
       integer :event_id
+      integer :event_routing_context_id, nullable: true
+      integer :recipient_user_id, nullable: true
+      string :recipient_user_login, nullable: true
       integer :event_user_id, nullable: true
       string :event_user_login, nullable: true
       integer :event_vps_id, nullable: true
@@ -81,6 +84,7 @@ module VpsAdmin::API::Resources
                load_validators: false,
                nullable: true
         integer :event_route_id, nullable: true
+        resource User, name: :recipient_user, value_label: :login, nullable: true
         integer :notification_receiver_id, nullable: true
         integer :notification_target_id, nullable: true
         integer :notification_receiver_target_id, nullable: true
@@ -100,6 +104,7 @@ module VpsAdmin::API::Resources
                 .joins(:event)
                 .includes(
                   { event: %i[user vps] },
+                  { event_routing_context: :recipient_user },
                   :event_route,
                   :notification_receiver,
                   :notification_target,
@@ -109,6 +114,10 @@ module VpsAdmin::API::Resources
         if input[:user]
           user_id = input[:user].respond_to?(:id) ? input[:user].id : input[:user]
           q = q.where(events: { user_id: })
+        end
+        if input[:recipient_user]
+          user_id = input[:recipient_user].respond_to?(:id) ? input[:recipient_user].id : input[:recipient_user]
+          q = q.joins(:event_routing_context).where(event_routing_contexts: { user_id: })
         end
         q = q.where(events: { event_type: input[:event_type] }) if input[:event_type].present?
         q = q.where(action: input[:action]) if input[:action].present?

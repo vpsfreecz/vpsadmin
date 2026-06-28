@@ -16,6 +16,7 @@ class EventDelivery < ApplicationRecord
   }.freeze
 
   belongs_to :event
+  belongs_to :event_routing_context, optional: true
   belongs_to :event_route, optional: true
   belongs_to :notification_receiver, optional: true
   belongs_to :notification_target, optional: true
@@ -98,6 +99,22 @@ class EventDelivery < ApplicationRecord
 
   def event_user_id
     event&.user_id
+  end
+
+  def recipient_user
+    event_routing_context&.recipient_user ||
+      notification_target&.user ||
+      notification_receiver_action&.notification_receiver&.user ||
+      notification_receiver&.user ||
+      event&.user
+  end
+
+  def recipient_user_id
+    recipient_user&.id
+  end
+
+  def recipient_user_login
+    recipient_user&.login
   end
 
   def event_user_login
@@ -193,6 +210,7 @@ class EventDelivery < ApplicationRecord
     user = notification_target&.user ||
            notification_receiver_action&.notification_receiver&.user ||
            notification_receiver&.user ||
+           event_routing_context&.recipient_user ||
            event&.user
     return true unless user
 
