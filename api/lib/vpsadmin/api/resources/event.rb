@@ -23,6 +23,10 @@ module VpsAdmin::API::Resources
              choices: { values: ::Event.routing_state_labels },
              load_validators: false
       integer :matched_event_route_id, nullable: true
+      string :subject_relation,
+             choices: { values: ::EventRoutingContext.subject_relation_labels },
+             load_validators: false,
+             nullable: true
     end
 
     params(:all) do
@@ -43,6 +47,10 @@ module VpsAdmin::API::Resources
         integer :notification_receiver_id, nullable: true
         integer :notification_target_id, nullable: true
         integer :notification_receiver_target_id, nullable: true
+        string :subject_relation,
+               choices: { values: ::EventRoutingContext.subject_relation_labels },
+               load_validators: false,
+               nullable: true
       end
 
       output(:object_list) do
@@ -51,16 +59,18 @@ module VpsAdmin::API::Resources
 
       authorize do |u|
         allow if u.role == :admin
-        restrict user_id: u.id
+        output blacklist: %i[matched_event_route_id]
         allow
       end
 
       def query
-        q = self.class.model.where(with_restricted)
+        q = self.class.model.visible_to(current_user)
 
-        %i[user event_type category severity routing_state matched_event_route_id].each do |v|
+        %i[user event_type category severity routing_state].each do |v|
           q = q.where(v => input[v]) if input.has_key?(v)
         end
+        q = matched_event_route_filter(q)
+        q = subject_relation_filter(q)
 
         delivery_filters = {}
         delivery_filters[:action] = input[:action] if input[:action].present?
@@ -74,9 +84,7 @@ module VpsAdmin::API::Resources
           delivery_filters[:notification_receiver_target_id] = input[:notification_receiver_target_id]
         end
 
-        if delivery_filters.any?
-          q = q.joins(:event_deliveries).where(event_deliveries: delivery_filters).distinct
-        end
+        q = delivery_filter(q, delivery_filters) if delivery_filters.any?
 
         q
       end
@@ -87,6 +95,94 @@ module VpsAdmin::API::Resources
 
       def exec
         with_pagination(with_includes(query).order(id: :desc))
+      end
+
+      protected
+
+      def matched_event_route_filter(scope)
+        return scope unless input.has_key?(:matched_event_route_id)
+        return scope.where(matched_event_route_id: input[:matched_event_route_id]) if current_user.role == :admin
+
+        unless ::EventRoute.where(
+          id: input[:matched_event_route_id],
+          user_id: current_user.id
+        ).exists?
+          return scope.none
+        end
+
+        matching_events = ::EventRoutingContext
+                          .where(
+                            user_id: current_user.id,
+                            matched_event_route_id: input[:matched_event_route_id]
+                          )
+                          .select(:event_id)
+
+        scope.where(id: matching_events)
+      end
+
+      def delivery_filter(scope, filters)
+        if current_user.role == :admin
+          matching_events = ::EventDelivery
+                            .where(filters)
+                            .select(:event_id)
+
+          return scope.where(id: matching_events)
+        end
+
+        return scope.none unless delivery_filter_visible_to_user?(filters)
+
+        matching_events = ::EventDelivery
+                          .joins(:event_routing_context)
+                          .where(filters)
+                          .where(event_routing_contexts: { user_id: current_user.id })
+                          .select(:event_id)
+
+        scope.where(id: matching_events)
+      end
+
+      def delivery_filter_visible_to_user?(filters)
+        if filters[:notification_receiver_id].present? &&
+           !::NotificationReceiver.where(
+             id: filters[:notification_receiver_id],
+             user_id: current_user.id
+           ).exists?
+          return false
+        end
+
+        if filters[:notification_target_id].present? &&
+           !::NotificationTarget.where(
+             id: filters[:notification_target_id],
+             user_id: current_user.id
+           ).exists?
+          return false
+        end
+
+        receiver_target_exists = ::NotificationReceiverTarget
+                                 .joins(:notification_receiver)
+                                 .where(
+                                   id: filters[:notification_receiver_target_id],
+                                   notification_receivers: { user_id: current_user.id }
+                                 )
+                                 .exists?
+
+        if filters[:notification_receiver_target_id].present? && !receiver_target_exists
+          return false
+        end
+
+        true
+      end
+
+      def subject_relation_filter(scope)
+        case input[:subject_relation]
+        when 'self'
+          scope.where(user_id: current_user.id)
+        when 'other_user'
+          scope.where.not(user_id: [nil, current_user.id])
+        when 'system'
+          scope.where(user_id: nil)
+        else
+          scope
+        end
       end
     end
 
@@ -99,12 +195,12 @@ module VpsAdmin::API::Resources
 
       authorize do |u|
         allow if u.role == :admin
-        restrict user_id: u.id
+        output blacklist: %i[matched_event_route_id]
         allow
       end
 
       def exec
-        self.class.model.find_by!(with_restricted(id: path_params['event_id']))
+        self.class.model.visible_to(current_user).find_by!(id: path_params['event_id'])
       end
     end
 
@@ -190,6 +286,9 @@ module VpsAdmin::API::Resources
 
       params(:all) do
         id :id
+        integer :event_routing_context_id, nullable: true
+        integer :recipient_user_id, nullable: true
+        string :recipient_user_login, nullable: true
         integer :event_route_id, nullable: true
         integer :notification_receiver_id, nullable: true
         string :notification_receiver_label, nullable: true
@@ -250,15 +349,19 @@ module VpsAdmin::API::Resources
 
         authorize do |u|
           allow if u.role == :admin
-          restrict events: { user_id: u.id }
           output blacklist: %i[template_name]
           allow
         end
 
         def query
-          self.class.model.joins(:event).where(
-            with_restricted(event_id: path_params['event_id'])
-          )
+          q = self.class.model
+                  .joins(:event)
+                  .left_outer_joins(:event_routing_context)
+                  .where(event_id: path_params['event_id'])
+          return q if current_user.role == :admin
+
+          q.where(events: { user_id: current_user.id })
+           .where(event_routing_contexts: { user_id: current_user.id })
         end
 
         def count
@@ -280,18 +383,23 @@ module VpsAdmin::API::Resources
 
         authorize do |u|
           allow if u.role == :admin
-          restrict events: { user_id: u.id }
           output blacklist: %i[template_name]
           allow
         end
 
         def exec
-          self.class.model.joins(:event).find_by!(
-            with_restricted(
-              event_id: path_params['event_id'],
-              id: path_params['delivery_id']
-            )
-          )
+          query.find_by!(id: path_params['delivery_id'])
+        end
+
+        def query
+          q = self.class.model
+                  .joins(:event)
+                  .left_outer_joins(:event_routing_context)
+                  .where(event_id: path_params['event_id'])
+          return q if current_user.role == :admin
+
+          q.where(events: { user_id: current_user.id })
+           .where(event_routing_contexts: { user_id: current_user.id })
         end
       end
 
@@ -306,22 +414,27 @@ module VpsAdmin::API::Resources
 
         authorize do |u|
           allow if u.role == :admin
-          restrict events: { user_id: u.id }
           output blacklist: %i[template_name]
           allow
         end
 
         def exec
-          delivery = ::EventDelivery.joins(:event).find_by!(
-            with_restricted(
-              event_id: path_params['event_id'],
-              id: path_params['delivery_id']
-            )
-          )
+          delivery = query.find_by!(id: path_params['delivery_id'])
 
           VpsAdmin::API::Notifications::Retry.retry!(delivery)
         rescue VpsAdmin::API::Notifications::Retry::InvalidState => e
           error!(e.message)
+        end
+
+        def query
+          q = ::EventDelivery
+              .joins(:event)
+              .left_outer_joins(:event_routing_context)
+              .where(event_id: path_params['event_id'])
+          return q if current_user.role == :admin
+
+          q.where(events: { user_id: current_user.id })
+           .where(event_routing_contexts: { user_id: current_user.id })
         end
       end
 
@@ -360,21 +473,23 @@ module VpsAdmin::API::Resources
 
           authorize do |u|
             allow if u.role == :admin
-            restrict events: { user_id: u.id }
             allow
           end
 
           def query
-            self.class.model
-                .joins(event_delivery: :event)
-                .where(
-                  with_restricted(
-                    event_deliveries: {
-                      event_id: path_params['event_id'],
-                      id: path_params['delivery_id']
-                    }
-                  )
-                )
+            q = self.class.model
+                    .joins(event_delivery: :event)
+                    .left_outer_joins(event_delivery: :event_routing_context)
+                    .where(
+                      event_deliveries: {
+                        event_id: path_params['event_id'],
+                        id: path_params['delivery_id']
+                      }
+                    )
+            return q if current_user.role == :admin
+
+            q.where(events: { user_id: current_user.id })
+             .where(event_routing_contexts: { user_id: current_user.id })
           end
 
           def count
@@ -395,22 +510,27 @@ module VpsAdmin::API::Resources
 
           authorize do |u|
             allow if u.role == :admin
-            restrict events: { user_id: u.id }
             allow
           end
 
           def exec
-            self.class.model
-                .joins(event_delivery: :event)
-                .find_by!(
-                  with_restricted(
-                    event_deliveries: {
-                      event_id: path_params['event_id'],
-                      id: path_params['delivery_id']
-                    },
-                    id: path_params['attempt_id']
-                  )
-                )
+            query.find_by!(id: path_params['attempt_id'])
+          end
+
+          def query
+            q = self.class.model
+                    .joins(event_delivery: :event)
+                    .left_outer_joins(event_delivery: :event_routing_context)
+                    .where(
+                      event_deliveries: {
+                        event_id: path_params['event_id'],
+                        id: path_params['delivery_id']
+                      }
+                    )
+            return q if current_user.role == :admin
+
+            q.where(events: { user_id: current_user.id })
+             .where(event_routing_contexts: { user_id: current_user.id })
           end
         end
       end

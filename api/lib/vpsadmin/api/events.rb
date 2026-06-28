@@ -276,11 +276,19 @@ module VpsAdmin::API
         end
         extra = context.instance_exec(&@extra_parameters_block) if @extra_parameters_block
         ret.merge!(extra || {})
+        roles = recipient_roles(context)
+        ret[:recipient_roles] ||= roles if roles
         ret
       end
 
       def evaluate(context, block)
         context.instance_exec(&block) if block
+      end
+
+      def recipient_roles(context)
+        template = delivery(:email)&.static_template_name || @fallback_template_name
+        roles = ::NotificationTemplate.templates[template&.to_sym]&.fetch(:roles, nil)
+        roles&.map(&:to_s)
       end
     end
 
@@ -397,6 +405,67 @@ module VpsAdmin::API
     SnapshotInfo = Struct.new(:id, :name, :dataset)
     SnapshotDownloadInfo = Struct.new(:id, :file_name, :expiration_date, :user, :snapshot)
     VpsMigrationInfo = Struct.new(:id, :maintenance_window)
+    RouteContext = Struct.new(
+      :event,
+      :route_owner,
+      :subject_relation,
+      :subject_user
+    ) do
+      def self.self_context(event)
+        new(event, event.user, event.user_id.present? ? 'self' : 'system', event.user)
+      end
+
+      def self.for(event, route_owner)
+        relation =
+          if event.user_id.blank?
+            'system'
+          elsif route_owner && event.user_id == route_owner.id
+            'self'
+          else
+            'other_user'
+          end
+
+        new(event, route_owner, relation, event.user)
+      end
+
+      def visible?
+        event.visible_to?(route_owner)
+      end
+
+      def self_subject?
+        subject_relation == 'self'
+      end
+
+      def system_subject?
+        subject_relation == 'system'
+      end
+
+      def default_route_allowed?
+        self_subject?
+      end
+
+      def source
+        if system_subject?
+          'system_route'
+        elsif self_subject?
+          'direct_route'
+        else
+          'visible_route'
+        end
+      end
+
+      def subject_user_id
+        subject_user&.id
+      end
+
+      def subject_is_self
+        self_subject?
+      end
+
+      def subject_is_admin_visible
+        !self_subject? && route_owner&.role == :admin
+      end
+    end
     DeliveryPlan = Struct.new(
       :action,
       :target_kind,
@@ -410,14 +479,16 @@ module VpsAdmin::API
       :state,
       :error_summary,
       :next_attempt_at,
-      :payload
+      :payload,
+      :route_context
     )
 
     RouteResult = Struct.new(
       :routing_state,
       :matched_event_route,
       :deliveries,
-      :spent_event_routes
+      :spent_event_routes,
+      :routing_context_states
     ) do
       def suppressed_by_mute?
         routing_state == 'suppressed' &&
@@ -501,18 +572,16 @@ module VpsAdmin::API
     def template_options_for(event, delivery = nil, action: nil)
       action ||= delivery&.action || :email
       opts = {
-        user: event.user,
+        user: delivery&.recipient_user || event.user,
         vars: template_vars_for(event, action)
       }
       template_params = template_params_for(event, action)
       opts[:params] = template_params if template_params
 
-      if delivery&.email_action? && delivery.custom_target_kind?
+      if delivery&.email_action?
         opts[:to] = email_target_addresses(event, delivery)
         opts[:include_default_recipients] = false
         opts[:include_template_recipients] = false
-      elsif delivery&.email_action? && explicit_default_target?(delivery)
-        opts[:to] = email_target_addresses(event, delivery)
       end
 
       opts.merge!(template_extra_options_for(event, action))
@@ -521,7 +590,7 @@ module VpsAdmin::API
 
     def email_custom_options_for(event, delivery)
       {
-        user: event.user,
+        user: delivery&.recipient_user || event.user,
         from: NotificationTemplates.default_from,
         to: email_target_addresses(event, delivery),
         subject: event.subject,
@@ -533,7 +602,7 @@ module VpsAdmin::API
       if delivery.default_recipient_target_kind?
         address = delivery.target_value.presence
         address = nil if address == 'default'
-        address ||= event.user&.email
+        address ||= delivery.recipient_user&.email || event.user&.email
         raise ArgumentError, 'event has no user e-mail recipient' if address.blank?
 
         return [address]
@@ -862,6 +931,7 @@ module VpsAdmin::API
         event.class.transaction do
           event.lock!
           event.event_deliveries.delete_all
+          event.event_routing_contexts.delete_all
           result = plan
 
           event.update!(
@@ -870,7 +940,7 @@ module VpsAdmin::API
           )
 
           result.deliveries.each do |delivery|
-            create_delivery!(delivery)
+            create_delivery!(delivery, result.routing_context_states)
           end
 
           spend_single_use_routes(result.spent_event_routes)
@@ -881,7 +951,7 @@ module VpsAdmin::API
 
       def plan
         ensure_default_routes
-        plan_route
+        plan_all_contexts
       end
 
       protected
@@ -892,49 +962,129 @@ module VpsAdmin::API
         ::NotificationReceiver.ensure_defaults_for!(event.user)
       end
 
-      def plan_route
+      def plan_all_contexts
+        context_results = route_contexts.map do |route_context|
+          plan_route(route_context, emit_skipped: route_context.self_subject?)
+        end
+
+        deliveries = deduplicate(context_results.flat_map(&:deliveries) + direct_email_deliveries)
+        first_delivery_route = deliveries.map(&:event_route).compact.first
+        first_matched_route = context_results.map(&:matched_event_route).compact.first
+
+        RouteResult.new(
+          routing_state: routing_state_for(deliveries),
+          matched_event_route: first_delivery_route || first_matched_route,
+          deliveries:,
+          spent_event_routes: context_results.flat_map(&:spent_event_routes).uniq,
+          routing_context_states: routing_context_states(deliveries)
+        )
+      end
+
+      def route_contexts
+        ret = []
+        ret << RouteContext.for(event, event.user) if event.user
+
+        admin_route_owner_ids.each do |user_id|
+          next if event.user_id.present? && event.user_id == user_id
+
+          owner = admin_route_owners.fetch(user_id)
+          ret << RouteContext.for(event, owner)
+        end
+
+        ret
+      end
+
+      def direct_email_deliveries
+        return [] unless event.user_id.blank?
+        return [] unless VpsAdmin::API::Notifications::Actions.known?('email')
+
+        custom_target = VpsAdmin::API::Events.custom_email_target_for(event).presence
+        if custom_target
+          return [
+            direct_email_delivery(
+              target_kind: 'custom',
+              target_value: custom_target,
+              target_label: custom_target
+            )
+          ]
+        end
+
+        default_target = VpsAdmin::API::Events.default_email_target_for(event).presence
+        return [] unless default_target
+
+        [
+          direct_email_delivery(
+            target_kind: 'default_recipient',
+            target_value: default_target,
+            target_label: default_target,
+            template_name: VpsAdmin::API::Events.template_name_for(event, :email)
+          )
+        ]
+      end
+
+      def admin_route_owner_ids
+        @admin_route_owner_ids ||= begin
+          scope = ::EventRoute
+                  .active
+                  .where(enabled: true, subject_scope: ::EventRoute.subject_scopes.fetch('visible'))
+                  .where(
+                    'event_type IS NULL OR event_type = ? OR event_type_pattern IS NOT NULL',
+                    event.event_type
+                  )
+          user_ids = scope.distinct.pluck(:user_id)
+          user_ids &= admin_route_owners.keys
+          user_ids.sort
+        end
+      end
+
+      def admin_route_owners
+        @admin_route_owners ||= ::User.where(level: 90..).index_by(&:id)
+      end
+
+      def plan_route(route_context, emit_skipped:)
         deadline = monotonic_time + EVALUATION_TIMEOUT
         deliveries = []
         first_matched_route = nil
+        previous_route_context = @route_context
+        @route_context = route_context
 
-        child_routes(nil).each do |route|
+        child_routes(route_context, nil).each do |route|
           break if deadline_expired?(deadline)
-          next unless route.matches?(event, deadline:)
+          next unless route.matches_in_context?(route_context, deadline:)
 
           first_matched_route ||= route
-          deliveries.concat(process_route(route, deadline))
+          deliveries.concat(process_route(route_context, route, deadline))
 
           break unless route.continue?
         end
 
-        if deliveries.empty?
-          deliveries = direct_deliveries
-          deliveries = [skipped_delivery(nil, nil, nil, 'no route matched the event')] if deliveries.empty?
-        end
+        deliveries = [skipped_delivery(nil, nil, nil, 'no route matched the event')] if deliveries.empty? && emit_skipped
 
         first_delivery_route = deliveries.map(&:event_route).compact.first
 
         RouteResult.new(
           routing_state: routing_state_for(deliveries),
           matched_event_route: first_delivery_route || first_matched_route,
-          deliveries: deduplicate(deliveries),
+          deliveries:,
           spent_event_routes: spent_routes
         )
+      ensure
+        @route_context = previous_route_context
       end
 
-      def process_route(route, deadline)
+      def process_route(route_context, route, deadline)
         ::EventRoute.increment_counter(:hit_count, route.id)
         @matched_routes << route
 
         deliveries = []
         matched_child = false
 
-        child_routes(route.id).each do |child|
+        child_routes(route_context, route.id).each do |child|
           break if deadline_expired?(deadline)
-          next unless child.matches?(event, deadline:)
+          next unless child.matches_in_context?(route_context, deadline:)
 
           matched_child = true
-          deliveries.concat(process_route(child, deadline))
+          deliveries.concat(process_route(route_context, child, deadline))
 
           break unless child.continue?
         end
@@ -944,77 +1094,28 @@ module VpsAdmin::API
         deliveries_for_route(route)
       end
 
-      def direct_deliveries
-        return [] if event.user
-
-        target = VpsAdmin::API::Events.default_email_target_for(event)
-        custom_target = VpsAdmin::API::Events.custom_email_target_for(event)
-        if custom_target.present?
-          return [
-            build_delivery(
-              nil,
-              nil,
-              nil,
-              target_kind: 'custom',
-              target_value: custom_target,
-              target_label: custom_target,
-              template_name: VpsAdmin::API::Events.template_name_for(event),
-              state: 'prepared'
-            )
-          ]
-        end
-
-        if target.blank?
-          return [] unless VpsAdmin::API::Events.system_template_email?(event)
-
-          return [
-            build_delivery(
-              nil,
-              nil,
-              nil,
-              target_value: nil,
-              target_label: 'Template recipients',
-              template_name: VpsAdmin::API::Events.template_name_for(event),
-              state: 'prepared'
-            )
-          ]
-        end
-
-        [
-          build_delivery(
-            nil,
-            nil,
-            nil,
-            target_value: target,
-            target_label: target,
-            template_name: VpsAdmin::API::Events.template_name_for(event),
-            state: 'prepared'
-          )
-        ]
+      def child_routes(route_context, parent_id)
+        routes_by_parent(route_context.route_owner)[parent_id] || []
       end
 
-      def child_routes(parent_id)
-        routes_by_parent[parent_id] || []
-      end
+      def routes_by_parent(route_owner)
+        return {} unless route_owner
 
-      def routes_by_parent
-        @routes_by_parent ||= if event.user
-                                event.user.event_routes
-                                     .active
-                                     .where(enabled: true)
-                                     .includes(
-                                       :event_route_matchers,
-                                       notification_receiver: [
-                                         { notification_receiver_actions: :notification_target },
-                                         { user: :user_notification_delivery_methods }
-                                       ]
-                                     )
-                                     .order(:position, :id)
-                                     .to_a
-                                     .group_by(&:parent_id)
-                              else
-                                {}
-                              end
+        @routes_by_parent ||= {}
+        @routes_by_parent[route_owner.id] ||=
+          route_owner.event_routes
+                     .active
+                     .where(enabled: true)
+                     .includes(
+                       :event_route_matchers,
+                       notification_receiver: [
+                         { notification_receiver_actions: :notification_target },
+                         { user: :user_notification_delivery_methods }
+                       ]
+                     )
+                     .order(:position, :id)
+                     .to_a
+                     .group_by(&:parent_id)
       end
 
       def deliveries_for_route(route)
@@ -1067,11 +1168,11 @@ module VpsAdmin::API
         end
 
         if receiver_action.default_recipient_target_kind?
-          if event.user.nil?
-            return skipped_delivery(route, receiver, receiver_action, 'event has no user')
+          if @route_context&.route_owner.nil?
+            return skipped_delivery(route, receiver, receiver_action, 'route has no recipient user')
           end
 
-          target = VpsAdmin::API::Events.default_email_target_for(event)
+          target = VpsAdmin::API::Events.default_email_target_for(event) if @route_context&.self_subject?
           return build_delivery(
             route,
             receiver,
@@ -1142,7 +1243,24 @@ module VpsAdmin::API
           notification_receiver_action: receiver_action,
           state:,
           next_attempt_at:,
-          payload:
+          payload:,
+          route_context: @route_context
+        )
+      end
+
+      def direct_email_delivery(target_kind:, target_value:, target_label:, template_name: nil)
+        DeliveryPlan.new(
+          action: 'email',
+          target_kind:,
+          target_value:,
+          target_label: delivery_label(target_label),
+          template_name:,
+          event_route: nil,
+          notification_receiver: nil,
+          notification_target: nil,
+          notification_receiver_action: nil,
+          state: 'prepared',
+          route_context: nil
         )
       end
 
@@ -1158,7 +1276,8 @@ module VpsAdmin::API
           notification_target: receiver_action&.notification_target,
           notification_receiver_action: receiver_action,
           state: 'skipped',
-          error_summary: reason
+          error_summary: reason,
+          route_context: @route_context
         )
       end
 
@@ -1184,6 +1303,8 @@ module VpsAdmin::API
       end
 
       def routing_state_for(deliveries)
+        return 'suppressed' if deliveries.empty?
+
         deliveries.any? { |delivery| delivery.state != 'skipped' } ? 'routed' : 'suppressed'
       end
 
@@ -1196,6 +1317,7 @@ module VpsAdmin::API
       def deduplication_key(delivery)
         if delivery.state == 'skipped'
           return [
+            delivery.route_context&.route_owner&.id,
             delivery.state,
             delivery.event_route&.id,
             delivery.notification_receiver&.id,
@@ -1213,6 +1335,7 @@ module VpsAdmin::API
           end
 
         [
+          delivery.route_context&.route_owner&.id,
           delivery.action,
           delivery.target_kind,
           target_key,
@@ -1221,8 +1344,30 @@ module VpsAdmin::API
         ]
       end
 
-      def create_delivery!(delivery)
+      def routing_context_states(deliveries)
+        deliveries.select { |delivery| delivery.route_context&.route_owner }.group_by do |delivery|
+          delivery.route_context.route_owner.id
+        end.transform_values do |items|
+          if items.any? { |delivery| delivery.state == 'failed' }
+            'failed'
+          elsif items.any? { |delivery| delivery.state != 'skipped' }
+            'routed'
+          else
+            'suppressed'
+          end
+        end
+      end
+
+      def create_delivery!(delivery, routing_context_states)
+        routing_context =
+          if delivery.route_context&.route_owner
+            routing_context_for_delivery(
+              delivery,
+              routing_context_states.fetch(delivery.route_context.route_owner.id)
+            )
+          end
         record = event.event_deliveries.create!(
+          event_routing_context: routing_context,
           event_route: delivery.event_route,
           notification_receiver: delivery.notification_receiver,
           notification_target: delivery.notification_target,
@@ -1247,6 +1392,24 @@ module VpsAdmin::API
         end
 
         record
+      end
+
+      def routing_context_for_delivery(delivery, routing_state)
+        route_context = delivery.route_context
+        user = route_context.route_owner
+        matched_route = delivery.event_route
+
+        event.event_routing_contexts.find_or_create_by!(user_id: user.id) do |context|
+          context.subject_relation = route_context.subject_relation
+          context.source = route_context.source
+          context.routing_state = routing_state
+          context.matched_event_route = matched_route
+        end.tap do |context|
+          attrs = {}
+          attrs[:routing_state] = routing_state if context.routing_state != routing_state
+          attrs[:matched_event_route] = matched_route if context.matched_event_route.nil? && matched_route
+          context.update!(attrs) if attrs.any?
+        end
       end
 
       def spent_routes
