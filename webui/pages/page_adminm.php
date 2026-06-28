@@ -47,7 +47,6 @@ function adminm_print_notification_delivery_methods($user)
 
     $xtpl->table_add_category(_('Event delivery methods'));
     $xtpl->table_add_category('&nbsp;');
-    $xtpl->table_add_category('&nbsp;');
     $xtpl->form_create(
         '?page=adminm&section=members&action=notification_delivery_methods&id=' . $user->id,
         'post'
@@ -56,7 +55,15 @@ function adminm_print_notification_delivery_methods($user)
         _('Enabled methods allow this user to configure receivers and receive event notifications.'),
         false,
         false,
-        '3'
+        '2'
+    );
+    $xtpl->table_tr();
+    $xtpl->table_td(
+        '<a href="' . h(adminm_notifications_url('limits', $user->id)) . '">'
+        . _('Delivery limits') . '</a>',
+        false,
+        false,
+        '2'
     );
     $xtpl->table_tr();
 

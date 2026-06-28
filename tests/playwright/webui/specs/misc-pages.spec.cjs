@@ -80,7 +80,7 @@ async function setReminder(page, resource, id, value, dateValue = null) {
   await page.goto(`/?page=reminder&resource=${resource}&id=${id}`, {
     waitUntil: 'domcontentloaded',
   });
-  await expect(content(page)).toContainText('Set e-mail reminder');
+  await expect(content(page)).toContainText('Configure notifications');
 
   const form = formByAction(page, `page=reminder&action=set&resource=${resource}&id=${id}`);
   await expect(form).toBeVisible();
@@ -91,7 +91,7 @@ async function setReminder(page, resource, id, value, dateValue = null) {
   }
 
   await submitForm(form, 'Go >>');
-  await expectNotification(page, 'Mail reminder set');
+  await expectNotification(page, 'Notification reminder set');
   await expect(page).toHaveURL(new RegExp(`page=reminder.*resource=${resource}.*id=${id}`));
 }
 

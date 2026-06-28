@@ -114,19 +114,9 @@ RSpec.describe 'outage reports update chain', requires_plugins: :outage_reports 
 
     direct = attempts.find { |_name, opts| opts[:user] == SpecSeed.user }
     expect(direct).not_to be_nil
-    generic_event = Event.where(event_type: 'outage.announced', user_id: nil).sole
+    expect(Event.where(event_type: 'outage.announced', user_id: nil)).to be_empty
     user_event = Event.where(event_type: 'outage.announced', user: SpecSeed.user).sole
     user_delivery = user_event.event_deliveries.sole
-    expect(generic_event.source).to eq(report)
-    expect(generic_event.parameters).to include(
-      'role' => 'generic',
-      'event' => 'announce',
-      'outage_id' => outage.id,
-      'update_id' => report.id,
-      'impact_type' => 'network'
-    )
-    expect(generic_event).to be_suppressed_routing_state
-    expect(generic_event.event_deliveries).to be_empty
     expect(user_event.source).to eq(report)
     expect(user_event.parameters).to include(
       'role' => 'user',
