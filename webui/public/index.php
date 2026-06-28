@@ -275,7 +275,6 @@ if (isLoggedIn()) {
     $xtpl->menu_add(_("Status"), '?page=', ($_GET["page"] == ''));
     $xtpl->menu_add(_("Members"), '?page=adminm', ($_GET["page"] == 'adminm'));
     $xtpl->menu_add(_("VPS"), '?page=adminvps', ($_GET["page"] == 'adminvps'));
-    $xtpl->menu_add(_("Notifications"), '?page=notifications', ($_GET["page"] == 'notifications'));
     if (isAdmin()) {
         $xtpl->menu_add(_("Backups"), '?page=backup', ($_GET["page"] == 'backup'));
 
@@ -287,7 +286,7 @@ if (isLoggedIn()) {
         $xtpl->menu_add(_("Networking"), '?page=networking', ($_GET["page"] == 'networking'));
         $xtpl->menu_add(_("DNS"), '?page=dns', ($_GET["page"] == 'dns'));
         $xtpl->menu_add(_("Cluster"), '?page=cluster', ($_GET["page"] == 'cluster'));
-        $xtpl->menu_add(_("Transaction log"), '?page=transactions', ($_GET["page"] == 'transactions'), true);
+        $xtpl->menu_add(_("Transaction log"), '?page=transactions', ($_GET["page"] == 'transactions'));
     } else {
         $xtpl->menu_add(_("Backups"), '?page=backup', ($_GET["page"] == 'backup'));
 
@@ -305,8 +304,9 @@ if (isLoggedIn()) {
 
         $xtpl->menu_add(_("Networking"), '?page=networking', ($_GET["page"] == 'networking'));
         $xtpl->menu_add(_("DNS"), '?page=dns', ($_GET["page"] == 'dns'));
-        $xtpl->menu_add(_("Transaction log"), '?page=transactions', ($_GET["page"] == 'transactions'), true);
+        $xtpl->menu_add(_("Transaction log"), '?page=transactions', ($_GET["page"] == 'transactions'));
     }
+    $xtpl->menu_add(_("Notifications"), '?page=notifications', ($_GET["page"] == 'notifications'), true);
 
     try {
         list_transaction_chains();

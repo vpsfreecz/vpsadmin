@@ -58,6 +58,9 @@ final class NotificationRouteUiTest extends TestCase
 
         self::assertStringContainsString("\$value !== null && \$value !== ''", $source);
         self::assertStringContainsString("\$delivery_action !== null && \$delivery_action !== ''", $source);
+        self::assertStringContainsString("api_get_uint('event_route_id')", $source);
+        self::assertStringContainsString("\$params['event_route_id'] = \$route_id", $source);
+        self::assertStringNotContainsString('matched_event_route_id', $source);
         self::assertStringContainsString(
             "api_param_to_form('severity', \$input->severity, get_val('severity'), null, true)",
             $source
@@ -78,6 +81,56 @@ final class NotificationRouteUiTest extends TestCase
 
         self::assertStringContainsString("'self' => _('Own events')", $source);
         self::assertStringContainsString("'visible' => _('Visible events')", $source);
+    }
+
+    public function testTestEventFormExposesAdminSubjectScope(): void
+    {
+        $source = $this->notificationsFormsSource();
+        $testForm = $this->sourceBetween(
+            $source,
+            'function notifications_test_event(',
+            "notifications_sidebar('test'"
+        );
+        $pageSource = file_get_contents(dirname(__DIR__, 2) . '/pages/page_notifications.php');
+        $testCase = $this->sourceBetween($pageSource, "case 'test':", 'default:');
+
+        self::assertStringContainsString('notifications_test_subject_scope_options', $testForm);
+        self::assertStringContainsString("'subject_scope'", $testForm);
+        self::assertStringContainsString("\$params['subject_scope'] = api_post('subject_scope')", $testCase);
+    }
+
+    public function testEventDetailsListMatchedRoutes(): void
+    {
+        $source = $this->notificationsFormsSource();
+        $matches = $this->sourceBetween(
+            $source,
+            'function notifications_event_route_matches(',
+            'function notifications_event_show('
+        );
+        $show = $this->sourceBetween(
+            $source,
+            'function notifications_event_show(',
+            'function notifications_delivery_show('
+        );
+
+        self::assertStringContainsString('$event->route_match->list()', $matches);
+        self::assertStringContainsString("_('Matched routes')", $matches);
+        self::assertStringContainsString('notifications_event_route_matches($event)', $show);
+        self::assertStringNotContainsString('matched_event_route_id', $show);
+    }
+
+    public function testReceiverTargetStatusUsesReceiverTargetEnabledField(): void
+    {
+        $source = $this->sourceBetween(
+            $this->notificationsFormsSource(),
+            'function notifications_receiver_action_secret_html(',
+            'function notifications_target_status_html('
+        );
+
+        self::assertStringContainsString("notifications_prop(\$action, 'target_enabled')", $source);
+        self::assertStringContainsString("notifications_prop(\$action, 'delivery_method_enabled')", $source);
+        self::assertStringContainsString('notifications_target_action_status_html($action)', $source);
+        self::assertStringNotContainsString('notifications_target_status_html($action)', $source);
     }
 
     private function notificationsFormsSource(): string

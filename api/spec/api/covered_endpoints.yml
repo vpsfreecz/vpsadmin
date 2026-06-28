@@ -124,6 +124,8 @@ covered:
 - event.delivery.attempt#show
 - event.delivery#retry
 - event.delivery#show
+- event.route_match#index
+- event.route_match#show
 - event_delivery#index
 - event_type#index
 - event_route#create
@@ -431,6 +433,9 @@ covered:
 - user.notification_delivery_method#index
 - user.notification_delivery_method#show
 - user.notification_delivery_method#update
+- user.notification_rate_limit#index
+- user.notification_rate_limit#show
+- user.notification_rate_limit#update
 - user_account#index
 - user_account#show
 - user_account#update

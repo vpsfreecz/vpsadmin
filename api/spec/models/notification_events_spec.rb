@@ -12,6 +12,7 @@ RSpec.describe VpsAdmin::API::NotificationEvents do
   end
 
   def reset_routing!(user)
+    EventRouteMatch.delete_all
     EventRouteMatcher.joins(:event_route).where(event_routes: { user_id: user.id }).delete_all
     NotificationReceiverAction
       .joins(:notification_receiver)
@@ -67,7 +68,7 @@ RSpec.describe VpsAdmin::API::NotificationEvents do
     expect(event.event_type).to eq('user.test_notification')
     expect(event.subject).to eq('Spec direct event')
     expect(event.parameters).to include('note' => 'from direct runner')
-    expect(event.matched_event_route).to eq(route)
+    expect(event.event_route_matches.reload.map(&:event_route)).to eq([route])
     expect(delivery).to be_released_state
     expect(delivery.notification_receiver_action).to eq(action)
     expect(delivery.transaction_id).to be_nil

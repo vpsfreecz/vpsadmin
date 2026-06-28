@@ -495,6 +495,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_08_120000) do
     t.bigint "event_delivery_id", null: false
     t.datetime "finished_at"
     t.string "provider_message_id"
+    t.bigint "recipient_user_id"
     t.text "response_body"
     t.text "response_headers"
     t.integer "response_status"
@@ -505,12 +506,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_08_120000) do
     t.index ["created_at"], name: "index_event_delivery_attempts_on_created_at"
     t.index ["event_delivery_id", "attempt_number"], name: "idx_delivery_attempts_on_delivery_number", unique: true
     t.index ["event_delivery_id"], name: "index_event_delivery_attempts_on_event_delivery_id"
+    t.index ["recipient_user_id", "action", "started_at"], name: "idx_delivery_attempts_on_recipient_action_started"
+    t.index ["recipient_user_id"], name: "idx_event_delivery_attempts_on_recipient_user"
   end
 
   create_table "event_routing_contexts", charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.bigint "event_id", null: false
-    t.bigint "matched_event_route_id"
     t.integer "routing_state", null: false
     t.string "source", limit: 50, null: false
     t.string "subject_relation", limit: 50, null: false
@@ -518,10 +520,26 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_08_120000) do
     t.bigint "user_id", null: false
     t.index ["event_id", "user_id"], name: "index_event_routing_contexts_on_event_user", unique: true
     t.index ["event_id"], name: "index_event_routing_contexts_on_event_id"
-    t.index ["matched_event_route_id"], name: "index_event_routing_contexts_on_matched_route"
     t.index ["routing_state"], name: "index_event_routing_contexts_on_routing_state"
     t.index ["subject_relation"], name: "index_event_routing_contexts_on_subject_relation"
     t.index ["user_id"], name: "index_event_routing_contexts_on_user_id"
+  end
+
+  create_table "event_route_matches", charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.bigint "event_id", null: false
+    t.bigint "event_route_id", null: false
+    t.integer "match_order", default: 0, null: false
+    t.bigint "route_owner_id", null: false
+    t.string "source", limit: 32, null: false
+    t.string "subject_relation", limit: 32, null: false
+    t.datetime "updated_at", null: false
+    t.index ["event_id", "event_route_id", "route_owner_id"], name: "idx_event_route_matches_unique", unique: true
+    t.index ["event_id", "match_order", "id"], name: "idx_event_route_matches_on_event_order"
+    t.index ["event_id"], name: "index_event_route_matches_on_event_id"
+    t.index ["event_route_id", "event_id"], name: "idx_event_route_matches_on_route_event"
+    t.index ["event_route_id"], name: "index_event_route_matches_on_event_route_id"
+    t.index ["route_owner_id"], name: "index_event_route_matches_on_route_owner_id"
   end
 
   create_table "event_route_matchers", charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
@@ -570,7 +588,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_08_120000) do
     t.datetime "created_at", null: false
     t.string "event_type", limit: 100, null: false
     t.string "ip_addr", limit: 46
-    t.bigint "matched_event_route_id"
     t.text "parameters"
     t.integer "routing_state", default: 0, null: false
     t.integer "severity", null: false
@@ -584,7 +601,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_08_120000) do
     t.index ["category"], name: "index_events_on_category"
     t.index ["created_at"], name: "index_events_on_created_at"
     t.index ["event_type"], name: "index_events_on_event_type"
-    t.index ["matched_event_route_id"], name: "index_events_on_matched_event_route_id"
     t.index ["routing_state"], name: "index_events_on_routing_state"
     t.index ["severity"], name: "index_events_on_severity"
     t.index ["user_id"], name: "index_events_on_user_id"
@@ -1163,6 +1179,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_08_120000) do
     t.index ["user_id", "enabled"], name: "index_notification_receivers_on_user_enabled"
     t.index ["user_id", "mute"], name: "index_notification_receivers_on_user_mute"
     t.index ["user_id"], name: "index_notification_receivers_on_user_id"
+  end
+
+  create_table "notification_rate_limit_states", charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "delivery_method", limit: 32, null: false
+    t.datetime "updated_at", null: false
+    t.integer "user_id", null: false
+    t.index ["user_id", "delivery_method"], name: "idx_notification_rate_limit_states_unique", unique: true
   end
 
   create_table "notification_targets", charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
@@ -1745,6 +1769,17 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_08_120000) do
     t.integer "user_id", null: false
     t.index ["delivery_method", "enabled"], name: "idx_user_notification_delivery_methods_state"
     t.index ["user_id", "delivery_method"], name: "idx_user_notification_delivery_methods_unique", unique: true
+  end
+
+  create_table "user_notification_rate_limits", id: { type: :integer, unsigned: true }, charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "delivery_method", limit: 32, null: false
+    t.integer "limit_count", null: false
+    t.string "period", limit: 16, null: false
+    t.datetime "updated_at", null: false
+    t.integer "user_id", null: false
+    t.index ["delivery_method", "period"], name: "idx_user_notification_rate_limits_method_period"
+    t.index ["user_id", "delivery_method", "period"], name: "idx_user_notification_rate_limits_unique", unique: true
   end
 
   create_table "user_namespace_blocks", id: { type: :integer, unsigned: true }, charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|

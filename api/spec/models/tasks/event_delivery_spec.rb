@@ -19,6 +19,7 @@ RSpec.describe VpsAdmin::API::Tasks::EventDelivery do
   end
 
   def reset_routing!(user)
+    EventRouteMatch.delete_all
     EventRouteMatcher.joins(:event_route).where(event_routes: { user_id: user.id }).delete_all
     NotificationReceiverAction
       .joins(:notification_receiver)
@@ -1670,6 +1671,58 @@ RSpec.describe VpsAdmin::API::Tasks::EventDelivery do
     expect(delivery.reload.attempt_count).to eq(2)
   end
 
+  it 'keeps stale reclaim work inside the rate-limit claim lock' do
+    delivery, = create_webhook_delivery!(url: 'https://webhook.example/events')
+    delivery.update!(state: :sending, next_attempt_at: Time.now - 60)
+    dispatcher = VpsAdmin::API::Notifications::Dispatcher.new('webhook')
+    inside_limit_lock = false
+
+    allow(VpsAdmin::API::Notifications::RateLimits)
+      .to receive(:with_limit_lock)
+      .and_wrap_original do |method, *args, &block|
+        method.call(*args) do
+          inside_limit_lock = true
+          block.call
+        ensure
+          inside_limit_lock = false
+        end
+      end
+    allow(dispatcher)
+      .to receive(:mark_stale_attempts_failed!)
+      .and_wrap_original do |method, delivery_arg|
+        expect(inside_limit_lock).to be(true)
+        method.call(delivery_arg)
+      end
+
+    expect(dispatcher.send(:claim_delivery, delivery.reload)).to be_present
+    expect(dispatcher).to have_received(:mark_stale_attempts_failed!)
+  end
+
+  it 'does not let two webhook deliveries consume one rate-limit slot' do
+    first_delivery, = create_webhook_delivery!(url: 'https://webhook.example/events')
+    second_event = VpsAdmin::API::Events.emit!(
+      'user.test_notification',
+      user: SpecSeed.user,
+      subject: 'Second rate limit event',
+      parameters: { note: 'second delivery' }
+    )
+    second_delivery = second_event.event_deliveries.sole
+    SpecSeed.user.user_notification_rate_limits.create!(
+      delivery_method: 'webhook',
+      period: 'minute',
+      limit_count: 1
+    )
+    dispatcher = VpsAdmin::API::Notifications::Dispatcher.new('webhook')
+
+    expect(dispatcher.send(:claim_delivery, first_delivery)).to be_present
+    expect(dispatcher.send(:claim_delivery, second_delivery)).to be_nil
+
+    expect(first_delivery.reload).to be_sending_state
+    expect(second_delivery.reload).to be_released_state
+    expect(second_delivery.error_summary).to include('delivery rate limit reached')
+    expect(EventDeliveryAttempt.where(recipient_user: SpecSeed.user, action: 'webhook').count).to eq(1)
+  end
+
   it 'posts webhooks to the snapshotted target when the action is edited later' do
     delivery, action = create_webhook_delivery!(url: 'https://webhook.example/events')
     action.update!(target_value: 'https://changed.example/events')
@@ -1692,6 +1745,67 @@ RSpec.describe VpsAdmin::API::Tasks::EventDelivery do
 
     expect(delivery.reload).to be_sent_state
     expect(Resolv).not_to have_received(:getaddresses).with('changed.example')
+  end
+
+  it 'delays webhook delivery when the recipient exceeds a rate limit' do
+    delivery, = create_webhook_delivery!(url: 'https://webhook.example/events')
+    previous_started_at = Time.now - 30
+    delivery.event_delivery_attempts.create!(
+      recipient_user: SpecSeed.user,
+      action: :webhook,
+      state: :succeeded,
+      attempt_number: 99,
+      started_at: previous_started_at,
+      finished_at: previous_started_at + 1
+    )
+    SpecSeed.user.user_notification_rate_limits.create!(
+      delivery_method: 'webhook',
+      period: 'minute',
+      limit_count: 1
+    )
+
+    allow(Net::HTTP).to receive(:start)
+
+    expect do
+      task.deliver_webhooks
+    end.not_to change(EventDeliveryAttempt, :count)
+
+    delivery.reload
+    expect(Net::HTTP).not_to have_received(:start)
+    expect(delivery).to be_released_state
+    expect(delivery.attempt_count).to eq(0)
+    expect(delivery.next_attempt_at.to_f).to be >= ((previous_started_at + 60).to_f - 0.001)
+    expect(delivery.error_summary).to include('delivery rate limit reached')
+    expect(NotificationRateLimitState.where(user: SpecSeed.user, delivery_method: 'webhook').exists?).to be(true)
+  end
+
+  it 'uses weekly windows when delaying webhook delivery' do
+    delivery, = create_webhook_delivery!(url: 'https://webhook.example/events')
+    previous_started_at = Time.now - 3.days
+    delivery.event_delivery_attempts.create!(
+      recipient_user: SpecSeed.user,
+      action: :webhook,
+      state: :succeeded,
+      attempt_number: 99,
+      started_at: previous_started_at,
+      finished_at: previous_started_at + 1
+    )
+    SpecSeed.user.user_notification_rate_limits.create!(
+      delivery_method: 'webhook',
+      period: 'week',
+      limit_count: 1
+    )
+
+    allow(Net::HTTP).to receive(:start)
+
+    expect do
+      task.deliver_webhooks
+    end.not_to change(EventDeliveryAttempt, :count)
+
+    delivery.reload
+    expect(delivery).to be_released_state
+    expect(delivery.next_attempt_at.to_f).to be >= ((previous_started_at + 1.week).to_f - 0.001)
+    expect(delivery.error_summary).to include('delivery rate limit reached')
   end
 
   it 'does not retry webhook deliveries for muted receivers' do

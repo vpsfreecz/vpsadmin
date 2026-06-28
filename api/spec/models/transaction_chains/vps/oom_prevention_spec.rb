@@ -19,6 +19,7 @@ RSpec.describe TransactionChains::Vps::OomPrevention do
   end
 
   def reset_routing!(user)
+    EventRouteMatch.delete_all
     EventRouteMatcher.joins(:event_route).where(event_routes: { user_id: user.id }).delete_all
     NotificationReceiverAction
       .joins(:notification_receiver)
