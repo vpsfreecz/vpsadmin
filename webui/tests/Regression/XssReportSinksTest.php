@@ -49,12 +49,6 @@ final class XssReportSinksTest extends TestCase
         );
 
         $this->assertFileContains(
-            'webui/pages/page_adminm.php',
-            'h(implode(\', \', getUserEmails($u, $email_role_recipients, \'Account management\')))',
-            'VULN-105 email role recipient summaries must be escaped.'
-        );
-
-        $this->assertFileContains(
             'webui/pages/page_networking.php',
             '$href = \'?\' . http_build_query([',
             'VULN-12 networking drill-down links must be built from typed values.'

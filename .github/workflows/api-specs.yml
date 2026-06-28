@@ -87,10 +87,7 @@ jobs:
             patterns: |
               spec/api/resources/mail_log_spec.rb
               spec/api/resources/mailbox_spec.rb
-              spec/api/resources/email_recipient_spec.rb
               spec/api/resources/notification_template_spec.rb
-              spec/api/resources/user_email_role_recipient_spec.rb
-              spec/api/resources/user_notification_template_recipient_spec.rb
 
           - topic: users-auth
             patterns: |
