@@ -79,6 +79,8 @@ namespace :vpsadmin do
       result = VpsAdmin::API::NotificationTemplates.install_defaults!
       puts "Created #{result[:templates_created]} templates and " \
            "#{result[:variants_created]} variants"
+      puts "Updated #{result[:variants_updated]} variants with missing HTML" \
+        if result[:variants_updated] > 0
     end
   end
 
