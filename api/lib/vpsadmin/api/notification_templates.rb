@@ -9,6 +9,47 @@ module VpsAdmin::API
     }.freeze
     PROTOCOLS = %w[email telegram sms].freeze
     DEFAULT_TELEGRAM_HTML = '<%= telegram_notification_html if respond_to?(:telegram_notification_html) %>'
+    LEGACY_DEFAULT_TELEGRAM_HTML = [
+      <<~'ERB',
+        <% subject = if @event.vps
+                       "VPS #{@event.vps.hostname} (##{@event.vps.id}): #{@event.subject}"
+                     else
+                       @event.subject.to_s
+                     end -%>
+        <b><%= ERB::Util.html_escape(subject) %></b>
+        <% if @event.summary.present? -%>
+
+        <%= ERB::Util.html_escape(@event.summary.to_s) %>
+        <% end -%>
+        <% url = if @event.vps
+                   webui_url("?page=adminvps&action=info&veid=#{@event.vps.id}")
+                 else
+                   webui_url("?page=notifications&action=event_show&id=#{@event.id}")
+                 end -%>
+        <% if url.present? -%>
+
+        Link: <a href="<%= ERB::Util.html_escape(url.to_s) %>">open in vpsAdmin</a>
+        <% end -%>
+      ERB
+      <<~'ERB'
+        <% vps_link = webui_link('open in vpsAdmin', "?page=adminvps&action=info&veid=#{@vps.id}") -%>
+        <b>VPS <%= h(@vps.hostname) %> (#<%= @vps.id %>): resources changed</b>
+
+        Current limits:
+        CPU: <code><%= @vps.cpu %> cores, limit <%= @vps.cpu_limit || (@vps.cpu * 100) %> %</code>
+        Memory: <code><%= @vps.memory %> MB</code>
+        Swap: <code><%= @vps.swap %> MB</code>
+
+        Reason: <%= h(@reason) %>
+        <% if @admin -%>
+        Changed by: <%= h(@admin.full_name) %>
+        <% end -%>
+        <% if vps_link.present? -%>
+
+        Link: <%= vps_link %>
+        <% end -%>
+      ERB
+    ].freeze
 
     CONCRETE_DEFAULTS = {
       expiration_user_active: :expiration_warning,
@@ -377,10 +418,24 @@ module VpsAdmin::API
     end
 
     def self.backfill_telegram_html?(variant, params)
-      variant.protocol == 'telegram' &&
-        variant.html.blank? &&
-        params[:html].present? &&
-        variant.text == params[:text]
+      return false unless variant.protocol == 'telegram' && params[:html].present?
+
+      (variant.html.blank? && variant.text == params[:text]) ||
+        (default_telegram_html?(params[:html]) && legacy_telegram_html?(variant.html))
+    end
+
+    def self.default_telegram_html?(html)
+      normalize_template_body(html) == normalize_template_body(DEFAULT_TELEGRAM_HTML)
+    end
+
+    def self.legacy_telegram_html?(html)
+      LEGACY_DEFAULT_TELEGRAM_HTML.any? do |legacy|
+        normalize_template_body(html) == normalize_template_body(legacy)
+      end
+    end
+
+    def self.normalize_template_body(value)
+      value.to_s.gsub(/\r\n?/, "\n").strip
     end
 
     def self.ensure_language!(code)
@@ -409,6 +464,9 @@ module VpsAdmin::API
     end
 
     private_class_method :backfill_telegram_html?,
+                         :default_telegram_html?,
+                         :legacy_telegram_html?,
+                         :normalize_template_body,
                          :configured_support_mail,
                          :ensure_language!,
                          :unique_templates,

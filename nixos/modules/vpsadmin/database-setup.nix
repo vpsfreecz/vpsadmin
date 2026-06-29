@@ -94,9 +94,10 @@ in
         default = true;
         description = ''
           Install built-in notification templates after migrations. Existing
-          templates and variants are left unchanged, except for adding a packaged
-          Telegram HTML body to an existing Telegram variant when its HTML body
-          is still empty and its text body still matches the packaged text.
+          templates and variants are left unchanged, except for applying
+          packaged Telegram HTML defaults to built-in variants. This backfills
+          empty HTML when the text still matches the packaged text, and replaces
+          exact legacy built-in Telegram HTML bodies.
         '';
       };
 

@@ -215,6 +215,91 @@ RSpec.describe VpsAdmin::API::NotificationTemplates do
     end
   end
 
+  it 'replaces legacy built-in Telegram HTML with the shared default renderer' do
+    Dir.mktmpdir do |dir|
+      described_class::LEGACY_DEFAULT_TELEGRAM_HTML.each_with_index do |legacy_html, i|
+        template_id = :"spec_legacy_telegram_template_#{i}"
+        NotificationTemplate.register(template_id, name: template_id.to_s)
+        NotificationTemplate.create!(
+          name: template_id.to_s,
+          label: "Legacy Telegram template #{i}",
+          template_id: template_id.to_s
+        ).notification_template_variants.create!(
+          language: SpecSeed.language,
+          protocol: :telegram,
+          text: 'Customized Telegram body',
+          html: legacy_html
+        )
+
+        write_template(
+          dir,
+          template_id.to_s,
+          meta: <<~RUBY,
+            template :#{template_id} do
+              label 'Packaged legacy replacement'
+            end
+          RUBY
+          text: 'Changed e-mail body',
+          telegram_text: 'Packaged Telegram body'
+        )
+      end
+
+      result = described_class.install_defaults!(paths: [File.join(dir, 'templates')])
+
+      expect(result).to eq(templates_created: 0, variants_created: 4, variants_updated: 2)
+
+      described_class::LEGACY_DEFAULT_TELEGRAM_HTML.each_index do |i|
+        template_id = "spec_legacy_telegram_template_#{i}"
+        variant = NotificationTemplate.find_by!(name: template_id)
+                                      .notification_template_variants
+                                      .find_by!(language: SpecSeed.language, protocol: 'telegram')
+
+        expect(variant.text).to eq('Customized Telegram body')
+        expect(variant.html).to eq(described_class::DEFAULT_TELEGRAM_HTML)
+      end
+    end
+  end
+
+  it 'keeps customized Telegram HTML that only resembles a legacy built-in template' do
+    template_id = :spec_customized_legacy_telegram_template
+    NotificationTemplate.register(template_id, name: template_id.to_s)
+    template = NotificationTemplate.create!(
+      name: template_id.to_s,
+      label: 'Customized legacy Telegram template',
+      template_id: template_id.to_s
+    )
+    custom_html = "#{described_class::LEGACY_DEFAULT_TELEGRAM_HTML.first}\n<b>Custom footer</b>"
+    template.notification_template_variants.create!(
+      language: SpecSeed.language,
+      protocol: :telegram,
+      text: 'Customized Telegram body',
+      html: custom_html
+    )
+
+    Dir.mktmpdir do |dir|
+      write_template(
+        dir,
+        template_id.to_s,
+        meta: <<~RUBY,
+          template :#{template_id} do
+            label 'Packaged legacy replacement'
+          end
+        RUBY
+        text: 'Changed e-mail body',
+        telegram_text: 'Packaged Telegram body'
+      )
+
+      result = described_class.install_defaults!(paths: [File.join(dir, 'templates')])
+      variant = template.reload.notification_template_variants.find_by!(
+        language: SpecSeed.language,
+        protocol: 'telegram'
+      )
+
+      expect(result).to eq(templates_created: 0, variants_created: 2, variants_updated: 0)
+      expect(variant.html).to eq(custom_html)
+    end
+  end
+
   it 'does not fill missing Telegram HTML when existing text was customized' do
     template = NotificationTemplate.create!(
       name: 'spec_existing_telegram_template',
