@@ -695,10 +695,6 @@ class VpsadminServicesMachine < OsVm::NixosMachine
 
   def mailpit_curl_command(path, method: 'GET', body: nil)
     args = [
-      'nixos-container',
-      'run',
-      'mailer',
-      '--',
       'curl',
       '--silent',
       '--show-error',

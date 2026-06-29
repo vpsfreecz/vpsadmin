@@ -16,7 +16,7 @@ class TransactionChain < ApplicationRecord
 
   attr_reader :acquired_locks
   attr_accessor :last_id, :last_node_id, :dst_chain, :named, :global_locks,
-                :locks, :urgent, :prio, :reversible, :mail_server
+                :locks, :urgent, :prio, :reversible
 
   include HaveAPI::Hookable
   include VpsAdmin::API::HashOptions
@@ -317,22 +317,14 @@ class TransactionChain < ApplicationRecord
     ret
   end
 
-  # See {NotificationTemplate.send_email!} for arguments
-  def mail(name, opts = {})
-    m = ::NotificationTemplate.send_email!(name, opts)
-    return if m.nil?
-
-    append(Transactions::Mail::Send, args: [find_mail_server, m])
-    m.update!(transaction_id: @last_id)
-    m
+  def mail(name, _opts = {})
+    raise NotImplementedError,
+          "TransactionChain#mail(#{name.inspect}) was replaced by event routing"
   end
 
-  # See {NotificationTemplate.send_custom_email} for arguments
-  def mail_custom(opts)
-    m = ::NotificationTemplate.send_custom_email(opts)
-    append(Transactions::Mail::Send, args: [find_mail_server, m])
-    m.update!(transaction_id: @last_id)
-    m
+  def mail_custom(_opts)
+    raise NotImplementedError,
+          'TransactionChain#mail_custom was replaced by event routing'
   end
 
   def route_event!(event_type, **)
@@ -410,7 +402,7 @@ class TransactionChain < ApplicationRecord
   # Return the node ID of last transaction. Find first available server if no
   # transactions have been appended yet.
   def find_node_id
-    @last_node_id || @last_node_id = ::Node.first_available.id
+    @last_node_id || @last_node_id = ::Node.first_available_transaction_runner.id
   end
 
   private
@@ -443,24 +435,6 @@ class TransactionChain < ApplicationRecord
     @last_id = t.id
     @named[opts[:name]] = @last_id if opts[:name]
     @last_id
-  end
-
-  def find_mail_server
-    chain = dst_chain || self
-    return chain.mail_server if chain.mail_server
-
-    status_table = ::NodeCurrentStatus.table_name
-    threshold = 120.seconds.ago.utc
-
-    chain.mail_server = ::Node.find_by(role: ::Node.roles[:mailer], active: true)
-    chain.mail_server ||= ::Node
-                          .joins(:node_current_status)
-                          .where(active: true)
-                          .where(
-                            "#{status_table}.created_at >= ? OR #{status_table}.updated_at >= ?",
-                            threshold,
-                            threshold
-                          ).take!
   end
 end
 
