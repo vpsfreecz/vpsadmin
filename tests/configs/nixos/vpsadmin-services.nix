@@ -149,15 +149,7 @@ let
   webuiPort = 8134;
   socketNetwork = "${cfg.socketAddress}/24";
 
-  mailerNode = {
-    address = cfg.socketAddress;
-    netInterfaces = [ "eth1" ];
-  }
-  // seed.mailerNode;
-
-  mailerRabbitUser = mailerNode.domain;
-
-  rabbitmqNodeUsers = unique (cfg.rabbitmqNodeUsers ++ [ mailerRabbitUser ]);
+  rabbitmqNodeUsers = unique cfg.rabbitmqNodeUsers;
 in
 {
   imports = [
@@ -200,13 +192,13 @@ in
         smtpPort = mkOption {
           type = types.port;
           default = 1025;
-          description = "Local Mailpit SMTP port inside the mailer container.";
+          description = "Local Mailpit SMTP port on the services VM.";
         };
 
         webPort = mkOption {
           type = types.port;
           default = 8025;
-          description = "Local Mailpit web/API port inside the mailer container.";
+          description = "Local Mailpit web/API port on the services VM.";
         };
       };
     };
@@ -225,11 +217,7 @@ in
       ];
       hosts = {
         "127.0.0.1" = loopbackHosts;
-        "${cfg.socketAddress}" = [
-          "vpsadmin-services"
-          mailerNode.domain
-          "${mailerNode.domain}.${seed.environment.domain}"
-        ];
+        "${cfg.socketAddress}" = [ "vpsadmin-services" ];
       }
       // socketPeersAsHosts;
     };
@@ -237,6 +225,7 @@ in
     environment.etc = listToAttrs secretFiles;
 
     environment.systemPackages = with pkgs; [
+      curl
       mariadb
       rabbitmqcfg
       redis
@@ -278,16 +267,16 @@ in
       "d /run/varnish 0755 varnish varnish -"
     ];
 
-    systemd.services = {
-      "container@mailer" = {
-        after = [
-          "vpsadmin-database-setup.service"
-          "vpsadmin-rabbitmq-setup.service"
-        ];
-        requires = [
-          "vpsadmin-database-setup.service"
-          "vpsadmin-rabbitmq-setup.service"
-        ];
+    systemd.services.mailpit = lib.mkIf cfg.mailpit.enable {
+      description = "Integration test mail capture service";
+      wantedBy = [ "multi-user.target" ];
+      after = [ "network.target" ];
+      serviceConfig = {
+        DynamicUser = true;
+        StateDirectory = "mailpit";
+        ExecStart = "${pkgs.mailpit}/bin/mailpit --database /var/lib/mailpit/mailpit.db --disable-version-check --smtp 127.0.0.1:${toString cfg.mailpit.smtpPort} --listen 127.0.0.1:${toString cfg.mailpit.webPort}";
+        Restart = "always";
+        RestartSec = "2s";
       };
     };
 
@@ -332,92 +321,6 @@ in
                 define ('OAUTH2_CLIENT_ID', '${webuiOauth2Client.client_id}');
                 define ('OAUTH2_CLIENT_SECRET', '${webuiOauth2Client.client_secret}');
               '';
-            };
-          };
-
-          system.stateVersion = lib.trivial.release;
-        };
-    };
-
-    containers.mailer = {
-      autoStart = true;
-      privateNetwork = false;
-      specialArgs = { inherit vpsadminos; };
-      config =
-        { config, lib, ... }:
-        {
-          imports = [
-            ../../../nixos/modules/nixos-modules.nix
-          ];
-
-          time.timeZone = "UTC";
-
-          networking = {
-            hostName = mailerNode.name;
-            hosts = {
-              "${mailerNode.address}" = [
-                mailerNode.domain
-                "${mailerNode.domain}.${seed.environment.domain}"
-              ];
-            };
-          };
-
-          services.postfix.enable = true;
-
-          environment.systemPackages = lib.optional cfg.mailpit.enable pkgs.curl;
-
-          environment.etc."vpsadmin/transaction.key".text = seed.transactionKey.public;
-
-          systemd.services.mailpit = lib.mkIf cfg.mailpit.enable {
-            description = "Integration test mail capture service";
-            wantedBy = [ "multi-user.target" ];
-            after = [ "network.target" ];
-            serviceConfig = {
-              DynamicUser = true;
-              StateDirectory = "mailpit";
-              ExecStart = "${pkgs.mailpit}/bin/mailpit --database /var/lib/mailpit/mailpit.db --disable-version-check --smtp 127.0.0.1:${toString cfg.mailpit.smtpPort} --listen 127.0.0.1:${toString cfg.mailpit.webPort}";
-              Restart = "always";
-              RestartSec = "2s";
-            };
-          };
-
-          vpsadmin = {
-            rabbitmq = {
-              hosts = [ cfg.socketAddress ];
-              virtualHost = rabbitmqVhost;
-            };
-
-            nodectld = {
-              enable = true;
-              settings = {
-                mode = "minimal";
-
-                rabbitmq = {
-                  username = mailerRabbitUser;
-                  password = rabbitNodeUser.password;
-                };
-
-                db = {
-                  hosts = [ cfg.socketAddress ];
-                  user = dbNodectldUser.user;
-                  pass = dbNodectldUser.password;
-                  name = dbName;
-                };
-
-                vpsadmin = {
-                  node_id = mailerNode.id;
-                  node_name = mailerNode.domain;
-                  node_addr = mailerNode.address;
-                  net_interfaces = mailerNode.netInterfaces;
-                  transaction_public_key = "/etc/vpsadmin/transaction.key";
-                  type = "mailer";
-                };
-
-                mailer = {
-                  smtp_server = "127.0.0.1";
-                  smtp_port = if cfg.mailpit.enable then cfg.mailpit.smtpPort else 25;
-                };
-              };
             };
           };
 
@@ -519,6 +422,11 @@ in
           enable = true;
           username = rabbitNotificationUser.user;
           passwordFile = rabbitNotificationUser.passwordFile;
+        };
+        notifications.smtp = {
+          enable = cfg.mailpit.enable;
+          address = "127.0.0.1";
+          port = if cfg.mailpit.enable then cfg.mailpit.smtpPort else 25;
         };
       };
 

@@ -230,23 +230,7 @@ import ../make-test.nix (
           end
         end
 
-        describe 'mailer node' do
-          it 'container is running' do
-            wait_until_block_succeeds(name: 'mailer container running') do
-              _, output = services.succeeds('nixos-container status mailer', timeout: 180)
-              expect(output).to include('up')
-              true
-            end
-          end
-
-          it 'nodectld reports running state' do
-            wait_until_block_succeeds(name: 'mailer nodectld running') do
-              _, output = services.succeeds('nixos-container run mailer -- nodectl status', timeout: 180)
-              expect(output).to include('State: running')
-              true
-            end
-          end
-
+        describe 'mail capture' do
           it 'mailpit API is responding' do
             services.wait_for_mailpit
             info = services.mailpit_info

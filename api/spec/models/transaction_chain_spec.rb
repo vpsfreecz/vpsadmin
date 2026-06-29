@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'json'
+require 'securerandom'
 
 module SpecTransactions
   class ChainTx < ::Transaction
@@ -94,6 +95,12 @@ module SpecChains
   class ContextProbe < ::TransactionChain
     def link_chain
       [included?, current_chain]
+    end
+  end
+
+  class ReleaseOnly < ::TransactionChain
+    def link_chain(event)
+      release_event_deliveries!(event)
     end
   end
 end
@@ -192,6 +199,44 @@ RSpec.describe TransactionChain do
     expect(confirmations.map(&:confirm_type)).to eq(['just_destroy_type'])
   end
 
+  it 'places service-side delivery releases on a live transaction runner node' do
+    NodeCurrentStatus.delete_all
+    runner = node
+    mailer = Node.create!(
+      location: runner.location,
+      role: :mailer,
+      name: "spec-mailer-#{SecureRandom.hex(3)}",
+      ip_addr: "198.51.100.#{(Node.maximum(:id).to_i % 200) + 20}",
+      cpus: 1,
+      total_memory: 512,
+      total_swap: 128,
+      active: true
+    )
+    fresh_node_status!(runner, updated_at: 10.seconds.ago.utc)
+    fresh_node_status!(mailer, updated_at: Time.now.utc)
+    event = Event.create!(
+      user: SpecSeed.user,
+      event_type: 'user.test_notification',
+      category: 'user',
+      severity: :info,
+      routing_state: :routed,
+      subject: 'Spec event',
+      parameters: {}
+    )
+    event.event_deliveries.create!(
+      action: 'email',
+      target_kind: :default_recipient,
+      state: :prepared
+    )
+
+    chain, = SpecChains::ReleaseOnly.fire2(args: [event], kwargs: {})
+    transaction = chain.transactions.sole
+
+    expect(transaction.handle).to eq(Transactions::EventDelivery::Release.t_type)
+    expect(transaction.node_id).to eq(runner.id)
+    expect(transaction.node_id).not_to eq(mailer.id)
+  end
+
   it 'preserves ordering across nested use_chain calls' do
     chain, = SpecChains::Outer.fire2(args: [node, lock_target], kwargs: {})
     transactions = chain.transactions.order(:id).to_a
@@ -236,21 +281,10 @@ RSpec.describe TransactionChain do
     expect(observed).to eq([true, outer])
   end
 
-  it 'uses an active node with a fresh status as the mail server fallback' do
-    Node.where(role: Node.roles[:mailer]).update_all(active: false)
-    Node.where.not(role: Node.roles[:mailer]).find_each do |existing_node|
-      stale_node_status!(existing_node)
-    end
-    stale_node = create_node!(name: "stale-mail-fallback-#{SecureRandom.hex(3)}")
-    fresh_node = create_node!(name: "fresh-mail-fallback-#{SecureRandom.hex(3)}")
-    inactive_node = create_node!(name: "inactive-mail-fallback-#{SecureRandom.hex(3)}", active: false)
-
-    stale_node_status!(stale_node)
-    fresh_node_status!(fresh_node, updated_at: 30.seconds.ago.utc)
-    fresh_node_status!(inactive_node, updated_at: 30.seconds.ago.utc)
-
+  it 'rejects legacy mail scheduling' do
     chain = described_class.new
 
-    expect(chain.send(:find_mail_server)).to eq(fresh_node)
+    expect { chain.mail(:daily_report) }.to raise_error(NotImplementedError, /event routing/)
+    expect { chain.mail_custom(to: 'user@example.test') }.to raise_error(NotImplementedError, /event routing/)
   end
 end
