@@ -2,6 +2,11 @@ require 'vpsadmin/api/maintainable'
 require_relative 'lockable'
 
 class Node < ApplicationRecord
+  CURRENT_STATUS_MAX_AGE = 120
+  CURRENT_STATUS_TIMESTAMP_SQL =
+    'COALESCE(node_current_statuses.updated_at, node_current_statuses.created_at)'.freeze
+  TRANSACTION_RUNNER_ROLES = %i[node storage].freeze
+
   belongs_to :location
   has_many :vpses
   has_many :transactions
@@ -195,14 +200,26 @@ class Node < ApplicationRecord
       .take!
   end
 
+  def self.first_available_transaction_runner
+    roles = TRANSACTION_RUNNER_ROLES.map { |role| Node.roles.fetch(role.to_s) }
+
+    joins(:node_current_status)
+      .where(active: true, role: roles)
+      .where("#{CURRENT_STATUS_TIMESTAMP_SQL} >= ?", CURRENT_STATUS_MAX_AGE.seconds.ago)
+      .order(Arel.sql("#{CURRENT_STATUS_TIMESTAMP_SQL} DESC"))
+      .take!
+  end
+
   def status
     return false unless node_current_status
 
     t = Time.now.utc.to_i
 
-    return (t - node_current_status.updated_at.to_i) <= 120 if node_current_status.updated_at
+    if node_current_status.updated_at
+      return (t - node_current_status.updated_at.to_i) <= CURRENT_STATUS_MAX_AGE
+    end
 
-    (t - node_current_status.created_at.to_i) <= 120
+    (t - node_current_status.created_at.to_i) <= CURRENT_STATUS_MAX_AGE
   end
 
   def pool_status
