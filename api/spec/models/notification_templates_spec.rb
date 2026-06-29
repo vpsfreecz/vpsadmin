@@ -37,8 +37,8 @@ RSpec.describe VpsAdmin::API::NotificationTemplates do
     RubyVM::InstructionSequence.compile(ERB.new(source, trim_mode: '-').src)
   end
 
-  def build_template(source)
-    NotificationTemplateVariant::TemplateBuilder.new({}).build(source)
+  def build_template(source, vars = {})
+    NotificationTemplateVariant::TemplateBuilder.new(vars).build(source)
   end
 
   it 'loads template directories in vpsadmin-notification-templates format' do
@@ -117,10 +117,21 @@ RSpec.describe VpsAdmin::API::NotificationTemplates do
       expect(telegram.from).to be_nil
       expect(telegram.subject).to be_nil
       expect(telegram.text).to eq('Telegram body')
+      expect(telegram.html).to eq(described_class::DEFAULT_TELEGRAM_HTML)
       expect(sms.from).to be_nil
       expect(sms.subject).to be_nil
       expect(sms.text).to eq('SMS body')
     end
+  end
+
+  it 'keeps default Telegram HTML safe for old template builders' do
+    old_builder = Class.new do
+      def build(source)
+        ERB.new(source, trim_mode: '-').result(binding)
+      end
+    end.new
+
+    expect(old_builder.build(described_class::DEFAULT_TELEGRAM_HTML)).to eq('')
   end
 
   it 'does not overwrite existing templates or variants' do
@@ -408,6 +419,92 @@ RSpec.describe VpsAdmin::API::NotificationTemplates do
     expect(build_template('<%= webui_link("VPS #1", "?page=adminvps&action=info&veid=1") %>')).to eq(
       '<a href="https://webui.example.test/?page=adminvps&amp;action=info&amp;veid=1">VPS #1</a>'
     )
+  end
+
+  it 'renders Telegram resource changes with linked VPS details and limits' do
+    allow(VpsAdmin::API::Events).to receive(:webui_url).and_return('https://webui.example.test')
+    template = NotificationTemplate.find_or_initialize_by(name: 'vps_resources_change')
+    template.assign_attributes(
+      label: 'VPS resources changed',
+      template_id: 'vps_resources_change'
+    )
+    template.save!
+    template.notification_template_variants.where(
+      language: SpecSeed.language,
+      protocol: :telegram
+    ).delete_all
+    template.notification_template_variants.create!(
+      language: SpecSeed.language,
+      protocol: :telegram,
+      text: 'Plain fallback',
+      html: described_class::DEFAULT_TELEGRAM_HTML
+    )
+    vps_class = Struct.new(:id, :hostname, :cpu, :cpu_limit, :memory, :swap)
+    user_class = Struct.new(:login)
+    event_class = Struct.new(:event_type, :subject, :summary, :parameters, :vps, :id)
+    vps = vps_class.new(id: 123, hostname: 'spec-vps', cpu: 3, cpu_limit: nil, memory: 4096, swap: 256)
+    admin = user_class.new(login: 'admin <user>')
+    parameters = {
+      'cpu' => 3,
+      'cpu_limit' => 0,
+      'memory' => 4096,
+      'swap' => 256
+    }
+    event = event_class.new(
+      event_type: 'vps.resources_changed',
+      subject: 'VPS #123 resources changed',
+      summary: nil,
+      parameters:,
+      vps:,
+      id: 456
+    )
+
+    rendered = NotificationTemplate.render_telegram!(
+      :vps_resources_change,
+      vars: {
+        event:,
+        notification_event: event,
+        vps:,
+        admin:,
+        reason: 'scale up & test',
+        parameters:
+      }
+    )
+
+    expect(rendered[:html]).to include(
+      '<b>VPS resources changed: ' \
+      '<a href="https://webui.example.test/?page=adminvps&amp;action=info&amp;veid=123">' \
+      'spec-vps (#123)</a></b>'
+    )
+    expect(rendered[:html]).to include('<b>Current limits:</b>')
+    expect(rendered[:html]).to include('Changed by: admin &lt;user&gt;')
+    expect(rendered[:html]).to include('CPU: 3')
+    expect(rendered[:html]).to include('CPU limit: unlimited')
+    expect(rendered[:html]).to include('Memory: 4 GB')
+    expect(rendered[:html]).to include('Swap: 256 MB')
+    expect(rendered[:html]).to include('Reason: scale up &amp; test')
+    expect(rendered[:html]).to include(
+      'Link: <a href="https://webui.example.test/?page=adminvps&amp;action=info&amp;veid=123">VPS details</a>'
+    )
+    expect(rendered[:html]).not_to include('open in vpsAdmin')
+
+    allow(VpsAdmin::API::Events).to receive(:webui_url).and_return(nil)
+
+    rendered = NotificationTemplate.render_telegram!(
+      :vps_resources_change,
+      vars: {
+        event:,
+        notification_event: event,
+        vps:,
+        admin:,
+        reason: 'scale up & test',
+        parameters:
+      }
+    )
+
+    expect(rendered[:html]).to include('<b>VPS resources changed: spec-vps (#123)</b>')
+    expect(rendered[:html]).not_to include('<a href=')
+    expect(rendered[:html]).not_to include('Link:')
   end
 
   it 'ships directory-backed English templates for all registered defaults' do

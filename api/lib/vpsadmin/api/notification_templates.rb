@@ -8,6 +8,7 @@ module VpsAdmin::API
       'cs' => 'Česky'
     }.freeze
     PROTOCOLS = %w[email telegram sms].freeze
+    DEFAULT_TELEGRAM_HTML = '<%= telegram_notification_html if respond_to?(:telegram_notification_html) %>'
 
     CONCRETE_DEFAULTS = {
       expiration_user_active: :expiration_warning,
@@ -235,7 +236,7 @@ module VpsAdmin::API
           return_path: defaults.fetch(:return_path, default_return_path),
           subject: @content[:subject] || defaults[:subject] || default_subject,
           text: @content[:text],
-          html: @content[:html],
+          html: @content[:html] || default_html,
           options: defaults[:options] || {}
         }
       end
@@ -246,6 +247,12 @@ module VpsAdmin::API
         return if protocol != 'email'
 
         "[vpsAdmin] #{@template.name.tr('_', ' ')}"
+      end
+
+      def default_html
+        return unless protocol == 'telegram'
+
+        DEFAULT_TELEGRAM_HTML
       end
 
       def default_from
