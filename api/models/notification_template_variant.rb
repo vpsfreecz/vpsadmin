@@ -38,6 +38,22 @@ class NotificationTemplateVariant < ApplicationRecord
       VpsAdmin::API::TimeZones.format_date(value, time_zone: @time_zone, format:)
     end
 
+    def html_escape(value)
+      ERB::Util.html_escape(value.to_s)
+    end
+
+    alias h html_escape
+
+    def html_link(label, url)
+      return if url.blank?
+
+      %(<a href="#{html_escape(url)}">#{html_escape(label)}</a>)
+    end
+
+    def webui_link(label, path = nil)
+      html_link(label, webui_url(path))
+    end
+
     def webui_url(path = nil)
       base_url = VpsAdmin::API::Events.webui_url
       return base_url if path.blank?
