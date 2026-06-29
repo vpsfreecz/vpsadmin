@@ -41,7 +41,7 @@ RSpec.describe VpsAdmin::API::NotificationTemplates do
     NotificationTemplateVariant::TemplateBuilder.new(vars).build(source)
   end
 
-  it 'loads template directories in vpsadmin-notification-templates format' do
+  it 'loads template package directories' do
     Dir.mktmpdir do |dir|
       FileUtils.mkdir_p(File.join(dir, '.gems'))
 
@@ -121,6 +121,114 @@ RSpec.describe VpsAdmin::API::NotificationTemplates do
       expect(sms.from).to be_nil
       expect(sms.subject).to be_nil
       expect(sms.text).to eq('SMS body')
+    end
+  end
+
+  it 'creates and updates managed templates from source paths' do
+    template = NotificationTemplate.create!(
+      name: 'spec_managed_template',
+      label: 'Old managed template',
+      template_id: 'daily_report'
+    )
+    template.notification_template_variants.create!(
+      language: SpecSeed.language,
+      protocol: :email,
+      from: 'old@example.test',
+      subject: 'Old subject',
+      text: 'Old body'
+    )
+
+    Dir.mktmpdir do |dir|
+      write_template(
+        dir,
+        'spec_managed_template',
+        meta: <<~RUBY,
+          template :user_create do
+            label 'Managed template'
+            user_visibility true
+            protocol :email do
+              from 'managed@example.test'
+            end
+          end
+        RUBY
+        text: 'Managed body',
+        email_html: '<p>Managed HTML</p>',
+        telegram_text: 'Managed Telegram body',
+        telegram_html: '<b>Managed Telegram HTML</b>',
+        sms_text: 'Managed SMS body'
+      )
+
+      result = described_class.install_managed!(
+        paths: [dir],
+        source_id: 'managed-source-1'
+      )
+
+      template.reload
+      email = template.notification_template_variants.find_by!(
+        language: SpecSeed.language,
+        protocol: 'email'
+      )
+      telegram = template.notification_template_variants.find_by!(
+        language: SpecSeed.language,
+        protocol: 'telegram'
+      )
+      sms = template.notification_template_variants.find_by!(
+        language: SpecSeed.language,
+        protocol: 'sms'
+      )
+
+      expect(result).to eq(
+        source_id: 'managed-source-1',
+        unchanged_source: false,
+        templates_created: 0,
+        templates_updated: 1,
+        variants_created: 2,
+        variants_updated: 1
+      )
+      expect(template.label).to eq('Managed template')
+      expect(template.template_id).to eq('user_create')
+      expect(template.user_visibility).to eq('visible')
+      expect(email.from).to eq('managed@example.test')
+      expect(email.text).to eq('Managed body')
+      expect(email.html).to eq('<p>Managed HTML</p>')
+      expect(telegram.html).to eq('<b>Managed Telegram HTML</b>')
+      expect(sms.text).to eq('Managed SMS body')
+      expect(SysConfig.get('notifications', 'managed_templates_source_id')).to eq('managed-source-1')
+    end
+  end
+
+  it 'skips managed template writes when the source id is unchanged' do
+    SysConfig.create!(
+      category: 'notifications',
+      name: 'managed_templates_source_id',
+      value: 'managed-source-1'
+    )
+
+    Dir.mktmpdir do |dir|
+      write_template(
+        dir,
+        'spec_managed_noop_template',
+        meta: <<~RUBY,
+          template :user_create do
+            label 'Managed no-op template'
+          end
+        RUBY
+        text: 'Managed no-op body'
+      )
+
+      expect do
+        result = described_class.install_managed!(
+          paths: [File.join(dir, 'templates')],
+          source_id: 'managed-source-1'
+        )
+
+        expect(result).to include(
+          source_id: 'managed-source-1',
+          unchanged_source: true,
+          templates_created: 0,
+          variants_created: 0
+        )
+      end.not_to change(NotificationTemplate, :count)
     end
   end
 
@@ -592,6 +700,28 @@ RSpec.describe VpsAdmin::API::NotificationTemplates do
     expect(build_template('<%= webui_link("VPS #1", "?page=adminvps&action=info&veid=1") %>')).to eq(
       '<a href="https://webui.example.test/?page=adminvps&amp;action=info&amp;veid=1">VPS #1</a>'
     )
+    markdown_reason = <<~MARKDOWN
+      **bold** <script>alert("x")</script>
+
+      [bad](javascript:alert(1)) [ok](https://example.test/?a=1&b=2)
+    MARKDOWN
+    rendered_email_reason = build_template(
+      '<%= markdown_html(@reason) %>',
+      reason: markdown_reason
+    )
+    expect(rendered_email_reason).to include('<strong>bold</strong>')
+    expect(rendered_email_reason).not_to include('<script>', 'javascript:')
+
+    rendered = build_template(
+      '<%= markdown_telegram_html(@reason) %>',
+      reason: "**bold** <script>alert('x')</script>\n\n- item\n\n[ok](https://example.test/?a=1&b=2)"
+    )
+    expect(rendered).to eq(
+      "<strong>bold</strong> alert(&#39;x&#39;)\n\n" \
+      "- item\n\n" \
+      '<a href="https://example.test/?a=1&amp;b=2">ok</a>'
+    )
+    expect(rendered).not_to include('<p>', '<ul>', '<li>', 'script', 'javascript:')
   end
 
   it 'renders Telegram resource changes with linked VPS details and limits' do
@@ -644,20 +774,16 @@ RSpec.describe VpsAdmin::API::NotificationTemplates do
       }
     )
 
-    expect(rendered[:html]).to include(
+    expect(rendered[:html]).to eq(
       '<b>VPS resources changed: ' \
       '<a href="https://webui.example.test/?page=adminvps&amp;action=info&amp;veid=123">' \
-      'spec-vps (#123)</a></b>'
-    )
-    expect(rendered[:html]).to include('<b>Current limits:</b>')
-    expect(rendered[:html]).to include('Changed by: admin &lt;user&gt;')
-    expect(rendered[:html]).to include('CPU: 3')
-    expect(rendered[:html]).to include('CPU limit: unlimited')
-    expect(rendered[:html]).to include('Memory: 4 GB')
-    expect(rendered[:html]).to include('Swap: 256 MB')
-    expect(rendered[:html]).to include('Reason: scale up &amp; test')
-    expect(rendered[:html].scan('Reason:').size).to eq(1)
-    expect(rendered[:html]).to include(
+      "spec-vps (#123)</a></b>\n\n" \
+      "<b>Current limits:</b>\n" \
+      "CPU: <code>3 cores, limit unlimited</code>\n" \
+      "Memory: <code>4096 MB</code>\n" \
+      "Swap: <code>256 MB</code>\n\n" \
+      "Reason: scale up &amp; test\n" \
+      "Changed by: admin &lt;user&gt;\n\n" \
       'Link: <a href="https://webui.example.test/?page=adminvps&amp;action=info&amp;veid=123">VPS details</a>'
     )
     expect(rendered[:html]).not_to include('open in vpsAdmin')
