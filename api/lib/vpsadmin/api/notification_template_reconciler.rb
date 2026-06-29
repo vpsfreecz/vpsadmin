@@ -50,7 +50,8 @@ module VpsAdmin::API
     def self.install_defaults!(paths: default_template_paths)
       result = {
         templates_created: 0,
-        variants_created: 0
+        variants_created: 0,
+        variants_updated: 0
       }
 
       templates = registered_templates(unique_templates(find_templates(paths)))
@@ -67,10 +68,20 @@ module VpsAdmin::API
 
           template.variants.each do |variant|
             language = ensure_language!(variant.language)
-            next if record.notification_template_variants.where(
+            existing = record.notification_template_variants.find_by(
               language:,
               protocol: variant.protocol
-            ).exists?
+            )
+
+            if existing
+              params = variant_params(template, variant)
+              if backfill_telegram_html?(existing, params)
+                existing.update!(html: params[:html])
+                result[:variants_updated] += 1
+              end
+
+              next
+            end
 
             record.notification_template_variants.create!(
               variant_params(template, variant).merge(language:)
@@ -262,6 +273,13 @@ module VpsAdmin::API
       nil
     end
 
+    def self.backfill_telegram_html?(variant, params)
+      variant.protocol == 'telegram' &&
+        variant.html.blank? &&
+        params[:html].present? &&
+        variant.text == params[:text]
+    end
+
     def self.ensure_language!(code)
       label = LANGUAGE_LABELS.fetch(code, code)
 
@@ -287,7 +305,8 @@ module VpsAdmin::API
       templates.select { |template| registered.has_key?(template.id.to_sym) }
     end
 
-    private_class_method :configured_support_mail,
+    private_class_method :backfill_telegram_html?,
+                         :configured_support_mail,
                          :ensure_language!,
                          :unique_templates,
                          :registered_templates,

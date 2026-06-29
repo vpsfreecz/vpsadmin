@@ -83,7 +83,11 @@ RSpec.describe VpsAdmin::API::NotificationTemplateReconciler do
         protocol: :email
       )
 
-      expect(result).to eq(templates_created: 1, variants_created: 1)
+      expect(result).to eq(
+        templates_created: 1,
+        variants_created: 1,
+        variants_updated: 0
+      )
       expect(template.template_id).to eq('user_create')
       expect(translation.text).to eq('Install body')
     end
@@ -524,11 +528,136 @@ RSpec.describe VpsAdmin::API::NotificationTemplateReconciler do
         protocol: :email
       )
 
-      expect(result).to eq(templates_created: 0, variants_created: 0)
+      expect(result).to eq(
+        templates_created: 0,
+        variants_created: 0,
+        variants_updated: 0
+      )
       expect(template.label).to eq('Existing template')
       expect(template.template_id).to eq('daily_report')
       expect(translation.from).to eq('custom@example.test')
       expect(translation.text).to eq('Custom body')
+    end
+  end
+
+  it 'fills missing Telegram HTML when stored text matches packaged text' do
+    template = NotificationTemplate.create!(
+      name: 'spec_existing_telegram_template',
+      label: 'Existing Telegram template',
+      template_id: 'user_create'
+    )
+    template.notification_template_variants.create!(
+      language: SpecSeed.language,
+      protocol: :telegram,
+      text: 'Packaged Telegram body'
+    )
+
+    Dir.mktmpdir do |dir|
+      write_template(
+        dir,
+        'spec_existing_telegram_template',
+        meta: "template :user_create do\nend\n",
+        plain: 'E-mail body'
+      )
+      telegram_path = File.join(dir, 'spec_existing_telegram_template', 'telegram')
+      FileUtils.mkdir_p(telegram_path)
+      File.write(File.join(telegram_path, 'en.text.erb'), 'Packaged Telegram body')
+      File.write(File.join(telegram_path, 'en.html.erb'), '<b>Packaged Telegram body</b>')
+
+      result = described_class.install_defaults!(paths: [dir])
+      variant = template.notification_template_variants.find_by!(
+        language: SpecSeed.language,
+        protocol: :telegram
+      )
+
+      expect(result).to eq(
+        templates_created: 0,
+        variants_created: 1,
+        variants_updated: 1
+      )
+      expect(variant.text).to eq('Packaged Telegram body')
+      expect(variant.html).to eq('<b>Packaged Telegram body</b>')
+    end
+  end
+
+  it 'does not fill Telegram HTML when stored text was customized' do
+    template = NotificationTemplate.create!(
+      name: 'spec_custom_telegram_template',
+      label: 'Custom Telegram template',
+      template_id: 'user_create'
+    )
+    template.notification_template_variants.create!(
+      language: SpecSeed.language,
+      protocol: :telegram,
+      text: 'Custom Telegram body'
+    )
+
+    Dir.mktmpdir do |dir|
+      write_template(
+        dir,
+        'spec_custom_telegram_template',
+        meta: "template :user_create do\nend\n",
+        plain: 'E-mail body'
+      )
+      telegram_path = File.join(dir, 'spec_custom_telegram_template', 'telegram')
+      FileUtils.mkdir_p(telegram_path)
+      File.write(File.join(telegram_path, 'en.text.erb'), 'Packaged Telegram body')
+      File.write(File.join(telegram_path, 'en.html.erb'), '<b>Packaged Telegram body</b>')
+
+      result = described_class.install_defaults!(paths: [dir])
+      variant = template.notification_template_variants.find_by!(
+        language: SpecSeed.language,
+        protocol: :telegram
+      )
+
+      expect(result).to eq(
+        templates_created: 0,
+        variants_created: 1,
+        variants_updated: 0
+      )
+      expect(variant.text).to eq('Custom Telegram body')
+      expect(variant.html).to be_nil
+    end
+  end
+
+  it 'does not fill missing e-mail HTML in stored variants' do
+    template = NotificationTemplate.create!(
+      name: 'spec_existing_email_template',
+      label: 'Existing e-mail template',
+      template_id: 'user_create'
+    )
+    template.notification_template_variants.create!(
+      language: SpecSeed.language,
+      protocol: :email,
+      from: 'custom@example.test',
+      subject: 'Custom subject',
+      text: 'Packaged e-mail body'
+    )
+
+    Dir.mktmpdir do |dir|
+      write_template(
+        dir,
+        'spec_existing_email_template',
+        meta: "template :user_create do\nend\n",
+        plain: 'Packaged e-mail body'
+      )
+      File.write(
+        File.join(dir, 'spec_existing_email_template', 'email', 'en.html.erb'),
+        '<p>Packaged e-mail HTML</p>'
+      )
+
+      result = described_class.install_defaults!(paths: [dir])
+      variant = template.notification_template_variants.find_by!(
+        language: SpecSeed.language,
+        protocol: :email
+      )
+
+      expect(result).to eq(
+        templates_created: 0,
+        variants_created: 0,
+        variants_updated: 0
+      )
+      expect(variant.html).to be_nil
     end
   end
 

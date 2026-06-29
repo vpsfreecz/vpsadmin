@@ -101,8 +101,11 @@ in
         default = vpsadminCfg.api.notificationTemplates.mode != "replace";
         description = ''
           Install built-in notification templates after migrations. Existing
-          templates and variants are left unchanged. This option defaults to
-          false when the API uses a replacement notification template source.
+          templates and variants are left unchanged, except for adding a packaged
+          Telegram HTML body to an existing Telegram variant when its HTML body
+          is still empty and its text body still matches the packaged text. This
+          option defaults to false when the API uses a replacement notification
+          template source.
         '';
       };
 

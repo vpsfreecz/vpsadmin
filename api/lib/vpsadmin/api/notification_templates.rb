@@ -14,6 +14,8 @@ module VpsAdmin
       LANGUAGE_PATTERN = /\A[a-zA-Z]{2}\z/
       VARIANT_FILE_PATTERN = /\A(?<language>[a-zA-Z]{2})\.(?<format>subject|text|html)\.erb\z/
       PROTOCOLS = %w[email telegram sms].freeze
+      DEFAULT_TELEGRAM_HTML =
+        '<%= telegram_notification_html if respond_to?(:telegram_notification_html) %>'
       PROTOCOL_FORMATS = {
         'email' => %w[subject text html],
         'telegram' => %w[text html],
@@ -500,7 +502,10 @@ module VpsAdmin
 
         def content(format)
           content = @content[format]
-          format == :subject && content ? content.chomp : content
+          return content.chomp if format == :subject && content
+          return DEFAULT_TELEGRAM_HTML if format == :html && protocol == 'telegram' && content.nil?
+
+          content
         end
 
         def options

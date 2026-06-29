@@ -169,6 +169,16 @@ RSpec.describe VpsAdmin::API::NotificationTemplates do
     end
   end
 
+  it 'keeps default Telegram HTML safe for old template builders' do
+    old_builder = Class.new do
+      def build(source)
+        ERB.new(source, trim_mode: '-').result(binding)
+      end
+    end.new
+
+    expect(old_builder.build(described_class::DEFAULT_TELEGRAM_HTML)).to eq('')
+  end
+
   it 'rejects unsupported protocol directories and declarations' do
     Dir.mktmpdir do |dir|
       path = write_template(dir)
