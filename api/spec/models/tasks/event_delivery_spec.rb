@@ -11,11 +11,18 @@ RSpec.describe VpsAdmin::API::Tasks::EventDelivery do
   end
 
   let(:task) { described_class.new }
+  let(:registered_template_keys) { [] }
 
   before do
     unlock_transaction_signer!
     ensure_mailer_available!
     reset_routing!(SpecSeed.user)
+  end
+
+  after do
+    registered_template_keys.each do |key|
+      NotificationTemplate.templates.delete(key)
+    end
   end
 
   def reset_routing!(user)
@@ -54,6 +61,9 @@ RSpec.describe VpsAdmin::API::Tasks::EventDelivery do
   end
 
   def create_telegram_delivery!(target_value: '123456789',
+                                template_name: nil,
+                                event_type: 'user.test_notification',
+                                subject: 'Spec Telegram event',
                                 summary: 'Spec Telegram summary',
                                 parameters: { note: 'from Telegram task spec' })
     allow(VpsAdmin::API::Notifications).to receive(:telegram_configured?).and_return(true)
@@ -69,17 +79,41 @@ RSpec.describe VpsAdmin::API::Tasks::EventDelivery do
     route = EventRoute.create!(
       user: SpecSeed.user,
       notification_receiver: receiver,
-      event_type: 'user.test_notification'
+      event_type:,
+      template_name:
     )
     event = VpsAdmin::API::Events.emit!(
-      'user.test_notification',
+      event_type,
       user: SpecSeed.user,
-      subject: 'Spec Telegram event',
+      subject:,
       summary:,
       parameters:
     )
 
     [event.event_deliveries.sole, action, route]
+  end
+
+  def create_telegram_template!(name:, text:, html: nil)
+    template_key = name.to_sym
+    unless NotificationTemplate.templates.has_key?(template_key)
+      NotificationTemplate.register(template_key)
+      registered_template_keys << template_key
+    end
+    template = NotificationTemplate.find_or_initialize_by(name:)
+    template.label ||= "Spec #{name}"
+    template.template_id ||= name
+    template.save!
+    template.notification_template_variants.where(
+      language: SpecSeed.language,
+      protocol: :telegram
+    ).delete_all
+    template.notification_template_variants.create!(
+      language: SpecSeed.language,
+      protocol: :telegram,
+      text:,
+      html:
+    )
+    template
   end
 
   def create_sms_delivery!(target_value: '+420123456789',
@@ -1172,19 +1206,23 @@ RSpec.describe VpsAdmin::API::Tasks::EventDelivery do
     expect(delivery.mail_log).to be_nil
   end
 
-  it 'sends Telegram messages and marks deliveries sent' do
-    delivery, action, route = create_telegram_delivery!
+  it 'sends generic Telegram messages as HTML and marks deliveries sent' do
+    delivery, action, route = create_telegram_delivery!(subject: 'Spec <Telegram> event')
     request = stub_telegram_response
 
     with_env('VPSADMIN_TELEGRAM_BOT_TOKEN' => '123:telegram-token') do
       task.deliver_telegrams
     end
 
-    body = JSON.parse(request.call.body)
+    sent_request = request.call
+    expect(sent_request).to be_present, delivery.reload.error_summary.to_s
+    body = JSON.parse(sent_request.body)
 
     expect(body['chat_id']).to eq('123456789')
-    expect(body['text']).to include('Spec Telegram event')
-    expect(body['text']).to include('Event: user.test_notification')
+    expect(body['text']).to include('<b>[info] Spec &lt;Telegram&gt; event</b>')
+    expect(body['text']).to include('Event: <code>user.test_notification</code>')
+    expect(body['parse_mode']).to eq('HTML')
+    expect(body.dig('link_preview_options', 'is_disabled')).to be(true)
     expect(request.call.path).to eq('/bot123:telegram-token/sendMessage')
     expect(delivery.reload).to be_sent_state
     expect(delivery.notification_receiver_action).to eq(action)
@@ -1195,6 +1233,89 @@ RSpec.describe VpsAdmin::API::Tasks::EventDelivery do
     attempt = delivery.event_delivery_attempts.sole
     expect(attempt).to be_succeeded_state
     expect(attempt.provider_message_id).to eq('42')
+  end
+
+  it 'sends Telegram HTML templates with Telegram parse mode' do
+    create_telegram_template!(
+      name: 'spec_telegram_html_template',
+      text: 'Plain <%= @event.subject %>',
+      html: '<b><%= h(@event.subject) %></b>'
+    )
+    delivery, = create_telegram_delivery!(
+      target_value: '223456789',
+      template_name: 'spec_telegram_html_template'
+    )
+    request = stub_telegram_response
+
+    with_env('VPSADMIN_TELEGRAM_BOT_TOKEN' => '123:telegram-token') do
+      task.deliver_telegrams
+    end
+
+    sent_request = request.call
+    expect(sent_request).to be_present, delivery.reload.error_summary.to_s
+    body = JSON.parse(sent_request.body)
+
+    expect(body['chat_id']).to eq('223456789')
+    expect(body['text']).to eq('<b>Spec Telegram event</b>')
+    expect(body['parse_mode']).to eq('HTML')
+    expect(body.dig('link_preview_options', 'is_disabled')).to be(true)
+    expect(JSON.parse(delivery.reload.payload)).to include(
+      'parse_mode' => 'HTML',
+      'link_preview_options' => { 'is_disabled' => true }
+    )
+    expect(delivery.reload).to be_sent_state
+  end
+
+  it 'uses event template mappings for default Telegram routes' do
+    create_telegram_template!(
+      name: 'user_suspend',
+      text: 'Plain default <%= @event.subject %>',
+      html: '<b>Default <%= h(@event.subject) %></b>'
+    )
+    delivery, = create_telegram_delivery!(
+      target_value: '423456789',
+      event_type: 'user.suspended',
+      parameters: { state: 'suspended', reason: 'task spec' }
+    )
+    request = stub_telegram_response
+
+    expect(delivery.template_name).to eq('user_suspend')
+
+    with_env('VPSADMIN_TELEGRAM_BOT_TOKEN' => '123:telegram-token') do
+      task.deliver_telegrams
+    end
+
+    body = JSON.parse(request.call.body)
+
+    expect(body['chat_id']).to eq('423456789')
+    expect(body['text']).to eq('<b>Default Spec Telegram event</b>')
+    expect(body['parse_mode']).to eq('HTML')
+    expect(body.dig('link_preview_options', 'is_disabled')).to be(true)
+    expect(delivery.reload).to be_sent_state
+  end
+
+  it 'falls back to text when rendered Telegram HTML is too long' do
+    create_telegram_template!(
+      name: 'spec_telegram_long_html_template',
+      text: 'Plain fallback <%= @event.subject %>',
+      html: "<b><%= 'x' * #{VpsAdmin::API::Notifications::TELEGRAM_TEXT_LIMIT + 1} %></b>"
+    )
+    delivery, = create_telegram_delivery!(
+      target_value: '323456789',
+      template_name: 'spec_telegram_long_html_template'
+    )
+    request = stub_telegram_response
+
+    with_env('VPSADMIN_TELEGRAM_BOT_TOKEN' => '123:telegram-token') do
+      task.deliver_telegrams
+    end
+
+    body = JSON.parse(request.call.body)
+
+    expect(body['text']).to eq('Plain fallback Spec Telegram event')
+    expect(body).not_to have_key('parse_mode')
+    expect(body).not_to have_key('link_preview_options')
+    expect(delivery.reload).to be_sent_state
   end
 
   it 'does not include summaries or parameters in default Telegram messages' do

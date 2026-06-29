@@ -190,6 +190,8 @@ module VpsAdmin::API
     RESPONSE_HEADERS_TRUNCATED = {
       'x-vpsadmin-truncated' => ['response headers truncated']
     }.freeze
+    TELEGRAM_HTML_PARSE_MODE = 'HTML'.freeze
+    TELEGRAM_LINK_PREVIEW_OPTIONS = { is_disabled: true }.freeze
     TELEGRAM_TEXT_LIMIT = 4096
     SMS_TEXT_LIMIT = 459
     SMS_CALLBACK_PATH = '/internal/notifications/sms/callback'.freeze
@@ -291,9 +293,8 @@ module VpsAdmin::API
 
     def telegram_payload_for(delivery)
       {
-        chat_id: delivery.target_value,
-        text: telegram_text_for(delivery)
-      }
+        chat_id: delivery.target_value
+      }.merge(telegram_message_for(delivery))
     end
 
     def sms_payload_for(delivery)
@@ -307,30 +308,63 @@ module VpsAdmin::API
     end
 
     def telegram_text_for(delivery)
+      telegram_message_for(delivery).fetch(:text)
+    end
+
+    def telegram_message_for(delivery)
       event = delivery.event
       template_name = delivery.template_name.presence&.to_sym ||
-                      VpsAdmin::API::Events.template_name_for(event)
+                      VpsAdmin::API::Events.template_name_for(event, :telegram)
 
       if template_name
         rendered = ::NotificationTemplate.render_telegram!(
           template_name,
           VpsAdmin::API::Events.template_options_for(event, delivery, action: :telegram)
         )
-        return truncate_telegram_text(rendered.fetch(:text))
+        html = rendered[:html].to_s
+
+        if html.present? && html.length <= TELEGRAM_TEXT_LIMIT
+          return {
+            text: html,
+            parse_mode: TELEGRAM_HTML_PARSE_MODE,
+            link_preview_options: TELEGRAM_LINK_PREVIEW_OPTIONS
+          }
+        end
+
+        return { text: truncate_telegram_text(rendered.fetch(:text)) }
       end
 
-      event = delivery.event
-      lines = [
+      text_lines = [
         "[#{event.severity}] #{event.subject}",
         "Event: #{event.event_type}"
       ]
+      html_lines = [
+        "<b>#{telegram_html_escape("[#{event.severity}] #{event.subject}")}</b>",
+        "Event: <code>#{telegram_html_escape(event.event_type)}</code>"
+      ]
 
-      lines << "VPS: ##{event.vps.id} #{event.vps.hostname}" if event.vps
+      if event.vps
+        vps_label = "##{event.vps.id} #{event.vps.hostname}"
+        text_lines << "VPS: #{vps_label}"
+        html_lines << "VPS: #{telegram_html_escape(vps_label)}"
+      end
 
       event_url = telegram_event_url(event)
-      lines << "Open: #{event_url}" if event_url.present?
+      if event_url.present?
+        text_lines << "Open: #{event_url}"
+        html_lines << %(Open: <a href="#{telegram_html_escape(event_url)}">event detail</a>)
+      end
 
-      truncate_telegram_text(lines.join("\n"))
+      html = html_lines.join("\n")
+      if html.length <= TELEGRAM_TEXT_LIMIT
+        return {
+          text: html,
+          parse_mode: TELEGRAM_HTML_PARSE_MODE,
+          link_preview_options: TELEGRAM_LINK_PREVIEW_OPTIONS
+        }
+      end
+
+      { text: truncate_telegram_text(text_lines.join("\n")) }
     end
 
     def telegram_event_url(event)
@@ -338,6 +372,10 @@ module VpsAdmin::API
       return if base_url.blank?
 
       "#{base_url}/?page=notifications&action=event_show&id=#{event.id}"
+    end
+
+    def telegram_html_escape(value)
+      ERB::Util.html_escape(value.to_s)
     end
 
     def truncate_telegram_text(text)
@@ -2073,15 +2111,16 @@ module VpsAdmin::API
         payload = JSON.parse(delivery.payload.to_s)
         raise 'Telegram payload is not an object' unless payload.is_a?(Hash)
 
-        {
+        ret = {
           chat_id: payload.fetch('chat_id'),
           text: payload.fetch('text')
         }
+
+        ret[:parse_mode] = payload['parse_mode'] if payload['parse_mode'].present?
+        ret[:link_preview_options] = payload['link_preview_options'] if payload['link_preview_options'].present?
+        ret
       rescue JSON::ParserError
-        {
-          chat_id: delivery.target_value,
-          text: Notifications.telegram_text_for(delivery)
-        }
+        Notifications.telegram_payload_for(delivery)
       end
 
       def sms_delivery_payload(delivery)

@@ -303,7 +303,8 @@ module VpsAdmin::API
       end
 
       def delivery(action)
-        DeliveryContext.new(self, definition.delivery(action))
+        delivery_definition = definition.delivery(action)
+        DeliveryContext.new(self, delivery_definition) if delivery_definition
       end
 
       def webui_url
@@ -559,7 +560,15 @@ module VpsAdmin::API
     end
 
     def sms_delivery_context_for(event)
-      delivery_context_for(event, :sms) || email_delivery_context_for(event)
+      notification_delivery_context_for(event, :sms)
+    end
+
+    def telegram_delivery_context_for(event)
+      notification_delivery_context_for(event, :telegram)
+    end
+
+    def notification_delivery_context_for(event, action)
+      delivery_context_for(event, action) || email_delivery_context_for(event)
     end
 
     def delivery_context_for(event, action)
@@ -571,7 +580,14 @@ module VpsAdmin::API
     end
 
     def template_context_for(event, action)
-      action.to_s == 'sms' ? sms_delivery_context_for(event) : delivery_context_for(event, action)
+      case action.to_s
+      when 'sms'
+        sms_delivery_context_for(event)
+      when 'telegram'
+        telegram_delivery_context_for(event)
+      else
+        delivery_context_for(event, action)
+      end
     end
 
     def template_name_for(event, action = :email)
