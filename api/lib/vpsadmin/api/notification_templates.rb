@@ -8,6 +8,7 @@ module VpsAdmin::API
       'cs' => 'Česky'
     }.freeze
     PROTOCOLS = %w[email telegram sms].freeze
+    DEFAULT_TELEGRAM_HTML = '<%= telegram_notification_html if respond_to?(:telegram_notification_html) %>'
 
     CONCRETE_DEFAULTS = {
       expiration_user_active: :expiration_warning,
@@ -235,7 +236,7 @@ module VpsAdmin::API
           return_path: defaults.fetch(:return_path, default_return_path),
           subject: @content[:subject] || defaults[:subject] || default_subject,
           text: @content[:text],
-          html: @content[:html],
+          html: @content[:html] || default_html,
           options: defaults[:options] || {}
         }
       end
@@ -246,6 +247,12 @@ module VpsAdmin::API
         return if protocol != 'email'
 
         "[vpsAdmin] #{@template.name.tr('_', ' ')}"
+      end
+
+      def default_html
+        return unless protocol == 'telegram'
+
+        DEFAULT_TELEGRAM_HTML
       end
 
       def default_from
@@ -264,7 +271,8 @@ module VpsAdmin::API
     def self.install_defaults!(paths: default_template_paths)
       result = {
         templates_created: 0,
-        variants_created: 0
+        variants_created: 0,
+        variants_updated: 0
       }
 
       templates = registered_templates(unique_templates(find_templates(paths)))
@@ -281,7 +289,21 @@ module VpsAdmin::API
 
           template.variants.each do |variant|
             language = ensure_language!(variant.lang)
-            next if record.notification_template_variants.where(language:, protocol: variant.protocol).exists?
+            existing = record.notification_template_variants.find_by(
+              language:,
+              protocol: variant.protocol
+            )
+
+            if existing
+              params = variant.params
+
+              if backfill_telegram_html?(existing, params)
+                existing.update!(html: params[:html])
+                result[:variants_updated] += 1
+              end
+
+              next
+            end
 
             record.notification_template_variants.create!(
               variant.params.merge(language:)
@@ -354,6 +376,13 @@ module VpsAdmin::API
       nil
     end
 
+    def self.backfill_telegram_html?(variant, params)
+      variant.protocol == 'telegram' &&
+        variant.html.blank? &&
+        params[:html].present? &&
+        variant.text == params[:text]
+    end
+
     def self.ensure_language!(code)
       label = LANGUAGE_LABELS.fetch(code, code)
 
@@ -379,7 +408,8 @@ module VpsAdmin::API
       templates.select { |template| registered.has_key?(template.id.to_sym) }
     end
 
-    private_class_method :configured_support_mail,
+    private_class_method :backfill_telegram_html?,
+                         :configured_support_mail,
                          :ensure_language!,
                          :unique_templates,
                          :registered_templates
