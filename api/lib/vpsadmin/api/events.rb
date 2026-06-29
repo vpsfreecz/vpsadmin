@@ -646,6 +646,7 @@ module VpsAdmin::API
     def template_vars_for(event, action = :email)
       {
         event:,
+        notification_event: event,
         user: event.user,
         parameters: event.parameters || {}
       }.merge(template_context_for(event, action)&.vars || {})
