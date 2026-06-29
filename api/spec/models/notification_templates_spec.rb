@@ -260,6 +260,124 @@ RSpec.describe VpsAdmin::API::NotificationTemplates do
     end
   end
 
+  it 'replaces packaged Telegram HTML with a legacy link label' do
+    template_id = :spec_legacy_link_label_telegram_template
+    NotificationTemplate.register(template_id, name: template_id.to_s)
+    template = NotificationTemplate.create!(
+      name: template_id.to_s,
+      label: 'Legacy link label Telegram template',
+      template_id: template_id.to_s
+    )
+    template.notification_template_variants.create!(
+      language: SpecSeed.language,
+      protocol: :telegram,
+      text: 'Packaged Telegram body',
+      html: <<~'ERB'
+        <% vps_link = webui_link('open in vpsAdmin', "?page=adminvps&action=info&veid=#{@vps.id}") -%>
+        <b>VPS <%= h(@vps.hostname) %> (#<%= @vps.id %>): network enabled</b>
+
+        Network: <code>enabled</code>
+        <% if vps_link.present? -%>
+
+        Link: <%= vps_link %>
+        <% end -%>
+      ERB
+    )
+
+    Dir.mktmpdir do |dir|
+      write_template(
+        dir,
+        template_id.to_s,
+        meta: <<~RUBY,
+          template :#{template_id} do
+            label 'Packaged legacy link replacement'
+          end
+        RUBY
+        text: 'Changed e-mail body',
+        telegram_text: 'Packaged Telegram body'
+      )
+
+      result = described_class.install_defaults!(paths: [File.join(dir, 'templates')])
+      variant = template.reload.notification_template_variants.find_by!(
+        language: SpecSeed.language,
+        protocol: 'telegram'
+      )
+
+      expect(result).to eq(templates_created: 0, variants_created: 2, variants_updated: 1)
+      expect(variant.text).to eq('Packaged Telegram body')
+      expect(variant.html).to eq(described_class::DEFAULT_TELEGRAM_HTML)
+    end
+  end
+
+  it 'replaces legacy Telegram HTML outside configured directory templates' do
+    template = NotificationTemplate.create!(
+      name: 'spec_legacy_telegram_template_without_directory',
+      label: 'Legacy Telegram template without directory',
+      template_id: 'user_create'
+    )
+    template.notification_template_variants.create!(
+      language: SpecSeed.language,
+      protocol: :telegram,
+      text: 'Customized Telegram body',
+      html: described_class::LEGACY_DEFAULT_TELEGRAM_HTML.first
+    )
+
+    result = described_class.install_defaults!(paths: [])
+    variant = template.reload.notification_template_variants.find_by!(
+      language: SpecSeed.language,
+      protocol: 'telegram'
+    )
+
+    expect(result).to eq(templates_created: 0, variants_created: 0, variants_updated: 1)
+    expect(variant.text).to eq('Customized Telegram body')
+    expect(variant.html).to eq(described_class::DEFAULT_TELEGRAM_HTML)
+  end
+
+  it 'keeps customized Telegram HTML with a legacy link label and packaged text' do
+    template_id = :spec_custom_legacy_link_label_telegram_template
+    NotificationTemplate.register(template_id, name: template_id.to_s)
+    template = NotificationTemplate.create!(
+      name: template_id.to_s,
+      label: 'Custom legacy link label Telegram template',
+      template_id: template_id.to_s
+    )
+    custom_html = <<~'ERB'
+      <% vps_link = webui_link('open in vpsAdmin', "?page=adminvps&action=info&veid=#{@vps.id}") -%>
+      <b>Customized VPS notification</b>
+
+      Link: <%= vps_link %>
+    ERB
+    template.notification_template_variants.create!(
+      language: SpecSeed.language,
+      protocol: :telegram,
+      text: 'Packaged Telegram body',
+      html: custom_html
+    )
+
+    Dir.mktmpdir do |dir|
+      write_template(
+        dir,
+        template_id.to_s,
+        meta: <<~RUBY,
+          template :#{template_id} do
+            label 'Packaged legacy link replacement'
+          end
+        RUBY
+        text: 'Changed e-mail body',
+        telegram_text: 'Packaged Telegram body'
+      )
+
+      result = described_class.install_defaults!(paths: [File.join(dir, 'templates')])
+      variant = template.reload.notification_template_variants.find_by!(
+        language: SpecSeed.language,
+        protocol: 'telegram'
+      )
+
+      expect(result).to eq(templates_created: 0, variants_created: 2, variants_updated: 0)
+      expect(variant.html).to eq(custom_html)
+    end
+  end
+
   it 'keeps customized Telegram HTML that only resembles a legacy built-in template' do
     template_id = :spec_customized_legacy_telegram_template
     NotificationTemplate.register(template_id, name: template_id.to_s)
@@ -538,6 +656,7 @@ RSpec.describe VpsAdmin::API::NotificationTemplates do
     expect(rendered[:html]).to include('Memory: 4 GB')
     expect(rendered[:html]).to include('Swap: 256 MB')
     expect(rendered[:html]).to include('Reason: scale up &amp; test')
+    expect(rendered[:html].scan('Reason:').size).to eq(1)
     expect(rendered[:html]).to include(
       'Link: <a href="https://webui.example.test/?page=adminvps&amp;action=info&amp;veid=123">VPS details</a>'
     )

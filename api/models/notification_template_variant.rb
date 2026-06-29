@@ -201,6 +201,8 @@ class NotificationTemplateVariant < ApplicationRecord
       lines.concat(telegram_security_advisory_lines)
       lines.concat(telegram_monitoring_alert_lines)
       lines.concat(telegram_daily_report_lines)
+      reason_line = telegram_reason_line(@reason)
+      lines << reason_line if reason_line.present? && !lines.include?(reason_line)
 
       lines.compact
     end
@@ -268,7 +270,6 @@ class NotificationTemplateVariant < ApplicationRecord
       lines << telegram_field('CPU limit', telegram_resource_value('cpu_limit'))
       lines << telegram_field('Memory', telegram_resource_value('memory'))
       lines << telegram_field('Swap', telegram_resource_value('swap'))
-      lines << telegram_reason_line(@reason)
       lines
     end
 
@@ -314,7 +315,6 @@ class NotificationTemplateVariant < ApplicationRecord
       if defined?(@maintenance_window)
         lines << telegram_field('Maintenance window', @maintenance_window ? 'yes' : 'no')
       end
-      lines << telegram_reason_line(@reason)
       lines
     end
 
@@ -352,7 +352,6 @@ class NotificationTemplateVariant < ApplicationRecord
       lines << telegram_field('To pool', @dst_pool.filesystem) if @dst_pool.respond_to?(:filesystem)
       lines << telegram_field('Exports', @exports.count) if @exports
       lines << telegram_field('Restart VPS', @restart_vps ? 'yes' : 'no') if defined?(@restart_vps)
-      lines << telegram_reason_line(@reason)
 
       if @vpses.present?
         lines << '<b>Affected VPS:</b>'

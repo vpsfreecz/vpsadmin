@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require 'digest'
+
 module VpsAdmin::API
   module NotificationTemplates
     DEFAULT_FROM = 'noreply@vpsadmin.invalid'
@@ -49,6 +51,24 @@ module VpsAdmin::API
         Link: <%= vps_link %>
         <% end -%>
       ERB
+    ].freeze
+    LEGACY_TELEGRAM_LINK_LABEL_HTML_SHA256 = %w[
+      170013ca0aeaf80c857e98ea5208b760de99f4f33eca21f06a4f443a5e8343f4
+      4e2bd296419a628d19a832d4c1889ae2cbd81107e97f3056469e2305e91e1081
+      5248a93474617fae24b777de95639206f24a7c6784eb547ff98812c1d90e17f4
+      5c653c0a8bdc3ad5bc1458b44603ccd44725c0b1dfc7b540fa4989aeeaaef2cb
+      60cd39c6351104b4a7a8aebc571b44c47919f5ecb22fe201061e6c6bed71e634
+      6bb2b77c793508c951393c57a6d71d4d16c42a5fd2ef12416f9beebb3500c24f
+      9524fa13cfc5d0426a8a2812acb101b19c4458b3be23ba79a202a5b3ec3d9b51
+      9baa490db5e89c8480d45fc7ef04d0ebd861ae2f1833eb6515aec6e57a1e31c4
+      9f00ad865aef50a5cc613617124352e24340bc433aa86e1a0a35e392986c397d
+      abc31fdbe6226e1e25abce60a39b6befc210e5f186feec1bd6a6432e6a04d099
+      b53d126efb98d7283941e40ca9b485b9b140247d102c29d6c961528d106d8807
+      c319a489d85cc137ce6c5b72933cfa04e9d69481e90988fbc5bb1211a04a784b
+      c64f6c82d47fbca9cb4261d722aa2d4be1753da3f8007875a105cea30546fe43
+      d6e874a6d174911b2ba5a71380e130297a37d2421db20ad87cbb31eec9b073d4
+      d9413d5c25a82865e6fcf42c40c114e84037efbf17568d6c2ffe425d8d8099af
+      fc06c7e24aa4f20755d9ddb6c35ee4eddab020b6cd59cba5570fd5f14d1f1f6d
     ].freeze
 
     CONCRETE_DEFAULTS = {
@@ -352,6 +372,8 @@ module VpsAdmin::API
             result[:variants_created] += 1
           end
         end
+
+        result[:variants_updated] += backfill_legacy_telegram_html_variants!
       end
 
       result
@@ -421,17 +443,39 @@ module VpsAdmin::API
       return false unless variant.protocol == 'telegram' && params[:html].present?
 
       (variant.html.blank? && variant.text == params[:text]) ||
-        (default_telegram_html?(params[:html]) && legacy_telegram_html?(variant.html))
+        (default_telegram_html?(params[:html]) && legacy_telegram_html?(variant))
+    end
+
+    def self.backfill_legacy_telegram_html_variants!
+      updated = 0
+
+      ::NotificationTemplateVariant.where(protocol: :telegram).find_each do |variant|
+        next unless legacy_telegram_html?(variant)
+
+        variant.update!(html: DEFAULT_TELEGRAM_HTML)
+        updated += 1
+      end
+
+      updated
     end
 
     def self.default_telegram_html?(html)
       normalize_template_body(html) == normalize_template_body(DEFAULT_TELEGRAM_HTML)
     end
 
-    def self.legacy_telegram_html?(html)
+    def self.legacy_telegram_html?(variant)
+      html = variant.html
+
       LEGACY_DEFAULT_TELEGRAM_HTML.any? do |legacy|
         normalize_template_body(html) == normalize_template_body(legacy)
-      end
+      end || legacy_telegram_link_label_html?(variant)
+    end
+
+    def self.legacy_telegram_link_label_html?(variant)
+      html = normalize_template_body(variant.html)
+      fingerprint = Digest::SHA256.hexdigest(html)
+
+      LEGACY_TELEGRAM_LINK_LABEL_HTML_SHA256.include?(fingerprint)
     end
 
     def self.normalize_template_body(value)
@@ -464,8 +508,10 @@ module VpsAdmin::API
     end
 
     private_class_method :backfill_telegram_html?,
+                         :backfill_legacy_telegram_html_variants!,
                          :default_telegram_html?,
                          :legacy_telegram_html?,
+                         :legacy_telegram_link_label_html?,
                          :normalize_template_body,
                          :configured_support_mail,
                          :ensure_language!,
