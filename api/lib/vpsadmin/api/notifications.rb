@@ -334,25 +334,24 @@ module VpsAdmin::API
         return { text: truncate_telegram_text(rendered.fetch(:text)) }
       end
 
+      subject = if event.vps
+                  "VPS #{event.vps.hostname} (##{event.vps.id}): #{event.subject}"
+                else
+                  event.subject
+                end
       text_lines = [
-        "[#{event.severity}] #{event.subject}",
+        "[#{event.severity}] #{subject}",
         "Event: #{event.event_type}"
       ]
       html_lines = [
-        "<b>#{telegram_html_escape("[#{event.severity}] #{event.subject}")}</b>",
+        "<b>#{telegram_html_escape("[#{event.severity}] #{subject}")}</b>",
         "Event: <code>#{telegram_html_escape(event.event_type)}</code>"
       ]
 
-      if event.vps
-        vps_label = "##{event.vps.id} #{event.vps.hostname}"
-        text_lines << "VPS: #{vps_label}"
-        html_lines << "VPS: #{telegram_html_escape(vps_label)}"
-      end
-
-      event_url = telegram_event_url(event)
-      if event_url.present?
-        text_lines << "Open: #{event_url}"
-        html_lines << %(Open: <a href="#{telegram_html_escape(event_url)}">event detail</a>)
+      url = telegram_webui_url(event)
+      if url.present?
+        text_lines << "Link: #{url}"
+        html_lines << %(Link: <a href="#{telegram_html_escape(url)}">open in vpsAdmin</a>)
       end
 
       html = html_lines.join("\n")
@@ -367,11 +366,15 @@ module VpsAdmin::API
       { text: truncate_telegram_text(text_lines.join("\n")) }
     end
 
-    def telegram_event_url(event)
+    def telegram_webui_url(event)
       base_url = VpsAdmin::API::Events.webui_url
       return if base_url.blank?
 
-      "#{base_url}/?page=notifications&action=event_show&id=#{event.id}"
+      if event.vps
+        "#{base_url}/?page=adminvps&action=info&veid=#{event.vps.id}"
+      else
+        "#{base_url}/?page=notifications&action=event_show&id=#{event.id}"
+      end
     end
 
     def telegram_html_escape(value)

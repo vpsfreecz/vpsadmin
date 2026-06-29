@@ -65,7 +65,8 @@ RSpec.describe VpsAdmin::API::Tasks::EventDelivery do
                                 event_type: 'user.test_notification',
                                 subject: 'Spec Telegram event',
                                 summary: 'Spec Telegram summary',
-                                parameters: { note: 'from Telegram task spec' })
+                                parameters: { note: 'from Telegram task spec' },
+                                vps: nil)
     allow(VpsAdmin::API::Notifications).to receive(:telegram_configured?).and_return(true)
 
     receiver = NotificationReceiver.create!(user: SpecSeed.user, label: 'Spec Telegram receiver')
@@ -85,6 +86,7 @@ RSpec.describe VpsAdmin::API::Tasks::EventDelivery do
     event = VpsAdmin::API::Events.emit!(
       event_type,
       user: SpecSeed.user,
+      vps:,
       subject:,
       summary:,
       parameters:
@@ -167,6 +169,12 @@ RSpec.describe VpsAdmin::API::Tasks::EventDelivery do
     end
 
     -> { request }
+  end
+
+  def set_webui_base_url!(url)
+    cfg = SysConfig.find_or_initialize_by(category: 'webui', name: 'base_url')
+    cfg.value = url
+    cfg.save!
   end
 
   def stub_sms_gateway_response(code: '202', body: { id: 101, status: 'queued' }, hosts: ['sms-brq.example'],
@@ -1233,6 +1241,30 @@ RSpec.describe VpsAdmin::API::Tasks::EventDelivery do
     attempt = delivery.event_delivery_attempts.sole
     expect(attempt).to be_succeeded_state
     expect(attempt.provider_message_id).to eq('42')
+  end
+
+  it 'puts VPS context and object links in generic Telegram messages' do
+    set_webui_base_url!('https://admin.example.test')
+    vps = build_standalone_vps_fixture(user: SpecSeed.user, hostname: 'spec-vps').fetch(:vps)
+    delivery, = create_telegram_delivery!(
+      subject: 'Spec VPS event',
+      vps:
+    )
+    request = stub_telegram_response
+
+    with_env('VPSADMIN_TELEGRAM_BOT_TOKEN' => '123:telegram-token') do
+      task.deliver_telegrams
+    end
+
+    body = JSON.parse(request.call.body)
+
+    expect(body['text']).to include("<b>[info] VPS spec-vps (##{vps.id}): Spec VPS event</b>")
+    expect(body['text']).to include(
+      %(Link: <a href="https://admin.example.test/?page=adminvps&amp;action=info&amp;veid=#{vps.id}">open in vpsAdmin</a>)
+    )
+    expect(body['text']).not_to include('event detail')
+    expect(body['parse_mode']).to eq('HTML')
+    expect(delivery.reload).to be_sent_state
   end
 
   it 'sends Telegram HTML templates with Telegram parse mode' do
