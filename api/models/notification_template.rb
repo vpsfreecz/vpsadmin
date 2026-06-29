@@ -190,8 +190,13 @@ class NotificationTemplate < ApplicationRecord
     variant = tpl.notification_template_variants.find_by(language: lang, protocol: protocol.to_s)
     raise VpsAdmin::API::Exceptions::NotificationTemplateDoesNotExist, name unless variant
 
+    vars = (opts[:vars] || {}).merge(
+      notification_template: tpl,
+      notification_template_name: tpl.name
+    )
+
     variant.resolve(
-      opts[:vars] || {},
+      vars,
       time_zone: opts[:time_zone] || opts[:user]&.time_zone
     )
 
