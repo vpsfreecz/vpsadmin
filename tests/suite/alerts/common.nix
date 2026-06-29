@@ -11,23 +11,8 @@ base
 + ''
   def setup_alerts_cluster(services, node)
     setup_user_lifecycle_cluster(services, node)
-    wait_for_mailer_nodectld(services)
     services.wait_for_mailpit
     ensure_operational_alert_templates(services)
-  end
-
-  def wait_for_mailer_nodectld(services)
-    wait_until_block_succeeds(name: 'mailer nodectld running') do
-      _, container_status = services.succeeds('nixos-container status mailer', timeout: 180)
-      expect(container_status).to include('up')
-
-      _, nodectld_status = services.succeeds(
-        'nixos-container run mailer -- nodectl status',
-        timeout: 180
-      )
-      expect(nodectld_status).to include('State: running')
-      true
-    end
   end
 
   def run_api_task(services, klass:, method:, env: {})
