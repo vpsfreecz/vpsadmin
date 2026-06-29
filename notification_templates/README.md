@@ -27,11 +27,14 @@ templates/
       cs.text.erb
     telegram/
       en.text.erb
+      en.html.erb
       cs.text.erb
 ```
 
 E-mail variants support `subject`, `text`, and `html` parts. Telegram variants
-currently support `text`.
+support required `text` and optional `html` parts. When a Telegram HTML part is
+present, vpsAdmin sends it with Telegram HTML parse mode and keeps the text part
+as the fallback.
 
 ## `meta.rb`
 

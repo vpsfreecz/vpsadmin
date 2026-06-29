@@ -5,7 +5,16 @@ require 'tmpdir'
 require 'erb'
 
 RSpec.describe VpsAdmin::API::NotificationTemplates do
-  def write_template(dir, name, meta:, text:, telegram_text: nil, sms_text: nil)
+  def write_template(
+    dir,
+    name,
+    meta:,
+    text:,
+    email_html: nil,
+    telegram_text: nil,
+    telegram_html: nil,
+    sms_text: nil
+  )
     base = File.join(dir, 'templates')
     path = File.join(base, name)
     email_path = File.join(path, 'email')
@@ -17,13 +26,19 @@ RSpec.describe VpsAdmin::API::NotificationTemplates do
     File.write(File.join(path, 'meta.rb'), meta)
     File.write(File.join(email_path, 'en.subject.erb'), 'Directory subject')
     File.write(File.join(email_path, 'en.text.erb'), text)
+    File.write(File.join(email_path, 'en.html.erb'), email_html) if email_html
     File.write(File.join(telegram_path, 'en.text.erb'), telegram_text || 'Telegram body')
+    File.write(File.join(telegram_path, 'en.html.erb'), telegram_html) if telegram_html
     File.write(File.join(sms_path, 'en.text.erb'), sms_text || 'SMS body')
     base
   end
 
   def compile_erb(source)
     RubyVM::InstructionSequence.compile(ERB.new(source, trim_mode: '-').src)
+  end
+
+  def build_template(source, vars = {})
+    NotificationTemplateVariant::TemplateBuilder.new(vars).build(source)
   end
 
   it 'loads template directories in vpsadmin-notification-templates format' do
@@ -43,7 +58,8 @@ RSpec.describe VpsAdmin::API::NotificationTemplates do
             end
           end
         RUBY
-        text: 'Directory body'
+        text: 'Directory body',
+        telegram_html: '<b>Telegram body</b>'
       )
 
       template = described_class.find_templates([File.join(dir, 'templates')]).first
@@ -62,7 +78,8 @@ RSpec.describe VpsAdmin::API::NotificationTemplates do
       )
       expect(template.variants.find { |v| v.protocol == 'telegram' }.params).to include(
         protocol: 'telegram',
-        text: 'Telegram body'
+        text: 'Telegram body',
+        html: '<b>Telegram body</b>'
       )
       expect(template.variants.find { |v| v.protocol == 'sms' }.params).to include(
         protocol: 'sms',
@@ -94,16 +111,27 @@ RSpec.describe VpsAdmin::API::NotificationTemplates do
       telegram = template.notification_template_variants.find_by!(language: SpecSeed.language, protocol: 'telegram')
       sms = template.notification_template_variants.find_by!(language: SpecSeed.language, protocol: 'sms')
 
-      expect(result).to eq(templates_created: 1, variants_created: 3)
+      expect(result).to eq(templates_created: 1, variants_created: 3, variants_updated: 0)
       expect(template.template_id).to eq('user_create')
       expect(variant.text).to eq('Install body')
       expect(telegram.from).to be_nil
       expect(telegram.subject).to be_nil
       expect(telegram.text).to eq('Telegram body')
+      expect(telegram.html).to eq(described_class::DEFAULT_TELEGRAM_HTML)
       expect(sms.from).to be_nil
       expect(sms.subject).to be_nil
       expect(sms.text).to eq('SMS body')
     end
+  end
+
+  it 'keeps default Telegram HTML safe for old template builders' do
+    old_builder = Class.new do
+      def build(source)
+        ERB.new(source, trim_mode: '-').result(binding)
+      end
+    end.new
+
+    expect(old_builder.build(described_class::DEFAULT_TELEGRAM_HTML)).to eq('')
   end
 
   it 'does not overwrite existing templates or variants' do
@@ -139,11 +167,129 @@ RSpec.describe VpsAdmin::API::NotificationTemplates do
       template.reload
       variant = template.notification_template_variants.find_by!(language: SpecSeed.language, protocol: 'email')
 
-      expect(result).to eq(templates_created: 0, variants_created: 2)
+      expect(result).to eq(templates_created: 0, variants_created: 2, variants_updated: 0)
       expect(template.label).to eq('Existing template')
       expect(template.template_id).to eq('daily_report')
       expect(variant.from).to eq('custom@example.test')
       expect(variant.text).to eq('Custom body')
+    end
+  end
+
+  it 'fills missing Telegram HTML when existing text matches the packaged text' do
+    template = NotificationTemplate.create!(
+      name: 'spec_existing_telegram_template',
+      label: 'Existing Telegram template',
+      template_id: 'user_create'
+    )
+    template.notification_template_variants.create!(
+      language: SpecSeed.language,
+      protocol: :telegram,
+      text: 'Packaged Telegram body'
+    )
+
+    Dir.mktmpdir do |dir|
+      write_template(
+        dir,
+        'spec_existing_telegram_template',
+        meta: <<~RUBY,
+          template :user_create do
+            label 'Changed Telegram template'
+          end
+        RUBY
+        text: 'Changed e-mail body',
+        telegram_text: 'Packaged Telegram body',
+        telegram_html: '<b>Changed Telegram HTML</b>'
+      )
+
+      result = described_class.install_defaults!(paths: [File.join(dir, 'templates')])
+      template.reload
+      variant = template.notification_template_variants.find_by!(
+        language: SpecSeed.language,
+        protocol: 'telegram'
+      )
+
+      expect(result).to eq(templates_created: 0, variants_created: 2, variants_updated: 1)
+      expect(template.label).to eq('Existing Telegram template')
+      expect(variant.text).to eq('Packaged Telegram body')
+      expect(variant.html).to eq('<b>Changed Telegram HTML</b>')
+    end
+  end
+
+  it 'does not fill missing Telegram HTML when existing text was customized' do
+    template = NotificationTemplate.create!(
+      name: 'spec_existing_telegram_template',
+      label: 'Existing Telegram template',
+      template_id: 'user_create'
+    )
+    template.notification_template_variants.create!(
+      language: SpecSeed.language,
+      protocol: :telegram,
+      text: 'Custom Telegram body'
+    )
+
+    Dir.mktmpdir do |dir|
+      write_template(
+        dir,
+        'spec_existing_telegram_template',
+        meta: <<~RUBY,
+          template :user_create do
+            label 'Changed Telegram template'
+          end
+        RUBY
+        text: 'Changed e-mail body',
+        telegram_text: 'Changed Telegram body',
+        telegram_html: '<b>Changed Telegram HTML</b>'
+      )
+
+      result = described_class.install_defaults!(paths: [File.join(dir, 'templates')])
+      template.reload
+      variant = template.notification_template_variants.find_by!(
+        language: SpecSeed.language,
+        protocol: 'telegram'
+      )
+
+      expect(result).to eq(templates_created: 0, variants_created: 2, variants_updated: 0)
+      expect(template.label).to eq('Existing Telegram template')
+      expect(variant.text).to eq('Custom Telegram body')
+      expect(variant.html).to be_nil
+    end
+  end
+
+  it 'does not fill missing e-mail HTML in existing variants' do
+    template = NotificationTemplate.create!(
+      name: 'spec_existing_email_template',
+      label: 'Existing e-mail template',
+      template_id: 'user_create'
+    )
+    template.notification_template_variants.create!(
+      language: SpecSeed.language,
+      protocol: :email,
+      from: 'custom@example.test',
+      subject: 'Custom subject',
+      text: 'Packaged e-mail body'
+    )
+
+    Dir.mktmpdir do |dir|
+      write_template(
+        dir,
+        'spec_existing_email_template',
+        meta: <<~RUBY,
+          template :user_create do
+            label 'Changed e-mail template'
+          end
+        RUBY
+        text: 'Packaged e-mail body',
+        email_html: '<p>Changed e-mail HTML</p>'
+      )
+
+      result = described_class.install_defaults!(paths: [File.join(dir, 'templates')])
+      variant = template.notification_template_variants.find_by!(
+        language: SpecSeed.language,
+        protocol: 'email'
+      )
+
+      expect(result).to eq(templates_created: 0, variants_created: 2, variants_updated: 0)
+      expect(variant.html).to be_nil
     end
   end
 
@@ -263,6 +409,138 @@ RSpec.describe VpsAdmin::API::NotificationTemplates do
     expect(mail.subject).to eq('Static subject')
   end
 
+  it 'renders safe HTML helpers in template variants' do
+    allow(VpsAdmin::API::Events).to receive(:webui_url).and_return('https://webui.example.test')
+
+    expect(build_template('<%= h("<alert&>") %>')).to eq('&lt;alert&amp;&gt;')
+    expect(build_template('<%= html_link("Open <x>", "https://example.test/?a=1&b=2") %>')).to eq(
+      '<a href="https://example.test/?a=1&amp;b=2">Open &lt;x&gt;</a>'
+    )
+    expect(build_template('<%= webui_link("VPS #1", "?page=adminvps&action=info&veid=1") %>')).to eq(
+      '<a href="https://webui.example.test/?page=adminvps&amp;action=info&amp;veid=1">VPS #1</a>'
+    )
+    markdown_reason = <<~MARKDOWN
+      **bold** <script>alert("x")</script>
+
+      [bad](javascript:alert(1)) [ok](https://example.test/?a=1&b=2)
+    MARKDOWN
+    rendered_email_reason = build_template(
+      '<%= markdown_html(@reason) %>',
+      reason: markdown_reason
+    )
+    expect(rendered_email_reason).to include('<strong>bold</strong>')
+    expect(rendered_email_reason).not_to include('<script>', 'javascript:')
+
+    rendered = build_template(
+      '<%= markdown_telegram_html(@reason) %>',
+      reason: "**bold** <script>alert('x')</script>\n\n- item\n\n[ok](https://example.test/?a=1&b=2)"
+    )
+    expect(rendered).to eq(
+      "<strong>bold</strong> alert(&#39;x&#39;)\n\n" \
+      "- item\n\n" \
+      '<a href="https://example.test/?a=1&amp;b=2">ok</a>'
+    )
+    expect(rendered).not_to include('<p>', '<ul>', '<li>', 'script', 'javascript:')
+  end
+
+  it 'renders Telegram resource changes with linked VPS details and limits' do
+    allow(VpsAdmin::API::Events).to receive(:webui_url).and_return('https://webui.example.test')
+    template = NotificationTemplate.find_or_initialize_by(name: 'vps_resources_change')
+    template.assign_attributes(
+      label: 'VPS resources changed',
+      template_id: 'vps_resources_change'
+    )
+    template.save!
+    template.notification_template_variants.where(
+      language: SpecSeed.language,
+      protocol: :telegram
+    ).delete_all
+    template.notification_template_variants.create!(
+      language: SpecSeed.language,
+      protocol: :telegram,
+      text: 'Plain fallback',
+      html: described_class::DEFAULT_TELEGRAM_HTML
+    )
+    vps_class = Struct.new(:id, :hostname, :cpu, :cpu_limit, :memory, :swap)
+    user_class = Struct.new(:login)
+    event_class = Struct.new(:event_type, :subject, :summary, :parameters, :vps, :id)
+    vps = vps_class.new(id: 123, hostname: 'spec-vps', cpu: 3, cpu_limit: nil, memory: 4096, swap: 256)
+    admin = user_class.new(login: 'admin <user>')
+    parameters = {
+      'cpu' => 3,
+      'cpu_limit' => 0,
+      'memory' => 4096,
+      'swap' => 256
+    }
+    event = event_class.new(
+      event_type: 'vps.resources_changed',
+      subject: 'VPS #123 resources changed',
+      summary: nil,
+      parameters:,
+      vps:,
+      id: 456
+    )
+
+    rendered = NotificationTemplate.render_telegram!(
+      :vps_resources_change,
+      vars: {
+        event:,
+        notification_event: event,
+        vps:,
+        admin:,
+        reason: 'scale up & test',
+        parameters:
+      }
+    )
+
+    expect(rendered[:html]).to eq(
+      '<b>VPS resources changed: ' \
+      '<a href="https://webui.example.test/?page=adminvps&amp;action=info&amp;veid=123">' \
+      "spec-vps (#123)</a></b>\n\n" \
+      "<b>Current limits:</b>\n" \
+      "CPU: <code>3 cores, limit 300 %</code>\n" \
+      "Memory: <code>4096 MB</code>\n" \
+      "Swap: <code>256 MB</code>\n\n" \
+      "Reason: scale up &amp; test\n" \
+      "Changed by: admin &lt;user&gt;\n\n" \
+      'Link: <a href="https://webui.example.test/?page=adminvps&amp;action=info&amp;veid=123">VPS details</a>'
+    )
+    expect(rendered[:html]).not_to include('open in vpsAdmin')
+
+    vps.cpu_limit = 250
+    rendered = NotificationTemplate.render_telegram!(
+      :vps_resources_change,
+      vars: {
+        event:,
+        notification_event: event,
+        vps:,
+        admin:,
+        reason: 'scale up & test',
+        parameters:
+      }
+    )
+    expect(rendered[:html]).to include('CPU: <code>3 cores, limit 250 %</code>')
+
+    vps.cpu_limit = nil
+    allow(VpsAdmin::API::Events).to receive(:webui_url).and_return(nil)
+
+    rendered = NotificationTemplate.render_telegram!(
+      :vps_resources_change,
+      vars: {
+        event:,
+        notification_event: event,
+        vps:,
+        admin:,
+        reason: 'scale up & test',
+        parameters:
+      }
+    )
+
+    expect(rendered[:html]).to include('<b>VPS resources changed: spec-vps (#123)</b>')
+    expect(rendered[:html]).not_to include('<a href=')
+    expect(rendered[:html]).not_to include('Link:')
+  end
+
   it 'ships directory-backed English templates for all registered defaults' do
     templates = described_class.find_templates(described_class.default_template_paths).to_h do |template|
       [template.name, template]
@@ -297,7 +575,14 @@ RSpec.describe VpsAdmin::API::NotificationTemplates do
       expect(telegram.params[:text]).to be_present
       expect(sms.params[:text]).to be_present
 
-      [params[:subject], params[:text], params[:html], telegram.params[:text], sms.params[:text]].compact.each do |source|
+      [
+        params[:subject],
+        params[:text],
+        params[:html],
+        telegram.params[:text],
+        telegram.params[:html],
+        sms.params[:text]
+      ].compact.each do |source|
         compile_erb(source)
       end
 
@@ -308,6 +593,7 @@ RSpec.describe VpsAdmin::API::NotificationTemplates do
         params[:text],
         params[:html],
         telegram.params[:text],
+        telegram.params[:html],
         sms.params[:text]
       ].compact.join("\n")
 
