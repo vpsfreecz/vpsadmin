@@ -350,8 +350,9 @@ module VpsAdmin::API
 
       url = telegram_webui_url(event)
       if url.present?
-        text_lines << "Link: #{url}"
-        html_lines << %(Link: <a href="#{telegram_html_escape(url)}">open in vpsAdmin</a>)
+        link_label = telegram_webui_link_label(event)
+        text_lines << "Link: #{link_label}: #{url}"
+        html_lines << %(Link: <a href="#{telegram_html_escape(url)}">#{telegram_html_escape(link_label)}</a>)
       end
 
       html = html_lines.join("\n")
@@ -375,6 +376,10 @@ module VpsAdmin::API
       else
         "#{base_url}/?page=notifications&action=event_show&id=#{event.id}"
       end
+    end
+
+    def telegram_webui_link_label(event)
+      event.vps ? 'VPS details' : 'event details'
     end
 
     def telegram_html_escape(value)

@@ -1260,7 +1260,7 @@ RSpec.describe VpsAdmin::API::Tasks::EventDelivery do
 
     expect(body['text']).to include("<b>[info] VPS spec-vps (##{vps.id}): Spec VPS event</b>")
     expect(body['text']).to include(
-      %(Link: <a href="https://admin.example.test/?page=adminvps&amp;action=info&amp;veid=#{vps.id}">open in vpsAdmin</a>)
+      %(Link: <a href="https://admin.example.test/?page=adminvps&amp;action=info&amp;veid=#{vps.id}">VPS details</a>)
     )
     expect(body['text']).not_to include('event detail')
     expect(body['parse_mode']).to eq('HTML')
