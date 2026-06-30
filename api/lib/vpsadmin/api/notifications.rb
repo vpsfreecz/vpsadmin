@@ -13,6 +13,8 @@ require 'yaml'
 
 module VpsAdmin::API
   module Notifications
+    TEST_EVENT_SOURCE_CLASS = 'VpsAdmin::API::Resources::Event::Test'.freeze
+
     class SmsCallbackAuthenticationError < StandardError; end
     class SmsCallbackConflictError < StandardError; end
     class EmailVerificationDeliveryError < StandardError; end
@@ -313,8 +315,7 @@ module VpsAdmin::API
 
     def telegram_message_for(delivery)
       event = delivery.event
-      template_name = delivery.template_name.presence&.to_sym ||
-                      VpsAdmin::API::Events.template_name_for(event, :telegram)
+      template_name = template_name_for_delivery(delivery, :telegram)
 
       if template_name
         rendered = ::NotificationTemplate.render_telegram!(
@@ -392,8 +393,7 @@ module VpsAdmin::API
 
     def sms_text_for(delivery)
       event = delivery.event
-      template_name = delivery.template_name.presence&.to_sym ||
-                      VpsAdmin::API::Events.template_name_for(event, :sms)
+      template_name = template_name_for_delivery(delivery, :sms)
 
       if template_name
         rendered = ::NotificationTemplate.render_sms!(
@@ -831,8 +831,7 @@ module VpsAdmin::API
 
     def build_mail_log(delivery)
       event = delivery.event
-      template_name = delivery.template_name.presence&.to_sym ||
-                      VpsAdmin::API::Events.template_name_for(event)
+      template_name = template_name_for_delivery(delivery, :email)
 
       if template_name
         return ::NotificationTemplate.send_email!(
@@ -852,6 +851,18 @@ module VpsAdmin::API
       end
 
       mail_log.save!(validate: false) unless mail_log.persisted?
+    end
+
+    def template_name_for_delivery(delivery, action)
+      event = delivery.event
+      return if test_notification_event?(event)
+
+      delivery.template_name.presence&.to_sym ||
+        VpsAdmin::API::Events.template_name_for(event, action)
+    end
+
+    def test_notification_event?(event)
+      event.source_class == TEST_EVENT_SOURCE_CLASS
     end
 
     Actions.define :email do
