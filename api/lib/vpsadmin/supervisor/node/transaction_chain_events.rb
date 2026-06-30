@@ -26,6 +26,8 @@ module VpsAdmin::Supervisor
               .find_by(id: event.fetch('chain_id'))
       return unless chain
 
+      ::EventDelivery.abort_unsent_for_transaction_chain!(chain) if aborting_state?(event.fetch('state'))
+
       VpsAdmin::API::Events.emit_transaction_chain_state!(
         chain,
         previous_state: event['previous_state'],
@@ -40,6 +42,10 @@ module VpsAdmin::Supervisor
       return Time.at(event.fetch('time')) if event['time']
 
       nil
+    end
+
+    def aborting_state?(state)
+      %w[rollbacking failed fatal].include?(state.to_s)
     end
   end
 end

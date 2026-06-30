@@ -34,7 +34,7 @@ RSpec.describe TransactionChains::IncidentReport::New do
     expect(chain.transaction_chain_concerns.pluck(:class_name, :row_id)).to include(
       ['Vps', fixture.fetch(:vps).id]
     )
-    expect(tx_classes(chain)).to include(Transactions::EventDelivery::Release)
+    expect(tx_classes(chain)).to include(Transactions::EventDelivery::Notify)
   end
 
   it 'uses Vps::Update for CPU limits' do
@@ -93,7 +93,7 @@ RSpec.describe TransactionChains::IncidentReport::New do
     expect(tx_classes(chain)).to include(
       Transactions::NetworkInterface::Disable,
       Transactions::Utils::NoOp,
-      Transactions::EventDelivery::Release
+      Transactions::EventDelivery::Notify
     )
     expect(chain.transaction_chain_concerns.pluck(:row_id)).to include(vps.id)
   end

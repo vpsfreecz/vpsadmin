@@ -49,7 +49,7 @@ RSpec.describe TransactionChains::MigrationPlan::Mail do
     expect(chain.transaction_chain_concerns.pluck(:class_name, :row_id)).to include(
       ['MigrationPlan', plan.id]
     )
-    expect(tx_classes(chain)).to include(Transactions::EventDelivery::Release)
+    expect(tx_classes(chain)).to include(Transactions::EventDelivery::Notify)
     expect(events.size).to eq(2)
     expect(routed_event.user).to eq(mail_user)
     expect(routed_event.event_deliveries.sole).to be_prepared_state

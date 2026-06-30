@@ -35,7 +35,7 @@ RSpec.describe 'requests plugin create chain', requires_plugins: :requests do # 
     expect(chain.transaction_chain_concerns.pluck(:class_name, :row_id)).to include(
       ['RegistrationRequest', request.id]
     )
-    expect(tx_classes(chain)).to all(eq(Transactions::EventDelivery::Release))
+    expect(tx_classes(chain)).to all(eq(Transactions::EventDelivery::Notify))
 
     events = request_events('request.created', request)
     user_event = events.find { |event| event.parameters.fetch('role') == 'user' }
@@ -89,7 +89,7 @@ RSpec.describe 'requests plugin create chain', requires_plugins: :requests do # 
     delivery = user_event.event_deliveries.sole
     mail = delivery.mail_log
 
-    expect(tx_classes(chain)).to include(Transactions::EventDelivery::Release)
+    expect(tx_classes(chain)).to include(Transactions::EventDelivery::Notify)
     expect(user_event.user).to be_nil
     expect(user_event).to be_routed_routing_state
     expect(delivery).to be_prepared_state

@@ -398,6 +398,7 @@ module VpsAdmin::API::Resources
         integer :recipient_user_id, nullable: true
         string :recipient_user_login, nullable: true
         integer :event_route_id, nullable: true
+        string :event_route_label, nullable: true
         integer :notification_receiver_id, nullable: true
         string :notification_receiver_label, nullable: true
         integer :notification_target_id, nullable: true
@@ -422,6 +423,8 @@ module VpsAdmin::API::Resources
                load_validators: false
         integer :mail_log_id, nullable: true
         integer :transaction_id, nullable: true
+        integer :delivery_transaction_chain_id, nullable: true
+        string :delivery_transaction_chain_label, nullable: true
         integer :attempt_count
         datetime :released_at, nullable: true
         datetime :next_attempt_at, nullable: true
@@ -465,6 +468,7 @@ module VpsAdmin::API::Resources
           q = self.class.model
                   .joins(:event)
                   .left_outer_joins(:event_routing_context)
+                  .includes(:event_route, delivery_transaction: :transaction_chain)
                   .where(event_id: path_params['event_id'])
           return q if current_user.role == :admin
 
@@ -503,6 +507,7 @@ module VpsAdmin::API::Resources
           q = self.class.model
                   .joins(:event)
                   .left_outer_joins(:event_routing_context)
+                  .includes(:event_route, delivery_transaction: :transaction_chain)
                   .where(event_id: path_params['event_id'])
           return q if current_user.role == :admin
 
