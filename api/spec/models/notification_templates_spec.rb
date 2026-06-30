@@ -419,6 +419,28 @@ RSpec.describe VpsAdmin::API::NotificationTemplates do
     expect(build_template('<%= webui_link("VPS #1", "?page=adminvps&action=info&veid=1") %>')).to eq(
       '<a href="https://webui.example.test/?page=adminvps&amp;action=info&amp;veid=1">VPS #1</a>'
     )
+    markdown_reason = <<~MARKDOWN
+      **bold** <script>alert("x")</script>
+
+      [bad](javascript:alert(1)) [ok](https://example.test/?a=1&b=2)
+    MARKDOWN
+    rendered_email_reason = build_template(
+      '<%= markdown_html(@reason) %>',
+      reason: markdown_reason
+    )
+    expect(rendered_email_reason).to include('<strong>bold</strong>')
+    expect(rendered_email_reason).not_to include('<script>', 'javascript:')
+
+    rendered = build_template(
+      '<%= markdown_telegram_html(@reason) %>',
+      reason: "**bold** <script>alert('x')</script>\n\n- item\n\n[ok](https://example.test/?a=1&b=2)"
+    )
+    expect(rendered).to eq(
+      "<strong>bold</strong> alert(&#39;x&#39;)\n\n" \
+      "- item\n\n" \
+      '<a href="https://example.test/?a=1&amp;b=2">ok</a>'
+    )
+    expect(rendered).not_to include('<p>', '<ul>', '<li>', 'script', 'javascript:')
   end
 
   it 'renders Telegram resource changes with linked VPS details and limits' do
@@ -471,23 +493,35 @@ RSpec.describe VpsAdmin::API::NotificationTemplates do
       }
     )
 
-    expect(rendered[:html]).to include(
+    expect(rendered[:html]).to eq(
       '<b>VPS resources changed: ' \
       '<a href="https://webui.example.test/?page=adminvps&amp;action=info&amp;veid=123">' \
-      'spec-vps (#123)</a></b>'
-    )
-    expect(rendered[:html]).to include('<b>Current limits:</b>')
-    expect(rendered[:html]).to include('Changed by: admin &lt;user&gt;')
-    expect(rendered[:html]).to include('CPU: 3')
-    expect(rendered[:html]).to include('CPU limit: unlimited')
-    expect(rendered[:html]).to include('Memory: 4 GB')
-    expect(rendered[:html]).to include('Swap: 256 MB')
-    expect(rendered[:html]).to include('Reason: scale up &amp; test')
-    expect(rendered[:html]).to include(
+      "spec-vps (#123)</a></b>\n\n" \
+      "<b>Current limits:</b>\n" \
+      "CPU: <code>3 cores, limit 300 %</code>\n" \
+      "Memory: <code>4096 MB</code>\n" \
+      "Swap: <code>256 MB</code>\n\n" \
+      "Reason: scale up &amp; test\n" \
+      "Changed by: admin &lt;user&gt;\n\n" \
       'Link: <a href="https://webui.example.test/?page=adminvps&amp;action=info&amp;veid=123">VPS details</a>'
     )
     expect(rendered[:html]).not_to include('open in vpsAdmin')
 
+    vps.cpu_limit = 250
+    rendered = NotificationTemplate.render_telegram!(
+      :vps_resources_change,
+      vars: {
+        event:,
+        notification_event: event,
+        vps:,
+        admin:,
+        reason: 'scale up & test',
+        parameters:
+      }
+    )
+    expect(rendered[:html]).to include('CPU: <code>3 cores, limit 250 %</code>')
+
+    vps.cpu_limit = nil
     allow(VpsAdmin::API::Events).to receive(:webui_url).and_return(nil)
 
     rendered = NotificationTemplate.render_telegram!(
