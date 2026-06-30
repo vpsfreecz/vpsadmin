@@ -123,12 +123,17 @@ class NotificationReceiver < ApplicationRecord
       return route
     end
 
-    user.event_routes.create!(
+    route = user.event_routes.create!(
       notification_receiver: receiver,
       label: ::EventRoute::DEFAULT_ROUTE_LABEL,
-      position: ::EventRoute::DEFAULT_ROUTE_POSITION,
-      default_route: true
+      position: ::EventRoute::DEFAULT_ROUTE_POSITION
     )
+    route.event_route_matchers.create!(
+      field: ::EventRoute::DEFAULT_ROUTE_MATCHER_FIELD,
+      operator: ::EventRoute::DEFAULT_ROUTE_MATCHER_OPERATOR,
+      value: ::EventRoute::DEFAULT_ROUTE_MATCHER_VALUE
+    )
+    route
   end
 
   def self.normalize_default_mute_receiver!(receiver)

@@ -14,13 +14,13 @@ module VpsAdmin::API::Resources
              choices: { values: VpsAdmin::API::Events.type_labels },
              load_validators: false,
              nullable: true
-      string :event_type_pattern, nullable: true
+      string :event_type_pattern, label: 'Event type pattern', nullable: true
       string :subject_scope,
+             label: 'Scope',
              choices: { values: ::EventRoute.subject_scope_labels },
              load_validators: false
       bool :continue
-      integer :hit_count, label: 'Hit count'
-      bool :default_route
+      integer :hit_count, label: 'Hits'
       bool :single_use
       datetime :spent_at, nullable: true
       datetime :expires_at, nullable: true
@@ -209,6 +209,7 @@ module VpsAdmin::API::Resources
         string :field,
                choices: { values: ::EventRouteMatcher.field_labels },
                load_validators: false
+        string :field_type, nullable: true
         string :operator,
                choices: { values: ::EventRouteMatcher.operator_labels },
                load_validators: false

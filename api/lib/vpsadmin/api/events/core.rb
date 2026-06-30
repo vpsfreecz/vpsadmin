@@ -764,9 +764,18 @@ VpsAdmin::API::Events.define do
       chain_label: 'Transaction chain label',
       previous_state: 'Previous state',
       state: 'Current state',
-      terminal: 'Whether the chain reached a terminal state',
-      successful: 'Whether the terminal state is successful',
-      failed: 'Whether the terminal state is failed or fatal',
+      terminal: {
+        label: 'Whether the chain reached a terminal state',
+        type: :boolean
+      },
+      successful: {
+        label: 'Whether the terminal state is successful',
+        type: :boolean
+      },
+      failed: {
+        label: 'Whether the terminal state is failed or fatal',
+        type: :boolean
+      },
       size: 'Number of transactions in the chain',
       progress: 'Finished transaction count',
       user_session_id: 'User session ID',

@@ -119,10 +119,9 @@ class VpsAdmin::API::Resources::TransactionChain < HaveAPI::Resource
              choices: { values: VpsAdmin::API::Events.type_labels },
              load_validators: false,
              nullable: true
-      string :event_type_pattern, nullable: true
+      string :event_type_pattern, label: 'Event type pattern', nullable: true
       bool :continue
-      integer :hit_count, label: 'Hit count'
-      bool :default_route
+      integer :hit_count, label: 'Hits'
       bool :single_use
       datetime :spent_at, nullable: true
       datetime :expires_at, nullable: true
