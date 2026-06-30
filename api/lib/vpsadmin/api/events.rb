@@ -1149,7 +1149,7 @@ module VpsAdmin::API
       def process_route(route_context, route, deadline)
         record_matched_route(route_context, route)
 
-        deliveries = []
+        deliveries = route.notification_receiver ? deliveries_for_route(route) : []
         matched_child = false
 
         child_routes(route_context, route.id).each do |child|
@@ -1162,9 +1162,11 @@ module VpsAdmin::API
           break unless child.continue?
         end
 
-        return deliveries if matched_child
+        if deliveries.empty? && !matched_child && route.notification_receiver.nil?
+          return [skipped_delivery(route, nil, nil, 'route has no receiver')]
+        end
 
-        deliveries_for_route(route)
+        deliveries
       end
 
       def child_routes(route_context, parent_id)
