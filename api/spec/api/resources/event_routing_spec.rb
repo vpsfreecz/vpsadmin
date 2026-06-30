@@ -411,6 +411,7 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
 
     as(SpecSeed.user) do
       json_post route_index_path, event_route: {
+        label: 'Spec incidents',
         notification_receiver_id: receiver.id,
         event_type: 'vps.incident_report',
         continue: true
@@ -492,6 +493,9 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
     expect(webhook_delivery_obj['notification_target_label']).to eq('Spec webhook')
     expect(webhook_delivery_obj['notification_target_display_target']).to eq('https://example.test/events')
     expect(webhook_delivery_obj['notification_receiver_target_id']).to eq(receiver_target.id)
+    expect(webhook_delivery_obj['event_route_label']).to eq('Spec incidents')
+    expect(webhook_delivery_obj['delivery_transaction_chain_id']).to be_nil
+    expect(webhook_delivery_obj['delivery_transaction_chain_label']).to be_nil
     expect(webhook_delivery_obj).not_to include('template_name')
 
     delivery = event.event_deliveries.find_by!(action: 'webhook')
@@ -500,6 +504,7 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
 
     expect_status(200)
     expect(delivery_obj['target_label']).to eq('Spec webhook')
+    expect(delivery_obj['event_route_label']).to eq('Spec incidents')
     expect(delivery_obj['notification_receiver_label']).to eq('Spec receiver')
     expect(delivery_obj['notification_target_label']).to eq('Spec webhook')
     expect(delivery_obj).not_to include('template_name')
@@ -1354,6 +1359,8 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
     incident = event_types.detect { |row| row['name'] == 'vps.incident_report' }
     expect(incident).to be_present
     expect(incident['default_routed']).to be(true)
+    expect(incident['fields']).to include('default_routed' => 'Default routed')
+    expect(incident['field_types']).to include('default_routed' => 'boolean')
     expect(incident['fields']).to include('parameters.codename' => 'Incident report: Report codename')
     test = event_types.detect { |row| row['name'] == 'user.test_notification' }
     expect(test['default_routed']).to be(true)
@@ -1362,6 +1369,11 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
     chain = event_types.detect { |row| row['name'] == 'transaction_chain.state_changed' }
     expect(chain['default_routed']).to be(false)
     expect(chain['fields']).to include('parameters.terminal' => 'Transaction chain state changed: Whether the chain reached a terminal state')
+    expect(chain['field_types']).to include(
+      'parameters.terminal' => 'boolean',
+      'parameters.successful' => 'boolean',
+      'parameters.failed' => 'boolean'
+    )
     dns = event_types.detect { |row| row['name'] == 'dns.zone_transfer.failed' }
     expect(dns['default_routed']).to be(false)
   end

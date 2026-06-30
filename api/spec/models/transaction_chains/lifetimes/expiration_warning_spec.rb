@@ -37,7 +37,7 @@ RSpec.describe TransactionChains::Lifetimes::ExpirationWarning do
 
     chain, = described_class.fire2(args: [User, [user]])
 
-    expect(tx_classes(chain)).to include(Transactions::EventDelivery::Release)
+    expect(tx_classes(chain)).to include(Transactions::EventDelivery::Notify)
     event = expect_routed_event!('lifetime.expiration_warning', user:)
     expect(event.source).to eq(user)
     expect(event.parameters).to include(
@@ -55,7 +55,7 @@ RSpec.describe TransactionChains::Lifetimes::ExpirationWarning do
 
     chain, = described_class.fire2(args: [Vps, [vps]])
 
-    expect(tx_classes(chain)).to include(Transactions::EventDelivery::Release)
+    expect(tx_classes(chain)).to include(Transactions::EventDelivery::Notify)
     event = expect_routed_event!('lifetime.expiration_warning', user: vps.user)
     expect(event.vps).to eq(vps)
     expect(event.source).to eq(vps)

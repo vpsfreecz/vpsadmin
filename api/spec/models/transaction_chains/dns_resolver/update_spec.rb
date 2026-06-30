@@ -52,11 +52,11 @@ RSpec.describe TransactionChains::DnsResolver::Update do
     expect(updated.addrs).to eq('192.0.2.201')
     expect(tx_classes(chain)).to include(
       Transactions::Vps::DnsResolver,
-      Transactions::EventDelivery::Release,
+      Transactions::EventDelivery::Notify,
       Transactions::Utils::NoOp
     )
     classes = tx_classes(chain)
-    release_idx = classes.index(Transactions::EventDelivery::Release)
+    release_idx = classes.index(Transactions::EventDelivery::Notify)
     expect(classes.rindex(Transactions::Vps::DnsResolver)).to be < release_idx
     expect(classes.rindex(Transactions::Utils::NoOp)).to be < release_idx
     expect(tx_payload(chain, Transactions::Vps::DnsResolver, vps_id: vps.id)).to eq(
@@ -108,11 +108,11 @@ RSpec.describe TransactionChains::DnsResolver::Update do
 
     expect(tx_classes(chain)).to include(
       Transactions::Vps::DnsResolver,
-      Transactions::EventDelivery::Release,
+      Transactions::EventDelivery::Notify,
       Transactions::Utils::NoOp
     )
     classes = tx_classes(chain)
-    release_idx = classes.index(Transactions::EventDelivery::Release)
+    release_idx = classes.index(Transactions::EventDelivery::Notify)
     expect(classes.rindex(Transactions::Vps::DnsResolver)).to be < release_idx
     expect(classes.rindex(Transactions::Utils::NoOp)).to be < release_idx
     expect(transactions_for(chain).select { |tx| tx.vps_id == local_vps.id }).to be_empty

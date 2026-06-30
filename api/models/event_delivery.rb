@@ -12,8 +12,12 @@ class EventDelivery < ApplicationRecord
     'skipped' => 'skipped',
     'failed' => 'failed',
     'canceled' => 'canceled',
-    'accepted' => 'accepted'
+    'accepted' => 'accepted',
+    'aborted' => 'aborted'
   }.freeze
+
+  ABORTABLE_STATES = %w[prepared released].freeze
+  NON_DELIVERED_FINAL_STATES = %w[skipped canceled aborted].freeze
 
   belongs_to :event
   belongs_to :event_routing_context, optional: true
@@ -33,7 +37,7 @@ class EventDelivery < ApplicationRecord
   has_many :event_delivery_attempts, dependent: :delete_all
 
   enum :target_kind, %i[default_recipient custom], suffix: true
-  enum :state, %i[prepared released sending sent skipped failed canceled accepted], suffix: true
+  enum :state, %i[prepared released sending sent skipped failed canceled accepted aborted], suffix: true
 
   serialize :response_headers, coder: JSON
 
@@ -62,6 +66,90 @@ class EventDelivery < ApplicationRecord
     STATE_LABELS
   end
 
+  def self.abort_unsent_for_transaction_chain!(chain)
+    chain_id = chain.respond_to?(:id) ? chain.id : chain
+    return [] if chain_id.blank?
+
+    aborted_event_ids = []
+    now = Time.now
+
+    transaction do
+      rows = joins(:delivery_transaction)
+             .where(
+               transactions: { transaction_chain_id: chain_id },
+               state: ABORTABLE_STATES,
+               attempt_count: 0,
+               provider_message_id: nil
+             )
+             .where(no_delivery_attempts_sql)
+             .lock
+             .pluck(:id, :event_id)
+
+      ids = rows.map(&:first)
+
+      if ids.any?
+        where(
+          id: ids,
+          state: ABORTABLE_STATES,
+          attempt_count: 0,
+          provider_message_id: nil
+        ).where(no_delivery_attempts_sql).update_all(
+          state: states.fetch('aborted'),
+          next_attempt_at: nil,
+          error_summary: "transaction chain ##{chain_id} failed before notification was sent",
+          updated_at: now
+        )
+
+        aborted_event_ids = where(id: ids, state: 'aborted').pluck(:event_id).uniq
+      end
+
+      aborted_event_ids.each { |event_id| recompute_abort_routing_state!(event_id, now:) }
+    end
+
+    aborted_event_ids
+  end
+
+  def self.no_delivery_attempts_sql
+    'NOT EXISTS (
+      SELECT 1
+      FROM event_delivery_attempts
+      WHERE event_delivery_attempts.event_delivery_id = event_deliveries.id
+    )'
+  end
+
+  def self.recompute_abort_routing_state!(event_id, now:)
+    rows = where(event_id:).pluck(:state, :event_routing_context_id)
+    return if rows.empty?
+
+    final_states = NON_DELIVERED_FINAL_STATES.map { |state| states.fetch(state) }
+    aborted_state = states.fetch('aborted')
+    normalized_rows = rows.map do |state, context_id|
+      [state.is_a?(String) ? states.fetch(state) : state, context_id]
+    end
+
+    if normalized_rows.any? { |state, _| state == aborted_state } &&
+       normalized_rows.all? { |state, _| final_states.include?(state) }
+      ::Event.where(id: event_id).update_all(
+        routing_state: ::Event.routing_states.fetch('aborted'),
+        updated_at: now
+      )
+    end
+
+    normalized_rows.map(&:second).compact.uniq.each do |context_id|
+      context_rows = normalized_rows.select { |_, row_context_id| row_context_id == context_id }
+      next unless context_rows.any? { |state, _| state == aborted_state }
+      next unless context_rows.all? { |state, _| final_states.include?(state) }
+
+      ::EventRoutingContext.where(id: context_id).update_all(
+        routing_state: ::EventRoutingContext.routing_states.fetch('aborted'),
+        updated_at: now
+      )
+    end
+  end
+
+  private_class_method :recompute_abort_routing_state!
+  private_class_method :no_delivery_attempts_sql
+
   def response_headers_json
     JSON.dump(response_headers || {})
   end
@@ -79,6 +167,18 @@ class EventDelivery < ApplicationRecord
 
   def notification_receiver_label
     notification_receiver&.label
+  end
+
+  def event_route_label
+    event_route&.display_label
+  end
+
+  def delivery_transaction_chain_id
+    delivery_transaction&.transaction_chain_id
+  end
+
+  def delivery_transaction_chain_label
+    delivery_transaction&.transaction_chain&.label
   end
 
   def notification_receiver_action_label

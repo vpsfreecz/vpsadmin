@@ -20,7 +20,7 @@ RSpec.describe TransactionChains::User::NewToken do
     chain, = described_class.fire(session)
 
     expect(chain.transaction_chain_concerns.pluck(:class_name, :row_id)).to include(['User', user.id])
-    expect(tx_classes(chain)).to include(Transactions::EventDelivery::Release)
+    expect(tx_classes(chain)).to include(Transactions::EventDelivery::Notify)
     expect(MailLog.joins(:notification_template).exists?(notification_templates: { name: 'user_new_token' })).to be(true)
 
     event = expect_routed_event!('user.new_token', user:)

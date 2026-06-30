@@ -6,7 +6,7 @@ module NodeCtldSpec
   end
 
   class BunnySpecChannel
-    def direct(_name); end
+    def direct(_name, **_opts); end
   end
 
   module RuntimeHelpers

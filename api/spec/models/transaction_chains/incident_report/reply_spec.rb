@@ -51,7 +51,7 @@ RSpec.describe TransactionChains::IncidentReport::Reply do
 
     chain, = described_class.fire2(args: [message, result])
 
-    expect(tx_classes(chain)).to include(Transactions::EventDelivery::Release)
+    expect(tx_classes(chain)).to include(Transactions::EventDelivery::Notify)
     expect(NotificationTemplate).to have_received(:send_custom_email).with(
       hash_including(
         from: 'abuse@test.invalid',

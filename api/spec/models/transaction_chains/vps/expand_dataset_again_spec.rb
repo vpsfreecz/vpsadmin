@@ -34,7 +34,7 @@ RSpec.describe TransactionChains::Vps::ExpandDatasetAgain do
     expect(returned_history).to eq(history)
     expect(tx_classes(chain)).to include(
       Transactions::Storage::SetDataset,
-      Transactions::EventDelivery::Release,
+      Transactions::EventDelivery::Notify,
       Transactions::Utils::NoOp
     )
     expect(tx_payload(chain, Transactions::Storage::SetDataset)).to include(

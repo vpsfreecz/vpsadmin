@@ -16,7 +16,8 @@ class Event < ApplicationRecord
     'pending' => 'pending',
     'routed' => 'routed',
     'suppressed' => 'suppressed',
-    'failed' => 'failed'
+    'failed' => 'failed',
+    'aborted' => 'aborted'
   }.freeze
 
   belongs_to :user, optional: true
@@ -33,7 +34,7 @@ class Event < ApplicationRecord
   end
 
   enum :severity, %i[info warning error critical], suffix: true
-  enum :routing_state, %i[pending routed suppressed failed], suffix: true
+  enum :routing_state, %i[pending routed suppressed failed aborted], suffix: true
 
   serialize :parameters, coder: JSON
 

@@ -20,7 +20,7 @@ RSpec.describe TransactionChains::User::NewLogin do
     chain, = described_class.fire(auth.fetch(:token_session), auth.fetch(:oauth2_authorization))
 
     expect(chain.transaction_chain_concerns.pluck(:class_name, :row_id)).to include(['User', user.id])
-    expect(tx_classes(chain)).to include(Transactions::EventDelivery::Release)
+    expect(tx_classes(chain)).to include(Transactions::EventDelivery::Notify)
     expect(MailLog.joins(:notification_template).exists?(notification_templates: { name: 'user_new_login' })).to be(true)
 
     event = expect_routed_event!('user.new_login', user:)
