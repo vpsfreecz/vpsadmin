@@ -79,8 +79,29 @@ namespace :vpsadmin do
       result = VpsAdmin::API::NotificationTemplates.install_defaults!
       puts "Created #{result[:templates_created]} templates and " \
            "#{result[:variants_created]} variants"
-      puts "Updated #{result[:variants_updated]} variants with missing HTML" \
+      puts "Filled missing Telegram HTML in #{result[:variants_updated]} variants" \
         if result[:variants_updated] > 0
+    end
+
+    desc 'Install managed notification templates from TEMPLATE_PATHS'
+    task :install_managed do
+      source_id = ENV.fetch('SOURCE_ID')
+      paths = (ENV['TEMPLATE_PATHS'] || ENV.fetch('TEMPLATE_PATH')).split(File::PATH_SEPARATOR)
+
+      puts "Install managed notification templates from #{source_id}"
+      result = VpsAdmin::API::NotificationTemplates.install_managed!(
+        paths:,
+        source_id:
+      )
+
+      if result[:unchanged_source]
+        puts 'Managed notification templates are already installed'
+      else
+        puts "Created #{result[:templates_created]} templates, " \
+             "updated #{result[:templates_updated]} templates"
+        puts "Created #{result[:variants_created]} variants, " \
+             "updated #{result[:variants_updated]} variants"
+      end
     end
   end
 
