@@ -3,6 +3,9 @@ class EventRoute < ApplicationRecord
   MAX_MATCHERS = 30
   DEFAULT_ROUTE_LABEL = 'Default route'.freeze
   DEFAULT_ROUTE_POSITION = 10_000
+  DEFAULT_ROUTE_MATCHER_FIELD = 'default_routed'.freeze
+  DEFAULT_ROUTE_MATCHER_OPERATOR = '=='.freeze
+  DEFAULT_ROUTE_MATCHER_VALUE = 'true'.freeze
   SUBJECT_SCOPE_LABELS = {
     'self' => 'self',
     'visible' => 'visible'
@@ -27,12 +30,17 @@ class EventRoute < ApplicationRecord
   enum :subject_scope, %i[self visible], suffix: true
 
   def self.default_route_for(user)
-    where(
-      user:,
-      parent_id: nil,
-      default_route: true,
-      subject_scope: subject_scopes.fetch('self')
-    ).order(:position, :id).first
+    active
+      .where(
+        user:,
+        parent_id: nil,
+        event_type: nil,
+        event_type_pattern: nil,
+        subject_scope: subject_scopes.fetch('self')
+      )
+      .includes(:event_route_matchers)
+      .order(:position, :id)
+      .detect(&:default_catch_all?)
   end
 
   def self.active
@@ -93,8 +101,6 @@ class EventRoute < ApplicationRecord
   def matches_in_context?(route_context, deadline: nil)
     return false unless active?
     return false unless subject_scope_matches?(route_context)
-    return false if default_route? && !route_context.default_route_allowed?
-    return false if default_route? && !VpsAdmin::API::Events.default_routed?(route_context.event.event_type)
     return false unless event_type_matches?(route_context.event.event_type)
 
     event_route_matchers.all? do |matcher|
@@ -127,6 +133,21 @@ class EventRoute < ApplicationRecord
 
   def spend!
     update!(enabled: false, spent_at: Time.now) if single_use? && spent_at.blank?
+  end
+
+  def default_catch_all?
+    return false unless parent_id.nil?
+    return false unless label == DEFAULT_ROUTE_LABEL
+    return false unless self_subject_scope?
+    return false if event_type.present? || event_type_pattern.present?
+
+    matchers = event_route_matchers.to_a
+    return false unless matchers.size == 1
+
+    matcher = matchers.first
+    matcher.field == DEFAULT_ROUTE_MATCHER_FIELD &&
+      matcher.operator == DEFAULT_ROUTE_MATCHER_OPERATOR &&
+      matcher.value.to_s == DEFAULT_ROUTE_MATCHER_VALUE
   end
 
   protected
