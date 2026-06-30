@@ -66,6 +66,7 @@ RSpec.describe VpsAdmin::API::Tasks::EventDelivery do
                                 subject: 'Spec Telegram event',
                                 summary: 'Spec Telegram summary',
                                 parameters: { note: 'from Telegram task spec' },
+                                source_class: nil,
                                 vps: nil)
     allow(VpsAdmin::API::Notifications).to receive(:telegram_configured?).and_return(true)
 
@@ -89,7 +90,8 @@ RSpec.describe VpsAdmin::API::Tasks::EventDelivery do
       vps:,
       subject:,
       summary:,
-      parameters:
+      parameters:,
+      source_class:
     )
 
     [event.event_deliveries.sole, action, route]
@@ -118,9 +120,43 @@ RSpec.describe VpsAdmin::API::Tasks::EventDelivery do
     template
   end
 
+  def create_missing_variable_template!(name)
+    template_key = name.to_sym
+    unless NotificationTemplate.templates.has_key?(template_key)
+      NotificationTemplate.register(template_key)
+      registered_template_keys << template_key
+    end
+    template = NotificationTemplate.find_or_initialize_by(name:)
+    template.label ||= "Spec #{name}"
+    template.template_id ||= name
+    template.save!
+    template.notification_template_variants.where(language: SpecSeed.language).delete_all
+    template.notification_template_variants.create!(
+      language: SpecSeed.language,
+      protocol: :email,
+      from: 'noreply@test.invalid',
+      subject: 'Broken <%= @missing.value %>',
+      text: 'Broken <%= @missing.value %>'
+    )
+    template.notification_template_variants.create!(
+      language: SpecSeed.language,
+      protocol: :telegram,
+      text: 'Broken <%= @missing.value %>',
+      html: '<b>Broken <%= @missing.value %></b>'
+    )
+    template.notification_template_variants.create!(
+      language: SpecSeed.language,
+      protocol: :sms,
+      text: 'Broken <%= @missing.value %>'
+    )
+    template
+  end
+
   def create_sms_delivery!(target_value: '+420123456789',
                            summary: 'Spec SMS summary',
-                           parameters: { note: 'from SMS task spec' })
+                           parameters: { note: 'from SMS task spec' },
+                           template_name: nil,
+                           source_class: nil)
     allow(VpsAdmin::API::Notifications).to receive(:sms_configured?).and_return(true)
 
     receiver = NotificationReceiver.create!(user: SpecSeed.user, label: 'Spec SMS receiver')
@@ -134,14 +170,16 @@ RSpec.describe VpsAdmin::API::Tasks::EventDelivery do
     route = EventRoute.create!(
       user: SpecSeed.user,
       notification_receiver: receiver,
-      event_type: 'user.test_notification'
+      event_type: 'user.test_notification',
+      template_name:
     )
     event = VpsAdmin::API::Events.emit!(
       'user.test_notification',
       user: SpecSeed.user,
       subject: 'Spec SMS event',
       summary:,
-      parameters:
+      parameters:,
+      source_class:
     )
 
     [event.event_deliveries.sole, action, route]
@@ -318,7 +356,8 @@ RSpec.describe VpsAdmin::API::Tasks::EventDelivery do
     )
   end
 
-  def create_email_delivery!(target_kind: :default_recipient, target_value: nil)
+  def create_email_delivery!(target_kind: :default_recipient, target_value: nil,
+                             template_name: nil, source_class: nil)
     receiver = NotificationReceiver.create!(user: SpecSeed.user, label: 'Spec receiver')
     attrs = {
       action: :email,
@@ -333,13 +372,15 @@ RSpec.describe VpsAdmin::API::Tasks::EventDelivery do
     route = EventRoute.create!(
       user: SpecSeed.user,
       notification_receiver: receiver,
-      event_type: 'user.test_notification'
+      event_type: 'user.test_notification',
+      template_name:
     )
     event = VpsAdmin::API::Events.emit!(
       'user.test_notification',
       user: SpecSeed.user,
       subject: 'Spec e-mail event',
-      parameters: { note: 'from e-mail task spec' }
+      parameters: { note: 'from e-mail task spec' },
+      source_class:
     )
 
     [event.event_deliveries.sole, action, route]
@@ -932,6 +973,25 @@ RSpec.describe VpsAdmin::API::Tasks::EventDelivery do
     expect(attempt.response_body).to eq('250 2.0.0 queued as spec-message-id')
   end
 
+  it 'renders synthetic test e-mails with generic content despite route templates' do
+    create_missing_variable_template!('spec_broken_test_template')
+    delivery, = create_email_delivery!(
+      template_name: 'spec_broken_test_template',
+      source_class: VpsAdmin::API::Notifications::TEST_EVENT_SOURCE_CLASS
+    )
+    stub_mail_delivery!
+
+    expect(delivery.template_name).to eq('spec_broken_test_template')
+
+    task.deliver_emails
+
+    delivery.reload
+    expect(delivery).to be_sent_state
+    expect(delivery.mail_log.subject).to eq('Spec e-mail event')
+    expect(delivery.mail_log.text_plain).to include('Event type: user.test_notification')
+    expect(delivery.mail_log.text_plain).not_to include('Broken')
+  end
+
   it 'snapshots default e-mail recipients when the delivery is prepared' do
     delivery, = create_email_delivery!
     original_recipient = delivery.mail_log.to
@@ -1243,6 +1303,28 @@ RSpec.describe VpsAdmin::API::Tasks::EventDelivery do
     expect(attempt.provider_message_id).to eq('42')
   end
 
+  it 'renders synthetic test Telegrams with generic content despite route templates' do
+    create_missing_variable_template!('spec_broken_test_template')
+    delivery, = create_telegram_delivery!(
+      template_name: 'spec_broken_test_template',
+      source_class: VpsAdmin::API::Notifications::TEST_EVENT_SOURCE_CLASS
+    )
+    request = stub_telegram_response
+
+    expect(delivery.template_name).to eq('spec_broken_test_template')
+
+    with_env('VPSADMIN_TELEGRAM_BOT_TOKEN' => '123:telegram-token') do
+      task.deliver_telegrams
+    end
+
+    body = JSON.parse(request.call.body)
+
+    expect(body['text']).to include('<b>[info] Spec Telegram event</b>')
+    expect(body['text']).to include('Event: <code>user.test_notification</code>')
+    expect(body['text']).not_to include('Broken')
+    expect(delivery.reload).to be_sent_state
+  end
+
   it 'puts VPS context and object links in generic Telegram messages' do
     set_webui_base_url!('https://admin.example.test')
     vps = build_standalone_vps_fixture(user: SpecSeed.user, hostname: 'spec-vps').fetch(:vps)
@@ -1482,6 +1564,26 @@ RSpec.describe VpsAdmin::API::Tasks::EventDelivery do
     attempt = delivery.event_delivery_attempts.sole
     expect(attempt).to be_succeeded_state
     expect(attempt.provider_message_id).to eq('brq:101')
+  end
+
+  it 'renders synthetic test SMS with generic content despite route templates' do
+    create_missing_variable_template!('spec_broken_test_template')
+    allow(VpsAdmin::API::Notifications::Config).to receive(:load).and_return(sms_notifications_config)
+    delivery, = create_sms_delivery!(
+      template_name: 'spec_broken_test_template',
+      source_class: VpsAdmin::API::Notifications::TEST_EVENT_SOURCE_CLASS
+    )
+    requests = stub_sms_gateway_response
+
+    expect(delivery.template_name).to eq('spec_broken_test_template')
+
+    task.deliver_smses
+
+    body = JSON.parse(requests.sole.body)
+    expect(body['text']).to include('Spec SMS event')
+    expect(body['text']).to include('Event: user.test_notification')
+    expect(body['text']).not_to include('Broken')
+    expect(delivery.reload).to be_accepted_state
   end
 
   it 'falls back to the next configured SMS gateway' do
