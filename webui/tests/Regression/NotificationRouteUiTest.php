@@ -115,8 +115,66 @@ final class NotificationRouteUiTest extends TestCase
 
         self::assertStringContainsString('$event->route_match->list()', $matches);
         self::assertStringContainsString("_('Matched routes')", $matches);
+        self::assertStringContainsString("_('Relation')", $matches);
+        self::assertStringNotContainsString("_('Source')", $matches);
+        self::assertStringNotContainsString("_('Order')", $matches);
+        self::assertStringNotContainsString('match_order', $matches);
         self::assertStringContainsString('notifications_event_route_matches($event)', $show);
         self::assertStringNotContainsString('matched_event_route_id', $show);
+    }
+
+    public function testRouteLifecycleAndHitLabelsAreShownForAllRoutes(): void
+    {
+        $source = $this->notificationsFormsSource();
+        $routeEdit = $this->sourceBetween(
+            $source,
+            'function notifications_route_edit(',
+            'function notifications_matcher_new('
+        );
+        $routesList = $this->sourceBetween(
+            $source,
+            'function notifications_routes_list(',
+            'function notifications_route_new('
+        );
+
+        self::assertStringContainsString("_('Route lifecycle')", $routeEdit);
+        self::assertStringContainsString("_('Single-use route')", $routeEdit);
+        self::assertStringContainsString("_('Hits')", $routeEdit);
+        self::assertStringNotContainsString("_('Default route lifecycle')", $routeEdit);
+        self::assertStringContainsString("_('Hits')", $routesList);
+        self::assertStringNotContainsString('Hit count', $routesList);
+    }
+
+    public function testMatcherFormSupportsAnyEventTypeAndBooleanValues(): void
+    {
+        $source = $this->notificationsFormsSource();
+        $matcherNew = $this->sourceBetween(
+            $source,
+            'function notifications_matcher_new(',
+            'function notifications_receiver_targets_summary_html('
+        );
+
+        self::assertStringContainsString('notifications_event_type_labels(true, true)', $matcherNew);
+        self::assertStringContainsString('Any event type', $source);
+        self::assertStringContainsString('notifications_matcher_value_toggle_script($field_types)', $matcherNew);
+        self::assertStringContainsString('notification-matcher-value', $matcherNew);
+        self::assertStringContainsString('fieldTypes[field.val()]==="boolean"', $source);
+    }
+
+    public function testEventTypesTableDisablesHoverHighlight(): void
+    {
+        $source = $this->notificationsFormsSource();
+        $eventTypes = $this->sourceBetween(
+            $source,
+            'function notifications_event_types(',
+            'function notifications_test_event('
+        );
+
+        self::assertStringContainsString('notification-event-types', $eventTypes);
+        self::assertStringContainsString('.notification-event-types tr:hover{background:#fff !important;}', $eventTypes);
+        self::assertStringContainsString('.notification-event-types tr:hover td{background:#fff !important;}', $eventTypes);
+        self::assertStringContainsString("\$xtpl->table_tr('#fff', false, 'nohover');", $eventTypes);
+        self::assertStringContainsString("_('Default routed')", $eventTypes);
     }
 
     public function testReceiverTargetStatusUsesReceiverTargetEnabledField(): void
