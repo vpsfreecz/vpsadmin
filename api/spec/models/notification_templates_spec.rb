@@ -779,7 +779,7 @@ RSpec.describe VpsAdmin::API::NotificationTemplates do
       '<a href="https://webui.example.test/?page=adminvps&amp;action=info&amp;veid=123">' \
       "spec-vps (#123)</a></b>\n\n" \
       "<b>Current limits:</b>\n" \
-      "CPU: <code>3 cores, limit unlimited</code>\n" \
+      "CPU: <code>3 cores, limit 300 %</code>\n" \
       "Memory: <code>4096 MB</code>\n" \
       "Swap: <code>256 MB</code>\n\n" \
       "Reason: scale up &amp; test\n" \
@@ -788,6 +788,21 @@ RSpec.describe VpsAdmin::API::NotificationTemplates do
     )
     expect(rendered[:html]).not_to include('open in vpsAdmin')
 
+    vps.cpu_limit = 250
+    rendered = NotificationTemplate.render_telegram!(
+      :vps_resources_change,
+      vars: {
+        event:,
+        notification_event: event,
+        vps:,
+        admin:,
+        reason: 'scale up & test',
+        parameters:
+      }
+    )
+    expect(rendered[:html]).to include('CPU: <code>3 cores, limit 250 %</code>')
+
+    vps.cpu_limit = nil
     allow(VpsAdmin::API::Events).to receive(:webui_url).and_return(nil)
 
     rendered = NotificationTemplate.render_telegram!(

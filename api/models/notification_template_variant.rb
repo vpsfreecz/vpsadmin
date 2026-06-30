@@ -398,10 +398,9 @@ class NotificationTemplateVariant < ApplicationRecord
 
     def telegram_cpu_limit_summary
       cpu = telegram_resource_raw('cpu')
-      limit = telegram_resource_raw('cpu_limit')
-      limit_text = limit.to_i <= 0 ? 'unlimited' : "#{limit} %"
+      limit = telegram_vps.cpu_limit || (cpu.to_i * 100)
 
-      "#{cpu} cores, limit #{limit_text}"
+      "#{cpu} cores, limit #{limit} %"
     end
 
     def telegram_changed_by_line
