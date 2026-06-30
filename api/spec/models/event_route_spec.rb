@@ -379,7 +379,7 @@ RSpec.describe EventRoute do
     expect(event.event_deliveries.where(notification_receiver: child_receiver).count).to eq(1)
   end
 
-  it 'routes to a matching child receiver instead of the parent receiver' do
+  it 'routes to both parent and matching child receivers' do
     parent_receiver = create_receiver!(
       label: 'Parent receiver',
       action: {
@@ -408,10 +408,12 @@ RSpec.describe EventRoute do
     deliveries = event.event_deliveries.order(:id)
 
     expect(matched_routes(event.reload)).to eq([parent, child])
-    expect(deliveries.map(&:action)).to eq(['webhook'])
-    expect(deliveries.first.target_value).to eq('https://example.test/events')
-    expect(deliveries.first.template_name).to be_nil
-    expect(deliveries.first).to be_released_state
+    expect(deliveries.map(&:action)).to eq(%w[email webhook])
+    expect(deliveries.map(&:target_value)).to eq(
+      ['parent@example.test', 'https://example.test/events']
+    )
+    expect(deliveries.map(&:template_name)).to eq(['vps_incident_report', nil])
+    expect(deliveries).to all(be_released_state)
   end
 
   it 'uses continue on matching sibling routes for additive delivery' do
