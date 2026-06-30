@@ -30,7 +30,7 @@ RSpec.describe TransactionChains::Vps::Block do
 
     expect(tx_classes(chain)).to include(
       Transactions::Vps::Stop,
-      Transactions::EventDelivery::Release
+      Transactions::EventDelivery::Notify
     )
     event = expect_routed_event!('vps.suspended', user: vps.user)
     expect(event.vps).to eq(vps)

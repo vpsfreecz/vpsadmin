@@ -48,8 +48,8 @@ RSpec.describe TransactionChains::Vps::OomPrevention do
     classes = tx_classes(chain)
 
     expect(prevention).to be_persisted
-    expect(classes).to include(Transactions::Vps::Restart, Transactions::EventDelivery::Release)
-    expect(classes.index(Transactions::Vps::Restart)).to be < classes.index(Transactions::EventDelivery::Release)
+    expect(classes).to include(Transactions::Vps::Restart, Transactions::EventDelivery::Notify)
+    expect(classes.index(Transactions::Vps::Restart)).to be < classes.index(Transactions::EventDelivery::Notify)
   end
 
   it 'does not let stale long custom e-mail labels block restart actions' do
@@ -85,8 +85,8 @@ RSpec.describe TransactionChains::Vps::OomPrevention do
     classes = tx_classes(chain)
 
     expect(prevention).to be_persisted
-    expect(classes).to include(Transactions::Vps::Stop, Transactions::EventDelivery::Release)
-    expect(classes.index(Transactions::Vps::Stop)).to be < classes.index(Transactions::EventDelivery::Release)
+    expect(classes).to include(Transactions::Vps::Stop, Transactions::EventDelivery::Notify)
+    expect(classes.index(Transactions::Vps::Stop)).to be < classes.index(Transactions::EventDelivery::Notify)
   end
 
   it 'raises for invalid actions' do

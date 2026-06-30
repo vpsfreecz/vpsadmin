@@ -31,7 +31,7 @@ RSpec.describe TransactionChains::User::ReportFailedLogins do
       ['User', user_a.id],
       ['User', user_b.id]
     )
-    expect(tx_classes(chain).count(Transactions::EventDelivery::Release)).to eq(2)
+    expect(tx_classes(chain).count(Transactions::EventDelivery::Notify)).to eq(2)
     event_a = expect_routed_event!('user.failed_logins', user: user_a)
     event_b = expect_routed_event!('user.failed_logins', user: user_b)
     expect(event_a.parameters).to include(

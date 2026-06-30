@@ -1,6 +1,6 @@
 module Transactions::EventDelivery
-  class Release < ::Transaction
-    t_name :event_delivery_release
+  class Notify < ::Transaction
+    t_name :event_delivery_notify
     t_type 9002
     queue :general
     keep_going
@@ -16,4 +16,6 @@ module Transactions::EventDelivery
       { delivery_ids: ids }
     end
   end
+
+  Release = Notify
 end

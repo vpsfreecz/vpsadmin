@@ -132,8 +132,8 @@ RSpec.describe TransactionChains::Vps::Update do
     )
     expect(ObjectHistory.where(tracked_object: vps, event_type: 'resources').count).to eq(1)
     classes = tx_classes(chain)
-    expect(classes).to include(Transactions::EventDelivery::Release)
-    expect(classes.index(Transactions::Vps::Resources)).to be < classes.index(Transactions::EventDelivery::Release)
+    expect(classes).to include(Transactions::EventDelivery::Notify)
+    expect(classes.index(Transactions::Vps::Resources)).to be < classes.index(Transactions::EventDelivery::Notify)
     event = expect_routed_event!('vps.resources_changed', user: vps.user)
     expect(event.vps).to eq(vps)
     expect(event.parameters).to include(
@@ -241,7 +241,7 @@ RSpec.describe TransactionChains::Vps::Update do
       'new_map_mode' => 'zfs',
       'original_map_mode' => 'native'
     )
-    expect(tx_classes(chain)).to include(Transactions::EventDelivery::Release)
+    expect(tx_classes(chain)).to include(Transactions::EventDelivery::Notify)
     event = expect_routed_event!('vps.network_disabled', user: vps.user)
     expect(event.vps).to eq(vps)
     expect(event.parameters).to include(

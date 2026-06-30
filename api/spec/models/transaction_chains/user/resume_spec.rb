@@ -24,12 +24,12 @@ RSpec.describe TransactionChains::User::Resume do
     classes = tx_classes(chain)
 
     expect(classes).to include(
-      Transactions::EventDelivery::Release,
+      Transactions::EventDelivery::Notify,
       Transactions::Vps::Start,
       Transactions::DnsServerZone::Update,
       Transactions::DnsServerZone::CreateRecords
     )
-    release_idx = classes.index(Transactions::EventDelivery::Release)
+    release_idx = classes.index(Transactions::EventDelivery::Notify)
     expect(classes.rindex(Transactions::Vps::Start)).to be < release_idx
     expect(classes.rindex(Transactions::DnsServerZone::Update)).to be < release_idx
     expect(classes.rindex(Transactions::DnsServerZone::CreateRecords)).to be < release_idx
@@ -51,6 +51,6 @@ RSpec.describe TransactionChains::User::Resume do
     chain, = described_class.fire(fixture.fetch(:user), false, nil, ObjectState.new)
 
     expect(tx_classes(chain)).to include(Transactions::Vps::Start)
-    expect(tx_classes(chain)).not_to include(Transactions::EventDelivery::Release)
+    expect(tx_classes(chain)).not_to include(Transactions::EventDelivery::Notify)
   end
 end

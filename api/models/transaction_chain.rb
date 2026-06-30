@@ -438,7 +438,11 @@ class TransactionChain < ApplicationRecord
     ids = event.event_deliveries.where(state: 'prepared').order(:id).pluck(:id)
     return if ids.empty?
 
-    append_t(Transactions::EventDelivery::Release, args: [find_node_id, ids])
+    transaction_id = append_t(Transactions::EventDelivery::Notify, args: [find_node_id, ids])
+    event.event_deliveries.where(id: ids, state: 'prepared').update_all(
+      transaction_id:,
+      updated_at: Time.now
+    )
   end
 
   # Set chain concerns.

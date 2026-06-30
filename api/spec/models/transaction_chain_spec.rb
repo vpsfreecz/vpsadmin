@@ -231,10 +231,13 @@ RSpec.describe TransactionChain do
 
     chain, = SpecChains::ReleaseOnly.fire2(args: [event], kwargs: {})
     transaction = chain.transactions.sole
+    delivery = event.event_deliveries.sole.reload
 
-    expect(transaction.handle).to eq(Transactions::EventDelivery::Release.t_type)
+    expect(transaction.handle).to eq(Transactions::EventDelivery::Notify.t_type)
+    expect(transaction.name).to eq('Notify')
     expect(transaction.node_id).to eq(runner.id)
     expect(transaction.node_id).not_to eq(mailer.id)
+    expect(delivery.transaction_id).to eq(transaction.id)
   end
 
   it 'preserves ordering across nested use_chain calls' do

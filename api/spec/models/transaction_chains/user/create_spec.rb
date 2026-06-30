@@ -56,7 +56,7 @@ RSpec.describe TransactionChains::User::Create do
     chain, created = described_class.fire(user, false, nil, nil, true)
 
     expect(created).to be_persisted
-    expect(tx_classes(chain)).to include(Transactions::EventDelivery::Release)
+    expect(tx_classes(chain)).to include(Transactions::EventDelivery::Notify)
     event = expect_routed_event!('user.created', user: created)
     expect(event.parameters).to include(
       'login' => created.login,
