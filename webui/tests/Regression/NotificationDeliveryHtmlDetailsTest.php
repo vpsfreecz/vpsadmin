@@ -65,6 +65,64 @@ final class NotificationDeliveryHtmlDetailsTest extends TestCase
         self::assertStringContainsString('false, false, 12', $functionSource);
     }
 
+    public function testDeliveryLogFilterIncludesAbortedState(): void
+    {
+        $source = file_get_contents(dirname(__DIR__, 2) . '/forms/notifications.forms.php');
+        $functionSource = $this->sourceBetween(
+            $source,
+            'function notifications_delivery_state_group_states(',
+            'function notifications_delivery_state_choices('
+        );
+
+        self::assertStringContainsString("return ['sent', 'failed', 'canceled', 'skipped', 'aborted'];", $functionSource);
+    }
+
+    public function testEventDetailDeliveryTableUsesVerticalResultRows(): void
+    {
+        $source = file_get_contents(dirname(__DIR__, 2) . '/forms/notifications.forms.php');
+        $functionSource = $this->sourceBetween(
+            $source,
+            'function notifications_event_show(',
+            'function notifications_delivery_show('
+        );
+
+        self::assertStringContainsString('notifications_delivery_route_link($delivery, $event->user_id)', $functionSource);
+        self::assertStringContainsString('notifications_delivery_transaction_chain_link($delivery)', $functionSource);
+        self::assertStringContainsString("_('Result') . ':'", $functionSource);
+        self::assertStringContainsString("_('Delivery attempts') . ':'", $functionSource);
+        self::assertStringContainsString('false, false, 6', $functionSource);
+        self::assertStringContainsString("false, false, 8", $functionSource);
+        self::assertStringNotContainsString('$xtpl->table_add_category(_(\'Result\'))', $functionSource);
+    }
+
+    public function testDeliveryDetailsUseRouteAndTransactionChainLinks(): void
+    {
+        $source = file_get_contents(dirname(__DIR__, 2) . '/forms/notifications.forms.php');
+        $functionSource = $this->sourceBetween(
+            $source,
+            'function notifications_delivery_show(',
+            'function notifications_delivery_email_show('
+        );
+
+        self::assertStringContainsString('notifications_delivery_route_link($delivery, $event->user_id)', $functionSource);
+        self::assertStringContainsString('notifications_delivery_transaction_chain_link($delivery)', $functionSource);
+        self::assertStringContainsString("_('Transaction chain') . ':'", $functionSource);
+    }
+
+    public function testTargetFormShowsLinkedUserLoginForAdmins(): void
+    {
+        $source = file_get_contents(dirname(__DIR__, 2) . '/forms/notifications.forms.php');
+        $functionSource = $this->sourceBetween(
+            $source,
+            'function notifications_target_form_fields(',
+            'function notifications_sms_verification_controls('
+        );
+
+        self::assertStringContainsString('$api->user->show($user_id)', $functionSource);
+        self::assertStringContainsString('user_link($target_user)', $functionSource);
+        self::assertStringNotContainsString("h((string) \$user_id)", $functionSource);
+    }
+
     public function testTelegramPairingDetailShowsGuidedPairingAndRepairFlow(): void
     {
         $source = file_get_contents(dirname(__DIR__, 2) . '/forms/notifications.forms.php');

@@ -121,6 +121,23 @@ function notifications_event_type_fields_from_type($type)
     return [];
 }
 
+function notifications_event_type_field_types_from_type($type)
+{
+    if (!isset($type->field_types) || $type->field_types === null) {
+        return [];
+    }
+
+    if (is_object($type->field_types)) {
+        return get_object_vars($type->field_types);
+    }
+
+    if (is_array($type->field_types)) {
+        return $type->field_types;
+    }
+
+    return [];
+}
+
 function notifications_api_list_to_array($list)
 {
     $wrapped_keys = [
@@ -201,7 +218,7 @@ function notifications_api_list_to_array($list)
 
 function notifications_event_type_fields($event_type, $fallback_fields)
 {
-    if (!$event_type) {
+    if (!$event_type || $event_type === '__any__') {
         return $fallback_fields;
     }
 
@@ -218,12 +235,31 @@ function notifications_event_type_fields($event_type, $fallback_fields)
     return $fallback_fields;
 }
 
-function notifications_event_type_labels($empty = true)
+function notifications_event_field_types($event_type = null)
+{
+    $ret = [];
+
+    foreach (notifications_event_types_cached() as $type) {
+        if ($event_type && $event_type !== '__any__' && $type->name !== $event_type) {
+            continue;
+        }
+
+        $ret += notifications_event_type_field_types_from_type($type);
+    }
+
+    return $ret;
+}
+
+function notifications_event_type_labels($empty = true, $any = false)
 {
     $ret = [];
 
     if ($empty) {
         $ret[''] = '---';
+    }
+
+    if ($any) {
+        $ret['__any__'] = _('Any event type');
     }
 
     foreach (notifications_event_types_cached() as $type) {
@@ -256,6 +292,54 @@ function notifications_matcher_operator_descriptions($operators)
     }
 
     return $ret;
+}
+
+function notifications_matcher_value_html($name, $value, $field, $field_types)
+{
+    if (($field_types[$field] ?? null) === 'boolean') {
+        return notifications_select_html($name, [
+            'true' => _('true'),
+            'false' => _('false'),
+        ], $value === 'false' || $value === false || $value === 0 || $value === '0' ? 'false' : 'true');
+    }
+
+    return notifications_text_input_html($name, $value, 35);
+}
+
+function notifications_matcher_value_toggle_script($field_types)
+{
+    global $xtpl;
+
+    $xtpl->assign(
+        'AJAX_SCRIPT',
+        ($xtpl->vars['AJAX_SCRIPT'] ?? '')
+        . '<script type="text/javascript">'
+        . '$(function(){'
+        . 'var fieldTypes=' . json_encode($field_types, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) . ';'
+        . 'var field=$("select[name=field]");'
+        . 'var container=$("#notification-matcher-value");'
+        . 'function booleanValue(value){'
+        . 'value=String(value||"").toLowerCase();'
+        . 'return $.inArray(value,["false","0","no","off"])>=0?"false":"true";'
+        . '}'
+        . 'function renderMatcherValue(){'
+        . 'var current=container.find("[name=value]").val()||"";'
+        . 'var bool=fieldTypes[field.val()]==="boolean";'
+        . 'var input=bool?$("<select>").attr({name:"value",id:"input"}):$("<input>").attr({type:"text",name:"value",id:"input",size:35});'
+        . 'if(bool){'
+        . 'current=booleanValue(current);'
+        . 'input.append($("<option>").attr("value","true").text("true"));'
+        . 'input.append($("<option>").attr("value","false").text("false"));'
+        . 'input.val(current);'
+        . '}else{'
+        . 'input.val(current);'
+        . '}'
+        . 'container.empty().append(input);'
+        . '}'
+        . 'field.on("change",renderMatcherValue);'
+        . '});'
+        . '</script>'
+    );
 }
 
 function notifications_label($labels, $value)
@@ -1026,10 +1110,6 @@ function notifications_matcher_params_from_row($row)
 
 function notifications_route_type_html($route, $event_type_labels)
 {
-    if (notifications_prop($route, 'default_route', false)) {
-        return h(_('Default event types'));
-    }
-
     if ($route->event_type) {
         return h(notifications_label($event_type_labels, $route->event_type));
     }
@@ -1279,7 +1359,7 @@ function notifications_routes_list($user_id = null)
     $xtpl->table_add_category(_('Scope'));
     $xtpl->table_add_category(_('Receiver'));
     $xtpl->table_add_category(_('Matchers'));
-    $xtpl->table_add_category(_('Hit count'));
+    $xtpl->table_add_category(_('Hits'));
     $xtpl->table_add_category(_('Enabled'));
     $xtpl->table_add_category(_('Continue'));
     $xtpl->table_add_category('');
@@ -1437,6 +1517,7 @@ function notifications_route_edit($route_id)
     $event_types = notifications_event_type_labels(true);
     $subject_scope_options = notifications_subject_scope_options($input->subject_scope);
     $operators = notifications_param_choices($matcher_input->operator);
+    $field_types = notifications_event_field_types();
     $receiver_options = notifications_receiver_options($route->user_id);
     $route_options = notifications_route_options($route->user_id, true, $route->id);
     $matchers = notifications_api_list_to_array($route->matcher->list());
@@ -1461,27 +1542,23 @@ function notifications_route_edit($route_id)
     $xtpl->form_out(_('Save'));
     notifications_clear_table_form();
 
-    if (
-        notifications_prop($route, 'default_route', false)
-        || notifications_prop($route, 'single_use', false)
-        || notifications_prop($route, 'spent_at')
-        || notifications_prop($route, 'expires_at')
-    ) {
-        $xtpl->table_title(_('Route lifecycle'));
-        $xtpl->table_td(_('Default route'));
-        $xtpl->table_td(boolean_icon(notifications_prop($route, 'default_route', false)));
-        $xtpl->table_tr();
-        $xtpl->table_td(_('Single-use route'));
-        $xtpl->table_td(boolean_icon(notifications_prop($route, 'single_use', false)));
-        $xtpl->table_tr();
-        $xtpl->table_td(_('Spent at'));
-        $xtpl->table_td($route->spent_at ? tolocaltz($route->spent_at) : '-');
-        $xtpl->table_tr();
-        $xtpl->table_td(_('Expires at'));
-        $xtpl->table_td($route->expires_at ? tolocaltz($route->expires_at) : '-');
-        $xtpl->table_tr();
-        $xtpl->table_out();
-    }
+    $xtpl->table_title(_('Route lifecycle'));
+    $xtpl->table_td(_('Single-use route'));
+    $xtpl->table_td(boolean_icon(notifications_prop($route, 'single_use', false)));
+    $xtpl->table_tr();
+    $xtpl->table_td(_('Spent at'));
+    $xtpl->table_td($route->spent_at ? tolocaltz($route->spent_at) : '-');
+    $xtpl->table_tr();
+    $xtpl->table_td(_('Expires at'));
+    $xtpl->table_td($route->expires_at ? tolocaltz($route->expires_at) : '-');
+    $xtpl->table_tr();
+    $xtpl->table_td(_('Hits'));
+    $xtpl->table_td(
+        '<a href="?page=notifications&action=events' . notifications_user_qs($route->user_id)
+        . '&event_route_id=' . $route->id . '">' . notifications_prop($route, 'hit_count', 0) . '</a>'
+    );
+    $xtpl->table_tr();
+    $xtpl->table_out();
 
     notifications_route_subroutes($route);
 
@@ -1496,7 +1573,7 @@ function notifications_route_edit($route_id)
         $prefix = 'matchers[' . $matcher->id . ']';
         $xtpl->table_td('<code>' . h($matcher->field) . '</code>', false, true);
         $xtpl->table_td(notifications_select_html($prefix . '[operator]', $operators, $matcher->operator));
-        $xtpl->table_td(notifications_text_input_html($prefix . '[value]', $matcher->value, 35));
+        $xtpl->table_td(notifications_matcher_value_html($prefix . '[value]', $matcher->value, $matcher->field, $field_types));
         $xtpl->table_td(
             '<a href="?page=notifications&action=matcher_delete&route=' . $route->id . '&id=' . $matcher->id
             . notifications_user_qs($route->user_id) . '&t=' . csrf_token() . '"><img src="template/icons/vps_delete.png" title="' . _('Delete') . '"></a>'
@@ -1542,7 +1619,7 @@ function notifications_matcher_new($route_id, $event_type = null)
     $xtpl->title(_('Add matcher') . ': ' . _('Notification route') . ' #' . $route->id);
 
     if (!$selected_event_type) {
-        $event_types = notifications_event_type_labels();
+        $event_types = notifications_event_type_labels(true, true);
 
         $xtpl->table_title(_('Select event type'));
         $xtpl->form_create('?page=notifications', 'get', 'notification-matcher-event-type', false);
@@ -1570,8 +1647,10 @@ function notifications_matcher_new($route_id, $event_type = null)
     }
 
     $fields = notifications_event_type_fields($selected_event_type, $all_fields);
+    $field_types = notifications_event_field_types($selected_event_type);
     $field = post_val('field', array_key_first($fields) ?: 'event_type');
     $operator = post_val('operator', array_key_first($operators) ?: '==');
+    notifications_matcher_value_toggle_script($field_types);
     $url = '?page=notifications&action=matcher_new&route=' . $route->id
         . ($route_event_type ? '' : '&event_type=' . urlencode($selected_event_type))
         . notifications_user_qs($route->user_id);
@@ -1584,7 +1663,7 @@ function notifications_matcher_new($route_id, $event_type = null)
     $xtpl->table_tr();
 
     $xtpl->table_td(_('Event type') . ':');
-    $xtpl->table_td('<code>' . h($selected_event_type) . '</code>');
+    $xtpl->table_td($selected_event_type === '__any__' ? h(_('Any event type')) : '<code>' . h($selected_event_type) . '</code>');
     $xtpl->table_tr();
 
     $xtpl->form_add_select(_('Field') . ':', 'field', $fields, $field);
@@ -1594,7 +1673,15 @@ function notifications_matcher_new($route_id, $event_type = null)
         notifications_matcher_operator_descriptions($operators),
         $operator
     );
-    $xtpl->form_add_input(_('Value') . ':', 'text', '35', 'value', post_val('value'));
+    $xtpl->table_td(_('Value') . ':');
+    $xtpl->table_td(
+        '<span id="notification-matcher-value">'
+        . notifications_matcher_value_html('value', post_val('value'), $field, $field_types)
+        . '</span>',
+        false,
+        true
+    );
+    $xtpl->table_tr();
     $xtpl->form_out(_('Add'));
 
     $xtpl->sbar_add(_('Back to route'), '?page=notifications&action=route_edit&id=' . $route->id . notifications_user_qs($route->user_id));
@@ -1850,6 +1937,32 @@ function notifications_delivery_receiver_action_link($delivery, $user_id = null)
     return '<a href="' . notifications_target_url($target_id, $user_id) . '">' . h($label) . '</a>';
 }
 
+function notifications_delivery_route_link($delivery, $user_id = null)
+{
+    $route_id = notifications_prop($delivery, 'event_route_id');
+    if (!$route_id) {
+        return '-';
+    }
+
+    $label = notifications_prop($delivery, 'event_route_label') ?: ('#' . $route_id);
+
+    return '<a href="?page=notifications&action=route_edit&id=' . rawurlencode((string) $route_id)
+        . notifications_user_qs($user_id) . '">' . h($label) . '</a>';
+}
+
+function notifications_delivery_transaction_chain_link($delivery)
+{
+    $chain_id = notifications_prop($delivery, 'delivery_transaction_chain_id');
+    if (!$chain_id) {
+        return '-';
+    }
+
+    $label = notifications_prop($delivery, 'delivery_transaction_chain_label') ?: ('#' . $chain_id);
+
+    return '<a href="?page=transactions&chain=' . rawurlencode((string) $chain_id) . '">'
+        . h($label) . '</a>';
+}
+
 function notifications_delivery_user_link($delivery)
 {
     $user_id = notifications_prop($delivery, 'event_user_id');
@@ -1883,7 +1996,7 @@ function notifications_delivery_state_group_states($state_group)
     if ($state_group === 'queue') {
         return ['prepared', 'released', 'sending'];
     } elseif ($state_group === 'log') {
-        return ['sent', 'failed', 'canceled', 'skipped'];
+        return ['sent', 'failed', 'canceled', 'skipped', 'aborted'];
     }
 
     return [];
@@ -2323,8 +2436,9 @@ function notifications_target_form_fields($user_id, $action_type, $target = null
     $receiver_id = $receiver ? $receiver->id : null;
 
     if (isAdmin()) {
+        $target_user = $target && isset($target->user) ? $target->user : $api->user->show($user_id);
         $xtpl->table_td(_('User') . ':');
-        $xtpl->table_td($target && isset($target->user) ? user_link($target->user) : h((string) $user_id));
+        $xtpl->table_td(user_link($target_user));
         $xtpl->table_tr();
     }
 
@@ -3230,8 +3344,6 @@ function notifications_event_route_matches($event)
     $xtpl->table_add_category(_('Route'));
     $xtpl->table_add_category(_('User'));
     $xtpl->table_add_category(_('Relation'));
-    $xtpl->table_add_category(_('Source'));
-    $xtpl->table_add_category(_('Order'));
 
     foreach ($matches as $match) {
         $route_label = notifications_prop($match, 'event_route_label') ?: ('#' . $match->event_route_id);
@@ -3244,13 +3356,11 @@ function notifications_event_route_matches($event)
         );
         $xtpl->table_td(h($owner));
         $xtpl->table_td(h(notifications_prop($match, 'subject_relation')));
-        $xtpl->table_td(h(notifications_prop($match, 'source')));
-        $xtpl->table_td(h(notifications_prop($match, 'match_order')));
         $xtpl->table_tr();
     }
 
     if (!$matches) {
-        $xtpl->table_td(_('No routes matched.'), false, false, 5);
+        $xtpl->table_td(_('No routes matched.'), false, false, 3);
         $xtpl->table_tr();
     }
 
@@ -3311,9 +3421,6 @@ function notifications_event_show($event_id)
     $xtpl->table_add_category(_('Route'));
     $xtpl->table_add_category(_('Attempts'));
     $xtpl->table_add_category(_('Released'));
-    $xtpl->table_add_category(_('Last attempt'));
-    $xtpl->table_add_category(_('Next retry'));
-    $xtpl->table_add_category(_('Result'));
 
     $deliveries = notifications_api_list_to_array($event->delivery->list());
 
@@ -3332,38 +3439,52 @@ function notifications_event_show($event_id)
         $xtpl->table_td(notifications_delivery_receiver_action_link($delivery, $event->user_id));
         $xtpl->table_td($target ? h($target) : '-');
         $xtpl->table_td(h($delivery->state));
-        $xtpl->table_td($delivery->event_route_id ? '<a href="?page=notifications&action=route_edit&id=' . $delivery->event_route_id . notifications_user_qs($event->user_id) . '">' . $delivery->event_route_id . '</a>' : '-');
+        $xtpl->table_td(notifications_delivery_route_link($delivery, $event->user_id));
         $xtpl->table_td(notifications_prop($delivery, 'attempt_count', 0), false, true);
         $xtpl->table_td(notifications_time_or_dash(notifications_prop($delivery, 'released_at')));
-        $xtpl->table_td(notifications_time_or_dash(notifications_prop($delivery, 'last_attempt_at')));
-        $xtpl->table_td(notifications_time_or_dash(notifications_prop($delivery, 'next_attempt_at')));
         $result = [];
+        $last_attempt = notifications_prop($delivery, 'last_attempt_at');
+        $next_attempt = notifications_prop($delivery, 'next_attempt_at');
+        if ($last_attempt) {
+            $result[] = h(_('Last attempt') . ': ' . tolocaltz($last_attempt));
+        }
+        if ($next_attempt) {
+            $result[] = h(_('Next retry') . ': ' . tolocaltz($next_attempt));
+        }
         if ($provider_message_id) {
-            $result[] = 'Message-ID ' . $provider_message_id;
+            $result[] = h('Message-ID ' . $provider_message_id);
         }
         $response_status_label = notifications_response_status_label($delivery->action, $response_status);
         if ($response_status_label) {
-            $result[] = $response_status_label;
+            $result[] = h($response_status_label);
         }
         if ($error_summary) {
-            $result[] = $error_summary;
+            $result[] = h($error_summary);
         }
-        $xtpl->table_td($result ? h(implode(', ', $result)) : '-');
+        if (notifications_prop($delivery, 'delivery_transaction_chain_id')) {
+            $result[] = h(_('Transaction chain') . ': ') . notifications_delivery_transaction_chain_link($delivery);
+        }
         $xtpl->table_tr();
 
+        if ($result) {
+            $xtpl->table_td(_('Result') . ':', false, false, 2);
+            $xtpl->table_td(implode(', ', $result), false, false, 6);
+            $xtpl->table_tr();
+        }
+
         $xtpl->table_td(_('Delivery attempts') . ':', false, false, 2);
-        $xtpl->table_td(notifications_delivery_attempts_html($event, $delivery), false, true, 9);
+        $xtpl->table_td(notifications_delivery_attempts_html($event, $delivery), false, true, 6);
         $xtpl->table_tr();
 
         if ($response_body) {
             $xtpl->table_td(_('Response') . ':', false, false, 2);
-            $xtpl->table_td('<pre>' . h(notifications_short_value($response_body, 1024)) . '</pre>', false, false, 9);
+            $xtpl->table_td('<pre>' . h(notifications_short_value($response_body, 1024)) . '</pre>', false, false, 6);
             $xtpl->table_tr();
         }
     }
 
     if (count($deliveries) == 0) {
-        $xtpl->table_td(_('No deliveries recorded.'), false, false, 11);
+        $xtpl->table_td(_('No deliveries recorded.'), false, false, 8);
         $xtpl->table_tr();
     }
 
@@ -3426,12 +3547,11 @@ function notifications_delivery_show($event_id, $delivery_id)
     $xtpl->table_tr();
 
     $xtpl->table_td(_('Route') . ':');
-    $xtpl->table_td(
-        $delivery->event_route_id
-            ? '<a href="?page=notifications&action=route_edit&id=' . $delivery->event_route_id
-                . notifications_user_qs($event->user_id) . '">' . $delivery->event_route_id . '</a>'
-            : '-'
-    );
+    $xtpl->table_td(notifications_delivery_route_link($delivery, $event->user_id));
+    $xtpl->table_tr();
+
+    $xtpl->table_td(_('Transaction chain') . ':');
+    $xtpl->table_td(notifications_delivery_transaction_chain_link($delivery));
     $xtpl->table_tr();
 
     $xtpl->table_td(_('Released') . ':');
@@ -3703,6 +3823,14 @@ function notifications_event_types($user_id = null)
     global $xtpl;
 
     $xtpl->title(_('Event types'));
+    $xtpl->assign(
+        'AJAX_SCRIPT',
+        ($xtpl->vars['AJAX_SCRIPT'] ?? '')
+        . '<style type="text/css">'
+        . '.notification-event-types tr:hover{background:#fff !important;}'
+        . '.notification-event-types tr:hover td{background:#fff !important;}'
+        . '</style>'
+    );
     $groups = [];
 
     foreach (notifications_event_types_cached() as $type) {
@@ -3716,7 +3844,7 @@ function notifications_event_types($user_id = null)
         $html .= '<details style="margin-bottom:1em;">'
             . '<summary><strong>' . h($category) . '</strong> (' . count($types) . ')</summary>'
             . '<table class="table-style01" style="margin-top:0.5em;">'
-            . '<tr><th>' . _('Name') . '</th><th>' . _('Severity') . '</th><th>' . _('Default route') . '</th><th>' . _('Matchable fields') . '</th></tr>';
+            . '<tr><th>' . _('Name') . '</th><th>' . _('Severity') . '</th><th>' . _('Default routed') . '</th><th>' . _('Matchable fields') . '</th></tr>';
 
         foreach ($types as $type) {
             $fields = notifications_event_type_fields_from_type($type);
@@ -3750,7 +3878,7 @@ function notifications_event_types($user_id = null)
 
     $xtpl->table_title(_('Event types'));
     $xtpl->table_td($html);
-    $xtpl->table_tr();
+    $xtpl->table_tr('#fff', false, 'nohover');
     $xtpl->table_out();
 
     notifications_sidebar('event_types', $user_id);
