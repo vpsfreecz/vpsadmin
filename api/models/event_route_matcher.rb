@@ -1,6 +1,7 @@
 class EventRouteMatcher < ApplicationRecord
   CORE_FIELDS = %w[
     event_type
+    default_routed
     category
     severity
     subject
@@ -14,6 +15,7 @@ class EventRouteMatcher < ApplicationRecord
 
   FIELD_LABELS = {
     'event_type' => 'Event type',
+    'default_routed' => 'Default routed',
     'category' => 'Category',
     'severity' => 'Severity',
     'subject' => 'Subject',
@@ -34,6 +36,12 @@ class EventRouteMatcher < ApplicationRecord
 
   SPECIAL_PARAMETER_FIELD_LABELS = {
     'parameters.recipient_roles' => 'Recipient roles'
+  }.freeze
+
+  FIELD_TYPES = {
+    'default_routed' => 'boolean',
+    'context.subject_is_self' => 'boolean',
+    'context.subject_is_admin_visible' => 'boolean'
   }.freeze
 
   OPERATOR_LABELS = {
@@ -86,13 +94,36 @@ class EventRouteMatcher < ApplicationRecord
     labels
   end
 
+  def self.field_types(event_type: nil)
+    types = FIELD_TYPES.dup
+
+    event_types =
+      if event_type.present?
+        [VpsAdmin::API::Events.type_for(event_type)].compact
+      else
+        VpsAdmin::API::Events.types
+      end
+
+    event_types.each do |type|
+      type.parameter_types.each do |name, field_type|
+        types["parameters.#{name}"] ||= field_type
+      end
+    end
+
+    types
+  end
+
   def self.operator_labels
     OPERATOR_LABELS
   end
 
+  def field_type
+    self.class.field_types.fetch(field, nil)
+  end
+
   def matches?(event, route_context: nil)
     actual = field_value(event, route_context:)
-    expected = value.to_s
+    expected = normalized_expected_value
 
     case operator
     when '=='
@@ -159,6 +190,8 @@ class EventRouteMatcher < ApplicationRecord
     case field
     when 'event_type'
       event.event_type
+    when 'default_routed'
+      VpsAdmin::API::Events.default_routed?(event.event_type)
     when 'category'
       event.category
     when 'severity'
@@ -222,5 +255,33 @@ class EventRouteMatcher < ApplicationRecord
 
   def numeric_value(v)
     Float(v)
+  end
+
+  def normalized_expected_value
+    return normalize_boolean_value(value) if boolean_field?
+
+    value.to_s
+  end
+
+  def boolean_field?
+    self.class.field_types.has_key?(field) && self.class.field_types.fetch(field) == 'boolean'
+  end
+
+  def normalize_boolean_value(v)
+    case v
+    when true
+      'true'
+    when false
+      'false'
+    else
+      case v.to_s.strip.downcase
+      when '1', 'true', 'yes', 'y', 'on'
+        'true'
+      when '0', 'false', 'no', 'n', 'off'
+        'false'
+      else
+        v.to_s
+      end
+    end
   end
 end

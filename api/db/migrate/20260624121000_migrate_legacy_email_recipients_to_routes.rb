@@ -627,7 +627,6 @@ class MigrateLegacyEmailRecipientsToRoutes < ActiveRecord::Migration[8.1]
       template_name: config.fetch(:template_name),
       subject_scope: SUBJECT_SCOPE_VISIBLE,
       continue: false,
-      default_route: false,
       single_use: false,
       spent_at: nil,
       expires_at: nil,

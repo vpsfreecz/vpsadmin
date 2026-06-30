@@ -434,7 +434,6 @@ class AddEvents < ActiveRecord::Migration[8.1]
       t.string      :event_type_pattern,       null: true, limit: 100
       t.string      :template_name, null: true, limit: 100
       t.boolean     :continue,                 null: false, default: false
-      t.boolean     :default_route,            null: false, default: false
       t.boolean     :single_use,               null: false, default: false
       t.datetime    :spent_at,                 null: true
       t.datetime    :expires_at,               null: true
@@ -448,8 +447,6 @@ class AddEvents < ActiveRecord::Migration[8.1]
     add_index :event_routes, :event_type
     add_index :event_routes, :parent_id
     add_index :event_routes, :notification_receiver_id
-    add_index :event_routes, %i[user_id default_route],
-              name: 'index_event_routes_on_user_default'
     add_index :event_routes, %i[user_id single_use spent_at],
               name: 'index_event_routes_on_user_single_use_spent'
     add_index :event_routes, :expires_at
@@ -625,7 +622,7 @@ class AddEvents < ActiveRecord::Migration[8.1]
         INSERT INTO event_routes
           (user_id, parent_id, notification_receiver_id, label, position,
            enabled, event_type, event_type_pattern, `continue`,
-           default_route, single_use, spent_at, expires_at, hit_count,
+           single_use, spent_at, expires_at, hit_count,
            created_at, updated_at)
         SELECT
           user_id,
@@ -637,7 +634,6 @@ class AddEvents < ActiveRecord::Migration[8.1]
           NULL,
           NULL,
           0,
-          1,
           0,
           NULL,
           NULL,
@@ -645,6 +641,23 @@ class AddEvents < ActiveRecord::Migration[8.1]
           CURRENT_TIMESTAMP,
           CURRENT_TIMESTAMP
         FROM notification_receivers
+      SQL
+
+      execute <<~SQL.squish
+        INSERT INTO event_route_matchers
+          (event_route_id, field, operator, value, created_at, updated_at)
+        SELECT
+          event_routes.id,
+          'default_routed',
+          '==',
+          'true',
+          CURRENT_TIMESTAMP,
+          CURRENT_TIMESTAMP
+        FROM event_routes
+        WHERE event_routes.parent_id IS NULL
+          AND event_routes.label = 'Default route'
+          AND event_routes.event_type IS NULL
+          AND event_routes.event_type_pattern IS NULL
       SQL
     end
   end
