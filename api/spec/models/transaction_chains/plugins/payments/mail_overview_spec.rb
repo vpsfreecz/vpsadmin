@@ -65,7 +65,7 @@ RSpec.describe 'payments plugin mail overview chain', requires_plugins: :payment
 
     chain, = chain_class.fire2(args: [86_400, SpecSeed.language])
 
-    expect(tx_classes(chain)).to eq([Transactions::EventDelivery::Release])
+    expect(tx_classes(chain)).to eq([Transactions::EventDelivery::Notify])
     expect(NotificationTemplate).to have_received(:send_email!).once
     event = Event.where(event_type: 'payments.overview').sole
     delivery = event.event_deliveries.sole

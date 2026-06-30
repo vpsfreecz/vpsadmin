@@ -20,14 +20,15 @@ class EventRoutingContext < ApplicationRecord
     'failed' => 'failed',
     'read' => 'read',
     'acknowledged' => 'acknowledged',
-    'bookmarked' => 'bookmarked'
+    'bookmarked' => 'bookmarked',
+    'aborted' => 'aborted'
   }.freeze
 
   belongs_to :event
   belongs_to :recipient_user, class_name: 'User', foreign_key: :user_id
   has_many :event_deliveries, dependent: :nullify
 
-  enum :routing_state, %i[routed suppressed failed read acknowledged bookmarked], suffix: true
+  enum :routing_state, %i[routed suppressed failed read acknowledged bookmarked aborted], suffix: true
 
   validates :subject_relation, inclusion: { in: SUBJECT_RELATION_LABELS.keys }
   validates :source, inclusion: { in: SOURCE_LABELS.keys }

@@ -29,7 +29,7 @@ RSpec.describe TransactionChains::Vps::StopOverQuota do
     )
     expect(tx_classes(chain)).to include(
       Transactions::Vps::Stop,
-      Transactions::EventDelivery::Release
+      Transactions::EventDelivery::Notify
     )
     event = expect_routed_event!('vps.stopped_over_quota', user: fixture.fetch(:vps).user)
     expect(event.vps).to eq(fixture.fetch(:vps))

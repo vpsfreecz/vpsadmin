@@ -21,7 +21,7 @@ RSpec.describe TransactionChains::Mail::VpsDatasetExpanded do
     chain, = described_class.fire2(args: [expansion])
 
     expect(chain).to be_present
-    expect(tx_classes(chain)).to include(Transactions::EventDelivery::Release)
+    expect(tx_classes(chain)).to include(Transactions::EventDelivery::Notify)
     expect(chain.transaction_chain_concerns.pluck(:class_name, :row_id)).to eq([['Vps', vps.id]])
     event = expect_routed_event!('vps.dataset_expanded', user: vps.user)
     expect(event.vps).to eq(vps)
