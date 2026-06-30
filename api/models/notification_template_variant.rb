@@ -1,3 +1,5 @@
+require 'redcarpet'
+
 class NotificationTemplateVariant < ApplicationRecord
   belongs_to :language
   belongs_to :notification_template
@@ -19,6 +21,11 @@ class NotificationTemplateVariant < ApplicationRecord
 
   class TemplateBuilder
     include ActiveSupport::NumberHelper
+
+    TELEGRAM_MARKDOWN_TAGS = %w[
+      a b blockquote code del em i ins pre s span strike strong tg-spoiler u
+    ].freeze
+    UNSAFE_MARKDOWN_URI_SCHEME = /\b(?:javascript|vbscript|data):/i
 
     def initialize(vars, time_zone: nil)
       @time_zone = time_zone
@@ -52,6 +59,18 @@ class NotificationTemplateVariant < ApplicationRecord
       %(<a href="#{html_escape(url)}">#{html_escape(label)}</a>)
     end
 
+    def markdown_html(value)
+      return '' if value.blank?
+
+      self.class.markdown_renderer.render(value.to_s).gsub(UNSAFE_MARKDOWN_URI_SCHEME, '').strip
+    end
+
+    def markdown_telegram_html(value)
+      return '' if value.blank?
+
+      self.class.telegram_supported_html(markdown_html(value))
+    end
+
     def webui_link(label, path = nil)
       html_link(label, webui_url(path))
     end
@@ -64,11 +83,22 @@ class NotificationTemplateVariant < ApplicationRecord
     end
 
     def telegram_notification_html
-      lines = [telegram_title]
-      lines.concat(telegram_detail_lines)
-      lines << telegram_primary_link_line
+      return telegram_vps_resource_change_html if @notification_template_name.to_s == 'vps_resources_change'
 
-      lines.compact.reject(&:blank?).join("\n")
+      lines = [telegram_title]
+      detail_lines = telegram_detail_lines.compact
+      if detail_lines.any?
+        lines << ''
+        lines.concat(detail_lines)
+      end
+
+      link_line = telegram_primary_link_line
+      if link_line.present?
+        lines << ''
+        lines << link_line
+      end
+
+      lines.compact.join("\n")
     end
 
     def webui_object_link(label, path)
@@ -116,6 +146,62 @@ class NotificationTemplateVariant < ApplicationRecord
       return unless download.respond_to?(:id)
 
       webui_object_link('snapshot download', "?page=backup&action=download_link&id=#{download.id}")
+    end
+
+    class << self
+      def markdown_renderer
+        @markdown_renderer ||= Redcarpet::Markdown.new(
+          Redcarpet::Render::HTML.new(
+            filter_html: true,
+            no_images: true,
+            no_styles: true,
+            safe_links_only: true
+          ),
+          autolink: true,
+          fenced_code_blocks: true,
+          strikethrough: true
+        )
+      end
+
+      def telegram_supported_html(html)
+        html = html.to_s.dup
+        html.gsub!(%r{<h[1-6]>(.*?)</h[1-6]>}im) { "<b>#{Regexp.last_match(1)}</b>\n" }
+        html.gsub!(%r{</?p>}i, "\n")
+        html.gsub!(%r{<br\s*/?>}i, "\n")
+        html.gsub!(%r{</?(ul|ol)>}i, "\n")
+        html.gsub!(/<li>/i, '- ')
+        html.gsub!(%r{</li>}i, "\n")
+
+        html.gsub!(%r{<(/?)([a-zA-Z][\w-]*)(?:\s+[^>]*)?>}) do |tag|
+          closing = Regexp.last_match(1) == '/'
+          name = Regexp.last_match(2).downcase
+
+          next '' unless TELEGRAM_MARKDOWN_TAGS.include?(name)
+          next "</#{name}>" if closing
+
+          if name == 'a'
+            href = tag[/\shref=(["'])(.*?)\1/i, 2]
+            next '' unless safe_telegram_href?(href)
+
+            %(<a href="#{ERB::Util.html_escape(href)}">)
+          elsif name == 'span'
+            tag.match?(/\sclass=(["'])tg-spoiler\1/i) ? '<span class="tg-spoiler">' : ''
+          else
+            "<#{name}>"
+          end
+        end
+
+        html.gsub(/\r\n?/, "\n")
+            .lines
+            .map(&:rstrip)
+            .join("\n")
+            .gsub(/\n{3,}/, "\n\n")
+            .strip
+      end
+
+      def safe_telegram_href?(href)
+        href.to_s.match?(%r{\Ahttps?://}i) || href.to_s.match?(/\Amailto:/i)
+      end
     end
 
     private
@@ -201,6 +287,8 @@ class NotificationTemplateVariant < ApplicationRecord
       lines.concat(telegram_security_advisory_lines)
       lines.concat(telegram_monitoring_alert_lines)
       lines.concat(telegram_daily_report_lines)
+      reason_line = telegram_reason_line(@reason)
+      lines << reason_line if reason_line.present? && !lines.include?(reason_line)
 
       lines.compact
     end
@@ -259,22 +347,38 @@ class NotificationTemplateVariant < ApplicationRecord
     def telegram_vps_resource_lines
       return [] unless @notification_template_name.to_s == 'vps_resources_change'
 
-      lines = []
-      changed_by = @admin.respond_to?(:login) ? @admin.login : nil
-      changed_by ||= @admin.respond_to?(:full_name) ? @admin.full_name : nil
-      lines << telegram_field('Changed by', changed_by || 'vpsAdmin')
-      lines << '<b>Current limits:</b>'
-      lines << telegram_field('CPU', telegram_resource_value('cpu'))
-      lines << telegram_field('CPU limit', telegram_resource_value('cpu_limit'))
-      lines << telegram_field('Memory', telegram_resource_value('memory'))
-      lines << telegram_field('Swap', telegram_resource_value('swap'))
-      lines << telegram_reason_line(@reason)
-      lines
+      []
+    end
+
+    def telegram_vps_resource_change_html
+      lines = [
+        telegram_title,
+        '',
+        '<b>Current limits:</b>',
+        "CPU: <code>#{html_escape(telegram_cpu_limit_summary)}</code>",
+        "Memory: <code>#{html_escape("#{telegram_resource_raw('memory')} MB")}</code>",
+        "Swap: <code>#{html_escape("#{telegram_resource_raw('swap')} MB")}</code>"
+      ]
+
+      reason_line = telegram_reason_line(@reason)
+      changed_by_line = telegram_changed_by_line
+      if reason_line.present? || changed_by_line.present?
+        lines << ''
+        lines << reason_line if reason_line.present?
+        lines << changed_by_line if changed_by_line.present?
+      end
+
+      link_line = telegram_primary_link_line
+      if link_line.present?
+        lines << ''
+        lines << link_line
+      end
+
+      lines.compact.join("\n")
     end
 
     def telegram_resource_value(name)
-      value = telegram_param(name)
-      value = telegram_vps.public_send(name) if value.nil? && telegram_vps.respond_to?(name)
+      value = telegram_resource_raw(name)
 
       case name.to_s
       when 'cpu_limit'
@@ -284,6 +388,27 @@ class NotificationTemplateVariant < ApplicationRecord
       else
         value
       end
+    end
+
+    def telegram_resource_raw(name)
+      value = telegram_param(name)
+      value = telegram_vps.public_send(name) if value.nil? && telegram_vps.respond_to?(name)
+      value
+    end
+
+    def telegram_cpu_limit_summary
+      cpu = telegram_resource_raw('cpu')
+      limit = telegram_vps.cpu_limit || (cpu.to_i * 100)
+
+      "#{cpu} cores, limit #{limit} %"
+    end
+
+    def telegram_changed_by_line
+      changed_by = @admin.respond_to?(:full_name) ? @admin.full_name : nil
+      changed_by = @admin.login if changed_by.blank? && @admin.respond_to?(:login)
+      changed_by ||= 'vpsAdmin'
+
+      telegram_field('Changed by', changed_by)
     end
 
     def telegram_state_lines
@@ -314,7 +439,6 @@ class NotificationTemplateVariant < ApplicationRecord
       if defined?(@maintenance_window)
         lines << telegram_field('Maintenance window', @maintenance_window ? 'yes' : 'no')
       end
-      lines << telegram_reason_line(@reason)
       lines
     end
 
@@ -352,7 +476,6 @@ class NotificationTemplateVariant < ApplicationRecord
       lines << telegram_field('To pool', @dst_pool.filesystem) if @dst_pool.respond_to?(:filesystem)
       lines << telegram_field('Exports', @exports.count) if @exports
       lines << telegram_field('Restart VPS', @restart_vps ? 'yes' : 'no') if defined?(@restart_vps)
-      lines << telegram_reason_line(@reason)
 
       if @vpses.present?
         lines << '<b>Affected VPS:</b>'
@@ -556,7 +679,9 @@ class NotificationTemplateVariant < ApplicationRecord
     end
 
     def telegram_reason_line(value)
-      telegram_field('Reason', value)
+      return if value.blank?
+
+      "Reason: #{markdown_telegram_html(value)}"
     end
 
     def telegram_param(name)
