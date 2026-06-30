@@ -15,6 +15,7 @@ module VpsAdmin::API::Resources
         string :template, nullable: true
         custom :parameters
         custom :fields
+        custom :field_types
       end
 
       authorize do |_u|
@@ -28,6 +29,7 @@ module VpsAdmin::API::Resources
       def exec
         VpsAdmin::API::Events.types.map do |type|
           fields = VpsAdmin::API::Events.field_labels(event_type: type.name)
+          field_types = VpsAdmin::API::Events.field_types(event_type: type.name)
 
           {
             name: type.name,
@@ -38,7 +40,8 @@ module VpsAdmin::API::Resources
             severity_description: type.severity_description,
             template: type.template,
             parameters: type.parameters,
-            fields:
+            fields:,
+            field_types:
           }
         end
       end

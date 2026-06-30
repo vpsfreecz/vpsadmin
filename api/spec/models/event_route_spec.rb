@@ -201,6 +201,37 @@ RSpec.describe EventRoute do
     expect(event.event_deliveries.sole.action).to eq('webhook')
   end
 
+  it 'lets custom routes match default-routed event types through a matcher' do
+    receiver = create_receiver!(
+      action: {
+        action: :webhook,
+        target_kind: :custom,
+        target_value: 'https://example.test/default-routed'
+      }
+    )
+    route = create_route!(receiver:, event_type: nil)
+    route.event_route_matchers.create!(
+      field: EventRoute::DEFAULT_ROUTE_MATCHER_FIELD,
+      operator: EventRoute::DEFAULT_ROUTE_MATCHER_OPERATOR,
+      value: EventRoute::DEFAULT_ROUTE_MATCHER_VALUE
+    )
+
+    routed_event = emit_incident!
+    opt_in_event = VpsAdmin::API::Events.emit!(
+      'transaction_chain.state_changed',
+      user: SpecSeed.user,
+      subject: 'Spec transaction state',
+      parameters: {
+        'state' => 'queued',
+        'terminal' => false
+      }
+    )
+
+    expect(matched_routes(routed_event.reload)).to eq([route])
+    expect(routed_event.event_deliveries.sole.target_value).to eq('https://example.test/default-routed')
+    expect(opt_in_event).to be_nil
+  end
+
   it 'matches boolean false event parameters' do
     receiver = create_receiver!(
       action: {
@@ -308,6 +339,44 @@ RSpec.describe EventRoute do
     expect(custom_receiver.notification_receiver_actions.count).to eq(1)
     expect(default_route.reload.notification_receiver).to eq(custom_receiver)
     expect(generated_mute_receiver.reload).to be_mute
+  end
+
+  it 'does not treat custom receiverless default-routed groups as the generated default route' do
+    parent = create_route!(
+      label: 'Default-routed group',
+      receiver: nil,
+      event_type: nil
+    )
+    parent.event_route_matchers.create!(
+      field: 'default_routed',
+      operator: '==',
+      value: 'true'
+    )
+    child_receiver = create_receiver!(
+      label: 'Child receiver',
+      action: {
+        action: :webhook,
+        target_kind: :custom,
+        target_value: 'https://example.test/child'
+      }
+    )
+    child = create_route!(
+      receiver: child_receiver,
+      parent:,
+      event_type: nil
+    )
+
+    NotificationReceiver.ensure_defaults_for!(SpecSeed.user)
+
+    generated_default_route = described_class.default_route_for(SpecSeed.user)
+    expect(generated_default_route).to be_present
+    expect(generated_default_route).not_to eq(parent)
+    expect(parent.reload.notification_receiver).to be_nil
+
+    event = emit_incident!
+
+    expect(matched_routes(event.reload)).to eq([parent, child])
+    expect(event.event_deliveries.where(notification_receiver: child_receiver).count).to eq(1)
   end
 
   it 'routes to a matching child receiver instead of the parent receiver' do
@@ -572,13 +641,17 @@ RSpec.describe EventRoute do
         target_kind: :default_recipient
       }
     )
-    create_route!(
+    route = create_route!(
       user: SpecSeed.admin,
       receiver:,
-      default_route: true,
       position: EventRoute::DEFAULT_ROUTE_POSITION,
       event_type: nil,
       subject_scope: :self
+    )
+    route.event_route_matchers.create!(
+      field: EventRoute::DEFAULT_ROUTE_MATCHER_FIELD,
+      operator: EventRoute::DEFAULT_ROUTE_MATCHER_OPERATOR,
+      value: EventRoute::DEFAULT_ROUTE_MATCHER_VALUE
     )
 
     event = emit_incident!

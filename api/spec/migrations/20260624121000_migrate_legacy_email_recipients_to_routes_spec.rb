@@ -89,7 +89,6 @@ RSpec.describe MigrateLegacyEmailRecipientsToRoutes do
         t.string :template_name, limit: 100
         t.integer :subject_scope, null: false, default: 0
         t.boolean :continue, null: false, default: false
-        t.boolean :default_route, null: false, default: false
         t.boolean :single_use, null: false, default: false
         t.datetime :spent_at
         t.datetime :expires_at

@@ -24,6 +24,7 @@ module VpsAdmin::API
       :category,
       :severity,
       :parameters,
+      :parameter_types,
       :template,
       :default_routed,
       :severity_description,
@@ -152,7 +153,7 @@ module VpsAdmin::API
     class EventDefinition
       attr_reader :name, :owner, :label, :category_name, :default_severity,
                   :default_routed, :severity_description,
-                  :arguments, :parameter_labels
+                  :arguments, :parameter_labels, :parameter_types
 
       def initialize(name, label:, category:, default_routed:, owner: nil,
                      severity: :info, template: nil,
@@ -167,6 +168,7 @@ module VpsAdmin::API
         @fallback_template_name = template&.to_s
         @arguments = {}
         @parameter_labels = {}
+        @parameter_types = {}
         @parameter_blocks = {}
         @delivery_definitions = {}
         @helpers = {}
@@ -188,13 +190,20 @@ module VpsAdmin::API
         end
       end
 
-      def parameter(name, label, &block)
+      def parameter(name, label, type: nil, &block)
         @parameter_labels[name.to_sym] = label
+        @parameter_types[name.to_sym] = type.to_s if type
         @parameter_blocks[name.to_sym] = block if block
       end
 
       def parameters(hash)
-        hash.each { |name, label| parameter(name, label) }
+        hash.each do |name, config|
+          if config.is_a?(Hash)
+            parameter(name, config.fetch(:label), type: config[:type])
+          else
+            parameter(name, config)
+          end
+        end
       end
 
       def extra_parameters(&block)
@@ -528,6 +537,7 @@ module VpsAdmin::API
         category: definition.category_name,
         severity: definition.default_severity,
         parameters: definition.parameter_labels,
+        parameter_types: definition.parameter_types,
         template: definition.template_name,
         default_routed: definition.default_routed,
         severity_description: definition.severity_description,
@@ -553,6 +563,10 @@ module VpsAdmin::API
 
     def field_labels(event_type: nil)
       EventRouteMatcher.field_labels(event_type:)
+    end
+
+    def field_types(event_type: nil)
+      EventRouteMatcher.field_types(event_type:)
     end
 
     def email_delivery_context_for(event)
