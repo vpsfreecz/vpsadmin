@@ -555,7 +555,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_21_120000) do
   create_table "event_routes", charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
     t.boolean "continue", default: false, null: false
     t.datetime "created_at", null: false
-    t.boolean "default_route", default: false, null: false
     t.boolean "enabled", default: true, null: false
     t.string "template_name", limit: 100
     t.string "event_type", limit: 100
@@ -577,7 +576,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_21_120000) do
     t.index ["notification_receiver_id"], name: "index_event_routes_on_notification_receiver_id"
     t.index ["parent_id"], name: "index_event_routes_on_parent_id"
     t.index ["subject_scope", "enabled"], name: "index_event_routes_on_subject_scope_enabled"
-    t.index ["user_id", "default_route"], name: "index_event_routes_on_user_default"
     t.index ["user_id", "single_use", "spent_at"], name: "index_event_routes_on_user_single_use_spent"
     t.index ["user_id", "parent_id", "position", "id"], name: "index_event_routes_on_user_parent_position"
     t.index ["user_id"], name: "index_event_routes_on_user_id"

@@ -59,11 +59,18 @@ RSpec.describe RemoveUsersMailerEnabled do
         t.string :event_type_pattern, limit: 100
         t.string :template_name, limit: 100
         t.boolean :continue, null: false, default: false
-        t.boolean :default_route, null: false, default: false
         t.boolean :single_use, null: false, default: false
         t.datetime :spent_at
         t.datetime :expires_at
         t.bigint :hit_count, null: false, default: 0
+        t.timestamps null: false
+      end
+
+      create_table :event_route_matchers do |t|
+        t.references :event_route, null: false
+        t.string :field, null: false, limit: 100
+        t.string :operator, null: false, limit: 50
+        t.text :value, null: false
         t.timestamps null: false
       end
     end
@@ -123,12 +130,12 @@ RSpec.describe RemoveUsersMailerEnabled do
     expect(boolish(disabled_method.fetch('enabled'))).to be(false)
     expect(boolish(existing_method.fetch('enabled'))).to be(false)
 
-    enabled_route = find_row(:event_routes, user_id: ids.fetch(:enabled_id), default_route: true)
+    enabled_route = default_route_for(ids.fetch(:enabled_id))
     enabled_receiver = find_row(:notification_receivers, id: enabled_route.fetch('notification_receiver_id'))
     expect(enabled_receiver.fetch('label')).to eq('Default e-mail')
     expect(boolish(enabled_receiver.fetch('mute'))).to be(false)
 
-    disabled_route = find_row(:event_routes, user_id: ids.fetch(:disabled_id), default_route: true)
+    disabled_route = default_route_for(ids.fetch(:disabled_id))
     disabled_receiver = find_row(:notification_receivers, id: disabled_route.fetch('notification_receiver_id'))
     expect(disabled_receiver.fetch('label')).to eq('Mute')
     expect(boolish(disabled_receiver.fetch('mute'))).to be(true)
@@ -152,5 +159,20 @@ RSpec.describe RemoveUsersMailerEnabled do
     expect(boolish(find_row(:users, id: ids.fetch(:enabled_id)).fetch('mailer_enabled'))).to be(true)
     expect(boolish(find_row(:users, id: ids.fetch(:disabled_id)).fetch('mailer_enabled'))).to be(false)
     expect(boolish(find_row(:users, id: ids.fetch(:existing_method_id)).fetch('mailer_enabled'))).to be(false)
+  end
+
+  def default_route_for(user_id)
+    found = find_rows(:event_routes, { user_id:, label: 'Default route' }).select do |route|
+      route.fetch('event_type').nil? &&
+        route.fetch('event_type_pattern').nil? &&
+        row_count(:event_route_matchers,
+                  event_route_id: route.fetch('id'),
+                  field: 'default_routed',
+                  operator: '==',
+                  value: 'true') == 1
+    end
+
+    expect(found.length).to eq(1), "expected one default route for user #{user_id}, found #{found.length}"
+    found.first
   end
 end

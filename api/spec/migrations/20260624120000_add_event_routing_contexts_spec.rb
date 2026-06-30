@@ -22,7 +22,6 @@ RSpec.describe AddEventRoutingContexts do
         t.string :event_type_pattern, limit: 100
         t.string :template_name, limit: 100
         t.boolean :continue, null: false, default: false
-        t.boolean :default_route, null: false, default: false
         t.boolean :single_use, null: false, default: false
         t.datetime :spent_at
         t.datetime :expires_at
@@ -94,7 +93,6 @@ RSpec.describe AddEventRoutingContexts do
       event_type_pattern: nil,
       template_name: nil,
       continue: false,
-      default_route: false,
       single_use: false,
       spent_at: nil,
       expires_at: nil,
