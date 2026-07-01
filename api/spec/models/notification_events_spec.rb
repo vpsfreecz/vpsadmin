@@ -47,7 +47,7 @@ RSpec.describe VpsAdmin::API::NotificationEvents do
           'user.test_notification',
           user:,
           subject: 'Spec direct event',
-          parameters: { note: 'from direct runner' }
+          payload: { note: 'from direct runner' }
         )
       end
     end

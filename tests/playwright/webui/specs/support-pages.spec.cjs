@@ -218,8 +218,17 @@ test.describe('support and status browser coverage', () => {
     });
     await expect(heading(page)).toContainText('Event types');
     await expect(content(page).locator('details summary').first()).toBeVisible();
-    await expect(content(page)).toContainText('Matchable fields');
-    await expect(content(page)).toContainText('user.test_notification');
+    const testEventType = content(page).locator('#event-type-user-test_notification');
+    await expect(testEventType).toHaveCount(1);
+    const testEventFields = testEventType.locator('table.table-style01').filter({
+      has: page.locator('th', { hasText: /^Field$/ }),
+    });
+    await expect(testEventFields).toHaveCount(1);
+    await expect(testEventFields).toContainText('Field');
+    await expect(testEventFields).toContainText('Type');
+    await expect(testEventFields).toContainText('Example');
+    await expect(testEventFields).toContainText('Meaning');
+    await expect(testEventFields).toContainText('note');
 
     await page.goto('/?page=notifications&action=events', {
       waitUntil: 'domcontentloaded',
@@ -400,15 +409,17 @@ test.describe('support and status browser coverage', () => {
     await expect(formByName(page, 'notification-matcher-event-type')).toHaveCount(0);
     const matcherForm = formByAction(page, 'action=matcher_new');
     await expect(matcherForm.locator('select[name="operator"]')).toContainText('== (equals)');
-    await matcherForm.locator('select[name="field"]').selectOption('parameters.note');
+    await matcherForm.locator('select[name="field"]').selectOption('note');
     await matcherForm.locator('select[name="operator"]').selectOption('==');
     await matcherForm.locator('input[name="value"]').fill('testing notification routing');
     await submitForm(matcherForm, 'Add');
     await expectNotification(page, 'Matcher added');
-    const matcherRow = rowWithText(page, 'parameters.note');
+    const matcherRow = content(page).locator('table.table-style01 tr').filter({
+      has: page.locator('code', { hasText: /^note$/ }),
+    }).first();
     await expect(matcherRow).toBeVisible();
     await expect(matcherRow.locator('select[name*="[field]"]')).toHaveCount(0);
-    await expect(matcherRow).toContainText('parameters.note');
+    await expect(matcherRow).toContainText('note');
 
     await page.goto('/?page=notifications&action=test', {
       waitUntil: 'domcontentloaded',
@@ -423,9 +434,9 @@ test.describe('support and status browser coverage', () => {
     await expect(content(page)).toContainText(subject);
     await expect(content(page)).toContainText('Deliveries');
     await expect(content(page)).toContainText('webhook');
-    const parameterRow = rowWithText(page, 'Parameters');
-    await expect(parameterRow.locator('pre')).toContainText('"note"');
-    await expect(parameterRow.locator('pre')).toContainText('testing notification routing');
+    const payloadRow = rowWithText(page, 'Payload');
+    await expect(payloadRow.locator('pre')).toContainText('"note"');
+    await expect(payloadRow.locator('pre')).toContainText('testing notification routing');
     const eventDeliveryRow = rowWithText(page, 'webhook');
     await expect(eventDeliveryRow).toContainText(receiverLabel);
     await expect(eventDeliveryRow).toContainText('Webui webhook target edited');

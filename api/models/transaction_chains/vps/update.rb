@@ -183,7 +183,7 @@ module TransactionChains
             vps:,
             subject: "VPS ##{vps.id} resources changed",
             summary: opts[:change_reason],
-            parameters: {
+            payload: {
               vps_id: vps.id,
               vps_hostname: vps.hostname,
               cpu: vps.cpu,

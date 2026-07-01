@@ -19,7 +19,7 @@ module VpsAdmin::API::Plugins::Requests::Events
   module_function
 
   def param(event, name)
-    params = event.parameters || {}
+    params = event.payload || {}
     params[name.to_s] || params[name.to_sym]
   end
 
@@ -122,36 +122,38 @@ end
 
 VpsAdmin::API::Events.define owner: :requests do
   {
-    'request.created' => ['Request created', { mail_id: 'Request mail thread ID' }],
+    'request.created' => ['Request created', {
+      mail_id: { description: 'ID of the mail thread used for request notification', type: :integer }
+    }],
     'request.updated' => ['Request updated', {
-      mail_id: 'Request mail thread ID',
-      reply_to_mail_id: 'Previous request mail thread ID'
+      mail_id: { description: 'ID of the mail thread used for request notification', type: :integer },
+      reply_to_mail_id: { description: 'ID of the previous mail thread this update replies to', type: :integer }
     }],
     'request.resolved' => ['Request resolved', {
-      admin_id: 'Resolving admin user ID',
-      admin_login: 'Resolving admin login',
-      reason: 'Resolution reason',
-      mail_id: 'Request mail thread ID',
-      reply_to_mail_id: 'Previous request mail thread ID'
+      admin_id: { description: 'ID of the admin who resolved the request', type: :integer },
+      admin_login: { description: 'Login of the admin who resolved the request', type: :string },
+      reason: { description: 'Reason recorded when the request was resolved', type: :string },
+      mail_id: { description: 'ID of the mail thread used for request notification', type: :integer },
+      reply_to_mail_id: { description: 'ID of the previous mail thread this resolution replies to', type: :integer }
     }]
-  }.each do |event_name, (label, extra_parameters)|
+  }.each do |event_name, (label, extra_fields)|
     event event_name,
           label:,
           category: 'requests',
           severity: :info,
           default_routed: true do
-      parameters(
+      fields(
         {
-          action: 'Request action',
-          role: 'Recipient role',
-          request_id: 'Request ID',
-          request_type: 'Request type',
-          request_state: 'Request state',
-          request_label: 'Request label',
-          user_id: 'Request owner user ID',
-          user_login: 'Request owner login',
-          recipient_email: 'Recipient e-mail'
-        }.merge(extra_parameters)
+          action: { description: 'Request workflow action that produced the notification', type: :string },
+          role: { description: 'Recipient role for this request notification', type: :string },
+          request_id: { description: 'ID of the request', type: :integer },
+          request_type: { description: 'Type of request being handled', type: :string },
+          request_state: { description: 'Request state after the event', type: :string },
+          request_label: { description: 'User-visible request label', type: :string },
+          user_id: { description: 'ID of the user who owns the request', type: :integer },
+          user_login: { description: 'Login of the user who owns the request', type: :string },
+          recipient_email: { description: 'Custom recipient e-mail address for this request notification', type: :string }
+        }.merge(extra_fields)
       )
 
       deliver :email do

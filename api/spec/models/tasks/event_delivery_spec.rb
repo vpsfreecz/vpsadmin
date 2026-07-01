@@ -54,7 +54,7 @@ RSpec.describe VpsAdmin::API::Tasks::EventDelivery do
       'user.test_notification',
       user:,
       subject: 'Spec event',
-      parameters: { note: 'from task spec' }
+      payload: { note: 'from task spec' }
     )
 
     [event.event_deliveries.sole, action, route]
@@ -65,7 +65,7 @@ RSpec.describe VpsAdmin::API::Tasks::EventDelivery do
                                 event_type: 'user.test_notification',
                                 subject: 'Spec Telegram event',
                                 summary: 'Spec Telegram summary',
-                                parameters: { note: 'from Telegram task spec' },
+                                payload: { note: 'from Telegram task spec' },
                                 source_class: nil,
                                 vps: nil)
     allow(VpsAdmin::API::Notifications).to receive(:telegram_configured?).and_return(true)
@@ -90,7 +90,7 @@ RSpec.describe VpsAdmin::API::Tasks::EventDelivery do
       vps:,
       subject:,
       summary:,
-      parameters:,
+      payload:,
       source_class:
     )
 
@@ -154,7 +154,7 @@ RSpec.describe VpsAdmin::API::Tasks::EventDelivery do
 
   def create_sms_delivery!(target_value: '+420123456789',
                            summary: 'Spec SMS summary',
-                           parameters: { note: 'from SMS task spec' },
+                           payload: { note: 'from SMS task spec' },
                            template_name: nil,
                            source_class: nil)
     allow(VpsAdmin::API::Notifications).to receive(:sms_configured?).and_return(true)
@@ -178,7 +178,7 @@ RSpec.describe VpsAdmin::API::Tasks::EventDelivery do
       user: SpecSeed.user,
       subject: 'Spec SMS event',
       summary:,
-      parameters:,
+      payload:,
       source_class:
     )
 
@@ -379,7 +379,7 @@ RSpec.describe VpsAdmin::API::Tasks::EventDelivery do
       'user.test_notification',
       user: SpecSeed.user,
       subject: 'Spec e-mail event',
-      parameters: { note: 'from e-mail task spec' },
+      payload: { note: 'from e-mail task spec' },
       source_class:
     )
 
@@ -413,7 +413,7 @@ RSpec.describe VpsAdmin::API::Tasks::EventDelivery do
       'incident_report.reply',
       subject: 'Re: Abuse report',
       summary: 'Created incident reports',
-      parameters: {
+      payload: {
         from_email: 'abuse@example.test',
         recipient_emails: ['sender@example.test'],
         in_reply_to_message_id: 'incident-source@example.test',
@@ -447,7 +447,7 @@ RSpec.describe VpsAdmin::API::Tasks::EventDelivery do
       user: SpecSeed.user,
       subject: 'Spoofed incident reply',
       summary: 'User-created incident reply test',
-      parameters: {
+      payload: {
         from_email: 'spoofed@example.test',
         recipient_emails: ['sender@example.test'],
         in_reply_to_message_id: 'spoofed-message@example.test',
@@ -478,7 +478,7 @@ RSpec.describe VpsAdmin::API::Tasks::EventDelivery do
       user: SpecSeed.user,
       subject: 'User-created daily report event',
       summary: 'User-created daily report event',
-      parameters: {
+      payload: {
         language_id: SpecSeed.language.id,
         language_code: SpecSeed.language.code,
         period_start: '2026-04-01T00:00:00Z',
@@ -509,7 +509,7 @@ RSpec.describe VpsAdmin::API::Tasks::EventDelivery do
       user: SpecSeed.user,
       vps:,
       subject: 'Spec VPS suspended',
-      parameters: {
+      payload: {
         state: 'suspended',
         reason: 'spec reason'
       }
@@ -535,7 +535,7 @@ RSpec.describe VpsAdmin::API::Tasks::EventDelivery do
       'dataset.migration_begun',
       user: SpecSeed.user,
       subject: 'Spec dataset migration',
-      parameters: {
+      payload: {
         dataset_id: 123,
         dataset_full_name: 'tank/spec',
         user_id: SpecSeed.user.id,
@@ -925,7 +925,7 @@ RSpec.describe VpsAdmin::API::Tasks::EventDelivery do
       category: 'test',
       severity: 'info',
       subject: 'Spec due e-mail',
-      parameters: {}
+      payload: {}
     )
     mail_log = MailLog.create!(
       user: SpecSeed.user,
@@ -1259,7 +1259,7 @@ RSpec.describe VpsAdmin::API::Tasks::EventDelivery do
       'vps.oom_report',
       user: SpecSeed.user,
       subject: 'Foreign OOM report',
-      parameters: {
+      payload: {
         selected_report_ids: [foreign_report.id]
       }
     )
@@ -1389,7 +1389,7 @@ RSpec.describe VpsAdmin::API::Tasks::EventDelivery do
     delivery, = create_telegram_delivery!(
       target_value: '423456789',
       event_type: 'user.suspended',
-      parameters: { state: 'suspended', reason: 'task spec' }
+      payload: { state: 'suspended', reason: 'task spec' }
     )
     request = stub_telegram_response
 
@@ -1435,7 +1435,7 @@ RSpec.describe VpsAdmin::API::Tasks::EventDelivery do
   it 'does not include summaries or parameters in default Telegram messages' do
     delivery, = create_telegram_delivery!(
       summary: 'Sensitive incident body',
-      parameters: {
+      payload: {
         note: 'from Telegram task spec',
         text: 'Sensitive incident body'
       }
@@ -1850,6 +1850,9 @@ RSpec.describe VpsAdmin::API::Tasks::EventDelivery do
     expected_signature = OpenSSL::HMAC.hexdigest('sha256', action.secret, request.body)
 
     expect(body.dig('event', 'type')).to eq('user.test_notification')
+    expect(body.dig('event', 'fields', 'subject_relation')).to eq('self')
+    expect(body.dig('event', 'fields', 'subject_user_id')).to eq(delivery.event.user_id)
+    expect(body.dig('event', 'fields', 'subject_is_self')).to be(true)
     expect(body.dig('delivery', 'id')).to eq(delivery.id)
     expect(body.dig('delivery', 'route', 'id')).to eq(route.id)
     expect(request['X-VpsAdmin-Event']).to eq('user.test_notification')
@@ -1959,7 +1962,7 @@ RSpec.describe VpsAdmin::API::Tasks::EventDelivery do
       'user.test_notification',
       user: SpecSeed.user,
       subject: 'Second rate limit event',
-      parameters: { note: 'second delivery' }
+      payload: { note: 'second delivery' }
     )
     second_delivery = second_event.event_deliveries.sole
     SpecSeed.user.user_notification_rate_limits.create!(

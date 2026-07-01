@@ -280,7 +280,7 @@ VpsAdmin::API::Events.define owner: :monitoring do
       argument :subject_override, type: String, optional: true
       argument :summary_override, type: String, optional: true
       argument :severity_override, type: [String, Symbol], optional: true
-      argument :extra_parameters, type: Hash, default: {}
+      argument :extra_payload, type: Hash, default: {}
       argument :variant, type: [String, Symbol], default: profile.fetch(:variant)
       argument :context, type: Hash, default: {}
 
@@ -305,71 +305,71 @@ VpsAdmin::API::Events.define owner: :monitoring do
           VpsAdmin::API::Plugins::Monitoring::Events.alert_severity(alert, alert_kind)
       end
 
-      parameter(:role, 'Recipient role') { role }
-      parameter(:alert_kind, 'Monitoring alert kind') { alert_kind }
-      parameter(:variant, 'Monitoring alert variant') { variant.to_s }
-      parameter(:monitor_name, 'Monitor internal name') { alert.monitor_name }
-      parameter(:monitor_label, 'Monitor label') { alert.label }
-      parameter(:monitor_issue, 'Monitor issue description') { alert.issue }
-      parameter(:monitored_event_id, 'Monitored event ID') { alert.id }
-      parameter(:state, 'Monitored event state') { alert.state }
-      parameter(:object_class, 'Monitored object class') { alert.class_name }
-      parameter(:object_id, 'Monitored object ID') { alert.row_id }
-      parameter(:object_label, 'Monitored object label') do
+      field(:role, 'Recipient role for this monitoring notification', type: :string) { role }
+      field(:alert_kind, 'Kind of monitoring alert that produced the notification', type: :string) { alert_kind }
+      field(:variant, 'Template/profile variant used by the monitoring event', type: :string) { variant.to_s }
+      field(:monitor_name, 'Internal name of the monitor definition', type: :string) { alert.monitor_name }
+      field(:monitor_label, 'User-visible monitor label', type: :string) { alert.label }
+      field(:monitor_issue, 'Issue text reported by the monitor', type: :string) { alert.issue }
+      field(:monitored_event_id, 'ID of the monitored event row', type: :integer) { alert.id }
+      field(:state, 'State of the monitored event after the check', type: :string) { alert.state }
+      field(:object_class, 'Class name of the monitored object', type: :string) { alert.class_name }
+      field(:object_id, 'ID of the monitored object', type: :integer) { alert.row_id }
+      field(:object_label, 'User-visible label of the monitored object', type: :string) do
         VpsAdmin::API::Plugins::Monitoring::Events.object_label(alert, alert.object)
       end
-      parameter(:measured_value, 'Latest measured value') do
+      field(:measured_value, 'Latest value recorded by the monitor', type: :string) do
         alert.monitored_event_logs.order(:id).last&.value
       end
-      parameter(:check_count, 'Number of recorded checks') { alert.check_count }
-      parameter(:alert_number, 'Alert sequence number') { alert.next_alert_id }
-      parameter(:affected_user_id, 'Affected user ID') { alert.user_id }
-      parameter(:affected_user_login, 'Affected user login') { alert.user&.login }
+      field(:check_count, 'Number of recorded checks for the monitored event', type: :integer) { alert.check_count }
+      field(:alert_number, 'Sequence number of this alert for the monitored event', type: :integer) { alert.next_alert_id }
+      field(:affected_user_id, 'ID of the user affected by the monitoring event', type: :integer) { alert.user_id }
+      field(:affected_user_login, 'Login of the user affected by the monitoring event', type: :string) { alert.user&.login }
 
       if VpsAdmin::API::Plugins::Monitoring::Events.field?(profile, :vps)
-        parameter(:vps_id, 'Affected VPS ID') do
+        field(:vps_id, 'ID of the VPS affected by the monitoring event', type: :integer) do
           VpsAdmin::API::Plugins::Monitoring::Events.related_vps(alert.object)&.id
         end
-        parameter(:vps_hostname, 'Affected VPS hostname') do
+        field(:vps_hostname, 'Hostname of the VPS affected by the monitoring event', type: :string) do
           VpsAdmin::API::Plugins::Monitoring::Events.related_vps(alert.object)&.hostname
         end
       end
 
       if VpsAdmin::API::Plugins::Monitoring::Events.field?(profile, :dataset)
-        parameter(:dataset_id, 'Affected dataset ID') do
+        field(:dataset_id, 'ID of the dataset affected by the monitoring event', type: :integer) do
           alert.object.id if defined?(::Dataset) && alert.object.is_a?(::Dataset)
         end
-        parameter(:dataset_full_name, 'Affected dataset name') do
+        field(:dataset_full_name, 'Full name of the dataset affected by the monitoring event', type: :string) do
           alert.object.full_name if defined?(::Dataset) && alert.object.is_a?(::Dataset)
         end
       end
 
       if VpsAdmin::API::Plugins::Monitoring::Events.field?(profile, :dns)
-        parameter(:dns_zone_id, 'Affected DNS zone ID') do
+        field(:dns_zone_id, 'ID of the DNS zone affected by the monitoring event', type: :integer) do
           VpsAdmin::API::Plugins::Monitoring::Events.dns_zone(alert.object)&.id
         end
-        parameter(:dns_zone_name, 'Affected DNS zone name') do
+        field(:dns_zone_name, 'Name of the DNS zone affected by the monitoring event', type: :string) do
           VpsAdmin::API::Plugins::Monitoring::Events.dns_zone(alert.object)&.name
         end
-        parameter(:dns_server_id, 'DNS server ID') do
+        field(:dns_server_id, 'ID of the DNS server involved in the monitoring event', type: :integer) do
           VpsAdmin::API::Plugins::Monitoring::Events.dns_server(alert.object)&.id
         end
-        parameter(:dns_server_name, 'DNS server name') do
+        field(:dns_server_name, 'Name of the DNS server involved in the monitoring event', type: :string) do
           VpsAdmin::API::Plugins::Monitoring::Events.dns_server(alert.object)&.name
         end
-        parameter(:transfer_status, 'DNS zone transfer status') do
+        field(:transfer_status, 'Last DNS zone transfer status observed by monitoring', type: :string) do
           VpsAdmin::API::Plugins::Monitoring::Events.transfer_value(
             alert.object,
             :last_transfer_status
           )
         end
-        parameter(:transfer_reason_code, 'DNS transfer reason code') do
+        field(:transfer_reason_code, 'Machine-readable reason for the last DNS transfer state', type: :string) do
           VpsAdmin::API::Plugins::Monitoring::Events.transfer_value(
             alert.object,
             :last_transfer_reason_code
           )
         end
-        parameter(:transfer_reason, 'DNS transfer reason') do
+        field(:transfer_reason, 'Human-readable reason for the last DNS transfer state', type: :string) do
           VpsAdmin::API::Plugins::Monitoring::Events.transfer_value(
             alert.object,
             :last_transfer_reason
@@ -378,34 +378,34 @@ VpsAdmin::API::Events.define owner: :monitoring do
       end
 
       if VpsAdmin::API::Plugins::Monitoring::Events.field?(profile, :pool_role)
-        parameter(:pool_role, 'Storage pool role') do
+        field(:pool_role, 'Storage pool role associated with the monitoring event', type: :string) do
           VpsAdmin::API::Plugins::Monitoring::Events.context_value(context, :pool_role)
         end
       end
 
       if VpsAdmin::API::Plugins::Monitoring::Events.field?(profile, :threshold)
-        parameter(:threshold, 'Alert threshold') do
+        field(:threshold, 'Numeric threshold configured for the monitoring alert', type: :number) do
           VpsAdmin::API::Plugins::Monitoring::Events.context_value(context, :threshold)
         end
       end
 
       if VpsAdmin::API::Plugins::Monitoring::Events.field?(profile, :maintenance)
-        parameter(:finish_weekday, 'Maintenance window weekday') do
+        field(:finish_weekday, 'Weekday when the maintenance window should finish', type: :integer) do
           VpsAdmin::API::Plugins::Monitoring::Events.context_value(context, :finish_weekday)
         end
-        parameter(:finish_minutes, 'Maintenance window finish minute') do
+        field(:finish_minutes, 'Minute of day when the maintenance window should finish', type: :integer) do
           VpsAdmin::API::Plugins::Monitoring::Events.context_value(context, :finish_minutes)
         end
       end
 
-      parameter(:created_at, 'Monitored event creation time') { alert.created_at&.iso8601 }
-      parameter(:updated_at, 'Monitored event update time') { alert.updated_at&.iso8601 }
-      parameter(:last_report_at, 'Last report time') { alert.last_report_at&.iso8601 }
-      parameter(:saved_until, 'Acknowledged or ignored until') { alert.saved_until&.iso8601 }
-      parameter(:duration_seconds, 'Monitored event duration in seconds') do
+      field(:created_at, 'Time when the monitored event was created', type: :datetime) { alert.created_at&.iso8601 }
+      field(:updated_at, 'Time when the monitored event was last updated', type: :datetime) { alert.updated_at&.iso8601 }
+      field(:last_report_at, 'Time when the monitored event was last reported', type: :datetime) { alert.last_report_at&.iso8601 }
+      field(:saved_until, 'Time until which the monitored event is acknowledged or ignored', type: :datetime) { alert.saved_until&.iso8601 }
+      field(:duration_seconds, 'Duration of the monitored event in seconds', type: :integer) do
         VpsAdmin::API::Plugins::Monitoring::Events.duration_seconds(alert)
       end
-      extra_parameters { extra_parameters }
+      extra_payload { extra_payload }
 
       deliver :email do
         template profile.fetch(:template)

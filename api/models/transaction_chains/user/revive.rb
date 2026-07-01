@@ -9,7 +9,7 @@ module TransactionChains
         source: log,
         subject: 'User account restored',
         summary: "User #{user.login} was restored",
-        parameters: {
+        payload: {
           state: log.state || 'active',
           reason: log.reason,
           expiration_date: log.expiration_date&.iso8601

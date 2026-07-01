@@ -95,12 +95,12 @@ RSpec.describe VpsAdmin::Supervisor::Node::OomReports do
         value: vps.id.to_s
       )
       route.event_route_matchers.create!(
-        field: 'parameters.stage',
+        field: 'stage',
         operator: '==',
         value: 'raw'
       )
       route.event_route_matchers.create!(
-        field: 'parameters.cgroup',
+        field: 'cgroup',
         operator: '=*',
         value: '/user.slice/*'
       )
@@ -126,12 +126,12 @@ RSpec.describe VpsAdmin::Supervisor::Node::OomReports do
         position: 1
       )
       route.event_route_matchers.create!(
-        field: 'parameters.stage',
+        field: 'stage',
         operator: '==',
         value: 'raw'
       )
       route.event_route_matchers.create!(
-        field: 'parameters.cgroup',
+        field: 'cgroup',
         operator: '=*',
         value: '/user.slice/*'
       )
@@ -141,7 +141,7 @@ RSpec.describe VpsAdmin::Supervisor::Node::OomReports do
         user: vps.user,
         vps:,
         subject: 'OOM notification',
-        parameters: {
+        payload: {
           stage: 'notification',
           cgroup: '/user.slice/a.scope'
         }
@@ -236,7 +236,7 @@ RSpec.describe VpsAdmin::Supervisor::Node::OomReports do
         continue: true
       )
       mute_route.event_route_matchers.create!(
-        field: 'parameters.cgroup',
+        field: 'cgroup',
         operator: '=*',
         value: '/user.slice/*'
       )

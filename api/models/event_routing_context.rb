@@ -45,4 +45,16 @@ class EventRoutingContext < ApplicationRecord
   def self.routing_state_labels
     ROUTING_STATE_LABELS
   end
+
+  def subject_user_id
+    event.user_id
+  end
+
+  def subject_is_self
+    subject_relation == 'self'
+  end
+
+  def subject_is_admin_visible
+    subject_relation != 'self' && recipient_user.role == :admin
+  end
 end

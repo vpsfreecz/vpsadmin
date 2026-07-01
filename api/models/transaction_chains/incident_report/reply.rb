@@ -16,7 +16,7 @@ module TransactionChains
         'incident_report.reply',
         subject: "Re: #{message.subject}",
         summary: text.truncate(::Event::MAX_SUMMARY_LENGTH),
-        parameters: {
+        payload: {
           from_email: result.reply[:from],
           recipient_emails: result.reply[:to],
           in_reply_to_message_id: message.message_id,

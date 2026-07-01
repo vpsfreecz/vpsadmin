@@ -14,7 +14,7 @@ module VpsAdmin::API::Resources
              load_validators: false
       string :subject
       text :summary, nullable: true
-      text :parameters_json, label: 'Parameters'
+      text :payload_json, label: 'Payload'
       string :source_class, nullable: true
       integer :source_id, nullable: true
       resource VPS, value_label: :hostname, nullable: true
@@ -223,7 +223,7 @@ module VpsAdmin::API::Resources
                nullable: true
         string :subject, nullable: true
         text :summary, nullable: true
-        text :parameters_json, label: 'Parameters', nullable: true
+        text :payload_json, label: 'Payload', nullable: true
         string :subject_scope,
                choices: { values: SUBJECT_SCOPE_LABELS },
                load_validators: false,
@@ -257,26 +257,26 @@ module VpsAdmin::API::Resources
           source_class: TEST_EVENT_SOURCE_CLASS,
           subject: input[:subject] || 'Test notification',
           summary: input[:summary],
-          parameters: parse_parameters,
+          payload: parse_payload,
           route_context_mode:,
           route_owner:,
           persist: :always
         )
       rescue JSON::ParserError
-        error!('parameters are not valid JSON')
+        error!('payload is not valid JSON')
       rescue ActiveRecord::RecordInvalid => e
         error!('test event failed', e.record.errors.to_hash)
       end
 
-      def parse_parameters
-        return { 'note' => 'Sent from notification settings' } if input[:parameters_json].blank?
+      def parse_payload
+        return { 'note' => 'Sent from notification settings' } if input[:payload_json].blank?
 
-        if input[:parameters_json].bytesize > ::Event::MAX_PARAMETERS_JSON_SIZE
-          error!('parameters are too large')
+        if input[:payload_json].bytesize > ::Event::MAX_PARAMETERS_JSON_SIZE
+          error!('payload is too large')
         end
 
-        ret = JSON.parse(input[:parameters_json])
-        error!('parameters must be a JSON object') unless ret.is_a?(Hash)
+        ret = JSON.parse(input[:payload_json])
+        error!('payload must be a JSON object') unless ret.is_a?(Hash)
 
         ret
       end
