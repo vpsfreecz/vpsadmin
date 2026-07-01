@@ -163,22 +163,17 @@ class VpsAdmin::API::Resources::TransactionChain < HaveAPI::Resource
         )
 
         route.event_route_matchers.create!(
-          field: 'source_class',
-          operator: '==',
-          value: 'TransactionChain'
-        )
-        route.event_route_matchers.create!(
-          field: 'source_id',
+          field: 'chain_id',
           operator: '==',
           value: @chain.id.to_s
         )
         route.event_route_matchers.create!(
-          field: 'parameters.terminal',
+          field: 'terminal',
           operator: '==',
           value: 'true'
         )
         route.event_route_matchers.create!(
-          field: 'parameters.changed_at_timestamp',
+          field: 'changed_at_timestamp',
           operator: '>=',
           value: format('%.6f', state_change_threshold)
         )

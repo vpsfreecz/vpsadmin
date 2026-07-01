@@ -15,7 +15,7 @@ module TransactionChains
         source: totp_device,
         subject: 'TOTP recovery code used',
         summary: "TOTP recovery code used for #{user.login}",
-        parameters: {
+        payload: {
           totp_device_id: totp_device.id,
           totp_device_label: totp_device.label,
           request_ip:,

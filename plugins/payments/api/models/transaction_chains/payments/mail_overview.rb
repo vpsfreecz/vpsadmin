@@ -27,7 +27,7 @@ module VpsAdmin::API::Plugins::Payments::TransactionChains
         'payments.overview',
         subject: 'Payments overview',
         summary: "Payments overview from #{format_report_time(now - period)} to #{format_report_time(now)}",
-        parameters: report_parameters(period, language, now, income, vars[:accepted]),
+        payload: report_parameters(period, language, now, income, vars[:accepted]),
         report_vars: vars
       )
       ensure_email_deliveries_queued!(event)

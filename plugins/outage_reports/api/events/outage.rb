@@ -133,12 +133,12 @@ module VpsAdmin::API::Plugins::OutageReports::Events
   module_function
 
   def param(event, name)
-    params = event.parameters || {}
+    params = event.payload || {}
     params[name.to_s] || params[name.to_sym]
   end
 
   def params(event)
-    event.parameters || {}
+    event.payload || {}
   end
 
   def outage_source(event)
@@ -300,45 +300,45 @@ end
 VpsAdmin::API::Events.define owner: :outage_reports do
   {
     'outage.announced' => ['Outage announced', {
-      entity_labels: 'Affected entity labels',
-      handler_names: 'Handler names'
+      entity_labels: { description: 'Labels of infrastructure entities affected by the outage', type: :string_list },
+      handler_names: { description: 'Names of admins handling the outage', type: :string_list }
     }],
     'outage.updated' => ['Outage updated', {
-      changes: 'Changed outage fields'
+      changed_fields: { description: 'Names of outage fields changed by the update', type: :string_list }
     }]
-  }.each do |event_name, (label, event_parameters)|
+  }.each do |event_name, (label, event_fields)|
     event event_name,
           label:,
           category: 'outages',
           severity: :warning,
           default_routed: true do
-      parameters(
+      fields(
         {
-          role: 'Recipient role',
-          event: 'Outage notification event',
-          outage_id: 'Outage ID',
-          update_id: 'Outage update ID',
-          outage_type: 'Outage type',
-          state: 'Outage state',
-          impact_type: 'Impact type',
-          begins_at: 'Beginning time',
-          finished_at: 'Finish time',
-          duration: 'Expected duration in minutes',
-          summary: 'Update summary',
-          description: 'Update description',
-          outage_summary: 'Outage summary',
-          outage_description: 'Outage description',
-          affected_user_id: 'Affected user ID',
-          affected_user_login: 'Affected user login',
-          affected_vps_count: 'Affected VPS count',
-          direct_vps_count: 'Directly affected VPS count',
-          indirect_vps_count: 'Indirectly affected VPS count',
-          affected_export_count: 'Affected export count',
-          cves: 'Related CVE identifiers',
-          reported_by_id: 'Reporting admin user ID',
-          reported_by_login: 'Reporting admin login',
-          reported_by_name: 'Reporting admin name'
-        }.merge(event_parameters)
+          role: { description: 'Recipient role for this outage notification', type: :string },
+          event: { description: 'Outage notification phase that produced the event', type: :string },
+          outage_id: { description: 'ID of the outage report', type: :integer },
+          update_id: { description: 'ID of the outage report update', type: :integer },
+          outage_type: { description: 'Type of outage being reported', type: :string },
+          state: { description: 'State of the outage after the update', type: :string },
+          impact_type: { description: 'Kind of impact declared for the outage', type: :string },
+          begins_at: { description: 'Time when the outage begins', type: :datetime },
+          finished_at: { description: 'Time when the outage is expected or known to finish', type: :datetime },
+          duration: { description: 'Expected outage duration in minutes', type: :integer },
+          summary: { description: 'Summary text of the outage update', type: :string },
+          description: { description: 'Detailed text of the outage update', type: :string },
+          outage_summary: { description: 'Current summary text of the outage report', type: :string },
+          outage_description: { description: 'Current detailed text of the outage report', type: :string },
+          affected_user_id: { description: 'ID of the affected user for user-targeted events', type: :integer },
+          affected_user_login: { description: 'Login of the affected user for user-targeted events', type: :string },
+          affected_vps_count: { description: 'Number of VPSes affected by the outage', type: :integer },
+          direct_vps_count: { description: 'Number of VPSes directly affected by the outage', type: :integer },
+          indirect_vps_count: { description: 'Number of VPSes indirectly affected by the outage', type: :integer },
+          affected_export_count: { description: 'Number of exports affected by the outage', type: :integer },
+          cves: { description: 'CVE identifiers related to the outage', type: :string_list },
+          reported_by_id: { description: 'ID of the admin who reported the update', type: :integer },
+          reported_by_login: { description: 'Login of the admin who reported the update', type: :string },
+          reported_by_name: { description: 'Full name of the admin who reported the update', type: :string }
+        }.merge(event_fields)
       )
 
       deliver :email do

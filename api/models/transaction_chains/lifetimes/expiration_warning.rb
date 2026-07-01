@@ -29,7 +29,7 @@ module TransactionChains
           source: obj,
           subject: "#{klass.name} #{object_label(obj)} expiration warning"[0, 255],
           summary: expiration_summary(obj, days_before, days_after),
-          parameters: event_parameters(obj, object_name, days_before, days_after)
+          payload: event_parameters(obj, object_name, days_before, days_after)
         )
       end
     end
