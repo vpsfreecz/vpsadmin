@@ -11,9 +11,9 @@ class MigrateLegacyEmailRecipientsToRoutes < ActiveRecord::Migration[8.1]
 
   def self.monitoring_matchers(role, monitor, state)
     [
-      ['parameters.role', '==', role],
-      ['parameters.monitor_name', '==', monitor],
-      ['parameters.state', '==', state]
+      ['role', '==', role],
+      ['monitor_name', '==', monitor],
+      ['state', '==', state]
     ]
   end
 
@@ -32,8 +32,8 @@ class MigrateLegacyEmailRecipientsToRoutes < ActiveRecord::Migration[8.1]
               template_name: 'request_action_role_type',
               relation: 'other_user',
               matchers: [
-                ['parameters.role', '==', role],
-                ['parameters.request_type', '==', type]
+                ['role', '==', role],
+                ['request_type', '==', type]
               ]
             }
           ]
@@ -46,7 +46,7 @@ class MigrateLegacyEmailRecipientsToRoutes < ActiveRecord::Migration[8.1]
             template_name: 'request_action_role',
             relation: 'other_user',
             matchers: [
-              ['parameters.role', '==', role]
+              ['role', '==', role]
             ]
           }
         ]
@@ -63,9 +63,9 @@ class MigrateLegacyEmailRecipientsToRoutes < ActiveRecord::Migration[8.1]
               template_name: 'request_resolve_role_type_state',
               relation: 'other_user',
               matchers: [
-                ['parameters.role', '==', role],
-                ['parameters.request_type', '==', type],
-                ['parameters.request_state', '==', state]
+                ['role', '==', role],
+                ['request_type', '==', type],
+                ['request_state', '==', state]
               ]
             }
           ]
@@ -78,8 +78,8 @@ class MigrateLegacyEmailRecipientsToRoutes < ActiveRecord::Migration[8.1]
             template_name: 'request_action_role_type',
             relation: 'other_user',
             matchers: [
-              ['parameters.role', '==', role],
-              ['parameters.request_type', '==', type]
+              ['role', '==', role],
+              ['request_type', '==', type]
             ]
           }
         ]
@@ -93,8 +93,8 @@ class MigrateLegacyEmailRecipientsToRoutes < ActiveRecord::Migration[8.1]
             template_name: 'request_resolve_role_state',
             relation: 'other_user',
             matchers: [
-              ['parameters.role', '==', role],
-              ['parameters.request_state', '==', state]
+              ['role', '==', role],
+              ['request_state', '==', state]
             ]
           }
         ]
@@ -107,7 +107,7 @@ class MigrateLegacyEmailRecipientsToRoutes < ActiveRecord::Migration[8.1]
           template_name: 'request_action_role',
           relation: 'other_user',
           matchers: [
-            ['parameters.role', '==', role]
+            ['role', '==', role]
           ]
         }
       ]
@@ -146,8 +146,8 @@ class MigrateLegacyEmailRecipientsToRoutes < ActiveRecord::Migration[8.1]
       template_name: 'expiration_warning',
       relation: 'other_user',
       matchers: [
-        ['parameters.object', '==', 'vps'],
-        ['parameters.state', '==', 'active']
+        ['object', '==', 'vps'],
+        ['state', '==', 'active']
       ]
     },
     'payment_accepted' => {
@@ -161,7 +161,7 @@ class MigrateLegacyEmailRecipientsToRoutes < ActiveRecord::Migration[8.1]
       template_name: 'outage_report_role_event',
       relation: 'other_user',
       matchers: [
-        ['parameters.role', '==', 'user']
+        ['role', '==', 'user']
       ]
     },
     'outage_report_user_update' => {
@@ -169,7 +169,7 @@ class MigrateLegacyEmailRecipientsToRoutes < ActiveRecord::Migration[8.1]
       template_name: 'outage_report_role_event',
       relation: 'other_user',
       matchers: [
-        ['parameters.role', '==', 'user']
+        ['role', '==', 'user']
       ]
     },
     'security_advisory_user_announce' => {
@@ -195,7 +195,7 @@ class MigrateLegacyEmailRecipientsToRoutes < ActiveRecord::Migration[8.1]
       template_name: 'vps_oom_report',
       relation: 'other_user',
       matchers: [
-        ['parameters.stage', '==', 'notification']
+        ['stage', '==', 'notification']
       ]
     },
     'vps_oom_prevention' => {
@@ -348,8 +348,8 @@ class MigrateLegacyEmailRecipientsToRoutes < ActiveRecord::Migration[8.1]
       template_name: 'expiration_warning',
       relation: 'other_user',
       matchers: [
-        ['parameters.object', '==', 'user'],
-        ['parameters.state', '==', 'active']
+        ['object', '==', 'user'],
+        ['state', '==', 'active']
       ]
     },
     'alert_admin_monthly_traffic_closed' => {
@@ -638,7 +638,7 @@ class MigrateLegacyEmailRecipientsToRoutes < ActiveRecord::Migration[8.1]
 
   def ensure_route_matchers(route_id, config)
     matchers = []
-    matchers << ['context.subject_relation', '==', config.fetch(:relation)] if config[:relation]
+    matchers << ['subject_relation', '==', config.fetch(:relation)] if config[:relation]
     matchers.concat(config.fetch(:matchers))
 
     matchers.each do |field, operator, value|

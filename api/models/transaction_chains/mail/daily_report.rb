@@ -25,7 +25,7 @@ module TransactionChains
         'system.daily_report',
         subject: 'Daily report',
         summary: "Daily report from #{format_report_time(start)} to #{format_report_time(now)}",
-        parameters: report_parameters(lang, start, now),
+        payload: report_parameters(lang, start, now),
         report_vars: mail_vars
       )
       ensure_email_deliveries_queued!(event)

@@ -80,7 +80,7 @@ module TransactionChains
           vps: vps_update.vps,
           subject: "VPS ##{vps_update.vps.id} DNS resolver changed",
           summary: "#{vps_update.old_ns.label} -> #{vps_update.new_ns.label}",
-          parameters: {
+          payload: {
             vps_id: vps_update.vps.id,
             vps_hostname: vps_update.vps.hostname,
             old_dns_resolver_id: vps_update.old_ns.id,

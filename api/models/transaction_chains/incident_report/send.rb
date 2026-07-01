@@ -19,7 +19,7 @@ module TransactionChains
           subject: inc.subject,
           summary: inc.text.to_s.truncate(::Event::MAX_SUMMARY_LENGTH),
           ip_addr: incident_ip_addr(inc),
-          parameters: incident_parameters(inc)
+          payload: incident_parameters(inc)
         )
         ensure_email_deliveries_queued!(event)
       end

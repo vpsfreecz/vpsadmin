@@ -11,7 +11,7 @@ module TransactionChains
             source: log,
             subject: 'User account suspended',
             summary: "User #{user.login} was suspended",
-            parameters: {
+            payload: {
               state: log.state || 'suspended',
               reason: log.reason,
               expiration_date: log.expiration_date&.iso8601

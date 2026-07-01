@@ -214,53 +214,53 @@ RSpec.describe MigrateLegacyEmailRecipientsToRoutes do
       event_type: 'payments.overview',
       template_name: 'payments_overview'
     )
-    expect_no_matcher(daily_route, 'context.subject_relation')
-    expect_no_matcher(payments_route, 'context.subject_relation')
+    expect_no_matcher(daily_route, 'subject_relation')
+    expect_no_matcher(payments_route, 'subject_relation')
 
     suspend_route = route_for(
       user_id: ids.fetch(:custom_admin_id),
       event_type: 'user.suspended',
       template_name: 'user_suspend'
     )
-    expect_matcher(suspend_route, 'context.subject_relation', '==', 'other_user')
+    expect_matcher(suspend_route, 'subject_relation', '==', 'other_user')
 
     expiration_route = route_for(
       user_id: ids.fetch(:custom_admin_id),
       event_type: 'lifetime.expiration_warning',
       template_name: 'expiration_warning'
     )
-    expect_matcher(expiration_route, 'context.subject_relation', '==', 'other_user')
-    expect_matcher(expiration_route, 'parameters.object', '==', 'user')
-    expect_matcher(expiration_route, 'parameters.state', '==', 'active')
+    expect_matcher(expiration_route, 'subject_relation', '==', 'other_user')
+    expect_matcher(expiration_route, 'object', '==', 'user')
+    expect_matcher(expiration_route, 'state', '==', 'active')
 
     vps_expiration_route = route_for(
       user_id: ids.fetch(:direct_admin_id),
       event_type: 'lifetime.expiration_warning',
       template_name: 'expiration_warning'
     )
-    expect_matcher(vps_expiration_route, 'context.subject_relation', '==', 'other_user')
-    expect_matcher(vps_expiration_route, 'parameters.object', '==', 'vps')
-    expect_matcher(vps_expiration_route, 'parameters.state', '==', 'active')
+    expect_matcher(vps_expiration_route, 'subject_relation', '==', 'other_user')
+    expect_matcher(vps_expiration_route, 'object', '==', 'vps')
+    expect_matcher(vps_expiration_route, 'state', '==', 'active')
 
     request_route = route_for(
       user_id: ids.fetch(:direct_admin_id),
       event_type: 'request.resolved',
       template_name: 'request_resolve_role_type_state'
     )
-    expect_matcher(request_route, 'context.subject_relation', '==', 'other_user')
-    expect_matcher(request_route, 'parameters.role', '==', 'user')
-    expect_matcher(request_route, 'parameters.request_type', '==', 'change')
-    expect_matcher(request_route, 'parameters.request_state', '==', 'approved')
+    expect_matcher(request_route, 'subject_relation', '==', 'other_user')
+    expect_matcher(request_route, 'role', '==', 'user')
+    expect_matcher(request_route, 'request_type', '==', 'change')
+    expect_matcher(request_route, 'request_state', '==', 'approved')
 
     monitoring_route = route_for(
       user_id: ids.fetch(:direct_admin_id),
       event_type: 'monitoring.monitor_state_changed',
       template_name: 'alert_role_event_state'
     )
-    expect_matcher(monitoring_route, 'context.subject_relation', '==', 'other_user')
-    expect_matcher(monitoring_route, 'parameters.role', '==', 'admin')
-    expect_matcher(monitoring_route, 'parameters.monitor_name', '==', 'monthly_traffic')
-    expect_matcher(monitoring_route, 'parameters.state', '==', 'acknowledged')
+    expect_matcher(monitoring_route, 'subject_relation', '==', 'other_user')
+    expect_matcher(monitoring_route, 'role', '==', 'admin')
+    expect_matcher(monitoring_route, 'monitor_name', '==', 'monthly_traffic')
+    expect_matcher(monitoring_route, 'state', '==', 'acknowledged')
   end
 
   it 'recreates legacy recipient tables on rollback without reconstructing rows' do

@@ -515,7 +515,7 @@ RSpec.describe 'VpsAdmin::API::Resources::User write actions' do # rubocop:disab
         category: 'test',
         severity: 'info',
         subject: 'Spec rate limit usage',
-        parameters: {}
+        payload: {}
       )
       delivery = EventDelivery.create!(
         event:,

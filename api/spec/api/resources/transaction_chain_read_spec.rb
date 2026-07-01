@@ -464,15 +464,14 @@ RSpec.describe 'VpsAdmin::API::Resources::TransactionChain' do
         expect(route.position).to eq(EventRoute.minimum(:position))
         expect(route.event_type).to eq('transaction_chain.state_changed')
         matcher_rows = route.event_route_matchers.map { |m| [m.field, m.operator, m.value] }
-        timestamp_matcher = route.event_route_matchers.find_by!(field: 'parameters.changed_at_timestamp')
+        timestamp_matcher = route.event_route_matchers.find_by!(field: 'changed_at_timestamp')
         expect(matcher_rows).to include(
-          ['source_class', '==', 'TransactionChain'],
-          ['source_id', '==', chain_a.id.to_s],
-          ['parameters.terminal', '==', 'true']
+          ['chain_id', '==', chain_a.id.to_s],
+          ['terminal', '==', 'true']
         )
         expect(timestamp_matcher.operator).to eq('>=')
         expect(Float(timestamp_matcher.value)).to be <= Time.now.to_f
-        expect(route.event_route_matchers.count).to eq(4)
+        expect(route.event_route_matchers.count).to eq(3)
       end
 
       it 'spends the route immediately when the chain is already terminal' do
@@ -522,7 +521,7 @@ RSpec.describe 'VpsAdmin::API::Resources::TransactionChain' do
 
         expect_status(200)
         route = EventRoute.find(route_obj['id'])
-        threshold = Float(route.event_route_matchers.find_by!(field: 'parameters.changed_at_timestamp').value)
+        threshold = Float(route.event_route_matchers.find_by!(field: 'changed_at_timestamp').value)
 
         stale_event = VpsAdmin::API::Events.emit_transaction_chain_state!(
           chain_a,

@@ -11,7 +11,7 @@ module TransactionChains
             source: log,
             subject: 'User account resumed',
             summary: "User #{user.login} was resumed",
-            parameters: {
+            payload: {
               state: log.state || 'active',
               reason: log.reason,
               expiration_date: log.expiration_date&.iso8601
