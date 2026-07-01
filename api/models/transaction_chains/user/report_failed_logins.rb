@@ -24,7 +24,7 @@ module TransactionChains
           source: user,
           subject: 'Failed sign-in attempts',
           summary: "#{attempts.length} failed sign-in attempts for #{user.login}",
-          parameters: {
+          payload: {
             attempt_count: attempts.length,
             group_count: attempt_groups.length,
             attempt_group_ids: attempt_ids.first(MAX_EVENT_ATTEMPT_GROUPS).map do |grp|

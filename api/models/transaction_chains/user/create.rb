@@ -116,7 +116,7 @@ module TransactionChains
         source: user,
         subject: 'User account created',
         summary: "User #{user.login} was created",
-        parameters: {
+        payload: {
           login: user.login,
           email: user.email,
           level: user.level,

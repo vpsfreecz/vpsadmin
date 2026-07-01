@@ -9,7 +9,7 @@ module TransactionChains
         source: log,
         subject: 'User account disabled',
         summary: "User #{user.login} was disabled",
-        parameters: {
+        payload: {
           state: log.state || 'soft_delete',
           reason: log.reason,
           expiration_date: log.expiration_date&.iso8601

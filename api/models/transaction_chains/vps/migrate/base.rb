@@ -194,7 +194,7 @@ module TransactionChains
         vps: src_vps,
         subject: "VPS ##{src_vps.id} migration #{state}",
         summary: "#{src_vps.node.domain_name} -> #{dst_vps.node.domain_name}",
-        parameters: {
+        payload: {
           vps_id: src_vps.id,
           vps_hostname: src_vps.hostname,
           src_node_id: src_vps.node.id,

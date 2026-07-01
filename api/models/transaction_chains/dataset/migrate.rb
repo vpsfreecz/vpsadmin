@@ -413,7 +413,7 @@ module TransactionChains
         source: dataset,
         subject: "Dataset #{dataset.full_name} migration #{state}",
         summary: "#{src_pool.filesystem} -> #{dst_pool.filesystem}",
-        parameters: {
+        payload: {
           dataset_id: dataset.id,
           dataset_full_name: dataset.full_name,
           user_id: dataset_user.id,
@@ -425,6 +425,8 @@ module TransactionChains
           dst_pool_filesystem: dst_pool.filesystem,
           export_count: export_list.count,
           affected_vps_count: affected_vpses.count,
+          affected_vps_ids: affected_vps_sample.map(&:id),
+          affected_vps_hostnames: affected_vps_sample.map(&:hostname),
           affected_vpses: affected_vps_sample.map { |vps| { id: vps.id, hostname: vps.hostname } },
           restart_vps:,
           maintenance_window: !maintenance_windows.nil?,

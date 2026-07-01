@@ -178,7 +178,7 @@ import ../../make-test.nix (
             position: 1
           )
           route.event_route_matchers.create!(
-            field: 'parameters.note',
+            field: 'note',
             operator: '==',
             value: 'integration notification payload'
           )
@@ -188,7 +188,7 @@ import ../../make-test.nix (
             user: user,
             subject: 'Integration notification event',
             summary: 'Integration notification summary',
-            parameters: { note: 'integration notification payload' }
+            payload: { note: 'integration notification payload' }
           )
           deliveries = event.event_deliveries.order(:id).to_a
 
@@ -291,7 +291,7 @@ import ../../make-test.nix (
           expect(body.fetch('event').fetch('type')).to eq('user.test_notification')
           expect(body.fetch('event').fetch('subject')).to eq('Integration notification event')
           expect(body.fetch('event').fetch('summary')).to eq('Integration notification summary')
-          expect(body.fetch('event').fetch('parameters').fetch('note')).to eq('integration notification payload')
+          expect(body.fetch('event').fetch('payload').fetch('note')).to eq('integration notification payload')
           expect(body.fetch('delivery').fetch('id')).to eq(event.fetch('webhook_delivery_id'))
           expect(body.fetch('delivery').fetch('route').fetch('id')).to eq(event.fetch('route_id'))
           expect(body.fetch('delivery').fetch('receiver').fetch('id')).to eq(event.fetch('receiver_id'))
