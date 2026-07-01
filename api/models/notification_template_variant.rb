@@ -685,7 +685,7 @@ class NotificationTemplateVariant < ApplicationRecord
     end
 
     def telegram_param(name)
-      params = @parameters || telegram_event&.parameters || {}
+      params = @payload || telegram_event&.payload || {}
       params[name.to_s] || params[name.to_sym]
     end
   end

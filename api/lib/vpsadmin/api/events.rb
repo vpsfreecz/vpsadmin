@@ -17,19 +17,93 @@ module VpsAdmin::API
       'failed' => 'error',
       'fatal' => 'critical'
     }.freeze
+    FIELD_TYPE_OPERATORS = {
+      'string' => %w[== != =~ !~ =* !*],
+      'integer' => %w[== != > >= < <=],
+      'number' => %w[== != > >= < <=],
+      'boolean' => %w[== !=],
+      'datetime' => %w[== != > >= < <=],
+      'string_list' => %w[contains not_contains],
+      'integer_list' => %w[contains not_contains]
+    }.freeze
 
     Type = Struct.new(
       :name,
       :label,
       :category,
       :severity,
-      :parameters,
-      :parameter_types,
+      :fields,
       :template,
       :default_routed,
       :severity_description,
       :definition
     )
+
+    FieldDefinition = Struct.new(
+      :name,
+      :description,
+      :type,
+      :example,
+      :choices,
+      :block,
+      keyword_init: true
+    ) do
+      def initialize(**kwargs)
+        super
+        self.name = name.to_sym
+        self.type = normalize_type(type)
+        self.example = default_example if example.nil?
+      end
+
+      def operators
+        FIELD_TYPE_OPERATORS.fetch(type)
+      end
+
+      def to_h
+        {
+          name: name.to_s,
+          description:,
+          type:,
+          example:,
+          operators:
+        }.tap do |ret|
+          ret[:choices] = choices if choices
+        end
+      end
+
+      def evaluate(context)
+        context.instance_exec(&block) if block
+      end
+
+      protected
+
+      def normalize_type(value)
+        raise ArgumentError, "event field #{name} must declare a type" if value.nil?
+
+        normalized = value.to_s
+        unless FIELD_TYPE_OPERATORS.has_key?(normalized)
+          raise ArgumentError, "unsupported event field type #{value.inspect}"
+        end
+
+        normalized
+      end
+
+      def default_example
+        name_s = name.to_s
+        return true if type == 'boolean'
+        return 123 if type == 'integer' || name_s.end_with?('_id')
+        return 3.14 if type == 'number'
+        return '2026-07-01T12:00:00Z' if type == 'datetime'
+        return [123] if type == 'integer_list'
+        return ['example'] if type == 'string_list'
+        return 'vps1.example.org' if name_s.include?('hostname')
+        return '198.51.100.10' if name_s.include?('ip_addr') || name_s.end_with?('_addr')
+        return 'warning' if name_s == 'severity'
+        return 'active' if name_s == 'state'
+
+        'example'
+      end
+    end
 
     Argument = Struct.new(:name, :type, :optional, :default, :has_default) do
       def validate!(event_name, value, provided:)
@@ -153,7 +227,7 @@ module VpsAdmin::API
     class EventDefinition
       attr_reader :name, :owner, :label, :category_name, :default_severity,
                   :default_routed, :severity_description,
-                  :arguments, :parameter_labels, :parameter_types
+                  :arguments
 
       def initialize(name, label:, category:, default_routed:, owner: nil,
                      severity: :info, template: nil,
@@ -167,9 +241,9 @@ module VpsAdmin::API
         @severity_description = severity_description
         @fallback_template_name = template&.to_s
         @arguments = {}
-        @parameter_labels = {}
-        @parameter_types = {}
-        @parameter_blocks = {}
+        @fields = {}
+        @payload_block = nil
+        @extra_payload_block = nil
         @delivery_definitions = {}
         @helpers = {}
       end
@@ -190,24 +264,41 @@ module VpsAdmin::API
         end
       end
 
-      def parameter(name, label, type: nil, &block)
-        @parameter_labels[name.to_sym] = label
-        @parameter_types[name.to_sym] = type.to_s if type
-        @parameter_blocks[name.to_sym] = block if block
+      def field(name, description = nil, type: nil, example: nil, choices: nil, &block)
+        if description.is_a?(Hash)
+          config = description
+          description = config[:description] || config[:label]
+          type = config.fetch(:type, type)
+          example = config.fetch(:example, example)
+          choices = config.fetch(:choices, choices)
+        end
+
+        @fields[name.to_sym] = FieldDefinition.new(
+          name:,
+          description: description || name.to_s.tr('_', ' '),
+          type:,
+          example:,
+          choices:,
+          block:
+        )
       end
 
-      def parameters(hash)
+      def fields(hash)
         hash.each do |name, config|
-          if config.is_a?(Hash)
-            parameter(name, config.fetch(:label), type: config[:type])
-          else
-            parameter(name, config)
+          unless config.is_a?(Hash)
+            raise ArgumentError, "event field #{name} must declare a type"
           end
+
+          field(name, config)
         end
       end
 
-      def extra_parameters(&block)
-        @extra_parameters_block = block
+      def payload(value = nil, &block)
+        @payload_block = block || proc { value }
+      end
+
+      def extra_payload(&block)
+        @extra_payload_block = block
       end
 
       def deliver(action, &block)
@@ -268,7 +359,7 @@ module VpsAdmin::API
           ip_addr: evaluate(context, @ip_addr_block),
           severity: evaluate(context, @severity_block),
           category: evaluate(context, @category_block),
-          parameters: build_parameters(context)
+          payload: build_payload(context)
         }.compact
       end
 
@@ -276,14 +367,54 @@ module VpsAdmin::API
         delivery(:email)&.static_template_name || @fallback_template_name
       end
 
+      def field_metadata
+        @fields.values.map(&:to_h)
+      end
+
+      def field_for(name)
+        @fields[name.to_sym]
+      end
+
+      def field_names
+        @fields.keys.map(&:to_s)
+      end
+
+      def payload_value(event, field)
+        case field.to_s
+        when 'vps_id'
+          event.vps_id || payload_fetch(event.payload, field)
+        when 'vps_hostname'
+          event.vps&.hostname || payload_fetch(event.payload, field)
+        when 'ip_addr'
+          event.ip_addr || payload_fetch(event.payload, field)
+        else
+          payload_fetch(event.payload, field)
+        end
+      end
+
       protected
 
-      def build_parameters(context)
-        ret = @parameter_blocks.each_with_object({}) do |(name, block), memo|
-          value = context.instance_exec(&block)
-          memo[name] = value unless value.nil?
+      def payload_fetch(payload, field)
+        payload ||= {}
+        field_s = field.to_s
+        field_sym = field.to_sym
+        if payload.has_key?(field_s)
+          payload[field_s]
+        elsif payload.has_key?(field_sym)
+          payload[field_sym]
         end
-        extra = context.instance_exec(&@extra_parameters_block) if @extra_parameters_block
+      end
+
+      def build_payload(context)
+        ret = if @payload_block
+                evaluate(context, @payload_block) || {}
+              else
+                @fields.each_value.with_object({}) do |field, memo|
+                  value = field.evaluate(context)
+                  memo[field.name] = value unless value.nil?
+                end
+              end
+        extra = context.instance_exec(&@extra_payload_block) if @extra_payload_block
         ret.merge!(extra || {})
         roles = recipient_roles(context)
         ret[:recipient_roles] ||= roles if roles
@@ -320,12 +451,18 @@ module VpsAdmin::API
         VpsAdmin::API::Events.webui_url
       end
 
-      def parameters
-        event&.parameters || {}
+      def payload
+        event&.payload || {}
       end
 
       def param(name)
-        parameters[name.to_s] || parameters[name.to_sym]
+        name_s = name.to_s
+        name_sym = name.to_sym
+        if payload.has_key?(name_s)
+          payload[name_s]
+        elsif payload.has_key?(name_sym)
+          payload[name_sym]
+        end
       end
 
       def method_missing(name, *args, &block)
@@ -536,8 +673,7 @@ module VpsAdmin::API
         label: definition.label,
         category: definition.category_name,
         severity: definition.default_severity,
-        parameters: definition.parameter_labels,
-        parameter_types: definition.parameter_types,
+        fields: definition.field_metadata,
         template: definition.template_name,
         default_routed: definition.default_routed,
         severity_description: definition.severity_description,
@@ -567,6 +703,18 @@ module VpsAdmin::API
 
     def field_types(event_type: nil)
       EventRouteMatcher.field_types(event_type:)
+    end
+
+    def field_metadata(event_type: nil)
+      EventRouteMatcher.field_metadata(event_type:)
+    end
+
+    def matchable_field_values(event, route_context: nil)
+      field_metadata(event_type: event.event_type).each_with_object({}) do |field, memo|
+        name = field.fetch(:name)
+        value = EventRouteMatcher.field_value(event, name, route_context:)
+        memo[name] = value unless value.nil?
+      end
     end
 
     def email_delivery_context_for(event)
@@ -662,7 +810,7 @@ module VpsAdmin::API
         event:,
         notification_event: event,
         user: event.user,
-        parameters: event.parameters || {}
+        payload: event.payload || {}
       }.merge(template_context_for(event, action)&.vars || {})
     end
 
@@ -721,7 +869,7 @@ module VpsAdmin::API
         "Severity: #{event.severity}",
         event.vps && "VPS: ##{event.vps.id} #{event.vps.hostname}",
         event.ip_addr && "IP address: #{event.ip_addr}",
-        "Parameters:\n#{JSON.pretty_generate(event.parameters || {})}"
+        "Payload:\n#{JSON.pretty_generate(event.payload || {})}"
       ].compact
 
       ret.join("\n\n")
@@ -733,15 +881,12 @@ module VpsAdmin::API
       ''
     end
 
-    def parameter_field?(field)
-      return false unless field.to_s.start_with?('parameters.')
-
-      name = field.to_s.delete_prefix('parameters.')
-      types.any? { |type| type.parameters.has_key?(name.to_sym) || type.parameters.has_key?(name) }
+    def field?(field)
+      EventRouteMatcher.field?(field)
     end
 
     def plan(event_type, user: nil, vps: nil, subject: nil, summary: nil,
-             parameters: nil, severity: nil, category: nil, ip_addr: nil,
+             payload: nil, severity: nil, category: nil, ip_addr: nil,
              record_route_hits: false, **event_args)
       type = type_for(event_type)
       context = event_context_for(type, event_args)
@@ -761,7 +906,7 @@ module VpsAdmin::API
         severity: severity || attrs[:severity] || type&.severity || 'info',
         subject: subject || attrs[:subject] || type&.label || event_type.to_s,
         summary: summary || attrs[:summary],
-        parameters: parameters || attrs[:parameters] || {},
+        parameters: payload || attrs[:payload] || {},
         ip_addr: ip_addr || attrs[:ip_addr]
       )
       context.event = event if context
@@ -771,7 +916,7 @@ module VpsAdmin::API
     end
 
     def emit!(event_type, user: nil, vps: nil, source: nil, source_class: nil,
-              source_id: nil, subject: nil, summary: nil, parameters: nil,
+              source_id: nil, subject: nil, summary: nil, payload: nil,
               severity: nil, category: nil, ip_addr: nil, route: true,
               release: true, persist: :routed, route_context_mode: nil,
               route_owner: nil, **event_args)
@@ -795,7 +940,7 @@ module VpsAdmin::API
         severity: severity || attrs[:severity] || type&.severity,
         subject: subject || attrs[:subject] || type&.label,
         summary: summary || attrs[:summary],
-        parameters: parameters || attrs[:parameters] || {},
+        parameters: payload || attrs[:payload] || {},
         source_class: source_class || source&.class&.name,
         source_id: source_id || source&.id,
         ip_addr: ip_addr || attrs[:ip_addr]
@@ -846,7 +991,7 @@ module VpsAdmin::API
         subject: transaction_chain_subject(chain, state),
         summary: transaction_chain_summary(chain, previous_state, state),
         severity: TRANSACTION_CHAIN_STATE_SEVERITIES.fetch(state.to_s, 'info'),
-        parameters: transaction_chain_parameters(
+        payload: transaction_chain_parameters(
           chain,
           previous_state:,
           state:,
@@ -860,6 +1005,8 @@ module VpsAdmin::API
       terminal = TRANSACTION_CHAIN_TERMINAL_STATES.include?(state.to_s)
       failed = TRANSACTION_CHAIN_FAILED_STATES.include?(state.to_s)
       event_time = changed_at || Time.now
+      concerns = safe_transaction_chain_concerns(chain)
+      concern_objects = Array(concerns[:objects] || concerns['objects'])
 
       {
         chain_id: chain.id,
@@ -873,7 +1020,9 @@ module VpsAdmin::API
         size: chain.size,
         progress: chain.progress,
         user_session_id: chain.user_session_id,
-        concerns: safe_transaction_chain_concerns(chain),
+        concerns:,
+        concern_classes: concern_objects.map { |item| Array(item).first }.compact.uniq,
+        concern_object_ids: concern_objects.map { |item| Array(item)[1] }.compact,
         node_id: node&.id,
         node_name: node&.domain_name,
         changed_at: event_time.iso8601,
@@ -922,7 +1071,7 @@ module VpsAdmin::API
         subject: dns_transfer_subject(log),
         summary: dns_transfer_summary(log),
         severity: log.failed? ? 'warning' : 'info',
-        parameters: dns_transfer_parameters(log, previous_status:)
+        payload: dns_transfer_parameters(log, previous_status:)
       )
     end
 

@@ -66,7 +66,7 @@ module VpsAdmin::API::Plugins::Payments::TransactionChains
         source: payment,
         subject: 'Payment accepted',
         summary: payment_event_summary(payment),
-        parameters: payment_event_parameters(payment)
+        payload: payment_event_parameters(payment)
       )
 
       payment

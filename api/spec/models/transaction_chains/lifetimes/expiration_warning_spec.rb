@@ -111,7 +111,7 @@ RSpec.describe TransactionChains::Lifetimes::ExpirationWarning do
       user:,
       source: user,
       subject: 'Delayed expiration warning',
-      parameters: {
+      payload: {
         object: 'user',
         object_id: user.id,
         object_label: user.login,

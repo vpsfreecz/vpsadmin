@@ -106,36 +106,90 @@ function notifications_prop($object, $name, $default = null)
 
 function notifications_event_type_fields_from_type($type)
 {
+    $ret = [];
+
+    foreach (notifications_event_type_field_metadata_from_type($type) as $name => $field) {
+        $ret[$name] = isset($field['description']) && $field['description']
+            ? $field['description']
+            : $name;
+    }
+
+    return $ret;
+}
+
+function notifications_event_type_field_metadata_from_type($type)
+{
     if (!isset($type->fields) || $type->fields === null) {
         return [];
     }
 
-    if (is_object($type->fields)) {
-        return get_object_vars($type->fields);
+    $fields = $type->fields;
+
+    if (is_object($fields)) {
+        $fields = get_object_vars($fields);
     }
 
-    if (is_array($type->fields)) {
-        return $type->fields;
+    if (!is_array($fields)) {
+        return [];
     }
 
-    return [];
+    $ret = [];
+
+    foreach ($fields as $name => $field) {
+        if (is_object($field)) {
+            $field = get_object_vars($field);
+        }
+
+        if (!is_array($field)) {
+            continue;
+        }
+
+        if (!isset($field['name'])) {
+            $field['name'] = is_string($name) ? $name : null;
+        }
+
+        if (!$field['name']) {
+            continue;
+        }
+
+        if (isset($field['operators']) && is_object($field['operators'])) {
+            $field['operators'] = array_values(get_object_vars($field['operators']));
+        }
+
+        if (isset($field['choices']) && is_object($field['choices'])) {
+            $field['choices'] = get_object_vars($field['choices']);
+        }
+
+        $ret[$field['name']] = $field;
+    }
+
+    return $ret;
 }
 
 function notifications_event_type_field_types_from_type($type)
 {
-    if (!isset($type->field_types) || $type->field_types === null) {
-        return [];
+    $ret = [];
+
+    foreach (notifications_event_type_field_metadata_from_type($type) as $name => $field) {
+        if (isset($field['type'])) {
+            $ret[$name] = $field['type'];
+        }
     }
 
-    if (is_object($type->field_types)) {
-        return get_object_vars($type->field_types);
+    return $ret;
+}
+
+function notifications_event_type_field_operators_from_type($type)
+{
+    $ret = [];
+
+    foreach (notifications_event_type_field_metadata_from_type($type) as $name => $field) {
+        if (isset($field['operators']) && is_array($field['operators'])) {
+            $ret[$name] = array_values($field['operators']);
+        }
     }
 
-    if (is_array($type->field_types)) {
-        return $type->field_types;
-    }
-
-    return [];
+    return $ret;
 }
 
 function notifications_api_list_to_array($list)
@@ -250,6 +304,36 @@ function notifications_event_field_types($event_type = null)
     return $ret;
 }
 
+function notifications_event_field_metadata($event_type = null)
+{
+    $ret = [];
+
+    foreach (notifications_event_types_cached() as $type) {
+        if ($event_type && $event_type !== '__any__' && $type->name !== $event_type) {
+            continue;
+        }
+
+        $ret += notifications_event_type_field_metadata_from_type($type);
+    }
+
+    return $ret;
+}
+
+function notifications_event_field_operators($event_type = null)
+{
+    $ret = [];
+
+    foreach (notifications_event_types_cached() as $type) {
+        if ($event_type && $event_type !== '__any__' && $type->name !== $event_type) {
+            continue;
+        }
+
+        $ret += notifications_event_type_field_operators_from_type($type);
+    }
+
+    return $ret;
+}
+
 function notifications_event_type_labels($empty = true, $any = false)
 {
     $ret = [];
@@ -294,6 +378,113 @@ function notifications_matcher_operator_descriptions($operators)
     return $ret;
 }
 
+function notifications_matcher_operator_reference_html()
+{
+    $rows = [
+        'string' => [
+            _('text value'),
+            ['==', '!=', '=~', '!~', '=*', '!*'],
+            _('exact text, regular expression, or glob pattern'),
+        ],
+        'integer' => [
+            _('whole number'),
+            ['==', '!=', '>', '>=', '<', '<='],
+            _('integer comparison, for example 123'),
+        ],
+        'number' => [
+            _('number'),
+            ['==', '!=', '>', '>=', '<', '<='],
+            _('decimal comparison, for example 3.14'),
+        ],
+        'boolean' => [
+            _('true/false'),
+            ['==', '!='],
+            _('true or false'),
+        ],
+        'datetime' => [
+            _('date and time'),
+            ['==', '!=', '>', '>=', '<', '<='],
+            _('ISO 8601 time, for example 2026-07-01T12:00:00Z'),
+        ],
+        'string_list' => [
+            _('list of text values'),
+            ['contains', 'not_contains'],
+            _('one list item to look for'),
+        ],
+        'integer_list' => [
+            _('list of whole numbers'),
+            ['contains', 'not_contains'],
+            _('one integer list item to look for'),
+        ],
+    ];
+
+    $html = '<table class="table-style01">'
+        . '<tr><th>' . _('Type') . '</th><th>' . _('Meaning') . '</th><th>' . _('Operators') . '</th><th>' . _('Value') . '</th></tr>';
+
+    foreach ($rows as $type => $row) {
+        [$meaning, $operators, $value] = $row;
+        $html .= '<tr>'
+            . '<td><code>' . h($type) . '</code></td>'
+            . '<td>' . h($meaning) . '</td>'
+            . '<td>' . notifications_operator_list_html($operators) . '</td>'
+            . '<td>' . h($value) . '</td>'
+            . '</tr>';
+    }
+
+    return $html . '</table>';
+}
+
+function notifications_operator_list_html($operators)
+{
+    if (!$operators || !is_array($operators)) {
+        return '-';
+    }
+
+    $ret = [];
+
+    foreach ($operators as $operator) {
+        $ret[] = '<code>' . h($operator) . '</code>';
+    }
+
+    return implode(' ', $ret);
+}
+
+function notifications_matcher_operators_for_field($field, $operators, $field_operators)
+{
+    $allowed = $field_operators[$field] ?? array_keys($operators);
+    $ret = [];
+
+    foreach ($allowed as $operator) {
+        if (isset($operators[$operator])) {
+            $ret[$operator] = $operators[$operator];
+        }
+    }
+
+    return $ret ?: $operators;
+}
+
+function notifications_field_example_html($field)
+{
+    if (!isset($field['example'])) {
+        return '-';
+    }
+
+    $example = $field['example'];
+
+    if (is_array($example) || is_object($example)) {
+        $example = json_encode($example, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+    } elseif (is_bool($example)) {
+        $example = $example ? 'true' : 'false';
+    }
+
+    return '<code>' . h((string) $example) . '</code>';
+}
+
+function notifications_event_type_anchor($name)
+{
+    return 'event-type-' . preg_replace('/[^a-zA-Z0-9_-]+/', '-', $name);
+}
+
 function notifications_matcher_value_html($name, $value, $field, $field_types)
 {
     if (($field_types[$field] ?? null) === 'boolean') {
@@ -306,7 +497,7 @@ function notifications_matcher_value_html($name, $value, $field, $field_types)
     return notifications_text_input_html($name, $value, 35);
 }
 
-function notifications_matcher_value_toggle_script($field_types)
+function notifications_matcher_value_toggle_script($field_types, $field_operators, $operator_labels)
 {
     global $xtpl;
 
@@ -316,11 +507,23 @@ function notifications_matcher_value_toggle_script($field_types)
         . '<script type="text/javascript">'
         . '$(function(){'
         . 'var fieldTypes=' . json_encode($field_types, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) . ';'
+        . 'var fieldOperators=' . json_encode($field_operators, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) . ';'
+        . 'var operatorLabels=' . json_encode($operator_labels, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) . ';'
         . 'var field=$("select[name=field]");'
+        . 'var operator=$("select[name=operator]");'
         . 'var container=$("#notification-matcher-value");'
         . 'function booleanValue(value){'
         . 'value=String(value||"").toLowerCase();'
         . 'return $.inArray(value,["false","0","no","off"])>=0?"false":"true";'
+        . '}'
+        . 'function renderMatcherOperator(){'
+        . 'var current=operator.val();'
+        . 'var allowed=fieldOperators[field.val()]||Object.keys(operatorLabels);'
+        . 'operator.empty();'
+        . '$.each(allowed,function(_,op){'
+        . 'if(operatorLabels[op]){operator.append($("<option>").attr("value",op).text(operatorLabels[op]));}'
+        . '});'
+        . 'if($.inArray(current,allowed)>=0){operator.val(current);}'
         . '}'
         . 'function renderMatcherValue(){'
         . 'var current=container.find("[name=value]").val()||"";'
@@ -336,7 +539,8 @@ function notifications_matcher_value_toggle_script($field_types)
         . '}'
         . 'container.empty().append(input);'
         . '}'
-        . 'field.on("change",renderMatcherValue);'
+        . 'field.on("change",function(){renderMatcherOperator();renderMatcherValue();});'
+        . 'renderMatcherOperator();'
         . '});'
         . '</script>'
     );
@@ -1518,6 +1722,7 @@ function notifications_route_edit($route_id)
     $subject_scope_options = notifications_subject_scope_options($input->subject_scope);
     $operators = notifications_param_choices($matcher_input->operator);
     $field_types = notifications_event_field_types();
+    $field_operators = notifications_event_field_operators();
     $receiver_options = notifications_receiver_options($route->user_id);
     $route_options = notifications_route_options($route->user_id, true, $route->id);
     $matchers = notifications_api_list_to_array($route->matcher->list());
@@ -1571,8 +1776,9 @@ function notifications_route_edit($route_id)
 
     foreach ($matchers as $matcher) {
         $prefix = 'matchers[' . $matcher->id . ']';
+        $matcher_operators = notifications_matcher_operators_for_field($matcher->field, $operators, $field_operators);
         $xtpl->table_td('<code>' . h($matcher->field) . '</code>', false, true);
-        $xtpl->table_td(notifications_select_html($prefix . '[operator]', $operators, $matcher->operator));
+        $xtpl->table_td(notifications_select_html($prefix . '[operator]', $matcher_operators, $matcher->operator));
         $xtpl->table_td(notifications_matcher_value_html($prefix . '[value]', $matcher->value, $matcher->field, $field_types));
         $xtpl->table_td(
             '<a href="?page=notifications&action=matcher_delete&route=' . $route->id . '&id=' . $matcher->id
@@ -1648,9 +1854,12 @@ function notifications_matcher_new($route_id, $event_type = null)
 
     $fields = notifications_event_type_fields($selected_event_type, $all_fields);
     $field_types = notifications_event_field_types($selected_event_type);
+    $field_operators = notifications_event_field_operators($selected_event_type);
     $field = post_val('field', array_key_first($fields) ?: 'event_type');
-    $operator = post_val('operator', array_key_first($operators) ?: '==');
-    notifications_matcher_value_toggle_script($field_types);
+    $field_operator_choices = notifications_matcher_operators_for_field($field, $operators, $field_operators);
+    $operator = post_val('operator', array_key_first($field_operator_choices) ?: '==');
+    $operator_labels = notifications_matcher_operator_descriptions($operators);
+    notifications_matcher_value_toggle_script($field_types, $field_operators, $operator_labels);
     $url = '?page=notifications&action=matcher_new&route=' . $route->id
         . ($route_event_type ? '' : '&event_type=' . urlencode($selected_event_type))
         . notifications_user_qs($route->user_id);
@@ -1670,7 +1879,7 @@ function notifications_matcher_new($route_id, $event_type = null)
     $xtpl->form_add_select(
         _('Operator') . ':',
         'operator',
-        notifications_matcher_operator_descriptions($operators),
+        notifications_matcher_operator_descriptions($field_operator_choices),
         $operator
     );
     $xtpl->table_td(_('Value') . ':');
@@ -1683,6 +1892,11 @@ function notifications_matcher_new($route_id, $event_type = null)
     );
     $xtpl->table_tr();
     $xtpl->form_out(_('Add'));
+
+    $xtpl->table_title(_('Matcher operator reference'));
+    $xtpl->table_td(notifications_matcher_operator_reference_html(), false, true);
+    $xtpl->table_tr('#fff', false, 'nohover');
+    $xtpl->table_out();
 
     $xtpl->sbar_add(_('Back to route'), '?page=notifications&action=route_edit&id=' . $route->id . notifications_user_qs($route->user_id));
     if (!$route_event_type) {
@@ -3405,8 +3619,8 @@ function notifications_event_show($event_id)
     $xtpl->table_td(h($event->summary));
     $xtpl->table_tr();
 
-    $xtpl->table_td(_('Parameters') . ':');
-    $xtpl->table_td(notifications_json_pre_html($event->parameters_json));
+    $xtpl->table_td(_('Payload') . ':');
+    $xtpl->table_td(notifications_json_pre_html($event->payload_json));
     $xtpl->table_tr();
     $xtpl->table_out();
 
@@ -3841,37 +4055,56 @@ function notifications_event_types($user_id = null)
     $html = '<div class="notification-event-types">';
 
     foreach ($groups as $category => $types) {
+        usort($types, function ($a, $b) {
+            return strcmp($a->name, $b->name);
+        });
+
         $html .= '<details style="margin-bottom:1em;">'
             . '<summary><strong>' . h($category) . '</strong> (' . count($types) . ')</summary>'
-            . '<table class="table-style01" style="margin-top:0.5em;">'
-            . '<tr><th>' . _('Name') . '</th><th>' . _('Severity') . '</th><th>' . _('Default routed') . '</th><th>' . _('Matchable fields') . '</th></tr>';
+            . '<div style="margin-top:0.5em;">';
 
         foreach ($types as $type) {
-            $fields = notifications_event_type_fields_from_type($type);
-            $fields_html = '-';
+            $anchor = notifications_event_type_anchor($type->name);
+            $fields = notifications_event_type_field_metadata_from_type($type);
+            $severity_description = notifications_prop($type, 'severity_description');
+            $template = notifications_prop($type, 'template');
 
-            if ($fields) {
-                $fields_html = '<table class="table-style01">'
-                    . '<tr><th>' . _('Field') . '</th><th>' . _('Label') . '</th></tr>';
+            $html .= '<div id="' . h($anchor) . '" style="margin:0 0 1.25em 0;">'
+                . '<table class="table-style01" style="margin-bottom:0.4em;">'
+                . '<tr><th colspan="2"><code>' . h($type->name) . '</code><br>' . h($type->label) . '</th></tr>'
+                . '<tr><td style="width:12em;">' . _('Severity') . ':</td><td>' . h($type->severity)
+                . ($severity_description ? '<br><small>' . h($severity_description) . '</small>' : '')
+                . '</td></tr>'
+                . '<tr><td>' . _('Default routed') . ':</td><td>'
+                . (notifications_prop($type, 'default_routed', true) ? h(_('yes')) : h(_('opt-in')))
+                . '</td></tr>';
 
-                foreach ($fields as $name => $label) {
-                    $fields_html .= '<tr><td><code>' . h($name) . '</code></td><td>' . h($label) . '</td></tr>';
-                }
-
-                $fields_html .= '</table>';
+            if ($template) {
+                $html .= '<tr><td>' . _('Template') . ':</td><td><code>' . h($template) . '</code></td></tr>';
             }
 
-            $html .= '<tr>'
-                . '<td><code>' . h($type->name) . '</code><br>' . h($type->label) . '</td>'
-                . '<td>' . h($type->severity)
-                . (notifications_prop($type, 'severity_description') ? '<br><small>' . h($type->severity_description) . '</small>' : '')
-                . '</td>'
-                . '<td>' . (notifications_prop($type, 'default_routed', true) ? h(_('yes')) : h(_('opt-in'))) . '</td>'
-                . '<td>' . $fields_html . '</td>'
-                . '</tr>';
+            $html .= '</table>'
+                . '<table class="table-style01">'
+                . '<tr><th>' . _('Field') . '</th><th>' . _('Type') . '</th><th>' . _('Operators') . '</th><th>' . _('Example') . '</th><th>' . _('Meaning') . '</th></tr>';
+
+            foreach ($fields as $name => $field) {
+                $html .= '<tr>'
+                    . '<td><code>' . h($name) . '</code></td>'
+                    . '<td><code>' . h($field['type'] ?? '') . '</code></td>'
+                    . '<td>' . notifications_operator_list_html($field['operators'] ?? []) . '</td>'
+                    . '<td>' . notifications_field_example_html($field) . '</td>'
+                    . '<td>' . h($field['description'] ?? $name) . '</td>'
+                    . '</tr>';
+            }
+
+            if (!$fields) {
+                $html .= '<tr><td colspan="5">' . _('No event-specific matchable fields.') . '</td></tr>';
+            }
+
+            $html .= '</table></div>';
         }
 
-        $html .= '</table></details>';
+        $html .= '</div></details>';
     }
 
     $html .= '</div>';
@@ -3882,6 +4115,16 @@ function notifications_event_types($user_id = null)
     $xtpl->table_out();
 
     notifications_sidebar('event_types', $user_id);
+    foreach ($groups as $category => $types) {
+        foreach ($types as $type) {
+            $xtpl->sbar_add(
+                $type->name,
+                '?page=notifications&action=event_types'
+                . notifications_user_qs($user_id)
+                . '#' . notifications_event_type_anchor($type->name)
+            );
+        }
+    }
 }
 
 function notifications_test_event($user_id = null)
@@ -3913,7 +4156,7 @@ function notifications_test_event($user_id = null)
     );
     api_param_to_form('subject', $input->subject, post_val('subject', _('Test notification')));
     api_param_to_form('summary', $input->summary, post_val('summary', _('This event was created from notification settings.')));
-    $xtpl->form_add_textarea(_('Parameters') . ':', 70, 8, 'parameters_json', post_val('parameters_json', "{\n  \"note\": \"testing notification routing\"\n}"));
+    $xtpl->form_add_textarea(_('Payload') . ':', 70, 8, 'payload_json', post_val('payload_json', "{\n  \"note\": \"testing notification routing\"\n}"));
     $xtpl->form_out(_('Create event'));
 
     notifications_sidebar('test', $user_id);

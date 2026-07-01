@@ -601,7 +601,7 @@ if (isLoggedIn()) {
                     'event_type' => api_post('event_type'),
                     'subject' => api_post('subject'),
                     'summary' => api_post('summary'),
-                    'parameters_json' => api_post('parameters_json'),
+                    'payload_json' => api_post('payload_json'),
                 ];
 
                 if (isAdmin()) {

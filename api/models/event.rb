@@ -86,8 +86,16 @@ class Event < ApplicationRecord
     source_class.safe_constantize&.find_by(id: source_id)
   end
 
-  def parameters_json
-    JSON.dump(parameters || {})
+  def payload_json
+    JSON.dump(payload)
+  end
+
+  def payload
+    parameters || {}
+  end
+
+  def payload=(value)
+    self.parameters = value
   end
 
   protected
