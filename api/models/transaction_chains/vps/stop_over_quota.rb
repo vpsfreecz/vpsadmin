@@ -21,7 +21,7 @@ module TransactionChains
         source: dataset_expansion,
         subject: "VPS ##{vps.id} stopped over quota",
         summary: "Dataset #{dataset.full_name} is over quota",
-        parameters: {
+        payload: {
           vps_id: vps.id,
           vps_hostname: vps.hostname,
           dataset_id: dataset.id,

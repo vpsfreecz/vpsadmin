@@ -265,7 +265,7 @@ RSpec.describe SecurityAdvisory do
     event = VpsAdmin::API::Events.emit!(
       'security_advisory.updated',
       user: SpecSeed.user,
-      parameters: {
+      payload: {
         advisory_id: advisory.id,
         update_id: update.id
       },

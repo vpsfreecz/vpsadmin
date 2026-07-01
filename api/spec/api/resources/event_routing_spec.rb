@@ -337,9 +337,9 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
       expect(
         matcher_create.dig('field', 'validators', 'include', 'values')
       ).to include(
-        'parameters.codename' => 'Incident report: Report codename',
-        'parameters.recipient_roles' => 'Recipient roles',
-        'context.subject_relation' => 'Subject relation'
+        'codename' => 'Incident report codename assigned by vpsAdmin',
+        'recipient_roles' => 'Template recipient roles available for this event',
+        'subject_relation' => 'Relationship between route owner and event subject'
       )
       expect(
         matcher_create.dig('operator', 'validators', 'include', 'values')
@@ -426,7 +426,7 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
 
     as(SpecSeed.user) do
       json_post matcher_index_path(route.id), matcher: {
-        field: 'parameters.codename',
+        field: 'codename',
         operator: '==',
         value: 'Spec-Abuse'
       }
@@ -440,7 +440,7 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
       'vps.incident_report',
       user: SpecSeed.user,
       subject: 'Spec incident',
-      parameters: {
+      payload: {
         'codename' => 'Spec-Abuse'
       }
     )
@@ -555,7 +555,7 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
       position: 1
     )
     route.event_route_matchers.create!(
-      field: 'context.subject_relation',
+      field: 'subject_relation',
       operator: '==',
       value: 'other_user'
     )
@@ -643,7 +643,7 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
       category: 'general',
       severity: 'info',
       subject: 'Spec queue event',
-      parameters: {}
+      payload: {}
     )
     common = {
       event:,
@@ -761,7 +761,7 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
 
     as(SpecSeed.user) do
       json_post matcher_index_path(route.id), matcher: {
-        field: 'parameters.cgroup',
+        field: 'cgroup',
         operator: '==',
         value: '/system.slice/spec.service'
       }
@@ -1186,7 +1186,7 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
       category: 'test',
       severity: 'info',
       subject: 'Retryable delivery',
-      parameters: {}
+      payload: {}
     )
     delivery = EventDelivery.create!(
       event:,
@@ -1219,7 +1219,7 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
       category: 'test',
       severity: 'info',
       subject: 'Sent delivery',
-      parameters: {}
+      payload: {}
     )
     delivery = EventDelivery.create!(
       event:,
@@ -1357,23 +1357,27 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
 
     expect_status(200)
     incident = event_types.detect { |row| row['name'] == 'vps.incident_report' }
+    incident_fields = incident['fields'].index_by { |field| field['name'] }
     expect(incident).to be_present
     expect(incident['default_routed']).to be(true)
-    expect(incident['fields']).to include('default_routed' => 'Default routed')
-    expect(incident['field_types']).to include('default_routed' => 'boolean')
-    expect(incident['fields']).to include('parameters.codename' => 'Incident report: Report codename')
+    expect(incident_fields.dig('default_routed', 'type')).to eq('boolean')
+    expect(incident_fields.dig('codename', 'description')).to eq('Incident report codename assigned by vpsAdmin')
+    expect(incident_fields.dig('codename', 'type')).to eq('string')
+    expect(incident_fields.dig('codename', 'operators')).to include('==', '=~')
     test = event_types.detect { |row| row['name'] == 'user.test_notification' }
     expect(test['default_routed']).to be(true)
     oom = event_types.detect { |row| row['name'] == 'vps.oom_report' }
-    expect(oom['fields']).to include('parameters.stage' => 'OOM report: OOM event stage')
+    oom_fields = oom['fields'].index_by { |field| field['name'] }
+    expect(oom_fields.dig('stage', 'description')).to eq('Processing stage that emitted the OOM notification')
+    expect(oom_fields.dig('cgroups', 'type')).to eq('string_list')
+    expect(oom_fields.dig('cgroups', 'operators')).to eq(%w[contains not_contains])
     chain = event_types.detect { |row| row['name'] == 'transaction_chain.state_changed' }
+    chain_fields = chain['fields'].index_by { |field| field['name'] }
     expect(chain['default_routed']).to be(false)
-    expect(chain['fields']).to include('parameters.terminal' => 'Transaction chain state changed: Whether the chain reached a terminal state')
-    expect(chain['field_types']).to include(
-      'parameters.terminal' => 'boolean',
-      'parameters.successful' => 'boolean',
-      'parameters.failed' => 'boolean'
-    )
+    expect(chain_fields.dig('terminal', 'description')).to eq('Whether the chain reached a terminal state')
+    expect(chain_fields.dig('terminal', 'type')).to eq('boolean')
+    expect(chain_fields.dig('successful', 'type')).to eq('boolean')
+    expect(chain_fields.dig('failed', 'type')).to eq('boolean')
     dns = event_types.detect { |row| row['name'] == 'dns.zone_transfer.failed' }
     expect(dns['default_routed']).to be(false)
   end
@@ -1383,11 +1387,10 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
 
     expect_status(200)
     monitoring = event_types.detect { |row| row['name'] == 'monitoring.monitor_state_changed' }
+    monitoring_fields = monitoring['fields'].index_by { |field| field['name'] }
     expect(monitoring['default_routed']).to be(true)
-    expect(monitoring['fields']).to include(
-      'parameters.monitor_name' => 'Monitoring state changed: Monitor internal name',
-      'parameters.state' => 'Monitoring state changed: Monitored event state'
-    )
+    expect(monitoring_fields.dig('monitor_name', 'description')).to eq('Internal name of the monitor definition')
+    expect(monitoring_fields.dig('state', 'description')).to eq('State of the monitored event after the check')
   end
 
   it 'does not register monitoring event types in core-only mode', without_plugins: :monitoring do
@@ -1400,7 +1403,7 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
       json_post event_test_path, event: {
         event_type: 'user.test_notification',
         subject: 'Spec test event',
-        parameters_json: JSON.dump(note: 'from spec')
+        payload_json: JSON.dump(note: 'from spec')
       }
     end
 
@@ -1467,7 +1470,7 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
       position: 1
     )
     route.event_route_matchers.create!(
-      field: 'context.subject_relation',
+      field: 'subject_relation',
       operator: '==',
       value: 'system'
     )
@@ -1511,7 +1514,7 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
         category: 'test',
         severity: 'info',
         subject: "Existing test event #{i}",
-        parameters: {},
+        payload: {},
         source_class: VpsAdmin::API::Resources::Event::Test::TEST_EVENT_SOURCE_CLASS
       )
     end
@@ -1572,7 +1575,7 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
       user: SpecSeed.user,
       subject: 'Spec delivery detail event',
       summary: 'Spec delivery detail summary',
-      parameters: { note: 'delivery detail' }
+      payload: { note: 'delivery detail' }
     )
     email_delivery = event.event_deliveries.email_action.sole
     webhook_delivery = event.event_deliveries.webhook_action.sole
@@ -1766,7 +1769,7 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
       json_post event_test_path, event: {
         event_type: 'user.failed_logins',
         subject: 'foreign failed login ids',
-        parameters_json: JSON.dump(attempt_group_ids: [[other_attempt.id]])
+        payload_json: JSON.dump(attempt_group_ids: [[other_attempt.id]])
       }
     end
 
@@ -1778,7 +1781,7 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
       json_post event_test_path, event: {
         event_type: 'user.totp_recovery_code_used',
         subject: 'foreign totp id',
-        parameters_json: JSON.dump(totp_device_id: other_totp.id)
+        payload_json: JSON.dump(totp_device_id: other_totp.id)
       }
     end
 
@@ -1792,7 +1795,7 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
       as(SpecSeed.user) do
         json_post event_test_path, event: {
           subject: 'oversized parameters',
-          parameters_json: JSON.dump(note: 'x' * ::Event::MAX_PARAMETERS_JSON_SIZE)
+          payload_json: JSON.dump(note: 'x' * ::Event::MAX_PARAMETERS_JSON_SIZE)
         }
       end
     end.not_to change(Event, :count)
@@ -1805,7 +1808,7 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
       as(SpecSeed.user) do
         json_post event_test_path, event: {
           subject: 'array parameters',
-          parameters_json: JSON.dump(['nope'])
+          payload_json: JSON.dump(['nope'])
         }
       end
     end.not_to change(Event, :count)

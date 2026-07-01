@@ -2,12 +2,12 @@ module VpsAdmin::API::Events::Core
   module_function
 
   def param(event, name)
-    params = event.parameters || {}
+    params = event.payload || {}
     params[name.to_s] || params[name.to_sym]
   end
 
   def params(event)
-    event.parameters || {}
+    event.payload || {}
   end
 
   def base_url
@@ -603,13 +603,13 @@ VpsAdmin::API::Events.define do
         category: 'account',
         severity: :info,
         default_routed: true do
-    parameters(
-      login: 'User login',
-      email: 'User e-mail',
-      level: 'User level',
-      object_state: 'Initial account state',
-      create_vps: 'Whether an initial VPS was requested',
-      active: 'Whether the account was activated'
+    fields(
+      login: { description: 'Login of the created user account', type: :string },
+      email: { description: 'E-mail address set on the created account', type: :string },
+      level: { description: 'Numeric user level assigned during creation', type: :integer },
+      object_state: { description: 'Initial lifecycle state of the account', type: :string },
+      create_vps: { description: 'Whether an initial VPS was requested', type: :boolean },
+      active: { description: 'Whether the account was activated immediately', type: :boolean }
     )
 
     deliver :email do
@@ -637,10 +637,10 @@ VpsAdmin::API::Events.define do
           category: 'account',
           severity:,
           default_routed: true do
-      parameters(
-        state: 'Lifecycle state',
-        reason: 'Lifecycle reason',
-        expiration_date: 'Expiration date'
+      fields(
+        state: { description: 'Account lifecycle state after the change', type: :string },
+        reason: { description: 'Operator-provided reason for the lifecycle change', type: :string },
+        expiration_date: { description: 'Date when the lifecycle state expires', type: :datetime }
       )
 
       deliver :email do
@@ -655,14 +655,14 @@ VpsAdmin::API::Events.define do
         category: 'security',
         severity: :warning,
         default_routed: true do
-    parameters(
-      auth_type: 'Authentication type',
-      client_ip_addr: 'Client IP address',
-      api_ip_addr: 'API IP address',
-      client_version: 'Client version',
-      scope: 'Token scope',
-      token_lifetime: 'Token lifetime',
-      label: 'Token label'
+    fields(
+      auth_type: { description: 'Authentication method used to create the token', type: :string },
+      client_ip_addr: { description: 'Client IP address reported by the API client', type: :string },
+      api_ip_addr: { description: 'IP address observed by the vpsAdmin API', type: :string },
+      client_version: { description: 'Version string reported by the API client', type: :string },
+      scope: { description: 'Access scope granted to the token', type: :string },
+      token_lifetime: { description: 'Token lifetime requested by the user session', type: :string },
+      label: { description: 'User-visible token label', type: :string }
     )
 
     deliver :email do
@@ -676,11 +676,11 @@ VpsAdmin::API::Events.define do
         category: 'security',
         severity: :critical,
         default_routed: true do
-    parameters(
-      totp_device_id: 'TOTP device ID',
-      totp_device_label: 'TOTP device label',
-      request_ip: 'Request IP address',
-      used_at: 'Recovery time'
+    fields(
+      totp_device_id: { description: 'ID of the TOTP device whose recovery code was used', type: :integer },
+      totp_device_label: { description: 'User-visible label of the affected TOTP device', type: :string },
+      request_ip: { description: 'IP address that submitted the recovery code', type: :string },
+      used_at: { description: 'Time when the recovery code was accepted', type: :datetime }
     )
 
     deliver :email do
@@ -694,13 +694,12 @@ VpsAdmin::API::Events.define do
         category: 'security',
         severity: :warning,
         default_routed: true do
-    parameters(
-      attempt_count: 'Failed attempt count',
-      group_count: 'Attempt group count',
-      attempt_group_ids: 'Failed attempt IDs grouped by similarity',
-      ip_addrs: 'Client IP addresses',
-      auth_types: 'Authentication types',
-      reasons: 'Failure reasons'
+    fields(
+      attempt_count: { description: 'Total number of failed sign-in attempts in the report', type: :integer },
+      group_count: { description: 'Number of attempt groups included in the report', type: :integer },
+      ip_addrs: { description: 'Client IP addresses observed in failed attempts', type: :string_list },
+      auth_types: { description: 'Authentication methods used in failed attempts', type: :string_list },
+      reasons: { description: 'Failure reasons reported by authentication', type: :string_list }
     )
 
     deliver :email do
@@ -714,7 +713,9 @@ VpsAdmin::API::Events.define do
         category: 'test',
         severity: :info,
         default_routed: true do
-    parameters(note: 'Test note')
+    fields(
+      note: { description: 'Free-form note supplied when creating the test event', type: :string }
+    )
   end
 
   event 'user.new_login',
@@ -731,14 +732,30 @@ VpsAdmin::API::Events.define do
     summary { "New sign-in to #{session.user.login}" }
     ip_addr { session.client_ip_addr || session.api_ip_addr }
 
-    parameter(:auth_type, 'Authentication type') { session.auth_type }
-    parameter(:client_ip_addr, 'Client IP address') { session.client_ip_addr }
-    parameter(:api_ip_addr, 'API IP address') { session.api_ip_addr }
-    parameter(:client_version, 'Client version') { session.client_version }
-    parameter(:user_agent, 'User agent') { session.user_agent_string }
-    parameter(:user_device_id, 'User device ID') { authorization.user_device&.id }
-    parameter(:authorization_id, 'OAuth authorization ID') { authorization.id }
-    parameter(:oauth2_client_id, 'OAuth client ID') { authorization.oauth2_client_id }
+    field(:auth_type, 'Authentication method used for the sign-in', type: :string) do
+      session.auth_type
+    end
+    field(:client_ip_addr, 'Client IP address reported by the API client', type: :string) do
+      session.client_ip_addr
+    end
+    field(:api_ip_addr, 'IP address observed by the vpsAdmin API', type: :string) do
+      session.api_ip_addr
+    end
+    field(:client_version, 'Version string reported by the API client', type: :string) do
+      session.client_version
+    end
+    field(:user_agent, 'HTTP User-Agent header used by the client', type: :string) do
+      session.user_agent_string
+    end
+    field(:user_device_id, 'ID of the remembered user device used for sign-in', type: :integer) do
+      authorization.user_device&.id
+    end
+    field(:authorization_id, 'ID of the OAuth authorization used for sign-in', type: :integer) do
+      authorization.id
+    end
+    field(:oauth2_client_id, 'ID of the OAuth client application', type: :integer) do
+      authorization.oauth2_client_id
+    end
 
     deliver :email do
       template :user_new_login
@@ -758,32 +775,33 @@ VpsAdmin::API::Events.define do
         severity: :info,
         default_routed: false,
         severity_description: 'Severity is derived from the new transaction chain state' do
-    parameters(
-      chain_id: 'Transaction chain ID',
-      chain_name: 'Transaction chain internal name',
-      chain_label: 'Transaction chain label',
-      previous_state: 'Previous state',
-      state: 'Current state',
+    fields(
+      chain_id: { description: 'ID of the transaction chain whose state changed', type: :integer },
+      chain_name: { description: 'Internal transaction chain name', type: :string },
+      chain_label: { description: 'User-visible transaction chain label', type: :string },
+      previous_state: { description: 'Transaction chain state before the change', type: :string },
+      state: { description: 'Transaction chain state after the change', type: :string },
       terminal: {
-        label: 'Whether the chain reached a terminal state',
+        description: 'Whether the chain reached a terminal state',
         type: :boolean
       },
       successful: {
-        label: 'Whether the terminal state is successful',
+        description: 'Whether the terminal state is successful',
         type: :boolean
       },
       failed: {
-        label: 'Whether the terminal state is failed or fatal',
+        description: 'Whether the terminal state is failed or fatal',
         type: :boolean
       },
-      size: 'Number of transactions in the chain',
-      progress: 'Finished transaction count',
-      user_session_id: 'User session ID',
-      concerns: 'Affected objects',
-      node_id: 'Node ID that reported the change',
-      node_name: 'Node name that reported the change',
-      changed_at: 'State change time',
-      changed_at_timestamp: 'State change Unix timestamp'
+      size: { description: 'Number of transactions in the chain', type: :integer },
+      progress: { description: 'Number of transactions already finished', type: :integer },
+      user_session_id: { description: 'ID of the user session that created the chain', type: :integer },
+      concern_classes: { description: 'Classes of objects affected by the chain', type: :string_list },
+      concern_object_ids: { description: 'IDs of objects affected by the chain', type: :integer_list },
+      node_id: { description: 'ID of the node that reported the state change', type: :integer },
+      node_name: { description: 'Domain name of the node that reported the state change', type: :string },
+      changed_at: { description: 'Time when the chain state changed', type: :datetime },
+      changed_at_timestamp: { description: 'Unix timestamp of the state change', type: :number }
     )
   end
 
@@ -793,23 +811,23 @@ VpsAdmin::API::Events.define do
           category: 'dns',
           severity: event_name.end_with?('failed') ? :warning : :info,
           default_routed: false do
-      parameters(
-        transfer_log_id: 'DNS transfer log ID',
-        dns_zone_id: 'DNS zone ID',
-        dns_zone_name: 'DNS zone name',
-        dns_server_zone_id: 'DNS server zone ID',
-        dns_server_id: 'DNS server ID',
-        dns_server_name: 'DNS server name',
-        node_id: 'Node ID',
-        node_name: 'Node name',
-        previous_status: 'Previous transfer status',
-        status: 'Transfer status',
-        reason_code: 'Failure reason code',
-        reason: 'Failure reason',
-        primary_addr: 'Primary server address',
-        serial: 'Transferred serial',
-        message: 'Transfer message',
-        event_at: 'Transfer event time'
+      fields(
+        transfer_log_id: { description: 'ID of the DNS transfer log row', type: :integer },
+        dns_zone_id: { description: 'ID of the DNS zone being transferred', type: :integer },
+        dns_zone_name: { description: 'Name of the DNS zone being transferred', type: :string },
+        dns_server_zone_id: { description: 'ID of the DNS server zone assignment', type: :integer },
+        dns_server_id: { description: 'ID of the DNS server handling the transfer', type: :integer },
+        dns_server_name: { description: 'Name of the DNS server handling the transfer', type: :string },
+        node_id: { description: 'ID of the node hosting the DNS server', type: :integer },
+        node_name: { description: 'Domain name of the node hosting the DNS server', type: :string },
+        previous_status: { description: 'Transfer status before this event', type: :string },
+        status: { description: 'Transfer status reported by the DNS server', type: :string },
+        reason_code: { description: 'Machine-readable transfer failure reason', type: :string },
+        reason: { description: 'Human-readable transfer failure reason', type: :string },
+        primary_addr: { description: 'Primary DNS server address used for transfer', type: :string },
+        serial: { description: 'DNS zone serial observed during transfer', type: :integer },
+        message: { description: 'Additional transfer message', type: :string },
+        event_at: { description: 'Time when the DNS transfer event happened', type: :datetime }
       )
     end
   end
@@ -821,12 +839,12 @@ VpsAdmin::API::Events.define do
         default_routed: true do
     argument :report_vars, type: Hash, optional: true
 
-    parameters(
-      language_id: 'Notification language ID',
-      language_code: 'Notification language code',
-      period_start: 'Report period start',
-      period_end: 'Report period end',
-      period_seconds: 'Report period in seconds'
+    fields(
+      language_id: { description: 'ID of the language used for the report', type: :integer },
+      language_code: { description: 'Language code used for the report', type: :string },
+      period_start: { description: 'Beginning of the report period', type: :datetime },
+      period_end: { description: 'End of the report period', type: :datetime },
+      period_seconds: { description: 'Length of the report period in seconds', type: :integer }
     )
 
     deliver :email do
@@ -848,16 +866,16 @@ VpsAdmin::API::Events.define do
         category: 'account',
         severity: :warning,
         default_routed: true do
-    parameters(
-      object: 'Expiring object type',
-      object_id: 'Expiring object ID',
-      object_label: 'Expiring object label',
-      state: 'Object lifecycle state',
-      expiration_date: 'Expiration date',
-      remind_after_date: 'Reminder silence date',
-      expires_in_days: 'Days until expiration',
-      expired_days_ago: 'Days since expiration',
-      expires_in_a_day: 'Whether expiration is within a day'
+    fields(
+      object: { description: 'Type of object whose lifecycle state expires', type: :string },
+      object_id: { description: 'ID of the expiring object', type: :integer },
+      object_label: { description: 'User-visible label of the expiring object', type: :string },
+      state: { description: 'Lifecycle state that is about to expire or already expired', type: :string },
+      expiration_date: { description: 'Time when the lifecycle state expires', type: :datetime },
+      remind_after_date: { description: 'Time before which repeated reminders are suppressed', type: :datetime },
+      expires_in_days: { description: 'Number of days until expiration', type: :number },
+      expired_days_ago: { description: 'Number of days since expiration', type: :number },
+      expires_in_a_day: { description: 'Whether expiration is within the next day', type: :boolean }
     )
 
     deliver :email do
@@ -879,23 +897,24 @@ VpsAdmin::API::Events.define do
           severity: :warning,
           default_routed: true do
       params = {
-        advisory_id: 'Security advisory ID',
-        advisory_name: 'Security advisory name',
-        cves: 'CVE identifiers',
-        state: 'Security advisory state',
-        published_at: 'Publication time',
-        affected_vps_count: 'Affected VPS count',
-        affected_vpses: 'Affected VPS sample'
+        advisory_id: { description: 'ID of the security advisory', type: :integer },
+        advisory_name: { description: 'Name of the security advisory', type: :string },
+        cves: { description: 'CVE identifiers mentioned by the advisory', type: :string_list },
+        state: { description: 'Current lifecycle state of the advisory', type: :string },
+        published_at: { description: 'Time when the advisory was published', type: :datetime },
+        affected_vps_count: { description: 'Number of affected VPSes visible to the recipient', type: :integer },
+        affected_vps_ids: { description: 'IDs of affected VPSes included in the payload sample', type: :integer_list },
+        affected_vps_hostnames: { description: 'Hostnames of affected VPSes included in the payload sample', type: :string_list }
       }
       if event_name.end_with?('updated')
         params = {
-          advisory_id: 'Security advisory ID',
-          advisory_name: 'Security advisory name',
-          update_id: 'Security advisory update ID',
-          update_summary: 'Update summary'
+          advisory_id: { description: 'ID of the security advisory', type: :integer },
+          advisory_name: { description: 'Name of the security advisory', type: :string },
+          update_id: { description: 'ID of the advisory update', type: :integer },
+          update_summary: { description: 'Summary of the advisory update', type: :string }
         }.merge(params.except(:advisory_id, :advisory_name))
       end
-      parameters(params)
+      fields(params)
 
       deliver :email do
         template(event_name.end_with?('announced') ? :security_advisory_user_announce : :security_advisory_user_update)
@@ -909,12 +928,12 @@ VpsAdmin::API::Events.define do
         category: 'incidents',
         severity: :warning,
         default_routed: true do
-    parameters(
-      subject: 'Report subject',
-      text: 'Report text',
-      codename: 'Report codename',
-      ip_addr: 'Affected IP address',
-      vps_id: 'Affected VPS ID'
+    fields(
+      subject: { description: 'Subject line received with the incident report', type: :string },
+      text: { description: 'Body text received with the incident report', type: :string },
+      codename: { description: 'Incident report codename assigned by vpsAdmin', type: :string },
+      ip_addr: { description: 'IP address mentioned by the incident report', type: :string },
+      vps_id: { description: 'ID of the VPS associated with the incident report', type: :integer }
     )
 
     deliver :email do
@@ -928,16 +947,16 @@ VpsAdmin::API::Events.define do
         category: 'incidents',
         severity: :info,
         default_routed: true do
-    parameters(
-      from_email: 'Reply sender e-mail',
-      recipient_emails: 'Reply recipient e-mail addresses',
-      in_reply_to_message_id: 'Original Message-ID',
-      references_message_id: 'References Message-ID',
-      incident_count: 'Created incident report count',
-      user_count: 'Affected user count',
-      vps_count: 'Affected VPS count',
-      incident_ids: 'Created incident report ID sample',
-      text: 'Reply text'
+    fields(
+      from_email: { description: 'E-mail address that sent the reply', type: :string },
+      recipient_emails: { description: 'Recipient e-mail addresses parsed from the reply', type: :string_list },
+      in_reply_to_message_id: { description: 'Message-ID referenced by the reply', type: :string },
+      references_message_id: { description: 'References header from the reply', type: :string },
+      incident_count: { description: 'Number of incident reports matched by the reply', type: :integer },
+      user_count: { description: 'Number of users affected by the reply', type: :integer },
+      vps_count: { description: 'Number of VPSes affected by the reply', type: :integer },
+      incident_ids: { description: 'IDs of incident reports matched by the reply', type: :integer_list },
+      text: { description: 'Reply body text', type: :string }
     )
 
     deliver :email do
@@ -965,15 +984,20 @@ VpsAdmin::API::Events.define do
         category: 'vps',
         severity: :warning,
         default_routed: true do
-    parameters(
-      stage: 'OOM event stage',
-      cgroup: 'Affected cgroup',
-      cgroups: 'Affected cgroups',
-      count: 'OOM count',
-      killed_name: 'Killed process',
-      report_count: 'Report count',
-      selected_report_count: 'Selected report count',
-      selected_oom_count: 'Selected OOM count'
+    fields(
+      vps_id: { description: 'ID of the VPS affected by the OOM report', type: :integer },
+      vps_hostname: { description: 'Hostname of the VPS affected by the OOM report', type: :string },
+      stage: { description: 'Processing stage that emitted the OOM notification', type: :string },
+      cgroup: { description: 'Primary affected cgroup path', type: :string },
+      cgroups: { description: 'Affected cgroup paths included in the event', type: :string_list },
+      count: { description: 'Number of OOM reports in the selected group', type: :integer },
+      killed_name: { description: 'Name of the process killed by the kernel', type: :string },
+      report_count: { description: 'Number of raw reports considered for the event', type: :integer },
+      selected_report_count: { description: 'Number of raw reports selected for notification', type: :integer },
+      selected_oom_count: { description: 'Number of OOM kills represented by selected reports', type: :integer },
+      selected_report_ids: { description: 'IDs of raw OOM reports selected for notification', type: :integer_list },
+      last_reported_id: { description: 'Highest raw OOM report ID already processed', type: :integer },
+      batch_reported_at: { description: 'Time when the OOM report batch was processed', type: :datetime }
     )
 
     deliver :email do
@@ -987,11 +1011,13 @@ VpsAdmin::API::Events.define do
         category: 'vps',
         severity: :critical,
         default_routed: true do
-    parameters(
-      action: 'Prevention action',
-      reason: 'Reason',
-      ooms_in_period: 'OOM count in period',
-      period_seconds: 'Period in seconds'
+    fields(
+      vps_id: { description: 'ID of the VPS affected by OOM prevention', type: :integer },
+      vps_hostname: { description: 'Hostname of the VPS affected by OOM prevention', type: :string },
+      action: { description: 'Preventive action taken after repeated OOM reports', type: :string },
+      reason: { description: 'Reason why the preventive action was taken', type: :string },
+      ooms_in_period: { description: 'Number of OOM reports seen in the tracked period', type: :integer },
+      period_seconds: { description: 'Length of the tracked period in seconds', type: :integer }
     )
 
     deliver :email do
@@ -1009,14 +1035,14 @@ VpsAdmin::API::Events.define do
           category: 'vps',
           severity:,
           default_routed: true do
-      parameters(
-        vps_id: 'VPS ID',
-        vps_hostname: 'VPS hostname',
-        state: 'Lifecycle state',
-        reason: 'Lifecycle reason',
-        expiration_date: 'Expiration date',
-        changed_by_id: 'User ID that changed the state',
-        changed_by_name: 'User name that changed the state'
+      fields(
+        vps_id: { description: 'ID of the VPS whose lifecycle state changed', type: :integer },
+        vps_hostname: { description: 'Hostname of the VPS whose lifecycle state changed', type: :string },
+        state: { description: 'VPS lifecycle state after the change', type: :string },
+        reason: { description: 'Operator-provided reason for the lifecycle change', type: :string },
+        expiration_date: { description: 'Date when the lifecycle state expires', type: :datetime },
+        changed_by_id: { description: 'ID of the user who changed the VPS lifecycle state', type: :integer },
+        changed_by_name: { description: 'Name of the user who changed the VPS lifecycle state', type: :string }
       )
 
       deliver :email do
@@ -1031,16 +1057,16 @@ VpsAdmin::API::Events.define do
         category: 'vps',
         severity: :info,
         default_routed: true do
-    parameters(
-      vps_id: 'VPS ID',
-      vps_hostname: 'VPS hostname',
-      cpu: 'CPU cores',
-      cpu_limit: 'CPU limit',
-      memory: 'Memory in MiB',
-      swap: 'Swap in MiB',
-      reason: 'Change reason',
-      admin_id: 'Admin user ID',
-      admin_name: 'Admin name'
+    fields(
+      vps_id: { description: 'ID of the VPS whose resources changed', type: :integer },
+      vps_hostname: { description: 'Hostname of the VPS whose resources changed', type: :string },
+      cpu: { description: 'CPU core count assigned to the VPS after the change', type: :integer },
+      cpu_limit: { description: 'CPU limit assigned to the VPS after the change', type: :number },
+      memory: { description: 'Memory limit assigned to the VPS after the change, in MiB', type: :integer },
+      swap: { description: 'Swap limit assigned to the VPS after the change, in MiB', type: :integer },
+      reason: { description: 'Operator-provided reason for the resource change', type: :string },
+      admin_id: { description: 'ID of the admin who changed the resources', type: :integer },
+      admin_name: { description: 'Name of the admin who changed the resources', type: :string }
     )
 
     deliver :email do
@@ -1054,15 +1080,15 @@ VpsAdmin::API::Events.define do
         category: 'vps',
         severity: :info,
         default_routed: true do
-    parameters(
-      vps_id: 'VPS ID',
-      vps_hostname: 'VPS hostname',
-      old_dns_resolver_id: 'Previous DNS resolver ID',
-      old_dns_resolver_label: 'Previous DNS resolver label',
-      old_dns_resolver_addrs: 'Previous DNS resolver addresses',
-      new_dns_resolver_id: 'New DNS resolver ID',
-      new_dns_resolver_label: 'New DNS resolver label',
-      new_dns_resolver_addrs: 'New DNS resolver addresses'
+    fields(
+      vps_id: { description: 'ID of the VPS whose resolver changed', type: :integer },
+      vps_hostname: { description: 'Hostname of the VPS whose resolver changed', type: :string },
+      old_dns_resolver_id: { description: 'ID of the previous DNS resolver', type: :integer },
+      old_dns_resolver_label: { description: 'Label of the previous DNS resolver', type: :string },
+      old_dns_resolver_addrs: { description: 'Addresses configured on the previous DNS resolver', type: :string },
+      new_dns_resolver_id: { description: 'ID of the new DNS resolver', type: :integer },
+      new_dns_resolver_label: { description: 'Label of the new DNS resolver', type: :string },
+      new_dns_resolver_addrs: { description: 'Addresses configured on the new DNS resolver', type: :string }
     )
 
     deliver :email do
@@ -1080,10 +1106,10 @@ VpsAdmin::API::Events.define do
           category: 'vps',
           severity:,
           default_routed: true do
-      parameters(
-        vps_id: 'VPS ID',
-        vps_hostname: 'VPS hostname',
-        reason: 'Disable/enable reason'
+      fields(
+        vps_id: { description: 'ID of the VPS whose network state changed', type: :integer },
+        vps_hostname: { description: 'Hostname of the VPS whose network state changed', type: :string },
+        reason: { description: 'Operator-provided reason for the network state change', type: :string }
       )
 
       deliver :email do
@@ -1103,20 +1129,20 @@ VpsAdmin::API::Events.define do
           category: 'vps',
           severity:,
           default_routed: true do
-      parameters(
-        vps_id: 'VPS ID',
-        vps_hostname: 'VPS hostname',
-        dataset_id: 'Dataset ID',
-        dataset_full_name: 'Dataset name',
-        dataset_refquota: 'Dataset refquota',
-        dataset_referenced: 'Dataset referenced space',
-        expansion_id: 'Dataset expansion ID',
-        original_refquota: 'Original refquota',
-        added_space: 'Added space',
-        expansion_count: 'Expansion count',
-        over_refquota_seconds: 'Time over quota in seconds',
-        max_over_refquota_seconds: 'Maximum time over quota in seconds',
-        enable_shrink: 'Whether automatic shrink is enabled'
+      fields(
+        vps_id: { description: 'ID of the VPS whose dataset quota changed', type: :integer },
+        vps_hostname: { description: 'Hostname of the VPS whose dataset quota changed', type: :string },
+        dataset_id: { description: 'ID of the dataset whose quota changed', type: :integer },
+        dataset_full_name: { description: 'Full dataset name whose quota changed', type: :string },
+        dataset_refquota: { description: 'Dataset refquota after the event, in bytes', type: :integer },
+        dataset_referenced: { description: 'Referenced dataset space at the time of the event, in bytes', type: :integer },
+        expansion_id: { description: 'ID of the dataset expansion record', type: :integer },
+        original_refquota: { description: 'Dataset refquota before automatic expansion or shrink, in bytes', type: :integer },
+        added_space: { description: 'Space added to the dataset refquota, in bytes', type: :integer },
+        expansion_count: { description: 'Number of expansions represented by the event', type: :integer },
+        over_refquota_seconds: { description: 'Time the dataset spent over quota, in seconds', type: :integer },
+        max_over_refquota_seconds: { description: 'Maximum allowed time over quota before action, in seconds', type: :integer },
+        enable_shrink: { description: 'Whether automatic shrink is enabled for the dataset', type: :boolean }
       )
 
       deliver :email do
@@ -1131,15 +1157,15 @@ VpsAdmin::API::Events.define do
         category: 'storage',
         severity: :info,
         default_routed: true do
-    parameters(
-      download_id: 'Snapshot download ID',
-      snapshot_id: 'Snapshot ID',
-      snapshot_name: 'Snapshot name',
-      dataset_id: 'Dataset ID',
-      dataset_full_name: 'Dataset name',
-      file_name: 'Download file name',
-      format: 'Download format',
-      expiration_date: 'Download expiration date'
+    fields(
+      download_id: { description: 'ID of the prepared snapshot download', type: :integer },
+      snapshot_id: { description: 'ID of the source snapshot', type: :integer },
+      snapshot_name: { description: 'Name of the source snapshot', type: :string },
+      dataset_id: { description: 'ID of the dataset that owns the snapshot', type: :integer },
+      dataset_full_name: { description: 'Full name of the dataset that owns the snapshot', type: :string },
+      file_name: { description: 'File name of the prepared download archive', type: :string },
+      format: { description: 'Archive format of the prepared download', type: :string },
+      expiration_date: { description: 'Time when the download link expires', type: :datetime }
     )
 
     deliver :email do
@@ -1156,25 +1182,26 @@ VpsAdmin::API::Events.define do
           default_routed: true do
       argument :vpses, type: Array, optional: true
 
-      parameters(
-        dataset_id: 'Dataset ID',
-        dataset_full_name: 'Dataset name',
-        user_id: 'Dataset owner user ID',
-        user_login: 'Dataset owner login',
-        user_name: 'Dataset owner name',
-        src_pool_id: 'Source pool ID',
-        src_pool_filesystem: 'Source pool filesystem',
-        dst_pool_id: 'Destination pool ID',
-        dst_pool_filesystem: 'Destination pool filesystem',
-        export_count: 'Export count',
-        affected_vps_count: 'Affected VPS count',
-        affected_vpses: 'Affected VPS sample',
-        restart_vps: 'Whether affected VPSes are restarted',
-        maintenance_window: 'Whether a maintenance window is used',
-        custom_window: 'Whether a custom maintenance window is used',
-        finish_weekday: 'Maintenance window weekday',
-        finish_minutes: 'Maintenance window minute',
-        reason: 'Migration reason'
+      fields(
+        dataset_id: { description: 'ID of the dataset being migrated', type: :integer },
+        dataset_full_name: { description: 'Full name of the dataset being migrated', type: :string },
+        user_id: { description: 'ID of the dataset owner', type: :integer },
+        user_login: { description: 'Login of the dataset owner', type: :string },
+        user_name: { description: 'Full name of the dataset owner', type: :string },
+        src_pool_id: { description: 'ID of the source storage pool', type: :integer },
+        src_pool_filesystem: { description: 'Filesystem name of the source storage pool', type: :string },
+        dst_pool_id: { description: 'ID of the destination storage pool', type: :integer },
+        dst_pool_filesystem: { description: 'Filesystem name of the destination storage pool', type: :string },
+        export_count: { description: 'Number of exports affected by the migration', type: :integer },
+        affected_vps_count: { description: 'Number of VPSes affected by the migration', type: :integer },
+        affected_vps_ids: { description: 'IDs of VPSes affected by the migration', type: :integer_list },
+        affected_vps_hostnames: { description: 'Hostnames of VPSes affected by the migration', type: :string_list },
+        restart_vps: { description: 'Whether affected VPSes are restarted during migration', type: :boolean },
+        maintenance_window: { description: 'Whether a maintenance window constrains the migration', type: :boolean },
+        custom_window: { description: 'Whether a custom maintenance window is used', type: :boolean },
+        finish_weekday: { description: 'Weekday when the maintenance window should finish', type: :integer },
+        finish_minutes: { description: 'Minute of day when the maintenance window should finish', type: :integer },
+        reason: { description: 'Operator-provided reason for the migration', type: :string }
       )
 
       deliver :email do
@@ -1199,19 +1226,19 @@ VpsAdmin::API::Events.define do
           category: 'vps',
           severity:,
           default_routed: true do
-      parameters(
-        migration_id: 'Migration ID',
-        vps_id: 'VPS ID',
-        vps_hostname: 'VPS hostname',
-        src_node_id: 'Source node ID',
-        src_node_domain_name: 'Source node domain name',
-        dst_node_id: 'Destination node ID',
-        dst_node_domain_name: 'Destination node domain name',
-        maintenance_window: 'Whether a maintenance window is used',
-        custom_window: 'Whether a custom maintenance window is used',
-        finish_weekday: 'Maintenance window weekday',
-        finish_minutes: 'Maintenance window minute',
-        reason: 'Migration reason'
+      fields(
+        migration_id: { description: 'ID of the VPS migration record', type: :integer },
+        vps_id: { description: 'ID of the VPS being migrated', type: :integer },
+        vps_hostname: { description: 'Hostname of the VPS being migrated', type: :string },
+        src_node_id: { description: 'ID of the source node', type: :integer },
+        src_node_domain_name: { description: 'Domain name of the source node', type: :string },
+        dst_node_id: { description: 'ID of the destination node', type: :integer },
+        dst_node_domain_name: { description: 'Domain name of the destination node', type: :string },
+        maintenance_window: { description: 'Whether a maintenance window constrains the migration', type: :boolean },
+        custom_window: { description: 'Whether a custom maintenance window is used', type: :boolean },
+        finish_weekday: { description: 'Weekday when the maintenance window should finish', type: :integer },
+        finish_minutes: { description: 'Minute of day when the maintenance window should finish', type: :integer },
+        reason: { description: 'Operator-provided reason for the migration', type: :string }
       )
 
       deliver :email do
@@ -1226,14 +1253,14 @@ VpsAdmin::API::Events.define do
         category: 'vps',
         severity: :warning,
         default_routed: true do
-    parameters(
-      vps_id: 'VPS ID',
-      vps_hostname: 'VPS hostname',
-      original_vps_id: 'Original VPS ID',
-      original_vps_hostname: 'Original VPS hostname',
-      new_vps_id: 'New VPS ID',
-      new_vps_hostname: 'New VPS hostname',
-      reason: 'Replacement reason'
+    fields(
+      vps_id: { description: 'ID of the VPS record that initiated replacement', type: :integer },
+      vps_hostname: { description: 'Hostname of the VPS record that initiated replacement', type: :string },
+      original_vps_id: { description: 'ID of the original VPS being replaced', type: :integer },
+      original_vps_hostname: { description: 'Hostname of the original VPS being replaced', type: :string },
+      new_vps_id: { description: 'ID of the newly created replacement VPS', type: :integer },
+      new_vps_hostname: { description: 'Hostname of the newly created replacement VPS', type: :string },
+      reason: { description: 'Operator-provided reason for the replacement', type: :string }
     )
 
     deliver :email do

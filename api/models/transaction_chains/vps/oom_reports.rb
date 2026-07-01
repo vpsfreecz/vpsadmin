@@ -42,7 +42,7 @@ module TransactionChains
         source: selected_reports.first,
         subject: "OOM report for VPS ##{vps.id}",
         summary: "vpsAdmin recorded #{all_oom_count} out-of-memory events",
-        parameters: oom_event_parameters(
+        payload: oom_event_parameters(
           reports: selected_reports,
           last_reported_id: last_reported_oom&.id,
           batch_reported_at: t,

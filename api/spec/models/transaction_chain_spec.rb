@@ -221,7 +221,7 @@ RSpec.describe TransactionChain do
       severity: :info,
       routing_state: :routed,
       subject: 'Spec event',
-      parameters: {}
+      payload: {}
     )
     event.event_deliveries.create!(
       action: 'email',

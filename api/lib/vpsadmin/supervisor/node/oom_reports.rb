@@ -195,7 +195,7 @@ module VpsAdmin::Supervisor
         vps:,
         subject: "OOM report for VPS ##{vps.id}",
         summary: "vpsAdmin recorded #{count} out-of-memory events",
-        parameters: {
+        payload: {
           stage: 'raw',
           cgroup: full_cgroup,
           cgroups: [full_cgroup],

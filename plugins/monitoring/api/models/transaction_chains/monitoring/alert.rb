@@ -12,7 +12,7 @@ module VpsAdmin::API::Plugins::Monitoring::TransactionChains
     def route_monitoring_alert!(event, recipient: event.user, role: 'user',
                                 alert_kind: 'state', variant: :role_event_state,
                                 context: {}, severity: nil, subject: nil,
-                                summary: nil, parameters: {})
+                                summary: nil, payload: {})
       route_event!(
         VpsAdmin::API::Plugins::Monitoring::Events.event_type_for(
           event,
@@ -28,7 +28,7 @@ module VpsAdmin::API::Plugins::Monitoring::TransactionChains
         subject_override: subject,
         summary_override: summary,
         severity_override: severity,
-        extra_parameters: parameters || {}
+        extra_payload: payload || {}
       )
     end
 

@@ -41,7 +41,7 @@ module TransactionChains
           source: update || advisory,
           subject: event_subject(advisory, action),
           summary: event_summary(update || advisory),
-          parameters: event_parameters(advisory, affected_vpses, update)
+          payload: event_parameters(advisory, affected_vpses, update)
         )
       end
 
@@ -53,6 +53,7 @@ module TransactionChains
       end
 
       def event_parameters(advisory, affected_vpses, update)
+        sample = affected_vps_sample(affected_vpses)
         ret = {
           advisory_id: advisory.id,
           advisory_name: advisory.name,
@@ -60,7 +61,9 @@ module TransactionChains
           state: advisory.state,
           published_at: advisory.published_at&.iso8601,
           affected_vps_count: affected_vpses.count,
-          affected_vpses: affected_vps_sample(affected_vpses)
+          affected_vps_ids: sample.map { |vps| vps.fetch(:vps_id) },
+          affected_vps_hostnames: sample.map { |vps| vps.fetch(:vps_hostname) },
+          affected_vpses: sample
         }
 
         if update

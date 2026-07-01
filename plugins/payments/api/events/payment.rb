@@ -12,7 +12,7 @@ module VpsAdmin::API::Plugins::Payments::Events
   module_function
 
   def param(event, name)
-    params = event.parameters || {}
+    params = event.payload || {}
     params[name.to_s] || params[name.to_sym]
   end
 
@@ -72,17 +72,17 @@ VpsAdmin::API::Events.define owner: :payments do
         category: 'payments',
         severity: :info,
         default_routed: true do
-    parameters(
-      payment_id: 'Payment ID',
-      amount: 'Accounted amount',
-      received_amount: 'Received amount',
-      received_currency: 'Received currency',
-      from_date: 'Paid from date',
-      to_date: 'Paid until date',
-      incoming_payment_id: 'Incoming payment ID',
-      incoming_transaction_id: 'Incoming bank transaction ID',
-      accounted_by_id: 'Accounting admin user ID',
-      accounted_by_login: 'Accounting admin login'
+    fields(
+      payment_id: { description: 'ID of the accepted user payment', type: :integer },
+      amount: { description: 'Amount credited to the user account', type: :number },
+      received_amount: { description: 'Amount received from the incoming payment', type: :number },
+      received_currency: { description: 'Currency received from the incoming payment', type: :string },
+      from_date: { description: 'Beginning of the paid membership period', type: :datetime },
+      to_date: { description: 'End of the paid membership period', type: :datetime },
+      incoming_payment_id: { description: 'ID of the incoming payment row', type: :integer },
+      incoming_transaction_id: { description: 'Bank transaction identifier of the incoming payment', type: :string },
+      accounted_by_id: { description: 'ID of the admin who accounted the payment', type: :integer },
+      accounted_by_login: { description: 'Login of the admin who accounted the payment', type: :string }
     )
 
     deliver :email do
@@ -98,14 +98,14 @@ VpsAdmin::API::Events.define owner: :payments do
         default_routed: true do
     argument :report_vars, type: Hash, optional: true
 
-    parameters(
-      language_id: 'Notification language ID',
-      language_code: 'Notification language code',
-      period_start: 'Report period start',
-      period_end: 'Report period end',
-      period_seconds: 'Report period in seconds',
-      incoming_payment_count: 'Incoming payment count',
-      accepted_payment_count: 'Accepted payment count'
+    fields(
+      language_id: { description: 'ID of the language used for the report', type: :integer },
+      language_code: { description: 'Language code used for the report', type: :string },
+      period_start: { description: 'Beginning of the report period', type: :datetime },
+      period_end: { description: 'End of the report period', type: :datetime },
+      period_seconds: { description: 'Length of the report period in seconds', type: :integer },
+      incoming_payment_count: { description: 'Number of incoming payments included in the report', type: :integer },
+      accepted_payment_count: { description: 'Number of accepted payments included in the report', type: :integer }
     )
 
     deliver :email do

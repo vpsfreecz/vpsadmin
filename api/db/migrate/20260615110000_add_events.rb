@@ -22,8 +22,8 @@ class AddEvents < ActiveRecord::Migration[8.1]
             roles: [],
             priority: 10,
             matchers: [
-              ['parameters.role', '==', role],
-              ['parameters.request_type', '==', type]
+              ['role', '==', role],
+              ['request_type', '==', type]
             ]
           }
         end
@@ -36,7 +36,7 @@ class AddEvents < ActiveRecord::Migration[8.1]
           roles: [],
           priority: 30,
           matchers: [
-            ['parameters.role', '==', role]
+            ['role', '==', role]
           ]
         }
       end
@@ -53,9 +53,9 @@ class AddEvents < ActiveRecord::Migration[8.1]
             roles: [],
             priority: 0,
             matchers: [
-              ['parameters.role', '==', role],
-              ['parameters.request_type', '==', type],
-              ['parameters.request_state', '==', state]
+              ['role', '==', role],
+              ['request_type', '==', type],
+              ['request_state', '==', state]
             ]
           }
         end
@@ -68,8 +68,8 @@ class AddEvents < ActiveRecord::Migration[8.1]
           roles: [],
           priority: 10,
           matchers: [
-            ['parameters.role', '==', role],
-            ['parameters.request_type', '==', type]
+            ['role', '==', role],
+            ['request_type', '==', type]
           ]
         }
       end
@@ -83,8 +83,8 @@ class AddEvents < ActiveRecord::Migration[8.1]
           roles: [],
           priority: 20,
           matchers: [
-            ['parameters.role', '==', role],
-            ['parameters.request_state', '==', state]
+            ['role', '==', role],
+            ['request_state', '==', state]
           ]
         }
       end
@@ -97,7 +97,7 @@ class AddEvents < ActiveRecord::Migration[8.1]
         roles: [],
         priority: 30,
         matchers: [
-          ['parameters.role', '==', role]
+          ['role', '==', role]
         ]
       }
     end
@@ -175,8 +175,8 @@ class AddEvents < ActiveRecord::Migration[8.1]
       label: 'User expiration warning',
       roles: %w[account],
       matchers: [
-        ['parameters.object', '==', 'user'],
-        ['parameters.state', '==', 'active']
+        ['object', '==', 'user'],
+        ['state', '==', 'active']
       ]
     },
     {
@@ -186,8 +186,8 @@ class AddEvents < ActiveRecord::Migration[8.1]
       label: 'VPS expiration warning',
       roles: %w[account],
       matchers: [
-        ['parameters.object', '==', 'vps'],
-        ['parameters.state', '==', 'active']
+        ['object', '==', 'vps'],
+        ['state', '==', 'active']
       ]
     },
     {
@@ -204,7 +204,7 @@ class AddEvents < ActiveRecord::Migration[8.1]
       label: 'Outage announced',
       roles: %w[admin],
       matchers: [
-        ['parameters.role', '==', 'user']
+        ['role', '==', 'user']
       ]
     },
     {
@@ -214,7 +214,7 @@ class AddEvents < ActiveRecord::Migration[8.1]
       label: 'Outage updated',
       roles: %w[admin],
       matchers: [
-        ['parameters.role', '==', 'user']
+        ['role', '==', 'user']
       ]
     },
     {
@@ -244,7 +244,7 @@ class AddEvents < ActiveRecord::Migration[8.1]
       label: 'OOM report',
       roles: %w[admin],
       matchers: [
-        ['parameters.stage', '==', 'notification']
+        ['stage', '==', 'notification']
       ]
     },
     {
@@ -702,13 +702,13 @@ class AddEvents < ActiveRecord::Migration[8.1]
         )
         create_event_route_matcher(
           route_id:,
-          field: 'parameters.stage',
+          field: 'stage',
           operator: '==',
           value: 'raw'
         )
         create_event_route_matcher(
           route_id:,
-          field: 'parameters.cgroup',
+          field: 'cgroup',
           operator: '=*',
           value: rule.fetch('cgroup_pattern')
         )
@@ -994,7 +994,7 @@ class AddEvents < ActiveRecord::Migration[8.1]
     if role
       create_event_route_matcher(
         route_id:,
-        field: 'parameters.recipient_roles',
+        field: 'recipient_roles',
         operator: 'contains',
         value: role
       )

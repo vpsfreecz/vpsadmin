@@ -22,7 +22,7 @@ module TransactionChains
         vps:,
         subject: "VPS ##{vps.id} network #{enable ? 'enabled' : 'disabled'}",
         summary: reason,
-        parameters: {
+        payload: {
           vps_id: vps.id,
           vps_hostname: vps.hostname,
           reason:
