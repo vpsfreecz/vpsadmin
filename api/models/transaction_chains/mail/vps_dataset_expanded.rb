@@ -16,7 +16,7 @@ module TransactionChains
         source: dataset_expansion,
         subject: "Dataset for VPS ##{vps.id} expanded",
         summary: "Dataset #{dataset.full_name} was expanded by #{dataset_expansion.added_space} MiB",
-        parameters: {
+        payload: {
           vps_id: vps.id,
           vps_hostname: vps.hostname,
           dataset_id: dataset.id,

@@ -15,7 +15,7 @@ module TransactionChains
         source: user_session,
         subject: 'New access token',
         summary: "New access token for #{session_user.login}",
-        parameters: {
+        payload: {
           auth_type: user_session.auth_type,
           client_ip_addr: user_session.client_ip_addr,
           api_ip_addr: user_session.api_ip_addr,

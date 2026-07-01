@@ -41,7 +41,7 @@ RSpec.describe EventRoute do
       source: incident,
       subject: incident.subject,
       summary: incident.text,
-      parameters: {
+      payload: {
         'codename' => incident.codename,
         'subject' => incident.subject,
         'text' => incident.text
@@ -100,7 +100,7 @@ RSpec.describe EventRoute do
       'vps.oom_report',
       user: SpecSeed.user,
       subject: 'Spec OOM',
-      parameters: {
+      payload: {
         'stage' => stage,
         'cgroup' => '/user.slice/a.scope'
       }
@@ -165,7 +165,7 @@ RSpec.describe EventRoute do
         'transaction_chain.state_changed',
         user: SpecSeed.user,
         subject: 'Spec transaction state',
-        parameters: {
+        payload: {
           'state' => 'queued',
           'terminal' => false
         }
@@ -190,7 +190,7 @@ RSpec.describe EventRoute do
       'transaction_chain.state_changed',
       user: SpecSeed.user,
       subject: 'Spec transaction state',
-      parameters: {
+      payload: {
         'state' => 'queued',
         'terminal' => false
       }
@@ -221,7 +221,7 @@ RSpec.describe EventRoute do
       'transaction_chain.state_changed',
       user: SpecSeed.user,
       subject: 'Spec transaction state',
-      parameters: {
+      payload: {
         'state' => 'queued',
         'terminal' => false
       }
@@ -245,7 +245,7 @@ RSpec.describe EventRoute do
       event_type: 'transaction_chain.state_changed'
     )
     route.event_route_matchers.create!(
-      field: 'parameters.terminal',
+      field: 'terminal',
       operator: '==',
       value: 'false'
     )
@@ -254,7 +254,7 @@ RSpec.describe EventRoute do
       'transaction_chain.state_changed',
       user: SpecSeed.user,
       subject: 'Spec transaction state',
-      parameters: {
+      payload: {
         'state' => 'queued',
         'terminal' => false
       }
@@ -262,6 +262,36 @@ RSpec.describe EventRoute do
 
     expect(event.reload).to be_routed_routing_state
     expect(matched_routes(event)).to eq([route])
+  end
+
+  it 'does not match payload keys undeclared by the event type' do
+    receiver = create_receiver!(
+      action: {
+        action: :webhook,
+        target_kind: :custom,
+        target_value: 'https://example.test/undeclared-stage'
+      }
+    )
+    route = create_route!(receiver:, event_type: nil)
+    route.event_route_matchers.create!(
+      field: 'stage',
+      operator: '==',
+      value: 'notification'
+    )
+
+    event = VpsAdmin::API::Events.emit!(
+      'vps.incident_report',
+      user: SpecSeed.user,
+      subject: 'Spec incident',
+      payload: {
+        'codename' => 'Spec-Abuse',
+        'subject' => 'Spec incident',
+        'text' => 'Spec incident body',
+        'stage' => 'notification'
+      }
+    )
+
+    expect(matched_routes(event.reload)).not_to include(route)
   end
 
   it 'marks single-use routes as spent after their first match' do
@@ -399,7 +429,7 @@ RSpec.describe EventRoute do
     parent = create_route!(receiver: parent_receiver)
     child = create_route!(receiver: child_receiver, parent:, position: 1)
     child.event_route_matchers.create!(
-      field: 'parameters.codename',
+      field: 'codename',
       operator: '==',
       value: 'Spec-Abuse'
     )
@@ -602,7 +632,7 @@ RSpec.describe EventRoute do
       subject_scope: :visible
     )
     route.event_route_matchers.create!(
-      field: 'context.subject_relation',
+      field: 'subject_relation',
       operator: '==',
       value: 'other_user'
     )
@@ -677,7 +707,7 @@ RSpec.describe EventRoute do
       template_name: 'user_suspend'
     )
     route.event_route_matchers.create!(
-      field: 'parameters.recipient_roles',
+      field: 'recipient_roles',
       operator: 'contains',
       value: 'account'
     )
@@ -686,7 +716,7 @@ RSpec.describe EventRoute do
       'user.suspended',
       user: SpecSeed.user,
       subject: 'Spec suspended user',
-      parameters: {
+      payload: {
         'state' => 'suspended',
         'recipient_roles' => %w[account]
       }
@@ -710,7 +740,7 @@ RSpec.describe EventRoute do
     )
     route = create_route!(receiver:, event_type: 'user.suspended')
     route.event_route_matchers.create!(
-      field: 'parameters.recipient_roles',
+      field: 'recipient_roles',
       operator: 'not_contains',
       value: 'account'
     )
@@ -719,7 +749,7 @@ RSpec.describe EventRoute do
       'user.suspended',
       user: SpecSeed.user,
       subject: 'Spec suspended user',
-      parameters: {
+      payload: {
         'recipient_roles' => %w[admin]
       }
     )
@@ -738,7 +768,7 @@ RSpec.describe EventRoute do
     )
     route = create_route!(receiver:)
     route.event_route_matchers.create!(
-      field: 'parameters.codename',
+      field: 'codename',
       operator: '=~',
       value: '^Spec-'
     )
@@ -759,7 +789,7 @@ RSpec.describe EventRoute do
     )
     route = create_route!(receiver:, event_type: 'vps.oom_report')
     route.event_route_matchers.create!(
-      field: 'parameters.cgroup',
+      field: 'cgroup',
       operator: '=*',
       value: '/user.slice/*.scope'
     )
@@ -768,7 +798,7 @@ RSpec.describe EventRoute do
       'vps.oom_report',
       user: SpecSeed.user,
       subject: 'Spec OOM',
-      parameters: {
+      payload: {
         'cgroup' => '/user.slice/a.scope'
       }
     )

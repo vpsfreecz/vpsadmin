@@ -53,7 +53,7 @@ module TransactionChains
           source: dl,
           subject: 'Snapshot download is ready',
           summary: "#{dataset.full_name}@#{snapshot.name}",
-          parameters: {
+          payload: {
             download_id: dl.id,
             snapshot_id: snapshot.id,
             snapshot_name: snapshot.name,

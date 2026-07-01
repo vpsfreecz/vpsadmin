@@ -97,6 +97,8 @@ final class NotificationRouteUiTest extends TestCase
         self::assertStringContainsString('notifications_test_subject_scope_options', $testForm);
         self::assertStringContainsString("'subject_scope'", $testForm);
         self::assertStringContainsString("\$params['subject_scope'] = api_post('subject_scope')", $testCase);
+        self::assertStringContainsString("'payload_json' => api_post('payload_json')", $testCase);
+        self::assertStringNotContainsString('parameters' . '_json', $testCase);
     }
 
     public function testEventDetailsListMatchedRoutes(): void
@@ -156,7 +158,10 @@ final class NotificationRouteUiTest extends TestCase
 
         self::assertStringContainsString('notifications_event_type_labels(true, true)', $matcherNew);
         self::assertStringContainsString('Any event type', $source);
-        self::assertStringContainsString('notifications_matcher_value_toggle_script($field_types)', $matcherNew);
+        self::assertStringContainsString(
+            'notifications_matcher_value_toggle_script($field_types, $field_operators, $operator_labels)',
+            $matcherNew
+        );
         self::assertStringContainsString('notification-matcher-value', $matcherNew);
         self::assertStringContainsString('fieldTypes[field.val()]==="boolean"', $source);
     }

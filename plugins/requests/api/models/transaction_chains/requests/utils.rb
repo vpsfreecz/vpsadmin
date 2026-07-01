@@ -9,7 +9,7 @@ module VpsAdmin::API::Plugins::Requests::TransactionChains
                              recipient_email: nil)
       role = role.to_s
       action = action.to_s
-      parameters = request_event_parameters(
+      payload = request_event_parameters(
         request,
         role:,
         action:,
@@ -26,7 +26,7 @@ module VpsAdmin::API::Plugins::Requests::TransactionChains
         source: request,
         subject: request_event_subject(request, action, role),
         summary: request_event_summary(request, action, role, state, reason),
-        parameters:
+        payload:
       )
     end
 

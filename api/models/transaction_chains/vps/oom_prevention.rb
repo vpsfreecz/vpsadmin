@@ -27,7 +27,7 @@ module TransactionChains
         source: prevention,
         subject: "OOM prevention for VPS ##{vps.id}",
         summary: "vpsAdmin will #{action} VPS ##{vps.id} after #{ooms_in_period} OOM events",
-        parameters: {
+        payload: {
           action: action.to_s,
           reason: 'repeated out-of-memory events',
           ooms_in_period:,

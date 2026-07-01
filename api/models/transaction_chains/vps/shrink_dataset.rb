@@ -31,7 +31,7 @@ module TransactionChains
           source: dataset_expansion,
           subject: "Dataset for VPS ##{vps.id} shrunk",
           summary: "Dataset #{dataset.full_name} was shrunk after temporary expansion",
-          parameters: {
+          payload: {
             vps_id: vps.id,
             vps_hostname: vps.hostname,
             dataset_id: dataset.id,

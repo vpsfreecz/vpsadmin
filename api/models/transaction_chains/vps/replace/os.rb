@@ -335,7 +335,7 @@ module TransactionChains
         source: dst_vps,
         subject: "VPS ##{vps.id} replaced",
         summary: "New VPS ##{dst_vps.id} #{dst_vps.hostname}",
-        parameters: {
+        payload: {
           vps_id: vps.id,
           vps_hostname: vps.hostname,
           original_vps_id: vps.id,

@@ -127,7 +127,7 @@ RSpec.describe 'requests plugin create chain', requires_plugins: :requests do # 
       user: SpecSeed.user,
       subject: 'foreign request',
       route: false,
-      parameters: {
+      payload: {
         role: 'user',
         action: 'update',
         request_type: 'change',

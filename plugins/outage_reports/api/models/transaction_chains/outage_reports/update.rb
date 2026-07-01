@@ -94,7 +94,7 @@ module VpsAdmin::API::Plugins::OutageReports::TransactionChains
         source: report,
         subject: outage_event_subject(outage, attrs),
         summary: report.summary,
-        parameters: outage_event_parameters(
+        payload: outage_event_parameters(
           role,
           user,
           outage,
@@ -124,6 +124,7 @@ module VpsAdmin::API::Plugins::OutageReports::TransactionChains
     end
 
     def outage_event_parameters(role, user, outage, report, attrs, msg_id, in_reply_to)
+      changes = outage_changes(report)
       {
         role:,
         event: outage_notification_event(attrs),
@@ -148,7 +149,8 @@ module VpsAdmin::API::Plugins::OutageReports::TransactionChains
         indirect_vps_count: user && outage.outage_vpses.where(user:, direct: false).count,
         affected_export_count: user && outage.outage_exports.where(user:).count,
         cves: security_advisory_cves(outage).map { |cve| cve[:cve_id] },
-        changes: outage_changes(report),
+        changed_fields: changes.map { |change| change.fetch(:field).to_s },
+        changes:,
         reported_by_id: report.reported_by_id,
         reported_by_login: report.reported_by&.login,
         reported_by_name: report.reporter_name,
