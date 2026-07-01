@@ -14,7 +14,7 @@ module TransactionChains
           source: m,
           subject: "VPS ##{m.vps.id} migration planned",
           summary: "#{m.src_node.domain_name} -> #{m.dst_node.domain_name}",
-          parameters: {
+          payload: {
             migration_id: m.id,
             vps_id: m.vps.id,
             vps_hostname: m.vps.hostname,

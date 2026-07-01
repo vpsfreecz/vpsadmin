@@ -14,7 +14,7 @@ module TransactionChains
         source: log,
         subject: "VPS ##{vps.id} resumed",
         summary: log.reason,
-        parameters: {
+        payload: {
           vps_id: vps.id,
           vps_hostname: vps.hostname,
           state: log.state,

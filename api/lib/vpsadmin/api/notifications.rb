@@ -253,7 +253,11 @@ module VpsAdmin::API
           severity: event.severity,
           subject: event.subject,
           summary: event.summary,
-          parameters: event.parameters || {},
+          payload: event.payload || {},
+          fields: VpsAdmin::API::Events.matchable_field_values(
+            event,
+            route_context: delivery.event_routing_context
+          ),
           ip_addr: event.ip_addr,
           source: {
             class: event.source_class,

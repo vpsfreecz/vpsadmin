@@ -68,7 +68,7 @@ RSpec.describe TransactionChains::Lifetimes::ExpirationWarning do
     expect(event.event_deliveries.sole.mail_log.notification_template.name).to eq('expiration_vps_active')
   end
 
-  it 'persists suppressed notifications for users with muted default notifications' do
+  it 'does not persist notifications for users with muted default notifications' do
     user = SpecSeed.create_or_update_user!(
       login: "no-mail-#{SecureRandom.hex(4)}",
       level: 1,
@@ -77,12 +77,12 @@ RSpec.describe TransactionChains::Lifetimes::ExpirationWarning do
     user.update!(expiration_date: 2.days.from_now)
     mute_default_notifications_for!(user)
 
-    chain, = described_class.fire2(args: [User, [user]])
-    event = expect_suppressed_event!('lifetime.expiration_warning', user:)
+    chain = nil
+    expect do
+      chain, = described_class.fire2(args: [User, [user]])
+    end.not_to(change { event_storage_counts })
 
     expect(chain).to be_nil
-    expect(event.source).to eq(user)
-    expect(event.event_deliveries.sole.error_summary).to include('does not notify')
   end
 
   it 'computes expiration day helper values' do
@@ -111,7 +111,7 @@ RSpec.describe TransactionChains::Lifetimes::ExpirationWarning do
       user:,
       source: user,
       subject: 'Delayed expiration warning',
-      parameters: {
+      payload: {
         object: 'user',
         object_id: user.id,
         object_label: user.login,

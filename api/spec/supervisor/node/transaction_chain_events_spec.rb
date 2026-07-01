@@ -36,7 +36,7 @@ RSpec.describe VpsAdmin::Supervisor::Node::TransactionChainEvents do
       severity: :info,
       routing_state: :routed,
       subject: 'Spec transaction-gated notification',
-      parameters: {}
+      payload: {}
     )
     context = event.event_routing_contexts.create!(
       recipient_user: SpecSeed.user,

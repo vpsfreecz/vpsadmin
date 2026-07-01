@@ -62,7 +62,7 @@ RSpec.describe NotificationTemplateVariant do
 
     vps_class = Struct.new(:id, :hostname, :cpu, :cpu_limit, :memory, :swap)
     user_class = Struct.new(:login)
-    event_class = Struct.new(:event_type, :subject, :summary, :parameters, :vps, :id)
+    event_class = Struct.new(:event_type, :subject, :summary, :payload, :vps, :id)
     vps = vps_class.new(
       id: 123,
       hostname: 'spec-vps',
@@ -72,7 +72,7 @@ RSpec.describe NotificationTemplateVariant do
       swap: 256
     )
     admin = user_class.new(login: 'admin <user>')
-    parameters = {
+    payload = {
       'cpu' => 3,
       'cpu_limit' => 0,
       'memory' => 4096,
@@ -82,7 +82,7 @@ RSpec.describe NotificationTemplateVariant do
       event_type: 'vps.resources_changed',
       subject: 'VPS #123 resources changed',
       summary: nil,
-      parameters:,
+      payload:,
       vps:,
       id: 456
     )
@@ -92,7 +92,7 @@ RSpec.describe NotificationTemplateVariant do
       vps:,
       admin:,
       reason: 'scale up & test',
-      parameters:
+      payload:
     }
 
     rendered = NotificationTemplate.render_telegram!(
