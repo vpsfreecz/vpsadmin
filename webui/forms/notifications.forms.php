@@ -101,7 +101,35 @@ function notifications_event_types_cached()
 
 function notifications_prop($object, $name, $default = null)
 {
-    return $object->{$name} ?? $default;
+    if (is_array($object)) {
+        return array_key_exists($name, $object) && $object[$name] !== null
+            ? $object[$name]
+            : $default;
+    }
+
+    if (!is_object($object)) {
+        return $default;
+    }
+
+    if (method_exists($object, 'attributes')) {
+        $attrs = $object->attributes();
+
+        if (is_array($attrs) && array_key_exists($name, $attrs)) {
+            return $attrs[$name] !== null ? $attrs[$name] : $default;
+        }
+    }
+
+    if (property_exists($object, $name)) {
+        return $object->{$name} !== null ? $object->{$name} : $default;
+    }
+
+    if (method_exists($object, '__get')) {
+        $value = $object->{$name};
+
+        return $value !== null ? $value : $default;
+    }
+
+    return $default;
 }
 
 function notifications_event_type_fields_from_type($type)
@@ -119,28 +147,19 @@ function notifications_event_type_fields_from_type($type)
 
 function notifications_event_type_field_metadata_from_type($type)
 {
-    if (!isset($type->fields) || $type->fields === null) {
+    $raw_fields = notifications_prop($type, 'fields');
+
+    if ($raw_fields === null) {
         return [];
     }
 
-    $fields = $type->fields;
-
-    if (is_object($fields)) {
-        $fields = get_object_vars($fields);
-    }
-
-    if (!is_array($fields)) {
-        return [];
-    }
+    $fields = notifications_event_type_metadata_array($raw_fields, true);
 
     $ret = [];
 
     foreach ($fields as $name => $field) {
-        if (is_object($field)) {
-            $field = get_object_vars($field);
-        }
-
-        if (!is_array($field)) {
+        $field = notifications_event_type_metadata_array($field);
+        if (!$field) {
             continue;
         }
 
@@ -152,18 +171,39 @@ function notifications_event_type_field_metadata_from_type($type)
             continue;
         }
 
-        if (isset($field['operators']) && is_object($field['operators'])) {
-            $field['operators'] = array_values(get_object_vars($field['operators']));
+        if (isset($field['operators'])) {
+            $field['operators'] = array_values(notifications_event_type_metadata_array($field['operators'], true));
         }
 
-        if (isset($field['choices']) && is_object($field['choices'])) {
-            $field['choices'] = get_object_vars($field['choices']);
+        if (isset($field['choices'])) {
+            $field['choices'] = notifications_event_type_metadata_array($field['choices'], true);
         }
 
         $ret[$field['name']] = $field;
     }
 
     return $ret;
+}
+
+function notifications_event_type_metadata_array($value, $decode_json = false)
+{
+    if ($decode_json && is_string($value)) {
+        $decoded = json_decode($value, true);
+
+        if (json_last_error() === JSON_ERROR_NONE) {
+            $value = $decoded;
+        }
+    }
+
+    if ($value instanceof Traversable) {
+        $value = iterator_to_array($value);
+    }
+
+    if (is_object($value)) {
+        $value = get_object_vars($value);
+    }
+
+    return is_array($value) ? $value : [];
 }
 
 function notifications_event_type_field_types_from_type($type)
@@ -347,7 +387,8 @@ function notifications_event_type_labels($empty = true, $any = false)
     }
 
     foreach (notifications_event_types_cached() as $type) {
-        $ret[$type->name] = isset($type->label) && $type->label ? $type->label : $type->name;
+        $name = notifications_prop($type, 'name');
+        $ret[$name] = notifications_prop($type, 'label', $name) ?: $name;
     }
 
     return $ret;
@@ -4037,18 +4078,11 @@ function notifications_event_types($user_id = null)
     global $xtpl;
 
     $xtpl->title(_('Event types'));
-    $xtpl->assign(
-        'AJAX_SCRIPT',
-        ($xtpl->vars['AJAX_SCRIPT'] ?? '')
-        . '<style type="text/css">'
-        . '.notification-event-types tr:hover{background:#fff !important;}'
-        . '.notification-event-types tr:hover td{background:#fff !important;}'
-        . '</style>'
-    );
+    notifications_event_types_hash_script();
     $groups = [];
 
     foreach (notifications_event_types_cached() as $type) {
-        $groups[$type->category ?: _('Other')][] = $type;
+        $groups[notifications_prop($type, 'category') ?: _('Other')][] = $type;
     }
 
     ksort($groups);
@@ -4056,35 +4090,39 @@ function notifications_event_types($user_id = null)
 
     foreach ($groups as $category => $types) {
         usort($types, function ($a, $b) {
-            return strcmp($a->name, $b->name);
+            return strcmp(notifications_prop($a, 'name', ''), notifications_prop($b, 'name', ''));
         });
 
-        $html .= '<details style="margin-bottom:1em;">'
-            . '<summary><strong>' . h($category) . '</strong> (' . count($types) . ')</summary>'
-            . '<div style="margin-top:0.5em;">';
+        $html .= '<details class="notification-event-type-category">'
+            . '<summary>' . h($category) . ' (' . count($types) . ')</summary>'
+            . '<div class="notification-event-type-list">';
 
         foreach ($types as $type) {
-            $anchor = notifications_event_type_anchor($type->name);
+            $name = notifications_prop($type, 'name');
+            $anchor = notifications_event_type_anchor($name);
             $fields = notifications_event_type_field_metadata_from_type($type);
             $severity_description = notifications_prop($type, 'severity_description');
             $template = notifications_prop($type, 'template');
+            $label = notifications_prop($type, 'label', $name);
+            $severity = notifications_prop($type, 'severity');
 
-            $html .= '<div id="' . h($anchor) . '" style="margin:0 0 1.25em 0;">'
-                . '<table class="table-style01" style="margin-bottom:0.4em;">'
-                . '<tr><th colspan="2"><code>' . h($type->name) . '</code><br>' . h($type->label) . '</th></tr>'
-                . '<tr><td style="width:12em;">' . _('Severity') . ':</td><td>' . h($type->severity)
+            $html .= '<section id="' . h($anchor) . '" class="notification-event-type">'
+                . '<h3><code>' . h($name) . '</code></h3>'
+                . '<p class="notification-event-type-label">' . h($label) . '</p>'
+                . '<dl class="inline notification-event-type-meta">'
+                . '<dt>' . _('Severity') . '</dt>'
+                . '<dd><code>' . h($severity) . '</code>'
                 . ($severity_description ? '<br><small>' . h($severity_description) . '</small>' : '')
-                . '</td></tr>'
-                . '<tr><td>' . _('Default routed') . ':</td><td>'
-                . (notifications_prop($type, 'default_routed', true) ? h(_('yes')) : h(_('opt-in')))
-                . '</td></tr>';
+                . '</dd>'
+                . '<dt>' . _('Default routed') . '</dt>'
+                . '<dd>' . (notifications_prop($type, 'default_routed', true) ? h(_('yes')) : h(_('no'))) . '</dd>';
 
-            if ($template) {
-                $html .= '<tr><td>' . _('Template') . ':</td><td><code>' . h($template) . '</code></td></tr>';
+            if (isAdmin() && $template) {
+                $html .= '<dt>' . _('Template') . '</dt><dd><code>' . h($template) . '</code></dd>';
             }
 
-            $html .= '</table>'
-                . '<table class="table-style01">'
+            $html .= '</dl>'
+                . '<table class="table-style01 notification-event-type-fields">'
                 . '<tr><th>' . _('Field') . '</th><th>' . _('Type') . '</th><th>' . _('Operators') . '</th><th>' . _('Example') . '</th><th>' . _('Meaning') . '</th></tr>';
 
             foreach ($fields as $name => $field) {
@@ -4098,10 +4136,10 @@ function notifications_event_types($user_id = null)
             }
 
             if (!$fields) {
-                $html .= '<tr><td colspan="5">' . _('No event-specific matchable fields.') . '</td></tr>';
+                $html .= '<tr><td colspan="5">' . _('No matchable fields were reported by the API.') . '</td></tr>';
             }
 
-            $html .= '</table></div>';
+            $html .= '</table></section>';
         }
 
         $html .= '</div></details>';
@@ -4109,22 +4147,67 @@ function notifications_event_types($user_id = null)
 
     $html .= '</div>';
 
-    $xtpl->table_title(_('Event types'));
-    $xtpl->table_td($html);
-    $xtpl->table_tr('#fff', false, 'nohover');
-    $xtpl->table_out();
+    $xtpl->content_add_fragment($html);
 
     notifications_sidebar('event_types', $user_id);
+    notifications_event_types_sidebar($groups, $user_id);
+}
+
+function notifications_event_types_hash_script()
+{
+    global $xtpl;
+
+    $xtpl->assign(
+        'AJAX_SCRIPT',
+        ($xtpl->vars['AJAX_SCRIPT'] ?? '')
+        . '<script type="text/javascript">'
+        . '$(function(){'
+        . 'function openEventTypeHash(){'
+        . 'var hash=window.location.hash;'
+        . 'if(!hash||hash.indexOf("#event-type-")!==0){return;}'
+        . 'var target=$(hash);'
+        . 'if(!target.length){return;}'
+        . 'target.closest("details.notification-event-type-category").prop("open",true);'
+        . 'if(target[0].scrollIntoView){target[0].scrollIntoView();}'
+        . '}'
+        . 'openEventTypeHash();'
+        . '$(window).on("hashchange",openEventTypeHash);'
+        . '$(".notification-event-type-sidebar a").on("click",function(){'
+        . 'setTimeout(openEventTypeHash,0);'
+        . '});'
+        . '});'
+        . '</script>'
+    );
+}
+
+function notifications_event_types_sidebar($groups, $user_id = null)
+{
+    global $xtpl;
+
+    $user_qs = notifications_user_qs($user_id);
+    $html = '<div class="notification-event-type-sidebar">'
+        . '<h3>' . _('Event types') . '</h3>';
+
     foreach ($groups as $category => $types) {
+        usort($types, function ($a, $b) {
+            return strcmp(notifications_prop($a, 'name', ''), notifications_prop($b, 'name', ''));
+        });
+
+        $html .= '<h4>' . h($category) . '</h4><ul>';
+
         foreach ($types as $type) {
-            $xtpl->sbar_add(
-                $type->name,
-                '?page=notifications&action=event_types'
-                . notifications_user_qs($user_id)
-                . '#' . notifications_event_type_anchor($type->name)
-            );
+            $name = notifications_prop($type, 'name');
+            $url = '?page=notifications&action=event_types'
+                . $user_qs
+                . '#' . notifications_event_type_anchor($name);
+            $html .= '<li><a href="' . h($url) . '">' . h($name) . '</a></li>';
         }
+
+        $html .= '</ul>';
     }
+
+    $html .= '</div>';
+    $xtpl->sbar_add_fragment($html);
 }
 
 function notifications_test_event($user_id = null)

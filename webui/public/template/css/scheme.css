@@ -52,6 +52,10 @@ Layout
 
 #aside h3 {color:#6E6E55;}
 #aside ul li {border-bottom:1px solid #D8D8CC;}
+.notification-event-type-category summary {background:#E1EEFA; border:1px solid #B2DAFF; color:#52523F;}
+.notification-event-type {border-bottom:1px solid #D8D8CC;}
+.notification-event-type h3 {border-bottom:1px solid #CDCDBE;}
+.notification-event-type-sidebar h4 {color:#6E6E55; border-bottom:1px solid #D8D8CC;}
 
 #footer {background:#4F4F4F; color:#BFBFBF;}
 #footer a {color:#BFBFBF;}
