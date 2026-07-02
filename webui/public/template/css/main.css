@@ -337,8 +337,17 @@ form[name="userns-map-entries"] input[type="text"] {text-align: right;}
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 7px 10px;
+  padding: 8px 10px;
   font-weight: bold;
+}
+
+.notification-event-type-category-title {
+  font-size: 125%;
+}
+
+.notification-event-type-category-count {
+  font-size: 90%;
+  font-weight: normal;
 }
 
 .notification-event-type-list {
@@ -362,7 +371,10 @@ form[name="userns-map-entries"] input[type="text"] {text-align: right;}
 
 .notification-event-type-meta {
   margin: 0 0 10px;
-  grid-template-columns: max-content minmax(0, 1fr);
+}
+
+.notification-event-type-meta p {
+  margin: 0 0 3px;
 }
 
 .notification-event-type-fields {
