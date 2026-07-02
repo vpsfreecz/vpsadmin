@@ -162,8 +162,14 @@ final class NotificationRouteUiTest extends TestCase
             'notifications_matcher_value_toggle_script($field_types, $field_operators, $operator_labels)',
             $matcherNew
         );
+        self::assertStringContainsString('notifications_matcher_field_select_options', $source);
+        self::assertStringContainsString("\$name . ' - ' . \$description", $source);
         self::assertStringContainsString('notification-matcher-value', $matcherNew);
         self::assertStringContainsString('fieldTypes[field.val()]==="boolean"', $source);
+        self::assertStringContainsString('else if(allowed.length){operator.val(allowed[0]);}', $source);
+        self::assertStringContainsString("notifications_matcher_operator_reference_html(), false, false", $matcherNew);
+        self::assertStringNotContainsString("notifications_matcher_operator_reference_html(), false, true", $matcherNew);
+        self::assertStringContainsString("notifications_matcher_value_html('value', post_val('value'), \$field, \$field_types)", $matcherNew);
     }
 
     public function testEventTypeFieldMetadataHandlesCustomPayloadShapes(): void
@@ -247,9 +253,10 @@ final class NotificationRouteUiTest extends TestCase
         self::assertStringContainsString('<section id="', $eventTypes);
         self::assertStringContainsString('<h3><code>', $eventTypes);
         self::assertStringContainsString('notification-event-type-label', $eventTypes);
-        self::assertStringContainsString(". '<summary>' . h(\$category) . ' (' . count(\$types) . ')</summary>'", $eventTypes);
+        self::assertStringContainsString('notification-event-type-category-title', $eventTypes);
+        self::assertStringContainsString('notification-event-type-category-count', $eventTypes);
+        self::assertStringContainsString("sprintf(_('%d events'), count(\$types))", $eventTypes);
         self::assertStringNotContainsString('class="notification-event-type-category" open', $eventTypes);
-        self::assertStringNotContainsString('<summary><span>', $eventTypes);
         self::assertStringContainsString('notifications_event_types_hash_script();', $eventTypes);
         self::assertStringContainsString(
             'target.closest("details.notification-event-type-category").prop("open",true);',
@@ -262,6 +269,10 @@ final class NotificationRouteUiTest extends TestCase
         self::assertStringNotContainsString('No event-specific matchable fields', $eventTypes);
         self::assertStringContainsString('No matchable fields were reported by the API', $eventTypes);
         self::assertStringContainsString("_('Default routed')", $eventTypes);
+        self::assertStringContainsString("_('Default routed') . ':</strong>", $eventTypes);
+        self::assertStringNotContainsString("<th>' . _('Operators')", $eventTypes);
+        self::assertStringNotContainsString("notifications_operator_list_html(\$field['operators']", $eventTypes);
+        self::assertStringContainsString("'<tr><td colspan=\"4\">'", $eventTypes);
         self::assertStringContainsString('if (isAdmin() && $template)', $eventTypes);
     }
 
