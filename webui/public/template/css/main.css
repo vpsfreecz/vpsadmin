@@ -324,6 +324,76 @@ form[name="userns-map-entries"] input[type="text"] {text-align: right;}
   overflow: auto;
 }
 
+.notification-event-types {
+  margin-top: 10px;
+}
+
+.notification-event-type-category {
+  margin: 0 0 18px;
+}
+
+.notification-event-type-category summary {
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 7px 10px;
+  font-weight: bold;
+}
+
+.notification-event-type-list {
+  margin-top: 10px;
+}
+
+.notification-event-type {
+  margin: 0 0 20px;
+  padding: 0 0 18px;
+}
+
+.notification-event-type h3 {
+  margin: 0 0 8px;
+  padding-bottom: 4px;
+  letter-spacing: 0;
+}
+
+.notification-event-type-label {
+  margin: 0 0 10px;
+}
+
+.notification-event-type-meta {
+  margin: 0 0 10px;
+  grid-template-columns: max-content minmax(0, 1fr);
+}
+
+.notification-event-type-fields {
+  width: 100%;
+  table-layout: auto;
+}
+
+.notification-event-type-fields th,
+.notification-event-type-fields td {
+  vertical-align: top;
+}
+
+.notification-event-type-fields td {
+  overflow-wrap: anywhere;
+}
+
+.notification-event-type-sidebar {
+  margin-bottom: 15px;
+}
+
+.notification-event-type-sidebar h4 {
+  margin: 8px 0 3px;
+  padding: 0;
+  font-size: 90%;
+  letter-spacing: 0;
+}
+
+.notification-event-type-sidebar ul {
+  margin-bottom: 10px;
+}
+
 a.user-unpaid {color: #fff;}
 
 /* Dropdown menu */
