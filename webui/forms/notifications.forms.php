@@ -313,7 +313,7 @@ function notifications_api_list_to_array($list)
 function notifications_event_type_fields($event_type, $fallback_fields)
 {
     if (!$event_type || $event_type === '__any__') {
-        return $fallback_fields;
+        return notifications_matcher_field_select_options($fallback_fields);
     }
 
     foreach (notifications_event_types_cached() as $type) {
@@ -323,10 +323,24 @@ function notifications_event_type_fields($event_type, $fallback_fields)
 
         $fields = notifications_event_type_fields_from_type($type);
 
-        return $fields ?: $fallback_fields;
+        return notifications_matcher_field_select_options($fields ?: $fallback_fields);
     }
 
-    return $fallback_fields;
+    return notifications_matcher_field_select_options($fallback_fields);
+}
+
+function notifications_matcher_field_select_options($fields)
+{
+    $ret = [];
+
+    foreach ($fields as $name => $description) {
+        $description = trim((string) $description);
+        $ret[$name] = $description && $description !== (string) $name
+            ? $name . ' - ' . $description
+            : (string) $name;
+    }
+
+    return $ret;
 }
 
 function notifications_event_field_types($event_type = null)
@@ -430,32 +444,32 @@ function notifications_matcher_operator_reference_html()
         'integer' => [
             _('whole number'),
             ['==', '!=', '>', '>=', '<', '<='],
-            _('integer comparison, for example 123'),
+            _('parsed as an integer, for example 123'),
         ],
         'number' => [
             _('number'),
             ['==', '!=', '>', '>=', '<', '<='],
-            _('decimal comparison, for example 3.14'),
+            _('parsed as a decimal number, for example 3.14'),
         ],
         'boolean' => [
             _('true/false'),
             ['==', '!='],
-            _('true or false'),
+            _('normalized from true/false, yes/no, on/off, or 1/0'),
         ],
         'datetime' => [
             _('date and time'),
             ['==', '!=', '>', '>=', '<', '<='],
-            _('ISO 8601 time, for example 2026-07-01T12:00:00Z'),
+            _('parsed as ISO 8601 time, for example 2026-07-01T12:00:00Z'),
         ],
         'string_list' => [
             _('list of text values'),
             ['contains', 'not_contains'],
-            _('one list item to look for'),
+            _('one text list item to look for'),
         ],
         'integer_list' => [
             _('list of whole numbers'),
             ['contains', 'not_contains'],
-            _('one integer list item to look for'),
+            _('one list item parsed as an integer'),
         ],
     ];
 
@@ -565,6 +579,7 @@ function notifications_matcher_value_toggle_script($field_types, $field_operator
         . 'if(operatorLabels[op]){operator.append($("<option>").attr("value",op).text(operatorLabels[op]));}'
         . '});'
         . 'if($.inArray(current,allowed)>=0){operator.val(current);}'
+        . 'else if(allowed.length){operator.val(allowed[0]);}'
         . '}'
         . 'function renderMatcherValue(){'
         . 'var current=container.find("[name=value]").val()||"";'
@@ -1929,13 +1944,13 @@ function notifications_matcher_new($route_id, $event_type = null)
         . notifications_matcher_value_html('value', post_val('value'), $field, $field_types)
         . '</span>',
         false,
-        true
+        false
     );
     $xtpl->table_tr();
     $xtpl->form_out(_('Add'));
 
     $xtpl->table_title(_('Matcher operator reference'));
-    $xtpl->table_td(notifications_matcher_operator_reference_html(), false, true);
+    $xtpl->table_td(notifications_matcher_operator_reference_html(), false, false);
     $xtpl->table_tr('#fff', false, 'nohover');
     $xtpl->table_out();
 
@@ -4094,7 +4109,9 @@ function notifications_event_types($user_id = null)
         });
 
         $html .= '<details class="notification-event-type-category">'
-            . '<summary>' . h($category) . ' (' . count($types) . ')</summary>'
+            . '<summary><span class="notification-event-type-category-title">'
+            . h($category) . '</span> <span class="notification-event-type-category-count">'
+            . h(sprintf(_('%d events'), count($types))) . '</span></summary>'
             . '<div class="notification-event-type-list">';
 
         foreach ($types as $type) {
@@ -4109,34 +4126,32 @@ function notifications_event_types($user_id = null)
             $html .= '<section id="' . h($anchor) . '" class="notification-event-type">'
                 . '<h3><code>' . h($name) . '</code></h3>'
                 . '<p class="notification-event-type-label">' . h($label) . '</p>'
-                . '<dl class="inline notification-event-type-meta">'
-                . '<dt>' . _('Severity') . '</dt>'
-                . '<dd><code>' . h($severity) . '</code>'
+                . '<div class="notification-event-type-meta">'
+                . '<p><strong>' . _('Severity') . ':</strong> <code>' . h($severity) . '</code>'
                 . ($severity_description ? '<br><small>' . h($severity_description) . '</small>' : '')
-                . '</dd>'
-                . '<dt>' . _('Default routed') . '</dt>'
-                . '<dd>' . (notifications_prop($type, 'default_routed', true) ? h(_('yes')) : h(_('no'))) . '</dd>';
+                . '</p>'
+                . '<p><strong>' . _('Default routed') . ':</strong> '
+                . (notifications_prop($type, 'default_routed', true) ? h(_('yes')) : h(_('no'))) . '</p>';
 
             if (isAdmin() && $template) {
-                $html .= '<dt>' . _('Template') . '</dt><dd><code>' . h($template) . '</code></dd>';
+                $html .= '<p><strong>' . _('Template') . ':</strong> <code>' . h($template) . '</code></p>';
             }
 
-            $html .= '</dl>'
+            $html .= '</div>'
                 . '<table class="table-style01 notification-event-type-fields">'
-                . '<tr><th>' . _('Field') . '</th><th>' . _('Type') . '</th><th>' . _('Operators') . '</th><th>' . _('Example') . '</th><th>' . _('Meaning') . '</th></tr>';
+                . '<tr><th>' . _('Field') . '</th><th>' . _('Type') . '</th><th>' . _('Example') . '</th><th>' . _('Meaning') . '</th></tr>';
 
             foreach ($fields as $name => $field) {
                 $html .= '<tr>'
                     . '<td><code>' . h($name) . '</code></td>'
                     . '<td><code>' . h($field['type'] ?? '') . '</code></td>'
-                    . '<td>' . notifications_operator_list_html($field['operators'] ?? []) . '</td>'
                     . '<td>' . notifications_field_example_html($field) . '</td>'
                     . '<td>' . h($field['description'] ?? $name) . '</td>'
                     . '</tr>';
             }
 
             if (!$fields) {
-                $html .= '<tr><td colspan="5">' . _('No matchable fields were reported by the API.') . '</td></tr>';
+                $html .= '<tr><td colspan="4">' . _('No matchable fields were reported by the API.') . '</td></tr>';
             }
 
             $html .= '</table></section>';
