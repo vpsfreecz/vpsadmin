@@ -107,6 +107,23 @@ RSpec.describe EventRoute do
     )
   end
 
+  def build_matcher(event_type:, field:, operator:, value:)
+    route = create_route!(
+      event_type:,
+      position: EventRoute.where(user: SpecSeed.user).count + 1
+    )
+    route.event_route_matchers.create!(field:, operator:, value:)
+  end
+
+  def build_event(event_type:, payload:)
+    Event.new(
+      user: SpecSeed.user,
+      event_type:,
+      subject: 'Spec event',
+      payload:
+    )
+  end
+
   def matched_routes(event)
     event.event_route_matches.reload.map(&:event_route)
   end
@@ -805,6 +822,122 @@ RSpec.describe EventRoute do
 
     expect(event.reload).to be_routed_routing_state
     expect(event.event_deliveries.sole.target_value).to eq('audit@example.test')
+  end
+
+  it 'parses typed matcher values before comparison' do
+    integer_matcher = build_matcher(
+      event_type: 'vps.oom_report',
+      field: 'count',
+      operator: '>=',
+      value: '10'
+    )
+    number_matcher = build_matcher(
+      event_type: 'lifetime.expiration_warning',
+      field: 'expires_in_days',
+      operator: '>',
+      value: '2.5'
+    )
+    datetime_matcher = build_matcher(
+      event_type: 'vps.oom_report',
+      field: 'batch_reported_at',
+      operator: '>=',
+      value: '2026-07-01T12:00:00Z'
+    )
+    boolean_matcher = build_matcher(
+      event_type: 'transaction_chain.state_changed',
+      field: 'terminal',
+      operator: '==',
+      value: 'yes'
+    )
+    integer_list_contains_matcher = build_matcher(
+      event_type: 'vps.oom_report',
+      field: 'selected_report_ids',
+      operator: 'contains',
+      value: '42'
+    )
+    integer_list_not_contains_matcher = build_matcher(
+      event_type: 'vps.oom_report',
+      field: 'selected_report_ids',
+      operator: 'not_contains',
+      value: '99'
+    )
+
+    expect(integer_matcher).to be_matches(
+      build_event(
+        event_type: 'vps.oom_report',
+        payload: { 'count' => 10 }
+      )
+    )
+    expect(number_matcher).to be_matches(
+      build_event(
+        event_type: 'lifetime.expiration_warning',
+        payload: { 'expires_in_days' => 3.5 }
+      )
+    )
+    expect(datetime_matcher).to be_matches(
+      build_event(
+        event_type: 'vps.oom_report',
+        payload: { 'batch_reported_at' => '2026-07-01T13:00:00Z' }
+      )
+    )
+    expect(boolean_matcher).to be_matches(
+      build_event(
+        event_type: 'transaction_chain.state_changed',
+        payload: { 'terminal' => true }
+      )
+    )
+    expect(integer_list_contains_matcher).to be_matches(
+      build_event(
+        event_type: 'vps.oom_report',
+        payload: { 'selected_report_ids' => [41, 42] }
+      )
+    )
+    expect(integer_list_not_contains_matcher).to be_matches(
+      build_event(
+        event_type: 'vps.oom_report',
+        payload: { 'selected_report_ids' => [41, 42] }
+      )
+    )
+  end
+
+  it 'fails typed matcher comparisons closed when matcher values cannot be parsed' do
+    integer_matcher = build_matcher(
+      event_type: 'vps.oom_report',
+      field: 'count',
+      operator: '>=',
+      value: 'ten'
+    )
+    datetime_matcher = build_matcher(
+      event_type: 'vps.oom_report',
+      field: 'batch_reported_at',
+      operator: '>=',
+      value: 'yesterday'
+    )
+    integer_list_matcher = build_matcher(
+      event_type: 'vps.oom_report',
+      field: 'selected_report_ids',
+      operator: 'contains',
+      value: 'forty-two'
+    )
+
+    expect(integer_matcher).not_to be_matches(
+      build_event(
+        event_type: 'vps.oom_report',
+        payload: { 'count' => 10 }
+      )
+    )
+    expect(datetime_matcher).not_to be_matches(
+      build_event(
+        event_type: 'vps.oom_report',
+        payload: { 'batch_reported_at' => '2026-07-01T13:00:00Z' }
+      )
+    )
+    expect(integer_list_matcher).not_to be_matches(
+      build_event(
+        event_type: 'vps.oom_report',
+        payload: { 'selected_report_ids' => [42] }
+      )
+    )
   end
 
   it 'rejects events with a VPS that belongs to another user' do
