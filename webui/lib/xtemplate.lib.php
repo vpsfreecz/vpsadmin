@@ -467,6 +467,11 @@ class XTemplate
         $this->assign('S_S_TITLE', $title3);
         $this->parse('main.s_s_title');
     }
+    public function content_add_fragment($html)
+    {
+        $this->assign('CONTENT_FRAGMENT', $html);
+        $this->parse('main.content_fragment');
+    }
     /**
       * @param $code - lang code
       * @param $icon - lang icon code

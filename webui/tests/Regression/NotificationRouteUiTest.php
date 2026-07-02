@@ -166,7 +166,73 @@ final class NotificationRouteUiTest extends TestCase
         self::assertStringContainsString('fieldTypes[field.val()]==="boolean"', $source);
     }
 
-    public function testEventTypesTableDisablesHoverHighlight(): void
+    public function testEventTypeFieldMetadataHandlesCustomPayloadShapes(): void
+    {
+        require_once dirname(__DIR__, 2) . '/forms/notifications.forms.php';
+
+        $magicType = new class {
+            private array $attrs;
+
+            public function __construct()
+            {
+                $this->attrs = [
+                    'fields' => [
+                        (object) [
+                            'name' => 'stage',
+                            'description' => 'Processing stage',
+                            'type' => 'string',
+                            'operators' => ['==', '!='],
+                        ],
+                    ],
+                    'default_routed' => false,
+                ];
+            }
+
+            public function attributes(): array
+            {
+                return $this->attrs;
+            }
+
+            public function __get(string $name): mixed
+            {
+                return $this->attrs[$name] ?? null;
+            }
+        };
+        $objectType = (object) [
+            'fields' => [
+                (object) [
+                    'name' => 'codename',
+                    'description' => 'Incident codename',
+                    'type' => 'string',
+                    'operators' => (object) ['==' => '==', '=~' => '=~'],
+                ],
+            ],
+        ];
+        $jsonType = (object) [
+            'fields' => json_encode([
+                [
+                    'name' => 'cgroups',
+                    'description' => 'OOM cgroups',
+                    'type' => 'string_list',
+                    'operators' => ['contains', 'not_contains'],
+                ],
+            ]),
+        ];
+
+        self::assertFalse(isset($magicType->fields));
+        $magicFields = notifications_event_type_field_metadata_from_type($magicType);
+        $objectFields = notifications_event_type_field_metadata_from_type($objectType);
+        $jsonFields = notifications_event_type_field_metadata_from_type($jsonType);
+
+        self::assertSame('Processing stage', $magicFields['stage']['description']);
+        self::assertFalse(notifications_prop($magicType, 'default_routed', true));
+        self::assertSame('Incident codename', $objectFields['codename']['description']);
+        self::assertSame(['==', '=~'], $objectFields['codename']['operators']);
+        self::assertSame('string_list', $jsonFields['cgroups']['type']);
+        self::assertSame(['contains', 'not_contains'], $jsonFields['cgroups']['operators']);
+    }
+
+    public function testEventTypesPageUsesSectionLayout(): void
     {
         $source = $this->notificationsFormsSource();
         $eventTypes = $this->sourceBetween(
@@ -176,10 +242,42 @@ final class NotificationRouteUiTest extends TestCase
         );
 
         self::assertStringContainsString('notification-event-types', $eventTypes);
-        self::assertStringContainsString('.notification-event-types tr:hover{background:#fff !important;}', $eventTypes);
-        self::assertStringContainsString('.notification-event-types tr:hover td{background:#fff !important;}', $eventTypes);
-        self::assertStringContainsString("\$xtpl->table_tr('#fff', false, 'nohover');", $eventTypes);
+        self::assertStringContainsString('notification-event-type-category', $eventTypes);
+        self::assertStringContainsString('notification-event-type-fields', $eventTypes);
+        self::assertStringContainsString('<section id="', $eventTypes);
+        self::assertStringContainsString('<h3><code>', $eventTypes);
+        self::assertStringContainsString('notification-event-type-label', $eventTypes);
+        self::assertStringContainsString(". '<summary>' . h(\$category) . ' (' . count(\$types) . ')</summary>'", $eventTypes);
+        self::assertStringNotContainsString('class="notification-event-type-category" open', $eventTypes);
+        self::assertStringNotContainsString('<summary><span>', $eventTypes);
+        self::assertStringContainsString('notifications_event_types_hash_script();', $eventTypes);
+        self::assertStringContainsString(
+            'target.closest("details.notification-event-type-category").prop("open",true);',
+            $eventTypes
+        );
+        self::assertStringContainsString('target[0].scrollIntoView', $eventTypes);
+        self::assertStringContainsString('$xtpl->content_add_fragment($html);', $eventTypes);
+        self::assertStringNotContainsString('$xtpl->table_td($html);', $eventTypes);
+        self::assertStringNotContainsString("\$xtpl->table_tr('#fff', false, 'nohover');", $eventTypes);
+        self::assertStringNotContainsString('No event-specific matchable fields', $eventTypes);
+        self::assertStringContainsString('No matchable fields were reported by the API', $eventTypes);
         self::assertStringContainsString("_('Default routed')", $eventTypes);
+        self::assertStringContainsString('if (isAdmin() && $template)', $eventTypes);
+    }
+
+    public function testEventTypesSidebarIsGroupedSeparately(): void
+    {
+        $source = $this->notificationsFormsSource();
+        $eventTypesSidebar = $this->sourceBetween(
+            $source,
+            'function notifications_event_types_sidebar(',
+            'function notifications_test_event('
+        );
+
+        self::assertStringContainsString('notification-event-type-sidebar', $eventTypesSidebar);
+        self::assertStringContainsString("<h3>' . _('Event types') . '</h3>", $eventTypesSidebar);
+        self::assertStringContainsString("'<h4>' . h(\$category) . '</h4><ul>'", $eventTypesSidebar);
+        self::assertStringContainsString('$xtpl->sbar_add_fragment($html);', $eventTypesSidebar);
     }
 
     public function testReceiverTargetStatusUsesReceiverTargetEnabledField(): void
