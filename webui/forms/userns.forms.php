@@ -55,10 +55,10 @@ function userns_list()
 
     if (isAdmin()) {
         $xtpl->form_add_input(_('User ID') . ':', 'text', '30', 'user', get_val('user'), '');
-        api_param_to_form('block_count', $input->block_count, $_GET['block_count']);
+        api_param_to_form('block_count', $input->block_count, $_GET['block_count'] ?? null);
     }
 
-    api_param_to_form('size', $input->size, $_GET['size']);
+    api_param_to_form('size', $input->size, $_GET['size'] ?? null);
 
     $xtpl->form_out(_('Show'));
 

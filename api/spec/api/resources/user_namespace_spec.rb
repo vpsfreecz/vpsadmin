@@ -83,6 +83,16 @@ RSpec.describe 'VpsAdmin::API::Resources::UserNamespace' do
 
       expect(scopes).to include('user_namespace#index', 'user_namespace#show')
     end
+
+    it 'keeps pagination parameters visible to normal users' do
+      as(SpecSeed.user) { options "#{index_path}?method=GET" }
+
+      expect_status(200)
+
+      params = json.dig('response', 'input', 'parameters')
+      expect(params).to include('size', 'limit', 'from_id')
+      expect(params).not_to include('user', 'block_count')
+    end
   end
 
   describe 'Index' do

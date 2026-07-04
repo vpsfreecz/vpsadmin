@@ -28,7 +28,7 @@ class VpsAdmin::API::Resources::UserNamespace < HaveAPI::Resource
     authorize do |u|
       allow if u.role == :admin
       restrict user_id: u.id
-      input whitelist: %i[size]
+      input whitelist: %i[size limit from_id]
       output whitelist: %i[id size]
       allow
     end
