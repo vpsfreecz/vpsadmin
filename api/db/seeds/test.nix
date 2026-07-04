@@ -13,6 +13,8 @@ let
     client_secret = "testWebuiSecret";
     client_secret_hash = "$2a$04$.CjIL4ngBsIDUHhlnpxt/efUr7asDojkCktOFYvhYqyzCPv5OnaM6";
     redirect_uri = "http://webui.vpsadmin.test/?page=login&action=callback";
+    access_token_lifetime = "renewable_auto";
+    access_token_seconds = 20 * 60;
   };
 
   transactionKey = {
