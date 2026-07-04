@@ -151,13 +151,16 @@ function print_editm($u)
     $xtpl->table_td('<a href="?page=reminder&action=reminder&resource=user&id=' . $u->id . '">' . _('Configure payment reminder') . '</a>');
     $xtpl->table_tr();
 
-    api_param_to_form(
+    $xtpl->table_td(_('Language') . ':');
+    api_param_to_form_pure(
         'language',
         $api->user->update->getParameters('input')->language,
         $u->language_id,
         null,
         false
     );
+    $xtpl->table_td(_('Used to localize vpsAdmin, API responses, and e-mails.'));
+    $xtpl->table_tr();
     $xtpl->form_add_select(
         _('Time zone') . ':',
         'time_zone',
@@ -1165,6 +1168,21 @@ if (isLoggedIn()) {
                 $user->update($params);
                 if ($_SESSION['user']['id'] == $user->id) {
                     $_SESSION['user']['time_zone'] = $params['time_zone'] ?: null;
+                    $languageCode = lang_code_by_id($params['language']);
+                    if ($languageCode) {
+                        $_SESSION['user']['language'] = $languageCode;
+                        $_SESSION['user']['language_locale'] = function_exists('webui_locale_for_api_language')
+                            ? webui_locale_for_api_language($languageCode, $langs ?? null)
+                            : null;
+                        if (isset($lang) && $_SESSION['user']['language_locale']) {
+                            $lang->set_current_lang($_SESSION['user']['language_locale']);
+                        }
+                        if (method_exists($api, 'setLanguage')) {
+                            $api->setLanguage($languageCode);
+                            $api->setup(true);
+                            $_SESSION['api_description'] = $api->getDescription();
+                        }
+                    }
                     set_request_time_zone($_SESSION['user']['time_zone']);
                 }
 

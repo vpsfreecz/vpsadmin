@@ -7,17 +7,23 @@ include WEBUI_ROOT . 'lib/version.lib.php';
 include WEBUI_ROOT . 'lib/functions.lib.php';
 include WEBUI_ROOT . 'lib/security.lib.php';
 include WEBUI_ROOT . 'lib/login.lib.php';
+include WEBUI_ROOT . 'lib/gettext_stream.lib.php';
+include WEBUI_ROOT . 'lib/gettext_inc.lib.php';
+include WEBUI_ROOT . 'lib/gettext_lang.lib.php';
+include WEBUI_ROOT . 'config_cfg.php';
 
 header('Content-Type: text/javascript');
 
 if (isLoggedIn()) {
+    $language = webui_current_api_language($langs);
     ?>
 (function(root) {
 	root.vpsAdmin = {
 		api: {
 			url: <?php echo json_encode(EXT_API_URL, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>,
 			version: <?php echo json_encode(API_VERSION, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>,
-			oauth2TrustedOrigins: <?php echo json_encode(getApiOAuth2TrustedOrigins(), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>
+			oauth2TrustedOrigins: <?php echo json_encode(getApiOAuth2TrustedOrigins(), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>,
+			language: <?php echo json_encode($language, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>
 		},
 		webui: {
 			url: <?php echo json_encode(getSelfUri(), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>
@@ -27,7 +33,8 @@ if (isLoggedIn()) {
 		},
 		user: {
 			id: <?php echo json_encode($_SESSION['user']['id'] ?? null, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>,
-			timeZone: <?php echo json_encode($_SESSION['user']['time_zone'] ?? null, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>
+			timeZone: <?php echo json_encode($_SESSION['user']['time_zone'] ?? null, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>,
+			language: <?php echo json_encode($language, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>
 		},
 		serverTimeZone: <?php echo json_encode(VPSADMIN_SERVER_TIME_ZONE, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>,
 	<?php if ($_SESSION['auth_type'] == 'oauth2') { ?>
@@ -44,7 +51,8 @@ if (isLoggedIn()) {
 var chainTimeout;
 var api = root.apiClient = new HaveAPI.Client(root.vpsAdmin.api.url, {
 	version: root.vpsAdmin.api.version,
-	oauth2TrustedOrigins: root.vpsAdmin.api.oauth2TrustedOrigins
+	oauth2TrustedOrigins: root.vpsAdmin.api.oauth2TrustedOrigins,
+	language: root.vpsAdmin.api.language
 });
 api.useDescription(root.vpsAdmin.description);
 

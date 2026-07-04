@@ -66,7 +66,14 @@ include WEBUI_ROOT . 'lib/gettext_lang.lib.php';
 // include configuration
 include WEBUI_ROOT . 'config_cfg.php';
 
-$api = new \HaveAPI\Client(INT_API_URL, API_VERSION, getClientIdentity(), getApiClientOptions());
+$webuiLocale = Lang::detect($langs);
+Lang::activate($webuiLocale);
+$api = new \HaveAPI\Client(
+    INT_API_URL,
+    API_VERSION,
+    getClientIdentity(),
+    getApiClientOptions(Lang::apiCodeForLocale($langs, $webuiLocale))
+);
 $api->registerDescriptionChangeFunc('api_description_changed');
 
 if (isset($_SESSION["api_description"]) && $_SESSION["api_description"]) {
@@ -76,13 +83,18 @@ if (isset($_SESSION["api_description"]) && $_SESSION["api_description"]) {
 // Create a template class
 $xtpl = new XTemplate(WEBUI_ROOT . 'template/template.html');
 // Create a langauge class
-$lang = new Lang($langs, $xtpl);
+$lang = new Lang($langs, $xtpl, $api, $webuiLocale);
 
 $xtpl->assign("VERSION", getVersionLink());
+$xtpl->assign("HTML_LANG", Lang::htmlLanguageForLocale($langs, $lang->get_current_lang()));
 $xtpl->assign("L_LOGIN", _("Log in"));
 $xtpl->assign("L_LOGGING_IN", _("Signing in..."));
 $xtpl->assign("L_LOGOUT", _("Logout"));
 $xtpl->assign("L_LOGOUT_SWITCH", _("Switch user"));
+$xtpl->assign("L_LOGO", _("Logo"));
+$xtpl->assign("L_NAVIGATION", _("Navigation"));
+$xtpl->assign("L_LEGAL_INFO", _("legal info"));
+$xtpl->assign("L_VPSADMIN_TEAM", _("vpsAdmin team"));
 $xtpl->assign('YEAR', date('Y'));
 
 $api_cluster = null;

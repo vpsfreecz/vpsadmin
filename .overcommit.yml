@@ -5,6 +5,8 @@ PreCommit:
     enabled: true
   VpsadminApiI18n:
     enabled: true
+  VpsadminWebuiI18n:
+    enabled: true
   PhpCsFixer:
     enabled: true
     command: 'php-cs-fixer'

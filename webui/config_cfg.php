@@ -20,7 +20,10 @@ $cfg_adminvps['table_heading'] = '';
 $langs = [
     "en_US.utf8" => [
         "code" => "en_US.utf8",
+        "api_code" => "en",
+        "html" => "en",
         "icon" => "us",
-        "lang" => "US english",
+        "lang" => "English",
+        "aliases" => ["en", "en-US"],
     ],
 ];

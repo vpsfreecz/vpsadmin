@@ -1,22 +1,32 @@
 #!/bin/sh
-# vim: expandtab sw=4 ts=4 sts=4:
+set -eu
 
-set -e
+script_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+webui_root=$(CDPATH= cd -- "$script_dir/../.." && pwd)
+domain=vpsAdmin
+pot="$webui_root/lang/locale/$domain.pot"
 
-if [ -z "$1" ] ; then
-    echo "Usage: ./admin/new-lang ll"
+if [ "$#" -ne 1 ]; then
+    echo "Usage: webui/lang/scripts/new-lang <locale>" >&2
+    echo "Example: webui/lang/scripts/new-lang cs_CZ.utf8" >&2
     exit 1
 fi
 
-mkdir langs/$1
+if ! command -v msginit >/dev/null 2>&1; then
+    echo "missing required gettext tool: msginit" >&2
+    exit 1
+fi
 
-for loc in vpsadmin ; do
-    msginit -i langs/$loc.pot -o langs/$1/$loc.po -l $1 --no-translator
-done
+locale=$1
+po_dir="$webui_root/lang/locale/$locale/LC_MESSAGES"
+po="$po_dir/$domain.po"
 
-svn add langs/$1
+if [ ! -f "$pot" ]; then
+    "$script_dir/locales-update"
+fi
 
-tmp=`mktemp`
-svn propget svn:ignore langs/cs/ > $tmp
-svn propset svn:ignore -F $tmp langs/$1
-rm -f $tmp
+mkdir -p "$po_dir"
+msginit --input="$pot" --output-file="$po" --locale="$locale" --no-translator
+
+echo "Created $po"
+echo "Edit translations there, then run webui/lang/scripts/locales-update."

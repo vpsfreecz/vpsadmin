@@ -1,10 +1,10 @@
 <!-- BEGIN: main -->
 <?xml version="1.0"?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="{HTML_LANG}" lang="{HTML_LANG}">
 <head>
     <meta http-equiv="content-type" content="text/html; charset=utf-8" />
-    <meta http-equiv="content-language" content="cs" />
+    <meta http-equiv="content-language" content="{HTML_LANG}" />
     <!--
 
     vpsAdmin
@@ -56,7 +56,7 @@
 <div id="header">
     <div class="main">
 
-        <h3 id="logo"><img src="template/vpsAdmin-logo.png" alt="Logo" /></h3>
+        <h3 id="logo"><img src="template/vpsAdmin-logo.png" alt="{L_LOGO}" /></h3>
         <div id="slogan_wrap">
 	    <div id="version">
             <p id="slogan">version: {VERSION}</p>
@@ -64,7 +64,7 @@
 	    <div id="langbox">
 	    <ul>
       <!-- BEGIN: langitem -->
-                  <li><a href="?page=lang&newlang={LANG_CODE}&prev_url={PREV_URL}"><img src="template/icons/langs/{LANG_ICON}.png" title="{LANG_LANG}" class="{LANG_IMG_CLASS}" /></a></li>
+                  <li><a href="?page=lang&newlang={LANG_CODE}&prev_url={PREV_URL}{LANG_TOKEN_PARAM}"><img src="template/icons/langs/{LANG_ICON}.png" title="{LANG_LANG}" class="{LANG_IMG_CLASS}" /></a></li>
       <!-- END: langitem -->
 	    </ul>
 	    </div>
@@ -140,7 +140,7 @@
 <div id="nav" class="box">
     <div class="main">
 
-        <h3 class="noscreen">Navigace</h3>
+        <h3 class="noscreen">{L_NAVIGATION}</h3>
 
         <ul>
 	    <!-- BEGIN: menu_item -->
@@ -268,10 +268,10 @@
 
         <p class="f-right">
             API time: {API_SPENT_TIME} s,
-            <a href="#">vpsAdmin</a> {VERSION} (<a href="?page=about">legal info</a>)
+            <a href="#">vpsAdmin</a> {VERSION} (<a href="?page=about">{L_LEGAL_INFO}</a>)
         </p>
 
-        <p>&copy;&nbsp;2008-{YEAR} <a href="?page=about">vpsAdmin team</a></p>
+        <p>&copy;&nbsp;2008-{YEAR} <a href="?page=about">{L_VPSADMIN_TEAM}</a></p>
 
     </div> <!-- /main -->
 </div> <!-- /footer -->

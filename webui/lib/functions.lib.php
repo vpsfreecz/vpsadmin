@@ -445,12 +445,22 @@ function getApiOAuth2TrustedOrigins()
     return defined('API_OAUTH2_TRUSTED_ORIGINS') ? API_OAUTH2_TRUSTED_ORIGINS : [];
 }
 
-function getApiClientOptions()
+function getApiClientOptions($language = null)
 {
-    return [
+    $ret = [
         'verify' => defined('API_SSL_VERIFY') ? API_SSL_VERIFY : true,
         'oauth2_trusted_origins' => getApiOAuth2TrustedOrigins(),
     ];
+
+    if ($language === null && function_exists('webui_current_api_language')) {
+        $language = webui_current_api_language();
+    }
+
+    if ($language !== null && (string) $language !== '') {
+        $ret['language'] = (string) $language;
+    }
+
+    return $ret;
 }
 
 function api_description_changed($api)
@@ -1238,6 +1248,40 @@ function lang_id_by_code($code, $langs = null)
     }
 
     return false;
+}
+
+function lang_code_by_id($id, $langs = null)
+{
+    global $api;
+
+    if (!$id) {
+        return false;
+    }
+
+    if (!$langs) {
+        $langs = $api->language->list();
+    }
+
+    foreach ($langs as $l) {
+        if ($l->id == $id) {
+            return $l->code;
+        }
+    }
+
+    return false;
+}
+
+function user_language_code($user, $langs = null)
+{
+    if (isset($user->language_id)) {
+        $code = lang_code_by_id($user->language_id, $langs);
+
+        if ($code) {
+            return $code;
+        }
+    }
+
+    return 'en';
 }
 
 

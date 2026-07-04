@@ -52,6 +52,17 @@
   separate `vpsadmin.parameters` tree.
 - The locale files include generated key structure from API source and HaveAPI
   parameter metadata. Edit translations in the locale files, then regenerate.
+- WebUI runtime translations use gettext domain `vpsAdmin`. Source strings are
+  `_()` calls in PHP; the generated source catalog is
+  `webui/lang/locale/vpsAdmin.pot`.
+- WebUI translations are edited in
+  `webui/lang/locale/<locale>/LC_MESSAGES/vpsAdmin.po`; compiled
+  `vpsAdmin.mo` files are generated artifacts. Locale maintenance scripts live
+  in `webui/lang/scripts/`.
+- WebUI language selection uses the browser language for guests, then the
+  logged-in user's `User.language` preference. The top-right language switcher
+  updates that preference for normal sessions and remains session-only while an
+  admin is impersonating another user.
 
 ## Testing Guidelines
 - Integration tests live in `tests/` and reuse the vpsAdminOS test framework via the flake input, so no sibling `vpsadminos` checkout or `NIX_PATH` setup is required.

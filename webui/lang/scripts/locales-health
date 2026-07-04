@@ -1,0 +1,108 @@
+#!/bin/sh
+set -eu
+
+script_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+webui_root=$(CDPATH= cd -- "$script_dir/../.." && pwd)
+domain=vpsAdmin
+pot="$webui_root/lang/locale/$domain.pot"
+
+need_tool() {
+    if ! command -v "$1" >/dev/null 2>&1; then
+        echo "missing required gettext tool: $1" >&2
+        exit 1
+    fi
+}
+
+configured_locales() {
+    php -r '
+        define("PRIV_USER", 1);
+        define("PRIV_POWERUSER", 2);
+        define("PRIV_ADMIN", 3);
+        define("PRIV_SUPERADMIN", 4);
+        define("PRIV_GOD", 5);
+        include $argv[1];
+        foreach (array_keys($langs) as $locale) {
+            echo $locale, "\n";
+        }
+    ' "$webui_root/config_cfg.php"
+}
+
+locale_configured() {
+    needle="$1"
+
+    configured_locales | while read -r locale; do
+        if [ "$locale" = "$needle" ]; then
+            echo yes
+            exit 0
+        fi
+    done | grep -q yes
+}
+
+po_has_entries() {
+    msgattrib "$1" "$2" --no-obsolete | grep -q '^msgid '
+}
+
+need_tool php
+need_tool msgattrib
+need_tool msgfmt
+
+if [ "${1:-}" != "--skip-pot" ]; then
+    "$script_dir/locales-update" --check
+    exit 0
+fi
+
+if [ ! -f "$pot" ]; then
+    echo "$pot is missing; run webui/lang/scripts/locales-update" >&2
+    exit 1
+fi
+
+configured_locales | while read -r locale; do
+    [ "$locale" = "en_US.utf8" ] && continue
+
+    po="$webui_root/lang/locale/$locale/LC_MESSAGES/$domain.po"
+    mo="$webui_root/lang/locale/$locale/LC_MESSAGES/$domain.mo"
+
+    if [ ! -f "$po" ]; then
+        echo "configured locale $locale is missing $po" >&2
+        exit 1
+    fi
+
+    if [ ! -f "$mo" ]; then
+        echo "configured locale $locale is missing $mo" >&2
+        exit 1
+    fi
+done
+
+find "$webui_root/lang/locale" \
+    -path '*/LC_MESSAGES/vpsAdmin.po' \
+    -print | sort | while read -r po; do
+        locale=$(basename "$(dirname "$(dirname "$po")")")
+
+        if ! locale_configured "$locale"; then
+            echo "$po exists for unconfigured locale $locale" >&2
+            exit 1
+        fi
+
+        if po_has_entries --untranslated "$po"; then
+            echo "$po has untranslated messages" >&2
+            exit 1
+        fi
+
+        if po_has_entries --only-fuzzy "$po"; then
+            echo "$po has fuzzy messages" >&2
+            exit 1
+        fi
+
+        tmp_mo=$(mktemp)
+        trap 'rm -f "$tmp_mo"' EXIT INT TERM
+        msgfmt --check -o "$tmp_mo" "$po"
+
+        mo=${po%.po}.mo
+        if ! cmp -s "$tmp_mo" "$mo"; then
+            echo "$mo is stale; run webui/lang/scripts/locales-update" >&2
+            exit 1
+        fi
+
+        rm -f "$tmp_mo"
+        trap - EXIT INT TERM
+    done

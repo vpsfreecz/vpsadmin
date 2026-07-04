@@ -1,6 +1,18 @@
 #!/bin/sh
-for x in langs/*/vpsadmin.po  ; do 
-    lang=`echo $x | sed 's@langs/\(.*\)/vpsadmin.po@\1@'`
-    echo -n "$lang: "
-    msgfmt --statistics --check -o - $x > /dev/null
-done
+set -eu
+
+script_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+webui_root=$(CDPATH= cd -- "$script_dir/../.." && pwd)
+
+if ! command -v msgfmt >/dev/null 2>&1; then
+    echo "missing required gettext tool: msgfmt" >&2
+    exit 1
+fi
+
+find "$webui_root/lang/locale" \
+    -path '*/LC_MESSAGES/vpsAdmin.po' \
+    -print | sort | while read -r po; do
+        locale=$(basename "$(dirname "$(dirname "$po")")")
+        printf '%s: ' "$locale"
+        msgfmt --statistics --check -o /dev/null "$po"
+    done

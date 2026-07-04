@@ -473,12 +473,13 @@ class XTemplate
       * @param $lang - language name
       * @param $class - class of image
     **/
-    public function lang_add($code, $icon, $lang, $class)
+    public function lang_add($code, $icon, $lang, $class, $tokenParam = '')
     {
         $this->assign('LANG_CODE', $code);
         $this->assign('LANG_ICON', $icon);
         $this->assign('LANG_IMG_CLASS', $class);
         $this->assign('LANG_LANG', $lang);
+        $this->assign('LANG_TOKEN_PARAM', $tokenParam);
         $this->assign('PREV_URL', base64_encode(curPageURL()));
         $this->parse('main.langitem');
     }

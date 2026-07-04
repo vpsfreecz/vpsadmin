@@ -211,6 +211,7 @@
             packages = with pkgs; [
               bundix
               git
+              gettext
               libffi
               ncurses
               ruby_3_4
@@ -263,6 +264,7 @@
             name = "vpsadmin-webui";
             componentPath = "webui";
             packages = with pkgs; [
+              gettext
               nixfmt
               php
               phpPackages.composer

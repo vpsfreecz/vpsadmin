@@ -30,10 +30,10 @@ function loginUser($access_url)
     session_start();
 
     $m = $api->user->current();
+    $languageCode = user_language_code($m);
 
     $_SESSION["user"]["id"] = $m->id;
 
-    $_SESSION['api_description'] = $api->getDescription();
     $_SESSION["logged_in"] = true;
     $_SESSION["auth_type"] = "oauth2";
     $_SESSION["access_token"] = $api->getAuthenticationProvider()->jsonSerialize();
@@ -42,7 +42,16 @@ function loginUser($access_url)
         'login' => $m->login,
         'session_length' => $m->preferred_session_length,
         'time_zone' => $m->time_zone ?? null,
+        'language' => $languageCode,
+        'language_locale' => function_exists('webui_locale_for_api_language')
+            ? webui_locale_for_api_language($languageCode, $GLOBALS['langs'] ?? null)
+            : null,
     ];
+    if (method_exists($api, 'setLanguage')) {
+        $api->setLanguage($languageCode);
+        $api->setup(true);
+    }
+    $_SESSION['api_description'] = $api->getDescription();
     set_request_time_zone($_SESSION["user"]["time_zone"]);
     $_SESSION["is_user"] =       ($m->level >= PRIV_USER) ? true : false;
     $_SESSION["is_poweruser"] =  ($m->level >= PRIV_POWERUSER) ? true : false;
@@ -181,6 +190,7 @@ function switchUserContext($target_user_id)
 
         // Do this to reload description from the API
         $api->authenticate('token', ['token' => $new_session->token_full]);
+        $languageCode = user_language_code($user);
 
         $_SESSION["logged_in"] = true;
         $_SESSION["auth_type"] = "token";
@@ -191,7 +201,16 @@ function switchUserContext($target_user_id)
             'login' => $user->login,
             'session_length' => 20 * 60,
             'time_zone' => $user->time_zone ?? null,
+            'language' => $languageCode,
+            'language_locale' => function_exists('webui_locale_for_api_language')
+                ? webui_locale_for_api_language($languageCode, $GLOBALS['langs'] ?? null)
+                : null,
         ];
+        if (method_exists($api, 'setLanguage')) {
+            $api->setLanguage($languageCode);
+            $api->setup(true);
+        }
+        $_SESSION['api_description'] = $api->getDescription();
         set_request_time_zone($_SESSION["user"]["time_zone"]);
         $_SESSION["is_user"] =       ($user->level >= PRIV_USER) ? true : false;
         $_SESSION["is_poweruser"] =  ($user->level >= PRIV_POWERUSER) ? true : false;

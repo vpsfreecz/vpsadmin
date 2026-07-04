@@ -7,6 +7,214 @@
     root.HaveAPI = factory();
   }
 }(this, function() {
+// This file is generated from i18n/haveapi.yml.
+// Do not edit it manually; manual changes will be overwritten.
+// Update i18n/haveapi.yml and run bundle exec rake i18n:update.
+
+var I18nMessages = {
+	  "en": {
+	    "authentication": {
+	      "callback_failed": "%{callback} failed: %{error}",
+	      "callback_invalid_return": "callback has to return an array or 'stop'",
+	      "callback_required": "Implement callback %{callback}",
+	      "invalid_credentials": "invalid credentials",
+	      "invalid_oauth2_pkce_verifier": "Invalid OAuth2 PKCE verifier",
+	      "invalid_oauth2_state": "Invalid OAuth2 state",
+	      "mfa_required": "implement multi-factor authentication",
+	      "multistep_callback_required": "add callback to handle multi-step authentication",
+	      "oauth2_access_token_required": "Option access_token must be provided",
+	      "oauth2_not_configured": "OAuth2 authentication is not configured",
+	      "oauth2_revoke_failed": "Unable to revoke access token, HTTP %{status}",
+	      "token_request_failed": "Unable to request token: %{message}",
+	      "token_revoke_failed": "Unable to revoke token: %{message}",
+	      "token_step_failed": "Failed at authentication step '%{action}': %{message}",
+	      "unsupported_auth_action": "Unsupported authentication action '%{action}'"
+	    },
+	    "errors": {
+	      "access_forbidden": "Access forbidden. Bad user name or password? Not authorized?",
+	      "action_failed": "%{action} failed: %{message}",
+	      "fatal_api_error": "Fatal API error: %{error}",
+	      "input_parameters_not_valid": "input parameters not valid",
+	      "input_parameters_not_valid_for_action": "Input parameters not valid for action '%{action}'",
+	      "invalid_input_parameters": "invalid input parameters",
+	      "uncancelable_action": "Action state #%{id} cannot be cancelled",
+	      "unresolved_arguments": "Unable to execute action '%{action}': unresolved arguments"
+	    },
+	    "validation": {
+	      "cannot_be_null": "cannot be null",
+	      "invalid_boolean": "not a valid boolean",
+	      "invalid_datetime": "not in ISO 8601 format",
+	      "invalid_float": "not a valid float",
+	      "invalid_input_layout": "invalid input layout",
+	      "invalid_integer": "not a valid integer",
+	      "invalid_resource_id": "not a valid resource id",
+	      "invalid_string": "not a valid string",
+	      "required_parameter_missing": "required parameter missing",
+	      "validation_failed": "validation failed",
+	      "validation_failed_with_errors": "validation failed: %{errors}"
+	    }
+	  },
+	  "cs": {
+	    "authentication": {
+	      "callback_failed": "%{callback} selhal: %{error}",
+	      "callback_invalid_return": "callback musí vrátit pole nebo 'stop'",
+	      "callback_required": "Implementujte callback %{callback}",
+	      "invalid_credentials": "neplatné přihlašovací údaje",
+	      "invalid_oauth2_pkce_verifier": "Neplatný OAuth2 PKCE verifier",
+	      "invalid_oauth2_state": "Neplatný OAuth2 state",
+	      "mfa_required": "implementujte vícefaktorové ověření",
+	      "multistep_callback_required": "přidejte callback pro zpracování vícefázového ověření",
+	      "oauth2_access_token_required": "Volba access_token musí být zadána",
+	      "oauth2_not_configured": "OAuth2 ověření není nastaveno",
+	      "oauth2_revoke_failed": "Přístupový token nelze zrušit, HTTP %{status}",
+	      "token_request_failed": "Token nelze vyžádat: %{message}",
+	      "token_revoke_failed": "Token nelze zrušit: %{message}",
+	      "token_step_failed": "Krok ověření '%{action}' selhal: %{message}",
+	      "unsupported_auth_action": "Nepodporovaná ověřovací akce '%{action}'"
+	    },
+	    "errors": {
+	      "access_forbidden": "Přístup odepřen. Chybné uživatelské jméno nebo heslo? Nejste oprávněni?",
+	      "action_failed": "%{action} selhala: %{message}",
+	      "fatal_api_error": "Fatální chyba API: %{error}",
+	      "input_parameters_not_valid": "vstupní parametry nejsou platné",
+	      "input_parameters_not_valid_for_action": "Vstupní parametry pro akci '%{action}' nejsou platné",
+	      "invalid_input_parameters": "neplatné vstupní parametry",
+	      "uncancelable_action": "Stav akce #%{id} nelze zrušit",
+	      "unresolved_arguments": "Akci '%{action}' nelze spustit: chybí argumenty"
+	    },
+	    "validation": {
+	      "cannot_be_null": "nesmí být null",
+	      "invalid_boolean": "neplatná pravdivostní hodnota",
+	      "invalid_datetime": "není ve formátu ISO 8601",
+	      "invalid_float": "neplatné desetinné číslo",
+	      "invalid_input_layout": "neplatná struktura vstupu",
+	      "invalid_integer": "neplatné celé číslo",
+	      "invalid_resource_id": "neplatné ID prostředku",
+	      "invalid_string": "neplatný řetězec",
+	      "required_parameter_missing": "povinný parametr chybí",
+	      "validation_failed": "validace selhala",
+	      "validation_failed_with_errors": "validace selhala: %{errors}"
+	    }
+	  }
+	};
+
+var I18n = {
+	DEFAULT_LOCALE: 'en',
+	DEFAULT_LANGUAGE_HEADER: 'Accept-Language',
+
+	translate: function(language, key, values) {
+		var message = this.lookup(this.localeFor(language), key) ||
+			this.lookup(this.DEFAULT_LOCALE, key) ||
+			key;
+
+		values = values || {};
+
+		for (var name in values) {
+			if (!values.hasOwnProperty(name))
+				continue;
+
+			message = message.replace(new RegExp('%\\{'+ name +'\\}', 'g'), String(values[name]));
+		}
+
+		return message;
+	},
+
+	requestHeaders: function(language, languageHeader) {
+		var ret = {};
+
+		if (language === undefined || language === null || String(language) === '')
+			return ret;
+
+		languageHeader = languageHeader || this.DEFAULT_LANGUAGE_HEADER;
+		this.assertHeaderName(languageHeader);
+		this.assertHeaderValue(language);
+
+		ret[languageHeader] = String(language);
+		return ret;
+	},
+
+	localeFor: function(language) {
+		if (language === undefined || language === null || String(language) === '')
+			return this.DEFAULT_LOCALE;
+
+		var tags = this.parseAcceptLanguage(String(language));
+
+		for (var i = 0; i < tags.length; i++) {
+			var locale = this.normalizeLocale(tags[i]);
+
+			if (locale && I18nMessages.hasOwnProperty(locale))
+				return locale;
+		}
+
+		return this.DEFAULT_LOCALE;
+	},
+
+	assertHeaderName: function(name) {
+		if (typeof name !== 'string' || !name.match(/^[!#$%&'*+.^_`|~0-9A-Za-z-]+$/))
+			throw new Error('Invalid language HTTP header name');
+	},
+
+	assertHeaderValue: function(value) {
+		if (typeof value !== 'string' && typeof value !== 'number' && typeof value !== 'boolean')
+			throw new Error('Invalid language HTTP header value');
+
+		if (String(value).match(/[\x00\r\n]/))
+			throw new Error('Invalid language HTTP header value');
+	},
+
+	lookup: function(locale, key) {
+		var data = I18nMessages[locale];
+		var parts = String(key).replace(/^haveapi_client\./, '').split('.');
+
+		for (var i = 0; i < parts.length; i++) {
+			if (!data || !data.hasOwnProperty(parts[i]))
+				return null;
+
+			data = data[parts[i]];
+		}
+
+		return typeof data === 'string' ? data : null;
+	},
+
+	parseAcceptLanguage: function(header) {
+		var ret = [];
+		var parts = header.split(',');
+
+		for (var i = 0; i < parts.length; i++) {
+			var tokens = parts[i].split(';');
+			var tag = tokens.shift().trim();
+			var q = 1.0;
+
+			for (var j = 0; j < tokens.length; j++) {
+				var qTokens = tokens[j].split('=');
+
+				if (qTokens[0].trim() == 'q')
+					q = parseFloat(qTokens[1]);
+			}
+
+			if (tag !== '' && q > 0)
+				ret.push([tag, q]);
+		}
+
+		ret.sort(function(a, b) {
+			return b[1] - a[1];
+		});
+
+		return ret.map(function(v) {
+			return v[0];
+		});
+	},
+
+	normalizeLocale: function(tag) {
+		var normalized = String(tag).trim().replace(/_/g, '-').replace(/\..*$/, '').toLowerCase();
+
+		if (normalized === '')
+			return null;
+
+		return normalized.split('-', 1)[0];
+	}
+};
+
 /**
  * Create a new client for the API.
  * @class Client
@@ -37,7 +245,11 @@ function Client(url, opts) {
 		attachedResourceNames: Object.create(null),
 		debug: (opts !== undefined && opts.debug !== undefined) ? opts.debug : 0,
 		oauth2TrustedOrigins: Client.normalizeTrustedOrigins(oauth2TrustedOrigins),
+		language: opts.language !== undefined ? opts.language : null,
+		languageHeader: opts.languageHeader !== undefined ?
+			opts.languageHeader : (opts.language_header || I18n.DEFAULT_LANGUAGE_HEADER),
 	};
+	I18n.requestHeaders(this._private.language, this._private.languageHeader);
 
 	this._private.hooks = new Client.Hooks(this._private.debug);
 	this._private.http = new Client.Http(this._private.debug);
@@ -195,6 +407,53 @@ Client.prototype.oauth2Url = function(url) {
 	return this.sameOriginUrl(url, {
 		trustedOrigins: this._private.oauth2TrustedOrigins
 	});
+};
+
+/**
+ * Set the language sent to the API server.
+ * @method HaveAPI.Client#setLanguage
+ * @param {String} language value for Accept-Language
+ */
+Client.prototype.setLanguage = function(language) {
+	I18n.requestHeaders(language, this._private.languageHeader);
+	this._private.language = language;
+};
+
+/**
+ * Set the language HTTP header name.
+ * @method HaveAPI.Client#setLanguageHeader
+ * @param {String} header HTTP header name
+ */
+Client.prototype.setLanguageHeader = function(header) {
+	I18n.assertHeaderName(header);
+	this._private.languageHeader = header;
+};
+
+Client.prototype.translate = function(key, values) {
+	return I18n.translate(this._private.language, key, values);
+};
+
+Client.prototype.languageHeaders = function() {
+	return I18n.requestHeaders(this._private.language, this._private.languageHeader);
+};
+
+Client.prototype.requestHeaders = function(headers) {
+	var ret = {};
+	var languageHeaders = this.languageHeaders();
+
+	headers = headers || {};
+
+	for (var name in headers) {
+		if (headers.hasOwnProperty(name))
+			ret[name] = headers[name];
+	}
+
+	for (var langName in languageHeaders) {
+		if (languageHeaders.hasOwnProperty(langName))
+			ret[langName] = languageHeaders[langName];
+	}
+
+	return ret;
 };
 
 /**
@@ -356,7 +615,7 @@ Client.prototype.fetchDescription = function(callback, path) {
 		method: 'OPTIONS',
 		url: url,
 		credentials: this.authProvider.credentials(),
-		headers: this.authProvider.headers(),
+		headers: this.requestHeaders(this.authProvider.headers()),
 		queryParameters: this.authProvider.queryParameters(),
 		callback: function (status, response) {
 			callback(status == 200, function () {
@@ -520,7 +779,7 @@ Client.prototype.directInvoke = function(action, opts) {
 		method: action.httpMethod(),
 		url: url,
 		credentials: this.authProvider.credentials(),
-		headers: this.authProvider.headers(),
+		headers: this.requestHeaders(this.authProvider.headers()),
 		queryParameters: this.authProvider.queryParameters(),
 		callback: function(status, response) {
 			var res = new Client.Response(action, response);
@@ -1048,7 +1307,7 @@ Authentication.OAuth2.prototype.setup = function(callback) {
 		if (callback !== undefined)
 			callback(this.client, true);
 	} else {
-		throw "Option access_token must be provided";
+		throw this.client.translate('authentication.oauth2_access_token_required');
 	}
 };
 
@@ -1076,6 +1335,12 @@ Authentication.OAuth2.prototype.logout = function(callback) {
 
 	http.open('POST', revokeUrl, true);
 	http.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
+
+	var headers = this.client.requestHeaders({});
+	for (var name in headers) {
+		if (headers.hasOwnProperty(name))
+			http.setRequestHeader(name, headers[name]);
+	}
 
 	http.onreadystatechange = function() {
 		if (http.readyState == 4) {
@@ -1206,7 +1471,7 @@ Authentication.Token.prototype.authenticationStep = function(action, input, call
 					callback(that.client, true);
 			} else {
 				if (that.opts.callback === undefined)
-					throw "implement multi-factor authentication";
+					throw that.client.translate('authentication.mfa_required');
 
 				var cont = function (input) {
 					that.authenticationStep(
@@ -1629,7 +1894,7 @@ Action.prototype.invoke = function() {
 		prep.onReply(this.client, new LocalResponse(
 			this,
 			false,
-			'invalid input parameters',
+			this.client.translate('errors.invalid_input_parameters'),
 			prep.params.errors
 		));
 		return;
@@ -1653,7 +1918,7 @@ Action.prototype.directInvoke = function() {
 		prep.onReply(this.client, new LocalResponse(
 			this,
 			false,
-			'invalid input parameters',
+			this.client.translate('errors.invalid_input_parameters'),
 			prep.params.errors
 		));
 		return;
@@ -1701,7 +1966,10 @@ Action.prototype.prepareInvoke = function(new_args) {
 	}
 
 	if (preparedPath.search(rx) != -1) {
-		console.log("UnresolvedArguments", "Unable to execute action '"+ this.name +"': unresolved arguments");
+		console.log("UnresolvedArguments", this.client.translate(
+			'errors.unresolved_arguments',
+			{action: this.name}
+		));
 
 		throw new Client.Exceptions.UnresolvedArguments(this);
 	}
@@ -1861,7 +2129,7 @@ Action.waitForCompletion = function (opts) {
 
 		if (state.shouldCancel()) {
 			if (!state.canCancel)
-				throw new Client.Exceptions.UncancelableAction(opts.id);
+				throw new Client.Exceptions.UncancelableAction(opts.id, opts.client);
 
 			return opts.client.action_state.cancel(
 				opts.id,
@@ -2530,6 +2798,10 @@ Parameters.prototype._addTypeError = function (name, msg) {
 	this.typeErrors[name].push(msg);
 };
 
+Parameters.prototype._message = function (key, values) {
+	return this.action.client.translate(key, values);
+};
+
 function isLeapYear (y) {
 	return (y % 4 === 0 && y % 100 !== 0) || (y % 400 === 0);
 }
@@ -2622,7 +2894,7 @@ Parameters.prototype.coerceParams = function (params) {
 			if (desc.nullable === true)
 				ret[p] = null;
 			else
-				this._addTypeError(p, 'cannot be null');
+				this._addTypeError(p, this._message('validation.cannot_be_null'));
 			continue;
 		}
 
@@ -2642,7 +2914,7 @@ Parameters.prototype.coerceParams = function (params) {
 					if (isFinite(resourceId) && Math.floor(resourceId) === resourceId)
 						ret[p] = resourceId;
 					else
-						this._addTypeError(p, 'not a valid resource id');
+						this._addTypeError(p, this._message('validation.invalid_resource_id'));
 
 				} else if (typeof resourceId === 'string') {
 					var resourceStr = resourceId.trim();
@@ -2650,10 +2922,10 @@ Parameters.prototype.coerceParams = function (params) {
 					if (resourceStr !== '' && resourceStr.match(/^[+-]?\d+$/))
 						ret[p] = parseInt(resourceStr, 10);
 					else
-						this._addTypeError(p, 'not a valid resource id');
+						this._addTypeError(p, this._message('validation.invalid_resource_id'));
 
 				} else {
-					this._addTypeError(p, 'not a valid resource id');
+					this._addTypeError(p, this._message('validation.invalid_resource_id'));
 				}
 
 				break;
@@ -2673,7 +2945,7 @@ Parameters.prototype.coerceParams = function (params) {
 				}
 
 				if (intValue === undefined)
-					this._addTypeError(p, 'not a valid integer');
+					this._addTypeError(p, this._message('validation.invalid_integer'));
 				else
 					ret[p] = intValue;
 
@@ -2698,7 +2970,7 @@ Parameters.prototype.coerceParams = function (params) {
 				}
 
 				if (floatValue === undefined)
-					this._addTypeError(p, 'not a valid float');
+					this._addTypeError(p, this._message('validation.invalid_float'));
 				else
 					ret[p] = floatValue;
 
@@ -2730,7 +3002,7 @@ Parameters.prototype.coerceParams = function (params) {
 				}
 
 				if (boolValue === undefined)
-					this._addTypeError(p, 'not a valid boolean');
+					this._addTypeError(p, this._message('validation.invalid_boolean'));
 				else
 					ret[p] = boolValue;
 
@@ -2751,7 +3023,7 @@ Parameters.prototype.coerceParams = function (params) {
 				}
 
 				if (dtValue === undefined)
-					this._addTypeError(p, 'not in ISO 8601 format');
+					this._addTypeError(p, this._message('validation.invalid_datetime'));
 				else
 					ret[p] = dtValue;
 
@@ -2762,7 +3034,7 @@ Parameters.prototype.coerceParams = function (params) {
 				if (typeof v === 'string' || typeof v === 'number' || typeof v === 'boolean')
 					ret[p] = String(v);
 				else
-					this._addTypeError(p, 'not a valid string');
+					this._addTypeError(p, this._message('validation.invalid_string'));
 
 				break;
 
@@ -2807,7 +3079,7 @@ Parameters.prototype.validate = function () {
 
 		if (!this.params.hasOwnProperty(name) || this.params[name] === undefined || this.params[name] === null) {
 			if (p.validators.present)
-				this.errors[name] = ['required parameter missing'];
+				this.errors[name] = [this._message('validation.required_parameter_missing')];
 
 			continue;
 		}
@@ -3018,7 +3290,9 @@ Client.Exceptions.ProtocolError = function (msg) {
  */
 Client.Exceptions.UnresolvedArguments = function (action) {
 	this.name = 'UnresolvedArguments';
-	this.message = "Unable to execute action '"+ action.name +"': unresolved arguments";
+	this.message = action.client.translate('errors.unresolved_arguments', {
+		action: action.name
+	});
 }
 
 /**
@@ -3026,9 +3300,9 @@ Client.Exceptions.UnresolvedArguments = function (action) {
  * @class UncancelableAction
  * @memberof HaveAPI.Client.Exceptions
  */
-Client.Exceptions.UncancelableAction = function (stateId) {
+Client.Exceptions.UncancelableAction = function (stateId, client) {
 	this.name = 'UncancelableAction';
-	this.message = "Action state #"+ stateId +" cannot be cancelled";
+	this.message = client.translate('errors.uncancelable_action', {id: stateId});
 }
 
 /**
