@@ -10,6 +10,8 @@ require_relative 'vps'
 require_relative 'vps_migration'
 
 class MailTemplate < ApplicationRecord
+  DEFAULT_LANGUAGE_CODE = 'en'.freeze
+
   has_many :mail_template_translations, dependent: :destroy
   has_many :mail_template_recipients, dependent: :destroy
   has_many :mail_recipients, through: :mail_template_recipients
@@ -84,8 +86,8 @@ class MailTemplate < ApplicationRecord
     tpl = MailTemplate.find_by(name: resolve_name(name, opts[:params]))
     raise VpsAdmin::API::Exceptions::MailTemplateDoesNotExist, name unless tpl
 
-    lang = opts[:language] || opts[:user].language
-    tr = tpl.mail_template_translations.find_by(language: lang)
+    lang = opts[:language] || opts[:user]&.language
+    tr = mail_template_translation_for(tpl, lang)
     raise VpsAdmin::API::Exceptions::MailTemplateDoesNotExist, name unless tr
 
     if opts[:vars]
@@ -185,6 +187,19 @@ class MailTemplate < ApplicationRecord
 
     mail.save!
     mail
+  end
+
+  def self.mail_template_translation_for(template, language)
+    languages = [language]
+    default_language = Language.find_by(code: DEFAULT_LANGUAGE_CODE)
+    languages << default_language if default_language
+
+    languages.compact.uniq(&:id).each do |lang|
+      tr = template.mail_template_translations.find_by(language: lang)
+      return tr if tr
+    end
+
+    nil
   end
 
   # Returns a list of e-mail recipients, tries to find role recipients,

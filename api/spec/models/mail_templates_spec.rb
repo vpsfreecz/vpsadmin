@@ -180,6 +180,35 @@ RSpec.describe VpsAdmin::API::MailTemplates do
     expect(mail.text_plain).to eq('At 2024-01-01 07:00 EST')
   end
 
+  it 'falls back to English when the user language translation is missing' do
+    language = Language.find_or_create_by!(code: 'cs') do |lang|
+      lang.label = 'Česky'
+    end
+    user = SpecSeed.user
+    user.update!(language:)
+
+    MailTemplate.register :spec_language_fallback_template, name: 'spec_language_fallback_template'
+    template = MailTemplate.create!(
+      name: 'spec_language_fallback_template',
+      label: 'Spec language fallback template',
+      template_id: 'spec_language_fallback_template'
+    )
+    template.mail_template_translations.create!(
+      language: SpecSeed.language,
+      from: 'noreply@test.invalid',
+      subject: 'English subject',
+      text_plain: 'English body'
+    )
+
+    mail = MailTemplate.send_mail!(
+      :spec_language_fallback_template,
+      user:
+    )
+
+    expect(mail.subject).to eq('English subject')
+    expect(mail.text_plain).to eq('English body')
+  end
+
   it 'ships directory-backed English templates for all registered defaults' do
     templates = described_class.find_templates(described_class.default_template_paths).to_h do |template|
       [template.name, template]
