@@ -1,5 +1,7 @@
 <?php
 
+use PHPUnit\Framework\Attributes\PreserveGlobalState;
+use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 use PHPUnit\Framework\TestCase;
 
 if (!class_exists('CsrfTokenInvalid')) {
@@ -79,31 +81,37 @@ if (!function_exists('_')) {
     }
 }
 
-function isLoggedIn()
-{
-    global $logoutExpiredSessionLoggedIn;
-
-    return $logoutExpiredSessionLoggedIn;
-}
-
-function csrf_check($name = 'common', $t = null)
-{
-    global $logoutExpiredSessionCsrfCalled, $logoutExpiredSessionCsrfValid;
-
-    $logoutExpiredSessionCsrfCalled = true;
-
-    if (!$logoutExpiredSessionCsrfValid) {
-        throw new CsrfTokenInvalid();
+if (!function_exists('isLoggedIn')) {
+    function isLoggedIn()
+    {
+        return $_SESSION["logged_in"] ?? false;
     }
 }
 
-function redirect($url)
-{
-    throw new CapturedLogoutRedirect($url);
+if (!function_exists('csrf_check')) {
+    function csrf_check($name = 'common', $t = null)
+    {
+        global $logoutExpiredSessionCsrfCalled, $logoutExpiredSessionCsrfValid;
+
+        $logoutExpiredSessionCsrfCalled = true;
+
+        if (!$logoutExpiredSessionCsrfValid) {
+            throw new CsrfTokenInvalid();
+        }
+    }
+}
+
+if (!function_exists('redirect')) {
+    function redirect($url)
+    {
+        throw new CapturedLogoutRedirect($url);
+    }
 }
 
 require_once dirname(__DIR__, 2) . '/lib/login.lib.php';
 
+#[RunTestsInSeparateProcesses]
+#[PreserveGlobalState(false)]
 final class LogoutExpiredSessionTest extends TestCase
 {
     protected function setUp(): void
