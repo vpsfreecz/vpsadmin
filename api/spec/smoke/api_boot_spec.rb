@@ -26,6 +26,10 @@ RSpec.describe ApiAppHelper do
     expect(resources.dig('user', 'description')).to eq('Spravovat uživatele')
     expect(resources.dig('user', 'actions', 'touch', 'description'))
       .to eq('Aktualizovat poslední aktivitu')
+    expect(resources.dig('user', 'actions', 'index', 'input', 'parameters', 'full_name', 'label'))
+      .to eq('Celé jméno')
+    expect(resources.dig('user', 'actions', 'index', 'input', 'parameters', 'full_name', 'description'))
+      .to eq('Jméno a příjmení')
   end
 
   it 'localizes keyed messages with interpolation' do

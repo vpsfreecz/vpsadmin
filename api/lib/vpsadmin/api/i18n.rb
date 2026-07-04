@@ -5,6 +5,7 @@ module VpsAdmin
     module I18n
       DEFAULT_LOCALE = :en
       LOCALE_HEADER = 'Accept-Language'
+      PARAMETER_SCOPE = 'vpsadmin'
 
       class << self
         def setup
@@ -12,13 +13,14 @@ module VpsAdmin
         end
 
         def configure_server(api)
-          unless api.respond_to?(:available_locales=) && api.respond_to?(:locale)
+          unless api.respond_to?(:available_locales=) && api.respond_to?(:locale) && api.respond_to?(:parameter_i18n_scope=)
             raise 'HaveAPI with i18n support is required'
           end
 
           api.default_locale = DEFAULT_LOCALE
           api.available_locales = available_locales
           api.locale_header = LOCALE_HEADER
+          api.parameter_i18n_scope = PARAMETER_SCOPE
 
           api.locale do |current_user:, default_locale:, **_|
             current_user&.language&.code || default_locale

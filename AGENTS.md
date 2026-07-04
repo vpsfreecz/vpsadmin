@@ -43,6 +43,16 @@
   tables belong in `plugins/*/api/db/migrate` and must not be committed to the
   core schema file.
 
+## Localization
+- API translations are maintained in `api/lib/vpsadmin/api/locales/*.yml` and
+  normalized by `rake vpsadmin:i18n:update`.
+- vpsAdmin sets HaveAPI `parameter_i18n_scope` to the `vpsadmin` application
+  root. Parameter labels/descriptions are generated under
+  `vpsadmin.resources`, `vpsadmin.attributes`, and `vpsadmin.meta`; do not add a
+  separate `vpsadmin.parameters` tree.
+- The locale files include generated key structure from API source and HaveAPI
+  parameter metadata. Edit translations in the locale files, then regenerate.
+
 ## Testing Guidelines
 - Integration tests live in `tests/` and reuse the vpsAdminOS test framework via the flake input, so no sibling `vpsadminos` checkout or `NIX_PATH` setup is required.
 - For local gem development of `libnodectld`, `nodectl`, or `nodectld` against a checkout, set `VPSADMINOS_PATH=/path/to/vpsadminos`.

@@ -1,3 +1,6 @@
+# This file is maintained by rake vpsadmin:i18n:update.
+# The key structure is generated from API source and HaveAPI parameter metadata.
+# Edit translations here, then rerun rake vpsadmin:i18n:update.
 ---
 cs:
   errors:
@@ -26,6 +29,1336 @@ cs:
       too_short: je příliš krátké (minimum je %{count} znaků)
       wrong_length: nemá správnou délku (má mít %{count} znaků)
   vpsadmin:
+    attributes:
+      access_token:
+        label: Přístupový token
+      access_token_lifetime:
+        label: Životnost přístupového tokenu
+      access_token_seconds:
+        label: Platnost přístupového tokenu v sekundách
+      account_name:
+        label: Název účtu
+      accounted_by:
+        label: Účtováno podle
+      action:
+        label: Akce
+      activate:
+        label: Aktivovat účet
+      active:
+        label: Aktivní
+      add_ip_addresses:
+        description: Přidat nyní všechny IP adresy z této sítě do databáze
+        label: Přidat IP adresy
+      added_by:
+        label: Přidal
+      added_space:
+        label: Přidané místo
+      addr:
+        description: Samotná adresa
+      address:
+        label: Adresa
+      address_location:
+        description: Lokalita, ze které se vybírají IP adresy
+        label: Umístění adresy
+      admin:
+        description: Filtrovat uživatele s administrátorskými oprávněními
+        label: Administrátor
+      admin_lock_type:
+        description: Jak je vynucen administrátorský zámek
+        label: Typ administrátorského zámku
+      admin_override:
+        description: Umožnit přiřadit více zdrojů, než uživatel skutečně má
+        label: Administrátorské překročení
+      admin_response:
+        label: Odpověď administrátora
+      affected:
+        label: Dotčeno
+      affected_direct_vps_count:
+        description: Počet přímo dotčených VPS
+        label: Přímo dotčené VPS
+      affected_export_count:
+        description: Počet dotčených exportů
+        label: Dotčené exporty
+      affected_indirect_vps_count:
+        description: Počet nepřímo dotčených VPS
+        label: Nepřímo dotčené VPS
+      affected_node_count:
+        label: Dotčené nody
+      affected_user_count:
+        description: Počet dotčených uživatelů
+        label: Dotčení uživatelé
+      affected_vps_count:
+        label: Dotčené VPS
+      algorithm:
+        label: Algoritmus
+      all_vps:
+        description: Povolit připojení tohoto exportu všem VPS uživatele. Změny IP
+          adres uživatele automaticky přidají nebo odeberou povolené hosty na exportu.
+        label: Všechny VPS
+      allocate_chain:
+        label: Alokační řetězec
+      allow_admin_modifications:
+        label: Povolit úpravy administrátorem
+      allow_single_sign_on:
+        label: Povolit single sign-on
+      amount:
+        label: Množství
+      arc_c:
+        label: Arc c
+      arc_c_max:
+        label: Arc c max
+      arc_hitpercent:
+        label: Arc hitpercent
+      arc_size:
+        label: Arc velikost
+      arch:
+        label: Architektura
+      assigned:
+        description: Počet IP adres přiřazených VPS
+        label: Přiřazeno
+      assigned_by_chain:
+        label: Přiřazeno řetězcem
+      assigned_to_interface:
+        label: Přiřazeno rozhraní
+      atime:
+        description: Řídí, zda se při čtení souborů aktualizuje čas přístupu
+        label: Čas přístupu
+      attr_changes:
+        label: Změny atributů
+      attribute:
+        description: Název atributu obsahujícího hledanou hodnotu
+        label: Atribut
+      auth_token:
+        label: Autentizační token
+      auth_type:
+        label: Typ autentizace
+      auto_add:
+        description: Automaticky přidat tento klíč do nově vytvořených VPS
+        label: Automaticky přidat
+      auto_resolve:
+        label: Automaticky vyřešit
+      automount:
+        description: Automaticky připojit nově vytvořené datasety pod všechny jejich
+          rodiče
+        label: Automatické připojení
+      autopick:
+        label: Automatický výběr
+      autostart_enable:
+        description: Spustit VPS při startu nodu?
+        label: Automaticky spustit
+      autostart_priority:
+        description: 0 je nejvyšší priorita, vyšší čísla mají nižší prioritu
+        label: Priorita automatického spuštění
+      avail:
+        description: Množství volného místa v datasetu
+        label: Dostupné místo
+      available_space:
+        label: Dostupné místo
+      bcc:
+        label: Bcc
+      begins_at:
+        label: Začíná v
+      bits:
+        label: Bity
+      block_count:
+        label: Počet bloků
+      bytes:
+        label: Bajty
+      bytes_in:
+        label: Bajty in
+      bytes_out:
+        label: Bajty out
+      can_create_vps:
+        label: Může vytvořit VPS
+      can_destroy_vps:
+        label: Může zrušit VPS
+      category:
+        label: Kategorie
+      cc:
+        label: Cc
+      cgroup:
+        label: Cgroup
+      cgroup_pattern:
+        label: Vzor cesty cgroup
+      challenge_token:
+        label: Výzva token
+      change_type:
+        label: Typ změny
+      changed_at:
+        label: Změněno at
+      charged_environment:
+        label: Účtované prostředí
+      checked_at:
+        label: Zkontrolováno at
+      class_name:
+        description: Hledat podle názvu dotčené třídy
+      client_id:
+        label: Klient id
+      client_ip_ptr:
+        label: PTR IP adresy klienta
+      client_secret:
+        label: Klient tajemství
+      client_version:
+        label: Verze klienta
+      closed_at:
+        label: Uzavřeno v
+      closes_at:
+        label: Closes at
+      cluster_resource:
+        label: ClusterResource
+      cluster_resource_package:
+        label: ClusterResourcePackage
+      codename:
+        label: Kódové jméno
+      comment:
+        description: Volitelný komentář
+        label: Komentář
+      component:
+        description: Filtrovat výpadky podle komponenty vpsAdminu
+        label: Komponenta
+      compression:
+        description: Přepnout kompresi dat v tomto datasetu
+        label: Komprese
+      compressratio:
+        description: Kompresní poměr použitého místa tohoto datasetu
+        label: Kompresní poměr použitých dat
+      concerns:
+        label: Týká se
+      concurrency:
+        description: Kolik migrací běží současně
+        label: Souběžnost
+      config:
+        label: Konfigurace
+      confirmed:
+        label: Potvrzeno
+      content:
+        label: Obsah
+      continue:
+        label: Pokračovat
+      count:
+        label: Počet
+      cpu:
+        description: Minimálně 1, maximálně 1024, krok je 1
+        label: CPU
+      cpu_guest:
+        label: Cpu guest
+      cpu_iowait:
+        label: Cpu iowait
+      cpu_irq:
+        label: Cpu irq
+      cpu_limit:
+        description: Limit maximálního využití CPU
+        label: Limit CPU
+      cpu_nice:
+        label: Cpu nice
+      cpu_softirq:
+        label: Cpu softirq
+      cpu_system:
+        label: Cpu system
+      cpu_user:
+        label: Cpu uživatel
+      cpus:
+        label: CPU
+      create_vps:
+        label: Vytvořit VPS
+      created_by:
+        label: Vytvořil
+      currency:
+        label: Měna
+      current:
+        label: Aktuální
+      current_history_id:
+        label: Aktuální historie id
+      current_state:
+        label: Aktuální stav
+      cve:
+        description: Filtrovat podle identifikátoru CVE.
+        label: CVE
+      cve_id:
+        description: Identifikátor CVE ve formátu CVE-YYYY-NNNN, např. CVE-2026-12345.
+        label: CVE
+      dataset:
+        description: Dataset, ve kterém se VPS nachází
+      dataset_expansion:
+        label: DatasetExpansion
+      dataset_plan:
+        label: DatasetPlan
+      dataset_plans:
+        label: Plány datasetu
+      date:
+        label: Datum
+      default:
+        description: Pokud je true, uživatelská konfigurace se dědí z konfigurace
+          prostředí
+        label: Výchozí
+      default_ttl:
+        description: Výchozí TTL záznamů v sekundách
+        label: Výchozí TTL
+      delta:
+        label: Delta
+      depends_on:
+        label: Závisí na
+      description:
+        label: Popis
+      detected_at:
+        label: Detekováno at
+      direct:
+        label: Přímé
+      diskspace:
+        description: Minimálně 1024, maximálně 1048576, krok je 1
+        label: Diskový prostor
+      distribution:
+        label: Distribuce
+      dns_resolver:
+        description: DNS resolver, který bude VPS používat
+        label: DNS resolver
+      dns_server:
+        label: DnsServer
+      dns_server_zone:
+        label: Zóna DNS serveru
+      dns_tsig_key:
+        label: DnsTsigKey
+      dns_zone_name:
+        label: Název DNS zóny
+      dnskey_algorithm:
+        label: DNSKEY algoritmus
+      dnskey_pubkey:
+        label: DNSKEY veřejný klíč
+      dnssec_enabled:
+        description: Vyžaduje nakonfigurované záznamy DNSKEY/DS v rodičovské zóně
+        label: Povolit DNSSEC
+      dokuwiki_groups:
+        description: Čárkou oddělený seznam skupin DokuWiki
+        label: Skupiny DokuWiki
+      domain:
+        label: Doména
+      domain_name:
+        description: Název nodu včetně domény lokality
+        label: Doménové jméno
+      done:
+        label: Hotovo
+      ds_algorithm:
+        label: DS algoritmus
+      ds_digest:
+        label: DS digest
+      ds_digest_type:
+        label: DS digest typ
+      duration:
+        description: Délka výpadku v minutách
+        label: Trvání
+      dynamic_update_enabled:
+        description: Pouze pro záznamy A a AAAA
+        label: Povolit dynamickou aktualizaci
+      dynamic_update_url:
+        label: URL dynamické aktualizace
+      email:
+        description: Administrátor této zóny
+        label: E-mail
+      en_description:
+        description: Uživatelské vysvětlení zranitelnosti, dotčených systémů, dopadu
+          a podmínek.
+        label: Anglický popis
+      en_message:
+        description: Volitelná zpráva pro uživatele s dalšími detaily o této aktualizaci.
+        label: Anglická zpráva
+      en_response:
+        description: Uživatelské vysvětlení zmírnění nebo opravy a informace, zda
+          uživatelé musí něco udělat.
+        label: Anglická odpověď
+      en_summary:
+        label: Anglické shrnutí
+      enable:
+        label: Povolit
+      enable_basic_auth:
+        label: Povolit HTTP Basic autentizaci
+      enable_cloud_init:
+        label: Cloud-init
+      enable_multi_factor_auth:
+        label: Povolit vícefaktorovou autentizaci
+      enable_network:
+        label: Povolit síť
+      enable_new_login_notification:
+        label: Povolit oznámení o novém přihlášení
+      enable_notifications:
+        description: Odesílat e-maily o rozšíření
+        label: Povolit oznámení
+      enable_oauth2_auth:
+        label: Povolit OAuth2 autentizaci
+      enable_os_template_auto_update:
+        label: Povolit automatickou aktualizaci OS šablon
+      enable_script:
+        label: Uživatelské skripty vpsAdminu
+      enable_shrink:
+        description: Automaticky zmenšit dataset, když je to možné
+        label: Povolit zmenšování
+      enable_single_sign_on:
+        label: Povolit single sign-on
+      enable_ssl:
+        label: Povolit ssl
+      enable_token_auth:
+        label: Povolit autentizaci tokenem
+      enable_user_dns_zones:
+        label: Povolit uživatel dns zones
+      enabled:
+        description: Povolit nebo zakázat použití šablony
+        label: Povoleno
+      entity_id:
+        description: Filtrovat výpadky podle ID entity
+      entity_name:
+        description: Filtrovat výpadky podle názvu entity
+        label: Název entity
+      environment:
+        label: Prostředí
+      environment_dataset_plan:
+        label: Prostředí dataset plan
+      estimated_income:
+        label: Estimated income
+      event_at:
+        label: Událost at
+      event_data:
+        label: Událost data
+      event_key:
+        label: Událost klíč
+      event_type:
+        label: Událost typ
+      expiration:
+        description: Datum, po kterém token přestane být platný
+      expirations:
+        description: Prohodit expirace
+        label: Expirace
+      expires_at:
+        label: Expiruje at
+      export:
+        description: Filtrovat výpadky ovlivňující konkrétní export
+        label: Export
+      export_count:
+        label: Export počet
+      failcnt:
+        label: Počet selhání
+      features:
+        label: Funkce
+      file_name:
+        label: Název souboru
+      filed_by:
+        label: Filed by
+      filesystem:
+        label: Souborový systém
+      fingerprint:
+        description: MD5 fingerprint
+        label: Otisk
+      finish_minutes:
+        description: Počet minut od půlnoci dne start_weekday, po kterých se migrace
+          provede
+        label: Minuty dokončení
+      finish_weekday:
+        description: Připravit migraci a dokončit ji v tento den
+        label: Den v týdnu dokončení
+      force:
+        description: Smazat DNS resolver i tehdy, když se používá. Dotčené VPS dostanou
+          nový DNS resolver.
+      format:
+        label: Formát
+      fqdn:
+        label: FQDN
+      free:
+        description: Počet volných jednotek zdroje
+        label: Volné
+      free_chain:
+        label: Volný řetězec
+      from:
+        label: Od
+      from_bytes:
+        description: Stránkovat podle příchozích/odchozích bajtů
+        label: Od bajty
+      from_date:
+        description: Stránkovat podle data vytvoření/aktualizace
+        label: Od datum
+      from_duration:
+        description: Stránkovat podle trvání
+        label: Od trvání
+      from_personal:
+        description: Odečíst přidané zdroje z osobního balíčku
+        label: Z osobního balíčku
+      from_snapshot:
+        label: Ze snapshotu
+      full_name:
+        description: Jméno a příjmení
+        label: Celé jméno
+      fuse:
+        label: FUSE
+      handled_by:
+        description: Filtrovat výpadky řešené uživatelem
+        label: Řeší
+      has_hypervisor:
+        label: Má hypervisor
+      has_ipv6:
+        description: True, pokud lokalita má IPv6 adresy
+        label: Má IPv6
+      has_storage:
+        label: Má storage
+      hidden:
+        label: Skryté
+      history_id:
+        label: Historie id
+      hit_count:
+        label: Počet zásahů
+      host_ip_address:
+        description: Host adresa pro přiřazení rozhraní, výchozí je první adresa
+        label: HostIpAddress
+      host_pid:
+        label: Host pid
+      hostname:
+        label: Hostname
+      hostname_any:
+        label: Hostname any
+      hostname_exact:
+        label: Hostname exact
+      how:
+        label: Jak jste se o nás dozvěděli?
+      impact:
+        label: Dopad
+      impermanence:
+        label: NixOS Impermanence
+      implicit_oom_report_rule_hit_count:
+        label: Implicitní oom report rule zásah počet
+      in_reply_to:
+        label: In reply to
+      in_rescue_mode:
+        label: V rescue režimu
+      incoming_payment:
+        label: Příchozí platba
+      info:
+        label: Info
+      input:
+        label: Vstup
+      instructions:
+        label: Instrukce
+      invoked_by_name:
+        label: Invoked by název
+      invoked_by_pid:
+        label: Invoked by pid
+      ip_address:
+        label: IP adresa
+      ip_address_assignment:
+        label: Přiřazení IP adresy
+      ip_checked:
+        label: Ip zkontrolováno
+      ip_crawler:
+        label: Ip crawler
+      ip_errors:
+        label: Ip errors
+      ip_fraud_score:
+        label: Ip fraud score
+      ip_message:
+        label: Ip zpráva
+      ip_prefix:
+        label: Ip prefix
+      ip_proxy:
+        label: Ip proxy
+      ip_recent_abuse:
+        label: Ip nedávné abuse
+      ip_request_id:
+        label: Ip požadavek id
+      ip_success:
+        label: Ip úspěch
+      ip_tor:
+        label: Ip tor
+      ip_version:
+        label: Ip verze
+      ip_vpn:
+        label: Ip vpn
+      ipv4:
+        label: IPv4
+      ipv4_addr:
+        label: Ipv4 addr
+      ipv4_count:
+        label: Ipv4 počet
+      ipv4_left:
+        label: Počet volných veřejných IPv4 adres
+      ipv4_private:
+        label: Privátní IPv4
+      ipv4_used:
+        label: Ipv4 použito
+      ipv6:
+        label: IPv6
+      ipv6_addr:
+        label: Ipv6 addr
+      is_open:
+        label: Is open
+      is_personal:
+        label: Is personal
+      is_universal:
+        description: Univerzální resolver je nezávislý na lokalitě
+        label: Je univerzální?
+      issue:
+        label: Vydání
+      issue_refresh_token:
+        label: Vydání obnovit token
+      keep_snapshots:
+        description: Ponechat snapshoty vytvořené během klonování
+        label: Ponechat snapshoty
+      kernel:
+        label: Kernel
+      keyid:
+        label: ID klíče
+      killed_name:
+        label: Killed název
+      killed_pid:
+        label: Killed pid
+      kind:
+        label: Druh
+      ks:
+        label: Ks
+      kvm:
+        label: KVM
+      label:
+        label: Popisek
+      last_activity_at:
+        label: Poslední aktivita
+      last_check_at:
+        label: Poslední check at
+      last_report:
+        label: Poslední hlášení
+      last_request_at:
+        label: Poslední požadavek v
+      last_seen_at:
+        label: Poslední seen at
+      last_transfer_at:
+        label: Poslední přenos at
+      last_transfer_log_id:
+        label: Poslední přenos log id
+      last_transfer_primary_addr:
+        label: Poslední přenos primární addr
+      last_transfer_reason:
+        label: Poslední přenos důvod
+      last_transfer_reason_code:
+        label: Poslední přenos důvod kód
+      last_transfer_serial:
+        label: Poslední přenos sériové číslo
+      last_transfer_status:
+        label: Poslední přenos stav
+      last_use:
+        label: Poslední použití
+      last_use_at:
+        label: Poslední použití at
+      lazy:
+        description: Pouze označit VPS jako smazanou
+        label: Odložené smazání
+      level:
+        label: Úroveň přístupu
+      limit:
+        label: Limit
+      loadavg1:
+        label: Loadavg1
+      loadavg15:
+        label: Loadavg15
+      loadavg5:
+        label: Loadavg5
+      loaded_at:
+        label: Loaded at
+      location:
+        label: Lokalita
+      lock:
+        label: Zámek
+      lockout:
+        label: Uzamčení
+      login:
+        label: Login
+      logout_sessions:
+        description: Při změně hesla odhlásit všechny relace kromě aktuální
+        label: Odhlásit relace
+      lxc:
+        label: LXC nesting
+      mac:
+        label: MAC Adresa
+      mail_catch_all:
+        label: E-mail catch all
+      mail_checked:
+        label: E-mail zkontrolováno
+      mail_deliverability:
+        label: E-mail deliverability
+      mail_disposable:
+        label: E-mail disposable
+      mail_dns_valid:
+        label: E-mail dns valid
+      mail_errors:
+        label: E-mail errors
+      mail_fraud_score:
+        label: E-mail fraud score
+      mail_frequent_complainer:
+        label: E-mail frequent complainer
+      mail_honeypot:
+        label: E-mail honeypot
+      mail_leaked:
+        label: E-mail leaked
+      mail_message:
+        label: E-mail zpráva
+      mail_overall_score:
+        label: E-mail overall score
+      mail_recent_abuse:
+        label: E-mail nedávné abuse
+      mail_recipient:
+        label: MailRecipient
+      mail_request_id:
+        label: E-mail požadavek id
+      mail_smtp_score:
+        label: E-mail smtp score
+      mail_spam_trap_score:
+        label: E-mail spam trap score
+      mail_success:
+        label: E-mail úspěch
+      mail_suspect:
+        label: E-mail suspect
+      mail_template:
+        label: MailTemplate
+      mail_timed_out:
+        label: E-mail timed out
+      mail_valid:
+        label: E-mail valid
+      mailbox:
+        label: Mailbox
+      mailer_enabled:
+        label: Povolené e-maily
+      maintenance:
+        description: Přepnout node do režimu údržby
+        label: Údržba
+      maintenance_window_vps:
+        description: Migrovat dataset v nejbližším okně údržby VPS
+        label: Okno údržby VPS
+      manage_dns_resolver:
+        label: Spravovat DNS resolver
+      manage_hostname:
+        description: Určuje, zda vpsAdmin nastavuje hostname VPS
+        label: Spravovat hostname
+      managed:
+        label: Spravováno
+      map_mode:
+        label: Režim mapování
+      master_enabled:
+        label: Master povolen
+      max:
+        description: Když objekt alokuje zdroj, nesmí použít více než maximum
+        label: Maximální hodnota
+      max_datasets:
+        label: Max datasets
+      max_over_refquota_seconds:
+        label: Max over refquota seconds
+      max_rx:
+        description: Maximální vstupní propustnost
+      max_tx:
+        description: Maximální výstupní propustnost
+      max_vps:
+        label: Max vps
+      max_vps_count:
+        description: 0 znamená bez omezení
+        label: Maximální počet VPS na uživatele
+      memory:
+        description: Minimálně 128, maximálně 1048576, krok je 1
+        label: Paměť
+      memtype:
+        label: Typ paměti
+      message:
+        label: Zpráva
+      message_id:
+        label: Zpráva id
+      metric_prefix:
+        description: Prefix přidaný ke všem metrikám
+        label: Prefix metrik
+      migration_plan_id:
+        label: Migrace plan id
+      min:
+        description: Když objekt alokuje zdroj, musí použít více než minimum
+        label: Minimální hodnota
+      min_user_level:
+        label: Min uživatel level
+      mitigated_since:
+        description: Kdy byl node mitigován nebo opraven, pokud je známo.
+        label: Mitigated since
+      mode:
+        label: Režim
+      monitor:
+        label: Monitor
+      month:
+        label: Měsíc
+      mount:
+        label: Mount
+      mount_root_dataset:
+        label: Přípojný bod rootfs
+      mountpoint:
+        label: Přípojný bod
+      namespace:
+        label: Namespace
+      network:
+        label: Síť
+      network_interface:
+        label: NetworkInterface
+      new_password:
+        description: Heslo musí mít alespoň 8 znaků
+        label: Heslo
+      new_refquota:
+        label: Nová refquota
+      no_start:
+        description: Nespouštět VPS na cílovém nodu
+        label: Nespouštět
+      node:
+        label: Node
+      node_a:
+        label: Node a
+      node_a_ip_addr:
+        label: Node a ip addr
+      node_b:
+        label: Node b
+      node_b_ip_addr:
+        label: Node b ip addr
+      node_count:
+        label: Node počet
+      node_id:
+        label: Node id
+      node_name:
+        label: Node název
+      node_state:
+        label: Node stav
+      nodes_online:
+        label: Nody online
+      note:
+        description: Volitelná poznámka operátora k tomuto stavu nodu.
+      ns_id:
+        description: Začátek rozsahu ID v uživatelském namespace
+        label: Ns id
+      object:
+        label: Objekt
+      object_id:
+        label: Objekt id
+      object_name:
+        label: Objekt název
+      object_state:
+        label: Stav objektu
+      offset:
+        label: Offset
+      on_start_fail:
+        description: Co se stane, když připojení selže během startu VPS
+        label: Při selhání připojení
+      onstartall:
+        description: Spustit VPS při akci spustit vše?
+        label: Při spuštění všeho
+      oom_report_rule:
+        label: OomReportRule
+      oom_score_adj:
+        label: Oom score adj
+      opens_at:
+        label: Opens at
+      optional_maintenance_window:
+        description: Použít okno údržby pouze tehdy, když má dataset nějaké exporty
+        label: Volitelné okno údržby
+      options:
+        label: Volby
+      order:
+        description: Pořadí šablony
+        label: Pořadí
+      org_id:
+        label: ID organizace
+      org_name:
+        label: Název organizace
+      os_family:
+        label: Rodina OS
+      outage:
+        description: Výpadek propojený s bezpečnostním advisory.
+        label: Výpadek
+      outage_id:
+        label: Výpadek id
+      output:
+        label: Výstup
+      over_refquota_seconds:
+        label: Over refquota seconds
+      owned:
+        description: Počet IP adres vlastněných některými uživateli
+        label: Vlastněno
+      packets:
+        label: Pakety
+      packets_in:
+        label: Pakety in
+      packets_out:
+        label: Pakety out
+      page:
+        label: Stránka
+      parameter:
+        label: Parametr
+      parent:
+        label: Rodič
+      passed:
+        label: Prošlo
+      passphrase:
+        label: Heslová fráze
+      password_reset:
+        label: Reset hesla
+      path:
+        label: Cesta
+      peer_type:
+        label: Typ protistrany
+      pgtables_bytes:
+        label: Pgtables bajty
+      platform:
+        label: Platforma
+      pool:
+        description: Storage pool, ve kterém se VPS nachází
+        label: Pool
+      pool_checked_at:
+        label: Pool zkontrolováno at
+      pool_scan:
+        label: Pool scan
+      pool_scan_percent:
+        label: Pool scan percent
+      pool_state:
+        label: Pool stav
+      pool_status:
+        label: Pool stav
+      port:
+        label: Port
+      ppp:
+        label: PPP
+      preferred_logout_all:
+        label: Preferovat odhlášení všech
+      preferred_session_length:
+        label: Preferovaná délka relace
+      prefix:
+        label: Prefix
+      preserve_backup_history:
+        description: Zálohovat náhradní snapshot, aby budoucí zálohy mohly pokračovat
+          inkrementálně
+        label: Zachovat historii záloh
+      preserve_backups:
+        description: Přesunout existující záložní datasety k náhradní VPS
+        label: Zachovat zálohy
+      primary:
+        label: Primární
+      primary_addr:
+        label: Primární addr
+      primary_location:
+        label: Primární lokalita
+      primary_pool:
+        description: Zobrazit pouze datasety na tomto poolu
+        label: Primární pool
+      priority:
+        description: Volitelná priorita, používá se pro záznamy MX a SRV
+        label: Priorita
+      process_count:
+        label: Počet procesů
+      progress:
+        description: Kolik transakcí je dokončeno
+        label: Průběh
+      property:
+        description: Název vlastnosti, která se má zdědit od rodiče; více vlastností
+          lze oddělit čárkou
+        label: Vlastnost
+      provisioning_uri:
+        label: Provisioning uri
+      public_key:
+        label: Veřejný klíč
+      public_key_credential:
+        label: Veřejný klíč credential
+      published_at:
+        description: Datum a čas zobrazený jako čas zveřejnění advisory.
+        label: Zveřejněno v
+      published_by:
+        label: Zveřejněno by
+      purpose:
+        label: Účel
+      quota:
+        description: Omezuje množství místa, které může spotřebovat dataset a všichni
+          jeho potomci
+        label: Kvóta
+      raw_message:
+        label: Raw zpráva
+      raw_user_id:
+        label: Raw uživatel id
+      raw_vps_id:
+        label: Raw vps id
+      ready:
+        description: True, pokud je archiv kompletní a připravený ke stažení
+        label: Připraveno
+      reason:
+        label: Důvod
+      reason_code:
+        label: Kód důvodu
+      recent_since:
+        label: Nedávné since
+      reconstructed:
+        label: Rekonstruováno
+      recordsize:
+        description: Určuje doporučenou velikost bloku pro soubory v souborovém systému
+        label: Velikost záznamu
+      recovery_code:
+        label: Obnova kód
+      redirect_uri:
+        label: Redirect uri
+      refcompressratio:
+        description: Kompresní poměr referencovaného místa tohoto datasetu
+        label: Kompresní poměr referencovaných dat
+      referenced:
+        description: Množství místa dostupného tomuto datasetu
+        label: Referencované místo
+      references:
+        label: Reference
+      refquota:
+        description: Omezuje množství místa, které může spotřebovat dataset
+        label: Referenční kvóta
+      refquota_check:
+        label: Kontrola refquota
+      refresh_at:
+        label: Obnovit at
+      refresh_token_seconds:
+        label: Obnovit token seconds
+      relatime:
+        description: Čas přístupu se aktualizuje pouze tehdy, když byl předchozí čas
+          přístupu starší než aktuální čas změny nebo úpravy, případně když nebyl
+          za posledních 24 hodin aktualizován.
+        label: Relativní čas přístupu
+      remind_after:
+        label: Připomenout po
+      remind_after_date:
+        description: E-mailová varování jsou umlčena do tohoto data
+        label: Připomenout po
+      remote_console_server:
+        description: URL HTTP serveru vzdálené konzole
+        label: Server vzdálené konzole
+      replace_ip_addresses:
+        description: Při migraci do jiné lokality se aktuální IP adresy nahradí adresami
+          z nové lokality
+        label: Nahradit IP adresy
+      reply_to:
+        label: Reply to
+      reported_at:
+        label: Nahlášeno at
+      request_count:
+        label: Počet požadavků
+      resource:
+        description: Název zdroje nalezeného objektu
+        label: Zdroj
+      resource_type:
+        label: Zdroj typ
+      resources:
+        label: Zdroje
+      restart_vps:
+        description: Restartovat VPS, ve kterých jsou připojeny migrované exporty
+        label: Restartovat VPS
+      retracted_at:
+        label: Retracted at
+      return_path:
+        label: Vrátit cesta
+      reverse_network_address:
+        label: Reverzní síť adresa
+      reverse_network_prefix:
+        label: Reverzní síť prefix
+      reverse_record_value:
+        label: Reverzní záznam hodnota
+      role:
+        description: Zobrazit pouze datasety určité role
+        label: Role
+      root_squash:
+        description: Mapovat požadavky z uid/gid 0 na anonymní uid/gid. Toto se nevztahuje
+          na jiná uid nebo gid, která mohou být stejně citlivá.
+        label: Root squash
+      route_via:
+        label: Route via
+      routed:
+        label: Routováno
+      row_id:
+        description: Hledat podle ID dotčeného řádku
+        label: ID řádku
+      rss:
+        label: Rss
+      rss_anon:
+        label: Rss anon
+      rss_file:
+        label: Rss soubor
+      rss_shmem:
+        label: Rss shmem
+      rsync:
+        description: Použít rsync místo zfs send/recv
+        label: Rsync
+      rw:
+        description: Povolit připojení exportu pro čtení i zápis.
+        label: Čtení i zápis
+      sample:
+        label: Vzorek
+      saved_until:
+        label: Uloženo do
+      scan:
+        label: Scan
+      scan_percent:
+        label: Scan percent
+      scope:
+        label: Scope
+      secret:
+        label: Tajemství
+      security_advisory_id:
+        label: Bezpečnostní advisory id
+      seed_vps:
+        description: Inicializovat zónu základními záznamy směřujícími na VPS
+        label: Seed VPS
+      select:
+        label: Vybrat
+      serial:
+        label: Sériové číslo
+      server:
+        label: Server
+      sha256sum:
+        description: Kontrolní součet
+        label: Sha256sum
+      sharenfs:
+        description: Řídí sdílení přes NFS
+        label: NFS share
+      shares_any_networks_with:
+        label: Sdílí IPv4 sítě s lokalitou
+      shares_networks_primary:
+        description: Filtrovat lokality se sdílenými sítěmi, které jsou primární v
+          jiné lokalitě
+        label: Primární sdílená síť
+      shares_v4_networks_with:
+        label: Sdílí IPv4 sítě s lokalitou
+      shares_v6_networks_with:
+        label: Sdílí IPv4 sítě s lokalitou
+      since:
+        label: Od
+      size:
+        label: Velikost
+      skip_multi_factor_auth_until:
+        label: Přeskočit multi factor autentizace do
+      skip_start:
+        description: Pokračovat i tehdy, když se VPS nepodaří spustit na cílovém nodu
+        label: Přeskočit spuštění
+      snapshot:
+        label: Snapshot
+      source:
+        label: Zdroj
+      source_cursor:
+        label: Zdroj cursor
+      split_access:
+        label: Rozdělení přístup
+      split_prefix:
+        label: Rozdělení prefix
+      src_amount:
+        label: Src množství
+      src_currency:
+        label: Src měna
+      src_node:
+        label: Src node
+      ss:
+        label: Ss
+      start:
+        description: Spustit novou VPS
+      start_menu_timeout:
+        description: Počet sekund, po které start menu čeká na uživatele
+        label: Časový limit start menu
+      started_at:
+        label: Spuštěno at
+      state:
+        label: Stav
+      status:
+        label: Stav
+      stepsize:
+        description: Kroky, po kterých se může iterovat alokovaná hodnota zdroje objektu
+        label: Velikost kroku
+      stop:
+        description: Provést konzistentní klon - původní VPS se před vytvořením snapshotu
+          zastaví
+        label: Zastavit
+      stop_vps:
+        description: Zastavit VPS, pokud se extra místo používá příliš dlouho nebo
+          proběhlo příliš mnoho rozšíření
+        label: Zastavit VPS
+      subject:
+        label: Subjekt
+      subtree_check:
+        description: Viz man exports(5).
+        label: Subtree check
+      success:
+        label: Úspěch
+      supported:
+        description: Je známo, že šablona funguje?
+        label: Podporováno
+      swap:
+        description: Minimálně 0, maximálně 1048576, krok je 1
+        label: Swap
+      swapents:
+        label: Swapents
+      sync:
+        label: Sync
+      taken:
+        description: Počet vlastněných a přiřazených IP adres
+        label: Zabráno
+      template_id:
+        label: Šablona id
+      text:
+        label: Text
+      text_html:
+        label: Text html
+      text_plain:
+        label: Text plain
+      tgid:
+        label: Tgid
+      threads:
+        description: Počet vláken NFS serveru.
+        label: Vlákna
+      time_zone:
+        description: Identifikátor časové zóny IANA, např. Europe/Prague
+        label: Časová zóna
+      to:
+        label: Komu
+      to_date:
+        label: To datum
+      to_depth:
+        description: Zobrazit pouze datasety do určité hloubky
+        label: Do hloubky
+      token:
+        description: Autentizační token
+        label: Token
+      token_fragment:
+        label: Fragment autentizačního tokenu
+      token_full:
+        label: Token celé
+      token_interval:
+        label: Interval tokenu
+      token_lifetime:
+        label: Životnost tokenu
+      total:
+        label: Celkem
+      total_memory:
+        label: Celkem paměť
+      total_space:
+        label: Celkem místo
+      total_swap:
+        label: Celkem swap
+      total_vm:
+        label: Celkem vm
+      transaction_id:
+        label: Transakce id
+      transaction_type:
+        label: Transakce typ
+      transfer_ip_addresses:
+        description: Je-li to možné, ponechat IP adresy a přeúčtovat je do jiného
+          prostředí nebo lokality
+        label: Převést IP adresy
+      ttl:
+        description: Volitelné TTL v sekundách, výchozí je TTL zóny
+        label: TTL
+      tun:
+        label: TUN/TAP
+      type:
+        description: node, storage nebo mailer
+      unassigned_by_chain:
+        label: Nepřiřazeno by řetězec
+      until:
+        label: Do
+      uptime:
+        label: Uptime
+      urgent:
+        label: Urgentní
+      url:
+        description: URL, na které lze archiv stáhnout
+      usage:
+        label: Využití
+      used_diskspace:
+        description: v MB
+        label: Použité místo na disku
+      used_memory:
+        description: v MB
+        label: Použitá paměť
+      used_space:
+        label: Použito místo
+      used_swap:
+        description: v MB
+        label: Použitý swap
+      user:
+        label: Uživatel
+      user_active:
+        label: Uživatel aktivní
+      user_add:
+        description: Pokud je true, uživatel může tento plán přidat k datasetu
+        label: Přidání uživatele
+      user_agent:
+        label: User agent
+      user_created:
+        label: Uživatel vytvořeno
+      user_data_content:
+        label: Obsah uživatelských dat
+      user_data_format:
+        label: Formát uživatelských dat
+      user_deleted:
+        label: Uživatel smazáno
+      user_dns_zone_type:
+        label: Uživatel dns zone typ
+      user_ident:
+        label: Uživatel ident
+      user_ip_ownership:
+        label: Uživatel vlastní IP adresy
+      user_message:
+        label: Uživatel zpráva
+      user_namespace:
+        label: UserNamespace
+      user_remove:
+        description: Pokud je true, uživatel může tento plán odebrat z datasetu
+        label: Odebrání uživatele
+      user_suspended:
+        label: Uživatel suspended
+      user_visibility:
+        label: Uživatel visibility
+      userpick:
+        label: Uživatelský výběr
+      value:
+        label: Hodnota
+      variant:
+        label: Varianta
+      vendor:
+        label: Vendor
+      version:
+        description: 4 nebo 6
+      view:
+        description: Je-li povoleno, vypsat nápovědní boxy pro aktuálního uživatele
+          včetně filtrů stránky/akce
+        label: Zobrazit
+      vps_action:
+        label: Akce VPS
+      vps_deleted:
+        description: Počet odloženě smazaných VPS
+      vps_free:
+        description: Počet volných slotů VPS
+        label: Volné sloty VPS
+      vps_id:
+        description: Začátek rozsahu ID ve VPS
+        label: Vps id
+      vps_lifetime:
+        description: v sekundách, 0 znamená bez omezení
+        label: Výchozí životnost VPS
+      vps_max:
+        description: Počet běžících VPS
+        label: Maximum slotů VPS
+      vps_pid:
+        label: Vps pid
+      vps_running:
+        description: Počet běžících VPS
+      vps_stopped:
+        description: Počet zastavených VPS
+      vps_suspended:
+        label: Vps suspended
+      vps_total:
+        description: Celkový počet VPS
+        label: Celkem VPS
+      vps_uid:
+        label: Vps uid
+      vps_user_data:
+        label: Uživatelská data
+      vs:
+        label: Vs
+      vulnerable_until:
+        description: Kdy expozice zranitelnosti na tomto nodu skončila, pokud je známo.
+        label: Zranitelné do
+      weekday:
+        label: Den v týdnu
+      year:
+        label: Rok
+      year_of_birth:
+        label: Rok narození
     errors:
       access_denied: Přístup odepřen
       access_denied_contact_support: Přístup odepřen, kontaktujte prosím podporu.
@@ -44,8 +1377,1474 @@ cs:
         %{id} (%{label}). Zkuste to prosím později.
       resource_under_maintenance: 'Zdroj je v údržbě: %{reason}'
     resources:
+      action_state:
+        attributes:
+          id:
+            label: ID
+      cluster:
+        actions:
+          full_stats:
+            output:
+              user_count:
+                label: Uživatel počet
+              vps_count:
+                label: Vps počet
+          public_stats:
+            output:
+              user_count:
+                label: Počet uživatelů
+              vps_count:
+                label: Počet VPS
+        attributes:
+          id:
+            description: Identifikátor nalezeného objektu
+            label: ID
+          maintenance_lock:
+            label: Údržba zámek
+          maintenance_lock_reason:
+            label: Údržba zámek důvod
+          vps_deleted:
+            label: Vps smazáno
+          vps_running:
+            label: Vps běžící
+          vps_stopped:
+            label: Vps zastaveno
+        input:
+          value:
+            description: Hodnota, která se má hledat
+        output:
+          value:
+            description: Nalezená hodnota
+      cluster_resource:
+        attributes:
+          id:
+            label: ID
+          name:
+            label: Název zdroje pro interní účely
+      cluster_resource_package:
+        attributes:
+          created_at:
+            label: Vytvořeno at
+          id:
+            label: ID
+          updated_at:
+            label: Aktualizováno at
+        item:
+          attributes:
+            id:
+              label: ID
+      component:
+        attributes:
+          id:
+            label: ID
+          name:
+            label: Název
+      dataset:
+        actions:
+          create:
+            input:
+              dataset:
+                label: Rodičovský dataset
+          index:
+            input:
+              dataset:
+                label: Podstrom
+        attributes:
+          cleanup_data:
+            description: Odebrat dataset ze zdrojového poolu
+            label: Vyčistit data
+          environment:
+            description: Prostředí, ve kterém je dataset
+          id:
+            label: ID
+          name:
+            label: Název
+          send_mail:
+            description: Informovat vlastníka datasetu o průběhu migrace
+            label: Odesílat e-maily
+          sync:
+            description: Řídí chování synchronních požadavků
+          used:
+            description: Množství místa použitého datasetem
+            label: Použité místo
+          user:
+            description: Vlastník datasetu
+          vps:
+            label: VPS
+        plan:
+          attributes:
+            id:
+              label: ID
+        property_history:
+          attributes:
+            created_at:
+              label: Vytvořeno at
+            id:
+              label: ID
+            name:
+              label: Název
+        snapshot:
+          attributes:
+            created_at:
+              label: Vytvořeno at
+            dataset:
+              label: Dataset
+            id:
+              label: ID
+            name:
+              label: Název
+      dataset_expansion:
+        attributes:
+          created_at:
+            label: Vytvořeno at
+          dataset:
+            label: Dataset
+          id:
+            label: ID
+          original_refquota:
+            label: Původní referenční kvóta
+          vps:
+            label: VPS
+        history:
+          attributes:
+            created_at:
+              label: Vytvořeno v
+            id:
+              label: ID
+            original_refquota:
+              label: Původní refquota
+      dataset_plan:
+        attributes:
+          id:
+            label: ID
+      default_object_cluster_resource:
+        attributes:
+          class_name:
+            label: Třída název
+          id:
+            label: ID
+      dns_record:
+        attributes:
+          created_at:
+            label: Vytvořeno at
+          dns_zone:
+            label: DNS zóna
+          id:
+            label: ID
+          name:
+            description: Doménové jméno, @ jako alias pro origin, * pro wildcard záznamy
+            label: Název
+          type:
+            label: Typ
+          updated_at:
+            label: Aktualizováno at
+      dns_record_log:
+        attributes:
+          created_at:
+            label: Vytvořeno at
+          dns_zone:
+            label: DNS zóna
+          id:
+            label: ID
+          name:
+            label: Název
+          transaction_chain:
+            label: Transakční řetězec
+          type:
+            label: Typ
+          updated_at:
+            label: Aktualizováno at
+      dns_resolver:
+        attributes:
+          force:
+            label: Vynucené smazání
+          id:
+            description: ID DNS resolveru
+            label: ID
+          ip_addr:
+            description: Více adres oddělených čárkou
+            label: IP adresa
+          location:
+            description: Lokalita, ve které lze tento resolver použít
+          vps:
+            description: Vypsat DNS resolvery použitelné pro konkrétní VPS
+            label: VPS
+      dns_server:
+        attributes:
+          created_at:
+            label: Vytvořeno at
+          id:
+            label: ID
+          name:
+            label: Název
+          updated_at:
+            label: Aktualizováno at
+      dns_server_zone:
+        attributes:
+          created_at:
+            label: Vytvořeno at
+          dns_zone:
+            label: DNS zóna
+          id:
+            label: ID
+          type:
+            label: Typ
+          updated_at:
+            label: Aktualizováno at
+      dns_server_zone_transfer_log:
+        attributes:
+          created_at:
+            label: Vytvořeno at
+          dns_zone:
+            label: DNS zóna
+          id:
+            label: ID
+          updated_at:
+            label: Aktualizováno at
+      dns_tsig_key:
+        attributes:
+          created_at:
+            label: Vytvořeno at
+          id:
+            label: ID
+          name:
+            label: Název
+          updated_at:
+            label: Aktualizováno at
+      dns_zone:
+        attributes:
+          created_at:
+            label: Vytvořeno at
+          id:
+            label: ID
+          name:
+            description: Plně kvalifikované doménové jméno
+            label: Název
+          updated_at:
+            label: Aktualizováno at
+      dns_zone_transfer:
+        attributes:
+          created_at:
+            label: Vytvořeno at
+          dns_zone:
+            label: DNS zóna
+          id:
+            label: ID
+          updated_at:
+            label: Aktualizováno at
+      dnssec_record:
+        attributes:
+          created_at:
+            label: Vytvořeno at
+          dns_zone:
+            label: DNS zóna
+          id:
+            label: ID
+          updated_at:
+            label: Aktualizováno at
+      environment:
+        attributes:
+          description:
+            description: Popis prostředí
+          domain:
+            description: FQDN prostředí, mělo by být kořenovou doménou subjektu
+          has_hypervisor:
+            description: Vypsat pouze prostředí s alespoň jedním hypervisorem
+          has_storage:
+            description: Vypsat pouze prostředí s alespoň jedním storage
+          id:
+            description: ID prostředí
+            label: ID
+          label:
+            description: Popisek prostředí
+          maintenance_lock:
+            label: Zámek údržby
+          maintenance_lock_reason:
+            label: Důvod údržby
+        dataset_plan:
+          attributes:
+            id:
+              label: ID
+      export:
+        attributes:
+          created_at:
+            label: Vytvořeno at
+          dataset:
+            label: Dataset
+          expiration_date:
+            label: Datum expirace
+          id:
+            label: ID exportu
+          sync:
+            description: Určuje, zda server odpovídá na požadavky až po zapsání změn
+              do stabilního úložiště.
+          updated_at:
+            label: Aktualizováno at
+        host:
+          attributes:
+            id:
+              label: ID
+            sync:
+              description: Určuje, zda server odpovídá na požadavky až po zapsání
+                změn do stabilního úložiště.
+      export_outage:
+        attributes:
+          id:
+            label: ID
+      help_box:
+        attributes:
+          id:
+            label: ID
+          language:
+            label: Jazyk
+      host_ip_address:
+        actions:
+          create:
+            input:
+              addr:
+                label: Síťová adresa
+          index:
+            input:
+              addr:
+                label: Síťová adresa
+          update:
+            input:
+              addr:
+                label: Adresa
+        attributes:
+          id:
+            description: ID IP adresy
+            label: ID
+          location:
+            description: Lokalita, ve které je tato IP adresa dostupná
+          user:
+            description: Filtrovat podle vlastníka
+          version:
+            label: Verze IP
+          vps:
+            description: VPS, ke které je tato IP přiřazena; může být null
+            label: VPS
+        output:
+          addr:
+            label: Adresa
+      incident_report:
+        attributes:
+          created_at:
+            label: Vytvořeno at
+          id:
+            label: ID
+          ip_addr:
+            label: IP adresa
+          vps:
+            label: VPS
+      incoming_payment:
+        attributes:
+          created_at:
+            label: Vytvořeno at
+          id:
+            label: ID
+      ip_address:
+        attributes:
+          addr:
+            label: Adresa
+          id:
+            description: ID IP adresy
+            label: ID
+          location:
+            description: Lokalita, ve které je tato IP adresa dostupná
+          user:
+            description: Filtrovat podle vlastníka
+          version:
+            label: Verze IP
+          vps:
+            description: VPS, ke které je tato IP přiřazena; může být null
+            label: VPS
+      ip_address_assignment:
+        attributes:
+          created_at:
+            label: Vytvořeno at
+          id:
+            label: ID
+          ip_addr:
+            label: Ip addr
+          updated_at:
+            label: Aktualizováno at
+          vps:
+            label: VPS
+      language:
+        attributes:
+          code:
+            label: Kód
+          id:
+            label: ID
+      location:
+        attributes:
+          description:
+            description: Popis lokality
+          domain:
+            description: Doména lokality, subdoména domény prostředí
+          environment:
+            description: Filtrovat lokality podle prostředí
+          has_hypervisor:
+            description: Vypsat pouze lokality s alespoň jedním hypervisor nodem
+          has_storage:
+            description: Vypsat pouze lokality s alespoň jedním storage nodem
+          hypervisor_type:
+            description: Vypsat pouze lokality s alespoň jedním nodem tohoto typu
+            label: Typ hypervisoru
+          id:
+            description: ID lokality
+            label: ID
+          label:
+            description: Popisek lokality
+          maintenance_lock:
+            label: Zámek údržby
+          maintenance_lock_reason:
+            label: Důvod údržby
+      location_network:
+        attributes:
+          id:
+            label: ID
+      mail_log:
+        attributes:
+          created_at:
+            label: Vytvořeno at
+          id:
+            label: ID
+      mail_recipient:
+        attributes:
+          id:
+            label: ID
+          label:
+            description: Uživatelsky srozumitelný popisek
+      mail_template:
+        attributes:
+          created_at:
+            label: Vytvořeno at
+          id:
+            label: ID
+          label:
+            description: Uživatelsky srozumitelný popisek
+          name:
+            description: Identifikátor šablony
+            label: Název
+          updated_at:
+            label: Aktualizováno at
+        recipient:
+          attributes:
+            id:
+              label: ID
+        translation:
+          attributes:
+            created_at:
+              label: Vytvořeno at
+            id:
+              label: ID
+            language:
+              label: Jazyk
+            updated_at:
+              label: Aktualizováno at
+      mailbox:
+        attributes:
+          created_at:
+            label: Vytvořeno at
+          id:
+            label: ID
+          password:
+            label: Heslo
+          updated_at:
+            label: Aktualizováno at
+        handler:
+          attributes:
+            class_name:
+              label: Třída název
+            created_at:
+              label: Vytvořeno at
+            id:
+              label: ID
+            updated_at:
+              label: Aktualizováno at
+      metrics_access_token:
+        attributes:
+          created_at:
+            label: Vytvořeno at
+          id:
+            label: ID
+          updated_at:
+            label: Aktualizováno at
+          use_count:
+            label: Počet použití
+      migration_plan:
+        attributes:
+          created_at:
+            label: Vytvořeno at
+          finished_at:
+            label: Dokončeno at
+          id:
+            label: ID
+          send_mail:
+            label: Odeslat e-mail
+          stop_on_error:
+            label: Zastavit on error
+        vps_migration:
+          attributes:
+            cleanup_data:
+              label: Vyčištění data
+            created_at:
+              label: Vytvořeno at
+            dst_node:
+              label: Dst node
+            finished_at:
+              label: Dokončeno at
+            id:
+              label: ID
+            maintenance_window:
+              label: Údržba window
+            transaction_chain:
+              label: Transakční řetězec
+            vps:
+              label: VPS
+      monitored_event:
+        attributes:
+          created_at:
+            label: Vytvořeno at
+          id:
+            label: ID
+          updated_at:
+            label: Aktualizováno at
+        log:
+          attributes:
+            created_at:
+              label: Vytvořeno at
+            id:
+              label: ID
+      network:
+        attributes:
+          count:
+            description: Počet přidaných IP adres
+          environment:
+            description: Prostředí, kterému jsou adresy účtovány
+          id:
+            label: ID
+          size:
+            description: Počet možných host IP adres
+          used:
+            description: Počet IP adres evidovaných ve vpsAdminu
+            label: Použito
+          user:
+            description: Vlastník nových IP adres
+      network_interface:
+        attributes:
+          id:
+            description: ID rozhraní
+            label: ID
+          location:
+            description: Lokalita, ve které je tato IP adresa dostupná
+          max_rx:
+            label: Maximální příchozí datová propustnost
+          max_tx:
+            label: Maximální odchozí datová propustnost
+          name:
+            label: Název
+          type:
+            label: Typ
+          vps:
+            description: VPS, ke které je rozhraní přiřazeno; může být null
+            label: VPS
+      network_interface_accounting:
+        attributes:
+          created_at:
+            label: Vytvořeno at
+          updated_at:
+            label: Aktualizováno at
+          vps:
+            label: VPS
+      network_interface_monitor:
+        attributes:
+          id:
+            label: ID
+          updated_at:
+            label: Aktualizováno at
+          vps:
+            label: VPS
+      news_log:
+        attributes:
+          created_at:
+            label: Vytvořeno at
+          id:
+            label: ID
+          since:
+            description: Vypsat novinky zveřejněné po tomto datu
+          updated_at:
+            label: Aktualizováno at
+      node:
+        actions:
+          create:
+            output:
+              cpu_idle:
+                label: Cpu idle
+              id:
+                label: ID
+              name:
+                label: Název
+          index:
+            output:
+              cpu_idle:
+                label: Cpu idle
+              id:
+                label: ID
+              name:
+                label: Název
+          overview_list:
+            output:
+              cpu_idle:
+                label: Cpu idle
+              id:
+                label: ID
+              name:
+                label: Název
+          public_status:
+            output:
+              cpu_idle:
+                label: Nečinnost CPU
+              id:
+                label: ID
+              name:
+                label: Název nodu
+          show:
+            output:
+              cpu_idle:
+                label: Cpu idle
+              id:
+                label: ID
+              name:
+                label: Název
+        attributes:
+          cgroup_version:
+            label: Verze cgroup
+          cleanup_data:
+            label: Vyčištění data
+          dst_node:
+            label: Cílový node
+          hypervisor_type:
+            description: vpsadminos
+            label: Typ hypervisoru
+          id:
+            description: ID nodu
+          ip_addr:
+            description: IP adresa nodu
+            label: IPv4 adresa
+          location:
+            description: Lokalita, ve které je node umístěn
+          maintenance_lock:
+            label: Zámek údržby
+          maintenance_lock_reason:
+            label: Důvod údržby
+          maintenance_window:
+            description: Spustit migrace v okně údržby každé VPS
+            label: Údržba window
+          max_rx:
+            label: Max tx
+          max_tx:
+            label: Max tx
+          name:
+            description: Název nodu
+          send_mail:
+            label: Odeslat e-mail
+          stop_on_error:
+            label: Zastavit při chybě
+          type:
+            label: Role
+          version:
+            label: Verze
+          vps_count:
+            label: Počet VPS
+          vps_deleted:
+            label: Smazané VPS
+          vps_running:
+            label: Běžící VPS
+          vps_stopped:
+            label: Zastavené VPS
+        input:
+          id:
+            label: ID
+          name:
+            label: Název
+        status:
+          attributes:
+            cpu_idle:
+              label: Cpu idle
+            created_at:
+              label: Vytvořeno at
+            id:
+              label: ID
+            version:
+              label: Verze
+      node_transfer_connection:
+        attributes:
+          created_at:
+            label: Vytvořeno at
+          id:
+            label: ID
+          updated_at:
+            label: Aktualizováno at
+      oauth2_client:
+        attributes:
+          created_at:
+            label: Vytvořeno at
+          id:
+            label: ID
+          name:
+            label: Název
+          updated_at:
+            label: Aktualizováno at
+      object_history:
+        attributes:
+          created_at:
+            label: Vytvořeno at
+          id:
+            label: ID
+          user_session:
+            label: Uživatelská relace
+      oom_report:
+        attributes:
+          created_at:
+            label: Vytvořeno at
+          id:
+            label: ID
+          vps:
+            label: VPS
+        stat:
+          attributes:
+            id:
+              label: ID
+        task:
+          attributes:
+            id:
+              label: ID
+            name:
+              label: Název
+        usage:
+          attributes:
+            id:
+              label: ID
+      oom_report_rule:
+        attributes:
+          created_at:
+            label: Vytvořeno at
+          id:
+            label: ID
+          updated_at:
+            label: Aktualizováno at
+          vps:
+            label: VPS
+      os_family:
+        attributes:
+          id:
+            label: ID
+      os_template:
+        attributes:
+          cgroup_version:
+            label: Cgroup verze
+          config:
+            description: Pokročilá konfigurace v YAML
+          hypervisor_type:
+            label: Hypervisor typ
+          id:
+            description: ID OS šablony
+            label: ID
+          info:
+            description: Informace o šabloně
+          label:
+            description: Uživatelsky srozumitelný popisek
+          name:
+            description: Název souboru šablony
+            label: Název
+          version:
+            label: Verze
+      outage:
+        attributes:
+          affected:
+            description: True, pokud je aktuální uživatel dotčen výpadkem
+          entity_id:
+            label: ID entity
+          environment:
+            description: Filtrovat výpadky podle prostředí
+          finished_at:
+            label: Dokončeno v
+          id:
+            label: ID
+          location:
+            description: Filtrovat výpadky podle lokality
+          node:
+            description: Filtrovat výpadky podle nodu
+          recent_since:
+            description: Filtrovat oznámené nebo nedávno nahlášené výpadky
+          security_advisory:
+            description: Filtrovat výpadky propojené s bezpečnostním advisory
+            label: Bezpečnostní advisory
+          since:
+            description: Filtrovat výpadky nahlášené od zadaného data
+          type:
+            label: Typ
+          user:
+            description: Filtrovat výpadky ovlivňující konkrétního uživatele
+          vps:
+            description: Filtrovat výpadky ovlivňující konkrétní VPS
+            label: VPS
+        entity:
+          attributes:
+            entity_id:
+              label: Entity id
+            id:
+              label: ID
+            name:
+              label: Název
+        handler:
+          attributes:
+            id:
+              label: ID
+            note:
+              label: Poznámka
+      outage_security_advisory:
+        attributes:
+          id:
+            label: ID
+          security_advisory:
+            description: Bezpečnostní advisory propojené s výpadkem.
+            label: Bezpečnostní advisory
+      outage_update:
+        attributes:
+          created_at:
+            label: Nahlášeno at
+          finished_at:
+            label: Dokončeno v
+          id:
+            label: ID
+          reported_by:
+            label: Nahlášeno by
+          reporter_name:
+            label: Jméno reportéra
+          send_mail:
+            label: Odeslat e-mail
+          since:
+            description: Filtrovat aktualizace nahlášené od zadaného data
+          type:
+            label: Typ
+      payment_stats:
+        attributes:
+          user_count:
+            label: Uživatel počet
+      pool:
+        attributes:
+          id:
+            label: ID
+          maintenance_lock:
+            label: Zámek údržby
+          maintenance_lock_reason:
+            label: Důvod údržby
+          name:
+            label: Název
+          sync:
+            description: Řídí chování synchronních požadavků
+          used:
+            description: Množství místa použitého datasetem
+            label: Použité místo
+      security_advisory:
+        attributes:
+          affected:
+            description: True, pokud je aktuální uživatel dotčen tímto advisory
+          created_at:
+            label: Vytvořeno at
+          en_summary:
+            description: Jednověté veřejné shrnutí zobrazené v seznamech advisory,
+              stavovém výstupu, IRC oznámeních a e-mailech.
+          id:
+            label: ID
+          name:
+            description: Volitelný známý název zranitelnosti, např. Dirty Pipe.
+            label: Název
+          recent_since:
+            description: Filtrovat zveřejněná nebo nedávno aktualizovaná advisory
+          send_mail:
+            description: Je-li povoleno, dotčení uživatelé dostanou e-mail po dokončení
+              akce.
+            label: Odeslat e-mail
+          since:
+            description: Filtrovat advisory vytvořená od zadaného data
+          updated_at:
+            label: Aktualizováno at
+          vps:
+            label: VPS
+        node_status:
+          attributes:
+            id:
+              label: ID
+            node:
+              description: Node, pro který se zaznamenává stav expozice.
+            note:
+              label: Poznámka
+            security_advisory:
+              label: Bezpečnostní advisory
+            state:
+              description: Vyhodnocení, zda byl node dotčen a zda bylo provedeno zmírnění.
+      security_advisory_cve:
+        actions:
+          create:
+            input:
+              security_advisory:
+                description: Advisory, ke kterému toto CVE patří.
+          index:
+            input:
+              security_advisory:
+                description: Filtrovat CVE přiřazená tomuto advisory.
+          update:
+            input:
+              security_advisory:
+                description: Advisory, ke kterému toto CVE patří.
+        attributes:
+          id:
+            label: ID
+          security_advisory:
+            label: Bezpečnostní advisory
+          url:
+            label: URL
+        output:
+          security_advisory:
+            description: Advisory, ke kterému toto CVE patří.
+      security_advisory_update:
+        attributes:
+          created_at:
+            label: Vytvořeno at
+          en_summary:
+            description: Jednověté veřejné shrnutí této aktualizace zobrazené v seznamech
+              aktualizací a e-mailech.
+          id:
+            label: ID
+          name:
+            label: Název
+          reported_by:
+            label: Nahlášeno by
+          reporter_name:
+            label: Reportér název
+          security_advisory:
+            description: Advisory, ke kterému tato aktualizace patří.
+          send_mail:
+            description: Je-li povoleno, dotčení uživatelé dostanou e-mail po dokončení
+              akce.
+            label: Odeslat e-mail
+          state:
+            description: Volitelná změna stavu advisory, která se má použít s touto
+              aktualizací.
+          updated_at:
+            label: Aktualizováno at
+        input:
+          security_advisory:
+            label: Bezpečnostní advisory
+        output:
+          security_advisory:
+            label: Bezpečnostní advisory
+      snapshot_download:
+        attributes:
+          dataset:
+            label: Dataset
+          expiration_date:
+            description: Archiv se smaže po uplynutí data expirace
+            label: Datum expirace
+          id:
+            label: ID
+          send_mail:
+            label: Odeslat e-mail
+          size:
+            description: Velikost archivu v MiB
+          url:
+            label: Url
+      system_config:
+        attributes:
+          name:
+            label: Název
+          type:
+            label: Typ
+      transaction:
+        attributes:
+          created_at:
+            label: Vytvořeno at
+          finished_at:
+            label: Dokončeno at
+          id:
+            label: ID
+          name:
+            label: Název
+          type:
+            label: Typ
+          vps:
+            label: VPS
+        input:
+          transaction_chain:
+            label: Transakční řetězec
+        output:
+          transaction_chain:
+            label: Transakční řetězec
+      transaction_chain:
+        attributes:
+          class_name:
+            label: Název třídy
+          created_at:
+            label: Datum vytvoření
+          id:
+            label: ID řetězce
+          label:
+            description: Uživatelsky srozumitelný název
+          name:
+            description: Pouze pro interní použití
+            label: Název
+          size:
+            description: Počet transakcí v řetězci
+          user_session:
+            label: Uživatelská relace
       user:
         actions:
+          available_ips:
+            input:
+              location:
+                description: Lokalita, ve které VPS poběží
+          create:
+            input:
+              location:
+                description: Lokalita, ve které se má vytvořit VPS
+              password:
+                label: Heslo
           touch:
             description: Aktualizovat poslední aktivitu
+          update:
+            input:
+              password:
+                label: Současné heslo
+        attributes:
+          change_reason:
+            description: Důvod změny stavu. Může být odeslán uživateli e-mailem.
+            label: Důvod
+          created_at:
+            label: Vytvořeno v
+          environment:
+            description: Prostředí, ve kterém se má vytvořit VPS
+          expiration_date:
+            description: Datum, po kterém se stav posune dál
+            label: Expirace
+          id:
+            label: ID uživatele
+          language:
+            label: Jazyk e-mailů
+          monthly_payment:
+            label: Měsíční platba
+          node:
+            description: Node, na kterém VPS poběží
+          os_template:
+            label: OS šablona
+          paid_until:
+            label: Zaplaceno do
+          password:
+            description: Heslo musí mít alespoň 8 znaků
+          vps:
+            label: Vytvořit VPS
+        cluster_resource:
+          attributes:
+            id:
+              label: ID
+            used:
+              description: Počet použitých jednotek zdroje
+              label: Použito
         description: Spravovat uživatele
+        environment_config:
+          attributes:
+            id:
+              label: ID
+        known_device:
+          attributes:
+            api_ip_addr:
+              label: IP adresa
+            api_ip_ptr:
+              label: IP PTR
+            client_ip_addr:
+              label: IP adresa klienta
+            created_at:
+              label: Vytvořeno at
+            id:
+              label: ID
+            updated_at:
+              label: Aktualizováno at
+        mail_role_recipient:
+          attributes:
+            id:
+              label: ID
+        mail_template_recipient:
+          attributes:
+            id:
+              label: ID
+        public_key:
+          attributes:
+            created_at:
+              label: Vytvořeno v
+            id:
+              label: ID
+            key:
+              label: Veřejný klíč
+            updated_at:
+              label: Aktualizováno v
+        state_log:
+          attributes:
+            expiration:
+              label: Expirace
+            id:
+              label: ID
+        totp_device:
+          attributes:
+            code:
+              label: TOTP kód
+            created_at:
+              label: Vytvořeno at
+            id:
+              label: ID
+            updated_at:
+              label: Aktualizováno at
+            use_count:
+              label: Použití počet
+        webauthn_credential:
+          attributes:
+            created_at:
+              label: Vytvořeno at
+            id:
+              label: ID
+            updated_at:
+              label: Aktualizováno at
+            use_count:
+              label: Použití počet
+      user_account:
+        attributes:
+          id:
+            label: ID
+          monthly_payment:
+            label: Měsíční platba
+          paid_until:
+            label: Zaplaceno do
+      user_cluster_resource_package:
+        attributes:
+          created_at:
+            label: Vytvořeno at
+          id:
+            label: ID
+          updated_at:
+            label: Aktualizováno at
+        item:
+          attributes:
+            id:
+              label: ID
+      user_namespace:
+        attributes:
+          id:
+            label: ID
+      user_namespace_map:
+        attributes:
+          id:
+            label: ID mapování
+        entry:
+          attributes:
+            count:
+              description: Počet mapovaných ID
+            id:
+              label: ID položky
+      user_outage:
+        attributes:
+          id:
+            label: ID
+          vps_count:
+            label: Vps počet
+      user_payment:
+        attributes:
+          created_at:
+            label: Vytvořeno at
+          id:
+            label: ID
+      user_request:
+        change:
+          attributes:
+            api_ip_addr:
+              label: IP adresa API
+            api_ip_ptr:
+              label: PTR IP adresy API
+            change_reason:
+              description: Proč chcete tuto změnu provést?
+              label: Důvod změny
+            client_ip_addr:
+              label: IP adresa klienta
+            created_at:
+              label: Vytvořeno v
+            id:
+              label: ID
+            updated_at:
+              label: Aktualizováno v
+        registration:
+          attributes:
+            api_ip_addr:
+              label: IP adresa API
+            api_ip_ptr:
+              label: PTR IP adresy API
+            client_ip_addr:
+              label: IP adresa klienta
+            created_at:
+              label: Vytvořeno v
+            id:
+              label: ID
+            language:
+              label: Jazyk
+            node:
+              description: Vytvořit novou VPS na tomto nodu
+            note:
+              label: Poznámky
+            os_template:
+              label: Distribuce
+            updated_at:
+              label: Aktualizováno v
+      user_security_advisory:
+        attributes:
+          id:
+            label: ID
+          security_advisory:
+            label: Bezpečnostní advisory
+          vps_count:
+            label: Vps počet
+      user_session:
+        attributes:
+          api_ip_addr:
+            label: IP adresa
+          api_ip_ptr:
+            label: IP PTR
+          client_ip_addr:
+            label: IP adresa klienta
+          created_at:
+            label: Vytvořeno v
+          id:
+            label: ID
+          ip_addr:
+            description: Hledat v IP adrese API i klienta
+            label: IP adresa
+      vps:
+        actions:
+          clone:
+            input:
+              environment:
+                description: Klonovat do prostředí
+              location:
+                description: Klonovat do lokality
+              node:
+                description: Klonovat na node
+              resources:
+                description: Klonovat zdroje jako paměť a CPU
+              user:
+                description: Vlastník klonované VPS
+          create:
+            input:
+              environment:
+                description: Prostředí, ve kterém se má vytvořit VPS, pro neadministrátory
+              hostname:
+                description: Hostname VPS
+              location:
+                description: Lokalita, ve které se má vytvořit VPS, pro neadministrátory
+              node:
+                description: Node, na kterém VPS poběží
+              start:
+                label: Spustit VPS
+              user:
+                description: Vlastník VPS
+          delete:
+            input:
+              change_reason:
+                description: Důvod změny stavu. Může být odeslán uživateli e-mailem.
+                label: Důvod
+              expiration_date:
+                description: Datum, po kterém se stav posune dál
+                label: Expirace
+          index:
+            input:
+              environment:
+                description: Filtrovat podle prostředí
+              location:
+                description: Filtrovat podle lokality
+              node:
+                description: Filtrovat podle nodu
+              user:
+                description: Filtrovat podle vlastníka
+          replace:
+            input:
+              expiration_date:
+                description: Jak dlouho ponechat původní VPS
+                label: Expirace datum
+              node:
+                description: Klonovat na node
+              start:
+                label: Spustit
+          restart:
+            input:
+              force:
+                label: Vynucený restart
+          stop:
+            input:
+              force:
+                label: Vynucené zastavení
+          swap_with:
+            input:
+              hostname:
+                description: Prohodit hostname
+              resources:
+                description: Prohodit zdroje (CPU, paměť a swap, ne diskový prostor)
+          update:
+            input:
+              change_reason:
+                description: Je-li vyplněno, odešle se vlastníkovi VPS e-mailem
+                label: Důvod změny
+              expiration_date:
+                description: Datum, po kterém se stav posune dál
+                label: Expirace
+              hostname:
+                description: Hostname VPS
+              node:
+                description: Node, na kterém VPS poběží
+              user:
+                description: Vlastník VPS
+        attributes:
+          cgroup_version:
+            label: Cgroup verze
+          cleanup_data:
+            description: Odebrat dataset VPS ze zdrojového nodu
+            label: Vyčistit data
+          config:
+            description: Vlastní konfigurační volby
+          cpu_idle:
+            label: Cpu idle
+          created_at:
+            label: Vytvořeno v
+          dataset:
+            label: Dataset
+          id:
+            label: ID VPS
+          info:
+            description: Popis VPS
+          is_running:
+            label: Běží
+          maintenance_lock:
+            label: Zámek údržby
+          maintenance_lock_reason:
+            label: Důvod údržby
+          maintenance_window:
+            description: Migrovat VPS v nejbližším okně údržby
+            label: Okno údržby
+          os_template:
+            label: OS šablona
+          password:
+            description: Automaticky vygenerované heslo
+            label: Heslo
+          send_mail:
+            description: Informovat vlastníka VPS o průběhu migrace
+            label: Odesílat e-maily
+          type:
+            label: Typ
+          user_namespace_map:
+            label: Mapování UID/GID
+          vps:
+            description: Prohodit s touto VPS
+            label: VPS
+        console_token:
+          attributes:
+            expiration:
+              label: Datum expirace
+        feature:
+          attributes:
+            id:
+              label: ID
+            name:
+              label: Název
+        mount:
+          attributes:
+            dataset:
+              label: Dataset
+            expiration_date:
+              description: Mount se smaže po uplynutí data expirace
+              label: Datum expirace
+            id:
+              label: ID
+            user_namespace_map:
+              label: Mapa UID/GID
+            vps:
+              label: VPS
+        output:
+          expiration_date:
+            description: Datum, po kterém se stav posune dál
+            label: Expirace
+          hostname:
+            description: Hostname VPS
+          node:
+            description: Node, na kterém VPS poběží
+          user:
+            description: Vlastník VPS
+        ssh_host_key:
+          attributes:
+            created_at:
+              label: Vytvořeno at
+            id:
+              label: ID
+            updated_at:
+              label: Aktualizováno at
+        state_log:
+          attributes:
+            expiration:
+              label: Expirace
+            id:
+              label: ID
+        status:
+          attributes:
+            cpu_idle:
+              label: Cpu idle
+            created_at:
+              label: Vytvořeno at
+            id:
+              label: ID
+          input:
+            is_running:
+              label: Is běžící
+          output:
+            is_running:
+              label: Běží
+      vps_outage:
+        attributes:
+          id:
+            label: ID
+          vps:
+            label: VPS
+      vps_security_advisory:
+        attributes:
+          id:
+            label: ID
+          security_advisory:
+            label: Bezpečnostní advisory
+          vps:
+            label: VPS
+      vps_user_data:
+        attributes:
+          created_at:
+            label: Vytvořeno v
+          id:
+            label: ID
+          updated_at:
+            label: Aktualizováno v
+          vps:
+            label: VPS
+      webui_user_setting:
+        attributes:
+          created_at:
+            label: Vytvořeno at
+          id:
+            label: ID
+          key:
+            label: Klíč
+          updated_at:
+            label: Aktualizováno at

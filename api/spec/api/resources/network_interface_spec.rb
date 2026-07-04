@@ -138,6 +138,14 @@ RSpec.describe 'VpsAdmin::API::Resources::NetworkInterface' do
       expect(index_params.keys).to include('vps', 'location', 'user', 'limit', 'from_id')
       expect(update_params.keys).to include('name', 'max_tx', 'max_rx', 'enable')
     end
+
+    it 'localizes network interface input metadata' do
+      header 'Accept-Language', 'cs'
+      update_params = action_input_params('network_interface', 'update')
+
+      expect(update_params.dig('enable', 'label')).to eq('Povolit')
+      expect(update_params.dig('max_tx', 'label')).to eq('Maximální odchozí datová propustnost')
+    end
   end
 
   describe 'Index' do

@@ -1274,8 +1274,8 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
       blocking true
 
       input do
-        ::VpsFeature::FEATURES.each do |name, label|
-          bool name, label:
+        ::VpsFeature::FEATURES.each do |name, feature|
+          bool name, label: feature.label
         end
       end
 
