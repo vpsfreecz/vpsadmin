@@ -323,7 +323,7 @@ function host_ip_address_list($page)
     }
 
     $xtpl->table_add_category('VPS');
-    $xtpl->table_add_category('Interface');
+    $xtpl->table_add_category(_('Interface'));
     $xtpl->table_add_category('');
     $xtpl->table_add_category('');
 

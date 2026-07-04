@@ -15,11 +15,11 @@ msgstr ""
 
 #: forms/backup.forms.php
 msgid "VPS backups"
-msgstr "VPS zálohy"
+msgstr "Zálohy VPS"
 
 #: forms/backup.forms.php
 msgid "NAS backups"
-msgstr "NAS zálohy"
+msgstr "Zálohy NAS"
 
 #: forms/backup.forms.php pages/page_backup.php
 msgid "Downloads"
@@ -64,11 +64,11 @@ msgstr "VPS ID"
 
 #: forms/backup.forms.php
 msgid "Include subdatasets"
-msgstr "Zahrnout dílčí datové sady"
+msgstr "Zahrnout dílčí datasety"
 
 #: forms/backup.forms.php
 msgid "Ignore datasets without snapshots"
-msgstr "Ignorujte datové sady bez snímků"
+msgstr "Ignorujte datasety bez snímků"
 
 #: forms/backup.forms.php forms/dns.forms.php forms/export.forms.php
 #: forms/incidents.forms.php forms/monitoring.forms.php
@@ -78,7 +78,7 @@ msgstr "Ignorujte datové sady bez snímků"
 #: pages/page_adminm.php pages/page_nas.php pages/page_networking.php
 #: pages/page_transactions.php
 msgid "Show"
-msgstr "Show"
+msgstr "Zobrazit"
 
 #: forms/backup.forms.php forms/cluster.forms.php forms/dns.forms.php
 #: forms/export.forms.php forms/incidents.forms.php forms/lifetimes.forms.php
@@ -99,7 +99,7 @@ msgstr "Dataset"
 
 #: forms/backup.forms.php forms/export.forms.php pages/page_backup.php
 msgid "Snapshot"
-msgstr "Momentka"
+msgstr "Snapshot"
 
 #: forms/backup.forms.php
 msgid "File name"
@@ -111,7 +111,7 @@ msgid "Size"
 msgstr "Velikost"
 
 #: forms/backup.forms.php forms/dataset.forms.php forms/export.forms.php
-#: pages/page_adminvps.php pages/page_lifetimes.php
+#: pages/page_adminm.php pages/page_adminvps.php pages/page_lifetimes.php
 msgid "Expiration"
 msgstr "Vypršení platnosti"
 
@@ -161,7 +161,7 @@ msgstr "Konfigurace systému"
 
 #: forms/cluster.forms.php
 msgid "Register new node"
-msgstr "Zaregistrujte nový uzel"
+msgstr "Registrovat nový node"
 
 #: forms/cluster.forms.php
 msgid "Manage OS templates"
@@ -169,7 +169,7 @@ msgstr "Správa šablon OS"
 
 #: forms/cluster.forms.php
 msgid "Manage networks"
-msgstr "Správa sítí"
+msgstr "Spravovat sítě"
 
 #: forms/cluster.forms.php
 msgid "Manage routable addresses"
@@ -177,32 +177,32 @@ msgstr "Správa směrovatelných adres"
 
 #: forms/cluster.forms.php forms/vps.forms.php
 msgid "Manage host addresses"
-msgstr "Spravujte adresy hostitelů"
+msgstr "Spravovat adresy hostitelů"
 
 #: forms/cluster.forms.php
 msgid "Manage DNS servers"
-msgstr "Spravujte servery DNS"
+msgstr "Spravovat DNS servery"
 
 #: forms/cluster.forms.php
 msgid "Manage environments"
-msgstr "Správa prostředí"
+msgstr "Spravovat prostředí"
 
 #: forms/cluster.forms.php
 msgid "Manage locations"
-msgstr "Spravujte místa"
+msgstr "Spravovat lokace"
 
 #: forms/cluster.forms.php
 msgid "Manage resource packages"
-msgstr "Spravujte balíčky zdrojů"
+msgstr "Spravovat balíčky prostředků"
 
 #: forms/cluster.forms.php forms/vps.forms.php
 msgid "OOM reports"
-msgstr "hlásí OOM"
+msgstr "OOM reporty"
 
 #: forms/cluster.forms.php forms/incidents.forms.php forms/vps.forms.php
 #: pages/page_adminm.php pages/page_incidents.php
 msgid "Incident reports"
-msgstr "Zprávy o incidentu"
+msgstr "Incidenty"
 
 #: forms/cluster.forms.php forms/outage.forms.php
 msgid "Outage list"
@@ -216,11 +216,11 @@ msgstr "Bezpečnostní upozornění"
 
 #: forms/cluster.forms.php pages/page_index.php pages/page_monitoring.php
 msgid "Monitoring"
-msgstr "Sledování"
+msgstr "Monitoring"
 
 #: forms/cluster.forms.php
 msgid "Event log"
-msgstr "Protokol událostí"
+msgstr "Události"
 
 #: forms/cluster.forms.php
 msgid "Help boxes"
@@ -234,7 +234,7 @@ msgstr "Shrnutí"
 #: forms/cluster.forms.php forms/outage.forms.php
 #: forms/security_advisory.forms.php
 msgid "Nodes"
-msgstr "Uzly"
+msgstr "Nody"
 
 #: forms/cluster.forms.php forms/node.forms.php
 msgid "online"
@@ -242,7 +242,7 @@ msgstr "online"
 
 #: forms/cluster.forms.php
 msgid "total"
-msgstr "celkový"
+msgstr "celkem"
 
 #: forms/cluster.forms.php forms/dataset.forms.php forms/dns.forms.php
 #: forms/incidents.forms.php forms/lifetimes.forms.php
@@ -256,11 +256,11 @@ msgstr "VPS"
 
 #: forms/cluster.forms.php pages/page_adminvps.php
 msgid "running"
-msgstr "běh"
+msgstr "běží"
 
 #: forms/cluster.forms.php pages/page_adminvps.php
 msgid "stopped"
-msgstr "zastavil"
+msgstr "vypnuto"
 
 #: forms/cluster.forms.php
 msgid "suspended"
@@ -272,7 +272,7 @@ msgstr "smazáno"
 
 #: forms/cluster.forms.php public/index.php
 msgid "Members"
-msgstr "členové"
+msgstr "Členové"
 
 #: forms/cluster.forms.php
 msgid "active"
@@ -288,18 +288,18 @@ msgstr "použitý"
 
 #: forms/cluster.forms.php
 msgid "Node list"
-msgstr "Seznam uzlů"
+msgstr "Seznam nodů"
 
 #: forms/cluster.forms.php forms/dataset.forms.php forms/dns.forms.php
 #: forms/node.forms.php forms/oom_reports.forms.php forms/outage.forms.php
 #: forms/security_advisory.forms.php forms/users.forms.php forms/vps.forms.php
 #: pages/page_cluster.php pages/page_transactions.php
 msgid "Name"
-msgstr "Jméno"
+msgstr "Název"
 
 #: forms/cluster.forms.php
 msgid "Up"
-msgstr "Nahoru"
+msgstr "Uptime"
 
 #: forms/cluster.forms.php
 msgid "Load"
@@ -307,11 +307,11 @@ msgstr "Zatížení"
 
 #: forms/cluster.forms.php
 msgid "%iowait"
-msgstr "%iočekat"
+msgstr "%iowait"
 
 #: forms/cluster.forms.php
 msgid "%idle"
-msgstr "%líný"
+msgstr "%idle"
 
 #: forms/cluster.forms.php
 msgid "Free mem"
@@ -319,7 +319,7 @@ msgstr "Volná paměť"
 
 #: forms/cluster.forms.php
 msgid "ARC"
-msgstr "OBLOUK"
+msgstr "ARC"
 
 #: forms/cluster.forms.php
 #, php-format
@@ -332,11 +332,11 @@ msgstr "Verze"
 
 #: forms/cluster.forms.php pages/page_index.php
 msgid "Kernel"
-msgstr "Jádro"
+msgstr "Kernel"
 
 #: forms/cluster.forms.php pages/page_cluster.php
 msgid "Toggle maintenance on node."
-msgstr "Přepnout údržbu na uzlu."
+msgstr "Přepnout údržbu na nodu."
 
 #: forms/cluster.forms.php pages/page_index.php
 msgid "The server is not responding"
@@ -360,7 +360,7 @@ msgstr "Součet"
 
 #: forms/cluster.forms.php pages/page_adminm.php
 msgid "Free"
-msgstr "Uvolnit"
+msgstr "Volno"
 
 #: forms/cluster.forms.php
 msgid "Max"
@@ -376,7 +376,7 @@ msgstr "Upravit"
 
 #: forms/cluster.forms.php pages/page_cluster.php
 msgid "Networks"
-msgstr "sítě"
+msgstr "Sítě"
 
 #: forms/cluster.forms.php forms/dns.forms.php forms/networking.forms.php
 #: forms/outage.forms.php
@@ -388,7 +388,7 @@ msgstr "Síť"
 #: forms/vps.forms.php pages/page_adminvps.php pages/page_cluster.php
 #: pages/page_networking.php
 msgid "Location"
-msgstr "Umístění"
+msgstr "Lokace"
 
 #: forms/cluster.forms.php forms/dataset.forms.php forms/monitoring.forms.php
 #: forms/userdata.forms.php forms/userns.forms.php forms/users.forms.php
@@ -425,23 +425,23 @@ msgstr "IP adresy"
 
 #: forms/cluster.forms.php forms/outage.forms.php
 msgid "Locations"
-msgstr "Místa"
+msgstr "Lokace"
 
 #: forms/cluster.forms.php
 msgid "List IP addresses in this network"
-msgstr "Seznam IP adres v této síti"
+msgstr "Vypsat IP adresy v této síti"
 
 #: forms/cluster.forms.php
 msgid "List locations this network is available in"
-msgstr "Uveďte umístění, ve kterých je tato síť dostupná"
+msgstr "Vypsat lokace, ve kterých je tato síť dostupná"
 
 #: forms/cluster.forms.php
 msgid "Network locations"
-msgstr "Umístění sítě"
+msgstr "Lokace sítě"
 
 #: forms/cluster.forms.php
 msgid "Add location"
-msgstr "Přidat umístění"
+msgstr "Přidat lokaci"
 
 #: forms/cluster.forms.php forms/dns.forms.php
 msgid "Primary"
@@ -461,7 +461,7 @@ msgstr "Uživatelský výběr"
 
 #: forms/cluster.forms.php
 msgid "Location networks"
-msgstr "Lokalizační sítě"
+msgstr "Sítě lokace"
 
 #: forms/cluster.forms.php
 msgid "Add network"
@@ -475,7 +475,7 @@ msgstr "Adresa"
 
 #: forms/cluster.forms.php
 msgid "Add network to location"
-msgstr "Přidejte síť k umístění"
+msgstr "Přidat síť do lokace"
 
 #: forms/cluster.forms.php forms/dataset.forms.php forms/dns.forms.php
 #: forms/oom_reports.forms.php forms/userdata.forms.php forms/userns.forms.php
@@ -485,19 +485,19 @@ msgstr "Přidat"
 
 #: forms/cluster.forms.php
 msgid "Add location to network"
-msgstr "Přidejte umístění do sítě"
+msgstr "Přidat lokaci do sítě"
 
 #: forms/cluster.forms.php
 msgid "Back to network locations"
-msgstr "Zpět na síťová umístění"
+msgstr "Zpět k lokacím sítě"
 
 #: forms/cluster.forms.php
 msgid "Back to location networks"
-msgstr "Zpět k lokalizačním sítím"
+msgstr "Zpět k sítím lokace"
 
 #: forms/cluster.forms.php
 msgid "Location network"
-msgstr "Lokalizační síť"
+msgstr "Síť lokace"
 
 #: forms/cluster.forms.php forms/dataset.forms.php forms/dns.forms.php
 #: forms/export.forms.php forms/oom_reports.forms.php forms/outage.forms.php
@@ -518,7 +518,7 @@ msgstr "Přidejte IP adresy"
 #: pages/page_backup.php pages/page_cluster.php pages/page_incidents.php
 #: pages/page_lifetimes.php pages/page_monitoring.php
 msgid "Back"
-msgstr "Zadní"
+msgstr "Zpět"
 
 #: forms/cluster.forms.php forms/dns.forms.php
 msgid "IP addresses"
@@ -526,7 +526,7 @@ msgstr "IP adresy"
 
 #: forms/cluster.forms.php
 msgid "Delete DNS resolver"
-msgstr "Odstraňte překladač DNS"
+msgstr "Smazat DNS resolver"
 
 #: forms/cluster.forms.php
 msgid "Edit template"
@@ -538,23 +538,23 @@ msgstr "Uložte změny"
 
 #: forms/cluster.forms.php pages/page_cluster.php
 msgid "Register new template"
-msgstr "Zaregistrujte novou šablonu"
+msgstr "Registrovat novou šablonu"
 
 #: forms/cluster.forms.php forms/dataset.forms.php
 msgid "Register"
-msgstr "Rejstřík"
+msgstr "Registrovat"
 
 #: forms/cluster.forms.php
 msgid "Register new server into cluster"
-msgstr "Zaregistrujte nový server do clusteru"
+msgstr "Zaregistrovat nový server do clusteru"
 
 #: forms/cluster.forms.php
 msgid "Edit node"
-msgstr "Upravit uzel"
+msgstr "Upravit node"
 
 #: forms/cluster.forms.php
 msgid "News Log"
-msgstr "Záznam novinek"
+msgstr "Novinky"
 
 #: forms/cluster.forms.php forms/dataset.forms.php forms/outage.forms.php
 #: pages/page_log.php
@@ -593,7 +593,7 @@ msgstr "Vše"
 
 #: forms/cluster.forms.php forms/users.forms.php
 msgid "Cluster resource packages"
-msgstr "Balíčky klastrových prostředků"
+msgstr "Balíčky prostředků clusteru"
 
 #: forms/cluster.forms.php forms/users.forms.php
 msgid "Package"
@@ -605,7 +605,7 @@ msgstr "Nový balíček"
 
 #: forms/cluster.forms.php
 msgid "Create a new cluster resource package"
-msgstr "Vytvořte nový balíček klastrových prostředků"
+msgstr "Vytvořit nový balíček prostředků clusteru"
 
 #: forms/cluster.forms.php forms/export.forms.php forms/users.forms.php
 msgid "Create"
@@ -624,7 +624,7 @@ msgstr "Prostředí"
 
 #: forms/cluster.forms.php pages/page_adminm.php
 msgid "Cluster resources"
-msgstr "Prostředky klastrů"
+msgstr "Prostředky clusteru"
 
 #: forms/cluster.forms.php forms/vps.forms.php pages/page_adminm.php
 #: pages/page_jumpto.php
@@ -647,9 +647,11 @@ msgstr "Odebrat balíček prostředků clusteru"
 
 #: forms/cluster.forms.php
 msgid ""
-"<b>Warning:</b> The package will also be immediately removed from all users that are using it."
+"<b>Warning:</b> The package will also be immediately removed from all users "
+"that are using it."
 msgstr ""
-"<b>Upozornění:</b> Balíček bude také okamžitě odebrán všem uživatelům, kteří jej používají."
+"<b>Upozornění:</b> Balíček bude také okamžitě odebrán všem uživatelům, kteří "
+"jej používají."
 
 #: forms/cluster.forms.php forms/dns.forms.php forms/export.forms.php
 #: forms/monitoring.forms.php forms/networking.forms.php forms/users.forms.php
@@ -673,13 +675,15 @@ msgstr "Odebrat položku balíčku prostředků clusteru"
 
 #: forms/cluster.forms.php
 msgid ""
-"<b>Warning:</b> The resource will also be immediately removed from all users having this package."
+"<b>Warning:</b> The resource will also be immediately removed from all users "
+"having this package."
 msgstr ""
-"<b>Upozornění:</b> Zdroj bude také okamžitě odebrán všem uživatelům, kteří mají tento balíček."
+"<b>Upozornění:</b> Zdroj bude také okamžitě odebrán všem uživatelům, kteří "
+"mají tento balíček."
 
 #: forms/dataset.forms.php
 msgid "Datasets"
-msgstr "Datové sady"
+msgstr "Datasety"
 
 #: forms/dataset.forms.php pages/page_dataset.php
 msgid "Mount"
@@ -687,41 +691,43 @@ msgstr "Mount"
 
 #: forms/dataset.forms.php
 msgid "Export"
-msgstr "Vývozní"
+msgstr "Export"
 
 #: forms/dataset.forms.php
 msgid "Dataset temporarily expanded"
-msgstr "Datová sada dočasně rozšířena"
+msgstr "Dataset dočasně rozšířen"
 
 #: forms/dataset.forms.php
 msgid "exported"
-msgstr "vyvezeno"
+msgstr "exportováno"
 
 #: forms/dataset.forms.php
 msgid "Create a subdataset"
-msgstr "Vytvořte dílčí datovou sadu"
+msgstr "Vytvořit dílčí dataset"
 
 #: forms/dataset.forms.php
 msgid "Create a new dataset"
-msgstr "Vytvořte novou datovou sadu"
+msgstr "Vytvořit nový dataset"
 
 #: forms/dataset.forms.php
 msgid "Create dataset"
-msgstr "Vytvořit datovou sadu"
+msgstr "Vytvořit dataset"
 
 #: forms/dataset.forms.php
 msgid "Create a new subdataset in"
-msgstr "Vytvořte novou dílčí datovou sadu v"
+msgstr "Vytvořit nový dílčí dataset v"
 
 #: forms/dataset.forms.php
 msgid ""
-"Do not prefix with VPS ID. Allowed characters: a-z A-Z 0-9 _ : .<br>Use / as a separator to create subdatasets. Max length 254 chars."
+"Do not prefix with VPS ID. Allowed characters: a-z A-Z 0-9 _ : .<br>Use / as "
+"a separator to create subdatasets. Max length 254 chars."
 msgstr ""
-"Nedávejte předponu VPS ID. Povolené znaky: a-z A-Z 0-9 _ : .<br>Použijte / jako oddělovač k vytvoření dílčích datových sad. Maximální délka 254 znaků."
+"Nedávejte předponu VPS ID. Povolené znaky: a-z A-Z 0-9 _ : .<br>Použijte / "
+"jako oddělovač k vytvoření dílčích datasetů. Maximální délka 254 znaků."
 
 #: forms/dataset.forms.php
 msgid "Auto mount"
-msgstr "Automatická montáž"
+msgstr "Automatický mount"
 
 #: forms/dataset.forms.php
 msgid "Inherit"
@@ -729,19 +735,19 @@ msgstr "Zdědit"
 
 #: forms/dataset.forms.php
 msgid "Edit dataset"
-msgstr "Upravit datovou sadu"
+msgstr "Upravit dataset"
 
 #: forms/dataset.forms.php
 msgid "Used space"
-msgstr "Využitý prostor"
+msgstr "Využitý prostor (used)"
 
 #: forms/dataset.forms.php
 msgid "Referenced space"
-msgstr "Referenční prostor"
+msgstr "Referencovaný prostor (referenced)"
 
 #: forms/dataset.forms.php
 msgid "Temporary dataset expansion"
-msgstr "Dočasné rozšíření datové sady"
+msgstr "Dočasné rozšíření datasetu"
 
 #: forms/dataset.forms.php
 msgid "Expanded at"
@@ -749,7 +755,7 @@ msgstr "Rozbaleno v"
 
 #: forms/dataset.forms.php
 msgid "Original refquota"
-msgstr "Původní referenční kvóta"
+msgstr "Původní kvóta datasetu (refquota)"
 
 #: forms/dataset.forms.php
 msgid "Added space"
@@ -757,15 +763,15 @@ msgstr "Přidán prostor"
 
 #: forms/dataset.forms.php
 msgid "Number of days over refquota"
-msgstr "Počet dní překročení referenční kvóty"
+msgstr "Počet dní překročení kvóty datasetu (refquota)"
 
 #: forms/dataset.forms.php
 msgid "Max days over refquota"
-msgstr "Maximální počet dní nad referenční kvótou"
+msgstr "Maximální počet dní nad kvótou datasetu (refquota)"
 
 #: forms/dataset.forms.php
 msgid "Max number of days over refquota"
-msgstr "Maximální počet dní překročení referenční kvóty"
+msgstr "Maximální počet dní překročení kvóty datasetu (refquota)"
 
 #: forms/dataset.forms.php forms/monitoring.forms.php forms/outage.forms.php
 #: forms/security_advisory.forms.php forms/users.forms.php
@@ -776,7 +782,7 @@ msgstr "Datum"
 
 #: forms/dataset.forms.php
 msgid "New refquota"
-msgstr "Nová referenční kvóta"
+msgstr "Nová kvóta datasetu (refquota)"
 
 #: forms/dataset.forms.php forms/users.forms.php
 msgid "Added by"
@@ -784,11 +790,11 @@ msgstr "Přidáno uživatelem"
 
 #: forms/dataset.forms.php
 msgid "Add space"
-msgstr "Přidejte prostor"
+msgstr "Přidat místo"
 
 #: forms/dataset.forms.php
 msgid "Temporarily expand dataset"
-msgstr "Dočasně rozbalte datovou sadu"
+msgstr "Dočasně rozšířit dataset"
 
 #: forms/dataset.forms.php
 msgid "Expand"
@@ -800,7 +806,7 @@ msgstr "Zaregistrujte stávající rozšíření"
 
 #: forms/dataset.forms.php
 msgid "Backup plans"
-msgstr "Záložní plány"
+msgstr "Zálohovací plány"
 
 #: forms/dataset.forms.php forms/outage.forms.php pages/page_cluster.php
 msgid "Description"
@@ -820,7 +826,7 @@ msgstr "Obnovit"
 
 #: forms/dataset.forms.php
 msgid "exported, can be mounted"
-msgstr "exportováno, lze namontovat"
+msgstr "exportováno, lze připojit"
 
 #: forms/dataset.forms.php
 msgid "Export to mount"
@@ -828,11 +834,11 @@ msgstr "Export do mount"
 
 #: forms/dataset.forms.php
 msgid "Make a new snapshot"
-msgstr "Vytvořte nový snímek"
+msgstr "Vytvořit nový snapshot"
 
 #: forms/dataset.forms.php
 msgid "Mounts"
-msgstr "Držáky"
+msgstr "Mounty"
 
 #: forms/dataset.forms.php
 msgid "Mountpoint"
@@ -840,22 +846,23 @@ msgstr "Mountpoint"
 
 #: forms/dataset.forms.php
 msgid "On mount fail"
-msgstr "Selhání při montáži"
+msgstr "Selhání při mountu"
 
 #: forms/dataset.forms.php forms/lifetimes.forms.php forms/monitoring.forms.php
 #: forms/node.forms.php forms/outage.forms.php
 #: forms/security_advisory.forms.php forms/users.forms.php
-#: pages/page_adminvps.php pages/page_lifetimes.php pages/page_transactions.php
+#: pages/page_adminm.php pages/page_adminvps.php pages/page_lifetimes.php
+#: pages/page_transactions.php
 msgid "State"
-msgstr "Stát"
+msgstr "Stav"
 
 #: forms/dataset.forms.php
 msgid "About to be mounted"
-msgstr "Před montáží"
+msgstr "Před mountem"
 
 #: forms/dataset.forms.php
 msgid "Mounted"
-msgstr "Jízdní"
+msgstr "Připojeno"
 
 #: forms/dataset.forms.php
 msgid "Unmounted"
@@ -867,20 +874,20 @@ msgstr "Přeskočeno"
 
 #: forms/dataset.forms.php
 msgid "Trying to mount"
-msgstr "Pokus o montáž"
+msgstr "Pokus o mount"
 
 #: forms/dataset.forms.php
 msgid "Waiting for mount"
-msgstr "Čekání na montáž"
+msgstr "Čekání na mount"
 
 #: forms/dataset.forms.php forms/users.forms.php pages/page_adminvps.php
 msgid "Disable"
-msgstr "Zakázat"
+msgstr "Vypnout"
 
 #: forms/dataset.forms.php forms/users.forms.php forms/vps.forms.php
 #: pages/page_adminm.php
 msgid "Enable"
-msgstr "Umožnit"
+msgstr "Zapnuto"
 
 #: forms/dataset.forms.php
 msgid "Disabled by admin"
@@ -888,11 +895,11 @@ msgstr "Zakázáno administrátorem"
 
 #: forms/dataset.forms.php
 msgid "Mount a dataset from the list above."
-msgstr "Připojte datovou sadu z výše uvedeného seznamu."
+msgstr "Připojit dataset ze seznamu výše."
 
 #: forms/dataset.forms.php
 msgid "Mount dataset"
-msgstr "Připojit datovou sadu"
+msgstr "Připojit dataset"
 
 #: forms/dataset.forms.php
 msgid "Mount to VPS"
@@ -908,7 +915,7 @@ msgstr "Přeskočit"
 
 #: forms/dataset.forms.php
 msgid "Mount later"
-msgstr "Namontujte později"
+msgstr "Připojit později"
 
 #: forms/dataset.forms.php
 msgid "Fail VPS start"
@@ -916,11 +923,11 @@ msgstr "Selhání VPS start"
 
 #: forms/dataset.forms.php
 msgid "Wait until mounted"
-msgstr "Počkejte na montáž"
+msgstr "Počkat na připojení"
 
-#: forms/dns.forms.php pages/page_cluster.php
-msgid "Servers"
-msgstr "servery"
+#: forms/dns.forms.php
+msgid "DNS servers"
+msgstr "DNS servery"
 
 #: forms/dns.forms.php
 msgid "All zones"
@@ -940,11 +947,11 @@ msgstr "Sekundární zóny"
 
 #: forms/dns.forms.php
 msgid "Transfer logs"
-msgstr "Přenos protokolů"
+msgstr "Log přenosů"
 
 #: forms/dns.forms.php
 msgid "Record logs"
-msgstr "Záznamy protokolů"
+msgstr "Logy záznamů"
 
 #: forms/dns.forms.php
 msgid "TSIG keys"
@@ -952,18 +959,14 @@ msgstr "TSIG klíče"
 
 #: forms/dns.forms.php
 msgid "Resolvers"
-msgstr "Řešitelé"
-
-#: forms/dns.forms.php
-msgid "DNS servers"
-msgstr "DNS servery"
+msgstr "DNS resolvery"
 
 #: forms/dns.forms.php forms/node.forms.php forms/oom_reports.forms.php
 #: forms/outage.forms.php forms/security_advisory.forms.php forms/vps.forms.php
 #: pages/page_adminvps.php pages/page_cluster.php pages/page_index.php
 #: pages/page_networking.php pages/page_node.php pages/page_transactions.php
 msgid "Node"
-msgstr "Uzel"
+msgstr "Node"
 
 #: forms/dns.forms.php
 msgid "IPv4"
@@ -1015,11 +1018,11 @@ msgstr "Nebyly nalezeny žádné zóny."
 
 #: forms/dns.forms.php
 msgid "DNS record log"
-msgstr "DNS záznam záznamu"
+msgstr "Log DNS záznamů"
 
 #: forms/dns.forms.php
 msgid "DNS transfer log"
-msgstr "DNS protokol přenosu"
+msgstr "Log DNS přenosů"
 
 #: forms/dns.forms.php
 msgid "DNS zone"
@@ -1047,7 +1050,8 @@ msgstr "Varování"
 
 #: forms/dns.forms.php
 msgid "Add at least one primary DNS server for this zone to become active."
-msgstr "Přidejte alespoň jeden primární server DNS, aby se tato zóna stala aktivní."
+msgstr ""
+"Přidejte alespoň jeden primární server DNS, aby se tato zóna stala aktivní."
 
 #: forms/dns.forms.php
 msgid "Name servers"
@@ -1119,7 +1123,7 @@ msgstr "Tajemství TSIG"
 
 #: forms/dns.forms.php
 msgid "Remove transfer"
-msgstr "Odstraňte přenos"
+msgstr "Odebrat přenos"
 
 #: forms/dns.forms.php
 msgid "Add primary server"
@@ -1147,7 +1151,7 @@ msgstr "DNS zóna serveru"
 
 #: forms/dns.forms.php
 msgid "Transfer log"
-msgstr "Přenosový protokol"
+msgstr "Log přenosů"
 
 #: forms/dns.forms.php forms/oom_reports.forms.php
 msgid "Time"
@@ -1156,7 +1160,7 @@ msgstr "Čas"
 #: forms/dns.forms.php forms/export.forms.php forms/outage.forms.php
 #: pages/page_adminm.php pages/page_adminvps.php public/index.php
 msgid "Status"
-msgstr "Postavení"
+msgstr "Status"
 
 #: forms/dns.forms.php
 msgid "Reason code"
@@ -1195,7 +1199,7 @@ msgstr "Nebyla nalezena žádná použitelná IP adresa hostitele."
 #: forms/dns.forms.php forms/outage.forms.php forms/vps.forms.php
 #: pages/page_adminvps.php
 msgid "Hostname"
-msgstr "Název hostitele"
+msgstr "Hostname"
 
 #: forms/dns.forms.php forms/networking.forms.php forms/vps.forms.php
 #: pages/page_networking.php
@@ -1521,7 +1525,7 @@ msgstr "NFS exportuje"
 
 #: forms/export.forms.php
 msgid "Export dataset"
-msgstr "Export datové sady"
+msgstr "Export datasetu"
 
 #: forms/export.forms.php forms/outage.forms.php
 msgid "Path"
@@ -1529,7 +1533,7 @@ msgstr "Cesta"
 
 #: forms/export.forms.php
 msgid "Select dataset to export"
-msgstr "Vyberte datovou sadu k exportu"
+msgstr "Vyberte dataset k exportu"
 
 #: forms/export.forms.php forms/networking.forms.php forms/outage.forms.php
 #: forms/users.forms.php forms/vps.forms.php
@@ -1538,15 +1542,15 @@ msgstr "Pokračovat"
 
 #: forms/export.forms.php
 msgid "Create NFS export"
-msgstr "Vytvořte export NFS"
+msgstr "Vytvořit NFS export"
 
 #: forms/export.forms.php forms/vps.forms.php pages/page_console.php
 msgid "Start"
-msgstr "Start"
+msgstr "Spustit"
 
 #: forms/export.forms.php
 msgid "Start the NFS server."
-msgstr "Spusťte server NFS."
+msgstr "Spustit NFS server."
 
 #: forms/export.forms.php
 msgid "Add host"
@@ -1578,7 +1582,7 @@ msgstr "NFS server je zastaven, export nelze připojit."
 
 #: forms/export.forms.php forms/vps.forms.php pages/page_console.php
 msgid "Stop"
-msgstr "Zastávka"
+msgstr "Stop"
 
 #: forms/export.forms.php
 msgid "Hosts"
@@ -1602,7 +1606,7 @@ msgstr "Kořenová tykev"
 
 #: forms/export.forms.php
 msgid "Mount command"
-msgstr "Příkaz Mount"
+msgstr "Příkaz pro mount"
 
 #: forms/export.forms.php
 msgid "fstab entry"
@@ -1610,7 +1614,7 @@ msgstr "fstab záznam"
 
 #: forms/export.forms.php
 msgid "systemd mount unit"
-msgstr "systémová montážní jednotka"
+msgstr "systemd mount unit"
 
 #: forms/export.forms.php
 msgid "NixOS configuration"
@@ -1630,9 +1634,11 @@ msgstr "Potvrďte smazání exportu NFS"
 
 #: forms/export.forms.php
 msgid ""
-"Stop the NFS server and remove the export. Data on the exported dataset are not affected by this operation."
+"Stop the NFS server and remove the export. Data on the exported dataset are "
+"not affected by this operation."
 msgstr ""
-"Zastavte server NFS a odeberte export. Data v exportované datové sadě nejsou touto operací ovlivněna."
+"Zastavit server NFS a odebrat export. Data v exportovaném datasetu nejsou "
+"touto operací ovlivněna."
 
 #: forms/export.forms.php
 msgid "Delete export"
@@ -1734,9 +1740,11 @@ msgstr "Nelze získat přístup ke zdroji"
 
 #: forms/lifetimes.forms.php
 msgid ""
-"E-mail reminders are sent daily before the expiration date. This form can be used to silent the notifications until a given date."
+"E-mail reminders are sent daily before the expiration date. This form can be "
+"used to silent the notifications until a given date."
 msgstr ""
-"E-mailové upomínky jsou zasílány denně před datem vypršení platnosti. Tento formulář lze použít k umlčení oznámení do daného data."
+"E-mailové upomínky jsou zasílány denně před datem vypršení platnosti. Tento "
+"formulář lze použít k umlčení oznámení do daného data."
 
 #: forms/lifetimes.forms.php forms/userdata.forms.php forms/users.forms.php
 #: pages/page_adminm.php
@@ -1810,13 +1818,15 @@ msgstr "Potvrzení události"
 
 #: forms/monitoring.forms.php
 msgid ""
-"When the event is acknowledged, you will not be notified about the issue until it is resolved."
+"When the event is acknowledged, you will not be notified about the issue "
+"until it is resolved."
 msgstr ""
-"Když je událost potvrzena, nebudete o problému informováni, dokud nebude vyřešen."
+"Když je událost potvrzena, nebudete o problému informováni, dokud nebude "
+"vyřešen."
 
 #: forms/monitoring.forms.php
 msgid "Until"
-msgstr "Až"
+msgstr "Do"
 
 #: forms/monitoring.forms.php
 msgid "Acknowledge"
@@ -1828,9 +1838,11 @@ msgstr "Ignorovat událost"
 
 #: forms/monitoring.forms.php
 msgid ""
-"When the event is ignored, you will not be notified about this issue any more, even should it arise in the future again."
+"When the event is ignored, you will not be notified about this issue any "
+"more, even should it arise in the future again."
 msgstr ""
-"Když je událost ignorována, nebudete o tomto problému dále informováni, a to ani v případě, že by se znovu objevil v budoucnu."
+"Když je událost ignorována, nebudete o tomto problému dále informováni, a to "
+"ani v případě, že by se znovu objevil v budoucnu."
 
 #: forms/monitoring.forms.php
 msgid "Ignore"
@@ -1838,7 +1850,7 @@ msgstr "Ignorovat"
 
 #: forms/networking.forms.php
 msgid "Routable IP Addresses"
-msgstr "Směrovatelné IP adresy"
+msgstr "Routované IP adresy"
 
 #: forms/networking.forms.php forms/users.forms.php
 msgid "Prefix"
@@ -1850,11 +1862,11 @@ msgstr "'unassigned' pro seznam volných adres"
 
 #: forms/networking.forms.php forms/vps.forms.php
 msgid "List incident reports"
-msgstr "Seznam zpráv o incidentech"
+msgstr "Zobrazit incidenty"
 
 #: forms/networking.forms.php forms/vps.forms.php
 msgid "List assignments"
-msgstr "Seznam úkolů"
+msgstr "Zobrazit přiřazení"
 
 #: forms/networking.forms.php
 msgid "Remove from VPS"
@@ -1930,15 +1942,15 @@ msgstr "adresa hostitele z této sítě bude zapnutá"
 
 #: forms/networking.forms.php
 msgid "Add only route"
-msgstr "Přidat pouze trasu"
+msgstr "Přidat pouze routu"
 
 #: forms/networking.forms.php
 msgid "Add route and an address to interface"
-msgstr "Přidejte trasu a adresu do rozhraní"
+msgstr "Přidat routu a adresu do rozhraní"
 
 #: forms/networking.forms.php
 msgid "Remove route from VPS"
-msgstr "Odebrat trasu z VPS"
+msgstr "Odebrat routu z VPS"
 
 #: forms/networking.forms.php forms/users.forms.php pages/page_cluster.php
 msgid "IP"
@@ -2006,11 +2018,11 @@ msgstr "Nakonfigurujte zpětný záznam"
 
 #: forms/networking.forms.php pages/page_adminm.php
 msgid "Set"
-msgstr "Soubor"
+msgstr "Nastavit"
 
 #: forms/node.forms.php
 msgid "Storage pools"
-msgstr "Skladovací bazény"
+msgstr "Storage pooly"
 
 #: forms/node.forms.php
 msgid "Scan"
@@ -2025,27 +2037,28 @@ msgid "Performance"
 msgstr "Výkon"
 
 #: forms/node.forms.php
-msgid "degraded - one or more disks have failed, the pool continues to function"
-msgstr "degradovaný - jeden nebo více disků selhalo, fond nadále funguje"
+msgid ""
+"degraded - one or more disks have failed, the pool continues to function"
+msgstr "degraded - jeden nebo více disků selhalo, pool dál funguje"
 
 #: forms/node.forms.php
 msgid "suspended - the pool is not operational"
-msgstr "pozastaveno - bazén není v provozu"
+msgstr "suspended - pool není provozuschopný"
 
 #: forms/node.forms.php
 msgid "faulted - the pool is not operational"
-msgstr "závada - bazén není v provozu"
+msgstr "faulted - pool není provozuschopný"
 
 #: forms/node.forms.php
 msgid "error - unable to check pool status"
-msgstr "chyba - nelze zkontrolovat stav bazénu"
+msgstr "chyba - nelze zkontrolovat status poolu"
 
 #: forms/node.forms.php forms/oom_reports.forms.php
 #: forms/security_advisory.forms.php
 msgid "unknown"
 msgstr "neznámý"
 
-#: forms/node.forms.php lib/functions.lib.php
+#: forms/node.forms.php
 msgid "none"
 msgstr "žádný"
 
@@ -2072,7 +2085,7 @@ msgstr "resilver - výměna disku"
 #: forms/node.forms.php
 #, php-format
 msgid "%s used of %s (%s free, %s%%)"
-msgstr "%s použito z %s (%s zdarma, %s%%)"
+msgstr "%s použito z %s (%s volno, %s%%)"
 
 #: forms/node.forms.php
 msgid "Graphs"
@@ -2088,7 +2101,7 @@ msgstr "Historie objektu"
 
 #: forms/object_history.forms.php
 msgid "User session"
-msgstr "Uživatelská relace"
+msgstr "Sezení uživatele"
 
 #: forms/object_history.forms.php
 msgid "Object ID"
@@ -2105,7 +2118,7 @@ msgstr "Vytvořeno v"
 
 #: forms/object_history.forms.php pages/page_transactions.php
 msgid "Session"
-msgstr "Zasedání"
+msgstr "Sezení"
 
 #: forms/object_history.forms.php
 msgid "Data"
@@ -2125,7 +2138,7 @@ msgstr "Zabitý proces"
 
 #: forms/oom_reports.forms.php forms/users.forms.php pages/page_adminm.php
 msgid "Count"
-msgstr "Počítat"
+msgstr "Počet"
 
 #: forms/oom_reports.forms.php
 msgid "nothing killed"
@@ -2229,7 +2242,7 @@ msgstr "oom_score_adj"
 
 #: forms/oom_reports.forms.php
 msgid "OOM report rules for VPS "
-msgstr "Pravidla sestavy OOM pro VPS"
+msgstr "Pravidla OOM reportů pro VPS "
 
 #: forms/oom_reports.forms.php
 msgid "Cgroup path pattern"
@@ -2242,7 +2255,8 @@ msgstr "Počet zásahů"
 #: forms/oom_reports.forms.php
 msgid "No rules are configured, notifications are sent for all OOM reports."
 msgstr ""
-"Nejsou nakonfigurována žádná pravidla, upozornění jsou odesílána pro všechny zprávy OOM."
+"Nejsou nakonfigurována žádná pravidla, upozornění jsou odesílána pro všechny "
+"OOM reporty."
 
 #: forms/oom_reports.forms.php
 msgid "Rules are evaluated top to bottom"
@@ -2250,15 +2264,21 @@ msgstr "Pravidla se vyhodnocují shora dolů"
 
 #: forms/oom_reports.forms.php
 msgid ""
-"Patterns are matched using Ruby's <a href=\"https://docs.ruby-lang.org/en/master/File.html#method-c-fnmatch\" target=\"_blank\">File.fnmatch</a> method with <code>File::FNM_PATHNAME | File::FNM_EXTGLOB</code>"
+"Patterns are matched using Ruby's <a href=\"https://docs.ruby-lang.org/en/"
+"master/File.html#method-c-fnmatch\" target=\"_blank\">File.fnmatch</a> "
+"method with <code>File::FNM_PATHNAME | File::FNM_EXTGLOB</code>"
 msgstr ""
-"Vzory jsou spárovány pomocí metody Ruby <a href=\"https://docs.ruby-lang.org/en/master/File.html#method-c-fnmatch\" target=\"_blank\">File.fnmatch</a> s <code>File::FNM_PATHNAME | Soubor::FNM_EXTGLOB</code>"
+"Vzory jsou spárovány pomocí metody Ruby <a href=\"https://docs.ruby-lang.org/"
+"en/master/File.html#method-c-fnmatch\" target=\"_blank\">File.fnmatch</a> s "
+"<code>File::FNM_PATHNAME | File::FNM_EXTGLOB</code>"
 
 #: forms/oom_reports.forms.php
 msgid ""
-"Matches are done against full cgroup path without <code>/sys/fs/cgroup</code>, see"
+"Matches are done against full cgroup path without <code>/sys/fs/cgroup</"
+"code>, see"
 msgstr ""
-"Shody se provádějí proti úplné cestě cgroup bez <code>/sys/fs/cgroup</code>, viz"
+"Shody se provádějí proti úplné cestě cgroup bez <code>/sys/fs/cgroup</code>, "
+"viz"
 
 #: forms/oom_reports.forms.php
 msgid "existing reports"
@@ -2270,9 +2290,11 @@ msgstr "První pravidlo shody určuje akci"
 
 #: forms/oom_reports.forms.php
 msgid ""
-"Out-of-memory situations are considered a configuration error and can result in VPS being restarted or stopped"
+"Out-of-memory situations are considered a configuration error and can result "
+"in VPS being restarted or stopped"
 msgstr ""
-"Situace s nedostatkem paměti jsou považovány za chybu konfigurace a mohou mít za následek restartování nebo zastavení VPS"
+"Situace s nedostatkem paměti jsou považovány za chybu konfigurace a mohou "
+"vést k restartu nebo Stopu VPS"
 
 #: forms/oom_reports.forms.php
 msgid "Add rule"
@@ -2280,7 +2302,7 @@ msgstr "Přidat pravidlo"
 
 #: forms/oom_reports.forms.php
 msgid "Update OOM report rule"
-msgstr "Aktualizujte pravidlo sestavy OOM"
+msgstr "Aktualizovat pravidlo OOM reportů"
 
 #: forms/oom_reports.forms.php
 msgid "Back to rule list"
@@ -2288,11 +2310,11 @@ msgstr "Zpět na seznam pravidel"
 
 #: forms/outage.forms.php
 msgid "Planned outage"
-msgstr "Plánovaná odstávka"
+msgstr "Odstávka"
 
 #: forms/outage.forms.php
 msgid "Unplanned outage"
-msgstr "Neplánovaný výpadek"
+msgstr "Výpadek"
 
 #: forms/outage.forms.php
 msgid "Planned"
@@ -2320,7 +2342,7 @@ msgstr "Nedostupnost"
 
 #: forms/outage.forms.php
 msgid "Outage Report"
-msgstr "Hlášení o výpadku"
+msgstr "Hlášení odstávky/výpadku"
 
 #: forms/outage.forms.php
 msgid "vpsAdmin"
@@ -2356,7 +2378,7 @@ msgstr "Řeší"
 
 #: forms/outage.forms.php
 msgid "Outage"
-msgstr "Výpadek"
+msgstr "Odstávka/výpadek"
 
 #: forms/outage.forms.php
 msgid "Edit original report"
@@ -2408,7 +2430,7 @@ msgstr "Odesílejte e-maily"
 
 #: forms/outage.forms.php
 msgid "Edit outage"
-msgstr "Upravit výpadek"
+msgstr "Upravit hlášení"
 
 #: forms/outage.forms.php
 msgid "Edit affected systems & handlers"
@@ -2440,7 +2462,7 @@ msgstr "Postižený export"
 
 #: forms/outage.forms.php
 msgid "You are not affected by this outage."
-msgstr "Tento výpadek se vás netýká."
+msgstr "Toto hlášení se vás netýká."
 
 #: forms/outage.forms.php forms/security_advisory.forms.php
 msgid "Information"
@@ -2452,7 +2474,7 @@ msgstr "Začíná v"
 
 #: forms/outage.forms.php pages/page_adminm.php
 msgid "minutes"
-msgstr "zápis"
+msgstr "minuty"
 
 #: forms/outage.forms.php forms/security_advisory.forms.php
 msgid "Impact"
@@ -2500,11 +2522,11 @@ msgstr "Zrušit"
 
 #: forms/outage.forms.php
 msgid "Resolve"
-msgstr "Odhodlání"
+msgstr "Vyřešit"
 
 #: forms/outage.forms.php
 msgid "Change"
-msgstr "Přeměna"
+msgstr "Změnit"
 
 #: forms/outage.forms.php forms/security_advisory.forms.php
 msgid "Updates"
@@ -2524,7 +2546,7 @@ msgstr "Dokončeno v:"
 
 #: forms/outage.forms.php
 msgid "State:"
-msgstr "Stát:"
+msgstr "Stav:"
 
 #: forms/outage.forms.php
 msgid "Impact type:"
@@ -2544,7 +2566,7 @@ msgstr "Ovlivňuje mě?"
 
 #: forms/outage.forms.php
 msgid "Export ID"
-msgstr "Exportovat ID"
+msgstr "ID exportu"
 
 #: forms/outage.forms.php
 msgid "Entity name"
@@ -2583,11 +2605,11 @@ msgstr "Počet exportů"
 
 #: forms/outage.forms.php
 msgid "Direct"
-msgstr "Řídit"
+msgstr "Přímé"
 
 #: forms/outage.forms.php
 msgid "Current"
-msgstr "Proud"
+msgstr "Aktuální"
 
 #: forms/outage.forms.php
 msgid "Recently resolved"
@@ -2595,7 +2617,7 @@ msgstr "Nedávno vyřešeno"
 
 #: forms/outage.forms.php
 msgid "planned and unplanned outages"
-msgstr "plánované i neplánované odstávky"
+msgstr "plánované odstávky i neplánované výpadky"
 
 #: forms/outage.forms.php
 msgid "planned outages"
@@ -2652,7 +2674,7 @@ msgstr "hypervizor"
 
 #: forms/security_advisory.forms.php
 msgid "storage"
-msgstr "skladování"
+msgstr "úložiště"
 
 #: forms/security_advisory.forms.php
 msgid "New security advisory"
@@ -2688,7 +2710,7 @@ msgstr "Volitelný název známé zranitelnosti."
 
 #: forms/security_advisory.forms.php
 msgid "A kernel bug could affect containers on selected nodes."
-msgstr "Chyba jádra by mohla ovlivnit kontejnery na vybraných uzlech."
+msgstr "Bug v kernelu může ovlivnit kontejnery na vybraných nodech."
 
 #: forms/security_advisory.forms.php
 msgid "One-sentence summary shown in advisory lists and emails."
@@ -2696,8 +2718,9 @@ msgstr "Shrnutí v jedné větě zobrazené v seznamech rad a e-mailech."
 
 #: forms/security_advisory.forms.php
 msgid ""
-"Describe the vulnerability, affected kernel versions, and required conditions."
-msgstr "Popište zranitelnost, ovlivněné verze jádra a požadované podmínky."
+"Describe the vulnerability, affected kernel versions, and required "
+"conditions."
+msgstr "Popište zranitelnost, dotčené verze kernelu a požadované podmínky."
 
 #: forms/security_advisory.forms.php
 msgid "User-facing explanation of the issue."
@@ -2739,7 +2762,7 @@ msgstr "Upravit upozornění"
 
 #: forms/security_advisory.forms.php
 msgid "Node statuses"
-msgstr "Stavy uzlů"
+msgstr "Stavy nodů"
 
 #: forms/security_advisory.forms.php
 msgid "Affected resources"
@@ -2775,7 +2798,7 @@ msgstr "Publikovat"
 
 #: forms/security_advisory.forms.php
 msgid "Node status"
-msgstr "Stav uzlu"
+msgstr "Stav nodu"
 
 #: forms/security_advisory.forms.php forms/users.forms.php
 msgid "Note"
@@ -2783,7 +2806,7 @@ msgstr "Poznámka"
 
 #: forms/security_advisory.forms.php
 msgid "No node statuses recorded."
-msgstr "Nebyly zaznamenány žádné stavy uzlů."
+msgstr "Nejsou zaznamenány žádné stavy nodů."
 
 #: forms/security_advisory.forms.php
 msgid "Related outages"
@@ -2815,15 +2838,15 @@ msgstr "Nebyly zveřejněny žádné aktualizace."
 
 #: forms/security_advisory.forms.php
 msgid "node statuses"
-msgstr "stavy uzlů"
+msgstr "stavy nodů"
 
 #: forms/security_advisory.forms.php
 msgid "Save node statuses"
-msgstr "Uložte stavy uzlů"
+msgstr "Uložit stavy nodů"
 
 #: forms/security_advisory.forms.php
 msgid "All nodes"
-msgstr "Všechny uzly"
+msgstr "Všechny nody"
 
 #: forms/security_advisory.forms.php
 msgid "Apply"
@@ -2831,7 +2854,7 @@ msgstr "Použít"
 
 #: forms/security_advisory.forms.php
 msgid "Kernel updated"
-msgstr "Jádro aktualizováno"
+msgstr "Kernel aktualizován"
 
 #: forms/security_advisory.forms.php
 msgid "Edit security advisory update"
@@ -2860,7 +2883,7 @@ msgstr "Nepovinné podrobnosti o této aktualizaci."
 #: forms/userdata.forms.php forms/vps.forms.php pages/page_adminm.php
 #: pages/page_userdata.php
 msgid "User data"
-msgstr "Uživatelská data"
+msgstr "User data"
 
 #: forms/userdata.forms.php pages/page_backup.php
 msgid "Format"
@@ -2868,11 +2891,11 @@ msgstr "Formát"
 
 #: forms/userdata.forms.php
 msgid "Add user data"
-msgstr "Přidejte uživatelská data"
+msgstr "Přidat User data"
 
 #: forms/userdata.forms.php
 msgid "Edit user data"
-msgstr "Upravit uživatelská data"
+msgstr "Upravit User data"
 
 #: forms/userdata.forms.php
 msgid "Deploy to VPS"
@@ -3021,7 +3044,7 @@ msgstr "Zpět ke konfiguraci prostředí"
 
 #: forms/users.forms.php
 msgid "Session log of"
-msgstr "Protokol relace"
+msgstr "Log sezení uživatele"
 
 #: forms/users.forms.php pages/page_transactions.php
 msgid "Exact ID"
@@ -3041,7 +3064,7 @@ msgstr "Klientská verze"
 
 #: forms/users.forms.php
 msgid "Token"
-msgstr "Žeton"
+msgstr "Token"
 
 #: forms/users.forms.php
 msgid "Admin ID"
@@ -3061,7 +3084,7 @@ msgstr "Blízko"
 
 #: forms/users.forms.php
 msgid "Edit user session"
-msgstr "Upravit uživatelskou relaci"
+msgstr "Upravit sezení uživatele"
 
 #: forms/users.forms.php
 msgid "Authentication type"
@@ -3069,7 +3092,7 @@ msgstr "Typ autentizace"
 
 #: forms/users.forms.php
 msgid "Back to sessions"
-msgstr "Zpět k relacím"
+msgstr "Zpět na sezení"
 
 #: forms/users.forms.php pages/page_adminm.php
 msgid "Requests for approval"
@@ -3142,7 +3165,7 @@ msgstr "Jak"
 #: forms/users.forms.php forms/vps.forms.php pages/page_adminvps.php
 #: pages/page_console.php
 msgid "Distribution"
-msgstr "Rozdělení"
+msgstr "Distribuce"
 
 #: forms/users.forms.php
 msgid "Currency"
@@ -3192,7 +3215,7 @@ msgstr "Žádost o podrobnosti schválení"
 msgid "Request info"
 msgstr "Vyžádejte si informace"
 
-#: forms/users.forms.php
+#: forms/users.forms.php pages/page_adminm.php
 msgid "Created"
 msgstr "Vytvořeno"
 
@@ -3502,9 +3525,11 @@ msgstr "e-maily"
 
 #: forms/users.forms.php
 msgid ""
-"E-mails configured here override role recipients. It is a comma separated list of e-mails, may contain line breaks."
+"E-mails configured here override role recipients. It is a comma separated "
+"list of e-mails, may contain line breaks."
 msgstr ""
-"Zde nakonfigurované e-maily mají přednost před příjemci rolí. Jedná se o čárkami oddělený seznam e-mailů, může obsahovat zalomení řádků."
+"Zde nakonfigurované e-maily mají přednost před příjemci rolí. Jedná se o "
+"čárkami oddělený seznam e-mailů, může obsahovat zalomení řádků."
 
 #: forms/users.forms.php
 msgid "Do <strong>not</strong> send this e-mail"
@@ -3512,7 +3537,7 @@ msgstr "Odešlete <strong>ne</strong> tento e-mail"
 
 #: forms/users.forms.php
 msgid "Configure resources"
-msgstr "Nakonfigurujte zdroje"
+msgstr "Konfigurovat zdroje"
 
 #: forms/users.forms.php pages/page_adminvps.php
 msgid "Resources"
@@ -3528,7 +3553,7 @@ msgstr "Přidat balíček"
 
 #: forms/users.forms.php
 msgid "Add cluster resource package"
-msgstr "Přidejte balíček klastrových prostředků"
+msgstr "Přidat balíček prostředků clusteru"
 
 #: forms/users.forms.php
 msgid "Edit resources"
@@ -3544,7 +3569,7 @@ msgstr "Potvrzeno"
 
 #: forms/users.forms.php
 msgid "Use count"
-msgstr "Použijte počet"
+msgstr "Počet použití"
 
 #: forms/users.forms.php
 msgid "Last use"
@@ -3555,7 +3580,8 @@ msgid "Add TOTP device"
 msgstr "Přidejte zařízení TOTP"
 
 #: forms/users.forms.php
-msgid "Pick a name for your authentication device. It can be changed at any time."
+msgid ""
+"Pick a name for your authentication device. It can be changed at any time."
 msgstr "Vyberte název pro své ověřovací zařízení. Lze jej kdykoli změnit."
 
 #: forms/users.forms.php
@@ -3564,9 +3590,11 @@ msgstr "Potvrďte nastavení zařízení TOTP"
 
 #: forms/users.forms.php
 msgid ""
-"Install a TOTP authenticator application like FreeOTP or Google Authenticator and scan the QR code below, or enter the secret key manually."
+"Install a TOTP authenticator application like FreeOTP or Google "
+"Authenticator and scan the QR code below, or enter the secret key manually."
 msgstr ""
-"Nainstalujte si ověřovací aplikaci TOTP jako FreeOTP nebo Google Authenticator a naskenujte níže uvedený QR kód nebo zadejte tajný klíč ručně."
+"Nainstalujte si ověřovací aplikaci TOTP jako FreeOTP nebo Google "
+"Authenticator a naskenujte níže uvedený QR kód nebo zadejte tajný klíč ručně."
 
 #: forms/users.forms.php
 msgid "Device"
@@ -3586,9 +3614,15 @@ msgstr "TOTP kód"
 
 #: forms/users.forms.php
 msgid ""
-"Once enabled, this authentication device or any other configured device will be needed to log into your account without any exception. Two-factor authentication can be later turned off by disabling or removing all configured authentication devices."
+"Once enabled, this authentication device or any other configured device will "
+"be needed to log into your account without any exception. Two-factor "
+"authentication can be later turned off by disabling or removing all "
+"configured authentication devices."
 msgstr ""
-"Po aktivaci bude toto ověřovací zařízení nebo jakékoli jiné nakonfigurované zařízení nutné k přihlášení k vašemu účtu bez jakékoli výjimky. Dvoufaktorové ověřování lze později vypnout vypnutím nebo odebráním všech nakonfigurovaných ověřovacích zařízení."
+"Po aktivaci bude toto ověřovací zařízení nebo jakékoli jiné nakonfigurované "
+"zařízení nutné k přihlášení k vašemu účtu bez jakékoli výjimky. "
+"Dvoufaktorové ověřování lze později vypnout vypnutím nebo odebráním všech "
+"nakonfigurovaných ověřovacích zařízení."
 
 #: forms/users.forms.php
 msgid "Enable the device for two-factor authentication"
@@ -3608,9 +3642,13 @@ msgstr "Obnovovací kód"
 
 #: forms/users.forms.php
 msgid ""
-"Two-factor authentication using TOTP is now enabled. In case you ever lose access to the TOTP authenticator device, you can use the recovery code below instead of the TOTP token to log in."
+"Two-factor authentication using TOTP is now enabled. In case you ever lose "
+"access to the TOTP authenticator device, you can use the recovery code below "
+"instead of the TOTP token to log in."
 msgstr ""
-"Nyní je povoleno dvoufaktorové ověřování pomocí TOTP. V případě, že někdy ztratíte přístup k ověřovacímu zařízení TOTP, můžete k přihlášení použít níže uvedený obnovovací kód namísto tokenu TOTP."
+"Nyní je povoleno dvoufaktorové ověřování pomocí TOTP. V případě, že někdy "
+"ztratíte přístup k ověřovacímu zařízení TOTP, můžete k přihlášení použít "
+"níže uvedený obnovovací kód namísto tokenu TOTP."
 
 #: forms/users.forms.php
 msgid "Go to TOTP device list"
@@ -3630,9 +3668,11 @@ msgstr "Potvrďte smazání zařízení TOTP"
 
 #: forms/users.forms.php
 msgid ""
-"Two-factor authentication will be turned off when the last authentication device is either disabled or removed."
+"Two-factor authentication will be turned off when the last authentication "
+"device is either disabled or removed."
 msgstr ""
-"Dvoufaktorové ověřování bude vypnuto, když je deaktivováno nebo odebráno poslední ověřovací zařízení."
+"Dvoufaktorové ověřování bude vypnuto, když je deaktivováno nebo odebráno "
+"poslední ověřovací zařízení."
 
 #: forms/users.forms.php pages/page_adminm.php
 msgid "Passkeys"
@@ -3656,7 +3696,8 @@ msgstr "Zaregistrujte nový přístupový klíč"
 
 #: forms/users.forms.php
 msgid "Passkeys cannot be registered by administrators logged in as users."
-msgstr "Přístupové klíče nemohou registrovat správci přihlášení jako uživatelé."
+msgstr ""
+"Přístupové klíče nemohou registrovat správci přihlášení jako uživatelé."
 
 #: forms/users.forms.php
 msgid "Edit passkey"
@@ -3740,7 +3781,7 @@ msgstr "Vytvořte nový přístupový token metrik"
 
 #: forms/vps.forms.php
 msgid "Create a VPS: Select user (0/4)"
-msgstr "Vytvořte VPS: Vyberte uživatele (0/4)"
+msgstr "Vytvořit VPS: Vybrat uživatele (0/4)"
 
 #: forms/vps.forms.php lib/xtemplate.lib.php
 msgid "Next"
@@ -3748,7 +3789,7 @@ msgstr "Další"
 
 #: forms/vps.forms.php
 msgid "Create a VPS: Select a location (1/4)"
-msgstr "Vytvořte VPS: Vyberte umístění (1/4)"
+msgstr "Vytvořit VPS: Vybrat lokaci (1/4)"
 
 #: forms/vps.forms.php
 msgid "Back to user selection"
@@ -3771,32 +3812,32 @@ msgid "Available resources"
 msgstr "Dostupné zdroje"
 
 #: forms/vps.forms.php
-msgid "Contact support if you need more"
-msgstr "Pokud potřebujete více, kontaktujte podporu"
+msgid "Contact support"
+msgstr "Kontaktujte podporu"
 
 #: forms/vps.forms.php
-msgid "resources."
-msgstr "zdroje."
+msgid "if you need more resources."
+msgstr "pokud potřebujete více zdrojů."
 
 #: forms/vps.forms.php
 msgid "Create a VPS: Select distribution (2/4)"
-msgstr "Vytvořte VPS: Vyberte distribuci (2/4)"
+msgstr "Vytvořit VPS: Vybrat distribuci (2/4)"
 
 #: forms/vps.forms.php
 msgid "Back to location selection"
-msgstr "Zpět na výběr místa"
+msgstr "Zpět k výběru lokace"
 
 #: forms/vps.forms.php
 msgid "Invalid location"
-msgstr "Neplatné umístění"
+msgstr "Neplatná lokace"
 
 #: forms/vps.forms.php
 msgid "Please select the desired location for your new VPS."
-msgstr "Vyberte prosím požadované umístění pro váš nový VPS."
+msgstr "Vyberte prosím požadovanou lokaci pro nové VPS."
 
 #: forms/vps.forms.php
 msgid "Create a VPS: Specify parameters (3/4)"
-msgstr "Vytvořte VPS: Zadejte parametry (3/4)"
+msgstr "Vytvořit VPS: Zadat parametry (3/4)"
 
 #: forms/vps.forms.php
 msgid "Back to distribution selection"
@@ -3820,7 +3861,7 @@ msgstr "K dispozici"
 
 #: forms/vps.forms.php
 msgid "Create a VPS: Final touches (4/4)"
-msgstr "Vytvořte VPS: Poslední úpravy (4/4)"
+msgstr "Vytvořit VPS: Poslední úpravy (4/4)"
 
 #: forms/vps.forms.php
 msgid "Back to parameters"
@@ -3844,15 +3885,15 @@ msgstr "Disk"
 
 #: forms/vps.forms.php lib/functions.lib.php
 msgid "Public IPv4"
-msgstr "Veřejné IPv4"
+msgstr "Veřejná IPv4"
 
 #: forms/vps.forms.php lib/functions.lib.php
 msgid "Public IPv6"
-msgstr "Veřejné IPv6"
+msgstr "Veřejná IPv6"
 
 #: forms/vps.forms.php lib/functions.lib.php
 msgid "Private IPv4"
-msgstr "Soukromý IPv4"
+msgstr "Privátní IPv4"
 
 #: forms/vps.forms.php
 msgid "Finalize"
@@ -3868,7 +3909,7 @@ msgstr "Žádné/automatické"
 
 #: forms/vps.forms.php
 msgid "Boot on create"
-msgstr "Spusťte při vytvoření"
+msgstr "Spustit při vytvoření"
 
 #: forms/vps.forms.php
 msgid "Extra information about VPS"
@@ -3876,9 +3917,11 @@ msgstr "Další informace o VPS"
 
 #: forms/vps.forms.php
 msgid ""
-"Optional script/cloud-init configuration which is run when the VPS is first started."
+"Optional script/cloud-init configuration which is run when the VPS is first "
+"started."
 msgstr ""
-"Volitelná konfigurace skriptu/cloud-init, která se spustí při prvním spuštění VPS."
+"Volitelná konfigurace skriptu/cloud-init, která se spustí při prvním "
+"spuštění VPS."
 
 #: forms/vps.forms.php
 msgid "No configuration"
@@ -3894,11 +3937,11 @@ msgstr "Správa uživatelských dat"
 
 #: forms/vps.forms.php
 msgid "Custom"
-msgstr "Zvyk"
+msgstr "Vlastní"
 
 #: forms/vps.forms.php
 msgid "VPS list"
-msgstr "VPS seznam"
+msgstr "Seznam VPS"
 
 #: forms/vps.forms.php
 msgid "[Admin mode]"
@@ -3938,11 +3981,11 @@ msgstr "VPS deaktivoval síť"
 
 #: forms/vps.forms.php
 msgid "The VPS is in rescue mode"
-msgstr "VPS je v záchranném režimu"
+msgstr "VPS je v nouzovém režimu"
 
 #: forms/vps.forms.php pages/page_adminvps.php
 msgid "Disk at"
-msgstr "Disk at"
+msgstr "Disk zaplněn na"
 
 #: forms/vps.forms.php pages/page_adminvps.php
 msgid "Disk temporarily expanded"
@@ -3950,7 +3993,7 @@ msgstr "Disk je dočasně rozšířen"
 
 #: forms/vps.forms.php pages/page_console.php
 msgid "Restart"
-msgstr "Restartujte"
+msgstr "Restartovat"
 
 #: forms/vps.forms.php pages/page_adminvps.php
 msgid "Unable to restart"
@@ -3966,7 +4009,7 @@ msgstr "Migrovat"
 
 #: forms/vps.forms.php
 msgid "Stop the VPS to be able to delete it"
-msgstr "Zastavte VPS, abyste jej mohli odstranit"
+msgstr "Pro smazání VPS nejdřív použijte Stop"
 
 #: forms/vps.forms.php
 msgid "Environment configuration does not allow VPS deletion"
@@ -4006,7 +4049,7 @@ msgstr "Klonovat VPS"
 
 #: forms/vps.forms.php
 msgid "Swap VPS"
-msgstr "Vyměňte VPS"
+msgstr "Prohodit VPS"
 
 #: forms/vps.forms.php
 msgid "Replace VPS"
@@ -4014,11 +4057,11 @@ msgstr "Nahradit VPS"
 
 #: forms/vps.forms.php
 msgid "History"
-msgstr "Dějiny"
+msgstr "Historie"
 
 #: forms/vps.forms.php
 msgid "Configure OOM reports"
-msgstr "Konfigurace zpráv OOM"
+msgstr "Konfigurace OOM reportů"
 
 #: forms/vps.forms.php
 msgid "Report incident"
@@ -4031,7 +4074,7 @@ msgstr "Výpadky"
 #: forms/vps.forms.php lib/xtemplate.lib.php pages/page_adminm.php
 #: public/index.php
 msgid "Transaction log"
-msgstr "Transakční protokol"
+msgstr "Transakce"
 
 #: forms/vps.forms.php
 msgid "VPS owner"
@@ -4055,7 +4098,7 @@ msgstr "VPS bude restartován."
 
 #: forms/vps.forms.php
 msgid "Migrate a VPS: Select node (1/3)"
-msgstr "Migrujte VPS: Vyberte uzel (1/3)"
+msgstr "Migrovat VPS: vybrat node (1/3)"
 
 #: forms/vps.forms.php
 msgid "Source VPS"
@@ -4075,15 +4118,15 @@ msgstr "Umístění:"
 
 #: forms/vps.forms.php
 msgid "Node:"
-msgstr "Uzel:"
+msgstr "Node:"
 
 #: forms/vps.forms.php
 msgid "Choose target node"
-msgstr "Vyberte cílový uzel"
+msgstr "Vybrat cílový node"
 
 #: forms/vps.forms.php
 msgid "Back to node selection"
-msgstr "Zpět k výběru uzlu"
+msgstr "Zpět k výběru nodu"
 
 #: forms/vps.forms.php
 msgid "Migrate a VPS: Preferences (2/3)"
@@ -4095,7 +4138,7 @@ msgstr "Migrace"
 
 #: forms/vps.forms.php
 msgid "Target node"
-msgstr "Cílový uzel"
+msgstr "Cílový node"
 
 #: forms/vps.forms.php
 msgid "Now or maintenance window"
@@ -4155,11 +4198,11 @@ msgstr "Odesílejte e-maily"
 
 #: forms/vps.forms.php
 msgid "Changing environment"
-msgstr "Měnící se prostředí"
+msgstr "Změna prostředí"
 
 #: forms/vps.forms.php
 msgid "Changing location"
-msgstr "Změna umístění"
+msgstr "Změna lokace"
 
 #: forms/vps.forms.php
 msgid "Clone a VPS: Select user (0/2)"
@@ -4171,7 +4214,7 @@ msgstr "Vyberte cílového uživatele"
 
 #: forms/vps.forms.php
 msgid "Clone a VPS: Select a location (1/2)"
-msgstr "Klonovat VPS: Vyberte umístění (1/2)"
+msgstr "Klonovat VPS: vyberte lokaci (1/2)"
 
 #: forms/vps.forms.php
 msgid "Target VPS"
@@ -4179,7 +4222,7 @@ msgstr "Cíl VPS"
 
 #: forms/vps.forms.php
 msgid "Choose target location"
-msgstr "Vyberte cílové umístění"
+msgstr "Vyberte cílovou lokaci"
 
 #: forms/vps.forms.php
 msgid "Clone a VPS: Final touches (2/2)"
@@ -4187,7 +4230,7 @@ msgstr "Klonovat VPS: Poslední úpravy (2/2)"
 
 #: forms/vps.forms.php
 msgid "Back to location"
-msgstr "Zpět na místo"
+msgstr "Zpět k lokaci"
 
 #: forms/vps.forms.php
 msgid "Preview"
@@ -4247,7 +4290,7 @@ msgstr "Max RX"
 
 #: forms/vps.forms.php
 msgid "Transfers in"
-msgstr "Převody v"
+msgstr "Přenosy za"
 
 #: forms/vps.forms.php
 msgid "Bytes"
@@ -4267,7 +4310,15 @@ msgstr "Odesláno"
 
 #: forms/vps.forms.php pages/page_networking.php
 msgid "Total"
-msgstr "Celkový"
+msgstr "Celkem"
+
+#: forms/vps.forms.php
+msgid "See traffic accounting log"
+msgstr "Zobrazit log přenosů"
+
+#: forms/vps.forms.php
+msgid "live monitor"
+msgstr "Live monitor"
 
 #: forms/vps.forms.php
 msgid "or"
@@ -4275,7 +4326,7 @@ msgstr "nebo"
 
 #: forms/vps.forms.php
 msgid "Routed addresses"
-msgstr "Směrované adresy"
+msgstr "Routované adresy"
 
 #: forms/vps.forms.php
 msgid " via "
@@ -4283,7 +4334,7 @@ msgstr "přes"
 
 #: forms/vps.forms.php
 msgid "Add route"
-msgstr "Přidat trasu"
+msgstr "Přidat routu"
 
 #: forms/vps.forms.php
 msgid "Invalid IP route type"
@@ -4299,15 +4350,15 @@ msgstr "Adresy rozhraní"
 
 #: forms/vps.forms.php
 msgid "Add public IPv4 address"
-msgstr "Přidejte veřejnou adresu IPv4"
+msgstr "Přidat veřejnou IPv4 adresu"
 
 #: forms/vps.forms.php
 msgid "Add private IPv4 address"
-msgstr "Přidejte soukromou adresu IPv4"
+msgstr "Přidat privátní IPv4 adresu"
 
 #: forms/vps.forms.php
 msgid "Add public IPv6 address"
-msgstr "Přidejte veřejnou adresu IPv6"
+msgstr "Přidat veřejnou IPv6 adresu"
 
 #: forms/vps.forms.php
 msgid "Add only one IP address at a time"
@@ -4315,7 +4366,7 @@ msgstr "Přidávejte vždy pouze jednu IP adresu"
 
 #: forms/vps.forms.php
 msgid "The VPS has to be stopped for replace to work."
-msgstr "Aby výměna fungovala, musí být VPS zastaveno."
+msgstr "Aby prohození fungovalo, musí být VPS vypnuto."
 
 #: forms/vps.forms.php
 msgid "Replace"
@@ -4378,8 +4429,8 @@ msgid "Some input parameters are not valid."
 msgstr "Některé vstupní parametry nejsou platné."
 
 #: lib/functions.lib.php
-msgid "Error message: "
-msgstr "Chybová zpráva:"
+msgid "Error message"
+msgstr "Chybová zpráva"
 
 #: lib/functions.lib.php
 msgid "uncompressed, ratio "
@@ -4387,7 +4438,7 @@ msgstr "nekomprimovaný, poměr"
 
 #: lib/functions.lib.php
 msgid "uncompressed"
-msgstr "nekomprimované"
+msgstr "bez komprese"
 
 #: lib/gettext_lang.lib.php lib/lang.lib.php
 msgid "ERROR: Language not found"
@@ -4403,17 +4454,19 @@ msgstr "Vybraný jazyk není dostupný v API."
 
 #: lib/login.lib.php
 msgid "Session expired"
-msgstr "Platnost relace vypršela"
+msgstr "Sezení vypršelo"
 
 #: lib/login.lib.php
 msgid ""
-"You have been logged out because your session expired. Please sign in again to continue."
+"You have been logged out because your session expired. Please sign in again "
+"to continue."
 msgstr ""
-"Byli jste odhlášeni, protože vaše relace vypršela. Chcete-li pokračovat, znovu se přihlaste."
+"Byli jste odhlášeni, protože vaše sezení vypršelo. Chcete-li pokračovat, "
+"znovu se přihlaste."
 
 #: lib/login.lib.php
 msgid "Goodbye"
-msgstr "Sbohem"
+msgstr "Na shledanou"
 
 #: lib/login.lib.php
 msgid "Logout successful"
@@ -4465,11 +4518,11 @@ msgstr "Výchozí nastavení serveru je"
 
 #: lib/tips.lib.php
 msgid "Use browser time zone"
-msgstr "Použijte časové pásmo prohlížeče"
+msgstr "Použít časové pásmo prohlížeče"
 
 #: lib/tips.lib.php
 msgid "Keep server default"
-msgstr "Ponechat výchozí server"
+msgstr "Ponechat výchozí časové pásmo serveru"
 
 #: lib/tips.lib.php lib/xtemplate.lib.php
 msgid "Edit profile"
@@ -4497,7 +4550,7 @@ msgstr "Vyhledávání"
 
 #: lib/xtemplate.lib.php
 msgid "Jump"
-msgstr "Skok"
+msgstr "Hledat"
 
 #: lib/xtemplate.lib.php
 msgid "Maintenance mode status: ON"
@@ -4607,7 +4660,7 @@ msgstr "Používá se k lokalizaci odpovědí vpsAdmin, API a e-mailů."
 
 #: pages/page_adminm.php
 msgid "Used to format dates and times in vpsAdmin and e-mails."
-msgstr "Používá se k formátování dat a časů v vpsAdmin a e-mailech."
+msgstr "Používá se k formátování dat a časů ve vpsAdminu a e-mailech."
 
 #: pages/page_adminm.php
 msgid "Require password reset"
@@ -4647,13 +4700,15 @@ msgstr "Opakujte nové heslo"
 
 #: pages/page_adminm.php
 msgid "Logout other sessions"
-msgstr "Odhlaste ostatní relace"
+msgstr "Odhlásit ostatní sezení"
 
 #: pages/page_adminm.php
 msgid ""
-"All sessions except this one will be logged out, all access tokens will be revoked."
+"All sessions except this one will be logged out, all access tokens will be "
+"revoked."
 msgstr ""
-"Všechny relace kromě této budou odhlášeny, všechny přístupové tokeny budou odvolány."
+"Všechna sezení kromě tohoto budou odhlášena, všechny přístupové tokeny budou "
+"odvolány."
 
 #: pages/page_adminm.php
 msgid "Authentication settings"
@@ -4665,8 +4720,10 @@ msgstr "Povolit HTTP basic"
 
 #: pages/page_adminm.php
 msgid ""
-"Enable authentication using HTTP basic. Not used by vpsAdmin and not recommended."
-msgstr "Povolte ověřování pomocí HTTP basic. Nepoužívá vpsAdmin a nedoporučuje se."
+"Enable authentication using HTTP basic. Not used by vpsAdmin and not "
+"recommended."
+msgstr ""
+"Povolte ověřování pomocí HTTP basic. Nepoužívá vpsAdmin a nedoporučuje se."
 
 #: pages/page_adminm.php
 msgid "Enable token authentication"
@@ -4681,7 +4738,8 @@ msgid "Enable OAuth2 authentication"
 msgstr "Povolit ověřování OAuth2"
 
 #: pages/page_adminm.php
-msgid "OAuth2 authentication is used by this web interface and cannot be disabled."
+msgid ""
+"OAuth2 authentication is used by this web interface and cannot be disabled."
 msgstr "Toto webové rozhraní používá autentizaci OAuth2 a nelze ji zakázat."
 
 #: pages/page_adminm.php
@@ -4690,11 +4748,12 @@ msgstr "Povolit upozornění na nové přihlášení"
 
 #: pages/page_adminm.php
 msgid "Send emails about logins from new devices. Strongly recommended."
-msgstr "Odesílejte e-maily o přihlášeních z nových zařízení. Důrazně doporučujeme."
+msgstr ""
+"Odesílejte e-maily o přihlášeních z nových zařízení. Důrazně doporučujeme."
 
 #: pages/page_adminm.php
 msgid "Session control"
-msgstr "Řízení relace"
+msgstr "Řízení sezení"
 
 #: pages/page_adminm.php
 msgid "Enable single sign-on"
@@ -4702,19 +4761,23 @@ msgstr "Povolit jednotné přihlášení"
 
 #: pages/page_adminm.php
 msgid ""
-"Enter credentials once and sign-in to all services, such as Discourse and Knowledge base."
+"Enter credentials once and sign-in to all services, such as Discourse and "
+"Knowledge base."
 msgstr ""
-"Zadejte přihlašovací údaje jednou a přihlaste se ke všem službám, jako je Diskusní a znalostní báze."
+"Zadejte přihlašovací údaje jednou a přihlaste se ke všem službám, jako je "
+"Diskusní a znalostní báze."
 
 #: pages/page_adminm.php
 msgid "Preferred session length"
-msgstr "Preferovaná délka relace"
+msgstr "Preferovaná délka sezení"
 
 #: pages/page_adminm.php
 msgid ""
-"How long will the session last without any activity. Set to 0 to disable session timeout."
+"How long will the session last without any activity. Set to 0 to disable "
+"session timeout."
 msgstr ""
-"Jak dlouho bude relace trvat bez jakékoli aktivity. Nastavením na 0 deaktivujete časový limit relace."
+"Jak dlouho sezení vydrží bez aktivity. Nastavením na 0 vypnete timeout "
+"sezení."
 
 #: pages/page_adminm.php
 msgid "Logout all"
@@ -4722,9 +4785,11 @@ msgstr "Odhlásit všechny"
 
 #: pages/page_adminm.php
 msgid ""
-"Always logout all OAuth2 authorizations of the same client, e.g. from all active vpsAdmin web UI sessions, even in different browsers."
+"Always logout all OAuth2 authorizations of the same client, e.g. from all "
+"active vpsAdmin web UI sessions, even in different browsers."
 msgstr ""
-"Vždy odhlašte všechna oprávnění OAuth2 stejného klienta, např. ze všech aktivních relací webového uživatelského rozhraní vpsAdmin, a to i v různých prohlížečích."
+"Vždy odhlašte všechna sezení OAuth2 stejného klienta, např. ze všech "
+"aktivních sezení webového rozhraní vpsAdmin, a to i v různých prohlížečích."
 
 #: pages/page_adminm.php
 msgid "Two-factor authentication"
@@ -4744,7 +4809,7 @@ msgstr "Zakázáno"
 
 #: pages/page_adminm.php
 msgid "Manage passkeys"
-msgstr "Spravujte přístupové klíče"
+msgstr "Spravovat přístupové klíče"
 
 #: pages/page_adminm.php
 msgid "Personal information"
@@ -4756,9 +4821,11 @@ msgstr "Důvod změny"
 
 #: pages/page_adminm.php
 msgid ""
-"Request for change will be sent to administrators for approval.Changes will not take effect immediately. You will be informed about the result."
+"Request for change will be sent to administrators for approval.Changes will "
+"not take effect immediately. You will be informed about the result."
 msgstr ""
-"Žádost o změnu bude zaslána administrátorům ke schválení. Změny se neprojeví okamžitě. O výsledku budete informováni."
+"Žádost o změnu bude zaslána administrátorům ke schválení. Změny se neprojeví "
+"okamžitě. O výsledku budete informováni."
 
 #: pages/page_adminm.php
 msgid "Request change"
@@ -4770,9 +4837,11 @@ msgstr "E-mailové role"
 
 #: pages/page_adminm.php
 msgid ""
-"E-mails configured here override the primary e-mail. It is a comma separated list of e-mails, may contain line breaks."
+"E-mails configured here override the primary e-mail. It is a comma separated "
+"list of e-mails, may contain line breaks."
 msgstr ""
-"Zde nakonfigurované e-maily mají přednost před primárním e-mailem. Jedná se o čárkami oddělený seznam e-mailů, může obsahovat zalomení řádků."
+"Zde nakonfigurované e-maily mají přednost před primárním e-mailem. Jedná se "
+"o čárkami oddělený seznam e-mailů, může obsahovat zalomení řádků."
 
 #: pages/page_adminm.php
 msgid "Advanced configuration"
@@ -4780,7 +4849,7 @@ msgstr "Pokročilá konfigurace"
 
 #: pages/page_adminm.php pages/page_adminvps.php
 msgid "State log"
-msgstr "Státní deník"
+msgstr "Log stavů"
 
 #: pages/page_adminm.php
 msgid "Advanced e-mail configuration"
@@ -4800,7 +4869,7 @@ msgstr "Známá přihlašovací zařízení"
 
 #: pages/page_adminm.php
 msgid "Sessions"
-msgstr "Relace"
+msgstr "Sezení"
 
 #: pages/page_adminm.php
 msgid "Resource packages"
@@ -5064,11 +5133,11 @@ msgstr "Nastavení ověřování byla úspěšně aktualizována."
 
 #: pages/page_adminm.php
 msgid "Session control updated"
-msgstr "Řízení relace aktualizováno"
+msgstr "Řízení sezení aktualizováno"
 
 #: pages/page_adminm.php
 msgid "Session control was successfully updated."
-msgstr "Řízení relace bylo úspěšně aktualizováno."
+msgstr "Řízení sezení bylo úspěšně aktualizováno."
 
 #: pages/page_adminm.php
 msgid "Multi-factor authentication enabled"
@@ -5257,19 +5326,19 @@ msgstr "Veřejný klíč se nepodařilo smazat"
 
 #: pages/page_adminm.php
 msgid "User session updated"
-msgstr "Uživatelská relace aktualizována"
+msgstr "Sezení uživatele aktualizováno"
 
 #: pages/page_adminm.php
 msgid "Failed to edit user session"
-msgstr "Úprava uživatelské relace se nezdařila"
+msgstr "Úprava sezení uživatele se nezdařila"
 
 #: pages/page_adminm.php
 msgid "User session closed"
-msgstr "Uživatelská relace uzavřena"
+msgstr "Sezení uživatele zavřeno"
 
 #: pages/page_adminm.php
 msgid "Failed to close session"
-msgstr "Uzavření relace se nezdařilo"
+msgstr "Zavření sezení se nezdařilo"
 
 #: pages/page_adminm.php
 msgid "Failed create metrics access token"
@@ -5355,11 +5424,11 @@ msgstr "Musíte se přihlásit, abyste měli přístup k funkcím vpsAdmin"
 
 #: pages/page_adminvps.php
 msgid "Force stop VPS"
-msgstr "Vynutit zastavení VPS"
+msgstr "Vynutit stop VPS"
 
 #: pages/page_adminvps.php
 msgid "Stop VPS"
-msgstr "Zastavit VPS"
+msgstr "Stop VPS"
 
 #: pages/page_adminvps.php pages/page_backup.php pages/page_console.php
 msgid "planned"
@@ -5367,7 +5436,7 @@ msgstr "plánované"
 
 #: pages/page_adminvps.php
 msgid "Unable to stop"
-msgstr "Nelze zastavit"
+msgstr "Stop se nezdařil"
 
 #: pages/page_adminvps.php
 msgid "Start of"
@@ -5431,7 +5500,7 @@ msgstr "Nasazení veřejného klíče se nezdařilo"
 
 #: pages/page_adminvps.php
 msgid "Hostname change planned"
-msgstr "Změna názvu hostitele plánována"
+msgstr "Změna hostname naplánována"
 
 #: pages/page_adminvps.php
 msgid "VPS user namespace mapping updated"
@@ -5511,7 +5580,7 @@ msgstr "DNS plánována změna"
 
 #: pages/page_adminvps.php
 msgid "DNS resolver change failed"
-msgstr "Změna překladače DNS se nezdařila"
+msgstr "Změna DNS resolveru se nezdařila"
 
 #: pages/page_adminvps.php
 msgid "Migration planned"
@@ -5546,9 +5615,11 @@ msgid "Confirm reinstallation of VPS"
 msgstr "Potvrďte přeinstalaci VPS"
 
 #: pages/page_adminvps.php
-msgid "All data from the VPS root filesystem will be deleted, subdatasets are kept."
+msgid ""
+"All data from the VPS root filesystem will be deleted, subdatasets are kept."
 msgstr ""
-"Všechna data z kořenového souborového systému VPS budou smazána, dílčí datové sady zůstanou zachovány."
+"Všechna data z kořenového souborového systému VPS budou smazána, dílčí "
+"datasety zůstanou zachovány."
 
 #: pages/page_adminvps.php
 msgid "Current OS template"
@@ -5564,7 +5635,7 @@ msgstr "Počáteční konfigurace"
 
 #: pages/page_adminvps.php
 msgid "Reinstall"
-msgstr "Přeinstalujte"
+msgstr "Přeinstalovat"
 
 #: pages/page_adminvps.php
 msgid "Distribution information updated"
@@ -5608,15 +5679,15 @@ msgstr "Změna automatického spuštění se nezdařila"
 
 #: pages/page_adminvps.php
 msgid "Start menu set"
-msgstr "Nabídka Start"
+msgstr "Start menu nastaveno"
 
 #: pages/page_adminvps.php
 msgid "The start menu will be reconfigured momentarily."
-msgstr "Nabídka Start bude na chvíli překonfigurována."
+msgstr "Start menu bude za chvíli překonfigurováno."
 
 #: pages/page_adminvps.php
 msgid "Start menu change failed"
-msgstr "Změna nabídky Start se nezdařila"
+msgstr "Změna Start menu se nezdařila"
 
 #: pages/page_adminvps.php
 msgid "Cgroup version set"
@@ -5632,7 +5703,7 @@ msgstr "Změna verze Cgroup se nezdařila"
 
 #: pages/page_adminvps.php
 msgid "VPS modifications preference set"
-msgstr "Sada předvoleb úprav VPS"
+msgstr "Předvolba úprav VPS nastavena"
 
 #: pages/page_adminvps.php
 msgid "VPS modifications by the admin team have been enabled."
@@ -5648,7 +5719,7 @@ msgstr "Změna předvolby úprav VPS se nezdařila"
 
 #: pages/page_adminvps.php
 msgid "Maintenance windows set"
-msgstr "Sada oken údržby"
+msgstr "Okna údržby nastavena"
 
 #: pages/page_adminvps.php
 msgid "Maintenance window configuration failed"
@@ -5692,11 +5763,11 @@ msgstr "Výměna se nezdařila"
 
 #: pages/page_adminvps.php
 msgid "Storage pool"
-msgstr "Skladovací bazén"
+msgstr "Storage pool"
 
 #: pages/page_adminvps.php
 msgid "poweroff"
-msgstr "vypnutí"
+msgstr "vypnout"
 
 #: pages/page_adminvps.php
 msgid "reset"
@@ -5708,7 +5779,7 @@ msgstr "restartovat"
 
 #: pages/page_adminvps.php
 msgid "stop"
-msgstr "zastávka"
+msgstr "stop"
 
 #: pages/page_adminvps.php
 msgid "start"
@@ -5720,11 +5791,11 @@ msgstr "otevřít vzdálenou konzoli"
 
 #: pages/page_adminvps.php
 msgid "Uptime"
-msgstr "Doba provozuschopnosti"
+msgstr "Uptime"
 
 #: pages/page_adminvps.php
 msgid "Load average"
-msgstr "Průměrná zátěž"
+msgstr "Loadavg"
 
 #: pages/page_adminvps.php
 msgid "Processes"
@@ -5760,9 +5831,11 @@ msgstr "VPS probíhá údržba"
 
 #: pages/page_adminvps.php
 msgid ""
-"All actions for this VPS are forbidden for the time being. This is usually used during outage to prevent data corruption."
+"All actions for this VPS are forbidden for the time being. This is usually "
+"used during outage to prevent data corruption."
 msgstr ""
-"Všechny akce pro tento VPS jsou prozatím zakázány. To se obvykle používá při výpadku, aby se zabránilo poškození dat."
+"Všechny akce pro tento VPS jsou prozatím zakázány. To se obvykle používá při "
+"výpadku, aby se zabránilo poškození dat."
 
 #: pages/page_adminvps.php public/index.php
 msgid "Please be patient."
@@ -5774,9 +5847,12 @@ msgstr "VPS je naplánováno k odstranění."
 
 #: pages/page_adminvps.php
 msgid ""
-"This VPS is inaccessible and will be deleted when expiration date passes or some other event occurs. Contact support if you want to revive it."
+"This VPS is inaccessible and will be deleted when expiration date passes or "
+"some other event occurs. Contact support if you want to revive it."
 msgstr ""
-"Tento VPS je nepřístupný a bude smazán, jakmile uplyne datum vypršení platnosti nebo dojde k nějaké jiné události. Pokud jej chcete oživit, kontaktujte podporu."
+"Tento VPS je nepřístupný a bude smazán, jakmile uplyne datum vypršení "
+"platnosti nebo dojde k nějaké jiné události. Pokud jej chcete oživit, "
+"kontaktujte podporu."
 
 #: pages/page_adminvps.php
 msgid "This VPS is deleted and cannot be revived."
@@ -5788,7 +5864,7 @@ msgstr "VPS je smazáno."
 
 #: pages/page_adminvps.php
 msgid "VPS in rescue mode"
-msgstr "VPS v záchranném režimu"
+msgstr "VPS v nouzovém režimu"
 
 #: pages/page_adminvps.php
 msgid ""
@@ -5804,11 +5880,11 @@ msgid ""
 msgstr ""
 "\n"
 "<p>\n"
-"VPS byl zaveden z čisté šablony. Všechny změny na\n"
-"záchranný systém bude ztracen po restartování VPS.\n"
+"VPS byl spuštěn z čisté šablony. Všechny změny v\n"
+"nouzovém systému budou ztraceny po restartování VPS.\n"
 "</p>\n"
 "<p>\n"
-"Restartujte VPS, abyste opustili záchranný režim.\n"
+"Restartujte VPS pro opuštění nouzového režimu.\n"
 "</p>"
 
 #: pages/page_adminvps.php
@@ -5819,7 +5895,8 @@ msgstr "Síť je zakázána"
 msgid ""
 "\n"
 "                    <p>\n"
-"                    The VPS has disabled network, most likely due to abuse. Please contact\n"
+"                    The VPS has disabled network, most likely due to abuse. "
+"Please contact\n"
 "                    support to reenable it.\n"
 "                    </p>\n"
 "                "
@@ -5836,9 +5913,11 @@ msgstr "SSH připojení"
 
 #: pages/page_adminvps.php
 msgid ""
-"The following credentials can be used on a newly created VPS with the default configuration."
+"The following credentials can be used on a newly created VPS with the "
+"default configuration."
 msgstr ""
-"Následující přihlašovací údaje lze použít na nově vytvořeném VPS s výchozí konfigurací."
+"Následující přihlašovací údaje lze použít na nově vytvořeném VPS s výchozí "
+"konfigurací."
 
 #: pages/page_adminvps.php
 msgid "Password or SSH key"
@@ -5846,7 +5925,8 @@ msgstr "Heslo nebo klíč SSH"
 
 #: pages/page_adminvps.php
 msgid "Set root password or deploy public key in the forms below."
-msgstr "Nastavte heslo uživatele root nebo nasaďte veřejný klíč ve formulářích níže."
+msgstr ""
+"Nastavte heslo uživatele root nebo nasaďte veřejný klíč ve formulářích níže."
 
 #: pages/page_adminvps.php
 msgid "One of:"
@@ -5870,13 +5950,15 @@ msgstr "Naposledy přečteno v"
 
 #: pages/page_adminvps.php
 msgid ""
-"The following SSH host keys have been found inside the VPS. You can verify that the fingerprints match on your first login."
+"The following SSH host keys have been found inside the VPS. You can verify "
+"that the fingerprints match on your first login."
 msgstr ""
-"Následující hostitelské klíče SSH byly nalezeny uvnitř VPS. Při prvním přihlášení si můžete ověřit, zda se otisky shodují."
+"Následující hostitelské klíče SSH byly nalezeny uvnitř VPS. Při prvním "
+"přihlášení si můžete ověřit, zda se otisky shodují."
 
 #: pages/page_adminvps.php
 msgid "Set root's password (in the VPS, not in the vpsAdmin)"
-msgstr "Nastavte heslo uživatele root (v VPS, ne v vpsAdmin)"
+msgstr "Nastavte heslo uživatele root (ve VPS, ne ve vpsAdminu)"
 
 #: pages/page_adminvps.php
 msgid "Username"
@@ -5884,7 +5966,7 @@ msgstr "Uživatelské jméno"
 
 #: pages/page_adminvps.php pages/page_console.php
 msgid "will be generated"
-msgstr "bude generován"
+msgstr "bude vygenerováno"
 
 #: pages/page_adminvps.php
 msgid "20 characters long, consists of: a-z, A-Z, 0-9"
@@ -5904,7 +5986,7 @@ msgstr "Jednoduché heslo"
 
 #: pages/page_adminvps.php
 msgid "Deploy public key to /root/.ssh/authorized_keys"
-msgstr "Nasaďte veřejný klíč do /root/.ssh/authorized_keys"
+msgstr "Nahrát veřejný klíč do /root/.ssh/authorized_keys"
 
 #: pages/page_adminvps.php
 msgid "Public keys can be registered in"
@@ -5916,21 +5998,25 @@ msgstr "nastavení profilu"
 
 #: pages/page_adminvps.php
 msgid "Disable network"
-msgstr "Zakázat síť"
+msgstr "Vypnout síť"
 
 #: pages/page_adminvps.php
-msgid "This form disables all network interfaces. User is sent an email on change."
+msgid ""
+"This form disables all network interfaces. User is sent an email on change."
 msgstr ""
-"Tento formulář zakáže všechna síťová rozhraní. Uživateli je zaslán e-mail o změně."
+"Tento formulář zakáže všechna síťová rozhraní. Uživateli je zaslán e-mail o "
+"změně."
 
 #: pages/page_adminvps.php
 msgid "Enable network"
 msgstr "Povolit síť"
 
 #: pages/page_adminvps.php
-msgid "This form enables all network interfaces. User is sent an email on change."
+msgid ""
+"This form enables all network interfaces. User is sent an email on change."
 msgstr ""
-"Tento formulář povoluje všechna síťová rozhraní. Uživateli je zaslán e-mail o změně."
+"Tento formulář povoluje všechna síťová rozhraní. Uživateli je zaslán e-mail "
+"o změně."
 
 #: pages/page_adminvps.php
 msgid "DNS resolver (/etc/resolv.conf)"
@@ -5938,60 +6024,72 @@ msgstr "DNS resolver (/etc/resolv.conf)"
 
 #: pages/page_adminvps.php
 msgid "Manage DNS resolver by vpsAdmin"
-msgstr "Spravovat DNS resolver pomocí vpsAdmin"
+msgstr "Spravovat DNS resolver pomocí vpsAdminu"
 
 #: pages/page_adminvps.php
 msgid "Manage DNS resolver manually"
-msgstr "Spravujte překladač DNS ručně"
+msgstr "Spravovat DNS resolver ručně"
 
 #: pages/page_adminvps.php
 msgid "See available DNS resolvers and their IP addresses"
-msgstr "Podívejte se na dostupné DNS resolvery a jejich IP adresy"
+msgstr "Zobrazit dostupné DNS resolvery a jejich IP adresy"
 
 #: pages/page_adminvps.php
 msgid "Manage hostname by vpsAdmin"
-msgstr "Spravovat název hostitele pomocí vpsAdmin"
+msgstr "Spravovat hostname pomocí vpsAdminu"
 
 #: pages/page_adminvps.php
 msgid "Manage hostname manually"
-msgstr "Spravujte název hostitele ručně"
+msgstr "Spravovat hostname ručně"
 
 #: pages/page_adminvps.php
 msgid "Boot VPS from template (rescue mode)"
-msgstr "Spusťte VPS ze šablony (režim záchrany)"
+msgstr "Spustit VPS ze šablony (nouzový režim)"
 
 #: pages/page_adminvps.php
 msgid ""
-"Boot the VPS from a clean template, e.g. to fix a broken system. The VPS configuration (IP addresses, resources, etc.) is the same, the VPS only starts from a clean system. The original root filesystem from the VPS can be accessed through the mountpoint configured below."
+"Boot the VPS from a clean template, e.g. to fix a broken system. The VPS "
+"configuration (IP addresses, resources, etc.) is the same, the VPS only "
+"starts from a clean system. The original root filesystem from the VPS can be "
+"accessed through the mountpoint configured below."
 msgstr ""
-"Spusťte VPS z čisté šablony, např. opravit poškozený systém. Konfigurace VPS (IP adresy, zdroje atd.) je stejná, VPS se spouští pouze z čistého systému. Původní kořenový souborový systém z VPS je přístupný přes přípojný bod nakonfigurovaný níže."
+"Spustí VPS z čisté šablony, např. pro opravu poškozeného systému. "
+"Konfigurace VPS (IP adresy, zdroje atd.) zůstane stejná, VPS se pouze spustí "
+"z čistého systému. Původní kořenový filesystém VPS bude dostupný přes "
+"mountpoint nastavený níže."
 
 #: pages/page_adminvps.php
 msgid ""
-"On next VPS start/restart, the VPS will start from it's own dataset again. The clean system created by this action is temporary and any changes to it will be lost."
+"On next VPS start/restart, the VPS will start from it's own dataset again. "
+"The clean system created by this action is temporary and any changes to it "
+"will be lost."
 msgstr ""
-"Při dalším startu/restartu VPS začne VPS znovu od své vlastní datové sady. Čistý systém vytvořený touto akcí je dočasný a všechny změny v něm budou ztraceny."
+"Při dalším startu/restartu se VPS znovu spustí ze svého vlastního datasetu. "
+"Čistý systém vytvořený touto akcí je dočasný a všechny změny v něm budou "
+"ztraceny."
 
 #: pages/page_adminvps.php
 msgid "Mount root dataset"
-msgstr "Připojit kořenovou datovou sadu"
+msgstr "Připojit kořenový dataset"
 
 #: pages/page_adminvps.php
 msgid "Do not mount the root dataset"
-msgstr "Nepřipojujte kořenovou datovou sadu"
+msgstr "Nepřipojovat kořenový dataset"
 
 #: pages/page_adminvps.php pages/page_console.php
 msgid "Boot"
-msgstr "Bota"
+msgstr "Spustit"
 
 #: pages/page_adminvps.php
 msgid "Reinstall system"
-msgstr "Přeinstalujte systém"
+msgstr "Přeinstalovat systém"
 
 #: pages/page_adminvps.php
-msgid "Install base system again. All data in the root filesystem will be removed."
+msgid ""
+"Install base system again. All data in the root filesystem will be removed."
 msgstr ""
-"Znovu nainstalujte základní systém. Všechna data v kořenovém systému souborů budou odstraněna."
+"Znovu nainstalujte základní systém. Všechna data v kořenovém systému souborů "
+"budou odstraněna."
 
 #: pages/page_adminvps.php
 msgid "Distribution information"
@@ -5999,19 +6097,24 @@ msgstr "Informace o distribuci"
 
 #: pages/page_adminvps.php
 msgid ""
-"Use if you have upgraded/downgraded your system. Distribution information can also be updated automatically by reading /etc/os-release, see below."
+"Use if you have upgraded/downgraded your system. Distribution information "
+"can also be updated automatically by reading /etc/os-release, see below."
 msgstr ""
-"Použijte, pokud jste upgradovali/downgradovali svůj systém. Informace o distribuci lze také aktualizovat automaticky přečtením /etc/os-release, viz níže."
+"Použijte, pokud jste upgradovali/downgradovali svůj systém. Informace o "
+"distribuci lze také aktualizovat automaticky přečtením /etc/os-release, viz "
+"níže."
 
 #: pages/page_adminvps.php
 msgid "Read /etc/os-release"
-msgstr "Přečtěte si /etc/os-release"
+msgstr "Číst /etc/os-release"
 
 #: pages/page_adminvps.php
 msgid ""
-"Automatically update distribution version information in vpsAdmin by reading <code>/etc/os-release</code> on VPS start."
+"Automatically update distribution version information in vpsAdmin by reading "
+"<code>/etc/os-release</code> on VPS start."
 msgstr ""
-"Automaticky aktualizujte informace o verzi distribuce v vpsAdmin přečtením <code>/etc/os-release</code> na začátku VPS."
+"Automaticky aktualizovat informace o verzi distribuce ve vpsAdminu přečtením "
+"<code>/etc/os-release</code> při startu VPS."
 
 #: pages/page_adminvps.php
 msgid "Features"
@@ -6027,13 +6130,15 @@ msgstr "Auto-Start"
 
 #: pages/page_adminvps.php
 msgid "Start Menu"
-msgstr "Nabídka Start"
+msgstr "Start menu"
 
 #: pages/page_adminvps.php
 msgid ""
-"Configure the number of seconds the start menu waits for the user before the system is started. Set to zero to disable the start menu."
+"Configure the number of seconds the start menu waits for the user before the "
+"system is started. Set to zero to disable the start menu."
 msgstr ""
-"Nakonfigurujte počet sekund, po které nabídka spuštění na uživatele čeká, než se systém spustí. Nastavením na nulu deaktivujete nabídku Start."
+"Nakonfigurujte počet sekund, po které Start menu čeká na uživatele, než se "
+"systém spustí. Nastavením na nulu Start menu vypnete."
 
 #: pages/page_adminvps.php
 msgid "Timeout"
@@ -6053,7 +6158,7 @@ msgstr "Používá se:"
 
 #: pages/page_adminvps.php
 msgid "Use cgroups supported by the distribution, i.e. "
-msgstr "Použijte cgroups podporované distribucí, tzn."
+msgstr "Použít cgroups podporované distribucí, tzn. "
 
 #: pages/page_adminvps.php
 msgid "for"
@@ -6077,9 +6182,19 @@ msgstr "VPS úpravy provedené týmem administrátorů"
 
 #: pages/page_adminvps.php
 msgid ""
-"New software features or bugs may require or benefit from configuration changes inside the VPS. If allowed, we can make these necessary changes for you. We usually only modify the base system configuration files which we would otherwise deliver in OS templates for new VPS. We do not access or modify your applications or data. We will email you about any changes we will make."
+"New software features or bugs may require or benefit from configuration "
+"changes inside the VPS. If allowed, we can make these necessary changes for "
+"you. We usually only modify the base system configuration files which we "
+"would otherwise deliver in OS templates for new VPS. We do not access or "
+"modify your applications or data. We will email you about any changes we "
+"will make."
 msgstr ""
-"Nové softwarové funkce nebo chyby mohou vyžadovat nebo mít prospěch z konfiguračních změn uvnitř VPS. Pokud je to povoleno, můžeme za vás provést tyto nezbytné změny. Obvykle upravujeme pouze konfigurační soubory základního systému, které bychom jinak dodali v šablonách OS pro nové VPS. K vašim aplikacím nebo datům nepřistupujeme ani je neupravujeme. O veškerých změnách, které provedeme, vás budeme informovat e-mailem."
+"Nové softwarové funkce nebo chyby mohou vyžadovat nebo mít prospěch z "
+"konfiguračních změn uvnitř VPS. Pokud je to povoleno, můžeme za vás provést "
+"tyto nezbytné změny. Obvykle upravujeme pouze konfigurační soubory "
+"základního systému, které bychom jinak dodali v šablonách OS pro nové VPS. K "
+"vašim aplikacím nebo datům nepřistupujeme ani je neupravujeme. O veškerých "
+"změnách, které provedeme, vás budeme informovat e-mailem."
 
 #: pages/page_adminvps.php
 msgid "Allow modifications by vpsFree.cz admin team (recommended)"
@@ -6103,11 +6218,11 @@ msgstr "Každý den stejné okno údržby"
 
 #: pages/page_adminvps.php
 msgid "Configure maintenance windows per day"
-msgstr "Nakonfigurujte okna údržby za den"
+msgstr "Konfigurovat okna údržby pro jednotlivé dny"
 
 #: pages/page_adminvps.php
 msgid "Map mode"
-msgstr "Režim mapy"
+msgstr "Režim mapování"
 
 #: pages/page_adminvps.php
 msgid "The VPS is restarted when map mode is changed."
@@ -6131,11 +6246,11 @@ msgstr "Spravovat VPS"
 
 #: pages/page_backup.php
 msgid "VPS Backups"
-msgstr "VPS Zálohy"
+msgstr "Zálohy VPS"
 
 #: pages/page_backup.php
 msgid "NAS Backups"
-msgstr "NAS Zálohy"
+msgstr "Zálohy NAS"
 
 #: pages/page_backup.php
 msgid "Download backup"
@@ -6143,7 +6258,7 @@ msgstr "Stáhnout zálohu"
 
 #: pages/page_backup.php
 msgid "Create a new snapshot of dataset"
-msgstr "Vytvořte nový snímek datové sady"
+msgstr "Vytvořit nový snapshot datasetu"
 
 #: pages/page_backup.php
 msgid "Optional user-defined snapshot identificator"
@@ -6151,7 +6266,7 @@ msgstr "Volitelný uživatelsky definovaný identifikátor snímku"
 
 #: pages/page_backup.php pages/page_export.php
 msgid "Dataset not found"
-msgstr "Datová sada nenalezena"
+msgstr "Dataset nenalezen"
 
 #: pages/page_backup.php
 msgid "Snapshot creation scheduled."
@@ -6171,7 +6286,7 @@ msgstr "Naplánována obnova."
 
 #: pages/page_backup.php
 msgid "Restoration of dataset"
-msgstr "Obnova datové sady"
+msgstr "Obnova datasetu"
 
 #: pages/page_backup.php
 msgid "from"
@@ -6179,7 +6294,7 @@ msgstr "z"
 
 #: pages/page_backup.php
 msgid "Dataset restoration failed"
-msgstr "Obnovení datové sady se nezdařilo"
+msgstr "Obnovení datasetu se nezdařilo"
 
 #: pages/page_backup.php
 msgid "Restore VPS"
@@ -6187,7 +6302,7 @@ msgstr "Obnovit VPS"
 
 #: pages/page_backup.php
 msgid "Restore dataset"
-msgstr "Obnovit datovou sadu"
+msgstr "Obnovit dataset"
 
 #: pages/page_backup.php
 msgid "from VPS"
@@ -6195,17 +6310,19 @@ msgstr "od VPS"
 
 #: pages/page_backup.php
 msgid "Confirm the restoration of dataset"
-msgstr "Potvrďte obnovení datové sady"
+msgstr "Potvrdit obnovení datasetu"
 
 #: pages/page_backup.php
 msgid ""
-"The dataset will be restored and all data that has not been snapshoted will be lost."
+"The dataset will be restored and all data that has not been snapshoted will "
+"be lost."
 msgstr ""
-"Datová sada bude obnovena a všechna data, která nebyla zachycena, budou ztracena."
+"Dataset bude obnoven a všechna data, která nebyla zachycena snapshotem, "
+"budou ztracena."
 
 #: pages/page_backup.php
 msgid "Dataset or snapshot not found"
-msgstr "Datová sada nebo snímek nebyl nalezen"
+msgstr "Dataset nebo snímek nebyl nalezen"
 
 #: pages/page_backup.php
 msgid "Snapshot deleted"
@@ -6233,9 +6350,11 @@ msgstr "Stažení snímku z"
 
 #: pages/page_backup.php
 msgid ""
-"Preparing the archive may take several hours. You will receive email with download link when it is done."
+"Preparing the archive may take several hours. You will receive email with "
+"download link when it is done."
 msgstr ""
-"Příprava archivu může trvat několik hodin. Po dokončení obdržíte e-mail s odkazem na stažení."
+"Příprava archivu může trvat několik hodin. Po dokončení obdržíte e-mail s "
+"odkazem na stažení."
 
 #: pages/page_backup.php
 msgid "Download failed"
@@ -6243,11 +6362,11 @@ msgstr "Stahování se nezdařilo"
 
 #: pages/page_backup.php
 msgid "Confirm the download of snapshot of dataset"
-msgstr "Potvrďte stažení snímku datové sady"
+msgstr "Potvrdit stažení snapshotu datasetu"
 
 #: pages/page_backup.php
 msgid "Please confirm the download of snapshot of dataset"
-msgstr "Potvrďte prosím stažení snímku datové sady"
+msgstr "Potvrďte prosím stažení snapshotu datasetu"
 
 #: pages/page_backup.php
 msgid "tar.gz archive"
@@ -6315,7 +6434,7 @@ msgstr "Štítek DNS"
 
 #: pages/page_cluster.php
 msgid "Is this DNS location independent?"
-msgstr "Je toto umístění DNS nezávislé?"
+msgstr "Je tato DNS konfigurace nezávislá na lokaci?"
 
 #: pages/page_cluster.php
 msgid "DNS server added."
@@ -6323,11 +6442,11 @@ msgstr "DNS server přidán."
 
 #: pages/page_cluster.php
 msgid "Failed to create a DNS resolver"
-msgstr "Nepodařilo se vytvořit překladač DNS"
+msgstr "Nepodařilo se vytvořit DNS resolver"
 
 #: pages/page_cluster.php
 msgid "Edit DNS Server"
-msgstr "Upravit DNS Server"
+msgstr "Upravit DNS server"
 
 #: pages/page_cluster.php
 msgid "DNS server updated."
@@ -6335,7 +6454,7 @@ msgstr "DNS server aktualizován."
 
 #: pages/page_cluster.php
 msgid "Failed to update a DNS resolver"
-msgstr "Aktualizace překladače DNS se nezdařila"
+msgstr "Aktualizace DNS resolveru se nezdařila"
 
 #: pages/page_cluster.php
 msgid "DNS server deleted."
@@ -6343,7 +6462,7 @@ msgstr "DNS server odstraněn."
 
 #: pages/page_cluster.php
 msgid "Failed to delete a DNS resolver"
-msgstr "Nepodařilo se odstranit překladač DNS"
+msgstr "Nepodařilo se smazat DNS resolver"
 
 #: pages/page_cluster.php
 msgid "Domain"
@@ -6351,19 +6470,19 @@ msgstr "Doména"
 
 #: pages/page_cluster.php
 msgid "Create a VPS"
-msgstr "Vytvořte VPS"
+msgstr "Vytvořit VPS"
 
 #: pages/page_cluster.php
 msgid "Destroy a VPS"
-msgstr "Zničte VPS"
+msgstr "Smazat VPS"
 
 #: pages/page_cluster.php
 msgid "IP ownership"
-msgstr "vlastnictví IP"
+msgstr "Vlastnictví IP"
 
 #: pages/page_cluster.php
 msgid "Toggle maintenance on environment."
-msgstr "Přepněte údržbu na prostředí."
+msgstr "Přepnout údržbu prostředí."
 
 #: pages/page_cluster.php
 msgid "Environment updated"
@@ -6375,15 +6494,15 @@ msgstr "Aktualizace prostředí se nezdařila"
 
 #: pages/page_cluster.php
 msgid "New cluster location"
-msgstr "Nové umístění clusteru"
+msgstr "Nová lokace clusteru"
 
 #: pages/page_cluster.php
 msgid "Location name"
-msgstr "Název místa"
+msgstr "Název lokace"
 
 #: pages/page_cluster.php
 msgid "Has this location IPv6 support?"
-msgstr "Podporuje toto umístění IPv6?"
+msgstr "Podporuje tato lokace IPv6?"
 
 #: pages/page_cluster.php
 msgid "Remote console server"
@@ -6395,27 +6514,27 @@ msgstr "URL"
 
 #: pages/page_cluster.php
 msgid "Location created"
-msgstr "Místo bylo vytvořeno"
+msgstr "Lokace vytvořena"
 
 #: pages/page_cluster.php
 msgid "Location creation failed"
-msgstr "Vytvoření polohy se nezdařilo"
+msgstr "Vytvoření lokace se nezdařilo"
 
 #: pages/page_cluster.php
 msgid "Edit location"
-msgstr "Upravit místo"
+msgstr "Upravit lokaci"
 
 #: pages/page_cluster.php
 msgid "Location find failed"
-msgstr "Hledání polohy se nezdařilo"
+msgstr "Vyhledání lokace se nezdařilo"
 
 #: pages/page_cluster.php
 msgid "Location label saved."
-msgstr "Štítek místa byl uložen."
+msgstr "Popisek lokace byl uložen."
 
 #: pages/page_cluster.php
 msgid "Location update failed"
-msgstr "Aktualizace polohy se nezdařila"
+msgstr "Aktualizace lokace se nezdařila"
 
 #: pages/page_cluster.php
 msgid "Package created"
@@ -6423,7 +6542,7 @@ msgstr "Balíček vytvořen"
 
 #: pages/page_cluster.php
 msgid "The cluster resource package was created."
-msgstr "Balíček klastrových prostředků byl vytvořen."
+msgstr "Balíček prostředků clusteru byl vytvořen."
 
 #: pages/page_cluster.php pages/page_security_advisory.php
 msgid "Create failed"
@@ -6435,7 +6554,7 @@ msgstr "Balíček aktualizován"
 
 #: pages/page_cluster.php
 msgid "The cluster resource package was updated."
-msgstr "Balíček klastrových prostředků byl aktualizován."
+msgstr "Balíček prostředků clusteru byl aktualizován."
 
 #: pages/page_cluster.php pages/page_security_advisory.php
 msgid "Delete failed"
@@ -6447,19 +6566,19 @@ msgstr "Zpět k sítím"
 
 #: pages/page_cluster.php
 msgid "Back to locations"
-msgstr "Zpět na místa"
+msgstr "Zpět k lokacím"
 
 #: pages/page_cluster.php
 msgid "Network added to location"
-msgstr "K umístění byla přidána síť"
+msgstr "Síť byla přidána do lokace"
 
 #: pages/page_cluster.php
 msgid "Location added to network"
-msgstr "Umístění bylo přidáno do sítě"
+msgstr "Lokace byla přidána do sítě"
 
 #: pages/page_cluster.php
 msgid "Network removed from location"
-msgstr "Síť byla odstraněna z umístění"
+msgstr "Síť byla odebrána z lokace"
 
 #: pages/page_cluster.php
 msgid "IP addition failed"
@@ -6495,11 +6614,11 @@ msgstr "Potvrďte smazání šablony OS"
 
 #: pages/page_cluster.php
 msgid "Node created"
-msgstr "Uzel vytvořen"
+msgstr "Node vytvořen"
 
 #: pages/page_cluster.php
 msgid "The node was succesfully registered."
-msgstr "Uzel byl úspěšně zaregistrován."
+msgstr "Node byl úspěšně zaregistrován."
 
 #: pages/page_cluster.php
 msgid "Settings succesfully updated."
@@ -6527,7 +6646,7 @@ msgstr "VYPNUTO"
 
 #: pages/page_cluster.php
 msgid "ON"
-msgstr "NA"
+msgstr "ZAP"
 
 #: pages/page_cluster.php
 msgid "maintenance"
@@ -6599,27 +6718,31 @@ msgstr "Smazat – N/A, šablona se používá"
 
 #: pages/page_cluster.php
 msgid "Cluster locations list"
-msgstr "Seznam umístění clusteru"
+msgstr "Seznam lokací clusteru"
 
 #: pages/page_cluster.php
 msgid "Location label"
-msgstr "Štítek umístění"
+msgstr "Popisek lokace"
+
+#: pages/page_cluster.php
+msgid "Servers"
+msgstr "Servery"
 
 #: pages/page_cluster.php
 msgid "List networks available in this location"
-msgstr "Seznam sítí dostupných v tomto umístění"
+msgstr "Vypsat sítě dostupné v této lokaci"
 
 #: pages/page_cluster.php
 msgid "New location"
-msgstr "Nové umístění"
+msgstr "Nová lokace"
 
 #: pages/page_cluster.php
 msgid "DNS Servers list"
-msgstr "DNS seznam serverů"
+msgstr "Seznam DNS serverů"
 
 #: pages/page_cluster.php
 msgid "All locations"
-msgstr "Všechny lokality"
+msgstr "Všechny lokace"
 
 #: pages/page_cluster.php
 msgid "Manage environment"
@@ -6639,7 +6762,7 @@ msgstr "Není k dispozici žádný konzolový server"
 
 #: pages/page_console.php
 msgid "There is no console server for this location."
-msgstr "Pro toto umístění neexistuje žádný konzolový server."
+msgstr "Pro tuto lokaci není k dispozici žádný konzolový server."
 
 #: pages/page_console.php
 msgid "Remote Console for VPS"
@@ -6647,7 +6770,7 @@ msgstr "Vzdálená konzole pro VPS"
 
 #: pages/page_console.php
 msgid "Poweroff"
-msgstr "Vypnutí"
+msgstr "Vypnout"
 
 #: pages/page_console.php
 msgid "failed"
@@ -6655,7 +6778,7 @@ msgstr "nepodařilo"
 
 #: pages/page_console.php
 msgid "Booting..."
-msgstr "Zavádění..."
+msgstr "Spouští se..."
 
 #: pages/page_console.php
 msgid "Set password"
@@ -6667,27 +6790,27 @@ msgstr "Po dokončení změňte heslo na bezpečné!"
 
 #: pages/page_console.php
 msgid "Rescue mode"
-msgstr "Záchranný režim"
+msgstr "Nouzový režim"
 
 #: pages/page_console.php
 msgid "Root dataset mountpoint"
-msgstr "Přípojný bod kořenové datové sady"
+msgstr "Mountpoint kořenového datasetu"
 
 #: pages/page_dataset.php
 msgid "Dataset created"
-msgstr "Soubor dat vytvořen"
+msgstr "Dataset vytvořen"
 
 #: pages/page_dataset.php
 msgid "Dataset creation failed"
-msgstr "Vytvoření datové sady se nezdařilo"
+msgstr "Vytvoření datasetu se nezdařilo"
 
 #: pages/page_dataset.php
 msgid "Dataset updated"
-msgstr "Datová sada aktualizována"
+msgstr "Dataset aktualizován"
 
 #: pages/page_dataset.php
 msgid "Dataset save failed"
-msgstr "Uložení datové sady se nezdařilo"
+msgstr "Uložení datasetu se nezdařilo"
 
 #: pages/page_dataset.php
 msgid "Dataset destroyed"
@@ -6695,55 +6818,55 @@ msgstr "Dataset zničen"
 
 #: pages/page_dataset.php
 msgid "Dataset was successfully destroyed."
-msgstr "Datová sada byla úspěšně zničena."
+msgstr "Dataset byl úspěšně zničen."
 
 #: pages/page_dataset.php
 msgid "Failed to destroy dataset"
-msgstr "Nepodařilo se zničit datovou sadu"
+msgstr "Nepodařilo se zničit dataset"
 
 #: pages/page_dataset.php
 msgid "Confirm the destroyal of dataset"
-msgstr "Potvrďte zničení datové sady"
+msgstr "Potvrdit zničení datasetu"
 
 #: pages/page_dataset.php
 msgid ""
 "The dataset will be destroyed along with all its descendants.\n"
 "\t\t\t\t\t\t\t\t\t<strong>This action is irreversible!</strong>"
 msgstr ""
-"Datový soubor bude zničen spolu se všemi jeho potomky.\n"
+"Dataset bude zničen spolu se všemi potomky.\n"
 "<strong>Tato akce je nevratná!</strong>"
 
 #: pages/page_dataset.php
 msgid "Destroy dataset"
-msgstr "Zničte datovou sadu"
+msgstr "Zničit dataset"
 
 #: pages/page_dataset.php
 msgid "Dataset cannot be found"
-msgstr "Datová sada nebyla nalezena"
+msgstr "Dataset nebyl nalezen"
 
 #: pages/page_dataset.php
 msgid "Dataset expansion updated"
-msgstr "Rozšíření datové sady aktualizováno"
+msgstr "Rozšíření datasetu aktualizováno"
 
 #: pages/page_dataset.php
 msgid "Dataset expansion save failed"
-msgstr "Uložení rozšíření datové sady se nezdařilo"
+msgstr "Uložení rozšíření datasetu se nezdařilo"
 
 #: pages/page_dataset.php
 msgid "Dataset expanded"
-msgstr "Datová sada rozšířena"
+msgstr "Dataset rozšířen"
 
 #: pages/page_dataset.php
 msgid "Dataset expansion failed"
-msgstr "Rozšíření datové sady se nezdařilo"
+msgstr "Rozšíření datasetu se nezdařilo"
 
 #: pages/page_dataset.php
 msgid "Dataset expansion registered"
-msgstr "Rozšíření datové sady bylo zaregistrováno"
+msgstr "Rozšíření datasetu bylo zaregistrováno"
 
 #: pages/page_dataset.php
 msgid "Dataset expand failed"
-msgstr "Rozšíření datové sady se nezdařilo"
+msgstr "Rozšíření datasetu se nezdařilo"
 
 #: pages/page_dataset.php
 msgid "Mount created"
@@ -6751,23 +6874,23 @@ msgstr "Mount vytvořen"
 
 #: pages/page_dataset.php
 msgid "The mount was successfully created."
-msgstr "Držák byl úspěšně vytvořen."
+msgstr "Mount byl úspěšně vytvořen."
 
 #: pages/page_dataset.php
 msgid "Failed create a mount"
-msgstr "Vytvoření držáku se nezdařilo"
+msgstr "Vytvoření mountu se nezdařilo"
 
 #: pages/page_dataset.php
 msgid "Mount removed"
-msgstr "Montáž odstraněna"
+msgstr "Mount odstraněn"
 
 #: pages/page_dataset.php
 msgid "The mount was successfully removed."
-msgstr "Držák byl úspěšně odstraněn."
+msgstr "Mount byl úspěšně odstraněn."
 
 #: pages/page_dataset.php
 msgid "Failed to remove mount"
-msgstr "Odstranění držáku se nezdařilo"
+msgstr "Odstranění mountu se nezdařilo"
 
 #: pages/page_dataset.php
 msgid " at "
@@ -6775,19 +6898,19 @@ msgstr "na"
 
 #: pages/page_dataset.php
 msgid "Confirm the removal of mount from VPS"
-msgstr "Potvrďte odebrání mount z VPS"
+msgstr "Potvrdit odebrání mountu z VPS"
 
 #: pages/page_dataset.php
 msgid "The dataset will be unmounted. The data itself is not touched."
-msgstr "Datová sada bude odpojena. Samotná data se nedotýkají."
+msgstr "Dataset bude odpojen. Samotná data zůstanou beze změny."
 
 #: pages/page_dataset.php
 msgid "Remove mount"
-msgstr "Odstraňte držák"
+msgstr "Odebrat mount"
 
 #: pages/page_dataset.php
 msgid "Mount removal failed"
-msgstr "Odstranění držáku se nezdařilo"
+msgstr "Odstranění mountu se nezdařilo"
 
 #: pages/page_dataset.php
 msgid "Mount edit failed"
@@ -6811,7 +6934,7 @@ msgstr "Záložní plán přidán."
 
 #: pages/page_dataset.php
 msgid "The dataset was successfully added to the backup plan."
-msgstr "Datová sada byla úspěšně přidána do plánu zálohování."
+msgstr "Dataset byl úspěšně přidán do plánu zálohování."
 
 #: pages/page_dataset.php
 msgid "Addition to backup plan failed"
@@ -6823,7 +6946,7 @@ msgstr "Záložní plán odstraněn."
 
 #: pages/page_dataset.php
 msgid "The dataset was successfully removed from the backup plan."
-msgstr "Datová sada byla úspěšně odstraněna z plánu zálohování."
+msgstr "Dataset byl úspěšně odebrán z plánu zálohování."
 
 #: pages/page_dataset.php
 msgid "Backup plan removal failed"
@@ -7019,7 +7142,7 @@ msgstr "Odebrání hostitele se nezdařilo"
 
 #: pages/page_export.php
 msgid "NFS Exports"
-msgstr "NFS Exportuje"
+msgstr "NFS exporty"
 
 #: pages/page_incidents.php
 msgid "Incident report sent"
@@ -7031,19 +7154,19 @@ msgstr "Uložení zprávy o incidentu se nezdařilo"
 
 #: pages/page_index.php pages/page_oom_reports.php
 msgid "OOM Reports"
-msgstr "Zprávy OOM"
+msgstr "OOM reporty"
 
 #: pages/page_index.php
 msgid "Incident Reports"
-msgstr "Zprávy o incidentech"
+msgstr "Incidenty"
 
 #: pages/page_index.php
 msgid "Event Log <a href=\"?page=cluster&action=sysconfig\">[edit]</a>"
-msgstr "Protokol událostí <a href=\"?page=cluster&action=sysconfig\">[upravit]</a>"
+msgstr "Události <a href=\"?page=cluster&action=sysconfig\">[upravit]</a>"
 
 #: pages/page_index.php
 msgid "Event Log"
-msgstr "Protokol událostí"
+msgstr "Události"
 
 #: pages/page_index.php
 msgid "View all"
@@ -7051,11 +7174,23 @@ msgstr "Zobrazit vše"
 
 #: pages/page_index.php
 msgid "Cluster statistics"
-msgstr "Statistika klastrů"
+msgstr "Statistiky clusteru"
+
+#: pages/page_index.php
+msgid "Members total"
+msgstr "Členů celkem"
+
+#: pages/page_index.php
+msgid "VPS total"
+msgstr "VPS celkem"
+
+#: pages/page_index.php
+msgid "IPv4 left"
+msgstr "IPv4 zbývá"
 
 #: pages/page_index.php
 msgid "Storage"
-msgstr "Skladování"
+msgstr "Úložiště"
 
 #: pages/page_index.php
 msgid "Read more about cgroups in KB"
@@ -7075,7 +7210,7 @@ msgstr "nikdy"
 
 #: pages/page_index.php
 msgid "scrub, "
-msgstr "drhnout,"
+msgstr "scrub, "
 
 #: pages/page_index.php
 msgid "resilver, "
@@ -7095,7 +7230,7 @@ msgstr "Atribut"
 
 #: pages/page_lifetimes.php pages/page_outage.php
 msgid "State set"
-msgstr "Stavový soubor"
+msgstr "Stav nastaven"
 
 #: pages/page_lifetimes.php
 msgid "Object state was successfully set to"
@@ -7111,7 +7246,7 @@ msgstr "Změna stavu se nezdařila"
 
 #: pages/page_lifetimes.php
 msgid "State log for"
-msgstr "Státní protokol pro"
+msgstr "Log stavů pro"
 
 #: pages/page_lifetimes.php
 msgid "Remind after"
@@ -7123,9 +7258,11 @@ msgstr "Chyba ověření"
 
 #: pages/page_login.php
 msgid ""
-"vpsAdmin was unable to obtain access token from the authorization server, please contact support if the error persists."
+"vpsAdmin was unable to obtain access token from the authorization server, "
+"please contact support if the error persists."
 msgstr ""
-"vpsAdmin nemohl získat přístupový token z autorizačního serveru. Pokud chyba přetrvává, kontaktujte podporu."
+"vpsAdmin nemohl získat přístupový token z autorizačního serveru. Pokud chyba "
+"přetrvává, kontaktujte podporu."
 
 #: pages/page_login.php
 msgid "Authorization server reports: "
@@ -7138,7 +7275,8 @@ msgstr "neznámá chyba"
 #: pages/page_login.php
 msgid "Please try to sign in again or contact support if the error persists."
 msgstr ""
-"Zkuste se prosím přihlásit znovu nebo kontaktujte podporu, pokud chyba přetrvává."
+"Zkuste se prosím přihlásit znovu nebo kontaktujte podporu, pokud chyba "
+"přetrvává."
 
 #: pages/page_login.php
 msgid "Dropped admin privileges"
@@ -7170,11 +7308,11 @@ msgstr "Problém byl úspěšně ignorován."
 
 #: pages/page_nas.php
 msgid "Show datasets owned by user"
-msgstr "Zobrazit datové sady vlastněné uživatelem"
+msgstr "Zobrazit datasety vlastněné uživatelem"
 
 #: pages/page_nas.php
 msgid "Show dataset subtree"
-msgstr "Zobrazit podstrom datové sady"
+msgstr "Zobrazit podstrom datasetu"
 
 #: pages/page_nas.php
 msgid "Manage NAS"
@@ -7182,7 +7320,7 @@ msgstr "Spravovat NAS"
 
 #: pages/page_networking.php
 msgid "Owner set"
-msgstr "Sada majitele"
+msgstr "Vlastník nastaven"
 
 #: pages/page_networking.php
 msgid "IP assigned"
@@ -7194,9 +7332,11 @@ msgstr "Neplatná trasa"
 
 #: pages/page_networking.php
 msgid ""
-"When adding the address to the interface, it cannot be routed through another address: do not set the \"Address\" field"
+"When adding the address to the interface, it cannot be routed through "
+"another address: do not set the \"Address\" field"
 msgstr ""
-"Při přidávání adresy do rozhraní ji nelze směrovat přes jinou adresu: pole \"Adresa\" nenastavujte"
+"Při přidávání adresy do rozhraní ji nelze směrovat přes jinou adresu: pole "
+"\"Adresa\" nenastavujte"
 
 #: pages/page_networking.php
 msgid "Something went wrong"
@@ -7216,7 +7356,7 @@ msgstr "IP odstraněna"
 
 #: pages/page_networking.php
 msgid "Reverse record set"
-msgstr "Reverzní sada záznamů"
+msgstr "Reverzní záznam nastaven"
 
 #: pages/page_networking.php
 msgid "Added"
@@ -7236,7 +7376,7 @@ msgstr "Adresa hostitele odstraněna z vpsAdmin"
 
 #: pages/page_networking.php
 msgid "Routable addresses"
-msgstr "Směrovatelné adresy"
+msgstr "Routované adresy"
 
 #: pages/page_networking.php
 msgid "List monthly traffic"
@@ -7244,15 +7384,15 @@ msgstr "Seznam měsíčního provozu"
 
 #: pages/page_networking.php
 msgid "Live monitor"
-msgstr "Živý monitor"
+msgstr "Live monitor"
 
 #: pages/page_networking.php
 msgid "User top"
-msgstr "Uživatelský top"
+msgstr "Top uživatelé"
 
 #: pages/page_networking.php public/index.php
 msgid "Networking"
-msgstr "vytváření sítí"
+msgstr "Sítě"
 
 #: pages/page_networking.php
 msgid "Monthly traffic"
@@ -7264,19 +7404,19 @@ msgstr "Statistika"
 
 #: pages/page_networking.php
 msgid "Top users"
-msgstr "Nejlepší uživatelé"
+msgstr "Top uživatelé"
 
 #: pages/page_networking.php
 msgid "In"
-msgstr "V"
+msgstr "Příchozí"
 
 #: pages/page_networking.php
 msgid "Out"
-msgstr "Ven"
+msgstr "Odchozí"
 
 #: pages/page_networking.php
 msgid "Refresh automatically"
-msgstr "Automaticky se obnoví"
+msgstr "Automaticky obnovovat"
 
 #: pages/page_networking.php
 msgid "10 second interval"
@@ -7288,11 +7428,11 @@ msgstr "Poslední aktualizace"
 
 #: pages/page_networking.php
 msgid "Receiving"
-msgstr "Příjem"
+msgstr "Příchozí"
 
 #: pages/page_networking.php
 msgid "Transmitting"
-msgstr "Vysílání"
+msgstr "Odchozí"
 
 #: pages/page_networking.php
 msgid "bps"
@@ -7412,7 +7552,7 @@ msgstr "Transakční řetězce"
 
 #: pages/page_transactions.php
 msgid "User session ID"
-msgstr "Uživatelská relace ID"
+msgstr "ID sezení uživatele"
 
 #: pages/page_transactions.php
 msgid "Class name"
@@ -7472,31 +7612,31 @@ msgstr "Je vyžadován uživatel ID."
 
 #: pages/page_userdata.php
 msgid "User data saved"
-msgstr "Uživatelská data uložena"
+msgstr "User data uložena"
 
 #: pages/page_userdata.php
 msgid "Failed to add user data"
-msgstr "Nepodařilo se přidat uživatelská data"
+msgstr "Nepodařilo se přidat User data"
 
 #: pages/page_userdata.php
 msgid "Failed to update user data"
-msgstr "Aktualizace uživatelských dat se nezdařila"
+msgstr "Aktualizace User data se nezdařila"
 
 #: pages/page_userdata.php
 msgid "User data deployed"
-msgstr "Nasazena uživatelská data"
+msgstr "User data nasazena"
 
 #: pages/page_userdata.php
 msgid "Failed to deploy user data"
-msgstr "Nepodařilo se nasadit uživatelská data"
+msgstr "Nepodařilo se nasadit User data"
 
 #: pages/page_userdata.php
 msgid "User data deleted"
-msgstr "Uživatelská data byla smazána"
+msgstr "User data smazána"
 
 #: pages/page_userdata.php
 msgid "Failed to delete user data"
-msgstr "Uživatelská data se nepodařilo smazat"
+msgstr "User data se nepodařilo smazat"
 
 #: pages/page_userns.php
 msgid "Label changed"
@@ -7548,7 +7688,7 @@ msgstr "Mapu nelze smazat"
 
 #: public/index.php
 msgid "Log in"
-msgstr "Přihlaste se"
+msgstr "Přihlásit se"
 
 #: public/index.php
 msgid "Signing in..."
@@ -7556,7 +7696,7 @@ msgstr "Přihlašování..."
 
 #: public/index.php
 msgid "Logout"
-msgstr "Odhlášení"
+msgstr "Odhlásit"
 
 #: public/index.php
 msgid "Switch user"
@@ -7585,7 +7725,8 @@ msgstr "Režim údržby"
 #: public/index.php
 msgid ""
 "vpsAdmin is currently in maintenance mode, any actions are disabled. <br />\n"
-"\t\t\t\t\t\t\t\t\t\t\tThis is usually used during outage to prevent data corruption.<br />"
+"\t\t\t\t\t\t\t\t\t\t\tThis is usually used during outage to prevent data "
+"corruption.<br />"
 msgstr ""
 "vpsAdmin je aktuálně v režimu údržby, všechny akce jsou zakázány. <br />\n"
 "To se obvykle používá při výpadku, aby se zabránilo poškození dat.<br />"
@@ -7600,8 +7741,10 @@ msgstr "Nelze se připojit k serveru API. Kontaktujte prosím podporu."
 
 #: public/index.php
 msgid ""
-"An unhandled error occured in communication with the API. Please contact the support."
-msgstr "V komunikaci s API došlo k neošetřené chybě. Kontaktujte prosím podporu."
+"An unhandled error occured in communication with the API. Please contact the "
+"support."
+msgstr ""
+"V komunikaci s API došlo k neošetřené chybě. Kontaktujte prosím podporu."
 
 #: public/index.php
 msgid "Token invalid"
@@ -7609,9 +7752,11 @@ msgstr "Token je neplatný"
 
 #: public/index.php
 msgid ""
-"Your security token is either invalid or expired. Please try to repeat the action, you will be given a new, valid token."
+"Your security token is either invalid or expired. Please try to repeat the "
+"action, you will be given a new, valid token."
 msgstr ""
-"Váš bezpečnostní token je buď neplatný, nebo vypršela jeho platnost. Zkuste akci zopakovat, obdržíte nový platný token."
+"Váš bezpečnostní token je buď neplatný, nebo vypršela jeho platnost. Zkuste "
+"akci zopakovat, obdržíte nový platný token."
 
 #: public/index.php
 msgid "NAS"
@@ -7619,11 +7764,11 @@ msgstr "NAS"
 
 #: public/index.php
 msgid "Exports"
-msgstr "Vývoz"
+msgstr "Exporty"
 
 #: public/index.php
 msgid "About vpsAdmin"
-msgstr "O vpsAdmin"
+msgstr "O vpsAdminu"
 
 #: public/index.php
 msgid "Edit help box"
@@ -7632,3 +7777,12 @@ msgstr "Upravit pole nápovědy"
 #: public/index.php
 msgid "Help"
 msgstr "Pomoc"
+
+#~ msgid "Contact support if you need more"
+#~ msgstr "Kontaktujte podporu, pokud potřebujete více"
+
+#~ msgid "resources."
+#~ msgstr "zdrojů."
+
+#~ msgid "Transactions"
+#~ msgstr "Transakce"

@@ -27,12 +27,30 @@ Always translate with context. The same English word can mean different things:
 - `Incident reports` are `Incidenty`.
 - `DNS resolvers` are `DNS resolvery`.
 - `Transfer logs` are `Log přenosů`.
+- Network transfers are `Přenosy`, never `Převody`.
+- `Routed addresses` and `Routable addresses` are `Routované adresy`.
 - `DNS record log` is `Log DNS záznamů`.
 - `Logout` button text is `Odhlásit`.
 - `Transaction log` stays as English source text; Czech menu text is
   `Transakce`.
 - `Dataset`/`Datasets` are `Dataset`/`Datasety`.
+- ZFS dataset property labels use a natural Czech label followed by the exact
+  property key in parentheses, e.g. `Využitý prostor (used)` and
+  `Referencovaný prostor (referenced)`.
+- For ZFS quotas, make the scope clear: `quota` includes descendants, while
+  `refquota` applies to the dataset itself. Use labels such as
+  `Kvóta včetně potomků (quota)` and `Kvóta datasetu (refquota)`.
 - `Mount`/`Mounts` are `Mount`/`Mounty`.
+- In mount-related states and errors, use `mount`, e.g. `Selhání při mountu`.
+- `Rescue mode` is `nouzový režim`.
+- VPS power state `stopped` is `vypnuto`; counts and labels use
+  `vypnuté VPS` and summaries use `vypnuto`.
+- VPS action `Stop` is kept as `Stop` when it names the vpsAdmin/osctl stop
+  operation. Do not translate the action label as `Zastavit` or `Vypnout`.
+- VPS action `Poweroff` is `Vypnout`.
+- Forced stop actions use `Vynutit stop`.
+- Remote console action labels are `Stop`, `Restartovat`, `Resetovat`,
+  `Vypnout`, and `Spustit`.
 - `Hostname`, `Loadavg`, `Uptime`, `Kernel`, and `User data` are left
   untranslated.
 
@@ -45,6 +63,10 @@ Keep established technical terms untranslated when natural:
 Use capitalization that matches the UI context. Main menu and sidebar labels
 should start with an uppercase letter. Short table labels should be concise.
 Longer descriptions may use full Czech sentences.
+
+Action labels should use the infinitive form, e.g. `Spravovat`, `Vytvořit`,
+`Upravit`, and `Vypnout`, not polite imperative forms such as `Spravujte`.
+Keep established command labels such as `Stop` unchanged.
 
 When updating translations:
 

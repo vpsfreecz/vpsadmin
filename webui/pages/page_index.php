@@ -79,9 +79,9 @@ if ($api->security_advisory) {
 
 $xtpl->table_title(_("Cluster statistics"));
 
-$xtpl->table_add_category('Members total');
-$xtpl->table_add_category('VPS total');
-$xtpl->table_add_category('IPv4 left');
+$xtpl->table_add_category(_('Members total'));
+$xtpl->table_add_category(_('VPS total'));
+$xtpl->table_add_category(_('IPv4 left'));
 
 $stats = $api->cluster->public_stats();
 

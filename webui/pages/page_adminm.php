@@ -95,16 +95,16 @@ function print_editm($u)
     $xtpl->table_td($u->id);
     $xtpl->table_tr();
 
-    $xtpl->table_td("Created" . ':');
+    $xtpl->table_td(_("Created") . ':');
     $xtpl->table_td(tolocaltz($u->created_at));
     $xtpl->table_tr();
 
-    $xtpl->table_td("State" . ':');
+    $xtpl->table_td(_("State") . ':');
     $xtpl->table_td($u->object_state);
     $xtpl->table_tr();
 
     if ($u->expiration_date) {
-        $xtpl->table_td("Expiration" . ':');
+        $xtpl->table_td(_("Expiration") . ':');
         $xtpl->table_td(tolocaltz($u->expiration_date));
         $xtpl->table_tr();
     }

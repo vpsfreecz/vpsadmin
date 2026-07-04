@@ -756,7 +756,7 @@ function data_size_to_humanreadable_b($val)
     global $DATA_SIZE_UNITS;
 
     if (!$val) {
-        return _("none");
+        return "0 B";
     }
 
     $res = data_size_unitize($val);
@@ -766,7 +766,7 @@ function data_size_to_humanreadable_b($val)
 function data_size_to_humanreadable_kb($val)
 {
     if (!$val) {
-        return _("none");
+        return "0 KB";
     }
 
     return data_size_to_humanreadable_b($val * 1024);
@@ -775,7 +775,7 @@ function data_size_to_humanreadable_kb($val)
 function data_size_to_humanreadable_mb($val)
 {
     if (!$val) {
-        return _("none");
+        return "0 MB";
     }
 
     return data_size_to_humanreadable_b($val * 1024 * 1024);
@@ -1393,7 +1393,7 @@ function readCommitHash()
 
 function format_errors($response)
 {
-    $body = _('Error message: ') . $response->getMessage();
+    $body = _('Error message') . ': ' . $response->getMessage();
     $errors = $response->getErrors();
 
     $body .= '<br>';

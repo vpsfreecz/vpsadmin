@@ -112,7 +112,7 @@ msgid "Size"
 msgstr ""
 
 #: forms/backup.forms.php forms/dataset.forms.php forms/export.forms.php
-#: pages/page_adminvps.php pages/page_lifetimes.php
+#: pages/page_adminm.php pages/page_adminvps.php pages/page_lifetimes.php
 msgid "Expiration"
 msgstr ""
 
@@ -846,7 +846,8 @@ msgstr ""
 #: forms/dataset.forms.php forms/lifetimes.forms.php forms/monitoring.forms.php
 #: forms/node.forms.php forms/outage.forms.php
 #: forms/security_advisory.forms.php forms/users.forms.php
-#: pages/page_adminvps.php pages/page_lifetimes.php pages/page_transactions.php
+#: pages/page_adminm.php pages/page_adminvps.php pages/page_lifetimes.php
+#: pages/page_transactions.php
 msgid "State"
 msgstr ""
 
@@ -919,8 +920,8 @@ msgstr ""
 msgid "Wait until mounted"
 msgstr ""
 
-#: forms/dns.forms.php pages/page_cluster.php
-msgid "Servers"
+#: forms/dns.forms.php
+msgid "DNS servers"
 msgstr ""
 
 #: forms/dns.forms.php
@@ -953,10 +954,6 @@ msgstr ""
 
 #: forms/dns.forms.php
 msgid "Resolvers"
-msgstr ""
-
-#: forms/dns.forms.php
-msgid "DNS servers"
 msgstr ""
 
 #: forms/dns.forms.php forms/node.forms.php forms/oom_reports.forms.php
@@ -2047,7 +2044,7 @@ msgstr ""
 msgid "unknown"
 msgstr ""
 
-#: forms/node.forms.php lib/functions.lib.php
+#: forms/node.forms.php
 msgid "none"
 msgstr ""
 
@@ -3194,7 +3191,7 @@ msgstr ""
 msgid "Request info"
 msgstr ""
 
-#: forms/users.forms.php
+#: forms/users.forms.php pages/page_adminm.php
 msgid "Created"
 msgstr ""
 
@@ -3777,11 +3774,11 @@ msgid "Available resources"
 msgstr ""
 
 #: forms/vps.forms.php
-msgid "Contact support if you need more"
+msgid "Contact support"
 msgstr ""
 
 #: forms/vps.forms.php
-msgid "resources."
+msgid "if you need more resources."
 msgstr ""
 
 #: forms/vps.forms.php
@@ -4276,6 +4273,14 @@ msgid "Total"
 msgstr ""
 
 #: forms/vps.forms.php
+msgid "See traffic accounting log"
+msgstr ""
+
+#: forms/vps.forms.php
+msgid "live monitor"
+msgstr ""
+
+#: forms/vps.forms.php
 msgid "or"
 msgstr ""
 
@@ -4384,7 +4389,7 @@ msgid "Some input parameters are not valid."
 msgstr ""
 
 #: lib/functions.lib.php
-msgid "Error message: "
+msgid "Error message"
 msgstr ""
 
 #: lib/functions.lib.php
@@ -6609,6 +6614,10 @@ msgid "Location label"
 msgstr ""
 
 #: pages/page_cluster.php
+msgid "Servers"
+msgstr ""
+
+#: pages/page_cluster.php
 msgid "List networks available in this location"
 msgstr ""
 
@@ -7052,6 +7061,18 @@ msgstr ""
 
 #: pages/page_index.php
 msgid "Cluster statistics"
+msgstr ""
+
+#: pages/page_index.php
+msgid "Members total"
+msgstr ""
+
+#: pages/page_index.php
+msgid "VPS total"
+msgstr ""
+
+#: pages/page_index.php
+msgid "IPv4 left"
 msgstr ""
 
 #: pages/page_index.php

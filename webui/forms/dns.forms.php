@@ -5,7 +5,7 @@ function dns_submenu()
     global $xtpl;
 
     if (isAdmin()) {
-        $xtpl->sbar_add(_('Servers'), '?page=dns&action=server_list');
+        $xtpl->sbar_add(_('DNS servers'), '?page=dns&action=server_list');
         $xtpl->sbar_add(_('All zones'), '?page=dns&action=zone_list');
     }
 
@@ -1060,7 +1060,7 @@ function dns_ptr_list()
     }
 
     $xtpl->table_add_category('VPS');
-    $xtpl->table_add_category('Interface');
+    $xtpl->table_add_category(_('Interface'));
 
     $xtpl->table_add_category(_("Host address"));
     $xtpl->table_add_category((_("Reverse record")));

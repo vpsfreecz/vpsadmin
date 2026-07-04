@@ -45,7 +45,7 @@ test('anonymous webui follows browser language', async ({ browser }) => {
   try {
     await page.goto('/', { waitUntil: 'domcontentloaded' });
     await expect(page.locator('html')).toHaveAttribute('lang', 'cs');
-    await expect(loginButton(page)).toHaveValue('Přihlaste se');
+    await expect(loginButton(page)).toHaveValue('Přihlásit se');
   } finally {
     await context.close();
   }
@@ -61,11 +61,11 @@ test('anonymous language flag persists selection', async ({ page }) => {
 
   await expect(page).toHaveURL(/page=about/);
   await expect(page.locator('html')).toHaveAttribute('lang', 'cs');
-  await expect(loginButton(page)).toHaveValue('Přihlaste se');
+  await expect(loginButton(page)).toHaveValue('Přihlásit se');
 
   await page.goto('/?page=login', { waitUntil: 'domcontentloaded' });
   await expect(page.locator('html')).toHaveAttribute('lang', 'cs');
-  await expect(loginButton(page)).toHaveValue('Přihlaste se');
+  await expect(loginButton(page)).toHaveValue('Přihlásit se');
 });
 
 test('anonymous about page renders', async ({ page }) => {

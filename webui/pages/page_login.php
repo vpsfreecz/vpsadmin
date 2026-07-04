@@ -26,7 +26,9 @@
 if ($_GET["action"] == 'login') {
     setupOAuth2ForLogin();
 
-    $queryParams = [];
+    $queryParams = [
+        'ui_locales' => webui_current_api_language($langs),
+    ];
 
     if (isset($_GET['user']) && $_GET['user']) {
         $queryParams['user'] = $_GET['user'];

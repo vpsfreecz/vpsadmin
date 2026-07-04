@@ -128,7 +128,9 @@ function print_newvps_page1($user_id)
             . '<p>' . $loc->description . '</p>'
             . '<h4>' . _('Available resources') . ':</h4>'
             . format_available_resources($user, $loc->environment, $owned_free_ips)
-            . '<p>' . _('Contact support if you need more') . ' <a href="?page=adminm&action=cluster_resources&id=' . $user->id . '">' . _('resources.') . '</a></p>'
+            . '<p><a href="?page=adminm&action=cluster_resources&id=' . $user->id . '">'
+            . _('Contact support')
+            . '</a> ' . _('if you need more resources.') . '</p>'
         );
 
         $xtpl->table_tr();
@@ -440,7 +442,9 @@ function print_newvps_page3($user_id, $loc_id, $tpl_id)
     }
 
     $xtpl->table_td(
-        _('Contact support if you need more') . ' <a href="?page=adminm&action=cluster_resources&id=' . $user->id . '">' . _('resources.') . '</a>',
+        '<a href="?page=adminm&action=cluster_resources&id=' . $user->id . '">'
+            . _('Contact support')
+            . '</a> ' . _('if you need more resources.'),
         false,
         false,
         '3'
@@ -2029,7 +2033,7 @@ function vps_netif_form($vps, $netif, $netif_accounting)
         $xtpl->table_tr();
 
         $xtpl->table_td(
-            '<a href="?page=networking&action=list&vps=' . $netif->vps_id . '&year=' . $accounting->year . '&month=">See traffic accounting log</a> ' . _('or') . ' <a href="?page=networking&action=live&vps=' . $netif->vps_id . '">live monitor</a>',
+            '<a href="?page=networking&action=list&vps=' . $netif->vps_id . '&year=' . $accounting->year . '&month=">' . _('See traffic accounting log') . '</a> ' . _('or') . ' <a href="?page=networking&action=live&vps=' . $netif->vps_id . '">' . _('live monitor') . '</a>',
             false,
             false,
             3
