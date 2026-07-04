@@ -920,6 +920,14 @@ msgstr ""
 msgid "Wait until mounted"
 msgstr ""
 
+#: forms/dataset.forms.php
+msgid "Show more properties"
+msgstr ""
+
+#: forms/dataset.forms.php
+msgid "Hide properties"
+msgstr ""
+
 #: forms/dns.forms.php
 msgid "DNS servers"
 msgstr ""
@@ -4389,6 +4397,18 @@ msgid "Some input parameters are not valid."
 msgstr ""
 
 #: lib/functions.lib.php
+msgid "Off"
+msgstr ""
+
+#: lib/functions.lib.php
+msgid "On"
+msgstr ""
+
+#: lib/functions.lib.php
+msgid "On, no authentication device is enabled"
+msgstr ""
+
+#: lib/functions.lib.php
 msgid "Error message"
 msgstr ""
 
@@ -4741,18 +4761,6 @@ msgstr ""
 
 #: pages/page_adminm.php
 msgid "Two-factor authentication"
-msgstr ""
-
-#: pages/page_adminm.php pages/page_adminvps.php
-msgid "Active"
-msgstr ""
-
-#: pages/page_adminm.php
-msgid "Inactive, no authentication device is enabled"
-msgstr ""
-
-#: pages/page_adminm.php
-msgid "Disabled"
 msgstr ""
 
 #: pages/page_adminm.php
@@ -6027,6 +6035,10 @@ msgstr ""
 
 #: pages/page_adminvps.php
 msgid "Auto-Start"
+msgstr ""
+
+#: pages/page_adminvps.php
+msgid "Active"
 msgstr ""
 
 #: pages/page_adminvps.php

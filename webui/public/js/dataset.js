@@ -1,9 +1,13 @@
 (function ($) {
 
 	var anchor;
+	var labels = window.vpsAdminDatasetLabels || {
+		hideProperties: 'Hide properties',
+		showMoreProperties: 'Show more properties'
+	};
 
 	function showProperties (init) {
-		anchor.text('Hide properties').click(switchMode(hideProperties));
+		anchor.text(labels.hideProperties).click(switchMode(hideProperties));
 
 		if (init)
 			$('.advanced-property').css('display', 'table-row');
@@ -18,7 +22,7 @@
 	}
 
 	function hideProperties (init) {
-		anchor.text('Show more properties').click(switchMode(showProperties));
+		anchor.text(labels.showMoreProperties).click(switchMode(showProperties));
 
 		if (init)
 			$('.advanced-property').hide();

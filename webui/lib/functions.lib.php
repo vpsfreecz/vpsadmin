@@ -1292,6 +1292,16 @@ function user_language_code(object $user, $langs = null)
 }
 
 
+function multi_factor_auth_status_label($enabled, $hasDevice = true)
+{
+    if (!$enabled) {
+        return _('Off');
+    }
+
+    return $hasDevice ? _('On') : _('On, no authentication device is enabled');
+}
+
+
 function network_label($net)
 {
     return $net->label ? $net->label : $net->address . '/' . $net->prefix;

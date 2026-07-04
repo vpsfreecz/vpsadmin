@@ -97,6 +97,12 @@ final class XssReportSinksTest extends TestCase
         );
 
         $this->assertFileContains(
+            'webui/forms/dataset.forms.php',
+            '$labels = webui_json([',
+            'VULN-107 dataset script labels must be JSON encoded for JavaScript.'
+        );
+
+        $this->assertFileContains(
             'webui/forms/dns.forms.php',
             '<code>\' . h($r->dnskey_pubkey) . \'</code>',
             'VULN-33 DNSSEC public keys must be escaped.'

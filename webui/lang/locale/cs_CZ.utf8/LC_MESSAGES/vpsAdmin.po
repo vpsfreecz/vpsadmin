@@ -925,6 +925,14 @@ msgstr "Selhání VPS start"
 msgid "Wait until mounted"
 msgstr "Počkat na připojení"
 
+#: forms/dataset.forms.php
+msgid "Show more properties"
+msgstr "Zobrazit více vlastností"
+
+#: forms/dataset.forms.php
+msgid "Hide properties"
+msgstr "Skrýt vlastnosti"
+
 #: forms/dns.forms.php
 msgid "DNS servers"
 msgstr "DNS servery"
@@ -4429,6 +4437,18 @@ msgid "Some input parameters are not valid."
 msgstr "Některé vstupní parametry nejsou platné."
 
 #: lib/functions.lib.php
+msgid "Off"
+msgstr "Vypnuto"
+
+#: lib/functions.lib.php
+msgid "On"
+msgstr "Zapnuto"
+
+#: lib/functions.lib.php
+msgid "On, no authentication device is enabled"
+msgstr "Zapnuto, ale není zapnuté žádné ověřovací zařízení"
+
+#: lib/functions.lib.php
 msgid "Error message"
 msgstr "Chybová zpráva"
 
@@ -4794,18 +4814,6 @@ msgstr ""
 #: pages/page_adminm.php
 msgid "Two-factor authentication"
 msgstr "Dvoufaktorová autentizace"
-
-#: pages/page_adminm.php pages/page_adminvps.php
-msgid "Active"
-msgstr "Aktivní"
-
-#: pages/page_adminm.php
-msgid "Inactive, no authentication device is enabled"
-msgstr "Neaktivní, není povoleno žádné ověřovací zařízení"
-
-#: pages/page_adminm.php
-msgid "Disabled"
-msgstr "Zakázáno"
 
 #: pages/page_adminm.php
 msgid "Manage passkeys"
@@ -6127,6 +6135,10 @@ msgstr "Při změně funkcí se VPS restartuje."
 #: pages/page_adminvps.php
 msgid "Auto-Start"
 msgstr "Auto-Start"
+
+#: pages/page_adminvps.php
+msgid "Active"
+msgstr "Aktivní"
 
 #: pages/page_adminvps.php
 msgid "Start Menu"
@@ -7777,6 +7789,9 @@ msgstr "Upravit pole nápovědy"
 #: public/index.php
 msgid "Help"
 msgstr "Pomoc"
+
+#~ msgid "Disabled"
+#~ msgstr "Zakázáno"
 
 #~ msgid "Contact support if you need more"
 #~ msgstr "Kontaktujte podporu, pokud potřebujete více"

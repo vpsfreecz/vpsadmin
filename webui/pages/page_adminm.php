@@ -294,17 +294,7 @@ function print_editm($u)
     $xtpl->form_add_checkbox(_('Enable') . ':', 'enable_multi_factor_auth', '1', post_val_issetto('enable_multi_factor_auth', '1', $u->enable_multi_factor_auth));
 
     $xtpl->table_td(_('Status') . ':');
-
-    if ($u->enable_multi_factor_auth) {
-        if ($hasTotp || $hasWebAuthn) {
-            $xtpl->table_td(_('Active'));
-        } else {
-            $xtpl->table_td(_('Inactive, no authentication device is enabled'));
-        }
-    } else {
-        $xtpl->table_td(_('Disabled'));
-    }
-
+    $xtpl->table_td(multi_factor_auth_status_label($u->enable_multi_factor_auth, $hasTotp || $hasWebAuthn));
     $xtpl->table_tr();
 
     $xtpl->table_td(_("TOTP devices") . ':');

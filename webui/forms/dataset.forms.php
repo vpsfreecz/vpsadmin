@@ -746,9 +746,15 @@ function include_dataset_scripts()
 {
     global $xtpl;
 
+    $labels = webui_json([
+        'showMoreProperties' => _('Show more properties'),
+        'hideProperties' => _('Hide properties'),
+    ]);
+
     $xtpl->assign(
         'AJAX_SCRIPT',
         $xtpl->vars['AJAX_SCRIPT']
+        . '<script type="text/javascript">window.vpsAdminDatasetLabels = ' . $labels . ';</script>'
         . '<script type="text/javascript" src="js/dataset.js"></script>'
     );
 }
