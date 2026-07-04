@@ -113,6 +113,52 @@ RSpec.describe VpsAdmin::API::Authentication::OAuth2Config do
     expect(response.body).to include('Log in')
   end
 
+  it 'uses ui_locales for the authorize page language' do
+    result = config.handle_get_authorize(
+      sinatra_handler: handler,
+      sinatra_request: build_request(extra_env: {
+        'HTTP_ACCEPT_LANGUAGE' => 'en-US,en;q=0.9'
+      }),
+      sinatra_params: {
+        ui_locales: 'cs-CZ'
+      },
+      oauth2_request:,
+      oauth2_response: response,
+      client:
+    )
+
+    expect(result).to be_nil
+    expect(response.body).to include('<html lang="cs">')
+    expect(response.body).to include('Přihlásit se pomocí vpsAdminu')
+    expect(response.body).to include('value="Přihlásit se"')
+    expect(response.body).to include('name="ui_locales" value="cs-CZ"')
+  end
+
+  it 'renders keyed auth errors in the requested authorize page language' do
+    result = config.handle_post_authorize(
+      sinatra_handler: handler,
+      sinatra_request: request,
+      sinatra_params: {
+        login_credentials: '1',
+        user: 'missing-user',
+        password: 'wrong-password',
+        ui_locales: 'cs'
+      },
+      oauth2_request:,
+      oauth2_response: response,
+      client:
+    )
+
+    expect(result.errors).to include(:invalid_user_or_password)
+    expect(response.body).to include('neplatný uživatel nebo heslo')
+    expect(response.body).not_to include('invalid user or password')
+  end
+
+  it 'falls back to a readable auth error when a symbolic error has no translation' do
+    expect(config.send(:translated_auth_errors, [:external_provider_error]))
+      .to eq(['external provider error'])
+  end
+
   it 're-renders the authorize page with an auth token when credentials require MFA' do
     create_totp_device!(user:)
     user.update!(enable_multi_factor_auth: true)
@@ -241,7 +287,7 @@ RSpec.describe VpsAdmin::API::Authentication::OAuth2Config do
     expect(result.authenticated).to be(true)
     expect(result.complete).to be(false)
     expect(result).to be_reset_password
-    expect(result.errors).to include('passwords do not match')
+    expect(result.errors).to include(:passwords_do_not_match)
     expect(response.body).to include('passwords do not match')
   end
 
@@ -470,7 +516,7 @@ RSpec.describe VpsAdmin::API::Authentication::OAuth2Config do
       expect(result.authenticated).to be(true)
       expect(result.complete).to be(false)
       expect(result.authorization).to be_nil
-      expect(result.errors).to include('account is locked out, contact support')
+      expect(result.errors).to include(:account_locked)
     end.not_to change(Oauth2Authorization, :count)
   end
 
@@ -496,7 +542,7 @@ RSpec.describe VpsAdmin::API::Authentication::OAuth2Config do
       expect(result.authenticated).to be(true)
       expect(result.complete).to be(false)
       expect(result.authorization).to be_nil
-      expect(result.errors).to include('OAuth2 authentication is disabled on this account')
+      expect(result.errors).to include(:oauth2_disabled)
     end.not_to change(Oauth2Authorization, :count)
   end
 

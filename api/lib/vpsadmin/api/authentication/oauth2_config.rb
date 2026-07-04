@@ -1,4 +1,5 @@
 require 'erb'
+require 'json'
 require 'vpsadmin/api/operations/utils/dns'
 
 module VpsAdmin::API
@@ -6,6 +7,22 @@ module VpsAdmin::API
     SSO_COOKIE = :vpsadmin_sso
 
     DEVICES_COOKIE = :vpsadmin_devices
+
+    UI_LOCALES_PARAM = :ui_locales
+
+    AUTH_ERROR_CODES = %i[
+      account_locked
+      invalid_totp_code
+      invalid_user_or_password
+      oauth2_disabled
+      password_reset_required
+      password_too_short
+      passwords_do_not_match
+    ].freeze
+
+    def self.i18n_keys
+      AUTH_ERROR_CODES.map { |code| "auth.oauth2.errors.#{code}" }
+    end
 
     include Operations::Utils::Dns
 
@@ -54,7 +71,7 @@ module VpsAdmin::API
       # @return [User, nil]
       attr_accessor :user
 
-      # @return [Array<String>]
+      # @return [Array<Symbol, String>]
       attr_reader :errors
 
       # @return [Boolean]
@@ -72,6 +89,10 @@ module VpsAdmin::API
         @cancel = cancel
         @errors = errors
         @reset_password = reset_password
+      end
+
+      def add_error(error)
+        @errors << error
       end
     end
 
@@ -97,6 +118,7 @@ module VpsAdmin::API
             oauth2_request:,
             oauth2_response:,
             sinatra_params:,
+            sinatra_request:,
             client:,
             auth_result:,
             devices:
@@ -107,6 +129,7 @@ module VpsAdmin::API
           oauth2_request:,
           oauth2_response:,
           sinatra_params:,
+          sinatra_request:,
           client:,
           devices:
         )
@@ -157,6 +180,7 @@ module VpsAdmin::API
           oauth2_request:,
           oauth2_response:,
           sinatra_params:,
+          sinatra_request:,
           client:,
           auth_result:,
           devices:
@@ -368,10 +392,11 @@ module VpsAdmin::API
     protected
 
     # @param auth_result [AuthResult]
-    def render_authorize_page(oauth2_request:, oauth2_response:, sinatra_params:, client:, devices:, auth_result: nil)
+    def render_authorize_page(oauth2_request:, oauth2_response:, sinatra_params:, client:, devices:, auth_result: nil, sinatra_request: nil)
       # Variables passed to the ERB template
       auth_token = auth_result && auth_result.auth_token
       user = sinatra_params[:user]
+      ui_locales = sinatra_params[UI_LOCALES_PARAM] || sinatra_params[UI_LOCALES_PARAM.to_s]
       next_multi_factor_auth = sinatra_params[:next_multi_factor_auth] || find_next_multi_factor_auth(devices)
       step =
         if auth_token && !auth_result.reset_password
@@ -389,6 +414,11 @@ module VpsAdmin::API
       end
 
       support_mail = ::SysConfig.get(:core, :support_mail)
+      locale = authorize_locale(sinatra_params, sinatra_request)
+      html_lang = locale.to_s
+      t = ->(key, **values) { oauth2_text(key, **values) }
+      html_t = ->(key, **values) { Rack::Utils.escape_html(t.call(key, **values)) }
+      js_t = ->(key, **values) { JSON.generate(t.call(key, **values)) }
 
       @template ||= ERB.new(
         File.read(File.join(__dir__, 'oauth2_authorize.erb')),
@@ -396,8 +426,88 @@ module VpsAdmin::API
       )
 
       oauth2_response.content_type = 'text/html'
-      oauth2_response.write(@template.result(binding))
+      ::I18n.with_locale(locale) do
+        auth_errors = translated_auth_errors(auth_result ? auth_result.errors : [])
+        oauth2_response.write(@template.result(binding))
+      end
       nil
+    end
+
+    def authorize_locale(sinatra_params, sinatra_request)
+      candidates = requested_ui_locales(sinatra_params)
+      candidates.concat(accept_language_candidates(sinatra_request))
+
+      candidates.each do |candidate|
+        locale = locale_from_tag(candidate)
+        return locale if locale
+      end
+
+      VpsAdmin::API::I18n::DEFAULT_LOCALE
+    end
+
+    def requested_ui_locales(sinatra_params)
+      value = sinatra_params[UI_LOCALES_PARAM] || sinatra_params[UI_LOCALES_PARAM.to_s]
+      value.to_s.split(/\s+/).reject(&:empty?)
+    end
+
+    def accept_language_candidates(sinatra_request)
+      header = sinatra_request&.env&.fetch('HTTP_ACCEPT_LANGUAGE', nil).to_s
+
+      header.split(',').each_with_index.filter_map do |entry, index|
+        parts = entry.split(';').map(&:strip)
+        tag = parts.shift
+        next if tag.nil? || tag.empty? || tag == '*'
+
+        quality = parts.filter_map do |part|
+          match = part.match(/\Aq=([0-9.]+)\z/)
+          match && match[1].to_f
+        end.first || 1.0
+        next if quality <= 0.0
+
+        [quality, index, tag]
+      end.sort_by { |quality, index, _| [-quality, index] }.map(&:last)
+    end
+
+    def locale_from_tag(tag)
+      normalized = tag.to_s.strip.downcase.tr('_', '-').sub(/\..*\z/, '')
+      return if normalized.empty?
+
+      available = VpsAdmin::API::I18n.available_locales.map(&:to_s)
+      candidates = [
+        normalized,
+        normalized.split('-').first
+      ].uniq
+
+      candidates.each do |candidate|
+        return candidate.to_sym if available.include?(candidate)
+      end
+
+      nil
+    end
+
+    def oauth2_text(key, **values)
+      key = key.to_s
+      scoped_key = "vpsadmin.auth.oauth2.#{key}"
+
+      unless key.match?(/\A[a-z0-9_]+\z/) && ::I18n.exists?(scoped_key, ::I18n.locale)
+        raise ArgumentError, "unknown OAuth2 auth page text #{key.inspect}"
+      end
+
+      VpsAdmin::API::I18n.t("auth.oauth2.#{key}", **values)
+    end
+
+    def translated_auth_errors(errors)
+      errors.map { |error| auth_error_text(error) }
+    end
+
+    def auth_error_text(error)
+      return error unless error.is_a?(Symbol)
+
+      code = error.to_s
+      default = code.tr('_', ' ')
+      return default unless code.match?(/\A[a-z0-9_]+\z/)
+
+      VpsAdmin::API::I18n.t("auth.oauth2.errors.#{code}", default:)
     end
 
     def auth_credentials(sinatra_request:, sinatra_params:, oauth2_request:, oauth2_response:, client:, devices:)
@@ -408,7 +518,7 @@ module VpsAdmin::API
       )
 
       if auth.nil?
-        return AuthResult.new(errors: ['invalid user or password'])
+        return AuthResult.new(errors: [:invalid_user_or_password])
       end
 
       ret = AuthResult.from_password_result(auth)
@@ -432,7 +542,7 @@ module VpsAdmin::API
           sinatra_request
         )
 
-        ret.errors << 'invalid user or password'
+        ret.add_error(:invalid_user_or_password)
         return ret
       end
 
@@ -501,7 +611,7 @@ module VpsAdmin::API
           sinatra_request
         )
 
-        ret.errors << 'invalid TOTP code'
+        ret.add_error(:invalid_totp_code)
       end
 
       ret
@@ -566,10 +676,10 @@ module VpsAdmin::API
       )
 
       if sinatra_params[:new_password1] != sinatra_params[:new_password2]
-        ret.errors << 'passwords do not match'
+        ret.add_error(:passwords_do_not_match)
         return ret
       elsif sinatra_params[:new_password1].length < 8
-        ret.errors << 'password should have at least 8 characters'
+        ret.add_error(:password_too_short)
         return ret
       end
 
@@ -663,7 +773,7 @@ module VpsAdmin::API
 
     def create_authorization(auth_result:, sinatra_request:, oauth2_request:, oauth2_response:, client:, devices:, sso: nil, skip_multi_factor_auth_until: nil, last_next_multi_factor_auth: 'require', set_multi_factor_auth_until: false)
       if (error = oauth2_login_error(auth_result.user, sinatra_request))
-        auth_result.errors << error
+        auth_result.add_error(error)
         auth_result.complete = false
         auth_result.authorization = nil
         return
@@ -784,9 +894,9 @@ module VpsAdmin::API
     end
 
     def oauth2_login_error(user, sinatra_request, allow_password_reset: false)
-      unless user.enable_oauth2_auth
-        return 'OAuth2 authentication is disabled on this account'
-      end
+      return :oauth2_disabled unless user.enable_oauth2_auth
+      return :account_locked if user.lockout
+      return :password_reset_required if user.password_reset && !allow_password_reset
 
       Operations::User::CheckLogin.run(
         user,

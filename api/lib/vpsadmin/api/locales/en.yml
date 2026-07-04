@@ -1363,6 +1363,47 @@ en:
         label: Year
       year_of_birth:
         label: Year of birth
+    auth:
+      oauth2:
+        cancel: Cancel
+        credentials_unavailable: Credentials are not available.
+        error_prefix: 'Error:'
+        errors:
+          account_locked: account is locked out, contact support
+          invalid_totp_code: invalid TOTP code
+          invalid_user_or_password: invalid user or password
+          oauth2_disabled: OAuth2 authentication is disabled on this account
+          password_reset_required: password reset required
+          password_too_short: password should have at least 8 characters
+          passwords_do_not_match: passwords do not match
+        failed_to_authenticate: 'Failed to authenticate: %{message}'
+        forgot_password_after: "."
+        forgot_password_before: Forgot password? Contact
+        heading: Sign in using vpsAdmin
+        login: Log in
+        login_passkey: Log in with a passkey
+        login_totp: Log in with TOTP
+        lost_device_after: "."
+        lost_device_before: Lost your authentication device? Try recovery code or
+          contact
+        mfa_day: Ask again in a day
+        mfa_month: Ask again in a month
+        mfa_require: Require multi-factor authentication on this device
+        mfa_week: Ask again in a week
+        new_password: New password
+        passkey_failed: Passkey authentication failed.
+        passkey_start_failed: Passkey authentication could not start.
+        passkey_success: Authenticated using passkey.
+        password: Password
+        repeat_new_password: Repeat new password
+        set_new_password: Please set a new password.
+        signing_in: Signing in...
+        signing_in_passkey: Signing in with a passkey...
+        support: support
+        title: vpsAdmin Authentication
+        totp_code: TOTP code
+        use_passkey_instead: Use a passkey instead
+        user: User
     errors:
       access_denied: Access denied
       access_denied_contact_support: Access denied, please contact support.

@@ -1,11 +1,11 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="<%= Rack::Utils.escape_html(html_lang) %>">
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.3.1/dist/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
     <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.0.8/css/all.css">
-    <title>vpsAdmin Authentication</title>
+    <title><%= html_t.call(:title) %></title>
     <style>
       body { margin-top: 40px; }
       .input-group-prepend span { min-width: 42px; }
@@ -15,7 +15,7 @@
         setTimeout(function() {
           var button = document.getElementById('login');
           button.disabled = true;
-          button.value = "Signing in...";
+          button.value = <%= js_t.call(:signing_in) %>;
         }, 10);
       }
 
@@ -48,7 +48,7 @@
       }
 
       function webAuthnButtonLabel() {
-        return "<% if mfa_methods.size > 1 %>Use a passkey instead<% else %>Log in with a passkey<% end %>";
+        return <% if mfa_methods.size > 1 %><%= js_t.call(:use_passkey_instead) %><% else %><%= js_t.call(:login_passkey) %><% end %>;
       }
 
       async function webAuthn(event) {
@@ -58,11 +58,11 @@
 
         const button = document.getElementById('webauthnBtn');
         button.disabled = true;
-        button.value = "Signing in with a passkey...";
+        button.value = <%= js_t.call(:signing_in_passkey) %>;
 
         try {
           if (navigator.credentials === undefined) {
-            throw new Error('Credentials are not available.');
+            throw new Error(<%= js_t.call(:credentials_unavailable) %>);
           }
 
           const resp1 = await fetch('/webauthn/authentication/begin', {
@@ -77,7 +77,7 @@
           const resp1Json = await resp1.json();
 
           if (!resp1.ok || !resp1Json.status) {
-            throw new Error(resp1Json.message || 'Passkey authentication could not start.');
+            throw new Error(resp1Json.message || <%= js_t.call(:passkey_start_failed) %>);
           }
 
           const options = resp1Json.response.authentication.options;
@@ -130,16 +130,16 @@
           const resp2Json = await resp2.json();
 
           if (resp2Json.status) {
-            reportAlert('success', 'Authenticated using passkey.');
+            reportAlert('success', <%= js_t.call(:passkey_success) %>);
 
             document.getElementById('webauthnInput').value = "1";
             document.getElementById('loginForm').submit();
 
           } else {
-            throw new Error(resp2Json.message || 'Passkey authentication failed.');
+            throw new Error(resp2Json.message || <%= js_t.call(:passkey_failed) %>);
           }
         } catch (error) {
-          reportAlert('danger', 'Failed to authenticate: ' + error.message);
+          reportAlert('danger', <%= js_t.call(:failed_to_authenticate, message: '') %> + error.message);
           button.disabled = false;
           button.value = webAuthnButtonLabel();
         }
@@ -162,18 +162,18 @@
           <div class="card">
             <article class="card-body">
               <img src="<%= logo_url %>" class="card-img-top" alt="vpsFree.cz">
-              <h4 class="card-title text-center mb-4 mt-1">Sign in using vpsAdmin</h4>
+              <h4 class="card-title text-center mb-4 mt-1"><%= html_t.call(:heading) %></h4>
               <h5 class="card-subtitle text-center text-muted mb-2"><%= client.name %></h5>
               <hr>
               <div id="alert-area">
                 <% if step == :reset_password -%>
                   <div class="alert alert-primary" role="alert">
-                    Please set a new password.
+                    <%= html_t.call(:set_new_password) %>
                   </div>
                 <% end -%>
-                <% (auth_result ? auth_result.errors : []).each do |error| -%>
+                <% auth_errors.each do |error| -%>
                   <div class="alert alert-danger" role="alert">
-                    Error: <%= Rack::Utils.escape_html(error) %>
+                    <%= html_t.call(:error_prefix) %> <%= Rack::Utils.escape_html(error) %>
                   </div>
                 <% end -%>
               </div>
@@ -181,6 +181,9 @@
               <form action="<%= authorize_path %>" method="post" onsubmit="onLoginFormSubmit();" id="loginForm">
                 <% oauth2_params(oauth2_request).each do |k, v| -%>
                   <input type="hidden" name="<%= k %>" value="<%= Rack::Utils.escape_html(v) %>">
+                <% end -%>
+                <% if ui_locales && !ui_locales.empty? -%>
+                  <input type="hidden" name="ui_locales" value="<%= Rack::Utils.escape_html(ui_locales) %>">
                 <% end -%>
 
                 <% if auth_token -%>
@@ -195,7 +198,7 @@
                       <div class="input-group-prepend">
                           <span class="input-group-text"> <i class="fa fa-user"></i> </span>
                        </div>
-                       <input type="text" class="form-control" name="user" placeholder="User" value="<%= Rack::Utils.escape_html(user) %>" <%= user && !user.empty? ? '' : 'autofocus' %>>
+                       <input type="text" class="form-control" name="user" placeholder="<%= html_t.call(:user) %>" value="<%= Rack::Utils.escape_html(user) %>" <%= user && !user.empty? ? '' : 'autofocus' %>>
                     </div>
                   </div>
 
@@ -204,7 +207,7 @@
                       <div class="input-group-prepend">
                         <span class="input-group-text"> <i class="fa fa-lock"></i> </span>
                       </div>
-                      <input class="form-control password-toggle" type="password" name="password" placeholder="Password" <%= user && !user.empty? ? 'autofocus' : '' %>>
+                      <input class="form-control password-toggle" type="password" name="password" placeholder="<%= html_t.call(:password) %>" <%= user && !user.empty? ? 'autofocus' : '' %>>
                       <div class="input-group-append">
                         <a href="#" onclick="togglePasswords();" class="input-group-text"><i class="fa fa-eye-slash password-toggle" aria-hidden="true"></i></a>
                       </div>
@@ -212,16 +215,16 @@
                   </div>
 
                   <div class="form-group">
-                    <input type="submit" class="btn btn-primary btn-block" name="login_credentials" id="login" value="Log in">
+                    <input type="submit" class="btn btn-primary btn-block" name="login_credentials" id="login" value="<%= html_t.call(:login) %>">
                   </div>
 
                 <% elsif step == :mfa -%>
                   <div class="form-group">
                     <select class="form-control" name="next_multi_factor_auth">
-                      <option value="require" <%= next_multi_factor_auth == 'require' ? 'selected' : '' %>>Require multi-factor authentication on this device</option>
-                      <option value="day" <%= next_multi_factor_auth == 'day' ? 'selected' : '' %>>Ask again in a day</option>
-                      <option value="week" <%= next_multi_factor_auth == 'week' ? 'selected' : '' %>>Ask again in a week</option>
-                      <option value="month" <%= next_multi_factor_auth == 'month' ? 'selected' : '' %>>Ask again in a month</option>
+                      <option value="require" <%= next_multi_factor_auth == 'require' ? 'selected' : '' %>><%= html_t.call(:mfa_require) %></option>
+                      <option value="day" <%= next_multi_factor_auth == 'day' ? 'selected' : '' %>><%= html_t.call(:mfa_day) %></option>
+                      <option value="week" <%= next_multi_factor_auth == 'week' ? 'selected' : '' %>><%= html_t.call(:mfa_week) %></option>
+                      <option value="month" <%= next_multi_factor_auth == 'month' ? 'selected' : '' %>><%= html_t.call(:mfa_month) %></option>
                     </select>
                   </div>
 
@@ -231,18 +234,18 @@
                         <div class="input-group-prepend">
                           <span class="input-group-text"> <i class="fa fa-lock"></i> </span>
                         </div>
-                        <input type="text" class="form-control" name="totp_code" id="totp_code" placeholder="TOTP code" autocomplete="off" autofocus>
+                        <input type="text" class="form-control" name="totp_code" id="totp_code" placeholder="<%= html_t.call(:totp_code) %>" autocomplete="off" autofocus>
                       </div>
                     </div>
 
                     <div class="form-group">
-                      <input type="submit" class="btn btn-primary btn-block" name="login_totp" id="login" value="Log in with TOTP">
+                      <input type="submit" class="btn btn-primary btn-block" name="login_totp" id="login" value="<%= html_t.call(:login_totp) %>">
                     </div>
                   <% end -%>
 
                   <% if mfa_methods.include?(:webauthn) -%>
                     <div class="form-group">
-                      <input type="submit" class="btn btn-secondary btn-block" name="login_webauthn" id="webauthnBtn" value="<% if mfa_methods.size > 1 %>Use a passkey instead<% else %>Log in with a passkey<% end %>" onclick="webAuthn(event);">
+                      <input type="submit" class="btn btn-secondary btn-block" name="login_webauthn" id="webauthnBtn" value="<% if mfa_methods.size > 1 %><%= html_t.call(:use_passkey_instead) %><% else %><%= html_t.call(:login_passkey) %><% end %>" onclick="webAuthn(event);">
                     </div>
                   <% end -%>
 
@@ -252,7 +255,7 @@
                       <div class="input-group-prepend">
                         <span class="input-group-text"> <i class="fa fa-lock"></i> </span>
                       </div>
-                      <input type="password" class="form-control password-toggle" name="new_password1" placeholder="New password" minlength="8" autofocus>
+                      <input type="password" class="form-control password-toggle" name="new_password1" placeholder="<%= html_t.call(:new_password) %>" minlength="8" autofocus>
                       <div class="input-group-append">
                         <a href="#" onclick="togglePasswords();" class="input-group-text"><i class="fa fa-eye-slash password-toggle" aria-hidden="true"></i></a>
                       </div>
@@ -264,7 +267,7 @@
                       <div class="input-group-prepend">
                         <span class="input-group-text"> <i class="fa fa-lock"></i> </span>
                       </div>
-                      <input type="password" class="form-control password-toggle" name="new_password2" placeholder="Repeat new password" minlength="8">
+                      <input type="password" class="form-control password-toggle" name="new_password2" placeholder="<%= html_t.call(:repeat_new_password) %>" minlength="8">
                       <div class="input-group-append">
                         <a href="#" onclick="togglePasswords();" class="input-group-text"><i class="fa fa-eye-slash password-toggle" aria-hidden="true"></i></a>
                       </div>
@@ -272,12 +275,12 @@
                   </div>
 
                   <div class="form-group">
-                    <input type="submit" class="btn btn-primary btn-block" name="login_reset_password" id="login" value="Log in">
+                    <input type="submit" class="btn btn-primary btn-block" name="login_reset_password" id="login" value="<%= html_t.call(:login) %>">
                   </div>
                 <% end -%>
 
                 <div class="form-group text-center">
-                  <input type="submit" class="btn btn-outline-secondary btn-sm" name="cancel" value="Cancel">
+                  <input type="submit" class="btn btn-outline-secondary btn-sm" name="cancel" value="<%= html_t.call(:cancel) %>">
                 </div>
               </form>
               <% if step == :credentials || (step == :mfa && mfa_methods.include?(:totp)) -%>
@@ -285,9 +288,9 @@
                 <p class="text-muted text-center">
                   <small>
                     <% if step == :credentials -%>
-                      Forgot password? Contact <a href="mailto:<%= support_mail %>">support</a>.
+                      <%= html_t.call(:forgot_password_before) %> <a href="mailto:<%= Rack::Utils.escape_html(support_mail) %>"><%= html_t.call(:support) %></a><%= html_t.call(:forgot_password_after) %>
                     <% elsif step == :mfa && mfa_methods.include?(:totp) -%>
-                      Lost your authentication device? Try recovery code or contact <a href="mailto:<%= support_mail %>">support</a>.
+                      <%= html_t.call(:lost_device_before) %> <a href="mailto:<%= Rack::Utils.escape_html(support_mail) %>"><%= html_t.call(:support) %></a><%= html_t.call(:lost_device_after) %>
                     <% end -%>
                   </small>
                 </p>

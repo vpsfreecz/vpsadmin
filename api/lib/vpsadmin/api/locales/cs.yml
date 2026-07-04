@@ -1359,6 +1359,47 @@ cs:
         label: Rok
       year_of_birth:
         label: Rok narození
+    auth:
+      oauth2:
+        cancel: Zrušit
+        credentials_unavailable: Přihlašovací údaje nejsou dostupné.
+        error_prefix: 'Chyba:'
+        errors:
+          account_locked: účet je uzamčen, kontaktujte podporu
+          invalid_totp_code: neplatný TOTP kód
+          invalid_user_or_password: neplatný uživatel nebo heslo
+          oauth2_disabled: OAuth2 autentizace je na tomto účtu vypnutá
+          password_reset_required: je vyžadována změna hesla
+          password_too_short: heslo musí mít alespoň 8 znaků
+          passwords_do_not_match: hesla se neshodují
+        failed_to_authenticate: 'Ověření se nezdařilo: %{message}'
+        forgot_password_after: "."
+        forgot_password_before: Zapomenuté heslo? Kontaktujte
+        heading: Přihlásit se pomocí vpsAdminu
+        login: Přihlásit se
+        login_passkey: Přihlásit se pomocí passkey
+        login_totp: Přihlásit se pomocí TOTP
+        lost_device_after: "."
+        lost_device_before: Ztratili jste autentizační zařízení? Zkuste recovery kód
+          nebo kontaktujte
+        mfa_day: Zeptat se znovu za den
+        mfa_month: Zeptat se znovu za měsíc
+        mfa_require: Vyžadovat MFA na tomto zařízení
+        mfa_week: Zeptat se znovu za týden
+        new_password: Nové heslo
+        passkey_failed: Přihlášení pomocí passkey se nezdařilo.
+        passkey_start_failed: Přihlášení pomocí passkey nelze spustit.
+        passkey_success: Přihlášení pomocí passkey bylo úspěšné.
+        password: Heslo
+        repeat_new_password: Zopakovat nové heslo
+        set_new_password: Nastavte prosím nové heslo.
+        signing_in: Přihlašování...
+        signing_in_passkey: Přihlašování pomocí passkey...
+        support: podporu
+        title: vpsAdmin autentizace
+        totp_code: TOTP kód
+        use_passkey_instead: Použít místo toho passkey
+        user: Uživatel
     errors:
       access_denied: Přístup odepřen
       access_denied_contact_support: Přístup odepřen, kontaktujte prosím podporu.

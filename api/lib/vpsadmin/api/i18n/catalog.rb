@@ -1,7 +1,9 @@
 # frozen_string_literal: true
 
 require 'fileutils'
+require 'erb'
 require 'json'
+require 'ripper'
 require 'yaml'
 
 module VpsAdmin
@@ -19,14 +21,10 @@ module VpsAdmin
           # Edit translations here, then rerun rake vpsadmin:i18n:update.
         HEADER
 
-        KEY_PATTERNS = [
-          /VpsAdmin::API::I18n\.(?:t|message)\(\s*['"]([a-z0-9_.]+)['"]/,
-          /\bapi_(?:t|message)\(\s*['"]([a-z0-9_.]+)['"]/
-        ].freeze
-
         SCAN_GLOBS = [
           'api/lib/vpsadmin/api.rb',
           'api/lib/vpsadmin/api/*.rb',
+          'api/lib/vpsadmin/api/authentication/**/*.rb',
           'api/lib/vpsadmin/api/operations/**/*.rb',
           'api/lib/vpsadmin/api/resources/**/*.rb',
           'api/models/**/*.rb',
@@ -41,6 +39,191 @@ module VpsAdmin
           'api/models/transaction_chains',
           'plugins/*/api/models/transaction_chains'
         ].freeze
+
+        class SourceKeyExtractor
+          RECEIVER = %w[VpsAdmin API I18n].freeze
+          METHODS = %w[t message].freeze
+          HELPERS = %w[api_t api_message].freeze
+
+          def self.call(content)
+            sexp = Ripper.sexp(content)
+            return [] unless sexp
+
+            new.extract(sexp)
+          end
+
+          def extract(node)
+            keys = []
+            walk(node, keys)
+            keys
+          end
+
+          private
+
+          def walk(node, keys)
+            return unless node.is_a?(Array)
+
+            case node[0]
+            when :method_add_arg
+              key = extract_method_add_arg(node)
+              keys << key if key
+
+            when :command_call
+              key = extract_command_call(node)
+              keys << key if key
+
+            when :command
+              key = extract_command(node)
+              keys << key if key
+            end
+
+            node.each { |child| walk(child, keys) if child.is_a?(Array) }
+          end
+
+          def extract_method_add_arg(node)
+            call = node[1]
+            return unless call && call[0] == :call
+            return unless const_path(call[1]) == RECEIVER
+            return unless METHODS.include?(token_value(call[3]))
+
+            first_string_arg(node[2])
+          end
+
+          def extract_command_call(node)
+            return unless const_path(node[1]) == RECEIVER
+            return unless METHODS.include?(token_value(node[3]))
+
+            first_string_arg(node[4])
+          end
+
+          def extract_command(node)
+            return unless HELPERS.include?(token_value(node[1]))
+
+            first_string_arg(node[2])
+          end
+
+          def first_string_arg(args)
+            string_literal_value(arg_list(args).first)
+          end
+
+          def arg_list(node)
+            return [] unless node
+
+            case node[0]
+            when :arg_paren
+              arg_list(node[1])
+            when :args_add_block
+              node[1] || []
+            else
+              []
+            end
+          end
+
+          def string_literal_value(node)
+            return unless node && node[0] == :string_literal
+
+            content = node[1]
+            return unless content && content[0] == :string_content
+
+            parts = content[1..]
+            return unless parts.length == 1 && parts[0][0] == :@tstring_content
+
+            parts[0][1]
+          end
+
+          def const_path(node)
+            return [] unless node
+
+            case node[0]
+            when :const_path_ref
+              const_path(node[1]) + [token_value(node[2])]
+            when :var_ref
+              [token_value(node[1])]
+            else
+              []
+            end
+          end
+
+          def token_value(node)
+            return unless node.is_a?(Array)
+
+            node[1]
+          end
+        end
+
+        class OAuth2TemplateKeyExtractor
+          HELPERS = %w[html_t js_t t].freeze
+
+          def self.call(content)
+            ruby = ERB.new(content, trim_mode: '-').src
+            sexp = Ripper.sexp(ruby)
+            return [] unless sexp
+
+            new.extract(sexp)
+          end
+
+          def extract(node)
+            keys = []
+            walk(node, keys)
+            keys
+          end
+
+          private
+
+          def walk(node, keys)
+            return unless node.is_a?(Array)
+
+            if node[0] == :method_add_arg
+              key = extract_method_add_arg(node)
+              keys << key if key
+            end
+
+            node.each { |child| walk(child, keys) if child.is_a?(Array) }
+          end
+
+          def extract_method_add_arg(node)
+            call = node[1]
+            return unless call && call[0] == :call
+            return unless helper_receiver?(call[1])
+            return unless token_value(call[3]) == 'call'
+
+            symbol_literal_value(arg_list(node[2]).first)
+          end
+
+          def helper_receiver?(node)
+            return false unless node && node[0] == :vcall
+
+            HELPERS.include?(token_value(node[1]))
+          end
+
+          def arg_list(node)
+            return [] unless node
+
+            case node[0]
+            when :arg_paren
+              arg_list(node[1])
+            when :args_add_block
+              node[1] || []
+            else
+              []
+            end
+          end
+
+          def symbol_literal_value(node)
+            return unless node && node[0] == :symbol_literal
+
+            symbol = node[1]
+            return unless symbol && symbol[0] == :symbol
+
+            token_value(symbol[1])
+          end
+
+          def token_value(node)
+            return unless node.is_a?(Array)
+
+            node[1]
+          end
+        end
 
         def initialize(root:)
           @root = root
@@ -175,7 +358,12 @@ module VpsAdmin
         end
 
         def used_keys
-          @used_keys ||= (source_keys + (parameter_catalog_required? ? parameter_metadata.keys : [])).uniq
+          @used_keys ||= (
+            source_keys +
+              oauth2_template_keys +
+              declared_source_keys +
+              (parameter_catalog_required? ? parameter_metadata.keys : [])
+          ).uniq
         end
 
         def parameter_catalog_required?
@@ -184,15 +372,23 @@ module VpsAdmin
 
         def source_keys
           @source_keys ||= source_files.each_with_object([]) do |file, ret|
-            content = File.read(file)
-
-            KEY_PATTERNS.each do |pattern|
-              content.scan(pattern) do |match|
-                key = match.first.delete_prefix('vpsadmin.')
-                ret << key unless ret.include?(key)
-              end
+            SourceKeyExtractor.call(File.read(file)).each do |key|
+              key = key.delete_prefix('vpsadmin.')
+              ret << key unless ret.include?(key)
             end
           end
+        end
+
+        def oauth2_template_keys
+          @oauth2_template_keys ||= begin
+            template = File.read(absolute_path('api/lib/vpsadmin/api/authentication/oauth2_authorize.erb'))
+
+            OAuth2TemplateKeyExtractor.call(template).map { |key| "auth.oauth2.#{key}" }
+          end
+        end
+
+        def declared_source_keys
+          api_runtime_data.fetch(:i18n_keys)
         end
 
         def parameter_metadata
@@ -251,23 +447,38 @@ module VpsAdmin
         end
 
         def parameter_metadata_items
-          @parameter_metadata_items ||= with_api_runtime do |api|
-            unless api.respond_to?(:parameter_metadata_i18n_items)
-              raise 'HaveAPI with parameter metadata i18n catalog support is required'
-            end
+          api_runtime_data.fetch(:parameter_metadata_items)
+        end
 
-            original_scope = api.parameter_i18n_scope if api.respond_to?(:parameter_i18n_scope)
-            previous_locale = ::I18n.locale
-            api.parameter_i18n_scope = VpsAdmin::API::I18n::PARAMETER_SCOPE if api.respond_to?(:parameter_i18n_scope=)
+        def api_runtime_data
+          @api_runtime_data ||= with_api_runtime do |api|
+            {
+              i18n_keys: runtime_i18n_keys,
+              parameter_metadata_items: runtime_parameter_metadata_items(api)
+            }
+          end
+        end
 
-            begin
-              ::I18n.with_locale(DEFAULT_LOCALE) do
-                api.parameter_metadata_i18n_items
-              end
-            ensure
-              ::I18n.locale = previous_locale
-              api.parameter_i18n_scope = original_scope if api.respond_to?(:parameter_i18n_scope=)
+        def runtime_i18n_keys
+          VpsAdmin::API::Authentication::OAuth2Config.i18n_keys
+        end
+
+        def runtime_parameter_metadata_items(api)
+          unless api.respond_to?(:parameter_metadata_i18n_items)
+            raise 'HaveAPI with parameter metadata i18n catalog support is required'
+          end
+
+          original_scope = api.parameter_i18n_scope if api.respond_to?(:parameter_i18n_scope)
+          previous_locale = ::I18n.locale
+          api.parameter_i18n_scope = VpsAdmin::API::I18n::PARAMETER_SCOPE if api.respond_to?(:parameter_i18n_scope=)
+
+          begin
+            ::I18n.with_locale(DEFAULT_LOCALE) do
+              api.parameter_metadata_i18n_items
             end
+          ensure
+            ::I18n.locale = previous_locale
+            api.parameter_i18n_scope = original_scope if api.respond_to?(:parameter_i18n_scope=)
           end
         end
 
