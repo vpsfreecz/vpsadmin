@@ -68,6 +68,18 @@ in
         '';
       };
 
+      supportedLocales = mkOption {
+        type = types.listOf types.str;
+        default = [
+          "en_US.UTF-8/UTF-8"
+          "cs_CZ.UTF-8/UTF-8"
+        ];
+        description = ''
+          System locales required by PHP gettext for enabled WebUI
+          translations.
+        '';
+      };
+
       errorReporting = mkOption {
         type = types.str;
         default = "E_ALL & ~E_NOTICE & ~E_STRICT & ~E_DEPRECATED";
@@ -178,6 +190,8 @@ in
       "d '${cfg.stateDirectory}' 0750 ${app} ${app} - -"
     ];
 
+    i18n.supportedLocales = mkAfter cfg.supportedLocales;
+
     services.phpfpm.pools.${app} = {
       user = app;
       settings = {
@@ -192,13 +206,16 @@ in
         "php_admin_flag[log_errors]" = true;
         "catch_workers_output" = true;
       };
-      phpEnv."PATH" = lib.makeBinPath (
-        with pkgs;
-        [
-          git
-          php
-        ]
-      );
+      phpEnv = {
+        PATH = lib.makeBinPath (
+          with pkgs;
+          [
+            git
+            php
+          ]
+        );
+        LOCALE_ARCHIVE = "${config.i18n.glibcLocales}/lib/locale/locale-archive";
+      };
       phpOptions = ''
         error_reporting = ${cfg.errorReporting}
         date.timezone = ${cfg.timeZone}
