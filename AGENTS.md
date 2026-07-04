@@ -44,6 +44,8 @@
   core schema file.
 
 ## Localization
+- Czech translation guidelines are documented in `doc/i18n-cs.md`. Follow the
+  terminology there when editing API or WebUI Czech translations.
 - API translations are maintained in `api/lib/vpsadmin/api/locales/*.yml` and
   normalized by `rake vpsadmin:i18n:update`.
 - vpsAdmin sets HaveAPI `parameter_i18n_scope` to the `vpsadmin` application
