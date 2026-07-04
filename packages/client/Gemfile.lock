@@ -4,7 +4,7 @@ PATH
     vpsadmin-client (4.1.0)
       base64
       curses
-      haveapi-client (~> 0.28.4)
+      haveapi-client (~> 0.29.1)
       json
       ruby-progressbar
 
@@ -31,7 +31,7 @@ GEM
     curses (1.6.0)
     domain_name (0.6.20240107)
     drb (2.2.3)
-    haveapi-client (0.28.4)
+    haveapi-client (0.29.1)
       activesupport (>= 7.0)
       highline (~> 3.1)
       json
