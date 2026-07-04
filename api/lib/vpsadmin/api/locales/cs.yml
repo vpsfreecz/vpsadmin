@@ -1,0 +1,51 @@
+---
+cs:
+  errors:
+    messages:
+      accepted: musí být přijato
+      blank: nesmí být prázdné
+      confirmation: neodpovídá potvrzení
+      empty: nesmí být prázdné
+      equal_to: musí být rovno %{count}
+      even: musí být sudé
+      exclusion: je rezervováno
+      greater_than: musí být větší než %{count}
+      greater_than_or_equal_to: musí být větší nebo rovno %{count}
+      inclusion: není v seznamu povolených hodnot
+      invalid: není platné
+      less_than: musí být menší než %{count}
+      less_than_or_equal_to: musí být menší nebo rovno %{count}
+      not_a_number: není číslo
+      not_an_integer: musí být celé číslo
+      odd: musí být liché
+      other_than: musí být jiné než %{count}
+      present: musí být prázdné
+      required: musí existovat
+      taken: již existuje
+      too_long: je příliš dlouhé (maximum je %{count} znaků)
+      too_short: je příliš krátké (minimum je %{count} znaků)
+      wrong_length: nemá správnou délku (má mít %{count} znaků)
+  vpsadmin:
+    errors:
+      access_denied: Přístup odepřen
+      access_denied_contact_support: Přístup odepřen, kontaktujte prosím podporu.
+      access_denied_lower: přístup odepřen
+      access_denied_to_dns_zone: přístup k zóně odepřen
+      access_denied_to_maintenance_window_vps: přístup k VPS pro okno údržby odepřen
+      access_denied_to_seed_vps: přístup k této VPS odepřen
+      access_denied_to_vps_user_data: Přístup k uživatelským datům VPS odepřen
+      access_token_in_url: access_token nesmí být poslán v URL
+      object_not_found: Objekt nebyl nalezen
+      object_not_found_lower: objekt nebyl nalezen
+      object_with_attribute_not_found: objekt %{resource} = %{id} nebyl nalezen
+      resource_allocation_error: 'Chyba alokace zdroje: %{reason}'
+      resource_locked: Zdroj je uzamčen. Zkuste to prosím později.
+      resource_locked_by_transaction_chain: Zdroj je uzamčen transakčním řetězcem
+        %{id} (%{label}). Zkuste to prosím později.
+      resource_under_maintenance: 'Zdroj je v údržbě: %{reason}'
+    resources:
+      user:
+        actions:
+          touch:
+            description: Aktualizovat poslední aktivitu
+        description: Spravovat uživatele

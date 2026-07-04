@@ -31,6 +31,15 @@ RSpec.describe 'VpsAdmin::API::Metrics' do
       expect(last_response.body).to include('Access denied')
     end
 
+    it 'localizes rejected access' do
+      header 'Accept-Language', 'cs'
+
+      request_metrics
+
+      expect(last_response.status).to eq(403)
+      expect(last_response.body).to include('Přístup odepřen')
+    end
+
     it 'returns Prometheus text with a valid token' do
       request_metrics(access_token: token.access_token)
 

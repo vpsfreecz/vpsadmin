@@ -13,6 +13,15 @@ RSpec.describe 'VpsAdmin::API' do
       expect(last_response.body).to include('Access denied')
     end
 
+    it 'localizes unauthenticated access without redirect' do
+      header 'Accept-Language', 'cs'
+
+      get '/webauthn/registration/new'
+
+      expect(last_response.status).to eq(401)
+      expect(last_response.body).to include('Přístup odepřen')
+    end
+
     it 'redirects unauthenticated access when redirect_uri is provided' do
       get '/webauthn/registration/new', redirect_uri: redirect_uri
 
@@ -21,6 +30,18 @@ RSpec.describe 'VpsAdmin::API' do
       expect(location).to include(redirect_uri)
       expect(location).to include('registerStatus=0')
       expect(location).to include('registerMessage=Access+denied')
+    end
+
+    it 'localizes unauthenticated redirect message' do
+      header 'Accept-Language', 'cs'
+
+      get '/webauthn/registration/new', redirect_uri: redirect_uri
+
+      expect(last_response.status).to eq(302)
+      location = last_response.headers['Location']
+      expect(location).to include('registerStatus=0')
+      expect(URI.decode_www_form(URI(location).query).to_h['registerMessage'])
+        .to eq('Přístup odepřen, kontaktujte prosím podporu.')
     end
 
     it 'rejects access tokens sent in URLs' do

@@ -56,6 +56,42 @@ RSpec.describe 'VpsAdmin::API::Resources::User' do
       expect(SpecSeed.other_user.reload.last_activity_at).to eq(Time.at(0))
     end
 
+    it 'localizes vpsAdmin action errors from Accept-Language' do
+      header 'Accept-Language', 'cs'
+      SpecSeed.other_user.update!(last_activity_at: Time.at(0))
+
+      as(SpecSeed.user) { json_get touch_path(SpecSeed.other_user.id) }
+
+      expect_status(200)
+      expect(json['status']).to be(false)
+      expect(msg).to eq('přístup odepřen')
+    end
+
+    it 'uses the authenticated user language when no header is sent' do
+      cs = Language.find_or_create_by!(code: 'cs') { |lang| lang.label = 'Čeština' }
+      SpecSeed.user.update!(language: cs)
+      SpecSeed.other_user.update!(last_activity_at: Time.at(0))
+
+      as(SpecSeed.user) { json_get touch_path(SpecSeed.other_user.id) }
+
+      expect_status(200)
+      expect(json['status']).to be(false)
+      expect(msg).to eq('přístup odepřen')
+    end
+
+    it 'lets an explicit language header override the user language' do
+      cs = Language.find_or_create_by!(code: 'cs') { |lang| lang.label = 'Čeština' }
+      SpecSeed.user.update!(language: cs)
+      SpecSeed.other_user.update!(last_activity_at: Time.at(0))
+      header 'Accept-Language', 'en'
+
+      as(SpecSeed.user) { json_get touch_path(SpecSeed.other_user.id) }
+
+      expect_status(200)
+      expect(json['status']).to be(false)
+      expect(msg).to eq('access denied')
+    end
+
     it 'allows admin to touch any user' do
       SpecSeed.other_user.update!(last_activity_at: Time.at(0))
 
