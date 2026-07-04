@@ -22,6 +22,35 @@ function getOAuth2RevokeParams($params = [])
     ]);
 }
 
+function post_login_redirect_target($accessUrl)
+{
+    $target = local_redirect_target($accessUrl, null);
+
+    if (!$target) {
+        return null;
+    }
+
+    $parts = parse_url($target);
+
+    if ($parts === false) {
+        return null;
+    }
+
+    $query = [];
+
+    if (isset($parts['query'])) {
+        parse_str($parts['query'], $query);
+    }
+
+    $page = $query['page'] ?? null;
+
+    if (is_array($page) || in_array($page, ['login', 'jumpto', 'lang'], true)) {
+        return null;
+    }
+
+    return $target;
+}
+
 function loginUser($access_url)
 {
     global $xtpl, $api;
@@ -43,14 +72,9 @@ function loginUser($access_url)
         'session_length' => $m->preferred_session_length,
         'time_zone' => $m->time_zone ?? null,
         'language' => $languageCode,
-        'language_locale' => function_exists('webui_locale_for_api_language')
-            ? webui_locale_for_api_language($languageCode, $GLOBALS['langs'] ?? null)
-            : null,
     ];
-    if (method_exists($api, 'setLanguage')) {
-        $api->setLanguage($languageCode);
-        $api->setup(true);
-    }
+    $api->setLanguage($languageCode);
+    $api->setup(true);
     $_SESSION['api_description'] = $api->getDescription();
     set_request_time_zone($_SESSION["user"]["time_zone"]);
     $_SESSION["is_user"] =       ($m->level >= PRIV_USER) ? true : false;
@@ -61,12 +85,11 @@ function loginUser($access_url)
     csrf_init();
 
     $api->user->touch($m->id);
+    $redirectTarget = post_login_redirect_target($access_url);
 
-    if ($access_url
-        && strpos($access_url, "?page=login&action=login") === false
-        && strpos($access_url, "?page=jumpto") === false) {
+    if ($redirectTarget) {
 
-        redirect($access_url);
+        redirect($redirectTarget);
 
     } elseif (isAdmin()) {
         redirect('?page=cluster');
@@ -202,14 +225,9 @@ function switchUserContext($target_user_id)
             'session_length' => 20 * 60,
             'time_zone' => $user->time_zone ?? null,
             'language' => $languageCode,
-            'language_locale' => function_exists('webui_locale_for_api_language')
-                ? webui_locale_for_api_language($languageCode, $GLOBALS['langs'] ?? null)
-                : null,
         ];
-        if (method_exists($api, 'setLanguage')) {
-            $api->setLanguage($languageCode);
-            $api->setup(true);
-        }
+        $api->setLanguage($languageCode);
+        $api->setup(true);
         $_SESSION['api_description'] = $api->getDescription();
         set_request_time_zone($_SESSION["user"]["time_zone"]);
         $_SESSION["is_user"] =       ($user->level >= PRIV_USER) ? true : false;

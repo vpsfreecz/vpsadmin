@@ -480,7 +480,9 @@ class XTemplate
         $this->assign('LANG_IMG_CLASS', $class);
         $this->assign('LANG_LANG', $lang);
         $this->assign('LANG_TOKEN_PARAM', $tokenParam);
-        $this->assign('PREV_URL', base64_encode(curPageURL()));
+        $this->assign('PREV_URL', base64_encode(
+            local_redirect_target($_SERVER['REQUEST_URI'] ?? './index.php', './index.php')
+        ));
         $this->parse('main.langitem');
     }
     /**

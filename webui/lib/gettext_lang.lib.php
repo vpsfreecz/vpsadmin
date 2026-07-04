@@ -279,9 +279,8 @@ class Lang
         }
 
         $_SESSION['user']['language'] = self::apiCodeForLocale($this->langs, $locale);
-        $_SESSION['user']['language_locale'] = $locale;
 
-        if ($this->api && method_exists($this->api, 'setLanguage')) {
+        if ($this->api) {
             $this->api->setLanguage($_SESSION['user']['language']);
             $this->api->setup(true);
             $_SESSION['api_description'] = $this->api->getDescription();

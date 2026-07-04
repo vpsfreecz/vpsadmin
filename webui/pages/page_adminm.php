@@ -1171,17 +1171,13 @@ if (isLoggedIn()) {
                     $languageCode = lang_code_by_id($params['language']);
                     if ($languageCode) {
                         $_SESSION['user']['language'] = $languageCode;
-                        $_SESSION['user']['language_locale'] = function_exists('webui_locale_for_api_language')
-                            ? webui_locale_for_api_language($languageCode, $langs ?? null)
-                            : null;
-                        if (isset($lang) && $_SESSION['user']['language_locale']) {
-                            $lang->set_current_lang($_SESSION['user']['language_locale']);
+                        $locale = webui_locale_for_api_language($languageCode, $langs ?? null);
+                        if (isset($lang) && $locale) {
+                            $lang->set_current_lang($locale);
                         }
-                        if (method_exists($api, 'setLanguage')) {
-                            $api->setLanguage($languageCode);
-                            $api->setup(true);
-                            $_SESSION['api_description'] = $api->getDescription();
-                        }
+                        $api->setLanguage($languageCode);
+                        $api->setup(true);
+                        $_SESSION['api_description'] = $api->getDescription();
                     }
                     set_request_time_zone($_SESSION['user']['time_zone']);
                 }

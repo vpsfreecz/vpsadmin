@@ -51,6 +51,23 @@ test('anonymous webui follows browser language', async ({ browser }) => {
   }
 });
 
+test('anonymous language flag persists selection', async ({ page }) => {
+  await page.goto('/?page=about', { waitUntil: 'domcontentloaded' });
+
+  await Promise.all([
+    page.waitForNavigation({ waitUntil: 'domcontentloaded' }),
+    languageFlag(page, 'cs_CZ.utf8').click(),
+  ]);
+
+  await expect(page).toHaveURL(/page=about/);
+  await expect(page.locator('html')).toHaveAttribute('lang', 'cs');
+  await expect(loginButton(page)).toHaveValue('Přihlaste se');
+
+  await page.goto('/?page=login', { waitUntil: 'domcontentloaded' });
+  await expect(page.locator('html')).toHaveAttribute('lang', 'cs');
+  await expect(loginButton(page)).toHaveValue('Přihlaste se');
+});
+
 test('anonymous about page renders', async ({ page }) => {
   await page.goto('/?page=about', { waitUntil: 'domcontentloaded' });
 

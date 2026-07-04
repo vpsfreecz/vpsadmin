@@ -44,7 +44,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && $_GET["action"] == 'callback') {
 
         try {
             $provider->requestAccessToken();
-            loginUser($_SESSION['access_url']);
+            loginUser($_SESSION['access_url'] ?? null);
         } catch (Exception $e) {
             $xtpl->perex(
                 _('Authentication error'),

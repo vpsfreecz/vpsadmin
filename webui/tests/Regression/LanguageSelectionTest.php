@@ -82,4 +82,40 @@ final class LanguageSelectionTest extends TestCase
 
         self::assertSame('cs', $options['language']);
     }
+
+    public function testUserLanguageCodeReadsHaveApiLanguageResource(): void
+    {
+        require_once dirname(__DIR__, 2) . '/lib/functions.lib.php';
+
+        $user = (object) [
+            'language' => (object) [
+                'id' => 2,
+                'code' => 'cs',
+            ],
+        ];
+
+        self::assertSame('cs', user_language_code($user));
+    }
+
+    public function testUserLanguageCodeResolvesLanguageId(): void
+    {
+        require_once dirname(__DIR__, 2) . '/lib/functions.lib.php';
+
+        $user = (object) [
+            'language_id' => 2,
+        ];
+        $langs = [
+            (object) ['id' => 1, 'code' => 'en'],
+            (object) ['id' => 2, 'code' => 'cs'],
+        ];
+
+        self::assertSame('cs', user_language_code($user, $langs));
+    }
+
+    public function testUserLanguageCodeDefaultsToEnglish(): void
+    {
+        require_once dirname(__DIR__, 2) . '/lib/functions.lib.php';
+
+        self::assertSame('en', user_language_code((object) []));
+    }
 }

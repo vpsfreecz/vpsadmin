@@ -457,10 +457,6 @@ function getApiClientOptions($language = null)
         'oauth2_trusted_origins' => getApiOAuth2TrustedOrigins(),
     ];
 
-    if ($language === null && function_exists('webui_current_api_language')) {
-        $language = webui_current_api_language();
-    }
-
     if ($language !== null && (string) $language !== '') {
         $ret['language'] = (string) $language;
     }
@@ -1276,10 +1272,16 @@ function lang_code_by_id($id, $langs = null)
     return false;
 }
 
-function user_language_code($user, $langs = null)
+function user_language_code(object $user, $langs = null)
 {
-    if (isset($user->language_id)) {
-        $code = lang_code_by_id($user->language_id, $langs);
+    $language = $user->language ?? null;
+    if (is_object($language) && isset($language->code)) {
+        return $language->code;
+    }
+
+    $languageId = $user->language_id ?? null;
+    if ($languageId) {
+        $code = lang_code_by_id($languageId, $langs);
 
         if ($code) {
             return $code;

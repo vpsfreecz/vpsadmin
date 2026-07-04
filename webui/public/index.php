@@ -148,7 +148,11 @@ try {
     } else {
         show_notification();
 
-        if (!isLoggedIn() && !isset($_SESSION['access_url'])) {
+        if (
+            !isLoggedIn()
+            && !isset($_SESSION['access_url'])
+            && !in_array($_GET['page'], ['login', 'lang'], true)
+        ) {
             $_SESSION["access_url"] = $_SERVER["REQUEST_URI"];
         }
 
