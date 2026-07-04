@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_06_223000) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_03_120000) do
   create_table "auth_tokens", id: { type: :integer, unsigned: true }, charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
     t.string "api_ip_addr", limit: 46
     t.string "api_ip_ptr"
@@ -294,6 +294,25 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_06_223000) do
     t.integer "location_id", unsigned: true
   end
 
+  create_table "dns_server_zone_transfer_logs", charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.bigint "dns_server_zone_id", null: false
+    t.datetime "event_at", null: false
+    t.string "event_key", limit: 64, null: false
+    t.text "message", size: :medium
+    t.string "primary_addr", limit: 46
+    t.text "raw_message", size: :medium
+    t.string "reason"
+    t.string "reason_code", limit: 40
+    t.integer "serial", unsigned: true
+    t.string "source_cursor", limit: 191
+    t.integer "status", null: false
+    t.datetime "updated_at", null: false
+    t.index ["dns_server_zone_id", "event_at"], name: "idx_dns_server_zone_transfer_logs_on_zone_and_event_at"
+    t.index ["dns_server_zone_id"], name: "index_dns_server_zone_transfer_logs_on_dns_server_zone_id"
+    t.index ["event_key"], name: "index_dns_server_zone_transfer_logs_on_event_key", unique: true
+  end
+
   create_table "dns_server_zones", charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
     t.integer "confirmed", default: 0, null: false
     t.datetime "created_at", null: false
@@ -317,25 +336,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_06_223000) do
     t.index ["dns_server_id"], name: "index_dns_server_zones_on_dns_server_id"
     t.index ["dns_zone_id"], name: "index_dns_server_zones_on_dns_zone_id"
     t.index ["last_transfer_status"], name: "index_dns_server_zones_on_last_transfer_status"
-  end
-
-  create_table "dns_server_zone_transfer_logs", charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
-    t.datetime "created_at", null: false
-    t.bigint "dns_server_zone_id", null: false
-    t.datetime "event_at", null: false
-    t.string "event_key", limit: 64, null: false
-    t.text "message", size: :medium
-    t.string "primary_addr", limit: 46
-    t.text "raw_message", size: :medium
-    t.string "reason"
-    t.string "reason_code", limit: 40
-    t.integer "serial", unsigned: true
-    t.string "source_cursor", limit: 191
-    t.integer "status", null: false
-    t.datetime "updated_at", null: false
-    t.index ["dns_server_zone_id", "event_at"], name: "idx_dns_server_zone_transfer_logs_on_zone_and_event_at"
-    t.index ["dns_server_zone_id"], name: "index_dns_server_zone_transfer_logs_on_dns_server_zone_id"
-    t.index ["event_key"], name: "index_dns_server_zone_transfer_logs_on_event_key", unique: true
   end
 
   create_table "dns_servers", charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
@@ -1241,15 +1241,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_06_223000) do
     t.index ["resource", "row_id"], name: "index_resource_locks_on_resource_and_row_id", unique: true
   end
 
-  create_table "single_sign_ons", charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
-    t.datetime "created_at", null: false
-    t.bigint "token_id"
-    t.datetime "updated_at", null: false
-    t.bigint "user_id", null: false
-    t.index ["token_id"], name: "index_single_sign_ons_on_token_id"
-    t.index ["user_id"], name: "index_single_sign_ons_on_user_id"
-  end
-
   create_table "security_advisories", charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.integer "created_by_id"
@@ -1332,6 +1323,15 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_06_223000) do
     t.index ["node_id"], name: "index_security_advisory_vpses_on_node_id"
     t.index ["security_advisory_id", "vps_id"], name: "index_sav_on_advisory_vps", unique: true
     t.index ["user_id"], name: "index_security_advisory_vpses_on_user_id"
+  end
+
+  create_table "single_sign_ons", charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.bigint "token_id"
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.index ["token_id"], name: "index_single_sign_ons_on_token_id"
+    t.index ["user_id"], name: "index_single_sign_ons_on_user_id"
   end
 
   create_table "snapshot_downloads", id: { type: :integer, unsigned: true }, charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
@@ -1702,9 +1702,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_06_223000) do
     t.boolean "preferred_logout_all", default: false, null: false
     t.integer "preferred_session_length", default: 1200, null: false
     t.datetime "remind_after_date", precision: nil
+    t.string "time_zone"
     t.datetime "updated_at", precision: nil
     t.string "webauthn_id"
-    t.string "time_zone"
     t.index ["login"], name: "index_users_on_login", unique: true
     t.index ["object_state"], name: "index_users_on_object_state"
   end

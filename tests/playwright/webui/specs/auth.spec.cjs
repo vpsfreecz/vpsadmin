@@ -15,6 +15,10 @@ const {
 } = require('../lib/pages/auth.cjs');
 
 const fixtures = readFixtures();
+const webuiBaseURL = process.env.WEBUI_BASE_URL || 'http://webui.vpsadmin.test';
+
+const languageFlag = (page, locale) =>
+  page.locator(`#langbox a[href*="newlang=${encodeURIComponent(locale)}"]`);
 
 async function expectNavLinks(page, hrefs) {
   for (const href of hrefs) {
@@ -26,6 +30,25 @@ test('anonymous webui loads', async ({ page }) => {
   await page.goto('/', { waitUntil: 'domcontentloaded' });
   await expect(page).toHaveTitle(/vpsAdmin/);
   await expect(loginButton(page)).toHaveValue('Log in');
+});
+
+test('anonymous webui follows browser language', async ({ browser }) => {
+  const context = await browser.newContext({
+    baseURL: webuiBaseURL,
+    locale: 'cs-CZ',
+    extraHTTPHeaders: {
+      'Accept-Language': 'cs-CZ,cs;q=0.9,en;q=0.8',
+    },
+  });
+  const page = await context.newPage();
+
+  try {
+    await page.goto('/', { waitUntil: 'domcontentloaded' });
+    await expect(page.locator('html')).toHaveAttribute('lang', 'cs');
+    await expect(loginButton(page)).toHaveValue('Přihlaste se');
+  } finally {
+    await context.close();
+  }
 });
 
 test('anonymous about page renders', async ({ page }) => {
@@ -188,4 +211,28 @@ test('admin can switch into user context and regain admin', async ({ page }) => 
   await expect(navLink(page, '?page=cluster')).toBeVisible();
 
   await logout(page, fixtures.admin.username);
+});
+
+test('language flag updates logged-in user preference', async ({ page }) => {
+  await login(page, fixtures.user);
+
+  await Promise.all([
+    page.waitForNavigation({ waitUntil: 'domcontentloaded' }),
+    languageFlag(page, 'cs_CZ.utf8').click(),
+  ]);
+  await expect(page.locator('html')).toHaveAttribute('lang', 'cs');
+  await expect.poll(
+    () => page.evaluate(() => window.vpsAdmin.user.language),
+  ).toBe('cs');
+
+  await Promise.all([
+    page.waitForNavigation({ waitUntil: 'domcontentloaded' }),
+    languageFlag(page, 'en_US.utf8').click(),
+  ]);
+  await expect(page.locator('html')).toHaveAttribute('lang', 'en');
+  await expect.poll(
+    () => page.evaluate(() => window.vpsAdmin.user.language),
+  ).toBe('en');
+
+  await logout(page, fixtures.user.username);
 });

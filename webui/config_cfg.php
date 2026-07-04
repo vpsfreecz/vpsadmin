@@ -26,4 +26,12 @@ $langs = [
         "lang" => "English",
         "aliases" => ["en", "en-US"],
     ],
+    "cs_CZ.utf8" => [
+        "code" => "cs_CZ.utf8",
+        "api_code" => "cs",
+        "html" => "cs",
+        "icon" => "cz",
+        "lang" => "Česky",
+        "aliases" => ["cs", "cs-CZ"],
+    ],
 ];
