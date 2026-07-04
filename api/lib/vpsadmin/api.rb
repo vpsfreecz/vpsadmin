@@ -121,6 +121,9 @@ module VpsAdmin
           # Stop this hook's propagation. If there is ExceptionMailer connected, we
           # don't want it to report this error.
           HaveAPI::Hooks.stop(ret)
+        else
+          warn "[vpsAdmin API] HaveAPI description failed: #{e.class}: #{e.message}"
+          e.backtrace&.each { |line| warn "\t#{line}" }
         end
 
         ret

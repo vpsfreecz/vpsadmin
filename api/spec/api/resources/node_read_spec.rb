@@ -70,6 +70,23 @@ RSpec.describe 'VpsAdmin::API::Resources::Node' do
     )
   end
 
+  describe 'Description' do
+    it 'describes the show endpoint for HaveAPI clients' do
+      as(SpecSeed.admin) { options "#{show_path(node.id)}?method=GET" }
+
+      expect_status(200)
+
+      response = json.fetch('response')
+      expect(response.fetch('scope')).to eq('node#show')
+      expect(response.dig('output', 'parameters')).to include(
+        'id',
+        'location',
+        'status',
+        'pool_status'
+      )
+    end
+  end
+
   describe 'Index' do
     it 'rejects unauthenticated access' do
       json_get index_path
