@@ -92,7 +92,7 @@ final class XssReportSinksTest extends TestCase
 
         $this->assertFileContains(
             'webui/public/config.js.php',
-            'json_encode(getSelfUri(), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT)',
+            'webui_json(getSelfUri())',
             'VULN-28 host-derived config URL must be JSON encoded.'
         );
 

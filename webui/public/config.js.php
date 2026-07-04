@@ -20,31 +20,31 @@ if (isLoggedIn()) {
 (function(root) {
 	root.vpsAdmin = {
 		api: {
-			url: <?php echo json_encode(EXT_API_URL, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>,
-			version: <?php echo json_encode(API_VERSION, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>,
-			oauth2TrustedOrigins: <?php echo json_encode(getApiOAuth2TrustedOrigins(), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>,
-			language: <?php echo json_encode($language, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>
+			url: <?php echo webui_json(EXT_API_URL) ?>,
+			version: <?php echo webui_json(API_VERSION) ?>,
+			oauth2TrustedOrigins: <?php echo webui_json(getApiOAuth2TrustedOrigins()) ?>,
+			language: <?php echo webui_json($language) ?>
 		},
 		webui: {
-			url: <?php echo json_encode(getSelfUri(), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>
+			url: <?php echo webui_json(getSelfUri()) ?>
 		},
 		csrf: {
-			sessionTimeZone: <?php echo json_encode(csrf_token('session_time_zone'), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>
+			sessionTimeZone: <?php echo webui_json(csrf_token('session_time_zone')) ?>
 		},
 		user: {
-			id: <?php echo json_encode($_SESSION['user']['id'] ?? null, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>,
-			timeZone: <?php echo json_encode($_SESSION['user']['time_zone'] ?? null, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>,
-			language: <?php echo json_encode($language, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>
+			id: <?php echo webui_json($_SESSION['user']['id'] ?? null) ?>,
+			timeZone: <?php echo webui_json($_SESSION['user']['time_zone'] ?? null) ?>,
+			language: <?php echo webui_json($language) ?>
 		},
-		serverTimeZone: <?php echo json_encode(VPSADMIN_SERVER_TIME_ZONE, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>,
+		serverTimeZone: <?php echo webui_json(VPSADMIN_SERVER_TIME_ZONE) ?>,
 	<?php if ($_SESSION['auth_type'] == 'oauth2') { ?>
-		accessToken: <?php echo json_encode($_SESSION['access_token']['access_token'], JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>,
+		accessToken: <?php echo webui_json($_SESSION['access_token']['access_token']) ?>,
 	<?php } elseif ($_SESSION['auth_type'] == 'token') { ?>
-		sessionToken: <?php echo json_encode($_SESSION['session_token'], JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>,
+		sessionToken: <?php echo webui_json($_SESSION['session_token']) ?>,
 	<?php } ?>
 	sessionLength: <?php echo $_SESSION['user']['session_length'] ?>,
-	logoutUrl: <?php echo json_encode('?page=login&action=logout&timeout=1&t=' . csrf_token()) ?>,
-	description: <?php echo json_encode($_SESSION['api_description']) ?>,
+	logoutUrl: <?php echo webui_json('?page=login&action=logout&timeout=1&t=' . csrf_token()) ?>,
+	description: <?php echo webui_json($_SESSION['api_description']) ?>,
 	sessionManagement: true
 };
 

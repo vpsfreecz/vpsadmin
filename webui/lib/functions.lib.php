@@ -445,6 +445,11 @@ function getApiOAuth2TrustedOrigins()
     return defined('API_OAUTH2_TRUSTED_ORIGINS') ? API_OAUTH2_TRUSTED_ORIGINS : [];
 }
 
+function webui_json($value)
+{
+    return json_encode($value, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT);
+}
+
 function getApiClientOptions($language = null)
 {
     $ret = [

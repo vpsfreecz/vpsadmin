@@ -2,11 +2,6 @@
 
 const WEBUI_TIP_TIME_ZONE_SETTINGS = 'time_zone_settings_v1';
 
-function webui_tip_json($value)
-{
-    return json_encode($value, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT);
-}
-
 function webui_tip_settings($namespace)
 {
     global $api;
@@ -42,7 +37,7 @@ function webui_tip_append_script($settings)
         'AJAX_SCRIPT',
         ($xtpl->vars['AJAX_SCRIPT'] ?? '')
         . '<script type="text/javascript">window.vpsAdminTips = '
-        . webui_tip_json($settings)
+        . webui_json($settings)
         . ';</script>'
         . '<script type="text/javascript" src="js/tips.js"></script>'
     );
