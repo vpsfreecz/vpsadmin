@@ -1,0 +1,79 @@
+name: i18n health
+
+on:
+  push:
+    paths:
+      - ".github/workflows/i18n-health.yml"
+      - ".overcommit.yml"
+      - ".git-hooks/**"
+      - "AGENTS.md"
+      - "flake.lock"
+      - "flake.nix"
+      - "api/**"
+      - "packages/**"
+      - "plugins/**"
+      - "webui/**"
+  pull_request:
+    paths:
+      - ".github/workflows/i18n-health.yml"
+      - ".overcommit.yml"
+      - ".git-hooks/**"
+      - "AGENTS.md"
+      - "flake.lock"
+      - "flake.nix"
+      - "api/**"
+      - "packages/**"
+      - "plugins/**"
+      - "webui/**"
+
+permissions:
+  contents: read
+
+jobs:
+  api-i18n:
+    name: API i18n health
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 1
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v31
+        with:
+          extra_nix_config: |
+            extra-substituters = https://cache.vpsadminos.org
+            extra-trusted-public-keys = cache.vpsadminos.org:wpIJlNZQIhS+0gFf1U3MC9sLZdLW3sh5qakOWGDoDrE=
+            fallback = true
+            connect-timeout = 15
+
+      - name: Check API translations
+        run: |
+          nix develop .#api --command bash -lc 'bundle exec rake vpsadmin:i18n:health'
+
+  webui-i18n:
+    name: WebUI i18n health
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 1
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v31
+        with:
+          extra_nix_config: |
+            extra-substituters = https://cache.vpsadminos.org
+            extra-trusted-public-keys = cache.vpsadminos.org:wpIJlNZQIhS+0gFf1U3MC9sLZdLW3sh5qakOWGDoDrE=
+            fallback = true
+            connect-timeout = 15
+
+      - name: Check WebUI translations
+        run: |
+          nix develop .#webui --command bash -lc './lang/scripts/locales-health'
