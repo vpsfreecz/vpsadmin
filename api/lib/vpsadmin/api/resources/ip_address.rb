@@ -325,11 +325,10 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
       ip = ::IpAddress.find(path_params['ip_address_id'])
       netif = input[:network_interface]
 
-      if current_user.role != :admin && ( \
-           (ip.user_id && ip.user_id != current_user.id) \
-           || (netif.vps.user_id != current_user.id)
-         )
-        error!('access denied')
+      if current_user.role != :admin &&
+         ((ip.user_id && ip.user_id != current_user.id) ||
+          netif.vps.user_id != current_user.id)
+        error!(VpsAdmin::API::I18n.message('errors.access_denied_lower'))
       end
 
       maintenance_check!(netif.vps)
@@ -382,11 +381,10 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
       ip = ::IpAddress.find(path_params['ip_address_id'])
       netif = input[:network_interface]
 
-      if current_user.role != :admin && ( \
-           (ip.user_id && ip.user_id != current_user.id) \
-           || (netif.vps.user_id != current_user.id)
-         )
-        error!('access denied')
+      if current_user.role != :admin &&
+         ((ip.user_id && ip.user_id != current_user.id) ||
+          netif.vps.user_id != current_user.id)
+        error!(VpsAdmin::API::I18n.message('errors.access_denied_lower'))
       end
 
       error!('invalid host IP address') if input[:host_ip_address] && input[:host_ip_address].ip_address != ip
@@ -433,12 +431,11 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
     def exec
       ip = ::IpAddress.find(path_params['ip_address_id'])
 
-      if current_user.role != :admin && ( \
-           (ip.user_id && ip.user_id != current_user.id) \
-           || (ip.network_interface_id && \
-               ip.network_interface.vps.user_id != current_user.id)
-         )
-        error!('access denied')
+      if current_user.role != :admin &&
+         ((ip.user_id && ip.user_id != current_user.id) ||
+          (ip.network_interface_id &&
+           ip.network_interface.vps.user_id != current_user.id))
+        error!(VpsAdmin::API::I18n.message('errors.access_denied_lower'))
       end
 
       netif = ip.network_interface

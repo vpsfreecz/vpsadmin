@@ -114,7 +114,7 @@ module VpsAdmin::API::Resources
           object_state_check!(current_user)
 
           if input[:seed_vps] && input[:seed_vps].user_id != current_user.id
-            error!('access to this VPS is denied')
+            error!(VpsAdmin::API::I18n.message('errors.access_denied_to_seed_vps'))
           end
         end
 

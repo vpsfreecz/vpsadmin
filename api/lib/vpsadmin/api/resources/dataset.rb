@@ -192,7 +192,7 @@ module VpsAdmin::API::Resources
           error!('insufficient permission to create a dataset')
 
         elsif current_user.role != :admin && input[:dataset] && !input[:dataset].user_create
-          error!('access denied')
+          error!(VpsAdmin::API::I18n.message('errors.access_denied_lower'))
         end
 
         object_state_check!(current_user)
@@ -433,7 +433,7 @@ module VpsAdmin::API::Resources
           error!('only top-level datasets can be migrated')
 
         elsif input[:maintenance_window_vps] && input[:maintenance_window_vps].user_id != ds.user_id
-          error!('access denied to maintenance window VPS')
+          error!(VpsAdmin::API::I18n.message('errors.access_denied_to_maintenance_window_vps'))
         end
 
         if (input[:finish_weekday] || input[:finish_minutes]) \

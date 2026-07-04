@@ -3,6 +3,8 @@ PreCommit:
     enabled: true
   RuboCop:
     enabled: true
+  VpsadminApiI18n:
+    enabled: true
   PhpCsFixer:
     enabled: true
     command: 'php-cs-fixer'

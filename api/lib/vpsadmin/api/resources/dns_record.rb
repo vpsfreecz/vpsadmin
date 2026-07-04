@@ -109,7 +109,7 @@ module VpsAdmin::API::Resources
 
       def exec
         if current_user.role != :admin && input[:dns_zone].user != current_user
-          error!('access to the zone denied')
+          error!(VpsAdmin::API::I18n.message('errors.access_denied_to_dns_zone'))
         end
 
         object_state_check!(input[:dns_zone].user) if input[:dns_zone].user_id

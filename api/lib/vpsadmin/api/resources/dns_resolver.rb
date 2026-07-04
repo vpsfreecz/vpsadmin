@@ -56,7 +56,7 @@ class VpsAdmin::API::Resources::DnsResolver < HaveAPI::Resource
 
       if input[:vps]
         if current_user.role != :admin && input[:vps].user_id != current_user.id
-          error!('access denied')
+          error!(VpsAdmin::API::I18n.message('errors.access_denied_lower'))
         end
 
         q = q.where(

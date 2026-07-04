@@ -98,7 +98,7 @@ class VpsAdmin::API::Resources::UserNamespaceMap < HaveAPI::Resource
     end
 
     def exec
-      error!('access denied') if current_user.role != :admin && input[:user_namespace].user_id != current_user.id
+      error!(VpsAdmin::API::I18n.message('errors.access_denied_lower')) if current_user.role != :admin && input[:user_namespace].user_id != current_user.id
 
       object_state_check!(input[:user_namespace].user)
 
@@ -265,7 +265,7 @@ class VpsAdmin::API::Resources::UserNamespaceMap < HaveAPI::Resource
         object_state_check!(map.user_namespace.user)
 
         if current_user.role != :admin && map.user_namespace.user_id != current_user.id
-          error!('access denied')
+          error!(VpsAdmin::API::I18n.message('errors.access_denied_lower'))
 
         elsif map.in_use?
           error!('the map is in use, it cannot be changed at this time')

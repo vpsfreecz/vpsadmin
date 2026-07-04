@@ -32,7 +32,8 @@ module VpsAdmin::API
 
       if opts[:vps_user_data]
         if opts[:vps_user_data].user_id != vps.user_id
-          raise Exceptions::OperationError, 'Access denied to VPS user data'
+          raise Exceptions::OperationError,
+                VpsAdmin::API::I18n.t('errors.access_denied_to_vps_user_data')
         elsif !os_template.support_user_data?(opts[:vps_user_data])
           raise Exceptions::OperationError,
                 "OS template #{os_template.label} does not support #{opts[:vps_user_data].format} user data"

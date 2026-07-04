@@ -1036,7 +1036,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
       maintenance_check!(vps)
 
       if vps.user != input[:vps].user
-        error!('access denied')
+        error!(VpsAdmin::API::I18n.message('errors.access_denied_lower'))
       end
 
       maintenance_check!(input[:vps])
@@ -1131,7 +1131,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
       object_state_check!(vps, vps.user)
 
       if current_user.role != :admin && input[:public_key].user_id != vps.user_id
-        error!('access denied')
+        error!(VpsAdmin::API::I18n.message('errors.access_denied_lower'))
       end
 
       @chain, = TransactionChains::Vps::DeployPublicKey.fire(vps, input[:public_key])

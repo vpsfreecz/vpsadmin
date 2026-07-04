@@ -39,6 +39,7 @@ module VpsAdmin
       end
 
       api = HaveAPI::Server.new
+      VpsAdmin::API::I18n.configure_server(api)
       api.use_version(:all)
       api.action_state = ActionState
 
@@ -47,7 +48,7 @@ module VpsAdmin
       api.connect_hook(:pre_mount) do |ret, _, sinatra|
         sinatra.get '/metrics' do
           m = Metrics.new
-          next [403, 'Access denied'] unless m.authenticate(params['access_token'])
+          next [403, VpsAdmin::API::I18n.t('errors.access_denied')] unless m.authenticate(params['access_token'])
 
           m.compute
           [200, { 'content-type' => 'text/plain' }, m.render]
@@ -55,7 +56,7 @@ module VpsAdmin
 
         sinatra.get '/sd/download-pools' do
           sd = DownloadPoolServiceDiscovery.new(request)
-          next [403, 'Access denied'] unless sd.authenticate
+          next [403, VpsAdmin::API::I18n.t('errors.access_denied')] unless sd.authenticate
 
           [200, { 'content-type' => 'application/json' }, JSON.dump(sd.render)]
         rescue VpsAdmin::API::Exceptions::ConfigurationError => e
@@ -64,7 +65,7 @@ module VpsAdmin
 
         webauthn_registration_new = proc do
           if request.get? && (params.has_key?('access_token') || params.has_key?(:access_token))
-            halt 400, 'access_token must not be sent in URL'
+            halt 400, VpsAdmin::API::I18n.t('errors.access_token_in_url')
           end
 
           unless authenticated?(settings.api_server.default_version)
@@ -72,17 +73,20 @@ module VpsAdmin
               uri = URI(params[:redirect_uri])
               query_params = URI.decode_www_form(uri.query || '')
               query_params << %w[registerStatus 0]
-              query_params << ['registerMessage', 'Access denied, please contact support.']
+              query_params << [
+                'registerMessage',
+                VpsAdmin::API::I18n.t('errors.access_denied_contact_support')
+              ]
               uri.query = URI.encode_www_form(query_params)
 
               redirect uri.to_s
             else
-              halt 401, 'Access denied'
+              halt 401, VpsAdmin::API::I18n.t('errors.access_denied')
             end
           end
 
           access_token = ::UserSession.current&.token&.token
-          halt 401, 'Access denied' unless access_token
+          halt 401, VpsAdmin::API::I18n.t('errors.access_denied') unless access_token
 
           VpsAdmin::API::Authentication::WebauthnRegister.run(
             current_user,
@@ -112,7 +116,7 @@ module VpsAdmin
       api.connect_hook(:description_exception) do |ret, _ctx, e|
         if e.is_a?(::ActiveRecord::RecordNotFound)
           ret[:http_status] = 404
-          ret[:message] = 'Object not found'
+          ret[:message] = VpsAdmin::API::I18n.message('errors.object_not_found')
 
           # Stop this hook's propagation. If there is ExceptionMailer connected, we
           # don't want it to report this error.
@@ -210,9 +214,13 @@ module VpsAdmin
         ret[:http_status] = 404
 
         ret[:message] = if /find ([^\s]+)[^=]+=(\d+)/ =~ exception.message
-                          "object #{$~[1]} = #{$~[2]} not found"
+                          VpsAdmin::API::I18n.message(
+                            'errors.object_with_attribute_not_found',
+                            resource: Regexp.last_match(1),
+                            id: Regexp.last_match(2)
+                          )
                         else
-                          'object not found'
+                          VpsAdmin::API::I18n.message('errors.object_not_found_lower')
                         end
 
         HaveAPI::Hooks.stop(ret)
@@ -225,11 +233,13 @@ module VpsAdmin
         lock = exception.get_lock
 
         ret[:message] = if lock && lock.locked_by.is_a?(::TransactionChain)
-                          'Resource is locked by transaction chain ' \
-                            "#{lock.locked_by_id} (#{lock.locked_by.label}). " \
-                            'Try again later.'
+                          VpsAdmin::API::I18n.message(
+                            'errors.resource_locked_by_transaction_chain',
+                            id: lock.locked_by_id,
+                            label: lock.locked_by.label
+                          )
                         else
-                          'Resource is locked. Try again later.'
+                          VpsAdmin::API::I18n.message('errors.resource_locked')
                         end
 
         puts "[#{Time.now}] Exception ResourceLocked: #{exception.message}"
@@ -241,7 +251,10 @@ module VpsAdmin
       e.rescue(VpsAdmin::API::Maintainable::ResourceUnderMaintenance) do |ret, exception|
         ret[:status] = false
         ret[:http_status] = 423
-        ret[:message] = "Resource is under maintenance: #{exception.message}"
+        ret[:message] = VpsAdmin::API::I18n.message(
+          'errors.resource_under_maintenance',
+          reason: exception.message
+        )
 
         HaveAPI::Hooks.stop(ret)
       end
@@ -249,7 +262,10 @@ module VpsAdmin
       e.rescue(VpsAdmin::API::Exceptions::ClusterResourceAllocationError) do |ret, exception|
         ret[:status] = false
         ret[:http_status] = 400
-        ret[:message] = "Resource allocation error: #{exception.message}"
+        ret[:message] = VpsAdmin::API::I18n.message(
+          'errors.resource_allocation_error',
+          reason: exception.message
+        )
 
         HaveAPI::Hooks.stop(ret)
       end

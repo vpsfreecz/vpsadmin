@@ -249,7 +249,7 @@ module VpsAdmin::API::Resources
       def exec
         ip = input[:ip_address]
 
-        error!('access denied') if current_user.role != :admin && ip.current_owner != current_user
+        error!(VpsAdmin::API::I18n.message('errors.access_denied_lower')) if current_user.role != :admin && ip.current_owner != current_user
 
         lifetime_objects = [ip.current_owner, ip.network_interface&.vps].compact
         object_state_check!(*lifetime_objects) if lifetime_objects.any?
@@ -281,7 +281,7 @@ module VpsAdmin::API::Resources
       def exec
         host = ::HostIpAddress.find(path_params['host_ip_address_id'])
 
-        error!('access denied') if current_user.role != :admin && host.current_owner != current_user
+        error!(VpsAdmin::API::I18n.message('errors.access_denied_lower')) if current_user.role != :admin && host.current_owner != current_user
 
         lifetime_objects = [host.current_owner, host.ip_address.network_interface&.vps].compact
         object_state_check!(*lifetime_objects) if lifetime_objects.any?
@@ -323,7 +323,7 @@ module VpsAdmin::API::Resources
       def exec
         host = ::HostIpAddress.find(path_params['host_ip_address_id'])
 
-        error!('access denied') if current_user.role != :admin && host.current_owner != current_user
+        error!(VpsAdmin::API::I18n.message('errors.access_denied_lower')) if current_user.role != :admin && host.current_owner != current_user
 
         lifetime_objects = [host.current_owner, host.ip_address.network_interface&.vps].compact
         object_state_check!(*lifetime_objects) if lifetime_objects.any?
@@ -363,7 +363,7 @@ module VpsAdmin::API::Resources
           error!("#{host.ip_address} is not assigned to any interface")
 
         elsif current_user.role != :admin && host.current_owner != current_user
-          error!('access denied')
+          error!(VpsAdmin::API::I18n.message('errors.access_denied_lower'))
 
         elsif host.assigned?
           error!("#{host.ip_addr} address is already assigned")
@@ -405,7 +405,7 @@ module VpsAdmin::API::Resources
           error!("#{host.ip_address} is not routed to any interface")
 
         elsif current_user.role != :admin && host.current_owner != current_user
-          error!('access denied')
+          error!(VpsAdmin::API::I18n.message('errors.access_denied_lower'))
 
         elsif host.routed_via_addresses.any?
           error!('one or more networks are routed via this address')

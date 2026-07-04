@@ -164,7 +164,7 @@ module VpsAdmin::API::Resources
 
       def exec
         data = self.class.model.find_by!(with_restricted(id: path_params['vps_user_data_id']))
-        error!('access denied') if input[:vps].user_id != data.user_id
+        error!(VpsAdmin::API::I18n.message('errors.access_denied_lower')) if input[:vps].user_id != data.user_id
 
         unless input[:vps].os_template.support_user_data?(data)
           error!(

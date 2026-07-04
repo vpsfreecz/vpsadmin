@@ -135,7 +135,7 @@ class VpsAdmin::API::Resources::Export < HaveAPI::Resource
       ds =
         input[:dataset] || input[:snapshot].dataset
 
-      error!('access denied') if current_user.role != :admin && ds.user_id != current_user.id
+      error!(VpsAdmin::API::I18n.message('errors.access_denied_lower')) if current_user.role != :admin && ds.user_id != current_user.id
 
       object_state_check!(ds, ds.user)
 
