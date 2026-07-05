@@ -17,7 +17,8 @@ Always translate with context. The same English word can mean different things:
 - `Storage` is `Úložiště`.
 - `Location`/`Locations` are `Lokace`.
 - A planned outage is `odstávka`; an unplanned outage is `výpadek`.
-  Never use `plánovaný výpadek`.
+  Never use `plánovaný výpadek`, `neplánovaný výpadek`,
+  `plánované výpadky`, or `neplánované výpadky`.
 - `Network`/`Networks` are `Síť`/`Sítě`.
 - `Export`/`Exports` are `Export`/`Exporty`.
 - `Back` navigation links are `Zpět`.

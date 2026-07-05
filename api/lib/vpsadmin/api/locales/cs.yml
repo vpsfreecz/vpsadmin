@@ -344,7 +344,7 @@ cs:
       ds_digest_type:
         label: Typ DS digestu
       duration:
-        description: Délka odstávky/výpadku v minutách
+        description: Délka odstávky nebo výpadku v minutách
         label: Trvání
       dynamic_update_enabled:
         description: Pouze pro záznamy A a AAAA
@@ -2206,7 +2206,7 @@ cs:
       outage:
         attributes:
           affected:
-            description: True, pokud je aktuální uživatel dotčen odstávkou/výpadkem
+            description: True, pokud je aktuální uživatel dotčen odstávkou nebo výpadkem
           entity_id:
             label: ID entity
           environment:
@@ -2220,7 +2220,7 @@ cs:
           node:
             description: Filtrovat hlášení podle nodu
           recent_since:
-            description: Filtrovat oznámené nebo nedávno nahlášené odstávky/výpadky
+            description: Filtrovat oznámené nebo nedávno nahlášené odstávky a výpadky
           security_advisory:
             description: Filtrovat hlášení propojená s bezpečnostními upozorněními
             label: Bezpečnostní advisory

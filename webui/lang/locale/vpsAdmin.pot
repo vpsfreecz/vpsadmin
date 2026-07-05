@@ -2302,14 +2302,6 @@ msgid "Unplanned outage"
 msgstr ""
 
 #: forms/outage.forms.php
-msgid "Planned"
-msgstr ""
-
-#: forms/outage.forms.php
-msgid "Unplanned"
-msgstr ""
-
-#: forms/outage.forms.php
 msgid "TBD"
 msgstr ""
 
@@ -2593,23 +2585,44 @@ msgid "Direct"
 msgstr ""
 
 #: forms/outage.forms.php
-msgid "Current"
+msgid "Planned outages"
 msgstr ""
 
 #: forms/outage.forms.php
-msgid "Recently resolved"
+msgid "Upcoming outages"
 msgstr ""
 
 #: forms/outage.forms.php
-msgid "planned and unplanned outages"
+msgid "Upcoming planned and unplanned outages"
 msgstr ""
 
 #: forms/outage.forms.php
-msgid "planned outages"
+msgid "Current planned outages"
 msgstr ""
 
 #: forms/outage.forms.php
-msgid "unplanned outages"
+msgid "Current outages"
+msgstr ""
+
+#: forms/outage.forms.php
+msgid "Current planned and unplanned outages"
+msgstr ""
+
+#: forms/outage.forms.php
+msgid "Recently completed planned outages"
+msgstr ""
+
+#: forms/outage.forms.php
+msgid "Recently resolved outages"
+msgstr ""
+
+#: forms/outage.forms.php
+msgid "Recently resolved planned and unplanned outages"
+msgstr ""
+
+#: forms/outage.forms.php forms/vps.forms.php pages/page_index.php
+#: pages/page_outage.php
+msgid "Outages"
 msgstr ""
 
 #: forms/security_advisory.forms.php lib/functions.lib.php
@@ -4033,10 +4046,6 @@ msgstr ""
 
 #: forms/vps.forms.php
 msgid "Report incident"
-msgstr ""
-
-#: forms/vps.forms.php pages/page_index.php pages/page_outage.php
-msgid "Outages"
 msgstr ""
 
 #: forms/vps.forms.php lib/xtemplate.lib.php pages/page_adminm.php

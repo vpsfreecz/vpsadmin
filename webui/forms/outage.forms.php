@@ -94,16 +94,7 @@ function outage_type_label($type)
 
 function outage_type_list_label($type)
 {
-    switch ($type) {
-        case 'planned_outage':
-            return _('Planned');
-
-        case 'unplanned_outage':
-            return _('Unplanned');
-
-        default:
-            return h($type);
-    }
+    return outage_type_label($type);
 }
 
 function outage_impact_label($impact)
@@ -377,7 +368,9 @@ function outage_edit_systems_form($id)
         'handlers[]',
         resource_list_to_options($api->user->list(['admin' => true]), 'id', 'full_name', false),
         post_val('handlers', array_map(
-            function ($h) { return $h->user_id; },
+            function ($h) {
+                return $h->user_id;
+            },
             $outage->handler->list()->asArray()
         )),
         '',
@@ -612,7 +605,9 @@ function outage_details($id)
 
     $xtpl->table_td(_('Affected systems') . ':');
     $xtpl->table_td(implode("\n<br>\n", array_map(
-        function ($ent) { return h($ent->label); },
+        function ($ent) {
+            return h($ent->label);
+        },
         $outage->entity->list()->asArray()
     )));
     $xtpl->table_tr();
@@ -666,7 +661,9 @@ function outage_details($id)
 
     $xtpl->table_td(_('Handled by') . ':');
     $xtpl->table_td(implode(', ', array_map(
-        function ($h) { return h($h->full_name); },
+        function ($h) {
+            return h($h->full_name);
+        },
         $outage->handler->list()->asArray()
     )));
     $xtpl->table_tr();
@@ -908,7 +905,7 @@ function outage_list()
 
     $xtpl->table_add_category(_('Date'));
     $xtpl->table_add_category(_('Duration'));
-    $xtpl->table_add_category(_('Outage'));
+    $xtpl->table_add_category(_('Type'));
     $xtpl->table_add_category(_('State'));
     $xtpl->table_add_category(_('Systems'));
     $xtpl->table_add_category(_('Impact'));
@@ -1026,7 +1023,9 @@ function outage_list()
         $xtpl->table_td(outage_type_list_label($outage->type));
         $xtpl->table_td($outage->state);
         $xtpl->table_td(implode(', ', array_map(
-            function ($v) { return h($v->label); },
+            function ($v) {
+                return h($v->label);
+            },
             $outage->entity->list()->asArray()
         )));
         $xtpl->table_td(outage_impact_label($outage->impact));
@@ -1312,22 +1311,22 @@ function outage_list_recent()
     }
 
     if (count($planned) > 0) {
-        $xtpl->table_title(outage_list_title(_('Planned'), $planned));
+        $xtpl->table_title(outage_list_title('upcoming', $planned));
         outage_list_overview($planned);
     }
 
     if (count($active) > 0) {
-        $xtpl->table_title(outage_list_title(_('Current'), $active));
+        $xtpl->table_title(outage_list_title('current', $active));
         outage_list_overview($active);
     }
 
     if (count($past) > 0) {
-        $xtpl->table_title(outage_list_title(_('Recently resolved'), $past));
+        $xtpl->table_title(outage_list_title('recent', $past));
         outage_list_overview(array_reverse($past));
     }
 }
 
-function outage_list_title($prefix, $outages)
+function outage_list_kind($outages)
 {
     $hasMaintenance = false;
     $hasOutage = false;
@@ -1345,13 +1344,56 @@ function outage_list_title($prefix, $outages)
     }
 
     if ($hasMaintenance && $hasOutage) {
-        return $prefix . ' ' . _('planned and unplanned outages');
+        return 'both';
     } elseif ($hasMaintenance) {
-        return $prefix . ' ' . _('planned outages');
+        return 'planned';
     } elseif ($hasOutage) {
-        return $prefix . ' ' . _('unplanned outages');
+        return 'unplanned';
     } else {
-        return $prefix . ' ' . _('planned and unplanned outages');
+        return 'both';
+    }
+}
+
+function outage_list_title($section, $outages)
+{
+    $kind = outage_list_kind($outages);
+
+    switch ($section) {
+        case 'upcoming':
+            switch ($kind) {
+                case 'planned':
+                    return _('Planned outages');
+                case 'unplanned':
+                    return _('Upcoming outages');
+                default:
+                    return _('Upcoming planned and unplanned outages');
+            }
+
+            // no break
+        case 'current':
+            switch ($kind) {
+                case 'planned':
+                    return _('Current planned outages');
+                case 'unplanned':
+                    return _('Current outages');
+                default:
+                    return _('Current planned and unplanned outages');
+            }
+
+            // no break
+        case 'recent':
+            switch ($kind) {
+                case 'planned':
+                    return _('Recently completed planned outages');
+                case 'unplanned':
+                    return _('Recently resolved outages');
+                default:
+                    return _('Recently resolved planned and unplanned outages');
+            }
+
+            // no break
+        default:
+            return _('Outages');
     }
 }
 
@@ -1361,7 +1403,7 @@ function outage_list_overview($outages)
 
     $xtpl->table_add_category(_('Date'));
     $xtpl->table_add_category(_('Duration'));
-    $xtpl->table_add_category(_('Outage'));
+    $xtpl->table_add_category(_('Type'));
     $xtpl->table_add_category(_('Systems'));
     $xtpl->table_add_category(_('Impact'));
     $xtpl->table_add_category(_('Reason'));
@@ -1381,7 +1423,9 @@ function outage_list_overview($outages)
         $xtpl->table_td($outage->duration . ' min', false, true);
         $xtpl->table_td(outage_type_list_label($outage->type));
         $xtpl->table_td(implode(', ', array_map(
-            function ($v) { return h($v->label); },
+            function ($v) {
+                return h($v->label);
+            },
             $outage->entity->list()->asArray()
         )));
         $xtpl->table_td(outage_impact_label($outage->impact));

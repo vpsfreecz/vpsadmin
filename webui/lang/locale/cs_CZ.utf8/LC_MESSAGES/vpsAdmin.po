@@ -206,7 +206,7 @@ msgstr "Incidenty"
 
 #: forms/cluster.forms.php forms/outage.forms.php
 msgid "Outage list"
-msgstr "Seznam výpadků"
+msgstr "Seznam odstávek a výpadků"
 
 #: forms/cluster.forms.php forms/outage.forms.php
 #: forms/security_advisory.forms.php forms/vps.forms.php pages/page_index.php
@@ -2325,14 +2325,6 @@ msgid "Unplanned outage"
 msgstr "Výpadek"
 
 #: forms/outage.forms.php
-msgid "Planned"
-msgstr "Plánováno"
-
-#: forms/outage.forms.php
-msgid "Unplanned"
-msgstr "Neplánovaně"
-
-#: forms/outage.forms.php
 msgid "TBD"
 msgstr "TBD"
 
@@ -2350,7 +2342,7 @@ msgstr "Nedostupnost"
 
 #: forms/outage.forms.php
 msgid "Outage Report"
-msgstr "Hlášení odstávky/výpadku"
+msgstr "Hlášení odstávky nebo výpadku"
 
 #: forms/outage.forms.php
 msgid "vpsAdmin"
@@ -2386,7 +2378,7 @@ msgstr "Řeší"
 
 #: forms/outage.forms.php
 msgid "Outage"
-msgstr "Odstávka/výpadek"
+msgstr "Odstávka nebo výpadek"
 
 #: forms/outage.forms.php
 msgid "Edit original report"
@@ -2595,7 +2587,7 @@ msgstr "Uživatelé"
 
 #: forms/outage.forms.php
 msgid "Unable to list outages"
-msgstr "Nelze vypsat výpadky"
+msgstr "Nelze vypsat odstávky a výpadky"
 
 #: forms/outage.forms.php forms/security_advisory.forms.php
 #: forms/users.forms.php pages/page_adminm.php
@@ -2616,24 +2608,45 @@ msgid "Direct"
 msgstr "Přímé"
 
 #: forms/outage.forms.php
-msgid "Current"
-msgstr "Aktuální"
+msgid "Planned outages"
+msgstr "Plánované odstávky"
 
 #: forms/outage.forms.php
-msgid "Recently resolved"
-msgstr "Nedávno vyřešeno"
+msgid "Upcoming outages"
+msgstr "Nadcházející výpadky"
 
 #: forms/outage.forms.php
-msgid "planned and unplanned outages"
-msgstr "plánované odstávky i neplánované výpadky"
+msgid "Upcoming planned and unplanned outages"
+msgstr "Nadcházející odstávky a výpadky"
 
 #: forms/outage.forms.php
-msgid "planned outages"
-msgstr "plánované odstávky"
+msgid "Current planned outages"
+msgstr "Probíhající odstávky"
 
 #: forms/outage.forms.php
-msgid "unplanned outages"
-msgstr "neplánované výpadky"
+msgid "Current outages"
+msgstr "Probíhající výpadky"
+
+#: forms/outage.forms.php
+msgid "Current planned and unplanned outages"
+msgstr "Probíhající odstávky a výpadky"
+
+#: forms/outage.forms.php
+msgid "Recently completed planned outages"
+msgstr "Nedávno ukončené odstávky"
+
+#: forms/outage.forms.php
+msgid "Recently resolved outages"
+msgstr "Nedávno vyřešené výpadky"
+
+#: forms/outage.forms.php
+msgid "Recently resolved planned and unplanned outages"
+msgstr "Nedávno ukončené odstávky a vyřešené výpadky"
+
+#: forms/outage.forms.php forms/vps.forms.php pages/page_index.php
+#: pages/page_outage.php
+msgid "Outages"
+msgstr "Odstávky a výpadky"
 
 #: forms/security_advisory.forms.php lib/functions.lib.php
 msgid "Security advisory"
@@ -2818,23 +2831,23 @@ msgstr "Nejsou zaznamenány žádné stavy nodů."
 
 #: forms/security_advisory.forms.php
 msgid "Related outages"
-msgstr "Související výpadky"
+msgstr "Související odstávky a výpadky"
 
 #: forms/security_advisory.forms.php
 msgid "Do you really wish to unlink this outage?"
-msgstr "Opravdu si přejete odpojit tento výpadek?"
+msgstr "Opravdu si přejete odpojit toto hlášení?"
 
 #: forms/security_advisory.forms.php
 msgid "No outages linked."
-msgstr "Žádné související výpadky."
+msgstr "Žádné související odstávky ani výpadky."
 
 #: forms/security_advisory.forms.php
 msgid "Link outage"
-msgstr "Výpadek odkazu"
+msgstr "Propojit hlášení"
 
 #: forms/security_advisory.forms.php
 msgid "Outage ID"
-msgstr "Výpadek ID"
+msgstr "ID hlášení"
 
 #: forms/security_advisory.forms.php
 msgid "Do you really wish to delete this update?"
@@ -4074,10 +4087,6 @@ msgstr "Konfigurace OOM reportů"
 #: forms/vps.forms.php
 msgid "Report incident"
 msgstr "Nahlásit incident"
-
-#: forms/vps.forms.php pages/page_index.php pages/page_outage.php
-msgid "Outages"
-msgstr "Výpadky"
 
 #: forms/vps.forms.php lib/xtemplate.lib.php pages/page_adminm.php
 #: public/index.php
@@ -5843,7 +5852,7 @@ msgid ""
 "used during outage to prevent data corruption."
 msgstr ""
 "Všechny akce pro tento VPS jsou prozatím zakázány. To se obvykle používá při "
-"výpadku, aby se zabránilo poškození dat."
+"odstávce nebo výpadku, aby se zabránilo poškození dat."
 
 #: pages/page_adminvps.php public/index.php
 msgid "Please be patient."
@@ -7488,7 +7497,7 @@ msgstr "Smazání pravidla se nezdařilo"
 
 #: pages/page_outage.php
 msgid "The outage update was successfully posted."
-msgstr "Aktualizace výpadku byla úspěšně odeslána."
+msgstr "Aktualizace hlášení byla úspěšně odeslána."
 
 #: pages/page_outage.php
 msgid "Update posted"
@@ -7496,7 +7505,7 @@ msgstr "Aktualizace zveřejněna"
 
 #: pages/page_outage.php
 msgid "The outage state was successfully set."
-msgstr "Stav výpadku byl úspěšně nastaven."
+msgstr "Stav hlášení byl úspěšně nastaven."
 
 #: pages/page_outage.php pages/page_security_advisory.php
 msgid "Link failed"
@@ -7556,7 +7565,7 @@ msgstr "Aktualizace smazána"
 
 #: pages/page_security_advisory.php
 msgid "Outage ID must be a number."
-msgstr "Výpadek ID musí být číslo."
+msgstr "ID hlášení musí být číslo."
 
 #: pages/page_transactions.php
 msgid "Transaction chains"
@@ -7741,7 +7750,8 @@ msgid ""
 "corruption.<br />"
 msgstr ""
 "vpsAdmin je aktuálně v režimu údržby, všechny akce jsou zakázány. <br />\n"
-"To se obvykle používá při výpadku, aby se zabránilo poškození dat.<br />"
+"To se obvykle používá při odstávce nebo výpadku, aby se zabránilo poškození "
+"dat.<br />"
 
 #: public/index.php
 msgid "Error occured"
@@ -7789,6 +7799,12 @@ msgstr "Upravit pole nápovědy"
 #: public/index.php
 msgid "Help"
 msgstr "Pomoc"
+
+#~ msgid "Current"
+#~ msgstr "Aktuální"
+
+#~ msgid "planned outages"
+#~ msgstr "plánované odstávky"
 
 #~ msgid "Disabled"
 #~ msgstr "Zakázáno"
