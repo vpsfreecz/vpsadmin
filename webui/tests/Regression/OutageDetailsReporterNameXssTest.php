@@ -139,6 +139,13 @@ final class OutageDetailsReporterNameXssTest extends TestCase
             }
         }
 
+        if (!function_exists('format_minutes')) {
+            function format_minutes($minutes)
+            {
+                return sprintf('%d minutes', $minutes);
+            }
+        }
+
         if (!function_exists('api_param_choice_label')) {
             function api_param_choice_label($desc, $value, $label_callback = null)
             {

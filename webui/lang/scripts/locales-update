@@ -28,6 +28,9 @@ generate_pot() {
         --language=PHP \
         --keyword=_ \
         --keyword=N_ \
+        --keyword=format_ngettext:1,2 \
+        --flag=format_ngettext:1:php-format \
+        --flag=format_ngettext:2:php-format \
         --add-location=file \
         --sort-by-file \
         --omit-header \

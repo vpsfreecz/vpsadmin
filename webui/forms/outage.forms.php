@@ -590,7 +590,7 @@ function outage_details($id)
     $xtpl->table_tr();
 
     $xtpl->table_td(_('Duration') . ':');
-    $xtpl->table_td($outage->duration . ' ' . _('minutes'));
+    $xtpl->table_td(format_minutes($outage->duration));
     $xtpl->table_tr();
 
     $xtpl->table_td(_('Type') . ':');
@@ -785,7 +785,7 @@ function outage_details($id)
                         break;
 
                     case 'duration':
-                        $changes[] = _("Duration:") . ' ' . $update->duration . ' ' . _('minutes');
+                        $changes[] = _("Duration:") . ' ' . format_minutes($update->duration);
                         break;
                 }
             }
@@ -1027,7 +1027,7 @@ function outage_list()
 
     foreach ($outages as $outage) {
         $xtpl->table_td(tolocaltz($outage->begins_at, 'Y-m-d H:i'));
-        $xtpl->table_td($outage->duration, false, true);
+        $xtpl->table_td(format_minutes($outage->duration), false, true);
         $xtpl->table_td(outage_type_list_label($outage->type));
         $xtpl->table_td(h(outage_state_label($outage->state)));
         $xtpl->table_td(implode(', ', array_map(
@@ -1428,7 +1428,7 @@ function outage_list_overview($outages)
 
     foreach ($outages as $outage) {
         $xtpl->table_td(tolocaltz($outage->begins_at, 'Y-m-d H:i'));
-        $xtpl->table_td($outage->duration . ' min', false, true);
+        $xtpl->table_td(format_minutes($outage->duration), false, true);
         $xtpl->table_td(outage_type_list_label($outage->type));
         $xtpl->table_td(implode(', ', array_map(
             function ($v) {

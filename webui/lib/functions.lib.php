@@ -294,10 +294,29 @@ function format_duration($interval)
     $s = floor($interval) % 60;
 
     if ($d >= 1) {
-        return sprintf("%d days, %02d:%02d:%02d", floor($d), $h, $m, $s);
+        $days = (int) floor($d);
+        return sprintf("%s, %02d:%02d:%02d", format_ngettext('%d day', '%d days', $days), $h, $m, $s);
     } else {
         return sprintf("%02d:%02d:%02d", $h, $m, $s);
     }
+}
+
+function format_ngettext($single, $plural, $number, ...$args)
+{
+    $message = function_exists('T_ngettext')
+        ? T_ngettext($single, $plural, $number)
+        : ($number == 1 ? $single : $plural);
+
+    if (!$args) {
+        $args = [$number];
+    }
+
+    return vsprintf($message, $args);
+}
+
+function format_minutes($minutes)
+{
+    return format_ngettext('%d minute', '%d minutes', $minutes);
 }
 
 function tolocaltz($datetime, $format = "Y-m-d H:i:s")
@@ -745,6 +764,26 @@ function unit_for_cluster_resource($name)
 
         default:
             return 'MiB';
+    }
+}
+
+function format_cluster_resource_amount($name, $amount, $formattedAmount = null)
+{
+    if ($formattedAmount === null) {
+        $formattedAmount = $amount;
+    }
+
+    switch ($name) {
+        case 'cpu':
+            return format_ngettext('%s core', '%s cores', $amount, $formattedAmount);
+
+        case 'ipv4':
+        case 'ipv4_private':
+        case 'ipv6':
+            return format_ngettext('%s address', '%s addresses', $amount, $formattedAmount);
+
+        default:
+            return $formattedAmount . ' MiB';
     }
 }
 

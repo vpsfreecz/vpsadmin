@@ -38,8 +38,7 @@ function format_available_resources($user, $environment, $owned_free_ips = null)
 
         $s .= '<li>';
         $s .= $ur->cluster_resource->label . ': ';
-        $s .= approx_number($free) . ' ';
-        $s .= unit_for_cluster_resource($name);
+        $s .= format_cluster_resource_amount($name, $free, approx_number($free));
         $s .= '</li>';
     }
 
@@ -405,7 +404,7 @@ function print_newvps_page3($user_id, $loc_id, $tpl_id)
         }
 
         $xtpl->table_td($p->label);
-        $xtpl->table_td($r->free . ' ' . unit_for_cluster_resource($name));
+        $xtpl->table_td(format_cluster_resource_amount($name, $r->free));
         $xtpl->form_add_number_pure(
             $name,
             $_GET[$name] ?? min($default, $r->free),
@@ -429,7 +428,7 @@ function print_newvps_page3($user_id, $loc_id, $tpl_id)
 
         $xtpl->table_td($p->label);
         $real_free = $r->free + ($owned_free_ips[$name] ?? 0);
-        $xtpl->table_td(approx_number($real_free) . ' ' . unit_for_cluster_resource($name));
+        $xtpl->table_td(format_cluster_resource_amount($name, $real_free, approx_number($real_free)));
         $xtpl->form_add_number_pure(
             $name,
             $_GET[$name] ?? $default,
@@ -534,7 +533,8 @@ function print_newvps_page4($user_id, $loc_id, $tpl_id)
     $xtpl->table_tr();
 
     $xtpl->table_td(_('CPUs') . ':');
-    $xtpl->table_td(h(api_get_uint('cpu', 0)) . ' ' . unit_for_cluster_resource('cpu'));
+    $cpu = api_get_uint('cpu', 0);
+    $xtpl->table_td(h(format_cluster_resource_amount('cpu', $cpu)));
     $xtpl->table_tr();
 
     $xtpl->table_td(_('Memory') . ':');
@@ -555,21 +555,21 @@ function print_newvps_page4($user_id, $loc_id, $tpl_id)
     $ipv4 = api_get_uint('ipv4');
     if ($ipv4) {
         $xtpl->table_td(_('Public IPv4') . ':');
-        $xtpl->table_td(h($ipv4) . ' ' . unit_for_cluster_resource('ipv4'));
+        $xtpl->table_td(h(format_cluster_resource_amount('ipv4', $ipv4)));
         $xtpl->table_tr();
     }
 
     $ipv6 = api_get_uint('ipv6');
     if ($ipv6) {
         $xtpl->table_td(_('Public IPv6') . ':');
-        $xtpl->table_td(h($ipv6) . ' ' . unit_for_cluster_resource('ipv6'));
+        $xtpl->table_td(h(format_cluster_resource_amount('ipv6', $ipv6)));
         $xtpl->table_tr();
     }
 
     $ipv4Private = api_get_uint('ipv4_private');
     if ($ipv4Private) {
         $xtpl->table_td(_('Private IPv4') . ':');
-        $xtpl->table_td(h($ipv4Private) . ' ' . unit_for_cluster_resource('ipv4_private'));
+        $xtpl->table_td(h(format_cluster_resource_amount('ipv4_private', $ipv4Private)));
         $xtpl->table_tr();
     }
 

@@ -227,7 +227,7 @@ function userns_map_list($userns_id = null)
             . $m->user_namespace->id
             . '</a>'
             . ' '
-            . '(' . $m->user_namespace->size . ' ' . _('IDs') . ')'
+            . '(' . format_ngettext('%d ID', '%d IDs', $m->user_namespace->size) . ')'
         );
         $xtpl->table_td(h($m->label));
         $xtpl->table_td(
@@ -268,7 +268,7 @@ function userns_map_show($map_id)
     $xtpl->table_tr();
 
     $xtpl->table_td(_('Namespace size') . ':');
-    $xtpl->table_td($m->user_namespace->size . ' ' . _('IDs'));
+    $xtpl->table_td(format_ngettext('%d ID', '%d IDs', $m->user_namespace->size));
     $xtpl->table_tr();
 
     $xtpl->form_add_input(_('Map label') . ':', 'text', '40', 'label', post_val('label', $m->label), '');
@@ -348,7 +348,7 @@ function userns_map_new()
                 $input->user_namespace,
                 post_val('user_namespace'),
                 function ($userns) {
-                    return '#' . $userns->id . ' (' . $userns->size . ' IDs)';
+                    return '#' . $userns->id . ' (' . format_ngettext('%d ID', '%d IDs', $userns->size) . ')';
                 }
             );
         }

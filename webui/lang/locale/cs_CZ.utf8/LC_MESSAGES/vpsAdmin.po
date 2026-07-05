@@ -2472,10 +2472,6 @@ msgstr "Informace"
 msgid "Begins at"
 msgstr "Začíná v"
 
-#: forms/outage.forms.php pages/page_adminm.php
-msgid "minutes"
-msgstr "minuty"
-
 #: forms/outage.forms.php forms/security_advisory.forms.php
 msgid "Impact"
 msgstr "Dopad"
@@ -2976,8 +2972,12 @@ msgid "UserNS"
 msgstr "UserNS"
 
 #: forms/userns.forms.php
-msgid "IDs"
-msgstr "ID"
+#, php-format
+msgid "%d ID"
+msgid_plural "%d IDs"
+msgstr[0] "%d ID"
+msgstr[1] "%d ID"
+msgstr[2] "%d ID"
 
 #: forms/userns.forms.php
 msgid "List VPS"
@@ -4410,6 +4410,22 @@ msgid "(IMPORTANT: This template is currently disabled, it cannot be used)"
 msgstr "(DŮLEŽITÉ: Tato šablona je aktuálně zakázána, nelze ji použít)"
 
 #: lib/functions.lib.php
+#, php-format
+msgid "%d day"
+msgid_plural "%d days"
+msgstr[0] "%d den"
+msgstr[1] "%d dny"
+msgstr[2] "%d dní"
+
+#: lib/functions.lib.php
+#, php-format
+msgid "%d minute"
+msgid_plural "%d minutes"
+msgstr[0] "%d minuta"
+msgstr[1] "%d minuty"
+msgstr[2] "%d minut"
+
+#: lib/functions.lib.php
 msgid "Server default"
 msgstr "Výchozí nastavení serveru"
 
@@ -4440,6 +4456,22 @@ msgstr "jádra"
 #: lib/functions.lib.php
 msgid "addresses"
 msgstr "adresy"
+
+#: lib/functions.lib.php
+#, php-format
+msgid "%s core"
+msgid_plural "%s cores"
+msgstr[0] "%s jádro"
+msgstr[1] "%s jádra"
+msgstr[2] "%s jader"
+
+#: lib/functions.lib.php
+#, php-format
+msgid "%s address"
+msgid_plural "%s addresses"
+msgstr[0] "%s adresa"
+msgstr[1] "%s adresy"
+msgstr[2] "%s adres"
 
 #: lib/functions.lib.php
 msgid "Some input parameters are not valid."
@@ -4603,13 +4635,19 @@ msgstr "Přepnout na"
 
 #: lib/xtemplate.lib.php
 #, php-format
-msgid "<span id='inputh%s'>%d</span> chars remaining"
-msgstr "<span id='inputh%s'>%d</span> zbývajících znaků"
+msgid "<span id='inputh%1$s'>%2$d</span> char remaining"
+msgid_plural "<span id='inputh%1$s'>%2$d</span> chars remaining"
+msgstr[0] "<span id='inputh%1$s'>%2$d</span> zbývá znak"
+msgstr[1] "<span id='inputh%1$s'>%2$d</span> zbývají znaky"
+msgstr[2] "<span id='inputh%1$s'>%2$d</span> zbývá znaků"
 
 #: lib/xtemplate.lib.php
 #, php-format
-msgid "<span id='inputh%s'>%d</span> chars needed"
-msgstr "<span id='inputh%s'>%d</span> potřebné znaky"
+msgid "<span id='inputh%1$s'>%2$d</span> char needed"
+msgid_plural "<span id='inputh%1$s'>%2$d</span> chars needed"
+msgstr[0] "<span id='inputh%1$s'>%2$d</span> je potřeba znak"
+msgstr[1] "<span id='inputh%1$s'>%2$d</span> jsou potřeba znaky"
+msgstr[2] "<span id='inputh%1$s'>%2$d</span> je potřeba znaků"
 
 #: lib/xtemplate.lib.php
 msgid "last 10"
@@ -4799,6 +4837,10 @@ msgstr ""
 #: pages/page_adminm.php
 msgid "Preferred session length"
 msgstr "Preferovaná délka sezení"
+
+#: pages/page_adminm.php
+msgid "minutes"
+msgstr "minuty"
 
 #: pages/page_adminm.php
 msgid ""
@@ -7815,6 +7857,9 @@ msgstr "Upravit pole nápovědy"
 #: public/index.php
 msgid "Help"
 msgstr "Pomoc"
+
+#~ msgid "IDs"
+#~ msgstr "ID"
 
 #~ msgid "Current"
 #~ msgstr "Aktuální"

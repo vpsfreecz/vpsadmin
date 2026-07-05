@@ -845,19 +845,25 @@ class XTemplate
         if ($nchar != 0) {
             $code  = moo_inputremaining("input" . $uid, "inputh" . $uid, $nchar, $uid); // see ajax.lib.php
             if ($nchar > 0) {
-                $output = sprintf(
-                    _("<span id='inputh%s'>%d</span> chars remaining"),
+                $remaining = $nchar - strlen($value);
+                $output = format_ngettext(
+                    "<span id='inputh%1\$s'>%2\$d</span> char remaining",
+                    "<span id='inputh%1\$s'>%2\$d</span> chars remaining",
+                    $remaining,
                     $uid,
-                    $nchar - strlen($value)
+                    $remaining
                 );
 
                 $maxlength = 'maxlength="' . $nchar . '"';
 
             } else {
-                $output = sprintf(
-                    _("<span id='inputh%s'>%d</span> chars needed"),
+                $needed = (int) (($nchar - strlen($value)) * (-1));
+                $output = format_ngettext(
+                    "<span id='inputh%1\$s'>%2\$d</span> char needed",
+                    "<span id='inputh%1\$s'>%2\$d</span> chars needed",
+                    $needed,
                     $uid,
-                    (int) (($nchar - strlen($value)) * (-1))
+                    $needed
                 );
             }
 

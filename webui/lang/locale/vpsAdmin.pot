@@ -2449,10 +2449,6 @@ msgstr ""
 msgid "Begins at"
 msgstr ""
 
-#: forms/outage.forms.php pages/page_adminm.php
-msgid "minutes"
-msgstr ""
-
 #: forms/outage.forms.php forms/security_advisory.forms.php
 msgid "Impact"
 msgstr ""
@@ -2952,8 +2948,11 @@ msgid "UserNS"
 msgstr ""
 
 #: forms/userns.forms.php
-msgid "IDs"
-msgstr ""
+#, php-format
+msgid "%d ID"
+msgid_plural "%d IDs"
+msgstr[0] ""
+msgstr[1] ""
 
 #: forms/userns.forms.php
 msgid "List VPS"
@@ -4370,6 +4369,20 @@ msgid "(IMPORTANT: This template is currently disabled, it cannot be used)"
 msgstr ""
 
 #: lib/functions.lib.php
+#, php-format
+msgid "%d day"
+msgid_plural "%d days"
+msgstr[0] ""
+msgstr[1] ""
+
+#: lib/functions.lib.php
+#, php-format
+msgid "%d minute"
+msgid_plural "%d minutes"
+msgstr[0] ""
+msgstr[1] ""
+
+#: lib/functions.lib.php
 msgid "Server default"
 msgstr ""
 
@@ -4400,6 +4413,20 @@ msgstr ""
 #: lib/functions.lib.php
 msgid "addresses"
 msgstr ""
+
+#: lib/functions.lib.php
+#, php-format
+msgid "%s core"
+msgid_plural "%s cores"
+msgstr[0] ""
+msgstr[1] ""
+
+#: lib/functions.lib.php
+#, php-format
+msgid "%s address"
+msgid_plural "%s addresses"
+msgstr[0] ""
+msgstr[1] ""
 
 #: lib/functions.lib.php
 msgid "Some input parameters are not valid."
@@ -4561,13 +4588,17 @@ msgstr ""
 
 #: lib/xtemplate.lib.php
 #, php-format
-msgid "<span id='inputh%s'>%d</span> chars remaining"
-msgstr ""
+msgid "<span id='inputh%1$s'>%2$d</span> char remaining"
+msgid_plural "<span id='inputh%1$s'>%2$d</span> chars remaining"
+msgstr[0] ""
+msgstr[1] ""
 
 #: lib/xtemplate.lib.php
 #, php-format
-msgid "<span id='inputh%s'>%d</span> chars needed"
-msgstr ""
+msgid "<span id='inputh%1$s'>%2$d</span> char needed"
+msgid_plural "<span id='inputh%1$s'>%2$d</span> chars needed"
+msgstr[0] ""
+msgstr[1] ""
 
 #: lib/xtemplate.lib.php
 msgid "last 10"
@@ -4750,6 +4781,10 @@ msgstr ""
 
 #: pages/page_adminm.php
 msgid "Preferred session length"
+msgstr ""
+
+#: pages/page_adminm.php
+msgid "minutes"
 msgstr ""
 
 #: pages/page_adminm.php
