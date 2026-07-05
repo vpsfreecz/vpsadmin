@@ -23,10 +23,10 @@ module VpsAdmin::API::Resources
       datetime :finished_at, label: 'Finished at', nullable: true
       integer :duration, label: 'Duration', desc: 'Outage duration in minutes'
       string :type, db_name: :outage_type, label: 'Type',
-                    choices: { values: ::Outage.outage_type_labels }
+                    choices: ::Outage.outage_types.keys.map(&:to_s)
       string :state, label: 'State', choices: ::Outage.states.keys.map(&:to_s)
       string :impact, db_name: :impact_type, label: 'Impact',
-                      choices: { values: ::Outage.impact_type_labels }
+                      choices: ::Outage.impact_types.keys.map(&:to_s)
       bool :auto_resolve, label: 'Auto-resolve', default: true
       use :texts
     end

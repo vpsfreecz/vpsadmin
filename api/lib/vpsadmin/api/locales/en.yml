@@ -33,6 +33,13 @@ en:
       access_token:
         label: Access token
       access_token_lifetime:
+        choices:
+          fixed:
+            label: fixed
+          renewable_auto:
+            label: renewable_auto
+          renewable_manual:
+            label: renewable_manual
         label: Access_token_lifetime
       access_token_seconds:
         label: Access_token_seconds
@@ -41,6 +48,17 @@ en:
       accounted_by:
         label: Accounted_by
       action:
+        choices:
+          approve:
+            label: approve
+          deny:
+            label: deny
+          ignore:
+            label: ignore
+          notify:
+            label: notify
+          request_correction:
+            label: request_correction
         label: Action
       activate:
         label: Activate account
@@ -64,6 +82,15 @@ en:
         description: Filter users with administrator privileges
         label: Admin
       admin_lock_type:
+        choices:
+          absolute:
+            label: absolute
+          no_lock:
+            label: no_lock
+          not_less:
+            label: not_less
+          not_more:
+            label: not_more
         description: How is the admin lock enforced
         label: Admin lock type
       admin_override:
@@ -91,6 +118,15 @@ en:
       affected_vps_count:
         label: Affected VPSes
       algorithm:
+        choices:
+          hmac_sha224:
+            label: hmac-sha224
+          hmac_sha256:
+            label: hmac-sha256
+          hmac_sha384:
+            label: hmac-sha384
+          hmac_sha512:
+            label: hmac-sha512
         label: Algorithm
       all_vps:
         description: Let all user's VPS to mount this export. Changes to the user's
@@ -133,6 +169,13 @@ en:
       auth_token:
         label: Auth_token
       auth_type:
+        choices:
+          basic:
+            label: basic
+          oauth2:
+            label: oauth2
+          token:
+            label: token
         label: Authentication type
       auto_add:
         description: Add this key automatically into newly created VPS
@@ -181,9 +224,26 @@ en:
         label: Cgroup
       cgroup_pattern:
         label: Cgroup path pattern
+      cgroup_version:
+        choices:
+          cgroup_any:
+            label: cgroup_any
+          cgroup_invalid:
+            label: cgroup_invalid
+          cgroup_v1:
+            label: cgroup_v1
+          cgroup_v2:
+            label: cgroup_v2
       challenge_token:
         label: Challenge_token
       change_type:
+        choices:
+          create_record:
+            label: create_record
+          delete_record:
+            label: delete_record
+          update_record:
+            label: update_record
         label: Change type
       changed_at:
         label: Changed_at
@@ -265,12 +325,30 @@ en:
       created_by:
         label: Created_by
       currency:
+        choices:
+          czk:
+            label: czk
+          eur:
+            label: eur
         label: Currency
       current:
         label: Current
       current_history_id:
         label: Current_history_id
       current_state:
+        choices:
+          created:
+            label: created
+          delayed:
+            label: delayed
+          mounted:
+            label: mounted
+          skipped:
+            label: skipped
+          unmounted:
+            label: unmounted
+          waiting:
+            label: waiting
         label: Current state
       cve:
         description: Filter by CVE identifier.
@@ -336,6 +414,13 @@ en:
         description: Node name including location domain
         label: Domain name
       done:
+        choices:
+          done:
+            label: done
+          staged:
+            label: staged
+          waiting:
+            label: waiting
         label: Done
       ds_algorithm:
         label: DS algorithm
@@ -457,6 +542,25 @@ en:
         description: Delete the DNS resolver even it is in use. Affected VPSes get
           a new DNS resolver.
       format:
+        choices:
+          archive:
+            label: archive
+          cloudinit_config:
+            label: cloudinit_config
+          cloudinit_script:
+            label: cloudinit_script
+          incremental_stream:
+            label: incremental_stream
+          nixos_configuration:
+            label: nixos_configuration
+          nixos_flake_configuration:
+            label: nixos_flake_configuration
+          nixos_flake_uri:
+            label: nixos_flake_uri
+          script:
+            label: script
+          stream:
+            label: stream
         label: Format
       fqdn:
         label: FQDN
@@ -492,6 +596,11 @@ en:
       has_hypervisor:
         label: Has hypervisor
       has_ipv6:
+        choices:
+          'false':
+            label: 'false'
+          'true':
+            label: 'true'
         description: True if location has IPv6 addresses
         label: Has IPv6
       has_storage:
@@ -516,7 +625,28 @@ en:
         label: Hostname_exact
       how:
         label: How did you learn about us?
+      hypervisor_type:
+        choices:
+          openvz:
+            label: openvz
+          vpsadminos:
+            label: vpsadminos
       impact:
+        choices:
+          export:
+            label: export
+          network:
+            label: network
+          performance:
+            label: performance
+          system_reset:
+            label: system_reset
+          system_restart:
+            label: system_restart
+          tbd:
+            label: tbd
+          unavailability:
+            label: unavailability
         label: Impact
       impermanence:
         label: NixOS Impermanence
@@ -565,6 +695,11 @@ en:
       ip_tor:
         label: Ip_tor
       ip_version:
+        choices:
+          '4':
+            label: '4'
+          '6':
+            label: '6'
         label: Ip_version
       ip_vpn:
         label: Ip_vpn
@@ -607,6 +742,11 @@ en:
       killed_pid:
         label: Killed_pid
       kind:
+        choices:
+          gid:
+            label: gid
+          uid:
+            label: uid
         label: Kind
       ks:
         label: Ks
@@ -637,6 +777,11 @@ en:
       last_transfer_serial:
         label: Last_transfer_serial
       last_transfer_status:
+        choices:
+          failed:
+            label: failed
+          success:
+            label: success
         label: Last_transfer_status
       last_use:
         label: Last use
@@ -723,6 +868,14 @@ en:
       maintenance:
         description: Put the node into maintenance mode
         label: Maintenance
+      maintenance_lock:
+        choices:
+          lock:
+            label: lock
+          master_lock:
+            label: master_lock
+          'no':
+            label: 'no'
       maintenance_window_vps:
         description: Migrate the dataset within the nearest maintenance window of
           VPS
@@ -733,8 +886,18 @@ en:
         description: Determines whether vpsAdmin sets VPS hostname or not
         label: Manage hostname
       managed:
+        choices:
+          'false':
+            label: 'false'
+          'true':
+            label: 'true'
         label: Managed
       map_mode:
+        choices:
+          native:
+            label: native
+          zfs:
+            label: zfs
         label: Map mode
       master_enabled:
         label: Master enabled
@@ -779,6 +942,11 @@ en:
         description: When the node was mitigated or patched, if known.
         label: Mitigated_since
       mode:
+        choices:
+          ro:
+            label: ro
+          rw:
+            label: rw
         label: Mode
       monitor:
         label: Monitor
@@ -791,6 +959,13 @@ en:
       mountpoint:
         label: Mountpoint
       namespace:
+        choices:
+          forms:
+            label: forms
+          tips:
+            label: tips
+          ui:
+            label: ui
         label: Namespace
       network:
         label: Network
@@ -821,6 +996,15 @@ en:
       node_name:
         label: Node_name
       node_state:
+        choices:
+          mitigated:
+            label: mitigated
+          not_affected:
+            label: not_affected
+          unknown:
+            label: unknown
+          vulnerable:
+            label: vulnerable
         label: Node_state
       nodes_online:
         label: Nodes_online
@@ -836,10 +1020,30 @@ en:
       object_name:
         label: Object_name
       object_state:
+        choices:
+          active:
+            label: active
+          deleted:
+            label: deleted
+          hard_delete:
+            label: hard_delete
+          soft_delete:
+            label: soft_delete
+          suspended:
+            label: suspended
         label: Object state
       offset:
         label: Offset
       on_start_fail:
+        choices:
+          fail_start:
+            label: fail_start
+          mount_later:
+            label: mount_later
+          skip:
+            label: skip
+          wait_for_mount:
+            label: wait_for_mount
         description: What happens when the mount fails during VPS start
         label: On mount failure
       onstartall:
@@ -857,6 +1061,29 @@ en:
       options:
         label: Options
       order:
+        choices:
+          asc:
+            label: asc
+          ascending:
+            label: ascending
+          created_at:
+            label: created_at
+          descending:
+            label: descending
+          interface:
+            label: interface
+          latest:
+            label: latest
+          longest:
+            label: longest
+          newest:
+            label: newest
+          oldest:
+            label: oldest
+          shortest:
+            label: shortest
+          updated_at:
+            label: updated_at
         description: Template order
         label: Order
       org_id:
@@ -898,10 +1125,20 @@ en:
       path:
         label: Path
       peer_type:
+        choices:
+          primary_type:
+            label: primary_type
+          secondary_type:
+            label: secondary_type
         label: Peer_type
       pgtables_bytes:
         label: Pgtables_bytes
       platform:
+        choices:
+          same:
+            label: same
+          vpsadminos:
+            label: vpsadminos
         label: Platform
       pool:
         description: Storage pool the VPS resides in
@@ -909,10 +1146,34 @@ en:
       pool_checked_at:
         label: Pool_checked_at
       pool_scan:
+        choices:
+          error:
+            label: error
+          none:
+            label: none
+          resilver:
+            label: resilver
+          scrub:
+            label: scrub
+          unknown:
+            label: unknown
         label: Pool_scan
       pool_scan_percent:
         label: Pool_scan_percent
       pool_state:
+        choices:
+          degraded:
+            label: degraded
+          error:
+            label: error
+          faulted:
+            label: faulted
+          online:
+            label: online
+          suspended:
+            label: suspended
+          unknown:
+            label: unknown
         label: Pool_state
       pool_status:
         label: Pool_status
@@ -966,6 +1227,13 @@ en:
       published_by:
         label: Published_by
       purpose:
+        choices:
+          any:
+            label: any
+          export:
+            label: export
+          vps:
+            label: vps
         label: Purpose
       quota:
         description: Limits the amount of space a dataset and all its descendants
@@ -1039,6 +1307,11 @@ en:
         description: Resource name of the located object
         label: Resource
       resource_type:
+        choices:
+          numeric:
+            label: numeric
+          object:
+            label: object
         label: Resource_type
       resources:
         label: Resources
@@ -1056,6 +1329,21 @@ en:
       reverse_record_value:
         label: Reverse_record_value
       role:
+        choices:
+          backup:
+            label: backup
+          forward_role:
+            label: forward_role
+          hypervisor:
+            label: hypervisor
+          primary:
+            label: primary
+          private_access:
+            label: private_access
+          public_access:
+            label: public_access
+          reverse_role:
+            label: reverse_role
         description: Show only datasets of certain role
         label: Role
       root_squash:
@@ -1088,6 +1376,17 @@ en:
       saved_until:
         label: Saved_until
       scan:
+        choices:
+          error:
+            label: error
+          none:
+            label: none
+          resilver:
+            label: resilver
+          scrub:
+            label: scrub
+          unknown:
+            label: unknown
         label: Scan
       scan_percent:
         label: Scan_percent
@@ -1101,6 +1400,11 @@ en:
         description: Seed the zone with basic records pointing to the VPS
         label: Seed VPS
       select:
+        choices:
+          all_until:
+            label: all_until
+          exactly_until:
+            label: exactly_until
         label: Select
       serial:
         label: Serial
@@ -1134,10 +1438,22 @@ en:
       snapshot:
         label: Snapshot
       source:
+        choices:
+          external_source:
+            label: external_source
+          internal_source:
+            label: internal_source
         label: Source
       source_cursor:
         label: Source_cursor
       split_access:
+        choices:
+          no_access:
+            label: no_access
+          owner_split:
+            label: owner_split
+          user_split:
+            label: user_split
         label: Split_access
       split_prefix:
         label: Split_prefix
@@ -1157,8 +1473,94 @@ en:
       started_at:
         label: Started_at
       state:
+        choices:
+          acknowledged:
+            label: acknowledged
+          active:
+            label: active
+          all:
+            label: all
+          announced:
+            label: announced
+          approved:
+            label: approved
+          awaiting:
+            label: awaiting
+          cancelled:
+            label: cancelled
+          cancelling:
+            label: cancelling
+          closed:
+            label: closed
+          confirmed:
+            label: confirmed
+          degraded:
+            label: degraded
+          denied:
+            label: denied
+          done:
+            label: done
+          draft:
+            label: draft
+          error:
+            label: error
+          failed:
+            label: failed
+          failing:
+            label: failing
+          fatal:
+            label: fatal
+          faulted:
+            label: faulted
+          ignored:
+            label: ignored
+          inactive:
+            label: inactive
+          mitigated:
+            label: mitigated
+          monitoring:
+            label: monitoring
+          not_affected:
+            label: not_affected
+          online:
+            label: online
+          open:
+            label: open
+          pending_correction:
+            label: pending_correction
+          processed:
+            label: processed
+          published:
+            label: published
+          queued:
+            label: queued
+          resolved:
+            label: resolved
+          retracted:
+            label: retracted
+          rollbacking:
+            label: rollbacking
+          running:
+            label: running
+          staged:
+            label: staged
+          suspended:
+            label: suspended
+          unconfirmed:
+            label: unconfirmed
+          unknown:
+            label: unknown
+          unmatched:
+            label: unmatched
+          vulnerable:
+            label: vulnerable
         label: State
       status:
+        choices:
+          failed:
+            label: failed
+          success:
+            label: success
         label: Status
       stepsize:
         description: Steps in which the objects allocated resource value may be iterated
@@ -1182,11 +1584,19 @@ en:
         description: Is template known to work?
         label: Supported
       swap:
+        choices:
+          enforce:
+            label: enforce
         description: Minimally 0, maximally 1048576, step size is 1
         label: Swap
       swapents:
         label: Swapents
       sync:
+        choices:
+          disabled:
+            label: disabled
+          standard:
+            label: standard
         label: Sync
       taken:
         description: Number of owned and assigned IP addresses
@@ -1224,6 +1634,15 @@ en:
       token_interval:
         label: Token interval
       token_lifetime:
+        choices:
+          fixed:
+            label: fixed
+          permanent:
+            label: permanent
+          renewable_auto:
+            label: renewable_auto
+          renewable_manual:
+            label: renewable_manual
         label: Token lifetime
       total:
         label: Total
@@ -1249,6 +1668,55 @@ en:
       tun:
         label: TUN/TAP
       type:
+        choices:
+          a:
+            label: A
+          aaaa:
+            label: AAAA
+          cname:
+            label: CNAME
+          dns_server:
+            label: dns_server
+          ds:
+            label: DS
+          mailer:
+            label: mailer
+          mx:
+            label: MX
+          node:
+            label: node
+          ns:
+            label: NS
+          planned_outage:
+            label: planned_outage
+          primary_type:
+            label: primary_type
+          ptr:
+            label: PTR
+          secondary_type:
+            label: secondary_type
+          secure:
+            label: secure
+          simple:
+            label: simple
+          srv:
+            label: SRV
+          sshfp:
+            label: SSHFP
+          storage:
+            label: storage
+          tlsa:
+            label: TLSA
+          txt:
+            label: TXT
+          unplanned_outage:
+            label: unplanned_outage
+          venet:
+            label: venet
+          veth_bridge:
+            label: veth_bridge
+          veth_routed:
+            label: veth_routed
         description: node, storage or mailer
       unassigned_by_chain:
         label: Unassigned_by_chain
@@ -1287,10 +1755,28 @@ en:
       user_data_content:
         label: User data content
       user_data_format:
+        choices:
+          cloudinit_config:
+            label: cloudinit_config
+          cloudinit_script:
+            label: cloudinit_script
+          nixos_configuration:
+            label: nixos_configuration
+          nixos_flake_configuration:
+            label: nixos_flake_configuration
+          nixos_flake_uri:
+            label: nixos_flake_uri
+          script:
+            label: script
         label: User data format
       user_deleted:
         label: User_deleted
       user_dns_zone_type:
+        choices:
+          primary_type:
+            label: primary_type
+          secondary_type:
+            label: secondary_type
         label: User_dns_zone_type
       user_ident:
         label: User_ident
@@ -1306,6 +1792,13 @@ en:
       user_suspended:
         label: User_suspended
       user_visibility:
+        choices:
+          default:
+            label: default
+          invisible:
+            label: invisible
+          visible:
+            label: visible
         label: User_visibility
       userpick:
         label: Userpick
@@ -1322,6 +1815,15 @@ en:
           page/action filters
         label: View
       vps_action:
+        choices:
+          disable_network:
+            label: disable_network
+          none:
+            label: none
+          stop:
+            label: stop
+          suspend:
+            label: suspend
         label: VPS action
       vps_deleted:
         description: Number of lazily deleted VPSes

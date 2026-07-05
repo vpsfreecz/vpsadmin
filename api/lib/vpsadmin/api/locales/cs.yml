@@ -33,6 +33,13 @@ cs:
       access_token:
         label: Přístupový token
       access_token_lifetime:
+        choices:
+          fixed:
+            label: pevná
+          renewable_auto:
+            label: automaticky obnovitelná
+          renewable_manual:
+            label: ručně obnovitelná
         label: Životnost přístupového tokenu
       access_token_seconds:
         label: Platnost přístupového tokenu v sekundách
@@ -41,6 +48,17 @@ cs:
       accounted_by:
         label: Účtováno podle
       action:
+        choices:
+          approve:
+            label: Schválit
+          deny:
+            label: Zamítnout
+          ignore:
+            label: Ignorovat
+          notify:
+            label: Upozornit
+          request_correction:
+            label: Vyžádat opravu
         label: Akce
       activate:
         label: Aktivovat účet
@@ -64,6 +82,15 @@ cs:
         description: Filtrovat uživatele s administrátorskými oprávněními
         label: Administrátor
       admin_lock_type:
+        choices:
+          absolute:
+            label: pevná hodnota
+          no_lock:
+            label: bez zámku
+          not_less:
+            label: nejméně
+          not_more:
+            label: nejvýše
         description: Jak je vynucen administrátorský zámek
         label: Typ administrátorského zámku
       admin_override:
@@ -90,6 +117,15 @@ cs:
       affected_vps_count:
         label: Dotčené VPS
       algorithm:
+        choices:
+          hmac_sha224:
+            label: hmac-sha224
+          hmac_sha256:
+            label: hmac-sha256
+          hmac_sha384:
+            label: hmac-sha384
+          hmac_sha512:
+            label: hmac-sha512
         label: Algoritmus
       all_vps:
         description: Povolit připojení tohoto exportu všem VPS uživatele. Změny IP
@@ -131,6 +167,13 @@ cs:
       auth_token:
         label: Autentizační token
       auth_type:
+        choices:
+          basic:
+            label: basic
+          oauth2:
+            label: OAuth2
+          token:
+            label: token
         label: Typ autentizace
       auto_add:
         description: Automaticky přidat tento klíč do nově vytvořených VPS
@@ -180,9 +223,26 @@ cs:
         label: Cgroup
       cgroup_pattern:
         label: Vzor cesty cgroup
+      cgroup_version:
+        choices:
+          cgroup_any:
+            label: libovolná cgroup
+          cgroup_invalid:
+            label: neplatná cgroup
+          cgroup_v1:
+            label: cgroup v1
+          cgroup_v2:
+            label: cgroup v2
       challenge_token:
         label: Token výzvy
       change_type:
+        choices:
+          create_record:
+            label: vytvoření záznamu
+          delete_record:
+            label: smazání záznamu
+          update_record:
+            label: úprava záznamu
         label: Typ změny
       changed_at:
         label: Změněno
@@ -264,12 +324,30 @@ cs:
       created_by:
         label: Vytvořil
       currency:
+        choices:
+          czk:
+            label: CZK
+          eur:
+            label: EUR
         label: Měna
       current:
         label: Aktuální
       current_history_id:
         label: ID aktuální historie
       current_state:
+        choices:
+          created:
+            label: vytvořeno
+          delayed:
+            label: odloženo
+          mounted:
+            label: mountnuto
+          skipped:
+            label: přeskočeno
+          unmounted:
+            label: odmountnuto
+          waiting:
+            label: čeká
         label: Aktuální stav
       cve:
         description: Filtrovat podle identifikátoru CVE.
@@ -336,6 +414,13 @@ cs:
         description: Název nodu včetně domény lokace
         label: Doménové jméno
       done:
+        choices:
+          done:
+            label: hotovo
+          staged:
+            label: připraveno
+          waiting:
+            label: čeká
         label: Hotovo
       ds_algorithm:
         label: DS algoritmus
@@ -457,6 +542,25 @@ cs:
         description: Smazat DNS resolver i tehdy, když se používá. Dotčené VPS dostanou
           nový DNS resolver.
       format:
+        choices:
+          archive:
+            label: archiv
+          cloudinit_config:
+            label: cloud-init konfigurace
+          cloudinit_script:
+            label: cloud-init skript
+          incremental_stream:
+            label: inkrementální stream
+          nixos_configuration:
+            label: NixOS konfigurace
+          nixos_flake_configuration:
+            label: NixOS flake konfigurace
+          nixos_flake_uri:
+            label: NixOS flake URI
+          script:
+            label: skript
+          stream:
+            label: stream
         label: Formát
       fqdn:
         label: FQDN
@@ -492,6 +596,11 @@ cs:
       has_hypervisor:
         label: Má hypervisor
       has_ipv6:
+        choices:
+          'false':
+            label: ne
+          'true':
+            label: ano
         description: True, pokud lokace má IPv6 adresy
         label: Má IPv6
       has_storage:
@@ -515,7 +624,28 @@ cs:
         label: Přesný hostname
       how:
         label: Jak jste se o nás dozvěděli?
+      hypervisor_type:
+        choices:
+          openvz:
+            label: OpenVZ
+          vpsadminos:
+            label: vpsAdminOS
       impact:
+        choices:
+          export:
+            label: NFS export
+          network:
+            label: Síť
+          performance:
+            label: Výkon
+          system_reset:
+            label: Reset systému
+          system_restart:
+            label: Restart systému
+          tbd:
+            label: bude upřesněno
+          unavailability:
+            label: Nedostupnost
         label: Dopad
       impermanence:
         label: NixOS Impermanence
@@ -564,6 +694,11 @@ cs:
       ip_tor:
         label: IP Tor
       ip_version:
+        choices:
+          '4':
+            label: '4'
+          '6':
+            label: '6'
         label: Verze IP
       ip_vpn:
         label: IP VPN
@@ -606,6 +741,11 @@ cs:
       killed_pid:
         label: PID ukončeného procesu
       kind:
+        choices:
+          gid:
+            label: GID
+          uid:
+            label: UID
         label: Druh
       ks:
         label: Ks
@@ -636,6 +776,11 @@ cs:
       last_transfer_serial:
         label: Poslední přenos sériové číslo
       last_transfer_status:
+        choices:
+          failed:
+            label: selhalo
+          success:
+            label: úspěch
         label: Status posledního přenosu
       last_use:
         label: Poslední použití
@@ -722,6 +867,14 @@ cs:
       maintenance:
         description: Přepnout node do režimu údržby
         label: Údržba
+      maintenance_lock:
+        choices:
+          lock:
+            label: zámek
+          master_lock:
+            label: hlavní zámek
+          'no':
+            label: ne
       maintenance_window_vps:
         description: Migrovat dataset v nejbližším okně údržby VPS
         label: Okno údržby VPS
@@ -731,8 +884,18 @@ cs:
         description: Určuje, zda vpsAdmin nastavuje hostname VPS
         label: Spravovat hostname
       managed:
+        choices:
+          'false':
+            label: ne
+          'true':
+            label: ano
         label: Spravováno
       map_mode:
+        choices:
+          native:
+            label: nativní
+          zfs:
+            label: ZFS
         label: Režim mapování
       master_enabled:
         label: Master povolen
@@ -775,6 +938,11 @@ cs:
         description: Kdy byl node mitigován nebo opraven, pokud je známo.
         label: Zmírněno od
       mode:
+        choices:
+          ro:
+            label: jen čtení
+          rw:
+            label: čtení i zápis
         label: Režim
       monitor:
         label: Monitor
@@ -787,6 +955,13 @@ cs:
       mountpoint:
         label: Přípojný bod
       namespace:
+        choices:
+          forms:
+            label: formuláře
+          tips:
+            label: tipy
+          ui:
+            label: UI
         label: Namespace
       network:
         label: Síť
@@ -817,6 +992,15 @@ cs:
       node_name:
         label: Název nodu
       node_state:
+        choices:
+          mitigated:
+            label: ošetřeno
+          not_affected:
+            label: netýká se
+          unknown:
+            label: neznámé
+          vulnerable:
+            label: zranitelné
         label: Stav nodu
       nodes_online:
         label: Nody online
@@ -832,10 +1016,30 @@ cs:
       object_name:
         label: Název objektu
       object_state:
+        choices:
+          active:
+            label: aktivní
+          deleted:
+            label: smazáno
+          hard_delete:
+            label: hard delete
+          soft_delete:
+            label: soft delete
+          suspended:
+            label: pozastaveno
         label: Stav objektu
       offset:
         label: Offset
       on_start_fail:
+        choices:
+          fail_start:
+            label: selhat start
+          mount_later:
+            label: mount později
+          skip:
+            label: přeskočit
+          wait_for_mount:
+            label: čekat na mount
         description: Co se stane, když připojení selže během startu VPS
         label: Při selhání připojení
       onstartall:
@@ -853,6 +1057,29 @@ cs:
       options:
         label: Volby
       order:
+        choices:
+          asc:
+            label: vzestupně
+          ascending:
+            label: vzestupně
+          created_at:
+            label: vytvořeno
+          descending:
+            label: sestupně
+          interface:
+            label: interface
+          latest:
+            label: poslední
+          longest:
+            label: nejdelší
+          newest:
+            label: nejnovější
+          oldest:
+            label: nejstarší
+          shortest:
+            label: nejkratší
+          updated_at:
+            label: upraveno
         description: Pořadí šablony
         label: Pořadí
       org_id:
@@ -894,10 +1121,20 @@ cs:
       path:
         label: Cesta
       peer_type:
+        choices:
+          primary_type:
+            label: primární
+          secondary_type:
+            label: sekundární
         label: Typ protistrany
       pgtables_bytes:
         label: Pgtables bajty
       platform:
+        choices:
+          same:
+            label: stejná
+          vpsadminos:
+            label: vpsAdminOS
         label: Platforma
       pool:
         description: Pool úložiště, ve kterém se VPS nachází
@@ -905,10 +1142,34 @@ cs:
       pool_checked_at:
         label: Pool zkontrolován
       pool_scan:
+        choices:
+          error:
+            label: chyba
+          none:
+            label: neprobíhá
+          resilver:
+            label: resilver
+          scrub:
+            label: scrub
+          unknown:
+            label: neznámý
         label: Scan poolu
       pool_scan_percent:
         label: Procento scanu poolu
       pool_state:
+        choices:
+          degraded:
+            label: degraded
+          error:
+            label: chyba
+          faulted:
+            label: faulted
+          online:
+            label: online
+          suspended:
+            label: suspended
+          unknown:
+            label: neznámý
         label: Stav poolu
       pool_status:
         label: Status poolu
@@ -962,6 +1223,13 @@ cs:
       published_by:
         label: Zveřejnil
       purpose:
+        choices:
+          any:
+            label: libovolný
+          export:
+            label: export
+          vps:
+            label: VPS
         label: Účel
       quota:
         description: Omezuje množství místa, které může spotřebovat dataset a všichni
@@ -1035,6 +1303,11 @@ cs:
         description: Název zdroje nalezeného objektu
         label: Zdroj
       resource_type:
+        choices:
+          numeric:
+            label: číselný
+          object:
+            label: objekt
         label: Typ zdroje
       resources:
         label: Zdroje
@@ -1052,6 +1325,21 @@ cs:
       reverse_record_value:
         label: Hodnota reverzního záznamu
       role:
+        choices:
+          backup:
+            label: backup
+          forward_role:
+            label: forward
+          hypervisor:
+            label: hypervisor
+          primary:
+            label: primární
+          private_access:
+            label: privátní přístup
+          public_access:
+            label: veřejný přístup
+          reverse_role:
+            label: reverse
         description: Zobrazit pouze datasety určité role
         label: Role
       root_squash:
@@ -1084,6 +1372,17 @@ cs:
       saved_until:
         label: Uloženo do
       scan:
+        choices:
+          error:
+            label: chyba
+          none:
+            label: neprobíhá
+          resilver:
+            label: resilver
+          scrub:
+            label: scrub
+          unknown:
+            label: neznámý
         label: Scan
       scan_percent:
         label: Scan percent
@@ -1097,6 +1396,11 @@ cs:
         description: Inicializovat zónu základními záznamy směřujícími na VPS
         label: Seed VPS
       select:
+        choices:
+          all_until:
+            label: vše do
+          exactly_until:
+            label: přesně do
         label: Vybrat
       serial:
         label: Sériové číslo
@@ -1130,10 +1434,22 @@ cs:
       snapshot:
         label: Snapshot
       source:
+        choices:
+          external_source:
+            label: externí
+          internal_source:
+            label: interní
         label: Zdroj
       source_cursor:
         label: Kurzor zdroje
       split_access:
+        choices:
+          no_access:
+            label: bez přístupu
+          owner_split:
+            label: podle vlastníka
+          user_split:
+            label: podle uživatele
         label: Rozdělený přístup
       split_prefix:
         label: Rozdělený prefix
@@ -1153,8 +1469,94 @@ cs:
       started_at:
         label: Spuštěno
       state:
+        choices:
+          acknowledged:
+            label: vzato na vědomí
+          active:
+            label: aktivní
+          all:
+            label: vše
+          announced:
+            label: oznámeno
+          approved:
+            label: schváleno
+          awaiting:
+            label: čeká
+          cancelled:
+            label: zrušeno
+          cancelling:
+            label: ruší se
+          closed:
+            label: uzavřeno
+          confirmed:
+            label: potvrzeno
+          degraded:
+            label: degraded
+          denied:
+            label: zamítnuto
+          done:
+            label: hotovo
+          draft:
+            label: koncept
+          error:
+            label: chyba
+          failed:
+            label: selhalo
+          failing:
+            label: selhává
+          fatal:
+            label: fatální chyba
+          faulted:
+            label: faulted
+          ignored:
+            label: ignorováno
+          inactive:
+            label: neaktivní
+          mitigated:
+            label: ošetřeno
+          monitoring:
+            label: monitoring
+          not_affected:
+            label: netýká se
+          online:
+            label: online
+          open:
+            label: otevřeno
+          pending_correction:
+            label: čeká na opravu
+          processed:
+            label: zpracováno
+          published:
+            label: publikováno
+          queued:
+            label: ve frontě
+          resolved:
+            label: vyřešeno
+          retracted:
+            label: staženo
+          rollbacking:
+            label: rollback
+          running:
+            label: běží
+          staged:
+            label: připraveno
+          suspended:
+            label: pozastaveno
+          unconfirmed:
+            label: nepotvrzeno
+          unknown:
+            label: neznámé
+          unmatched:
+            label: bez shody
+          vulnerable:
+            label: zranitelné
         label: Stav
       status:
+        choices:
+          failed:
+            label: selhalo
+          success:
+            label: úspěch
         label: Status
       stepsize:
         description: Kroky, po kterých se může iterovat alokovaná hodnota zdroje objektu
@@ -1178,11 +1580,19 @@ cs:
         description: Je známo, že šablona funguje?
         label: Podporováno
       swap:
+        choices:
+          enforce:
+            label: vynutit
         description: Minimálně 0, maximálně 1048576, krok je 1
         label: Swap
       swapents:
         label: Swapents
       sync:
+        choices:
+          disabled:
+            label: vypnuto
+          standard:
+            label: standardní
         label: Sync
       taken:
         description: Počet vlastněných a přiřazených IP adres
@@ -1220,6 +1630,15 @@ cs:
       token_interval:
         label: Interval tokenu
       token_lifetime:
+        choices:
+          fixed:
+            label: pevná
+          permanent:
+            label: trvalá
+          renewable_auto:
+            label: automaticky obnovitelná
+          renewable_manual:
+            label: ručně obnovitelná
         label: Životnost tokenu
       total:
         label: Celkem
@@ -1245,6 +1664,55 @@ cs:
       tun:
         label: TUN/TAP
       type:
+        choices:
+          a:
+            label: A
+          aaaa:
+            label: AAAA
+          cname:
+            label: CNAME
+          dns_server:
+            label: DNS server
+          ds:
+            label: DS
+          mailer:
+            label: mailer
+          mx:
+            label: MX
+          node:
+            label: Node
+          ns:
+            label: NS
+          planned_outage:
+            label: Odstávka
+          primary_type:
+            label: primární
+          ptr:
+            label: PTR
+          secondary_type:
+            label: sekundární
+          secure:
+            label: secure
+          simple:
+            label: jednoduché
+          srv:
+            label: SRV
+          sshfp:
+            label: SSHFP
+          storage:
+            label: storage
+          tlsa:
+            label: TLSA
+          txt:
+            label: TXT
+          unplanned_outage:
+            label: Výpadek
+          venet:
+            label: venet
+          veth_bridge:
+            label: veth bridge
+          veth_routed:
+            label: veth routed
         description: node, úložiště nebo mailer
       unassigned_by_chain:
         label: Nepřiřazeno řetězcem
@@ -1283,10 +1751,28 @@ cs:
       user_data_content:
         label: Obsah User data
       user_data_format:
+        choices:
+          cloudinit_config:
+            label: cloud-init konfigurace
+          cloudinit_script:
+            label: cloud-init skript
+          nixos_configuration:
+            label: NixOS konfigurace
+          nixos_flake_configuration:
+            label: NixOS flake konfigurace
+          nixos_flake_uri:
+            label: NixOS flake URI
+          script:
+            label: skript
         label: Formát User data
       user_deleted:
         label: Uživatel smazán
       user_dns_zone_type:
+        choices:
+          primary_type:
+            label: primární
+          secondary_type:
+            label: sekundární
         label: Typ DNS zóny uživatele
       user_ident:
         label: Uživatel ident
@@ -1302,6 +1788,13 @@ cs:
       user_suspended:
         label: Uživatel suspendován
       user_visibility:
+        choices:
+          default:
+            label: výchozí
+          invisible:
+            label: skryto
+          visible:
+            label: viditelné
         label: Viditelnost uživatele
       userpick:
         label: Uživatelský výběr
@@ -1318,6 +1811,15 @@ cs:
           včetně filtrů stránky/akce
         label: Zobrazit
       vps_action:
+        choices:
+          disable_network:
+            label: Vypnout síť
+          none:
+            label: žádná
+          stop:
+            label: Stop
+          suspend:
+            label: Pozastavit
         label: Akce VPS
       vps_deleted:
         description: Počet odloženě smazaných VPS

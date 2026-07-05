@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "8aad3d136209eba38621c3677a52586f",
+    "content-hash": "4ba630023491fa534790a502e2c9b311",
     "packages": [
         {
             "name": "bacon/bacon-qr-code",
@@ -515,16 +515,16 @@
         },
         {
             "name": "haveapi/client",
-            "version": "0.29.1",
+            "version": "0.29.2",
             "source": {
                 "type": "git",
                 "url": "https://github.com/vpsfreecz/haveapi-client-php.git",
-                "reference": "77da8f4b5d87cab24cdfd9812f6f6c34d1857ff4"
+                "reference": "57add0e084f7e3f2805736adc791f105a83f52e7"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/vpsfreecz/haveapi-client-php/zipball/77da8f4b5d87cab24cdfd9812f6f6c34d1857ff4",
-                "reference": "77da8f4b5d87cab24cdfd9812f6f6c34d1857ff4",
+                "url": "https://api.github.com/repos/vpsfreecz/haveapi-client-php/zipball/57add0e084f7e3f2805736adc791f105a83f52e7",
+                "reference": "57add0e084f7e3f2805736adc791f105a83f52e7",
                 "shasum": ""
             },
             "require": {
@@ -555,9 +555,9 @@
             "homepage": "https://github.com/vpsfreecz/haveapi-client-php",
             "support": {
                 "issues": "https://github.com/vpsfreecz/haveapi-client-php/issues",
-                "source": "https://github.com/vpsfreecz/haveapi-client-php/tree/v0.29.1"
+                "source": "https://github.com/vpsfreecz/haveapi-client-php/tree/v0.29.2"
             },
-            "time": "2026-07-04T11:24:54+00:00"
+            "time": "2026-07-05T22:02:50+00:00"
         },
         {
             "name": "league/oauth2-client",

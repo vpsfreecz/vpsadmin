@@ -18,7 +18,7 @@ module VpsAdmin::API::Resources
       integer :duration, label: 'Duration', desc: 'Outage duration in minutes'
       string :state, label: 'State', choices: ::OutageUpdate.states.keys.map(&:to_s)
       string :impact, db_name: :impact_type, label: 'Impact',
-                      choices: { values: ::Outage.impact_type_labels }
+                      choices: ::Outage.impact_types.keys.map(&:to_s)
       use :texts
     end
 
@@ -26,7 +26,7 @@ module VpsAdmin::API::Resources
       id :id
       resource VpsAdmin::API::Resources::Outage, value_label: :begins_at
       string :type, db_name: :outage_type, label: 'Type',
-                    choices: { values: ::Outage.outage_type_labels }
+                    choices: ::Outage.outage_types.keys.map(&:to_s)
       use :editable
       resource VpsAdmin::API::Resources::User, name: :reported_by, value_label: :login,
                                                label: 'Reported by'
