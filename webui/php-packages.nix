@@ -204,10 +204,10 @@ let
     "nikic/php-parser" = {
       targetDir = "";
       src = composerEnv.buildZipPackage {
-        name = "nikic-php-parser-dca41cd15c2ac9d055ad70dbfd011130757d1f82";
+        name = "nikic-php-parser-044a6a392ff8ad0d61f14370a5fbbd0a0107152f";
         src = fetchurl {
-          url = "https://api.github.com/repos/nikic/PHP-Parser/zipball/dca41cd15c2ac9d055ad70dbfd011130757d1f82";
-          sha256 = "1qiv7qp87p0p39yqdcffakvdb533gnx57iz966wv7hkhprqsn2lb";
+          url = "https://api.github.com/repos/nikic/PHP-Parser/zipball/044a6a392ff8ad0d61f14370a5fbbd0a0107152f";
+          sha256 = "1bxr2q8xvlj2195m38bis72fymmnz0x6diikgh6pbzf71zyrp599";
         };
       };
     };
