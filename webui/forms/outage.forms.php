@@ -126,6 +126,14 @@ function outage_impact_label($impact)
     }
 }
 
+function outage_state_label($state)
+{
+    global $api;
+
+    $input = $api->outage->list->getParameters('input');
+    return api_param_choice_label($input->state, $state);
+}
+
 function outage_report_form()
 {
     global $xtpl, $api;
@@ -590,7 +598,7 @@ function outage_details($id)
     $xtpl->table_tr();
 
     $xtpl->table_td(_('State') . ':');
-    $xtpl->table_td($outage->state);
+    $xtpl->table_td(h(outage_state_label($outage->state)));
     $xtpl->table_tr();
 
     $xtpl->table_td(_('Impact') . ':');
@@ -769,7 +777,7 @@ function outage_details($id)
                         break;
 
                     case 'state':
-                        $changes[] = _("State:") . ' ' . $update->state;
+                        $changes[] = _("State:") . ' ' . h(outage_state_label($update->state));
                         break;
 
                     case 'impact':
@@ -1021,7 +1029,7 @@ function outage_list()
         $xtpl->table_td(tolocaltz($outage->begins_at, 'Y-m-d H:i'));
         $xtpl->table_td($outage->duration, false, true);
         $xtpl->table_td(outage_type_list_label($outage->type));
-        $xtpl->table_td($outage->state);
+        $xtpl->table_td(h(outage_state_label($outage->state)));
         $xtpl->table_td(implode(', ', array_map(
             function ($v) {
                 return h($v->label);

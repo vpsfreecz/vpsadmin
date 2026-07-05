@@ -57,7 +57,11 @@ async function submitChainFilter(page, values) {
   await expect(form).toBeVisible();
 
   for (const [name, value] of Object.entries(values)) {
-    await form.locator(`input[name="${name}"]`).fill(String(value));
+    if (name === 'state') {
+      await form.locator('select[name="state"]').selectOption(String(value));
+    } else {
+      await form.locator(`input[name="${name}"]`).fill(String(value));
+    }
   }
 
   await submitForm(form);
@@ -68,8 +72,8 @@ async function submitTransactionFilter(page, values, options = {}) {
   await expect(form).toBeVisible();
 
   for (const [name, value] of Object.entries(values)) {
-    if (name === 'node') {
-      await form.locator('select[name="node"]').selectOption(String(value));
+    if (name === 'node' || name === 'done') {
+      await form.locator(`select[name="${name}"]`).selectOption(String(value));
     } else {
       await form.locator(`input[name="${name}"]`).fill(String(value));
     }

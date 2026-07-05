@@ -28,11 +28,28 @@ function chain_class($chain)
     }
 }
 
+function transaction_chain_state_label($state)
+{
+    global $api;
+
+    $input = $api->transaction_chain->list->getParameters('input');
+    return api_param_choice_label($input->state, $state);
+}
+
+function transaction_done_label($done)
+{
+    global $api;
+
+    $input = $api->transaction->list->getParameters('input');
+    return api_param_choice_label($input->done, $done);
+}
+
 function list_chains()
 {
     global $xtpl, $api;
 
     $pagination = new \Pagination\System(null, $api->transaction_chain->list);
+    $input = $api->transaction_chain->list->getParameters('input');
 
     $xtpl->title(_("Transaction chains"));
 
@@ -48,7 +65,7 @@ function list_chains()
     $xtpl->form_add_input(_("Exact ID") . ':', 'text', '40', 'chain', get_val('chain'));
     $xtpl->form_add_input(_("User ID") . ':', 'text', '40', 'user', get_val('user'));
     $xtpl->form_add_input(_("User session ID") . ':', 'text', '40', 'user_session', get_val('user_session'));
-    $xtpl->form_add_input(_("State") . ':', 'text', '40', 'state', get_val('state'), 'queued, done, rollbacking, failed');
+    api_param_to_form('state', $input->state, get_val('state'), null, true);
     $xtpl->form_add_input(_("Name") . ':', 'text', '40', 'name', get_val('name'));
     $xtpl->form_add_input(_("Class name") . ':', 'text', '40', 'class_name', get_val('class_name'));
     $xtpl->form_add_input(_("Object id") . ':', 'text', '40', 'row_id', get_val('row_id'));
@@ -125,7 +142,7 @@ function list_chains()
 
         $xtpl->table_td(transaction_chain_concerns($chain));
         $xtpl->table_td(h($chain->label));
-        $xtpl->table_td(h($chain->state));
+        $xtpl->table_td(h(transaction_chain_state_label($chain->state)));
         $xtpl->table_td($chain->size);
         $xtpl->table_td($chain->progress . ' (' . round($chain->progress / $chain->size * 100, 0) . ' %)');
         $xtpl->table_tr(false, chain_class($chain));
@@ -175,7 +192,7 @@ function chain_transactions($chain_id)
     $xtpl->table_tr();
 
     $xtpl->table_td(_('State'));
-    $xtpl->table_td(h($chain->state));
+    $xtpl->table_td(h(transaction_chain_state_label($chain->state)));
     $xtpl->table_tr();
 
     $xtpl->table_td(_('Size'));
@@ -201,6 +218,7 @@ function chain_transactions($chain_id)
     $xtpl->table_out();
 
     $pagination = new \Pagination\System(null, $api->transaction->list, ['defaultLimit' => 100]);
+    $input = $api->transaction->list->getParameters('input');
 
     $xtpl->table_title(_('Filters'));
     $xtpl->form_create('', 'get', 'transaction-filter', false);
@@ -220,7 +238,7 @@ function chain_transactions($chain_id)
         get_val('node')
     );
     $xtpl->form_add_input(_("Type") . ':', 'text', '40', 'type', get_val('type'));
-    $xtpl->form_add_input(_("Done") . ':', 'text', '40', 'done', get_val('done'));
+    api_param_to_form('done', $input->done, get_val('done'), null, true);
     $xtpl->form_add_input(_("Success") . ':', 'text', '40', 'success', get_val('success'));
     $xtpl->form_add_checkbox(_("Detailed mode") . ':', 'details', '1', get_val('details'));
 
@@ -273,17 +291,17 @@ function chain_transactions($chain_id)
     $pagination->setResourceList($transactions);
 
     $xtpl->table_title(_('Chained transactions'));
-    $xtpl->table_add_category("ID");
-    $xtpl->table_add_category("QUEUED");
-    $xtpl->table_add_category("TIME");
-    $xtpl->table_add_category("REAL");
-    $xtpl->table_add_category("USER");
-    $xtpl->table_add_category("NODE");
-    $xtpl->table_add_category("VPS");
-    $xtpl->table_add_category("TYPE");
-    $xtpl->table_add_category("PRIO");
-    $xtpl->table_add_category("DONE?");
-    $xtpl->table_add_category("OK?");
+    $xtpl->table_add_category(_('ID'));
+    $xtpl->table_add_category(_('Queued'));
+    $xtpl->table_add_category(_('Time'));
+    $xtpl->table_add_category(_('Real'));
+    $xtpl->table_add_category(_('User'));
+    $xtpl->table_add_category(_('Node'));
+    $xtpl->table_add_category(_('VPS'));
+    $xtpl->table_add_category(_('Type'));
+    $xtpl->table_add_category(_('Prio'));
+    $xtpl->table_add_category(_('Done?'));
+    $xtpl->table_add_category(_('OK?'));
 
     foreach ($transactions as $t) {
         $created_at = strtotime($t->created_at);
@@ -307,7 +325,7 @@ function chain_transactions($chain_id)
         $xtpl->table_td($t->vps_id ? '<a href="?page=adminvps&action=info&veid=' . $t->vps_id . '">' . $t->vps_id . '</a>' : '---');
         $xtpl->table_td($t->name . ' (' . $t->type . ')');
         $xtpl->table_td(($t->urgent ? '<img src="template/icons/warning.png" alt="' . _('Urgent') . '" title="' . _('Urgent') . '"> ' : '') . $t->priority);
-        $xtpl->table_td($t->done);
+        $xtpl->table_td(h(transaction_done_label($t->done)));
         $xtpl->table_td($t->success);
         $xtpl->table_tr(false, transaction_class($t));
 

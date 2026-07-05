@@ -19,6 +19,8 @@ Always translate with context. The same English word can mean different things:
 - A planned outage is `odstávka`; an unplanned outage is `výpadek`.
   Never use `plánovaný výpadek`, `neplánovaný výpadek`,
   `plánované výpadky`, or `neplánované výpadky`.
+  In combined outage lists, use labels such as `Odstávky`, `Výpadky`, and
+  `Odstávky a výpadky`.
 - `Network`/`Networks` are `Síť`/`Sítě`.
 - `Export`/`Exports` are `Export`/`Exporty`.
 - `Back` navigation links are `Zpět`.
@@ -34,6 +36,11 @@ Always translate with context. The same English word can mean different things:
 - `Logout` button text is `Odhlásit`.
 - `Transaction log` stays as English source text; Czech menu text is
   `Transakce`.
+- Transaction chain pages can use concise Czech labels such as `Transakce`;
+  `Concerns` means affected objects and is translated as `Týká se`, never
+  `Obavy`.
+- Security advisory `mitigated` state is `ošetřeno`, not a literal
+  `zmírněno`.
 - `Dataset`/`Datasets` are `Dataset`/`Datasety`.
 - ZFS dataset property labels use a natural Czech label followed by the exact
   property key in parentheses, e.g. `Využitý prostor (used)` and

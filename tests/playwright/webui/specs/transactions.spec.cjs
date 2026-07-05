@@ -27,7 +27,7 @@ test('user can open transaction state-filtered lists and chain details', async (
     });
 
     const form = chainFilterForm(page);
-    await expect(form.locator('input[name="state"]')).toHaveValue(state);
+    await expect(form.locator('select[name="state"]')).toHaveValue(state);
     await expect(form.locator('input[name="name"]')).toHaveValue(chain.name);
 
     const row = chainRow(page, chain.id);

@@ -523,6 +523,65 @@ function boolean_icon($val)
     }
 }
 
+function api_param_choices($desc, $label_callback = null, $empty = null)
+{
+    if (!$desc->validators || !property_exists($desc->validators, 'include')) {
+        return null;
+    }
+
+    $desc_choices = $desc->validators->include->values;
+
+    if (is_object($desc_choices)) {
+        $desc_choices = get_object_vars($desc_choices);
+    }
+
+    $assoc = is_assoc($desc_choices);
+    $choices = [];
+
+    if ($empty) {
+        $choices[''] = '---';
+    }
+
+    if ($label_callback) {
+        foreach ($desc_choices as $k => $val) {
+            $choice_label = $label_callback($val);
+
+            if (is_null($choice_label)) {
+                continue;
+            }
+
+            if ($assoc) {
+                $choices[$k] = $choice_label;
+            } else {
+                $choices[$val] = $choice_label;
+            }
+        }
+
+    } else {
+        if ($assoc) {
+            $choices += $desc_choices;
+
+        } else {
+            foreach ($desc_choices as $val) {
+                $choices[$val] = $val;
+            }
+        }
+    }
+
+    return $choices;
+}
+
+function api_param_choice_label($desc, $value, $label_callback = null)
+{
+    $choices = api_param_choices($desc, $label_callback);
+
+    if ($choices !== null && array_key_exists($value, $choices)) {
+        return $choices[$value];
+    }
+
+    return $value;
+}
+
 function api_param_to_form_pure($name, $desc, $v = null, $label_callback = null, $empty = null)
 {
     global $xtpl, $api;
@@ -539,46 +598,9 @@ function api_param_to_form_pure($name, $desc, $v = null, $label_callback = null,
         case 'String':
         case 'Integer':
         case 'Float':
-            if ($desc->validators && property_exists($desc->validators, 'include')) {
-                $desc_choices = $desc->validators->include->values;
+            $choices = api_param_choices($desc, $label_callback, $empty);
 
-                if (is_object($desc_choices)) {
-                    $desc_choices = get_object_vars($desc_choices);
-                }
-
-                $assoc = is_assoc($desc_choices);
-                $choices = [];
-
-                if ($empty) {
-                    $choices[''] = '---';
-                }
-
-                if ($label_callback) {
-                    foreach ($desc_choices as $k => $val) {
-                        $choice_label = $label_callback($val);
-
-                        if (is_null($choice_label)) {
-                            continue;
-                        }
-
-                        if ($assoc) {
-                            $choices[$k] = $choice_label;
-                        } else {
-                            $choices[$val] = $choice_label;
-                        }
-                    }
-
-                } else {
-                    if ($assoc) {
-                        $choices += $desc_choices;
-
-                    } else {
-                        foreach ($desc_choices as $val) {
-                            $choices[$val] = $val;
-                        }
-                    }
-                }
-
+            if ($choices !== null) {
                 $xtpl->form_add_select_pure(
                     $name,
                     $choices,

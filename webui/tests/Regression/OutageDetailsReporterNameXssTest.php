@@ -139,6 +139,13 @@ final class OutageDetailsReporterNameXssTest extends TestCase
             }
         }
 
+        if (!function_exists('api_param_choice_label')) {
+            function api_param_choice_label($desc, $value, $label_callback = null)
+            {
+                return $value;
+            }
+        }
+
         $payload = '<img src=x onerror=alert("outage-reporter-xss")>';
 
         global $xtpl, $api;
@@ -146,6 +153,20 @@ final class OutageDetailsReporterNameXssTest extends TestCase
         $xtpl = new FakeOutageTemplate();
         $api = (object) [
             'outage' => new class {
+                public object $list;
+
+                public function __construct()
+                {
+                    $this->list = new class {
+                        public function getParameters($direction)
+                        {
+                            return (object) [
+                                'state' => (object) [],
+                            ];
+                        }
+                    };
+                }
+
                 public function show($id)
                 {
                     return new FakeOutage();

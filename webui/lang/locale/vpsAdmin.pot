@@ -251,7 +251,7 @@ msgstr ""
 #: forms/outage.forms.php forms/security_advisory.forms.php
 #: forms/userdata.forms.php forms/vps.forms.php pages/page_adminm.php
 #: pages/page_adminvps.php pages/page_index.php pages/page_networking.php
-#: public/index.php
+#: pages/page_transactions.php public/index.php
 msgid "VPS"
 msgstr ""
 
@@ -1155,7 +1155,7 @@ msgstr ""
 msgid "Transfer log"
 msgstr ""
 
-#: forms/dns.forms.php forms/oom_reports.forms.php
+#: forms/dns.forms.php forms/oom_reports.forms.php pages/page_transactions.php
 msgid "Time"
 msgstr ""
 
@@ -1657,7 +1657,7 @@ msgid "Assignment ID"
 msgstr ""
 
 #: forms/incidents.forms.php forms/userns.forms.php pages/page_adminvps.php
-#: pages/page_cluster.php pages/page_jumpto.php
+#: pages/page_cluster.php pages/page_jumpto.php pages/page_transactions.php
 msgid "ID"
 msgstr ""
 
@@ -7481,15 +7481,31 @@ msgid "Concerns"
 msgstr ""
 
 #: pages/page_transactions.php
-msgid "Done"
-msgstr ""
-
-#: pages/page_transactions.php
 msgid "Detailed mode"
 msgstr ""
 
 #: pages/page_transactions.php
 msgid "Chained transactions"
+msgstr ""
+
+#: pages/page_transactions.php
+msgid "Queued"
+msgstr ""
+
+#: pages/page_transactions.php
+msgid "Real"
+msgstr ""
+
+#: pages/page_transactions.php
+msgid "Prio"
+msgstr ""
+
+#: pages/page_transactions.php
+msgid "Done?"
+msgstr ""
+
+#: pages/page_transactions.php
+msgid "OK?"
 msgstr ""
 
 #: pages/page_transactions.php

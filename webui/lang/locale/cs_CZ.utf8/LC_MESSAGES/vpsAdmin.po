@@ -250,7 +250,7 @@ msgstr "celkem"
 #: forms/outage.forms.php forms/security_advisory.forms.php
 #: forms/userdata.forms.php forms/vps.forms.php pages/page_adminm.php
 #: pages/page_adminvps.php pages/page_index.php pages/page_networking.php
-#: public/index.php
+#: pages/page_transactions.php public/index.php
 msgid "VPS"
 msgstr "VPS"
 
@@ -1161,7 +1161,7 @@ msgstr "DNS zóna serveru"
 msgid "Transfer log"
 msgstr "Log přenosů"
 
-#: forms/dns.forms.php forms/oom_reports.forms.php
+#: forms/dns.forms.php forms/oom_reports.forms.php pages/page_transactions.php
 msgid "Time"
 msgstr "Čas"
 
@@ -1457,7 +1457,7 @@ msgstr "Změnit typ"
 
 #: forms/dns.forms.php pages/page_transactions.php
 msgid "Transaction chain"
-msgstr "Transakční řetězec"
+msgstr "Řetězec transakcí"
 
 #: forms/dns.forms.php
 msgid "DNS resolvers"
@@ -1665,7 +1665,7 @@ msgid "Assignment ID"
 msgstr "Úkol ID"
 
 #: forms/incidents.forms.php forms/userns.forms.php pages/page_adminvps.php
-#: pages/page_cluster.php pages/page_jumpto.php
+#: pages/page_cluster.php pages/page_jumpto.php pages/page_transactions.php
 msgid "ID"
 msgstr "ID"
 
@@ -2410,11 +2410,11 @@ msgstr "Odeslat aktualizaci"
 
 #: forms/outage.forms.php
 msgid "staged"
-msgstr "inscenované"
+msgstr "připraveno"
 
 #: forms/outage.forms.php
 msgid "announced"
-msgstr "oznámil"
+msgstr "oznámeno"
 
 #: forms/outage.forms.php
 msgid "cancelled"
@@ -2609,7 +2609,7 @@ msgstr "Přímé"
 
 #: forms/outage.forms.php
 msgid "Planned outages"
-msgstr "Plánované odstávky"
+msgstr "Odstávky"
 
 #: forms/outage.forms.php
 msgid "Upcoming outages"
@@ -2671,7 +2671,7 @@ msgstr "návrh"
 
 #: forms/security_advisory.forms.php
 msgid "published"
-msgstr "zveřejněno"
+msgstr "publikováno"
 
 #: forms/security_advisory.forms.php
 msgid "retracted"
@@ -2679,19 +2679,19 @@ msgstr "staženo"
 
 #: forms/security_advisory.forms.php
 msgid "not affected"
-msgstr "neovlivněno"
+msgstr "netýká se"
 
 #: forms/security_advisory.forms.php
 msgid "vulnerable"
-msgstr "zranitelný"
+msgstr "zranitelné"
 
 #: forms/security_advisory.forms.php
 msgid "mitigated"
-msgstr "zmírněno"
+msgstr "ošetřeno"
 
 #: forms/security_advisory.forms.php
 msgid "hypervisor"
-msgstr "hypervizor"
+msgstr "hypervisor"
 
 #: forms/security_advisory.forms.php
 msgid "storage"
@@ -2795,11 +2795,11 @@ msgstr "Váš dotčený VPS"
 
 #: forms/security_advisory.forms.php
 msgid "Vulnerable until"
-msgstr "Zranitelný do"
+msgstr "Zranitelné do"
 
 #: forms/security_advisory.forms.php
 msgid "Mitigated since"
-msgstr "Od té doby zmírněno"
+msgstr "Ošetřeno od"
 
 #: forms/security_advisory.forms.php
 msgid "Your VPS were not affected by this advisory."
@@ -7569,7 +7569,7 @@ msgstr "ID hlášení musí být číslo."
 
 #: pages/page_transactions.php
 msgid "Transaction chains"
-msgstr "Transakční řetězce"
+msgstr "Transakce"
 
 #: pages/page_transactions.php
 msgid "User session ID"
@@ -7589,19 +7589,15 @@ msgstr "Pokrok"
 
 #: pages/page_transactions.php
 msgid "Chain not found"
-msgstr "Řetěz nenalezen"
+msgstr "Řetězec nenalezen"
 
 #: pages/page_transactions.php
 msgid "Chain info"
-msgstr "Informace o řetězu"
+msgstr "Informace o řetězci"
 
 #: pages/page_transactions.php
 msgid "Concerns"
-msgstr "Obavy"
-
-#: pages/page_transactions.php
-msgid "Done"
-msgstr "Hotovo"
+msgstr "Týká se"
 
 #: pages/page_transactions.php
 msgid "Detailed mode"
@@ -7609,7 +7605,27 @@ msgstr "Podrobný režim"
 
 #: pages/page_transactions.php
 msgid "Chained transactions"
-msgstr "Řetězované transakce"
+msgstr "Transakce"
+
+#: pages/page_transactions.php
+msgid "Queued"
+msgstr "Zařazeno"
+
+#: pages/page_transactions.php
+msgid "Real"
+msgstr "Reálně"
+
+#: pages/page_transactions.php
+msgid "Prio"
+msgstr "Prio"
+
+#: pages/page_transactions.php
+msgid "Done?"
+msgstr "Hotovo?"
+
+#: pages/page_transactions.php
+msgid "OK?"
+msgstr "OK?"
 
 #: pages/page_transactions.php
 msgid "Urgent"
