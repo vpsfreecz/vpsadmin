@@ -146,7 +146,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Select spec files for topic
         working-directory: api
@@ -248,7 +248,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Select spec files for topic
         working-directory: api
@@ -330,7 +330,7 @@ jobs:
 
     steps:
       - name: Checkout (for git ls-files)
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Download per-topic file lists
         uses: actions/download-artifact@v8
@@ -343,7 +343,9 @@ jobs:
           set -euo pipefail
 
           # All tracked spec files in the API component (paths relative to api/)
-          git -C api ls-files 'spec/**/*_spec.rb' | sort > all_specs.txt
+          # Migration specs have a separate workflow because they are selected
+          # by changed migration file and also run as a scheduled full sweep.
+          git -C api ls-files 'spec/**/*_spec.rb' ':!spec/migrations/*_spec.rb' | sort > all_specs.txt
 
           # Union and duplicate detection from downloaded artifacts
           find artifacts -type f -name 'rspec-files-*.txt' -print0 \

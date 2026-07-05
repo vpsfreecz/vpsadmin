@@ -25,6 +25,20 @@ class CiTestSelectionTest < Minitest::Test
     assert_equal 'skip', selection.mode
   end
 
+  def test_migration_spec_harness_changes_skip_integration_ci
+    selection = selector.select([
+                                  '.git-hooks/pre_commit/migration_specs.rb',
+                                  '.github/workflows/api-migration-specs.yml',
+                                  '.github/workflows/api-specs.yml',
+                                  '.overcommit.yml',
+                                  'api/spec/migration_helper.rb',
+                                  'api/spec/migrations/20260703120000_add_czech_language_spec.rb',
+                                  'tools/check_migration_specs.rb'
+                                ])
+
+    assert_equal 'skip', selection.mode
+  end
+
   def test_mixed_skip_and_runtime_changes_select_runtime_tags
     selection = selector.select(['tests/README.md', 'webui/pages/page_login.php'])
 

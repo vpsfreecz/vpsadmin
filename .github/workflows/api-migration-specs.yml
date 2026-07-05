@@ -1,0 +1,159 @@
+name: API Migration Specs
+
+on:
+  push:
+    paths:
+      - "api/db/migrate/**"
+      - "api/spec/migration_helper.rb"
+      - "api/spec/migrations/**"
+      - "api/spec/support/db_setup.rb"
+      - "tools/check_migration_specs.rb"
+      - ".github/workflows/api-migration-specs.yml"
+      - "AGENTS.md"
+  pull_request:
+    paths:
+      - "api/db/migrate/**"
+      - "api/spec/migration_helper.rb"
+      - "api/spec/migrations/**"
+      - "api/spec/support/db_setup.rb"
+      - "tools/check_migration_specs.rb"
+      - ".github/workflows/api-migration-specs.yml"
+      - "AGENTS.md"
+  schedule:
+    - cron: "17 3 * * 1"
+  workflow_dispatch:
+
+concurrency:
+  group: api-migration-specs-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  migration-specs:
+    name: API migration specs
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    env:
+      RACK_ENV: test
+      BUNDLE_WITHOUT: development
+      BUNDLE_JOBS: "4"
+      BUNDLE_RETRY: "3"
+      VPSADMIN_PLUGINS: none
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Determine base ref
+        id: base
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          EVENT_BEFORE: ${{ github.event.before }}
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+          HEAD_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+
+          zero_rev="0000000000000000000000000000000000000000"
+          base=""
+
+          use_base() {
+            local candidate="$1"
+
+            if [[ -z "$candidate" || "$candidate" == "$zero_rev" ]]; then
+              return
+            fi
+
+            if git cat-file -e "${candidate}^{commit}" 2>/dev/null \
+              && git merge-base "$candidate" "$HEAD_SHA" >/dev/null; then
+              base="$candidate"
+            fi
+          }
+
+          if [[ "$EVENT_NAME" == "pull_request" ]]; then
+            use_base "$PR_BASE_SHA"
+          else
+            use_base "$EVENT_BEFORE"
+          fi
+
+          if [[ -z "$base" ]]; then
+            git fetch --no-tags origin \
+              "+refs/heads/${DEFAULT_BRANCH}:refs/remotes/origin/${DEFAULT_BRANCH}"
+            base="$(git merge-base "$HEAD_SHA" "origin/${DEFAULT_BRANCH}" || true)"
+          fi
+
+          if [[ -z "$base" ]]; then
+            echo "Unable to determine migration spec diff base" >&2
+            exit 1
+          fi
+
+          echo "ref=$base" >> "$GITHUB_OUTPUT"
+
+      - name: Check migration spec coverage
+        run: tools/check_migration_specs.rb --base "${{ steps.base.outputs.ref }}" --head HEAD
+
+      - name: Select migration specs
+        id: specs
+        run: |
+          set -euo pipefail
+          mkdir -p api/tmp
+
+          if [[ "${{ github.event_name }}" == "schedule" || "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            git -C api ls-files 'spec/migrations/*_spec.rb' | sort > api/tmp/migration-specs.txt
+          else
+            git diff --name-only "${{ steps.base.outputs.ref }}...HEAD" -- \
+              'api/db/migrate/*.rb' \
+              'api/spec/migrations/*_spec.rb' \
+              | ruby -ne '
+                  path = $_.strip
+                  if path.start_with?("api/db/migrate/")
+                    name = File.basename(path, ".rb")
+                    puts "spec/migrations/#{name}_spec.rb"
+                  elsif path.start_with?("api/spec/migrations/")
+                    puts path.sub(%r{\Aapi/}, "")
+                  end
+                ' \
+              | sort -u > api/tmp/migration-specs.txt
+          fi
+
+          if [[ ! -s api/tmp/migration-specs.txt ]]; then
+            echo "run=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Install system dependencies (MariaDB server + headers)
+        if: steps.specs.outputs.run == 'true'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libmariadb-dev \
+            libmariadb-dev-compat \
+            mariadb-client \
+            mariadb-server
+
+      - name: Read Ruby series
+        if: steps.specs.outputs.run == 'true'
+        id: ruby-version
+        run: |
+          set -euo pipefail
+          echo "version=$(cut -d. -f1,2 .ruby-version)" >> "$GITHUB_OUTPUT"
+
+      - name: Set up Ruby (Bundler cache)
+        if: steps.specs.outputs.run == 'true'
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: ${{ steps.ruby-version.outputs.version }}
+          bundler-cache: true
+          working-directory: api
+
+      - name: Run migration specs
+        if: steps.specs.outputs.run == 'true'
+        working-directory: api
+        run: xargs -a tmp/migration-specs.txt bundle exec rspec --options /dev/null --format documentation
