@@ -472,14 +472,18 @@ module VpsAdmin
         end
 
         def runtime_i18n_default_values
-          ::TransactionChain.transaction_chain_label_defaults.merge(
-            ::TransactionChain.concern_class_label_defaults
-          )
+          ::TransactionChain.transaction_chain_label_defaults
+                            .merge(::TransactionChain.concern_class_label_defaults)
+                            .merge(VpsAdmin::API::Events.i18n_defaults)
         end
 
         def runtime_model_errors
           ::Transaction.transaction_label_errors +
             ::TransactionChain.transaction_chain_label_errors
+        end
+
+        def runtime_i18n_key_defaults
+          VpsAdmin::API::Events.i18n_defaults
         end
 
         def runtime_parameter_metadata_items(api)
