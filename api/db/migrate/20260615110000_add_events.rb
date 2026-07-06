@@ -638,6 +638,31 @@ class AddEvents < ActiveRecord::Migration[8.1]
       SQL
 
       execute <<~SQL.squish
+        INSERT INTO event_routes
+          (user_id, parent_id, notification_receiver_id, label, position,
+           enabled, event_type, event_type_pattern, `continue`,
+           single_use, spent_at, expires_at, hit_count,
+           created_at, updated_at)
+        SELECT
+          user_id,
+          NULL,
+          id,
+          'Default admin route',
+          10001,
+          1,
+          NULL,
+          NULL,
+          0,
+          0,
+          NULL,
+          NULL,
+          0,
+          CURRENT_TIMESTAMP,
+          CURRENT_TIMESTAMP
+        FROM notification_receivers
+      SQL
+
+      execute <<~SQL.squish
         INSERT INTO event_route_matchers
           (event_route_id, field, operator, value, created_at, updated_at)
         SELECT
@@ -649,7 +674,24 @@ class AddEvents < ActiveRecord::Migration[8.1]
           CURRENT_TIMESTAMP
         FROM event_routes
         WHERE event_routes.parent_id IS NULL
-          AND event_routes.label = 'Default route'
+          AND event_routes.label IN ('Default route', 'Default admin route')
+          AND event_routes.event_type IS NULL
+          AND event_routes.event_type_pattern IS NULL
+      SQL
+
+      execute <<~SQL.squish
+        INSERT INTO event_route_matchers
+          (event_route_id, field, operator, value, created_at, updated_at)
+        SELECT
+          event_routes.id,
+          'roles',
+          'contains',
+          CASE WHEN event_routes.label = 'Default admin route' THEN 'admin' ELSE 'account' END,
+          CURRENT_TIMESTAMP,
+          CURRENT_TIMESTAMP
+        FROM event_routes
+        WHERE event_routes.parent_id IS NULL
+          AND event_routes.label IN ('Default route', 'Default admin route')
           AND event_routes.event_type IS NULL
           AND event_routes.event_type_pattern IS NULL
       SQL

@@ -2,10 +2,16 @@ class EventRoute < ApplicationRecord
   MAX_ROUTES = 100
   MAX_MATCHERS = 30
   DEFAULT_ROUTE_LABEL = 'Default route'.freeze
+  DEFAULT_ADMIN_ROUTE_LABEL = 'Default admin route'.freeze
   DEFAULT_ROUTE_POSITION = 10_000
+  DEFAULT_ADMIN_ROUTE_POSITION = 10_001
   DEFAULT_ROUTE_MATCHER_FIELD = 'default_routed'.freeze
   DEFAULT_ROUTE_MATCHER_OPERATOR = '=='.freeze
   DEFAULT_ROUTE_MATCHER_VALUE = 'true'.freeze
+  DEFAULT_ROUTE_ROLE_FIELD = 'roles'.freeze
+  DEFAULT_ROUTE_ROLE_OPERATOR = 'contains'.freeze
+  DEFAULT_ACCOUNT_ROUTE_ROLE_VALUE = 'account'.freeze
+  DEFAULT_ADMIN_ROUTE_ROLE_VALUE = 'admin'.freeze
   SUBJECT_SCOPE_LABELS = {
     'self' => 'self',
     'visible' => 'visible'
@@ -29,7 +35,15 @@ class EventRoute < ApplicationRecord
 
   enum :subject_scope, %i[self visible], suffix: true
 
-  def self.default_route_for(user)
+  def self.default_route_for(user, role: DEFAULT_ACCOUNT_ROUTE_ROLE_VALUE)
+    default_routes_for(user).detect { |route| route.default_for_role?(role) }
+  end
+
+  def self.default_admin_route_for(user)
+    default_route_for(user, role: DEFAULT_ADMIN_ROUTE_ROLE_VALUE)
+  end
+
+  def self.default_routes_for(user)
     active
       .where(
         user:,
@@ -40,7 +54,7 @@ class EventRoute < ApplicationRecord
       )
       .includes(:event_route_matchers)
       .order(:position, :id)
-      .detect(&:default_catch_all?)
+      .select(&:generated_default?)
   end
 
   def self.active
@@ -57,7 +71,7 @@ class EventRoute < ApplicationRecord
 
     return scope.maximum(:position).to_i + 1 if parent_id.present?
 
-    default_route = default_route_for(user)
+    default_route = default_routes_for(user).first
 
     return scope.maximum(:position).to_i + 1 unless default_route
 
@@ -136,21 +150,44 @@ class EventRoute < ApplicationRecord
   end
 
   def default_catch_all?
+    default_for_role?(DEFAULT_ACCOUNT_ROUTE_ROLE_VALUE)
+  end
+
+  def generated_default?
+    default_for_role?(DEFAULT_ACCOUNT_ROUTE_ROLE_VALUE) ||
+      default_for_role?(DEFAULT_ADMIN_ROUTE_ROLE_VALUE)
+  end
+
+  def default_for_role?(role)
     return false unless parent_id.nil?
-    return false unless label == DEFAULT_ROUTE_LABEL
+    return false unless label == default_label_for_role(role)
     return false unless self_subject_scope?
     return false if event_type.present? || event_type_pattern.present?
 
     matchers = event_route_matchers.to_a
-    return false unless matchers.size == 1
+    return false unless matchers.size == 2
 
-    matcher = matchers.first
-    matcher.field == DEFAULT_ROUTE_MATCHER_FIELD &&
-      matcher.operator == DEFAULT_ROUTE_MATCHER_OPERATOR &&
-      matcher.value.to_s == DEFAULT_ROUTE_MATCHER_VALUE
+    matchers.any? do |matcher|
+      matcher.field == DEFAULT_ROUTE_MATCHER_FIELD &&
+        matcher.operator == DEFAULT_ROUTE_MATCHER_OPERATOR &&
+        matcher.value.to_s == DEFAULT_ROUTE_MATCHER_VALUE
+    end && matchers.any? do |matcher|
+      matcher.field == DEFAULT_ROUTE_ROLE_FIELD &&
+        matcher.operator == DEFAULT_ROUTE_ROLE_OPERATOR &&
+        matcher.value.to_s == role.to_s
+    end
   end
 
   protected
+
+  def default_label_for_role(role)
+    case role.to_s
+    when DEFAULT_ADMIN_ROUTE_ROLE_VALUE
+      DEFAULT_ADMIN_ROUTE_LABEL
+    else
+      DEFAULT_ROUTE_LABEL
+    end
+  end
 
   def check_event_type_selector
     return if event_type.blank? || event_type_pattern.blank?

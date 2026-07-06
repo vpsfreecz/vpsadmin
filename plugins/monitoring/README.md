@@ -2,7 +2,7 @@ vpsAdmin Monitoring
 ===================
 
 This plugin allows admins to configure custom monitors for resource usage
-and can execute custom actions, i.e. alert users via e-mail.
+and can execute custom actions, i.e. route monitoring alert notifications.
 
 ## Installation
 Copy the plugin to directory `plugins/` in your API installation directory.
@@ -15,10 +15,10 @@ a monitor that would check that users do not use more than 75% of CPU for three
 days in a row:
 
     VpsAdmin::API::Plugins::Monitoring.config do
-      action :alert_user do |event|
-        # Send mail to responsible user, you have to register your own mail
-        # templates.
-        mail(:alert_user)
+      action :route_alert do |event|
+        # Route a monitoring event. The concrete event type and templates are
+        # registered by the deployment configuration.
+        route_monitoring_alert!(event)
       end
 
       monitor :cpu do
@@ -44,7 +44,7 @@ days in a row:
         check { |vps, v| v.nil? || v > 25 }
 
         # Name of an action that is called when the event is confirmed
-        action :alert_user
+        action :route_alert
       end
     end
 
