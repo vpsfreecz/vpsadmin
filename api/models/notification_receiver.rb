@@ -29,7 +29,8 @@ class NotificationReceiver < ApplicationRecord
     transaction do
       email_receiver = ensure_default_email_receiver_for!(user)
       ensure_default_mute_receiver_for!(user)
-      ensure_default_route!(user, email_receiver)
+      ensure_default_route!(user, email_receiver, role: ::EventRoute::DEFAULT_ACCOUNT_ROUTE_ROLE_VALUE)
+      ensure_default_route!(user, email_receiver, role: ::EventRoute::DEFAULT_ADMIN_ROUTE_ROLE_VALUE)
     end
   end
 
@@ -149,8 +150,8 @@ class NotificationReceiver < ApplicationRecord
     receiver.notification_receiver_targets.maximum(:position).to_i + 1
   end
 
-  def self.ensure_default_route!(user, receiver)
-    route = ::EventRoute.default_route_for(user)
+  def self.ensure_default_route!(user, receiver, role:)
+    route = ::EventRoute.default_route_for(user, role:)
 
     if route
       route.update!(notification_receiver: receiver) if route.notification_receiver.nil?
@@ -159,15 +160,28 @@ class NotificationReceiver < ApplicationRecord
 
     route = user.event_routes.create!(
       notification_receiver: receiver,
-      label: ::EventRoute::DEFAULT_ROUTE_LABEL,
-      position: ::EventRoute::DEFAULT_ROUTE_POSITION
+      label: default_route_label(role),
+      position: default_route_position(role)
     )
     route.event_route_matchers.create!(
       field: ::EventRoute::DEFAULT_ROUTE_MATCHER_FIELD,
       operator: ::EventRoute::DEFAULT_ROUTE_MATCHER_OPERATOR,
       value: ::EventRoute::DEFAULT_ROUTE_MATCHER_VALUE
     )
+    route.event_route_matchers.create!(
+      field: ::EventRoute::DEFAULT_ROUTE_ROLE_FIELD,
+      operator: ::EventRoute::DEFAULT_ROUTE_ROLE_OPERATOR,
+      value: role.to_s
+    )
     route
+  end
+
+  def self.default_route_label(role)
+    role.to_s == ::EventRoute::DEFAULT_ADMIN_ROUTE_ROLE_VALUE ? ::EventRoute::DEFAULT_ADMIN_ROUTE_LABEL : ::EventRoute::DEFAULT_ROUTE_LABEL
+  end
+
+  def self.default_route_position(role)
+    role.to_s == ::EventRoute::DEFAULT_ADMIN_ROUTE_ROLE_VALUE ? ::EventRoute::DEFAULT_ADMIN_ROUTE_POSITION : ::EventRoute::DEFAULT_ROUTE_POSITION
   end
 
   def self.admin_request_route_for(admin)

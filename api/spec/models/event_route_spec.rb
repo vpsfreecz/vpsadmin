@@ -134,7 +134,7 @@ RSpec.describe EventRoute do
     receivers = SpecSeed.user.notification_receivers.to_a
 
     expect(event.reload).to be_routed_routing_state
-    expect(matched_routes(event)).not_to be_empty
+    expect(matched_routes(event)).to eq([described_class.default_admin_route_for(SpecSeed.user)])
     expect(receivers.size).to eq(2)
     expect(default_email_receiver_for(SpecSeed.user).label).to eq('Default')
     expect(default_email_receiver_for(SpecSeed.user).notification_receiver_actions.sole.label).to eq('Default')
@@ -340,14 +340,14 @@ RSpec.describe EventRoute do
   it 'can mute and restore default-routed events with generated receivers' do
     emit_incident!
 
-    muted_receiver = mute_default_notifications_for!(SpecSeed.user)
+    muted_receiver = mute_default_notifications_for!(SpecSeed.user, role: 'admin')
     muted_event = nil
 
     expect do
       muted_event = emit_incident!
     end.to change(Event, :count).by(1)
 
-    muted_route = described_class.default_route_for(SpecSeed.user)
+    muted_route = described_class.default_admin_route_for(SpecSeed.user)
     muted_delivery = muted_event.event_deliveries.sole
     expect(muted_event.reload).to be_suppressed_routing_state
     expect(matched_routes(muted_event)).to eq([muted_route])
@@ -355,7 +355,7 @@ RSpec.describe EventRoute do
     expect(muted_delivery.notification_receiver).to eq(muted_receiver)
     expect(muted_receiver.reload).to be_mute
 
-    route_default_notifications_to_email_for!(SpecSeed.user)
+    route_default_notifications_to_email_for!(SpecSeed.user, role: 'admin')
     routed_event = emit_incident!
     routed_delivery = routed_event.event_deliveries.sole
 
@@ -368,7 +368,7 @@ RSpec.describe EventRoute do
   it 'does not overwrite user-managed default route receivers' do
     emit_incident!
     generated_mute_receiver = default_mute_receiver_for(SpecSeed.user)
-    default_route = described_class.default_route_for(SpecSeed.user)
+    default_route = described_class.default_admin_route_for(SpecSeed.user)
     custom_receiver = create_receiver!(
       label: 'Custom receiver',
       action: {

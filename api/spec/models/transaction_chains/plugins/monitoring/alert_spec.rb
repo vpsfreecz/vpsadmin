@@ -144,7 +144,7 @@ RSpec.describe 'monitoring alert chain', requires_plugins: :monitoring do # rubo
     expect(event.reload.alert_count).to eq(1)
   end
 
-  it 'uses the generated default route for monitoring alerts' do
+  it 'uses the generated admin-role default route for monitoring alerts' do
     event = build_event
     reset_routing!(event.user)
     allow(NotificationTemplate).to receive(:send_email!).and_return(build_mail_log_double)
@@ -159,7 +159,7 @@ RSpec.describe 'monitoring alert chain', requires_plugins: :monitoring do # rubo
     expect(tx_classes(chain)).to include(Transactions::EventDelivery::Notify)
     expect(routed_event.event_type).to eq('monitoring.alert_chain')
     expect(routed_event.event_route_matches.reload.map(&:event_route)).to eq(
-      [EventRoute.default_route_for(event.user)]
+      [EventRoute.default_admin_route_for(event.user)]
     )
     expect(delivery).to have_attributes(
       action: 'email',
