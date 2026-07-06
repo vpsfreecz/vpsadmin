@@ -25,32 +25,31 @@ VpsAdmin::API::Plugin.register(:requests) do
       webui_url: String
     }
 
-    %w[user admin].each do |_role|
-      NotificationTemplate.register(:request_action_role_type,
-                                    name: 'request_%{action}_%{role}_%{type}', params: {
-                                      action: 'create or resolve',
-                                      role: 'user or admin',
-                                      type: 'registration or change'
-                                    }, vars:)
+    %w[user admin].each do |audience|
+      %w[create update].each do |action|
+        NotificationTemplate.register(:"request_#{action}_#{audience}", vars:)
 
-      NotificationTemplate.register(:request_action_role,
-                                    name: 'request_%{action}_%{role}', params: {
-                                      action: 'create or resolve',
-                                      role: 'user or admin'
-                                    }, vars:)
+        %w[registration change].each do |type|
+          NotificationTemplate.register(:"request_#{action}_#{audience}_#{type}", vars:)
+        end
+      end
 
-      NotificationTemplate.register(:request_resolve_role_type_state,
-                                    name: 'request_resolve_%{role}_%{type}_%{state}', params: {
-                                      role: 'user or admin',
-                                      type: 'registration or change',
-                                      state: 'one of awaiting, approved, denied, ignored'
-                                    }, vars:)
+      NotificationTemplate.register(:"request_resolve_#{audience}", vars:)
 
-      NotificationTemplate.register :request_resolve_role_state,
-                                    name: 'request_resolve_%{role}_%{state}', params: {
-                                      role: 'user or admin',
-                                      state: 'one of awaiting, approved, denied, ignored'
-                                    }, vars:
+      %w[registration change].each do |type|
+        NotificationTemplate.register(:"request_resolve_#{audience}_#{type}", vars:)
+      end
+
+      %w[awaiting approved denied ignored pending_correction].each do |state|
+        NotificationTemplate.register(:"request_resolve_#{audience}_#{state}", vars:)
+
+        %w[registration change].each do |type|
+          NotificationTemplate.register(
+            :"request_resolve_#{audience}_#{type}_#{state}",
+            vars:
+          )
+        end
+      end
     end
   end
 end

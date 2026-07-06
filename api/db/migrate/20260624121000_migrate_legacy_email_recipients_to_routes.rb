@@ -6,13 +6,11 @@ class MigrateLegacyEmailRecipientsToRoutes < ActiveRecord::Migration[8.1]
   CUSTOM_TARGET_KIND = 1
   SUBJECT_SCOPE_VISIBLE = 1
   REQUEST_TEMPLATE_TYPES = %w[registration change].freeze
-  REQUEST_TEMPLATE_ROLES = %w[user admin].freeze
+  REQUEST_TEMPLATE_AUDIENCES = %w[user admin].freeze
   REQUEST_TEMPLATE_RESOLVE_STATES = %w[approved denied ignored pending_correction awaiting].freeze
 
-  def self.monitoring_matchers(role, monitor, state)
+  def self.monitoring_matchers(state)
     [
-      ['role', '==', role],
-      ['monitor_name', '==', monitor],
       ['state', '==', state]
     ]
   end
@@ -23,47 +21,46 @@ class MigrateLegacyEmailRecipientsToRoutes < ActiveRecord::Migration[8.1]
     %w[create update].each do |action|
       event_type = action == 'create' ? 'request.created' : 'request.updated'
 
-      REQUEST_TEMPLATE_ROLES.each do |role|
+      REQUEST_TEMPLATE_AUDIENCES.each do |audience|
         REQUEST_TEMPLATE_TYPES.each do |type|
+          template_name = "request_#{action}_#{audience}_#{type}"
           ret << [
-            "request_#{action}_#{role}_#{type}",
+            template_name,
             {
               event_type:,
-              template_name: 'request_action_role_type',
+              template_name:,
               relation: 'other_user',
               matchers: [
-                ['role', '==', role],
                 ['request_type', '==', type]
               ]
             }
           ]
         end
 
+        template_name = "request_#{action}_#{audience}"
         ret << [
-          "request_#{action}_#{role}",
+          template_name,
           {
             event_type:,
-            template_name: 'request_action_role',
+            template_name:,
             relation: 'other_user',
-            matchers: [
-              ['role', '==', role]
-            ]
+            matchers: []
           }
         ]
       end
     end
 
-    REQUEST_TEMPLATE_ROLES.each do |role|
+    REQUEST_TEMPLATE_AUDIENCES.each do |audience|
       REQUEST_TEMPLATE_TYPES.each do |type|
         REQUEST_TEMPLATE_RESOLVE_STATES.each do |state|
+          template_name = "request_resolve_#{audience}_#{type}_#{state}"
           ret << [
-            "request_resolve_#{role}_#{type}_#{state}",
+            template_name,
             {
               event_type: 'request.resolved',
-              template_name: 'request_resolve_role_type_state',
+              template_name:,
               relation: 'other_user',
               matchers: [
-                ['role', '==', role],
                 ['request_type', '==', type],
                 ['request_state', '==', state]
               ]
@@ -71,14 +68,14 @@ class MigrateLegacyEmailRecipientsToRoutes < ActiveRecord::Migration[8.1]
           ]
         end
 
+        template_name = "request_resolve_#{audience}_#{type}"
         ret << [
-          "request_resolve_#{role}_#{type}",
+          template_name,
           {
             event_type: 'request.resolved',
-            template_name: 'request_action_role_type',
+            template_name:,
             relation: 'other_user',
             matchers: [
-              ['role', '==', role],
               ['request_type', '==', type]
             ]
           }
@@ -86,29 +83,28 @@ class MigrateLegacyEmailRecipientsToRoutes < ActiveRecord::Migration[8.1]
       end
 
       REQUEST_TEMPLATE_RESOLVE_STATES.each do |state|
+        template_name = "request_resolve_#{audience}_#{state}"
         ret << [
-          "request_resolve_#{role}_#{state}",
+          template_name,
           {
             event_type: 'request.resolved',
-            template_name: 'request_resolve_role_state',
+            template_name:,
             relation: 'other_user',
             matchers: [
-              ['role', '==', role],
               ['request_state', '==', state]
             ]
           }
         ]
       end
 
+      template_name = "request_resolve_#{audience}"
       ret << [
-        "request_resolve_#{role}",
+        template_name,
         {
           event_type: 'request.resolved',
-          template_name: 'request_action_role',
+          template_name:,
           relation: 'other_user',
-          matchers: [
-            ['role', '==', role]
-          ]
+          matchers: []
         }
       ]
     end
@@ -158,19 +154,15 @@ class MigrateLegacyEmailRecipientsToRoutes < ActiveRecord::Migration[8.1]
     },
     'outage_report_user_announce' => {
       event_type: 'outage.announced',
-      template_name: 'outage_report_role_event',
+      template_name: 'outage_report_user_announce',
       relation: 'other_user',
-      matchers: [
-        ['role', '==', 'user']
-      ]
+      matchers: []
     },
     'outage_report_user_update' => {
       event_type: 'outage.updated',
-      template_name: 'outage_report_role_event',
+      template_name: 'outage_report_user_update',
       relation: 'other_user',
-      matchers: [
-        ['role', '==', 'user']
-      ]
+      matchers: []
     },
     'security_advisory_user_announce' => {
       event_type: 'security_advisory.announced',
@@ -352,53 +344,53 @@ class MigrateLegacyEmailRecipientsToRoutes < ActiveRecord::Migration[8.1]
         ['state', '==', 'active']
       ]
     },
-    'alert_admin_monthly_traffic_closed' => {
-      event_type: 'monitoring.monitor_state_changed',
-      template_name: 'alert_role_event_state',
+    'alert_monthly_traffic_closed' => {
+      event_type: 'monitoring.monthly_traffic',
+      template_name: 'alert_monthly_traffic_closed',
       relation: 'other_user',
-      matchers: monitoring_matchers('admin', 'monthly_traffic', 'closed')
+      matchers: monitoring_matchers('closed')
     },
-    'alert_admin_monthly_traffic_confirmed' => {
-      event_type: 'monitoring.monitor_state_changed',
-      template_name: 'alert_role_event_state',
+    'alert_monthly_traffic_confirmed' => {
+      event_type: 'monitoring.monthly_traffic',
+      template_name: 'alert_monthly_traffic_confirmed',
       relation: 'other_user',
-      matchers: monitoring_matchers('admin', 'monthly_traffic', 'acknowledged')
+      matchers: monitoring_matchers('acknowledged')
     },
-    'alert_admin_unpaid_cpu_closed' => {
-      event_type: 'monitoring.monitor_state_changed',
-      template_name: 'alert_role_event_state',
+    'alert_unpaid_cpu_closed' => {
+      event_type: 'monitoring.unpaid_cpu',
+      template_name: 'alert_unpaid_cpu_closed',
       relation: 'other_user',
-      matchers: monitoring_matchers('admin', 'unpaid_cpu', 'closed')
+      matchers: monitoring_matchers('closed')
     },
-    'alert_admin_unpaid_cpu_confirmed' => {
-      event_type: 'monitoring.monitor_state_changed',
-      template_name: 'alert_role_event_state',
+    'alert_unpaid_cpu_confirmed' => {
+      event_type: 'monitoring.unpaid_cpu',
+      template_name: 'alert_unpaid_cpu_confirmed',
       relation: 'other_user',
-      matchers: monitoring_matchers('admin', 'unpaid_cpu', 'acknowledged')
+      matchers: monitoring_matchers('acknowledged')
     },
-    'alert_admin_unpaid_data_flow_closed' => {
-      event_type: 'monitoring.monitor_state_changed',
-      template_name: 'alert_role_event_state',
+    'alert_unpaid_data_flow_closed' => {
+      event_type: 'monitoring.unpaid_data_flow',
+      template_name: 'alert_unpaid_data_flow_closed',
       relation: 'other_user',
-      matchers: monitoring_matchers('admin', 'unpaid_data_flow', 'closed')
+      matchers: monitoring_matchers('closed')
     },
-    'alert_admin_unpaid_data_flow_confirmed' => {
-      event_type: 'monitoring.monitor_state_changed',
-      template_name: 'alert_role_event_state',
+    'alert_unpaid_data_flow_confirmed' => {
+      event_type: 'monitoring.unpaid_data_flow',
+      template_name: 'alert_unpaid_data_flow_confirmed',
       relation: 'other_user',
-      matchers: monitoring_matchers('admin', 'unpaid_data_flow', 'acknowledged')
+      matchers: monitoring_matchers('acknowledged')
     },
-    'alert_user_paid_cpu_closed' => {
-      event_type: 'monitoring.monitor_state_changed',
-      template_name: 'alert_role_event_state',
+    'alert_paid_cpu_closed' => {
+      event_type: 'monitoring.paid_cpu',
+      template_name: 'alert_paid_cpu_closed',
       relation: 'other_user',
-      matchers: monitoring_matchers('user', 'paid_cpu', 'closed')
+      matchers: monitoring_matchers('closed')
     },
-    'alert_user_paid_cpu_confirmed' => {
-      event_type: 'monitoring.monitor_state_changed',
-      template_name: 'alert_role_event_state',
+    'alert_paid_cpu_confirmed' => {
+      event_type: 'monitoring.paid_cpu',
+      template_name: 'alert_paid_cpu_confirmed',
       relation: 'other_user',
-      matchers: monitoring_matchers('user', 'paid_cpu', 'acknowledged')
+      matchers: monitoring_matchers('acknowledged')
     }
   }.merge(EVENT_TEMPLATE_ROUTE_MAP).freeze
 

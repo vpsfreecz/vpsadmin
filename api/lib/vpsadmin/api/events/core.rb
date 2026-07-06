@@ -602,6 +602,7 @@ VpsAdmin::API::Events.define do
         label: 'User account created',
         category: 'account',
         severity: :info,
+        roles: %i[account],
         default_routed: true do
     fields(
       login: { description: 'Login of the created user account', type: :string },
@@ -636,6 +637,7 @@ VpsAdmin::API::Events.define do
           label:,
           category: 'account',
           severity:,
+          roles: %i[account],
           default_routed: true do
       fields(
         state: { description: 'Account lifecycle state after the change', type: :string },
@@ -654,6 +656,7 @@ VpsAdmin::API::Events.define do
         label: 'New access token',
         category: 'security',
         severity: :warning,
+        roles: %i[admin],
         default_routed: true do
     fields(
       auth_type: { description: 'Authentication method used to create the token', type: :string },
@@ -675,6 +678,7 @@ VpsAdmin::API::Events.define do
         label: 'TOTP recovery code used',
         category: 'security',
         severity: :critical,
+        roles: %i[account],
         default_routed: true do
     fields(
       totp_device_id: { description: 'ID of the TOTP device whose recovery code was used', type: :integer },
@@ -693,6 +697,7 @@ VpsAdmin::API::Events.define do
         label: 'Failed sign-in report',
         category: 'security',
         severity: :warning,
+        roles: %i[account],
         default_routed: true do
     fields(
       attempt_count: { description: 'Total number of failed sign-in attempts in the report', type: :integer },
@@ -712,6 +717,7 @@ VpsAdmin::API::Events.define do
         label: 'Test notification',
         category: 'test',
         severity: :info,
+        roles: %i[account],
         default_routed: true do
     fields(
       note: { description: 'Free-form note supplied when creating the test event', type: :string }
@@ -722,6 +728,7 @@ VpsAdmin::API::Events.define do
         label: 'New sign-in',
         category: 'security',
         severity: :warning,
+        roles: %i[admin],
         default_routed: true do
     argument :session, type: 'UserSession'
     argument :authorization, type: 'Oauth2Authorization'
@@ -773,6 +780,7 @@ VpsAdmin::API::Events.define do
         label: 'Transaction chain state changed',
         category: 'transactions',
         severity: :info,
+        roles: %i[admin],
         default_routed: false,
         severity_description: 'Severity is derived from the new transaction chain state' do
     fields(
@@ -810,6 +818,7 @@ VpsAdmin::API::Events.define do
           label: event_name.end_with?('failed') ? 'DNS zone transfer failed' : 'DNS zone transfer recovered',
           category: 'dns',
           severity: event_name.end_with?('failed') ? :warning : :info,
+          roles: %i[admin],
           default_routed: false do
       fields(
         transfer_log_id: { description: 'ID of the DNS transfer log row', type: :integer },
@@ -836,6 +845,7 @@ VpsAdmin::API::Events.define do
         label: 'Daily report',
         category: 'system',
         severity: :info,
+        roles: %i[admin],
         default_routed: true do
     argument :report_vars, type: Hash, optional: true
 
@@ -865,6 +875,7 @@ VpsAdmin::API::Events.define do
         label: 'Expiration warning',
         category: 'account',
         severity: :warning,
+        roles: %i[account],
         default_routed: true do
     fields(
       object: { description: 'Type of object whose lifecycle state expires', type: :string },
@@ -895,6 +906,7 @@ VpsAdmin::API::Events.define do
           label: event_name.end_with?('announced') ? 'Security advisory announced' : 'Security advisory updated',
           category: 'security',
           severity: :warning,
+          roles: %i[admin],
           default_routed: true do
       params = {
         advisory_id: { description: 'ID of the security advisory', type: :integer },
@@ -927,6 +939,7 @@ VpsAdmin::API::Events.define do
         label: 'Incident report',
         category: 'incidents',
         severity: :warning,
+        roles: %i[admin],
         default_routed: true do
     fields(
       subject: { description: 'Subject line received with the incident report', type: :string },
@@ -946,6 +959,7 @@ VpsAdmin::API::Events.define do
         label: 'Incident report reply',
         category: 'incidents',
         severity: :info,
+        roles: %i[admin],
         default_routed: true do
     fields(
       from_email: { description: 'E-mail address that sent the reply', type: :string },
@@ -983,6 +997,7 @@ VpsAdmin::API::Events.define do
         label: 'OOM report',
         category: 'vps',
         severity: :warning,
+        roles: %i[admin],
         default_routed: true do
     fields(
       vps_id: { description: 'ID of the VPS affected by the OOM report', type: :integer },
@@ -1010,6 +1025,7 @@ VpsAdmin::API::Events.define do
         label: 'OOM prevention',
         category: 'vps',
         severity: :critical,
+        roles: %i[admin],
         default_routed: true do
     fields(
       vps_id: { description: 'ID of the VPS affected by OOM prevention', type: :integer },
@@ -1034,6 +1050,7 @@ VpsAdmin::API::Events.define do
           label:,
           category: 'vps',
           severity:,
+          roles: %i[account admin],
           default_routed: true do
       fields(
         vps_id: { description: 'ID of the VPS whose lifecycle state changed', type: :integer },
@@ -1056,6 +1073,7 @@ VpsAdmin::API::Events.define do
         label: 'VPS resources changed',
         category: 'vps',
         severity: :info,
+        roles: %i[admin],
         default_routed: true do
     fields(
       vps_id: { description: 'ID of the VPS whose resources changed', type: :integer },
@@ -1079,6 +1097,7 @@ VpsAdmin::API::Events.define do
         label: 'VPS DNS resolver changed',
         category: 'vps',
         severity: :info,
+        roles: %i[admin],
         default_routed: true do
     fields(
       vps_id: { description: 'ID of the VPS whose resolver changed', type: :integer },
@@ -1105,6 +1124,7 @@ VpsAdmin::API::Events.define do
           label:,
           category: 'vps',
           severity:,
+          roles: %i[admin],
           default_routed: true do
       fields(
         vps_id: { description: 'ID of the VPS whose network state changed', type: :integer },
@@ -1128,6 +1148,7 @@ VpsAdmin::API::Events.define do
           label:,
           category: 'vps',
           severity:,
+          roles: %i[admin],
           default_routed: true do
       fields(
         vps_id: { description: 'ID of the VPS whose dataset quota changed', type: :integer },
@@ -1156,6 +1177,7 @@ VpsAdmin::API::Events.define do
         label: 'Snapshot download ready',
         category: 'storage',
         severity: :info,
+        roles: %i[admin],
         default_routed: true do
     fields(
       download_id: { description: 'ID of the prepared snapshot download', type: :integer },
@@ -1179,6 +1201,7 @@ VpsAdmin::API::Events.define do
           label: event_name.end_with?('begun') ? 'Dataset migration begun' : 'Dataset migration finished',
           category: 'storage',
           severity: event_name.end_with?('begun') ? :warning : :info,
+          roles: %i[admin],
           default_routed: true do
       argument :vpses, type: Array, optional: true
 
@@ -1225,6 +1248,7 @@ VpsAdmin::API::Events.define do
           label:,
           category: 'vps',
           severity:,
+          roles: %i[admin],
           default_routed: true do
       fields(
         migration_id: { description: 'ID of the VPS migration record', type: :integer },
@@ -1252,6 +1276,7 @@ VpsAdmin::API::Events.define do
         label: 'VPS replaced',
         category: 'vps',
         severity: :warning,
+        roles: %i[admin],
         default_routed: true do
     fields(
       vps_id: { description: 'ID of the VPS record that initiated replacement', type: :integer },

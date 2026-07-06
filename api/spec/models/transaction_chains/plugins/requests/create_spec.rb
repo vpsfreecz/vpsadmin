@@ -14,9 +14,9 @@ RSpec.describe 'requests plugin create chain', requires_plugins: :requests do # 
     ensure_mailer_available!
   end
 
-  it 'concerns the request and routes user/admin mail with type fallback' do
-    ensure_request_notification_template!('request_create_user', 'request_action_role')
-    ensure_request_notification_template!('request_create_admin', 'request_action_role')
+  it 'concerns the request and routes applicant/admin mail with concrete templates' do
+    ensure_request_notification_template!('request_create_user', 'request_create_user')
+    ensure_request_notification_template!('request_create_admin', 'request_create_admin')
     admin2 = create_lifecycle_user!(login: 'plugin-request-admin')
     admin2.update!(level: 99)
     disabled_admin = create_lifecycle_user!(login: 'plugin-request-muted')
@@ -37,45 +37,44 @@ RSpec.describe 'requests plugin create chain', requires_plugins: :requests do # 
     )
     expect(tx_classes(chain)).to all(eq(Transactions::EventDelivery::Notify))
 
-    events = request_events('request.created', request)
-    user_event = events.find { |event| event.parameters.fetch('role') == 'user' }
-    admin_events = events.select { |event| event.parameters.fetch('role') == 'admin' }
-    enabled_admin_events = admin_events.select(&:routed_routing_state?)
-    muted_admin_event = admin_events.find { |event| event.user == disabled_admin }
+    event = request_events('request.created', request).sole
+    deliveries = event.event_deliveries.to_a
+    direct_delivery = deliveries.find(&:direct_email_delivery?)
+    admin_deliveries = deliveries.select(&:event_routing_context)
+    enabled_admin_deliveries = admin_deliveries.select(&:prepared_state?)
+    skipped_admin_deliveries = admin_deliveries.select(&:skipped_state?)
 
-    expect(user_event.user).to eq(request.user)
-    expect(user_event.parameters).to include(
+    expect(event.user).to be_nil
+    expect(event.parameters).to include(
       'action' => 'create',
       'request_type' => 'registration',
       'request_state' => 'awaiting',
       'recipient_email' => request.user_mail,
       'mail_id' => 3
     )
-    expect(user_event.event_deliveries.sole).to have_attributes(
+    expect(event.parameters).not_to have_key('role')
+    expect(direct_delivery).to have_attributes(
       target_value: request.user_mail,
-      template_name: 'request_action_role'
+      template_name: 'request_create_user'
     )
-    expect(user_event.event_deliveries.sole.mail_log).to have_attributes(
+    expect(direct_delivery.mail_log).to have_attributes(
       message_id: "<vpsadmin-request-#{request.id}-3@vpsadmin.vpsfree.cz>"
     )
-    expect(user_event.event_deliveries.sole.mail_log.notification_template.name).to eq('request_create_user')
-    expect(user_event.event_deliveries.sole.mail_log.to).to include(request.user_mail)
+    expect(direct_delivery.mail_log.notification_template.name).to eq('request_create_user')
+    expect(direct_delivery.mail_log.to).to include(request.user_mail)
 
-    expect(enabled_admin_events.map(&:user)).to contain_exactly(SpecSeed.admin, admin2)
-    enabled_admin_events.each do |event|
-      delivery = event.event_deliveries.sole
+    expect(enabled_admin_deliveries.map(&:recipient_user)).to contain_exactly(SpecSeed.admin, admin2)
+    enabled_admin_deliveries.each do |delivery|
       expect(delivery).to be_prepared_state
       expect(delivery.mail_log.notification_template.name).to eq('request_create_admin')
       expect(delivery.mail_log.message_id).to eq("<vpsadmin-request-#{request.id}-3@vpsadmin.vpsfree.cz>")
     end
-    expect(admin_events.map(&:user)).not_to include(disabled_same_email)
-    expect(muted_admin_event).to be_suppressed_routing_state
-    expect(muted_admin_event.event_deliveries.sole).to be_skipped_state
+    expect(skipped_admin_deliveries.map(&:recipient_user)).to include(disabled_admin, disabled_same_email)
   end
 
   it 'routes public registration owner mail without a request user' do
-    ensure_request_notification_template!('request_create_user', 'request_action_role')
-    ensure_request_notification_template!('request_create_admin', 'request_action_role')
+    ensure_request_notification_template!('request_create_user', 'request_create_user')
+    ensure_request_notification_template!('request_create_admin', 'request_create_admin')
     request = build_registration_request!(
       user: nil,
       last_mail_id: 7,
@@ -83,21 +82,20 @@ RSpec.describe 'requests plugin create chain', requires_plugins: :requests do # 
     )
 
     chain, = chain_class.fire2(args: [request])
-    user_event = request_events('request.created', request).find do |event|
-      event.parameters.fetch('role') == 'user'
-    end
-    delivery = user_event.event_deliveries.sole
+    event = request_events('request.created', request).sole
+    delivery = event.event_deliveries.find(&:direct_email_delivery?)
     mail = delivery.mail_log
 
     expect(tx_classes(chain)).to include(Transactions::EventDelivery::Notify)
-    expect(user_event.user).to be_nil
-    expect(user_event).to be_routed_routing_state
+    expect(event.user).to be_nil
+    expect(event).to be_routed_routing_state
     expect(delivery).to be_prepared_state
     expect(delivery).to be_direct_email_delivery
     expect(delivery.target_value).to eq('public-registration-owner@test.invalid')
+    expect(delivery.template_name).to eq('request_create_user')
     expect(mail.to).to include('public-registration-owner@test.invalid')
     expect(mail.message_id).to eq("<vpsadmin-request-#{request.id}-7@vpsadmin.vpsfree.cz>")
-    expect(VpsAdmin::API::Events.template_options_for(user_event.reload).fetch(:vars).fetch(:request)).to eq(request)
+    expect(VpsAdmin::API::Events.template_options_for(event.reload).fetch(:vars).fetch(:request)).to eq(request)
   end
 
   it 'logs failed deliveries when every request template is missing' do
@@ -110,12 +108,11 @@ RSpec.describe 'requests plugin create chain', requires_plugins: :requests do # 
     request = build_registration_request!
 
     chain, = chain_class.fire2(args: [request])
-    events = request_events('request.created', request)
+    event = request_events('request.created', request).sole
 
     expect(chain).to be_nil.or have_attributes(transactions: be_empty)
-    expect(events).not_to be_empty
-    expect(events.map { |event| event.event_deliveries.sole.state }).to all(eq('failed'))
-    expect(events.map { |event| event.event_deliveries.sole.error_summary }).to all(
+    expect(event.event_deliveries.map(&:state)).to all(eq('failed'))
+    expect(event.event_deliveries.map(&:error_summary)).to all(
       include('NotificationTemplateDoesNotExist')
     )
   end
@@ -128,7 +125,6 @@ RSpec.describe 'requests plugin create chain', requires_plugins: :requests do # 
       subject: 'foreign request',
       route: false,
       payload: {
-        role: 'user',
         action: 'update',
         request_type: 'change',
         request_state: 'awaiting',
