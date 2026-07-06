@@ -2760,6 +2760,1080 @@ en:
       resource_locked_by_transaction_chain: Resource is locked by transaction chain
         %{id} (%{label}). Try again later.
       resource_under_maintenance: 'Resource is under maintenance: %{reason}'
+    events:
+      fields:
+        common:
+          category:
+            description: Event category used for grouping
+          default_routed:
+            description: Whether the event is delivered by the default route
+          event_type:
+            description: Unique event type name
+          roles:
+            description: Notification roles declared by the event type
+          severity:
+            description: Event severity
+          subject:
+            description: Short event subject
+          subject_is_admin_visible:
+            description: Whether an admin route sees another user subject
+          subject_is_self:
+            description: Whether the event subject is the route owner
+          subject_relation:
+            description: Relationship between route owner and event subject
+          subject_user_id:
+            description: User ID of the event subject
+          summary:
+            description: Longer event summary
+        dataset_migration_begun:
+          affected_vps_count:
+            description: Number of VPSes affected by the migration
+          affected_vps_hostnames:
+            description: Hostnames of VPSes affected by the migration
+          affected_vps_ids:
+            description: IDs of VPSes affected by the migration
+          custom_window:
+            description: Whether a custom maintenance window is used
+          dataset_full_name:
+            description: Full name of the dataset being migrated
+          dataset_id:
+            description: ID of the dataset being migrated
+          dst_pool_filesystem:
+            description: Filesystem name of the destination storage pool
+          dst_pool_id:
+            description: ID of the destination storage pool
+          export_count:
+            description: Number of exports affected by the migration
+          finish_minutes:
+            description: Minute of day when the maintenance window should finish
+          finish_weekday:
+            description: Weekday when the maintenance window should finish
+          maintenance_window:
+            description: Whether a maintenance window constrains the migration
+          reason:
+            description: Operator-provided reason for the migration
+          restart_vps:
+            description: Whether affected VPSes are restarted during migration
+          src_pool_filesystem:
+            description: Filesystem name of the source storage pool
+          src_pool_id:
+            description: ID of the source storage pool
+          user_id:
+            description: ID of the dataset owner
+          user_login:
+            description: Login of the dataset owner
+          user_name:
+            description: Full name of the dataset owner
+        dataset_migration_finished:
+          affected_vps_count:
+            description: Number of VPSes affected by the migration
+          affected_vps_hostnames:
+            description: Hostnames of VPSes affected by the migration
+          affected_vps_ids:
+            description: IDs of VPSes affected by the migration
+          custom_window:
+            description: Whether a custom maintenance window is used
+          dataset_full_name:
+            description: Full name of the dataset being migrated
+          dataset_id:
+            description: ID of the dataset being migrated
+          dst_pool_filesystem:
+            description: Filesystem name of the destination storage pool
+          dst_pool_id:
+            description: ID of the destination storage pool
+          export_count:
+            description: Number of exports affected by the migration
+          finish_minutes:
+            description: Minute of day when the maintenance window should finish
+          finish_weekday:
+            description: Weekday when the maintenance window should finish
+          maintenance_window:
+            description: Whether a maintenance window constrains the migration
+          reason:
+            description: Operator-provided reason for the migration
+          restart_vps:
+            description: Whether affected VPSes are restarted during migration
+          src_pool_filesystem:
+            description: Filesystem name of the source storage pool
+          src_pool_id:
+            description: ID of the source storage pool
+          user_id:
+            description: ID of the dataset owner
+          user_login:
+            description: Login of the dataset owner
+          user_name:
+            description: Full name of the dataset owner
+        dns_zone_transfer_failed:
+          dns_server_id:
+            description: ID of the DNS server handling the transfer
+          dns_server_name:
+            description: Name of the DNS server handling the transfer
+          dns_server_zone_id:
+            description: ID of the DNS server zone assignment
+          dns_zone_id:
+            description: ID of the DNS zone being transferred
+          dns_zone_name:
+            description: Name of the DNS zone being transferred
+          event_at:
+            description: Time when the DNS transfer event happened
+          message:
+            description: Additional transfer message
+          node_id:
+            description: ID of the node hosting the DNS server
+          node_name:
+            description: Domain name of the node hosting the DNS server
+          previous_status:
+            description: Transfer status before this event
+          primary_addr:
+            description: Primary DNS server address used for transfer
+          reason:
+            description: Human-readable transfer failure reason
+          reason_code:
+            description: Machine-readable transfer failure reason
+          serial:
+            description: DNS zone serial observed during transfer
+          status:
+            description: Transfer status reported by the DNS server
+          transfer_log_id:
+            description: ID of the DNS transfer log row
+        dns_zone_transfer_recovered:
+          dns_server_id:
+            description: ID of the DNS server handling the transfer
+          dns_server_name:
+            description: Name of the DNS server handling the transfer
+          dns_server_zone_id:
+            description: ID of the DNS server zone assignment
+          dns_zone_id:
+            description: ID of the DNS zone being transferred
+          dns_zone_name:
+            description: Name of the DNS zone being transferred
+          event_at:
+            description: Time when the DNS transfer event happened
+          message:
+            description: Additional transfer message
+          node_id:
+            description: ID of the node hosting the DNS server
+          node_name:
+            description: Domain name of the node hosting the DNS server
+          previous_status:
+            description: Transfer status before this event
+          primary_addr:
+            description: Primary DNS server address used for transfer
+          reason:
+            description: Human-readable transfer failure reason
+          reason_code:
+            description: Machine-readable transfer failure reason
+          serial:
+            description: DNS zone serial observed during transfer
+          status:
+            description: Transfer status reported by the DNS server
+          transfer_log_id:
+            description: ID of the DNS transfer log row
+        incident_report_reply:
+          from_email:
+            description: E-mail address that sent the reply
+          in_reply_to_message_id:
+            description: Message-ID referenced by the reply
+          incident_count:
+            description: Number of incident reports matched by the reply
+          incident_ids:
+            description: IDs of incident reports matched by the reply
+          recipient_emails:
+            description: Recipient e-mail addresses parsed from the reply
+          references_message_id:
+            description: References header from the reply
+          text:
+            description: Reply body text
+          user_count:
+            description: Number of users affected by the reply
+          vps_count:
+            description: Number of VPSes affected by the reply
+        lifetime_expiration_warning:
+          expiration_date:
+            description: Time when the lifecycle state expires
+          expired_days_ago:
+            description: Number of days since expiration
+          expires_in_a_day:
+            description: Whether expiration is within the next day
+          expires_in_days:
+            description: Number of days until expiration
+          object:
+            description: Type of object whose lifecycle state expires
+          object_id:
+            description: ID of the expiring object
+          object_label:
+            description: User-visible label of the expiring object
+          remind_after_date:
+            description: Time before which repeated reminders are suppressed
+          state:
+            description: Lifecycle state that is about to expire or already expired
+        monitoring:
+          affected_user_id:
+            description: ID of the user affected by the monitoring event
+          affected_user_login:
+            description: Login of the user affected by the monitoring event
+          alert_kind:
+            description: Kind of monitoring alert that produced the notification
+          alert_number:
+            description: Sequence number of this alert for the monitored event
+          check_count:
+            description: Number of recorded checks for the monitored event
+          created_at:
+            description: Time when the monitored event was created
+          dataset_full_name:
+            description: Full name of the dataset affected by the monitoring event
+          dataset_id:
+            description: ID of the dataset affected by the monitoring event
+          dns_server_id:
+            description: ID of the DNS server involved in the monitoring event
+          dns_server_name:
+            description: Name of the DNS server involved in the monitoring event
+          dns_zone_id:
+            description: ID of the DNS zone affected by the monitoring event
+          dns_zone_name:
+            description: Name of the DNS zone affected by the monitoring event
+          duration_seconds:
+            description: Duration of the monitored event in seconds
+          finish_minutes:
+            description: Minute of day when the maintenance window should finish
+          finish_weekday:
+            description: Weekday when the maintenance window should finish
+          last_report_at:
+            description: Time when the monitored event was last reported
+          measured_value:
+            description: Latest value recorded by the monitor
+          monitor_issue:
+            description: Issue text reported by the monitor
+          monitor_label:
+            description: User-visible monitor label
+          monitor_name:
+            description: Internal name of the monitor definition
+          monitored_event_id:
+            description: ID of the monitored event row
+          object_class:
+            description: Class name of the monitored object
+          object_id:
+            description: ID of the monitored object
+          object_label:
+            description: User-visible label of the monitored object
+          pool_role:
+            description: Storage pool role associated with the monitoring event
+          saved_until:
+            description: Time until which the monitored event is acknowledged or ignored
+          state:
+            description: State of the monitored event after the check
+          threshold:
+            description: Numeric threshold configured for the monitoring alert
+          transfer_reason:
+            description: Human-readable reason for the last DNS transfer state
+          transfer_reason_code:
+            description: Machine-readable reason for the last DNS transfer state
+          transfer_status:
+            description: Last DNS zone transfer status observed by monitoring
+          updated_at:
+            description: Time when the monitored event was last updated
+          vps_hostname:
+            description: Hostname of the VPS affected by the monitoring event
+          vps_id:
+            description: ID of the VPS affected by the monitoring event
+        outage_announced:
+          affected_export_count:
+            description: Number of exports affected by the outage
+          affected_user_id:
+            description: ID of the affected user for user-targeted events
+          affected_user_login:
+            description: Login of the affected user for user-targeted events
+          affected_vps_count:
+            description: Number of VPSes affected by the outage
+          begins_at:
+            description: Time when the outage begins
+          cves:
+            description: CVE identifiers related to the outage
+          description:
+            description: Detailed text of the outage update
+          direct_vps_count:
+            description: Number of VPSes directly affected by the outage
+          duration:
+            description: Expected outage duration in minutes
+          entity_labels:
+            description: Labels of infrastructure entities affected by the outage
+          event:
+            description: Outage notification phase that produced the event
+          finished_at:
+            description: Time when the outage is expected or known to finish
+          handler_names:
+            description: Names of admins handling the outage
+          impact_type:
+            description: Kind of impact declared for the outage
+          indirect_vps_count:
+            description: Number of VPSes indirectly affected by the outage
+          outage_description:
+            description: Current detailed text of the outage report
+          outage_id:
+            description: ID of the outage report
+          outage_summary:
+            description: Current summary text of the outage report
+          outage_type:
+            description: Type of outage being reported
+          reported_by_id:
+            description: ID of the admin who reported the update
+          reported_by_login:
+            description: Login of the admin who reported the update
+          reported_by_name:
+            description: Full name of the admin who reported the update
+          state:
+            description: State of the outage after the update
+          summary:
+            description: Summary text of the outage update
+          update_id:
+            description: ID of the outage report update
+        outage_updated:
+          affected_export_count:
+            description: Number of exports affected by the outage
+          affected_user_id:
+            description: ID of the affected user for user-targeted events
+          affected_user_login:
+            description: Login of the affected user for user-targeted events
+          affected_vps_count:
+            description: Number of VPSes affected by the outage
+          begins_at:
+            description: Time when the outage begins
+          changed_fields:
+            description: Names of outage fields changed by the update
+          cves:
+            description: CVE identifiers related to the outage
+          description:
+            description: Detailed text of the outage update
+          direct_vps_count:
+            description: Number of VPSes directly affected by the outage
+          duration:
+            description: Expected outage duration in minutes
+          event:
+            description: Outage notification phase that produced the event
+          finished_at:
+            description: Time when the outage is expected or known to finish
+          impact_type:
+            description: Kind of impact declared for the outage
+          indirect_vps_count:
+            description: Number of VPSes indirectly affected by the outage
+          outage_description:
+            description: Current detailed text of the outage report
+          outage_id:
+            description: ID of the outage report
+          outage_summary:
+            description: Current summary text of the outage report
+          outage_type:
+            description: Type of outage being reported
+          reported_by_id:
+            description: ID of the admin who reported the update
+          reported_by_login:
+            description: Login of the admin who reported the update
+          reported_by_name:
+            description: Full name of the admin who reported the update
+          state:
+            description: State of the outage after the update
+          summary:
+            description: Summary text of the outage update
+          update_id:
+            description: ID of the outage report update
+        payment_accepted:
+          accounted_by_id:
+            description: ID of the admin who accounted the payment
+          accounted_by_login:
+            description: Login of the admin who accounted the payment
+          amount:
+            description: Amount credited to the user account
+          from_date:
+            description: Beginning of the paid membership period
+          incoming_payment_id:
+            description: ID of the incoming payment row
+          incoming_transaction_id:
+            description: Bank transaction identifier of the incoming payment
+          payment_id:
+            description: ID of the accepted user payment
+          received_amount:
+            description: Amount received from the incoming payment
+          received_currency:
+            description: Currency received from the incoming payment
+          to_date:
+            description: End of the paid membership period
+        payments_overview:
+          accepted_payment_count:
+            description: Number of accepted payments included in the report
+          incoming_payment_count:
+            description: Number of incoming payments included in the report
+          language_code:
+            description: Language code used for the report
+          language_id:
+            description: ID of the language used for the report
+          period_end:
+            description: End of the report period
+          period_seconds:
+            description: Length of the report period in seconds
+          period_start:
+            description: Beginning of the report period
+        request_created:
+          action:
+            description: Request workflow action that produced the notification
+          mail_id:
+            description: ID of the mail thread used for request notification
+          recipient_email:
+            description: Custom recipient e-mail address for this request notification
+          request_id:
+            description: ID of the request
+          request_label:
+            description: User-visible request label
+          request_state:
+            description: Request state after the event
+          request_type:
+            description: Type of request being handled
+          user_id:
+            description: ID of the user who owns the request
+          user_login:
+            description: Login of the user who owns the request
+        request_resolved:
+          action:
+            description: Request workflow action that produced the notification
+          admin_id:
+            description: ID of the admin who resolved the request
+          admin_login:
+            description: Login of the admin who resolved the request
+          mail_id:
+            description: ID of the mail thread used for request notification
+          reason:
+            description: Reason recorded when the request was resolved
+          recipient_email:
+            description: Custom recipient e-mail address for this request notification
+          reply_to_mail_id:
+            description: ID of the previous mail thread this resolution replies to
+          request_id:
+            description: ID of the request
+          request_label:
+            description: User-visible request label
+          request_state:
+            description: Request state after the event
+          request_type:
+            description: Type of request being handled
+          user_id:
+            description: ID of the user who owns the request
+          user_login:
+            description: Login of the user who owns the request
+        request_updated:
+          action:
+            description: Request workflow action that produced the notification
+          mail_id:
+            description: ID of the mail thread used for request notification
+          recipient_email:
+            description: Custom recipient e-mail address for this request notification
+          reply_to_mail_id:
+            description: ID of the previous mail thread this update replies to
+          request_id:
+            description: ID of the request
+          request_label:
+            description: User-visible request label
+          request_state:
+            description: Request state after the event
+          request_type:
+            description: Type of request being handled
+          user_id:
+            description: ID of the user who owns the request
+          user_login:
+            description: Login of the user who owns the request
+        security_advisory_announced:
+          advisory_id:
+            description: ID of the security advisory
+          advisory_name:
+            description: Name of the security advisory
+          affected_vps_count:
+            description: Number of affected VPSes visible to the recipient
+          affected_vps_hostnames:
+            description: Hostnames of affected VPSes included in the payload sample
+          affected_vps_ids:
+            description: IDs of affected VPSes included in the payload sample
+          cves:
+            description: CVE identifiers mentioned by the advisory
+          published_at:
+            description: Time when the advisory was published
+          state:
+            description: Current lifecycle state of the advisory
+        security_advisory_updated:
+          advisory_id:
+            description: ID of the security advisory
+          advisory_name:
+            description: Name of the security advisory
+          affected_vps_count:
+            description: Number of affected VPSes visible to the recipient
+          affected_vps_hostnames:
+            description: Hostnames of affected VPSes included in the payload sample
+          affected_vps_ids:
+            description: IDs of affected VPSes included in the payload sample
+          cves:
+            description: CVE identifiers mentioned by the advisory
+          published_at:
+            description: Time when the advisory was published
+          state:
+            description: Current lifecycle state of the advisory
+          update_id:
+            description: ID of the advisory update
+          update_summary:
+            description: Summary of the advisory update
+        snapshot_download_ready:
+          dataset_full_name:
+            description: Full name of the dataset that owns the snapshot
+          dataset_id:
+            description: ID of the dataset that owns the snapshot
+          download_id:
+            description: ID of the prepared snapshot download
+          expiration_date:
+            description: Time when the download link expires
+          file_name:
+            description: File name of the prepared download archive
+          format:
+            description: Archive format of the prepared download
+          snapshot_id:
+            description: ID of the source snapshot
+          snapshot_name:
+            description: Name of the source snapshot
+        system_daily_report:
+          language_code:
+            description: Language code used for the report
+          language_id:
+            description: ID of the language used for the report
+          period_end:
+            description: End of the report period
+          period_seconds:
+            description: Length of the report period in seconds
+          period_start:
+            description: Beginning of the report period
+        transaction_chain_state_changed:
+          chain_id:
+            description: ID of the transaction chain whose state changed
+          chain_label:
+            description: User-visible transaction chain label
+          chain_name:
+            description: Internal transaction chain name
+          changed_at:
+            description: Time when the chain state changed
+          changed_at_timestamp:
+            description: Unix timestamp of the state change
+          concern_classes:
+            description: Classes of objects affected by the chain
+          concern_object_ids:
+            description: IDs of objects affected by the chain
+          failed:
+            description: Whether the terminal state is failed or fatal
+          node_id:
+            description: ID of the node that reported the state change
+          node_name:
+            description: Domain name of the node that reported the state change
+          previous_state:
+            description: Transaction chain state before the change
+          progress:
+            description: Number of transactions already finished
+          size:
+            description: Number of transactions in the chain
+          state:
+            description: Transaction chain state after the change
+          successful:
+            description: Whether the terminal state is successful
+          terminal:
+            description: Whether the chain reached a terminal state
+          user_session_id:
+            description: ID of the user session that created the chain
+        user_created:
+          active:
+            description: Whether the account was activated immediately
+          create_vps:
+            description: Whether an initial VPS was requested
+          email:
+            description: E-mail address set on the created account
+          level:
+            description: Numeric user level assigned during creation
+          login:
+            description: Login of the created user account
+          object_state:
+            description: Initial lifecycle state of the account
+        user_failed_logins:
+          attempt_count:
+            description: Total number of failed sign-in attempts in the report
+          auth_types:
+            description: Authentication methods used in failed attempts
+          group_count:
+            description: Number of attempt groups included in the report
+          ip_addrs:
+            description: Client IP addresses observed in failed attempts
+          reasons:
+            description: Failure reasons reported by authentication
+        user_new_login:
+          api_ip_addr:
+            description: IP address observed by the vpsAdmin API
+          auth_type:
+            description: Authentication method used for the sign-in
+          authorization_id:
+            description: ID of the OAuth authorization used for sign-in
+          client_ip_addr:
+            description: Client IP address reported by the API client
+          client_version:
+            description: Version string reported by the API client
+          oauth2_client_id:
+            description: ID of the OAuth client application
+          user_agent:
+            description: HTTP User-Agent header used by the client
+          user_device_id:
+            description: ID of the remembered user device used for sign-in
+        user_new_token:
+          api_ip_addr:
+            description: IP address observed by the vpsAdmin API
+          auth_type:
+            description: Authentication method used to create the token
+          client_ip_addr:
+            description: Client IP address reported by the API client
+          client_version:
+            description: Version string reported by the API client
+          label:
+            description: User-visible token label
+          scope:
+            description: Access scope granted to the token
+          token_lifetime:
+            description: Token lifetime requested by the user session
+        user_resumed:
+          expiration_date:
+            description: Date when the lifecycle state expires
+          reason:
+            description: Operator-provided reason for the lifecycle change
+          state:
+            description: Account lifecycle state after the change
+        user_revived:
+          expiration_date:
+            description: Date when the lifecycle state expires
+          reason:
+            description: Operator-provided reason for the lifecycle change
+          state:
+            description: Account lifecycle state after the change
+        user_soft_deleted:
+          expiration_date:
+            description: Date when the lifecycle state expires
+          reason:
+            description: Operator-provided reason for the lifecycle change
+          state:
+            description: Account lifecycle state after the change
+        user_suspended:
+          expiration_date:
+            description: Date when the lifecycle state expires
+          reason:
+            description: Operator-provided reason for the lifecycle change
+          state:
+            description: Account lifecycle state after the change
+        user_test_notification:
+          note:
+            description: Free-form note supplied when creating the test event
+        user_totp_recovery_code_used:
+          request_ip:
+            description: IP address that submitted the recovery code
+          totp_device_id:
+            description: ID of the TOTP device whose recovery code was used
+          totp_device_label:
+            description: User-visible label of the affected TOTP device
+          used_at:
+            description: Time when the recovery code was accepted
+        vps_dataset_expanded:
+          added_space:
+            description: Space added to the dataset refquota, in bytes
+          dataset_full_name:
+            description: Full dataset name whose quota changed
+          dataset_id:
+            description: ID of the dataset whose quota changed
+          dataset_referenced:
+            description: Referenced dataset space at the time of the event, in bytes
+          dataset_refquota:
+            description: Dataset refquota after the event, in bytes
+          enable_shrink:
+            description: Whether automatic shrink is enabled for the dataset
+          expansion_count:
+            description: Number of expansions represented by the event
+          expansion_id:
+            description: ID of the dataset expansion record
+          max_over_refquota_seconds:
+            description: Maximum allowed time over quota before action, in seconds
+          original_refquota:
+            description: Dataset refquota before automatic expansion or shrink, in
+              bytes
+          over_refquota_seconds:
+            description: Time the dataset spent over quota, in seconds
+          vps_hostname:
+            description: Hostname of the VPS whose dataset quota changed
+          vps_id:
+            description: ID of the VPS whose dataset quota changed
+        vps_dataset_shrunk:
+          added_space:
+            description: Space added to the dataset refquota, in bytes
+          dataset_full_name:
+            description: Full dataset name whose quota changed
+          dataset_id:
+            description: ID of the dataset whose quota changed
+          dataset_referenced:
+            description: Referenced dataset space at the time of the event, in bytes
+          dataset_refquota:
+            description: Dataset refquota after the event, in bytes
+          enable_shrink:
+            description: Whether automatic shrink is enabled for the dataset
+          expansion_count:
+            description: Number of expansions represented by the event
+          expansion_id:
+            description: ID of the dataset expansion record
+          max_over_refquota_seconds:
+            description: Maximum allowed time over quota before action, in seconds
+          original_refquota:
+            description: Dataset refquota before automatic expansion or shrink, in
+              bytes
+          over_refquota_seconds:
+            description: Time the dataset spent over quota, in seconds
+          vps_hostname:
+            description: Hostname of the VPS whose dataset quota changed
+          vps_id:
+            description: ID of the VPS whose dataset quota changed
+        vps_dns_resolver_changed:
+          new_dns_resolver_addrs:
+            description: Addresses configured on the new DNS resolver
+          new_dns_resolver_id:
+            description: ID of the new DNS resolver
+          new_dns_resolver_label:
+            description: Label of the new DNS resolver
+          old_dns_resolver_addrs:
+            description: Addresses configured on the previous DNS resolver
+          old_dns_resolver_id:
+            description: ID of the previous DNS resolver
+          old_dns_resolver_label:
+            description: Label of the previous DNS resolver
+          vps_hostname:
+            description: Hostname of the VPS whose resolver changed
+          vps_id:
+            description: ID of the VPS whose resolver changed
+        vps_incident_report:
+          codename:
+            description: Incident report codename assigned by vpsAdmin
+          ip_addr:
+            description: IP address mentioned by the incident report
+          subject:
+            description: Subject line received with the incident report
+          text:
+            description: Body text received with the incident report
+          vps_id:
+            description: ID of the VPS associated with the incident report
+        vps_migration_begun:
+          custom_window:
+            description: Whether a custom maintenance window is used
+          dst_node_domain_name:
+            description: Domain name of the destination node
+          dst_node_id:
+            description: ID of the destination node
+          finish_minutes:
+            description: Minute of day when the maintenance window should finish
+          finish_weekday:
+            description: Weekday when the maintenance window should finish
+          maintenance_window:
+            description: Whether a maintenance window constrains the migration
+          migration_id:
+            description: ID of the VPS migration record
+          reason:
+            description: Operator-provided reason for the migration
+          src_node_domain_name:
+            description: Domain name of the source node
+          src_node_id:
+            description: ID of the source node
+          vps_hostname:
+            description: Hostname of the VPS being migrated
+          vps_id:
+            description: ID of the VPS being migrated
+        vps_migration_finished:
+          custom_window:
+            description: Whether a custom maintenance window is used
+          dst_node_domain_name:
+            description: Domain name of the destination node
+          dst_node_id:
+            description: ID of the destination node
+          finish_minutes:
+            description: Minute of day when the maintenance window should finish
+          finish_weekday:
+            description: Weekday when the maintenance window should finish
+          maintenance_window:
+            description: Whether a maintenance window constrains the migration
+          migration_id:
+            description: ID of the VPS migration record
+          reason:
+            description: Operator-provided reason for the migration
+          src_node_domain_name:
+            description: Domain name of the source node
+          src_node_id:
+            description: ID of the source node
+          vps_hostname:
+            description: Hostname of the VPS being migrated
+          vps_id:
+            description: ID of the VPS being migrated
+        vps_migration_planned:
+          custom_window:
+            description: Whether a custom maintenance window is used
+          dst_node_domain_name:
+            description: Domain name of the destination node
+          dst_node_id:
+            description: ID of the destination node
+          finish_minutes:
+            description: Minute of day when the maintenance window should finish
+          finish_weekday:
+            description: Weekday when the maintenance window should finish
+          maintenance_window:
+            description: Whether a maintenance window constrains the migration
+          migration_id:
+            description: ID of the VPS migration record
+          reason:
+            description: Operator-provided reason for the migration
+          src_node_domain_name:
+            description: Domain name of the source node
+          src_node_id:
+            description: ID of the source node
+          vps_hostname:
+            description: Hostname of the VPS being migrated
+          vps_id:
+            description: ID of the VPS being migrated
+        vps_network_disabled:
+          reason:
+            description: Operator-provided reason for the network state change
+          vps_hostname:
+            description: Hostname of the VPS whose network state changed
+          vps_id:
+            description: ID of the VPS whose network state changed
+        vps_network_enabled:
+          reason:
+            description: Operator-provided reason for the network state change
+          vps_hostname:
+            description: Hostname of the VPS whose network state changed
+          vps_id:
+            description: ID of the VPS whose network state changed
+        vps_oom_prevention:
+          action:
+            description: Preventive action taken after repeated OOM reports
+          ooms_in_period:
+            description: Number of OOM reports seen in the tracked period
+          period_seconds:
+            description: Length of the tracked period in seconds
+          reason:
+            description: Reason why the preventive action was taken
+          vps_hostname:
+            description: Hostname of the VPS affected by OOM prevention
+          vps_id:
+            description: ID of the VPS affected by OOM prevention
+        vps_oom_report:
+          batch_reported_at:
+            description: Time when the OOM report batch was processed
+          cgroup:
+            description: Primary affected cgroup path
+          cgroups:
+            description: Affected cgroup paths included in the event
+          count:
+            description: Number of OOM reports in the selected group
+          killed_name:
+            description: Name of the process killed by the kernel
+          last_reported_id:
+            description: Highest raw OOM report ID already processed
+          report_count:
+            description: Number of raw reports considered for the event
+          selected_oom_count:
+            description: Number of OOM kills represented by selected reports
+          selected_report_count:
+            description: Number of raw reports selected for notification
+          selected_report_ids:
+            description: IDs of raw OOM reports selected for notification
+          stage:
+            description: Processing stage that emitted the OOM notification
+          vps_hostname:
+            description: Hostname of the VPS affected by the OOM report
+          vps_id:
+            description: ID of the VPS affected by the OOM report
+        vps_replaced:
+          new_vps_hostname:
+            description: Hostname of the newly created replacement VPS
+          new_vps_id:
+            description: ID of the newly created replacement VPS
+          original_vps_hostname:
+            description: Hostname of the original VPS being replaced
+          original_vps_id:
+            description: ID of the original VPS being replaced
+          reason:
+            description: Operator-provided reason for the replacement
+          vps_hostname:
+            description: Hostname of the VPS record that initiated replacement
+          vps_id:
+            description: ID of the VPS record that initiated replacement
+        vps_resources_changed:
+          admin_id:
+            description: ID of the admin who changed the resources
+          admin_name:
+            description: Name of the admin who changed the resources
+          cpu:
+            description: CPU core count assigned to the VPS after the change
+          cpu_limit:
+            description: CPU limit assigned to the VPS after the change
+          memory:
+            description: Memory limit assigned to the VPS after the change, in MiB
+          reason:
+            description: Operator-provided reason for the resource change
+          swap:
+            description: Swap limit assigned to the VPS after the change, in MiB
+          vps_hostname:
+            description: Hostname of the VPS whose resources changed
+          vps_id:
+            description: ID of the VPS whose resources changed
+        vps_resumed:
+          changed_by_id:
+            description: ID of the user who changed the VPS lifecycle state
+          changed_by_name:
+            description: Name of the user who changed the VPS lifecycle state
+          expiration_date:
+            description: Date when the lifecycle state expires
+          reason:
+            description: Operator-provided reason for the lifecycle change
+          state:
+            description: VPS lifecycle state after the change
+          vps_hostname:
+            description: Hostname of the VPS whose lifecycle state changed
+          vps_id:
+            description: ID of the VPS whose lifecycle state changed
+        vps_stopped_over_quota:
+          added_space:
+            description: Space added to the dataset refquota, in bytes
+          dataset_full_name:
+            description: Full dataset name whose quota changed
+          dataset_id:
+            description: ID of the dataset whose quota changed
+          dataset_referenced:
+            description: Referenced dataset space at the time of the event, in bytes
+          dataset_refquota:
+            description: Dataset refquota after the event, in bytes
+          enable_shrink:
+            description: Whether automatic shrink is enabled for the dataset
+          expansion_count:
+            description: Number of expansions represented by the event
+          expansion_id:
+            description: ID of the dataset expansion record
+          max_over_refquota_seconds:
+            description: Maximum allowed time over quota before action, in seconds
+          original_refquota:
+            description: Dataset refquota before automatic expansion or shrink, in
+              bytes
+          over_refquota_seconds:
+            description: Time the dataset spent over quota, in seconds
+          vps_hostname:
+            description: Hostname of the VPS whose dataset quota changed
+          vps_id:
+            description: ID of the VPS whose dataset quota changed
+        vps_suspended:
+          changed_by_id:
+            description: ID of the user who changed the VPS lifecycle state
+          changed_by_name:
+            description: Name of the user who changed the VPS lifecycle state
+          expiration_date:
+            description: Date when the lifecycle state expires
+          reason:
+            description: Operator-provided reason for the lifecycle change
+          state:
+            description: VPS lifecycle state after the change
+          vps_hostname:
+            description: Hostname of the VPS whose lifecycle state changed
+          vps_id:
+            description: ID of the VPS whose lifecycle state changed
+      types:
+        dataset_migration_begun:
+          label: Dataset migration begun
+        dataset_migration_finished:
+          label: Dataset migration finished
+        dns_zone_transfer_failed:
+          label: DNS zone transfer failed
+        dns_zone_transfer_recovered:
+          label: DNS zone transfer recovered
+        incident_report_reply:
+          label: Incident report reply
+        lifetime_expiration_warning:
+          label: Expiration warning
+        monitoring:
+          severity_description: Severity is derived from the monitoring alert state
+        outage_announced:
+          label: Outage announced
+        outage_updated:
+          label: Outage updated
+        payment_accepted:
+          label: Payment accepted
+        payments_overview:
+          label: Payments overview
+        request_created:
+          label: Request created
+        request_resolved:
+          label: Request resolved
+        request_updated:
+          label: Request updated
+        security_advisory_announced:
+          label: Security advisory announced
+        security_advisory_updated:
+          label: Security advisory updated
+        snapshot_download_ready:
+          label: Snapshot download ready
+        system_daily_report:
+          label: Daily report
+        transaction_chain_state_changed:
+          label: Transaction chain state changed
+          severity_description: Severity is derived from the new transaction chain
+            state
+        user_created:
+          label: User account created
+        user_failed_logins:
+          label: Failed sign-in report
+        user_new_login:
+          label: New sign-in
+        user_new_token:
+          label: New access token
+        user_resumed:
+          label: User account resumed
+        user_revived:
+          label: User account restored
+        user_soft_deleted:
+          label: User account disabled
+        user_suspended:
+          label: User account suspended
+        user_test_notification:
+          label: Test notification
+        user_totp_recovery_code_used:
+          label: TOTP recovery code used
+        vps_dataset_expanded:
+          label: VPS dataset expanded
+        vps_dataset_shrunk:
+          label: VPS dataset shrunk
+        vps_dns_resolver_changed:
+          label: VPS DNS resolver changed
+        vps_incident_report:
+          label: Incident report
+        vps_migration_begun:
+          label: VPS migration begun
+        vps_migration_finished:
+          label: VPS migration finished
+        vps_migration_planned:
+          label: VPS migration planned
+        vps_network_disabled:
+          label: VPS network disabled
+        vps_network_enabled:
+          label: VPS network enabled
+        vps_oom_prevention:
+          label: OOM prevention
+        vps_oom_report:
+          label: OOM report
+        vps_replaced:
+          label: VPS replaced
+        vps_resources_changed:
+          label: VPS resources changed
+        vps_resumed:
+          label: VPS resumed
+        vps_stopped_over_quota:
+          label: VPS stopped over quota
+        vps_suspended:
+          label: VPS suspended
     resources:
       action_state:
         attributes:
