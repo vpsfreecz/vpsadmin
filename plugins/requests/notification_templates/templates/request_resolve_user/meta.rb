@@ -1,3 +1,3 @@
-template :request_action_role do
+template :request_resolve_user do
   label 'Resolve request (user)'
 end

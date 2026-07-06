@@ -8,6 +8,13 @@ module VpsAdmin::API::Plugins
           VpsAdmin::API::Plugins::Monitoring.register_action(name, block)
         end
 
+        def alert_event(event_type, **)
+          VpsAdmin::API::Plugins::Monitoring::Events.register_event(
+            event_type,
+            **
+          )
+        end
+
         def monitor(name, &)
           env = MonitorEnv.new
           env.instance_exec(&)

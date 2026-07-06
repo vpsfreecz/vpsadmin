@@ -1,3 +1,3 @@
-template :outage_report_role do
+template :outage_report_user do
   label 'User outage report'
 end
