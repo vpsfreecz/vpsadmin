@@ -324,6 +324,19 @@ en:
         label: Create VPS
       created_by:
         label: Created_by
+      cs_description:
+        description: User-facing explanation of the vulnerability, affected systems,
+          impact, and conditions.
+        label: Česky description
+      cs_message:
+        description: Optional user-facing message with more details about this update.
+        label: Česky message
+      cs_response:
+        description: User-facing explanation of the mitigation or fix and whether
+          users need to take action.
+        label: Česky response
+      cs_summary:
+        label: Česky summary
       currency:
         choices:
           czk:
@@ -2798,6 +2811,9 @@ en:
             description: True if the current user is affected by the advisory
           created_at:
             label: Created_at
+          cs_summary:
+            description: One-sentence public summary shown in advisory lists, status
+              output, IRC announcements, and emails.
           en_summary:
             description: One-sentence public summary shown in advisory lists, status
               output, IRC announcements, and emails.
@@ -2859,6 +2875,9 @@ en:
         attributes:
           created_at:
             label: Created_at
+          cs_summary:
+            description: One-sentence public summary of this update, shown in update
+              lists and emails.
           en_summary:
             description: One-sentence public summary of this update, shown in update
               lists and emails.

@@ -323,6 +323,7 @@ RSpec.describe 'VpsAdmin::API::Resources::SecurityAdvisory' do
           name: 'Spec Kernel Bug',
           published_at: Time.utc(2026, 1, 1, 8, 0, 0).iso8601,
           en_summary: 'Spec kernel summary',
+          cs_summary: 'Spec shrnuti kernelu',
           en_description: 'Spec kernel description',
           en_response: 'Spec kernel mitigation'
         }
@@ -360,7 +361,8 @@ RSpec.describe 'VpsAdmin::API::Resources::SecurityAdvisory' do
         json_put show_path(advisory_id), security_advisory: {
           name: 'Renamed Spec Kernel Bug',
           published_at: Time.utc(2026, 1, 1, 9, 0, 0).iso8601,
-          en_summary: 'Updated kernel summary'
+          en_summary: 'Updated kernel summary',
+          cs_summary: 'Aktualizovane shrnuti kernelu'
         }
       end
 
@@ -653,6 +655,7 @@ RSpec.describe 'VpsAdmin::API::Resources::SecurityAdvisory' do
           security_advisory: advisory.id,
           published_at: published_at.iso8601,
           en_summary: 'Follow-up summary',
+          cs_summary: 'Navazujici shrnuti',
           en_message: 'Follow-up message'
         }
       end
@@ -678,7 +681,8 @@ RSpec.describe 'VpsAdmin::API::Resources::SecurityAdvisory' do
       as(SpecSeed.admin) do
         json_post update_index_path, security_advisory_update: {
           security_advisory: missing,
-          en_summary: 'Orphan update'
+          en_summary: 'Orphan update',
+          cs_summary: 'Osamocena aktualizace'
         }
       end
 
@@ -704,6 +708,7 @@ RSpec.describe 'VpsAdmin::API::Resources::SecurityAdvisory' do
         json_post update_index_path, security_advisory_update: {
           security_advisory: advisory.id,
           en_summary: 'Editable update',
+          cs_summary: 'Upravitelna aktualizace',
           en_message: ''
         }
       end
@@ -715,6 +720,7 @@ RSpec.describe 'VpsAdmin::API::Resources::SecurityAdvisory' do
       as(SpecSeed.admin) do
         json_put update_path(update_id), security_advisory_update: {
           en_summary: 'Edited update',
+          cs_summary: 'Upravena aktualizace',
           en_message: 'Edited update message'
         }
       end

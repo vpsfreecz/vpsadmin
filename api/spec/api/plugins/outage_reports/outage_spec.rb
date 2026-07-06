@@ -406,6 +406,7 @@ RSpec.describe 'VpsAdmin::API::Resources::Outage', requires_plugins: :outage_rep
           impact: 'network',
           auto_resolve: true,
           en_summary: 'Spec outage',
+          cs_summary: 'Spec vypadek',
           en_description: 'Spec description'
         }
       }
@@ -444,6 +445,11 @@ RSpec.describe 'VpsAdmin::API::Resources::Outage', requires_plugins: :outage_rep
       translation = ::OutageTranslation.find_by(outage: created, language: lang)
       expect(translation).not_to be_nil
       expect(translation.summary).to eq('Spec outage')
+
+      lang = ::Language.find_by(code: 'cs')
+      translation = ::OutageTranslation.find_by(outage: created, language: lang)
+      expect(translation).not_to be_nil
+      expect(translation.summary).to eq('Spec vypadek')
     end
 
     it 'requires en_summary' do

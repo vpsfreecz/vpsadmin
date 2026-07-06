@@ -323,6 +323,19 @@ cs:
         label: Vytvořit VPS
       created_by:
         label: Vytvořil
+      cs_description:
+        description: Uživatelské vysvětlení zranitelnosti, dotčených systémů, dopadu
+          a podmínek.
+        label: Český popis
+      cs_message:
+        description: Volitelná zpráva pro uživatele s dalšími detaily o této aktualizaci.
+        label: Česká zpráva
+      cs_response:
+        description: Uživatelské vysvětlení opravy a informace, zda uživatelé musí
+          něco udělat.
+        label: Česká odpověď
+      cs_summary:
+        label: České shrnutí
       currency:
         choices:
           czk:
@@ -2792,6 +2805,9 @@ cs:
             description: True, pokud je aktuální uživatel dotčen tímto advisory
           created_at:
             label: Vytvořeno
+          cs_summary:
+            description: Jednověté veřejné shrnutí zobrazené v seznamech advisory,
+              statusovém výstupu, IRC oznámeních a e-mailech.
           en_summary:
             description: Jednověté veřejné shrnutí zobrazené v seznamech advisory,
               statusovém výstupu, IRC oznámeních a e-mailech.
@@ -2852,6 +2868,9 @@ cs:
         attributes:
           created_at:
             label: Vytvořeno
+          cs_summary:
+            description: Jednověté veřejné shrnutí této aktualizace zobrazené v seznamech
+              aktualizací a e-mailech.
           en_summary:
             description: Jednověté veřejné shrnutí této aktualizace zobrazené v seznamech
               aktualizací a e-mailech.

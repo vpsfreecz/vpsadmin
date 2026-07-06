@@ -114,6 +114,10 @@ module SpecSeed
     Language.find_or_create_by!(code: 'en') do |lang|
       lang.label = 'English'
     end
+
+    Language.find_or_create_by!(code: 'cs') do |lang|
+      lang.label = 'Česky'
+    end
   end
 
   def seed_mail_templates!
