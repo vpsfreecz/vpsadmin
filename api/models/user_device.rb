@@ -15,7 +15,7 @@ class UserDevice < ApplicationRecord
   validate :validate_skip_multi_factor_auth_until
 
   def user_agent_string
-    user_agent.agent
+    user_agent&.agent.to_s
   end
 
   def usable?

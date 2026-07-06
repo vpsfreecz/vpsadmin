@@ -57,6 +57,6 @@ class UserSession < ApplicationRecord
   end
 
   def user_agent_string
-    user_agent.agent
+    user_agent&.agent.to_s
   end
 end

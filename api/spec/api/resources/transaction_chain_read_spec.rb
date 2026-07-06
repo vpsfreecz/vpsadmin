@@ -365,6 +365,18 @@ RSpec.describe 'VpsAdmin::API::Resources::TransactionChain' do
         expect(chain_obj.dig('concerns', 'labels', 'User')).to eq('Uživatel')
       end
 
+      it 'renders chains whose user session has no user-agent row' do
+        session_user.update_column(:user_agent_id, nil)
+
+        as(user) { json_get show_path(chain_a.id) }
+
+        expect_status(200)
+        expect(json['status']).to be(true)
+        expect(chain_obj['id']).to eq(chain_a.id)
+        expect(resource_id(chain_obj['user_session'])).to eq(session_user.id)
+        expect(session_user.reload.user_agent_string).to eq('')
+      end
+
       it 'hides other users chains from normal users' do
         as(user) { json_get show_path(chain_c.id) }
 
