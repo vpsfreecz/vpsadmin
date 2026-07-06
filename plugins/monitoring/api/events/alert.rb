@@ -182,7 +182,7 @@ module VpsAdmin::API::Plugins::Monitoring::Events
             default_routed: profile.fetch(:default_routed),
             severity_description: profile.fetch(:severity_description) do
         argument :alert, type: ::MonitoredEvent
-        argument :recipient, type: ::User, optional: true
+        argument :affected_user, type: ::User, optional: true
         argument :alert_kind, type: String, default: 'state'
         argument :subject_override, type: String, optional: true
         argument :summary_override, type: String, optional: true
@@ -190,12 +190,12 @@ module VpsAdmin::API::Plugins::Monitoring::Events
         argument :extra_payload, type: Hash, default: {}
         argument :context, type: Hash, default: {}
 
-        user { recipient || alert.user }
+        user { affected_user || alert.user }
         source { alert }
         vps do
           VpsAdmin::API::Plugins::Monitoring::Events.vps_for(
             alert.object,
-            recipient || alert.user
+            affected_user || alert.user
           )
         end
         subject do
@@ -337,7 +337,7 @@ module VpsAdmin::API::Plugins::Monitoring::Events
             VpsAdmin::API::Plugins::Monitoring::Events.template_vars(
               profile,
               alert,
-              recipient || alert.user,
+              affected_user || alert.user,
               context
             )
           end
