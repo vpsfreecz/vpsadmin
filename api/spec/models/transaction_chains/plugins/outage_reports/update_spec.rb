@@ -114,12 +114,17 @@ RSpec.describe 'outage reports update chain', requires_plugins: :outage_reports 
 
     direct = attempts.find { |_name, opts| opts[:user] == SpecSeed.user }
     expect(direct).not_to be_nil
-    expect(Event.where(event_type: 'outage.announced', user_id: nil)).to be_empty
+    generic_event = Event.where(event_type: 'outage.announced', user_id: nil).sole
+    expect(generic_event).to be_suppressed_routing_state
+    expect(generic_event.parameters).to include(
+      'roles' => ['admin'],
+      'event' => 'announce'
+    )
     user_event = Event.where(event_type: 'outage.announced', user: SpecSeed.user).sole
     user_delivery = user_event.event_deliveries.sole
     expect(user_event.source).to eq(report)
     expect(user_event.parameters).to include(
-      'role' => 'user',
+      'roles' => ['account'],
       'event' => 'announce',
       'affected_user_id' => SpecSeed.user.id,
       'affected_user_login' => SpecSeed.user.login,
@@ -132,7 +137,7 @@ RSpec.describe 'outage reports update chain', requires_plugins: :outage_reports 
     )
     expect(user_delivery).to be_prepared_state
     expect(user_delivery.notification_receiver).not_to be_nil
-    expect(user_delivery.template_name).to eq('outage_report_role_event')
+    expect(user_delivery.template_name).to eq('outage_report_user_announce')
 
     expected_direct_reply = "<vpsadmin-outage-#{outage.id}-#{SpecSeed.user.id}-announce@vpsadmin.vpsfree.cz>"
     expect(direct.last[:message_id]).to eq(
@@ -183,7 +188,7 @@ RSpec.describe 'outage reports update chain', requires_plugins: :outage_reports 
     delivery = event.event_deliveries.sole
     expect(event).to be_suppressed_routing_state
     expect(event.parameters).to include(
-      'role' => 'user',
+      'roles' => ['account'],
       'event' => 'announce',
       'affected_user_id' => SpecSeed.user.id
     )

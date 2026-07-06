@@ -31,10 +31,11 @@ class EventRouteMatcher < ApplicationRecord
       type: 'string',
       example: 'vpsAdmin recorded 3 out-of-memory events'
     },
-    'recipient_roles' => {
-      description: 'Template recipient roles available for this event',
+    'roles' => {
+      description: 'Notification roles declared by the event type',
       type: 'string_list',
-      example: %w[user]
+      example: %w[account],
+      choices: %w[account admin]
     },
     'subject_relation' => {
       description: 'Relationship between route owner and event subject',

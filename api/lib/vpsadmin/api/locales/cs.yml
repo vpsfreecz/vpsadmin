@@ -53,12 +53,20 @@ cs:
             label: schválit
           deny:
             label: zamítnout
+          email:
+            label: e-mail
           ignore:
             label: ignorovat
           notify:
             label: Upozornit
           request_correction:
             label: vyžádat opravu
+          sms:
+            label: SMS
+          telegram:
+            label: Telegram
+          webhook:
+            label: Webhook
         label: Akce
       activate:
         label: Aktivovat účet
@@ -159,6 +167,10 @@ cs:
       atime:
         description: Řídí, zda se při čtení souborů aktualizuje čas přístupu
         label: Čas přístupu
+      attempt_count:
+        label: Počet pokusů
+      attempt_number:
+        label: Číslo pokusu
       attr_changes:
         label: Změny atributů
       attribute:
@@ -289,6 +301,8 @@ cs:
         label: Souběžnost
       config:
         label: Konfigurace
+      config_json:
+        label: Konfigurace
       confirmed:
         label: Potvrzeno
       content:
@@ -382,9 +396,30 @@ cs:
         description: Pokud je true, uživatelská konfigurace se dědí z konfigurace
           prostředí
         label: Výchozí
+      default_limit_count:
+        label: Výchozí limit
+      default_routed:
+        label: Výchozí routování
       default_ttl:
         description: Výchozí TTL záznamů v sekundách
         label: Výchozí TTL
+      delivery_method:
+        choices:
+          email:
+            label: e-mail
+          sms:
+            label: SMS
+          telegram:
+            label: Telegram
+          webhook:
+            label: Webhook
+        label: Způsob doručení
+      delivery_method_enabled:
+        label: Způsob doručení povolen
+      delivery_transaction_chain_id:
+        label: ID doručovacího transakčního řetězce
+      delivery_transaction_chain_label:
+        label: Popisek doručovacího transakčního řetězce
       delta:
         label: Delta
       depends_on:
@@ -398,6 +433,12 @@ cs:
       diskspace:
         description: Minimálně 1024, maximálně 1048576, krok je 1
         label: Diskový prostor
+      display_action_summary:
+        label: Souhrn akce
+      display_label:
+        label: Zobrazený popisek
+      display_target:
+        label: Zobrazený cíl
       distribution:
         label: Distribuce
       dns_resolver:
@@ -498,6 +539,11 @@ cs:
       enable_user_dns_zones:
         label: Povolit DNS zóny uživatelů
       enabled:
+        choices:
+          'false':
+            label: ne
+          'true':
+            label: ano
         label: Povoleno
       entity_id:
         description: Filtrovat hlášení podle ID entity
@@ -510,16 +556,133 @@ cs:
         label: Prostředí
       environment_dataset_plan:
         label: Plán datasetu prostředí
+      error_summary:
+        label: Souhrn chyby
       estimated_income:
         label: Odhadovaný příjem
       event_at:
         label: Čas události
+      event_created_at:
+        label: Vytvoření události
       event_data:
         label: Data události
+      event_delivery_id:
+        label: ID doručení události
+      event_id:
+        label: ID události
       event_key:
         label: Klíč události
+      event_route_id:
+        label: ID routy události
+      event_route_label:
+        label: Popisek routy události
+      event_routing_context_id:
+        label: ID routovacího kontextu události
+      event_severity:
+        label: Závažnost události
+      event_subject:
+        label: Subjekt události
       event_type:
+        choices:
+          dataset_migration_begun:
+            label: Migrace datasetu zahájena
+          dataset_migration_finished:
+            label: Migrace datasetu dokončena
+          dns_zone_transfer_failed:
+            label: Transfer DNS zóny selhal
+          dns_zone_transfer_recovered:
+            label: Transfer DNS zóny obnoven
+          incident_report_reply:
+            label: Odpověď na incident
+          lifetime_expiration_warning:
+            label: Upozornění na vypršení
+          outage_announced:
+            label: Odstávka nebo výpadek oznámen
+          outage_updated:
+            label: Odstávka nebo výpadek aktualizován
+          payment_accepted:
+            label: Platba přijata
+          payments_overview:
+            label: Přehled plateb
+          request_created:
+            label: Žádost vytvořena
+          request_resolved:
+            label: Žádost vyřešena
+          request_updated:
+            label: Žádost aktualizována
+          security_advisory_announced:
+            label: Bezpečnostní upozornění oznámeno
+          security_advisory_updated:
+            label: Bezpečnostní upozornění aktualizováno
+          snapshot_download_ready:
+            label: Stažení snapshotu připraveno
+          system_daily_report:
+            label: Denní report
+          transaction_chain_state_changed:
+            label: Stav transakčního řetězce změněn
+          user_created:
+            label: Uživatelský účet vytvořen
+          user_failed_logins:
+            label: Přehled neúspěšných přihlášení
+          user_new_login:
+            label: Nové přihlášení
+          user_new_token:
+            label: Nový přístupový token
+          user_resumed:
+            label: Uživatelský účet obnoven
+          user_revived:
+            label: Uživatelský účet vrácen
+          user_soft_deleted:
+            label: Uživatelský účet deaktivován
+          user_suspended:
+            label: Uživatelský účet suspendován
+          user_test_notification:
+            label: Testovací notifikace
+          user_totp_recovery_code_used:
+            label: Použit obnovovací kód TOTP
+          vps_dataset_expanded:
+            label: Dataset VPS rozšířen
+          vps_dataset_shrunk:
+            label: Dataset VPS zmenšen
+          vps_dns_resolver_changed:
+            label: DNS resolver VPS změněn
+          vps_incident_report:
+            label: Incident
+          vps_migration_begun:
+            label: Migrace VPS zahájena
+          vps_migration_finished:
+            label: Migrace VPS dokončena
+          vps_migration_planned:
+            label: Migrace VPS naplánována
+          vps_network_disabled:
+            label: Síť VPS zakázána
+          vps_network_enabled:
+            label: Síť VPS povolena
+          vps_oom_prevention:
+            label: Prevence OOM
+          vps_oom_report:
+            label: OOM report
+          vps_replaced:
+            label: VPS nahrazeno
+          vps_resources_changed:
+            label: Prostředky VPS změněny
+          vps_resumed:
+            label: VPS obnoveno
+          vps_stopped_over_quota:
+            label: VPS zastaveno kvůli překročení kvóty
+          vps_suspended:
+            label: VPS suspendováno
         label: Typ události
+      event_type_pattern:
+        label: Vzor typu události
+      event_user_id:
+        label: ID uživatele události
+      event_user_login:
+        label: Login uživatele události
+      event_vps_hostname:
+        label: Hostname VPS události
+      event_vps_id:
+        label: ID VPS události
       expiration:
         description: Datum, po kterém token přestane být platný
       expirations:
@@ -536,6 +699,433 @@ cs:
         label: Počet selhání
       features:
         label: Funkce
+      field:
+        choices:
+          accepted_payment_count:
+            label: Počet přijatých plateb zahrnutých v přehledu
+          accounted_by_id:
+            label: ID administrátora, který platbu zaúčtoval
+          accounted_by_login:
+            label: Login administrátora, který platbu zaúčtoval
+          action:
+            label: Akce workflow žádosti, která vytvořila notifikaci
+          active:
+            label: Zda byl účet ihned aktivován
+          added_space:
+            label: Prostor přidaný do refquota datasetu v bajtech
+          admin_id:
+            label: ID administrátora, který žádost vyřešil
+          admin_login:
+            label: Login administrátora, který žádost vyřešil
+          admin_name:
+            label: Jméno administrátora, který změnil prostředky
+          advisory_id:
+            label: ID bezpečnostního upozornění
+          advisory_name:
+            label: Název bezpečnostního upozornění
+          affected_export_count:
+            label: Počet exportů dotčených odstávkou nebo výpadkem
+          affected_user_id:
+            label: ID dotčeného uživatele u událostí cílených na uživatele
+          affected_user_login:
+            label: Login dotčeného uživatele u událostí cílených na uživatele
+          affected_vps_count:
+            label: Počet VPS dotčených migrací
+          affected_vps_hostnames:
+            label: Hostname VPS dotčených migrací
+          affected_vps_ids:
+            label: ID VPS dotčených migrací
+          amount:
+            label: Částka připsaná na účet uživatele
+          api_ip_addr:
+            label: IP adresa zaznamenaná vpsAdmin API
+          attempt_count:
+            label: Celkový počet neúspěšných přihlášení v přehledu
+          auth_type:
+            label: Metoda autentizace použitá při přihlášení
+          auth_types:
+            label: Metody autentizace použité při neúspěšných pokusech
+          authorization_id:
+            label: ID OAuth autorizace použité při přihlášení
+          batch_reported_at:
+            label: Čas zpracování dávky OOM reportů
+          begins_at:
+            label: Čas začátku odstávky nebo výpadku
+          category:
+            label: Kategorie události používaná pro seskupení
+          cgroup:
+            label: Primární dotčená cesta cgroup
+          cgroups:
+            label: Dotčené cgroup cesty zahrnuté v události
+          chain_id:
+            label: ID transakčního řetězce, jehož stav se změnil
+          chain_label:
+            label: Uživatelsky viditelný popisek transakčního řetězce
+          chain_name:
+            label: Interní název transakčního řetězce
+          changed_at:
+            label: Čas změny stavu řetězce
+          changed_at_timestamp:
+            label: Unixový timestamp změny stavu
+          changed_by_id:
+            label: ID uživatele, který změnil životní stav VPS
+          changed_by_name:
+            label: Jméno uživatele, který změnil životní stav VPS
+          changed_fields:
+            label: Názvy polí outage reportu změněných aktualizací
+          client_ip_addr:
+            label: IP adresa klienta nahlášená API klientem
+          client_version:
+            label: Verze nahlášená API klientem
+          codename:
+            label: Kódové označení incidentu přidělené vpsAdminem
+          concern_classes:
+            label: Třídy objektů dotčených řetězcem
+          concern_object_ids:
+            label: ID objektů dotčených řetězcem
+          count:
+            label: Počet OOM reportů ve vybrané skupině
+          cpu:
+            label: Počet CPU jader přiřazený VPS po změně
+          cpu_limit:
+            label: CPU limit přiřazený VPS po změně
+          create_vps:
+            label: Zda bylo požádáno o počáteční VPS
+          custom_window:
+            label: Zda je použit vlastní maintenance window
+          cves:
+            label: CVE identifikátory související s odstávkou nebo výpadkem
+          dataset_full_name:
+            label: Plný název migrovaného datasetu
+          dataset_id:
+            label: ID migrovaného datasetu
+          dataset_referenced:
+            label: Referencovaný prostor datasetu v čase události, v bajtech
+          dataset_refquota:
+            label: Refquota datasetu po události, v bajtech
+          default_routed:
+            label: Zda je událost doručena výchozí routou
+          description:
+            label: Podrobný text aktualizace outage reportu
+          direct_vps_count:
+            label: Počet VPS přímo dotčených odstávkou nebo výpadkem
+          dns_server_id:
+            label: ID DNS serveru zpracovávajícího transfer
+          dns_server_name:
+            label: Název DNS serveru zpracovávajícího transfer
+          dns_server_zone_id:
+            label: ID přiřazení zóny k DNS serveru
+          dns_zone_id:
+            label: ID přenášené DNS zóny
+          dns_zone_name:
+            label: Název přenášené DNS zóny
+          download_id:
+            label: ID připraveného stažení snapshotu
+          dst_node_domain_name:
+            label: Doménové jméno cílového nodu
+          dst_node_id:
+            label: ID cílového nodu
+          dst_pool_filesystem:
+            label: Filesystem cílového storage poolu
+          dst_pool_id:
+            label: ID cílového storage poolu
+          duration:
+            label: Očekávaná doba odstávky nebo výpadku v minutách
+          email:
+            label: E-mailová adresa nastavená na vytvořeném účtu
+          enable_shrink:
+            label: Zda je pro dataset povolen automatický shrink
+          entity_labels:
+            label: Popisky infrastrukturních entit dotčených odstávkou nebo výpadkem
+          event:
+            label: Fáze notifikace outage reportu, která vytvořila událost
+          event_at:
+            label: Čas události DNS transferu
+          event_type:
+            label: Jedinečný název typu události
+          expansion_count:
+            label: Počet expanzí zahrnutých v události
+          expansion_id:
+            label: ID záznamu expanze datasetu
+          expiration_date:
+            label: Čas vypršení životního stavu
+          expired_days_ago:
+            label: Počet dnů od vypršení
+          expires_in_a_day:
+            label: Zda vypršení nastane během příštího dne
+          expires_in_days:
+            label: Počet dnů do vypršení
+          export_count:
+            label: Počet exportů dotčených migrací
+          failed:
+            label: Zda je koncový stav selhaný nebo fatální
+          file_name:
+            label: Název připraveného archivu ke stažení
+          finish_minutes:
+            label: Minuta dne, kdy má maintenance window skončit
+          finish_weekday:
+            label: Den v týdnu, kdy má maintenance window skončit
+          finished_at:
+            label: Čas, kdy odstávka nebo výpadek má skončit nebo skončil
+          format:
+            label: Formát připraveného stažení
+          from_date:
+            label: Začátek zaplaceného období členství
+          from_email:
+            label: E-mailová adresa, která odeslala odpověď
+          group_count:
+            label: Počet skupin pokusů zahrnutých v přehledu
+          handler_names:
+            label: Jména administrátorů řešících outage report
+          impact_type:
+            label: Druh dopadu uvedený pro outage report
+          in_reply_to_message_id:
+            label: Message-ID odkazované odpovědí
+          incident_count:
+            label: Počet incidentů odpovídajících odpovědi
+          incident_ids:
+            label: ID incidentů odpovídajících odpovědi
+          incoming_payment_count:
+            label: Počet příchozích plateb zahrnutých v přehledu
+          incoming_payment_id:
+            label: ID řádku příchozí platby
+          incoming_transaction_id:
+            label: Identifikátor bankovní transakce příchozí platby
+          indirect_vps_count:
+            label: Počet VPS nepřímo dotčených odstávkou nebo výpadkem
+          ip_addr:
+            label: IP adresa uvedená v incidentu
+          ip_addrs:
+            label: IP adresy klientů zaznamenané při neúspěšných pokusech
+          killed_name:
+            label: Název procesu ukončeného kernelem
+          label:
+            label: Uživatelsky viditelný popisek tokenu
+          language_code:
+            label: Kód jazyka použitý pro přehled
+          language_id:
+            label: ID jazyka použitého pro přehled
+          last_reported_id:
+            label: Nejvyšší již zpracované ID surového OOM reportu
+          level:
+            label: Číselná úroveň uživatele při vytvoření
+          login:
+            label: Login vytvořeného uživatelského účtu
+          mail_id:
+            label: ID mailového vlákna použitého pro notifikaci žádosti
+          maintenance_window:
+            label: Zda migraci omezuje maintenance window
+          max_over_refquota_seconds:
+            label: Maximální povolený čas nad kvótou před akcí, v sekundách
+          memory:
+            label: Limit paměti přiřazený VPS po změně, v MiB
+          message:
+            label: Dodatečná zpráva k transferu
+          migration_id:
+            label: ID záznamu migrace VPS
+          new_dns_resolver_addrs:
+            label: Adresy nastavené na novém DNS resolveru
+          new_dns_resolver_id:
+            label: ID nového DNS resolveru
+          new_dns_resolver_label:
+            label: Popisek nového DNS resolveru
+          new_vps_hostname:
+            label: Hostname nově vytvořeného náhradního VPS
+          new_vps_id:
+            label: ID nově vytvořeného náhradního VPS
+          node_id:
+            label: ID nodu hostujícího DNS server
+          node_name:
+            label: Doménové jméno nodu hostujícího DNS server
+          note:
+            label: Volná poznámka zadaná při vytvoření testovací události
+          oauth2_client_id:
+            label: ID aplikace OAuth klienta
+          object:
+            label: Typ objektu, jehož životní stav vyprší
+          object_id:
+            label: ID objektu, který vyprší
+          object_label:
+            label: Uživatelsky viditelný popisek objektu, který vyprší
+          object_state:
+            label: Počáteční životní stav účtu
+          old_dns_resolver_addrs:
+            label: Adresy nastavené na předchozím DNS resolveru
+          old_dns_resolver_id:
+            label: ID předchozího DNS resolveru
+          old_dns_resolver_label:
+            label: Popisek předchozího DNS resolveru
+          ooms_in_period:
+            label: Počet OOM reportů zaznamenaných ve sledovaném období
+          original_refquota:
+            label: Refquota datasetu před automatickou expanzí nebo shrinkem, v bajtech
+          original_vps_hostname:
+            label: Hostname původního nahrazovaného VPS
+          original_vps_id:
+            label: ID původního nahrazovaného VPS
+          outage_description:
+            label: Aktuální podrobný text outage reportu
+          outage_id:
+            label: ID outage reportu
+          outage_summary:
+            label: Aktuální souhrn outage reportu
+          outage_type:
+            label: Typ hlášené odstávky nebo výpadku
+          over_refquota_seconds:
+            label: Čas, který dataset strávil nad kvótou, v sekundách
+          payment_id:
+            label: ID přijaté uživatelské platby
+          period_end:
+            label: Konec období přehledu
+          period_seconds:
+            label: Délka období přehledu v sekundách
+          period_start:
+            label: Začátek období přehledu
+          previous_state:
+            label: Stav transakčního řetězce před změnou
+          previous_status:
+            label: Status transferu před touto událostí
+          primary_addr:
+            label: Adresa primárního DNS serveru použitá pro transfer
+          progress:
+            label: Počet již dokončených transakcí
+          published_at:
+            label: Čas publikování bezpečnostního upozornění
+          reason:
+            label: Důvod migrace zadaný operátorem
+          reason_code:
+            label: Strojově čitelný důvod selhání transferu
+          reasons:
+            label: Důvody selhání nahlášené autentizací
+          received_amount:
+            label: Částka přijatá z příchozí platby
+          received_currency:
+            label: Měna přijatá z příchozí platby
+          recipient_email:
+            label: Vlastní e-mailový příjemce této notifikace žádosti
+          recipient_emails:
+            label: E-mailové adresy příjemců načtené z odpovědi
+          references_message_id:
+            label: Hlavička References z odpovědi
+          remind_after_date:
+            label: Čas, před kterým se potlačují opakovaná připomenutí
+          reply_to_mail_id:
+            label: ID předchozího mailového vlákna, na které řešení odpovídá
+          report_count:
+            label: Počet surových reportů zvažovaných pro událost
+          reported_by_id:
+            label: ID administrátora, který nahlásil aktualizaci
+          reported_by_login:
+            label: Login administrátora, který nahlásil aktualizaci
+          reported_by_name:
+            label: Celé jméno administrátora, který nahlásil aktualizaci
+          request_id:
+            label: ID žádosti
+          request_ip:
+            label: IP adresa, ze které byl odeslán obnovovací kód
+          request_label:
+            label: Uživatelsky viditelný popisek žádosti
+          request_state:
+            label: Stav žádosti po události
+          request_type:
+            label: Typ zpracovávané žádosti
+          restart_vps:
+            label: Zda jsou dotčená VPS během migrace restartována
+          roles:
+            label: Notifikační role deklarované typem události
+          scope:
+            label: Rozsah přístupu udělený tokenu
+          selected_oom_count:
+            label: Počet OOM killů zastoupených vybranými reporty
+          selected_report_count:
+            label: Počet surových reportů vybraných pro notifikaci
+          selected_report_ids:
+            label: ID surových OOM reportů vybraných pro notifikaci
+          serial:
+            label: Serial DNS zóny zaznamenaný při transferu
+          severity:
+            label: Závažnost události
+          size:
+            label: Počet transakcí v řetězci
+          snapshot_id:
+            label: ID zdrojového snapshotu
+          snapshot_name:
+            label: Název zdrojového snapshotu
+          src_node_domain_name:
+            label: Doménové jméno zdrojového nodu
+          src_node_id:
+            label: ID zdrojového nodu
+          src_pool_filesystem:
+            label: Filesystem zdrojového storage poolu
+          src_pool_id:
+            label: ID zdrojového storage poolu
+          stage:
+            label: Fáze zpracování, která vytvořila OOM notifikaci
+          state:
+            label: Životní stav, který brzy vyprší nebo už vypršel
+          status:
+            label: Status transferu nahlášený DNS serverem
+          subject:
+            label: Krátký předmět události
+          subject_is_admin_visible:
+            label: Zda administrátorská routa vidí subjekt jiného uživatele
+          subject_is_self:
+            label: Zda je subjekt události vlastníkem routy
+          subject_relation:
+            label: Vztah mezi vlastníkem routy a subjektem události
+          subject_user_id:
+            label: ID uživatele, který je subjektem události
+          successful:
+            label: Zda je koncový stav úspěšný
+          summary:
+            label: Delší souhrn události
+          swap:
+            label: Swap limit přiřazený VPS po změně, v MiB
+          terminal:
+            label: Zda řetězec dosáhl koncového stavu
+          text:
+            label: Text odpovědi
+          to_date:
+            label: Konec zaplaceného období členství
+          token_lifetime:
+            label: Životnost tokenu požadovaná uživatelským sezením
+          totp_device_id:
+            label: ID TOTP zařízení, jehož obnovovací kód byl použit
+          totp_device_label:
+            label: Uživatelsky viditelný popisek dotčeného TOTP zařízení
+          transfer_log_id:
+            label: ID řádku logu DNS transferu
+          update_id:
+            label: ID aktualizace outage reportu
+          update_summary:
+            label: Souhrn aktualizace bezpečnostního upozornění
+          used_at:
+            label: Čas přijetí obnovovacího kódu
+          user_agent:
+            label: HTTP hlavička User-Agent použitá klientem
+          user_count:
+            label: Počet uživatelů dotčených odpovědí
+          user_device_id:
+            label: ID zapamatovaného uživatelského zařízení použitého při přihlášení
+          user_id:
+            label: ID vlastníka datasetu
+          user_login:
+            label: Login vlastníka datasetu
+          user_name:
+            label: Celé jméno vlastníka datasetu
+          user_session_id:
+            label: ID uživatelského sezení, které vytvořilo řetězec
+          vps_count:
+            label: Počet VPS dotčených odpovědí
+          vps_hostname:
+            label: Hostname VPS, jehož kvóta datasetu se změnila
+          vps_id:
+            label: ID VPS, jehož kvóta datasetu se změnila
+        label: Pole
+      field_type:
+        label: Typ pole
+      fields:
+        label: Pole
       file_name:
         label: Název souboru
       filed_by:
@@ -622,8 +1212,6 @@ cs:
         label: Skryté
       history_id:
         label: ID historie
-      hit_count:
-        label: Počet zásahů
       host_ip_address:
         description: Host adresa pro přiřazení rozhraní, výchozí je první adresa
         label: Host IP adresa
@@ -637,6 +1225,8 @@ cs:
         label: Přesný hostname
       how:
         label: Jak jste se o nás dozvěděli?
+      html:
+        label: HTML
       hypervisor_type:
         choices:
           openvz:
@@ -668,6 +1258,8 @@ cs:
         label: In reply to
       in_rescue_mode:
         label: V rescue režimu
+      include_spent:
+        label: Zahrnout spotřebu
       incoming_payment:
         label: Příchozí platba
       info:
@@ -768,8 +1360,12 @@ cs:
         label: Popisek
       last_activity_at:
         label: Poslední aktivita
+      last_attempt_at:
+        label: Čas posledního pokusu
       last_check_at:
         label: Poslední kontrola
+      last_error:
+        label: Poslední chyba
       last_report:
         label: Poslední hlášení
       last_request_at:
@@ -806,6 +1402,8 @@ cs:
         label: Úroveň přístupu
       limit:
         label: Limit
+      limit_count:
+        label: Limit
       loadavg1:
         label: Loadavg1
       loadavg15:
@@ -835,6 +1433,8 @@ cs:
         label: MAC adresa
       mail_catch_all:
         label: E-mail catch-all
+      mail_cc:
+        label: E-mail CC
       mail_checked:
         label: E-mail zkontrolován
       mail_deliverability:
@@ -849,38 +1449,50 @@ cs:
         label: Rizikové skóre e-mailu
       mail_frequent_complainer:
         label: Častý stěžovatel
+      mail_from:
+        label: E-mail From
       mail_honeypot:
         label: E-mail honeypot
       mail_leaked:
         label: Uniklý e-mail
+      mail_log_id:
+        label: ID mail logu
       mail_message:
         label: Zpráva e-mailové kontroly
+      mail_message_id:
+        label: Message-ID e-mailu
       mail_overall_score:
         label: Celkové skóre e-mailu
       mail_recent_abuse:
         label: Nedávné zneužití e-mailu
-      mail_recipient:
-        label: Příjemce e-mailu
+      mail_reply_to:
+        label: E-mail Reply-To
       mail_request_id:
         label: ID požadavku e-mailové kontroly
+      mail_return_path:
+        label: E-mail Return-Path
       mail_smtp_score:
         label: SMTP skóre e-mailu
       mail_spam_trap_score:
         label: Spam trap skóre e-mailu
+      mail_subject:
+        label: Předmět e-mailu
       mail_success:
         label: Úspěch e-mailové kontroly
       mail_suspect:
         label: Podezřelý e-mail
-      mail_template:
-        label: E-mailová šablona
+      mail_text_html:
+        label: HTML text e-mailu
+      mail_text_plain:
+        label: Text e-mailu
       mail_timed_out:
         label: Časový limit e-mailové kontroly
+      mail_to:
+        label: E-mail To
       mail_valid:
         label: Platný e-mail
       mailbox:
         label: Mailbox
-      mailer_enabled:
-        label: Povolený mailer
       maintenance:
         description: Přepnout node do režimu údržby
         label: Údržba
@@ -916,6 +1528,10 @@ cs:
         label: Režim mapování
       master_enabled:
         label: Master povolen
+      match_order:
+        label: Pořadí vyhodnocení
+      matcher_summary:
+        label: Souhrn matcheru
       max:
         description: Když objekt alokuje zdroj, nesmí použít více než maximum
         label: Maximální hodnota
@@ -971,6 +1587,8 @@ cs:
         label: Přípojný bod rootfs
       mountpoint:
         label: Přípojný bod
+      mute:
+        label: Ztišit
       namespace:
         choices:
           forms:
@@ -989,6 +1607,8 @@ cs:
         label: Heslo
       new_refquota:
         label: Nová kvóta datasetu (refquota)
+      next_attempt_at:
+        label: Další pokus
       no_start:
         description: Nespouštět VPS na cílovém nodu
         label: Nespouštět
@@ -1023,6 +1643,24 @@ cs:
         label: Nody online
       note:
         description: Volitelná poznámka operátora k tomuto stavu nodu.
+      notification_receiver_action_display_target:
+        label: Zobrazený cíl akce receiveru
+      notification_receiver_action_label:
+        label: Popisek akce receiveru
+      notification_receiver_id:
+        label: ID receiveru notifikací
+      notification_receiver_label:
+        label: Popisek receiveru notifikací
+      notification_receiver_target_id:
+        label: ID cíle receiveru notifikací
+      notification_target_display_target:
+        label: Zobrazený cíl notifikací
+      notification_target_id:
+        label: ID cíle notifikací
+      notification_target_label:
+        label: Popisek cíle notifikací
+      notification_template:
+        label: Notifikační šablona
       ns_id:
         description: Začátek rozsahu ID v uživatelském namespace
         label: ID namespace
@@ -1062,6 +1700,13 @@ cs:
         label: Úprava OOM skóre
       opens_at:
         label: Otevírá se
+      operator:
+        choices:
+          contains:
+            label: obsahuje
+          not_contains:
+            label: neobsahuje
+        label: Operátor
       optional_maintenance_window:
         description: Použít okno údržby pouze tehdy, když má dataset nějaké exporty
         label: Volitelné okno údržby
@@ -1108,6 +1753,8 @@ cs:
         label: Výstup
       over_refquota_seconds:
         label: Sekundy nad kvótou datasetu (refquota)
+      override_limit_count:
+        label: Přepsaný limit
       owned:
         description: Počet IP adres vlastněných některými uživateli
         label: Vlastněno
@@ -1123,6 +1770,8 @@ cs:
         label: Parametr
       parent:
         label: Rodič
+      parent_id:
+        label: ID rodiče
       passed:
         label: Prošlo
       passphrase:
@@ -1131,6 +1780,10 @@ cs:
         label: Reset hesla
       path:
         label: Cesta
+      payload:
+        label: Payload
+      payload_json:
+        label: Payload
       peer_type:
         choices:
           primary_type:
@@ -1138,6 +1791,19 @@ cs:
           secondary_type:
             label: sekundární
         label: Typ protistrany
+      period:
+        choices:
+          day:
+            label: den
+          hour:
+            label: hodina
+          minute:
+            label: minuta
+          week:
+            label: týden
+        label: Období
+      period_label:
+        label: Popisek období
       pgtables_bytes:
         label: Pgtables bajty
       platform:
@@ -1186,6 +1852,8 @@ cs:
         label: Status poolu
       port:
         label: Port
+      position:
+        label: Pozice
       ppp:
         label: PPP
       preferred_logout_all:
@@ -1222,6 +1890,17 @@ cs:
         description: Název vlastnosti, která se má zdědit od rodiče; více vlastností
           lze oddělit čárkou
         label: Vlastnost
+      protocol:
+        choices:
+          email:
+            label: e-mail
+          sms:
+            label: SMS
+          telegram:
+            label: Telegram
+        label: Protokol
+      provider_message_id:
+        label: ID zprávy u poskytovatele
       provisioning_uri:
         label: URI provisioningu
       public_key:
@@ -1261,6 +1940,12 @@ cs:
         label: Kód důvodu
       recent_since:
         label: Nedávné od
+      recipient_user:
+        label: Příjemce
+      recipient_user_id:
+        label: ID příjemce
+      recipient_user_login:
+        label: Login příjemce
       reconstructed:
         label: Rekonstruováno
       recordsize:
@@ -1292,6 +1977,10 @@ cs:
           přístupu starší než aktuální čas změny nebo úpravy, případně když nebyl
           za posledních 24 hodin aktualizován.
         label: Relativní čas přístupu
+      released_at:
+        label: Uvolněno
+      remaining_count:
+        label: Zbývá
       remind_after:
         label: Připomenout po
       remind_after_date:
@@ -1310,6 +1999,8 @@ cs:
         label: Nahlášeno
       request_count:
         label: Počet požadavků
+      resets_at:
+        label: Reset v
       resource:
         description: Název zdroje nalezeného objektu
         label: Zdroj
@@ -1322,6 +2013,12 @@ cs:
         label: Typ zdroje
       resources:
         label: Zdroje
+      response_body:
+        label: Tělo odpovědi
+      response_headers_json:
+        label: Hlavičky odpovědi
+      response_status:
+        label: Status odpovědi
       restart_vps:
         description: Restartovat VPS, ve kterých jsou připojeny migrované exporty
         label: Restartovat VPS
@@ -1353,14 +2050,33 @@ cs:
             label: reverse
         description: Zobrazit pouze datasety určité role
         label: Role
+      roles:
+        label: Role
       root_squash:
         description: Mapovat požadavky z uid/gid 0 na anonymní uid/gid. Toto se nevztahuje
           na jiná uid nebo gid, která mohou být stejně citlivá.
         label: Root squash
+      route_owner_id:
+        label: ID vlastníka routy
+      route_owner_login:
+        label: Login vlastníka routy
       route_via:
         label: Routovat přes
       routed:
         label: Routováno
+      routing_state:
+        choices:
+          aborted:
+            label: zrušeno
+          failed:
+            label: selhalo
+          pending:
+            label: čeká
+          routed:
+            label: naroutováno
+          suppressed:
+            label: potlačeno
+        label: Stav routování
       row_id:
         description: Hledat podle ID dotčeného řádku
         label: ID řádku
@@ -1401,6 +2117,8 @@ cs:
         label: Scope
       secret:
         label: Tajemství
+      secret_present:
+        label: Secret nastaven
       security_advisory_id:
         label: ID bezpečnostního advisory
       seed_vps:
@@ -1417,6 +2135,19 @@ cs:
         label: Sériové číslo
       server:
         label: Server
+      severity:
+        choices:
+          critical:
+            label: kritická
+          error:
+            label: chyba
+          info:
+            label: informace
+          warning:
+            label: varování
+        label: Závažnost
+      severity_description:
+        label: Popis závažnosti
       sha256sum:
         description: Kontrolní součet
         label: SHA256 suma
@@ -1435,6 +2166,8 @@ cs:
         label: Sdílí IPv6 sítě s lokací
       since:
         label: Od
+      single_use:
+        label: Jednorázové
       size:
         label: Velikost
       skip_multi_factor_auth_until:
@@ -1446,13 +2179,29 @@ cs:
         label: Snapshot
       source:
         choices:
+          direct_route:
+            label: přímá routa
           external_source:
             label: externí
           internal_source:
             label: interní
+          migration:
+            label: migrace
+          rbac_route:
+            label: RBAC routa
+          system_route:
+            label: systémová routa
+          visible_route:
+            label: viditelná routa
         label: Zdroj
+      source_class:
+        label: Třída zdroje
       source_cursor:
         label: Kurzor zdroje
+      source_id:
+        label: ID zdroje
+      spent_at:
+        label: Spotřebováno v
       split_access:
         choices:
           no_access:
@@ -1481,6 +2230,10 @@ cs:
         label: Spuštěno
       state:
         choices:
+          aborted:
+            label: zrušeno
+          accepted:
+            label: přijato
           acknowledged:
             label: vzato na vědomí
           active:
@@ -1493,6 +2246,8 @@ cs:
             label: schváleno
           awaiting:
             label: čeká
+          canceled:
+            label: zrušeno
           cancelled:
             label: zrušeno
           cancelling:
@@ -1535,12 +2290,16 @@ cs:
             label: otevřeno
           pending_correction:
             label: čeká na opravu
+          prepared:
+            label: připraveno
           processed:
             label: zpracováno
           published:
             label: publikováno
           queued:
             label: ve frontě
+          released:
+            label: uvolněno
           resolved:
             label: vyřešeno
           retracted:
@@ -1549,8 +2308,16 @@ cs:
             label: rollback
           running:
             label: běží
+          sending:
+            label: odesílá se
+          sent:
+            label: odesláno
+          skipped:
+            label: přeskočeno
           staged:
             label: připraveno
+          succeeded:
+            label: úspěšné
           suspended:
             label: pozastaveno
           unconfirmed:
@@ -1562,6 +2329,13 @@ cs:
           vulnerable:
             label: zranitelné
         label: Stav
+      state_group:
+        choices:
+          log:
+            label: log
+          queue:
+            label: fronta
+        label: Skupina stavů
       status:
         choices:
           failed:
@@ -1582,11 +2356,28 @@ cs:
         label: Vypnout VPS
       subject:
         label: Předmět
+      subject_relation:
+        choices:
+          other_user:
+            label: jiný uživatel
+          rbac:
+            label: RBAC
+          self:
+            label: vlastní
+          system:
+            label: systém
+        label: Vztah subjektu
+      subject_scope:
+        choices:
+          system:
+            label: systém
       subtree_check:
         description: Viz man exports(5).
         label: Subtree check
       success:
         label: Úspěch
+      summary:
+        label: Souhrn
       supported:
         description: Je známo, že šablona funguje?
         label: Podporováno
@@ -1608,8 +2399,33 @@ cs:
       taken:
         description: Počet vlastněných a přiřazených IP adres
         label: Zabráno
+      target_enabled:
+        label: Cíl povolen
+      target_kind:
+        choices:
+          custom:
+            label: vlastní cíl
+          default_recipient:
+            label: výchozí příjemce
+        label: Druh cíle
+      target_label:
+        label: Popisek cíle
+      target_value:
+        label: Hodnota cíle
+      telegram_bot_name:
+        label: Název Telegram bota
+      telegram_bot_url:
+        label: URL Telegram bota
+      telegram_pairing_command:
+        label: Párovací příkaz Telegramu
+      telegram_pairing_url:
+        label: Párovací URL Telegramu
+      template:
+        label: Šablona
       template_id:
         label: ID šablony
+      template_name:
+        label: Název šablony
       text:
         label: Text
       text_html:
@@ -1737,6 +2553,8 @@ cs:
         description: URL, na které lze archiv stáhnout
       usage:
         label: Využití
+      used_count:
+        label: Použito
       used_diskspace:
         description: v MB
         label: Použité místo na disku
@@ -1815,6 +2633,12 @@ cs:
         label: Varianta
       vendor:
         label: Vendor
+      verification_token:
+        label: Ověřovací token
+      verified:
+        label: Ověřeno
+      verified_at:
+        label: Ověřeno v
       version:
         description: 4 nebo 6
       view:
@@ -2223,6 +3047,88 @@ cs:
           attributes:
             id:
               label: ID
+      event:
+        attributes:
+          created_at:
+            label: Vytvořeno
+          id:
+            label: ID
+          ip_addr:
+            label: IP adresa
+          subject_scope:
+            choices:
+              self:
+                label: Vlastní routy
+              visible:
+                label: Administrátorsky viditelné routy
+            label: Rozsah subjektu
+          updated_at:
+            label: Aktualizováno
+          vps:
+            label: VPS
+        delivery:
+          attempt:
+            attributes:
+              created_at:
+                label: Vytvořeno
+              finished_at:
+                label: Dokončeno
+              id:
+                label: ID
+              updated_at:
+                label: Aktualizováno
+          attributes:
+            created_at:
+              label: Vytvořeno
+            id:
+              label: ID
+            updated_at:
+              label: Aktualizováno
+        route_match:
+          attributes:
+            created_at:
+              label: Vytvořeno
+            id:
+              label: ID
+            updated_at:
+              label: Aktualizováno
+      event_delivery:
+        attributes:
+          created_at:
+            label: Vytvořeno
+          id:
+            label: ID
+          updated_at:
+            label: Aktualizováno
+      event_route:
+        attributes:
+          created_at:
+            label: Vytvořeno
+          hit_count:
+            label: Zásahy
+          id:
+            label: ID
+          subject_scope:
+            choices:
+              self:
+                label: vlastní
+              visible:
+                label: viditelné
+            label: Rozsah
+          updated_at:
+            label: Aktualizováno
+        matcher:
+          attributes:
+            created_at:
+              label: Vytvořeno
+            id:
+              label: ID
+            updated_at:
+              label: Aktualizováno
+      event_type:
+        attributes:
+          name:
+            label: Název
       export:
         attributes:
           created_at:
@@ -2369,39 +3275,6 @@ cs:
             label: Vytvořeno
           id:
             label: ID
-      mail_recipient:
-        attributes:
-          id:
-            label: ID
-          label:
-            description: Uživatelsky srozumitelný popisek
-      mail_template:
-        attributes:
-          created_at:
-            label: Vytvořeno
-          id:
-            label: ID
-          label:
-            description: Uživatelsky srozumitelný popisek
-          name:
-            description: Identifikátor šablony
-            label: Název
-          updated_at:
-            label: Aktualizováno
-        recipient:
-          attributes:
-            id:
-              label: ID
-        translation:
-          attributes:
-            created_at:
-              label: Vytvořeno
-            id:
-              label: ID
-            language:
-              label: Jazyk
-            updated_at:
-              label: Aktualizováno
       mailbox:
         attributes:
           created_at:
@@ -2441,6 +3314,7 @@ cs:
           id:
             label: ID
           send_mail:
+            description: Informovat vlastníky VPS o průběhu migrace
             label: Odeslat e-mail
           stop_on_error:
             label: Zastavit při chybě
@@ -2608,6 +3482,7 @@ cs:
           name:
             description: Název nodu
           send_mail:
+            description: Informovat vlastníky VPS o průběhu migrace
             label: Odeslat e-mail
           stop_on_error:
             label: Zastavit při chybě
@@ -2646,6 +3521,55 @@ cs:
             label: ID
           updated_at:
             label: Aktualizováno
+      notification_receiver:
+        attributes:
+          created_at:
+            label: Vytvořeno
+          id:
+            label: ID
+          updated_at:
+            label: Aktualizováno
+        target:
+          attributes:
+            created_at:
+              label: Vytvořeno
+            id:
+              label: ID
+            updated_at:
+              label: Aktualizováno
+      notification_target:
+        attributes:
+          code:
+            label: Kód
+          created_at:
+            label: Vytvořeno
+          id:
+            label: ID
+          updated_at:
+            label: Aktualizováno
+      notification_template:
+        attributes:
+          created_at:
+            label: Vytvořeno
+          id:
+            label: ID
+          label:
+            description: Srozumitelný popisek
+          name:
+            description: Identifikátor šablony
+            label: Název
+          updated_at:
+            label: Aktualizováno
+        variant:
+          attributes:
+            created_at:
+              label: Vytvořeno
+            id:
+              label: ID
+            language:
+              label: Jazyk
+            updated_at:
+              label: Aktualizováno
       oauth2_client:
         attributes:
           created_at:
@@ -2690,6 +3614,8 @@ cs:
         attributes:
           created_at:
             label: Vytvořeno
+          hit_count:
+            label: Počet zásahů
           id:
             label: ID
           updated_at:
@@ -2920,6 +3846,7 @@ cs:
           id:
             label: ID
           send_mail:
+            description: Informovat uživatele, až bude stažení snapshotu připravené
             label: Odeslat e-mail
           size:
             description: Velikost archivu v MiB
@@ -2952,13 +3879,30 @@ cs:
           transaction_chain:
             label: Transakční řetězec
       transaction_chain:
+        actions:
+          index:
+            output:
+              created_at:
+                label: Datum vytvoření
+              id:
+                label: ID řetězce
+          notify_when_done:
+            output:
+              created_at:
+                label: Vytvořeno
+              id:
+                label: ID
+          show:
+            output:
+              created_at:
+                label: Datum vytvoření
+              id:
+                label: ID řetězce
         attributes:
           class_name:
             label: Název třídy
-          created_at:
-            label: Datum vytvoření
-          id:
-            label: ID řetězce
+          hit_count:
+            label: Zásahy
           label:
             description: Uživatelsky srozumitelný název
           name:
@@ -2966,6 +3910,8 @@ cs:
             label: Název
           size:
             description: Počet transakcí v řetězci
+          updated_at:
+            label: Aktualizováno
           user_session:
             label: Relace
       user:
@@ -3067,14 +4013,22 @@ cs:
               label: ID
             updated_at:
               label: Aktualizováno
-        mail_role_recipient:
+        notification_delivery_method:
           attributes:
+            created_at:
+              label: Vytvořeno
             id:
               label: ID
-        mail_template_recipient:
+            updated_at:
+              label: Aktualizováno
+        notification_rate_limit:
           attributes:
+            created_at:
+              label: Vytvořeno
             id:
               label: ID
+            updated_at:
+              label: Aktualizováno
         output:
           object_state:
             choices:
@@ -3560,6 +4514,8 @@ cs:
         dns_zone_transfer:
           create: Přenos zóny+
           destroy: Přenos zóny-
+        event_delivery:
+          email: Doručení události e-mailem
         export:
           add_hosts: Hosty+
           add_hosts_to_all: Hosty+
@@ -3728,6 +4684,7 @@ cs:
         dns_zone_remove_servers: Odebrání DNS serverů
         dns_zone_update: Úprava DNS zóny
         dns_zone_update_records: Úprava DNS záznamů
+        event_delivery_notify: Notifikace doručení události
         export_add_hosts: Přidání hostů exportu
         export_create: Vytvoření exportu
         export_del_hosts: Odebrání hostů exportu

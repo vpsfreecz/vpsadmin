@@ -3,6 +3,7 @@ class NotificationReceiver < ApplicationRecord
   LEGACY_DEFAULT_EMAIL_LABEL = 'Default e-mail'.freeze
   DEFAULT_MUTE_LABEL = 'Mute'.freeze
   LEGACY_DEFAULT_MUTE_LABEL = 'Do not notify'.freeze
+  ADMIN_REQUEST_ROUTE_LABEL = 'Admin request notifications'.freeze
   MAX_RECEIVERS_PER_USER = 50
   DEFAULT_EMAIL_DESCRIPTION = 'Default notification receiver'.freeze
   DEFAULT_MUTE_DESCRIPTION = 'Default muted notification receiver'.freeze
@@ -30,6 +31,39 @@ class NotificationReceiver < ApplicationRecord
       ensure_default_mute_receiver_for!(user)
       ensure_default_route!(user, email_receiver)
     end
+  end
+
+  def self.ensure_admin_request_defaults!
+    transaction do
+      ::User.where(level: 90..).find_each do |admin|
+        ensure_admin_request_defaults_for!(admin)
+      end
+    end
+  end
+
+  def self.ensure_admin_request_defaults_for!(admin)
+    email_receiver = ensure_default_email_receiver_for!(admin)
+    ensure_default_mute_receiver_for!(admin)
+    route = admin_request_route_for(admin)
+
+    if route
+      route.update!(notification_receiver: email_receiver) if route.notification_receiver.nil?
+      return route
+    end
+
+    route = admin.event_routes.create!(
+      notification_receiver: email_receiver,
+      label: ADMIN_REQUEST_ROUTE_LABEL,
+      event_type_pattern: 'request.*',
+      subject_scope: ::EventRoute.subject_scopes.fetch('visible'),
+      position: ::EventRoute.prepend_position_for(admin)
+    )
+    route.event_route_matchers.create!(
+      field: 'roles',
+      operator: 'contains',
+      value: 'account'
+    )
+    route
   end
 
   def self.ensure_default_email_receiver_for!(user)
@@ -134,6 +168,27 @@ class NotificationReceiver < ApplicationRecord
       value: ::EventRoute::DEFAULT_ROUTE_MATCHER_VALUE
     )
     route
+  end
+
+  def self.admin_request_route_for(admin)
+    ::EventRoute.active
+                .where(
+                  user: admin,
+                  parent_id: nil,
+                  label: ADMIN_REQUEST_ROUTE_LABEL,
+                  event_type: nil,
+                  event_type_pattern: 'request.*',
+                  subject_scope: ::EventRoute.subject_scopes.fetch('visible')
+                )
+                .includes(:event_route_matchers)
+                .order(:position, :id)
+                .detect do |route|
+                  route.event_route_matchers.any? do |matcher|
+                    matcher.field == 'roles' &&
+                      matcher.operator == 'contains' &&
+                      matcher.value.to_s == 'account'
+                  end
+                end
   end
 
   def self.normalize_default_mute_receiver!(receiver)

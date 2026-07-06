@@ -27,29 +27,29 @@ msgstr "Stahování"
 
 #: forms/backup.forms.php forms/dns.forms.php forms/export.forms.php
 #: forms/incidents.forms.php forms/monitoring.forms.php
-#: forms/networking.forms.php forms/object_history.forms.php
-#: forms/oom_reports.forms.php forms/outage.forms.php forms/userdata.forms.php
-#: forms/userns.forms.php forms/users.forms.php forms/vps.forms.php
-#: pages/page_adminm.php pages/page_nas.php pages/page_networking.php
-#: pages/page_transactions.php
+#: forms/networking.forms.php forms/notifications.forms.php
+#: forms/object_history.forms.php forms/oom_reports.forms.php
+#: forms/outage.forms.php forms/userdata.forms.php forms/userns.forms.php
+#: forms/users.forms.php forms/vps.forms.php pages/page_adminm.php
+#: pages/page_nas.php pages/page_networking.php pages/page_transactions.php
 msgid "Filters"
 msgstr "Filtry"
 
 #: forms/backup.forms.php forms/dns.forms.php forms/export.forms.php
 #: forms/incidents.forms.php forms/monitoring.forms.php
-#: forms/networking.forms.php forms/object_history.forms.php
-#: forms/oom_reports.forms.php forms/outage.forms.php forms/userdata.forms.php
-#: forms/userns.forms.php forms/users.forms.php forms/vps.forms.php
-#: pages/page_adminm.php pages/page_nas.php pages/page_networking.php
-#: pages/page_transactions.php
+#: forms/networking.forms.php forms/notifications.forms.php
+#: forms/object_history.forms.php forms/oom_reports.forms.php
+#: forms/outage.forms.php forms/userdata.forms.php forms/userns.forms.php
+#: forms/users.forms.php forms/vps.forms.php pages/page_adminm.php
+#: pages/page_nas.php pages/page_networking.php pages/page_transactions.php
 msgid "Limit"
 msgstr "Omezit"
 
 #: forms/backup.forms.php forms/dns.forms.php forms/export.forms.php
 #: forms/incidents.forms.php forms/networking.forms.php
-#: forms/object_history.forms.php forms/oom_reports.forms.php
-#: forms/users.forms.php forms/vps.forms.php pages/page_adminm.php
-#: pages/page_nas.php pages/page_transactions.php
+#: forms/notifications.forms.php forms/object_history.forms.php
+#: forms/oom_reports.forms.php forms/users.forms.php forms/vps.forms.php
+#: pages/page_adminm.php pages/page_nas.php pages/page_transactions.php
 msgid "From ID"
 msgstr "Od ID"
 
@@ -72,22 +72,23 @@ msgstr "Ignorujte datasety bez snímků"
 
 #: forms/backup.forms.php forms/dns.forms.php forms/export.forms.php
 #: forms/incidents.forms.php forms/monitoring.forms.php
-#: forms/networking.forms.php forms/object_history.forms.php
-#: forms/oom_reports.forms.php forms/outage.forms.php forms/userdata.forms.php
-#: forms/userns.forms.php forms/users.forms.php forms/vps.forms.php
-#: pages/page_adminm.php pages/page_nas.php pages/page_networking.php
-#: pages/page_transactions.php
+#: forms/networking.forms.php forms/notifications.forms.php
+#: forms/object_history.forms.php forms/oom_reports.forms.php
+#: forms/outage.forms.php forms/userdata.forms.php forms/userns.forms.php
+#: forms/users.forms.php forms/vps.forms.php pages/page_adminm.php
+#: pages/page_nas.php pages/page_networking.php pages/page_transactions.php
 msgid "Show"
 msgstr "Zobrazit"
 
 #: forms/backup.forms.php forms/cluster.forms.php forms/dns.forms.php
 #: forms/export.forms.php forms/incidents.forms.php forms/lifetimes.forms.php
 #: forms/monitoring.forms.php forms/networking.forms.php
-#: forms/object_history.forms.php forms/oom_reports.forms.php
-#: forms/outage.forms.php forms/security_advisory.forms.php
-#: forms/userdata.forms.php forms/userns.forms.php forms/users.forms.php
-#: forms/vps.forms.php pages/page_adminm.php pages/page_adminvps.php
-#: pages/page_console.php pages/page_lifetimes.php pages/page_networking.php
+#: forms/notifications.forms.php forms/object_history.forms.php
+#: forms/oom_reports.forms.php forms/outage.forms.php
+#: forms/security_advisory.forms.php forms/userdata.forms.php
+#: forms/userns.forms.php forms/users.forms.php forms/vps.forms.php
+#: pages/page_adminm.php pages/page_adminvps.php pages/page_console.php
+#: pages/page_lifetimes.php pages/page_networking.php
 #: pages/page_transactions.php
 msgid "User"
 msgstr "Uživatel"
@@ -124,10 +125,11 @@ msgid "in progress"
 msgstr "probíhá"
 
 #: forms/backup.forms.php forms/cluster.forms.php forms/dataset.forms.php
-#: forms/dns.forms.php forms/export.forms.php forms/oom_reports.forms.php
-#: forms/security_advisory.forms.php forms/userdata.forms.php
-#: forms/userns.forms.php forms/users.forms.php forms/vps.forms.php
-#: pages/page_adminm.php pages/page_backup.php pages/page_cluster.php
+#: forms/dns.forms.php forms/export.forms.php forms/notifications.forms.php
+#: forms/oom_reports.forms.php forms/security_advisory.forms.php
+#: forms/userdata.forms.php forms/userns.forms.php forms/users.forms.php
+#: forms/vps.forms.php pages/page_adminm.php pages/page_backup.php
+#: pages/page_cluster.php
 msgid "Delete"
 msgstr "Vymazat"
 
@@ -218,7 +220,7 @@ msgstr "Bezpečnostní upozornění"
 msgid "Monitoring"
 msgstr "Monitoring"
 
-#: forms/cluster.forms.php
+#: forms/cluster.forms.php forms/notifications.forms.php
 msgid "Event log"
 msgstr "Události"
 
@@ -226,7 +228,7 @@ msgstr "Události"
 msgid "Help boxes"
 msgstr "Nápověda"
 
-#: forms/cluster.forms.php forms/outage.forms.php
+#: forms/cluster.forms.php forms/notifications.forms.php forms/outage.forms.php
 #: forms/security_advisory.forms.php forms/users.forms.php
 msgid "Summary"
 msgstr "Shrnutí"
@@ -246,11 +248,12 @@ msgstr "celkem"
 
 #: forms/cluster.forms.php forms/dataset.forms.php forms/dns.forms.php
 #: forms/incidents.forms.php forms/lifetimes.forms.php
-#: forms/networking.forms.php forms/oom_reports.forms.php
-#: forms/outage.forms.php forms/security_advisory.forms.php
-#: forms/userdata.forms.php forms/vps.forms.php pages/page_adminm.php
-#: pages/page_adminvps.php pages/page_index.php pages/page_networking.php
-#: pages/page_transactions.php public/index.php
+#: forms/networking.forms.php forms/notifications.forms.php
+#: forms/oom_reports.forms.php forms/outage.forms.php
+#: forms/security_advisory.forms.php forms/userdata.forms.php
+#: forms/vps.forms.php pages/page_adminm.php pages/page_adminvps.php
+#: pages/page_index.php pages/page_networking.php pages/page_transactions.php
+#: public/index.php
 msgid "VPS"
 msgstr "VPS"
 
@@ -368,9 +371,10 @@ msgstr "Max"
 
 #: forms/cluster.forms.php forms/dataset.forms.php forms/dns.forms.php
 #: forms/export.forms.php forms/networking.forms.php
-#: forms/oom_reports.forms.php forms/security_advisory.forms.php
-#: forms/userdata.forms.php forms/users.forms.php forms/vps.forms.php
-#: pages/page_adminm.php pages/page_cluster.php public/index.php
+#: forms/notifications.forms.php forms/oom_reports.forms.php
+#: forms/security_advisory.forms.php forms/userdata.forms.php
+#: forms/users.forms.php forms/vps.forms.php pages/page_adminm.php
+#: pages/page_cluster.php public/index.php
 msgid "Edit"
 msgstr "Upravit"
 
@@ -391,15 +395,17 @@ msgid "Location"
 msgstr "Lokace"
 
 #: forms/cluster.forms.php forms/dataset.forms.php forms/monitoring.forms.php
-#: forms/userdata.forms.php forms/userns.forms.php forms/users.forms.php
-#: pages/page_adminm.php pages/page_backup.php pages/page_cluster.php
+#: forms/notifications.forms.php forms/userdata.forms.php
+#: forms/userns.forms.php forms/users.forms.php pages/page_adminm.php
+#: pages/page_backup.php pages/page_cluster.php
 msgid "Label"
 msgstr "Označení"
 
-#: forms/cluster.forms.php forms/dns.forms.php forms/oom_reports.forms.php
-#: forms/outage.forms.php forms/security_advisory.forms.php
-#: forms/userns.forms.php forms/users.forms.php forms/vps.forms.php
-#: pages/page_adminvps.php pages/page_transactions.php
+#: forms/cluster.forms.php forms/dns.forms.php forms/notifications.forms.php
+#: forms/oom_reports.forms.php forms/outage.forms.php
+#: forms/security_advisory.forms.php forms/userns.forms.php
+#: forms/users.forms.php forms/vps.forms.php pages/page_adminvps.php
+#: pages/page_transactions.php
 msgid "Type"
 msgstr "Typ"
 
@@ -407,7 +413,7 @@ msgstr "Typ"
 msgid "Managed"
 msgstr "Spravováno"
 
-#: forms/cluster.forms.php pages/page_adminm.php
+#: forms/cluster.forms.php forms/notifications.forms.php pages/page_adminm.php
 msgid "Used"
 msgstr "Použitý"
 
@@ -478,8 +484,9 @@ msgid "Add network to location"
 msgstr "Přidat síť do lokace"
 
 #: forms/cluster.forms.php forms/dataset.forms.php forms/dns.forms.php
-#: forms/oom_reports.forms.php forms/userdata.forms.php forms/userns.forms.php
-#: forms/users.forms.php pages/page_adminm.php
+#: forms/notifications.forms.php forms/oom_reports.forms.php
+#: forms/userdata.forms.php forms/userns.forms.php forms/users.forms.php
+#: pages/page_adminm.php
 msgid "Add"
 msgstr "Přidat"
 
@@ -500,7 +507,8 @@ msgid "Location network"
 msgstr "Síť lokace"
 
 #: forms/cluster.forms.php forms/dataset.forms.php forms/dns.forms.php
-#: forms/export.forms.php forms/oom_reports.forms.php forms/outage.forms.php
+#: forms/export.forms.php forms/notifications.forms.php
+#: forms/oom_reports.forms.php forms/outage.forms.php
 #: forms/security_advisory.forms.php forms/userdata.forms.php
 #: forms/userns.forms.php forms/users.forms.php pages/page_adminm.php
 #: pages/page_adminvps.php pages/page_cluster.php
@@ -532,7 +540,7 @@ msgstr "Smazat DNS resolver"
 msgid "Edit template"
 msgstr "Upravit šablonu"
 
-#: forms/cluster.forms.php pages/page_cluster.php
+#: forms/cluster.forms.php forms/notifications.forms.php pages/page_cluster.php
 msgid "Save changes"
 msgstr "Uložte změny"
 
@@ -566,8 +574,8 @@ msgstr "Novinky"
 msgid "Date and time"
 msgstr "Datum a čas"
 
-#: forms/cluster.forms.php forms/dns.forms.php forms/users.forms.php
-#: pages/page_log.php
+#: forms/cluster.forms.php forms/dns.forms.php forms/notifications.forms.php
+#: forms/users.forms.php pages/page_log.php
 msgid "Message"
 msgstr "Zpráva"
 
@@ -579,7 +587,8 @@ msgstr "Aktualizovat"
 msgid "Page"
 msgstr "Strana"
 
-#: forms/cluster.forms.php forms/dataset.forms.php forms/oom_reports.forms.php
+#: forms/cluster.forms.php forms/dataset.forms.php
+#: forms/notifications.forms.php forms/oom_reports.forms.php
 #: lib/xtemplate.lib.php pages/page_transactions.php
 msgid "Action"
 msgstr "Akce"
@@ -637,8 +646,8 @@ msgid "Resource"
 msgstr "Zdroj"
 
 #: forms/cluster.forms.php forms/monitoring.forms.php
-#: forms/oom_reports.forms.php forms/vps.forms.php pages/page_adminm.php
-#: pages/page_jumpto.php
+#: forms/notifications.forms.php forms/oom_reports.forms.php
+#: forms/vps.forms.php pages/page_adminm.php pages/page_jumpto.php
 msgid "Value"
 msgstr "Hodnota"
 
@@ -656,7 +665,9 @@ msgid ""
 "that are using it."
 msgstr ""
 "<b>Upozornění:</b> Balíček bude také okamžitě odebrán všem uživatelům, kteří "
-"jej používají."
+"jej používají.<b>Upozornění:</b> Balíček bude také okamžitě odebrán všem "
+"uživatelům, kteří jej používají.<b>Upozornění:</b> Balíček bude také "
+"okamžitě odebrán všem uživatelům, kteří jej používají."
 
 #: forms/cluster.forms.php forms/dns.forms.php forms/export.forms.php
 #: forms/monitoring.forms.php forms/networking.forms.php forms/users.forms.php
@@ -684,7 +695,9 @@ msgid ""
 "having this package."
 msgstr ""
 "<b>Upozornění:</b> Zdroj bude také okamžitě odebrán všem uživatelům, kteří "
-"mají tento balíček."
+"mají tento balíček.<b>Upozornění:</b> Zdroj bude také okamžitě odebrán všem "
+"uživatelům, kteří mají tento balíček.<b>Upozornění:</b> Zdroj bude také "
+"okamžitě odebrán všem uživatelům, kteří mají tento balíček."
 
 #: forms/dataset.forms.php
 msgid "Datasets"
@@ -728,7 +741,12 @@ msgid ""
 "a separator to create subdatasets. Max length 254 chars."
 msgstr ""
 "Nedávejte předponu VPS ID. Povolené znaky: a-z A-Z 0-9 _ : .<br>Použijte / "
-"jako oddělovač k vytvoření dílčích datasetů. Maximální délka 254 znaků."
+"jako oddělovač k vytvoření dílčích datasetů. Maximální délka 254 "
+"znaků.Nedávejte předponu VPS ID. Povolené znaky: a-z A-Z 0-9 _ : ."
+"<br>Použijte / jako oddělovač k vytvoření dílčích datasetů. Maximální délka "
+"254 znaků.Nedávejte předponu VPS ID. Povolené znaky: a-z A-Z 0-9 _ : ."
+"<br>Použijte / jako oddělovač k vytvoření dílčích datasetů. Maximální délka "
+"254 znaků."
 
 #: forms/dataset.forms.php
 msgid "Auto mount"
@@ -854,7 +872,7 @@ msgid "On mount fail"
 msgstr "Selhání při mountu"
 
 #: forms/dataset.forms.php forms/lifetimes.forms.php forms/monitoring.forms.php
-#: forms/node.forms.php forms/outage.forms.php
+#: forms/node.forms.php forms/notifications.forms.php forms/outage.forms.php
 #: forms/security_advisory.forms.php forms/users.forms.php
 #: pages/page_adminm.php pages/page_adminvps.php pages/page_lifetimes.php
 #: pages/page_transactions.php
@@ -1005,19 +1023,19 @@ msgstr "Typ uživatelské zóny"
 msgid "Role"
 msgstr "Role"
 
-#: forms/dns.forms.php
+#: forms/dns.forms.php forms/notifications.forms.php
 msgid "Source"
 msgstr "Zdroj"
 
-#: forms/dns.forms.php forms/export.forms.php forms/users.forms.php
-#: pages/page_cluster.php
+#: forms/dns.forms.php forms/export.forms.php forms/notifications.forms.php
+#: forms/users.forms.php pages/page_cluster.php
 msgid "Enabled"
 msgstr "Povoleno"
 
 #: forms/dns.forms.php forms/incidents.forms.php forms/monitoring.forms.php
-#: forms/oom_reports.forms.php forms/outage.forms.php
-#: forms/security_advisory.forms.php forms/userns.forms.php
-#: forms/users.forms.php
+#: forms/notifications.forms.php forms/oom_reports.forms.php
+#: forms/outage.forms.php forms/security_advisory.forms.php
+#: forms/userns.forms.php forms/users.forms.php
 msgid "Details"
 msgstr "Podrobnosti"
 
@@ -1064,7 +1082,10 @@ msgstr "Varování"
 #: forms/dns.forms.php
 msgid "Add at least one primary DNS server for this zone to become active."
 msgstr ""
-"Přidejte alespoň jeden primární server DNS, aby se tato zóna stala aktivní."
+"Přidejte alespoň jeden primární server DNS, aby se tato zóna stala "
+"aktivní.Přidejte alespoň jeden primární server DNS, aby se tato zóna stala "
+"aktivní.Přidejte alespoň jeden primární server DNS, aby se tato zóna stala "
+"aktivní."
 
 #: forms/dns.forms.php
 msgid "Name servers"
@@ -1166,12 +1187,14 @@ msgstr "DNS zóna serveru"
 msgid "Transfer log"
 msgstr "Log přenosů"
 
-#: forms/dns.forms.php forms/oom_reports.forms.php pages/page_transactions.php
+#: forms/dns.forms.php forms/notifications.forms.php
+#: forms/oom_reports.forms.php pages/page_transactions.php
 msgid "Time"
 msgstr "Čas"
 
-#: forms/dns.forms.php forms/export.forms.php forms/outage.forms.php
-#: pages/page_adminm.php pages/page_adminvps.php public/index.php
+#: forms/dns.forms.php forms/export.forms.php forms/notifications.forms.php
+#: forms/outage.forms.php pages/page_adminm.php pages/page_adminvps.php
+#: public/index.php
 msgid "Status"
 msgstr "Status"
 
@@ -1257,7 +1280,8 @@ msgid "Create a new secondary DNS zone"
 msgstr "Vytvořte novou sekundární zónu DNS"
 
 #: forms/dns.forms.php forms/export.forms.php forms/incidents.forms.php
-#: forms/monitoring.forms.php forms/networking.forms.php forms/outage.forms.php
+#: forms/monitoring.forms.php forms/networking.forms.php
+#: forms/notifications.forms.php forms/outage.forms.php
 #: forms/userdata.forms.php forms/userns.forms.php forms/users.forms.php
 #: forms/vps.forms.php pages/page_networking.php pages/page_transactions.php
 msgid "User ID"
@@ -1323,7 +1347,7 @@ msgstr "DNSKEY záznam"
 msgid "DS record"
 msgstr "záznam DS"
 
-#: forms/dns.forms.php
+#: forms/dns.forms.php forms/notifications.forms.php
 msgid "Secret"
 msgstr "Tajný"
 
@@ -1460,7 +1484,8 @@ msgstr "Majitel"
 msgid "Change type"
 msgstr "Změnit typ"
 
-#: forms/dns.forms.php pages/page_transactions.php
+#: forms/dns.forms.php forms/notifications.forms.php
+#: pages/page_transactions.php
 msgid "Transaction chain"
 msgstr "Řetězec transakcí"
 
@@ -1548,8 +1573,9 @@ msgstr "Cesta"
 msgid "Select dataset to export"
 msgstr "Vyberte dataset k exportu"
 
-#: forms/export.forms.php forms/networking.forms.php forms/outage.forms.php
-#: forms/users.forms.php forms/vps.forms.php
+#: forms/export.forms.php forms/networking.forms.php
+#: forms/notifications.forms.php forms/outage.forms.php forms/users.forms.php
+#: forms/vps.forms.php
 msgid "Continue"
 msgstr "Pokračovat"
 
@@ -1651,7 +1677,9 @@ msgid ""
 "not affected by this operation."
 msgstr ""
 "Zastavit server NFS a odebrat export. Data v exportovaném datasetu nejsou "
-"touto operací ovlivněna."
+"touto operací ovlivněna.Zastavit server NFS a odebrat export. Data v "
+"exportovaném datasetu nejsou touto operací ovlivněna.Zastavit server NFS a "
+"odebrat export. Data v exportovaném datasetu nejsou touto operací ovlivněna."
 
 #: forms/export.forms.php
 msgid "Delete export"
@@ -1678,7 +1706,7 @@ msgstr "ID"
 msgid "Detected at"
 msgstr "Zjištěno v"
 
-#: forms/incidents.forms.php
+#: forms/incidents.forms.php forms/notifications.forms.php
 msgid "Subject"
 msgstr "Podrobit"
 
@@ -1744,8 +1772,8 @@ msgid "Go >>"
 msgstr "Přejít >>"
 
 #: forms/lifetimes.forms.php
-msgid "Set e-mail reminder"
-msgstr "Nastavit e-mailové připomenutí"
+msgid "Configure notifications"
+msgstr "Nastavit notifikace"
 
 #: forms/lifetimes.forms.php
 msgid "Unable to access resource"
@@ -1753,11 +1781,11 @@ msgstr "Nelze získat přístup ke zdroji"
 
 #: forms/lifetimes.forms.php
 msgid ""
-"E-mail reminders are sent daily before the expiration date. This form can be "
-"used to silent the notifications until a given date."
+"Notifications are sent daily before the expiration date. This form can be "
+"used to silence notifications until a given date."
 msgstr ""
-"E-mailové upomínky jsou zasílány denně před datem vypršení platnosti. Tento "
-"formulář lze použít k umlčení oznámení do daného data."
+"Notifikace jsou zasílány denně před datem vypršení platnosti. Tento formulář "
+"lze použít k utišení notifikací do zadaného data."
 
 #: forms/lifetimes.forms.php forms/userdata.forms.php forms/users.forms.php
 #: pages/page_adminm.php
@@ -1809,7 +1837,8 @@ msgstr "Objekt"
 msgid "Duration"
 msgstr "Trvání"
 
-#: forms/monitoring.forms.php forms/object_history.forms.php
+#: forms/monitoring.forms.php forms/notifications.forms.php
+#: forms/object_history.forms.php
 msgid "Event"
 msgstr "Událost"
 
@@ -1835,7 +1864,9 @@ msgid ""
 "until it is resolved."
 msgstr ""
 "Když je událost potvrzena, nebudete o problému informováni, dokud nebude "
-"vyřešen."
+"vyřešen.Když je událost potvrzena, nebudete o problému informováni, dokud "
+"nebude vyřešen.Když je událost potvrzena, nebudete o problému informováni, "
+"dokud nebude vyřešen."
 
 #: forms/monitoring.forms.php
 msgid "Until"
@@ -1855,7 +1886,11 @@ msgid ""
 "more, even should it arise in the future again."
 msgstr ""
 "Když je událost ignorována, nebudete o tomto problému dále informováni, a to "
-"ani v případě, že by se znovu objevil v budoucnu."
+"ani v případě, že by se znovu objevil v budoucnu.Když je událost ignorována, "
+"nebudete o tomto problému dále informováni, a to ani v případě, že by se "
+"znovu objevil v budoucnu.Když je událost ignorována, nebudete o tomto "
+"problému dále informováni, a to ani v případě, že by se znovu objevil v "
+"budoucnu."
 
 #: forms/monitoring.forms.php
 msgid "Ignore"
@@ -2001,11 +2036,13 @@ msgstr "Odebrat adresu z vpsAdmin"
 msgid "IP address assignments"
 msgstr "Přidělování IP adres"
 
-#: forms/networking.forms.php pages/page_adminvps.php
+#: forms/networking.forms.php forms/notifications.forms.php
+#: pages/page_adminvps.php
 msgid "From"
 msgstr "Z"
 
-#: forms/networking.forms.php pages/page_adminvps.php
+#: forms/networking.forms.php forms/notifications.forms.php
+#: pages/page_adminvps.php
 msgid "To"
 msgstr "Na"
 
@@ -2108,6 +2145,1078 @@ msgstr "Grafy"
 msgid "See all graphs in Munin"
 msgstr "Zobrazit všechny grafy v Muninu"
 
+#: forms/notifications.forms.php
+msgid "Delivery queue"
+msgstr "Fronta doručování"
+
+#: forms/notifications.forms.php
+msgid "Delivery log"
+msgstr "Log doručování"
+
+#: forms/notifications.forms.php
+msgid "Routes"
+msgstr "Routy"
+
+#: forms/notifications.forms.php
+msgid "Receivers"
+msgstr "Příjemci"
+
+#: forms/notifications.forms.php
+msgid "Targets"
+msgstr "Cíle"
+
+#: forms/notifications.forms.php
+msgid "Limits"
+msgstr "Limity"
+
+#: forms/notifications.forms.php
+msgid "Event types"
+msgstr "Typy událostí"
+
+#: forms/notifications.forms.php
+msgid "Test event"
+msgstr "Testovací událost"
+
+#: forms/notifications.forms.php
+msgid "Any event type"
+msgstr "Libovolný typ události"
+
+#: forms/notifications.forms.php
+msgid "equals"
+msgstr "rovná se"
+
+#: forms/notifications.forms.php
+msgid "does not equal"
+msgstr "nerovná se"
+
+#: forms/notifications.forms.php
+msgid "matches regular expression"
+msgstr "odpovídá regulárnímu výrazu"
+
+#: forms/notifications.forms.php
+msgid "does not match regular expression"
+msgstr "neodpovídá regulárnímu výrazu"
+
+#: forms/notifications.forms.php
+msgid "matches glob"
+msgstr "odpovídá glob vzoru"
+
+#: forms/notifications.forms.php
+msgid "does not match glob"
+msgstr "neodpovídá glob vzoru"
+
+#: forms/notifications.forms.php
+msgid "greater than"
+msgstr "větší než"
+
+#: forms/notifications.forms.php
+msgid "greater than or equal"
+msgstr "větší nebo rovno"
+
+#: forms/notifications.forms.php
+msgid "less than"
+msgstr "menší než"
+
+#: forms/notifications.forms.php
+msgid "less than or equal"
+msgstr "menší nebo rovno"
+
+#: forms/notifications.forms.php
+msgid "contains list item"
+msgstr "obsahuje položku seznamu"
+
+#: forms/notifications.forms.php
+msgid "does not contain list item"
+msgstr "neobsahuje položku seznamu"
+
+#: forms/notifications.forms.php
+msgid "text value"
+msgstr "textová hodnota"
+
+#: forms/notifications.forms.php
+msgid "exact text, regular expression, or glob pattern"
+msgstr "přesný text, regulární výraz nebo glob vzor"
+
+#: forms/notifications.forms.php
+msgid "whole number"
+msgstr "celé číslo"
+
+#: forms/notifications.forms.php
+msgid "parsed as an integer, for example 123"
+msgstr "zpracováno jako celé číslo, například 123"
+
+#: forms/notifications.forms.php
+msgid "number"
+msgstr "číslo"
+
+#: forms/notifications.forms.php
+msgid "parsed as a decimal number, for example 3.14"
+msgstr "zpracováno jako desetinné číslo, například 3.14"
+
+#: forms/notifications.forms.php
+msgid "true/false"
+msgstr "true/false"
+
+#: forms/notifications.forms.php
+msgid "normalized from true/false, yes/no, on/off, or 1/0"
+msgstr "normalizováno z true/false, yes/no, on/off nebo 1/0"
+
+#: forms/notifications.forms.php
+msgid "date and time"
+msgstr "datum a čas"
+
+#: forms/notifications.forms.php
+msgid "parsed as ISO 8601 time, for example 2026-07-01T12:00:00Z"
+msgstr "zpracováno jako čas v ISO 8601, například 2026-07-01T12:00:00Z"
+
+#: forms/notifications.forms.php
+msgid "list of text values"
+msgstr "seznam textových hodnot"
+
+#: forms/notifications.forms.php
+msgid "one text list item to look for"
+msgstr "jedna textová položka seznamu k vyhledání"
+
+#: forms/notifications.forms.php
+msgid "list of whole numbers"
+msgstr "seznam celých čísel"
+
+#: forms/notifications.forms.php
+msgid "one list item parsed as an integer"
+msgstr "jedna položka seznamu zpracovaná jako celé číslo"
+
+#: forms/notifications.forms.php
+msgid "Meaning"
+msgstr "Význam"
+
+#: forms/notifications.forms.php
+msgid "Operators"
+msgstr "Operátory"
+
+#: forms/notifications.forms.php
+msgid "true"
+msgstr "true"
+
+#: forms/notifications.forms.php
+msgid "false"
+msgstr "false"
+
+#: forms/notifications.forms.php
+msgid "Own events"
+msgstr "Vlastní události"
+
+#: forms/notifications.forms.php
+msgid "Visible events"
+msgstr "Viditelné události"
+
+#: forms/notifications.forms.php
+msgid "Own routes"
+msgstr "Vlastní routy"
+
+#: forms/notifications.forms.php
+msgid "Admin visible routes"
+msgstr "Administrátorsky viditelné routy"
+
+#: forms/notifications.forms.php
+msgid "Admin system routes"
+msgstr "Administrátorské systémové routy"
+
+#: forms/notifications.forms.php
+msgid "Drag to reorder"
+msgstr "Přetažením změňte pořadí"
+
+#: forms/notifications.forms.php forms/vps.forms.php
+msgid "Add route"
+msgstr "Přidat routu"
+
+#: forms/notifications.forms.php
+msgid "Add subroute"
+msgstr "Přidat podroutu"
+
+#: forms/notifications.forms.php
+#, php-format
+msgid "Parent: %s"
+msgstr "Nadřazená routa: %s"
+
+#: forms/notifications.forms.php
+msgid "Subroute"
+msgstr "Podrouta"
+
+#: forms/notifications.forms.php
+msgid "Already first"
+msgstr "Již první"
+
+#: forms/notifications.forms.php
+msgid "Move up"
+msgstr "Posunout nahoru"
+
+#: forms/notifications.forms.php
+msgid "Already last"
+msgstr "Již poslední"
+
+#: forms/notifications.forms.php
+msgid "Move down"
+msgstr "Posunout dolů"
+
+#: forms/notifications.forms.php
+msgid "muted"
+msgstr "ztlumeno"
+
+#: forms/notifications.forms.php
+msgid "Notification routes"
+msgstr "Notifikační routy"
+
+#: forms/notifications.forms.php
+msgid "Events"
+msgstr "Události"
+
+#: forms/notifications.forms.php
+msgid "Scope"
+msgstr "Rozsah"
+
+#: forms/notifications.forms.php
+msgid "Receiver"
+msgstr "Příjemce"
+
+#: forms/notifications.forms.php
+msgid "Matchers"
+msgstr "Matchery"
+
+#: forms/notifications.forms.php
+msgid "Hits"
+msgstr "Počet shod"
+
+#: forms/notifications.forms.php
+msgid "Disable route"
+msgstr "Vypnout routu"
+
+#: forms/notifications.forms.php
+msgid "Enable route"
+msgstr "Zapnout routu"
+
+#: forms/notifications.forms.php
+msgid "Do you really wish to delete this notification route?"
+msgstr "Opravdu si přejete smazat tuto notifikační routu?"
+
+#: forms/notifications.forms.php
+msgid "No routes configured."
+msgstr "Nejsou nakonfigurovány žádné routy."
+
+#: forms/notifications.forms.php
+msgid "Add notification route"
+msgstr "Přidat notifikační routu"
+
+#: forms/notifications.forms.php
+msgid "Parent route"
+msgstr "Nadřazená routa"
+
+#: forms/notifications.forms.php
+msgid "Event type"
+msgstr "Typ události"
+
+#: forms/notifications.forms.php
+msgid "Event type pattern"
+msgstr "Vzor typu události"
+
+#: forms/notifications.forms.php
+msgid "Back to routes"
+msgstr "Zpět na routy"
+
+#: forms/notifications.forms.php
+msgid "Subroutes"
+msgstr "Podrouty"
+
+#: forms/notifications.forms.php
+msgid "No subroutes configured."
+msgstr "Nejsou nakonfigurovány žádné podrouty."
+
+#: forms/notifications.forms.php
+msgid "Notification route"
+msgstr "Notifikační routa"
+
+#: forms/notifications.forms.php
+msgid "Update route"
+msgstr "Upravit routu"
+
+#: forms/notifications.forms.php
+msgid "Route lifecycle"
+msgstr "Životní cyklus routy"
+
+#: forms/notifications.forms.php
+msgid "Single-use route"
+msgstr "Jednorázová routa"
+
+#: forms/notifications.forms.php
+msgid "Spent at"
+msgstr "Použito v"
+
+#: forms/notifications.forms.php
+msgid "Expires at"
+msgstr "Vyprší v"
+
+#: forms/notifications.forms.php
+msgid "Field"
+msgstr "Pole"
+
+#: forms/notifications.forms.php
+msgid "Operator"
+msgstr "Operátor"
+
+#: forms/notifications.forms.php
+msgid "Add matcher"
+msgstr "Přidat matcher"
+
+#: forms/notifications.forms.php
+msgid "No matchers configured."
+msgstr "Nejsou nakonfigurovány žádné matchery."
+
+#: forms/notifications.forms.php
+msgid "Select event type"
+msgstr "Vybrat typ události"
+
+#: forms/notifications.forms.php
+msgid "Choose the event type whose fields should be offered."
+msgstr "Vyberte typ události, jehož pole se mají nabízet."
+
+#: forms/notifications.forms.php
+msgid "Back to route"
+msgstr "Zpět na routu"
+
+#: forms/notifications.forms.php
+msgid "Route"
+msgstr "Routa"
+
+#: forms/notifications.forms.php
+msgid "Matcher operator reference"
+msgstr "Přehled operátorů matcherů"
+
+#: forms/notifications.forms.php
+msgid "Choose different event type"
+msgstr "Vybrat jiný typ události"
+
+#: forms/notifications.forms.php lib/functions.lib.php pages/page_dataset.php
+msgid "disabled"
+msgstr "zakázáno"
+
+#: forms/notifications.forms.php
+msgid "Retry delivery"
+msgstr "Zopakovat doručení"
+
+#: forms/notifications.forms.php
+msgid "Open Telegram bot"
+msgstr "Otevřít Telegram bota"
+
+#: forms/notifications.forms.php
+msgid "Automatic pairing link is not available. Use manual pairing below."
+msgstr ""
+"Odkaz pro automatické spárování není k dispozici. Použijte ruční spárování "
+"níže."
+
+#: forms/notifications.forms.php
+msgid ""
+"The link includes the pairing command. Press Start in Telegram to finish "
+"pairing."
+msgstr ""
+"Odkaz obsahuje párovací příkaz. Stiskněte Start v Telegramu pro dokončení "
+"spárování."
+
+#: forms/notifications.forms.php
+#, php-format
+msgid "Create a new pairing command and use it in a private chat with @%s."
+msgstr "Vytvořte nový párovací příkaz a použijte jej v soukromém chatu s @%s."
+
+#: forms/notifications.forms.php
+msgid ""
+"Create a new pairing command and use it in a private chat with the Telegram "
+"bot."
+msgstr ""
+"Vytvořte nový párovací příkaz a použijte jej v soukromém chatu s Telegram "
+"botem."
+
+#: forms/notifications.forms.php
+#, php-format
+msgid "Open a private chat with @%s."
+msgstr "Otevřít soukromý chat s @%s."
+
+#: forms/notifications.forms.php
+msgid "Open a private chat with the vpsAdmin Telegram bot."
+msgstr "Otevřít soukromý chat s Telegram botem vpsAdminu."
+
+#: forms/notifications.forms.php
+#, php-format
+msgid "Send %s."
+msgstr "Odeslat %s."
+
+#: forms/notifications.forms.php
+msgid "The bot will confirm whether pairing succeeded."
+msgstr "Bot potvrdí, zda se spárování podařilo."
+
+#: forms/notifications.forms.php
+msgid "prepared (waiting for transaction release)"
+msgstr "připraveno (čeká na uvolnění transakce)"
+
+#: forms/notifications.forms.php
+msgid "released"
+msgstr "uvolněno"
+
+#: forms/notifications.forms.php
+msgid "released (scheduled)"
+msgstr "uvolněno (naplánováno)"
+
+#: forms/notifications.forms.php
+msgid "sending"
+msgstr "odesílá se"
+
+#: forms/notifications.forms.php
+msgid "Waiting for transaction release"
+msgstr "Čeká na uvolnění transakce"
+
+#: forms/notifications.forms.php
+msgid "Waiting for dispatcher"
+msgstr "Čeká na dispatcher"
+
+#: forms/notifications.forms.php
+msgid "Delivery attempt is running"
+msgstr "Pokus o doručení běží"
+
+#: forms/notifications.forms.php
+msgid "Header"
+msgstr "Hlavička"
+
+#: forms/notifications.forms.php
+msgid "HTML preview"
+msgstr "Náhled HTML"
+
+#: forms/notifications.forms.php
+msgid "HTML source"
+msgstr "Zdroj HTML"
+
+#: forms/notifications.forms.php
+msgid "Notification targets"
+msgstr "Notifikační cíle"
+
+#: forms/notifications.forms.php
+msgid "Target"
+msgstr "Cíl"
+
+#: forms/notifications.forms.php
+msgid "Disable target"
+msgstr "Vypnout cíl"
+
+#: forms/notifications.forms.php
+msgid "Enable target"
+msgstr "Zapnout cíl"
+
+#: forms/notifications.forms.php
+msgid ""
+"Do you really wish to delete this notification target? Receiver links using "
+"it will be removed."
+msgstr ""
+"Opravdu si přejete smazat tento notifikační cíl? Vazby příjemců, které jej "
+"používají, budou odebrány."
+
+#: forms/notifications.forms.php
+msgid "No targets configured."
+msgstr "Nejsou nakonfigurovány žádné cíle."
+
+#: forms/notifications.forms.php
+msgid "Add target"
+msgstr "Přidat cíl"
+
+#: forms/notifications.forms.php
+msgid "Notification receivers"
+msgstr "Příjemci notifikací"
+
+#: forms/notifications.forms.php
+msgid "Mute"
+msgstr "Ztlumit"
+
+#: forms/notifications.forms.php
+msgid "Disable receiver"
+msgstr "Vypnout příjemce"
+
+#: forms/notifications.forms.php
+msgid "Enable receiver"
+msgstr "Zapnout příjemce"
+
+#: forms/notifications.forms.php
+msgid "Do you really wish to delete this notification receiver?"
+msgstr "Opravdu si přejete smazat tohoto příjemce notifikací?"
+
+#: forms/notifications.forms.php
+msgid "No receivers configured."
+msgstr "Nejsou nakonfigurováni žádní příjemci."
+
+#: forms/notifications.forms.php
+msgid "Add receiver"
+msgstr "Přidat příjemce"
+
+#: forms/notifications.forms.php
+msgid "target disabled"
+msgstr "cíl vypnut"
+
+#: forms/notifications.forms.php
+msgid "delivery method disabled"
+msgstr "metoda doručení vypnuta"
+
+#: forms/notifications.forms.php
+msgid "pending"
+msgstr "čeká"
+
+#: forms/notifications.forms.php
+msgid "verified"
+msgstr "ověřeno"
+
+#: forms/notifications.forms.php
+msgid "paired"
+msgstr "spárováno"
+
+#: forms/notifications.forms.php
+msgid "Optional display name for this target."
+msgstr "Nepovinný zobrazovaný název tohoto cíle."
+
+#: forms/notifications.forms.php
+msgid "Recipient"
+msgstr "Příjemce"
+
+#: forms/notifications.forms.php
+msgid "Use the account e-mail or provide one custom address."
+msgstr "Použijte e-mail účtu nebo zadejte jednu vlastní adresu."
+
+#: forms/notifications.forms.php
+msgid "Custom e-mail address"
+msgstr "Vlastní e-mailová adresa"
+
+#: forms/notifications.forms.php
+msgid "Used only when custom target is selected."
+msgstr "Použije se jen při výběru vlastního cíle."
+
+#: forms/notifications.forms.php
+msgid "Verification"
+msgstr "Ověření"
+
+#: forms/notifications.forms.php
+msgid "A verification e-mail is sent after saving a custom address target."
+msgstr "Po uložení vlastního e-mailového cíle bude odeslán ověřovací e-mail."
+
+#: forms/notifications.forms.php
+msgid "Last error"
+msgstr "Poslední chyba"
+
+#: forms/notifications.forms.php
+msgid "Webhook URL"
+msgstr "URL webhooku"
+
+#: forms/notifications.forms.php
+msgid "HTTP or HTTPS endpoint that receives the event JSON payload."
+msgstr "HTTP nebo HTTPS endpoint, který přijímá JSON payload události."
+
+#: forms/notifications.forms.php
+msgid "leave empty to keep"
+msgstr "ponechte prázdné pro zachování"
+
+#: forms/notifications.forms.php
+msgid "Optional HMAC secret sent as X-VpsAdmin-Signature-256."
+msgstr "Nepovinné HMAC tajemství posílané jako X-VpsAdmin-Signature-256."
+
+#: forms/notifications.forms.php
+msgid "Current secret"
+msgstr "Současné tajemství"
+
+#: forms/notifications.forms.php
+msgid "clear secret"
+msgstr "smazat tajemství"
+
+#: forms/notifications.forms.php
+msgid "Pairing"
+msgstr "Párování"
+
+#: forms/notifications.forms.php
+msgid "Automatic pairing"
+msgstr "Automatické párování"
+
+#: forms/notifications.forms.php
+msgid "Manual pairing"
+msgstr "Ruční párování"
+
+#: forms/notifications.forms.php
+msgid "created after saving"
+msgstr "vytvořeno po uložení"
+
+#: forms/notifications.forms.php
+msgid ""
+"Re-pairing creates a new pairing command and pauses Telegram delivery until "
+"pairing succeeds. Continue?"
+msgstr ""
+"Opětovné spárování vytvoří nový párovací příkaz a pozastaví doručování přes "
+"Telegram, dokud se spárování nepodaří. Pokračovat?"
+
+#: forms/notifications.forms.php
+msgid "Re-pair Telegram chat"
+msgstr "Znovu spárovat Telegram chat"
+
+#: forms/notifications.forms.php
+msgid "Telegram delivery will be paused until the new chat is paired."
+msgstr ""
+"Doručování přes Telegram bude pozastaveno, dokud nebude nový chat spárován."
+
+#: forms/notifications.forms.php
+msgid "Re-pair"
+msgstr "Znovu spárovat"
+
+#: forms/notifications.forms.php
+msgid "Pairing command"
+msgstr "Párovací příkaz"
+
+#: forms/notifications.forms.php
+msgid "Generate new pairing command"
+msgstr "Vygenerovat nový párovací příkaz"
+
+#: forms/notifications.forms.php
+msgid "Phone number"
+msgstr "Telefonní číslo"
+
+#: forms/notifications.forms.php
+msgid "Use international E.164 format, e.g. +420123456789."
+msgstr "Použijte mezinárodní formát E.164, např. +420123456789."
+
+#: forms/notifications.forms.php
+msgid "Instructions"
+msgstr "Pokyny"
+
+#: forms/notifications.forms.php
+msgid ""
+"Save the phone number, send a verification SMS, then enter the code from the "
+"message."
+msgstr ""
+"Uložte telefonní číslo, odešlete ověřovací SMS a poté zadejte kód ze zprávy."
+
+#: forms/notifications.forms.php
+msgid "SMS verification"
+msgstr "Ověření SMS"
+
+#: forms/notifications.forms.php
+msgid "Verification SMS"
+msgstr "Ověřovací SMS"
+
+#: forms/notifications.forms.php
+msgid "Send a verification SMS to this phone number?"
+msgstr "Odeslat ověřovací SMS na toto telefonní číslo?"
+
+#: forms/notifications.forms.php
+msgid "Send verification SMS"
+msgstr "Odeslat ověřovací SMS"
+
+#: forms/notifications.forms.php
+msgid "Delivery is limited by a short resend cooldown."
+msgstr "Doručení je omezeno krátkou pauzou před opakovaným odesláním."
+
+#: forms/notifications.forms.php
+msgid "Verification code"
+msgstr "Ověřovací kód"
+
+#: forms/notifications.forms.php
+msgid "Enter the 6-digit code from the SMS."
+msgstr "Zadejte šestimístný kód ze SMS."
+
+#: forms/notifications.forms.php
+msgid "Confirm code"
+msgstr "Potvrdit kód"
+
+#: forms/notifications.forms.php
+msgid "E-mail verification"
+msgstr "Ověření e-mailu"
+
+#: forms/notifications.forms.php
+msgid "Verification e-mail"
+msgstr "Ověřovací e-mail"
+
+#: forms/notifications.forms.php
+msgid "Send a verification e-mail to this address?"
+msgstr "Odeslat ověřovací e-mail na tuto adresu?"
+
+#: forms/notifications.forms.php
+msgid "Send verification e-mail"
+msgstr "Odeslat ověřovací e-mail"
+
+#: forms/notifications.forms.php
+msgid "Open the link from the message to verify this target."
+msgstr "Otevřete odkaz ze zprávy pro ověření tohoto cíle."
+
+#: forms/notifications.forms.php
+msgid "Add notification target"
+msgstr "Přidat notifikační cíl"
+
+#: forms/notifications.forms.php
+msgid "No delivery methods enabled"
+msgstr "Nejsou povoleny žádné metody doručení"
+
+#: forms/notifications.forms.php
+msgid "No event delivery methods are enabled for this user."
+msgstr "Pro tohoto uživatele nejsou povoleny žádné metody doručení událostí."
+
+#: forms/notifications.forms.php
+msgid "Back to receiver"
+msgstr "Zpět na příjemce"
+
+#: forms/notifications.forms.php
+msgid "Back to targets"
+msgstr "Zpět na cíle"
+
+#: forms/notifications.forms.php
+msgid "Select target type"
+msgstr "Vybrat typ cíle"
+
+#: forms/notifications.forms.php
+msgid "Target type"
+msgstr "Typ cíle"
+
+#: forms/notifications.forms.php
+msgid "Choose how matching events will be delivered."
+msgstr "Vyberte, jak budou doručovány odpovídající události."
+
+#: forms/notifications.forms.php
+msgid "Notification target"
+msgstr "Notifikační cíl"
+
+#: forms/notifications.forms.php
+msgid "Update target"
+msgstr "Upravit cíl"
+
+#: forms/notifications.forms.php
+msgid "Notification receiver"
+msgstr "Příjemce notifikací"
+
+#: forms/notifications.forms.php
+msgid "Update receiver"
+msgstr "Upravit příjemce"
+
+#: forms/notifications.forms.php
+msgid "Target enabled"
+msgstr "Cíl zapnut"
+
+#: forms/notifications.forms.php
+msgid "Edit target"
+msgstr "Upravit cíl"
+
+#: forms/notifications.forms.php
+msgid ""
+"Do you really wish to unlink this notification target from the receiver?"
+msgstr "Opravdu si přejete odpojit tento notifikační cíl od příjemce?"
+
+#: forms/notifications.forms.php
+msgid "No targets linked."
+msgstr "Nejsou připojeny žádné cíle."
+
+#: forms/notifications.forms.php
+msgid "Create and link target"
+msgstr "Vytvořit a připojit cíl"
+
+#: forms/notifications.forms.php
+msgid "Link existing target"
+msgstr "Připojit existující cíl"
+
+#: forms/notifications.forms.php
+msgid "Select an existing reusable target."
+msgstr "Vyberte existující znovupoužitelný cíl."
+
+#: forms/notifications.forms.php
+msgid "Link target"
+msgstr "Připojit cíl"
+
+#: forms/notifications.forms.php
+msgid "Back to receivers"
+msgstr "Zpět na příjemce"
+
+#: forms/notifications.forms.php
+msgid "custom"
+msgstr "vlastní"
+
+#: forms/notifications.forms.php
+msgid "default"
+msgstr "výchozí"
+
+#: forms/notifications.forms.php
+msgid "Notification delivery limits"
+msgstr "Limity doručování notifikací"
+
+#: forms/notifications.forms.php
+msgid "Method"
+msgstr "Metoda"
+
+#: forms/notifications.forms.php
+msgid "Window"
+msgstr "Okno"
+
+#: forms/notifications.forms.php
+msgid "Remaining"
+msgstr "Zbývá"
+
+#: forms/notifications.forms.php
+msgid "Resets at"
+msgstr "Resetuje se v"
+
+#: forms/notifications.forms.php
+msgid "No delivery limits are configured."
+msgstr "Nejsou nakonfigurovány žádné limity doručování."
+
+#: forms/notifications.forms.php pages/page_adminm.php pages/page_adminvps.php
+#: pages/page_backup.php pages/page_cluster.php pages/page_console.php
+#: pages/page_dataset.php pages/page_dns.php pages/page_export.php
+#: pages/page_history.php pages/page_incidents.php pages/page_jumpto.php
+#: pages/page_lifetimes.php pages/page_monitoring.php pages/page_nas.php
+#: pages/page_networking.php pages/page_node.php pages/page_notifications.php
+#: pages/page_oom_reports.php pages/page_outage.php pages/page_redirect.php
+#: pages/page_reminder.php pages/page_transactions.php pages/page_userdata.php
+#: pages/page_userns.php
+msgid "Access forbidden"
+msgstr "Přístup zakázán"
+
+#: forms/notifications.forms.php
+msgid "Only administrators can view notification delivery queues."
+msgstr "Fronty doručování notifikací mohou zobrazit pouze administrátoři."
+
+#: forms/notifications.forms.php
+msgid "Route ID"
+msgstr "ID routy"
+
+#: forms/notifications.forms.php
+msgid "Receiver ID"
+msgstr "ID příjemce"
+
+#: forms/notifications.forms.php
+msgid "Target ID"
+msgstr "ID cíle"
+
+#: forms/notifications.forms.php
+msgid "Receiver target ID"
+msgstr "ID cíle příjemce"
+
+#: forms/notifications.forms.php
+msgid "Delivery"
+msgstr "Doručení"
+
+#: forms/notifications.forms.php
+msgid "Attempts"
+msgstr "Pokusy"
+
+#: forms/notifications.forms.php
+msgid "Released"
+msgstr "Uvolněno"
+
+#: forms/notifications.forms.php
+msgid "Last attempt"
+msgstr "Poslední pokus"
+
+#: forms/notifications.forms.php
+msgid "Next retry"
+msgstr "Další opakování"
+
+#: forms/notifications.forms.php
+msgid "No deliveries found."
+msgstr "Nebyla nalezena žádná doručení."
+
+#: forms/notifications.forms.php
+msgid "Severity"
+msgstr "Závažnost"
+
+#: forms/notifications.forms.php
+msgid "Deliveries"
+msgstr "Doručení"
+
+#: forms/notifications.forms.php
+msgid "Matched routes"
+msgstr "Odpovídající routy"
+
+#: forms/notifications.forms.php
+msgid "Relation"
+msgstr "Vztah"
+
+#: forms/notifications.forms.php
+msgid "No routes matched."
+msgstr "Neodpovídají žádné routy."
+
+#: forms/notifications.forms.php
+msgid "Routing state"
+msgstr "Stav routování"
+
+#: forms/notifications.forms.php
+msgid "Payload"
+msgstr "Payload"
+
+#: forms/notifications.forms.php
+msgid "Result"
+msgstr "Výsledek"
+
+#: forms/notifications.forms.php
+msgid "Delivery attempts"
+msgstr "Pokusy o doručení"
+
+#: forms/notifications.forms.php
+msgid "Response"
+msgstr "Odpověď"
+
+#: forms/notifications.forms.php
+msgid "No deliveries recorded."
+msgstr "Nejsou zaznamenána žádná doručení."
+
+#: forms/notifications.forms.php
+msgid "Back to event log"
+msgstr "Zpět na log událostí"
+
+#: forms/notifications.forms.php
+msgid "Event delivery"
+msgstr "Doručení události"
+
+#: forms/notifications.forms.php
+msgid "Template"
+msgstr "Šablona"
+
+#: forms/notifications.forms.php
+msgid "Message ID"
+msgstr "ID zprávy"
+
+#: forms/notifications.forms.php
+msgid "Response status"
+msgstr "Stav odpovědi"
+
+#: forms/notifications.forms.php pages/page_adminvps.php
+msgid "Error"
+msgstr "Chyba"
+
+#: forms/notifications.forms.php
+msgid "Retry"
+msgstr "Zopakovat"
+
+#: forms/notifications.forms.php
+msgid "Back to event"
+msgstr "Zpět na událost"
+
+#: forms/notifications.forms.php forms/users.forms.php pages/page_adminm.php
+msgid "E-mail"
+msgstr "E-mail"
+
+#: forms/notifications.forms.php
+msgid "Cc"
+msgstr "Kopie"
+
+#: forms/notifications.forms.php
+msgid "Reply-To"
+msgstr "Reply-To"
+
+#: forms/notifications.forms.php
+msgid "Return-Path"
+msgstr "Return-Path"
+
+#: forms/notifications.forms.php
+msgid "Plain text"
+msgstr "Prostý text"
+
+#: forms/notifications.forms.php
+msgid "No e-mail snapshot recorded for this delivery."
+msgstr "Pro toto doručení není zaznamenán snímek e-mailu."
+
+#: forms/notifications.forms.php
+msgid "Telegram"
+msgstr "Telegram"
+
+#: forms/notifications.forms.php
+msgid "Chat"
+msgstr "Chat"
+
+#: forms/notifications.forms.php
+msgid "SMS"
+msgstr "SMS"
+
+#: forms/notifications.forms.php
+msgid "Gateway callback"
+msgstr "Callback brány"
+
+#: forms/notifications.forms.php
+msgid "Webhook"
+msgstr "Webhook"
+
+#: forms/notifications.forms.php
+msgid "Request payload"
+msgstr "Payload požadavku"
+
+#: forms/notifications.forms.php
+msgid "Response headers"
+msgstr "Hlavičky odpovědi"
+
+#: forms/notifications.forms.php
+msgid "Response body"
+msgstr "Tělo odpovědi"
+
+#: forms/notifications.forms.php
+msgid "Attempt"
+msgstr "Pokus"
+
+#: forms/notifications.forms.php
+msgid "Started"
+msgstr "Začalo"
+
+#: forms/notifications.forms.php
+msgid "Finished"
+msgstr "Skončilo"
+
+#: forms/notifications.forms.php
+msgid "No attempts recorded."
+msgstr "Nejsou zaznamenány žádné pokusy."
+
+#: forms/notifications.forms.php
+msgid "Other"
+msgstr "Ostatní"
+
+#: forms/notifications.forms.php
+#, php-format
+msgid "%d events"
+msgstr "%d událostí"
+
+#: forms/notifications.forms.php
+msgid "Default routed"
+msgstr "Výchozí routování"
+
+#: forms/notifications.forms.php
+msgid "no"
+msgstr "ne"
+
+#: forms/notifications.forms.php
+msgid "yes"
+msgstr "ano"
+
+#: forms/notifications.forms.php
+msgid "Example"
+msgstr "Příklad"
+
+#: forms/notifications.forms.php
+msgid "No matchable fields were reported by the API."
+msgstr "API nevrátilo žádná matchovatelná pole."
+
+#: forms/notifications.forms.php
+msgid "Test notification event"
+msgstr "Testovací notifikační událost"
+
+#: forms/notifications.forms.php
+msgid "Create test event"
+msgstr "Vytvořit testovací událost"
+
+#: forms/notifications.forms.php
+msgid "Subject scope"
+msgstr "Rozsah subjektu"
+
+#: forms/notifications.forms.php
+msgid "Test notification"
+msgstr "Testovací notifikace"
+
+#: forms/notifications.forms.php
+msgid "This event was created from notification settings."
+msgstr "Tato událost byla vytvořena z nastavení notifikací."
+
+#: forms/notifications.forms.php
+msgid "Create event"
+msgstr "Vytvořit událost"
+
 #: forms/object_history.forms.php
 msgid "Object history"
 msgstr "Historie objektu"
@@ -2157,9 +3266,9 @@ msgstr "Počet"
 msgid "nothing killed"
 msgstr "nic zabito"
 
-#: forms/oom_reports.forms.php
-msgid "Configure rules"
-msgstr "Nakonfigurujte pravidla"
+#: forms/oom_reports.forms.php forms/vps.forms.php
+msgid "Configure OOM notifications"
+msgstr "Nastavit OOM notifikace"
 
 #: forms/oom_reports.forms.php
 msgid "Out-of-memory Reports for VPS"
@@ -2269,7 +3378,9 @@ msgstr "Počet zásahů"
 msgid "No rules are configured, notifications are sent for all OOM reports."
 msgstr ""
 "Nejsou nakonfigurována žádná pravidla, upozornění jsou odesílána pro všechny "
-"OOM reporty."
+"OOM reporty.Nejsou nakonfigurována žádná pravidla, upozornění jsou odesílána "
+"pro všechny OOM reporty.Nejsou nakonfigurována žádná pravidla, upozornění "
+"jsou odesílána pro všechny OOM reporty."
 
 #: forms/oom_reports.forms.php
 msgid "Rules are evaluated top to bottom"
@@ -2283,6 +3394,12 @@ msgid ""
 msgstr ""
 "Vzory jsou spárovány pomocí metody Ruby <a href=\"https://docs.ruby-lang.org/"
 "en/master/File.html#method-c-fnmatch\" target=\"_blank\">File.fnmatch</a> s "
+"<code>File::FNM_PATHNAME | File::FNM_EXTGLOB</code>Vzory jsou spárovány "
+"pomocí metody Ruby <a href=\"https://docs.ruby-lang.org/en/master/"
+"File.html#method-c-fnmatch\" target=\"_blank\">File.fnmatch</a> s "
+"<code>File::FNM_PATHNAME | File::FNM_EXTGLOB</code>Vzory jsou spárovány "
+"pomocí metody Ruby <a href=\"https://docs.ruby-lang.org/en/master/"
+"File.html#method-c-fnmatch\" target=\"_blank\">File.fnmatch</a> s "
 "<code>File::FNM_PATHNAME | File::FNM_EXTGLOB</code>"
 
 #: forms/oom_reports.forms.php
@@ -2291,7 +3408,9 @@ msgid ""
 "code>, see"
 msgstr ""
 "Shody se provádějí proti úplné cestě cgroup bez <code>/sys/fs/cgroup</code>, "
-"viz"
+"vizShody se provádějí proti úplné cestě cgroup bez <code>/sys/fs/cgroup</"
+"code>, vizShody se provádějí proti úplné cestě cgroup bez <code>/sys/fs/"
+"cgroup</code>, viz"
 
 #: forms/oom_reports.forms.php
 msgid "existing reports"
@@ -2307,7 +3426,10 @@ msgid ""
 "in VPS being restarted or stopped"
 msgstr ""
 "Situace s nedostatkem paměti jsou považovány za chybu konfigurace a mohou "
-"vést k restartu nebo vypnutí VPS"
+"vést k restartu nebo Stopu VPSSituace s nedostatkem paměti jsou považovány "
+"za chybu konfigurace a mohou vést k restartu nebo Stopu VPSSituace s "
+"nedostatkem paměti jsou považovány za chybu konfigurace a mohou vést k "
+"restartu nebo vypnutí VPS"
 
 #: forms/oom_reports.forms.php
 msgid "Add rule"
@@ -2437,9 +3559,9 @@ msgstr "zrušeno"
 msgid "resolved"
 msgstr "vyřešeno"
 
-#: forms/outage.forms.php
-msgid "Send mails"
-msgstr "Odesílejte e-maily"
+#: forms/outage.forms.php forms/vps.forms.php
+msgid "Send notifications"
+msgstr "Odeslat notifikace"
 
 #: forms/outage.forms.php
 msgid "Edit outage"
@@ -2743,8 +3865,8 @@ msgid "A kernel bug could affect containers on selected nodes."
 msgstr "Bug v kernelu může ovlivnit kontejnery na vybraných nodech."
 
 #: forms/security_advisory.forms.php
-msgid "One-sentence summary shown in advisory lists and emails."
-msgstr "Shrnutí v jedné větě zobrazené v seznamech rad a e-mailech."
+msgid "One-sentence summary shown in advisory lists and notifications."
+msgstr "Shrnutí v jedné větě zobrazené v seznamech advisory a notifikacích."
 
 #: forms/security_advisory.forms.php
 msgid ""
@@ -2764,7 +3886,10 @@ msgstr "odpověď"
 msgid ""
 "Describe the mitigation, rollout time, and whether users need to take action."
 msgstr ""
-"Popište zmírnění, dobu zavádění a zda uživatelé musí podniknout nějaké kroky."
+"Popište zmírnění, dobu zavádění a zda uživatelé musí podniknout nějaké "
+"kroky.Popište zmírnění, dobu zavádění a zda uživatelé musí podniknout nějaké "
+"kroky.Popište zmírnění, dobu zavádění a zda uživatelé musí podniknout nějaké "
+"kroky."
 
 #: forms/security_advisory.forms.php
 msgid "What administrators did in response."
@@ -2819,8 +3944,8 @@ msgid "Publish advisory"
 msgstr "Publikovat poradenství"
 
 #: forms/security_advisory.forms.php
-msgid "Send mails to affected users"
-msgstr "Odesílejte e-maily postiženým uživatelům"
+msgid "Send notifications to affected users"
+msgstr "Odeslat notifikace dotčeným uživatelům"
 
 #: forms/security_advisory.forms.php
 msgid "Publish"
@@ -3413,10 +4538,6 @@ msgstr "DNS platný, ověřený e-mail existuje"
 msgid "Overall score"
 msgstr "Celkové skóre"
 
-#: forms/users.forms.php pages/page_adminm.php
-msgid "E-mail"
-msgstr "E-mail"
-
 #: forms/users.forms.php
 msgid "Change reason"
 msgstr "Změnit důvod"
@@ -3542,30 +4663,6 @@ msgid "Assign"
 msgstr "Přiřadit"
 
 #: forms/users.forms.php
-msgid "Recipients by e-mail type"
-msgstr "Příjemci podle typu e-mailu"
-
-#: forms/users.forms.php
-msgid "Templates"
-msgstr "Šablony"
-
-#: forms/users.forms.php pages/page_adminm.php
-msgid "E-mails"
-msgstr "e-maily"
-
-#: forms/users.forms.php
-msgid ""
-"E-mails configured here override role recipients. It is a comma separated "
-"list of e-mails, may contain line breaks."
-msgstr ""
-"Zde nakonfigurované e-maily mají přednost před příjemci rolí. Jedná se o "
-"čárkami oddělený seznam e-mailů, může obsahovat zalomení řádků."
-
-#: forms/users.forms.php
-msgid "Do not send these e-mails"
-msgstr "Neposílat tyto e-maily"
-
-#: forms/users.forms.php
 msgid "Configure resources"
 msgstr "Konfigurovat zdroje"
 
@@ -3624,6 +4721,10 @@ msgid ""
 "Authenticator and scan the QR code below, or enter the secret key manually."
 msgstr ""
 "Nainstalujte si ověřovací aplikaci TOTP jako FreeOTP nebo Google "
+"Authenticator a naskenujte níže uvedený QR kód nebo zadejte tajný klíč "
+"ručně.Nainstalujte si ověřovací aplikaci TOTP jako FreeOTP nebo Google "
+"Authenticator a naskenujte níže uvedený QR kód nebo zadejte tajný klíč "
+"ručně.Nainstalujte si ověřovací aplikaci TOTP jako FreeOTP nebo Google "
 "Authenticator a naskenujte níže uvedený QR kód nebo zadejte tajný klíč ručně."
 
 #: forms/users.forms.php
@@ -3652,7 +4753,14 @@ msgstr ""
 "Po aktivaci bude toto ověřovací zařízení nebo jakékoli jiné nakonfigurované "
 "zařízení nutné k přihlášení k vašemu účtu bez jakékoli výjimky. "
 "Dvoufaktorové ověřování lze později vypnout vypnutím nebo odebráním všech "
-"nakonfigurovaných ověřovacích zařízení."
+"nakonfigurovaných ověřovacích zařízení.Po aktivaci bude toto ověřovací "
+"zařízení nebo jakékoli jiné nakonfigurované zařízení nutné k přihlášení k "
+"vašemu účtu bez jakékoli výjimky. Dvoufaktorové ověřování lze později "
+"vypnout vypnutím nebo odebráním všech nakonfigurovaných ověřovacích "
+"zařízení.Po aktivaci bude toto ověřovací zařízení nebo jakékoli jiné "
+"nakonfigurované zařízení nutné k přihlášení k vašemu účtu bez jakékoli "
+"výjimky. Dvoufaktorové ověřování lze později vypnout vypnutím nebo odebráním "
+"všech nakonfigurovaných ověřovacích zařízení."
 
 #: forms/users.forms.php
 msgid "Enable the device for two-factor authentication"
@@ -3678,7 +4786,13 @@ msgid ""
 msgstr ""
 "Nyní je povoleno dvoufaktorové ověřování pomocí TOTP. V případě, že někdy "
 "ztratíte přístup k ověřovacímu zařízení TOTP, můžete k přihlášení použít "
-"níže uvedený obnovovací kód namísto tokenu TOTP."
+"níže uvedený obnovovací kód namísto tokenu TOTP.Nyní je povoleno "
+"dvoufaktorové ověřování pomocí TOTP. V případě, že někdy ztratíte přístup k "
+"ověřovacímu zařízení TOTP, můžete k přihlášení použít níže uvedený "
+"obnovovací kód namísto tokenu TOTP.Nyní je povoleno dvoufaktorové ověřování "
+"pomocí TOTP. V případě, že někdy ztratíte přístup k ověřovacímu zařízení "
+"TOTP, můžete k přihlášení použít níže uvedený obnovovací kód namísto tokenu "
+"TOTP."
 
 #: forms/users.forms.php
 msgid "Go to TOTP device list"
@@ -3702,7 +4816,10 @@ msgid ""
 "device is either disabled or removed."
 msgstr ""
 "Dvoufaktorové ověřování bude vypnuto, když je deaktivováno nebo odebráno "
-"poslední ověřovací zařízení."
+"poslední ověřovací zařízení.Dvoufaktorové ověřování bude vypnuto, když je "
+"deaktivováno nebo odebráno poslední ověřovací zařízení.Dvoufaktorové "
+"ověřování bude vypnuto, když je deaktivováno nebo odebráno poslední "
+"ověřovací zařízení."
 
 #: forms/users.forms.php pages/page_adminm.php
 msgid "Passkeys"
@@ -3727,7 +4844,10 @@ msgstr "Zaregistrujte nový přístupový klíč"
 #: forms/users.forms.php
 msgid "Passkeys cannot be registered by administrators logged in as users."
 msgstr ""
-"Přístupové klíče nemohou registrovat správci přihlášení jako uživatelé."
+"Přístupové klíče nemohou registrovat správci přihlášení jako "
+"uživatelé.Přístupové klíče nemohou registrovat správci přihlášení jako "
+"uživatelé.Přístupové klíče nemohou registrovat správci přihlášení jako "
+"uživatelé."
 
 #: forms/users.forms.php
 msgid "Edit passkey"
@@ -4098,10 +5218,6 @@ msgid "History"
 msgstr "Historie"
 
 #: forms/vps.forms.php
-msgid "Configure OOM reports"
-msgstr "Konfigurace OOM reportů"
-
-#: forms/vps.forms.php
 msgid "Report incident"
 msgstr "Nahlásit incident"
 
@@ -4225,10 +5341,6 @@ msgstr "Nespouštět"
 #: forms/vps.forms.php
 msgid "Skip start"
 msgstr "Přeskočit spuštění"
-
-#: forms/vps.forms.php
-msgid "Send e-mails"
-msgstr "Odesílejte e-maily"
 
 #: forms/vps.forms.php
 msgid "Changing environment"
@@ -4363,10 +5475,6 @@ msgid " via "
 msgstr "přes"
 
 #: forms/vps.forms.php
-msgid "Add route"
-msgstr "Přidat routu"
-
-#: forms/vps.forms.php
 msgid "Invalid IP route type"
 msgstr "Neplatný typ trasy IP"
 
@@ -4447,10 +5555,6 @@ msgid "Left-click - extend timeout; Long left-click - disable timeout"
 msgstr ""
 "Kliknutím prodloužíte čas do odhlášení; dlouhým kliknutím automatické "
 "odhlášení vypnete"
-
-#: lib/functions.lib.php pages/page_dataset.php
-msgid "disabled"
-msgstr "zakázáno"
 
 #: lib/functions.lib.php
 msgid "Turn maintenance OFF."
@@ -4684,6 +5788,22 @@ msgid "Switch context"
 msgstr "Přepnout kontext"
 
 #: pages/page_adminm.php
+msgid "Event delivery methods"
+msgstr "Metody doručení událostí"
+
+#: pages/page_adminm.php
+msgid ""
+"Enabled methods allow this user to configure receivers and receive event "
+"notifications."
+msgstr ""
+"Povolené metody umožní tomuto uživateli nastavovat příjemce a přijímat "
+"notifikace událostí."
+
+#: pages/page_adminm.php
+msgid "Delivery limits"
+msgstr "Limity doručování"
+
+#: pages/page_adminm.php
 msgid "Add a member"
 msgstr "Přidat člena"
 
@@ -4720,10 +5840,6 @@ msgid "Postal address"
 msgstr "Poštovní adresa"
 
 #: pages/page_adminm.php
-msgid "Enable vpsAdmin mailer"
-msgstr "Povolit mailer vpsAdmin"
-
-#: pages/page_adminm.php
 msgid "Note for administrators"
 msgstr "Poznámka pro administrátory"
 
@@ -4735,21 +5851,26 @@ msgstr "Spravovat členy"
 msgid "Member"
 msgstr "Člen"
 
-#: pages/page_adminm.php
-msgid "Enable mail notifications from vpsAdmin"
-msgstr "Povolit e-mailová upozornění od vpsAdmin"
+#: pages/page_adminm.php pages/page_notifications.php
+#: pages/page_transactions.php public/index.php
+msgid "Notifications"
+msgstr "Notifikace"
 
 #: pages/page_adminm.php
-msgid "Configure payment reminder"
-msgstr "Nakonfigurujte připomenutí platby"
+msgid "Configure event routes"
+msgstr "Nastavit routy událostí"
+
+#: pages/page_adminm.php
+msgid "Configure payment notifications"
+msgstr "Nastavit notifikace plateb"
 
 #: pages/page_adminm.php
 msgid "Used to localize vpsAdmin, API responses, and e-mails."
 msgstr "Používá se k lokalizaci odpovědí vpsAdmin, API a e-mailů."
 
 #: pages/page_adminm.php
-msgid "Used to format dates and times in vpsAdmin and e-mails."
-msgstr "Používá se k formátování dat a časů ve vpsAdminu a e-mailech."
+msgid "Used to format dates and times in vpsAdmin and notifications."
+msgstr "Používá se k formátování dat a časů ve vpsAdminu a notifikacích."
 
 #: pages/page_adminm.php
 msgid "Require password reset"
@@ -4758,18 +5879,6 @@ msgstr "Vyžadovat reset hesla"
 #: pages/page_adminm.php
 msgid "Lock-out"
 msgstr "Uzamčení"
-
-#: pages/page_adminm.php
-msgid "Contact"
-msgstr "Kontakt"
-
-#: pages/page_adminm.php
-msgid "Account management"
-msgstr "Vedení účtu"
-
-#: pages/page_adminm.php
-msgid "System administrator"
-msgstr "Správce systému"
 
 #: pages/page_adminm.php
 msgid "Change password"
@@ -4796,8 +5905,10 @@ msgid ""
 "All sessions except this one will be logged out, all access tokens will be "
 "revoked."
 msgstr ""
-"Všechny relace kromě této budou ukončeny a všechny přístupové tokeny "
-"zneplatněny."
+"Všechna sezení kromě tohoto budou odhlášena, všechny přístupové tokeny budou "
+"odvolány.Všechna sezení kromě tohoto budou odhlášena, všechny přístupové "
+"tokeny budou odvolány.Všechny relace kromě této budou ukončeny a všechny "
+"přístupové tokeny zneplatněny."
 
 #: pages/page_adminm.php
 msgid "Authentication settings"
@@ -4812,7 +5923,9 @@ msgid ""
 "Enable authentication using HTTP basic. Not used by vpsAdmin and not "
 "recommended."
 msgstr ""
-"Povolte ověřování pomocí HTTP basic. Nepoužívá vpsAdmin a nedoporučuje se."
+"Povolte ověřování pomocí HTTP basic. Nepoužívá vpsAdmin a nedoporučuje "
+"se.Povolte ověřování pomocí HTTP basic. Nepoužívá vpsAdmin a nedoporučuje "
+"se.Povolte ověřování pomocí HTTP basic. Nepoužívá vpsAdmin a nedoporučuje se."
 
 #: pages/page_adminm.php
 msgid "Enable token authentication"
@@ -4836,9 +5949,9 @@ msgid "Enable new login notification"
 msgstr "Povolit upozornění na nové přihlášení"
 
 #: pages/page_adminm.php
-msgid "Send emails about logins from new devices. Strongly recommended."
+msgid "Send notifications about logins from new devices. Strongly recommended."
 msgstr ""
-"Odesílejte e-maily o přihlášeních z nových zařízení. Důrazně doporučujeme."
+"Odesílat notifikace o přihlášeních z nových zařízení. Důrazně doporučeno."
 
 #: pages/page_adminm.php
 msgid "Session control"
@@ -4854,7 +5967,10 @@ msgid ""
 "Knowledge base."
 msgstr ""
 "Zadejte přihlašovací údaje jednou a přihlaste se ke všem službám, jako je "
-"Diskusní a znalostní báze."
+"Diskusní a znalostní báze.Zadejte přihlašovací údaje jednou a přihlaste se "
+"ke všem službám, jako je Diskusní a znalostní báze.Zadejte přihlašovací "
+"údaje jednou a přihlaste se ke všem službám, jako je Diskusní a znalostní "
+"báze."
 
 #: pages/page_adminm.php
 msgid "Preferred session length"
@@ -4869,8 +5985,10 @@ msgid ""
 "How long will the session last without any activity. Set to 0 to disable "
 "session timeout."
 msgstr ""
-"Doba, po kterou může relace zůstat neaktivní. Hodnota 0 automatické "
-"odhlašování vypne."
+"Jak dlouho sezení vydrží bez aktivity. Nastavením na 0 vypnete timeout "
+"sezení.Jak dlouho sezení vydrží bez aktivity. Nastavením na 0 vypnete "
+"timeout sezení.Doba, po kterou může relace zůstat neaktivní. Hodnota 0 "
+"automatické odhlašování vypne."
 
 #: pages/page_adminm.php
 msgid "Logout all"
@@ -4881,8 +5999,13 @@ msgid ""
 "Always logout all OAuth2 authorizations of the same client, e.g. from all "
 "active vpsAdmin web UI sessions, even in different browsers."
 msgstr ""
-"Při odhlášení vždy ukončit všechna OAuth2 oprávnění stejného klienta, např. "
-"všechny aktivní relace webového rozhraní vpsAdmin, i v jiných prohlížečích."
+"Vždy odhlašte všechna sezení OAuth2 stejného klienta, např. ze všech "
+"aktivních sezení webového rozhraní vpsAdmin, a to i v různých "
+"prohlížečích.Vždy odhlašte všechna sezení OAuth2 stejného klienta, např. ze "
+"všech aktivních sezení webového rozhraní vpsAdmin, a to i v různých "
+"prohlížečích.Při odhlášení vždy ukončit všechna OAuth2 oprávnění stejného "
+"klienta, např. všechny aktivní relace webového rozhraní vpsAdmin, i v jiných "
+"prohlížečích."
 
 #: pages/page_adminm.php
 msgid "Two-factor authentication"
@@ -4906,39 +6029,26 @@ msgid ""
 "not take effect immediately. You will be informed about the result."
 msgstr ""
 "Žádost o změnu bude zaslána administrátorům ke schválení. Změny se neprojeví "
-"okamžitě. O výsledku budete informováni."
+"okamžitě. O výsledku budete informováni.Žádost o změnu bude zaslána "
+"administrátorům ke schválení. Změny se neprojeví okamžitě. O výsledku budete "
+"informováni.Žádost o změnu bude zaslána administrátorům ke schválení. Změny "
+"se neprojeví okamžitě. O výsledku budete informováni."
 
 #: pages/page_adminm.php
 msgid "Request change"
 msgstr "Požádejte o změnu"
 
 #: pages/page_adminm.php
-msgid "E-mail roles"
-msgstr "E-mailové role"
+msgid "Notifications are configured using event routes and receivers."
+msgstr "Notifikace se nastavují pomocí rout událostí a příjemců."
 
 #: pages/page_adminm.php
-msgid ""
-"E-mails configured here override the primary e-mail. It is a comma separated "
-"list of e-mails, may contain line breaks."
-msgstr ""
-"Zde nakonfigurované e-maily mají přednost před primárním e-mailem. Jedná se "
-"o čárkami oddělený seznam e-mailů, může obsahovat zalomení řádků."
-
-#: pages/page_adminm.php
-msgid "Advanced configuration"
-msgstr "Pokročilá konfigurace"
+msgid "Configure receivers"
+msgstr "Nastavit příjemce"
 
 #: pages/page_adminm.php pages/page_adminvps.php
 msgid "State log"
 msgstr "Log stavů"
-
-#: pages/page_adminm.php
-msgid "Advanced e-mail configuration"
-msgstr "Pokročilá konfigurace e-mailu"
-
-#: pages/page_adminm.php
-msgid "Advanced mail configuration"
-msgstr "Pokročilá konfigurace pošty"
 
 #: pages/page_adminm.php
 msgid "Public keys"
@@ -5039,10 +6149,6 @@ msgstr "Správa členů [režim správce]"
 #: pages/page_adminm.php
 msgid "Access level"
 msgstr "Úroveň přístupu"
-
-#: pages/page_adminm.php
-msgid "Mailer enabled"
-msgstr "Mailer povolen"
 
 #: pages/page_adminm.php
 msgid "NICKNAME"
@@ -5183,6 +6289,26 @@ msgstr "Uživatel aktualizován"
 #: pages/page_adminm.php
 msgid "User update failed"
 msgstr "Aktualizace uživatele se nezdařila"
+
+#: pages/page_adminm.php pages/page_notifications.php
+msgid "Access denied"
+msgstr "Přístup odepřen"
+
+#: pages/page_adminm.php
+msgid "Only administrators can update event delivery methods."
+msgstr "Metody doručení událostí mohou upravovat pouze administrátoři."
+
+#: pages/page_adminm.php
+msgid "Event delivery methods updated"
+msgstr "Metody doručení událostí aktualizovány"
+
+#: pages/page_adminm.php
+msgid "Event delivery methods were successfully updated."
+msgstr "Metody doručení událostí byly úspěšně aktualizovány."
+
+#: pages/page_adminm.php
+msgid "Event delivery method update failed"
+msgstr "Aktualizace metod doručení událostí se nezdařila"
 
 #: pages/page_adminm.php
 msgid "Invalid entry"
@@ -5341,23 +6467,6 @@ msgid "Change request failed"
 msgstr "Požadavek na změnu se nezdařil"
 
 #: pages/page_adminm.php
-msgid "Role e-mails updated"
-msgstr "E-maily rolí aktualizovány"
-
-#: pages/page_adminm.php
-msgid "The changes were successfully saved."
-msgstr "Změny byly úspěšně uloženy."
-
-#: pages/page_adminm.php pages/page_adminvps.php pages/page_cluster.php
-#: pages/page_networking.php pages/page_security_advisory.php
-msgid "Update failed"
-msgstr "Aktualizace se nezdařila"
-
-#: pages/page_adminm.php
-msgid "Template e-mails updated"
-msgstr "Šablony e-mailů aktualizovány"
-
-#: pages/page_adminm.php
 msgid "Paid until date set"
 msgstr "Zaplaceno do nastaveného data"
 
@@ -5465,6 +6574,11 @@ msgstr "Konfigurace prostředí byla úspěšně aktualizována."
 msgid "Settings customized"
 msgstr "Nastavení přizpůsobené"
 
+#: pages/page_adminm.php pages/page_adminvps.php pages/page_cluster.php
+#: pages/page_networking.php pages/page_security_advisory.php
+msgid "Update failed"
+msgstr "Aktualizace se nezdařila"
+
 #: pages/page_adminm.php
 msgid "Settings reset to default"
 msgstr "Nastavení se resetuje na výchozí"
@@ -5486,20 +6600,9 @@ msgstr "Platby"
 #: pages/page_dns.php pages/page_export.php pages/page_history.php
 #: pages/page_incidents.php pages/page_jumpto.php pages/page_lifetimes.php
 #: pages/page_monitoring.php pages/page_nas.php pages/page_networking.php
-#: pages/page_node.php pages/page_oom_reports.php pages/page_outage.php
-#: pages/page_redirect.php pages/page_reminder.php pages/page_transactions.php
-#: pages/page_userdata.php pages/page_userns.php
-msgid "Access forbidden"
-msgstr "Přístup zakázán"
-
-#: pages/page_adminm.php pages/page_adminvps.php pages/page_backup.php
-#: pages/page_cluster.php pages/page_console.php pages/page_dataset.php
-#: pages/page_dns.php pages/page_export.php pages/page_history.php
-#: pages/page_incidents.php pages/page_jumpto.php pages/page_lifetimes.php
-#: pages/page_monitoring.php pages/page_nas.php pages/page_networking.php
-#: pages/page_oom_reports.php pages/page_outage.php pages/page_redirect.php
-#: pages/page_reminder.php pages/page_transactions.php pages/page_userdata.php
-#: pages/page_userns.php
+#: pages/page_notifications.php pages/page_oom_reports.php
+#: pages/page_outage.php pages/page_redirect.php pages/page_reminder.php
+#: pages/page_transactions.php pages/page_userdata.php pages/page_userns.php
 msgid "You have to log in to be able to access vpsAdmin's functions"
 msgstr "Musíte se přihlásit, abyste měli přístup k funkcím vpsAdmin"
 
@@ -5600,10 +6703,6 @@ msgid "Resource change failed"
 msgstr "Změna zdroje se nezdařila"
 
 #: pages/page_adminvps.php
-msgid "Error"
-msgstr "Chyba"
-
-#: pages/page_adminvps.php
 msgid "Owner changed"
 msgstr "Majitel se změnil"
 
@@ -5700,7 +6799,10 @@ msgid ""
 "All data from the VPS root filesystem will be deleted, subdatasets are kept."
 msgstr ""
 "Všechna data z kořenového souborového systému VPS budou smazána, dílčí "
-"datasety zůstanou zachovány."
+"datasety zůstanou zachovány.Všechna data z kořenového souborového systému "
+"VPS budou smazána, dílčí datasety zůstanou zachovány.Všechna data z "
+"kořenového souborového systému VPS budou smazána, dílčí datasety zůstanou "
+"zachovány."
 
 #: pages/page_adminvps.php
 msgid "Current OS template"
@@ -5917,7 +7019,11 @@ msgid ""
 "used during outage to prevent data corruption."
 msgstr ""
 "Všechny akce pro tento VPS jsou prozatím zakázány. To se obvykle používá při "
-"odstávce nebo výpadku, aby se zabránilo poškození dat."
+"odstávce nebo výpadku, aby se zabránilo poškození dat.Všechny akce pro tento "
+"VPS jsou prozatím zakázány. To se obvykle používá při odstávce nebo výpadku, "
+"aby se zabránilo poškození dat.Všechny akce pro tento VPS jsou prozatím "
+"zakázány. To se obvykle používá při odstávce nebo výpadku, aby se zabránilo "
+"poškození dat."
 
 #: pages/page_adminvps.php public/index.php
 msgid "Please be patient."
@@ -5934,7 +7040,11 @@ msgid ""
 msgstr ""
 "Tento VPS je nepřístupný a bude smazán, jakmile uplyne datum vypršení "
 "platnosti nebo dojde k nějaké jiné události. Pokud jej chcete oživit, "
-"kontaktujte podporu."
+"kontaktujte podporu.Tento VPS je nepřístupný a bude smazán, jakmile uplyne "
+"datum vypršení platnosti nebo dojde k nějaké jiné události. Pokud jej chcete "
+"oživit, kontaktujte podporu.Tento VPS je nepřístupný a bude smazán, jakmile "
+"uplyne datum vypršení platnosti nebo dojde k nějaké jiné události. Pokud jej "
+"chcete oživit, kontaktujte podporu."
 
 #: pages/page_adminvps.php
 msgid "This VPS is deleted and cannot be revived."
@@ -5967,6 +7077,20 @@ msgstr ""
 "</p>\n"
 "<p>\n"
 "Restartujte VPS pro opuštění nouzového režimu.\n"
+"</p>\n"
+"<p>\n"
+"VPS byl spuštěn z čisté šablony. Všechny změny v\n"
+"nouzovém systému budou ztraceny po restartování VPS.\n"
+"</p>\n"
+"<p>\n"
+"Restartujte VPS pro opuštění nouzového režimu.\n"
+"</p>\n"
+"<p>\n"
+"VPS byl spuštěn z čisté šablony. Všechny změny v\n"
+"nouzovém systému budou ztraceny po restartování VPS.\n"
+"</p>\n"
+"<p>\n"
+"Restartujte VPS pro opuštění nouzového režimu.\n"
 "</p>"
 
 #: pages/page_adminvps.php
@@ -5987,6 +7111,14 @@ msgstr ""
 "<p>\n"
 "VPS deaktivoval síť, pravděpodobně kvůli zneužití. Kontaktujte prosím\n"
 "podporu pro jeho opětovné zapnutí.\n"
+"</p>\n"
+"<p>\n"
+"VPS deaktivoval síť, pravděpodobně kvůli zneužití. Kontaktujte prosím\n"
+"podporu pro jeho opětovné zapnutí.\n"
+"</p>\n"
+"<p>\n"
+"VPS deaktivoval síť, pravděpodobně kvůli zneužití. Kontaktujte prosím\n"
+"podporu pro jeho opětovné zapnutí.\n"
 "</p>"
 
 #: pages/page_adminvps.php
@@ -5999,7 +7131,9 @@ msgid ""
 "default configuration."
 msgstr ""
 "Následující přihlašovací údaje lze použít na nově vytvořeném VPS s výchozí "
-"konfigurací."
+"konfigurací.Následující přihlašovací údaje lze použít na nově vytvořeném VPS "
+"s výchozí konfigurací.Následující přihlašovací údaje lze použít na nově "
+"vytvořeném VPS s výchozí konfigurací."
 
 #: pages/page_adminvps.php
 msgid "Password or SSH key"
@@ -6008,7 +7142,10 @@ msgstr "Heslo nebo klíč SSH"
 #: pages/page_adminvps.php
 msgid "Set root password or deploy public key in the forms below."
 msgstr ""
-"Nastavte heslo uživatele root nebo nasaďte veřejný klíč ve formulářích níže."
+"Nastavte heslo uživatele root nebo nasaďte veřejný klíč ve formulářích "
+"níže.Nastavte heslo uživatele root nebo nasaďte veřejný klíč ve formulářích "
+"níže.Nastavte heslo uživatele root nebo nasaďte veřejný klíč ve formulářích "
+"níže."
 
 #: pages/page_adminvps.php
 msgid "One of:"
@@ -6036,7 +7173,10 @@ msgid ""
 "that the fingerprints match on your first login."
 msgstr ""
 "Následující hostitelské klíče SSH byly nalezeny uvnitř VPS. Při prvním "
-"přihlášení si můžete ověřit, zda se otisky shodují."
+"přihlášení si můžete ověřit, zda se otisky shodují.Následující hostitelské "
+"klíče SSH byly nalezeny uvnitř VPS. Při prvním přihlášení si můžete ověřit, "
+"zda se otisky shodují.Následující hostitelské klíče SSH byly nalezeny uvnitř "
+"VPS. Při prvním přihlášení si můžete ověřit, zda se otisky shodují."
 
 #: pages/page_adminvps.php
 msgid "Set root's password (in the VPS, not in the vpsAdmin)"
@@ -6084,10 +7224,11 @@ msgstr "Vypnout síť"
 
 #: pages/page_adminvps.php
 msgid ""
-"This form disables all network interfaces. User is sent an email on change."
+"This form disables all network interfaces. User is sent a notification on "
+"change."
 msgstr ""
-"Tento formulář zakáže všechna síťová rozhraní. Uživateli je zaslán e-mail o "
-"změně."
+"Tento formulář zakáže všechna síťová rozhraní. Uživateli bude při změně "
+"odeslána notifikace."
 
 #: pages/page_adminvps.php
 msgid "Enable network"
@@ -6095,10 +7236,11 @@ msgstr "Povolit síť"
 
 #: pages/page_adminvps.php
 msgid ""
-"This form enables all network interfaces. User is sent an email on change."
+"This form enables all network interfaces. User is sent a notification on "
+"change."
 msgstr ""
-"Tento formulář povoluje všechna síťová rozhraní. Uživateli je zaslán e-mail "
-"o změně."
+"Tento formulář povolí všechna síťová rozhraní. Uživateli bude při změně "
+"odeslána notifikace."
 
 #: pages/page_adminvps.php
 msgid "DNS resolver (/etc/resolv.conf)"
@@ -6138,7 +7280,13 @@ msgstr ""
 "Spustí VPS z čisté šablony, např. pro opravu poškozeného systému. "
 "Konfigurace VPS (IP adresy, zdroje atd.) zůstane stejná, VPS se pouze spustí "
 "z čistého systému. Původní kořenový filesystém VPS bude dostupný přes "
-"mountpoint nastavený níže."
+"mountpoint nastavený níže.Spustí VPS z čisté šablony, např. pro opravu "
+"poškozeného systému. Konfigurace VPS (IP adresy, zdroje atd.) zůstane "
+"stejná, VPS se pouze spustí z čistého systému. Původní kořenový filesystém "
+"VPS bude dostupný přes mountpoint nastavený níže.Spustí VPS z čisté šablony, "
+"např. pro opravu poškozeného systému. Konfigurace VPS (IP adresy, zdroje "
+"atd.) zůstane stejná, VPS se pouze spustí z čistého systému. Původní "
+"kořenový filesystém VPS bude dostupný přes mountpoint nastavený níže."
 
 #: pages/page_adminvps.php
 msgid ""
@@ -6148,7 +7296,11 @@ msgid ""
 msgstr ""
 "Při dalším startu/restartu se VPS znovu spustí ze svého vlastního datasetu. "
 "Čistý systém vytvořený touto akcí je dočasný a všechny změny v něm budou "
-"ztraceny."
+"ztraceny.Při dalším startu/restartu se VPS znovu spustí ze svého vlastního "
+"datasetu. Čistý systém vytvořený touto akcí je dočasný a všechny změny v něm "
+"budou ztraceny.Při dalším startu/restartu se VPS znovu spustí ze svého "
+"vlastního datasetu. Čistý systém vytvořený touto akcí je dočasný a všechny "
+"změny v něm budou ztraceny."
 
 #: pages/page_adminvps.php
 msgid "Mount root dataset"
@@ -6171,7 +7323,9 @@ msgid ""
 "Install base system again. All data in the root filesystem will be removed."
 msgstr ""
 "Znovu nainstalujte základní systém. Všechna data v kořenovém systému souborů "
-"budou odstraněna."
+"budou odstraněna.Znovu nainstalujte základní systém. Všechna data v "
+"kořenovém systému souborů budou odstraněna.Znovu nainstalujte základní "
+"systém. Všechna data v kořenovém systému souborů budou odstraněna."
 
 #: pages/page_adminvps.php
 msgid "Distribution information"
@@ -6183,6 +7337,10 @@ msgid ""
 "can also be updated automatically by reading /etc/os-release, see below."
 msgstr ""
 "Použijte, pokud jste upgradovali/downgradovali svůj systém. Informace o "
+"distribuci lze také aktualizovat automaticky přečtením /etc/os-release, viz "
+"níže.Použijte, pokud jste upgradovali/downgradovali svůj systém. Informace o "
+"distribuci lze také aktualizovat automaticky přečtením /etc/os-release, viz "
+"níže.Použijte, pokud jste upgradovali/downgradovali svůj systém. Informace o "
 "distribuci lze také aktualizovat automaticky sledováním /etc/os-release, viz "
 "níže."
 
@@ -6223,8 +7381,12 @@ msgid ""
 "Configure the number of seconds the start menu waits for the user before the "
 "system is started. Set to zero to disable the start menu."
 msgstr ""
-"Nakonfigurujte počet sekund, po které start menu čeká na uživatele, než se "
-"systém spustí. Nastavením na nulu start menu vypnete."
+"Nakonfigurujte počet sekund, po které Start menu čeká na uživatele, než se "
+"systém spustí. Nastavením na nulu Start menu vypnete.Nakonfigurujte počet "
+"sekund, po které Start menu čeká na uživatele, než se systém spustí. "
+"Nastavením na nulu Start menu vypnete.Nakonfigurujte počet sekund, po které "
+"start menu čeká na uživatele, než se systém spustí. Nastavením na nulu start "
+"menu vypnete."
 
 #: pages/page_adminvps.php
 msgid "Timeout"
@@ -6272,7 +7434,7 @@ msgid ""
 "changes inside the VPS. If allowed, we can make these necessary changes for "
 "you. We usually only modify the base system configuration files which we "
 "would otherwise deliver in OS templates for new VPS. We do not access or "
-"modify your applications or data. We will email you about any changes we "
+"modify your applications or data. You will be notified about any changes we "
 "will make."
 msgstr ""
 "Nové softwarové funkce nebo chyby mohou vyžadovat nebo mít prospěch z "
@@ -6280,7 +7442,7 @@ msgstr ""
 "tyto nezbytné změny. Obvykle upravujeme pouze konfigurační soubory "
 "základního systému, které bychom jinak dodali v šablonách OS pro nové VPS. K "
 "vašim aplikacím nebo datům nepřistupujeme ani je neupravujeme. O veškerých "
-"změnách, které provedeme, vás budeme informovat e-mailem."
+"změnách, které provedeme, vás budeme informovat notifikací."
 
 #: pages/page_adminvps.php
 msgid "Allow modifications by vpsFree.cz admin team (recommended)"
@@ -6404,7 +7566,9 @@ msgid ""
 "be lost."
 msgstr ""
 "Dataset bude obnoven a všechna data, která nebyla zachycena snapshotem, "
-"budou ztracena."
+"budou ztracena.Dataset bude obnoven a všechna data, která nebyla zachycena "
+"snapshotem, budou ztracena.Dataset bude obnoven a všechna data, která nebyla "
+"zachycena snapshotem, budou ztracena."
 
 #: pages/page_backup.php
 msgid "Dataset or snapshot not found"
@@ -6436,11 +7600,11 @@ msgstr "Stažení snímku z"
 
 #: pages/page_backup.php
 msgid ""
-"Preparing the archive may take several hours. You will receive email with "
-"download link when it is done."
+"Preparing the archive may take several hours. You will receive a "
+"notification with the download link when it is done."
 msgstr ""
-"Příprava archivu může trvat několik hodin. Po dokončení obdržíte e-mail s "
-"odkazem na stažení."
+"Příprava archivu může trvat několik hodin. Po dokončení obdržíte notifikaci "
+"s odkazem na stažení."
 
 #: pages/page_backup.php
 msgid "Download failed"
@@ -6924,6 +8088,10 @@ msgid ""
 "\t\t\t\t\t\t\t\t\t<strong>This action is irreversible!</strong>"
 msgstr ""
 "Dataset bude zničen spolu se všemi potomky.\n"
+"<strong>Tato akce je nevratná!</strong>Dataset bude zničen spolu se všemi "
+"potomky.\n"
+"<strong>Tato akce je nevratná!</strong>Dataset bude zničen spolu se všemi "
+"potomky.\n"
 "<strong>Tato akce je nevratná!</strong>"
 
 #: pages/page_dataset.php
@@ -7348,6 +8516,9 @@ msgid ""
 "please contact support if the error persists."
 msgstr ""
 "vpsAdmin nemohl získat přístupový token z autorizačního serveru. Pokud chyba "
+"přetrvává, kontaktujte podporu.vpsAdmin nemohl získat přístupový token z "
+"autorizačního serveru. Pokud chyba přetrvává, kontaktujte podporu.vpsAdmin "
+"nemohl získat přístupový token z autorizačního serveru. Pokud chyba "
 "přetrvává, kontaktujte podporu."
 
 #: pages/page_login.php
@@ -7362,7 +8533,9 @@ msgstr "neznámá chyba"
 msgid "Please try to sign in again or contact support if the error persists."
 msgstr ""
 "Zkuste se prosím přihlásit znovu nebo kontaktujte podporu, pokud chyba "
-"přetrvává."
+"přetrvává.Zkuste se prosím přihlásit znovu nebo kontaktujte podporu, pokud "
+"chyba přetrvává.Zkuste se prosím přihlásit znovu nebo kontaktujte podporu, "
+"pokud chyba přetrvává."
 
 #: pages/page_login.php
 msgid "Dropped admin privileges"
@@ -7422,7 +8595,9 @@ msgid ""
 "another address: do not set the \"Address\" field"
 msgstr ""
 "Při přidávání adresy do rozhraní ji nelze směrovat přes jinou adresu: pole "
-"\"Adresa\" nenastavujte"
+"\"Adresa\" nenastavujtePři přidávání adresy do rozhraní ji nelze směrovat "
+"přes jinou adresu: pole \"Adresa\" nenastavujtePři přidávání adresy do "
+"rozhraní ji nelze směrovat přes jinou adresu: pole \"Adresa\" nenastavujte"
 
 #: pages/page_networking.php
 msgid "Something went wrong"
@@ -7536,29 +8711,212 @@ msgstr "Zpět ke stavu"
 msgid "You have to log in to be able to access vpsadmin's functions"
 msgstr "Abyste měli přístup k funkcím vpsadmin, musíte se přihlásit"
 
-#: pages/page_oom_reports.php
-msgid "Rule added"
-msgstr "Pravidlo přidáno"
+#: pages/page_notifications.php
+msgid "Route added"
+msgstr "Routa přidána"
+
+#: pages/page_notifications.php
+msgid "Failed to add route"
+msgstr "Přidání routy se nezdařilo"
+
+#: pages/page_notifications.php
+msgid "Route updated"
+msgstr "Routa aktualizována"
+
+#: pages/page_notifications.php
+msgid "Failed to update route"
+msgstr "Aktualizace routy se nezdařila"
+
+#: pages/page_notifications.php
+msgid "Route deleted"
+msgstr "Routa smazána"
+
+#: pages/page_notifications.php
+msgid "Failed to delete route"
+msgstr "Smazání routy se nezdařilo"
+
+#: pages/page_notifications.php
+msgid "Failed to reorder routes"
+msgstr "Změna pořadí rout se nezdařila"
+
+#: pages/page_notifications.php
+msgid "Invalid route order"
+msgstr "Neplatné pořadí rout"
+
+#: pages/page_notifications.php
+msgid "Matcher added"
+msgstr "Matcher přidán"
+
+#: pages/page_notifications.php
+msgid "Failed to add matcher"
+msgstr "Přidání matcheru se nezdařilo"
+
+#: pages/page_notifications.php
+msgid "Matchers updated"
+msgstr "Matchery aktualizovány"
+
+#: pages/page_notifications.php
+msgid "Failed to save matchers"
+msgstr "Uložení matcherů se nezdařilo"
+
+#: pages/page_notifications.php
+msgid "Matcher deleted"
+msgstr "Matcher smazán"
+
+#: pages/page_notifications.php
+msgid "Failed to delete matcher"
+msgstr "Smazání matcheru se nezdařilo"
+
+#: pages/page_notifications.php
+msgid "Receiver added"
+msgstr "Příjemce přidán"
+
+#: pages/page_notifications.php
+msgid "Failed to add receiver"
+msgstr "Přidání příjemce se nezdařilo"
+
+#: pages/page_notifications.php
+msgid "Receiver updated"
+msgstr "Příjemce aktualizován"
+
+#: pages/page_notifications.php
+msgid "Failed to update receiver"
+msgstr "Aktualizace příjemce se nezdařila"
+
+#: pages/page_notifications.php
+msgid "Receiver deleted"
+msgstr "Příjemce smazán"
+
+#: pages/page_notifications.php
+msgid "Failed to delete receiver"
+msgstr "Smazání příjemce se nezdařilo"
+
+#: pages/page_notifications.php
+msgid "Failed to add target"
+msgstr "Přidání cíle se nezdařilo"
+
+#: pages/page_notifications.php
+msgid "Invalid target type"
+msgstr "Neplatný typ cíle"
+
+#: pages/page_notifications.php
+msgid "Target added"
+msgstr "Cíl přidán"
+
+#: pages/page_notifications.php
+msgid "Target updated"
+msgstr "Cíl aktualizován"
+
+#: pages/page_notifications.php
+msgid "Failed to update target"
+msgstr "Aktualizace cíle se nezdařila"
+
+#: pages/page_notifications.php
+msgid "Pairing command created"
+msgstr "Párovací příkaz vytvořen"
+
+#: pages/page_notifications.php
+msgid "Failed to create pairing token"
+msgstr "Vytvoření párovacího tokenu se nezdařilo"
+
+#: pages/page_notifications.php
+msgid "Verification e-mail sent"
+msgstr "Ověřovací e-mail odeslán"
+
+#: pages/page_notifications.php
+msgid "Failed to send verification e-mail"
+msgstr "Odeslání ověřovacího e-mailu se nezdařilo"
+
+#: pages/page_notifications.php
+msgid "E-mail address verified"
+msgstr "E-mailová adresa ověřena"
+
+#: pages/page_notifications.php
+msgid "Failed to verify e-mail address"
+msgstr "Ověření e-mailové adresy se nezdařilo"
+
+#: pages/page_notifications.php
+msgid "Verification SMS sent"
+msgstr "Ověřovací SMS odeslána"
+
+#: pages/page_notifications.php
+msgid "Failed to send verification SMS"
+msgstr "Odeslání ověřovací SMS se nezdařilo"
+
+#: pages/page_notifications.php
+msgid "Phone number verified"
+msgstr "Telefonní číslo ověřeno"
+
+#: pages/page_notifications.php
+msgid "Failed to verify phone number"
+msgstr "Ověření telefonního čísla se nezdařilo"
+
+#: pages/page_notifications.php
+msgid "Target deleted"
+msgstr "Cíl smazán"
+
+#: pages/page_notifications.php
+msgid "Failed to delete target"
+msgstr "Smazání cíle se nezdařilo"
+
+#: pages/page_notifications.php
+msgid "Target linked"
+msgstr "Cíl připojen"
+
+#: pages/page_notifications.php
+msgid "Failed to link target"
+msgstr "Připojení cíle se nezdařilo"
+
+#: pages/page_notifications.php
+msgid "Target unlinked"
+msgstr "Cíl odpojen"
+
+#: pages/page_notifications.php
+msgid "Failed to unlink target"
+msgstr "Odpojení cíle se nezdařilo"
+
+#: pages/page_notifications.php
+msgid "Delivery retry scheduled"
+msgstr "Opakování doručení naplánováno"
+
+#: pages/page_notifications.php
+msgid "Failed to retry delivery"
+msgstr "Opakování doručení se nezdařilo"
+
+#: pages/page_notifications.php
+msgid "Only administrators can update delivery limits."
+msgstr "Limity doručování mohou upravovat pouze administrátoři."
+
+#: pages/page_notifications.php
+msgid "Limits must be positive integers."
+msgstr "Limity musí být kladná celá čísla."
+
+#: pages/page_notifications.php
+msgid "Delivery limits updated"
+msgstr "Limity doručování aktualizovány"
+
+#: pages/page_notifications.php
+msgid "Failed to update delivery limits"
+msgstr "Aktualizace limitů doručování se nezdařila"
+
+#: pages/page_notifications.php
+msgid "Test event created"
+msgstr "Testovací událost vytvořena"
+
+#: pages/page_notifications.php
+msgid "Failed to create test event"
+msgstr "Vytvoření testovací události se nezdařilo"
 
 #: pages/page_oom_reports.php
-msgid "Failed to add rule"
-msgstr "Přidání pravidla se nezdařilo"
+msgid "OOM report rules moved"
+msgstr "Pravidla OOM reportů přesunuta"
 
 #: pages/page_oom_reports.php
-msgid "Rule updated"
-msgstr "Pravidlo aktualizováno"
-
-#: pages/page_oom_reports.php
-msgid "Failed to update rule"
-msgstr "Aktualizace pravidla se nezdařila"
-
-#: pages/page_oom_reports.php
-msgid "Rule deleted"
-msgstr "Pravidlo smazáno"
-
-#: pages/page_oom_reports.php
-msgid "Failed to delete rule"
-msgstr "Smazání pravidla se nezdařilo"
+msgid ""
+"OOM report delivery and suppression are configured using notification routes."
+msgstr ""
+"Doručování OOM reportů a jejich potlačení se nastavuje pomocí notifikačních "
+"rout."
 
 #: pages/page_outage.php
 msgid "The outage update was successfully posted."
@@ -7593,8 +8951,8 @@ msgid "Unable to determine remind date"
 msgstr "Nelze určit datum připomenutí"
 
 #: pages/page_reminder.php
-msgid "Mail reminder set"
-msgstr "Nastavení připomenutí pošty"
+msgid "Notification reminder set"
+msgstr "Notifikační připomenutí nastaveno"
 
 #: pages/page_reminder.php
 msgid "vpsAdmin will not remind you until"
@@ -7653,6 +9011,14 @@ msgid "Progress"
 msgstr "Pokrok"
 
 #: pages/page_transactions.php
+msgid "Notification route created"
+msgstr "Notifikační routa vytvořena"
+
+#: pages/page_transactions.php
+msgid "Failed to create notification route"
+msgstr "Vytvoření notifikační routy se nezdařilo"
+
+#: pages/page_transactions.php
 msgid "Chain not found"
 msgstr "Řetězec nenalezen"
 
@@ -7663,6 +9029,10 @@ msgstr "Informace o řetězci"
 #: pages/page_transactions.php
 msgid "Concerns"
 msgstr "Týká se"
+
+#: pages/page_transactions.php
+msgid "Notify me when done"
+msgstr "Informovat mě po dokončení"
 
 #: pages/page_transactions.php
 msgid "Detailed mode"
@@ -7832,6 +9202,12 @@ msgid ""
 msgstr ""
 "vpsAdmin je aktuálně v režimu údržby, všechny akce jsou zakázány. <br />\n"
 "To se obvykle používá při odstávce nebo výpadku, aby se zabránilo poškození "
+"dat.<br />vpsAdmin je aktuálně v režimu údržby, všechny akce jsou zakázány. "
+"<br />\n"
+"To se obvykle používá při odstávce nebo výpadku, aby se zabránilo poškození "
+"dat.<br />vpsAdmin je aktuálně v režimu údržby, všechny akce jsou zakázány. "
+"<br />\n"
+"To se obvykle používá při odstávce nebo výpadku, aby se zabránilo poškození "
 "dat.<br />"
 
 #: public/index.php
@@ -7847,7 +9223,9 @@ msgid ""
 "An unhandled error occured in communication with the API. Please contact the "
 "support."
 msgstr ""
-"V komunikaci s API došlo k neošetřené chybě. Kontaktujte prosím podporu."
+"V komunikaci s API došlo k neošetřené chybě. Kontaktujte prosím podporu.V "
+"komunikaci s API došlo k neošetřené chybě. Kontaktujte prosím podporu.V "
+"komunikaci s API došlo k neošetřené chybě. Kontaktujte prosím podporu."
 
 #: public/index.php
 msgid "Token invalid"
@@ -7859,7 +9237,10 @@ msgid ""
 "action, you will be given a new, valid token."
 msgstr ""
 "Váš bezpečnostní token je buď neplatný, nebo vypršela jeho platnost. Zkuste "
-"akci zopakovat, obdržíte nový platný token."
+"akci zopakovat, obdržíte nový platný token.Váš bezpečnostní token je buď "
+"neplatný, nebo vypršela jeho platnost. Zkuste akci zopakovat, obdržíte nový "
+"platný token.Váš bezpečnostní token je buď neplatný, nebo vypršela jeho "
+"platnost. Zkuste akci zopakovat, obdržíte nový platný token."
 
 #: public/index.php
 msgid "NAS"
@@ -7880,51 +9261,3 @@ msgstr "Upravit pole nápovědy"
 #: public/index.php
 msgid "Help"
 msgstr "Pomoc"
-
-#~ msgid "Mail template recipients"
-#~ msgstr "Příjemci šablony pošty"
-
-#~ msgid "awaiting"
-#~ msgstr "čekání"
-
-#~ msgid "pending correction"
-#~ msgstr "čekající na opravu"
-
-#~ msgid "approved"
-#~ msgstr "schválený"
-
-#~ msgid "denied"
-#~ msgstr "popřel"
-
-#~ msgid "ignored"
-#~ msgstr "ignoroval"
-
-#~ msgid "Bytes"
-#~ msgstr "Bajtů"
-
-#~ msgid "Force stop VPS"
-#~ msgstr "Vynutit stop VPS"
-
-#~ msgid "stop"
-#~ msgstr "stop"
-
-#~ msgid "IDs"
-#~ msgstr "ID"
-
-#~ msgid "Current"
-#~ msgstr "Aktuální"
-
-#~ msgid "planned outages"
-#~ msgstr "plánované odstávky"
-
-#~ msgid "Disabled"
-#~ msgstr "Zakázáno"
-
-#~ msgid "Contact support if you need more"
-#~ msgstr "Kontaktujte podporu, pokud potřebujete více"
-
-#~ msgid "resources."
-#~ msgstr "zdrojů."
-
-#~ msgid "Transactions"
-#~ msgstr "Transakce"

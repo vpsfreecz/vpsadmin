@@ -53,12 +53,20 @@ en:
             label: approve
           deny:
             label: deny
+          email:
+            label: E-mail
           ignore:
             label: ignore
           notify:
             label: notify
           request_correction:
             label: request_correction
+          sms:
+            label: SMS
+          telegram:
+            label: Telegram
+          webhook:
+            label: Webhook
         label: Action
       activate:
         label: Activate account
@@ -161,6 +169,10 @@ en:
         description: Controls whether the access time for files is updated when they
           are read
         label: Access time
+      attempt_count:
+        label: Attempt_count
+      attempt_number:
+        label: Attempt_number
       attr_changes:
         label: Attribute changes
       attribute:
@@ -290,6 +302,8 @@ en:
         label: Concurrency
       config:
         label: Config
+      config_json:
+        label: Configuration
       confirmed:
         label: Confirmed
       content:
@@ -382,9 +396,30 @@ en:
       default:
         description: If true, the user config is inherited from the environment config
         label: Default
+      default_limit_count:
+        label: Default_limit_count
+      default_routed:
+        label: Default_routed
       default_ttl:
         description: Default TTL for records, in seconds
         label: Default TTL
+      delivery_method:
+        choices:
+          email:
+            label: E-mail
+          sms:
+            label: SMS
+          telegram:
+            label: Telegram
+          webhook:
+            label: Webhook
+        label: Delivery_method
+      delivery_method_enabled:
+        label: Delivery_method_enabled
+      delivery_transaction_chain_id:
+        label: Delivery_transaction_chain_id
+      delivery_transaction_chain_label:
+        label: Delivery_transaction_chain_label
       delta:
         label: Delta
       depends_on:
@@ -398,6 +433,12 @@ en:
       diskspace:
         description: Minimally 1024, maximally 1048576, step size is 1
         label: Disk space
+      display_action_summary:
+        label: Display_action_summary
+      display_label:
+        label: Display_label
+      display_target:
+        label: Display_target
       distribution:
         label: Distribution
       dns_resolver:
@@ -478,7 +519,7 @@ en:
       enable_new_login_notification:
         label: Enable new login notification
       enable_notifications:
-        description: Send emails about the expansion
+        description: Send notifications about the expansion
         label: Enable notifications
       enable_oauth2_auth:
         label: Enable OAuth2 authentication
@@ -498,6 +539,11 @@ en:
       enable_user_dns_zones:
         label: Enable_user_dns_zones
       enabled:
+        choices:
+          'false':
+            label: 'false'
+          'true':
+            label: 'true'
         label: Enabled
       entity_id:
         description: Filter outages by entity ID
@@ -510,16 +556,133 @@ en:
         label: Environment
       environment_dataset_plan:
         label: Environment_dataset_plan
+      error_summary:
+        label: Error_summary
       estimated_income:
         label: Estimated_income
       event_at:
         label: Event_at
+      event_created_at:
+        label: Event_created_at
       event_data:
         label: Event_data
+      event_delivery_id:
+        label: Event_delivery_id
+      event_id:
+        label: Event_id
       event_key:
         label: Event_key
+      event_route_id:
+        label: Event_route_id
+      event_route_label:
+        label: Event_route_label
+      event_routing_context_id:
+        label: Event_routing_context_id
+      event_severity:
+        label: Event_severity
+      event_subject:
+        label: Event_subject
       event_type:
+        choices:
+          dataset_migration_begun:
+            label: Dataset migration begun
+          dataset_migration_finished:
+            label: Dataset migration finished
+          dns_zone_transfer_failed:
+            label: DNS zone transfer failed
+          dns_zone_transfer_recovered:
+            label: DNS zone transfer recovered
+          incident_report_reply:
+            label: Incident report reply
+          lifetime_expiration_warning:
+            label: Expiration warning
+          outage_announced:
+            label: Outage announced
+          outage_updated:
+            label: Outage updated
+          payment_accepted:
+            label: Payment accepted
+          payments_overview:
+            label: Payments overview
+          request_created:
+            label: Request created
+          request_resolved:
+            label: Request resolved
+          request_updated:
+            label: Request updated
+          security_advisory_announced:
+            label: Security advisory announced
+          security_advisory_updated:
+            label: Security advisory updated
+          snapshot_download_ready:
+            label: Snapshot download ready
+          system_daily_report:
+            label: Daily report
+          transaction_chain_state_changed:
+            label: Transaction chain state changed
+          user_created:
+            label: User account created
+          user_failed_logins:
+            label: Failed sign-in report
+          user_new_login:
+            label: New sign-in
+          user_new_token:
+            label: New access token
+          user_resumed:
+            label: User account resumed
+          user_revived:
+            label: User account restored
+          user_soft_deleted:
+            label: User account disabled
+          user_suspended:
+            label: User account suspended
+          user_test_notification:
+            label: Test notification
+          user_totp_recovery_code_used:
+            label: TOTP recovery code used
+          vps_dataset_expanded:
+            label: VPS dataset expanded
+          vps_dataset_shrunk:
+            label: VPS dataset shrunk
+          vps_dns_resolver_changed:
+            label: VPS DNS resolver changed
+          vps_incident_report:
+            label: Incident report
+          vps_migration_begun:
+            label: VPS migration begun
+          vps_migration_finished:
+            label: VPS migration finished
+          vps_migration_planned:
+            label: VPS migration planned
+          vps_network_disabled:
+            label: VPS network disabled
+          vps_network_enabled:
+            label: VPS network enabled
+          vps_oom_prevention:
+            label: OOM prevention
+          vps_oom_report:
+            label: OOM report
+          vps_replaced:
+            label: VPS replaced
+          vps_resources_changed:
+            label: VPS resources changed
+          vps_resumed:
+            label: VPS resumed
+          vps_stopped_over_quota:
+            label: VPS stopped over quota
+          vps_suspended:
+            label: VPS suspended
         label: Event_type
+      event_type_pattern:
+        label: Event type pattern
+      event_user_id:
+        label: Event_user_id
+      event_user_login:
+        label: Event_user_login
+      event_vps_hostname:
+        label: Event_vps_hostname
+      event_vps_id:
+        label: Event_vps_id
       expiration:
         description: A date after which the token becomes invalid
       expirations:
@@ -536,6 +699,433 @@ en:
         label: Failcnt
       features:
         label: Features
+      field:
+        choices:
+          accepted_payment_count:
+            label: Number of accepted payments included in the report
+          accounted_by_id:
+            label: ID of the admin who accounted the payment
+          accounted_by_login:
+            label: Login of the admin who accounted the payment
+          action:
+            label: Request workflow action that produced the notification
+          active:
+            label: Whether the account was activated immediately
+          added_space:
+            label: Space added to the dataset refquota, in bytes
+          admin_id:
+            label: ID of the admin who resolved the request
+          admin_login:
+            label: Login of the admin who resolved the request
+          admin_name:
+            label: Name of the admin who changed the resources
+          advisory_id:
+            label: ID of the security advisory
+          advisory_name:
+            label: Name of the security advisory
+          affected_export_count:
+            label: Number of exports affected by the outage
+          affected_user_id:
+            label: ID of the affected user for user-targeted events
+          affected_user_login:
+            label: Login of the affected user for user-targeted events
+          affected_vps_count:
+            label: Number of VPSes affected by the migration
+          affected_vps_hostnames:
+            label: Hostnames of VPSes affected by the migration
+          affected_vps_ids:
+            label: IDs of VPSes affected by the migration
+          amount:
+            label: Amount credited to the user account
+          api_ip_addr:
+            label: IP address observed by the vpsAdmin API
+          attempt_count:
+            label: Total number of failed sign-in attempts in the report
+          auth_type:
+            label: Authentication method used for the sign-in
+          auth_types:
+            label: Authentication methods used in failed attempts
+          authorization_id:
+            label: ID of the OAuth authorization used for sign-in
+          batch_reported_at:
+            label: Time when the OOM report batch was processed
+          begins_at:
+            label: Time when the outage begins
+          category:
+            label: Event category used for grouping
+          cgroup:
+            label: Primary affected cgroup path
+          cgroups:
+            label: Affected cgroup paths included in the event
+          chain_id:
+            label: ID of the transaction chain whose state changed
+          chain_label:
+            label: User-visible transaction chain label
+          chain_name:
+            label: Internal transaction chain name
+          changed_at:
+            label: Time when the chain state changed
+          changed_at_timestamp:
+            label: Unix timestamp of the state change
+          changed_by_id:
+            label: ID of the user who changed the VPS lifecycle state
+          changed_by_name:
+            label: Name of the user who changed the VPS lifecycle state
+          changed_fields:
+            label: Names of outage fields changed by the update
+          client_ip_addr:
+            label: Client IP address reported by the API client
+          client_version:
+            label: Version string reported by the API client
+          codename:
+            label: Incident report codename assigned by vpsAdmin
+          concern_classes:
+            label: Classes of objects affected by the chain
+          concern_object_ids:
+            label: IDs of objects affected by the chain
+          count:
+            label: Number of OOM reports in the selected group
+          cpu:
+            label: CPU core count assigned to the VPS after the change
+          cpu_limit:
+            label: CPU limit assigned to the VPS after the change
+          create_vps:
+            label: Whether an initial VPS was requested
+          custom_window:
+            label: Whether a custom maintenance window is used
+          cves:
+            label: CVE identifiers related to the outage
+          dataset_full_name:
+            label: Full name of the dataset being migrated
+          dataset_id:
+            label: ID of the dataset being migrated
+          dataset_referenced:
+            label: Referenced dataset space at the time of the event, in bytes
+          dataset_refquota:
+            label: Dataset refquota after the event, in bytes
+          default_routed:
+            label: Whether the event is delivered by the default route
+          description:
+            label: Detailed text of the outage update
+          direct_vps_count:
+            label: Number of VPSes directly affected by the outage
+          dns_server_id:
+            label: ID of the DNS server handling the transfer
+          dns_server_name:
+            label: Name of the DNS server handling the transfer
+          dns_server_zone_id:
+            label: ID of the DNS server zone assignment
+          dns_zone_id:
+            label: ID of the DNS zone being transferred
+          dns_zone_name:
+            label: Name of the DNS zone being transferred
+          download_id:
+            label: ID of the prepared snapshot download
+          dst_node_domain_name:
+            label: Domain name of the destination node
+          dst_node_id:
+            label: ID of the destination node
+          dst_pool_filesystem:
+            label: Filesystem name of the destination storage pool
+          dst_pool_id:
+            label: ID of the destination storage pool
+          duration:
+            label: Expected outage duration in minutes
+          email:
+            label: E-mail address set on the created account
+          enable_shrink:
+            label: Whether automatic shrink is enabled for the dataset
+          entity_labels:
+            label: Labels of infrastructure entities affected by the outage
+          event:
+            label: Outage notification phase that produced the event
+          event_at:
+            label: Time when the DNS transfer event happened
+          event_type:
+            label: Unique event type name
+          expansion_count:
+            label: Number of expansions represented by the event
+          expansion_id:
+            label: ID of the dataset expansion record
+          expiration_date:
+            label: Time when the lifecycle state expires
+          expired_days_ago:
+            label: Number of days since expiration
+          expires_in_a_day:
+            label: Whether expiration is within the next day
+          expires_in_days:
+            label: Number of days until expiration
+          export_count:
+            label: Number of exports affected by the migration
+          failed:
+            label: Whether the terminal state is failed or fatal
+          file_name:
+            label: File name of the prepared download archive
+          finish_minutes:
+            label: Minute of day when the maintenance window should finish
+          finish_weekday:
+            label: Weekday when the maintenance window should finish
+          finished_at:
+            label: Time when the outage is expected or known to finish
+          format:
+            label: Archive format of the prepared download
+          from_date:
+            label: Beginning of the paid membership period
+          from_email:
+            label: E-mail address that sent the reply
+          group_count:
+            label: Number of attempt groups included in the report
+          handler_names:
+            label: Names of admins handling the outage
+          impact_type:
+            label: Kind of impact declared for the outage
+          in_reply_to_message_id:
+            label: Message-ID referenced by the reply
+          incident_count:
+            label: Number of incident reports matched by the reply
+          incident_ids:
+            label: IDs of incident reports matched by the reply
+          incoming_payment_count:
+            label: Number of incoming payments included in the report
+          incoming_payment_id:
+            label: ID of the incoming payment row
+          incoming_transaction_id:
+            label: Bank transaction identifier of the incoming payment
+          indirect_vps_count:
+            label: Number of VPSes indirectly affected by the outage
+          ip_addr:
+            label: IP address mentioned by the incident report
+          ip_addrs:
+            label: Client IP addresses observed in failed attempts
+          killed_name:
+            label: Name of the process killed by the kernel
+          label:
+            label: User-visible token label
+          language_code:
+            label: Language code used for the report
+          language_id:
+            label: ID of the language used for the report
+          last_reported_id:
+            label: Highest raw OOM report ID already processed
+          level:
+            label: Numeric user level assigned during creation
+          login:
+            label: Login of the created user account
+          mail_id:
+            label: ID of the mail thread used for request notification
+          maintenance_window:
+            label: Whether a maintenance window constrains the migration
+          max_over_refquota_seconds:
+            label: Maximum allowed time over quota before action, in seconds
+          memory:
+            label: Memory limit assigned to the VPS after the change, in MiB
+          message:
+            label: Additional transfer message
+          migration_id:
+            label: ID of the VPS migration record
+          new_dns_resolver_addrs:
+            label: Addresses configured on the new DNS resolver
+          new_dns_resolver_id:
+            label: ID of the new DNS resolver
+          new_dns_resolver_label:
+            label: Label of the new DNS resolver
+          new_vps_hostname:
+            label: Hostname of the newly created replacement VPS
+          new_vps_id:
+            label: ID of the newly created replacement VPS
+          node_id:
+            label: ID of the node hosting the DNS server
+          node_name:
+            label: Domain name of the node hosting the DNS server
+          note:
+            label: Free-form note supplied when creating the test event
+          oauth2_client_id:
+            label: ID of the OAuth client application
+          object:
+            label: Type of object whose lifecycle state expires
+          object_id:
+            label: ID of the expiring object
+          object_label:
+            label: User-visible label of the expiring object
+          object_state:
+            label: Initial lifecycle state of the account
+          old_dns_resolver_addrs:
+            label: Addresses configured on the previous DNS resolver
+          old_dns_resolver_id:
+            label: ID of the previous DNS resolver
+          old_dns_resolver_label:
+            label: Label of the previous DNS resolver
+          ooms_in_period:
+            label: Number of OOM reports seen in the tracked period
+          original_refquota:
+            label: Dataset refquota before automatic expansion or shrink, in bytes
+          original_vps_hostname:
+            label: Hostname of the original VPS being replaced
+          original_vps_id:
+            label: ID of the original VPS being replaced
+          outage_description:
+            label: Current detailed text of the outage report
+          outage_id:
+            label: ID of the outage report
+          outage_summary:
+            label: Current summary text of the outage report
+          outage_type:
+            label: Type of outage being reported
+          over_refquota_seconds:
+            label: Time the dataset spent over quota, in seconds
+          payment_id:
+            label: ID of the accepted user payment
+          period_end:
+            label: End of the report period
+          period_seconds:
+            label: Length of the report period in seconds
+          period_start:
+            label: Beginning of the report period
+          previous_state:
+            label: Transaction chain state before the change
+          previous_status:
+            label: Transfer status before this event
+          primary_addr:
+            label: Primary DNS server address used for transfer
+          progress:
+            label: Number of transactions already finished
+          published_at:
+            label: Time when the advisory was published
+          reason:
+            label: Operator-provided reason for the migration
+          reason_code:
+            label: Machine-readable transfer failure reason
+          reasons:
+            label: Failure reasons reported by authentication
+          received_amount:
+            label: Amount received from the incoming payment
+          received_currency:
+            label: Currency received from the incoming payment
+          recipient_email:
+            label: Custom recipient e-mail address for this request notification
+          recipient_emails:
+            label: Recipient e-mail addresses parsed from the reply
+          references_message_id:
+            label: References header from the reply
+          remind_after_date:
+            label: Time before which repeated reminders are suppressed
+          reply_to_mail_id:
+            label: ID of the previous mail thread this resolution replies to
+          report_count:
+            label: Number of raw reports considered for the event
+          reported_by_id:
+            label: ID of the admin who reported the update
+          reported_by_login:
+            label: Login of the admin who reported the update
+          reported_by_name:
+            label: Full name of the admin who reported the update
+          request_id:
+            label: ID of the request
+          request_ip:
+            label: IP address that submitted the recovery code
+          request_label:
+            label: User-visible request label
+          request_state:
+            label: Request state after the event
+          request_type:
+            label: Type of request being handled
+          restart_vps:
+            label: Whether affected VPSes are restarted during migration
+          roles:
+            label: Notification roles declared by the event type
+          scope:
+            label: Access scope granted to the token
+          selected_oom_count:
+            label: Number of OOM kills represented by selected reports
+          selected_report_count:
+            label: Number of raw reports selected for notification
+          selected_report_ids:
+            label: IDs of raw OOM reports selected for notification
+          serial:
+            label: DNS zone serial observed during transfer
+          severity:
+            label: Event severity
+          size:
+            label: Number of transactions in the chain
+          snapshot_id:
+            label: ID of the source snapshot
+          snapshot_name:
+            label: Name of the source snapshot
+          src_node_domain_name:
+            label: Domain name of the source node
+          src_node_id:
+            label: ID of the source node
+          src_pool_filesystem:
+            label: Filesystem name of the source storage pool
+          src_pool_id:
+            label: ID of the source storage pool
+          stage:
+            label: Processing stage that emitted the OOM notification
+          state:
+            label: Lifecycle state that is about to expire or already expired
+          status:
+            label: Transfer status reported by the DNS server
+          subject:
+            label: Short event subject
+          subject_is_admin_visible:
+            label: Whether an admin route sees another user subject
+          subject_is_self:
+            label: Whether the event subject is the route owner
+          subject_relation:
+            label: Relationship between route owner and event subject
+          subject_user_id:
+            label: User ID of the event subject
+          successful:
+            label: Whether the terminal state is successful
+          summary:
+            label: Longer event summary
+          swap:
+            label: Swap limit assigned to the VPS after the change, in MiB
+          terminal:
+            label: Whether the chain reached a terminal state
+          text:
+            label: Reply body text
+          to_date:
+            label: End of the paid membership period
+          token_lifetime:
+            label: Token lifetime requested by the user session
+          totp_device_id:
+            label: ID of the TOTP device whose recovery code was used
+          totp_device_label:
+            label: User-visible label of the affected TOTP device
+          transfer_log_id:
+            label: ID of the DNS transfer log row
+          update_id:
+            label: ID of the outage report update
+          update_summary:
+            label: Summary of the advisory update
+          used_at:
+            label: Time when the recovery code was accepted
+          user_agent:
+            label: HTTP User-Agent header used by the client
+          user_count:
+            label: Number of users affected by the reply
+          user_device_id:
+            label: ID of the remembered user device used for sign-in
+          user_id:
+            label: ID of the dataset owner
+          user_login:
+            label: Login of the dataset owner
+          user_name:
+            label: Full name of the dataset owner
+          user_session_id:
+            label: ID of the user session that created the chain
+          vps_count:
+            label: Number of VPSes affected by the reply
+          vps_hostname:
+            label: Hostname of the VPS whose dataset quota changed
+          vps_id:
+            label: ID of the VPS whose dataset quota changed
+        label: Field
+      field_type:
+        label: Field_type
+      fields:
+        label: Fields
       file_name:
         label: File name
       filed_by:
@@ -623,8 +1213,6 @@ en:
         label: Hidden
       history_id:
         label: History_id
-      hit_count:
-        label: Hit count
       host_ip_address:
         description: Host address to assign to the interface, defaults to the first
           address
@@ -639,6 +1227,8 @@ en:
         label: Hostname_exact
       how:
         label: How did you learn about us?
+      html:
+        label: Html
       hypervisor_type:
         choices:
           openvz:
@@ -670,6 +1260,8 @@ en:
         label: In_reply_to
       in_rescue_mode:
         label: In rescue mode
+      include_spent:
+        label: Include_spent
       incoming_payment:
         label: IncomingPayment
       info:
@@ -770,8 +1362,12 @@ en:
         label: Label
       last_activity_at:
         label: Last activity
+      last_attempt_at:
+        label: Last_attempt_at
       last_check_at:
         label: Last_check_at
+      last_error:
+        label: Last_error
       last_report:
         label: Last report
       last_request_at:
@@ -808,6 +1404,8 @@ en:
         label: Access level
       limit:
         label: Limit
+      limit_count:
+        label: Limit_count
       loadavg1:
         label: Loadavg1
       loadavg15:
@@ -837,6 +1435,8 @@ en:
         label: MAC Address
       mail_catch_all:
         label: Mail_catch_all
+      mail_cc:
+        label: Mail_cc
       mail_checked:
         label: Mail_checked
       mail_deliverability:
@@ -851,38 +1451,50 @@ en:
         label: Mail_fraud_score
       mail_frequent_complainer:
         label: Mail_frequent_complainer
+      mail_from:
+        label: Mail_from
       mail_honeypot:
         label: Mail_honeypot
       mail_leaked:
         label: Mail_leaked
+      mail_log_id:
+        label: Mail_log_id
       mail_message:
         label: Mail_message
+      mail_message_id:
+        label: Mail_message_id
       mail_overall_score:
         label: Mail_overall_score
       mail_recent_abuse:
         label: Mail_recent_abuse
-      mail_recipient:
-        label: MailRecipient
+      mail_reply_to:
+        label: Mail_reply_to
       mail_request_id:
         label: Mail_request_id
+      mail_return_path:
+        label: Mail_return_path
       mail_smtp_score:
         label: Mail_smtp_score
       mail_spam_trap_score:
         label: Mail_spam_trap_score
+      mail_subject:
+        label: Mail_subject
       mail_success:
         label: Mail_success
       mail_suspect:
         label: Mail_suspect
-      mail_template:
-        label: MailTemplate
+      mail_text_html:
+        label: Mail_text_html
+      mail_text_plain:
+        label: Mail_text_plain
       mail_timed_out:
         label: Mail_timed_out
+      mail_to:
+        label: Mail_to
       mail_valid:
         label: Mail_valid
       mailbox:
         label: Mailbox
-      mailer_enabled:
-        label: Enabled mailer
       maintenance:
         description: Put the node into maintenance mode
         label: Maintenance
@@ -919,6 +1531,10 @@ en:
         label: Map mode
       master_enabled:
         label: Master enabled
+      match_order:
+        label: Match_order
+      matcher_summary:
+        label: Matcher_summary
       max:
         description: When an object is allocating a resource, it must not use more
           than maximum
@@ -976,6 +1592,8 @@ en:
         label: Rootfs mountpoint
       mountpoint:
         label: Mountpoint
+      mute:
+        label: Mute
       namespace:
         choices:
           forms:
@@ -994,6 +1612,8 @@ en:
         label: Password
       new_refquota:
         label: New refquota
+      next_attempt_at:
+        label: Next_attempt_at
       no_start:
         description: Do not start the VPS on the target node
         label: No start
@@ -1028,6 +1648,24 @@ en:
         label: Nodes_online
       note:
         description: Optional operator note for this node status.
+      notification_receiver_action_display_target:
+        label: Receiver target display target
+      notification_receiver_action_label:
+        label: Receiver target label
+      notification_receiver_id:
+        label: Notification_receiver_id
+      notification_receiver_label:
+        label: Notification_receiver_label
+      notification_receiver_target_id:
+        label: Notification_receiver_target_id
+      notification_target_display_target:
+        label: Notification_target_display_target
+      notification_target_id:
+        label: Notification_target_id
+      notification_target_label:
+        label: Notification_target_label
+      notification_template:
+        label: NotificationTemplate
       ns_id:
         description: Beginning of the ID range within the user namespace
         label: Ns_id
@@ -1067,6 +1705,13 @@ en:
         label: Oom_score_adj
       opens_at:
         label: Opens_at
+      operator:
+        choices:
+          contains:
+            label: contains
+          not_contains:
+            label: does not contain
+        label: Operator
       optional_maintenance_window:
         description: Use maintenance window only if the dataset has any exports
         label: Optional maintenance window
@@ -1113,6 +1758,8 @@ en:
         label: Output
       over_refquota_seconds:
         label: Over_refquota_seconds
+      override_limit_count:
+        label: Override_limit_count
       owned:
         description: Number of IP addresses owned by some users
         label: Owned
@@ -1128,6 +1775,8 @@ en:
         label: Parameter
       parent:
         label: Parent
+      parent_id:
+        label: Parent_id
       passed:
         label: Passed
       passphrase:
@@ -1136,6 +1785,10 @@ en:
         label: Password reset
       path:
         label: Path
+      payload:
+        label: Payload
+      payload_json:
+        label: Payload
       peer_type:
         choices:
           primary_type:
@@ -1143,6 +1796,19 @@ en:
           secondary_type:
             label: secondary_type
         label: Peer_type
+      period:
+        choices:
+          day:
+            label: day
+          hour:
+            label: hour
+          minute:
+            label: minute
+          week:
+            label: week
+        label: Period
+      period_label:
+        label: Period_label
       pgtables_bytes:
         label: Pgtables_bytes
       platform:
@@ -1191,6 +1857,8 @@ en:
         label: Pool_status
       port:
         label: Port
+      position:
+        label: Position
       ppp:
         label: PPP
       preferred_logout_all:
@@ -1227,6 +1895,17 @@ en:
         description: Name of property to inherit from parent, multiple properties
           may be separated by a comma
         label: Property
+      protocol:
+        choices:
+          email:
+            label: email
+          sms:
+            label: sms
+          telegram:
+            label: telegram
+        label: Protocol
+      provider_message_id:
+        label: Provider_message_id
       provisioning_uri:
         label: Provisioning_uri
       public_key:
@@ -1266,6 +1945,12 @@ en:
         label: Reason code
       recent_since:
         label: Recent_since
+      recipient_user:
+        label: Recipient_user
+      recipient_user_id:
+        label: Recipient_user_id
+      recipient_user_login:
+        label: Recipient_user_login
       reconstructed:
         label: Reconstructed
       recordsize:
@@ -1297,6 +1982,10 @@ en:
           than the current modify or change time or if the existing access time hasn't
           been updated within the past 24 hours
         label: Relative access time
+      released_at:
+        label: Released_at
+      remaining_count:
+        label: Remaining_count
       remind_after:
         label: Remind_after
       remind_after_date:
@@ -1315,6 +2004,8 @@ en:
         label: Reported_at
       request_count:
         label: Request count
+      resets_at:
+        label: Resets_at
       resource:
         description: Resource name of the located object
         label: Resource
@@ -1327,6 +2018,12 @@ en:
         label: Resource_type
       resources:
         label: Resources
+      response_body:
+        label: Response_body
+      response_headers_json:
+        label: Response headers
+      response_status:
+        label: Response_status
       restart_vps:
         description: Restart VPSes where migrated exports are mounted
         label: Restart VPS
@@ -1358,14 +2055,33 @@ en:
             label: reverse_role
         description: Show only datasets of certain role
         label: Role
+      roles:
+        label: Roles
       root_squash:
         description: Map requests from uid/gid 0 to the anonymous uid/gid. Note that
           this does not apply to any other uids or gids that might be equally sensitive.
         label: Root squash
+      route_owner_id:
+        label: Route_owner_id
+      route_owner_login:
+        label: Route_owner_login
       route_via:
         label: Route_via
       routed:
         label: Routed
+      routing_state:
+        choices:
+          aborted:
+            label: aborted
+          failed:
+            label: failed
+          pending:
+            label: pending
+          routed:
+            label: routed
+          suppressed:
+            label: suppressed
+        label: Routing_state
       row_id:
         description: Search by concerned row id
         label: Row id
@@ -1406,6 +2122,8 @@ en:
         label: Scope
       secret:
         label: Secret
+      secret_present:
+        label: Secret_present
       security_advisory_id:
         label: Security_advisory_id
       seed_vps:
@@ -1422,6 +2140,19 @@ en:
         label: Serial
       server:
         label: Server
+      severity:
+        choices:
+          critical:
+            label: critical
+          error:
+            label: error
+          info:
+            label: info
+          warning:
+            label: warning
+        label: Severity
+      severity_description:
+        label: Severity_description
       sha256sum:
         description: Control checksum
         label: Sha256sum
@@ -1440,6 +2171,8 @@ en:
         label: Shares IPv4 networks with location
       since:
         label: Since
+      single_use:
+        label: Single_use
       size:
         label: Size
       skip_multi_factor_auth_until:
@@ -1451,13 +2184,29 @@ en:
         label: Snapshot
       source:
         choices:
+          direct_route:
+            label: direct route
           external_source:
             label: external_source
           internal_source:
             label: internal_source
+          migration:
+            label: migration
+          rbac_route:
+            label: RBAC route
+          system_route:
+            label: system route
+          visible_route:
+            label: visible route
         label: Source
+      source_class:
+        label: Source_class
       source_cursor:
         label: Source_cursor
+      source_id:
+        label: Source_id
+      spent_at:
+        label: Spent_at
       split_access:
         choices:
           no_access:
@@ -1486,6 +2235,10 @@ en:
         label: Started_at
       state:
         choices:
+          aborted:
+            label: aborted
+          accepted:
+            label: accepted
           acknowledged:
             label: acknowledged
           active:
@@ -1498,6 +2251,8 @@ en:
             label: approved
           awaiting:
             label: awaiting
+          canceled:
+            label: canceled
           cancelled:
             label: cancelled
           cancelling:
@@ -1540,12 +2295,16 @@ en:
             label: open
           pending_correction:
             label: pending_correction
+          prepared:
+            label: prepared
           processed:
             label: processed
           published:
             label: published
           queued:
             label: queued
+          released:
+            label: released
           resolved:
             label: resolved
           retracted:
@@ -1554,8 +2313,16 @@ en:
             label: rollbacking
           running:
             label: running
+          sending:
+            label: sending
+          sent:
+            label: sent
+          skipped:
+            label: skipped
           staged:
             label: staged
+          succeeded:
+            label: succeeded
           suspended:
             label: suspended
           unconfirmed:
@@ -1567,6 +2334,13 @@ en:
           vulnerable:
             label: vulnerable
         label: State
+      state_group:
+        choices:
+          log:
+            label: log
+          queue:
+            label: queue
+        label: State_group
       status:
         choices:
           failed:
@@ -1587,11 +2361,28 @@ en:
         label: Shutdown VPS
       subject:
         label: Subject
+      subject_relation:
+        choices:
+          other_user:
+            label: other user
+          rbac:
+            label: RBAC
+          self:
+            label: self
+          system:
+            label: system
+        label: Subject_relation
+      subject_scope:
+        choices:
+          system:
+            label: Admin system routes
       subtree_check:
         description: See man exports(5).
         label: Subtree check
       success:
         label: Success
+      summary:
+        label: Summary
       supported:
         description: Is template known to work?
         label: Supported
@@ -1613,8 +2404,33 @@ en:
       taken:
         description: Number of owned and assigned IP addresses
         label: Taken
+      target_enabled:
+        label: Target_enabled
+      target_kind:
+        choices:
+          custom:
+            label: custom target
+          default_recipient:
+            label: default recipient
+        label: Target_kind
+      target_label:
+        label: Target_label
+      target_value:
+        label: Target_value
+      telegram_bot_name:
+        label: Telegram_bot_name
+      telegram_bot_url:
+        label: Telegram_bot_url
+      telegram_pairing_command:
+        label: Telegram_pairing_command
+      telegram_pairing_url:
+        label: Telegram_pairing_url
+      template:
+        label: Template
       template_id:
         label: Template_id
+      template_name:
+        label: Template_name
       text:
         label: Text
       text_html:
@@ -1742,6 +2558,8 @@ en:
         description: URL at which the archive can be downloaded
       usage:
         label: Usage
+      used_count:
+        label: Used_count
       used_diskspace:
         description: in MB
         label: Used disk space
@@ -1820,6 +2638,12 @@ en:
         label: Variant
       vendor:
         label: Vendor
+      verification_token:
+        label: Verification_token
+      verified:
+        label: Verified
+      verified_at:
+        label: Verified_at
       version:
         description: 4 or 6
       view:
@@ -2020,8 +2844,8 @@ en:
           name:
             label: Name
           send_mail:
-            description: Inform the dataset owner about migration progress
-            label: Send e-mails
+            description: Notify the dataset owner about migration progress
+            label: Send notifications
           sync:
             description: Controls the behavior of synchronous requests
           used:
@@ -2229,6 +3053,88 @@ en:
           attributes:
             id:
               label: ID
+      event:
+        attributes:
+          created_at:
+            label: Created_at
+          id:
+            label: Id
+          ip_addr:
+            label: Ip_addr
+          subject_scope:
+            choices:
+              self:
+                label: Own routes
+              visible:
+                label: Admin visible routes
+            label: Subject_scope
+          updated_at:
+            label: Updated_at
+          vps:
+            label: VPS
+        delivery:
+          attempt:
+            attributes:
+              created_at:
+                label: Created_at
+              finished_at:
+                label: Finished_at
+              id:
+                label: Id
+              updated_at:
+                label: Updated_at
+          attributes:
+            created_at:
+              label: Created_at
+            id:
+              label: Id
+            updated_at:
+              label: Updated_at
+        route_match:
+          attributes:
+            created_at:
+              label: Created_at
+            id:
+              label: Id
+            updated_at:
+              label: Updated_at
+      event_delivery:
+        attributes:
+          created_at:
+            label: Created_at
+          id:
+            label: Id
+          updated_at:
+            label: Updated_at
+      event_route:
+        attributes:
+          created_at:
+            label: Created_at
+          hit_count:
+            label: Hits
+          id:
+            label: Id
+          subject_scope:
+            choices:
+              self:
+                label: self
+              visible:
+                label: visible
+            label: Scope
+          updated_at:
+            label: Updated_at
+        matcher:
+          attributes:
+            created_at:
+              label: Created_at
+            id:
+              label: Id
+            updated_at:
+              label: Updated_at
+      event_type:
+        attributes:
+          name:
+            label: Name
       export:
         attributes:
           created_at:
@@ -2375,39 +3281,6 @@ en:
             label: Created_at
           id:
             label: Id
-      mail_recipient:
-        attributes:
-          id:
-            label: Id
-          label:
-            description: Human-friendly label
-      mail_template:
-        attributes:
-          created_at:
-            label: Created_at
-          id:
-            label: Id
-          label:
-            description: Human-friendly label
-          name:
-            description: Template identifier
-            label: Name
-          updated_at:
-            label: Updated_at
-        recipient:
-          attributes:
-            id:
-              label: Id
-        translation:
-          attributes:
-            created_at:
-              label: Created_at
-            id:
-              label: Id
-            language:
-              label: Language
-            updated_at:
-              label: Updated_at
       mailbox:
         attributes:
           created_at:
@@ -2447,7 +3320,8 @@ en:
           id:
             label: Id
           send_mail:
-            label: Send_mail
+            description: Notify VPS owners about migration progress
+            label: Send notifications
           stop_on_error:
             label: Stop_on_error
         vps_migration:
@@ -2614,7 +3488,8 @@ en:
           name:
             description: Node name
           send_mail:
-            label: Send_mail
+            description: Notify VPS owners about migration progress
+            label: Send notifications
           stop_on_error:
             label: Stop on error
           type:
@@ -2652,6 +3527,55 @@ en:
             label: Id
           updated_at:
             label: Updated_at
+      notification_receiver:
+        attributes:
+          created_at:
+            label: Created_at
+          id:
+            label: Id
+          updated_at:
+            label: Updated_at
+        target:
+          attributes:
+            created_at:
+              label: Created_at
+            id:
+              label: Id
+            updated_at:
+              label: Updated_at
+      notification_target:
+        attributes:
+          code:
+            label: Code
+          created_at:
+            label: Created_at
+          id:
+            label: Id
+          updated_at:
+            label: Updated_at
+      notification_template:
+        attributes:
+          created_at:
+            label: Created_at
+          id:
+            label: Id
+          label:
+            description: Human-friendly label
+          name:
+            description: Template identifier
+            label: Name
+          updated_at:
+            label: Updated_at
+        variant:
+          attributes:
+            created_at:
+              label: Created_at
+            id:
+              label: Id
+            language:
+              label: Language
+            updated_at:
+              label: Updated_at
       oauth2_client:
         attributes:
           created_at:
@@ -2696,6 +3620,8 @@ en:
         attributes:
           created_at:
             label: Created_at
+          hit_count:
+            label: Hit count
           id:
             label: Id
           updated_at:
@@ -2792,7 +3718,7 @@ en:
           reporter_name:
             label: Reporter's name
           send_mail:
-            label: Send mail
+            label: Send notifications
           since:
             description: Filter updates reported since specified date
           type:
@@ -2824,10 +3750,10 @@ en:
             label: Created_at
           cs_summary:
             description: One-sentence public summary shown in advisory lists, status
-              output, IRC announcements, and emails.
+              output, IRC announcements, and notifications.
           en_summary:
             description: One-sentence public summary shown in advisory lists, status
-              output, IRC announcements, and emails.
+              output, IRC announcements, and notifications.
           id:
             label: Id
           name:
@@ -2836,9 +3762,9 @@ en:
           recent_since:
             description: Filter published or recently updated advisories
           send_mail:
-            description: When enabled, affected users are emailed after the action
-              completes.
-            label: Send mail
+            description: When enabled, affected users receive a notification after
+              the action completes.
+            label: Send notifications
           since:
             description: Filter advisories created since specified date
           updated_at:
@@ -2888,10 +3814,10 @@ en:
             label: Created_at
           cs_summary:
             description: One-sentence public summary of this update, shown in update
-              lists and emails.
+              lists and notifications.
           en_summary:
             description: One-sentence public summary of this update, shown in update
-              lists and emails.
+              lists and notifications.
           id:
             label: Id
           name:
@@ -2903,9 +3829,9 @@ en:
           security_advisory:
             description: Advisory to which this update belongs.
           send_mail:
-            description: When enabled, affected users are emailed after the action
-              completes.
-            label: Send mail
+            description: When enabled, affected users receive a notification after
+              the action completes.
+            label: Send notifications
           state:
             description: Optional advisory state change to apply with this update.
           updated_at:
@@ -2926,7 +3852,8 @@ en:
           id:
             label: Id
           send_mail:
-            label: Send_mail
+            description: Notify the user when the snapshot download is ready
+            label: Send notification
           size:
             description: Size of the archive in MiB
           url:
@@ -2958,13 +3885,30 @@ en:
           transaction_chain:
             label: TransactionChain
       transaction_chain:
+        actions:
+          index:
+            output:
+              created_at:
+                label: Creation date
+              id:
+                label: Chain ID
+          notify_when_done:
+            output:
+              created_at:
+                label: Created_at
+              id:
+                label: Id
+          show:
+            output:
+              created_at:
+                label: Creation date
+              id:
+                label: Chain ID
         attributes:
           class_name:
             label: Class name
-          created_at:
-            label: Creation date
-          id:
-            label: Chain ID
+          hit_count:
+            label: Hits
           label:
             description: Human-friendly name
           name:
@@ -2972,6 +3916,8 @@ en:
             label: Name
           size:
             description: Number of transactions in the chain
+          updated_at:
+            label: Updated_at
           user_session:
             label: User session
       user:
@@ -3034,7 +3980,7 @@ en:
           id:
             label: User ID
           language:
-            label: Language of e-mails
+            label: Language of notifications
           monthly_payment:
             label: Monthly payment
           node:
@@ -3073,14 +4019,22 @@ en:
               label: Id
             updated_at:
               label: Updated_at
-        mail_role_recipient:
+        notification_delivery_method:
           attributes:
+            created_at:
+              label: Created_at
             id:
               label: Id
-        mail_template_recipient:
+            updated_at:
+              label: Updated_at
+        notification_rate_limit:
           attributes:
+            created_at:
+              label: Created_at
             id:
               label: Id
+            updated_at:
+              label: Updated_at
         output:
           object_state:
             choices:
@@ -3325,7 +4279,7 @@ en:
           update:
             input:
               change_reason:
-                description: If filled, it is send to VPS owner in an email
+                description: If filled, it is sent to the VPS owner as a notification
                 label: Change reason
               expiration_date:
                 description: A date after which the state will progress
@@ -3377,8 +4331,8 @@ en:
             description: Auto-generated password
             label: Password
           send_mail:
-            description: Inform the VPS owner about migration progress
-            label: Send e-mails
+            description: Notify the VPS owner about migration progress
+            label: Send notifications
           type:
             label: Type
           user_namespace_map:
@@ -3566,6 +4520,8 @@ en:
         dns_zone_transfer:
           create: Zone transfer+
           destroy: Zone transfer-
+        event_delivery:
+          email: Event e-mail delivery
         export:
           add_hosts: Hosts+
           add_hosts_to_all: Hosts+
@@ -3598,7 +4554,7 @@ en:
         maintenance:
           custom: Custom
         migration_plan:
-          mail: Mail
+          mail: Migration notifications
         network:
           add_ips: IP+
           create: Create
@@ -3630,7 +4586,7 @@ en:
             update: Update
           payments:
             create: Create
-            mail_overview: Mail overview
+            mail_overview: Payments overview notifications
           requests:
             create: Creation
             resolve: Resolve
@@ -3638,7 +4594,7 @@ en:
         pool:
           create: Create
         security_advisories:
-          mail: Security advisory mail
+          mail: Security advisory notifications
         snapshot:
           destroy: Destroy
         snapshot_in_pool:
@@ -3734,6 +4690,7 @@ en:
         dns_zone_remove_servers: Remove DNS servers
         dns_zone_update: Update DNS zone
         dns_zone_update_records: Update DNS records
+        event_delivery_notify: Notify event delivery
         export_add_hosts: Add export hosts
         export_create: Create export
         export_del_hosts: Remove export hosts

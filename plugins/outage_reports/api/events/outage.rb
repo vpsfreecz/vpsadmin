@@ -192,14 +192,7 @@ module VpsAdmin::API::Plugins::OutageReports::Events
   def outage_visible_to_event_user?(event, outage)
     return true if event.user_id.blank?
 
-    case param(event, 'role').to_s
-    when 'user'
-      outage.outage_users.where(user_id: event.user_id).exists?
-    when 'generic'
-      event.user&.role == :admin
-    else
-      false
-    end
+    outage.outage_users.where(user_id: event.user_id).exists?
   end
 
   def outage_vpses_for(outage, user, direct: nil)
@@ -242,8 +235,7 @@ module VpsAdmin::API::Plugins::OutageReports::Events
     raise ArgumentError, 'outage is missing' unless outage
 
     update = outage_update_from_parameters(event, outage)
-    role = param(event, 'role').to_s
-    user = role == 'user' ? event.user : nil
+    user = event.user
 
     {
       outage:,
@@ -260,30 +252,34 @@ module VpsAdmin::API::Plugins::OutageReports::Events
   end
 
   def outage_template_params(event)
-    {
-      role: param(event, 'role') || 'user',
-      event: param(event, 'event') || 'update'
-    }
+    nil
   end
 
   def outage_template_choice(event)
-    template_params = outage_template_params(event)
-    role = template_params[:role]
-    event_name = template_params[:event]
-    language = role == 'generic' ? ::Language.take : event.user&.language
-    choices = [
-      [:outage_report_role_event, { role:, event: event_name }],
-      [:outage_report_role_event, { role:, event: 'update' }],
-      [:outage_report_role, { role: }]
-    ]
+    language = outage_system_event?(event) ? ::Language.take : event.user&.language
+    choices = outage_template_candidates(event)
 
-    choices.find do |name, params|
-      VpsAdmin::API::Events.template_available?(name, params, language)
+    choices.find do |name|
+      VpsAdmin::API::Events.template_available?(name, nil, language)
     end || choices.first
   end
 
+  def outage_template_candidates(event)
+    audience = outage_system_event?(event) ? 'generic' : 'user'
+    event_name = param(event, 'event') || 'update'
+
+    [].tap do |ret|
+      ret << "outage_report_#{audience}_#{event_name}"
+      ret << "outage_report_#{audience}_update" unless event_name == 'update'
+      ret << "outage_report_#{audience}"
+    end.map(&:to_sym)
+  end
+
+  def outage_system_event?(event)
+    event.user_id.blank?
+  end
+
   def outage_template_options(event)
-    role = param(event, 'role').to_s
     ret = {
       message_id: param(event, 'mail_message_id')
     }.compact
@@ -292,7 +288,7 @@ module VpsAdmin::API::Plugins::OutageReports::Events
       ret[:in_reply_to] = reply_to
       ret[:references] = reply_to
     end
-    ret[:language] = ::Language.take if role == 'generic'
+    ret[:language] = ::Language.take if outage_system_event?(event)
     ret
   end
 end
@@ -311,10 +307,10 @@ VpsAdmin::API::Events.define owner: :outage_reports do
           label:,
           category: 'outages',
           severity: :warning,
+          roles: %i[account admin],
           default_routed: true do
       fields(
         {
-          role: { description: 'Recipient role for this outage notification', type: :string },
           event: { description: 'Outage notification phase that produced the event', type: :string },
           outage_id: { description: 'ID of the outage report', type: :integer },
           update_id: { description: 'ID of the outage report update', type: :integer },
@@ -342,10 +338,10 @@ VpsAdmin::API::Events.define owner: :outage_reports do
       )
 
       deliver :email do
-        template { VpsAdmin::API::Plugins::OutageReports::Events.outage_template_choice(event).first }
-        params { VpsAdmin::API::Plugins::OutageReports::Events.outage_template_choice(event).last }
+        template { VpsAdmin::API::Plugins::OutageReports::Events.outage_template_choice(event) }
+        params { VpsAdmin::API::Plugins::OutageReports::Events.outage_template_params(event) }
         options { VpsAdmin::API::Plugins::OutageReports::Events.outage_template_options(event) }
-        system_template { VpsAdmin::API::Plugins::OutageReports::Events.param(event, 'role').to_s == 'generic' }
+        system_template { VpsAdmin::API::Plugins::OutageReports::Events.outage_system_event?(event) }
         vars { VpsAdmin::API::Plugins::OutageReports::Events.outage_email_vars(event) }
       end
     end

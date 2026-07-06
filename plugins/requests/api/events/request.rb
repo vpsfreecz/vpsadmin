@@ -1,19 +1,8 @@
 module VpsAdmin::API::Plugins::Requests::Events
   REQUEST_TEMPLATE_CANDIDATES = {
-    'request.created' => %i[
-      request_action_role_type
-      request_action_role
-    ],
-    'request.updated' => %i[
-      request_action_role_type
-      request_action_role
-    ],
-    'request.resolved' => %i[
-      request_resolve_role_type_state
-      request_action_role_type
-      request_resolve_role_state
-      request_action_role
-    ]
+    'request.created' => :request_action_template_candidates,
+    'request.updated' => :request_action_template_candidates,
+    'request.resolved' => :request_resolve_template_candidates
   }.freeze
 
   module_function
@@ -23,30 +12,28 @@ module VpsAdmin::API::Plugins::Requests::Events
     params[name.to_s] || params[name.to_sym]
   end
 
-  def request_source(event)
+  def request_source(event, route_context: nil, delivery: nil)
     source = event.source
     return unless source.is_a?(::UserRequest)
-    return unless request_visible_to_event_user?(event, source)
+    return unless request_visible_to_recipient?(event, source, route_context:, delivery:)
 
     source
   end
 
-  def request_from_parameters(event)
+  def request_from_parameters(event, route_context: nil, delivery: nil)
     request_id = param(event, 'request_id')
     return if request_id.blank?
 
     request = ::UserRequest.find_by(id: request_id)
-    return unless request && request_visible_to_event_user?(event, request)
+    return unless request && request_visible_to_recipient?(event, request, route_context:, delivery:)
 
     request
   end
 
-  def request_visible_to_event_user?(event, request)
-    role = param(event, 'role').to_s
+  def request_visible_to_recipient?(event, request, route_context: nil, delivery: nil)
+    return true if request_admin_audience?(event, route_context:, delivery:)
 
-    if role == 'admin'
-      event.user&.role == :admin
-    elsif event.user_id.blank?
+    if event.user_id.blank?
       recipient = param(event, 'recipient_email')
       recipient.present? && recipient == request.user_mail
     else
@@ -54,8 +41,21 @@ module VpsAdmin::API::Plugins::Requests::Events
     end
   end
 
-  def request_email_vars(event)
-    request = request_source(event) || request_from_parameters(event)
+  def request_admin_audience?(event, route_context: nil, delivery: nil)
+    context = route_context || VpsAdmin::API::Events.route_context_for_delivery(delivery)
+    return true if context&.subject_is_admin_visible
+
+    recipient = delivery&.recipient_user
+    recipient&.role == :admin && recipient.id != event.user_id
+  end
+
+  def request_delivery_audience(event, route_context: nil, delivery: nil)
+    request_admin_audience?(event, route_context:, delivery:) ? 'admin' : 'user'
+  end
+
+  def request_email_vars(event, route_context: nil, delivery: nil)
+    request = request_source(event, route_context:, delivery:) ||
+              request_from_parameters(event, route_context:, delivery:)
     raise ArgumentError, 'request source is missing' unless request
 
     {
@@ -65,28 +65,57 @@ module VpsAdmin::API::Plugins::Requests::Events
     }
   end
 
-  def request_template_name_for(event)
-    params = request_template_params(event)
-    language = request_email_language(event)
+  def request_template_name_for(event, route_context: nil, delivery: nil)
+    language = request_email_language(event, route_context:, delivery:)
+    candidates = request_template_candidates(event, route_context:, delivery:)
 
-    REQUEST_TEMPLATE_CANDIDATES.fetch(event.event_type).find do |candidate|
-      VpsAdmin::API::Events.template_available?(candidate, params, language)
-    end || REQUEST_TEMPLATE_CANDIDATES.fetch(event.event_type).first
+    candidates.find do |candidate|
+      VpsAdmin::API::Events.template_available?(candidate, nil, language)
+    end || candidates.first
   end
 
-  def request_template_params(event)
-    {
-      action: param(event, 'action'),
-      role: param(event, 'role'),
-      type: param(event, 'request_type'),
-      state: param(event, 'request_state')
-    }
+  def request_template_candidates(event, route_context: nil, delivery: nil)
+    method_name = REQUEST_TEMPLATE_CANDIDATES.fetch(event.event_type)
+    public_send(method_name, event, route_context:, delivery:)
   end
 
-  def request_email_language(event)
-    return event.user&.language unless param(event, 'role').to_s == 'user'
+  def request_action_template_candidates(event, route_context: nil, delivery: nil)
+    action = param(event, 'action')
+    audience = request_delivery_audience(event, route_context:, delivery:)
+    type = param(event, 'request_type')
 
-    request = request_source(event) || request_from_parameters(event)
+    [].tap do |ret|
+      ret << "request_#{action}_#{audience}_#{type}" if type.present?
+      ret << "request_#{action}_#{audience}"
+    end.map(&:to_sym)
+  end
+
+  def request_resolve_template_candidates(event, route_context: nil, delivery: nil)
+    audience = request_delivery_audience(event, route_context:, delivery:)
+    type = param(event, 'request_type')
+    state = param(event, 'request_state')
+
+    [].tap do |ret|
+      ret << "request_resolve_#{audience}_#{type}_#{state}" if type.present? && state.present?
+      ret << "request_resolve_#{audience}_#{type}" if type.present?
+      ret << "request_resolve_#{audience}_#{state}" if state.present?
+      ret << "request_resolve_#{audience}"
+    end.map(&:to_sym)
+  end
+
+  def request_template_params(_event)
+    nil
+  end
+
+  def request_email_language(event, route_context: nil, delivery: nil)
+    if request_admin_audience?(event, route_context:, delivery:)
+      return delivery&.recipient_user&.language ||
+             route_context&.route_owner&.language ||
+             event.user&.language
+    end
+
+    request = request_source(event, route_context:, delivery:) ||
+              request_from_parameters(event, route_context:, delivery:)
     request&.user_language || event.user&.language
   end
 
@@ -100,9 +129,9 @@ module VpsAdmin::API::Plugins::Requests::Events
     nil
   end
 
-  def request_template_options(event)
+  def request_template_options(event, route_context: nil, delivery: nil)
     ret = {
-      language: request_email_language(event),
+      language: request_email_language(event, route_context:, delivery:),
       message_id: request_message_id(event, 'mail_id')
     }.compact
     reply_to = request_message_id(event, 'reply_to_mail_id')
@@ -113,8 +142,8 @@ module VpsAdmin::API::Plugins::Requests::Events
     ret
   end
 
-  def default_email_target(event)
-    return unless param(event, 'role').to_s == 'user'
+  def default_email_target(event, route_context: nil, delivery: nil)
+    return if request_admin_audience?(event, route_context:, delivery:)
 
     param(event, 'recipient_email')
   end
@@ -141,11 +170,11 @@ VpsAdmin::API::Events.define owner: :requests do
           label:,
           category: 'requests',
           severity: :info,
+          roles: %i[account],
           default_routed: true do
       fields(
         {
           action: { description: 'Request workflow action that produced the notification', type: :string },
-          role: { description: 'Recipient role for this request notification', type: :string },
           request_id: { description: 'ID of the request', type: :integer },
           request_type: { description: 'Type of request being handled', type: :string },
           request_state: { description: 'Request state after the event', type: :string },
@@ -157,11 +186,35 @@ VpsAdmin::API::Events.define owner: :requests do
       )
 
       deliver :email do
-        template { VpsAdmin::API::Plugins::Requests::Events.request_template_name_for(event) }
+        template do
+          VpsAdmin::API::Plugins::Requests::Events.request_template_name_for(
+            event,
+            route_context: route_context,
+            delivery: current_delivery
+          )
+        end
         params { VpsAdmin::API::Plugins::Requests::Events.request_template_params(event) }
-        options { VpsAdmin::API::Plugins::Requests::Events.request_template_options(event) }
-        default_target { VpsAdmin::API::Plugins::Requests::Events.default_email_target(event) }
-        vars { VpsAdmin::API::Plugins::Requests::Events.request_email_vars(event) }
+        options do
+          VpsAdmin::API::Plugins::Requests::Events.request_template_options(
+            event,
+            route_context: route_context,
+            delivery: current_delivery
+          )
+        end
+        default_target do
+          VpsAdmin::API::Plugins::Requests::Events.default_email_target(
+            event,
+            route_context: route_context,
+            delivery: current_delivery
+          )
+        end
+        vars do
+          VpsAdmin::API::Plugins::Requests::Events.request_email_vars(
+            event,
+            route_context: route_context,
+            delivery: current_delivery
+          )
+        end
       end
     end
   end

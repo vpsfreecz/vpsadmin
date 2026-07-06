@@ -28,29 +28,29 @@ msgstr ""
 
 #: forms/backup.forms.php forms/dns.forms.php forms/export.forms.php
 #: forms/incidents.forms.php forms/monitoring.forms.php
-#: forms/networking.forms.php forms/object_history.forms.php
-#: forms/oom_reports.forms.php forms/outage.forms.php forms/userdata.forms.php
-#: forms/userns.forms.php forms/users.forms.php forms/vps.forms.php
-#: pages/page_adminm.php pages/page_nas.php pages/page_networking.php
-#: pages/page_transactions.php
+#: forms/networking.forms.php forms/notifications.forms.php
+#: forms/object_history.forms.php forms/oom_reports.forms.php
+#: forms/outage.forms.php forms/userdata.forms.php forms/userns.forms.php
+#: forms/users.forms.php forms/vps.forms.php pages/page_adminm.php
+#: pages/page_nas.php pages/page_networking.php pages/page_transactions.php
 msgid "Filters"
 msgstr ""
 
 #: forms/backup.forms.php forms/dns.forms.php forms/export.forms.php
 #: forms/incidents.forms.php forms/monitoring.forms.php
-#: forms/networking.forms.php forms/object_history.forms.php
-#: forms/oom_reports.forms.php forms/outage.forms.php forms/userdata.forms.php
-#: forms/userns.forms.php forms/users.forms.php forms/vps.forms.php
-#: pages/page_adminm.php pages/page_nas.php pages/page_networking.php
-#: pages/page_transactions.php
+#: forms/networking.forms.php forms/notifications.forms.php
+#: forms/object_history.forms.php forms/oom_reports.forms.php
+#: forms/outage.forms.php forms/userdata.forms.php forms/userns.forms.php
+#: forms/users.forms.php forms/vps.forms.php pages/page_adminm.php
+#: pages/page_nas.php pages/page_networking.php pages/page_transactions.php
 msgid "Limit"
 msgstr ""
 
 #: forms/backup.forms.php forms/dns.forms.php forms/export.forms.php
 #: forms/incidents.forms.php forms/networking.forms.php
-#: forms/object_history.forms.php forms/oom_reports.forms.php
-#: forms/users.forms.php forms/vps.forms.php pages/page_adminm.php
-#: pages/page_nas.php pages/page_transactions.php
+#: forms/notifications.forms.php forms/object_history.forms.php
+#: forms/oom_reports.forms.php forms/users.forms.php forms/vps.forms.php
+#: pages/page_adminm.php pages/page_nas.php pages/page_transactions.php
 msgid "From ID"
 msgstr ""
 
@@ -73,22 +73,23 @@ msgstr ""
 
 #: forms/backup.forms.php forms/dns.forms.php forms/export.forms.php
 #: forms/incidents.forms.php forms/monitoring.forms.php
-#: forms/networking.forms.php forms/object_history.forms.php
-#: forms/oom_reports.forms.php forms/outage.forms.php forms/userdata.forms.php
-#: forms/userns.forms.php forms/users.forms.php forms/vps.forms.php
-#: pages/page_adminm.php pages/page_nas.php pages/page_networking.php
-#: pages/page_transactions.php
+#: forms/networking.forms.php forms/notifications.forms.php
+#: forms/object_history.forms.php forms/oom_reports.forms.php
+#: forms/outage.forms.php forms/userdata.forms.php forms/userns.forms.php
+#: forms/users.forms.php forms/vps.forms.php pages/page_adminm.php
+#: pages/page_nas.php pages/page_networking.php pages/page_transactions.php
 msgid "Show"
 msgstr ""
 
 #: forms/backup.forms.php forms/cluster.forms.php forms/dns.forms.php
 #: forms/export.forms.php forms/incidents.forms.php forms/lifetimes.forms.php
 #: forms/monitoring.forms.php forms/networking.forms.php
-#: forms/object_history.forms.php forms/oom_reports.forms.php
-#: forms/outage.forms.php forms/security_advisory.forms.php
-#: forms/userdata.forms.php forms/userns.forms.php forms/users.forms.php
-#: forms/vps.forms.php pages/page_adminm.php pages/page_adminvps.php
-#: pages/page_console.php pages/page_lifetimes.php pages/page_networking.php
+#: forms/notifications.forms.php forms/object_history.forms.php
+#: forms/oom_reports.forms.php forms/outage.forms.php
+#: forms/security_advisory.forms.php forms/userdata.forms.php
+#: forms/userns.forms.php forms/users.forms.php forms/vps.forms.php
+#: pages/page_adminm.php pages/page_adminvps.php pages/page_console.php
+#: pages/page_lifetimes.php pages/page_networking.php
 #: pages/page_transactions.php
 msgid "User"
 msgstr ""
@@ -125,10 +126,11 @@ msgid "in progress"
 msgstr ""
 
 #: forms/backup.forms.php forms/cluster.forms.php forms/dataset.forms.php
-#: forms/dns.forms.php forms/export.forms.php forms/oom_reports.forms.php
-#: forms/security_advisory.forms.php forms/userdata.forms.php
-#: forms/userns.forms.php forms/users.forms.php forms/vps.forms.php
-#: pages/page_adminm.php pages/page_backup.php pages/page_cluster.php
+#: forms/dns.forms.php forms/export.forms.php forms/notifications.forms.php
+#: forms/oom_reports.forms.php forms/security_advisory.forms.php
+#: forms/userdata.forms.php forms/userns.forms.php forms/users.forms.php
+#: forms/vps.forms.php pages/page_adminm.php pages/page_backup.php
+#: pages/page_cluster.php
 msgid "Delete"
 msgstr ""
 
@@ -219,7 +221,7 @@ msgstr ""
 msgid "Monitoring"
 msgstr ""
 
-#: forms/cluster.forms.php
+#: forms/cluster.forms.php forms/notifications.forms.php
 msgid "Event log"
 msgstr ""
 
@@ -227,7 +229,7 @@ msgstr ""
 msgid "Help boxes"
 msgstr ""
 
-#: forms/cluster.forms.php forms/outage.forms.php
+#: forms/cluster.forms.php forms/notifications.forms.php forms/outage.forms.php
 #: forms/security_advisory.forms.php forms/users.forms.php
 msgid "Summary"
 msgstr ""
@@ -247,11 +249,12 @@ msgstr ""
 
 #: forms/cluster.forms.php forms/dataset.forms.php forms/dns.forms.php
 #: forms/incidents.forms.php forms/lifetimes.forms.php
-#: forms/networking.forms.php forms/oom_reports.forms.php
-#: forms/outage.forms.php forms/security_advisory.forms.php
-#: forms/userdata.forms.php forms/vps.forms.php pages/page_adminm.php
-#: pages/page_adminvps.php pages/page_index.php pages/page_networking.php
-#: pages/page_transactions.php public/index.php
+#: forms/networking.forms.php forms/notifications.forms.php
+#: forms/oom_reports.forms.php forms/outage.forms.php
+#: forms/security_advisory.forms.php forms/userdata.forms.php
+#: forms/vps.forms.php pages/page_adminm.php pages/page_adminvps.php
+#: pages/page_index.php pages/page_networking.php pages/page_transactions.php
+#: public/index.php
 msgid "VPS"
 msgstr ""
 
@@ -369,9 +372,10 @@ msgstr ""
 
 #: forms/cluster.forms.php forms/dataset.forms.php forms/dns.forms.php
 #: forms/export.forms.php forms/networking.forms.php
-#: forms/oom_reports.forms.php forms/security_advisory.forms.php
-#: forms/userdata.forms.php forms/users.forms.php forms/vps.forms.php
-#: pages/page_adminm.php pages/page_cluster.php public/index.php
+#: forms/notifications.forms.php forms/oom_reports.forms.php
+#: forms/security_advisory.forms.php forms/userdata.forms.php
+#: forms/users.forms.php forms/vps.forms.php pages/page_adminm.php
+#: pages/page_cluster.php public/index.php
 msgid "Edit"
 msgstr ""
 
@@ -392,15 +396,17 @@ msgid "Location"
 msgstr ""
 
 #: forms/cluster.forms.php forms/dataset.forms.php forms/monitoring.forms.php
-#: forms/userdata.forms.php forms/userns.forms.php forms/users.forms.php
-#: pages/page_adminm.php pages/page_backup.php pages/page_cluster.php
+#: forms/notifications.forms.php forms/userdata.forms.php
+#: forms/userns.forms.php forms/users.forms.php pages/page_adminm.php
+#: pages/page_backup.php pages/page_cluster.php
 msgid "Label"
 msgstr ""
 
-#: forms/cluster.forms.php forms/dns.forms.php forms/oom_reports.forms.php
-#: forms/outage.forms.php forms/security_advisory.forms.php
-#: forms/userns.forms.php forms/users.forms.php forms/vps.forms.php
-#: pages/page_adminvps.php pages/page_transactions.php
+#: forms/cluster.forms.php forms/dns.forms.php forms/notifications.forms.php
+#: forms/oom_reports.forms.php forms/outage.forms.php
+#: forms/security_advisory.forms.php forms/userns.forms.php
+#: forms/users.forms.php forms/vps.forms.php pages/page_adminvps.php
+#: pages/page_transactions.php
 msgid "Type"
 msgstr ""
 
@@ -408,7 +414,7 @@ msgstr ""
 msgid "Managed"
 msgstr ""
 
-#: forms/cluster.forms.php pages/page_adminm.php
+#: forms/cluster.forms.php forms/notifications.forms.php pages/page_adminm.php
 msgid "Used"
 msgstr ""
 
@@ -479,8 +485,9 @@ msgid "Add network to location"
 msgstr ""
 
 #: forms/cluster.forms.php forms/dataset.forms.php forms/dns.forms.php
-#: forms/oom_reports.forms.php forms/userdata.forms.php forms/userns.forms.php
-#: forms/users.forms.php pages/page_adminm.php
+#: forms/notifications.forms.php forms/oom_reports.forms.php
+#: forms/userdata.forms.php forms/userns.forms.php forms/users.forms.php
+#: pages/page_adminm.php
 msgid "Add"
 msgstr ""
 
@@ -501,7 +508,8 @@ msgid "Location network"
 msgstr ""
 
 #: forms/cluster.forms.php forms/dataset.forms.php forms/dns.forms.php
-#: forms/export.forms.php forms/oom_reports.forms.php forms/outage.forms.php
+#: forms/export.forms.php forms/notifications.forms.php
+#: forms/oom_reports.forms.php forms/outage.forms.php
 #: forms/security_advisory.forms.php forms/userdata.forms.php
 #: forms/userns.forms.php forms/users.forms.php pages/page_adminm.php
 #: pages/page_adminvps.php pages/page_cluster.php
@@ -533,7 +541,7 @@ msgstr ""
 msgid "Edit template"
 msgstr ""
 
-#: forms/cluster.forms.php pages/page_cluster.php
+#: forms/cluster.forms.php forms/notifications.forms.php pages/page_cluster.php
 msgid "Save changes"
 msgstr ""
 
@@ -567,8 +575,8 @@ msgstr ""
 msgid "Date and time"
 msgstr ""
 
-#: forms/cluster.forms.php forms/dns.forms.php forms/users.forms.php
-#: pages/page_log.php
+#: forms/cluster.forms.php forms/dns.forms.php forms/notifications.forms.php
+#: forms/users.forms.php pages/page_log.php
 msgid "Message"
 msgstr ""
 
@@ -580,7 +588,8 @@ msgstr ""
 msgid "Page"
 msgstr ""
 
-#: forms/cluster.forms.php forms/dataset.forms.php forms/oom_reports.forms.php
+#: forms/cluster.forms.php forms/dataset.forms.php
+#: forms/notifications.forms.php forms/oom_reports.forms.php
 #: lib/xtemplate.lib.php pages/page_transactions.php
 msgid "Action"
 msgstr ""
@@ -638,8 +647,8 @@ msgid "Resource"
 msgstr ""
 
 #: forms/cluster.forms.php forms/monitoring.forms.php
-#: forms/oom_reports.forms.php forms/vps.forms.php pages/page_adminm.php
-#: pages/page_jumpto.php
+#: forms/notifications.forms.php forms/oom_reports.forms.php
+#: forms/vps.forms.php pages/page_adminm.php pages/page_jumpto.php
 msgid "Value"
 msgstr ""
 
@@ -849,7 +858,7 @@ msgid "On mount fail"
 msgstr ""
 
 #: forms/dataset.forms.php forms/lifetimes.forms.php forms/monitoring.forms.php
-#: forms/node.forms.php forms/outage.forms.php
+#: forms/node.forms.php forms/notifications.forms.php forms/outage.forms.php
 #: forms/security_advisory.forms.php forms/users.forms.php
 #: pages/page_adminm.php pages/page_adminvps.php pages/page_lifetimes.php
 #: pages/page_transactions.php
@@ -1000,19 +1009,19 @@ msgstr ""
 msgid "Role"
 msgstr ""
 
-#: forms/dns.forms.php
+#: forms/dns.forms.php forms/notifications.forms.php
 msgid "Source"
 msgstr ""
 
-#: forms/dns.forms.php forms/export.forms.php forms/users.forms.php
-#: pages/page_cluster.php
+#: forms/dns.forms.php forms/export.forms.php forms/notifications.forms.php
+#: forms/users.forms.php pages/page_cluster.php
 msgid "Enabled"
 msgstr ""
 
 #: forms/dns.forms.php forms/incidents.forms.php forms/monitoring.forms.php
-#: forms/oom_reports.forms.php forms/outage.forms.php
-#: forms/security_advisory.forms.php forms/userns.forms.php
-#: forms/users.forms.php
+#: forms/notifications.forms.php forms/oom_reports.forms.php
+#: forms/outage.forms.php forms/security_advisory.forms.php
+#: forms/userns.forms.php forms/users.forms.php
 msgid "Details"
 msgstr ""
 
@@ -1160,12 +1169,14 @@ msgstr ""
 msgid "Transfer log"
 msgstr ""
 
-#: forms/dns.forms.php forms/oom_reports.forms.php pages/page_transactions.php
+#: forms/dns.forms.php forms/notifications.forms.php
+#: forms/oom_reports.forms.php pages/page_transactions.php
 msgid "Time"
 msgstr ""
 
-#: forms/dns.forms.php forms/export.forms.php forms/outage.forms.php
-#: pages/page_adminm.php pages/page_adminvps.php public/index.php
+#: forms/dns.forms.php forms/export.forms.php forms/notifications.forms.php
+#: forms/outage.forms.php pages/page_adminm.php pages/page_adminvps.php
+#: public/index.php
 msgid "Status"
 msgstr ""
 
@@ -1251,7 +1262,8 @@ msgid "Create a new secondary DNS zone"
 msgstr ""
 
 #: forms/dns.forms.php forms/export.forms.php forms/incidents.forms.php
-#: forms/monitoring.forms.php forms/networking.forms.php forms/outage.forms.php
+#: forms/monitoring.forms.php forms/networking.forms.php
+#: forms/notifications.forms.php forms/outage.forms.php
 #: forms/userdata.forms.php forms/userns.forms.php forms/users.forms.php
 #: forms/vps.forms.php pages/page_networking.php pages/page_transactions.php
 msgid "User ID"
@@ -1317,7 +1329,7 @@ msgstr ""
 msgid "DS record"
 msgstr ""
 
-#: forms/dns.forms.php
+#: forms/dns.forms.php forms/notifications.forms.php
 msgid "Secret"
 msgstr ""
 
@@ -1454,7 +1466,8 @@ msgstr ""
 msgid "Change type"
 msgstr ""
 
-#: forms/dns.forms.php pages/page_transactions.php
+#: forms/dns.forms.php forms/notifications.forms.php
+#: pages/page_transactions.php
 msgid "Transaction chain"
 msgstr ""
 
@@ -1542,8 +1555,9 @@ msgstr ""
 msgid "Select dataset to export"
 msgstr ""
 
-#: forms/export.forms.php forms/networking.forms.php forms/outage.forms.php
-#: forms/users.forms.php forms/vps.forms.php
+#: forms/export.forms.php forms/networking.forms.php
+#: forms/notifications.forms.php forms/outage.forms.php forms/users.forms.php
+#: forms/vps.forms.php
 msgid "Continue"
 msgstr ""
 
@@ -1670,7 +1684,7 @@ msgstr ""
 msgid "Detected at"
 msgstr ""
 
-#: forms/incidents.forms.php
+#: forms/incidents.forms.php forms/notifications.forms.php
 msgid "Subject"
 msgstr ""
 
@@ -1736,7 +1750,7 @@ msgid "Go >>"
 msgstr ""
 
 #: forms/lifetimes.forms.php
-msgid "Set e-mail reminder"
+msgid "Configure notifications"
 msgstr ""
 
 #: forms/lifetimes.forms.php
@@ -1745,8 +1759,8 @@ msgstr ""
 
 #: forms/lifetimes.forms.php
 msgid ""
-"E-mail reminders are sent daily before the expiration date. This form can be "
-"used to silent the notifications until a given date."
+"Notifications are sent daily before the expiration date. This form can be "
+"used to silence notifications until a given date."
 msgstr ""
 
 #: forms/lifetimes.forms.php forms/userdata.forms.php forms/users.forms.php
@@ -1799,7 +1813,8 @@ msgstr ""
 msgid "Duration"
 msgstr ""
 
-#: forms/monitoring.forms.php forms/object_history.forms.php
+#: forms/monitoring.forms.php forms/notifications.forms.php
+#: forms/object_history.forms.php
 msgid "Event"
 msgstr ""
 
@@ -1987,11 +2002,13 @@ msgstr ""
 msgid "IP address assignments"
 msgstr ""
 
-#: forms/networking.forms.php pages/page_adminvps.php
+#: forms/networking.forms.php forms/notifications.forms.php
+#: pages/page_adminvps.php
 msgid "From"
 msgstr ""
 
-#: forms/networking.forms.php pages/page_adminvps.php
+#: forms/networking.forms.php forms/notifications.forms.php
+#: pages/page_adminvps.php
 msgid "To"
 msgstr ""
 
@@ -2094,6 +2111,1066 @@ msgstr ""
 msgid "See all graphs in Munin"
 msgstr ""
 
+#: forms/notifications.forms.php
+msgid "Delivery queue"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Delivery log"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Routes"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Receivers"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Targets"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Limits"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Event types"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Test event"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Any event type"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "equals"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "does not equal"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "matches regular expression"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "does not match regular expression"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "matches glob"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "does not match glob"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "greater than"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "greater than or equal"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "less than"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "less than or equal"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "contains list item"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "does not contain list item"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "text value"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "exact text, regular expression, or glob pattern"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "whole number"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "parsed as an integer, for example 123"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "number"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "parsed as a decimal number, for example 3.14"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "true/false"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "normalized from true/false, yes/no, on/off, or 1/0"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "date and time"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "parsed as ISO 8601 time, for example 2026-07-01T12:00:00Z"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "list of text values"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "one text list item to look for"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "list of whole numbers"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "one list item parsed as an integer"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Meaning"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Operators"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "true"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "false"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Own events"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Visible events"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Own routes"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Admin visible routes"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Admin system routes"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Drag to reorder"
+msgstr ""
+
+#: forms/notifications.forms.php forms/vps.forms.php
+msgid "Add route"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Add subroute"
+msgstr ""
+
+#: forms/notifications.forms.php
+#, php-format
+msgid "Parent: %s"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Subroute"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Already first"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Move up"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Already last"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Move down"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "muted"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Notification routes"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Events"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Scope"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Receiver"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Matchers"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Hits"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Disable route"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Enable route"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Do you really wish to delete this notification route?"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "No routes configured."
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Add notification route"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Parent route"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Event type"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Event type pattern"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Back to routes"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Subroutes"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "No subroutes configured."
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Notification route"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Update route"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Route lifecycle"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Single-use route"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Spent at"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Expires at"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Field"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Operator"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Add matcher"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "No matchers configured."
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Select event type"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Choose the event type whose fields should be offered."
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Back to route"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Route"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Matcher operator reference"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Choose different event type"
+msgstr ""
+
+#: forms/notifications.forms.php lib/functions.lib.php pages/page_dataset.php
+msgid "disabled"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Retry delivery"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Open Telegram bot"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Automatic pairing link is not available. Use manual pairing below."
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid ""
+"The link includes the pairing command. Press Start in Telegram to finish "
+"pairing."
+msgstr ""
+
+#: forms/notifications.forms.php
+#, php-format
+msgid "Create a new pairing command and use it in a private chat with @%s."
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid ""
+"Create a new pairing command and use it in a private chat with the Telegram "
+"bot."
+msgstr ""
+
+#: forms/notifications.forms.php
+#, php-format
+msgid "Open a private chat with @%s."
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Open a private chat with the vpsAdmin Telegram bot."
+msgstr ""
+
+#: forms/notifications.forms.php
+#, php-format
+msgid "Send %s."
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "The bot will confirm whether pairing succeeded."
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "prepared (waiting for transaction release)"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "released"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "released (scheduled)"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "sending"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Waiting for transaction release"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Waiting for dispatcher"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Delivery attempt is running"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Header"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "HTML preview"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "HTML source"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Notification targets"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Target"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Disable target"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Enable target"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid ""
+"Do you really wish to delete this notification target? Receiver links using "
+"it will be removed."
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "No targets configured."
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Add target"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Notification receivers"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Mute"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Disable receiver"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Enable receiver"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Do you really wish to delete this notification receiver?"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "No receivers configured."
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Add receiver"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "target disabled"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "delivery method disabled"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "pending"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "verified"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "paired"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Optional display name for this target."
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Recipient"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Use the account e-mail or provide one custom address."
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Custom e-mail address"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Used only when custom target is selected."
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Verification"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "A verification e-mail is sent after saving a custom address target."
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Last error"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Webhook URL"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "HTTP or HTTPS endpoint that receives the event JSON payload."
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "leave empty to keep"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Optional HMAC secret sent as X-VpsAdmin-Signature-256."
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Current secret"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "clear secret"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Pairing"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Automatic pairing"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Manual pairing"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "created after saving"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid ""
+"Re-pairing creates a new pairing command and pauses Telegram delivery until "
+"pairing succeeds. Continue?"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Re-pair Telegram chat"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Telegram delivery will be paused until the new chat is paired."
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Re-pair"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Pairing command"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Generate new pairing command"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Phone number"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Use international E.164 format, e.g. +420123456789."
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Instructions"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid ""
+"Save the phone number, send a verification SMS, then enter the code from the "
+"message."
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "SMS verification"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Verification SMS"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Send a verification SMS to this phone number?"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Send verification SMS"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Delivery is limited by a short resend cooldown."
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Verification code"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Enter the 6-digit code from the SMS."
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Confirm code"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "E-mail verification"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Verification e-mail"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Send a verification e-mail to this address?"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Send verification e-mail"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Open the link from the message to verify this target."
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Add notification target"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "No delivery methods enabled"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "No event delivery methods are enabled for this user."
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Back to receiver"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Back to targets"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Select target type"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Target type"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Choose how matching events will be delivered."
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Notification target"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Update target"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Notification receiver"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Update receiver"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Target enabled"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Edit target"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid ""
+"Do you really wish to unlink this notification target from the receiver?"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "No targets linked."
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Create and link target"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Link existing target"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Select an existing reusable target."
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Link target"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Back to receivers"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "custom"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "default"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Notification delivery limits"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Method"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Window"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Remaining"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Resets at"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "No delivery limits are configured."
+msgstr ""
+
+#: forms/notifications.forms.php pages/page_adminm.php pages/page_adminvps.php
+#: pages/page_backup.php pages/page_cluster.php pages/page_console.php
+#: pages/page_dataset.php pages/page_dns.php pages/page_export.php
+#: pages/page_history.php pages/page_incidents.php pages/page_jumpto.php
+#: pages/page_lifetimes.php pages/page_monitoring.php pages/page_nas.php
+#: pages/page_networking.php pages/page_node.php pages/page_notifications.php
+#: pages/page_oom_reports.php pages/page_outage.php pages/page_redirect.php
+#: pages/page_reminder.php pages/page_transactions.php pages/page_userdata.php
+#: pages/page_userns.php
+msgid "Access forbidden"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Only administrators can view notification delivery queues."
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Route ID"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Receiver ID"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Target ID"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Receiver target ID"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Delivery"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Attempts"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Released"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Last attempt"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Next retry"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "No deliveries found."
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Severity"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Deliveries"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Matched routes"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Relation"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "No routes matched."
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Routing state"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Payload"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Result"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Delivery attempts"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Response"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "No deliveries recorded."
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Back to event log"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Event delivery"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Template"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Message ID"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Response status"
+msgstr ""
+
+#: forms/notifications.forms.php pages/page_adminvps.php
+msgid "Error"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Retry"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Back to event"
+msgstr ""
+
+#: forms/notifications.forms.php forms/users.forms.php pages/page_adminm.php
+msgid "E-mail"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Cc"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Reply-To"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Return-Path"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Plain text"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "No e-mail snapshot recorded for this delivery."
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Telegram"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Chat"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "SMS"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Gateway callback"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Webhook"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Request payload"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Response headers"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Response body"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Attempt"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Started"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Finished"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "No attempts recorded."
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Other"
+msgstr ""
+
+#: forms/notifications.forms.php
+#, php-format
+msgid "%d events"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Default routed"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "no"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "yes"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Example"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "No matchable fields were reported by the API."
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Test notification event"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Create test event"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Subject scope"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Test notification"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "This event was created from notification settings."
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Create event"
+msgstr ""
+
 #: forms/object_history.forms.php
 msgid "Object history"
 msgstr ""
@@ -2143,8 +3220,8 @@ msgstr ""
 msgid "nothing killed"
 msgstr ""
 
-#: forms/oom_reports.forms.php
-msgid "Configure rules"
+#: forms/oom_reports.forms.php forms/vps.forms.php
+msgid "Configure OOM notifications"
 msgstr ""
 
 #: forms/oom_reports.forms.php
@@ -2414,8 +3491,8 @@ msgstr ""
 msgid "resolved"
 msgstr ""
 
-#: forms/outage.forms.php
-msgid "Send mails"
+#: forms/outage.forms.php forms/vps.forms.php
+msgid "Send notifications"
 msgstr ""
 
 #: forms/outage.forms.php
@@ -2720,7 +3797,7 @@ msgid "A kernel bug could affect containers on selected nodes."
 msgstr ""
 
 #: forms/security_advisory.forms.php
-msgid "One-sentence summary shown in advisory lists and emails."
+msgid "One-sentence summary shown in advisory lists and notifications."
 msgstr ""
 
 #: forms/security_advisory.forms.php
@@ -2795,7 +3872,7 @@ msgid "Publish advisory"
 msgstr ""
 
 #: forms/security_advisory.forms.php
-msgid "Send mails to affected users"
+msgid "Send notifications to affected users"
 msgstr ""
 
 #: forms/security_advisory.forms.php
@@ -3388,10 +4465,6 @@ msgstr ""
 msgid "Overall score"
 msgstr ""
 
-#: forms/users.forms.php pages/page_adminm.php
-msgid "E-mail"
-msgstr ""
-
 #: forms/users.forms.php
 msgid "Change reason"
 msgstr ""
@@ -3514,28 +4587,6 @@ msgstr ""
 
 #: forms/users.forms.php
 msgid "Assign"
-msgstr ""
-
-#: forms/users.forms.php
-msgid "Recipients by e-mail type"
-msgstr ""
-
-#: forms/users.forms.php
-msgid "Templates"
-msgstr ""
-
-#: forms/users.forms.php pages/page_adminm.php
-msgid "E-mails"
-msgstr ""
-
-#: forms/users.forms.php
-msgid ""
-"E-mails configured here override role recipients. It is a comma separated "
-"list of e-mails, may contain line breaks."
-msgstr ""
-
-#: forms/users.forms.php
-msgid "Do not send these e-mails"
 msgstr ""
 
 #: forms/users.forms.php
@@ -4057,10 +5108,6 @@ msgid "History"
 msgstr ""
 
 #: forms/vps.forms.php
-msgid "Configure OOM reports"
-msgstr ""
-
-#: forms/vps.forms.php
 msgid "Report incident"
 msgstr ""
 
@@ -4183,10 +5230,6 @@ msgstr ""
 
 #: forms/vps.forms.php
 msgid "Skip start"
-msgstr ""
-
-#: forms/vps.forms.php
-msgid "Send e-mails"
 msgstr ""
 
 #: forms/vps.forms.php
@@ -4322,10 +5365,6 @@ msgid " via "
 msgstr ""
 
 #: forms/vps.forms.php
-msgid "Add route"
-msgstr ""
-
-#: forms/vps.forms.php
 msgid "Invalid IP route type"
 msgstr ""
 
@@ -4401,10 +5440,6 @@ msgstr ""
 
 #: lib/functions.lib.php
 msgid "Left-click - extend timeout; Long left-click - disable timeout"
-msgstr ""
-
-#: lib/functions.lib.php pages/page_dataset.php
-msgid "disabled"
 msgstr ""
 
 #: lib/functions.lib.php
@@ -4633,6 +5668,20 @@ msgid "Switch context"
 msgstr ""
 
 #: pages/page_adminm.php
+msgid "Event delivery methods"
+msgstr ""
+
+#: pages/page_adminm.php
+msgid ""
+"Enabled methods allow this user to configure receivers and receive event "
+"notifications."
+msgstr ""
+
+#: pages/page_adminm.php
+msgid "Delivery limits"
+msgstr ""
+
+#: pages/page_adminm.php
 msgid "Add a member"
 msgstr ""
 
@@ -4669,10 +5718,6 @@ msgid "Postal address"
 msgstr ""
 
 #: pages/page_adminm.php
-msgid "Enable vpsAdmin mailer"
-msgstr ""
-
-#: pages/page_adminm.php
 msgid "Note for administrators"
 msgstr ""
 
@@ -4684,12 +5729,17 @@ msgstr ""
 msgid "Member"
 msgstr ""
 
-#: pages/page_adminm.php
-msgid "Enable mail notifications from vpsAdmin"
+#: pages/page_adminm.php pages/page_notifications.php
+#: pages/page_transactions.php public/index.php
+msgid "Notifications"
 msgstr ""
 
 #: pages/page_adminm.php
-msgid "Configure payment reminder"
+msgid "Configure event routes"
+msgstr ""
+
+#: pages/page_adminm.php
+msgid "Configure payment notifications"
 msgstr ""
 
 #: pages/page_adminm.php
@@ -4697,7 +5747,7 @@ msgid "Used to localize vpsAdmin, API responses, and e-mails."
 msgstr ""
 
 #: pages/page_adminm.php
-msgid "Used to format dates and times in vpsAdmin and e-mails."
+msgid "Used to format dates and times in vpsAdmin and notifications."
 msgstr ""
 
 #: pages/page_adminm.php
@@ -4706,18 +5756,6 @@ msgstr ""
 
 #: pages/page_adminm.php
 msgid "Lock-out"
-msgstr ""
-
-#: pages/page_adminm.php
-msgid "Contact"
-msgstr ""
-
-#: pages/page_adminm.php
-msgid "Account management"
-msgstr ""
-
-#: pages/page_adminm.php
-msgid "System administrator"
 msgstr ""
 
 #: pages/page_adminm.php
@@ -4782,7 +5820,7 @@ msgid "Enable new login notification"
 msgstr ""
 
 #: pages/page_adminm.php
-msgid "Send emails about logins from new devices. Strongly recommended."
+msgid "Send notifications about logins from new devices. Strongly recommended."
 msgstr ""
 
 #: pages/page_adminm.php
@@ -4850,29 +5888,15 @@ msgid "Request change"
 msgstr ""
 
 #: pages/page_adminm.php
-msgid "E-mail roles"
+msgid "Notifications are configured using event routes and receivers."
 msgstr ""
 
 #: pages/page_adminm.php
-msgid ""
-"E-mails configured here override the primary e-mail. It is a comma separated "
-"list of e-mails, may contain line breaks."
-msgstr ""
-
-#: pages/page_adminm.php
-msgid "Advanced configuration"
+msgid "Configure receivers"
 msgstr ""
 
 #: pages/page_adminm.php pages/page_adminvps.php
 msgid "State log"
-msgstr ""
-
-#: pages/page_adminm.php
-msgid "Advanced e-mail configuration"
-msgstr ""
-
-#: pages/page_adminm.php
-msgid "Advanced mail configuration"
 msgstr ""
 
 #: pages/page_adminm.php
@@ -4973,10 +5997,6 @@ msgstr ""
 
 #: pages/page_adminm.php
 msgid "Access level"
-msgstr ""
-
-#: pages/page_adminm.php
-msgid "Mailer enabled"
 msgstr ""
 
 #: pages/page_adminm.php
@@ -5117,6 +6137,26 @@ msgstr ""
 
 #: pages/page_adminm.php
 msgid "User update failed"
+msgstr ""
+
+#: pages/page_adminm.php pages/page_notifications.php
+msgid "Access denied"
+msgstr ""
+
+#: pages/page_adminm.php
+msgid "Only administrators can update event delivery methods."
+msgstr ""
+
+#: pages/page_adminm.php
+msgid "Event delivery methods updated"
+msgstr ""
+
+#: pages/page_adminm.php
+msgid "Event delivery methods were successfully updated."
+msgstr ""
+
+#: pages/page_adminm.php
+msgid "Event delivery method update failed"
 msgstr ""
 
 #: pages/page_adminm.php
@@ -5276,23 +6316,6 @@ msgid "Change request failed"
 msgstr ""
 
 #: pages/page_adminm.php
-msgid "Role e-mails updated"
-msgstr ""
-
-#: pages/page_adminm.php
-msgid "The changes were successfully saved."
-msgstr ""
-
-#: pages/page_adminm.php pages/page_adminvps.php pages/page_cluster.php
-#: pages/page_networking.php pages/page_security_advisory.php
-msgid "Update failed"
-msgstr ""
-
-#: pages/page_adminm.php
-msgid "Template e-mails updated"
-msgstr ""
-
-#: pages/page_adminm.php
 msgid "Paid until date set"
 msgstr ""
 
@@ -5400,6 +6423,11 @@ msgstr ""
 msgid "Settings customized"
 msgstr ""
 
+#: pages/page_adminm.php pages/page_adminvps.php pages/page_cluster.php
+#: pages/page_networking.php pages/page_security_advisory.php
+msgid "Update failed"
+msgstr ""
+
 #: pages/page_adminm.php
 msgid "Settings reset to default"
 msgstr ""
@@ -5421,20 +6449,9 @@ msgstr ""
 #: pages/page_dns.php pages/page_export.php pages/page_history.php
 #: pages/page_incidents.php pages/page_jumpto.php pages/page_lifetimes.php
 #: pages/page_monitoring.php pages/page_nas.php pages/page_networking.php
-#: pages/page_node.php pages/page_oom_reports.php pages/page_outage.php
-#: pages/page_redirect.php pages/page_reminder.php pages/page_transactions.php
-#: pages/page_userdata.php pages/page_userns.php
-msgid "Access forbidden"
-msgstr ""
-
-#: pages/page_adminm.php pages/page_adminvps.php pages/page_backup.php
-#: pages/page_cluster.php pages/page_console.php pages/page_dataset.php
-#: pages/page_dns.php pages/page_export.php pages/page_history.php
-#: pages/page_incidents.php pages/page_jumpto.php pages/page_lifetimes.php
-#: pages/page_monitoring.php pages/page_nas.php pages/page_networking.php
-#: pages/page_oom_reports.php pages/page_outage.php pages/page_redirect.php
-#: pages/page_reminder.php pages/page_transactions.php pages/page_userdata.php
-#: pages/page_userns.php
+#: pages/page_notifications.php pages/page_oom_reports.php
+#: pages/page_outage.php pages/page_redirect.php pages/page_reminder.php
+#: pages/page_transactions.php pages/page_userdata.php pages/page_userns.php
 msgid "You have to log in to be able to access vpsAdmin's functions"
 msgstr ""
 
@@ -5532,10 +6549,6 @@ msgstr ""
 
 #: pages/page_adminvps.php
 msgid "Resource change failed"
-msgstr ""
-
-#: pages/page_adminvps.php
-msgid "Error"
 msgstr ""
 
 #: pages/page_adminvps.php
@@ -5994,7 +7007,8 @@ msgstr ""
 
 #: pages/page_adminvps.php
 msgid ""
-"This form disables all network interfaces. User is sent an email on change."
+"This form disables all network interfaces. User is sent a notification on "
+"change."
 msgstr ""
 
 #: pages/page_adminvps.php
@@ -6003,7 +7017,8 @@ msgstr ""
 
 #: pages/page_adminvps.php
 msgid ""
-"This form enables all network interfaces. User is sent an email on change."
+"This form enables all network interfaces. User is sent a notification on "
+"change."
 msgstr ""
 
 #: pages/page_adminvps.php
@@ -6162,7 +7177,7 @@ msgid ""
 "changes inside the VPS. If allowed, we can make these necessary changes for "
 "you. We usually only modify the base system configuration files which we "
 "would otherwise deliver in OS templates for new VPS. We do not access or "
-"modify your applications or data. We will email you about any changes we "
+"modify your applications or data. You will be notified about any changes we "
 "will make."
 msgstr ""
 
@@ -6318,8 +7333,8 @@ msgstr ""
 
 #: pages/page_backup.php
 msgid ""
-"Preparing the archive may take several hours. You will receive email with "
-"download link when it is done."
+"Preparing the archive may take several hours. You will receive a "
+"notification with the download link when it is done."
 msgstr ""
 
 #: pages/page_backup.php
@@ -7408,28 +8423,209 @@ msgstr ""
 msgid "You have to log in to be able to access vpsadmin's functions"
 msgstr ""
 
-#: pages/page_oom_reports.php
-msgid "Rule added"
+#: pages/page_notifications.php
+msgid "Route added"
+msgstr ""
+
+#: pages/page_notifications.php
+msgid "Failed to add route"
+msgstr ""
+
+#: pages/page_notifications.php
+msgid "Route updated"
+msgstr ""
+
+#: pages/page_notifications.php
+msgid "Failed to update route"
+msgstr ""
+
+#: pages/page_notifications.php
+msgid "Route deleted"
+msgstr ""
+
+#: pages/page_notifications.php
+msgid "Failed to delete route"
+msgstr ""
+
+#: pages/page_notifications.php
+msgid "Failed to reorder routes"
+msgstr ""
+
+#: pages/page_notifications.php
+msgid "Invalid route order"
+msgstr ""
+
+#: pages/page_notifications.php
+msgid "Matcher added"
+msgstr ""
+
+#: pages/page_notifications.php
+msgid "Failed to add matcher"
+msgstr ""
+
+#: pages/page_notifications.php
+msgid "Matchers updated"
+msgstr ""
+
+#: pages/page_notifications.php
+msgid "Failed to save matchers"
+msgstr ""
+
+#: pages/page_notifications.php
+msgid "Matcher deleted"
+msgstr ""
+
+#: pages/page_notifications.php
+msgid "Failed to delete matcher"
+msgstr ""
+
+#: pages/page_notifications.php
+msgid "Receiver added"
+msgstr ""
+
+#: pages/page_notifications.php
+msgid "Failed to add receiver"
+msgstr ""
+
+#: pages/page_notifications.php
+msgid "Receiver updated"
+msgstr ""
+
+#: pages/page_notifications.php
+msgid "Failed to update receiver"
+msgstr ""
+
+#: pages/page_notifications.php
+msgid "Receiver deleted"
+msgstr ""
+
+#: pages/page_notifications.php
+msgid "Failed to delete receiver"
+msgstr ""
+
+#: pages/page_notifications.php
+msgid "Failed to add target"
+msgstr ""
+
+#: pages/page_notifications.php
+msgid "Invalid target type"
+msgstr ""
+
+#: pages/page_notifications.php
+msgid "Target added"
+msgstr ""
+
+#: pages/page_notifications.php
+msgid "Target updated"
+msgstr ""
+
+#: pages/page_notifications.php
+msgid "Failed to update target"
+msgstr ""
+
+#: pages/page_notifications.php
+msgid "Pairing command created"
+msgstr ""
+
+#: pages/page_notifications.php
+msgid "Failed to create pairing token"
+msgstr ""
+
+#: pages/page_notifications.php
+msgid "Verification e-mail sent"
+msgstr ""
+
+#: pages/page_notifications.php
+msgid "Failed to send verification e-mail"
+msgstr ""
+
+#: pages/page_notifications.php
+msgid "E-mail address verified"
+msgstr ""
+
+#: pages/page_notifications.php
+msgid "Failed to verify e-mail address"
+msgstr ""
+
+#: pages/page_notifications.php
+msgid "Verification SMS sent"
+msgstr ""
+
+#: pages/page_notifications.php
+msgid "Failed to send verification SMS"
+msgstr ""
+
+#: pages/page_notifications.php
+msgid "Phone number verified"
+msgstr ""
+
+#: pages/page_notifications.php
+msgid "Failed to verify phone number"
+msgstr ""
+
+#: pages/page_notifications.php
+msgid "Target deleted"
+msgstr ""
+
+#: pages/page_notifications.php
+msgid "Failed to delete target"
+msgstr ""
+
+#: pages/page_notifications.php
+msgid "Target linked"
+msgstr ""
+
+#: pages/page_notifications.php
+msgid "Failed to link target"
+msgstr ""
+
+#: pages/page_notifications.php
+msgid "Target unlinked"
+msgstr ""
+
+#: pages/page_notifications.php
+msgid "Failed to unlink target"
+msgstr ""
+
+#: pages/page_notifications.php
+msgid "Delivery retry scheduled"
+msgstr ""
+
+#: pages/page_notifications.php
+msgid "Failed to retry delivery"
+msgstr ""
+
+#: pages/page_notifications.php
+msgid "Only administrators can update delivery limits."
+msgstr ""
+
+#: pages/page_notifications.php
+msgid "Limits must be positive integers."
+msgstr ""
+
+#: pages/page_notifications.php
+msgid "Delivery limits updated"
+msgstr ""
+
+#: pages/page_notifications.php
+msgid "Failed to update delivery limits"
+msgstr ""
+
+#: pages/page_notifications.php
+msgid "Test event created"
+msgstr ""
+
+#: pages/page_notifications.php
+msgid "Failed to create test event"
 msgstr ""
 
 #: pages/page_oom_reports.php
-msgid "Failed to add rule"
+msgid "OOM report rules moved"
 msgstr ""
 
 #: pages/page_oom_reports.php
-msgid "Rule updated"
-msgstr ""
-
-#: pages/page_oom_reports.php
-msgid "Failed to update rule"
-msgstr ""
-
-#: pages/page_oom_reports.php
-msgid "Rule deleted"
-msgstr ""
-
-#: pages/page_oom_reports.php
-msgid "Failed to delete rule"
+msgid ""
+"OOM report delivery and suppression are configured using notification routes."
 msgstr ""
 
 #: pages/page_outage.php
@@ -7465,7 +8661,7 @@ msgid "Unable to determine remind date"
 msgstr ""
 
 #: pages/page_reminder.php
-msgid "Mail reminder set"
+msgid "Notification reminder set"
 msgstr ""
 
 #: pages/page_reminder.php
@@ -7525,6 +8721,14 @@ msgid "Progress"
 msgstr ""
 
 #: pages/page_transactions.php
+msgid "Notification route created"
+msgstr ""
+
+#: pages/page_transactions.php
+msgid "Failed to create notification route"
+msgstr ""
+
+#: pages/page_transactions.php
 msgid "Chain not found"
 msgstr ""
 
@@ -7534,6 +8738,10 @@ msgstr ""
 
 #: pages/page_transactions.php
 msgid "Concerns"
+msgstr ""
+
+#: pages/page_transactions.php
+msgid "Notify me when done"
 msgstr ""
 
 #: pages/page_transactions.php

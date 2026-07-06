@@ -724,7 +724,7 @@ RSpec.describe EventRoute do
       template_name: 'user_suspend'
     )
     route.event_route_matchers.create!(
-      field: 'recipient_roles',
+      field: 'roles',
       operator: 'contains',
       value: 'account'
     )
@@ -735,7 +735,7 @@ RSpec.describe EventRoute do
       subject: 'Spec suspended user',
       payload: {
         'state' => 'suspended',
-        'recipient_roles' => %w[account]
+        'roles' => %w[account]
       }
     )
     delivery = event.event_deliveries.sole
@@ -757,7 +757,7 @@ RSpec.describe EventRoute do
     )
     route = create_route!(receiver:, event_type: 'user.suspended')
     route.event_route_matchers.create!(
-      field: 'recipient_roles',
+      field: 'roles',
       operator: 'not_contains',
       value: 'account'
     )
@@ -767,7 +767,7 @@ RSpec.describe EventRoute do
       user: SpecSeed.user,
       subject: 'Spec suspended user',
       payload: {
-        'recipient_roles' => %w[admin]
+        'roles' => %w[admin]
       }
     )
 
