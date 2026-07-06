@@ -15,7 +15,9 @@ include WEBUI_ROOT . 'config_cfg.php';
 header('Content-Type: text/javascript');
 
 if (isLoggedIn()) {
-    $language = webui_current_api_language($langs);
+    $webuiLocale = Lang::detect($langs);
+    Lang::activate($webuiLocale);
+    $language = Lang::apiCodeForLocale($langs, $webuiLocale);
     ?>
 (function(root) {
 	root.vpsAdmin = {
@@ -45,7 +47,8 @@ if (isLoggedIn()) {
 	sessionLength: <?php echo $_SESSION['user']['session_length'] ?>,
 	logoutUrl: <?php echo webui_json('?page=login&action=logout&timeout=1&t=' . csrf_token()) ?>,
 	description: <?php echo webui_json($_SESSION['api_description']) ?>,
-	sessionManagement: true
+	sessionManagement: true,
+	sessionCountdown: <?php echo webui_json(webui_session_countdown_labels()) ?>
 };
 
 var chainTimeout;

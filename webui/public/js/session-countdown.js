@@ -72,11 +72,11 @@
 			var el = $('#'+elementId);
 
 			el.css('cursor', 'pointer');
-			el.attr('title', 'Left-click - extend timeout; Long left-click - disable timeout');
+			el.attr('title', root.vpsAdmin.sessionCountdown.timeoutHelp);
 
 			el.longclick(1500, function () {
 				el.off('click').attr('title', '');
-				setValue('disabled');
+				setValue(root.vpsAdmin.sessionCountdown.disabled);
 				setTimeout(stopSessionTimer, 1500);
 			}, true);
 

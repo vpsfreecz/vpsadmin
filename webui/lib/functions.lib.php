@@ -469,6 +469,14 @@ function webui_json($value)
     return json_encode($value, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT);
 }
 
+function webui_session_countdown_labels()
+{
+    return [
+        'timeoutHelp' => _('Left-click - extend timeout; Long left-click - disable timeout'),
+        'disabled' => _('disabled'),
+    ];
+}
+
 function getApiClientOptions($language = null)
 {
     $ret = [

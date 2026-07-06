@@ -4387,6 +4387,14 @@ msgid "Server default"
 msgstr ""
 
 #: lib/functions.lib.php
+msgid "Left-click - extend timeout; Long left-click - disable timeout"
+msgstr ""
+
+#: lib/functions.lib.php pages/page_dataset.php
+msgid "disabled"
+msgstr ""
+
+#: lib/functions.lib.php
 msgid "Turn maintenance OFF."
 msgstr ""
 
@@ -6861,10 +6869,6 @@ msgstr ""
 
 #: pages/page_dataset.php
 msgid "Mount edit failed"
-msgstr ""
-
-#: pages/page_dataset.php
-msgid "disabled"
 msgstr ""
 
 #: pages/page_dataset.php

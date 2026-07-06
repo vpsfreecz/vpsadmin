@@ -4430,6 +4430,16 @@ msgid "Server default"
 msgstr "Výchozí nastavení serveru"
 
 #: lib/functions.lib.php
+msgid "Left-click - extend timeout; Long left-click - disable timeout"
+msgstr ""
+"Kliknutí levým tlačítkem - prodloužit timeout; dlouhé kliknutí levým "
+"tlačítkem - vypnout timeout"
+
+#: lib/functions.lib.php pages/page_dataset.php
+msgid "disabled"
+msgstr "zakázáno"
+
+#: lib/functions.lib.php
 msgid "Turn maintenance OFF."
 msgstr "Vypněte údržbu."
 
@@ -6982,10 +6992,6 @@ msgstr "Odstranění mountu se nezdařilo"
 #: pages/page_dataset.php
 msgid "Mount edit failed"
 msgstr "Úprava připojení se nezdařila"
-
-#: pages/page_dataset.php
-msgid "disabled"
-msgstr "zakázáno"
 
 #: pages/page_dataset.php
 msgid "enabled"
