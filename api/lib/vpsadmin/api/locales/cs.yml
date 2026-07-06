@@ -3391,3 +3391,224 @@ cs:
             label: Klíč
           updated_at:
             label: Aktualizováno
+    transaction_chains:
+      concerns:
+        classes:
+          branch: Branch
+          change_request: Změnový požadavek
+          dataset: Dataset
+          dataset_expansion: Rozšíření datasetu
+          dataset_in_pool: Dataset v poolu
+          dns_resolver: DNS resolver
+          dns_server_zone: DNS server zóna
+          dns_zone: DNS zóna
+          dns_zone_transfer: Přenos DNS zóny
+          export: Export
+          host_ip_address: Host IP adresa
+          incident_report: Incident
+          migration_plan: Migrační plán
+          mount: Mount
+          network_interface: Síťové rozhraní
+          node: Node
+          outage: Odstávka/výpadek
+          pool: Pool
+          registration_request: Registrační požadavek
+          security_advisory: Bezpečnostní upozornění
+          snapshot: Snapshot
+          snapshot_download: Stažení snapshotu
+          snapshot_in_pool: Snapshot v poolu
+          user: Uživatel
+          user_payment: Platba uživatele
+          vps: VPS
+      labels:
+        branch:
+          destroy: Smazat branch datasetu
+        cluster:
+          generate_known_hosts: known_hosts
+          generate_migration_keys: Migrační klíče
+        dataset:
+          backup: Záloha
+          base_download: Stažení
+          create: Vytvořit
+          destroy: Smazat
+          full_download: Stažení
+          group_snapshot: Snapshot datasetu
+          incremental_download: Stažení
+          inherit: Zdědit vlastnosti datasetu
+          migrate: Migrovat
+          remove_download: Odebrat stažení
+          rollback: Rollback
+          rotate: Rotace
+          send: Odeslat
+          set: Nastavit vlastnosti
+          snapshot: Snapshot
+          transfer: Přenos
+        dataset_in_pool:
+          destroy: Smazat
+          detach_backup_heads: Odpojit zálohy
+        dataset_tree:
+          destroy: Smazat strom datasetů
+        dns_resolver:
+          destroy: Smazat
+          update: Upravit
+        dns_server_zone:
+          create: Server zóna+
+          destroy: Server zóna-
+        dns_zone:
+          create_record: Záznam+
+          create_user: Zóna+
+          destroy_record: Záznam-
+          destroy_user: Zóna-
+          set_reverse_record: Nastavit PTR
+          unset_reverse_record: Zrušit PTR
+          update: Upravit zónu
+          update_record: Záznam*
+        dns_zone_transfer:
+          create: Přenos zóny+
+          destroy: Přenos zóny-
+        export:
+          add_hosts: Hosty+
+          add_hosts_to_all: Hosty+
+          create: Vytvořit
+          del_hosts: Hosty-
+          del_hosts_from_all: Hosty-
+          destroy: Smazat
+          edit_host: Host*
+          update: Upravit
+        host_ip_address:
+          destroy: Host IP-
+        incident_report:
+          new: Incident
+          process: Incident
+          reply: 'Re: incident'
+          send: Incident
+        ip:
+          allocate: Přidělit IP objektu
+          free: Uvolnit IP z objektu
+          update: IP*
+        lifetimes:
+          expiration_warning: Expirace
+          wrapper: Změna stavu
+        mail:
+          daily_report: Denní report
+          vps_dataset_expanded: Dataset rozšířen
+        maintenance:
+          custom: Vlastní
+        migration_plan:
+          mail: Mail
+        network:
+          add_ips: IP+
+          create: Vytvořit
+        network_interface:
+          add_host_ip: IP+
+          add_route: Routa+
+          cleanup_host_ip_addresses: Vyčistit host IP
+          clear: Netif-
+          del_host_ip: IP-
+          del_route: Routa-
+          destroy: Netif-
+          rename: Přejmenovat
+          update: Netif*
+          venet:
+            clone: Klonovat
+            create: Venet+
+            morph: Morph
+          veth_routed:
+            clone: Klonovat
+            create: Veth+
+            morph: Morph
+        node:
+          register: Registrovat
+          shaper_root_change: Shaper*
+        plugins:
+          monitoring:
+            alert: Alert
+          outage_reports:
+            update: Upravit
+          payments:
+            create: Vytvořit
+            mail_overview: Mail přehled
+          requests:
+            create: Vytvořit
+            resolve: Vyřešit
+            update: Upravit
+        pool:
+          create: Vytvořit
+        security_advisories:
+          mail: Mail bezpečnostního upozornění
+        snapshot:
+          destroy: Smazat
+        snapshot_in_pool:
+          destroy: Smazat snapshot v poolu
+          purge_clones: Smazat klony
+        user:
+          create: Vytvořit uživatele
+          destroy: Smazat uživatele
+          hard_delete: Smazat uživatele natvrdo
+          new_login: Nové přihlášení
+          new_token: Nový token
+          report_failed_logins: Neúspěšná přihlášení
+          resume: Obnovit
+          revive: Oživit
+          soft_delete: Soft delete
+          suspend: Suspendovat
+          totp_recovery_code_used: TOTP recovery
+        user_namespace:
+          allocate: Přidělit userns
+          free: Uvolnit userns
+        user_namespace_map:
+          disuse: Přestat používat userns
+          use: Použít userns
+        vps:
+          apply_config: Aplikovat konfiguraci
+          autostart: Autostart
+          block: Blokovat
+          boot: Spustit
+          clone:
+            os_to_os: Klonovat
+            vz_to_os: Klonovat
+            vz_to_vz: Klonovat
+          create: Vytvořit
+          deploy_public_key: SSH klíč
+          deploy_user_data: User data
+          destroy: Smazat
+          destroy_mount: Smazat mount
+          enable_network: Síť
+          expand_dataset: Rozšířit
+          expand_dataset_again: Rozšířit+
+          features: Features
+          migrate:
+            os_to_os: Migrovat
+            os_to_vz: Migrovat
+            vz_to_os: Migrovat
+            vz_to_vz: Migrovat
+          mount: Mount
+          mount_dataset: Mount datasetu
+          mount_snapshot: Mount snapshotu
+          mounts: Mounty
+          oom_prevention: OOM prevence
+          oom_reports: OOM reporty
+          passwd: Heslo
+          reinstall: Přeinstalovat
+          replace:
+            os: Prohodit
+          restart: Restartovat
+          restore: Obnovit
+          revive: Oživit
+          set_resources: Zdroje
+          shrink_dataset: Zmenšit
+          soft_delete: Soft delete
+          start: Spustit
+          stop: Stop
+          stop_over_quota: Stop kvóta
+          swap: Prohodit
+          umount: Unmount
+          umount_dataset: Unmount datasetu
+          umount_snapshot: Unmount snapshotu
+          unblock: Odblokovat
+          update: Upravit
+          update_mount: Mount*
+        vps_config:
+          create: Vytvořit
+          delete: Smazat
+          update: Upravit

@@ -15,6 +15,15 @@ const {
 
 const fixtures = readFixtures();
 const states = ['queued', 'done', 'rollbacking', 'failed'];
+const languageFlag = (page, locale) =>
+  page.locator(`#langbox a[href*="newlang=${encodeURIComponent(locale)}"]`);
+
+async function switchLanguage(page, locale) {
+  await Promise.all([
+    page.waitForNavigation({ waitUntil: 'domcontentloaded' }),
+    languageFlag(page, locale).click(),
+  ]);
+}
 
 test('user can open transaction state-filtered lists and chain details', async ({ page }) => {
   await login(page, fixtures.user);
@@ -127,4 +136,58 @@ test('admin sees transaction user filters, session links, and detailed payloads'
   await expect(page.locator('#content-in')).toContainText(chain.fixture);
 
   await logout(page, fixtures.admin.username);
+});
+
+test('user sees localized transaction chain labels and concerns', async ({ page }) => {
+  const chain = fixtures.transactions.states.done;
+
+  await login(page, fixtures.user);
+  try {
+    await switchLanguage(page, 'cs_CZ.utf8');
+
+    await gotoTransactionList(page, { name: chain.name });
+    const row = chainRow(page, chain.id);
+    await expect(row).toBeVisible();
+    await expect(row).toContainText('Uživatel');
+    await expect(row).toContainText('Nové přihlášení');
+
+    await page.goto(`/?page=transactions&chain=${chain.id}`, { waitUntil: 'domcontentloaded' });
+    await expect(page.locator('#content-in')).toContainText(`Řetězec transakcí #${chain.id}`);
+    await expect(page.locator('#content-in')).toContainText('Uživatel');
+    await expect(page.locator('#content-in')).toContainText('Nové přihlášení');
+  } finally {
+    await switchLanguage(page, 'en_US.utf8');
+    await logout(page, fixtures.user.username);
+  }
+});
+
+test('dashboard transaction updater uses localized concern labels', async ({ page }) => {
+  await login(page, fixtures.user);
+  try {
+    await switchLanguage(page, 'cs_CZ.utf8');
+    await page.goto('/', { waitUntil: 'domcontentloaded' });
+
+    const rows = page.locator('#transactions table tr:has(td)');
+    await expect(rows.first()).toBeVisible();
+    await page.locator('#transactions table').evaluate((table) => {
+      const currentRows = Array.from(table.querySelectorAll('tr'))
+        .filter((row) => row.querySelector('td'));
+      currentRows.slice(1).forEach((row) => row.remove());
+
+      const row = currentRows[0];
+      row.setAttribute('data-transaction-chain-id', 'stale');
+      row.setAttribute('data-transaction-chain-progress', '0');
+      row.querySelector('td:nth-child(2)').textContent = 'stale concern';
+      row.querySelector('td:nth-child(3)').textContent = 'stale action';
+    });
+
+    const localizedRow = page.locator('#transactions table tr:has(td)', {
+      hasText: 'Nové přihlášení',
+    }).first();
+    await expect(localizedRow).toBeVisible({ timeout: 10000 });
+    await expect(localizedRow).toContainText('Uživatel');
+  } finally {
+    await switchLanguage(page, 'en_US.utf8');
+    await logout(page, fixtures.user.username);
+  }
 });

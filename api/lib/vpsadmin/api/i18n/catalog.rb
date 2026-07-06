@@ -274,8 +274,9 @@ module VpsAdmin
         def normalized_catalog(add_missing:)
           current = deep_dup(locale_data)
           keys = used_keys
-          parameter_defaults = parameter_catalog_required? ? parameter_metadata : {}
-          parameter_keys = parameter_defaults.keys
+          default_values = runtime_i18n_defaults
+          default_values = default_values.merge(parameter_metadata) if parameter_catalog_required?
+          parameter_keys = parameter_catalog_required? ? parameter_metadata.keys : []
 
           locales.to_h do |locale|
             original_data = current.fetch(locale, {})
@@ -283,8 +284,8 @@ module VpsAdmin
             data = prune_vpsadmin_catalog(original_data, keys)
 
             keys.each do |key|
-              if locale == DEFAULT_LOCALE && parameter_defaults.has_key?(key)
-                set_nested(data, scoped_parts(key), parameter_defaults.fetch(key), overwrite: true)
+              if locale == DEFAULT_LOCALE && default_values.has_key?(key)
+                set_nested(data, scoped_parts(key), default_values.fetch(key), overwrite: true)
 
               elsif add_missing
                 value = if parameter_keys.include?(key)
@@ -362,6 +363,7 @@ module VpsAdmin
             source_keys +
               oauth2_template_keys +
               declared_source_keys +
+              runtime_i18n_defaults.keys +
               (parameter_catalog_required? ? parameter_metadata.keys : [])
           ).uniq
         end
@@ -454,6 +456,7 @@ module VpsAdmin
           @api_runtime_data ||= with_api_runtime do |api|
             {
               i18n_keys: runtime_i18n_keys,
+              i18n_defaults: runtime_i18n_default_values,
               parameter_metadata_items: runtime_parameter_metadata_items(api)
             }
           end
@@ -461,6 +464,16 @@ module VpsAdmin
 
         def runtime_i18n_keys
           VpsAdmin::API::Authentication::OAuth2Config.i18n_keys
+        end
+
+        def runtime_i18n_defaults
+          api_runtime_data.fetch(:i18n_defaults)
+        end
+
+        def runtime_i18n_default_values
+          ::TransactionChain.transaction_chain_label_defaults.merge(
+            ::TransactionChain.concern_class_label_defaults
+          )
         end
 
         def runtime_parameter_metadata_items(api)

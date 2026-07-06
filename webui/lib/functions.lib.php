@@ -1101,18 +1101,22 @@ function post_val_issetto($name, $value, $default = false)
     return $_POST[$name] == $value;
 }
 
-function transaction_concern_class($klass)
+function transaction_concern_class($klass, $concerns = null)
 {
+    if ($concerns && isset($concerns->labels->{$klass})) {
+        return h($concerns->labels->{$klass});
+    }
+
     $tr = [
         'SecurityAdvisory' => _('Security advisory'),
         'Vps' => 'VPS',
     ];
 
     if (array_key_exists($klass, $tr)) {
-        return $tr[$klass];
+        return h($tr[$klass]);
     }
 
-    return $klass;
+    return h($klass);
 }
 
 function transaction_concern_link($klass, $row_id)
@@ -1165,7 +1169,7 @@ function transaction_chain_concerns($chain, $limit = 10)
                 return '---';
             }
             $o = $chain->concerns->objects[0];
-            return transaction_concern_class($o[0]) . ' ' . transaction_concern_link($o[0], $o[1]);
+            return transaction_concern_class($o[0], $chain->concerns) . ' ' . transaction_concern_link($o[0], $o[1]);
 
         case 'transform':
             if (count($chain->concerns->objects) < 2) {
@@ -1175,7 +1179,7 @@ function transaction_chain_concerns($chain, $limit = 10)
             $src = $chain->concerns->objects[0];
             $dst = $chain->concerns->objects[1];
 
-            return transaction_concern_class($src[0]) . ' ' . transaction_concern_link($src[0], $src[1]) . ' -> ' . transaction_concern_link($dst[0], $dst[1]);
+            return transaction_concern_class($src[0], $chain->concerns) . ' ' . transaction_concern_link($src[0], $src[1]) . ' -> ' . transaction_concern_link($dst[0], $dst[1]);
 
         default:
             return _('Unknown');

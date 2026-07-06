@@ -62,16 +62,23 @@
 		}
 	}
 
-	function chainConcernClass(obj) {
+	function escapeHtml(value) {
+		return $('<span>').text(value).html();
+	}
+
+	function chainConcernClass(chain, obj) {
+		if (chain.concerns.labels && chain.concerns.labels[obj[0]])
+			return escapeHtml(chain.concerns.labels[obj[0]]);
+
 		var klassMap = {
 			SecurityAdvisory: 'Security advisory',
 			Vps: 'VPS'
 		};
 
 		if (klassMap[obj[0]])
-			return klassMap[obj[0]];
+			return escapeHtml(klassMap[obj[0]]);
 
-		return obj[0];
+		return escapeHtml(obj[0]);
 	}
 
 	function chainConcerns(chain) {
@@ -80,13 +87,13 @@
 
 		switch (chain.concerns.type) {
 			case 'affect':
-				return chainConcernClass(chain.concerns.objects[0]) + ' ' + chainConcernLink(chain.concerns.objects[0]);
+				return chainConcernClass(chain, chain.concerns.objects[0]) + ' ' + chainConcernLink(chain.concerns.objects[0]);
 
 			case 'transform':
-				src = chain.concerns.objects[0];
-				dst = chain.concerns.objects[1];
+				var src = chain.concerns.objects[0];
+				var dst = chain.concerns.objects[1];
 
-				return chainConcernClass(src) + ' ' + chainConcernLink(src) + ' -> ' + chainConcernLink(dst);
+				return chainConcernClass(chain, src) + ' ' + chainConcernLink(src) + ' -> ' + chainConcernLink(dst);
 
 			default:
 				return 'Unknown';

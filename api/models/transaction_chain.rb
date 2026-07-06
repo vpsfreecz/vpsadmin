@@ -6,6 +6,35 @@ require 'vpsadmin/api/hash_options'
 # All transaction must be in a chain. Transaction without a chain does not
 # have a meaning.
 class TransactionChain < ApplicationRecord
+  CONCERN_CLASS_LABELS = {
+    'Branch' => 'Branch',
+    'ChangeRequest' => 'Change request',
+    'Dataset' => 'Dataset',
+    'DatasetExpansion' => 'Dataset expansion',
+    'DatasetInPool' => 'Dataset in pool',
+    'DnsResolver' => 'DNS resolver',
+    'DnsServerZone' => 'DNS server zone',
+    'DnsZone' => 'DNS zone',
+    'DnsZoneTransfer' => 'DNS zone transfer',
+    'Export' => 'Export',
+    'HostIpAddress' => 'Host IP address',
+    'IncidentReport' => 'Incident report',
+    'MigrationPlan' => 'Migration plan',
+    'Mount' => 'Mount',
+    'NetworkInterface' => 'Network interface',
+    'Node' => 'Node',
+    'Outage' => 'Outage',
+    'Pool' => 'Pool',
+    'RegistrationRequest' => 'Registration request',
+    'SecurityAdvisory' => 'Security advisory',
+    'Snapshot' => 'Snapshot',
+    'SnapshotDownload' => 'Snapshot download',
+    'SnapshotInPool' => 'Snapshot in pool',
+    'User' => 'User',
+    'UserPayment' => 'User payment',
+    'Vps' => 'VPS'
+  }.freeze
+
   has_many :transactions
   has_many :transaction_chain_concerns, dependent: :delete_all
   belongs_to :user
@@ -133,6 +162,56 @@ class TransactionChain < ApplicationRecord
       @label = v
     else
       @label
+    end
+  end
+
+  def self.localized_label(default: nil)
+    label_default = label || default || chain_name.humanize
+
+    VpsAdmin::API::I18n.t(label_i18n_key, default: label_default)
+  end
+
+  def self.label_i18n_key
+    "transaction_chains.labels.#{transaction_chain_i18n_path(name)}"
+  end
+
+  def self.transaction_chain_label_defaults
+    descendants.each_with_object({}) do |klass, ret|
+      next if klass.name.nil? || klass.label.nil?
+
+      ret[klass.label_i18n_key] = klass.label
+    end
+  end
+
+  def self.concern_class_label_defaults
+    CONCERN_CLASS_LABELS.to_h do |klass, label|
+      [concern_class_i18n_key(klass), label]
+    end
+  end
+
+  def self.concern_class_i18n_key(klass)
+    "transaction_chains.concerns.classes.#{klass.to_s.underscore}"
+  end
+
+  def self.concern_class_label(klass)
+    klass = klass.to_s
+    label_default = CONCERN_CLASS_LABELS.fetch(klass, klass)
+
+    VpsAdmin::API::I18n.t(concern_class_i18n_key(klass), default: label_default)
+  end
+
+  def self.transaction_chain_i18n_path(class_name)
+    parts = class_name.to_s.split('::')
+    index = parts.rindex('TransactionChains')
+    return parts.map(&:underscore).join('.') unless index
+
+    suffix = parts[(index + 1)..]
+    prefix = parts[0...index]
+
+    if prefix[0, 3] == %w[VpsAdmin API Plugins] && prefix[3]
+      (['plugins', prefix[3].underscore] + suffix.map(&:underscore)).join('.')
+    else
+      suffix.map(&:underscore).join('.')
     end
   end
 
@@ -348,10 +427,11 @@ class TransactionChain < ApplicationRecord
   end
 
   def format_concerns
-    ret = { type: concern_type[6..], objects: [] }
+    ret = { type: concern_type[6..], objects: [], labels: {} }
 
     transaction_chain_concerns.each do |c|
       ret[:objects] << [c.class_name, c.row_id]
+      ret[:labels][c.class_name] = self.class.concern_class_label(c.class_name)
     end
 
     ret
@@ -373,7 +453,9 @@ class TransactionChain < ApplicationRecord
   end
 
   def label
-    Kernel.const_get(type).label
+    Kernel.const_get(type).localized_label(default: name)
+  rescue NameError
+    name || type
   end
 
   # Return the node ID of last transaction. Find first available server if no

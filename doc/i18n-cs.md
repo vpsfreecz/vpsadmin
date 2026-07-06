@@ -39,6 +39,10 @@ Always translate with context. The same English word can mean different things:
 - Transaction chain pages can use concise Czech labels such as `Transakce`;
   `Concerns` means affected objects and is translated as `Týká se`, never
   `Obavy`.
+- Transaction chain action labels and affected-object labels are translated in
+  the API locale files, because both API clients and the WebUI display them.
+  The WebUI must not maintain separate PHP-only or JavaScript-only translations
+  for these labels.
 - Security advisory `mitigated` state is `ošetřeno`, not a literal
   `zmírněno`.
 - `Dataset`/`Datasets` are `Dataset`/`Datasety`.

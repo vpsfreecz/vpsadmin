@@ -99,10 +99,10 @@ RSpec.describe 'VpsAdmin::API::Resources::TransactionChain' do
       )
     end
 
-    def create_chain(user:, session:, name:, state:, size:, progress:, concerns: [])
+    def create_chain(user:, session:, name:, state:, size:, progress:, concerns: [], type: 'TransactionChain')
       chain = TransactionChain.create!(
         name: name,
-        type: 'TransactionChain',
+        type: type,
         state: state,
         size: size,
         progress: progress,
@@ -235,6 +235,7 @@ RSpec.describe 'VpsAdmin::API::Resources::TransactionChain' do
         expect(row).not_to have_key('user')
         expect(row.dig('concerns', 'type')).to eq('affect')
         expect(row.dig('concerns', 'objects')).to include(['Vps', 101])
+        expect(row.dig('concerns', 'labels', 'Vps')).to eq('VPS')
       end
 
       it 'returns only own chains for support users' do
@@ -339,6 +340,29 @@ RSpec.describe 'VpsAdmin::API::Resources::TransactionChain' do
         expect(chain_obj['created_at']).not_to be_nil
         expect(chain_obj.dig('concerns', 'type')).to eq('affect')
         expect(chain_obj.dig('concerns', 'objects')).to include(['Vps', 101])
+        expect(chain_obj.dig('concerns', 'labels', 'Vps')).to eq('VPS')
+      end
+
+      it 'localizes chain and concern labels' do
+        chain = create_chain(
+          user: user,
+          session: session_user,
+          name: 'spec_localized_chain',
+          type: TransactionChains::User::NewLogin.name,
+          state: :done,
+          size: 1,
+          progress: 1,
+          concerns: [['User', user.id]]
+        )
+        header 'Accept-Language', 'cs'
+
+        as(user) { json_get show_path(chain.id) }
+
+        expect_status(200)
+        expect(json['status']).to be(true)
+        expect(chain_obj['label']).to eq('Nové přihlášení')
+        expect(chain_obj.dig('concerns', 'objects')).to include(['User', user.id])
+        expect(chain_obj.dig('concerns', 'labels', 'User')).to eq('Uživatel')
       end
 
       it 'hides other users chains from normal users' do

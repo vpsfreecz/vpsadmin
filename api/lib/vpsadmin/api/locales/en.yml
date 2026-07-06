@@ -3396,3 +3396,224 @@ en:
             label: Key
           updated_at:
             label: Updated_at
+    transaction_chains:
+      concerns:
+        classes:
+          branch: Branch
+          change_request: Change request
+          dataset: Dataset
+          dataset_expansion: Dataset expansion
+          dataset_in_pool: Dataset in pool
+          dns_resolver: DNS resolver
+          dns_server_zone: DNS server zone
+          dns_zone: DNS zone
+          dns_zone_transfer: DNS zone transfer
+          export: Export
+          host_ip_address: Host IP address
+          incident_report: Incident report
+          migration_plan: Migration plan
+          mount: Mount
+          network_interface: Network interface
+          node: Node
+          outage: Outage
+          pool: Pool
+          registration_request: Registration request
+          security_advisory: Security advisory
+          snapshot: Snapshot
+          snapshot_download: Snapshot download
+          snapshot_in_pool: Snapshot in pool
+          user: User
+          user_payment: User payment
+          vps: VPS
+      labels:
+        branch:
+          destroy: Destroy dataset branch
+        cluster:
+          generate_known_hosts: Known hosts
+          generate_migration_keys: Migration keys
+        dataset:
+          backup: Backup
+          base_download: Download
+          create: Create
+          destroy: Destroy
+          full_download: Download
+          group_snapshot: Snapshot dataset
+          incremental_download: Download
+          inherit: Inherit dataset properties
+          migrate: Migrate
+          remove_download: Remove
+          rollback: Rollback
+          rotate: Rotate
+          send: Send
+          set: Set properties
+          snapshot: Snapshot
+          transfer: Transfer
+        dataset_in_pool:
+          destroy: Destroy
+          detach_backup_heads: Detach backups
+        dataset_tree:
+          destroy: Destroy dataset tree
+        dns_resolver:
+          destroy: Destroy
+          update: Update
+        dns_server_zone:
+          create: Server zone+
+          destroy: Server zone-
+        dns_zone:
+          create_record: Record+
+          create_user: Zone+
+          destroy_record: Record-
+          destroy_user: Zone-
+          set_reverse_record: Set PTR
+          unset_reverse_record: Unset PTR
+          update: Update zone
+          update_record: Record*
+        dns_zone_transfer:
+          create: Zone transfer+
+          destroy: Zone transfer-
+        export:
+          add_hosts: Hosts+
+          add_hosts_to_all: Hosts+
+          create: Create
+          del_hosts: Hosts-
+          del_hosts_from_all: Hosts-
+          destroy: Destroy
+          edit_host: Host*
+          update: Update
+        host_ip_address:
+          destroy: Host IP-
+        incident_report:
+          new: Incident report
+          process: Incident report
+          reply: 'Re: incident'
+          send: Incident report
+        ip:
+          allocate: Allocate IP to object
+          free: Free IP from object
+          update: IP*
+        lifetimes:
+          expiration_warning: Expiration
+          wrapper: State change
+        mail:
+          daily_report: Daily report
+          vps_dataset_expanded: Dataset expanded
+        maintenance:
+          custom: Custom
+        migration_plan:
+          mail: Mail
+        network:
+          add_ips: IP+
+          create: Create
+        network_interface:
+          add_host_ip: IP+
+          add_route: Route+
+          cleanup_host_ip_addresses: Cleanup host IPs
+          clear: Netif-
+          del_host_ip: IP-
+          del_route: Route-
+          destroy: Netif-
+          rename: Rename
+          update: Netif*
+          venet:
+            clone: Clone
+            create: Venet+
+            morph: Morph
+          veth_routed:
+            clone: Clone
+            create: Veth+
+            morph: Morph
+        node:
+          register: Register
+          shaper_root_change: Sshaper*
+        plugins:
+          monitoring:
+            alert: Alert
+          outage_reports:
+            update: Update
+          payments:
+            create: Create
+            mail_overview: Mail overview
+          requests:
+            create: Create
+            resolve: Resolve
+            update: Update
+        pool:
+          create: Create
+        security_advisories:
+          mail: Security advisory mail
+        snapshot:
+          destroy: Destroy
+        snapshot_in_pool:
+          destroy: Destroy snapshot in pool
+          purge_clones: Purge clones
+        user:
+          create: Create user
+          destroy: Destroy user
+          hard_delete: Hard delete user
+          new_login: New login
+          new_token: New token
+          report_failed_logins: Failed logins
+          resume: Resume
+          revive: Revive
+          soft_delete: Soft delete
+          suspend: Suspend
+          totp_recovery_code_used: TOTP recovery
+        user_namespace:
+          allocate: Allocate userns
+          free: Free userns
+        user_namespace_map:
+          disuse: Disuse userns
+          use: Use userns
+        vps:
+          apply_config: Apply config
+          autostart: Autostart
+          block: Block
+          boot: Boot
+          clone:
+            os_to_os: Clone
+            vz_to_os: Clone
+            vz_to_vz: Clone
+          create: Create
+          deploy_public_key: Pubkey
+          deploy_user_data: User data
+          destroy: Destroy
+          destroy_mount: Destroy
+          enable_network: Network
+          expand_dataset: Expand
+          expand_dataset_again: Expand+
+          features: Features
+          migrate:
+            os_to_os: Migrate
+            os_to_vz: Migrate
+            vz_to_os: Migrate
+            vz_to_vz: Migrate
+          mount: Mount
+          mount_dataset: Mount dataset
+          mount_snapshot: Mount snapshot
+          mounts: Mounts
+          oom_prevention: OOM Prevention
+          oom_reports: OOM Reports
+          passwd: Password
+          reinstall: Reinstall
+          replace:
+            os: Replace
+          restart: Restart
+          restore: Restore
+          revive: Revive
+          set_resources: Resources
+          shrink_dataset: Shrink
+          soft_delete: Soft delete
+          start: Start
+          stop: Stop
+          stop_over_quota: StopQuota
+          swap: Swap
+          umount: Umount
+          umount_dataset: Umount dataset
+          umount_snapshot: Unount snapshot
+          unblock: Unblock
+          update: Modify
+          update_mount: Mount*
+        vps_config:
+          create: Create
+          delete: Delete
+          update: Update
