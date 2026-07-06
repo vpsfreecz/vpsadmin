@@ -1,3 +1,3 @@
-template :request_action_role do
+template :request_create_admin do
   label 'Create request (admin)'
 end
