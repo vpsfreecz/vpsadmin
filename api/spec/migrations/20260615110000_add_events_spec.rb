@@ -100,6 +100,19 @@ RSpec.describe AddEvents do
                      field: 'default_routed',
                      operator: '==',
                      value: 'true')).to eq(1)
+    expect(row_count(:event_route_matchers,
+                     event_route_id: default_route.fetch('id'),
+                     field: 'roles',
+                     operator: 'contains',
+                     value: 'account')).to eq(1)
+
+    admin_default_route = default_route_for(ids.fetch(:enabled_id), role: 'admin')
+    expect(admin_default_route.fetch('notification_receiver_id').to_i).to eq(default_receiver.fetch('id').to_i)
+    expect(row_count(:event_route_matchers,
+                     event_route_id: admin_default_route.fetch('id'),
+                     field: 'roles',
+                     operator: 'contains',
+                     value: 'admin')).to eq(1)
 
     mute_route = default_route_for(ids.fetch(:disabled_id))
     expect(mute_route.fetch('notification_receiver_id').to_i).to eq(mute_receiver.fetch('id').to_i)
@@ -108,6 +121,19 @@ RSpec.describe AddEvents do
                      field: 'default_routed',
                      operator: '==',
                      value: 'true')).to eq(1)
+    expect(row_count(:event_route_matchers,
+                     event_route_id: mute_route.fetch('id'),
+                     field: 'roles',
+                     operator: 'contains',
+                     value: 'account')).to eq(1)
+
+    admin_mute_route = default_route_for(ids.fetch(:disabled_id), role: 'admin')
+    expect(admin_mute_route.fetch('notification_receiver_id').to_i).to eq(mute_receiver.fetch('id').to_i)
+    expect(row_count(:event_route_matchers,
+                     event_route_id: admin_mute_route.fetch('id'),
+                     field: 'roles',
+                     operator: 'contains',
+                     value: 'admin')).to eq(1)
 
     account_receiver = find_row(
       :notification_receivers,
@@ -167,12 +193,19 @@ RSpec.describe AddEvents do
     expect(row_count(:notification_targets, user_id: ids.fetch(:disabled_id), target_value: 'disabled@example.test')).to eq(0)
   end
 
-  def default_route_for(user_id)
-    found = find_rows(:event_routes, { user_id:, label: 'Default route' }).select do |route|
-      route.fetch('event_type').nil? && route.fetch('event_type_pattern').nil?
+  def default_route_for(user_id, role: 'account')
+    label = role == 'admin' ? 'Default admin route' : 'Default route'
+    found = find_rows(:event_routes, { user_id:, label: }).select do |route|
+      route.fetch('event_type').nil? &&
+        route.fetch('event_type_pattern').nil? &&
+        row_count(:event_route_matchers,
+                  event_route_id: route.fetch('id'),
+                  field: 'roles',
+                  operator: 'contains',
+                  value: role) == 1
     end
 
-    expect(found.length).to eq(1), "expected one default route for user #{user_id}, found #{found.length}"
+    expect(found.length).to eq(1), "expected one #{role} default route for user #{user_id}, found #{found.length}"
     found.first
   end
 
