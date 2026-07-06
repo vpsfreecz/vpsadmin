@@ -73,7 +73,7 @@ function lifetimes_reminder_form($resource, $id)
     $xtpl->sbar_out(_("Reminders"));
 
     $xtpl->table_td(_('State') . ':');
-    $xtpl->table_td($obj->object_state);
+    $xtpl->table_td(api_param_choice_label($p->object_state, $obj->object_state));
     $xtpl->table_tr();
 
     if ($obj->expiration_date) {

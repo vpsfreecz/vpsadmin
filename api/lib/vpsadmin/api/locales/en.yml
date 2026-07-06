@@ -1022,15 +1022,9 @@ en:
       object_state:
         choices:
           active:
-            label: active
-          deleted:
-            label: deleted
-          hard_delete:
-            label: hard_delete
-          soft_delete:
-            label: soft_delete
+            label: Active
           suspended:
-            label: suspended
+            label: Suspended
         label: Object state
       offset:
         label: Offset
@@ -2962,10 +2956,38 @@ en:
                 description: Location in which to create the VPS
               password:
                 label: Password
+          delete:
+            input:
+              object_state:
+                choices:
+                  deleted:
+                    label: deleted
+                  hard_delete:
+                    label: hard_delete
+                  soft_delete:
+                    label: soft_delete
+          index:
+            input:
+              object_state:
+                choices:
+                  deleted:
+                    label: Deleted
+                  hard_delete:
+                    label: Hard delete
+                  soft_delete:
+                    label: Soft delete
           touch:
             description: Update last activity
           update:
             input:
+              object_state:
+                choices:
+                  deleted:
+                    label: Deleted
+                  hard_delete:
+                    label: Hard delete
+                  soft_delete:
+                    label: Soft delete
               password:
                 label: Current password
         attributes:
@@ -3029,6 +3051,15 @@ en:
           attributes:
             id:
               label: Id
+        output:
+          object_state:
+            choices:
+              deleted:
+                label: Deleted
+              hard_delete:
+                label: Hard delete
+              soft_delete:
+                label: Soft delete
         public_key:
           attributes:
             created_at:
@@ -3212,6 +3243,14 @@ en:
               expiration_date:
                 description: A date after which the state will progress
                 label: Expiration
+              object_state:
+                choices:
+                  deleted:
+                    label: deleted
+                  hard_delete:
+                    label: hard_delete
+                  soft_delete:
+                    label: soft_delete
           index:
             input:
               environment:
@@ -3220,6 +3259,14 @@ en:
                 description: Filter by location
               node:
                 description: Filter by node
+              object_state:
+                choices:
+                  deleted:
+                    label: Deleted
+                  hard_delete:
+                    label: Hard delete
+                  soft_delete:
+                    label: Soft delete
               user:
                 description: Filter by owner
           replace:
@@ -3257,6 +3304,14 @@ en:
                 description: VPS hostname
               node:
                 description: Node VPS will run on
+              object_state:
+                choices:
+                  deleted:
+                    label: Deleted
+                  hard_delete:
+                    label: Hard delete
+                  soft_delete:
+                    label: Soft delete
               user:
                 description: VPS owner
         attributes:
@@ -3332,6 +3387,14 @@ en:
             description: VPS hostname
           node:
             description: Node VPS will run on
+          object_state:
+            choices:
+              deleted:
+                label: Deleted
+              hard_delete:
+                label: Hard delete
+              soft_delete:
+                label: Soft delete
           user:
             description: VPS owner
         ssh_host_key:

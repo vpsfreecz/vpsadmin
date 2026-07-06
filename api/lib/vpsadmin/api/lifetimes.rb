@@ -211,7 +211,7 @@ module VpsAdmin::API
 
         r.params(:lifetime_state) do
           string :object_state, label: 'Object state',
-                                choices: Private.states(r.model)
+                                choices: { values: Private.state_choices(r.model) }
         end
 
         r.params(:lifetime_expiration) do
@@ -439,6 +439,12 @@ module VpsAdmin::API
 
       def self.states(o)
         o.instance_variable_get('@states')
+      end
+
+      def self.state_choices(o)
+        states(o).to_h do |state|
+          [state, state.to_s.tr('_', ' ').capitalize]
+        end
       end
 
       def self.state_changes(o)

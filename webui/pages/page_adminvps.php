@@ -1185,7 +1185,8 @@ if (isLoggedIn()) {
         $xtpl->table_tr();
 
         $xtpl->table_td(_("State") . ':');
-        $xtpl->table_td($vps->object_state);
+        $stateParam = $api->vps->index->getParameters('input')->object_state;
+        $xtpl->table_td(api_param_choice_label($stateParam, $vps->object_state));
         $xtpl->table_tr();
 
         if ($vps->expiration_date) {

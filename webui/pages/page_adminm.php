@@ -100,7 +100,8 @@ function print_editm($u)
     $xtpl->table_tr();
 
     $xtpl->table_td(_("State") . ':');
-    $xtpl->table_td($u->object_state);
+    $stateParam = $api->user->index->getParameters('input')->object_state;
+    $xtpl->table_td(api_param_choice_label($stateParam, $u->object_state));
     $xtpl->table_tr();
 
     if ($u->expiration_date) {

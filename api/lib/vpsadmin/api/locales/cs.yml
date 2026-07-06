@@ -1018,12 +1018,6 @@ cs:
         choices:
           active:
             label: aktivní
-          deleted:
-            label: smazáno
-          hard_delete:
-            label: hard delete
-          soft_delete:
-            label: soft delete
           suspended:
             label: pozastaveno
         label: Stav objektu
@@ -2956,10 +2950,38 @@ cs:
                 description: Lokace, ve které se má vytvořit VPS
               password:
                 label: Heslo
+          delete:
+            input:
+              object_state:
+                choices:
+                  deleted:
+                    label: smazáno
+                  hard_delete:
+                    label: hard delete
+                  soft_delete:
+                    label: soft delete
+          index:
+            input:
+              object_state:
+                choices:
+                  deleted:
+                    label: smazáno
+                  hard_delete:
+                    label: hard delete
+                  soft_delete:
+                    label: soft delete
           touch:
             description: Aktualizovat poslední aktivitu
           update:
             input:
+              object_state:
+                choices:
+                  deleted:
+                    label: smazáno
+                  hard_delete:
+                    label: hard delete
+                  soft_delete:
+                    label: soft delete
               password:
                 label: Současné heslo
         attributes:
@@ -3023,6 +3045,15 @@ cs:
           attributes:
             id:
               label: ID
+        output:
+          object_state:
+            choices:
+              deleted:
+                label: smazáno
+              hard_delete:
+                label: hard delete
+              soft_delete:
+                label: soft delete
         public_key:
           attributes:
             created_at:
@@ -3206,6 +3237,14 @@ cs:
               expiration_date:
                 description: Datum, po kterém se stav posune dál
                 label: Expirace
+              object_state:
+                choices:
+                  deleted:
+                    label: smazáno
+                  hard_delete:
+                    label: hard delete
+                  soft_delete:
+                    label: soft delete
           index:
             input:
               environment:
@@ -3214,6 +3253,14 @@ cs:
                 description: Filtrovat podle lokace
               node:
                 description: Filtrovat podle nodu
+              object_state:
+                choices:
+                  deleted:
+                    label: smazáno
+                  hard_delete:
+                    label: hard delete
+                  soft_delete:
+                    label: soft delete
               user:
                 description: Filtrovat podle vlastníka
           replace:
@@ -3251,6 +3298,14 @@ cs:
                 description: Hostname VPS
               node:
                 description: Node, na kterém VPS poběží
+              object_state:
+                choices:
+                  deleted:
+                    label: smazáno
+                  hard_delete:
+                    label: hard delete
+                  soft_delete:
+                    label: soft delete
               user:
                 description: Vlastník VPS
         attributes:
@@ -3326,6 +3381,14 @@ cs:
             description: Hostname VPS
           node:
             description: Node, na kterém VPS poběží
+          object_state:
+            choices:
+              deleted:
+                label: smazáno
+              hard_delete:
+                label: hard delete
+              soft_delete:
+                label: soft delete
           user:
             description: Vlastník VPS
         ssh_host_key:
