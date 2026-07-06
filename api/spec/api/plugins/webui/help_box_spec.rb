@@ -28,6 +28,9 @@ RSpec.describe 'VpsAdmin::API::Resources::HelpBox', requires_plugins: :webui do
       content: 'Admin-only help',
       order: 80
     )
+    b9 = HelpBox.create!(page: 'log', action: '*', language: lang_cs, content: 'Czech public', order: 90)
+    b10 = HelpBox.create!(page: 'log', action: '*', language: lang_en, content: 'English public', order: 100)
+    b11 = HelpBox.create!(page: 'log', action: '*', language: nil, content: 'Shared public', order: 110)
 
     {
       lang_en: lang_en,
@@ -39,7 +42,10 @@ RSpec.describe 'VpsAdmin::API::Resources::HelpBox', requires_plugins: :webui do
       b5: b5,
       b6: b6,
       b7: b7,
-      b8: b8
+      b8: b8,
+      b9: b9,
+      b10: b10,
+      b11: b11
     }
   end
 
@@ -139,6 +145,18 @@ RSpec.describe 'VpsAdmin::API::Resources::HelpBox', requires_plugins: :webui do
     fixtures.fetch(:b8)
   end
 
+  def b9
+    fixtures.fetch(:b9)
+  end
+
+  def b10
+    fixtures.fetch(:b10)
+  end
+
+  def b11
+    fixtures.fetch(:b11)
+  end
+
   describe 'Index' do
     it 'does not expose browse results to unauthenticated users' do
       json_get index_path
@@ -221,6 +239,19 @@ RSpec.describe 'VpsAdmin::API::Resources::HelpBox', requires_plugins: :webui do
 
       ids = help_boxes.map { |row| row['id'] }
       expect(ids).to include(b7.id)
+    end
+
+    it 'uses the requested language for unauthenticated view requests' do
+      header 'Accept-Language', 'cs'
+      json_get index_path, help_box: { view: true, page: 'log' }
+      header 'Accept-Language', nil
+
+      expect_status(200)
+      expect(json['status']).to be(true)
+
+      ids = help_boxes.map { |row| row['id'] }
+      expect(ids).to eq([b9.id, b11.id])
+      expect(ids).not_to include(b10.id)
     end
 
     it 'filters to explicit language when view=true and language provided' do

@@ -73,10 +73,16 @@ module VpsAdmin::API::Resources
                 q.where(language: input[:language])
 
               else
-                q.where(
-                  'language_id IS NULL OR language_id = ?',
-                  current_user ? current_user.language_id : ::Language.take!.id
-                )
+                lang = request_language
+
+                if lang
+                  q.where(
+                    'language_id IS NULL OR language_id = ?',
+                    lang.id
+                  )
+                else
+                  q.where(language_id: nil)
+                end
               end
         else
           return ::HelpBox.none unless current_user && current_user.role == :admin
@@ -109,6 +115,11 @@ module VpsAdmin::API::Resources
       def public_help_page?(page, action)
         actions = PUBLIC_HELP_PAGES[page]
         actions && actions.include?(action)
+      end
+
+      def request_language
+        ::Language.find_by(code: ::I18n.locale.to_s) ||
+          ::Language.find_by(code: VpsAdmin::API::I18n::DEFAULT_LOCALE.to_s)
       end
 
       def count
