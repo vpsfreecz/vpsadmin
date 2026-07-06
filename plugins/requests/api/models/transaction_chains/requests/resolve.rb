@@ -23,32 +23,15 @@ module VpsAdmin::API::Plugins::Requests::TransactionChains
         last_mail_id: request.last_mail_id + 1
       )
 
-      if state != :ignored
-        route_request_event!(
-          'request.resolved',
-          request,
-          recipient: request.user,
-          role: 'user',
-          action: 'resolve',
-          reply_to_mail_id: reply_to,
-          state:,
-          reason:,
-          recipient_email: request.user_mail
-        )
-      end
-
-      admin_request_recipients.each do |admin|
-        route_request_event!(
-          'request.resolved',
-          request,
-          recipient: admin,
-          role: 'admin',
-          action: 'resolve',
-          reply_to_mail_id: reply_to,
-          state:,
-          reason:
-        )
-      end
+      route_request_event!(
+        'request.resolved',
+        request,
+        action: 'resolve',
+        reply_to_mail_id: reply_to,
+        state:,
+        reason:,
+        recipient_email: state.to_sym == :ignored ? nil : request.user_mail
+      )
 
       request.send(action, self, params)
     end

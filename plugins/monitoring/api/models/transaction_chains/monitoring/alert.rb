@@ -9,21 +9,19 @@ module VpsAdmin::API::Plugins::Monitoring::TransactionChains
       event.increment!(:alert_count) unless empty?
     end
 
-    def route_monitoring_alert!(event, recipient: event.user, role: 'user',
-                                alert_kind: 'state', variant: :role_event_state,
+    def route_monitoring_alert!(event, event_type: nil, recipient: event.user,
+                                alert_kind: 'state',
                                 context: {}, severity: nil, subject: nil,
                                 summary: nil, payload: {})
+      event_type ||= VpsAdmin::API::Plugins::Monitoring::Events.event_type_for_monitor(
+        event.monitor_name
+      )
+
       route_event!(
-        VpsAdmin::API::Plugins::Monitoring::Events.event_type_for(
-          event,
-          variant,
-          alert_kind
-        ),
+        event_type,
         alert: event,
         recipient: recipient || event.user,
-        role: role.to_s,
         alert_kind: alert_kind.to_s,
-        variant:,
         context: context || {},
         subject_override: subject,
         summary_override: summary,

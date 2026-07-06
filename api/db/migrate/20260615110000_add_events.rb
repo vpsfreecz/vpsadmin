@@ -4,7 +4,7 @@ class AddEvents < ActiveRecord::Migration[8.1]
   ADVANCED_NOTIFICATION_TEMPLATE_ROUTE_POSITION = 10
   ADVANCED_EMAIL_ROLE_ROUTE_POSITION = 1_000
   REQUEST_TEMPLATE_TYPES = %w[registration change].freeze
-  REQUEST_TEMPLATE_ROLES = %w[user admin].freeze
+  REQUEST_TEMPLATE_AUDIENCES = %w[user admin].freeze
   REQUEST_TEMPLATE_RESOLVE_STATES = %w[approved denied ignored pending_correction awaiting].freeze
   REQUEST_ADVANCED_EVENT_TEMPLATES = begin
     ret = []
@@ -12,93 +12,91 @@ class AddEvents < ActiveRecord::Migration[8.1]
     %w[create update].each do |action|
       event_type = action == 'create' ? 'request.created' : 'request.updated'
 
-      REQUEST_TEMPLATE_ROLES.each do |role|
+      REQUEST_TEMPLATE_AUDIENCES.each do |audience|
         REQUEST_TEMPLATE_TYPES.each do |type|
+          template_name = "request_#{action}_#{audience}_#{type}"
           ret << {
             event_type:,
-            template_name: 'request_action_role_type',
-            legacy_template_names: ["request_#{action}_#{role}_#{type}"],
-            label: "Request #{action} #{role} #{type}",
+            template_name:,
+            legacy_template_names: [template_name],
+            label: "Request #{action} #{audience} #{type}",
             roles: [],
             priority: 10,
             matchers: [
-              ['role', '==', role],
               ['request_type', '==', type]
             ]
           }
         end
 
+        template_name = "request_#{action}_#{audience}"
         ret << {
           event_type:,
-          template_name: 'request_action_role',
-          legacy_template_names: ["request_#{action}_#{role}"],
-          label: "Request #{action} #{role}",
+          template_name:,
+          legacy_template_names: [template_name],
+          label: "Request #{action} #{audience}",
           roles: [],
           priority: 30,
-          matchers: [
-            ['role', '==', role]
-          ]
+          matchers: []
         }
       end
     end
 
-    REQUEST_TEMPLATE_ROLES.each do |role|
+    REQUEST_TEMPLATE_AUDIENCES.each do |audience|
       REQUEST_TEMPLATE_TYPES.each do |type|
         REQUEST_TEMPLATE_RESOLVE_STATES.each do |state|
+          template_name = "request_resolve_#{audience}_#{type}_#{state}"
           ret << {
             event_type: 'request.resolved',
-            template_name: 'request_resolve_role_type_state',
-            legacy_template_names: ["request_resolve_#{role}_#{type}_#{state}"],
-            label: "Request resolve #{role} #{type} #{state}",
+            template_name:,
+            legacy_template_names: [template_name],
+            label: "Request resolve #{audience} #{type} #{state}",
             roles: [],
             priority: 0,
             matchers: [
-              ['role', '==', role],
               ['request_type', '==', type],
               ['request_state', '==', state]
             ]
           }
         end
 
+        template_name = "request_resolve_#{audience}_#{type}"
         ret << {
           event_type: 'request.resolved',
-          template_name: 'request_action_role_type',
-          legacy_template_names: ["request_resolve_#{role}_#{type}"],
-          label: "Request resolve #{role} #{type}",
+          template_name:,
+          legacy_template_names: [template_name],
+          label: "Request resolve #{audience} #{type}",
           roles: [],
           priority: 10,
           matchers: [
-            ['role', '==', role],
             ['request_type', '==', type]
           ]
         }
       end
 
       REQUEST_TEMPLATE_RESOLVE_STATES.each do |state|
+        template_name = "request_resolve_#{audience}_#{state}"
         ret << {
           event_type: 'request.resolved',
-          template_name: 'request_resolve_role_state',
-          legacy_template_names: ["request_resolve_#{role}_#{state}"],
-          label: "Request resolve #{role} #{state}",
+          template_name:,
+          legacy_template_names: [template_name],
+          label: "Request resolve #{audience} #{state}",
           roles: [],
           priority: 20,
           matchers: [
-            ['role', '==', role],
             ['request_state', '==', state]
           ]
         }
       end
 
+      template_name = "request_resolve_#{audience}"
       ret << {
         event_type: 'request.resolved',
-        template_name: 'request_action_role',
-        legacy_template_names: ["request_resolve_#{role}"],
-        label: "Request resolve #{role}",
+        template_name:,
+        legacy_template_names: [template_name],
+        label: "Request resolve #{audience}",
         roles: [],
         priority: 30,
-        matchers: [
-          ['role', '==', role]
-        ]
+        matchers: []
       }
     end
 
@@ -199,23 +197,19 @@ class AddEvents < ActiveRecord::Migration[8.1]
     },
     {
       event_type: 'outage.announced',
-      template_name: 'outage_report_role_event',
+      template_name: 'outage_report_user_announce',
       legacy_template_names: %w[outage_report_user_announce],
       label: 'Outage announced',
-      roles: %w[admin],
-      matchers: [
-        ['role', '==', 'user']
-      ]
+      roles: %w[account],
+      matchers: []
     },
     {
       event_type: 'outage.updated',
-      template_name: 'outage_report_role_event',
+      template_name: 'outage_report_user_update',
       legacy_template_names: %w[outage_report_user_update],
       label: 'Outage updated',
-      roles: %w[admin],
-      matchers: [
-        ['role', '==', 'user']
-      ]
+      roles: %w[account],
+      matchers: []
     },
     {
       event_type: 'security_advisory.announced',
@@ -994,7 +988,7 @@ class AddEvents < ActiveRecord::Migration[8.1]
     if role
       create_event_route_matcher(
         route_id:,
-        field: 'recipient_roles',
+        field: 'roles',
         operator: 'contains',
         value: role
       )

@@ -10,6 +10,7 @@ module VpsAdmin::API::Resources
         string :label
         string :category
         string :severity
+        custom :roles
         bool :default_routed
         string :severity_description, nullable: true
         string :template, nullable: true
@@ -28,13 +29,19 @@ module VpsAdmin::API::Resources
         VpsAdmin::API::Events.types.map do |type|
           {
             name: type.name,
-            label: type.label,
+            label: VpsAdmin::API::Events.localized_type_label(type),
             category: type.category,
             severity: type.severity,
+            roles: type.roles,
             default_routed: type.default_routed,
-            severity_description: type.severity_description,
+            severity_description: VpsAdmin::API::Events.localized_severity_description(type),
             template: type.template,
-            fields: VpsAdmin::API::Events.field_metadata(event_type: type.name)
+            fields: VpsAdmin::API::Events.field_metadata(event_type: type.name).map do |field|
+              VpsAdmin::API::Events.localized_field_metadata(
+                event_type: type.name,
+                field:
+              )
+            end
           }
         end
       end

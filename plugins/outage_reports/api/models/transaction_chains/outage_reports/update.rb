@@ -61,7 +61,7 @@ module VpsAdmin::API::Plugins::OutageReports::TransactionChains
       return outage unless opts[:send_mail]
 
       # Generic notification announcement
-      route_outage_event!('generic', nil, outage, report, attrs, last_report)
+      route_outage_event!(nil, outage, report, attrs, last_report)
 
       # Notify affected users directly
       outage.outage_users.includes(:user).joins(:user).where(
@@ -72,7 +72,7 @@ module VpsAdmin::API::Plugins::OutageReports::TransactionChains
           ]
         }
       ).each do |ou|
-        route_outage_event!('user', ou.user, outage, report, attrs, last_report)
+        route_outage_event!(ou.user, outage, report, attrs, last_report)
       end
 
       outage
@@ -80,7 +80,7 @@ module VpsAdmin::API::Plugins::OutageReports::TransactionChains
 
     protected
 
-    def route_outage_event!(role, user, outage, report, attrs, last_report)
+    def route_outage_event!(user, outage, report, attrs, last_report)
       msg_id = message_id(
         attrs[:state] == ::Outage.states[:announced] ? :announce : :update,
         outage, report, user
@@ -94,8 +94,8 @@ module VpsAdmin::API::Plugins::OutageReports::TransactionChains
         source: report,
         subject: outage_event_subject(outage, attrs),
         summary: report.summary,
+        persist: user ? :routed : :always,
         payload: outage_event_parameters(
-          role,
           user,
           outage,
           report,
@@ -123,10 +123,10 @@ module VpsAdmin::API::Plugins::OutageReports::TransactionChains
       "#{prefix} ##{outage.id}"
     end
 
-    def outage_event_parameters(role, user, outage, report, attrs, msg_id, in_reply_to)
+    def outage_event_parameters(user, outage, report, attrs, msg_id, in_reply_to)
       changes = outage_changes(report)
       {
-        role:,
+        roles: user ? %w[account] : %w[admin],
         event: outage_notification_event(attrs),
         outage_id: outage.id,
         update_id: report.id,

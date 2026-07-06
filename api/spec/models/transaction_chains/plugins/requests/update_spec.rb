@@ -15,8 +15,8 @@ RSpec.describe 'requests plugin update chain', requires_plugins: :requests do # 
   end
 
   it 'updates attributes, resets state, increments mail id, and threads replies' do
-    ensure_request_notification_template!('request_update_user', 'request_action_role')
-    ensure_request_notification_template!('request_update_admin', 'request_action_role')
+    ensure_request_notification_template!('request_update_user', 'request_update_user')
+    ensure_request_notification_template!('request_update_admin', 'request_update_admin')
     request = build_change_request!(
       state: :pending_correction,
       last_mail_id: 5,
@@ -37,10 +37,16 @@ RSpec.describe 'requests plugin update chain', requires_plugins: :requests do # 
       ['ChangeRequest', request.id]
     )
 
-    events = request_events('request.updated', request)
-    user_event = events.find { |event| event.parameters.fetch('role') == 'user' }
+    event = request_events('request.updated', request).sole
+    user_delivery = event.event_deliveries.detect do |delivery|
+      delivery.event_routing_context&.user_id == request.user_id
+    end
+    admin_delivery = event.event_deliveries.detect do |delivery|
+      delivery.event_routing_context&.user_id == SpecSeed.admin.id
+    end
 
-    expect(user_event.parameters).to include(
+    expect(event.user).to eq(request.user)
+    expect(event.parameters).to include(
       'action' => 'update',
       'request_type' => 'change',
       'request_state' => 'awaiting',
@@ -48,11 +54,18 @@ RSpec.describe 'requests plugin update chain', requires_plugins: :requests do # 
       'mail_id' => 6,
       'reply_to_mail_id' => 5
     )
-    events.each do |event|
-      delivery = event.event_deliveries.sole
+    expect(event.parameters).not_to have_key('role')
+    expect(user_delivery).to be_present
+    expect(admin_delivery).to be_present
+
+    {
+      user_delivery => 'request_update_user',
+      admin_delivery => 'request_update_admin'
+    }.each do |delivery, template_name|
       mail = delivery.mail_log
 
-      expect(delivery.template_name).to eq('request_action_role')
+      expect(delivery.template_name).to eq(template_name)
+      expect(mail.notification_template.name).to eq(template_name)
       expect(mail.message_id).to eq("<vpsadmin-request-#{request.id}-6@vpsadmin.vpsfree.cz>")
       expect(mail.in_reply_to).to eq("<vpsadmin-request-#{request.id}-5@vpsadmin.vpsfree.cz>")
       expect(mail.references).to eq("<vpsadmin-request-#{request.id}-5@vpsadmin.vpsfree.cz>")
@@ -60,8 +73,8 @@ RSpec.describe 'requests plugin update chain', requires_plugins: :requests do # 
   end
 
   it 'routes public registration correction mail without a request user' do
-    ensure_request_notification_template!('request_update_user', 'request_action_role')
-    ensure_request_notification_template!('request_update_admin', 'request_action_role')
+    ensure_request_notification_template!('request_update_user', 'request_update_user')
+    ensure_request_notification_template!('request_update_admin', 'request_update_admin')
     request = build_registration_request!(
       user: nil,
       state: :pending_correction,
@@ -72,19 +85,18 @@ RSpec.describe 'requests plugin update chain', requires_plugins: :requests do # 
 
     chain, = chain_class.fire2(args: [request, {
                                  full_name: 'New Public Name'
-                               }])
+                                 }])
     request.reload
-    user_event = request_events('request.updated', request).find do |event|
-      event.parameters.fetch('role') == 'user'
-    end
-    delivery = user_event.event_deliveries.sole
+    event = request_events('request.updated', request).sole
+    delivery = event.event_deliveries.find(&:direct_email_delivery?)
     mail = delivery.mail_log
 
     expect(tx_classes(chain)).to include(Transactions::EventDelivery::Notify)
     expect(request.full_name).to eq('New Public Name')
-    expect(user_event.user).to be_nil
+    expect(event.user).to be_nil
     expect(delivery).to be_direct_email_delivery
     expect(delivery.target_value).to eq('public-registration-update@test.invalid')
+    expect(delivery.template_name).to eq('request_update_user')
     expect(mail.to).to include('public-registration-update@test.invalid')
     expect(mail.message_id).to eq("<vpsadmin-request-#{request.id}-5@vpsadmin.vpsfree.cz>")
     expect(mail.in_reply_to).to eq("<vpsadmin-request-#{request.id}-4@vpsadmin.vpsfree.cz>")
