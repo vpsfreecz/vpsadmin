@@ -1386,6 +1386,20 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
     expect(dns['default_routed']).to be(false)
   end
 
+  it 'localizes event type labels and field descriptions' do
+    cs = Language.find_or_create_by!(code: 'cs') { |lang| lang.label = 'Čeština' }
+    SpecSeed.user.update!(language: cs)
+
+    as(SpecSeed.user) { json_get event_types_path }
+
+    expect_status(200)
+    incident = event_types.detect { |row| row['name'] == 'vps.incident_report' }
+    incident_fields = incident['fields'].index_by { |field| field['name'] }
+    expect(incident['label']).to eq('Incident')
+    expect(incident_fields.dig('category', 'description')).to eq('Kategorie události používaná pro seskupení')
+    expect(incident_fields.dig('codename', 'description')).to eq('Kódové označení incidentu přidělené vpsAdminem')
+  end
+
   it 'lists monitoring event types and fields registered by configuration', requires_plugins: :monitoring do
     VpsAdmin::API::Plugins::Monitoring::Events.register_event(
       'monitoring.spec_alert',
@@ -1403,6 +1417,72 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
     expect(monitoring['default_routed']).to be(true)
     expect(monitoring_fields.dig('monitor_name', 'description')).to eq('Internal name of the monitor definition')
     expect(monitoring_fields.dig('state', 'description')).to eq('State of the monitored event after the check')
+  end
+
+  it 'localizes monitoring field metadata through family keys', requires_plugins: :monitoring do
+    VpsAdmin::API::Plugins::Monitoring::Events.register_event(
+      'monitoring.spec_alert',
+      label: 'Spec monitoring alert',
+      template: :alert_monitoring_spec,
+      monitors: %i[spec_alert],
+      fields: %i[vps]
+    )
+    cs = Language.find_or_create_by!(code: 'cs') { |lang| lang.label = 'Čeština' }
+    SpecSeed.user.update!(language: cs)
+
+    as(SpecSeed.user) { json_get event_types_path }
+
+    expect_status(200)
+    monitoring = event_types.detect { |row| row['name'] == 'monitoring.spec_alert' }
+    monitoring_fields = monitoring['fields'].index_by { |field| field['name'] }
+    expect(monitoring['severity_description']).to eq('Závažnost je odvozena ze stavu monitoringového alertu')
+    expect(monitoring_fields.dig('monitor_name', 'description')).to eq('Interní název definice monitoru')
+    expect(monitoring_fields.dig('vps_id', 'description')).to eq('ID VPS ovlivněného monitoringovou událostí')
+  end
+
+  it 'loads event metadata translations from external config locales' do
+    require 'fileutils'
+    require 'tmpdir'
+
+    type = VpsAdmin::API::Events::Type.new(
+      'monitoring.spec_alert',
+      'Spec monitoring alert',
+      'monitoring',
+      'warning',
+      %w[admin],
+      [],
+      nil,
+      true,
+      nil,
+      nil
+    )
+    original_load_path = I18n.load_path.dup
+
+    Dir.mktmpdir do |root|
+      FileUtils.mkdir_p(File.join(root, 'config', 'locales'))
+      File.write(
+        File.join(root, 'config', 'locales', 'cs.yml'),
+        <<~YAML
+          cs:
+            vpsadmin:
+              events:
+                types:
+                  monitoring_spec_alert:
+                    label: Spec monitoring alert česky
+        YAML
+      )
+      allow(VpsAdmin::API).to receive(:root).and_return(root)
+
+      VpsAdmin::API::I18n.setup
+      I18n.reload!
+
+      I18n.with_locale(:cs) do
+        expect(VpsAdmin::API::Events.localized_type_label(type)).to eq('Spec monitoring alert česky')
+      end
+    ensure
+      I18n.load_path = original_load_path
+      I18n.reload!
+    end
   end
 
   it 'does not register monitoring event types in core-only mode', without_plugins: :monitoring do
