@@ -3534,8 +3534,8 @@ msgid "Assign"
 msgstr "Přiřadit"
 
 #: forms/users.forms.php
-msgid "Mail template recipients"
-msgstr "Příjemci šablony pošty"
+msgid "Recipients by e-mail type"
+msgstr "Příjemci podle typu e-mailu"
 
 #: forms/users.forms.php
 msgid "Templates"
@@ -3554,8 +3554,8 @@ msgstr ""
 "čárkami oddělený seznam e-mailů, může obsahovat zalomení řádků."
 
 #: forms/users.forms.php
-msgid "Do <strong>not</strong> send this e-mail"
-msgstr "Odešlete <strong>ne</strong> tento e-mail"
+msgid "Do not send these e-mails"
+msgstr "Neposílat tyto e-maily"
 
 #: forms/users.forms.php
 msgid "Configure resources"
@@ -7872,6 +7872,9 @@ msgstr "Upravit pole nápovědy"
 #: public/index.php
 msgid "Help"
 msgstr "Pomoc"
+
+#~ msgid "Mail template recipients"
+#~ msgstr "Příjemci šablony pošty"
 
 #~ msgid "awaiting"
 #~ msgstr "čekání"

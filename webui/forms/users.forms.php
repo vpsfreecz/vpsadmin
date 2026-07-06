@@ -1192,7 +1192,7 @@ function mail_template_recipient_form($user_id)
 
     $u = $api->user->show($user_id);
 
-    $xtpl->title(_('Mail template recipients'));
+    $xtpl->title(_('Recipients by e-mail type'));
 
     $xtpl->form_create('?page=adminm&action=template_recipients&id=' . $u->id, 'post');
     $xtpl->table_add_category(_('Templates'));
@@ -1226,7 +1226,7 @@ function mail_template_recipient_form($user_id)
             "disable[{$recp->id}]",
             '1',
             isset($_POST['disable']) ? isset($_POST['disable'][$recp->id]) : !$recp->enabled,
-            _("Do <strong>not</strong> send this e-mail")
+            _("Do not send these e-mails")
         );
         $xtpl->table_tr();
 

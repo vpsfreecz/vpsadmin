@@ -396,7 +396,7 @@ test.describe.serial('admin member and user management browser coverage', () => 
 
     await gotoMemberEdit(page, target.id);
     await actionLink(page, 'template_recipients').click();
-    await expect(page.locator('#content-in')).toContainText('Mail template recipients');
+    await expect(page.locator('#content-in')).toContainText('Recipients by e-mail type');
     const templateForm = formByAction(page, 'action=template_recipients');
     await expect(templateForm.locator('textarea[name^="to["]').first()).toBeVisible();
     await templateForm.locator('textarea[name^="to["]').first().fill('admin-template@example.test');

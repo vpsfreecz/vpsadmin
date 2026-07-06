@@ -341,7 +341,7 @@ test.describe.serial('user members self-service browser coverage', () => {
 
     await gotoMemberEdit(page, fixtures.user.id);
     await actionLink(page, 'template_recipients').click();
-    await expect(page.locator('#content-in')).toContainText('Mail template recipients');
+    await expect(page.locator('#content-in')).toContainText('Recipients by e-mail type');
     const templateForm = formByAction(page, 'action=template_recipients');
     await expect(templateForm.locator('textarea[name^="to["]').first()).toBeVisible();
     await submitForm(templateForm, 'Save');
