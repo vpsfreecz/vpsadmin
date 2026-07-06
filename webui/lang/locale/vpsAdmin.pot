@@ -554,6 +554,11 @@ msgid "Edit node"
 msgstr ""
 
 #: forms/cluster.forms.php
+#, php-format
+msgid "Message (%s)"
+msgstr ""
+
+#: forms/cluster.forms.php
 msgid "News Log"
 msgstr ""
 

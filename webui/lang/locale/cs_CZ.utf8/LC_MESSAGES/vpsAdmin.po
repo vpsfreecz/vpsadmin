@@ -553,6 +553,11 @@ msgid "Edit node"
 msgstr "Upravit node"
 
 #: forms/cluster.forms.php
+#, php-format
+msgid "Message (%s)"
+msgstr "Zpráva (%s)"
+
+#: forms/cluster.forms.php
 msgid "News Log"
 msgstr "Novinky"
 

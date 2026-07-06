@@ -619,6 +619,37 @@ function system_config_form()
     $xtpl->form_out(_("Save changes"));
 }
 
+function news_log_message_payload()
+{
+    global $api;
+
+    $ret = [];
+
+    foreach ($api->language->list() as $language) {
+        $name = $language->code . '_message';
+        $ret[$name] = $_POST[$name] ?? '';
+    }
+
+    return $ret;
+}
+
+function news_log_message_fields($news = null)
+{
+    global $xtpl, $api;
+
+    foreach ($api->language->list() as $language) {
+        $name = $language->code . '_message';
+        $value = $news ? $news->{$name} : '';
+        $xtpl->form_add_textarea(
+            sprintf(_("Message (%s)") . ':', $language->label),
+            80,
+            5,
+            $name,
+            post_val($name, $value)
+        );
+    }
+}
+
 function news_list_and_create_form()
 {
     global $xtpl, $api;
@@ -628,7 +659,7 @@ function news_list_and_create_form()
     $xtpl->table_add_category('');
     $xtpl->form_create('?page=cluster&action=log_add', 'post');
     $xtpl->form_add_input(_("Date and time") . ':', 'text', '30', 'published_at', post_val('published_at', strftime("%Y-%m-%d %H:%M")));
-    $xtpl->form_add_textarea(_("Message") . ':', 80, 5, 'message', post_val('message'));
+    news_log_message_fields();
     $xtpl->form_out(_("Add"));
 
     $xtpl->table_add_category(_('Date and time'));
@@ -655,7 +686,7 @@ function news_edit_form($id)
 
     $xtpl->form_create('?page=cluster&action=log_edit_save&id=' . $news->id, 'post');
     $xtpl->form_add_input(_("Date and time") . ':', 'text', '30', 'published_at', post_val('published_at', tolocaltz($news->published_at, 'Y-m-d H:i')));
-    $xtpl->form_add_textarea(_("Message") . ':', 80, 5, 'message', $news->message);
+    news_log_message_fields($news);
     $xtpl->form_out(_("Update"));
 }
 

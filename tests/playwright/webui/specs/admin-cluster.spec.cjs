@@ -433,7 +433,8 @@ test.describe.serial('admin cluster browser coverage', () => {
     await gotoCluster(page, 'eventlog');
     form = formByAction(page, 'action=log_add');
     await expect(form).toBeVisible();
-    await form.locator('textarea[name="message"]').fill(eventLog.message);
+    await form.locator('textarea[name="en_message"]').fill(eventLog.message);
+    await form.locator('textarea[name="cs_message"]').fill(eventLog.message);
     await submitForm(form, 'Add');
     await expectNotification(page, 'News message added');
     let row = rowWithText(page, eventLog.message);
@@ -442,7 +443,8 @@ test.describe.serial('admin cluster browser coverage', () => {
     await actionLink(row, 'log_edit').click();
     form = formByAction(page, 'action=log_edit_save');
     await expect(form).toBeVisible();
-    await form.locator('textarea[name="message"]').fill(eventLog.updatedMessage);
+    await form.locator('textarea[name="en_message"]').fill(eventLog.updatedMessage);
+    await form.locator('textarea[name="cs_message"]').fill(eventLog.updatedMessage);
     await submitForm(form, 'Update');
     await expectNotification(page, 'Log message updated');
     row = rowWithText(page, eventLog.updatedMessage);

@@ -921,9 +921,8 @@ if (isAdmin()) {
             csrf_check();
 
             try {
-                $api->news_log->create([
+                $api->news_log->create(news_log_message_payload() + [
                     'published_at' => date('c', strtotime($_POST['published_at'])),
-                    'message' => $_POST['message'],
                 ]);
 
                 notify_user(_("News message added"), _("Message successfully saved."));
@@ -943,9 +942,8 @@ if (isAdmin()) {
             csrf_check();
 
             try {
-                $api->news_log->update($_GET['id'], [
+                $api->news_log->update($_GET['id'], news_log_message_payload() + [
                     'published_at' => date('c', strtotime($_POST['published_at'])),
-                    'message' => $_POST['message'],
                 ]);
 
                 notify_user(_("Log message updated"), _("Message successfully updated."));
