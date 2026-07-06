@@ -86,7 +86,7 @@ RSpec.describe 'VpsAdmin::API::Resources::NewsLog', requires_plugins: :newslog d
   end
 
   def payload_min
-    { message: 'Spec News Created' }
+    { en_message: 'Spec News Created' }
   end
 
   describe 'API description' do
@@ -114,7 +114,20 @@ RSpec.describe 'VpsAdmin::API::Resources::NewsLog', requires_plugins: :newslog d
       expect(messages).to eq(['Spec News Past 2', 'Spec News Past 1'])
       expect(messages).not_to include('Spec News Future')
 
-      expect(news_logs).to all(include('id', 'message', 'published_at', 'created_at', 'updated_at'))
+      expect(news_logs).to all(include('id', 'message', 'en_message', 'published_at', 'created_at', 'updated_at'))
+    end
+
+    it 'returns the requested language message when translated' do
+      lang_cs = Language.find_or_create_by!(code: 'cs') { |lang| lang.label = 'Česky' }
+      news_past_recent.news_log_translations.create!(language: lang_cs, message: 'Spec novinka')
+
+      header 'Accept-Language', 'cs'
+      json_get index_path
+      header 'Accept-Language', nil
+
+      expect_status(200)
+      expect(json['status']).to be(true)
+      expect(news_logs.map { |row| row['message'] }).to eq(['Spec novinka', 'Spec News Past 1'])
     end
 
     it 'includes future news for admins' do
@@ -229,46 +242,67 @@ RSpec.describe 'VpsAdmin::API::Resources::NewsLog', requires_plugins: :newslog d
     it 'allows admins to create with default published_at' do
       now = Time.now
 
-      # rubocop:disable RSpec/ExpectChange
       expect do
         as(SpecSeed.admin) { json_post index_path, news_log: payload_min }
-      end.to change { ::NewsLog.count }.by(1)
-      # rubocop:enable RSpec/ExpectChange
+      end.to change(::NewsLog, :count).by(1)
 
       expect_status(200)
       expect(json['status']).to be(true)
 
       record = ::NewsLog.find(news_log['id'])
-      expect(record.message).to eq(payload_min[:message])
+      expect(record.message).to eq(payload_min[:en_message])
+      expect(record.news_log_translations.find_by!(language: SpecSeed.language).message).to eq(payload_min[:en_message])
       expect(record.published_at).to be_within(10).of(now)
     end
 
-    it 'returns validation errors when message is missing' do
+    it 'stores the English message when translation storage is not migrated yet' do
+      allow(::NewsLog).to receive(:translations_available?).and_return(false)
+
+      expect do
+        as(SpecSeed.admin) { json_post index_path, news_log: payload_min }
+      end.to change(::NewsLog, :count).by(1)
+
+      expect_status(200)
+      expect(json['status']).to be(true)
+
+      record = ::NewsLog.find(news_log['id'])
+      expect(record.message).to eq(payload_min[:en_message])
+    end
+
+    it 'returns validation errors when English message is missing' do
       as(SpecSeed.admin) { json_post index_path, news_log: { published_at: Time.now.iso8601 } }
 
       expect_status(200)
       expect(json['status']).to be(false)
-      expect(response_errors.keys.map(&:to_s)).to include('message')
+      expect(response_errors.keys.map(&:to_s)).to include('en_message')
+    end
+
+    it 'does not accept the legacy message input as a writable field' do
+      as(SpecSeed.admin) { json_post index_path, news_log: { message: 'Legacy message' } }
+
+      expect_status(200)
+      expect(json['status']).to be(false)
+      expect(response_errors.keys.map(&:to_s)).to include('en_message')
     end
   end
 
   describe 'Update' do
     it 'rejects unauthenticated access' do
-      json_put show_path(news_past_older.id), news_log: { message: 'Updated' }
+      json_put show_path(news_past_older.id), news_log: { en_message: 'Updated' }
 
       expect_status(401)
       expect(json['status']).to be(false)
     end
 
     it 'forbids normal users' do
-      as(SpecSeed.user) { json_put show_path(news_past_older.id), news_log: { message: 'Updated' } }
+      as(SpecSeed.user) { json_put show_path(news_past_older.id), news_log: { en_message: 'Updated' } }
 
       expect_status(403)
       expect(json['status']).to be(false)
     end
 
     it 'forbids support users' do
-      as(SpecSeed.support) { json_put show_path(news_past_older.id), news_log: { message: 'Updated' } }
+      as(SpecSeed.support) { json_put show_path(news_past_older.id), news_log: { en_message: 'Updated' } }
 
       expect_status(403)
       expect(json['status']).to be(false)
@@ -280,7 +314,7 @@ RSpec.describe 'VpsAdmin::API::Resources::NewsLog', requires_plugins: :newslog d
 
       as(SpecSeed.admin) do
         json_put show_path(news_past_older.id), news_log: {
-          message: new_message,
+          en_message: new_message,
           published_at: new_time.iso8601
         }
       end
@@ -291,23 +325,29 @@ RSpec.describe 'VpsAdmin::API::Resources::NewsLog', requires_plugins: :newslog d
 
       record = ::NewsLog.find(news_past_older.id)
       expect(record.message).to eq(new_message)
+      expect(record.news_log_translations.find_by!(language: SpecSeed.language).message).to eq(new_message)
       expect(record.published_at).to be_within(1).of(new_time)
     end
 
-    it 'returns validation errors when message is missing' do
+    it 'allows admins to update published_at without changing messages' do
+      new_time = Time.now - 5.minutes
+
       as(SpecSeed.admin) do
-        json_put show_path(news_past_older.id), news_log: { published_at: (Time.now - 5.minutes).iso8601 }
+        json_put show_path(news_past_older.id), news_log: { published_at: new_time.iso8601 }
       end
 
       expect_status(200)
-      expect(json['status']).to be(false)
-      expect(response_errors.keys.map(&:to_s)).to include('message')
+      expect(json['status']).to be(true)
+
+      record = ::NewsLog.find(news_past_older.id)
+      expect(record.message).to eq('Spec News Past 1')
+      expect(record.published_at).to be_within(1).of(new_time)
     end
 
     it 'returns 404 for unknown id' do
       missing = ::NewsLog.maximum(:id).to_i + 100
 
-      as(SpecSeed.admin) { json_put show_path(missing), news_log: { message: 'x' } }
+      as(SpecSeed.admin) { json_put show_path(missing), news_log: { en_message: 'x' } }
 
       expect_status(404)
       expect(json['status']).to be(false)
