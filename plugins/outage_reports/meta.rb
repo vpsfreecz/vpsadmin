@@ -18,31 +18,31 @@ VpsAdmin::API::Plugin.register(:outage_reports) do
                        description: 'Mail header Message-ID used to put e-mails into threads',
                        min_user_level: 99
 
-    ::NotificationTemplate.register :outage_report_role_event,
-                                    name: 'outage_report_%{role}_%{event}', params: {
-                                      role: 'user or generic',
-                                      event: 'announce, cancel, close or update'
-                                    }, roles: %i[admin], vars: {
-                                      outage: '::Outage',
-                                      o: '::Outage',
-                                      update: '::OutageUpdate',
-                                      user: '::User',
-                                      vpses: 'Array<::Vps>',
-                                      security_advisory_cves: 'Array<Hash>',
-                                      webui_url: String
-                                    }, public: true
+    outage_vars = {
+      outage: '::Outage',
+      o: '::Outage',
+      update: '::OutageUpdate',
+      user: '::User',
+      vpses: 'OutageVps relation',
+      direct_vpses: 'OutageVps relation',
+      indirect_vpses: 'OutageVps relation',
+      exports: 'OutageExport relation',
+      security_advisory_cves: 'Array<Hash>',
+      webui_url: String
+    }
 
-    ::NotificationTemplate.register :outage_report_role,
-                                    name: 'outage_report_%{role}', params: {
-                                      role: 'user or generic'
-                                    }, roles: %i[admin], vars: {
-                                      outage: '::Outage',
-                                      o: '::Outage',
-                                      update: '::OutageUpdate',
-                                      user: '::User',
-                                      vpses: 'OutageVps relation',
-                                      security_advisory_cves: 'Array<Hash>',
-                                      webui_url: String
-                                    }, public: true
+    %i[
+      outage_report_generic
+      outage_report_generic_announce
+      outage_report_generic_update
+      outage_report_user
+      outage_report_user_announce
+      outage_report_user_update
+    ].each do |template_name|
+      ::NotificationTemplate.register template_name,
+                                      name: template_name.to_s,
+                                      vars: outage_vars,
+                                      public: true
+    end
   end
 end

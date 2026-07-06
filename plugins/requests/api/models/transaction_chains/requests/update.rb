@@ -22,23 +22,10 @@ module VpsAdmin::API::Plugins::Requests::TransactionChains
       route_request_event!(
         'request.updated',
         request,
-        recipient: request.user,
-        role: 'user',
         action: 'update',
         reply_to_mail_id: reply_to,
         recipient_email: request.user_mail
       )
-
-      admin_request_recipients.each do |admin|
-        route_request_event!(
-          'request.updated',
-          request,
-          recipient: admin,
-          role: 'admin',
-          action: 'update',
-          reply_to_mail_id: reply_to
-        )
-      end
     end
   end
 end

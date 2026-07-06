@@ -32,6 +32,7 @@ module VpsAdmin::API
       :label,
       :category,
       :severity,
+      :roles,
       :fields,
       :template,
       :default_routed,
@@ -226,11 +227,11 @@ module VpsAdmin::API
 
     class EventDefinition
       attr_reader :name, :owner, :label, :category_name, :default_severity,
-                  :default_routed, :severity_description,
+                  :default_routed, :roles, :severity_description,
                   :arguments
 
-      def initialize(name, label:, category:, default_routed:, owner: nil,
-                     severity: :info, template: nil,
+      def initialize(name, label:, category:, default_routed:, roles:,
+                     owner: nil, severity: :info, template: nil,
                      severity_description: nil)
         @name = name.to_s
         @owner = owner
@@ -238,6 +239,7 @@ module VpsAdmin::API
         @category_name = category.to_s
         @default_severity = severity.to_s
         @default_routed = default_routed ? true : false
+        @roles = normalize_roles(roles)
         @severity_description = severity_description
         @fallback_template_name = template&.to_s
         @arguments = {}
@@ -406,18 +408,18 @@ module VpsAdmin::API
       end
 
       def build_payload(context)
-        ret = if @payload_block
-                evaluate(context, @payload_block) || {}
-              else
-                @fields.each_value.with_object({}) do |field, memo|
-                  value = field.evaluate(context)
-                  memo[field.name] = value unless value.nil?
-                end
-              end
+        ret =
+          if @payload_block
+            evaluate(context, @payload_block) || {}
+          else
+            @fields.each_value.with_object({}) do |field, memo|
+              value = field.evaluate(context)
+              memo[field.name] = value unless value.nil?
+            end
+          end
         extra = context.instance_exec(&@extra_payload_block) if @extra_payload_block
         ret.merge!(extra || {})
-        roles = recipient_roles(context)
-        ret[:recipient_roles] ||= roles if roles
+        ret[:roles] ||= roles
         ret
       end
 
@@ -425,16 +427,22 @@ module VpsAdmin::API
         context.instance_exec(&block) if block
       end
 
-      def recipient_roles(context)
-        template = delivery(:email)&.static_template_name || @fallback_template_name
-        roles = ::NotificationTemplate.templates[template&.to_sym]&.fetch(:roles, nil)
-        roles&.map(&:to_s)
+      def normalize_roles(value)
+        ret = Array(value).map(&:to_s).uniq
+        raise ArgumentError, "event #{name} must declare at least one role" if ret.empty?
+
+        unsupported = ret - %w[account admin]
+        if unsupported.any?
+          raise ArgumentError, "event #{name} declares unsupported role #{unsupported.first.inspect}"
+        end
+
+        ret
       end
     end
 
     class EventContext
       attr_reader :definition, :arguments
-      attr_accessor :event
+      attr_accessor :event, :route_context, :current_delivery
 
       def initialize(definition, arguments, event: nil)
         @definition = definition
@@ -673,6 +681,7 @@ module VpsAdmin::API
         label: definition.label,
         category: definition.category_name,
         severity: definition.default_severity,
+        roles: definition.roles,
         fields: definition.field_metadata,
         template: definition.template_name,
         default_routed: definition.default_routed,
@@ -709,6 +718,43 @@ module VpsAdmin::API
       EventRouteMatcher.field_metadata(event_type:)
     end
 
+    def localized_type_label(type)
+      I18n.t(
+        "vpsadmin.events.types.#{i18n_key_fragment(type.name)}.label",
+        default: type.label
+      )
+    end
+
+    def localized_severity_description(type)
+      return unless type.severity_description
+
+      I18n.t(
+        "vpsadmin.events.types.#{i18n_key_fragment(type.name)}.severity_description",
+        default: type.severity_description
+      )
+    end
+
+    def localized_field_metadata(event_type:, field:)
+      field = field.dup
+      field_name = field.fetch(:name)
+      family = event_type.to_s.split('.', 2).first
+      field[:description] = I18n.t(
+        "vpsadmin.events.fields.#{i18n_key_fragment(event_type)}.#{field_name}.description",
+        default: I18n.t(
+          "vpsadmin.events.fields.#{family}.#{field_name}.description",
+          default: I18n.t(
+            "vpsadmin.events.fields.common.#{field_name}.description",
+            default: field.fetch(:description)
+          )
+        )
+      )
+      field
+    end
+
+    def i18n_key_fragment(value)
+      value.to_s.tr('.', '_')
+    end
+
     def matchable_field_values(event, route_context: nil)
       field_metadata(event_type: event.event_type).each_with_object({}) do |field, memo|
         name = field.fetch(:name)
@@ -717,56 +763,65 @@ module VpsAdmin::API
       end
     end
 
-    def email_delivery_context_for(event)
-      delivery_context_for(event, :email)
+    def email_delivery_context_for(event, route_context: nil, delivery: nil)
+      delivery_context_for_context(event, :email, route_context:, delivery:)
     end
 
-    def sms_delivery_context_for(event)
-      notification_delivery_context_for(event, :sms)
+    def sms_delivery_context_for(event, route_context: nil, delivery: nil)
+      notification_delivery_context_for(event, :sms, route_context:, delivery:)
     end
 
-    def telegram_delivery_context_for(event)
-      notification_delivery_context_for(event, :telegram)
+    def telegram_delivery_context_for(event, route_context: nil, delivery: nil)
+      notification_delivery_context_for(event, :telegram, route_context:, delivery:)
     end
 
-    def notification_delivery_context_for(event, action)
-      delivery_context_for(event, action) || email_delivery_context_for(event)
+    def notification_delivery_context_for(event, action, route_context: nil, delivery: nil)
+      delivery_context_for_context(event, action, route_context:, delivery:) ||
+        email_delivery_context_for(event, route_context:, delivery:)
     end
 
     def delivery_context_for(event, action)
+      delivery_context_for_context(event, action)
+    end
+
+    def delivery_context_for_context(event, action, route_context: nil, delivery: nil)
       context = event.runtime_event_context ||
                 type_for(event.event_type)&.definition&.build_context_from_event(event)
       return unless context
 
+      context.route_context = route_context || route_context_for_delivery(delivery)
+      context.current_delivery = delivery
       context.delivery(action)
     end
 
-    def template_context_for(event, action)
+    def template_context_for(event, action, route_context: nil, delivery: nil)
       case action.to_s
       when 'sms'
-        sms_delivery_context_for(event)
+        delivery_context_for_context(event, :sms, route_context:, delivery:) ||
+          delivery_context_for_context(event, :email, route_context:, delivery:)
       when 'telegram'
-        telegram_delivery_context_for(event)
+        delivery_context_for_context(event, :telegram, route_context:, delivery:) ||
+          delivery_context_for_context(event, :email, route_context:, delivery:)
       else
-        delivery_context_for(event, action)
+        delivery_context_for_context(event, action, route_context:, delivery:)
       end
     end
 
-    def template_name_for(event, action = :email)
-      template_context_for(event, action)&.template&.to_sym
+    def template_name_for(event, action = :email, route_context: nil, delivery: nil)
+      template_context_for(event, action, route_context:, delivery:)&.template&.to_sym
     end
 
-    def template_params_for(event, action = :email)
-      template_context_for(event, action)&.params
+    def template_params_for(event, action = :email, route_context: nil, delivery: nil)
+      template_context_for(event, action, route_context:, delivery:)&.params
     end
 
     def template_options_for(event, delivery = nil, action: nil)
       action ||= delivery&.action || :email
       opts = {
         user: delivery&.recipient_user || event.user,
-        vars: template_vars_for(event, action)
+        vars: template_vars_for(event, action, delivery:)
       }
-      template_params = template_params_for(event, action)
+      template_params = template_params_for(event, action, delivery:)
       opts[:params] = template_params if template_params
 
       if delivery&.email_action?
@@ -775,7 +830,7 @@ module VpsAdmin::API
         opts[:include_template_recipients] = false
       end
 
-      opts.merge!(template_extra_options_for(event, action))
+      opts.merge!(template_extra_options_for(event, action, delivery:))
       opts
     end
 
@@ -786,7 +841,7 @@ module VpsAdmin::API
         to: email_target_addresses(event, delivery),
         subject: event.subject,
         text_plain: custom_email_body(event, delivery)
-      }.merge(custom_email_extra_options_for(event))
+      }.merge(custom_email_extra_options_for(event, delivery:))
     end
 
     def email_target_addresses(event, delivery)
@@ -805,21 +860,21 @@ module VpsAdmin::API
       addresses
     end
 
-    def template_vars_for(event, action = :email)
+    def template_vars_for(event, action = :email, route_context: nil, delivery: nil)
       {
         event:,
         notification_event: event,
         user: event.user,
         payload: event.payload || {}
-      }.merge(template_context_for(event, action)&.vars || {})
+      }.merge(template_context_for(event, action, route_context:, delivery:)&.vars || {})
     end
 
-    def template_extra_options_for(event, action = :email)
-      template_context_for(event, action)&.options || {}
+    def template_extra_options_for(event, action = :email, route_context: nil, delivery: nil)
+      template_context_for(event, action, route_context:, delivery:)&.options || {}
     end
 
-    def custom_email_extra_options_for(event)
-      email_delivery_context_for(event)&.custom_options || {}
+    def custom_email_extra_options_for(event, route_context: nil, delivery: nil)
+      email_delivery_context_for(event, route_context:, delivery:)&.custom_options || {}
     end
 
     def template_available?(name, params, language, protocol: 'email')
@@ -839,16 +894,16 @@ module VpsAdmin::API
         delivery.target_value != 'default'
     end
 
-    def default_email_target_for(event)
-      email_delivery_context_for(event)&.default_target
+    def default_email_target_for(event, route_context: nil, delivery: nil)
+      email_delivery_context_for(event, route_context:, delivery:)&.default_target
     end
 
-    def custom_email_target_for(event)
-      email_delivery_context_for(event)&.custom_target
+    def custom_email_target_for(event, route_context: nil, delivery: nil)
+      email_delivery_context_for(event, route_context:, delivery:)&.custom_target
     end
 
-    def system_template_email?(event)
-      email_delivery_context_for(event)&.system_template? == true
+    def system_template_email?(event, route_context: nil, delivery: nil)
+      email_delivery_context_for(event, route_context:, delivery:)&.system_template? == true
     end
 
     def parse_time(value)
@@ -859,8 +914,22 @@ module VpsAdmin::API
       nil
     end
 
+    def route_context_for_delivery(delivery)
+      return unless delivery
+
+      routing_context = delivery.event_routing_context
+      return unless routing_context
+
+      RouteContext.new(
+        delivery.event,
+        routing_context.recipient_user,
+        routing_context.subject_relation,
+        delivery.event.user
+      )
+    end
+
     def custom_email_body(event, delivery)
-      body = email_delivery_context_for(event)&.custom_body
+      body = email_delivery_context_for(event, delivery:)&.custom_body
       return body if body.present?
 
       ret = [
@@ -906,7 +975,7 @@ module VpsAdmin::API
         severity: severity || attrs[:severity] || type&.severity || 'info',
         subject: subject || attrs[:subject] || type&.label || event_type.to_s,
         summary: summary || attrs[:summary],
-        parameters: payload || attrs[:payload] || {},
+        parameters: payload_with_defaults(type, payload || attrs[:payload] || {}),
         ip_addr: ip_addr || attrs[:ip_addr]
       )
       context.event = event if context
@@ -940,7 +1009,7 @@ module VpsAdmin::API
         severity: severity || attrs[:severity] || type&.severity,
         subject: subject || attrs[:subject] || type&.label,
         summary: summary || attrs[:summary],
-        parameters: payload || attrs[:payload] || {},
+        parameters: payload_with_defaults(type, payload || attrs[:payload] || {}),
         source_class: source_class || source&.class&.name,
         source_id: source_id || source&.id,
         ip_addr: ip_addr || attrs[:ip_addr]
@@ -972,6 +1041,14 @@ module VpsAdmin::API
       raise ArgumentError, "event does not accept typed arguments: #{event_args.keys.join(', ')}" unless type&.definition
 
       type.definition.build_context(event_args)
+    end
+
+    def payload_with_defaults(type, payload)
+      ret = (payload || {}).dup
+      if type&.roles && !ret.has_key?(:roles) && !ret.has_key?('roles')
+        ret[:roles] = type.roles
+      end
+      ret
     end
 
     def route!(event)
@@ -1182,9 +1259,14 @@ module VpsAdmin::API
       protected
 
       def ensure_default_routes
+        ::NotificationReceiver.ensure_admin_request_defaults! if request_event?
         return unless event.user
 
         ::NotificationReceiver.ensure_defaults_for!(event.user)
+      end
+
+      def request_event?
+        event.event_type.to_s.start_with?('request.')
       end
 
       def plan_all_contexts
@@ -1396,7 +1478,12 @@ module VpsAdmin::API
             return skipped_delivery(route, receiver, receiver_action, 'route has no recipient user')
           end
 
-          target = VpsAdmin::API::Events.default_email_target_for(event) if @route_context&.self_subject?
+          if @route_context&.self_subject?
+            target = VpsAdmin::API::Events.default_email_target_for(
+              event,
+              route_context: @route_context
+            )
+          end
           return build_delivery(
             route,
             receiver,
@@ -1523,7 +1610,11 @@ module VpsAdmin::API
                       receiver_action&.telegram_action? ||
                       receiver_action&.sms_action?
 
-        VpsAdmin::API::Events.template_name_for(event, receiver_action.action)
+        VpsAdmin::API::Events.template_name_for(
+          event,
+          receiver_action.action,
+          route_context: @route_context
+        )
       end
 
       def routing_state_for(deliveries)

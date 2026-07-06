@@ -1,3 +1,3 @@
-template :request_action_role do
+template :request_update_admin do
   label 'Update request (admin)'
 end

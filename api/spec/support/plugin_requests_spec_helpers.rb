@@ -59,15 +59,17 @@ module PluginRequestsSpecHelpers
       tpl.template_id = template_id
     end
 
-    return if template.notification_template_variants.where(language: SpecSeed.language, protocol: :email).exists?
+    [SpecSeed.language, SpecSeed.admin.language].compact.uniq.each do |language|
+      next if template.notification_template_variants.where(language:, protocol: :email).exists?
 
-    template.notification_template_variants.create!(
-      language: SpecSeed.language,
-      protocol: :email,
-      from: 'noreply@test.invalid',
-      subject: "#{name} subject",
-      text: "#{name} body"
-    )
+      template.notification_template_variants.create!(
+        language:,
+        protocol: :email,
+        from: 'noreply@test.invalid',
+        subject: "#{name} subject",
+        text: "#{name} body"
+      )
+    end
   end
 end
 

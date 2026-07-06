@@ -1,3 +1,3 @@
-template :outage_report_role_event do
+template :outage_report_generic_update do
   label 'Generic outage report update'
 end
