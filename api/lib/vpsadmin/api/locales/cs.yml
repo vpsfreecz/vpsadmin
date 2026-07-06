@@ -2166,6 +2166,1082 @@ cs:
       resource_locked_by_transaction_chain: Zdroj je uzamčen transakčním řetězcem
         %{id} (%{label}). Zkuste to prosím později.
       resource_under_maintenance: 'Zdroj je v údržbě: %{reason}'
+    events:
+      fields:
+        common:
+          category:
+            description: Kategorie události používaná pro seskupení
+          default_routed:
+            description: Zda je událost doručena výchozí routou
+          event_type:
+            description: Jedinečný název typu události
+          roles:
+            description: Notifikační role deklarované typem události
+          severity:
+            description: Závažnost události
+          subject:
+            description: Krátký předmět události
+          subject_is_admin_visible:
+            description: Zda administrátorská routa vidí subjekt jiného uživatele
+          subject_is_self:
+            description: Zda je subjekt události vlastníkem routy
+          subject_relation:
+            description: Vztah mezi vlastníkem routy a subjektem události
+          subject_user_id:
+            description: ID uživatele, který je subjektem události
+          summary:
+            description: Delší souhrn události
+        dataset_migration_begun:
+          affected_vps_count:
+            description: Počet VPS dotčených migrací
+          affected_vps_hostnames:
+            description: Hostname VPS dotčených migrací
+          affected_vps_ids:
+            description: ID VPS dotčených migrací
+          custom_window:
+            description: Zda je použit vlastní maintenance window
+          dataset_full_name:
+            description: Plný název migrovaného datasetu
+          dataset_id:
+            description: ID migrovaného datasetu
+          dst_pool_filesystem:
+            description: Filesystem cílového storage poolu
+          dst_pool_id:
+            description: ID cílového storage poolu
+          export_count:
+            description: Počet exportů dotčených migrací
+          finish_minutes:
+            description: Minuta dne, kdy má maintenance window skončit
+          finish_weekday:
+            description: Den v týdnu, kdy má maintenance window skončit
+          maintenance_window:
+            description: Zda migraci omezuje maintenance window
+          reason:
+            description: Důvod migrace zadaný operátorem
+          restart_vps:
+            description: Zda jsou dotčená VPS během migrace restartována
+          src_pool_filesystem:
+            description: Filesystem zdrojového storage poolu
+          src_pool_id:
+            description: ID zdrojového storage poolu
+          user_id:
+            description: ID vlastníka datasetu
+          user_login:
+            description: Login vlastníka datasetu
+          user_name:
+            description: Celé jméno vlastníka datasetu
+        dataset_migration_finished:
+          affected_vps_count:
+            description: Počet VPS dotčených migrací
+          affected_vps_hostnames:
+            description: Hostname VPS dotčených migrací
+          affected_vps_ids:
+            description: ID VPS dotčených migrací
+          custom_window:
+            description: Zda je použit vlastní maintenance window
+          dataset_full_name:
+            description: Plný název migrovaného datasetu
+          dataset_id:
+            description: ID migrovaného datasetu
+          dst_pool_filesystem:
+            description: Filesystem cílového storage poolu
+          dst_pool_id:
+            description: ID cílového storage poolu
+          export_count:
+            description: Počet exportů dotčených migrací
+          finish_minutes:
+            description: Minuta dne, kdy má maintenance window skončit
+          finish_weekday:
+            description: Den v týdnu, kdy má maintenance window skončit
+          maintenance_window:
+            description: Zda migraci omezuje maintenance window
+          reason:
+            description: Důvod migrace zadaný operátorem
+          restart_vps:
+            description: Zda jsou dotčená VPS během migrace restartována
+          src_pool_filesystem:
+            description: Filesystem zdrojového storage poolu
+          src_pool_id:
+            description: ID zdrojového storage poolu
+          user_id:
+            description: ID vlastníka datasetu
+          user_login:
+            description: Login vlastníka datasetu
+          user_name:
+            description: Celé jméno vlastníka datasetu
+        dns_zone_transfer_failed:
+          dns_server_id:
+            description: ID DNS serveru zpracovávajícího transfer
+          dns_server_name:
+            description: Název DNS serveru zpracovávajícího transfer
+          dns_server_zone_id:
+            description: ID přiřazení zóny k DNS serveru
+          dns_zone_id:
+            description: ID přenášené DNS zóny
+          dns_zone_name:
+            description: Název přenášené DNS zóny
+          event_at:
+            description: Čas události DNS transferu
+          message:
+            description: Dodatečná zpráva k transferu
+          node_id:
+            description: ID nodu hostujícího DNS server
+          node_name:
+            description: Doménové jméno nodu hostujícího DNS server
+          previous_status:
+            description: Status transferu před touto událostí
+          primary_addr:
+            description: Adresa primárního DNS serveru použitá pro transfer
+          reason:
+            description: Čitelný důvod selhání přenosu
+          reason_code:
+            description: Strojově čitelný důvod selhání transferu
+          serial:
+            description: Serial DNS zóny zaznamenaný při transferu
+          status:
+            description: Status transferu nahlášený DNS serverem
+          transfer_log_id:
+            description: ID řádku logu DNS transferu
+        dns_zone_transfer_recovered:
+          dns_server_id:
+            description: ID DNS serveru zpracovávajícího transfer
+          dns_server_name:
+            description: Název DNS serveru zpracovávajícího transfer
+          dns_server_zone_id:
+            description: ID přiřazení zóny k DNS serveru
+          dns_zone_id:
+            description: ID přenášené DNS zóny
+          dns_zone_name:
+            description: Název přenášené DNS zóny
+          event_at:
+            description: Čas události DNS transferu
+          message:
+            description: Dodatečná zpráva k transferu
+          node_id:
+            description: ID nodu hostujícího DNS server
+          node_name:
+            description: Doménové jméno nodu hostujícího DNS server
+          previous_status:
+            description: Status transferu před touto událostí
+          primary_addr:
+            description: Adresa primárního DNS serveru použitá pro transfer
+          reason:
+            description: Čitelný důvod selhání přenosu
+          reason_code:
+            description: Strojově čitelný důvod selhání transferu
+          serial:
+            description: Serial DNS zóny zaznamenaný při transferu
+          status:
+            description: Status transferu nahlášený DNS serverem
+          transfer_log_id:
+            description: ID řádku logu DNS transferu
+        incident_report_reply:
+          from_email:
+            description: E-mailová adresa, která odeslala odpověď
+          in_reply_to_message_id:
+            description: Message-ID odkazované odpovědí
+          incident_count:
+            description: Počet incidentů odpovídajících odpovědi
+          incident_ids:
+            description: ID incidentů odpovídajících odpovědi
+          recipient_emails:
+            description: E-mailové adresy příjemců načtené z odpovědi
+          references_message_id:
+            description: Hlavička References z odpovědi
+          text:
+            description: Text odpovědi
+          user_count:
+            description: Počet uživatelů dotčených odpovědí
+          vps_count:
+            description: Počet VPS dotčených odpovědí
+        lifetime_expiration_warning:
+          expiration_date:
+            description: Čas vypršení životního stavu
+          expired_days_ago:
+            description: Počet dnů od vypršení
+          expires_in_a_day:
+            description: Zda vypršení nastane během příštího dne
+          expires_in_days:
+            description: Počet dnů do vypršení
+          object:
+            description: Typ objektu, jehož životní stav vyprší
+          object_id:
+            description: ID objektu, který vyprší
+          object_label:
+            description: Uživatelsky viditelný popisek objektu, který vyprší
+          remind_after_date:
+            description: Čas, před kterým se potlačují opakovaná připomenutí
+          state:
+            description: Životní stav, který brzy vyprší nebo už vypršel
+        monitoring:
+          affected_user_id:
+            description: ID uživatele ovlivněného monitoringovou událostí
+          affected_user_login:
+            description: Login uživatele ovlivněného monitoringovou událostí
+          alert_kind:
+            description: Druh monitoringového alertu, který vytvořil notifikaci
+          alert_number:
+            description: Pořadové číslo tohoto alertu pro monitorovanou událost
+          check_count:
+            description: Počet zaznamenaných kontrol pro monitorovanou událost
+          created_at:
+            description: Čas vytvoření monitorované události
+          dataset_full_name:
+            description: Celý název datasetu ovlivněného monitoringovou událostí
+          dataset_id:
+            description: ID datasetu ovlivněného monitoringovou událostí
+          dns_server_id:
+            description: ID DNS serveru zapojeného do monitoringové události
+          dns_server_name:
+            description: Název DNS serveru zapojeného do monitoringové události
+          dns_zone_id:
+            description: ID DNS zóny ovlivněné monitoringovou událostí
+          dns_zone_name:
+            description: Název DNS zóny ovlivněné monitoringovou událostí
+          duration_seconds:
+            description: Doba trvání monitorované události v sekundách
+          finish_minutes:
+            description: Minuta dne, kdy má maintenance window skončit
+          finish_weekday:
+            description: Den v týdnu, kdy má maintenance window skončit
+          last_report_at:
+            description: Čas posledního nahlášení monitorované události
+          measured_value:
+            description: Poslední hodnota zaznamenaná monitorem
+          monitor_issue:
+            description: Text problému nahlášený monitorem
+          monitor_label:
+            description: Uživatelsky viditelný popisek monitoru
+          monitor_name:
+            description: Interní název definice monitoru
+          monitored_event_id:
+            description: ID řádku monitorované události
+          object_class:
+            description: Název třídy monitorovaného objektu
+          object_id:
+            description: ID monitorovaného objektu
+          object_label:
+            description: Uživatelsky viditelný popisek monitorovaného objektu
+          pool_role:
+            description: Role storage poolu spojená s monitoringovou událostí
+          saved_until:
+            description: Čas, do kterého je monitorovaná událost potvrzená nebo ignorovaná
+          state:
+            description: Stav monitorované události po kontrole
+          threshold:
+            description: Číselný práh nakonfigurovaný pro monitoringový alert
+          transfer_reason:
+            description: Čitelný důvod posledního stavu DNS přenosu
+          transfer_reason_code:
+            description: Strojově čitelný důvod posledního stavu DNS přenosu
+          transfer_status:
+            description: Poslední stav přenosu DNS zóny zjištěný monitoringem
+          updated_at:
+            description: Čas poslední aktualizace monitorované události
+          vps_hostname:
+            description: Hostname VPS ovlivněného monitoringovou událostí
+          vps_id:
+            description: ID VPS ovlivněného monitoringovou událostí
+        outage_announced:
+          affected_export_count:
+            description: Počet exportů dotčených odstávkou nebo výpadkem
+          affected_user_id:
+            description: ID dotčeného uživatele u událostí cílených na uživatele
+          affected_user_login:
+            description: Login dotčeného uživatele u událostí cílených na uživatele
+          affected_vps_count:
+            description: Počet VPS ovlivněných odstávkou
+          begins_at:
+            description: Čas začátku odstávky nebo výpadku
+          cves:
+            description: CVE identifikátory související s odstávkou nebo výpadkem
+          description:
+            description: Podrobný text aktualizace outage reportu
+          direct_vps_count:
+            description: Počet VPS přímo dotčených odstávkou nebo výpadkem
+          duration:
+            description: Očekávaná doba odstávky nebo výpadku v minutách
+          entity_labels:
+            description: Popisky infrastrukturních entit dotčených odstávkou nebo
+              výpadkem
+          event:
+            description: Fáze notifikace outage reportu, která vytvořila událost
+          finished_at:
+            description: Čas, kdy odstávka nebo výpadek má skončit nebo skončil
+          handler_names:
+            description: Jména administrátorů řešících outage report
+          impact_type:
+            description: Druh dopadu uvedený pro outage report
+          indirect_vps_count:
+            description: Počet VPS nepřímo dotčených odstávkou nebo výpadkem
+          outage_description:
+            description: Aktuální podrobný text outage reportu
+          outage_id:
+            description: ID outage reportu
+          outage_summary:
+            description: Aktuální souhrn outage reportu
+          outage_type:
+            description: Typ hlášené odstávky nebo výpadku
+          reported_by_id:
+            description: ID administrátora, který nahlásil aktualizaci
+          reported_by_login:
+            description: Login administrátora, který nahlásil aktualizaci
+          reported_by_name:
+            description: Celé jméno administrátora, který nahlásil aktualizaci
+          state:
+            description: Stav odstávky po aktualizaci
+          summary:
+            description: Souhrnný text aktualizace odstávky
+          update_id:
+            description: ID aktualizace outage reportu
+        outage_updated:
+          affected_export_count:
+            description: Počet exportů dotčených odstávkou nebo výpadkem
+          affected_user_id:
+            description: ID dotčeného uživatele u událostí cílených na uživatele
+          affected_user_login:
+            description: Login dotčeného uživatele u událostí cílených na uživatele
+          affected_vps_count:
+            description: Počet VPS ovlivněných odstávkou
+          begins_at:
+            description: Čas začátku odstávky nebo výpadku
+          changed_fields:
+            description: Názvy polí outage reportu změněných aktualizací
+          cves:
+            description: CVE identifikátory související s odstávkou nebo výpadkem
+          description:
+            description: Podrobný text aktualizace outage reportu
+          direct_vps_count:
+            description: Počet VPS přímo dotčených odstávkou nebo výpadkem
+          duration:
+            description: Očekávaná doba odstávky nebo výpadku v minutách
+          event:
+            description: Fáze notifikace outage reportu, která vytvořila událost
+          finished_at:
+            description: Čas, kdy odstávka nebo výpadek má skončit nebo skončil
+          impact_type:
+            description: Druh dopadu uvedený pro outage report
+          indirect_vps_count:
+            description: Počet VPS nepřímo dotčených odstávkou nebo výpadkem
+          outage_description:
+            description: Aktuální podrobný text outage reportu
+          outage_id:
+            description: ID outage reportu
+          outage_summary:
+            description: Aktuální souhrn outage reportu
+          outage_type:
+            description: Typ hlášené odstávky nebo výpadku
+          reported_by_id:
+            description: ID administrátora, který nahlásil aktualizaci
+          reported_by_login:
+            description: Login administrátora, který nahlásil aktualizaci
+          reported_by_name:
+            description: Celé jméno administrátora, který nahlásil aktualizaci
+          state:
+            description: Stav odstávky po aktualizaci
+          summary:
+            description: Souhrnný text aktualizace odstávky
+          update_id:
+            description: ID aktualizace outage reportu
+        payment_accepted:
+          accounted_by_id:
+            description: ID administrátora, který platbu zaúčtoval
+          accounted_by_login:
+            description: Login administrátora, který platbu zaúčtoval
+          amount:
+            description: Částka připsaná na účet uživatele
+          from_date:
+            description: Začátek zaplaceného období členství
+          incoming_payment_id:
+            description: ID řádku příchozí platby
+          incoming_transaction_id:
+            description: Identifikátor bankovní transakce příchozí platby
+          payment_id:
+            description: ID přijaté uživatelské platby
+          received_amount:
+            description: Částka přijatá z příchozí platby
+          received_currency:
+            description: Měna přijatá z příchozí platby
+          to_date:
+            description: Konec zaplaceného období členství
+        payments_overview:
+          accepted_payment_count:
+            description: Počet přijatých plateb zahrnutých v přehledu
+          incoming_payment_count:
+            description: Počet příchozích plateb zahrnutých v přehledu
+          language_code:
+            description: Kód jazyka použitý pro přehled
+          language_id:
+            description: ID jazyka použitého pro přehled
+          period_end:
+            description: Konec období přehledu
+          period_seconds:
+            description: Délka období přehledu v sekundách
+          period_start:
+            description: Začátek období přehledu
+        request_created:
+          action:
+            description: Akce workflow žádosti, která vytvořila notifikaci
+          mail_id:
+            description: ID mailového vlákna použitého pro notifikaci žádosti
+          recipient_email:
+            description: Vlastní e-mailový příjemce této notifikace žádosti
+          request_id:
+            description: ID žádosti
+          request_label:
+            description: Uživatelsky viditelný popisek žádosti
+          request_state:
+            description: Stav žádosti po události
+          request_type:
+            description: Typ zpracovávané žádosti
+          user_id:
+            description: ID uživatele, který vlastní žádost
+          user_login:
+            description: Login uživatele, který vlastní žádost
+        request_resolved:
+          action:
+            description: Akce workflow žádosti, která vytvořila notifikaci
+          admin_id:
+            description: ID administrátora, který žádost vyřešil
+          admin_login:
+            description: Login administrátora, který žádost vyřešil
+          mail_id:
+            description: ID mailového vlákna použitého pro notifikaci žádosti
+          reason:
+            description: Důvod zaznamenaný při vyřešení žádosti
+          recipient_email:
+            description: Vlastní e-mailový příjemce této notifikace žádosti
+          reply_to_mail_id:
+            description: ID předchozího mailového vlákna, na které řešení odpovídá
+          request_id:
+            description: ID žádosti
+          request_label:
+            description: Uživatelsky viditelný popisek žádosti
+          request_state:
+            description: Stav žádosti po události
+          request_type:
+            description: Typ zpracovávané žádosti
+          user_id:
+            description: ID uživatele, který vlastní žádost
+          user_login:
+            description: Login uživatele, který vlastní žádost
+        request_updated:
+          action:
+            description: Akce workflow žádosti, která vytvořila notifikaci
+          mail_id:
+            description: ID mailového vlákna použitého pro notifikaci žádosti
+          recipient_email:
+            description: Vlastní e-mailový příjemce této notifikace žádosti
+          reply_to_mail_id:
+            description: ID předchozího e-mailového vlákna, na které tato aktualizace
+              odpovídá
+          request_id:
+            description: ID žádosti
+          request_label:
+            description: Uživatelsky viditelný popisek žádosti
+          request_state:
+            description: Stav žádosti po události
+          request_type:
+            description: Typ zpracovávané žádosti
+          user_id:
+            description: ID uživatele, který vlastní žádost
+          user_login:
+            description: Login uživatele, který vlastní žádost
+        security_advisory_announced:
+          advisory_id:
+            description: ID bezpečnostního upozornění
+          advisory_name:
+            description: Název bezpečnostního upozornění
+          affected_vps_count:
+            description: Počet ovlivněných VPS viditelných příjemci
+          affected_vps_hostnames:
+            description: Hostnamy ovlivněných VPS zahrnuté ve vzorku payloadu
+          affected_vps_ids:
+            description: ID ovlivněných VPS zahrnutá ve vzorku payloadu
+          cves:
+            description: CVE identifikátory zmíněné v advisoriu
+          published_at:
+            description: Čas publikování bezpečnostního upozornění
+          state:
+            description: Aktuální stav životního cyklu advisoria
+        security_advisory_updated:
+          advisory_id:
+            description: ID bezpečnostního upozornění
+          advisory_name:
+            description: Název bezpečnostního upozornění
+          affected_vps_count:
+            description: Počet ovlivněných VPS viditelných příjemci
+          affected_vps_hostnames:
+            description: Hostnamy ovlivněných VPS zahrnuté ve vzorku payloadu
+          affected_vps_ids:
+            description: ID ovlivněných VPS zahrnutá ve vzorku payloadu
+          cves:
+            description: CVE identifikátory zmíněné v advisoriu
+          published_at:
+            description: Čas publikování bezpečnostního upozornění
+          state:
+            description: Aktuální stav životního cyklu advisoria
+          update_id:
+            description: ID aktualizace advisoria
+          update_summary:
+            description: Souhrn aktualizace bezpečnostního upozornění
+        snapshot_download_ready:
+          dataset_full_name:
+            description: Celý název datasetu, který vlastní snapshot
+          dataset_id:
+            description: ID datasetu, který vlastní snapshot
+          download_id:
+            description: ID připraveného stažení snapshotu
+          expiration_date:
+            description: Čas vypršení odkazu pro stažení
+          file_name:
+            description: Název připraveného archivu ke stažení
+          format:
+            description: Formát připraveného stažení
+          snapshot_id:
+            description: ID zdrojového snapshotu
+          snapshot_name:
+            description: Název zdrojového snapshotu
+        system_daily_report:
+          language_code:
+            description: Kód jazyka použitý pro přehled
+          language_id:
+            description: ID jazyka použitého pro přehled
+          period_end:
+            description: Konec období přehledu
+          period_seconds:
+            description: Délka období přehledu v sekundách
+          period_start:
+            description: Začátek období přehledu
+        transaction_chain_state_changed:
+          chain_id:
+            description: ID transakčního řetězce, jehož stav se změnil
+          chain_label:
+            description: Uživatelsky viditelný popisek transakčního řetězce
+          chain_name:
+            description: Interní název transakčního řetězce
+          changed_at:
+            description: Čas změny stavu řetězce
+          changed_at_timestamp:
+            description: Unixový timestamp změny stavu
+          concern_classes:
+            description: Třídy objektů dotčených řetězcem
+          concern_object_ids:
+            description: ID objektů dotčených řetězcem
+          failed:
+            description: Zda je koncový stav selhaný nebo fatální
+          node_id:
+            description: ID nodu, který nahlásil změnu stavu
+          node_name:
+            description: Doménový název nodu, který nahlásil změnu stavu
+          previous_state:
+            description: Stav transakčního řetězce před změnou
+          progress:
+            description: Počet již dokončených transakcí
+          size:
+            description: Počet transakcí v řetězci
+          state:
+            description: Stav transakčního řetězce po změně
+          successful:
+            description: Zda je koncový stav úspěšný
+          terminal:
+            description: Zda řetězec dosáhl koncového stavu
+          user_session_id:
+            description: ID uživatelského sezení, které vytvořilo řetězec
+        user_created:
+          active:
+            description: Zda byl účet ihned aktivován
+          create_vps:
+            description: Zda bylo požádáno o počáteční VPS
+          email:
+            description: E-mailová adresa nastavená na vytvořeném účtu
+          level:
+            description: Číselná úroveň uživatele při vytvoření
+          login:
+            description: Login vytvořeného uživatelského účtu
+          object_state:
+            description: Počáteční životní stav účtu
+        user_failed_logins:
+          attempt_count:
+            description: Celkový počet neúspěšných přihlášení v přehledu
+          auth_types:
+            description: Metody autentizace použité při neúspěšných pokusech
+          group_count:
+            description: Počet skupin pokusů zahrnutých v přehledu
+          ip_addrs:
+            description: IP adresy klientů zaznamenané při neúspěšných pokusech
+          reasons:
+            description: Důvody selhání nahlášené autentizací
+        user_new_login:
+          api_ip_addr:
+            description: IP adresa zaznamenaná vpsAdmin API
+          auth_type:
+            description: Metoda autentizace použitá při přihlášení
+          authorization_id:
+            description: ID OAuth autorizace použité při přihlášení
+          client_ip_addr:
+            description: IP adresa klienta nahlášená API klientem
+          client_version:
+            description: Verze nahlášená API klientem
+          oauth2_client_id:
+            description: ID aplikace OAuth klienta
+          user_agent:
+            description: HTTP hlavička User-Agent použitá klientem
+          user_device_id:
+            description: ID zapamatovaného uživatelského zařízení použitého při přihlášení
+        user_new_token:
+          api_ip_addr:
+            description: IP adresa zaznamenaná vpsAdmin API
+          auth_type:
+            description: Metoda autentizace použitá pro vytvoření tokenu
+          client_ip_addr:
+            description: IP adresa klienta nahlášená API klientem
+          client_version:
+            description: Verze nahlášená API klientem
+          label:
+            description: Uživatelsky viditelný popisek tokenu
+          scope:
+            description: Rozsah přístupu udělený tokenu
+          token_lifetime:
+            description: Životnost tokenu požadovaná uživatelským sezením
+        user_resumed:
+          expiration_date:
+            description: Datum vypršení stavu životního cyklu
+          reason:
+            description: Důvod změny stavu životního cyklu zadaný operátorem
+          state:
+            description: Stav životního cyklu účtu po změně
+        user_revived:
+          expiration_date:
+            description: Datum vypršení stavu životního cyklu
+          reason:
+            description: Důvod změny stavu životního cyklu zadaný operátorem
+          state:
+            description: Stav životního cyklu účtu po změně
+        user_soft_deleted:
+          expiration_date:
+            description: Datum vypršení stavu životního cyklu
+          reason:
+            description: Důvod změny stavu životního cyklu zadaný operátorem
+          state:
+            description: Stav životního cyklu účtu po změně
+        user_suspended:
+          expiration_date:
+            description: Datum vypršení stavu životního cyklu
+          reason:
+            description: Důvod změny stavu životního cyklu zadaný operátorem
+          state:
+            description: Stav životního cyklu účtu po změně
+        user_test_notification:
+          note:
+            description: Volná poznámka zadaná při vytvoření testovací události
+        user_totp_recovery_code_used:
+          request_ip:
+            description: IP adresa, ze které byl odeslán obnovovací kód
+          totp_device_id:
+            description: ID TOTP zařízení, jehož obnovovací kód byl použit
+          totp_device_label:
+            description: Uživatelsky viditelný popisek dotčeného TOTP zařízení
+          used_at:
+            description: Čas přijetí obnovovacího kódu
+        vps_dataset_expanded:
+          added_space:
+            description: Prostor přidaný do refquota datasetu v bajtech
+          dataset_full_name:
+            description: Celý název datasetu, jehož kvóta se změnila
+          dataset_id:
+            description: ID datasetu, jehož kvóta se změnila
+          dataset_referenced:
+            description: Referencovaný prostor datasetu v čase události, v bajtech
+          dataset_refquota:
+            description: Refquota datasetu po události, v bajtech
+          enable_shrink:
+            description: Zda je pro dataset povolen automatický shrink
+          expansion_count:
+            description: Počet expanzí zahrnutých v události
+          expansion_id:
+            description: ID záznamu expanze datasetu
+          max_over_refquota_seconds:
+            description: Maximální povolený čas nad kvótou před akcí, v sekundách
+          original_refquota:
+            description: Refquota datasetu před automatickou expanzí nebo shrinkem,
+              v bajtech
+          over_refquota_seconds:
+            description: Čas, který dataset strávil nad kvótou, v sekundách
+          vps_hostname:
+            description: Hostname VPS, jehož kvóta datasetu se změnila
+          vps_id:
+            description: ID VPS, jehož kvóta datasetu se změnila
+        vps_dataset_shrunk:
+          added_space:
+            description: Prostor přidaný do refquota datasetu v bajtech
+          dataset_full_name:
+            description: Celý název datasetu, jehož kvóta se změnila
+          dataset_id:
+            description: ID datasetu, jehož kvóta se změnila
+          dataset_referenced:
+            description: Referencovaný prostor datasetu v čase události, v bajtech
+          dataset_refquota:
+            description: Refquota datasetu po události, v bajtech
+          enable_shrink:
+            description: Zda je pro dataset povolen automatický shrink
+          expansion_count:
+            description: Počet expanzí zahrnutých v události
+          expansion_id:
+            description: ID záznamu expanze datasetu
+          max_over_refquota_seconds:
+            description: Maximální povolený čas nad kvótou před akcí, v sekundách
+          original_refquota:
+            description: Refquota datasetu před automatickou expanzí nebo shrinkem,
+              v bajtech
+          over_refquota_seconds:
+            description: Čas, který dataset strávil nad kvótou, v sekundách
+          vps_hostname:
+            description: Hostname VPS, jehož kvóta datasetu se změnila
+          vps_id:
+            description: ID VPS, jehož kvóta datasetu se změnila
+        vps_dns_resolver_changed:
+          new_dns_resolver_addrs:
+            description: Adresy nastavené na novém DNS resolveru
+          new_dns_resolver_id:
+            description: ID nového DNS resolveru
+          new_dns_resolver_label:
+            description: Popisek nového DNS resolveru
+          old_dns_resolver_addrs:
+            description: Adresy nastavené na předchozím DNS resolveru
+          old_dns_resolver_id:
+            description: ID předchozího DNS resolveru
+          old_dns_resolver_label:
+            description: Popisek předchozího DNS resolveru
+          vps_hostname:
+            description: Hostname VPS, jehož resolver se změnil
+          vps_id:
+            description: ID VPS, jehož resolver se změnil
+        vps_incident_report:
+          codename:
+            description: Kódové označení incidentu přidělené vpsAdminem
+          ip_addr:
+            description: IP adresa uvedená v incidentu
+          subject:
+            description: Předmět přijatý s incidentem
+          text:
+            description: Text těla přijatý s incidentem
+          vps_id:
+            description: ID VPS spojeného s incidentem
+        vps_migration_begun:
+          custom_window:
+            description: Zda je použit vlastní maintenance window
+          dst_node_domain_name:
+            description: Doménové jméno cílového nodu
+          dst_node_id:
+            description: ID cílového nodu
+          finish_minutes:
+            description: Minuta dne, kdy má maintenance window skončit
+          finish_weekday:
+            description: Den v týdnu, kdy má maintenance window skončit
+          maintenance_window:
+            description: Zda migraci omezuje maintenance window
+          migration_id:
+            description: ID záznamu migrace VPS
+          reason:
+            description: Důvod migrace zadaný operátorem
+          src_node_domain_name:
+            description: Doménové jméno zdrojového nodu
+          src_node_id:
+            description: ID zdrojového nodu
+          vps_hostname:
+            description: Hostname migrovaného VPS
+          vps_id:
+            description: ID migrovaného VPS
+        vps_migration_finished:
+          custom_window:
+            description: Zda je použit vlastní maintenance window
+          dst_node_domain_name:
+            description: Doménové jméno cílového nodu
+          dst_node_id:
+            description: ID cílového nodu
+          finish_minutes:
+            description: Minuta dne, kdy má maintenance window skončit
+          finish_weekday:
+            description: Den v týdnu, kdy má maintenance window skončit
+          maintenance_window:
+            description: Zda migraci omezuje maintenance window
+          migration_id:
+            description: ID záznamu migrace VPS
+          reason:
+            description: Důvod migrace zadaný operátorem
+          src_node_domain_name:
+            description: Doménové jméno zdrojového nodu
+          src_node_id:
+            description: ID zdrojového nodu
+          vps_hostname:
+            description: Hostname migrovaného VPS
+          vps_id:
+            description: ID migrovaného VPS
+        vps_migration_planned:
+          custom_window:
+            description: Zda je použit vlastní maintenance window
+          dst_node_domain_name:
+            description: Doménové jméno cílového nodu
+          dst_node_id:
+            description: ID cílového nodu
+          finish_minutes:
+            description: Minuta dne, kdy má maintenance window skončit
+          finish_weekday:
+            description: Den v týdnu, kdy má maintenance window skončit
+          maintenance_window:
+            description: Zda migraci omezuje maintenance window
+          migration_id:
+            description: ID záznamu migrace VPS
+          reason:
+            description: Důvod migrace zadaný operátorem
+          src_node_domain_name:
+            description: Doménové jméno zdrojového nodu
+          src_node_id:
+            description: ID zdrojového nodu
+          vps_hostname:
+            description: Hostname migrovaného VPS
+          vps_id:
+            description: ID migrovaného VPS
+        vps_network_disabled:
+          reason:
+            description: Důvod změny stavu sítě zadaný operátorem
+          vps_hostname:
+            description: Hostname VPS, jehož stav sítě se změnil
+          vps_id:
+            description: ID VPS, jehož stav sítě se změnil
+        vps_network_enabled:
+          reason:
+            description: Důvod změny stavu sítě zadaný operátorem
+          vps_hostname:
+            description: Hostname VPS, jehož stav sítě se změnil
+          vps_id:
+            description: ID VPS, jehož stav sítě se změnil
+        vps_oom_prevention:
+          action:
+            description: Preventivní akce provedená po opakovaných OOM hlášeních
+          ooms_in_period:
+            description: Počet OOM reportů zaznamenaných ve sledovaném období
+          period_seconds:
+            description: Délka sledovaného období v sekundách
+          reason:
+            description: Důvod provedení preventivní akce
+          vps_hostname:
+            description: Hostname VPS ovlivněného OOM prevencí
+          vps_id:
+            description: ID VPS ovlivněného OOM prevencí
+        vps_oom_report:
+          batch_reported_at:
+            description: Čas zpracování dávky OOM reportů
+          cgroup:
+            description: Primární dotčená cesta cgroup
+          cgroups:
+            description: Dotčené cgroup cesty zahrnuté v události
+          count:
+            description: Počet OOM reportů ve vybrané skupině
+          killed_name:
+            description: Název procesu ukončeného kernelem
+          last_reported_id:
+            description: Nejvyšší již zpracované ID surového OOM reportu
+          report_count:
+            description: Počet surových reportů zvažovaných pro událost
+          selected_oom_count:
+            description: Počet OOM killů zastoupených vybranými reporty
+          selected_report_count:
+            description: Počet surových reportů vybraných pro notifikaci
+          selected_report_ids:
+            description: ID surových OOM reportů vybraných pro notifikaci
+          stage:
+            description: Fáze zpracování, která vytvořila OOM notifikaci
+          vps_hostname:
+            description: Hostname VPS ovlivněného OOM reportem
+          vps_id:
+            description: ID VPS ovlivněného OOM reportem
+        vps_replaced:
+          new_vps_hostname:
+            description: Hostname nově vytvořeného náhradního VPS
+          new_vps_id:
+            description: ID nově vytvořeného náhradního VPS
+          original_vps_hostname:
+            description: Hostname původního nahrazovaného VPS
+          original_vps_id:
+            description: ID původního nahrazovaného VPS
+          reason:
+            description: Důvod nahrazení zadaný operátorem
+          vps_hostname:
+            description: Hostname záznamu VPS, který zahájil nahrazení
+          vps_id:
+            description: ID záznamu VPS, který zahájil nahrazení
+        vps_resources_changed:
+          admin_id:
+            description: ID admina, který změnil prostředky
+          admin_name:
+            description: Jméno administrátora, který změnil prostředky
+          cpu:
+            description: Počet CPU jader přiřazený VPS po změně
+          cpu_limit:
+            description: CPU limit přiřazený VPS po změně
+          memory:
+            description: Limit paměti přiřazený VPS po změně, v MiB
+          reason:
+            description: Důvod změny prostředků zadaný operátorem
+          swap:
+            description: Swap limit přiřazený VPS po změně, v MiB
+          vps_hostname:
+            description: Hostname VPS, jehož prostředky se změnily
+          vps_id:
+            description: ID VPS, jehož prostředky se změnily
+        vps_resumed:
+          changed_by_id:
+            description: ID uživatele, který změnil životní stav VPS
+          changed_by_name:
+            description: Jméno uživatele, který změnil životní stav VPS
+          expiration_date:
+            description: Datum vypršení stavu životního cyklu
+          reason:
+            description: Důvod změny stavu životního cyklu zadaný operátorem
+          state:
+            description: Stav životního cyklu VPS po změně
+          vps_hostname:
+            description: Hostname VPS, jehož stav životního cyklu se změnil
+          vps_id:
+            description: ID VPS, jehož stav životního cyklu se změnil
+        vps_stopped_over_quota:
+          added_space:
+            description: Prostor přidaný do refquota datasetu v bajtech
+          dataset_full_name:
+            description: Celý název datasetu, jehož kvóta se změnila
+          dataset_id:
+            description: ID datasetu, jehož kvóta se změnila
+          dataset_referenced:
+            description: Referencovaný prostor datasetu v čase události, v bajtech
+          dataset_refquota:
+            description: Refquota datasetu po události, v bajtech
+          enable_shrink:
+            description: Zda je pro dataset povolen automatický shrink
+          expansion_count:
+            description: Počet expanzí zahrnutých v události
+          expansion_id:
+            description: ID záznamu expanze datasetu
+          max_over_refquota_seconds:
+            description: Maximální povolený čas nad kvótou před akcí, v sekundách
+          original_refquota:
+            description: Refquota datasetu před automatickou expanzí nebo shrinkem,
+              v bajtech
+          over_refquota_seconds:
+            description: Čas, který dataset strávil nad kvótou, v sekundách
+          vps_hostname:
+            description: Hostname VPS, jehož kvóta datasetu se změnila
+          vps_id:
+            description: ID VPS, jehož kvóta datasetu se změnila
+        vps_suspended:
+          changed_by_id:
+            description: ID uživatele, který změnil životní stav VPS
+          changed_by_name:
+            description: Jméno uživatele, který změnil životní stav VPS
+          expiration_date:
+            description: Datum vypršení stavu životního cyklu
+          reason:
+            description: Důvod změny stavu životního cyklu zadaný operátorem
+          state:
+            description: Stav životního cyklu VPS po změně
+          vps_hostname:
+            description: Hostname VPS, jehož stav životního cyklu se změnil
+          vps_id:
+            description: ID VPS, jehož stav životního cyklu se změnil
+      types:
+        dataset_migration_begun:
+          label: Migrace datasetu zahájena
+        dataset_migration_finished:
+          label: Migrace datasetu dokončena
+        dns_zone_transfer_failed:
+          label: Transfer DNS zóny selhal
+        dns_zone_transfer_recovered:
+          label: Transfer DNS zóny obnoven
+        incident_report_reply:
+          label: Odpověď na incident
+        lifetime_expiration_warning:
+          label: Upozornění na vypršení
+        monitoring:
+          severity_description: Závažnost je odvozena ze stavu monitoringového alertu
+        outage_announced:
+          label: Odstávka nebo výpadek oznámen
+        outage_updated:
+          label: Odstávka nebo výpadek aktualizován
+        payment_accepted:
+          label: Platba přijata
+        payments_overview:
+          label: Přehled plateb
+        request_created:
+          label: Žádost vytvořena
+        request_resolved:
+          label: Žádost vyřešena
+        request_updated:
+          label: Žádost aktualizována
+        security_advisory_announced:
+          label: Bezpečnostní upozornění oznámeno
+        security_advisory_updated:
+          label: Bezpečnostní upozornění aktualizováno
+        snapshot_download_ready:
+          label: Stažení snapshotu připraveno
+        system_daily_report:
+          label: Denní report
+        transaction_chain_state_changed:
+          label: Stav transakčního řetězce změněn
+          severity_description: Závažnost je odvozena z nového stavu transakčního
+            řetězce
+        user_created:
+          label: Uživatelský účet vytvořen
+        user_failed_logins:
+          label: Přehled neúspěšných přihlášení
+        user_new_login:
+          label: Nové přihlášení
+        user_new_token:
+          label: Nový přístupový token
+        user_resumed:
+          label: Uživatelský účet obnoven
+        user_revived:
+          label: Uživatelský účet vrácen
+        user_soft_deleted:
+          label: Uživatelský účet deaktivován
+        user_suspended:
+          label: Uživatelský účet suspendován
+        user_test_notification:
+          label: Testovací notifikace
+        user_totp_recovery_code_used:
+          label: Použit obnovovací kód TOTP
+        vps_dataset_expanded:
+          label: Dataset VPS rozšířen
+        vps_dataset_shrunk:
+          label: Dataset VPS zmenšen
+        vps_dns_resolver_changed:
+          label: DNS resolver VPS změněn
+        vps_incident_report:
+          label: Incident
+        vps_migration_begun:
+          label: Migrace VPS zahájena
+        vps_migration_finished:
+          label: Migrace VPS dokončena
+        vps_migration_planned:
+          label: Migrace VPS naplánována
+        vps_network_disabled:
+          label: Síť VPS zakázána
+        vps_network_enabled:
+          label: Síť VPS povolena
+        vps_oom_prevention:
+          label: Prevence OOM
+        vps_oom_report:
+          label: OOM report
+        vps_replaced:
+          label: VPS nahrazeno
+        vps_resources_changed:
+          label: Prostředky VPS změněny
+        vps_resumed:
+          label: VPS obnoveno
+        vps_stopped_over_quota:
+          label: VPS zastaveno kvůli překročení kvóty
+        vps_suspended:
+          label: VPS suspendováno
     resources:
       action_state:
         attributes:
