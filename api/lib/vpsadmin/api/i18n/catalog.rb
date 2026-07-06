@@ -261,6 +261,7 @@ module VpsAdmin
           errors.concat(interpolation_errors)
           errors.concat(source_catalog_errors)
           errors.concat(resource_key_collision_errors)
+          errors.concat(runtime_model_errors)
 
           return true if errors.empty?
 
@@ -463,7 +464,7 @@ module VpsAdmin
         end
 
         def runtime_i18n_keys
-          VpsAdmin::API::Authentication::OAuth2Config.i18n_keys
+          VpsAdmin::API::Authentication::OAuth2Config.i18n_keys + ::Transaction.transaction_label_keys
         end
 
         def runtime_i18n_defaults
@@ -474,6 +475,11 @@ module VpsAdmin
           ::TransactionChain.transaction_chain_label_defaults.merge(
             ::TransactionChain.concern_class_label_defaults
           )
+        end
+
+        def runtime_model_errors
+          ::Transaction.transaction_label_errors +
+            ::TransactionChain.transaction_chain_label_errors
         end
 
         def runtime_parameter_metadata_items(api)

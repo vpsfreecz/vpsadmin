@@ -10,6 +10,7 @@ module VpsAdmin::API::Resources
       resource User, label: 'User', value_label: :login
       integer :type, db_name: :handle
       string :name
+      string :label
       resource VPS, label: 'VPS', value_label: :hostname
       resource Transaction, name: :depends_on, label: 'Depends on', value_label: :name
       bool :urgent

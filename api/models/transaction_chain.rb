@@ -35,6 +35,14 @@ class TransactionChain < ApplicationRecord
     'Vps' => 'VPS'
   }.freeze
 
+  LABEL_OPTIONAL_CLASSES = %w[
+    TransactionChains::Lifetimes::NotImplemented
+    TransactionChains::NetworkInterface::Veth::Base
+    TransactionChains::SnapshotInPool::FreeClone
+    TransactionChains::SnapshotInPool::UseClone
+    TransactionChains::Vps::Migrate::Base
+  ].freeze
+
   has_many :transactions
   has_many :transaction_chain_concerns, dependent: :delete_all
   belongs_to :user
@@ -180,6 +188,14 @@ class TransactionChain < ApplicationRecord
       next if klass.name.nil? || klass.label.nil?
 
       ret[klass.label_i18n_key] = klass.label
+    end
+  end
+
+  def self.transaction_chain_label_errors
+    descendants.filter_map do |klass|
+      next if klass.name.nil? || klass.label || LABEL_OPTIONAL_CLASSES.include?(klass.name)
+
+      "#{klass.name}: missing label"
     end
   end
 

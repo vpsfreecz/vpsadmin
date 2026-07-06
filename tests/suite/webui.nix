@@ -2031,6 +2031,7 @@ import ../make-test.nix (
            #{readonly_chain_time})
       SQL
       readonly_transaction_id = ActiveRecord::Base.connection.select_value('SELECT LAST_INSERT_ID()')
+      readonly_transaction_label = Transaction.find(readonly_transaction_id).label
 
       webui_transaction_names = %w[
         webui_tx_queued
@@ -2119,6 +2120,7 @@ import ../make-test.nix (
           'progress' => chain.progress,
           'transactionId' => tx&.id,
           'transactionName' => tx&.name,
+          'transactionLabel' => tx&.label,
           'transactionType' => tx&.handle,
           'transactionDone' => tx&.done,
           'transactionSuccess' => tx&.status,
@@ -4495,6 +4497,7 @@ import ../make-test.nix (
         'transactionChain' => {
           'id' => readonly_chain_id.to_i,
           'transactionId' => readonly_transaction_id.to_i,
+          'transactionLabel' => readonly_transaction_label,
           'name' => 'webui_readonly',
           'label' => 'New login',
           'state' => 'done'

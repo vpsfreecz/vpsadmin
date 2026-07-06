@@ -323,7 +323,7 @@ function chain_transactions($chain_id)
         $xtpl->table_td($t->user_id ? ($t->user_id . ' <a href="?page=adminm&action=edit&id=' . $t->user_id . '">' . $t->user->login . '</a>') : '---');
         $xtpl->table_td($t->node->domain_name);
         $xtpl->table_td($t->vps_id ? '<a href="?page=adminvps&action=info&veid=' . $t->vps_id . '">' . $t->vps_id . '</a>' : '---');
-        $xtpl->table_td($t->name . ' (' . $t->type . ')');
+        $xtpl->table_td(h($t->label) . ' (' . $t->type . ')');
         $xtpl->table_td(($t->urgent ? '<img src="template/icons/warning.png" alt="' . _('Urgent') . '" title="' . _('Urgent') . '"> ' : '') . $t->priority);
         $xtpl->table_td(h(transaction_done_label($t->done)));
         $xtpl->table_td($t->success);

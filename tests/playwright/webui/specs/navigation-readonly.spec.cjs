@@ -101,7 +101,9 @@ test('user transaction log opens and can filter to an owned chain', async ({ pag
   await expect(page.locator('#content-in')).toContainText(
     String(fixtures.transactionChain.transactionId),
   );
-  await expect(page.locator('#content-in')).toContainText('NoOp');
+  await expect(page.locator('#content-in')).toContainText(
+    fixtures.transactionChain.transactionLabel,
+  );
 
   await logout(page, fixtures.user.username);
 });

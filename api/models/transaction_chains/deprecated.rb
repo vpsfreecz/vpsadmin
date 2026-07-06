@@ -1,12 +1,16 @@
 module TransactionChains
   class Deprecated < ::TransactionChain
+    label 'Deprecated'
+
     def link_chain(*_)
       raise "Transaction chain #{self.class.name} has been deprecated"
     end
   end
 
   module Dataset
-    class SetUserNamespaceMap < Deprecated; end
+    class SetUserNamespaceMap < Deprecated
+      label 'Set user namespace map'
+    end
   end
 
   module Vps
@@ -14,23 +18,44 @@ module TransactionChains
       label 'Apply config'
     end
 
-    class AddIp < Deprecated; end
-    class DelIp < Deprecated; end
-    class CreateVeth < Deprecated; end
-    class RemoveVeth < Deprecated; end
+    class AddIp < Deprecated
+      label 'Add IP'
+    end
 
-    class SetUserNamespaceMap < Deprecated; end
+    class DelIp < Deprecated
+      label 'Delete IP'
+    end
 
-    class ShaperChange < Deprecated; end
-    class ShaperSet < Deprecated; end
-    class ShaperUnset < Deprecated; end
+    class CreateVeth < Deprecated
+      label 'Create veth'
+    end
+
+    class RemoveVeth < Deprecated
+      label 'Remove veth'
+    end
+
+    class SetUserNamespaceMap < Deprecated
+      label 'Set user namespace map'
+    end
+
+    class ShaperChange < Deprecated
+      label 'Change shaper'
+    end
+
+    class ShaperSet < Deprecated
+      label 'Set shaper'
+    end
+
+    class ShaperUnset < Deprecated
+      label 'Unset shaper'
+    end
 
     class MountSnapshot < Deprecated
       label 'Mount snapshot'
     end
 
     class UmountSnapshot < Deprecated
-      label 'Unount snapshot'
+      label 'Unmount snapshot'
     end
 
     module Clone
@@ -73,8 +98,13 @@ module TransactionChains
   end
 
   module IntegrityCheck
-    class Cluster < Deprecated; end
-    class Node < Deprecated; end
+    class Cluster < Deprecated
+      label 'Integrity check cluster'
+    end
+
+    class Node < Deprecated
+      label 'Integrity check node'
+    end
   end
 
   module Cluster

@@ -3422,7 +3422,7 @@ cs:
           vps: VPS
       labels:
         branch:
-          destroy: Smazat branch datasetu
+          destroy: Smazat větev datasetu
         cluster:
           generate_known_hosts: known_hosts
           generate_migration_keys: Migrační klíče
@@ -3441,6 +3441,7 @@ cs:
           rotate: Rotace
           send: Odeslat
           set: Nastavit vlastnosti
+          set_user_namespace_map: Nastavit mapu user namespace
           snapshot: Snapshot
           transfer: Přenos
         dataset_in_pool:
@@ -3448,6 +3449,7 @@ cs:
           detach_backup_heads: Odpojit zálohy
         dataset_tree:
           destroy: Smazat strom datasetů
+        deprecated: Deprecated
         dns_resolver:
           destroy: Smazat
           update: Upravit
@@ -3482,6 +3484,9 @@ cs:
           process: Incident
           reply: 'Re: incident'
           send: Incident
+        integrity_check:
+          cluster: Kontrola integrity clusteru
+          node: Kontrola integrity nodu
         ip:
           allocate: Přidělit IP objektu
           free: Uvolnit IP z objektu
@@ -3560,6 +3565,7 @@ cs:
           disuse: Přestat používat userns
           use: Použít userns
         vps:
+          add_ip: Přidat IP
           apply_config: Aplikovat konfiguraci
           autostart: Autostart
           block: Blokovat
@@ -3569,6 +3575,8 @@ cs:
             vz_to_os: Klonovat
             vz_to_vz: Klonovat
           create: Vytvořit
+          create_veth: Vytvořit veth
+          del_ip: Smazat IP
           deploy_public_key: SSH klíč
           deploy_user_data: User data
           destroy: Smazat
@@ -3590,12 +3598,17 @@ cs:
           oom_reports: OOM reporty
           passwd: Heslo
           reinstall: Přeinstalovat
+          remove_veth: Odebrat veth
           replace:
             os: Prohodit
           restart: Restartovat
           restore: Obnovit
           revive: Oživit
           set_resources: Zdroje
+          set_user_namespace_map: Nastavit mapu user namespace
+          shaper_change: Změnit shaper
+          shaper_set: Nastavit shaper
+          shaper_unset: Zrušit shaper
           shrink_dataset: Zmenšit
           soft_delete: Soft delete
           start: Spustit
@@ -3612,3 +3625,111 @@ cs:
           create: Vytvořit
           delete: Smazat
           update: Upravit
+    transactions:
+      labels:
+        dns_server_reload: Reloadovat DNS server
+        dns_zone_add_servers: Přidat DNS servery
+        dns_zone_create: Vytvořit DNS zónu
+        dns_zone_create_records: Vytvořit DNS záznamy
+        dns_zone_delete_records: Smazat DNS záznamy
+        dns_zone_destroy: Smazat DNS zónu
+        dns_zone_remove_servers: Odebrat DNS servery
+        dns_zone_update: Upravit DNS zónu
+        dns_zone_update_records: Upravit DNS záznamy
+        export_add_hosts: Přidat hosty exportu
+        export_create: Vytvořit export
+        export_del_hosts: Odebrat hosty exportu
+        export_destroy: Smazat export
+        export_disable: Vypnout export
+        export_enable: Zapnout export
+        export_set: Upravit export
+        mail_send: Odeslat e-mail
+        maintenance_window_in_or_fail: Ověřit maintenance window
+        maintenance_window_wait: Čekat na maintenance window
+        netif_create_veth_routed: Vytvořit routovaný veth
+        netif_disable: Vypnout síťové rozhraní
+        netif_enable: Zapnout síťové rozhraní
+        netif_host_addr_add: Přidat IP adresu hostu
+        netif_host_addr_del: Odebrat IP adresu hostu
+        netif_remove_veth_routed: Odebrat routovaný veth
+        netif_rename: Přejmenovat síťové rozhraní
+        netif_set_shaper: Nastavit shaper sítě
+        network_register: Registrovat síť
+        pool_authorize_rsync_key: Autorizovat rsync klíč
+        pool_authorize_send_key: Autorizovat send klíč
+        pool_generate_send_key: Vygenerovat send klíč
+        pool_revoke_rsync_key: Odvolat rsync klíč
+        queue_release: Uvolnit frontu
+        queue_reserve: Rezervovat frontu
+        storage_activate_snapshot_clone: Aktivovat klon snapshotu
+        storage_apply_rollback: Provést rollback
+        storage_clone_snapshot: Klonovat snapshot
+        storage_clone_snapshot_name: Nastavit název klonu snapshotu
+        storage_create_branch_dataset: Vytvořit větev datasetu
+        storage_create_dataset: Vytvořit dataset
+        storage_create_dataset_tree: Vytvořit strom datasetu
+        storage_create_pool: Vytvořit pool
+        storage_create_snapshot: Vytvořit snapshot
+        storage_create_snapshots: Vytvořit snapshoty
+        storage_deactivate_snapshot_clone: Deaktivovat klon snapshotu
+        storage_destroy_branch: Smazat větev datasetu
+        storage_destroy_dataset: Smazat dataset
+        storage_destroy_dataset_tree: Smazat strom datasetu
+        storage_destroy_snapshot: Smazat snapshot
+        storage_download_snapshot: Stáhnout snapshot
+        storage_ensure_ugid_offset: Zajistit UGID offset
+        storage_inherit_property: Zdědit vlastnost
+        storage_local_send: Odeslat dataset lokálně
+        storage_prepare_rollback: Připravit rollback
+        storage_recv: Přijmout dataset
+        storage_recv_check: Ověřit přijatý dataset
+        storage_remove_clone: Odebrat klon
+        storage_remove_download: Odebrat download
+        storage_rename_dataset: Přejmenovat dataset
+        storage_rollback: Provést rollback datasetu
+        storage_rsync_dataset: Synchronizovat dataset přes rsync
+        storage_send: Odeslat dataset
+        storage_set_canmount: Nastavit canmount
+        storage_set_dataset: Nastavit vlastnosti datasetu
+        userns_map_disuse: Přestat používat mapu user namespace
+        userns_map_use: Použít mapu user namespace
+        utils_no_op: Bez operace
+        vps_apply_user_data: Aplikovat User data
+        vps_autostart: Nastavit autostart
+        vps_boot: Boot VPS
+        vps_chown: Změnit vlastníka VPS
+        vps_copy: Kopírovat VPS
+        vps_create: Vytvořit VPS
+        vps_deploy_public_key: Nahrát veřejný klíč
+        vps_deploy_user_data: Nahrát User data
+        vps_destroy: Smazat VPS
+        vps_dns_resolver: Nastavit DNS resolver
+        vps_features: Nastavit features VPS
+        vps_hostname: Nastavit Hostname
+        vps_map_mode: Nastavit režim mapování
+        vps_mount: Mount VPS
+        vps_mounts: Upravit Mounty
+        vps_os_template: Nastavit OS template
+        vps_passwd: Změnit heslo
+        vps_populate_config: Vygenerovat konfiguraci VPS
+        vps_recover_cleanup: Uklidit po recovery
+        vps_reinstall: Přeinstalovat VPS
+        vps_remove_config: Smazat konfiguraci VPS
+        vps_resources: Nastavit zdroje VPS
+        vps_restart: Restartovat VPS
+        vps_route_add: Přidat routu
+        vps_route_del: Smazat routu
+        vps_send_cleanup: Uklidit po sendu
+        vps_send_config: Odeslat konfiguraci VPS
+        vps_send_rollback_config: Odeslat rollback konfiguraci
+        vps_send_rootfs: Odeslat rootfs
+        vps_send_state: Odeslat stav VPS
+        vps_send_sync: Synchronizovat send
+        vps_shaper_root_change: Změnit root shaper
+        vps_start: Spustit VPS
+        vps_start_menu: Nastavit Start menu
+        vps_stop: Stop VPS
+        vps_umount: Unmount VPS
+        vps_unmanage_dns_resolver: Přestat spravovat DNS resolver
+        vps_unmanage_hostname: Přestat spravovat Hostname
+        vps_wait_for_routes: Čekat na routy

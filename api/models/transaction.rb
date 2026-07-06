@@ -60,12 +60,57 @@ class Transaction < ApplicationRecord
     end
 
     def register_type(t, klass)
-      @types ||= {}
-      @types[t] = klass
+      type_registry[t] = klass
     end
 
     def for_type(t)
-      @types[t]
+      type_registry[t]
+    end
+
+    def registered_types
+      type_registry.values.uniq.sort_by { |klass| [klass.t_name.to_s, klass.name.to_s] }
+    end
+
+    def transaction_label_keys
+      registered_types.filter_map do |klass|
+        next unless klass.t_name
+
+        klass.label_i18n_key
+      end
+    end
+
+    def transaction_label_errors
+      descendants.flat_map do |klass|
+        next [] unless klass.name
+        next [] if klass.t_name.nil? && klass.t_type.nil?
+
+        errors = []
+        errors << "#{klass.name}: missing t_name" if klass.t_name.nil?
+        errors << "#{klass.name}: missing t_type" if klass.t_type.nil?
+        errors
+      end
+    end
+
+    def label_i18n_key
+      raise "#{name}: missing t_name" unless t_name
+
+      "transactions.labels.#{t_name}"
+    end
+
+    def localized_label(default: nil)
+      VpsAdmin::API::I18n.t(label_i18n_key, default: default || default_label)
+    end
+
+    def default_label
+      return t_name.to_s.humanize if t_name
+
+      name.to_s.demodulize.underscore.humanize
+    end
+
+    private
+
+    def type_registry
+      @type_registry ||= {}
     end
   end
 
@@ -146,6 +191,16 @@ class Transaction < ApplicationRecord
 
   def name
     self.class.for_type(handle).to_s.demodulize
+  end
+
+  def label
+    klass = self.class.for_type(handle)
+    return name unless klass
+
+    default = name
+    default = klass.default_label if default.to_s.empty?
+
+    klass.localized_label(default:)
   end
 
   # Configure transaction confirmations - objects in the database

@@ -82,7 +82,7 @@ test('user can filter own transaction chains and transactions', async ({ page })
 
   const txRow = transactionRow(page, chain.id, chain.transactionId);
   await expect(txRow).toBeVisible();
-  await expect(txRow).toContainText(chain.transactionName);
+  await expect(txRow).toContainText(chain.transactionLabel);
   await expect(txRow).toContainText(chain.transactionDone);
   await expect(txRow).toContainText(String(chain.transactionSuccess));
 
@@ -130,7 +130,7 @@ test('admin sees transaction user filters, session links, and detailed payloads'
 
   const txRow = transactionRow(page, chain.id, chain.transactionId);
   await expect(txRow).toBeVisible();
-  await expect(txRow).toContainText(`${chain.transactionName} (${chain.transactionType})`);
+  await expect(txRow).toContainText(`${chain.transactionLabel} (${chain.transactionType})`);
   await expect(page.locator('#content-in')).toContainText('Input');
   await expect(page.locator('#content-in')).toContainText('Output');
   await expect(page.locator('#content-in')).toContainText(chain.fixture);

@@ -3446,6 +3446,7 @@ en:
           rotate: Rotate
           send: Send
           set: Set properties
+          set_user_namespace_map: Set user namespace map
           snapshot: Snapshot
           transfer: Transfer
         dataset_in_pool:
@@ -3453,6 +3454,7 @@ en:
           detach_backup_heads: Detach backups
         dataset_tree:
           destroy: Destroy dataset tree
+        deprecated: Deprecated
         dns_resolver:
           destroy: Destroy
           update: Update
@@ -3487,6 +3489,9 @@ en:
           process: Incident report
           reply: 'Re: incident'
           send: Incident report
+        integrity_check:
+          cluster: Integrity check cluster
+          node: Integrity check node
         ip:
           allocate: Allocate IP to object
           free: Free IP from object
@@ -3565,6 +3570,7 @@ en:
           disuse: Disuse userns
           use: Use userns
         vps:
+          add_ip: Add IP
           apply_config: Apply config
           autostart: Autostart
           block: Block
@@ -3574,6 +3580,8 @@ en:
             vz_to_os: Clone
             vz_to_vz: Clone
           create: Create
+          create_veth: Create veth
+          del_ip: Delete IP
           deploy_public_key: Pubkey
           deploy_user_data: User data
           destroy: Destroy
@@ -3595,12 +3603,17 @@ en:
           oom_reports: OOM Reports
           passwd: Password
           reinstall: Reinstall
+          remove_veth: Remove veth
           replace:
             os: Replace
           restart: Restart
           restore: Restore
           revive: Revive
           set_resources: Resources
+          set_user_namespace_map: Set user namespace map
+          shaper_change: Change shaper
+          shaper_set: Set shaper
+          shaper_unset: Unset shaper
           shrink_dataset: Shrink
           soft_delete: Soft delete
           start: Start
@@ -3609,7 +3622,7 @@ en:
           swap: Swap
           umount: Umount
           umount_dataset: Umount dataset
-          umount_snapshot: Unount snapshot
+          umount_snapshot: Unmount snapshot
           unblock: Unblock
           update: Modify
           update_mount: Mount*
@@ -3617,3 +3630,111 @@ en:
           create: Create
           delete: Delete
           update: Update
+    transactions:
+      labels:
+        dns_server_reload: Reload DNS server
+        dns_zone_add_servers: Add DNS servers
+        dns_zone_create: Create DNS zone
+        dns_zone_create_records: Create DNS records
+        dns_zone_delete_records: Delete DNS records
+        dns_zone_destroy: Delete DNS zone
+        dns_zone_remove_servers: Remove DNS servers
+        dns_zone_update: Update DNS zone
+        dns_zone_update_records: Update DNS records
+        export_add_hosts: Add export hosts
+        export_create: Create export
+        export_del_hosts: Remove export hosts
+        export_destroy: Delete export
+        export_disable: Disable export
+        export_enable: Enable export
+        export_set: Update export
+        mail_send: Send mail
+        maintenance_window_in_or_fail: Check maintenance window
+        maintenance_window_wait: Wait for maintenance window
+        netif_create_veth_routed: Create routed veth
+        netif_disable: Disable network interface
+        netif_enable: Enable network interface
+        netif_host_addr_add: Add host IP address
+        netif_host_addr_del: Remove host IP address
+        netif_remove_veth_routed: Remove routed veth
+        netif_rename: Rename network interface
+        netif_set_shaper: Set network shaper
+        network_register: Register network
+        pool_authorize_rsync_key: Authorize rsync key
+        pool_authorize_send_key: Authorize send key
+        pool_generate_send_key: Generate send key
+        pool_revoke_rsync_key: Revoke rsync key
+        queue_release: Release queue
+        queue_reserve: Reserve queue
+        storage_activate_snapshot_clone: Activate snapshot clone
+        storage_apply_rollback: Apply rollback
+        storage_clone_snapshot: Clone snapshot
+        storage_clone_snapshot_name: Set snapshot clone name
+        storage_create_branch_dataset: Create dataset branch
+        storage_create_dataset: Create dataset
+        storage_create_dataset_tree: Create dataset tree
+        storage_create_pool: Create pool
+        storage_create_snapshot: Create snapshot
+        storage_create_snapshots: Create snapshots
+        storage_deactivate_snapshot_clone: Deactivate snapshot clone
+        storage_destroy_branch: Delete dataset branch
+        storage_destroy_dataset: Delete dataset
+        storage_destroy_dataset_tree: Delete dataset tree
+        storage_destroy_snapshot: Delete snapshot
+        storage_download_snapshot: Download snapshot
+        storage_ensure_ugid_offset: Ensure UGID offset
+        storage_inherit_property: Inherit property
+        storage_local_send: Send dataset locally
+        storage_prepare_rollback: Prepare rollback
+        storage_recv: Receive dataset
+        storage_recv_check: Check received dataset
+        storage_remove_clone: Remove clone
+        storage_remove_download: Remove download
+        storage_rename_dataset: Rename dataset
+        storage_rollback: Roll back dataset
+        storage_rsync_dataset: Rsync dataset
+        storage_send: Send dataset
+        storage_set_canmount: Set canmount
+        storage_set_dataset: Set dataset properties
+        userns_map_disuse: Stop using user namespace map
+        userns_map_use: Use user namespace map
+        utils_no_op: No-op
+        vps_apply_user_data: Apply User data
+        vps_autostart: Set autostart
+        vps_boot: Boot VPS
+        vps_chown: Change VPS owner
+        vps_copy: Copy VPS
+        vps_create: Create VPS
+        vps_deploy_public_key: Deploy public key
+        vps_deploy_user_data: Deploy User data
+        vps_destroy: Delete VPS
+        vps_dns_resolver: Set DNS resolver
+        vps_features: Set VPS features
+        vps_hostname: Set Hostname
+        vps_map_mode: Set mapping mode
+        vps_mount: Mount VPS
+        vps_mounts: Update Mounts
+        vps_os_template: Set OS template
+        vps_passwd: Change password
+        vps_populate_config: Populate VPS config
+        vps_recover_cleanup: Clean up recovery
+        vps_reinstall: Reinstall VPS
+        vps_remove_config: Remove VPS config
+        vps_resources: Set VPS resources
+        vps_restart: Restart VPS
+        vps_route_add: Add route
+        vps_route_del: Delete route
+        vps_send_cleanup: Clean up send
+        vps_send_config: Send VPS config
+        vps_send_rollback_config: Send rollback config
+        vps_send_rootfs: Send rootfs
+        vps_send_state: Send VPS state
+        vps_send_sync: Synchronize send
+        vps_shaper_root_change: Change root shaper
+        vps_start: Start VPS
+        vps_start_menu: Set Start menu
+        vps_stop: Stop VPS
+        vps_umount: Unmount VPS
+        vps_unmanage_dns_resolver: Unmanage DNS resolver
+        vps_unmanage_hostname: Unmanage Hostname
+        vps_wait_for_routes: Wait for routes

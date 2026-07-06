@@ -43,9 +43,12 @@ Always translate with context. The same English word can mean different things:
   the API locale files, because both API clients and the WebUI display them.
   The WebUI must not maintain separate PHP-only or JavaScript-only translations
   for these labels.
+- Transaction labels are translated in the API locale files and rendered by
+  the WebUI from the API-provided `label` field.
 - Security advisory `mitigated` state is `ošetřeno`, not a literal
   `zmírněno`.
 - `Dataset`/`Datasets` are `Dataset`/`Datasety`.
+- Dataset branches are `větev datasetu`, never `branch datasetu`.
 - ZFS dataset property labels use a natural Czech label followed by the exact
   property key in parentheses, e.g. `Využitý prostor (used)` and
   `Referencovaný prostor (referenced)`.
