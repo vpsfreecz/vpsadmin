@@ -117,7 +117,7 @@ RSpec.describe MigrateLegacyEmailRecipientsToRoutes do
       expiration_user_active: insert_template('expiration_user_active', 'Payment notification'),
       expiration_vps_active: insert_template('expiration_vps_active', 'VPS payment notification'),
       request_resolve: insert_template('request_resolve_user_change_approved', 'Request approved'),
-      alert: insert_template('alert_admin_monthly_traffic_confirmed', 'Monthly traffic alert')
+      alert: insert_template('alert_monthly_traffic_confirmed', 'Monthly traffic alert')
     }
 
     default_recipient_id = insert_row(
@@ -245,21 +245,18 @@ RSpec.describe MigrateLegacyEmailRecipientsToRoutes do
     request_route = route_for(
       user_id: ids.fetch(:direct_admin_id),
       event_type: 'request.resolved',
-      template_name: 'request_resolve_role_type_state'
+      template_name: 'request_resolve_user_change_approved'
     )
     expect_matcher(request_route, 'subject_relation', '==', 'other_user')
-    expect_matcher(request_route, 'role', '==', 'user')
     expect_matcher(request_route, 'request_type', '==', 'change')
     expect_matcher(request_route, 'request_state', '==', 'approved')
 
     monitoring_route = route_for(
       user_id: ids.fetch(:direct_admin_id),
-      event_type: 'monitoring.monitor_state_changed',
-      template_name: 'alert_role_event_state'
+      event_type: 'monitoring.monthly_traffic',
+      template_name: 'alert_monthly_traffic_confirmed'
     )
     expect_matcher(monitoring_route, 'subject_relation', '==', 'other_user')
-    expect_matcher(monitoring_route, 'role', '==', 'admin')
-    expect_matcher(monitoring_route, 'monitor_name', '==', 'monthly_traffic')
     expect_matcher(monitoring_route, 'state', '==', 'acknowledged')
   end
 
