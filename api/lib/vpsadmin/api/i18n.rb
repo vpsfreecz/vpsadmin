@@ -9,7 +9,7 @@ module VpsAdmin
 
       class << self
         def setup
-          ::I18n.load_path |= Dir[File.join(locale_dir, '*.yml')]
+          ::I18n.load_path |= locale_paths
         end
 
         def configure_server(api)
@@ -39,10 +39,28 @@ module VpsAdmin
           File.expand_path('locales', __dir__)
         end
 
+        def external_locale_dir
+          root =
+            if VpsAdmin::API.respond_to?(:root)
+              VpsAdmin::API.root
+            else
+              File.expand_path('../../..', __dir__)
+            end
+
+          File.join(root, 'config', 'locales')
+        end
+
+        def locale_paths
+          [
+            Dir[File.join(locale_dir, '*.yml')],
+            Dir[File.join(external_locale_dir, '*.yml')]
+          ].flatten
+        end
+
         def available_locales
-          locales = Dir[File.join(locale_dir, '*.yml')].map do |path|
+          locales = locale_paths.map do |path|
             File.basename(path, '.yml').to_sym
-          end
+          end.uniq
           other_locales = locales.reject { |locale| locale == DEFAULT_LOCALE }.sort
           [DEFAULT_LOCALE] + other_locales
         end
