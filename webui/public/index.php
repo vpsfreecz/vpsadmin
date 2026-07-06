@@ -325,7 +325,7 @@ $xtpl->logbox(
 );
 
 if ($config) {
-    $xtpl->adminbox($config->get("webui", "sidebar"));
+    $xtpl->adminbox($config->getLocalized("webui", "sidebar"));
 }
 
 webui_render_sidebar_tips();

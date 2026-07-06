@@ -9,9 +9,18 @@ VpsAdmin::API::Plugin.register(:webui) do
   config do
     SysConfig.register :webui, :base_url, String, min_user_level: 0
     SysConfig.register :webui, :document_title, String, min_user_level: 0
-    SysConfig.register :webui, :noticeboard, Text, min_user_level: 0
-    SysConfig.register :webui, :index_info_box_title, String, min_user_level: 0
-    SysConfig.register :webui, :index_info_box_content, Text, min_user_level: 0
+    SysConfig.register :webui, :noticeboard, Hash,
+                       min_user_level: 0,
+                       localized: true
+    SysConfig.register :webui, :index_info_box_title, Hash,
+                       min_user_level: 0,
+                       localized: true
+    SysConfig.register :webui, :index_info_box_content, Hash,
+                       min_user_level: 0,
+                       localized: true
+    SysConfig.register :webui, :sidebar, Hash,
+                       min_user_level: 0,
+                       localized: true
     SysConfig.register :webui, :munin_url, String, min_user_level: 0
     SysConfig.register :webui, :goresheat_url, String, min_user_level: 0
 

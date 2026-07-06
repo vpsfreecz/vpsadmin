@@ -49,7 +49,7 @@ if (isAdmin()) {
 
 $xtpl->table_add_category('');
 
-$noticeboard = $config->get("webui", "noticeboard");
+$noticeboard = $config->getLocalized("webui", "noticeboard");
 
 if ($noticeboard) {
     $xtpl->table_td(nl2br($noticeboard), false, false, 2);
@@ -227,7 +227,7 @@ foreach ($nodes as $node) {
 
 $xtpl->table_out();
 
-$xtpl->table_add_category($config->get('webui', 'index_info_box_title'));
-$xtpl->table_td($config->get('webui', 'index_info_box_content'));
+$xtpl->table_add_category($config->getLocalized('webui', 'index_info_box_title'));
+$xtpl->table_td($config->getLocalized('webui', 'index_info_box_content'));
 $xtpl->table_tr();
 $xtpl->table_out();

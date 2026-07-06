@@ -16,10 +16,16 @@ class SystemConfig implements Iterator
     private $catIterator;
     private $options;
     private $optIterator;
+    private $language;
 
-    public function __construct($api, $forceLoad = false)
+    public function __construct($api, $forceLoad = false, $language = null)
     {
         $this->api = $api;
+        $this->language = $language;
+
+        if (!$this->language && function_exists('webui_current_api_language')) {
+            $this->language = webui_current_api_language($GLOBALS['langs'] ?? null);
+        }
 
         $this->loadConfig($forceLoad);
         $this->setupIterator();
@@ -28,6 +34,11 @@ class SystemConfig implements Iterator
     public function get($cat, $name)
     {
         return $this->cfg[$cat][$name]['value'];
+    }
+
+    public function getLocalized($cat, $name)
+    {
+        return $this->cfg[$cat][$name]['localized_value'] ?? $this->get($cat, $name);
     }
 
     public function getType($cat, $name)
@@ -43,12 +54,19 @@ class SystemConfig implements Iterator
 
     protected function loadConfig($force)
     {
-        if (!$force && isset($_SESSION['sysconfig'])) {
-            return $this->cfg = $_SESSION['sysconfig'];
+        $cacheKey = $this->language ?: '_default';
+
+        if ($force) {
+            unset($_SESSION['sysconfig_by_language']);
+        }
+
+        if (!$force && isset($_SESSION['sysconfig_by_language'][$cacheKey])) {
+            return $this->cfg = $_SESSION['sysconfig_by_language'][$cacheKey];
         }
 
         $this->cfg = $this->fetchConfig();
-        $_SESSION['sysconfig'] = $this->cfg;
+        unset($_SESSION['sysconfig']);
+        $_SESSION['sysconfig_by_language'][$cacheKey] = $this->cfg;
     }
 
     protected function fetchConfig()
