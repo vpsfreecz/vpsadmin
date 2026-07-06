@@ -132,6 +132,9 @@
 	}
 
 	function checkChanges(chains, from) {
+		if (from >= chains.length)
+			return;
+
 		var i = from;
 
 		$("#transactions table tr:has(td)").slice(-1 * (10 - from)).each(function() {
@@ -158,17 +161,28 @@
 
 			var last = chains.last();
 			var count = 0;
-			var removeNum = $("#transactions table tr:has(td)").length;
+			var rows = $("#transactions table tr:has(td)");
+			var removeNum = rows.length;
+			var addNum = 0;
+			var foundCommon = false;
 
-			$("#transactions table tr:has(td)").each(function() {
+			rows.each(function() {
 				removeNum -= 1;
 				count += 1;
 
 				if (this.getAttribute("data-transaction-chain-id") == last.id) {
 					//console.log("found common chain", last.id);
+					foundCommon = true;
 					return false;
 				}
 			});
+
+			if (foundCommon) {
+				addNum = removeNum > 0 ? removeNum : chains.length - count;
+			} else {
+				removeNum = rows.length;
+				addNum = chains.length;
+			}
 
 			if (removeNum > 0) {
 				//console.log("will remove", removeNum, "elements");
@@ -178,13 +192,13 @@
 				});
 
 				setTimeout(function() {
-					addChains(chains, removeNum);
-					checkChanges(chains, removeNum);
+					addChains(chains, addNum);
+					checkChanges(chains, addNum);
 
 				}, 500);
 
-			} else if (chains.length < 10 && removeNum == 0 && count > 0) {
-				addChains(chains, chains.length - count);
+			} else if (addNum > 0) {
+				addChains(chains, addNum);
 				checkChanges(chains, 0);
 
 			} else {
