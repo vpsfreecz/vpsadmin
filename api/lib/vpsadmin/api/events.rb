@@ -46,8 +46,7 @@ module VpsAdmin::API
       :type,
       :example,
       :choices,
-      :block,
-      keyword_init: true
+      :block
     ) do
       def initialize(**kwargs)
         super
@@ -728,9 +727,13 @@ module VpsAdmin::API
     def localized_severity_description(type)
       return unless type.severity_description
 
+      family = type.name.to_s.split('.', 2).first
       I18n.t(
         "vpsadmin.events.types.#{i18n_key_fragment(type.name)}.severity_description",
-        default: type.severity_description
+        default: I18n.t(
+          "vpsadmin.events.types.#{family}.severity_description",
+          default: type.severity_description
+        )
       )
     end
 
@@ -753,6 +756,34 @@ module VpsAdmin::API
 
     def i18n_key_fragment(value)
       value.to_s.tr('.', '_')
+    end
+
+    def i18n_defaults
+      ret = {}
+
+      EventRouteMatcher::COMMON_FIELDS.each do |name, config|
+        ret["events.fields.common.#{name}.description"] = config.fetch(:description)
+      end
+
+      types.each do |type|
+        type_key = i18n_key_fragment(type.name)
+        ret["events.types.#{type_key}.label"] = type.label
+        if type.severity_description
+          ret["events.types.#{type_key}.severity_description"] = type.severity_description
+        end
+
+        type.fields.each do |field|
+          field_key = field.fetch(:name)
+          ret["events.fields.#{type_key}.#{field_key}.description"] = field.fetch(:description)
+        end
+      end
+
+      if defined?(VpsAdmin::API::Plugins::Monitoring::Events) &&
+         VpsAdmin::API::Plugins::Monitoring::Events.respond_to?(:i18n_defaults)
+        ret.merge!(VpsAdmin::API::Plugins::Monitoring::Events.i18n_defaults)
+      end
+
+      ret
     end
 
     def matchable_field_values(event, route_context: nil)
