@@ -4,6 +4,7 @@ on:
   push:
     paths:
       - "api/db/migrate/**"
+      - "plugins/*/api/db/migrate/**"
       - "api/spec/migration_helper.rb"
       - "api/spec/migrations/**"
       - "api/spec/support/db_setup.rb"
@@ -13,6 +14,7 @@ on:
   pull_request:
     paths:
       - "api/db/migrate/**"
+      - "plugins/*/api/db/migrate/**"
       - "api/spec/migration_helper.rb"
       - "api/spec/migrations/**"
       - "api/spec/support/db_setup.rb"
@@ -109,10 +111,11 @@ jobs:
           else
             git diff --name-only "${{ steps.base.outputs.ref }}...HEAD" -- \
               'api/db/migrate/*.rb' \
+              'plugins/*/api/db/migrate/*.rb' \
               'api/spec/migrations/*_spec.rb' \
               | ruby -ne '
                   path = $_.strip
-                  if path.start_with?("api/db/migrate/")
+                  if path.start_with?("api/db/migrate/") || path.match?(%r{\Aplugins/[^/]+/api/db/migrate/})
                     name = File.basename(path, ".rb")
                     puts "spec/migrations/#{name}_spec.rb"
                   elsif path.start_with?("api/spec/migrations/")

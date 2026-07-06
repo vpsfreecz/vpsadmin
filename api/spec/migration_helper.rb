@@ -24,6 +24,17 @@ module MigrationSpecSupport
 
     require path
   end
+
+  def plugin_migration_path(plugin, name)
+    File.expand_path("../../plugins/#{plugin}/api/db/migrate/#{name}.rb", __dir__)
+  end
+
+  def require_plugin_migration(plugin, name)
+    path = plugin_migration_path(plugin, name)
+    raise "Plugin migration #{plugin}/#{name.inspect} not found at #{path}" unless File.exist?(path)
+
+    require path
+  end
 end
 
 module MigrationSpecHelpers

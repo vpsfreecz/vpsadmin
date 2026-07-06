@@ -8,6 +8,11 @@ options = {
   mode: :cached
 }
 
+MIGRATION_PATHS = [
+  'api/db/migrate/*.rb',
+  'plugins/*/api/db/migrate/*.rb'
+].freeze
+
 OptionParser.new do |opts|
   opts.banner = 'Usage: tools/check_migration_specs.rb [--cached | --base REF [--head REF]]'
 
@@ -36,11 +41,11 @@ def added_migrations(options)
   output =
     case options.fetch(:mode)
     when :cached
-      git('diff', '--cached', '--name-status', '--diff-filter=A', '--', 'api/db/migrate/*.rb')
+      git('diff', '--cached', '--name-status', '--diff-filter=A', '--', *MIGRATION_PATHS)
     when :base
       base = options.fetch(:base)
       head = options[:head] || 'HEAD'
-      git('diff', '--name-status', '--diff-filter=A', "#{base}...#{head}", '--', 'api/db/migrate/*.rb')
+      git('diff', '--name-status', '--diff-filter=A', "#{base}...#{head}", '--', *MIGRATION_PATHS)
     else
       raise "unsupported mode #{options[:mode].inspect}"
     end
