@@ -1,3 +1,3 @@
-template :request_action_role do
+template :request_update_user do
   label 'Update request (user)'
 end

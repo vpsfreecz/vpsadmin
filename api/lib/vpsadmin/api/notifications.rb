@@ -862,7 +862,7 @@ module VpsAdmin::API
       return if test_notification_event?(event)
 
       delivery.template_name.presence&.to_sym ||
-        VpsAdmin::API::Events.template_name_for(event, action)
+        VpsAdmin::API::Events.template_name_for(event, action, delivery:)
     end
 
     def test_notification_event?(event)

@@ -421,6 +421,8 @@ function notifications_matcher_operator_descriptions($operators)
         '>=' => _('greater than or equal'),
         '<' => _('less than'),
         '<=' => _('less than or equal'),
+        'contains' => _('contains list item'),
+        'not_contains' => _('does not contain list item'),
     ];
     $ret = [];
 

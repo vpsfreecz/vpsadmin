@@ -129,7 +129,7 @@ RSpec.describe AddEvents do
     expect(boolish(account_route.fetch('continue'))).to be(false)
     expect(row_count(:event_route_matchers,
                      event_route_id: account_route.fetch('id'),
-                     field: 'recipient_roles',
+                     field: 'roles',
                      operator: 'contains',
                      value: 'account')).to eq(1)
 
@@ -141,7 +141,7 @@ RSpec.describe AddEvents do
     )
     expect(row_count(:event_route_matchers,
                      event_route_id: admin_route.fetch('id'),
-                     field: 'recipient_roles',
+                     field: 'roles',
                      operator: 'contains',
                      value: 'admin')).to eq(1)
 
@@ -194,7 +194,7 @@ RSpec.describe AddEvents do
       row_count(
         :event_route_matchers,
         event_route_id: route.fetch('id'),
-        field: 'recipient_roles',
+        field: 'roles',
         operator: 'contains',
         value: 'account'
       ) == 1
@@ -211,7 +211,7 @@ RSpec.describe AddEvents do
       row_count(
         :event_route_matchers,
         event_route_id: route.fetch('id'),
-        field: 'recipient_roles',
+        field: 'roles',
         operator: 'contains',
         value: 'admin'
       ) == 1

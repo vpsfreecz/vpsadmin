@@ -327,10 +327,14 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
       receiver_target_create = action_input_params('notification_receiver.target', :create)
       receiver_target_update = action_input_params('notification_receiver.target', :update)
       event_index = action_input_params(:event, :index)
+      expected_type_labels = VpsAdmin::API::Events.type_labels.except(
+        'monitoring.alert_chain',
+        'monitoring.spec_alert'
+      )
 
       expect(
         route_create.dig('event_type', 'validators', 'include', 'values')
-      ).to eq(VpsAdmin::API::Events.type_labels)
+      ).to eq(expected_type_labels)
       expect(
         route_create.dig('subject_scope', 'validators', 'include', 'values')
       ).to eq(::EventRoute.subject_scope_labels)
@@ -338,7 +342,7 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
         matcher_create.dig('field', 'validators', 'include', 'values')
       ).to include(
         'codename' => 'Incident report codename assigned by vpsAdmin',
-        'recipient_roles' => 'Template recipient roles available for this event',
+        'roles' => 'Notification roles declared by the event type',
         'subject_relation' => 'Relationship between route owner and event subject'
       )
       expect(
@@ -1382,11 +1386,19 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
     expect(dns['default_routed']).to be(false)
   end
 
-  it 'lists monitoring event types and fields when the plugin is enabled', requires_plugins: :monitoring do
+  it 'lists monitoring event types and fields registered by configuration', requires_plugins: :monitoring do
+    VpsAdmin::API::Plugins::Monitoring::Events.register_event(
+      'monitoring.spec_alert',
+      label: 'Spec monitoring alert',
+      template: :alert_monitoring_spec,
+      monitors: %i[spec_alert],
+      fields: %i[vps]
+    )
+
     as(SpecSeed.user) { json_get event_types_path }
 
     expect_status(200)
-    monitoring = event_types.detect { |row| row['name'] == 'monitoring.monitor_state_changed' }
+    monitoring = event_types.detect { |row| row['name'] == 'monitoring.spec_alert' }
     monitoring_fields = monitoring['fields'].index_by { |field| field['name'] }
     expect(monitoring['default_routed']).to be(true)
     expect(monitoring_fields.dig('monitor_name', 'description')).to eq('Internal name of the monitor definition')
@@ -1413,7 +1425,7 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
 
     event = Event.find(event_obj['id'])
     expect(event.user).to eq(SpecSeed.user)
-    expect(event.parameters).to eq('note' => 'from spec')
+    expect(event.parameters).to eq('note' => 'from spec', 'roles' => ['account'])
     expect(event.source_class).to eq(VpsAdmin::API::Resources::Event::Test::TEST_EVENT_SOURCE_CLASS)
     expect(event.event_deliveries.map(&:action)).to eq(['email'])
   end
