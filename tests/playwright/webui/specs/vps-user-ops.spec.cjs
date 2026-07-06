@@ -93,7 +93,7 @@ test.describe.serial('VPS user side operations and console coverage', () => {
     await bootConsoleRescue(page, vpsId, fixtures.osTemplates.reinstall.id);
     await runConsoleVpsAction(page, vpsId, 'restart', 'Restart', 'running');
     await runConsoleVpsAction(page, vpsId, 'force_restart', 'Reset', 'running');
-    await runConsoleVpsAction(page, vpsId, 'stop', 'Stop', 'stopped');
+    await runConsoleVpsAction(page, vpsId, 'stop', 'Shutdown', 'stopped');
     await runConsoleVpsAction(page, vpsId, 'start', 'Start', 'running');
     await runConsoleVpsAction(page, vpsId, 'force_stop', 'Poweroff', 'stopped');
 

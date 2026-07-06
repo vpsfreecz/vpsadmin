@@ -26,7 +26,7 @@ test.describe.serial('VPS browser lifecycle', () => {
 
     vpsId = await createVps(page, fixtures, hostname);
 
-    await runDetailAction(page, vpsId, 'stop', 'Stop VPS', 'stopped');
+    await runDetailAction(page, vpsId, 'stop', 'Shutdown VPS', 'stopped');
     await runDetailAction(page, vpsId, 'start', 'Start of', 'running');
     await runDetailAction(page, vpsId, 'restart', 'Restart of', 'running');
 

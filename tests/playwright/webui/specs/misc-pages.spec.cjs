@@ -226,7 +226,7 @@ test.describe.serial('miscellaneous webui page coverage', () => {
     const iframeRendered = await expectConsoleIframe(page, fixtures.vps.fixtures.support.id);
     test.skip(!iframeRendered, 'Fixture location has no remote console server');
 
-    for (const label of ['Start', 'Stop', 'Restart', 'Reset', 'Poweroff']) {
+    for (const label of ['Start', 'Shutdown', 'Restart', 'Reset', 'Poweroff']) {
       await expect(page.locator('#aside a', { hasText: label }).first()).toBeVisible();
     }
     await expect(page.locator('#aside button', { hasText: 'Generate password' })).toBeVisible();

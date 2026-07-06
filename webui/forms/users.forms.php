@@ -107,6 +107,7 @@ function list_user_sessions($user_id)
     $u = $api->user->find($user_id);
 
     $input = $api->user_session->index->getParameters('input');
+    $output = $api->user_session->show->getParameters('output');
     $pagination = new \Pagination\System(null, $api->user_session->index);
 
     $xtpl->title(_('Session log of') . ' <a href="?page=adminm&action=edit&id=' . $u->id . '">#' . $u->id . '</a> ' . $u->login);
@@ -262,20 +263,20 @@ function list_user_sessions($user_id)
         }
 
         $xtpl->table_td(
-            '<dl>'
-            . '<dt>Request count:</dt><dd>' . $s->request_count . '</dd>'
-            . '<dt>Last request at:</dt><dd>' . ($s->last_request_at ? tolocaltz($s->last_request_at) : '---') . '</dd>'
-            . '<dt>API IP address:</dt><dd>' . h($s->api_ip_addr) . '</dd>'
-            . '<dt>API IP PTR:</dt><dd>' . h($s->api_ip_ptr) . '</dd>'
-            . '<dt>Client IP address:</dt><dd>' . h($s->client_ip_addr) . '</dd>'
-            . '<dt>Client IP PTR:</dt><dd>' . h($s->client_ip_ptr) . '</dd>'
-            . '<dt>User agent:</dt><dd>' . h($s->user_agent) . '</dd>'
-            . '<dt>Client version:</dt><dd>' . h($s->client_version) . '</dd>'
-            . '<dt>Token:</dt><dd>' . ($s->token_fragment ? $s->token_fragment . '...' : '---') . '</dd>'
-            . '<dt>Token lifetime:</dt><dd>' . $s->token_lifetime . '</dd>'
-            . '<dt>Token interval:</dt><dd>' . $s->token_interval . '</dd>'
-            . '<dt>Scope:</dt><dd>' . h($s->scope) . '</dd>'
-            . '<dl>',
+            makeDefinitionList([
+                $output->request_count->label => $s->request_count,
+                $output->last_request_at->label => $s->last_request_at ? tolocaltz($s->last_request_at) : '---',
+                $output->api_ip_addr->label => $s->api_ip_addr,
+                $output->api_ip_ptr->label => $s->api_ip_ptr,
+                $output->client_ip_addr->label => $s->client_ip_addr,
+                $output->client_ip_ptr->label => $s->client_ip_ptr,
+                $output->user_agent->label => $s->user_agent,
+                $output->client_version->label => $s->client_version,
+                _('Token') => $s->token_fragment ? $s->token_fragment . '...' : '---',
+                $output->token_lifetime->label => $s->token_lifetime,
+                $output->token_interval->label => $s->token_interval,
+                $output->scope->label => $s->scope,
+            ], 'inline'),
             false,
             false,
             '10'
@@ -316,6 +317,21 @@ function user_session_edit_form($id)
     $xtpl->sbar_add('<br><img src="template/icons/m_edit.png"  title="' . _("Back to sessions") . '" />' . _('Back to sessions'), $_GET['return'] ?? ("?page=adminm&section=members&action=user_sessions&id={$_GET['id']}"));
 }
 
+function user_request_type_labels($includeAll = false)
+{
+    $labels = [
+        'registration' => _('registration'),
+        'change' => _('change'),
+    ];
+
+    return $includeAll ? (['all' => _('all')] + $labels) : $labels;
+}
+
+function user_request_type_label($type)
+{
+    return user_request_type_labels()[$type];
+}
+
 function approval_requests_list()
 {
     global $xtpl, $api;
@@ -341,19 +357,10 @@ function approval_requests_list()
     ]);
 
     $xtpl->form_add_input(_("Limit") . ':', 'text', '30', 'limit', $limit);
-    $xtpl->form_add_select(_("Type") . ':', 'type', [
-        "all" => _("all"),
-        "registration" => _("registration"),
-        "change" => _("change"),
-    ], $_GET["type"] ?? 'all');
-    $xtpl->form_add_select(_("State") . ':', 'state', [
-        "all" => _("all"),
-        "awaiting" => _("awaiting"),
-        "pending_correction" => _("pending correction"),
-        "approved" => _("approved"),
-        "denied" => _("denied"),
-        "ignored" => _("ignored"),
-    ], $_GET["state"] ?? "awaiting");
+
+    $stateParam = $api->user_request->registration->index->getParameters('input')->state;
+    $xtpl->form_add_select(_("Type") . ':', 'type', user_request_type_labels(true), $_GET["type"] ?? 'all');
+    $xtpl->form_add_select(_("State") . ':', 'state', ['all' => _('all')] + api_param_choices($stateParam), $_GET["state"] ?? "awaiting");
 
     $xtpl->form_add_input(_("IP address") . ':', 'text', '30', 'ip_addr', get_val("ip_addr"));
     $xtpl->form_add_input(_("Client IP PTR") . ':', 'text', '30', 'client_ip_ptr', get_val("client_ip_ptr"));
@@ -363,10 +370,10 @@ function approval_requests_list()
     $xtpl->form_out(_("Show"));
 
     $xtpl->table_add_category('#');
-    $xtpl->table_add_category('DATE');
-    $xtpl->table_add_category('TYPE');
-    $xtpl->table_add_category('STATE');
-    $xtpl->table_add_category('ADMIN');
+    $xtpl->table_add_category(_('DATE'));
+    $xtpl->table_add_category(_('TYPE'));
+    $xtpl->table_add_category(_('STATE'));
+    $xtpl->table_add_category(_('ADMIN'));
     $xtpl->table_add_category('');
     $xtpl->table_add_category('');
     $xtpl->table_add_category('');
@@ -432,8 +439,8 @@ function approval_requests_list()
 
         $xtpl->table_td('<a href="?page=adminm&action=request_details&id=' . $r->id . '&type=' . $type . '">#' . $r->id . '</a>');
         $xtpl->table_td(tolocaltz($r->created_at));
-        $xtpl->table_td($type);
-        $xtpl->table_td($r->state);
+        $xtpl->table_td(user_request_type_label($type));
+        $xtpl->table_td(api_param_choice_label($stateParam, $r->state));
         $xtpl->table_td($r->admin_id ? ('<a href="?page=adminm&action=edit&id=' . $r->admin_id . '&type=' . $type . '">' . $r->admin->login . '</a>') : '-');
         $xtpl->table_td('<a href="?page=adminm&action=request_details&id=' . $r->id . '&type=' . $type . '"><img src="template/icons/m_edit.png"  title="' . _("Details") . '" /></a>');
         $xtpl->table_td('<a href="?page=adminm&action=request_process&id=' . $r->id . '&type=' . $type . '&rule=approve&t=' . csrf_token() . '&next_url=' . $nextUrl . '">' . _("approve") . '</a>');
@@ -503,6 +510,7 @@ function approval_requests_details($type, $id)
     global $xtpl, $api;
 
     $r = $api->user_request->{$type}->show($id);
+    $stateParam = $api->user_request->{$type}->index->getParameters('input')->state;
 
     $xtpl->title(_("Request for approval details"));
 
@@ -518,11 +526,11 @@ function approval_requests_details($type, $id)
     $xtpl->table_tr();
 
     $xtpl->table_td(_("Type") . ':');
-    $xtpl->table_td($type == "registration" ? _("registration") : _("change"));
+    $xtpl->table_td(user_request_type_label($type));
     $xtpl->table_tr();
 
     $xtpl->table_td(_("State") . ':');
-    $xtpl->table_td($r->state);
+    $xtpl->table_td(api_param_choice_label($stateParam, $r->state));
     $xtpl->table_tr();
 
     $xtpl->table_td(_("Applicant") . ':');

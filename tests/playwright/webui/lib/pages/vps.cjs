@@ -695,7 +695,7 @@ async function stopVpsIfRunning(page, vpsId) {
 
   await acceptNextDialog(page);
   await stopAction.click();
-  await expectNotification(page, 'Stop VPS');
+  await expectNotification(page, 'Shutdown VPS');
   await waitForVpsTransactionsSettled(page, vpsId);
   await waitForVpsStatus(page, vpsId, 'stopped');
 }

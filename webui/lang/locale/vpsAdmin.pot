@@ -1582,7 +1582,7 @@ msgstr ""
 msgid "NFS server is stopped, the export cannot mounted."
 msgstr ""
 
-#: forms/export.forms.php forms/vps.forms.php pages/page_console.php
+#: forms/export.forms.php
 msgid "Stop"
 msgstr ""
 
@@ -2114,7 +2114,7 @@ msgstr ""
 msgid "Session"
 msgstr ""
 
-#: forms/object_history.forms.php
+#: forms/object_history.forms.php forms/vps.forms.php
 msgid "Data"
 msgstr ""
 
@@ -3090,14 +3090,6 @@ msgstr ""
 msgid "Back to sessions"
 msgstr ""
 
-#: forms/users.forms.php pages/page_adminm.php
-msgid "Requests for approval"
-msgstr ""
-
-#: forms/users.forms.php
-msgid "all"
-msgstr ""
-
 #: forms/users.forms.php
 msgid "registration"
 msgstr ""
@@ -3107,27 +3099,31 @@ msgid "change"
 msgstr ""
 
 #: forms/users.forms.php
-msgid "awaiting"
+msgid "all"
 msgstr ""
 
-#: forms/users.forms.php
-msgid "pending correction"
-msgstr ""
-
-#: forms/users.forms.php
-msgid "approved"
-msgstr ""
-
-#: forms/users.forms.php
-msgid "denied"
-msgstr ""
-
-#: forms/users.forms.php
-msgid "ignored"
+#: forms/users.forms.php pages/page_adminm.php
+msgid "Requests for approval"
 msgstr ""
 
 #: forms/users.forms.php
 msgid "Client IP PTR"
+msgstr ""
+
+#: forms/users.forms.php
+msgid "DATE"
+msgstr ""
+
+#: forms/users.forms.php
+msgid "TYPE"
+msgstr ""
+
+#: forms/users.forms.php
+msgid "STATE"
+msgstr ""
+
+#: forms/users.forms.php
+msgid "ADMIN"
 msgstr ""
 
 #: forms/users.forms.php
@@ -3899,8 +3895,8 @@ msgstr ""
 
 #: forms/vps.forms.php
 msgid ""
-"Optional script/cloud-init configuration which is run when the VPS is first "
-"started."
+"Optional script/cloud-init configuration which is applied when the VPS is "
+"first started."
 msgstr ""
 
 #: forms/vps.forms.php
@@ -3979,6 +3975,14 @@ msgstr ""
 msgid "Unable to restart"
 msgstr ""
 
+#: forms/vps.forms.php pages/page_adminvps.php pages/page_console.php
+msgid "Ask the VPS to shut down the system gracefully."
+msgstr ""
+
+#: forms/vps.forms.php pages/page_adminvps.php
+msgid "shutdown"
+msgstr ""
+
 #: forms/vps.forms.php
 msgid "Remote Console"
 msgstr ""
@@ -3988,7 +3992,7 @@ msgid "Migrate"
 msgstr ""
 
 #: forms/vps.forms.php
-msgid "Stop the VPS to be able to delete it"
+msgid "Shut down the VPS to be able to delete it"
 msgstr ""
 
 #: forms/vps.forms.php
@@ -4269,10 +4273,6 @@ msgid "Transfers in"
 msgstr ""
 
 #: forms/vps.forms.php
-msgid "Bytes"
-msgstr ""
-
-#: forms/vps.forms.php
 msgid "Packets"
 msgstr ""
 
@@ -4469,13 +4469,12 @@ msgid "Selected language is not available in the API."
 msgstr ""
 
 #: lib/login.lib.php
-msgid "Session expired"
+msgid "Session ended"
 msgstr ""
 
 #: lib/login.lib.php
 msgid ""
-"You have been logged out because your session expired. Please sign in again "
-"to continue."
+"You have been logged out due to inactivity. Please sign in again to continue."
 msgstr ""
 
 #: lib/login.lib.php
@@ -5419,11 +5418,11 @@ msgid "You have to log in to be able to access vpsAdmin's functions"
 msgstr ""
 
 #: pages/page_adminvps.php
-msgid "Force stop VPS"
+msgid "Poweroff VPS"
 msgstr ""
 
 #: pages/page_adminvps.php
-msgid "Stop VPS"
+msgid "Shutdown VPS"
 msgstr ""
 
 #: pages/page_adminvps.php pages/page_backup.php pages/page_console.php
@@ -5431,7 +5430,7 @@ msgid "planned"
 msgstr ""
 
 #: pages/page_adminvps.php
-msgid "Unable to stop"
+msgid "Unable to shut down"
 msgstr ""
 
 #: pages/page_adminvps.php
@@ -5759,6 +5758,11 @@ msgstr ""
 msgid "Storage pool"
 msgstr ""
 
+#: pages/page_adminvps.php pages/page_console.php
+msgid ""
+"Immediately power off the VPS without waiting for the system to shut down."
+msgstr ""
+
 #: pages/page_adminvps.php
 msgid "poweroff"
 msgstr ""
@@ -5769,10 +5773,6 @@ msgstr ""
 
 #: pages/page_adminvps.php
 msgid "restart"
-msgstr ""
-
-#: pages/page_adminvps.php
-msgid "stop"
 msgstr ""
 
 #: pages/page_adminvps.php
@@ -6065,8 +6065,8 @@ msgstr ""
 
 #: pages/page_adminvps.php
 msgid ""
-"Automatically update distribution version information in vpsAdmin by reading "
-"<code>/etc/os-release</code> on VPS start."
+"Automatically update distribution version information in vpsAdmin by "
+"watching <code>/etc/os-release</code> on VPS start."
 msgstr ""
 
 #: pages/page_adminvps.php
@@ -6711,6 +6711,10 @@ msgstr ""
 
 #: pages/page_console.php
 msgid "Remote Console for VPS"
+msgstr ""
+
+#: pages/page_console.php
+msgid "Shutdown"
 msgstr ""
 
 #: pages/page_console.php

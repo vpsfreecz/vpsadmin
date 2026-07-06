@@ -95,10 +95,10 @@ test.describe.serial('VPS user core browser coverage', () => {
     await expect(row.locator(`a[href*="run=stop"][href*="veid=${savedVpsId}"]`)).toBeVisible();
     await expect(row.locator(`a[href*="page=console"][href*="veid=${savedVpsId}"]`)).toBeVisible();
     await expect(row.locator(`a[href*="action=delete"][href*="veid=${savedVpsId}"]`)).toHaveCount(0);
-    await expect(row.locator('img[title="Stop the VPS to be able to delete it"]')).toBeVisible();
+    await expect(row.locator('img[title="Shut down the VPS to be able to delete it"]')).toBeVisible();
 
     await runListAction(page, savedVpsId, 'restart', 'Restart of', 'running');
-    await runListAction(page, savedVpsId, 'stop', 'Stop VPS', 'stopped');
+    await runListAction(page, savedVpsId, 'stop', 'Shutdown VPS', 'stopped');
 
     await gotoVpsList(page);
     row = vpsListRow(page, savedVpsId);
@@ -116,7 +116,7 @@ test.describe.serial('VPS user core browser coverage', () => {
     await login(page, fixtures.user);
 
     await runDetailAction(page, customVpsId, 'force_restart', 'Force restart VPS', 'running');
-    await runDetailAction(page, customVpsId, 'force_stop', 'Force stop VPS', 'stopped');
+    await runDetailAction(page, customVpsId, 'force_stop', 'Poweroff VPS', 'stopped');
     await runDetailAction(page, customVpsId, 'start', 'Start of', 'running');
 
     await openRemoteConsole(page, customVpsId);

@@ -233,7 +233,7 @@ test.describe.serial('VPS admin core browser coverage', () => {
 
     await expectAdminRowActionLinks(page, savedVpsId);
     await runFilteredListAction(page, savedVpsId, 'restart', 'Restart of', 'running');
-    await runFilteredListAction(page, savedVpsId, 'stop', 'Stop VPS', 'stopped');
+    await runFilteredListAction(page, savedVpsId, 'stop', 'Shutdown VPS', 'stopped');
 
     await openAdminVpsListAround(page, customVpsId);
     await expect(vpsListRow(page, customVpsId).locator('img[title="Unable to restart"]')).toBeVisible();
@@ -254,11 +254,11 @@ test.describe.serial('VPS admin core browser coverage', () => {
     await expect(page.locator('#content-in h1')).toContainText('[Admin mode]');
     await expect(page.locator('#aside a', { hasText: 'State log' })).toBeVisible();
 
-    await runDetailAction(page, customVpsId, 'stop', 'Stop VPS', 'stopped', { confirm: false });
+    await runDetailAction(page, customVpsId, 'stop', 'Shutdown VPS', 'stopped', { confirm: false });
     await runDetailAction(page, customVpsId, 'start', 'Start of', 'running', { confirm: false });
     await runDetailAction(page, customVpsId, 'restart', 'Restart of', 'running', { confirm: false });
     await runDetailAction(page, customVpsId, 'force_restart', 'Force restart VPS', 'running', { confirm: false });
-    await runDetailAction(page, customVpsId, 'force_stop', 'Force stop VPS', 'stopped', { confirm: false });
+    await runDetailAction(page, customVpsId, 'force_stop', 'Poweroff VPS', 'stopped', { confirm: false });
     await runDetailAction(page, customVpsId, 'start', 'Start of', 'running', { confirm: false });
 
     await submitAdminResources(page, customVpsId, {

@@ -149,7 +149,7 @@ final class LogoutExpiredSessionTest extends TestCase
         logoutUser();
 
         self::assertFalse($logoutExpiredSessionCsrfCalled);
-        self::assertSame('Session expired', $xtpl->lastTitle);
+        self::assertSame('Session ended', $xtpl->lastTitle);
         self::assertFalse($_SESSION['logged_in']);
     }
 
@@ -190,7 +190,7 @@ final class LogoutExpiredSessionTest extends TestCase
 
         self::assertTrue($logoutExpiredSessionCsrfCalled);
         self::assertTrue($api->provider->revoked);
-        self::assertSame('Session expired', $xtpl->lastTitle);
+        self::assertSame('Session ended', $xtpl->lastTitle);
     }
 
     public function testIntentionalLogoutKeepsGoodbyeMessage(): void

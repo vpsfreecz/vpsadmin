@@ -1588,7 +1588,7 @@ msgstr "NFS server běží, export lze připojit."
 msgid "NFS server is stopped, the export cannot mounted."
 msgstr "NFS server je zastaven, export nelze připojit."
 
-#: forms/export.forms.php forms/vps.forms.php pages/page_console.php
+#: forms/export.forms.php
 msgid "Stop"
 msgstr "Stop"
 
@@ -2122,13 +2122,13 @@ msgstr "Detailní výstup"
 #: forms/object_history.forms.php forms/users.forms.php pages/page_adminm.php
 #: pages/page_adminvps.php pages/page_transactions.php
 msgid "Created at"
-msgstr "Vytvořeno v"
+msgstr "Vytvořeno"
 
 #: forms/object_history.forms.php pages/page_transactions.php
 msgid "Session"
 msgstr "Sezení"
 
-#: forms/object_history.forms.php
+#: forms/object_history.forms.php forms/vps.forms.php
 msgid "Data"
 msgstr "Data"
 
@@ -2302,7 +2302,7 @@ msgid ""
 "in VPS being restarted or stopped"
 msgstr ""
 "Situace s nedostatkem paměti jsou považovány za chybu konfigurace a mohou "
-"vést k restartu nebo Stopu VPS"
+"vést k restartu nebo vypnutí VPS"
 
 #: forms/oom_reports.forms.php
 msgid "Add rule"
@@ -3077,11 +3077,11 @@ msgstr "IP adresa"
 
 #: forms/users.forms.php
 msgid "User agent"
-msgstr "Uživatelský agent"
+msgstr "User agent"
 
 #: forms/users.forms.php
 msgid "Client version"
-msgstr "Klientská verze"
+msgstr "Verze klienta"
 
 #: forms/users.forms.php
 msgid "Token"
@@ -3093,7 +3093,7 @@ msgstr "Správce ID"
 
 #: forms/users.forms.php
 msgid "Closed at"
-msgstr "Zavřeno v"
+msgstr "Ukončeno"
 
 #: forms/users.forms.php
 msgid "Auth type"
@@ -3115,53 +3115,49 @@ msgstr "Typ autentizace"
 msgid "Back to sessions"
 msgstr "Zpět na sezení"
 
-#: forms/users.forms.php pages/page_adminm.php
-msgid "Requests for approval"
-msgstr "Žádosti o schválení"
-
-#: forms/users.forms.php
-msgid "all"
-msgstr "vše"
-
 #: forms/users.forms.php
 msgid "registration"
 msgstr "registrace"
 
 #: forms/users.forms.php
 msgid "change"
-msgstr "přeměna"
+msgstr "změna"
 
 #: forms/users.forms.php
-msgid "awaiting"
-msgstr "čekání"
+msgid "all"
+msgstr "vše"
 
-#: forms/users.forms.php
-msgid "pending correction"
-msgstr "čekající na opravu"
-
-#: forms/users.forms.php
-msgid "approved"
-msgstr "schválený"
-
-#: forms/users.forms.php
-msgid "denied"
-msgstr "popřel"
-
-#: forms/users.forms.php
-msgid "ignored"
-msgstr "ignoroval"
+#: forms/users.forms.php pages/page_adminm.php
+msgid "Requests for approval"
+msgstr "Žádosti o schválení"
 
 #: forms/users.forms.php
 msgid "Client IP PTR"
 msgstr "Klient IP PTR"
 
 #: forms/users.forms.php
+msgid "DATE"
+msgstr "DATUM"
+
+#: forms/users.forms.php
+msgid "TYPE"
+msgstr "TYP"
+
+#: forms/users.forms.php
+msgid "STATE"
+msgstr "STAV"
+
+#: forms/users.forms.php
+msgid "ADMIN"
+msgstr "ADMIN"
+
+#: forms/users.forms.php
 msgid "approve"
-msgstr "schvalovat"
+msgstr "schválit"
 
 #: forms/users.forms.php
 msgid "deny"
-msgstr "odmítnout"
+msgstr "zamítnout"
 
 #: forms/users.forms.php
 msgid "ignore"
@@ -3218,7 +3214,7 @@ msgstr "skóre IP"
 
 #: forms/users.forms.php
 msgid "Mail suspect"
-msgstr "Podezřelý z pošty"
+msgstr "Podezřelý e-mail"
 
 #: forms/users.forms.php
 msgid "Mail score"
@@ -3938,10 +3934,10 @@ msgstr "Další informace o VPS"
 
 #: forms/vps.forms.php
 msgid ""
-"Optional script/cloud-init configuration which is run when the VPS is first "
-"started."
+"Optional script/cloud-init configuration which is applied when the VPS is "
+"first started."
 msgstr ""
-"Volitelná konfigurace skriptu/cloud-init, která se spustí při prvním "
+"Volitelná konfigurace skriptu/cloud-init, která se aplikuje při prvním "
 "spuštění VPS."
 
 #: forms/vps.forms.php
@@ -4020,6 +4016,14 @@ msgstr "Restartovat"
 msgid "Unable to restart"
 msgstr "Nelze restartovat"
 
+#: forms/vps.forms.php pages/page_adminvps.php pages/page_console.php
+msgid "Ask the VPS to shut down the system gracefully."
+msgstr "Požádá VPS o řádné vypnutí systému."
+
+#: forms/vps.forms.php pages/page_adminvps.php
+msgid "shutdown"
+msgstr "vypnout"
+
 #: forms/vps.forms.php
 msgid "Remote Console"
 msgstr "Vzdálená konzole"
@@ -4029,8 +4033,8 @@ msgid "Migrate"
 msgstr "Migrovat"
 
 #: forms/vps.forms.php
-msgid "Stop the VPS to be able to delete it"
-msgstr "Pro smazání VPS nejdřív použijte Stop"
+msgid "Shut down the VPS to be able to delete it"
+msgstr "Pro smazání VPS ji nejdřív vypněte"
 
 #: forms/vps.forms.php
 msgid "Environment configuration does not allow VPS deletion"
@@ -4163,15 +4167,15 @@ msgstr "Nyní nebo okno údržby"
 
 #: forms/vps.forms.php
 msgid "Finish on day"
-msgstr "Skončit v den"
+msgstr "Dokončit v den"
 
 #: forms/vps.forms.php
 msgid "Finish from"
-msgstr "Skončit od"
+msgstr "Dokončit v hodinu"
 
 #: forms/vps.forms.php
 msgid "Finish the migration from this hour on"
-msgstr "Dokončete migraci od této hodiny"
+msgstr "Dokončit migraci od této hodiny"
 
 #: forms/vps.forms.php
 msgid "Back to preferences"
@@ -4191,7 +4195,7 @@ msgstr "Nahraďte IP adresy"
 
 #: forms/vps.forms.php
 msgid "When"
-msgstr "Když"
+msgstr "Kdy"
 
 #: forms/vps.forms.php lib/functions.lib.php
 msgid "now"
@@ -4203,11 +4207,11 @@ msgstr "Vyčištění dat"
 
 #: forms/vps.forms.php
 msgid "No start"
-msgstr "Žádný start"
+msgstr "Nespouštět"
 
 #: forms/vps.forms.php
 msgid "Skip start"
-msgstr "Přeskočit začátek"
+msgstr "Přeskočit spuštění"
 
 #: forms/vps.forms.php
 msgid "Send e-mails"
@@ -4308,10 +4312,6 @@ msgstr "Max RX"
 #: forms/vps.forms.php
 msgid "Transfers in"
 msgstr "Přenosy za"
-
-#: forms/vps.forms.php
-msgid "Bytes"
-msgstr "Bajtů"
 
 #: forms/vps.forms.php
 msgid "Packets"
@@ -4514,16 +4514,15 @@ msgid "Selected language is not available in the API."
 msgstr "Vybraný jazyk není dostupný v API."
 
 #: lib/login.lib.php
-msgid "Session expired"
-msgstr "Sezení vypršelo"
+msgid "Session ended"
+msgstr "Sezení ukončeno"
 
 #: lib/login.lib.php
 msgid ""
-"You have been logged out because your session expired. Please sign in again "
-"to continue."
+"You have been logged out due to inactivity. Please sign in again to continue."
 msgstr ""
-"Byli jste odhlášeni, protože vaše sezení vypršelo. Chcete-li pokračovat, "
-"znovu se přihlaste."
+"Byli jste odhlášeni z důvodu neaktivity. Chcete-li pokračovat, znovu se "
+"přihlaste."
 
 #: lib/login.lib.php
 msgid "Goodbye"
@@ -5482,20 +5481,20 @@ msgid "You have to log in to be able to access vpsAdmin's functions"
 msgstr "Musíte se přihlásit, abyste měli přístup k funkcím vpsAdmin"
 
 #: pages/page_adminvps.php
-msgid "Force stop VPS"
-msgstr "Vynutit stop VPS"
+msgid "Poweroff VPS"
+msgstr "Vynutit vypnutí VPS"
 
 #: pages/page_adminvps.php
-msgid "Stop VPS"
-msgstr "Stop VPS"
+msgid "Shutdown VPS"
+msgstr "Vypnout VPS"
 
 #: pages/page_adminvps.php pages/page_backup.php pages/page_console.php
 msgid "planned"
 msgstr "plánované"
 
 #: pages/page_adminvps.php
-msgid "Unable to stop"
-msgstr "Stop se nezdařil"
+msgid "Unable to shut down"
+msgstr "Vypnutí se nezdařilo"
 
 #: pages/page_adminvps.php
 msgid "Start of"
@@ -5643,7 +5642,7 @@ msgstr "Změna DNS resolveru se nezdařila"
 
 #: pages/page_adminvps.php
 msgid "Migration planned"
-msgstr "Plánovaná migrace"
+msgstr "Migrace naplánována"
 
 #: pages/page_adminvps.php
 msgid "Migration failed"
@@ -5824,9 +5823,14 @@ msgstr "Výměna se nezdařila"
 msgid "Storage pool"
 msgstr "Storage pool"
 
+#: pages/page_adminvps.php pages/page_console.php
+msgid ""
+"Immediately power off the VPS without waiting for the system to shut down."
+msgstr "Okamžitě vypne VPS bez čekání na ukončení běhu systému."
+
 #: pages/page_adminvps.php
 msgid "poweroff"
-msgstr "vypnout"
+msgstr "vynutit vypnutí"
 
 #: pages/page_adminvps.php
 msgid "reset"
@@ -5835,10 +5839,6 @@ msgstr "resetovat"
 #: pages/page_adminvps.php
 msgid "restart"
 msgstr "restartovat"
-
-#: pages/page_adminvps.php
-msgid "stop"
-msgstr "stop"
 
 #: pages/page_adminvps.php
 msgid "start"
@@ -6160,20 +6160,20 @@ msgid ""
 "can also be updated automatically by reading /etc/os-release, see below."
 msgstr ""
 "Použijte, pokud jste upgradovali/downgradovali svůj systém. Informace o "
-"distribuci lze také aktualizovat automaticky přečtením /etc/os-release, viz "
+"distribuci lze také aktualizovat automaticky sledováním /etc/os-release, viz "
 "níže."
 
 #: pages/page_adminvps.php
 msgid "Read /etc/os-release"
-msgstr "Číst /etc/os-release"
+msgstr "Sledovat /etc/os-release"
 
 #: pages/page_adminvps.php
 msgid ""
-"Automatically update distribution version information in vpsAdmin by reading "
-"<code>/etc/os-release</code> on VPS start."
+"Automatically update distribution version information in vpsAdmin by "
+"watching <code>/etc/os-release</code> on VPS start."
 msgstr ""
-"Automaticky aktualizovat informace o verzi distribuce ve vpsAdminu přečtením "
-"<code>/etc/os-release</code> při startu VPS."
+"Automaticky aktualizovat informace o verzi distribuce ve vpsAdminu "
+"sledováním <code>/etc/os-release</code> při startu VPS."
 
 #: pages/page_adminvps.php
 msgid "Features"
@@ -6200,8 +6200,8 @@ msgid ""
 "Configure the number of seconds the start menu waits for the user before the "
 "system is started. Set to zero to disable the start menu."
 msgstr ""
-"Nakonfigurujte počet sekund, po které Start menu čeká na uživatele, než se "
-"systém spustí. Nastavením na nulu Start menu vypnete."
+"Nakonfigurujte počet sekund, po které start menu čeká na uživatele, než se "
+"systém spustí. Nastavením na nulu start menu vypnete."
 
 #: pages/page_adminvps.php
 msgid "Timeout"
@@ -6832,8 +6832,12 @@ msgid "Remote Console for VPS"
 msgstr "Vzdálená konzole pro VPS"
 
 #: pages/page_console.php
-msgid "Poweroff"
+msgid "Shutdown"
 msgstr "Vypnout"
+
+#: pages/page_console.php
+msgid "Poweroff"
+msgstr "Vynutit vypnutí"
 
 #: pages/page_console.php
 msgid "failed"
@@ -7857,6 +7861,30 @@ msgstr "Upravit pole nápovědy"
 #: public/index.php
 msgid "Help"
 msgstr "Pomoc"
+
+#~ msgid "awaiting"
+#~ msgstr "čekání"
+
+#~ msgid "pending correction"
+#~ msgstr "čekající na opravu"
+
+#~ msgid "approved"
+#~ msgstr "schválený"
+
+#~ msgid "denied"
+#~ msgstr "popřel"
+
+#~ msgid "ignored"
+#~ msgstr "ignoroval"
+
+#~ msgid "Bytes"
+#~ msgstr "Bajtů"
+
+#~ msgid "Force stop VPS"
+#~ msgstr "Vynutit stop VPS"
+
+#~ msgid "stop"
+#~ msgstr "stop"
 
 #~ msgid "IDs"
 #~ msgstr "ID"

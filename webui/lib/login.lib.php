@@ -121,8 +121,8 @@ function showLogoutMessage($sessionExpired = false)
 
     if ($sessionExpired) {
         $xtpl->perex(
-            _("Session expired"),
-            _("You have been logged out because your session expired. Please sign in again to continue.")
+            _("Session ended"),
+            _("You have been logged out due to inactivity. Please sign in again to continue.")
         );
     } else {
         $xtpl->perex(_("Goodbye"), _("Logout successful"));

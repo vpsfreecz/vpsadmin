@@ -35,11 +35,11 @@ if (isLoggedIn()) {
                 'force' => $_GET["run"] == 'force_stop',
             ]);
 
-            notify_user(($_GET["run"] == 'force_stop' ? _("Force stop VPS") : _("Stop VPS")) . " {$_GET["veid"]} " . _("planned"));
+            notify_user(($_GET["run"] == 'force_stop' ? _("Poweroff VPS") : _("Shutdown VPS")) . " {$_GET["veid"]} " . _("planned"));
             redirect(vps_run_redirect_path($_GET["veid"]));
 
         } catch (\HaveAPI\Client\Exception\ActionFailed $e) {
-            $xtpl->perex_format_errors(_('Unable to stop'), $e->getResponse());
+            $xtpl->perex_format_errors(_('Unable to shut down'), $e->getResponse());
 
             if ($_GET['action'] == 'info') {
                 $show_info = true;
@@ -1202,7 +1202,7 @@ if (isLoggedIn()) {
 
         if ($vps->maintenance_lock == 'no') {
             $status = $vps->is_running
-                ? _("running") . ' (<a href="?page=adminvps&action=info&run=restart&veid=' . $vps->id . '&t=' . csrf_token() . '" ' . vps_confirm_action_onclick($vps, 'restart') . '>' . _("restart") . '</a>, <a href="?page=adminvps&action=info&run=force_restart&veid=' . $vps->id . '&t=' . csrf_token() . '" ' . vps_confirm_action_onclick($vps, 'force_restart') . '>' . _("reset") . '</a>, <a href="?page=adminvps&action=info&run=stop&veid=' . $vps->id . '&t=' . csrf_token() . '" ' . vps_confirm_action_onclick($vps, 'stop') . '>' . _("stop") . '</a>, <a href="?page=adminvps&action=info&run=force_stop&veid=' . $vps->id . '&t=' . csrf_token() . '" ' . vps_confirm_action_onclick($vps, 'force_stop') . '>' . _("poweroff") . '</a>'
+                ? _("running") . ' (<a href="?page=adminvps&action=info&run=restart&veid=' . $vps->id . '&t=' . csrf_token() . '" ' . vps_confirm_action_onclick($vps, 'restart') . '>' . _("restart") . '</a>, <a href="?page=adminvps&action=info&run=force_restart&veid=' . $vps->id . '&t=' . csrf_token() . '" ' . vps_confirm_action_onclick($vps, 'force_restart') . '>' . _("reset") . '</a>, <a href="?page=adminvps&action=info&run=stop&veid=' . $vps->id . '&t=' . csrf_token() . '" title="' . h(_("Ask the VPS to shut down the system gracefully.")) . '" ' . vps_confirm_action_onclick($vps, _('shutdown')) . '>' . _("shutdown") . '</a>, <a href="?page=adminvps&action=info&run=force_stop&veid=' . $vps->id . '&t=' . csrf_token() . '" title="' . h(_("Immediately power off the VPS without waiting for the system to shut down.")) . '" ' . vps_confirm_action_onclick($vps, _('poweroff')) . '>' . _("poweroff") . '</a>'
                 : _("stopped") . ' (<a href="?page=adminvps&action=info&run=start&veid=' . $vps->id . '&t=' . csrf_token() . '">' . _("start") . '</a>';
 
             $status .= ', <a href="?page=console&veid=' . $vps->id . '&t=' . csrf_token() . '">' . _("open remote console") . '</a>)';
@@ -1658,7 +1658,7 @@ if (isLoggedIn()) {
             $xtpl->table_title(_('Read /etc/os-release'));
             $xtpl->form_create('?page=adminvps&action=toggle_os_template_auto_update&veid=' . $vps->id, 'post');
             $xtpl->form_add_checkbox_pure('enable_os_template_auto_update', '1', post_val_issetto('enable_os_template_auto_update', '1', $vps->enable_os_template_auto_update));
-            $xtpl->table_td(_('Automatically update distribution version information in vpsAdmin by reading <code>/etc/os-release</code> on VPS start.'));
+            $xtpl->table_td(_('Automatically update distribution version information in vpsAdmin by watching <code>/etc/os-release</code> on VPS start.'));
             $xtpl->table_tr();
             $xtpl->form_out(_('Save'));
 

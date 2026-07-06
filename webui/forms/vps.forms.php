@@ -649,7 +649,7 @@ function vps_user_data_select_form($action, $user_id)
     $input = $action->getParameters('input');
 
     $xtpl->table_td(
-        _('Optional script/cloud-init configuration which is run when the VPS is first started.'),
+        _('Optional script/cloud-init configuration which is applied when the VPS is first started.'),
         false,
         false,
         2
@@ -855,7 +855,7 @@ function vps_list_form()
 
             if (isAdmin() || $vps->maintenance_lock == 'no') {
                 $xtpl->table_td(($vps->is_running) ? '<a href="?page=adminvps&run=restart&veid=' . $vps->id . '&t=' . csrf_token() . '" ' . vps_confirm_action_onclick($vps, 'restart') . '><img src="template/icons/vps_restart.png" title="' . _("Restart") . '"/></a>' : '<img src="template/icons/vps_restart_grey.png"  title="' . _("Unable to restart") . '" />');
-                $xtpl->table_td(($vps->is_running) ? '<a href="?page=adminvps&run=stop&veid=' . $vps->id . '&t=' . csrf_token() . '" ' . vps_confirm_action_onclick($vps, 'stop') . '><img src="template/icons/vps_stop.png"  title="' . _("Stop") . '"/></a>' : '<a href="?page=adminvps&run=start&veid=' . $vps->id . '&t=' . csrf_token() . '"><img src="template/icons/vps_start.png"  title="' . _("Start") . '"/></a>');
+                $xtpl->table_td(($vps->is_running) ? '<a href="?page=adminvps&run=stop&veid=' . $vps->id . '&t=' . csrf_token() . '" ' . vps_confirm_action_onclick($vps, _('shutdown')) . '><img src="template/icons/vps_stop.png"  title="' . h(_("Ask the VPS to shut down the system gracefully.")) . '"/></a>' : '<a href="?page=adminvps&run=start&veid=' . $vps->id . '&t=' . csrf_token() . '"><img src="template/icons/vps_start.png"  title="' . _("Start") . '"/></a>');
 
                 if (!isAdmin()) {
                     $xtpl->table_td('<a href="?page=console&veid=' . $vps->id . '&t=' . csrf_token() . '"><img src="template/icons/console.png"  title="' . _("Remote Console") . '"/></a>');
@@ -881,7 +881,7 @@ function vps_list_form()
                     $deleteAction();
                 } elseif ($envs_destroy[$vps->node->location->environment_id]) {
                     if ($vps->is_running) {
-                        $cantDelete(_('Stop the VPS to be able to delete it'));
+                        $cantDelete(_('Shut down the VPS to be able to delete it'));
                     } else {
                         $deleteAction();
                     }
@@ -990,13 +990,13 @@ function vps_details_submenu($vps)
     $xtpl->sbar_add(_('User namespaces'), '?page=userns');
 }
 
-function vps_confirm_action_onclick($vps, $action)
+function vps_confirm_action_onclick($vps, $actionLabel)
 {
     if (isAdmin()) {
         return "";
     }
 
-    return 'onclick="return vpsConfirmAction(\'' . h($action) . '\', ' . h($vps->id) . ', \'' . h($vps->hostname) . '\');"';
+    return 'onclick="return vpsConfirmAction(\'' . h($actionLabel) . '\', ' . h($vps->id) . ', \'' . h($vps->hostname) . '\');"';
 }
 
 function vps_details_suite($vps)
@@ -2014,7 +2014,7 @@ function vps_netif_form($vps, $netif, $netif_accounting)
 
     if ($accounting) {
         $xtpl->table_add_category(_('Transfers in') . ' ' . $accounting->year . '/' . $accounting->month);
-        $xtpl->table_add_category(_('Bytes'));
+        $xtpl->table_add_category(_('Data'));
         $xtpl->table_add_category(_('Packets'));
 
         $xtpl->table_td(_('Received') . ':');
