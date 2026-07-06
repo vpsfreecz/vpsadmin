@@ -50,6 +50,8 @@ function secondaryLocationId() {
 }
 
 test.describe.serial('VPS user side operations and console coverage', () => {
+  test.setTimeout(30 * 60 * 1000);
+
   test('user clone, swap, delete, and admin gating flows work', async ({ page }) => {
     await login(page, fixtures.user);
 

@@ -25,7 +25,7 @@ module AfterTestScriptRunLogs
       systemctl_output=$(systemctl --failed --no-legend --no-pager --type=service 2>&1 || true)
       printf '%s\n' "$systemctl_output"
 
-      failed_units=$(printf '%s\n' "$systemctl_output" | awk '$1 ~ /\\.service$/ { print $1 }')
+      failed_units=$(printf '%s\n' "$systemctl_output" | awk '{ for (i = 1; i <= NF; i++) if ($i ~ /\\.service$/) print $i }')
 
       if [ -z "$failed_units" ]; then
         echo "[after_test_script_run] no failed services found"

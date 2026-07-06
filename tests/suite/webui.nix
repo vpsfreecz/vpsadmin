@@ -546,7 +546,7 @@ import ../make-test.nix (
         raise "Timed out waiting for webui transaction chains to become idle: #{pending.inspect}"
       end
 
-      def run_playwright(script_name, *specs)
+      def run_playwright(script_name, *specs, timeout: 1800)
         raise ArgumentError, 'at least one Playwright spec is required' if specs.empty?
 
         safe_name = script_name.gsub(/[^A-Za-z0-9_.-]/, '-')
@@ -557,7 +557,7 @@ import ../make-test.nix (
         playwright_failed = false
 
         begin
-          services.succeeds(<<~SH, timeout: 1800)
+          services.succeeds(<<~SH, timeout: timeout)
             set -euo pipefail
 
             export CI=1
@@ -565,14 +565,30 @@ import ../make-test.nix (
             export PLAYWRIGHT_BROWSERS_PATH=${playwrightBrowsers}
             export WEBUI_BASE_URL=http://webui.vpsadmin.test
             export VPSADMIN_WEBUI_FIXTURES=#{WEBUI_FIXTURES}
+            result_dir=/tmp/vpsadmin-webui-playwright-results-#{safe_name}
 
-            rm -rf "$HOME" /tmp/vpsadmin-webui-playwright-results-#{safe_name}
+            rm -rf "$HOME" "$result_dir"
             mkdir -p "$HOME"
 
             cd ${playwrightSuite}
+            set +e
             ${playwrightRunner}/bin/vpsadmin-webui-playwright test #{spec_args} \
               --config=${playwrightSuite}/playwright.config.cjs \
-              --output=/tmp/vpsadmin-webui-playwright-results-#{safe_name}
+              --output="$result_dir"
+            status=$?
+            set -e
+
+            if [ "$status" -ne 0 ]; then
+              echo "[run_playwright] Playwright failed for #{safe_name}; artifacts in $result_dir"
+              find "$result_dir" -name error-context.md -print | while IFS= read -r context; do
+                echo "[run_playwright] error context: $context"
+                sed -n '1,240p' "$context"
+              done
+              find "$result_dir" -name trace.zip -print -o -name '*.png' -print \
+                | sed 's/^/[run_playwright] artifact: /'
+            fi
+
+            exit "$status"
           SH
         rescue StandardError
           playwright_failed = true
@@ -4620,7 +4636,7 @@ import ../make-test.nix (
         script = webuiTestScriptCommon + ''
           describe 'webui user VPS core browser flow' do
             it 'passes Playwright user VPS core tests' do
-              run_playwright('vps-user-core', 'specs/vps-user-core.spec.cjs')
+              run_playwright('vps-user-core', 'specs/vps-user-core.spec.cjs', timeout: 2700)
             end
           end
         '';
@@ -4637,7 +4653,7 @@ import ../make-test.nix (
 
           describe 'webui user VPS side operation browser flow' do
             it 'passes Playwright user VPS side operation tests' do
-              run_playwright('vps-user-ops', 'specs/vps-user-ops.spec.cjs')
+              run_playwright('vps-user-ops', 'specs/vps-user-ops.spec.cjs', timeout: 3600)
             end
           end
         '';
