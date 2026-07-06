@@ -1566,13 +1566,13 @@ en:
         description: Steps in which the objects allocated resource value may be iterated
         label: Step size
       stop:
-        description: Do a consistent clone - original VPS is stopped before making
+        description: Do a consistent clone - original VPS is shut down before making
           a snapshot
-        label: Stop
+        label: Shutdown
       stop_vps:
-        description: Stop the VPS after extra space is used too long or there are
-          too many expansions
-        label: Stop VPS
+        description: Shut down the VPS after extra space is used too long or there
+          are too many expansions
+        label: Shutdown VPS
       subject:
         label: Subject
       subtree_check:
@@ -3164,11 +3164,11 @@ en:
       user_session:
         attributes:
           api_ip_addr:
-            label: IP Address
+            label: API IP address
           api_ip_ptr:
-            label: IP PTR
+            label: API IP PTR
           client_ip_addr:
-            label: Client IP Address
+            label: Client IP address
           created_at:
             label: Created at
           id:
@@ -3238,7 +3238,7 @@ en:
           stop:
             input:
               force:
-                label: Force stop
+                label: Poweroff
           swap_with:
             input:
               hostname:
@@ -3733,7 +3733,7 @@ en:
         vps_shaper_root_change: Change root shaper
         vps_start: Start VPS
         vps_start_menu: Set Start menu
-        vps_stop: Stop VPS
+        vps_stop: Shutdown VPS
         vps_umount: Unmount VPS
         vps_unmanage_dns_resolver: Unmanage DNS resolver
         vps_unmanage_hostname: Unmanage Hostname

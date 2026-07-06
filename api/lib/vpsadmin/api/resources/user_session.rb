@@ -8,9 +8,9 @@ module VpsAdmin::API::Resources
       resource User, value_label: :login
       string :label
       string :auth_type, label: 'Authentication type', choices: %w[basic token oauth2]
-      string :api_ip_addr, label: 'IP Address'
-      string :api_ip_ptr, label: 'IP PTR'
-      string :client_ip_addr, label: 'Client IP Address'
+      string :api_ip_addr, label: 'API IP address'
+      string :api_ip_ptr, label: 'API IP PTR'
+      string :client_ip_addr, label: 'Client IP address'
       string :client_ip_ptr, label: 'Client IP PTR'
       string :user_agent, label: 'User agent', db_name: :user_agent_string
       string :client_version, label: 'Client version'

@@ -17,8 +17,8 @@ module VpsAdmin::API::Resources
                                   desc: 'Send emails about the expansion'
       bool :enable_shrink, label: 'Enable shrink',
                            desc: 'Automatically shrink the dataset when possible'
-      bool :stop_vps, label: 'Stop VPS',
-                      desc: 'Stop the VPS after extra space is used too long or there are too many expansions'
+      bool :stop_vps, label: 'Shutdown VPS',
+                      desc: 'Shut down the VPS after extra space is used too long or there are too many expansions'
       integer :over_refquota_seconds
       integer :max_over_refquota_seconds
       datetime :created_at

@@ -45,6 +45,10 @@ Always translate with context. The same English word can mean different things:
   for these labels.
 - Transaction labels are translated in the API locale files and rendered by
   the WebUI from the API-provided `label` field.
+- Transaction labels use concise noun/process labels, usually verbal nouns
+  such as `Přidání`, `Vytvoření`, `Smazání`, and `Nastavení`, or established
+  technical nouns such as `Reload DNS serveru`. Do not use infinitive command
+  labels such as `Přidat DNS server` for transaction labels.
 - Security advisory `mitigated` state is `ošetřeno`, not a literal
   `zmírněno`.
 - `Dataset`/`Datasets` are `Dataset`/`Datasety`.
@@ -60,12 +64,15 @@ Always translate with context. The same English word can mean different things:
 - `Rescue mode` is `nouzový režim`.
 - VPS power state `stopped` is `vypnuto`; counts and labels use
   `vypnuté VPS` and summaries use `vypnuto`.
-- VPS action `Stop` is kept as `Stop` when it names the vpsAdmin/osctl stop
-  operation. Do not translate the action label as `Zastavit` or `Vypnout`.
-- VPS action `Poweroff` is `Vypnout`.
-- Forced stop actions use `Vynutit stop`.
-- Remote console action labels are `Stop`, `Restartovat`, `Resetovat`,
-  `Vypnout`, and `Spustit`.
+- VPS action `Shutdown` is `Vypnout`. It requests a graceful shutdown inside
+  the VPS.
+- VPS action `Poweroff` is `Vynutit vypnutí`. It immediately powers off the
+  VPS without waiting for the system to shut down.
+- Internal API action names such as `stop` and `force_stop` are identifiers and
+  remain unchanged, but user-visible labels must use `Shutdown`/`Poweroff` and
+  `Vypnout`/`Vynutit vypnutí`.
+- Remote console action labels are `Vypnout`, `Restartovat`, `Resetovat`,
+  `Vynutit vypnutí`, and `Spustit`.
 - `Hostname`, `Loadavg`, `Uptime`, `Kernel`, and `User data` are left
   untranslated.
 
@@ -81,7 +88,6 @@ Longer descriptions may use full Czech sentences.
 
 Action labels should use the infinitive form, e.g. `Spravovat`, `Vytvořit`,
 `Upravit`, and `Vypnout`, not polite imperative forms such as `Spravujte`.
-Keep established command labels such as `Stop` unchanged.
 
 When updating translations:
 

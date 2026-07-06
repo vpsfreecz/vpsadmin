@@ -50,15 +50,15 @@ cs:
       action:
         choices:
           approve:
-            label: Schválit
+            label: schválit
           deny:
-            label: Zamítnout
+            label: zamítnout
           ignore:
-            label: Ignorovat
+            label: ignorovat
           notify:
             label: Upozornit
           request_correction:
-            label: Vyžádat opravu
+            label: vyžádat opravu
         label: Akce
       activate:
         label: Aktivovat účet
@@ -532,12 +532,11 @@ cs:
         description: MD5 fingerprint
         label: Otisk
       finish_minutes:
-        description: Počet minut od půlnoci dne start_weekday, po kterých se migrace
-          provede
-        label: Minuty dokončení
+        description: Dokončit migraci od této hodiny
+        label: Dokončit v hodinu
       finish_weekday:
         description: Připravit migraci a dokončit ji v tento den
-        label: Den v týdnu dokončení
+        label: Dokončit v den
       force:
         description: Smazat DNS resolver i tehdy, když se používá. Dotčené VPS dostanou
           nový DNS resolver.
@@ -1562,13 +1561,13 @@ cs:
         description: Kroky, po kterých se může iterovat alokovaná hodnota zdroje objektu
         label: Velikost kroku
       stop:
-        description: Provést konzistentní klon - před vytvořením snapshotu se na původním
-          VPS provede Stop
-        label: Stop
+        description: Provést konzistentní klon - před vytvořením snapshotu se původní
+          VPS řádně vypne
+        label: Vypnout
       stop_vps:
-        description: Provést Stop VPS, pokud se extra místo používá příliš dlouho
-          nebo proběhlo příliš mnoho rozšíření
-        label: Stop VPS
+        description: Vypnout VPS, pokud se extra místo používá příliš dlouho nebo
+          proběhlo příliš mnoho rozšíření
+        label: Vypnout VPS
       subject:
         label: Předmět
       subtree_check:
@@ -1817,7 +1816,7 @@ cs:
           none:
             label: žádná
           stop:
-            label: Stop
+            label: Vypnout
           suspend:
             label: Pozastavit
         label: Akce VPS
@@ -3159,9 +3158,9 @@ cs:
       user_session:
         attributes:
           api_ip_addr:
-            label: IP adresa
+            label: API IP adresa
           api_ip_ptr:
-            label: IP PTR
+            label: API IP PTR
           client_ip_addr:
             label: IP adresa klienta
           created_at:
@@ -3233,7 +3232,7 @@ cs:
           stop:
             input:
               force:
-                label: Vynutit stop
+                label: Vynutit vypnutí
           swap_with:
             input:
               hostname:
@@ -3612,7 +3611,7 @@ cs:
           shrink_dataset: Zmenšit
           soft_delete: Soft delete
           start: Spustit
-          stop: Stop
+          stop: Vypnout
           stop_over_quota: Stop kvóta
           swap: Prohodit
           umount: Unmount
@@ -3627,109 +3626,109 @@ cs:
           update: Upravit
     transactions:
       labels:
-        dns_server_reload: Reloadovat DNS server
-        dns_zone_add_servers: Přidat DNS servery
-        dns_zone_create: Vytvořit DNS zónu
-        dns_zone_create_records: Vytvořit DNS záznamy
-        dns_zone_delete_records: Smazat DNS záznamy
-        dns_zone_destroy: Smazat DNS zónu
-        dns_zone_remove_servers: Odebrat DNS servery
-        dns_zone_update: Upravit DNS zónu
-        dns_zone_update_records: Upravit DNS záznamy
-        export_add_hosts: Přidat hosty exportu
-        export_create: Vytvořit export
-        export_del_hosts: Odebrat hosty exportu
-        export_destroy: Smazat export
-        export_disable: Vypnout export
-        export_enable: Zapnout export
-        export_set: Upravit export
-        mail_send: Odeslat e-mail
-        maintenance_window_in_or_fail: Ověřit maintenance window
-        maintenance_window_wait: Čekat na maintenance window
-        netif_create_veth_routed: Vytvořit routovaný veth
-        netif_disable: Vypnout síťové rozhraní
-        netif_enable: Zapnout síťové rozhraní
-        netif_host_addr_add: Přidat IP adresu hostu
-        netif_host_addr_del: Odebrat IP adresu hostu
-        netif_remove_veth_routed: Odebrat routovaný veth
-        netif_rename: Přejmenovat síťové rozhraní
-        netif_set_shaper: Nastavit shaper sítě
-        network_register: Registrovat síť
-        pool_authorize_rsync_key: Autorizovat rsync klíč
-        pool_authorize_send_key: Autorizovat send klíč
-        pool_generate_send_key: Vygenerovat send klíč
-        pool_revoke_rsync_key: Odvolat rsync klíč
-        queue_release: Uvolnit frontu
-        queue_reserve: Rezervovat frontu
-        storage_activate_snapshot_clone: Aktivovat klon snapshotu
-        storage_apply_rollback: Provést rollback
-        storage_clone_snapshot: Klonovat snapshot
-        storage_clone_snapshot_name: Nastavit název klonu snapshotu
-        storage_create_branch_dataset: Vytvořit větev datasetu
-        storage_create_dataset: Vytvořit dataset
-        storage_create_dataset_tree: Vytvořit strom datasetu
-        storage_create_pool: Vytvořit pool
-        storage_create_snapshot: Vytvořit snapshot
-        storage_create_snapshots: Vytvořit snapshoty
-        storage_deactivate_snapshot_clone: Deaktivovat klon snapshotu
-        storage_destroy_branch: Smazat větev datasetu
-        storage_destroy_dataset: Smazat dataset
-        storage_destroy_dataset_tree: Smazat strom datasetu
-        storage_destroy_snapshot: Smazat snapshot
-        storage_download_snapshot: Stáhnout snapshot
-        storage_ensure_ugid_offset: Zajistit UGID offset
-        storage_inherit_property: Zdědit vlastnost
-        storage_local_send: Odeslat dataset lokálně
-        storage_prepare_rollback: Připravit rollback
-        storage_recv: Přijmout dataset
-        storage_recv_check: Ověřit přijatý dataset
-        storage_remove_clone: Odebrat klon
-        storage_remove_download: Odebrat download
-        storage_rename_dataset: Přejmenovat dataset
-        storage_rollback: Provést rollback datasetu
-        storage_rsync_dataset: Synchronizovat dataset přes rsync
-        storage_send: Odeslat dataset
-        storage_set_canmount: Nastavit canmount
-        storage_set_dataset: Nastavit vlastnosti datasetu
-        userns_map_disuse: Přestat používat mapu user namespace
-        userns_map_use: Použít mapu user namespace
+        dns_server_reload: Reload DNS serveru
+        dns_zone_add_servers: Přidání DNS serverů
+        dns_zone_create: Vytvoření DNS zóny
+        dns_zone_create_records: Vytvoření DNS záznamů
+        dns_zone_delete_records: Smazání DNS záznamů
+        dns_zone_destroy: Smazání DNS zóny
+        dns_zone_remove_servers: Odebrání DNS serverů
+        dns_zone_update: Úprava DNS zóny
+        dns_zone_update_records: Úprava DNS záznamů
+        export_add_hosts: Přidání hostů exportu
+        export_create: Vytvoření exportu
+        export_del_hosts: Odebrání hostů exportu
+        export_destroy: Smazání exportu
+        export_disable: Vypnutí exportu
+        export_enable: Zapnutí exportu
+        export_set: Úprava exportu
+        mail_send: Odeslání e-mailu
+        maintenance_window_in_or_fail: Ověření maintenance window
+        maintenance_window_wait: Čekání na maintenance window
+        netif_create_veth_routed: Vytvoření routovaného vethu
+        netif_disable: Vypnutí síťového rozhraní
+        netif_enable: Zapnutí síťového rozhraní
+        netif_host_addr_add: Přidání IP adresy hostu
+        netif_host_addr_del: Odebrání IP adresy hostu
+        netif_remove_veth_routed: Odebrání routovaného vethu
+        netif_rename: Přejmenování síťového rozhraní
+        netif_set_shaper: Nastavení síťového shaperu
+        network_register: Registrace sítě
+        pool_authorize_rsync_key: Autorizace rsync klíče
+        pool_authorize_send_key: Autorizace send klíče
+        pool_generate_send_key: Vygenerování send klíče
+        pool_revoke_rsync_key: Odvolání rsync klíče
+        queue_release: Uvolnění fronty
+        queue_reserve: Rezervace fronty
+        storage_activate_snapshot_clone: Aktivace klonu snapshotu
+        storage_apply_rollback: Aplikace rollbacku
+        storage_clone_snapshot: Klonování snapshotu
+        storage_clone_snapshot_name: Nastavení názvu klonu snapshotu
+        storage_create_branch_dataset: Vytvoření větve datasetu
+        storage_create_dataset: Vytvoření datasetu
+        storage_create_dataset_tree: Vytvoření stromu datasetu
+        storage_create_pool: Vytvoření poolu
+        storage_create_snapshot: Vytvoření snapshotu
+        storage_create_snapshots: Vytvoření snapshotů
+        storage_deactivate_snapshot_clone: Deaktivace klonu snapshotu
+        storage_destroy_branch: Smazání větve datasetu
+        storage_destroy_dataset: Smazání datasetu
+        storage_destroy_dataset_tree: Smazání stromu datasetu
+        storage_destroy_snapshot: Smazání snapshotu
+        storage_download_snapshot: Stažení snapshotu
+        storage_ensure_ugid_offset: Zajištění UGID offsetu
+        storage_inherit_property: Zdědění vlastnosti
+        storage_local_send: Lokální odeslání datasetu
+        storage_prepare_rollback: Příprava rollbacku
+        storage_recv: Přijetí datasetu
+        storage_recv_check: Ověření přijatého datasetu
+        storage_remove_clone: Odebrání klonu
+        storage_remove_download: Odebrání downloadu
+        storage_rename_dataset: Přejmenování datasetu
+        storage_rollback: Rollback datasetu
+        storage_rsync_dataset: Synchronizace datasetu přes rsync
+        storage_send: Odeslání datasetu
+        storage_set_canmount: Nastavení canmount
+        storage_set_dataset: Nastavení vlastností datasetu
+        userns_map_disuse: Ukončení používání mapy user namespace
+        userns_map_use: Použití mapy user namespace
         utils_no_op: Bez operace
-        vps_apply_user_data: Aplikovat User data
-        vps_autostart: Nastavit autostart
+        vps_apply_user_data: Aplikace User data
+        vps_autostart: Nastavení autostartu
         vps_boot: Boot VPS
-        vps_chown: Změnit vlastníka VPS
-        vps_copy: Kopírovat VPS
-        vps_create: Vytvořit VPS
-        vps_deploy_public_key: Nahrát veřejný klíč
-        vps_deploy_user_data: Nahrát User data
-        vps_destroy: Smazat VPS
-        vps_dns_resolver: Nastavit DNS resolver
-        vps_features: Nastavit features VPS
-        vps_hostname: Nastavit Hostname
-        vps_map_mode: Nastavit režim mapování
+        vps_chown: Změna vlastníka VPS
+        vps_copy: Kopírování VPS
+        vps_create: Vytvoření VPS
+        vps_deploy_public_key: Nahrání veřejného klíče
+        vps_deploy_user_data: Nahrání User data
+        vps_destroy: Smazání VPS
+        vps_dns_resolver: Nastavení DNS resolveru
+        vps_features: Nastavení features VPS
+        vps_hostname: Nastavení Hostname
+        vps_map_mode: Nastavení režimu mapování
         vps_mount: Mount VPS
-        vps_mounts: Upravit Mounty
-        vps_os_template: Nastavit OS template
-        vps_passwd: Změnit heslo
-        vps_populate_config: Vygenerovat konfiguraci VPS
-        vps_recover_cleanup: Uklidit po recovery
-        vps_reinstall: Přeinstalovat VPS
-        vps_remove_config: Smazat konfiguraci VPS
-        vps_resources: Nastavit zdroje VPS
-        vps_restart: Restartovat VPS
-        vps_route_add: Přidat routu
-        vps_route_del: Smazat routu
-        vps_send_cleanup: Uklidit po sendu
-        vps_send_config: Odeslat konfiguraci VPS
-        vps_send_rollback_config: Odeslat rollback konfiguraci
-        vps_send_rootfs: Odeslat rootfs
-        vps_send_state: Odeslat stav VPS
-        vps_send_sync: Synchronizovat send
-        vps_shaper_root_change: Změnit root shaper
-        vps_start: Spustit VPS
-        vps_start_menu: Nastavit Start menu
-        vps_stop: Stop VPS
+        vps_mounts: Úprava Mountů
+        vps_os_template: Nastavení OS template
+        vps_passwd: Změna hesla
+        vps_populate_config: Vygenerování konfigurace VPS
+        vps_recover_cleanup: Úklid po recovery
+        vps_reinstall: Přeinstalace VPS
+        vps_remove_config: Smazání konfigurace VPS
+        vps_resources: Nastavení zdrojů VPS
+        vps_restart: Restart VPS
+        vps_route_add: Přidání routy
+        vps_route_del: Smazání routy
+        vps_send_cleanup: Úklid po sendu
+        vps_send_config: Odeslání konfigurace VPS
+        vps_send_rollback_config: Odeslání rollback konfigurace
+        vps_send_rootfs: Odeslání rootfs
+        vps_send_state: Odeslání stavu VPS
+        vps_send_sync: Synchronizace sendu
+        vps_shaper_root_change: Změna root shaperu
+        vps_start: Spuštění VPS
+        vps_start_menu: Nastavení start menu
+        vps_stop: Vypnutí VPS
         vps_umount: Unmount VPS
-        vps_unmanage_dns_resolver: Přestat spravovat DNS resolver
-        vps_unmanage_hostname: Přestat spravovat Hostname
-        vps_wait_for_routes: Čekat na routy
+        vps_unmanage_dns_resolver: Ukončení správy DNS resolveru
+        vps_unmanage_hostname: Ukončení správy Hostname
+        vps_wait_for_routes: Čekání na routy

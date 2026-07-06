@@ -635,13 +635,13 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
   end
 
   class Stop < HaveAPI::Action
-    desc 'Stop VPS'
+    desc 'Shutdown VPS'
     route '{%{resource}_id}/stop'
     http_method :post
     blocking true
 
     input(:hash) do
-      bool :force, label: 'Force stop', default: false, fill: true
+      bool :force, label: 'Poweroff', default: false, fill: true
     end
 
     authorize do |u|
@@ -909,8 +909,8 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
                        desc: 'Clone resources such as memory and CPU'
       bool :features, default: true, fill: true
       string :hostname
-      bool :stop, default: true, fill: true,
-                  desc: 'Do a consistent clone - original VPS is stopped before making a snapshot'
+      bool :stop, label: 'Shutdown', default: true, fill: true,
+                  desc: 'Do a consistent clone - original VPS is shut down before making a snapshot'
       bool :keep_snapshots, default: false, fill: true, label: 'Keep snapshots',
                             desc: 'Keep snapshots created during the cloning process'
     end
