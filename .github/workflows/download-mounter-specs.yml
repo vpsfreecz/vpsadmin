@@ -11,6 +11,7 @@ on:
       - ".github/workflows/download-mounter-specs.yml"
       - ".ruby-version"
       - "download_mounter/**"
+  workflow_dispatch:
 
 concurrency:
   group: download-mounter-specs-${{ github.workflow }}-${{ github.ref }}

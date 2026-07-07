@@ -17,6 +17,7 @@ on:
       - "webui/**"
       - "api/lib/vpsadmin/api/authentication/webauthn_register.erb"
       - "api/lib/vpsadmin/api/authentication/webauthn_register.rb"
+  workflow_dispatch:
 
 concurrency:
   group: webui-phpunit-${{ github.workflow }}-${{ github.ref }}

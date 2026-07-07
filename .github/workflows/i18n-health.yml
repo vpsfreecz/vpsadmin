@@ -25,6 +25,7 @@ on:
       - "packages/**"
       - "plugins/**"
       - "webui/**"
+  workflow_dispatch:
 
 permissions:
   contents: read

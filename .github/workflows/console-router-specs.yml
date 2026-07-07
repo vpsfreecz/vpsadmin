@@ -11,6 +11,7 @@ on:
       - ".github/workflows/console-router-specs.yml"
       - ".ruby-version"
       - "console_router/**"
+  workflow_dispatch:
 
 concurrency:
   group: console-router-specs-${{ github.workflow }}-${{ github.ref }}

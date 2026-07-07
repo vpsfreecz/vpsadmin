@@ -17,6 +17,7 @@ on:
       - "api/spec/support/db_setup.rb"
       - "flake.lock"
       - "libnodectld/**"
+  workflow_dispatch:
 
 concurrency:
   group: libnodectld-specs-${{ github.workflow }}-${{ github.ref }}

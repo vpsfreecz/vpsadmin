@@ -15,6 +15,7 @@ on:
       - "plugins/**"
       - ".github/workflows/api-specs.yml"
       - "AGENTS.md"
+  workflow_dispatch:
 
 # Cancel older runs on the same ref when new commits are pushed
 concurrency:
