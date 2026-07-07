@@ -63,6 +63,18 @@ RSpec.describe NodeCtld::DnsTransferLog do
     expect(started).to be_nil
   end
 
+  it 'ignores empty transfer completion summaries after failed attempts' do
+    log = described_class.new
+
+    event = log.send(
+      :parse_message,
+      "transfer of 'timeout.test/IN' from 192.0.2.1#53: Transfer completed: " \
+      '0 messages, 0 records, 0 bytes, 132.454 secs (0 bytes/sec) (serial 0)'
+    )
+
+    expect(event).to be_nil
+  end
+
   it 'ignores successful transfer status messages' do
     log = described_class.new
     event = log.send(

@@ -143,4 +143,34 @@ RSpec.describe VpsAdmin::Supervisor::Node::DnsTransferLog do
     expect(server_zone.last_transfer_reason).to be_nil
     expect(server_zone.last_transfer_serial).to eq(2_026_050_901)
   end
+
+  it 'ignores empty transfer completion summaries from older nodes' do
+    server_zone = create_server_zone!
+    supervisor = described_class.new(nil, SpecSeed.node)
+    supervisor.send(:save_event, transfer_event(server_zone))
+
+    expect do
+      supervisor.send(
+        :save_event,
+        transfer_event(
+          server_zone,
+          'status' => 'success',
+          'reason_code' => nil,
+          'reason' => nil,
+          'serial' => 0,
+          'message' => 'Transfer completed successfully',
+          'raw_message' =>
+            "transfer of '#{server_zone.dns_zone.name.delete_suffix('.')}/IN' " \
+            'from 192.0.2.1#53: Transfer completed: 0 messages, 0 records, ' \
+            '0 bytes, 132.454 secs (0 bytes/sec) (serial 0)',
+          'event_key' => SecureRandom.hex(32),
+          'time' => Time.utc(2026, 5, 9, 12, 10, 0).to_i
+        )
+      )
+    end.not_to change(DnsServerZoneTransferLog, :count)
+
+    server_zone.reload
+    expect(server_zone.last_transfer_status).to eq('failed')
+    expect(server_zone.last_transfer_reason_code).to eq('refused')
+  end
 end

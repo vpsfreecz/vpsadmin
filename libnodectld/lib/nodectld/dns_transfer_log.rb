@@ -142,13 +142,20 @@ module NodeCtld
     end
 
     def parse_transfer_completed(message)
-      return unless %r{transfer of '([^']+)/IN' from ([^#\s]+)#\d+: Transfer completed: .*serial (\d+)} =~ message
+      return unless %r{transfer of '([^']+)/IN' from ([^#\s]+)#\d+: Transfer completed: (\d+) messages?, (\d+) records?, (\d+) bytes?, .*serial (\d+)} =~ message
+
+      messages = Regexp.last_match(3).to_i
+      records = Regexp.last_match(4).to_i
+      bytes = Regexp.last_match(5).to_i
+      serial = Regexp.last_match(6).to_i
+
+      return if messages == 0 && records == 0 && bytes == 0 && serial == 0
 
       event(
         Regexp.last_match(1),
         'success',
         primary_addr: Regexp.last_match(2),
-        serial: Regexp.last_match(3).to_i,
+        serial:,
         message: 'Transfer completed successfully'
       )
     end

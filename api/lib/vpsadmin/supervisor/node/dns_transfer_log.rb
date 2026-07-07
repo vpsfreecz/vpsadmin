@@ -25,6 +25,8 @@ module VpsAdmin::Supervisor
     protected
 
     def save_event(event)
+      return if empty_transfer_success_event?(event)
+
       dns_server_zone = ::DnsServerZone.joins(:dns_zone, :dns_server).find_by(
         dns_zones: { name: event.fetch('name') },
         dns_servers: { node_id: node.id }
@@ -86,6 +88,16 @@ module VpsAdmin::Supervisor
           event['message']
         ].join("\0")
       )
+    end
+
+    def empty_transfer_success_event?(event)
+      raw_message = event['raw_message'].to_s
+
+      event['status'] == 'success' &&
+        event['serial'].to_i == 0 &&
+        event['message'] == 'Transfer completed successfully' &&
+        raw_message.include?('Transfer completed: 0 messages, 0 records, 0 bytes,') &&
+        raw_message.include?('(serial 0)')
     end
   end
 end
