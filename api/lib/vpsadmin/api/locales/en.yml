@@ -815,6 +815,10 @@ en:
         label: Loadavg5
       loaded_at:
         label: Loaded_at
+      localized:
+        label: Localized
+      localized_value:
+        label: Localized value
       location:
         label: Location
       lock:

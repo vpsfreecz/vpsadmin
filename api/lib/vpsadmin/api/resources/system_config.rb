@@ -7,7 +7,9 @@ module VpsAdmin::API::Resources
       string :category
       string :name
       string :type, db_name: :data_type
+      bool :localized
       custom :value, db_name: :get_value
+      custom :localized_value, label: 'Localized value'
       string :label
       string :description
       integer :min_user_level

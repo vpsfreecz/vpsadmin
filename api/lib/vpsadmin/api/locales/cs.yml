@@ -813,6 +813,10 @@ cs:
         label: Loadavg5
       loaded_at:
         label: Načteno
+      localized:
+        label: Lokalizováno
+      localized_value:
+        label: Lokalizovaná hodnota
       location:
         label: Lokace
       lock:

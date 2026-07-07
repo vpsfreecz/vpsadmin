@@ -130,6 +130,7 @@ RSpec.describe 'VpsAdmin::API::Resources::SystemConfig' do
 
       public_cfg = system_configs.find { |cfg| cfg['name'] == 'public' }
       expect(public_cfg['type']).to eq('String')
+      expect(public_cfg['localized']).to be(false)
       expect(public_cfg['value']).to eq('pub')
       expect(public_cfg['min_user_level']).to eq(0)
 
@@ -234,6 +235,57 @@ RSpec.describe 'VpsAdmin::API::Resources::SystemConfig' do
 
       expect_status(404)
       expect(json['status']).to be(false)
+    end
+
+    it 'returns localized_value for localized hash settings' do
+      SysConfig.create!(
+        category:,
+        name: 'localized',
+        data_type: 'Hash',
+        localized: true,
+        value: { 'en' => 'English value', 'cs' => 'Czech value' },
+        label: 'Localized',
+        description: 'Localized setting',
+        min_user_level: 0
+      )
+
+      header 'Accept-Language', 'cs'
+      json_get show_path('localized')
+      header 'Accept-Language', nil
+
+      expect_status(200)
+      expect(system_config['type']).to eq('Hash')
+      expect(system_config['localized']).to be(true)
+      expect(YAML.safe_load(system_config['value'])).to eq(
+        'en' => 'English value',
+        'cs' => 'Czech value'
+      )
+      expect(system_config['localized_value']).to eq('Czech value')
+    end
+
+    it 'does not localize ordinary hash settings' do
+      SysConfig.create!(
+        category:,
+        name: 'plain_hash',
+        data_type: 'Hash',
+        value: { 'EUR' => 25.0, 'USD' => 23.0 },
+        label: 'Plain hash',
+        description: 'Structural hash setting',
+        min_user_level: 0
+      )
+
+      header 'Accept-Language', 'cs'
+      json_get show_path('plain_hash')
+      header 'Accept-Language', nil
+
+      expect_status(200)
+      expect(system_config['type']).to eq('Hash')
+      expect(system_config['localized']).to be(false)
+      expect(YAML.safe_load(system_config['value'])).to eq(
+        'EUR' => 25.0,
+        'USD' => 23.0
+      )
+      expect(system_config['localized_value']).to be_nil
     end
   end
 

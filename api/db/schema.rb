@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_03_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_07_140000) do
   create_table "auth_tokens", id: { type: :integer, unsigned: true }, charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
     t.string "api_ip_addr", limit: 46
     t.string "api_ip_ptr"
@@ -1403,6 +1403,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_03_120000) do
     t.string "data_type", default: "Text", null: false
     t.text "description"
     t.string "label"
+    t.boolean "localized", default: false, null: false
     t.integer "min_user_level"
     t.string "name", limit: 75, null: false
     t.datetime "updated_at", precision: nil
