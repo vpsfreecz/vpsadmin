@@ -94,7 +94,16 @@ function outage_type_label($type)
 
 function outage_type_list_label($type)
 {
-    return outage_type_label($type);
+    switch ($type) {
+        case 'planned_outage':
+            return _('Planned');
+
+        case 'unplanned_outage':
+            return _('Unplanned');
+
+        default:
+            return h($type);
+    }
 }
 
 function outage_impact_label($impact)

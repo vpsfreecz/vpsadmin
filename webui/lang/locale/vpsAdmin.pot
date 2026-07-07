@@ -2307,6 +2307,14 @@ msgid "Unplanned outage"
 msgstr ""
 
 #: forms/outage.forms.php
+msgid "Planned"
+msgstr ""
+
+#: forms/outage.forms.php
+msgid "Unplanned"
+msgstr ""
+
+#: forms/outage.forms.php
 msgid "TBD"
 msgstr ""
 
