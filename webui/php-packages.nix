@@ -234,10 +234,10 @@ let
     "phpunit/php-code-coverage" = {
       targetDir = "";
       src = composerEnv.buildZipPackage {
-        name = "phpunit-php-code-coverage-10d7da3628a99289cdf4c662dd7f0d73f1baec83";
+        name = "phpunit-php-code-coverage-82f6e49ff224e2cde923d74425e583a883910783";
         src = fetchurl {
-          url = "https://api.github.com/repos/sebastianbergmann/php-code-coverage/zipball/10d7da3628a99289cdf4c662dd7f0d73f1baec83";
-          sha256 = "113av3s68f1g8jw88aqi0rbvddm1sady51jplbpw110w1y28znqx";
+          url = "https://api.github.com/repos/sebastianbergmann/php-code-coverage/zipball/82f6e49ff224e2cde923d74425e583a883910783";
+          sha256 = "0vjwcn6s15ngqin1k34k3fx11kcc9f83j030n7kdkhq1khb0sk0y";
         };
       };
     };
@@ -284,10 +284,10 @@ let
     "phpunit/phpunit" = {
       targetDir = "";
       src = composerEnv.buildZipPackage {
-        name = "phpunit-phpunit-492c067e618de7b3c76105082c90f9d2833401b7";
+        name = "phpunit-phpunit-d76d0e24225e587d6a5f0c6f6d9fef0d90712b54";
         src = fetchurl {
-          url = "https://api.github.com/repos/sebastianbergmann/phpunit/zipball/492c067e618de7b3c76105082c90f9d2833401b7";
-          sha256 = "199k0j4hlvqmblvxd3j0iv4408w07csysj26m7g4awq1pdbj2f4z";
+          url = "https://api.github.com/repos/sebastianbergmann/phpunit/zipball/d76d0e24225e587d6a5f0c6f6d9fef0d90712b54";
+          sha256 = "18jzqxmz3p1y20l12wnbrixnknrfdz2fm0j2hc66jlrcsbnxggn6";
         };
       };
     };
