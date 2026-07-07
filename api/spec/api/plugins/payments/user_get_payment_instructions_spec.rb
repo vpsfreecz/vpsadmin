@@ -9,7 +9,10 @@ RSpec.describe 'VpsAdmin::API::Resources::User', requires_plugins: :payments do
     seed_payments_sysconfig!(
       default_currency: 'CZK',
       conversion_rates: {},
-      payment_instructions: 'Hello <%= user.login %>, monthly=<%= monthly_payment %>'
+      payment_instructions: {
+        'en' => 'Hello <%= user.login %>, monthly=<%= monthly_payment %>',
+        'cs' => 'Ahoj <%= user.login %>, měsíčně=<%= monthly_payment %>'
+      }
     )
     SpecSeed.user.user_account.update!(monthly_payment: 123)
   end
@@ -65,6 +68,17 @@ RSpec.describe 'VpsAdmin::API::Resources::User', requires_plugins: :payments do
       expect_status(200)
       expect(json['status']).to be(true)
       expect(instructions.to_s).to include('user')
+      expect(instructions.to_s).to include('123')
+    end
+
+    it 'renders instructions in the requested language' do
+      header 'Accept-Language', 'cs'
+      as(user) { json_get instructions_path(user.id) }
+      header 'Accept-Language', nil
+
+      expect_status(200)
+      expect(json['status']).to be(true)
+      expect(instructions.to_s).to include('Ahoj user')
       expect(instructions.to_s).to include('123')
     end
 

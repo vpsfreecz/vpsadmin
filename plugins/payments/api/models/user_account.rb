@@ -80,7 +80,7 @@ class UserAccount < ApplicationRecord
 
   def payment_instructions
     ERB.new(
-      SysConfig.get(:plugin_payments, :payment_instructions) || '',
+      SysConfig.localized_get(:plugin_payments, :payment_instructions) || '',
       trim_mode: '-'
     ).result(binding)
   end
