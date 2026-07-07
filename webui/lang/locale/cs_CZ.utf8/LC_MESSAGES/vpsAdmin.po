@@ -2114,7 +2114,7 @@ msgstr "Historie objektu"
 
 #: forms/object_history.forms.php
 msgid "User session"
-msgstr "Sezení uživatele"
+msgstr "Uživatelská relace"
 
 #: forms/object_history.forms.php
 msgid "Object ID"
@@ -2131,7 +2131,7 @@ msgstr "Vytvořeno"
 
 #: forms/object_history.forms.php pages/page_transactions.php
 msgid "Session"
-msgstr "Sezení"
+msgstr "Relace"
 
 #: forms/object_history.forms.php forms/vps.forms.php
 msgid "Data"
@@ -3078,7 +3078,7 @@ msgstr "Zpět ke konfiguraci prostředí"
 
 #: forms/users.forms.php
 msgid "Session log of"
-msgstr "Log sezení uživatele"
+msgstr "Historie relací uživatele"
 
 #: forms/users.forms.php pages/page_transactions.php
 msgid "Exact ID"
@@ -3114,11 +3114,11 @@ msgstr "Typ ověření"
 
 #: forms/users.forms.php
 msgid "Close"
-msgstr "Blízko"
+msgstr "Ukončit"
 
 #: forms/users.forms.php
 msgid "Edit user session"
-msgstr "Upravit sezení uživatele"
+msgstr "Upravit relaci uživatele"
 
 #: forms/users.forms.php
 msgid "Authentication type"
@@ -3126,7 +3126,7 @@ msgstr "Typ autentizace"
 
 #: forms/users.forms.php
 msgid "Back to sessions"
-msgstr "Zpět na sezení"
+msgstr "Zpět na relace"
 
 #: forms/users.forms.php
 msgid "registration"
@@ -4445,8 +4445,8 @@ msgstr "Výchozí nastavení serveru"
 #: lib/functions.lib.php
 msgid "Left-click - extend timeout; Long left-click - disable timeout"
 msgstr ""
-"Kliknutí levým tlačítkem - prodloužit timeout; dlouhé kliknutí levým "
-"tlačítkem - vypnout timeout"
+"Kliknutím prodloužíte čas do odhlášení; dlouhým kliknutím automatické "
+"odhlášení vypnete"
 
 #: lib/functions.lib.php pages/page_dataset.php
 msgid "disabled"
@@ -4538,7 +4538,7 @@ msgstr "Vybraný jazyk není dostupný v API."
 
 #: lib/login.lib.php
 msgid "Session ended"
-msgstr "Sezení ukončeno"
+msgstr "Přihlášení bylo ukončeno"
 
 #: lib/login.lib.php
 msgid ""
@@ -4789,15 +4789,15 @@ msgstr "Opakujte nové heslo"
 
 #: pages/page_adminm.php
 msgid "Logout other sessions"
-msgstr "Odhlásit ostatní sezení"
+msgstr "Ukončit ostatní relace"
 
 #: pages/page_adminm.php
 msgid ""
 "All sessions except this one will be logged out, all access tokens will be "
 "revoked."
 msgstr ""
-"Všechna sezení kromě tohoto budou odhlášena, všechny přístupové tokeny budou "
-"odvolány."
+"Všechny relace kromě této budou ukončeny a všechny přístupové tokeny "
+"zneplatněny."
 
 #: pages/page_adminm.php
 msgid "Authentication settings"
@@ -4842,7 +4842,7 @@ msgstr ""
 
 #: pages/page_adminm.php
 msgid "Session control"
-msgstr "Řízení sezení"
+msgstr "Nastavení relací"
 
 #: pages/page_adminm.php
 msgid "Enable single sign-on"
@@ -4858,7 +4858,7 @@ msgstr ""
 
 #: pages/page_adminm.php
 msgid "Preferred session length"
-msgstr "Preferovaná délka sezení"
+msgstr "Doba nečinnosti před odhlášením"
 
 #: pages/page_adminm.php
 msgid "minutes"
@@ -4869,20 +4869,20 @@ msgid ""
 "How long will the session last without any activity. Set to 0 to disable "
 "session timeout."
 msgstr ""
-"Jak dlouho sezení vydrží bez aktivity. Nastavením na 0 vypnete timeout "
-"sezení."
+"Doba, po kterou může relace zůstat neaktivní. Hodnota 0 automatické "
+"odhlašování vypne."
 
 #: pages/page_adminm.php
 msgid "Logout all"
-msgstr "Odhlásit všechny"
+msgstr "Odhlašovat všude"
 
 #: pages/page_adminm.php
 msgid ""
 "Always logout all OAuth2 authorizations of the same client, e.g. from all "
 "active vpsAdmin web UI sessions, even in different browsers."
 msgstr ""
-"Vždy odhlašte všechna sezení OAuth2 stejného klienta, např. ze všech "
-"aktivních sezení webového rozhraní vpsAdmin, a to i v různých prohlížečích."
+"Při odhlášení vždy ukončit všechna OAuth2 oprávnění stejného klienta, např. "
+"všechny aktivní relace webového rozhraní vpsAdmin, i v jiných prohlížečích."
 
 #: pages/page_adminm.php
 msgid "Two-factor authentication"
@@ -4950,7 +4950,7 @@ msgstr "Známá přihlašovací zařízení"
 
 #: pages/page_adminm.php
 msgid "Sessions"
-msgstr "Sezení"
+msgstr "Relace"
 
 #: pages/page_adminm.php
 msgid "Resource packages"
@@ -5214,11 +5214,11 @@ msgstr "Nastavení ověřování byla úspěšně aktualizována."
 
 #: pages/page_adminm.php
 msgid "Session control updated"
-msgstr "Řízení sezení aktualizováno"
+msgstr "Nastavení relací aktualizováno"
 
 #: pages/page_adminm.php
 msgid "Session control was successfully updated."
-msgstr "Řízení sezení bylo úspěšně aktualizováno."
+msgstr "Nastavení relací bylo úspěšně aktualizováno."
 
 #: pages/page_adminm.php
 msgid "Multi-factor authentication enabled"
@@ -5407,19 +5407,19 @@ msgstr "Veřejný klíč se nepodařilo smazat"
 
 #: pages/page_adminm.php
 msgid "User session updated"
-msgstr "Sezení uživatele aktualizováno"
+msgstr "Relace uživatele upravena"
 
 #: pages/page_adminm.php
 msgid "Failed to edit user session"
-msgstr "Úprava sezení uživatele se nezdařila"
+msgstr "Relaci uživatele se nepodařilo upravit"
 
 #: pages/page_adminm.php
 msgid "User session closed"
-msgstr "Sezení uživatele zavřeno"
+msgstr "Relace uživatele ukončena"
 
 #: pages/page_adminm.php
 msgid "Failed to close session"
-msgstr "Zavření sezení se nezdařilo"
+msgstr "Relaci se nepodařilo ukončit"
 
 #: pages/page_adminm.php
 msgid "Failed create metrics access token"
@@ -7638,7 +7638,7 @@ msgstr "Transakce"
 
 #: pages/page_transactions.php
 msgid "User session ID"
-msgstr "ID sezení uživatele"
+msgstr "ID uživatelské relace"
 
 #: pages/page_transactions.php
 msgid "Class name"

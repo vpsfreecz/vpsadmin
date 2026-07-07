@@ -38,11 +38,11 @@ final class ConfigJsLocalizationTest extends TestCase
             $catalog
         );
         self::assertStringContainsString(
-            '"Kliknutí levým tlačítkem - prodloužit timeout; dlouhé kliknutí levým "',
+            '"Kliknutím prodloužíte čas do odhlášení; dlouhým kliknutím automatické "',
             $catalog
         );
         self::assertStringContainsString(
-            '"tlačítkem - vypnout timeout"',
+            '"odhlášení vypnete"',
             $catalog
         );
     }

@@ -24,7 +24,12 @@ Always translate with context. The same English word can mean different things:
 - `Network`/`Networks` are `Síť`/`Sítě`.
 - `Export`/`Exports` are `Export`/`Exporty`.
 - `Back` navigation links are `Zpět`.
-- `User sessions` are `Sezení`.
+- User-session objects are `relace`, e.g. `uživatelská relace`,
+  `relace uživatele`, and `Relace` in menus/headings. Use
+  `ukončit relaci` for ending a session, never `zavřít sezení`.
+- In user-facing automatic logout messages, describe the event as
+  `odhlášení` or `ukončené přihlášení`, e.g. `Přihlášení bylo ukončeno` and
+  `Byli jste odhlášeni z důvodu neaktivity`.
 - `User data` stays `User data`.
 - `Event log` is usually `Události`.
 - `Incident reports` are `Incidenty`.

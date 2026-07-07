@@ -827,8 +827,8 @@ cs:
       login:
         label: Login
       logout_sessions:
-        description: Při změně hesla odhlásit všechna sezení kromě aktuálního
-        label: Odhlásit sezení
+        description: Při změně hesla ukončit všechny relace kromě aktuální
+        label: Ukončit relace
       lxc:
         label: LXC nesting
       mac:
@@ -1189,9 +1189,9 @@ cs:
       ppp:
         label: PPP
       preferred_logout_all:
-        label: Preferovat odhlášení všech
+        label: Odhlašovat všude
       preferred_session_length:
-        label: Preferovaná délka sezení
+        label: Doba nečinnosti před odhlášením
       prefix:
         label: Prefix
       preserve_backup_history:
@@ -2663,7 +2663,7 @@ cs:
           id:
             label: ID
           user_session:
-            label: Sezení
+            label: Relace
       oom_report:
         attributes:
           created_at:
@@ -2967,7 +2967,7 @@ cs:
           size:
             description: Počet transakcí v řetězci
           user_session:
-            label: Sezení
+            label: Relace
       user:
         actions:
           available_ips:
