@@ -447,7 +447,9 @@ class Outage < ApplicationRecord
       begins_at: begins_at.iso8601,
       duration:,
       impact: impact_type,
-      entities: outage_entities.map { |v| { name: v.name, id: v.row_id, label: v.real_name } },
+      entities: outage_entities.map do |v|
+        { name: v.name, entity_type: v.entity_type, id: v.row_id, label: v.real_name }
+      end,
       handlers: outage_handlers.map(&:full_name),
       translations: {}
     }

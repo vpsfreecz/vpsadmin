@@ -589,7 +589,14 @@ RSpec.describe 'VpsAdmin::API::Resources::Outage', requires_plugins: :outage_rep
 
       expect_status(200)
       expect(json['status']).to be(true)
-      expect(entities.map { |row| row['id'] }).to include(entity.id)
+
+      row = entities.detect { |v| v['id'] == entity.id }
+      expect(row).to include(
+        'name' => 'Node',
+        'entity_type' => 'node',
+        'entity_id' => SpecSeed.node.id,
+        'label' => SpecSeed.node.domain_name
+      )
     end
 
     it 'allows unauthenticated show access' do
@@ -598,6 +605,26 @@ RSpec.describe 'VpsAdmin::API::Resources::Outage', requires_plugins: :outage_rep
       expect_status(200)
       expect(json['status']).to be(true)
       expect(entity_obj['id']).to eq(entity.id)
+      expect(entity_obj).to include(
+        'name' => 'Node',
+        'entity_type' => 'node',
+        'entity_id' => SpecSeed.node.id,
+        'label' => SpecSeed.node.domain_name
+      )
+    end
+
+    it 'labels custom entities as custom' do
+      custom = ::OutageEntity.create!(outage: outage, name: 'External router')
+
+      json_get entity_show_path(outage.id, custom.id)
+
+      expect_status(200)
+      expect(entity_obj).to include(
+        'name' => 'External router',
+        'entity_type' => 'custom',
+        'entity_id' => nil,
+        'label' => 'External router'
+      )
     end
 
     it 'hides staged outage entities from non-admin readers' do
@@ -653,6 +680,8 @@ RSpec.describe 'VpsAdmin::API::Resources::Outage', requires_plugins: :outage_rep
       expect_status(200)
       expect(json['status']).to be(true)
       expect(entity_obj['name']).to eq('Location')
+      expect(entity_obj['entity_type']).to eq('location')
+      expect(entity_obj['label']).to eq(SpecSeed.location.label)
     end
 
     it 'rejects duplicate entities' do

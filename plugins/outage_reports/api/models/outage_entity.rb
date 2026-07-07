@@ -1,5 +1,17 @@
 class OutageEntity < ApplicationRecord
+  ENTITY_TYPES = {
+    'vpsAdmin' => 'vpsadmin',
+    'Cluster' => 'cluster',
+    'Environment' => 'environment',
+    'Location' => 'location',
+    'Node' => 'node'
+  }.freeze
+
   belongs_to :outage
+
+  def entity_type
+    ENTITY_TYPES.fetch(name, 'custom')
+  end
 
   def real_name
     case name
@@ -24,26 +36,8 @@ class OutageEntity < ApplicationRecord
   end
 
   def label
-    case name
-    when 'vpsAdmin'
-      "vpsAdmin #{real_name}"
-
-    when 'Cluster'
-      'All systems within the cluster'
-
-    when 'Environment'
-      "Environment #{real_name}"
-
-    when 'Location'
-      "Location #{real_name}"
-
-    when 'Node'
-      "Node #{real_name}"
-
-    else
-      real_name
-    end
+    real_name
   rescue ActiveRecord::RecordNotFound
-    "#{name} #{row_id}"
+    row_id ? row_id.to_s : name
   end
 end

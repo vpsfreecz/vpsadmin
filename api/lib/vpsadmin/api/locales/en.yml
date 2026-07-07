@@ -504,6 +504,8 @@ en:
       entity_name:
         description: Filter outages by entity name
         label: Entity name
+      entity_type:
+        label: Entity type
       environment:
         label: Environment
       environment_dataset_plan:

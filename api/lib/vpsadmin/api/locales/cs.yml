@@ -504,6 +504,8 @@ cs:
       entity_name:
         description: Filtrovat hlášení podle názvu entity
         label: Název entity
+      entity_type:
+        label: Typ entity
       environment:
         label: Prostředí
       environment_dataset_plan:

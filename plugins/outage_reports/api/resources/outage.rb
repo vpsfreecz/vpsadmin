@@ -331,6 +331,7 @@ module VpsAdmin::API::Resources
       params(:all) do
         id :id
         use :editable
+        string :entity_type, label: 'Entity type'
         string :label, label: 'Label'
       end
 
