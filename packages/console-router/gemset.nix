@@ -281,10 +281,10 @@
     platforms = [ ];
     source = {
       remotes = [ "https://rubygems.org" ];
-      sha256 = "1cvaikq1dcbfl008i16c1pi1gmdax7vfkvmhch64jdkakyk9nnqd";
+      sha256 = "089pvsdyf8krrhzavqm1lq4yqf79valiklnn290y1qbgf6r2wixs";
       type = "gem";
     };
-    version = "2.7.0";
+    version = "2.8.0";
   };
   webrick = {
     groups = [ "development" ];
