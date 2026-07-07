@@ -498,7 +498,6 @@ cs:
       enable_user_dns_zones:
         label: Povolit DNS zóny uživatelů
       enabled:
-        description: Povolit nebo zakázat použití šablony
         label: Povoleno
       entity_id:
         description: Filtrovat hlášení podle ID entity
@@ -2082,6 +2081,8 @@ cs:
             label: Vytvořeno
           dns_zone:
             label: DNS zóna
+          enabled:
+            description: Povolit nebo zakázat tento DNS záznam
           id:
             label: ID
           name:
@@ -2168,6 +2169,8 @@ cs:
         attributes:
           created_at:
             label: Vytvořeno
+          enabled:
+            description: Povolit nebo zakázat tuto DNS zónu
           id:
             label: ID
           name:
@@ -2701,6 +2704,8 @@ cs:
             label: Verze cgroup
           config:
             description: Pokročilá konfigurace v YAML
+          enabled:
+            description: Povolit nebo zakázat použití šablony
           hypervisor_type:
             label: Typ hypervisoru
           id:

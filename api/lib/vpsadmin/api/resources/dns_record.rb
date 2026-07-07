@@ -12,7 +12,7 @@ module VpsAdmin::API::Resources
       integer :ttl, label: 'TTL', desc: 'Optional TTL in seconds, defaults to zone TTL', nullable: true
       integer :priority, label: 'Priority', desc: 'Optional priority, used for MX and SRV records', nullable: true
       text :comment, desc: 'Optional comment'
-      bool :enabled, default: true
+      bool :enabled, desc: 'Enable or disable this DNS record', default: true
       bool :dynamic_update_enabled, label: 'Enable dynamic update', desc: 'Only for A and AAAA records', default: false
     end
 

@@ -1096,7 +1096,7 @@ msgstr "Stav zóny"
 
 #: forms/dns.forms.php
 msgid "Last transfer"
-msgstr "Poslední převod"
+msgstr "Poslední přenos"
 
 #: forms/dns.forms.php
 msgid "Do you really wish to this server?"
@@ -1478,7 +1478,7 @@ msgstr "sekundární"
 
 #: forms/dns.forms.php
 msgid "Forward zone"
-msgstr "Přední zóna"
+msgstr "Dopředná zóna"
 
 #: forms/dns.forms.php
 msgid "Reverse zone"
@@ -1510,7 +1510,7 @@ msgstr "Platnost vyprší"
 
 #: forms/dns.forms.php
 msgid "No transfers recorded"
-msgstr "Nebyly zaznamenány žádné převody"
+msgstr "Nebyly zaznamenány žádné přenosy"
 
 #: forms/dns.forms.php
 msgid "Successful"

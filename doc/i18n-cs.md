@@ -30,9 +30,10 @@ Always translate with context. The same English word can mean different things:
 - `Incident reports` are `Incidenty`.
 - `DNS resolvers` are `DNS resolvery`.
 - `Transfer logs` are `Log přenosů`.
-- Network transfers are `Přenosy`, never `Převody`.
+- Network and DNS transfers are `Přenosy`, never `Převody`.
 - `Routed addresses` and `Routable addresses` are `Routované adresy`.
 - `DNS record log` is `Log DNS záznamů`.
+- `Forward zone` in DNS is `Dopředná zóna`, not `Přední zóna`.
 - `Logout` button text is `Odhlásit`.
 - `Transaction log` stays as English source text; Czech menu text is
   `Transakce`.

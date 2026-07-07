@@ -498,7 +498,6 @@ en:
       enable_user_dns_zones:
         label: Enable_user_dns_zones
       enabled:
-        description: Enable/disable template usage
         label: Enabled
       entity_id:
         description: Filter outages by entity ID
@@ -2088,6 +2087,8 @@ en:
             label: Created_at
           dns_zone:
             label: DnsZone
+          enabled:
+            description: Enable or disable this DNS record
           id:
             label: ID
           name:
@@ -2174,6 +2175,8 @@ en:
         attributes:
           created_at:
             label: Created_at
+          enabled:
+            description: Enable or disable this DNS zone
           id:
             label: ID
           name:
@@ -2707,6 +2710,8 @@ en:
             label: Cgroup_version
           config:
             description: Advanced configuration in YAML
+          enabled:
+            description: Enable/disable template usage
           hypervisor_type:
             label: Hypervisor_type
           id:

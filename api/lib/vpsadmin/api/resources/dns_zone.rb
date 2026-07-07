@@ -14,7 +14,7 @@ module VpsAdmin::API::Resources
       integer :default_ttl, label: 'Default TTL', desc: 'Default TTL for records, in seconds'
       string :email, label: 'E-mail', desc: 'Administrator of this zone'
       bool :dnssec_enabled, label: 'Enable DNSSEC', desc: 'Requires DNSKEY/DS records to be configured in the parent zone'
-      bool :enabled
+      bool :enabled, desc: 'Enable or disable this DNS zone'
     end
 
     params(:all) do
