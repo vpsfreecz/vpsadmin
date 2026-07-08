@@ -67,6 +67,8 @@ Always translate with context. The same English word can mean different things:
   `Kvóta včetně potomků (quota)` and `Kvóta datasetu (refquota)`.
 - `Mount`/`Mounts` are `Mount`/`Mounty`.
 - In mount-related states and errors, use `mount`, e.g. `Selhání při mountu`.
+- For an NFS export value in the `host:path` form, use `Adresa exportu`.
+  Use `mountpoint` only for the local mount target.
 - `Rescue mode` is `nouzový režim`.
 - VPS power state `stopped` is `vypnuto`; counts and labels use
   `vypnuté VPS` and summaries use `vypnuto`.
@@ -81,6 +83,9 @@ Always translate with context. The same English word can mean different things:
   `Vynutit vypnutí`, and `Spustit`.
 - `Hostname`, `Loadavg`, `Uptime`, `Kernel`, and `User data` are left
   untranslated.
+- VPS `feature`/`features` are `funkce`, for example `Funkce VPS` or
+  `Funkce`. Do not use `vlastnosti` for VPS features. Dataset and ZFS
+  properties remain `vlastnost`/`vlastnosti`.
 
 Keep established technical terms untranslated when natural:
 

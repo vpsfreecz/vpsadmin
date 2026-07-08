@@ -211,7 +211,7 @@ RSpec.describe 'VpsAdmin::API::Resources::Transaction' do
 
         row = txs.find { |item| item['id'] == t1.id }
         expect(row).to include('id', 'transaction_chain', 'success', 'done', 'created_at')
-        expect(row['label']).to eq('No-op')
+        expect(row['label']).to eq('NoOp')
         expect(tx_chain_id(row)).to eq(chain_a.id)
         expect(row).not_to include('user', 'type', 'urgent', 'priority', 'input', 'output')
       end
@@ -234,7 +234,7 @@ RSpec.describe 'VpsAdmin::API::Resources::Transaction' do
         row = txs.find { |item| item['id'] == t1.id }
         expect(tx_user_id(row)).to eq(user.id)
         expect(row).to include('user', 'type', 'label', 'urgent', 'priority', 'input', 'output')
-        expect(row['label']).to eq('No-op')
+        expect(row['label']).to eq('NoOp')
       end
 
       it 'supports limit pagination' do
@@ -299,7 +299,7 @@ RSpec.describe 'VpsAdmin::API::Resources::Transaction' do
         expect(json['status']).to be(true)
         expect(tx_obj['id']).to eq(t1.id)
         expect(tx_chain_id(tx_obj)).to eq(chain_a.id)
-        expect(tx_obj['label']).to eq('No-op')
+        expect(tx_obj['label']).to eq('NoOp')
         expect(tx_obj['success']).to eq(0)
         expect(tx_obj['done']).to eq('waiting')
         expect(tx_obj).not_to include('user', 'type', 'urgent', 'priority', 'input', 'output')
@@ -327,7 +327,7 @@ RSpec.describe 'VpsAdmin::API::Resources::Transaction' do
         expect(tx_obj['id']).to eq(t1.id)
         expect(tx_user_id(tx_obj)).to eq(user.id)
         expect(tx_obj['type']).to eq(Transactions::Utils::NoOp.t_type)
-        expect(tx_obj['label']).to eq('No-op')
+        expect(tx_obj['label']).to eq('NoOp')
         expect(tx_obj['urgent']).to be(true)
         expect(tx_obj['priority']).to eq(10)
         expect(tx_obj['input']).to eq('{"payload":"t1"}')
@@ -340,7 +340,7 @@ RSpec.describe 'VpsAdmin::API::Resources::Transaction' do
         as(admin) { json_get show_path(t1.id) }
 
         expect_status(200)
-        expect(tx_obj['label']).to eq('Bez operace')
+        expect(tx_obj['label']).to eq('NoOp')
       end
 
       it 'returns 404 for unknown transaction' do

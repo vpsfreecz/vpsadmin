@@ -3492,31 +3492,31 @@ en:
     transaction_chains:
       concerns:
         classes:
-          branch: Branch
-          change_request: Change request
+          branch: Dataset branch
+          change_request: Request
           dataset: Dataset
           dataset_expansion: Dataset expansion
           dataset_in_pool: Dataset in pool
           dns_resolver: DNS resolver
-          dns_server_zone: DNS server zone
+          dns_server_zone: Server zone
           dns_zone: DNS zone
-          dns_zone_transfer: DNS zone transfer
+          dns_zone_transfer: Zone transfer
           export: Export
-          host_ip_address: Host IP address
+          host_ip_address: Host IP
           incident_report: Incident report
-          migration_plan: Migration plan
+          migration_plan: Migration
           mount: Mount
-          network_interface: Network interface
+          network_interface: Interface
           node: Node
           outage: Outage
           pool: Pool
-          registration_request: Registration request
-          security_advisory: Security advisory
+          registration_request: Registration
+          security_advisory: Security
           snapshot: Snapshot
           snapshot_download: Snapshot download
           snapshot_in_pool: Snapshot in pool
           user: User
-          user_payment: User payment
+          user_payment: Payment
           vps: VPS
       labels:
         branch:
@@ -3632,7 +3632,7 @@ en:
             create: Create
             mail_overview: Mail overview
           requests:
-            create: Create
+            create: Creation
             resolve: Resolve
             update: Update
         pool:
@@ -3741,16 +3741,16 @@ en:
         export_disable: Disable export
         export_enable: Enable export
         export_set: Update export
-        mail_send: Send mail
-        maintenance_window_in_or_fail: Check maintenance window
-        maintenance_window_wait: Wait for maintenance window
-        netif_create_veth_routed: Create routed veth
-        netif_disable: Disable network interface
-        netif_enable: Enable network interface
+        mail_send: E-mail
+        maintenance_window_in_or_fail: Maintenance window check
+        maintenance_window_wait: Maintenance window wait
+        netif_create_veth_routed: Create interface
+        netif_disable: Disable interface
+        netif_enable: Enable interface
         netif_host_addr_add: Add host IP address
         netif_host_addr_del: Remove host IP address
-        netif_remove_veth_routed: Remove routed veth
-        netif_rename: Rename network interface
+        netif_remove_veth_routed: Remove interface
+        netif_rename: Rename interface
         netif_set_shaper: Set network shaper
         network_register: Register network
         pool_authorize_rsync_key: Authorize rsync key
@@ -3777,7 +3777,7 @@ en:
         storage_download_snapshot: Download snapshot
         storage_ensure_ugid_offset: Ensure UGID offset
         storage_inherit_property: Inherit property
-        storage_local_send: Send dataset locally
+        storage_local_send: Local dataset transfer
         storage_prepare_rollback: Prepare rollback
         storage_recv: Receive dataset
         storage_recv_check: Check received dataset
@@ -3786,14 +3786,14 @@ en:
         storage_rename_dataset: Rename dataset
         storage_rollback: Roll back dataset
         storage_rsync_dataset: Rsync dataset
-        storage_send: Send dataset
+        storage_send: Dataset transfer
         storage_set_canmount: Set canmount
         storage_set_dataset: Set dataset properties
         userns_map_disuse: Stop using user namespace map
         userns_map_use: Use user namespace map
-        utils_no_op: No-op
+        utils_no_op: NoOp
         vps_apply_user_data: Apply User data
-        vps_autostart: Set autostart
+        vps_autostart: Autostart
         vps_boot: Boot VPS
         vps_chown: Change VPS owner
         vps_copy: Copy VPS
@@ -3801,31 +3801,31 @@ en:
         vps_deploy_public_key: Deploy public key
         vps_deploy_user_data: Deploy User data
         vps_destroy: Delete VPS
-        vps_dns_resolver: Set DNS resolver
-        vps_features: Set VPS features
-        vps_hostname: Set Hostname
+        vps_dns_resolver: DNS resolver
+        vps_features: VPS features
+        vps_hostname: Hostname
         vps_map_mode: Set mapping mode
         vps_mount: Mount VPS
-        vps_mounts: Update Mounts
-        vps_os_template: Set OS template
+        vps_mounts: Mounts
+        vps_os_template: OS template
         vps_passwd: Change password
         vps_populate_config: Populate VPS config
         vps_recover_cleanup: Clean up recovery
         vps_reinstall: Reinstall VPS
         vps_remove_config: Remove VPS config
-        vps_resources: Set VPS resources
+        vps_resources: VPS resources
         vps_restart: Restart VPS
         vps_route_add: Add route
         vps_route_del: Delete route
-        vps_send_cleanup: Clean up send
-        vps_send_config: Send VPS config
-        vps_send_rollback_config: Send rollback config
-        vps_send_rootfs: Send rootfs
-        vps_send_state: Send VPS state
-        vps_send_sync: Synchronize send
+        vps_send_cleanup: Finish transfer
+        vps_send_config: Transfer VPS config
+        vps_send_rollback_config: Transfer rollback config
+        vps_send_rootfs: Transfer rootfs
+        vps_send_state: Transfer VPS state
+        vps_send_sync: Data sync
         vps_shaper_root_change: Change root shaper
         vps_start: Start VPS
-        vps_start_menu: Set Start menu
+        vps_start_menu: Start menu
         vps_stop: Shutdown VPS
         vps_umount: Unmount VPS
         vps_unmanage_dns_resolver: Unmanage DNS resolver

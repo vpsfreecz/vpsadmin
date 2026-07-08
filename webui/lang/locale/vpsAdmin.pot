@@ -1572,7 +1572,7 @@ msgid "NFS export"
 msgstr ""
 
 #: forms/export.forms.php
-msgid "Mount path"
+msgid "Export address"
 msgstr ""
 
 #: forms/export.forms.php

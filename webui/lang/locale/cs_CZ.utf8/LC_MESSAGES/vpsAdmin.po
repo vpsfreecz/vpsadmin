@@ -284,7 +284,7 @@ msgstr "IPv4 adresy"
 
 #: forms/cluster.forms.php
 msgid "used"
-msgstr "použitý"
+msgstr "použito"
 
 #: forms/cluster.forms.php
 msgid "Node list"
@@ -1578,8 +1578,8 @@ msgid "NFS export"
 msgstr "NFS export"
 
 #: forms/export.forms.php
-msgid "Mount path"
-msgstr "Montážní cesta"
+msgid "Export address"
+msgstr "Adresa exportu"
 
 #: forms/export.forms.php
 msgid "Default parameters"
@@ -4862,7 +4862,7 @@ msgstr "Doba nečinnosti před odhlášením"
 
 #: pages/page_adminm.php
 msgid "minutes"
-msgstr "minuty"
+msgstr "minut"
 
 #: pages/page_adminm.php
 msgid ""
@@ -5736,7 +5736,7 @@ msgstr "Čtení /etc/release bylo zakázáno"
 
 #: pages/page_adminvps.php
 msgid "Features set"
-msgstr "Sada funkcí"
+msgstr "Funkce nastaveny"
 
 #: pages/page_adminvps.php
 msgid "Features will be set momentarily."
@@ -5744,7 +5744,7 @@ msgstr "Funkce budou nastaveny za chvíli."
 
 #: pages/page_adminvps.php
 msgid "Feature set failed"
-msgstr "Sada funkcí selhala"
+msgstr "Nastavení funkcí se nezdařilo"
 
 #: pages/page_adminvps.php
 msgid "Auto-Start priority set"
@@ -6200,7 +6200,7 @@ msgstr ""
 
 #: pages/page_adminvps.php
 msgid "Features"
-msgstr "Vlastnosti"
+msgstr "Funkce"
 
 #: pages/page_adminvps.php
 msgid "VPS is restarted when features are changed."

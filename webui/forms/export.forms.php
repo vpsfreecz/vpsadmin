@@ -195,7 +195,7 @@ function export_edit_form($id)
     $xtpl->table_td($ex->path);
     $xtpl->table_tr();
 
-    $xtpl->table_td(_('Mount path') . ':');
+    $xtpl->table_td(_('Export address') . ':');
     $xtpl->table_td($ex->host_ip_address->addr . ':' . $ex->path);
     $xtpl->table_tr();
 
@@ -360,7 +360,7 @@ function export_destroy_form($id)
     $xtpl->table_td($ex->path);
     $xtpl->table_tr();
 
-    $xtpl->table_td(_('Mount path') . ':');
+    $xtpl->table_td(_('Export address') . ':');
     $xtpl->table_td($ex->host_ip_address->addr . ':' . $ex->path);
     $xtpl->table_tr();
 
@@ -409,8 +409,8 @@ function export_host_add_form($export_id)
         ]);
 
         foreach ($ips as $ip) {
-            $ip_options[$ip->id] =
-                "{$ip->addr}/{$ip->prefix} (VPS #{$vps->id} {$vps->hostname})";
+            $ip_options[$ip->id]
+                = "{$ip->addr}/{$ip->prefix} (VPS #{$vps->id} {$vps->hostname})";
         }
     }
 

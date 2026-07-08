@@ -352,7 +352,11 @@ RSpec.describe 'VpsAdmin::API::Resources::TransactionChain' do
           state: :done,
           size: 1,
           progress: 1,
-          concerns: [['User', user.id]]
+          concerns: [
+            ['User', user.id],
+            ['UserPayment', 101],
+            ['RegistrationRequest', 102]
+          ]
         )
         header 'Accept-Language', 'cs'
 
@@ -363,6 +367,8 @@ RSpec.describe 'VpsAdmin::API::Resources::TransactionChain' do
         expect(chain_obj['label']).to eq('Nové přihlášení')
         expect(chain_obj.dig('concerns', 'objects')).to include(['User', user.id])
         expect(chain_obj.dig('concerns', 'labels', 'User')).to eq('Uživatel')
+        expect(chain_obj.dig('concerns', 'labels', 'UserPayment')).to eq('Platba')
+        expect(chain_obj.dig('concerns', 'labels', 'RegistrationRequest')).to eq('Registrace')
       end
 
       it 'renders chains whose user session has no user-agent row' do

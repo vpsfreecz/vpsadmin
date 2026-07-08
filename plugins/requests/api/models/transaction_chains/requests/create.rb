@@ -4,7 +4,7 @@ module VpsAdmin::API::Plugins::Requests::TransactionChains
   class Create < ::TransactionChain
     include Utils
 
-    label 'Create'
+    label 'Creation'
     allow_empty
 
     def link_chain(request)
