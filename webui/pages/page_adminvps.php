@@ -1223,7 +1223,11 @@ if (isLoggedIn()) {
         $xtpl->table_tr();
 
         $xtpl->table_td(_("Load average") . ':');
-        $xtpl->table_td($vps->is_running ? implode(', ', [$vps->loadavg1, $vps->loadavg5, $vps->loadavg15]) : '-');
+        $xtpl->table_td(
+            $vps->is_running
+                ? implode(', ', array_map('format_load_average', [$vps->loadavg1, $vps->loadavg5, $vps->loadavg15]))
+                : '-'
+        );
         $xtpl->table_tr();
 
         $xtpl->table_td(_("Processes") . ':');

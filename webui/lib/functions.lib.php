@@ -448,6 +448,26 @@ function random_string($len)
     return $str;
 }
 
+function format_decimal_number($n, $decimals = 2, $trim = true)
+{
+    $formatted = number_format((float) $n, $decimals, '.', ' ');
+
+    if (!$trim || strpos($formatted, '.') === false) {
+        return $formatted;
+    }
+
+    return rtrim(rtrim($formatted, '0'), '.');
+}
+
+function format_load_average($n)
+{
+    if ($n === null || $n === '') {
+        return '-';
+    }
+
+    return format_decimal_number($n, 2, false);
+}
+
 function format_data_rate($n, $suffix)
 {
     $units = [
@@ -461,11 +481,11 @@ function format_data_rate($n, $suffix)
 
     foreach ($units as $threshold => $unit) {
         if ($n > $threshold) {
-            return round(($n / $threshold), 2) . "$unit$suffix";
+            return format_decimal_number($n / $threshold) . "$unit$suffix";
         }
     }
 
-    return round($n, 2) . "$suffix";
+    return format_decimal_number($n) . "$suffix";
 }
 
 function getClientIdentity()
@@ -851,7 +871,7 @@ function data_size_to_humanreadable_b($val)
     }
 
     $res = data_size_unitize($val);
-    return round($res[0], 2) . " " . $DATA_SIZE_UNITS[$res[1]];
+    return format_decimal_number($res[0]) . " " . $DATA_SIZE_UNITS[$res[1]];
 }
 
 function data_size_to_humanreadable_kb($val)
@@ -916,7 +936,7 @@ function format_number_with_unit($n)
         $unit = strtoupper($unit);
     }
 
-    return round($val, 2) . $unit;
+    return format_decimal_number($val) . $unit;
 }
 
 function approx_number($val)
