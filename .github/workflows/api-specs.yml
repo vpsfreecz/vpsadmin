@@ -29,7 +29,7 @@ jobs:
   api-specs-full:
     name: "API specs (full) - ${{ matrix.topic }}"
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 60
 
     strategy:
       fail-fast: false
@@ -233,7 +233,7 @@ jobs:
   api-specs-core:
     name: "API specs (core) - ${{ matrix.topic }}"
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 60
 
     strategy:
       fail-fast: false
