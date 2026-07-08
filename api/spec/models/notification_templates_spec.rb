@@ -484,14 +484,42 @@ RSpec.describe VpsAdmin::API::NotificationTemplates do
       subject: 'English subject',
       text: 'English body'
     )
+    template.notification_template_variants.create!(
+      language: SpecSeed.language,
+      protocol: :telegram,
+      text: 'English Telegram body'
+    )
+    template.notification_template_variants.create!(
+      language: SpecSeed.language,
+      protocol: :sms,
+      text: 'English SMS body'
+    )
 
     mail = NotificationTemplate.send_email!(
+      :spec_language_fallback_template,
+      user:
+    )
+    telegram = NotificationTemplate.render_telegram!(
+      :spec_language_fallback_template,
+      user:
+    )
+    sms = NotificationTemplate.render_sms!(
       :spec_language_fallback_template,
       user:
     )
 
     expect(mail.subject).to eq('English subject')
     expect(mail.text_plain).to eq('English body')
+    expect(telegram[:text]).to eq('English Telegram body')
+    expect(sms[:text]).to eq('English SMS body')
+    expect(
+      VpsAdmin::API::Events.template_available?(
+        :spec_language_fallback_template,
+        nil,
+        language,
+        protocol: :telegram
+      )
+    ).to be(true)
   end
 
   it 'normalizes static e-mail subjects without template variables' do
