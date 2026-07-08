@@ -88,7 +88,7 @@ class NotificationTemplate < ApplicationRecord
     tpl = find_resolved!(name, opts[:params])
 
     lang = resolve_language(opts)
-    variant = tpl.notification_template_variants.find_by(language: lang, protocol: 'email')
+    variant = find_variant(tpl, lang, 'email')
     raise VpsAdmin::API::Exceptions::NotificationTemplateDoesNotExist, name unless variant
 
     if opts[:vars]
@@ -187,7 +187,7 @@ class NotificationTemplate < ApplicationRecord
   def self.render_protocol!(protocol, name, opts = {})
     tpl = find_resolved!(name, opts[:params])
     lang = resolve_language(opts)
-    variant = tpl.notification_template_variants.find_by(language: lang, protocol: protocol.to_s)
+    variant = find_variant(tpl, lang, protocol)
     raise VpsAdmin::API::Exceptions::NotificationTemplateDoesNotExist, name unless variant
 
     vars = (opts[:vars] || {}).merge(
@@ -224,6 +224,17 @@ class NotificationTemplate < ApplicationRecord
       Language.find_by(code: 'en') ||
       Language.first ||
       raise(VpsAdmin::API::Exceptions::NotificationTemplateDoesNotExist, opts[:name])
+  end
+
+  def self.find_variant(template, language, protocol)
+    protocol = protocol.to_s
+    variant = template.notification_template_variants.find_by(language:, protocol:)
+    return variant if variant
+
+    english = Language.find_by(code: 'en')
+    return if english.nil? || english == language
+
+    template.notification_template_variants.find_by(language: english, protocol:)
   end
 
   # Register built-in templates
