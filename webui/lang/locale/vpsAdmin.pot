@@ -2594,7 +2594,7 @@ msgid "Direct"
 msgstr ""
 
 #: forms/outage.forms.php
-msgid "Planned outages"
+msgid "Upcoming maintenance"
 msgstr ""
 
 #: forms/outage.forms.php
@@ -2602,31 +2602,31 @@ msgid "Upcoming outages"
 msgstr ""
 
 #: forms/outage.forms.php
-msgid "Upcoming planned and unplanned outages"
+msgid "Upcoming maintenance and outages"
 msgstr ""
 
 #: forms/outage.forms.php
-msgid "Current planned outages"
+msgid "Ongoing maintenance"
 msgstr ""
 
 #: forms/outage.forms.php
-msgid "Current outages"
+msgid "Ongoing outages"
 msgstr ""
 
 #: forms/outage.forms.php
-msgid "Current planned and unplanned outages"
+msgid "Ongoing maintenance and outages"
 msgstr ""
 
 #: forms/outage.forms.php
-msgid "Recently completed planned outages"
+msgid "Recent maintenance"
 msgstr ""
 
 #: forms/outage.forms.php
-msgid "Recently resolved outages"
+msgid "Recent outages"
 msgstr ""
 
 #: forms/outage.forms.php
-msgid "Recently resolved planned and unplanned outages"
+msgid "Recent maintenance and outages"
 msgstr ""
 
 #: forms/outage.forms.php forms/vps.forms.php pages/page_index.php

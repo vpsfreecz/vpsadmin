@@ -2617,40 +2617,40 @@ msgid "Direct"
 msgstr "Přímé"
 
 #: forms/outage.forms.php
-msgid "Planned outages"
-msgstr "Odstávky"
+msgid "Upcoming maintenance"
+msgstr "Nadcházející odstávky"
 
 #: forms/outage.forms.php
 msgid "Upcoming outages"
 msgstr "Nadcházející výpadky"
 
 #: forms/outage.forms.php
-msgid "Upcoming planned and unplanned outages"
+msgid "Upcoming maintenance and outages"
 msgstr "Nadcházející odstávky a výpadky"
 
 #: forms/outage.forms.php
-msgid "Current planned outages"
+msgid "Ongoing maintenance"
 msgstr "Probíhající odstávky"
 
 #: forms/outage.forms.php
-msgid "Current outages"
+msgid "Ongoing outages"
 msgstr "Probíhající výpadky"
 
 #: forms/outage.forms.php
-msgid "Current planned and unplanned outages"
+msgid "Ongoing maintenance and outages"
 msgstr "Probíhající odstávky a výpadky"
 
 #: forms/outage.forms.php
-msgid "Recently completed planned outages"
-msgstr "Nedávno ukončené odstávky"
+msgid "Recent maintenance"
+msgstr "Nedávné odstávky"
 
 #: forms/outage.forms.php
-msgid "Recently resolved outages"
-msgstr "Nedávno vyřešené výpadky"
+msgid "Recent outages"
+msgstr "Nedávné výpadky"
 
 #: forms/outage.forms.php
-msgid "Recently resolved planned and unplanned outages"
-msgstr "Nedávno ukončené odstávky a vyřešené výpadky"
+msgid "Recent maintenance and outages"
+msgstr "Nedávné odstávky a výpadky"
 
 #: forms/outage.forms.php forms/vps.forms.php pages/page_index.php
 #: pages/page_outage.php

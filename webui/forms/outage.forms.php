@@ -1379,33 +1379,33 @@ function outage_list_title($section, $outages)
         case 'upcoming':
             switch ($kind) {
                 case 'planned':
-                    return _('Planned outages');
+                    return _('Upcoming maintenance');
                 case 'unplanned':
                     return _('Upcoming outages');
                 default:
-                    return _('Upcoming planned and unplanned outages');
+                    return _('Upcoming maintenance and outages');
             }
 
             // no break
         case 'current':
             switch ($kind) {
                 case 'planned':
-                    return _('Current planned outages');
+                    return _('Ongoing maintenance');
                 case 'unplanned':
-                    return _('Current outages');
+                    return _('Ongoing outages');
                 default:
-                    return _('Current planned and unplanned outages');
+                    return _('Ongoing maintenance and outages');
             }
 
             // no break
         case 'recent':
             switch ($kind) {
                 case 'planned':
-                    return _('Recently completed planned outages');
+                    return _('Recent maintenance');
                 case 'unplanned':
-                    return _('Recently resolved outages');
+                    return _('Recent outages');
                 default:
-                    return _('Recently resolved planned and unplanned outages');
+                    return _('Recent maintenance and outages');
             }
 
             // no break

@@ -247,15 +247,15 @@ final class OutageDetailsReporterNameXssTest extends TestCase
             (object) ['type' => 'unplanned_outage'],
         ];
 
-        self::assertSame('Planned outages', outage_list_title('upcoming', $planned));
+        self::assertSame('Upcoming maintenance', outage_list_title('upcoming', $planned));
         self::assertSame('Upcoming outages', outage_list_title('upcoming', $unplanned));
-        self::assertSame('Upcoming planned and unplanned outages', outage_list_title('upcoming', $mixed));
-        self::assertSame('Current planned outages', outage_list_title('current', $planned));
-        self::assertSame('Current outages', outage_list_title('current', $unplanned));
-        self::assertSame('Current planned and unplanned outages', outage_list_title('current', $mixed));
-        self::assertSame('Recently completed planned outages', outage_list_title('recent', $planned));
-        self::assertSame('Recently resolved outages', outage_list_title('recent', $unplanned));
-        self::assertSame('Recently resolved planned and unplanned outages', outage_list_title('recent', $mixed));
+        self::assertSame('Upcoming maintenance and outages', outage_list_title('upcoming', $mixed));
+        self::assertSame('Ongoing maintenance', outage_list_title('current', $planned));
+        self::assertSame('Ongoing outages', outage_list_title('current', $unplanned));
+        self::assertSame('Ongoing maintenance and outages', outage_list_title('current', $mixed));
+        self::assertSame('Recent maintenance', outage_list_title('recent', $planned));
+        self::assertSame('Recent outages', outage_list_title('recent', $unplanned));
+        self::assertSame('Recent maintenance and outages', outage_list_title('recent', $mixed));
     }
 
     public function testCzechOutageLinkTranslationsUseNeutralReportTerms(): void
