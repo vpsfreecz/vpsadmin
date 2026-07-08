@@ -808,6 +808,14 @@ RSpec.describe VpsAdmin::API::NotificationTemplateReconciler do
     expect(mail.subject).to eq('Static subject')
   end
 
+  it 'does not require optional registered template candidates to be shipped' do
+    NotificationTemplate.register :spec_optional_candidate_template, default: false
+
+    expect(described_class.required_default_templates).not_to include(
+      'spec_optional_candidate_template'
+    )
+  end
+
   it 'ships directory-backed English templates for all registered defaults' do
     templates = described_class.find_templates(described_class.default_template_paths).to_h do |template|
       [template.name, template]
