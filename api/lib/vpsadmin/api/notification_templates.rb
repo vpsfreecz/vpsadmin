@@ -455,7 +455,7 @@ module VpsAdmin::API
       registered = ::NotificationTemplate.templates
 
       registered.filter_map do |id, desc|
-        [id.to_s, id.to_s] unless desc[:name]
+        [id.to_s, id.to_s] unless desc[:name] || desc[:default] == false
       end.to_h.merge(
         CONCRETE_DEFAULTS.filter_map do |name, template_id|
           next unless registered.has_key?(template_id)
