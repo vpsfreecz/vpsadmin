@@ -3545,7 +3545,7 @@ en:
           create_user: Zone+
           destroy_record: Record-
           destroy_user: Zone-
-          set_reverse_record: Set PTR
+          set_reverse_record: PTR setup
           unset_reverse_record: Unset PTR
           update: Update zone
           update_record: Record*

@@ -1,6 +1,6 @@
 module TransactionChains
   class DnsZone::SetReverseRecord < ::TransactionChain
-    label 'Set PTR'
+    label 'PTR setup'
     allow_empty
 
     # @param host_ip_address [::HostIpAddress]

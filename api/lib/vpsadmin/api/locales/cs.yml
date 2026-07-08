@@ -3539,7 +3539,7 @@ cs:
           create_user: Zóna+
           destroy_record: Záznam-
           destroy_user: Zóna-
-          set_reverse_record: Nastavit PTR
+          set_reverse_record: Nastavení PTR
           unset_reverse_record: Zrušit PTR
           update: Upravit zónu
           update_record: Záznam*
