@@ -4697,7 +4697,7 @@ msgstr "Přezdívka"
 
 #: pages/page_adminm.php
 msgid "Privileges"
-msgstr "privilegia"
+msgstr "Privilegia"
 
 #: pages/page_adminm.php pages/page_adminvps.php pages/page_console.php
 msgid "Password"
