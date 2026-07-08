@@ -1235,7 +1235,7 @@ if (isLoggedIn()) {
         $xtpl->table_tr();
 
         $xtpl->table_td(_("CPU") . ':');
-        $xtpl->table_td($vps->is_running ? sprintf('%.2f %%', 100.0 - $vps->cpu_idle) : '-');
+        $xtpl->table_td($vps->is_running ? format_decimal_number(100.0 - $vps->cpu_idle, 2, false) . ' %' : '-');
         $xtpl->table_tr();
 
         $xtpl->table_td(_("RAM") . ':');
@@ -1250,9 +1250,9 @@ if (isLoggedIn()) {
 
         $xtpl->table_td(_("Disk") . ':');
         $xtpl->table_td(
-            ($vps->diskspace && showVpsDiskSpaceWarning($vps) ? ('<img src="template/icons/warning.png" title="' . _('Disk at') . ' ' . sprintf('%.2f %%', round(vpsDiskUsagePercent($vps), 2)) . '"> ') : '')
+            ($vps->diskspace && showVpsDiskSpaceWarning($vps) ? ('<img src="template/icons/warning.png" title="' . _('Disk at') . ' ' . format_decimal_number(vpsDiskUsagePercent($vps), 2, false) . ' %"> ') : '')
             . ($vps->diskspace && showVpsDiskExpansionWarning($vps) ? ('<img src="template/icons/warning.png" title="' . _('Disk temporarily expanded') . '"> ') : '')
-            . sprintf('%.2f GB', round($vps->used_diskspace / 1024, 2))
+            . format_decimal_number($vps->used_diskspace / 1024, 2, false) . ' GB'
         );
         $xtpl->table_tr();
 

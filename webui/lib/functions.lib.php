@@ -450,13 +450,27 @@ function random_string($len)
 
 function format_decimal_number($n, $decimals = 2, $trim = true)
 {
-    $formatted = number_format((float) $n, $decimals, '.', ' ');
+    $decimalSeparator = webui_decimal_separator();
+    $formatted = number_format((float) $n, $decimals, $decimalSeparator, ' ');
 
-    if (!$trim || strpos($formatted, '.') === false) {
+    if (!$trim || strpos($formatted, $decimalSeparator) === false) {
         return $formatted;
     }
 
-    return rtrim(rtrim($formatted, '0'), '.');
+    return rtrim(rtrim($formatted, '0'), $decimalSeparator);
+}
+
+function webui_decimal_separator()
+{
+    $locale = $GLOBALS['CURRENTLOCALE'] ?? '';
+
+    if (!is_string($locale) || $locale === '') {
+        return '.';
+    }
+
+    $locale = strtolower(str_replace('-', '_', $locale));
+
+    return preg_match('/^cs([_.@]|$)/', $locale) ? ',' : '.';
 }
 
 function format_load_average($n)
@@ -972,11 +986,11 @@ function approx_number($val)
 
     foreach (array_reverse($data) as $unit) {
         if ($val > $unit['n']) {
-            return (round($val / $unit['n'], 2) * $sign) . $unit['unit'];
+            return format_decimal_number(($val / $unit['n']) * $sign) . $unit['unit'];
         }
     }
 
-    return number_format($val * $sign, 0, '.', ' ');
+    return format_decimal_number($val * $sign, 0, false);
 }
 
 function get_val($name, $default = '')
@@ -1632,7 +1646,7 @@ function usedSpaceWithCompression($dataset, $property)
     $ret .= data_size_to_humanreadable($used);
     $ret .= ' (';
     $ret .= data_size_to_humanreadable($used * $ratio);
-    $ret .= ' ' . _('uncompressed, ratio ') . $ratio . '&times;)';
+    $ret .= ' ' . _('uncompressed, ratio ') . format_decimal_number($ratio) . '&times;)';
 
     return $ret;
 }
@@ -1643,7 +1657,7 @@ function compressRatioWithUsedSpace($dataset, $property)
     $ratio = $dataset->{$property};
 
     $ret = '';
-    $ret .= $ratio . '&times;';
+    $ret .= format_decimal_number($ratio) . '&times;';
     $ret .= ' (';
     $ret .= data_size_to_humanreadable($used * $ratio);
     $ret .= ' ' . _('uncompressed') . ')';

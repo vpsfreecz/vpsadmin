@@ -356,7 +356,7 @@ function dataset_edit_form()
         $xtpl->table_tr();
 
         $xtpl->table_td(_('Number of days over refquota') . ':');
-        $xtpl->table_td(round($exp->over_refquota_seconds / 60 / 60 / 24, 1));
+        $xtpl->table_td(format_decimal_number($exp->over_refquota_seconds / 60 / 60 / 24, 1, false));
         $xtpl->table_tr();
 
         if (isAdmin()) {

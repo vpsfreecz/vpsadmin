@@ -170,7 +170,7 @@ function backup_download_list_form()
         $xtpl->table_td($dl->snapshot_id ? $dl->snapshot->dataset->name : '---');
         $xtpl->table_td($dl->snapshot_id ? tolocaltz($dl->snapshot->created_at, 'Y-m-d H:i') : '---');
         $xtpl->table_td('<span title="' . $dl->file_name . '">' . $short_name . '</span>');
-        $xtpl->table_td($dl->size ? (round($dl->size / 1024, 2) . "&nbsp;GiB") : '---');
+        $xtpl->table_td($dl->size ? (format_decimal_number($dl->size / 1024) . "&nbsp;GiB") : '---');
         $xtpl->table_td(tolocaltz($dl->expiration_date, 'Y-m-d'));
         $xtpl->table_td($dl->ready ? '<a href="' . $dl->url . '">' . _('Download') . '</a>' : _('in progress'));
         $xtpl->table_td($dl->ready ? '<a href="?page=backup&action=download_destroy&id=' . $dl->id . '"><img src="template/icons/delete.png" title="' . _("Delete") . '"></a>' : '');
@@ -215,7 +215,7 @@ function backup_download_show_form($id)
     $xtpl->table_tr();
 
     $xtpl->table_td(_('Size') . ':');
-    $xtpl->table_td($dl->size ? (round($dl->size / 1024, 2) . "&nbsp;GiB") : '---');
+    $xtpl->table_td($dl->size ? (format_decimal_number($dl->size / 1024) . "&nbsp;GiB") : '---');
     $xtpl->table_tr();
 
     $xtpl->table_td(_('Expiration') . ':');

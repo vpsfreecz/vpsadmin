@@ -843,9 +843,9 @@ function vps_list_form()
 
             if ($vps->used_diskspace > 0) {
                 $xtpl->table_td(
-                    ($vps->diskspace && $diskSpaceWarning ? ('<img src="template/icons/warning.png" title="' . _('Disk at') . ' ' . sprintf('%.2f %%', round(vpsDiskUsagePercent($vps), 2)) . '"> ') : '')
+                    ($vps->diskspace && $diskSpaceWarning ? ('<img src="template/icons/warning.png" title="' . _('Disk at') . ' ' . format_decimal_number(vpsDiskUsagePercent($vps), 2, false) . ' %"> ') : '')
                     . ($expansionWarning ? ('<img src="template/icons/warning.png" title="' . _('Disk temporarily expanded') . '"> ') : '')
-                    . sprintf('%.2f GB', round($vps->used_diskspace / 1024, 2)),
+                    . format_decimal_number($vps->used_diskspace / 1024, 2, false) . ' GB',
                     false,
                     true
                 );

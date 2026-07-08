@@ -111,23 +111,23 @@ function node_overview()
         $xtpl->table_td($node->id);
         $xtpl->table_td($node->domain_name);
         $xtpl->table_td($node->vps_running, false, true);
-        $xtpl->table_td(sprintf('%.1f', $node->uptime / 60.0 / 60 / 24), false, true);
+        $xtpl->table_td(format_decimal_number($node->uptime / 60.0 / 60 / 24, 1, false), false, true);
         $xtpl->table_td(format_load_average($node->loadavg5), false, true);
 
         // CPU
-        $xtpl->table_td(sprintf('%.2f', $node->cpu_iowait), false, true);
-        $xtpl->table_td(sprintf('%.2f', $node->cpu_idle), false, true);
+        $xtpl->table_td(format_decimal_number($node->cpu_iowait, 2, false), false, true);
+        $xtpl->table_td(format_decimal_number($node->cpu_idle, 2, false), false, true);
 
         // Memory
         $xtpl->table_td(
-            sprintf('%.2f', ($node->total_memory - $node->used_memory) / 1024),
+            format_decimal_number(($node->total_memory - $node->used_memory) / 1024, 2, false),
             false,
             true
         );
 
         // ARC
-        $xtpl->table_td(sprintf('%.2f', $node->arc_size / 1024.0), false, true);
-        $xtpl->table_td(sprintf('%.2f', $node->arc_hitpercent), false, true);
+        $xtpl->table_td(format_decimal_number($node->arc_size / 1024.0, 2, false), false, true);
+        $xtpl->table_td(format_decimal_number($node->arc_hitpercent, 2, false), false, true);
 
         // Daemon version
         $xtpl->table_td(h($node->version), false, true);

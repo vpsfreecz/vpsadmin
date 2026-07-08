@@ -182,9 +182,9 @@ foreach ($nodes as $node) {
     $xtpl->table_td((isLoggedIn() ? node_link($node, $node->name) : $node->name));
 
     if ($node->pool_scan == 'scrub') {
-        $xtpl->table_td(_('scrub, ') . round($node->pool_scan_percent, 1) . '&nbsp;%');
+        $xtpl->table_td(_('scrub, ') . format_decimal_number($node->pool_scan_percent, 1, false) . '&nbsp;%');
     } elseif ($node->pool_scan == 'resilver') {
-        $xtpl->table_td(_('resilver, ') . round($node->pool_scan_percent, 1) . '&nbsp;%');
+        $xtpl->table_td(_('resilver, ') . format_decimal_number($node->pool_scan_percent, 1, false) . '&nbsp;%');
     } else {
         $xtpl->table_td($node->pool_state);
     }
@@ -195,7 +195,7 @@ foreach ($nodes as $node) {
         $xtpl->table_td('---', false, true);
     } else {
         $xtpl->table_td(
-            $munin->linkHostPath(sprintf('%.2f %%', 100.0 - $node->cpu_idle), $node->fqdn, '#system'),
+            $munin->linkHostPath(format_decimal_number(100.0 - $node->cpu_idle, 2, false) . ' %', $node->fqdn, '#system'),
             false,
             true
         );

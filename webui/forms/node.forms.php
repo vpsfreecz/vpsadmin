@@ -66,11 +66,11 @@ function node_details_table($node_id)
                 $perf = _('nominal');
                 break;
             case 'scrub':
-                $scan = _('scrub - checking data integrity') . ', ' . round($pool->scan_percent, 1) . '&nbsp;% ' . _('done');
+                $scan = _('scrub - checking data integrity') . ', ' . format_decimal_number($pool->scan_percent, 1, false) . '&nbsp;% ' . _('done');
                 $perf = _('decreased');
                 break;
             case 'resilver':
-                $scan = _('resilver - replacing disk') . ', ' . round($pool->scan_percent, 1) . '&nbsp;% ' . _('done');
+                $scan = _('resilver - replacing disk') . ', ' . format_decimal_number($pool->scan_percent, 1, false) . '&nbsp;% ' . _('done');
                 $perf = _('decreased');
                 break;
             case 'error':
@@ -97,7 +97,7 @@ function node_details_table($node_id)
                 $used = data_size_to_humanreadable($usedSpace);
                 $total = data_size_to_humanreadable($totalSpace);
                 $free = data_size_to_humanreadable($availableSpace);
-                $pct = round(($usedSpace / $totalSpace) * 100, 1);
+                $pct = format_decimal_number(($usedSpace / $totalSpace) * 100, 1, false);
 
                 $space_usage = sprintf(_('%s used of %s (%s free, %s%%)'), $used, $total, $free, $pct);
             }
