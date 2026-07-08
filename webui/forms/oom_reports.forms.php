@@ -165,7 +165,7 @@ function oom_reports_show($id)
         }
     }
 
-    $xtpl->title(_('Out-of-memory Reports for VPS') . ' ' . $r->vps_id);
+    $xtpl->title(_('Out-of-memory Report for VPS') . ' ' . $r->vps_id);
 
     $xtpl->table_td(_('Time') . ':');
     $xtpl->table_td(tolocaltz($r->created_at));
@@ -246,19 +246,19 @@ function oom_reports_show($id)
 
     $xtpl->table_out();
 
-    $xtpl->table_title(_('Tasks'));
-    $xtpl->table_add_category(_('PID'));
-    $xtpl->table_add_category(_('Name'));
-    $xtpl->table_add_category(_('UID'));
-    $xtpl->table_add_category(_('TGID'));
-    $xtpl->table_add_category(_('VM'));
-    $xtpl->table_add_category(_('RSS'));
-    $xtpl->table_add_category(_('anon'));
-    $xtpl->table_add_category(_('file'));
-    $xtpl->table_add_category(_('shmem'));
-    $xtpl->table_add_category(_('pgtables'));
-    $xtpl->table_add_category(_('swapents'));
-    $xtpl->table_add_category(_('oom_score_adj'));
+    $xtpl->table_title(_('Processes'));
+    $xtpl->table_add_category('PID');
+    $xtpl->table_add_category('Name');
+    $xtpl->table_add_category('UID');
+    $xtpl->table_add_category('TGID');
+    $xtpl->table_add_category('VM');
+    $xtpl->table_add_category('RSS');
+    $xtpl->table_add_category('anon');
+    $xtpl->table_add_category('file');
+    $xtpl->table_add_category('shmem');
+    $xtpl->table_add_category('pgtables');
+    $xtpl->table_add_category('swapents');
+    $xtpl->table_add_category('oom_score_adj');
 
     $vm_sum = 0;
     $rss_sum = 0;
@@ -302,18 +302,18 @@ function oom_reports_show($id)
         $xtpl->table_tr($stat->host_pid == $r->killed_pid ? '#FFCCCC' : false);
     }
 
-    $xtpl->table_td(_('PID'), '#5EAFFF; color:#FFF; font-weight:bold; text-align:center;');
-    $xtpl->table_td(_('Name'), '#5EAFFF; color:#FFF; font-weight:bold; text-align:center;');
-    $xtpl->table_td(_('UID'), '#5EAFFF; color:#FFF; font-weight:bold; text-align:center;');
-    $xtpl->table_td(_('TGID'), '#5EAFFF; color:#FFF; font-weight:bold; text-align:center;');
-    $xtpl->table_td(_('VM'), '#5EAFFF; color:#FFF; font-weight:bold; text-align:center;');
-    $xtpl->table_td(_('RSS'), '#5EAFFF; color:#FFF; font-weight:bold; text-align:center;');
-    $xtpl->table_td(_('anon'), '#5EAFFF; color:#FFF; font-weight:bold; text-align:center;');
-    $xtpl->table_td(_('file'), '#5EAFFF; color:#FFF; font-weight:bold; text-align:center;');
-    $xtpl->table_td(_('shmem'), '#5EAFFF; color:#FFF; font-weight:bold; text-align:center;');
-    $xtpl->table_td(_('pgtables'), '#5EAFFF; color:#FFF; font-weight:bold; text-align:center;');
-    $xtpl->table_td(_('swapents'), '#5EAFFF; color:#FFF; font-weight:bold; text-align:center;');
-    $xtpl->table_td(_('oom_score_adj'), '#5EAFFF; color:#FFF; font-weight:bold; text-align:center;');
+    $xtpl->table_td('PID', '#5EAFFF; color:#FFF; font-weight:bold; text-align:center;');
+    $xtpl->table_td('Name', '#5EAFFF; color:#FFF; font-weight:bold; text-align:center;');
+    $xtpl->table_td('UID', '#5EAFFF; color:#FFF; font-weight:bold; text-align:center;');
+    $xtpl->table_td('TGID', '#5EAFFF; color:#FFF; font-weight:bold; text-align:center;');
+    $xtpl->table_td('VM', '#5EAFFF; color:#FFF; font-weight:bold; text-align:center;');
+    $xtpl->table_td('RSS', '#5EAFFF; color:#FFF; font-weight:bold; text-align:center;');
+    $xtpl->table_td('anon', '#5EAFFF; color:#FFF; font-weight:bold; text-align:center;');
+    $xtpl->table_td('file', '#5EAFFF; color:#FFF; font-weight:bold; text-align:center;');
+    $xtpl->table_td('shmem', '#5EAFFF; color:#FFF; font-weight:bold; text-align:center;');
+    $xtpl->table_td('pgtables', '#5EAFFF; color:#FFF; font-weight:bold; text-align:center;');
+    $xtpl->table_td('swapents', '#5EAFFF; color:#FFF; font-weight:bold; text-align:center;');
+    $xtpl->table_td('oom_score_adj', '#5EAFFF; color:#FFF; font-weight:bold; text-align:center;');
     $xtpl->table_tr();
 
     $xtpl->table_td(_('Sum') . ':', false, false, '2');
@@ -377,7 +377,7 @@ function oom_reports_rules_list($vps_id)
             '<ul>'
             . '<li>' . _('Rules are evaluated top to bottom') . '</li>'
             . '<li>' . _('Patterns are matched using Ruby\'s <a href="https://docs.ruby-lang.org/en/master/File.html#method-c-fnmatch" target="_blank">File.fnmatch</a> method with <code>File::FNM_PATHNAME | File::FNM_EXTGLOB</code>') . '</li>'
-            . '<li>' . _('Matches are done against full cgroup path without <code>/sys/fs/cgroup</code>, see') . ' <a href="?page=oom_reports&list=1">' . _('existing reports') . '</a>' . '</li>'
+            . '<li>' . _('Matches are done against full cgroup path without <code>/sys/fs/cgroup</code>, see') . ' <a href="?page=oom_reports&list=1">' . _('existing OOM reports') . '</a>' . '</li>'
             . '<li>' . _('The first matching rule determines the action') . '</li>'
             . '<li>' . _('Out-of-memory situations are considered a configuration error and can result in VPS being restarted or stopped') . '</li>'
             . '</ul>',

@@ -292,7 +292,7 @@ msgid "Node list"
 msgstr ""
 
 #: forms/cluster.forms.php forms/dataset.forms.php forms/dns.forms.php
-#: forms/node.forms.php forms/oom_reports.forms.php forms/outage.forms.php
+#: forms/node.forms.php forms/outage.forms.php
 #: forms/security_advisory.forms.php forms/users.forms.php forms/vps.forms.php
 #: pages/page_cluster.php pages/page_transactions.php
 msgid "Name"
@@ -2149,7 +2149,7 @@ msgid "Configure rules"
 msgstr ""
 
 #: forms/oom_reports.forms.php
-msgid "Out-of-memory Reports for VPS"
+msgid "Out-of-memory Report for VPS"
 msgstr ""
 
 #: forms/oom_reports.forms.php
@@ -2192,52 +2192,8 @@ msgstr ""
 msgid "Parameter"
 msgstr ""
 
-#: forms/oom_reports.forms.php
-msgid "Tasks"
-msgstr ""
-
-#: forms/oom_reports.forms.php
-msgid "PID"
-msgstr ""
-
-#: forms/oom_reports.forms.php
-msgid "UID"
-msgstr ""
-
-#: forms/oom_reports.forms.php
-msgid "TGID"
-msgstr ""
-
-#: forms/oom_reports.forms.php
-msgid "VM"
-msgstr ""
-
-#: forms/oom_reports.forms.php
-msgid "RSS"
-msgstr ""
-
-#: forms/oom_reports.forms.php
-msgid "anon"
-msgstr ""
-
-#: forms/oom_reports.forms.php
-msgid "file"
-msgstr ""
-
-#: forms/oom_reports.forms.php
-msgid "shmem"
-msgstr ""
-
-#: forms/oom_reports.forms.php
-msgid "pgtables"
-msgstr ""
-
-#: forms/oom_reports.forms.php
-msgid "swapents"
-msgstr ""
-
-#: forms/oom_reports.forms.php
-msgid "oom_score_adj"
+#: forms/oom_reports.forms.php pages/page_adminvps.php
+msgid "Processes"
 msgstr ""
 
 #: forms/oom_reports.forms.php
@@ -2274,7 +2230,7 @@ msgid ""
 msgstr ""
 
 #: forms/oom_reports.forms.php
-msgid "existing reports"
+msgid "existing OOM reports"
 msgstr ""
 
 #: forms/oom_reports.forms.php
@@ -5815,10 +5771,6 @@ msgstr ""
 
 #: pages/page_adminvps.php
 msgid "Load average"
-msgstr ""
-
-#: pages/page_adminvps.php
-msgid "Processes"
 msgstr ""
 
 #: pages/page_adminvps.php pages/page_index.php

@@ -162,7 +162,7 @@ test.describe('support and status browser coverage', () => {
     await page.goto(`/?page=oom_reports&action=show&id=${s.oomReport.id}`, {
       waitUntil: 'domcontentloaded',
     });
-    await expect(heading(page)).toContainText(`Out-of-memory Reports for VPS ${s.vps.id}`);
+    await expect(heading(page)).toContainText(`Out-of-memory Report for VPS ${s.vps.id}`);
     await expect(content(page)).toContainText(s.oomReport.cgroup);
     await expect(content(page)).toContainText(s.oomReport.killedName);
 

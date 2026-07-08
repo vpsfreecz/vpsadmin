@@ -43,7 +43,7 @@ msgstr "Filtry"
 #: pages/page_adminm.php pages/page_nas.php pages/page_networking.php
 #: pages/page_transactions.php
 msgid "Limit"
-msgstr "Omezit"
+msgstr "Limit"
 
 #: forms/backup.forms.php forms/dns.forms.php forms/export.forms.php
 #: forms/incidents.forms.php forms/networking.forms.php
@@ -291,7 +291,7 @@ msgid "Node list"
 msgstr "Seznam nodů"
 
 #: forms/cluster.forms.php forms/dataset.forms.php forms/dns.forms.php
-#: forms/node.forms.php forms/oom_reports.forms.php forms/outage.forms.php
+#: forms/node.forms.php forms/outage.forms.php
 #: forms/security_advisory.forms.php forms/users.forms.php forms/vps.forms.php
 #: pages/page_cluster.php pages/page_transactions.php
 msgid "Name"
@@ -2140,7 +2140,7 @@ msgstr "Data"
 
 #: forms/oom_reports.forms.php
 msgid "Out-of-memory Reports"
-msgstr "Zprávy o nedostatku paměti"
+msgstr "Reporty o nedostatku paměti"
 
 #: forms/oom_reports.forms.php
 msgid "Rule ID"
@@ -2163,8 +2163,8 @@ msgid "Configure rules"
 msgstr "Nakonfigurujte pravidla"
 
 #: forms/oom_reports.forms.php
-msgid "Out-of-memory Reports for VPS"
-msgstr "Zprávy o nedostatku paměti pro VPS"
+msgid "Out-of-memory Report for VPS"
+msgstr "Report o nedostatku paměti pro VPS"
 
 #: forms/oom_reports.forms.php
 msgid "Cgroup"
@@ -2180,7 +2180,7 @@ msgstr "Vyvoláno uživatelem"
 
 #: forms/oom_reports.forms.php
 msgid "Killed"
-msgstr "Zabitý"
+msgstr "Zabito"
 
 #: forms/oom_reports.forms.php
 msgid "same process"
@@ -2192,7 +2192,7 @@ msgstr "Využití paměti cgroup"
 
 #: forms/oom_reports.forms.php
 msgid "Usage"
-msgstr "Používání"
+msgstr "Využito"
 
 #: forms/oom_reports.forms.php
 msgid "Fail count"
@@ -2206,53 +2206,9 @@ msgstr "Statistiky paměti cgroup"
 msgid "Parameter"
 msgstr "Parametr"
 
-#: forms/oom_reports.forms.php
-msgid "Tasks"
-msgstr "Úkoly"
-
-#: forms/oom_reports.forms.php
-msgid "PID"
-msgstr "PID"
-
-#: forms/oom_reports.forms.php
-msgid "UID"
-msgstr "UID"
-
-#: forms/oom_reports.forms.php
-msgid "TGID"
-msgstr "TGID"
-
-#: forms/oom_reports.forms.php
-msgid "VM"
-msgstr "VM"
-
-#: forms/oom_reports.forms.php
-msgid "RSS"
-msgstr "RSS"
-
-#: forms/oom_reports.forms.php
-msgid "anon"
-msgstr "anon"
-
-#: forms/oom_reports.forms.php
-msgid "file"
-msgstr "soubor"
-
-#: forms/oom_reports.forms.php
-msgid "shmem"
-msgstr "hmem"
-
-#: forms/oom_reports.forms.php
-msgid "pgtables"
-msgstr "pgtables"
-
-#: forms/oom_reports.forms.php
-msgid "swapents"
-msgstr "swapenty"
-
-#: forms/oom_reports.forms.php
-msgid "oom_score_adj"
-msgstr "oom_score_adj"
+#: forms/oom_reports.forms.php pages/page_adminvps.php
+msgid "Processes"
+msgstr "Procesy"
 
 #: forms/oom_reports.forms.php
 msgid "OOM report rules for VPS "
@@ -2295,8 +2251,8 @@ msgstr ""
 "viz"
 
 #: forms/oom_reports.forms.php
-msgid "existing reports"
-msgstr "stávající přehledy"
+msgid "existing OOM reports"
+msgstr "existující OOM reporty"
 
 #: forms/oom_reports.forms.php
 msgid "The first matching rule determines the action"
@@ -2316,7 +2272,7 @@ msgstr "Přidat pravidlo"
 
 #: forms/oom_reports.forms.php
 msgid "Update OOM report rule"
-msgstr "Aktualizovat pravidlo OOM reportů"
+msgstr "Upravit pravidlo OOM reportů"
 
 #: forms/oom_reports.forms.php
 msgid "Back to rule list"
@@ -5884,10 +5840,6 @@ msgstr "Uptime"
 msgid "Load average"
 msgstr "Loadavg"
 
-#: pages/page_adminvps.php
-msgid "Processes"
-msgstr "Procesy"
-
 #: pages/page_adminvps.php pages/page_index.php
 msgid "CPU"
 msgstr "CPU"
@@ -7885,6 +7837,42 @@ msgstr "Upravit pole nápovědy"
 #: public/index.php
 msgid "Help"
 msgstr "Pomoc"
+
+#~ msgid "Tasks"
+#~ msgstr "Úkoly"
+
+#~ msgid "PID"
+#~ msgstr "PID"
+
+#~ msgid "UID"
+#~ msgstr "UID"
+
+#~ msgid "TGID"
+#~ msgstr "TGID"
+
+#~ msgid "VM"
+#~ msgstr "VM"
+
+#~ msgid "RSS"
+#~ msgstr "RSS"
+
+#~ msgid "anon"
+#~ msgstr "anon"
+
+#~ msgid "file"
+#~ msgstr "soubor"
+
+#~ msgid "shmem"
+#~ msgstr "hmem"
+
+#~ msgid "pgtables"
+#~ msgstr "pgtables"
+
+#~ msgid "swapents"
+#~ msgstr "swapenty"
+
+#~ msgid "oom_score_adj"
+#~ msgstr "oom_score_adj"
 
 #~ msgid "Mail template recipients"
 #~ msgstr "Příjemci šablony pošty"
