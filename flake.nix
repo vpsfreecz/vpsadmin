@@ -101,6 +101,29 @@
             overlays = [ composedOverlay ];
           };
           lib = pkgs.lib;
+          libosctlNative = pkgs.stdenv.mkDerivation {
+            pname = "libosctl-native-dev";
+            version = vpsadminosVersion;
+            src = vpsadminos.outPath + "/libosctl";
+            nativeBuildInputs = [ pkgs.ruby_vpsadminos ];
+
+            dontConfigure = true;
+
+            buildPhase = ''
+              runHook preBuild
+              cd ext/libosctl
+              ruby extconf.rb
+              make
+              runHook postBuild
+            '';
+
+            installPhase = ''
+              runHook preInstall
+              mkdir -p "$out/libosctl"
+              cp native.so "$out/libosctl/native.so"
+              runHook postInstall
+            '';
+          };
 
           enterRepoHook = componentPath: ''
             find_vpsadmin_repo_root() {
@@ -139,6 +162,7 @@
               promptName ? componentPath,
               rubyPackage ? pkgs.ruby_3_4,
               purityDisabled ? false,
+              withLibosctlNative ? false,
               extraHook ? "",
             }:
             pkgs.mkShell {
@@ -169,6 +193,11 @@
               + ''
                 ${if purityDisabled then "NIX_ENFORCE_PURITY=0 " else ""}$BUNDLE install
 
+              ''
+              + lib.optionalString withLibosctlNative ''
+                export RUBYLIB="${libosctlNative}''${RUBYLIB:+:$RUBYLIB}"
+              ''
+              + ''
                 export RUBYOPT=-rbundler/setup
                 export PATH="$(ruby -e 'puts Gem.bindir'):$PATH"
               ''
@@ -322,6 +351,7 @@
             ];
             rubyPackage = pkgs.ruby_vpsadminos;
             gemHome = "/tmp/dev-ruby-gems";
+            withLibosctlNative = true;
             extraHook = ''
               run-nodectld() {
                 bundle exec bin/nodectld --no-wrapper "$@"
@@ -344,6 +374,7 @@
             ];
             rubyPackage = pkgs.ruby_vpsadminos;
             gemHome = "/tmp/dev-ruby-gems";
+            withLibosctlNative = true;
           };
         }
       );
