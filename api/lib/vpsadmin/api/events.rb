@@ -914,7 +914,7 @@ module VpsAdmin::API
       return false unless template
       return true unless language
 
-      template.notification_template_variants.where(language:, protocol:).exists?
+      ::NotificationTemplate.find_variant(template, language, protocol).present?
     rescue StandardError
       false
     end
