@@ -65,7 +65,7 @@ RSpec.describe TransactionChains::Vps::OomReports do
 
     expect(chain).to be_nil
     expect(NotificationTemplate).not_to have_received(:send_email!)
-    expect(event.event_deliveries.sole.error_summary).to include('does not notify')
+    expect(event.event_deliveries.sole.error_summary).to eq('delivery method is disabled')
     expect(reports.map { |report| report.reload.reported_at }).to all(be_present)
   end
 

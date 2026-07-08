@@ -241,7 +241,7 @@ RSpec.describe TransactionChains::Dataset::Migrate do
     end
   end
 
-  it 'stores only a bounded affected VPS sample in event parameters' do
+  it 'stores only a bounded affected VPS sample in event payload' do
     src_pool, dst_pool = create_primary_pool_pair
     dataset, = create_dataset_with_pool!(
       user: user,
@@ -276,13 +276,13 @@ RSpec.describe TransactionChains::Dataset::Migrate do
       reason: 'many mounts'
     )
 
-    params = captured.fetch(:parameters)
+    payload = captured.fetch(:payload)
 
-    expect(params.fetch(:affected_vps_count)).to eq(101)
-    expect(params.fetch(:affected_vpses).count).to eq(
+    expect(payload.fetch(:affected_vps_count)).to eq(101)
+    expect(payload.fetch(:affected_vpses).count).to eq(
       VpsAdmin::API::Events::PARAMETER_SAMPLE_LIMIT
     )
-    expect(params.fetch(:affected_vpses).last).to eq(
+    expect(payload.fetch(:affected_vpses).last).to eq(
       id: VpsAdmin::API::Events::PARAMETER_SAMPLE_LIMIT,
       hostname: "sample-vps-#{VpsAdmin::API::Events::PARAMETER_SAMPLE_LIMIT}"
     )

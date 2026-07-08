@@ -91,6 +91,6 @@ RSpec.describe TransactionChains::IncidentReport::Send do
     expect(chain).to be_nil
     expect(NotificationTemplate).not_to have_received(:send_email!)
     expect(event.source).to eq(incident)
-    expect(event.event_deliveries.sole.error_summary).to include('does not notify')
+    expect(event.event_deliveries.sole.error_summary).to eq('delivery method is disabled')
   end
 end
