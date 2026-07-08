@@ -1406,8 +1406,10 @@ en:
         label: Scope
       secret:
         label: Secret
+      security_advisory:
+        label: Security advisory
       security_advisory_id:
-        label: Security_advisory_id
+        label: Security advisory ID
       seed_vps:
         description: Seed the zone with basic records pointing to the VPS
         label: Seed VPS
@@ -2748,7 +2750,6 @@ en:
             description: Filter announced or recently reported outages
           security_advisory:
             description: Filter outages linked to a security advisory
-            label: SecurityAdvisory
           since:
             description: Filter outages reported since specified date
           type:
@@ -2778,7 +2779,6 @@ en:
             label: Id
           security_advisory:
             description: Security advisory linked to an outage.
-            label: SecurityAdvisory
       outage_update:
         attributes:
           created_at:
@@ -2853,8 +2853,6 @@ en:
               description: Node whose exposure status is being recorded.
             note:
               label: Note
-            security_advisory:
-              label: SecurityAdvisory
             state:
               description: Assessment of whether the node was affected and whether
                 it has been mitigated.
@@ -2875,8 +2873,6 @@ en:
         attributes:
           id:
             label: Id
-          security_advisory:
-            label: Security advisory
           url:
             label: URL
         output:
@@ -2910,12 +2906,6 @@ en:
             description: Optional advisory state change to apply with this update.
           updated_at:
             label: Updated_at
-        input:
-          security_advisory:
-            label: Security advisory
-        output:
-          security_advisory:
-            label: SecurityAdvisory
       snapshot_download:
         attributes:
           dataset:
@@ -3218,8 +3208,6 @@ en:
         attributes:
           id:
             label: Id
-          security_advisory:
-            label: SecurityAdvisory
           vps_count:
             label: Vps_count
       user_session:
@@ -3465,8 +3453,6 @@ en:
         attributes:
           id:
             label: Id
-          security_advisory:
-            label: SecurityAdvisory
           vps:
             label: VPS
       vps_user_data:
@@ -3816,7 +3802,7 @@ en:
         vps_resources: VPS resources
         vps_restart: Restart VPS
         vps_route_add: Add route
-        vps_route_del: Delete route
+        vps_route_del: Remove route
         vps_send_cleanup: Finish transfer
         vps_send_config: Transfer VPS config
         vps_send_rollback_config: Transfer rollback config

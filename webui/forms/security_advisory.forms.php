@@ -706,7 +706,13 @@ function security_advisory_details($id)
     $xtpl->table_td(h($advisory->name ?: '-'));
     $xtpl->table_tr();
 
-    foreach (['summary', 'description', 'response'] as $field) {
+    $fieldLabels = [
+        'summary' => _('Summary'),
+        'description' => _('Description'),
+        'response' => _('Response'),
+    ];
+
+    foreach ($fieldLabels as $field => $label) {
         $rowCount = max(1, count($langs));
         $firstRow = true;
 
@@ -717,7 +723,7 @@ function security_advisory_details($id)
                 : h($advisory->{$name});
 
             if ($firstRow) {
-                $xtpl->table_td(_(ucfirst($field)) . ':', false, false, 1, $rowCount, 'top');
+                $xtpl->table_td($label . ':', false, false, 1, $rowCount, 'top');
                 $firstRow = false;
             }
 

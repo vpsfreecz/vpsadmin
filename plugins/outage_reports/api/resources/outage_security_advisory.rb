@@ -8,6 +8,7 @@ module VpsAdmin::API::Resources
                value_label: :begins_at,
                desc: 'Outage linked to a security advisory.'
       resource VpsAdmin::API::Resources::SecurityAdvisory,
+               label: 'Security advisory',
                value_label: :id,
                desc: 'Security advisory linked to an outage.'
     end
@@ -16,7 +17,7 @@ module VpsAdmin::API::Resources
       id :id
       use :editable
       integer :outage_id
-      integer :security_advisory_id
+      integer :security_advisory_id, label: 'Security advisory ID'
     end
 
     class Index < HaveAPI::Actions::Default::Index

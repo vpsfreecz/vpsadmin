@@ -17,7 +17,7 @@ module VpsAdmin::API::Resources
     params(:all) do
       id :id
       use :editable
-      integer :security_advisory_id
+      integer :security_advisory_id, label: 'Security advisory ID'
       string :url, label: 'URL'
     end
 

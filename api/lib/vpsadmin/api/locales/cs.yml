@@ -269,7 +269,7 @@ cs:
       cluster_resource_package:
         label: Balíček clusterových zdrojů
       codename:
-        label: Kódové jméno
+        label: Kódový název
       comment:
         description: Volitelný komentář
         label: Komentář
@@ -543,7 +543,7 @@ cs:
       filesystem:
         label: Souborový systém
       fingerprint:
-        description: MD5 fingerprint
+        description: MD5 otisk klíče
         label: Otisk
       finish_minutes:
         description: Dokončit migraci od této hodiny
@@ -683,7 +683,7 @@ cs:
       ip_address:
         label: IP adresa
       ip_address_assignment:
-        label: Přiřazení IP adresy
+        label: Přidělení IP adresy
       ip_checked:
         label: IP zkontrolováno
       ip_crawler:
@@ -746,7 +746,7 @@ cs:
         description: Ponechat snapshoty vytvořené během klonování
         label: Ponechat snapshoty
       kernel:
-        label: Kernel
+        label: Jádro
       keyid:
         label: ID klíče
       killed_name:
@@ -1100,7 +1100,7 @@ cs:
       os_family:
         label: Rodina OS
       outage:
-        description: Hlášení propojené s bezpečnostním advisory.
+        description: Hlášení propojené s bezpečnostním upozorněním.
         label: Hlášení
       outage_id:
         label: ID hlášení
@@ -1217,7 +1217,7 @@ cs:
         label: Počet procesů
       progress:
         description: Kolik transakcí je dokončeno
-        label: Průběh
+        label: Postup
       property:
         description: Název vlastnosti, která se má zdědit od rodiče; více vlastností
           lze oddělit čárkou
@@ -1229,7 +1229,7 @@ cs:
       public_key_credential:
         label: Credential veřejného klíče
       published_at:
-        description: Datum a čas zobrazený jako čas zveřejnění advisory.
+        description: Datum a čas zobrazený jako čas zveřejnění upozornění.
         label: Zveřejněno
       published_by:
         label: Zveřejnil
@@ -1401,8 +1401,10 @@ cs:
         label: Scope
       secret:
         label: Tajemství
+      security_advisory:
+        label: Bezpečnostní upozornění
       security_advisory_id:
-        label: ID bezpečnostního advisory
+        label: ID bezpečnostního upozornění
       seed_vps:
         description: Inicializovat zónu základními záznamy směřujícími na VPS
         label: Seed VPS
@@ -2288,7 +2290,7 @@ cs:
       incident_report:
         attributes:
           created_at:
-            label: Vytvořeno
+            label: Přidáno
           id:
             label: ID
           ip_addr:
@@ -2742,7 +2744,6 @@ cs:
             description: Filtrovat oznámené nebo nedávno nahlášené odstávky a výpadky
           security_advisory:
             description: Filtrovat hlášení propojená s bezpečnostními upozorněními
-            label: Bezpečnostní advisory
           since:
             description: Filtrovat hlášení nahlášená od zadaného data
           type:
@@ -2771,8 +2772,7 @@ cs:
           id:
             label: ID
           security_advisory:
-            description: Bezpečnostní advisory propojené s hlášením.
-            label: Bezpečnostní advisory
+            description: Bezpečnostní upozornění propojené s hlášením.
       outage_update:
         attributes:
           created_at:
@@ -2813,14 +2813,14 @@ cs:
       security_advisory:
         attributes:
           affected:
-            description: True, pokud je aktuální uživatel dotčen tímto advisory
+            description: True, pokud je aktuální uživatel dotčen tímto upozorněním
           created_at:
             label: Vytvořeno
           cs_summary:
-            description: Jednověté veřejné shrnutí zobrazené v seznamech advisory,
+            description: Jednověté veřejné shrnutí zobrazené v seznamech upozornění,
               statusovém výstupu, IRC oznámeních a e-mailech.
           en_summary:
-            description: Jednověté veřejné shrnutí zobrazené v seznamech advisory,
+            description: Jednověté veřejné shrnutí zobrazené v seznamech upozornění,
               statusovém výstupu, IRC oznámeních a e-mailech.
           id:
             label: ID
@@ -2828,13 +2828,13 @@ cs:
             description: Volitelný známý název zranitelnosti, např. Dirty Pipe.
             label: Název
           recent_since:
-            description: Filtrovat zveřejněná nebo nedávno aktualizovaná advisory
+            description: Filtrovat zveřejněná nebo nedávno aktualizovaná upozornění
           send_mail:
             description: Je-li povoleno, dotčení uživatelé dostanou e-mail po dokončení
               akce.
             label: Odeslat e-mail
           since:
-            description: Filtrovat advisory vytvořená od zadaného data
+            description: Filtrovat upozornění vytvořená od zadaného data
           updated_at:
             label: Aktualizováno
           vps:
@@ -2847,8 +2847,6 @@ cs:
               description: Node, pro který se zaznamenává stav expozice.
             note:
               label: Poznámka
-            security_advisory:
-              label: Bezpečnostní advisory
             state:
               description: Vyhodnocení, zda byl node dotčen a zda bylo provedeno zmírnění.
       security_advisory_cve:
@@ -2856,25 +2854,23 @@ cs:
           create:
             input:
               security_advisory:
-                description: Advisory, ke kterému toto CVE patří.
+                description: Upozornění, ke kterému toto CVE patří.
           index:
             input:
               security_advisory:
-                description: Filtrovat CVE přiřazená tomuto advisory.
+                description: Filtrovat CVE přiřazená tomuto upozornění.
           update:
             input:
               security_advisory:
-                description: Advisory, ke kterému toto CVE patří.
+                description: Upozornění, ke kterému toto CVE patří.
         attributes:
           id:
             label: ID
-          security_advisory:
-            label: Bezpečnostní advisory
           url:
             label: URL
         output:
           security_advisory:
-            description: Advisory, ke kterému toto CVE patří.
+            description: Upozornění, ke kterému toto CVE patří.
       security_advisory_update:
         attributes:
           created_at:
@@ -2894,22 +2890,16 @@ cs:
           reporter_name:
             label: Jméno reportéra
           security_advisory:
-            description: Advisory, ke kterému tato aktualizace patří.
+            description: Upozornění, ke kterému tato aktualizace patří.
           send_mail:
             description: Je-li povoleno, dotčení uživatelé dostanou e-mail po dokončení
               akce.
             label: Odeslat e-mail
           state:
-            description: Volitelná změna stavu advisory, která se má použít s touto
+            description: Volitelná změna stavu upozornění, která se má použít s touto
               aktualizací.
           updated_at:
             label: Aktualizováno
-        input:
-          security_advisory:
-            label: Bezpečnostní advisory
-        output:
-          security_advisory:
-            label: Bezpečnostní advisory
       snapshot_download:
         attributes:
           dataset:
@@ -3212,8 +3202,6 @@ cs:
         attributes:
           id:
             label: ID
-          security_advisory:
-            label: Bezpečnostní advisory
           vps_count:
             label: Počet VPS
       user_session:
@@ -3459,8 +3447,6 @@ cs:
         attributes:
           id:
             label: ID
-          security_advisory:
-            label: Bezpečnostní advisory
           vps:
             label: VPS
       vps_user_data:
@@ -3505,7 +3491,7 @@ cs:
           outage: Odstávka/výpadek
           pool: Pool
           registration_request: Registrace
-          security_advisory: Bezpečnost
+          security_advisory: Bezpečnostní upozornění
           snapshot: Snapshot
           snapshot_download: Stažení snapshotu
           snapshot_in_pool: Snapshot v poolu
@@ -3521,7 +3507,7 @@ cs:
         dataset:
           backup: Záloha
           base_download: Stažení
-          create: Vytvořit
+          create: Vytvoření
           destroy: Smazat
           full_download: Stažení
           group_snapshot: Snapshot datasetu
@@ -3563,7 +3549,7 @@ cs:
         export:
           add_hosts: Hosty+
           add_hosts_to_all: Hosty+
-          create: Vytvořit
+          create: Vytvoření
           del_hosts: Hosty-
           del_hosts_from_all: Hosty-
           destroy: Smazat
@@ -3595,7 +3581,7 @@ cs:
           mail: Mail
         network:
           add_ips: IP+
-          create: Vytvořit
+          create: Vytvoření
         network_interface:
           add_host_ip: IP+
           add_route: Routa+
@@ -3623,14 +3609,14 @@ cs:
           outage_reports:
             update: Upravit
           payments:
-            create: Vytvořit
+            create: Vytvoření
             mail_overview: Mail přehled
           requests:
             create: Vytvoření
-            resolve: Vyřešit
+            resolve: Vyřešení
             update: Upravit
         pool:
-          create: Vytvořit
+          create: Vytvoření
         security_advisories:
           mail: Mail bezpečnostního upozornění
         snapshot:
@@ -3639,7 +3625,7 @@ cs:
           destroy: Smazat snapshot v poolu
           purge_clones: Smazat klony
         user:
-          create: Vytvořit uživatele
+          create: Vytvoření uživatele
           destroy: Smazat uživatele
           hard_delete: Smazat uživatele natvrdo
           new_login: Nové přihlášení
@@ -3666,8 +3652,8 @@ cs:
             os_to_os: Klonovat
             vz_to_os: Klonovat
             vz_to_vz: Klonovat
-          create: Vytvořit
-          create_veth: Vytvořit veth
+          create: Vytvoření
+          create_veth: Vytvoření veth
           del_ip: Smazat IP
           deploy_public_key: SSH klíč
           deploy_user_data: User data
@@ -3689,11 +3675,11 @@ cs:
           oom_prevention: OOM prevence
           oom_reports: OOM reporty
           passwd: Heslo
-          reinstall: Přeinstalovat
+          reinstall: Přeinstalace
           remove_veth: Odebrat veth
           replace:
             os: Prohodit
-          restart: Restartovat
+          restart: Restart
           restore: Obnovit
           revive: Oživit
           set_resources: Zdroje
@@ -3703,8 +3689,8 @@ cs:
           shaper_unset: Zrušit shaper
           shrink_dataset: Zmenšit
           soft_delete: Soft delete
-          start: Spustit
-          stop: Vypnout
+          start: Start
+          stop: Stop
           stop_over_quota: Stop kvóta
           swap: Prohodit
           umount: Unmount
@@ -3714,7 +3700,7 @@ cs:
           update: Upravit
           update_mount: Mount*
         vps_config:
-          create: Vytvořit
+          create: Vytvoření
           delete: Smazat
           update: Upravit
     transactions:
@@ -3741,8 +3727,8 @@ cs:
         netif_create_veth_routed: Vytvoření rozhraní
         netif_disable: Vypnutí rozhraní
         netif_enable: Zapnutí rozhraní
-        netif_host_addr_add: Přidání host IP adresy
-        netif_host_addr_del: Odebrání host IP adresy
+        netif_host_addr_add: Přidat host IP adresu
+        netif_host_addr_del: Odebrat host IP adresu
         netif_remove_veth_routed: Odebrání rozhraní
         netif_rename: Přejmenování rozhraní
         netif_set_shaper: Nastavení síťového shaperu
@@ -3809,8 +3795,8 @@ cs:
         vps_remove_config: Smazání konfigurace VPS
         vps_resources: Zdroje VPS
         vps_restart: Restart VPS
-        vps_route_add: Přidání routy
-        vps_route_del: Smazání routy
+        vps_route_add: Přidat routu
+        vps_route_del: Odebrat routu
         vps_send_cleanup: Dokončení přenosu
         vps_send_config: Přenos konfigurace VPS
         vps_send_rollback_config: Přenos rollback konfigurace

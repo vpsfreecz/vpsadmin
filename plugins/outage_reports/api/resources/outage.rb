@@ -90,6 +90,7 @@ module VpsAdmin::API::Resources
         resource VpsAdmin::API::Resources::Component,
                  desc: 'Filter outages by vpsAdmin component'
         resource VpsAdmin::API::Resources::SecurityAdvisory,
+                 label: 'Security advisory',
                  desc: 'Filter outages linked to a security advisory'
         string :entity_name, label: 'Entity name', desc: 'Filter outages by entity name'
         integer :entity_id, label: 'Entity ID', desc: 'Filter outages by entity ID'

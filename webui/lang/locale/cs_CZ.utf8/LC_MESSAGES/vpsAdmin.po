@@ -332,7 +332,7 @@ msgstr "Verze"
 
 #: forms/cluster.forms.php pages/page_index.php
 msgid "Kernel"
-msgstr "Kernel"
+msgstr "Jádro"
 
 #: forms/cluster.forms.php pages/page_cluster.php
 msgid "Toggle maintenance on node."
@@ -813,7 +813,8 @@ msgstr "Zaregistrujte stávající rozšíření"
 msgid "Backup plans"
 msgstr "Zálohovací plány"
 
-#: forms/dataset.forms.php forms/outage.forms.php pages/page_cluster.php
+#: forms/dataset.forms.php forms/outage.forms.php
+#: forms/security_advisory.forms.php pages/page_cluster.php
 msgid "Description"
 msgstr "Popis"
 
@@ -1667,7 +1668,7 @@ msgstr "hostitel"
 
 #: forms/incidents.forms.php
 msgid "Assignment ID"
-msgstr "Úkol ID"
+msgstr "ID přidělení"
 
 #: forms/incidents.forms.php forms/userns.forms.php pages/page_adminvps.php
 #: pages/page_cluster.php pages/page_jumpto.php pages/page_transactions.php
@@ -1676,15 +1677,15 @@ msgstr "ID"
 
 #: forms/incidents.forms.php forms/monitoring.forms.php
 msgid "Detected at"
-msgstr "Zjištěno v"
+msgstr "Detekováno"
 
 #: forms/incidents.forms.php
 msgid "Subject"
-msgstr "Podrobit"
+msgstr "Předmět"
 
 #: forms/incidents.forms.php
 msgid "Codename"
-msgstr "kódové jméno"
+msgstr "Kódový název"
 
 #: forms/incidents.forms.php forms/users.forms.php
 msgid "Admin"
@@ -1696,7 +1697,7 @@ msgstr "Zpráva o incidentu"
 
 #: forms/incidents.forms.php
 msgid "Assignment"
-msgstr "Úkol"
+msgstr "Přidělení"
 
 #: forms/incidents.forms.php
 msgid "Filed by"
@@ -1708,11 +1709,11 @@ msgstr "Poštovní schránka"
 
 #: forms/incidents.forms.php
 msgid "Added at"
-msgstr "Přidáno v"
+msgstr "Přidáno"
 
 #: forms/incidents.forms.php
 msgid "Reported at"
-msgstr "Hlášeno na"
+msgstr "Nahlášeno"
 
 #: forms/incidents.forms.php pages/page_adminvps.php
 msgid "CPU limit"
@@ -2503,11 +2504,11 @@ msgstr "CVE"
 
 #: forms/outage.forms.php
 msgid "Do you really wish to unlink this security advisory?"
-msgstr "Opravdu si přejete zrušit propojení tohoto bezpečnostního doporučení?"
+msgstr "Opravdu si přejete zrušit propojení tohoto bezpečnostního upozornění?"
 
 #: forms/outage.forms.php
 msgid "Link security advisory"
-msgstr "Odkaz na bezpečnostní upozornění"
+msgstr "Propojit bezpečnostní upozornění"
 
 #: forms/outage.forms.php
 msgid "Link"
@@ -2659,7 +2660,7 @@ msgstr "Odstávky a výpadky"
 
 #: forms/security_advisory.forms.php lib/functions.lib.php
 msgid "Security advisory"
-msgstr "Bezpečnostní poradenství"
+msgstr "Bezpečnostní upozornění"
 
 #: forms/security_advisory.forms.php
 #, php-format
@@ -2712,7 +2713,7 @@ msgstr "Nové bezpečnostní upozornění"
 
 #: forms/security_advisory.forms.php
 msgid "Security advisory details"
-msgstr "Podrobnosti bezpečnostního poradenství"
+msgstr "Podrobnosti bezpečnostního upozornění"
 
 #: forms/security_advisory.forms.php
 msgid "Edit security advisory"
@@ -2724,7 +2725,7 @@ msgstr "Publikováno na"
 
 #: forms/security_advisory.forms.php
 msgid "Date and time shown as the advisory publication time."
-msgstr "Datum a čas zobrazený jako doporučený čas zveřejnění."
+msgstr "Datum a čas zobrazený jako čas zveřejnění upozornění."
 
 #: forms/security_advisory.forms.php
 msgid "CVE identifier in CVE-YYYY-NNNN format."
@@ -2740,17 +2741,17 @@ msgstr "Volitelný název známé zranitelnosti."
 
 #: forms/security_advisory.forms.php
 msgid "A kernel bug could affect containers on selected nodes."
-msgstr "Bug v kernelu může ovlivnit kontejnery na vybraných nodech."
+msgstr "Bug v jádře může ovlivnit kontejnery na vybraných nodech."
 
 #: forms/security_advisory.forms.php
 msgid "One-sentence summary shown in advisory lists and emails."
-msgstr "Shrnutí v jedné větě zobrazené v seznamech rad a e-mailech."
+msgstr "Shrnutí v jedné větě zobrazené v seznamech upozornění a e-mailech."
 
 #: forms/security_advisory.forms.php
 msgid ""
 "Describe the vulnerability, affected kernel versions, and required "
 "conditions."
-msgstr "Popište zranitelnost, dotčené verze kernelu a požadované podmínky."
+msgstr "Popište zranitelnost, dotčené verze jádra a požadované podmínky."
 
 #: forms/security_advisory.forms.php
 msgid "User-facing explanation of the issue."
@@ -2758,7 +2759,7 @@ msgstr "Uživatelské vysvětlení problému."
 
 #: forms/security_advisory.forms.php
 msgid "response"
-msgstr "odpověď"
+msgstr "reakce"
 
 #: forms/security_advisory.forms.php
 msgid ""
@@ -2812,11 +2813,15 @@ msgstr "Ošetřeno od"
 
 #: forms/security_advisory.forms.php
 msgid "Your VPS were not affected by this advisory."
-msgstr "Vaše VPS nebyly tímto doporučením ovlivněny."
+msgstr "Vaše VPS nebyly tímto upozorněním ovlivněny."
+
+#: forms/security_advisory.forms.php
+msgid "Response"
+msgstr "Reakce"
 
 #: forms/security_advisory.forms.php
 msgid "Publish advisory"
-msgstr "Publikovat poradenství"
+msgstr "Publikovat upozornění"
 
 #: forms/security_advisory.forms.php
 msgid "Send mails to affected users"
@@ -2884,7 +2889,7 @@ msgstr "Použít"
 
 #: forms/security_advisory.forms.php
 msgid "Kernel updated"
-msgstr "Kernel aktualizován"
+msgstr "Jádro aktualizováno"
 
 #: forms/security_advisory.forms.php
 msgid "Edit security advisory update"
@@ -2892,7 +2897,7 @@ msgstr "Upravit aktualizaci bezpečnostního upozornění"
 
 #: forms/security_advisory.forms.php
 msgid "Post security advisory update"
-msgstr "Zveřejněte aktualizaci bezpečnostního doporučení"
+msgstr "Zveřejnit aktualizaci bezpečnostního upozornění"
 
 #: forms/security_advisory.forms.php
 msgid "no change"
@@ -4966,7 +4971,7 @@ msgstr "VPS ke smazání"
 
 #: pages/page_adminm.php pages/page_adminvps.php
 msgid "Fingerprint"
-msgstr "Otisk prstu"
+msgstr "Otisk"
 
 #: pages/page_adminm.php
 msgid "Auto add"
@@ -4974,7 +4979,7 @@ msgstr "Automatické přidání"
 
 #: pages/page_adminm.php
 msgid "Add a public key"
-msgstr "Přidejte veřejný klíč"
+msgstr "Přidat veřejný klíč"
 
 #: pages/page_adminm.php
 msgid "Add public key"
@@ -6012,7 +6017,7 @@ msgstr ""
 
 #: pages/page_adminvps.php
 msgid "One of:"
-msgstr "jeden z:"
+msgstr "Jedna z:"
 
 #: pages/page_adminvps.php
 msgid "The VPS has no interface IP addresses set"
@@ -6024,7 +6029,7 @@ msgstr "Příklad příkazu"
 
 #: pages/page_adminvps.php
 msgid "SSH host keys"
-msgstr "SSH hostitelské klíče"
+msgstr "Hostitelské klíče SSH"
 
 #: pages/page_adminvps.php
 msgid "Last read at"
@@ -6035,8 +6040,8 @@ msgid ""
 "The following SSH host keys have been found inside the VPS. You can verify "
 "that the fingerprints match on your first login."
 msgstr ""
-"Následující hostitelské klíče SSH byly nalezeny uvnitř VPS. Při prvním "
-"přihlášení si můžete ověřit, zda se otisky shodují."
+"Ve VPS byly nalezeny následující hostitelské klíče SSH. Při prvním "
+"přihlášení můžete ověřit, že se otisky shodují."
 
 #: pages/page_adminvps.php
 msgid "Set root's password (in the VPS, not in the vpsAdmin)"
@@ -7610,7 +7615,7 @@ msgstr "Publikování se nezdařilo"
 
 #: pages/page_security_advisory.php
 msgid "The security advisory update was successfully saved."
-msgstr "Aktualizace bezpečnostního zpravodaje byla úspěšně uložena."
+msgstr "Aktualizace bezpečnostního upozornění byla úspěšně uložena."
 
 #: pages/page_security_advisory.php
 msgid "Update saved"
@@ -7622,7 +7627,7 @@ msgstr "Uložení se nezdařilo"
 
 #: pages/page_security_advisory.php
 msgid "The security advisory update was successfully deleted."
-msgstr "Aktualizace bezpečnostního zpravodaje byla úspěšně odstraněna."
+msgstr "Aktualizace bezpečnostního upozornění byla úspěšně odstraněna."
 
 #: pages/page_security_advisory.php
 msgid "Update deleted"
@@ -7650,7 +7655,7 @@ msgstr "ID objektu"
 
 #: pages/page_transactions.php
 msgid "Progress"
-msgstr "Pokrok"
+msgstr "Postup"
 
 #: pages/page_transactions.php
 msgid "Chain not found"

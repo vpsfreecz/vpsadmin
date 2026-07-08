@@ -808,7 +808,8 @@ msgstr ""
 msgid "Backup plans"
 msgstr ""
 
-#: forms/dataset.forms.php forms/outage.forms.php pages/page_cluster.php
+#: forms/dataset.forms.php forms/outage.forms.php
+#: forms/security_advisory.forms.php pages/page_cluster.php
 msgid "Description"
 msgstr ""
 
@@ -2788,6 +2789,10 @@ msgstr ""
 
 #: forms/security_advisory.forms.php
 msgid "Your VPS were not affected by this advisory."
+msgstr ""
+
+#: forms/security_advisory.forms.php
+msgid "Response"
 msgstr ""
 
 #: forms/security_advisory.forms.php

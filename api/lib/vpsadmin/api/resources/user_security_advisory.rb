@@ -5,7 +5,9 @@ module VpsAdmin::API::Resources
 
     params(:all) do
       id :id
-      resource VpsAdmin::API::Resources::SecurityAdvisory, value_label: :id
+      resource VpsAdmin::API::Resources::SecurityAdvisory,
+               label: 'Security advisory',
+               value_label: :id
       resource VpsAdmin::API::Resources::User, value_label: :login
       integer :vps_count
     end

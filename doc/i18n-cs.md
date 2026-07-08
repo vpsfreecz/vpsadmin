@@ -12,7 +12,7 @@ Always translate with context. The same English word can mean different things:
 - Disk or resource `free` is `volné` or `volno`, never `zdarma`.
 - `Node`/`Nodes` are `Node`/`Nody`, not `uzel`.
 - `Cluster` is `Cluster`, not `klastr`.
-- `Kernel` is `Kernel`.
+- `Kernel` is `Jádro`.
 - `Monitoring` is `Monitoring`.
 - `Storage` is `Úložiště`.
 - `Location`/`Locations` are `Lokace`.
@@ -55,8 +55,15 @@ Always translate with context. The same English word can mean different things:
   such as `Přidání`, `Vytvoření`, `Smazání`, and `Nastavení`, or established
   technical nouns such as `Reload DNS serveru`. Do not use infinitive command
   labels such as `Přidat DNS server` for transaction labels.
+- Route and host IP address add/remove transaction labels are intentional
+  compact exceptions: use paired labels such as `Přidat routu` and
+  `Odebrat routu`.
+- `Security advisory` is `Bezpečnostní upozornění`.
 - Security advisory `mitigated` state is `ošetřeno`, not a literal
   `zmírněno`.
+- SSH/user key `Fingerprint` in short table and field labels is `Otisk`.
+  In prose, use `otisk klíče`, `otisk klíče SSH`, or
+  `otisk hostitelského klíče SSH` when the type of key needs to be explicit.
 - `Dataset`/`Datasets` are `Dataset`/`Datasety`.
 - Dataset branches are `větev datasetu`, never `branch datasetu`.
 - ZFS dataset property labels use a natural Czech label followed by the exact
@@ -81,8 +88,7 @@ Always translate with context. The same English word can mean different things:
   `Vypnout`/`Vynutit vypnutí`.
 - Remote console action labels are `Vypnout`, `Restartovat`, `Resetovat`,
   `Vynutit vypnutí`, and `Spustit`.
-- `Hostname`, `Loadavg`, `Uptime`, `Kernel`, and `User data` are left
-  untranslated.
+- `Hostname`, `Loadavg`, `Uptime`, and `User data` are left untranslated.
 - VPS `feature`/`features` are `funkce`, for example `Funkce VPS` or
   `Funkce`. Do not use `vlastnosti` for VPS features. Dataset and ZFS
   properties remain `vlastnost`/`vlastnosti`.
