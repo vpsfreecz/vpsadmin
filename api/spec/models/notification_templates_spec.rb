@@ -545,6 +545,14 @@ RSpec.describe VpsAdmin::API::NotificationTemplates do
     expect(mail.subject).to eq('Static subject')
   end
 
+  it 'does not require optional registered template candidates to be shipped' do
+    NotificationTemplate.register :spec_optional_candidate_template, default: false
+
+    expect(described_class.required_default_templates).not_to include(
+      'spec_optional_candidate_template'
+    )
+  end
+
   it 'renders safe HTML helpers in template variants' do
     allow(VpsAdmin::API::Events).to receive(:webui_url).and_return('https://webui.example.test')
 
