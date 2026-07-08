@@ -301,11 +301,33 @@ function format_duration($interval)
     }
 }
 
+function ngettext_plural_count($number)
+{
+    if (is_int($number)) {
+        return $number;
+    }
+
+    if (is_float($number) || is_numeric($number)) {
+        $floatNumber = (float) $number;
+
+        if (!is_finite($floatNumber)) {
+            return 2;
+        }
+
+        $intNumber = (int) $floatNumber;
+        return ((float) $intNumber === $floatNumber) ? $intNumber : 2;
+    }
+
+    return 2;
+}
+
 function format_ngettext($single, $plural, $number, ...$args)
 {
+    $pluralCount = ngettext_plural_count($number);
+
     $message = function_exists('T_ngettext')
-        ? T_ngettext($single, $plural, $number)
-        : ($number == 1 ? $single : $plural);
+        ? T_ngettext($single, $plural, $pluralCount)
+        : ($pluralCount == 1 ? $single : $plural);
 
     if (!$args) {
         $args = [$number];
