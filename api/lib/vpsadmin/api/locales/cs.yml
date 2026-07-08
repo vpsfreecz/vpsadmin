@@ -136,17 +136,17 @@ cs:
       allow_admin_modifications:
         label: Povolit úpravy administrátorem
       allow_single_sign_on:
-        label: Povolit single sign-on
+        label: Povolit jednotné přihlášení
       amount:
         label: Množství
       arc_c:
-        label: Arc c
+        label: ARC c
       arc_c_max:
-        label: Arc c max
+        label: ARC c max
       arc_hitpercent:
-        label: Arc hitpercent
+        label: ARC hitpercent
       arc_size:
-        label: Arc velikost
+        label: Velikost ARC
       arch:
         label: Architektura
       assigned:
@@ -257,7 +257,7 @@ cs:
       client_ip_ptr:
         label: PTR IP adresy klienta
       client_secret:
-        label: Tajemství klienta
+        label: Tajný klíč klienta
       client_version:
         label: Verze klienta
       closed_at:
@@ -460,7 +460,7 @@ cs:
         description: Volitelná zpráva pro uživatele s dalšími detaily o této aktualizaci.
         label: Anglická zpráva
       en_response:
-        description: Uživatelské vysvětlení zmírnění nebo opravy a informace, zda
+        description: Uživatelské vysvětlení ošetření nebo opravy a informace, zda
           uživatelé musí něco udělat.
         label: Anglická odpověď
       en_summary:
@@ -490,7 +490,7 @@ cs:
         description: Automaticky zmenšit dataset, když je to možné
         label: Povolit zmenšování
       enable_single_sign_on:
-        label: Povolit single sign-on
+        label: Povolit jednotné přihlášení
       enable_ssl:
         label: Povolit SSL
       enable_token_auth:
@@ -667,7 +667,7 @@ cs:
       in_reply_to:
         label: In reply to
       in_rescue_mode:
-        label: V rescue režimu
+        label: V nouzovém režimu
       incoming_payment:
         label: Příchozí platba
       info:
@@ -732,7 +732,7 @@ cs:
       ipv6_addr:
         label: IPv6 adresa
       is_open:
-        label: Otevřené
+        label: Otevřeno
       is_personal:
         label: Osobní
       is_universal:
@@ -787,7 +787,7 @@ cs:
       last_transfer_reason_code:
         label: Kód důvodu posledního přenosu
       last_transfer_serial:
-        label: Poslední přenos sériové číslo
+        label: Sériové číslo posledního přenosu
       last_transfer_status:
         choices:
           failed:
@@ -952,8 +952,8 @@ cs:
       min_user_level:
         label: Minimální úroveň uživatele
       mitigated_since:
-        description: Kdy byl node mitigován nebo opraven, pokud je známo.
-        label: Zmírněno od
+        description: Kdy byl node ošetřen nebo opraven, pokud je známo.
+        label: Ošetřeno od
       mode:
         choices:
           ro:
@@ -1044,15 +1044,15 @@ cs:
       on_start_fail:
         choices:
           fail_start:
-            label: selhat start
+            label: zrušit spuštění
           mount_later:
             label: mount později
           skip:
             label: přeskočit
           wait_for_mount:
-            label: čekat na mount
-        description: Co se stane, když připojení selže během startu VPS
-        label: Při selhání připojení
+            label: počkat na mount
+        description: Co dělat při selhání mountu při startu VPS
+        label: Při selhání mountu
       onstartall:
         description: Spustit VPS při akci spustit vše?
         label: Při spuštění všeho
@@ -1078,7 +1078,7 @@ cs:
           descending:
             label: sestupně
           interface:
-            label: interface
+            label: rozhraní
           latest:
             label: poslední
           longest:
@@ -1400,7 +1400,7 @@ cs:
       scope:
         label: Scope
       secret:
-        label: Tajemství
+        label: Tajný klíč
       security_advisory:
         label: Bezpečnostní upozornění
       security_advisory_id:
@@ -1670,7 +1670,7 @@ cs:
       transfer_ip_addresses:
         description: Je-li to možné, ponechat IP adresy a přeúčtovat je do jiného
           prostředí nebo lokace
-        label: Převést IP adresy
+        label: Přenést IP adresy
       ttl:
         description: Volitelné TTL v sekundách, výchozí je TTL zóny
         label: TTL
@@ -1892,28 +1892,28 @@ cs:
         forgot_password_before: Zapomenuté heslo? Kontaktujte
         heading: Přihlásit se pomocí vpsAdminu
         login: Přihlásit se
-        login_passkey: Přihlásit se pomocí passkey
+        login_passkey: Přihlásit se přístupovým klíčem
         login_totp: Přihlásit se pomocí TOTP
         lost_device_after: "."
-        lost_device_before: Ztratili jste autentizační zařízení? Zkuste recovery kód
-          nebo kontaktujte
+        lost_device_before: Ztratili jste autentizační zařízení? Zkuste obnovovací
+          kód nebo kontaktujte
         mfa_day: Zeptat se znovu za den
         mfa_month: Zeptat se znovu za měsíc
         mfa_require: Vyžadovat MFA na tomto zařízení
         mfa_week: Zeptat se znovu za týden
         new_password: Nové heslo
-        passkey_failed: Přihlášení pomocí passkey se nezdařilo.
-        passkey_start_failed: Přihlášení pomocí passkey nelze spustit.
-        passkey_success: Přihlášení pomocí passkey bylo úspěšné.
+        passkey_failed: Přihlášení přístupovým klíčem se nezdařilo.
+        passkey_start_failed: Přihlášení přístupovým klíčem nelze spustit.
+        passkey_success: Přihlášení přístupovým klíčem bylo úspěšné.
         password: Heslo
         repeat_new_password: Zopakovat nové heslo
         set_new_password: Nastavte prosím nové heslo.
         signing_in: Přihlašování...
-        signing_in_passkey: Přihlašování pomocí passkey...
+        signing_in_passkey: Přihlašování přístupovým klíčem...
         support: podporu
         title: vpsAdmin autentizace
         totp_code: TOTP kód
-        use_passkey_instead: Použít místo toho passkey
+        use_passkey_instead: Použít místo toho přístupový klíč
         user: Uživatel
     errors:
       access_denied: Přístup odepřen
@@ -2848,7 +2848,7 @@ cs:
             note:
               label: Poznámka
             state:
-              description: Vyhodnocení, zda byl node dotčen a zda bylo provedeno zmírnění.
+              description: Vyhodnocení, zda byl node dotčen a zda bylo provedeno ošetření.
       security_advisory_cve:
         actions:
           create:
@@ -3500,7 +3500,7 @@ cs:
           vps: VPS
       labels:
         branch:
-          destroy: Smazat větev datasetu
+          destroy: Smazání větve datasetu
         cluster:
           generate_known_hosts: known_hosts
           generate_migration_keys: Migrační klíče
@@ -3508,29 +3508,29 @@ cs:
           backup: Záloha
           base_download: Stažení
           create: Vytvoření
-          destroy: Smazat
+          destroy: Smazání
           full_download: Stažení
           group_snapshot: Snapshot datasetu
           incremental_download: Stažení
-          inherit: Zdědit vlastnosti datasetu
-          migrate: Migrovat
-          remove_download: Odebrat stažení
+          inherit: Zdědění vlastností datasetu
+          migrate: Migrace
+          remove_download: Odebrání stažení
           rollback: Rollback
           rotate: Rotace
-          send: Odeslat
-          set: Nastavit vlastnosti
-          set_user_namespace_map: Nastavit mapu user namespace
+          send: Odeslání
+          set: Nastavení vlastností
+          set_user_namespace_map: Nastavení mapy user namespace
           snapshot: Snapshot
           transfer: Přenos
         dataset_in_pool:
-          destroy: Smazat
-          detach_backup_heads: Odpojit zálohy
+          destroy: Smazání
+          detach_backup_heads: Odpojení záloh
         dataset_tree:
-          destroy: Smazat strom datasetů
+          destroy: Smazání stromu datasetů
         deprecated: Deprecated
         dns_resolver:
-          destroy: Smazat
-          update: Upravit
+          destroy: Smazání
+          update: Úprava
         dns_server_zone:
           create: Server zóna+
           destroy: Server zóna-
@@ -3540,8 +3540,8 @@ cs:
           destroy_record: Záznam-
           destroy_user: Zóna-
           set_reverse_record: Nastavení PTR
-          unset_reverse_record: Zrušit PTR
-          update: Upravit zónu
+          unset_reverse_record: Zrušení PTR
+          update: Úprava zóny
           update_record: Záznam*
         dns_zone_transfer:
           create: Přenos zóny+
@@ -3552,9 +3552,9 @@ cs:
           create: Vytvoření
           del_hosts: Hosty-
           del_hosts_from_all: Hosty-
-          destroy: Smazat
-          edit_host: Host*
-          update: Upravit
+          destroy: Smazání
+          edit_host: Úprava hosta
+          update: Úprava
         host_ip_address:
           destroy: Host IP-
         incident_report:
@@ -3566,8 +3566,8 @@ cs:
           cluster: Kontrola integrity clusteru
           node: Kontrola integrity nodu
         ip:
-          allocate: Přidělit IP objektu
-          free: Uvolnit IP z objektu
+          allocate: Přidělení IP objektu
+          free: Uvolnění IP z objektu
           update: IP*
         lifetimes:
           expiration_warning: Expirace
@@ -3593,48 +3593,48 @@ cs:
           rename: Přejmenovat
           update: Netif*
           venet:
-            clone: Klonovat
+            clone: Klonování
             create: Venet+
             morph: Morph
           veth_routed:
-            clone: Klonovat
+            clone: Klonování
             create: Veth+
             morph: Morph
         node:
-          register: Registrovat
+          register: Registrace nodu
           shaper_root_change: Shaper*
         plugins:
           monitoring:
             alert: Alert
           outage_reports:
-            update: Upravit
+            update: Úprava
           payments:
             create: Vytvoření
             mail_overview: Mail přehled
           requests:
             create: Vytvoření
             resolve: Vyřešení
-            update: Upravit
+            update: Úprava
         pool:
           create: Vytvoření
         security_advisories:
           mail: Mail bezpečnostního upozornění
         snapshot:
-          destroy: Smazat
+          destroy: Smazání
         snapshot_in_pool:
-          destroy: Smazat snapshot v poolu
-          purge_clones: Smazat klony
+          destroy: Smazání snapshotu v poolu
+          purge_clones: Smazání klonů
         user:
           create: Vytvoření uživatele
-          destroy: Smazat uživatele
-          hard_delete: Smazat uživatele natvrdo
+          destroy: Smazání uživatele
+          hard_delete: Tvrdé smazání uživatele
           new_login: Nové přihlášení
           new_token: Nový token
           report_failed_logins: Neúspěšná přihlášení
-          resume: Obnovit
-          revive: Oživit
+          resume: Obnovení uživatele
+          revive: Oživení uživatele
           soft_delete: Soft delete
-          suspend: Suspendovat
+          suspend: Suspendování uživatele
           totp_recovery_code_used: TOTP recovery
         user_namespace:
           allocate: Přidělit userns
@@ -3644,30 +3644,30 @@ cs:
           use: Použít userns
         vps:
           add_ip: Přidat IP
-          apply_config: Aplikovat konfiguraci
+          apply_config: Aplikace konfigurace
           autostart: Autostart
-          block: Blokovat
-          boot: Spustit
+          block: Blokování
+          boot: Spuštění VPS
           clone:
-            os_to_os: Klonovat
-            vz_to_os: Klonovat
-            vz_to_vz: Klonovat
+            os_to_os: Klonování
+            vz_to_os: Klonování
+            vz_to_vz: Klonování
           create: Vytvoření
           create_veth: Vytvoření veth
-          del_ip: Smazat IP
+          del_ip: Smazání IP
           deploy_public_key: SSH klíč
           deploy_user_data: User data
-          destroy: Smazat
-          destroy_mount: Smazat mount
+          destroy: Smazání
+          destroy_mount: Smazání mountu
           enable_network: Síť
-          expand_dataset: Rozšířit
-          expand_dataset_again: Rozšířit+
+          expand_dataset: Rozšíření datasetu
+          expand_dataset_again: Rozšíření datasetu+
           features: Funkce
           migrate:
-            os_to_os: Migrovat
-            os_to_vz: Migrovat
-            vz_to_os: Migrovat
-            vz_to_vz: Migrovat
+            os_to_os: Migrace
+            os_to_vz: Migrace
+            vz_to_os: Migrace
+            vz_to_vz: Migrace
           mount: Mount
           mount_dataset: Mount datasetu
           mount_snapshot: Mount snapshotu
@@ -3676,33 +3676,33 @@ cs:
           oom_reports: OOM reporty
           passwd: Heslo
           reinstall: Přeinstalace
-          remove_veth: Odebrat veth
+          remove_veth: Odebrání veth
           replace:
-            os: Prohodit
+            os: Nahrazení VPS
           restart: Restart
-          restore: Obnovit
-          revive: Oživit
+          restore: Obnovení
+          revive: Oživení
           set_resources: Zdroje
-          set_user_namespace_map: Nastavit mapu user namespace
-          shaper_change: Změnit shaper
-          shaper_set: Nastavit shaper
-          shaper_unset: Zrušit shaper
-          shrink_dataset: Zmenšit
+          set_user_namespace_map: Nastavení mapy user namespace
+          shaper_change: Změna shaperu
+          shaper_set: Nastavení shaperu
+          shaper_unset: Zrušení shaperu
+          shrink_dataset: Zmenšení datasetu
           soft_delete: Soft delete
-          start: Start
-          stop: Stop
-          stop_over_quota: Stop kvóta
-          swap: Prohodit
+          start: Spuštění VPS
+          stop: Vypnutí VPS
+          stop_over_quota: Zastavení kvůli kvótě
+          swap: Prohození
           umount: Unmount
           umount_dataset: Unmount datasetu
           umount_snapshot: Unmount snapshotu
           unblock: Odblokovat
-          update: Upravit
+          update: Úprava VPS
           update_mount: Mount*
         vps_config:
           create: Vytvoření
-          delete: Smazat
-          update: Upravit
+          delete: Smazání
+          update: Úprava
     transactions:
       labels:
         dns_server_reload: Reload DNS serveru
@@ -3762,7 +3762,7 @@ cs:
         storage_recv: Příjem datasetu
         storage_recv_check: Ověření přijatého datasetu
         storage_remove_clone: Odebrání klonu
-        storage_remove_download: Odebrání downloadu
+        storage_remove_download: Odebrání stažení
         storage_rename_dataset: Přejmenování datasetu
         storage_rollback: Rollback datasetu
         storage_rsync_dataset: Synchronizace datasetu přes rsync
@@ -3774,7 +3774,7 @@ cs:
         utils_no_op: NoOp
         vps_apply_user_data: Aplikace User data
         vps_autostart: Autostart
-        vps_boot: Boot VPS
+        vps_boot: Spuštění VPS
         vps_chown: Změna vlastníka VPS
         vps_copy: Kopírování VPS
         vps_create: Vytvoření VPS
@@ -3787,7 +3787,7 @@ cs:
         vps_map_mode: Nastavení režimu mapování
         vps_mount: Mount VPS
         vps_mounts: Mounty
-        vps_os_template: OS template
+        vps_os_template: OS šablona
         vps_passwd: Změna hesla
         vps_populate_config: Vygenerování konfigurace VPS
         vps_recover_cleanup: Úklid po recovery
