@@ -100,8 +100,6 @@ RSpec.describe 'requests plugin create chain', requires_plugins: :requests do # 
 
   it 'logs failed deliveries when every request template is missing' do
     NotificationTemplate.where(name: %w[
-                                 request_create_user_registration
-                                 request_create_admin_registration
                                  request_create_user
                                  request_create_admin
                                ]).destroy_all

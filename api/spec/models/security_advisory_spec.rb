@@ -194,7 +194,7 @@ RSpec.describe SecurityAdvisory do
       )
     )
     expect(muted_event.event_deliveries.sole).to be_skipped_state
-    expect(muted_event.event_deliveries.sole.error_summary).to include('does not notify')
+    expect(muted_event.event_deliveries.sole.error_summary).to eq('delivery method is disabled')
     expect(advisory.last_chain).to be_nil
   end
 
