@@ -464,7 +464,7 @@ function include_export_scripts()
 
     $xtpl->assign(
         'AJAX_SCRIPT',
-        $xtpl->vars['AJAX_SCRIPT']
+        ($xtpl->vars['AJAX_SCRIPT'] ?? '')
         . '<script type="text/javascript" src="js/export.js"></script>'
     );
 }

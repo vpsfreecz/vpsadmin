@@ -14,7 +14,7 @@ function maintenance_to_entities()
         'nodes' => [],
     ];
 
-    switch ($_GET['type']) {
+    switch ($_GET['type'] ?? null) {
         case 'vpsadmin':
             $ret['vpsadmin'][] = $_GET['obj_id'];
             break;
@@ -851,9 +851,9 @@ function outage_list()
 
     $input = $api->outage->list->getParameters('input');
 
-    api_param_to_form('type', $input->type, $_GET['type'], null, true);
-    api_param_to_form('state', $input->state, $_GET['state'], null, true);
-    api_param_to_form('impact', $input->impact, $_GET['impact'], null, true);
+    api_param_to_form('type', $input->type, api_get('type'), null, true);
+    api_param_to_form('state', $input->state, api_get('state'), null, true);
+    api_param_to_form('impact', $input->impact, api_get('impact'), null, true);
 
     if (isLoggedIn()) {
         $xtpl->form_add_select(_('Affects me?'), 'affected', [
@@ -916,7 +916,7 @@ function outage_list()
         );
     }
 
-    api_param_to_form('order', $input->order, $_GET['order']);
+    api_param_to_form('order', $input->order, api_get('order'));
 
     $xtpl->form_out(_('Show'));
 
@@ -1186,12 +1186,12 @@ function outage_affected_vps($id)
     ];
 
     foreach (['user', 'environment', 'location', 'node'] as $v) {
-        if ($_GET[$v]) {
+        if ($_GET[$v] ?? false) {
             $params[$v] = $_GET[$v];
         }
     }
 
-    if ($_GET['direct']) {
+    if ($_GET['direct'] ?? false) {
         $params['direct'] = $_GET['direct'] === 'yes';
     }
 
@@ -1270,7 +1270,7 @@ function outage_affected_exports($id)
     ];
 
     foreach (['user', 'environment', 'location', 'node'] as $v) {
-        if ($_GET[$v]) {
+        if ($_GET[$v] ?? false) {
             $params[$v] = $_GET[$v];
         }
     }

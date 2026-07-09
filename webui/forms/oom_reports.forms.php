@@ -144,7 +144,7 @@ function oom_reports_show($id)
 
     $r = $api->oom_report->show($id, ['meta' => ['includes' => 'vps__node,oom_report_rule']]);
 
-    if ($_GET['return_url']) {
+    if ($_GET['return_url'] ?? false) {
         $xtpl->sbar_add(
             _('Back'),
             $_GET['return_url']

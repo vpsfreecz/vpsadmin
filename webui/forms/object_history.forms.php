@@ -8,7 +8,7 @@ function list_object_history()
 
     $xtpl->title(_('Object history'));
 
-    if ($_GET['return_url']) {
+    if ($_GET['return_url'] ?? false) {
         $xtpl->sbar_add(_('Back'), $_GET['return_url']);
         $xtpl->sbar_out(_("Object history"));
     }
@@ -18,7 +18,7 @@ function list_object_history()
 
     $xtpl->form_set_hidden_fields([
         'page' => 'history',
-        'return_url' => $_GET['return_url'],
+        'return_url' => $_GET['return_url'] ?? null,
         'list' => '1',
     ]);
 
@@ -38,7 +38,7 @@ function list_object_history()
 
     $xtpl->form_out(_('Show'));
 
-    if (!$_GET['list']) {
+    if (!($_GET['list'] ?? false)) {
         return;
     }
 

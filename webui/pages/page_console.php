@@ -53,7 +53,7 @@ _theframe.contentWindow.location.href = _theframe.src;
         return htmlspecialchars($value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
     };
 
-    $xtpl->assign('AJAX_SCRIPT', $xtpl->vars['AJAX_SCRIPT'] . '
+    $xtpl->assign('AJAX_SCRIPT', ($xtpl->vars['AJAX_SCRIPT'] ?? '') . '
 <script type="text/javascript">
 function vps_action_label(cmd) {
 	var labels = {

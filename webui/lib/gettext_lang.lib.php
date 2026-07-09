@@ -23,7 +23,7 @@ class Lang
 
     public static function detect($langs, $session = null, $cookies = null, $server = null)
     {
-        $session ??= $_SESSION;
+        $session ??= $_SESSION ?? [];
         $cookies ??= $_COOKIE;
         $server ??= $_SERVER;
 

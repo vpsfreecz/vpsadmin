@@ -69,16 +69,16 @@ function monitoring_list()
 
     $input = $api->monitored_event->list->getParameters('input');
 
-    api_param_to_form('monitor', $input->monitor, $_GET['monitor']);
+    api_param_to_form('monitor', $input->monitor, api_get('monitor'));
 
     if (isAdmin()) {
         $xtpl->form_add_input(_('User ID') . ':', 'text', '30', 'user', get_val('user'), '');
     }
 
-    api_param_to_form('object_name', $input->object_name, $_GET['object_name']);
-    api_param_to_form('object_id', $input->object_id, $_GET['object_id']);
-    api_param_to_form('state', $input->state, $_GET['state'], null, true);
-    api_param_to_form('order', $input->order, $_GET['order']);
+    api_param_to_form('object_name', $input->object_name, api_get('object_name'));
+    api_param_to_form('object_id', $input->object_id, api_get('object_id'));
+    api_param_to_form('state', $input->state, api_get('state'), null, true);
+    api_param_to_form('order', $input->order, api_get('order'));
 
     $xtpl->form_out(_('Show'));
 

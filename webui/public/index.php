@@ -197,7 +197,9 @@ try {
                 include WEBUI_ROOT . 'pages/page_incidents.php';
                 break;
             case 'lang':
-                $lang->change($_GET['newlang']);
+                if (isset($_GET['newlang'])) {
+                    $lang->change($_GET['newlang']);
+                }
                 break;
             case 'console':
                 include WEBUI_ROOT . 'pages/page_console.php';

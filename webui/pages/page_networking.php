@@ -511,7 +511,7 @@ if (isLoggedIn()) {
 
         $xtpl->form_out(_('Show'));
 
-        if (!$_GET['list']) {
+        if (!($_GET['list'] ?? false)) {
             return;
         }
 
@@ -704,7 +704,7 @@ if (isLoggedIn()) {
 
         $xtpl->assign(
             'AJAX_SCRIPT',
-            $xtpl->vars['AJAX_SCRIPT'] . '
+            ($xtpl->vars['AJAX_SCRIPT'] ?? '') . '
 		<script type="text/javascript" src="js/network-monitor.js"></script>'
         );
 

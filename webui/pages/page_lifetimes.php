@@ -2,7 +2,7 @@
 
 if (isLoggedIn() && isAdmin()) {
 
-    switch ($_GET['action']) {
+    switch ($_GET['action'] ?? null) {
         case 'set_state':
             try {
                 csrf_check();

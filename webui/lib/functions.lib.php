@@ -608,7 +608,7 @@ function boolean_icon($val)
 
 function api_param_choices($desc, $label_callback = null, $empty = null)
 {
-    if (!$desc->validators || !property_exists($desc->validators, 'include')) {
+    if (!$desc || !isset($desc->validators) || !property_exists($desc->validators, 'include')) {
         return null;
     }
 
@@ -1335,6 +1335,7 @@ function cgroup_version($v)
 
 function colorize($array)
 {
+    $array = array_values($array);
     $ret = [];
 
     $from = 0x70;

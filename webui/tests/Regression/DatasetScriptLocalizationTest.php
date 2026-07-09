@@ -41,4 +41,11 @@ final class DatasetScriptLocalizationTest extends TestCase
             strpos($script, 'window.vpsAdminDatasetLabels')
         );
     }
+
+    public function testMountStartFailureLabelsCanComeFromApiMetadata(): void
+    {
+        require_once dirname(__DIR__, 2) . '/forms/dataset.forms.php';
+
+        self::assertSame('Custom API label', translate_mount_on_start_fail('Custom API label'));
+    }
 }

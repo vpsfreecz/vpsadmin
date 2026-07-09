@@ -95,38 +95,38 @@ if (isLoggedIn()) {
             break;
 
         case 'new-step-1':
-            print_newvps_page1($_GET['user']);
+            print_newvps_page1(api_get_uint('user'));
             break;
 
         case 'new-step-2':
             print_newvps_page2(
-                $_GET['user'],
-                $_GET['location']
+                api_get_uint('user'),
+                api_get_uint('location')
             );
             break;
 
         case 'new-step-3':
             print_newvps_page3(
-                $_GET['user'],
-                $_GET['location'],
-                $_GET['os_template']
+                api_get_uint('user'),
+                api_get_uint('location'),
+                api_get_uint('os_template')
             );
             break;
 
         case 'new-step-4':
             print_newvps_page4(
-                $_GET['user'],
-                $_GET['location'],
-                $_GET['os_template']
+                api_get_uint('user'),
+                api_get_uint('location'),
+                api_get_uint('os_template')
             );
             break;
 
         case 'new-submit':
             if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
                 print_newvps_page4(
-                    $_GET['user'],
-                    $_GET['location'],
-                    $_GET['os_template']
+                    api_get_uint('user'),
+                    api_get_uint('location'),
+                    api_get_uint('os_template')
                 );
                 break;
             }
@@ -134,29 +134,32 @@ if (isLoggedIn()) {
             csrf_check();
 
             $params = [
-                'hostname' => $_POST['hostname'],
-                'os_template' => $_GET['os_template'],
-                'memory' => (int) $_GET['memory'],
-                'swap' => (int) $_GET['swap'],
-                'cpu' => (int) $_GET['cpu'],
-                'diskspace' => (int) $_GET['diskspace'],
-                'ipv4' => (int) $_GET['ipv4'],
-                'ipv4_private' => (int) $_GET['ipv4_private'],
-                'ipv6' => (int) $_GET['ipv6'],
+                'hostname' => api_post('hostname', ''),
+                'os_template' => api_get_uint('os_template'),
+                'memory' => api_get_uint('memory', 0),
+                'swap' => api_get_uint('swap', 0),
+                'cpu' => api_get_uint('cpu', 0),
+                'diskspace' => api_get_uint('diskspace', 0),
+                'ipv4' => api_get_uint('ipv4', 0),
+                'ipv4_private' => api_get_uint('ipv4_private', 0),
+                'ipv6' => api_get_uint('ipv6', 0),
             ];
 
             if (isAdmin()) {
                 $params['info'] = $_POST['info'] ?? '';
-                $params['user'] = $_GET['user'];
-                $params['node'] = $_POST['node'];
+                $params['user'] = api_get_uint('user');
+                $params['node'] = api_post_uint('node');
                 $params['start'] = isset($_POST['boot_after_create']);
 
             } else {
-                if ($_GET['location']) {
-                    $params['location'] = (int) $_GET['location'];
+                $locationId = api_get_uint('location');
+                if ($locationId !== null && $locationId > 0) {
+                    $params['location'] = $locationId;
                 }
-                if ($_POST['user_namespace_map']) {
-                    $params['user_namespace_map'] = $_POST['user_namespace_map'];
+
+                $userNamespaceMapId = api_post_uint('user_namespace_map');
+                if ($userNamespaceMapId !== null && $userNamespaceMapId > 0) {
+                    $params['user_namespace_map'] = $userNamespaceMapId;
                 }
             }
 
@@ -175,7 +178,7 @@ if (isLoggedIn()) {
             try {
                 $vps = $api->vps->create($params);
 
-                if ($params['start'] || !isAdmin()) {
+                if (($params['start'] ?? false) || !isAdmin()) {
                     notify_user(
                         _("VPS create ") . ' ' . $vps->id,
                         _("VPS will be created and booted afterwards.")
@@ -236,7 +239,7 @@ if (isLoggedIn()) {
                     'type' => $_POST['password_type'] == 'simple' ? 'simple' : 'secure',
                 ]);
 
-                if (!$_SESSION['vps_password']) {
+                if (!isset($_SESSION['vps_password'])) {
                     $_SESSION['vps_password'] = [];
                 }
 
@@ -991,11 +994,11 @@ if (isLoggedIn()) {
             break;
 
         case 'clone-step-1':
-            vps_clone_form_step1($_GET['veid'], $_GET['user']);
+            vps_clone_form_step1($_GET['veid'], api_get_uint('user'));
             break;
 
         case 'clone-step-2':
-            vps_clone_form_step2($_GET['veid'], $_GET['user'], $_GET['location']);
+            vps_clone_form_step2($_GET['veid'], api_get_uint('user'), api_get_uint('location'));
             break;
 
         case 'clone-submit':

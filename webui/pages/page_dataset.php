@@ -3,7 +3,7 @@
 if (isLoggedIn()) {
     $quotas = ['quota', 'refquota'];
 
-    switch ($_GET['action']) {
+    switch ($_GET['action'] ?? null) {
         case 'new':
             if (isset($_POST['name'])) {
                 csrf_check();

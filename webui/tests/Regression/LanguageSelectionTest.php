@@ -54,6 +54,29 @@ final class LanguageSelectionTest extends TestCase
         );
     }
 
+    public function testDetectDefaultsWhenSessionSuperglobalIsUnset(): void
+    {
+        $hadSession = array_key_exists('_SESSION', $GLOBALS);
+        $oldSession = $_SESSION ?? null;
+        $oldCookie = $_COOKIE;
+        $oldServer = $_SERVER;
+
+        try {
+            unset($_SESSION);
+            $_COOKIE = [];
+            $_SERVER = [];
+
+            self::assertSame('en_US.utf8', Lang::detect($this->langs()));
+        } finally {
+            if ($hadSession) {
+                $_SESSION = $oldSession;
+            }
+
+            $_COOKIE = $oldCookie;
+            $_SERVER = $oldServer;
+        }
+    }
+
     public function testAcceptLanguageQualityIsRespected(): void
     {
         self::assertSame(

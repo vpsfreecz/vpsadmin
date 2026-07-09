@@ -14,6 +14,14 @@ class ApiParamChoicesTemplate
 
 final class ApiParamChoicesTest extends TestCase
 {
+    public function testMissingChoiceMetadataHasNoChoices(): void
+    {
+        require_once dirname(__DIR__, 2) . '/lib/functions.lib.php';
+
+        self::assertNull(api_param_choices(null));
+        self::assertNull(api_param_choices((object) []));
+    }
+
     public function testMappedChoiceMetadataRendersAsSelectOptions(): void
     {
         require_once dirname(__DIR__, 2) . '/lib/functions.lib.php';
@@ -46,5 +54,15 @@ final class ApiParamChoicesTest extends TestCase
                 'planned_outage',
             ],
         ], $xtpl->selects);
+    }
+
+    public function testColorizeAcceptsSparseArrays(): void
+    {
+        require_once dirname(__DIR__, 2) . '/lib/functions.lib.php';
+
+        $colors = colorize(array_unique([5, 5, 16]));
+
+        self::assertSame([5, 16], array_keys($colors));
+        self::assertCount(2, $colors);
     }
 }

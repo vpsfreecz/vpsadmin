@@ -207,7 +207,7 @@ function dataset_create_form()
             $params->dataset->label,
             'dataset',
             resource_list_to_options($api->dataset->list(['role' => $_GET['role']]), 'id', 'name'),
-            $_POST['dataset'],
+            post_val('dataset'),
             $params->dataset->description
         );
     }
@@ -217,7 +217,7 @@ function dataset_create_form()
         'text',
         '30',
         'name',
-        $_POST['name'],
+        post_val('name'),
         _('Do not prefix with VPS ID. Allowed characters: a-z A-Z 0-9 _ : .<br>'
         . 'Use / as a separator to create subdatasets. Max length 254 chars.')
     );
@@ -226,9 +226,10 @@ function dataset_create_form()
     // Quota
     $quota = $params->{$quota_name};
 
-    if (!$_POST[$quota_name]) {
+    $quotaValue = post_val($quota_name);
+    if (!$quotaValue) {
         $v = data_size_unitize(
-            ($_POST[$quota_name] ? $_POST[$quota_name] : $quota->default) * 1024 * 1024
+            ($quotaValue ? $quotaValue : $quota->default) * 1024 * 1024
         );
     }
 
@@ -236,8 +237,8 @@ function dataset_create_form()
         $quota->label . ' '
         . '<input type="hidden" name="return" value="' . h($_GET['return'] ?? $_POST['return'] ?? '') . '">'
     );
-    $xtpl->form_add_input_pure('text', '30', $quota_name, $_POST[$quota_name] ? $_POST[$quota_name] : $v[0], $quota->description);
-    $xtpl->form_add_select_pure('quota_unit', ["g" => "GiB", "t" => "TiB"], $_POST[$quota_name] ? $_POST['quota_unit'] : $v[1]);
+    $xtpl->form_add_input_pure('text', '30', $quota_name, $quotaValue ? $quotaValue : $v[0], $quota->description);
+    $xtpl->form_add_select_pure('quota_unit', ["g" => "GiB", "t" => "TiB"], $quotaValue ? post_val('quota_unit', 'g') : $v[1]);
     $xtpl->table_tr();
 
     // Remaining dataset properties
@@ -259,7 +260,7 @@ function dataset_create_form()
 
     $xtpl->form_out(_('Save'), null, '<span class="advanced-property-toggle"></span>');
 
-    $xtpl->sbar_add(_("Back"), $_GET['return'] ? $_GET['return'] : $_POST['return']);
+    $xtpl->sbar_add(_("Back"), $_GET['return'] ?? $_POST['return'] ?? '');
     $xtpl->sbar_out(_('Dataset'));
 }
 
@@ -294,7 +295,8 @@ function dataset_edit_form()
     // Quota
     $quota = $params->{$quota_name};
 
-    if (!$_POST[$quota_name]) {
+    $quotaValue = post_val($quota_name);
+    if (!$quotaValue) {
         $v = data_size_unitize($ds->{$quota_name} * 1024 * 1024);
     }
 
@@ -302,8 +304,8 @@ function dataset_edit_form()
         $quota->label . ' '
         . '<input type="hidden" name="return" value="' . h($_GET['return'] ?? $_POST['return'] ?? '') . '">'
     );
-    $xtpl->form_add_input_pure('text', '30', $quota_name, $_POST[$quota_name] ? $_POST[$quota_name] : $v[0], $quota->description);
-    $xtpl->form_add_select_pure('quota_unit', ["g" => "GiB", "t" => "TiB"], $_POST[$quota_name] ? $_POST['quota_unit'] : $v[1]);
+    $xtpl->form_add_input_pure('text', '30', $quota_name, $quotaValue ? $quotaValue : $v[0], $quota->description);
+    $xtpl->form_add_select_pure('quota_unit', ["g" => "GiB", "t" => "TiB"], $quotaValue ? post_val('quota_unit', 'g') : $v[1]);
     $xtpl->table_tr();
 
     if (isAdmin()) {
@@ -487,7 +489,7 @@ function dataset_edit_form()
 
     $xtpl->form_out(_('Add'));
 
-    $xtpl->sbar_add(_("Back"), $_GET['return'] ? $_GET['return'] : $_POST['return']);
+    $xtpl->sbar_add(_("Back"), $_GET['return'] ?? $_POST['return'] ?? '');
     $xtpl->sbar_out(_('Dataset'));
 }
 
@@ -739,7 +741,7 @@ function translate_mount_on_start_fail($v)
         'wait_for_mount' => _('Wait until mounted'),
     ];
 
-    return $start_fail_choices[$v];
+    return $start_fail_choices[$v] ?? $v;
 }
 
 function include_dataset_scripts()
@@ -753,7 +755,7 @@ function include_dataset_scripts()
 
     $xtpl->assign(
         'AJAX_SCRIPT',
-        $xtpl->vars['AJAX_SCRIPT']
+        ($xtpl->vars['AJAX_SCRIPT'] ?? '')
         . '<script type="text/javascript">window.vpsAdminDatasetLabels = ' . $labels . ';</script>'
         . '<script type="text/javascript" src="js/dataset.js"></script>'
     );

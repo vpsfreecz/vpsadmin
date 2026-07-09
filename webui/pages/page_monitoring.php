@@ -1,7 +1,7 @@
 <?php
 
 if (isLoggedIn()) {
-    switch ($_GET['action']) {
+    switch ($_GET['action'] ?? null) {
         case 'list':
             monitoring_list();
             break;

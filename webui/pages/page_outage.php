@@ -138,7 +138,7 @@ function outage_set_handlers($outage)
 }
 
 if (isLoggedIn()) {
-    switch ($_GET['action']) {
+    switch ($_GET['action'] ?? null) {
         case 'report':
             if (isAdmin()) {
                 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -395,7 +395,7 @@ if (isLoggedIn()) {
     $xtpl->sbar_out(_('Outages'));
 
 } else {
-    switch ($_GET['action']) {
+    switch ($_GET['action'] ?? null) {
         case 'list':
             outage_list();
             break;

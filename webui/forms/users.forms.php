@@ -139,7 +139,7 @@ function list_user_sessions($user_id)
 
     $xtpl->form_out(_('Show'));
 
-    if (!$_GET['list']) {
+    if (!($_GET['list'] ?? false)) {
         return;
     }
 
@@ -258,7 +258,7 @@ function list_user_sessions($user_id)
 
         $xtpl->table_tr($color);
 
-        if (!$_GET['details']) {
+        if (!isset($_GET['details'])) {
             continue;
         }
 
@@ -285,7 +285,7 @@ function list_user_sessions($user_id)
         $xtpl->table_tr();
     }
 
-    if (!$_GET['session_id']) {
+    if (!($_GET['session_id'] ?? false)) {
         $xtpl->table_pagination($pagination);
     }
 
@@ -1218,7 +1218,7 @@ function mail_template_recipient_form($user_id)
             50,
             5,
             "to[{$recp->id}]",
-            $_POST['to'][$recp->id] ? $_POST['to'][$recp->id] : str_replace(',', ",\n", $recp->to)
+            post_val_array('to', $recp->id, str_replace(',', ",\n", $recp->to))
         );
         $xtpl->table_tr();
 

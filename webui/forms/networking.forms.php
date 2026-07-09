@@ -245,7 +245,7 @@ function host_ip_address_list($page)
 
     $xtpl->form_out(_('Show'));
 
-    if (!$_GET['list']) {
+    if (!($_GET['list'] ?? false)) {
         return;
     }
 

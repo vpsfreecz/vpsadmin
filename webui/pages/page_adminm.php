@@ -101,7 +101,7 @@ function print_editm($u)
 
     $xtpl->table_td(_("State") . ':');
     $stateParam = $api->user->index->getParameters('input')->object_state;
-    $xtpl->table_td(api_param_choice_label($stateParam, $u->object_state));
+    $xtpl->table_td(api_param_choice_label($stateParam, $u->object_state ?? null));
     $xtpl->table_tr();
 
     if ($u->expiration_date) {
@@ -484,7 +484,7 @@ function add_pubkey($user)
     global $api, $xtpl;
 
     $xtpl->table_title(_('Add public key'));
-    $xtpl->form_create('?page=adminm&section=members&action=pubkey_add&id=' . $user . '&pubkey_id=' . $id, 'post');
+    $xtpl->form_create('?page=adminm&section=members&action=pubkey_add&id=' . $user, 'post');
 
     $xtpl->form_add_input(_("Label") . ':', 'text', '30', 'label', post_val('label'));
     $xtpl->form_add_textarea(_("Public key") . ':', '80', '12', 'key', post_val('key'));
@@ -1329,7 +1329,7 @@ if (isLoggedIn()) {
                     _('Invalid device'),
                     _('Please repeat the device addition procedure.')
                 );
-            } elseif ($_POST['code']) {
+            } elseif (api_post('code') !== null) {
                 csrf_check();
 
                 try {

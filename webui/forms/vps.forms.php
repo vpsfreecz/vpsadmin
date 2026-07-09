@@ -11,7 +11,7 @@ function print_newvps_page0()
         'page' => 'adminvps',
         'action' => 'new-step-1',
     ]);
-    $xtpl->form_add_input(_('User ID') . ':', 'text', '30', 'user', $_GET['user']);
+    $xtpl->form_add_input(_('User ID') . ':', 'text', '30', 'user', get_val('user'));
     $xtpl->form_out(_("Next"));
 }
 
@@ -95,6 +95,8 @@ function print_newvps_page1($user_id)
 
     $avail_user_id = $user->id;
 
+    $selectedLocation = api_get_uint('location');
+
     foreach ($locations as $loc) {
         $owned_free_ips = [
             'ipv4' => 0,
@@ -115,7 +117,7 @@ function print_newvps_page1($user_id)
         $xtpl->form_add_radio_pure(
             'location',
             $loc->id,
-            $_GET['location'] == $loc->id
+            $selectedLocation === $loc->id
         );
         $xtpl->table_td('<strong>' . $loc->label . '</strong>');
         $xtpl->table_tr();
@@ -593,7 +595,7 @@ function print_newvps_page4($user_id, $loc_id, $tpl_id)
                 'domain_name',
                 false
             ),
-            $_POST['node']
+            post_val('node')
         );
     }
 
@@ -602,7 +604,7 @@ function print_newvps_page4($user_id, $loc_id, $tpl_id)
         'text',
         '30',
         'hostname',
-        $_POST['hostname'],
+        post_val('hostname'),
         _("A-z, a-z"),
         255
     );
@@ -631,7 +633,7 @@ function print_newvps_page4($user_id, $loc_id, $tpl_id)
             28,
             4,
             'info',
-            $_POST['info']
+            post_val('info')
         );
     }
 
@@ -942,7 +944,7 @@ function vps_details_submenu($vps)
 {
     global $xtpl, $api;
 
-    if ($_GET['action'] != 'info') {
+    if (($_GET['action'] ?? null) != 'info') {
         $xtpl->sbar_add(_('Back to details'), '?page=adminvps&action=info&veid=' . $vps->id);
     }
 
@@ -1561,11 +1563,13 @@ function vps_clone_form_step1($vps_id, $user_id)
         $user = $api->user->current();
     }
 
+    $selectedLocation = api_get_uint('location');
+
     foreach ($locations as $loc) {
         $xtpl->form_add_radio_pure(
             'location',
             $loc->id,
-            $_GET['location'] == $loc->id
+            $selectedLocation === $loc->id
         );
         $xtpl->table_td('<strong>' . $loc->label . '</strong>');
         $xtpl->table_tr();
