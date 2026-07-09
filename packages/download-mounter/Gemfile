@@ -1,6 +1,6 @@
 source 'https://rubygems.org'
 
-gem 'haveapi-client', '~> 0.29.2'
+gem 'haveapi-client', '~> 0.29.3'
 gem 'highline'
 
 group :test do

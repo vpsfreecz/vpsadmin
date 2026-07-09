@@ -365,7 +365,7 @@ RSpec.describe 'VpsAdmin::API::Resources::OomReportRule' do
 
       expect_status(200)
       expect(json['status']).to be(false)
-      expect(response_message).to match(/create failed|input parameters not valid/)
+      expect(response_message).to match(/create failed|input parameters (are )?not valid/)
       expect(response_errors.keys.map(&:to_s)).to include('cgroup_pattern')
     end
 
