@@ -3133,9 +3133,9 @@
     node.zfs_exists?("#{dataset_path}@#{snapshot_name}", type: 'snapshot', timeout: 30)
   end
 
-  def grep_nodectld_log(node, pattern)
+  def grep_mbuffer_log(node, transaction_id, pattern)
     _, output = node.succeeds(
-      "grep -F #{Shellwords.escape(pattern)} /var/log/nodectld",
+      "grep -F #{Shellwords.escape(pattern)} /tmp/nodectld-mbuffer-#{Integer(transaction_id)}.log",
       timeout: 60
     )
     output

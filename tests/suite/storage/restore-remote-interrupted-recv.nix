@@ -125,13 +125,13 @@ import ../../make-test.nix (
           expect(recv_check_detail).not_to be_nil
           expect(recv_tx).not_to be_nil
           expect(
-            grep_nodectld_log(
+            grep_mbuffer_log(
               node1,
-              "chain=#{response.fetch('chain_id')},trans=#{recv_tx.fetch('id')},type=execute] " \
-              "fork /run/vpsadmin-test-faulty-mbuffer"
+              recv_tx.fetch('id'),
+              'faulty-mbuffer recv abort after'
             )
           ).to include(
-            '/run/vpsadmin-test-faulty-mbuffer'
+            'faulty-mbuffer recv abort after'
           )
           expect(rollback_dataset_exists?(node1, setup.fetch('primary_dataset_path'))).to be(false)
           expect(chain_port_reservations(services, response.fetch('chain_id'))).to eq([])

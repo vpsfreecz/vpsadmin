@@ -51,7 +51,7 @@ import ../../make-test.nix (
             dst_dip_id: setup.fetch('dst_dip_id'),
             label: 'interrupt-recv-s1'
           )
-          write_dataset_payload(
+          payload_checksum = write_dataset_payload(
             node1,
             dataset_path: setup.fetch('primary_dataset_path'),
             relative_path: 'var/tmp/recv.bin',
@@ -116,13 +116,13 @@ import ../../make-test.nix (
           expect(recv_check_detail).not_to be_nil
           expect(recv_tx).not_to be_nil
           expect(
-            grep_nodectld_log(
+            grep_mbuffer_log(
               node2,
-              "chain=#{response.fetch('chain_id')},trans=#{recv_tx.fetch('id')},type=execute] " \
-              "fork /run/vpsadmin-test-faulty-mbuffer"
+              recv_tx.fetch('id'),
+              'faulty-mbuffer recv abort after'
             )
           ).to include(
-            '/run/vpsadmin-test-faulty-mbuffer'
+            'faulty-mbuffer recv abort after'
           )
           expect(failed_handles).to include(tx_types(services).fetch('recv_check'))
           expect(backup_names).to include(base.fetch('name'))
@@ -144,6 +144,17 @@ import ../../make-test.nix (
               include_names: [snap2.fetch('name')]
             )
           ).to include(snap2.fetch('name'))
+          head_branch = head_branch_row(services, setup.fetch('dst_dip_id'))
+          backup_branch_dataset = branch_dataset_path(
+            backup_pool_fs,
+            setup.fetch('dataset_full_name'),
+            head_branch
+          )
+          expect(file_checksum(
+            node2,
+            dataset_path: backup_branch_dataset,
+            relative_path: 'var/tmp/recv.bin'
+          )).to eq(payload_checksum)
         end
       end
     '';
