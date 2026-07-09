@@ -145,7 +145,9 @@ function vps_user_data_edit($id)
             'id',
             'hostname',
             false,
-            function ($vps) { return $vps->id . ' - ' . h($vps->hostname); }
+            function ($vps) {
+                return $vps->id . ' - ' . h($vps->hostname);
+            }
         ),
         post_val('vps')
     );

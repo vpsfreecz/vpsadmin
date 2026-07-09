@@ -3,9 +3,7 @@
 use PHPUnit\Framework\TestCase;
 
 if (!class_exists('CsrfTokenInvalid')) {
-    class CsrfTokenInvalid extends Exception
-    {
-    }
+    class CsrfTokenInvalid extends Exception {}
 }
 
 class CapturingContextSwitchTemplate
@@ -160,20 +158,12 @@ final class CsrfContextSwitchTest extends TestCase
             throw new RuntimeException('switchUserContext() should not be reached');
         }
 
-        function setupOAuth2ForLogin()
-        {
-        }
+        function setupOAuth2ForLogin() {}
 
-        function logoutUser()
-        {
-        }
+        function logoutUser() {}
 
-        function logoutAndSwitchUser()
-        {
-        }
+        function logoutAndSwitchUser() {}
 
-        function regainAdminUser()
-        {
-        }
+        function regainAdminUser() {}
     }
 }

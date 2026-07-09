@@ -39,33 +39,19 @@ class CapturingWebauthnTemplate
     public array $forms = [];
     public array $hiddenFields = [];
 
-    public function table_title($title)
-    {
-    }
+    public function table_title($title) {}
 
-    public function table_add_category($title)
-    {
-    }
+    public function table_add_category($title) {}
 
-    public function table_td($content, ...$args)
-    {
-    }
+    public function table_td($content, ...$args) {}
 
-    public function table_tr()
-    {
-    }
+    public function table_tr() {}
 
-    public function table_out()
-    {
-    }
+    public function table_out() {}
 
-    public function form_out($label)
-    {
-    }
+    public function form_out($label) {}
 
-    public function sbar_add($label, $url = null)
-    {
-    }
+    public function sbar_add($label, $url = null) {}
 
     public function form_create($action = '?page=', $method = 'post', $name = 'generic_form', $csrf = true)
     {

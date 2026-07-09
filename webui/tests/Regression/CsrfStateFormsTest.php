@@ -3,20 +3,14 @@
 use PHPUnit\Framework\TestCase;
 
 if (!class_exists('CsrfTokenInvalid')) {
-    class CsrfTokenInvalid extends Exception
-    {
-    }
+    class CsrfTokenInvalid extends Exception {}
 }
 
 class NullStateFormTemplate
 {
-    public function perex($title, $message = '')
-    {
-    }
+    public function perex($title, $message = '') {}
 
-    public function perex_format_errors($title, $response)
-    {
-    }
+    public function perex_format_errors($title, $response) {}
 }
 
 class RejectingStateResource
