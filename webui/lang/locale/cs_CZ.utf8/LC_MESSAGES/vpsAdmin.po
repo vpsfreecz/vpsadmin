@@ -1869,7 +1869,7 @@ msgstr "Routované IP adresy"
 
 #: forms/networking.forms.php forms/users.forms.php
 msgid "Prefix"
-msgstr "Předpona"
+msgstr "Prefix"
 
 #: forms/networking.forms.php
 msgid "'unassigned' to list free addresses"
@@ -2005,23 +2005,23 @@ msgstr "Přidělování IP adres"
 
 #: forms/networking.forms.php pages/page_adminvps.php
 msgid "From"
-msgstr "Z"
+msgstr "Od"
 
 #: forms/networking.forms.php pages/page_adminvps.php
 msgid "To"
-msgstr "Na"
+msgstr "Do"
 
 #: forms/networking.forms.php
 msgid "Assigned by"
-msgstr "Přidělil"
+msgstr "Přidělení"
 
 #: forms/networking.forms.php
 msgid "Unassigned by"
-msgstr "Nepřiřazeno uživatelem"
+msgstr "Odebrání"
 
 #: forms/networking.forms.php
 msgid "Assigned at"
-msgstr "Přiděleno v"
+msgstr "Přiděleno"
 
 #: forms/networking.forms.php
 msgid "Verified"

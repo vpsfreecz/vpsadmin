@@ -22,6 +22,8 @@ Always translate with context. The same English word can mean different things:
   In combined outage lists, use labels such as `Odstávky`, `Výpadky`, and
   `Odstávky a výpadky`.
 - `Network`/`Networks` are `Síť`/`Sítě`.
+- A network `Prefix` is `Prefix`, never `Předpona`. Use the same technical
+  term in compound labels such as `IP prefix` and `Prefix reverzní sítě`.
 - `Export`/`Exports` are `Export`/`Exporty`.
 - `Back` navigation links are `Zpět`.
 - User-session objects are `relace`, e.g. `uživatelská relace`,
