@@ -106,6 +106,19 @@ final class LanguageSelectionTest extends TestCase
         self::assertSame('cs', $options['language']);
     }
 
+    public function testCzechCatalogUsesCzechCgroupsKnowledgeBaseUrl(): void
+    {
+        $po = file_get_contents(
+            dirname(__DIR__, 2) . '/lang/locale/cs_CZ.utf8/LC_MESSAGES/vpsAdmin.po'
+        );
+
+        self::assertStringContainsString(
+            "msgid \"https://kb.vpsfree.org/manuals/vps/cgroups\"\n"
+            . "msgstr \"https://kb.vpsfree.cz/navody/vps/cgroups\"",
+            $po
+        );
+    }
+
     public function testUserLanguageCodeReadsHaveApiLanguageResource(): void
     {
         require_once dirname(__DIR__, 2) . '/lib/functions.lib.php';

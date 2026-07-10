@@ -57,9 +57,9 @@ Always translate with context. The same English word can mean different things:
   such as `Přidání`, `Vytvoření`, `Smazání`, and `Nastavení`, or established
   technical nouns such as `Reload DNS serveru`. Do not use infinitive command
   labels such as `Přidat DNS server` for transaction labels.
-- Route and host IP address add/remove transaction labels are intentional
-  compact exceptions: use paired labels such as `Přidat routu` and
-  `Odebrat routu`.
+- Route and host IP address transaction labels follow the same verbal-noun
+  rule: use `Přidání routy`/`Odebrání routy` and
+  `Přidání host IP adresy`/`Odebrání host IP adresy`.
 - `Security advisory` is `Bezpečnostní upozornění`.
 - Security advisory `mitigated` state is `ošetřeno`, not a literal
   `zmírněno`.
@@ -67,6 +67,8 @@ Always translate with context. The same English word can mean different things:
   In prose, use `otisk klíče`, `otisk klíče SSH`, or
   `otisk hostitelského klíče SSH` when the type of key needs to be explicit.
 - `Dataset`/`Datasets` are `Dataset`/`Datasety`.
+- `Subdataset`/`Subdatasets` are `Vnořený dataset`/`Vnořené datasety`.
+  Use `potomci` when a label describes all recursive dataset descendants.
 - Dataset branches are `větev datasetu`, never `branch datasetu`.
 - ZFS dataset property labels use a natural Czech label followed by the exact
   property key in parentheses, e.g. `Využitý prostor (used)` and
@@ -75,7 +77,10 @@ Always translate with context. The same English word can mean different things:
   `refquota` applies to the dataset itself. Use labels such as
   `Kvóta včetně potomků (quota)` and `Kvóta datasetu (refquota)`.
 - `Mount`/`Mounts` are `Mount`/`Mounty`.
-- In mount-related states and errors, use `mount`, e.g. `Selhání při mountu`.
+- In mount-related operation names and errors, use `mount`, e.g.
+  `Selhání při mountu`. State values describing whether the dataset is
+  connected use `Připojeno`/`Nepřipojeno` and related phrases use
+  `připojení`.
 - For an NFS export value in the `host:path` form, use `Adresa exportu`.
   Use `mountpoint` only for the local mount target.
 - `Rescue mode` is `nouzový režim`.
@@ -104,6 +109,11 @@ Keep established technical terms untranslated when natural:
 Use capitalization that matches the UI context. Main menu and sidebar labels
 should start with an uppercase letter. Short table labels should be concise.
 Longer descriptions may use full Czech sentences.
+
+Values rendered inside status table cells start with a lower-case letter. For
+node storage pools, scrub/resilver values include `neprobíhá`, `scrub - kontrola
+integrity dat`, `resilver - výměna disku`, `chyba - ...`, and `neznámý`.
+Performance values are `nominální`, `snížený`, and `neznámý`.
 
 Action labels should use the infinitive form, e.g. `Spravovat`, `Vytvořit`,
 `Upravit`, and `Vypnout`, not polite imperative forms such as `Spravujte`.

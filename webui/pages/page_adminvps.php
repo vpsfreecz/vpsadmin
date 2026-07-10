@@ -1955,7 +1955,7 @@ if (isLoggedIn()) {
                 $xtpl->table_tr();
 
                 $xtpl->table_td(
-                    'VPS is restarted when user namespace map is changed.',
+                    _('VPS is restarted when user namespace map is changed.'),
                     false,
                     false,
                     2

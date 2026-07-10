@@ -42,4 +42,17 @@ RSpec.describe ApiAppHelper do
         .to eq('Zdroj je uzamčen transakčním řetězcem 42 (test). Zkuste to prosím později.')
     end
   end
+
+  it 'localizes route and host IP transaction labels as verbal nouns' do
+    ::I18n.with_locale(:cs) do
+      expect(VpsAdmin::API::I18n.t('transactions.labels.vps_route_add'))
+        .to eq('Přidání routy')
+      expect(VpsAdmin::API::I18n.t('transactions.labels.vps_route_del'))
+        .to eq('Odebrání routy')
+      expect(VpsAdmin::API::I18n.t('transactions.labels.netif_host_addr_add'))
+        .to eq('Přidání host IP adresy')
+      expect(VpsAdmin::API::I18n.t('transactions.labels.netif_host_addr_del'))
+        .to eq('Odebrání host IP adresy')
+    end
+  end
 end

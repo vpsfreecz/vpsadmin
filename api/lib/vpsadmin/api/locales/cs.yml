@@ -350,17 +350,17 @@ cs:
       current_state:
         choices:
           created:
-            label: vytvořeno
+            label: připraveno k připojení
           delayed:
-            label: odloženo
+            label: probíhá pokus o připojení
           mounted:
-            label: mountnuto
+            label: připojeno
           skipped:
             label: přeskočeno
           unmounted:
-            label: odmountnuto
+            label: nepřipojeno
           waiting:
-            label: čeká
+            label: čekání na připojení
         label: Aktuální stav
       cve:
         description: Filtrovat podle identifikátoru CVE.
@@ -3727,8 +3727,8 @@ cs:
         netif_create_veth_routed: Vytvoření rozhraní
         netif_disable: Vypnutí rozhraní
         netif_enable: Zapnutí rozhraní
-        netif_host_addr_add: Přidat host IP adresu
-        netif_host_addr_del: Odebrat host IP adresu
+        netif_host_addr_add: Přidání host IP adresy
+        netif_host_addr_del: Odebrání host IP adresy
         netif_remove_veth_routed: Odebrání rozhraní
         netif_rename: Přejmenování rozhraní
         netif_set_shaper: Nastavení síťového shaperu
@@ -3795,8 +3795,8 @@ cs:
         vps_remove_config: Smazání konfigurace VPS
         vps_resources: Zdroje VPS
         vps_restart: Restart VPS
-        vps_route_add: Přidat routu
-        vps_route_del: Odebrat routu
+        vps_route_add: Přidání routy
+        vps_route_del: Odebrání routy
         vps_send_cleanup: Dokončení přenosu
         vps_send_config: Přenos konfigurace VPS
         vps_send_rollback_config: Přenos rollback konfigurace

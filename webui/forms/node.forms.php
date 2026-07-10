@@ -77,6 +77,10 @@ function node_details_table($node_id)
                 $scan = _('error - unable to check pool status');
                 $perf = _('unknown');
                 break;
+            case 'unknown':
+                $scan = _('unknown');
+                $perf = _('unknown');
+                break;
             default:
                 $scan = $pool->scan;
                 $perf = _('unknown');

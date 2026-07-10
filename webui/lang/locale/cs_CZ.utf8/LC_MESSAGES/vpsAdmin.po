@@ -64,7 +64,7 @@ msgstr "VPS ID"
 
 #: forms/backup.forms.php
 msgid "Include subdatasets"
-msgstr "Zahrnout dílčí datasety"
+msgstr "Zahrnout vnořené datasety"
 
 #: forms/backup.forms.php
 msgid "Ignore datasets without snapshots"
@@ -709,7 +709,7 @@ msgstr "exportováno"
 
 #: forms/dataset.forms.php
 msgid "Create a subdataset"
-msgstr "Vytvořit dílčí dataset"
+msgstr "Vytvořit vnořený dataset"
 
 #: forms/dataset.forms.php
 msgid "Create a new dataset"
@@ -721,7 +721,7 @@ msgstr "Vytvořit dataset"
 
 #: forms/dataset.forms.php
 msgid "Create a new subdataset in"
-msgstr "Vytvořit nový dílčí dataset v"
+msgstr "Vytvořit nový vnořený dataset v"
 
 #: forms/dataset.forms.php
 msgid ""
@@ -729,7 +729,7 @@ msgid ""
 "a separator to create subdatasets. Max length 254 chars."
 msgstr ""
 "Nedávejte předponu VPS ID. Povolené znaky: a-z A-Z 0-9 _ : .<br>Použijte / "
-"jako oddělovač k vytvoření dílčích datasetů. Maximální délka 254 znaků."
+"jako oddělovač k vytvoření vnořených datasetů. Maximální délka 254 znaků."
 
 #: forms/dataset.forms.php
 msgid "Auto mount"
@@ -837,7 +837,7 @@ msgstr "exportováno, lze připojit"
 
 #: forms/dataset.forms.php
 msgid "Export to mount"
-msgstr "Export do mount"
+msgstr "Export pro mount"
 
 #: forms/dataset.forms.php
 msgid "Make a new snapshot"
@@ -865,7 +865,7 @@ msgstr "Stav"
 
 #: forms/dataset.forms.php
 msgid "About to be mounted"
-msgstr "Před mountem"
+msgstr "Připraveno k připojení"
 
 #: forms/dataset.forms.php
 msgid "Mounted"
@@ -873,7 +873,7 @@ msgstr "Připojeno"
 
 #: forms/dataset.forms.php
 msgid "Unmounted"
-msgstr "Nenamontováno"
+msgstr "Nepřipojeno"
 
 #: forms/dataset.forms.php
 msgid "Skipped"
@@ -881,11 +881,11 @@ msgstr "Přeskočeno"
 
 #: forms/dataset.forms.php
 msgid "Trying to mount"
-msgstr "Pokus o mount"
+msgstr "Probíhá pokus o připojení"
 
 #: forms/dataset.forms.php
 msgid "Waiting for mount"
-msgstr "Čekání na mount"
+msgstr "Čekání na připojení"
 
 #: forms/dataset.forms.php forms/users.forms.php pages/page_adminvps.php
 msgid "Disable"
@@ -1667,6 +1667,14 @@ msgstr "přidat hostitele"
 msgid "host"
 msgstr "hostitel"
 
+#: forms/export.forms.php
+msgid "Show advanced options"
+msgstr "Zobrazit pokročilé možnosti"
+
+#: forms/export.forms.php
+msgid "Hide advanced options"
+msgstr "Skrýt pokročilé možnosti"
+
 #: forms/incidents.forms.php
 msgid "Assignment ID"
 msgstr "ID přidělení"
@@ -2075,7 +2083,7 @@ msgstr "neznámý"
 
 #: forms/node.forms.php
 msgid "none"
-msgstr "Neprobíhá"
+msgstr "neprobíhá"
 
 #: forms/node.forms.php
 msgid "nominal"
@@ -2091,7 +2099,7 @@ msgstr "scrub - kontrola integrity dat"
 
 #: forms/node.forms.php
 msgid "decreased"
-msgstr "snížena"
+msgstr "snížený"
 
 #: forms/node.forms.php
 msgid "resilver - replacing disk"
@@ -5661,7 +5669,7 @@ msgstr "Potvrdit přeinstalaci VPS"
 msgid ""
 "All data from the VPS root filesystem will be deleted, subdatasets are kept."
 msgstr ""
-"Všechna data z kořenového souborového systému VPS budou smazána, dílčí "
+"Všechna data z kořenového souborového systému VPS budou smazána, vnořené "
 "datasety zůstanou zachovány."
 
 #: pages/page_adminvps.php
@@ -6283,6 +6291,10 @@ msgstr "Mapa"
 #: pages/page_adminvps.php
 msgid "Manage user namespace maps"
 msgstr "Správa map uživatelských jmenných prostorů"
+
+#: pages/page_adminvps.php
+msgid "VPS is restarted when user namespace map is changed."
+msgstr "Při změně mapy uživatelského jmenného prostoru se VPS restartuje."
 
 #: pages/page_adminvps.php pages/page_console.php pages/page_lifetimes.php
 msgid "Manage VPS"
@@ -7237,12 +7249,16 @@ msgid "Storage"
 msgstr "Úložiště"
 
 #: pages/page_index.php
-msgid "Read more about cgroups in KB"
-msgstr "Přečtěte si více o cgroups v KB"
-
-#: pages/page_index.php
 msgid "cgroups"
 msgstr "cgroups"
+
+#: pages/page_index.php
+msgid "https://kb.vpsfree.org/manuals/vps/cgroups"
+msgstr "https://kb.vpsfree.cz/navody/vps/cgroups"
+
+#: pages/page_index.php
+msgid "Read more about cgroups in KB"
+msgstr "Přečtěte si více o cgroups v KB"
 
 #: pages/page_index.php
 msgid "The server is currently under maintenance"

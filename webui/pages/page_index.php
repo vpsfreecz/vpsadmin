@@ -122,7 +122,13 @@ $xtpl->table_td(_("Storage"), '#5EAFFF; color:#FFF; font-weight:bold;');
 $xtpl->table_td(_("VPS"), '#5EAFFF; color:#FFF; font-weight:bold;');
 $xtpl->table_td(_("CPU"), '#5EAFFF; color:#FFF; font-weight:bold;');
 $xtpl->table_td(_("Kernel"), '#5EAFFF; color:#FFF; font-weight:bold;');
-$xtpl->table_td(_("cgroups") . ' [<a style="color: #ffffff;" href="https://kb.vpsfree.org/manuals/vps/cgroups" target="_blank" title="' . _('Read more about cgroups in KB') . '">?</a>]', '#5EAFFF; color:#FFF; font-weight:bold;');
+
+$cgroupsHeader = _("cgroups")
+    . ' [<a style="color: #ffffff;" href="'
+    . h(_('https://kb.vpsfree.org/manuals/vps/cgroups'))
+    . '" target="_blank" title="' . _('Read more about cgroups in KB')
+    . '">?</a>]';
+$xtpl->table_td($cgroupsHeader, '#5EAFFF; color:#FFF; font-weight:bold;');
 
 if ($goresheatUrl) {
     $xtpl->table_td('', '#5EAFFF; color:#FFF; font-weight:bold;');
@@ -142,7 +148,7 @@ foreach ($nodes as $node) {
         $xtpl->table_td(_("VPS"), '#5EAFFF; color:#FFF; font-weight:bold;');
         $xtpl->table_td(_("CPU"), '#5EAFFF; color:#FFF; font-weight:bold;');
         $xtpl->table_td(_("Kernel"), '#5EAFFF; color:#FFF; font-weight:bold;');
-        $xtpl->table_td(_("cgroups") . ' [<a style="color: #ffffff;" href="https://kb.vpsfree.org/manuals/vps/cgroups" target="_blank" title="' . _('Read more about cgroups in KB') . '">?</a>]', '#5EAFFF; color:#FFF; font-weight:bold;');
+        $xtpl->table_td($cgroupsHeader, '#5EAFFF; color:#FFF; font-weight:bold;');
 
         if ($goresheatUrl) {
             $xtpl->table_td('', '#5EAFFF; color:#FFF; font-weight:bold;');

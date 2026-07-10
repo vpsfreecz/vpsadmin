@@ -462,9 +462,15 @@ function include_export_scripts()
 {
     global $xtpl;
 
+    $labels = webui_json([
+        'showAdvancedOptions' => _('Show advanced options'),
+        'hideAdvancedOptions' => _('Hide advanced options'),
+    ]);
+
     $xtpl->assign(
         'AJAX_SCRIPT',
         ($xtpl->vars['AJAX_SCRIPT'] ?? '')
+        . '<script type="text/javascript">window.vpsAdminExportLabels = ' . $labels . ';</script>'
         . '<script type="text/javascript" src="js/export.js"></script>'
     );
 }

@@ -1659,6 +1659,14 @@ msgstr ""
 msgid "host"
 msgstr ""
 
+#: forms/export.forms.php
+msgid "Show advanced options"
+msgstr ""
+
+#: forms/export.forms.php
+msgid "Hide advanced options"
+msgstr ""
+
 #: forms/incidents.forms.php
 msgid "Assignment ID"
 msgstr ""
@@ -6168,6 +6176,10 @@ msgstr ""
 msgid "Manage user namespace maps"
 msgstr ""
 
+#: pages/page_adminvps.php
+msgid "VPS is restarted when user namespace map is changed."
+msgstr ""
+
 #: pages/page_adminvps.php pages/page_console.php pages/page_lifetimes.php
 msgid "Manage VPS"
 msgstr ""
@@ -7115,11 +7127,15 @@ msgid "Storage"
 msgstr ""
 
 #: pages/page_index.php
-msgid "Read more about cgroups in KB"
+msgid "cgroups"
 msgstr ""
 
 #: pages/page_index.php
-msgid "cgroups"
+msgid "https://kb.vpsfree.org/manuals/vps/cgroups"
+msgstr ""
+
+#: pages/page_index.php
+msgid "Read more about cgroups in KB"
 msgstr ""
 
 #: pages/page_index.php

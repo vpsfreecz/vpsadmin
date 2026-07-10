@@ -1,9 +1,13 @@
 (function ($) {
 
 	var anchor;
+	var labels = window.vpsAdminExportLabels || {
+		hideAdvancedOptions: 'Hide advanced options',
+		showAdvancedOptions: 'Show advanced options'
+	};
 
 	function showProperties (init) {
-		anchor.text('Hide advanced options').click(switchMode(hideProperties));
+		anchor.text(labels.hideAdvancedOptions).click(switchMode(hideProperties));
 
 		if (init)
 			$('.advanced-option').css('display', 'table-row');
@@ -18,7 +22,7 @@
 	}
 
 	function hideProperties (init) {
-		anchor.text('Show advanced options').click(switchMode(showProperties));
+		anchor.text(labels.showAdvancedOptions).click(switchMode(showProperties));
 
 		if (init)
 			$('.advanced-option').hide();
