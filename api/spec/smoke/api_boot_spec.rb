@@ -30,6 +30,8 @@ RSpec.describe ApiAppHelper do
       .to eq('Celé jméno')
     expect(resources.dig('user', 'actions', 'index', 'input', 'parameters', 'full_name', 'description'))
       .to eq('Jméno a příjmení')
+    expect(resources.dig('transaction_chain', 'actions', 'index', 'input', 'parameters', 'class_name', 'label'))
+      .to eq('Název objektu')
   end
 
   it 'localizes keyed messages with interpolation' do

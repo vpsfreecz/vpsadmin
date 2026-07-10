@@ -158,7 +158,7 @@ cs:
         label: Přiřazeno rozhraní
       atime:
         description: Řídí, zda se při čtení souborů aktualizuje čas přístupu
-        label: Čas přístupu
+        label: Čas přístupu (atime)
       attr_changes:
         label: Změny atributů
       attribute:
@@ -277,8 +277,8 @@ cs:
         description: Filtrovat hlášení podle komponenty vpsAdminu
         label: Komponenta
       compression:
-        description: Přepnout kompresi dat v tomto datasetu
-        label: Komprese
+        description: Vypnout/zapnout kompresi dat
+        label: Komprese (compression)
       compressratio:
         description: Kompresní poměr použitého místa tohoto datasetu
         label: Kompresní poměr použitých dat
@@ -1265,7 +1265,7 @@ cs:
         label: Rekonstruováno
       recordsize:
         description: Určuje doporučenou velikost bloku pro soubory v souborovém systému
-        label: Velikost záznamu
+        label: Velikost záznamu (recordsize)
       recovery_code:
         label: Obnovovací kód
       redirect_uri:
@@ -1291,7 +1291,7 @@ cs:
         description: Čas přístupu se aktualizuje pouze tehdy, když byl předchozí čas
           přístupu starší než aktuální čas změny nebo úpravy, případně když nebyl
           za posledních 24 hodin aktualizován.
-        label: Relativní čas přístupu
+        label: Relativní čas přístupu (relatime)
       remind_after:
         label: Připomenout po
       remind_after_date:
@@ -1606,7 +1606,7 @@ cs:
             label: vypnuto
           standard:
             label: standardní
-        label: Sync
+        label: Synchronní operace (sync)
       taken:
         description: Počet vlastněných a přiřazených IP adres
         label: Zabráno
@@ -2944,7 +2944,7 @@ cs:
       transaction_chain:
         attributes:
           class_name:
-            label: Název třídy
+            label: Název objektu
           created_at:
             label: Datum vytvoření
           id:
@@ -3609,7 +3609,7 @@ cs:
           outage_reports:
             update: Úprava
           payments:
-            create: Vytvoření
+            create: Připsání
             mail_overview: Mail přehled
           requests:
             create: Vytvoření

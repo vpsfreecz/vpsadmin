@@ -328,6 +328,7 @@ msgid "%hit"
 msgstr ""
 
 #: forms/cluster.forms.php forms/dns.forms.php forms/networking.forms.php
+#: public/index.php
 msgid "Version"
 msgstr ""
 

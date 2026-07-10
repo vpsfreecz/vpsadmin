@@ -327,6 +327,7 @@ msgid "%hit"
 msgstr "%hit"
 
 #: forms/cluster.forms.php forms/dns.forms.php forms/networking.forms.php
+#: public/index.php
 msgid "Version"
 msgstr "Verze"
 
@@ -2040,7 +2041,7 @@ msgstr "Storage pooly"
 
 #: forms/node.forms.php
 msgid "Scan"
-msgstr "Skenovat"
+msgstr "Scrub / resilver"
 
 #: forms/node.forms.php
 msgid "Space usage"
@@ -2074,7 +2075,7 @@ msgstr "neznámý"
 
 #: forms/node.forms.php
 msgid "none"
-msgstr "žádný"
+msgstr "Neprobíhá"
 
 #: forms/node.forms.php
 msgid "nominal"
@@ -2176,7 +2177,7 @@ msgstr "Pravidlo"
 
 #: forms/oom_reports.forms.php
 msgid "Invoked by"
-msgstr "Vyvoláno uživatelem"
+msgstr "Vyvoláno procesem"
 
 #: forms/oom_reports.forms.php
 msgid "Killed"
@@ -5985,7 +5986,7 @@ msgstr "Hostitelské klíče SSH"
 
 #: pages/page_adminvps.php
 msgid "Last read at"
-msgstr "Naposledy přečteno v"
+msgstr "Naposledy přečteno"
 
 #: pages/page_adminvps.php
 msgid ""
@@ -7487,7 +7488,7 @@ msgstr "Pakety/s"
 
 #: pages/page_node.php
 msgid "Back to status"
-msgstr "Zpět ke stavu"
+msgstr "Zpět na přehled"
 
 #: pages/page_node.php
 msgid "You have to log in to be able to access vpsadmin's functions"
@@ -7599,7 +7600,7 @@ msgstr "ID uživatelské relace"
 
 #: pages/page_transactions.php
 msgid "Class name"
-msgstr "Název třídy"
+msgstr "Název objektu"
 
 #: pages/page_transactions.php
 msgid "Object id"

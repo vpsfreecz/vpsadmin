@@ -86,6 +86,7 @@ $xtpl = new XTemplate(WEBUI_ROOT . 'template/template.html');
 $lang = new Lang($langs, $xtpl, $api, $webuiLocale);
 
 $xtpl->assign("VERSION", getVersionLink());
+$xtpl->assign("L_VERSION", _("Version"));
 $xtpl->assign("HTML_LANG", Lang::htmlLanguageForLocale($langs, $lang->get_current_lang()));
 $xtpl->assign("L_LOGIN", _("Log in"));
 $xtpl->assign("L_LOGGING_IN", _("Signing in..."));
