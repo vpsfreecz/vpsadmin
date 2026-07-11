@@ -33,6 +33,9 @@ Always translate with context. The same English word can mean different things:
   `odhlášení` or `ukončené přihlášení`, e.g. `Přihlášení bylo ukončeno` and
   `Byli jste odhlášeni z důvodu neaktivity`.
 - `User data` stays `User data`.
+- A `Login` field or column that identifies a user's account name is
+  `Přezdívka`. The technical term `login` may remain untranslated when it
+  describes the authentication process rather than the account name.
 - `Event log` is usually `Události`.
 - `Incident reports` are `Incidenty`.
 - `DNS resolvers` are `DNS resolvery`.
@@ -104,7 +107,7 @@ Keep established technical terms untranslated when natural:
 
 - API, DNS, VPS, NAS, IPv4, IPv6, FQDN, MAC
 - ARC, scrub, resilver, snapshot, dataset, namespace
-- mountpoint, resolver, token, login, hostname
+- mountpoint, resolver, token, hostname
 
 Use capitalization that matches the UI context. Main menu and sidebar labels
 should start with an uppercase letter. Short table labels should be concise.

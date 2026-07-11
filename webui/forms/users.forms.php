@@ -922,12 +922,12 @@ function user_payment_form($user_id)
     $xtpl->form_out(_("Save"));
 
     $xtpl->table_title(_('Payment log'));
-    $xtpl->table_add_category("ACCEPTED AT");
-    $xtpl->table_add_category("ACCOUNTED BY");
-    $xtpl->table_add_category("AMOUNT");
-    $xtpl->table_add_category("FROM");
-    $xtpl->table_add_category("TO");
-    $xtpl->table_add_category("PAYMENT");
+    $xtpl->table_add_category(_('ACCEPTED AT'));
+    $xtpl->table_add_category(_('ACCOUNTED BY'));
+    $xtpl->table_add_category(_('AMOUNT'));
+    $xtpl->table_add_category(_('FROM'));
+    $xtpl->table_add_category(_('TO'));
+    $xtpl->table_add_category(_('PAYMENT'));
 
     $payments = $api->user_payment->list([
         'user' => $u->id,
@@ -999,13 +999,13 @@ function user_payment_history()
     $xtpl->form_add_input(_("User ID") . ':', 'text', '40', 'user', get_val('user'));
     $xtpl->form_out(_("Show"));
 
-    $xtpl->table_add_category("ACCEPTED AT");
-    $xtpl->table_add_category("USER");
-    $xtpl->table_add_category("ACCOUNTED BY");
-    $xtpl->table_add_category("AMOUNT");
-    $xtpl->table_add_category("FROM");
-    $xtpl->table_add_category("TO");
-    $xtpl->table_add_category("MONTHS");
+    $xtpl->table_add_category(_('ACCEPTED AT'));
+    $xtpl->table_add_category(_('USER'));
+    $xtpl->table_add_category(_('ACCOUNTED BY'));
+    $xtpl->table_add_category(_('AMOUNT'));
+    $xtpl->table_add_category(_('FROM'));
+    $xtpl->table_add_category(_('TO'));
+    $xtpl->table_add_category(_('MONTHS'));
 
     foreach ($payments as $p) {
         $xtpl->table_td(tolocaltz($p->created_at));
@@ -1069,18 +1069,18 @@ function incoming_payments_list()
 
     $xtpl->form_out(_('Show'));
 
-    $xtpl->table_add_category("DATE");
-    $xtpl->table_add_category("AMOUNT");
-    $xtpl->table_add_category("STATE");
-    $xtpl->table_add_category("FROM");
-    $xtpl->table_add_category("MESSAGE");
-    $xtpl->table_add_category("VS");
-    $xtpl->table_add_category("");
+    $xtpl->table_add_category(_('DATE'));
+    $xtpl->table_add_category(_('AMOUNT'));
+    $xtpl->table_add_category(_('STATE'));
+    $xtpl->table_add_category(_('PAYER'));
+    $xtpl->table_add_category(_('MESSAGE'));
+    $xtpl->table_add_category(_('VS'));
+    $xtpl->table_add_category('');
 
     foreach ($payments as $p) {
         $xtpl->table_td(tolocaltz($p->date, 'Y-m-d'));
         $xtpl->table_td($p->amount . "&nbsp;" . $p->currency, false, true);
-        $xtpl->table_td($p->state);
+        $xtpl->table_td(api_param_choice_label($input->state, $p->state));
         $xtpl->table_td(h($p->account_name));
         $xtpl->table_td(h($p->user_message));
         $xtpl->table_td(h($p->vs));

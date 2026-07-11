@@ -30,6 +30,15 @@ const fixtures = readFixtures();
 const managed = fixtures.adminMembers && fixtures.adminMembers.managed;
 const adminPublicKey =
   'ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAICdl1OmUwRKSkYjismjOiW46qAeMkIFwYfKNNSUaIbC6 webui-admin-managed@test';
+const languageFlag = (page, locale) =>
+  page.locator(`#langbox a[href*="newlang=${encodeURIComponent(locale)}"]`);
+
+async function switchLanguage(page, locale) {
+  await Promise.all([
+    page.waitForNavigation({ waitUntil: 'domcontentloaded' }),
+    languageFlag(page, locale).click(),
+  ]);
+}
 
 function requireManagedFixture() {
   if (!managed || !managed.id || !managed.username) {
@@ -78,6 +87,13 @@ function tableContaining(page, ...texts) {
   }
 
   return table.first();
+}
+
+function tableAfterHeading(page, heading) {
+  return page
+    .locator('h2', { hasText: heading })
+    .first()
+    .locator('xpath=following::table[1]');
 }
 
 async function submitRequestProcess(page, request, action) {
@@ -484,6 +500,70 @@ test.describe.serial('admin member and user management browser coverage', () => 
     );
     await expect(page.locator('#content-in')).toContainText('Estimate income');
     await expect(page.locator('#content-in')).toContainText('Estimated income');
+
+    try {
+      await switchLanguage(page, 'cs_CZ.utf8');
+
+      await page.goto(memberActionUrl('payset', target.id), {
+        waitUntil: 'domcontentloaded',
+      });
+      const payset = page.locator('#content-in');
+      await expect(payset).toContainText('Platby uživatele');
+      await expect(payset).toContainText('Přezdívka:');
+      await expect(payset).toContainText('Částka:');
+      await expect(payset).toContainText('Přehled plateb');
+      await expect(tableAfterHeading(page, 'Přehled plateb').locator('th')).toHaveText([
+        'PŘIJATO',
+        'ZAÚČTOVAL',
+        'ČÁSTKA',
+        'OD',
+        'DO',
+        'PLATBA',
+      ]);
+
+      await page.goto('/?page=adminm&action=incoming_payments', {
+        waitUntil: 'domcontentloaded',
+      });
+      const incomingTable = tableContaining(page, 'webui admin managed payment');
+      await expect(incomingTable.locator('th')).toHaveText([
+        'DATUM',
+        'ČÁSTKA',
+        'STAV',
+        'PLÁTCE',
+        'ZPRÁVA',
+        'VS',
+        '',
+      ]);
+      await expect(
+        formByAction(page, 'action=incoming_payments').locator('select[name="state"] option'),
+      ).toHaveText(['ve frontě', 'bez shody', 'zpracováno', 'ignorováno']);
+      await expect(rowWithText(page, 'webui admin managed payment')).toContainText('zpracováno');
+
+      await page.goto(memberActionUrl('incoming_payment', incoming.id), {
+        waitUntil: 'domcontentloaded',
+      });
+      const incomingDetails = page.locator('#content-in');
+      await expect(incomingDetails).toContainText('ID transakce:');
+      await expect(incomingDetails).toContainText('Přijato:');
+      await expect(incomingDetails).toContainText('Částka:');
+
+      await page.goto(
+        `/?page=adminm&action=payments_history&limit=10&user=${target.id}&accounted_by=${fixtures.admin.id}`,
+        { waitUntil: 'domcontentloaded' },
+      );
+      const historyTable = tableContaining(page, target.username);
+      await expect(historyTable.locator('th')).toHaveText([
+        'PŘIJATO',
+        'UŽIVATEL',
+        'ZAÚČTOVAL',
+        'ČÁSTKA',
+        'OD',
+        'DO',
+        'MĚSÍCE',
+      ]);
+    } finally {
+      await switchLanguage(page, 'en_US.utf8');
+    }
 
     await logout(page, fixtures.admin.username);
   });

@@ -3431,11 +3431,55 @@ msgid "Payment log"
 msgstr ""
 
 #: forms/users.forms.php
+msgid "ACCEPTED AT"
+msgstr ""
+
+#: forms/users.forms.php
+msgid "ACCOUNTED BY"
+msgstr ""
+
+#: forms/users.forms.php
+msgid "AMOUNT"
+msgstr ""
+
+#: forms/users.forms.php
+msgid "FROM"
+msgstr ""
+
+#: forms/users.forms.php
+msgid "TO"
+msgstr ""
+
+#: forms/users.forms.php pages/page_adminm.php
+msgid "PAYMENT"
+msgstr ""
+
+#: forms/users.forms.php
 msgid "Payment history"
+msgstr ""
+
+#: forms/users.forms.php
+msgid "USER"
+msgstr ""
+
+#: forms/users.forms.php
+msgid "MONTHS"
 msgstr ""
 
 #: forms/users.forms.php pages/page_adminm.php
 msgid "Incoming payments"
+msgstr ""
+
+#: forms/users.forms.php
+msgid "PAYER"
+msgstr ""
+
+#: forms/users.forms.php
+msgid "MESSAGE"
+msgstr ""
+
+#: forms/users.forms.php
+msgid "VS"
 msgstr ""
 
 #: forms/users.forms.php
@@ -3468,10 +3512,6 @@ msgstr ""
 
 #: forms/users.forms.php
 msgid "User message"
-msgstr ""
-
-#: forms/users.forms.php
-msgid "VS"
 msgstr ""
 
 #: forms/users.forms.php
@@ -4987,10 +5027,6 @@ msgstr ""
 
 #: pages/page_adminm.php
 msgid "LAST ACTIVITY"
-msgstr ""
-
-#: pages/page_adminm.php
-msgid "PAYMENT"
 msgstr ""
 
 #: pages/page_adminm.php

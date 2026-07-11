@@ -119,6 +119,42 @@ final class LanguageSelectionTest extends TestCase
         );
     }
 
+    public function testCzechCatalogUsesPaymentPageWording(): void
+    {
+        $po = file_get_contents(
+            dirname(__DIR__, 2) . '/lang/locale/cs_CZ.utf8/LC_MESSAGES/vpsAdmin.po'
+        );
+        $expected = [
+            'Login' => 'Přezdívka',
+            'User payments' => 'Platby uživatele',
+            'Amount' => 'Částka',
+            'Payment log' => 'Přehled plateb',
+            'ACCEPTED AT' => 'PŘIJATO',
+            'ACCOUNTED BY' => 'ZAÚČTOVAL',
+            'AMOUNT' => 'ČÁSTKA',
+            'FROM' => 'OD',
+            'TO' => 'DO',
+            'PAYMENT' => 'PLATBA',
+            'USER' => 'UŽIVATEL',
+            'MONTHS' => 'MĚSÍCE',
+            'DATE' => 'DATUM',
+            'STATE' => 'STAV',
+            'PAYER' => 'PLÁTCE',
+            'MESSAGE' => 'ZPRÁVA',
+            'VS' => 'VS',
+            'Transaction ID' => 'ID transakce',
+            'Accepted at' => 'Přijato',
+        ];
+
+        foreach ($expected as $source => $translation) {
+            self::assertMatchesRegularExpression(
+                '/^msgid "' . preg_quote($source, '/') . '"\n'
+                . 'msgstr "' . preg_quote($translation, '/') . '"$/m',
+                $po
+            );
+        }
+    }
+
     public function testUserLanguageCodeReadsHaveApiLanguageResource(): void
     {
         require_once dirname(__DIR__, 2) . '/lib/functions.lib.php';

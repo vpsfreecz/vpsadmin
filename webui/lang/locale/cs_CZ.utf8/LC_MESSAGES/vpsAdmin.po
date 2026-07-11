@@ -2571,7 +2571,7 @@ msgstr "Nelze vypsat odstávky a výpadky"
 #: forms/outage.forms.php forms/security_advisory.forms.php
 #: forms/users.forms.php pages/page_adminm.php
 msgid "Login"
-msgstr "Přihlášení"
+msgstr "Přezdívka"
 
 #: forms/outage.forms.php forms/security_advisory.forms.php
 #: forms/users.forms.php pages/page_adminm.php pages/page_cluster.php
@@ -3421,7 +3421,7 @@ msgstr "Pokyny k platbě"
 
 #: forms/users.forms.php
 msgid "User payments"
-msgstr "Uživatelské platby"
+msgstr "Platby uživatele"
 
 #: forms/users.forms.php pages/page_adminm.php
 msgid "Paid until"
@@ -3449,19 +3449,63 @@ msgstr "Přidat platbu"
 
 #: forms/users.forms.php pages/page_adminm.php
 msgid "Amount"
-msgstr "Množství"
+msgstr "Částka"
 
 #: forms/users.forms.php
 msgid "Payment log"
-msgstr "Záznam plateb"
+msgstr "Přehled plateb"
+
+#: forms/users.forms.php
+msgid "ACCEPTED AT"
+msgstr "PŘIJATO"
+
+#: forms/users.forms.php
+msgid "ACCOUNTED BY"
+msgstr "ZAÚČTOVAL"
+
+#: forms/users.forms.php
+msgid "AMOUNT"
+msgstr "ČÁSTKA"
+
+#: forms/users.forms.php
+msgid "FROM"
+msgstr "OD"
+
+#: forms/users.forms.php
+msgid "TO"
+msgstr "DO"
+
+#: forms/users.forms.php pages/page_adminm.php
+msgid "PAYMENT"
+msgstr "PLATBA"
 
 #: forms/users.forms.php
 msgid "Payment history"
 msgstr "Historie plateb"
 
+#: forms/users.forms.php
+msgid "USER"
+msgstr "UŽIVATEL"
+
+#: forms/users.forms.php
+msgid "MONTHS"
+msgstr "MĚSÍCE"
+
 #: forms/users.forms.php pages/page_adminm.php
 msgid "Incoming payments"
 msgstr "Příchozí platby"
+
+#: forms/users.forms.php
+msgid "PAYER"
+msgstr "PLÁTCE"
+
+#: forms/users.forms.php
+msgid "MESSAGE"
+msgstr "ZPRÁVA"
+
+#: forms/users.forms.php
+msgid "VS"
+msgstr "VS"
 
 #: forms/users.forms.php
 msgid "Incoming payment"
@@ -3469,11 +3513,11 @@ msgstr "Příchozí platba"
 
 #: forms/users.forms.php
 msgid "Transaction ID"
-msgstr "Transakce ID"
+msgstr "ID transakce"
 
 #: forms/users.forms.php
 msgid "Accepted at"
-msgstr "Přijato v"
+msgstr "Přijato"
 
 #: forms/users.forms.php
 msgid "Original amount"
@@ -3494,10 +3538,6 @@ msgstr "Identifikace uživatele"
 #: forms/users.forms.php
 msgid "User message"
 msgstr "Uživatelská zpráva"
-
-#: forms/users.forms.php
-msgid "VS"
-msgstr "VS"
 
 #: forms/users.forms.php
 msgid "KS"
@@ -5053,10 +5093,6 @@ msgstr "CELÉ JMÉNO"
 #: pages/page_adminm.php
 msgid "LAST ACTIVITY"
 msgstr "POSLEDNÍ AKTIVITA"
-
-#: pages/page_adminm.php
-msgid "PAYMENT"
-msgstr "PLATBA"
 
 #: pages/page_adminm.php
 msgid "Cannot delete yourself"
