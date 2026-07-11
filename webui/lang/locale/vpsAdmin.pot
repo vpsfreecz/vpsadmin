@@ -1740,9 +1740,8 @@ msgstr ""
 msgid "Object state"
 msgstr ""
 
-#: forms/lifetimes.forms.php forms/userns.forms.php forms/vps.forms.php
-#: pages/page_adminvps.php pages/page_backup.php
-msgid "Go >>"
+#: forms/lifetimes.forms.php forms/users.forms.php
+msgid "Set state"
 msgstr ""
 
 #: forms/lifetimes.forms.php
@@ -1794,6 +1793,10 @@ msgstr ""
 
 #: forms/lifetimes.forms.php
 msgid "Do not remind me"
+msgstr ""
+
+#: forms/lifetimes.forms.php
+msgid "Set reminder"
 msgstr ""
 
 #: forms/monitoring.forms.php
@@ -2973,6 +2976,10 @@ msgstr ""
 msgid "Create a new UID/GID map"
 msgstr ""
 
+#: forms/userns.forms.php
+msgid "Create UID/GID map"
+msgstr ""
+
 #: forms/users.forms.php pages/page_adminm.php
 msgid "Environment configs"
 msgstr ""
@@ -3472,10 +3479,6 @@ msgstr ""
 
 #: forms/users.forms.php
 msgid "SS"
-msgstr ""
-
-#: forms/users.forms.php
-msgid "Set state"
 msgstr ""
 
 #: forms/users.forms.php
@@ -4252,6 +4255,10 @@ msgid "Max RX"
 msgstr ""
 
 #: forms/vps.forms.php
+msgid "Save interface settings"
+msgstr ""
+
+#: forms/vps.forms.php
 msgid "Transfers in"
 msgstr ""
 
@@ -4321,6 +4328,10 @@ msgstr ""
 
 #: forms/vps.forms.php
 msgid "Add only one IP address at a time"
+msgstr ""
+
+#: forms/vps.forms.php
+msgid "Add IP address"
 msgstr ""
 
 #: forms/vps.forms.php
@@ -5943,6 +5954,10 @@ msgid "Simple password"
 msgstr ""
 
 #: pages/page_adminvps.php
+msgid "Set root password"
+msgstr ""
+
+#: pages/page_adminvps.php
 msgid "Deploy public key to /root/.ssh/authorized_keys"
 msgstr ""
 
@@ -5952,6 +5967,10 @@ msgstr ""
 
 #: pages/page_adminvps.php
 msgid "profile settings"
+msgstr ""
+
+#: pages/page_adminvps.php
+msgid "Deploy public key"
 msgstr ""
 
 #: pages/page_adminvps.php
@@ -5989,11 +6008,19 @@ msgid "See available DNS resolvers and their IP addresses"
 msgstr ""
 
 #: pages/page_adminvps.php
+msgid "Save DNS resolver settings"
+msgstr ""
+
+#: pages/page_adminvps.php
 msgid "Manage hostname by vpsAdmin"
 msgstr ""
 
 #: pages/page_adminvps.php
 msgid "Manage hostname manually"
+msgstr ""
+
+#: pages/page_adminvps.php
+msgid "Save hostname settings"
 msgstr ""
 
 #: pages/page_adminvps.php
@@ -6057,6 +6084,10 @@ msgid ""
 msgstr ""
 
 #: pages/page_adminvps.php
+msgid "Set resources"
+msgstr ""
+
+#: pages/page_adminvps.php
 msgid "Features"
 msgstr ""
 
@@ -6065,11 +6096,19 @@ msgid "VPS is restarted when features are changed."
 msgstr ""
 
 #: pages/page_adminvps.php
+msgid "Set features"
+msgstr ""
+
+#: pages/page_adminvps.php
 msgid "Auto-Start"
 msgstr ""
 
 #: pages/page_adminvps.php
 msgid "Active"
+msgstr ""
+
+#: pages/page_adminvps.php
+msgid "Set auto-start priority"
 msgstr ""
 
 #: pages/page_adminvps.php
@@ -6088,6 +6127,10 @@ msgstr ""
 
 #: pages/page_adminvps.php
 msgid "seconds"
+msgstr ""
+
+#: pages/page_adminvps.php
+msgid "Set start menu timeout"
 msgstr ""
 
 #: pages/page_adminvps.php
@@ -6119,6 +6162,10 @@ msgid "Contact support if you'd like to use"
 msgstr ""
 
 #: pages/page_adminvps.php
+msgid "Set cgroup version"
+msgstr ""
+
+#: pages/page_adminvps.php
 msgid "VPS modifications by the admin team"
 msgstr ""
 
@@ -6141,6 +6188,10 @@ msgid "Do not allow modifications by vpsFree.cz admin team"
 msgstr ""
 
 #: pages/page_adminvps.php
+msgid "Save preference"
+msgstr ""
+
+#: pages/page_adminvps.php
 msgid "Maintenance windows"
 msgstr ""
 
@@ -6157,11 +6208,19 @@ msgid "Configure maintenance windows per day"
 msgstr ""
 
 #: pages/page_adminvps.php
+msgid "Save maintenance windows"
+msgstr ""
+
+#: pages/page_adminvps.php
 msgid "Map mode"
 msgstr ""
 
 #: pages/page_adminvps.php
 msgid "The VPS is restarted when map mode is changed."
+msgstr ""
+
+#: pages/page_adminvps.php
+msgid "Set map mode"
 msgstr ""
 
 #: pages/page_adminvps.php
@@ -6178,6 +6237,10 @@ msgstr ""
 
 #: pages/page_adminvps.php
 msgid "VPS is restarted when user namespace map is changed."
+msgstr ""
+
+#: pages/page_adminvps.php
+msgid "Set UID/GID map"
 msgstr ""
 
 #: pages/page_adminvps.php pages/page_console.php pages/page_lifetimes.php
@@ -6202,6 +6265,10 @@ msgstr ""
 
 #: pages/page_backup.php
 msgid "Optional user-defined snapshot identificator"
+msgstr ""
+
+#: pages/page_backup.php
+msgid "Create snapshot"
 msgstr ""
 
 #: pages/page_backup.php pages/page_export.php

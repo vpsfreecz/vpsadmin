@@ -386,7 +386,7 @@ async function submitVpsSwapPreview(page, primaryVpsId, secondaryVpsId, options 
     }
   }
 
-  await submitForm(previewForm, /Go/);
+  await submitForm(previewForm, 'Swap VPS');
 
   await expectNotification(page, 'Swap in progress');
   await expect(page).toHaveURL(new RegExp(`action=info.*veid=${primaryVpsId}`));

@@ -28,7 +28,7 @@ function lifetimes_set_state_form($resource, $id, $current_obj = null)
     api_param_to_form('expiration_date', $p->expiration_date, $expiration);
     api_param_to_form('change_reason', $p->change_reason);
 
-    $xtpl->form_out(_("Go >>"));
+    $xtpl->form_out(_('Set state'));
 }
 
 function lifetimes_reminder_form($resource, $id)
@@ -109,5 +109,5 @@ function lifetimes_reminder_form($resource, $id)
     $xtpl->form_add_radio_pure('remind_in', 'never', false);
     $xtpl->table_tr();
 
-    $xtpl->form_out(_("Go >>"));
+    $xtpl->form_out(_('Set reminder'));
 }

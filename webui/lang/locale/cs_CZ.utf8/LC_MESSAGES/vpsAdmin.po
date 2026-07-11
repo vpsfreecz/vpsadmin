@@ -1748,10 +1748,9 @@ msgstr "Zpráva"
 msgid "Object state"
 msgstr "Stav objektu"
 
-#: forms/lifetimes.forms.php forms/userns.forms.php forms/vps.forms.php
-#: pages/page_adminvps.php pages/page_backup.php
-msgid "Go >>"
-msgstr "Přejít >>"
+#: forms/lifetimes.forms.php forms/users.forms.php
+msgid "Set state"
+msgstr "Nastavit stav"
 
 #: forms/lifetimes.forms.php
 msgid "Set e-mail reminder"
@@ -1805,6 +1804,10 @@ msgstr "Připomeňte mi poté"
 #: forms/lifetimes.forms.php
 msgid "Do not remind me"
 msgstr "Nepřipomínej mi to"
+
+#: forms/lifetimes.forms.php
+msgid "Set reminder"
+msgstr "Nastavit připomenutí"
 
 #: forms/monitoring.forms.php
 msgid "Monitored event list"
@@ -2998,6 +3001,10 @@ msgstr "ID počet"
 msgid "Create a new UID/GID map"
 msgstr "Vytvořit novou mapu UID/GID"
 
+#: forms/userns.forms.php
+msgid "Create UID/GID map"
+msgstr "Vytvořit mapu UID/GID"
+
 #: forms/users.forms.php pages/page_adminm.php
 msgid "Environment configs"
 msgstr "Konfigurace prostředí"
@@ -3498,10 +3505,6 @@ msgstr "KS"
 #: forms/users.forms.php
 msgid "SS"
 msgstr "SS"
-
-#: forms/users.forms.php
-msgid "Set state"
-msgstr "Nastavit stav"
 
 #: forms/users.forms.php
 msgid "Assign payment"
@@ -4293,6 +4296,10 @@ msgid "Max RX"
 msgstr "Max RX"
 
 #: forms/vps.forms.php
+msgid "Save interface settings"
+msgstr "Uložit nastavení rozhraní"
+
+#: forms/vps.forms.php
 msgid "Transfers in"
 msgstr "Přenosy za"
 
@@ -4363,6 +4370,10 @@ msgstr "Přidat veřejnou IPv6 adresu"
 #: forms/vps.forms.php
 msgid "Add only one IP address at a time"
 msgstr "Přidávejte vždy pouze jednu IP adresu"
+
+#: forms/vps.forms.php
+msgid "Add IP address"
+msgstr "Přidat IP adresu"
 
 #: forms/vps.forms.php
 msgid "The VPS has to be stopped for replace to work."
@@ -6033,6 +6044,10 @@ msgid "Simple password"
 msgstr "Jednoduché heslo"
 
 #: pages/page_adminvps.php
+msgid "Set root password"
+msgstr "Nastavit heslo uživatele root"
+
+#: pages/page_adminvps.php
 msgid "Deploy public key to /root/.ssh/authorized_keys"
 msgstr "Nahrát veřejný klíč do /root/.ssh/authorized_keys"
 
@@ -6043,6 +6058,10 @@ msgstr "Veřejné klíče lze zaregistrovat"
 #: pages/page_adminvps.php
 msgid "profile settings"
 msgstr "nastavení profilu"
+
+#: pages/page_adminvps.php
+msgid "Deploy public key"
+msgstr "Nasadit veřejný klíč"
 
 #: pages/page_adminvps.php
 msgid "Disable network"
@@ -6083,12 +6102,20 @@ msgid "See available DNS resolvers and their IP addresses"
 msgstr "Zobrazit dostupné DNS resolvery a jejich IP adresy"
 
 #: pages/page_adminvps.php
+msgid "Save DNS resolver settings"
+msgstr "Uložit nastavení DNS resolveru"
+
+#: pages/page_adminvps.php
 msgid "Manage hostname by vpsAdmin"
 msgstr "Spravovat hostname pomocí vpsAdminu"
 
 #: pages/page_adminvps.php
 msgid "Manage hostname manually"
 msgstr "Spravovat hostname ručně"
+
+#: pages/page_adminvps.php
+msgid "Save hostname settings"
+msgstr "Uložit nastavení hostname"
 
 #: pages/page_adminvps.php
 msgid "Boot VPS from template (rescue mode)"
@@ -6165,6 +6192,10 @@ msgstr ""
 "sledováním <code>/etc/os-release</code> při startu VPS."
 
 #: pages/page_adminvps.php
+msgid "Set resources"
+msgstr "Nastavit prostředky"
+
+#: pages/page_adminvps.php
 msgid "Features"
 msgstr "Funkce"
 
@@ -6173,12 +6204,20 @@ msgid "VPS is restarted when features are changed."
 msgstr "Při změně funkcí se VPS restartuje."
 
 #: pages/page_adminvps.php
+msgid "Set features"
+msgstr "Nastavit funkce"
+
+#: pages/page_adminvps.php
 msgid "Auto-Start"
 msgstr "Auto-Start"
 
 #: pages/page_adminvps.php
 msgid "Active"
 msgstr "Aktivní"
+
+#: pages/page_adminvps.php
+msgid "Set auto-start priority"
+msgstr "Nastavit prioritu automatického spuštění"
 
 #: pages/page_adminvps.php
 msgid "Start Menu"
@@ -6199,6 +6238,10 @@ msgstr "Časový limit"
 #: pages/page_adminvps.php
 msgid "seconds"
 msgstr "sekundy"
+
+#: pages/page_adminvps.php
+msgid "Set start menu timeout"
+msgstr "Nastavit časový limit start menu"
 
 #: pages/page_adminvps.php
 msgid "Cgroup version"
@@ -6229,6 +6272,10 @@ msgid "Contact support if you'd like to use"
 msgstr "Pokud chcete použít, kontaktujte podporu"
 
 #: pages/page_adminvps.php
+msgid "Set cgroup version"
+msgstr "Nastavit verzi cgroups"
+
+#: pages/page_adminvps.php
 msgid "VPS modifications by the admin team"
 msgstr "Úpravy VPS administrátorským týmem"
 
@@ -6257,6 +6304,10 @@ msgid "Do not allow modifications by vpsFree.cz admin team"
 msgstr "Nepovolovat úpravy administrátorským týmem vpsFree.cz"
 
 #: pages/page_adminvps.php
+msgid "Save preference"
+msgstr "Uložit nastavení"
+
+#: pages/page_adminvps.php
 msgid "Maintenance windows"
 msgstr "Okna údržby"
 
@@ -6273,12 +6324,20 @@ msgid "Configure maintenance windows per day"
 msgstr "Konfigurovat okna údržby pro jednotlivé dny"
 
 #: pages/page_adminvps.php
+msgid "Save maintenance windows"
+msgstr "Uložit okna údržby"
+
+#: pages/page_adminvps.php
 msgid "Map mode"
 msgstr "Režim mapování"
 
 #: pages/page_adminvps.php
 msgid "The VPS is restarted when map mode is changed."
 msgstr "Při změně režimu mapování se VPS restartuje."
+
+#: pages/page_adminvps.php
+msgid "Set map mode"
+msgstr "Nastavit režim mapování"
 
 #: pages/page_adminvps.php
 msgid "UID/GID mapping"
@@ -6295,6 +6354,10 @@ msgstr "Správa map uživatelských jmenných prostorů"
 #: pages/page_adminvps.php
 msgid "VPS is restarted when user namespace map is changed."
 msgstr "Při změně mapy uživatelského jmenného prostoru se VPS restartuje."
+
+#: pages/page_adminvps.php
+msgid "Set UID/GID map"
+msgstr "Nastavit mapu UID/GID"
 
 #: pages/page_adminvps.php pages/page_console.php pages/page_lifetimes.php
 msgid "Manage VPS"
@@ -6319,6 +6382,10 @@ msgstr "Vytvořit nový snapshot datasetu"
 #: pages/page_backup.php
 msgid "Optional user-defined snapshot identificator"
 msgstr "Volitelný uživatelský identifikátor snapshotu"
+
+#: pages/page_backup.php
+msgid "Create snapshot"
+msgstr "Vytvořit snapshot"
 
 #: pages/page_backup.php pages/page_export.php
 msgid "Dataset not found"
@@ -7854,6 +7921,9 @@ msgstr "Upravit pole nápovědy"
 #: public/index.php
 msgid "Help"
 msgstr "Pomoc"
+
+#~ msgid "Go >>"
+#~ msgstr "Přejít >>"
 
 #~ msgid "Tasks"
 #~ msgstr "Úkoly"

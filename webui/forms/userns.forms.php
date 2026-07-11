@@ -358,5 +358,5 @@ function userns_map_new()
     $xtpl->form_add_input_pure('text', '30', 'label', post_val('label'));
     $xtpl->table_tr();
 
-    $xtpl->form_out(_('Go >>'));
+    $xtpl->form_out(_('Create UID/GID map'));
 }

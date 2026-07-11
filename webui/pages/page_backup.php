@@ -61,7 +61,7 @@ if (isLoggedIn()) {
                     _('Optional user-defined snapshot identificator')
                 );
 
-                $xtpl->form_out(_('Go >>'));
+                $xtpl->form_out(_('Create snapshot'));
 
             } catch (\HaveAPI\Client\Exception\ActionFailed $e) {
                 $xtpl->perex_format_errors(_('Dataset not found'), $e->getResponse());

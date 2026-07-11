@@ -90,7 +90,7 @@ async function setReminder(page, resource, id, value, dateValue = null) {
     await form.locator('input[name="remind_after_date"]').fill(dateValue || futureDate(21));
   }
 
-  await submitForm(form, 'Go >>');
+  await submitForm(form, 'Set reminder');
   await expectNotification(page, 'Mail reminder set');
   await expect(page).toHaveURL(new RegExp(`page=reminder.*resource=${resource}.*id=${id}`));
 }
@@ -210,7 +210,7 @@ test.describe.serial('miscellaneous webui page coverage', () => {
     await expect(stateForm.locator('input[name="expiration_date"]')).toBeVisible();
     await stateForm.locator('select[name="object_state"]').selectOption('active');
     await stateForm.locator('input[name="expiration_date"]').fill(futureDateTime(35));
-    await submitForm(stateForm, 'Go >>');
+    await submitForm(stateForm, 'Set state');
     await expectNotification(page, 'State set');
     await expect(page).toHaveURL(new RegExp(`page=adminm.*action=edit.*id=${managed.id}`));
 

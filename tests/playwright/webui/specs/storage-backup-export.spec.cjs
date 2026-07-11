@@ -268,7 +268,7 @@ test.describe.serial('storage, backup, dataset, and export browser coverage', ()
     const snapshotForm = formByAction(page, 'action=snapshot_create');
     await snapshotForm.locator('input[name="label"]').fill('Webui user snapshot create');
     const beforeIds = await currentTransactionChainIds(page);
-    await submitForm(snapshotForm, 'Go >>');
+    await submitForm(snapshotForm, 'Create snapshot');
     await expectNotification(page, 'Snapshot creation scheduled');
     await waitForNewTransactionChains(page, beforeIds);
 

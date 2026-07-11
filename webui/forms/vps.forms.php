@@ -1950,7 +1950,7 @@ function vps_swap_preview_form($primary, $secondary, $opts)
         . ($opts['hostname'] ? '<input type="hidden" name="hostname" value="1">' : '')
         . ($opts['resources'] ? '<input type="hidden" name="resources" value="1">' : '')
         . ($opts['expirations'] ? '<input type="hidden" name="expirations" value="1">' : '')
-        . $xtpl->html_submit(_('Go >>'), 'go'),
+        . $xtpl->html_submit(_('Swap VPS'), 'go'),
         false,
         false,
         '2'
@@ -2005,7 +2005,7 @@ function vps_netif_form($vps, $netif, $netif_accounting)
         $xtpl->form_add_checkbox(_('Enable') . ':', 'enable', '1', post_val('enable', $netif->enable));
     }
 
-    $xtpl->form_out(_('Go >>'));
+    $xtpl->form_out(_('Save interface settings'));
 
     $accounting = null;
 
@@ -2250,7 +2250,7 @@ function vps_netif_ipaddrs_form($vps, $netif)
     );
     $xtpl->table_tr();
 
-    $xtpl->form_out(_('Go >>'));
+    $xtpl->form_out(_('Add IP address'));
 }
 
 function vps_replace_form($vps)

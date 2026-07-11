@@ -1461,7 +1461,7 @@ if (isLoggedIn()) {
             $xtpl->form_add_radio(_("Simple password") . ':', 'password_type', 'simple', false, _('8 characters long, consists of: a-z, 2-9'));
             $xtpl->table_tr();
 
-            $xtpl->form_out(_("Go >>"));
+            $xtpl->form_out(_('Set root password'));
 
             // Public keys
             $xtpl->table_title(_("Deploy public key to /root/.ssh/authorized_keys"));
@@ -1483,7 +1483,7 @@ if (isLoggedIn()) {
                 resource_list_to_options($api->user($vps->user_id)->public_key->list())
             );
 
-            $xtpl->form_out(_('Go >>'));
+            $xtpl->form_out(_('Deploy public key'));
 
             // Network interfaces
             $netifs = $api->network_interface->list(['vps' => $vps->id]);
@@ -1511,7 +1511,7 @@ if (isLoggedIn()) {
                     $xtpl->table_tr();
                     $xtpl->form_add_checkbox(_('Disable') . ':', 'disable_network', '1', post_val('disable_network'));
                     $xtpl->form_add_textarea(_('Reason') . ':', 60, 10, 'change_reason', post_val('change_reason'));
-                    $xtpl->form_out(_('Go >>'));
+                    $xtpl->form_out(_('Disable network'));
                 } else {
                     $xtpl->table_title(_('Enable network'));
                     $xtpl->form_create('?page=adminvps&action=enable_network&veid=' . $vps->id, 'post');
@@ -1522,7 +1522,7 @@ if (isLoggedIn()) {
                         2
                     );
                     $xtpl->table_tr();
-                    $xtpl->form_out(_('Go >>'));
+                    $xtpl->form_out(_('Enable network'));
                 }
             }
 
@@ -1555,7 +1555,7 @@ if (isLoggedIn()) {
             $xtpl->table_td('<a href="?page=dns&action=resolver_list&return_url=' . $return_url . '">' . _('See available DNS resolvers and their IP addresses') . '</a>');
             $xtpl->table_tr();
 
-            $xtpl->form_out(_("Go >>"));
+            $xtpl->form_out(_('Save DNS resolver settings'));
 
             // Hostname change
             $xtpl->table_title(_('Hostname'));
@@ -1571,7 +1571,7 @@ if (isLoggedIn()) {
             $xtpl->table_tr();
 
 
-            $xtpl->form_out(_("Go >>"));
+            $xtpl->form_out(_('Save hostname settings'));
 
             // Datasets
             dataset_list('hypervisor', $vps->dataset_id);
@@ -1727,7 +1727,7 @@ if (isLoggedIn()) {
                 api_param_to_form('admin_lock_type', $params->admin_lock_type);
             }
 
-            $xtpl->form_out(_("Go >>"));
+            $xtpl->form_out(_('Set resources'));
 
             // Enable devices/capabilities
             $xtpl->table_title(_('Features'));
@@ -1748,7 +1748,7 @@ if (isLoggedIn()) {
             $xtpl->table_td(_('VPS is restarted when features are changed.'), false, false, '2');
             $xtpl->table_tr();
 
-            $xtpl->form_out(_("Go >>"));
+            $xtpl->form_out(_('Set features'));
 
             // Auto-start
             if (isAdmin()) {
@@ -1761,7 +1761,7 @@ if (isLoggedIn()) {
 
                 $xtpl->form_add_number(_('Priority') . ':', 'autostart_priority', post_val('autostart_priority', $vps->autostart_priority), 0, 100000, 1, '', $params->autostart_priority->description);
 
-                $xtpl->form_out(_("Go >>"));
+                $xtpl->form_out(_('Set auto-start priority'));
             }
 
             // Start menu
@@ -1787,7 +1787,7 @@ if (isLoggedIn()) {
                 _('seconds')
             );
 
-            $xtpl->form_out(_("Go >>"));
+            $xtpl->form_out(_('Set start menu timeout'));
 
             // Cgroup version
             $xtpl->table_title(_('Cgroup version'));
@@ -1834,7 +1834,7 @@ if (isLoggedIn()) {
             );
             $xtpl->table_tr();
 
-            $xtpl->form_out(_("Go >>"));
+            $xtpl->form_out(_('Set cgroup version'));
 
             // Admin modifications
             $xtpl->table_title(_('VPS modifications by the admin team'));
@@ -1869,7 +1869,7 @@ if (isLoggedIn()) {
             $xtpl->table_td(_('Do not allow modifications by vpsFree.cz admin team'));
             $xtpl->table_tr();
 
-            $xtpl->form_out(_("Go >>"));
+            $xtpl->form_out(_('Save preference'));
 
             // Maintenance windows
             $xtpl->table_title(_('Maintenance windows'));
@@ -1918,7 +1918,7 @@ if (isLoggedIn()) {
                 $xtpl->table_tr();
             }
 
-            $xtpl->form_out(_("Go >>"));
+            $xtpl->form_out(_('Save maintenance windows'));
 
             // Map mode
             if (isAdmin()) {
@@ -1930,7 +1930,7 @@ if (isLoggedIn()) {
                 $xtpl->table_td(_('The VPS is restarted when map mode is changed.'), false, false, 2);
                 $xtpl->table_tr();
 
-                $xtpl->form_out(_('Go >>'));
+                $xtpl->form_out(_('Set map mode'));
             }
 
             // User namespace map
@@ -1962,7 +1962,7 @@ if (isLoggedIn()) {
                 );
                 $xtpl->table_tr();
 
-                $xtpl->form_out(_('Go >>'));
+                $xtpl->form_out(_('Set UID/GID map'));
 
                 $xtpl->table_add_category(_('Type'));
                 $xtpl->table_add_category(_('ID within VPS'));
