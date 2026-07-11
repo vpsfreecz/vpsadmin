@@ -111,7 +111,8 @@ msgid "Size"
 msgstr "Velikost"
 
 #: forms/backup.forms.php forms/dataset.forms.php forms/export.forms.php
-#: pages/page_adminm.php pages/page_adminvps.php pages/page_lifetimes.php
+#: forms/vps.forms.php pages/page_adminm.php pages/page_adminvps.php
+#: pages/page_lifetimes.php
 msgid "Expiration"
 msgstr "Vypršení platnosti"
 
@@ -521,7 +522,7 @@ msgstr "Přidat IP adresy"
 msgid "Back"
 msgstr "Zpět"
 
-#: forms/cluster.forms.php forms/dns.forms.php
+#: forms/cluster.forms.php forms/dns.forms.php forms/vps.forms.php
 msgid "IP addresses"
 msgstr "IP adresy"
 
@@ -4243,6 +4244,10 @@ msgstr "Zpět k lokaci"
 msgid "Preview"
 msgstr "Náhled"
 
+#: forms/vps.forms.php pages/page_adminvps.php pages/page_index.php
+msgid "CPU"
+msgstr "CPU"
+
 #: forms/vps.forms.php
 msgid "several minutes"
 msgstr "několik minut"
@@ -4252,36 +4257,44 @@ msgid "up to several hours"
 msgstr "až několik hodin"
 
 #: forms/vps.forms.php
-msgid "Replace VPS "
-msgstr "Nahradit VPS"
+msgid "Outage duration"
+msgstr "Délka odstávky"
+
+#: forms/vps.forms.php
+#, php-format
+msgid "Swap VPS %1$s with VPS %2$s"
+msgstr "Prohodit VPS %1$s s VPS %2$s"
 
 #: forms/vps.forms.php
 msgid "Now"
-msgstr "Teď"
+msgstr "Nyní"
 
 #: forms/vps.forms.php
 msgid "After swap"
 msgstr "Po výměně"
 
 #: forms/vps.forms.php
-msgid "First migration, VPS"
-msgstr "První migrace, VPS"
+#, php-format
+msgid "First migration: VPS %1$s to node %2$s"
+msgstr "První migrace: VPS %1$s na node %2$s"
 
 #: forms/vps.forms.php
-msgid "to"
-msgstr "na"
+msgid "will become"
+msgstr "změní se na"
 
 #: forms/vps.forms.php
-msgid "Second migration, VPS"
-msgstr "Druhá migrace, VPS"
+#, php-format
+msgid "Second migration: VPS %1$s to node %2$s"
+msgstr "Druhá migrace: VPS %1$s na node %2$s"
 
 #: forms/vps.forms.php
-msgid "Changed attributes are marked in"
-msgstr "Změněné atributy jsou označeny v"
+#, php-format
+msgid "Changed attributes are marked in %s."
+msgstr "Změněné atributy jsou označeny %s."
 
 #: forms/vps.forms.php
 msgid "green"
-msgstr "zelený"
+msgstr "zeleně"
 
 #: forms/vps.forms.php
 msgid "MAC address"
@@ -5859,10 +5872,6 @@ msgstr "Uptime"
 #: pages/page_adminvps.php
 msgid "Load average"
 msgstr "Loadavg"
-
-#: pages/page_adminvps.php pages/page_index.php
-msgid "CPU"
-msgstr "CPU"
 
 #: pages/page_adminvps.php
 msgid "RAM"
@@ -7921,6 +7930,12 @@ msgstr "Upravit pole nápovědy"
 #: public/index.php
 msgid "Help"
 msgstr "Pomoc"
+
+#~ msgid "Replace VPS "
+#~ msgstr "Nahradit VPS"
+
+#~ msgid "to"
+#~ msgstr "na"
 
 #~ msgid "Go >>"
 #~ msgstr "Přejít >>"

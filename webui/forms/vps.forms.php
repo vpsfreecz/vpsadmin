@@ -1786,29 +1786,38 @@ function format_swap_preview($vps, $hostname, $resources_vps, $ips, $node, $expi
 
     $s_swap = '';
     if (isAdmin()) {
+        $swap_label = _('Swap');
         $s_swap = <<<EOT
-            		<dt>Swap:</dt>
-            		<dd style="{$resources_style}">{$resources_vps->swap}</dd>
+                <dt>{$swap_label}:</dt>
+                <dd style="{$resources_style}">{$resources_vps->swap}</dd>
             EOT;
     }
 
+    $node_label = _('Node');
+    $environment_label = _('Environment');
+    $hostname_label = _('Hostname');
+    $expiration_label = _('Expiration');
+    $cpu_label = _('CPU');
+    $memory_label = _('Memory');
+    $ip_addresses_label = _('IP addresses');
+
     $s = <<<EOT
-        	<h3 style="{$node_style}">Node {$node->domain_name}</h3>
-        	<dl>
-        		<dt>Environment:</dt>
-        		<dd style="{$env_style}">{$node->location->environment->label}</dd>
-        		<dt>Hostname:</dt>
-        		<dd style="{$hostname_style}">$s_hostname</dd>
-        		<dt>Expiration:</dt>
-        		<dd style="{$expiration_style}">{$expiration_date}</dd>
-        		<dt>CPU:</dt>
-        		<dd style="{$resources_style}">{$resources_vps->cpu}</dd>
-        		<dt>Memory:</dt>
-        		<dd style="{$resources_style}">{$resources_vps->memory}</dd>
-        		{$s_swap}
-        		<dt>IP addresses:</dt>
-        		<dd style="{$ips_style}">$ips</dd>
-        	</dl>
+            <h3 style="{$node_style}">{$node_label} {$node->domain_name}</h3>
+            <dl>
+                <dt>{$environment_label}:</dt>
+                <dd style="{$env_style}">{$node->location->environment->label}</dd>
+                <dt>{$hostname_label}:</dt>
+                <dd style="{$hostname_style}">$s_hostname</dd>
+                <dt>{$expiration_label}:</dt>
+                <dd style="{$expiration_style}">{$expiration_date}</dd>
+                <dt>{$cpu_label}:</dt>
+                <dd style="{$resources_style}">{$resources_vps->cpu}</dd>
+                <dt>{$memory_label}:</dt>
+                <dd style="{$resources_style}">{$resources_vps->memory}</dd>
+                {$s_swap}
+                <dt>{$ip_addresses_label}:</dt>
+                <dd style="{$ips_style}">$ips</dd>
+            </dl>
         EOT;
     return $s;
 }
@@ -1818,13 +1827,15 @@ function format_swap_vps_cell($vps, $primary = false)
     $outage_len = $primary ? _('several minutes') : _('up to several hours');
 
     $vps_link = vps_link($vps);
+    $vps_label = _('VPS');
+    $outage_duration_label = _('Outage duration');
 
     $s = <<<EOT
-        	<h3>VPS {$vps_link}</h3>
-        	<dl>
-        		<dt>Outage duration:</dt>
-        		<dd>{$outage_len}</dd>
-        	</dl>
+            <h3>{$vps_label} {$vps_link}</h3>
+            <dl>
+                <dt>{$outage_duration_label}:</dt>
+                <dd>{$outage_len}</dd>
+            </dl>
         EOT;
 
     return $s;
@@ -1834,7 +1845,11 @@ function vps_swap_preview_form($primary, $secondary, $opts)
 {
     global $xtpl, $api;
 
-    $xtpl->table_title(_("Replace VPS " . vps_link($primary) . " with " . vps_link($secondary)));
+    $xtpl->table_title(sprintf(
+        _('Swap VPS %1$s with VPS %2$s'),
+        vps_link($primary),
+        vps_link($secondary)
+    ));
     $xtpl->form_create('?page=adminvps&action=swap&veid=' . $primary->id, 'post');
     $xtpl->table_add_category(_('VPS'));
     $xtpl->table_add_category(_('Now'));
@@ -1849,7 +1864,11 @@ function vps_swap_preview_form($primary, $secondary, $opts)
     }
 
     $xtpl->table_td(
-        _('First migration, VPS') . ' ' . vps_link($secondary) . ' ' . _('to') . ' ' . node_link($primary->node) . ':',
+        sprintf(
+            _('First migration: VPS %1$s to node %2$s'),
+            vps_link($secondary),
+            node_link($primary->node)
+        ) . ':',
         false,
         false,
         4
@@ -1870,7 +1889,7 @@ function vps_swap_preview_form($primary, $secondary, $opts)
     );
 
     $xtpl->table_td(
-        '<img src="template/icons/draw-arrow-forward.png" alt="will become">',
+        '<img src="template/icons/draw-arrow-forward.png" alt="' . h(_('will become')) . '">',
         false,
         false,
         '1',
@@ -1892,7 +1911,11 @@ function vps_swap_preview_form($primary, $secondary, $opts)
     $xtpl->table_tr(false, 'notoddrow');
 
     $xtpl->table_td(
-        _('Second migration, VPS') . ' ' . vps_link($primary) . ' ' . _('to') . ' ' . node_link($secondary->node) . ':',
+        sprintf(
+            _('Second migration: VPS %1$s to node %2$s'),
+            vps_link($primary),
+            node_link($secondary->node)
+        ) . ':',
         false,
         false,
         4
@@ -1913,7 +1936,7 @@ function vps_swap_preview_form($primary, $secondary, $opts)
     );
 
     $xtpl->table_td(
-        '<img src="template/icons/draw-arrow-forward.png" alt="will become">',
+        '<img src="template/icons/draw-arrow-forward.png" alt="' . h(_('will become')) . '">',
         false,
         false,
         '1',
@@ -1935,7 +1958,10 @@ function vps_swap_preview_form($primary, $secondary, $opts)
     $xtpl->table_tr(false, 'notoddrow');
 
     $xtpl->table_td(
-        _('Changed attributes are marked in') . ' <strong style="color: #20c220;">' . _('green') . '</strong>.',
+        sprintf(
+            _('Changed attributes are marked in %s.'),
+            '<strong style="color: #20c220;">' . _('green') . '</strong>'
+        ),
         false,
         false,
         4

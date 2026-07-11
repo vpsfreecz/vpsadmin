@@ -370,10 +370,18 @@ async function previewVpsSwap(page, primaryVpsId, secondaryVpsId, options = {}) 
 
   await expect(page).toHaveURL(/action=swap_preview/);
   await expect(page.locator('#content-in')).toContainText(
-    new RegExp(`Replace VPS\\s+#${primaryVpsId}\\s+with\\s+#${secondaryVpsId}`),
+    new RegExp(`Swap VPS\\s+#${primaryVpsId}\\s+with VPS\\s+#${secondaryVpsId}`),
   );
-  await expect(page.locator('#content-in')).toContainText('First migration');
-  await expect(page.locator('#content-in')).toContainText('Second migration');
+  await expect(page.locator('#content-in')).toContainText('First migration:');
+  await expect(page.locator('#content-in')).toContainText('Second migration:');
+  await expect(page.locator('#content-in')).toContainText('Outage duration:');
+  await expect(page.locator('#content-in')).toContainText('Environment:');
+  await expect(page.locator('#content-in')).toContainText('Expiration:');
+  await expect(page.locator('#content-in')).toContainText('Memory:');
+  await expect(page.locator('#content-in')).toContainText('IP addresses:');
+  await expect(page.locator('#content-in')).toContainText('Changed attributes are marked in green.');
+  await expect(page.locator('img[alt="will become"]')).toHaveCount(2);
+  await expect(page.locator('input[type="submit"][value="Swap VPS"]')).toBeVisible();
 }
 
 async function submitVpsSwapPreview(page, primaryVpsId, secondaryVpsId, options = {}) {

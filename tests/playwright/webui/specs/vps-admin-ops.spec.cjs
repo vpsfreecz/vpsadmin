@@ -37,6 +37,16 @@ function futureDateTime(days) {
   ].join('-') + ' 00:00:00';
 }
 
+const languageFlag = (page, locale) =>
+  page.locator(`#langbox a[href*="newlang=${encodeURIComponent(locale)}"]`);
+
+async function switchLanguage(page, locale) {
+  await Promise.all([
+    page.waitForNavigation({ waitUntil: 'domcontentloaded' }),
+    languageFlag(page, locale).click(),
+  ]);
+}
+
 function adminCreateOptions(options = {}) {
   return {
     bootAfterCreate: false,
@@ -198,6 +208,29 @@ test.describe.serial('VPS admin long operation browser coverage', () => {
     );
 
     await previewVpsSwap(page, primaryVpsId, secondaryVpsId, swapOptions);
+
+    try {
+      await switchLanguage(page, 'cs_CZ.utf8');
+      const preview = page.locator('#content-in');
+      await expect(preview).toContainText(
+        new RegExp(`Prohodit VPS\\s+#${primaryVpsId}\\s+s VPS\\s+#${secondaryVpsId}`),
+      );
+      await expect(preview).toContainText('Nyní');
+      await expect(preview).toContainText('Po výměně');
+      await expect(preview).toContainText('První migrace:');
+      await expect(preview).toContainText('Druhá migrace:');
+      await expect(preview).toContainText('Délka odstávky:');
+      await expect(preview).toContainText('Prostředí:');
+      await expect(preview).toContainText('Vypršení platnosti:');
+      await expect(preview).toContainText('Paměť:');
+      await expect(preview).toContainText('IP adresy:');
+      await expect(preview).toContainText('Změněné atributy jsou označeny zeleně.');
+      await expect(preview.locator('img[alt="změní se na"]')).toHaveCount(2);
+      await expect(page.locator('input[type="submit"][value="Prohodit VPS"]')).toBeVisible();
+    } finally {
+      await switchLanguage(page, 'en_US.utf8');
+    }
+
     await submitVpsSwapPreview(page, primaryVpsId, secondaryVpsId, swapOptions);
 
     await logout(page, fixtures.admin.username);

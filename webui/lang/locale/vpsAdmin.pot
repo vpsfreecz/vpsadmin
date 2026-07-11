@@ -112,7 +112,8 @@ msgid "Size"
 msgstr ""
 
 #: forms/backup.forms.php forms/dataset.forms.php forms/export.forms.php
-#: pages/page_adminm.php pages/page_adminvps.php pages/page_lifetimes.php
+#: forms/vps.forms.php pages/page_adminm.php pages/page_adminvps.php
+#: pages/page_lifetimes.php
 msgid "Expiration"
 msgstr ""
 
@@ -522,7 +523,7 @@ msgstr ""
 msgid "Back"
 msgstr ""
 
-#: forms/cluster.forms.php forms/dns.forms.php
+#: forms/cluster.forms.php forms/dns.forms.php forms/vps.forms.php
 msgid "IP addresses"
 msgstr ""
 
@@ -4202,6 +4203,10 @@ msgstr ""
 msgid "Preview"
 msgstr ""
 
+#: forms/vps.forms.php pages/page_adminvps.php pages/page_index.php
+msgid "CPU"
+msgstr ""
+
 #: forms/vps.forms.php
 msgid "several minutes"
 msgstr ""
@@ -4211,7 +4216,12 @@ msgid "up to several hours"
 msgstr ""
 
 #: forms/vps.forms.php
-msgid "Replace VPS "
+msgid "Outage duration"
+msgstr ""
+
+#: forms/vps.forms.php
+#, php-format
+msgid "Swap VPS %1$s with VPS %2$s"
 msgstr ""
 
 #: forms/vps.forms.php
@@ -4223,19 +4233,22 @@ msgid "After swap"
 msgstr ""
 
 #: forms/vps.forms.php
-msgid "First migration, VPS"
+#, php-format
+msgid "First migration: VPS %1$s to node %2$s"
 msgstr ""
 
 #: forms/vps.forms.php
-msgid "to"
+msgid "will become"
 msgstr ""
 
 #: forms/vps.forms.php
-msgid "Second migration, VPS"
+#, php-format
+msgid "Second migration: VPS %1$s to node %2$s"
 msgstr ""
 
 #: forms/vps.forms.php
-msgid "Changed attributes are marked in"
+#, php-format
+msgid "Changed attributes are marked in %s."
 msgstr ""
 
 #: forms/vps.forms.php
@@ -5791,10 +5804,6 @@ msgstr ""
 
 #: pages/page_adminvps.php
 msgid "Load average"
-msgstr ""
-
-#: pages/page_adminvps.php pages/page_index.php
-msgid "CPU"
 msgstr ""
 
 #: pages/page_adminvps.php
