@@ -1728,9 +1728,9 @@ en:
           venet:
             label: venet
           veth_bridge:
-            label: veth_bridge
+            label: Bridged veth
           veth_routed:
-            label: veth_routed
+            label: Routed veth
         description: node, storage or mailer
       unassigned_by_chain:
         label: Unassigned_by_chain

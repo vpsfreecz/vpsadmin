@@ -55,4 +55,28 @@ RSpec.describe ApiAppHelper do
         .to eq('Odebrání host IP adresy')
     end
   end
+
+  it 'localizes network interface type labels' do
+    expected = {
+      en: {
+        venet: 'venet',
+        veth_bridge: 'Bridged veth',
+        veth_routed: 'Routed veth'
+      },
+      cs: {
+        venet: 'venet',
+        veth_bridge: 'Veth připojený do bridge',
+        veth_routed: 'Routovaný veth'
+      }
+    }
+
+    expected.each do |locale, labels|
+      ::I18n.with_locale(locale) do
+        labels.each do |type, label|
+          expect(VpsAdmin::API::I18n.t("attributes.type.choices.#{type}.label"))
+            .to eq(label)
+        end
+      end
+    end
+  end
 end

@@ -132,6 +132,7 @@ test.describe.serial('VPS user core browser coverage', () => {
     await expect(passwordForm).toContainText(
       'After logging in over SSH, you can change it using the passwd command.',
     );
+    await expect(formByAction(page, 'action=netif')).toContainText('Routed veth');
 
     try {
       await switchLanguage(page, 'cs_CZ.utf8');
@@ -140,6 +141,7 @@ test.describe.serial('VPS user core browser coverage', () => {
       await expect(passwordForm).toContainText(
         'Po přihlášení přes SSH jej můžete změnit příkazem passwd.',
       );
+      await expect(formByAction(page, 'action=netif')).toContainText('Routovaný veth');
     } finally {
       await switchLanguage(page, 'en_US.utf8');
     }

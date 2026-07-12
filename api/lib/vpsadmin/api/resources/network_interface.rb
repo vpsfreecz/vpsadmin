@@ -9,8 +9,15 @@ module VpsAdmin::API::Resources
                     desc: 'VPS the interface is assigned to, can be null',
                     value_label: :hostname
       string :name
-      string :type, choices: ::NetworkInterface.kinds.keys.map(&:to_s),
-                    db_name: :kind
+      string :type,
+             choices: {
+               values: {
+                 venet: 'venet',
+                 veth_bridge: 'Bridged veth',
+                 veth_routed: 'Routed veth'
+               }
+             },
+             db_name: :kind
       string :mac, label: 'MAC Address'
       integer :max_tx, label: 'Max outgoing data throughput'
       integer :max_rx, label: 'Max incoming data throughput'

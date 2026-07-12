@@ -1723,9 +1723,9 @@ cs:
           venet:
             label: venet
           veth_bridge:
-            label: veth bridge
+            label: Veth připojený do bridge
           veth_routed:
-            label: veth routed
+            label: Routovaný veth
         description: node, úložiště nebo mailer
       unassigned_by_chain:
         label: Nepřiřazeno řetězcem

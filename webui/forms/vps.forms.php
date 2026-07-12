@@ -2000,7 +2000,8 @@ function vps_netif_form($vps, $netif, $netif_accounting)
     $xtpl->form_add_input(_('Name') . ':', 'text', '30', 'name', $netif->name);
 
     $xtpl->table_td(_('Type') . ':');
-    $xtpl->table_td($netif->type);
+    $typeParam = $api->network_interface->list->getParameters('output')->type;
+    $xtpl->table_td(h(api_param_choice_label($typeParam, $netif->type)));
     $xtpl->table_tr();
 
     $xtpl->table_td(_('MAC address') . ':');
