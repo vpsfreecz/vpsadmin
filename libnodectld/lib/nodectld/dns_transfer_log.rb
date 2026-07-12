@@ -135,6 +135,7 @@ module NodeCtld
 
     def parse_message(message)
       parse_transfer_completed(message) ||
+        parse_zone_up_to_date(message) ||
         parse_transfer_status(message) ||
         parse_transfer_failed(message) ||
         parse_refresh_failed(message) ||
@@ -157,6 +158,17 @@ module NodeCtld
         primary_addr: Regexp.last_match(2),
         serial:,
         message: 'Transfer completed successfully'
+      )
+    end
+
+    def parse_zone_up_to_date(message)
+      return unless %r{zone ([^/]+)/IN: notify from ([^#\s]+)#\d+: zone is up to date\z} =~ message
+
+      event(
+        Regexp.last_match(1),
+        'success',
+        primary_addr: Regexp.last_match(2),
+        message: 'Zone is up to date'
       )
     end
 

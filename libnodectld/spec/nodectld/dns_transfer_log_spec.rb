@@ -63,6 +63,22 @@ RSpec.describe NodeCtld::DnsTransferLog do
     expect(started).to be_nil
   end
 
+  it 'normalizes an up-to-date notify as a successful synchronization' do
+    log = described_class.new
+
+    event = log.send(
+      :parse_message,
+      'zone current.test/IN: notify from 2001:db8::1#43627: zone is up to date'
+    )
+
+    expect(event).to include(
+      name: 'current.test.',
+      status: 'success',
+      primary_addr: '2001:db8::1',
+      message: 'Zone is up to date'
+    )
+  end
+
   it 'ignores empty transfer completion summaries after failed attempts' do
     log = described_class.new
 

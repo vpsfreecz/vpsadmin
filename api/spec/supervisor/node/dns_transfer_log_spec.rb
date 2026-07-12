@@ -144,6 +144,36 @@ RSpec.describe VpsAdmin::Supervisor::Node::DnsTransferLog do
     expect(server_zone.last_transfer_serial).to eq(2_026_050_901)
   end
 
+  it 'clears failure state after an up-to-date notify' do
+    server_zone = create_server_zone!
+    supervisor = described_class.new(nil, SpecSeed.node)
+    supervisor.send(:save_event, transfer_event(server_zone))
+
+    supervisor.send(
+      :save_event,
+      transfer_event(
+        server_zone,
+        'status' => 'success',
+        'reason_code' => nil,
+        'reason' => nil,
+        'primary_addr' => '2001:db8::1',
+        'message' => 'Zone is up to date',
+        'raw_message' =>
+          "zone #{server_zone.dns_zone.name.delete_suffix('.')}/IN: " \
+          'notify from 2001:db8::1#43627: zone is up to date',
+        'event_key' => SecureRandom.hex(32),
+        'time' => Time.utc(2026, 5, 9, 12, 10, 0).to_i
+      )
+    )
+
+    server_zone.reload
+    expect(server_zone.last_transfer_status).to eq('success')
+    expect(server_zone.last_transfer_reason_code).to be_nil
+    expect(server_zone.last_transfer_reason).to be_nil
+    expect(server_zone.last_transfer_primary_addr).to eq('2001:db8::1')
+    expect(server_zone.last_transfer_serial).to be_nil
+  end
+
   it 'ignores empty transfer completion summaries from older nodes' do
     server_zone = create_server_zone!
     supervisor = described_class.new(nil, SpecSeed.node)

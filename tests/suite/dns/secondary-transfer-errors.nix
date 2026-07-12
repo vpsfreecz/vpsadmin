@@ -140,6 +140,20 @@ import ../../make-test.nix (
 
           emit_bind_log(
             dns,
+            "zone #{zone_name}/IN: notify from 192.0.2.1#43627: zone is up to date"
+          )
+          state = wait_for_transfer_state(
+            services,
+            server_zone_id: server_zone_id,
+            status: 'success'
+          )
+          expect(state.fetch('last_transfer_reason_code')).to be_nil
+          expect(state.fetch('last_transfer_reason')).to be_nil
+          expect(state.fetch('last_transfer_primary_addr')).to eq('192.0.2.1')
+          expect(state.fetch('last_transfer_serial')).to be_nil
+
+          emit_bind_log(
+            dns,
             "transfer of '#{zone_name}/IN' from 192.0.2.1#53: Transfer completed: " \
             '1 messages, 5 records, 400 bytes, 0.001 secs (serial 2026050901)'
           )
