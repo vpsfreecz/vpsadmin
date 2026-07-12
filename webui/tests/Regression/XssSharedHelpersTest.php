@@ -40,6 +40,16 @@ final class XssSharedHelpersTest extends TestCase
             'data-vpsadmin-doc-id="backups.menu"',
             $xtpl->vars['MENU_DOC_ATTR']
         );
+        $xtpl->menu_add('VPS', '?page=adminvps', false, false, 'vps.menu');
+        self::assertSame(
+            'data-vpsadmin-doc-id="vps.menu"',
+            $xtpl->vars['MENU_DOC_ATTR']
+        );
+        $xtpl->sbar_add('User data', '?page=userdata', 'userdata.menu');
+        self::assertSame(
+            'data-vpsadmin-doc-id="userdata.menu"',
+            $xtpl->vars['SBI_DOC_ATTR']
+        );
         $xtpl->table_title('Features', 'vps.features');
         self::assertSame(
             'data-vpsadmin-doc-id="vps.features"',

@@ -273,7 +273,7 @@ try {
 if (isLoggedIn()) {
     $xtpl->menu_add(_("Status"), '?page=', ($_GET["page"] == ''));
     $xtpl->menu_add(_("Members"), '?page=adminm', ($_GET["page"] == 'adminm'));
-    $xtpl->menu_add(_("VPS"), '?page=adminvps', ($_GET["page"] == 'adminvps'));
+    $xtpl->menu_add(_("VPS"), '?page=adminvps', ($_GET["page"] == 'adminvps'), false, 'vps.menu');
     if (isAdmin()) {
         $xtpl->menu_add(_("Backups"), '?page=backup', ($_GET["page"] == 'backup'), false, 'backups.menu');
 
@@ -281,7 +281,7 @@ if (isLoggedIn()) {
             $xtpl->menu_add(_("NAS"), '?page=nas', ($_GET["page"] == 'nas'));
         }
 
-        $xtpl->menu_add(_("Exports"), '?page=export', ($_GET["page"] == 'export'));
+        $xtpl->menu_add(_("Exports"), '?page=export', ($_GET["page"] == 'export'), false, 'exports.menu');
         $xtpl->menu_add(_("Networking"), '?page=networking', ($_GET["page"] == 'networking'), false, 'networking.menu');
         $xtpl->menu_add(_("DNS"), '?page=dns', ($_GET["page"] == 'dns'), false, 'dns.menu');
         $xtpl->menu_add(_("Cluster"), '?page=cluster', ($_GET["page"] == 'cluster'));
@@ -294,7 +294,7 @@ if (isLoggedIn()) {
         }
 
         if (isExportPublic()) {
-            $xtpl->menu_add(_("Exports"), '?page=export', ($_GET["page"] == 'export'));
+            $xtpl->menu_add(_("Exports"), '?page=export', ($_GET["page"] == 'export'), false, 'exports.menu');
         }
 
         if (USERNS_PUBLIC) {

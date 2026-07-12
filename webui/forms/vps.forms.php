@@ -923,7 +923,7 @@ function vps_list_form()
         $xtpl->sbar_add('<img src="template/icons/m_add.png"  title="' . _("New VPS") . '" /> ' . _("New VPS"), '?page=adminvps&section=vps&action=new-step-1', 'vps.create');
     }
 
-    $xtpl->sbar_add('<img src="template/icons/vps_ip_list.png" title="' . _("User data") . '" /> ' . _("User data"), '?page=userdata&action=list');
+    $xtpl->sbar_add('<img src="template/icons/vps_ip_list.png" title="' . _("User data") . '" /> ' . _("User data"), '?page=userdata&action=list', 'userdata.menu');
     $xtpl->sbar_add('<img src="template/icons/vps_ip_list.png" title="' . _("User namespaces") . '" /> ' . _("User namespaces"), '?page=userns');
 }
 
@@ -988,7 +988,7 @@ function vps_details_submenu($vps)
     }
 
     $xtpl->sbar_add(_('Transaction log'), '?page=transactions&class_name=Vps&row_id=' . $vps->id);
-    $xtpl->sbar_add(_('User data'), '?page=userdata&action=list&user=' . $vps->user_id);
+    $xtpl->sbar_add(_('User data'), '?page=userdata&action=list&user=' . $vps->user_id, 'userdata.menu');
     $xtpl->sbar_add(_('User namespaces'), '?page=userns');
 }
 

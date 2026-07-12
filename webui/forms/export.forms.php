@@ -23,7 +23,7 @@ function export_list()
 
     $xtpl->title(_('NFS exports'));
 
-    $xtpl->sbar_add(_("Export dataset"), '?page=export&action=export_dataset');
+    $xtpl->sbar_add(_("Export dataset"), '?page=export&action=export_dataset', 'exports.export-dataset');
 
     if (isAdmin()) {
         $xtpl->table_title(_('Filters'));
