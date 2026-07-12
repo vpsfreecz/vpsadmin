@@ -44,6 +44,16 @@
   core schema file.
 
 ## Localization
+
+### Knowledge-base documentation impact
+
+Any feature that changes something visible in the WebUI may affect localized
+KB navigation text or screenshots. Follow the canonical workflow in
+`vpsadmin-kb-captures/docs/webui-change-workflow.md`: pin the vpsAdmin feature
+commit there, run its documentation contract, and review every reported Czech
+and English page and screenshot concept. A green vpsAdmin test suite alone does
+not prove that external documentation remains current.
+
 - Czech translation guidelines are documented in `doc/i18n-cs.md`. Follow the
   terminology there when editing API or WebUI Czech translations.
 - API translations are maintained in `api/lib/vpsadmin/api/locales/*.yml` and
