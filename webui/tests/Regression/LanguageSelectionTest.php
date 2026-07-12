@@ -155,6 +155,28 @@ final class LanguageSelectionTest extends TestCase
         }
     }
 
+    public function testCzechCatalogUsesPasswordWarningWording(): void
+    {
+        $po = file_get_contents(
+            dirname(__DIR__, 2) . '/lang/locale/cs_CZ.utf8/LC_MESSAGES/vpsAdmin.po'
+        );
+        $expected = [
+            'The password is generated randomly.' => 'Heslo se generuje náhodně.',
+            'This form is intended only for initial SSH access.'
+                => 'Tento formulář slouží pouze pro první přístup přes SSH.',
+            'After logging in over SSH, you can change it using the %s command.'
+                => 'Po přihlášení přes SSH jej můžete změnit příkazem %s.',
+        ];
+
+        foreach ($expected as $source => $translation) {
+            self::assertMatchesRegularExpression(
+                '/^msgid "' . preg_quote($source, '/') . '"\n'
+                . 'msgstr "' . preg_quote($translation, '/') . '"$/m',
+                $po
+            );
+        }
+    }
+
     public function testUserLanguageCodeReadsHaveApiLanguageResource(): void
     {
         require_once dirname(__DIR__, 2) . '/lib/functions.lib.php';

@@ -1449,9 +1449,15 @@ if (isLoggedIn()) {
 
             if (!isAdmin()) {
                 $xtpl->table_td('');
-                $xtpl->table_td('<b>Warning</b>: The password is randomly generated.<br>
-							This password changer is here only to enable the first access to SSH.<br>
-							You can change it with <em>passwd</em> command once you\'ve logged onto SSH.');
+                $xtpl->table_td(
+                    '<b>' . _('Warning') . '</b>: '
+                    . _('The password is generated randomly.') . '<br>'
+                    . _('This form is intended only for initial SSH access.') . '<br>'
+                    . sprintf(
+                        _('After logging in over SSH, you can change it using the %s command.'),
+                        '<em>passwd</em>'
+                    )
+                );
                 $xtpl->table_tr();
             }
 

@@ -5983,6 +5983,19 @@ msgid "will be generated"
 msgstr ""
 
 #: pages/page_adminvps.php
+msgid "The password is generated randomly."
+msgstr ""
+
+#: pages/page_adminvps.php
+msgid "This form is intended only for initial SSH access."
+msgstr ""
+
+#: pages/page_adminvps.php
+#, php-format
+msgid "After logging in over SSH, you can change it using the %s command."
+msgstr ""
+
+#: pages/page_adminvps.php
 msgid "20 characters long, consists of: a-z, A-Z, 0-9"
 msgstr ""
 

@@ -2,7 +2,7 @@ const { test, expect } = require('@playwright/test');
 
 const { readFixtures } = require('../lib/fixtures.cjs');
 const { login, logout } = require('../lib/pages/auth.cjs');
-const { expectNotification, gotoVpsDetail } = require('../lib/pages/webui.cjs');
+const { expectNotification, formByAction, gotoVpsDetail } = require('../lib/pages/webui.cjs');
 const {
   addAndRemoveRoutedIpAndHostAddress,
   bootFromTemplate,
@@ -32,6 +32,16 @@ const fixtures = readFixtures();
 
 function hostname(prefix) {
   return `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
+}
+
+const languageFlag = (page, locale) =>
+  page.locator(`#langbox a[href*="newlang=${encodeURIComponent(locale)}"]`);
+
+async function switchLanguage(page, locale) {
+  await Promise.all([
+    page.waitForNavigation({ waitUntil: 'domcontentloaded' }),
+    languageFlag(page, locale).click(),
+  ]);
 }
 
 test.describe.serial('VPS user core browser coverage', () => {
@@ -114,6 +124,25 @@ test.describe.serial('VPS user core browser coverage', () => {
     expect(customVpsId).toBeTruthy();
 
     await login(page, fixtures.user);
+
+    await gotoVpsDetail(page, customVpsId);
+    const passwordForm = formByAction(page, 'action=passwd');
+    await expect(passwordForm).toContainText('Warning: The password is generated randomly.');
+    await expect(passwordForm).toContainText('This form is intended only for initial SSH access.');
+    await expect(passwordForm).toContainText(
+      'After logging in over SSH, you can change it using the passwd command.',
+    );
+
+    try {
+      await switchLanguage(page, 'cs_CZ.utf8');
+      await expect(passwordForm).toContainText('Varování: Heslo se generuje náhodně.');
+      await expect(passwordForm).toContainText('Tento formulář slouží pouze pro první přístup přes SSH.');
+      await expect(passwordForm).toContainText(
+        'Po přihlášení přes SSH jej můžete změnit příkazem passwd.',
+      );
+    } finally {
+      await switchLanguage(page, 'en_US.utf8');
+    }
 
     await runDetailAction(page, customVpsId, 'force_restart', 'Force restart VPS', 'running');
     await runDetailAction(page, customVpsId, 'force_stop', 'Poweroff VPS', 'stopped');
