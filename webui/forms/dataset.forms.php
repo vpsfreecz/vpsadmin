@@ -143,7 +143,7 @@ function dataset_list($role, $parent = null, $user = null, $dataset = null, $lim
         }
 
         if ($role == 'hypervisor') {
-            $xtpl->table_td('<a href="?page=dataset&action=mount&dataset=' . $ds->id . '&vps=' . $_GET['veid'] . '&return=' . $return . '">' . _('Mount') . '</a>');
+            $xtpl->table_td('<a data-vpsadmin-doc-id="datasets.mount" href="?page=dataset&action=mount&dataset=' . $ds->id . '&vps=' . $_GET['veid'] . '&return=' . $return . '">' . _('Mount') . '</a>');
         }
 
         if ($role == 'primary' && isExportPublic()) {
@@ -172,7 +172,7 @@ function dataset_list($role, $parent = null, $user = null, $dataset = null, $lim
     $xtpl->table_out();
 
     if ($opts['submenu'] ?? null !== false) {
-        $xtpl->sbar_add(_('Create dataset'), '?page=dataset&action=new&role=' . $role . '&parent=' . $parent . '&return=' . urlencode($_SERVER['REQUEST_URI']));
+        $xtpl->sbar_add(_('Create dataset'), '?page=dataset&action=new&role=' . $role . '&parent=' . $parent . '&return=' . urlencode($_SERVER['REQUEST_URI']), 'datasets.create');
     }
 }
 

@@ -1588,7 +1588,7 @@ if (isLoggedIn()) {
             $os_templates = list_templates($vps);
 
             // Boot
-            $xtpl->table_title(_('Boot VPS from template (rescue mode)'));
+            $xtpl->table_title(_('Boot VPS from template (rescue mode)'), 'vps.boot-rescue');
             $xtpl->form_create('?page=adminvps&action=boot&veid=' . $vps->id, 'post');
             $xtpl->table_td(
                 '<p>'
@@ -1736,7 +1736,7 @@ if (isLoggedIn()) {
             $xtpl->form_out(_('Set resources'));
 
             // Enable devices/capabilities
-            $xtpl->table_title(_('Features'));
+            $xtpl->table_title(_('Features'), 'vps.features');
             $xtpl->form_create('?page=adminvps&action=features&veid=' . $vps->id, 'post');
 
             $features = $vps->feature->list();

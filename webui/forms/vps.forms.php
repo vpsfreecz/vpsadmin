@@ -917,10 +917,10 @@ function vps_list_form()
     }
 
     if (isAdmin()) {
-        $xtpl->sbar_add('<img src="template/icons/m_add.png"  title="' . _("New VPS") . '" /> ' . _("New VPS"), '?page=adminvps&section=vps&action=new-step-0');
+        $xtpl->sbar_add('<img src="template/icons/m_add.png"  title="' . _("New VPS") . '" /> ' . _("New VPS"), '?page=adminvps&section=vps&action=new-step-0', 'vps.create');
         $xtpl->sbar_add('<img src="template/icons/vps_ip_list.png"  title="' . _("List VPSes") . '" /> ' . _("List VPSes"), '?page=adminvps&action=list');
     } else {
-        $xtpl->sbar_add('<img src="template/icons/m_add.png"  title="' . _("New VPS") . '" /> ' . _("New VPS"), '?page=adminvps&section=vps&action=new-step-1');
+        $xtpl->sbar_add('<img src="template/icons/m_add.png"  title="' . _("New VPS") . '" /> ' . _("New VPS"), '?page=adminvps&section=vps&action=new-step-1', 'vps.create');
     }
 
     $xtpl->sbar_add('<img src="template/icons/vps_ip_list.png" title="' . _("User data") . '" /> ' . _("User data"), '?page=userdata&action=list');
@@ -957,12 +957,12 @@ function vps_details_submenu($vps)
     }
 
     if (isAdmin()) {
-        $xtpl->sbar_add(_('Clone VPS'), '?page=adminvps&action=clone-step-0&veid=' . $vps->id);
+        $xtpl->sbar_add(_('Clone VPS'), '?page=adminvps&action=clone-step-0&veid=' . $vps->id, 'vps.clone');
     } else {
-        $xtpl->sbar_add(_('Clone VPS'), '?page=adminvps&action=clone-step-1&veid=' . $vps->id);
+        $xtpl->sbar_add(_('Clone VPS'), '?page=adminvps&action=clone-step-1&veid=' . $vps->id, 'vps.clone');
     }
 
-    $xtpl->sbar_add(_('Swap VPS'), '?page=adminvps&action=swap&veid=' . $vps->id);
+    $xtpl->sbar_add(_('Swap VPS'), '?page=adminvps&action=swap&veid=' . $vps->id, 'vps.swap');
 
     if (isAdmin()) {
         $xtpl->sbar_add(_('Replace VPS'), '?page=adminvps&action=replace&veid=' . $vps->id);

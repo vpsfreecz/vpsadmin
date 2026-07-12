@@ -108,7 +108,7 @@
                         <!-- <span><a href="?page=login&action=drop_admin&next={V_NEXT}"><img src="template/icons/m_dropadmin.png" title="{L_DROP_PRIVILEGES}" /></a></span>-->
             		<!-- END: is_admin -->
             		<!-- BEGIN: not_admin -->
-						<span><a href="?page=adminm&section=members&action=edit&id={L_USER_ID}">{L_EDIT_PROFILE}</a></span>
+						<span><a data-vpsadmin-doc-id="member.edit-profile" href="?page=adminm&section=members&action=edit&id={L_USER_ID}">{L_EDIT_PROFILE}</a></span>
 					<!-- END: not_admin -->
 					<!-- BEGIN: context_switch -->
 						<span><a href="?page=login&action=regain_admin&next={V_NEXT}"><img src="template/icons/m_dropadmin.png" title="{L_REGAIN_PRIVILEGES}" /></a></span>
@@ -144,7 +144,7 @@
 
         <ul>
 	    <!-- BEGIN: menu_item -->
-            <li {MENU_ACTIVE} {MENU_LAST}><a href="{MENU_LINK}">{MENU_TITLE}</a></li>
+            <li {MENU_ACTIVE} {MENU_LAST}><a href="{MENU_LINK}" {MENU_DOC_ATTR}>{MENU_TITLE}</a></li>
 	    <!-- END: menu_item -->
         </ul>
 
@@ -178,7 +178,7 @@
 
 	      <!-- BEGIN: table -->
 	      <!-- BEGIN: t_title -->
-	        <h2>{T_TITLE}</h2>
+	        <h2 {T_DOC_ATTR}>{T_TITLE}</h2>
 	      <!-- END: t_title -->
 		  {TABLE_FORM_BEGIN}
 		  {FORM_CSRF_TOKEN}
@@ -212,7 +212,7 @@
 
             <ul>
 				<!-- BEGIN: sb_item -->
-                <li><a href="{SBI_LINK}">{SBI_TITLE}</a></li>
+                <li><a href="{SBI_LINK}" {SBI_DOC_ATTR}>{SBI_TITLE}</a></li>
 				<!-- END: sb_item -->
             </ul>
             <hr class="noscreen" />

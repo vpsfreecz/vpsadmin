@@ -16,7 +16,7 @@ function backup_submenu()
 {
     global $xtpl;
 
-    $xtpl->sbar_add(_("VPS backups"), '?page=backup&action=vps');
+    $xtpl->sbar_add(_("VPS backups"), '?page=backup&action=vps', 'backups.vps');
     $xtpl->sbar_add(_("NAS backups"), '?page=backup&action=nas');
     $xtpl->sbar_add(_("Downloads"), '?page=backup&action=downloads');
 }

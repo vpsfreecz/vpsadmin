@@ -10,11 +10,11 @@ function dns_submenu()
     }
 
     $xtpl->sbar_add(_('Reverse records'), '?page=dns&action=ptr_list');
-    $xtpl->sbar_add(_('Primary zones'), '?page=dns&action=primary_zone_list');
-    $xtpl->sbar_add(_('Secondary zones'), '?page=dns&action=secondary_zone_list');
+    $xtpl->sbar_add(_('Primary zones'), '?page=dns&action=primary_zone_list', 'dns.primary-zones');
+    $xtpl->sbar_add(_('Secondary zones'), '?page=dns&action=secondary_zone_list', 'dns.secondary-zones');
     $xtpl->sbar_add(_('Transfer logs'), '?page=dns&action=transfer_log');
     $xtpl->sbar_add(_('Record logs'), '?page=dns&action=record_log');
-    $xtpl->sbar_add(_('TSIG keys'), '?page=dns&action=tsig_key_list');
+    $xtpl->sbar_add(_('TSIG keys'), '?page=dns&action=tsig_key_list', 'dns.tsig-keys');
     $xtpl->sbar_add(_('Resolvers'), '?page=dns&action=resolver_list');
 }
 

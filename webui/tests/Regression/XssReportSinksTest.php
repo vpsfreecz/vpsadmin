@@ -32,7 +32,7 @@ final class XssReportSinksTest extends TestCase
 
         $this->assertFileContains(
             'webui/lib/xtemplate.lib.php',
-            '$this->sbar_add_trusted($title, local_redirect_target($link));',
+            '$this->sbar_add_trusted($title, local_redirect_target($link), $docId);',
             'VULN-06/VULN-44 sidebar hrefs must be validated and escaped centrally.'
         );
 

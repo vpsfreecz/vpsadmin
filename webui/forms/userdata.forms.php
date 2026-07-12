@@ -134,7 +134,7 @@ function vps_user_data_edit($id)
 
     $xtpl->form_out(_('Save'));
 
-    $xtpl->table_title(_('Deploy to VPS'));
+    $xtpl->table_title(_('Deploy to VPS'), 'userdata.deploy');
     $xtpl->form_create('?page=userdata&action=deploy&id=' . $data->id, 'post');
 
     $xtpl->form_add_select(

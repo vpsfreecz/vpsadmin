@@ -318,10 +318,10 @@ if (isLoggedIn()) {
             break;
     }
 
-    $xtpl->sbar_add(_("Routable addresses"), '?page=networking&action=ip_addresses');
+    $xtpl->sbar_add(_("Routable addresses"), '?page=networking&action=ip_addresses', 'networking.routable-addresses');
     $xtpl->sbar_add(_("Host addresses"), '?page=networking&action=host_ip_addresses');
-    $xtpl->sbar_add(_("List monthly traffic"), '?page=networking&action=traffic');
-    $xtpl->sbar_add(_("Live monitor"), '?page=networking&action=live');
+    $xtpl->sbar_add(_("List monthly traffic"), '?page=networking&action=traffic', 'networking.monthly-traffic');
+    $xtpl->sbar_add(_("Live monitor"), '?page=networking&action=live', 'networking.live-monitor');
 
     if (isAdmin()) {
         $xtpl->sbar_add(_("User top"), '?page=networking&action=user_top');

@@ -386,16 +386,16 @@ function print_editm($u)
     }
 
     if (payments_enabled()) {
-        $xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="' . _("Payment instructions") . '" />' . _('Payment instructions'), "?page=adminm&section=members&action=payment_instructions&id={$u->id}");
+        $xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="' . _("Payment instructions") . '" />' . _('Payment instructions'), "?page=adminm&section=members&action=payment_instructions&id={$u->id}", 'member.payment-instructions');
     }
 
-    $xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="' . _("Advanced mail configuration") . '" />' . _('Advanced e-mail configuration'), "?page=adminm&section=members&action=template_recipients&id={$u->id}");
-    $xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="' . _("Public keys") . '" />' . _('Public keys'), "?page=adminm&section=members&action=pubkeys&id={$u->id}");
-    $xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="' . _("TOTP devices") . '" />' . _('TOTP devices'), "?page=adminm&section=members&action=totp_devices&id={$u->id}");
-    $xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="' . _("Passkeys") . '" />' . _('Passkeys'), "?page=adminm&section=members&action=webauthn_list&id={$u->id}");
+    $xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="' . _("Advanced mail configuration") . '" />' . _('Advanced e-mail configuration'), "?page=adminm&section=members&action=template_recipients&id={$u->id}", 'member.advanced-email-configuration');
+    $xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="' . _("Public keys") . '" />' . _('Public keys'), "?page=adminm&section=members&action=pubkeys&id={$u->id}", 'member.public-keys');
+    $xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="' . _("TOTP devices") . '" />' . _('TOTP devices'), "?page=adminm&section=members&action=totp_devices&id={$u->id}", 'member.totp-devices');
+    $xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="' . _("Passkeys") . '" />' . _('Passkeys'), "?page=adminm&section=members&action=webauthn_list&id={$u->id}", 'member.passkeys');
     $xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="' . _("Known login devices") . '" />' . _('Known login devices'), "?page=adminm&action=known_devices&id={$u->id}");
-    $xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="' . _("Sessions") . '" />' . _('Sessions'), "?page=adminm&action=user_sessions&id={$u->id}");
-    $xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="' . _("Metrics access tokens") . '" />' . _('Metrics access tokens'), "?page=adminm&action=metrics&id={$u->id}");
+    $xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="' . _("Sessions") . '" />' . _('Sessions'), "?page=adminm&action=user_sessions&id={$u->id}", 'member.sessions');
+    $xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="' . _("Metrics access tokens") . '" />' . _('Metrics access tokens'), "?page=adminm&action=metrics&id={$u->id}", 'member.metrics-access-tokens');
 
     if (isAdmin()) {
         $xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="' . _("Transaction log") . '" />' . _('Transaction log'), "?page=transactions&user={$u->id}");
@@ -405,8 +405,8 @@ function print_editm($u)
     $xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="' . _("User data") . '" />' . _('User data'), "?page=userdata&action=list&user={$u->id}");
 
     $xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="' . _("Resource packages") . '" />' . _('Resource packages'), "?page=adminm&section=members&action=resource_packages&id={$u->id}");
-    $xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="' . _("Cluster resources") . '" />' . _('Cluster resources'), "?page=adminm&section=members&action=cluster_resources&id={$u->id}");
-    $xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="' . _("Environment configs") . '" />' . _('Environment configs'), "?page=adminm&section=members&action=env_cfg&id={$u->id}");
+    $xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="' . _("Cluster resources") . '" />' . _('Cluster resources'), "?page=adminm&section=members&action=cluster_resources&id={$u->id}", 'member.cluster-resources');
+    $xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="' . _("Environment configs") . '" />' . _('Environment configs'), "?page=adminm&section=members&action=env_cfg&id={$u->id}", 'member.environment-configs');
 }
 
 function print_deletem($u)
@@ -474,7 +474,7 @@ function list_pubkeys()
 
     $xtpl->table_out();
 
-    $xtpl->sbar_add('<br><img src="template/icons/m_edit.png"  title="' . _("Add public key") . '" />' . _('Add public key'), "?page=adminm&section=members&action=pubkey_add&id={$_GET['id']}");
+    $xtpl->sbar_add('<br><img src="template/icons/m_edit.png"  title="' . _("Add public key") . '" />' . _('Add public key'), "?page=adminm&section=members&action=pubkey_add&id={$_GET['id']}", 'member.public-keys.add');
     $xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="' . _("Back to user details") . '" />' . _('Back to user details'), "?page=adminm&section=members&action=edit&id={$_GET['id']}");
 
 }

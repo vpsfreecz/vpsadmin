@@ -30,6 +30,24 @@ final class XssSharedHelpersTest extends TestCase
         $xtpl->sbar_add_trusted('Console action', "javascript:vps_do('start');");
         self::assertSame('javascript:vps_do(&#039;start&#039;);', $xtpl->vars['SBI_LINK']);
 
+        $xtpl->sbar_add('Documented action', '?page=networking', 'networking.menu');
+        self::assertSame(
+            'data-vpsadmin-doc-id="networking.menu"',
+            $xtpl->vars['SBI_DOC_ATTR']
+        );
+        $xtpl->menu_add('Backups', '?page=backup', false, false, 'backups.menu');
+        self::assertSame(
+            'data-vpsadmin-doc-id="backups.menu"',
+            $xtpl->vars['MENU_DOC_ATTR']
+        );
+        $xtpl->table_title('Features', 'vps.features');
+        self::assertSame(
+            'data-vpsadmin-doc-id="vps.features"',
+            $xtpl->vars['T_DOC_ATTR']
+        );
+        $xtpl->sbar_add('Undocumented action', '?page=');
+        self::assertSame('', $xtpl->vars['SBI_DOC_ATTR']);
+
         $xtpl->form_create('?page=cluster&type=' . $payload, 'post" autofocus="autofocus', 'x"><script>', false);
         $form = $xtpl->vars['TABLE_FORM_BEGIN'];
 
@@ -53,5 +71,15 @@ final class XssSharedHelpersTest extends TestCase
             'SERVER_PORT' => '80',
         ];
         self::assertSame('https://proxy.example.test:8443', getSelfUri());
+    }
+
+    public function testDocumentationIdsRejectInvalidAttributes(): void
+    {
+        require_once dirname(__DIR__, 2) . '/lib/functions.lib.php';
+        require_once dirname(__DIR__, 2) . '/lib/xtemplate.lib.php';
+
+        $xtpl = new XTemplate('', '', null, 'main', false);
+        $this->expectException(InvalidArgumentException::class);
+        $xtpl->sbar_add('Invalid action', '?page=', 'invalid ID');
     }
 }

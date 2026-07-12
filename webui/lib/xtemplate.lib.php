@@ -548,12 +548,13 @@ class XTemplate
       * @param $active - Is user currently here?
       * @param $is_last - Is this item last in the menu?
       */
-    public function menu_add($title = 'Titulek', $link = '#', $active = false, $is_last = false)
+    public function menu_add($title = 'Titulek', $link = '#', $active = false, $is_last = false, $docId = null)
     {
         $this->assign('MENU_LINK', $link);
         $this->assign('MENU_TITLE', $title);
         $this->assign('MENU_ACTIVE', ($active) ? 'id="nav-active"' : '');
         $this->assign('MENU_LAST', ($is_last) ? 'class="last"' : '');
+        $this->assign('MENU_DOC_ATTR', $this->documentation_attribute($docId));
         $this->parse('main.menu_item');
     }
     /**
@@ -597,14 +598,15 @@ class XTemplate
       * @param $title - link title
       * @param $link - link URL
       */
-    public function sbar_add($title, $link)
+    public function sbar_add($title, $link, $docId = null)
     {
-        $this->sbar_add_trusted($title, local_redirect_target($link));
+        $this->sbar_add_trusted($title, local_redirect_target($link), $docId);
     }
-    public function sbar_add_trusted($title, $link)
+    public function sbar_add_trusted($title, $link, $docId = null)
     {
         $this->assign('SBI_TITLE', $title);
         $this->assign('SBI_LINK', h($link));
+        $this->assign('SBI_DOC_ATTR', $this->documentation_attribute($docId));
         $this->parse('main.sidebar.sb_item');
     }
     public function sbar_add_fragment($html)
@@ -621,10 +623,23 @@ class XTemplate
         $this->assign('SB_TITLE', $title);
         $this->parse('main.sidebar');
     }
-    public function table_title($title = "")
+    public function table_title($title = "", $docId = null)
     {
         $this->assign('T_TITLE', $title);
+        $this->assign('T_DOC_ATTR', $this->documentation_attribute($docId));
         $this->parse('main.table.t_title');
+    }
+
+    private function documentation_attribute($docId)
+    {
+        if ($docId === null) {
+            return '';
+        }
+        if (!is_string($docId) || !preg_match('/\A[a-z][a-z0-9]*(?:[.-][a-z0-9]+)*\z/', $docId)) {
+            throw new InvalidArgumentException('Invalid vpsAdmin documentation ID');
+        }
+
+        return 'data-vpsadmin-doc-id="' . h($docId) . '"';
     }
     /**
       * Add table category to table header
