@@ -19,6 +19,15 @@ const {
 
 const fixtures = readFixtures();
 const support = fixtures.support;
+const languageFlag = (page, locale) =>
+  page.locator(`#langbox a[href*="newlang=${encodeURIComponent(locale)}"]`);
+
+async function switchLanguage(page, locale) {
+  await Promise.all([
+    page.waitForNavigation({ waitUntil: 'domcontentloaded' }),
+    languageFlag(page, locale).click(),
+  ]);
+}
 
 function requireSupportFixtures() {
   if (
@@ -453,7 +462,34 @@ test.describe('support and status browser coverage', () => {
       'Event ignored',
     );
 
-    await logout(page, fixtures.user.username);
+    await switchLanguage(page, 'cs_CZ.utf8');
+    try {
+      await page.goto(
+        [
+          '/?page=monitoring&action=list',
+          `monitor=${showEvent.monitor}`,
+          `object_name=${showEvent.objectName}`,
+          `object_id=${showEvent.objectId}`,
+          'state=confirmed',
+        ].join('&'),
+        { waitUntil: 'domcontentloaded' },
+      );
+
+      const localizedFilter = formByName(page, 'monitoring-list');
+      await expect(
+        localizedFilter.locator('select[name="state"] option:checked'),
+      ).toHaveText('potvrzeno');
+      await expect(rowWithText(page, showEvent.label)).toContainText('potvrzeno');
+
+      await page.goto(`/?page=monitoring&action=show&id=${showEvent.id}`, {
+        waitUntil: 'domcontentloaded',
+      });
+      const stateRow = content(page).locator('tr').filter({ hasText: 'Stav:' }).first();
+      await expect(stateRow.locator('td')).toHaveText(['Stav:', 'potvrzeno']);
+    } finally {
+      await switchLanguage(page, 'en_US.utf8');
+      await logout(page, fixtures.user.username);
+    }
   });
 
   test('admin monitoring filters, fields, acknowledge, and ignore are wired', async ({ page }) => {

@@ -310,6 +310,26 @@ RSpec.describe 'VpsAdmin::API::Resources::MonitoredEvent', requires_plugins: :mo
         'monitored_event.log#show'
       )
     end
+
+    it 'localizes monitored event states in Czech' do
+      header 'Accept-Language', 'cs'
+      as(user) { options "#{index_path}?method=GET" }
+
+      expect_status(200)
+      expect(
+        json.dig(
+          'response', 'input', 'parameters', 'state',
+          'validators', 'include', 'values'
+        )
+      ).to eq(
+        'monitoring' => 'sleduje se',
+        'confirmed' => 'potvrzeno',
+        'unconfirmed' => 'nepotvrzeno',
+        'acknowledged' => 'vzato na vědomí',
+        'ignored' => 'ignorováno',
+        'closed' => 'uzavřeno'
+      )
+    end
   end
 
   describe 'Index' do

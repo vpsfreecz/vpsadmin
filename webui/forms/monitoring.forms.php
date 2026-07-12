@@ -96,7 +96,7 @@ function monitoring_list()
 
     foreach ($events as $e) {
         $xtpl->table_td(tolocaltz($e->created_at));
-        $xtpl->table_td($e->state);
+        $xtpl->table_td(h(api_param_choice_label($input->state, $e->state)));
 
         if (isAdmin()) {
             $xtpl->table_td($e->user_id ? user_link($e->user) : '-');
@@ -123,6 +123,7 @@ function monitoring_event()
     global $xtpl, $api;
 
     $e = $api->monitored_event->show($_GET['id']);
+    $output = $api->monitored_event->show->getParameters('output');
 
     $xtpl->title(_('Event') . ' #' . $e->id . ': ' . $e->label);
 
@@ -152,7 +153,7 @@ function monitoring_event()
     $xtpl->table_tr();
 
     $xtpl->table_td(_('State') . ':');
-    $xtpl->table_td($e->state);
+    $xtpl->table_td(h(api_param_choice_label($output->state, $e->state)));
     $xtpl->table_tr();
 
     $xtpl->table_out();

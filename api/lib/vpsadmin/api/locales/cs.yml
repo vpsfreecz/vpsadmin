@@ -1528,7 +1528,7 @@ cs:
           mitigated:
             label: ošetřeno
           monitoring:
-            label: monitoring
+            label: sleduje se
           not_affected:
             label: netýká se
           online:
