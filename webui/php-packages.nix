@@ -344,10 +344,10 @@ let
     "sebastian/exporter" = {
       targetDir = "";
       src = composerEnv.buildZipPackage {
-        name = "sebastian-exporter-c0d29a945f8cf82f300a05e69874508e307ca4c6";
+        name = "sebastian-exporter-cfaa77c750dcad6f44c9bac8f62ac486e1c82c26";
         src = fetchurl {
-          url = "https://api.github.com/repos/sebastianbergmann/exporter/zipball/c0d29a945f8cf82f300a05e69874508e307ca4c6";
-          sha256 = "0mvs2s4cf28hswkmbbhfyf49rf5hz2a6ssl9wlarsp5d0q4ba0zj";
+          url = "https://api.github.com/repos/sebastianbergmann/exporter/zipball/cfaa77c750dcad6f44c9bac8f62ac486e1c82c26";
+          sha256 = "109rg3qqrwzqzhbwmlmcrilcxr7257vcyk9ik0mjiqzgr0x7bzhd";
         };
       };
     };
