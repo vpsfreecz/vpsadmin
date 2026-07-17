@@ -389,6 +389,8 @@ en:
         label: Confirmed
       content:
         label: Content
+      content_revision:
+        label: Content_revision
       continue:
         label: Continue
       count:
@@ -460,9 +462,6 @@ en:
         label: Current state
       current_system:
         label: Current_system
-      cve:
-        description: Filter by CVE identifier.
-        label: CVE
       cve_id:
         description: CVE identifier in CVE-YYYY-NNNN format, e.g. CVE-2026-12345.
         label: CVE
@@ -649,6 +648,8 @@ en:
         label: Event_type
       evidence_revision:
         label: Evidence_revision
+      expected_content_revision:
+        label: Expected_content_revision
       expiration:
         description: A date after which the token becomes invalid
       expirations:
@@ -661,6 +662,8 @@ en:
         label: Export
       export_count:
         label: Export_count
+      external_id:
+        label: External_id
       failcnt:
         label: Failcnt
       features:
@@ -1169,8 +1172,6 @@ en:
         label: Node_count
       node_ebpf_program:
         label: NodeEbpfProgram
-      node_id:
-        label: Node_id
       node_kernel_event:
         label: NodeKernelEvent
       node_kernel_evidence:
@@ -1179,8 +1180,6 @@ en:
         label: NodeKernelHistoryState
       node_kernel_livepatch:
         label: NodeKernelLivepatch
-      node_name:
-        label: Node_name
       node_state:
         choices:
           mitigated:
@@ -3158,6 +3157,28 @@ en:
             description: Amount of space used by dataset
             label: Used space
       security_advisory:
+        actions:
+          create:
+            input:
+              cve:
+                label: Initial CVE
+              external_id:
+                description: Stable idempotency key; retries return the existing advisory.
+          index:
+            input:
+              cve:
+                label: CVE
+              external_id:
+                description: Filter by an exact external idempotency key.
+          publish:
+            input:
+              expected_content_revision:
+                description: Publish only the exact draft revision shown during review.
+          update:
+            input:
+              expected_content_revision:
+                description: Apply the change only when the advisory has this content
+                  revision.
         attributes:
           affected:
             description: True if the current user is affected by the advisory
@@ -3166,6 +3187,8 @@ en:
           cs_summary:
             description: One-sentence public summary shown in advisory lists, status
               output, IRC announcements, and emails.
+          cve:
+            description: Optional CVE link created atomically with the draft.
           en_summary:
             description: One-sentence public summary shown in advisory lists, status
               output, IRC announcements, and emails.
@@ -3188,6 +3211,9 @@ en:
             label: VPS
         node_status:
           attributes:
+            expected_content_revision:
+              description: Apply the change only when the advisory has this content
+                revision.
             id:
               label: Id
             node:
@@ -3197,6 +3223,9 @@ en:
             state:
               description: Assessment of whether the node was affected and whether
                 it has been mitigated.
+        output:
+          external_id:
+            description: Stable external idempotency key for an advisory source.
       security_advisory_cve:
         actions:
           create:
@@ -3212,6 +3241,12 @@ en:
               security_advisory:
                 description: Advisory to which this CVE belongs.
         attributes:
+          cve:
+            description: Filter by CVE identifier.
+            label: CVE
+          expected_content_revision:
+            description: Apply the change only when the advisory has this content
+              revision.
           id:
             label: Id
           url:

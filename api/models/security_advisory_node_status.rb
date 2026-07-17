@@ -20,10 +20,6 @@ class SecurityAdvisoryNodeStatus < ApplicationRecord
     STATE_LABELS.fetch(state, state.to_s)
   end
 
-  def node_name
-    node.domain_name
-  end
-
   protected
 
   def node_in_advisory_scope

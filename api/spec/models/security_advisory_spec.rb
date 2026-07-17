@@ -73,13 +73,31 @@ RSpec.describe SecurityAdvisory do
     user_vps = create_vps!(user: SpecSeed.user, node: SpecSeed.node, hostname: 'spec-advisory-user')
     other_vps = create_vps!(user: SpecSeed.other_user, node: SpecSeed.node, hostname: 'spec-advisory-other')
 
-    advisory.publish!(published_by: SpecSeed.admin)
+    advisory.publish!(
+      expected_content_revision: advisory.content_revision,
+      published_by: SpecSeed.admin
+    )
 
     expect(advisory.security_advisory_vpses.pluck(:vps_id)).to contain_exactly(user_vps.id, other_vps.id)
     expect(advisory.security_advisory_users.pluck(:user_id)).to contain_exactly(
       SpecSeed.user.id,
       SpecSeed.other_user.id
     )
+  end
+
+  it 'refuses to publish a draft revision other than the reviewed revision' do
+    advisory = build_advisory
+    add_mitigated_status!(advisory)
+    add_not_affected_status!(advisory)
+
+    expect do
+      advisory.publish!(
+        expected_content_revision: advisory.content_revision + 1,
+        published_by: SpecSeed.admin
+      )
+    end.to raise_error(SecurityAdvisory::RevisionMismatch)
+
+    expect(advisory.reload).to be_draft
   end
 
   it 'rejects raw child rows for missing advisory ids' do
@@ -147,7 +165,11 @@ RSpec.describe SecurityAdvisory do
       build_mail_log_double
     end
 
-    advisory.publish!(send_mail: false, published_by: SpecSeed.admin)
+    advisory.publish!(
+      expected_content_revision: advisory.content_revision,
+      send_mail: false,
+      published_by: SpecSeed.admin
+    )
 
     expect(MailTemplate).not_to have_received(:send_mail!)
 

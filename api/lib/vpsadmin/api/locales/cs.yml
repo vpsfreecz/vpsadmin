@@ -388,6 +388,8 @@ cs:
         label: Potvrzeno
       content:
         label: Obsah
+      content_revision:
+        label: Revize obsahu
       continue:
         label: Pokračovat
       count:
@@ -459,9 +461,6 @@ cs:
         label: Aktuální stav
       current_system:
         label: Aktuální systém
-      cve:
-        description: Filtrovat podle identifikátoru CVE.
-        label: CVE
       cve_id:
         description: Identifikátor CVE ve formátu CVE-YYYY-NNNN, např. CVE-2026-12345.
         label: CVE
@@ -649,6 +648,8 @@ cs:
         label: Typ události
       evidence_revision:
         label: Revize podkladů
+      expected_content_revision:
+        label: Očekávaná revize obsahu
       expiration:
         description: Datum, po kterém token přestane být platný
       expirations:
@@ -661,6 +662,8 @@ cs:
         label: Export
       export_count:
         label: Počet exportů
+      external_id:
+        label: Externí ID
       failcnt:
         label: Počet selhání
       features:
@@ -1164,8 +1167,6 @@ cs:
         label: Počet nodů
       node_ebpf_program:
         label: eBPF program Node
-      node_id:
-        label: ID nodu
       node_kernel_event:
         label: Událost kernelu Node
       node_kernel_evidence:
@@ -1174,8 +1175,6 @@ cs:
         label: Stav historie kernelu Node
       node_kernel_livepatch:
         label: Live patch kernelu Node
-      node_name:
-        label: Název nodu
       node_state:
         choices:
           mitigated:
@@ -3152,6 +3151,30 @@ cs:
             description: Množství místa použitého datasetem
             label: Použité místo
       security_advisory:
+        actions:
+          create:
+            input:
+              cve:
+                label: Počáteční CVE
+              external_id:
+                description: Stabilní klíč idempotence; opakovaný požadavek vrátí
+                  existující bezpečnostní upozornění.
+          index:
+            input:
+              cve:
+                label: CVE
+              external_id:
+                description: Filtrovat podle přesného externího klíče idempotence.
+          publish:
+            input:
+              expected_content_revision:
+                description: Zveřejnit pouze přesnou revizi konceptu zobrazenou při
+                  kontrole.
+          update:
+            input:
+              expected_content_revision:
+                description: Změnu provést pouze v případě, že má bezpečnostní upozornění
+                  tuto revizi obsahu.
         attributes:
           affected:
             description: True, pokud je aktuální uživatel dotčen tímto upozorněním
@@ -3160,6 +3183,8 @@ cs:
           cs_summary:
             description: Jednověté veřejné shrnutí zobrazené v seznamech upozornění,
               statusovém výstupu, IRC oznámeních a e-mailech.
+          cve:
+            description: Volitelný odkaz na CVE vytvořený atomicky s konceptem.
           en_summary:
             description: Jednověté veřejné shrnutí zobrazené v seznamech upozornění,
               statusovém výstupu, IRC oznámeních a e-mailech.
@@ -3182,6 +3207,9 @@ cs:
             label: VPS
         node_status:
           attributes:
+            expected_content_revision:
+              description: Změnu provést pouze v případě, že má bezpečnostní upozornění
+                tuto revizi obsahu.
             id:
               label: ID
             node:
@@ -3190,6 +3218,9 @@ cs:
               label: Poznámka
             state:
               description: Vyhodnocení, zda byl node dotčen a zda bylo provedeno ošetření.
+        output:
+          external_id:
+            description: Stabilní externí klíč idempotence zdroje bezpečnostního upozornění.
       security_advisory_cve:
         actions:
           create:
@@ -3205,6 +3236,12 @@ cs:
               security_advisory:
                 description: Upozornění, ke kterému toto CVE patří.
         attributes:
+          cve:
+            description: Filtrovat podle identifikátoru CVE.
+            label: CVE
+          expected_content_revision:
+            description: Změnu provést pouze v případě, že má bezpečnostní upozornění
+              tuto revizi obsahu.
           id:
             label: ID
           url:

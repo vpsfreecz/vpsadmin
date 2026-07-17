@@ -1,6 +1,9 @@
 require_relative 'transaction_chains/security_advisories/mail'
 
 class SecurityAdvisory < ApplicationRecord
+  class DraftRequired < StandardError; end
+  class RevisionMismatch < StandardError; end
+
   attr_reader :last_chain
 
   has_many :security_advisory_cves, class_name: 'SecurityAdvisoryCve', dependent: :delete_all
@@ -15,6 +18,8 @@ class SecurityAdvisory < ApplicationRecord
   belongs_to :published_by, class_name: 'User', optional: true
 
   enum :state, %i[draft published retracted]
+
+  validates :external_id, length: { maximum: 255 }, uniqueness: true, allow_nil: true
 
   after_initialize :load_translations
 
@@ -52,6 +57,24 @@ class SecurityAdvisory < ApplicationRecord
 
   def cve_ids
     security_advisory_cves.order(:cve_id).pluck(:cve_id)
+  end
+
+  def mutate_draft!(expected_content_revision: nil)
+    with_lock do
+      unless draft?
+        raise DraftRequired, 'security advisory can only be changed while it is a draft'
+      end
+
+      if !expected_content_revision.nil? && expected_content_revision.to_i != content_revision
+        raise RevisionMismatch,
+              "security advisory changed (expected revision #{expected_content_revision}, " \
+              "current revision #{content_revision})"
+      end
+
+      result = yield
+      update_columns(content_revision: content_revision + 1, updated_at: Time.current)
+      result
+    end
   end
 
   def affected(user: nil)
@@ -99,10 +122,14 @@ class SecurityAdvisory < ApplicationRecord
     load_translations
   end
 
-  def publish!(send_mail: false, published_by: nil, published_at: nil)
-    validate_publishable!
-
-    transaction do
+  def publish!(expected_content_revision:, send_mail: false, published_by: nil, published_at: nil)
+    with_lock do
+      if expected_content_revision.to_i != content_revision
+        raise RevisionMismatch,
+              "security advisory changed (expected revision #{expected_content_revision}, " \
+              "current revision #{content_revision})"
+      end
+      validate_publishable!
       self.state = 'published'
       self.published_at = published_at if published_at
       self.published_at ||= Time.now

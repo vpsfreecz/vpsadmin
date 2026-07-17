@@ -9,8 +9,8 @@ RSpec.describe 'VpsAdmin::API::Resources::SecurityAdvisory' do
     SpecSeed.user
     SpecSeed.other_user
     SpecSeed.location
-    SpecSeed.node
-    SpecSeed.other_node
+    SpecSeed.node.update!(active: true, role: :node)
+    SpecSeed.other_node.update!(active: true, role: :storage)
     SpecSeed.pool
     SpecSeed.other_pool
     SpecSeed.os_template
@@ -76,8 +76,16 @@ RSpec.describe 'VpsAdmin::API::Resources::SecurityAdvisory' do
     put path, JSON.dump(payload), { 'CONTENT_TYPE' => 'application/json' }
   end
 
-  def json_delete(path)
-    delete path, nil, { 'CONTENT_TYPE' => 'application/json' }
+  def json_delete(path, payload = nil)
+    delete path, payload && JSON.dump(payload), { 'CONTENT_TYPE' => 'application/json' }
+  end
+
+  def publish_payload(advisory, **values)
+    {
+      security_advisory: values.merge(
+        expected_content_revision: advisory.reload.content_revision
+      )
+    }
   end
 
   def security_advisories
@@ -193,7 +201,10 @@ RSpec.describe 'VpsAdmin::API::Resources::SecurityAdvisory' do
   def build_published_advisory
     advisory = build_advisory
     make_publishable!(advisory)
-    advisory.publish!(published_by: SpecSeed.admin)
+    advisory.publish!(
+      expected_content_revision: advisory.content_revision,
+      published_by: SpecSeed.admin
+    )
     advisory.reload
   end
 
@@ -228,6 +239,7 @@ RSpec.describe 'VpsAdmin::API::Resources::SecurityAdvisory' do
 
     it 'documents security advisory form parameters' do
       advisory_params = action_input_params(:security_advisory, :create)
+      advisory_update_params = action_input_params(:security_advisory, :update)
       publish_params = action_input_params(:security_advisory, :publish)
       cve_params = action_input_params(:security_advisory_cve, :create)
       update_params = action_input_params(:security_advisory_update, :create)
@@ -253,6 +265,8 @@ RSpec.describe 'VpsAdmin::API::Resources::SecurityAdvisory' do
       expect(cve_params.dig('cve_id', 'description')).to include(
         'CVE-YYYY-NNNN'
       )
+      expect(advisory_update_params.dig('expected_content_revision', 'required')).to be(true)
+      expect(cve_params.dig('expected_content_revision', 'required')).to be(true)
       expect(update_params.dig('state', 'description')).to include(
         'state change'
       )
@@ -301,6 +315,7 @@ RSpec.describe 'VpsAdmin::API::Resources::SecurityAdvisory' do
         'affected_user_count',
         'affected_vps_count',
         'created_by',
+        'external_id',
         'published_by'
       )
 
@@ -356,9 +371,11 @@ RSpec.describe 'VpsAdmin::API::Resources::SecurityAdvisory' do
       expect(Time.parse(security_advisory_obj.fetch('published_at')).utc).to eq(Time.utc(2026, 1, 1, 8, 0, 0))
 
       advisory_id = security_advisory_obj.fetch('id')
+      revision = security_advisory_obj.fetch('content_revision')
 
       as(SpecSeed.admin) do
         json_put show_path(advisory_id), security_advisory: {
+          expected_content_revision: revision,
           name: 'Renamed Spec Kernel Bug',
           published_at: Time.utc(2026, 1, 1, 9, 0, 0).iso8601,
           en_summary: 'Updated kernel summary',
@@ -374,16 +391,110 @@ RSpec.describe 'VpsAdmin::API::Resources::SecurityAdvisory' do
       )
       expect(Time.parse(security_advisory_obj.fetch('published_at')).utc).to eq(Time.utc(2026, 1, 1, 9, 0, 0))
     end
+
+    it 'creates an initial CVE atomically and retries by external id' do
+      first_payload = Marshal.load(Marshal.dump(payload))
+      first_payload[:security_advisory].merge!(
+        external_id: 'vpsfreecz/security-advisories/CVE-2026-46242',
+        cve: 'CVE-2026-46242'
+      )
+
+      as(SpecSeed.admin) { json_post index_path, first_payload }
+
+      expect_status(200)
+      advisory_id = security_advisory_obj.fetch('id')
+      expect(::SecurityAdvisoryCve.where(
+               security_advisory_id: advisory_id,
+               cve_id: 'CVE-2026-46242'
+             )).to exist
+
+      retry_payload = Marshal.load(Marshal.dump(first_payload))
+      retry_payload[:security_advisory][:en_summary] = 'Must not overwrite the committed draft'
+      as(SpecSeed.admin) { json_post index_path, retry_payload }
+
+      expect_status(200)
+      expect(security_advisory_obj.fetch('id')).to eq(advisory_id)
+      expect(::SecurityAdvisory.where(
+        external_id: 'vpsfreecz/security-advisories/CVE-2026-46242'
+      ).count).to eq(1)
+      expect(security_advisory_obj.fetch('en_summary')).to eq('Spec kernel summary')
+    end
+
+    it 'requires a content revision for draft mutations' do
+      advisory = build_advisory(cves: 'CVE-2026-1001')
+
+      as(SpecSeed.admin) do
+        json_put show_path(advisory.id), security_advisory: {
+          en_summary: 'Unconditional overwrite'
+        }
+      end
+
+      expect_status(200)
+      expect(json['status']).to be(false)
+      expect(errors.fetch('expected_content_revision').join(' ')).to include('required')
+    end
+
+    it 'rejects stale and post-publication draft updates' do
+      advisory = build_advisory
+      revision = advisory.content_revision
+
+      as(SpecSeed.admin) do
+        json_put show_path(advisory.id), security_advisory: {
+          expected_content_revision: revision,
+          en_summary: 'First reviewed summary'
+        }
+      end
+
+      expect_status(200)
+      expect(security_advisory_obj['content_revision']).to eq(revision + 1)
+
+      as(SpecSeed.admin) do
+        json_put show_path(advisory.id), security_advisory: {
+          expected_content_revision: revision,
+          en_summary: 'Stale automation summary'
+        }
+      end
+
+      expect_status(409)
+      summary = advisory.security_advisory_translations
+                        .joins(:language)
+                        .find_by!(languages: { code: 'en' })
+                        .summary
+      expect(summary).to eq('First reviewed summary')
+
+      make_publishable!(advisory)
+      advisory.reload
+      advisory.publish!(
+        expected_content_revision: advisory.content_revision,
+        published_by: SpecSeed.admin
+      )
+
+      as(SpecSeed.admin) do
+        json_put show_path(advisory.id), security_advisory: {
+          expected_content_revision: advisory.content_revision,
+          en_summary: 'Changed after publication'
+        }
+      end
+
+      expect_status(409)
+      summary = advisory.security_advisory_translations
+                        .joins(:language)
+                        .find_by!(languages: { code: 'en' })
+                        .summary
+      expect(summary).to eq('First reviewed summary')
+    end
   end
 
   describe 'CVEs' do
     it 'allows admins to manage advisory CVEs' do
       advisory = build_advisory(cves: 'CVE-2026-1001')
+      revision = advisory.content_revision
 
       as(SpecSeed.admin) do
         json_post cve_index_path, security_advisory_cve: {
           security_advisory: advisory.id,
-          cve_id: 'CVE-2026-1002'
+          cve_id: 'CVE-2026-1002',
+          expected_content_revision: revision
         }
       end
 
@@ -395,6 +506,7 @@ RSpec.describe 'VpsAdmin::API::Resources::SecurityAdvisory' do
         'url' => 'https://www.cve.org/CVERecord?id=CVE-2026-1002'
       )
       cve_id = security_advisory_cve_obj.fetch('id')
+      revision += 1
 
       as(SpecSeed.admin) do
         json_get cve_index_path, security_advisory_cve: {
@@ -408,15 +520,21 @@ RSpec.describe 'VpsAdmin::API::Resources::SecurityAdvisory' do
 
       as(SpecSeed.admin) do
         json_put cve_path(cve_id), security_advisory_cve: {
-          cve_id: 'CVE-2026-1003'
+          cve_id: 'CVE-2026-1003',
+          expected_content_revision: revision
         }
       end
 
       expect_status(200)
       expect(json['status']).to be(true)
       expect(security_advisory_cve_obj['cve_id']).to eq('CVE-2026-1003')
+      revision += 1
 
-      as(SpecSeed.admin) { json_delete cve_path(cve_id) }
+      as(SpecSeed.admin) do
+        json_delete cve_path(cve_id), security_advisory_cve: {
+          expected_content_revision: revision
+        }
+      end
 
       expect_status(200)
       expect(json).to include('status' => true)
@@ -429,7 +547,8 @@ RSpec.describe 'VpsAdmin::API::Resources::SecurityAdvisory' do
       as(SpecSeed.admin) do
         json_post cve_index_path, security_advisory_cve: {
           security_advisory: advisory.id,
-          cve_id: 'not-a-cve'
+          cve_id: 'not-a-cve',
+          expected_content_revision: advisory.content_revision
         }
       end
 
@@ -440,7 +559,8 @@ RSpec.describe 'VpsAdmin::API::Resources::SecurityAdvisory' do
       as(SpecSeed.admin) do
         json_post cve_index_path, security_advisory_cve: {
           security_advisory: advisory.id,
-          cve_id: 'CVE-2026-1001'
+          cve_id: 'CVE-2026-1001',
+          expected_content_revision: advisory.content_revision
         }
       end
 
@@ -449,13 +569,29 @@ RSpec.describe 'VpsAdmin::API::Resources::SecurityAdvisory' do
       expect(errors['cve_id'].join(' ')).to include('has already been taken')
     end
 
+    it 'checks the advisory revision when adding a CVE' do
+      advisory = build_advisory(cves: 'CVE-2026-1001')
+
+      as(SpecSeed.admin) do
+        json_post cve_index_path, security_advisory_cve: {
+          security_advisory: advisory.id,
+          cve_id: 'CVE-2026-1002',
+          expected_content_revision: advisory.content_revision + 1
+        }
+      end
+
+      expect_status(409)
+      expect(advisory.security_advisory_cves.pluck(:cve_id)).to contain_exactly('CVE-2026-1001')
+    end
+
     it 'rejects CVEs for missing advisories' do
       missing = ::SecurityAdvisory.maximum(:id).to_i + 100
 
       as(SpecSeed.admin) do
         json_post cve_index_path, security_advisory_cve: {
           security_advisory: missing,
-          cve_id: 'CVE-2026-1999'
+          cve_id: 'CVE-2026-1999',
+          expected_content_revision: 0
         }
       end
 
@@ -483,12 +619,113 @@ RSpec.describe 'VpsAdmin::API::Resources::SecurityAdvisory' do
   end
 
   describe 'Node statuses and publication' do
+    it 'supports the complete automation workflow with only its exact token scopes' do
+      advisory = build_advisory
+      session = create_open_session!(
+        user: SpecSeed.admin,
+        auth_type: 'token',
+        token_lifetime: 'permanent',
+        scope: %w[
+          node#index
+          node#show
+          node_kernel_evidence#index
+          node_kernel_evidence#show
+          node_cgroup_state#index
+          node_kernel_event#index
+          node_kernel_configuration_option#index
+          node_kernel_parameter#index
+          node_kernel_module#index
+          node_sysctl#index
+          node_software_version#index
+          node_kernel_livepatch#index
+          node_kernel_livepatch#show
+          node_kernel_livepatch_patch#index
+          node_ebpf_program#index
+          node_ebpf_program#show
+          node_ebpf_program_object#index
+          node_ebpf_program_link#index
+          node_kernel_evidence_error#index
+          node_kernel_history_state#index
+          node_kernel_history_state#show
+          node_kernel_history_gap#index
+          security_advisory#index
+          security_advisory#show
+          security_advisory#create
+          security_advisory#update
+          security_advisory_cve#index
+          security_advisory_cve#create
+          security_advisory_cve#delete
+          security_advisory.node_status#index
+          security_advisory.node_status#create
+          security_advisory.node_status#update
+          security_advisory.node_status#delete
+        ]
+      )
+      header 'X-HaveAPI-Auth-Token', session.token.token
+
+      json_get vpath('/node_kernel_evidences'), node_kernel_evidence: {
+        node: SpecSeed.node.id
+      }
+      expect_status(200)
+
+      json_get vpath('/node_kernel_modules'), node_kernel_module: {
+        node: SpecSeed.node.id
+      }
+      expect_status(200)
+
+      json_get cve_index_path, security_advisory_cve: {
+        security_advisory: advisory.id
+      }
+      expect_status(200)
+
+      json_post node_status_index_path(advisory.id), node_status: {
+        node: SpecSeed.node.id,
+        state: 'not_affected',
+        expected_content_revision: advisory.content_revision
+      }
+      expect_status(200)
+      expect(json['status']).to be(true), json.inspect
+      expect(advisory.security_advisory_node_statuses.reload.pluck(:node_id))
+        .to eq([SpecSeed.node.id])
+
+      json_get vpath('/nodes')
+      expect_status(200)
+    ensure
+      header 'X-HaveAPI-Auth-Token', nil
+    end
+
+    it 'checks the advisory revision when creating node status' do
+      advisory = build_advisory
+
+      as(SpecSeed.admin) do
+        json_post node_status_index_path(advisory.id), node_status: {
+          node: SpecSeed.node.id,
+          state: 'not_affected'
+        }
+      end
+
+      expect_status(200)
+      expect(json['status']).to be(false)
+      expect(errors.fetch('expected_content_revision').join(' ')).to include('required')
+
+      as(SpecSeed.admin) do
+        json_post node_status_index_path(advisory.id), node_status: {
+          node: SpecSeed.node.id,
+          state: 'not_affected',
+          expected_content_revision: advisory.content_revision + 1
+        }
+      end
+
+      expect_status(409)
+      expect(advisory.security_advisory_node_statuses).to be_empty
+    end
+
     it 'blocks publication without at least one CVE' do
       advisory = build_advisory
       advisory.security_advisory_cves.delete_all
       make_publishable!(advisory)
 
-      as(SpecSeed.admin) { json_post publish_path(advisory.id), security_advisory: {} }
+      as(SpecSeed.admin) { json_post publish_path(advisory.id), publish_payload(advisory) }
 
       expect_status(200)
       expect(json['status']).to be(false)
@@ -498,7 +735,7 @@ RSpec.describe 'VpsAdmin::API::Resources::SecurityAdvisory' do
     it 'blocks publication until all node statuses are mitigated or not affected' do
       advisory = build_advisory
 
-      as(SpecSeed.admin) { json_post publish_path(advisory.id), security_advisory: {} }
+      as(SpecSeed.admin) { json_post publish_path(advisory.id), publish_payload(advisory) }
 
       expect_status(200)
       expect(json['status']).to be(false)
@@ -507,7 +744,8 @@ RSpec.describe 'VpsAdmin::API::Resources::SecurityAdvisory' do
       as(SpecSeed.admin) do
         json_post node_status_index_path(advisory.id), node_status: {
           node: SpecSeed.node.id,
-          state: 'vulnerable'
+          state: 'vulnerable',
+          expected_content_revision: advisory.content_revision
         }
       end
 
@@ -515,7 +753,7 @@ RSpec.describe 'VpsAdmin::API::Resources::SecurityAdvisory' do
       expect(json['status']).to be(true)
       status_id = node_status_obj.fetch('id')
 
-      as(SpecSeed.admin) { json_post publish_path(advisory.id), security_advisory: {} }
+      as(SpecSeed.admin) { json_post publish_path(advisory.id), publish_payload(advisory) }
 
       expect_status(200)
       expect(json['status']).to be(false)
@@ -523,6 +761,7 @@ RSpec.describe 'VpsAdmin::API::Resources::SecurityAdvisory' do
 
       as(SpecSeed.admin) do
         json_put node_status_path(advisory.id, status_id), node_status: {
+          expected_content_revision: advisory.reload.content_revision,
           state: 'mitigated',
           vulnerable_until: Time.utc(2026, 1, 1, 10, 0, 0).iso8601,
           mitigated_since: Time.utc(2026, 1, 1, 10, 5, 0).iso8601
@@ -537,10 +776,11 @@ RSpec.describe 'VpsAdmin::API::Resources::SecurityAdvisory' do
 
       published_at = Time.utc(2026, 1, 1, 11, 0, 0)
       as(SpecSeed.admin) do
-        json_post publish_path(advisory.id), security_advisory: {
+        json_post publish_path(advisory.id), publish_payload(
+          advisory,
           send_mail: false,
           published_at: published_at.iso8601
-        }
+        )
       end
 
       expect_status(200)
@@ -559,7 +799,8 @@ RSpec.describe 'VpsAdmin::API::Resources::SecurityAdvisory' do
       as(SpecSeed.admin) do
         json_post node_status_index_path(missing), node_status: {
           node: SpecSeed.node.id,
-          state: 'not_affected'
+          state: 'not_affected',
+          expected_content_revision: 0
         }
       end
 
@@ -578,10 +819,10 @@ RSpec.describe 'VpsAdmin::API::Resources::SecurityAdvisory' do
       expect_status(200)
       expect(node_statuses.map { |row| row['id'] }).not_to include(draft_status.id)
 
-      json_get node_status_index_path(published.id)
+      as(SpecSeed.user) { json_get node_status_index_path(published.id) }
 
       expect_status(200)
-      expect(node_statuses.map { |row| row['node_id'] }).to include(SpecSeed.node.id)
+      expect(node_statuses.map { |row| row.dig('node', 'id') }).to include(SpecSeed.node.id)
     end
   end
 
@@ -591,7 +832,10 @@ RSpec.describe 'VpsAdmin::API::Resources::SecurityAdvisory' do
       make_publishable!(advisory)
       user_vps = create_vps!(user: SpecSeed.user, node: SpecSeed.node, hostname: 'spec-security-user-vps')
       other_vps = create_vps!(user: SpecSeed.other_user, node: SpecSeed.node, hostname: 'spec-security-other-vps')
-      advisory.publish!(published_by: SpecSeed.admin)
+      advisory.publish!(
+        expected_content_revision: advisory.content_revision,
+        published_by: SpecSeed.admin
+      )
 
       json_get vps_index_path
 
@@ -615,7 +859,10 @@ RSpec.describe 'VpsAdmin::API::Resources::SecurityAdvisory' do
       make_publishable!(advisory)
       create_vps!(user: SpecSeed.user, node: SpecSeed.node, hostname: 'spec-security-user-summary')
       create_vps!(user: SpecSeed.other_user, node: SpecSeed.node, hostname: 'spec-security-other-summary')
-      advisory.publish!(published_by: SpecSeed.admin)
+      advisory.publish!(
+        expected_content_revision: advisory.content_revision,
+        published_by: SpecSeed.admin
+      )
 
       as(SpecSeed.user) { json_get user_index_path }
 
@@ -630,7 +877,10 @@ RSpec.describe 'VpsAdmin::API::Resources::SecurityAdvisory' do
       make_publishable!(advisory)
       user_vps = create_vps!(user: SpecSeed.user, node: SpecSeed.node, hostname: 'spec-security-user-filter')
       other_vps = create_vps!(user: SpecSeed.other_user, node: SpecSeed.node, hostname: 'spec-security-other-filter')
-      advisory.publish!(published_by: SpecSeed.admin)
+      advisory.publish!(
+        expected_content_revision: advisory.content_revision,
+        published_by: SpecSeed.admin
+      )
 
       as(SpecSeed.user) { json_get index_path, security_advisory: { vps: user_vps.id } }
 

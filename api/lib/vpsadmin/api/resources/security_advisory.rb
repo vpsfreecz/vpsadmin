@@ -21,6 +21,7 @@ module VpsAdmin::API::Resources
       affected_user_count
       affected_vps_count
       created_by
+      external_id
       published_by
     ].freeze
 
@@ -47,9 +48,19 @@ module VpsAdmin::API::Resources
       use :texts
     end
 
+    params(:revision_precondition) do
+      integer :expected_content_revision,
+              required: true,
+              desc: 'Apply the change only when the advisory has this content revision.'
+    end
+
     params(:all) do
       id :id
+      string :external_id,
+             desc: 'Stable external idempotency key for an advisory source.',
+             nullable: true
       string :state, choices: ::SecurityAdvisory.states.keys.map(&:to_s)
+      integer :content_revision
       use :editable
       bool :affected,
            label: 'Affected',
@@ -88,6 +99,13 @@ module VpsAdmin::API::Resources
 
         tr
       end
+
+      def mutate_draft(advisory, &)
+        expected_revision = input.delete(:expected_content_revision)
+        advisory.mutate_draft!(expected_content_revision: expected_revision, &)
+      rescue ::SecurityAdvisory::DraftRequired, ::SecurityAdvisory::RevisionMismatch => e
+        error!(e.message, {}, http_status: 409)
+      end
     end
 
     class Index < HaveAPI::Actions::Default::Index
@@ -97,6 +115,7 @@ module VpsAdmin::API::Resources
       input do
         use :all, include: %i[state affected]
         string :cve, label: 'CVE'
+        string :external_id, desc: 'Filter by an exact external idempotency key.'
         datetime :recent_since, desc: 'Filter published or recently updated advisories'
         resource VpsAdmin::API::Resources::User, name: :user, label: 'User'
         resource VpsAdmin::API::Resources::VPS, name: :vps, label: 'VPS'
@@ -114,7 +133,7 @@ module VpsAdmin::API::Resources
         output blacklist: NON_ADMIN_OUTPUT_BLACKLIST
         input blacklist: %i[user]
         allow if u
-        input blacklist: %i[affected user vps]
+        input blacklist: %i[affected external_id user vps]
         allow
       end
 
@@ -128,6 +147,8 @@ module VpsAdmin::API::Resources
             security_advisory_cves: { cve_id: ::SecurityAdvisory.normalize_cve(input[:cve]) }
           )
         end
+
+        q = q.where(external_id: input[:external_id]) if input[:external_id]
 
         if input[:affected]
           q = q.joins(:security_advisory_users).where(
@@ -219,6 +240,13 @@ module VpsAdmin::API::Resources
 
       input do
         use :editable
+        string :external_id,
+               desc: 'Stable idempotency key; retries return the existing advisory.',
+               nullable: true
+        string :cve,
+               label: 'Initial CVE',
+               desc: 'Optional CVE link created atomically with the draft.',
+               nullable: true
 
         ::Language.all.each do |lang|
           patch :"#{lang.code}_summary", required: true
@@ -234,12 +262,26 @@ module VpsAdmin::API::Resources
       end
 
       def exec
+        external_id = input.delete(:external_id).presence
+        if external_id && (existing = ::SecurityAdvisory.find_by(external_id:))
+          return existing
+        end
+
+        cve = input.delete(:cve).presence
         tr = extract_translations
         ::SecurityAdvisory.transaction do
-          advisory = ::SecurityAdvisory.create!(to_db_names(input).merge(created_by: current_user))
+          advisory = ::SecurityAdvisory.create!(
+            to_db_names(input).merge(created_by: current_user, external_id:)
+          )
           advisory.update_translations!(tr)
+          advisory.security_advisory_cves.create!(cve_id: ::SecurityAdvisory.normalize_cve(cve)) if cve
           advisory
         end
+      rescue ActiveRecord::RecordNotUnique
+        existing = ::SecurityAdvisory.find_by(external_id:)
+        raise unless existing
+
+        existing
       rescue ActiveRecord::RecordInvalid => e
         error!('create failed', to_param_names(e.record.errors.to_hash))
       end
@@ -252,6 +294,7 @@ module VpsAdmin::API::Resources
 
       input do
         use :editable
+        use :revision_precondition
       end
 
       output do
@@ -265,11 +308,11 @@ module VpsAdmin::API::Resources
       def exec
         advisory = ::SecurityAdvisory.find(path_params['security_advisory_id'])
         tr = extract_translations
-        ::SecurityAdvisory.transaction do
+        mutate_draft(advisory) do
           advisory.update!(to_db_names(input))
           advisory.update_translations!(tr)
-          advisory
         end
+        advisory
       rescue ActiveRecord::RecordInvalid => e
         error!('update failed', to_param_names(e.record.errors.to_hash))
       end
@@ -282,6 +325,9 @@ module VpsAdmin::API::Resources
       blocking true
 
       input do
+        integer :expected_content_revision,
+                required: true,
+                desc: 'Publish only the exact draft revision shown during review.'
         bool :send_mail,
              label: 'Send mail',
              desc: SEND_MAIL_DESCRIPTION,
@@ -304,10 +350,13 @@ module VpsAdmin::API::Resources
       def exec
         @advisory = ::SecurityAdvisory.find(path_params['security_advisory_id'])
         @advisory.publish!(
+          expected_content_revision: input[:expected_content_revision],
           send_mail: input[:send_mail],
           published_by: current_user,
           published_at: input[:published_at]
         )
+      rescue ::SecurityAdvisory::RevisionMismatch => e
+        error!(e.message, {}, http_status: 409)
       rescue ActiveRecord::RecordInvalid => e
         error!('publish failed', to_param_names(e.record.errors.to_hash))
       end
@@ -337,6 +386,12 @@ module VpsAdmin::API::Resources
       route '{security_advisory_id}/node_statuses'
       model ::SecurityAdvisoryNodeStatus
 
+      params(:revision_precondition) do
+        integer :expected_content_revision,
+                required: true,
+                desc: 'Apply the change only when the advisory has this content revision.'
+      end
+
       params(:editable) do
         resource VpsAdmin::API::Resources::Node,
                  value_label: :domain_name,
@@ -359,8 +414,7 @@ module VpsAdmin::API::Resources
         resource VpsAdmin::API::Resources::SecurityAdvisory,
                  label: 'Security advisory',
                  value_label: :id
-        integer :node_id
-        string :node_name
+        resource VpsAdmin::API::Resources::Node, value_label: :domain_name
         string :state,
                choices: ::SecurityAdvisoryNodeStatus.states.keys.map(&:to_s),
                desc: 'Assessment of whether the node was affected ' \
@@ -411,10 +465,13 @@ module VpsAdmin::API::Resources
       end
 
       class Create < HaveAPI::Actions::Default::Create
+        include Helpers
+
         desc 'Create advisory node status'
 
         input do
           use :editable
+          use :revision_precondition
           patch :node, required: true
           patch :state, required: true
         end
@@ -429,19 +486,24 @@ module VpsAdmin::API::Resources
 
         def exec
           advisory = ::SecurityAdvisory.find(path_params['security_advisory_id'])
-          ::SecurityAdvisoryNodeStatus.create!(
-            to_db_names(input).merge(security_advisory: advisory)
-          )
+          mutate_draft(advisory) do
+            ::SecurityAdvisoryNodeStatus.create!(
+              to_db_names(input).merge(security_advisory: advisory)
+            )
+          end
         rescue ActiveRecord::RecordInvalid => e
           error!('create failed', to_param_names(e.record.errors.to_hash))
         end
       end
 
       class Update < HaveAPI::Actions::Default::Update
+        include Helpers
+
         desc 'Update advisory node status'
 
         input do
           use :editable, exclude: %i[node]
+          use :revision_precondition
         end
 
         output do
@@ -457,7 +519,9 @@ module VpsAdmin::API::Resources
             security_advisory_id: path_params['security_advisory_id'],
             id: path_params['node_status_id']
           )
-          status.update!(to_db_names(input))
+          mutate_draft(status.security_advisory) do
+            status.update!(to_db_names(input))
+          end
           status
         rescue ActiveRecord::RecordInvalid => e
           error!('update failed', to_param_names(e.record.errors.to_hash))
@@ -465,7 +529,13 @@ module VpsAdmin::API::Resources
       end
 
       class Delete < HaveAPI::Actions::Default::Delete
+        include Helpers
+
         desc 'Delete advisory node status'
+
+        input do
+          use :revision_precondition
+        end
 
         authorize do |u|
           allow if u.role == :admin
@@ -479,7 +549,7 @@ module VpsAdmin::API::Resources
         end
 
         def exec
-          @status.destroy!
+          mutate_draft(@status.security_advisory) { @status.destroy! }
           ok!
         end
       end

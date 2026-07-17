@@ -82,7 +82,7 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
     end
 
     authorize do |u|
-      allow if u.role == :admin
+      allow if u&.role == :admin
       input blacklist: %i[state]
       output whitelist: %i[id name domain_name fqdn location hypervisor_type cgroup_version]
       restrict active: true
@@ -306,7 +306,7 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
     end
 
     authorize do |u|
-      allow if u.role == :admin
+      allow if u&.role == :admin
       output whitelist: %i[id name domain_name fqdn location hypervisor_type cgroup_version]
       restrict active: true
       allow
